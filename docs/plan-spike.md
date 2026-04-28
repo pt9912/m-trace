@@ -157,6 +157,12 @@ Verbindliche Folge:
 - der AP-1-Branch wird mit dem geänderten Vertrag aktualisiert (Rebase
   oder Merge), damit beide Prototypen am Ende gegen denselben Vertrag
   bewertet werden
+- das Spike-Protokoll `docs/spike/backend-stack-results.md` lebt
+  durchgehend auf `main` und wird **nicht** in den Spike-Branches
+  gepflegt. Jeder AP committet seine Notizen direkt auf `main` (eigener
+  Commit, separat vom Prototypen-Code), damit AP-2 die AP-1-Notizen
+  ohne Merge sieht und AP-3 in Konsequenz auf einer vollständigen
+  Notiz-Historie aufsetzt.
 
 ### 4.2 Harte Zeitgrenze, keine dritte Spike-Runde
 
@@ -378,10 +384,16 @@ Aufgaben:
 - Validierungsregeln und Fehlerfälle festschreiben
 - Pflichttests (Happy Path und Fehlerfälle) festschreiben
 - Datei nach `main` mergen
+- Spike-Protokoll-Skelett `docs/spike/backend-stack-results.md` auf
+  `main` anlegen (Abschnitte: AP-1-Notizen, AP-2-Notizen,
+  Vertragsänderungen, Subjektive Eindrücke). Datei lebt fortan auf
+  `main` und wird von AP-1/AP-2 dort ergänzt — siehe §4.1.
 
 Abnahme:
 
 - Datei existiert auf `main`
+- `docs/spike/backend-stack-results.md` existiert auf `main` mit
+  leerem Skelett
 - jeder Endpunkt hat Beispielpayload, Statuscode-Liste und mindestens einen
   Testfall
 - alle Metriken der Spec sind genannt
@@ -415,8 +427,9 @@ Aufgaben:
 - Image als `m-trace-api-spike:go` taggen
 - `make test` und `docker run -p 8080:8080 m-trace-api-spike:go` müssen laufen
 - `make lint` ruft `golangci-lint run ./...` auf (Soll-Aufgabe; siehe §14.9)
-- Spike-Notizen pro Bewertungskategorie in
-  `docs/spike/backend-stack-results.md` führen
+- Spike-Notizen pro Bewertungskategorie direkt auf `main` in
+  `docs/spike/backend-stack-results.md` committen (siehe §4.1) —
+  **nicht** in `spike/go-api`
 
 Abnahme:
 
@@ -425,8 +438,9 @@ Abnahme:
 - Docker-Image baut und startet, `/api/health` liefert HTTP 200
 - alle Pflichtmetriken sichtbar an `/api/metrics`
 - OTel ist mindestens einmal im Code berührt
-- Notizen zu Bewertungskategorien sind in
-  `docs/spike/backend-stack-results.md` festgehalten
+- AP-1-Notizen sind auf `main` in
+  `docs/spike/backend-stack-results.md` festgehalten und vor AP-2-
+  Start sichtbar
 
 ### 6.3 AP-2: Micronaut-Prototyp
 
@@ -460,9 +474,11 @@ Aufgaben:
 - `./gradlew test` und `docker run -p 8080:8080 m-trace-api-spike:micronaut`
   müssen laufen
 - `make lint` ruft `./gradlew detekt` auf (Soll-Aufgabe; siehe §14.9)
-- Spike-Notizen pro Bewertungskategorie in
-  `docs/spike/backend-stack-results.md` ergänzen
-- Spike-Notizen pro Bewertungskategorie führen
+- Branch von `main` ziehen (gewährleistet, dass AP-1-Notizen aus
+  `docs/spike/backend-stack-results.md` schon sichtbar sind)
+- AP-2-Notizen pro Bewertungskategorie direkt auf `main` in
+  `docs/spike/backend-stack-results.md` committen (siehe §4.1) —
+  **nicht** in `spike/micronaut-api`
 
 Abnahme:
 
@@ -576,16 +592,16 @@ gilt als sauber). `.gomodcache/` und `.gradle-user-home/` sind im
 
 Hinweis zum JVM-Cold-Start (Micronaut-Variante):
 
-Der Cold-Start wird zusätzlich mit Production-JVM-Flags gemessen, um
-ein realistisches Bild zu bekommen:
+Bewertet wird **ausschließlich** der Default-JVM-Cold-Start ohne
+zusätzliche Tuning-Flags. JVM-Tuning ist gemäß §7.4 und Spec §8 aus
+dem Spike-Scope ausgeschlossen, damit der Vergleich Go vs.
+Kotlin/Micronaut nicht durch Runtime-Konfiguration verzerrt wird.
 
-- Default-JVM (kein Flag): Baseline
-- Production-Variante: `-XX:+UseZGC -XX:+ZGenerational` (Pattern aus
-  d-migrate `Dockerfile`/Jib-Konfiguration)
-
-Beide Werte werden im Messwertbogen notiert. ZGC reduziert
-Latenz-Tail bei kleinem Heap deutlich; das beeinflusst die
-Bewertungskategorie `Cold Start`.
+Optional darf eine **nicht-bewertete** Zusatznotiz im Messwertbogen
+stehen: Cold-Start-Wert mit `-XX:+UseZGC -XX:+ZGenerational` (Pattern
+aus d-migrate). Der Wert dient nur als Referenz für die
+spätere `apps/api`-Konfiguration im MVP und fließt nicht in die
+Bewertungskategorie `Cold Start` ein.
 
 ### 7.3 Bewertungsraster
 

@@ -541,7 +541,7 @@ Spike gemäß `docs/spike/0001-backend-stack.md` durchgeführt.
 ## Optionen
 
 - Go mit Standard Library und optional Chi
-- Micronaut 4.x mit Java 21
+- Kotlin 2.1.x auf JDK 21 mit Micronaut 4.x
 
 ## Scope
 

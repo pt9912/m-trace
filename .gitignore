@@ -100,8 +100,11 @@ hs_err_pid*
 replay_pid*
 .kotlin/
 
-# Keep Gradle wrapper jar (required for build):
-!gradle/wrapper/gradle-wrapper.jar
+# Keep Gradle wrapper jar (required for build) at any depth.
+# Important: pattern with leading "**/" matches in subdirectories such as
+# apps/api/gradle/wrapper/gradle-wrapper.jar. A path-anchored pattern
+# without "**/" would only un-ignore the root-level wrapper.
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # ---------------------------------------------------------------------------
 # Docker
