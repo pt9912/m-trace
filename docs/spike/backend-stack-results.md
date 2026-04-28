@@ -338,25 +338,55 @@ Zeitbudget.
 
 ## 4. Reihenfolge und Bias (Plan §4.4)
 
-- Tatsächliche Reihenfolge: _Go zuerst / Micronaut zuerst_
-- Beobachteter Bias: _–_
-- Korrekturmaßnahmen während des Spikes: _–_
+- Tatsächliche Reihenfolge: **Go zuerst, Kotlin/Micronaut danach**
+  (Default aus Plan §4.4).
+- Beobachteter Bias: erwarteter Vorteil für den zweiten Stack
+  (Schema/Statuscodes/Edge Cases bereits durchdacht) hat **nicht**
+  durchgeschlagen. Mehraufwand bei Kotlin/Micronaut war
+  tooling-environment-spezifisch (Micronaut-BOM, KSP-Defaults,
+  detekt-srcDirs, Micrometer-1.13-Package-Move, `@Replaces`-Scope,
+  Kotest5+`@MicronautTest`-Inkompatibilität), nicht API-Spec-bezogen.
+- Korrekturmaßnahmen während des Spikes: keine — der Bias hätte das
+  Ergebnis nicht in Richtung Kotlin verschoben (siehe
+  `docs/adr/0001-backend-stack.md` §4).
 
 ---
 
 ## 5. Subjektive Gesamteindrücke
 
-_Freier Block für übergreifende Notizen, Aha-Momente, Frustpunkte. Wird
-in AP-3 zu den ADR-Abschnitten "Bewertung" und "Konsequenzen" verdichtet._
+Im ADR `docs/adr/0001-backend-stack.md` §5 (Bewertung) und §8
+(Konsequenzen) verdichtet. Kernpunkte:
+
+- Go fühlt sich für einen kleinen HTTP-Service mit OTel + Prometheus
+  *kürzer und glatter* an als Kotlin/Micronaut. Stdlib `net/http`,
+  `log/slog`, `prometheus/client_golang` reichen vollständig; keine
+  Plugin-Stack-Pflege.
+- Kotlin-Sprachfeatures (sealed result types, `data object`, value
+  classes, exhaustive when) sind angenehm zu schreiben — gehen aber
+  im Spike-Kontext gegen Build-Zyklus von 30–40 s pro `compile`
+  (Go: ~5 s) verloren.
+- Hexagon ist in beiden Stacks gleich gut umsetzbar (nach
+  `object`-Refactor in Kotlin), aber Go ist näher an der
+  Streaming-/Observability-OSS-Welt und erleichtert Contributor-Onboarding.
 
 ---
 
 ## 6. Übergang zu AP-3
 
-- Bewertungsbogen (Spec §16) ausgefüllt im ADR: ☐
-- Messwertbogen (Spec §17) ausgefüllt im ADR: ☐
-- Reihenfolge-Bias im ADR notiert: ☐
-- Sieger-Branch markiert: ☐
+- Bewertungsbogen (Spec §16) ausgefüllt im ADR: ☑
+- Messwertbogen (Spec §17) ausgefüllt im ADR: ☑
+- Reihenfolge-Bias im ADR notiert: ☑
+- Sieger-Branch markiert: ☑ (`spike/go-api`,
+  Final-Commit `7148a8d`)
 - Unterlegener Branch gelöscht oder als Tag
-  `spike/backend-stack-loser-YYYYMMDD` archiviert: ☐
-- Finale Commit-Hashes beider Prototypen im ADR: ☐
+  `spike/backend-stack-loser-2026-04-28` archiviert: ☑ (Tag gesetzt
+  auf `7c8bc44`, Branch `spike/micronaut-api` gelöscht)
+- Finale Commit-Hashes beider Prototypen im ADR: ☑
+
+---
+
+## 7. ADR
+
+`docs/adr/0001-backend-stack.md` (Status: **Accepted**, Datum
+2026-04-28). **Gewählt: Go.** Vorsprung 1,55 gewichtete Punkte
+(38,75 pp), klar über der 10-pp-Schwelle aus Plan §4.6.
