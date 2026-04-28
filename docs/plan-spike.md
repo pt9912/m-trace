@@ -147,6 +147,12 @@ Verbindliche Folge:
   Spike-Protokoll begründet sein
 - der zweite Stack darf nicht davon profitieren, dass unklare
   Anforderungen erst im ersten Prototyp entdeckt wurden
+- genehmigte Vertragsänderungen aus AP-1 werden **vor** AP-2-Start nach
+  `main` gemerged; AP-2 (§6.3) zieht den Branch damit gegen den
+  finalen Vertrag
+- der AP-1-Branch wird mit dem geänderten Vertrag aktualisiert (Rebase
+  oder Merge), damit beide Prototypen am Ende gegen denselben Vertrag
+  bewertet werden
 
 ### 4.2 Harte Zeitgrenze, keine dritte Spike-Runde
 
@@ -480,15 +486,20 @@ Jeder Prototyp muss ohne externe Dienste folgende Tests grün haben:
 - Unit-Test zentrale Domain-Validierung: Pflichtfelder, Schema-Version
 - Integrationstest `POST /api/playback-events`: Happy Path mit gültigem
   Token
+- Integrationstest HTTP 400 bei abweichender `schema_version`
 - Integrationstest HTTP 401 bei fehlendem oder falschem Token
+- Integrationstest HTTP 413 bei Body über 256 KB
 - Integrationstest HTTP 422 bei ungültigem Event (fehlendes Pflichtfeld)
 - Integrationstest HTTP 422 bei mehr als 100 Events im Batch
 - Integrationstest HTTP 429 bei Rate-Limit-Überschreitung mit
   `Retry-After`-Header
 
+Diese Tests decken sämtliche Validierungsregeln aus Spec §6.3 ab. Ein
+Prototyp mit einem fehlenden oder fehlschlagenden Pflichttest ist nur
+dann DoD-fähig, wenn das Scheitern gemäß §10 dokumentiert ist.
+
 Bonus-Tests:
 
-- HTTP 413 bei Body > 256 KB
 - `GET /api/stream-sessions` Liste
 - `GET /api/stream-sessions/{id}` Detail
 
@@ -515,7 +526,7 @@ Pro Prototyp objektiv festzuhalten:
 | Cold Start bis erster 200 OK auf `/api/health` | `time` + Curl-Loop |
 | Build-Zeit von Scratch | `time docker build --no-cache` |
 | Größe des Dependency-Caches | isolierter Cache pro Prototyp (siehe Hinweis) |
-| Anzahl direkter Dependencies | `go list -m all` bzw. `gradle dependencies` |
+| Anzahl direkter Dependencies | direkt deklariert in `apps/api/go.mod` (`require`-Block ohne `// indirect`) bzw. `apps/api/build.gradle.kts` (Einträge im `dependencies {}`-Block: `implementation`, `api`, `testImplementation`, ...). Transitive Dependencies werden nicht mitgezählt. |
 | Testlaufzeit | `time make test` |
 | Anzahl direkt geschriebener Konfigurationsdateien | manuell |
 
@@ -525,8 +536,14 @@ Globale Caches (`~/go/pkg/mod`, `~/.gradle`) sind durch andere Projekte
 verfälscht und nicht vergleichbar. Der Spike misst pro Prototyp einen
 isolierten Cache aus einem leeren Branch-Clone:
 
-- **Go**: `GOMODCACHE="$PWD/.gomodcache" go build ./... && du -sh .gomodcache`
-- **Gradle**: `./gradlew --gradle-user-home "$PWD/.gradle-user-home" build && du -sh .gradle-user-home`
+- **Go** (aus `apps/api/`):  
+  `cd apps/api && GOMODCACHE="$PWD/.gomodcache" go build ./... && du -sh .gomodcache`
+- **Gradle** (aus `apps/api/`):  
+  `cd apps/api && ./gradlew --gradle-user-home "$PWD/.gradle-user-home" build && du -sh .gradle-user-home`
+
+Ergebnis liegt damit unter `apps/api/.gomodcache/` bzw.
+`apps/api/.gradle-user-home/`. Beide Pfade sind im `.gitignore` gemappt
+(Pattern ohne führenden Slash matcht in jedem Unterverzeichnis).
 
 Vor der Messung muss der jeweilige Cache leer sein (frischer Branch-Clone
 gilt als sauber). `.gomodcache/` und `.gradle-user-home/` sind im
@@ -669,11 +686,12 @@ Gegenmaßnahme:
 Der Spike ist abgeschlossen, wenn:
 
 - `docs/spike/backend-api-contract.md` auf `main` existiert
-- Branch `spike/go-api` den Muss-Scope erfüllt **oder** dokumentiert
-  daran gescheitert ist
-- Branch `spike/micronaut-api` den Muss-Scope erfüllt **oder** dokumentiert
-  daran gescheitert ist
-- jeder Prototyp hat alle Pflichttests aus §7.1 grün
+- Branch `spike/go-api` den Muss-Scope erfüllt und alle Pflichttests aus
+  §7.1 grün hat **oder** das Scheitern inklusive fehlender bzw.
+  fehlschlagender Tests im Spike-Protokoll dokumentiert ist
+- Branch `spike/micronaut-api` den Muss-Scope erfüllt und alle Pflichttests
+  aus §7.1 grün hat **oder** das Scheitern inklusive fehlender bzw.
+  fehlschlagender Tests im Spike-Protokoll dokumentiert ist
 - Bewertungsbogen für beide Prototypen vollständig ausgefüllt ist
 - Messwertbogen für beide Prototypen vollständig ausgefüllt ist
 - Reihenfolge-Bias im ADR dokumentiert ist
