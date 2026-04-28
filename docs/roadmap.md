@@ -40,7 +40,7 @@ jedem Folge-ADR aktualisieren.
 
 ### 1.2 Was noch offen ist (vor MVP `0.1.0`)
 
-Reihenfolge ist verbindlich (Plan SP-41):
+Reihenfolge ist verbindlich (SP-41):
 
 1. `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen
    (erfüllt **MVP-2**).
@@ -67,8 +67,8 @@ weil dort kein ID-System existiert.
 
 | # | Status | Schritt | Trigger | Verweis |
 |---|---|---|---|---|
-| 1 | ⬜ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; Plan SP-41 |
-| 2 | ⬜ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | Plan SP-41 |
+| 1 | ⬜ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; SP-41 |
+| 2 | ⬜ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | SP-41 |
 | 3 | ⬜ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; ADR §8 |
 | 4 | ⬜ | Phase-2-Risiken in Issue-Backlog | Nach Schritt 3 | ADR §8 |
 | 5 | ⬜ | `docs/architecture.md` schreiben | Vor `0.1.0`-DoD | AK-3, AK-10 |
@@ -154,7 +154,7 @@ die für `0.1.0`+ relevanten Punkte:
 - **Docker-only-Workflow**: alle Build-/Test-/Lint-Schritte über
   `docker build --target ...`. Lokales Go ist optional. Pattern aus
   `docs/plan-spike.md` §14.11 wird beibehalten.
-- **CI-Artifacts** (Plan SP-41 Lessons-learned): Test-Results,
+- **CI-Artifacts** (SP-41 Lessons-learned): Test-Results,
   Coverage-Reports, Lint-Reports beim CI-Setup hochladen — Pattern
   analog zu `d-migrate/.github/workflows/build.yml`.
 - **Multi-Modul-Aufteilung erst on demand**: bei wachsender
