@@ -282,6 +282,7 @@ Pflichttests (Detailaufstellung in `docs/plan-spike.md` §7.1):
 - Integrationstest HTTP 401 bei unbekanntem `project_id`
 - Integrationstest HTTP 413 bei Body über 256 KB
 - Integrationstest HTTP 422 bei ungültigem Event
+- Integrationstest HTTP 422 bei leerem oder fehlendem `events`-Feld
 - Integrationstest HTTP 422 bei mehr als 100 Events im Batch
 - Integrationstest HTTP 429 bei Rate Limit mit `Retry-After`-Header
 

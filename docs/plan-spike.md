@@ -22,13 +22,17 @@ Dieser Plan operationalisiert die Spike-Spezifikation aus
 `docs/spike/0001-backend-stack.md`. Er bricht sie in datierte Arbeitspakete,
 Abnahmekriterien, Verifikationsschritte und eine Definition of Done auf.
 
-Konkrete Ergebnisse nach Abschluss:
+Konkrete Ergebnisse nach Abschluss (mit verbindlichen Pfaden):
 
 - API-Kontrakt-Datei `docs/spike/backend-api-contract.md`
 - Branch `spike/go-api` mit lauffähigem Go-Prototyp
 - Branch `spike/micronaut-api` mit lauffähigem Micronaut-Prototyp
-- ausgefüllter Bewertungsbogen und Messwertbogen
-- ADR `docs/adr/0001-backend-stack.md` mit gewähltem Stack
+- Spike-Protokoll `docs/spike/backend-stack-results.md` mit
+  Live-Notizen, Vertragsänderungen und subjektiven Eindrücken pro
+  Bewertungskategorie
+- ADR `docs/adr/0001-backend-stack.md` mit gewähltem Stack; enthält
+  den ausgefüllten Bewertungsbogen (Spec §16) und Messwertbogen
+  (Spec §17) für beide Prototypen
 - Sieger-Branch als Basis für die spätere `apps/api`-Implementierung
 
 Nicht Ergebnis dieses Plans:
@@ -144,7 +148,7 @@ Verbindliche Folge:
 - der Kontrakt darf nach dem ersten Implementierungs-Branch nicht mehr
   einseitig geändert werden
 - Änderungen müssen in beiden Prototypen identisch landen und im
-  Spike-Protokoll begründet sein
+  Spike-Protokoll (`docs/spike/backend-stack-results.md`) begründet sein
 - der zweite Stack darf nicht davon profitieren, dass unklare
   Anforderungen erst im ersten Prototyp entdeckt wurden
 - genehmigte Vertragsänderungen aus AP-1 werden **vor** AP-2-Start nach
@@ -409,7 +413,8 @@ Aufgaben:
 - Pflichttests gemäß Spec §6.12 schreiben
 - Image als `m-trace-api-spike:go` taggen
 - `make test` und `docker run -p 8080:8080 m-trace-api-spike:go` müssen laufen
-- Spike-Notizen pro Bewertungskategorie führen
+- Spike-Notizen pro Bewertungskategorie in
+  `docs/spike/backend-stack-results.md` führen
 
 Abnahme:
 
@@ -418,7 +423,8 @@ Abnahme:
 - Docker-Image baut und startet, `/api/health` liefert HTTP 200
 - alle Pflichtmetriken sichtbar an `/api/metrics`
 - OTel ist mindestens einmal im Code berührt
-- Notizen zu Bewertungskategorien existieren
+- Notizen zu Bewertungskategorien sind in
+  `docs/spike/backend-stack-results.md` festgehalten
 
 ### 6.3 AP-2: Micronaut-Prototyp
 
@@ -447,6 +453,8 @@ Aufgaben:
 - Image als `m-trace-api-spike:micronaut` taggen
 - `./gradlew test` und `docker run -p 8080:8080 m-trace-api-spike:micronaut`
   müssen laufen
+- Spike-Notizen pro Bewertungskategorie in
+  `docs/spike/backend-stack-results.md` ergänzen
 - Spike-Notizen pro Bewertungskategorie führen
 
 Abnahme:
@@ -459,10 +467,12 @@ Maximalbudget: 0,5 Tag.
 
 Aufgaben:
 
-- Bewertungsraster für beide Prototypen ausfüllen (Spec §16)
-- Messwertbogen für beide Prototypen ausfüllen (Spec §17)
-- Reihenfolge-Bias notieren
-- Subjektive Notizen sortieren
+- Bewertungsraster (Vorlage Spec §16) für beide Prototypen direkt im
+  ADR ausfüllen
+- Messwertbogen (Vorlage Spec §17) für beide Prototypen direkt im ADR
+  ausfüllen
+- Reihenfolge-Bias und subjektive Eindrücke aus
+  `docs/spike/backend-stack-results.md` ins ADR übernehmen
 - Entscheidung gemäß Entscheidungsregel treffen (§4.6)
 - ADR `docs/adr/0001-backend-stack.md` schreiben (Vorlage Spec §15)
 - Sieger-Branch markieren; unterlegenen Branch löschen oder als Tag
@@ -471,9 +481,10 @@ Aufgaben:
 
 Abnahme:
 
-- Bewertungs- und Messwertbogen vollständig ausgefüllt
+- Bewertungs- und Messwertbogen sind vollständig im ADR ausgefüllt
 - ADR existiert auf `main` mit klarer Stack-Entscheidung
-- Bias-Abschnitt im ADR ist nicht leer
+- Bias-Abschnitt im ADR ist nicht leer und referenziert das
+  Spike-Protokoll
 - unterlegener Branch ist nicht mehr aktiver Entwicklungspfad
 
 ---
@@ -495,6 +506,8 @@ Jeder Prototyp muss ohne externe Dienste folgende Tests grün haben:
 - Integrationstest HTTP 401 bei unbekanntem `project_id` (Spec §6.4)
 - Integrationstest HTTP 413 bei Body über 256 KB
 - Integrationstest HTTP 422 bei ungültigem Event (fehlendes Pflichtfeld)
+- Integrationstest HTTP 422 bei leerem `events`-Array (`[]`)
+- Integrationstest HTTP 422 bei fehlendem `events`-Feld
 - Integrationstest HTTP 422 bei mehr als 100 Events im Batch
 - Integrationstest HTTP 429 bei Rate-Limit-Überschreitung mit
   `Retry-After`-Header
@@ -697,8 +710,12 @@ Der Spike ist abgeschlossen, wenn:
 - Branch `spike/micronaut-api` den Muss-Scope erfüllt und alle Pflichttests
   aus §7.1 grün hat **oder** das Scheitern inklusive fehlender bzw.
   fehlschlagender Tests im Spike-Protokoll dokumentiert ist
-- Bewertungsbogen für beide Prototypen vollständig ausgefüllt ist
-- Messwertbogen für beide Prototypen vollständig ausgefüllt ist
+- Bewertungsbogen (Spec §16) für beide Prototypen vollständig in
+  `docs/adr/0001-backend-stack.md` ausgefüllt ist
+- Messwertbogen (Spec §17) für beide Prototypen vollständig in
+  `docs/adr/0001-backend-stack.md` ausgefüllt ist
+- `docs/spike/backend-stack-results.md` enthält Live-Notizen pro
+  Bewertungskategorie und protokollierte Vertragsänderungen
 - Reihenfolge-Bias im ADR dokumentiert ist
 - `docs/adr/0001-backend-stack.md` mit klarer Stack-Entscheidung,
   Begründung in 2–3 Sätzen und Konsequenzen-Abschnitt existiert
@@ -912,8 +929,9 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
 ### 14.6 Java-Version im Micronaut-Prototyp
 
 - **Default**: Java 21 (LTS).
-- Java 17 erlaubt, wenn die lokale Toolchain das einfacher macht; im
-  ADR begründen.
+- Java 21 ist verbindlich (übereinstimmend mit AP-2 §6.3 und Spec §6.11);
+  ein Wechsel auf Java 17 würde den Vergleich verzerren und ist
+  ausgeschlossen.
 - Kotlin nur, wenn explizit gewünscht — sonst zusätzliche Variable im
   Vergleich.
 
