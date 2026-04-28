@@ -452,12 +452,13 @@ spike/micronaut-api
 Stack:
 
 - Micronaut 4.x
-- Kotlin 2.x auf JDK 21 (Default; Begründung in
+- Kotlin 2.1.x auf JDK 21 (Default; Begründung in
   `docs/plan-spike.md` §14.6)
 - OTel via Micronaut-OpenTelemetry-Modul oder direkte OTel SDK-Nutzung
-- Tests mit `@MicronautTest` und JUnit 5 (alternativ Kotest)
+- Tests mit Kotest 6.x + MockK + `@MicronautTest`-Integration
+  (Default; siehe `docs/plan-spike.md` §14.10)
 - Logging mit Logback und optional Logstash-Encoder
-- Linting: `detekt` als Soll (siehe `docs/plan-spike.md` §14.9)
+- Linting: `detekt` 1.23+ als Soll (siehe `docs/plan-spike.md` §14.9)
 
 ### 12.4 Tag 5: Auswertung
 

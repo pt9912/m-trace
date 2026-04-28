@@ -435,11 +435,14 @@ Maximalbudget: 2 Tage. Branch: `spike/micronaut-api`.
 Stack:
 
 - Micronaut 4.x
-- Kotlin 2.x auf JDK 21 (siehe §14.6 für Begründung)
+- Kotlin 2.1.x auf JDK 21 (siehe §14.6 für Begründung)
+- Versionen zentral in `apps/api/gradle.properties` (Pattern aus
+  d-migrate `gradle.properties`), nicht als String-Literale verstreut
 - OTel via Micronaut-OpenTelemetry-Modul oder direkte SDK-Nutzung
-- Tests mit `@MicronautTest` und JUnit 5 (alternativ Kotest)
-- Logging mit Logback, optional Logstash-Encoder
-- Linting: `detekt` (Soll, siehe §14.9)
+- Tests mit Kotest 6.x + MockK + `@MicronautTest`-Integration
+  (siehe §14.10 für Default-Wahl)
+- Logging mit Logback (1.5.x), optional Logstash-Encoder
+- Linting: `detekt` 1.23+ (Soll, siehe §14.9)
 
 Aufgaben:
 
@@ -570,6 +573,19 @@ Ergebnis liegt damit unter `apps/api/.gomodcache/` bzw.
 Vor der Messung muss der jeweilige Cache leer sein (frischer Branch-Clone
 gilt als sauber). `.gomodcache/` und `.gradle-user-home/` sind im
 `.gitignore` ausgenommen.
+
+Hinweis zum JVM-Cold-Start (Micronaut-Variante):
+
+Der Cold-Start wird zusätzlich mit Production-JVM-Flags gemessen, um
+ein realistisches Bild zu bekommen:
+
+- Default-JVM (kein Flag): Baseline
+- Production-Variante: `-XX:+UseZGC -XX:+ZGenerational` (Pattern aus
+  d-migrate `Dockerfile`/Jib-Konfiguration)
+
+Beide Werte werden im Messwertbogen notiert. ZGC reduziert
+Latenz-Tail bei kleinem Heap deutlich; das beeinflusst die
+Bewertungskategorie `Cold Start`.
 
 ### 7.3 Bewertungsraster
 
@@ -755,6 +771,20 @@ Verbindliche Folge:
 Phase-1-Risiken aus Bewertungskategorie "Absehbare Phase-2-Risiken"
 werden im ADR dokumentiert und in einen ersten Issue-Backlog überführt.
 
+Lessons-learned-Hinweise aus dem Vergleich mit `d-migrate` (für
+0.1.0+, nicht im Spike-Scope):
+
+- Coverage mit Kover (Kotlin) bzw. `go test -cover` (Go) ab MVP
+  einführen; `koverVerify` mit Mindestschwelle (d-migrate: 90% Root,
+  modulweise abgestuft).
+- Per-Modul `detekt-baseline.xml` beim Übergang zu Multi-Modul-
+  Mono-Repo erzeugen — pragmatischer Pfad bei wachsendem Bestand.
+- CI-Workflow uploadet Test-Results, Coverage-Reports und
+  detekt-Reports als Artifacts (Pattern aus
+  `d-migrate/.github/workflows/build.yml`).
+- `outputs.cacheIf { false }` auf Test-Tasks setzen, damit Coverage-
+  Counter nicht aus stalem Build-Cache kommen.
+
 ---
 
 ## 12. Verbindliche Modul- und Paketstruktur
@@ -831,6 +861,7 @@ apps/api/
 │       └── kotlin/
 │           └── dev/mtrace/api/
 ├── build.gradle.kts
+├── gradle.properties
 ├── detekt.yml
 ├── gradle/
 │   └── wrapper/
@@ -841,8 +872,28 @@ apps/api/
 
 Kotlin-Package-Konvention: `dev.mtrace.api.*`. Group-Id im Gradle-Build:
 `dev.mtrace`. `build.gradle.kts` aktiviert die Plugins
-`org.jetbrains.kotlin.jvm`, `io.micronaut.application` und
-`io.gitlab.arturbosch.detekt`. `detekt.yml` enthält die Lint-Konfiguration.
+`org.jetbrains.kotlin.jvm` (2.1.x), `io.micronaut.application` und
+`io.gitlab.arturbosch.detekt` (1.23+). `detekt.yml` enthält die
+Lint-Konfiguration.
+
+`gradle.properties` hält Versionen zentral (Pattern aus d-migrate):
+
+```properties
+kotlin.code.style=official
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.jvmargs=-Xmx4g
+
+kotlinVersion=2.1.20
+micronautVersion=4.7.x
+kotestVersion=6.1.x
+mockkVersion=1.14.x
+logbackVersion=1.5.x
+detektVersion=1.23.8
+```
+
+Konkrete Patch-Levels werden beim Anlegen des Branches auf den dann
+aktuellen Stand gesetzt; Spike-relevant sind die Major/Minor.
 
 ### 12.3 Gemeinsame Identifier-Konventionen
 
@@ -972,8 +1023,18 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   Default-Regelsatz ausführt.
 - **Go**: `golangci-lint run ./...` mit den Default-Lintern (`govet`,
   `errcheck`, `staticcheck`, `unused`, `ineffassign`).
-- **Kotlin**: `./gradlew detekt` mit der mitgelieferten Default-
-  Konfiguration (`detekt.yml` aus dem Plugin-Default).
+- **Kotlin**: `./gradlew detekt` mit `buildUponDefaultConfig = true`
+  und der mitgelieferten Default-Konfiguration als Startpunkt.
+- Empfohlene Gradle-Konfiguration für detekt (übernommen aus
+  `d-migrate/build.gradle.kts`):
+  - `tasks.named("check") { dependsOn("detekt") }` — `gradle build`
+    bzw. `gradle check` führen detekt automatisch aus.
+  - `tasks.withType<Test>().configureEach { dependsOn("detekt") }` —
+    Lint läuft *vor* den Tests, damit Lint-Probleme schneller sichtbar
+    werden als Test-Failures.
+  - Reports: `html`, `xml`, `sarif` aktivieren. SARIF wird vom GitHub
+    Security-Tab gelesen — null Aufwand, hoher Wert.
+  - `parallel = true`, `allRules = false`, `ignoreFailures = false`.
 - Beide Linter sind **Soll**, nicht Muss. Sie dürfen nicht den
   Pflicht-Test-Scope vergrößern. Ein roter Lint-Run blockiert weder
   AP-1 noch AP-2 vom DoD, fließt aber in die Bewertungskategorien
@@ -982,4 +1043,45 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   einseitiger JVM-Bonus; mit Linter pro Stack wird Build-Ergonomie
   symmetrisch messbar.
 - Custom Lint-Regeln, Suppressions oder Tooling-Ausbau sind im Spike
-  ausgeschlossen — Default-Profil pur.
+  ausgeschlossen — Default-Profil pur. Per-Modul `detekt-baseline.xml`
+  ist im Spike (Greenfield) nicht nötig; in §11 als pragmatischer
+  Migrationspfad bei Bestandsmodulen erwähnt.
+
+### 14.10 Test-Framework im Micronaut-Prototyp
+
+- **Default**: Kotest 6.x als Test-Runner, MockK als Mocking-Library,
+  `@MicronautTest` für DI-Integration in Specs.
+- Begründung:
+  - Kotest ist Kotlin-idiomatischer (Spec-DSL, eingebautes
+    Property-Testing) und reduziert Boilerplate gegenüber JUnit 5.
+  - MockK ist für Kotlin-Klassen (z. B. `final` per Default) ohne
+    Open-Workarounds nutzbar.
+  - Konsistenz mit dem produktiven Kotlin-Stack `d-migrate`: gleicher
+    Test-Stack erleichtert Cross-Project-Wartung und Contributor-Fit.
+- JUnit 5 als Plattform bleibt eingebunden (Kotest läuft auf JUnit
+  Platform), wird aber nicht direkt als Test-Stil verwendet.
+- Falls `@MicronautTest` mit Kotest-Specs unverhältnismäßig viel
+  Reibung erzeugt, ist ein Wechsel auf JUnit 5 + JUnit-Style erlaubt;
+  Begründung im ADR.
+
+### 14.11 Dockerfile-Struktur (Soll)
+
+- **Soll-Vorgabe** (kein Spec-Muss): Mehrstufiger Dockerfile-Build pro
+  Prototyp, damit Dependency-Resolution unabhängig vom Source-Code
+  cached.
+- Empfohlenes Stage-Layout (übernommen aus `d-migrate/Dockerfile`):
+  - Stage `deps`: kopiert nur Build-Metadaten (`build.gradle.kts`,
+    `gradle.properties`, `gradle/`, `gradlew` bzw. `go.mod`,
+    `go.sum`) und löst Abhängigkeiten auf
+    (`gradle resolveAllDependencies` bzw. `go mod download`).
+  - Stage `compile`: kopiert Sources und kompiliert (`gradle classes`
+    bzw. `go build ./...`). Schneller Feedback-Loop ohne Tests.
+  - Stage `build`: führt Tests + finales Artefakt aus.
+  - Stage `runtime`: minimales Final-Image (`distroless` für Go,
+    `eclipse-temurin:21-jre-alpine` für Kotlin).
+- Eigener Gradle-Task `resolveAllDependencies` für die `deps`-Stage
+  (siehe `d-migrate/build.gradle.kts:179`), damit alle resolvable
+  Configurations einmalig vorgewärmt werden.
+- Im Spike darf das Dockerfile auch zweistufig (Build + Runtime)
+  bleiben — die Stage-Trennung ist Soll, nicht Muss. Die gemessene
+  Build-Zeit (§7.2) zeigt, ob sich der Mehraufwand lohnt.
