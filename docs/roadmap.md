@@ -114,7 +114,7 @@ Eine pro Lastenheft (`OE-X`) plus zwei roadmap-spezifische Punkte.
 | Kennung | Entscheidung | Wo wird sie getroffen | Status |
 |---|---|---|---|
 | — | Issue-Backlog-Form (GitHub Issues / Markdown-TODO / Linear / …) | mit Schritt 4 in §2 | offen, roadmap-spezifisch |
-| — | Repo-Hosting (`github.com/<owner>/m-trace`) | vor `0.1.0` Public-Release | offen — Plan §14.8 |
+| — | Repo-Hosting (`github.com/<owner>/m-trace`) | vor `0.1.0` Public-Release | offen — SP-57 |
 | OE-1 | Projektlizenz: MIT oder Apache-2.0 | vor `0.1.0` Public-Release | MIT bereits committed (`LICENSE`); Apache-2.0-Prüfung offen |
 | OE-2 | Backend-Technologie final | — | **resolved** durch ADR `0001-backend-stack.md` (Go); Eintrag entfällt mit Lastenheft `1.0.0` |
 | OE-3 | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen |
@@ -123,7 +123,7 @@ Eine pro Lastenheft (`OE-X`) plus zwei roadmap-spezifische Punkte.
 | OE-6 | CI-Zielplattformen | mit Schritt 4 in §2 | offen |
 | OE-7 | Release-Konvention | vor `0.1.0` Public-Release | offen |
 | OE-8 | Paketnamen für npm | Schritt 9 in §2 | offen |
-| OE-9 | Go Module Name final | Schritt 1 in §2 | offen — Plan §14.8 |
+| OE-9 | Go Module Name final | Schritt 1 in §2 | offen — SP-57 |
 
 ---
 
