@@ -217,15 +217,17 @@ Das Projekt muss als Mono-Repo organisiert werden.
 
 #### Anforderungen
 
-- Das Repository muss alle Hauptbestandteile des Projekts enthalten.
-- Anwendungen müssen unter `apps/` liegen.
-- Wiederverwendbare Libraries müssen unter `packages/` liegen.
-- Hilfsdienste müssen unter `services/` liegen.
-- Beispiele müssen unter `examples/` liegen.
-- Observability-Konfigurationen müssen unter `observability/` liegen.
-- Deployment-Artefakte müssen unter `deploy/` liegen.
-- Dokumentation muss unter `docs/` liegen.
-- Skripte müssen unter `scripts/` liegen.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-1 | Muss | Das Repository muss alle Hauptbestandteile des Projekts enthalten. |
+| F-2 | Muss | Anwendungen müssen unter `apps/` liegen. |
+| F-3 | Muss | Wiederverwendbare Libraries müssen unter `packages/` liegen. |
+| F-4 | Muss | Hilfsdienste müssen unter `services/` liegen. |
+| F-5 | Muss | Beispiele müssen unter `examples/` liegen. |
+| F-6 | Muss | Observability-Konfigurationen müssen unter `observability/` liegen. |
+| F-7 | Muss | Deployment-Artefakte müssen unter `deploy/` liegen. |
+| F-8 | Muss | Dokumentation muss unter `docs/` liegen. |
+| F-9 | Muss | Skripte müssen unter `scripts/` liegen. |
 
 #### Zielstruktur
 
@@ -279,13 +281,15 @@ Die fachlich relevanten Anwendungen und Libraries müssen nach hexagonaler Archi
 
 #### Anforderungen
 
-- Fachlogik muss im Ordner `hexagon/` liegen.
-- Technische Ein- und Ausgänge müssen im Ordner `adapters/` liegen.
-- Abhängigkeiten müssen von außen nach innen zeigen.
-- Die Domain darf keine Framework-, HTTP-, Datenbank- oder Docker-Abhängigkeiten enthalten.
-- Ports müssen als Schnittstellen definiert werden.
-- Adapter müssen Ports implementieren oder Use Cases aufrufen.
-- DTOs dürfen nicht Teil der Domain sein.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-10 | Muss | Fachlogik muss im Ordner `hexagon/` liegen. |
+| F-11 | Muss | Technische Ein- und Ausgänge müssen im Ordner `adapters/` liegen. |
+| F-12 | Muss | Abhängigkeiten müssen von außen nach innen zeigen. |
+| F-13 | Muss | Die Domain darf keine Framework-, HTTP-, Datenbank- oder Docker-Abhängigkeiten enthalten. |
+| F-14 | Muss | Ports müssen als Schnittstellen definiert werden. |
+| F-15 | Muss | Adapter müssen Ports implementieren oder Use Cases aufrufen. |
+| F-16 | Muss | DTOs dürfen nicht Teil der Domain sein. |
 
 #### Standardstruktur
 
@@ -322,12 +326,14 @@ Die API-Anwendung muss unter `apps/api` liegen. Die finale Backend-Technologie w
 
 #### Hauptaufgaben
 
-- Annahme von Playback-Events
-- Verwaltung von Stream-Sessions
-- Bereitstellung von Metriken
-- Weitergabe von Telemetrie an OpenTelemetry
-- Bereitstellung von Daten für das Dashboard
-- Integration des Stream Analyzers
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-17 | Muss | Annahme von Playback-Events |
+| F-18 | Muss | Verwaltung von Stream-Sessions |
+| F-19 | Muss | Bereitstellung von Metriken |
+| F-20 | Muss | Weitergabe von Telemetrie an OpenTelemetry |
+| F-21 | Muss | Bereitstellung von Daten für das Dashboard |
+| F-22 | Muss | Integration des Stream Analyzers |
 
 #### Mindest-Endpunkte für den MVP
 
@@ -361,12 +367,14 @@ Das Dashboard muss unter `apps/dashboard` liegen und mit SvelteKit umgesetzt wer
 
 #### Hauptaufgaben
 
-- Anzeige laufender Stream-Sessions
-- Anzeige aktueller Playback-Metriken
-- Anzeige von Fehlern und Warnungen
-- Anzeige einfacher Stream-Health-Zustände
-- Anzeige von Backend- und Telemetrie-Status
-- Integration eines Test-Players
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-23 | Muss | Anzeige laufender Stream-Sessions |
+| F-24 | Muss | Anzeige aktueller Playback-Metriken |
+| F-25 | Muss | Anzeige von Fehlern und Warnungen |
+| F-26 | Muss | Anzeige einfacher Stream-Health-Zustände |
+| F-27 | Muss | Anzeige von Backend- und Telemetrie-Status |
+| F-28 | Muss | Integration eines Test-Players |
 
 #### Mindestansichten für den MVP
 
@@ -417,12 +425,14 @@ Status im MVP: **Muss**
 
 Hauptaufgaben:
 
-- Playback-Events annehmen
-- Stream-Sessions verwalten
-- Metriken vorbereiten oder exportieren
-- Daten für Dashboard bereitstellen
-- Stream Analyzer anbinden
-- Health Checks bereitstellen
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-29 | Muss | Playback-Events annehmen |
+| F-30 | Muss | Stream-Sessions verwalten |
+| F-31 | Muss | Metriken vorbereiten oder exportieren |
+| F-32 | Muss | Daten für Dashboard bereitstellen |
+| F-33 | Muss | Stream Analyzer anbinden |
+| F-34 | Muss | Health Checks bereitstellen |
 
 Architektur:
 
@@ -456,12 +466,14 @@ Status im MVP: **Muss**
 
 Hauptaufgaben:
 
-- Live-Übersicht anzeigen
-- Test-Player bereitstellen
-- Playback-Events anzeigen
-- Stream-Sessions anzeigen
-- API-Status anzeigen
-- Links zu Grafana, Prometheus und Media-Server-Konsole anzeigen
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-35 | Muss | Live-Übersicht anzeigen |
+| F-36 | Muss | Test-Player bereitstellen |
+| F-37 | Muss | Playback-Events anzeigen |
+| F-38 | Muss | Stream-Sessions anzeigen |
+| F-39 | Muss | API-Status anzeigen |
+| F-40 | Muss | Links zu Grafana, Prometheus und Media-Server-Konsole anzeigen |
 
 Architektur:
 
@@ -496,11 +508,13 @@ Status im MVP: **Nicht Bestandteil**
 
 Spätere Hauptaufgaben:
 
-- HLS-Teststream abspielen
-- Player-SDK isoliert integrieren
-- erzeugte Events sichtbar machen
-- SDK-Konfiguration testen
-- als minimale Referenzintegration für externe Nutzer dienen
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-41 | Kann | HLS-Teststream abspielen |
+| F-42 | Kann | Player-SDK isoliert integrieren |
+| F-43 | Kann | erzeugte Events sichtbar machen |
+| F-44 | Kann | SDK-Konfiguration testen |
+| F-45 | Kann | als minimale Referenzintegration für externe Nutzer dienen |
 
 Warum nicht im MVP:
 
@@ -517,12 +531,14 @@ Status im MVP: **Kann**
 
 Hauptaufgaben:
 
-- Stream-Keys verwalten
-- Ingest-Endpunkte beschreiben
-- Routing-Regeln für Streams definieren
-- Webhooks bei Stream-Start und Stream-Ende auslösen
-- SRT-/RTMP-Konfigurationen vorbereiten
-- Media-Server-Konfigurationen generieren oder validieren
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-46 | Kann | Stream-Keys verwalten |
+| F-47 | Kann | Ingest-Endpunkte beschreiben |
+| F-48 | Kann | Routing-Regeln für Streams definieren |
+| F-49 | Kann | Webhooks bei Stream-Start und Stream-Ende auslösen |
+| F-50 | Kann | SRT-/RTMP-Konfigurationen vorbereiten |
+| F-51 | Kann | Media-Server-Konfigurationen generieren oder validieren |
 
 Mögliche Endpunkte:
 
@@ -582,12 +598,14 @@ Im ersten MVP kann `apps/api` den Analyzer direkt als Library nutzen. Ein separa
 
 Hauptaufgaben:
 
-- HLS-URL entgegennehmen
-- Manifest analysieren
-- Analyseergebnis als JSON liefern
-- Fehler und Warnungen normalisieren
-- spätere DASH-/CMAF-Analyse anbieten
-- Sicherheitsgrenzen für externe URL-Abrufe schaffen
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-52 | Kann | HLS-URL entgegennehmen |
+| F-53 | Kann | Manifest analysieren |
+| F-54 | Kann | Analyseergebnis als JSON liefern |
+| F-55 | Kann | Fehler und Warnungen normalisieren |
+| F-56 | Kann | spätere DASH-/CMAF-Analyse anbieten |
+| F-57 | Kann | Sicherheitsgrenzen für externe URL-Abrufe schaffen |
 
 Mögliche Endpunkte:
 
@@ -719,11 +737,13 @@ Im MVP unterstützt das Player-SDK nur `hls.js`.
 
 Weitere Player-Adapter sind spätere Erweiterungen:
 
-- dash.js
-- Shaka Player
-- Video.js
-- native Safari HLS
-- WebRTC `getStats()`, separat in späterer Phase
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-58 | Kann | dash.js |
+| F-59 | Kann | Shaka Player |
+| F-60 | Kann | Video.js |
+| F-61 | Kann | native Safari HLS |
+| F-62 | Kann | WebRTC `getStats()`, separat in späterer Phase |
 
 Ein Player-SDK von Grund auf ist ein eigenes Subprojekt und darf nicht unterschätzt werden. Unterschiedliche Player liefern unterschiedliche Events, Timing-Modelle und Metriken. Safari mit nativem HLS bietet besonders wenig Introspektion.
 
@@ -751,11 +771,13 @@ Für den MVP gilt:
 
 #### Hauptaufgaben
 
-- Anbindung an ein `HTMLVideoElement`
-- Erfassung von Playback-Events
-- Erfassung einfacher Metriken
-- Versand der Events über OpenTelemetry Web SDK oder HTTP an die API
-- Trennung von Browser-Adapter und fachlicher Tracking-Logik
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-63 | Muss | Anbindung an ein `HTMLVideoElement` |
+| F-64 | Muss | Erfassung von Playback-Events |
+| F-65 | Muss | Erfassung einfacher Metriken |
+| F-66 | Muss | Versand der Events über OpenTelemetry Web SDK oder HTTP an die API |
+| F-67 | Muss | Trennung von Browser-Adapter und fachlicher Tracking-Logik |
 
 #### Zu erfassende Events im MVP
 
@@ -804,23 +826,27 @@ Der Stream Analyzer muss unter `packages/stream-analyzer` liegen und in TypeScri
 
 #### Hauptaufgaben
 
-- Abruf von HLS-Manifesten
-- Analyse einfacher Manifest-Eigenschaften
-- Prüfung von Segment-Dauern
-- Erkennung offensichtlicher Inkonsistenzen
-- Bereitstellung einer API für Backend und CLI
-- Vorbereitung für DASH- und CMAF-Analyse
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-68 | Muss | Abruf von HLS-Manifesten |
+| F-69 | Muss | Analyse einfacher Manifest-Eigenschaften |
+| F-70 | Muss | Prüfung von Segment-Dauern |
+| F-71 | Muss | Erkennung offensichtlicher Inkonsistenzen |
+| F-72 | Muss | Bereitstellung einer API für Backend und CLI |
+| F-73 | Muss | Vorbereitung für DASH- und CMAF-Analyse |
 
 #### Mindestfunktionen für den MVP
 
-- HLS Master Playlist erkennen
-- HLS Media Playlist erkennen
-- Varianten und Renditions extrahieren
-- Segment-Anzahl bestimmen
-- durchschnittliche Segment-Dauer berechnen
-- Abweichungen bei Segment-Dauern erkennen
-- einfache Live-Latenz-Schätzung
-- Analyseergebnis als JSON liefern
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-74 | Muss | HLS Master Playlist erkennen |
+| F-75 | Muss | HLS Media Playlist erkennen |
+| F-76 | Muss | Varianten und Renditions extrahieren |
+| F-77 | Muss | Segment-Anzahl bestimmen |
+| F-78 | Muss | durchschnittliche Segment-Dauer berechnen |
+| F-79 | Muss | Abweichungen bei Segment-Dauern erkennen |
+| F-80 | Muss | einfache Live-Latenz-Schätzung |
+| F-81 | Muss | Analyseergebnis als JSON liefern |
 
 #### CLI-Ziel
 
@@ -836,13 +862,15 @@ Das Projekt muss eine lokale Streaming-Testumgebung bereitstellen.
 
 #### Anforderungen
 
-- Start per Docker Compose
-- Media Server für lokale Tests
-- FFmpeg-basierter Teststream
-- API erreichbar unter `localhost`
-- Dashboard erreichbar unter `localhost`
-- Prometheus und Grafana optional verfügbar
-- OpenTelemetry Collector optional verfügbar
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-82 | Muss | Start per Docker Compose |
+| F-83 | Muss | Media Server für lokale Tests |
+| F-84 | Muss | FFmpeg-basierter Teststream |
+| F-85 | Muss | API erreichbar unter `localhost` |
+| F-86 | Muss | Dashboard erreichbar unter `localhost` |
+| F-87 | Muss | Prometheus und Grafana optional verfügbar |
+| F-88 | Muss | OpenTelemetry Collector optional verfügbar |
 
 #### Mindestdienste
 
@@ -876,12 +904,14 @@ Das Projekt muss Observability von Beginn an berücksichtigen.
 
 #### Anforderungen
 
-- API muss strukturierte Logs erzeugen.
-- API muss Health Checks bereitstellen.
-- API soll OpenTelemetry unterstützen.
-- Playback-Events sollen als Metriken oder Traces exportierbar sein.
-- Prometheus soll technische Metriken erfassen können.
-- Grafana soll mit einem einfachen Beispiel-Dashboard ausgeliefert werden.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-89 | Muss | API muss strukturierte Logs erzeugen. |
+| F-90 | Muss | API muss Health Checks bereitstellen. |
+| F-91 | Muss | API soll OpenTelemetry unterstützen. |
+| F-92 | Muss | Playback-Events sollen als Metriken oder Traces exportierbar sein. |
+| F-93 | Muss | Prometheus soll technische Metriken erfassen können. |
+| F-94 | Muss | Grafana soll mit einem einfachen Beispiel-Dashboard ausgeliefert werden. |
 
 #### Mindestmetriken
 
@@ -918,12 +948,14 @@ Diese Labels können bei Player-Telemetrie sehr schnell zu unkontrollierbarer Ca
 
 #### Anforderungen
 
-- Prometheus darf nur für aggregierte Metriken verwendet werden.
-- `session_id` darf nicht als Prometheus-Label verwendet werden.
-- Per-Session-Daten sollen als Traces oder Events modelliert werden.
-- Für hochvolumige Eventdaten muss eine spätere Storage-Option vorgesehen werden.
-- Das System muss Sampling vorbereiten.
-- Das Telemetrie-Modell muss Datenschutz und Cardinality gemeinsam berücksichtigen.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-95 | Muss | Prometheus darf nur für aggregierte Metriken verwendet werden. |
+| F-96 | Muss | `session_id` darf nicht als Prometheus-Label verwendet werden. |
+| F-97 | Muss | Per-Session-Daten sollen als Traces oder Events modelliert werden. |
+| F-98 | Muss | Für hochvolumige Eventdaten muss eine spätere Storage-Option vorgesehen werden. |
+| F-99 | Muss | Das System muss Sampling vorbereiten. |
+| F-100 | Muss | Das Telemetrie-Modell muss Datenschutz und Cardinality gemeinsam berücksichtigen. |
 
 #### Empfohlene Zuordnung
 
@@ -939,11 +971,13 @@ Diese Labels können bei Player-Telemetrie sehr schnell zu unkontrollierbarer Ca
 
 Im ersten MVP sollen folgende Regeln gelten:
 
-- Prometheus nur für Aggregate
-- Player-Sessions als OpenTelemetry-Traces vorbereiten
-- In-Memory-Speicherung nur für lokale Demo
-- keine produktive Langzeitspeicherung im MVP
-- keine `session_id`-Labels in Prometheus
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-101 | Muss | Prometheus nur für Aggregate |
+| F-102 | Muss | Player-Sessions als OpenTelemetry-Traces vorbereiten |
+| F-103 | Muss | In-Memory-Speicherung nur für lokale Demo |
+| F-104 | Muss | keine produktive Langzeitspeicherung im MVP |
+| F-105 | Muss | keine `session_id`-Labels in Prometheus |
 
 ---
 
@@ -957,17 +991,21 @@ Das Browser-SDK darf nicht dauerhaft gegen einen vollständig offenen Ingest-End
 
 MVP-Anforderungen:
 
-- Events enthalten eine `project_id`.
-- Events werden mit einem öffentlichen Project Token oder einem kurzlebigen Ingest Token versehen.
-- Das Backend validiert erlaubte Origins.
-- Tokens dürfen keine Secrets mit hoher Kritikalität sein, da Browser-Code öffentlich ist.
-- Rate Limits gelten pro Project, Origin und IP-Bereich.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-106 | Muss | Events enthalten eine `project_id`. |
+| F-107 | Muss | Events werden mit einem öffentlichen Project Token oder einem kurzlebigen Ingest Token versehen. |
+| F-108 | Muss | Das Backend validiert erlaubte Origins. |
+| F-109 | Muss | Tokens dürfen keine Secrets mit hoher Kritikalität sein, da Browser-Code öffentlich ist. |
+| F-110 | Muss | Rate Limits gelten pro Project, Origin und IP-Bereich. |
 
 Spätere Erweiterungen:
 
-- serverseitig signierte Session Tokens
-- rotierbare Project Tokens
-- tenant-spezifische Ingest Policies
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-111 | Kann | serverseitig signierte Session Tokens |
+| F-112 | Kann | rotierbare Project Tokens |
+| F-113 | Kann | tenant-spezifische Ingest Policies |
 
 #### Schema-Versionierung
 
@@ -991,10 +1029,12 @@ Pflichtfelder im Wire-Format:
 
 Anforderungen:
 
-- neue Felder müssen abwärtskompatibel sein
-- unbekannte Felder dürfen nicht zum Fehler führen
-- entfernte Felder müssen über mindestens eine Minor-Version toleriert werden
-- Breaking Changes erfordern neue Major-Version der Event-Schemas
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-114 | Muss | neue Felder müssen abwärtskompatibel sein |
+| F-115 | Muss | unbekannte Felder dürfen nicht zum Fehler führen |
+| F-116 | Muss | entfernte Felder müssen über mindestens eine Minor-Version toleriert werden |
+| F-117 | Muss | Breaking Changes erfordern neue Major-Version der Event-Schemas |
 
 #### Backpressure und Rate Limiting
 
@@ -1002,12 +1042,14 @@ Die Ingest-API muss Überlastung kontrolliert behandeln.
 
 MVP-Anforderungen:
 
-- maximale Event-Batch-Größe definieren
-- maximale Request-Rate pro Project definieren
-- HTTP `429` bei Rate Limit
-- HTTP `202` für angenommene Events
-- Events dürfen bei lokaler Überlast verworfen werden, wenn dies als Dropped-Event-Metrik sichtbar wird
-- SDK muss Sampling und Batch-Größe konfigurieren können
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-118 | Muss | maximale Event-Batch-Größe definieren |
+| F-119 | Muss | maximale Request-Rate pro Project definieren |
+| F-120 | Muss | HTTP `429` bei Rate Limit |
+| F-121 | Muss | HTTP `202` für angenommene Events |
+| F-122 | Muss | Events dürfen bei lokaler Überlast verworfen werden, wenn dies als Dropped-Event-Metrik sichtbar wird |
+| F-123 | Muss | SDK muss Sampling und Batch-Größe konfigurieren können |
 
 #### Zeitstempel und Time Skew
 
@@ -1015,16 +1057,20 @@ Browser-Clocks sind unzuverlässig. Das Backend muss daher zwischen Client-Zeit 
 
 Pflichtfelder:
 
-- `client_timestamp`
-- `server_received_at`
-- optional `client_time_origin`
-- optional `sequence_number`
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-124 | Muss | `client_timestamp` |
+| F-125 | Muss | `server_received_at` |
+| F-126 | Muss | optional `client_time_origin` |
+| F-127 | Muss | optional `sequence_number` |
 
 Regeln:
 
-- Ordering innerhalb einer Session bevorzugt über `sequence_number`
-- Latenzberechnungen niemals blind nur aus Client-Zeit ableiten
-- Backend muss auffälligen Time Skew markieren können
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-128 | Muss | Ordering innerhalb einer Session bevorzugt über `sequence_number` |
+| F-129 | Muss | Latenzberechnungen niemals blind nur aus Client-Zeit ableiten |
+| F-130 | Muss | Backend muss auffälligen Time Skew markieren können |
 
 #### Performance-Budget für das Player-SDK
 
@@ -1080,51 +1126,61 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 
 ### 8.1 Plattform
 
-- Entwicklung muss unter Linux möglich sein.
-- Entwicklung muss mit VS Code kompatibel sein.
-- Lokaler Betrieb muss über Docker möglich sein.
-- Build-Prozesse müssen ohne proprietäre Dienste funktionieren.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-1 | Muss | Entwicklung muss unter Linux möglich sein. |
+| NF-2 | Muss | Entwicklung muss mit VS Code kompatibel sein. |
+| NF-3 | Muss | Lokaler Betrieb muss über Docker möglich sein. |
+| NF-4 | Muss | Build-Prozesse müssen ohne proprietäre Dienste funktionieren. |
 
 ### 8.2 Wartbarkeit
 
-- Fachlogik muss testbar sein, ohne externe Infrastruktur zu starten.
-- Domain-Klassen dürfen keine Framework-Abhängigkeiten enthalten.
-- Ports müssen klar benannt und dokumentiert sein.
-- Adapter müssen austauschbar sein.
-- Technische Implementierungen dürfen nicht in die Domain-Schicht lecken.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-5 | Muss | Fachlogik muss testbar sein, ohne externe Infrastruktur zu starten. |
+| NF-6 | Muss | Domain-Klassen dürfen keine Framework-Abhängigkeiten enthalten. |
+| NF-7 | Muss | Ports müssen klar benannt und dokumentiert sein. |
+| NF-8 | Muss | Adapter müssen austauschbar sein. |
+| NF-9 | Muss | Technische Implementierungen dürfen nicht in die Domain-Schicht lecken. |
 
 ### 8.3 Erweiterbarkeit
 
 Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 
-- MediaMTX-Adapter
-- SRT-Ingest-Metriken
-- DASH-Analyse
-- CMAF-Analyse
-- WebRTC-Metriken
-- Datenbankpersistenz
-- Authentifizierung
-- Multi-Stream-Betrieb
-- Kubernetes Deployment
-- CI-basierte Stream-Checks
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-10 | Muss | MediaMTX-Adapter |
+| NF-11 | Muss | SRT-Ingest-Metriken |
+| NF-12 | Muss | DASH-Analyse |
+| NF-13 | Muss | CMAF-Analyse |
+| NF-14 | Muss | WebRTC-Metriken |
+| NF-15 | Muss | Datenbankpersistenz |
+| NF-16 | Muss | Authentifizierung |
+| NF-17 | Muss | Multi-Stream-Betrieb |
+| NF-18 | Muss | Kubernetes Deployment |
+| NF-19 | Muss | CI-basierte Stream-Checks |
 
 ### 8.4 Performance
 
 Für den MVP gelten einfache Anforderungen:
 
-- API muss lokale Demo-Last problemlos verarbeiten.
-- Player-SDK darf Playback nicht merklich beeinflussen.
-- Dashboard muss bei mehreren aktiven Sessions bedienbar bleiben.
-- Event-Erfassung muss asynchron oder leichtgewichtig erfolgen.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-20 | Muss | API muss lokale Demo-Last problemlos verarbeiten. |
+| NF-21 | Muss | Player-SDK darf Playback nicht merklich beeinflussen. |
+| NF-22 | Muss | Dashboard muss bei mehreren aktiven Sessions bedienbar bleiben. |
+| NF-23 | Muss | Event-Erfassung muss asynchron oder leichtgewichtig erfolgen. |
 
 ### 8.5 Sicherheit
 
-- Keine Secrets im Repository.
-- `.env.example` muss Beispielwerte enthalten.
-- Produktive Secrets müssen über Umgebungsvariablen gesetzt werden.
-- CORS muss im lokalen Setup kontrolliert konfiguriert sein.
-- Externe URLs für Stream-Analyse müssen später abgesichert werden, um SSRF-Risiken zu vermeiden.
-- Security-Meldungen müssen über `SECURITY.md` beschrieben werden.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-24 | Muss | Keine Secrets im Repository. |
+| NF-25 | Muss | `.env.example` muss Beispielwerte enthalten. |
+| NF-26 | Muss | Produktive Secrets müssen über Umgebungsvariablen gesetzt werden. |
+| NF-27 | Muss | CORS muss im lokalen Setup kontrolliert konfiguriert sein. |
+| NF-28 | Muss | Externe URLs für Stream-Analyse müssen später abgesichert werden, um SSRF-Risiken zu vermeiden. |
+| NF-29 | Muss | Security-Meldungen müssen über `SECURITY.md` beschrieben werden. |
 
 #### CORS- und CSP-Grundregeln für Player-Telemetrie
 
@@ -1132,14 +1188,16 @@ Für Browser-SDK-Telemetrie muss Cross-Origin-Kommunikation kontrolliert werden.
 
 MVP-Anforderungen:
 
-- erlaubte Origins werden pro Project konfiguriert
-- SDK-Requests nutzen standardmäßig `credentials: "omit"`
-- keine Cookies für Player-Telemetrie im MVP
-- Preflight-fähige CORS-Konfiguration
-- `Access-Control-Allow-Origin` darf nicht pauschal `*` sein, sobald Project Tokens genutzt werden
-- erlaubte Methoden zunächst auf `POST` und `OPTIONS` begrenzen
-- erlaubte Header explizit definieren, z. B. `Content-Type`, `X-MTrace-Project`, `X-MTrace-Token`
-- CSP-Beispiele für `connect-src` müssen dokumentiert werden
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-30 | Muss | erlaubte Origins werden pro Project konfiguriert |
+| NF-31 | Muss | SDK-Requests nutzen standardmäßig `credentials: "omit"` |
+| NF-32 | Muss | keine Cookies für Player-Telemetrie im MVP |
+| NF-33 | Muss | Preflight-fähige CORS-Konfiguration |
+| NF-34 | Muss | `Access-Control-Allow-Origin` darf nicht pauschal `*` sein, sobald Project Tokens genutzt werden |
+| NF-35 | Muss | erlaubte Methoden zunächst auf `POST` und `OPTIONS` begrenzen |
+| NF-36 | Muss | erlaubte Header explizit definieren, z. B. `Content-Type`, `X-MTrace-Project`, `X-MTrace-Token` |
+| NF-37 | Muss | CSP-Beispiele für `connect-src` müssen dokumentiert werden |
 
 Beispiel-CSP für eine Demo-Integration:
 
@@ -1154,22 +1212,26 @@ Player-Telemetrie kann personenbezogene oder personenbeziehbare Daten enthalten.
 
 Anforderungen:
 
-- IP-Adressen dürfen im MVP nicht unnötig gespeichert werden.
-- User-Agent-Daten müssen reduzierbar oder anonymisierbar sein.
-- Session-IDs müssen pseudonym sein.
-- Ein konfigurierbarer Anonymisierungs-Layer im Collector soll vorbereitet werden.
-- Das Projekt muss dokumentieren, welche Telemetriedaten erhoben werden.
-- Datenschutzfreundliche Defaults haben Vorrang vor maximaler Analyse-Tiefe.
-- Für EU-Nutzung muss eine GDPR-freundliche Betriebsweise möglich sein.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-38 | Muss | IP-Adressen dürfen im MVP nicht unnötig gespeichert werden. |
+| NF-39 | Muss | User-Agent-Daten müssen reduzierbar oder anonymisierbar sein. |
+| NF-40 | Muss | Session-IDs müssen pseudonym sein. |
+| NF-41 | Muss | Ein konfigurierbarer Anonymisierungs-Layer im Collector soll vorbereitet werden. |
+| NF-42 | Muss | Das Projekt muss dokumentieren, welche Telemetriedaten erhoben werden. |
+| NF-43 | Muss | Datenschutzfreundliche Defaults haben Vorrang vor maximaler Analyse-Tiefe. |
+| NF-44 | Muss | Für EU-Nutzung muss eine GDPR-freundliche Betriebsweise möglich sein. |
 
 ### 8.7 Qualität
 
-- Automatisierte Tests für Domain- und Application-Schicht
-- Linting für TypeScript
-- Tests für zentrale Backend-Use-Cases
-- CI-Pipeline für Build und Test
-- klare Commit- und Release-Konventionen
-- CHANGELOG-Pflege ab dem ersten Release
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| NF-45 | Muss | Automatisierte Tests für Domain- und Application-Schicht |
+| NF-46 | Muss | Linting für TypeScript |
+| NF-47 | Muss | Tests für zentrale Backend-Use-Cases |
+| NF-48 | Muss | CI-Pipeline für Build und Test |
+| NF-49 | Muss | klare Commit- und Release-Konventionen |
+| NF-50 | Muss | CHANGELOG-Pflege ab dem ersten Release |
 
 ---
 
@@ -1363,61 +1425,69 @@ MediaMTX + hls.js Demo Route + Player Events + OTel-kompatibles Eventmodell + Da
 
 Muss-Anforderungen für `0.1.0`:
 
-- Mono-Repo-Struktur
-- eine Backend-App unter `apps/api`
-- eine Web-App unter `apps/dashboard`
-- Demo-Player als `/demo`-Route im Dashboard, nicht als separate App
-- `packages/player-sdk` mit hls.js-Adapter
-- pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony
-- Docker Compose Setup
-- MediaMTX als erster Media Server
-- FFmpeg-Teststream
-- OpenTelemetry-kompatibles Eventmodell
-- API-Endpunkt für Playback-Event-Batches
-- einfache Session-Liste
-- einfache Event-Anzeige
-- einfache eingebaute Session-/Trace-Ansicht im Dashboard
-- Prometheus nur für aggregierte Metriken
-- lokale Speicherung per In-Memory oder SQLite
-- README mit Schnellstart
-- CHANGELOG mit initialem Eintrag
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| MVP-1 | Muss | Mono-Repo-Struktur |
+| MVP-2 | Muss | eine Backend-App unter `apps/api` |
+| MVP-3 | Muss | eine Web-App unter `apps/dashboard` |
+| MVP-4 | Muss | Demo-Player als `/demo`-Route im Dashboard, nicht als separate App |
+| MVP-5 | Muss | `packages/player-sdk` mit hls.js-Adapter |
+| MVP-6 | Muss | pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony |
+| MVP-7 | Muss | Docker Compose Setup |
+| MVP-8 | Muss | MediaMTX als erster Media Server |
+| MVP-9 | Muss | FFmpeg-Teststream |
+| MVP-10 | Muss | OpenTelemetry-kompatibles Eventmodell |
+| MVP-11 | Muss | API-Endpunkt für Playback-Event-Batches |
+| MVP-12 | Muss | einfache Session-Liste |
+| MVP-13 | Muss | einfache Event-Anzeige |
+| MVP-14 | Muss | einfache eingebaute Session-/Trace-Ansicht im Dashboard |
+| MVP-15 | Muss | Prometheus nur für aggregierte Metriken |
+| MVP-16 | Muss | lokale Speicherung per In-Memory oder SQLite |
+| MVP-17 | Muss | README mit Schnellstart |
+| MVP-18 | Muss | CHANGELOG mit initialem Eintrag |
 
 Nicht im `0.1.0`-MVP:
 
-- separate `apps/demo-player`
-- separate `apps/analyzer-api`
-- `packages/stream-analyzer` als fertiges Paket
-- Tempo als Pflichtkomponente
-- Mimir oder ClickHouse
-- WebRTC
-- SRT-Health-View
-- Multi-Tenant-Betrieb
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| MVP-19 | Muss | separate `apps/demo-player` |
+| MVP-20 | Muss | separate `apps/analyzer-api` |
+| MVP-21 | Muss | `packages/stream-analyzer` als fertiges Paket |
+| MVP-22 | Muss | Tempo als Pflichtkomponente |
+| MVP-23 | Muss | Mimir oder ClickHouse |
+| MVP-24 | Muss | WebRTC |
+| MVP-25 | Muss | SRT-Health-View |
+| MVP-26 | Muss | Multi-Tenant-Betrieb |
 
 
 ### 12.2 Soll-Anforderungen
 
-- SQLite-Persistenz statt reinem In-Memory
-- Grafana-Dashboard für Aggregate
-- einfache OTel-Collector-Konfiguration
-- rudimentäre HLS-Manifest-Prüfung als interner Spike
-- WebSocket oder SSE für Live-Updates
-- CI mit GitHub Actions
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| MVP-27 | Soll | SQLite-Persistenz statt reinem In-Memory |
+| MVP-28 | Soll | Grafana-Dashboard für Aggregate |
+| MVP-29 | Soll | einfache OTel-Collector-Konfiguration |
+| MVP-30 | Soll | rudimentäre HLS-Manifest-Prüfung als interner Spike |
+| MVP-31 | Soll | WebSocket oder SSE für Live-Updates |
+| MVP-32 | Soll | CI mit GitHub Actions |
 
 
 ### 12.3 Kann-Anforderungen
 
-- eigenständiger Stream Analyzer als `packages/stream-analyzer`
-- CLI für Stream Analyzer
-- Tempo-Integration
-- SRS-Beispiel
-- DASH-Analyse
-- SRT-Ingest-Beispiel
-- SRT-Health-View
-- Persistenz mit PostgreSQL
-- ClickHouse- oder VictoriaMetrics-Anbindung
-- Kubernetes-Manifeste
-- Devcontainer
-- Release-Automatisierung
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| MVP-33 | Kann | eigenständiger Stream Analyzer als `packages/stream-analyzer` |
+| MVP-34 | Kann | CLI für Stream Analyzer |
+| MVP-35 | Kann | Tempo-Integration |
+| MVP-36 | Kann | SRS-Beispiel |
+| MVP-37 | Kann | DASH-Analyse |
+| MVP-38 | Kann | SRT-Ingest-Beispiel |
+| MVP-39 | Kann | SRT-Health-View |
+| MVP-40 | Kann | Persistenz mit PostgreSQL |
+| MVP-41 | Kann | ClickHouse- oder VictoriaMetrics-Anbindung |
+| MVP-42 | Kann | Kubernetes-Manifeste |
+| MVP-43 | Kann | Devcontainer |
+| MVP-44 | Kann | Release-Automatisierung |
 
 
 ---
@@ -1535,17 +1605,19 @@ Akzeptanzkriterien:
 
 Das Projekt gilt in der ersten Phase als erfolgreich, wenn folgende Punkte erfüllt sind:
 
-- Ein neuer Entwickler kann das Projekt unter Linux lokal starten.
-- Die Startanleitung funktioniert ohne manuelle Sonderkonfiguration.
-- Die Architektur ist klar nachvollziehbar.
-- Die Domain-Schicht ist frameworkfrei.
-- Die Adapter sind technisch klar getrennt.
-- Mindestens ein Teststream kann abgespielt werden.
-- Playback-Events werden vom Browser an die API gesendet.
-- Events sind im Dashboard sichtbar.
-- Basis-Metriken sind über Observability-Komponenten sichtbar oder vorbereitet.
-- Das Repository ist Open-Source-tauglich dokumentiert.
-- Die erste Version ist als GitHub-Release veröffentlichbar.
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| AK-1 | Muss | Ein neuer Entwickler kann das Projekt unter Linux lokal starten. |
+| AK-2 | Muss | Die Startanleitung funktioniert ohne manuelle Sonderkonfiguration. |
+| AK-3 | Muss | Die Architektur ist klar nachvollziehbar. |
+| AK-4 | Muss | Die Domain-Schicht ist frameworkfrei. |
+| AK-5 | Muss | Die Adapter sind technisch klar getrennt. |
+| AK-6 | Muss | Mindestens ein Teststream kann abgespielt werden. |
+| AK-7 | Muss | Playback-Events werden vom Browser an die API gesendet. |
+| AK-8 | Muss | Events sind im Dashboard sichtbar. |
+| AK-9 | Muss | Basis-Metriken sind über Observability-Komponenten sichtbar oder vorbereitet. |
+| AK-10 | Muss | Das Repository ist Open-Source-tauglich dokumentiert. |
+| AK-11 | Muss | Die erste Version ist als GitHub-Release veröffentlichbar. |
 
 ---
 
