@@ -1500,16 +1500,18 @@ Ziel: Ein Entwickler kann das Repository klonen und lokal einen MediaMTX-basiert
 
 Akzeptanzkriterien:
 
-- `make dev` startet alle notwendigen Dienste.
-- Dashboard ist erreichbar.
-- API ist erreichbar.
-- Teststream läuft über MediaMTX.
-- Player-SDK sendet hls.js-basierte Events.
-- API nimmt Events an.
-- Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge.
-- README beschreibt den Ablauf reproduzierbar.
-- Prometheus enthält nur aggregierte Metriken.
-- Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar.
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-1 | Muss | `make dev` startet alle notwendigen Dienste. |
+| RAK-2 | Muss | Dashboard ist erreichbar. |
+| RAK-3 | Muss | API ist erreichbar. |
+| RAK-4 | Muss | Teststream läuft über MediaMTX. |
+| RAK-5 | Muss | Player-SDK sendet hls.js-basierte Events. |
+| RAK-6 | Muss | API nimmt Events an. |
+| RAK-7 | Muss | Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge. |
+| RAK-8 | Muss | README beschreibt den Ablauf reproduzierbar. |
+| RAK-9 | Muss | Prometheus enthält nur aggregierte Metriken. |
+| RAK-10 | Soll | Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. |
 
 ---
 
@@ -1524,17 +1526,19 @@ Abgrenzung zu `0.1.0`:
 
 Akzeptanzkriterien:
 
-- SDK ist als npm-Paket baubar und lokal installierbar.
-- Public API ist dokumentiert.
-- Event-Schema ist versioniert.
-- hls.js-Adapter ist getestet.
-- HTTP-Transport ist getestet.
-- OTel-Transport ist vorbereitet oder experimentell nutzbar.
-- SDK unterstützt Batching, Sampling und Retry-Grenzen.
-- SDK hält das definierte Performance-Budget ein.
-- Browser-Support-Matrix ist dokumentiert.
-- Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert.
-- Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft.
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-11 | Muss | SDK ist als npm-Paket baubar und lokal installierbar. |
+| RAK-12 | Muss | Public API ist dokumentiert. |
+| RAK-13 | Muss | Event-Schema ist versioniert. |
+| RAK-14 | Muss | hls.js-Adapter ist getestet. |
+| RAK-15 | Muss | HTTP-Transport ist getestet. |
+| RAK-16 | Soll | OTel-Transport ist vorbereitet oder experimentell nutzbar. |
+| RAK-17 | Muss | SDK unterstützt Batching, Sampling und Retry-Grenzen. |
+| RAK-18 | Muss | SDK hält das definierte Performance-Budget ein. |
+| RAK-19 | Muss | Browser-Support-Matrix ist dokumentiert. |
+| RAK-20 | Muss | Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert. |
+| RAK-21 | Muss | Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft. |
 
 
 ---
@@ -1545,13 +1549,15 @@ Ziel: HLS-Streams können analysiert werden.
 
 Akzeptanzkriterien:
 
-- HLS Manifest kann geladen werden.
-- Master Playlist kann erkannt werden.
-- Media Playlist kann erkannt werden.
-- Segment-Dauern werden geprüft.
-- Ergebnis wird als JSON ausgegeben.
-- API kann Analyzer nutzen.
-- CLI-Grundlage existiert.
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-22 | Muss | HLS Manifest kann geladen werden. |
+| RAK-23 | Muss | Master Playlist kann erkannt werden. |
+| RAK-24 | Muss | Media Playlist kann erkannt werden. |
+| RAK-25 | Muss | Segment-Dauern werden geprüft. |
+| RAK-26 | Muss | Ergebnis wird als JSON ausgegeben. |
+| RAK-27 | Muss | API kann Analyzer nutzen. |
+| RAK-28 | Muss | CLI-Grundlage existiert. |
 
 ---
 
@@ -1561,13 +1567,15 @@ Ziel: Die in `0.1.0` vorbereitete OTel-Grundlage wird zu einer nutzbaren Korrela
 
 Akzeptanzkriterien:
 
-- Player-Session-Traces werden konsistent erzeugt.
-- Manifest-Requests, Segment-Requests und Player-Events werden in einem Trace zusammengeführt, soweit technisch möglich.
-- Tempo kann optional als Trace-Backend verwendet werden.
-- Dashboard kann Session-Verläufe auch ohne Tempo einfach anzeigen.
-- Prometheus bleibt auf aggregierte Metriken beschränkt.
-- Dropped-, Rate-Limited- und Invalid-Event-Metriken sind sichtbar.
-- Dokumentation beschreibt Cardinality-Grenzen und Sampling-Strategie.
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-29 | Muss | Player-Session-Traces werden konsistent erzeugt. |
+| RAK-30 | Soll | Manifest-Requests, Segment-Requests und Player-Events werden in einem Trace zusammengeführt, soweit technisch möglich. |
+| RAK-31 | Kann | Tempo kann optional als Trace-Backend verwendet werden. |
+| RAK-32 | Muss | Dashboard kann Session-Verläufe auch ohne Tempo einfach anzeigen. |
+| RAK-33 | Muss | Prometheus bleibt auf aggregierte Metriken beschränkt. |
+| RAK-34 | Muss | Dropped-, Rate-Limited- und Invalid-Event-Metriken sind sichtbar. |
+| RAK-35 | Muss | Dokumentation beschreibt Cardinality-Grenzen und Sampling-Strategie. |
 
 
 ---
@@ -1578,11 +1586,13 @@ Ziel: Das lokale Lab unterstützt weitere Streaming-Szenarien.
 
 Akzeptanzkriterien:
 
-- MediaMTX-Beispiel vorhanden.
-- SRT-Beispiel vorhanden.
-- DASH-Beispiel vorhanden.
-- WebRTC-Beispiel vorbereitet.
-- Beispiele sind dokumentiert.
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-36 | Muss | MediaMTX-Beispiel vorhanden. |
+| RAK-37 | Muss | SRT-Beispiel vorhanden. |
+| RAK-38 | Muss | DASH-Beispiel vorhanden. |
+| RAK-39 | Soll | WebRTC-Beispiel vorbereitet. |
+| RAK-40 | Muss | Beispiele sind dokumentiert. |
 
 ---
 
@@ -1592,12 +1602,14 @@ Ziel: SRT-Contribution-Workflows technisch sichtbar machen.
 
 Akzeptanzkriterien:
 
-- SRT-Testsetup vorhanden.
-- SRT-Verbindungsmetriken werden erfasst oder importiert.
-- RTT, Packet Loss, Retransmissions und Bandbreite werden angezeigt.
-- Dashboard enthält eine SRT-Health-Ansicht.
-- Dokumentation erklärt typische SRT-Fehlerbilder.
-- SRT-Metriken werden OTel-kompatibel modelliert.
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-41 | Muss | SRT-Testsetup vorhanden. |
+| RAK-42 | Muss | SRT-Verbindungsmetriken werden erfasst oder importiert. |
+| RAK-43 | Muss | RTT, Packet Loss, Retransmissions und Bandbreite werden angezeigt. |
+| RAK-44 | Muss | Dashboard enthält eine SRT-Health-Ansicht. |
+| RAK-45 | Muss | Dokumentation erklärt typische SRT-Fehlerbilder. |
+| RAK-46 | Muss | SRT-Metriken werden OTel-kompatibel modelliert. |
 
 ---
 
@@ -1683,15 +1695,17 @@ Große Plattform-Betreiber sollen erst später adressiert werden.
 
 ### 16.2 Weitere offene Entscheidungen
 
-- Projektlizenz: MIT oder Apache-2.0
-- Backend-Technologie final: Go oder Micronaut nach technischem Spike
-- Datenhaltung im MVP: rein In-Memory oder SQLite/PostgreSQL
-- Frontend-Styling: eigenes CSS, Tailwind oder UI-Library
-- Live-Updates: Polling, WebSocket oder Server-Sent Events
-- CI-Zielplattformen
-- Release-Konvention
-- Paketnamen für npm
-- Go Module Name oder JVM Package Namespace final
+| Kennung | Status | Entscheidung |
+|---|---|---|
+| OE-1 | offen | Projektlizenz: MIT oder Apache-2.0 |
+| OE-2 | offen | Backend-Technologie final: Go oder Micronaut nach technischem Spike |
+| OE-3 | offen | Datenhaltung im MVP: rein In-Memory oder SQLite/PostgreSQL |
+| OE-4 | offen | Frontend-Styling: eigenes CSS, Tailwind oder UI-Library |
+| OE-5 | offen | Live-Updates: Polling, WebSocket oder Server-Sent Events |
+| OE-6 | offen | CI-Zielplattformen |
+| OE-7 | offen | Release-Konvention |
+| OE-8 | offen | Paketnamen für npm |
+| OE-9 | offen | Go Module Name oder JVM Package Namespace final |
 
 ---
 
