@@ -1,0 +1,10 @@
+# Build artefacts that should not enter the Docker context.
+.git
+.gitignore
+*.md
+.idea
+.vscode
+.gradle
+build
+.gomodcache
+.gradle-user-home

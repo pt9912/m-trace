@@ -1,0 +1,10 @@
+micronaut:
+  application:
+    name: m-trace-api
+  server:
+    port: 8080
+    max-request-size: 256KB
+endpoints:
+  prometheus:
+    sensitive: false
+    path: /api/metrics

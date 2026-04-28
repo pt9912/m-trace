@@ -1,0 +1,41 @@
+# Spike-level detekt config. buildUponDefaultConfig=true in
+# build.gradle.kts means this file only carries overrides on top of
+# detekt's default ruleset. Per plan §14.9 the spike uses default
+# rules; per-module baselines are not used (Greenfield).
+
+complexity:
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 12
+    ignoreDataClasses: true
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 20
+    thresholdInFiles: 20
+
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+    excludePackageStatements: true
+    excludeImportStatements: true
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: true
+    max: 8
+
+performance:
+  # Spreading varargs (*args) is idiomatic Kotlin for forwarding to
+  # Java vararg APIs such as Micronaut.run; the array-copy concern
+  # doesn't apply at startup.
+  SpreadOperator:
+    active: false
+
+naming:
+  # Custom Gradle srcDirs ("hexagon", "adapters") break detekt's
+  # default expectation that the package path mirrors src/main/kotlin
+  # subdirectories. Per Plan §12.2 this layout is intentional.
+  InvalidPackageDeclaration:
+    active: false
