@@ -24,7 +24,11 @@ style:
     active: false
   ReturnCount:
     active: true
-    max: 8
+    max: 15
+    excludeGuardClauses: true
+  DestructuringDeclarationWithTooManyEntries:
+    active: true
+    maxDestructuringEntries: 5
 
 performance:
   # Spreading varargs (*args) is idiomatic Kotlin for forwarding to
