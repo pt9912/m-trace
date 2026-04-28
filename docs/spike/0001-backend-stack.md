@@ -395,7 +395,7 @@ Diese Werte werden für jeden Prototyp objektiv festgehalten und in das ADR übe
 | Final Docker Image Size | `docker images` |
 | Cold Start bis erster 200 OK auf `/api/health` | `time` + Curl-Loop |
 | Build-Zeit von Scratch | `time docker build --no-cache` |
-| Größe des Dependency-Caches | `du -sh ~/go/pkg/mod` bzw. `du -sh ~/.gradle` |
+| Größe des Dependency-Caches | isolierter Cache pro Prototyp (siehe Hinweis in `docs/plan-spike.md` §7.2) |
 | Anzahl direkter Dependencies | `go list -m all` bzw. `gradle dependencies` |
 | Testlaufzeit | `time make test` oder äquivalent |
 | Anzahl direkt geschriebener Konfigurationsdateien | manuell zählen |
@@ -624,7 +624,7 @@ docs/adr/0001-backend-stack.md
 
 ## 19. Erfolgskriterium des Spikes selbst
 
-Der Spike ist erfolgreich, wenn nach 4,5 Tagen:
+Der Spike ist erfolgreich, wenn nach 5 Arbeitstagen (Summe aus §2: 0,5 + 2 + 2 + 0,5):
 
 - zwei lauffähige Prototypen existieren oder einer dokumentiert am Muss-Scope gescheitert ist,
 - Bewertungsraster und Messpunkte für beide ausgefüllt sind,

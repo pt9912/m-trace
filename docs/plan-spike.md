@@ -40,8 +40,8 @@ Nicht Ergebnis dieses Plans:
 - Multi-Tenant-Verwaltung
 
 Wichtig: Phase-Bezeichnungen "Tag 0" bis "Tag 5" sind Maximalbudgets
-gemäß `docs/spike/0001-backend-stack.md` §2, keine Kalendertage. Die harte
-Grenze von 4,5 Arbeitstagen Gesamtaufwand bleibt bestehen.
+gemäß `docs/spike/0001-backend-stack.md` §2, keine Kalendertage. Die
+harte Gesamtgrenze beträgt 5 Arbeitstage (0,5 + 2 + 2 + 0,5).
 
 ---
 
@@ -257,31 +257,37 @@ Branch nach `main` gemerged.
 
 ### 5.2 Mindeststruktur pro Prototyp
 
-Verbindlich für beide Branches im jeweiligen Working Tree-Root:
+Verbindlich ist die *logische* Schichtung, nicht der konkrete Dateipfad.
+Beide Prototypen müssen folgende Schichten erkennbar voneinander trennen:
 
-```text
-apps/
-└── api/
-    ├── src/
-    │   ├── hexagon/
-    │   │   ├── domain/
-    │   │   ├── port/
-    │   │   │   ├── in/
-    │   │   │   └── out/
-    │   │   └── application/
-    │   └── adapters/
-    │       ├── in/
-    │       │   └── http/
-    │       └── out/
-    │           ├── persistence/
-    │           ├── telemetry/
-    │           └── metrics/
-    ├── Dockerfile
-    └── README.md
-```
+- `hexagon/domain/` — frameworkfreie Fachobjekte
+- `hexagon/port/in/` — Eingangs-Ports (Use-Case-Schnittstellen)
+- `hexagon/port/out/` — Ausgangs-Ports (Repository, Publisher)
+- `hexagon/application/` — Use Cases / Application Services
+- `adapters/in/http/` — HTTP-Controller
+- `adapters/out/persistence/` — Event-Repository
+- `adapters/out/telemetry/` — OTel-Setup
+- `adapters/out/metrics/` — Prometheus-Publisher
+
+Die Abbildung auf Dateipfade folgt der jeweiligen Sprach-Konvention:
+
+- **Go**: nutzt `apps/api/internal/hexagon/...` und
+  `apps/api/internal/adapters/...`; Entry-Point unter
+  `apps/api/cmd/api/main.go`. Konkreter Tree in §12.1.
+- **Micronaut/Java**: nutzt `apps/api/src/main/java/dev/mtrace/api/hexagon/...`
+  und `.../adapters/...`. Konkreter Tree in §12.2.
 
 Stack-spezifische Builddateien (`go.mod`, `build.gradle.kts`,
-`gradle/wrapper/`, `Makefile`) liegen ergänzend im Branch.
+`gradle/wrapper/`, `Makefile`) und `Dockerfile`/`README.md` liegen
+ergänzend im jeweiligen `apps/api/`-Verzeichnis.
+
+Verbindliche Folge:
+
+- Vergleichende LoC-Messungen (siehe §7.2) zählen die *logischen*
+  Schichten, nicht ein bestimmtes Verzeichnis. `cloc` läuft pro Prototyp
+  gegen den jeweiligen Domain- bzw. Adapter-Pfad gemäß §12.
+- Eine zusätzliche `internal/` oder `src/main/java/...`-Ebene gilt nicht
+  als Hexagon-Verletzung, solange die Schichten klar bleiben.
 
 ### 5.3 Domain-Objekte
 
@@ -502,16 +508,29 @@ Pro Prototyp objektiv festzuhalten:
 |---|---|
 | Wallclock bis erster grüner Test | Stoppuhr |
 | Wallclock bis erstes `docker run` mit 200 OK | Stoppuhr |
-| LoC im Domain-Layer | `cloc src/hexagon/domain/` oder Äquivalent |
-| LoC im Adapter-Layer | `cloc src/adapters/` oder Äquivalent |
+| LoC im Domain-Layer | `cloc` über die Domain-Pfade gemäß §12.1/§12.2 |
+| LoC im Adapter-Layer | `cloc` über die Adapter-Pfade gemäß §12.1/§12.2 |
 | Artefaktgröße | Go-Binary bzw. JAR/App |
 | Final Docker Image Size | `docker images` |
 | Cold Start bis erster 200 OK auf `/api/health` | `time` + Curl-Loop |
 | Build-Zeit von Scratch | `time docker build --no-cache` |
-| Größe des Dependency-Caches | `du -sh ~/go/pkg/mod` bzw. `~/.gradle` |
+| Größe des Dependency-Caches | isolierter Cache pro Prototyp (siehe Hinweis) |
 | Anzahl direkter Dependencies | `go list -m all` bzw. `gradle dependencies` |
 | Testlaufzeit | `time make test` |
 | Anzahl direkt geschriebener Konfigurationsdateien | manuell |
+
+Hinweis zum Dependency-Cache:
+
+Globale Caches (`~/go/pkg/mod`, `~/.gradle`) sind durch andere Projekte
+verfälscht und nicht vergleichbar. Der Spike misst pro Prototyp einen
+isolierten Cache aus einem leeren Branch-Clone:
+
+- **Go**: `GOMODCACHE="$PWD/.gomodcache" go build ./... && du -sh .gomodcache`
+- **Gradle**: `./gradlew --gradle-user-home "$PWD/.gradle-user-home" build && du -sh .gradle-user-home`
+
+Vor der Messung muss der jeweilige Cache leer sein (frischer Branch-Clone
+gilt als sauber). `.gomodcache/` und `.gradle-user-home/` sind im
+`.gitignore` ausgenommen.
 
 ### 7.3 Bewertungsraster
 
@@ -592,7 +611,7 @@ Gegenmaßnahme:
 - Reihenfolge darf bewusst gedreht werden (§4.4).
 - `Contributor-Fit` (10%) zielt auf das OSS-Umfeld, nicht auf Eigen-Skill.
 
-### 9.3 Unklarer Sieger nach 4,5 Tagen
+### 9.3 Unklarer Sieger nach 5 Tagen
 
 Risiko:
 
@@ -782,7 +801,13 @@ Java-Package-Konvention: `dev.mtrace.api.*`. Group-Id im Gradle-Build:
 
 Verbindlich für beide Prototypen:
 
-- HTTP-Header: `X-MTrace-Token`, `X-MTrace-Project`
+- HTTP-Header `X-MTrace-Token`: **Pflicht** im Spike-Muss-Scope. Trägt
+  das Auth-Token gemäß Spec §6.4. Validiert in den Tests aus §7.1.
+- HTTP-Header `X-MTrace-Project`: reservierter Konventionsname für
+  CORS-Allowlist und spätere Multi-Tenant-Nutzung gemäß Lastenheft §8.5.
+  **Im Spike optional** — die `project_id` kommt im Muss-Scope aus dem
+  Event-Payload, nicht aus dem Header. Wird im API-Kontrakt als reserviert
+  dokumentiert, aber nicht erzwungen.
 - Prometheus-Metrik-Prefix: `mtrace_`
 - OTel-Attribut-Prefix: `mtrace.*`
 - Docker-Image-Tag: `m-trace-api-spike`

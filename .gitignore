@@ -115,6 +115,10 @@ tmp/
 .tmp/
 *.bak
 
+# Spike-isolated dependency caches (see docs/plan-spike.md §7.2):
+.gomodcache/
+.gradle-user-home/
+
 # ---------------------------------------------------------------------------
 # Tooling state
 # ---------------------------------------------------------------------------
