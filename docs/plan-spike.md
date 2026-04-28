@@ -277,33 +277,39 @@ Verbindlich ist die *logische* Schichtung, nicht der konkrete Dateipfad.
 Beide Prototypen müssen folgende Schichten erkennbar voneinander trennen:
 
 - `hexagon/domain/` — frameworkfreie Fachobjekte
-- `hexagon/port/in/` — Eingangs-Ports (Use-Case-Schnittstellen)
-- `hexagon/port/out/` — Ausgangs-Ports (Repository, Publisher)
+- `hexagon/port/driving/` — Eingangs-Ports (Use-Case-Schnittstellen)
+- `hexagon/port/driven/` — Ausgangs-Ports (Repository, Publisher)
 - `hexagon/application/` — Use Cases / Application Services
-- `adapters/in/http/` — HTTP-Controller
-- `adapters/out/persistence/` — Event-Repository
-- `adapters/out/telemetry/` — OTel-Setup
-- `adapters/out/metrics/` — Prometheus-Publisher
+- `adapters/driving/http/` — HTTP-Controller (inbound)
+- `adapters/driven/persistence/` — Event-Repository (outbound)
+- `adapters/driven/telemetry/` — OTel-Setup (outbound)
+- `adapters/driven/metrics/` — Prometheus-Publisher (outbound)
 
-Die Abbildung auf Dateipfade folgt der jeweiligen Sprach-Konvention:
+Hexagon und Adapters liegen **direkt** unter `apps/api/` — bewusst
+flach, damit die Architektur beim ersten `ls apps/api/` sichtbar ist
+(kein `internal/`-Wrapper, keine zusätzliche
+`src/main/kotlin/dev/mtrace/api/`-Ebene). Die Abbildung pro Stack:
 
-- **Go**: nutzt `apps/api/internal/hexagon/...` und
-  `apps/api/internal/adapters/...`; Entry-Point unter
-  `apps/api/cmd/api/main.go`. Konkreter Tree in §12.1.
-- **Micronaut/Kotlin**: nutzt `apps/api/src/main/kotlin/dev/mtrace/api/hexagon/...`
-  und `.../adapters/...`. Konkreter Tree in §12.2.
+- **Go**: `apps/api/hexagon/...` und `apps/api/adapters/...` direkt;
+  Entry-Point unter `apps/api/cmd/api/main.go`. Konkreter Tree in §12.1.
+- **Micronaut/Kotlin**: `apps/api/hexagon/...` und
+  `apps/api/adapters/...` direkt, via custom Gradle-`srcDirs`
+  (siehe §12.2). Package-Namen bleiben sauber
+  (`dev.mtrace.api.hexagon.domain`, ...), Verzeichnisse sind flach.
 
-Stack-spezifische Builddateien (`go.mod`, `build.gradle.kts`,
-`gradle/wrapper/`, `Makefile`) und `Dockerfile`/`README.md` liegen
-ergänzend im jeweiligen `apps/api/`-Verzeichnis.
+Stack-spezifische Builddateien (`go.mod`/`go.sum` bzw.
+`build.gradle.kts`/`gradle.properties`, `detekt.yml`) und
+`Dockerfile`/`Makefile` liegen ergänzend direkt unter `apps/api/`.
 
 Verbindliche Folge:
 
 - Vergleichende LoC-Messungen (siehe §7.2) zählen die *logischen*
   Schichten, nicht ein bestimmtes Verzeichnis. `cloc` läuft pro Prototyp
   gegen den jeweiligen Domain- bzw. Adapter-Pfad gemäß §12.
-- Eine zusätzliche `internal/` oder `src/main/kotlin/...`-Ebene gilt nicht
-  als Hexagon-Verletzung, solange die Schichten klar bleiben.
+- Hexagon-/Adapter-Verzeichnisse direkt unter `apps/api/` sind
+  Pflicht — keine zusätzliche `internal/`-Ebene (Go) und keine
+  zusätzliche `src/main/kotlin/dev/mtrace/api/`-Ebene (Kotlin).
+  Architektur muss beim ersten Blick sichtbar sein.
 
 ### 5.3 Domain-Objekte
 
@@ -425,8 +431,11 @@ Aufgaben:
 - Dockerfile mit Multi-Stage-Build (`gcr.io/distroless/static-debian12`)
 - Pflichttests gemäß Spec §6.12 schreiben
 - Image als `m-trace-api-spike:go` taggen
-- `make test` und `docker run -p 8080:8080 m-trace-api-spike:go` müssen laufen
-- `make lint` ruft `golangci-lint run ./...` auf (Soll-Aufgabe; siehe §14.9)
+- `make test` ruft `docker build --target test` auf und muss grün
+  durchlaufen; `docker run -p 8080:8080 m-trace-api-spike:go` startet
+  den Service
+- `make lint` ruft `docker build --target lint` auf (Soll-Aufgabe;
+  siehe §14.9). Stage führt intern `golangci-lint run ./...` aus.
 - Spike-Notizen pro Bewertungskategorie direkt auf `main` in
   `docs/spike/backend-stack-results.md` committen (siehe §4.1) —
   **nicht** in `spike/go-api`
@@ -460,29 +469,35 @@ Stack:
 
 Aufgaben:
 
-- Branch von `main` ziehen (nicht von `spike/go-api`)
-- Gradle-Wrapper, `build.gradle.kts`, Micronaut-Application initialisieren
+- Branch von `main` ziehen (nicht von `spike/go-api`); damit sind
+  AP-1-Notizen aus `docs/spike/backend-stack-results.md` schon
+  sichtbar
+- `build.gradle.kts`, `gradle.properties` und Micronaut-Application
+  initialisieren. **Kein** `gradle-wrapper.jar` ins Repo — Build-Image
+  bringt Gradle 8.12 mit (`gradle:8.12-jdk21`).
 - Domain, Use Case, Ports, Adapter gemäß §5.2/§5.3 anlegen
 - HTTP-Controller, In-Memory-Repository, Prometheus-Publisher, In-Memory-
   Rate-Limiter implementieren
 - minimaler OTel-Setup integrieren
 - strukturierte JSON-Logs einrichten
-- Dockerfile mit Multi-Stage-Build (`eclipse-temurin:21-jre-alpine` oder
-  Distroless Java)
+- Dockerfile mit Multi-Stage-Build:
+  Build-Image `gradle:8.12-jdk21`, Final-Image
+  `eclipse-temurin:21-jre-alpine` (alternativ Distroless Java)
 - Pflichttests gemäß Spec §6.12 schreiben
 - Image als `m-trace-api-spike:micronaut` taggen
-- `./gradlew test` und `docker run -p 8080:8080 m-trace-api-spike:micronaut`
-  müssen laufen
-- `make lint` ruft `./gradlew detekt` auf (Soll-Aufgabe; siehe §14.9)
-- Branch von `main` ziehen (gewährleistet, dass AP-1-Notizen aus
-  `docs/spike/backend-stack-results.md` schon sichtbar sind)
+- `make test` ruft `docker build --target test` auf und muss grün
+  durchlaufen; `docker run -p 8080:8080 m-trace-api-spike:micronaut`
+  startet den Service
+- `make lint` ruft `docker build --target detekt` auf (Soll-Aufgabe;
+  siehe §14.9). Stage führt intern `gradle detekt` aus.
 - AP-2-Notizen pro Bewertungskategorie direkt auf `main` in
   `docs/spike/backend-stack-results.md` committen (siehe §4.1) —
   **nicht** in `spike/micronaut-api`
 
 Abnahme:
 
-- identisch zu AP-1, mit `./gradlew test` statt `go test ./...`
+- identisch zu AP-1; `make test` ruft die Kotlin-Test-Stage des
+  Dockerfiles auf (statt der Go-Stage)
 
 ### 6.4 AP-3: Auswertung und ADR
 
@@ -550,7 +565,10 @@ Ein einziger Testbefehl muss funktionieren:
 make test
 ```
 
-oder stack-spezifisch (`go test ./...` bzw. `./gradlew test`).
+`make test` ruft intern `docker build --target test
+-t m-trace-api-spike:<stack>-test .` auf. Lokale Toolchain-Befehle
+(`go test ./...`, `./gradlew test`) sind kein Pflichtweg — der
+Spike ist Docker-only (siehe §14.11 und Spec §6.11).
 
 ### 7.2 Mess-Punkte
 
@@ -573,22 +591,27 @@ Pro Prototyp objektiv festzuhalten:
 
 Hinweis zum Dependency-Cache:
 
-Globale Caches (`~/go/pkg/mod`, `~/.gradle`) sind durch andere Projekte
-verfälscht und nicht vergleichbar. Der Spike misst pro Prototyp einen
-isolierten Cache aus einem leeren Branch-Clone:
+Im Docker-only Workflow lebt der Dependency-Cache in einem
+Docker-Layer der `deps`-Stage, nicht im Host-Filesystem. Gemessen
+wird die Größe dieses Layers nach einem `--no-cache`-Build:
 
-- **Go** (aus `apps/api/`):  
-  `cd apps/api && GOMODCACHE="$PWD/.gomodcache" go build ./... && du -sh .gomodcache`
-- **Gradle** (aus `apps/api/`):  
-  `cd apps/api && ./gradlew --gradle-user-home "$PWD/.gradle-user-home" build && du -sh .gradle-user-home`
+```bash
+docker build --no-cache --target deps -t m-trace-api-spike:<stack>-deps .
+docker history --no-trunc --format "{{.Size}}\t{{.CreatedBy}}" \
+  m-trace-api-spike:<stack>-deps | head -5
+```
 
-Ergebnis liegt damit unter `apps/api/.gomodcache/` bzw.
-`apps/api/.gradle-user-home/`. Beide Pfade sind im `.gitignore` gemappt
-(Pattern ohne führenden Slash matcht in jedem Unterverzeichnis).
+Notiert wird:
 
-Vor der Messung muss der jeweilige Cache leer sein (frischer Branch-Clone
-gilt als sauber). `.gomodcache/` und `.gradle-user-home/` sind im
-`.gitignore` ausgenommen.
+- die Image-Größe der `deps`-Stage abzüglich der jeweiligen Base-
+  Image-Größe (`docker image inspect ... --format '{{.Size}}'`)
+- die Größe des Layers, der `gradle resolveAllDependencies` bzw.
+  `go mod download` ausführt — das ist der eigentliche Dependency-
+  Cache-Footprint
+
+Globale Host-Caches (`~/go/pkg/mod`, `~/.gradle`) bleiben unberührt
+und werden nicht gemessen. Damit ist der Wert Docker-reproduzierbar
+und unabhängig von der lokalen Entwicklungs-Umgebung.
 
 Hinweis zum JVM-Cold-Start (Micronaut-Variante):
 
@@ -800,6 +823,13 @@ Lessons-learned-Hinweise aus dem Vergleich mit `d-migrate` (für
   `d-migrate/.github/workflows/build.yml`).
 - `outputs.cacheIf { false }` auf Test-Tasks setzen, damit Coverage-
   Counter nicht aus stalem Build-Cache kommen.
+- Bei wachsender Codebase `apps/api/` von Single-Modul zu
+  Gradle-Multi-Modul aufteilen: jedes `hexagon/<x>/` und
+  `adapters/<driving|driven>/<x>/` wird ein eigenes Sub-Modul mit
+  eigener `build.gradle.kts`. Vorteil: Compile-Time-Enforcement der
+  Hexagon-Boundaries via Modul-Dependencies (Pattern aus
+  `d-migrate/settings.gradle.kts`). Im Spike bewusst Single-Modul,
+  damit das 2-Tage-Budget pro Prototyp realistisch bleibt.
 
 ---
 
@@ -812,79 +842,109 @@ apps/api/
 ├── cmd/
 │   └── api/
 │       └── main.go
-├── internal/
-│   ├── hexagon/
-│   │   ├── domain/
-│   │   │   ├── playback_event.go
-│   │   │   ├── stream_session.go
-│   │   │   ├── project.go
-│   │   │   └── project_token.go
-│   │   ├── port/
-│   │   │   ├── in/
-│   │   │   │   └── playback_event_inbound.go
-│   │   │   └── out/
-│   │   │       ├── event_repository.go
-│   │   │       └── metrics_publisher.go
-│   │   └── application/
-│   │       └── register_playback_event_batch.go
-│   └── adapters/
-│       ├── in/
-│       │   └── http/
-│       │       ├── handler.go
-│       │       ├── auth.go
-│       │       └── rate_limit.go
-│       └── out/
-│           ├── persistence/
-│           │   └── inmemory_event_repository.go
-│           ├── telemetry/
-│           │   └── otel.go
-│           └── metrics/
-│               └── prometheus_publisher.go
+├── hexagon/
+│   ├── domain/
+│   │   ├── playback_event.go
+│   │   ├── stream_session.go
+│   │   ├── project.go
+│   │   └── project_token.go
+│   ├── port/
+│   │   ├── driving/
+│   │   │   └── playback_event_inbound.go
+│   │   └── driven/
+│   │       ├── event_repository.go
+│   │       └── metrics_publisher.go
+│   └── application/
+│       └── register_playback_event_batch.go
+├── adapters/
+│   ├── driving/
+│   │   └── http/
+│   │       ├── handler.go
+│   │       ├── auth.go
+│   │       └── rate_limit.go
+│   └── driven/
+│       ├── persistence/
+│       │   └── inmemory_event_repository.go
+│       ├── telemetry/
+│       │   └── otel.go
+│       └── metrics/
+│           └── prometheus_publisher.go
 ├── go.mod
 ├── Dockerfile
 └── Makefile
 ```
 
-Module-Path-Konvention: `github.com/<owner>/m-trace/apps/api` —
-finaler Owner-Pfad bleibt offen bis zur Repo-Erstellung auf GitHub.
+`hexagon/` und `adapters/` liegen direkt unter `apps/api/`, kein
+`internal/`-Wrapper. Architektur ist beim ersten `ls apps/api/`
+sichtbar. Module-Path-Konvention:
+`github.com/<owner>/m-trace/apps/api` — finaler Owner-Pfad bleibt
+offen bis zur Repo-Erstellung auf GitHub.
 
 ### 12.2 Micronaut-Prototyp (Kotlin)
 
 ```text
 apps/api/
-├── src/
-│   ├── main/
-│   │   ├── kotlin/
-│   │   │   └── dev/mtrace/api/
-│   │   │       ├── Application.kt
-│   │   │       ├── hexagon/
-│   │   │       │   ├── domain/
-│   │   │       │   ├── port/
-│   │   │       │   │   ├── in/
-│   │   │       │   │   └── out/
-│   │   │       │   └── application/
-│   │   │       └── adapters/
-│   │   │           ├── in/
-│   │   │           │   └── http/
-│   │   │           └── out/
-│   │   │               ├── persistence/
-│   │   │               ├── telemetry/
-│   │   │               └── metrics/
-│   │   └── resources/
-│   │       ├── application.yml
-│   │       └── logback.xml
-│   └── test/
-│       └── kotlin/
-│           └── dev/mtrace/api/
+├── hexagon/
+│   ├── domain/
+│   ├── port/
+│   │   ├── driving/
+│   │   └── driven/
+│   └── application/
+├── adapters/
+│   ├── driving/
+│   │   └── http/
+│   │       └── Application.kt   # Micronaut-Bootstrap = Inbound-Adapter
+│   └── driven/
+│       ├── persistence/
+│       ├── telemetry/
+│       └── metrics/
+├── resources/
+│   ├── application.yml
+│   └── logback.xml
+├── test/
+│   └── (Spiegelung der hexagon/-/adapters/-Schichten)
 ├── build.gradle.kts
 ├── gradle.properties
 ├── detekt.yml
-├── gradle/
-│   └── wrapper/
-├── gradlew
 ├── Dockerfile
 └── Makefile
 ```
+
+`hexagon/` und `adapters/` liegen direkt unter `apps/api/`; kein
+`src/main/kotlin/dev/mtrace/api/`-Wrapper. Architektur ist beim
+ersten `ls apps/api/` sichtbar — symmetrisch zu §12.1 (Go).
+
+Voraussetzung in `build.gradle.kts` (custom Source Sets):
+
+```kotlin
+sourceSets {
+    main {
+        kotlin {
+            srcDirs("hexagon", "adapters")
+        }
+        resources {
+            srcDirs("resources")
+        }
+    }
+    test {
+        kotlin {
+            srcDirs("test")
+        }
+    }
+}
+```
+
+Package-Namen bleiben d-migrate-konform: `dev.mtrace.api.hexagon.domain`,
+`dev.mtrace.api.adapters.driving.http`, ... — die Sprache erkennt
+Pakete unabhängig vom Verzeichnispfad, sobald `srcDirs` korrekt sind.
+
+Application.kt liegt unter `adapters/driving/http/`, weil der
+HTTP-Server der Inbound-Adapter ist (Hexagon-Konvention; analog
+zu d-migrate `adapters/driving/cli/.../Main.kt`).
+
+Kein `gradle-wrapper.jar` und kein `gradlew`-Script im Repo: der
+Spike läuft Docker-only (siehe §14.11 und Spec §6.11). Das
+Build-Image `gradle:8.12-jdk21` bringt Gradle direkt mit.
 
 Kotlin-Package-Konvention: `dev.mtrace.api.*`. Group-Id im Gradle-Build:
 `dev.mtrace`. `build.gradle.kts` aktiviert die Plugins
@@ -1039,7 +1099,8 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   Default-Regelsatz ausführt.
 - **Go**: `golangci-lint run ./...` mit den Default-Lintern (`govet`,
   `errcheck`, `staticcheck`, `unused`, `ineffassign`).
-- **Kotlin**: `./gradlew detekt` mit `buildUponDefaultConfig = true`
+- **Kotlin**: `docker build --target detekt` (intern
+  `gradle --no-daemon detekt`) mit `buildUponDefaultConfig = true`
   und der mitgelieferten Default-Konfiguration als Startpunkt.
 - Empfohlene Gradle-Konfiguration für detekt (übernommen aus
   `d-migrate/build.gradle.kts`):
@@ -1080,24 +1141,41 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   Reibung erzeugt, ist ein Wechsel auf JUnit 5 + JUnit-Style erlaubt;
   Begründung im ADR.
 
-### 14.11 Dockerfile-Struktur (Soll)
+### 14.11 Dockerfile-Struktur (verbindlich)
 
-- **Soll-Vorgabe** (kein Spec-Muss): Mehrstufiger Dockerfile-Build pro
-  Prototyp, damit Dependency-Resolution unabhängig vom Source-Code
-  cached.
-- Empfohlenes Stage-Layout (übernommen aus `d-migrate/Dockerfile`):
-  - Stage `deps`: kopiert nur Build-Metadaten (`build.gradle.kts`,
-    `gradle.properties`, `gradle/`, `gradlew` bzw. `go.mod`,
-    `go.sum`) und löst Abhängigkeiten auf
-    (`gradle resolveAllDependencies` bzw. `go mod download`).
-  - Stage `compile`: kopiert Sources und kompiliert (`gradle classes`
-    bzw. `go build ./...`). Schneller Feedback-Loop ohne Tests.
-  - Stage `build`: führt Tests + finales Artefakt aus.
-  - Stage `runtime`: minimales Final-Image (`distroless` für Go,
-    `eclipse-temurin:21-jre-alpine` für Kotlin).
-- Eigener Gradle-Task `resolveAllDependencies` für die `deps`-Stage
-  (siehe `d-migrate/build.gradle.kts:179`), damit alle resolvable
-  Configurations einmalig vorgewärmt werden.
-- Im Spike darf das Dockerfile auch zweistufig (Build + Runtime)
-  bleiben — die Stage-Trennung ist Soll, nicht Muss. Die gemessene
-  Build-Zeit (§7.2) zeigt, ob sich der Mehraufwand lohnt.
+Der Spike ist Docker-only: alle Build-, Test- und Lint-Schritte
+laufen über `docker build --target <stage>`. Der Dockerfile pro
+Prototyp ist daher zentral und muss folgende Stages benennen:
+
+- **`deps`**: kopiert nur Build-Metadaten und löst Abhängigkeiten auf.
+  - Go: `go.mod`, `go.sum` → `RUN go mod download`
+  - Kotlin: `build.gradle.kts`, `gradle.properties` → `RUN gradle
+    --no-daemon resolveAllDependencies` (Custom-Task, siehe
+    `d-migrate/build.gradle.kts:179`)
+- **`compile`**: kopiert Sources und kompiliert.
+  - Go: `RUN go build ./...`
+  - Kotlin: `RUN gradle --no-daemon classes`
+- **`lint`** (Soll, siehe §14.9):
+  - Go: `RUN golangci-lint run ./...`
+  - Kotlin: `RUN gradle --no-daemon detekt`
+- **`test`**: führt die Pflichttests aus §7.1 aus.
+  - Go: `RUN go test ./...`
+  - Kotlin: `RUN gradle --no-daemon test`
+- **`build`**: erzeugt das finale Artefakt.
+  - Go: Binary
+  - Kotlin: Distribution via `gradle installDist` oder ähnlich
+- **`runtime`**: minimales Final-Image.
+  - Go: `gcr.io/distroless/static-debian12`
+  - Kotlin: `eclipse-temurin:21-jre-alpine` (alternativ Distroless Java)
+
+Make-Targets:
+
+```makefile
+test:    ; docker build --target test -t m-trace-api-spike:<stack>-test .
+lint:    ; docker build --target lint -t m-trace-api-spike:<stack>-lint .
+build:   ; docker build --target runtime -t m-trace-api-spike:<stack> .
+```
+
+Damit funktioniert ein frischer Clone ohne lokales Go, JDK oder
+Gradle. Die `gradle-wrapper.jar` und das `gradlew`-Script werden
+**nicht** versioniert.

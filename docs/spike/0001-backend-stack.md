@@ -256,7 +256,17 @@ Es reicht ein In-Memory-Rate-Limiter. Verteiltes Rate Limiting ist nicht Teil de
 
 ### 6.11 Build und Deployment
 
-- `Dockerfile` mit Multi-Stage Build
+- **Docker-only Workflow**: alle Build-, Test- und Lint-Schritte
+  laufen über `docker build --target <stage>`. Lokale Toolchains (Go,
+  JDK, Gradle-Wrapper) sind nicht erforderlich.
+- `Dockerfile` mit Multi-Stage Build pro Prototyp
+- Build-Stages (Detailstruktur in `docs/plan-spike.md` §14.11):
+  `deps` → `compile` → `test` → `runtime`. Kotlin ergänzt zusätzlich
+  eine `detekt`-Stage.
+- Build-Tooling im Docker-Image:
+  - Go: `golang:1.22` (oder vergleichbar) als Build-Image
+  - Micronaut: `gradle:8.12-jdk21` als Build-Image — bringt Gradle
+    direkt mit, daher kein checked-in `gradle-wrapper.jar` nötig
 - Final Image:
   - Go: bevorzugt `gcr.io/distroless/static-debian12` oder vergleichbar
   - Micronaut: bevorzugt `eclipse-temurin:21-jre-alpine` oder Distroless Java
@@ -292,15 +302,13 @@ Ein Testbefehl muss funktionieren:
 make test
 ```
 
-Oder stack-spezifisch:
-
-```bash
-go test ./...
-```
-
-```bash
-./gradlew test
-```
+`make test` ruft intern `docker build --target test -t
+m-trace-api-spike:<stack>-test .` auf. Lokale Toolchain-Befehle
+(`go test ./...`, `./gradlew test`) sind im Spike kein Pflichtweg —
+der Docker-Build ist die kanonische Test-Ausführung. Wer lokale
+Iteration bevorzugt, kann sich Toolchains selbst einrichten; das
+Repo committet weder `gradle-wrapper.jar` noch lokale Toolchain-
+Files.
 
 ---
 

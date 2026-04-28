@@ -100,11 +100,13 @@ hs_err_pid*
 replay_pid*
 .kotlin/
 
-# Keep Gradle wrapper jar (required for build) at any depth.
-# Important: pattern with leading "**/" matches in subdirectories such as
-# apps/api/gradle/wrapper/gradle-wrapper.jar. A path-anchored pattern
-# without "**/" would only un-ignore the root-level wrapper.
-!**/gradle/wrapper/gradle-wrapper.jar
+# Spike workflow is Docker-only (see docs/plan-spike.md §14.11 and
+# docs/spike/0001-backend-stack.md §6.11). gradle-wrapper.jar and
+# gradlew are NOT committed; the gradle:8.12-jdk21 build image
+# brings Gradle directly. Local wrapper files (if a developer
+# generates them via "gradle wrapper") are dev-only and stay
+# uncommitted.
+**/gradle/wrapper/
 
 # ---------------------------------------------------------------------------
 # Docker
