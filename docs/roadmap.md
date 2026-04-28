@@ -21,39 +21,28 @@ jedem Folge-ADR aktualisieren.
 
 ### 1.1 Was abgeschlossen ist
 
-- **Lastenheft v0.7.0** (`docs/lastenheft.md`): Anforderungen mit
-  IDs (`F-`, `NF-`, `MVP-`, `AK-`, **`RAK-`**, **`OE-`**) und
-  Release-Plan.
-- **Backend-Spike**: zwei Prototypen mit identischem Muss-Scope,
-  Bewertung gemäß Plan §7.3. Sieger ist Go.
-  - Spec: `docs/spike/0001-backend-stack.md`
-  - Plan: `docs/plan-spike.md`
-  - API-Kontrakt: `docs/spike/backend-api-contract.md` (frozen)
-  - Protokoll: `docs/spike/backend-stack-results.md`
-  - **ADR**: `docs/adr/0001-backend-stack.md` — Status Accepted,
-    Datum 2026-04-28
-- **Sieger-Branch**: `spike/go-api`, Final-Commit `7148a8d`.
-  Wird Basis für `apps/api` in `0.1.0`.
-- **Verlierer-Branch**: archiviert als Tag
-  `spike/backend-stack-loser-2026-04-28` (Final-Commit `7c8bc44`),
-  Branch `spike/micronaut-api` gelöscht.
+| Status | Bereich | Ergebnis | Verweise |
+|---|---|---|---|
+| ✅ | Lastenheft | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert. | `docs/lastenheft.md` |
+| ✅ | Backend-Spike | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/plan-spike.md` (SP-30), `docs/plan-spike.md` (SP-41) |
+| ✅ | API-Kontrakt | Spike-API-Kontrakt erstellt, dokumentiert und eingefroren (`frozen`). | `docs/spike/backend-api-contract.md` |
+| ✅ | ADR | Backend-Stack-Entscheidung entschieden und als **Accepted** festgehalten. | `docs/adr/0001-backend-stack.md` |
+| ✅ | Siegerbranch | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`. | `spike/go-api`, ADR |
+| ✅ | Unterlegener Branch | Als Tag archiviert: `spike/backend-stack-loser-2026-04-28` (Commit `7c8bc44`), `spike/micronaut-api` gelöscht. | `spike/backend-stack-loser-2026-04-28` |
 
 ### 1.2 Was noch offen ist (vor MVP `0.1.0`)
 
-Reihenfolge ist verbindlich (SP-41):
+Reihenfolge ist verbindlich (SP-41).
 
-1. `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen
-   (erfüllt **MVP-2**).
-2. **Lastenheft auf `1.0.0` heben**: Backend-Entscheidung
-   einarbeiten, offene Entscheidungen reduzieren.
-3. **`README.md` Tech-Overview** auf den gewählten Stack
-   (Go 1.22 + stdlib + Prometheus + OTel + distroless) anpassen
-   (deckt **MVP-17**).
-4. **Phase-2-Risiken aus ADR §8** in Issue-Backlog überführen
-   (Form: siehe §5 unten — offene Entscheidung).
+| Reihenfolge | Status | Aufgabe | Trigger | Verweis |
+|---|---|---|---|---|
+| 1 | ⬜ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | SP-41 |
+| 2 | ⬜ | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren. | Nach Schritt 1 | SP-41 |
+| 3 | ⬜ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17 |
+| 4 | 🟡 | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen (Form: siehe §5). | Nach Schritt 3 | ADR §8 |
 
-Erst danach beginnt die eigentliche `0.1.0`-Implementierung
-(Dashboard, Player-SDK, Docker-Lab, Observability).
+Erst danach beginnt die eigentliche `0.1.0`-Implementierung:
+Dashboard, Player-SDK, Docker-Lab und Observability.
 
 ---
 
