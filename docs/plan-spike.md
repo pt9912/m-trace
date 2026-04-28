@@ -284,7 +284,7 @@ Die Abbildung auf Dateipfade folgt der jeweiligen Sprach-Konvention:
 - **Go**: nutzt `apps/api/internal/hexagon/...` und
   `apps/api/internal/adapters/...`; Entry-Point unter
   `apps/api/cmd/api/main.go`. Konkreter Tree in §12.1.
-- **Micronaut/Java**: nutzt `apps/api/src/main/java/dev/mtrace/api/hexagon/...`
+- **Micronaut/Kotlin**: nutzt `apps/api/src/main/kotlin/dev/mtrace/api/hexagon/...`
   und `.../adapters/...`. Konkreter Tree in §12.2.
 
 Stack-spezifische Builddateien (`go.mod`, `build.gradle.kts`,
@@ -296,7 +296,7 @@ Verbindliche Folge:
 - Vergleichende LoC-Messungen (siehe §7.2) zählen die *logischen*
   Schichten, nicht ein bestimmtes Verzeichnis. `cloc` läuft pro Prototyp
   gegen den jeweiligen Domain- bzw. Adapter-Pfad gemäß §12.
-- Eine zusätzliche `internal/` oder `src/main/java/...`-Ebene gilt nicht
+- Eine zusätzliche `internal/` oder `src/main/kotlin/...`-Ebene gilt nicht
   als Hexagon-Verletzung, solange die Schichten klar bleiben.
 
 ### 5.3 Domain-Objekte
@@ -399,6 +399,7 @@ Stack:
 - OTel via `go.opentelemetry.io/otel`
 - Tests mit `testing` und `httptest`
 - Logging mit `log/slog`
+- Linting: `golangci-lint` (Soll, siehe §14.9)
 
 Aufgaben:
 
@@ -413,6 +414,7 @@ Aufgaben:
 - Pflichttests gemäß Spec §6.12 schreiben
 - Image als `m-trace-api-spike:go` taggen
 - `make test` und `docker run -p 8080:8080 m-trace-api-spike:go` müssen laufen
+- `make lint` ruft `golangci-lint run ./...` auf (Soll-Aufgabe; siehe §14.9)
 - Spike-Notizen pro Bewertungskategorie in
   `docs/spike/backend-stack-results.md` führen
 
@@ -433,10 +435,11 @@ Maximalbudget: 2 Tage. Branch: `spike/micronaut-api`.
 Stack:
 
 - Micronaut 4.x
-- Java 21 (Kotlin nur wenn bewusst gewollt)
+- Kotlin 2.x auf JDK 21 (siehe §14.6 für Begründung)
 - OTel via Micronaut-OpenTelemetry-Modul oder direkte SDK-Nutzung
-- Tests mit `@MicronautTest` und JUnit 5
+- Tests mit `@MicronautTest` und JUnit 5 (alternativ Kotest)
 - Logging mit Logback, optional Logstash-Encoder
+- Linting: `detekt` (Soll, siehe §14.9)
 
 Aufgaben:
 
@@ -453,6 +456,7 @@ Aufgaben:
 - Image als `m-trace-api-spike:micronaut` taggen
 - `./gradlew test` und `docker run -p 8080:8080 m-trace-api-spike:micronaut`
   müssen laufen
+- `make lint` ruft `./gradlew detekt` auf (Soll-Aufgabe; siehe §14.9)
 - Spike-Notizen pro Bewertungskategorie in
   `docs/spike/backend-stack-results.md` ergänzen
 - Spike-Notizen pro Bewertungskategorie führen
@@ -798,15 +802,15 @@ apps/api/
 Module-Path-Konvention: `github.com/<owner>/m-trace/apps/api` —
 finaler Owner-Pfad bleibt offen bis zur Repo-Erstellung auf GitHub.
 
-### 12.2 Micronaut-Prototyp
+### 12.2 Micronaut-Prototyp (Kotlin)
 
 ```text
 apps/api/
 ├── src/
 │   ├── main/
-│   │   ├── java/
+│   │   ├── kotlin/
 │   │   │   └── dev/mtrace/api/
-│   │   │       ├── Application.java
+│   │   │       ├── Application.kt
 │   │   │       ├── hexagon/
 │   │   │       │   ├── domain/
 │   │   │       │   ├── port/
@@ -824,9 +828,10 @@ apps/api/
 │   │       ├── application.yml
 │   │       └── logback.xml
 │   └── test/
-│       └── java/
+│       └── kotlin/
 │           └── dev/mtrace/api/
 ├── build.gradle.kts
+├── detekt.yml
 ├── gradle/
 │   └── wrapper/
 ├── gradlew
@@ -834,8 +839,10 @@ apps/api/
 └── Makefile
 ```
 
-Java-Package-Konvention: `dev.mtrace.api.*`. Group-Id im Gradle-Build:
-`dev.mtrace`.
+Kotlin-Package-Konvention: `dev.mtrace.api.*`. Group-Id im Gradle-Build:
+`dev.mtrace`. `build.gradle.kts` aktiviert die Plugins
+`org.jetbrains.kotlin.jvm`, `io.micronaut.application` und
+`io.gitlab.arturbosch.detekt`. `detekt.yml` enthält die Lint-Konfiguration.
 
 ### 12.3 Gemeinsame Identifier-Konventionen
 
@@ -926,14 +933,22 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   rechtfertigen — finale Commit-Hash steht im ADR und reicht für spätere
   Referenz.
 
-### 14.6 Java-Version im Micronaut-Prototyp
+### 14.6 Sprache und JDK-Version im Micronaut-Prototyp
 
-- **Default**: Java 21 (LTS).
-- Java 21 ist verbindlich (übereinstimmend mit AP-2 §6.3 und Spec §6.11);
-  ein Wechsel auf Java 17 würde den Vergleich verzerren und ist
-  ausgeschlossen.
-- Kotlin nur, wenn explizit gewünscht — sonst zusätzliche Variable im
-  Vergleich.
+- **Default**: Kotlin 2.x auf JDK 21 (LTS).
+- Begründung: Die spätere `apps/api`-Implementierung ist in Kotlin
+  geplant. Ein Java-Spike würde `Contributor-Fit` und subjektive
+  Velocity falsch einordnen, weil produktive Wartung dann in einer
+  anderen Sprache stattfände als die Spike-Bewertung.
+- Konsequenz: Der Vergleich ist Go vs. Kotlin/Micronaut, nicht Go vs.
+  Java/Micronaut. Diese bewusste Entscheidung wird im ADR notiert
+  (Bewertungskategorien `Contributor-Fit` und `Subjektiver Spaß`).
+- Java 21 als JVM-Plattform bleibt verbindlich (Spec §6.11). Kotlin
+  kompiliert nach JVM-21-Bytecode; das Container-Basisimage
+  (`eclipse-temurin:21-jre-alpine`) bleibt unverändert.
+- Reine-Java-Variante: nur, wenn der Kotlin-Build im Spike
+  unverhältnismäßig viel Reibung erzeugt (z. B. Gradle-Plugin-
+  Inkompatibilität). Wechsel im ADR begründen.
 
 ### 14.7 Container-Basisimage
 
@@ -949,3 +964,22 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   (`github.com/example/m-trace/apps/api`) initialisiert; Anpassung beim
   Übergang zu `main`.
 - Im Micronaut-Prototyp ist Group-Id `dev.mtrace` direkt finalisierbar.
+
+### 14.9 Linting
+
+- **Soll-Vorgabe** (nicht Spec-Muss): jeder Prototyp stellt einen
+  `make lint`-Befehl bereit, der einen Standard-Linter mit
+  Default-Regelsatz ausführt.
+- **Go**: `golangci-lint run ./...` mit den Default-Lintern (`govet`,
+  `errcheck`, `staticcheck`, `unused`, `ineffassign`).
+- **Kotlin**: `./gradlew detekt` mit der mitgelieferten Default-
+  Konfiguration (`detekt.yml` aus dem Plugin-Default).
+- Beide Linter sind **Soll**, nicht Muss. Sie dürfen nicht den
+  Pflicht-Test-Scope vergrößern. Ein roter Lint-Run blockiert weder
+  AP-1 noch AP-2 vom DoD, fließt aber in die Bewertungskategorien
+  `Build-Komplexität` und `Test-Velocity` ein.
+- Begründung: ohne Linter-Pendant pro Stack wäre detekt ein
+  einseitiger JVM-Bonus; mit Linter pro Stack wird Build-Ergonomie
+  symmetrisch messbar.
+- Custom Lint-Regeln, Suppressions oder Tooling-Ausbau sind im Spike
+  ausgeschlossen — Default-Profil pur.
