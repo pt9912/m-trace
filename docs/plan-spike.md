@@ -407,7 +407,8 @@ Aufgaben:
 - strukturierte JSON-Logs einrichten
 - Dockerfile mit Multi-Stage-Build (`gcr.io/distroless/static-debian12`)
 - Pflichttests gemäß Spec §6.12 schreiben
-- `make test` und `docker run -p 8080:8080 m-trace-api-spike` müssen laufen
+- Image als `m-trace-api-spike:go` taggen
+- `make test` und `docker run -p 8080:8080 m-trace-api-spike:go` müssen laufen
 - Spike-Notizen pro Bewertungskategorie führen
 
 Abnahme:
@@ -443,8 +444,9 @@ Aufgaben:
 - Dockerfile mit Multi-Stage-Build (`eclipse-temurin:21-jre-alpine` oder
   Distroless Java)
 - Pflichttests gemäß Spec §6.12 schreiben
-- `./gradlew test` und `docker run -p 8080:8080 m-trace-api-spike` müssen
-  laufen
+- Image als `m-trace-api-spike:micronaut` taggen
+- `./gradlew test` und `docker run -p 8080:8080 m-trace-api-spike:micronaut`
+  müssen laufen
 - Spike-Notizen pro Bewertungskategorie führen
 
 Abnahme:
@@ -488,6 +490,9 @@ Jeder Prototyp muss ohne externe Dienste folgende Tests grün haben:
   Token
 - Integrationstest HTTP 400 bei abweichender `schema_version`
 - Integrationstest HTTP 401 bei fehlendem oder falschem Token
+- Integrationstest HTTP 401 bei gültigem Token, dessen `project_id` im
+  Event nicht zum Token passt (Spec §6.4)
+- Integrationstest HTTP 401 bei unbekanntem `project_id` (Spec §6.4)
 - Integrationstest HTTP 413 bei Body über 256 KB
 - Integrationstest HTTP 422 bei ungültigem Event (fehlendes Pflichtfeld)
 - Integrationstest HTTP 422 bei mehr als 100 Events im Batch
@@ -828,7 +833,11 @@ Verbindlich für beide Prototypen:
   dokumentiert, aber nicht erzwungen.
 - Prometheus-Metrik-Prefix: `mtrace_`
 - OTel-Attribut-Prefix: `mtrace.*`
-- Docker-Image-Tag: `m-trace-api-spike`
+- Docker-Image-Tag: `m-trace-api-spike:<stack>` mit `<stack>` ∈
+  {`go`, `micronaut`}. Beide Prototypen müssen koexistieren können,
+  damit AP-3-Messungen (Image-Größe, Cold Start) reproduzierbar sind.
+  Image-ID (`docker images --format '{{.ID}}'`) wird zusätzlich im
+  Messwertbogen festgehalten.
 - npm-Package-Name in Beispielen: `@m-trace/player-sdk`
 
 Diese Konventionen sind im API-Kontrakt (`docs/spike/backend-api-contract.md`)

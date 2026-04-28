@@ -261,21 +261,29 @@ Es reicht ein In-Memory-Rate-Limiter. Verteiltes Rate Limiting ist nicht Teil de
   - Go: bevorzugt `gcr.io/distroless/static-debian12` oder vergleichbar
   - Micronaut: bevorzugt `eclipse-temurin:21-jre-alpine` oder Distroless Java
 - `docker build` läuft ohne Mounts und ohne BuildKit-Spezialfeatures
-- `docker run -p 8080:8080 m-trace-api-spike` startet den Service
+- Image wird stack-spezifisch getaggt (`m-trace-api-spike:go` bzw.
+  `m-trace-api-spike:micronaut`), damit beide Prototypen für die
+  AP-3-Messungen koexistieren
+- `docker run -p 8080:8080 m-trace-api-spike:<stack>` startet den Service
 - `/api/health` liefert nach Start HTTP 200
 
 ### 6.12 Tests
 
 Tests laufen ohne externe Dienste.
 
-Pflichttests:
+Pflichttests (Detailaufstellung in `docs/plan-spike.md` §7.1):
 
 - Unit-Test für `RegisterPlaybackEventBatch`
 - Unit-Test für zentrale Domain-Validierung
 - Integrationstest `POST /api/playback-events` Happy Path
-- Integrationstest HTTP 401 bei falschem Token
+- Integrationstest HTTP 400 bei abweichender `schema_version`
+- Integrationstest HTTP 401 bei fehlendem oder falschem Token
+- Integrationstest HTTP 401 bei `project_id`/Token-Mismatch
+- Integrationstest HTTP 401 bei unbekanntem `project_id`
+- Integrationstest HTTP 413 bei Body über 256 KB
 - Integrationstest HTTP 422 bei ungültigem Event
-- Integrationstest HTTP 429 bei Rate Limit
+- Integrationstest HTTP 422 bei mehr als 100 Events im Batch
+- Integrationstest HTTP 429 bei Rate Limit mit `Retry-After`-Header
 
 Ein Testbefehl muss funktionieren:
 
@@ -309,7 +317,6 @@ Bonusfunktionen:
 | expliziter Session-Lifecycle `ended` | Domainmodell prüfen |
 | OTel-Counter zusätzlich zu Prometheus | OTel-Ergonomie besser bewerten |
 | `trace_id` in Logs | Trace-/Logging-Integration prüfen |
-| Body-Limit-Test für HTTP 413 | Request-Handling prüfen |
 | vollständige Hexagon-Schichtung bis ins Detail | Architekturfit prüfen |
 
 Wichtig:
@@ -396,7 +403,7 @@ Diese Werte werden für jeden Prototyp objektiv festgehalten und in das ADR übe
 | Cold Start bis erster 200 OK auf `/api/health` | `time` + Curl-Loop |
 | Build-Zeit von Scratch | `time docker build --no-cache` |
 | Größe des Dependency-Caches | isolierter Cache pro Prototyp (siehe Hinweis in `docs/plan-spike.md` §7.2) |
-| Anzahl direkter Dependencies | `go list -m all` bzw. `gradle dependencies` |
+| Anzahl direkter Dependencies | direkt deklariert in `apps/api/go.mod` (`require`-Block ohne `// indirect`) bzw. `apps/api/build.gradle.kts` (`dependencies {}`-Block); transitive werden nicht mitgezählt |
 | Testlaufzeit | `time make test` oder äquivalent |
 | Anzahl direkt geschriebener Konfigurationsdateien | manuell zählen |
 
