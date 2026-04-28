@@ -1,13 +1,15 @@
-// Inbound (driving) ports — entry points called by adapters such as
-// HTTP. Per docs/plan-spike.md §5.2 nothing here imports any driven
-// adapter or wire-format concern; the HTTP adapter parses JSON into
-// BatchInput before invoking the use case.
+// Inbound (driving) port shapes — the wire-format-neutral input and
+// result types that adapters such as HTTP, gRPC, or future MCP
+// implementations exchange with the application layer. Per
+// docs/plan-spike.md §5.2 nothing here imports any driven adapter or
+// wire-format concern.
+//
+// The port itself is the function signature
+// `dev.mtrace.api.hexagon.application.RegisterPlaybackEventBatch
+// .execute(...)` — Kotlin idiom prefers an `object` with a stateless
+// function over a class + interface for a single use case (cleaner
+// than @Singleton, leaves the inner hexagon free of jakarta.inject).
 package dev.mtrace.api.hexagon.port.driving
-
-/** Single use-case entry point for the spike: accept a batch. */
-interface PlaybackEventInbound {
-    fun registerPlaybackEventBatch(input: BatchInput): RegisterBatchResult
-}
 
 /** Wire-format-neutral request representation. */
 data class BatchInput(

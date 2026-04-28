@@ -19,9 +19,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 private val FIXED_NOW: Instant = Instant.parse("2026-04-28T12:00:00.000Z")
-
 private val FIXED_CLOCK: Clock = Clock.fixed(FIXED_NOW, ZoneOffset.UTC)
-
 private val DEMO_PROJECT = Project(id = "demo", token = ProjectToken("demo-token"))
 
 private class StubResolver : ProjectResolver {
@@ -58,7 +56,7 @@ private class SpyMetrics : MetricsPublisher {
 }
 
 private fun validBatch(): BatchInput = BatchInput(
-    schemaVersion = SUPPORTED_SCHEMA_VERSION,
+    schemaVersion = RegisterPlaybackEventBatch.SUPPORTED_SCHEMA_VERSION,
     authToken = "demo-token",
     events = listOf(
         EventInput(
@@ -72,99 +70,90 @@ private fun validBatch(): BatchInput = BatchInput(
     ),
 )
 
-private data class Setup(
-    val useCase: RegisterPlaybackEventBatchUseCase,
-    val limiter: StubLimiter,
-    val repo: StubRepo,
-    val metrics: SpyMetrics,
-)
-
-private fun newSetup(): Setup {
-    val limiter = StubLimiter()
-    val repo = StubRepo()
-    val metrics = SpyMetrics()
-    val useCase = RegisterPlaybackEventBatchUseCase(
+private fun run(
+    input: BatchInput,
+    limiter: StubLimiter = StubLimiter(),
+    repo: StubRepo = StubRepo(),
+    metrics: SpyMetrics = SpyMetrics(),
+): Triple<RegisterBatchResult, StubRepo, SpyMetrics> {
+    val result = RegisterPlaybackEventBatch.execute(
+        input = input,
         projects = StubResolver(),
         limiter = limiter,
         events = repo,
         metrics = metrics,
         clock = FIXED_CLOCK,
     )
-    return Setup(useCase, limiter, repo, metrics)
+    return Triple(result, repo, metrics)
 }
 
-class RegisterPlaybackEventBatchUseCaseTest : StringSpec({
+class RegisterPlaybackEventBatchTest : StringSpec({
 
     "happy path returns Accepted with count and persists events" {
-        val (uc, _, repo, metrics) = newSetup()
-        val result = uc.registerPlaybackEventBatch(validBatch())
+        val (result, repo, metrics) = run(validBatch())
         result shouldBe RegisterBatchResult.Accepted(1)
         repo.appended.size shouldBe 1
         metrics.accepted shouldBe 1
     }
 
     "unknown token returns Unauthorized" {
-        val (uc, _, _, _) = newSetup()
-        val input = validBatch().copy(authToken = "wrong-token")
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.Unauthorized
+        val (result, _, _) = run(validBatch().copy(authToken = "wrong-token"))
+        result shouldBe RegisterBatchResult.Unauthorized
     }
 
     "wrong schema version returns SchemaVersionMismatch and counts as invalid" {
-        val (uc, _, _, metrics) = newSetup()
-        val input = validBatch().copy(schemaVersion = "2.0")
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.SchemaVersionMismatch
+        val (result, _, metrics) = run(validBatch().copy(schemaVersion = "2.0"))
+        result shouldBe RegisterBatchResult.SchemaVersionMismatch
         metrics.invalid shouldBe 1
     }
 
     "empty events returns BatchEmpty" {
-        val (uc, _, _, _) = newSetup()
-        val input = validBatch().copy(events = emptyList())
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.BatchEmpty
+        val (result, _, _) = run(validBatch().copy(events = emptyList()))
+        result shouldBe RegisterBatchResult.BatchEmpty
     }
 
     "more than 100 events returns BatchTooLarge with full count invalid" {
-        val (uc, _, _, metrics) = newSetup()
         val template = validBatch().events.first()
-        val input = validBatch().copy(events = List(MAX_BATCH_SIZE + 1) { template })
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.BatchTooLarge
-        metrics.invalid shouldBe MAX_BATCH_SIZE + 1
+        val input = validBatch().copy(
+            events = List(RegisterPlaybackEventBatch.MAX_BATCH_SIZE + 1) { template },
+        )
+        val (result, _, metrics) = run(input)
+        result shouldBe RegisterBatchResult.BatchTooLarge
+        metrics.invalid shouldBe RegisterPlaybackEventBatch.MAX_BATCH_SIZE + 1
     }
 
     "missing required field returns InvalidEvent" {
-        val (uc, _, _, _) = newSetup()
         val input = validBatch().let { b ->
             b.copy(events = b.events.map { it.copy(eventName = "") })
         }
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.InvalidEvent
+        val (result, _, _) = run(input)
+        result shouldBe RegisterBatchResult.InvalidEvent
     }
 
     "bad client_timestamp returns InvalidEvent" {
-        val (uc, _, _, _) = newSetup()
         val input = validBatch().let { b ->
             b.copy(events = b.events.map { it.copy(clientTimestamp = "not-a-timestamp") })
         }
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.InvalidEvent
+        val (result, _, _) = run(input)
+        result shouldBe RegisterBatchResult.InvalidEvent
     }
 
     "project_id mismatch returns Unauthorized" {
-        val (uc, _, _, _) = newSetup()
         val input = validBatch().let { b ->
             b.copy(events = b.events.map { it.copy(projectId = "other") })
         }
-        uc.registerPlaybackEventBatch(input) shouldBe RegisterBatchResult.Unauthorized
+        val (result, _, _) = run(input)
+        result shouldBe RegisterBatchResult.Unauthorized
     }
 
     "rate limited returns RateLimited and counts toward rate-limit metric" {
-        val (uc, limiter, _, metrics) = newSetup()
-        limiter.deny = true
-        uc.registerPlaybackEventBatch(validBatch()) shouldBe RegisterBatchResult.RateLimited
+        val (result, _, metrics) = run(validBatch(), limiter = StubLimiter(deny = true))
+        result shouldBe RegisterBatchResult.RateLimited
         metrics.rateLimited shouldBe 1
     }
 
     "repo failure returns InternalFailure and counts toward dropped metric" {
-        val (uc, _, repo, metrics) = newSetup()
-        repo.failNext = true
-        val result = uc.registerPlaybackEventBatch(validBatch())
+        val (result, _, metrics) = run(validBatch(), repo = StubRepo(failNext = true))
         result.shouldBeInstanceOf<RegisterBatchResult.InternalFailure>()
         metrics.dropped shouldBe 1
     }

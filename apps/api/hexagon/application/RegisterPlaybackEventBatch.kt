@@ -1,6 +1,9 @@
 // Use-case service. Per docs/plan-spike.md §5.2 application code may
 // import domain and ports but no adapter (HTTP, JSON, Prometheus,
-// OTel).
+// OTel) — and crucially no DI framework either. The Kotlin prototype
+// expresses the use case as an object with a stateless execute()
+// function rather than a @Singleton class, so the inner hexagon
+// stays free of jakarta.inject.
 package dev.mtrace.api.hexagon.application
 
 import dev.mtrace.api.hexagon.domain.PlaybackEvent
@@ -10,14 +13,11 @@ import dev.mtrace.api.hexagon.port.driven.MetricsPublisher
 import dev.mtrace.api.hexagon.port.driven.ProjectResolver
 import dev.mtrace.api.hexagon.port.driven.RateLimiter
 import dev.mtrace.api.hexagon.port.driving.BatchInput
-import dev.mtrace.api.hexagon.port.driving.PlaybackEventInbound
+import dev.mtrace.api.hexagon.port.driving.EventInput
 import dev.mtrace.api.hexagon.port.driving.RegisterBatchResult
 import java.time.Clock
 import java.time.Instant
 import java.time.format.DateTimeParseException
-
-const val SUPPORTED_SCHEMA_VERSION = "1.0"
-const val MAX_BATCH_SIZE = 100
 
 /**
  * Validates and persists a batch of player events. Walks the
@@ -25,25 +25,31 @@ const val MAX_BATCH_SIZE = 100
  * (auth) onwards; steps 1 (body size) and the bare presence of
  * X-MTrace-Token are the HTTP adapter's responsibility.
  *
- * On rejection the appropriate counter is incremented so that
- * rejection volumes are observable through GET /api/metrics.
+ * Stateless — driving adapters call [execute] with their injected
+ * dependencies. No instance is needed; no DI annotation appears in
+ * the inner hexagon.
  */
-class RegisterPlaybackEventBatchUseCase(
-    private val projects: ProjectResolver,
-    private val limiter: RateLimiter,
-    private val events: EventRepository,
-    private val metrics: MetricsPublisher,
-    private val clock: Clock = Clock.systemUTC(),
-) : PlaybackEventInbound {
+object RegisterPlaybackEventBatch {
 
-    override fun registerPlaybackEventBatch(input: BatchInput): RegisterBatchResult {
-        // Step 2 — auth.
+    const val SUPPORTED_SCHEMA_VERSION = "1.0"
+    const val MAX_BATCH_SIZE = 100
+
+    @Suppress("LongParameterList")
+    fun execute(
+        input: BatchInput,
+        projects: ProjectResolver,
+        limiter: RateLimiter,
+        events: EventRepository,
+        metrics: MetricsPublisher,
+        clock: Clock = Clock.systemUTC(),
+    ): RegisterBatchResult {
+        // Step 2 — auth: resolve token to project.
         val project = projects.resolveByToken(input.authToken)
             ?: return RegisterBatchResult.Unauthorized
 
-        // Step 3 — rate limit. Charged for the whole intended batch
-        // size, even if validation later rejects the batch — so a
-        // caller cannot probe validation responses without paying the
+        // Step 3 — rate limit: charged for the requested batch size,
+        // even if validation later rejects the batch — so a caller
+        // can't probe validation responses without paying the
         // per-project budget.
         if (!limiter.allow(project.id, input.events.size)) {
             metrics.rateLimitedEvents(input.events.size)
@@ -103,14 +109,15 @@ class RegisterPlaybackEventBatchUseCase(
             RegisterBatchResult.Accepted(parsed.size)
         } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
             // Any persistence failure must surface as a "dropped"
-            // counter increment per docs/spike/backend-api-contract.md
-            // §7. The repo contract does not enumerate exception types.
+            // counter increment per
+            // docs/spike/backend-api-contract.md §7. The repo
+            // contract does not enumerate exception types.
             metrics.droppedEvents(parsed.size)
             RegisterBatchResult.InternalFailure(t)
         }
     }
 
-    private fun hasRequiredFields(e: dev.mtrace.api.hexagon.port.driving.EventInput): Boolean =
+    private fun hasRequiredFields(e: EventInput): Boolean =
         e.eventName.isNotBlank() &&
             e.projectId.isNotBlank() &&
             e.sessionId.isNotBlank() &&

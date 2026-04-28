@@ -3,6 +3,7 @@
 package dev.mtrace.api.adapters.driven.ratelimit
 
 import dev.mtrace.api.hexagon.port.driven.RateLimiter
+import io.micronaut.context.annotation.Factory
 import jakarta.inject.Singleton
 import java.time.Clock
 import java.time.Instant
@@ -12,7 +13,13 @@ import kotlin.concurrent.withLock
 const val DEFAULT_RATE_LIMIT_CAPACITY: Int = 100
 const val DEFAULT_RATE_LIMIT_REFILL_PER_SEC: Double = 100.0
 
-@Singleton
+/**
+ * Plain class — instantiated either by tests (with custom clock) or
+ * by [TokenBucketFactory] for production wiring. No @Singleton on
+ * the class itself because Micronaut's KSP processor does not
+ * resolve Kotlin default constructor values; adding @Singleton would
+ * make the DI container try to inject Int/Double beans and fail.
+ */
 class TokenBucketRateLimiter(
     private val capacity: Int = DEFAULT_RATE_LIMIT_CAPACITY,
     private val refillPerSec: Double = DEFAULT_RATE_LIMIT_REFILL_PER_SEC,
@@ -48,4 +55,11 @@ class TokenBucketRateLimiter(
     private companion object {
         private const val MILLIS_PER_SECOND: Double = 1000.0
     }
+}
+
+/** Production wiring for [TokenBucketRateLimiter]. */
+@Factory
+class TokenBucketFactory {
+    @Singleton
+    fun rateLimiter(): RateLimiter = TokenBucketRateLimiter()
 }
