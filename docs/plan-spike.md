@@ -10,7 +10,7 @@
 
 ---
 
-## 1. Ziel
+## 1. Ziel (SP-1)
 
 Der Backend-Spike liefert die technische Entscheidung zwischen Go und Micronaut
 für `apps/api` durch zwei zeitlich begrenzte Prototypen mit identischem
@@ -49,9 +49,9 @@ harte Gesamtgrenze beträgt 5 Arbeitstage (0,5 + 2 + 2 + 0,5).
 
 ---
 
-## 2. Ausgangslage
+## 2. Ausgangslage (SP-2)
 
-### 2.1 Lastenheft hält Backend-Entscheidung bewusst offen
+### 2.1 Lastenheft hält Backend-Entscheidung bewusst offen (SP-3)
 
 `docs/lastenheft.md` §9.1 nennt zwei zulässige Optionen — Go oder Micronaut —
 und bindet die Wahl explizit an einen technischen Spike. §10.1 listet die
@@ -59,7 +59,7 @@ Mindestanforderungen unabhängig vom Stack. §16.2 führt die endgültige
 Backend-Technologie als offene Entscheidung. §17 Schritt 0 fordert den Spike
 als Voraussetzung jeder MVP-Implementierung.
 
-### 2.2 Spike-Spezifikation ist normativ
+### 2.2 Spike-Spezifikation ist normativ (SP-4)
 
 `docs/spike/0001-backend-stack.md` ist verbindlich für:
 
@@ -74,7 +74,7 @@ als Voraussetzung jeder MVP-Implementierung.
 Dieser Plan verfeinert die Spec, widerspricht ihr nicht. Bei Konflikten
 gilt die Spec.
 
-### 2.3 Repository ist noch leer
+### 2.3 Repository ist noch leer (SP-5)
 
 Aktueller Stand:
 
@@ -94,9 +94,9 @@ Verbindliche Folge:
 
 ---
 
-## 3. Scope für den Spike
+## 3. Scope für den Spike (SP-6)
 
-### 3.1 In Scope
+### 3.1 In Scope (SP-7)
 
 - API-Kontrakt-Datei mit Endpunkten, Beispielpayloads, Statuscodes,
   Header-Definitionen, Metriknamen und Testfällen
@@ -111,7 +111,7 @@ Verbindliche Folge:
 - ausgefüllter Bewertungs- und Messwertbogen
 - ADR mit Stack-Entscheidung, Bias-Notiz und Konsequenzen
 
-### 3.2 Bewusst nicht Teil des Spikes
+### 3.2 Bewusst nicht Teil des Spikes (SP-8)
 
 Übernommen aus `docs/spike/0001-backend-stack.md` §8 und hier verbindlich:
 
@@ -135,9 +135,9 @@ nutzt der MVP?".
 
 ---
 
-## 4. Leitentscheidungen
+## 4. Leitentscheidungen (SP-9)
 
-### 4.1 API-Kontrakt vor jedem Implementierungsstart
+### 4.1 API-Kontrakt vor jedem Implementierungsstart (SP-10)
 
 Vor `git checkout -b spike/go-api` wird `docs/spike/backend-api-contract.md`
 erstellt und committed. Inhalt: Endpunkte, Beispielpayloads, Statuscodes,
@@ -164,7 +164,7 @@ Verbindliche Folge:
   ohne Merge sieht und AP-3 in Konsequenz auf einer vollständigen
   Notiz-Historie aufsetzt.
 
-### 4.2 Harte Zeitgrenze, keine dritte Spike-Runde
+### 4.2 Harte Zeitgrenze, keine dritte Spike-Runde (SP-11)
 
 Maximalbudgets:
 
@@ -182,7 +182,7 @@ Verbindliche Folge:
 - der Plan erlaubt keinen "halben Tag mehr"
 - ein dritter Spike-Versuch ist ausgeschlossen
 
-### 4.3 Identischer Scope, keine Coexistenz danach
+### 4.3 Identischer Scope, keine Coexistenz danach (SP-12)
 
 Beide Prototypen liefern denselben Muss-Scope. Erweiterungen "weil es
 schnell geht" oder Auslassungen "weil es im anderen Stack einfacher ist"
@@ -196,7 +196,7 @@ Verbindliche Folge:
   `spike/backend-stack-loser-YYYYMMDD` archiviert
 - der finale Commit-Hash beider Prototypen wird im ADR referenziert
 
-### 4.4 Reihenfolge-Bias wird dokumentiert, nicht ausgeglichen
+### 4.4 Reihenfolge-Bias wird dokumentiert, nicht ausgeglichen (SP-13)
 
 Default-Reihenfolge: Go-Prototyp zuerst, Micronaut-Prototyp zweit.
 
@@ -213,7 +213,7 @@ Verbindliche Folge:
   unfairen Erfahrungsvorteil hätte
 - die tatsächliche Reihenfolge wird im ADR festgehalten
 
-### 4.5 Hexagon nur dort, wo Fachlogik entsteht
+### 4.5 Hexagon nur dort, wo Fachlogik entsteht (SP-14)
 
 Beide Prototypen müssen Domain-Logik frameworkfrei halten. Die
 Standard-Schichtung ist:
@@ -242,7 +242,7 @@ Verbindliche Folge:
 - DTOs liegen in den Adapters, nicht in der Domain
 - Adapter implementieren Ports oder rufen Use Cases
 
-### 4.6 Eine Entscheidung, keine "beide Optionen sind gut"
+### 4.6 Eine Entscheidung, keine "beide Optionen sind gut" (SP-15)
 
 Die Entscheidungsregel aus Spec §10 ist verbindlich:
 
@@ -256,9 +256,9 @@ Das ADR muss eine *gewählte* Option benennen.
 
 ---
 
-## 5. Zielarchitektur
+## 5. Zielarchitektur (SP-16)
 
-### 5.1 Branch-Layout im Repository
+### 5.1 Branch-Layout im Repository (SP-17)
 
 | Branch | Zweck | Lebensdauer |
 |---|---|---|
@@ -275,7 +275,7 @@ Branch). Details in §4.3 und §14.5.
 `docs/spike/backend-api-contract.md` wird vor dem ersten Implementierungs-
 Branch nach `main` gemerged.
 
-### 5.2 Mindeststruktur pro Prototyp
+### 5.2 Mindeststruktur pro Prototyp (SP-18)
 
 Verbindlich ist die *logische* Schichtung, nicht der konkrete Dateipfad.
 Beide Prototypen müssen folgende Schichten erkennbar voneinander trennen:
@@ -315,7 +315,7 @@ Verbindliche Folge:
   zusätzliche `src/main/kotlin/dev/mtrace/api/`-Ebene (Kotlin).
   Architektur muss beim ersten Blick sichtbar sein.
 
-### 5.3 Domain-Objekte
+### 5.3 Domain-Objekte (SP-19)
 
 Beide Prototypen modellieren mindestens:
 
@@ -345,7 +345,7 @@ Adapter:
 angelegt) und `ended` (Bonus). Ein expliziter Session-Ende-Endpunkt ist
 nicht Pflicht.
 
-### 5.4 Metriken-Vertrag
+### 5.4 Metriken-Vertrag (SP-20)
 
 Pflichtmetriken im Prometheus-Format an `GET /api/metrics`:
 
@@ -360,7 +360,7 @@ Hochkardinale Labels (`session_id`, `user_agent`, `segment_url`) sind
 verboten. `mtrace_dropped_events_total` darf in Phase 1 bei `0` bleiben,
 wenn kein Drop-Pfad implementiert wird; die Metrik muss aber existieren.
 
-### 5.5 OTel-Mindestumfang
+### 5.5 OTel-Mindestumfang (SP-21)
 
 Verbindlich pro Prototyp:
 
@@ -378,9 +378,9 @@ OTel ist *Ergonomie-Test*, nicht produktive Telemetrie-Pipeline.
 
 ---
 
-## 6. Arbeitspakete
+## 6. Arbeitspakete (SP-22)
 
-### 6.1 AP-0: API-Kontrakt fixieren
+### 6.1 AP-0: API-Kontrakt fixieren (SP-23)
 
 Maximalbudget: 0,5 Tag.
 
@@ -410,7 +410,7 @@ Abnahme:
 - nach Merge nach `main` werden keine Vertragsänderungen mehr einseitig
   vorgenommen
 
-### 6.2 AP-1: Go-Prototyp
+### 6.2 AP-1: Go-Prototyp (SP-24)
 
 Maximalbudget: 2 Tage. Branch: `spike/go-api`.
 
@@ -455,7 +455,7 @@ Abnahme:
   `docs/spike/backend-stack-results.md` festgehalten und vor AP-2-
   Start sichtbar
 
-### 6.3 AP-2: Micronaut-Prototyp
+### 6.3 AP-2: Micronaut-Prototyp (SP-25)
 
 Maximalbudget: 2 Tage. Branch: `spike/micronaut-api`.
 
@@ -504,7 +504,7 @@ Abnahme:
 - identisch zu AP-1; `make test` ruft die Kotlin-Test-Stage des
   Dockerfiles auf (statt der Go-Stage)
 
-### 6.4 AP-3: Auswertung und ADR
+### 6.4 AP-3: Auswertung und ADR (SP-26)
 
 Maximalbudget: 0,5 Tag.
 
@@ -532,9 +532,9 @@ Abnahme:
 
 ---
 
-## 7. Verifikationsstrategie
+## 7. Verifikationsstrategie (SP-27)
 
-### 7.1 Pflichttests pro Prototyp
+### 7.1 Pflichttests pro Prototyp (SP-28)
 
 Jeder Prototyp muss ohne externe Dienste folgende Tests grün haben:
 
@@ -575,7 +575,7 @@ make test
 (`go test ./...`, `./gradlew test`) sind kein Pflichtweg — der
 Spike ist Docker-only (siehe §14.11 und Spec §6.11).
 
-### 7.2 Mess-Punkte
+### 7.2 Mess-Punkte (SP-29)
 
 Pro Prototyp objektiv festzuhalten:
 
@@ -631,7 +631,7 @@ aus d-migrate). Der Wert dient nur als Referenz für die
 spätere `apps/api`-Konfiguration im MVP und fließt nicht in die
 Bewertungskategorie `Cold Start` ein.
 
-### 7.3 Bewertungsraster
+### 7.3 Bewertungsraster (SP-30)
 
 Verbindlich aus Spec §9, identisch für beide Prototypen, Punkte 1–5:
 
@@ -654,14 +654,14 @@ Nicht direkt in der Bewertung:
 - Performance-Benchmarks unter Last
 - theoretische Vorteile aus Blogposts
 
-### 7.4 Keine Lasttests, keine Produktionssimulation
+### 7.4 Keine Lasttests, keine Produktionssimulation (SP-31)
 
 Performance-Optimierung über "läuft mit Tests durch" hinaus ist nicht Teil
 des Spikes. Lasttests, Profiling-Sessions und JVM-Tuning sind ausgeschlossen.
 
 ---
 
-## 8. Betroffene Codebasis
+## 8. Betroffene Codebasis (SP-32)
 
 Voraussichtlich erzeugt:
 
@@ -681,9 +681,9 @@ Bewusst nicht betroffen:
 
 ---
 
-## 9. Risiken und Gegenmaßnahmen
+## 9. Risiken und Gegenmaßnahmen (SP-33)
 
-### 9.1 Scope-Creep im Erststack
+### 9.1 Scope-Creep im Erststack (SP-34)
 
 Risiko:
 
@@ -697,7 +697,7 @@ Gegenmaßnahme:
 - Pull-Request-Beschreibung pro Prototyp listet umgesetzten Muss-Scope.
 - Bonus-Punkte werden separat im Bewertungsbogen ausgewiesen.
 
-### 9.2 Erfahrungs-Bias zugunsten eines Stacks
+### 9.2 Erfahrungs-Bias zugunsten eines Stacks (SP-35)
 
 Risiko:
 
@@ -710,7 +710,7 @@ Gegenmaßnahme:
 - Reihenfolge darf bewusst gedreht werden (§4.4).
 - `Contributor-Fit` (10%) zielt auf das OSS-Umfeld, nicht auf Eigen-Skill.
 
-### 9.3 Unklarer Sieger nach 5 Tagen
+### 9.3 Unklarer Sieger nach 5 Tagen (SP-36)
 
 Risiko:
 
@@ -723,7 +723,7 @@ Gegenmaßnahme:
 - Wenn die Regel nicht greift, gewinnt der Stack mit weniger
   Infrastruktur-/Build-Komplexität.
 
-### 9.4 OTel-Integration wird "später sauber gemacht"
+### 9.4 OTel-Integration wird "später sauber gemacht" (SP-37)
 
 Risiko:
 
@@ -735,7 +735,7 @@ Gegenmaßnahme:
 - minimaler OTel-Setup ist Muss-Scope, nicht Bonus.
 - Bewertung von OTel ohne Code-Berührung ist ungültig.
 
-### 9.5 Coexistenz beider Prototypen "für später"
+### 9.5 Coexistenz beider Prototypen "für später" (SP-38)
 
 Risiko:
 
@@ -748,7 +748,7 @@ Gegenmaßnahme:
 - Sieger-Branch wird Basis für `apps/api`, unterlegener Branch wird
   archiviert oder gelöscht.
 
-### 9.6 Spec-Drift während des Spikes
+### 9.6 Spec-Drift während des Spikes (SP-39)
 
 Risiko:
 
@@ -763,7 +763,7 @@ Gegenmaßnahme:
 
 ---
 
-## 10. Definition of Done für den Spike
+## 10. Definition of Done für den Spike (SP-40)
 
 Der Spike ist abgeschlossen, wenn:
 
@@ -795,7 +795,7 @@ Neubewertung gelöst, nicht durch mehr Code.
 
 ---
 
-## 11. Anschluss an MVP `0.1.0`
+## 11. Anschluss an MVP `0.1.0` (SP-41)
 
 Nach abgeschlossenem Spike beginnt die MVP-Implementierung gemäß
 Lastenheft §17 Schritt 2 ff.
@@ -838,9 +838,9 @@ Lessons-learned-Hinweise aus dem Vergleich mit `d-migrate` (für
 
 ---
 
-## 12. Verbindliche Modul- und Paketstruktur
+## 12. Verbindliche Modul- und Paketstruktur (SP-42)
 
-### 12.1 Go-Prototyp
+### 12.1 Go-Prototyp (SP-43)
 
 ```text
 apps/api/
@@ -885,7 +885,7 @@ sichtbar. Module-Path-Konvention:
 `github.com/<owner>/m-trace/apps/api` — finaler Owner-Pfad bleibt
 offen bis zur Repo-Erstellung auf GitHub.
 
-### 12.2 Micronaut-Prototyp (Kotlin)
+### 12.2 Micronaut-Prototyp (Kotlin) (SP-44)
 
 ```text
 apps/api/
@@ -976,7 +976,7 @@ detektVersion=1.23.8
 Konkrete Patch-Levels werden beim Anlegen des Branches auf den dann
 aktuellen Stand gesetzt; Spike-relevant sind die Major/Minor.
 
-### 12.3 Gemeinsame Identifier-Konventionen
+### 12.3 Gemeinsame Identifier-Konventionen (SP-45)
 
 Verbindlich für beide Prototypen:
 
@@ -1001,9 +1001,9 @@ zu fixieren und dürfen zwischen den Prototypen nicht abweichen.
 
 ---
 
-## 13. Arbeitspaket-Abhängigkeiten und Test-Tabelle
+## 13. Arbeitspaket-Abhängigkeiten und Test-Tabelle (SP-46)
 
-### 13.1 Reihenfolge
+### 13.1 Reihenfolge (SP-47)
 
 ```text
 AP-0  ──►  AP-1  ──►  AP-2  ──►  AP-3
@@ -1016,7 +1016,7 @@ AP-0  ──►  AP-1  ──►  AP-2  ──►  AP-3
 
 Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
 
-### 13.2 Pflichttests pro Arbeitspaket
+### 13.2 Pflichttests pro Arbeitspaket (SP-48)
 
 | AP | Pflichttest |
 |---|---|
@@ -1027,15 +1027,15 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
 
 ---
 
-## 14. Offene Entscheidungen mit Default-Empfehlung
+## 14. Offene Entscheidungen mit Default-Empfehlung (SP-49)
 
-### 14.1 Reihenfolge der Prototypen
+### 14.1 Reihenfolge der Prototypen (SP-50)
 
 - **Default**: Go zuerst, Micronaut zweit.
 - Drehen erlaubt, wenn Micronaut-Erfahrung sonst zu großen Vorteil hätte.
 - Festlegung im ADR-Abschnitt "Reihenfolge und Bias".
 
-### 14.2 Routing-Library im Go-Prototyp
+### 14.2 Routing-Library im Go-Prototyp (SP-51)
 
 - **Default**: Standard-`net/http`.
 - Wechsel zu `chi` zulässig, wenn Standard für die Pflicht-Endpunkte
@@ -1043,21 +1043,21 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
 - `gorilla/mux`, `echo`, `gin` bewusst ausgeschlossen — der Spike soll
   keinen Framework-Vergleich aufmachen, der die OTel-Bewertung verwässert.
 
-### 14.3 Logging-Format im Micronaut-Prototyp
+### 14.3 Logging-Format im Micronaut-Prototyp (SP-52)
 
 - **Default**: Logback mit JSON-Encoder (Logstash-Encoder oder
   `LogstashEncoder`-äquivalent).
 - Strukturierte JSON-Logs mit `project_id`, `session_id`, `status_code`,
   `error_type` sind Pflicht.
 
-### 14.4 ADR-Pfad
+### 14.4 ADR-Pfad (SP-53)
 
 - **Default**: `docs/adr/0001-backend-stack.md`.
 - Konsistent mit Lastenheft §17 Schritt 0 und Spike-Spec §6.
 - Kein Wechsel zu alternativen ADR-Tools (adr-tools-Templates ja,
   Toolchain-Lock-In nein).
 
-### 14.5 Archivierungsmodus für unterlegenen Branch
+### 14.5 Archivierungsmodus für unterlegenen Branch (SP-54)
 
 - **Default**: Tag `spike/backend-stack-loser-YYYYMMDD` setzen, danach
   Branch löschen.
@@ -1065,7 +1065,7 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   rechtfertigen — finale Commit-Hash steht im ADR und reicht für spätere
   Referenz.
 
-### 14.6 Sprache und JDK-Version im Micronaut-Prototyp
+### 14.6 Sprache und JDK-Version im Micronaut-Prototyp (SP-55)
 
 - **Default**: Kotlin 2.x auf JDK 21 (LTS).
 - Begründung: Die spätere `apps/api`-Implementierung ist in Kotlin
@@ -1082,14 +1082,14 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   unverhältnismäßig viel Reibung erzeugt (z. B. Gradle-Plugin-
   Inkompatibilität). Wechsel im ADR begründen.
 
-### 14.7 Container-Basisimage
+### 14.7 Container-Basisimage (SP-56)
 
 - **Go-Default**: `gcr.io/distroless/static-debian12`.
 - **Micronaut-Default**: `eclipse-temurin:21-jre-alpine`; Distroless Java
   als Bonus.
 - Image-Größe ist Bewertungskategorie, nicht Optimierungsziel des Spikes.
 
-### 14.8 GitHub-Owner und Modul-Pfade
+### 14.8 GitHub-Owner und Modul-Pfade (SP-57)
 
 - **Default**: offen bis zur GitHub-Repo-Erstellung.
 - Im Go-Prototyp wird `go.mod` zunächst mit Platzhalter-Path
@@ -1097,7 +1097,7 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   Übergang zu `main`.
 - Im Micronaut-Prototyp ist Group-Id `dev.mtrace` direkt finalisierbar.
 
-### 14.9 Linting
+### 14.9 Linting (SP-58)
 
 - **Soll-Vorgabe** (nicht Spec-Muss): jeder Prototyp stellt einen
   `make lint`-Befehl bereit, der einen Standard-Linter mit
@@ -1130,7 +1130,7 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   ist im Spike (Greenfield) nicht nötig; in §11 als pragmatischer
   Migrationspfad bei Bestandsmodulen erwähnt.
 
-### 14.10 Test-Framework im Micronaut-Prototyp
+### 14.10 Test-Framework im Micronaut-Prototyp (SP-59)
 
 - **Default**: Kotest 6.x als Test-Runner, MockK als Mocking-Library,
   `@MicronautTest` für DI-Integration in Specs.
@@ -1147,7 +1147,7 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   Reibung erzeugt, ist ein Wechsel auf JUnit 5 + JUnit-Style erlaubt;
   Begründung im ADR.
 
-### 14.11 Dockerfile-Struktur (verbindlich)
+### 14.11 Dockerfile-Struktur (verbindlich) (SP-60)
 
 Der Spike ist Docker-only: alle Build-, Test- und Lint-Schritte
 laufen über `docker build --target <stage>`. Der Dockerfile pro
