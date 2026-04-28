@@ -34,6 +34,14 @@ dependencies {
     // Logging, YAML config and metrics.
     runtimeOnly("ch.qos.logback:logback-classic:${rootProject.properties["logbackVersion"]}")
     runtimeOnly("org.yaml:snakeyaml")
+    // Micronaut-Micrometer provides a MeterRegistry bean. We expose
+    // /api/metrics ourselves via a controller (see
+    // adapters/driving/http/MetricsController.kt) instead of using
+    // the management endpoint plumbing. The micrometer-registry-
+    // prometheus jar is added explicitly so PrometheusMeterRegistry
+    // is on the compile classpath.
+    implementation("io.micronaut.micrometer:micronaut-micrometer-core")
+    implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
     implementation(
         "io.micrometer:micrometer-registry-prometheus:${rootProject.properties["micrometerVersion"]}",
     )

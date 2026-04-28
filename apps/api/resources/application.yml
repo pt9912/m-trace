@@ -4,7 +4,9 @@ micronaut:
   server:
     port: 8080
     max-request-size: 256KB
-endpoints:
-  prometheus:
-    sensitive: false
-    path: /api/metrics
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+        step: PT1M
