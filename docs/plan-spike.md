@@ -265,7 +265,11 @@ Das ADR muss eine *gewählte* Option benennen.
 | `main` | Lastenheft, Spike-Doc, Plan, README | dauerhaft |
 | `spike/go-api` | Go-Prototyp | bis Auswertung; danach Sieger oder Archiv |
 | `spike/micronaut-api` | Micronaut-Prototyp | bis Auswertung; danach Sieger oder Archiv |
-| `spike/backend-stack-loser-YYYYMMDD` | optionales Archiv | dauerhaft, kein aktiver Branch |
+
+Hinweis zum unterlegenen Stack: nach AP-3 wird der unterlegene
+Spike-Branch entweder gelöscht oder als **Tag**
+`spike/backend-stack-loser-YYYYMMDD` archiviert (kein paralleler
+Branch). Details in §4.3 und §14.5.
 
 `main` enthält keine Prototyp-Sourcen. Die API-Kontrakt-Datei
 `docs/spike/backend-api-contract.md` wird vor dem ersten Implementierungs-
@@ -488,8 +492,9 @@ Aufgaben:
 - `make test` ruft `docker build --target test` auf und muss grün
   durchlaufen; `docker run -p 8080:8080 m-trace-api-spike:micronaut`
   startet den Service
-- `make lint` ruft `docker build --target detekt` auf (Soll-Aufgabe;
-  siehe §14.9). Stage führt intern `gradle detekt` aus.
+- `make lint` ruft `docker build --target lint` auf (Soll-Aufgabe;
+  siehe §14.9). Stage führt intern `gradle --no-daemon detekt` aus.
+  Stage-Name ist über beide Stacks hinweg `lint` (siehe §14.11).
 - AP-2-Notizen pro Bewertungskategorie direkt auf `main` in
   `docs/spike/backend-stack-results.md` committen (siehe §4.1) —
   **nicht** in `spike/micronaut-api`
@@ -1099,9 +1104,10 @@ Parallelarbeit ist nicht vorgesehen — der Spike ist Solo-Aufwand.
   Default-Regelsatz ausführt.
 - **Go**: `golangci-lint run ./...` mit den Default-Lintern (`govet`,
   `errcheck`, `staticcheck`, `unused`, `ineffassign`).
-- **Kotlin**: `docker build --target detekt` (intern
+- **Kotlin**: `docker build --target lint` (intern
   `gradle --no-daemon detekt`) mit `buildUponDefaultConfig = true`
   und der mitgelieferten Default-Konfiguration als Startpunkt.
+  Stage-Name ist `lint` (gemeinsam mit Go-Stack), nicht `detekt`.
 - Empfohlene Gradle-Konfiguration für detekt (übernommen aus
   `d-migrate/build.gradle.kts`):
   - `tasks.named("check") { dependsOn("detekt") }` — `gradle build`
@@ -1150,8 +1156,9 @@ Prototyp ist daher zentral und muss folgende Stages benennen:
 - **`deps`**: kopiert nur Build-Metadaten und löst Abhängigkeiten auf.
   - Go: `go.mod`, `go.sum` → `RUN go mod download`
   - Kotlin: `build.gradle.kts`, `gradle.properties` → `RUN gradle
-    --no-daemon resolveAllDependencies` (Custom-Task, siehe
-    `d-migrate/build.gradle.kts:179`)
+    --no-daemon resolveAllDependencies`. Der Task wird im Spike
+    selbst angelegt (Snippet unten), Inspiration aus
+    `d-migrate/build.gradle.kts:179`.
 - **`compile`**: kopiert Sources und kompiliert.
   - Go: `RUN go build ./...`
   - Kotlin: `RUN gradle --no-daemon classes`
@@ -1179,3 +1186,24 @@ build:   ; docker build --target runtime -t m-trace-api-spike:<stack> .
 Damit funktioniert ein frischer Clone ohne lokales Go, JDK oder
 Gradle. Die `gradle-wrapper.jar` und das `gradlew`-Script werden
 **nicht** versioniert.
+
+Custom-Task `resolveAllDependencies` (Kotlin), Snippet in
+`apps/api/build.gradle.kts`:
+
+```kotlin
+tasks.register("resolveAllDependencies") {
+    group = "build setup"
+    description = "Resolve all configurations to warm the Gradle " +
+        "dependency cache (used by the deps Dockerfile stage)."
+    doLast {
+        configurations
+            .filter { it.isCanBeResolved }
+            .forEach { it.resolve() }
+    }
+}
+```
+
+Das Snippet ist gegenüber `d-migrate/build.gradle.kts:179` bewusst
+einfacher gehalten (Single-Modul: keine `allprojects`-Iteration).
+Bei späterer Multi-Modul-Aufteilung gemäß §11 muss die
+`allprojects { ... }`-Variante übernommen werden.
