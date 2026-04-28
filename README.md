@@ -1,52 +1,52 @@
 # m-trace
 
-**OpenTelemetry-native observability for live media streaming.**
+**OpenTelemetry-native Observability für Live-Media-Streaming.**
 
-m-trace is a self-hosted observability and diagnostics stack for live media workflows.  
-It helps trace media streams from ingest to player by combining player telemetry, stream sessions, infrastructure signals, Prometheus metrics, and OpenTelemetry-compatible event modeling.
+m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
+Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: early planning / architecture phase
+> Status: frühe Planungs- und Architekturphase
 
 ---
 
-## What is m-trace?
+## Was ist m-trace?
 
-m-trace is designed for developers, self-hosters, small streaming platforms, broadcasters, and technical teams who want to understand what happens inside their streaming pipeline without depending on a proprietary SaaS analytics silo.
+m-trace richtet sich an Entwickler, Selbsthoster, kleine Streaming-Plattformen, Broadcaster und technische Teams, die verstehen wollen, was in ihrer Streaming-Pipeline passiert — ohne sich von einem proprietären SaaS-Analytics-Silo abhängig zu machen.
 
-The first goal is simple:
+Das erste Ziel ist einfach:
 
 ```text
-MediaMTX + hls.js demo player + playback events + dashboard + OpenTelemetry-compatible model
+MediaMTX + hls.js-Demo-Player + Playback-Events + Dashboard + OpenTelemetry-kompatibles Modell
 ```
 
-The long-term goal is broader:
+Das langfristige Ziel ist breiter:
 
 ```text
-Trace live media streams from ingest to player.
+Media-Streams von Ingest bis Player nachverfolgen.
 ```
 
 ---
 
-## Why m-trace?
+## Warum m-trace?
 
-Commercial platforms such as Mux Data, Bitmovin Analytics, NPAW/YOUBORA, and Conviva solve many QoE and analytics problems.  
-m-trace focuses on a different gap:
+Kommerzielle Plattformen wie Mux Data, Bitmovin Analytics, NPAW/YOUBORA und Conviva lösen viele klassische QoE- und Analytics-Probleme.  
+m-trace fokussiert eine andere Lücke:
 
-- self-hosted streaming observability
-- OpenTelemetry-native modeling
-- ingest-to-player correlation
-- developer-friendly local demos
-- streaming diagnostics instead of business analytics
-- practical tooling for small teams and labs
+- selbstgehostete Streaming-Observability
+- OpenTelemetry-natives Modellieren
+- Korrelation von Ingest bis Player
+- entwicklerfreundliche lokale Demos
+- Streaming-Diagnose statt Business-Analytics
+- praktisches Tooling für kleine Teams und Labs
 
-The project is not trying to replace a full commercial video analytics platform.  
-It aims to become a practical open-source stack for technical streaming diagnosis.
+Das Projekt versucht nicht, eine vollständige kommerzielle Video-Analytics-Plattform zu ersetzen.  
+Es soll ein praxistauglicher Open-Source-Stack für technische Streaming-Diagnose werden.
 
 ---
 
-## Core idea
+## Kerngedanke
 
-A typical live streaming flow looks like this:
+Ein typischer Live-Streaming-Flow sieht so aus:
 
 ```text
 Encoder / FFmpeg / OBS
@@ -66,47 +66,47 @@ m-trace API
 Dashboard / Metrics / OpenTelemetry
 ```
 
-m-trace collects and normalizes signals from the player and backend so that stream sessions can be inspected, debugged, and eventually correlated with infrastructure telemetry.
+m-trace sammelt und normalisiert Signale aus Player und Backend, sodass Stream-Sessions inspiziert, debugged und langfristig mit Infrastruktur-Telemetrie korreliert werden können.
 
 ---
 
-## MVP scope
+## MVP-Scope
 
-The first MVP is intentionally small.
+Der erste MVP ist bewusst klein gehalten.
 
-### Included in v0.1.0
+### Enthalten in v0.1.0
 
-- mono-repo structure
-- backend API under `apps/api`
-- dashboard under `apps/dashboard`
-- demo player as dashboard route `/demo`
-- player SDK under `packages/player-sdk`
-- hls.js adapter
-- MediaMTX-based local streaming setup
-- FFmpeg test stream
-- playback event ingestion
-- basic stream session view
-- basic event view
-- Prometheus-compatible aggregate metrics
-- OpenTelemetry-compatible event model
-- in-memory or SQLite persistence
-- Docker-first local development
+- Mono-Repo-Struktur
+- Backend-API unter `apps/api`
+- Dashboard unter `apps/dashboard`
+- Demo-Player als Dashboard-Route `/demo`
+- Player-SDK unter `packages/player-sdk`
+- hls.js-Adapter
+- MediaMTX-basiertes lokales Streaming-Setup
+- FFmpeg-Teststream
+- Aufnahme von Playback-Events
+- einfache Stream-Session-Ansicht
+- einfache Event-Ansicht
+- Prometheus-kompatible Aggregat-Metriken
+- OpenTelemetry-kompatibles Eventmodell
+- In-Memory- oder SQLite-Persistenz
+- Docker-first lokale Entwicklung
 
-### Not included in v0.1.0
+### Nicht in v0.1.0 enthalten
 
-- separate demo-player app
-- separate analyzer API
-- production multi-tenancy
-- WebRTC monitoring
-- SRT health view
-- Tempo as required dependency
-- Mimir or ClickHouse
-- Kubernetes production deployment
-- full HLS/DASH manifest analyzer
+- separate Demo-Player-App
+- separate Analyzer-API
+- produktive Multi-Tenancy
+- WebRTC-Monitoring
+- SRT-Health-Ansicht
+- Tempo als Pflicht-Abhängigkeit
+- Mimir oder ClickHouse
+- Kubernetes-Produktionsbetrieb
+- vollständiger HLS-/DASH-Manifest-Analyzer
 
 ---
 
-## Planned repository structure
+## Geplante Repository-Struktur
 
 ```text
 m-trace/
@@ -143,25 +143,25 @@ m-trace/
 └── CHANGELOG.md
 ```
 
-Not all directories are part of the first MVP.  
-Some are placeholders for the roadmap.
+Nicht alle Verzeichnisse gehören zum ersten MVP.  
+Einige sind Platzhalter für die Roadmap.
 
 ---
 
-## Architecture principles
+## Architekturprinzipien
 
-m-trace uses pragmatic architecture boundaries.
+m-trace nutzt pragmatische Architekturgrenzen.
 
 ### Backend
 
-The backend technology is still open until the backend spike is completed.
+Die Backend-Technologie ist offen, bis der Backend-Spike abgeschlossen ist.
 
-Candidates:
+Kandidaten:
 
 - Go
 - Micronaut / JVM
 
-The backend should follow a hexagonal architecture where it adds real value:
+Das Backend soll hexagonale Architektur dort einsetzen, wo sie echten Mehrwert bringt:
 
 ```text
 apps/api/
@@ -182,17 +182,17 @@ apps/api/
 └── Dockerfile
 ```
 
-Dependency direction:
+Abhängigkeitsrichtung:
 
 ```text
 adapters → hexagon
 ```
 
-The domain must not depend on HTTP, database, framework, Docker, or OpenTelemetry implementation details.
+Die Domain darf nicht von HTTP-, Datenbank-, Framework-, Docker- oder OpenTelemetry-Implementierungsdetails abhängen.
 
-### Player SDK
+### Player-SDK
 
-The player SDK is intentionally not fully hexagonal in the MVP.
+Das Player-SDK ist im MVP bewusst nicht voll hexagonal.
 
 ```text
 packages/player-sdk/src/
@@ -204,27 +204,27 @@ packages/player-sdk/src/
 └── index.ts
 ```
 
-The first supported player integration is:
+Die erste unterstützte Player-Integration ist:
 
 ```text
 hls.js
 ```
 
-Other integrations are future work:
+Weitere Integrationen sind spätere Arbeit:
 
 - dash.js
 - Shaka Player
 - Video.js
-- native Safari HLS
-- WebRTC getStats
+- natives Safari-HLS
+- WebRTC `getStats`
 
 ---
 
-## Event model
+## Eventmodell
 
-Player events use a versioned wire format.
+Player-Events nutzen ein versioniertes Wire-Format.
 
-Example:
+Beispiel:
 
 ```json
 {
@@ -245,7 +245,7 @@ Example:
 }
 ```
 
-Important concepts:
+Wichtige Konzepte:
 
 - `schema_version`
 - `project_id`
@@ -253,17 +253,17 @@ Important concepts:
 - `client_timestamp`
 - `server_received_at`
 - `sequence_number`
-- SDK name and version
+- SDK-Name und -Version
 
-The backend must handle schema evolution, time skew, rate limits, and invalid event batches explicitly.
+Das Backend muss Schema-Evolution, Time Skew, Rate Limits und ungültige Event-Batches explizit behandeln.
 
 ---
 
-## Metrics
+## Metriken
 
-Prometheus is used for aggregate metrics only.
+Prometheus wird ausschließlich für Aggregat-Metriken genutzt.
 
-Examples:
+Beispiele:
 
 ```text
 mtrace_playback_events_total
@@ -273,26 +273,26 @@ mtrace_dropped_events_total
 mtrace_active_sessions
 ```
 
-High-cardinality values such as `session_id`, `user_agent`, or `segment_url` must not be used as Prometheus labels.
+Hochkardinale Werte wie `session_id`, `user_agent` oder `segment_url` dürfen nicht als Prometheus-Labels verwendet werden.
 
-Per-session debugging should be modeled as traces or stored in a suitable event/session store.
+Per-Session-Debugging soll als Trace modelliert oder in einem geeigneten Event-/Session-Store abgelegt werden.
 
 ---
 
-## OpenTelemetry strategy
+## OpenTelemetry-Strategie
 
-m-trace is OpenTelemetry-native by design.
+m-trace ist von Beginn an OpenTelemetry-nativ.
 
-That means:
+Das bedeutet:
 
-- use existing OTel semantic conventions where possible
-- define media-specific attributes only where needed
-- avoid vendor-specific telemetry formats
-- keep session data trace-compatible
-- keep Prometheus focused on aggregates
-- prepare future correlation across ingest, origin, and player
+- bestehende OTel-Semantic-Conventions nutzen, wo möglich
+- media-spezifische Attribute nur dort definieren, wo nötig
+- vendor-spezifische Telemetrieformate vermeiden
+- Session-Daten trace-kompatibel halten
+- Prometheus auf Aggregate beschränken
+- spätere Korrelation über Ingest, Origin und Player vorbereiten
 
-A future player-session trace may look like this:
+Ein zukünftiger Player-Session-Trace könnte so aussehen:
 
 ```text
 Player Session Trace
@@ -306,9 +306,9 @@ Player Session Trace
 
 ---
 
-## Local development goal
+## Lokales Entwicklungsziel
 
-The intended developer experience is:
+Die geplante Developer Experience:
 
 ```bash
 git clone https://github.com/<owner>/m-trace.git
@@ -316,34 +316,34 @@ cd m-trace
 make dev
 ```
 
-Expected local services:
+Erwartete lokale Dienste:
 
-| Service          | Purpose                         |
-| ---------------- | ------------------------------- |
-| API              | event ingestion and session API |
-| Dashboard        | web UI and `/demo` player route |
-| MediaMTX         | local media server              |
-| FFmpeg generator | test stream                     |
-| Prometheus       | aggregate metrics               |
-| Grafana          | optional dashboards             |
-| OTel Collector   | optional telemetry pipeline     |
+| Dienst           | Zweck                            |
+| ---------------- | -------------------------------- |
+| API              | Event-Annahme und Session-API    |
+| Dashboard        | Web-UI und `/demo`-Player-Route  |
+| MediaMTX         | lokaler Media-Server             |
+| FFmpeg-Generator | Teststream                       |
+| Prometheus       | Aggregat-Metriken                |
+| Grafana          | optionale Dashboards             |
+| OTel Collector   | optionale Telemetrie-Pipeline    |
 
-This setup is not implemented yet.  
-It is the target for the first MVP.
+Dieses Setup ist noch nicht umgesetzt.  
+Es ist das Ziel des ersten MVP.
 
 ---
 
-## Backend technology spike
+## Backend-Technologie-Spike
 
-Before implementing the backend API, m-trace will run a short technology spike.
+Vor der Implementierung der Backend-API führt m-trace einen kurzen Technologie-Spike durch.
 
-Goal:
+Ziel:
 
 ```text
-Decide between Go and Micronaut for apps/api.
+Entscheidung zwischen Go und Micronaut für apps/api.
 ```
 
-Spike branches:
+Spike-Branches:
 
 ```text
 spike/go-api
@@ -356,168 +356,167 @@ Outcome:
 docs/adr/0001-backend-stack.md
 ```
 
-The selected stack becomes the foundation for `apps/api`.
+Der gewählte Stack wird Grundlage für `apps/api`.
+
+Detail-Spezifikation und Arbeitsplan:
+
+- `docs/spike/0001-backend-stack.md` — Spike-Spezifikation
+- `docs/plan-spike.md` — Implementierungsplan für den Spike
 
 ---
 
 ## Roadmap
 
-### v0.1.0 — OTel-native local demo
+### v0.1.0 — OTel-native lokale Demo
 
-- MediaMTX local setup
-- hls.js demo route
-- player event ingestion
-- basic session view
-- basic event view
-- Prometheus aggregate metrics
-- OpenTelemetry-compatible event model
+- MediaMTX-Lokal-Setup
+- hls.js-Demo-Route
+- Aufnahme von Player-Events
+- einfache Session-Ansicht
+- einfache Event-Ansicht
+- Prometheus-Aggregat-Metriken
+- OpenTelemetry-kompatibles Eventmodell
 
-### v0.2.0 — Publishable player SDK
+### v0.2.0 — Publizierbares Player-SDK
 
-- npm package
-- stable public API
-- hls.js adapter tests
-- event schema compatibility tests
-- batching and sampling
-- documented browser support
+- npm-Paket
+- stabile Public API
+- hls.js-Adapter-Tests
+- Event-Schema-Kompatibilitätstests
+- Batching und Sampling
+- dokumentierter Browser-Support
 
-### v0.3.0 — Stream analyzer
+### v0.3.0 — Stream-Analyzer
 
-- HLS manifest parsing
-- segment duration checks
-- target duration checks
-- standalone CLI foundation
+- HLS-Manifest-Parsing
+- Segment-Dauer-Checks
+- Target-Duration-Checks
+- Grundlage für eigenständige CLI
 
-### v0.4.0 — Advanced trace correlation
+### v0.4.0 — Erweiterte Trace-Korrelation
 
-- player session traces
-- optional Tempo integration
-- session timeline view
-- sampling strategy
+- Player-Session-Traces
+- optionale Tempo-Integration
+- Session-Timeline-Ansicht
+- Sampling-Strategie
 
-### v0.5.0 — Multi-protocol lab
+### v0.5.0 — Multi-Protokoll-Lab
 
-- DASH example
-- SRS example
-- extended MediaMTX examples
+- DASH-Beispiel
+- SRS-Beispiel
+- erweiterte MediaMTX-Beispiele
 
-### v0.6.0 — SRT health view
+### v0.6.0 — SRT-Health-Ansicht
 
-- SRT metrics
-- RTT, packet loss, retransmissions
-- link health dashboard
-- SRT troubleshooting docs
-
----
-
-## Browser support
-
-MVP browser support is intentionally narrow.
-
-| Environment                     | MVP status          |
-| ------------------------------- | ------------------- |
-| Chrome Desktop, current stable  | supported           |
-| Firefox Desktop, current stable | supported           |
-| Safari Desktop, current stable  | limited             |
-| Chromium-based browsers         | best effort         |
-| iOS Safari                      | not required in MVP |
-| Android Chrome                  | not required in MVP |
-| Smart-TV browsers               | out of scope        |
-| Embedded WebViews               | out of scope        |
-
-The MVP integration path is hls.js.  
-Native Safari HLS introspection is not a v0.1.0 goal.
+- SRT-Metriken
+- RTT, Packet Loss, Retransmissions
+- Link-Health-Dashboard
+- SRT-Troubleshooting-Doku
 
 ---
 
-## Security and privacy
+## Browser-Support
 
-m-trace should be safe by default for self-hosted environments.
+Der MVP-Browser-Support ist bewusst eng gefasst.
 
-MVP principles:
+| Umgebung                          | MVP-Status                  |
+| --------------------------------- | --------------------------- |
+| Chrome Desktop, aktuelle Stable   | unterstützt                 |
+| Firefox Desktop, aktuelle Stable  | unterstützt                 |
+| Safari Desktop, aktuelle Stable   | eingeschränkt               |
+| Chromium-basierte Browser         | best effort                 |
+| iOS Safari                        | im MVP nicht erforderlich   |
+| Android Chrome                    | im MVP nicht erforderlich   |
+| Smart-TV-Browser                  | nicht im Scope              |
+| Embedded WebViews                 | nicht im Scope              |
 
-- no secrets in the repository
-- no cookie-based telemetry ingestion
-- SDK requests use `credentials: "omit"` by default
-- allowed origins are configured per project
-- project tokens are treated as low-criticality browser tokens
-- rate limits are required
-- IP addresses should not be stored unnecessarily
-- user-agent data should be reducible or anonymized
-- GDPR-friendly operation must be possible
-
----
-
-## What m-trace is not
-
-m-trace is not:
-
-- a commercial QoE analytics replacement
-- an advertising analytics system
-- a DRM analytics platform
-- a CDN optimizer
-- a full multi-tenant SaaS platform
-- a replacement for MediaMTX, FFmpeg, Grafana, or Prometheus
-
-m-trace is a technical observability and diagnostics project for media streaming workflows.
+Der MVP-Integrationspfad ist hls.js.  
+Native Safari-HLS-Introspektion ist kein Ziel von v0.1.0.
 
 ---
 
-## Current status
+## Sicherheit und Datenschutz
 
-The project is in the planning and spike phase.
+m-trace soll für selbstgehostete Umgebungen standardmäßig sicher sein.
 
-Current documents:
+MVP-Prinzipien:
+
+- keine Secrets im Repository
+- keine cookie-basierte Telemetrie-Annahme
+- SDK-Requests nutzen standardmäßig `credentials: "omit"`
+- erlaubte Origins werden pro Projekt konfiguriert
+- Project-Tokens gelten als niedrig-kritische Browser-Tokens
+- Rate Limits sind verpflichtend
+- IP-Adressen sollen nicht unnötig gespeichert werden
+- User-Agent-Daten sollen reduzierbar oder anonymisierbar sein
+- GDPR-konformer Betrieb muss möglich sein
+
+---
+
+## Was m-trace nicht ist
+
+m-trace ist nicht:
+
+- ein Ersatz für kommerzielle QoE-Analytics
+- ein Werbe-Analytics-System
+- eine DRM-Analytics-Plattform
+- ein CDN-Optimizer
+- eine vollständige Multi-Tenant-SaaS-Plattform
+- ein Ersatz für MediaMTX, FFmpeg, Grafana oder Prometheus
+
+m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
+
+---
+
+## Aktueller Stand
+
+Das Projekt befindet sich in der Planungs- und Spike-Phase.
+
+Aktuelle Dokumente:
 
 ```text
+docs/lastenheft.md
 docs/spike/0001-backend-stack.md
-docs/adr/0001-backend-stack.md
+docs/plan-spike.md
 ```
 
-The first major implementation decision is the backend stack.
+Die erste große Implementierungsentscheidung ist der Backend-Stack. Sie wird im ADR `docs/adr/0001-backend-stack.md` festgehalten (entsteht).
 
 ---
 
-## License
+## Lizenz
 
-License is not finalized yet.
-
-Recommended options:
-
-- Apache-2.0
-- MIT
-
-Apache-2.0 is preferred if long-term open-source adoption and patent clarity are important.
+[MIT License](LICENSE).
 
 ---
 
-## Contributing
+## Mitarbeit
 
-Contributions are not open yet because the repository is still in the initial planning phase.
+Beiträge sind noch nicht offen, da sich das Repository in der initialen Planungsphase befindet.
 
-Planned contribution areas:
+Geplante Bereiche für Beiträge:
 
-- player SDK
-- hls.js telemetry
-- backend API
-- MediaMTX examples
-- OpenTelemetry modeling
-- Prometheus/Grafana dashboards
-- HLS/DASH analyzer
-- SRT metrics
+- Player-SDK
+- hls.js-Telemetrie
+- Backend-API
+- MediaMTX-Beispiele
+- OpenTelemetry-Modellierung
+- Prometheus-/Grafana-Dashboards
+- HLS-/DASH-Analyzer
+- SRT-Metriken
 
 ---
 
 ## Name
 
-`m-trace` means:
+`m-trace` steht für:
 
 ```text
 Media Trace
 ```
 
-The project goal is simple:
+Das Projektziel ist simpel:
 
 ```text
-Trace media streams from ingest to player.
+Media-Streams von Ingest bis Player nachverfolgen.
 ```
