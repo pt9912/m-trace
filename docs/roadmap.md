@@ -2,7 +2,7 @@
 
 > **Stand**: 2026-04-28  
 > **Phase**: Post-Spike, Pre-MVP `0.1.0`  
-> **Bezug**: `docs/lastenheft.md` §13 (Release-Plan, normativ),
+> **Bezug**: `docs/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `docs/adr/0001-backend-stack.md` (Backend-Entscheidung),
 > `docs/plan-spike.md` SP-41 (Anschluss an MVP),
 > `docs/spike/backend-stack-results.md` (Spike-Protokoll).
