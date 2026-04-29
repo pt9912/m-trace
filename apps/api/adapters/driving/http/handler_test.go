@@ -50,7 +50,7 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Serv
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
 	publisher := metrics.NewPrometheusPublisher()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), clock,
+		resolver, limiter, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), clock,
 	)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	router := apihttp.NewRouter(uc, publisher.Handler(), nil, logger)
@@ -81,7 +81,7 @@ func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
 	publisher := metrics.NewPrometheusPublisher()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, unlimitedLimiter{}, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), time.Now,
+		resolver, unlimitedLimiter{}, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
 	)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	router := apihttp.NewRouter(uc, publisher.Handler(), nil, logger)

@@ -83,6 +83,17 @@ func (s *stubAnalyzer) AnalyzeBatch(_ context.Context, _ []domain.PlaybackEvent)
 	return nil
 }
 
+// stubSequencer liefert deterministische, monoton steigende
+// ingest_sequence-Werte ab 1 für die Use-Case-Tests.
+type stubSequencer struct {
+	last int64
+}
+
+func (s *stubSequencer) Next() int64 {
+	s.last++
+	return s.last
+}
+
 func validBatch() driving.BatchInput {
 	return driving.BatchInput{
 		SchemaVersion: application.SupportedSchemaVersion,
@@ -99,22 +110,23 @@ func validBatch() driving.BatchInput {
 	}
 }
 
-func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer) {
+func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer, *stubSequencer) {
 	limiter := &stubLimiter{}
 	repo := &stubRepo{}
 	metrics := &spyMetrics{}
 	telemetry := &stubTelemetry{}
 	analyzer := &stubAnalyzer{}
+	sequencer := &stubSequencer{}
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		stubProjectResolver{}, limiter, repo, metrics, telemetry, analyzer,
+		stubProjectResolver{}, limiter, repo, metrics, telemetry, analyzer, sequencer,
 		func() time.Time { return time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC) },
 	)
-	return uc, limiter, repo, metrics, telemetry, analyzer
+	return uc, limiter, repo, metrics, telemetry, analyzer, sequencer
 }
 
 func TestHappyPath(t *testing.T) {
 	t.Parallel()
-	uc, _, repo, metrics, telemetry, analyzer := newUseCase()
+	uc, _, repo, metrics, telemetry, analyzer, _ := newUseCase()
 	res, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -139,6 +151,32 @@ func TestHappyPath(t *testing.T) {
 	if analyzer.calls != 0 {
 		t.Errorf("expected StreamAnalyzer.AnalyzeBatch=0 in 0.1.0 (slot-only), got %d", analyzer.calls)
 	}
+	// IngestSequence: erstes Event muss den ersten Sequencer-Wert (1) tragen.
+	if got := repo.appended[0].IngestSequence; got != 1 {
+		t.Errorf("expected IngestSequence=1 for first event, got %d", got)
+	}
+}
+
+// TestIngestSequenceMonotonic verifiziert, dass mehrere Events einer
+// Batch jeweils einen monoton steigenden ingest_sequence-Wert tragen.
+// plan-0.1.0.md §5.1: "monoton steigender Counter pro apps/api-Prozess".
+func TestIngestSequenceMonotonic(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, _, _, _, _ := newUseCase()
+	in := validBatch()
+	template := in.Events[0]
+	in.Events = []driving.EventInput{template, template, template}
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(repo.appended) != 3 {
+		t.Fatalf("expected 3 appended events, got %d", len(repo.appended))
+	}
+	for i, ev := range repo.appended {
+		if got, want := ev.IngestSequence, int64(i+1); got != want {
+			t.Errorf("event[%d].IngestSequence=%d want %d", i, got, want)
+		}
+	}
 }
 
 // TestTelemetryReceivedBeforeAuth verifiziert, dass BatchReceived auch
@@ -146,7 +184,7 @@ func TestHappyPath(t *testing.T) {
 // nicht validated — siehe Telemetry-Port-Doc).
 func TestTelemetryReceivedBeforeAuth(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, telemetry, _ := newUseCase()
+	uc, _, _, _, telemetry, _, _ := newUseCase()
 	in := validBatch()
 	in.AuthToken = "wrong-token"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -160,7 +198,7 @@ func TestTelemetryReceivedBeforeAuth(t *testing.T) {
 
 func TestUnauthorizedToken(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _ := newUseCase()
+	uc, _, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.AuthToken = "wrong-token"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -171,7 +209,7 @@ func TestUnauthorizedToken(t *testing.T) {
 
 func TestSchemaVersionMismatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _ := newUseCase()
+	uc, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	in.SchemaVersion = "2.0"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -185,7 +223,7 @@ func TestSchemaVersionMismatch(t *testing.T) {
 
 func TestEmptyBatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _ := newUseCase()
+	uc, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events = nil
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -201,7 +239,7 @@ func TestEmptyBatch(t *testing.T) {
 
 func TestBatchTooLarge(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _ := newUseCase()
+	uc, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	template := in.Events[0]
 	in.Events = make([]driving.EventInput, application.MaxBatchSize+1)
@@ -219,7 +257,7 @@ func TestBatchTooLarge(t *testing.T) {
 
 func TestInvalidEventMissingField(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _ := newUseCase()
+	uc, _, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events[0].EventName = ""
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -230,7 +268,7 @@ func TestInvalidEventMissingField(t *testing.T) {
 
 func TestInvalidEventBadTimestamp(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _ := newUseCase()
+	uc, _, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events[0].ClientTimestamp = "not-a-timestamp"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -241,7 +279,7 @@ func TestInvalidEventBadTimestamp(t *testing.T) {
 
 func TestProjectIDTokenMismatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _ := newUseCase()
+	uc, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events[0].ProjectID = "other-project"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -256,7 +294,7 @@ func TestProjectIDTokenMismatch(t *testing.T) {
 
 func TestRateLimited(t *testing.T) {
 	t.Parallel()
-	uc, limiter, _, metrics, _, _ := newUseCase()
+	uc, limiter, _, metrics, _, _, _ := newUseCase()
 	limiter.deny = true
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
 	if !errors.Is(err, domain.ErrRateLimited) {
@@ -269,7 +307,7 @@ func TestRateLimited(t *testing.T) {
 
 func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	t.Parallel()
-	uc, _, repo, metrics, _, _ := newUseCase()
+	uc, _, repo, metrics, _, _, _ := newUseCase()
 	repo.failNext = true
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
 	if err == nil {

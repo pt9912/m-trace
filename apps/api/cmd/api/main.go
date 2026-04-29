@@ -62,9 +62,10 @@ func main() {
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
 	analyzer := streamanalyzer.NewNoopStreamAnalyzer()
+	sequencer := persistence.NewInMemoryIngestSequencer()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, otelTelemetry, analyzer, time.Now,
+		resolver, limiter, repo, publisher, otelTelemetry, analyzer, sequencer, time.Now,
 	)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)

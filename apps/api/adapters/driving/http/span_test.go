@@ -119,7 +119,7 @@ func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) 
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), time.Now,
+		resolver, limiter, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
 	)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	tracer := tp.Tracer("test")

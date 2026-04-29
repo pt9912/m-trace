@@ -9,12 +9,19 @@ import "time"
 // PlaybackEvent is a normalized player-side event accepted by the API.
 // The wire-format counterpart lives in
 // hexagon/port/driving (BatchInput / EventInput).
+//
+// IngestSequence ist ein serverseitig gesetzter Pflicht-Counter
+// (plan-0.1.0.md §5.1): monoton steigend pro apps/api-Prozess, vor
+// Append im Use Case gesetzt. Begründet die Eindeutigkeit der
+// Pagination-Sortierung auch bei identischen Client-Feldern und
+// gleichen ServerReceivedAt-Werten.
 type PlaybackEvent struct {
 	EventName        string
 	ProjectID        string
 	SessionID        string
 	ClientTimestamp  time.Time
 	ServerReceivedAt time.Time
+	IngestSequence   int64
 	SequenceNumber   *int64
 	SDK              SDKInfo
 }

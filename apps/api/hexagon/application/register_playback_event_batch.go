@@ -24,13 +24,14 @@ const MaxBatchSize = 100
 // RegisterPlaybackEventBatchUseCase validates and persists a batch of
 // player events. It implements driving.PlaybackEventInbound.
 type RegisterPlaybackEventBatchUseCase struct {
-	projects  driven.ProjectResolver
-	limiter   driven.RateLimiter
-	events    driven.EventRepository
-	metrics   driven.MetricsPublisher
-	telemetry driven.Telemetry
-	analyzer  driven.StreamAnalyzer
-	now       func() time.Time
+	projects   driven.ProjectResolver
+	limiter    driven.RateLimiter
+	events     driven.EventRepository
+	metrics    driven.MetricsPublisher
+	telemetry  driven.Telemetry
+	analyzer   driven.StreamAnalyzer
+	sequencer  driven.IngestSequencer
+	now        func() time.Time
 }
 
 // NewRegisterPlaybackEventBatchUseCase wires the use case with its
@@ -38,6 +39,8 @@ type RegisterPlaybackEventBatchUseCase struct {
 // F-22-Architektur-Vorbereitung (siehe plan-0.1.0.md §5.1, F-22-Item):
 // der Slot wird gesetzt, AnalyzeBatch jedoch erst ab 0.3.0 produktiv
 // aufgerufen; bis dahin trägt main.go einen NoopStreamAnalyzer ein.
+// sequencer liefert die serverseitige ingest_sequence pro Event vor
+// dem Append (plan-0.1.0.md §5.1).
 func NewRegisterPlaybackEventBatchUseCase(
 	projects driven.ProjectResolver,
 	limiter driven.RateLimiter,
@@ -45,6 +48,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 	metrics driven.MetricsPublisher,
 	telemetry driven.Telemetry,
 	analyzer driven.StreamAnalyzer,
+	sequencer driven.IngestSequencer,
 	now func() time.Time,
 ) *RegisterPlaybackEventBatchUseCase {
 	if now == nil {
@@ -57,6 +61,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 		metrics:   metrics,
 		telemetry: telemetry,
 		analyzer:  analyzer,
+		sequencer: sequencer,
 		now:       now,
 	}
 }
@@ -139,6 +144,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 			SessionID:        e.SessionID,
 			ClientTimestamp:  ts,
 			ServerReceivedAt: now,
+			IngestSequence:   u.sequencer.Next(),
 			SequenceNumber:   e.SequenceNumber,
 			SDK: domain.SDKInfo{
 				Name:    e.SDK.Name,
