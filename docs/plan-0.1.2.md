@@ -64,9 +64,11 @@ DoD:
 
 DoD:
 
-- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` mit metrik-spezifischen Series-Queries:
-    - `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
+- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability`:
+    - **Setup-Pflicht**: vor dem Smoke-Test muss eine Mindestdaten-Lage im Prometheus erzeugt sein, sonst geben die Queries leer zurück und der Cardinality-Check besteht trivial (false positive). Konkret: Compose-Stack läuft, Demo-SDK auf der `/demo`-Route hat mindestens 5 Player-Sessions mit jeweils ≥ 10 Events erzeugt **oder** ein equivalenter `curl`-Smoke-Lauf hat mindestens 50 Events in mindestens 5 Sessions an `/api/playback-events` gesendet. Mindestens ein Prometheus-Scrape-Intervall (Default 15 s) muss vergangen sein.
+    - `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
     - Pro Mindestmetrik aus Lastenheft §7.9: `curl -g 'http://localhost:9090/api/v1/labels?match[]={__name__="mtrace_playback_events_total"}'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10. `match[]` benötigt einen vollständigen Vektor-Selector (`{__name__="..."}`); der nackte Metrikname ist zwischen Prometheus-Versionen nicht zuverlässig akzeptiert.
+    - Zusätzlich: `mtrace_playback_events_total` muss einen Wert > 0 haben (`curl 'http://localhost:9090/api/v1/query?query=mtrace_playback_events_total'`); diente als Sanity-Check, dass der Counter überhaupt aktiv inkrementiert wurde.
     - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
 - [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch, abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, `plan-0.1.1.md` §3). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 

@@ -2,7 +2,14 @@
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).  
 > **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
-> **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) — Tranchen 0, 0a, 0b müssen vollständig (`[x]`) sein; §5.1–§5.4 inklusive Release-Akzeptanzkriterien `0.1.0` (§5.3) und übergreifender DoD `0.1.0` (§5.4) abgeschlossen, insbesondere CI-Pflicht-Item. **Tranche 0c (Lastenheft-Patches) ist konstruktionsbedingt fortlaufend offen**; das Vorgänger-Gate verlangt nur, dass alle bis zum `0.1.1`-Start eingetragenen §4a.x-Items entweder `[x]` oder explizit als nicht-blockierend markiert sind — nicht den Abschluss der Tranche selbst.  
+> **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
+>
+> - Tranche 0 (Pre-MVP-Vorbereitung): `[x]` — bereits heute erfüllt.
+> - Tranchen 0a (Architektur- und Plan-Doku) und 0b (Spike-Code-Korrekturen): alle DoD-Items `[x]`. Heute laufende `[ ]`-Items werden im Verlauf der `0.1.0`-Implementierung geschlossen — sie sind Stand des Plans, nicht des Gates.
+> - §5.1–§5.4 (Tranche 1 — Backend-Erweiterung, Compose-Lab Core, RAKs, Übergreifende DoD): alle DoD-Items `[x]`, insbesondere CI-Pflicht-Item aus §5.4.
+> - **Tranche 0c (Lastenheft-Patches)**: konstruktionsbedingt fortlaufend offen; das Gate verlangt nur, dass alle bis zum `0.1.1`-Start eingetragenen §4a.x-Items entweder `[x]` oder explizit als nicht-blockierend markiert sind — nicht den Abschluss der Tranche selbst.
+>
+> Konsequenz: solange `0.1.0` nicht released ist, hat dieses Plan-Dokument Status ⬜ in Tranchen-Übersicht und Roadmap §3. Implementierungsarbeit an `0.1.1`-Items beginnt erst, wenn das Gate erfüllt ist.  
 > **Nachfolger**: [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -81,7 +88,9 @@ DoD:
 - [ ] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht.
 - [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
 - [ ] API-Client mit typisierten Anfragen.
-- [ ] **API-Origin-Strategie**: im **Vite-Dev-Mode** nutzt das Dashboard einen SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS für GET-Routen entfällt; im **Compose-Production-Build** läuft das Dashboard über getrennten Origin und nutzt die in `plan-0.1.0.md` §5.1 definierten CORS-Headers für GET-Routen (Dashboard-Lese-Pfad).
+- [ ] **API-Origin-Strategie** für beide Endpoint-Klassen aus `plan-0.1.0.md` §5.1:
+    - **GET-Routen** (Dashboard-API-Client): im **Vite-Dev-Mode** SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS entfällt; im **Compose-Production-Build** über getrennten Origin mit den `0.1.0`-CORS-Headers für den Dashboard-Lese-Pfad.
+    - **POST `/api/playback-events`** (Player-SDK auf der `/demo`-Route): immer Cross-Origin gegen `apps/api`, weil das SDK projektunabhängig konfigurierbar sein soll. Nutzt die `0.1.0`-CORS-Headers für den Player-SDK-Pfad inklusive Variante-B-Origin-Validierung (Preflight gegen globale Allowed-Origins-Union, POST-Validierung Origin↔`project_id`). Vite-Dev-Proxy ist hier **kein** Ersatz, weil das SDK unabhängig vom Dashboard ausgeliefert werden können muss; im Dev-Mode greift dasselbe CORS-Setup.
 - [ ] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `docs/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`).
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
 
