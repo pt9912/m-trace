@@ -149,11 +149,11 @@ DoD:
 DoD:
 
 - [x] Skelett-Datei angelegt mit §0..§5-Sektionen und Bezug-Verweisen, alle Inhalts-Sections als „TODO"-Platzhalter (`c86e021`). Referenz-Anker für `plan-0.1.2.md` §4.1 (RAK-8-Refinement) ist damit gesetzt.
-- [ ] Quickstart `make dev` dokumentieren (Bezug AK-1, AK-2).
-- [ ] Voraussetzungen pro Plattform (Linux/macOS/Windows-WSL).
-- [ ] Compose-Stack-Topologie dokumentieren.
-- [ ] Test-/Lint-/Coverage-Workflows lokal.
-- [ ] Roadmap §2 Schritt 7 auf ✅.
+- [x] Quickstart `make dev` dokumentieren (Bezug AK-1, AK-2) (`<dieser Commit>`).
+- [x] Voraussetzungen pro Plattform (Linux/macOS/Windows-WSL) (`<dieser Commit>`).
+- [x] Compose-Stack-Topologie dokumentieren (`<dieser Commit>`).
+- [x] Test-/Lint-/Coverage-Workflows lokal (`<dieser Commit>`).
+- [x] Roadmap §2 Schritt 7 auf ✅ (`<dieser Commit>`).
 
 ---
 
