@@ -2,11 +2,11 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 0.7.0  
-**Status:** Entwurf  
+**Version:** 1.0.0  
+**Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
-**Primärer Stack:** Go oder Micronaut nach technischem Spike, SvelteKit, TypeScript, Docker, OpenTelemetry  
+**Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.  
 
 ---
 
@@ -189,7 +189,7 @@ Der Fokus liegt auf:
 - hexagonaler Architektur
 - lokaler Entwicklungsumgebung
 - lauffähigem Docker-Compose-Setup
-- Backend-API in Go oder Micronaut nach technischem Spike
+- Backend-API in Go (siehe `docs/adr/0001-backend-stack.md`)
 - SvelteKit Dashboard
 - TypeScript Player-SDK
 - einfachem Stream Analyzer
@@ -322,7 +322,7 @@ hexagon → adapters
 
 ### 7.3 API-Anwendung
 
-Die API-Anwendung muss unter `apps/api` liegen. Die finale Backend-Technologie wird nach einem technischen Spike entschieden.
+Die API-Anwendung muss unter `apps/api` liegen. Backend-Technologie ist Go gemäß `docs/adr/0001-backend-stack.md`; Spec in §10.1.
 
 #### Hauptaufgaben
 
@@ -689,11 +689,11 @@ Die finale Aufteilung ist erst sinnvoll, wenn echte Anforderungen für Mehrbenut
 
 | App | Zweck | MVP-Status | Technologie |
 |---|---|---|---|
-| `apps/api` | zentrale Backend-API | Muss | Go oder Micronaut, nach Spike |
+| `apps/api` | zentrale Backend-API | Muss | Go (ADR-0001) |
 | `apps/dashboard` | Web-Dashboard | Muss | SvelteKit |
 | `apps/demo-player` | SDK-Referenz und Testplayer | Nicht MVP, zunächst `/demo`-Route | SvelteKit oder Vite |
-| `apps/ingest-gateway` | Stream-Key, Ingest und Routing | Kann | Go oder Micronaut, nach Spike |
-| `apps/analyzer-api` | separater Analyse-Service | Kann | Micronaut oder Node.js |
+| `apps/ingest-gateway` | Stream-Key, Ingest und Routing | Kann | Go (analog ADR-0001) |
+| `apps/analyzer-api` | separater Analyse-Service | Kann | Go oder Node.js |
 | `apps/control-plane` | spätere Verwaltungsplattform | Später | offen |
 
 ---
@@ -1237,9 +1237,7 @@ Anforderungen:
 
 ## 9. Technologie-Strategie und Architekturentscheidungen
 
-Die ursprüngliche Präferenz für Java/Micronaut ist technisch machbar, aber im Streaming-Observability-Umfeld nicht automatisch die strategisch stärkste Wahl.
-
-Viele relevante Komponenten und Communities in diesem Bereich sind stark durch Go, Rust und TypeScript geprägt:
+Streaming-Observability-relevante Komponenten und Communities sind stark durch Go, Rust und TypeScript geprägt:
 
 - Media-Server und Streaming-Infrastruktur häufig in Go
 - OpenTelemetry Collector in Go
@@ -1248,26 +1246,16 @@ Viele relevante Komponenten und Communities in diesem Bereich sind stark durch G
 
 ### 9.1 Backend-Entscheidung
 
-Für den MVP gibt es zwei realistische Optionen:
+**Entschieden: Go.** Die Wahl ist in `docs/adr/0001-backend-stack.md` (Status: Accepted) festgehalten und beruht auf zwei Mini-Prototypen mit identischem Muss-Scope (`docs/spike/backend-api-contract.md`); das Spike-Protokoll liegt in `docs/spike/backend-stack-results.md`.
+
+Historischer Tradeoff (Stand vor dem Spike):
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
-| Go Backend | passt kulturell gut zu OTel, MediaMTX und Infrastruktur-Tools | weniger passend zur ursprünglichen Micronaut-Präferenz |
-| JVM Backend (Micronaut) | vertrauter JVM-Stack, gute DI, gute Testbarkeit | kleinerer Contributor-Pool im Streaming-OSS-Umfeld |
+| **Go** ✅ | passt kulturell gut zu OTel, MediaMTX und Infrastruktur-Tools | — |
+| JVM (Micronaut) | vertrauter JVM-Stack, gute DI, gute Testbarkeit | kleinerer Contributor-Pool im Streaming-OSS-Umfeld |
 
-Empfehlung für OSS-Adoption:
-
-```text
-Go für neue m-trace-Core-Services bevorzugen.
-```
-
-Pragmatische Alternative:
-
-```text
-Micronaut bleibt erlaubt, wenn die persönliche Umsetzungsgeschwindigkeit wichtiger ist als maximale OSS-Adoption.
-```
-
-Das Lastenheft muss diese Entscheidung bewusst offenhalten, bis der erste technische Spike abgeschlossen ist.
+Konkrete Stack-Spezifikation in §10.1.
 
 ### 9.2 Hexagonale Architektur
 
@@ -1323,34 +1311,31 @@ Für den MVP bedeutet das:
 
 ### 10.1 Backend
 
-Die Backend-Technologie ist bis zum technischen Spike bewusst offen.
+Backend-Technologie: **Go**, entschieden in `docs/adr/0001-backend-stack.md`.
 
-Zulässige Optionen für den MVP:
+| Bereich | Festlegung |
+|---|---|
+| Sprache | Go 1.22 oder höher |
+| HTTP | Standard-Library `net/http` |
+| Metriken | `prometheus/client_golang` |
+| Tracing | `go.opentelemetry.io/otel` |
+| Logging | `log/slog`, JSON-Formatter |
+| Build/Runtime | Distroless-static (`gcr.io/distroless/static-debian12:nonroot`) |
+| Linting | `golangci-lint` mit Default-Lintern (`govet`, `errcheck`, `staticcheck`, `unused`, `ineffassign`) |
+| Tests | `testing` + `httptest`, keine externen Frameworks |
+| Workflow | Docker-only (`docker build --target {test,lint,build,runtime}`); lokales Go optional |
+| Modulpfad | `github.com/pt9912/m-trace/apps/api` |
 
-| Option | Sprache | Framework/Ansatz |
-|---|---|---|
-| Go | Go | Standard-Library, Chi, Fiber oder vergleichbar |
-| JVM | Java oder Kotlin | Micronaut oder vergleichbar |
+Mindestanforderungen an die Implementierung:
 
-Entscheidungskriterien:
-
-- Umsetzungsgeschwindigkeit
-- Contributor-Fit im Streaming-/Observability-Umfeld
-- OpenTelemetry-Integration
-- Docker-Build-Komplexität
-- Testbarkeit
-- langfristige Wartbarkeit
-
-Bis zur finalen Entscheidung müssen Architektur- und Verzeichnisbeispiele technologie-neutral verstanden werden.
-
-Mindestanforderungen unabhängig vom Stack:
-
-- HTTP API für Event-Ingest
+- HTTP API für Event-Ingest gemäß `docs/spike/backend-api-contract.md` (frozen)
 - Health Check
-- strukturierte Logs
+- strukturierte Logs (`slog`)
 - OpenTelemetry-kompatibles Eventmodell
-- klare Trennung von Domain, Application und Adapters
+- klare Trennung von Domain, Application und Adapters (Hexagon-Layout `hexagon/{domain,application,port/{driving,driven}}`, `adapters/{driving,driven}/...`)
 - Containerisierung per Docker
+
+Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe `docs/roadmap.md` §4 Folge-ADR).
 
 
 ### 10.2 Frontend
@@ -1698,39 +1683,32 @@ Große Plattform-Betreiber sollen erst später adressiert werden.
 | Kennung | Status | Entscheidung |
 |---|---|---|
 | OE-1 | offen | Projektlizenz: MIT oder Apache-2.0 |
-| OE-2 | offen | Backend-Technologie final: Go oder Micronaut nach technischem Spike |
+| OE-2 | resolved | Backend-Technologie final: **Go** (siehe `docs/adr/0001-backend-stack.md`) |
 | OE-3 | offen | Datenhaltung im MVP: rein In-Memory oder SQLite/PostgreSQL |
 | OE-4 | offen | Frontend-Styling: eigenes CSS, Tailwind oder UI-Library |
 | OE-5 | offen | Live-Updates: Polling, WebSocket oder Server-Sent Events |
 | OE-6 | offen | CI-Zielplattformen |
 | OE-7 | offen | Release-Konvention |
 | OE-8 | offen | Paketnamen für npm |
-| OE-9 | offen | Go Module Name oder JVM Package Namespace final |
+| OE-9 | resolved | Go Module Name final: **`github.com/pt9912/m-trace/apps/api`** |
 
 ---
 
 ## 17. Erste empfohlene Umsetzungsschritte
 
-### Schritt 0: Backend-Technologie-Spike
+### Schritt 0: Backend-Technologie-Spike — abgeschlossen
 
-Vor der eigentlichen MVP-Implementierung muss die Backend-Technologie entschieden werden.
+Backend-Technologie wurde durch zwei lauffähige Mini-Prototypen (Go,
+Micronaut) im identischen Muss-Scope entschieden. Dokumentation:
 
-Vorgehen:
+- Spike-Spezifikation: `docs/spike/0001-backend-stack.md`
+- Implementierungsplan: `docs/plan-spike.md`
+- API-Kontrakt (frozen): `docs/spike/backend-api-contract.md`
+- Spike-Protokoll: `docs/spike/backend-stack-results.md`
+- Entscheidung: `docs/adr/0001-backend-stack.md` (Status: Accepted) — **Go**
 
-- Branch `spike/go-api`
-- Branch `spike/micronaut-api`
-- identischer Mini-Scope in beiden Branches:
-  - `POST /api/playback-events`
-  - In-Memory Event Repository
-  - strukturierte Logs
-  - einfacher Health Check
-  - OpenTelemetry Export oder vorbereiteter OTLP-Pfad
-  - Dockerfile
-- Entscheidung dokumentieren in `docs/adr/0001-backend-stack.md`
-
-Akzeptanzkriterium:
-
-Die Entscheidung wird nicht theoretisch getroffen, sondern anhand zweier lauffähiger Mini-Prototypen.
+Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
+(siehe `docs/roadmap.md` §1).
 
 ---
 
@@ -1745,7 +1723,7 @@ Die Entscheidung wird nicht theoretisch getroffen, sondern anhand zweier lauffä
 
 ### Schritt 2: API-Grundgerüst
 
-- Backend-App unter `apps/api`, in Go oder Micronaut nach technischem Spike
+- Backend-App unter `apps/api` in Go (siehe `docs/adr/0001-backend-stack.md`)
 - Hexagon-Struktur anlegen
 - Domain-Modelle für StreamSession und PlaybackEvent
 - Use Case `RegisterPlaybackEventUseCase`
