@@ -273,7 +273,7 @@ m-trace/
 
 ### 5.1 Event-Ingest
 
-Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) (Schritte 1 und 2 im HTTP-Adapter, Schritte 2..8 im Use Case):
+Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) (Schritte 1 und 2 im HTTP-Adapter, Schritte 3..10 im Use Case):
 
 Akteure:
 
@@ -298,13 +298,13 @@ sequenceDiagram
     participant Metrics
 
     Browser->>HTTP: POST /api/playback-events
-    Note over HTTP: Step 1 — Body ≤ 256 KB<br/>Step 2 — X-MTrace-Token vorhanden<br/>Parse JSON → BatchInput
+    Note over HTTP: Step 1 — X-MTrace-Token vorhanden<br/>Step 2 — Body ≤ 256 KB<br/>Parse JSON → BatchInput
     HTTP->>UseCase: RegisterPlaybackEventBatch(in)
     UseCase->>Auth: ResolveByToken(token)
     Auth-->>UseCase: Project
     UseCase->>Rate: Allow(projectID, n)
     Rate-->>UseCase: ok
-    Note over UseCase: Step 4 — schema_version == "1.0"<br/>Step 5 — Batch-Form (1..100)<br/>Step 6 — Event-Pflichtfelder<br/>Step 7 — project_id ≡ Token-Projekt
+    Note over UseCase: Step 5 — schema_version == "1.0"<br/>Step 6/7 — Batch-Form (1..100)<br/>Step 8 — Event-Pflichtfelder<br/>Step 9 — project_id ≡ Token-Projekt
     UseCase->>Repo: Append(events)
     Repo-->>UseCase: ok
     UseCase->>Metrics: EventsAccepted(n)
@@ -312,24 +312,26 @@ sequenceDiagram
     HTTP-->>Browser: 202 Accepted
 ```
 
-Schritt-Nummerierung (1..8) entspricht dem API-Kontrakt §5; Schritte 1 und 2 laufen im HTTP-Adapter, Schritt 2 (Auth-Token) bis Schritt 8 (Persistenz) im Use Case.
+Schritt-Nummerierung (1..10) entspricht dem API-Kontrakt §5; Schritte 1 (Auth-Header-Presence) und 2 (Body-Größe) laufen im HTTP-Adapter, Schritt 3 (Token-Auflösung) bis Schritt 10 (Erfolg) im Use Case. Auth steht bewusst **vor** dem Body-Read, damit unauthentifizierte Requests einen Fast-Reject-Pfad haben.
 
 Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut Spike-Spec §6.10:
 
 | Stufe | Fehler | Status | Counter | Geprüft in |
 |---|---|---|---|---|
-| Body | Größe > 256 KB | 413 | — (HTTP) | HTTP-Adapter |
-| Auth-Header | fehlt | 401 | — (HTTP) | HTTP-Adapter |
-| Auth-Token | Token unbekannt | 401 | — (Adapter-Fehler durchgereicht) | Use Case Step 2 |
-| Rate-Limit | Budget aufgebraucht | 429 + `Retry-After` | `mtrace_rate_limited_events_total` | Use Case Step 3 |
-| schema_version | ≠ `"1.0"` | 400 | `mtrace_invalid_events_total` | Use Case Step 4 |
-| Batch-Form | leer | 422 | `mtrace_invalid_events_total` (n=0) | Use Case Step 5 |
-| Batch-Größe | > 100 Events | 422 | `mtrace_invalid_events_total` | Use Case Step 5 |
-| Event-Felder | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` | Use Case Step 6 |
-| Token-Bindung | `project_id` ≠ Token-Projekt | 401 | `mtrace_invalid_events_total` | Use Case Step 7 |
-| Persistenz | Repository-Fehler | 500 | `mtrace_dropped_events_total` | Use Case Step 8 |
+| Auth-Header | fehlt | 401 | — (HTTP) | HTTP-Adapter Step 1 |
+| Body | Größe > 256 KB (mit Auth-Header) | 413 | — (HTTP) | HTTP-Adapter Step 2 |
+| Auth-Token | Token unbekannt | 401 | — (Adapter-Fehler durchgereicht) | Use Case Step 3 |
+| Rate-Limit | Budget aufgebraucht | 429 + `Retry-After` | `mtrace_rate_limited_events_total` | Use Case Step 4 |
+| schema_version | ≠ `"1.0"` | 400 | `mtrace_invalid_events_total` | Use Case Step 5 |
+| Batch-Form | leer | 422 | `mtrace_invalid_events_total` (n=0) | Use Case Step 6 |
+| Batch-Größe | > 100 Events | 422 | `mtrace_invalid_events_total` | Use Case Step 7 |
+| Event-Felder | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` | Use Case Step 8 |
+| Token-Bindung | `project_id` ≠ Token-Projekt | 401 | `mtrace_invalid_events_total` | Use Case Step 9 |
+| Persistenz | Repository-Fehler | 500 | `mtrace_dropped_events_total` | Use Case Step 10 |
 
-Auth-Pfade rufen den `MetricsPublisher` bewusst nicht auf: Step 2 (`ResolveByToken`) reicht den Adapter-Fehler unverändert durch, und die HTTP-seitige Header-Prüfung läuft komplett im Adapter, ohne den Use Case zu erreichen. Token-Bindung in Step 7 zählt dagegen als Validierungsfehler und erhöht `mtrace_invalid_events_total`.
+Auth-Pfade rufen den `MetricsPublisher` bewusst nicht auf: Step 3 (`ResolveByToken`) reicht den Adapter-Fehler unverändert durch, und die HTTP-seitige Header-Prüfung läuft komplett im Adapter, ohne den Use Case zu erreichen. Token-Bindung in Step 9 zählt dagegen als Validierungsfehler und erhöht `mtrace_invalid_events_total`.
+
+Hinweis zur Numerierung: Die Doc-Step-Nummern folgen dem API-Kontrakt §5 (1..10). Der Code in `apps/api/hexagon/application/register_playback_event_batch.go` kommentiert seine Use-Case-Branches mit den ursprünglichen Spike-Nummern 2..8 (Step 2 = Auth-Token, …, Step 8 = Persist + Accept) — das ist historisch und wird beim nächsten Refactor angeglichen.
 
 ### 5.2 Metrics-Pfad
 

@@ -1,9 +1,12 @@
 # Backend-API-Kontrakt — Spike
 
-> **Status**: Frozen ab dem Merge dieser Datei nach `main`.  
+> **Status**: Frozen während Spike-Vergleich; nach ADR-0001 (Accepted)
+> ist Post-Spike-Pflege erlaubt — Änderungen werden im Commit-Body
+> begründet und aus den Pflichttests in §11 ableitbar gemacht.  
 > **Bezug**: `docs/spike/0001-backend-stack.md` §6, `docs/plan-spike.md` §7.1, §12.3.  
-> **Änderungen**: nur synchron in beiden Prototypen, mit Eintrag im
-> Spike-Protokoll `docs/spike/backend-stack-results.md` (siehe Plan §4.1).
+> **Änderungen**: nur synchron mit dem Code in `apps/api/`; während
+> des Spikes mussten beide Prototypen identisch sein, jetzt führt der
+> Sieger-Code (`apps/api`) den Kontrakt.
 
 Dieser Kontrakt ist die normative Schnittstelle, die beide Prototypen
 (`spike/go-api`, `spike/micronaut-api`) identisch implementieren müssen.
@@ -133,34 +136,43 @@ abwärtskompatibel verhalten.
 Reihenfolge der Validierung pro Request (Implementierungen müssen sich daran
 halten, damit die Pflichttests deterministisch sind):
 
-1. **Body-Größe** > 256 KB → `413 Payload Too Large`.
-2. **Auth-Header** fehlt oder ungültig → `401 Unauthorized`.
-3. **Rate-Limit** für `project_id` überschritten → `429 Too Many Requests`
+1. **Auth-Header**: `X-MTrace-Token` fehlt → `401 Unauthorized`. Diese
+   Prüfung läuft im HTTP-Adapter, vor dem Body-Read, damit
+   unauthentifizierte Requests einen Fast-Reject-Pfad erhalten und
+   keine Body-Bandbreite konsumieren.
+2. **Body-Größe**: > 256 KB → `413 Payload Too Large`.
+3. **Auth-Token**: Token unbekannt → `401 Unauthorized`. Diese Prüfung
+   läuft im Use Case (`ResolveByToken`).
+4. **Rate-Limit** für `project_id` überschritten → `429 Too Many Requests`
    mit `Retry-After`-Header (Sekunden).
-4. **Schema-Version**: `schema_version` ≠ `"1.0"` → `400 Bad Request`.
-5. **Batch-Form**: `events` fehlt oder ist leer → `422 Unprocessable Entity`.
-6. **Batch-Größe**: `events.length` > 100 → `422 Unprocessable Entity`.
-7. **Event-Pflichtfelder**: ein Event ohne `event_name`, `project_id`,
+5. **Schema-Version**: `schema_version` ≠ `"1.0"` → `400 Bad Request`.
+6. **Batch-Form**: `events` fehlt oder ist leer → `422 Unprocessable Entity`.
+7. **Batch-Größe**: `events.length` > 100 → `422 Unprocessable Entity`.
+8. **Event-Pflichtfelder**: ein Event ohne `event_name`, `project_id`,
    `session_id`, `client_timestamp` oder `sdk.{name,version}` → der
    gesamte Batch wird mit `422 Unprocessable Entity` abgelehnt.
-8. **`project_id`/Token-Bindung**: ein Event mit `project_id` ≠ Token-
+9. **`project_id`/Token-Bindung**: ein Event mit `project_id` ≠ Token-
    Projekt → `401 Unauthorized` für den Batch.
-9. **Erfolg**: Batch wird angenommen → `202 Accepted`.
+10. **Erfolg**: Batch wird angenommen → `202 Accepted`.
 
 Übersicht:
 
 | Bedingung | Status |
 |---|---:|
-| Body > 256 KB                           | `413` |
-| Auth-Header fehlt oder Token ungültig   | `401` |
-| `project_id`/Token-Mismatch             | `401` |
-| Unbekannte `project_id`                 | `401` |
-| Rate-Limit überschritten                | `429` + `Retry-After` |
-| `schema_version` ≠ `"1.0"`              | `400` |
-| `events` leer oder fehlt                | `422` |
-| `events.length` > 100                   | `422` |
-| Event ohne Pflichtfeld                  | `422` |
-| Valider Batch                            | `202` |
+| Auth-Header fehlt                        | `401` |
+| Body > 256 KB (mit Auth-Header)          | `413` |
+| Token unbekannt                          | `401` |
+| `project_id`/Token-Mismatch              | `401` |
+| Rate-Limit überschritten                 | `429` + `Retry-After` |
+| `schema_version` ≠ `"1.0"`               | `400` |
+| `events` leer oder fehlt                 | `422` |
+| `events.length` > 100                    | `422` |
+| Event ohne Pflichtfeld                   | `422` |
+| Valider Batch                             | `202` |
+
+Folge der Auth-vor-Body-Reihenfolge: ein Request **ohne** Auth-Header
+und mit Body > 256 KB liefert `401`, **nicht** `413` (siehe Pflichttest
+in §11).
 
 Antwort-Body bei Fehlerfällen ist **nicht** Teil des Pflicht-Kontrakts —
 Implementierungen dürfen einen JSON-Body mit Fehlerbeschreibung senden,
@@ -245,7 +257,8 @@ Aus `docs/plan-spike.md` §7.1 (deckungsgleich mit Spec §6.12):
 - Integrationstest `401` bei fehlendem oder falschem Token
 - Integrationstest `401` bei `project_id`/Token-Mismatch
 - Integrationstest `401` bei unbekanntem `project_id`
-- Integrationstest `413` bei Body über 256 KB
+- Integrationstest `413` bei Body über 256 KB (mit gültigem Auth-Header)
+- Integrationstest `401` bei Body über 256 KB **ohne** Auth-Header — verifiziert die Auth-vor-Body-Reihenfolge aus §5
 - Integrationstest `422` bei ungültigem Event (Pflichtfeld fehlt)
 - Integrationstest `422` bei leerem oder fehlendem `events`-Feld
 - Integrationstest `422` bei mehr als 100 Events im Batch

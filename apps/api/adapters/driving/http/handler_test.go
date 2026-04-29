@@ -176,6 +176,20 @@ func TestHTTP_413_BodyTooLarge(t *testing.T) {
 	}
 }
 
+// Verifies §5 Auth-vor-Body-Reihenfolge: ein Body > 256 KB ohne
+// X-MTrace-Token muss 401 liefern (Header-Check feuert zuerst), nicht
+// 413. Der Pflichttest stand früher nicht in §11 — siehe
+// docs/spike/backend-api-contract.md §5/§11.
+func TestHTTP_401_BodyTooLarge_NoToken(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	body := strings.Repeat("X", apihttp.MaxBodyBytes+1)
+	resp := postEvents(t, srv, "", body)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("expected 401 (Auth-Header vor Body-Read), got %d", resp.StatusCode)
+	}
+}
+
 func TestHTTP_422_MissingField(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
