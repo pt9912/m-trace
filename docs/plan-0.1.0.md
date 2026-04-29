@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (OTel-native Local Demo)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.0.0`](./lastenheft.md) §13.1 (RAK-1..RAK-10), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.0.1`](./lastenheft.md) §13.1 (RAK-1..RAK-10), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 
 ## 0. Konvention
 
@@ -22,6 +22,7 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | 🟡 |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | 🟡 |
+| 0c | Lastenheft-Patches aus Code-Reviews (Patch-Level-Bumps `1.0.x`) | 🟡 |
 | 1 | MVP-Implementierung — Dashboard, Player-SDK, Docker-Compose-Lab, Observability-Stack | ⬜ |
 
 ---
@@ -216,6 +217,24 @@ DoD:
 
 ---
 
+## 4a. Tranche 0c — Lastenheft-Patches
+
+Aus Code-Reviews entstehende Lastenheft-Korrekturen (interne Inkonsistenzen, Wording-Schärfungen). Jeder Patch erhöht den Lastenheft-Patch-Level (`1.0.0` → `1.0.1` → `1.0.2` …). Status: 🟡 in Arbeit.
+
+### 4a.1 Patch `1.0.1` — F-94 / MVP-28 Harmonisierung (Grafana-Klassifikation)
+
+Lastenheft-interner Widerspruch: §7.9 F-94 listete Grafana mit Priorität **Muss**, §12.2 MVP-28 mit Priorität **Soll**. Beide referenzieren dieselbe Komponente. Im Plan §5.4 hatte ich eigenmächtig zugunsten MVP-28 entschieden; per User-Entscheidung wird stattdessen das Lastenheft korrigiert.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.0.0` → `1.0.1`.
+- [x] Lastenheft §7.9 F-94: Priorität `Muss` → `Soll`; Wording auf „Grafana **kann** mit einem einfachen Beispiel-Dashboard ausgeliefert werden (harmonisiert mit MVP-28)".
+- [x] Plan §5.4: Hinweis auf F-94/MVP-28-Widerspruch entfernt; Grafana bleibt im Soll-Block (observability-Profil).
+- [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.1` aktualisiert.
+- [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.1` aktualisiert.
+
+---
+
 ## 5. Tranche 1 — MVP-Implementierung
 
 Roadmap §2 Schritte 8–11; Lastenheft RAK-1..RAK-10. Status: ⬜ offen.
@@ -297,7 +316,7 @@ DoD Pflicht-Anteile (Muss, in `apps/api` direkt):
 
 DoD Soll-Anteile (`observability`-Profil, MVP-28/MVP-29):
 
-- [ ] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus. *Hinweis*: F-94 ist Lastenheft-Muss, MVP-28 ist Soll — die Tabellen widersprechen sich; der Plan folgt der granuläreren MVP-28-Klassifikation.
+- [ ] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus. (F-94 wurde mit Lastenheft-Patch `1.0.1` auf Soll harmonisiert, siehe Tranche 0c §4a.1.)
 - [ ] **MVP-29** OTel-Collector unter `services/otel-collector/` im observability-Profil; nimmt OTLP von `apps/api` entgegen und exportiert Metriken zu Prometheus. Trace-Backend (z. B. Jaeger) ist Bonus, **kein** Pflicht-Bestandteil — Tempo ist per MVP-22 Nicht-MVP.
 - [ ] `make dev-observability` (oder gleichwertiges Compose-Profile-Aufruf) startet beide Soll-Services additiv zum Core.
 

@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
@@ -911,7 +911,7 @@ Das Projekt muss Observability von Beginn an berücksichtigen.
 | F-91 | Muss | API soll OpenTelemetry unterstützen. |
 | F-92 | Muss | Playback-Events sollen als Metriken oder Traces exportierbar sein. |
 | F-93 | Muss | Prometheus soll technische Metriken erfassen können. |
-| F-94 | Muss | Grafana soll mit einem einfachen Beispiel-Dashboard ausgeliefert werden. |
+| F-94 | Soll | Grafana kann mit einem einfachen Beispiel-Dashboard ausgeliefert werden (harmonisiert mit MVP-28). |
 
 #### Mindestmetriken
 
