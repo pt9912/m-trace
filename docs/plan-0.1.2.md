@@ -2,7 +2,13 @@
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.1` (Player-SDK + Dashboard).  
 > **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
-> **Vorgänger**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard).
+> **Vorgänger-Gate (Stand zum `0.1.2`-Start, nicht zum heutigen Zeitpunkt)**:
+>
+> - [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.1` (§5).
+> - [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) muss vollständig (`[x]`) sein. **Harte technische Voraussetzung** — Tranche 1 dieses Plans (Pflicht-Anteile in `apps/api`) baut darauf auf; F-91 ist hier nicht erneut implementiert, sondern „Voraussetzung erfüllt durch §4.3".
+> - **Tranche 0c (Lastenheft-Patches)** in `plan-0.1.0.md`: konstruktionsbedingt fortlaufend offen; das Gate verlangt nur, dass alle bis zum `0.1.2`-Start eingetragenen §4a.x-Items entweder `[x]` oder explizit als nicht-blockierend markiert sind — nicht den Abschluss der Tranche selbst.
+>
+> Konsequenz: solange `0.1.1` nicht released oder `plan-0.1.0` §4.3 nicht abgeschlossen ist, hat dieses Plan-Dokument Status ⬜ in Tranchen-Übersicht und Roadmap §3.
 
 ## 0. Konvention
 
@@ -65,7 +71,8 @@ DoD:
 DoD:
 
 - [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability`:
-    - **Setup-Pflicht**: vor dem Smoke-Test muss eine Mindestdaten-Lage im Prometheus erzeugt sein, sonst geben die Queries leer zurück und der Cardinality-Check besteht trivial (false positive). Konkret: Compose-Stack läuft, Demo-SDK auf der `/demo`-Route hat mindestens 5 Player-Sessions mit jeweils ≥ 10 Events erzeugt **oder** ein equivalenter `curl`-Smoke-Lauf hat mindestens 50 Events in mindestens 5 Sessions an `/api/playback-events` gesendet. Mindestens ein Prometheus-Scrape-Intervall (Default 15 s) muss vergangen sein.
+    - **Setup-Pflicht**: vor dem Smoke-Test muss eine Mindestdaten-Lage im Prometheus erzeugt sein, sonst geben die Queries leer zurück und der Cardinality-Check besteht trivial (false positive). Konkret: Compose-Stack läuft, mindestens 5 Player-Sessions mit jeweils ≥ 10 Events; mindestens ein Prometheus-Scrape-Intervall (Default 15 s) ist vergangen.
+    - **Seed-Skript**: `scripts/seed-rak9.sh` (oder `make seed-rak9`-Target) erzeugt die Mindestdaten-Lage reproduzierbar via `curl`-Aufrufe gegen `/api/playback-events` (50 Events in 5 Sessions mit unterschiedlichen `session_id`/`event_name`-Mustern). Der Smoke-Test ruft das Skript als ersten Schritt auf, danach laufen die unten genannten Queries gegen Prometheus. CI-Pipeline (sobald OE-6 entschieden) ruft denselben Pfad auf — das vermeidet manuelle Lastaufbereitung und „false confidence". Demo-SDK-basierte Lastaufbereitung ist eine Bonus-Variante für interaktive Lab-Sessions, kein DoD-Pfad.
     - `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
     - Pro Mindestmetrik aus Lastenheft §7.9: `curl -g 'http://localhost:9090/api/v1/labels?match[]={__name__="mtrace_playback_events_total"}'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10. `match[]` benötigt einen vollständigen Vektor-Selector (`{__name__="..."}`); der nackte Metrikname ist zwischen Prometheus-Versionen nicht zuverlässig akzeptiert.
     - Zusätzlich: `mtrace_playback_events_total` muss einen Wert > 0 haben (`curl 'http://localhost:9090/api/v1/query?query=mtrace_playback_events_total'`); diente als Sanity-Check, dass der Counter überhaupt aktiv inkrementiert wurde.
