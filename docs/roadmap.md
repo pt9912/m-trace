@@ -38,7 +38,7 @@ Reihenfolge ist verbindlich (SP-41).
 |---|---|---|---|---|
 | 1 | ✅ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | OE-9; SP-41 |
 | 2 | ✅ | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren. | Nach Schritt 1 | OE-2; OE-9; SP-41 |
-| 3 | ⬜ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41 |
+| 3 | ✅ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41 |
 | 4 | ⬜ | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen (Form: siehe §5). | Nach Schritt 3 | SP-41 |
 
 Erst danach beginnt die eigentliche `0.1.0`-Implementierung:
@@ -58,7 +58,7 @@ weil dort kein ID-System existiert.
 |---|---|---|---|---|
 | 1 | ✅ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; OE-9; SP-41 |
 | 2 | ✅ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | OE-2; OE-9; SP-41 |
-| 3 | ⬜ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; SP-41 |
+| 3 | ✅ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; SP-41 |
 | 4 | ⬜ | Phase-2-Risiken in Issue-Backlog | Nach Schritt 3 | SP-41 |
 | 5 | ⬜ | `docs/architecture.md` schreiben | Vor `0.1.0`-DoD | AK-3, AK-10 |
 | 6 | ⬜ | `docs/telemetry-model.md` schreiben | Vor `0.1.0`-DoD | F-89..F-94, F-106..F-115, AK-9 |

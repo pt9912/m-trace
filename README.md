@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: frühe Planungs- und Architekturphase
+> Status: Pre-MVP `0.1.0` — Backend-Skelett auf `main`, Lastenheft `1.0.0` verbindlich.
 
 ---
 
@@ -154,31 +154,26 @@ m-trace nutzt pragmatische Architekturgrenzen.
 
 ### Backend
 
-Die Backend-Technologie ist offen, bis der Backend-Spike abgeschlossen ist.
+Backend-Stack ist **Go 1.22** (Standard-Library `net/http`,
+`prometheus/client_golang`, `go.opentelemetry.io/otel`, `log/slog`,
+Distroless-Runtime). Entscheidung in `docs/adr/0001-backend-stack.md`,
+Spec im Lastenheft §10.1.
 
-Kandidaten:
+Workflow ist Docker-only: `make {test,lint,build,run}` in `apps/api/`.
+Lokales Go ist nicht erforderlich.
 
-- Go
-- Micronaut / JVM
-
-Das Backend soll hexagonale Architektur dort einsetzen, wo sie echten Mehrwert bringt:
+Hexagon-Layout in `apps/api/`:
 
 ```text
 apps/api/
-├── src/
-│   ├── hexagon/
-│   │   ├── domain/
-│   │   ├── port/
-│   │   │   ├── in/
-│   │   │   └── out/
-│   │   └── application/
-│   └── adapters/
-│       ├── in/
-│       │   └── http/
-│       └── out/
-│           ├── persistence/
-│           ├── telemetry/
-│           └── metrics/
+├── cmd/api/main.go
+├── hexagon/
+│   ├── domain/
+│   ├── port/{driving,driven}/
+│   └── application/
+├── adapters/
+│   ├── driving/http/
+│   └── driven/{auth,metrics,persistence,ratelimit,telemetry}/
 └── Dockerfile
 ```
 
@@ -311,7 +306,7 @@ Player Session Trace
 Die geplante Developer Experience:
 
 ```bash
-git clone https://github.com/<owner>/m-trace.git
+git clone https://github.com/pt9912/m-trace.git
 cd m-trace
 make dev
 ```
@@ -333,35 +328,21 @@ Es ist das Ziel des ersten MVP.
 
 ---
 
-## Backend-Technologie-Spike
+## Backend-Technologie-Spike (abgeschlossen)
 
-Vor der Implementierung der Backend-API führt m-trace einen kurzen Technologie-Spike durch.
+Die Backend-Technologie wurde durch zwei lauffähige Mini-Prototypen
+(Go, Micronaut) im identischen Muss-Scope entschieden. Sieger ist Go.
 
-Ziel:
+Dokumentation:
 
-```text
-Entscheidung zwischen Go und Micronaut für apps/api.
-```
-
-Spike-Branches:
-
-```text
-spike/go-api
-spike/micronaut-api
-```
-
-Outcome:
-
-```text
-docs/adr/0001-backend-stack.md
-```
-
-Der gewählte Stack wird Grundlage für `apps/api`.
-
-Detail-Spezifikation und Arbeitsplan:
-
+- `docs/adr/0001-backend-stack.md` — Entscheidung (Status: Accepted)
+- `docs/spike/backend-stack-results.md` — Spike-Protokoll
+- `docs/spike/backend-api-contract.md` — API-Kontrakt (frozen)
 - `docs/spike/0001-backend-stack.md` — Spike-Spezifikation
-- `docs/plan-spike.md` — Implementierungsplan für den Spike
+- `docs/plan-spike.md` — Implementierungsplan
+
+Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
+(Modulpfad `github.com/pt9912/m-trace/apps/api`).
 
 ---
 
@@ -470,17 +451,19 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt befindet sich in der Planungs- und Spike-Phase.
+Das Projekt ist in der Pre-MVP-`0.1.0`-Phase: Backend-Spike abgeschlossen, Lastenheft `1.0.0` verbindlich, `apps/api`-Skelett auf `main` integriert.
 
-Aktuelle Dokumente:
+Leitende Dokumente:
 
 ```text
-docs/lastenheft.md
-docs/spike/0001-backend-stack.md
-docs/plan-spike.md
+docs/lastenheft.md           # Anforderungen (verbindlich, 1.0.0)
+docs/roadmap.md              # Status, Folge-ADRs, offene Entscheidungen
+docs/adr/0001-backend-stack.md   # Backend-Entscheidung (Accepted: Go)
+docs/spike/                  # Spike-Spezifikation, API-Kontrakt, Protokoll
+docs/plan-spike.md           # Spike-Implementierungsplan
 ```
 
-Die erste große Implementierungsentscheidung ist der Backend-Stack. Sie wird im ADR `docs/adr/0001-backend-stack.md` festgehalten (entsteht).
+Nächste Schritte stehen in `docs/roadmap.md` §2.
 
 ---
 
