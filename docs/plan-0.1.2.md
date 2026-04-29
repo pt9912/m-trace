@@ -1,0 +1,82 @@
+# Implementation Plan — `0.1.2` (Observability-Stack)
+
+> **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.1` (Player-SDK + Dashboard).  
+> **Bezug**: [Lastenheft `1.1.0`](./lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
+> **Vorgänger**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard).
+
+## 0. Konvention
+
+DoD-Checkboxen analog [`plan-0.1.0.md`](./plan-0.1.0.md) §0:
+
+- `[x]` ausgeliefert mit Commit-Hash.
+- `[ ]` offen.
+- `[!]` blockiert durch Lastenheft-Inkonsistenz.
+- 🟡 in Arbeit.
+
+Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patches in der `0.1.2`-Phase landen ebenfalls dort als §4a.x-Eintrag.
+
+---
+
+## 1. Tranchen-Übersicht
+
+| Tranche | Inhalt | Status |
+|---|---|---|
+| 1 | Pflicht-Anteile in `apps/api` (F-89..F-93, Mindestmetriken) | ⬜ |
+| 2 | Soll-Anteile im `observability`-Compose-Profil (F-94/MVP-28 Grafana, MVP-29 OTel-Collector) | ⬜ |
+| 3 | Release-Akzeptanzkriterien `0.1.2` | ⬜ |
+
+Tempo bleibt explizit Nicht-MVP (MVP-22).
+
+---
+
+## 2. Tranche 1 — Observability Pflicht-Anteile (`apps/api` direkt)
+
+Bezug: MVP-10 (Muss), MVP-15 (Muss); F-89..F-93 (Muss); Mindestmetriken laut Lastenheft §7.9.
+
+DoD:
+
+- [ ] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert; Verifikation per `docker compose logs api`).
+- [ ] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3 aus `0.1.0`).
+- [ ] **F-91** OpenTelemetry-Unterstützung — durch Tranche-0b §4.3 in `plan-0.1.0.md` (`Telemetry`-Port + OTLP-Anbindung via `autoexport`) abgedeckt.
+- [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent.
+- [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`). Prometheus selbst läuft im observability-Profil (Tranche 2).
+- [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.2`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
+
+---
+
+## 3. Tranche 2 — Observability Soll-Anteile (`observability`-Compose-Profil)
+
+Bezug: MVP-28 (Soll Grafana), MVP-29 (Soll OTel-Collector); F-94 (Soll, harmonisiert mit MVP-28 in Lastenheft `1.0.1`, siehe `plan-0.1.0.md` Tranche 0c §4a.1); F-87/F-88 (siehe Patch `1.0.2`, `plan-0.1.0.md` §4a.2).
+
+Soll-Komponenten leben im `observability`-Compose-Profil und werden über `make dev-observability` (oder `docker compose --profile observability up`) ergänzend zum Core-Stack gestartet.
+
+DoD:
+
+- [ ] Compose-Erweiterung: `prometheus`, `grafana`, `otel-collector` mit `profiles: ["observability"]` — additiv und opt-in.
+- [ ] `make dev-observability` (Makefile-Target) aktiviert das observability-Profil zusätzlich zum Core.
+- [ ] **MVP-29** OTel-Collector unter `services/otel-collector/`; nimmt OTLP von `apps/api` entgegen und exportiert Metriken zu Prometheus. Trace-Backend (z. B. Jaeger) ist Bonus, **kein** Pflicht-Bestandteil — Tempo ist per MVP-22 Nicht-MVP.
+- [ ] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus.
+- [ ] System-Status-Ansicht im Dashboard (`apps/dashboard`, `0.1.1` §3) erkennt das aktive observability-Profil und zeigt Prometheus/Grafana/OTel-Collector als „connected" statt „inaktiv" an.
+
+---
+
+## 4. Tranche 3 — Release-Akzeptanzkriterien `0.1.2` (Lastenheft §13.3)
+
+DoD:
+
+- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability`: `curl http://localhost:9090/api/v1/label/session_id/values` muss leer/nicht-existent sein; Spot-Check der `mtrace_*`-Series gegen die Cardinality-Regeln aus Lastenheft §7.10.
+- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch, abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, `plan-0.1.1.md` §3). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
+
+### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)
+
+- [ ] `CHANGELOG.md` enthält Eintrag für `0.1.2`.
+- [ ] README/`docs/local-development.md` ergänzt um die `make dev-observability`-Variante und die Service-URLs (Prometheus, Grafana, OTel-Collector) — RAK-8-Refinement.
+
+---
+
+## 5. Wartung
+
+- Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`, Commit-Hash anhängen.
+- Neue Findings in `0.1.2`-Phase landen entweder in dieser Datei oder in `risks-backlog.md`.
+- Lastenheft-Patches während `0.1.2` werden in `plan-0.1.0.md` Tranche 0c als neue §4a.x-Einträge ergänzt (zentrale Patch-Historie).
+- Mit `0.1.2`-Release ist die `0.1.x`-Phase abgeschlossen; nächster Plan ist `plan-0.2.0.md` (publizierbares Player-SDK).

@@ -1,7 +1,8 @@
-# Implementation Plan — `0.1.0` (OTel-native Local Demo)
+# Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.0.2`](./lastenheft.md) §13.1 (RAK-1..RAK-10), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.0`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
 
@@ -23,8 +24,10 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | 🟡 |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | 🟡 |
-| 0c | Lastenheft-Patches aus Code-Reviews (Patch-Level-Bumps `1.0.x`) | 🟡 |
-| 1 | MVP-Implementierung — Dashboard, Player-SDK, Docker-Compose-Lab, Observability-Stack | ⬜ |
+| 0c | Lastenheft-Patches aus Code-Reviews (`1.0.1`, `1.0.2`) und MVP-Restrukturierung (`1.1.0`) | 🟡 |
+| 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ⬜ |
+
+Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
 
 ---
 
@@ -246,132 +249,82 @@ DoD:
 - [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.2` aktualisiert (`c2e7ac7`).
 - [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.2` aktualisiert (`c2e7ac7`).
 
+### 4a.3 Patch `1.1.0` — MVP-Phasen-Restrukturierung
+
+Aus User-Entscheidung „Variante 2-A": der ursprüngliche `0.1.0`-MVP wird in drei Sub-Releases (`0.1.0`/`0.1.1`/`0.1.2`) geschnitten, damit jeder Schritt einen demonstrierbaren Eigenwert hat und der Gesamt-Scope nicht in einem einzelnen Cycle landet. Das ist eine **Restrukturierung**, kein Detail-Patch — daher Minor-Bump statt Patch-Level.
+
+DoD:
+
+- [ ] Lastenheft Header: Version `1.0.2` → `1.1.0`.
+- [ ] Lastenheft §13: §13.1 (`0.1.0`-RAKs) wird in §13.1 (`0.1.0` Backend Core + Demo-Lab), §13.2 (`0.1.1` Player-SDK + Dashboard) und §13.3 (`0.1.2` Observability-Stack) aufgeteilt; RAK-1..RAK-10 werden auf die drei Sub-Releases verteilt; nachfolgende §13.x-Sections (`0.2.0`..`0.6.0`) entsprechend renumeriert auf §13.4..§13.8.
+- [ ] Lastenheft §7.3 F-22: Wording auf „Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`" — löst den Tranche-13-Findings-Block (F-22 vs MVP-21).
+- [ ] `docs/plan-0.1.0.md` schrumpft auf den neuen `0.1.0`-Scope (Backend + Lab); Player-SDK, Dashboard und Observability werden in eigene Plan-Dokumente ausgelagert.
+- [ ] `docs/plan-0.1.1.md` neu angelegt — Player-SDK + Dashboard; Tranchen 0/0a/0b/0c werden referenzierend zu `plan-0.1.0.md` gehalten.
+- [ ] `docs/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend.
+- [ ] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt.
+- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert.
+
 ---
 
-## 5. Tranche 1 — MVP-Implementierung
+## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Roadmap §2 Schritte 8–11; Lastenheft RAK-1..RAK-10. Status: ⬜ offen.
+Status: ⬜ offen. Bezug: Lastenheft `1.1.0` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
-### 5.1 Schritt 8 — Dashboard-App und Session-Pfad (`apps/dashboard` + Backend-Erweiterung)
+Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
-Bezug: MVP-3, MVP-16, F-23..F-28, F-35..F-40; RAK-7; OE-3 (Datenhaltung MVP) und OE-4 (Frontend-Styling) werden hier entschieden.
+### 5.1 Backend-Erweiterung (`apps/api`)
 
-DoD Backend (`apps/api`):
+Bezug: MVP-3, MVP-16, F-17..F-22; OE-3 (Datenhaltung MVP) wird hier entschieden.
+
+DoD:
 
 - [ ] Domain-Aggregation: `StreamSession` wird aus eingehenden `PlaybackEvent`-Batches abgeleitet — bei jedem Event mit unbekanntem `session_id` wird eine `StreamSession` mit Default-State `Active` erzeugt.
-- [ ] Session-Lifecycle (`Active` → `Stalled` → `Ended`) als Pflicht — Voraussetzung für F-26 im Dashboard. Stalled = keine Events in einem Schwellwert-Fenster (z. B. 60 s, konfigurierbar); Ended = explizites End-Event aus dem SDK oder Inaktivität jenseits des Stalled-Fensters.
+- [ ] Session-Lifecycle (`Active` → `Stalled` → `Ended`) als Pflicht — Voraussetzung für F-26 im Dashboard (`0.1.1`). Stalled = keine Events in einem Schwellwert-Fenster (z. B. 60 s, konfigurierbar); Ended = explizites End-Event aus dem SDK oder Inaktivität jenseits des Stalled-Fensters.
 - [ ] **MVP-16** Lokale Speicherung der Sessions und Events: In-Memory ist Pflicht-Default; SQLite als Soll-Erweiterung über OE-3-Folge-ADR. Beide Implementierungen leben hinter dem `EventRepository`-Port plus einem neuen `SessionRepository`-Port (oder vereinheitlicht — Design-Entscheidung im Use Case).
-- [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession` (oder erweiterung des bestehenden); Domain-Sicht auf `StreamSession` mit Event-Zählern.
-- [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste). Aktuell sind nur die drei Spike-Pflicht-Endpoints implementiert.
-- [!] **F-22** „Integration des Stream Analyzers" steht im Lastenheft §7.3 als Muss für `apps/api`, während `packages/stream-analyzer` per **MVP-21** (Nicht-MVP) erst ab Phase `0.3.0` als fertiges Paket geplant ist. Architecture §4.1 spiegelt MVP-21. Ohne Lastenheft-Patch bleibt eine Muss-Anforderung des MVP unsichtbar offen. Auflösung folgt mit Tranche 0c (siehe §4a) — bis dahin blockiert.
-- [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches; HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
+- [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession`; Domain-Sicht auf `StreamSession` mit Event-Zählern.
+- [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste).
+- [ ] **F-22** (Lastenheft `1.1.0`): Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` (oder vergleichbar) als leeres bzw. marker-Interface; Use Case bindet den Port nicht produktiv ein (keine Aufrufe), legt aber den Erweiterungspunkt fest. Volle Integration ab Phase `0.3.0`.
+- [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches und Lifecycle-Transitions (Active → Stalled → Ended); HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
 
-DoD Dashboard (`apps/dashboard`):
+### 5.2 Docker-Compose-Lab (Core, `0.1.0`-Anteil)
 
-- [ ] SvelteKit-App-Skelett unter `apps/dashboard/` (TypeScript, pnpm).
-- [ ] Startseite mit Layout.
-- [ ] **F-23 + MVP-12** Dashboard-Route `/sessions` zeigt einfache Session-Liste, ruft `GET /api/stream-sessions` auf.
-- [ ] **MVP-13 + MVP-14** Dashboard-Route `/sessions/:id` zeigt einfache Event-Anzeige plus eingebaute Session-/Trace-Ansicht (Timeline der zugehörigen Events), ruft `GET /api/stream-sessions/{id}` auf.
-- [ ] **F-24** Anzeige aktueller Playback-Metriken — entweder im `/sessions/:id`-Detail oder als globale Übersicht (z. B. Zähler-Card auf der Startseite).
-- [ ] **F-25** Anzeige von Fehlern und Warnungen — entweder dedizierte Route `/errors` oder als Filter über die Event-Liste.
-- [ ] **F-26** Anzeige einfacher Stream-Health-Zustände — Active/Stalled/Ended pro Session sichtbar.
-- [ ] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; OTel-/Prometheus-Erreichbarkeit als zusätzlicher Status (kann minimal als „connected"/„unreachable" dargestellt werden).
-- [ ] **F-28 + F-36** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
-- [ ] **F-35** Live-Übersicht — Startseite zeigt aggregierten Live-Stand (laufende Sessions, Event-Rate, Fehlerzähler) als Landing.
-- [ ] **F-37** Playback-Events anzeigen — eine dedizierte Sicht (Route oder Tab) listet eingehende Events mit Filter nach Session und Event-Typ.
-- [ ] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt.
-- [ ] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected`.
-- [ ] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht.
-- [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-Konsole. Ziele werden aus den Compose-Service-URLs abgeleitet (z. B. `http://localhost:3000` Grafana, `http://localhost:9090` Prometheus, `http://localhost:8888` MediaMTX-Web-UI). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
-- [ ] API-Client mit typisierten Anfragen.
-- [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
-- [ ] Dashboard-Build im Docker-Compose-Lab (Schritt 10) eingebunden.
+Bezug: MVP-7..MVP-9, F-82..F-88 (nach Patch `1.0.2`); RAK-1, RAK-4.
 
-### 5.2 Schritt 9 — Player-SDK (`packages/player-sdk`)
-
-Bezug: MVP-5, F-63..F-67; OE-8 (Paketnamen für npm) wird hier entschieden.
+Compose-Setup nutzt die Docker-Compose-Profile-Semantik korrekt: Core-Services werden **ohne** `profiles:`-Direktive deklariert und starten damit per Default bei `docker compose up`. Das observability-Profil ist additiv und wird in [`plan-0.1.2.md`](./plan-0.1.2.md) gepflegt; das `dashboard`-Service-Add-On wird in [`plan-0.1.1.md`](./plan-0.1.1.md) gepflegt. In `0.1.0` startet das Core-Lab drei Pflicht-Mindestdienste: `api`, `mediamtx`, `stream-generator`.
 
 DoD:
 
-- [ ] TypeScript-Package unter `packages/player-sdk/`.
-- [ ] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter).
-- [ ] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …).
-- [ ] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, ...).
-- [ ] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; OpenTelemetry Web SDK als optionaler zweiter Transport-Pfad.
-- [ ] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren.
-- [ ] Browser-Build (ESM + UMD).
-- [ ] OE-8 entscheiden (Paketname, Scope).
-- [ ] Demo-Integration in `apps/dashboard/src/routes/demo/`.
-
-### 5.3 Schritt 10 — Docker-Compose-Lab (Core)
-
-Bezug: MVP-7..MVP-9, F-82..F-88; RAK-1.
-
-Compose-Setup nutzt die Docker-Compose-Profile-Semantik korrekt: Core-Services werden **ohne** `profiles:`-Direktive deklariert und starten damit per Default bei `docker compose up`. Observability-Services tragen `profiles: ["observability"]` und starten nur, wenn das Profil explizit aktiviert wird (`docker compose --profile observability up` oder `COMPOSE_PROFILES=observability docker compose up`). Tempo bleibt explizit aus dem MVP ausgeschlossen (MVP-22 ist Nicht-MVP).
-
-DoD:
-
-- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis. **Core-Services** (`api`, `dashboard`, `mediamtx`, `stream-generator`) ohne `profiles:`-Direktive — sie starten per Default; entspricht den vier Services aus `architecture.md` §8.2 und der Pflicht-Mindestdienste-Tabelle aus Lastenheft §7.8 (nach Patch `1.0.2`).
-- [ ] **Observability-Services** (`otel-collector`, `prometheus`, `grafana`) mit `profiles: ["observability"]` — additiv und opt-in; entspricht der Soll-Mindestdienste-Tabelle aus Lastenheft §7.8.
+- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis. Core-Services für `0.1.0` (`api`, `mediamtx`, `stream-generator`) ohne `profiles:`-Direktive — sie starten per Default; entspricht den entsprechenden Pflicht-Mindestdiensten aus Lastenheft §7.8 (nach Patch `1.0.2`).
 - [ ] MediaMTX als `services/media-server/` mit Konfiguration für HLS.
 - [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
 - [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
-- [ ] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode.
-- [ ] `make dev` führt `docker compose up --build` ohne Profil-Flag aus — startet damit ausschließlich die Core-Services und erfüllt RAK-1.
-- [ ] `make dev-observability` aktiviert das observability-Profil zusätzlich.
+- [ ] `make dev` führt `docker compose up --build` ohne Profil-Flag aus — startet damit ausschließlich die Core-Services.
 - [ ] `make stop` beendet sauber (`docker compose down`, Profile-aware).
-- [ ] Core-Stack mindestens unter Linux verifiziert (Bezug AK-1).
+- [ ] Core-Stack mindestens unter Linux verifiziert.
+- [ ] Smoke-Test `0.1.0`: nach `make dev` liefert `curl http://localhost:8080/api/health` ein `200`; ein POST mit gültigem Token an `/api/playback-events` liefert `202`; ein GET an `/api/stream-sessions` listet die so erzeugte Session.
 
-### 5.4 Schritt 11 — Observability-Stack
-
-Bezug: MVP-10 (Muss), MVP-15 (Muss), MVP-28 (Soll Grafana), MVP-29 (Soll OTel-Collector); F-89..F-93 (Muss); F-94 (Soll, harmonisiert mit MVP-28 in Lastenheft `1.0.1`, siehe Tranche 0c §4a.1); Mindestmetriken laut Lastenheft §7.9; **MVP-22 (Tempo) ist explizit Nicht-MVP**.
-
-Soll-Komponenten (Grafana, OTel-Collector) leben im `observability`-Compose-Profil und werden über `make dev-observability` (oder `docker compose --profile observability up`) ergänzend zum Core-Stack gestartet. RAK-1 ist mit dem Core-Stack erfüllt; das observability-Profil ist additiv und nicht für die DoD-Abnahme von Schritt 10 erforderlich.
-
-DoD Pflicht-Anteile (Muss, in `apps/api` direkt):
-
-- [ ] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert).
-- [ ] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3).
-- [ ] **F-91** OpenTelemetry-Unterstützung — durch Tranche-0b §4.3 (`Telemetry`-Port + OTLP-Anbindung via `autoexport`) bereits abgedeckt.
-- [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent.
-- [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`); Compose-Service-Name wird in Schritt 10 verbindlich festgelegt. Prometheus läuft im observability-Profil.
-- [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.0`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
-
-DoD Soll-Anteile (`observability`-Profil, MVP-28/MVP-29):
-
-- [ ] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus. (F-94 wurde mit Lastenheft-Patch `1.0.1` auf Soll harmonisiert, siehe Tranche 0c §4a.1.)
-- [ ] **MVP-29** OTel-Collector unter `services/otel-collector/` im observability-Profil; nimmt OTLP von `apps/api` entgegen und exportiert Metriken zu Prometheus. Trace-Backend (z. B. Jaeger) ist Bonus, **kein** Pflicht-Bestandteil — Tempo ist per MVP-22 Nicht-MVP.
-- [ ] `make dev-observability` (oder gleichwertiges Compose-Profile-Aufruf) startet beide Soll-Services additiv zum Core.
-
-### 5.5 Release-Akzeptanzkriterien (Lastenheft §13.1: RAK-1..RAK-10)
-
-Diese zehn Punkte sind die kanonische Abnahmeprüfung für den `0.1.0`-Release. Jeder Eintrag wird ausgehakt, sobald die zugehörige Tranche-1.x-Implementierung ihn erfüllt.
+### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft §13.1 nach Patch `1.1.0`)
 
 DoD:
 
-- [ ] **RAK-1** `make dev` startet alle notwendigen Dienste (Tranche 5.3).
-- [ ] **RAK-2** Dashboard ist erreichbar (Tranche 5.1, 5.3).
-- [ ] **RAK-3** API ist erreichbar (Tranche 5.3 — `apps/api` läuft im Compose-Stack auf Port 8080, `/api/health` liefert `200`).
-- [ ] **RAK-4** Teststream läuft über MediaMTX (Tranche 5.3).
-- [ ] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 5.2).
-- [ ] **RAK-6** API nimmt Events an (Tranche 5.1/5.2 End-to-End-Pfad).
-- [ ] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 5.1).
-- [ ] **RAK-8** README beschreibt den Ablauf reproduzierbar — Quickstart-Pfad in `README.md`/`docs/local-development.md` (Tranche 0a §3.6 + Release-Doku).
-- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` (Prometheus liegt im observability-Profil): `curl http://localhost:9090/api/v1/label/session_id/values` muss leer/nicht-existent sein; Spot-Check der `mtrace_*`-Series gegen die Cardinality-Regeln aus Lastenheft §7.10.
-- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, Tranche 5.1). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
+- [ ] **RAK-1** `make dev` startet die in `0.1.0` erforderlichen Pflicht-Dienste (`api`, `mediamtx`, `stream-generator`) (Tranche 5.2).
+- [ ] **RAK-3** API ist erreichbar — `/api/health` liefert `200` im Compose-Stack; alle MVP-Endpoints (drei Spike-Pflicht plus die zwei Stream-Sessions-Endpoints) erreichbar (Tranche 5.1/5.2).
+- [ ] **RAK-4** Teststream läuft über MediaMTX (Tranche 5.2).
+- [ ] **RAK-6** API nimmt Events an (`POST /api/playback-events` mit gültigem Token liefert `202`) (Tranche 5.1/5.2).
+- [ ] **RAK-8** README/Local-Development-Doku beschreibt den `0.1.0`-Quickstart reproduzierbar (Initial-Anteil; wird in `0.1.1` und `0.1.2` ergänzt). Bezug Tranche 0a §3.6.
 
-### 5.6 Übergreifende DoD (Lastenheft §18)
+### 5.4 Übergreifende DoD `0.1.0` (Lastenheft §18, `0.1.0`-Anteil)
 
-Lastenheft §18 ergänzt die RAKs um dokumentations- und prozessbezogene Items, die kein eigenes RAK haben aber für die Abnahme erforderlich sind:
+Dokumentations- und prozessbezogene Items für den `0.1.0`-Release. RAK-spezifische Items stehen in §5.3.
 
 DoD:
 
 - [x] Architektur in `docs/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
-- [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5).
-- [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch`, HTTP-Integrationstests für alle MVP-Endpoints (Spike-Pflicht: `POST /api/playback-events`, `GET /api/health`, `GET /api/metrics`; ergänzt in Tranche 5.1: `GET /api/stream-sessions`, `GET /api/stream-sessions/{id}`), Tests für die Tranche-0b-Code-Korrekturen.
-- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32).
+- [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss.
+- [ ] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8.
+- [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints.
+- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32). Falls OE-6 zum `0.1.0`-Release noch offen ist, wandert die CI-DoD in `plan-0.1.1.md`.
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`).
-- [ ] Test-Player kann den Stream abspielen (manueller Smoke-Test, deckt RAK-2/4/5 zusammen ab).
 
 ---
 
@@ -380,4 +333,4 @@ DoD:
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`, Commit-Hash anhängen (Format ```Item-Beschreibung (`<hash>`)```), gegebenenfalls Sub-Items detaillieren.
 - Neue Findings landen entweder als neues `[ ]`-Item in der passenden Tranche oder, wenn architekturrelevant und langfristig, in [`risks-backlog.md`](./risks-backlog.md) als `R-X`.
 - Beim Schritt-Abschluss: `roadmap.md` §1.2/§2 auf ✅ flippen.
-- Nach `0.1.0`-Release: dieses Dokument als historisch archivieren oder in ein `0.2.0`-Plan-Dokument fortschreiben.
+- Nach `0.1.0`-Release: dieses Dokument als historisch archivieren; Folge-Pläne sind [`plan-0.1.1.md`](./plan-0.1.1.md) und [`plan-0.1.2.md`](./plan-0.1.2.md), danach `plan-0.2.0.md`.

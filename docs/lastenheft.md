@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 1.0.2  
+**Version:** 1.1.0  
 **Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
@@ -333,7 +333,7 @@ Die API-Anwendung muss unter `apps/api` liegen. Backend-Technologie ist Go gemä
 | F-19 | Muss | Bereitstellung von Metriken |
 | F-20 | Muss | Weitergabe von Telemetrie an OpenTelemetry |
 | F-21 | Muss | Bereitstellung von Daten für das Dashboard |
-| F-22 | Muss | Integration des Stream Analyzers |
+| F-22 | Muss | Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`. |
 
 #### Mindest-Endpunkte für den MVP
 
@@ -1489,28 +1489,58 @@ Nicht im `0.1.0`-MVP:
 
 ## 13. Release-Plan
 
-### 13.1 Version 0.1.0: OTel-native Local Demo
+Die `0.1.x`-Phase ist in drei Sub-Releases geschnitten (Patch `1.1.0`),
+damit jeder Schritt einen demonstrierbaren Eigenwert hat und der
+Gesamt-MVP-Scope nicht in einem einzelnen Release-Cycle landet:
 
-Ziel: Ein Entwickler kann das Repository klonen und lokal einen MediaMTX-basierten Teststream mit hls.js-Player, Player-Events und OpenTelemetry-Grundmodell sehen.
+- `0.1.0` Backend Core + Demo-Lab — curl-driven End-to-End.
+- `0.1.1` Player-SDK + Dashboard — Browser-getrieben, UI sichtbar.
+- `0.1.2` Observability-Stack — Aggregat-Metriken und Traces.
+
+`0.2.0` schließt mit dem publizierbaren Player-SDK an wie ursprünglich.
+
+### 13.1 Version 0.1.0: Backend Core + Demo-Lab
+
+Ziel: Ein Entwickler kann das Repository klonen und ein lokales Lab mit MediaMTX-basiertem Teststream und Backend-API starten; Player-Events werden per `curl` (oder anderem HTTP-Client) an die API gesendet, Sessions sind über die API abfragbar.
 
 Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-1 | Muss | `make dev` startet alle notwendigen Dienste. |
-| RAK-2 | Muss | Dashboard ist erreichbar. |
-| RAK-3 | Muss | API ist erreichbar. |
+| RAK-1 | Muss | `make dev` startet die in `0.1.0` erforderlichen Pflicht-Dienste (`api`, `mediamtx`, `stream-generator`). |
+| RAK-3 | Muss | API ist erreichbar (`/api/health` liefert `200`, drei Pflicht-Endpoints aus dem Spike plus die zwei Stream-Sessions-Endpoints). |
 | RAK-4 | Muss | Teststream läuft über MediaMTX. |
+| RAK-6 | Muss | API nimmt Events an (`POST /api/playback-events` mit gültigem Token). |
+| RAK-8 | Muss | README/Local-Development-Doku beschreibt den `0.1.0`-Quickstart reproduzierbar. |
+
+### 13.2 Version 0.1.1: Player-SDK + Dashboard
+
+Ziel: Browser-Player auf der Demo-Route sendet echte Playback-Events an die API; Dashboard zeigt Sessions, Events und Status.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-2 | Muss | Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service. |
 | RAK-5 | Muss | Player-SDK sendet hls.js-basierte Events. |
-| RAK-6 | Muss | API nimmt Events an. |
 | RAK-7 | Muss | Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge. |
-| RAK-8 | Muss | README beschreibt den Ablauf reproduzierbar. |
-| RAK-9 | Muss | Prometheus enthält nur aggregierte Metriken. |
+
+### 13.3 Version 0.1.2: Observability-Stack
+
+Ziel: Optionales `observability`-Compose-Profil bringt Prometheus, Grafana und OTel-Collector additiv zum Core-Stack; Aggregat-Metriken und Traces sind sichtbar.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-9 | Muss | Prometheus enthält nur aggregierte Metriken (Cardinality-Regeln aus §7.10 eingehalten). |
 | RAK-10 | Soll | Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. |
+
+RAK-8 wird in `0.1.2` ergänzt um die Doku zum `observability`-Profil.
 
 ---
 
-### 13.2 Version 0.2.0: Publizierbares Player SDK
+### 13.4 Version 0.2.0: Publizierbares Player SDK
 
 Ziel: Das Player-SDK wird vom MVP-Prototyp zu einem eigenständig nutzbaren und dokumentierten npm-Paket ausgebaut.
 
@@ -1538,7 +1568,7 @@ Akzeptanzkriterien:
 
 ---
 
-### 13.3 Version 0.3.0: Stream Analyzer
+### 13.5 Version 0.3.0: Stream Analyzer
 
 Ziel: HLS-Streams können analysiert werden.
 
@@ -1556,7 +1586,7 @@ Akzeptanzkriterien:
 
 ---
 
-### 13.4 Version 0.4.0: Erweiterte Trace-Korrelation
+### 13.6 Version 0.4.0: Erweiterte Trace-Korrelation
 
 Ziel: Die in `0.1.0` vorbereitete OTel-Grundlage wird zu einer nutzbaren Korrelationsschicht ausgebaut.
 
@@ -1575,7 +1605,7 @@ Akzeptanzkriterien:
 
 ---
 
-### 13.5 Version 0.5.0: Multi-Protocol Lab
+### 13.7 Version 0.5.0: Multi-Protocol Lab
 
 Ziel: Das lokale Lab unterstützt weitere Streaming-Szenarien.
 
@@ -1591,7 +1621,7 @@ Akzeptanzkriterien:
 
 ---
 
-### 13.6 Version 0.6.0: SRT Health View
+### 13.8 Version 0.6.0: SRT Health View
 
 Ziel: SRT-Contribution-Workflows technisch sichtbar machen.
 
