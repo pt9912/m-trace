@@ -71,7 +71,7 @@ flowchart LR
     Browser -->|Playback-Events<br/>POST /api/playback-events| API
     Dashboard -->|GET /api/sessions| API
     Prom -->|scrape /api/metrics| API
-    API -->|OTLP Spans/Metrics| OTelBackend
+    API -.OTel wired but silent;<br/>OTLP-Export geplant.-> OTelBackend
 ```
 
 ### 2.2 Architekturtreiber
@@ -82,7 +82,7 @@ flowchart LR
 | OpenTelemetry-nativ (§4.2) | OTel-SDK direkt in `apps/api`, keine vendor-spezifischen Telemetrie-Pfade |
 | Cardinality-Sicherheit (§7.10) | Prometheus nur für Aggregate, hohe Kardinalität in Trace/Event-Store |
 | Player-First (§7.6) | Wire-Format und SDK-Budget im Lastenheft fixiert; API-Kontrakt frozen (`docs/spike/backend-api-contract.md`) |
-| Hexagon-Disziplin (§7.2 F-10..F-16) | Application-Core ohne Framework-Abhängigkeit, technische Konzerne in Adaptern |
+| Hexagon-Disziplin (§7.2 F-10..F-16) | Application-Core ohne Framework-Abhängigkeit, technische Konzepte in Adaptern |
 
 ---
 
@@ -137,7 +137,7 @@ Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/
 | `hexagon/port/driven/` | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher` | reine Schnittstellen; Implementierungen in `adapters/driven/*` |
 | `hexagon/application/` | `RegisterPlaybackEventBatch` Use Case | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken in fester Reihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) |
 
-Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty`, `ErrBatchTooLarge`, `ErrInvalidEvent`, `ErrRateLimited`) sind die einzige Schnittstelle zwischen Application und Adapter, die Fehlerfälle transportiert. Der HTTP-Adapter mappt sie auf Status-Codes (§5.4 unten).
+Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty`, `ErrBatchTooLarge`, `ErrInvalidEvent`, `ErrRateLimited`) sind die einzige Schnittstelle zwischen Application und Adapter, die Fehlerfälle transportiert. Der HTTP-Adapter mappt sie auf Status-Codes — Reihenfolge und Tabelle in §5.1.
 
 ### 3.3 Ports
 
@@ -189,7 +189,7 @@ Aktuell vorhandene Adapter (`apps/api/`):
 | `adapters/driven/persistence/` | Driven | `InMemoryEventRepository` | Spike-Stand; Folge-ADR (Roadmap §4) wechselt auf SQLite/PostgreSQL |
 | `adapters/driven/ratelimit/` | Driven | `TokenBucket` | 100 Events/s/Project laut Spike-Spec §6.9 |
 | `adapters/driven/metrics/` | Driven | `PrometheusPublisher` | exposed über `/api/metrics` |
-| `adapters/driven/telemetry/` | Driven | OTel-SDK-Setup | querschnittlich; kein Port — der Use Case nutzt `otel.Tracer` direkt |
+| `adapters/driven/telemetry/` | Driven | OTel-SDK-Setup | querschnittlich; *wired but silent* — registriert einen `MeterProvider` ohne Exporter, der Use Case selbst importiert keinen OTel-Pfad. OTLP-Anbindung folgt mit `0.1.0`-Implementierung. |
 
 ---
 
@@ -263,7 +263,7 @@ m-trace/
 
 ### 5.1 Event-Ingest
 
-Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md):
+Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) (Schritte 1 und 2 im HTTP-Adapter, Schritte 2..8 im Use Case):
 
 ```mermaid
 sequenceDiagram
@@ -277,32 +277,41 @@ sequenceDiagram
     participant Metrics as adapters/driven/metrics<br/>PrometheusPublisher
 
     Browser->>HTTP: POST /api/playback-events<br/>X-MTrace-Token, JSON-Batch
+    HTTP->>HTTP: Step 1 — Body-Größe (≤ 256 KB)
+    HTTP->>HTTP: Step 2 — Auth-Header vorhanden
     HTTP->>HTTP: Parse JSON → BatchInput
     HTTP->>App: RegisterPlaybackEventBatch(BatchInput)
-    App->>App: Validate schema_version
-    App->>Auth: ResolveByToken(token)
+    App->>Auth: Step 2 — ResolveByToken(token)
     Auth-->>App: Project
-    App->>App: Validate batch size (1..100)
-    App->>App: Validate event fields, parse timestamp
-    App->>Rate: Allow(projectID, n)
+    App->>Rate: Step 3 — Allow(projectID, n)
     Rate-->>App: ok | ErrRateLimited
-    App->>Repo: Append(events)
+    App->>App: Step 4 — schema_version == "1.0"
+    App->>App: Step 5 — Batch-Form (1..100 Events)
+    App->>App: Step 6 — Event-Pflichtfelder, Timestamp parsen
+    App->>App: Step 7 — project_id ≡ Token-Projekt
+    App->>Repo: Step 8 — Append(events)
     Repo-->>App: ok
     App->>Metrics: EventsAccepted(n)
     App-->>HTTP: BatchResult{Accepted: n}
     HTTP-->>Browser: 202 Accepted
 ```
 
-Fehlerpfade führen ebenfalls über `MetricsPublisher`:
+Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut Spike-Spec §6.10:
 
-| Stufe | Fehler | Status | Counter |
-|---|---|---|---|
-| schema_version | unsupported | 400 | `mtrace_invalid_events_total` |
-| Auth | unbekannter Token | 401 | `mtrace_invalid_events_total` |
-| Batch | leer/zu groß | 400/413 | `mtrace_invalid_events_total` |
-| Event | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` |
-| Rate-Limit | Budget aufgebraucht | 429 | `mtrace_rate_limited_events_total` |
-| Persistenz | Repository-Fehler | 500 | `mtrace_dropped_events_total` |
+| Stufe | Fehler | Status | Counter | Geprüft in |
+|---|---|---|---|---|
+| Body | Größe > 256 KB | 413 | — (HTTP) | HTTP-Adapter |
+| Auth-Header | fehlt | 401 | — (HTTP) | HTTP-Adapter |
+| Auth-Token | Token unbekannt | 401 | — (Adapter-Fehler durchgereicht) | Use Case Step 2 |
+| Rate-Limit | Budget aufgebraucht | 429 + `Retry-After` | `mtrace_rate_limited_events_total` | Use Case Step 3 |
+| schema_version | ≠ `"1.0"` | 400 | `mtrace_invalid_events_total` | Use Case Step 4 |
+| Batch-Form | leer | 422 | `mtrace_invalid_events_total` (n=0) | Use Case Step 5 |
+| Batch-Größe | > 100 Events | 422 | `mtrace_invalid_events_total` | Use Case Step 5 |
+| Event-Felder | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` | Use Case Step 6 |
+| Token-Bindung | `project_id` ≠ Token-Projekt | 401 | `mtrace_invalid_events_total` | Use Case Step 7 |
+| Persistenz | Repository-Fehler | 500 | `mtrace_dropped_events_total` | Use Case Step 8 |
+
+Auth-Pfade rufen den `MetricsPublisher` bewusst nicht auf: Step 2 (`ResolveByToken`) reicht den Adapter-Fehler unverändert durch, und die HTTP-seitige Header-Prüfung läuft komplett im Adapter, ohne den Use Case zu erreichen. Token-Bindung in Step 7 zählt dagegen als Validierungsfehler und erhöht `mtrace_invalid_events_total`.
 
 ### 5.2 Metrics-Pfad
 
@@ -324,7 +333,7 @@ Hochkardinale Werte (`session_id`, `user_agent`, `segment_url`) sind als Prometh
 
 ### 5.3 Telemetrie-Pfad
 
-`adapters/driven/telemetry` initialisiert einmalig den OpenTelemetry-SDK in `main.go`. Spans setzt der Use Case direkt über `otel.Tracer(...)`. Es gibt bewusst **keinen** Port `Tracer` — Tracing ist Querschnitt und kein fachlicher Adapter-Vertrag.
+`adapters/driven/telemetry` initialisiert einmalig den OpenTelemetry-SDK in `main.go`. Aktueller Stand: *wired but silent* — der `Setup()`-Aufruf registriert einen prozesslokalen `MeterProvider` ohne Exporter (laut Spike-Spec §6.7); der Use Case importiert weder `otel.Tracer` noch `otel.Meter`. Damit ist die Build- und Call-Site-Integration belegt, ohne dass produktive Telemetrie entsteht. OTLP-Anbindung und konkrete Spans folgen mit `0.1.0`-Implementierung. Ein Port `Tracer` ist bewusst nicht vorgesehen — Tracing bleibt Querschnitt und kein fachlicher Adapter-Vertrag.
 
 ---
 
@@ -333,7 +342,7 @@ Hochkardinale Werte (`session_id`, `user_agent`, `segment_url`) sind als Prometh
 | Thema | Umsetzung | Bezug |
 |---|---|---|
 | Logging | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt | Lastenheft §10.1 |
-| Tracing | OTel-SDK-Setup in `adapters/driven/telemetry`; Use Case nutzt `otel.Tracer` direkt | ADR-0001 §5 |
+| Tracing | OTel-SDK-Setup in `adapters/driven/telemetry` (*wired but silent*: `MeterProvider` ohne Exporter); Use Case ruft aktuell weder `otel.Tracer` noch `otel.Meter` auf — produktive Telemetrie folgt mit `0.1.0`-Implementierung. | ADR-0001 §5; Spike-Spec §6.7 |
 | Metriken | Prometheus über `/api/metrics`-Endpoint, nur Aggregate | Lastenheft §7.9, §7.10 |
 | Auth | Header `X-MTrace-Token`, Auflösung über `ProjectResolver` | Spike-Spec §6.4, Lastenheft §8.5 |
 | Rate Limiting | In-Memory Token-Bucket, 100 Events/s/Project | Spike-Spec §6.9 |
