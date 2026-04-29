@@ -240,11 +240,11 @@ Lastenheft-interner Widerspruch in §7.8: F-87/F-88 klassifizierten Prometheus, 
 
 DoD:
 
-- [x] Lastenheft Header: Version `1.0.1` → `1.0.2`.
-- [x] Lastenheft §7.8 Mindestdienste: in zwei Tabellen aufgeteilt — Pflicht-Block (`api`, `dashboard`, `mediamtx`, `stream-generator`), Soll-Block (`otel-collector`, `prometheus`, `grafana`) mit Bezug auf F-87/F-88 und MVP-28/MVP-29.
-- [x] Plan §5.3 `make dev`-Item von `[!]` zurück auf `[ ]` geflippt — Inkonsistenz aufgelöst.
-- [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.2` aktualisiert.
-- [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.2` aktualisiert.
+- [x] Lastenheft Header: Version `1.0.1` → `1.0.2` (`c2e7ac7`).
+- [x] Lastenheft §7.8 Mindestdienste: in zwei Tabellen aufgeteilt — Pflicht-Block (`api`, `dashboard`, `mediamtx`, `stream-generator`), Soll-Block (`otel-collector`, `prometheus`, `grafana`) mit Bezug auf F-87/F-88 und MVP-28/MVP-29 (`c2e7ac7`).
+- [x] Plan §5.3 `make dev`-Item von `[!]` zurück auf `[ ]` geflippt — Inkonsistenz aufgelöst (`c2e7ac7`).
+- [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.2` aktualisiert (`c2e7ac7`).
+- [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.2` aktualisiert (`c2e7ac7`).
 
 ---
 
