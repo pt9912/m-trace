@@ -182,12 +182,20 @@ müssen aber.
 
 ## 6. Rate Limiting
 
-- **Quote**: 100 Events/Sekunde pro `project_id`.
-- **Algorithmus**: Token-Bucket oder vergleichbar, in-memory, pro Prototyp.
+- **Quote**: 100 Events/Sekunde **pro Dimension**. Drei unabhängige
+  Dimensionen werden geprüft (plan-0.1.0.md §5.1, F-110): `project_id`,
+  `client_ip`, `origin`. Mismatch in einer Dimension reicht für `429`;
+  ein 429 in einer Dimension verbraucht keine Tokens in den anderen
+  („all-or-nothing"-Commit).
+- **Algorithmus**: Token-Bucket pro (Dimension, Wert), in-memory, pro
+  Prototyp. Capacity und Refill teilen sich alle Dimensionen.
 - **Antwort bei Überschreitung**: `429 Too Many Requests` mit Header
   `Retry-After: <seconds>`.
-- **Granularität**: Quote zählt **Events**, nicht Requests; ein Batch von
-  50 Events verbraucht 50 Tokens.
+- **Granularität**: Quote zählt **Events**, nicht Requests; ein Batch
+  von 50 Events verbraucht 50 Tokens pro gesetzter Dimension.
+- **Leere Dimensions-Werte** (z. B. `origin=""` im CLI/curl-Pfad) werden
+  übersprungen — keine künstlichen Sentinels, kein Rate-Limit gegen den
+  leeren String.
 - Verteiltes Rate-Limiting ist nicht Teil des Spikes.
 
 ---

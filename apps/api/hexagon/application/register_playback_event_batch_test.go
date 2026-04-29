@@ -8,6 +8,7 @@ import (
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -35,7 +36,7 @@ type stubLimiter struct {
 	deny bool
 }
 
-func (s *stubLimiter) Allow(_ context.Context, _ string, _ int) error {
+func (s *stubLimiter) Allow(_ context.Context, _ driven.RateLimitKey, _ int) error {
 	if s.deny {
 		return domain.ErrRateLimited
 	}

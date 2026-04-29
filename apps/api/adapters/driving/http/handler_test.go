@@ -17,6 +17,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 // noopTelemetry satisfies driven.Telemetry without recording anything;
@@ -75,7 +76,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 // runs). Verifying the 422 path requires bypassing that earlier gate.
 type unlimitedLimiter struct{}
 
-func (unlimitedLimiter) Allow(_ context.Context, _ string, _ int) error { return nil }
+func (unlimitedLimiter) Allow(_ context.Context, _ driven.RateLimitKey, _ int) error { return nil }
 
 // newServerWithUnlimitedRate wires a router whose rate limiter never
 // rejects, so tests can reach validation rules downstream of the

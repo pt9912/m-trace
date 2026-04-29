@@ -18,14 +18,17 @@ type PlaybackEventInbound interface {
 
 // BatchInput is the wire-format-neutral representation of a request to
 // the API. It carries the raw header value (AuthToken), den optionalen
-// Origin-Header (CORS Variante B, plan-0.1.0.md §5.1) und die
-// parsed payload. Per docs/spike/backend-api-contract.md §5 the use
-// case is responsible for the full validation order from step 2
-// onwards. Origin="" → CLI/curl-Pfad: keine Project-Bindung.
+// Origin-Header (CORS Variante B, plan-0.1.0.md §5.1), die ermittelte
+// ClientIP (für die Rate-Limit-Dimension F-110) und die parsed
+// payload. Per docs/spike/backend-api-contract.md §5 the use case is
+// responsible for the full validation order from step 2 onwards.
+// Origin="" → CLI/curl-Pfad: keine Project-Bindung. ClientIP="" →
+// keine IP-basierte Rate-Limit-Dimension (Tests/headless flows).
 type BatchInput struct {
 	SchemaVersion string
 	AuthToken     string
 	Origin        string
+	ClientIP      string
 	Events        []EventInput
 }
 

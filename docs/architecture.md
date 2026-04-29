@@ -175,7 +175,17 @@ type ProjectResolver interface {
 }
 
 type RateLimiter interface {
-    Allow(ctx context.Context, projectID string, n int) error
+    Allow(ctx context.Context, key RateLimitKey, n int) error
+}
+
+// RateLimitKey trägt die drei Dimensionen aus plan-0.1.0.md §5.1
+// (F-110). Leere Felder werden vom Adapter übersprungen — das stellt
+// sicher, dass CLI-/Lab-Pfade ohne Origin nur Project- und Client-IP-
+// Tokens verbrauchen.
+type RateLimitKey struct {
+    ProjectID string
+    ClientIP  string
+    Origin    string
 }
 
 type MetricsPublisher interface {
@@ -334,7 +344,8 @@ sequenceDiagram
     UseCase->>Telemetry: BatchReceived(ctx, len(in.Events))
     UseCase->>Auth: ResolveByToken(token)
     Auth-->>UseCase: Project
-    UseCase->>Rate: Allow(projectID, n)
+    Note over UseCase: Step 3b — Origin ∈ Project.AllowedOrigins<br/>(plan-0.1.0 §5.1, CORS Variante B)
+    UseCase->>Rate: Allow(RateLimitKey{ProjectID, ClientIP, Origin}, n)
     Rate-->>UseCase: ok
     Note over UseCase: Step 5 — schema_version == "1.0"<br/>Step 6/7 — Batch-Form (1..100)<br/>Step 8 — Event-Pflichtfelder<br/>Step 9 — project_id ≡ Token-Projekt
     UseCase->>Repo: Append(events)

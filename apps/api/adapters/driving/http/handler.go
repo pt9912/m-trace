@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -114,6 +115,7 @@ func (h *PlaybackEventsHandler) serve(ctx context.Context, w http.ResponseWriter
 		SchemaVersion: payload.SchemaVersion,
 		AuthToken:     token,
 		Origin:        r.Header.Get("Origin"),
+		ClientIP:      clientIPFromRequest(r),
 		Events:        toEventInputs(payload.Events),
 	}
 	batchSize := len(in.Events)
@@ -189,6 +191,23 @@ func (r *statusRecorder) statusCode() int {
 		return http.StatusOK
 	}
 	return r.code
+}
+
+// clientIPFromRequest extrahiert die Client-Adresse aus r.RemoteAddr
+// für die Rate-Limit-Dimension client_ip (plan-0.1.0.md §5.1, F-110).
+// In 0.1.0 wird `X-Forwarded-For` bewusst nicht ausgewertet — ein
+// vertrauenswürdiger Proxy-Chain-Header ist nicht eingerichtet.
+// httptest und CLI liefern z. B. "127.0.0.1:54321"; der Port wird
+// abgeschnitten, IPv6-Klammern werden beibehalten (net.SplitHostPort).
+func clientIPFromRequest(r *http.Request) string {
+	if r.RemoteAddr == "" {
+		return ""
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }
 
 // outcomeFor maps HTTP status codes to the small set of batch.outcome

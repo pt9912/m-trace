@@ -108,8 +108,15 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	// Step 4 — rate limit: charged for the requested batch size, even
 	// if the batch later turns out to be malformed. This prevents a
 	// caller from probing for validation responses without paying the
-	// per-project budget.
-	if err := u.limiter.Allow(ctx, project.ID, len(in.Events)); err != nil {
+	// per-project budget. Drei Dimensionen (project_id, client_ip,
+	// origin) werden gemeinsam geprüft (plan-0.1.0.md §5.1, F-110);
+	// Mismatch in einer reicht für 429.
+	limitKey := driven.RateLimitKey{
+		ProjectID: project.ID,
+		ClientIP:  in.ClientIP,
+		Origin:    in.Origin,
+	}
+	if err := u.limiter.Allow(ctx, limitKey, len(in.Events)); err != nil {
 		u.metrics.RateLimitedEvents(len(in.Events))
 		return driving.BatchResult{}, err
 	}
