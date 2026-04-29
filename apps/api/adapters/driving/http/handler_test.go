@@ -18,6 +18,14 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 )
 
+// noopTelemetry satisfies driven.Telemetry without recording anything;
+// the driven-port Telemetry is exercised in the use case tests
+// (hexagon/application) and the OTel adapter tests
+// (adapters/driven/telemetry).
+type noopTelemetry struct{}
+
+func (noopTelemetry) BatchReceived(_ context.Context, _ int) {}
+
 const validBody = `{
   "schema_version": "1.0",
   "events": [
@@ -41,10 +49,10 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Serv
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
 	publisher := metrics.NewPrometheusPublisher()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, clock,
+		resolver, limiter, repo, publisher, noopTelemetry{}, clock,
 	)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, publisher.Handler(), logger)
+	router := apihttp.NewRouter(uc, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv
@@ -72,10 +80,10 @@ func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
 	publisher := metrics.NewPrometheusPublisher()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, unlimitedLimiter{}, repo, publisher, time.Now,
+		resolver, unlimitedLimiter{}, repo, publisher, noopTelemetry{}, time.Now,
 	)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, publisher.Handler(), logger)
+	router := apihttp.NewRouter(uc, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

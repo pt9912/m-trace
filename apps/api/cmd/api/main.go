@@ -42,9 +42,15 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
-	mp, err := telemetry.Setup(serviceName, serviceVersion)
+	otelProviders, err := telemetry.Setup(context.Background(), serviceName, serviceVersion)
 	if err != nil {
 		logger.Error("otel setup failed", "error", err)
+		os.Exit(1)
+	}
+
+	otelTelemetry, err := telemetry.NewOTelTelemetry(otelProviders.Meter.Meter(telemetry.MeterName))
+	if err != nil {
+		logger.Error("otel telemetry adapter init failed", "error", err)
 		os.Exit(1)
 	}
 
@@ -56,10 +62,11 @@ func main() {
 	publisher := metrics.NewPrometheusPublisher()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, time.Now,
+		resolver, limiter, repo, publisher, otelTelemetry, time.Now,
 	)
 
-	router := apihttp.NewRouter(useCase, publisher.Handler(), logger)
+	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
+	router := apihttp.NewRouter(useCase, publisher.Handler(), tracer, logger)
 
 	srv := &http.Server{
 		Addr:              listenAddr,
@@ -95,7 +102,7 @@ func main() {
 		logger.Error("graceful shutdown failed", "error", err)
 		os.Exit(1)
 	}
-	if err := mp.Shutdown(shutdownCtx); err != nil {
+	if err := otelProviders.Shutdown(shutdownCtx); err != nil {
 		logger.Error("otel shutdown failed", "error", err)
 	}
 	logger.Info("server stopped")

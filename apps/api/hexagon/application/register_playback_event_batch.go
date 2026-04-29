@@ -24,11 +24,12 @@ const MaxBatchSize = 100
 // RegisterPlaybackEventBatchUseCase validates and persists a batch of
 // player events. It implements driving.PlaybackEventInbound.
 type RegisterPlaybackEventBatchUseCase struct {
-	projects driven.ProjectResolver
-	limiter  driven.RateLimiter
-	events   driven.EventRepository
-	metrics  driven.MetricsPublisher
-	now      func() time.Time
+	projects  driven.ProjectResolver
+	limiter   driven.RateLimiter
+	events    driven.EventRepository
+	metrics   driven.MetricsPublisher
+	telemetry driven.Telemetry
+	now       func() time.Time
 }
 
 // NewRegisterPlaybackEventBatchUseCase wires the use case with its
@@ -38,17 +39,19 @@ func NewRegisterPlaybackEventBatchUseCase(
 	limiter driven.RateLimiter,
 	events driven.EventRepository,
 	metrics driven.MetricsPublisher,
+	telemetry driven.Telemetry,
 	now func() time.Time,
 ) *RegisterPlaybackEventBatchUseCase {
 	if now == nil {
 		now = time.Now
 	}
 	return &RegisterPlaybackEventBatchUseCase{
-		projects: projects,
-		limiter:  limiter,
-		events:   events,
-		metrics:  metrics,
-		now:      now,
+		projects:  projects,
+		limiter:   limiter,
+		events:    events,
+		metrics:   metrics,
+		telemetry: telemetry,
+		now:       now,
 	}
 }
 
@@ -67,6 +70,10 @@ func NewRegisterPlaybackEventBatchUseCase(
 func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	ctx context.Context, in driving.BatchInput,
 ) (driving.BatchResult, error) {
+	// OTel-Counter: vor Auth zählen, damit auch fehlgeschlagene Auth-
+	// Requests im received-Counter erscheinen (siehe Telemetry-Port-Doc).
+	u.telemetry.BatchReceived(ctx, len(in.Events))
+
 	// Step 3 — auth-token: resolve token to project. Auth-Fehler zählen
 	// nicht in invalid_events.
 	project, err := u.projects.ResolveByToken(ctx, in.AuthToken)

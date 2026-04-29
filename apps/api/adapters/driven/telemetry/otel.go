@@ -1,31 +1,80 @@
-// Package telemetry holds a minimal OpenTelemetry setup. Per
-// docs/spike/0001-backend-stack.md §6.7 the Spike requires only that
-// OTel is wired into the build and code path; no exporter, no
-// production collector, no full trace correlation.
+// Package telemetry implements the driven.Telemetry port via the
+// OpenTelemetry SDK. Per docs/architecture.md §3.4 this is one of two
+// places (alongside adapters/driving/http) where OTel imports are
+// allowed; hexagon/ stays OTel-frei (boundary-test in
+// scripts/check-architecture.sh).
 //
-// Bewertet wird die Ergonomie der Integration (Spec §9), nicht die
-// produktive Telemetrie.
+// The Setup function returns Providers with a graceful Shutdown(ctx)
+// that combines the meter- and tracer-provider shutdown errors. Reader
+// und Span-Exporter werden via autoexport mit explizitem No-Op-Fallback
+// aufgelöst — siehe docs/architecture.md §5.3.
 package telemetry
 
 import (
+	"context"
+	"errors"
+
+	"go.opentelemetry.io/contrib/exporters/autoexport"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// MeterName is the OTel scope used for spike instrumentation.
+// MeterName is the OTel scope used for instrumentation.
 const MeterName = "github.com/pt9912/m-trace/apps/api"
 
-// Setup initializes a minimal OTel MeterProvider with a process-local
-// resource and registers it as the global provider. The provider is
-// returned so the caller can Shutdown it on graceful shutdown.
+// TracerName is the OTel scope used for span creation in the HTTP
+// adapter (ServeHTTP wraps requests in a span).
+const TracerName = "github.com/pt9912/m-trace/apps/api"
+
+// counterBatchesReceived is the OTel counter name for BatchReceived
+// calls. Per docs/telemetry-model.md §2.2 it appears in Prometheus as
+// mtrace_api_batches_received after the OTel→Prom translation
+// (`.` → `_`).
+const counterBatchesReceived = "mtrace.api.batches.received"
+
+// Providers bundles the meter- and tracer-provider returned by Setup.
+// A single Shutdown(ctx) collapses both lifecycle calls and joins
+// their errors.
+type Providers struct {
+	Meter  *sdkmetric.MeterProvider
+	Tracer *sdktrace.TracerProvider
+}
+
+// Shutdown stops both providers and joins any errors. Safe to call
+// when only one provider is set; nil-safe per provider.
+func (p *Providers) Shutdown(ctx context.Context) error {
+	var errs []error
+	if p.Meter != nil {
+		if err := p.Meter.Shutdown(ctx); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if p.Tracer != nil {
+		if err := p.Tracer.Shutdown(ctx); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// Setup initializes a MeterProvider and a TracerProvider with a
+// process-local resource and registers them as the globals.
 //
-// No exporter is configured — OTel is "wired but silent" per
-// Spec §6.7. A future MVP can swap in OTLP without touching call sites.
-func Setup(serviceName, serviceVersion string) (*sdkmetric.MeterProvider, error) {
+// Reader und Span-Exporter werden über autoexport mit explizitem
+// No-Op-Fallback aufgelöst — ohne `OTEL_TRACES_EXPORTER=otlp` /
+// `OTEL_METRICS_EXPORTER=otlp` (oder andere `OTEL_*`-Env-Vars) bleibt
+// das Setup silent. autoexport defaultet ohne Fallback auf OTLP, was
+// lokale Dev-Setups gegen einen nicht vorhandenen Collector pushen
+// ließe; deshalb der explizite Fallback.
+func Setup(ctx context.Context, serviceName, serviceVersion string) (*Providers, error) {
 	res, err := resource.Merge(
 		resource.Default(),
 		resource.NewWithAttributes(
@@ -39,9 +88,54 @@ func Setup(serviceName, serviceVersion string) (*sdkmetric.MeterProvider, error)
 		return nil, err
 	}
 
-	mp := sdkmetric.NewMeterProvider(sdkmetric.WithResource(res))
+	// Metric reader with no-op fallback when no OTEL_METRICS_EXPORTER
+	// is set.
+	reader, err := autoexport.NewMetricReader(
+		ctx,
+		autoexport.WithFallbackMetricReader(func(_ context.Context) (sdkmetric.Reader, error) {
+			return sdkmetric.NewManualReader(), nil
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(res),
+		sdkmetric.WithReader(reader),
+	)
 	otel.SetMeterProvider(mp)
-	return mp, nil
+
+	// Span exporter with no-op fallback when no OTEL_TRACES_EXPORTER
+	// is set.
+	spanExporter, err := autoexport.NewSpanExporter(
+		ctx,
+		autoexport.WithFallbackSpanExporter(func(_ context.Context) (sdktrace.SpanExporter, error) {
+			return noopSpanExporter{}, nil
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithResource(res),
+		sdktrace.WithBatcher(spanExporter),
+	)
+	otel.SetTracerProvider(tp)
+
+	return &Providers{Meter: mp, Tracer: tp}, nil
+}
+
+// noopSpanExporter discards all spans. Used as autoexport fallback.
+type noopSpanExporter struct{}
+
+func (noopSpanExporter) ExportSpans(_ context.Context, _ []sdktrace.ReadOnlySpan) error {
+	return nil
+}
+
+func (noopSpanExporter) Shutdown(_ context.Context) error {
+	return nil
 }
 
 // Meter returns the spike's named meter from the globally registered
@@ -49,3 +143,40 @@ func Setup(serviceName, serviceVersion string) (*sdkmetric.MeterProvider, error)
 func Meter() metric.Meter {
 	return otel.GetMeterProvider().Meter(MeterName)
 }
+
+// OTelTelemetry implements driven.Telemetry by mapping BatchReceived
+// onto an OTel Int64Counter. The counter is created lazily on the
+// first call so that Setup may not yet have run during construction
+// in tests; production code wires Setup before calling the use case.
+type OTelTelemetry struct {
+	counter metric.Int64Counter
+}
+
+// NewOTelTelemetry returns a telemetry implementation that uses the
+// given meter to create the Int64Counter `mtrace.api.batches.received`.
+// If meter is nil, a no-op meter is used (useful for tests that do
+// not wire the SDK).
+func NewOTelTelemetry(meter metric.Meter) (*OTelTelemetry, error) {
+	if meter == nil {
+		meter = noop.NewMeterProvider().Meter(MeterName)
+	}
+	counter, err := meter.Int64Counter(
+		counterBatchesReceived,
+		metric.WithDescription("Anzahl der via POST /api/playback-events empfangenen Batches"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &OTelTelemetry{counter: counter}, nil
+}
+
+// BatchReceived increments the counter by 1 with batch.size as
+// attribute. The size attribute is bounded (small int range), so it
+// does not violate the Prometheus cardinality rules from
+// docs/telemetry-model.md §3.
+func (t *OTelTelemetry) BatchReceived(ctx context.Context, size int) {
+	t.counter.Add(ctx, 1, metric.WithAttributes(attribute.Int("batch.size", size)))
+}
+
+// Compile-time check: OTelTelemetry implements driven.Telemetry.
+var _ driven.Telemetry = (*OTelTelemetry)(nil)

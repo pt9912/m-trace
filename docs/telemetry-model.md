@@ -117,12 +117,14 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 
 `apps/api/adapters/driving/http` erzeugt einen Span pro Request am HTTP-Boundary. Das ist der einzige Span-Pfad im `0.1.x` (Use Case spricht OTel ausschließlich über den `Telemetry`-Driven-Port — siehe §2.2).
 
-| Span-Name | Wann | Pflicht-Attribute |
-|---|---|---|
-| `http.handler POST /api/playback-events` | pro Request auf den Player-SDK-Pfad | `http.method=POST`, `http.route=/api/playback-events`, `http.status_code=<code>`, `batch.size=<int>` (bei `202`), `batch.outcome=<accepted|invalid|rate_limited|forbidden|error>` |
-| `http.handler GET /api/stream-sessions` | pro Request auf den Listen-Endpoint | `http.method=GET`, `http.route=/api/stream-sessions`, `http.status_code` |
-| `http.handler GET /api/stream-sessions/{id}` | pro Request auf den Detail-Endpoint | `http.method=GET`, `http.route=/api/stream-sessions/{id}`, `http.status_code` |
-| `http.handler GET /api/health` | pro Health-Check | `http.method=GET`, `http.route=/api/health`, `http.status_code` |
+| Span-Name | Wann | Pflicht-Attribute | Implementiert in |
+|---|---|---|---|
+| `http.handler POST /api/playback-events` | pro Request auf den Player-SDK-Pfad | `http.method=POST`, `http.route=/api/playback-events`, `http.status_code=<code>`, `batch.size=<int>` (sobald JSON geparst), `batch.outcome=<accepted\|invalid\|unauthorized\|too_large\|rate_limited\|error\|other>` | 0.1.0-pre, plan-0.1.0 §4.3 |
+| `http.handler GET /api/stream-sessions` | pro Request auf den Listen-Endpoint | `http.method=GET`, `http.route=/api/stream-sessions`, `http.status_code` | 0.1.0, plan-0.1.0 §5.1 |
+| `http.handler GET /api/stream-sessions/{id}` | pro Request auf den Detail-Endpoint | `http.method=GET`, `http.route=/api/stream-sessions/{id}`, `http.status_code` | 0.1.0, plan-0.1.0 §5.1 |
+| `http.handler GET /api/health` | pro Health-Check | `http.method=GET`, `http.route=/api/health`, `http.status_code` | 0.1.0, plan-0.1.0 §5.1 |
+
+`GET /api/metrics` erzeugt **keinen** Span — der Prometheus-Endpoint wird vom Scraper periodisch und in hoher Frequenz gepollt; ein Span pro Scrape würde Trace-Storage ohne Erkenntnisgewinn aufblähen.
 
 Span-Attribute folgen [OTel HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/) wo anwendbar; m-trace-spezifische Erweiterungen nutzen den Namespace `mtrace.*` oder `batch.*`.
 
