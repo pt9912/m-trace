@@ -200,17 +200,23 @@ Adapter dürfen `hexagon/` importieren, niemals umgekehrt. Compile-Time-Enforcem
 var _ driven.EventRepository = (*InMemoryEventRepository)(nil)
 ```
 
-Aktuell vorhandene Adapter (`apps/api/`):
+Adapter im Zielbild `0.1.0` (`apps/api/`):
 
-| Pfad | Rolle | Implementiert | Hinweis |
+| Pfad | Rolle | Implementierung | Hinweis |
 |---|---|---|---|
-| `adapters/driving/http/` | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing) | mountet Prometheus-Handler aus `metrics`-Adapter |
-| `adapters/driven/auth/` | Driven | `StaticProjectResolver` | Static Map; Spike-Stand, später eigener Adapter |
-| `adapters/driven/persistence/` | Driven | `InMemoryEventRepository` | Spike-Stand; Folge-ADR (Roadmap §4) wechselt auf SQLite/PostgreSQL |
-| `adapters/driven/ratelimit/` | Driven | `TokenBucket` | 100 Events/s/Project laut Spike-Spec §6.9 |
-| `adapters/driven/metrics/` | Driven | `PrometheusPublisher` | exposed über `/api/metrics` |
-| `adapters/driven/telemetry/` | Driven | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`) | einzige Stelle mit OTel-Imports innerhalb der Anwendung. Default ist *silent* (kein Exporter); OTLP-Export aktiviert sich, sobald die Standard-OTel-Env-Vars gesetzt sind (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, …). |
-| `adapters/driving/http/` (Querschnitt) | Driving | erzeugt zusätzlich Request-Spans um den Use-Case-Aufruf via `otel.Tracer` | komplementär zu `Telemetry`-Port-Counter; OTel-Import zulässig, weil HTTP-Adapter OTel-Adapter sein darf. |
+| `adapters/driving/http/` | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer` | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`. |
+| `adapters/driven/auth/` | Driven | `StaticProjectResolver` | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
+| `adapters/driven/persistence/` | Driven | `InMemoryEventRepository` | wechselt mit Persistenz-Folge-ADR (Roadmap §4) auf SQLite/PostgreSQL, OE-3. |
+| `adapters/driven/ratelimit/` | Driven | `TokenBucket` | 100 Events/s/Project laut API-Kontrakt §6. |
+| `adapters/driven/metrics/` | Driven | `PrometheusPublisher` | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2). |
+| `adapters/driven/telemetry/` | Driven | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag. |
+
+OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zulässig:
+
+- `adapters/driven/telemetry/` — implementiert den `Telemetry`-Port und das OTel-SDK-Setup.
+- `adapters/driving/http/` — erzeugt Request-Spans am HTTP-Boundary.
+
+Alle anderen Pakete (`hexagon/`, `cmd/api/`, übrige Adapter) importieren weder `go.opentelemetry.io/otel` noch dessen Sub-Pakete. Die Boundary wird per Code-Review gehalten und kann zusätzlich mit einem Import-Test (`go list -deps`) abgesichert werden.
 
 ---
 
@@ -374,13 +380,16 @@ OTel-Telemetrie verläuft über zwei sich ergänzende Pfade — beide ohne OTel-
 
 **Initialisierung und Exporter-Default**:
 
-`adapters/driven/telemetry/Setup` registriert in `main.go` einen prozesslokalen `MeterProvider` und `TracerProvider` mit Service-Resource (`service.name`, `service.version`). Default ist *silent* — kein Exporter wird konfiguriert. OTLP-Export aktiviert sich automatisch, sobald die Standard-OTel-Env-Vars gesetzt sind:
+`adapters/driven/telemetry/Setup` registriert in `main.go` einen prozesslokalen `MeterProvider` und `TracerProvider` mit Service-Resource (`service.name`, `service.version`). Reader und Span-Exporter werden über `go.opentelemetry.io/contrib/exporters/autoexport` aufgelöst — damit reagieren beide Provider direkt auf die [Standard-OTel-Env-Vars](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) ohne separaten Code-Pfad:
 
-- `OTEL_EXPORTER_OTLP_ENDPOINT` (z. B. `http://localhost:4317`)
-- `OTEL_EXPORTER_OTLP_PROTOCOL` (`grpc` oder `http/protobuf`)
-- weitere `OTEL_*`-Variablen analog [OpenTelemetry Environment Variables Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/)
+| Env-Var (Beispiel) | Effekt |
+|---|---|
+| keine | `autoexport` liefert No-Op-Reader und No-Op-Span-Exporter — Provider sind silent. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` | OTLP-Reader und OTLP-Span-Exporter (Default `grpc`) werden registriert. |
+| `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` | wechselt das Transport-Protokoll. |
+| `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` | erlauben gezielte Exporter-Wahl (z. B. `console` für Debug). |
 
-Lokales Dev läuft ohne Backend-Konfiguration silent durch; produktive Setups konfigurieren über die Standard-Env-Vars ohne Code-Änderung.
+Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die Env-Vars und brauchen keinen Code-Patch. `autoexport` ist die einzige zusätzliche OTel-Abhängigkeit, die das Soll vorsieht.
 
 ---
 
@@ -389,7 +398,7 @@ Lokales Dev läuft ohne Backend-Konfiguration silent durch; produktive Setups ko
 | Thema | Umsetzung | Bezug |
 |---|---|---|
 | Logging | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt | Lastenheft §10.1 |
-| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Default silent; OTLP-Export aktiviert sich über Standard-`OTEL_EXPORTER_OTLP_*`-Env-Vars. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
+| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport`: silent ohne Env-Vars, OTLP sobald `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
 | Metriken | Prometheus über `/api/metrics`-Endpoint, nur Aggregate | Lastenheft §7.9, §7.10 |
 | Auth | Header `X-MTrace-Token`, Auflösung über `ProjectResolver` | Spike-Spec §6.4, Lastenheft §8.5 |
 | Rate Limiting | In-Memory Token-Bucket, 100 Events/s/Project | Spike-Spec §6.9 |

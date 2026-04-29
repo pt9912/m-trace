@@ -186,7 +186,8 @@ DoD:
 - [ ] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received`; Attribut `batch.size`.
 - [ ] `apps/api/cmd/api/main.go` verdrahtet die `OTelTelemetry`-Implementierung in den Use Case.
 - [ ] HTTP-Adapter `apps/api/adapters/driving/http/handler.go`: Request-Span via `otel.Tracer` um den Use-Case-Aufruf; Span-Name `http.handler POST /api/playback-events` o. ä.; Attribute für Status-Code und (bei Erfolg) `batch.size`.
-- [ ] Default bleibt silent: kein Exporter wird per Code konfiguriert. Aktivierung über Standard-OTel-Env-Vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, …).
+- [ ] `Setup` in `adapters/driven/telemetry`: `MeterProvider` und `TracerProvider` registrieren Reader/Span-Exporter über `go.opentelemetry.io/contrib/exporters/autoexport`. Damit antwortet die Konfiguration auf die Standard-OTel-Env-Vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`); ohne Env-Vars bleibt der Provider silent (No-Op-Reader/-Exporter).
+- [ ] `autoexport`-Modul-Abhängigkeit in `apps/api/go.mod` ergänzt.
 - [ ] Unit-Test `RegisterPlaybackEventBatchTest`: Telemetry-Stub zählt `BatchReceived`-Aufrufe.
 - [ ] Adapter-Test `OTelTelemetryTest`: nach N `BatchReceived`-Aufrufen liefert ein `metric.ManualReader` Counter-Wert N (oder die Standard-OTel-Test-Mechanik).
 - [ ] Docker-Targets `test` und `lint` grün.
