@@ -70,6 +70,14 @@ DoD:
 - [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`). Prometheus selbst läuft im observability-Profil (Tranche 2).
 - [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.2`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
 - [ ] **RAK-9-Seed-Skript** `scripts/seed-rak9.sh` (oder gleichwertiges `make seed-rak9`-Target) erzeugt reproduzierbar mindestens 50 Events in 5 Sessions an `/api/playback-events`. Nutzt `curl` gegen einen laufenden Compose-Stack mit `make dev-observability`; verschiedene `session_id`/`event_name`-Muster für Cardinality-Spot-Check. Voraussetzung für RAK-9-Smoke-Test (§4) und CI-Verifikation (sobald OE-6 entschieden); ohne dieses Skript bleibt RAK-9 von manueller Lastaufbereitung abhängig.
+- [ ] **Seed-Skript-Contract**: das Skript akzeptiert Pflicht- und Optional-Parameter, damit es deterministisch in frischen Checkouts und in CI läuft:
+    - `--base-url` (Default `http://localhost:8080`).
+    - `--project-id` (Default `demo`); muss in der API-`StaticProjectResolver`-Konfiguration als gültige Project-ID hinterlegt sein.
+    - `--token` (Default `demo-token`); muss zu `--project-id` passen.
+    - `--origin` (Default leer = kein `Origin`-Header gesendet, CLI/Lab-Pfad); bei gesetztem Wert wird der Origin in den HTTP-Headern mitgesendet — der Wert muss in den Allowed-Origins des Projekts sein, sonst antwortet die API mit 403.
+    - `--sessions` (Default 5), `--events-per-session` (Default 10).
+    - `--skip-auth` (Bool, Default false): überspringt Auth-Header für lokale isolierte Smoke-Variante (z. B. wenn Backend `apps/api` ohne Auth-Konfiguration läuft) — in CI niemals nutzen.
+    - Compose-Default-Fixtures: `services/`-Konfigurationen liefern eine `demo`-Project-ID mit Token `demo-token` und Allowed-Origin `http://localhost:5173`, damit das Seed-Skript out-of-the-box läuft.
 
 ---
 
@@ -102,8 +110,7 @@ DoD:
     - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
 - [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. Mindestens **eine** der beiden Varianten muss reproduzierbar prüfbar sein:
     - **Variante A — OTel-Spans im Backend (Console-Exporter)**: `apps/api` erzeugt mindestens einen Request-Span pro `POST /api/playback-events` (abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`). Verifikation läuft mit deterministischem Console-Exporter, damit der Test reproduzierbar ist und nicht von Trace-Backend-Bonus-Komponenten (Jaeger u. a. — sind im MVP nicht Pflicht) abhängt: das Smoke-Skript setzt `OTEL_TRACES_EXPORTER=console` für den `api`-Service (entweder via Compose-Override oder `make seed-rak9` mit Env-Var-Injection), führt `seed-rak9.sh` aus, dann prüft `docker compose logs api | grep '"name":"http.handler POST'` mindestens einen Span-Eintrag. Console-Exporter ist immer verfügbar (Teil der OTel-SDK-Distribution); kein Trace-Backend nötig.
-    - **Variante B — Dashboard-Trace-Ansicht**: die eingebaute Session-/Trace-Ansicht aus `plan-0.1.1.md` §3 (MVP-14) zeigt für eine über `seed-rak9.sh` erzeugte Session eine Event-Timeline mit ≥ 5 Events; das gilt als erfüllter „exemplarisch sichtbar"-Pfad und braucht kein Observability-Profile.
-    - Welche Variante gewählt wird, ist im RAK-10-Smoke-Test-Commit zu dokumentieren; eine reine „beides möglich"-Aussage ohne konkreten Nachweis erfüllt RAK-10 nicht.
+    - **Variante B — Dashboard-Trace-Ansicht (constraint)**: die eingebaute Session-/Trace-Ansicht aus `plan-0.1.1.md` §3 (MVP-14) zählt **nur dann** als RAK-10-Erfüllung, wenn sie tatsächlich Trace-äquivalente Daten zeigt — d. h. mindestens (a) Span-äquivalente Hierarchie pro Session (z. B. Request-Span umschließt Event-Spans) **und** (b) Span-Attribute wie Dauer/Latenz pro Sub-Vorgang aus den persistierten Daten ableitbar. Eine reine Event-Liste ohne diese Trace-Semantik gilt als „best effort", nicht als RAK-10-DoD — in dem Fall muss Variante A erfüllt sein. Der Smoke-Test-Commit dokumentiert konkret, welche Variante (A oder B) genutzt wurde und wie sie geprüft wurde.
     - Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
 ### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)

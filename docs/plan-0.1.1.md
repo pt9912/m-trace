@@ -41,19 +41,23 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Gate ist in zwei Kategorien geteilt: **harte Voraussetzungen** (alle `[x]`) und **weiche Voraussetzungen** (offen erlaubt, wenn explizit als nicht-blockierend markiert). Tranche ist „erfüllt", wenn alle harten und alle blockierenden weichen Items `[x]` sind.
 
-DoD — **harte Voraussetzungen** (Pflicht `[x]` vor `0.1.1`-Start):
+DoD — **harte Voraussetzungen** (Pflicht `[x]` vor `0.1.1`-Start; granular gelistet, damit Gate-Zustand eindeutig prüfbar ist):
 
-- [ ] `plan-0.1.0.md` Tranchen 0, 0a, 0b vollständig (`[x]`).
-- [ ] `plan-0.1.0.md` §5.1 (Backend-Erweiterung) abgeschlossen.
-- [ ] `plan-0.1.0.md` §5.2 (Compose-Lab Core) abgeschlossen.
-- [ ] `plan-0.1.0.md` §5.3 (Release-Akzeptanzkriterien `0.1.0` — RAK-1/3/4/6/8) abgeschlossen.
-- [ ] `plan-0.1.0.md` §5.4 (Übergreifende DoD `0.1.0`) abgeschlossen, insbesondere CI-Pflicht-Item.
+- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md: alle Inhalts-Items `[x]` (nicht nur Skelett-Anlage).
+- [ ] `plan-0.1.0.md` §3.6 local-development.md: alle Inhalts-Items `[x]`.
+- [ ] `plan-0.1.0.md` §4.2 Counter-Scope (InvalidEvents/DroppedEvents-Drops + Tests) `[x]`.
+- [ ] `plan-0.1.0.md` §4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport `[x]`.
+- [ ] `plan-0.1.0.md` §5.1 Backend-Erweiterung `[x]`.
+- [ ] `plan-0.1.0.md` §5.2 Compose-Lab Core `[x]`.
+- [ ] `plan-0.1.0.md` §5.3 Release-Akzeptanzkriterien `0.1.0` (RAK-1/3/4/6/8) `[x]`.
+- [ ] `plan-0.1.0.md` §5.4 Übergreifende DoD `0.1.0` `[x]`, insbesondere CI-Pflicht-Item.
 
-DoD — **weiche Voraussetzungen** (offen erlaubt, wenn nicht-blockierend; Tranche-0c-Patches sind konstruktionsbedingt fortlaufend):
+DoD — **weiche Voraussetzungen** (offen erlaubt; Gate **nicht** blockierend):
 
+- [ ] `plan-0.1.0.md` §4.4 Code-Step-Numbering: kann offen bleiben, ist Code-Kommentar-Cleanup ohne `0.1.1`-Auswirkung. Wird beim nächsten Code-Touch in `apps/api/hexagon/application/register_playback_event_batch.go` mitgenommen.
 - [ ] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.1`-Start einzeln eingestuft: jedes offene Item ist entweder
     - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.1`-Implementierung direkt betrifft), **oder**
-    - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag (z. B. Wording-Schärfungen, die `0.1.1`-Code nicht beeinflussen).
+    - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag.
 - [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem 0c-Item nachvollziehbar (Commit-Body listet die §4a.x-Nummern und ihren Status).
 
 ---
