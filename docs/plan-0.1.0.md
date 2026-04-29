@@ -36,7 +36,7 @@ DoD:
 
 - [x] Spike-Sieger-Branch `spike/go-api` als `--no-ff`-Merge auf `main` integriert (`f2f3e44`).
 - [x] Modulpfad-Rename `github.com/example/m-trace/apps/api` → `github.com/pt9912/m-trace/apps/api` (16 Dateien, `e073040`).
-- [x] Docker-Targets `test`, `lint`, `build` lokal grün verifiziert.
+- [x] Docker-Targets `test`, `lint`, `build` lokal grün verifiziert nach Modulpfad-Rename (`e073040`).
 - [x] `apps/api/README.md` post-Spike aktualisiert (Titel, Adapter-Tree, Pflicht-Endpoints) (`09b2e23`, korrigiert in `486bd08`).
 - [x] Roadmap §1.2 und §2 Schritt 1 auf ✅ (`09b2e23`).
 
@@ -98,7 +98,7 @@ DoD:
 - [x] Findings aus Code-Review-Runde 2 (geplante Pfade, OTel-Spans-Pfeil, Session-Aggregation-Wording, Soll/Ist-Konvention) korrigiert (`13c2d27`).
 - [x] Variante B integriert: Auth-vor-Body-Reihenfolge in Sequenzdiagramm und Fehler-Tabelle (`40d79d9`).
 - [x] Restrukturierung zu reinem Zielbild (Soll/Ist-Trennung): „geplant"-Markierungen entfernt, OTel-Wording auf Soll, §4.1+§4.2 vereint, §5.2 Pull-Richtung, §5.1 Auth-Counter-Scope, Domain-Errors-Wording (`6ab96f1`).
-- [x] Roadmap §1.2 und §2 Schritt 5 auf ✅ (`932f0bd`, `08811cb`).
+- [x] Roadmap §2 Schritt 5 auf ✅ (`932f0bd`, `08811cb`). (§1.2 enthält nur die Pre-MVP-Schritte 1–4.)
 
 ### 3.2 `docs/risks-backlog.md`
 
@@ -121,8 +121,8 @@ DoD:
 
 DoD:
 
-- [x] Datei angelegt mit Tranchen 0/0a/0b/1 und vollständigem Lieferstand (`<gleicher Commit>`).
-- [x] Roadmap §1.2 und §2 Schritt 5/6/7-Bereich verweist auf Plan-Doku (folgt im Verweis-Commit).
+- [x] Datei angelegt mit Tranchen 0/0a/0b/1 und vollständigem Lieferstand (`6530502`).
+- [x] Roadmap verweist auf Plan-Doku — Bezug-Liste, §1.2-Hinweis auf Tranche-0-Detail, §2-Hinweis auf granularen Lieferstand, §3-Akzeptanzkriterien-Spalte (`c172e0c`).
 
 ### 3.5 `docs/telemetry-model.md` (Schritt 6)
 
@@ -278,7 +278,7 @@ DoD:
 - [ ] Das Player-SDK erzeugt Events.
 - [ ] Die API nimmt Events an.
 - [ ] Das Dashboard zeigt Events.
-- [ ] Architektur in `docs/architecture.md` beschrieben (Tranche 0a).
+- [x] Architektur in `docs/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
 - [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a).
 - [ ] Tests für zentrale Use Cases vorhanden.
 - [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6).
