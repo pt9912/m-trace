@@ -216,7 +216,19 @@ OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zuläss
 - `adapters/driven/telemetry/` — implementiert den `Telemetry`-Port und das OTel-SDK-Setup.
 - `adapters/driving/http/` — erzeugt Request-Spans am HTTP-Boundary.
 
-Alle anderen Pakete (`hexagon/`, `cmd/api/`, übrige Adapter) importieren weder `go.opentelemetry.io/otel` noch dessen Sub-Pakete. Die Boundary wird per Code-Review gehalten und kann zusätzlich mit einem Import-Test (`go list -deps`) abgesichert werden.
+Alle Pakete unterhalb `hexagon/` importieren weder `go.opentelemetry.io/otel` noch dessen Sub-Pakete. Übrige Adapter unter `adapters/driven/{auth,metrics,persistence,ratelimit}/` ebenfalls nicht. `cmd/api/` darf den Telemetry-Adapter wiring-mäßig importieren und sieht OTel daher transitiv — das ist kein Boundary-Verstoß.
+
+Die Regel betrifft also **direkte** Imports. Eine Boundary-Absicherung per Test prüft direkte Imports, z. B. mit:
+
+```bash
+# pro hexagon-Paket die Imports einsammeln und gegen OTel filtern
+go list -f '{{.ImportPath}} {{join .Imports " "}}' \
+    ./hexagon/... \
+    | grep 'go.opentelemetry.io' \
+    && exit 1 || true
+```
+
+`go list -deps ./...` greift bewusst zu weit: weil `cmd/api` den Telemetry-Adapter zieht, würde der transitive Schluss OTel zwangsläufig zeigen. Der Direkt-Import-Filter (oder `go list -json` mit `Imports` statt `Deps`) ist die richtige Granularität.
 
 ---
 
@@ -297,6 +309,7 @@ Akteure:
 - **Browser** — Player-SDK
 - **HTTP** — `adapters/driving/http.PlaybackEventsHandler`
 - **UseCase** — `application.RegisterPlaybackEventBatch`
+- **Telemetry** — `adapters/driven/telemetry.OTelTelemetry` (über `Telemetry`-Port)
 - **Auth** — `adapters/driven/auth.StaticProjectResolver`
 - **Rate** — `adapters/driven/ratelimit.TokenBucket`
 - **Repo** — `adapters/driven/persistence.InMemoryEventRepository`
@@ -309,6 +322,7 @@ sequenceDiagram
     participant Browser
     participant HTTP
     participant UseCase
+    participant Telemetry
     participant Auth
     participant Rate
     participant Repo
@@ -317,6 +331,7 @@ sequenceDiagram
     Browser->>HTTP: POST /api/playback-events
     Note over HTTP: Step 1 — X-MTrace-Token vorhanden<br/>Step 2 — Body ≤ 256 KB<br/>Parse JSON → BatchInput
     HTTP->>UseCase: RegisterPlaybackEventBatch(in)
+    UseCase->>Telemetry: BatchReceived(ctx, len(in.Events))
     UseCase->>Auth: ResolveByToken(token)
     Auth-->>UseCase: Project
     UseCase->>Rate: Allow(projectID, n)
@@ -331,7 +346,7 @@ sequenceDiagram
 
 Schritt-Nummerierung (1..10) entspricht dem API-Kontrakt §5; Schritte 1 (Auth-Header-Presence) und 2 (Body-Größe) laufen im HTTP-Adapter, Schritt 3 (Token-Auflösung) bis Schritt 10 (Erfolg) im Use Case. Auth steht bewusst **vor** dem Body-Read, damit unauthentifizierte Requests einen Fast-Reject-Pfad haben.
 
-Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut Spike-Spec §6.10:
+Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut [API-Kontrakt §7](./spike/backend-api-contract.md):
 
 | Stufe | Fehler | Status | Counter | Geprüft in |
 |---|---|---|---|---|
@@ -359,7 +374,7 @@ flowchart LR
     Scraper["Prometheus-Scraper"] -->|GET /api/metrics| Handler
 ```
 
-Pflicht-Counter (Spike-Spec §6.10):
+Pflicht-Counter (laut [API-Kontrakt §7](./spike/backend-api-contract.md)):
 
 - `mtrace_playback_events_total`
 - `mtrace_invalid_events_total`
