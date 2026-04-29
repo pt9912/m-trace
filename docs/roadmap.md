@@ -82,16 +82,21 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | Version | Titel | Status | Akzeptanzkriterien |
 |---|---|---|---|
 | `0.0.x` | Spike + Planungsphase | ✅ | — |
-| `0.1.0` | OTel-native Local Demo | 🟡 | RAK-1..RAK-10; DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
+| `0.1.0` | Backend Core + Demo-Lab | 🟡 | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
+| `0.1.1` | Player-SDK + Dashboard | ⬜ | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md) |
+| `0.1.2` | Observability-Stack | ⬜ | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md) |
 | `0.2.0` | Publizierbares Player SDK | ⬜ | RAK-11..RAK-21 |
 | `0.3.0` | Stream Analyzer | ⬜ | RAK-22..RAK-28 |
 | `0.4.0` | Erweiterte Trace-Korrelation | ⬜ | RAK-29..RAK-35 |
 | `0.5.0` | Multi-Protocol Lab | ⬜ | RAK-36..RAK-40 |
 | `0.6.0` | SRT Health View | ⬜ | RAK-41..RAK-46 |
 
+`0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
+geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
+
 DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
 (Lastenheft-übergreifend, nicht Release-spezifisch). Detaillierter
-Lieferstand pro Tranche steht in [`docs/plan-0.1.0.md`](./plan-0.1.0.md);
+Lieferstand pro Tranche steht in den drei `0.1.x`-Plan-Dokumenten;
 Release-Vorgehen in [`docs/releasing.md`](./releasing.md) (Skeleton —
 wird mit OE-6 und OE-7 konkretisiert).
 

@@ -255,14 +255,14 @@ Aus User-Entscheidung „Variante 2-A": der ursprüngliche `0.1.0`-MVP wird in d
 
 DoD:
 
-- [ ] Lastenheft Header: Version `1.0.2` → `1.1.0`.
-- [ ] Lastenheft §13: §13.1 (`0.1.0`-RAKs) wird in §13.1 (`0.1.0` Backend Core + Demo-Lab), §13.2 (`0.1.1` Player-SDK + Dashboard) und §13.3 (`0.1.2` Observability-Stack) aufgeteilt; RAK-1..RAK-10 werden auf die drei Sub-Releases verteilt; nachfolgende §13.x-Sections (`0.2.0`..`0.6.0`) entsprechend renumeriert auf §13.4..§13.8.
-- [ ] Lastenheft §7.3 F-22: Wording auf „Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`" — löst den Tranche-13-Findings-Block (F-22 vs MVP-21).
-- [ ] `docs/plan-0.1.0.md` schrumpft auf den neuen `0.1.0`-Scope (Backend + Lab); Player-SDK, Dashboard und Observability werden in eigene Plan-Dokumente ausgelagert.
-- [ ] `docs/plan-0.1.1.md` neu angelegt — Player-SDK + Dashboard; Tranchen 0/0a/0b/0c werden referenzierend zu `plan-0.1.0.md` gehalten.
-- [ ] `docs/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend.
-- [ ] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt.
-- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert.
+- [x] Lastenheft Header: Version `1.0.2` → `1.1.0` (`31ccb47`).
+- [x] Lastenheft §13: §13.1 (`0.1.0`-RAKs) wird in §13.1 (`0.1.0` Backend Core + Demo-Lab), §13.2 (`0.1.1` Player-SDK + Dashboard) und §13.3 (`0.1.2` Observability-Stack) aufgeteilt; RAK-1..RAK-10 werden auf die drei Sub-Releases verteilt; nachfolgende §13.x-Sections (`0.2.0`..`0.6.0`) entsprechend renumeriert auf §13.4..§13.8 (`31ccb47`).
+- [x] Lastenheft §7.3 F-22: Wording auf „Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`" — löst den Tranche-13-Findings-Block (F-22 vs MVP-21) (`31ccb47`).
+- [x] `docs/plan-0.1.0.md` schrumpft auf den neuen `0.1.0`-Scope (Backend + Lab); Player-SDK, Dashboard und Observability werden in eigene Plan-Dokumente ausgelagert (`31ccb47`).
+- [x] `docs/plan-0.1.1.md` neu angelegt — Player-SDK + Dashboard; Tranchen 0/0a/0b/0c werden referenzierend zu `plan-0.1.0.md` gehalten (`31ccb47`).
+- [x] `docs/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend (`31ccb47`).
+- [x] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt.
+- [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert.
 
 ---
 
