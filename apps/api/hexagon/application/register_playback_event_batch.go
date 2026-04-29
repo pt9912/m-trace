@@ -53,9 +53,9 @@ func NewRegisterPlaybackEventBatchUseCase(
 }
 
 // RegisterPlaybackEventBatch implements the validation order of
-// docs/spike/backend-api-contract.md §5 from step 2 onwards. Steps 1
-// (body size) and the bare presence of the X-MTrace-Token header are
-// the HTTP adapter's responsibility.
+// docs/spike/backend-api-contract.md §5 from step 3 onwards. Steps 1
+// (X-MTrace-Token header presence) and 2 (body size) are the HTTP
+// adapter's responsibility.
 //
 // Counter semantics (API-Kontrakt §7, harmonisiert mit Lastenheft 1.1.2
 // §7.9): mtrace_invalid_events_total zählt nur Validierungs-Rejects
@@ -67,14 +67,14 @@ func NewRegisterPlaybackEventBatchUseCase(
 func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	ctx context.Context, in driving.BatchInput,
 ) (driving.BatchResult, error) {
-	// Step 2 — auth: resolve token to project. Auth-Fehler zählen
+	// Step 3 — auth-token: resolve token to project. Auth-Fehler zählen
 	// nicht in invalid_events.
 	project, err := u.projects.ResolveByToken(ctx, in.AuthToken)
 	if err != nil {
 		return driving.BatchResult{}, err
 	}
 
-	// Step 3 — rate limit: charged for the requested batch size, even
+	// Step 4 — rate limit: charged for the requested batch size, even
 	// if the batch later turns out to be malformed. This prevents a
 	// caller from probing for validation responses without paying the
 	// per-project budget.
@@ -83,18 +83,19 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, err
 	}
 
-	// Step 4 — schema version.
+	// Step 5 — schema version.
 	if in.SchemaVersion != SupportedSchemaVersion {
 		u.metrics.InvalidEvents(len(in.Events))
 		return driving.BatchResult{}, domain.ErrSchemaVersionMismatch
 	}
 
-	// Step 5 — batch shape. Empty batch wird mit 422 abgelehnt; der
+	// Step 6 — batch form: empty batch wird mit 422 abgelehnt; der
 	// Counter zählt Events, nicht Batches — bei n=0 also kein
 	// Counter-Increment (Lastenheft §7.9).
 	if len(in.Events) == 0 {
 		return driving.BatchResult{}, domain.ErrBatchEmpty
 	}
+	// Step 7 — batch size: zu viele Events.
 	if len(in.Events) > MaxBatchSize {
 		u.metrics.InvalidEvents(len(in.Events))
 		return driving.BatchResult{}, domain.ErrBatchTooLarge
@@ -103,12 +104,12 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	now := u.now().UTC()
 	parsed := make([]domain.PlaybackEvent, 0, len(in.Events))
 	for _, e := range in.Events {
-		// Step 6 — per-event field check.
+		// Step 8 — per-event field check.
 		if !hasRequiredFields(e) {
 			u.metrics.InvalidEvents(len(in.Events))
 			return driving.BatchResult{}, domain.ErrInvalidEvent
 		}
-		// Step 7 — token/project binding. Auth-Fehler (401) zählt nicht
+		// Step 9 — token/project binding. Auth-Fehler (401) zählt nicht
 		// in invalid_events — Counter ist auf Validierungsfehler 400/422
 		// beschränkt.
 		if e.ProjectID != project.ID {
@@ -133,7 +134,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		})
 	}
 
-	// Step 8 — persist + accept. Synchron fehlgeschlagenes Append ist
+	// Step 10 — persist + accept. Synchron fehlgeschlagenes Append ist
 	// kein Backpressure-Drop und inkrementiert dropped_events nicht;
 	// Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs.
 	if err := u.events.Append(ctx, parsed); err != nil {

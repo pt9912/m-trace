@@ -12,7 +12,7 @@ import (
 )
 
 // MaxBodyBytes caps the request body at 256 KB
-// (docs/spike/backend-api-contract.md §5 step 1).
+// (docs/spike/backend-api-contract.md §5 step 2).
 const MaxBodyBytes = 256 * 1024
 
 // PlaybackEventsHandler implements POST /api/playback-events.
@@ -21,11 +21,12 @@ type PlaybackEventsHandler struct {
 	Logger  *slog.Logger
 }
 
-// ServeHTTP follows the validation order:
+// ServeHTTP follows the validation order from
+// docs/spike/backend-api-contract.md §5:
 //
-//	step 1: body size       -> 413
-//	step 2: header presence -> 401
-//	(steps 3-7 are inside the use case, mapped from domain errors)
+//	step 1: X-MTrace-Token header presence -> 401
+//	step 2: body size                      -> 413
+//	(steps 3-10 are inside the use case, mapped from domain errors)
 func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Method routing is done by the mux (Go 1.22 method-aware patterns)
 	// but we keep an explicit guard so the handler is robust if mounted
@@ -35,14 +36,16 @@ func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Step 2 — Auth-Header presence.
+	// Step 1 — Auth-Header presence. Origin-loser Fast-Reject vor dem
+	// Body-Read; siehe API-Kontrakt §5 (Auth-vor-Body-Reihenfolge,
+	// Patch 40d79d9).
 	token := r.Header.Get("X-MTrace-Token")
 	if token == "" {
 		writeStatus(w, http.StatusUnauthorized)
 		return
 	}
 
-	// Step 1 — Body size limit. MaxBytesReader wraps r.Body so reads
+	// Step 2 — Body size limit. MaxBytesReader wraps r.Body so reads
 	// past the limit return *http.MaxBytesError.
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodyBytes)
 	body, err := io.ReadAll(r.Body)

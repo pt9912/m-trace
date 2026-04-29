@@ -182,9 +182,9 @@ Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Co
 
 DoD:
 
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Token-Bindung-Branch: `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 9; im Code aktuell als Step 7 kommentiert (siehe §4.4 für die Numerierungs-Sync) (`372a6d4`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Batch-leer-Branch: `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op. *Step-Mapping*: Kontrakt §5 Step 6; im Code aktuell der erste `if len(in.Events) == 0`-Branch innerhalb des kombinierten Code-Step 5 (Batch shape) (`372a6d4`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Persistenz-Branch: `u.metrics.DroppedEvents(len(parsed))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 10 (Persist) bei Repository-Fehler; im Code aktuell als Step 8 (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Token-Bindung-Branch (Step 9): `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Batch-leer-Branch (Step 6): `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Persistenz-Branch (Step 10): `u.metrics.DroppedEvents(len(parsed))`-Aufruf entfernen (`372a6d4`).
 - [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei `project_id`/Token-Mismatch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird (`372a6d4`).
 - [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei leerem Batch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird (`372a6d4`).
 - [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei Repository-Fehler (Append → Error) verifiziert, dass `DroppedEvents` **nicht** inkrementiert wird; Use Case gibt den Fehler zurück, HTTP-Adapter liefert `500` (`372a6d4`).
@@ -220,9 +220,9 @@ Code-Kommentare in `register_playback_event_batch.go` nutzen weiterhin die Spike
 
 DoD:
 
-- [ ] `apps/api/hexagon/application/register_playback_event_batch.go`: Step-Kommentare auf neue Numerierung 3..10.
-- [ ] `apps/api/adapters/driving/http/handler.go`: Step-Kommentare 1+2 für Auth-Header und Body.
-- [ ] Hinweis auf alte Numerierung in `docs/architecture.md` §5.1 entfernen (sobald Code aktualisiert).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go`: Step-Kommentare auf neue Numerierung 3..10 (Steps 3 ResolveByToken, 4 RateLimit, 5 SchemaVersion, 6 BatchEmpty, 7 BatchTooLarge, 8 EventFields, 9 TokenBinding, 10 PersistAccept) (`<dieser Commit>`).
+- [x] `apps/api/adapters/driving/http/handler.go`: Step-Kommentare 1+2 für Auth-Header und Body; Doc-Block auf Steps 3-10 im Use Case verweisen (`<dieser Commit>`).
+- [x] Hinweis auf alte Numerierung in `docs/architecture.md` §5.1 entfernen — bereits in einem früheren Edit erfolgt; aktueller Stand zeigt nur die Kontrakt-Numerierung 1..10 (`<dieser Commit>`).
 
 ---
 
