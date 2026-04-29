@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 1.0.1  
+**Version:** 1.0.2  
 **Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
@@ -874,15 +874,25 @@ Das Projekt muss eine lokale Streaming-Testumgebung bereitstellen.
 
 #### Mindestdienste
 
+Die Dienste sind in zwei Klassen gegliedert (harmonisiert mit F-87/F-88
+und MVP-28/MVP-29 in Patch `1.0.2`):
+
+**Pflicht (Muss, im Default-Compose-Profil):**
+
 | Dienst | Zweck |
 |---|---|
 | `api` | Backend-API |
 | `dashboard` | SvelteKit UI |
 | `mediamtx` | lokaler Media Server |
 | `stream-generator` | FFmpeg-Teststream |
-| `otel-collector` | OpenTelemetry Collector |
-| `prometheus` | Metrikspeicherung |
-| `grafana` | Visualisierung |
+
+**Soll (optional, im `observability`-Compose-Profil):**
+
+| Dienst | Zweck | Bezug |
+|---|---|---|
+| `otel-collector` | OpenTelemetry Collector | F-88 (optional verfügbar), MVP-29 |
+| `prometheus` | Metrikspeicherung | F-87 (optional verfügbar) |
+| `grafana` | Visualisierung | F-87 (optional verfügbar), MVP-28 |
 
 #### Erwarteter Startbefehl
 

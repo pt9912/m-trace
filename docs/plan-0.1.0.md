@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (OTel-native Local Demo)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.0.1`](./lastenheft.md) §13.1 (RAK-1..RAK-10), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.0.2`](./lastenheft.md) §13.1 (RAK-1..RAK-10), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 
 ## 0. Konvention
 
@@ -234,6 +234,18 @@ DoD:
 - [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.1` aktualisiert (`65405cb`).
 - [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.1` aktualisiert (`65405cb`).
 
+### 4a.2 Patch `1.0.2` — F-87 / F-88 / Mindestdienste-Harmonisierung
+
+Lastenheft-interner Widerspruch in §7.8: F-87/F-88 klassifizierten Prometheus, Grafana und OTel-Collector als „optional verfügbar" mit Priorität **Muss**, während die Mindestdienste-Tabelle dieselben Dienste ohne Optional-Hinweis listete. Per User-Entscheidung Variante A: Mindestdienste-Tabelle in Pflicht- und Soll-Block aufgeteilt, konsistent mit F-87/F-88 und MVP-28/MVP-29.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.0.1` → `1.0.2`.
+- [x] Lastenheft §7.8 Mindestdienste: in zwei Tabellen aufgeteilt — Pflicht-Block (`api`, `dashboard`, `mediamtx`, `stream-generator`), Soll-Block (`otel-collector`, `prometheus`, `grafana`) mit Bezug auf F-87/F-88 und MVP-28/MVP-29.
+- [x] Plan §5.3 `make dev`-Item von `[!]` zurück auf `[ ]` geflippt — Inkonsistenz aufgelöst.
+- [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.2` aktualisiert.
+- [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.2` aktualisiert.
+
 ---
 
 ## 5. Tranche 1 — MVP-Implementierung
@@ -301,7 +313,7 @@ DoD:
 - [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
 - [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
 - [ ] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode.
-- [!] `make dev` startet das **Core-Profil** und erfüllt damit RAK-1 — Observability-Services starten nur über das observability-Profil (siehe §5.4). *Lastenheft-Inkonsistenz*: §7.8 listet `otel-collector`, `prometheus` und `grafana` als „Mindestdienste" (Lastenheft Z. 875–885), während F-87 und F-88 dieselben Dienste in §7.8 als „optional" (Muss-Priorität) klassifizieren. Auflösung folgt mit Lastenheft-Patch (Tranche 0c, siehe §4a) — bis dahin blockiert.
+- [ ] `make dev` startet das **Core-Profil** und erfüllt damit RAK-1 — Observability-Services starten nur über das observability-Profil (siehe §5.4). Lastenheft-Inkonsistenz zwischen F-87/F-88 (optional, Muss-Priorität) und Mindestdienste-Tabelle wurde mit Patch `1.0.2` aufgelöst (siehe Tranche 0c §4a.2).
 - [ ] `make stop` beendet sauber.
 - [ ] Core-Stack mindestens unter Linux verifiziert (Bezug AK-1).
 

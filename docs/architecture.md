@@ -7,7 +7,7 @@
 | Dokument | Architektur `m-trace` |
 | Stand | `2026-04-29` |
 | Status | Verbindlich (Zielbild `0.1.0`) |
-| Bezug | [Lastenheft `1.0.1`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
+| Bezug | [Lastenheft `1.0.2`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
 
 ### 0.1 Zweck
 
