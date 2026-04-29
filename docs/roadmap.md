@@ -116,6 +116,7 @@ zugehörigen Risiken stehen in `docs/risks-backlog.md`.
 | Coverage-Tooling für Go (`go test -cover` + Threshold) | `0.1.0`+ | Coverage-Strategie analog zu d-migrate-Pattern. |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`) | offen | Wird nur relevant, wenn Hexagon-Boundaries Disziplin-basiert nicht reichen. |
 | Strengere CORS-Preflight-Project-Isolation (Variante A) | offen, Trigger Multi-Tenant | `0.1.0` setzt Variante B (globale Preflight-Allowlist + Project↔Origin-Validierung beim POST). Wenn echte Multi-Tenant-Projektion oder strengere Preflight-Isolation gebraucht wird, Migration auf Variante A — Project im Pfad (`/api/projects/{project_id}/...`) oder als URL-Parameter, damit der Preflight bereits projektscharf prüfen kann. |
+| Durabel-konsistente Cursor-Strategie für Pagination | offen, Trigger Horizontalskalierung oder Blue/Green-Deployment | `0.1.0` nutzt `process_instance_id` im Cursor; Restart bzw. Cross-Instance-Routing invalidiert den Cursor. Mit Multi-Instance-Setup wird das nicht mehr tragbar — Folge-ADR muss eine durabel-stabile Cursor-Form (z. B. opaker Token mit Storage-Token-ID, durable Sequence-Generator, server-side Snapshot) festlegen. Voraussetzung: Persistenz-Folge-ADR (OE-3) muss die Storage-Garantien klären. |
 
 Neue Folge-ADRs werden hier ergänzt, sobald der Bedarf entsteht oder
 ein Issue darauf hinweist.
