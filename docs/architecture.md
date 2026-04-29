@@ -249,12 +249,11 @@ m-trace/
 │   └── config/                      # gemeinsame Konfiguration
 ├── services/
 │   ├── stream-generator/            # FFmpeg-Teststream
-│   ├── otel-collector/              # OpenTelemetry Collector
 │   └── media-server/                # MediaMTX
 ├── observability/
 │   ├── prometheus/
 │   ├── grafana/
-│   └── otel/
+│   └── otel-collector/              # OpenTelemetry Collector + Konfiguration
 ├── docs/
 └── docker-compose.yml               # Lokal-Lab
 ```
