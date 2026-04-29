@@ -128,12 +128,17 @@ func TestSchemaVersionMismatch(t *testing.T) {
 
 func TestEmptyBatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _ := newUseCase()
+	uc, _, _, metrics := newUseCase()
 	in := validBatch()
 	in.Events = nil
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
 	if !errors.Is(err, domain.ErrBatchEmpty) {
 		t.Errorf("expected ErrBatchEmpty, got %v", err)
+	}
+	// Counter zählt Events, nicht Batches — bei n=0 kein Increment
+	// (Lastenheft 1.1.2 §7.9).
+	if metrics.invalid != 0 {
+		t.Errorf("expected InvalidEvents=0 (empty batch counts no events), got %d", metrics.invalid)
 	}
 }
 
@@ -179,12 +184,16 @@ func TestInvalidEventBadTimestamp(t *testing.T) {
 
 func TestProjectIDTokenMismatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _ := newUseCase()
+	uc, _, _, metrics := newUseCase()
 	in := validBatch()
 	in.Events[0].ProjectID = "other-project"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
 	if !errors.Is(err, domain.ErrUnauthorized) {
 		t.Errorf("expected ErrUnauthorized, got %v", err)
+	}
+	// Auth-Fehler (401) zählen nicht in invalid_events (API-Kontrakt §7).
+	if metrics.invalid != 0 {
+		t.Errorf("expected InvalidEvents=0 (auth-Fehler zählen nicht), got %d", metrics.invalid)
 	}
 }
 
@@ -201,7 +210,7 @@ func TestRateLimited(t *testing.T) {
 	}
 }
 
-func TestRepoFailureCountsAsDropped(t *testing.T) {
+func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	t.Parallel()
 	uc, _, repo, metrics := newUseCase()
 	repo.failNext = true
@@ -209,7 +218,13 @@ func TestRepoFailureCountsAsDropped(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error")
 	}
-	if metrics.dropped != 1 {
-		t.Errorf("expected DroppedEvents=1, got %d", metrics.dropped)
+	// Synchron fehlgeschlagenes Append ist kein Backpressure-Drop;
+	// dropped_events bleibt unverändert (API-Kontrakt §7,
+	// Lastenheft 1.1.2 §7.9 nach Plan §4.2).
+	if metrics.dropped != 0 {
+		t.Errorf("expected DroppedEvents=0 (synchron fehlgeschlagenes Append ist kein Backpressure-Drop), got %d", metrics.dropped)
+	}
+	if metrics.accepted != 0 {
+		t.Errorf("expected EventsAccepted=0 on repo failure, got %d", metrics.accepted)
 	}
 }

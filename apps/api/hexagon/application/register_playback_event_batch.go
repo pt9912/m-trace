@@ -57,12 +57,18 @@ func NewRegisterPlaybackEventBatchUseCase(
 // (body size) and the bare presence of the X-MTrace-Token header are
 // the HTTP adapter's responsibility.
 //
-// On error, the corresponding metric counter is incremented so that
-// rejection counts are observable through GET /api/metrics.
+// Counter semantics (API-Kontrakt §7, harmonisiert mit Lastenheft 1.1.2
+// §7.9): mtrace_invalid_events_total zählt nur Validierungs-Rejects
+// mit Status 400/422 (Schema, Batch-Form, Event-Felder). Auth-Fehler
+// (401) — sowohl ResolveByToken als auch Token/Project-Bindung —
+// inkrementieren keinen Counter. mtrace_dropped_events_total ist auf
+// interne Backpressure-Drops beschränkt; synchron fehlgeschlagenes
+// Append ist kein Drop und inkrementiert den Counter nicht.
 func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	ctx context.Context, in driving.BatchInput,
 ) (driving.BatchResult, error) {
-	// Step 2 — auth: resolve token to project.
+	// Step 2 — auth: resolve token to project. Auth-Fehler zählen
+	// nicht in invalid_events.
 	project, err := u.projects.ResolveByToken(ctx, in.AuthToken)
 	if err != nil {
 		return driving.BatchResult{}, err
@@ -83,12 +89,10 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, domain.ErrSchemaVersionMismatch
 	}
 
-	// Step 5 — batch shape.
+	// Step 5 — batch shape. Empty batch wird mit 422 abgelehnt; der
+	// Counter zählt Events, nicht Batches — bei n=0 also kein
+	// Counter-Increment (Lastenheft §7.9).
 	if len(in.Events) == 0 {
-		// Empty batch: nothing to count, but the request itself is
-		// invalid. Increment by 0 so the counter call still happens
-		// (callers may rely on the side effect for tracing).
-		u.metrics.InvalidEvents(0)
 		return driving.BatchResult{}, domain.ErrBatchEmpty
 	}
 	if len(in.Events) > MaxBatchSize {
@@ -104,9 +108,10 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 			u.metrics.InvalidEvents(len(in.Events))
 			return driving.BatchResult{}, domain.ErrInvalidEvent
 		}
-		// Step 7 — token/project binding.
+		// Step 7 — token/project binding. Auth-Fehler (401) zählt nicht
+		// in invalid_events — Counter ist auf Validierungsfehler 400/422
+		// beschränkt.
 		if e.ProjectID != project.ID {
-			u.metrics.InvalidEvents(len(in.Events))
 			return driving.BatchResult{}, domain.ErrUnauthorized
 		}
 		ts, err := time.Parse(time.RFC3339Nano, e.ClientTimestamp)
@@ -128,9 +133,10 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		})
 	}
 
-	// Step 8 — persist + accept.
+	// Step 8 — persist + accept. Synchron fehlgeschlagenes Append ist
+	// kein Backpressure-Drop und inkrementiert dropped_events nicht;
+	// Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs.
 	if err := u.events.Append(ctx, parsed); err != nil {
-		u.metrics.DroppedEvents(len(parsed))
 		return driving.BatchResult{}, err
 	}
 
