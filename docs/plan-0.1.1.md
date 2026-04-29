@@ -1,8 +1,8 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).  
-> **Bezug**: [Lastenheft `1.1.1`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
-> **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) (Backend Core + Demo-Lab — alle Tranchen 0..0c, 5.1, 5.2 müssen abgeschlossen sein).  
+> **Bezug**: [Lastenheft `1.1.2`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
+> **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) (Backend Core + Demo-Lab — alle Tranchen 0..0c und §5.1–§5.4 müssen abgeschlossen sein, inklusive Release-Akzeptanzkriterien `0.1.0` (§5.3) und übergreifender DoD `0.1.0` (§5.4); insbesondere CI-Pflicht-Item).  
 > **Nachfolger**: [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -97,7 +97,7 @@ DoD:
 
 ### 5.1 Übergreifende DoD `0.1.1` (Lastenheft §18, `0.1.1`-Anteil)
 
-- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32) — falls in `0.1.0` aus zeitlichen Gründen nicht erreicht.
+- [ ] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete).
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.1.1`.
 - [ ] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement).
 

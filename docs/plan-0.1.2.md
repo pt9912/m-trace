@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.2` (Observability-Stack)
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.1` (Player-SDK + Dashboard).  
-> **Bezug**: [Lastenheft `1.1.1`](./lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
+> **Bezug**: [Lastenheft `1.1.2`](./lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
 > **Vorgänger**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard).
 
 ## 0. Konvention
@@ -21,7 +21,7 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 | Tranche | Inhalt | Status |
 |---|---|---|
-| 1 | Pflicht-Anteile in `apps/api` (F-89..F-93, Mindestmetriken) | ⬜ |
+| 1 | Pflicht-Anteile (F-89..F-93, Mindestmetriken) — Code in `apps/api` plus Repo-weite Prometheus-Konfiguration unter `observability/prometheus/` | ⬜ |
 | 2 | Soll-Anteile im `observability`-Compose-Profil (F-94/MVP-28 Grafana, MVP-29 OTel-Collector) | ⬜ |
 | 3 | Release-Akzeptanzkriterien `0.1.2` | ⬜ |
 
@@ -29,7 +29,7 @@ Tempo bleibt explizit Nicht-MVP (MVP-22).
 
 ---
 
-## 2. Tranche 1 — Observability Pflicht-Anteile (`apps/api` direkt)
+## 2. Tranche 1 — Observability Pflicht-Anteile (`apps/api` und `observability/prometheus/`)
 
 Bezug: MVP-10 (Muss), MVP-15 (Muss); F-89..F-93 (Muss); Mindestmetriken laut Lastenheft §7.9.
 

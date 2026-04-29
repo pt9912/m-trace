@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.1.1`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.2`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | 🟡 |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | 🟡 |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1` | 🟡 fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2` | 🟡 fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ⬜ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -131,7 +131,7 @@ DoD:
 
 ### 3.5 `docs/telemetry-model.md` (Schritt 6)
 
-Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, Schema, Cardinality-Regeln. Implementierungs-/Setup-Aspekte (strukturierte Logs, Health-Endpoint, Prometheus- und Grafana-Konfiguration) gehören in Tranche 5.4 (Observability-Stack), nicht hierher.
+Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, Schema, Cardinality-Regeln. Implementierungs-/Setup-Aspekte (strukturierte Logs, Health-Endpoint, Prometheus- und Grafana-Konfiguration) gehören in [`plan-0.1.2.md`](./plan-0.1.2.md) Tranche 1/2 (Observability-Stack), nicht hierher.
 
 DoD:
 
@@ -274,11 +274,21 @@ DoD:
 - [x] Lastenheft §7.8 nach den Mindestdienste-Tabellen: Hinweisblock ergänzt, dass die Tabellen den `0.1.x`-End-Zustand beschreiben; Pflicht-Mindestdienste werden stufenweise mit `0.1.0`/`0.1.1`/`0.1.2` aktiviert; Sub-Release-Subsets stehen im jeweiligen Plan-Dokument (`85ef32a`).
 - [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.1` aktualisiert (`85ef32a`).
 
+### 4a.5 Patch `1.1.2` — `mtrace_invalid_events_total`-Wording
+
+Aus Code-Review-Finding: Lastenheft §7.9 beschrieb `mtrace_invalid_events_total` als „Anzahl wegen Schema/Auth abgelehnter Events", während API-Kontrakt §7 (seit Patch `9fddfa1`) und Architecture §5.1 Auth-Fehler explizit aus dem Counter ausschließen. Das war eine Lastenheft-vs-Kontrakt-Inkonsistenz, die der Plan §4.2 unilateral aufgelöst hatte — Patch `1.1.2` zieht das Lastenheft korrekt nach.
+
+DoD:
+
+- [ ] Lastenheft Header: Version `1.1.1` → `1.1.2`.
+- [ ] Lastenheft §7.9 Mindestmetriken-Tabelle: Wording für `mtrace_invalid_events_total` auf „Anzahl wegen Schema-/Validierungsfehlern (`400`/`422`) abgelehnter Events; Auth-Fehler (`401`) zählen nicht (harmonisiert mit API-Kontrakt §7 in Patch `1.1.2`)" — entfernt „Auth" aus dem Counter-Scope.
+- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.2` aktualisiert.
+
 ---
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Status: ⬜ offen. Bezug: Lastenheft `1.1.0` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
+Status: ⬜ offen. Bezug: Lastenheft `1.1.2` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
@@ -293,7 +303,7 @@ DoD:
 - [ ] **MVP-16** Lokale Speicherung der Sessions und Events: In-Memory ist Pflicht-Default; SQLite als Soll-Erweiterung über OE-3-Folge-ADR. Beide Implementierungen leben hinter dem `EventRepository`-Port plus einem neuen `SessionRepository`-Port (oder vereinheitlicht — Design-Entscheidung im Use Case).
 - [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession`; Domain-Sicht auf `StreamSession` mit Event-Zählern.
 - [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste).
-- [ ] **F-22** (Lastenheft `1.1.0`): Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` (oder vergleichbar) als leeres bzw. marker-Interface; Use Case bindet den Port nicht produktiv ein (keine Aufrufe), legt aber den Erweiterungspunkt fest. Volle Integration ab Phase `0.3.0`.
+- [ ] **F-22** (Lastenheft `1.1.2` §7.3, Wording aus Patch `1.1.0`): Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` (oder vergleichbar) als leeres bzw. marker-Interface; Use Case bindet den Port nicht produktiv ein (keine Aufrufe), legt aber den Erweiterungspunkt fest. Volle Integration ab Phase `0.3.0`.
 - [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches und Lifecycle-Transitions (Active → Stalled → Ended); HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
 
 ### 5.2 Docker-Compose-Lab (Core, `0.1.0`-Anteil)
@@ -313,7 +323,7 @@ DoD:
 - [ ] Core-Stack mindestens unter Linux verifiziert.
 - [ ] Smoke-Test `0.1.0`: nach `make dev` liefert `curl http://localhost:8080/api/health` ein `200`; ein POST mit gültigem Token an `/api/playback-events` liefert `202`; ein GET an `/api/stream-sessions` listet die so erzeugte Session.
 
-### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft §13.1 nach Patch `1.1.0`)
+### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft `1.1.2` §13.1; RAK-Verteilung aus Patch `1.1.0`)
 
 DoD:
 

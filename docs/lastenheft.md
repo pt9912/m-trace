@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 1.1.1  
+**Version:** 1.1.2  
 **Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
@@ -944,7 +944,7 @@ Das Projekt muss Observability von Beginn an berücksichtigen.
 | `mtrace_api_requests_total` | API Requests |
 | `mtrace_dropped_events_total` | Anzahl verworfener Events |
 | `mtrace_rate_limited_events_total` | Anzahl durch Rate Limits abgelehnter Events |
-| `mtrace_invalid_events_total` | Anzahl wegen Schema/Auth abgelehnter Events |
+| `mtrace_invalid_events_total` | Anzahl wegen Schema-/Validierungsfehlern (`400`/`422`) abgelehnter Events; Auth-Fehler (`401`) zählen nicht (harmonisiert mit API-Kontrakt §7 in Patch `1.1.2`). |
 
 ---
 
