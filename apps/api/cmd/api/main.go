@@ -21,6 +21,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
@@ -60,9 +61,10 @@ func main() {
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
+	analyzer := streamanalyzer.NewNoopStreamAnalyzer()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, otelTelemetry, time.Now,
+		resolver, limiter, repo, publisher, otelTelemetry, analyzer, time.Now,
 	)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)

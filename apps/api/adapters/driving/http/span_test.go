@@ -18,6 +18,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 )
@@ -118,7 +119,7 @@ func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) 
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, noopTelemetry{}, time.Now,
+		resolver, limiter, repo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), time.Now,
 	)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	tracer := tp.Tracer("test")

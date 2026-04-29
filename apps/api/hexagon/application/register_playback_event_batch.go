@@ -29,17 +29,22 @@ type RegisterPlaybackEventBatchUseCase struct {
 	events    driven.EventRepository
 	metrics   driven.MetricsPublisher
 	telemetry driven.Telemetry
+	analyzer  driven.StreamAnalyzer
 	now       func() time.Time
 }
 
 // NewRegisterPlaybackEventBatchUseCase wires the use case with its
-// driven ports. If now is nil, time.Now is used.
+// driven ports. If now is nil, time.Now is used. analyzer ist die
+// F-22-Architektur-Vorbereitung (siehe plan-0.1.0.md §5.1, F-22-Item):
+// der Slot wird gesetzt, AnalyzeBatch jedoch erst ab 0.3.0 produktiv
+// aufgerufen; bis dahin trägt main.go einen NoopStreamAnalyzer ein.
 func NewRegisterPlaybackEventBatchUseCase(
 	projects driven.ProjectResolver,
 	limiter driven.RateLimiter,
 	events driven.EventRepository,
 	metrics driven.MetricsPublisher,
 	telemetry driven.Telemetry,
+	analyzer driven.StreamAnalyzer,
 	now func() time.Time,
 ) *RegisterPlaybackEventBatchUseCase {
 	if now == nil {
@@ -51,6 +56,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 		events:    events,
 		metrics:   metrics,
 		telemetry: telemetry,
+		analyzer:  analyzer,
 		now:       now,
 	}
 }
