@@ -270,9 +270,9 @@ Aus Code-Review-Finding: Lastenheft §7.8 listet `dashboard` weiterhin als Pflic
 
 DoD:
 
-- [ ] Lastenheft Header: Version `1.1.0` → `1.1.1`.
-- [ ] Lastenheft §7.8 nach den Mindestdienste-Tabellen: Hinweisblock ergänzt, dass die Tabellen den `0.1.x`-End-Zustand beschreiben; Pflicht-Mindestdienste werden stufenweise mit `0.1.0`/`0.1.1`/`0.1.2` aktiviert; Sub-Release-Subsets stehen im jeweiligen Plan-Dokument.
-- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.1` aktualisiert.
+- [x] Lastenheft Header: Version `1.1.0` → `1.1.1` (`85ef32a`).
+- [x] Lastenheft §7.8 nach den Mindestdienste-Tabellen: Hinweisblock ergänzt, dass die Tabellen den `0.1.x`-End-Zustand beschreiben; Pflicht-Mindestdienste werden stufenweise mit `0.1.0`/`0.1.1`/`0.1.2` aktiviert; Sub-Release-Subsets stehen im jeweiligen Plan-Dokument (`85ef32a`).
+- [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.1` aktualisiert (`85ef32a`).
 
 ---
 
