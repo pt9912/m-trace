@@ -162,25 +162,33 @@ DoD:
 - [x] `apps/api/adapters/driving/http/handler_test.go`: neuer Test `TestHTTP_401_BodyTooLarge_NoToken` (`40d79d9`).
 - [x] Docker-Pflichttests grün (`40d79d9`).
 
-### 4.2 InvalidEvents-Counter-Scope (Hoch-Finding)
+### 4.2 InvalidEvents-Counter-Scope: nur abgelehnte Events (Hoch + Mittel C1)
 
-Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md): `mtrace_invalid_events_total` zählt ausschließlich Validierungs-Rejects mit Status `400` und `422`. Auth-Fehler (401) zählen **nicht** rein.
+Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`): `mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422`. Auth-Fehler (`401`) zählen nicht. Bei leerem Batch (`events.length == 0`) bleibt der Counter unverändert (Ablehnung sichtbar über HTTP-Status und Access-Logs).
 
 DoD:
 
 - [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Step 9 (Token-Bindung): `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen.
-- [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: neuer Unit-Test verifiziert, dass bei `project_id`/Token-Mismatch der `InvalidEvents`-Counter **nicht** inkrementiert wird.
+- [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Step 6 (Batch leer): `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op und konsistenter ist kein Aufruf.
+- [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei `project_id`/Token-Mismatch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird.
+- [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei leerem Batch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird.
 - [ ] Docker-Targets `test` und `lint` grün.
 
-### 4.3 OTel-Counter im Use Case (Mittel-Finding)
+### 4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span (Mittel-Finding)
 
-Soll laut [API-Kontrakt §8](./spike/backend-api-contract.md): minimaler OTel-Setup mit mindestens einem Counter oder Span erzeugt. Der MeterProvider ist registriert, Instrumentierung fehlt aktuell.
+Soll laut [API-Kontrakt §8](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`) und Architecture §5.3: OTel-Aufrufe aus dem Use Case laufen ausschließlich über einen frameworkneutralen Driven Port `Telemetry`; Request-Spans erzeugt der HTTP-Adapter direkt. `hexagon/`-Pakete dürfen kein OTel importieren.
 
 DoD:
 
-- [ ] `apps/api/hexagon/application/register_playback_event_batch.go`: Counter `mtrace.api.batches.received` über `telemetry.Meter()` anlegen, im Konstruktor cachen.
-- [ ] Counter wird bei jedem `RegisterPlaybackEventBatch`-Eintritt `+1` inkrementiert.
-- [ ] Test verifiziert, dass nach N Aufrufen der MeterProvider den Counter-Wert N hält (oder über `metric.Reader` ein konkreter Wert lesbar ist).
+- [ ] Neuer Port `apps/api/hexagon/port/driven/telemetry.go` mit Interface `Telemetry { BatchReceived(ctx context.Context, size int) }`.
+- [ ] Use-Case-Konstruktor `NewRegisterPlaybackEventBatchUseCase` um `telemetry driven.Telemetry`-Parameter erweitert; Aufruf `u.telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt.
+- [ ] `apps/api/hexagon/`-Pakete importieren weiterhin **kein** OTel (verifiziert per `go list -deps` oder `import-Boundary-Test`).
+- [ ] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received`; Attribut `batch.size`.
+- [ ] `apps/api/cmd/api/main.go` verdrahtet die `OTelTelemetry`-Implementierung in den Use Case.
+- [ ] HTTP-Adapter `apps/api/adapters/driving/http/handler.go`: Request-Span via `otel.Tracer` um den Use-Case-Aufruf; Span-Name `http.handler POST /api/playback-events` o. ä.; Attribute für Status-Code und (bei Erfolg) `batch.size`.
+- [ ] Default bleibt silent: kein Exporter wird per Code konfiguriert. Aktivierung über Standard-OTel-Env-Vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, …).
+- [ ] Unit-Test `RegisterPlaybackEventBatchTest`: Telemetry-Stub zählt `BatchReceived`-Aufrufe.
+- [ ] Adapter-Test `OTelTelemetryTest`: nach N `BatchReceived`-Aufrufen liefert ein `metric.ManualReader` Counter-Wert N (oder die Standard-OTel-Test-Mechanik).
 - [ ] Docker-Targets `test` und `lint` grün.
 
 ### 4.4 Code-Step-Numbering an Kontrakt anpassen
