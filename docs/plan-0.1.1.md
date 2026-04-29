@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).  
-> **Bezug**: [Lastenheft `1.1.0`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
+> **Bezug**: [Lastenheft `1.1.1`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
 > **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) (Backend Core + Demo-Lab — alle Tranchen 0..0c, 5.1, 5.2 müssen abgeschlossen sein).  
 > **Nachfolger**: [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 

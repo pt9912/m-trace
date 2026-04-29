@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 1.1.0  
+**Version:** 1.1.1  
 **Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
@@ -893,6 +893,15 @@ und MVP-28/MVP-29 in Patch `1.0.2`):
 | `otel-collector` | OpenTelemetry Collector | F-88 (optional verfügbar), MVP-29 |
 | `prometheus` | Metrikspeicherung | F-87 (optional verfügbar) |
 | `grafana` | Visualisierung | F-87 (optional verfügbar), MVP-28 |
+
+> **Hinweis (Patch `1.1.1`)**: Die obigen Tabellen beschreiben den
+> **End-Zustand der `0.1.x`-Phase**. Mit der Sub-Release-Schneidung
+> aus Patch `1.1.0` (§13.1–§13.3) werden die Pflicht-Mindestdienste
+> stufenweise aktiviert: `0.1.0` startet `api`, `mediamtx`,
+> `stream-generator`; `0.1.1` ergänzt `dashboard`; `0.1.2` aktiviert
+> die Soll-Tabelle über das `observability`-Compose-Profil. Der
+> jeweilige Sub-Release-Pflicht-Subset steht im zugehörigen
+> Plan-Dokument (`docs/plan-0.1.x.md`).
 
 #### Erwarteter Startbefehl
 

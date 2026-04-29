@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.1.0`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.1`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | 🟡 |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | 🟡 |
-| 0c | Lastenheft-Patches aus Code-Reviews (`1.0.1`, `1.0.2`) und MVP-Restrukturierung (`1.1.0`) | 🟡 |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1` | 🟡 fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ⬜ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -223,7 +223,7 @@ DoD:
 
 ## 4a. Tranche 0c — Lastenheft-Patches
 
-Aus Code-Reviews entstehende Lastenheft-Korrekturen (interne Inkonsistenzen, Wording-Schärfungen). Jeder Patch erhöht den Lastenheft-Patch-Level (`1.0.0` → `1.0.1` → `1.0.2` …). Status: 🟡 in Arbeit.
+Aus Code-Reviews und User-Entscheidungen entstehende Lastenheft-Korrekturen (interne Inkonsistenzen, Wording-Schärfungen, Restrukturierung). Jeder Patch erhöht den Lastenheft-Versionsstand (`1.0.x` für Inhalts-Patches, `1.x.0` für strukturelle Bumps). **Diese Tranche ist fortlaufend** — sie ist auch dann „🟡 fortlaufend", wenn alle bisherigen Patch-Items abgeschlossen sind, weil weitere Patches während `0.1.x` jederzeit ergänzt werden können. Wartung: neue Patches werden als neuer §4a.X-Eintrag mit eigener Patch-Versionsnummer aufgenommen.
 
 ### 4a.1 Patch `1.0.1` — F-94 / MVP-28 Harmonisierung (Grafana-Klassifikation)
 
@@ -263,6 +263,16 @@ DoD:
 - [x] `docs/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend (`31ccb47`).
 - [x] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt (`0c4cab6`).
 - [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert (`0c4cab6`).
+
+### 4a.4 Patch `1.1.1` — Mindestdienste-Hinweis für Sub-Releases
+
+Aus Code-Review-Finding: Lastenheft §7.8 listet `dashboard` weiterhin als Pflicht-Mindestdienst, während `plan-0.1.0.md` §5.2 für `0.1.0` nur drei Core-Services (`api`, `mediamtx`, `stream-generator`) startet. Die Mindestdienste-Tabelle in §7.8 ist korrekt für den `0.1.x`-End-Zustand (nach `0.1.1`); für die Sub-Release-Subsets fehlte ein Hinweis. Patch `1.1.1` ergänzt diesen.
+
+DoD:
+
+- [ ] Lastenheft Header: Version `1.1.0` → `1.1.1`.
+- [ ] Lastenheft §7.8 nach den Mindestdienste-Tabellen: Hinweisblock ergänzt, dass die Tabellen den `0.1.x`-End-Zustand beschreiben; Pflicht-Mindestdienste werden stufenweise mit `0.1.0`/`0.1.1`/`0.1.2` aktiviert; Sub-Release-Subsets stehen im jeweiligen Plan-Dokument.
+- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.1` aktualisiert.
 
 ---
 
@@ -323,7 +333,7 @@ DoD:
 - [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss.
 - [ ] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8.
 - [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints.
-- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32). Falls OE-6 zum `0.1.0`-Release noch offen ist, wandert die CI-DoD in `plan-0.1.1.md`.
+- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32). Pflicht für `0.1.0`-DoD laut Lastenheft §18 und Roadmap-OE-6-Trigger („vor `0.1.0`-DoD"); ohne Auflösung von OE-6 ist `0.1.0` nicht abnehmbar.
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`).
 
 ---
