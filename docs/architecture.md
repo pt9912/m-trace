@@ -218,17 +218,18 @@ OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zuläss
 
 Alle Pakete unterhalb `hexagon/` importieren weder `go.opentelemetry.io/otel` noch dessen Sub-Pakete. Übrige Adapter unter `adapters/driven/{auth,metrics,persistence,ratelimit}/` ebenfalls nicht. `cmd/api/` darf den Telemetry-Adapter wiring-mäßig importieren und sieht OTel daher transitiv — das ist kein Boundary-Verstoß.
 
-Die Regel betrifft also **direkte** Imports. Eine Boundary-Absicherung per Test prüft direkte Imports, z. B. mit:
+Die Regel betrifft also **direkte** Imports und gilt geschichtet. Verbindliche Boundary-Tabelle:
 
-```bash
-# pro hexagon-Paket die Imports einsammeln und gegen OTel filtern
-go list -f '{{.ImportPath}} {{join .Imports " "}}' \
-    ./hexagon/... \
-    | grep 'go.opentelemetry.io' \
-    && exit 1 || true
-```
+| Paket-Pattern | Verbotene direkte Imports | Begründung |
+|---|---|---|
+| `./hexagon/...` | `${MODULE}/adapters`, `go.opentelemetry.io`, `github.com/prometheus`, `database/sql`, `net/http` | Hexagon darf keine Adapter oder Infrastruktur-Bibliotheken kennen. |
+| `./hexagon/domain/...` | `${MODULE}/hexagon/application`, `${MODULE}/hexagon/port` | Domain darf nicht von Application oder Ports abhängen. |
+| `./hexagon/application/...` | `${MODULE}/adapters` | Application spricht ausschließlich über Ports, nicht Adapter-Implementierungen. |
+| `./hexagon/port/...` | `${MODULE}/adapters` | Ports sind Abstraktionen — sie dürfen keine Adapter-Implementierung importieren. |
 
-`go list -deps ./...` greift bewusst zu weit: weil `cmd/api` den Telemetry-Adapter zieht, würde der transitive Schluss OTel zwangsläufig zeigen. Der Direkt-Import-Filter (oder `go list -json` mit `Imports` statt `Deps`) ist die richtige Granularität.
+Absicherung als ausführbares Skript: `apps/api/scripts/check-architecture.sh` (auch als `make arch-check` aufrufbar). Das Skript iteriert über die Patterns, sammelt pro Paket die direkten Imports via `go list -f '{{join .Imports "\n"}}'` und filtert sie gegen den jeweiligen Forbidden-Regex. Bei einem Treffer wird Paketname, Begründung und Liste der verbotenen Imports ausgegeben und der Lauf bricht mit Exit 1 ab.
+
+`go list -deps` greift bewusst zu weit: weil `cmd/api` den Telemetry-Adapter zieht, würde der transitive Schluss OTel zwangsläufig zeigen. Der Direkt-Import-Filter (`Imports` statt `Deps`) ist die richtige Granularität.
 
 ---
 

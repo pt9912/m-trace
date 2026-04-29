@@ -3,7 +3,7 @@
 
 IMAGE := m-trace-api-spike
 
-.PHONY: test lint build deps compile run clean
+.PHONY: test lint build deps compile run arch-check clean
 
 # Run unit + integration tests inside Docker.
 test:
@@ -28,6 +28,14 @@ compile:
 # Run the runtime container with port 8080 exposed.
 run: build
 	docker run --rm -p 8080:8080 --name m-trace-api-go $(IMAGE):go
+
+# Architecture-Boundary-Test (siehe docs/architecture.md §3.4).
+# Prüft, dass hexagon/ keine direkten Imports auf Adapter,
+# OTel, Prometheus, database/sql oder net/http enthält und die
+# Schichtengrenzen domain → application → port respektiert sind.
+arch-check:
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.22 \
+		bash scripts/check-architecture.sh
 
 # Remove all spike-related images.
 clean:
