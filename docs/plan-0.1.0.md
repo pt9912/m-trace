@@ -280,9 +280,9 @@ Aus Code-Review-Finding: Lastenheft §7.9 beschrieb `mtrace_invalid_events_total
 
 DoD:
 
-- [ ] Lastenheft Header: Version `1.1.1` → `1.1.2`.
-- [ ] Lastenheft §7.9 Mindestmetriken-Tabelle: Wording für `mtrace_invalid_events_total` auf „Anzahl wegen Schema-/Validierungsfehlern (`400`/`422`) abgelehnter Events; Auth-Fehler (`401`) zählen nicht (harmonisiert mit API-Kontrakt §7 in Patch `1.1.2`)" — entfernt „Auth" aus dem Counter-Scope.
-- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.2` aktualisiert.
+- [x] Lastenheft Header: Version `1.1.1` → `1.1.2` (`0d6ffae`).
+- [x] Lastenheft §7.9 Mindestmetriken-Tabelle: Wording für `mtrace_invalid_events_total` auf „Anzahl wegen Schema-/Validierungsfehlern (`400`/`422`) abgelehnter Events; Auth-Fehler (`401`) zählen nicht (harmonisiert mit API-Kontrakt §7 in Patch `1.1.2`)" — entfernt „Auth" aus dem Counter-Scope (`0d6ffae`).
+- [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.2` aktualisiert (`0d6ffae`).
 
 ---
 
