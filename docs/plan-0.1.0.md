@@ -136,13 +136,13 @@ Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, Schema, Cardinali
 DoD:
 
 - [x] Skelett-Datei angelegt mit §0..§6-Sektionen und Bezug-Verweisen, alle Inhalts-Sections als „TODO"-Platzhalter (`c86e021`). Referenz-Anker für andere Plan-Dokumente (`plan-0.1.1.md` §2, `plan-0.1.2.md` §4) ist damit gesetzt.
-- [x] OTel-Modell für Spans/Counter spezifizieren — Naming-Konvention, Resource-Attribute, Pflicht-Spans (Bezug **F-91, F-92**) (`<dieser Commit>`).
-- [x] Cardinality- und Datenmodell-Regeln dokumentieren — verbotene Labels, Trennung Aggregat/Per-Session (Bezug **F-95..F-100** Lastenheft §7.10 sowie **F-101..F-105** als MVP-Variante) (`<dieser Commit>`).
-- [x] Wire-Format für Player-Events spezifizieren — Pflichtfelder, Schema-Version, Versand-Pfad, SDK-Identifier (Bezug **F-106..F-115** Lastenheft §7.11.1–§7.11.3) (`<dieser Commit>`).
-- [x] Backpressure- und Limit-Regeln dokumentieren — Batch-Größe, Rate-Limit-Modell, Drop-Politik (Bezug **F-118..F-123**) (`<dieser Commit>`).
-- [x] Time-Stempel-Felder, Skew-Behandlung und Sequenz-Ordering dokumentieren (Bezug **F-124..F-130**) (`<dieser Commit>`).
-- [x] Schema-Versionierung und Evolution dokumentieren (`<dieser Commit>`).
-- [ ] Roadmap §2 Schritt 6 auf ✅ (folgt im selben Commit oder direkt danach).
+- [x] OTel-Modell für Spans/Counter spezifizieren — Naming-Konvention, Resource-Attribute, Pflicht-Spans (Bezug **F-91, F-92**) (`e532e1e`).
+- [x] Cardinality- und Datenmodell-Regeln dokumentieren — verbotene Labels, Trennung Aggregat/Per-Session (Bezug **F-95..F-100** Lastenheft §7.10 sowie **F-101..F-105** als MVP-Variante) (`e532e1e`).
+- [x] Wire-Format für Player-Events spezifizieren — Pflichtfelder, Schema-Version, Versand-Pfad, SDK-Identifier (Bezug **F-106..F-115** Lastenheft §7.11.1–§7.11.3) (`e532e1e`).
+- [x] Backpressure- und Limit-Regeln dokumentieren — Batch-Größe, Rate-Limit-Modell, Drop-Politik (Bezug **F-118..F-123**) (`e532e1e`).
+- [x] Time-Stempel-Felder, Skew-Behandlung und Sequenz-Ordering dokumentieren (Bezug **F-124..F-130**) (`e532e1e`).
+- [x] Schema-Versionierung und Evolution dokumentieren (`e532e1e`).
+- [x] Roadmap §2 Schritt 6 auf ✅ (`e532e1e`).
 
 ### 3.6 `docs/local-development.md` (Schritt 7)
 
