@@ -118,7 +118,7 @@ Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsrege
 | OE-3 | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen |
 | OE-4 | Frontend-Styling (eigenes CSS / Tailwind / UI-Library) | mit Schritt 8 in §2 | offen |
 | OE-5 | Live-Updates: Polling / WebSocket / SSE | Folge-ADR `0.4.0` | offen |
-| OE-6 | CI-Zielplattformen | mit Schritt 4 in §2 | offen |
+| OE-6 | CI-Zielplattformen — verknüpft mit **MVP-32** | beim CI-Setup (vor `0.1.0`-DoD) | offen |
 | OE-7 | Release-Konvention | vor `0.1.0` Public-Release | offen |
 | OE-8 | Paketnamen für npm | Schritt 9 in §2 | offen |
 
