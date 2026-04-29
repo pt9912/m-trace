@@ -41,16 +41,22 @@ func NewRouter(
 		Tracer:  tracer,
 		Logger:  logger,
 	}
+	sessionsList := &SessionsListHandler{
+		UseCase: sessions,
+		Tracer:  tracer,
+		Logger:  logger,
+	}
+	sessionsGet := &SessionsGetHandler{
+		UseCase: sessions,
+		Tracer:  tracer,
+		Logger:  logger,
+	}
 
 	mux.Handle("POST /api/playback-events", playback)
 	mux.HandleFunc("GET /api/health", HealthHandler)
 	mux.Handle("GET /api/metrics", metricsHandler)
-
-	// Sessions-Endpoints werden in plan-0.1.0.md §5.1 Sub-Item 5
-	// hier registriert. Bis dahin bleibt der Slot ungenutzt — der
-	// Compile-Time-Bezug verhindert, dass main.go aus der Signatur
-	// läuft.
-	_ = sessions
+	mux.Handle("GET /api/stream-sessions", sessionsList)
+	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
 
 	return mux
 }
