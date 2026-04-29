@@ -168,8 +168,8 @@ Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Co
 
 DoD:
 
-- [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Step 9 (Token-Bindung): `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen.
-- [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Step 6 (Batch leer): `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op und konsistenter ist kein Aufruf.
+- [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Token-Bindung-Branch: `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 9; im Code aktuell als Step 7 kommentiert (siehe §4.4 für die Numerierungs-Sync).
+- [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Batch-leer-Branch: `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op. *Step-Mapping*: Kontrakt §5 Step 6; im Code aktuell der erste `if len(in.Events) == 0`-Branch innerhalb des kombinierten Code-Step 5 (Batch shape).
 - [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei `project_id`/Token-Mismatch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird.
 - [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei leerem Batch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird.
 - [ ] Docker-Targets `test` und `lint` grün.
@@ -260,29 +260,40 @@ Bezug: MVP-10, MVP-15, F-89..F-94.
 
 DoD:
 
-- [ ] Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für `apps/api:/api/metrics`.
+- [ ] Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`); Compose-Service-Name wird in Schritt 10 verbindlich festgelegt.
 - [ ] Pflicht-Counter-Definitionen aus `apps/api` aktiv (`mtrace_playback_events_total`, …).
 - [ ] OTel-Collector unter `services/otel-collector/` (optional im MVP, aber wired).
 - [ ] Optional: Grafana-Container mit Default-Dashboard für die vier Pflicht-Counter.
 
-### 5.5 MVP-DoD (Lastenheft §18)
+### 5.5 Release-Akzeptanzkriterien (Lastenheft §13.1: RAK-1..RAK-10)
 
-Diese Items sind die kanonischen Abschluss-Kriterien für `0.1.0` und werden ausgehakt, sobald die Tranchen 1.x sie erfüllen.
+Diese zehn Punkte sind die kanonische Abnahmeprüfung für den `0.1.0`-Release. Jeder Eintrag wird ausgehakt, sobald die zugehörige Tranche-1.x-Implementierung ihn erfüllt.
 
 DoD:
 
-- [ ] `make dev` startet erfolgreich.
-- [ ] Der Teststream läuft lokal.
-- [ ] Das Dashboard ist im Browser erreichbar.
-- [ ] Der Test-Player kann den Stream abspielen.
-- [ ] Das Player-SDK erzeugt Events.
-- [ ] Die API nimmt Events an.
-- [ ] Das Dashboard zeigt Events.
+- [ ] **RAK-1** `make dev` startet alle notwendigen Dienste (Tranche 5.3).
+- [ ] **RAK-2** Dashboard ist erreichbar (Tranche 5.1, 5.3).
+- [ ] **RAK-3** API ist erreichbar (Tranche 5.3 — `apps/api` läuft im Compose-Stack auf Port 8080, `/api/health` liefert `200`).
+- [ ] **RAK-4** Teststream läuft über MediaMTX (Tranche 5.3).
+- [ ] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 5.2).
+- [ ] **RAK-6** API nimmt Events an (Tranche 5.1/5.2 End-to-End-Pfad).
+- [ ] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 5.1).
+- [ ] **RAK-8** README beschreibt den Ablauf reproduzierbar — Quickstart-Pfad in `README.md`/`docs/local-development.md` (Tranche 0a §3.6 + Release-Doku).
+- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Compose-Stack-Verifikation, dass keine hochkardinalen Labels exportiert werden (Tranche 5.4 + Spot-Check).
+- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder OTel-Spans pro Session oder Dashboard-Trace-Ansicht (Tranche 5.1 + 5.4; minimal: ein Beispiel-Trace im Dashboard oder Tempo).
+
+### 5.6 Übergreifende DoD (Lastenheft §18)
+
+Lastenheft §18 ergänzt die RAKs um dokumentations- und prozessbezogene Items, die kein eigenes RAK haben aber für die Abnahme erforderlich sind:
+
+DoD:
+
 - [x] Architektur in `docs/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
-- [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a).
-- [ ] Tests für zentrale Use Cases vorhanden.
-- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6).
-- [ ] `CHANGELOG.md` enthält Eintrag für `0.1.0`.
+- [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5).
+- [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch`, HTTP-Integrationstests für die drei Pflicht-Endpoints, Tests für die Tranche-0b-Code-Korrekturen.
+- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32).
+- [ ] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`).
+- [ ] Test-Player kann den Stream abspielen (manueller Smoke-Test, deckt RAK-2/4/5 zusammen ab).
 
 ---
 
