@@ -32,10 +32,10 @@ jedem Folge-ADR aktualisieren.
 | ✅      | Siegerbranch        | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`.                                                               | `spike/go-api`, ADR                                                                                                                   |
 | ✅      | Unterlegener Branch | Als Tag archiviert: `spike/backend-stack-loser-2026-04-28` (Commit `7c8bc44`), `spike/micronaut-api` gelöscht.                                   | `spike/backend-stack-loser-2026-04-28`                                                                                                |
 
-### 1.2 Was noch offen ist (vor MVP `0.1.0`)
+### 1.2 Pre-MVP-Vorbereitung (SP-41) — abgeschlossen
 
-Reihenfolge ist verbindlich (SP-41). Detaillierte DoD-Checkboxen pro
-Schritt in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 0).
+Reihenfolge war verbindlich (SP-41). Detail-DoD und Commit-Hashes
+in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §2.
 
 | Reihenfolge | Status | Aufgabe                                                                                                         | Trigger        | Verweis           |
 | ----------- | ------ | --------------------------------------------------------------------------------------------------------------- | -------------- | ----------------- |
@@ -44,8 +44,24 @@ Schritt in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 0).
 | 3           | ✅      | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41     |
 | 4           | ✅      | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/risks-backlog.md`.                     | Nach Schritt 3 | SP-41             |
 
-Erst danach beginnt die eigentliche `0.1.0`-Implementierung:
-Dashboard, Player-SDK, Docker-Lab und Observability.
+### 1.3 Verbleibend für `0.1.0`-Release
+
+Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung ausgeliefert,
+Compose-Lab + RAK-Verifikation + CI-Setup stehen aus. DoD-Detail
+in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
+
+| Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------- |
+| 1           | ✅      | §5.1 Backend-Erweiterung (Sessions-Endpoints, MVP-16, F-22-Hook, ingest_sequence, CORS Variante B, RateLimiter-Dimensionen, Lifecycle-Sweeper).                        | nach Tranche 0                       | plan-0.1.0 §5.1; MVP-2, MVP-16, F-17..F-22 |
+| 2           | ⬜      | §5.2 Compose-Lab Core (`api`, `mediamtx`, `stream-generator`) inkl. `make dev`/`make stop` und Smoke-Test (`/health`, POST events, GET sessions).                       | nach §5.1                            | plan-0.1.0 §5.2; MVP-7..MVP-9; F-82..F-88 |
+| 3           | ⬜      | §5.3 RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 verifiziert — fällt mit §5.2.                                                                                                   | nach §5.2                            | plan-0.1.0 §5.3                        |
+| 4           | ⬜      | §5.4 Hash-Backfill für bereits gelieferte DoD-Items (Telemetry-Model, Local-Dev, Use-Case-Tests) + `CHANGELOG.md`-Eintrag für `0.1.0`.                                 | parallel zu §5.2/§5.3                | plan-0.1.0 §5.4                        |
+| 5           | ⬜      | OE-6 entscheiden (CI-Zielplattformen) und GitHub-Actions-Workflow `build.yml` mit `make test`, `make lint`, `make coverage-gate`, `make arch-check` aufsetzen.         | 4 Wochen vor Release-Tag (Eskalation) | OE-6; plan-0.1.0 §5.4                  |
+
+Ab dem `0.1.0`-Tag setzen `0.1.1` (Player-SDK + Dashboard) und
+`0.1.2` (Observability-Stack) auf — Detail in
+[`plan-0.1.1.md`](./plan-0.1.1.md) und
+[`plan-0.1.2.md`](./plan-0.1.2.md).
 
 ---
 
