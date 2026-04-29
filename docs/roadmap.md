@@ -85,7 +85,9 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.6.0` | SRT Health View | ⬜ | RAK-41..RAK-46 |
 
 DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
-(Lastenheft-übergreifend, nicht Release-spezifisch).
+(Lastenheft-übergreifend, nicht Release-spezifisch). Release-Vorgehen
+in [`docs/releasing.md`](./releasing.md) (Skeleton — wird mit OE-6
+und OE-7 konkretisiert).
 
 ---
 
