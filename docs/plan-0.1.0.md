@@ -9,6 +9,7 @@ DoD-Checkboxen tracken den Lieferstand:
 
 - `[x]` ausgeliefert — Commit-Hash genannt; das Item ist im Code/in der Doku enthalten.
 - `[ ]` offen — kein Commit, kein Code dahinter.
+- `[!]` blockiert durch Lastenheft-Inkonsistenz — Item kann erst angegangen werden, wenn ein Lastenheft-Patch (Tranche 0c, siehe §4a) den Widerspruch auflöst. Siehe `roadmap.md` §7.1 für die Konvention.
 - 🟡 in Arbeit — partiell umgesetzt mit weiteren offenen Sub-Items.
 
 Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **kein** Status-Tracking. Differenzen Code↔Soll werden hier als offene `[ ]`-DoD-Items getrackt.

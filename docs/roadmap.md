@@ -167,3 +167,29 @@ die für `0.1.0`+ relevanten Punkte:
   und (falls strukturell) in das Lastenheft übernehmen.
 - §1 Aktueller Stand wird nach jedem signifikanten Meilenstein neu
   geschrieben (nicht inkrementell — die Liste bleibt kurz).
+
+### 7.1 Source-of-Truth-Konvention bei Lastenheft-Widersprüchen
+
+Lastenheft ist die normative Anforderungsquelle. Bei **interner**
+Inkonsistenz zwischen einer F-Kennung (Anforderungs-Detail in §7) und
+einer MVP-Kennung (Release-Prioritäts-Klassifikation in §12) gewinnt
+**keine** Seite automatisch:
+
+1. Plan-Dokumente (`plan-X.Y.Z.md`) markieren betroffene DoD-Items mit
+   Status `[!]` (statt `[ ]` oder `[x]`) und beschreiben die
+   Inkonsistenz in einem kurzen Hinweis.
+2. Auflösung erfolgt durch einen **Lastenheft-Patch**: betroffene
+   F- oder MVP-Kennung wird angepasst, Lastenheft-Header-Version
+   bekommt einen Patch-Level-Bump (`1.0.0` → `1.0.1` → `1.0.2` …).
+3. Der Patch wird im jeweiligen Plan-Dokument unter der dortigen
+   Tranche „Lastenheft-Patches" (z. B. `plan-0.1.0.md` Tranche 0c)
+   getrackt — mit Verweis auf die geänderten F-/MVP-Kennungen und
+   den Begründungs-Pfad (Code-Review-Finding, ADR, Diskussion).
+4. Bezug-Listen in den Soll-Dokumenten (`architecture.md`,
+   `plan-X.Y.Z.md`, `README.md`) werden auf die neue Patch-Version
+   gepinnt; historische Verweise (frühere Plan-Stände, ADRs,
+   Spike-Doku) bleiben auf der ursprünglichen Version.
+
+Diese Konvention verhindert, dass der Plan eigenmächtig zugunsten
+einer der widersprüchlichen Quellen entscheidet und damit eine
+normative Anforderung des Lastenhefts unterläuft.
