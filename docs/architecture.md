@@ -265,36 +265,43 @@ m-trace/
 
 Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) (Schritte 1 und 2 im HTTP-Adapter, Schritte 2..8 im Use Case):
 
+Akteure:
+
+- **Browser** — Player-SDK
+- **HTTP** — `adapters/driving/http.PlaybackEventsHandler`
+- **UseCase** — `application.RegisterPlaybackEventBatch`
+- **Auth** — `adapters/driven/auth.StaticProjectResolver`
+- **Rate** — `adapters/driven/ratelimit.TokenBucket`
+- **Repo** — `adapters/driven/persistence.InMemoryEventRepository`
+- **Metrics** — `adapters/driven/metrics.PrometheusPublisher`
+
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Browser as Browser<br/>(Player-SDK)
-    participant HTTP as adapters/driving/http<br/>PlaybackEventsHandler
-    participant App as application<br/>RegisterPlaybackEventBatch
-    participant Auth as adapters/driven/auth<br/>StaticProjectResolver
-    participant Rate as adapters/driven/ratelimit<br/>TokenBucket
-    participant Repo as adapters/driven/persistence<br/>InMemoryEventRepository
-    participant Metrics as adapters/driven/metrics<br/>PrometheusPublisher
+    participant Browser
+    participant HTTP
+    participant UseCase
+    participant Auth
+    participant Rate
+    participant Repo
+    participant Metrics
 
-    Browser->>HTTP: POST /api/playback-events<br/>X-MTrace-Token, JSON-Batch
-    HTTP->>HTTP: Step 1 — Body-Größe (≤ 256 KB)
-    HTTP->>HTTP: Step 2 — Auth-Header vorhanden
-    HTTP->>HTTP: Parse JSON → BatchInput
-    HTTP->>App: RegisterPlaybackEventBatch(BatchInput)
-    App->>Auth: Step 2 — ResolveByToken(token)
-    Auth-->>App: Project
-    App->>Rate: Step 3 — Allow(projectID, n)
-    Rate-->>App: ok | ErrRateLimited
-    App->>App: Step 4 — schema_version == "1.0"
-    App->>App: Step 5 — Batch-Form (1..100 Events)
-    App->>App: Step 6 — Event-Pflichtfelder, Timestamp parsen
-    App->>App: Step 7 — project_id ≡ Token-Projekt
-    App->>Repo: Step 8 — Append(events)
-    Repo-->>App: ok
-    App->>Metrics: EventsAccepted(n)
-    App-->>HTTP: BatchResult{Accepted: n}
+    Browser->>HTTP: POST /api/playback-events
+    Note over HTTP: Step 1 — Body ≤ 256 KB<br/>Step 2 — X-MTrace-Token vorhanden<br/>Parse JSON → BatchInput
+    HTTP->>UseCase: RegisterPlaybackEventBatch(in)
+    UseCase->>Auth: ResolveByToken(token)
+    Auth-->>UseCase: Project
+    UseCase->>Rate: Allow(projectID, n)
+    Rate-->>UseCase: ok
+    Note over UseCase: Step 4 — schema_version == "1.0"<br/>Step 5 — Batch-Form (1..100)<br/>Step 6 — Event-Pflichtfelder<br/>Step 7 — project_id ≡ Token-Projekt
+    UseCase->>Repo: Append(events)
+    Repo-->>UseCase: ok
+    UseCase->>Metrics: EventsAccepted(n)
+    UseCase-->>HTTP: BatchResult{Accepted: n}
     HTTP-->>Browser: 202 Accepted
 ```
+
+Schritt-Nummerierung (1..8) entspricht dem API-Kontrakt §5; Schritte 1 und 2 laufen im HTTP-Adapter, Schritt 2 (Auth-Token) bis Schritt 8 (Persistenz) im Use Case.
 
 Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut Spike-Spec §6.10:
 
