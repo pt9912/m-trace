@@ -37,7 +37,7 @@ DoD:
 
 - [ ] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert; Verifikation per `docker compose logs api`).
 - [ ] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3 aus `0.1.0`).
-- [ ] **F-91** OpenTelemetry-Unterstützung — durch Tranche-0b §4.3 in `plan-0.1.0.md` (`Telemetry`-Port + OTLP-Anbindung via `autoexport`) abgedeckt.
+- [ ] **F-91** OpenTelemetry-Unterstützung — **Voraussetzung aus Tranche-0b §4.3** in `plan-0.1.0.md` (`Telemetry`-Port + OTLP-Anbindung via `autoexport`). Vor Beginn von Tranche 1 muss §4.3 vollständig (`[x]`) sein; `0.1.2` baut darauf auf, implementiert F-91 aber nicht erneut.
 - [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent.
 - [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`). Prometheus selbst läuft im observability-Profil (Tranche 2).
 - [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.2`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
@@ -64,7 +64,10 @@ DoD:
 
 DoD:
 
-- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability`: `curl http://localhost:9090/api/v1/label/session_id/values` muss leer/nicht-existent sein; Spot-Check der `mtrace_*`-Series gegen die Cardinality-Regeln aus Lastenheft §7.10.
+- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` mit metrik-spezifischen Series-Queries:
+    - `curl 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`.
+    - Pro Mindestmetrik aus Lastenheft §7.9: `curl 'http://localhost:9090/api/v1/labels?match[]=mtrace_playback_events_total'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10.
+    - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
 - [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch, abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, `plan-0.1.1.md` §3). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
 ### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)
