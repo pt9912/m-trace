@@ -258,10 +258,12 @@ Bezug: MVP-3, MVP-16, F-23..F-28, F-35..F-40; RAK-7; OE-3 (Datenhaltung MVP) und
 
 DoD Backend (`apps/api`):
 
-- [ ] Domain-Aggregation: `StreamSession` wird aus eingehenden `PlaybackEvent`-Batches abgeleitet — bei jedem Event mit unbekanntem `session_id` wird eine `StreamSession` mit Default-State `Active` erzeugt; Session-Lifecycle (Active → Ended) ist Bonus, falls Time-Budget reicht.
+- [ ] Domain-Aggregation: `StreamSession` wird aus eingehenden `PlaybackEvent`-Batches abgeleitet — bei jedem Event mit unbekanntem `session_id` wird eine `StreamSession` mit Default-State `Active` erzeugt.
+- [ ] Session-Lifecycle (`Active` → `Stalled` → `Ended`) als Pflicht — Voraussetzung für F-26 im Dashboard. Stalled = keine Events in einem Schwellwert-Fenster (z. B. 60 s, konfigurierbar); Ended = explizites End-Event aus dem SDK oder Inaktivität jenseits des Stalled-Fensters.
 - [ ] **MVP-16** Lokale Speicherung der Sessions und Events: In-Memory ist Pflicht-Default; SQLite als Soll-Erweiterung über OE-3-Folge-ADR. Beide Implementierungen leben hinter dem `EventRepository`-Port plus einem neuen `SessionRepository`-Port (oder vereinheitlicht — Design-Entscheidung im Use Case).
 - [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession` (oder erweiterung des bestehenden); Domain-Sicht auf `StreamSession` mit Event-Zählern.
 - [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste). Aktuell sind nur die drei Spike-Pflicht-Endpoints implementiert.
+- [!] **F-22** „Integration des Stream Analyzers" steht im Lastenheft §7.3 als Muss für `apps/api`, während `packages/stream-analyzer` per **MVP-21** (Nicht-MVP) erst ab Phase `0.3.0` als fertiges Paket geplant ist. Architecture §4.1 spiegelt MVP-21. Ohne Lastenheft-Patch bleibt eine Muss-Anforderung des MVP unsichtbar offen. Auflösung folgt mit Tranche 0c (siehe §4a) — bis dahin blockiert.
 - [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches; HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
 
 DoD Dashboard (`apps/dashboard`):
@@ -279,6 +281,7 @@ DoD Dashboard (`apps/dashboard`):
 - [ ] **F-37** Playback-Events anzeigen — eine dedizierte Sicht (Route oder Tab) listet eingehende Events mit Filter nach Session und Event-Typ.
 - [ ] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt.
 - [ ] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected`.
+- [ ] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht.
 - [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-Konsole. Ziele werden aus den Compose-Service-URLs abgeleitet (z. B. `http://localhost:3000` Grafana, `http://localhost:9090` Prometheus, `http://localhost:8888` MediaMTX-Web-UI). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
 - [ ] API-Client mit typisierten Anfragen.
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
@@ -304,17 +307,19 @@ DoD:
 
 Bezug: MVP-7..MVP-9, F-82..F-88; RAK-1.
 
-Compose-Stack ist in zwei Profile geteilt: **Core** (Pflicht für RAK-1) und **observability** (Soll-Add-On laut MVP-28/MVP-29). Tempo bleibt explizit aus dem MVP ausgeschlossen (MVP-22 ist Nicht-MVP).
+Compose-Setup nutzt die Docker-Compose-Profile-Semantik korrekt: Core-Services werden **ohne** `profiles:`-Direktive deklariert und starten damit per Default bei `docker compose up`. Observability-Services tragen `profiles: ["observability"]` und starten nur, wenn das Profil explizit aktiviert wird (`docker compose --profile observability up` oder `COMPOSE_PROFILES=observability docker compose up`). Tempo bleibt explizit aus dem MVP ausgeschlossen (MVP-22 ist Nicht-MVP).
 
 DoD:
 
-- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis mit dem **Core-Profil** (Default): `apps/api`, `apps/dashboard`, MediaMTX, FFmpeg-Generator — die vier Services aus `architecture.md` §8.2.
+- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis. **Core-Services** (`api`, `dashboard`, `mediamtx`, `stream-generator`) ohne `profiles:`-Direktive — sie starten per Default; entspricht den vier Services aus `architecture.md` §8.2 und der Pflicht-Mindestdienste-Tabelle aus Lastenheft §7.8 (nach Patch `1.0.2`).
+- [ ] **Observability-Services** (`otel-collector`, `prometheus`, `grafana`) mit `profiles: ["observability"]` — additiv und opt-in; entspricht der Soll-Mindestdienste-Tabelle aus Lastenheft §7.8.
 - [ ] MediaMTX als `services/media-server/` mit Konfiguration für HLS.
 - [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
 - [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
 - [ ] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode.
-- [ ] `make dev` startet das **Core-Profil** und erfüllt damit RAK-1 — Observability-Services starten nur über das observability-Profil (siehe §5.4). Lastenheft-Inkonsistenz zwischen F-87/F-88 (optional, Muss-Priorität) und Mindestdienste-Tabelle wurde mit Patch `1.0.2` aufgelöst (siehe Tranche 0c §4a.2).
-- [ ] `make stop` beendet sauber.
+- [ ] `make dev` führt `docker compose up --build` ohne Profil-Flag aus — startet damit ausschließlich die Core-Services und erfüllt RAK-1.
+- [ ] `make dev-observability` aktiviert das observability-Profil zusätzlich.
+- [ ] `make stop` beendet sauber (`docker compose down`, Profile-aware).
 - [ ] Core-Stack mindestens unter Linux verifiziert (Bezug AK-1).
 
 ### 5.4 Schritt 11 — Observability-Stack
@@ -352,7 +357,7 @@ DoD:
 - [ ] **RAK-6** API nimmt Events an (Tranche 5.1/5.2 End-to-End-Pfad).
 - [ ] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 5.1).
 - [ ] **RAK-8** README beschreibt den Ablauf reproduzierbar — Quickstart-Pfad in `README.md`/`docs/local-development.md` (Tranche 0a §3.6 + Release-Doku).
-- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Compose-Stack-Verifikation, dass keine hochkardinalen Labels exportiert werden (Tranche 5.4 + Spot-Check).
+- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` (Prometheus liegt im observability-Profil): `curl http://localhost:9090/api/v1/label/session_id/values` muss leer/nicht-existent sein; Spot-Check der `mtrace_*`-Series gegen die Cardinality-Regeln aus Lastenheft §7.10.
 - [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, Tranche 5.1). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
 ### 5.6 Übergreifende DoD (Lastenheft §18)
