@@ -39,7 +39,7 @@ Reihenfolge ist verbindlich (SP-41).
 | 1 | ⬜ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | SP-41 |
 | 2 | ⬜ | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren. | Nach Schritt 1 | SP-41 |
 | 3 | ⬜ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17 |
-| 4 | 🟡 | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen (Form: siehe §5). | Nach Schritt 3 | ADR §8 |
+| 4 | ⬜ | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen (Form: siehe §5). | Nach Schritt 3 | ADR §8 |
 
 Erst danach beginnt die eigentliche `0.1.0`-Implementierung:
 Dashboard, Player-SDK, Docker-Lab und Observability.
@@ -114,16 +114,16 @@ Eine pro Lastenheft (`OE-X`) plus zwei roadmap-spezifische Punkte.
 | Kennung | Entscheidung | Wo wird sie getroffen | Status |
 |---|---|---|---|
 | — | Issue-Backlog-Form (GitHub Issues / Markdown-TODO / Linear / …) | mit Schritt 4 in §2 | offen, roadmap-spezifisch |
-| — | Repo-Hosting (`github.com/<owner>/m-trace`) | vor `0.1.0` Public-Release | offen — SP-57 |
+| — | Repo-Hosting (`github.com/<owner>/m-trace`) | git-origin | **resolved**: `github.com/pt9912/m-trace`; Eintrag entfällt mit Schritt 2 (Lastenheft `1.0.0`) |
 | OE-1 | Projektlizenz: MIT oder Apache-2.0 | vor `0.1.0` Public-Release | MIT bereits committed (`LICENSE`); Apache-2.0-Prüfung offen |
-| OE-2 | Backend-Technologie final | — | **resolved** durch ADR `0001-backend-stack.md` (Go); Eintrag entfällt mit Lastenheft `1.0.0` |
+| OE-2 | Backend-Technologie final | — | **resolved** durch ADR `0001-backend-stack.md` (Go); Eintrag entfällt mit Schritt 2 (Lastenheft `1.0.0`) — kein eigenes Arbeitspaket |
 | OE-3 | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen |
 | OE-4 | Frontend-Styling (eigenes CSS / Tailwind / UI-Library) | mit Schritt 8 in §2 | offen |
 | OE-5 | Live-Updates: Polling / WebSocket / SSE | Folge-ADR `0.4.0` | offen |
 | OE-6 | CI-Zielplattformen | mit Schritt 4 in §2 | offen |
 | OE-7 | Release-Konvention | vor `0.1.0` Public-Release | offen |
 | OE-8 | Paketnamen für npm | Schritt 9 in §2 | offen |
-| OE-9 | Go Module Name final | Schritt 1 in §2 | offen — SP-57 |
+| OE-9 | Go Module Name final | Schritt 1 in §2 | **resolved**: `github.com/pt9912/m-trace/apps/api`; Rename des Spike-Pfads (`github.com/example/m-trace/apps/api`) erfolgt im Rahmen von Schritt 1 |
 
 ---
 
