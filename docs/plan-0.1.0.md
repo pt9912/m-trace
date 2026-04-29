@@ -307,7 +307,7 @@ DoD:
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Status: ⬜ offen. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
+Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung ausgeliefert, §5.2 Compose-Lab und §5.3/§5.4 stehen aus. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
