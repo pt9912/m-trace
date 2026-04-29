@@ -44,6 +44,7 @@ DoD:
 - [ ] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren.
 - [ ] Browser-Build (ESM + UMD).
 - [ ] OE-8 entscheiden (Paketname, Scope).
+- [ ] **F-110 origin-Bucket (Backend)**: vor Beginn der Browser-Integrationstests muss `apps/api` den dritten Rate-Limit-Bucket auf der `origin`-Dimension aktiv haben (Vorbereitung optional in `0.1.0` §5.1, verbindliche Aktivierung spätestens hier). Test: ein Browser-Origin mit aufgebrauchtem origin-Budget liefert `429`, auch wenn project_id-Budget noch frei ist.
 - [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching); Integrationstest gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End) auf den im MVP unterstützten Browsern: **Pflicht** Chrome Desktop (aktuelle Stable) und Firefox Desktop (aktuelle Stable); **eingeschränkt** Safari Desktop (Basis-Playback laut Lastenheft §6/§MVP-Browser-Matrix); iOS Safari, Android Chrome, Smart-TV-Browser, Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
 
 ---
@@ -70,6 +71,8 @@ DoD:
 - [ ] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht.
 - [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
 - [ ] API-Client mit typisierten Anfragen.
+- [ ] **API-Origin-Strategie**: im **Vite-Dev-Mode** nutzt das Dashboard einen SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS für GET-Routen entfällt; im **Compose-Production-Build** läuft das Dashboard über getrennten Origin und nutzt die in `plan-0.1.0.md` §5.1 definierten CORS-Headers für GET-Routen (Dashboard-Lese-Pfad).
+- [ ] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `docs/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`).
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
 
 ---

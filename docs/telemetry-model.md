@@ -17,6 +17,7 @@ Zu spezifizieren:
 - Optionale Felder (`sequence_number`, `client_time_origin`).
 - Schema-Version-Feld (Lastenheft §7.11.3 / API-Kontrakt §3).
 - Beispiel-Payloads (Happy-Path, leere Sub-Felder).
+- **NF-37 CSP-Beispiele für SDK-`connect-src`**: für Drittanbieter, die das Player-SDK in eigene Seiten einbinden, ein Mustertext (z. B. `connect-src 'self' https://collector.example.com`); Hinweis auf Origin-Allowlist im Backend (F-108).
 
 ## 2. OTel-Modell
 

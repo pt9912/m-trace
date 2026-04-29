@@ -49,6 +49,7 @@ Zu dokumentieren:
 - Ports und Zwecke (api 8080, dashboard 5173, mediamtx 8888 HLS / 9997 API, prometheus 9090, grafana 3000).
 - Inter-Service-Konfiguration (`OTEL_EXPORTER_OTLP_ENDPOINT`, MediaMTX-URL für Player-SDK-Demo).
 - Service-Abhängigkeiten in Compose (`depends_on`, Healthchecks).
+- **NF-37 CSP-Beispiele für `connect-src`**: Empfohlener `Content-Security-Policy`-Header für die Dashboard-Auslieferung (z. B. `default-src 'self'; connect-src 'self' http://localhost:8080`) — getrennte Beispiele für Dev-Mode (Vite-Proxy) und Compose-Production-Build (separater API-Origin).
 
 ## 4. Test-/Lint-/Coverage-Workflows
 
