@@ -126,12 +126,16 @@ DoD:
 
 ### 3.5 `docs/telemetry-model.md` (Schritt 6)
 
+Deckt alle Telemetrie- und Cardinality-relevanten F-Kennungen aus Lastenheft §7.9, §7.10 und §7.11.
+
 DoD:
 
-- [ ] OTel-Schema und Naming-Konvention für Spans/Counter spezifizieren (Bezug F-89..F-94, F-106..F-115).
-- [ ] Wire-Format für Player-Events dokumentieren (Bezug Lastenheft §7.11).
-- [ ] Cardinality-Regeln (Lastenheft §7.10) erläutern.
-- [ ] Schema-Versionierung und Time-Skew-Behandlung dokumentieren.
+- [ ] OTel-Schema und Naming-Konvention für Spans/Counter spezifizieren (Bezug **F-89..F-94**).
+- [ ] Cardinality- und Datenmodell-Regeln dokumentieren (Bezug **F-95..F-100** Lastenheft §7.10 sowie **F-101..F-105** als MVP-Variante).
+- [ ] Wire-Format für Player-Events spezifizieren — Pflichtfelder, Schema-Version, Versand-Pfad (Bezug **F-106..F-115** Lastenheft §7.11.1–§7.11.3).
+- [ ] Backpressure- und Limit-Regeln (Batch-Größe, Rate-Limit, Drop-Politik) dokumentieren (Bezug **F-118..F-123**).
+- [ ] Time-Stempel-Felder, Skew-Behandlung und Sequenz-Ordering dokumentieren (Bezug **F-124..F-130**).
+- [ ] Schema-Versionierung und Evolution dokumentieren.
 - [ ] Roadmap §2 Schritt 6 auf ✅.
 
 ### 3.6 `docs/local-development.md` (Schritt 7)
@@ -162,16 +166,21 @@ DoD:
 - [x] `apps/api/adapters/driving/http/handler_test.go`: neuer Test `TestHTTP_401_BodyTooLarge_NoToken` (`40d79d9`).
 - [x] Docker-Pflichttests grün (`40d79d9`).
 
-### 4.2 InvalidEvents-Counter-Scope: nur abgelehnte Events (Hoch + Mittel C1)
+### 4.2 Counter-Scope: invalid_events nur für 400/422, dropped_events nur für Backpressure (Hoch + Mittel C1)
 
-Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`): `mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422`. Auth-Fehler (`401`) zählen nicht. Bei leerem Batch (`events.length == 0`) bleibt der Counter unverändert (Ablehnung sichtbar über HTTP-Status und Access-Logs).
+Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`):
+
+- `mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422`. Auth-Fehler (`401`) zählen nicht. Bei leerem Batch (`events.length == 0`) bleibt der Counter unverändert (Ablehnung sichtbar über HTTP-Status und Access-Logs).
+- `mtrace_dropped_events_total` ist für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Queue-Puffer) und darf konstant `0` sein. Synchron fehlgeschlagenes `Append` ist kein Drop und inkrementiert den Counter nicht — Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs.
 
 DoD:
 
 - [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Token-Bindung-Branch: `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 9; im Code aktuell als Step 7 kommentiert (siehe §4.4 für die Numerierungs-Sync).
 - [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Batch-leer-Branch: `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op. *Step-Mapping*: Kontrakt §5 Step 6; im Code aktuell der erste `if len(in.Events) == 0`-Branch innerhalb des kombinierten Code-Step 5 (Batch shape).
+- [ ] `apps/api/hexagon/application/register_playback_event_batch.go` Persistenz-Branch: `u.metrics.DroppedEvents(len(parsed))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 10 (Persist) bei Repository-Fehler; im Code aktuell als Step 8.
 - [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei `project_id`/Token-Mismatch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird.
 - [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei leerem Batch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird.
+- [ ] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei Repository-Fehler (Append → Error) verifiziert, dass `DroppedEvents` **nicht** inkrementiert wird; Use Case gibt den Fehler zurück, HTTP-Adapter liefert `500`.
 - [ ] Docker-Targets `test` und `lint` grün.
 
 ### 4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span (Mittel-Finding)
@@ -211,15 +220,22 @@ DoD:
 
 Roadmap §2 Schritte 8–11; Lastenheft RAK-1..RAK-10. Status: ⬜ offen.
 
-### 5.1 Schritt 8 — Dashboard-App (`apps/dashboard`)
+### 5.1 Schritt 8 — Dashboard-App und Session-Pfad (`apps/dashboard` + Backend-Erweiterung)
 
-Bezug: MVP-3, F-23..F-28; OE-4 (Frontend-Styling) wird hier entschieden.
+Bezug: MVP-3, MVP-16, F-23..F-28; RAK-7; OE-3 (Datenhaltung MVP) und OE-4 (Frontend-Styling) werden hier entschieden.
 
-DoD:
+DoD Backend (`apps/api`):
+
+- [ ] Domain-Aggregation: `StreamSession` wird aus eingehenden `PlaybackEvent`-Batches abgeleitet — bei jedem Event mit unbekanntem `session_id` wird eine `StreamSession` mit Default-State `Active` erzeugt; Session-Lifecycle (Active → Ended) ist Bonus, falls Time-Budget reicht.
+- [ ] **MVP-16** Lokale Speicherung der Sessions und Events: In-Memory ist Pflicht-Default; SQLite als Soll-Erweiterung über OE-3-Folge-ADR. Beide Implementierungen leben hinter dem `EventRepository`-Port plus einem neuen `SessionRepository`-Port (oder vereinheitlicht — Design-Entscheidung im Use Case).
+- [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession` (oder erweiterung des bestehenden); Domain-Sicht auf `StreamSession` mit Event-Zählern.
+- [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste). Aktuell sind nur die drei Spike-Pflicht-Endpoints implementiert.
+- [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches; HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
+
+DoD Dashboard (`apps/dashboard`):
 
 - [ ] SvelteKit-App-Skelett unter `apps/dashboard/` (TypeScript, pnpm).
 - [ ] Startseite mit Layout.
-- [ ] Backend-Erweiterung in `apps/api`: zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail). Aktuell sind nur die drei Spike-Pflicht-Endpoints implementiert.
 - [ ] Dashboard-Route `/sessions` zeigt Liste, ruft `GET /api/stream-sessions` auf.
 - [ ] Dashboard-Route `/sessions/:id` zeigt Detail mit Event-Liste, ruft `GET /api/stream-sessions/{id}` auf.
 - [ ] Dashboard-Route `/demo` — Test-Player mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
@@ -243,34 +259,43 @@ DoD:
 - [ ] OE-8 entscheiden (Paketname, Scope).
 - [ ] Demo-Integration in `apps/dashboard/src/routes/demo/`.
 
-### 5.3 Schritt 10 — Docker-Compose-Lab
+### 5.3 Schritt 10 — Docker-Compose-Lab (Core)
 
-Bezug: MVP-7..MVP-9, F-82..F-88.
+Bezug: MVP-7..MVP-9, F-82..F-88; RAK-1.
+
+Compose-Stack ist in zwei Profile geteilt: **Core** (Pflicht für RAK-1) und **observability** (Soll-Add-On laut MVP-28/MVP-29). Tempo bleibt explizit aus dem MVP ausgeschlossen (MVP-22 ist Nicht-MVP).
 
 DoD:
 
-- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis mit den vier Services aus `architecture.md` §8.2.
+- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis mit dem **Core-Profil** (Default): `apps/api`, `apps/dashboard`, MediaMTX, FFmpeg-Generator — die vier Services aus `architecture.md` §8.2.
 - [ ] MediaMTX als `services/media-server/` mit Konfiguration für HLS.
 - [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
-- [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint).
+- [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
 - [ ] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode.
-- [ ] `make dev` startet das gesamte Lab; `make stop` beendet sauber.
-- [ ] Compose-Stack mindestens unter Linux verifiziert (Bezug AK-1).
+- [ ] `make dev` startet das **Core-Profil** und erfüllt damit RAK-1 — Observability-Services starten nur über das observability-Profil (siehe §5.4).
+- [ ] `make stop` beendet sauber.
+- [ ] Core-Stack mindestens unter Linux verifiziert (Bezug AK-1).
 
 ### 5.4 Schritt 11 — Observability-Stack
 
-Bezug: MVP-10, MVP-15, F-89..F-94 (alle Muss); Mindestmetriken laut Lastenheft §7.9.
+Bezug: MVP-10 (Muss), MVP-15 (Muss), MVP-28 (Soll Grafana), MVP-29 (Soll OTel-Collector); F-89..F-94 (Muss); Mindestmetriken laut Lastenheft §7.9; **MVP-22 (Tempo) ist explizit Nicht-MVP**.
 
-DoD:
+Soll-Komponenten (Grafana, OTel-Collector) leben im `observability`-Compose-Profil und werden über `make dev-observability` (oder `docker compose --profile observability up`) ergänzend zum Core-Stack gestartet. RAK-1 ist mit dem Core-Stack erfüllt; das observability-Profil ist additiv und nicht für die DoD-Abnahme von Schritt 10 erforderlich.
+
+DoD Pflicht-Anteile (Muss, in `apps/api` direkt):
 
 - [ ] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert).
 - [ ] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3).
-- [ ] **F-91** OpenTelemetry-Unterstützung — durch Tranche-0b §4.3 (`Telemetry`-Port + OTLP-Anbindung via `autoexport`) bereits abgedeckt; Verifikation, dass die `OTEL_*`-Env-Vars im Compose-Stack auf den OTel-Collector zeigen.
-- [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces); Counter und Spans werden im Compose-Lab gegen den OTel-Collector geprüft.
-- [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`); Compose-Service-Name wird in Schritt 10 verbindlich festgelegt.
-- [ ] **F-94** Grafana-Container (Muss, kein „optional") mit einem **einfachen Beispiel-Dashboard** unter `observability/grafana/`. Dashboard zeigt mindestens die vier Pflicht-Counter aus dem API-Kontrakt §7.
+- [ ] **F-91** OpenTelemetry-Unterstützung — durch Tranche-0b §4.3 (`Telemetry`-Port + OTLP-Anbindung via `autoexport`) bereits abgedeckt.
+- [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent.
+- [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`); Compose-Service-Name wird in Schritt 10 verbindlich festgelegt. Prometheus läuft im observability-Profil.
 - [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.0`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
-- [ ] OTel-Collector unter `services/otel-collector/` als Compose-Service; nimmt OTLP von `apps/api` entgegen, exportiert Traces und Metriken in zwei Pfaden: zu Prometheus (über Remote-Write oder Pull) und zu einem Trace-Backend (z. B. Tempo oder Jaeger).
+
+DoD Soll-Anteile (`observability`-Profil, MVP-28/MVP-29):
+
+- [ ] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus. *Hinweis*: F-94 ist Lastenheft-Muss, MVP-28 ist Soll — die Tabellen widersprechen sich; der Plan folgt der granuläreren MVP-28-Klassifikation.
+- [ ] **MVP-29** OTel-Collector unter `services/otel-collector/` im observability-Profil; nimmt OTLP von `apps/api` entgegen und exportiert Metriken zu Prometheus. Trace-Backend (z. B. Jaeger) ist Bonus, **kein** Pflicht-Bestandteil — Tempo ist per MVP-22 Nicht-MVP.
+- [ ] `make dev-observability` (oder gleichwertiges Compose-Profile-Aufruf) startet beide Soll-Services additiv zum Core.
 
 ### 5.5 Release-Akzeptanzkriterien (Lastenheft §13.1: RAK-1..RAK-10)
 
