@@ -80,6 +80,62 @@ func TestInMemoryEventRepository_ListBySession_SortAndCursor(t *testing.T) {
 	}
 }
 
+// TestInMemoryEventRepository_Snapshot deckt die for-Tests-gedachte
+// Hilfsmethode ab.
+func TestInMemoryEventRepository_Snapshot(t *testing.T) {
+	t.Parallel()
+	repo := persistence.NewInMemoryEventRepository()
+	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+	in := []domain.PlaybackEvent{
+		{SessionID: "s1", ServerReceivedAt: t0, IngestSequence: 1},
+		{SessionID: "s2", ServerReceivedAt: t0, IngestSequence: 2},
+	}
+	if err := repo.Append(context.Background(), in); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	got := repo.Snapshot()
+	if len(got) != 2 {
+		t.Errorf("Snapshot len=%d want 2", len(got))
+	}
+	// Snapshot ist eine Kopie — Mutationen am Snapshot dürfen den
+	// internen State nicht ändern.
+	got[0].SessionID = "mutated"
+	again := repo.Snapshot()
+	if again[0].SessionID == "mutated" {
+		t.Errorf("Snapshot returned a shared slice (mutation leaked)")
+	}
+}
+
+// TestInMemoryEventRepository_ListBySession_NilSequenceNumberSortsFirst
+// deckt nullableSeqValue's nil-Pfad ab und verifiziert die
+// Sort-Order: bei gleichem ServerReceivedAt sortiert ein Event mit
+// nil SequenceNumber vor einem Event mit gesetzter Nummer
+// (plan-0.1.0.md §5.1).
+func TestInMemoryEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *testing.T) {
+	t.Parallel()
+	repo := persistence.NewInMemoryEventRepository()
+	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+	intp := func(v int64) *int64 { return &v }
+	if err := repo.Append(context.Background(), []domain.PlaybackEvent{
+		{SessionID: "s1", ServerReceivedAt: t0, SequenceNumber: intp(5), IngestSequence: 2},
+		{SessionID: "s1", ServerReceivedAt: t0, SequenceNumber: nil, IngestSequence: 1},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	page, err := repo.ListBySession(context.Background(), driven.EventListQuery{
+		SessionID: "s1", Limit: 10,
+	})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(page.Events) != 2 {
+		t.Fatalf("expected 2 events, got %d", len(page.Events))
+	}
+	if page.Events[0].SequenceNumber != nil {
+		t.Errorf("nil-SequenceNumber must sort first; got SeqNum=%v as event[0]", page.Events[0].SequenceNumber)
+	}
+}
+
 // TestInMemoryEventRepository_ListBySession_FiltersBySessionID
 // verifiziert, dass Events anderer Sessions nicht durchsickern.
 func TestInMemoryEventRepository_ListBySession_FiltersBySessionID(t *testing.T) {

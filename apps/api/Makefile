@@ -3,15 +3,28 @@
 
 IMAGE := m-trace-api-spike
 
-.PHONY: test lint build deps compile run arch-check clean
+# Coverage-Threshold für `make coverage-gate`. 90 % als Start, Ziel 95 %
+# (siehe docs/quality.md §3). Über `make coverage-gate THRESHOLD=…`
+# überschreibbar, ohne den Default-Pfad anzufassen.
+THRESHOLD ?= 90
+
+# `--no-cache-filter <stage>` zwingt BuildKit, die genannte Stage neu
+# zu evaluieren, ohne die `deps`-Layer (Go-Module-Cache) zu verwerfen.
+# Ohne diesen Filter konnte ein Stale-Layer-Hash früher Test-Failures
+# maskieren — siehe Coverage-Doku.
+NO_CACHE_FILTER_TEST     := --no-cache-filter test
+NO_CACHE_FILTER_LINT     := --no-cache-filter lint
+NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
+
+.PHONY: test lint build deps compile run arch-check coverage coverage-gate coverage-report clean
 
 # Run unit + integration tests inside Docker.
 test:
-	docker build --target test -t $(IMAGE):go-test .
+	docker build $(NO_CACHE_FILTER_TEST) --target test -t $(IMAGE):go-test .
 
 # Run golangci-lint (Soll, plan §14.9 / §14.11).
 lint:
-	docker build --target lint -t $(IMAGE):go-lint .
+	docker build $(NO_CACHE_FILTER_LINT) --target lint -t $(IMAGE):go-lint .
 
 # Build the runtime image (distroless static).
 build:
@@ -37,6 +50,33 @@ arch-check:
 	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.22 \
 		bash scripts/check-architecture.sh
 
+# Coverage-Pflicht-Gate (docs/quality.md §3): misst Coverage über
+# hexagon/ und adapters/, druckt den per-Funktion-Report und fordert
+# mindestens THRESHOLD % Total. Default-Threshold 90 %, Ziel 95 %.
+# Override: `make coverage-gate THRESHOLD=92`.
+coverage-gate:
+	docker build $(NO_CACHE_FILTER_COVERAGE) \
+		--target coverage \
+		--build-arg COVERAGE_THRESHOLD=$(THRESHOLD) \
+		-t $(IMAGE):go-coverage .
+
+# Alias: gleicher Pfad wie das Gate, aber als „informational"-Form für
+# Tageworkflow lesbar — derselbe Stage liefert per-Funktion-Report
+# auf stdout, das Gate ist trotzdem aktiv.
+coverage: coverage-gate
+
+# Coverage-Report (HTML + Profil + Func-Text) in apps/api/build/coverage/
+# extrahieren. Nutzt `--output type=local`, um die /out-Layer der
+# coverage-Stage als Verzeichnis rauszuziehen.
+coverage-report:
+	mkdir -p build/coverage
+	docker build $(NO_CACHE_FILTER_COVERAGE) \
+		--target coverage-export \
+		--build-arg COVERAGE_THRESHOLD=$(THRESHOLD) \
+		--output type=local,dest=build/coverage \
+		.
+	@echo "coverage-report: build/coverage/coverage.html"
+
 # Remove all spike-related images.
 clean:
-	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps
+	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps $(IMAGE):go-coverage

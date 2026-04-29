@@ -78,20 +78,48 @@ Test-Output und Reports leben in den jeweiligen
 
 ---
 
-## 3. Coverage (Platzhalter)
+## 3. Coverage
 
-Coverage-Instrumentierung ist nicht im aktuellen `Dockerfile` aktiviert.
-Der ADR (`docs/adr/0001-backend-stack.md` §8) sieht für `0.1.0+` eine
-Coverage-Strategie vor:
+Coverage-Messung läuft Docker-basiert über die `coverage`-Stage des
+`apps/api/Dockerfile`. Das Gate ist Pflicht-Bestandteil des Build-
+Prozesses und bricht den Build, wenn die Total-Line-Coverage den
+Threshold unterschreitet.
 
-- `go test -cover` (Standardbibliothek-nativ)
-- Aggregierter Threshold im Build-Gate (Vorschlag: 90% Line-
-  Coverage auf `apps/api/hexagon/` und `apps/api/adapters/`)
-- HTML-/JSON-Report als CI-Artifact
+```bash
+cd apps/api
+make coverage-gate                 # Pflicht-Gate, Default-Threshold 90 %
+make coverage-gate THRESHOLD=92    # Threshold ad-hoc anheben
+make coverage-report               # Profil + HTML in build/coverage/ extrahieren
+```
 
-Konkrete Ausgestaltung wird in einer Folge-ADR festgelegt
-(siehe `docs/roadmap.md` §4 — *Coverage-Tooling für Go*). Bis dahin
-existiert dieser Pfad nicht; das Gate ist `Tests grün` über §2.
+Der Coverage-Range ist bewusst auf `hexagon/` und `adapters/`
+beschränkt (`-coverpkg=./hexagon/...,./adapters/...`); `cmd/api`
+besteht aus Wiring, Signal-Handling und OTel-Setup und ist nicht
+sinnvoll testbar — Tests dort wären Doppel-Verifikationen der
+Standardbibliothek.
+
+| Artefakt | Quelle | Form |
+|---|---|---|
+| `build/coverage/coverage.out`      | Go-Coverage-Profil (`-coverprofile`) | binär, von `go tool cover` lesbar |
+| `build/coverage/coverage-func.txt` | per-Funktion-Report                  | Plain-Text, Last-Line trägt das Total |
+| `build/coverage/coverage.html`     | gerenderte HTML-Übersicht            | öffnen mit Browser; CI-Artifact |
+
+Der Threshold steht aktuell auf **90 %**, Ziel ist **>= 95 %**.
+Begründung: ein Threshold, der mit der Realität gleichzieht, statt sie
+zu führen, wird typischerweise gesenkt — also wird er von Anfang an
+hoch gehalten, damit jede neue Code-Zeile mit ihrem Test einkommt.
+Override jederzeit per `make coverage-gate THRESHOLD=…` möglich;
+Senkung des Defaults ist eine ADR-pflichtige Entscheidung.
+
+`docker build --no-cache-filter coverage` erzwingt die Re-Evaluation
+der Coverage-Stage, ohne die `deps`-Layer zu verwerfen — das verhindert
+das Stale-Cache-Maskieren von Test-Failures, das im Spike beobachtet
+wurde. Make-Targets `test`, `lint`, `coverage-gate`, `coverage-report`
+ziehen den Filter automatisch.
+
+Skript: `apps/api/scripts/coverage-gate.sh <func-file> [<threshold>]`.
+Lesen die Last-Line des `go tool cover -func`-Outputs und exitet
+1 bei Unterschreitung, 2 bei Eingabe-Fehler.
 
 ---
 

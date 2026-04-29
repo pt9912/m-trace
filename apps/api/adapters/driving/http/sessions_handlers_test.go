@@ -155,6 +155,69 @@ func TestHTTP_StreamSessionsByID_NotFound(t *testing.T) {
 	}
 }
 
+// TestHTTP_StreamSessionsByID_InvalidEventsLimit deckt den 400-Pfad
+// für eine kaputte events_limit-Query.
+func TestHTTP_StreamSessionsByID_InvalidEventsLimit(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	resp, body := getJSON(t, srv.URL, "/api/stream-sessions/sess-1?events_limit=abc")
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp.StatusCode)
+	}
+	if body["error"] != "events_limit_invalid" {
+		t.Errorf("error=%v want events_limit_invalid", body["error"])
+	}
+}
+
+// TestHTTP_StreamSessionsByID_MalformedCursor deckt den
+// cursor_invalid/malformed-Pfad für ein defektes events_cursor.
+func TestHTTP_StreamSessionsByID_MalformedCursor(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	resp, body := getJSON(t, srv.URL, "/api/stream-sessions/sess-1?events_cursor=AAAA")
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp.StatusCode)
+	}
+	if body["error"] != "cursor_invalid" || body["reason"] != "malformed" {
+		t.Errorf("body=%v want cursor_invalid/malformed", body)
+	}
+}
+
+// TestHTTP_StreamSessionsByID_StaleCursor verifiziert den
+// Storage-Restart-Pfad: ein wohlgeformter events_cursor mit fremder
+// process_instance_id liefert 400 cursor_invalid/storage_restart.
+func TestHTTP_StreamSessionsByID_StaleCursor(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	if r := postEvents(t, srv, "demo-token", validBody); r.StatusCode != http.StatusAccepted {
+		t.Fatalf("post: %d", r.StatusCode)
+	}
+	stale := encodeCursorForTest(t, `{"pid":"other","rcv":"2026-04-28T12:00:00Z","ing":1}`)
+	resp, body := getJSON(t, srv.URL, "/api/stream-sessions/sess-1?events_cursor="+url.QueryEscape(stale))
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp.StatusCode)
+	}
+	if body["error"] != "cursor_invalid" || body["reason"] != "storage_restart" {
+		t.Errorf("body=%v want cursor_invalid/storage_restart", body)
+	}
+}
+
+// TestHTTP_StreamSessionsByID_EmptyID prüft, dass die Trailing-Slash-
+// Route ohne ID vom mux auf 404 abgebildet wird (keine eigene Route
+// für `/api/stream-sessions/`).
+func TestHTTP_StreamSessionsByID_EmptyID(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	resp, err := http.Get(srv.URL + "/api/stream-sessions/")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", resp.StatusCode)
+	}
+}
+
 // TestHTTP_StreamSessionsByID_HappyPath erzeugt eine Session via POST
 // und holt sie inkl. Events.
 func TestHTTP_StreamSessionsByID_HappyPath(t *testing.T) {

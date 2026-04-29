@@ -81,3 +81,55 @@ func findCounter(t *testing.T, rm *metricdata.ResourceMetrics, name string) metr
 	t.Fatalf("counter %q not found in collected metrics", name)
 	return metricdata.Sum[int64]{}
 }
+
+// TestSetup_NoEnvVarsReturnsProvidersAndShutsDown verifiziert den
+// No-Op-Fallback-Pfad aus plan-0.1.0.md §4.3: ohne `OTEL_*`-Env-Vars
+// liefert Setup einsatzbereite Provider. Erzeugt einen Span (über den
+// TracerProvider) und beendet beide Provider sauber via Shutdown —
+// damit decken wir noopSpanExporter.{ExportSpans,Shutdown} ab.
+func TestSetup_NoEnvVarsReturnsProvidersAndShutsDown(t *testing.T) {
+	// Nicht parallel: der Setup-Pfad registriert globale Provider via
+	// otel.SetMeterProvider/SetTracerProvider — andere Tests dürfen
+	// dabei nicht queren.
+	ctx := context.Background()
+
+	providers, err := telemetry.Setup(ctx, "test-service", "test-version")
+	if err != nil {
+		t.Fatalf("Setup: %v", err)
+	}
+	if providers == nil || providers.Meter == nil || providers.Tracer == nil {
+		t.Fatalf("Setup returned incomplete providers: %#v", providers)
+	}
+
+	// Span-Erzeugung + Force-Flush triggert noopSpanExporter.ExportSpans.
+	tracer := providers.Tracer.Tracer(telemetry.TracerName)
+	_, span := tracer.Start(ctx, "test-span")
+	span.End()
+	if err := providers.Tracer.ForceFlush(ctx); err != nil {
+		t.Errorf("ForceFlush: %v", err)
+	}
+
+	// Meter()-Helper: deckt den Default-Pfad über den globalen Provider.
+	if telemetry.Meter() == nil {
+		t.Errorf("Meter() returned nil")
+	}
+
+	// Shutdown deckt den combined-Shutdown-Pfad inkl.
+	// noopSpanExporter.Shutdown.
+	if err := providers.Shutdown(ctx); err != nil {
+		t.Errorf("Shutdown: %v", err)
+	}
+}
+
+// TestProviders_ShutdownNilSafe deckt den Pfad ab, in dem ein
+// Provider-Bundle teilweise unvollständig ist — z. B. wenn Setup nach
+// Meter-Provider-Erfolg vor Tracer-Provider-Setup abgebrochen wäre.
+// Beide Felder gleichzeitig nil → Shutdown ist no-op und gibt nil
+// zurück.
+func TestProviders_ShutdownNilSafe(t *testing.T) {
+	t.Parallel()
+	p := &telemetry.Providers{}
+	if err := p.Shutdown(context.Background()); err != nil {
+		t.Errorf("nil providers Shutdown: expected nil, got %v", err)
+	}
+}

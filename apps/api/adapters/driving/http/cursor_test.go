@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/base64"
 	"errors"
 	"testing"
 	"time"
@@ -59,6 +60,47 @@ func TestDecodeListSessionsCursor_EmptyAndMalformed(t *testing.T) {
 	if _, err := decodeListSessionsCursor("AAEC"); !errors.Is(err, errInvalidCursor) {
 		t.Errorf("not JSON: want errInvalidCursor, got %v", err)
 	}
+}
+
+// TestDecodeListSessionsCursor_EmptyFieldsRejected verifiziert, dass
+// ein wohlgeformter base64-JSON-Cursor mit leeren PID- oder SID-Feldern
+// als errInvalidCursor abgelehnt wird (defense-in-depth gegen
+// gefälschte Cursor).
+func TestDecodeListSessionsCursor_EmptyFieldsRejected(t *testing.T) {
+	t.Parallel()
+	cases := []string{
+		`{"pid":"","sa":"2026-04-28T12:00:00Z","sid":"s1"}`,
+		`{"pid":"abc","sa":"2026-04-28T12:00:00Z","sid":""}`,
+		`{"pid":"abc","sa":"not-a-time","sid":"s1"}`,
+	}
+	for _, raw := range cases {
+		encoded := encodeRaw(raw)
+		if _, err := decodeListSessionsCursor(encoded); !errors.Is(err, errInvalidCursor) {
+			t.Errorf("decode(%q): expected errInvalidCursor, got %v", raw, err)
+		}
+	}
+}
+
+// TestDecodeSessionEventsCursor_EmptyFieldsRejected — analog für den
+// Event-Cursor.
+func TestDecodeSessionEventsCursor_EmptyFieldsRejected(t *testing.T) {
+	t.Parallel()
+	cases := []string{
+		`{"pid":"","rcv":"2026-04-28T12:00:00Z","ing":1}`,
+		`{"pid":"abc","rcv":"not-a-time","ing":1}`,
+	}
+	for _, raw := range cases {
+		encoded := encodeRaw(raw)
+		if _, err := decodeSessionEventsCursor(encoded); !errors.Is(err, errInvalidCursor) {
+			t.Errorf("decode(%q): expected errInvalidCursor, got %v", raw, err)
+		}
+	}
+}
+
+// encodeRaw ist ein Helper für die obige Test-Suite — base64-url ohne
+// Padding über das stdlib base64-Paket.
+func encodeRaw(raw string) string {
+	return base64.RawURLEncoding.EncodeToString([]byte(raw))
 }
 
 // TestEncodeDecodeSessionEventsCursor_RoundTrip — analog für die

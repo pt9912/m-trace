@@ -13,6 +13,9 @@
 #   compile  - compiles the binary for fast feedback
 #   lint     - runs golangci-lint (Soll target, plan §14.9)
 #   test     - runs `go test ./...`
+#   coverage - runs `go test -coverprofile` + `go tool cover -func`,
+#              prüft Threshold (Default 90 %) und exportiert das
+#              Profil + den HTML-Report in /out
 #   build    - produces the final binary
 #   runtime  - distroless runtime image
 # ---------------------------------------------------------------------------
@@ -54,6 +57,36 @@ FROM deps AS test
 
 COPY . .
 RUN CGO_ENABLED=0 go test ./...
+
+# ---- coverage --------------------------------------------------------------
+# Misst Coverage über hexagon/ und adapters/ (cmd/api ist Wiring +
+# Signal-Handling; bewusst aus dem Coverage-Range ausgenommen) und
+# erzwingt eine Threshold von 90 % (überschreibbar via Build-Argument
+# COVERAGE_THRESHOLD). Erzeugt zusätzlich einen HTML-Report — nutzbar
+# via `docker build --target coverage --output type=local,dest=...`.
+FROM deps AS coverage
+
+ARG COVERAGE_THRESHOLD=90
+ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
+
+COPY . .
+RUN mkdir -p /out && \
+    CGO_ENABLED=0 go test \
+        -coverpkg=./hexagon/...,./adapters/... \
+        -coverprofile=/out/coverage.out \
+        -covermode=atomic \
+        ./... && \
+    go tool cover -func=/out/coverage.out | tee /out/coverage-func.txt && \
+    go tool cover -html=/out/coverage.out -o /out/coverage.html && \
+    bash scripts/coverage-gate.sh /out/coverage-func.txt "$COVERAGE_THRESHOLD"
+
+# ---- coverage-export -------------------------------------------------------
+# `FROM scratch` mit ausschließlich /out drin — dadurch extrahiert
+# `docker build --target coverage-export --output type=local,dest=…`
+# nur die Coverage-Artefakte (Profil, Func-Text, HTML), nicht das ganze
+# Toolchain-Rootfs.
+FROM scratch AS coverage-export
+COPY --from=coverage /out /
 
 # ---- build -----------------------------------------------------------------
 FROM deps AS build

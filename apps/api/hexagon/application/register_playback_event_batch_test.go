@@ -57,6 +57,13 @@ func (s *stubRepo) Append(_ context.Context, events []domain.PlaybackEvent) erro
 	return nil
 }
 
+// ListBySession ist no-op — der Use Case in dieser Test-Suite ruft den
+// Read-Pfad nicht. Stub-Methode existiert nur, damit *stubRepo den
+// driven.EventRepository-Vertrag erfüllt.
+func (s *stubRepo) ListBySession(_ context.Context, _ driven.EventListQuery) (driven.EventPage, error) {
+	return driven.EventPage{}, nil
+}
+
 // stubSessionRepo zeichnet UpsertFromEvents-Aufrufe auf und kann eine
 // einmalige Failure simulieren. List/Get/Sweep sind no-ops — der Use
 // Case in dieser Test-Suite ruft sie nicht.

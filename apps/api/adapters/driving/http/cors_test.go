@@ -133,6 +133,18 @@ func TestCORS_Vary_HeaderOnEveryResponse(t *testing.T) {
 	}
 }
 
+// TestCORS_Preflight_Dashboard_UnknownOrigin deckt den 403-Pfad des
+// Dashboard-Preflights ab — analog zum SDK-Pfad, aber an einer anderen
+// Route.
+func TestCORS_Preflight_Dashboard_UnknownOrigin(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	resp := optionsRequest(t, srv.URL, "/api/stream-sessions", "http://attacker.example", http.MethodGet)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", resp.StatusCode)
+	}
+}
+
 // CORS-Test 7: Preflight OPTIONS /api/stream-sessions mit registriertem
 // Origin → 204 mit `Access-Control-Allow-Methods: GET, OPTIONS`.
 func TestCORS_Preflight_Dashboard_Allowed(t *testing.T) {
