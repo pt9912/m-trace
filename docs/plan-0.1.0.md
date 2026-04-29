@@ -290,12 +290,12 @@ Aus Code-Review-Findings: nach der Sub-Release-Schneidung (Patch `1.1.0`) waren 
 
 DoD:
 
-- [ ] Lastenheft Header: Version `1.1.2` → `1.1.3`.
-- [ ] Lastenheft §12.1: Header umformuliert auf „Muss-Anforderungen für die `0.1.x`-Phase (Gesamt-MVP)"; Hinweisblock ergänzt, der MVP-1..MVP-29 auf die Sub-Releases `0.1.0`/`0.1.1`/`0.1.2` verteilt analog zur RAK-Verteilung in §13.1–§13.3.
-- [ ] Roadmap §2 Schritt 6 enger gefasst: Beschreibung auf „Datenmodell, Wire-Format, Cardinality — kein Observability-Setup"; Verweis-IDs auf F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 (F-89/F-90/F-93/F-94 entfernt — gehören zu Roadmap §2 Schritt 11).
-- [ ] Roadmap §2 Schritte 8–11 Trigger an Sub-Release-Abhängigkeiten angeglichen: Schritt 8/9 „Nach `0.1.0`-Release" mit Verweis auf `plan-0.1.1.md`; Schritt 10 dreigeteilt (Core in `0.1.0`, dashboard in `0.1.1`, observability in `0.1.2`); Schritt 11 „Nach `0.1.1`-Release" mit Verweis auf `plan-0.1.2.md`. Schritt 9 Verweis-Range auf F-63..F-67 aktualisiert (war F-63..F-65, fehlten F-66/F-67 aus Patch der Dashboard-DoD).
-- [ ] `plan-0.1.1.md` §3 F-40-Item: MediaMTX-Link von Port `8888` (HLS) auf Port `9997` (API/Status) verlegt; „Web-UI"-Bezeichnung entfernt — MediaMTX hat keine native Web-UI.
-- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.3` aktualisiert.
+- [x] Lastenheft Header: Version `1.1.2` → `1.1.3` (`a39f943`).
+- [x] Lastenheft §12.1: Header umformuliert auf „Muss-Anforderungen für die `0.1.x`-Phase (Gesamt-MVP)"; Hinweisblock ergänzt, der MVP-1..MVP-29 auf die Sub-Releases `0.1.0`/`0.1.1`/`0.1.2` verteilt analog zur RAK-Verteilung in §13.1–§13.3 (`a39f943`).
+- [x] Roadmap §2 Schritt 6 enger gefasst: Beschreibung auf „Datenmodell, Wire-Format, Cardinality — kein Observability-Setup"; Verweis-IDs auf F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 (F-89/F-90/F-93/F-94 entfernt — gehören zu Roadmap §2 Schritt 11) (`a39f943`).
+- [x] Roadmap §2 Schritte 8–11 Trigger an Sub-Release-Abhängigkeiten angeglichen: Schritt 8/9 „Nach `0.1.0`-Release" mit Verweis auf `plan-0.1.1.md`; Schritt 10 dreigeteilt (Core in `0.1.0`, dashboard in `0.1.1`, observability in `0.1.2`); Schritt 11 „Nach `0.1.1`-Release" mit Verweis auf `plan-0.1.2.md`. Schritt 9 Verweis-Range auf F-63..F-67 aktualisiert (war F-63..F-65, fehlten F-66/F-67 aus Patch der Dashboard-DoD) (`a39f943`).
+- [x] `plan-0.1.1.md` §3 F-40-Item: MediaMTX-Link von Port `8888` (HLS) auf Port `9997` (API/Status) verlegt; „Web-UI"-Bezeichnung entfernt — MediaMTX hat keine native Web-UI (`a39f943`).
+- [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.3` aktualisiert (`a39f943`).
 
 ---
 
