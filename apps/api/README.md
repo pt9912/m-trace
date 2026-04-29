@@ -1,7 +1,11 @@
-# m-trace API — Go-Spike-Prototyp
+# m-trace API (Go)
 
-Backend-Spike gemäß `docs/plan-spike.md` §6.2 und
-`docs/spike/0001-backend-stack.md` §12.2.
+Backend-Service für m-trace. Hexagon-Architektur mit Go 1.22 +
+stdlib `net/http` + Prometheus + OpenTelemetry, Distroless-Runtime.
+
+Stack-Entscheidung: `docs/adr/0001-backend-stack.md` (Accepted).
+Roadmap & Release-Plan: `docs/roadmap.md`, `docs/lastenheft.md`.
+Hexagon-Struktur: `docs/plan-spike.md` §12.1.
 
 ## Workflow (Docker-only)
 
@@ -17,9 +21,6 @@ Lokales Go ist **nicht erforderlich** — das Build-Image
 
 ## Verzeichnisstruktur
 
-`hexagon/` und `adapters/` liegen direkt unter `apps/api/`,
-flach und sichtbar. Details in `docs/plan-spike.md` §12.1.
-
 ```text
 apps/api/
 ├── cmd/api/main.go
@@ -29,10 +30,15 @@ apps/api/
 │   └── application/
 └── adapters/
     ├── driving/http/
-    └── driven/{persistence,telemetry,metrics}/
+    └── driven/{auth,metrics,persistence,ratelimit,telemetry}/
 ```
 
 ## Status
 
-Bootstrap. `/api/health` liefert `200 OK`. Domain, Use Case, Tests
-und Pflicht-Endpunkte folgen in nachfolgenden Commits.
+Pre-MVP `0.1.0`-Skelett, integriert aus dem Backend-Spike-Sieger.
+Vorhanden: Domain, Use Case `RegisterPlaybackEventBatch`, alle drei
+Pflicht-Endpunkte (`POST /api/playback-events`,
+`GET /api/sessions/{id}`, `GET /metrics`), `/api/health`,
+Unit- und HTTP-Integrationstests grün.
+
+API-Kontrakt (frozen): `docs/spike/backend-api-contract.md`.

@@ -36,7 +36,7 @@ Reihenfolge ist verbindlich (SP-41).
 
 | Reihenfolge | Status | Aufgabe | Trigger | Verweis |
 |---|---|---|---|---|
-| 1 | ⬜ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | SP-41 |
+| 1 | ✅ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | SP-41 |
 | 2 | ⬜ | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren. | Nach Schritt 1 | SP-41 |
 | 3 | ⬜ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17 |
 | 4 | ⬜ | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen (Form: siehe §5). | Nach Schritt 3 | ADR §8 |
@@ -56,7 +56,7 @@ weil dort kein ID-System existiert.
 
 | # | Status | Schritt | Trigger | Verweis |
 |---|---|---|---|---|
-| 1 | ⬜ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; SP-41 |
+| 1 | ✅ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; SP-41 |
 | 2 | ⬜ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | SP-41 |
 | 3 | ⬜ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; ADR §8 |
 | 4 | ⬜ | Phase-2-Risiken in Issue-Backlog | Nach Schritt 3 | ADR §8 |
