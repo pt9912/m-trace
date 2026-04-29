@@ -315,7 +315,15 @@ DoD:
 - [ ] Session-Lifecycle (`Active` → `Stalled` → `Ended`) als Pflicht — Voraussetzung für F-26 im Dashboard (`0.1.1`). Stalled = keine Events in einem Schwellwert-Fenster (z. B. 60 s, konfigurierbar); Ended = explizites End-Event aus dem SDK oder Inaktivität jenseits des Stalled-Fensters.
 - [ ] **MVP-16** Lokale Speicherung der Sessions und Events: In-Memory ist Pflicht-Default; SQLite als Soll-Erweiterung über OE-3-Folge-ADR. Beide Implementierungen leben hinter dem `EventRepository`-Port plus einem neuen `SessionRepository`-Port (oder vereinheitlicht — Design-Entscheidung im Use Case).
 - [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession`; Domain-Sicht auf `StreamSession` mit Event-Zählern.
-- [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste).
+- [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3:
+    - `GET /api/stream-sessions` (Liste). Default-Limit 100 Sessions, hartes Maximum 1000 (Query-Parameter `limit`); stabile Sortierung nach `started_at` absteigend; Cursor-basierte Pagination via Query-Parameter `cursor` (opaker Token).
+    - `GET /api/stream-sessions/{id}` (Detail mit Event-Liste). Event-Liste mit Default-Limit 100, hartes Maximum 1000 (Query-Parameter `events_limit`); stabile Sortierung nach `(server_received_at, sequence_number)` aufsteigend; Cursor-basierte Pagination via Query-Parameter `events_cursor`. Hintergrund: Cardinality/Storage-Risiko aus Lastenheft §7.10 — der Endpoint darf nicht unbeschränkt viele Events streamen.
+- [ ] **CORS / Origin-Validierung** für Browser-SDK-Anbindung (Voraussetzung für `0.1.1`):
+    - **F-108 + NF-30** Allowed-Origins pro Project konfigurierbar; Domain-Modell `AllowedOrigin` (oder Erweiterung `Project`); statische Konfiguration analog Spike-Pattern reicht für `0.1.0`.
+    - **NF-33 + NF-35 + NF-36** Preflight-fähige CORS-Konfiguration im HTTP-Adapter: `OPTIONS /api/playback-events` antwortet mit `Access-Control-Allow-Methods: POST, OPTIONS`, `Access-Control-Allow-Headers: Content-Type, X-MTrace-Project, X-MTrace-Token`, `Access-Control-Allow-Origin` mit konkretem Origin (kein `*`, sobald Project-Tokens genutzt werden — NF-34) und `Access-Control-Max-Age` mit moderatem Wert (z. B. 600 s).
+    - **NF-31 + NF-32** Hinweis im API-Kontrakt-/Telemetrie-Modell-Doku: SDK nutzt `credentials: "omit"`; keine Cookies werden gesetzt oder erwartet.
+    - HTTP-Integrationstests für (a) erfolgreiche Preflight-Response, (b) Origin-Mismatch → `403`, (c) `*`-Wildcard nicht in der Antwort, sobald ein gültiger Project-Token vorliegt.
+- [ ] **Rate-Limit-Dimensionen erweitert (F-110)**: `RateLimiter`-Port erweitert oder neu modelliert für drei Dimensionen `project_id` / `origin` / `client_ip`. Spike-Implementierung deckt nur `project_id` ab; für `0.1.0` werden mindestens zwei Dimensionen (`project_id`, `client_ip`) als Token-Buckets implementiert. `origin` als dritter Bucket ist Pflicht für Browser-Traffic im `0.1.1`-Test, kann aber bereits in `0.1.0` mit-implementiert werden. Konfiguration über Konstanten oder ENV-Variablen analog Spike-Pattern.
 - [ ] **F-22** (Lastenheft `1.1.3` §7.3, Wording aus Patch `1.1.0`): Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` (oder vergleichbar) als leeres bzw. marker-Interface; Use Case bindet den Port nicht produktiv ein (keine Aufrufe), legt aber den Erweiterungspunkt fest. Volle Integration ab Phase `0.3.0`.
 - [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches und Lifecycle-Transitions (Active → Stalled → Ended); HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
 
@@ -328,7 +336,7 @@ Compose-Setup nutzt die Docker-Compose-Profile-Semantik korrekt: Core-Services w
 DoD:
 
 - [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis. Core-Services für `0.1.0` (`api`, `mediamtx`, `stream-generator`) ohne `profiles:`-Direktive — sie starten per Default; entspricht den entsprechenden Pflicht-Mindestdiensten aus Lastenheft §7.8 (nach Patch `1.0.2`).
-- [ ] MediaMTX als `services/media-server/` mit Konfiguration für HLS.
+- [ ] MediaMTX als `services/media-server/` mit Konfiguration für HLS (Port `8888`) und HTTP-API/Status (Port `9997`). Beide Ports werden im Compose-Stack exposed; HTTP-API/Status ist Voraussetzung für den `0.1.1`-Dashboard-System-Status-Link (F-40).
 - [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
 - [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
 - [ ] `make dev` führt `docker compose up --build` ohne Profil-Flag aus — startet damit ausschließlich die Core-Services.

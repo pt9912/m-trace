@@ -82,8 +82,8 @@ DoD:
 
 - [ ] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode.
 - [ ] Compose-Stack ergänzt um den `dashboard`-Service (ohne `profiles:`-Direktive — startet per Default; entspricht der vollständigen Pflicht-Mindestdienste-Tabelle aus Lastenheft §7.8 nach Patch `1.0.2`).
-- [ ] `make dev` startet jetzt vier Core-Services (`api`, `dashboard`, `mediamtx`, `stream-generator`) und erfüllt damit RAK-1 vollständig.
-- [ ] Dashboard erreichbar unter `http://localhost:5173` (oder Compose-equivalent) — RAK-2 erfüllt.
+- [ ] `make dev` startet jetzt vier Core-Services (`api`, `dashboard`, `mediamtx`, `stream-generator`) — RAK-1 ist bereits in `0.1.0` mit drei Diensten erfüllt (siehe `plan-0.1.0.md` §5.3); `0.1.1` erweitert die Mindestdienste-Liste um `dashboard`, ohne RAK-1 erneut auszulösen.
+- [ ] Dashboard erreichbar unter `http://localhost:5173` (oder Compose-equivalent) — **RAK-2** wird hier neu erfüllt.
 - [ ] Smoke-Test `0.1.1`: Browser-Player-Demo-Route lädt den MediaMTX-Stream, sendet via Player-SDK Events an die API, Dashboard zeigt die Session live.
 
 ---
