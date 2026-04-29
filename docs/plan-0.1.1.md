@@ -31,11 +31,12 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 ## 2. Tranche 1 — Player-SDK (`packages/player-sdk`)
 
-Bezug: MVP-5, F-63..F-67; OE-8 (Paketnamen für npm) wird hier entschieden.
+Bezug: MVP-5, MVP-6, F-63..F-67; OE-8 (Paketnamen für npm) wird hier entschieden.
 
 DoD:
 
 - [ ] TypeScript-Package unter `packages/player-sdk/`.
+- [ ] **MVP-6** Pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony — leichte Adapter-Struktur laut Lastenheft §9.2, keine `hexagon/`-Pflicht-Aufteilung mit Domain/Application/Port. Verzeichnislayout analog `architecture.md` §4.1: `core/`, `adapters/hlsjs/`, `transport/`, `types/`.
 - [ ] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter).
 - [ ] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …).
 - [ ] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, …).
@@ -43,7 +44,7 @@ DoD:
 - [ ] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren.
 - [ ] Browser-Build (ESM + UMD).
 - [ ] OE-8 entscheiden (Paketname, Scope).
-- [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching), Integration-Test gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End).
+- [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching); Integrationstest gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End) auf den im MVP unterstützten Browsern: **Pflicht** Chrome Desktop (aktuelle Stable) und Firefox Desktop (aktuelle Stable); **eingeschränkt** Safari Desktop (Basis-Playback laut Lastenheft §6/§MVP-Browser-Matrix); iOS Safari, Android Chrome, Smart-TV-Browser, Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
 
 ---
 

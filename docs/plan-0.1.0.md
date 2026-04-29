@@ -301,13 +301,13 @@ DoD:
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Status: ⬜ offen. Bezug: Lastenheft `1.1.2` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
+Status: ⬜ offen. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
 ### 5.1 Backend-Erweiterung (`apps/api`)
 
-Bezug: MVP-3, MVP-16, F-17..F-22; OE-3 (Datenhaltung MVP) wird hier entschieden.
+Bezug: MVP-2, MVP-16, F-17..F-22; OE-3 (Datenhaltung MVP) wird hier entschieden. (MVP-3 = Dashboard wandert nach `0.1.1`, siehe `plan-0.1.1.md`.)
 
 DoD:
 
@@ -316,7 +316,7 @@ DoD:
 - [ ] **MVP-16** Lokale Speicherung der Sessions und Events: In-Memory ist Pflicht-Default; SQLite als Soll-Erweiterung über OE-3-Folge-ADR. Beide Implementierungen leben hinter dem `EventRepository`-Port plus einem neuen `SessionRepository`-Port (oder vereinheitlicht — Design-Entscheidung im Use Case).
 - [ ] Neuer Use Case `ListStreamSessions` und `GetStreamSession`; Domain-Sicht auf `StreamSession` mit Event-Zählern.
 - [ ] Zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail mit Event-Liste).
-- [ ] **F-22** (Lastenheft `1.1.2` §7.3, Wording aus Patch `1.1.0`): Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` (oder vergleichbar) als leeres bzw. marker-Interface; Use Case bindet den Port nicht produktiv ein (keine Aufrufe), legt aber den Erweiterungspunkt fest. Volle Integration ab Phase `0.3.0`.
+- [ ] **F-22** (Lastenheft `1.1.3` §7.3, Wording aus Patch `1.1.0`): Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` (oder vergleichbar) als leeres bzw. marker-Interface; Use Case bindet den Port nicht produktiv ein (keine Aufrufe), legt aber den Erweiterungspunkt fest. Volle Integration ab Phase `0.3.0`.
 - [ ] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches und Lifecycle-Transitions (Active → Stalled → Ended); HTTP-Integrationstest für die zwei Stream-Sessions-Endpoints.
 
 ### 5.2 Docker-Compose-Lab (Core, `0.1.0`-Anteil)
@@ -336,7 +336,7 @@ DoD:
 - [ ] Core-Stack mindestens unter Linux verifiziert.
 - [ ] Smoke-Test `0.1.0`: nach `make dev` liefert `curl http://localhost:8080/api/health` ein `200`; ein POST mit gültigem Token an `/api/playback-events` liefert `202`; ein GET an `/api/stream-sessions` listet die so erzeugte Session.
 
-### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft `1.1.2` §13.1; RAK-Verteilung aus Patch `1.1.0`)
+### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft `1.1.3` §13.1; RAK-Verteilung aus Patch `1.1.0`)
 
 DoD:
 
