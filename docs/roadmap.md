@@ -39,7 +39,7 @@ Reihenfolge ist verbindlich (SP-41).
 | 1 | ✅ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | OE-9; SP-41 |
 | 2 | ✅ | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren. | Nach Schritt 1 | OE-2; OE-9; SP-41 |
 | 3 | ✅ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41 |
-| 4 | ⬜ | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen (Form: siehe §5). | Nach Schritt 3 | SP-41 |
+| 4 | ✅ | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/risks-backlog.md`. | Nach Schritt 3 | SP-41 |
 
 Erst danach beginnt die eigentliche `0.1.0`-Implementierung:
 Dashboard, Player-SDK, Docker-Lab und Observability.
@@ -59,7 +59,7 @@ weil dort kein ID-System existiert.
 | 1 | ✅ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; OE-9; SP-41 |
 | 2 | ✅ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | OE-2; OE-9; SP-41 |
 | 3 | ✅ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; SP-41 |
-| 4 | ⬜ | Phase-2-Risiken in Issue-Backlog | Nach Schritt 3 | SP-41 |
+| 4 | ✅ | Phase-2-Risiken in `docs/risks-backlog.md` | Nach Schritt 3 | SP-41 |
 | 5 | ⬜ | `docs/architecture.md` schreiben | Vor `0.1.0`-DoD | AK-3, AK-10 |
 | 6 | ⬜ | `docs/telemetry-model.md` schreiben | Vor `0.1.0`-DoD | F-89..F-94, F-106..F-115, AK-9 |
 | 7 | ⬜ | `docs/local-development.md` schreiben | Vor `0.1.0`-DoD | AK-1, AK-2 |
@@ -92,7 +92,8 @@ DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
 ## 4. Folge-ADRs
 
 Aus `docs/adr/0001-backend-stack.md` §8 erwartete Folge-ADRs.
-Alle sind ⬜ geplant; ADR-Nummer wird beim Schreiben vergeben.
+Alle sind ⬜ geplant; ADR-Nummer wird beim Schreiben vergeben. Die
+zugehörigen Risiken stehen in `docs/risks-backlog.md`.
 
 | Erwartete ADR | Trigger-Release | Begründung |
 |---|---|---|
@@ -109,11 +110,10 @@ ein Issue darauf hinweist.
 
 ## 5. Offene Entscheidungen
 
-Verbleibende Lastenheft-`OE-X` plus ein roadmap-spezifischer Punkt; aufgelöste Einträge sind nach §7-Wartungsregel entfernt.
+Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsregel entfernt.
 
 | Kennung | Entscheidung | Wo wird sie getroffen | Status |
 |---|---|---|---|
-| — | Issue-Backlog-Form (GitHub Issues / Markdown-TODO / Linear / …) | mit Schritt 4 in §2 | offen, roadmap-spezifisch |
 | OE-1 | Projektlizenz: MIT oder Apache-2.0 | vor `0.1.0` Public-Release | MIT bereits committed (`LICENSE`); Apache-2.0-Prüfung offen |
 | OE-3 | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen |
 | OE-4 | Frontend-Styling (eigenes CSS / Tailwind / UI-Library) | mit Schritt 8 in §2 | offen |
