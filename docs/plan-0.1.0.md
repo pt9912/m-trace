@@ -228,11 +228,11 @@ Lastenheft-interner Widerspruch: §7.9 F-94 listete Grafana mit Priorität **Mus
 
 DoD:
 
-- [x] Lastenheft Header: Version `1.0.0` → `1.0.1`.
-- [x] Lastenheft §7.9 F-94: Priorität `Muss` → `Soll`; Wording auf „Grafana **kann** mit einem einfachen Beispiel-Dashboard ausgeliefert werden (harmonisiert mit MVP-28)".
-- [x] Plan §5.4: Hinweis auf F-94/MVP-28-Widerspruch entfernt; Grafana bleibt im Soll-Block (observability-Profil).
-- [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.1` aktualisiert.
-- [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.1` aktualisiert.
+- [x] Lastenheft Header: Version `1.0.0` → `1.0.1` (`65405cb`).
+- [x] Lastenheft §7.9 F-94: Priorität `Muss` → `Soll`; Wording auf „Grafana **kann** mit einem einfachen Beispiel-Dashboard ausgeliefert werden (harmonisiert mit MVP-28)" (`65405cb`).
+- [x] Plan §5.4: Hinweis auf F-94/MVP-28-Widerspruch entfernt; Grafana bleibt im Soll-Block (observability-Profil) (`65405cb`).
+- [x] Bezug-Listen (Plan §0, Architecture §0) auf `Lastenheft 1.0.1` aktualisiert (`65405cb`).
+- [x] README Status- und Aktueller-Stand-Abschnitt auf `Lastenheft 1.0.1` aktualisiert (`65405cb`).
 
 ---
 
@@ -242,7 +242,7 @@ Roadmap §2 Schritte 8–11; Lastenheft RAK-1..RAK-10. Status: ⬜ offen.
 
 ### 5.1 Schritt 8 — Dashboard-App und Session-Pfad (`apps/dashboard` + Backend-Erweiterung)
 
-Bezug: MVP-3, MVP-16, F-23..F-28; RAK-7; OE-3 (Datenhaltung MVP) und OE-4 (Frontend-Styling) werden hier entschieden.
+Bezug: MVP-3, MVP-16, F-23..F-28, F-35..F-40; RAK-7; OE-3 (Datenhaltung MVP) und OE-4 (Frontend-Styling) werden hier entschieden.
 
 DoD Backend (`apps/api`):
 
@@ -262,7 +262,12 @@ DoD Dashboard (`apps/dashboard`):
 - [ ] **F-25** Anzeige von Fehlern und Warnungen — entweder dedizierte Route `/errors` oder als Filter über die Event-Liste.
 - [ ] **F-26** Anzeige einfacher Stream-Health-Zustände — Active/Stalled/Ended pro Session sichtbar.
 - [ ] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; OTel-/Prometheus-Erreichbarkeit als zusätzlicher Status (kann minimal als „connected"/„unreachable" dargestellt werden).
-- [ ] **F-28** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
+- [ ] **F-28 + F-36** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
+- [ ] **F-35** Live-Übersicht — Startseite zeigt aggregierten Live-Stand (laufende Sessions, Event-Rate, Fehlerzähler) als Landing.
+- [ ] **F-37** Playback-Events anzeigen — eine dedizierte Sicht (Route oder Tab) listet eingehende Events mit Filter nach Session und Event-Typ.
+- [ ] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt.
+- [ ] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected`.
+- [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-Konsole. Ziele werden aus den Compose-Service-URLs abgeleitet (z. B. `http://localhost:3000` Grafana, `http://localhost:9090` Prometheus, `http://localhost:8888` MediaMTX-Web-UI). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
 - [ ] API-Client mit typisierten Anfragen.
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
 - [ ] Dashboard-Build im Docker-Compose-Lab (Schritt 10) eingebunden.
@@ -296,13 +301,13 @@ DoD:
 - [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
 - [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
 - [ ] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode.
-- [ ] `make dev` startet das **Core-Profil** und erfüllt damit RAK-1 — Observability-Services starten nur über das observability-Profil (siehe §5.4).
+- [!] `make dev` startet das **Core-Profil** und erfüllt damit RAK-1 — Observability-Services starten nur über das observability-Profil (siehe §5.4). *Lastenheft-Inkonsistenz*: §7.8 listet `otel-collector`, `prometheus` und `grafana` als „Mindestdienste" (Lastenheft Z. 875–885), während F-87 und F-88 dieselben Dienste in §7.8 als „optional" (Muss-Priorität) klassifizieren. Auflösung folgt mit Lastenheft-Patch (Tranche 0c, siehe §4a) — bis dahin blockiert.
 - [ ] `make stop` beendet sauber.
 - [ ] Core-Stack mindestens unter Linux verifiziert (Bezug AK-1).
 
 ### 5.4 Schritt 11 — Observability-Stack
 
-Bezug: MVP-10 (Muss), MVP-15 (Muss), MVP-28 (Soll Grafana), MVP-29 (Soll OTel-Collector); F-89..F-94 (Muss); Mindestmetriken laut Lastenheft §7.9; **MVP-22 (Tempo) ist explizit Nicht-MVP**.
+Bezug: MVP-10 (Muss), MVP-15 (Muss), MVP-28 (Soll Grafana), MVP-29 (Soll OTel-Collector); F-89..F-93 (Muss); F-94 (Soll, harmonisiert mit MVP-28 in Lastenheft `1.0.1`, siehe Tranche 0c §4a.1); Mindestmetriken laut Lastenheft §7.9; **MVP-22 (Tempo) ist explizit Nicht-MVP**.
 
 Soll-Komponenten (Grafana, OTel-Collector) leben im `observability`-Compose-Profil und werden über `make dev-observability` (oder `docker compose --profile observability up`) ergänzend zum Core-Stack gestartet. RAK-1 ist mit dem Core-Stack erfüllt; das observability-Profil ist additiv und nicht für die DoD-Abnahme von Schritt 10 erforderlich.
 
