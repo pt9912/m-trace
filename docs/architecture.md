@@ -80,7 +80,7 @@ flowchart LR
     FFmpeg -->|Stream| MediaMTX
     MediaMTX -->|HLS| Browser
     Browser -->|Playback-Events<br/>POST /api/playback-events| API
-    Dashboard -->|GET /api/sessions| API
+    Dashboard -->|GET /api/stream-sessions| API
     Prom -->|scrape /api/metrics| API
     API -->|OTLP-Export| OTelBackend
 ```

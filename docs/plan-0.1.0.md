@@ -219,26 +219,29 @@ DoD:
 
 - [ ] SvelteKit-App-Skelett unter `apps/dashboard/` (TypeScript, pnpm).
 - [ ] Startseite mit Layout.
-- [ ] `/sessions` — einfache Session-Liste, ruft `GET /api/sessions` auf (Endpoint im Backend zu ergänzen).
-- [ ] `/sessions/:id` — Session-Detailansicht mit Event-Liste.
-- [ ] `/demo` — Test-Player-Route mit hls.js + Player-SDK-Referenzintegration.
+- [ ] Backend-Erweiterung in `apps/api`: zwei neue MVP-Endpoints aus Lastenheft §7.3 — `GET /api/stream-sessions` (Liste) und `GET /api/stream-sessions/{id}` (Detail). Aktuell sind nur die drei Spike-Pflicht-Endpoints implementiert.
+- [ ] Dashboard-Route `/sessions` zeigt Liste, ruft `GET /api/stream-sessions` auf.
+- [ ] Dashboard-Route `/sessions/:id` zeigt Detail mit Event-Liste, ruft `GET /api/stream-sessions/{id}` auf.
+- [ ] Dashboard-Route `/demo` — Test-Player mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
 - [ ] API-Client mit typisierten Anfragen.
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
 - [ ] Dashboard-Build im Docker-Compose-Lab (Schritt 10) eingebunden.
 
 ### 5.2 Schritt 9 — Player-SDK (`packages/player-sdk`)
 
-Bezug: MVP-5, F-63..F-65; OE-8 (Paketnamen für npm) wird hier entschieden.
+Bezug: MVP-5, F-63..F-67; OE-8 (Paketnamen für npm) wird hier entschieden.
 
 DoD:
 
 - [ ] TypeScript-Package unter `packages/player-sdk/`.
-- [ ] hls.js-Adapter (`adapters/hlsjs/`).
-- [ ] HTTP Event Publisher (`transport/`), Batching und Sampling.
-- [ ] Wire-Format laut `docs/telemetry-model.md`.
+- [ ] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter).
+- [ ] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …).
+- [ ] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, ...).
+- [ ] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; OpenTelemetry Web SDK als optionaler zweiter Transport-Pfad.
+- [ ] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren.
 - [ ] Browser-Build (ESM + UMD).
 - [ ] OE-8 entscheiden (Paketname, Scope).
-- [ ] Demo-Integration in `apps/dashboard/routes/demo`.
+- [ ] Demo-Integration in `apps/dashboard/src/routes/demo/`.
 
 ### 5.3 Schritt 10 — Docker-Compose-Lab
 
@@ -256,14 +259,18 @@ DoD:
 
 ### 5.4 Schritt 11 — Observability-Stack
 
-Bezug: MVP-10, MVP-15, F-89..F-94.
+Bezug: MVP-10, MVP-15, F-89..F-94 (alle Muss); Mindestmetriken laut Lastenheft §7.9.
 
 DoD:
 
-- [ ] Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`); Compose-Service-Name wird in Schritt 10 verbindlich festgelegt.
-- [ ] Pflicht-Counter-Definitionen aus `apps/api` aktiv (`mtrace_playback_events_total`, …).
-- [ ] OTel-Collector unter `services/otel-collector/` (optional im MVP, aber wired).
-- [ ] Optional: Grafana-Container mit Default-Dashboard für die vier Pflicht-Counter.
+- [ ] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert).
+- [ ] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3).
+- [ ] **F-91** OpenTelemetry-Unterstützung — durch Tranche-0b §4.3 (`Telemetry`-Port + OTLP-Anbindung via `autoexport`) bereits abgedeckt; Verifikation, dass die `OTEL_*`-Env-Vars im Compose-Stack auf den OTel-Collector zeigen.
+- [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces); Counter und Spans werden im Compose-Lab gegen den OTel-Collector geprüft.
+- [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`); Compose-Service-Name wird in Schritt 10 verbindlich festgelegt.
+- [ ] **F-94** Grafana-Container (Muss, kein „optional") mit einem **einfachen Beispiel-Dashboard** unter `observability/grafana/`. Dashboard zeigt mindestens die vier Pflicht-Counter aus dem API-Kontrakt §7.
+- [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.0`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
+- [ ] OTel-Collector unter `services/otel-collector/` als Compose-Service; nimmt OTLP von `apps/api` entgegen, exportiert Traces und Metriken in zwei Pfaden: zu Prometheus (über Remote-Write oder Pull) und zu einem Trace-Backend (z. B. Tempo oder Jaeger).
 
 ### 5.5 Release-Akzeptanzkriterien (Lastenheft §13.1: RAK-1..RAK-10)
 
@@ -290,7 +297,7 @@ DoD:
 
 - [x] Architektur in `docs/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
 - [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5).
-- [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch`, HTTP-Integrationstests für die drei Pflicht-Endpoints, Tests für die Tranche-0b-Code-Korrekturen.
+- [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch`, HTTP-Integrationstests für alle MVP-Endpoints (Spike-Pflicht: `POST /api/playback-events`, `GET /api/health`, `GET /api/metrics`; ergänzt in Tranche 5.1: `GET /api/stream-sessions`, `GET /api/stream-sessions/{id}`), Tests für die Tranche-0b-Code-Korrekturen.
 - [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32).
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`).
 - [ ] Test-Player kann den Stream abspielen (manueller Smoke-Test, deckt RAK-2/4/5 zusammen ab).
