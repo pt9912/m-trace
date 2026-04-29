@@ -12,4 +12,13 @@ var (
 	ErrBatchTooLarge         = errors.New("batch exceeds 100 events")
 	ErrInvalidEvent          = errors.New("event is missing required fields or has invalid values")
 	ErrRateLimited           = errors.New("rate limit exceeded")
+	// ErrCursorInvalid wird vom Sessions-Read-Use-Case zurückgegeben,
+	// wenn der eingehende Cursor gegen die aktuelle ProcessInstanceID
+	// nicht mehr matcht (Storage-Restart) oder syntaktisch defekt ist.
+	// HTTP-Mapping: 400 mit Body {"error":"cursor_invalid", ...}
+	// (plan-0.1.0.md §5.1).
+	ErrCursorInvalid = errors.New("cursor invalid (storage restart or malformed)")
+	// ErrSessionNotFound wird vom Detail-Use-Case zurückgegeben, wenn
+	// keine Session zur angefragten ID existiert. HTTP-Mapping: 404.
+	ErrSessionNotFound = errors.New("session not found")
 )

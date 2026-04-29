@@ -118,12 +118,14 @@ func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) 
 	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
+	sessionRepo := persistence.NewInMemorySessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, persistence.NewInMemorySessionRepository(), publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
+		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
 	)
+	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	tracer := tp.Tracer("test")
-	router := apihttp.NewRouter(uc, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(uc, sessionsService, publisher.Handler(), tracer, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

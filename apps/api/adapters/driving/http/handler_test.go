@@ -49,11 +49,13 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Serv
 	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
 	publisher := metrics.NewPrometheusPublisher()
+	sessionRepo := persistence.NewInMemorySessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, persistence.NewInMemorySessionRepository(), publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), clock,
+		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), clock,
 	)
+	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, publisher.Handler(), nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv
@@ -80,11 +82,13 @@ func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	repo := persistence.NewInMemoryEventRepository()
 	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
 	publisher := metrics.NewPrometheusPublisher()
+	sessionRepo := persistence.NewInMemorySessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, unlimitedLimiter{}, repo, persistence.NewInMemorySessionRepository(), publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
+		resolver, unlimitedLimiter{}, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
 	)
+	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, publisher.Handler(), nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

@@ -9,6 +9,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -25,6 +27,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
 const (
@@ -69,8 +72,16 @@ func main() {
 		resolver, limiter, repo, sessions, publisher, otelTelemetry, analyzer, sequencer, time.Now,
 	)
 
+	processID, err := newProcessInstanceID()
+	if err != nil {
+		logger.Error("process_instance_id generation failed", "error", err)
+		os.Exit(1)
+	}
+	logger.Info("process instance allocated", "process_instance_id", string(processID))
+	sessionsService := application.NewSessionsService(sessions, repo, processID)
+
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, publisher.Handler(), tracer, logger)
 
 	srv := &http.Server{
 		Addr:              listenAddr,
@@ -110,4 +121,15 @@ func main() {
 		logger.Error("otel shutdown failed", "error", err)
 	}
 	logger.Info("server stopped")
+}
+
+// newProcessInstanceID erzeugt eine 16-Byte-Zufalls-ID und gibt sie als
+// Hex-String zurück (32 Zeichen). Verwendet als domain.ProcessInstanceID
+// im Cursor-Vertrag aus plan-0.1.0.md §5.1.
+func newProcessInstanceID() (domain.ProcessInstanceID, error) {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", err
+	}
+	return domain.ProcessInstanceID(hex.EncodeToString(b[:])), nil
 }
