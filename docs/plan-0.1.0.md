@@ -126,14 +126,14 @@ DoD:
 
 ### 3.5 `docs/telemetry-model.md` (Schritt 6)
 
-Deckt alle Telemetrie- und Cardinality-relevanten F-Kennungen aus Lastenheft §7.9, §7.10 und §7.11.
+Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, Schema, Cardinality-Regeln. Implementierungs-/Setup-Aspekte (strukturierte Logs, Health-Endpoint, Prometheus- und Grafana-Konfiguration) gehören in Tranche 5.4 (Observability-Stack), nicht hierher.
 
 DoD:
 
-- [ ] OTel-Schema und Naming-Konvention für Spans/Counter spezifizieren (Bezug **F-89..F-94**).
-- [ ] Cardinality- und Datenmodell-Regeln dokumentieren (Bezug **F-95..F-100** Lastenheft §7.10 sowie **F-101..F-105** als MVP-Variante).
-- [ ] Wire-Format für Player-Events spezifizieren — Pflichtfelder, Schema-Version, Versand-Pfad (Bezug **F-106..F-115** Lastenheft §7.11.1–§7.11.3).
-- [ ] Backpressure- und Limit-Regeln (Batch-Größe, Rate-Limit, Drop-Politik) dokumentieren (Bezug **F-118..F-123**).
+- [ ] OTel-Modell für Spans/Counter spezifizieren — Naming-Konvention, Resource-Attribute, Pflicht-Spans (Bezug **F-91, F-92**).
+- [ ] Cardinality- und Datenmodell-Regeln dokumentieren — verbotene Labels, Trennung Aggregat/Per-Session (Bezug **F-95..F-100** Lastenheft §7.10 sowie **F-101..F-105** als MVP-Variante).
+- [ ] Wire-Format für Player-Events spezifizieren — Pflichtfelder, Schema-Version, Versand-Pfad, SDK-Identifier (Bezug **F-106..F-115** Lastenheft §7.11.1–§7.11.3).
+- [ ] Backpressure- und Limit-Regeln dokumentieren — Batch-Größe, Rate-Limit-Modell, Drop-Politik (Bezug **F-118..F-123**).
 - [ ] Time-Stempel-Felder, Skew-Behandlung und Sequenz-Ordering dokumentieren (Bezug **F-124..F-130**).
 - [ ] Schema-Versionierung und Evolution dokumentieren.
 - [ ] Roadmap §2 Schritt 6 auf ✅.
@@ -236,9 +236,13 @@ DoD Dashboard (`apps/dashboard`):
 
 - [ ] SvelteKit-App-Skelett unter `apps/dashboard/` (TypeScript, pnpm).
 - [ ] Startseite mit Layout.
-- [ ] Dashboard-Route `/sessions` zeigt Liste, ruft `GET /api/stream-sessions` auf.
-- [ ] Dashboard-Route `/sessions/:id` zeigt Detail mit Event-Liste, ruft `GET /api/stream-sessions/{id}` auf.
-- [ ] Dashboard-Route `/demo` — Test-Player mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
+- [ ] **F-23 + MVP-12** Dashboard-Route `/sessions` zeigt einfache Session-Liste, ruft `GET /api/stream-sessions` auf.
+- [ ] **MVP-13 + MVP-14** Dashboard-Route `/sessions/:id` zeigt einfache Event-Anzeige plus eingebaute Session-/Trace-Ansicht (Timeline der zugehörigen Events), ruft `GET /api/stream-sessions/{id}` auf.
+- [ ] **F-24** Anzeige aktueller Playback-Metriken — entweder im `/sessions/:id`-Detail oder als globale Übersicht (z. B. Zähler-Card auf der Startseite).
+- [ ] **F-25** Anzeige von Fehlern und Warnungen — entweder dedizierte Route `/errors` oder als Filter über die Event-Liste.
+- [ ] **F-26** Anzeige einfacher Stream-Health-Zustände — Active/Stalled/Ended pro Session sichtbar.
+- [ ] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; OTel-/Prometheus-Erreichbarkeit als zusätzlicher Status (kann minimal als „connected"/„unreachable" dargestellt werden).
+- [ ] **F-28** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
 - [ ] API-Client mit typisierten Anfragen.
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
 - [ ] Dashboard-Build im Docker-Compose-Lab (Schritt 10) eingebunden.
@@ -312,7 +316,7 @@ DoD:
 - [ ] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 5.1).
 - [ ] **RAK-8** README beschreibt den Ablauf reproduzierbar — Quickstart-Pfad in `README.md`/`docs/local-development.md` (Tranche 0a §3.6 + Release-Doku).
 - [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Compose-Stack-Verifikation, dass keine hochkardinalen Labels exportiert werden (Tranche 5.4 + Spot-Check).
-- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder OTel-Spans pro Session oder Dashboard-Trace-Ansicht (Tranche 5.1 + 5.4; minimal: ein Beispiel-Trace im Dashboard oder Tempo).
+- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, Tranche 5.1). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
 ### 5.6 Übergreifende DoD (Lastenheft §18)
 
