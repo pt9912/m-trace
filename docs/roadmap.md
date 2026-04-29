@@ -3,6 +3,8 @@
 > **Stand**: 2026-04-28  
 > **Phase**: Post-Spike, Pre-MVP `0.1.0`  
 > **Bezug**: `docs/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
+> `docs/architecture.md` (Zielbild),
+> `docs/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),
 > `docs/adr/0001-backend-stack.md` (Backend-Entscheidung),
 > `docs/plan-spike.md` SP-41 (Anschluss an MVP),
 > `docs/spike/backend-stack-results.md` (Spike-Protokoll).
@@ -32,7 +34,8 @@ jedem Folge-ADR aktualisieren.
 
 ### 1.2 Was noch offen ist (vor MVP `0.1.0`)
 
-Reihenfolge ist verbindlich (SP-41).
+Reihenfolge ist verbindlich (SP-41). Detaillierte DoD-Checkboxen pro
+Schritt in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 0).
 
 | Reihenfolge | Status | Aufgabe | Trigger | Verweis |
 |---|---|---|---|---|
@@ -52,7 +55,9 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 
 Verweise nutzen die Lastenheft-Kennungen (`F-`, `NF-`, `MVP-`, `AK-`)
 wo sie existieren; Plan- und ADR-Sektionsnummern werden behalten,
-weil dort kein ID-System existiert.
+weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
+(DoD-Checkboxen mit Commit-Hashes) in
+[`docs/plan-0.1.0.md`](./plan-0.1.0.md).
 
 | # | Status | Schritt | Trigger | Verweis |
 |---|---|---|---|---|
@@ -77,7 +82,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | Version | Titel | Status | Akzeptanzkriterien |
 |---|---|---|---|
 | `0.0.x` | Spike + Planungsphase | ✅ | — |
-| `0.1.0` | OTel-native Local Demo | ⬜ | RAK-1..RAK-10 |
+| `0.1.0` | OTel-native Local Demo | 🟡 | RAK-1..RAK-10; DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
 | `0.2.0` | Publizierbares Player SDK | ⬜ | RAK-11..RAK-21 |
 | `0.3.0` | Stream Analyzer | ⬜ | RAK-22..RAK-28 |
 | `0.4.0` | Erweiterte Trace-Korrelation | ⬜ | RAK-29..RAK-35 |
@@ -85,9 +90,10 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.6.0` | SRT Health View | ⬜ | RAK-41..RAK-46 |
 
 DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
-(Lastenheft-übergreifend, nicht Release-spezifisch). Release-Vorgehen
-in [`docs/releasing.md`](./releasing.md) (Skeleton — wird mit OE-6
-und OE-7 konkretisiert).
+(Lastenheft-übergreifend, nicht Release-spezifisch). Detaillierter
+Lieferstand pro Tranche steht in [`docs/plan-0.1.0.md`](./plan-0.1.0.md);
+Release-Vorgehen in [`docs/releasing.md`](./releasing.md) (Skeleton —
+wird mit OE-6 und OE-7 konkretisiert).
 
 ---
 
