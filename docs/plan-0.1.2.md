@@ -40,20 +40,23 @@ Tempo bleibt explizit Nicht-MVP (MVP-22).
 
 Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Gate ist in zwei Kategorien geteilt: **harte Voraussetzungen** (alle `[x]`) und **weiche Voraussetzungen** (offen erlaubt, wenn explizit als nicht-blockierend markiert). Tranche ist „erfüllt", wenn alle harten und alle blockierenden weichen Items `[x]` sind.
 
-DoD — **harte Voraussetzungen** (Pflicht `[x]` vor `0.1.2`-Start):
+DoD — **harte Voraussetzungen, technisch zwingend** (Pflicht `[x]` vor `0.1.2`-Start):
 
 - [ ] `plan-0.1.1.md` Tranche 1 (Player-SDK) abgeschlossen — alle DoD-Items `[x]`.
 - [ ] `plan-0.1.1.md` Tranche 2 (Dashboard) abgeschlossen.
 - [ ] `plan-0.1.1.md` Tranche 3 (Compose-Lab-Erweiterung um `dashboard`) abgeschlossen.
 - [ ] `plan-0.1.1.md` Tranche 4 (Release-Akzeptanzkriterien `0.1.1` — RAK-2, RAK-5, RAK-7) abgeschlossen.
 - [ ] `plan-0.1.0.md` Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) abgeschlossen — harte technische Voraussetzung für F-91.
+- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md, **Pflicht-Anteile für `0.1.2`** — OTel-Modell (F-91, F-92) und Cardinality-Regeln (F-95..F-105): das Observability-Stack-Setup braucht diese Spezifikationen für Konfiguration und Verifikation.
 
-DoD — **weiche Voraussetzungen** (offen erlaubt, wenn nicht-blockierend):
+DoD — **weiche Voraussetzungen, Dokumentations-/Aufräumarbeiten** (offen erlaubt; nicht Gate-blockierend):
 
+- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.2`** — Wire-Format §1, Backpressure §4, Time-Stempel §5, Schema-Versionierung §6 (sind primär für `0.1.1` SDK relevant; bis `0.1.2`-Start erwartet `[x]`, aber nicht harter Gate-Blocker).
+- [ ] `plan-0.1.0.md` §3.6 local-development.md: nicht direkt für `0.1.2`-Implementierung erforderlich.
 - [ ] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.2`-Start einzeln eingestuft: jedes offene Item ist entweder
-    - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.2`-Implementierung direkt betrifft), **oder**
-    - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.2)`-Vermerk im jeweiligen §4a.x-Eintrag.
-- [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem 0c-Item nachvollziehbar.
+    - **blockierend** → muss `[x]` sein, **oder**
+    - **nicht-blockierend** → offen erlaubt, mit `(nicht-blockierend für 0.1.2)`-Vermerk.
+- [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar.
 
 ---
 
@@ -104,9 +107,11 @@ DoD:
 - [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability`:
     - **Setup-Pflicht**: vor dem Smoke-Test muss eine Mindestdaten-Lage im Prometheus erzeugt sein, sonst geben die Queries leer zurück und der Cardinality-Check besteht trivial (false positive). Konkret: Compose-Stack läuft, mindestens 5 Player-Sessions mit jeweils ≥ 10 Events; mindestens ein Prometheus-Scrape-Intervall (Default 15 s) ist vergangen.
     - **Seed-Skript**: `scripts/seed-rak9.sh` (oder `make seed-rak9`-Target) erzeugt die Mindestdaten-Lage reproduzierbar via `curl`-Aufrufe gegen `/api/playback-events` (50 Events in 5 Sessions mit unterschiedlichen `session_id`/`event_name`-Mustern). Der Smoke-Test ruft das Skript als ersten Schritt auf, danach laufen die unten genannten Queries gegen Prometheus. CI-Pipeline (sobald OE-6 entschieden) ruft denselben Pfad auf — das vermeidet manuelle Lastaufbereitung und „false confidence". Demo-SDK-basierte Lastaufbereitung ist eine Bonus-Variante für interaktive Lab-Sessions, kein DoD-Pfad.
-    - `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
-    - Pro Mindestmetrik aus Lastenheft §7.9: `curl -g 'http://localhost:9090/api/v1/labels?match[]={__name__="mtrace_playback_events_total"}'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10. `match[]` benötigt einen vollständigen Vektor-Selector (`{__name__="..."}`); der nackte Metrikname ist zwischen Prometheus-Versionen nicht zuverlässig akzeptiert.
-    - Zusätzlich: `mtrace_playback_events_total` muss einen Wert > 0 haben (`curl 'http://localhost:9090/api/v1/query?query=mtrace_playback_events_total'`); diente als Sanity-Check, dass der Counter überhaupt aktiv inkrementiert wurde.
+    - **Label-Name-Check (verbotene Labels)**: `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
+    - **Cardinality-Wert-Check (PromQL)**: zusätzlich zur Label-Name-Liste werden konkrete Kardinalitäts-Limits per PromQL geprüft, weil `api/v1/labels` nur Label-Namen, nicht ihre Wert-Verteilung liefert:
+        - Pro Mindestmetrik: `curl 'http://localhost:9090/api/v1/query?query=count(count by (__name__) (mtrace_playback_events_total))'` (analog für die anderen Pflicht-Counter) — Erwartung: Ergebnis ≤ 1 für die Pflicht-Counter mit nur Aggregat-Labels.
+        - Generisch für alle `mtrace_*`-Metriken: `curl 'http://localhost:9090/api/v1/query?query=count(count by (instance, job, __name__) ({__name__=~"mtrace_.+"}))'` — Erwartung: Anzahl Series ≤ kleine Konstante (z. B. < 50, abhängig von Mindestmetriken-Anzahl × erlaubte Aggregat-Labels). Eine plötzliche Explosion auf > 100 deutet auf eine Cardinality-Verletzung hin (z. B. wurde session_id versehentlich als Label aufgenommen).
+        - Sanity-Check: `mtrace_playback_events_total` muss einen Wert > 0 haben (`curl 'http://localhost:9090/api/v1/query?query=mtrace_playback_events_total'`); bestätigt, dass der Counter aktiv inkrementiert wurde.
     - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
 - [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. Mindestens **eine** der beiden Varianten muss reproduzierbar prüfbar sein:
     - **Variante A — OTel-Spans im Backend (Console-Exporter)**: `apps/api` erzeugt mindestens einen Request-Span pro `POST /api/playback-events` (abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`). Verifikation läuft mit deterministischem Console-Exporter, damit der Test reproduzierbar ist und nicht von Trace-Backend-Bonus-Komponenten (Jaeger u. a. — sind im MVP nicht Pflicht) abhängt: das Smoke-Skript setzt `OTEL_TRACES_EXPORTER=console` für den `api`-Service (entweder via Compose-Override oder `make seed-rak9` mit Env-Var-Injection), führt `seed-rak9.sh` aus, dann prüft `docker compose logs api | grep '"name":"http.handler POST'` mindestens einen Span-Eintrag. Console-Exporter ist immer verfügbar (Teil der OTel-SDK-Distribution); kein Trace-Backend nötig.
