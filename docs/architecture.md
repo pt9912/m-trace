@@ -2,12 +2,12 @@
 
 ## 0. Dokumenteninformationen
 
-| Feld | Wert |
-|---|---|
-| Dokument | Architektur `m-trace` |
-| Stand | `2026-04-29` |
-| Status | Verbindlich (Zielbild `0.1.0`) |
-| Bezug | [Lastenheft `1.1.3`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) / [`0.1.1`](./plan-0.1.1.md) / [`0.1.2`](./plan-0.1.2.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
+| Feld     | Wert                                                                                                                                                                                                                                                                                   |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dokument | Architektur `m-trace`                                                                                                                                                                                                                                                                  |
+| Stand    | `2026-04-29`                                                                                                                                                                                                                                                                           |
+| Status   | Verbindlich (Zielbild `0.1.0`)                                                                                                                                                                                                                                                         |
+| Bezug    | [Lastenheft `1.1.3`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) / [`0.1.1`](./plan-0.1.1.md) / [`0.1.2`](./plan-0.1.2.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
 
 ### 0.1 Zweck
 
@@ -34,12 +34,12 @@ Differenzen Code↔Soll werden **nicht** durch weichere Architektur-Formulierung
 
 m-trace nutzt **Hexagonale Architektur (Ports & Adapters)** für Komponenten mit echter fachlicher Anwendungslogik. Andere Komponenten bleiben bewusst pragmatisch:
 
-| Komponente | Architektur | Begründung |
-|---|---|---|
-| `apps/api` | hexagonal | echte Domain-Logik (Event-Annahme, Validierung, Session-Modell vorbereitet) |
-| `apps/dashboard` | Feature-Struktur | UI-Code, kein Domain-Kern |
-| `packages/player-sdk` | leichte Adapter-Struktur | Browser-Library, Hexagon ohne Mehrwert im MVP |
-| `packages/stream-analyzer` | hexagonal oder geschichtete Library | Einsatz pro Folge-Phase prüfen |
+| Komponente                 | Architektur                         | Begründung                                                                  |
+| -------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
+| `apps/api`                 | hexagonal                           | echte Domain-Logik (Event-Annahme, Validierung, Session-Modell vorbereitet) |
+| `apps/dashboard`           | Feature-Struktur                    | UI-Code, kein Domain-Kern                                                   |
+| `packages/player-sdk`      | leichte Adapter-Struktur            | Browser-Library, Hexagon ohne Mehrwert im MVP                               |
+| `packages/stream-analyzer` | hexagonal oder geschichtete Library | Einsatz pro Folge-Phase prüfen                                              |
 
 Die Backend-Stack-Wahl (Go) ist in [ADR-0001](./adr/0001-backend-stack.md) entschieden.
 
@@ -49,13 +49,13 @@ Die Backend-Stack-Wahl (Go) ist in [ADR-0001](./adr/0001-backend-stack.md) entsc
 
 Die Akzeptanzkriterien aus Lastenheft §14 sind die Leitplanken für dieses Dokument:
 
-| AK | Ziel | Wirkt sich aus auf |
-|---|---|---|
-| AK-3 | Architektur ist klar nachvollziehbar | §3 Hexagon, §4 Verzeichnisstruktur, §5 Datenflüsse |
-| AK-4 | Domain-Schicht ist frameworkfrei | §3.2 Application Core, §6 Querschnitt |
-| AK-5 | Adapter sind technisch klar getrennt | §3.4 Adapter, §4 Verzeichnisstruktur |
-| AK-9 | Basis-Metriken sind sichtbar oder vorbereitet | §6 Querschnitt, §5 Datenflüsse |
-| AK-10 | Repository ist Open-Source-tauglich dokumentiert | dieses Dokument |
+| AK    | Ziel                                             | Wirkt sich aus auf                                 |
+| ----- | ------------------------------------------------ | -------------------------------------------------- |
+| AK-3  | Architektur ist klar nachvollziehbar             | §3 Hexagon, §4 Verzeichnisstruktur, §5 Datenflüsse |
+| AK-4  | Domain-Schicht ist frameworkfrei                 | §3.2 Application Core, §6 Querschnitt              |
+| AK-5  | Adapter sind technisch klar getrennt             | §3.4 Adapter, §4 Verzeichnisstruktur               |
+| AK-9  | Basis-Metriken sind sichtbar oder vorbereitet    | §6 Querschnitt, §5 Datenflüsse                     |
+| AK-10 | Repository ist Open-Source-tauglich dokumentiert | dieses Dokument                                    |
 
 ---
 
@@ -87,13 +87,13 @@ flowchart LR
 
 ### 2.2 Architekturtreiber
 
-| Treiber | Konsequenz |
-|---|---|
-| Selbsthoster-first (Lastenheft §9.3) | einfache Deploybarkeit, Distroless-Runtime, Docker-Compose statt Kubernetes |
-| OpenTelemetry-nativ (§4.2) | OTel-SDK direkt in `apps/api`, keine vendor-spezifischen Telemetrie-Pfade |
-| Cardinality-Sicherheit (§7.10) | Prometheus nur für Aggregate, hohe Kardinalität in Trace/Event-Store |
-| Player-First (§7.6) | Wire-Format und SDK-Budget im Lastenheft fixiert; API-Kontrakt frozen (`docs/spike/backend-api-contract.md`) |
-| Hexagon-Disziplin (§7.2 F-10..F-16) | Application-Core ohne Framework-Abhängigkeit, technische Konzepte in Adaptern |
+| Treiber                              | Konsequenz                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Selbsthoster-first (Lastenheft §9.3) | einfache Deploybarkeit, Distroless-Runtime, Docker-Compose statt Kubernetes                                  |
+| OpenTelemetry-nativ (§4.2)           | OTel-SDK direkt in `apps/api`, keine vendor-spezifischen Telemetrie-Pfade                                    |
+| Cardinality-Sicherheit (§7.10)       | Prometheus nur für Aggregate, hohe Kardinalität in Trace/Event-Store                                         |
+| Player-First (§7.6)                  | Wire-Format und SDK-Budget im Lastenheft fixiert; API-Kontrakt frozen (`docs/spike/backend-api-contract.md`) |
+| Hexagon-Disziplin (§7.2 F-10..F-16)  | Application-Core ohne Framework-Abhängigkeit, technische Konzepte in Adaptern                                |
 
 ---
 
@@ -144,12 +144,12 @@ Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/
 
 `hexagon/` enthält ausschließlich frameworkfreien Code:
 
-| Paket | Inhalt | Regeln |
-|---|---|---|
-| `hexagon/domain/` | `PlaybackEvent`, `StreamSession`, `Project`, `ProjectToken`, Domain-Errors | keine HTTP-, JSON-, Prometheus-, OTel-, Persistenz-Imports |
-| `hexagon/port/driving/` | `PlaybackEventInbound` (Use-Case-Eingang) und Wire-format-neutrale DTOs (`BatchInput`, `EventInput`, `SDKInput`, `BatchResult`) | keine Imports von `adapters/*`; DTOs trennen Domain von Wire-Format |
-| `hexagon/port/driven/` | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher`, `Telemetry` | reine Schnittstellen; Implementierungen in `adapters/driven/*`. Keine Imports von OTel, Prometheus oder anderen Adapter-Bibliotheken. |
-| `hexagon/application/` | `RegisterPlaybackEventBatch` Use Case | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken, Telemetrie in fester Reihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) |
+| Paket                   | Inhalt                                                                                                                          | Regeln                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hexagon/domain/`       | `PlaybackEvent`, `StreamSession`, `Project`, `ProjectToken`, Domain-Errors                                                      | keine HTTP-, JSON-, Prometheus-, OTel-, Persistenz-Imports                                                                                                 |
+| `hexagon/port/driving/` | `PlaybackEventInbound` (Use-Case-Eingang) und Wire-format-neutrale DTOs (`BatchInput`, `EventInput`, `SDKInput`, `BatchResult`) | keine Imports von `adapters/*`; DTOs trennen Domain von Wire-Format                                                                                        |
+| `hexagon/port/driven/`  | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher`, `Telemetry`                                            | reine Schnittstellen; Implementierungen in `adapters/driven/*`. Keine Imports von OTel, Prometheus oder anderen Adapter-Bibliotheken.                      |
+| `hexagon/application/`  | `RegisterPlaybackEventBatch` Use Case                                                                                           | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken, Telemetrie in fester Reihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) |
 
 Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty`, `ErrBatchTooLarge`, `ErrInvalidEvent`, `ErrRateLimited`) decken erwartete fachliche Fehlerkategorien ab. Der HTTP-Adapter mappt sie auf Status-Codes (Tabelle in §5.1). Technische Adapter-Fehler — z. B. von `EventRepository.Append` — fallen nicht in dieses Set; sie werden vom Use Case unverändert durchgereicht und vom HTTP-Adapter im Default-Zweig auf `500` gemappt.
 
@@ -202,14 +202,14 @@ var _ driven.EventRepository = (*InMemoryEventRepository)(nil)
 
 Adapter im Zielbild `0.1.0` (`apps/api/`):
 
-| Pfad | Rolle | Implementierung | Hinweis |
-|---|---|---|---|
-| `adapters/driving/http/` | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer` | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`. |
-| `adapters/driven/auth/` | Driven | `StaticProjectResolver` | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
-| `adapters/driven/persistence/` | Driven | `InMemoryEventRepository` | wechselt mit Persistenz-Folge-ADR (Roadmap §4) auf SQLite/PostgreSQL, OE-3. |
-| `adapters/driven/ratelimit/` | Driven | `TokenBucket` | 100 Events/s/Project laut API-Kontrakt §6. |
-| `adapters/driven/metrics/` | Driven | `PrometheusPublisher` | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2). |
-| `adapters/driven/telemetry/` | Driven | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag. |
+| Pfad                           | Rolle   | Implementierung                                                                                                                                                              | Hinweis                                                                                                                             |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `adapters/driving/http/`       | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer`                                                                   | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`.               |
+| `adapters/driven/auth/`        | Driven  | `StaticProjectResolver`                                                                                                                                                      | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
+| `adapters/driven/persistence/` | Driven  | `InMemoryEventRepository`                                                                                                                                                    | wechselt mit Persistenz-Folge-ADR (Roadmap §4) auf SQLite/PostgreSQL, OE-3.                                                         |
+| `adapters/driven/ratelimit/`   | Driven  | `TokenBucket`                                                                                                                                                                | 100 Events/s/Project laut API-Kontrakt §6.                                                                                          |
+| `adapters/driven/metrics/`     | Driven  | `PrometheusPublisher`                                                                                                                                                        | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
+| `adapters/driven/telemetry/`   | Driven  | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
 
 OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zulässig:
 
@@ -220,12 +220,12 @@ Alle Pakete unterhalb `hexagon/` importieren weder `go.opentelemetry.io/otel` no
 
 Die Regel betrifft also **direkte** Imports und gilt geschichtet. Verbindliche Boundary-Tabelle:
 
-| Paket-Pattern | Verbotene direkte Imports | Begründung |
-|---|---|---|
-| `./hexagon/...` | `${MODULE}/adapters`, `go.opentelemetry.io`, `github.com/prometheus`, `database/sql`, `net/http` | Hexagon darf keine Adapter oder Infrastruktur-Bibliotheken kennen. |
-| `./hexagon/domain/...` | `${MODULE}/hexagon/application`, `${MODULE}/hexagon/port` | Domain darf nicht von Application oder Ports abhängen. |
-| `./hexagon/application/...` | `${MODULE}/adapters` | Application spricht ausschließlich über Ports, nicht Adapter-Implementierungen. |
-| `./hexagon/port/...` | `${MODULE}/adapters` | Ports sind Abstraktionen — sie dürfen keine Adapter-Implementierung importieren. |
+| Paket-Pattern               | Verbotene direkte Imports                                                                        | Begründung                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `./hexagon/...`             | `${MODULE}/adapters`, `go.opentelemetry.io`, `github.com/prometheus`, `database/sql`, `net/http` | Hexagon darf keine Adapter oder Infrastruktur-Bibliotheken kennen.               |
+| `./hexagon/domain/...`      | `${MODULE}/hexagon/application`, `${MODULE}/hexagon/port`                                        | Domain darf nicht von Application oder Ports abhängen.                           |
+| `./hexagon/application/...` | `${MODULE}/adapters`                                                                             | Application spricht ausschließlich über Ports, nicht Adapter-Implementierungen.  |
+| `./hexagon/port/...`        | `${MODULE}/adapters`                                                                             | Ports sind Abstraktionen — sie dürfen keine Adapter-Implementierung importieren. |
 
 Absicherung als ausführbares Skript: `apps/api/scripts/check-architecture.sh` (auch als `make arch-check` aufrufbar). Das Skript iteriert über die Patterns, sammelt pro Paket die direkten Imports via `go list -f '{{join .Imports "\n"}}'` und filtert sie gegen den jeweiligen Forbidden-Regex. Bei einem Treffer wird Paketname, Begründung und Liste der verbotenen Imports ausgegeben und der Lauf bricht mit Exit 1 ab.
 
@@ -348,18 +348,18 @@ Schritt-Nummerierung (1..10) entspricht dem API-Kontrakt §5; Schritte 1 (Auth-H
 
 Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut [API-Kontrakt §7](./spike/backend-api-contract.md):
 
-| Stufe | Fehler | Status | Counter | Geprüft in |
-|---|---|---|---|---|
-| Auth-Header | fehlt | 401 | — | HTTP-Adapter Step 1 |
-| Body | Größe > 256 KB | 413 | — | HTTP-Adapter Step 2 |
-| Auth-Token | Token unbekannt | 401 | — | Use Case Step 3 |
-| Rate-Limit | Budget aufgebraucht | 429 + `Retry-After` | `mtrace_rate_limited_events_total` | Use Case Step 4 |
-| schema_version | ≠ `"1.0"` | 400 | `mtrace_invalid_events_total` | Use Case Step 5 |
-| Batch-Form | leer | 422 | — (Counter bleibt unverändert: n=0 abgelehnte Events) | Use Case Step 6 |
-| Batch-Größe | > 100 Events | 422 | `mtrace_invalid_events_total` | Use Case Step 7 |
-| Event-Felder | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` | Use Case Step 8 |
-| Token-Bindung | `project_id` ≠ Token-Projekt | 401 | — | Use Case Step 9 |
-| Persistenz | Repository-Fehler | 500 | — (kein Counter; Sichtbarkeit über HTTP-5xx-Histogramm und Logs) | Use Case Step 10 |
+| Stufe          | Fehler                       | Status              | Counter                                                          | Geprüft in          |
+| -------------- | ---------------------------- | ------------------- | ---------------------------------------------------------------- | ------------------- |
+| Auth-Header    | fehlt                        | 401                 | —                                                                | HTTP-Adapter Step 1 |
+| Body           | Größe > 256 KB               | 413                 | —                                                                | HTTP-Adapter Step 2 |
+| Auth-Token     | Token unbekannt              | 401                 | —                                                                | Use Case Step 3     |
+| Rate-Limit     | Budget aufgebraucht          | 429 + `Retry-After` | `mtrace_rate_limited_events_total`                               | Use Case Step 4     |
+| schema_version | ≠ `"1.0"`                    | 400                 | `mtrace_invalid_events_total`                                    | Use Case Step 5     |
+| Batch-Form     | leer                         | 422                 | — (Counter bleibt unverändert: n=0 abgelehnte Events)            | Use Case Step 6     |
+| Batch-Größe    | > 100 Events                 | 422                 | `mtrace_invalid_events_total`                                    | Use Case Step 7     |
+| Event-Felder   | Pflichtfeld fehlt            | 422                 | `mtrace_invalid_events_total`                                    | Use Case Step 8     |
+| Token-Bindung  | `project_id` ≠ Token-Projekt | 401                 | —                                                                | Use Case Step 9     |
+| Persistenz     | Repository-Fehler            | 500                 | — (kein Counter; Sichtbarkeit über HTTP-5xx-Histogramm und Logs) | Use Case Step 10    |
 
 `mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422` (laut [API-Kontrakt §7](./spike/backend-api-contract.md)) — der Wertbereich ist die Anzahl betroffener Events, nicht die Anzahl Batches. Auth-Fehler (HTTP-Header-Check, `ResolveByToken`, Token-Bindung) laufen nicht in den Counter. Bei leerem Batch (`events.length == 0`) bleibt der Counter folglich unverändert; die Ablehnung ist über HTTP-Status (`422`) und Access-Logs sichtbar. Persistenz-Fehler (`500`) inkrementieren ebenfalls keinen Counter — `mtrace_dropped_events_total` ist laut Kontrakt §7 für **interne Backpressure-Drops** reserviert (z. B. ein zukünftiger Async-Channel mit überlaufendem Puffer), nicht für synchron-fehlgeschlagenes `Append`.
 
@@ -412,14 +412,14 @@ exporter, _ := autoexport.NewSpanExporter(ctx,
 
 Damit gilt für die [Standard-OTel-Env-Vars](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/):
 
-| Konfiguration | Effekt |
-|---|---|
-| keine Env-Vars | Fallback aktiv → No-Op-Reader und No-Op-Span-Exporter, Provider silent. |
-| `OTEL_TRACES_EXPORTER=otlp` und/oder `OTEL_METRICS_EXPORTER=otlp` | OTLP-Reader und/oder OTLP-Span-Exporter werden registriert. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT=…` | Endpoint für die OTLP-Variante. |
-| `OTEL_EXPORTER_OTLP_PROTOCOL=…` | Wahl des Transport-Protokolls (`grpc`, `http/protobuf`). Default-Protokoll richtet sich nach der eingebundenen `autoexport`-Modulversion. |
-| `OTEL_TRACES_EXPORTER=console` | Console-Exporter für Debug. |
-| `OTEL_TRACES_EXPORTER=none` (analog Metrics) | explizit kein Exporter — ist auch ohne Fallback silent. |
+| Konfiguration                                                     | Effekt                                                                                                                                    |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| keine Env-Vars                                                    | Fallback aktiv → No-Op-Reader und No-Op-Span-Exporter, Provider silent.                                                                   |
+| `OTEL_TRACES_EXPORTER=otlp` und/oder `OTEL_METRICS_EXPORTER=otlp` | OTLP-Reader und/oder OTLP-Span-Exporter werden registriert.                                                                               |
+| `OTEL_EXPORTER_OTLP_ENDPOINT=…`                                   | Endpoint für die OTLP-Variante.                                                                                                           |
+| `OTEL_EXPORTER_OTLP_PROTOCOL=…`                                   | Wahl des Transport-Protokolls (`grpc`, `http/protobuf`). Default-Protokoll richtet sich nach der eingebundenen `autoexport`-Modulversion. |
+| `OTEL_TRACES_EXPORTER=console`                                    | Console-Exporter für Debug.                                                                                                               |
+| `OTEL_TRACES_EXPORTER=none` (analog Metrics)                      | explizit kein Exporter — ist auch ohne Fallback silent.                                                                                   |
 
 Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die Env-Vars und brauchen keinen Code-Patch. `autoexport` ist die einzige zusätzliche OTel-Abhängigkeit, die das Soll vorsieht; die exakte autoexport-Version wird in `apps/api/go.mod` gepinnt.
 
@@ -427,14 +427,14 @@ Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die
 
 ## 6. Querschnittsthemen
 
-| Thema | Umsetzung | Bezug |
-|---|---|---|
-| Logging | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt | Lastenheft §10.1 |
-| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
-| Metriken | Prometheus über `/api/metrics`-Endpoint, nur Aggregate | Lastenheft §7.9, §7.10 |
-| Auth | Header `X-MTrace-Token`, Auflösung über `ProjectResolver` | Spike-Spec §6.4, Lastenheft §8.5 |
-| Rate Limiting | In-Memory Token-Bucket, 100 Events/s/Project | Spike-Spec §6.9 |
-| Konfiguration | Konstanten in `cmd/api/main.go`; Umweltvariablen folgen ab `0.1.0`-Implementierung | — |
+| Thema                  | Umsetzung                                                                                                                                                                                                                                                                                                                                                                                                                        | Bezug                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §10.1                 |
+| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8     |
+| Metriken               | Prometheus über `/api/metrics`-Endpoint, nur Aggregate                                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §7.9, §7.10           |
+| Auth                   | Header `X-MTrace-Token`, Auflösung über `ProjectResolver`                                                                                                                                                                                                                                                                                                                                                                        | Spike-Spec §6.4, Lastenheft §8.5 |
+| Rate Limiting          | In-Memory Token-Bucket, 100 Events/s/Project                                                                                                                                                                                                                                                                                                                                                                                     | Spike-Spec §6.9                  |
+| Konfiguration          | Konstanten in `cmd/api/main.go`; Umweltvariablen folgen ab `0.1.0`-Implementierung                                                                                                                                                                                                                                                                                                                                               | —                                |
 
 ---
 
@@ -442,21 +442,21 @@ Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die
 
 ### 7.1 Bestand
 
-| ADR | Status | Inhalt |
-|---|---|---|
+| ADR                                     | Status   | Inhalt                                                                           |
+| --------------------------------------- | -------- | -------------------------------------------------------------------------------- |
 | [ADR-0001](./adr/0001-backend-stack.md) | Accepted | Backend-Stack: Go 1.22, stdlib `net/http`, Prometheus, OpenTelemetry, Distroless |
 
 ### 7.2 Geplant
 
 Folge-ADRs aus [Roadmap §4](./roadmap.md):
 
-| Erwartete ADR | Trigger-Release | Bezug |
-|---|---|---|
+| Erwartete ADR                                    | Trigger-Release | Bezug        |
+| ------------------------------------------------ | --------------- | ------------ |
 | Persistenz-Wechsel In-Memory → SQLite/PostgreSQL | `0.1.0`–`0.2.0` | MVP-16, OE-3 |
-| WebSocket vs. SSE für Live-Updates | `0.4.0` | OE-5, R-3 |
-| SRT-Binding-Stack | `0.6.0` | R-2 |
-| Coverage-Tooling für Go | `0.1.0`+ | analog d-migrate-Pattern |
-| `apps/api` Multi-Modul-Aufteilung (`go.work`) | on demand | R-1 |
+| WebSocket vs. SSE für Live-Updates               | `0.4.0`         | OE-5, R-3    |
+| SRT-Binding-Stack                                | `0.6.0`         | R-2          |
+| Coverage-Tooling für Go                          | `0.1.0`+        |              |
+| `apps/api` Multi-Modul-Aufteilung (`go.work`)    | on demand       | R-1          |
 
 Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](./risks-backlog.md).
 
@@ -479,13 +479,13 @@ flowchart LR
     Build --> Runtime["runtime<br/>distroless-static"]
 ```
 
-| Stage | Image | Zweck |
-|---|---|---|
-| `deps` | `golang:1.22` | `go mod download`, Cache-Layer |
-| `compile` | `golang:1.22` | schneller `go build` für Iteration |
-| `lint` | `golangci/golangci-lint:v1.62-alpine` | Default-Linters laut Lastenheft §10.1 |
-| `test` | `golang:1.22` | `go test ./...` |
-| `build` | `golang:1.22` | Stripped binary (`-s -w`) für Runtime |
+| Stage     | Image                                       | Zweck                                  |
+| --------- | ------------------------------------------- | -------------------------------------- |
+| `deps`    | `golang:1.22`                               | `go mod download`, Cache-Layer         |
+| `compile` | `golang:1.22`                               | schneller `go build` für Iteration     |
+| `lint`    | `golangci/golangci-lint:v1.62-alpine`       | Default-Linters laut Lastenheft §10.1  |
+| `test`    | `golang:1.22`                               | `go test ./...`                        |
+| `build`   | `golang:1.22`                               | Stripped binary (`-s -w`) für Runtime  |
 | `runtime` | `gcr.io/distroless/static-debian12:nonroot` | Final-Image (~10 MB, Cold-Start ~9 ms) |
 
 ### 8.2 Lokal-Lab
@@ -518,16 +518,16 @@ flowchart TB
 
 ## 9. Rückverfolgbarkeit
 
-| Architektur-Aussage | Dokument-§ | Lastenheft / AK |
-|---|---|---|
-| Hexagonale Aufteilung mit framework-freier Domain | §3 | F-10..F-16, AK-3, AK-4 |
-| Trennung driving/driven Adapter | §3.4 | F-11, F-15, AK-5 |
-| Verzeichnislayout `apps/api/` | §4 | §7.1 Mono-Repo |
-| Validierungsreihenfolge im Use Case | §5.1 | API-Kontrakt §5 |
-| Prometheus nur für Aggregate | §5.2, §6 | §7.10 Cardinality-Regel, AK-9 |
-| OpenTelemetry-Querschnitt | §5.3, §6 | §4.2, §10.1 |
-| Docker-only-Workflow, Distroless | §8.1 | §10.1, ADR-0001 §6 |
-| Repository-Doku-Tauglichkeit | dieses Dokument | AK-10 |
+| Architektur-Aussage                               | Dokument-§      | Lastenheft / AK               |
+| ------------------------------------------------- | --------------- | ----------------------------- |
+| Hexagonale Aufteilung mit framework-freier Domain | §3              | F-10..F-16, AK-3, AK-4        |
+| Trennung driving/driven Adapter                   | §3.4            | F-11, F-15, AK-5              |
+| Verzeichnislayout `apps/api/`                     | §4              | §7.1 Mono-Repo                |
+| Validierungsreihenfolge im Use Case               | §5.1            | API-Kontrakt §5               |
+| Prometheus nur für Aggregate                      | §5.2, §6        | §7.10 Cardinality-Regel, AK-9 |
+| OpenTelemetry-Querschnitt                         | §5.3, §6        | §4.2, §10.1                   |
+| Docker-only-Workflow, Distroless                  | §8.1            | §10.1, ADR-0001 §6            |
+| Repository-Doku-Tauglichkeit                      | dieses Dokument | AK-10                         |
 
 ---
 

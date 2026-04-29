@@ -27,13 +27,13 @@ docker build --target lint -t m-trace-api-spike:lint .
 
 Die Stage führt `golangci-lint run ./...` mit Default-Lintern aus:
 
-| Linter | Zweck |
-|---|---|
-| `govet` | semantische Korrektheit (z. B. printf-Argumente) |
-| `errcheck` | Fehlerwerte werden nicht ignoriert |
-| `staticcheck` | Klassische Bug-Patterns + Style |
-| `unused` | toter Code |
-| `ineffassign` | unwirksame Zuweisungen |
+| Linter        | Zweck                                            |
+| ------------- | ------------------------------------------------ |
+| `govet`       | semantische Korrektheit (z. B. printf-Argumente) |
+| `errcheck`    | Fehlerwerte werden nicht ignoriert               |
+| `staticcheck` | Klassische Bug-Patterns + Style                  |
+| `unused`      | toter Code                                       |
+| `ineffassign` | unwirksame Zuweisungen                           |
 
 Custom-Regeln, Suppressions und Toolchain-Ausbau sind im Spike-Scope
 ausgeschlossen — Default-Profil pur (Plan §14.9). Verstöße brechen
@@ -80,13 +80,12 @@ Test-Output und Reports leben in den jeweiligen
 
 ## 3. Coverage (Platzhalter)
 
-Coverage-Instrumentierung ist **nicht** Teil des Spike-Scope und
-nicht im aktuellen `Dockerfile` aktiviert. Der ADR
-(`docs/adr/0001-backend-stack.md` §8) sieht für `0.1.0+` eine
-Coverage-Strategie analog zum d-migrate-Pattern vor:
+Coverage-Instrumentierung ist nicht im aktuellen `Dockerfile` aktiviert.
+Der ADR (`docs/adr/0001-backend-stack.md` §8) sieht für `0.1.0+` eine
+Coverage-Strategie vor:
 
 - `go test -cover` (Standardbibliothek-nativ)
-- Aggregierter Threshold im Build-Gate (Vorschlag: 80% Line-
+- Aggregierter Threshold im Build-Gate (Vorschlag: 90% Line-
   Coverage auf `apps/api/hexagon/` und `apps/api/adapters/`)
 - HTML-/JSON-Report als CI-Artifact
 
@@ -127,14 +126,14 @@ Erwartet: `HTTP 200` und `{"status":"ok"}` (Spec §6.1).
 
 Verbindlich aus `docs/spike/backend-api-contract.md`:
 
-| Vertrag | Ort | Gate |
-|---|---|---|
-| Endpunkt-Pfad/-Methode/-Statuscode | §2 | HTTP-Integrationstests pro Statuscode (§11) |
-| Wire-Format `events`-Batch | §3 | Unit-Test `RegisterPlaybackEventBatch` (Schema-Version, Pflichtfelder) |
-| Auth-Reihenfolge `X-MTrace-Token` ↔ `project_id` | §4–§5 | Drei `401`-Integrationstests (fehlend, falsch, mismatch) |
-| 9-Schritt-Validierungsreihenfolge | §5 | Test-Pärchen mit `unlimitedLimiter`-Fixture für 422-too-many-events trotz step-3 Rate-Limit-Maskierung |
-| Pflicht-Metriken `mtrace_*` | §7 | Smoke-Curl in §4 oben + automatischer Test (`go test`) |
-| Rate-Limit + `Retry-After` | §6 | dedizierter 429-Integrationstest |
+| Vertrag                                          | Ort   | Gate                                                                                                   |
+| ------------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------ |
+| Endpunkt-Pfad/-Methode/-Statuscode               | §2    | HTTP-Integrationstests pro Statuscode (§11)                                                            |
+| Wire-Format `events`-Batch                       | §3    | Unit-Test `RegisterPlaybackEventBatch` (Schema-Version, Pflichtfelder)                                 |
+| Auth-Reihenfolge `X-MTrace-Token` ↔ `project_id` | §4–§5 | Drei `401`-Integrationstests (fehlend, falsch, mismatch)                                               |
+| 9-Schritt-Validierungsreihenfolge                | §5    | Test-Pärchen mit `unlimitedLimiter`-Fixture für 422-too-many-events trotz step-3 Rate-Limit-Maskierung |
+| Pflicht-Metriken `mtrace_*`                      | §7    | Smoke-Curl in §4 oben + automatischer Test (`go test`)                                                 |
+| Rate-Limit + `Retry-After`                       | §6    | dedizierter 429-Integrationstest                                                                       |
 
 Vertragsänderungen sind nur synchron in beiden Implementierungen
 zulässig — bis `0.1.0` ist nur Go-Implementierung relevant — und

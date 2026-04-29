@@ -23,26 +23,26 @@ jedem Folge-ADR aktualisieren.
 
 ### 1.1 Was abgeschlossen ist
 
-| Status | Bereich | Ergebnis | Verweise |
-|---|---|---|---|
-| ✅ | Lastenheft | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert. | `docs/lastenheft.md` |
-| ✅ | Backend-Spike | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/plan-spike.md` (SP-30), `docs/plan-spike.md` (SP-41) |
-| ✅ | API-Kontrakt | Spike-API-Kontrakt erstellt, dokumentiert und eingefroren (`frozen`). | `docs/spike/backend-api-contract.md` |
-| ✅ | ADR | Backend-Stack-Entscheidung entschieden und als **Accepted** festgehalten. | `docs/adr/0001-backend-stack.md` |
-| ✅ | Siegerbranch | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`. | `spike/go-api`, ADR |
-| ✅ | Unterlegener Branch | Als Tag archiviert: `spike/backend-stack-loser-2026-04-28` (Commit `7c8bc44`), `spike/micronaut-api` gelöscht. | `spike/backend-stack-loser-2026-04-28` |
+| Status | Bereich             | Ergebnis                                                                                                                                         | Verweise                                                                                                                              |
+| ------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅      | Lastenheft          | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert.                        | `docs/lastenheft.md`                                                                                                                  |
+| ✅      | Backend-Spike       | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/plan-spike.md` (SP-30), `docs/plan-spike.md` (SP-41) |
+| ✅      | API-Kontrakt        | Spike-API-Kontrakt erstellt, dokumentiert und eingefroren (`frozen`).                                                                            | `docs/spike/backend-api-contract.md`                                                                                                  |
+| ✅      | ADR                 | Backend-Stack-Entscheidung entschieden und als **Accepted** festgehalten.                                                                        | `docs/adr/0001-backend-stack.md`                                                                                                      |
+| ✅      | Siegerbranch        | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`.                                                               | `spike/go-api`, ADR                                                                                                                   |
+| ✅      | Unterlegener Branch | Als Tag archiviert: `spike/backend-stack-loser-2026-04-28` (Commit `7c8bc44`), `spike/micronaut-api` gelöscht.                                   | `spike/backend-stack-loser-2026-04-28`                                                                                                |
 
 ### 1.2 Was noch offen ist (vor MVP `0.1.0`)
 
 Reihenfolge ist verbindlich (SP-41). Detaillierte DoD-Checkboxen pro
 Schritt in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 0).
 
-| Reihenfolge | Status | Aufgabe | Trigger | Verweis |
-|---|---|---|---|---|
-| 1 | ✅ | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2). | Sofort | OE-9; SP-41 |
-| 2 | ✅ | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren. | Nach Schritt 1 | OE-2; OE-9; SP-41 |
-| 3 | ✅ | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41 |
-| 4 | ✅ | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/risks-backlog.md`. | Nach Schritt 3 | SP-41 |
+| Reihenfolge | Status | Aufgabe                                                                                                         | Trigger        | Verweis           |
+| ----------- | ------ | --------------------------------------------------------------------------------------------------------------- | -------------- | ----------------- |
+| 1           | ✅      | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2).                                              | Sofort         | OE-9; SP-41       |
+| 2           | ✅      | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren.               | Nach Schritt 1 | OE-2; OE-9; SP-41 |
+| 3           | ✅      | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41     |
+| 4           | ✅      | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/risks-backlog.md`.                     | Nach Schritt 3 | SP-41             |
 
 Erst danach beginnt die eigentliche `0.1.0`-Implementierung:
 Dashboard, Player-SDK, Docker-Lab und Observability.
@@ -59,19 +59,19 @@ weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
 (DoD-Checkboxen mit Commit-Hashes) in
 [`docs/plan-0.1.0.md`](./plan-0.1.0.md).
 
-| # | Status | Schritt | Trigger | Verweis |
-|---|---|---|---|---|
-| 1 | ✅ | `spike/go-api` → `apps/api` auf `main` integrieren | Sofort | MVP-2; OE-9; SP-41 |
-| 2 | ✅ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | OE-2; OE-9; SP-41 |
-| 3 | ✅ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; SP-41 |
-| 4 | ✅ | Phase-2-Risiken in `docs/risks-backlog.md` | Nach Schritt 3 | SP-41 |
-| 5 | ✅ | `docs/architecture.md` schreiben | Vor `0.1.0`-DoD | AK-3, AK-10 |
-| 6 | ✅ | `docs/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup) | Vor `0.1.0`-DoD | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 |
-| 7 | ✅ | `docs/local-development.md` schreiben | Vor `0.1.0`-DoD | AK-1, AK-2 |
-| 8 | ⬜ | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`) | Nach `0.1.0`-Release | MVP-3; F-23..F-28 |
-| 9 | ⬜ | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`) | Nach `0.1.0`-Release | MVP-5; F-63..F-67 |
-| 10 | ⬜ | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88 |
-| 11 | ⬜ | Observability-Stack (Prometheus + optional Grafana, OTel-Collector) — `0.1.2` (siehe `plan-0.1.2.md`) | Nach `0.1.1`-Release | MVP-10, MVP-15; F-89..F-94 |
+| #   | Status | Schritt                                                                                                               | Trigger                                                         | Verweis                                                   |
+| --- | ------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------- |
+| 1   | ✅      | `spike/go-api` → `apps/api` auf `main` integrieren                                                                    | Sofort                                                          | MVP-2; OE-9; SP-41                                        |
+| 2   | ✅      | Lastenheft auf `1.0.0` heben                                                                                          | Nach Schritt 1                                                  | OE-2; OE-9; SP-41                                         |
+| 3   | ✅      | README Tech-Overview anpassen                                                                                         | Nach Schritt 2                                                  | MVP-17; SP-41                                             |
+| 4   | ✅      | Phase-2-Risiken in `docs/risks-backlog.md`                                                                            | Nach Schritt 3                                                  | SP-41                                                     |
+| 5   | ✅      | `docs/architecture.md` schreiben                                                                                      | Vor `0.1.0`-DoD                                                 | AK-3, AK-10                                               |
+| 6   | ✅      | `docs/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup)                | Vor `0.1.0`-DoD                                                 | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 |
+| 7   | ✅      | `docs/local-development.md` schreiben                                                                                 | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                |
+| 8   | ⬜      | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                            | Nach `0.1.0`-Release                                            | MVP-3; F-23..F-28                                         |
+| 9   | ⬜      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |
+| 10  | ⬜      | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88                                  |
+| 11  | ⬜      | Observability-Stack (Prometheus + optional Grafana, OTel-Collector) — `0.1.2` (siehe `plan-0.1.2.md`)                 | Nach `0.1.1`-Release                                            | MVP-10, MVP-15; F-89..F-94                                |
 
 ---
 
@@ -79,17 +79,17 @@ weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
 
 Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 
-| Version | Titel | Status | Akzeptanzkriterien |
-|---|---|---|---|
-| `0.0.x` | Spike + Planungsphase | ✅ | — |
-| `0.1.0` | Backend Core + Demo-Lab | 🟡 | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
-| `0.1.1` | Player-SDK + Dashboard | ⬜ | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md) |
-| `0.1.2` | Observability-Stack | ⬜ | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md) |
-| `0.2.0` | Publizierbares Player SDK | ⬜ | RAK-11..RAK-21 |
-| `0.3.0` | Stream Analyzer | ⬜ | RAK-22..RAK-28 |
-| `0.4.0` | Erweiterte Trace-Korrelation | ⬜ | RAK-29..RAK-35 |
-| `0.5.0` | Multi-Protocol Lab | ⬜ | RAK-36..RAK-40 |
-| `0.6.0` | SRT Health View | ⬜ | RAK-41..RAK-46 |
+| Version | Titel                        | Status | Akzeptanzkriterien                                                                              |
+| ------- | ---------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| `0.0.x` | Spike + Planungsphase        | ✅      | —                                                                                               |
+| `0.1.0` | Backend Core + Demo-Lab      | 🟡      | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
+| `0.1.1` | Player-SDK + Dashboard       | ⬜      | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md)                         |
+| `0.1.2` | Observability-Stack          | ⬜      | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md)                               |
+| `0.2.0` | Publizierbares Player SDK    | ⬜      | RAK-11..RAK-21                                                                                  |
+| `0.3.0` | Stream Analyzer              | ⬜      | RAK-22..RAK-28                                                                                  |
+| `0.4.0` | Erweiterte Trace-Korrelation | ⬜      | RAK-29..RAK-35                                                                                  |
+| `0.5.0` | Multi-Protocol Lab           | ⬜      | RAK-36..RAK-40                                                                                  |
+| `0.6.0` | SRT Health View              | ⬜      | RAK-41..RAK-46                                                                                  |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
@@ -108,15 +108,15 @@ Aus `docs/adr/0001-backend-stack.md` §8 erwartete Folge-ADRs.
 Alle sind ⬜ geplant; ADR-Nummer wird beim Schreiben vergeben. Die
 zugehörigen Risiken stehen in `docs/risks-backlog.md`.
 
-| Erwartete ADR | Trigger-Release | Begründung |
-|---|---|---|
-| Persistenz-Wechsel In-Memory → SQLite/PostgreSQL (**MVP-16**) | `0.1.0`–`0.2.0` | Spike-In-Memory ist nicht ausreichend, sobald Sessions persistiert werden sollen. |
-| WebSocket vs. SSE für Live-Updates | `0.4.0` | Live-Update-Mechanismus für Trace/Session-Ansicht. |
-| SRT-Binding-Stack | `0.6.0` | CGO-Bindings könnten das distroless-static-Pattern brechen. |
-| Coverage-Tooling für Go (`go test -cover` + Threshold) | `0.1.0`+ | Coverage-Strategie analog zu d-migrate-Pattern. |
-| `apps/api` Multi-Modul-Aufteilung (`go.work`) | offen | Wird nur relevant, wenn Hexagon-Boundaries Disziplin-basiert nicht reichen. |
-| Strengere CORS-Preflight-Project-Isolation (Variante A) | offen, Trigger Multi-Tenant | `0.1.0` setzt Variante B (globale Preflight-Allowlist + Project↔Origin-Validierung beim POST). Wenn echte Multi-Tenant-Projektion oder strengere Preflight-Isolation gebraucht wird, Migration auf Variante A — Project im Pfad (`/api/projects/{project_id}/...`) oder als URL-Parameter, damit der Preflight bereits projektscharf prüfen kann. |
-| Durabel-konsistente Cursor-Strategie für Pagination | offen, Trigger Horizontalskalierung oder Blue/Green-Deployment | `0.1.0` nutzt `process_instance_id` im Cursor; Restart bzw. Cross-Instance-Routing invalidiert den Cursor. Mit Multi-Instance-Setup wird das nicht mehr tragbar — Folge-ADR muss eine durabel-stabile Cursor-Form (z. B. opaker Token mit Storage-Token-ID, durable Sequence-Generator, server-side Snapshot) festlegen. Voraussetzung: Persistenz-Folge-ADR (OE-3) muss die Storage-Garantien klären. |
+| Erwartete ADR                                                 | Trigger-Release                                                | Begründung                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Persistenz-Wechsel In-Memory → SQLite/PostgreSQL (**MVP-16**) | `0.1.0`–`0.2.0`                                                | Spike-In-Memory ist nicht ausreichend, sobald Sessions persistiert werden sollen.                                                                                                                                                                                                                                                                                                                      |
+| WebSocket vs. SSE für Live-Updates                            | `0.4.0`                                                        | Live-Update-Mechanismus für Trace/Session-Ansicht.                                                                                                                                                                                                                                                                                                                                                     |
+| SRT-Binding-Stack                                             | `0.6.0`                                                        | CGO-Bindings könnten das distroless-static-Pattern brechen.                                                                                                                                                                                                                                                                                                                                            |
+| Coverage-Tooling für Go (`go test -cover` + Threshold)        | `0.1.0`+                                                       | Offen.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `apps/api` Multi-Modul-Aufteilung (`go.work`)                 | offen                                                          | Wird nur relevant, wenn Hexagon-Boundaries Disziplin-basiert nicht reichen.                                                                                                                                                                                                                                                                                                                            |
+| Strengere CORS-Preflight-Project-Isolation (Variante A)       | offen, Trigger Multi-Tenant                                    | `0.1.0` setzt Variante B (globale Preflight-Allowlist + Project↔Origin-Validierung beim POST). Wenn echte Multi-Tenant-Projektion oder strengere Preflight-Isolation gebraucht wird, Migration auf Variante A — Project im Pfad (`/api/projects/{project_id}/...`) oder als URL-Parameter, damit der Preflight bereits projektscharf prüfen kann.                                                      |
+| Durabel-konsistente Cursor-Strategie für Pagination           | offen, Trigger Horizontalskalierung oder Blue/Green-Deployment | `0.1.0` nutzt `process_instance_id` im Cursor; Restart bzw. Cross-Instance-Routing invalidiert den Cursor. Mit Multi-Instance-Setup wird das nicht mehr tragbar — Folge-ADR muss eine durabel-stabile Cursor-Form (z. B. opaker Token mit Storage-Token-ID, durable Sequence-Generator, server-side Snapshot) festlegen. Voraussetzung: Persistenz-Folge-ADR (OE-3) muss die Storage-Garantien klären. |
 
 Neue Folge-ADRs werden hier ergänzt, sobald der Bedarf entsteht oder
 ein Issue darauf hinweist.
@@ -127,15 +127,15 @@ ein Issue darauf hinweist.
 
 Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsregel entfernt.
 
-| Kennung | Entscheidung | Wo wird sie getroffen | Status |
-|---|---|---|---|
-| OE-1 | Projektlizenz: MIT oder Apache-2.0 | vor `0.1.0` Public-Release | MIT bereits committed (`LICENSE`); Apache-2.0-Prüfung offen |
-| OE-3 | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen |
-| OE-4 | Frontend-Styling (eigenes CSS / Tailwind / UI-Library) | mit Schritt 8 in §2 | offen |
-| OE-5 | Live-Updates: Polling / WebSocket / SSE | Folge-ADR `0.4.0` | offen |
-| OE-6 | CI-Zielplattformen — verknüpft mit **MVP-32** | beim CI-Setup (vor `0.1.0`-DoD) | offen |
-| OE-7 | Release-Konvention | vor `0.1.0` Public-Release | offen |
-| OE-8 | Paketnamen für npm | Schritt 9 in §2 | offen |
+| Kennung | Entscheidung                                                                     | Wo wird sie getroffen             | Status                                                      |
+| ------- | -------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
+| OE-1    | Projektlizenz: MIT oder Apache-2.0                                               | vor `0.1.0` Public-Release        | MIT bereits committed (`LICENSE`); Apache-2.0-Prüfung offen |
+| OE-3    | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen                                                       |
+| OE-4    | Frontend-Styling (eigenes CSS / Tailwind / UI-Library)                           | mit Schritt 8 in §2               | offen                                                       |
+| OE-5    | Live-Updates: Polling / WebSocket / SSE                                          | Folge-ADR `0.4.0`                 | offen                                                       |
+| OE-6    | CI-Zielplattformen — verknüpft mit **MVP-32**                                    | beim CI-Setup (vor `0.1.0`-DoD)   | offen                                                       |
+| OE-7    | Release-Konvention                                                               | vor `0.1.0` Public-Release        | offen                                                       |
+| OE-8    | Paketnamen für npm                                                               | Schritt 9 in §2                   | offen                                                       |
 
 ---
 
