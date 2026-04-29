@@ -13,6 +13,8 @@
 
 Dieses Dokument beschreibt, *wie* die Anforderungen aus dem Lastenheft architektonisch umgesetzt werden. Es führt das Lastenheft nicht erneut, sondern erklärt die strukturellen Entscheidungen, die das Lastenheft an Implementierung knüpft: Hexagon-Aufteilung, Verzeichnisstruktur, Abhängigkeitsregeln, Datenflüsse und die Querverweise zu den Architektur-Entscheidungen (ADRs).
 
+**Konvention für Ist-Zustand vs. Zielarchitektur**: Vorhandene Komponenten und Pfade werden mit durchgezogenen Linien und Standardbeschriftung dargestellt; geplante Komponenten und Pfade sind gestrichelt und tragen einen expliziten „geplant"-Hinweis (oft mit Release-Bezug). Status-Tabellen wie §4.1 vs. §4.2 setzen dieselbe Trennung um.
+
 ### 0.2 Nicht-Ziel
 
 - Anforderungen formulieren — das ist Aufgabe von [`lastenheft.md`](./lastenheft.md).
@@ -26,7 +28,7 @@ m-trace nutzt **Hexagonale Architektur (Ports & Adapters)** für Komponenten mit
 
 | Komponente | Architektur | Begründung |
 |---|---|---|
-| `apps/api` | hexagonal | echte Domain-Logik (Event-Annahme, Validierung, Session-Aggregation) |
+| `apps/api` | hexagonal | echte Domain-Logik (Event-Annahme, Validierung, Session-Modell vorbereitet) |
 | `apps/dashboard` | Feature-Struktur | UI-Code, kein Domain-Kern |
 | `packages/player-sdk` | leichte Adapter-Struktur | Browser-Library, Hexagon ohne Mehrwert im MVP |
 | `packages/stream-analyzer` | hexagonal oder geschichtete Library | Einsatz pro Folge-Phase prüfen |
@@ -67,13 +69,18 @@ flowchart LR
         Prom["Prometheus<br/>(scraped /api/metrics)"]
     end
 
-    FFmpeg -->|Stream| MediaMTX
-    MediaMTX -->|HLS| Browser
     Browser -->|Playback-Events<br/>POST /api/playback-events| API
-    Dashboard -->|GET /api/sessions| API
-    Prom -->|scrape /api/metrics| API
-    API -.OTel wired but silent;<br/>OTLP-Export geplant.-> OTelBackend
+    FFmpeg -.->|Stream| MediaMTX
+    MediaMTX -.->|HLS| Browser
+    Dashboard -.->|GET /api/sessions<br/>(Bonus-Scope, geplant)| API
+    Prom -.->|scrape /api/metrics| API
+    API -.OTLP-Export geplant<br/>(aktuell wired but silent).-> OTelBackend
+
+    classDef planned stroke-dasharray:5 5,fill:#f1f5f9,color:#475569
+    class Browser,FFmpeg,MediaMTX,OTelBackend,Dashboard,Prom planned
 ```
+
+Durchgezogene Pfeile zeigen den im Pre-MVP-`0.1.0` vorhandenen Pfad (`apps/api`); gestrichelte Knoten und Pfeile sind im Aufbau für `0.1.0` (Roadmap §2 Schritte 8–11). `apps/api` selbst ist die einzige Komponente, die heute implementiert ist.
 
 ### 2.2 Architekturtreiber
 
@@ -123,8 +130,9 @@ flowchart TB
     OutPorts --> Auth
     OutPorts --> Rate
     OutPorts --> Metrics
-    UseCase -.OTel-Spans.-> Telemetry
 ```
+
+`telemetry` registriert in `main.go` einen `MeterProvider` (siehe §5.3) und ist im Diagramm bewusst **nicht** als Use-Case-abhängig dargestellt — der aktuelle Use Case importiert weder `otel.Tracer` noch `otel.Meter`. Sobald produktive Telemetrie entsteht (`0.1.0`-Implementierung), wird hier eine entsprechende Linie ergänzt.
 
 Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/` bzw. `adapters/driving/` und `adapters/driven/`. Lastenheft §7.2 schreibt den Stil mit `port/in/`, `port/out/`, `adapters/in/`, `adapters/out/` als Standardstruktur — beide Konventionen sind in der Hexagon-Literatur gleichwertig; m-trace folgt der `driving/driven`-Variante, weil sie die Aufrufrichtung sprachlich klarer markiert.
 
