@@ -261,8 +261,8 @@ DoD:
 - [x] `docs/plan-0.1.0.md` schrumpft auf den neuen `0.1.0`-Scope (Backend + Lab); Player-SDK, Dashboard und Observability werden in eigene Plan-Dokumente ausgelagert (`31ccb47`).
 - [x] `docs/plan-0.1.1.md` neu angelegt — Player-SDK + Dashboard; Tranchen 0/0a/0b/0c werden referenzierend zu `plan-0.1.0.md` gehalten (`31ccb47`).
 - [x] `docs/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend (`31ccb47`).
-- [x] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt.
-- [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert.
+- [x] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt (`0c4cab6`).
+- [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert (`0c4cab6`).
 
 ---
 
