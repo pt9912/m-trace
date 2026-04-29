@@ -78,6 +78,10 @@ RUN mkdir -p /out && \
         ./... && \
     go tool cover -func=/out/coverage.out | tee /out/coverage-func.txt && \
     go tool cover -html=/out/coverage.out -o /out/coverage.html && \
+    go run ./scripts/coverage-overview \
+        -profile /out/coverage.out \
+        -threshold "$COVERAGE_THRESHOLD" \
+        -out /out/index.html && \
     bash scripts/coverage-gate.sh /out/coverage-func.txt "$COVERAGE_THRESHOLD"
 
 # ---- coverage-export -------------------------------------------------------

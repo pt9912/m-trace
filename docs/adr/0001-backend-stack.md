@@ -168,8 +168,10 @@ ursprünglich offen:**
 - DI-Annotations-Strategie ist nicht mehr nötig — Go hat keine
   DI-Container-Idiome. `var _ Interface = (*Impl)(nil)`
   Compile-Time-Checks bleiben das primäre Hexagon-Enforcement.
-- Coverage: Kover entfällt; `go test -cover` wird in `0.1.0+`
-  als Coverage-Werkzeug eingeführt.
+- Coverage: Kover entfällt; `go test -cover` ist seit Pre-MVP
+  `0.1.0` als Coverage-Werkzeug eingeführt — Pflicht-Gate mit
+  90 %-Threshold und HTML-/Übersicht-Report (siehe
+  `docs/quality.md` §3).
 - detekt-Konfig fällt weg; `golangci-lint` mit Default-Lintern
   ist die Soll-Vorgabe.
 
