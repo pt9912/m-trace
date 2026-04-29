@@ -27,11 +27,27 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 | Tranche | Inhalt | Status |
 |---|---|---|
+| 0 | Vorgänger-Gate-Verifikation | ⬜ |
 | 1 | Pflicht-Anteile (F-89..F-93, Mindestmetriken) — Code in `apps/api` plus Repo-weite Prometheus-Konfiguration unter `observability/prometheus/` | ⬜ |
 | 2 | Soll-Anteile im `observability`-Compose-Profil (F-94/MVP-28 Grafana, MVP-29 OTel-Collector) | ⬜ |
 | 3 | Release-Akzeptanzkriterien `0.1.2` | ⬜ |
 
 Tempo bleibt explizit Nicht-MVP (MVP-22).
+
+---
+
+## 1a. Tranche 0 — Vorgänger-Gate-Verifikation
+
+Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Tranche muss `[x]` sein, bevor Tranche 1 beginnt.
+
+DoD:
+
+- [ ] `plan-0.1.1.md` Tranche 1 (Player-SDK) abgeschlossen — alle DoD-Items `[x]`.
+- [ ] `plan-0.1.1.md` Tranche 2 (Dashboard) abgeschlossen.
+- [ ] `plan-0.1.1.md` Tranche 3 (Compose-Lab-Erweiterung um `dashboard`) abgeschlossen.
+- [ ] `plan-0.1.1.md` Tranche 4 (Release-Akzeptanzkriterien `0.1.1` — RAK-2, RAK-5, RAK-7) abgeschlossen.
+- [ ] `plan-0.1.0.md` Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) abgeschlossen — harte technische Voraussetzung für F-91.
+- [ ] `plan-0.1.0.md` Tranche 0c §4a.x: alle bis zum `0.1.2`-Start eingetragenen Items entweder `[x]` oder explizit als nicht-blockierend markiert.
 
 ---
 
@@ -47,6 +63,7 @@ DoD:
 - [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent.
 - [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`). Prometheus selbst läuft im observability-Profil (Tranche 2).
 - [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.2`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
+- [ ] **RAK-9-Seed-Skript** `scripts/seed-rak9.sh` (oder gleichwertiges `make seed-rak9`-Target) erzeugt reproduzierbar mindestens 50 Events in 5 Sessions an `/api/playback-events`. Nutzt `curl` gegen einen laufenden Compose-Stack mit `make dev-observability`; verschiedene `session_id`/`event_name`-Muster für Cardinality-Spot-Check. Voraussetzung für RAK-9-Smoke-Test (§4) und CI-Verifikation (sobald OE-6 entschieden); ohne dieses Skript bleibt RAK-9 von manueller Lastaufbereitung abhängig.
 
 ---
 

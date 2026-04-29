@@ -29,10 +29,26 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 | Tranche | Inhalt | Status |
 |---|---|---|
+| 0 | Vorgänger-Gate-Verifikation | ⬜ |
 | 1 | Player-SDK unter `packages/player-sdk` | ⬜ |
 | 2 | Dashboard unter `apps/dashboard` | ⬜ |
 | 3 | Compose-Lab-Erweiterung um den `dashboard`-Service | ⬜ |
 | 4 | Release-Akzeptanzkriterien `0.1.1` | ⬜ |
+
+---
+
+## 1a. Tranche 0 — Vorgänger-Gate-Verifikation
+
+Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Tranche muss `[x]` sein, bevor Tranche 1 beginnt.
+
+DoD:
+
+- [ ] `plan-0.1.0.md` Tranchen 0, 0a, 0b vollständig (`[x]`).
+- [ ] `plan-0.1.0.md` §5.1 (Backend-Erweiterung) abgeschlossen.
+- [ ] `plan-0.1.0.md` §5.2 (Compose-Lab Core) abgeschlossen.
+- [ ] `plan-0.1.0.md` §5.3 (Release-Akzeptanzkriterien `0.1.0` — RAK-1/3/4/6/8) abgeschlossen.
+- [ ] `plan-0.1.0.md` §5.4 (Übergreifende DoD `0.1.0`) abgeschlossen, insbesondere CI-Pflicht-Item.
+- [ ] `plan-0.1.0.md` Tranche 0c §4a.x: alle bis zum `0.1.1`-Start eingetragenen Items entweder `[x]` oder explizit als nicht-blockierend markiert.
 
 ---
 
