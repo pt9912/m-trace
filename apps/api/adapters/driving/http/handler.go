@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/example/m-trace/apps/api/hexagon/domain"
-	"github.com/example/m-trace/apps/api/hexagon/port/driving"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // MaxBodyBytes caps the request body at 256 KB

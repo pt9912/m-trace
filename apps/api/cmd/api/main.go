@@ -17,13 +17,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/example/m-trace/apps/api/adapters/driven/auth"
-	"github.com/example/m-trace/apps/api/adapters/driven/metrics"
-	"github.com/example/m-trace/apps/api/adapters/driven/persistence"
-	"github.com/example/m-trace/apps/api/adapters/driven/ratelimit"
-	"github.com/example/m-trace/apps/api/adapters/driven/telemetry"
-	apihttp "github.com/example/m-trace/apps/api/adapters/driving/http"
-	"github.com/example/m-trace/apps/api/hexagon/application"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
+	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
+	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 )
 
 const (

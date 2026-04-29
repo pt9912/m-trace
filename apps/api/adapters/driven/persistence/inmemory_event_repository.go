@@ -7,8 +7,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/example/m-trace/apps/api/hexagon/domain"
-	"github.com/example/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 // InMemoryEventRepository keeps accepted events in a slice. Safe for

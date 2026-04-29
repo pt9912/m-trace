@@ -7,7 +7,7 @@ package driven
 import (
 	"context"
 
-	"github.com/example/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
 // EventRepository persists accepted events. The spike uses an

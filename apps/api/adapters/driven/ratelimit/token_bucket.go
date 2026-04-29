@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/example/m-trace/apps/api/hexagon/domain"
-	"github.com/example/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 // TokenBucketRateLimiter enforces an event-rate budget per project.

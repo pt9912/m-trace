@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/example/m-trace/apps/api/adapters/driven/ratelimit"
-	"github.com/example/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
 func TestTokenBucket_AllowsUpToCapacity(t *testing.T) {

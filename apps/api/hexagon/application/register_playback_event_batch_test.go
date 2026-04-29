@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/example/m-trace/apps/api/hexagon/application"
-	"github.com/example/m-trace/apps/api/hexagon/domain"
-	"github.com/example/m-trace/apps/api/hexagon/port/driving"
+	"github.com/pt9912/m-trace/apps/api/hexagon/application"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // stubProjectResolver returns a single demo project for "demo-token",

@@ -3,7 +3,7 @@ package driven
 import (
 	"context"
 
-	"github.com/example/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
 // ProjectResolver looks up a project by its presented X-MTrace-Token.

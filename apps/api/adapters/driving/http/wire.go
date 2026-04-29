@@ -4,7 +4,7 @@
 // docs/spike/backend-api-contract.md §5.
 package http
 
-import "github.com/example/m-trace/apps/api/hexagon/port/driving"
+import "github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 
 // wireEvent is the JSON shape of a single event in the request body.
 // The use case never sees these tags; mapping happens in

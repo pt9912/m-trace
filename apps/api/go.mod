@@ -1,4 +1,4 @@
-module github.com/example/m-trace/apps/api
+module github.com/pt9912/m-trace/apps/api
 
 go 1.22
 

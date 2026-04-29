@@ -6,7 +6,7 @@ package metrics
 import (
 	"net/http"
 
-	"github.com/example/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

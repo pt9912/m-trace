@@ -6,8 +6,8 @@ package auth
 import (
 	"context"
 
-	"github.com/example/m-trace/apps/api/hexagon/domain"
-	"github.com/example/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 // StaticProjectResolver resolves a presented X-MTrace-Token to a

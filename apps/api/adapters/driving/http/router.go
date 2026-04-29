@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/example/m-trace/apps/api/hexagon/port/driving"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // NewRouter wires the three pflicht endpoints onto a single mux.

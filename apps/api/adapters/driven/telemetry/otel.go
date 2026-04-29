@@ -17,7 +17,7 @@ import (
 )
 
 // MeterName is the OTel scope used for spike instrumentation.
-const MeterName = "github.com/example/m-trace/apps/api"
+const MeterName = "github.com/pt9912/m-trace/apps/api"
 
 // Setup initializes a minimal OTel MeterProvider with a process-local
 // resource and registers it as the global provider. The provider is
