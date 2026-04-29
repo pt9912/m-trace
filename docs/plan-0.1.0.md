@@ -220,9 +220,9 @@ Code-Kommentare in `register_playback_event_batch.go` nutzen weiterhin die Spike
 
 DoD:
 
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go`: Step-Kommentare auf neue Numerierung 3..10 (Steps 3 ResolveByToken, 4 RateLimit, 5 SchemaVersion, 6 BatchEmpty, 7 BatchTooLarge, 8 EventFields, 9 TokenBinding, 10 PersistAccept) (`<dieser Commit>`).
-- [x] `apps/api/adapters/driving/http/handler.go`: Step-Kommentare 1+2 für Auth-Header und Body; Doc-Block auf Steps 3-10 im Use Case verweisen (`<dieser Commit>`).
-- [x] Hinweis auf alte Numerierung in `docs/architecture.md` §5.1 entfernen — bereits in einem früheren Edit erfolgt; aktueller Stand zeigt nur die Kontrakt-Numerierung 1..10 (`<dieser Commit>`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go`: Step-Kommentare auf neue Numerierung 3..10 (Steps 3 ResolveByToken, 4 RateLimit, 5 SchemaVersion, 6 BatchEmpty, 7 BatchTooLarge, 8 EventFields, 9 TokenBinding, 10 PersistAccept) (`dbdcb67`).
+- [x] `apps/api/adapters/driving/http/handler.go`: Step-Kommentare 1+2 für Auth-Header und Body; Doc-Block auf Steps 3-10 im Use Case verweisen (`dbdcb67`).
+- [x] Hinweis auf alte Numerierung in `docs/architecture.md` §5.1 entfernen — bereits in einem früheren Edit erfolgt; aktueller Stand zeigt nur die Kontrakt-Numerierung 1..10 (`dbdcb67`).
 
 ---
 
