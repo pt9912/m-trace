@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.1.2`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | 🟡 |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | 🟡 |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2` | 🟡 fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3` | 🟡 fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ⬜ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -283,6 +283,19 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.1` → `1.1.2` (`0d6ffae`).
 - [x] Lastenheft §7.9 Mindestmetriken-Tabelle: Wording für `mtrace_invalid_events_total` auf „Anzahl wegen Schema-/Validierungsfehlern (`400`/`422`) abgelehnter Events; Auth-Fehler (`401`) zählen nicht (harmonisiert mit API-Kontrakt §7 in Patch `1.1.2`)" — entfernt „Auth" aus dem Counter-Scope (`0d6ffae`).
 - [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.2` aktualisiert (`0d6ffae`).
+
+### 4a.6 Patch `1.1.3` — §12 MVP-Umfang nach Sub-Release-Split + Roadmap-Schritte 6–11 + MediaMTX-Link
+
+Aus Code-Review-Findings: nach der Sub-Release-Schneidung (Patch `1.1.0`) waren noch drei Stellen auf den ursprünglichen einzelnen `0.1.0`-Scope ausgerichtet — Lastenheft §12, Roadmap-Schritte 8–11, Roadmap-Schritt 6. Plus eine kleine MediaMTX-Bezeichnungs-Korrektur in `plan-0.1.1.md`.
+
+DoD:
+
+- [ ] Lastenheft Header: Version `1.1.2` → `1.1.3`.
+- [ ] Lastenheft §12.1: Header umformuliert auf „Muss-Anforderungen für die `0.1.x`-Phase (Gesamt-MVP)"; Hinweisblock ergänzt, der MVP-1..MVP-29 auf die Sub-Releases `0.1.0`/`0.1.1`/`0.1.2` verteilt analog zur RAK-Verteilung in §13.1–§13.3.
+- [ ] Roadmap §2 Schritt 6 enger gefasst: Beschreibung auf „Datenmodell, Wire-Format, Cardinality — kein Observability-Setup"; Verweis-IDs auf F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 (F-89/F-90/F-93/F-94 entfernt — gehören zu Roadmap §2 Schritt 11).
+- [ ] Roadmap §2 Schritte 8–11 Trigger an Sub-Release-Abhängigkeiten angeglichen: Schritt 8/9 „Nach `0.1.0`-Release" mit Verweis auf `plan-0.1.1.md`; Schritt 10 dreigeteilt (Core in `0.1.0`, dashboard in `0.1.1`, observability in `0.1.2`); Schritt 11 „Nach `0.1.1`-Release" mit Verweis auf `plan-0.1.2.md`. Schritt 9 Verweis-Range auf F-63..F-67 aktualisiert (war F-63..F-65, fehlten F-66/F-67 aus Patch der Dashboard-DoD).
+- [ ] `plan-0.1.1.md` §3 F-40-Item: MediaMTX-Link von Port `8888` (HLS) auf Port `9997` (API/Status) verlegt; „Web-UI"-Bezeichnung entfernt — MediaMTX hat keine native Web-UI.
+- [ ] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.3` aktualisiert.
 
 ---
 

@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).  
-> **Bezug**: [Lastenheft `1.1.2`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
+> **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
 > **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) (Backend Core + Demo-Lab — alle Tranchen 0..0c und §5.1–§5.4 müssen abgeschlossen sein, inklusive Release-Akzeptanzkriterien `0.1.0` (§5.3) und übergreifender DoD `0.1.0` (§5.4); insbesondere CI-Pflicht-Item).  
 > **Nachfolger**: [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
@@ -67,7 +67,7 @@ DoD:
 - [ ] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt.
 - [ ] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected`.
 - [ ] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht.
-- [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-Konsole. Ziele werden aus den Compose-Service-URLs abgeleitet (z. B. `http://localhost:3000` Grafana, `http://localhost:9090` Prometheus, `http://localhost:8888` MediaMTX-Web-UI). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
+- [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
 - [ ] API-Client mit typisierten Anfragen.
 - [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
 

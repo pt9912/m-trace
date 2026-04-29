@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace  
 **Dokumenttyp:** Lastenheft  
-**Version:** 1.1.2  
+**Version:** 1.1.3  
 **Status:** Verbindlich  
 **Lizenzziel:** Open Source, bevorzugt Apache-2.0 oder MIT  
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur  
@@ -1427,7 +1427,22 @@ MVP-Ziel:
 MediaMTX + hls.js Demo Route + Player Events + OTel-kompatibles Eventmodell + Dashboard-Anzeige
 ```
 
-Muss-Anforderungen für `0.1.0`:
+Muss-Anforderungen für die `0.1.x`-Phase (Gesamt-MVP). Die einzelnen
+Items werden mit Patch `1.1.0` auf die drei Sub-Releases verteilt
+(siehe §13.1–§13.3 für die RAK-Zuordnung):
+
+- `0.1.0` Backend Core + Demo-Lab — Pflicht: MVP-1, MVP-2, MVP-7
+  (Compose Core), MVP-8, MVP-9, MVP-11, MVP-16, MVP-17, MVP-18.
+  Nicht in `0.1.0`: MVP-3 (Dashboard), MVP-4 (Demo-Route), MVP-5
+  (Player-SDK), MVP-12..MVP-14 (Dashboard-Anzeigen), MVP-10/MVP-15
+  (Observability).
+- `0.1.1` Player-SDK + Dashboard — kommen MVP-3, MVP-4, MVP-5,
+  MVP-6, MVP-12, MVP-13, MVP-14 hinzu.
+- `0.1.2` Observability-Stack — kommen MVP-10, MVP-15
+  (Pflicht-Anteile, siehe §7.9 Hinweis aus Patch `1.1.1`/`1.1.2`)
+  hinzu; Soll-Anteile MVP-28, MVP-29 als observability-Profil.
+
+Muss-Anforderungen für die Gesamt-`0.1.x`-Phase:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
