@@ -60,7 +60,7 @@ weil dort kein ID-System existiert.
 | 2 | ✅ | Lastenheft auf `1.0.0` heben | Nach Schritt 1 | OE-2; OE-9; SP-41 |
 | 3 | ✅ | README Tech-Overview anpassen | Nach Schritt 2 | MVP-17; SP-41 |
 | 4 | ✅ | Phase-2-Risiken in `docs/risks-backlog.md` | Nach Schritt 3 | SP-41 |
-| 5 | ⬜ | `docs/architecture.md` schreiben | Vor `0.1.0`-DoD | AK-3, AK-10 |
+| 5 | ✅ | `docs/architecture.md` schreiben | Vor `0.1.0`-DoD | AK-3, AK-10 |
 | 6 | ⬜ | `docs/telemetry-model.md` schreiben | Vor `0.1.0`-DoD | F-89..F-94, F-106..F-115, AK-9 |
 | 7 | ⬜ | `docs/local-development.md` schreiben | Vor `0.1.0`-DoD | AK-1, AK-2 |
 | 8 | ⬜ | Dashboard-App (`apps/dashboard`) anlegen | Nach Schritt 1 | MVP-3; F-23..F-28 |
