@@ -51,7 +51,7 @@ DoD:
 
 ## 3. Tranche 2 — Dashboard (`apps/dashboard`)
 
-Bezug: MVP-3, F-23..F-28, F-35..F-40; RAK-2, RAK-7; OE-4 (Frontend-Styling) wird hier entschieden.
+Bezug: MVP-3, MVP-4, F-23..F-28, F-35..F-40; RAK-2, RAK-7; OE-4 (Frontend-Styling) wird hier entschieden.
 
 DoD:
 

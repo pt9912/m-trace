@@ -65,8 +65,8 @@ DoD:
 DoD:
 
 - [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` mit metrik-spezifischen Series-Queries:
-    - `curl 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`.
-    - Pro Mindestmetrik aus Lastenheft §7.9: `curl 'http://localhost:9090/api/v1/labels?match[]=mtrace_playback_events_total'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10.
+    - `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
+    - Pro Mindestmetrik aus Lastenheft §7.9: `curl -g 'http://localhost:9090/api/v1/labels?match[]=mtrace_playback_events_total'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10.
     - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
 - [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch, abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, `plan-0.1.1.md` §3). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
