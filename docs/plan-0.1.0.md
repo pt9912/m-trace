@@ -135,7 +135,7 @@ Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, Schema, Cardinali
 
 DoD:
 
-- [x] Skelett-Datei angelegt mit §0..§6-Sektionen und Bezug-Verweisen, alle Inhalts-Sections als „TODO"-Platzhalter (`<dieser Commit>`). Referenz-Anker für andere Plan-Dokumente (`plan-0.1.1.md` §2, `plan-0.1.2.md` §4) ist damit gesetzt; die Inhalts-Items unten bleiben offen.
+- [x] Skelett-Datei angelegt mit §0..§6-Sektionen und Bezug-Verweisen, alle Inhalts-Sections als „TODO"-Platzhalter (`c86e021`). Referenz-Anker für andere Plan-Dokumente (`plan-0.1.1.md` §2, `plan-0.1.2.md` §4) ist damit gesetzt; die Inhalts-Items unten bleiben offen.
 - [ ] OTel-Modell für Spans/Counter spezifizieren — Naming-Konvention, Resource-Attribute, Pflicht-Spans (Bezug **F-91, F-92**).
 - [ ] Cardinality- und Datenmodell-Regeln dokumentieren — verbotene Labels, Trennung Aggregat/Per-Session (Bezug **F-95..F-100** Lastenheft §7.10 sowie **F-101..F-105** als MVP-Variante).
 - [ ] Wire-Format für Player-Events spezifizieren — Pflichtfelder, Schema-Version, Versand-Pfad, SDK-Identifier (Bezug **F-106..F-115** Lastenheft §7.11.1–§7.11.3).
@@ -148,7 +148,7 @@ DoD:
 
 DoD:
 
-- [x] Skelett-Datei angelegt mit §0..§5-Sektionen und Bezug-Verweisen, alle Inhalts-Sections als „TODO"-Platzhalter (`<dieser Commit>`). Referenz-Anker für `plan-0.1.2.md` §4.1 (RAK-8-Refinement) ist damit gesetzt.
+- [x] Skelett-Datei angelegt mit §0..§5-Sektionen und Bezug-Verweisen, alle Inhalts-Sections als „TODO"-Platzhalter (`c86e021`). Referenz-Anker für `plan-0.1.2.md` §4.1 (RAK-8-Refinement) ist damit gesetzt.
 - [ ] Quickstart `make dev` dokumentieren (Bezug AK-1, AK-2).
 - [ ] Voraussetzungen pro Plattform (Linux/macOS/Windows-WSL).
 - [ ] Compose-Stack-Topologie dokumentieren.
