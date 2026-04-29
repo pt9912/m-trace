@@ -4,10 +4,16 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
+
+// SessionEndedEventName ist der Event-Name, der eine Session direkt
+// auf Ended schaltet (plan-0.1.0.md §5.1 Sub-Item 8;
+// telemetry-model.md §1.3).
+const SessionEndedEventName = "session_ended"
 
 // InMemorySessionRepository hält die bekannten Sessions in einer Map
 // session_id → StreamSession. Pro session_id wird die StartedAt vom
@@ -31,7 +37,9 @@ func NewInMemorySessionRepository() *InMemorySessionRepository {
 
 // UpsertFromEvents legt für unbekannte session_id eine neue
 // StreamSession an und aktualisiert für bekannte LastEventAt und
-// EventCount. Reihenfolge folgt der Slice-Reihenfolge.
+// EventCount. Reihenfolge folgt der Slice-Reihenfolge. Ein Event mit
+// event_name=session_ended schaltet die Session sofort auf Ended
+// (plan-0.1.0.md §5.1 Sub-Item 8).
 func (r *InMemorySessionRepository) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
 	if len(events) == 0 {
 		return nil
@@ -41,7 +49,7 @@ func (r *InMemorySessionRepository) UpsertFromEvents(_ context.Context, events [
 	for _, e := range events {
 		s, ok := r.sessions[e.SessionID]
 		if !ok {
-			r.sessions[e.SessionID] = domain.StreamSession{
+			s = domain.StreamSession{
 				ID:          e.SessionID,
 				ProjectID:   e.ProjectID,
 				State:       domain.SessionStateActive,
@@ -49,11 +57,40 @@ func (r *InMemorySessionRepository) UpsertFromEvents(_ context.Context, events [
 				LastEventAt: e.ServerReceivedAt,
 				EventCount:  1,
 			}
+		} else {
+			s.LastEventAt = e.ServerReceivedAt
+			s.EventCount++
+		}
+		if e.EventName == SessionEndedEventName && s.State != domain.SessionStateEnded {
+			s.State = domain.SessionStateEnded
+			endedAt := e.ServerReceivedAt
+			s.EndedAt = &endedAt
+		}
+		r.sessions[e.SessionID] = s
+	}
+	return nil
+}
+
+// Sweep wertet zeitbasierte Lifecycle-Übergänge aus (plan-0.1.0.md
+// §5.1 Sub-Item 8). Idempotent: bereits Ended-Sessions werden nicht
+// erneut angefasst.
+func (r *InMemorySessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for id, s := range r.sessions {
+		if s.State == domain.SessionStateEnded {
 			continue
 		}
-		s.LastEventAt = e.ServerReceivedAt
-		s.EventCount++
-		r.sessions[e.SessionID] = s
+		idle := now.Sub(s.LastEventAt)
+		if s.State == domain.SessionStateActive && idle > stalledAfter {
+			s.State = domain.SessionStateStalled
+		}
+		if s.State == domain.SessionStateStalled && idle > endedAfter {
+			s.State = domain.SessionStateEnded
+			endedAt := now
+			s.EndedAt = &endedAt
+		}
+		r.sessions[id] = s
 	}
 	return nil
 }

@@ -85,6 +85,7 @@ func main() {
 	}
 	logger.Info("process instance allocated", "process_instance_id", string(processID))
 	sessionsService := application.NewSessionsService(sessions, repo, processID)
+	sessionsSweeper := application.NewSessionsSweeper(sessions, time.Now, logger)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	router := apihttp.NewRouter(useCase, sessionsService, resolver, publisher.Handler(), tracer, logger)
@@ -100,6 +101,8 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	go sessionsSweeper.Run(ctx)
 
 	go func() {
 		logger.Info("server starting",

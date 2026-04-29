@@ -108,6 +108,10 @@ func (r *fakeSessionRepo) Get(_ context.Context, id string) (domain.StreamSessio
 	return s, nil
 }
 
+func (r *fakeSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Duration) error {
+	return nil
+}
+
 // fakeEventRepo implementiert driven.EventRepository für Tests.
 type fakeEventRepo struct {
 	events []domain.PlaybackEvent

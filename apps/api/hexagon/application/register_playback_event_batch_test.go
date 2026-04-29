@@ -58,7 +58,8 @@ func (s *stubRepo) Append(_ context.Context, events []domain.PlaybackEvent) erro
 }
 
 // stubSessionRepo zeichnet UpsertFromEvents-Aufrufe auf und kann eine
-// einmalige Failure simulieren.
+// einmalige Failure simulieren. List/Get/Sweep sind no-ops — der Use
+// Case in dieser Test-Suite ruft sie nicht.
 type stubSessionRepo struct {
 	upserts  [][]domain.PlaybackEvent
 	failNext bool
@@ -72,6 +73,18 @@ func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.Pl
 	dup := make([]domain.PlaybackEvent, len(events))
 	copy(dup, events)
 	s.upserts = append(s.upserts, dup)
+	return nil
+}
+
+func (s *stubSessionRepo) List(_ context.Context, _ driven.SessionListQuery) (driven.SessionPage, error) {
+	return driven.SessionPage{}, nil
+}
+
+func (s *stubSessionRepo) Get(_ context.Context, _ string) (domain.StreamSession, error) {
+	return domain.StreamSession{}, domain.ErrSessionNotFound
+}
+
+func (s *stubSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Duration) error {
 	return nil
 }
 

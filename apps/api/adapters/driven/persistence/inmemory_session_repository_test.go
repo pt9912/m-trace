@@ -148,3 +148,95 @@ func TestInMemorySessionRepository_Get_NotFound(t *testing.T) {
 		t.Errorf("expected ErrSessionNotFound, got %v", err)
 	}
 }
+
+// TestInMemorySessionRepository_Sweep_ActiveToStalled verifiziert den
+// ersten Lifecycle-Übergang (plan-0.1.0.md §5.1 Sub-Item 8): eine
+// Active-Session ohne Folge-Events kippt nach Ablauf des Stalled-
+// Schwellwerts auf Stalled.
+func TestInMemorySessionRepository_Sweep_ActiveToStalled(t *testing.T) {
+	t.Parallel()
+	repo := persistence.NewInMemorySessionRepository()
+	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+
+	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
+		SessionID:        "s1",
+		ProjectID:        "demo",
+		ServerReceivedAt: t0,
+	}}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	// Innerhalb des Stalled-Fensters → bleibt Active.
+	_ = repo.Sweep(context.Background(), t0.Add(30*time.Second), 60*time.Second, 5*time.Minute)
+	got, _ := repo.Get(context.Background(), "s1")
+	if got.State != domain.SessionStateActive {
+		t.Errorf("after 30s: state=%q want active", got.State)
+	}
+
+	// Jenseits Stalled-Fenster → Stalled.
+	_ = repo.Sweep(context.Background(), t0.Add(90*time.Second), 60*time.Second, 5*time.Minute)
+	got, _ = repo.Get(context.Background(), "s1")
+	if got.State != domain.SessionStateStalled {
+		t.Errorf("after 90s: state=%q want stalled", got.State)
+	}
+	if got.EndedAt != nil {
+		t.Errorf("EndedAt set on stalled (=%v); should still be nil", got.EndedAt)
+	}
+}
+
+// TestInMemorySessionRepository_Sweep_StalledToEnded verifiziert den
+// zweiten Lifecycle-Übergang plus Idempotenz (mehrere Sweeps nach
+// Ended ändern nichts mehr).
+func TestInMemorySessionRepository_Sweep_StalledToEnded(t *testing.T) {
+	t.Parallel()
+	repo := persistence.NewInMemorySessionRepository()
+	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
+		SessionID: "s1", ProjectID: "demo", ServerReceivedAt: t0,
+	}}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	end := t0.Add(10 * time.Minute)
+	_ = repo.Sweep(context.Background(), end, 60*time.Second, 5*time.Minute)
+	got, _ := repo.Get(context.Background(), "s1")
+	if got.State != domain.SessionStateEnded {
+		t.Errorf("expected ended, got %q", got.State)
+	}
+	if got.EndedAt == nil || !got.EndedAt.Equal(end) {
+		t.Errorf("EndedAt=%v want %v", got.EndedAt, end)
+	}
+
+	// Idempotent: zweiter Sweep ändert nichts.
+	originalEnded := *got.EndedAt
+	_ = repo.Sweep(context.Background(), end.Add(time.Hour), 60*time.Second, 5*time.Minute)
+	got, _ = repo.Get(context.Background(), "s1")
+	if got.EndedAt == nil || !got.EndedAt.Equal(originalEnded) {
+		t.Errorf("EndedAt mutated on second sweep: %v", got.EndedAt)
+	}
+}
+
+// TestInMemorySessionRepository_ExplicitSessionEndedEvent verifiziert,
+// dass ein Event mit event_name=session_ended die Session sofort auf
+// Ended schaltet und EndedAt=ServerReceivedAt setzt.
+func TestInMemorySessionRepository_ExplicitSessionEndedEvent(t *testing.T) {
+	t.Parallel()
+	repo := persistence.NewInMemorySessionRepository()
+	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+	end := t0.Add(time.Second)
+
+	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{
+		{EventName: "playback_started", SessionID: "s1", ProjectID: "demo", ServerReceivedAt: t0},
+		{EventName: "session_ended", SessionID: "s1", ProjectID: "demo", ServerReceivedAt: end},
+	}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	got, _ := repo.Get(context.Background(), "s1")
+	if got.State != domain.SessionStateEnded {
+		t.Errorf("expected ended, got %q", got.State)
+	}
+	if got.EndedAt == nil || !got.EndedAt.Equal(end) {
+		t.Errorf("EndedAt=%v want %v", got.EndedAt, end)
+	}
+}
