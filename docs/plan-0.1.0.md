@@ -194,6 +194,8 @@ DoD:
 
 Soll laut [API-Kontrakt §8](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`) und Architecture §5.3: OTel-Aufrufe aus dem Use Case laufen ausschließlich über einen frameworkneutralen Driven Port `Telemetry`; Request-Spans erzeugt der HTTP-Adapter direkt. `hexagon/`-Pakete dürfen kein OTel importieren.
 
+**Scope-Abgrenzung gegenüber `0.1.2` Observability-Stack**: §4.3 liefert die **API-seitige Telemetrie-Vorbereitung** in `apps/api` (Port + Adapter-Implementierung + Request-Spans + autoexport-Setup). Die **Observability-Stack-Komponenten** (Prometheus-Service, Grafana-Service, OTel-Collector-Service mit ihren Compose-/Konfig-Artefakten) sind explizit nicht hier, sondern in [`plan-0.1.2.md`](./plan-0.1.2.md). Die Vorziehung der API-seitigen Vorbereitung in `0.1.0` ist bewusst — ohne den Telemetry-Port wäre die Architektur in `0.1.0` instabil (Hexagon-Boundary-Verletzungen müssten erst nachträglich aufgeräumt werden), und der API-Kontrakt §8 verlangt „mindestens einen Counter oder Span" als Spike-Erbe.
+
 DoD:
 
 - [ ] Neuer Port `apps/api/hexagon/port/driven/telemetry.go` mit Interface `Telemetry { BatchReceived(ctx context.Context, size int) }`.
@@ -327,13 +329,14 @@ DoD:
         - **Dashboard-Lese-Pfad** `OPTIONS /api/stream-sessions`, `OPTIONS /api/stream-sessions/{id}`, `OPTIONS /api/health` — Bezug **NF-33 + NF-34 + NF-36** (NF-35 gilt explizit nur für den SDK-Telemetrie-Pfad, Lastenheft §7.11): analog, aber `Access-Control-Allow-Methods: GET, OPTIONS`. Origin nicht in der Union → `403`.
         - **Vary**-Header in jeder Antwort (Preflight wie eigentlicher Request): `Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers` — verhindert falsches Caching durch CDN/Proxy.
     - Echte-Request-Verhalten:
-        - **Player-SDK-Pfad** `POST /api/playback-events`: nach den bestehenden Use-Case-Validierungen (siehe API-Kontrakt §5) wird zusätzlich `Origin` gegen die Allowed-Origins des **konkreten Projects** (aufgelöst aus `X-MTrace-Token`) validiert. Mismatch → `403 Forbidden`. `Origin`-Header **fehlt** (CLI/curl/Lab-Flows): zulässig, kein 403 — der Pfad bleibt für `curl`-Smoke-Tests und Headless-Tests offen.
+        - **Player-SDK-Pfad** `POST /api/playback-events`: Origin-Validierung erfolgt **nach** Step 3 (Token-Auflösung) und **vor** Step 4 (Rate-Limit), damit ein Origin-Mismatch weder Rate-Limit-Tokens verbraucht noch Events persistiert noch `mtrace_playback_events_total` inkrementiert. Konkreter Ablauf: Step 3 löst das Project auf → Origin wird gegen die Allowed-Origins **dieses Projects** geprüft → Mismatch → `403 Forbidden` ohne Side-Effects. `Origin`-Header **fehlt** (CLI/curl/Lab-Flows): die Project-Bindung wird übersprungen, kein 403 — der Pfad bleibt für `curl`-Smoke-Tests und Headless-Tests offen.
         - **Dashboard-Lese-Pfad** (`GET ...`): keine Project-Token-Bindung (Lese-Pfad ist projektunabhängig im MVP); `Origin`-Validierung gegen globale Union genügt.
     - **NF-31 + NF-32** Hinweis im API-Kontrakt-/Telemetrie-Modell-Doku: SDK nutzt `credentials: "omit"`; keine Cookies werden gesetzt oder erwartet.
     - HTTP-Integrationstests verbindlich:
         1. Preflight `OPTIONS /api/playback-events` mit registriertem Origin → `204` mit konkretem `Access-Control-Allow-Origin: <origin>`, kein `*`.
         2. Preflight `OPTIONS /api/playback-events` mit unbekanntem Origin → `403`.
         3. `POST /api/playback-events` mit gültigem Project-A-Token, aber Origin aus Project-B-Allowlist → `403` (Project↔Origin-Mismatch).
+        3a. **Side-Effect-Test**: derselbe Project-↔-Origin-Mismatch-Request darf weder den `EventRepository` (kein `Append`) noch den `RateLimiter` (kein Token-Verbrauch) noch `mtrace_playback_events_total` berühren — Origin-Check liegt vor Step 4.
         4. `POST /api/playback-events` ohne `Origin`-Header (CLI/curl) → unverändert akzeptiert (kein `403`).
         5. Antworten enthalten `Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers`.
         6. Keine Antwort enthält `Access-Control-Allow-Origin: *`, sobald ein Project-Token im Spiel ist.

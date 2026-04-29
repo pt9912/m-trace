@@ -2,7 +2,7 @@
 
 > **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).  
 > **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).  
-> **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) (Backend Core + Demo-Lab — alle Tranchen 0..0c und §5.1–§5.4 müssen abgeschlossen sein, inklusive Release-Akzeptanzkriterien `0.1.0` (§5.3) und übergreifender DoD `0.1.0` (§5.4); insbesondere CI-Pflicht-Item).  
+> **Vorgänger**: [`plan-0.1.0.md`](./plan-0.1.0.md) — Tranchen 0, 0a, 0b müssen vollständig (`[x]`) sein; §5.1–§5.4 inklusive Release-Akzeptanzkriterien `0.1.0` (§5.3) und übergreifender DoD `0.1.0` (§5.4) abgeschlossen, insbesondere CI-Pflicht-Item. **Tranche 0c (Lastenheft-Patches) ist konstruktionsbedingt fortlaufend offen**; das Vorgänger-Gate verlangt nur, dass alle bis zum `0.1.1`-Start eingetragenen §4a.x-Items entweder `[x]` oder explizit als nicht-blockierend markiert sind — nicht den Abschluss der Tranche selbst.  
 > **Nachfolger**: [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -34,6 +34,16 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 Bezug: MVP-5, MVP-6, F-63..F-67; OE-8 (Paketnamen für npm) wird hier entschieden.
 
 DoD:
+
+**Workspace-Bootstrap** (Repo-weit, gemeinsame Voraussetzung mit Tranche 2 Dashboard):
+
+- [ ] Root-`package.json` mit Mono-Repo-Marker und Top-Level-Scripts (`build`, `test`, `lint`, ggf. `format`); kein eigener Source-Code-Inhalt.
+- [ ] `pnpm-workspace.yaml` mit `apps/*` und `packages/*` als Workspace-Globs (deckt `apps/dashboard` und `packages/player-sdk` ab).
+- [ ] `pnpm-lock.yaml` versioniert; `.npmrc` (Engine-Strict, falls nötig) und `.nvmrc` (Pinning der Node-Major-Version) im Repo-Root.
+- [ ] Top-Level-Scripts delegieren via `pnpm -r run <task>` an die Workspace-Pakete; `make` bleibt als Compose-/Lab-Wrapper unverändert.
+- [ ] Architecture §4.1 Mono-Repo-Layout reflektiert die neuen Wurzel-Dateien (Doku-Update gemeinsam mit dem Bootstrap-Commit).
+
+**Player-SDK** (`packages/player-sdk/`):
 
 - [ ] TypeScript-Package unter `packages/player-sdk/`.
 - [ ] **MVP-6** Pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony — leichte Adapter-Struktur laut Lastenheft §9.2, keine `hexagon/`-Pflicht-Aufteilung mit Domain/Application/Port. Verzeichnislayout analog `architecture.md` §4.1: `core/`, `adapters/hlsjs/`, `transport/`, `types/`.
