@@ -232,13 +232,15 @@ Verbindliche Regeln:
   `hexagon/`-Pakete dürfen **nicht** direkt OTel importieren.
   Spans am Request-Boundary darf der HTTP-Adapter direkt erzeugen.
 - Reader und Span-Exporter werden über
-  `go.opentelemetry.io/contrib/exporters/autoexport` aufgelöst.
-  Default ist silent (No-Op-Reader/-Exporter); OTLP-Anbindung
-  aktiviert sich automatisch, sobald die Standard-OTel-Env-Vars
-  gesetzt sind (`OTEL_EXPORTER_OTLP_ENDPOINT`,
-  `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_TRACES_EXPORTER`,
-  `OTEL_METRICS_EXPORTER`, …). Kein zusätzlicher Code-Pfad für
-  „Dev vs. Prod".
+  `go.opentelemetry.io/contrib/exporters/autoexport` aufgelöst,
+  jeweils mit explizitem No-Op-Fallback
+  (`autoexport.WithFallbackMetricReader` /
+  `autoexport.WithFallbackSpanExporter`) — sonst defaultet autoexport
+  auf OTLP, sobald die Env-Vars unset sind. Mit Fallback gilt:
+  ohne Env-Vars silent; mit `OTEL_TRACES_EXPORTER=otlp` /
+  `OTEL_METRICS_EXPORTER=otlp` (oder weiteren Standard-OTel-Env-Vars)
+  registriert autoexport den entsprechenden Exporter. Kein
+  zusätzlicher Code-Pfad für „Dev vs. Prod".
 - Konkrete Attribute und Resource-Konfiguration sind
   Implementierungs-Detail; bewertet wurde im Spike die **Ergonomie**
   der OTel-Integration im jeweiligen Stack (Bewertungsraster Spec §9).

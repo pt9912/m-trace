@@ -222,7 +222,7 @@ Alle anderen Pakete (`hexagon/`, `cmd/api/`, übrige Adapter) importieren weder 
 
 ## 4. Verzeichnis- und Modulstruktur
 
-### 4.1 Mono-Repo-Layout
+### 4.1 Zielstruktur Mono-Repo (`0.1.0`)
 
 ```text
 m-trace/
@@ -245,6 +245,8 @@ m-trace/
 ├── docs/
 └── docker-compose.yml               # Lokal-Lab
 ```
+
+Dies ist die Soll-Struktur für `0.1.0`; aktueller Implementierungsstand pro Verzeichnis steht in [`plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 1) und in der Roadmap §1.1.
 
 ### 4.2 Hexagon-Layout pro App (`apps/api/` exemplarisch)
 
@@ -342,9 +344,9 @@ Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contrac
 | Batch-Größe | > 100 Events | 422 | `mtrace_invalid_events_total` | Use Case Step 7 |
 | Event-Felder | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` | Use Case Step 8 |
 | Token-Bindung | `project_id` ≠ Token-Projekt | 401 | — | Use Case Step 9 |
-| Persistenz | Repository-Fehler | 500 | `mtrace_dropped_events_total` | Use Case Step 10 |
+| Persistenz | Repository-Fehler | 500 | — (kein Counter; Sichtbarkeit über HTTP-5xx-Histogramm und Logs) | Use Case Step 10 |
 
-`mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422` (laut [API-Kontrakt §7](./spike/backend-api-contract.md)) — der Wertbereich ist die Anzahl betroffener Events, nicht die Anzahl Batches. Auth-Fehler (HTTP-Header-Check, `ResolveByToken`, Token-Bindung) laufen nicht in den Counter. Bei leerem Batch (`events.length == 0`) bleibt der Counter folglich unverändert; die Ablehnung ist über HTTP-Status (`422`) und Access-Logs sichtbar.
+`mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422` (laut [API-Kontrakt §7](./spike/backend-api-contract.md)) — der Wertbereich ist die Anzahl betroffener Events, nicht die Anzahl Batches. Auth-Fehler (HTTP-Header-Check, `ResolveByToken`, Token-Bindung) laufen nicht in den Counter. Bei leerem Batch (`events.length == 0`) bleibt der Counter folglich unverändert; die Ablehnung ist über HTTP-Status (`422`) und Access-Logs sichtbar. Persistenz-Fehler (`500`) inkrementieren ebenfalls keinen Counter — `mtrace_dropped_events_total` ist laut Kontrakt §7 für **interne Backpressure-Drops** reserviert (z. B. ein zukünftiger Async-Channel mit überlaufendem Puffer), nicht für synchron-fehlgeschlagenes `Append`.
 
 ### 5.2 Metrics-Pfad
 
@@ -380,16 +382,31 @@ OTel-Telemetrie verläuft über zwei sich ergänzende Pfade — beide ohne OTel-
 
 **Initialisierung und Exporter-Default**:
 
-`adapters/driven/telemetry/Setup` registriert in `main.go` einen prozesslokalen `MeterProvider` und `TracerProvider` mit Service-Resource (`service.name`, `service.version`). Reader und Span-Exporter werden über `go.opentelemetry.io/contrib/exporters/autoexport` aufgelöst — damit reagieren beide Provider direkt auf die [Standard-OTel-Env-Vars](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) ohne separaten Code-Pfad:
+`adapters/driven/telemetry/Setup` registriert in `main.go` einen prozesslokalen `MeterProvider` und `TracerProvider` mit Service-Resource (`service.name`, `service.version`). Reader und Span-Exporter werden über `go.opentelemetry.io/contrib/exporters/autoexport` aufgelöst.
 
-| Env-Var (Beispiel) | Effekt |
+Der Soll-Default ist **silent**, weicht damit vom autoexport-Default ab: ohne Env-Vars defaulten `OTEL_TRACES_EXPORTER` und `OTEL_METRICS_EXPORTER` in autoexport auf `otlp` und nicht auf No-Op. Damit lokales Dev *ohne* OTel-Backend nicht standardmäßig OTLP-Verbindungsversuche unternimmt, ruft `Setup` autoexport mit explizitem No-Op-Fallback auf:
+
+```go
+reader, _ := autoexport.NewMetricReader(ctx,
+    autoexport.WithFallbackMetricReader(noopMetricReaderFactory),
+)
+exporter, _ := autoexport.NewSpanExporter(ctx,
+    autoexport.WithFallbackSpanExporter(noopSpanExporterFactory),
+)
+```
+
+Damit gilt für die [Standard-OTel-Env-Vars](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/):
+
+| Konfiguration | Effekt |
 |---|---|
-| keine | `autoexport` liefert No-Op-Reader und No-Op-Span-Exporter — Provider sind silent. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` | OTLP-Reader und OTLP-Span-Exporter (Default `grpc`) werden registriert. |
-| `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` | wechselt das Transport-Protokoll. |
-| `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` | erlauben gezielte Exporter-Wahl (z. B. `console` für Debug). |
+| keine Env-Vars | Fallback aktiv → No-Op-Reader und No-Op-Span-Exporter, Provider silent. |
+| `OTEL_TRACES_EXPORTER=otlp` und/oder `OTEL_METRICS_EXPORTER=otlp` | OTLP-Reader und/oder OTLP-Span-Exporter werden registriert. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT=…` | Endpoint für die OTLP-Variante. |
+| `OTEL_EXPORTER_OTLP_PROTOCOL=…` | Wahl des Transport-Protokolls (`grpc`, `http/protobuf`). Default-Protokoll richtet sich nach der eingebundenen `autoexport`-Modulversion. |
+| `OTEL_TRACES_EXPORTER=console` | Console-Exporter für Debug. |
+| `OTEL_TRACES_EXPORTER=none` (analog Metrics) | explizit kein Exporter — ist auch ohne Fallback silent. |
 
-Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die Env-Vars und brauchen keinen Code-Patch. `autoexport` ist die einzige zusätzliche OTel-Abhängigkeit, die das Soll vorsieht.
+Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die Env-Vars und brauchen keinen Code-Patch. `autoexport` ist die einzige zusätzliche OTel-Abhängigkeit, die das Soll vorsieht; die exakte autoexport-Version wird in `apps/api/go.mod` gepinnt.
 
 ---
 
@@ -398,7 +415,7 @@ Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die
 | Thema | Umsetzung | Bezug |
 |---|---|---|
 | Logging | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt | Lastenheft §10.1 |
-| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport`: silent ohne Env-Vars, OTLP sobald `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
+| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
 | Metriken | Prometheus über `/api/metrics`-Endpoint, nur Aggregate | Lastenheft §7.9, §7.10 |
 | Auth | Header `X-MTrace-Token`, Auflösung über `ProjectResolver` | Spike-Spec §6.4, Lastenheft §8.5 |
 | Rate Limiting | In-Memory Token-Bucket, 100 Events/s/Project | Spike-Spec §6.9 |
