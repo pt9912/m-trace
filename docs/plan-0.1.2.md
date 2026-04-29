@@ -38,16 +38,22 @@ Tempo bleibt explizit Nicht-MVP (MVP-22).
 
 ## 1a. Tranche 0 — Vorgänger-Gate-Verifikation
 
-Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Tranche muss `[x]` sein, bevor Tranche 1 beginnt.
+Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Gate ist in zwei Kategorien geteilt: **harte Voraussetzungen** (alle `[x]`) und **weiche Voraussetzungen** (offen erlaubt, wenn explizit als nicht-blockierend markiert). Tranche ist „erfüllt", wenn alle harten und alle blockierenden weichen Items `[x]` sind.
 
-DoD:
+DoD — **harte Voraussetzungen** (Pflicht `[x]` vor `0.1.2`-Start):
 
 - [ ] `plan-0.1.1.md` Tranche 1 (Player-SDK) abgeschlossen — alle DoD-Items `[x]`.
 - [ ] `plan-0.1.1.md` Tranche 2 (Dashboard) abgeschlossen.
 - [ ] `plan-0.1.1.md` Tranche 3 (Compose-Lab-Erweiterung um `dashboard`) abgeschlossen.
 - [ ] `plan-0.1.1.md` Tranche 4 (Release-Akzeptanzkriterien `0.1.1` — RAK-2, RAK-5, RAK-7) abgeschlossen.
 - [ ] `plan-0.1.0.md` Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) abgeschlossen — harte technische Voraussetzung für F-91.
-- [ ] `plan-0.1.0.md` Tranche 0c §4a.x: alle bis zum `0.1.2`-Start eingetragenen Items entweder `[x]` oder explizit als nicht-blockierend markiert.
+
+DoD — **weiche Voraussetzungen** (offen erlaubt, wenn nicht-blockierend):
+
+- [ ] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.2`-Start einzeln eingestuft: jedes offene Item ist entweder
+    - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.2`-Implementierung direkt betrifft), **oder**
+    - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.2)`-Vermerk im jeweiligen §4a.x-Eintrag.
+- [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem 0c-Item nachvollziehbar.
 
 ---
 
@@ -94,7 +100,11 @@ DoD:
     - Pro Mindestmetrik aus Lastenheft §7.9: `curl -g 'http://localhost:9090/api/v1/labels?match[]={__name__="mtrace_playback_events_total"}'` (analog für die übrigen) listet die tatsächlich verwendeten Labels — Spot-Check gegen die Cardinality-Regeln aus Lastenheft §7.10. `match[]` benötigt einen vollständigen Vektor-Selector (`{__name__="..."}`); der nackte Metrikname ist zwischen Prometheus-Versionen nicht zuverlässig akzeptiert.
     - Zusätzlich: `mtrace_playback_events_total` muss einen Wert > 0 haben (`curl 'http://localhost:9090/api/v1/query?query=mtrace_playback_events_total'`); diente als Sanity-Check, dass der Counter überhaupt aktiv inkrementiert wurde.
     - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
-- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar — entweder als OTel-Span-Struktur in `apps/api` (mindestens ein Span pro Batch, abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`) oder über die eingebaute Session-/Trace-Ansicht im Dashboard (MVP-14, `plan-0.1.1.md` §3). Tempo bleibt **explizit Nicht-MVP** (MVP-22).
+- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. Mindestens **eine** der beiden Varianten muss reproduzierbar prüfbar sein:
+    - **Variante A — OTel-Spans im Backend**: `apps/api` erzeugt mindestens einen Request-Span pro `POST /api/playback-events` (abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`). Verifikation: mit aktivem `observability`-Profil (oder isoliert mit `OTEL_TRACES_EXPORTER=console`) muss der Span im OTel-Collector-Log oder Jaeger-Bonus-Backend abrufbar sein. Konkret prüfbar: Aufruf von `seed-rak9.sh` plus `docker compose logs otel-collector | grep 'POST /api/playback-events'` muss mindestens einen Span-Event-Eintrag liefern. Bei rein-Console-Variante: `docker compose logs api | grep '"name":"http.handler POST'`.
+    - **Variante B — Dashboard-Trace-Ansicht**: die eingebaute Session-/Trace-Ansicht aus `plan-0.1.1.md` §3 (MVP-14) zeigt für eine über `seed-rak9.sh` erzeugte Session eine Event-Timeline mit ≥ 5 Events; das gilt als erfüllter „exemplarisch sichtbar"-Pfad und braucht kein Observability-Profile.
+    - Welche Variante gewählt wird, ist im RAK-10-Smoke-Test-Commit zu dokumentieren; eine reine „beides möglich"-Aussage ohne konkreten Nachweis erfüllt RAK-10 nicht.
+    - Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
 ### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)
 

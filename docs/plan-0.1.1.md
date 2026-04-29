@@ -39,16 +39,22 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 ## 1a. Tranche 0 — Vorgänger-Gate-Verifikation
 
-Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Tranche muss `[x]` sein, bevor Tranche 1 beginnt.
+Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-Items. Gate ist in zwei Kategorien geteilt: **harte Voraussetzungen** (alle `[x]`) und **weiche Voraussetzungen** (offen erlaubt, wenn explizit als nicht-blockierend markiert). Tranche ist „erfüllt", wenn alle harten und alle blockierenden weichen Items `[x]` sind.
 
-DoD:
+DoD — **harte Voraussetzungen** (Pflicht `[x]` vor `0.1.1`-Start):
 
 - [ ] `plan-0.1.0.md` Tranchen 0, 0a, 0b vollständig (`[x]`).
 - [ ] `plan-0.1.0.md` §5.1 (Backend-Erweiterung) abgeschlossen.
 - [ ] `plan-0.1.0.md` §5.2 (Compose-Lab Core) abgeschlossen.
 - [ ] `plan-0.1.0.md` §5.3 (Release-Akzeptanzkriterien `0.1.0` — RAK-1/3/4/6/8) abgeschlossen.
 - [ ] `plan-0.1.0.md` §5.4 (Übergreifende DoD `0.1.0`) abgeschlossen, insbesondere CI-Pflicht-Item.
-- [ ] `plan-0.1.0.md` Tranche 0c §4a.x: alle bis zum `0.1.1`-Start eingetragenen Items entweder `[x]` oder explizit als nicht-blockierend markiert.
+
+DoD — **weiche Voraussetzungen** (offen erlaubt, wenn nicht-blockierend; Tranche-0c-Patches sind konstruktionsbedingt fortlaufend):
+
+- [ ] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.1`-Start einzeln eingestuft: jedes offene Item ist entweder
+    - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.1`-Implementierung direkt betrifft), **oder**
+    - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag (z. B. Wording-Schärfungen, die `0.1.1`-Code nicht beeinflussen).
+- [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem 0c-Item nachvollziehbar (Commit-Body listet die §4a.x-Nummern und ihren Status).
 
 ---
 
