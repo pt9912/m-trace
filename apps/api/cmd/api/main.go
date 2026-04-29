@@ -56,6 +56,7 @@ func main() {
 	}
 
 	repo := persistence.NewInMemoryEventRepository()
+	sessions := persistence.NewInMemorySessionRepository()
 	resolver := auth.NewStaticProjectResolver(map[string]string{
 		"demo": "demo-token",
 	})
@@ -65,7 +66,7 @@ func main() {
 	sequencer := persistence.NewInMemoryIngestSequencer()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, publisher, otelTelemetry, analyzer, sequencer, time.Now,
+		resolver, limiter, repo, sessions, publisher, otelTelemetry, analyzer, sequencer, time.Now,
 	)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)

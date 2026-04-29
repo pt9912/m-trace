@@ -47,6 +47,24 @@ func (s *stubRepo) Append(_ context.Context, events []domain.PlaybackEvent) erro
 	return nil
 }
 
+// stubSessionRepo zeichnet UpsertFromEvents-Aufrufe auf und kann eine
+// einmalige Failure simulieren.
+type stubSessionRepo struct {
+	upserts  [][]domain.PlaybackEvent
+	failNext bool
+}
+
+func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
+	if s.failNext {
+		s.failNext = false
+		return errors.New("session repo failure")
+	}
+	dup := make([]domain.PlaybackEvent, len(events))
+	copy(dup, events)
+	s.upserts = append(s.upserts, dup)
+	return nil
+}
+
 type spyMetrics struct {
 	accepted, invalid, rateLimited, dropped int
 }
@@ -110,23 +128,24 @@ func validBatch() driving.BatchInput {
 	}
 }
 
-func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer, *stubSequencer) {
+func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *stubSessionRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer, *stubSequencer) {
 	limiter := &stubLimiter{}
 	repo := &stubRepo{}
+	sessions := &stubSessionRepo{}
 	metrics := &spyMetrics{}
 	telemetry := &stubTelemetry{}
 	analyzer := &stubAnalyzer{}
 	sequencer := &stubSequencer{}
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		stubProjectResolver{}, limiter, repo, metrics, telemetry, analyzer, sequencer,
+		stubProjectResolver{}, limiter, repo, sessions, metrics, telemetry, analyzer, sequencer,
 		func() time.Time { return time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC) },
 	)
-	return uc, limiter, repo, metrics, telemetry, analyzer, sequencer
+	return uc, limiter, repo, sessions, metrics, telemetry, analyzer, sequencer
 }
 
 func TestHappyPath(t *testing.T) {
 	t.Parallel()
-	uc, _, repo, metrics, telemetry, analyzer, _ := newUseCase()
+	uc, _, repo, sessions, metrics, telemetry, analyzer, _ := newUseCase()
 	res, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -155,6 +174,13 @@ func TestHappyPath(t *testing.T) {
 	if got := repo.appended[0].IngestSequence; got != 1 {
 		t.Errorf("expected IngestSequence=1 for first event, got %d", got)
 	}
+	// SessionRepository: ein Upsert pro Batch.
+	if got := len(sessions.upserts); got != 1 {
+		t.Errorf("expected 1 SessionRepository.UpsertFromEvents call, got %d", got)
+	}
+	if got := len(sessions.upserts[0]); got != 1 {
+		t.Errorf("expected upsert with 1 event, got %d", got)
+	}
 }
 
 // TestIngestSequenceMonotonic verifiziert, dass mehrere Events einer
@@ -162,7 +188,7 @@ func TestHappyPath(t *testing.T) {
 // plan-0.1.0.md §5.1: "monoton steigender Counter pro apps/api-Prozess".
 func TestIngestSequenceMonotonic(t *testing.T) {
 	t.Parallel()
-	uc, _, repo, _, _, _, _ := newUseCase()
+	uc, _, repo, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	template := in.Events[0]
 	in.Events = []driving.EventInput{template, template, template}
@@ -184,7 +210,7 @@ func TestIngestSequenceMonotonic(t *testing.T) {
 // nicht validated — siehe Telemetry-Port-Doc).
 func TestTelemetryReceivedBeforeAuth(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, telemetry, _, _ := newUseCase()
+	uc, _, _, _, _, telemetry, _, _ := newUseCase()
 	in := validBatch()
 	in.AuthToken = "wrong-token"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -198,7 +224,7 @@ func TestTelemetryReceivedBeforeAuth(t *testing.T) {
 
 func TestUnauthorizedToken(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _, _ := newUseCase()
+	uc, _, _, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.AuthToken = "wrong-token"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -209,7 +235,7 @@ func TestUnauthorizedToken(t *testing.T) {
 
 func TestSchemaVersionMismatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _, _ := newUseCase()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	in.SchemaVersion = "2.0"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -223,7 +249,7 @@ func TestSchemaVersionMismatch(t *testing.T) {
 
 func TestEmptyBatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _, _ := newUseCase()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events = nil
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -239,7 +265,7 @@ func TestEmptyBatch(t *testing.T) {
 
 func TestBatchTooLarge(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _, _ := newUseCase()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	template := in.Events[0]
 	in.Events = make([]driving.EventInput, application.MaxBatchSize+1)
@@ -257,7 +283,7 @@ func TestBatchTooLarge(t *testing.T) {
 
 func TestInvalidEventMissingField(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _, _ := newUseCase()
+	uc, _, _, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events[0].EventName = ""
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -268,7 +294,7 @@ func TestInvalidEventMissingField(t *testing.T) {
 
 func TestInvalidEventBadTimestamp(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _, _ := newUseCase()
+	uc, _, _, _, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events[0].ClientTimestamp = "not-a-timestamp"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -279,7 +305,7 @@ func TestInvalidEventBadTimestamp(t *testing.T) {
 
 func TestProjectIDTokenMismatch(t *testing.T) {
 	t.Parallel()
-	uc, _, _, metrics, _, _, _ := newUseCase()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events[0].ProjectID = "other-project"
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
@@ -294,7 +320,7 @@ func TestProjectIDTokenMismatch(t *testing.T) {
 
 func TestRateLimited(t *testing.T) {
 	t.Parallel()
-	uc, limiter, _, metrics, _, _, _ := newUseCase()
+	uc, limiter, _, _, metrics, _, _, _ := newUseCase()
 	limiter.deny = true
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
 	if !errors.Is(err, domain.ErrRateLimited) {
@@ -307,11 +333,16 @@ func TestRateLimited(t *testing.T) {
 
 func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	t.Parallel()
-	uc, _, repo, metrics, _, _, _ := newUseCase()
+	uc, _, repo, sessions, metrics, _, _, _ := newUseCase()
 	repo.failNext = true
 	_, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
 	if err == nil {
 		t.Fatal("expected an error")
+	}
+	// Session-Upsert läuft erst nach erfolgreichem Append; bei
+	// Repository-Fehler darf die Sessions-Sicht nicht divergieren.
+	if got := len(sessions.upserts); got != 0 {
+		t.Errorf("expected 0 SessionRepository.UpsertFromEvents calls on append failure, got %d", got)
 	}
 	// Synchron fehlgeschlagenes Append ist kein Backpressure-Drop;
 	// dropped_events bleibt unverändert (API-Kontrakt §7,

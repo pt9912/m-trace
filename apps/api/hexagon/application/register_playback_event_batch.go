@@ -24,14 +24,15 @@ const MaxBatchSize = 100
 // RegisterPlaybackEventBatchUseCase validates and persists a batch of
 // player events. It implements driving.PlaybackEventInbound.
 type RegisterPlaybackEventBatchUseCase struct {
-	projects   driven.ProjectResolver
-	limiter    driven.RateLimiter
-	events     driven.EventRepository
-	metrics    driven.MetricsPublisher
-	telemetry  driven.Telemetry
-	analyzer   driven.StreamAnalyzer
-	sequencer  driven.IngestSequencer
-	now        func() time.Time
+	projects  driven.ProjectResolver
+	limiter   driven.RateLimiter
+	events    driven.EventRepository
+	sessions  driven.SessionRepository
+	metrics   driven.MetricsPublisher
+	telemetry driven.Telemetry
+	analyzer  driven.StreamAnalyzer
+	sequencer driven.IngestSequencer
+	now       func() time.Time
 }
 
 // NewRegisterPlaybackEventBatchUseCase wires the use case with its
@@ -40,11 +41,14 @@ type RegisterPlaybackEventBatchUseCase struct {
 // der Slot wird gesetzt, AnalyzeBatch jedoch erst ab 0.3.0 produktiv
 // aufgerufen; bis dahin trägt main.go einen NoopStreamAnalyzer ein.
 // sequencer liefert die serverseitige ingest_sequence pro Event vor
-// dem Append (plan-0.1.0.md §5.1).
+// dem Append (plan-0.1.0.md §5.1). sessions hält den aggregierten
+// Session-State, der nach jedem akzeptierten Batch via
+// UpsertFromEvents fortgeschrieben wird.
 func NewRegisterPlaybackEventBatchUseCase(
 	projects driven.ProjectResolver,
 	limiter driven.RateLimiter,
 	events driven.EventRepository,
+	sessions driven.SessionRepository,
 	metrics driven.MetricsPublisher,
 	telemetry driven.Telemetry,
 	analyzer driven.StreamAnalyzer,
@@ -58,6 +62,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 		projects:  projects,
 		limiter:   limiter,
 		events:    events,
+		sessions:  sessions,
 		metrics:   metrics,
 		telemetry: telemetry,
 		analyzer:  analyzer,
@@ -155,8 +160,14 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 
 	// Step 10 — persist + accept. Synchron fehlgeschlagenes Append ist
 	// kein Backpressure-Drop und inkrementiert dropped_events nicht;
-	// Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs.
+	// Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs. Session-
+	// Aggregation läuft erst nach erfolgreichem Append, damit die
+	// Sessions-Sicht nicht mit Events divergiert, die der Repository-
+	// Append nicht akzeptiert hat.
 	if err := u.events.Append(ctx, parsed); err != nil {
+		return driving.BatchResult{}, err
+	}
+	if err := u.sessions.UpsertFromEvents(ctx, parsed); err != nil {
 		return driving.BatchResult{}, err
 	}
 
