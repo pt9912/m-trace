@@ -198,21 +198,22 @@ Soll laut [API-Kontrakt §8](./spike/backend-api-contract.md) (präzisiert in Co
 
 DoD:
 
-- [ ] Neuer Port `apps/api/hexagon/port/driven/telemetry.go` mit Interface `Telemetry { BatchReceived(ctx context.Context, size int) }`.
-- [ ] Use-Case-Konstruktor `NewRegisterPlaybackEventBatchUseCase` um `telemetry driven.Telemetry`-Parameter erweitert; Aufruf `u.telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt.
+- [x] Neuer Port `apps/api/hexagon/port/driven/telemetry.go` mit Interface `Telemetry { BatchReceived(ctx context.Context, size int) }` (`51b3812`).
+- [x] Use-Case-Konstruktor `NewRegisterPlaybackEventBatchUseCase` um `telemetry driven.Telemetry`-Parameter erweitert; Aufruf `u.telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt — vor Auth, damit auch fehlgeschlagene Auth-Requests im received-Counter erscheinen (`51b3812`).
 - [x] Boundary-Test-Skript `apps/api/scripts/check-architecture.sh` (per `make arch-check` aufrufbar) prüft, dass `hexagon/` keine direkten Imports auf Adapter, OTel, Prometheus, `database/sql` oder `net/http` enthält und die Schichtengrenzen domain → application → port respektiert sind. Aktueller Code besteht den Test (`5784f6e`).
 - [ ] Boundary-Test in CI eingebunden, sobald OE-6 entschieden ist.
-- [ ] `apps/api/hexagon/`-Pakete importieren weiterhin **kein** OTel — per Boundary-Test verifiziert.
-- [ ] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received` (Punkt-Notation laut OTel-Semconv); Attribut `batch.size`. **Naming-Translation**: das OTel→Prometheus-Mapping ersetzt `.` durch `_`, daher erscheint der Counter in Prometheus als `mtrace_api_batches_received` (vom OTLP-Exporter automatisch konvertiert). Smoke-Test-Regex `^mtrace_.+` (Plan `0.1.2` §4) deckt beide Namen ab — den translated Counter sowie die direkten Prometheus-Counter aus `adapters/driven/metrics`. Dokumentation in `docs/telemetry-model.md` §2 erfasst diese Translation explizit.
-- [ ] `apps/api/cmd/api/main.go` verdrahtet die `OTelTelemetry`-Implementierung in den Use Case.
-- [ ] HTTP-Adapter `apps/api/adapters/driving/http/handler.go`: Request-Span via `otel.Tracer` um den Use-Case-Aufruf; Span-Name `http.handler POST /api/playback-events` o. ä.; Attribute für Status-Code und (bei Erfolg) `batch.size`.
-- [ ] `Setup` in `adapters/driven/telemetry`: `MeterProvider` und `TracerProvider` registrieren Reader/Span-Exporter über `go.opentelemetry.io/contrib/exporters/autoexport`. Damit antwortet die Konfiguration auf die Standard-OTel-Env-Vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`).
-- [ ] **Autoexport-Modul-Pin festlegen** als Voraussetzung der nachfolgenden DoD-Items. Aktuell verfügbare Variante: `go.opentelemetry.io/contrib/exporters/autoexport@v0.49.0` oder neuer (frühere Versionen kennen `WithFallback*` nicht). Im Bootstrap-Commit zu §4.3 wird die konkret gewählte Version in `apps/api/go.mod` gepinnt; Plan referenziert die Version dann explizit.
-- [ ] Setup ruft autoexport mit explizitem **No-Op-Fallback** auf (`autoexport.WithFallbackMetricReader` / `autoexport.WithFallbackSpanExporter` — beide ab `v0.49.0` verfügbar) — sonst defaultet autoexport ohne Env-Vars auf OTLP, was lokale Dev-Setups versuchen lässt, gegen einen nicht vorhandenen Collector zu pushen. Mit Fallback bleibt der Provider ohne Env-Vars silent.
-- [ ] `autoexport`-Modul-Abhängigkeit in `apps/api/go.mod` mit der gepinnten Version ergänzt; Default-Protokoll für OTLP (`grpc` vs `http/protobuf`) variiert zwischen autoexport-Versionen — der Pin macht das Verhalten reproduzierbar.
-- [ ] Unit-Test `RegisterPlaybackEventBatchTest`: Telemetry-Stub zählt `BatchReceived`-Aufrufe.
-- [ ] Adapter-Test `OTelTelemetryTest`: nach N `BatchReceived`-Aufrufen liefert ein `metric.ManualReader` Counter-Wert N (oder die Standard-OTel-Test-Mechanik).
-- [ ] Docker-Targets `test` und `lint` grün.
+- [x] `apps/api/hexagon/`-Pakete importieren weiterhin **kein** OTel — per Boundary-Test verifiziert (`make arch-check` grün auf `51b3812`).
+- [x] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received` (Punkt-Notation laut OTel-Semconv); Attribut `batch.size`. **Naming-Translation**: das OTel→Prometheus-Mapping ersetzt `.` durch `_`, daher erscheint der Counter in Prometheus als `mtrace_api_batches_received` (vom OTLP-Exporter automatisch konvertiert). Smoke-Test-Regex `^mtrace_.+` (Plan `0.1.2` §4) deckt beide Namen ab — den translated Counter sowie die direkten Prometheus-Counter aus `adapters/driven/metrics`. Dokumentation in `docs/telemetry-model.md` §2 erfasst diese Translation explizit (`51b3812`).
+- [x] `apps/api/cmd/api/main.go` verdrahtet die `OTelTelemetry`-Implementierung in den Use Case (`51b3812`).
+- [x] HTTP-Adapter `apps/api/adapters/driving/http/handler.go`: Request-Span via `otel.Tracer` um den Use-Case-Aufruf; Span-Name `http.handler POST /api/playback-events`; Attribute `http.method`, `http.route`, `http.status_code`, `batch.size` (sobald JSON geparst), `batch.outcome` (`51b3812`).
+- [x] `Setup` in `adapters/driven/telemetry`: `MeterProvider` und `TracerProvider` registrieren Reader/Span-Exporter über `go.opentelemetry.io/contrib/exporters/autoexport`. Damit antwortet die Konfiguration auf die Standard-OTel-Env-Vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`) (`51b3812`).
+- [x] **Autoexport-Modul-Pin** festgelegt: `go.opentelemetry.io/contrib/exporters/autoexport v0.57.0` (kompatibel mit OTel SDK `v1.32.0`, `WithFallback*` verfügbar) — gepinnt in `apps/api/go.mod` (`51b3812`).
+- [x] Setup ruft autoexport mit explizitem **No-Op-Fallback** auf (`autoexport.WithFallbackMetricReader` mit `ManualReader`, `autoexport.WithFallbackSpanExporter` mit lokalem `noopSpanExporter`); ohne `OTEL_*`-Env-Vars bleibt der Provider silent (`51b3812`).
+- [x] `autoexport`-Modul-Abhängigkeit in `apps/api/go.mod`/`go.sum` mit der gepinnten Version ergänzt; `make test` und `make lint` grün auf der frischen Module-Resolution (`51b3812`).
+- [x] Unit-Test `register_playback_event_batch_test.go`: Telemetry-Stub zählt `BatchReceived`-Aufrufe; `TestTelemetryReceivedBeforeAuth` verifiziert Auth-Reject-Pfad (`51b3812`).
+- [x] Adapter-Test `adapters/driven/telemetry/otel_test.go`: nach N `BatchReceived`-Aufrufen liefert ein `sdkmetric.ManualReader` einen Counter mit Wert 1 pro `batch.size`-Attribut-Bucket (`51b3812`).
+- [x] Span-Test `adapters/driving/http/span_test.go`: `tracetest.SpanRecorder` verifiziert Span-Name, `http.method`/`http.route`/`http.status_code`/`batch.size`/`batch.outcome`-Attribute auf 202- und 401-Pfaden (`51b3812`).
+- [x] Docker-Targets `test`, `lint` und `arch-check` grün (`51b3812`).
 
 ### 4.4 Code-Step-Numbering an Kontrakt anpassen
 
