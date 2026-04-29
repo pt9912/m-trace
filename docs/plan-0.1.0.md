@@ -182,13 +182,13 @@ Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Co
 
 DoD:
 
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Token-Bindung-Branch: `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 9; im Code aktuell als Step 7 kommentiert (siehe §4.4 für die Numerierungs-Sync) (`<dieser Commit>`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Batch-leer-Branch: `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op. *Step-Mapping*: Kontrakt §5 Step 6; im Code aktuell der erste `if len(in.Events) == 0`-Branch innerhalb des kombinierten Code-Step 5 (Batch shape) (`<dieser Commit>`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Persistenz-Branch: `u.metrics.DroppedEvents(len(parsed))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 10 (Persist) bei Repository-Fehler; im Code aktuell als Step 8 (`<dieser Commit>`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei `project_id`/Token-Mismatch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird (`<dieser Commit>`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei leerem Batch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird (`<dieser Commit>`).
-- [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei Repository-Fehler (Append → Error) verifiziert, dass `DroppedEvents` **nicht** inkrementiert wird; Use Case gibt den Fehler zurück, HTTP-Adapter liefert `500` (`<dieser Commit>`).
-- [x] Docker-Targets `test` und `lint` grün (`<dieser Commit>`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Token-Bindung-Branch: `u.metrics.InvalidEvents(len(in.Events))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 9; im Code aktuell als Step 7 kommentiert (siehe §4.4 für die Numerierungs-Sync) (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Batch-leer-Branch: `u.metrics.InvalidEvents(0)`-Aufruf entfernen — Counter um 0 zu erhöhen ist ein No-Op. *Step-Mapping*: Kontrakt §5 Step 6; im Code aktuell der erste `if len(in.Events) == 0`-Branch innerhalb des kombinierten Code-Step 5 (Batch shape) (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch.go` Persistenz-Branch: `u.metrics.DroppedEvents(len(parsed))`-Aufruf entfernen. *Step-Mapping*: Kontrakt §5 Step 10 (Persist) bei Repository-Fehler; im Code aktuell als Step 8 (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei `project_id`/Token-Mismatch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei leerem Batch verifiziert, dass `InvalidEvents` **nicht** inkrementiert wird (`372a6d4`).
+- [x] `apps/api/hexagon/application/register_playback_event_batch_test.go`: Unit-Test bei Repository-Fehler (Append → Error) verifiziert, dass `DroppedEvents` **nicht** inkrementiert wird; Use Case gibt den Fehler zurück, HTTP-Adapter liefert `500` (`372a6d4`).
+- [x] Docker-Targets `test` und `lint` grün (`372a6d4`).
 
 ### 4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span (Mittel-Finding)
 
