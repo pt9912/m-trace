@@ -113,7 +113,7 @@ flowchart TB
         InPort["Driving Port<br/>PlaybackEventInbound"]
         UseCase["Application<br/>RegisterPlaybackEventBatch"]
         Domain["Domain<br/>PlaybackEvent, StreamSession,<br/>Project, ProjectToken"]
-        OutPorts["Driven Ports<br/>EventRepository, ProjectResolver,<br/>RateLimiter, MetricsPublisher"]
+        OutPorts["Driven Ports<br/>EventRepository, ProjectResolver,<br/>RateLimiter, MetricsPublisher,<br/>Telemetry"]
 
         InPort --> UseCase
         UseCase --> Domain
@@ -125,7 +125,7 @@ flowchart TB
         Auth["auth<br/>StaticProjectResolver"]
         Rate["ratelimit<br/>TokenBucket"]
         Metrics["metrics<br/>PrometheusPublisher"]
-        Telemetry["telemetry<br/>OTel-SDK Setup"]
+        Telemetry["telemetry<br/>OTel-Adapter"]
     end
 
     HTTP --> InPort
@@ -133,10 +133,10 @@ flowchart TB
     OutPorts --> Auth
     OutPorts --> Rate
     OutPorts --> Metrics
-    UseCase -.OTel-Counter.-> Telemetry
+    OutPorts --> Telemetry
 ```
 
-Die OTel-Linie ist gestrichelt, weil sie keinen fachlichen Adapter-Vertrag (Port) ist, sondern Querschnitt: der Use Case erzeugt mindestens einen Counter über die Meter-API von `adapters/driven/telemetry`. Tracing bleibt bewusst portfrei, damit die Domain nicht von OTel-Typen abhängt.
+Telemetrie ist konsequent als Driven Port modelliert (`Telemetry`), nicht als Querschnitt-Spezialfall. Damit importiert `hexagon/` keinen OTel-Code; die OTel-Bibliothek lebt ausschließlich im Adapter `adapters/driven/telemetry`. Request-Spans am HTTP-Boundary erzeugt zusätzlich der `adapters/driving/http`-Adapter direkt — siehe §5.3.
 
 Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/` bzw. `adapters/driving/` und `adapters/driven/`. Lastenheft §7.2 schreibt den Stil mit `port/in/`, `port/out/`, `adapters/in/`, `adapters/out/` als Standardstruktur — beide Konventionen sind in der Hexagon-Literatur gleichwertig; m-trace folgt der `driving/driven`-Variante, weil sie die Aufrufrichtung sprachlich klarer markiert.
 
@@ -148,8 +148,8 @@ Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/
 |---|---|---|
 | `hexagon/domain/` | `PlaybackEvent`, `StreamSession`, `Project`, `ProjectToken`, Domain-Errors | keine HTTP-, JSON-, Prometheus-, OTel-, Persistenz-Imports |
 | `hexagon/port/driving/` | `PlaybackEventInbound` (Use-Case-Eingang) und Wire-format-neutrale DTOs (`BatchInput`, `EventInput`, `SDKInput`, `BatchResult`) | keine Imports von `adapters/*`; DTOs trennen Domain von Wire-Format |
-| `hexagon/port/driven/` | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher` | reine Schnittstellen; Implementierungen in `adapters/driven/*` |
-| `hexagon/application/` | `RegisterPlaybackEventBatch` Use Case | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken in fester Reihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) |
+| `hexagon/port/driven/` | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher`, `Telemetry` | reine Schnittstellen; Implementierungen in `adapters/driven/*`. Keine Imports von OTel, Prometheus oder anderen Adapter-Bibliotheken. |
+| `hexagon/application/` | `RegisterPlaybackEventBatch` Use Case | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken, Telemetrie in fester Reihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) |
 
 Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty`, `ErrBatchTooLarge`, `ErrInvalidEvent`, `ErrRateLimited`) decken erwartete fachliche Fehlerkategorien ab. Der HTTP-Adapter mappt sie auf Status-Codes (Tabelle in §5.1). Technische Adapter-Fehler — z. B. von `EventRepository.Append` — fallen nicht in dieses Set; sie werden vom Use Case unverändert durchgereicht und vom HTTP-Adapter im Default-Zweig auf `500` gemappt.
 
@@ -184,7 +184,13 @@ type MetricsPublisher interface {
     RateLimitedEvents(n int)
     DroppedEvents(n int)
 }
+
+type Telemetry interface {
+    BatchReceived(ctx context.Context, size int)
+}
 ```
+
+`Telemetry` ist die framework-neutrale Fassade für OTel-Aufrufe aus dem Use Case. Implementierung in `adapters/driven/telemetry` mappt `BatchReceived` auf einen `Int64Counter` (`mtrace.api.batches.received`) mit `batch.size` als Attribut. Weitere Methoden (z. B. `BatchValidated`, `BatchPersisted`) werden bei Bedarf ergänzt — die Domain kennt nur die Port-Signatur, nicht OTel.
 
 ### 3.4 Adapter
 
@@ -203,7 +209,8 @@ Aktuell vorhandene Adapter (`apps/api/`):
 | `adapters/driven/persistence/` | Driven | `InMemoryEventRepository` | Spike-Stand; Folge-ADR (Roadmap §4) wechselt auf SQLite/PostgreSQL |
 | `adapters/driven/ratelimit/` | Driven | `TokenBucket` | 100 Events/s/Project laut Spike-Spec §6.9 |
 | `adapters/driven/metrics/` | Driven | `PrometheusPublisher` | exposed über `/api/metrics` |
-| `adapters/driven/telemetry/` | Driven | OTel-SDK-Setup (Meter und Tracer) | querschnittlich, kein Port. Stellt eine `Meter`-Helper bereit; der Use Case erzeugt darüber mindestens einen Counter (`mtrace.api.batches.received`). OTLP-Exporter ist konfigurierbar. |
+| `adapters/driven/telemetry/` | Driven | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`) | einzige Stelle mit OTel-Imports innerhalb der Anwendung. Default ist *silent* (kein Exporter); OTLP-Export aktiviert sich, sobald die Standard-OTel-Env-Vars gesetzt sind (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, …). |
+| `adapters/driving/http/` (Querschnitt) | Driving | erzeugt zusätzlich Request-Spans um den Use-Case-Aufruf via `otel.Tracer` | komplementär zu `Telemetry`-Port-Counter; OTel-Import zulässig, weil HTTP-Adapter OTel-Adapter sein darf. |
 
 ---
 
@@ -325,13 +332,13 @@ Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contrac
 | Auth-Token | Token unbekannt | 401 | — | Use Case Step 3 |
 | Rate-Limit | Budget aufgebraucht | 429 + `Retry-After` | `mtrace_rate_limited_events_total` | Use Case Step 4 |
 | schema_version | ≠ `"1.0"` | 400 | `mtrace_invalid_events_total` | Use Case Step 5 |
-| Batch-Form | leer | 422 | `mtrace_invalid_events_total` (n=0) | Use Case Step 6 |
+| Batch-Form | leer | 422 | — (Counter bleibt unverändert: n=0 abgelehnte Events) | Use Case Step 6 |
 | Batch-Größe | > 100 Events | 422 | `mtrace_invalid_events_total` | Use Case Step 7 |
 | Event-Felder | Pflichtfeld fehlt | 422 | `mtrace_invalid_events_total` | Use Case Step 8 |
 | Token-Bindung | `project_id` ≠ Token-Projekt | 401 | — | Use Case Step 9 |
 | Persistenz | Repository-Fehler | 500 | `mtrace_dropped_events_total` | Use Case Step 10 |
 
-`mtrace_invalid_events_total` deckt **ausschließlich** Validierungs-Rejects mit Status `400` und `422` ab (laut [API-Kontrakt §7](./spike/backend-api-contract.md)). Auth-Fehler — sowohl der HTTP-seitige Header-Check als auch Use-Case-seitiges `ResolveByToken` und Token-Bindung — laufen nicht in invalid_events.
+`mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422` (laut [API-Kontrakt §7](./spike/backend-api-contract.md)) — der Wertbereich ist die Anzahl betroffener Events, nicht die Anzahl Batches. Auth-Fehler (HTTP-Header-Check, `ResolveByToken`, Token-Bindung) laufen nicht in den Counter. Bei leerem Batch (`events.length == 0`) bleibt der Counter folglich unverändert; die Ablehnung ist über HTTP-Status (`422`) und Access-Logs sichtbar.
 
 ### 5.2 Metrics-Pfad
 
@@ -355,9 +362,25 @@ Hochkardinale Werte (`session_id`, `user_agent`, `segment_url`) sind als Prometh
 
 ### 5.3 Telemetrie-Pfad
 
-`adapters/driven/telemetry` initialisiert in `main.go` einen prozesslokalen `MeterProvider` mit Service-Resource (`service.name`, `service.version`) und stellt eine `Meter`-Helper bereit. Der Use Case erzeugt darüber mindestens einen Counter (`mtrace.api.batches.received`), der bei jedem `RegisterPlaybackEventBatch`-Aufruf inkrementiert wird (Pflicht laut [API-Kontrakt §8](./spike/backend-api-contract.md)). Der Exporter ist konfigurierbar — der Default ist OTLP-gRPC, ein silenter Provider ohne Exporter ist für lokale Dev-Setups zulässig.
+OTel-Telemetrie verläuft über zwei sich ergänzende Pfade — beide ohne OTel-Import in `hexagon/`:
 
-Tracing bleibt bewusst querschnittlich und ohne expliziten Port `Tracer` — die Domain darf nicht von OTel-Typen abhängen. Spans entstehen ausschließlich in `adapters/driving/http` (Request-Span) und im Use Case (Inner-Span via `otel.Tracer`), ohne dass die Hexagon-Domain die OTel-Bibliothek importiert.
+**Driven Port `Telemetry`** (Use-Case-Telemetrie):
+
+`hexagon/port/driven/Telemetry` ist eine framework-neutrale Schnittstelle. Der Use Case ruft `telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt jedes Aufrufs (siehe §5.1 Sequenzdiagramm). Der Adapter `adapters/driven/telemetry` implementiert die Methode mit einem OTel-`Int64Counter` namens `mtrace.api.batches.received`, der `batch.size` als Attribut trägt. Damit ist die Pflicht aus [API-Kontrakt §8](./spike/backend-api-contract.md) („mindestens ein Counter oder Span erzeugt") erfüllt.
+
+**Request-Span im HTTP-Adapter**:
+
+`adapters/driving/http` erzeugt um jeden `POST /api/playback-events`-Aufruf einen OTel-Span via `otel.Tracer` (Span-Name `http.handler POST /api/playback-events` oder vergleichbar). Status-Code, `batch.size` (aus Use-Case-Result) und gegebenenfalls die Domain-Error-Klasse werden als Span-Attribute gesetzt. Der HTTP-Adapter darf OTel direkt importieren — er ist die Adapter-Schicht.
+
+**Initialisierung und Exporter-Default**:
+
+`adapters/driven/telemetry/Setup` registriert in `main.go` einen prozesslokalen `MeterProvider` und `TracerProvider` mit Service-Resource (`service.name`, `service.version`). Default ist *silent* — kein Exporter wird konfiguriert. OTLP-Export aktiviert sich automatisch, sobald die Standard-OTel-Env-Vars gesetzt sind:
+
+- `OTEL_EXPORTER_OTLP_ENDPOINT` (z. B. `http://localhost:4317`)
+- `OTEL_EXPORTER_OTLP_PROTOCOL` (`grpc` oder `http/protobuf`)
+- weitere `OTEL_*`-Variablen analog [OpenTelemetry Environment Variables Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/)
+
+Lokales Dev läuft ohne Backend-Konfiguration silent durch; produktive Setups konfigurieren über die Standard-Env-Vars ohne Code-Änderung.
 
 ---
 
@@ -366,7 +389,7 @@ Tracing bleibt bewusst querschnittlich und ohne expliziten Port `Tracer` — die
 | Thema | Umsetzung | Bezug |
 |---|---|---|
 | Logging | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt | Lastenheft §10.1 |
-| Tracing & OTel-Counter | OTel-SDK-Setup in `adapters/driven/telemetry`; Use Case erzeugt einen Counter (`mtrace.api.batches.received`) über die `Meter`-Helper. Spans im HTTP-Adapter und Use Case via `otel.Tracer`. Domain bleibt OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
+| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Default silent; OTLP-Export aktiviert sich über Standard-`OTEL_EXPORTER_OTLP_*`-Env-Vars. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8 |
 | Metriken | Prometheus über `/api/metrics`-Endpoint, nur Aggregate | Lastenheft §7.9, §7.10 |
 | Auth | Header `X-MTrace-Token`, Auflösung über `ProjectResolver` | Spike-Spec §6.4, Lastenheft §8.5 |
 | Rate Limiting | In-Memory Token-Bucket, 100 Events/s/Project | Spike-Spec §6.9 |

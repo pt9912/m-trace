@@ -200,12 +200,20 @@ Spec §6.6):
 | Metrik | Typ | Bedeutung |
 |---|---|---|
 | `mtrace_playback_events_total`        | counter | angenommene Events (Status `202`) |
-| `mtrace_invalid_events_total`         | counter | Events / Batches abgelehnt mit `400` oder `422` |
+| `mtrace_invalid_events_total`         | counter | Events abgelehnt mit `400` oder `422` |
 | `mtrace_rate_limited_events_total`    | counter | Events abgelehnt mit `429` |
 | `mtrace_dropped_events_total`         | counter | intern verworfene Events (Backpressure) |
 
 Verbindliche Regeln:
 
+- Alle vier Counter zählen **Events**, nicht Batches. Bei einem Batch
+  mit `events.length == 0`, der mit `422` abgelehnt wird, bleibt
+  `mtrace_invalid_events_total` folglich unverändert — die Ablehnung
+  ist über HTTP-Status und Access-Logs sichtbar, nicht über die Metrik.
+- Auth-Fehler (`401`) laufen nicht in `mtrace_invalid_events_total`,
+  weder der HTTP-seitige Header-Check noch Use-Case-seitiges
+  `ResolveByToken` und Token-Bindung. `mtrace_invalid_events_total`
+  ist auf `400` und `422` beschränkt.
 - **Keine** hochkardinalen Labels: `session_id`, `user_agent`,
   `segment_url`, `client_ip` und beliebige `project_id` sind verboten.
 - `mtrace_dropped_events_total` darf konstant `0` sein, wenn der Prototyp
@@ -219,9 +227,16 @@ Verbindliche Regeln:
 
 - Im Spike-Muss-Scope: minimaler OTel-Setup im Code (Meter oder Tracer
   initialisiert, mindestens ein Counter oder Span erzeugt).
-- Konkrete Attribute, Resource-Konfiguration und Exporter sind
-  Implementierungs-Detail; bewertet wird die **Ergonomie** der
-  OTel-Integration im jeweiligen Stack (Bewertungsraster Spec §9).
+- Im Post-Spike-Soll: der Use Case spricht OTel ausschließlich über
+  einen frameworkneutralen Driven Port (z. B. `Telemetry`) an —
+  `hexagon/`-Pakete dürfen **nicht** direkt OTel importieren.
+  Spans am Request-Boundary darf der HTTP-Adapter direkt erzeugen.
+- Default ist ein silenter Provider ohne Exporter; OTLP-Anbindung
+  aktiviert sich automatisch über die Standard-OTel-Env-Vars
+  (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, …).
+- Konkrete Attribute und Resource-Konfiguration sind
+  Implementierungs-Detail; bewertet wurde im Spike die **Ergonomie**
+  der OTel-Integration im jeweiligen Stack (Bewertungsraster Spec §9).
 
 ---
 
