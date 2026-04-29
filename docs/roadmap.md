@@ -115,6 +115,7 @@ zugehörigen Risiken stehen in `docs/risks-backlog.md`.
 | SRT-Binding-Stack | `0.6.0` | CGO-Bindings könnten das distroless-static-Pattern brechen. |
 | Coverage-Tooling für Go (`go test -cover` + Threshold) | `0.1.0`+ | Coverage-Strategie analog zu d-migrate-Pattern. |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`) | offen | Wird nur relevant, wenn Hexagon-Boundaries Disziplin-basiert nicht reichen. |
+| Strengere CORS-Preflight-Project-Isolation (Variante A) | offen, Trigger Multi-Tenant | `0.1.0` setzt Variante B (globale Preflight-Allowlist + Project↔Origin-Validierung beim POST). Wenn echte Multi-Tenant-Projektion oder strengere Preflight-Isolation gebraucht wird, Migration auf Variante A — Project im Pfad (`/api/projects/{project_id}/...`) oder als URL-Parameter, damit der Preflight bereits projektscharf prüfen kann. |
 
 Neue Folge-ADRs werden hier ergänzt, sobald der Bedarf entsteht oder
 ein Issue darauf hinweist.
