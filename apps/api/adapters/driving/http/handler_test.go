@@ -46,7 +46,10 @@ const validBody = `{
 func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Server {
 	t.Helper()
 	repo := persistence.NewInMemoryEventRepository()
-	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
+		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
+	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
 	publisher := metrics.NewPrometheusPublisher()
 	sessionRepo := persistence.NewInMemorySessionRepository()
@@ -55,7 +58,7 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Serv
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, sessionsService, publisher.Handler(), nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, resolver, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv
@@ -80,7 +83,10 @@ func (unlimitedLimiter) Allow(_ context.Context, _ string, _ int) error { return
 func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	t.Helper()
 	repo := persistence.NewInMemoryEventRepository()
-	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
+		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
+	})
 	publisher := metrics.NewPrometheusPublisher()
 	sessionRepo := persistence.NewInMemorySessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
@@ -88,7 +94,7 @@ func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, sessionsService, publisher.Handler(), nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, resolver, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

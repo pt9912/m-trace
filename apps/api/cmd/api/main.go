@@ -60,8 +60,14 @@ func main() {
 
 	repo := persistence.NewInMemoryEventRepository()
 	sessions := persistence.NewInMemorySessionRepository()
-	resolver := auth.NewStaticProjectResolver(map[string]string{
-		"demo": "demo-token",
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo": {
+			Token: "demo-token",
+			AllowedOrigins: []string{
+				"http://localhost:5173",
+				"http://localhost:3000",
+			},
+		},
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
@@ -81,7 +87,7 @@ func main() {
 	sessionsService := application.NewSessionsService(sessions, repo, processID)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, sessionsService, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, resolver, publisher.Handler(), tracer, logger)
 
 	srv := &http.Server{
 		Addr:              listenAddr,

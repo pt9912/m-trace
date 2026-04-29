@@ -97,6 +97,14 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, err
 	}
 
+	// Step 3b — Origin-Validierung (CORS Variante B, plan-0.1.0.md §5.1).
+	// Lauft vor Step 4, damit weder Rate-Limit-Tokens verbraucht noch
+	// Counter inkrementiert werden. Origin="" → CLI/curl/Lab-Flow,
+	// Project-Bindung wird übersprungen.
+	if !project.IsOriginAllowed(in.Origin) {
+		return driving.BatchResult{}, domain.ErrOriginNotAllowed
+	}
+
 	// Step 4 — rate limit: charged for the requested batch size, even
 	// if the batch later turns out to be malformed. This prevents a
 	// caller from probing for validation responses without paying the

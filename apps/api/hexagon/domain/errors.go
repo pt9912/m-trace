@@ -21,4 +21,11 @@ var (
 	// ErrSessionNotFound wird vom Detail-Use-Case zurückgegeben, wenn
 	// keine Session zur angefragten ID existiert. HTTP-Mapping: 404.
 	ErrSessionNotFound = errors.New("session not found")
+	// ErrOriginNotAllowed wird vom Use Case zurückgegeben, wenn der
+	// `Origin`-Header eines POST-Requests gegen die Allowed-Origins-
+	// Liste des aufgelösten Projects mismatcht (CORS Variante B,
+	// plan-0.1.0.md §5.1). HTTP-Mapping: 403 Forbidden — vor Step 4
+	// (Rate-Limit), damit weder Tokens noch Counter inkrementiert
+	// werden.
+	ErrOriginNotAllowed = errors.New("origin not allowed for project")
 )

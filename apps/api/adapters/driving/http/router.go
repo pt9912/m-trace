@@ -20,18 +20,23 @@ import (
 // tracer falls back to a no-op tracer so tests can wire the router
 // without an OTel SDK setup.
 //
-// sessions wird mit den GET-Sessions-Endpoints in §5.1 Sub-Item 5
-// produktiv verkabelt; bis dahin ist der Service-Slot bereits gesetzt,
-// damit main.go gegen die finale Signatur baut.
+// allowlist liefert die globale Union der Allowed-Origins für die
+// CORS-Preflight-Handler (plan-0.1.0.md §5.1, Variante B). nil
+// deaktiviert den CORS-Pfad — alle Preflights werden dann mit `403`
+// abgelehnt; der `Vary`-Header bleibt trotzdem auf jeder Antwort.
 func NewRouter(
 	useCase driving.PlaybackEventInbound,
 	sessions driving.SessionsInbound,
+	allowlist OriginAllowlist,
 	metricsHandler http.Handler,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
 	if tracer == nil {
 		tracer = tracenoop.NewTracerProvider().Tracer("noop")
+	}
+	if allowlist == nil {
+		allowlist = noopAllowlist{}
 	}
 
 	mux := http.NewServeMux()
@@ -58,5 +63,18 @@ func NewRouter(
 	mux.Handle("GET /api/stream-sessions", sessionsList)
 	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
 
-	return mux
+	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
+	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
+	mux.HandleFunc("OPTIONS /api/playback-events", playerSDKPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/stream-sessions", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/stream-sessions/{id}", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/health", dashboardPreflightHandler(allowlist))
+
+	return corsMiddleware(mux)
 }
+
+// noopAllowlist lehnt jeden Origin ab — Fallback für nil-Allowlist
+// (Test-Server ohne CORS-Setup).
+type noopAllowlist struct{}
+
+func (noopAllowlist) IsOriginInGlobalUnion(_ string) bool { return false }

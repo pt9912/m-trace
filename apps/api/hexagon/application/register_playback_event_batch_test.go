@@ -12,12 +12,21 @@ import (
 )
 
 // stubProjectResolver returns a single demo project for "demo-token",
-// nothing else (matches the contract's hardcoded map).
-type stubProjectResolver struct{}
+// nothing else (matches the contract's hardcoded map). allowedOrigins
+// trägt die CORS-Variante-B-Allowlist für origin-bezogene Tests; leer
+// lässt IsOriginAllowed für jeden non-empty Origin false werden,
+// während Origin="" (CLI/curl) immer durchgewinkt wird.
+type stubProjectResolver struct {
+	allowedOrigins []string
+}
 
-func (stubProjectResolver) ResolveByToken(_ context.Context, token string) (domain.Project, error) {
+func (s stubProjectResolver) ResolveByToken(_ context.Context, token string) (domain.Project, error) {
 	if token == "demo-token" {
-		return domain.Project{ID: "demo", Token: domain.ProjectToken("demo-token")}, nil
+		return domain.Project{
+			ID:             "demo",
+			Token:          domain.ProjectToken("demo-token"),
+			AllowedOrigins: append([]string(nil), s.allowedOrigins...),
+		}, nil
 	}
 	return domain.Project{}, domain.ErrUnauthorized
 }
@@ -129,6 +138,13 @@ func validBatch() driving.BatchInput {
 }
 
 func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *stubSessionRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer, *stubSequencer) {
+	return newUseCaseWithOrigins(nil)
+}
+
+// newUseCaseWithOrigins erlaubt die Origin-Allowlist des Stub-Project-
+// Resolvers zu konfigurieren — Voraussetzung für die CORS-Variante-B-
+// Tests aus plan-0.1.0.md §5.1 Sub-Item 6.
+func newUseCaseWithOrigins(origins []string) (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *stubSessionRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer, *stubSequencer) {
 	limiter := &stubLimiter{}
 	repo := &stubRepo{}
 	sessions := &stubSessionRepo{}
@@ -137,7 +153,7 @@ func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter,
 	analyzer := &stubAnalyzer{}
 	sequencer := &stubSequencer{}
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		stubProjectResolver{}, limiter, repo, sessions, metrics, telemetry, analyzer, sequencer,
+		stubProjectResolver{allowedOrigins: origins}, limiter, repo, sessions, metrics, telemetry, analyzer, sequencer,
 		func() time.Time { return time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC) },
 	)
 	return uc, limiter, repo, sessions, metrics, telemetry, analyzer, sequencer
@@ -315,6 +331,53 @@ func TestProjectIDTokenMismatch(t *testing.T) {
 	// Auth-Fehler (401) zählen nicht in invalid_events (API-Kontrakt §7).
 	if metrics.invalid != 0 {
 		t.Errorf("expected InvalidEvents=0 (auth-Fehler zählen nicht), got %d", metrics.invalid)
+	}
+}
+
+// TestOriginNotAllowed_NoSideEffects verifiziert plan-0.1.0.md §5.1
+// CORS Variante B: ein Origin, der nicht in der Allowlist des Project
+// steht, gibt ErrOriginNotAllowed zurück, ohne den Rate-Limiter zu
+// belasten oder Events anzulegen — die Origin-Validierung läuft vor
+// Step 4.
+func TestOriginNotAllowed_NoSideEffects(t *testing.T) {
+	t.Parallel()
+	uc, limiter, repo, sessions, metrics, _, _, _ := newUseCaseWithOrigins([]string{"http://allowed.example"})
+
+	in := validBatch()
+	in.Origin = "http://attacker.example"
+
+	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if !errors.Is(err, domain.ErrOriginNotAllowed) {
+		t.Fatalf("expected ErrOriginNotAllowed, got %v", err)
+	}
+	if limiter.deny {
+		t.Errorf("limiter wasn't reached but state changed unexpectedly")
+	}
+	if len(repo.appended) != 0 {
+		t.Errorf("expected 0 appended, got %d (origin reject must not persist)", len(repo.appended))
+	}
+	if len(sessions.upserts) != 0 {
+		t.Errorf("expected 0 session upserts, got %d", len(sessions.upserts))
+	}
+	if metrics.invalid != 0 || metrics.rateLimited != 0 || metrics.accepted != 0 || metrics.dropped != 0 {
+		t.Errorf("origin reject must not touch metrics (got accepted=%d invalid=%d rl=%d dropped=%d)",
+			metrics.accepted, metrics.invalid, metrics.rateLimited, metrics.dropped)
+	}
+}
+
+// TestOriginEmpty_BypassesProjectBinding verifiziert den CLI/curl-Pfad
+// (plan-0.1.0.md §5.1): kein Origin-Header → keine Project-Bindung,
+// kein 403.
+func TestOriginEmpty_BypassesProjectBinding(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, _, _, _, _, _ := newUseCaseWithOrigins([]string{"http://allowed.example"})
+	in := validBatch()
+	in.Origin = ""
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("expected accepted, got %v", err)
+	}
+	if len(repo.appended) != 1 {
+		t.Errorf("expected 1 appended, got %d", len(repo.appended))
 	}
 }
 

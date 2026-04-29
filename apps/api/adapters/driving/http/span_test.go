@@ -115,7 +115,9 @@ func TestHTTP_Span_AuthRejectMissingTokenAttributes(t *testing.T) {
 func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) *httptest.Server {
 	t.Helper()
 	repo := persistence.NewInMemoryEventRepository()
-	resolver := auth.NewStaticProjectResolver(map[string]string{"demo": "demo-token"})
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo": {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
+	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
 	sessionRepo := persistence.NewInMemorySessionRepository()
@@ -125,7 +127,7 @@ func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) 
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	tracer := tp.Tracer("test")
-	router := apihttp.NewRouter(uc, sessionsService, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(uc, sessionsService, resolver, publisher.Handler(), tracer, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

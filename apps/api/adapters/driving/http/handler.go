@@ -113,6 +113,7 @@ func (h *PlaybackEventsHandler) serve(ctx context.Context, w http.ResponseWriter
 	in := driving.BatchInput{
 		SchemaVersion: payload.SchemaVersion,
 		AuthToken:     token,
+		Origin:        r.Header.Get("Origin"),
 		Events:        toEventInputs(payload.Events),
 	}
 	batchSize := len(in.Events)
@@ -135,6 +136,8 @@ func (h *PlaybackEventsHandler) writeUseCaseError(w http.ResponseWriter, err err
 		writeStatus(w, http.StatusBadRequest)
 	case errors.Is(err, domain.ErrUnauthorized):
 		writeStatus(w, http.StatusUnauthorized)
+	case errors.Is(err, domain.ErrOriginNotAllowed):
+		writeStatus(w, http.StatusForbidden)
 	case errors.Is(err, domain.ErrBatchEmpty),
 		errors.Is(err, domain.ErrBatchTooLarge),
 		errors.Is(err, domain.ErrInvalidEvent):
@@ -197,6 +200,8 @@ func outcomeFor(code int) string {
 		return "accepted"
 	case code == http.StatusUnauthorized:
 		return "unauthorized"
+	case code == http.StatusForbidden:
+		return "forbidden"
 	case code == http.StatusRequestEntityTooLarge:
 		return "too_large"
 	case code == http.StatusTooManyRequests:
