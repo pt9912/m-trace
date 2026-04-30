@@ -34,6 +34,10 @@ prom_query() {
   curl -sS --get "${PROMETHEUS_URL}/api/v1/query" --data-urlencode "query=${query}"
 }
 
+prom_first_value() {
+  node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); const r=p.data.result[0]; process.stdout.write(r ? r.value[1] : "0")'
+}
+
 wait_for_status "${API_URL}/api/health" "200" "api-health"
 wait_for_status "${PROMETHEUS_URL}/-/ready" "200" "prometheus-ready"
 wait_for_status "${GRAFANA_URL}/api/health" "200" "grafana-health"
@@ -42,12 +46,37 @@ wait_for_status "${OTEL_HEALTH_URL}/" "200" "otel-health"
 scripts/seed-rak9.sh --base-url "$API_URL"
 sleep "$SCRAPE_WAIT_SECONDS"
 
-playback_value="$(prom_query 'mtrace_playback_events_total' | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); const r=p.data.result[0]; process.stdout.write(r ? r.value[1] : "0")')"
+playback_value="$(prom_query 'mtrace_playback_events_total' | prom_first_value)"
 if [ "${playback_value%.*}" -le 0 ]; then
   echo "prometheus-playback-events: expected >0, got ${playback_value}" >&2
   exit 1
 fi
 echo "prometheus-playback-events: ${playback_value}"
+
+required_metrics=(
+  mtrace_playback_events_total
+  mtrace_playback_errors_total
+  mtrace_active_sessions
+  mtrace_rebuffer_events_total
+  mtrace_startup_time_ms
+  mtrace_api_requests_total
+  mtrace_dropped_events_total
+  mtrace_rate_limited_events_total
+  mtrace_invalid_events_total
+)
+
+for metric in "${required_metrics[@]}"; do
+  metric_cardinality="$(prom_query "count(count by (__name__) (${metric}))" | prom_first_value)"
+  if [ "${metric_cardinality%.*}" -gt 1 ]; then
+    echo "prometheus-required-metric-cardinality: ${metric} expected <=1, got ${metric_cardinality}" >&2
+    exit 1
+  fi
+  if [ "${metric_cardinality%.*}" -lt 1 ]; then
+    echo "prometheus-required-metric-cardinality: ${metric} expected present, got ${metric_cardinality}" >&2
+    exit 1
+  fi
+  echo "prometheus-required-metric-cardinality: ${metric}=${metric_cardinality}"
+done
 
 series_json="$(curl -sS --get "${PROMETHEUS_URL}/api/v1/series" --data-urlencode 'match[]={__name__=~"mtrace_.+"}')"
 series_count="$(printf '%s' "$series_json" | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String(p.data.length))')"
@@ -67,7 +96,7 @@ if (bad.length) {
 '
 echo "prometheus-series: ${series_count} mtrace series, forbidden labels absent"
 
-cardinality="$(prom_query 'count(count by (instance, job, __name__) ({__name__=~"mtrace_.+"}))' | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); const r=p.data.result[0]; process.stdout.write(r ? r.value[1] : "0")')"
+cardinality="$(prom_query 'count(count by (instance, job, __name__) ({__name__=~"mtrace_.+"}))' | prom_first_value)"
 if [ "${cardinality%.*}" -ge 50 ]; then
   echo "prometheus-cardinality: expected <50, got ${cardinality}" >&2
   exit 1
