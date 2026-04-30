@@ -26,10 +26,10 @@ Ab `0.1.1` zusätzlich (Player-SDK + Dashboard sind TypeScript-Pakete):
 
 | Tool | Mindest-Version | Zweck |
 |---|---|---|
-| Node.js | 20 LTS (siehe `.nvmrc` im Repo-Root) | Build- und Test-Workflows für `apps/dashboard` und `packages/player-sdk`. |
-| pnpm | 9 | Workspace-Manager (`pnpm-workspace.yaml`). |
+| Node.js | 22 (siehe `.nvmrc` im Repo-Root) | Build- und Test-Workflows für `apps/dashboard` und `packages/player-sdk`. |
+| pnpm | 10 (siehe `package.json` `packageManager`) | Workspace-Manager (`pnpm-workspace.yaml`). |
 
-`.nvmrc` und `.npmrc` werden mit dem Mono-Repo-Bootstrap aus `plan-0.1.1.md` §2 verbindlich gepinnt.
+`.nvmrc`, `.npmrc`, `package.json`, `pnpm-workspace.yaml` und `pnpm-lock.yaml` sind im Repo-Root versioniert.
 
 ### 1.2 Plattform-Hinweise
 

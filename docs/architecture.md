@@ -245,7 +245,7 @@ Absicherung als ausführbares Skript: `apps/api/scripts/check-architecture.sh` (
 
 ## 4. Verzeichnis- und Modulstruktur
 
-### 4.1 Zielstruktur Mono-Repo (`0.1.0`)
+### 4.1 Zielstruktur Mono-Repo (`0.1.x`)
 
 ```text
 m-trace/
@@ -265,7 +265,10 @@ m-trace/
 │   ├── grafana/
 │   └── otel-collector/              # OpenTelemetry Collector + Konfiguration
 ├── docs/
-└── docker-compose.yml               # Lokal-Lab
+├── docker-compose.yml               # Lokal-Lab
+├── package.json                     # pnpm Workspace Root
+├── pnpm-workspace.yaml
+└── pnpm-lock.yaml
 ```
 
 Dies ist die Soll-Struktur für `0.1.0`; aktueller Implementierungsstand pro Verzeichnis steht in [`plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 1) und in der Roadmap §1.1.

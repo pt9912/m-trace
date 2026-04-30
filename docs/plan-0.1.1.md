@@ -1,6 +1,6 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
-> **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).  
+> **Status**: 🟡 in Arbeit. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
 > **Bezug**: [Lastenheft `1.1.4`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
@@ -29,8 +29,8 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 | Tranche | Inhalt | Status |
 |---|---|---|
-| 0 | Vorgänger-Gate-Verifikation | ⬜ |
-| 1 | Player-SDK unter `packages/player-sdk` | ⬜ |
+| 0 | Vorgänger-Gate-Verifikation | ✅ |
+| 1 | Player-SDK unter `packages/player-sdk` | 🟡 |
 | 2 | Dashboard unter `apps/dashboard` | ⬜ |
 | 3 | Compose-Lab-Erweiterung um den `dashboard`-Service | ⬜ |
 | 4 | Release-Akzeptanzkriterien `0.1.1` | ⬜ |
@@ -43,23 +43,23 @@ Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-
 
 DoD — **harte Voraussetzungen, technisch zwingend** (Pflicht `[x]` vor `0.1.1`-Start; ohne diese kann die `0.1.1`-Implementierung nicht starten):
 
-- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md, **Pflicht-Anteile für `0.1.1`** — Wire-Format (F-106..F-115) und Backpressure-/Limit-Regeln (F-118..F-123): das Player-SDK muss das Format und die Limits kennen, um Events korrekt zu senden. Andere `0.1.0`-Bereiche von §3.5 (OTel-Modell, Cardinality, Time-Stempel, Schema-Versionierung) sind weiche Voraussetzungen.
-- [ ] `plan-0.1.0.md` §4.2 Counter-Scope (InvalidEvents/DroppedEvents-Drops + Tests) `[x]`.
-- [ ] `plan-0.1.0.md` §4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport `[x]`.
-- [ ] `plan-0.1.0.md` §5.1 Backend-Erweiterung `[x]` (insbesondere Stream-Sessions-Endpoints, MVP-16 Persistenz, CORS, Rate-Limit-Dimensionen).
-- [ ] `plan-0.1.0.md` §5.2 Compose-Lab Core `[x]`.
-- [ ] `plan-0.1.0.md` §5.3 Release-Akzeptanzkriterien `0.1.0` (RAK-1/3/4/6/8) `[x]`.
-- [ ] `plan-0.1.0.md` §5.4 Übergreifende DoD `0.1.0` `[x]`, insbesondere CI-Pflicht-Item.
+- [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **Pflicht-Anteile für `0.1.1`** — Wire-Format (F-106..F-115) und Backpressure-/Limit-Regeln (F-118..F-123): das Player-SDK muss das Format und die Limits kennen, um Events korrekt zu senden. Andere `0.1.0`-Bereiche von §3.5 (OTel-Modell, Cardinality, Time-Stempel, Schema-Versionierung) sind weiche Voraussetzungen (`e532e1e`, `51b3812`).
+- [x] `plan-0.1.0.md` §4.2 Counter-Scope (InvalidEvents/DroppedEvents-Drops + Tests) `[x]` (`372a6d4`, `9fddfa1`).
+- [x] `plan-0.1.0.md` §4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport `[x]` (`51b3812`, `46e45ec`).
+- [x] `plan-0.1.0.md` §5.1 Backend-Erweiterung `[x]` (insbesondere Stream-Sessions-Endpoints, MVP-16 Persistenz, CORS, Rate-Limit-Dimensionen) (`26a64e2`, `504e4c9`).
+- [x] `plan-0.1.0.md` §5.2 Compose-Lab Core `[x]` (`504e4c9`).
+- [x] `plan-0.1.0.md` §5.3 Release-Akzeptanzkriterien `0.1.0` (RAK-1/3/4/6/8) `[x]` (`504e4c9`).
+- [x] `plan-0.1.0.md` §5.4 Übergreifende DoD `0.1.0` `[x]`, insbesondere CI-Pflicht-Item (`46e45ec`, `95359df`).
 
 DoD — **weiche Voraussetzungen, Dokumentations-/Aufräumarbeiten** (offen erlaubt; Gate **nicht** blockierend, sollten aber bis zum `0.1.0`-Release-Tag geschlossen werden):
 
-- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.1`** — OTel-Modell §2, Cardinality §3, Time-Stempel §5, Schema-Versionierung §6: nur indirekt für SDK-Implementierung relevant.
-- [ ] `plan-0.1.0.md` §3.6 local-development.md: Developer-Guide; `0.1.1`-Implementierung kann mit dem bestehenden `apps/api`-Setup arbeiten.
-- [ ] `plan-0.1.0.md` §4.4 Code-Step-Numbering: Code-Kommentar-Cleanup ohne `0.1.1`-Auswirkung. Wird beim nächsten Code-Touch in `apps/api/hexagon/application/register_playback_event_batch.go` mitgenommen.
-- [ ] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.1`-Start einzeln eingestuft: jedes offene Item ist entweder
+- [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.1`** — OTel-Modell §2, Cardinality §3, Time-Stempel §5, Schema-Versionierung §6: nur indirekt für SDK-Implementierung relevant (`e532e1e`, `51b3812`).
+- [x] `plan-0.1.0.md` §3.6 local-development.md: Developer-Guide; `0.1.1`-Implementierung kann mit dem bestehenden `apps/api`-Setup arbeiten (`2eede43`, `504e4c9`, `WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] `plan-0.1.0.md` §4.4 Code-Step-Numbering: Code-Kommentar-Cleanup ohne `0.1.1`-Auswirkung (`dbdcb67`).
+- [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items sind bis Patch `1.1.4` geschlossen; keine offenen blockierenden Patch-Items zum `0.1.1`-Start.
     - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.1`-Implementierung direkt betrifft), **oder**
     - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag.
-- [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar.
+- [x] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar (`WORKSPACE_BOOTSTRAP_COMMIT`).
 
 ---
 
@@ -71,11 +71,11 @@ DoD:
 
 **Workspace-Bootstrap** (Repo-weit, gemeinsame Voraussetzung mit Tranche 2 Dashboard):
 
-- [ ] Root-`package.json` mit Mono-Repo-Marker und Top-Level-Scripts (`build`, `test`, `lint`, ggf. `format`); kein eigener Source-Code-Inhalt.
-- [ ] `pnpm-workspace.yaml` mit `apps/*` und `packages/*` als Workspace-Globs (deckt `apps/dashboard` und `packages/player-sdk` ab).
-- [ ] `pnpm-lock.yaml` versioniert; `.npmrc` (Engine-Strict, falls nötig) und `.nvmrc` (Pinning der Node-Major-Version) im Repo-Root.
-- [ ] Top-Level-Scripts delegieren via `pnpm -r run <task>` an die Workspace-Pakete; `make` bleibt als Compose-/Lab-Wrapper unverändert.
-- [ ] Architecture §4.1 Mono-Repo-Layout reflektiert die neuen Wurzel-Dateien (Doku-Update gemeinsam mit dem Bootstrap-Commit).
+- [x] Root-`package.json` mit Mono-Repo-Marker und Top-Level-Scripts (`build`, `test`, `lint`, `check`); kein eigener Source-Code-Inhalt (`WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] `pnpm-workspace.yaml` mit `apps/*` und `packages/*` als Workspace-Globs (deckt `apps/dashboard` und `packages/player-sdk` ab) (`WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] `pnpm-lock.yaml` versioniert; `.npmrc` mit Engine-Strict und `.nvmrc` mit Node-Major-Pinning im Repo-Root (`WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] Top-Level-Scripts delegieren via `pnpm -r --if-present run <task>` an die Workspace-Pakete; `make` bleibt als Compose-/Lab-Wrapper unverändert (`WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] Architecture §4.1 Mono-Repo-Layout reflektiert die neuen Wurzel-Dateien (Doku-Update gemeinsam mit dem Bootstrap-Commit) (`WORKSPACE_BOOTSTRAP_COMMIT`).
 
 **Player-SDK** (`packages/player-sdk/`):
 
