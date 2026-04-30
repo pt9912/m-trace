@@ -32,7 +32,7 @@ Neue Lastenheft-Patches während `0.2.0` landen weiterhin zentral in `plan-0.1.0
 | 2 | Event-Schema-Versionierung und CI-Kompatibilitätscheck | ✅ |
 | 3 | Adapter-/Transport-Tests und Runtime-Grenzen | ✅ |
 | 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ✅ |
-| 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ⬜ |
+| 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ✅ |
 | 5 | Demo-Integrationsdoku und Release-Akzeptanzkriterien `0.2.0` | ⬜ |
 | 6 | OE-3/Persistenz-Folge-ADR vorbereiten | ⬜ |
 
@@ -176,14 +176,14 @@ Ziel: Das SDK hat klare Laufzeitgrenzen, eine dokumentierte Browser-Support-Matr
 
 DoD:
 
-- [ ] OTel-Transport-Option erfüllt RAK-16: vorbereitet oder experimentell nutzbar. Da RAK-16 ein Soll-Kriterium ist, darf es nur über das unten definierte Deferral-DoD nicht-blockierend verschoben werden.
-- [ ] „Vorbereitet" ist konkret nachweisbar: stabiler Transport-Port/Interface, dokumentierter Opt-in-Konfigurationspfad, keine Pflicht-Abhängigkeit im Default-Bundle und ein Test/Compile-Check, der die spätere OTel-Transport-Implementierung anschließbar hält.
-- [ ] Falls experimentell nutzbar: OTel-Transport hängt nicht am Default-Bundle und ist als separater opt-in Pfad dokumentiert.
-- [ ] Falls RAK-16 nicht mindestens als „vorbereitet" erfüllt wird: nicht-blockierendes Deferral-DoD ist vollständig erfüllt — Begründung dokumentiert, Folge-Release benannt, `risks-backlog.md` oder Roadmap aktualisiert, Release Notes nennen RAK-16 als nicht enthaltenes Soll-Kriterium.
-- [ ] Performance-Budget übernimmt die normativen Lastenheft-Grenzen: SDK-Bundle < 30 KB gzip ohne hls.js, < 5 ms Verarbeitungszeit pro Event, kein synchrones Netzwerk im Hot Path, Playback darf bei Telemetriefehlern nicht abbrechen.
-- [ ] Performance-Smoke misst mindestens Bundle-Größe, synthetische Event-Verarbeitungszeit und Queue-/Retry-Grenzen reproduzierbar.
-- [ ] Browser-Support-Matrix ist dokumentiert und übernimmt mindestens die Lastenheft-Einstufung: Chrome Desktop `supported`, Firefox Desktop `supported`, Safari Desktop `documented limitation`; weitere Browser werden als `supported`, `documented limitation` oder `out of scope` klassifiziert.
-- [ ] Browser-E2E-Gates bleiben für alle als `supported` markierten Browser grün; Browser mit `documented limitation` brauchen eine begründete Einschränkung, aber kein vollständiges Gate.
+- [x] OTel-Transport-Option erfüllt RAK-16: vorbereitet oder experimentell nutzbar. Da RAK-16 ein Soll-Kriterium ist, darf es nur über das unten definierte Deferral-DoD nicht-blockierend verschoben werden (`34713c3`).
+- [x] „Vorbereitet" ist konkret nachweisbar: stabiler Transport-Port/Interface, dokumentierter Opt-in-Konfigurationspfad, keine Pflicht-Abhängigkeit im Default-Bundle und ein Test/Compile-Check, der die spätere OTel-Transport-Implementierung anschließbar hält (`34713c3`).
+- [x] Experimentell nutzbarer OTel-Transport ist in `0.2.0` nicht der gewählte Pfad; die vorbereitete Variante hängt nicht am Default-Bundle und ist als separater Opt-in-Pfad dokumentiert (`34713c3`).
+- [x] Deferral-DoD entfällt, weil RAK-16 mindestens als „vorbereitet" erfüllt ist (`34713c3`).
+- [x] Performance-Budget übernimmt die normativen Lastenheft-Grenzen: SDK-Bundle < 30 KB gzip ohne hls.js, < 5 ms Verarbeitungszeit pro Event, kein synchrones Netzwerk im Hot Path, Playback darf bei Telemetriefehlern nicht abbrechen (`34713c3`).
+- [x] Performance-Smoke misst mindestens Bundle-Größe, synthetische Event-Verarbeitungszeit und Queue-/Retry-Grenzen reproduzierbar (`34713c3`).
+- [x] Browser-Support-Matrix ist dokumentiert und übernimmt mindestens die Lastenheft-Einstufung: Chrome Desktop `supported`, Firefox Desktop `supported`, Safari Desktop `documented limitation`; weitere Browser werden als `supported`, `documented limitation` oder `out of scope` klassifiziert (`34713c3`).
+- [x] Browser-E2E-Gates bleiben für alle als `supported` markierten Browser grün; Browser mit `documented limitation` brauchen eine begründete Einschränkung, aber kein vollständiges Gate (`34713c3`).
 
 ---
 
