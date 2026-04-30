@@ -27,10 +27,10 @@ export default defineConfig({
       include: ["src/**/*.{ts,svelte}"],
       exclude: ["src/app.html"],
       thresholds: {
-        branches: 35,
-        functions: 70,
-        lines: 60,
-        statements: 65
+        branches: 90,
+        functions: 90,
+        lines: 90,
+        statements: 90
       }
     }
   }

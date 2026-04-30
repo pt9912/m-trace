@@ -175,11 +175,9 @@ Coverage-Scope ist `apps/dashboard/src/**/*.{ts,svelte}`; Testcode,
 generierte SvelteKit-Dateien, Build-Artefakte und statische
 Framework-Ausgabe gehören nicht in den Nenner.
 
-Der Start-Threshold ist verbindlich: Statements 65 %, Lines 60 %,
-Functions 70 %, Branches 35 %. Begründung: Dashboard-Tests starten in
-`0.2.0` mit API-Unit-Tests und Component-Smokes für die wichtigsten
-Routen. Demo-Player und Session-Detail bekommen gezielte Vertiefung in
-Folgearbeiten; Senkungen nach Einführung sind begründungspflichtig.
+Der Threshold ist verbindlich: Statements 90 %, Lines 90 %, Functions
+90 %, Branches 90 %. Senkungen nach Einführung sind
+begründungspflichtig.
 
 ### 3.4 Monorepo-Gate-Abgrenzung
 

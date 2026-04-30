@@ -52,7 +52,7 @@
             <td>{formatTime(event.server_received_at)}</td>
             <td>{event.event_name}</td>
             <td><a href={`/sessions/${event.session_id}`}>{event.session_id}</a></td>
-            <td>{event.sdk.name} {event.sdk.version}</td>
+            <td>{`${event.sdk.name} ${event.sdk.version}`}</td>
           </tr>
         {:else}
           <tr>

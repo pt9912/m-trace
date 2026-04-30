@@ -56,6 +56,12 @@ describe("dashboard API client", () => {
     await expect(getHealth()).resolves.toEqual({ ok: false, status: 0, text: "offline" });
   });
 
+  it("rejects JSON requests with non-2xx responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 500 })));
+
+    await expect(listSessions()).rejects.toThrow("/api/stream-sessions?limit=100 returned 500");
+  });
+
   it("classifies error and warning events", () => {
     expect(isErrorEvent(event("playback_error"))).toBe(true);
     expect(isErrorEvent(event("buffer_warning"))).toBe(true);
@@ -64,6 +70,10 @@ describe("dashboard API client", () => {
 
   it("formats absent timestamps as n/a", () => {
     expect(formatTime(undefined)).toBe("n/a");
+  });
+
+  it("formats present timestamps", () => {
+    expect(formatTime("2026-04-30T12:34:56.000Z")).not.toBe("n/a");
   });
 });
 

@@ -56,11 +56,9 @@
     hls = undefined;
     void tracker?.destroy();
     tracker = undefined;
-    if (video) {
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-    }
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
   }
 
   onMount(() => {
