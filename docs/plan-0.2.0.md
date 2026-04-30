@@ -211,7 +211,7 @@ DoD:
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [x] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben (`37f20ce`).
 - [x] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt (`05fb496`).
-- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make browser-e2e` sowie ein eventuell separates Node-Coverage-Target aus Arbeitspaket 3a.
+- [x] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build`, `make browser-e2e` (verifiziert nach `2befd71`).
 - [x] CI-Gate-Abgrenzung ist dokumentiert: `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` laufen in GitHub Actions; der SDK↔Schema-Kompatibilitätscheck und ein eventuell separates Node-Coverage-Gate hängen an einem dieser Gates oder an eigenen Actions-Steps; `make browser-e2e` bleibt entweder bewusst manuelles Release-Gate oder wird als eigener Actions-Job ergänzt (`d367720`, `f31fb71`, `34713c3`).
 
 ---
