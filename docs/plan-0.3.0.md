@@ -187,7 +187,7 @@ DoD:
 - [ ] CLI-Einstieg ist im Analyzer-Paket definiert, z. B. `bin` in `package.json`.
 - [ ] Der Lastenheft-Aufruf `pnpm m-trace check <url>` funktioniert exakt als Smoke-Kriterium.
 - [ ] CLI akzeptiert mindestens Datei-Pfad oder URL als Input.
-- [ ] CLI-URL-Input nutzt dieselben SSRF-Schutzregeln wie der Analyzer-Loader oder ist auf lokale Dateien beschränkt; Abweichungen sind dokumentiert und getestet.
+- [ ] CLI-URL-Input ist verpflichtend und nutzt dieselben SSRF-Schutzregeln wie der Analyzer-Loader; lokale Datei-Analyse ist zusätzlich erlaubt, ersetzt aber das URL-Ziel nicht.
 - [ ] CLI gibt Analyseergebnis auf stdout als JSON aus.
 - [ ] Fehler werden mit sinnvollem Exit-Code und maschinenlesbarem Fehler-JSON oder klar dokumentiertem stderr ausgegeben.
 - [ ] CLI-Tests decken Datei-Input, URL-/Fetch-Mock, Erfolg und Fehlerfall ab.
@@ -211,7 +211,7 @@ DoD:
 - [ ] Versionen sind konsistent: Root-`package.json.version`, `packages/stream-analyzer/package.json.version`, `CHANGELOG.md`-Abschnitt, Release-Tag `v0.3.0` und die im JSON-Ergebnis gesendete Analyzer-Version passen zusammen oder eine bewusst abweichende Versionierungsregel ist dokumentiert und getestet.
 - [ ] `docs/stream-analyzer.md`, `docs/local-development.md`, `docs/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.3.0`.
-- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build` und Analyzer-spezifische Smoke-/CLI-Gates, sofern eingeführt.
+- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build` und ein reproduzierbarer Analyzer-CLI-Smoke für `pnpm m-trace check <url>` gegen lokales Fixture oder gemockten Fetch-Pfad.
 - [ ] Falls `make browser-e2e` nicht durch Analyzer-Änderungen betroffen ist, bleibt es ein manuelles Release-Gate; bei Dashboard-/Demo-Auswirkungen läuft es grün.
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.3.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [ ] OE-3/Persistenz ist entschieden oder explizit nicht-blockierend deferred, falls Analyseergebnisse nicht durable gespeichert werden.
