@@ -387,7 +387,7 @@ DoD:
 - [x] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8 (`2eede43`, `504e4c9`).
 - [x] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints (`7148a8d`, `9842d39`, `796aaa7`, `26a64e2`, `835f258`, `504e4c9`).
 - [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32). Pflicht für `0.1.0`-DoD laut Lastenheft §18 und Roadmap-OE-6-Trigger („vor `0.1.0`-DoD"); ohne Auflösung von OE-6 ist `0.1.0` nicht abnehmbar. **Eskalationsregel**: OE-6 muss spätestens vier Wochen vor dem geplanten `0.1.0`-Release entschieden sein — verbleibt OE-6 darüber hinaus offen, wird der Punkt in Roadmap §5 als `[!]`-blockierend markiert und an den Projekt-Owner für eine Fast-Track-ADR-Entscheidung eskaliert. Bis zur Entscheidung kann `0.1.1` nicht beginnen (siehe Vorgänger-Gate dort).
-- [x] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`) (`62a8cd7`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`) (`95591a5`).
 
 ---
 
