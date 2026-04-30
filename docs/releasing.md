@@ -1,8 +1,8 @@
 # Releasing — m-trace
 
-> **Status**: Skeleton. CI-Verifikation ist konkretisiert; Asset-Liste
-> und Branching-Modell werden befüllt, sobald
-> [`OE-7`](./roadmap.md) (Release-Konvention) entschieden ist.
+> **Status**: Verbindlich für `0.1.0`. CI-Verifikation,
+> Branching-Modell und Tag-Format sind konkretisiert; Container-Image-
+> Veröffentlichung bleibt außerhalb von `0.1.0`.
 > Bezug: AK-11, DoD §18 (Lastenheft).
 
 ## 0. Zweck
@@ -63,11 +63,12 @@ gh run watch --workflow build.yml
 
 ## 3. Release-Commit und Tag
 
-> **TODO bis OE-7**: Branching-Modell festlegen (Trunk-based auf
-> `main` vs. GitFlow `develop` → `main`). Davon hängt ab, ob der
-> Release-Commit direkt auf `main` landet oder über einen Merge aus
-> `develop`. Tag-Format ebenfalls fixieren — vorgeschlagen: `vX.Y.Z`
-> (SemVer, kein Pre-Release-Suffix für Hauptreleases).
+Release-Konvention für `0.1.x`:
+
+- trunk-based auf `main`.
+- Release-Commit direkt auf `main`.
+- annotierte SemVer-Tags im Format `vX.Y.Z`.
+- kein Pre-Release-Suffix für Hauptreleases.
 
 ```bash
 git commit -m "chore(release): vX.Y.Z"
@@ -78,16 +79,13 @@ git push origin "$TAG"
 
 ## 4. GitHub-Release
 
-> **TODO bis OE-7**: Asset-Liste, Source-Bundle, Container-
-> Image-Pfad (z. B. `ghcr.io/pt9912/m-trace-api:X.Y.Z`) und Pretty-
-> Print der Release-Notes festlegen. Vorlage analog cmake-xray /
-> d-migrate-Pattern.
-
 Mindestumfang:
 
 - Release-Notes aus dem `CHANGELOG.md`-Versionsabschnitt extrahieren.
 - Release-Titel: `m-trace X.Y.Z`.
 - Tag: `vX.Y.Z`.
+- Assets: GitHub-Source-Archive (`zip`/`tar.gz`) genügen für `0.1.0`.
+  Container-Image-Veröffentlichung folgt in einem späteren Release.
 
 ```bash
 gh release create "$TAG" \
@@ -105,14 +103,36 @@ gh release create "$TAG" \
 
 ## 6. Rollback
 
-> **TODO bis OE-7**: Rollback-Szenarien dokumentieren analog
-> d-migrate `releasing.md` §6 (Tag noch lokal, Tag bereits gepusht,
-> GitHub-Release zurückziehen, CI-Build nach Release fehlschlägt).
+Tag noch nicht gepusht:
+
+```bash
+git tag -d "$TAG"
+```
+
+Tag bereits gepusht, GitHub-Release noch nicht erstellt:
+
+```bash
+git push origin ":refs/tags/$TAG"
+git tag -d "$TAG"
+```
+
+GitHub-Release bereits erstellt:
+
+```bash
+gh release delete "$TAG"
+git push origin ":refs/tags/$TAG"
+git tag -d "$TAG"
+```
+
+CI-Build nach Release fehlgeschlagen: Release auf GitHub als
+Pre-Release/Draft zurückstufen oder löschen, Fehler auf `main`
+beheben, neuen Release-Commit erstellen und Tag neu setzen. Kein
+Force-Push auf `main`.
 
 ## 7. Referenzen
 
 - Lastenheft §14 — Akzeptanzkriterien (AK-11).
 - Lastenheft §18 — Definition of Done für den MVP.
 - `docs/roadmap.md` §3 — Release-Übersicht und RAK-Akzeptanzkriterien.
-- `docs/roadmap.md` §5 — Offene Entscheidungen (OE-7).
+- `docs/roadmap.md` §5 — Offene Entscheidungen.
 - `CHANGELOG.md` — Versionsverlauf.

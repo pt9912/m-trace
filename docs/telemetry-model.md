@@ -1,7 +1,7 @@
 # Telemetry-Model — m-trace
 
 > **Status**: Verbindlich für `0.1.x`. Wire-Format und Backpressure-Limits sind harte Voraussetzung für `0.1.1` (Player-SDK); OTel-Modell und Cardinality-Regeln sind harte Voraussetzung für `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](./roadmap.md) §2 Schritt 6; [Plan `0.1.0`](./plan-0.1.0.md) §3.5; [API-Kontrakt](./spike/backend-api-contract.md); [Architektur](./architecture.md) §5.
+> **Bezug**: [Lastenheft `1.1.4`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](./roadmap.md) §2 Schritt 6; [Plan `0.1.0`](./plan-0.1.0.md) §3.5; [API-Kontrakt](./spike/backend-api-contract.md); [Architektur](./architecture.md) §5.
 
 ## 0. Zweck
 

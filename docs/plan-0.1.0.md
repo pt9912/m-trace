@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: In Arbeit. Pre-MVP-Vorbereitung (Tranche 0) abgeschlossen, Architektur-Skelett-Doku (Tranche 0a) und Spike-Code-Korrekturen (Tranche 0b) teilweise umgesetzt.  
-> **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.4`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | 🟡 |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | 🟡 |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3` | 🟡 fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4` | 🟡 fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ⬜ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -118,7 +118,7 @@ DoD:
 - [x] Skeleton-Datei angelegt mit §0..§7, Platzhaltern und expliziten TODOs (`67b5aeb`).
 - [x] Roadmap §3 verlinkt auf `releasing.md` (`67b5aeb`).
 - [x] §2 Verifikation konkretisieren: `0.1.0` nutzt GitHub Actions auf `ubuntu-24.04`; Workflow `.github/workflows/build.yml` führt Root-Targets `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` aus (`46e45ec`).
-- [ ] §3 Branching-Modell und Tag-Format konkretisieren, sobald **OE-7** (Release-Konvention) entschieden ist.
+- [x] §3 Branching-Modell und Tag-Format konkretisieren: trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`.
 - [ ] §4 Asset-Liste, Source-Bundle, Container-Image-Pfad konkretisieren.
 - [ ] §6 Rollback-Szenarien analog d-migrate-Pattern.
 
@@ -305,9 +305,25 @@ DoD:
 
 ---
 
+### 4a.7 Patch `1.1.4` — OE-1/OE-6/OE-7 auflösen
+
+Nach Lieferung des Compose-Labs und des GitHub-Actions-Workflows sind
+die vor `0.1.0` blockierenden offenen Entscheidungen geklärt.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.3` → `1.1.4`.
+- [x] Lastenheft Header: Lizenzziel auf konkrete Lizenz **MIT** gesetzt; `LICENSE` ist bereits vorhanden.
+- [x] Lastenheft §16.2: OE-1 resolved — Projektlizenz MIT.
+- [x] Lastenheft §16.2: OE-6 resolved — CI-Zielplattform GitHub Actions `ubuntu-24.04`.
+- [x] Lastenheft §16.2: OE-7 resolved — trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`.
+- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.4` aktualisiert.
+
+---
+
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Status: 🟡 releasebereit im Code — §5.1 Backend-Erweiterung, §5.2 Compose-Lab, §5.3 RAK-Verifikation und §5.4 CI-Setup sind ausgeliefert; OE-1/OE-7 bleiben vor dem Public-Release offen. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
+Status: 🟡 releasebereit im Code — §5.1 Backend-Erweiterung, §5.2 Compose-Lab, §5.3 RAK-Verifikation und §5.4 CI-Setup sind ausgeliefert; Public-Release-Vorbereitung läuft über `docs/releasing.md`. Bezug: Lastenheft `1.1.4` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
@@ -366,7 +382,7 @@ DoD:
 - [x] Core-Stack mindestens unter Linux verifiziert: `docker compose up -d --build`, `make smoke`, `make stop`, danach `docker compose ps` leer (`504e4c9`).
 - [x] Smoke-Test `0.1.0`: nach `make dev` liefert `curl http://localhost:8080/api/health` ein `200`; ein POST mit gültigem Token an `/api/playback-events` liefert `202`; ein GET an `/api/stream-sessions` listet die so erzeugte Session. Zusätzlich prüft `make smoke` das HLS-Manifest via MediaMTX (`504e4c9`).
 
-### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft `1.1.3` §13.1; RAK-Verteilung aus Patch `1.1.0`)
+### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft `1.1.4` §13.1; RAK-Verteilung aus Patch `1.1.0`)
 
 DoD:
 

@@ -47,8 +47,9 @@ in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §2.
 ### 1.3 Verbleibend für `0.1.0`-Release
 
 Status: 🟡 releasebereit im Code — §5.1 Backend-Erweiterung, §5.2
-Compose-Lab, RAK-1/3/4/6/8-Verifikation und CI-Setup sind ausgeliefert.
-OE-1/OE-7 bleiben vor dem Public-Release offen. DoD-Detail
+Compose-Lab, RAK-1/3/4/6/8-Verifikation, CI-Setup, Lizenz- und
+Release-Konvention sind ausgeliefert. `0.1.0`-Tag/GitHub-Release stehen
+noch aus. DoD-Detail
 in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
 
 | Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
@@ -114,8 +115,7 @@ geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
 DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
 (Lastenheft-übergreifend, nicht Release-spezifisch). Detaillierter
 Lieferstand pro Tranche steht in den drei `0.1.x`-Plan-Dokumenten;
-Release-Vorgehen in [`docs/releasing.md`](./releasing.md) (Skeleton —
-CI-Verifikation konkretisiert; Release-Konvention folgt mit OE-7).
+Release-Vorgehen in [`docs/releasing.md`](./releasing.md).
 
 ---
 
@@ -145,11 +145,9 @@ Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsrege
 
 | Kennung | Entscheidung                                                                     | Wo wird sie getroffen             | Status                                                      |
 | ------- | -------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
-| OE-1    | Projektlizenz: MIT oder Apache-2.0                                               | vor `0.1.0` Public-Release        | MIT bereits committed (`LICENSE`); Apache-2.0-Prüfung offen |
 | OE-3    | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen                                                       |
 | OE-4    | Frontend-Styling (eigenes CSS / Tailwind / UI-Library)                           | mit Schritt 8 in §2               | offen                                                       |
 | OE-5    | Live-Updates: Polling / WebSocket / SSE                                          | Folge-ADR `0.4.0`                 | offen                                                       |
-| OE-7    | Release-Konvention                                                               | vor `0.1.0` Public-Release        | offen                                                       |
 | OE-8    | Paketnamen für npm                                                               | Schritt 9 in §2                   | offen                                                       |
 
 ---

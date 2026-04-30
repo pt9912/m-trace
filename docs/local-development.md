@@ -1,7 +1,7 @@
 # Local Development — m-trace
 
 > **Status**: Verbindlich für `0.1.x`. Die Quickstart-Sektion wird mit jedem Sub-Release erweitert (`0.1.0` Backend Core, `0.1.1` Player-SDK + Dashboard, `0.1.2` Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.3`](./lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](./roadmap.md) §2 Schritt 7; [Plan `0.1.0`](./plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](./architecture.md) §8.
+> **Bezug**: [Lastenheft `1.1.4`](./lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](./roadmap.md) §2 Schritt 7; [Plan `0.1.0`](./plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](./architecture.md) §8.
 
 ## 0. Zweck
 
@@ -199,7 +199,7 @@ make deps           # nur dependencies auflösen (Cache-Layer)
 make clean          # entfernt alle apps/api-spike:*-Images
 ```
 
-Coverage-Tooling (`go test -cover`-Threshold) ist Folge-ADR aus Roadmap §4 und kommt voraussichtlich in `0.1.0`-CI-Setup (sobald OE-6 entschieden, siehe `plan-0.1.0.md` §5.4 Eskalationsregel).
+Coverage-Tooling (`go test -cover`-Threshold) ist über `make coverage-gate` verfügbar und läuft im `0.1.0`-CI-Workflow.
 
 ### 4.2 Player-SDK (`packages/player-sdk`, ab `0.1.1`)
 
