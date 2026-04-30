@@ -3,7 +3,7 @@ services:
     build:
       context: ./apps/api
       target: runtime
-    image: m-trace-api:0.1.1
+    image: m-trace-api:0.1.2
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
       OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/dashboard/Dockerfile
-    image: m-trace-dashboard:0.1.1
+    image: m-trace-dashboard:0.1.2
     depends_on:
       - api
       - mediamtx
@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/dashboard/Dockerfile
-    image: m-trace-dashboard:0.1.1-e2e
+    image: m-trace-dashboard:0.1.2-e2e
     profiles:
       - test
     depends_on:

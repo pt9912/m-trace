@@ -170,12 +170,12 @@ CSP-Beispiele für `connect-src` (NF-37):
 
 ### 3.3 Service-Abhängigkeiten
 
-`docker-compose.yml` setzt `depends_on` mit Healthchecks:
+`docker-compose.yml` setzt einfache `depends_on`-Beziehungen. Compose wartet damit auf gestartete Container (`service_started`), nicht auf applikative Healthchecks:
 
-- `dashboard` wartet auf `api` (Healthcheck `/api/health` → 200).
+- `dashboard` startet nach `api` und `mediamtx`.
 - `api` wartet implizit auf nichts (kann ohne `mediamtx` starten).
-- `prometheus` wartet auf `api` (Healthcheck) und `otel-collector` (im observability-Profil).
-- `grafana` wartet auf `prometheus`.
+- `prometheus` startet nach `api` und `otel-collector` (im observability-Profil).
+- `grafana` startet nach `prometheus`.
 
 Der Status pro Service ist über `docker compose ps` und `docker compose logs <service>` einsehbar.
 
