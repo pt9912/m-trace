@@ -72,7 +72,15 @@ func main() {
 		},
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
-	publisher := metrics.NewPrometheusPublisher()
+	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(func() float64 {
+		var active float64
+		for _, session := range sessions.Snapshot() {
+			if session.State == domain.SessionStateActive {
+				active++
+			}
+		}
+		return active
+	}))
 	analyzer := streamanalyzer.NewNoopStreamAnalyzer()
 	sequencer := persistence.NewInMemoryIngestSequencer()
 
@@ -91,6 +99,7 @@ func main() {
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	router := apihttp.NewRouter(useCase, sessionsService, resolver, publisher.Handler(), tracer, logger)
+	router = apihttp.RequestMetricsMiddleware(router, publisher)
 	addr := listenAddr()
 
 	srv := &http.Server{

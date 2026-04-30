@@ -6,6 +6,10 @@ services:
     image: m-trace-api:0.1.1
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "${OTEL_EXPORTER_OTLP_PROTOCOL:-}"
+      OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-}"
+      OTEL_METRICS_EXPORTER: "${OTEL_METRICS_EXPORTER:-}"
     ports:
       - "8080:8080"
 
@@ -77,3 +81,46 @@ services:
       - /work/apps/dashboard/node_modules
       - /work/packages/player-sdk/node_modules
     entrypoint: ["/bin/bash", "/work/scripts/run-playwright-container.sh"]
+
+  prometheus:
+    image: prom/prometheus:v3.11.2
+    profiles:
+      - observability
+    depends_on:
+      - api
+      - otel-collector
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    profiles:
+      - observability
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.150.1
+    profiles:
+      - observability
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./observability/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"

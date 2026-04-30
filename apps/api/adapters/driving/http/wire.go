@@ -10,12 +10,13 @@ import "github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 // The use case never sees these tags; mapping happens in
 // toEventInputs.
 type wireEvent struct {
-	EventName       string  `json:"event_name"`
-	ProjectID       string  `json:"project_id"`
-	SessionID       string  `json:"session_id"`
-	ClientTimestamp string  `json:"client_timestamp"`
-	SequenceNumber  *int64  `json:"sequence_number,omitempty"`
-	SDK             wireSDK `json:"sdk"`
+	EventName       string         `json:"event_name"`
+	ProjectID       string         `json:"project_id"`
+	SessionID       string         `json:"session_id"`
+	ClientTimestamp string         `json:"client_timestamp"`
+	SequenceNumber  *int64         `json:"sequence_number,omitempty"`
+	SDK             wireSDK        `json:"sdk"`
+	Meta            map[string]any `json:"meta,omitempty"`
 }
 
 type wireSDK struct {
@@ -41,7 +42,19 @@ func toEventInputs(events []wireEvent) []driving.EventInput {
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
+			Meta: copyMeta(e.Meta),
 		}
+	}
+	return out
+}
+
+func copyMeta(in map[string]any) map[string]any {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		out[k] = v
 	}
 	return out
 }

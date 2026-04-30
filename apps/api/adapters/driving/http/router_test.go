@@ -61,3 +61,31 @@ func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {
 		t.Errorf("noopAllowlist must reject every preflight; got %d want 403", resp.StatusCode)
 	}
 }
+
+type countingRequestMetrics struct {
+	requests int
+}
+
+func (m *countingRequestMetrics) APIRequests(n int) {
+	m.requests += n
+}
+
+func TestRequestMetricsMiddlewareCountsEveryRequest(t *testing.T) {
+	t.Parallel()
+	counter := &countingRequestMetrics{}
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	handler := apihttp.RequestMetricsMiddleware(next, counter)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status=%d want 204", rec.Code)
+	}
+	if counter.requests != 1 {
+		t.Errorf("expected APIRequests=1, got %d", counter.requests)
+	}
+}

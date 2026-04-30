@@ -1,34 +1,64 @@
 // Package metrics holds the Prometheus exposition adapter for the
-// four mandatory mtrace_* counters from
+// aggregate mtrace_* metrics from docs/lastenheft.md §7.9 and
 // docs/spike/backend-api-contract.md §7.
 package metrics
 
 import (
 	"net/http"
 
-	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// PrometheusPublisher exposes the four mandatory counters
-// (mtrace_playback_events_total, mtrace_invalid_events_total,
-// mtrace_rate_limited_events_total, mtrace_dropped_events_total) and
-// returns the HTTP handler for GET /api/metrics.
+// ActiveSessionsFunc returns the current number of active sessions.
+// It must not inspect or emit per-session labels.
+type ActiveSessionsFunc func() float64
+
+type publisherConfig struct {
+	activeSessions ActiveSessionsFunc
+}
+
+// PublisherOption configures optional metric sources.
+type PublisherOption func(*publisherConfig)
+
+// WithActiveSessionsFunc wires the active-session gauge to the current
+// session repository state. nil leaves the gauge at 0.
+func WithActiveSessionsFunc(fn ActiveSessionsFunc) PublisherOption {
+	return func(cfg *publisherConfig) {
+		cfg.activeSessions = fn
+	}
+}
+
+// PrometheusPublisher exposes the aggregate mtrace_* counters/gauges
+// and returns the HTTP handler for GET /api/metrics.
 //
 // No high-cardinality labels are emitted (Spec §7).
 type PrometheusPublisher struct {
 	registry *prometheus.Registry
 
-	eventsAccepted     prometheus.Counter
-	invalidEvents      prometheus.Counter
-	rateLimitedEvents  prometheus.Counter
-	droppedEvents      prometheus.Counter
+	eventsAccepted    prometheus.Counter
+	invalidEvents     prometheus.Counter
+	rateLimitedEvents prometheus.Counter
+	droppedEvents     prometheus.Counter
+	playbackErrors    prometheus.Counter
+	rebufferEvents    prometheus.Counter
+	apiRequests       prometheus.Counter
+	activeSessions    prometheus.GaugeFunc
+	startupTimeMS     prometheus.Gauge
 }
 
-// NewPrometheusPublisher creates and registers the four counters.
-func NewPrometheusPublisher() *PrometheusPublisher {
+// NewPrometheusPublisher creates and registers the aggregate metrics.
+func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 	registry := prometheus.NewRegistry()
+	cfg := publisherConfig{}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	activeSessions := cfg.activeSessions
+	if activeSessions == nil {
+		activeSessions = func() float64 { return 0 }
+	}
 
 	p := &PrometheusPublisher{
 		registry: registry,
@@ -48,12 +78,37 @@ func NewPrometheusPublisher() *PrometheusPublisher {
 			Name: "mtrace_dropped_events_total",
 			Help: "Total number of events dropped internally (e.g. on persistence backpressure).",
 		}),
+		playbackErrors: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mtrace_playback_errors_total",
+			Help: "Total number of accepted playback error events.",
+		}),
+		rebufferEvents: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mtrace_rebuffer_events_total",
+			Help: "Total number of accepted rebuffer start events.",
+		}),
+		apiRequests: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mtrace_api_requests_total",
+			Help: "Total number of HTTP requests handled by the API.",
+		}),
+		activeSessions: prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+			Name: "mtrace_active_sessions",
+			Help: "Current number of active stream sessions.",
+		}, activeSessions),
+		startupTimeMS: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "mtrace_startup_time_ms",
+			Help: "Most recently observed player startup time in milliseconds.",
+		}),
 	}
 	registry.MustRegister(
 		p.eventsAccepted,
 		p.invalidEvents,
 		p.rateLimitedEvents,
 		p.droppedEvents,
+		p.playbackErrors,
+		p.rebufferEvents,
+		p.apiRequests,
+		p.activeSessions,
+		p.startupTimeMS,
 	)
 	return p
 }
@@ -84,6 +139,34 @@ func (p *PrometheusPublisher) RateLimitedEvents(n int) {
 func (p *PrometheusPublisher) DroppedEvents(n int) {
 	if n > 0 {
 		p.droppedEvents.Add(float64(n))
+	}
+}
+
+// PlaybackErrors increments the accepted playback-error counter by n.
+func (p *PrometheusPublisher) PlaybackErrors(n int) {
+	if n > 0 {
+		p.playbackErrors.Add(float64(n))
+	}
+}
+
+// RebufferEvents increments the accepted rebuffer-start counter by n.
+func (p *PrometheusPublisher) RebufferEvents(n int) {
+	if n > 0 {
+		p.rebufferEvents.Add(float64(n))
+	}
+}
+
+// StartupTimeMS records the latest accepted startup duration.
+func (p *PrometheusPublisher) StartupTimeMS(ms float64) {
+	if ms >= 0 {
+		p.startupTimeMS.Set(ms)
+	}
+}
+
+// APIRequests increments the API request counter by n.
+func (p *PrometheusPublisher) APIRequests(n int) {
+	if n > 0 {
+		p.apiRequests.Add(float64(n))
 	}
 }
 

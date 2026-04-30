@@ -24,6 +24,7 @@ type PlaybackEvent struct {
 	IngestSequence   int64
 	SequenceNumber   *int64
 	SDK              SDKInfo
+	Meta             EventMeta
 }
 
 // SDKInfo identifies the producing player SDK.
@@ -31,3 +32,8 @@ type SDKInfo struct {
 	Name    string
 	Version string
 }
+
+// EventMeta carries event-specific scalar attributes from the player
+// SDK wire format. Values stay generic inside the domain because only
+// selected, bounded aggregate metrics are interpreted by the use case.
+type EventMeta map[string]any

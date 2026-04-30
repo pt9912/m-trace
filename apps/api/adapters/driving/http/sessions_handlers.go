@@ -228,13 +228,13 @@ func parseLimitWithName(s string) (int, error) {
 
 // sessionWire ist die JSON-Antwortform für domain.StreamSession.
 type sessionWire struct {
-	ID            string  `json:"session_id"`
-	ProjectID     string  `json:"project_id"`
-	State         string  `json:"state"`
-	StartedAt     string  `json:"started_at"`
-	LastEventAt   string  `json:"last_event_at"`
-	EndedAt       *string `json:"ended_at,omitempty"`
-	EventCount    int64   `json:"event_count"`
+	ID          string  `json:"session_id"`
+	ProjectID   string  `json:"project_id"`
+	State       string  `json:"state"`
+	StartedAt   string  `json:"started_at"`
+	LastEventAt string  `json:"last_event_at"`
+	EndedAt     *string `json:"ended_at,omitempty"`
+	EventCount  int64   `json:"event_count"`
 }
 
 func toSessionWire(s domain.StreamSession) sessionWire {
@@ -263,14 +263,15 @@ func toSessionWireList(in []domain.StreamSession) []sessionWire {
 
 // eventWire ist die JSON-Antwortform für ein Event im Detail-Response.
 type eventWire struct {
-	EventName        string  `json:"event_name"`
-	ProjectID        string  `json:"project_id"`
-	SessionID        string  `json:"session_id"`
-	ClientTimestamp  string  `json:"client_timestamp"`
-	ServerReceivedAt string  `json:"server_received_at"`
-	IngestSequence   int64   `json:"ingest_sequence"`
-	SequenceNumber   *int64  `json:"sequence_number,omitempty"`
-	SDK              sdkWire `json:"sdk"`
+	EventName        string         `json:"event_name"`
+	ProjectID        string         `json:"project_id"`
+	SessionID        string         `json:"session_id"`
+	ClientTimestamp  string         `json:"client_timestamp"`
+	ServerReceivedAt string         `json:"server_received_at"`
+	IngestSequence   int64          `json:"ingest_sequence"`
+	SequenceNumber   *int64         `json:"sequence_number,omitempty"`
+	SDK              sdkWire        `json:"sdk"`
+	Meta             map[string]any `json:"meta,omitempty"`
 }
 
 type sdkWire struct {
@@ -293,6 +294,7 @@ func toEventWireList(in []domain.PlaybackEvent) []eventWire {
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
+			Meta: e.Meta,
 		}
 	}
 	return out

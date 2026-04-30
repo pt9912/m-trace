@@ -5,15 +5,45 @@
   let health: HealthStatus = { ok: false, status: 0, text: "not checked" };
   let loading = true;
 
-  const observabilityServices = [
-    { name: "Prometheus", url: "http://localhost:9090", status: "inactive", note: "observability profile" },
-    { name: "Grafana", url: "http://localhost:3000", status: "inactive", note: "observability profile" },
-    { name: "OTel Collector", url: undefined, status: "inactive", note: "OTLP endpoint only" }
+  type ServiceStatus = "connected" | "inactive";
+
+  let observabilityServices: Array<{ name: string; url: string; openUrl?: string; status: ServiceStatus; note: string }> = [
+    {
+      name: "Prometheus",
+      url: "http://localhost:9090/-/ready",
+      openUrl: "http://localhost:9090",
+      status: "inactive",
+      note: "observability profile"
+    },
+    {
+      name: "Grafana",
+      url: "http://localhost:3000/api/health",
+      openUrl: "http://localhost:3000",
+      status: "inactive",
+      note: "observability profile"
+    },
+    {
+      name: "OTel Collector",
+      url: "http://localhost:13133",
+      status: "inactive",
+      note: "health endpoint"
+    }
   ];
+
+  async function probe(url: string): Promise<ServiceStatus> {
+    try {
+      await fetch(url, { mode: "no-cors", cache: "no-store" });
+      return "connected";
+    } catch {
+      return "inactive";
+    }
+  }
 
   async function refresh() {
     loading = true;
-    health = await getHealth();
+    const [nextHealth, ...statuses] = await Promise.all([getHealth(), ...observabilityServices.map((service) => probe(service.url))]);
+    health = nextHealth;
+    observabilityServices = observabilityServices.map((service, index) => ({ ...service, status: statuses[index] }));
     loading = false;
   }
 
@@ -51,7 +81,9 @@
   <div class="panel">
     <div class="panel-head">
       <h2>Observability</h2>
-      <span class="pill inactive">inactive</span>
+      <span class={`pill ${observabilityServices.some((service) => service.status === "connected") ? "connected" : "inactive"}`}>
+        {observabilityServices.some((service) => service.status === "connected") ? "connected" : "inactive"}
+      </span>
     </div>
     <div class="status-list">
       {#each observabilityServices as service}
@@ -61,9 +93,9 @@
             <span class="muted">{service.note}</span>
           </div>
           <div class="status-actions">
-            <span class="pill inactive">{service.status}</span>
-            {#if service.url}
-              <a href={service.url} target="_blank" rel="noreferrer">Open</a>
+            <span class={`pill ${service.status}`}>{service.status}</span>
+            {#if service.openUrl}
+              <a href={service.openUrl} target="_blank" rel="noreferrer">Open</a>
             {/if}
           </div>
         </div>

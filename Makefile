@@ -1,15 +1,24 @@
 COMPOSE ?= docker compose
 
-.PHONY: dev stop smoke browser-e2e test lint build coverage-gate arch-check
+.PHONY: dev dev-observability stop smoke smoke-observability seed-rak9 browser-e2e test lint build coverage-gate arch-check
 
 dev:
 	$(COMPOSE) up --build
 
+dev-observability:
+	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability up --build
+
 stop:
-	$(COMPOSE) down
+	$(COMPOSE) --profile observability down
 
 smoke:
 	bash scripts/smoke-0.1.1.sh
+
+smoke-observability:
+	bash scripts/smoke-observability.sh
+
+seed-rak9:
+	bash scripts/seed-rak9.sh
 
 browser-e2e:
 	bash scripts/test-browser-e2e.sh

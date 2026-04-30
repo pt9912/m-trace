@@ -42,6 +42,7 @@ type EventInput struct {
 	ClientTimestamp string
 	SequenceNumber  *int64
 	SDK             SDKInput
+	Meta            map[string]any
 }
 
 // SDKInput is the wire counterpart of domain.SDKInfo.

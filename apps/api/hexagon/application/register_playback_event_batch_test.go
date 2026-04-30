@@ -97,12 +97,19 @@ func (s *stubSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Durati
 
 type spyMetrics struct {
 	accepted, invalid, rateLimited, dropped int
+	playbackErrors, rebufferEvents          int
+	startupTimes                            []float64
 }
 
 func (s *spyMetrics) EventsAccepted(n int)    { s.accepted += n }
 func (s *spyMetrics) InvalidEvents(n int)     { s.invalid += n }
 func (s *spyMetrics) RateLimitedEvents(n int) { s.rateLimited += n }
 func (s *spyMetrics) DroppedEvents(n int)     { s.dropped += n }
+func (s *spyMetrics) PlaybackErrors(n int)    { s.playbackErrors += n }
+func (s *spyMetrics) RebufferEvents(n int)    { s.rebufferEvents += n }
+func (s *spyMetrics) StartupTimeMS(ms float64) {
+	s.startupTimes = append(s.startupTimes, ms)
+}
 
 // stubTelemetry zählt BatchReceived-Aufrufe. Pro Aufruf wird die
 // gemeldete Batch-Größe addiert; calls misst die reine Aufrufzahl.
@@ -239,6 +246,38 @@ func TestIngestSequenceMonotonic(t *testing.T) {
 		if got, want := ev.IngestSequence, int64(i+1); got != want {
 			t.Errorf("event[%d].IngestSequence=%d want %d", i, got, want)
 		}
+	}
+}
+
+func TestPlaybackAggregateMetrics(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, _, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	template := in.Events[0]
+	playbackError := template
+	playbackError.EventName = "playback_error"
+	startup := template
+	startup.EventName = "startup_time_measured"
+	startup.Meta = map[string]any{"duration_ms": float64(1234)}
+	in.Events = []driving.EventInput{template, playbackError, startup}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := len(repo.appended); got != 3 {
+		t.Fatalf("expected 3 appended events, got %d", got)
+	}
+	if metrics.rebufferEvents != 1 {
+		t.Errorf("expected RebufferEvents=1, got %d", metrics.rebufferEvents)
+	}
+	if metrics.playbackErrors != 1 {
+		t.Errorf("expected PlaybackErrors=1, got %d", metrics.playbackErrors)
+	}
+	if len(metrics.startupTimes) != 1 || metrics.startupTimes[0] != 1234 {
+		t.Errorf("expected StartupTimeMS=[1234], got %#v", metrics.startupTimes)
+	}
+	if got := repo.appended[2].Meta["duration_ms"]; got != float64(1234) {
+		t.Errorf("expected persisted meta duration_ms=1234, got %#v", got)
 	}
 }
 

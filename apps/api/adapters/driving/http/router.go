@@ -10,6 +10,12 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
+// RequestMetrics is the small metrics surface the HTTP adapter needs
+// for aggregate request counting.
+type RequestMetrics interface {
+	APIRequests(n int)
+}
+
 // NewRouter wires the pflicht-Endpoints onto a single mux. Method
 // routing uses Go 1.22 method-aware patterns ("POST /path"), so
 // non-matching methods fall through to a 404 from the mux.
@@ -71,6 +77,19 @@ func NewRouter(
 	mux.HandleFunc("OPTIONS /api/health", dashboardPreflightHandler(allowlist))
 
 	return corsMiddleware(mux, allowlist)
+}
+
+// RequestMetricsMiddleware counts every HTTP request that enters the
+// API router. It intentionally emits no labels to keep Prometheus
+// cardinality bounded.
+func RequestMetricsMiddleware(next http.Handler, metrics RequestMetrics) http.Handler {
+	if metrics == nil {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		metrics.APIRequests(1)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // noopAllowlist lehnt jeden Origin ab — Fallback für nil-Allowlist

@@ -13,6 +13,7 @@ package telemetry
 import (
 	"context"
 	"errors"
+	"os"
 
 	"go.opentelemetry.io/contrib/exporters/autoexport"
 	"go.opentelemetry.io/otel"
@@ -75,6 +76,8 @@ func (p *Providers) Shutdown(ctx context.Context) error {
 // lokale Dev-Setups gegen einen nicht vorhandenen Collector pushen
 // ließe; deshalb der explizite Fallback.
 func Setup(ctx context.Context, serviceName, serviceVersion string) (*Providers, error) {
+	unsetBlankOTelEnv()
+
 	res, err := resource.Merge(
 		resource.Default(),
 		resource.NewWithAttributes(
@@ -125,6 +128,19 @@ func Setup(ctx context.Context, serviceName, serviceVersion string) (*Providers,
 	otel.SetTracerProvider(tp)
 
 	return &Providers{Meter: mp, Tracer: tp}, nil
+}
+
+func unsetBlankOTelEnv() {
+	for _, key := range []string{
+		"OTEL_EXPORTER_OTLP_ENDPOINT",
+		"OTEL_EXPORTER_OTLP_PROTOCOL",
+		"OTEL_TRACES_EXPORTER",
+		"OTEL_METRICS_EXPORTER",
+	} {
+		if os.Getenv(key) == "" {
+			_ = os.Unsetenv(key)
+		}
+	}
 }
 
 // noopSpanExporter discards all spans. Used as autoexport fallback.

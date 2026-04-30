@@ -218,6 +218,13 @@ Smoke-Test:
 make smoke
 ```
 
+Optionaler Observability-Stack mit Prometheus, Grafana und OTel-Collector:
+
+```bash
+make dev-observability
+make smoke-observability
+```
+
 Browser-End-to-End-Test im Playwright-Container:
 
 ```bash
@@ -227,6 +234,9 @@ make browser-e2e
 - Dashboard: <http://localhost:5173>
 - API: <http://localhost:8080/api/health>
 - HLS-Teststream: <http://localhost:8888/teststream/index.m3u8>
+- Prometheus: <http://localhost:9090> (`make dev-observability`)
+- Grafana: <http://localhost:3000> (`admin`/`admin`, `make dev-observability`)
+- OTel Collector: OTLP `localhost:4317`/`4318`, Health <http://localhost:13133>
 
 Details stehen in [docs/local-development.md](docs/local-development.md).
 

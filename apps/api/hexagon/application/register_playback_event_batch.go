@@ -170,6 +170,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
+			Meta: domain.EventMeta(copyEventMeta(e.Meta)),
 		})
 	}
 
@@ -187,6 +188,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	}
 
 	u.metrics.EventsAccepted(len(parsed))
+	u.publishPlaybackMetrics(parsed)
 	return driving.BatchResult{Accepted: len(parsed)}, nil
 }
 
@@ -197,6 +199,61 @@ func hasRequiredFields(e driving.EventInput) bool {
 		strings.TrimSpace(e.ClientTimestamp) != "" &&
 		strings.TrimSpace(e.SDK.Name) != "" &&
 		strings.TrimSpace(e.SDK.Version) != ""
+}
+
+func (u *RegisterPlaybackEventBatchUseCase) publishPlaybackMetrics(events []domain.PlaybackEvent) {
+	var playbackErrors int
+	var rebufferEvents int
+	for _, e := range events {
+		switch e.EventName {
+		case "playback_error":
+			playbackErrors++
+		case "rebuffer_started":
+			rebufferEvents++
+		case "startup_time_measured":
+			if duration, ok := numericMeta(e.Meta, "duration_ms"); ok {
+				u.metrics.StartupTimeMS(duration)
+			}
+		}
+	}
+	u.metrics.PlaybackErrors(playbackErrors)
+	u.metrics.RebufferEvents(rebufferEvents)
+}
+
+func numericMeta(meta domain.EventMeta, key string) (float64, bool) {
+	if len(meta) == 0 {
+		return 0, false
+	}
+	switch v := meta[key].(type) {
+	case float64:
+		return v, true
+	case float32:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case jsonNumber:
+		f, err := v.Float64()
+		return f, err == nil
+	default:
+		return 0, false
+	}
+}
+
+type jsonNumber interface {
+	Float64() (float64, error)
+}
+
+func copyEventMeta(in map[string]any) map[string]any {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
 }
 
 // Compile-time check: the use case implements the inbound port.
