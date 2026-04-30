@@ -34,7 +34,7 @@ Neue Lastenheft-Patches während `0.2.0` landen weiterhin zentral in `plan-0.1.0
 | 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ✅ |
 | 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ✅ |
 | 5 | Demo-Integrationsdoku und Release-Akzeptanzkriterien `0.2.0` | 🟡 |
-| 6 | OE-3/Persistenz-Folge-ADR vorbereiten | ⬜ |
+| 6 | OE-3/Persistenz-Folge-ADR vorbereiten | ✅ |
 
 ---
 
@@ -209,7 +209,7 @@ DoD:
 - [x] **RAK-21** Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft; der Check nutzt ein maschinenlesbares Compat-Fixture oder einen Snapshot mit SDK-Version, `sdk.version`, `schema_version` und API-`SupportedSchemaVersion` (`d367720`).
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.2.0`.
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
-- [ ] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben.
+- [x] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben (`37f20ce`).
 - [x] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt (`05fb496`).
 - [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make browser-e2e` sowie ein eventuell separates Node-Coverage-Target aus Arbeitspaket 3a.
 - [x] CI-Gate-Abgrenzung ist dokumentiert: `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` laufen in GitHub Actions; der SDK↔Schema-Kompatibilitätscheck und ein eventuell separates Node-Coverage-Gate hängen an einem dieser Gates oder an eigenen Actions-Steps; `make browser-e2e` bleibt entweder bewusst manuelles Release-Gate oder wird als eigener Actions-Job ergänzt (`d367720`, `f31fb71`, `34713c3`).
@@ -224,10 +224,10 @@ Diese Tranche ist vorbereitend für die nächste Persistenzentscheidung. Sie blo
 
 DoD:
 
-- [ ] Entscheidungsvorlage für In-Memory → SQLite/PostgreSQL erstellt oder als Folge-ADR-Entwurf begonnen.
-- [ ] Persistenz-Anforderungen aus SDK-/Schema-Sicht gesammelt: Event-Schema-Version, Cursor-Stabilität, Session-Ende, Retention.
-- [ ] Roadmap/Risiken-Backlog verweisen auf die konkrete ADR-Arbeit.
-- [ ] Falls kein ADR-Abschluss in `0.2.0` erfolgt: nicht-blockierende Begründung im Plan dokumentiert.
+- [x] Entscheidungsvorlage für In-Memory → SQLite/PostgreSQL erstellt oder als Folge-ADR-Entwurf begonnen (`37f20ce`).
+- [x] Persistenz-Anforderungen aus SDK-/Schema-Sicht gesammelt: Event-Schema-Version, Cursor-Stabilität, Session-Ende, Retention (`37f20ce`).
+- [x] Roadmap/Risiken-Backlog verweisen auf die konkrete ADR-Arbeit (`37f20ce`).
+- [x] Falls kein ADR-Abschluss in `0.2.0` erfolgt: nicht-blockierende Begründung im Plan dokumentiert (`37f20ce`).
 
 ---
 
