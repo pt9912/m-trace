@@ -1,7 +1,7 @@
 # Implementation Plan — `0.2.0` (Publizierbares Player SDK)
 
-> **Status**: ⬜ geplant. Beginnt nach Abschluss von `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](./architecture.md); [Telemetry-Modell](./telemetry-model.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Status**: 🟡 in Arbeit. Beginnt nach Abschluss von `0.1.2` (Observability-Stack).  
+> **Bezug**: [Lastenheft `1.1.7`](./lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](./architecture.md); [Telemetry-Modell](./telemetry-model.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.2.0`-Start)**:
 >
 > - [`plan-0.1.2.md`](./plan-0.1.2.md) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.2` (§4).
@@ -28,8 +28,8 @@ Neue Lastenheft-Patches während `0.2.0` landen weiterhin zentral in `plan-0.1.0
 | Tranche | Inhalt | Status |
 |---|---|---|
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
-| 1 | SDK-Paketierung und Public API | ⬜ |
-| 2 | Event-Schema-Versionierung und CI-Kompatibilitätscheck | ⬜ |
+| 1 | SDK-Paketierung und Public API | ✅ |
+| 2 | Event-Schema-Versionierung und CI-Kompatibilitätscheck | ✅ |
 | 3 | Adapter-/Transport-Tests und Runtime-Grenzen | ⬜ |
 | 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ⬜ |
 | 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ⬜ |
@@ -61,22 +61,22 @@ Ziel: `packages/player-sdk` wird von einem Workspace-Paket zu einem lokal instal
 
 DoD:
 
-- [ ] Paketnamen-Migration gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer.
-- [ ] `packages/player-sdk/package.json` enthält publish-fähige Metadaten: `name`, `version`, `description`, `license`, `repository`, `files`, `exports`, `types`, ESM/CJS/Browser-Build-Einstiege.
-- [ ] `packages/player-sdk/package.json` setzt `version` auf `0.2.0`; Pack-/Install-Smoke-Test prüft, dass das erzeugte npm-Paket ebenfalls Version `0.2.0` meldet.
-- [ ] Root-`package.json` setzt `version` auf `0.2.0`; Repo-Release-Tag, Root-Metadaten und SDK-Paketversion sind konsistent oder eine bewusst abweichende Versionierungsregel ist dokumentiert.
-- [ ] `packages/player-sdk/package.json` ist nicht mehr als privates Paket blockiert: `private` ist entfernt oder `false`; bei öffentlichem Scoped Package ist `publishConfig.access` passend gesetzt.
-- [ ] `pnpm --filter @npm9912/player-sdk pack` erzeugt ein installierbares Tarball-Artefakt.
-- [ ] Publish-Dry-Run läuft ohne Paketierungsfehler, z. B. `pnpm --filter @npm9912/player-sdk publish --dry-run` oder ein äquivalenter `npm publish --dry-run` gegen das erzeugte Tarball.
-- [ ] Lokaler Install-Smoke-Test installiert das gepackte SDK in ein temporäres Beispielprojekt und importiert ESM sowie CJS erfolgreich.
-- [ ] Tarball-Content-Check prüft, dass ESM-, CJS-, Type-Definition- und Browser/IIFE-Build-Artefakte im gepackten Paket enthalten sind.
-- [ ] Browser-Einstieg ist stabil auffindbar und verifiziert: `package.json` definiert entweder `browser`, einen Conditional Export oder einen dokumentierten CDN-/IIFE-Pfad, und der Smoke-Test nutzt genau diesen Einstieg.
-- [ ] Browser-Load-Smoke lädt den Browser/IIFE-Build aus dem installierten Paket und prüft, dass der globale SDK-Einstieg nutzbar ist.
-- [ ] Browser-Bundle bleibt als expliziter Build-Ausgang vorhanden und ist in der Paketdoku beschrieben.
-- [ ] Public API wird in `packages/player-sdk/README.md` dokumentiert: Einstieg, Tracker-Lifecycle, Konfiguration, Events, hls.js-Adapter, Transport-Optionen, Fehlerverhalten.
-- [ ] Projektdokument `docs/player-sdk.md` wird angelegt und beschreibt die Player-SDK-Nutzung gemäß Lastenheft §7.6; damit wird der SDK-Anteil der Pflichtdokument-Liste aus §7.12 erfüllt. `packages/player-sdk/README.md` darf darauf verweisen, ersetzt es aber nicht.
-- [ ] Public API-Surface wird technisch abgesichert, z. B. durch TypeScript-API-Snapshot oder Export-Snapshot-Test.
-- [ ] Interne Module bleiben intern: dokumentierte Imports laufen nur über den Package-Entry-Point, nicht über tiefe Pfade.
+- [x] Paketnamen-Migration gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer (`d367720`).
+- [x] `packages/player-sdk/package.json` enthält publish-fähige Metadaten: `name`, `version`, `description`, `license`, `repository`, `files`, `exports`, `types`, ESM/CJS/Browser-Build-Einstiege (`819ee17`, `d367720`).
+- [x] `packages/player-sdk/package.json` setzt `version` auf `0.2.0`; Pack-/Install-Smoke-Test prüft, dass das erzeugte npm-Paket ebenfalls Version `0.2.0` meldet (`819ee17`).
+- [x] Root-`package.json` setzt `version` auf `0.2.0`; Repo-Release-Tag, Root-Metadaten und SDK-Paketversion sind konsistent oder eine bewusst abweichende Versionierungsregel ist dokumentiert (`819ee17`).
+- [x] `packages/player-sdk/package.json` ist nicht mehr als privates Paket blockiert: `private` ist entfernt oder `false`; bei öffentlichem Scoped Package ist `publishConfig.access` passend gesetzt (`819ee17`).
+- [x] `pnpm --filter @npm9912/player-sdk pack` erzeugt ein installierbares Tarball-Artefakt (`819ee17`, `d367720`).
+- [x] Publish-Dry-Run läuft ohne Paketierungsfehler, z. B. `pnpm --filter @npm9912/player-sdk publish --dry-run` oder ein äquivalenter `npm publish --dry-run` gegen das erzeugte Tarball (`819ee17`, `d367720`).
+- [x] Lokaler Install-Smoke-Test installiert das gepackte SDK in ein temporäres Beispielprojekt und importiert ESM sowie CJS erfolgreich (`819ee17`, `d367720`).
+- [x] Tarball-Content-Check prüft, dass ESM-, CJS-, Type-Definition- und Browser/IIFE-Build-Artefakte im gepackten Paket enthalten sind (`819ee17`).
+- [x] Browser-Einstieg ist stabil auffindbar und verifiziert: `package.json` definiert entweder `browser`, einen Conditional Export oder einen dokumentierten CDN-/IIFE-Pfad, und der Smoke-Test nutzt genau diesen Einstieg (`819ee17`).
+- [x] Browser-Load-Smoke lädt den Browser/IIFE-Build aus dem installierten Paket und prüft, dass der globale SDK-Einstieg nutzbar ist (`819ee17`).
+- [x] Browser-Bundle bleibt als expliziter Build-Ausgang vorhanden und ist in der Paketdoku beschrieben (`819ee17`).
+- [x] Public API wird in `packages/player-sdk/README.md` dokumentiert: Einstieg, Tracker-Lifecycle, Konfiguration, Events, hls.js-Adapter, Transport-Optionen, Fehlerverhalten (`819ee17`, `d367720`).
+- [x] Projektdokument `docs/player-sdk.md` wird angelegt und beschreibt die Player-SDK-Nutzung gemäß Lastenheft §7.6; damit wird der SDK-Anteil der Pflichtdokument-Liste aus §7.12 erfüllt. `packages/player-sdk/README.md` darf darauf verweisen, ersetzt es aber nicht (`819ee17`, `d367720`).
+- [x] Public API-Surface wird technisch abgesichert, z. B. durch TypeScript-API-Snapshot oder Export-Snapshot-Test (`819ee17`, `d367720`).
+- [x] Interne Module bleiben intern: dokumentierte Imports laufen nur über den Package-Entry-Point, nicht über tiefe Pfade (`819ee17`).
 
 ---
 
@@ -88,21 +88,21 @@ Ziel: SDK-Version und Event-Schema-Version sind explizit gekoppelt, damit API, S
 
 DoD:
 
-- [ ] Event-Schema-Version wird im SDK als stabile Konstante exportiert.
-- [ ] SDK-Version wird aus genau einer Quelle abgeleitet: `packages/player-sdk/package.json`, exportierte SDK-Version und die im Wire-Event gesendete `sdk.version` sind synchron.
-- [ ] SDK sendet die Schema-Version im definierten Wire-Format aus `docs/telemetry-model.md`.
-- [ ] SDK-Tests verhindern Regressionen bei `sdk.version` und Schema-Version im erzeugten Event-Payload.
-- [ ] `docs/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes.
-- [ ] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert.
-- [ ] API-Tests prüfen, dass die aktuell unterstützte Schema-Version akzeptiert wird.
-- [ ] SDK-Tests prüfen, dass jeder erzeugte Batch die aktuelle Schema-Version trägt.
-- [ ] Maschinenlesbare Contract-Artefakte werden angelegt, z. B. `contracts/event-schema.json` und `contracts/sdk-compat.json`; sie sind Source of Truth für Schema-Version und SDK↔Schema-Kompatibilität.
-- [ ] Contract-Ownership und Update-Regel sind dokumentiert: Änderungen an Schema-Version, SDK-Version oder API-`SupportedSchemaVersion` müssen die Contract-Artefakte im selben Commit aktualisieren.
-- [ ] CI-Kompatibilitätscheck vergleicht SDK-Konstante, Contract-Artefakte und API-Erwartung; technische API-Quelle ist `SupportedSchemaVersion` in `apps/api/hexagon/application/register_playback_event_batch.go`.
-- [ ] Markdown-Doku (`docs/telemetry-model.md`, `docs/player-sdk.md`) referenziert die Contract-Artefakte; CI parst nicht freitextliche Markdown-Prosa als Source of Truth.
-- [ ] RAK-21 wird über die Contract-Artefakte geprüft: `packages/player-sdk/package.json.version`, exportierte SDK-Version, ausgesendetes `sdk.version`, ausgesendete `schema_version` und API-`SupportedSchemaVersion` müssen gemeinsam konsistent sein.
-- [ ] CI-Kompatibilitätscheck ist an ein verbindliches Gate angebunden: entweder Bestandteil von `make test`/`make lint` oder eigenes Root-Target mit explizitem GitHub-Actions-Step.
-- [ ] `CHANGELOG.md`-Konvention für Event-Schema-Änderungen ist dokumentiert.
+- [x] Event-Schema-Version wird im SDK als stabile Konstante exportiert (`d367720`).
+- [x] SDK-Version wird aus genau einer Quelle abgeleitet: `packages/player-sdk/package.json`, exportierte SDK-Version und die im Wire-Event gesendete `sdk.version` sind synchron (`d367720`).
+- [x] SDK sendet die Schema-Version im definierten Wire-Format aus `docs/telemetry-model.md` (`d367720`).
+- [x] SDK-Tests verhindern Regressionen bei `sdk.version` und Schema-Version im erzeugten Event-Payload (`d367720`).
+- [x] `docs/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes (`d367720`).
+- [x] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert (`d367720`).
+- [x] API-Tests prüfen, dass die aktuell unterstützte Schema-Version akzeptiert wird (`d367720`).
+- [x] SDK-Tests prüfen, dass jeder erzeugte Batch die aktuelle Schema-Version trägt (`d367720`).
+- [x] Maschinenlesbare Contract-Artefakte werden angelegt, z. B. `contracts/event-schema.json` und `contracts/sdk-compat.json`; sie sind Source of Truth für Schema-Version und SDK↔Schema-Kompatibilität (`d367720`).
+- [x] Contract-Ownership und Update-Regel sind dokumentiert: Änderungen an Schema-Version, SDK-Version oder API-`SupportedSchemaVersion` müssen die Contract-Artefakte im selben Commit aktualisieren (`d367720`).
+- [x] CI-Kompatibilitätscheck vergleicht SDK-Konstante, Contract-Artefakte und API-Erwartung; technische API-Quelle ist `SupportedSchemaVersion` in `apps/api/hexagon/application/register_playback_event_batch.go` (`d367720`).
+- [x] Markdown-Doku (`docs/telemetry-model.md`, `docs/player-sdk.md`) referenziert die Contract-Artefakte; CI parst nicht freitextliche Markdown-Prosa als Source of Truth (`d367720`).
+- [x] RAK-21 wird über die Contract-Artefakte geprüft: `packages/player-sdk/package.json.version`, exportierte SDK-Version, ausgesendetes `sdk.version`, ausgesendete `schema_version` und API-`SupportedSchemaVersion` müssen gemeinsam konsistent sein (`d367720`).
+- [x] CI-Kompatibilitätscheck ist an ein verbindliches Gate angebunden: entweder Bestandteil von `make test`/`make lint` oder eigenes Root-Target mit explizitem GitHub-Actions-Step (`d367720`).
+- [x] `CHANGELOG.md`-Konvention für Event-Schema-Änderungen ist dokumentiert (`d367720`).
 
 ---
 
