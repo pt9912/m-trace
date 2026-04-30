@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-04-30
-> **Phase**: Post-Spike, Pre-MVP `0.1.0`  
+> **Phase**: Post-`0.1.1`, vor `0.1.2` Observability-Stack  
 > **Bezug**: `docs/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `docs/architecture.md` (Zielbild),
 > `docs/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),

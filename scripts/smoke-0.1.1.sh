@@ -47,7 +47,7 @@ post_status="$(
     "session_id": "$SESSION_ID",
     "client_timestamp": "2026-04-29T10:00:00.000Z",
     "sequence_number": 1,
-    "sdk": {"name": "@m-trace/player-sdk", "version": "0.1.1-dev"}
+    "sdk": {"name": "@m-trace/player-sdk", "version": "0.1.1"}
   }]
 }
 JSON

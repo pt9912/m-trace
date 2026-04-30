@@ -3,7 +3,7 @@ services:
     build:
       context: ./apps/api
       target: runtime
-    image: m-trace-api:0.1.0
+    image: m-trace-api:0.1.1
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
     ports:

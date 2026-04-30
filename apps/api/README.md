@@ -35,11 +35,12 @@ apps/api/
 
 ## Status
 
-Pre-MVP `0.1.0`-Skelett, integriert aus dem Backend-Spike-Sieger.
-Vorhanden: Domain, Use Case `RegisterPlaybackEventBatch`, alle drei
-Pflicht-Endpunkte (`POST /api/playback-events`, `GET /api/health`,
-`GET /api/metrics`), Unit- und HTTP-Integrationstests grün.
-Listen-/Detail-Endpunkte für Stream-Sessions sind Bonus-Scope und
-folgen ab `0.1.0`-Implementierung.
+`0.1.1`-Stand, integriert aus dem Backend-Spike-Sieger und der
+`0.1.0`-Backend-Core-Implementierung. Vorhanden: Domain, Use Case
+`RegisterPlaybackEventBatch`, Pflicht-Endpunkte
+(`POST /api/playback-events`, `GET /api/health`, `GET /api/metrics`),
+Stream-Sessions-Endpoints (`GET /api/stream-sessions`,
+`GET /api/stream-sessions/{id}`), CORS/Origin-Validierung, Rate-Limits,
+Telemetry-Port sowie Unit- und HTTP-Integrationstests.
 
 API-Kontrakt (frozen): `docs/spike/backend-api-contract.md`.
