@@ -104,114 +104,12 @@ Der erste MVP ist bewusst klein gehalten.
 - Kubernetes-Produktionsbetrieb
 - vollständiger HLS-/DASH-Manifest-Analyzer
 
----
-
-## Geplante Repository-Struktur
-
-```text
-m-trace/
-├── apps/
-│   ├── api/
-│   └── dashboard/
-├── packages/
-│   ├── player-sdk/
-│   ├── stream-analyzer/
-│   ├── shared-types/
-│   └── config/
-├── services/
-│   ├── stream-generator/
-│   ├── otel-collector/
-│   └── media-server/
-├── examples/
-│   ├── mediamtx/
-│   ├── hls/
-│   ├── dash/
-│   ├── srt/
-│   └── webrtc/
-├── observability/
-│   ├── prometheus/
-│   ├── grafana/
-│   ├── tempo/
-│   └── otel/
-├── docs/
-│   ├── adr/
-│   └── spike/
-├── scripts/
-├── docker-compose.yml
-├── Makefile
-├── README.md
-└── CHANGELOG.md
-```
-
-Nicht alle Verzeichnisse gehören zum ersten MVP.  
-Einige sind Platzhalter für die Roadmap.
 
 ---
 
 ## Architekturprinzipien
 
-m-trace nutzt pragmatische Architekturgrenzen.
-
-### Backend
-
-Backend-Stack ist **Go 1.22** (Standard-Library `net/http`,
-`prometheus/client_golang`, `go.opentelemetry.io/otel`, `log/slog`,
-Distroless-Runtime). Entscheidung in `docs/adr/0001-backend-stack.md`,
-Spec im Lastenheft §10.1.
-
-Workflow ist Docker-only: `make {test,lint,build,run}` in `apps/api/`.
-Lokales Go ist nicht erforderlich.
-
-Hexagon-Layout in `apps/api/`:
-
-```text
-apps/api/
-├── cmd/api/main.go
-├── hexagon/
-│   ├── domain/
-│   ├── port/{driving,driven}/
-│   └── application/
-├── adapters/
-│   ├── driving/http/
-│   └── driven/{auth,metrics,persistence,ratelimit,telemetry}/
-└── Dockerfile
-```
-
-Abhängigkeitsrichtung:
-
-```text
-adapters → hexagon
-```
-
-Die Domain darf nicht von HTTP-, Datenbank-, Framework-, Docker- oder OpenTelemetry-Implementierungsdetails abhängen.
-
-### Player-SDK
-
-Das Player-SDK ist im MVP bewusst nicht voll hexagonal.
-
-```text
-packages/player-sdk/src/
-├── core/
-├── adapters/
-│   └── hlsjs/
-├── transport/
-├── types/
-└── index.ts
-```
-
-Die erste unterstützte Player-Integration ist:
-
-```text
-hls.js
-```
-
-Weitere Integrationen sind spätere Arbeit:
-
-- dash.js
-- Shaka Player
-- Video.js
-- natives Safari-HLS
-- WebRTC `getStats`
+Die aktuelle Architektur ist in [docs/architecture.md](docs/architecture.md) beschrieben.
 
 ---
 
@@ -313,38 +211,18 @@ make dev
 
 Erwartete lokale Dienste:
 
-| Dienst           | Zweck                            |
-| ---------------- | -------------------------------- |
-| API              | Event-Annahme und Session-API    |
-| Dashboard        | Web-UI und `/demo`-Player-Route  |
-| MediaMTX         | lokaler Media-Server             |
-| FFmpeg-Generator | Teststream                       |
-| Prometheus       | Aggregat-Metriken                |
-| Grafana          | optionale Dashboards             |
-| OTel Collector   | optionale Telemetrie-Pipeline    |
+| Dienst           | Zweck                           |
+| ---------------- | ------------------------------- |
+| API              | Event-Annahme und Session-API   |
+| Dashboard        | Web-UI und `/demo`-Player-Route |
+| MediaMTX         | lokaler Media-Server            |
+| FFmpeg-Generator | Teststream                      |
+| Prometheus       | Aggregat-Metriken               |
+| Grafana          | optionale Dashboards            |
+| OTel Collector   | optionale Telemetrie-Pipeline   |
 
 Dieses Setup ist noch nicht umgesetzt.  
 Es ist das Ziel des ersten MVP.
-
----
-
-## Backend-Technologie-Spike (abgeschlossen)
-
-Die Backend-Technologie wurde durch zwei lauffähige Mini-Prototypen
-(Go, Micronaut) im identischen Muss-Scope entschieden. Sieger ist Go.
-
-Dokumentation:
-
-- `docs/adr/0001-backend-stack.md` — Entscheidung (Status: Accepted)
-- `docs/spike/backend-stack-results.md` — Spike-Protokoll
-- `docs/spike/backend-api-contract.md` — API-Kontrakt (frozen)
-- `docs/spike/0001-backend-stack.md` — Spike-Spezifikation
-- `docs/plan-spike.md` — Implementierungsplan
-
-Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
-(Modulpfad `github.com/pt9912/m-trace/apps/api`).
-
----
 
 ## Roadmap
 
@@ -400,16 +278,16 @@ Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
 
 Der MVP-Browser-Support ist bewusst eng gefasst.
 
-| Umgebung                          | MVP-Status                  |
-| --------------------------------- | --------------------------- |
-| Chrome Desktop, aktuelle Stable   | unterstützt                 |
-| Firefox Desktop, aktuelle Stable  | unterstützt                 |
-| Safari Desktop, aktuelle Stable   | eingeschränkt               |
-| Chromium-basierte Browser         | best effort                 |
-| iOS Safari                        | im MVP nicht erforderlich   |
-| Android Chrome                    | im MVP nicht erforderlich   |
-| Smart-TV-Browser                  | nicht im Scope              |
-| Embedded WebViews                 | nicht im Scope              |
+| Umgebung                         | MVP-Status                |
+| -------------------------------- | ------------------------- |
+| Chrome Desktop, aktuelle Stable  | unterstützt               |
+| Firefox Desktop, aktuelle Stable | unterstützt               |
+| Safari Desktop, aktuelle Stable  | eingeschränkt             |
+| Chromium-basierte Browser        | best effort               |
+| iOS Safari                       | im MVP nicht erforderlich |
+| Android Chrome                   | im MVP nicht erforderlich |
+| Smart-TV-Browser                 | nicht im Scope            |
+| Embedded WebViews                | nicht im Scope            |
 
 Der MVP-Integrationspfad ist hls.js.  
 Native Safari-HLS-Introspektion ist kein Ziel von v0.1.0.
@@ -451,42 +329,23 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt ist in der Pre-MVP-`0.1.0`-Phase: Backend-Spike abgeschlossen, Lastenheft `1.1.3` verbindlich, `apps/api`-Skelett auf `main` integriert.
+Das Projekt ist in der Pre-MVP-`0.1.0`-Phase: Lastenheft `1.1.3` verbindlich, `apps/api`-Skelett auf `main` integriert.
 
 Leitende Dokumente:
 
-```text
-docs/lastenheft.md           # Anforderungen (verbindlich, 1.1.3)
-docs/roadmap.md              # Status, Folge-ADRs, offene Entscheidungen
-docs/adr/0001-backend-stack.md   # Backend-Entscheidung (Accepted: Go)
-docs/spike/                  # Spike-Spezifikation, API-Kontrakt, Protokoll
-docs/plan-spike.md           # Spike-Implementierungsplan
-```
+- [docs/lastenheft.md](docs/lastenheft.md) — Anforderungen (verbindlich, 1.1.3)
+- [docs/roadmap.md](docs/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
+- [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
+- [docs/releasing.md](docs/releasing.md) — Release-Prozess
+- [docs/quality.md](docs/quality.md) — Qualitätsrichtlinien
 
-Nächste Schritte stehen in `docs/roadmap.md` §2.
+Nächste Schritte stehen in [docs/roadmap.md](docs/roadmap.md) §2.
 
 ---
 
 ## Lizenz
 
 [MIT License](LICENSE).
-
----
-
-## Mitarbeit
-
-Beiträge sind noch nicht offen, da sich das Repository in der initialen Planungsphase befindet.
-
-Geplante Bereiche für Beiträge:
-
-- Player-SDK
-- hls.js-Telemetrie
-- Backend-API
-- MediaMTX-Beispiele
-- OpenTelemetry-Modellierung
-- Prometheus-/Grafana-Dashboards
-- HLS-/DASH-Analyzer
-- SRT-Metriken
 
 ---
 
