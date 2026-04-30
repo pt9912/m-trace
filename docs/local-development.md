@@ -90,7 +90,7 @@ curl -i -X POST http://localhost:8080/api/playback-events \
     "session_id": "smoke-test-1",
     "client_timestamp": "2026-04-29T10:00:00.000Z",
     "sequence_number": 1,
-    "sdk": {"name": "@m-trace/player-sdk", "version": "0.1.0"}
+    "sdk": {"name": "@npm9912/player-sdk", "version": "0.2.0"}
   }]
 }
 JSON

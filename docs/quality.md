@@ -133,7 +133,7 @@ Lesen die Last-Line des `go tool cover -func`-Outputs und exitet
 Das Player-SDK nutzt Vitest für die Unit-Tests:
 
 ```bash
-pnpm --filter @m-trace/player-sdk run test
+pnpm --filter @npm9912/player-sdk run test
 ```
 
 Der Coverage-Scope für ein späteres Gate ist das produktive SDK unter

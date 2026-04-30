@@ -38,7 +38,7 @@ const tempDir = mkdtempSync(path.join(tmpdir(), "m-trace-player-sdk-"));
 
 try {
   const appDir = path.join(tempDir, "consumer");
-  const installedPackageDir = path.join(appDir, "node_modules", "@m-trace", "player-sdk");
+  const installedPackageDir = path.join(appDir, "node_modules", ...sourcePackageJson.name.split("/"));
   await mkdir(installedPackageDir, { recursive: true });
   await writeFile(path.join(appDir, "package.json"), JSON.stringify({ name: "m-trace-player-sdk-smoke", private: true }, null, 2));
 
@@ -61,7 +61,7 @@ try {
   assert(typeof esmModule.HttpTransport === "function", "ESM entry must export HttpTransport");
 
   const require = createRequire(path.join(appDir, "package.json"));
-  const cjsModule = require("@m-trace/player-sdk");
+  const cjsModule = require("@npm9912/player-sdk");
   assert(typeof cjsModule.createTracker === "function", "CJS entry must export createTracker");
   assert(typeof cjsModule.HttpTransport === "function", "CJS entry must export HttpTransport");
 

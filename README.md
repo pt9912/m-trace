@@ -133,8 +133,8 @@ Beispiel:
       "client_timestamp": "2026-04-28T12:00:00.000Z",
       "sequence_number": 42,
       "sdk": {
-        "name": "@m-trace/player-sdk",
-        "version": "0.1.0"
+        "name": "@npm9912/player-sdk",
+        "version": "0.2.0"
       }
     }
   ]

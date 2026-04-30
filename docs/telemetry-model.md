@@ -19,6 +19,13 @@ Drei Wirkungsebenen pro Telemetrie-Datum:
 
 > Bezug: F-106..F-115; API-Kontrakt §3; Lastenheft §7.11.1–§7.11.3.
 
+Maschinenlesbare Source of Truth für die Wire-Schema-Version ist
+[`contracts/event-schema.json`](../contracts/event-schema.json). Die
+SDK↔Schema-Kompatibilität steht in
+[`contracts/sdk-compat.json`](../contracts/sdk-compat.json). Änderungen an
+Schema-Version, SDK-Version oder API-`SupportedSchemaVersion` müssen diese
+Contract-Artefakte im selben Commit aktualisieren.
+
 ### 1.1 Batch-Wrapper
 
 Ein einzelner `POST /api/playback-events`-Request transportiert genau einen **Batch** mit 1..100 Events:
@@ -44,7 +51,7 @@ Pflicht-Header (siehe API-Kontrakt §1):
 | `project_id` | string, nicht-leer | identifiziert das Projekt; muss zum gelieferten Token passen, sonst `401` (Token-Bindung). | F-106; API-Kontrakt §5 Step 9 |
 | `session_id` | string, nicht-leer | identifiziert die Player-Session; pseudonym (NF-40). | API-Kontrakt §3.2 |
 | `client_timestamp` | string, RFC3339 mit ms | Erzeugungszeitpunkt am Client. | F-124; siehe §5 |
-| `sdk.name` | string, nicht-leer | identifiziert das SDK (z. B. `@m-trace/player-sdk`). | API-Kontrakt §3.2 |
+| `sdk.name` | string, nicht-leer | identifiziert das SDK (z. B. `@npm9912/player-sdk` ab `0.2.0`). | API-Kontrakt §3.2 |
 | `sdk.version` | string, SemVer | identifiziert die SDK-Version. | API-Kontrakt §3.2 |
 
 ### 1.3 Erfasste Event-Typen im MVP
@@ -97,8 +104,8 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
       "client_timestamp": "2026-04-28T12:00:00.000Z",
       "sequence_number": 42,
       "sdk": {
-        "name": "@m-trace/player-sdk",
-        "version": "0.1.0"
+        "name": "@npm9912/player-sdk",
+        "version": "0.2.0"
       },
       "meta": {
         "buffered_seconds": 1.8,

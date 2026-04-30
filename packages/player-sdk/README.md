@@ -1,4 +1,4 @@
-# @m-trace/player-sdk
+# @npm9912/player-sdk
 
 Browser SDK for sending m-trace playback telemetry from an `HTMLVideoElement`
 or an hls.js player to `POST /api/playback-events`.
@@ -6,7 +6,7 @@ or an hls.js player to `POST /api/playback-events`.
 ## Install
 
 ```bash
-pnpm add @m-trace/player-sdk hls.js
+pnpm add @npm9912/player-sdk hls.js
 ```
 
 `hls.js` is a peer dependency because applications usually already own the
@@ -16,7 +16,7 @@ player version.
 
 ```ts
 import Hls from "hls.js";
-import { attachHlsJs, createTracker } from "@m-trace/player-sdk";
+import { attachHlsJs, createTracker } from "@npm9912/player-sdk";
 
 const video = document.querySelector("video");
 if (!video) {
@@ -59,7 +59,7 @@ Type exports cover the wire payload and configuration surface:
 `PlayerTracker`, `SessionMetricsSnapshot`, and `RebufferMeasurement`.
 
 Deep imports from `src/` or `dist/` are not public API. Import from
-`@m-trace/player-sdk`.
+`@npm9912/player-sdk`.
 
 ## Tracker Lifecycle
 
@@ -110,7 +110,7 @@ The package ships ESM, CJS and IIFE builds. The stable browser entry is the
 `browser` field in `package.json`:
 
 ```html
-<script src="/node_modules/@m-trace/player-sdk/dist/index.global.js"></script>
+<script src="/node_modules/@npm9912/player-sdk/dist/index.global.js"></script>
 <script>
   const tracker = MTracePlayerSDK.createTracker({
     endpoint: "http://localhost:8080/api/playback-events",

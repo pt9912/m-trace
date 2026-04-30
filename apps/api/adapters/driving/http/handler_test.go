@@ -36,7 +36,7 @@ const validBody = `{
       "project_id": "demo",
       "session_id": "sess-1",
       "client_timestamp": "2026-04-28T12:00:00.000Z",
-      "sdk": { "name": "@m-trace/player-sdk", "version": "0.1.0" }
+      "sdk": { "name": "@npm9912/player-sdk", "version": "0.2.0" }
     }
   ]
 }`

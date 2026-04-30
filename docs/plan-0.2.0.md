@@ -61,7 +61,7 @@ Ziel: `packages/player-sdk` wird von einem Workspace-Paket zu einem lokal instal
 
 DoD:
 
-- [ ] Paketnamen-Migration gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, `rg '@m-trace/player-sdk'` liefert nur noch Treffer in den unter §2.2 gelisteten historischen Dateien.
+- [ ] Paketnamen-Migration gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer.
 - [ ] `packages/player-sdk/package.json` enthält publish-fähige Metadaten: `name`, `version`, `description`, `license`, `repository`, `files`, `exports`, `types`, ESM/CJS/Browser-Build-Einstiege.
 - [ ] `packages/player-sdk/package.json` setzt `version` auf `0.2.0`; Pack-/Install-Smoke-Test prüft, dass das erzeugte npm-Paket ebenfalls Version `0.2.0` meldet.
 - [ ] Root-`package.json` setzt `version` auf `0.2.0`; Repo-Release-Tag, Root-Metadaten und SDK-Paketversion sind konsistent oder eine bewusst abweichende Versionierungsregel ist dokumentiert.
@@ -93,7 +93,7 @@ DoD:
 - [ ] SDK sendet die Schema-Version im definierten Wire-Format aus `docs/telemetry-model.md`.
 - [ ] SDK-Tests verhindern Regressionen bei `sdk.version` und Schema-Version im erzeugten Event-Payload.
 - [ ] `docs/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes.
-- [ ] `docs/spike/backend-api-contract.md` referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; normative Beispiele dürfen keine veralteten SDK-/Schema-Versionen enthalten.
+- [ ] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert.
 - [ ] API-Tests prüfen, dass die aktuell unterstützte Schema-Version akzeptiert wird.
 - [ ] SDK-Tests prüfen, dass jeder erzeugte Batch die aktuelle Schema-Version trägt.
 - [ ] Maschinenlesbare Contract-Artefakte werden angelegt, z. B. `contracts/event-schema.json` und `contracts/sdk-compat.json`; sie sind Source of Truth für Schema-Version und SDK↔Schema-Kompatibilität.

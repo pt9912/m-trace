@@ -11,7 +11,7 @@
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
     "test:e2e": "playwright test",
-    "lint": "pnpm -r --if-present run lint",
+    "lint": "pnpm -r --if-present run lint && node scripts/check-sdk-compat.mjs",
     "check": "pnpm -r --if-present run check"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 # Player-SDK
 
 > **Status**: `0.2.0`-Arbeitsstand. Dieses Dokument beschreibt die
-> projektweite Nutzung des Pakets `@m-trace/player-sdk`.
+> projektweite Nutzung des Pakets `@npm9912/player-sdk`.
 
 Das Player-SDK erfasst Playback-Events im Browser und sendet sie im
 m-trace-Wire-Format an die API. Der aktuelle Einstiegspunkt ist
@@ -11,7 +11,7 @@ m-trace-Wire-Format an die API. Der aktuelle Einstiegspunkt ist
 ## Installation
 
 ```bash
-pnpm add @m-trace/player-sdk hls.js
+pnpm add @npm9912/player-sdk hls.js
 ```
 
 `hls.js` ist Peer Dependency. Anwendungen kontrollieren dadurch selbst, welche
@@ -21,7 +21,7 @@ Player-Version sie einsetzen.
 
 ```ts
 import Hls from "hls.js";
-import { attachHlsJs, createTracker } from "@m-trace/player-sdk";
+import { attachHlsJs, createTracker } from "@npm9912/player-sdk";
 
 const tracker = createTracker({
   endpoint: "http://localhost:8080/api/playback-events",
@@ -52,7 +52,7 @@ import {
   attachHlsJs,
   createSessionId,
   createTracker
-} from "@m-trace/player-sdk";
+} from "@npm9912/player-sdk";
 ```
 
 Öffentliche Typen:
@@ -102,6 +102,9 @@ Das SDK sendet Batches mit `schema_version: "1.0"`. Jedes Event enthält
 `sdk.name` und `sdk.version`. Das vollständige Datenmodell steht in
 [`docs/telemetry-model.md`](./telemetry-model.md), der HTTP-Kontrakt in
 [`docs/spike/backend-api-contract.md`](./spike/backend-api-contract.md).
+Maschinenlesbare Contract-Artefakte sind
+[`contracts/event-schema.json`](../contracts/event-schema.json) und
+[`contracts/sdk-compat.json`](../contracts/sdk-compat.json).
 
 ## Browser-Build
 

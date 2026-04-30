@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.6<br>
+**Version:** 1.1.7<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
@@ -1040,8 +1040,8 @@ Pflichtfelder im Wire-Format:
   "session_id": "01J...",
   "client_timestamp": "2026-04-28T12:00:00.000Z",
   "sdk": {
-    "name": "@m-trace/player-sdk",
-    "version": "0.1.0"
+    "name": "@npm9912/player-sdk",
+    "version": "0.2.0"
   }
 }
 ```
@@ -1753,7 +1753,7 @@ Große Plattform-Betreiber sollen erst später adressiert werden.
 | OE-5 | offen | Live-Updates: Polling, WebSocket oder Server-Sent Events |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
 | OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`** |
-| OE-8 | resolved | npm-Paketname Player-SDK: **`@m-trace/player-sdk`** |
+| OE-8 | resolved | npm-Paketname Player-SDK: **`@npm9912/player-sdk`** ab `0.2.0`; Lieferstand `0.1.x` wurde unter `@m-trace/player-sdk` ausgeliefert (Lastenheft `1.1.5`, `bae4a2a`), aber nie öffentlich publishet. |
 | OE-9 | resolved | Go Module Name final: **`github.com/pt9912/m-trace/apps/api`** |
 
 ---

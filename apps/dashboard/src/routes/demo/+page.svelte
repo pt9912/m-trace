@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import { env } from "$env/dynamic/public";
   import type Hls from "hls.js";
-  import { attachHlsJs, createTracker, type HlsJsAdapter, type PlayerTracker } from "@m-trace/player-sdk";
+  import { attachHlsJs, createTracker, type HlsJsAdapter, type PlayerTracker } from "@npm9912/player-sdk";
 
   const hlsUrl = env.PUBLIC_HLS_URL || "http://localhost:8888/teststream/index.m3u8";
   const collectorEndpoint = env.PUBLIC_PLAYER_COLLECTOR_ENDPOINT || "http://localhost:8080/api/playback-events";

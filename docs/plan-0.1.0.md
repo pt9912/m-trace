@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | ✅ |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | ✅ |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6` | ✅ bis `1.1.6`; fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7` | ✅ bis `1.1.7`; fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ✅ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -342,6 +342,20 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.5` → `1.1.6` (`1a6a6c7`).
 - [x] Lastenheft §16.2: OE-4 resolved — eigenes CSS ohne Tailwind/UI-Library (`1a6a6c7`).
 - [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.6` aktualisiert (`1a6a6c7`).
+
+### 4a.10 Patch `1.1.7` — OE-8 Paketname Player-SDK neu entscheiden
+
+Mit `0.2.0` wird das Player-SDK erstmals publizierbar. Der ursprünglich
+für `0.1.x` dokumentierte npm-Scope `@m-trace` ist nicht als npm-Org
+reserviert; Maintainer publisht Pakete bereits unter `@npm9912`. Daher
+wird OE-8 vor der ersten Veröffentlichung neu entschieden. Details stehen
+in [`docs/migrate-package-name.md`](./migrate-package-name.md).
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.6` → `1.1.7`.
+- [x] Lastenheft §16.2: OE-8 resolved — Player-SDK-Paketname `@npm9912/player-sdk` ab `0.2.0`; `0.1.x`-Lieferstand unter `@m-trace/player-sdk` bleibt historische Wahrheit, wurde aber nie öffentlich publishet.
+- [x] Lebende Code-, Doku- und Package-Stellen folgen `docs/migrate-package-name.md` §2.1; historische `0.1.x`-Artefakte bleiben gemäß §2.2 unverändert.
 
 ---
 

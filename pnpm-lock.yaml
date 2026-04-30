@@ -26,7 +26,7 @@ importers:
 
   apps/dashboard:
     dependencies:
-      '@m-trace/player-sdk':
+      '@npm9912/player-sdk':
         specifier: workspace:*
         version: link:../../packages/player-sdk
       hls.js:

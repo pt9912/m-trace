@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --filter @m-trace/dashboard...
 COPY apps/dashboard apps/dashboard
 COPY packages/player-sdk packages/player-sdk
 
-RUN pnpm --filter @m-trace/player-sdk run build && pnpm --filter @m-trace/dashboard run build
+RUN pnpm --filter @npm9912/player-sdk run build && pnpm --filter @m-trace/dashboard run build
 
 FROM node:22-bookworm-slim AS runtime
 

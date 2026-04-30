@@ -1,9 +1,10 @@
 import type { PlayerSDKConfig, Transport } from "../types/config";
 import type { EventDraft, PlaybackEvent } from "../types/events";
 import { HttpTransport } from "../transport/http";
+import { EVENT_SCHEMA_VERSION, PLAYER_SDK_NAME, PLAYER_SDK_VERSION } from "../version";
 import { createSessionId } from "./session";
 
-const sdk = { name: "@m-trace/player-sdk", version: "0.2.0" };
+const sdk = { name: PLAYER_SDK_NAME, version: PLAYER_SDK_VERSION };
 const maxBatchEvents = 100;
 
 export interface PlayerTracker {
@@ -89,7 +90,7 @@ export class MTracePlayerTracker implements PlayerTracker {
     while (this.queue.length > 0) {
       const events = this.queue.splice(0, maxBatchEvents);
       await this.transport.send({
-        schema_version: "1.0",
+        schema_version: EVENT_SCHEMA_VERSION,
         events
       });
     }

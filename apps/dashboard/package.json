@@ -7,11 +7,11 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "lint": "pnpm --filter @m-trace/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check": "pnpm --filter @m-trace/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "lint": "pnpm --filter @npm9912/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check": "pnpm --filter @npm9912/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@m-trace/player-sdk": "workspace:*",
+    "@npm9912/player-sdk": "workspace:*",
     "hls.js": "^1.6.16"
   },
   "devDependencies": {

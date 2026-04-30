@@ -48,6 +48,8 @@
 | `docs/plan-0.1.1.md` Z. 90 | analog für `0.1.1` |
 | `docs/plan-spike.md` Z. 997 | abgeschlossener Spike |
 | `docs/spike/backend-api-contract.md`, `docs/spike/0001-backend-stack.md` | Spike-Snapshots |
+| `docs/migrate-package-name.md` | dieses Migrationsprotokoll nennt alten und neuen Namen ausdrücklich |
+| `docs/lastenheft.md` §16.2 | OE-8-Neuentscheidung enthält die historische `0.1.x`-Einordnung |
 | `CHANGELOG.md` Z. 35 | Eintrag in `0.1.1`-Sektion: „Lastenheft `1.1.5` löst OE-8 auf: `@m-trace/player-sdk`" — historische Wahrheit |
 
 ## 3. Durchführungsreihenfolge
