@@ -9,9 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - Unreleased
 
+### Added
+
+- Publizierbares Player-SDK-Paket `@npm9912/player-sdk` mit ESM-, CJS-,
+  Browser/IIFE- und Type-Definition-Builds.
+- Pack-, Publish-Dry-Run-, Install- und Browser-Load-Smokes für das SDK.
+- Projektweite SDK-Doku in `docs/player-sdk.md` sowie Paketdoku in
+  `packages/player-sdk/README.md`.
+- Maschinenlesbare Contract-Artefakte für Event-Schema und SDK↔Schema-
+  Kompatibilität.
+- CI-Kompatibilitätscheck für SDK-Version, `sdk.version`,
+  `schema_version` und API-`SupportedSchemaVersion`.
+- Vitest-Coverage-Gates für Player-SDK und Dashboard mit verbindlichen
+  90-%-Schwellen.
+- Performance-Smoke für das Player-SDK mit Bundle-, Hot-Path- und
+  Queue-/Retry-Prüfungen.
+- Browser-Support-Matrix in `docs/browser-support.md`.
+- Demo-Integrationsdoku für die Dashboard-Route `/demo`.
+- ADR-Draft `0002` zur Persistenzentscheidung In-Memory vs.
+  SQLite/PostgreSQL.
+
 ### Changed
 
 - Lastenheft `1.1.7` entscheidet OE-8 neu: Player-SDK wird ab `0.2.0` als `@npm9912/player-sdk` veröffentlicht. Der `0.1.x`-Lieferstand wurde nie öffentlich publishet, daher ist kein Migrations-Pfad für externe Konsumenten erforderlich.
+- Player-SDK-Events senden die SDK-Version synchron aus
+  `packages/player-sdk/package.json`.
+- Player-SDK-Batches bleiben innerhalb der API-Grenzen: maximal 100 Events
+  und maximal 256 KiB Request-Body.
+- `HttpTransport` respektiert `Retry-After` bei `429`, retried nur
+  transiente Fehler und vermeidet blindes Retry bei nicht-transienten `4xx`
+  sowie `413`.
+- Dashboard- und SDK-Paketnamen wurden auf den `@npm9912`-Scope migriert.
+
+### Fixed
+
+- Dashboard-Tests laufen in frischen CI-Checkouts ohne vorher gebautes
+  SDK-`dist`, weil Vitest den SDK-Import im Testmodus auf einen lokalen Mock
+  auflöst.
+- `session_ended` wird beim Tracker-`destroy()` zuverlässig erzeugt und
+  umgeht Sampling.
 
 ## [0.1.2] - 2026-04-30
 
