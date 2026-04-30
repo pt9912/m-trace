@@ -106,14 +106,14 @@ DoD:
 - [x] **F-24** Anzeige aktueller Playback-Metriken — entweder im `/sessions/:id`-Detail oder als globale Übersicht (z. B. Zähler-Card auf der Startseite) (`1a6a6c7`).
 - [x] **F-25** Anzeige von Fehlern und Warnungen — entweder dedizierte Route `/errors` oder als Filter über die Event-Liste (`1a6a6c7`).
 - [x] **F-26** Anzeige einfacher Stream-Health-Zustände — Active/Stalled/Ended pro Session sichtbar (Backend-Lifecycle aus `0.1.0` §5.1) (`1a6a6c7`).
-- [x] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; Telemetry-Status zunächst minimal („wired"/„nicht konfiguriert"; vollständig wenn `0.1.2` Observability-Profil läuft) (`1a6a6c7`, `STATUS_COMMIT`).
+- [x] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; Telemetry-Status zunächst minimal („wired"/„nicht konfiguriert"; vollständig wenn `0.1.2` Observability-Profil läuft) (`1a6a6c7`, `e69028c`).
 - [x] **F-28 + F-36** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3) (`1a6a6c7`).
 - [x] **F-35** Live-Übersicht — Startseite zeigt aggregierten Live-Stand (laufende Sessions, Event-Rate, Fehlerzähler) als Landing (`1a6a6c7`).
 - [x] **F-37** Playback-Events anzeigen — dedizierte Route `/events` listet eingehende Events mit Filter nach Session und Event-Typ (`1a6a6c7`, `55ccac4`).
 - [x] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt (`1a6a6c7`).
 - [x] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected` (`1a6a6c7`).
-- [x] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht (`1a6a6c7`, `STATUS_COMMIT`).
-- [x] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet (`1a6a6c7`, `STATUS_COMMIT`).
+- [x] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht (`1a6a6c7`, `e69028c`).
+- [x] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet (`1a6a6c7`, `e69028c`).
 - [x] API-Client mit typisierten Anfragen (`1a6a6c7`).
 - [x] **API-Origin-Strategie** für beide Endpoint-Klassen aus `plan-0.1.0.md` §5.1 (`1a6a6c7`):
     - **GET-Routen** (Dashboard-API-Client): im **Vite-Dev-Mode** SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS entfällt; im **Compose-Production-Build** über getrennten Origin mit den `0.1.0`-CORS-Headers für den Dashboard-Lese-Pfad.
@@ -148,8 +148,8 @@ DoD:
 ### 5.1 Übergreifende DoD `0.1.1` (Lastenheft §18, `0.1.1`-Anteil)
 
 - [x] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete) — der bestehende GitHub-Workflow nutzt `make test`, `make lint` und `make build`; diese Targets delegieren jetzt zusätzlich an den pnpm-Workspace (`1d58f19`, `571a112`, `9b26e4f`).
-- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`, `9b26e4f`, `55ccac4`, `STATUS_COMMIT`).
-- [x] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement) (`1d58f19`, `9b26e4f`, `STATUS_COMMIT`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`, `9b26e4f`, `55ccac4`, `e69028c`).
+- [x] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement) (`1d58f19`, `9b26e4f`, `e69028c`).
 
 ---
 
