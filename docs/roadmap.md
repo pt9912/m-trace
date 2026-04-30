@@ -89,6 +89,13 @@ weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
 | 9   | ✅      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |
 | 10  | ✅      | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88                                  |
 | 11  | ✅      | Observability-Stack (Prometheus + optional Grafana, OTel-Collector) — `0.1.2` (siehe `plan-0.1.2.md`)                 | Nach `0.1.1`-Release                                            | MVP-10, MVP-15; F-89..F-94                                |
+| 12  | ⬜      | `docs/plan-0.2.0.md` anlegen und `0.2.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.1.2`-Release                                            | RAK-11..RAK-21                                            |
+| 13  | ⬜      | Player-SDK-Paketierung und Public API stabilisieren                                                                   | Nach Schritt 12                                                 | RAK-11, RAK-12                                            |
+| 14  | ⬜      | Event-Schema-Versionierung und SDK↔Schema-Kompatibilitätscheck in CI planen                                           | Nach Schritt 12                                                 | RAK-13, RAK-21                                            |
+| 15  | ⬜      | hls.js-Adapter, HTTP-Transport sowie Batching/Sampling/Retry-Grenzen testbar absichern                                | Nach Schritt 12                                                 | RAK-14, RAK-15, RAK-17                                    |
+| 16  | ⬜      | OTel-Transport-Option bewerten und Performance-Budget nachweisen                                                      | Nach Schritt 12                                                 | RAK-16, RAK-18                                            |
+| 17  | ⬜      | Browser-Support-Matrix und Demo-Integrationsdoku erstellen                                                            | Nach Schritt 12                                                 | RAK-19, RAK-20                                            |
+| 18  | ⬜      | OE-3-Folge-ADR für Persistenz vorbereiten                                                                             | Parallel zu `0.2.0`-Planung                                     | OE-3; MVP-16                                              |
 
 ---
 
