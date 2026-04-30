@@ -35,8 +35,8 @@ apps/api/
 
 ## Status
 
-`0.1.2`-Stand, integriert aus dem Backend-Spike-Sieger und der
-`0.1.x`-Backend-Core-Implementierung. Vorhanden: Domain, Use Case
+`0.2.0`-Stand, integriert aus dem Backend-Spike-Sieger und der
+`0.1.x`/`0.2.0`-Implementierung. Vorhanden: Domain, Use Case
 `RegisterPlaybackEventBatch`, Pflicht-Endpunkte
 (`POST /api/playback-events`, `GET /api/health`, `GET /api/metrics`),
 Stream-Sessions-Endpoints (`GET /api/stream-sessions`,

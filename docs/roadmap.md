@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-04-30
-> **Phase**: Post-`0.1.2`, vor `0.2.0` publizierbares Player SDK  
+> **Phase**: Post-`0.2.0`, vor `0.3.0` Stream Analyzer  
 > **Bezug**: `docs/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `docs/architecture.md` (Zielbild),
 > `docs/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),
@@ -109,7 +109,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.1.0` | Backend Core + Demo-Lab      | ✅      | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
 | `0.1.1` | Player-SDK + Dashboard       | ✅      | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md)                         |
 | `0.1.2` | Observability-Stack          | ✅      | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md)                               |
-| `0.2.0` | Publizierbares Player SDK    | ⬜      | RAK-11..RAK-21                                                                                  |
+| `0.2.0` | Publizierbares Player SDK    | ✅      | RAK-11..RAK-21                                                                                  |
 | `0.3.0` | Stream Analyzer              | ⬜      | RAK-22..RAK-28                                                                                  |
 | `0.4.0` | Erweiterte Trace-Korrelation | ⬜      | RAK-29..RAK-35                                                                                  |
 | `0.5.0` | Multi-Protocol Lab           | ⬜      | RAK-36..RAK-40                                                                                  |
