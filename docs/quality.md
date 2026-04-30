@@ -170,22 +170,23 @@ müssen im Spike-Protokoll
 
 ---
 
-## 6. CI-Pipeline (Platzhalter)
+## 6. CI-Pipeline
 
-Eine CI-Pipeline existiert noch nicht. Geplant ab `0.1.0` (siehe
-`docs/roadmap.md` §2 Schritt 1 ff.):
+`0.1.0` nutzt GitHub Actions auf `ubuntu-24.04` als CI-Zielplattform.
+Workflow: `.github/workflows/build.yml`.
 
-- GitHub Actions Workflow `build.yml` mit Steps für
-  `make test`, `make lint`, `docker build --target runtime`
-- Test-, Coverage- und Lint-Reports als Workflow-Artifacts
-  (Pattern aus `d-migrate/.github/workflows/build.yml`)
-- Cache: `gradle/actions/setup-*` analog für Go über
-  `actions/cache` auf `~/go/pkg/mod` (oder Docker-Layer-Cache
-  direkt)
+Der Workflow läuft auf Pull Requests und Pushes nach `main`:
 
-Bis CI existiert ist der lokale Docker-Pfad maßgeblich und
-identisch zu dem, was die spätere CI ausführen wird (Plan §14.11
-Docker-only-Workflow).
+- `make test`
+- `make lint`
+- `make coverage-gate`
+- `make arch-check`
+- `make build`
+
+Die Root-Targets delegieren in `apps/api/` und nutzen denselben
+Docker-only-Pfad wie die lokale Entwicklung. Test-, Coverage- und
+Lint-Reports als Workflow-Artefakte bleiben eine spätere
+Verbesserung; `0.1.0` erzwingt zunächst die Gates.
 
 ---
 

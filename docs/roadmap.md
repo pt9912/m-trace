@@ -46,8 +46,9 @@ in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §2.
 
 ### 1.3 Verbleibend für `0.1.0`-Release
 
-Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung und §5.2 Compose-Lab
-ausgeliefert; RAK-1/3/4/6/8 verifiziert. CI-Setup steht aus. DoD-Detail
+Status: 🟡 releasebereit im Code — §5.1 Backend-Erweiterung, §5.2
+Compose-Lab, RAK-1/3/4/6/8-Verifikation und CI-Setup sind ausgeliefert.
+OE-1/OE-7 bleiben vor dem Public-Release offen. DoD-Detail
 in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
 
 | Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
@@ -56,7 +57,7 @@ in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
 | 2           | ✅      | §5.2 Compose-Lab Core (`api`, `mediamtx`, `stream-generator`) inkl. `make dev`/`make stop` und Smoke-Test (`/health`, POST events, GET sessions, HLS-Manifest).          | nach §5.1                            | plan-0.1.0 §5.2; MVP-7..MVP-9; F-82..F-88 |
 | 3           | ✅      | §5.3 RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 verifiziert — fällt mit §5.2.                                                                                                   | nach §5.2                            | plan-0.1.0 §5.3                        |
 | 4           | ✅      | §5.4 Hash-Backfill für bereits gelieferte DoD-Items (Telemetry-Model, Local-Dev, Use-Case-Tests) + `CHANGELOG.md`-Eintrag für `0.1.0`.                                 | parallel zu §5.2/§5.3                | plan-0.1.0 §5.4                        |
-| 5           | ⬜      | OE-6 entscheiden (CI-Zielplattformen) und GitHub-Actions-Workflow `build.yml` mit `make test`, `make lint`, `make coverage-gate`, `make arch-check` aufsetzen.         | 4 Wochen vor Release-Tag (Eskalation) | OE-6; plan-0.1.0 §5.4                  |
+| 5           | ✅      | OE-6 entschieden (`ubuntu-24.04` via GitHub Actions) und Workflow `build.yml` mit `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` aufgesetzt. | vor `0.1.0`-DoD                       | plan-0.1.0 §5.4                        |
 
 Ab dem `0.1.0`-Tag setzen `0.1.1` (Player-SDK + Dashboard) und
 `0.1.2` (Observability-Stack) auf — Detail in
@@ -114,7 +115,7 @@ DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
 (Lastenheft-übergreifend, nicht Release-spezifisch). Detaillierter
 Lieferstand pro Tranche steht in den drei `0.1.x`-Plan-Dokumenten;
 Release-Vorgehen in [`docs/releasing.md`](./releasing.md) (Skeleton —
-wird mit OE-6 und OE-7 konkretisiert).
+CI-Verifikation konkretisiert; Release-Konvention folgt mit OE-7).
 
 ---
 
@@ -148,7 +149,6 @@ Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsrege
 | OE-3    | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | offen                                                       |
 | OE-4    | Frontend-Styling (eigenes CSS / Tailwind / UI-Library)                           | mit Schritt 8 in §2               | offen                                                       |
 | OE-5    | Live-Updates: Polling / WebSocket / SSE                                          | Folge-ADR `0.4.0`                 | offen                                                       |
-| OE-6    | CI-Zielplattformen — verknüpft mit **MVP-32**                                    | beim CI-Setup (vor `0.1.0`-DoD)   | offen                                                       |
 | OE-7    | Release-Konvention                                                               | vor `0.1.0` Public-Release        | offen                                                       |
 | OE-8    | Paketnamen für npm                                                               | Schritt 9 in §2                   | offen                                                       |
 

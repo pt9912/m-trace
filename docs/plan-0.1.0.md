@@ -117,7 +117,7 @@ DoD:
 
 - [x] Skeleton-Datei angelegt mit §0..§7, Platzhaltern und expliziten TODOs (`67b5aeb`).
 - [x] Roadmap §3 verlinkt auf `releasing.md` (`67b5aeb`).
-- [ ] §2 Verifikation konkretisieren, sobald **OE-6** (CI-Zielplattformen) entschieden ist.
+- [x] §2 Verifikation konkretisieren: `0.1.0` nutzt GitHub Actions auf `ubuntu-24.04`; Workflow `.github/workflows/build.yml` führt Root-Targets `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` aus (`46e45ec`).
 - [ ] §3 Branching-Modell und Tag-Format konkretisieren, sobald **OE-7** (Release-Konvention) entschieden ist.
 - [ ] §4 Asset-Liste, Source-Bundle, Container-Image-Pfad konkretisieren.
 - [ ] §6 Rollback-Szenarien analog d-migrate-Pattern.
@@ -201,7 +201,7 @@ DoD:
 - [x] Neuer Port `apps/api/hexagon/port/driven/telemetry.go` mit Interface `Telemetry { BatchReceived(ctx context.Context, size int) }` (`51b3812`).
 - [x] Use-Case-Konstruktor `NewRegisterPlaybackEventBatchUseCase` um `telemetry driven.Telemetry`-Parameter erweitert; Aufruf `u.telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt — vor Auth, damit auch fehlgeschlagene Auth-Requests im received-Counter erscheinen (`51b3812`).
 - [x] Boundary-Test-Skript `apps/api/scripts/check-architecture.sh` (per `make arch-check` aufrufbar) prüft, dass `hexagon/` keine direkten Imports auf Adapter, OTel, Prometheus, `database/sql` oder `net/http` enthält und die Schichtengrenzen domain → application → port respektiert sind. Aktueller Code besteht den Test (`5784f6e`).
-- [ ] Boundary-Test in CI eingebunden, sobald OE-6 entschieden ist.
+- [x] Boundary-Test in CI eingebunden (`make arch-check` im Workflow `.github/workflows/build.yml`) (`46e45ec`).
 - [x] `apps/api/hexagon/`-Pakete importieren weiterhin **kein** OTel — per Boundary-Test verifiziert (`make arch-check` grün auf `51b3812`).
 - [x] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received` (Punkt-Notation laut OTel-Semconv); Attribut `batch.size`. **Naming-Translation**: das OTel→Prometheus-Mapping ersetzt `.` durch `_`, daher erscheint der Counter in Prometheus als `mtrace_api_batches_received` (vom OTLP-Exporter automatisch konvertiert). Smoke-Test-Regex `^mtrace_.+` (Plan `0.1.2` §4) deckt beide Namen ab — den translated Counter sowie die direkten Prometheus-Counter aus `adapters/driven/metrics`. Dokumentation in `docs/telemetry-model.md` §2 erfasst diese Translation explizit (`51b3812`).
 - [x] `apps/api/cmd/api/main.go` verdrahtet die `OTelTelemetry`-Implementierung in den Use Case (`51b3812`).
@@ -307,7 +307,7 @@ DoD:
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung und §5.2 Compose-Lab ausgeliefert; §5.3 RAK-1/3/4/6/8 verifiziert; §5.4 steht noch für CI/Release-Prozess aus. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
+Status: 🟡 releasebereit im Code — §5.1 Backend-Erweiterung, §5.2 Compose-Lab, §5.3 RAK-Verifikation und §5.4 CI-Setup sind ausgeliefert; OE-1/OE-7 bleiben vor dem Public-Release offen. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
@@ -386,7 +386,7 @@ DoD:
 - [x] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss (`e532e1e`, `51b3812`).
 - [x] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8 (`2eede43`, `504e4c9`).
 - [x] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints (`7148a8d`, `9842d39`, `796aaa7`, `26a64e2`, `835f258`, `504e4c9`).
-- [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32). Pflicht für `0.1.0`-DoD laut Lastenheft §18 und Roadmap-OE-6-Trigger („vor `0.1.0`-DoD"); ohne Auflösung von OE-6 ist `0.1.0` nicht abnehmbar. **Eskalationsregel**: OE-6 muss spätestens vier Wochen vor dem geplanten `0.1.0`-Release entschieden sein — verbleibt OE-6 darüber hinaus offen, wird der Punkt in Roadmap §5 als `[!]`-blockierend markiert und an den Projekt-Owner für eine Fast-Track-ADR-Entscheidung eskaliert. Bis zur Entscheidung kann `0.1.1` nicht beginnen (siehe Vorgänger-Gate dort).
+- [x] CI führt Build und Tests aus (verknüpft mit OE-6, MVP-32): OE-6 ist für `0.1.0` entschieden als GitHub Actions auf `ubuntu-24.04`; Workflow `.github/workflows/build.yml` läuft auf Push nach `main` und Pull Requests mit `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` (`46e45ec`).
 - [x] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`) (`95591a5`).
 
 ---

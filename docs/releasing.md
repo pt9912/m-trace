@@ -1,9 +1,8 @@
 # Releasing — m-trace
 
-> **Status**: Skeleton. Konkrete Befehle, CI-Auslöser, Asset-Liste und
-> Branching-Modell werden befüllt, sobald
-> [`OE-6`](./roadmap.md) (CI-Zielplattformen) und
-> [`OE-7`](./roadmap.md) (Release-Konvention) entschieden sind.
+> **Status**: Skeleton. CI-Verifikation ist konkretisiert; Asset-Liste
+> und Branching-Modell werden befüllt, sobald
+> [`OE-7`](./roadmap.md) (Release-Konvention) entschieden ist.
 > Bezug: AK-11, DoD §18 (Lastenheft).
 
 ## 0. Zweck
@@ -36,26 +35,31 @@ Vor jedem Release:
 
 ## 2. Verifikation
 
-Vor Tag und GitHub-Release müssen die Docker-Pfade in `apps/api/`
-grün sein:
+Vor Tag und GitHub-Release müssen die Root-Targets grün sein:
 
 ```bash
-cd apps/api
-make test     # docker build --target test
-make lint     # docker build --target lint
-make build    # docker build --target runtime
+make test
+make lint
+make coverage-gate
+make arch-check
+make build
 ```
 
 Erfolgskriterien:
 
-- alle drei Targets exit code 0.
+- alle fünf Targets exit code 0.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus
   `docs/spike/backend-api-contract.md` §11 ab.
+- Coverage-Gate liegt bei mindestens 90 %.
+- Architektur-Grenzen bleiben laut `make arch-check` intakt.
 
-> **TODO bis OE-6**: CI-Workflow ergänzen, sobald GitHub-Actions oder
-> alternative Plattform feststeht. Dann hier den `gh run watch`-
-> Befehl und die zu wartenden Workflow-Namen ergänzen.
+CI-Zielplattform für `0.1.0` ist GitHub Actions auf `ubuntu-24.04`.
+Workflow-Name: `build`.
+
+```bash
+gh run watch --workflow build.yml
+```
 
 ## 3. Release-Commit und Tag
 
@@ -74,7 +78,7 @@ git push origin "$TAG"
 
 ## 4. GitHub-Release
 
-> **TODO bis OE-6/OE-7**: Asset-Liste, Source-Bundle, Container-
+> **TODO bis OE-7**: Asset-Liste, Source-Bundle, Container-
 > Image-Pfad (z. B. `ghcr.io/pt9912/m-trace-api:X.Y.Z`) und Pretty-
 > Print der Release-Notes festlegen. Vorlage analog cmake-xray /
 > d-migrate-Pattern.
@@ -101,7 +105,7 @@ gh release create "$TAG" \
 
 ## 6. Rollback
 
-> **TODO bis OE-6/OE-7**: Rollback-Szenarien dokumentieren analog
+> **TODO bis OE-7**: Rollback-Szenarien dokumentieren analog
 > d-migrate `releasing.md` §6 (Tag noch lokal, Tag bereits gepusht,
 > GitHub-Release zurückziehen, CI-Build nach Release fehlschlägt).
 
@@ -110,5 +114,5 @@ gh release create "$TAG" \
 - Lastenheft §14 — Akzeptanzkriterien (AK-11).
 - Lastenheft §18 — Definition of Done für den MVP.
 - `docs/roadmap.md` §3 — Release-Übersicht und RAK-Akzeptanzkriterien.
-- `docs/roadmap.md` §5 — Offene Entscheidungen (OE-6, OE-7).
+- `docs/roadmap.md` §5 — Offene Entscheidungen (OE-7).
 - `CHANGELOG.md` — Versionsverlauf.

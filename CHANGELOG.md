@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `0.1.0` Compose-Lab Core mit `api`, `mediamtx` und `stream-generator`.
 - Root-Targets `make dev`, `make stop` und `make smoke`.
+- Root-Targets `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` für lokale CI-Parität.
+- GitHub-Actions-Workflow `build.yml` für API-Test, Lint, Coverage-Gate, Architekturprüfung und Runtime-Build auf `ubuntu-24.04`.
 - MediaMTX-Konfiguration für RTSP-Publish, HLS auf Port `8888` und HTTP-API auf Port `9997`.
 - FFmpeg-Teststream via `jrottenberg/ffmpeg:8.1-ubuntu2404`.
 
