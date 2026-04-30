@@ -1,22 +1,44 @@
 {
   "name": "@m-trace/player-sdk",
-  "version": "0.1.1",
-  "private": true,
+  "version": "0.2.0",
+  "description": "Browser Player SDK for sending m-trace playback telemetry.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pt9912/m-trace.git",
+    "directory": "packages/player-sdk"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
+  "browser": "./dist/index.global.js",
+  "unpkg": "./dist/index.global.js",
+  "jsdelivr": "./dist/index.global.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": "./dist/index.js",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./browser": {
+      "default": "./dist/index.global.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs,iife --global-name MTracePlayerSDK --dts --clean",
     "test": "vitest run",
-    "lint": "tsc --noEmit && node scripts/check-boundaries.mjs"
+    "lint": "tsc --noEmit && node scripts/check-boundaries.mjs && node scripts/check-public-api.mjs",
+    "pack:smoke": "pnpm run build && pnpm pack --pack-destination ../../.tmp/player-sdk-pack && node scripts/pack-smoke.mjs ../../.tmp/player-sdk-pack/m-trace-player-sdk-0.2.0.tgz",
+    "publish:dry-run": "npm_config_cache=$PWD/../../.tmp/npm-cache pnpm publish --dry-run --no-git-checks"
   },
   "peerDependencies": {
     "hls.js": "^1.6.0"

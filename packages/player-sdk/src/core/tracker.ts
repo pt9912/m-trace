@@ -3,7 +3,7 @@ import type { EventDraft, PlaybackEvent } from "../types/events";
 import { HttpTransport } from "../transport/http";
 import { createSessionId } from "./session";
 
-const sdk = { name: "@m-trace/player-sdk", version: "0.1.1" };
+const sdk = { name: "@m-trace/player-sdk", version: "0.2.0" };
 const maxBatchEvents = 100;
 
 export interface PlayerTracker {
