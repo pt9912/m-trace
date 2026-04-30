@@ -64,8 +64,11 @@ DoD:
 
 - [ ] Workspace-Paket `packages/stream-analyzer` ist angelegt und in `pnpm-workspace.yaml` enthalten.
 - [ ] `package.json` enthält eindeutige Paketmetadaten, `type`, `main`, `module`, `types`, `exports`, `files`, `license`, `repository.directory` und CI-taugliche Scripts.
+- [ ] Analyzer-Version wird aus genau einer Quelle abgeleitet: `packages/stream-analyzer/package.json`, exportierte Version und die im JSON-Ergebnis gesendete Analyzer-Version sind synchron und getestet.
 - [ ] Public API exportiert mindestens eine Analysefunktion für HLS-Manifeste und klar typisierte Ergebnis-/Fehlertypen.
+- [ ] API-/Adapter-Kontrakt für Backend-Nutzung ist vor Parser-Implementierung entschieden: Manifest-Input, optionale URL/Base-URL, Analyse-Resultat und Fehlerform sind so modelliert, dass der Go-`StreamAnalyzer`-Port nicht auf Playback-Event-Batches festgelegt bleibt.
 - [ ] Interne Parser-Module bleiben intern; dokumentierte Konsumenten importieren nur über den Package-Entry-Point.
+- [ ] F-73 ist vorbereitet: Parser- und Ergebnisgrenzen sind so geschnitten, dass DASH-/CMAF-Analyse später als eigener Analyzer-Typ ergänzt werden kann; Nicht-HLS bleibt in `0.3.0` explizit dokumentiert out of scope.
 - [ ] TypeScript-Build erzeugt ESM, CJS und Type-Definitionen oder dokumentiert bewusst, warum nur ein Format unterstützt wird.
 - [ ] Unit-Test-Setup ist vorhanden und läuft über `pnpm --filter <stream-analyzer-paket> run test`.
 - [ ] Coverage-Scope für `packages/stream-analyzer/src/` ist definiert; Zielschwelle ist mindestens 90 % für Statements, Lines, Functions und Branches.
@@ -119,6 +122,7 @@ Ziel: Media Playlists liefern Segmentdaten, Dauerstatistiken, einfache Inkonsist
 DoD:
 
 - [ ] Segmente aus `#EXTINF` werden mit URI und Dauer extrahiert.
+- [ ] `#EXT-X-TARGETDURATION` wird ausgewertet; Segment-Dauer-Findings prüfen, ob gerundete Segmentdauern die Target-Duration verletzen.
 - [ ] Segment-Anzahl wird bestimmt.
 - [ ] Durchschnittliche Segment-Dauer wird berechnet.
 - [ ] Segment-Dauerabweichungen werden gegen eine dokumentierte Toleranz geprüft.
@@ -138,8 +142,8 @@ Ziel: Analyzer-Ergebnisse sind stabil serialisierbar, für API und CLI geeignet 
 
 DoD:
 
-- [ ] JSON-Shape ist als TypeScript-Typ und Dokumentationsbeispiel festgelegt.
-- [ ] Ergebnis enthält mindestens Analyzer-Version, Input-Metadaten, Playlist-Typ, Summary, Findings und typspezifische Details.
+- [ ] JSON-Shape ist als TypeScript-Typ und Dokumentationsbeispiel festgelegt; das Format bleibt um weitere Analyzer-Typen wie DASH/CMAF erweiterbar.
+- [ ] Ergebnis enthält mindestens Analyzer-Version aus der Paketversion, Input-Metadaten, Playlist-Typ, Summary, Findings und typspezifische Details.
 - [ ] Fehler-JSON ist klar vom Erfolgs-JSON unterscheidbar.
 - [ ] Stabilitätsregel ist dokumentiert: additive Änderungen sind erlaubt; breaking Changes benötigen Changelog und Plan-/Doku-Update.
 - [ ] JSON-Serialisierung ist getestet und enthält keine nicht-deterministischen Felder ohne explizite Normalisierung.
