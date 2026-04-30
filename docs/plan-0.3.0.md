@@ -87,6 +87,7 @@ DoD:
 
 - [ ] Analyse kann mit Manifest-Text als Input laufen; Netzwerkabruf ist ein separater, austauschbarer Input-Pfad.
 - [ ] HTTP-/Fetch-Laden unterstützt Timeout, maximale Manifest-Größe und klare Fehler für Netzwerk-, Statuscode- und Content-Type-Probleme.
+- [ ] URL-Laden hat verbindliche SSRF-Schutzregeln: nur `http`/`https`, keine Credentials in URLs, Redirect-Limit, gleiche Sicherheitsprüfung nach jedem Redirect, Block für localhost, private/link-local/loopback/reservierte IP-Bereiche, dokumentiertes DNS-Rebinding-Verhalten und Größenlimit auch nach Redirects.
 - [ ] Parser erkennt HLS-Grundstruktur und lehnt nicht-HLS-Text mit einem strukturierten Fehler ab.
 - [ ] Master Playlist wird anhand HLS-Tags erkannt und getestet.
 - [ ] Media Playlist wird anhand HLS-Tags erkannt und getestet.
@@ -128,7 +129,7 @@ DoD:
 - [ ] Segment-Dauerabweichungen werden gegen eine dokumentierte Toleranz geprüft.
 - [ ] Findings unterscheiden mindestens `info`, `warning` und `error`.
 - [ ] Live-/VOD-Erkennung ist definiert, z. B. anhand `#EXT-X-ENDLIST`.
-- [ ] Einfache Live-Latenz-Schätzung ist dokumentiert und getestet oder bewusst als nicht erfülltes RAK-/F-Item markiert.
+- [ ] Einfache Live-Latenz-Schätzung ist dokumentiert und getestet.
 - [ ] Malformed Segment-Einträge liefern strukturierte Findings, statt unkontrolliert zu crashen.
 - [ ] JSON-Ergebnis für Media Playlists ist snapshot- oder schema-nah getestet.
 
@@ -161,7 +162,7 @@ DoD:
 
 - [ ] Bestehender Go-Port `hexagon/port/driven.StreamAnalyzer` wird überprüft und bei Bedarf so angepasst, dass Analyseaufrufe fachlich sinnvoll modelliert sind.
 - [ ] API-Integration nutzt einen Adapter an der Driven-Seite; Domain und Application Layer importieren keine Node-/TypeScript-Implementierungsdetails.
-- [ ] Falls Node-Analyzer aus Go heraus nicht sinnvoll direkt nutzbar ist, ist der Integrationsmodus explizit entschieden: CLI-Adapter, separater Prozess, HTTP-intern oder bewusst deferred.
+- [ ] Falls Node-Analyzer aus Go heraus nicht sinnvoll direkt nutzbar ist, ist der Integrationsmodus explizit entschieden: CLI-Adapter, separater Prozess oder HTTP-intern. API-Nutzbarkeit selbst ist release-blocking und darf nicht deferred werden.
 - [ ] API-Endpunkt oder Use-Case-Pfad für Analyse ist definiert und getestet.
 - [ ] Fehlerabbildung von Analyzer-Fehlern auf HTTP-Status/Problem-Shape ist dokumentiert.
 - [ ] Metriken/Logs für Analyseaufrufe sind minimal vorhanden oder bewusst deferred.
@@ -179,6 +180,7 @@ DoD:
 
 - [ ] CLI-Einstieg ist im Analyzer-Paket definiert, z. B. `bin` in `package.json`.
 - [ ] CLI akzeptiert mindestens Datei-Pfad oder URL als Input.
+- [ ] CLI-URL-Input nutzt dieselben SSRF-Schutzregeln wie der Analyzer-Loader oder ist auf lokale Dateien beschränkt; Abweichungen sind dokumentiert und getestet.
 - [ ] CLI gibt Analyseergebnis auf stdout als JSON aus.
 - [ ] Fehler werden mit sinnvollem Exit-Code und maschinenlesbarem Fehler-JSON oder klar dokumentiertem stderr ausgegeben.
 - [ ] CLI-Tests decken Datei-Input, URL-/Fetch-Mock, Erfolg und Fehlerfall ab.
