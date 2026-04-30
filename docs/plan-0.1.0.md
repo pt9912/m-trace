@@ -339,9 +339,9 @@ Mit dem `0.1.1`-Dashboard-Skelett wird die Styling-Strategie festgelegt.
 
 DoD:
 
-- [x] Lastenheft Header: Version `1.1.5` → `1.1.6` (`DASHBOARD_COMMIT`).
-- [x] Lastenheft §16.2: OE-4 resolved — eigenes CSS ohne Tailwind/UI-Library (`DASHBOARD_COMMIT`).
-- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.6` aktualisiert (`DASHBOARD_COMMIT`).
+- [x] Lastenheft Header: Version `1.1.5` → `1.1.6` (`1a6a6c7`).
+- [x] Lastenheft §16.2: OE-4 resolved — eigenes CSS ohne Tailwind/UI-Library (`1a6a6c7`).
+- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.6` aktualisiert (`1a6a6c7`).
 
 ---
 
