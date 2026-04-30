@@ -226,6 +226,11 @@ th {
   color: #8a2d20;
 }
 
+.pill.inactive {
+  background: #e7ebef;
+  color: #4f5f6d;
+}
+
 .muted {
   color: #687684;
 }
@@ -263,6 +268,41 @@ th {
   padding: 9px 12px;
 }
 
+.status-list {
+  display: grid;
+  gap: 1px;
+  padding: 16px;
+}
+
+.status-row {
+  align-items: center;
+  border-bottom: 1px solid #edf1f5;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.status-row:first-child {
+  padding-top: 0;
+}
+
+.status-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.status-row strong,
+.status-row span {
+  display: block;
+}
+
+.status-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
 .error {
   color: #8a2d20;
 }
@@ -291,5 +331,10 @@ th {
 
   .timeline-row {
     grid-template-columns: 1fr;
+  }
+
+  .status-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

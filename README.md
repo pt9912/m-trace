@@ -74,25 +74,28 @@ m-trace sammelt und normalisiert Signale aus Player und Backend, sodass Stream-S
 
 Der erste MVP ist bewusst klein gehalten.
 
-### Enthalten in v0.1.0
+### Enthalten seit v0.1.0
 
 - Mono-Repo-Struktur
 - Backend-API unter `apps/api`
+- MediaMTX-basiertes lokales Streaming-Setup
+- FFmpeg-Teststream
+- Aufnahme von Playback-Events
+- Prometheus-kompatible Aggregat-Metriken
+- OpenTelemetry-kompatibles Eventmodell
+- In-Memory-Persistenz
+- Docker-first lokale Entwicklung
+
+### Enthalten seit v0.1.1
+
 - Dashboard unter `apps/dashboard`
 - Demo-Player als Dashboard-Route `/demo`
 - Player-SDK unter `packages/player-sdk`
 - hls.js-Adapter
-- MediaMTX-basiertes lokales Streaming-Setup
-- FFmpeg-Teststream
-- Aufnahme von Playback-Events
 - einfache Stream-Session-Ansicht
 - einfache Event-Ansicht
-- Prometheus-kompatible Aggregat-Metriken
-- OpenTelemetry-kompatibles Eventmodell
-- In-Memory- oder SQLite-Persistenz
-- Docker-first lokale Entwicklung
 
-### Nicht in v0.1.0 enthalten
+### Nicht im aktuellen 0.1.x-MVP enthalten
 
 - separate Demo-Player-App
 - separate Analyzer-API

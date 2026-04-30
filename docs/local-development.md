@@ -51,7 +51,7 @@ Ab `0.1.1` zusätzlich (Player-SDK + Dashboard sind TypeScript-Pakete):
 
 ## 2. Quickstart
 
-### 2.1 Erster Start (`0.1.0` Backend Core + Demo-Lab)
+### 2.1 Erster Start (`0.1.1` Core-Lab)
 
 ```bash
 git clone https://github.com/pt9912/m-trace.git
@@ -59,13 +59,14 @@ cd m-trace
 make dev
 ```
 
-`make dev` führt `docker compose up --build` ohne Profil-Flag aus. Das startet das Core-Profil (drei Pflicht-Mindestdienste laut Lastenheft §7.8 nach Patch `1.1.1`):
+`make dev` führt `docker compose up --build` ohne Profil-Flag aus. Das startet das Core-Profil (vier Pflicht-Mindestdienste ab `0.1.1` laut Lastenheft §7.8):
 
 - `api` auf `http://localhost:8080` (`apps/api`)
+- `dashboard` auf `http://localhost:5173` (`apps/dashboard`)
 - `mediamtx` (HLS auf `http://localhost:8888`, HTTP-API/Status auf `http://localhost:9997`)
 - `stream-generator` (FFmpeg-Teststream; sendet kontinuierlich an MediaMTX)
 
-Erwartete Wartezeit beim Erst-Pull: 5–10 Minuten (Image-Download + Multi-Stage-Build von `apps/api`).
+Erwartete Wartezeit beim Erst-Pull: 5–10 Minuten (Image-Download + Multi-Stage-Builds von `apps/api` und `apps/dashboard`).
 
 ### 2.2 Smoke-Test
 
