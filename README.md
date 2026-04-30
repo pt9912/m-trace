@@ -199,9 +199,9 @@ Player Session Trace
 
 ---
 
-## Lokales Entwicklungsziel
+## Lokale Entwicklung
 
-Die geplante Developer Experience:
+Das `0.1.0`-Core-Lab startet die Backend-API, MediaMTX und einen FFmpeg-Teststream:
 
 ```bash
 git clone https://github.com/pt9912/m-trace.git
@@ -209,20 +209,13 @@ cd m-trace
 make dev
 ```
 
-Erwartete lokale Dienste:
+Smoke-Test:
 
-| Dienst           | Zweck                           |
-| ---------------- | ------------------------------- |
-| API              | Event-Annahme und Session-API   |
-| Dashboard        | Web-UI und `/demo`-Player-Route |
-| MediaMTX         | lokaler Media-Server            |
-| FFmpeg-Generator | Teststream                      |
-| Prometheus       | Aggregat-Metriken               |
-| Grafana          | optionale Dashboards            |
-| OTel Collector   | optionale Telemetrie-Pipeline   |
+```bash
+make smoke
+```
 
-Dieses Setup ist noch nicht umgesetzt.  
-Es ist das Ziel des ersten MVP.
+Details stehen in [docs/local-development.md](docs/local-development.md).
 
 ## Roadmap
 

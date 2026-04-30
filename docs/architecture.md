@@ -501,7 +501,7 @@ flowchart LR
 
 ### 8.2 Lokal-Lab
 
-Das `0.1.0`-Compose-Setup startet vier Services aus dem Repo-Wurzelverzeichnis:
+Das `0.1.0`-Compose-Setup startet drei Core-Services aus dem Repo-Wurzelverzeichnis:
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
@@ -510,16 +510,14 @@ flowchart TB
 
     subgraph compose["docker-compose.yml"]
         API["apps/api<br/>Port 8080"]
-        Dashboard["apps/dashboard<br/>Port 5173"]
         MediaMTX["MediaMTX<br/>Port 8888 (HLS)"]
         FFmpeg["FFmpeg-Generator<br/>Teststream → MediaMTX"]
     end
 
     Prom["Prometheus<br/>(optional)"]
 
-    User -->|HTTP| Dashboard
+    User -->|HTTP| API
     User -->|HLS| MediaMTX
-    Dashboard -->|API| API
     FFmpeg -->|RTSP/RTMP| MediaMTX
     MediaMTX -->|HLS| User
     Prom -.scrape.-> API

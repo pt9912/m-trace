@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Stand**: 2026-04-28  
+> **Stand**: 2026-04-30
 > **Phase**: Post-Spike, Pre-MVP `0.1.0`  
 > **Bezug**: `docs/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `docs/architecture.md` (Zielbild),
@@ -46,16 +46,16 @@ in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §2.
 
 ### 1.3 Verbleibend für `0.1.0`-Release
 
-Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung ausgeliefert,
-Compose-Lab + RAK-Verifikation + CI-Setup stehen aus. DoD-Detail
+Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung und §5.2 Compose-Lab
+ausgeliefert; RAK-1/3/4/6/8 verifiziert. CI-Setup steht aus. DoD-Detail
 in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
 
 | Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
 | ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------- |
 | 1           | ✅      | §5.1 Backend-Erweiterung (Sessions-Endpoints, MVP-16, F-22-Hook, ingest_sequence, CORS Variante B, RateLimiter-Dimensionen, Lifecycle-Sweeper).                        | nach Tranche 0                       | plan-0.1.0 §5.1; MVP-2, MVP-16, F-17..F-22 |
-| 2           | ⬜      | §5.2 Compose-Lab Core (`api`, `mediamtx`, `stream-generator`) inkl. `make dev`/`make stop` und Smoke-Test (`/health`, POST events, GET sessions).                       | nach §5.1                            | plan-0.1.0 §5.2; MVP-7..MVP-9; F-82..F-88 |
-| 3           | ⬜      | §5.3 RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 verifiziert — fällt mit §5.2.                                                                                                   | nach §5.2                            | plan-0.1.0 §5.3                        |
-| 4           | ⬜      | §5.4 Hash-Backfill für bereits gelieferte DoD-Items (Telemetry-Model, Local-Dev, Use-Case-Tests) + `CHANGELOG.md`-Eintrag für `0.1.0`.                                 | parallel zu §5.2/§5.3                | plan-0.1.0 §5.4                        |
+| 2           | ✅      | §5.2 Compose-Lab Core (`api`, `mediamtx`, `stream-generator`) inkl. `make dev`/`make stop` und Smoke-Test (`/health`, POST events, GET sessions, HLS-Manifest).          | nach §5.1                            | plan-0.1.0 §5.2; MVP-7..MVP-9; F-82..F-88 |
+| 3           | ✅      | §5.3 RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 verifiziert — fällt mit §5.2.                                                                                                   | nach §5.2                            | plan-0.1.0 §5.3                        |
+| 4           | ✅      | §5.4 Hash-Backfill für bereits gelieferte DoD-Items (Telemetry-Model, Local-Dev, Use-Case-Tests) + `CHANGELOG.md`-Eintrag für `0.1.0`.                                 | parallel zu §5.2/§5.3                | plan-0.1.0 §5.4                        |
 | 5           | ⬜      | OE-6 entscheiden (CI-Zielplattformen) und GitHub-Actions-Workflow `build.yml` mit `make test`, `make lint`, `make coverage-gate`, `make arch-check` aufsetzen.         | 4 Wochen vor Release-Tag (Eskalation) | OE-6; plan-0.1.0 §5.4                  |
 
 Ab dem `0.1.0`-Tag setzen `0.1.1` (Player-SDK + Dashboard) und
@@ -86,7 +86,7 @@ weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
 | 7   | ✅      | `docs/local-development.md` schreiben                                                                                 | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                |
 | 8   | ⬜      | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                            | Nach `0.1.0`-Release                                            | MVP-3; F-23..F-28                                         |
 | 9   | ⬜      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |
-| 10  | ⬜      | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88                                  |
+| 10  | ✅      | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88                                  |
 | 11  | ⬜      | Observability-Stack (Prometheus + optional Grafana, OTel-Collector) — `0.1.2` (siehe `plan-0.1.2.md`)                 | Nach `0.1.1`-Release                                            | MVP-10, MVP-15; F-89..F-94                                |
 
 ---

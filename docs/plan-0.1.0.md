@@ -307,7 +307,7 @@ DoD:
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)
 
-Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung ausgeliefert, §5.2 Compose-Lab und §5.3/§5.4 stehen aus. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
+Status: 🟡 in Arbeit — §5.1 Backend-Erweiterung und §5.2 Compose-Lab ausgeliefert; §5.3 RAK-1/3/4/6/8 verifiziert; §5.4 steht noch für CI/Release-Prozess aus. Bezug: Lastenheft `1.1.3` §13.1 (RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 für `0.1.0`); Roadmap §2 Schritt 10 (Compose-Lab Core) plus Backend-Erweiterungen aus Lastenheft §7.3.
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgelagert.
 
@@ -357,24 +357,24 @@ Compose-Setup nutzt die Docker-Compose-Profile-Semantik korrekt: Core-Services w
 
 DoD:
 
-- [ ] `docker-compose.yml` im Repo-Wurzelverzeichnis. Core-Services für `0.1.0` (`api`, `mediamtx`, `stream-generator`) ohne `profiles:`-Direktive — sie starten per Default; entspricht den entsprechenden Pflicht-Mindestdiensten aus Lastenheft §7.8 (nach Patch `1.0.2`).
-- [ ] MediaMTX als `services/media-server/` mit Konfiguration für HLS (Port `8888`) und HTTP-API/Status (Port `9997`). Beide Ports werden im Compose-Stack exposed; HTTP-API/Status ist Voraussetzung für den `0.1.1`-Dashboard-System-Status-Link (F-40).
-- [ ] FFmpeg-Generator als `services/stream-generator/` mit Teststream.
-- [ ] `apps/api`-Container mit ENV-Variablen-Parametrisierung (Listen-Adresse, OTel-Endpoint, OTel-Exporter-Konfig laut `architecture.md` §5.3).
-- [ ] `make dev` führt `docker compose up --build` ohne Profil-Flag aus — startet damit ausschließlich die Core-Services.
-- [ ] `make stop` beendet sauber (`docker compose down`, Profile-aware).
-- [ ] Core-Stack mindestens unter Linux verifiziert.
-- [ ] Smoke-Test `0.1.0`: nach `make dev` liefert `curl http://localhost:8080/api/health` ein `200`; ein POST mit gültigem Token an `/api/playback-events` liefert `202`; ein GET an `/api/stream-sessions` listet die so erzeugte Session.
+- [x] `docker-compose.yml` im Repo-Wurzelverzeichnis. Core-Services für `0.1.0` (`api`, `mediamtx`, `stream-generator`) ohne `profiles:`-Direktive — sie starten per Default; entspricht den entsprechenden Pflicht-Mindestdiensten aus Lastenheft §7.8 (nach Patch `1.0.2`) (`504e4c9`).
+- [x] MediaMTX als `services/media-server/` mit Konfiguration für HLS (Port `8888`) und HTTP-API/Status (Port `9997`). Beide Ports werden im Compose-Stack exposed; HTTP-API/Status ist Voraussetzung für den `0.1.1`-Dashboard-System-Status-Link (F-40) (`504e4c9`).
+- [x] FFmpeg-Generator als `services/stream-generator/` mit Teststream (`jrottenberg/ffmpeg:8.1-ubuntu2404`) (`504e4c9`).
+- [x] `apps/api`-Container mit ENV-Variablen-Parametrisierung für die Listen-Adresse (`MTRACE_API_LISTEN_ADDR`). OTel-Exporter-Konfig bleibt im Core-Compose bewusst unset, damit autoexport mit No-Op-Fallback silent bleibt; der OTLP-Endpoint wird erst im `observability`-Profil aus `plan-0.1.2.md` gesetzt (`504e4c9`).
+- [x] `make dev` führt `docker compose up --build` ohne Profil-Flag aus — startet damit ausschließlich die Core-Services (`504e4c9`).
+- [x] `make stop` beendet sauber (`docker compose down`, Profile-aware) (`504e4c9`).
+- [x] Core-Stack mindestens unter Linux verifiziert: `docker compose up -d --build`, `make smoke`, `make stop`, danach `docker compose ps` leer (`504e4c9`).
+- [x] Smoke-Test `0.1.0`: nach `make dev` liefert `curl http://localhost:8080/api/health` ein `200`; ein POST mit gültigem Token an `/api/playback-events` liefert `202`; ein GET an `/api/stream-sessions` listet die so erzeugte Session. Zusätzlich prüft `make smoke` das HLS-Manifest via MediaMTX (`504e4c9`).
 
 ### 5.3 Release-Akzeptanzkriterien `0.1.0` (Lastenheft `1.1.3` §13.1; RAK-Verteilung aus Patch `1.1.0`)
 
 DoD:
 
-- [ ] **RAK-1** `make dev` startet die in `0.1.0` erforderlichen Pflicht-Dienste (`api`, `mediamtx`, `stream-generator`) (Tranche 5.2).
-- [ ] **RAK-3** API ist erreichbar — `/api/health` liefert `200` im Compose-Stack; alle MVP-Endpoints (drei Spike-Pflicht plus die zwei Stream-Sessions-Endpoints) erreichbar (Tranche 5.1/5.2).
-- [ ] **RAK-4** Teststream läuft über MediaMTX (Tranche 5.2).
-- [ ] **RAK-6** API nimmt Events an (`POST /api/playback-events` mit gültigem Token liefert `202`) (Tranche 5.1/5.2).
-- [ ] **RAK-8** README/Local-Development-Doku beschreibt den `0.1.0`-Quickstart reproduzierbar (Initial-Anteil; wird in `0.1.1` und `0.1.2` ergänzt). Bezug Tranche 0a §3.6.
+- [x] **RAK-1** `make dev` startet die in `0.1.0` erforderlichen Pflicht-Dienste (`api`, `mediamtx`, `stream-generator`) (Tranche 5.2) (`504e4c9`).
+- [x] **RAK-3** API ist erreichbar — `/api/health` liefert `200` im Compose-Stack; alle MVP-Endpoints (drei Spike-Pflicht plus die zwei Stream-Sessions-Endpoints) erreichbar (Tranche 5.1/5.2) (`26a64e2`, `504e4c9`).
+- [x] **RAK-4** Teststream läuft über MediaMTX (Tranche 5.2) (`504e4c9`).
+- [x] **RAK-6** API nimmt Events an (`POST /api/playback-events` mit gültigem Token liefert `202`) (Tranche 5.1/5.2) (`504e4c9`).
+- [x] **RAK-8** README/Local-Development-Doku beschreibt den `0.1.0`-Quickstart reproduzierbar (Initial-Anteil; wird in `0.1.1` und `0.1.2` ergänzt). Bezug Tranche 0a §3.6 (`2eede43`, `504e4c9`).
 
 ### 5.4 Übergreifende DoD `0.1.0` (Lastenheft §18, `0.1.0`-Anteil)
 
@@ -383,11 +383,11 @@ Dokumentations- und prozessbezogene Items für den `0.1.0`-Release. RAK-spezifis
 DoD:
 
 - [x] Architektur in `docs/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
-- [ ] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss.
-- [ ] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8.
-- [ ] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints.
+- [x] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss (`e532e1e`, `51b3812`).
+- [x] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8 (`2eede43`, `504e4c9`).
+- [x] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints (`7148a8d`, `9842d39`, `796aaa7`, `26a64e2`, `835f258`, `504e4c9`).
 - [ ] CI führt mindestens Build und Tests aus (verknüpft mit OE-6, MVP-32). Pflicht für `0.1.0`-DoD laut Lastenheft §18 und Roadmap-OE-6-Trigger („vor `0.1.0`-DoD"); ohne Auflösung von OE-6 ist `0.1.0` nicht abnehmbar. **Eskalationsregel**: OE-6 muss spätestens vier Wochen vor dem geplanten `0.1.0`-Release entschieden sein — verbleibt OE-6 darüber hinaus offen, wird der Punkt in Roadmap §5 als `[!]`-blockierend markiert und an den Projekt-Owner für eine Fast-Track-ADR-Entscheidung eskaliert. Bis zur Entscheidung kann `0.1.1` nicht beginnen (siehe Vorgänger-Gate dort).
-- [ ] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`) (`62a8cd7`).
 
 ---
 
