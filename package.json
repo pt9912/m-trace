@@ -10,10 +10,12 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
+    "test:e2e": "playwright test",
     "lint": "pnpm -r --if-present run lint",
     "check": "pnpm -r --if-present run check"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "hls.js": "^1.6.16",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",

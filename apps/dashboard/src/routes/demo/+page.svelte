@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { env } from "$env/dynamic/public";
   import type Hls from "hls.js";
   import { attachHlsJs, createTracker, type HlsJsAdapter, type PlayerTracker } from "@m-trace/player-sdk";
@@ -21,6 +21,7 @@
       endpoint: collectorEndpoint,
       token: "demo-token",
       projectId: "demo",
+      sessionId: new URLSearchParams(window.location.search).get("session_id") ?? undefined,
       batchSize: 5,
       flushIntervalMs: 2000
     });
@@ -61,6 +62,13 @@
       video.load();
     }
   }
+
+  onMount(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("autostart") === "1") {
+      void start();
+    }
+  });
 
   onDestroy(stop);
 </script>

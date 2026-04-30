@@ -27,9 +27,13 @@ var (
 // corsMiddleware setzt den `Vary`-Header auf jede ausgehende Antwort.
 // Das verhindert, dass CDNs/Proxies eine Origin-spezifische Antwort
 // für eine andere Origin ausliefern (plan-0.1.0.md §5.1).
-func corsMiddleware(next http.Handler) http.Handler {
+func corsMiddleware(next http.Handler, allowlist OriginAllowlist) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		appendVary(w)
+		origin := r.Header.Get("Origin")
+		if allowlist.IsOriginInGlobalUnion(origin) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		next.ServeHTTP(w, r)
 	})
 }

@@ -67,6 +67,7 @@ func main() {
 			AllowedOrigins: []string{
 				"http://localhost:5173",
 				"http://localhost:3000",
+				"http://dashboard-e2e:5173",
 			},
 		},
 	})

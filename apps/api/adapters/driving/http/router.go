@@ -70,7 +70,7 @@ func NewRouter(
 	mux.HandleFunc("OPTIONS /api/stream-sessions/{id}", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/health", dashboardPreflightHandler(allowlist))
 
-	return corsMiddleware(mux)
+	return corsMiddleware(mux, allowlist)
 }
 
 // noopAllowlist lehnt jeden Origin ab — Fallback für nil-Allowlist

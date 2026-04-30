@@ -16,6 +16,8 @@ dist
 **/dist
 coverage
 **/coverage
+test-results
+playwright-report
 
 *.log
 tmp

@@ -62,6 +62,8 @@ out/
 .turbo/
 .parcel-cache/
 coverage/
+test-results/
+playwright-report/
 *.tsbuildinfo
 .eslintcache
 

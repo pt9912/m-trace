@@ -1,0 +1,30 @@
+import { expect, test } from "@playwright/test";
+
+const apiURL = process.env.API_URL ?? "http://localhost:8080";
+
+test("demo player emits events and dashboard renders the session", async ({ browserName, page, request }) => {
+  const sessionId = `playwright-${browserName}-${Date.now()}`;
+
+  await page.goto(`/demo?autostart=1&session_id=${sessionId}`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Demo player" })).toBeVisible();
+
+  await expect
+    .poll(
+      async () => {
+        const response = await request.get(`${apiURL}/api/stream-sessions`);
+        const body = await response.text();
+        return response.ok() && body.includes(sessionId);
+      },
+      { timeout: 30_000 }
+    )
+    .toBe(true);
+
+  const detail = await request.get(`${apiURL}/api/stream-sessions/${sessionId}?events_limit=100`);
+  expect(detail.ok()).toBe(true);
+  const payload = (await detail.json()) as { events: Array<{ event_name: string }> };
+  expect(payload.events.length).toBeGreaterThan(0);
+
+  await page.goto(`/sessions/${sessionId}`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByText(sessionId)).toBeVisible();
+  await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible();
+});

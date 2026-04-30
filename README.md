@@ -215,6 +215,12 @@ Smoke-Test:
 make smoke
 ```
 
+Browser-End-to-End-Test im Playwright-Container:
+
+```bash
+make browser-e2e
+```
+
 - Dashboard: <http://localhost:5173>
 - API: <http://localhost:8080/api/health>
 - HLS-Teststream: <http://localhost:8888/teststream/index.m3u8>

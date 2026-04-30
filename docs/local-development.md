@@ -250,6 +250,7 @@ Schlägt der Test fehl, listet er den verstoßenden Import explizit. Verbindlich
 | Smoke | Wann | Aufruf |
 |---|---|---|
 | `0.1.0`-Smoke (curl-basiert) | nach `make dev` | siehe §2.2 oben. |
+| `0.1.1`-Browser-E2E (Playwright im Container) | ohne laufenden Stack; Script startet API, MediaMTX, FFmpeg und `dashboard-e2e` selbst | `make browser-e2e` |
 | RAK-9-Smoke (Cardinality) | mit aktivem observability-Profil | `make seed-rak9 && bash scripts/check-rak9.sh` (siehe `plan-0.1.2.md` §2 + §4). |
 | RAK-10-Smoke (OTel-Spans) | mit `OTEL_TRACES_EXPORTER=console` | siehe `plan-0.1.2.md` §4 Variante A. |
 

@@ -1,6 +1,6 @@
 COMPOSE ?= docker compose
 
-.PHONY: dev stop smoke test lint build coverage-gate arch-check
+.PHONY: dev stop smoke browser-e2e test lint build coverage-gate arch-check
 
 dev:
 	$(COMPOSE) up --build
@@ -10,6 +10,9 @@ stop:
 
 smoke:
 	bash scripts/smoke-0.1.1.sh
+
+browser-e2e:
+	bash scripts/test-browser-e2e.sh
 
 test:
 	$(MAKE) -C apps/api test

@@ -52,6 +52,23 @@ func postEventsWithOrigin(t *testing.T, srvURL, token, origin, body string) *htt
 	return resp
 }
 
+func getWithOrigin(t *testing.T, srvURL, path, origin string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srvURL+path, nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	return resp
+}
+
 // CORS-Test 1: Preflight OPTIONS /api/playback-events mit registriertem
 // Origin → 204 mit konkretem Allow-Origin (kein `*`).
 func TestCORS_Preflight_PlaybackEvents_Allowed(t *testing.T) {
@@ -159,5 +176,23 @@ func TestCORS_Preflight_Dashboard_Allowed(t *testing.T) {
 	}
 	if strings.Contains(resp.Header.Get("Access-Control-Allow-Methods"), "POST") {
 		t.Errorf("dashboard preflight must not advertise POST")
+	}
+}
+
+func TestCORS_DashboardGet_AllowedOriginHeader(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+
+	post := postEventsWithOrigin(t, srv.URL, "demo-token", "http://localhost:5173", validBody)
+	if post.StatusCode != http.StatusAccepted {
+		t.Fatalf("seed post: expected 202, got %d", post.StatusCode)
+	}
+
+	resp := getWithOrigin(t, srv.URL, "/api/stream-sessions", "http://localhost:5173")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "http://localhost:5173" {
+		t.Errorf("Access-Control-Allow-Origin=%q want concrete origin", got)
 	}
 }
