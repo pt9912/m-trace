@@ -129,11 +129,11 @@ Bezug: MVP-7..MVP-9, F-86; RAK-1 (Update auf vier Pflicht-Mindestdienste), RAK-2
 
 DoD:
 
-- [x] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode (`COMPOSE_DASHBOARD_COMMIT`).
-- [x] Compose-Stack ergänzt um den `dashboard`-Service (ohne `profiles:`-Direktive — startet per Default; entspricht der vollständigen Pflicht-Mindestdienste-Tabelle aus Lastenheft §7.8 nach Patch `1.0.2`) (`COMPOSE_DASHBOARD_COMMIT`).
-- [x] `make dev` startet jetzt vier Core-Services (`api`, `dashboard`, `mediamtx`, `stream-generator`) — RAK-1 ist bereits in `0.1.0` mit drei Diensten erfüllt (siehe `plan-0.1.0.md` §5.3); `0.1.1` erweitert die Mindestdienste-Liste um `dashboard`, ohne RAK-1 erneut auszulösen (`COMPOSE_DASHBOARD_COMMIT`).
-- [x] Dashboard erreichbar unter `http://localhost:5173` (oder Compose-equivalent) — **RAK-2** wird hier neu erfüllt (`COMPOSE_DASHBOARD_COMMIT`).
-- [x] Smoke-Test `0.1.1`: Dashboard- und Demo-Route liefern `200`, MediaMTX-HLS-Manifest ist erreichbar, Events werden an die API gesendet und erscheinen in `/api/stream-sessions` (`COMPOSE_DASHBOARD_COMMIT`).
+- [x] `apps/dashboard`-Container im Production-Build oder Vite-Dev-Mode (`1d58f19`).
+- [x] Compose-Stack ergänzt um den `dashboard`-Service (ohne `profiles:`-Direktive — startet per Default; entspricht der vollständigen Pflicht-Mindestdienste-Tabelle aus Lastenheft §7.8 nach Patch `1.0.2`) (`1d58f19`).
+- [x] `make dev` startet jetzt vier Core-Services (`api`, `dashboard`, `mediamtx`, `stream-generator`) — RAK-1 ist bereits in `0.1.0` mit drei Diensten erfüllt (siehe `plan-0.1.0.md` §5.3); `0.1.1` erweitert die Mindestdienste-Liste um `dashboard`, ohne RAK-1 erneut auszulösen (`1d58f19`).
+- [x] Dashboard erreichbar unter `http://localhost:5173` (oder Compose-equivalent) — **RAK-2** wird hier neu erfüllt (`1d58f19`).
+- [x] Smoke-Test `0.1.1`: Dashboard- und Demo-Route liefern `200`, MediaMTX-HLS-Manifest ist erreichbar, Events werden an die API gesendet und erscheinen in `/api/stream-sessions` (`1d58f19`).
 
 ---
 
@@ -141,7 +141,7 @@ DoD:
 
 DoD:
 
-- [x] **RAK-2** Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service (Tranche 3) (`COMPOSE_DASHBOARD_COMMIT`).
+- [x] **RAK-2** Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service (Tranche 3) (`1d58f19`).
 - [ ] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1).
 - [ ] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2).
 
