@@ -1,6 +1,6 @@
 # Implementation Plan — `0.1.2` (Observability-Stack)
 
-> **Status**: ⬜ offen. Beginnt nach Abschluss von `0.1.1` (Player-SDK + Dashboard).  
+> **Status**: 🟡 in Arbeit. Start nach `0.1.1`-Release erfolgt; Observability-Profil und RAK-9-Smoke sind implementiert.  
 > **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.2`-Start, nicht zum heutigen Zeitpunkt)**:
 >
@@ -8,7 +8,7 @@
 > - [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) muss vollständig (`[x]`) sein. **Harte technische Voraussetzung** — Tranche 1 dieses Plans (Pflicht-Anteile in `apps/api`) baut darauf auf; F-91 ist hier nicht erneut implementiert, sondern „Voraussetzung erfüllt durch §4.3".
 > - **Tranche 0c (Lastenheft-Patches)** in `plan-0.1.0.md`: konstruktionsbedingt fortlaufend offen; das Gate verlangt nur, dass alle bis zum `0.1.2`-Start eingetragenen §4a.x-Items entweder `[x]` oder explizit als nicht-blockierend markiert sind — nicht den Abschluss der Tranche selbst.
 >
-> Konsequenz: solange `0.1.1` nicht released oder `plan-0.1.0` §4.3 nicht abgeschlossen ist, hat dieses Plan-Dokument Status ⬜ in Tranchen-Übersicht und Roadmap §3.
+> Startkonsequenz: das Gate wurde in §1a verifiziert; offene Punkte liegen ab jetzt in Tranche 3.
 
 ## 0. Konvention
 
@@ -27,10 +27,10 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 
 | Tranche | Inhalt | Status |
 |---|---|---|
-| 0 | Vorgänger-Gate-Verifikation | ⬜ |
-| 1 | Pflicht-Anteile (F-89..F-93, Mindestmetriken) — Code in `apps/api` plus Repo-weite Prometheus-Konfiguration unter `observability/prometheus/` | ⬜ |
-| 2 | Soll-Anteile im `observability`-Compose-Profil (F-94/MVP-28 Grafana, MVP-29 OTel-Collector) | ⬜ |
-| 3 | Release-Akzeptanzkriterien `0.1.2` | ⬜ |
+| 0 | Vorgänger-Gate-Verifikation | ✅ |
+| 1 | Pflicht-Anteile (F-89..F-93, Mindestmetriken) — Code in `apps/api` plus Repo-weite Prometheus-Konfiguration unter `observability/prometheus/` | ✅ |
+| 2 | Soll-Anteile im `observability`-Compose-Profil (F-94/MVP-28 Grafana, MVP-29 OTel-Collector) | ✅ |
+| 3 | Release-Akzeptanzkriterien `0.1.2` | 🟡 |
 
 Tempo bleibt explizit Nicht-MVP (MVP-22).
 
@@ -42,21 +42,21 @@ Konvertiert die narrative Vorgänger-Gate-Beschreibung aus §0 in prüfbare DoD-
 
 DoD — **harte Voraussetzungen, technisch zwingend** (Pflicht `[x]` vor `0.1.2`-Start):
 
-- [ ] `plan-0.1.1.md` Tranche 1 (Player-SDK) abgeschlossen — alle DoD-Items `[x]`.
-- [ ] `plan-0.1.1.md` Tranche 2 (Dashboard) abgeschlossen.
-- [ ] `plan-0.1.1.md` Tranche 3 (Compose-Lab-Erweiterung um `dashboard`) abgeschlossen.
-- [ ] `plan-0.1.1.md` Tranche 4 (Release-Akzeptanzkriterien `0.1.1` — RAK-2, RAK-5, RAK-7) abgeschlossen.
-- [ ] `plan-0.1.0.md` Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) abgeschlossen — harte technische Voraussetzung für F-91.
-- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md, **Pflicht-Anteile für `0.1.2`** — OTel-Modell (F-91, F-92) und Cardinality-Regeln (F-95..F-105): das Observability-Stack-Setup braucht diese Spezifikationen für Konfiguration und Verifikation.
+- [x] `plan-0.1.1.md` Tranche 1 (Player-SDK) abgeschlossen — alle DoD-Items `[x]` (`55ccac4`, `966699f`).
+- [x] `plan-0.1.1.md` Tranche 2 (Dashboard) abgeschlossen (`55ccac4`, `966699f`).
+- [x] `plan-0.1.1.md` Tranche 3 (Compose-Lab-Erweiterung um `dashboard`) abgeschlossen (`1d58f19`, `966699f`).
+- [x] `plan-0.1.1.md` Tranche 4 (Release-Akzeptanzkriterien `0.1.1` — RAK-2, RAK-5, RAK-7) abgeschlossen (`9b26e4f`, `55ccac4`, `966699f`).
+- [x] `plan-0.1.0.md` Tranche 0b §4.3 (Telemetry-Driven-Port + OTel-Counter + Request-Span + autoexport) abgeschlossen — harte technische Voraussetzung für F-91 (`51b3812`).
+- [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **Pflicht-Anteile für `0.1.2`** — OTel-Modell (F-91, F-92) und Cardinality-Regeln (F-95..F-105): das Observability-Stack-Setup braucht diese Spezifikationen für Konfiguration und Verifikation (`e532e1e`, `51b3812`).
 
 DoD — **weiche Voraussetzungen, Dokumentations-/Aufräumarbeiten** (offen erlaubt; nicht Gate-blockierend):
 
-- [ ] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.2`** — Wire-Format §1, Backpressure §4, Time-Stempel §5, Schema-Versionierung §6 (sind primär für `0.1.1` SDK relevant; bis `0.1.2`-Start erwartet `[x]`, aber nicht harter Gate-Blocker).
-- [ ] `plan-0.1.0.md` §3.6 local-development.md: nicht direkt für `0.1.2`-Implementierung erforderlich.
-- [ ] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.2`-Start einzeln eingestuft: jedes offene Item ist entweder
+- [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.2`** — Wire-Format §1, Backpressure §4, Time-Stempel §5, Schema-Versionierung §6 (sind primär für `0.1.1` SDK relevant; bis `0.1.2`-Start erwartet `[x]`, aber nicht harter Gate-Blocker) (`e532e1e`, `51b3812`).
+- [x] `plan-0.1.0.md` §3.6 local-development.md: nicht direkt für `0.1.2`-Implementierung erforderlich (`2eede43`, `504e4c9`, `beabcd5`).
+- [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items werden vor dem `0.1.2`-Start einzeln eingestuft: jedes offene Item ist entweder
     - **blockierend** → muss `[x]` sein, **oder**
-    - **nicht-blockierend** → offen erlaubt, mit `(nicht-blockierend für 0.1.2)`-Vermerk.
-- [ ] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar.
+    - **nicht-blockierend** → offen erlaubt, mit `(nicht-blockierend für 0.1.2)`-Vermerk. Bis Patch `1.1.6` sind keine blockierenden §4a.x-Items offen (`966699f`, `beabcd5`).
+- [x] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar (`beabcd5`).
 
 ---
 
@@ -66,14 +66,14 @@ Bezug: MVP-10 (Muss), MVP-15 (Muss); F-89..F-93 (Muss); Mindestmetriken laut Las
 
 DoD:
 
-- [ ] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert; Verifikation per `docker compose logs api`).
-- [ ] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3 aus `0.1.0`).
-- [ ] **F-91** OpenTelemetry-Unterstützung — **Voraussetzung aus Tranche-0b §4.3** in `plan-0.1.0.md` (`Telemetry`-Port + OTLP-Anbindung via `autoexport`). Vor Beginn von Tranche 1 muss §4.3 vollständig (`[x]`) sein; `0.1.2` baut darauf auf, implementiert F-91 aber nicht erneut.
-- [ ] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent.
-- [ ] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`). Prometheus selbst läuft im observability-Profil (Tranche 2).
-- [ ] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.2`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten.
-- [ ] **RAK-9-Seed-Skript** `scripts/seed-rak9.sh` (oder gleichwertiges `make seed-rak9`-Target) erzeugt reproduzierbar mindestens 50 Events in 5 Sessions an `/api/playback-events`. Nutzt `curl` gegen einen laufenden Compose-Stack mit `make dev-observability`; verschiedene `session_id`/`event_name`-Muster für Cardinality-Spot-Check. Voraussetzung für RAK-9-Smoke-Test (§4) und spätere CI-Verifikation; ohne dieses Skript bleibt RAK-9 von manueller Lastaufbereitung abhängig.
-- [ ] **Seed-Skript-Contract**: das Skript akzeptiert Pflicht- und Optional-Parameter, damit es deterministisch in frischen Checkouts und in CI läuft:
+- [x] **F-89** Strukturierte Logs in `apps/api` (`log/slog` + JSON-Handler ist bereits aus dem Spike vorhanden; im Compose-Stack stdout-fähig konfiguriert; Verifikation per `docker compose logs api`) (`504e4c9`, verifiziert in `beabcd5`).
+- [x] **F-90** Health Check `/api/health` ist bereits aus dem Spike vorhanden — Verifikation, dass der Endpoint im Compose-Stack `200` liefert (Bezug RAK-3 aus `0.1.0`) (`504e4c9`, verifiziert in `beabcd5`).
+- [x] **F-91** OpenTelemetry-Unterstützung — **Voraussetzung aus Tranche-0b §4.3** in `plan-0.1.0.md` (`Telemetry`-Port + OTLP-Anbindung via `autoexport`). Vor Beginn von Tranche 1 muss §4.3 vollständig (`[x]`) sein; `0.1.2` baut darauf auf, implementiert F-91 aber nicht erneut (`51b3812`, `beabcd5`).
+- [x] **F-92** Playback-Events sind als Metriken oder Traces exportierbar — über den `Telemetry`-Port-Counter (Metriken) sowie HTTP-Adapter-Spans (Traces). Aktivierung erfolgt über `OTEL_*`-Env-Vars; im Core-Stack ohne observability-Profil bleiben sie silent (`51b3812`, `beabcd5`).
+- [x] **F-93** Prometheus-Konfiguration unter `observability/prometheus/` mit Scrape-Job für den `api`-Compose-Service (`targets: ["api:8080"]`, `metrics_path: "/api/metrics"`). Prometheus selbst läuft im observability-Profil (Tranche 2) (`beabcd5`).
+- [x] Mindestmetriken aus Lastenheft §7.9 in `apps/api` instrumentiert: bereits vorhanden sind die vier API-Kontrakt-Counter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`); ergänzend für `0.1.2`: `mtrace_active_sessions`, `mtrace_api_requests_total`, `mtrace_playback_errors_total`, `mtrace_rebuffer_events_total`, `mtrace_startup_time_ms`. Cardinality-Regeln aus Lastenheft §7.10 sind einzuhalten (`beabcd5`).
+- [x] **RAK-9-Seed-Skript** `scripts/seed-rak9.sh` (oder gleichwertiges `make seed-rak9`-Target) erzeugt reproduzierbar mindestens 50 Events in 5 Sessions an `/api/playback-events`. Nutzt `curl` gegen einen laufenden Compose-Stack mit `make dev-observability`; verschiedene `session_id`/`event_name`-Muster für Cardinality-Spot-Check. Voraussetzung für RAK-9-Smoke-Test (§4) und spätere CI-Verifikation; ohne dieses Skript bleibt RAK-9 von manueller Lastaufbereitung abhängig (`beabcd5`).
+- [x] **Seed-Skript-Contract**: das Skript akzeptiert Pflicht- und Optional-Parameter, damit es deterministisch in frischen Checkouts und in CI läuft (`beabcd5`):
     - `--base-url` (Default `http://localhost:8080`).
     - `--project-id` (Default `demo`); muss in der API-`StaticProjectResolver`-Konfiguration als gültige Project-ID hinterlegt sein.
     - `--token` (Default `demo-token`); muss zu `--project-id` passen.
@@ -92,11 +92,11 @@ Soll-Komponenten leben im `observability`-Compose-Profil und werden über `make 
 
 DoD:
 
-- [ ] Compose-Erweiterung: `prometheus`, `grafana`, `otel-collector` mit `profiles: ["observability"]` — additiv und opt-in.
-- [ ] `make dev-observability` (Makefile-Target) aktiviert das observability-Profil zusätzlich zum Core.
-- [ ] **MVP-29** OTel-Collector unter `observability/otel-collector/`; nimmt OTLP von `apps/api` entgegen und exportiert Metriken zu Prometheus. Trace-Backend (z. B. Jaeger) ist Bonus, **kein** Pflicht-Bestandteil — Tempo ist per MVP-22 Nicht-MVP.
-- [ ] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus.
-- [ ] System-Status-Ansicht im Dashboard (`apps/dashboard`, `0.1.1` §3) erkennt das aktive observability-Profil und zeigt Prometheus/Grafana/OTel-Collector als „connected" statt „inaktiv" an.
+- [x] Compose-Erweiterung: `prometheus`, `grafana`, `otel-collector` mit `profiles: ["observability"]` — additiv und opt-in (`beabcd5`).
+- [x] `make dev-observability` (Makefile-Target) aktiviert das observability-Profil zusätzlich zum Core (`beabcd5`).
+- [x] **MVP-29** OTel-Collector unter `observability/otel-collector/`; nimmt OTLP von `apps/api` entgegen und exportiert Metriken zu Prometheus. Trace-Backend (z. B. Jaeger) ist Bonus, **kein** Pflicht-Bestandteil — Tempo ist per MVP-22 Nicht-MVP (`beabcd5`).
+- [x] **F-94 + MVP-28** Grafana-Container im observability-Profil mit einem einfachen Beispiel-Dashboard unter `observability/grafana/`. Dashboard zeigt mindestens die vier API-Kontrakt-Counter; weitere Mindestmetriken aus §7.9 als Bonus (`beabcd5`).
+- [x] System-Status-Ansicht im Dashboard (`apps/dashboard`, `0.1.1` §3) erkennt das aktive observability-Profil und zeigt Prometheus/Grafana/OTel-Collector als „connected" statt „inaktiv" an (`beabcd5`).
 
 ---
 
@@ -104,10 +104,10 @@ DoD:
 
 DoD:
 
-- [ ] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability`:
+- [x] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` (`make smoke-observability`, `beabcd5`):
     - **Setup-Pflicht**: vor dem Smoke-Test muss eine Mindestdaten-Lage im Prometheus erzeugt sein, sonst geben die Queries leer zurück und der Cardinality-Check besteht trivial (false positive). Konkret: Compose-Stack läuft, mindestens 5 Player-Sessions mit jeweils ≥ 10 Events; mindestens ein Prometheus-Scrape-Intervall (Default 15 s) ist vergangen.
     - **Seed-Skript**: `scripts/seed-rak9.sh` (oder `make seed-rak9`-Target) erzeugt die Mindestdaten-Lage reproduzierbar via `curl`-Aufrufe gegen `/api/playback-events` (50 Events in 5 Sessions mit unterschiedlichen `session_id`/`event_name`-Mustern). Der Smoke-Test ruft das Skript als ersten Schritt auf, danach laufen die unten genannten Queries gegen Prometheus. Eine spätere CI-Erweiterung ruft denselben Pfad auf — das vermeidet manuelle Lastaufbereitung und „false confidence". Demo-SDK-basierte Lastaufbereitung ist eine Bonus-Variante für interaktive Lab-Sessions, kein DoD-Pfad.
-    - **Label-Name-Check (verbotene Labels)**: `curl -g 'http://localhost:9090/api/v1/series?match[]={__name__=~"mtrace_.+"}'` listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`. Das `-g`-Flag deaktiviert curl-URL-Globbing, das eckige Klammern sonst als Range-Pattern interpretiert.
+    - **Label-Name-Check (verbotene Labels)**: `make smoke-observability` nutzt Prometheus `api/v1/series` mit URL-encodiertem `match[]={__name__=~"mtrace_.+"}` und listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`.
     - **Cardinality-Wert-Check (PromQL)**: zusätzlich zur Label-Name-Liste werden konkrete Kardinalitäts-Limits per PromQL geprüft, weil `api/v1/labels` nur Label-Namen, nicht ihre Wert-Verteilung liefert:
         - Pro Mindestmetrik: `curl 'http://localhost:9090/api/v1/query?query=count(count by (__name__) (mtrace_playback_events_total))'` (analog für die anderen Pflicht-Counter) — Erwartung: Ergebnis ≤ 1 für die Pflicht-Counter mit nur Aggregat-Labels.
         - Generisch für alle `mtrace_*`-Metriken: `curl 'http://localhost:9090/api/v1/query?query=count(count by (instance, job, __name__) ({__name__=~"mtrace_.+"}))'` — Erwartung: Anzahl Series ≤ kleine Konstante (z. B. < 50, abhängig von Mindestmetriken-Anzahl × erlaubte Aggregat-Labels). Eine plötzliche Explosion auf > 100 deutet auf eine Cardinality-Verletzung hin (z. B. wurde session_id versehentlich als Label aufgenommen).
@@ -121,7 +121,7 @@ DoD:
 ### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)
 
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.1.2`.
-- [ ] README/`docs/local-development.md` ergänzt um die `make dev-observability`-Variante und die Service-URLs (Prometheus, Grafana, OTel-Collector) — RAK-8-Refinement.
+- [x] README/`docs/local-development.md` ergänzt um die `make dev-observability`-Variante und die Service-URLs (Prometheus, Grafana, OTel-Collector) — RAK-8-Refinement (`beabcd5`).
 
 ---
 
