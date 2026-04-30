@@ -72,9 +72,9 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 
 Verweise nutzen die Lastenheft-Kennungen (`F-`, `NF-`, `MVP-`, `AK-`)
 wo sie existieren; Plan- und ADR-Sektionsnummern werden behalten,
-weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
-(DoD-Checkboxen mit Commit-Hashes) in
-[`docs/plan-0.1.0.md`](./plan-0.1.0.md).
+weil dort kein ID-System existiert. Granularer Lieferstand pro Release
+steht in den jeweiligen Plan-Dateien mit DoD-Checkboxen und
+Commit-Hashes, z. B. [`docs/plan-0.3.0.md`](./plan-0.3.0.md).
 
 | #   | Status | Schritt                                                                                                               | Trigger                                                         | Verweis                                                   |
 | --- | ------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------- |
@@ -96,7 +96,7 @@ weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
 | 16  | ✅      | OTel-Transport-Option bewerten und Performance-Budget nachweisen                                                      | Nach Schritt 15                                                 | RAK-16, RAK-18                                            |
 | 17  | ✅      | Browser-Support-Matrix und Demo-Integrationsdoku erstellen                                                            | Nach Schritt 16                                                 | RAK-19, RAK-20                                            |
 | 18  | ✅      | OE-3-Folge-ADR für Persistenz vorbereiten                                                                             | Parallel zu `0.2.0`-Planung                                     | OE-3; MVP-16                                              |
-| 19  | ⬜      | `docs/plan-0.3.0.md` anlegen und `0.3.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.2.0`-Release                                            | RAK-22..RAK-28                                            |
+| 19  | ✅      | `docs/plan-0.3.0.md` anlegen und `0.3.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.2.0`-Release                                            | RAK-22..RAK-28                                            |
 | 20  | ⬜      | Stream-Analyzer-Paket `packages/stream-analyzer` anlegen                                                              | Nach Schritt 19                                                 | RAK-22..RAK-26; MVP-33                                    |
 | 21  | ⬜      | HLS-Manifest laden und Master-/Media-Playlist-Erkennung umsetzen                                                      | Nach Schritt 20                                                 | RAK-22, RAK-23, RAK-24                                    |
 | 22  | ⬜      | Segment-Dauern prüfen und JSON-Ergebnisformat stabilisieren                                                           | Nach Schritt 21                                                 | RAK-25, RAK-26                                            |
