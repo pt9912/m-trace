@@ -1,4 +1,5 @@
 import type Hls from "hls.js";
+import { SessionMetrics } from "../../core/session-metrics";
 import type { PlayerTracker } from "../../core/tracker";
 
 interface HlsEventEmitter {
@@ -13,27 +14,40 @@ export interface HlsJsAdapter {
 export function attachHlsJs(video: HTMLVideoElement, hls: Hls, tracker: PlayerTracker): HlsJsAdapter {
   const emitter = hls as unknown as HlsEventEmitter;
   const startedAt = performance.now();
-  let rebufferStartedAt: number | undefined;
+  const metrics = new SessionMetrics(startedAt);
 
   const onManifest = () => tracker.track({ eventName: "manifest_loaded" });
   const onFragmentLoaded = () => tracker.track({ eventName: "segment_loaded" });
   const onLevelSwitched = () => tracker.track({ eventName: "bitrate_switch" });
   const onError = () => tracker.track({ eventName: "playback_error" });
   const onWaiting = () => {
-    rebufferStartedAt = performance.now();
-    tracker.track({ eventName: "rebuffer_started" });
+    if (metrics.startRebuffer(performance.now())) {
+      tracker.track({ eventName: "rebuffer_started" });
+    }
   };
   const onPlaying = () => {
-    if (rebufferStartedAt !== undefined) {
-      rebufferStartedAt = undefined;
-      tracker.track({ eventName: "rebuffer_ended" });
+    const rebuffer = metrics.endRebuffer(performance.now());
+    if (rebuffer) {
+      tracker.track({
+        eventName: "rebuffer_ended",
+        meta: {
+          duration_ms: rebuffer.durationMs,
+          rebuffer_count: rebuffer.rebufferCount,
+          total_rebuffer_duration_ms: rebuffer.totalRebufferDurationMs
+        }
+      });
       return;
     }
-    tracker.track({ eventName: "startup_completed" });
+
+    reportStartup();
   };
-  const onLoadedData = () => {
-    if (performance.now() >= startedAt) {
-      tracker.track({ eventName: "startup_completed" });
+  const onLoadedData = () => reportStartup();
+
+  const reportStartup = () => {
+    const startupTimeMs = metrics.completeStartup(performance.now());
+    if (startupTimeMs !== undefined) {
+      tracker.track({ eventName: "playback_started" });
+      tracker.track({ eventName: "startup_time_measured", meta: { duration_ms: startupTimeMs } });
     }
   };
 

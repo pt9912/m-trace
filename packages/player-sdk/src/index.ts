@@ -1,8 +1,10 @@
 export { createTracker, MTracePlayerTracker } from "./core/tracker";
 export type { PlayerTracker } from "./core/tracker";
 export { createSessionId } from "./core/session";
+export { SessionMetrics } from "./core/session-metrics";
+export type { RebufferMeasurement, SessionMetricsSnapshot } from "./core/session-metrics";
 export { HttpTransport } from "./transport/http";
 export { attachHlsJs } from "./adapters/hlsjs/adapter";
 export type { HlsJsAdapter } from "./adapters/hlsjs/adapter";
-export type { EventDraft, PlaybackEvent, PlaybackEventBatch, PlaybackEventName, SDKInfo } from "./types/events";
+export type { EventDraft, EventMeta, EventMetaValue, PlaybackEvent, PlaybackEventBatch, PlaybackEventName, SDKInfo } from "./types/events";
 export type { PlayerSDKConfig, Transport } from "./types/config";

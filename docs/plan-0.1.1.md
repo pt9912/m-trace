@@ -83,13 +83,13 @@ DoD:
 - [x] **MVP-6** Pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony — leichte Adapter-Struktur laut Lastenheft §9.2, keine `hexagon/`-Pflicht-Aufteilung mit Domain/Application/Port. Verzeichnislayout analog `architecture.md` §4.1: `core/`, `adapters/hlsjs/`, `transport/`, `types/` (`bae4a2a`).
 - [x] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter) (`bae4a2a`).
 - [x] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …) (`bae4a2a`).
-- [ ] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, …).
+- [x] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, …) (`PLAYER_SDK_METRICS_COMMIT`).
 - [x] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; OpenTelemetry Web SDK bleibt optionaler späterer Transport-Pfad (`bae4a2a`).
 - [x] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren (`bae4a2a`).
 - [x] Browser-Build (ESM + UMD/IIFE) (`bae4a2a`).
 - [x] OE-8 entscheiden (Paketname, Scope): `@m-trace/player-sdk` (`bae4a2a`).
 - [x] **F-110 origin-Bucket (Backend)**: vor Beginn der Browser-Integrationstests muss `apps/api` den dritten Rate-Limit-Bucket auf der `origin`-Dimension aktiv haben (Vorbereitung optional in `0.1.0` §5.1, verbindliche Aktivierung spätestens hier). Test: ein Browser-Origin mit aufgebrauchtem origin-Budget liefert `429`, auch wenn project_id-Budget noch frei ist (`75e55e7`, `c15d8e1`).
-- [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching); Integrationstest gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End) auf den im MVP unterstützten Browsern: **Pflicht** Chrome Desktop (aktuelle Stable) und Firefox Desktop (aktuelle Stable); **eingeschränkt** Safari Desktop (Basis-Playback laut Lastenheft §6/§MVP-Browser-Matrix); iOS Safari, Android Chrome, Smart-TV-Browser, Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
+- [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching, Session-Metriken) vorhanden (`bae4a2a`, `PLAYER_SDK_METRICS_COMMIT`); Integrationstest gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End) auf den im MVP unterstützten Browsern bleibt offen: **Pflicht** Chrome Desktop (aktuelle Stable) und Firefox Desktop (aktuelle Stable); **eingeschränkt** Safari Desktop (Basis-Playback laut Lastenheft §6/§MVP-Browser-Matrix); iOS Safari, Android Chrome, Smart-TV-Browser, Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
 
 ---
 

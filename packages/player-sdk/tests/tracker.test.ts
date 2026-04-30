@@ -26,7 +26,11 @@ describe("MTracePlayerTracker", () => {
     tracker.track({ eventName: "manifest_loaded", timestamp: new Date("2026-04-30T00:00:00.000Z") });
     expect(transport.batches).toHaveLength(0);
 
-    tracker.track({ eventName: "segment_loaded", timestamp: new Date("2026-04-30T00:00:01.000Z") });
+    tracker.track({
+      eventName: "segment_loaded",
+      timestamp: new Date("2026-04-30T00:00:01.000Z"),
+      meta: { duration_ms: 120 }
+    });
     await tracker.flush();
 
     expect(transport.batches).toEqual([
@@ -47,7 +51,8 @@ describe("MTracePlayerTracker", () => {
             session_id: "session-1",
             client_timestamp: "2026-04-30T00:00:01.000Z",
             sequence_number: 2,
-            sdk: { name: "@m-trace/player-sdk", version: "0.1.1-dev" }
+            sdk: { name: "@m-trace/player-sdk", version: "0.1.1-dev" },
+            meta: { duration_ms: 120 }
           }
         ]
       }

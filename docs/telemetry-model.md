@@ -60,6 +60,8 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 | `rebuffer_started` | `waiting` während Wiedergabe | `0.1.1` |
 | `rebuffer_ended` | erstes `playing` nach `waiting` | `0.1.1` |
 | `playback_error` | hls.js Error oder `error`-Event auf `<video>` | `0.1.1` |
+| `startup_time_measured` | erster Startup-Abschluss, `meta.duration_ms` enthält Startup-Dauer | `0.1.1` |
+| `metrics_sampled` | SDK-seitiger Metrik-Snapshot, optional für spätere Erweiterungen | `0.1.1` |
 | `session_ended` | Tab-Close oder explizites SDK-`stop()` | `0.1.1` |
 
 ### 1.4 Optionale Felder

@@ -54,14 +54,19 @@ export class MTracePlayerTracker implements PlayerTracker {
     }
 
     this.sequence += 1;
-    this.queue.push({
+    const playbackEvent: PlaybackEvent = {
       event_name: event.eventName,
       project_id: this.projectId,
       session_id: this.sessionId,
       client_timestamp: (event.timestamp ?? new Date()).toISOString(),
       sequence_number: this.sequence,
       sdk
-    });
+    };
+    if (event.meta !== undefined) {
+      playbackEvent.meta = event.meta;
+    }
+
+    this.queue.push(playbackEvent);
 
     if (this.queue.length >= this.batchSize) {
       void this.flush();
