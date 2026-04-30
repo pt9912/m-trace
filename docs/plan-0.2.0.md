@@ -60,12 +60,13 @@ Ziel: `packages/player-sdk` wird von einem Workspace-Paket zu einem lokal instal
 
 DoD:
 
+- [ ] Paketnamen-Migration gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, `rg '@m-trace/player-sdk'` liefert nur noch Treffer in den unter §2.2 gelisteten historischen Dateien.
 - [ ] `packages/player-sdk/package.json` enthält publish-fähige Metadaten: `name`, `version`, `description`, `license`, `repository`, `files`, `exports`, `types`, ESM/CJS/Browser-Build-Einstiege.
 - [ ] `packages/player-sdk/package.json` setzt `version` auf `0.2.0`; Pack-/Install-Smoke-Test prüft, dass das erzeugte npm-Paket ebenfalls Version `0.2.0` meldet.
 - [ ] Root-`package.json` setzt `version` auf `0.2.0`; Repo-Release-Tag, Root-Metadaten und SDK-Paketversion sind konsistent oder eine bewusst abweichende Versionierungsregel ist dokumentiert.
 - [ ] `packages/player-sdk/package.json` ist nicht mehr als privates Paket blockiert: `private` ist entfernt oder `false`; bei öffentlichem Scoped Package ist `publishConfig.access` passend gesetzt.
-- [ ] `pnpm --filter @m-trace/player-sdk pack` erzeugt ein installierbares Tarball-Artefakt.
-- [ ] Publish-Dry-Run läuft ohne Paketierungsfehler, z. B. `pnpm --filter @m-trace/player-sdk publish --dry-run` oder ein äquivalenter `npm publish --dry-run` gegen das erzeugte Tarball.
+- [ ] `pnpm --filter @npm9912/player-sdk pack` erzeugt ein installierbares Tarball-Artefakt.
+- [ ] Publish-Dry-Run läuft ohne Paketierungsfehler, z. B. `pnpm --filter @npm9912/player-sdk publish --dry-run` oder ein äquivalenter `npm publish --dry-run` gegen das erzeugte Tarball.
 - [ ] Lokaler Install-Smoke-Test installiert das gepackte SDK in ein temporäres Beispielprojekt und importiert ESM sowie CJS erfolgreich.
 - [ ] Tarball-Content-Check prüft, dass ESM-, CJS-, Type-Definition- und Browser/IIFE-Build-Artefakte im gepackten Paket enthalten sind.
 - [ ] Browser-Einstieg ist stabil auffindbar und verifiziert: `package.json` definiert entweder `browser`, einen Conditional Export oder einen dokumentierten CDN-/IIFE-Pfad, und der Smoke-Test nutzt genau diesen Einstieg.
