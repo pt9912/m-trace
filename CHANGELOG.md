@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - Unreleased
+
+### Added
+
+- Observability-Compose-Profil mit Prometheus, Grafana und OTel-Collector.
+- Prometheus-Konfiguration, Grafana-Provisioning und m-trace-Beispieldashboard.
+- API-Mindestmetriken für aktive Sessions, API-Requests, Playback-Fehler, Rebuffer-Events und Startup-Zeit.
+- RAK-9-Seed- und Smoke-Skripte für Prometheus-Cardinality-Checks.
+- RAK-10-Console-Smoke für exemplarische OTel-Request-Spans.
+
 ## [0.1.1] - 2026-04-30
 
 ### Added

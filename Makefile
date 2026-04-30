@@ -1,6 +1,6 @@
 COMPOSE ?= docker compose
 
-.PHONY: dev dev-observability stop smoke smoke-observability seed-rak9 browser-e2e test lint build coverage-gate arch-check
+.PHONY: dev dev-observability stop smoke smoke-observability smoke-rak10-console seed-rak9 browser-e2e test lint build coverage-gate arch-check
 
 dev:
 	$(COMPOSE) up --build
@@ -16,6 +16,10 @@ smoke:
 
 smoke-observability:
 	bash scripts/smoke-observability.sh
+
+smoke-rak10-console:
+	OTEL_TRACES_EXPORTER=console $(COMPOSE) up -d --build api
+	bash scripts/smoke-rak10-console.sh
 
 seed-rak9:
 	bash scripts/seed-rak9.sh

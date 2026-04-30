@@ -113,14 +113,14 @@ DoD:
         - Generisch für alle `mtrace_*`-Metriken: `curl 'http://localhost:9090/api/v1/query?query=count(count by (instance, job, __name__) ({__name__=~"mtrace_.+"}))'` — Erwartung: Anzahl Series ≤ kleine Konstante (z. B. < 50, abhängig von Mindestmetriken-Anzahl × erlaubte Aggregat-Labels). Eine plötzliche Explosion auf > 100 deutet auf eine Cardinality-Verletzung hin (z. B. wurde session_id versehentlich als Label aufgenommen).
         - Sanity-Check: `mtrace_playback_events_total` muss einen Wert > 0 haben (`curl 'http://localhost:9090/api/v1/query?query=mtrace_playback_events_total'`); bestätigt, dass der Counter aktiv inkrementiert wurde.
     - Der frühere `api/v1/label/session_id/values`-Endpoint ist zu schwach (globaler Discovery-Endpoint, hängt von der Datenmenge ab) und wird nicht mehr verwendet.
-- [ ] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. Mindestens **eine** der beiden Varianten muss reproduzierbar prüfbar sein:
+- [x] **RAK-10 (Soll)** Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. Variante A ist über `make smoke-rak10-console` reproduzierbar geprüft (`beabcd5`, Smoke-Target ergänzt in Folgecommit):
     - **Variante A — OTel-Spans im Backend (Console-Exporter)**: `apps/api` erzeugt mindestens einen Request-Span pro `POST /api/playback-events` (abgedeckt durch Tranche-0b §4.3 in `plan-0.1.0.md`). Verifikation läuft mit deterministischem Console-Exporter, damit der Test reproduzierbar ist und nicht von Trace-Backend-Bonus-Komponenten (Jaeger u. a. — sind im MVP nicht Pflicht) abhängt: das Smoke-Skript setzt `OTEL_TRACES_EXPORTER=console` für den `api`-Service (entweder via Compose-Override oder `make seed-rak9` mit Env-Var-Injection), führt `seed-rak9.sh` aus, dann prüft `docker compose logs api | grep '"name":"http.handler POST'` mindestens einen Span-Eintrag. Console-Exporter ist immer verfügbar (Teil der OTel-SDK-Distribution); kein Trace-Backend nötig.
     - **Variante B — Dashboard-Trace-Ansicht (constraint)**: die eingebaute Session-/Trace-Ansicht aus `plan-0.1.1.md` §3 (MVP-14) zählt **nur dann** als RAK-10-Erfüllung, wenn sie tatsächlich Trace-äquivalente Daten zeigt — d. h. mindestens (a) Span-äquivalente Hierarchie pro Session (z. B. Request-Span umschließt Event-Spans) **und** (b) Span-Attribute wie Dauer/Latenz pro Sub-Vorgang aus den persistierten Daten ableitbar. Eine reine Event-Liste ohne diese Trace-Semantik gilt als „best effort", nicht als RAK-10-DoD — in dem Fall muss Variante A erfüllt sein. Der Smoke-Test-Commit dokumentiert konkret, welche Variante (A oder B) genutzt wurde und wie sie geprüft wurde.
     - Tempo bleibt **explizit Nicht-MVP** (MVP-22).
 
 ### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)
 
-- [ ] `CHANGELOG.md` enthält Eintrag für `0.1.2`.
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.2` (Folgecommit nach `beabcd5`).
 - [x] README/`docs/local-development.md` ergänzt um die `make dev-observability`-Variante und die Service-URLs (Prometheus, Grafana, OTel-Collector) — RAK-8-Refinement (`beabcd5`).
 
 ---
