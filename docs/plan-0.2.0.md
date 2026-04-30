@@ -207,7 +207,7 @@ DoD:
 - [x] **RAK-19** Browser-Support-Matrix ist dokumentiert (`34713c3`).
 - [x] **RAK-20** Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert (`1c5ab12`).
 - [x] **RAK-21** Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft; der Check nutzt ein maschinenlesbares Compat-Fixture oder einen Snapshot mit SDK-Version, `sdk.version`, `schema_version` und API-`SupportedSchemaVersion` (`d367720`).
-- [ ] `CHANGELOG.md` enthält Eintrag für `0.2.0`.
+- [x] `CHANGELOG.md` enthält Eintrag für `0.2.0` (`4797568`).
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [x] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben (`37f20ce`).
 - [x] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt (`05fb496`).
