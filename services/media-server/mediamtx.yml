@@ -1,0 +1,12 @@
+api: yes
+apiAddress: :9997
+
+rtsp: yes
+rtspAddress: :8554
+
+hls: yes
+hlsAddress: :8888
+
+paths:
+  teststream:
+    source: publisher

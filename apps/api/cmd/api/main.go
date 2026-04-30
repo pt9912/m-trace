@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -31,9 +32,9 @@ import (
 )
 
 const (
-	serviceName    = "m-trace-api"
-	serviceVersion = "0.1.0-spike"
-	listenAddr     = ":8080"
+	serviceName       = "m-trace-api"
+	serviceVersion    = "0.1.0-spike"
+	defaultListenAddr = ":8080"
 
 	// Spike Spec §6.9: 100 events/sec/project.
 	rateLimitCapacity = 100
@@ -89,9 +90,10 @@ func main() {
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	router := apihttp.NewRouter(useCase, sessionsService, resolver, publisher.Handler(), tracer, logger)
+	addr := listenAddr()
 
 	srv := &http.Server{
-		Addr:              listenAddr,
+		Addr:              addr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
@@ -130,6 +132,13 @@ func main() {
 		logger.Error("otel shutdown failed", "error", err)
 	}
 	logger.Info("server stopped")
+}
+
+func listenAddr() string {
+	if addr := strings.TrimSpace(os.Getenv("MTRACE_API_LISTEN_ADDR")); addr != "" {
+		return addr
+	}
+	return defaultListenAddr
 }
 
 // newProcessInstanceID erzeugt eine 16-Byte-Zufalls-ID und gibt sie als

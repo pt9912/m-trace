@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+      target: runtime
+    image: m-trace-api:0.1.0
+    environment:
+      MTRACE_API_LISTEN_ADDR: ":8080"
+    ports:
+      - "8080:8080"
+
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    volumes:
+      - ./services/media-server/mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "8554:8554"
+      - "8888:8888"
+      - "9997:9997"
+
+  stream-generator:
+    image: jrottenberg/ffmpeg:8.1-ubuntu2404
+    depends_on:
+      - mediamtx
+    volumes:
+      - ./services/stream-generator/ffmpeg-loop.sh:/stream-generator/ffmpeg-loop.sh:ro
+    entrypoint: ["/bin/sh"]
+    command: ["/stream-generator/ffmpeg-loop.sh"]

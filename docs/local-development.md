@@ -74,7 +74,7 @@ Nach erfolgreichem Start kann der API-Pfad direkt geprüft werden:
 ```bash
 # Health-Check
 curl http://localhost:8080/api/health
-# erwartet: 200 OK mit Body {}
+# erwartet: 200 OK mit Body {"status":"ok"}
 
 # Event senden (gültiger Spike-Token "demo-token")
 curl -i -X POST http://localhost:8080/api/playback-events \
@@ -108,7 +108,7 @@ Stream-Auslieferung lokal (HLS):
 
 ```bash
 # HLS-Manifest des Teststreams
-curl http://localhost:8888/teststream/index.m3u8
+curl -L http://localhost:8888/teststream/index.m3u8
 # erwartet: 200 OK mit HLS-Manifest
 ```
 
