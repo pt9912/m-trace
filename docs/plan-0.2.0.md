@@ -33,7 +33,7 @@ Neue Lastenheft-Patches während `0.2.0` landen weiterhin zentral in `plan-0.1.0
 | 3 | Adapter-/Transport-Tests und Runtime-Grenzen | ✅ |
 | 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ✅ |
 | 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ✅ |
-| 5 | Demo-Integrationsdoku und Release-Akzeptanzkriterien `0.2.0` | ⬜ |
+| 5 | Demo-Integrationsdoku und Release-Akzeptanzkriterien `0.2.0` | 🟡 |
 | 6 | OE-3/Persistenz-Folge-ADR vorbereiten | ⬜ |
 
 ---
@@ -193,26 +193,26 @@ Bezug: RAK-11..RAK-21; RAK-20.
 
 DoD:
 
-- [ ] Dashboard-Route `/demo` ist als Beispielintegration dokumentiert: SDK-Konfiguration, API-URL, Token/Project, hls.js-Anbindung, erwartete Events.
-- [ ] `README.md` verlinkt auf die SDK-Doku und beschreibt den lokalen SDK-Install-/Demo-Pfad.
-- [ ] `docs/local-development.md` beschreibt, wie das gepackte SDK lokal gegen Dashboard/API getestet wird.
-- [ ] **RAK-11** SDK ist als npm-Paket baubar und lokal installierbar; Paketversion ist `0.2.0`.
-- [ ] **RAK-12** Public API ist dokumentiert.
-- [ ] **RAK-13** Event-Schema ist versioniert.
-- [ ] **RAK-14** hls.js-Adapter ist getestet.
-- [ ] **RAK-15** HTTP-Transport ist getestet.
-- [ ] **RAK-16 (Soll)** OTel-Transport ist vorbereitet oder experimentell nutzbar; alternativ ist das nicht-blockierende Deferral-DoD aus Tranche 4 erfüllt.
-- [ ] **RAK-17** SDK unterstützt Batching, Sampling und Retry-Grenzen.
-- [ ] **RAK-18** SDK hält das definierte Performance-Budget ein.
-- [ ] **RAK-19** Browser-Support-Matrix ist dokumentiert.
-- [ ] **RAK-20** Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert.
-- [ ] **RAK-21** Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft; der Check nutzt ein maschinenlesbares Compat-Fixture oder einen Snapshot mit SDK-Version, `sdk.version`, `schema_version` und API-`SupportedSchemaVersion`.
+- [x] Dashboard-Route `/demo` ist als Beispielintegration dokumentiert: SDK-Konfiguration, API-URL, Token/Project, hls.js-Anbindung, erwartete Events (`1c5ab12`).
+- [x] `README.md` verlinkt auf die SDK-Doku und beschreibt den lokalen SDK-Install-/Demo-Pfad (`1c5ab12`).
+- [x] `docs/local-development.md` beschreibt, wie das gepackte SDK lokal gegen Dashboard/API getestet wird (`1c5ab12`).
+- [x] **RAK-11** SDK ist als npm-Paket baubar und lokal installierbar; Paketversion ist `0.2.0` (`819ee17`, `d367720`, `1c5ab12`).
+- [x] **RAK-12** Public API ist dokumentiert (`819ee17`, `d367720`, `1c5ab12`).
+- [x] **RAK-13** Event-Schema ist versioniert (`d367720`).
+- [x] **RAK-14** hls.js-Adapter ist getestet (`f31fb71`, `197c058`).
+- [x] **RAK-15** HTTP-Transport ist getestet (`f31fb71`, `197c058`).
+- [x] **RAK-16 (Soll)** OTel-Transport ist vorbereitet oder experimentell nutzbar; alternativ ist das nicht-blockierende Deferral-DoD aus Tranche 4 erfüllt (`34713c3`).
+- [x] **RAK-17** SDK unterstützt Batching, Sampling und Retry-Grenzen (`f31fb71`, `197c058`).
+- [x] **RAK-18** SDK hält das definierte Performance-Budget ein (`34713c3`).
+- [x] **RAK-19** Browser-Support-Matrix ist dokumentiert (`34713c3`).
+- [x] **RAK-20** Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert (`1c5ab12`).
+- [x] **RAK-21** Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft; der Check nutzt ein maschinenlesbares Compat-Fixture oder einen Snapshot mit SDK-Version, `sdk.version`, `schema_version` und API-`SupportedSchemaVersion` (`d367720`).
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.2.0`.
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [ ] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben.
-- [ ] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt.
+- [x] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt (`05fb496`).
 - [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make browser-e2e` sowie ein eventuell separates Node-Coverage-Target aus Arbeitspaket 3a.
-- [ ] CI-Gate-Abgrenzung ist dokumentiert: `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` laufen in GitHub Actions; der SDK↔Schema-Kompatibilitätscheck und ein eventuell separates Node-Coverage-Gate hängen an einem dieser Gates oder an eigenen Actions-Steps; `make browser-e2e` bleibt entweder bewusst manuelles Release-Gate oder wird als eigener Actions-Job ergänzt.
+- [x] CI-Gate-Abgrenzung ist dokumentiert: `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` laufen in GitHub Actions; der SDK↔Schema-Kompatibilitätscheck und ein eventuell separates Node-Coverage-Gate hängen an einem dieser Gates oder an eigenen Actions-Steps; `make browser-e2e` bleibt entweder bewusst manuelles Release-Gate oder wird als eigener Actions-Job ergänzt (`d367720`, `f31fb71`, `34713c3`).
 
 ---
 
