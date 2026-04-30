@@ -31,9 +31,9 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 |---|---|---|
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
 | 1 | Player-SDK unter `packages/player-sdk` | 🟡 |
-| 2 | Dashboard unter `apps/dashboard` | ⬜ |
-| 3 | Compose-Lab-Erweiterung um den `dashboard`-Service | ⬜ |
-| 4 | Release-Akzeptanzkriterien `0.1.1` | ⬜ |
+| 2 | Dashboard unter `apps/dashboard` | ✅ |
+| 3 | Compose-Lab-Erweiterung um den `dashboard`-Service | ✅ |
+| 4 | Release-Akzeptanzkriterien `0.1.1` | 🟡 |
 
 ---
 
@@ -142,14 +142,14 @@ DoD:
 DoD:
 
 - [x] **RAK-2** Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service (Tranche 3) (`1d58f19`).
-- [ ] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1).
-- [ ] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2).
+- [x] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1) (`bae4a2a`, `cf07fda`, `1a6a6c7`).
+- [x] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2) (`1a6a6c7`, `1d58f19`).
 
 ### 5.1 Übergreifende DoD `0.1.1` (Lastenheft §18, `0.1.1`-Anteil)
 
-- [ ] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete).
-- [ ] `CHANGELOG.md` enthält Eintrag für `0.1.1`.
-- [ ] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement).
+- [x] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete) — der bestehende GitHub-Workflow nutzt `make test`, `make lint` und `make build`; diese Targets delegieren jetzt zusätzlich an den pnpm-Workspace (`1d58f19`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`).
+- [x] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement) (`1d58f19`).
 
 ---
 
