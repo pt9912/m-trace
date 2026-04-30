@@ -104,7 +104,7 @@ DoD:
 
 DoD:
 
-- [x] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` (`make smoke-observability`, `beabcd5`):
+- [x] **RAK-9** Prometheus enthält nur aggregierte Metriken — Smoke-Test über `make dev-observability` (`make smoke-observability`, `beabcd5`, Einzelprüfungen ergänzt in `7acda47`):
     - **Setup-Pflicht**: vor dem Smoke-Test muss eine Mindestdaten-Lage im Prometheus erzeugt sein, sonst geben die Queries leer zurück und der Cardinality-Check besteht trivial (false positive). Konkret: Compose-Stack läuft, mindestens 5 Player-Sessions mit jeweils ≥ 10 Events; mindestens ein Prometheus-Scrape-Intervall (Default 15 s) ist vergangen.
     - **Seed-Skript**: `scripts/seed-rak9.sh` (oder `make seed-rak9`-Target) erzeugt die Mindestdaten-Lage reproduzierbar via `curl`-Aufrufe gegen `/api/playback-events` (50 Events in 5 Sessions mit unterschiedlichen `session_id`/`event_name`-Mustern). Der Smoke-Test ruft das Skript als ersten Schritt auf, danach laufen die unten genannten Queries gegen Prometheus. Eine spätere CI-Erweiterung ruft denselben Pfad auf — das vermeidet manuelle Lastaufbereitung und „false confidence". Demo-SDK-basierte Lastaufbereitung ist eine Bonus-Variante für interaktive Lab-Sessions, kein DoD-Pfad.
     - **Label-Name-Check (verbotene Labels)**: `make smoke-observability` nutzt Prometheus `api/v1/series` mit URL-encodiertem `match[]={__name__=~"mtrace_.+"}` und listet alle `mtrace_*`-Series. Erwartet: Liste ist **nicht-leer** (Setup-Voraussetzung greift) und keine Series enthält die verbotenen Labels `session_id`, `user_agent`, `segment_url`, `client_ip`.
