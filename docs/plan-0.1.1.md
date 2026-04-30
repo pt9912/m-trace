@@ -54,12 +54,12 @@ DoD — **harte Voraussetzungen, technisch zwingend** (Pflicht `[x]` vor `0.1.1`
 DoD — **weiche Voraussetzungen, Dokumentations-/Aufräumarbeiten** (offen erlaubt; Gate **nicht** blockierend, sollten aber bis zum `0.1.0`-Release-Tag geschlossen werden):
 
 - [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.1`** — OTel-Modell §2, Cardinality §3, Time-Stempel §5, Schema-Versionierung §6: nur indirekt für SDK-Implementierung relevant (`e532e1e`, `51b3812`).
-- [x] `plan-0.1.0.md` §3.6 local-development.md: Developer-Guide; `0.1.1`-Implementierung kann mit dem bestehenden `apps/api`-Setup arbeiten (`2eede43`, `504e4c9`, `WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] `plan-0.1.0.md` §3.6 local-development.md: Developer-Guide; `0.1.1`-Implementierung kann mit dem bestehenden `apps/api`-Setup arbeiten (`2eede43`, `504e4c9`, `35eba88`).
 - [x] `plan-0.1.0.md` §4.4 Code-Step-Numbering: Code-Kommentar-Cleanup ohne `0.1.1`-Auswirkung (`dbdcb67`).
 - [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items sind bis Patch `1.1.4` geschlossen; keine offenen blockierenden Patch-Items zum `0.1.1`-Start.
     - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.1`-Implementierung direkt betrifft), **oder**
     - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag.
-- [x] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar (`WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar (`35eba88`).
 
 ---
 
@@ -71,11 +71,11 @@ DoD:
 
 **Workspace-Bootstrap** (Repo-weit, gemeinsame Voraussetzung mit Tranche 2 Dashboard):
 
-- [x] Root-`package.json` mit Mono-Repo-Marker und Top-Level-Scripts (`build`, `test`, `lint`, `check`); kein eigener Source-Code-Inhalt (`WORKSPACE_BOOTSTRAP_COMMIT`).
-- [x] `pnpm-workspace.yaml` mit `apps/*` und `packages/*` als Workspace-Globs (deckt `apps/dashboard` und `packages/player-sdk` ab) (`WORKSPACE_BOOTSTRAP_COMMIT`).
-- [x] `pnpm-lock.yaml` versioniert; `.npmrc` mit Engine-Strict und `.nvmrc` mit Node-Major-Pinning im Repo-Root (`WORKSPACE_BOOTSTRAP_COMMIT`).
-- [x] Top-Level-Scripts delegieren via `pnpm -r --if-present run <task>` an die Workspace-Pakete; `make` bleibt als Compose-/Lab-Wrapper unverändert (`WORKSPACE_BOOTSTRAP_COMMIT`).
-- [x] Architecture §4.1 Mono-Repo-Layout reflektiert die neuen Wurzel-Dateien (Doku-Update gemeinsam mit dem Bootstrap-Commit) (`WORKSPACE_BOOTSTRAP_COMMIT`).
+- [x] Root-`package.json` mit Mono-Repo-Marker und Top-Level-Scripts (`build`, `test`, `lint`, `check`); kein eigener Source-Code-Inhalt (`35eba88`).
+- [x] `pnpm-workspace.yaml` mit `apps/*` und `packages/*` als Workspace-Globs (deckt `apps/dashboard` und `packages/player-sdk` ab) (`35eba88`).
+- [x] `pnpm-lock.yaml` versioniert; `.npmrc` mit Engine-Strict und `.nvmrc` mit Node-Major-Pinning im Repo-Root (`35eba88`).
+- [x] Top-Level-Scripts delegieren via `pnpm -r --if-present run <task>` an die Workspace-Pakete; `make` bleibt als Compose-/Lab-Wrapper unverändert (`35eba88`).
+- [x] Architecture §4.1 Mono-Repo-Layout reflektiert die neuen Wurzel-Dateien (Doku-Update gemeinsam mit dem Bootstrap-Commit) (`35eba88`).
 
 **Player-SDK** (`packages/player-sdk/`):
 
