@@ -238,7 +238,38 @@ pnpm --filter @npm9912/m-trace-dashboard run test:coverage
 
 Im Vite-Dev-Mode greift der SvelteKit-Proxy `/api/*` → `http://localhost:8080`, damit Browser-CORS für GET-Routen entfällt (`plan-0.1.1.md` §3 API-Origin-Strategie). Im Compose-Production-Build laufen Dashboard und API über getrennte Origins; CORS-Headers aus `plan-0.1.0.md` §5.1 greifen.
 
-### 4.4 Architektur-Boundary-Check (Backend)
+### 4.4 Gepacktes SDK gegen Dashboard/API testen (`0.2.0`)
+
+Der lokale Veröffentlichungs-Sanity-Check trennt Paketierung und
+End-to-End-Integration:
+
+```bash
+pnpm --filter @npm9912/player-sdk run pack:smoke
+make dev
+```
+
+`pack:smoke` baut das SDK, erzeugt ein Tarball-Artefakt, installiert es in ein
+temporäres Beispielprojekt und prüft ESM, CJS und den Browser/IIFE-Einstieg.
+Damit ist abgesichert, dass das Paket lokal installierbar ist.
+
+Das laufende Lab nutzt denselben Package-Entry-Point im Dashboard-Build. Die
+Demo-Route testet das SDK gegen die echte lokale API:
+
+```text
+http://localhost:5173/demo?session_id=local-pack-demo&autostart=1
+```
+
+Nach einigen Sekunden kann die erzeugte Session geprüft werden:
+
+```bash
+curl http://localhost:8080/api/stream-sessions/local-pack-demo/events
+```
+
+Erwartet sind Playback-Events aus der Demo und nach `Stop` bzw. beim Verlassen
+der Route ein `session_ended` Event. Die Details der Beispielintegration stehen
+in [`docs/demo-integration.md`](./demo-integration.md).
+
+### 4.5 Architektur-Boundary-Check (Backend)
 
 ```bash
 cd apps/api
@@ -254,7 +285,7 @@ Prüft nach `apps/api/scripts/check-architecture.sh`, dass:
 
 Schlägt der Test fehl, listet er den verstoßenden Import explizit. Verbindlich vor jedem PR.
 
-### 4.5 RAK-Smoke-Tests
+### 4.6 RAK-Smoke-Tests
 
 | Smoke | Wann | Aufruf |
 |---|---|---|

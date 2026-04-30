@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.1.2` — Observability-Stack implementiert, Lastenheft `1.1.6` verbindlich.
+> Status: `0.2.0` in Arbeit — publizierbares Player-SDK, stabile Public API und Demo-Integration.
 
 ---
 
@@ -216,6 +216,20 @@ Smoke-Test:
 
 ```bash
 make smoke
+```
+
+SDK- und Demo-Dokumentation:
+
+- [docs/player-sdk.md](docs/player-sdk.md) beschreibt Installation, Public API, Transport, Performance-Budget und Browser-Build.
+- [docs/demo-integration.md](docs/demo-integration.md) beschreibt die Dashboard-Route `/demo` als lokale hls.js-/Player-SDK-Integration.
+- [docs/browser-support.md](docs/browser-support.md) dokumentiert die Browser-Support-Matrix.
+
+Lokaler SDK-/Demo-Pfad:
+
+```bash
+pnpm --filter @npm9912/player-sdk run pack:smoke
+make dev
+# dann http://localhost:5173/demo?session_id=readme-demo&autostart=1 öffnen
 ```
 
 Optionaler Observability-Stack mit Prometheus, Grafana und OTel-Collector:
