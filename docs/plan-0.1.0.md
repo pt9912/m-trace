@@ -327,9 +327,9 @@ Mit dem `0.1.1`-Player-SDK-Skelett wird der npm-Paketname festgelegt.
 
 DoD:
 
-- [x] Lastenheft Header: Version `1.1.4` → `1.1.5` (`PLAYER_SDK_COMMIT`).
-- [x] Lastenheft §16.2: OE-8 resolved — Player-SDK-Paketname `@m-trace/player-sdk` (`PLAYER_SDK_COMMIT`).
-- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.5` aktualisiert (`PLAYER_SDK_COMMIT`).
+- [x] Lastenheft Header: Version `1.1.4` → `1.1.5` (`bae4a2a`).
+- [x] Lastenheft §16.2: OE-8 resolved — Player-SDK-Paketname `@m-trace/player-sdk` (`bae4a2a`).
+- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.5` aktualisiert (`bae4a2a`).
 
 ---
 
