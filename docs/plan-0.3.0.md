@@ -64,9 +64,11 @@ DoD:
 
 - [ ] Workspace-Paket `packages/stream-analyzer` ist angelegt und in `pnpm-workspace.yaml` enthalten.
 - [ ] `package.json` enthält eindeutige Paketmetadaten, `type`, `main`, `module`, `types`, `exports`, `files`, `license`, `repository.directory` und CI-taugliche Scripts.
+- [ ] `packages/stream-analyzer/package.json.version` wird für `0.3.0` mit dem Repo-Release versioniert; abweichende unabhängige Versionierung wäre vor Umsetzung als explizite Versionierungsregel zu dokumentieren.
 - [ ] Analyzer-Version wird aus genau einer Quelle abgeleitet: `packages/stream-analyzer/package.json`, exportierte Version und die im JSON-Ergebnis gesendete Analyzer-Version sind synchron und getestet.
 - [ ] Public API exportiert mindestens eine Analysefunktion für HLS-Manifeste und klar typisierte Ergebnis-/Fehlertypen.
 - [ ] API-/Adapter-Kontrakt für Backend-Nutzung ist vor Parser-Implementierung entschieden: Manifest-Input, optionale URL/Base-URL, Analyse-Resultat und Fehlerform sind so modelliert, dass der Go-`StreamAnalyzer`-Port nicht auf Playback-Event-Batches festgelegt bleibt.
+- [ ] Go-Port-/Use-Case-Zielsignatur ist früh umgesetzt oder als Kompatibilitätsadapter vorbereitet, bevor Parser-Implementierung beginnt; der bestehende `AnalyzeBatch(ctx, []domain.PlaybackEvent) error`-Slot darf nicht bis Tranche 6 als einziger API-Integrationsvertrag stehen bleiben.
 - [ ] Interne Parser-Module bleiben intern; dokumentierte Konsumenten importieren nur über den Package-Entry-Point.
 - [ ] F-73 ist vorbereitet: Parser- und Ergebnisgrenzen sind so geschnitten, dass DASH-/CMAF-Analyse später als eigener Analyzer-Typ ergänzt werden kann; Nicht-HLS bleibt in `0.3.0` explizit dokumentiert out of scope.
 - [ ] TypeScript-Build erzeugt ESM, CJS und Type-Definitionen oder dokumentiert bewusst, warum nur ein Format unterstützt wird.
@@ -88,6 +90,7 @@ DoD:
 - [ ] Analyse kann mit Manifest-Text als Input laufen; Netzwerkabruf ist ein separater, austauschbarer Input-Pfad.
 - [ ] HTTP-/Fetch-Laden unterstützt Timeout, maximale Manifest-Größe und klare Fehler für Netzwerk-, Statuscode- und Content-Type-Probleme.
 - [ ] URL-Laden hat verbindliche SSRF-Schutzregeln: nur `http`/`https`, keine Credentials in URLs, Redirect-Limit, gleiche Sicherheitsprüfung nach jedem Redirect, Block für localhost, private/link-local/loopback/reservierte IP-Bereiche, dokumentiertes DNS-Rebinding-Verhalten und Größenlimit auch nach Redirects.
+- [ ] SSRF-Schutz ist testpflichtig: Tests decken Credentials in URLs, localhost/private/link-local/loopback/reservierte IPs, Redirect auf verbotene Ziele, Redirect-Limit, dokumentierte DNS-Rebinding-Entscheidung und Größenlimit nach Redirect ab.
 - [ ] Parser erkennt HLS-Grundstruktur und lehnt nicht-HLS-Text mit einem strukturierten Fehler ab.
 - [ ] Master Playlist wird anhand HLS-Tags erkannt und getestet.
 - [ ] Media Playlist wird anhand HLS-Tags erkannt und getestet.
@@ -162,8 +165,11 @@ DoD:
 
 - [ ] Bestehender Go-Port `hexagon/port/driven.StreamAnalyzer` wird überprüft und bei Bedarf so angepasst, dass Analyseaufrufe fachlich sinnvoll modelliert sind.
 - [ ] API-Integration nutzt einen Adapter an der Driven-Seite; Domain und Application Layer importieren keine Node-/TypeScript-Implementierungsdetails.
-- [ ] Falls Node-Analyzer aus Go heraus nicht sinnvoll direkt nutzbar ist, ist der Integrationsmodus explizit entschieden: CLI-Adapter, separater Prozess oder HTTP-intern. API-Nutzbarkeit selbst ist release-blocking und darf nicht deferred werden.
+- [ ] Bevorzugter Integrationsmodus für `0.3.0` ist ein interner Analyzer-HTTP-Service, damit das distroless-Go-API-Image keinen Node-/CLI-Runtime-Stack enthalten muss. Abweichungen müssen die Runtime- und Security-Folgen im Plan dokumentieren.
+- [ ] Falls Node-Analyzer aus Go heraus nicht sinnvoll direkt nutzbar ist, ist der Integrationsmodus explizit entschieden: bevorzugt HTTP-intern, alternativ separater Prozess oder CLI-Adapter. API-Nutzbarkeit selbst ist release-blocking und darf nicht deferred werden.
+- [ ] Docker-/Compose-/Runtime-Wiring ist umgesetzt und getestet: Analyzer-Service oder Adapter ist in lokaler Entwicklung und CI verfügbar, `apps/api` kann ihn erreichen, und ein Smoke-Test prüft den Analyzer-API-Pfad im laufenden Stack.
 - [ ] API-Endpunkt oder Use-Case-Pfad für Analyse ist definiert und getestet.
+- [ ] Backend-API-Kontrakt wird synchron aktualisiert oder eine Nachfolgedoku als neue Contract-Quelle benannt; Pfad, Methode, Request-/Response-Shape, Fehlerabbildung und Pflichttests für den Analyzer-API-Pfad sind dokumentiert.
 - [ ] Fehlerabbildung von Analyzer-Fehlern auf HTTP-Status/Problem-Shape ist dokumentiert.
 - [ ] Metriken/Logs für Analyseaufrufe sind minimal vorhanden oder bewusst deferred.
 - [ ] Architekturcheck bleibt grün.
@@ -179,6 +185,7 @@ Ziel: Eine einfache CLI kann lokale oder per URL geladene HLS-Manifeste analysie
 DoD:
 
 - [ ] CLI-Einstieg ist im Analyzer-Paket definiert, z. B. `bin` in `package.json`.
+- [ ] Der Lastenheft-Aufruf `pnpm m-trace check <url>` funktioniert exakt als Smoke-Kriterium.
 - [ ] CLI akzeptiert mindestens Datei-Pfad oder URL als Input.
 - [ ] CLI-URL-Input nutzt dieselben SSRF-Schutzregeln wie der Analyzer-Loader oder ist auf lokale Dateien beschränkt; Abweichungen sind dokumentiert und getestet.
 - [ ] CLI gibt Analyseergebnis auf stdout als JSON aus.
@@ -201,9 +208,10 @@ DoD:
 - [ ] **RAK-26** Ergebnis wird als JSON ausgegeben.
 - [ ] **RAK-27** API kann Analyzer nutzen.
 - [ ] **RAK-28** CLI-Grundlage existiert.
+- [ ] Versionen sind konsistent: Root-`package.json.version`, `packages/stream-analyzer/package.json.version`, `CHANGELOG.md`-Abschnitt, Release-Tag `v0.3.0` und die im JSON-Ergebnis gesendete Analyzer-Version passen zusammen oder eine bewusst abweichende Versionierungsregel ist dokumentiert und getestet.
 - [ ] `docs/stream-analyzer.md`, `docs/local-development.md`, `docs/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.3.0`.
-- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` und Analyzer-spezifische Smoke-/CLI-Gates, sofern eingeführt.
+- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build` und Analyzer-spezifische Smoke-/CLI-Gates, sofern eingeführt.
 - [ ] Falls `make browser-e2e` nicht durch Analyzer-Änderungen betroffen ist, bleibt es ein manuelles Release-Gate; bei Dashboard-/Demo-Auswirkungen läuft es grün.
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.3.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [ ] OE-3/Persistenz ist entschieden oder explizit nicht-blockierend deferred, falls Analyseergebnisse nicht durable gespeichert werden.
