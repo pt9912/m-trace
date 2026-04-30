@@ -41,13 +41,14 @@ Vor Tag und GitHub-Release müssen die Root-Targets grün sein:
 make test
 make lint
 make coverage-gate
+make sdk-performance-smoke
 make arch-check
 make build
 ```
 
 Erfolgskriterien:
 
-- alle fünf Targets exit code 0.
+- alle sechs Targets exit code 0.
 - `make coverage-gate` umfasst API-, Player-SDK- und Dashboard-Coverage.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus

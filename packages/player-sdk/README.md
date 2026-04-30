@@ -137,3 +137,40 @@ as a cooldown before the next send; without that header it uses exponential
 backoff. Non-transient `4xx` responses, including `413`, are not retried.
 Applications can provide a custom `transport` to integrate different buffering
 behavior.
+
+## Custom and OTel-style Transports
+
+The default bundle has no OpenTelemetry dependency. Applications that already
+own an OTel pipeline can inject an opt-in transport through `transport`:
+
+```ts
+import type { PlaybackEventBatch, Transport } from "@npm9912/player-sdk";
+
+class OTelLikeTransport implements Transport {
+  async send(batch: PlaybackEventBatch): Promise<void> {
+    void batch;
+  }
+}
+```
+
+The stable integration point is `Transport.send(batch)`.
+
+## Performance and Browser Support
+
+The `0.2.0` budget is:
+
+| Metric | Budget |
+|---|---:|
+| Bundle size | < 30 KiB gzip without hls.js |
+| Event processing | < 5 ms per event in the normal path |
+| Hot path | no synchronous network calls |
+| Playback safety | telemetry failures must not abort playback |
+
+Run the reproducible smoke with:
+
+```bash
+pnpm --filter @npm9912/player-sdk run performance:smoke
+```
+
+The browser matrix is maintained in
+[`docs/browser-support.md`](../../docs/browser-support.md).

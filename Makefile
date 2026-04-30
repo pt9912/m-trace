@@ -1,6 +1,6 @@
 COMPOSE ?= docker compose
 
-.PHONY: dev dev-observability stop smoke smoke-observability smoke-rak10-console seed-rak9 browser-e2e test lint build coverage-gate arch-check
+.PHONY: dev dev-observability stop smoke smoke-observability smoke-rak10-console seed-rak9 browser-e2e test lint build coverage-gate arch-check sdk-performance-smoke
 
 dev:
 	$(COMPOSE) up --build
@@ -46,3 +46,6 @@ coverage-gate:
 
 arch-check:
 	$(MAKE) -C apps/api arch-check
+
+sdk-performance-smoke:
+	pnpm --filter @npm9912/player-sdk run performance:smoke

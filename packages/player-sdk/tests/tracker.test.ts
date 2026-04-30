@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createTracker } from "../src/core/tracker";
 import type { PlaybackEventBatch } from "../src/types/events";
+import type { Transport } from "../src/types/config";
 
 class MemoryTransport {
   batches: PlaybackEventBatch[] = [];
@@ -120,6 +121,32 @@ describe("MTracePlayerTracker", () => {
     expect(transport.batches).toHaveLength(1);
     expect(transport.batches[0]?.events.map((event) => event.event_name)).toEqual(["playback_error", "session_ended"]);
     vi.useRealTimers();
+  });
+
+  it("accepts an opt-in OTel-style transport through the stable transport port", async () => {
+    const exportedBatches: PlaybackEventBatch[] = [];
+    const otelLikeTransport: Transport = {
+      async send(batch) {
+        exportedBatches.push(batch);
+      }
+    };
+    const tracker = createTracker({
+      endpoint: "http://localhost:8080/api/playback-events",
+      token: "demo-token",
+      projectId: "demo",
+      sessionId: "session-otel",
+      flushIntervalMs: 0,
+      transport: otelLikeTransport
+    });
+
+    tracker.track({ eventName: "metrics_sampled", meta: { duration_ms: 12 } });
+    await tracker.flush();
+
+    expect(exportedBatches[0]?.events[0]).toMatchObject({
+      event_name: "metrics_sampled",
+      session_id: "session-otel",
+      meta: { duration_ms: 12 }
+    });
   });
 
   it("splits local queues into API-compatible batches", async () => {

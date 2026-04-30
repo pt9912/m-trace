@@ -135,6 +135,7 @@ für das reproduzierbare Coverage-Gate:
 ```bash
 pnpm --filter @npm9912/player-sdk run test
 pnpm --filter @npm9912/player-sdk run test:coverage
+pnpm --filter @npm9912/player-sdk run performance:smoke
 ```
 
 Der Coverage-Scope ist das produktive SDK unter
@@ -154,6 +155,11 @@ Artefakte landen unter `packages/player-sdk/coverage/`:
 Der Threshold ist verbindlich: Statements 90 %, Lines 90 %, Functions
 90 %, Branches 90 %. Senkungen nach Einführung sind
 begründungspflichtig.
+
+Der Performance-Smoke ist kein Coverage-Gate. Er baut das SDK und prüft
+das normative `0.2.0`-Budget: Bundle < 30 KiB gzip ohne hls.js,
+Event-Verarbeitung < 5 ms pro Event, kein synchroner Netzwerkaufruf im
+Hot Path sowie Queue-/Retry-Grenzen.
 
 ### 3.3 Dashboard (`apps/dashboard`)
 

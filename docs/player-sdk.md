@@ -113,6 +113,63 @@ auf drei Versuche. `429` mit `Retry-After` wird als Cooldown respektiert; ohne
 Header gilt der normale Backoff. Nicht-transiente `4xx` und `413 Payload Too
 Large` werden nicht erneut gesendet.
 
+## OpenTelemetry-Vorbereitung
+
+RAK-16 ist in `0.2.0` als vorbereiteter Opt-in-Pfad umgesetzt. Das SDK bringt
+keine OTel-Abhängigkeit im Default-Bundle mit. Anwendungen können aber einen
+eigenen Transport über `PlayerSDKConfig.transport` injizieren:
+
+```ts
+import { createTracker, type PlaybackEventBatch, type Transport } from "@npm9912/player-sdk";
+
+class OTelLikeTransport implements Transport {
+  async send(batch: PlaybackEventBatch): Promise<void> {
+    // Anwendungsspezifische Übersetzung in OTel-Spans, Logs oder Metriken.
+    void batch;
+  }
+}
+
+const tracker = createTracker({
+  endpoint: "http://localhost:8080/api/playback-events",
+  token: "demo-token",
+  projectId: "demo",
+  transport: new OTelLikeTransport()
+});
+```
+
+Der stabile Port ist `Transport.send(batch)`. Ein späterer offizieller
+OTel-Transport muss an diesen Port anschließen und darf den HTTP-Transport
+nicht als Default-Pfad ersetzen.
+
+## Performance-Budget
+
+Das SDK übernimmt die normativen MVP-Grenzen aus dem Lastenheft:
+
+| Kennzahl | Budget |
+|---|---:|
+| Bundle-Größe | < 30 KiB gzip ohne hls.js |
+| Event-Verarbeitung | < 5 ms pro Event im Normalfall |
+| Hot Path | keine synchronen Netzwerkaufrufe |
+| Transport | batchingfähig |
+| Fehlerverhalten | Telemetriefehler dürfen Playback nicht abbrechen |
+| Sampling | konfigurierbar |
+
+Reproduzierbarer Smoke:
+
+```bash
+pnpm --filter @npm9912/player-sdk run performance:smoke
+```
+
+Der Smoke baut das SDK, prüft die gzip-Größe des ESM-Bundles, misst
+synthetische Event-Verarbeitung und verifiziert Queue-/Retry-Grenzen ohne
+echtes Netzwerk.
+
+## Browser-Support
+
+Die Browser-Matrix steht in [`docs/browser-support.md`](./browser-support.md).
+Für `0.2.0` sind Chrome Desktop und Firefox Desktop `supported`; Safari
+Desktop ist als `documented limitation` klassifiziert.
+
 ## Wire-Format
 
 Das SDK sendet Batches mit `schema_version: "1.0"`. Jedes Event enthält

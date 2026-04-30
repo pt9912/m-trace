@@ -211,8 +211,12 @@ per Vitest.
 pnpm --filter @npm9912/player-sdk run build
 pnpm --filter @npm9912/player-sdk run test
 pnpm --filter @npm9912/player-sdk run test:coverage
+pnpm --filter @npm9912/player-sdk run performance:smoke
 pnpm --filter @npm9912/player-sdk run lint
 ```
+
+Der Performance-Smoke baut das SDK und prüft das `0.2.0`-Budget
+für Bundle-Größe, Event-Hot-Path und Queue-/Retry-Grenzen.
 
 Alternative über Top-Level-Scripts (Mono-Repo-Bootstrap aus `plan-0.1.1.md` §2):
 
