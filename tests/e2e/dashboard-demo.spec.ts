@@ -23,8 +23,17 @@ test("demo player emits events and dashboard renders the session", async ({ brow
   expect(detail.ok()).toBe(true);
   const payload = (await detail.json()) as { events: Array<{ event_name: string }> };
   expect(payload.events.length).toBeGreaterThan(0);
+  const eventName = payload.events[0]?.event_name ?? "";
+  expect(eventName).not.toBe("");
 
   await page.goto(`/sessions/${sessionId}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByText(sessionId)).toBeVisible();
   await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible();
+
+  await page.goto("/events", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Session filter").selectOption(sessionId);
+  await page.getByLabel("Event type filter").selectOption(eventName);
+  await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  const eventRow = page.getByRole("row", { name: new RegExp(`${eventName} ${sessionId}`) });
+  await expect(eventRow).toBeVisible();
 });

@@ -4,6 +4,7 @@ import { HttpTransport } from "../transport/http";
 import { createSessionId } from "./session";
 
 const sdk = { name: "@m-trace/player-sdk", version: "0.1.1-dev" };
+const maxBatchEvents = 100;
 
 export interface PlayerTracker {
   readonly sessionId: string;
@@ -21,6 +22,7 @@ export class MTracePlayerTracker implements PlayerTracker {
   private readonly transport: Transport;
   private readonly queue: PlaybackEvent[] = [];
   private sequence = 0;
+  private destroyed = false;
   private flushTimer: ReturnType<typeof setInterval> | undefined;
 
   constructor(config: PlayerSDKConfig) {
@@ -37,7 +39,7 @@ export class MTracePlayerTracker implements PlayerTracker {
     this.projectId = config.projectId;
     this.sessionId = config.sessionId ?? createSessionId();
     this.sampleRate = clampSampleRate(config.sampleRate ?? 1);
-    this.batchSize = Math.max(1, Math.floor(config.batchSize ?? 10));
+    this.batchSize = Math.min(maxBatchEvents, Math.max(1, Math.floor(config.batchSize ?? 10)));
     this.transport = config.transport ?? new HttpTransport(config.endpoint, config.token);
 
     const flushIntervalMs = Math.max(0, Math.floor(config.flushIntervalMs ?? 5000));
@@ -49,10 +51,16 @@ export class MTracePlayerTracker implements PlayerTracker {
   }
 
   track(event: EventDraft): void {
+    if (this.destroyed) {
+      return;
+    }
     if (Math.random() > this.sampleRate) {
       return;
     }
+    this.enqueue(event, true);
+  }
 
+  private enqueue(event: EventDraft, autoFlush: boolean): void {
     this.sequence += 1;
     const playbackEvent: PlaybackEvent = {
       event_name: event.eventName,
@@ -68,7 +76,7 @@ export class MTracePlayerTracker implements PlayerTracker {
 
     this.queue.push(playbackEvent);
 
-    if (this.queue.length >= this.batchSize) {
+    if (autoFlush && this.queue.length >= this.batchSize) {
       void this.flush();
     }
   }
@@ -78,18 +86,25 @@ export class MTracePlayerTracker implements PlayerTracker {
       return;
     }
 
-    const events = this.queue.splice(0, this.queue.length);
-    await this.transport.send({
-      schema_version: "1.0",
-      events
-    });
+    while (this.queue.length > 0) {
+      const events = this.queue.splice(0, maxBatchEvents);
+      await this.transport.send({
+        schema_version: "1.0",
+        events
+      });
+    }
   }
 
   async destroy(): Promise<void> {
+    if (this.destroyed) {
+      return;
+    }
+    this.destroyed = true;
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
       this.flushTimer = undefined;
     }
+    this.enqueue({ eventName: "session_ended" }, false);
     await this.flush();
   }
 }

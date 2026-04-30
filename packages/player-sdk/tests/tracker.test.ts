@@ -93,6 +93,44 @@ describe("MTracePlayerTracker", () => {
     await tracker.destroy();
 
     expect(transport.batches).toHaveLength(1);
+    expect(transport.batches[0]?.events.map((event) => event.event_name)).toEqual(["playback_error", "session_ended"]);
     vi.useRealTimers();
+  });
+
+  it("splits local queues into API-compatible batches", async () => {
+    const transport = new MemoryTransport();
+    const tracker = createTracker({
+      endpoint: "http://localhost:8080/api/playback-events",
+      token: "demo-token",
+      projectId: "demo",
+      batchSize: 250,
+      flushIntervalMs: 0,
+      transport
+    });
+
+    for (let i = 0; i < 101; i += 1) {
+      tracker.track({ eventName: "segment_loaded" });
+    }
+    await tracker.flush();
+
+    expect(transport.batches.map((batch) => batch.events.length)).toEqual([100, 1]);
+  });
+
+  it("emits session_ended only once on destroy", async () => {
+    const transport = new MemoryTransport();
+    const tracker = createTracker({
+      endpoint: "http://localhost:8080/api/playback-events",
+      token: "demo-token",
+      projectId: "demo",
+      batchSize: 10,
+      flushIntervalMs: 0,
+      transport
+    });
+
+    await tracker.destroy();
+    await tracker.destroy();
+
+    expect(transport.batches).toHaveLength(1);
+    expect(transport.batches[0]?.events.map((event) => event.event_name)).toEqual(["session_ended"]);
   });
 });
