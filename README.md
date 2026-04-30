@@ -201,7 +201,7 @@ Player Session Trace
 
 ## Lokale Entwicklung
 
-Das `0.1.0`-Core-Lab startet die Backend-API, MediaMTX und einen FFmpeg-Teststream:
+Das lokale Core-Lab startet Backend-API, Dashboard, MediaMTX und einen FFmpeg-Teststream:
 
 ```bash
 git clone https://github.com/pt9912/m-trace.git
@@ -214,6 +214,10 @@ Smoke-Test:
 ```bash
 make smoke
 ```
+
+- Dashboard: <http://localhost:5173>
+- API: <http://localhost:8080/api/health>
+- HLS-Teststream: <http://localhost:8888/teststream/index.m3u8>
 
 Details stehen in [docs/local-development.md](docs/local-development.md).
 
