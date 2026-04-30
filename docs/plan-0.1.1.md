@@ -84,12 +84,12 @@ DoD:
 - [x] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter) (`bae4a2a`).
 - [x] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …) (`bae4a2a`).
 - [x] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, …) (`cf07fda`).
-- [x] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; OpenTelemetry Web SDK bleibt optionaler späterer Transport-Pfad (`bae4a2a`).
+- [x] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; Batches werden auf das API-Limit von 100 Events begrenzt und größere lokale Queues gesplittet. OpenTelemetry Web SDK bleibt optionaler späterer Transport-Pfad (`bae4a2a`, `55ccac4`).
 - [x] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren (`bae4a2a`).
 - [x] Browser-Build (ESM + UMD/IIFE) (`bae4a2a`).
 - [x] OE-8 entscheiden (Paketname, Scope): `@m-trace/player-sdk` (`bae4a2a`).
 - [x] **F-110 origin-Bucket (Backend)**: vor Beginn der Browser-Integrationstests muss `apps/api` den dritten Rate-Limit-Bucket auf der `origin`-Dimension aktiv haben (Vorbereitung optional in `0.1.0` §5.1, verbindliche Aktivierung spätestens hier). Test: ein Browser-Origin mit aufgebrauchtem origin-Budget liefert `429`, auch wenn project_id-Budget noch frei ist (`75e55e7`, `c15d8e1`).
-- [x] Tests: Unit-Tests für Core-Logik (Sampling, Batching, Session-Metriken) vorhanden (`bae4a2a`, `cf07fda`); containerisierter Playwright-Integrationstest gegen das `apps/api` aus `0.1.0` prüft Browser → API → Dashboard in Chromium und Firefox (`9b26e4f`). Safari Desktop bleibt wegen nativer HLS-Introspektion eingeschränkt; iOS Safari, Android Chrome, Smart-TV-Browser und Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
+- [x] Tests: Unit-Tests für Core-Logik (Sampling, Batching, Session-Metriken, Batch-Limit, `session_ended`) vorhanden (`bae4a2a`, `cf07fda`, `55ccac4`); containerisierter Playwright-Integrationstest gegen das `apps/api` aus `0.1.0` prüft Browser → API → Dashboard inklusive Event-Typ-Filter in Chromium und Firefox (`9b26e4f`, `55ccac4`). Safari Desktop bleibt wegen nativer HLS-Introspektion eingeschränkt; iOS Safari, Android Chrome, Smart-TV-Browser und Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
 
 ---
 
@@ -109,7 +109,7 @@ DoD:
 - [x] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; Telemetry-Status zunächst minimal („wired"/„nicht konfiguriert"; vollständig wenn `0.1.2` Observability-Profil läuft) (`1a6a6c7`).
 - [x] **F-28 + F-36** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3) (`1a6a6c7`).
 - [x] **F-35** Live-Übersicht — Startseite zeigt aggregierten Live-Stand (laufende Sessions, Event-Rate, Fehlerzähler) als Landing (`1a6a6c7`).
-- [x] **F-37** Playback-Events anzeigen — eine dedizierte Sicht (Route oder Tab) listet eingehende Events mit Filter nach Session und Event-Typ (`1a6a6c7`).
+- [x] **F-37** Playback-Events anzeigen — dedizierte Route `/events` listet eingehende Events mit Filter nach Session und Event-Typ (`1a6a6c7`, `55ccac4`).
 - [x] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt (`1a6a6c7`).
 - [x] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected` (`1a6a6c7`).
 - [x] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht (`1a6a6c7`).
@@ -142,13 +142,13 @@ DoD:
 DoD:
 
 - [x] **RAK-2** Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service (Tranche 3) (`1d58f19`).
-- [x] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1) (`bae4a2a`, `cf07fda`, `1a6a6c7`, `9b26e4f`).
-- [x] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2) (`1a6a6c7`, `1d58f19`, `9b26e4f`).
+- [x] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1) (`bae4a2a`, `cf07fda`, `1a6a6c7`, `9b26e4f`, `55ccac4`).
+- [x] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2) (`1a6a6c7`, `1d58f19`, `9b26e4f`, `55ccac4`).
 
 ### 5.1 Übergreifende DoD `0.1.1` (Lastenheft §18, `0.1.1`-Anteil)
 
 - [x] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete) — der bestehende GitHub-Workflow nutzt `make test`, `make lint` und `make build`; diese Targets delegieren jetzt zusätzlich an den pnpm-Workspace (`1d58f19`, `571a112`, `9b26e4f`).
-- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`, `9b26e4f`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`, `9b26e4f`, `55ccac4`).
 - [x] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement) (`1d58f19`, `9b26e4f`).
 
 ---
