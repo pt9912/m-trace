@@ -31,6 +31,7 @@ Neue Lastenheft-Patches während `0.2.0` landen weiterhin zentral in `plan-0.1.0
 | 1 | SDK-Paketierung und Public API | ⬜ |
 | 2 | Event-Schema-Versionierung und CI-Kompatibilitätscheck | ⬜ |
 | 3 | Adapter-/Transport-Tests und Runtime-Grenzen | ⬜ |
+| 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ⬜ |
 | 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ⬜ |
 | 5 | Demo-Integrationsdoku und Release-Akzeptanzkriterien `0.2.0` | ⬜ |
 | 6 | OE-3/Persistenz-Folge-ADR vorbereiten | ⬜ |
@@ -126,6 +127,45 @@ DoD:
 - [ ] `destroy()`/Session-Ende-Verhalten bleibt getestet, inklusive Flush- und Drop-Fällen.
 - [ ] Root-Gates `make test` und `make lint` decken die neuen SDK-Tests ab.
 
+### 4a. Arbeitspaket 3a — Coverage-Konfiguration für Node-Workspaces
+
+Bezug: `docs/quality.md` §3; RAK-14, RAK-15, RAK-17.
+
+Ziel: Die in `0.2.0` stabilisierten SDK-Tests bekommen ein
+reproduzierbares Coverage-Gate. Dashboard-Coverage wird nicht
+implizit behauptet, sondern als eigene Entscheidung behandelt, weil
+`apps/dashboard` aktuell kein Unit-Test-Setup besitzt.
+
+DoD:
+
+- [ ] Coverage-Provider für Vitest ist im Workspace festgelegt und
+  reproduzierbar gepinnt, z. B. `@vitest/coverage-v8` passend zur
+  Vitest-Version.
+- [ ] `packages/player-sdk/package.json` enthält ein Coverage-Script,
+  z. B. `test:coverage`, das ohne Watch-Modus läuft und CI-taugliche
+  Artefakte erzeugt.
+- [ ] Player-SDK-Coverage-Scope ist auf produktiven Code unter
+  `packages/player-sdk/src/` begrenzt; `tests/`, `dist/` und
+  `scripts/` sind ausgeschlossen.
+- [ ] Player-SDK-Threshold ist verbindlich definiert und begründet.
+  Der Startwert darf niedriger als das API-Ziel sein, muss aber eine
+  Erhöhungsperspektive enthalten; Senkungen nach Einführung sind wie
+  beim API-Gate begründungspflichtig.
+- [ ] Root-Target-Strategie ist entschieden und umgesetzt: entweder
+  `make coverage-gate` umfasst API plus Player-SDK, oder ein eigenes
+  Node-Coverage-Target wird angelegt und in CI/Release-Gates explizit
+  genannt. Stillschweigende API-only-Semantik ist nicht zulässig.
+- [ ] `.github/workflows/build.yml` führt das neue Coverage-Gate aus
+  oder dokumentiert bewusst, warum es bis zum Folge-Release lokal
+  bleibt.
+- [ ] `docs/quality.md`, `docs/local-development.md` und
+  `docs/releasing.md` beschreiben die tatsächlichen Coverage-Kommandos
+  und Artefakte für `packages/player-sdk`.
+- [ ] Für `apps/dashboard` ist eine Entscheidung dokumentiert:
+  entweder Unit-/Component-Test-Setup plus Coverage-Scope
+  `apps/dashboard/src/` wird eingeführt, oder Dashboard-Coverage wird
+  mit Begründung und Folge-Release explizit deferred.
+
 ---
 
 ## 5. Tranche 4 — OTel-Transport-Option, Performance-Budget und Browser-Matrix
@@ -170,8 +210,9 @@ DoD:
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.2.0`.
 - [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [ ] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben.
-- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make browser-e2e`.
-- [ ] CI-Gate-Abgrenzung ist dokumentiert: `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` laufen in GitHub Actions; der SDK↔Schema-Kompatibilitätscheck hängt an einem dieser Gates oder an einem eigenen Actions-Step; `make browser-e2e` bleibt entweder bewusst manuelles Release-Gate oder wird als eigener Actions-Job ergänzt.
+- [ ] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt.
+- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make browser-e2e` sowie ein eventuell separates Node-Coverage-Target aus Arbeitspaket 3a.
+- [ ] CI-Gate-Abgrenzung ist dokumentiert: `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` laufen in GitHub Actions; der SDK↔Schema-Kompatibilitätscheck und ein eventuell separates Node-Coverage-Gate hängen an einem dieser Gates oder an eigenen Actions-Steps; `make browser-e2e` bleibt entweder bewusst manuelles Release-Gate oder wird als eigener Actions-Job ergänzt.
 
 ---
 

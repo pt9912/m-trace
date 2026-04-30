@@ -80,10 +80,17 @@ Test-Output und Reports leben in den jeweiligen
 
 ## 3. Coverage
 
-Coverage-Messung läuft Docker-basiert über die `coverage`-Stage des
-`apps/api/Dockerfile`. Das Gate ist Pflicht-Bestandteil des Build-
-Prozesses und bricht den Build, wenn die Total-Line-Coverage den
-Threshold unterschreitet.
+Coverage ist pro Workspace-Bereich definiert. Ein hartes Coverage-Gate
+existiert aktuell nur für `apps/api`; `packages/player-sdk` und
+`apps/dashboard` haben eigene Test-/Check-Pfade, aber noch kein
+verbindliches Coverage-Threshold-Gate.
+
+### 3.1 API (`apps/api`)
+
+Die API-Coverage-Messung läuft Docker-basiert über die
+`coverage`-Stage des `apps/api/Dockerfile`. Das Gate ist Pflicht-
+Bestandteil des Build-Prozesses und bricht den Build, wenn die
+Total-Line-Coverage den Threshold unterschreitet.
 
 ```bash
 cd apps/api
@@ -120,6 +127,50 @@ ziehen den Filter automatisch.
 Skript: `apps/api/scripts/coverage-gate.sh <func-file> [<threshold>]`.
 Lesen die Last-Line des `go tool cover -func`-Outputs und exitet
 1 bei Unterschreitung, 2 bei Eingabe-Fehler.
+
+### 3.2 Player-SDK (`packages/player-sdk`)
+
+Das Player-SDK nutzt Vitest für die Unit-Tests:
+
+```bash
+pnpm --filter @m-trace/player-sdk run test
+```
+
+Der Coverage-Scope für ein späteres Gate ist das produktive SDK unter
+`packages/player-sdk/src/`; Testcode unter `packages/player-sdk/tests/`,
+Build-Artefakte unter `packages/player-sdk/dist/` und Hilfsskripte
+unter `packages/player-sdk/scripts/` gehören nicht in den Nenner.
+
+Aktuell ist noch kein reproduzierbarer Coverage-Report oder Threshold
+im Package definiert. Eine Aktivierung muss mindestens ein
+Package-Script, das Coverage-Artefakte erzeugt, und einen verbindlichen
+Threshold dokumentieren; bis dahin zählt das SDK in CI nur über
+`pnpm run test`/`pnpm run lint`, nicht über `make coverage-gate`.
+
+### 3.3 Dashboard (`apps/dashboard`)
+
+Das Dashboard ist eine SvelteKit-App. Der aktuelle Qualitätspfad ist
+Build plus Svelte-Type-Check:
+
+```bash
+pnpm --filter @m-trace/dashboard run build
+pnpm --filter @m-trace/dashboard run check
+```
+
+Für `apps/dashboard` ist derzeit kein Unit-Test- oder Coverage-Script
+im Package definiert. Daher gibt es auch kein Dashboard-Coverage-Gate.
+Sobald UI-Unit-Tests eingeführt werden, muss der Coverage-Scope auf
+`apps/dashboard/src/` beschränkt werden; generierte SvelteKit-Dateien,
+Build-Artefakte und statische Framework-Ausgabe gehören nicht in den
+Coverage-Nenner.
+
+### 3.4 Monorepo-Gate-Abgrenzung
+
+`make coverage-gate` bleibt bis zur Einführung weiterer Coverage-
+Scripts bewusst das API-Gate. Es darf nicht stillschweigend Node-
+Workspace-Coverage behaupten. Wenn `packages/player-sdk` oder
+`apps/dashboard` Coverage-Gates bekommen, müssen Root-Targets und CI
+explizit erweitert werden.
 
 ---
 
