@@ -312,12 +312,12 @@ die vor `0.1.0` blockierenden offenen Entscheidungen geklärt.
 
 DoD:
 
-- [x] Lastenheft Header: Version `1.1.3` → `1.1.4`.
-- [x] Lastenheft Header: Lizenzziel auf konkrete Lizenz **MIT** gesetzt; `LICENSE` ist bereits vorhanden.
-- [x] Lastenheft §16.2: OE-1 resolved — Projektlizenz MIT.
-- [x] Lastenheft §16.2: OE-6 resolved — CI-Zielplattform GitHub Actions `ubuntu-24.04`.
-- [x] Lastenheft §16.2: OE-7 resolved — trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`.
-- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.4` aktualisiert.
+- [x] Lastenheft Header: Version `1.1.3` → `1.1.4` (`a9f0c53`).
+- [x] Lastenheft Header: Lizenzziel auf konkrete Lizenz **MIT** gesetzt; `LICENSE` ist bereits vorhanden (`a9f0c53`).
+- [x] Lastenheft §16.2: OE-1 resolved — Projektlizenz MIT (`a9f0c53`).
+- [x] Lastenheft §16.2: OE-6 resolved — CI-Zielplattform GitHub Actions `ubuntu-24.04` (`a9f0c53`).
+- [x] Lastenheft §16.2: OE-7 resolved — trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md` (`a9f0c53`).
+- [x] Bezug-Pins (README, Architektur, Telemetry-Modell, Local-Development, Pläne `0.1.0`/`0.1.1`/`0.1.2`) auf `Lastenheft 1.1.4` aktualisiert (`a9f0c53`).
 
 ---
 
