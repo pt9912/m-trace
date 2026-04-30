@@ -1,6 +1,6 @@
 # Implementation Plan — `0.1.2` (Observability-Stack)
 
-> **Status**: 🟡 in Arbeit. Start nach `0.1.1`-Release erfolgt; Observability-Profil und RAK-9-Smoke sind implementiert.  
+> **Status**: ✅ implementiert. Observability-Profil, RAK-9 und RAK-10 sind umgesetzt und lokal verifiziert.  
 > **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.2`-Start, nicht zum heutigen Zeitpunkt)**:
 >
@@ -30,7 +30,7 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
 | 1 | Pflicht-Anteile (F-89..F-93, Mindestmetriken) — Code in `apps/api` plus Repo-weite Prometheus-Konfiguration unter `observability/prometheus/` | ✅ |
 | 2 | Soll-Anteile im `observability`-Compose-Profil (F-94/MVP-28 Grafana, MVP-29 OTel-Collector) | ✅ |
-| 3 | Release-Akzeptanzkriterien `0.1.2` | 🟡 |
+| 3 | Release-Akzeptanzkriterien `0.1.2` | ✅ |
 
 Tempo bleibt explizit Nicht-MVP (MVP-22).
 
