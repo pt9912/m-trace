@@ -30,8 +30,8 @@ Neue Lastenheft-Patches während `0.2.0` landen weiterhin zentral in `plan-0.1.0
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
 | 1 | SDK-Paketierung und Public API | ✅ |
 | 2 | Event-Schema-Versionierung und CI-Kompatibilitätscheck | ✅ |
-| 3 | Adapter-/Transport-Tests und Runtime-Grenzen | ⬜ |
-| 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ⬜ |
+| 3 | Adapter-/Transport-Tests und Runtime-Grenzen | ✅ |
+| 3a | Node-Coverage-Gates für Player-SDK; Dashboard-Entscheidung | ✅ |
 | 4 | OTel-Transport-Option, Performance-Budget und Browser-Matrix | ⬜ |
 | 5 | Demo-Integrationsdoku und Release-Akzeptanzkriterien `0.2.0` | ⬜ |
 | 6 | OE-3/Persistenz-Folge-ADR vorbereiten | ⬜ |
@@ -114,18 +114,18 @@ Ziel: hls.js-Adapter, HTTP-Transport sowie Batching/Sampling/Retry-Grenzen sind 
 
 DoD:
 
-- [ ] hls.js-Adapter-Tests decken Manifest-/Level-/Fragment-/Error-/Rebuffer-nahe Ereignisse ab.
-- [ ] hls.js-Adapter-Tests nutzen kontrollierte Test-Doubles oder eine reproduzierbare Browser-Testumgebung; reale Netzinstabilität ist kein Test-Orakel.
-- [ ] HTTP-Transport-Tests decken erfolgreiche Sends, 4xx/5xx, Timeout/Abort und Netzwerkfehler ab.
-- [ ] HTTP-Transport-Verhalten für `429 Too Many Requests` ist explizit festgelegt und getestet: `Retry-After` aus dem API-Kontrakt wird als Cooldown respektiert; vor Ablauf wird nicht erneut gesendet. Fehlt `Retry-After`, greift die dokumentierte Backoff-/Drop-Regel.
-- [ ] Retry-Mindestverhalten ist festgelegt und getestet: Netzwerkfehler, Timeout und `5xx` sind retrybar; `400`, `401`, `403` und andere nicht-transiente `4xx` werden nicht retried; `429` folgt der gesonderten `Retry-After`-Regel.
-- [ ] Retry-Grenzen sind dokumentiert und technisch erzwungen: maximale Versuche, Backoff-Regel mit Obergrenze, Abbruch-/Drop-Verhalten und Queue-Limit.
-- [ ] Batching-Grenze bleibt hart bei maximal 100 Events pro Request; größere Queues werden gesplittet.
-- [ ] Payload-Byte-Grenze aus dem API-Kontrakt ist technisch erzwungen: SDK-Batches bleiben unter 256 KB Request-Body; große Queues werden nach Event-Anzahl und Byte-Größe gesplittet oder dokumentiert gedroppt.
-- [ ] `413 Payload Too Large` ist getestet und wird nicht blind retried; Drop-/Fehlerverhalten ist dokumentiert.
-- [ ] Sampling-Semantik ist deterministisch testbar und dokumentiert: Sampling-Einheit (Event oder Session), Behandlung von `session_ended` und Zählweise von `sequence_number` bei verworfenen Events sind eindeutig festgelegt.
-- [ ] `destroy()`/Session-Ende-Verhalten bleibt getestet, inklusive Flush- und Drop-Fällen.
-- [ ] Root-Gates `make test` und `make lint` decken die neuen SDK-Tests ab.
+- [x] hls.js-Adapter-Tests decken Manifest-/Level-/Fragment-/Error-/Rebuffer-nahe Ereignisse ab (`f31fb71`, `197c058`).
+- [x] hls.js-Adapter-Tests nutzen kontrollierte Test-Doubles oder eine reproduzierbare Browser-Testumgebung; reale Netzinstabilität ist kein Test-Orakel (`f31fb71`).
+- [x] HTTP-Transport-Tests decken erfolgreiche Sends, 4xx/5xx, Timeout/Abort und Netzwerkfehler ab (`f31fb71`, `197c058`).
+- [x] HTTP-Transport-Verhalten für `429 Too Many Requests` ist explizit festgelegt und getestet: `Retry-After` aus dem API-Kontrakt wird als Cooldown respektiert; vor Ablauf wird nicht erneut gesendet. Fehlt `Retry-After`, greift die dokumentierte Backoff-/Drop-Regel (`f31fb71`, `197c058`).
+- [x] Retry-Mindestverhalten ist festgelegt und getestet: Netzwerkfehler, Timeout und `5xx` sind retrybar; `400`, `401`, `403` und andere nicht-transiente `4xx` werden nicht retried; `429` folgt der gesonderten `Retry-After`-Regel (`f31fb71`, `197c058`).
+- [x] Retry-Grenzen sind dokumentiert und technisch erzwungen: maximale Versuche, Backoff-Regel mit Obergrenze, Abbruch-/Drop-Verhalten und Queue-Limit (`f31fb71`).
+- [x] Batching-Grenze bleibt hart bei maximal 100 Events pro Request; größere Queues werden gesplittet (`f31fb71`).
+- [x] Payload-Byte-Grenze aus dem API-Kontrakt ist technisch erzwungen: SDK-Batches bleiben unter 256 KB Request-Body; große Queues werden nach Event-Anzahl und Byte-Größe gesplittet oder dokumentiert gedroppt (`f31fb71`).
+- [x] `413 Payload Too Large` ist getestet und wird nicht blind retried; Drop-/Fehlerverhalten ist dokumentiert (`f31fb71`, `197c058`).
+- [x] Sampling-Semantik ist deterministisch testbar und dokumentiert: Sampling-Einheit (Event oder Session), Behandlung von `session_ended` und Zählweise von `sequence_number` bei verworfenen Events sind eindeutig festgelegt (`f31fb71`).
+- [x] `destroy()`/Session-Ende-Verhalten bleibt getestet, inklusive Flush- und Drop-Fällen (`f31fb71`).
+- [x] Root-Gates `make test` und `make lint` decken die neuen SDK-Tests ab (`f31fb71`, `0a664a1`).
 
 ### 4a. Arbeitspaket 3a — Coverage-Konfiguration für Node-Workspaces
 
@@ -138,33 +138,33 @@ behandelt.
 
 DoD:
 
-- [ ] Coverage-Provider für Vitest ist im Workspace festgelegt und
+- [x] Coverage-Provider für Vitest ist im Workspace festgelegt und
   reproduzierbar gepinnt, z. B. `@vitest/coverage-v8` passend zur
-  Vitest-Version.
-- [ ] `packages/player-sdk/package.json` enthält ein Coverage-Script,
+  Vitest-Version (`f31fb71`, `f3294e1`).
+- [x] `packages/player-sdk/package.json` enthält ein Coverage-Script,
   z. B. `test:coverage`, das ohne Watch-Modus läuft und CI-taugliche
-  Artefakte erzeugt.
-- [ ] Player-SDK-Coverage-Scope ist auf produktiven Code unter
+  Artefakte erzeugt (`f31fb71`).
+- [x] Player-SDK-Coverage-Scope ist auf produktiven Code unter
   `packages/player-sdk/src/` begrenzt; `tests/`, `dist/` und
-  `scripts/` sind ausgeschlossen.
-- [ ] Player-SDK-Threshold ist verbindlich definiert und begründet.
+  `scripts/` sind ausgeschlossen (`f31fb71`).
+- [x] Player-SDK-Threshold ist verbindlich definiert und begründet.
   Der Startwert darf niedriger als das API-Ziel sein, muss aber eine
   Erhöhungsperspektive enthalten; Senkungen nach Einführung sind wie
-  beim API-Gate begründungspflichtig.
-- [ ] Root-Target-Strategie ist entschieden und umgesetzt: entweder
+  beim API-Gate begründungspflichtig (`197c058`).
+- [x] Root-Target-Strategie ist entschieden und umgesetzt: entweder
   `make coverage-gate` umfasst API plus Player-SDK, oder ein eigenes
   Node-Coverage-Target wird angelegt und in CI/Release-Gates explizit
-  genannt. Stillschweigende API-only-Semantik ist nicht zulässig.
-- [ ] `.github/workflows/build.yml` führt das neue Coverage-Gate aus
+  genannt. Stillschweigende API-only-Semantik ist nicht zulässig (`f31fb71`).
+- [x] `.github/workflows/build.yml` führt das neue Coverage-Gate aus
   oder dokumentiert bewusst, warum es bis zum Folge-Release lokal
-  bleibt.
-- [ ] `docs/quality.md`, `docs/local-development.md` und
+  bleibt (`f31fb71`).
+- [x] `docs/quality.md`, `docs/local-development.md` und
   `docs/releasing.md` beschreiben die tatsächlichen Coverage-Kommandos
-  und Artefakte für `packages/player-sdk`.
-- [ ] Für `apps/dashboard` ist eine Entscheidung dokumentiert:
+  und Artefakte für `packages/player-sdk` (`f31fb71`, `197c058`).
+- [x] Für `apps/dashboard` ist eine Entscheidung dokumentiert:
   entweder Unit-/Component-Test-Setup plus Coverage-Scope
   `apps/dashboard/src/` wird eingeführt, oder Dashboard-Coverage wird
-  mit Begründung und Folge-Release explizit deferred.
+  mit Begründung und Folge-Release explizit deferred (`f3294e1`, `0a664a1`).
 
 ---
 
