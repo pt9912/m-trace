@@ -4,6 +4,7 @@ export { createSessionId } from "./core/session";
 export { SessionMetrics } from "./core/session-metrics";
 export type { RebufferMeasurement, SessionMetricsSnapshot } from "./core/session-metrics";
 export { HttpTransport } from "./transport/http";
+export type { HttpTransportOptions } from "./transport/http";
 export { attachHlsJs } from "./adapters/hlsjs/adapter";
 export { EVENT_SCHEMA_VERSION, PLAYER_SDK_NAME, PLAYER_SDK_VERSION } from "./version";
 export type { HlsJsAdapter } from "./adapters/hlsjs/adapter";

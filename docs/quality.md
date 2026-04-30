@@ -80,10 +80,9 @@ Test-Output und Reports leben in den jeweiligen
 
 ## 3. Coverage
 
-Coverage ist pro Workspace-Bereich definiert. Ein hartes Coverage-Gate
-existiert aktuell nur für `apps/api`; `packages/player-sdk` und
-`apps/dashboard` haben eigene Test-/Check-Pfade, aber noch kein
-verbindliches Coverage-Threshold-Gate.
+Coverage ist pro Workspace-Bereich definiert. Harte Coverage-Gates
+existieren aktuell für `apps/api`, `packages/player-sdk` und
+`apps/dashboard`.
 
 ### 3.1 API (`apps/api`)
 
@@ -130,47 +129,63 @@ Lesen die Last-Line des `go tool cover -func`-Outputs und exitet
 
 ### 3.2 Player-SDK (`packages/player-sdk`)
 
-Das Player-SDK nutzt Vitest für die Unit-Tests:
+Das Player-SDK nutzt Vitest für Unit-Tests und `@vitest/coverage-v8`
+für das reproduzierbare Coverage-Gate:
 
 ```bash
 pnpm --filter @npm9912/player-sdk run test
+pnpm --filter @npm9912/player-sdk run test:coverage
 ```
 
-Der Coverage-Scope für ein späteres Gate ist das produktive SDK unter
+Der Coverage-Scope ist das produktive SDK unter
 `packages/player-sdk/src/`; Testcode unter `packages/player-sdk/tests/`,
 Build-Artefakte unter `packages/player-sdk/dist/` und Hilfsskripte
 unter `packages/player-sdk/scripts/` gehören nicht in den Nenner.
 
-Aktuell ist noch kein reproduzierbarer Coverage-Report oder Threshold
-im Package definiert. Eine Aktivierung muss mindestens ein
-Package-Script, das Coverage-Artefakte erzeugt, und einen verbindlichen
-Threshold dokumentieren; bis dahin zählt das SDK in CI nur über
-`pnpm run test`/`pnpm run lint`, nicht über `make coverage-gate`.
+Die Konfiguration steht in `packages/player-sdk/vitest.config.ts`.
+Artefakte landen unter `packages/player-sdk/coverage/`:
+
+| Artefakt | Form |
+|---|---|
+| `coverage-summary.json` | maschinenlesbare Summary |
+| `lcov.info` | LCOV-Profil |
+| `index.html` | HTML-Report |
+
+Der Start-Threshold ist bewusst niedriger als beim API-Gate, aber
+verbindlich: Statements 85 %, Lines 85 %, Functions 80 %, Branches 75 %.
+Begründung: der SDK-Scope enthält Adapter- und Transport-Fehlerpfade, die
+mit Tranche 3 erstmals systematisch abgesichert werden; Ziel ist eine
+schrittweise Anhebung Richtung 90 %+, sobald weitere Browser-/Transport-
+Varianten hinzukommen. Senkungen nach Einführung sind begründungspflichtig.
 
 ### 3.3 Dashboard (`apps/dashboard`)
 
 Das Dashboard ist eine SvelteKit-App. Der aktuelle Qualitätspfad ist
-Build plus Svelte-Type-Check:
+Build, Svelte-Type-Check, Vitest-jsdom-Tests und Coverage:
 
 ```bash
-pnpm --filter @m-trace/dashboard run build
-pnpm --filter @m-trace/dashboard run check
+pnpm --filter @npm9912/m-trace-dashboard run build
+pnpm --filter @npm9912/m-trace-dashboard run check
+pnpm --filter @npm9912/m-trace-dashboard run test
+pnpm --filter @npm9912/m-trace-dashboard run test:coverage
 ```
 
-Für `apps/dashboard` ist derzeit kein Unit-Test- oder Coverage-Script
-im Package definiert. Daher gibt es auch kein Dashboard-Coverage-Gate.
-Sobald UI-Unit-Tests eingeführt werden, muss der Coverage-Scope auf
-`apps/dashboard/src/` beschränkt werden; generierte SvelteKit-Dateien,
-Build-Artefakte und statische Framework-Ausgabe gehören nicht in den
-Coverage-Nenner.
+Die Konfiguration steht in `apps/dashboard/vite.config.ts`. Der
+Coverage-Scope ist `apps/dashboard/src/**/*.{ts,svelte}`; Testcode,
+generierte SvelteKit-Dateien, Build-Artefakte und statische
+Framework-Ausgabe gehören nicht in den Nenner.
+
+Der Start-Threshold ist verbindlich: Statements 65 %, Lines 60 %,
+Functions 70 %, Branches 35 %. Begründung: Dashboard-Tests starten in
+`0.2.0` mit API-Unit-Tests und Component-Smokes für die wichtigsten
+Routen. Demo-Player und Session-Detail bekommen gezielte Vertiefung in
+Folgearbeiten; Senkungen nach Einführung sind begründungspflichtig.
 
 ### 3.4 Monorepo-Gate-Abgrenzung
 
-`make coverage-gate` bleibt bis zur Einführung weiterer Coverage-
-Scripts bewusst das API-Gate. Es darf nicht stillschweigend Node-
-Workspace-Coverage behaupten. Wenn `packages/player-sdk` oder
-`apps/dashboard` Coverage-Gates bekommen, müssen Root-Targets und CI
-explizit erweitert werden.
+`make coverage-gate` umfasst ab `0.2.0` das API-Gate, das
+Player-SDK-Gate und das Dashboard-Gate. Die CI ruft weiterhin das
+Root-Target auf und bekommt damit alle Coverage-Pfade.
 
 ---
 

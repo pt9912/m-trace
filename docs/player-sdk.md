@@ -33,10 +33,10 @@ const hls = new Hls();
 hls.loadSource("http://localhost:8888/teststream/index.m3u8");
 hls.attachMedia(videoElement);
 
-const adapter = attachHlsJs(hls, tracker);
+const adapter = attachHlsJs(videoElement, hls, tracker);
 
 window.addEventListener("pagehide", () => {
-  adapter.detach();
+  adapter.destroy();
   void tracker.destroy();
 });
 ```
@@ -81,20 +81,37 @@ Tiefe Imports aus `src/` oder `dist/` sind keine stabile API.
 | `batchSize` | nein | Events pro Request, hart auf 100 begrenzt. |
 | `flushIntervalMs` | nein | Automatischer Flush-Timer; `0` deaktiviert ihn. |
 | `sampleRate` | nein | Sampling-Rate zwischen `0` und `1`. |
+| `maxQueueEvents` | nein | Lokales Queue-Limit für normale Playback-Events; Standard ist 1000. |
 | `transport` | nein | Eigener Transport mit `send(batch)`. |
 
 ## Lifecycle
 
 `track()` reiht Events in die lokale Queue ein. `flush()` sendet die Queue
-sofort. `destroy()` beendet die Session, erzeugt genau ein `session_ended`
-Event, stoppt Timer und flushed die Queue.
+sofort und splittet Requests nach den API-Grenzen: maximal 100 Events und
+maximal 256 KiB Request-Body. Einzelne Events, die allein nicht in einen
+API-Request passen, werden beim Flush verworfen statt als sicher abgelehnter
+Payload gesendet.
+
+`sampleRate` wirkt eventbasiert auf normale Playback-Events. Gesampelte Events
+verbrauchen keine `sequence_number`. `session_ended` umgeht Sampling, damit
+`destroy()` die Session verlässlich schließen kann.
+
+`destroy()` beendet die Session, erzeugt genau ein `session_ended` Event,
+stoppt Timer und flushed die Queue.
 
 ## hls.js-Adapter
 
-`attachHlsJs(hls, tracker)` verbindet hls.js-Events mit dem Tracker. Der
-Adapter gibt ein Objekt mit `detach()` zurück. `detach()` entfernt Listener,
-zerstört aber nicht den Tracker; der aufrufende Code bleibt für
+`attachHlsJs(video, hls, tracker)` verbindet Video- und hls.js-Events mit dem
+Tracker. Der Adapter gibt ein Objekt mit `destroy()` zurück. `destroy()`
+entfernt Listener, zerstört aber nicht den Tracker; der aufrufende Code bleibt für
 `tracker.destroy()` verantwortlich.
+
+## Transport-Verhalten
+
+`HttpTransport` wiederholt Netzwerkfehler, Timeouts, `5xx` und `429` begrenzt
+auf drei Versuche. `429` mit `Retry-After` wird als Cooldown respektiert; ohne
+Header gilt der normale Backoff. Nicht-transiente `4xx` und `413 Payload Too
+Large` werden nicht erneut gesendet.
 
 ## Wire-Format
 

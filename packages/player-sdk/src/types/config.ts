@@ -12,5 +12,6 @@ export interface PlayerSDKConfig {
   batchSize?: number;
   flushIntervalMs?: number;
   sampleRate?: number;
+  maxQueueEvents?: number;
   transport?: Transport;
 }

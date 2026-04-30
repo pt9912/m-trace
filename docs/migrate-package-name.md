@@ -1,4 +1,4 @@
-# Migration Plan — Player-SDK-Paketname `@m-trace/player-sdk` → `@npm9912/player-sdk`
+# Migration Plan — npm-Paketnamen `@m-trace/*` → `@npm9912/*`
 
 > **Status**: ⬜ geplant, durchzuführen vor dem `0.2.0`-Release.
 > **Bezug**: [`plan-0.2.0.md`](./plan-0.2.0.md) Tranche 1 (RAK-11, publizierbares SDK); [`lastenheft.md`](./lastenheft.md) §16.2 (OE-8).
@@ -6,7 +6,8 @@
 
 ## 1. Entscheidung
 
-- Neuer Paketname **ab `0.2.0`**: `@npm9912/player-sdk`.
+- Neuer Player-SDK-Paketname **ab `0.2.0`**: `@npm9912/player-sdk`.
+- Neuer Dashboard-Workspace-Paketname **ab `0.2.0`**: `@npm9912/m-trace-dashboard`.
 - Historische Artefakte mit explizitem `0.1.x`-Bezug bleiben **unverändert** (Wire-Fixtures, Smoke-Skripte, abgeschlossene Plan-Dokumente, CHANGELOG-Einträge in `0.1.x`-Sektionen). Begründung: sie dokumentieren den Lieferstand `0.1.0` / `0.1.1` und müssen reproduzierbar bleiben.
 - Lebende Spezifikations- und Code-Stellen werden auf den neuen Namen umgestellt.
 - Globaler IIFE-Name `MTracePlayerSDK` (tsup `--global-name`) bleibt erhalten — er ist orthogonal zum npm-Paketnamen und kein Branding-Bruch.
@@ -23,8 +24,8 @@
 | `packages/player-sdk/tests/tracker.test.ts` | 46, 54 | Test-Erwartung |
 | `packages/player-sdk/scripts/pack-smoke.mjs` | 64 | `require()`-Pfad im CJS-Smoke |
 | `packages/player-sdk/README.md` | 1, 9, 19, 62, 113 | Paket-Doku |
-| `apps/dashboard/package.json` | 10, 11, 14 | Workspace-Dependency + Build-Hooks |
-| `apps/dashboard/Dockerfile` | 16 | Build-Filter |
+| `apps/dashboard/package.json` | 2, 10, 11, 14 | Paketname, Workspace-Dependency + Build-Hooks |
+| `apps/dashboard/Dockerfile` | 11, 16 | Build-Filter |
 | `apps/dashboard/src/routes/demo/+page.svelte` | 5 | Import |
 | `apps/api/adapters/driving/http/handler_test.go` | 39 | Test-Fixture |
 | `apps/api/hexagon/application/register_playback_event_batch_test.go` | 162 | Test-Fixture |
@@ -56,7 +57,7 @@
 
 1. **Lastenheft + Cross-Cutting-Plan**: OE-8 in `docs/lastenheft.md:1756` neu fassen; in `docs/plan-0.1.0.md` Tranche 0c einen neuen §4a-Eintrag ergänzen, der die Neuentscheidung begründet (Konvention aus `plan-0.2.0.md` §0).
 2. **SDK-Paket**: `package.json` (`name`, `pack:smoke`-Pfad), `src/core/tracker.ts`, Tests, `scripts/pack-smoke.mjs`, `README.md`.
-3. **Dashboard-Konsument**: `apps/dashboard/package.json`, `Dockerfile`, `routes/demo/+page.svelte`.
+3. **Dashboard-Konsument und Workspace-Paket**: `apps/dashboard/package.json`, `Dockerfile`, `routes/demo/+page.svelte`.
 4. **Backend-Test-Fixtures**: beide Go-Tests.
 5. **Lebende Spec-Doku**: `telemetry-model.md`, `lastenheft.md` (Beispiel-Payload Z. 1043), `player-sdk.md`, `local-development.md`, `README.md`, `plan-0.2.0.md`.
 6. **CHANGELOG**: Eintrag in `0.2.0`-Sektion ergänzen — siehe §5.
@@ -72,7 +73,7 @@ Nach der Umbenennung müssen folgende Befehle grün laufen:
 - `pnpm --filter @npm9912/player-sdk run lint` (TypeScript + Boundaries + Public-API-Snapshot)
 - `pnpm --filter @npm9912/player-sdk run pack:smoke` — erzeugt `.tmp/player-sdk-pack/npm9912-player-sdk-0.2.0.tgz` und der CJS-Require-Smoke importiert das umbenannte Paket
 - `pnpm --filter @npm9912/player-sdk run publish:dry-run` — npm akzeptiert den neuen Scope-Namen formal
-- `pnpm --filter @m-trace/dashboard run lint` (Workspace-Dependency-Auflösung)
+- `pnpm --filter @npm9912/m-trace-dashboard run lint` (Workspace-Dependency-Auflösung)
 - `make test`, `make lint`, `make build`, `make browser-e2e` an Repo-Root
 - Such-Gate: `rg '@m-trace/player-sdk'` darf **nur noch** in den unter §2.2 gelisteten historischen Dateien Treffer liefern.
 

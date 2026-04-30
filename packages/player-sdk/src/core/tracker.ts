@@ -6,6 +6,8 @@ import { createSessionId } from "./session";
 
 const sdk = { name: PLAYER_SDK_NAME, version: PLAYER_SDK_VERSION };
 const maxBatchEvents = 100;
+const maxBatchBodyBytes = 256 * 1024;
+const defaultMaxQueueEvents = 1000;
 
 export interface PlayerTracker {
   readonly sessionId: string;
@@ -20,6 +22,7 @@ export class MTracePlayerTracker implements PlayerTracker {
   private readonly projectId: string;
   private readonly sampleRate: number;
   private readonly batchSize: number;
+  private readonly maxQueueEvents: number;
   private readonly transport: Transport;
   private readonly queue: PlaybackEvent[] = [];
   private sequence = 0;
@@ -41,6 +44,7 @@ export class MTracePlayerTracker implements PlayerTracker {
     this.sessionId = config.sessionId ?? createSessionId();
     this.sampleRate = clampSampleRate(config.sampleRate ?? 1);
     this.batchSize = Math.min(maxBatchEvents, Math.max(1, Math.floor(config.batchSize ?? 10)));
+    this.maxQueueEvents = Math.max(1, Math.floor(config.maxQueueEvents ?? defaultMaxQueueEvents));
     this.transport = config.transport ?? new HttpTransport(config.endpoint, config.token);
 
     const flushIntervalMs = Math.max(0, Math.floor(config.flushIntervalMs ?? 5000));
@@ -55,13 +59,13 @@ export class MTracePlayerTracker implements PlayerTracker {
     if (this.destroyed) {
       return;
     }
-    if (Math.random() > this.sampleRate) {
+    if (this.sampleRate <= 0 || Math.random() >= this.sampleRate) {
       return;
     }
-    this.enqueue(event, true);
+    this.enqueue(event, true, true);
   }
 
-  private enqueue(event: EventDraft, autoFlush: boolean): void {
+  private enqueue(event: EventDraft, autoFlush: boolean, enforceQueueLimit: boolean): void {
     this.sequence += 1;
     const playbackEvent: PlaybackEvent = {
       event_name: event.eventName,
@@ -76,6 +80,11 @@ export class MTracePlayerTracker implements PlayerTracker {
     }
 
     this.queue.push(playbackEvent);
+    if (enforceQueueLimit) {
+      while (this.queue.length > this.maxQueueEvents) {
+        this.queue.shift();
+      }
+    }
 
     if (autoFlush && this.queue.length >= this.batchSize) {
       void this.flush();
@@ -88,7 +97,10 @@ export class MTracePlayerTracker implements PlayerTracker {
     }
 
     while (this.queue.length > 0) {
-      const events = this.queue.splice(0, maxBatchEvents);
+      const events = this.drainNextBatch();
+      if (events.length === 0) {
+        return;
+      }
       await this.transport.send({
         schema_version: EVENT_SCHEMA_VERSION,
         events
@@ -105,8 +117,31 @@ export class MTracePlayerTracker implements PlayerTracker {
       clearInterval(this.flushTimer);
       this.flushTimer = undefined;
     }
-    this.enqueue({ eventName: "session_ended" }, false);
+    this.enqueue({ eventName: "session_ended" }, false, false);
     await this.flush();
+  }
+
+  private drainNextBatch(): PlaybackEvent[] {
+    const events: PlaybackEvent[] = [];
+
+    while (this.queue.length > 0 && events.length < maxBatchEvents) {
+      const event = this.queue.shift();
+      if (event === undefined) {
+        break;
+      }
+
+      if (batchSizeBytes([...events, event]) <= maxBatchBodyBytes) {
+        events.push(event);
+        continue;
+      }
+
+      if (events.length > 0) {
+        this.queue.unshift(event);
+        break;
+      }
+    }
+
+    return events;
   }
 }
 
@@ -119,4 +154,13 @@ function clampSampleRate(rate: number): number {
     return 1;
   }
   return Math.min(1, Math.max(0, rate));
+}
+
+function batchSizeBytes(events: PlaybackEvent[]): number {
+  return new TextEncoder().encode(
+    JSON.stringify({
+      schema_version: EVENT_SCHEMA_VERSION,
+      events
+    })
+  ).length;
 }

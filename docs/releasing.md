@@ -48,6 +48,7 @@ make build
 Erfolgskriterien:
 
 - alle fünf Targets exit code 0.
+- `make coverage-gate` umfasst API-, Player-SDK- und Dashboard-Coverage.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus
   `docs/spike/backend-api-contract.md` §11 ab.

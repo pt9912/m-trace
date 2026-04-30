@@ -36,6 +36,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs,iife --global-name MTracePlayerSDK --dts --clean",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit && node scripts/check-boundaries.mjs && node scripts/check-public-api.mjs",
     "pack:smoke": "pnpm run build && pnpm pack --pack-destination ../../.tmp/player-sdk-pack && node scripts/pack-smoke.mjs ../../.tmp/player-sdk-pack/npm9912-player-sdk-0.2.0.tgz",
     "publish:dry-run": "npm_config_cache=$PWD/../../.tmp/npm-cache pnpm publish --dry-run --no-git-checks"
@@ -44,6 +45,7 @@
     "hls.js": "^1.6.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.5",
     "hls.js": "1.6.16",
     "tsup": "8.5.1",
     "typescript": "6.0.3",

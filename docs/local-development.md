@@ -200,15 +200,18 @@ make deps           # nur dependencies auflösen (Cache-Layer)
 make clean          # entfernt alle apps/api-spike:*-Images
 ```
 
-Coverage-Tooling (`go test -cover`-Threshold) ist über `make coverage-gate` verfügbar und läuft im `0.1.0`-CI-Workflow.
+Coverage-Tooling ist über `make coverage-gate` verfügbar. Das Root-Target
+prüft die API-Coverage per Docker sowie Player-SDK- und Dashboard-Coverage
+per Vitest.
 
 ### 4.2 Player-SDK (`packages/player-sdk`, ab `0.1.1`)
 
 ```bash
 # vom Repo-Root, nicht aus packages/player-sdk
-pnpm -r --filter player-sdk run build
-pnpm -r --filter player-sdk run test
-pnpm -r --filter player-sdk run lint
+pnpm --filter @npm9912/player-sdk run build
+pnpm --filter @npm9912/player-sdk run test
+pnpm --filter @npm9912/player-sdk run test:coverage
+pnpm --filter @npm9912/player-sdk run lint
 ```
 
 Alternative über Top-Level-Scripts (Mono-Repo-Bootstrap aus `plan-0.1.1.md` §2):
@@ -222,10 +225,11 @@ pnpm run lint
 ### 4.3 Dashboard (`apps/dashboard`, ab `0.1.1`)
 
 ```bash
-pnpm -r --filter dashboard run dev      # Vite-Dev-Mode mit /api/*-Proxy auf localhost:8080
-pnpm -r --filter dashboard run build    # Production-Build für Compose-Service
-pnpm -r --filter dashboard run check    # SvelteKit-Type-Check
-pnpm -r --filter dashboard run test
+pnpm --filter @npm9912/m-trace-dashboard run dev      # Vite-Dev-Mode mit /api/*-Proxy auf localhost:8080
+pnpm --filter @npm9912/m-trace-dashboard run build    # Production-Build für Compose-Service
+pnpm --filter @npm9912/m-trace-dashboard run check    # SvelteKit-Type-Check
+pnpm --filter @npm9912/m-trace-dashboard run test
+pnpm --filter @npm9912/m-trace-dashboard run test:coverage
 ```
 
 Im Vite-Dev-Mode greift der SvelteKit-Proxy `/api/*` → `http://localhost:8080`, damit Browser-CORS für GET-Routen entfällt (`plan-0.1.1.md` §3 API-Origin-Strategie). Im Compose-Production-Build laufen Dashboard und API über getrennte Origins; CORS-Headers aus `plan-0.1.0.md` §5.1 greifen.

@@ -131,10 +131,10 @@ DoD:
 
 Bezug: `docs/quality.md` §3; RAK-14, RAK-15, RAK-17.
 
-Ziel: Die in `0.2.0` stabilisierten SDK-Tests bekommen ein
-reproduzierbares Coverage-Gate. Dashboard-Coverage wird nicht
-implizit behauptet, sondern als eigene Entscheidung behandelt, weil
-`apps/dashboard` aktuell kein Unit-Test-Setup besitzt.
+Ziel: Die in `0.2.0` stabilisierten Node-Workspaces bekommen
+reproduzierbare Coverage-Gates. Dashboard-Coverage wird nicht
+implizit behauptet, sondern als eigener Scope unter `apps/dashboard/src/`
+behandelt.
 
 DoD:
 

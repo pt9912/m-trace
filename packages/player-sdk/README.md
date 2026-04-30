@@ -36,10 +36,10 @@ const hls = new Hls();
 hls.loadSource("http://localhost:8888/teststream/index.m3u8");
 hls.attachMedia(video);
 
-const adapter = attachHlsJs(hls, tracker);
+const adapter = attachHlsJs(video, hls, tracker);
 
 window.addEventListener("pagehide", () => {
-  adapter.detach();
+  adapter.destroy();
   void tracker.destroy();
 });
 ```
@@ -49,7 +49,7 @@ window.addEventListener("pagehide", () => {
 - `createTracker(config)` creates a `PlayerTracker`.
 - `MTracePlayerTracker` is the concrete tracker implementation.
 - `HttpTransport` sends batches to the m-trace API.
-- `attachHlsJs(hls, tracker)` wires hls.js events into a tracker.
+- `attachHlsJs(video, hls, tracker)` wires video and hls.js events into a tracker.
 - `createSessionId()` creates a browser-safe random session id.
 - `SessionMetrics` tracks startup and rebuffer measurements.
 
@@ -82,6 +82,7 @@ remaining queue. Calling `destroy()` more than once is safe.
 | `batchSize` | no | Events per request. Clamped to the API limit of 100. |
 | `flushIntervalMs` | no | Periodic flush interval; `0` disables the timer. |
 | `sampleRate` | no | `0..1` event sampling rate. |
+| `maxQueueEvents` | no | Local queue cap before normal playback events are dropped. Defaults to 1000. |
 | `transport` | no | Custom transport implementing `send(batch)`. |
 
 ## Events
@@ -104,6 +105,14 @@ Each batch uses `schema_version: "1.0"` and includes SDK metadata on every
 event. The full wire contract is described in
 [`docs/telemetry-model.md`](../../docs/telemetry-model.md).
 
+The tracker keeps batches within the API limits of 100 events and 256 KiB
+request body size. If a single event cannot fit into one request body, it is
+dropped during `flush()` instead of sending a payload the API must reject.
+
+Sampling is event-based for normal playback events. Sampled-out events do not
+consume `sequence_number`; `session_ended` bypasses sampling so `destroy()` can
+close the session reliably.
+
 ## Browser Build
 
 The package ships ESM, CJS and IIFE builds. The stable browser entry is the
@@ -122,6 +131,9 @@ The package ships ESM, CJS and IIFE builds. The stable browser entry is the
 
 ## Error Behavior
 
-`HttpTransport` rejects when the ingest API returns a non-2xx response or when
-`fetch` fails. Applications can provide a custom `transport` to integrate
-different retry or buffering behavior.
+`HttpTransport` retries network errors, request timeouts, `5xx` responses and
+`429` responses up to three attempts by default. `429` respects `Retry-After`
+as a cooldown before the next send; without that header it uses exponential
+backoff. Non-transient `4xx` responses, including `413`, are not retried.
+Applications can provide a custom `transport` to integrate different buffering
+behavior.
