@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: 🟡 in Arbeit. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
-> **Bezug**: [Lastenheft `1.1.5`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
 > - Tranche 0 (Pre-MVP-Vorbereitung): `[x]` — bereits heute erfüllt.
@@ -56,7 +56,7 @@ DoD — **weiche Voraussetzungen, Dokumentations-/Aufräumarbeiten** (offen erla
 - [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.1`** — OTel-Modell §2, Cardinality §3, Time-Stempel §5, Schema-Versionierung §6: nur indirekt für SDK-Implementierung relevant (`e532e1e`, `51b3812`).
 - [x] `plan-0.1.0.md` §3.6 local-development.md: Developer-Guide; `0.1.1`-Implementierung kann mit dem bestehenden `apps/api`-Setup arbeiten (`2eede43`, `504e4c9`, `35eba88`).
 - [x] `plan-0.1.0.md` §4.4 Code-Step-Numbering: Code-Kommentar-Cleanup ohne `0.1.1`-Auswirkung (`dbdcb67`).
-- [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items sind bis Patch `1.1.5` geschlossen; keine offenen blockierenden Patch-Items zum `0.1.1`-Start.
+- [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items sind bis Patch `1.1.6` geschlossen; keine offenen blockierenden Patch-Items zum `0.1.1`-Start.
     - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.1`-Implementierung direkt betrifft), **oder**
     - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag.
 - [x] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar (`35eba88`).
@@ -99,27 +99,27 @@ Bezug: MVP-3, MVP-4, F-23..F-28, F-35..F-40; RAK-2, RAK-7; OE-4 (Frontend-Stylin
 
 DoD:
 
-- [ ] SvelteKit-App-Skelett unter `apps/dashboard/` (TypeScript, pnpm).
-- [ ] Startseite mit Layout.
-- [ ] **F-23 + MVP-12** Dashboard-Route `/sessions` zeigt einfache Session-Liste, ruft `GET /api/stream-sessions` auf.
-- [ ] **MVP-13 + MVP-14** Dashboard-Route `/sessions/:id` zeigt einfache Event-Anzeige plus eingebaute Session-/Trace-Ansicht (Timeline der zugehörigen Events), ruft `GET /api/stream-sessions/{id}` auf.
-- [ ] **F-24** Anzeige aktueller Playback-Metriken — entweder im `/sessions/:id`-Detail oder als globale Übersicht (z. B. Zähler-Card auf der Startseite).
-- [ ] **F-25** Anzeige von Fehlern und Warnungen — entweder dedizierte Route `/errors` oder als Filter über die Event-Liste.
-- [ ] **F-26** Anzeige einfacher Stream-Health-Zustände — Active/Stalled/Ended pro Session sichtbar (Backend-Lifecycle aus `0.1.0` §5.1).
-- [ ] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; Telemetry-Status zunächst minimal („wired"/„nicht konfiguriert"; vollständig wenn `0.1.2` Observability-Profil läuft).
-- [ ] **F-28 + F-36** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3).
-- [ ] **F-35** Live-Übersicht — Startseite zeigt aggregierten Live-Stand (laufende Sessions, Event-Rate, Fehlerzähler) als Landing.
-- [ ] **F-37** Playback-Events anzeigen — eine dedizierte Sicht (Route oder Tab) listet eingehende Events mit Filter nach Session und Event-Typ.
-- [ ] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt.
-- [ ] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected`.
-- [ ] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht.
-- [ ] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet.
-- [ ] API-Client mit typisierten Anfragen.
-- [ ] **API-Origin-Strategie** für beide Endpoint-Klassen aus `plan-0.1.0.md` §5.1:
+- [x] SvelteKit-App-Skelett unter `apps/dashboard/` (TypeScript, pnpm) (`DASHBOARD_COMMIT`).
+- [x] Startseite mit Layout (`DASHBOARD_COMMIT`).
+- [x] **F-23 + MVP-12** Dashboard-Route `/sessions` zeigt einfache Session-Liste, ruft `GET /api/stream-sessions` auf (`DASHBOARD_COMMIT`).
+- [x] **MVP-13 + MVP-14** Dashboard-Route `/sessions/:id` zeigt einfache Event-Anzeige plus eingebaute Session-/Trace-Ansicht (Timeline der zugehörigen Events), ruft `GET /api/stream-sessions/{id}` auf (`DASHBOARD_COMMIT`).
+- [x] **F-24** Anzeige aktueller Playback-Metriken — entweder im `/sessions/:id`-Detail oder als globale Übersicht (z. B. Zähler-Card auf der Startseite) (`DASHBOARD_COMMIT`).
+- [x] **F-25** Anzeige von Fehlern und Warnungen — entweder dedizierte Route `/errors` oder als Filter über die Event-Liste (`DASHBOARD_COMMIT`).
+- [x] **F-26** Anzeige einfacher Stream-Health-Zustände — Active/Stalled/Ended pro Session sichtbar (Backend-Lifecycle aus `0.1.0` §5.1) (`DASHBOARD_COMMIT`).
+- [x] **F-27** Anzeige von Backend- und Telemetrie-Status — Health-Indicator basierend auf `GET /api/health`; Telemetry-Status zunächst minimal („wired"/„nicht konfiguriert"; vollständig wenn `0.1.2` Observability-Profil läuft) (`DASHBOARD_COMMIT`).
+- [x] **F-28 + F-36** Test-Player-Integration: Dashboard-Route `/demo` mit hls.js + Player-SDK-Referenzintegration. Pfad in der App: `apps/dashboard/src/routes/demo/` (SvelteKit-Konvention, Lastenheft §7.5.3) (`DASHBOARD_COMMIT`).
+- [x] **F-35** Live-Übersicht — Startseite zeigt aggregierten Live-Stand (laufende Sessions, Event-Rate, Fehlerzähler) als Landing (`DASHBOARD_COMMIT`).
+- [x] **F-37** Playback-Events anzeigen — eine dedizierte Sicht (Route oder Tab) listet eingehende Events mit Filter nach Session und Event-Typ (`DASHBOARD_COMMIT`).
+- [x] **F-38** Stream-Sessions-Übersicht — bereits durch F-23/MVP-12 oben abgedeckt (`DASHBOARD_COMMIT`).
+- [x] **F-39** API-Status-Anzeige — bereits durch F-27 oben abgedeckt; F-39 verlangt explizite Sichtbarkeit, also mindestens ein UI-Element mit `connected/disconnected` (`DASHBOARD_COMMIT`).
+- [x] **System-Status-Ansicht** (Lastenheft §7.4 Mindestansichten Z. 387): dedizierte Route `/status` (oder klar abgegrenzter Bereich) mit Status-Indicator-Block für (a) API (`/api/health`), (b) Media-Server (MediaMTX-HLS-Endpoint), (c) Observability-Komponenten (Prometheus, Grafana, OTel-Collector — bei deaktiviertem observability-Profil als „inaktiv" gekennzeichnet). Konsolidiert F-27 und F-39 zu einer prüfbaren Ansicht (`DASHBOARD_COMMIT`).
+- [x] **F-40** Footer- oder Navigations-Links zu Grafana, Prometheus und MediaMTX-API/Status. Ziele werden aus den Compose-Service-URLs abgeleitet: Grafana `http://localhost:3000`, Prometheus `http://localhost:9090`, MediaMTX-API `http://localhost:9997` (HTTP-API/Status; MediaMTX hat keine native Web-UI, der HLS-Endpoint auf Port `8888` ist Stream-Auslieferung, kein Konsolen-Ersatz). Bei deaktiviertem observability-Profil bleiben die Grafana-/Prometheus-Links als „nicht verfügbar" gekennzeichnet (`DASHBOARD_COMMIT`).
+- [x] API-Client mit typisierten Anfragen (`DASHBOARD_COMMIT`).
+- [x] **API-Origin-Strategie** für beide Endpoint-Klassen aus `plan-0.1.0.md` §5.1 (`DASHBOARD_COMMIT`):
     - **GET-Routen** (Dashboard-API-Client): im **Vite-Dev-Mode** SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS entfällt; im **Compose-Production-Build** über getrennten Origin mit den `0.1.0`-CORS-Headers für den Dashboard-Lese-Pfad.
     - **POST `/api/playback-events`** (Player-SDK auf der `/demo`-Route): immer Cross-Origin gegen `apps/api`, weil das SDK projektunabhängig konfigurierbar sein soll. Nutzt die `0.1.0`-CORS-Headers für den Player-SDK-Pfad inklusive Variante-B-Origin-Validierung (Preflight gegen globale Allowed-Origins-Union, POST-Validierung Origin↔`project_id`). Vite-Dev-Proxy ist hier **kein** Ersatz, weil das SDK unabhängig vom Dashboard ausgeliefert werden können muss; im Dev-Mode greift dasselbe CORS-Setup.
-- [ ] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `docs/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`).
-- [ ] Frontend-Styling: OE-4 entscheiden (eigenes CSS / Tailwind / UI-Library).
+- [x] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `docs/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`) (`35eba88`, `bae4a2a`).
+- [x] Frontend-Styling: OE-4 entscheiden — eigenes CSS ohne Tailwind/UI-Library (`DASHBOARD_COMMIT`).
 
 ---
 

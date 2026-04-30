@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.5<br>
+**Version:** 1.1.6<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
@@ -1749,7 +1749,7 @@ Große Plattform-Betreiber sollen erst später adressiert werden.
 | OE-1 | resolved | Projektlizenz: **MIT** (siehe `LICENSE`) |
 | OE-2 | resolved | Backend-Technologie final: **Go** (siehe `docs/adr/0001-backend-stack.md`) |
 | OE-3 | offen | Datenhaltung im MVP: rein In-Memory oder SQLite/PostgreSQL |
-| OE-4 | offen | Frontend-Styling: eigenes CSS, Tailwind oder UI-Library |
+| OE-4 | resolved | Frontend-Styling im MVP: **eigenes CSS ohne Tailwind/UI-Library** |
 | OE-5 | offen | Live-Updates: Polling, WebSocket oder Server-Sent Events |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
 | OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`** |
