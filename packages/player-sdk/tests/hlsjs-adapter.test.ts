@@ -101,6 +101,36 @@ describe("attachHlsJs", () => {
     });
   });
 
+  it("does not start duplicate rebuffer spans", () => {
+    const hls = new FakeHls();
+    const video = new FakeVideo();
+    const tracker = new RecordingTracker();
+
+    attachHlsJs(video as unknown as HTMLVideoElement, hls as never, tracker);
+
+    video.emit("waiting");
+    video.emit("waiting");
+    video.emit("playing");
+
+    expect(tracker.events.map((event) => event.eventName)).toEqual(["rebuffer_started", "rebuffer_ended"]);
+  });
+
+  it("maps startup from the first playing event", () => {
+    const hls = new FakeHls();
+    const video = new FakeVideo();
+    const tracker = new RecordingTracker();
+
+    attachHlsJs(video as unknown as HTMLVideoElement, hls as never, tracker);
+
+    video.emit("playing");
+    video.emit("playing");
+
+    expect(tracker.events.map((event) => event.eventName)).toEqual([
+      "playback_started",
+      "startup_time_measured"
+    ]);
+  });
+
   it("removes all listeners on destroy", () => {
     const hls = new FakeHls();
     const video = new FakeVideo();

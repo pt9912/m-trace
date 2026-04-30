@@ -151,12 +151,9 @@ Artefakte landen unter `packages/player-sdk/coverage/`:
 | `lcov.info` | LCOV-Profil |
 | `index.html` | HTML-Report |
 
-Der Start-Threshold ist bewusst niedriger als beim API-Gate, aber
-verbindlich: Statements 85 %, Lines 85 %, Functions 80 %, Branches 75 %.
-Begründung: der SDK-Scope enthält Adapter- und Transport-Fehlerpfade, die
-mit Tranche 3 erstmals systematisch abgesichert werden; Ziel ist eine
-schrittweise Anhebung Richtung 90 %+, sobald weitere Browser-/Transport-
-Varianten hinzukommen. Senkungen nach Einführung sind begründungspflichtig.
+Der Threshold ist verbindlich: Statements 90 %, Lines 90 %, Functions
+90 %, Branches 90 %. Senkungen nach Einführung sind
+begründungspflichtig.
 
 ### 3.3 Dashboard (`apps/dashboard`)
 
