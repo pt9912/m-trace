@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.1.0` — Backend Core + Compose-Lab, Lastenheft `1.1.6` verbindlich.
+> Status: `0.1.1-dev` — Player-SDK + Dashboard, Lastenheft `1.1.6` verbindlich.
 
 ---
 
@@ -332,7 +332,7 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.1.0`: Lastenheft `1.1.6` verbindlich, Backend Core und Compose-Lab auf `main` integriert.
+Das Projekt steht bei `0.1.1-dev`: Lastenheft `1.1.6` verbindlich, Player-SDK und Dashboard sind auf `main` integriert.
 
 Leitende Dokumente:
 

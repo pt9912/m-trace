@@ -85,8 +85,8 @@ weil dort kein ID-System existiert. Granularer Lieferstand pro Schritt
 | 5   | ✅      | `docs/architecture.md` schreiben                                                                                      | Vor `0.1.0`-DoD                                                 | AK-3, AK-10                                               |
 | 6   | ✅      | `docs/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup)                | Vor `0.1.0`-DoD                                                 | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 |
 | 7   | ✅      | `docs/local-development.md` schreiben                                                                                 | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                |
-| 8   | ⬜      | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                            | Nach `0.1.0`-Release                                            | MVP-3; F-23..F-28                                         |
-| 9   | ⬜      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |
+| 8   | ✅      | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                            | Nach `0.1.0`-Release                                            | MVP-3; F-23..F-28                                         |
+| 9   | ✅      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |
 | 10  | ✅      | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88                                  |
 | 11  | ⬜      | Observability-Stack (Prometheus + optional Grafana, OTel-Collector) — `0.1.2` (siehe `plan-0.1.2.md`)                 | Nach `0.1.1`-Release                                            | MVP-10, MVP-15; F-89..F-94                                |
 
@@ -100,7 +100,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | ------- | ---------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
 | `0.0.x` | Spike + Planungsphase        | ✅      | —                                                                                               |
 | `0.1.0` | Backend Core + Demo-Lab      | ✅      | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
-| `0.1.1` | Player-SDK + Dashboard       | ⬜      | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md)                         |
+| `0.1.1` | Player-SDK + Dashboard       | ✅      | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md)                         |
 | `0.1.2` | Observability-Stack          | ⬜      | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md)                               |
 | `0.2.0` | Publizierbares Player SDK    | ⬜      | RAK-11..RAK-21                                                                                  |
 | `0.3.0` | Stream Analyzer              | ⬜      | RAK-22..RAK-28                                                                                  |

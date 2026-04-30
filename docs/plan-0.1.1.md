@@ -1,6 +1,6 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
-> **Status**: 🟡 in Arbeit. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
+> **Status**: ✅ abgeschlossen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
 > **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
@@ -30,10 +30,10 @@ Tranchen 0/0a/0b/0c werden in `plan-0.1.0.md` gepflegt — neue Lastenheft-Patch
 | Tranche | Inhalt | Status |
 |---|---|---|
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
-| 1 | Player-SDK unter `packages/player-sdk` | 🟡 |
+| 1 | Player-SDK unter `packages/player-sdk` | ✅ |
 | 2 | Dashboard unter `apps/dashboard` | ✅ |
 | 3 | Compose-Lab-Erweiterung um den `dashboard`-Service | ✅ |
-| 4 | Release-Akzeptanzkriterien `0.1.1` | 🟡 |
+| 4 | Release-Akzeptanzkriterien `0.1.1` | ✅ |
 
 ---
 
@@ -89,7 +89,7 @@ DoD:
 - [x] Browser-Build (ESM + UMD/IIFE) (`bae4a2a`).
 - [x] OE-8 entscheiden (Paketname, Scope): `@m-trace/player-sdk` (`bae4a2a`).
 - [x] **F-110 origin-Bucket (Backend)**: vor Beginn der Browser-Integrationstests muss `apps/api` den dritten Rate-Limit-Bucket auf der `origin`-Dimension aktiv haben (Vorbereitung optional in `0.1.0` §5.1, verbindliche Aktivierung spätestens hier). Test: ein Browser-Origin mit aufgebrauchtem origin-Budget liefert `429`, auch wenn project_id-Budget noch frei ist (`75e55e7`, `c15d8e1`).
-- [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching, Session-Metriken) vorhanden (`bae4a2a`, `cf07fda`); Integrationstest gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End) auf den im MVP unterstützten Browsern bleibt offen: **Pflicht** Chrome Desktop (aktuelle Stable) und Firefox Desktop (aktuelle Stable); **eingeschränkt** Safari Desktop (Basis-Playback laut Lastenheft §6/§MVP-Browser-Matrix); iOS Safari, Android Chrome, Smart-TV-Browser, Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
+- [x] Tests: Unit-Tests für Core-Logik (Sampling, Batching, Session-Metriken) vorhanden (`bae4a2a`, `cf07fda`); containerisierter Playwright-Integrationstest gegen das `apps/api` aus `0.1.0` prüft Browser → API → Dashboard in Chromium und Firefox (`9b26e4f`). Safari Desktop bleibt wegen nativer HLS-Introspektion eingeschränkt; iOS Safari, Android Chrome, Smart-TV-Browser und Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
 
 ---
 
@@ -142,14 +142,14 @@ DoD:
 DoD:
 
 - [x] **RAK-2** Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service (Tranche 3) (`1d58f19`).
-- [x] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1) (`bae4a2a`, `cf07fda`, `1a6a6c7`).
-- [x] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2) (`1a6a6c7`, `1d58f19`).
+- [x] **RAK-5** Player-SDK sendet hls.js-basierte Events (Tranche 1) (`bae4a2a`, `cf07fda`, `1a6a6c7`, `9b26e4f`).
+- [x] **RAK-7** Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge (Tranche 2) (`1a6a6c7`, `1d58f19`, `9b26e4f`).
 
 ### 5.1 Übergreifende DoD `0.1.1` (Lastenheft §18, `0.1.1`-Anteil)
 
-- [x] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete) — der bestehende GitHub-Workflow nutzt `make test`, `make lint` und `make build`; diese Targets delegieren jetzt zusätzlich an den pnpm-Workspace (`1d58f19`).
-- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`).
-- [x] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement) (`1d58f19`).
+- [x] CI deckt zusätzlich Player-SDK- und Dashboard-Builds ab (CI als Pflicht-Bestandteil ist bereits in `0.1.0` §5.4 erforderlich; `0.1.1` ergänzt nur Coverage für die neuen Pakete) — der bestehende GitHub-Workflow nutzt `make test`, `make lint` und `make build`; diese Targets delegieren jetzt zusätzlich an den pnpm-Workspace (`1d58f19`, `571a112`, `9b26e4f`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.1` (`1a6a6c7`, `1d58f19`, `9b26e4f`).
+- [x] README ergänzt um die Player-SDK- und Dashboard-Quickstart-Schritte (RAK-8-Refinement) (`1d58f19`, `9b26e4f`).
 
 ---
 
