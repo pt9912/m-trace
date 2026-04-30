@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: 🟡 in Arbeit. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
-> **Bezug**: [Lastenheft `1.1.4`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.5`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
 > - Tranche 0 (Pre-MVP-Vorbereitung): `[x]` — bereits heute erfüllt.
@@ -56,7 +56,7 @@ DoD — **weiche Voraussetzungen, Dokumentations-/Aufräumarbeiten** (offen erla
 - [x] `plan-0.1.0.md` §3.5 telemetry-model.md, **nicht-Pflicht-Anteile für `0.1.1`** — OTel-Modell §2, Cardinality §3, Time-Stempel §5, Schema-Versionierung §6: nur indirekt für SDK-Implementierung relevant (`e532e1e`, `51b3812`).
 - [x] `plan-0.1.0.md` §3.6 local-development.md: Developer-Guide; `0.1.1`-Implementierung kann mit dem bestehenden `apps/api`-Setup arbeiten (`2eede43`, `504e4c9`, `35eba88`).
 - [x] `plan-0.1.0.md` §4.4 Code-Step-Numbering: Code-Kommentar-Cleanup ohne `0.1.1`-Auswirkung (`dbdcb67`).
-- [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items sind bis Patch `1.1.4` geschlossen; keine offenen blockierenden Patch-Items zum `0.1.1`-Start.
+- [x] `plan-0.1.0.md` Tranche 0c §4a.x-Items sind bis Patch `1.1.5` geschlossen; keine offenen blockierenden Patch-Items zum `0.1.1`-Start.
     - **blockierend** → muss `[x]` sein (z. B. Lastenheft-Patches, deren Wording die `0.1.1`-Implementierung direkt betrifft), **oder**
     - **nicht-blockierend** → offen erlaubt, mit ausdrücklichem `(nicht-blockierend für 0.1.1)`-Vermerk im jeweiligen §4a.x-Eintrag.
 - [x] Vorgänger-Gate-Verifikations-Commit dokumentiert die Einstufung pro offenem Item nachvollziehbar (`35eba88`).
@@ -79,16 +79,16 @@ DoD:
 
 **Player-SDK** (`packages/player-sdk/`):
 
-- [ ] TypeScript-Package unter `packages/player-sdk/`.
-- [ ] **MVP-6** Pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony — leichte Adapter-Struktur laut Lastenheft §9.2, keine `hexagon/`-Pflicht-Aufteilung mit Domain/Application/Port. Verzeichnislayout analog `architecture.md` §4.1: `core/`, `adapters/hlsjs/`, `transport/`, `types/`.
-- [ ] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter).
-- [ ] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …).
+- [x] TypeScript-Package unter `packages/player-sdk/` (`PLAYER_SDK_COMMIT`).
+- [x] **MVP-6** Pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony — leichte Adapter-Struktur laut Lastenheft §9.2, keine `hexagon/`-Pflicht-Aufteilung mit Domain/Application/Port. Verzeichnislayout analog `architecture.md` §4.1: `core/`, `adapters/hlsjs/`, `transport/`, `types/` (`PLAYER_SDK_COMMIT`).
+- [x] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter) (`PLAYER_SDK_COMMIT`).
+- [x] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …) (`PLAYER_SDK_COMMIT`).
 - [ ] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, …).
-- [ ] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; OpenTelemetry Web SDK als optionaler zweiter Transport-Pfad.
-- [ ] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren.
-- [ ] Browser-Build (ESM + UMD).
-- [ ] OE-8 entscheiden (Paketname, Scope).
-- [ ] **F-110 origin-Bucket (Backend)**: vor Beginn der Browser-Integrationstests muss `apps/api` den dritten Rate-Limit-Bucket auf der `origin`-Dimension aktiv haben (Vorbereitung optional in `0.1.0` §5.1, verbindliche Aktivierung spätestens hier). Test: ein Browser-Origin mit aufgebrauchtem origin-Budget liefert `429`, auch wenn project_id-Budget noch frei ist.
+- [x] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; OpenTelemetry Web SDK bleibt optionaler späterer Transport-Pfad (`PLAYER_SDK_COMMIT`).
+- [x] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren (`PLAYER_SDK_COMMIT`).
+- [x] Browser-Build (ESM + UMD/IIFE) (`PLAYER_SDK_COMMIT`).
+- [x] OE-8 entscheiden (Paketname, Scope): `@m-trace/player-sdk` (`PLAYER_SDK_COMMIT`).
+- [x] **F-110 origin-Bucket (Backend)**: vor Beginn der Browser-Integrationstests muss `apps/api` den dritten Rate-Limit-Bucket auf der `origin`-Dimension aktiv haben (Vorbereitung optional in `0.1.0` §5.1, verbindliche Aktivierung spätestens hier). Test: ein Browser-Origin mit aufgebrauchtem origin-Budget liefert `429`, auch wenn project_id-Budget noch frei ist (`75e55e7`, `c15d8e1`).
 - [ ] Tests: Unit-Tests für Core-Logik (Sampling, Batching); Integrationstest gegen das `apps/api` aus `0.1.0` (Browser → API End-to-End) auf den im MVP unterstützten Browsern: **Pflicht** Chrome Desktop (aktuelle Stable) und Firefox Desktop (aktuelle Stable); **eingeschränkt** Safari Desktop (Basis-Playback laut Lastenheft §6/§MVP-Browser-Matrix); iOS Safari, Android Chrome, Smart-TV-Browser, Embedded-WebViews bleiben außerhalb des `0.1.1`-Test-Scope.
 
 ---

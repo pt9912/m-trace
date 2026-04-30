@@ -12,5 +12,11 @@
     "test": "pnpm -r --if-present run test",
     "lint": "pnpm -r --if-present run lint",
     "check": "pnpm -r --if-present run check"
+  },
+  "devDependencies": {
+    "hls.js": "^1.6.16",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   }
 }

@@ -7,7 +7,7 @@
 | Dokument | Architektur `m-trace`                                                                                                                                                                                                                                                                  |
 | Stand    | `2026-04-29`                                                                                                                                                                                                                                                                           |
 | Status   | Verbindlich (Zielbild `0.1.0`)                                                                                                                                                                                                                                                         |
-| Bezug    | [Lastenheft `1.1.4`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) / [`0.1.1`](./plan-0.1.1.md) / [`0.1.2`](./plan-0.1.2.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
+| Bezug    | [Lastenheft `1.1.5`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) / [`0.1.1`](./plan-0.1.1.md) / [`0.1.2`](./plan-0.1.2.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
 
 ### 0.1 Zweck
 
@@ -547,7 +547,7 @@ flowchart TB
 
 Verweise auf die normativen Listen statt Duplikat:
 
-- Offene Lastenheft-Entscheidungen: [Roadmap §5](./roadmap.md) (OE-3..OE-5, OE-8).
+- Offene Lastenheft-Entscheidungen: [Roadmap §5](./roadmap.md) (OE-3..OE-5).
 - Bekannte Phase-2-Risiken: [`risks-backlog.md`](./risks-backlog.md) (R-1..R-3).
 - Erwartete Folge-ADRs: [Roadmap §4](./roadmap.md).
 

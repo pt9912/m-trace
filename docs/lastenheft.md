@@ -1,12 +1,12 @@
 # Lastenheft: m-trace
 
-**Projektname:** m-trace  
-**Dokumenttyp:** Lastenheft  
-**Version:** 1.1.4
-**Status:** Verbindlich  
-**Lizenz:** MIT
-**Architekturstil:** Mono-Repo mit hexagonaler Architektur  
-**Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.  
+**Projektname:** m-trace<br>
+**Dokumenttyp:** Lastenheft<br>
+**Version:** 1.1.5<br>
+**Status:** Verbindlich<br>
+**Lizenz:** MIT<br>
+**Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
+**Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
 ---
 
@@ -1753,7 +1753,7 @@ Große Plattform-Betreiber sollen erst später adressiert werden.
 | OE-5 | offen | Live-Updates: Polling, WebSocket oder Server-Sent Events |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
 | OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`** |
-| OE-8 | offen | Paketnamen für npm |
+| OE-8 | resolved | npm-Paketname Player-SDK: **`@m-trace/player-sdk`** |
 | OE-9 | resolved | Go Module Name final: **`github.com/pt9912/m-trace/apps/api`** |
 
 ---

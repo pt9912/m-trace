@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "lib": ["ES2022", "DOM"],
+    "types": ["vitest/globals"],
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.mjs"]
+}
