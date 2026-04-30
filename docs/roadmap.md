@@ -46,10 +46,9 @@ in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §2.
 
 ### 1.3 Verbleibend für `0.1.0`-Release
 
-Status: 🟡 releasebereit im Code — §5.1 Backend-Erweiterung, §5.2
+Status: ✅ `0.1.0` abgeschlossen — §5.1 Backend-Erweiterung, §5.2
 Compose-Lab, RAK-1/3/4/6/8-Verifikation, CI-Setup, Lizenz- und
-Release-Konvention sind ausgeliefert. `0.1.0`-Tag/GitHub-Release stehen
-noch aus. DoD-Detail
+Release-Konvention sind ausgeliefert. DoD-Detail
 in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
 
 | Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
@@ -100,7 +99,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | Version | Titel                        | Status | Akzeptanzkriterien                                                                              |
 | ------- | ---------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
 | `0.0.x` | Spike + Planungsphase        | ✅      | —                                                                                               |
-| `0.1.0` | Backend Core + Demo-Lab      | 🟡      | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
+| `0.1.0` | Backend Core + Demo-Lab      | ✅      | RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 (initial); DoD-Tracking in [`plan-0.1.0.md`](./plan-0.1.0.md) |
 | `0.1.1` | Player-SDK + Dashboard       | ⬜      | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md)                         |
 | `0.1.2` | Observability-Stack          | ⬜      | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md)                               |
 | `0.2.0` | Publizierbares Player SDK    | ⬜      | RAK-11..RAK-21                                                                                  |

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [0.1.0] - 2026-04-30
+
+### Added
+
 - `0.1.0` Compose-Lab Core mit `api`, `mediamtx` und `stream-generator`.
 - Root-Targets `make dev`, `make stop` und `make smoke`.
 - Root-Targets `make test`, `make lint`, `make coverage-gate`, `make arch-check` und `make build` für lokale CI-Parität.
@@ -21,5 +29,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API-Listen-Adresse ist über `MTRACE_API_LISTEN_ADDR` konfigurierbar.
 - Local-Development-Doku beschreibt den verifizierten `0.1.0`-Smoke-Test.
 - Lastenheft `1.1.4` löst OE-1, OE-6 und OE-7 auf: MIT-Lizenz, GitHub Actions auf `ubuntu-24.04`, trunk-based Releases mit annotierten `vX.Y.Z`-Tags.
-
-### Fixed
