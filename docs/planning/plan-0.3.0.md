@@ -31,7 +31,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 1 | Stream-Analyzer-Paket und Public API | ✅ |
 | 2 | HLS-Manifest laden und Playlist-Typ erkennen | ✅ |
 | 3 | Master-Playlist-Analyse | ✅ |
-| 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ⬜ |
+| 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ✅ |
 | 5 | JSON-Ergebnisformat und Dokumentation | ⬜ |
 | 6 | API-Anbindung über StreamAnalyzer-Port | ⬜ |
 | 7 | CLI-Grundlage | ⬜ |
@@ -125,16 +125,16 @@ Ziel: Media Playlists liefern Segmentdaten, Dauerstatistiken, einfache Inkonsist
 
 DoD:
 
-- [ ] Segmente aus `#EXTINF` werden mit URI und Dauer extrahiert.
-- [ ] `#EXT-X-TARGETDURATION` wird ausgewertet; Segment-Dauer-Findings prüfen, ob gerundete Segmentdauern die Target-Duration verletzen.
-- [ ] Segment-Anzahl wird bestimmt.
-- [ ] Durchschnittliche Segment-Dauer wird berechnet.
-- [ ] Segment-Dauerabweichungen werden gegen eine dokumentierte Toleranz geprüft.
-- [ ] Findings unterscheiden mindestens `info`, `warning` und `error`.
-- [ ] Live-/VOD-Erkennung ist definiert, z. B. anhand `#EXT-X-ENDLIST`.
-- [ ] Einfache Live-Latenz-Schätzung ist dokumentiert und getestet.
-- [ ] Malformed Segment-Einträge liefern strukturierte Findings, statt unkontrolliert zu crashen.
-- [ ] JSON-Ergebnis für Media Playlists ist snapshot- oder schema-nah getestet.
+- [x] Segmente aus `#EXTINF` werden mit URI und Dauer extrahiert (`1a9cc27`).
+- [x] `#EXT-X-TARGETDURATION` wird ausgewertet; Segment-Dauer-Findings prüfen, ob gerundete Segmentdauern die Target-Duration verletzen (`1a9cc27`).
+- [x] Segment-Anzahl wird bestimmt (`1a9cc27`).
+- [x] Durchschnittliche Segment-Dauer wird berechnet (`1a9cc27`).
+- [x] Segment-Dauerabweichungen werden gegen eine dokumentierte Toleranz geprüft (`1a9cc27`).
+- [x] Findings unterscheiden mindestens `info`, `warning` und `error` (`1a9cc27`).
+- [x] Live-/VOD-Erkennung ist definiert, z. B. anhand `#EXT-X-ENDLIST` (`1a9cc27`).
+- [x] Einfache Live-Latenz-Schätzung ist dokumentiert und getestet (`1a9cc27`).
+- [x] Malformed Segment-Einträge liefern strukturierte Findings, statt unkontrolliert zu crashen (`1a9cc27`).
+- [x] JSON-Ergebnis für Media Playlists ist snapshot- oder schema-nah getestet (`1a9cc27`).
 
 ---
 
