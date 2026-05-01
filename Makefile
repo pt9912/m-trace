@@ -64,8 +64,12 @@ smoke-analyzer:
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am workspace-build, damit das CLI-
-# Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt.
+# Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt; ein
+# zweiter `pnpm install` materialisiert die Bin-Symlinks (workspace-
+# Pakete können das beim ersten Install nicht, wenn `dist/` noch
+# fehlt — gleiches Verhalten in CI und auf frischen Clones).
 smoke-cli: workspace-build
+	$(PNPM) install --frozen-lockfile
 	bash scripts/smoke-cli.sh
 
 # Spec ist die Quelle der Wahrheit; Go-Tests konsumieren Kopien aus
