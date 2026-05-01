@@ -35,6 +35,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 5 | JSON-Ergebnisformat und Dokumentation | ✅ |
 | 6 | API-Anbindung über StreamAnalyzer-Port | ✅ |
 | 7 | CLI-Grundlage | ✅ |
+| 7.5 | Tranche-6-Folge-Issues härten | ⬜ |
 | 8 | Release-Akzeptanzkriterien `0.3.0` | ⬜ |
 
 ---
@@ -174,35 +175,6 @@ DoD:
 - [!] Metriken/Logs für Analyseaufrufe sind minimal vorhanden oder bewusst deferred — bewusst deferred auf 0.3.x: HTTPStreamAnalyzer und AnalyzeHandler loggen Fehler über den existierenden slog-Pfad; Prometheus-Counter/Histogram bleiben Tranche-0.3.x-Folge-Issue (kein Release-Blocker für Tranche 6).
 - [x] Architekturcheck bleibt grün (`579e7cc`).
 
-### 7.1 Folge-Issues nach Code-Review (offen für 0.3.x)
-
-Tranche 6 wurde mit Hash `579e7cc` ausgeliefert; ein anschließendes
-Review hat Punkte aufgedeckt, die bewusst nicht release-blockierend
-sind, aber mittelfristig adressiert werden:
-
-- **Contract-Drift TS↔Go**: das Wire-Format zwischen
-  `apps/analyzer-service` und `apps/api/adapters/driven/streamanalyzer`
-  ist heute durch separate Go-Structs und TypeScript-Typen modelliert.
-  Es gibt keinen automatischen Cross-Process-Test, der absichert, dass
-  beide Seiten byte-für-byte alignen. Die Pflichtfelder (`status`,
-  `analyzerVersion`, `playlistType`, `analyzerKind`, `findings.code`/
-  `level`) werden im Adapter aktiv gemappt, drift aber unbemerkt.
-  Lösungsidee: gemeinsame JSON-Schema-Datei in `spec/`, gegen die
-  beide Seiten testen — oder ein Vitest-Fixture, das den Service
-  startet und das Go-Adapter-Roundtrip prüft.
-- **Analyse-Metriken**: heute nur strukturierte slog-Logs auf Erfolgs-
-  und Fehler-Pfad. Ein einzelner Prometheus-Counter (`analyze_requests_total{outcome,code}`) wäre cheap-to-ship und gibt Operator-Sicht
-  auf den Endpoint-Stand. Aktueller Stand entspricht der DoD-Wahl
-  „minimal vorhanden oder bewusst deferred".
-- **SSRF-Local-Dev-Bequemlichkeit**: Compose-interne URL-Inputs
-  (`http://mediamtx:8888/...`) treffen den SSRF-Block, weil docker-
-  bridge-IPs in RFC1918 liegen. Workaround: Text-Inputs nutzen
-  (Smoke und Doku tun das). Ein opt-in `ANALYZER_ALLOW_PRIVATE_NETWORKS`-
-  Flag im analyzer-service wäre eine saubere Folge-Erweiterung.
-- **Dockerfile-Optimierung**: zwei `pnpm install`-Schritte (Build- und
-  Runtime-Stage) im `apps/analyzer-service/Dockerfile`. `pnpm deploy --prod` oder ein gebundeltes Single-File-Output via tsup würde den
-  Runtime-Stage schlanker machen.
-
 ---
 
 ## 8. Tranche 7 — CLI-Grundlage
@@ -224,7 +196,51 @@ DoD:
 
 ---
 
-## 9. Tranche 8 — Release-Akzeptanzkriterien `0.3.0`
+## 9. Tranche 7.5 — Tranche-6-Folge-Issues härten
+
+Bezug: Code-Review zu Tranche 6 (Hash `579e7cc`) und zu den Tranche-6-
+Review-Fixes (`d894556`); siehe `spec/lastenheft.md` F-22/F-33 für den
+Analyzer-Pfad und §13.5 für RAK-27.
+
+Ziel: die vier nicht-release-blockierenden Punkte aus dem Tranche-6-
+Review schließen, bevor `0.3.0` ins Release-Akzeptanz-Gate (Tranche 8)
+geht. Damit gehen wir mit weniger Tech-Debt und besserer Operator-
+Sicht in den Release-Schnitt.
+
+DoD:
+
+- [ ] Cross-Process-Vertragstest TS↔Go: gemeinsames JSON-Schema
+  (z. B. `spec/analyzer-result.schema.json`) oder Vitest-Fixture-
+  Setup, gegen das sowohl der `apps/analyzer-service`-Output als auch
+  das Go-Adapter-Decoding getestet werden. Drift in Pflichtfeldern
+  (`status`, `analyzerVersion`, `playlistType`, `analyzerKind`,
+  `findings[].code`/`level`) muss in CI rot werden.
+- [ ] Prometheus-Counter `analyze_requests_total{outcome,code}` (oder
+  äquivalent) im Go-API-Stack ergänzt; Counter wird vom
+  `AnalyzeHandler` auf jedem Erfolgs- und Fehlerpfad erhöht. Coverage-
+  Gate bleibt grün; bestehende Cardinality-Begrenzungen werden nicht
+  verletzt (`outcome` ∈ {ok, error}, `code` aus der bekannten Domäne).
+- [ ] `analyzer-service` bekommt einen opt-in
+  `ANALYZER_ALLOW_PRIVATE_NETWORKS=true` (oder vergleichbares) Flag,
+  das die SSRF-IP-Blocklist nur dann lockert, wenn explizit gesetzt;
+  Default bleibt unverändert (Block). Doku in
+  `docs/user/stream-analyzer.md` §6 vermerkt das Flag und die
+  Sicherheitsfolgen.
+- [ ] `apps/analyzer-service/Dockerfile` läuft mit nur einem
+  produktiven Install-Schritt (z. B. via `pnpm deploy --prod` oder
+  einem tsup-Single-File-Bundle, das `node_modules` zur Laufzeit
+  überflüssig macht). Image-Größe der `runtime`-Stage ist nach dem
+  Refactor messbar kleiner oder identisch — nicht größer.
+- [ ] Plan-/Doku-Aktualisierung: dieser §9-Block wird beim Schließen
+  jedes DoD-Items mit Commit-Hash versehen; ein Hinweis-Eintrag im
+  `CHANGELOG.md` (Unreleased) hält die Operator-relevanten
+  Änderungen fest (Counter-Name, Flag-Name).
+- [ ] `make gates` und `make smoke-analyzer` bleiben grün; CI-Run
+  auf `main` ist nach dem Tranche-7.5-Abschluss erfolgreich.
+
+---
+
+## 10. Tranche 8 — Release-Akzeptanzkriterien `0.3.0`
 
 Bezug: RAK-22..RAK-28; `docs/user/releasing.md`.
 
@@ -247,7 +263,7 @@ DoD:
 
 ---
 
-## 10. Wartung
+## 11. Wartung
 
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`, Commit-Hash anhängen.
 - Neue Findings in der `0.3.0`-Phase landen entweder in dieser Datei oder in `risks-backlog.md`.
