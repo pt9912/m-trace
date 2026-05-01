@@ -51,3 +51,9 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Player-SDK performance smoke
+        run: make sdk-performance-smoke
+
+      - name: CLI smoke
+        run: make smoke-cli

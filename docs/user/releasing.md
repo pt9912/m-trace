@@ -1,8 +1,8 @@
 # Releasing — m-trace
 
-> **Status**: Verbindlich für `0.1.0`. CI-Verifikation,
-> Branching-Modell und Tag-Format sind konkretisiert; Container-Image-
-> Veröffentlichung bleibt außerhalb von `0.1.0`.
+> **Status**: Verbindlich für alle Releases (zuletzt verifiziert mit
+> `0.3.0`). CI-Verifikation, Branching-Modell und Tag-Format sind
+> stabil; Container-Image-Veröffentlichung bleibt deferred.
 > Bezug: AK-11, DoD §18 (Lastenheft).
 
 ## 0. Zweck
@@ -44,19 +44,25 @@ make coverage-gate
 make sdk-performance-smoke
 make arch-check
 make build
+make smoke-cli            # ab 0.3.0: Lastenheft-Aufruf `pnpm m-trace check`
+make smoke-analyzer       # ab 0.3.0: manuelles Release-Gate, fährt Compose hoch
 ```
 
 Erfolgskriterien:
 
-- alle sechs Targets exit code 0.
-- `make coverage-gate` umfasst API-, Player-SDK- und Dashboard-Coverage.
+- alle Targets exit code 0.
+- `make coverage-gate` umfasst API-, Player-SDK-, Dashboard-,
+  stream-analyzer- und (ab `0.3.0`) analyzer-service-Coverage.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus
   `spec/backend-api-contract.md` §11 ab.
 - Coverage-Gate liegt bei mindestens 90 %.
 - Architektur-Grenzen bleiben laut `make arch-check` intakt.
 
-CI-Zielplattform für `0.1.0` ist GitHub Actions auf `ubuntu-24.04`.
+CI deckt `test`, `lint`, `coverage-gate`, `arch-check`, `build`,
+`sdk-performance-smoke` und `smoke-cli` ab; `smoke-analyzer` läuft
+lokal vor dem Tag (Compose-Stack-Up ist zu schwergewichtig für jeden
+PR-Run). CI-Zielplattform ist GitHub Actions auf `ubuntu-24.04`,
 Workflow-Name: `build`.
 
 ```bash

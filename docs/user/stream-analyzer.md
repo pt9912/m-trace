@@ -408,7 +408,11 @@ Anwendungsfälle:
   einem RFC1918-Hostnamen) analysiert werden sollen.
 - `apps/analyzer-service` liest die Env-Variable
   `ANALYZER_ALLOW_PRIVATE_NETWORKS=true|1|yes|on` und reicht das Flag
-  pro Aufruf an den Loader weiter. Default bleibt aus — Produktions-
+  pro Aufruf an den Loader weiter. Default in `apps/analyzer-service`
+  ist aus; **das Compose-Lab-Setup** (`docker-compose.yml`) setzt das
+  Flag explizit auf `true`, damit der Analyzer den eingebauten
+  MediaMTX-Stream (`http://mediamtx:8888/teststream/index.m3u8` →
+  RFC1918-IP der Docker-Bridge) erreichen kann. Produktions-
   Deployments setzen die Variable nicht.
 
 **Service-Schalter ist ausschließlich die Env-Variable**: ein

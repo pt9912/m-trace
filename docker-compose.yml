@@ -24,6 +24,12 @@ services:
     environment:
       ANALYZER_LISTEN_HOST: "0.0.0.0"
       ANALYZER_LISTEN_PORT: "7000"
+      # Lab-Default: erlaubt das Analysieren intern erreichbarer
+      # MediaMTX-Streams (`http://mediamtx:8888/...`) — der Compose-
+      # Bridge gibt RFC1918-IPs aus, die der SSRF-Schutz sonst
+      # blockt. Produktions-Deployments setzen das Flag nicht
+      # (siehe docs/user/stream-analyzer.md §6).
+      ANALYZER_ALLOW_PRIVATE_NETWORKS: "true"
     ports:
       - "7000:7000"
 

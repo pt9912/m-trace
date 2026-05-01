@@ -131,11 +131,13 @@ JSON
 make smoke-analyzer
 ```
 
-URL-Inputs gegen interne Compose-Services scheitern an der
-SSRF-Sperre (`http://mediamtx:8888/…` löst zu einem RFC1918-IP auf
-und wird vom analyzer-service korrekt mit 400 `fetch_blocked`
-abgelehnt). Für lokale End-to-End-Tests deshalb Text-Input
-verwenden oder eine öffentliche HLS-URL nutzen.
+URL-Inputs gegen interne Compose-Services funktionieren im Lab-
+Setup, weil `docker-compose.yml` den `analyzer-service` mit
+`ANALYZER_ALLOW_PRIVATE_NETWORKS=true` startet (`docs/user/stream-
+analyzer.md` §6). Außerhalb der Compose-Topologie greift der
+SSRF-Block per Default und URL-Inputs auf RFC1918-Adressen werden
+mit 400 `fetch_blocked` abgelehnt — dann Text-Input verwenden oder
+eine öffentliche HLS-URL.
 
 CLI (ab `0.3.0` Tranche 7):
 
