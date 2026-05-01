@@ -50,6 +50,7 @@ describe("analyzeHlsManifest — Tranche 1 contract", () => {
 
     expect(result.status).toBe("error");
     expect(result.code).toBe("invalid_input");
+    expect(result).not.toHaveProperty("details");
   });
 
   it("rejects invalid text input shape", async () => {
@@ -61,6 +62,7 @@ describe("analyzeHlsManifest — Tranche 1 contract", () => {
 
     expect(result.status).toBe("error");
     expect(result.code).toBe("invalid_input");
+    expect(result).not.toHaveProperty("details");
   });
 
   it("rejects unknown manifest input kind", async () => {
@@ -72,6 +74,7 @@ describe("analyzeHlsManifest — Tranche 1 contract", () => {
 
     expect(result.status).toBe("error");
     expect(result.code).toBe("invalid_input");
+    expect(result).not.toHaveProperty("details");
   });
 
   it("returns a stable top-level shape", async () => {

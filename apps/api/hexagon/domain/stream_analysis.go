@@ -57,9 +57,9 @@ type StreamAnalysisFinding struct {
 
 // StreamAnalysisResult ist das Domain-Modell der Analyseausgabe. Das
 // stabile JSON-Schema entsteht in plan-0.3.0 Tranche 5; bis dahin
-// nutzt die API RawJSON, um analyzer-spezifische Detail-Strukturen
-// unverändert weiterzureichen, ohne die Domain auf eine HLS-spezi-
-// fische Struktur festzulegen.
+// reicht die Domain die analyzer-spezifischen Detail-Strukturen als
+// vorcodiertes JSON weiter, ohne sich auf eine HLS-spezifische
+// Struktur festzulegen.
 type StreamAnalysisResult struct {
 	// AnalyzerVersion stammt aus packages/stream-analyzer/package.json
 	// (plan-0.3.0 §2 Tranche 1: Versionssynchronizität).
@@ -68,8 +68,9 @@ type StreamAnalysisResult struct {
 	PlaylistType PlaylistType
 	// Findings sind die Drei-Stufen-Befunde aus Tranche 4.
 	Findings []StreamAnalysisFinding
-	// RawJSON ist die vom Analyzer gelieferte JSON-Repräsentation des
-	// Ergebnisses, additiv erweiterbar (Tranche 5). Leere Slices
-	// signalisieren „kein Detail geliefert".
-	RawJSON []byte
+	// EncodedDetails ist die typspezifische Detail-Sektion, vorcodiert
+	// als UTF-8-JSON-Objekt (Tranche 5 fixiert das Schema). Leere
+	// Slices signalisieren "kein Detail geliefert"; ungültiges JSON
+	// ist ein Adapter-Bug und kein Domain-Zustand.
+	EncodedDetails []byte
 }

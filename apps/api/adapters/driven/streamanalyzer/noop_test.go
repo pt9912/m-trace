@@ -64,8 +64,8 @@ func TestNoopStreamAnalyzer_AnalyzeManifestReturnsEmptyResult(t *testing.T) {
 			if len(result.Findings) != 0 {
 				t.Errorf("Findings: want empty, got %d", len(result.Findings))
 			}
-			if len(result.RawJSON) != 0 {
-				t.Errorf("RawJSON: want empty, got %d bytes", len(result.RawJSON))
+			if len(result.EncodedDetails) != 0 {
+				t.Errorf("EncodedDetails: want empty, got %d bytes", len(result.EncodedDetails))
 			}
 		})
 	}

@@ -27,9 +27,8 @@ export interface ManifestUrlInput {
  * Optionen, die aufruferseitig nicht zwingend gesetzt werden müssen,
  * den Analyseaufruf aber feinjustieren. Konkrete Felder kommen mit
  * den jeweiligen Tranchen hinzu (z. B. `fetchTimeoutMs` in Tranche 2,
- * `segmentDurationToleranceFraction` in Tranche 4).
+ * `segmentDurationToleranceFraction` in Tranche 4); das Interface
+ * bleibt bewusst leer, bis das erste Feld einzieht.
  */
-export interface AnalyzeOptions {
-  /** Reserviert für zukünftige Optionen; aktuell wirkungslos. */
-  readonly _reserved?: never;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface AnalyzeOptions {}

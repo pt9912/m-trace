@@ -124,9 +124,9 @@ Diskriminator-Feld verlassen. Beispiel:
 
 | Bereich       | 0.3.0   | Bemerkung                                                     |
 | ------------- | ------- | ------------------------------------------------------------- |
-| HLS Master    | ✅ Plan | Tranche 3 implementiert Variants/Renditions (RAK-23, F-76).   |
-| HLS Media     | ✅ Plan | Tranche 4 implementiert Segmente/Findings (RAK-24/25, F-70..). |
-| HLS via URL   | ✅ Plan | Tranche 2 inkl. Timeout, Größenlimit, SSRF-Schutz.            |
+| HLS Master    | ⬜ Plan | Tranche 3 implementiert Variants/Renditions (RAK-23, F-76).   |
+| HLS Media     | ⬜ Plan | Tranche 4 implementiert Segmente/Findings (RAK-24/25, F-70..). |
+| HLS via URL   | ⬜ Plan | Tranche 2 inkl. Timeout, Größenlimit, SSRF-Schutz.            |
 | DASH/CMAF     | ❌      | Out of scope — F-73 als eigener Analyzer-Typ in Folge-Release.|
 | SRT           | ❌      | Eigener Bereich (`0.6.0`).                                    |
 
@@ -148,11 +148,14 @@ Ab Tranche 6 ruft `apps/api` den Analyzer über den Driven-Port
 `hexagon/port/driven.StreamAnalyzer.AnalyzeManifest(ctx, request) (result, error)`
 auf. Tranche 1 hat den Port bereits um die Zielsignatur erweitert; bis zur
 Tranche-6-Verdrahtung trägt `NoopStreamAnalyzer` einen leeren Slot mit
-`AnalyzerVersion = "noop"`.
+`AnalyzerVersion = "noop"`. Das Domain-Modell reicht analyzer-spezifische
+Detail-Strukturen als vorcodiertes JSON via `EncodedDetails []byte` weiter,
+damit `apps/api/hexagon/domain` kein HLS-Detail-Schema vorgibt.
 
-Bevorzugter Integrationsmodus für 0.3.0 ist ein interner Analyzer-HTTP-Service,
-damit das distroless-Go-API-Image keinen Node-Runtime mitbringen muss
-(plan-0.3.0 §7).
+Tranche 6 entscheidet den Integrationsmodus formal (plan-0.3.0 §7);
+favorisiert ist ein interner Analyzer-HTTP-Service, damit das distroless-
+Go-API-Image keinen Node-Runtime mitbringen muss. Diese Doku-Sektion
+beschreibt den Plan, nicht den Tranche-1-Lieferstand.
 
 ## 6. Lokale Entwicklung
 
