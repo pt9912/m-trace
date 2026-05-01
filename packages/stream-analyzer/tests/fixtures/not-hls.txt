@@ -1,0 +1,4 @@
+<html>
+<head><title>Not a manifest</title></head>
+<body>This is not an HLS manifest.</body>
+</html>

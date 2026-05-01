@@ -1,21 +1,72 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
 import { analyzeHlsManifest, AnalysisError, STREAM_ANALYZER_VERSION } from "../src/index.js";
 import type { AnalysisErrorResult, AnalysisResult } from "../src/index.js";
 
-describe("analyzeHlsManifest — Tranche 1 contract", () => {
-  it("returns an ok result for a text manifest input", async () => {
-    const result = await analyzeHlsManifest({ kind: "text", text: "#EXTM3U\n" });
+const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+const fixture = (name: string): string => readFileSync(join(fixturesDir, name), "utf8");
+
+describe("analyzeHlsManifest — Tranche 2 contract", () => {
+  it("classifies a master playlist", async () => {
+    const result = (await analyzeHlsManifest({ kind: "text", text: fixture("master.m3u8") })) as AnalysisResult;
 
     expect(result.status).toBe("ok");
-    const ok = result as AnalysisResult;
-    expect(ok.analyzerVersion).toBe(STREAM_ANALYZER_VERSION);
-    expect(ok.input).toEqual({ source: "text" });
-    expect(ok.playlistType).toBe("unknown");
-    expect(ok.summary).toEqual({ itemCount: 0 });
-    expect(ok.findings).toHaveLength(1);
-    expect(ok.findings[0]).toMatchObject({ code: "not_implemented", level: "info" });
-    expect(ok.details).toBeNull();
+    expect(result.analyzerVersion).toBe(STREAM_ANALYZER_VERSION);
+    expect(result.input).toEqual({ source: "text" });
+    expect(result.playlistType).toBe("master");
+    expect(result.findings.some((f) => f.code === "playlist_ambiguous")).toBe(false);
+    expect(result.details).toBeNull();
+  });
+
+  it("classifies a media playlist", async () => {
+    const result = (await analyzeHlsManifest({ kind: "text", text: fixture("media.m3u8") })) as AnalysisResult;
+
+    expect(result.status).toBe("ok");
+    expect(result.playlistType).toBe("media");
+    expect(result.findings.some((f) => f.code === "playlist_ambiguous")).toBe(false);
+  });
+
+  it("flags ambiguous playlists with master as primary type", async () => {
+    const result = (await analyzeHlsManifest({ kind: "text", text: fixture("ambiguous.m3u8") })) as AnalysisResult;
+
+    expect(result.status).toBe("ok");
+    expect(result.playlistType).toBe("master");
+    expect(result.findings.find((f) => f.code === "playlist_ambiguous")).toMatchObject({ level: "warning" });
+  });
+
+  it("rejects non-HLS content with manifest_not_hls", async () => {
+    const result = (await analyzeHlsManifest({
+      kind: "text",
+      text: fixture("not-hls.txt")
+    })) as AnalysisErrorResult;
+
+    expect(result.status).toBe("error");
+    expect(result.code).toBe("manifest_not_hls");
+    expect(result.details).toMatchObject({ firstLine: expect.stringContaining("<html>") });
+  });
+
+  it("rejects empty manifests with manifest_not_hls", async () => {
+    const result = (await analyzeHlsManifest({
+      kind: "text",
+      text: fixture("empty.m3u8")
+    })) as AnalysisErrorResult;
+
+    expect(result.status).toBe("error");
+    expect(result.code).toBe("manifest_not_hls");
+  });
+
+  it("classifies malformed HLS files but still emits findings", async () => {
+    const result = (await analyzeHlsManifest({
+      kind: "text",
+      text: fixture("malformed.m3u8")
+    })) as AnalysisResult;
+
+    expect(result.status).toBe("ok");
+    expect(result.playlistType).toBe("media");
+    expect(result.findings.some((f) => f.code === "details_pending")).toBe(true);
   });
 
   it("preserves baseUrl in input metadata when supplied", async () => {
@@ -27,19 +78,8 @@ describe("analyzeHlsManifest — Tranche 1 contract", () => {
 
     expect(result.status).toBe("ok");
     expect(result.input).toEqual({ source: "text", baseUrl: "https://cdn.example.test/" });
-  });
-
-  it("returns a structured error result for url input in Tranche 1", async () => {
-    const result = (await analyzeHlsManifest({
-      kind: "url",
-      url: "https://example.test/manifest.m3u8"
-    })) as AnalysisErrorResult;
-
-    expect(result.status).toBe("error");
-    expect(result.code).toBe("fetch_blocked");
-    expect(result.analyzerVersion).toBe(STREAM_ANALYZER_VERSION);
-    expect(result.message).toMatch(/Tranche 2/);
-    expect(result.details).toEqual({ url: "https://example.test/manifest.m3u8" });
+    expect(result.playlistType).toBe("unknown");
+    expect(result.findings.some((f) => f.code === "playlist_type_unknown")).toBe(true);
   });
 
   it("rejects invalid url input shape", async () => {

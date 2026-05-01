@@ -1,8 +1,7 @@
 /**
  * Eingabeformen für die Manifestanalyse. Tranche 1 legt die
- * Diskriminierung fest; das tatsächliche Laden via URL kommt in
- * Tranche 2 (plan-0.3.0 §3) inklusive Timeout, Größenlimit und
- * SSRF-Schutz.
+ * Diskriminierung fest; Tranche 2 hat das URL-Laden mit Timeout,
+ * Größenlimit und SSRF-Schutz angeschlossen.
  */
 export type ManifestInput = ManifestTextInput | ManifestUrlInput;
 
@@ -17,18 +16,29 @@ export interface ManifestTextInput {
 export interface ManifestUrlInput {
   readonly kind: "url";
   /**
-   * Quell-URL des Manifests. Tranche 2 erzwingt http/https und
-   * blockiert lokale/private Adressen sowie Credentials in der URL.
+   * Quell-URL des Manifests. Loader erzwingt http/https, blockt
+   * lokale/private/link-local/loopback/reservierte IP-Bereiche und
+   * verbietet Credentials in der URL (siehe `docs/user/stream-
+   * analyzer.md` §6).
    */
   readonly url: string;
 }
 
+export interface FetchOptions {
+  /** Zeitlimit pro HTTP-Hop in Millisekunden. Default: 10_000. */
+  readonly timeoutMs?: number;
+  /** Maximaler Bytes-Cap für den gesamten Body. Default: 5_000_000. */
+  readonly maxBytes?: number;
+  /** Maximal zulässige Redirect-Hops. Default: 5. */
+  readonly maxRedirects?: number;
+}
+
 /**
  * Optionen, die aufruferseitig nicht zwingend gesetzt werden müssen,
- * den Analyseaufruf aber feinjustieren. Konkrete Felder kommen mit
- * den jeweiligen Tranchen hinzu (z. B. `fetchTimeoutMs` in Tranche 2,
- * `segmentDurationToleranceFraction` in Tranche 4); das Interface
- * bleibt bewusst leer, bis das erste Feld einzieht.
+ * den Analyseaufruf aber feinjustieren. Tranche 4 ergänzt z. B. eine
+ * `segmentDurationToleranceFraction`.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AnalyzeOptions {}
+export interface AnalyzeOptions {
+  /** Optionen für den URL-Loader (greift nur bei `kind === "url"`). */
+  readonly fetch?: FetchOptions;
+}

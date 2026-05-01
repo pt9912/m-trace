@@ -1,0 +1,4 @@
+#EXTM3U
+this-is-not-a-valid-tag
+#EXTINF:bad-duration,
+seg-broken.ts

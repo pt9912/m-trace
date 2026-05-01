@@ -2,43 +2,54 @@ import type { AnalysisFinding } from "../../types/finding.js";
 import type {
   AnalysisInputMetadata,
   AnalysisResult,
-  AnalysisSummary,
-  PlaylistType
+  AnalysisSummary
 } from "../../types/result.js";
+import { classifyHlsManifest } from "./classify.js";
 
 /**
- * Tranche-1-Stub: liefert eine stabile, additiv erweiterbare
- * Result-Struktur, ohne den eigentlichen Parser zu implementieren.
- * Das tatsächliche HLS-Parsing wandert in Tranche 2/3/4 hierher;
- * bis dahin meldet der Stub ein `not_implemented`-Finding, damit
- * Konsumenten den Implementierungsstand sofort erkennen.
- *
- * Der Parser bekommt den Manifesttext und die Input-Metadaten getrennt:
- * Tranche 2 kann URL-Manifeste laden und an dieselbe Parser-Funktion
- * weitergeben, ohne dass die Result-Struktur zwischen Text- und
- * URL-Fall divergiert.
+ * Parst den Manifesttext so weit, wie es Tranche 2 verlangt:
+ * Header- und Klassifikator-Erkennung. Master-/Media-Detail-Parsing
+ * folgt in Tranche 3/4; die Stelle bleibt hier, damit `analyze.ts`
+ * für Text- und URL-Inputs denselben Funktionspfad nutzt.
  */
 export function analyzeHlsManifestText(
-  _text: string,
+  text: string,
   inputMeta: AnalysisInputMetadata,
   analyzerVersion: string
 ): AnalysisResult {
-  const playlistType: PlaylistType = "unknown";
-  const summary: AnalysisSummary = { itemCount: 0 };
-  const findings: AnalysisFinding[] = [
-    {
-      code: "not_implemented",
-      level: "info",
+  const classification = classifyHlsManifest(text);
+
+  const findings: AnalysisFinding[] = [];
+  if (classification.ambiguous) {
+    findings.push({
+      code: "playlist_ambiguous",
+      level: "warning",
       message:
-        "stream-analyzer 0.3.0 Tranche 1: HLS-Parser ist noch nicht angeschlossen; Result-Schema ist stabil."
-    }
-  ];
+        "Manifest enthält sowohl Master- als auch Media-Tags. Tranche 2 klassifiziert es als Master; Tranche 3/4 entscheidet die Detail-Auswertung."
+    });
+  }
+  if (classification.playlistType === "unknown") {
+    findings.push({
+      code: "playlist_type_unknown",
+      level: "warning",
+      message:
+        "Manifest beginnt mit #EXTM3U, enthält aber weder Master- noch Media-Tags. Inhalt wird als unklassifiziert gemeldet."
+    });
+  }
+  findings.push({
+    code: "details_pending",
+    level: "info",
+    message:
+      "stream-analyzer 0.3.0 Tranche 2: Klassifikation abgeschlossen, typspezifische Detail-Auswertung folgt in Tranche 3/4."
+  });
+
+  const summary: AnalysisSummary = { itemCount: 0 };
 
   return {
     status: "ok",
     analyzerVersion,
     input: inputMeta,
-    playlistType,
+    playlistType: classification.playlistType,
     summary,
     findings,
     details: null

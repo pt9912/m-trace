@@ -1,43 +1,94 @@
-import type { AnalyzeOptions, ManifestInput } from "./types/input.js";
-import type { AnalysisResult } from "./types/result.js";
+import type { AnalyzeOptions, FetchOptions, ManifestInput } from "./types/input.js";
+import type { AnalysisInputMetadata, AnalysisResult } from "./types/result.js";
 import type { AnalysisErrorResult } from "./types/error.js";
 import { AnalysisError } from "./types/error.js";
 import { STREAM_ANALYZER_VERSION } from "./version.js";
 import { analyzeHlsManifestText } from "./internal/parsers/hls.js";
+import { loadHlsManifest } from "./internal/loader/fetch.js";
+import { defaultLoaderRuntime, type LoaderRuntime } from "./internal/loader/runtime.js";
+
+const FETCH_DEFAULTS: Required<FetchOptions> = {
+  timeoutMs: 10_000,
+  maxBytes: 5_000_000,
+  maxRedirects: 5
+};
 
 /**
  * Public Entry Point. Liefert je nach Eingabe entweder ein
  * `AnalysisResult` (Erfolg) oder ein `AnalysisErrorResult` (Fehler).
- * Damit ist die Erfolg-/Fehlerunterscheidung statisch über
- * `result.status` typisiert (plan-0.3.0 §6 Tranche 5).
- *
- * URL-Input wird in Tranche 2 mit Lade-Politik (Timeout, Größe,
- * SSRF-Schutz) implementiert; Tranche 1 lehnt ihn definiert mit
- * Code `fetch_blocked` ab, damit kein versehentlicher Netzwerkzugriff
- * entstehen kann, bevor die Schutzregeln greifen.
  */
 export async function analyzeHlsManifest(
   input: ManifestInput,
-  _options: AnalyzeOptions = {}
+  options: AnalyzeOptions = {}
+): Promise<AnalysisResult | AnalysisErrorResult> {
+  return analyzeWithRuntime(input, options, defaultLoaderRuntime);
+}
+
+/**
+ * Internal Entry Point für Tests: erlaubt Injektion einer Runtime,
+ * damit SSRF-/Loader-Verhalten ohne echtes Netzwerk geprüft werden
+ * kann. Nicht Teil der publizierten API.
+ */
+export async function analyzeWithRuntime(
+  input: ManifestInput,
+  options: AnalyzeOptions,
+  runtime: LoaderRuntime
 ): Promise<AnalysisResult | AnalysisErrorResult> {
   const validation = validateInput(input);
   if (validation.kind === "error") {
     return toErrorResult(validation.error);
   }
-  if (validation.input.kind === "url") {
-    return toErrorResult(
-      new AnalysisError(
-        "fetch_blocked",
-        "URL-Laden wird erst in 0.3.0 Tranche 2 freigeschaltet (plan-0.3.0 §3).",
-        { url: validation.input.url }
-      )
-    );
+  const validInput = validation.input;
+  if (validInput.kind === "url") {
+    return loadAndAnalyzeUrl(validInput.url, options, runtime);
   }
-  const inputMeta =
-    validation.input.baseUrl !== undefined
-      ? { source: "text" as const, baseUrl: validation.input.baseUrl }
-      : { source: "text" as const };
-  return analyzeHlsManifestText(validation.input.text, inputMeta, STREAM_ANALYZER_VERSION);
+  const inputMeta: AnalysisInputMetadata =
+    validInput.baseUrl !== undefined
+      ? { source: "text", baseUrl: validInput.baseUrl }
+      : { source: "text" };
+  return runParser(validInput.text, inputMeta);
+}
+
+async function loadAndAnalyzeUrl(
+  url: string,
+  options: AnalyzeOptions,
+  runtime: LoaderRuntime
+): Promise<AnalysisResult | AnalysisErrorResult> {
+  const fetchOpts: Required<FetchOptions> = {
+    ...FETCH_DEFAULTS,
+    ...(options.fetch ?? {})
+  };
+  let loaded;
+  try {
+    loaded = await loadHlsManifest(url, {
+      runtime,
+      timeoutMs: fetchOpts.timeoutMs,
+      maxBytes: fetchOpts.maxBytes,
+      maxRedirects: fetchOpts.maxRedirects
+    });
+  } catch (error) {
+    if (error instanceof AnalysisError) {
+      return toErrorResult(error);
+    }
+    throw error;
+  }
+  const inputMeta: AnalysisInputMetadata = {
+    source: "url",
+    url,
+    baseUrl: loaded.finalUrl
+  };
+  return runParser(loaded.text, inputMeta);
+}
+
+function runParser(text: string, inputMeta: AnalysisInputMetadata): AnalysisResult | AnalysisErrorResult {
+  try {
+    return analyzeHlsManifestText(text, inputMeta, STREAM_ANALYZER_VERSION);
+  } catch (error) {
+    if (error instanceof AnalysisError) {
+      return toErrorResult(error);
+    }
+    throw error;
+  }
 }
 
 type Validation = { kind: "ok"; input: ManifestInput } | { kind: "error"; error: AnalysisError };
