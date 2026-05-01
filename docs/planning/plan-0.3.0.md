@@ -216,6 +216,14 @@ DoD:
 - [x] Plan-/Doku-Aktualisierung: §9-DoD-Items mit Hash, `CHANGELOG.md`-Unreleased-Eintrag mit Counter-Name, Flag-Name, Dockerfile-Notiz und Contract-Test-Hinweis (`a622ae8`).
 - [x] `make gates` und `make smoke-analyzer` bleiben grün (`a622ae8`); CI-Run auf `main` wird nach dem Push verifiziert.
 
+### 9.1 Offene Folge-Issues aus dem 0.3.0-Release
+
+Im Tranche-8-Release-Lauf aufgefallen, nicht release-blockierend, aber für
+`0.3.x` oder `0.4.0` zu adressieren:
+
+- [ ] **Cross-Process-Vertragstest deckt „silent ignore"-Drift nicht.** Der Go-Adapter verwarf in `579e7cc`/`d894556` die Wire-Felder `summary` und `input` stumm; der Contract-Test in `apps/api/adapters/driven/streamanalyzer/contract_test.go` blieb grün, weil die Drift einseitig war (TS produziert, Go ignoriert) und der Test nur die selbst-dekodierten Felder prüfte. Fix in `aae849c` schloss den Bug, nicht aber das Testloch. Folge: Contract-Test um eine Vollständigkeitsgrenze erweitern — alle in der Spec-Fixture vorhandenen Top-Level-Felder müssen entweder im `domain.StreamAnalysisResult` ankommen oder im Test als „bewusst ignoriert" deklariert werden.
+- [ ] **CI-Workflow setzt Workspace-Bin-Symlinks erst spät.** `pnpm install --frozen-lockfile` läuft im Workflow vor `workspace-build`, deshalb fehlt nach dem ersten Install der `m-trace`-Bin-Symlink (workspace-Pakete brauchen `dist/`). `make smoke-cli` repariert das heute mit einem zweiten idempotenten `pnpm install` nach `workspace-build` (`8cc9109`). Sauberer wäre ein dedizierter Refresh-Step in `.github/workflows/build.yml` nach „Workspace build", der den Doppelaufruf im Makefile redundant macht.
+
 ---
 
 ## 10. Tranche 8 — Release-Akzeptanzkriterien `0.3.0`
