@@ -28,7 +28,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | Tranche | Inhalt | Status |
 |---|---|---|
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
-| 1 | Stream-Analyzer-Paket und Public API | ⬜ |
+| 1 | Stream-Analyzer-Paket und Public API | ✅ |
 | 2 | HLS-Manifest laden und Playlist-Typ erkennen | ⬜ |
 | 3 | Master-Playlist-Analyse | ⬜ |
 | 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ⬜ |
@@ -62,20 +62,20 @@ Ziel: `packages/stream-analyzer` wird als TypeScript-Paket mit stabiler Public A
 
 DoD:
 
-- [ ] Workspace-Paket `packages/stream-analyzer` ist angelegt und in `pnpm-workspace.yaml` enthalten.
-- [ ] `package.json` enthält eindeutige Paketmetadaten, `type`, `main`, `module`, `types`, `exports`, `files`, `license`, `repository.directory` und CI-taugliche Scripts.
-- [ ] `packages/stream-analyzer/package.json.version` wird für `0.3.0` mit dem Repo-Release versioniert; abweichende unabhängige Versionierung wäre vor Umsetzung als explizite Versionierungsregel zu dokumentieren.
-- [ ] Analyzer-Version wird aus genau einer Quelle abgeleitet: `packages/stream-analyzer/package.json`, exportierte Version und die im JSON-Ergebnis gesendete Analyzer-Version sind synchron und getestet.
-- [ ] Public API exportiert mindestens eine Analysefunktion für HLS-Manifeste und klar typisierte Ergebnis-/Fehlertypen.
-- [ ] API-/Adapter-Kontrakt für Backend-Nutzung ist vor Parser-Implementierung entschieden: Manifest-Input, optionale URL/Base-URL, Analyse-Resultat und Fehlerform sind so modelliert, dass der Go-`StreamAnalyzer`-Port nicht auf Playback-Event-Batches festgelegt bleibt.
-- [ ] Go-Port-/Use-Case-Zielsignatur ist früh umgesetzt oder als Kompatibilitätsadapter vorbereitet, bevor Parser-Implementierung beginnt; der bestehende `AnalyzeBatch(ctx, []domain.PlaybackEvent) error`-Slot darf nicht bis Tranche 6 als einziger API-Integrationsvertrag stehen bleiben.
-- [ ] Interne Parser-Module bleiben intern; dokumentierte Konsumenten importieren nur über den Package-Entry-Point.
-- [ ] F-73 ist vorbereitet: Parser- und Ergebnisgrenzen sind so geschnitten, dass DASH-/CMAF-Analyse später als eigener Analyzer-Typ ergänzt werden kann; Nicht-HLS bleibt in `0.3.0` explizit dokumentiert out of scope.
-- [ ] TypeScript-Build erzeugt ESM, CJS und Type-Definitionen oder dokumentiert bewusst, warum nur ein Format unterstützt wird.
-- [ ] Unit-Test-Setup ist vorhanden und läuft über `pnpm --filter <stream-analyzer-paket> run test`.
-- [ ] Coverage-Scope für `packages/stream-analyzer/src/` ist definiert; Zielschwelle ist mindestens 90 % für Statements, Lines, Functions und Branches.
-- [ ] Root-Gates `make test`, `make lint`, `make coverage-gate` und `make build` beziehen das neue Workspace-Paket ein.
-- [ ] `docs/stream-analyzer.md` beschreibt Public API, unterstützten Scope, bekannte Grenzen und Beispiele.
+- [x] Workspace-Paket `packages/stream-analyzer` ist angelegt und in `pnpm-workspace.yaml` enthalten (`5aa3f34`).
+- [x] `package.json` enthält eindeutige Paketmetadaten, `type`, `main`, `module`, `types`, `exports`, `files`, `license`, `repository.directory` und CI-taugliche Scripts (`5aa3f34`).
+- [x] `packages/stream-analyzer/package.json.version` wird für `0.3.0` mit dem Repo-Release versioniert; abweichende unabhängige Versionierung wäre vor Umsetzung als explizite Versionierungsregel zu dokumentieren (`5aa3f34`).
+- [x] Analyzer-Version wird aus genau einer Quelle abgeleitet: `packages/stream-analyzer/package.json`, exportierte Version und die im JSON-Ergebnis gesendete Analyzer-Version sind synchron und getestet (`5aa3f34`).
+- [x] Public API exportiert mindestens eine Analysefunktion für HLS-Manifeste und klar typisierte Ergebnis-/Fehlertypen (`5aa3f34`).
+- [x] API-/Adapter-Kontrakt für Backend-Nutzung ist vor Parser-Implementierung entschieden: Manifest-Input, optionale URL/Base-URL, Analyse-Resultat und Fehlerform sind so modelliert, dass der Go-`StreamAnalyzer`-Port nicht auf Playback-Event-Batches festgelegt bleibt (`5aa3f34`).
+- [x] Go-Port-/Use-Case-Zielsignatur ist früh umgesetzt oder als Kompatibilitätsadapter vorbereitet, bevor Parser-Implementierung beginnt; der bestehende `AnalyzeBatch(ctx, []domain.PlaybackEvent) error`-Slot darf nicht bis Tranche 6 als einziger API-Integrationsvertrag stehen bleiben (`5aa3f34`).
+- [x] Interne Parser-Module bleiben intern; dokumentierte Konsumenten importieren nur über den Package-Entry-Point (`5aa3f34`).
+- [x] F-73 ist vorbereitet: Parser- und Ergebnisgrenzen sind so geschnitten, dass DASH-/CMAF-Analyse später als eigener Analyzer-Typ ergänzt werden kann; Nicht-HLS bleibt in `0.3.0` explizit dokumentiert out of scope (`5aa3f34`).
+- [x] TypeScript-Build erzeugt ESM, CJS und Type-Definitionen oder dokumentiert bewusst, warum nur ein Format unterstützt wird (`5aa3f34`).
+- [x] Unit-Test-Setup ist vorhanden und läuft über `pnpm --filter <stream-analyzer-paket> run test` (`5aa3f34`).
+- [x] Coverage-Scope für `packages/stream-analyzer/src/` ist definiert; Zielschwelle ist mindestens 90 % für Statements, Lines, Functions und Branches (`5aa3f34`).
+- [x] Root-Gates `make test`, `make lint`, `make coverage-gate` und `make build` beziehen das neue Workspace-Paket ein (`5aa3f34`).
+- [x] `docs/user/stream-analyzer.md` beschreibt Public API, unterstützten Scope, bekannte Grenzen und Beispiele (`5aa3f34`).
 
 ---
 
@@ -140,7 +140,7 @@ DoD:
 
 ## 6. Tranche 5 — JSON-Ergebnisformat und Dokumentation
 
-Bezug: RAK-26; F-81; `docs/stream-analyzer.md`.
+Bezug: RAK-26; F-81; `docs/user/stream-analyzer.md`.
 
 Ziel: Analyzer-Ergebnisse sind stabil serialisierbar, für API und CLI geeignet und dokumentiert.
 
@@ -151,7 +151,7 @@ DoD:
 - [ ] Fehler-JSON ist klar vom Erfolgs-JSON unterscheidbar.
 - [ ] Stabilitätsregel ist dokumentiert: additive Änderungen sind erlaubt; breaking Changes benötigen Changelog und Plan-/Doku-Update.
 - [ ] JSON-Serialisierung ist getestet und enthält keine nicht-deterministischen Felder ohne explizite Normalisierung.
-- [ ] `docs/stream-analyzer.md` enthält Beispiele für Master Playlist, Media Playlist und Fehlerfall.
+- [ ] `docs/user/stream-analyzer.md` enthält Beispiele für Master Playlist, Media Playlist und Fehlerfall.
 
 ---
 
@@ -209,7 +209,7 @@ DoD:
 - [ ] **RAK-27** API kann Analyzer nutzen.
 - [ ] **RAK-28** CLI-Grundlage existiert.
 - [ ] Versionen sind konsistent: Root-`package.json.version`, `packages/stream-analyzer/package.json.version`, `CHANGELOG.md`-Abschnitt, Release-Tag `v0.3.0` und die im JSON-Ergebnis gesendete Analyzer-Version passen zusammen oder eine bewusst abweichende Versionierungsregel ist dokumentiert und getestet.
-- [ ] `docs/stream-analyzer.md`, `docs/user/local-development.md`, `docs/user/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
+- [ ] `docs/user/stream-analyzer.md`, `docs/user/local-development.md`, `docs/user/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.3.0`.
 - [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build` und ein reproduzierbarer Analyzer-CLI-Smoke für `pnpm m-trace check <url>` gegen lokales Fixture oder gemockten Fetch-Pfad.
 - [ ] Falls `make browser-e2e` nicht durch Analyzer-Änderungen betroffen ist, bleibt es ein manuelles Release-Gate; bei Dashboard-/Demo-Auswirkungen läuft es grün.
