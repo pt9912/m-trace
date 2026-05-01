@@ -72,12 +72,13 @@ DoD:
 
 - [ ] SQLite-Schema für Projekte, Sessions, Playback-Events und Ingest-Sequenzen ist festgelegt und versioniert.
 - [ ] Migrationsmechanismus ist entschieden und implementiert; Migrationen laufen beim lokalen API-Start deterministisch und idempotent.
+- [ ] Cursor-Kompatibilitätsstrategie ist dokumentiert: Cursor tragen eine Version; alte `process_instance_id`-Cursor werden einmalig als `cursor_invalid` mit Recovery-Hinweis abgewiesen, und Dashboard/SDK-Clients brechen die Wiederholung nach einem Snapshot-Reload ab statt denselben Cursor erneut zu senden.
 - [ ] SQLite-Datei liegt im Compose-Lab in einem benannten Volume des `api`-Service; `make stop` entfernt das Volume nicht.
 - [ ] Konfiguration erlaubt einen expliziten SQLite-Pfad für lokale Entwicklung und CI.
 - [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind hinter den bestehenden Ports implementiert; Application- und Domain-Layer bleiben frei von SQLite-Imports.
 - [ ] In-Memory-Adapter bleiben nur für Tests oder expliziten Dev-Fallback erhalten und sind nicht mehr der Default im Compose-Lab.
-- [ ] Idempotenz-Grenzen sind vor Implementierung festgelegt: Session-State-Updates (`session_ended`, Sweeper-Zustände) sind idempotent; Event-Level-Deduplikation ist entweder über einen dokumentierten Event-Key/Hash (`project_id`, `session_id`, `sequence_number` oder dedizierte Event-ID) testbar umgesetzt oder bewusst als append-only mit sichtbar möglichen Duplikaten dokumentiert.
-- [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als durabler Tie-Breaker.
+- [ ] Idempotenz-Grenzen sind vor Implementierung festgelegt: Session-State-Updates (`session_ended`, Sweeper-Zustände) sind idempotent; Event-Level-Deduplikation ist entweder über einen dokumentierten Event-Key/Hash (`project_id`, `session_id`, `sequence_number` oder dedizierte Event-ID) testbar umgesetzt oder jedes Duplikat bekommt eine persistierte Timeline-Klassifikation (`accepted`, `duplicate_suspected`, `replayed`) mit Dashboard-Anzeige.
+- [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als serverseitig verpflichtender, durabler Tie-Breaker für jeden persistierten Event.
 - [ ] Cursor-Format nutzt keine `process_instance_id`-Invalidierung mehr; Cursor bleiben nach API-Restart gültig oder liefern den im API-Kontrakt dokumentierten Fehler `400 {"error":"cursor_invalid","message":"..."}` ohne `Retry-After`; Clients recovern durch Verwerfen des Cursors und erneuten Snapshot-Load.
 - [ ] Retention-Defaults für das lokale Lab sind festgelegt und dokumentiert; Reset-/Wipe-Anleitung steht in `docs/user/local-development.md`.
 - [ ] Persistenztests decken Neustart-Simulation, Migration, Cursor-Stabilität, Session-Ende, Event-Ordering und Retention ab.
@@ -94,6 +95,7 @@ Ziel: Player-Sessions werden konsistent als Trace-Konzept modelliert. OTel-Spans
 DoD:
 
 - [ ] Trace-ID-Strategie ist festgelegt: pro Player-Session existiert eine stabile Korrelation, die Backend-Spans und gespeicherte Events verbinden kann.
+- [ ] RAK-29/RAK-32 sind Tempo-unabhängig erfüllbar: die lokale Persistenz speichert `trace_id` oder eine äquivalente `correlation_id` als Source of Truth; Tempo ist nur optionaler Export/Viewer und darf kein Pflichtpfad für Dashboard-Korrelation sein.
 - [ ] `session_id` bleibt pseudonym und wird nicht als Prometheus-Label verwendet.
 - [ ] HTTP-Request-Spans für `POST /api/playback-events` tragen kontrollierte Attribute für Project, Batch-Outcome, Event-Anzahl und bei Erfolg Session-Korrelationsdaten.
 - [ ] Event-Persistenz speichert Trace-/Span-Kontext oder eine daraus abgeleitete Korrelations-ID so, dass die Dashboard-Ansicht ohne Tempo nutzbar bleibt.
@@ -101,6 +103,7 @@ DoD:
 - [ ] Server validiert eingehende Korrelationsfelder defensiv; ungültige Trace-Kontexte führen nicht zum Absturz und werden dokumentiert behandelt.
 - [ ] Time-Skew-Handling aus `spec/telemetry-model.md` §5.3 ist umgesetzt oder als explizit späterer Scope dokumentiert.
 - [ ] Tests decken Trace-Konsistenz über mehrere Batches einer Session, fehlenden Client-Kontext, ungültigen Kontext und Session-Ende ab.
+- [ ] Tests verifizieren Trace-/Korrelationskonsistenz bei deaktiviertem Tempo-Profil; dieselben Tests dürfen nicht von einem externen Trace-Backend abhängen.
 - [ ] `spec/telemetry-model.md` dokumentiert die konkrete Span-Struktur, Attribute und Sampling-Auswirkung für `0.4.0`.
 
 ---
@@ -138,9 +141,11 @@ DoD:
 - [ ] Detailansicht stellt eine Timeline aus Player-, Manifest- und Segment-Ereignissen dar, mit stabiler Reihenfolge und klarer Typ-Unterscheidung.
 - [ ] Laufende Sessions sind von beendeten Sessions unterscheidbar; `session_ended` und Sweeper-Ende werden sichtbar.
 - [ ] Invalid-, dropped- und rate-limited Hinweise sind in der Session- oder Statusansicht auffindbar, ohne Prometheus-Rohwissen vorauszusetzen.
+- [ ] Duplikat- oder Replay-Klassifikationen aus der Persistenz sind in der Timeline unterscheidbar und beschädigen nicht die Default-Reihenfolge.
 - [ ] Pagination oder inkrementelles Nachladen bleibt bei längeren Sessions bedienbar; Cursor-Verhalten ist restart-stabil.
 - [ ] SSE-Live-Update-Mechanismus aus ADR 0003 ist implementiert; Polling bleibt Fallback für Stream-Abbruch oder nicht verfügbare SSE-Verbindung.
 - [ ] SSE-Endpunkt-Schnitt ist im `spec/backend-api-contract.md` als verlässlicher Vertrag dokumentiert: globaler Stream, optionaler Session-Detail-Stream, Payload-Schema, `Last-Event-ID`-/Backfill-Regel, Fehler-/Reconnect-Semantik und Polling-Fallback-Intervalle.
+- [ ] SSE-Fallback-Grenzen sind hart definiert und getestet: Heartbeat-Intervall, Reconnect-Backoff, maximale Backfill-Lücke und Polling-Intervall haben konkrete Defaults sowie obere Grenzen im API-Kontrakt.
 - [ ] Backend-Tests decken SSE-Stream-Header, EventSource-kompatibles Format, Heartbeats/Keepalive, Client-Abbruch und reconnect-freundliche Semantik ab.
 - [ ] Dashboard-Tests decken SSE-Erfolg, Reconnect/Backfill und Polling-Fallback ab.
 - [ ] Dashboard-Tests decken leere Timeline, kurze Session, lange Session, laufende Session, beendete Session und Restart-Persistenz über API-Mockdaten ab.
@@ -158,6 +163,7 @@ DoD:
 
 - [ ] Compose-Profil für Tempo ist optional und startet nur bei expliziter Aktivierung.
 - [ ] OTel-Collector leitet Traces an Tempo weiter, wenn das Profil aktiv ist; ohne Profil bleibt der API-Start silent/no-op.
+- [ ] Ohne Tempo-Profil bleiben lokale `trace_id`/`correlation_id`, Dashboard-Timeline und RAK-29-Tests vollständig funktionsfähig.
 - [ ] Trace-Suche oder ein Link-Konzept ist dokumentiert, falls Dashboard und Tempo gemeinsam laufen.
 - [ ] RAK-29 ist auch ohne Tempo erfüllt; Tempo erweitert nur Debug-Tiefe.
 - [ ] Lokaler Smoke-Test oder manuelle Release-Checkliste beschreibt, wie ein Trace in Tempo sichtbar wird.
@@ -209,7 +215,7 @@ Bezug: RAK-29..RAK-35; `docs/user/releasing.md`.
 
 DoD:
 
-- [ ] **RAK-29** Player-Session-Traces werden konsistent erzeugt: mehrere Batches einer Session teilen stabile Korrelationsdaten; Tests decken Erfolg und fehlenden Kontext ab.
+- [ ] **RAK-29** Player-Session-Traces werden konsistent und Tempo-unabhängig erzeugt: mehrere Batches einer Session teilen lokal persistierte Korrelationsdaten; Tests decken Erfolg, fehlenden Kontext und deaktiviertes Tempo-Profil ab.
 - [ ] **RAK-30** Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich in einem gemeinsamen Trace-/Korrelationskontext zusammengeführt; Timeline-only-Ausnahmen sind je Ereignistyp begründet und dokumentiert.
 - [ ] **RAK-31** Tempo kann optional als Trace-Backend verwendet werden oder ist bewusst als Kann-Scope deferred, ohne Muss-Kriterien zu gefährden.
 - [ ] **RAK-32** Dashboard kann Session-Verläufe ohne Tempo anzeigen; API-Restart verliert bestehende lokale Session-Historie nicht.
