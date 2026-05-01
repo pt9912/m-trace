@@ -113,6 +113,30 @@ curl -L http://localhost:8888/teststream/index.m3u8
 # erwartet: 200 OK mit HLS-Manifest
 ```
 
+Analyzer-Endpunkt (ab `0.3.0` Tranche 6):
+
+```bash
+# Master-Manifest analysieren (Text-Input, exerciert API → analyzer-service)
+curl -i -X POST http://localhost:8080/api/analyze \
+  -H 'Content-Type: application/json' \
+  --data-binary @- <<'JSON'
+{
+  "kind": "text",
+  "text": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1280000\nvideo/720p.m3u8\n"
+}
+JSON
+# erwartet: 200 OK mit { status:"ok", playlistType:"master", … }
+
+# Smoke-Lauf inkl. Stack-Up und SSRF-Negativfall
+make smoke-analyzer
+```
+
+URL-Inputs gegen interne Compose-Services scheitern an der
+SSRF-Sperre (`http://mediamtx:8888/…` löst zu einem RFC1918-IP auf
+und wird vom analyzer-service korrekt mit 502 abgelehnt). Für lokale
+End-to-End-Tests deshalb Text-Input verwenden oder eine öffentliche
+HLS-URL nutzen.
+
 ### 2.3 Stack erweitern (`0.1.1` Dashboard, `0.1.2` Observability)
 
 Ab `0.1.1` kommt der `dashboard`-Service ins Core-Profil (vier Pflicht-Mindestdienste); `make dev` startet ihn automatisch. Erreichbar unter `http://localhost:5173` (oder Compose-equivalent).

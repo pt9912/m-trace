@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Workspace-Paket `@npm9912/stream-analyzer` mit HLS-Klassifikator,
+  URL-Loader (Timeout/Größenlimit/SSRF-Sperrlisten),
+  Master- und Media-Detail-Parser sowie diskriminierter Union-API
+  `AnalysisResult` (`analyzerKind: "hls"`, `analyzerVersion`,
+  Stabilitätsregel und Serialisierungsgarantien).
+- Internes HTTP-Service-Paket `@npm9912/analyzer-service`
+  (`apps/analyzer-service`) als Node-Wrapper um den Analyzer; läuft
+  in der Compose-Topologie als `analyzer-service`-Container.
+- API-Endpunkt `POST /api/analyze` mit Pass-through-Schema und
+  Problem-Shape-Fehlern (`invalid_request`, `analyzer_unavailable`
+  etc.). Go-Driven-Adapter `HTTPStreamAnalyzer` ruft den
+  analyzer-service.
+- `make smoke-analyzer` als End-to-End-Smoke (Master-Text-Input und
+  SSRF-Negativfall) im laufenden Compose-Stack.
+- Doku: `docs/user/stream-analyzer.md` (Tranche-1..6-Stand) und
+  `spec/backend-api-contract.md` §3.6 Analyzer-Endpunkt.
+
 ## [0.2.0] - 2026-04-30
 
 ### Added

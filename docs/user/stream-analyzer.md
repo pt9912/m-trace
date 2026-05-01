@@ -8,7 +8,7 @@ Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 Tranche 5)
+## 1. Status (0.3.0 Tranche 6)
 
 - ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 % stehen.
@@ -28,8 +28,10 @@ F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
   `playlistType`, `analyzerKind: "hls"` als Erweiterungspfad für
   DASH/CMAF, deterministische Serialisierung, Stabilitätsregel als
   operativer Vertrag — siehe §4 und §8.
-- ⬜ API-Anbindung über den Driven-Port `StreamAnalyzer.AnalyzeManifest` —
-  Tranche 6.
+- ✅ API-Anbindung: `POST /api/analyze` reicht den Aufruf an den
+  internen `analyzer-service` (Node-HTTP-Wrapper) weiter; Go-API
+  bleibt distroless-static. Vollständig in `docker-compose.yml`
+  verdrahtet, Smoke-Test über `make smoke-analyzer` — siehe §5.
 - ⬜ CLI `pnpm m-trace check <url>` — Tranche 7.
 
 Tranche 5 sperrt das JSON-Format. Konsumenten erkennen Erfolg/Fehler an
@@ -323,18 +325,38 @@ Diese Eigenschaften sind als Tests in
 
 ## 5. Backend-Anbindung
 
-Ab Tranche 6 ruft `apps/api` den Analyzer über den Driven-Port
+`apps/api` ruft den Analyzer über den Driven-Port
 `hexagon/port/driven.StreamAnalyzer.AnalyzeManifest(ctx, request) (result, error)`
-auf. Tranche 1 hat den Port bereits um die Zielsignatur erweitert; bis zur
-Tranche-6-Verdrahtung trägt `NoopStreamAnalyzer` einen leeren Slot mit
-`AnalyzerVersion = "noop"`. Das Domain-Modell reicht analyzer-spezifische
-Detail-Strukturen als vorcodiertes JSON via `EncodedDetails []byte` weiter,
-damit `apps/api/hexagon/domain` kein HLS-Detail-Schema vorgibt.
+auf. Der produktive Adapter (`HTTPStreamAnalyzer`) postet das
+Manifest-Eingabe-Schema des stream-analyzer-Pakets gegen den internen
+`analyzer-service` (Node-HTTP-Wrapper unter `apps/analyzer-service`)
+und mappt das `AnalyzeOutput`-JSON auf `domain.StreamAnalysisResult`
+zurück. So bleibt das Go-API-Image distroless-static, ohne
+Node-Runtime einzubetten.
 
-Tranche 6 entscheidet den Integrationsmodus formal (plan-0.3.0 §7);
-favorisiert ist ein interner Analyzer-HTTP-Service, damit das distroless-
-Go-API-Image keinen Node-Runtime mitbringen muss. Diese Doku-Sektion
-beschreibt den Plan, nicht den Tranche-1-Lieferstand.
+`docker-compose.yml` startet den Service als `analyzer-service` und
+setzt `ANALYZER_BASE_URL=http://analyzer-service:7000` an `apps/api`.
+Ohne diese Env-Variable greift `apps/api` auf den Noop-Slot zurück
+und meldet den Zustand im Startup-Log.
+
+**API-Endpunkt**: `POST /api/analyze` (vollständig dokumentiert in
+[`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
+§3.6). Request- und Response-Schema spiegeln die Public API des
+Pakets; Fehler werden auf eine Problem-Shape gemappt:
+
+| HTTP | `code`                  | Anlass                                                                |
+| ---- | ----------------------- | --------------------------------------------------------------------- |
+| 400  | `invalid_request`       | Pflichtfelder fehlen oder leer.                                       |
+| 400  | `invalid_json`          | Body kein gültiges JSON.                                              |
+| 415  | `unsupported_media_type`| Content-Type nicht `application/json`.                                |
+| 413  | `payload_too_large`     | Body über 1 MiB.                                                       |
+| 502  | `analyzer_unavailable`  | analyzer-service nicht erreichbar, abgelehnt (SSRF/Timeout/malformed) oder unerwartete Fehlerantwort. `details.reason` enthält den Adapter-String. |
+
+Ein lokaler End-to-End-Smoke (`make smoke-analyzer`) startet den
+Stack, prüft `/health` an Service und API, sendet einen Master-
+Manifest-Text gegen `/api/analyze` und verifiziert zusätzlich, dass
+ein RFC1918-URL-Input vom SSRF-Schutz korrekt mit 502 abgelehnt
+wird.
 
 ## 6. URL-Loader und SSRF-Schutz
 

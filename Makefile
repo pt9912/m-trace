@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci
 
 help:
 	@printf '%s\n' \
@@ -18,6 +18,7 @@ help:
 		'  make smoke                  Run the local 0.1.1 smoke checks' \
 		'  make smoke-observability    Run the Prometheus/cardinality smoke checks' \
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
+		'  make smoke-analyzer         Run the analyzer-service smoke check' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
 		'  make browser-e2e            Run browser E2E checks' \
 		'  make test                   Run API Docker tests and workspace tests' \
@@ -52,6 +53,10 @@ smoke-observability:
 smoke-rak10-console:
 	OTEL_TRACES_EXPORTER=console $(COMPOSE) up -d --build api
 	bash scripts/smoke-rak10-console.sh
+
+smoke-analyzer:
+	$(COMPOSE) up -d --build analyzer-service api mediamtx stream-generator
+	bash scripts/smoke-analyzer.sh
 
 seed-rak9:
 	bash scripts/seed-rak9.sh
@@ -92,6 +97,7 @@ workspace-coverage-gate:
 	$(PNPM) --filter @npm9912/player-sdk run test:coverage
 	$(PNPM) --filter @npm9912/m-trace-dashboard run test:coverage
 	$(PNPM) --filter @npm9912/stream-analyzer run test:coverage
+	$(PNPM) --filter @npm9912/analyzer-service run test:coverage
 
 coverage-report:
 	$(API_MAKE) coverage-report THRESHOLD="$(THRESHOLD)"

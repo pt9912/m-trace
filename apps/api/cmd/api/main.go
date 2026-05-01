@@ -29,6 +29,7 @@ import (
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 const (
@@ -81,7 +82,7 @@ func main() {
 		}
 		return active
 	}))
-	analyzer := streamanalyzer.NewNoopStreamAnalyzer()
+	analyzer := newAnalyzer(logger)
 	sequencer := persistence.NewInMemoryIngestSequencer()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
@@ -97,8 +98,10 @@ func main() {
 	sessionsService := application.NewSessionsService(sessions, repo, processID)
 	sessionsSweeper := application.NewSessionsSweeper(sessions, time.Now, logger)
 
+	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
+
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, sessionsService, resolver, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, publisher.Handler(), tracer, logger)
 	router = apihttp.RequestMetricsMiddleware(router, publisher)
 	addr := listenAddr()
 
@@ -149,6 +152,21 @@ func listenAddr() string {
 		return addr
 	}
 	return defaultListenAddr
+}
+
+// newAnalyzer wählt zwischen dem Noop-Slot und dem HTTP-Adapter
+// gegen den analyzer-service (plan-0.3.0 §7 Tranche 6). Setzt der
+// Operator `ANALYZER_BASE_URL`, wird der HTTP-Adapter aktiv; sonst
+// bleibt es beim Noop, damit lokale Smokes ohne Begleitservice
+// laufen können.
+func newAnalyzer(logger *slog.Logger) driven.StreamAnalyzer {
+	baseURL := strings.TrimSpace(os.Getenv("ANALYZER_BASE_URL"))
+	if baseURL == "" {
+		logger.Info("analyzer adapter: noop (ANALYZER_BASE_URL nicht gesetzt)")
+		return streamanalyzer.NewNoopStreamAnalyzer()
+	}
+	logger.Info("analyzer adapter: http", "base_url", baseURL)
+	return streamanalyzer.NewHTTPStreamAnalyzer(baseURL)
 }
 
 // newProcessInstanceID erzeugt eine 16-Byte-Zufalls-ID und gibt sie als

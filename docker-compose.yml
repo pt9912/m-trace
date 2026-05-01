@@ -4,14 +4,28 @@ services:
       context: ./apps/api
       target: runtime
     image: m-trace-api:0.1.2
+    depends_on:
+      - analyzer-service
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
       OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
       OTEL_EXPORTER_OTLP_PROTOCOL: "${OTEL_EXPORTER_OTLP_PROTOCOL:-}"
       OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-}"
       OTEL_METRICS_EXPORTER: "${OTEL_METRICS_EXPORTER:-}"
+      ANALYZER_BASE_URL: "http://analyzer-service:7000"
     ports:
       - "8080:8080"
+
+  analyzer-service:
+    build:
+      context: .
+      dockerfile: ./apps/analyzer-service/Dockerfile
+    image: m-trace-analyzer:0.3.0
+    environment:
+      ANALYZER_LISTEN_HOST: "0.0.0.0"
+      ANALYZER_LISTEN_PORT: "7000"
+    ports:
+      - "7000:7000"
 
   dashboard:
     build:

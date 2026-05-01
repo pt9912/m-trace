@@ -59,7 +59,7 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Serv
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, sessionsService, resolver, publisher.Handler(), nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv
@@ -95,7 +95,7 @@ func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, sessionsService, resolver, publisher.Handler(), nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

@@ -1,0 +1,27 @@
+{
+  "name": "@npm9912/analyzer-service",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Internal HTTP wrapper around @npm9912/stream-analyzer for the m-trace API.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/main.cjs",
+  "module": "./dist/main.js",
+  "scripts": {
+    "build": "tsup src/main.ts --format esm,cjs --clean",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc --noEmit",
+    "start": "node dist/main.cjs"
+  },
+  "dependencies": {
+    "@npm9912/stream-analyzer": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.12.0",
+    "@vitest/coverage-v8": "4.1.5",
+    "tsup": "8.5.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.5"
+  }
+}

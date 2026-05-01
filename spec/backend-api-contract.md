@@ -36,6 +36,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `GET`  | `/api/metrics`          | Prometheus-Exposition           | `200 OK`        |
 | `GET`  | `/api/stream-sessions`  | Stream-Sessions listen          | `200 OK`        |
 | `GET`  | `/api/stream-sessions/{id}` | Stream-Session mit Events lesen | `200 OK` oder `404 Not Found` |
+| `POST` | `/api/analyze`          | HLS-Manifest analysieren (plan-0.3.0 §7) | `200 OK` |
 
 ---
 
@@ -102,6 +103,55 @@ Unbekannte Felder dürfen nicht zum Fehler führen (Vorwärtskompatibilität).
 `accepted` ist die Anzahl angenommener Events. Weitere Antwortfelder sind
 nicht spezifiziert; Implementierungen dürfen sie ergänzen, müssen sich aber
 abwärtskompatibel verhalten.
+
+---
+
+### 3.6 Analyzer-Endpunkt `POST /api/analyze`
+
+`POST /api/analyze` reicht eine HLS-Manifest-Analyse an den
+internen `analyzer-service` weiter (plan-0.3.0 §7 Tranche 6) und
+gibt das `AnalysisResult`-JSON aus `@npm9912/stream-analyzer`
+zurück. Der Endpunkt ist authentifizierungsfrei in 0.3.0 — der
+Service ist nur über das interne Netz erreichbar; ein öffentlich
+exponierter Deploy braucht eine Egress-Firewall oder einen
+Folge-ADR mit Token-Schicht.
+
+**Request** (`Content-Type: application/json`):
+
+```json
+{ "kind": "url", "url": "https://cdn.example.test/manifest.m3u8" }
+```
+
+oder
+
+```json
+{ "kind": "text", "text": "#EXTM3U\n…", "baseUrl": "https://cdn.example.test/" }
+```
+
+Pflicht: `kind` (`"url" | "text"`). Bei `kind="url"` ist `url`
+Pflicht; bei `kind="text"` ist `text` Pflicht und `baseUrl`
+optional. Body-Limit auf API-Ebene: 1 MiB (Defense-in-Depth; der
+analyzer-service hat sein eigenes Limit beim Manifest-Loading).
+
+**Erfolgsantwort** (`200 OK`): vollständiges `AnalysisResult` aus
+`docs/user/stream-analyzer.md` §2.2 — diskriminiert per
+`playlistType`, mit `analyzerVersion`, `analyzerKind: "hls"`,
+`summary`, `findings`, `details`.
+
+**Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
+
+| HTTP | `code`                  | Anlass                                                                  |
+| ---- | ----------------------- | ----------------------------------------------------------------------- |
+| 400  | `invalid_request`       | Pflichtfelder fehlen / kind unbekannt / leerer `text`/`url`-Wert.       |
+| 400  | `invalid_json`          | Body ist kein gültiges JSON.                                            |
+| 415  | `unsupported_media_type`| `Content-Type` ist nicht `application/json`.                            |
+| 413  | `payload_too_large`     | Request-Body übersteigt 1 MiB.                                          |
+| 502  | `analyzer_unavailable`  | analyzer-service nicht erreichbar oder hat den Aufruf abgelehnt (z. B. SSRF-Block, Timeout, malformed Manifest). `details.reason` enthält die Adapter-Fehlermeldung. |
+
+Der analyzer-service-Pfad bekommt einen 30-Sekunden-Timeout vom
+HTTP-Adapter sowie ein Antwortgrößen-Limit von 4 MiB. Beides ist
+Defense-in-Depth gegen einen kompromittierten oder hängenden
+Service; die Limits sind nicht öffentlich konfigurierbar.
 
 ---
 

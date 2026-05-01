@@ -33,6 +33,7 @@ type RequestMetrics interface {
 func NewRouter(
 	useCase driving.PlaybackEventInbound,
 	sessions driving.SessionsInbound,
+	analysis driving.StreamAnalysisInbound,
 	allowlist OriginAllowlist,
 	metricsHandler http.Handler,
 	tracer trace.Tracer,
@@ -68,6 +69,12 @@ func NewRouter(
 	mux.Handle("GET /api/metrics", metricsHandler)
 	mux.Handle("GET /api/stream-sessions", sessionsList)
 	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
+
+	if analysis != nil {
+		analyzeHandler := &AnalyzeHandler{UseCase: analysis, Logger: logger}
+		mux.Handle("POST /api/analyze", analyzeHandler)
+		mux.HandleFunc("OPTIONS /api/analyze", dashboardPreflightHandler(allowlist))
+	}
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
 	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
