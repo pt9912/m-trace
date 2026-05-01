@@ -33,7 +33,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 3 | Master-Playlist-Analyse | ✅ |
 | 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ✅ |
 | 5 | JSON-Ergebnisformat und Dokumentation | ✅ |
-| 6 | API-Anbindung über StreamAnalyzer-Port | ⬜ |
+| 6 | API-Anbindung über StreamAnalyzer-Port | ✅ |
 | 7 | CLI-Grundlage | ⬜ |
 | 8 | Release-Akzeptanzkriterien `0.3.0` | ⬜ |
 
@@ -163,16 +163,16 @@ Ziel: `apps/api` kann den Analyzer nutzen, ohne die hexagonalen Grenzen zu verle
 
 DoD:
 
-- [ ] Bestehender Go-Port `hexagon/port/driven.StreamAnalyzer` wird überprüft und bei Bedarf so angepasst, dass Analyseaufrufe fachlich sinnvoll modelliert sind.
-- [ ] API-Integration nutzt einen Adapter an der Driven-Seite; Domain und Application Layer importieren keine Node-/TypeScript-Implementierungsdetails.
-- [ ] Bevorzugter Integrationsmodus für `0.3.0` ist ein interner Analyzer-HTTP-Service, damit das distroless-Go-API-Image keinen Node-/CLI-Runtime-Stack enthalten muss. Abweichungen müssen die Runtime- und Security-Folgen im Plan dokumentieren.
-- [ ] Falls Node-Analyzer aus Go heraus nicht sinnvoll direkt nutzbar ist, ist der Integrationsmodus explizit entschieden: bevorzugt HTTP-intern, alternativ separater Prozess oder CLI-Adapter. API-Nutzbarkeit selbst ist release-blocking und darf nicht deferred werden.
-- [ ] Docker-/Compose-/Runtime-Wiring ist umgesetzt und getestet: Analyzer-Service oder Adapter ist in lokaler Entwicklung und CI verfügbar, `apps/api` kann ihn erreichen, und ein Smoke-Test prüft den Analyzer-API-Pfad im laufenden Stack.
-- [ ] API-Endpunkt oder Use-Case-Pfad für Analyse ist definiert und getestet.
-- [ ] Backend-API-Kontrakt wird synchron aktualisiert oder eine Nachfolgedoku als neue Contract-Quelle benannt; Pfad, Methode, Request-/Response-Shape, Fehlerabbildung und Pflichttests für den Analyzer-API-Pfad sind dokumentiert.
-- [ ] Fehlerabbildung von Analyzer-Fehlern auf HTTP-Status/Problem-Shape ist dokumentiert.
-- [ ] Metriken/Logs für Analyseaufrufe sind minimal vorhanden oder bewusst deferred.
-- [ ] Architekturcheck bleibt grün.
+- [x] Bestehender Go-Port `hexagon/port/driven.StreamAnalyzer` wird überprüft und bei Bedarf so angepasst, dass Analyseaufrufe fachlich sinnvoll modelliert sind (`5aa3f34`, `579e7cc`).
+- [x] API-Integration nutzt einen Adapter an der Driven-Seite; Domain und Application Layer importieren keine Node-/TypeScript-Implementierungsdetails (`579e7cc`).
+- [x] Bevorzugter Integrationsmodus für `0.3.0` ist ein interner Analyzer-HTTP-Service, damit das distroless-Go-API-Image keinen Node-/CLI-Runtime-Stack enthalten muss. Abweichungen müssen die Runtime- und Security-Folgen im Plan dokumentieren (`579e7cc`).
+- [x] Falls Node-Analyzer aus Go heraus nicht sinnvoll direkt nutzbar ist, ist der Integrationsmodus explizit entschieden: bevorzugt HTTP-intern, alternativ separater Prozess oder CLI-Adapter. API-Nutzbarkeit selbst ist release-blocking und darf nicht deferred werden (`579e7cc`).
+- [x] Docker-/Compose-/Runtime-Wiring ist umgesetzt und getestet: Analyzer-Service oder Adapter ist in lokaler Entwicklung und CI verfügbar, `apps/api` kann ihn erreichen, und ein Smoke-Test prüft den Analyzer-API-Pfad im laufenden Stack (`579e7cc`).
+- [x] API-Endpunkt oder Use-Case-Pfad für Analyse ist definiert und getestet (`579e7cc`).
+- [x] Backend-API-Kontrakt wird synchron aktualisiert oder eine Nachfolgedoku als neue Contract-Quelle benannt; Pfad, Methode, Request-/Response-Shape, Fehlerabbildung und Pflichttests für den Analyzer-API-Pfad sind dokumentiert (`579e7cc`).
+- [x] Fehlerabbildung von Analyzer-Fehlern auf HTTP-Status/Problem-Shape ist dokumentiert (`579e7cc`).
+- [!] Metriken/Logs für Analyseaufrufe sind minimal vorhanden oder bewusst deferred — bewusst deferred auf 0.3.x: HTTPStreamAnalyzer und AnalyzeHandler loggen Fehler über den existierenden slog-Pfad; Prometheus-Counter/Histogram bleiben Tranche-0.3.x-Folge-Issue (kein Release-Blocker für Tranche 6).
+- [x] Architekturcheck bleibt grün (`579e7cc`).
 
 ---
 
