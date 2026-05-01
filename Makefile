@@ -1,6 +1,38 @@
 COMPOSE ?= docker compose
+PNPM ?= pnpm
+API_MAKE ?= $(MAKE) -C apps/api
 
-.PHONY: dev dev-observability stop smoke smoke-observability smoke-rak10-console seed-rak9 browser-e2e test lint build coverage-gate arch-check sdk-performance-smoke
+COVERAGE_THRESHOLD ?= 90
+THRESHOLD ?= $(COVERAGE_THRESHOLD)
+
+.DEFAULT_GOAL := help
+
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci
+
+help:
+	@printf '%s\n' \
+		'Targets:' \
+		'  make dev                    Start the core Docker Compose lab' \
+		'  make dev-observability      Start the lab with the observability profile' \
+		'  make stop                   Stop all Compose services, including observability' \
+		'  make smoke                  Run the local 0.1.1 smoke checks' \
+		'  make smoke-observability    Run the Prometheus/cardinality smoke checks' \
+		'  make smoke-rak10-console    Run the console-trace smoke check' \
+		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
+		'  make browser-e2e            Run browser E2E checks' \
+		'  make test                   Run API Docker tests and workspace tests' \
+		'  make lint                   Run API Docker lint and workspace lint' \
+		'  make build                  Build API runtime image and workspace packages' \
+		'  make coverage-gate          Run API, SDK, dashboard and analyzer coverage gates' \
+		'  make coverage-report        Export the API coverage report' \
+		'  make arch-check             Run the API architecture boundary check' \
+		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
+		'  make gates                  Run test, lint, coverage and architecture gates' \
+		'  make ci                     Run gates plus build' \
+		'' \
+		'Variables:' \
+		'  COMPOSE="docker compose" PNPM=pnpm API_MAKE="$(MAKE) -C apps/api"' \
+		'  COVERAGE_THRESHOLD=90 THRESHOLD=$(THRESHOLD)'
 
 dev:
 	$(COMPOSE) up --build
@@ -27,26 +59,49 @@ seed-rak9:
 browser-e2e:
 	bash scripts/test-browser-e2e.sh
 
-test:
-	$(MAKE) -C apps/api test
-	pnpm run test
+test: api-test workspace-test
 
-lint:
-	$(MAKE) -C apps/api lint
-	pnpm run lint
+api-test:
+	$(API_MAKE) test
 
-build:
-	$(MAKE) -C apps/api build
-	pnpm run build
+workspace-test:
+	$(PNPM) run test
 
-coverage-gate:
-	$(MAKE) -C apps/api coverage-gate $(if $(THRESHOLD),THRESHOLD="$(THRESHOLD)")
-	pnpm --filter @npm9912/player-sdk run test:coverage
-	pnpm --filter @npm9912/m-trace-dashboard run test:coverage
-	pnpm --filter @npm9912/stream-analyzer run test:coverage
+lint: api-lint workspace-lint
+
+api-lint:
+	$(API_MAKE) lint
+
+workspace-lint:
+	$(PNPM) run lint
+
+build: api-build workspace-build
+
+api-build:
+	$(API_MAKE) build
+
+workspace-build:
+	$(PNPM) run build
+
+coverage-gate: api-coverage-gate workspace-coverage-gate
+
+api-coverage-gate:
+	$(API_MAKE) coverage-gate THRESHOLD="$(THRESHOLD)"
+
+workspace-coverage-gate:
+	$(PNPM) --filter @npm9912/player-sdk run test:coverage
+	$(PNPM) --filter @npm9912/m-trace-dashboard run test:coverage
+	$(PNPM) --filter @npm9912/stream-analyzer run test:coverage
+
+coverage-report:
+	$(API_MAKE) coverage-report THRESHOLD="$(THRESHOLD)"
 
 arch-check:
-	$(MAKE) -C apps/api arch-check
+	$(API_MAKE) arch-check
 
 sdk-performance-smoke:
-	pnpm --filter @npm9912/player-sdk run performance:smoke
+	$(PNPM) --filter @npm9912/player-sdk run performance:smoke
+
+gates: test lint coverage-gate arch-check
+
+ci: gates build
