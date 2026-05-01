@@ -29,7 +29,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 |---|---|---|
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
 | 1 | Stream-Analyzer-Paket und Public API | ✅ |
-| 2 | HLS-Manifest laden und Playlist-Typ erkennen | ⬜ |
+| 2 | HLS-Manifest laden und Playlist-Typ erkennen | ✅ |
 | 3 | Master-Playlist-Analyse | ⬜ |
 | 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ⬜ |
 | 5 | JSON-Ergebnisformat und Dokumentation | ⬜ |
@@ -87,16 +87,16 @@ Ziel: Der Analyzer kann HLS-Manifeste aus kontrollierten Eingaben laden und zwis
 
 DoD:
 
-- [ ] Analyse kann mit Manifest-Text als Input laufen; Netzwerkabruf ist ein separater, austauschbarer Input-Pfad.
-- [ ] HTTP-/Fetch-Laden unterstützt Timeout, maximale Manifest-Größe und klare Fehler für Netzwerk-, Statuscode- und Content-Type-Probleme.
-- [ ] URL-Laden hat verbindliche SSRF-Schutzregeln: nur `http`/`https`, keine Credentials in URLs, Redirect-Limit, gleiche Sicherheitsprüfung nach jedem Redirect, Block für localhost, private/link-local/loopback/reservierte IP-Bereiche, dokumentiertes DNS-Rebinding-Verhalten und Größenlimit auch nach Redirects.
-- [ ] SSRF-Schutz ist testpflichtig: Tests decken Credentials in URLs, localhost/private/link-local/loopback/reservierte IPs, Redirect auf verbotene Ziele, Redirect-Limit, dokumentierte DNS-Rebinding-Entscheidung und Größenlimit nach Redirect ab.
-- [ ] Parser erkennt HLS-Grundstruktur und lehnt nicht-HLS-Text mit einem strukturierten Fehler ab.
-- [ ] Master Playlist wird anhand HLS-Tags erkannt und getestet.
-- [ ] Media Playlist wird anhand HLS-Tags erkannt und getestet.
-- [ ] Ambige oder gemischte Playlists liefern ein definiertes Ergebnis oder einen dokumentierten Fehler.
-- [ ] Fixtures decken gültige Master Playlists, gültige Media Playlists, leere Dateien, nicht-HLS-Inhalt und malformed HLS ab.
-- [ ] Der Parser arbeitet deterministisch ohne echte Netzwerkabhängigkeit in Unit-Tests.
+- [x] Analyse kann mit Manifest-Text als Input laufen; Netzwerkabruf ist ein separater, austauschbarer Input-Pfad (`6b96d4e`).
+- [x] HTTP-/Fetch-Laden unterstützt Timeout, maximale Manifest-Größe und klare Fehler für Netzwerk-, Statuscode- und Content-Type-Probleme (`6b96d4e`).
+- [x] URL-Laden hat verbindliche SSRF-Schutzregeln: nur `http`/`https`, keine Credentials in URLs, Redirect-Limit, gleiche Sicherheitsprüfung nach jedem Redirect, Block für localhost, private/link-local/loopback/reservierte IP-Bereiche, dokumentiertes DNS-Rebinding-Verhalten und Größenlimit auch nach Redirects (`6b96d4e`).
+- [x] SSRF-Schutz ist testpflichtig: Tests decken Credentials in URLs, localhost/private/link-local/loopback/reservierte IPs, Redirect auf verbotene Ziele, Redirect-Limit, dokumentierte DNS-Rebinding-Entscheidung und Größenlimit nach Redirect ab (`6b96d4e`).
+- [x] Parser erkennt HLS-Grundstruktur und lehnt nicht-HLS-Text mit einem strukturierten Fehler ab (`6b96d4e`).
+- [x] Master Playlist wird anhand HLS-Tags erkannt und getestet (`6b96d4e`).
+- [x] Media Playlist wird anhand HLS-Tags erkannt und getestet (`6b96d4e`).
+- [x] Ambige oder gemischte Playlists liefern ein definiertes Ergebnis oder einen dokumentierten Fehler (`6b96d4e`).
+- [x] Fixtures decken gültige Master Playlists, gültige Media Playlists, leere Dateien, nicht-HLS-Inhalt und malformed HLS ab (`6b96d4e`).
+- [x] Der Parser arbeitet deterministisch ohne echte Netzwerkabhängigkeit in Unit-Tests (`6b96d4e`).
 
 ---
 
