@@ -46,6 +46,7 @@ type PrometheusPublisher struct {
 	apiRequests       prometheus.Counter
 	activeSessions    prometheus.GaugeFunc
 	startupTimeMS     prometheus.Gauge
+	analyzeRequests   *prometheus.CounterVec
 }
 
 // NewPrometheusPublisher creates and registers the aggregate metrics.
@@ -98,6 +99,18 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 			Name: "mtrace_startup_time_ms",
 			Help: "Most recently observed player startup time in milliseconds.",
 		}),
+		// `outcome` ist {ok, error}, `code` aus der abgeschlossenen
+		// Domäne (`invalid_request`, `analyzer_unavailable`, plus die
+		// AnalysisErrorCode-Werte aus dem stream-analyzer-Vertrag).
+		// Cardinality bleibt damit beschränkt (plan-0.3.0 §9 Tranche
+		// 7.5; Spec §7 — keine Cardinality-Explosion).
+		analyzeRequests: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "mtrace_analyze_requests_total",
+				Help: "Total number of POST /api/analyze invocations grouped by outcome and result/error code.",
+			},
+			[]string{"outcome", "code"},
+		),
 	}
 	registry.MustRegister(
 		p.eventsAccepted,
@@ -109,6 +122,7 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		p.apiRequests,
 		p.activeSessions,
 		p.startupTimeMS,
+		p.analyzeRequests,
 	)
 	return p
 }
@@ -168,6 +182,23 @@ func (p *PrometheusPublisher) APIRequests(n int) {
 	if n > 0 {
 		p.apiRequests.Add(float64(n))
 	}
+}
+
+// AnalyzeRequest erhöht den Counter um 1 für eine abgeschlossene
+// Analyse-Anfrage (POST /api/analyze). `outcome` ist "ok" oder
+// "error"; `code` ist entweder leer (bei outcome="ok") oder der
+// fachliche Fehler-Code (`invalid_request`, `analyzer_unavailable`,
+// plus die `AnalysisErrorCode`-Werte aus dem stream-analyzer-
+// Vertrag). Leere Strings werden zu "_unknown" normalisiert, damit
+// der Label-Wert nie leer im Output landet.
+func (p *PrometheusPublisher) AnalyzeRequest(outcome, code string) {
+	if outcome == "" {
+		outcome = "_unknown"
+	}
+	if code == "" {
+		code = "_unknown"
+	}
+	p.analyzeRequests.WithLabelValues(outcome, code).Inc()
 }
 
 // Handler returns the HTTP handler for GET /api/metrics.

@@ -20,13 +20,20 @@ export interface AnalyzerServerOptions {
    * `analyzeHlsManifest`-Funktion. Tests injizieren einen Stub.
    */
   readonly analyze?: (input: ManifestInput, options?: AnalyzeOptions) => Promise<AnalyzeOutput>;
+  /**
+   * Wenn `true`, lockert der Loader die SSRF-IP-Sperrlisten (loopback,
+   * private, link-local). `main.ts` liest das aus
+   * `ANALYZER_ALLOW_PRIVATE_NETWORKS` und reicht das Flag durch.
+   */
+  readonly allowPrivateNetworks?: boolean;
 }
 
 export function createAnalyzerServer(options: AnalyzerServerOptions = {}): Server {
   const analyze = options.analyze ?? analyzeHlsManifest;
+  const allowPrivateNetworks = options.allowPrivateNetworks === true;
 
   return createHttpServer((req, res) => {
-    handleRequest(req, res, analyze).catch((error) => {
+    handleRequest(req, res, analyze, allowPrivateNetworks).catch((error) => {
       writeProblem(res, 500, "internal_error", `Unbehandelter Fehler: ${describeError(error)}`);
     });
   });
@@ -35,7 +42,8 @@ export function createAnalyzerServer(options: AnalyzerServerOptions = {}): Serve
 async function handleRequest(
   req: IncomingMessage,
   res: ServerResponse,
-  analyze: (input: ManifestInput, options?: AnalyzeOptions) => Promise<AnalyzeOutput>
+  analyze: (input: ManifestInput, options?: AnalyzeOptions) => Promise<AnalyzeOutput>,
+  allowPrivateNetworks: boolean
 ): Promise<void> {
   const url = req.url ?? "/";
   if (req.method === "GET" && url === "/health") {
@@ -43,7 +51,7 @@ async function handleRequest(
     return;
   }
   if (req.method === "POST" && url === "/analyze") {
-    await handleAnalyze(req, res, analyze);
+    await handleAnalyze(req, res, analyze, allowPrivateNetworks);
     return;
   }
   writeProblem(res, 404, "not_found", `${req.method ?? "?"} ${url} ist nicht definiert.`);
@@ -52,7 +60,8 @@ async function handleRequest(
 async function handleAnalyze(
   req: IncomingMessage,
   res: ServerResponse,
-  analyze: (input: ManifestInput, options?: AnalyzeOptions) => Promise<AnalyzeOutput>
+  analyze: (input: ManifestInput, options?: AnalyzeOptions) => Promise<AnalyzeOutput>,
+  allowPrivateNetworks: boolean
 ): Promise<void> {
   const contentType = (req.headers["content-type"] ?? "").toLowerCase();
   const mainType = contentType.split(";")[0].trim();
@@ -82,9 +91,23 @@ async function handleAnalyze(
     );
     return;
   }
-  const fetchOptions = parseFetchOptions(parsed);
+  const fetchOptions = mergeFetchOptions(parseFetchOptions(parsed), allowPrivateNetworks);
   const result = await analyze(input, fetchOptions ? { fetch: fetchOptions } : undefined);
   writeJson(res, 200, result);
+}
+
+function mergeFetchOptions(
+  fromBody: NonNullable<AnalyzeOptions["fetch"]> | null,
+  allowPrivateNetworks: boolean
+): NonNullable<AnalyzeOptions["fetch"]> | null {
+  // Service-seitige Policy hat Vorrang vor Body-Werten — wenn der
+  // Operator das Flag in der Compose-/Container-Config gesetzt hat,
+  // gilt es für alle Aufrufe an diesen Service-Prozess. Andernfalls
+  // greifen nur die Body-Werte (oder Default-Verhalten).
+  if (allowPrivateNetworks) {
+    return { ...(fromBody ?? {}), allowPrivateNetworks: true };
+  }
+  return fromBody;
 }
 
 interface ReadResult {

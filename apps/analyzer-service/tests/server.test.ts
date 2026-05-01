@@ -13,8 +13,8 @@ interface RunningServer {
 
 type AnalyzeFn = (input: ManifestInput, options?: AnalyzeOptions) => Promise<AnalyzeOutput>;
 
-async function startServer(analyze: AnalyzeFn): Promise<RunningServer> {
-  const server = createAnalyzerServer({ analyze });
+async function startServer(analyze: AnalyzeFn, allowPrivateNetworks = false): Promise<RunningServer> {
+  const server = createAnalyzerServer({ analyze, allowPrivateNetworks });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
   const addr = server.address() as AddressInfo;
   return { url: `http://127.0.0.1:${addr.port}`, server };
@@ -237,6 +237,57 @@ describe("analyzer-service — POST /analyze", () => {
       body: JSON.stringify({ kind: "url", url: "https://example.test/m.m3u8", fetch: "broken" })
     });
     expect(res.status).toBe(200);
+  });
+});
+
+describe("analyzer-service — allowPrivateNetworks", () => {
+  it("forces fetch.allowPrivateNetworks=true on every analyze call when the flag is set", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    }, true);
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "url", url: "https://example.test/m.m3u8" })
+    });
+    expect(res.status).toBe(200);
+    expect(observedOptions).toEqual({ fetch: { allowPrivateNetworks: true } });
+  });
+
+  it("merges service flag with body fetch-options", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    }, true);
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "url",
+        url: "https://example.test/m.m3u8",
+        fetch: { timeoutMs: 5000 }
+      })
+    });
+    expect(res.status).toBe(200);
+    expect(observedOptions).toEqual({ fetch: { timeoutMs: 5000, allowPrivateNetworks: true } });
+  });
+
+  it("ignores the flag when the env did not set it (default)", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    });
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "url", url: "https://example.test/m.m3u8" })
+    });
+    expect(res.status).toBe(200);
+    expect(observedOptions).toBeUndefined();
   });
 });
 

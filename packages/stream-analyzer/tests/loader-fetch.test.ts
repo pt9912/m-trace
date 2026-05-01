@@ -62,12 +62,16 @@ function toAsyncIterable(text: string): AsyncIterable<Uint8Array> {
   })();
 }
 
-function loadOpts(runtime: LoaderRuntime, overrides: Partial<{ timeoutMs: number; maxBytes: number; maxRedirects: number }> = {}) {
+function loadOpts(
+  runtime: LoaderRuntime,
+  overrides: Partial<{ timeoutMs: number; maxBytes: number; maxRedirects: number; allowPrivateNetworks: boolean }> = {}
+) {
   return {
     runtime,
     timeoutMs: 1000,
     maxBytes: 1_000_000,
     maxRedirects: 3,
+    allowPrivateNetworks: false,
     ...overrides
   };
 }
@@ -139,6 +143,40 @@ describe("loadHlsManifest — SSRF runtime path", () => {
       code: "fetch_blocked"
     });
     expect(resolveCalled).toBe(false);
+  });
+
+  it("allows private IPv4 results when allowPrivateNetworks=true", async () => {
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        return [{ address: "10.0.0.5", family: 4 }];
+      },
+      async fetch() {
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "application/vnd.apple.mpegurl" : null) },
+          body: (async function* () {
+            yield new TextEncoder().encode("#EXTM3U\n");
+          })()
+        };
+      }
+    };
+    const result = await loadHlsManifest(
+      "https://internal.test/m.m3u8",
+      loadOpts(runtime, { allowPrivateNetworks: true })
+    );
+    expect(result.text).toBe("#EXTM3U\n");
+  });
+
+  it("allowPrivateNetworks does not relax credentials/scheme/redirect rules", async () => {
+    const runtime = makeRuntime({ responses: {} });
+    // Credentials in URL bleibt geblockt.
+    await expect(
+      loadHlsManifest("https://user:pass@example.test/m.m3u8", loadOpts(runtime, { allowPrivateNetworks: true }))
+    ).rejects.toMatchObject({ code: "fetch_blocked" });
+    // ftp-Schema bleibt geblockt.
+    await expect(
+      loadHlsManifest("ftp://example.test/m.m3u8", loadOpts(runtime, { allowPrivateNetworks: true }))
+    ).rejects.toMatchObject({ code: "fetch_blocked" });
   });
 
   it("blocks IPv6 loopback literal", async () => {

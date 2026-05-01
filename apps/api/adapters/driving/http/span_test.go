@@ -127,7 +127,7 @@ func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) 
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	tracer := tp.Tracer("test")
-	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), nil, tracer, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

@@ -7,6 +7,12 @@ export interface LoadOptions {
   readonly timeoutMs: number;
   readonly maxBytes: number;
   readonly maxRedirects: number;
+  /**
+   * Wenn `true`, überspringt der Loader den IP-Bereichs-Block (loopback,
+   * private, link-local). Scheme-/Credentials-/Größen-/Redirect-Regeln
+   * bleiben aktiv. Default in `analyze.ts`: `false`.
+   */
+  readonly allowPrivateNetworks: boolean;
 }
 
 export interface LoadResult {
@@ -79,14 +85,16 @@ async function fetchHop(rawUrl: string, options: LoadOptions, hop: number): Prom
       host: parsed.hostname
     });
   }
-  for (const entry of candidates) {
-    const decision = validateResolvedIp(entry.address, entry.family);
-    if (!decision.ok) {
-      throw new AnalysisError(
-        "fetch_blocked",
-        `Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ${decision.reason}.`,
-        { hop, host: parsed.hostname, ...(decision.detail ?? {}) }
-      );
+  if (!options.allowPrivateNetworks) {
+    for (const entry of candidates) {
+      const decision = validateResolvedIp(entry.address, entry.family);
+      if (!decision.ok) {
+        throw new AnalysisError(
+          "fetch_blocked",
+          `Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ${decision.reason}.`,
+          { hop, host: parsed.hostname, ...(decision.detail ?? {}) }
+        );
+      }
     }
   }
 

@@ -387,6 +387,27 @@ durch eine harte Schutzkette, jeder Eintrag ist getestet:
 | Status-Codes            | Nicht-2xx → `fetch_failed`.                                              |
 | Content-Type            | `application/vnd.apple.mpegurl`, `application/x-mpegurl`, `audio/mpegurl`, `text/plain`. Fehlt der Header, wird als Text-Fallback akzeptiert; alles andere → `fetch_failed`. |
 
+### `allowPrivateNetworks` (opt-in)
+
+Standardmäßig blockt der Loader die in der Tabelle gelisteten privaten
+und Reservierungs-Bereiche. `FetchOptions.allowPrivateNetworks: true`
+lockert **ausschließlich** die IPv4-/IPv6-Sperrlisten — Schema-Whitelist,
+Credentials-Block und Größen-/Redirect-Regeln bleiben aktiv.
+
+Anwendungsfälle:
+
+- Compose-/Lab-Setups, in denen interne Streams (z. B. mediamtx auf
+  einem RFC1918-Hostnamen) analysiert werden sollen.
+- `apps/analyzer-service` liest die Env-Variable
+  `ANALYZER_ALLOW_PRIVATE_NETWORKS=true|1|yes|on` und reicht das Flag
+  pro Aufruf an den Loader weiter. Default bleibt aus — Produktions-
+  Deployments setzen die Variable nicht.
+
+Wer das Flag setzt, übernimmt explizit das Risiko: ein böswillig
+gewähltes URL-Ziel kann dann auch interne Services (Metadata-
+Endpoints, Admin-UIs, Datenbank-Ports) treffen. Ein zusätzlich vor-
+geschalteter Egress-Filter bleibt dringend empfohlen.
+
 ### DNS-Rebinding-Entscheidung
 
 Der Loader löst den Host genau **einmal** auf, prüft jeden zurückgegebenen

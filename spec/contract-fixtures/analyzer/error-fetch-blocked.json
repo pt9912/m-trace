@@ -1,0 +1,13 @@
+{
+  "status": "error",
+  "analyzerVersion": "0.3.0",
+  "analyzerKind": "hls",
+  "code": "fetch_blocked",
+  "message": "Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ip_blocked.",
+  "details": {
+    "hop": 0,
+    "host": "internal.example.test",
+    "address": "10.0.0.5",
+    "family": 4
+  }
+}

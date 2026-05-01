@@ -36,6 +36,7 @@ func NewRouter(
 	analysis driving.StreamAnalysisInbound,
 	allowlist OriginAllowlist,
 	metricsHandler http.Handler,
+	analyzeMetrics AnalyzeMetrics,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -71,7 +72,7 @@ func NewRouter(
 	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
 
 	if analysis != nil {
-		analyzeHandler := &AnalyzeHandler{UseCase: analysis, Logger: logger}
+		analyzeHandler := &AnalyzeHandler{UseCase: analysis, Logger: logger, Metrics: analyzeMetrics}
 		mux.Handle("POST /api/analyze", analyzeHandler)
 		mux.HandleFunc("OPTIONS /api/analyze", dashboardPreflightHandler(allowlist))
 	}

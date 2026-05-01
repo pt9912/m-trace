@@ -10,7 +10,8 @@ import { defaultLoaderRuntime, type LoaderRuntime } from "./internal/loader/runt
 const FETCH_DEFAULTS: Required<FetchOptions> = {
   timeoutMs: 10_000,
   maxBytes: 5_000_000,
-  maxRedirects: 5
+  maxRedirects: 5,
+  allowPrivateNetworks: false
 };
 
 /**
@@ -64,7 +65,8 @@ async function loadAndAnalyzeUrl(
       runtime,
       timeoutMs: fetchOpts.timeoutMs,
       maxBytes: fetchOpts.maxBytes,
-      maxRedirects: fetchOpts.maxRedirects
+      maxRedirects: fetchOpts.maxRedirects,
+      allowPrivateNetworks: fetchOpts.allowPrivateNetworks
     });
   } catch (error) {
     if (error instanceof AnalysisError) {

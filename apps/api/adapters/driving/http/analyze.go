@@ -20,6 +20,15 @@ import (
 // pathologisch große Anfragen ausgehungert wird.
 const maxAnalyzeRequestBytes = 1 * 1024 * 1024
 
+// AnalyzeMetrics ist die schmale Metrik-Schnittstelle, die der
+// AnalyzeHandler braucht. Implementierungen erhöhen einen Counter
+// `outcome` ∈ {ok, error} × `code` ∈ {ok, invalid_request,
+// analyzer_unavailable, …}. Cardinality bleibt damit beschränkt
+// (plan-0.3.0 §9 Tranche 7.5).
+type AnalyzeMetrics interface {
+	AnalyzeRequest(outcome, code string)
+}
+
 // AnalyzeHandler bedient POST /api/analyze: Manifest-Input → Analyzer-
 // Result. Erfolg gibt das vollständige domain.StreamAnalysisResult
 // als JSON zurück; Fehler werden in eine Problem-Shape (RFC 7807-nah)
@@ -27,6 +36,9 @@ const maxAnalyzeRequestBytes = 1 * 1024 * 1024
 type AnalyzeHandler struct {
 	UseCase driving.StreamAnalysisInbound
 	Logger  *slog.Logger
+	// Metrics ist optional — nil bedeutet "nicht zählen". Tests, die
+	// den Counter nicht beobachten wollen, können das Feld weglassen.
+	Metrics AnalyzeMetrics
 }
 
 type analyzeRequestPayload struct {
@@ -64,6 +76,7 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mainType := strings.ToLower(strings.TrimSpace(strings.SplitN(contentType, ";", 2)[0]))
 	if mainType != "application/json" {
 		writeAnalyzeProblem(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Content-Type muss application/json sein.", nil)
+		h.recordOutcome("error", "unsupported_media_type")
 		return
 	}
 
@@ -71,27 +84,31 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	raw, err := io.ReadAll(limited)
 	if err != nil {
 		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_request", "Request-Body konnte nicht gelesen werden.", nil)
+		h.recordOutcome("error", "invalid_request")
 		return
 	}
 	if int64(len(raw)) > maxAnalyzeRequestBytes {
 		writeAnalyzeProblem(w, http.StatusRequestEntityTooLarge, "payload_too_large", "Request-Body überschreitet das API-Limit.", nil)
+		h.recordOutcome("error", "payload_too_large")
 		return
 	}
 
 	var payload analyzeRequestPayload
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.", nil)
+		h.recordOutcome("error", "invalid_json")
 		return
 	}
 	req, problem := payloadToRequest(payload)
 	if problem != nil {
 		writeAnalyzeProblem(w, problem.status, problem.code, problem.message, nil)
+		h.recordOutcome("error", problem.code)
 		return
 	}
 
 	result, err := h.UseCase.AnalyzeManifest(r.Context(), req)
 	if err != nil {
-		mapAndWriteUseCaseError(w, h.Logger, err)
+		h.mapAndWriteUseCaseError(w, err)
 		return
 	}
 
@@ -117,7 +134,14 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"analyzerVersion", result.AnalyzerVersion,
 		)
 	}
+	h.recordOutcome("ok", "ok")
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *AnalyzeHandler) recordOutcome(outcome, code string) {
+	if h.Metrics != nil {
+		h.Metrics.AnalyzeRequest(outcome, code)
+	}
 }
 
 type validationProblem struct {
@@ -181,31 +205,34 @@ func findingsToPayload(in []domain.StreamAnalysisFinding) []analyzeFindingPayloa
 //     analyzer_unavailable. Die Adapter-Fehler-Message bleibt
 //     bewusst aus dem Antwort-Body (Info-Leak); sie wird strukturiert
 //     im Log abgelegt.
-func mapAndWriteUseCaseError(w http.ResponseWriter, logger *slog.Logger, err error) {
+func (h *AnalyzeHandler) mapAndWriteUseCaseError(w http.ResponseWriter, err error) {
 	if errors.Is(err, application.ErrAnalyzeManifestEmpty) {
-		logWarn(logger, "analyze rejected: empty input", "code", "invalid_request")
+		logWarn(h.Logger, "analyze rejected: empty input", "code", "invalid_request")
 		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_request", err.Error(), nil)
+		h.recordOutcome("error", "invalid_request")
 		return
 	}
 
 	var domainErr *domain.StreamAnalysisDomainError
 	if errors.As(err, &domainErr) {
 		status := domainHTTPStatus(domainErr.Code)
-		logWarn(logger, "analyze rejected by analyzer",
+		logWarn(h.Logger, "analyze rejected by analyzer",
 			"code", string(domainErr.Code),
 			"status", status,
 		)
 		writeAnalyzeProblem(w, status, string(domainErr.Code), domainErr.Message, domainErr.Details)
+		h.recordOutcome("error", string(domainErr.Code))
 		return
 	}
 
-	logWarn(logger, "analyzer transport error",
+	logWarn(h.Logger, "analyzer transport error",
 		"code", "analyzer_unavailable",
 		"status", http.StatusBadGateway,
 		"error", err.Error(),
 	)
 	writeAnalyzeProblem(w, http.StatusBadGateway, "analyzer_unavailable",
 		"Analyzer-Service hat den Aufruf nicht erfolgreich beantwortet.", nil)
+	h.recordOutcome("error", "analyzer_unavailable")
 }
 
 func domainHTTPStatus(code domain.StreamAnalysisErrorCode) int {

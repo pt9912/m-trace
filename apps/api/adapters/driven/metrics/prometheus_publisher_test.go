@@ -35,6 +35,11 @@ func TestPrometheusPublisher_HandlerExposesAllCounters(t *testing.T) {
 	p.APIRequests(7)
 	p.APIRequests(0)
 	p.StartupTimeMS(1234)
+	p.AnalyzeRequest("ok", "ok")
+	p.AnalyzeRequest("error", "manifest_not_hls")
+	// Empty-Args werden zu "_unknown" normalisiert; ein einzelner
+	// Aufruf reicht, um den Branch in coverage zu treffen.
+	p.AnalyzeRequest("", "")
 
 	srv := httptest.NewServer(p.Handler())
 	defer srv.Close()
@@ -60,6 +65,9 @@ func TestPrometheusPublisher_HandlerExposesAllCounters(t *testing.T) {
 		"mtrace_api_requests_total":        "7",
 		"mtrace_active_sessions":           "2",
 		"mtrace_startup_time_ms":           "1234",
+		`mtrace_analyze_requests_total{code="ok",outcome="ok"}`:                   "1",
+		`mtrace_analyze_requests_total{code="manifest_not_hls",outcome="error"}`: "1",
+		`mtrace_analyze_requests_total{code="_unknown",outcome="_unknown"}`:      "1",
 	}
 	for name, expected := range want {
 		line := name + " " + expected

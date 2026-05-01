@@ -31,6 +31,20 @@ export interface FetchOptions {
   readonly maxBytes?: number;
   /** Maximal zulässige Redirect-Hops. Default: 5. */
   readonly maxRedirects?: number;
+  /**
+   * Opt-in: lockert die IPv4-/IPv6-Sperrlisten für loopback,
+   * private und link-local-Bereiche. Default `false` (Block bleibt).
+   * Scheme-Whitelist, Credentials-Block und Größen-/Redirect-Regeln
+   * bleiben **unabhängig** vom Flag aktiv.
+   *
+   * Vorgesehen für streng-vertrauenswürdige Lokal-/Compose-Setups
+   * (z. B. analyzer-service mit `ANALYZER_ALLOW_PRIVATE_NETWORKS=true`),
+   * in denen interne mediamtx-Streams gegen den Compose-Hostnamen
+   * geprüft werden sollen. Produktionsdeployments sollten das Flag
+   * NICHT setzen — der SSRF-Schutz vor RFC1918-Adressen ist eine
+   * der Kernregeln des Loaders.
+   */
+  readonly allowPrivateNetworks?: boolean;
 }
 
 /**

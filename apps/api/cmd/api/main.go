@@ -101,7 +101,7 @@ func main() {
 	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, publisher.Handler(), tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, publisher.Handler(), publisher, tracer, logger)
 	router = apihttp.RequestMetricsMiddleware(router, publisher)
 	addr := listenAddr()
 

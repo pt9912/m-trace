@@ -31,6 +31,23 @@ func newAnalyzeHandler(stub *stubAnalysisInbound) http.Handler {
 	return &apihttp.AnalyzeHandler{UseCase: stub}
 }
 
+type recordedOutcome struct {
+	outcome string
+	code    string
+}
+
+type stubAnalyzeMetrics struct {
+	recorded []recordedOutcome
+}
+
+func (s *stubAnalyzeMetrics) AnalyzeRequest(outcome, code string) {
+	s.recorded = append(s.recorded, recordedOutcome{outcome: outcome, code: code})
+}
+
+func newAnalyzeHandlerWithMetrics(stub *stubAnalysisInbound, m *stubAnalyzeMetrics) http.Handler {
+	return &apihttp.AnalyzeHandler{UseCase: stub, Metrics: m}
+}
+
 func TestAnalyzeHandler_Success_URL(t *testing.T) {
 	t.Parallel()
 	stub := &stubAnalysisInbound{
@@ -274,6 +291,102 @@ func TestAnalyzeHandler_MapsDomainErrorsByCode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAnalyzeHandler_RecordsOutcomeMetrics(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		stubResult  domain.StreamAnalysisResult
+		stubErr     error
+		body        string
+		contentType string
+		wantOutcome string
+		wantCode    string
+	}{
+		{
+			name:        "success → outcome=ok, code=ok",
+			stubResult:  domain.StreamAnalysisResult{AnalyzerVersion: "0.3.0", PlaylistType: domain.PlaylistTypeMaster},
+			body:        `{"kind":"text","text":"#EXTM3U\n"}`,
+			contentType: "application/json",
+			wantOutcome: "ok",
+			wantCode:    "ok",
+		},
+		{
+			name:        "domain error → outcome=error, code=manifest_not_hls",
+			stubErr:     &domain.StreamAnalysisDomainError{Code: domain.StreamAnalysisManifestNotHLS, Message: "x"},
+			body:        `{"kind":"text","text":"<html>"}`,
+			contentType: "application/json",
+			wantOutcome: "error",
+			wantCode:    "manifest_not_hls",
+		},
+		{
+			name:        "transport error → outcome=error, code=analyzer_unavailable",
+			stubErr:     errors.New("dial tcp: i/o timeout"),
+			body:        `{"kind":"url","url":"https://example.test/m.m3u8"}`,
+			contentType: "application/json",
+			wantOutcome: "error",
+			wantCode:    "analyzer_unavailable",
+		},
+		{
+			name:        "invalid_request → outcome=error, code=invalid_request",
+			body:        `{}`,
+			contentType: "application/json",
+			wantOutcome: "error",
+			wantCode:    "invalid_request",
+		},
+		{
+			name:        "unsupported_media_type → outcome=error, code=unsupported_media_type",
+			body:        `{}`,
+			contentType: "text/plain",
+			wantOutcome: "error",
+			wantCode:    "unsupported_media_type",
+		},
+		{
+			name:        "invalid_json → outcome=error, code=invalid_json",
+			body:        `{not json`,
+			contentType: "application/json",
+			wantOutcome: "error",
+			wantCode:    "invalid_json",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			stub := &stubAnalysisInbound{result: tc.stubResult, err: tc.stubErr}
+			metrics := &stubAnalyzeMetrics{}
+			server := httptest.NewServer(newAnalyzeHandlerWithMetrics(stub, metrics))
+			defer server.Close()
+
+			res, err := http.Post(server.URL, tc.contentType, strings.NewReader(tc.body))
+			if err != nil {
+				t.Fatalf("post failed: %v", err)
+			}
+			res.Body.Close()
+
+			if len(metrics.recorded) != 1 {
+				t.Fatalf("expected exactly one metric record, got %d: %+v", len(metrics.recorded), metrics.recorded)
+			}
+			got := metrics.recorded[0]
+			if got.outcome != tc.wantOutcome || got.code != tc.wantCode {
+				t.Errorf("metric outcome/code: want (%q,%q), got (%q,%q)", tc.wantOutcome, tc.wantCode, got.outcome, got.code)
+			}
+		})
+	}
+}
+
+func TestAnalyzeHandler_RecordsNothingWhenMetricsNil(t *testing.T) {
+	t.Parallel()
+	stub := &stubAnalysisInbound{result: domain.StreamAnalysisResult{AnalyzerVersion: "0.3.0", PlaylistType: domain.PlaylistTypeUnknown}}
+	server := httptest.NewServer(newAnalyzeHandler(stub))
+	defer server.Close()
+	res, err := http.Post(server.URL, "application/json", strings.NewReader(`{"kind":"text","text":"#EXTM3U\n"}`))
+	if err != nil {
+		t.Fatalf("post failed: %v", err)
+	}
+	res.Body.Close()
+	// Kein Panic — der Handler verträgt nil-Metrics.
 }
 
 func TestAnalyzeHandler_DomainErrorWithoutDetailsOmitsDetails(t *testing.T) {
