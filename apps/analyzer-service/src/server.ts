@@ -100,10 +100,13 @@ function mergeFetchOptions(
   fromBody: NonNullable<AnalyzeOptions["fetch"]> | null,
   allowPrivateNetworks: boolean
 ): NonNullable<AnalyzeOptions["fetch"]> | null {
-  // Service-seitige Policy hat Vorrang vor Body-Werten — wenn der
-  // Operator das Flag in der Compose-/Container-Config gesetzt hat,
-  // gilt es für alle Aufrufe an diesen Service-Prozess. Andernfalls
-  // greifen nur die Body-Werte (oder Default-Verhalten).
+  // Service-seitige Policy ist der einzige Schalter für
+  // `allowPrivateNetworks`: nur wenn der Operator das Flag in der
+  // Compose-/Container-Config gesetzt hat, lockert der Loader die
+  // IP-Sperrlisten. Aufrufer können das Flag NICHT über den Body
+  // setzen — `parseFetchOptions` whitelistet `allowPrivateNetworks`
+  // bewusst nicht (siehe Test "does NOT honor a body-set
+  // allowPrivateNetworks when env is false").
   if (allowPrivateNetworks) {
     return { ...(fromBody ?? {}), allowPrivateNetworks: true };
   }

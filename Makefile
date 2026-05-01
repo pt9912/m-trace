@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures
 
 help:
 	@printf '%s\n' \
@@ -20,6 +20,7 @@ help:
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
+		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
 		'  make browser-e2e            Run browser E2E checks' \
 		'  make test                   Run API Docker tests and workspace tests' \
@@ -66,6 +67,16 @@ smoke-analyzer:
 # Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt.
 smoke-cli: workspace-build
 	bash scripts/smoke-cli.sh
+
+# Spec ist die Quelle der Wahrheit; Go-Tests konsumieren Kopien aus
+# apps/api/.../testdata/, weil der api-Docker-Build-Context nur
+# apps/api/ kennt. `make sync-contract-fixtures` kopiert die
+# Spec-Dateien in den Go-Pfad — manueller Trigger, weil derselbe
+# TS-Test (workspace-test) den Drift bereits hart prüft.
+sync-contract-fixtures:
+	cp spec/contract-fixtures/analyzer/success-master.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-master.json
+	cp spec/contract-fixtures/analyzer/error-fetch-blocked.json apps/api/adapters/driven/streamanalyzer/testdata/contract-error-fetch-blocked.json
+	@echo "[sync-contract-fixtures] copied 2 fixture(s) into apps/api/.../streamanalyzer/testdata/"
 
 seed-rak9:
 	bash scripts/seed-rak9.sh

@@ -274,6 +274,14 @@ Minor unverändert bleibt:
 - Discriminator-Felder ändern (`status`, `playlistType`,
   `analyzerKind`).
 
+**Sicherheitskritische Optionen**: `FetchOptions.allowPrivateNetworks`
+(Default `false`) lockert die SSRF-IP-Sperrlisten. Library-Konsumenten
+können das Flag explizit aktivieren, sollten es aber **nicht** in
+Produktion verwenden. Die m-trace-API selbst nutzt das Flag nur,
+wenn der Operator `ANALYZER_ALLOW_PRIVATE_NETWORKS` auf dem
+analyzer-service-Container setzt; Aufrufer der API können es **nicht**
+über den Request-Body anfordern (siehe §6).
+
 **Diskriminatoren**:
 
 - `result.status` trennt Erfolg (`"ok"`) und Fehler (`"error"`).
@@ -402,6 +410,14 @@ Anwendungsfälle:
   `ANALYZER_ALLOW_PRIVATE_NETWORKS=true|1|yes|on` und reicht das Flag
   pro Aufruf an den Loader weiter. Default bleibt aus — Produktions-
   Deployments setzen die Variable nicht.
+
+**Service-Schalter ist ausschließlich die Env-Variable**: ein
+Aufrufer kann das Flag nicht über den Request-Body setzen. Die
+analyzer-service-Whitelist erlaubt im `fetch`-Sub-Block nur
+`timeoutMs`, `maxBytes`, `maxRedirects`; `allowPrivateNetworks`
+fällt heraus und wird nicht an den Loader durchgereicht. Das ist
+absichtlich und in `apps/analyzer-service/tests/server.test.ts`
+gepinnt.
 
 Wer das Flag setzt, übernimmt explizit das Risiko: ein böswillig
 gewähltes URL-Ziel kann dann auch interne Services (Metadata-

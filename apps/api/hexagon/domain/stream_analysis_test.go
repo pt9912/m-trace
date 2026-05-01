@@ -30,6 +30,16 @@ func TestStreamAnalysisDomainError_Error(t *testing.T) {
 			},
 			want: "manifest_not_hls: Manifest beginnt nicht mit #EXTM3U.",
 		},
+		{
+			name: "empty code, with message",
+			err:  &domain.StreamAnalysisDomainError{Code: "", Message: "boom"},
+			want: ": boom",
+		},
+		{
+			name: "code, empty message",
+			err:  &domain.StreamAnalysisDomainError{Code: domain.StreamAnalysisInternalError, Message: ""},
+			want: "internal_error: ",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

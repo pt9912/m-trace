@@ -275,6 +275,32 @@ describe("analyzer-service — allowPrivateNetworks", () => {
     expect(observedOptions).toEqual({ fetch: { timeoutMs: 5000, allowPrivateNetworks: true } });
   });
 
+  it("does NOT honor a body-set allowPrivateNetworks when env is false", async () => {
+    // Defense-in-Depth: parseFetchOptions im Service whitelistet die
+    // erlaubten Felder; allowPrivateNetworks ist nicht dabei. Damit
+    // kann ein Aufrufer das Flag nicht über den Body bypass-en, wenn
+    // der Operator es per Env nicht gesetzt hat. Dieser Test pinnt
+    // genau diese Garantie — ein zukünftiges Whitelist-Update muss
+    // entweder den Test brechen oder das Verhalten erhalten.
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    });
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "url",
+        url: "https://example.test/m.m3u8",
+        fetch: { allowPrivateNetworks: true, timeoutMs: 1234 }
+      })
+    });
+    expect(res.status).toBe(200);
+    // timeoutMs darf durch (whitelisted), allowPrivateNetworks nicht.
+    expect(observedOptions).toEqual({ fetch: { timeoutMs: 1234 } });
+  });
+
   it("ignores the flag when the env did not set it (default)", async () => {
     let observedOptions: AnalyzeOptions | undefined;
     running = await startServer(async (_input, options) => {

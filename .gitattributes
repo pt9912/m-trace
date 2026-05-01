@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.json text eol=lf
+*.m3u8 text eol=lf
+*.sh text eol=lf

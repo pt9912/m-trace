@@ -186,19 +186,54 @@ func (p *PrometheusPublisher) APIRequests(n int) {
 
 // AnalyzeRequest erhöht den Counter um 1 für eine abgeschlossene
 // Analyse-Anfrage (POST /api/analyze). `outcome` ist "ok" oder
-// "error"; `code` ist entweder leer (bei outcome="ok") oder der
-// fachliche Fehler-Code (`invalid_request`, `analyzer_unavailable`,
-// plus die `AnalysisErrorCode`-Werte aus dem stream-analyzer-
-// Vertrag). Leere Strings werden zu "_unknown" normalisiert, damit
-// der Label-Wert nie leer im Output landet.
+// "error"; `code` ist entweder "ok" (bei outcome="ok") oder der
+// fachliche Fehler-Code aus der Domäne (siehe knownAnalyzeCodes).
+// Unbekannte Werte werden auf "_unknown" gemappt — Cardinality-
+// Defense-in-Depth, falls je ein Aufrufer einen unklassifizierten
+// Code übergibt (plan-0.3.0 §9 Tranche 7.5/1; Spec §7).
 func (p *PrometheusPublisher) AnalyzeRequest(outcome, code string) {
-	if outcome == "" {
-		outcome = "_unknown"
+	p.analyzeRequests.WithLabelValues(normalizeOutcome(outcome), normalizeAnalyzeCode(code)).Inc()
+}
+
+// knownAnalyzeOutcomes definiert die abgeschlossene Outcome-Domäne
+// für `mtrace_analyze_requests_total`.
+var knownAnalyzeOutcomes = map[string]struct{}{
+	"ok":    {},
+	"error": {},
+}
+
+// knownAnalyzeCodes definiert die abgeschlossene Code-Domäne für
+// `mtrace_analyze_requests_total`. API-Eingabe-Codes
+// (`invalid_request`, `invalid_json`, …) plus alle
+// `domain.StreamAnalysisErrorCode`-Werte plus `analyzer_unavailable`
+// (Transport) sind erlaubt; alles andere fällt auf "_unknown".
+var knownAnalyzeCodes = map[string]struct{}{
+	"ok":                     {},
+	"invalid_request":        {},
+	"invalid_json":           {},
+	"unsupported_media_type": {},
+	"payload_too_large":      {},
+	"invalid_input":          {},
+	"manifest_not_hls":       {},
+	"fetch_blocked":          {},
+	"fetch_failed":           {},
+	"manifest_too_large":     {},
+	"internal_error":         {},
+	"analyzer_unavailable":   {},
+}
+
+func normalizeOutcome(value string) string {
+	if _, ok := knownAnalyzeOutcomes[value]; ok {
+		return value
 	}
-	if code == "" {
-		code = "_unknown"
+	return "_unknown"
+}
+
+func normalizeAnalyzeCode(value string) string {
+	if _, ok := knownAnalyzeCodes[value]; ok {
+		return value
 	}
-	p.analyzeRequests.WithLabelValues(outcome, code).Inc()
+	return "_unknown"
 }
 
 // Handler returns the HTTP handler for GET /api/metrics.
