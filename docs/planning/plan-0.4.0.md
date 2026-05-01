@@ -72,6 +72,7 @@ DoD:
 
 - [ ] SQLite-Schema für Projekte, Sessions, Playback-Events und Ingest-Sequenzen ist festgelegt und versioniert.
 - [ ] Migrationsmechanismus ist entschieden und implementiert; Migrationen laufen beim lokalen API-Start deterministisch und idempotent.
+- [ ] Migrationsfehler sind definiert: teilweise fehlgeschlagene Migrationen hinterlassen einen erkennbaren Schema-/Migration-State, starten keine Folgemigration blind und haben eine dokumentierte Reparatur- oder Rollback-Prozedur für das lokale Lab.
 - [ ] Cursor-Kompatibilitätsmatrix ist im API-Kontrakt dokumentiert: `cursor_version`, erkannte Legacy-Formate (`process_instance_id`), Verhalten je Version (`accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed`, `cursor_expired`), HTTP-Status, Body und Client-Recovery sind eindeutig festgelegt.
 - [ ] Legacy-`process_instance_id`-Cursor werden dauerhaft als `cursor_invalid_legacy` abgewiesen; „einmalig" gilt nur für das Client-Verhalten pro Cursor-Wert: nach Snapshot-Reload darf derselbe Legacy-Cursor nicht erneut gesendet werden.
 - [ ] SQLite-Datei liegt im Compose-Lab in einem benannten Volume des `api`-Service; `make stop` entfernt das Volume nicht.
@@ -79,7 +80,7 @@ DoD:
 - [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind hinter den bestehenden Ports implementiert; Application- und Domain-Layer bleiben frei von SQLite-Imports.
 - [ ] In-Memory-Adapter bleiben nur für Tests oder expliziten Dev-Fallback erhalten und sind nicht mehr der Default im Compose-Lab.
 - [ ] Idempotenz-Grenzen sind vor Implementierung festgelegt: Session-State-Updates (`session_ended`, Sweeper-Zustände) sind idempotent; Event-Level-Deduplikation ist entweder über einen dokumentierten Event-Key/Hash (`project_id`, `session_id`, `sequence_number` oder dedizierte Event-ID) testbar umgesetzt oder jedes Duplikat bekommt eine persistierte Timeline-Klassifikation (`accepted`, `duplicate_suspected`, `replayed`) mit Dashboard-Anzeige.
-- [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als serverseitig verpflichtender, durabler Tie-Breaker für jeden persistierten Event.
+- [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als serverseitig verpflichtender, durabler Tie-Breaker für jeden persistierten Event; Scope und Eindeutigkeit von `ingest_sequence`/Persistenz-ID sind explizit festgelegt (global oder mindestens eindeutig innerhalb `project_id` + `session_id`).
 - [ ] Cursor-Format nutzt keine `process_instance_id`-Invalidierung mehr; unterstützte neue Cursor-Versionen bleiben nach API-Restart gültig oder liefern einen Fehlercode aus der Kompatibilitätsmatrix ohne `Retry-After`; Clients recovern durch Verwerfen des Cursors und erneuten Snapshot-Load.
 - [ ] Retention-Defaults für das lokale Lab sind festgelegt und dokumentiert; Reset-/Wipe-Anleitung steht in `docs/user/local-development.md`.
 - [ ] Persistenztests decken Neustart-Simulation, Migration, Cursor-Stabilität, Session-Ende, Event-Ordering und Retention ab.
@@ -145,8 +146,8 @@ DoD:
 - [ ] Duplikat- oder Replay-Klassifikationen aus der Persistenz sind in der Timeline unterscheidbar und beschädigen nicht die Default-Reihenfolge.
 - [ ] Pagination oder inkrementelles Nachladen bleibt bei längeren Sessions bedienbar; Cursor-Verhalten ist restart-stabil.
 - [ ] SSE-Live-Update-Mechanismus aus ADR 0003 ist implementiert; Polling bleibt Fallback für Stream-Abbruch oder nicht verfügbare SSE-Verbindung.
-- [ ] SSE-Endpunkt-Schnitt ist im `spec/backend-api-contract.md` als verlässlicher Vertrag dokumentiert: globaler Stream, optionaler Session-Detail-Stream, Payload-Schema, `Last-Event-ID`-/Backfill-Regel, Fehler-/Reconnect-Semantik und Polling-Fallback-Intervalle.
-- [ ] SSE-`id`/`Last-Event-ID` ist an ein dauerhaft persistiertes Event-Store-Feld gebunden, z. B. eine monotone Persistenz-ID oder `ingest_sequence`; Reconnect-Backfill liest ausschließlich aus SQLite und funktioniert nach API-Restart.
+- [ ] SSE-Endpunkt-Schnittstelle ist im `spec/backend-api-contract.md` als verlässlicher Vertrag dokumentiert: globaler Stream, optionaler Session-Detail-Stream, Payload-Schema, `Last-Event-ID`-/Backfill-Regel, Fehler-/Reconnect-Semantik und Polling-Fallback-Intervalle.
+- [ ] SSE-`id`/`Last-Event-ID` ist an ein dauerhaft persistiertes Event-Store-Feld gebunden, z. B. eine monotone Persistenz-ID oder `ingest_sequence`; Scope und Eindeutigkeit sind passend zum Stream-Typ definiert (globaler Stream braucht global eindeutige ID, Session-Stream mindestens session-eindeutige ID); Reconnect-Backfill liest ausschließlich aus SQLite und funktioniert nach API-Restart.
 - [ ] SSE-Fallback-Grenzen sind hart definiert und getestet: Heartbeat-Intervall, Reconnect-Backoff, maximale Backfill-Lücke und Polling-Intervall haben konkrete Defaults sowie obere Grenzen im API-Kontrakt.
 - [ ] Backend-Tests decken SSE-Stream-Header, EventSource-kompatibles Format, Heartbeats/Keepalive, Client-Abbruch und reconnect-freundliche Semantik ab.
 - [ ] Dashboard-Tests decken SSE-Erfolg, Reconnect/Backfill und Polling-Fallback ab.
