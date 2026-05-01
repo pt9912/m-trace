@@ -82,11 +82,19 @@ export function parseCodecs(value: string | undefined): string[] | null {
   return value.split(",").map((c) => c.trim()).filter((c) => c.length > 0);
 }
 
-/** Parst Float-Wert; `null` bei NaN. */
+/**
+ * Parst einen Float-Wert. `null` bei undefined, leerem/Whitespace-only
+ * String, NaN, ±Infinity oder negativen Werten. `Number("")` ist in
+ * JavaScript 0 — diese Falle muss der Helper für die HLS-Pflichtfelder
+ * (z. B. EXTINF-Dauer) explizit ausschließen, sonst rutschen leere
+ * Eingaben als „0" durch.
+ */
 export function parseFloatAttr(value: string | undefined): number | null {
   if (value === undefined) return null;
+  if (value.trim().length === 0) return null;
   const n = Number(value);
-  if (Number.isNaN(n)) return null;
+  if (!Number.isFinite(n)) return null;
+  if (n < 0) return null;
   return n;
 }
 

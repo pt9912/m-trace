@@ -11,6 +11,10 @@ const MEDIASEQUENCE_PREFIX = "#EXT-X-MEDIA-SEQUENCE:";
 const PLAYLISTTYPE_PREFIX = "#EXT-X-PLAYLIST-TYPE:";
 const EXTINF_PREFIX = "#EXTINF:";
 const ENDLIST_TAG = "#EXT-X-ENDLIST";
+const KEY_PREFIX = "#EXT-X-KEY:";
+const MAP_PREFIX = "#EXT-X-MAP:";
+const DISCONTINUITY_TAG = "#EXT-X-DISCONTINUITY";
+const PROGRAM_DATE_TIME_PREFIX = "#EXT-X-PROGRAM-DATE-TIME:";
 
 /**
  * Toleranzgrenze für `segment_duration_outlier`. Segmentdauern, die
@@ -59,6 +63,12 @@ export function parseMediaPlaylist(text: string, baseUrl: string | undefined): M
   let endList = false;
   let pending: PendingExtInf | null = null;
   const drafts: SegmentDraft[] = [];
+  const features = {
+    encryption: false,
+    initSegment: false,
+    discontinuity: false,
+    programDateTime: false
+  };
 
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const line = lines[lineIdx].trim();
@@ -99,6 +109,28 @@ export function parseMediaPlaylist(text: string, baseUrl: string | undefined): M
 
     if (line.startsWith(PLAYLISTTYPE_PREFIX)) {
       playlistType = line.slice(PLAYLISTTYPE_PREFIX.length).trim();
+      continue;
+    }
+
+    if (line.startsWith(KEY_PREFIX)) {
+      // METHOD=NONE deaktiviert eine zuvor gesetzte Verschlüsselung;
+      // nur "echte" Methoden zählen als Feature.
+      const payload = line.slice(KEY_PREFIX.length);
+      if (!/METHOD\s*=\s*NONE/.test(payload)) {
+        features.encryption = true;
+      }
+      continue;
+    }
+    if (line.startsWith(MAP_PREFIX)) {
+      features.initSegment = true;
+      continue;
+    }
+    if (line === DISCONTINUITY_TAG || line.startsWith(DISCONTINUITY_TAG + ":")) {
+      features.discontinuity = true;
+      continue;
+    }
+    if (line.startsWith(PROGRAM_DATE_TIME_PREFIX)) {
+      features.programDateTime = true;
       continue;
     }
 
@@ -149,7 +181,8 @@ export function parseMediaPlaylist(text: string, baseUrl: string | undefined): M
   }
 
   findings.push(...checkTargetViolations(drafts, targetDuration));
-  findings.push(...checkDurationOutliers(drafts, endList));
+  findings.push(...checkDurationOutliers(drafts, endList, targetDuration));
+  findings.push(...featureFindings(features));
 
   const segments: MediaSegment[] = drafts.map((d) => ({
     uri: d.uri,
@@ -250,13 +283,21 @@ function checkTargetViolations(
 
 function checkDurationOutliers(
   drafts: readonly SegmentDraft[],
-  endList: boolean
+  endList: boolean,
+  targetDuration: number | undefined
 ): AnalysisFinding[] {
   const parseable = drafts.filter((d) => d.durationParseable);
   if (parseable.length < 2) return [];
   const total = parseable.reduce((sum, d) => sum + d.duration, 0);
   const average = total / parseable.length;
-  const lowerBound = average * OUTLIER_LOWER_FRACTION;
+  // Anker bevorzugt TARGETDURATION (Apple-HLS-Authoring-Guide), weil
+  // ein Mean-Anker sich durch Ausreißer selbst absenkt. Fehlt das Tag,
+  // greift der Mean-Fallback, damit Manifeste ohne TARGETDURATION
+  // trotzdem geprüft werden können (auch wenn dieser Fall ohnehin
+  // bereits media_missing_targetduration auslöst).
+  const anchor = targetDuration ?? average;
+  const anchorLabel = targetDuration !== undefined ? "TARGETDURATION" : "Mittel";
+  const lowerBound = anchor * OUTLIER_LOWER_FRACTION;
   const findings: AnalysisFinding[] = [];
   for (let i = 0; i < parseable.length; i++) {
     const d = parseable[i];
@@ -269,9 +310,52 @@ function checkDurationOutliers(
       findings.push({
         code: "segment_duration_outlier",
         level: "warning",
-        message: `Segment #${d.sequenceNumber} dauert ${d.duration.toFixed(3)} s, unter ${(OUTLIER_LOWER_FRACTION * 100).toFixed(0)} % des Mittels (${average.toFixed(3)} s).`
+        message: `Segment #${d.sequenceNumber} dauert ${d.duration.toFixed(3)} s, unter ${(OUTLIER_LOWER_FRACTION * 100).toFixed(0)} % des Ankers (${anchorLabel}=${anchor.toFixed(3)} s).`
       });
     }
+  }
+  return findings;
+}
+
+function featureFindings(features: {
+  encryption: boolean;
+  initSegment: boolean;
+  discontinuity: boolean;
+  programDateTime: boolean;
+}): AnalysisFinding[] {
+  // Diese HLS-Features beeinflussen Tranche-4-Aggregate (Anzahl,
+  // Dauer, Live/VOD) nicht — sie ändern aber, was der Analyzer NICHT
+  // validiert. Eine Info-Finding pro Feature-Klasse signalisiert
+  // Konsumenten den Audit-Stand, ohne Warning/Error-Counter zu
+  // verfälschen.
+  const findings: AnalysisFinding[] = [];
+  if (features.encryption) {
+    findings.push({
+      code: "media_encryption_present",
+      level: "info",
+      message: "Manifest enthält EXT-X-KEY mit aktiver Methode; Analyzer validiert Schlüssel-/Decryption-Pfade nicht."
+    });
+  }
+  if (features.initSegment) {
+    findings.push({
+      code: "media_init_segment_present",
+      level: "info",
+      message: "Manifest enthält EXT-X-MAP (fMP4-Init-Segment); Analyzer prüft Init-Segment-Konsistenz nicht."
+    });
+  }
+  if (features.discontinuity) {
+    findings.push({
+      code: "media_discontinuity_present",
+      level: "info",
+      message: "Manifest enthält EXT-X-DISCONTINUITY; Timeline-Continuity wird nicht ausgewertet."
+    });
+  }
+  if (features.programDateTime) {
+    findings.push({
+      code: "media_program_date_time_present",
+      level: "info",
+      message: "Manifest enthält EXT-X-PROGRAM-DATE-TIME; Wall-Clock-Annotationen werden nicht ausgewertet."
+    });
   }
   return findings;
 }

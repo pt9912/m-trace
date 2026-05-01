@@ -110,6 +110,26 @@ describe("parseMediaPlaylist — findings and tolerances", () => {
     expect(result.details.segments[0].duration).toBe(0);
   });
 
+  it("flags EXTINF with empty duration as malformed (Number(\"\") === 0 trap)", () => {
+    const bad = ["#EXTM3U", "#EXT-X-TARGETDURATION:6", "#EXTINF:,foo", "a.ts", "#EXT-X-ENDLIST"].join("\n");
+    const result = parseMediaPlaylist(bad, undefined);
+    expect(result.findings.some((f) => f.code === "segment_malformed_extinf" && f.level === "warning")).toBe(true);
+    expect(result.details.segments[0].duration).toBe(0);
+  });
+
+  it("flags EXTINF without comma as malformed", () => {
+    // Tatsächlich liefert RFC 8216 EXTINF immer mit Komma, aber ein
+    // bloßes "#EXTINF:6" ist parseable (Komma optional, Title leer).
+    // Hier prüfen wir, dass das nicht crasht und die Dauer korrekt
+    // geparst wird.
+    const ok = ["#EXTM3U", "#EXT-X-TARGETDURATION:6", "#EXTINF:6", "a.ts", "#EXT-X-ENDLIST"].join("\n");
+    const result = parseMediaPlaylist(ok, undefined);
+    expect(result.details.segments).toHaveLength(1);
+    expect(result.details.segments[0].duration).toBe(6);
+    expect(result.details.segments[0].title).toBeUndefined();
+    expect(result.findings.some((f) => f.code === "segment_malformed_extinf")).toBe(false);
+  });
+
   it("flags EXTINF without a following URI as missing-uri error", () => {
     const bad = [
       "#EXTM3U",
@@ -144,12 +164,112 @@ describe("parseMediaPlaylist — findings and tolerances", () => {
     expect(result.details.segments[0].title).toBe("Episode 1");
   });
 
+  it("preserves commas inside EXTINF title (only first comma is a delimiter)", () => {
+    const titled = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      "#EXTINF:6.0,Episode 1, Part 2",
+      "a.ts",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(titled, undefined);
+    expect(result.details.segments[0].title).toBe("Episode 1, Part 2");
+  });
+
   it("falls back to mediaSequence=0 when MEDIA-SEQUENCE is malformed", () => {
     const bad = ["#EXTM3U", "#EXT-X-TARGETDURATION:6", "#EXT-X-MEDIA-SEQUENCE:abc", "#EXTINF:6.0,", "a.ts"].join("\n");
     const result = parseMediaPlaylist(bad, undefined);
     expect(result.findings.some((f) => f.code === "media_malformed_mediasequence" && f.level === "warning")).toBe(true);
     expect(result.details.mediaSequence).toBe(0);
     expect(result.details.segments[0].sequenceNumber).toBe(0);
+  });
+});
+
+describe("parseMediaPlaylist — unsupported feature info findings", () => {
+  it("emits media_encryption_present for EXT-X-KEY with active method", () => {
+    const enc = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      '#EXT-X-KEY:METHOD=AES-128,URI="key.php?id=42"',
+      "#EXTINF:6.0,",
+      "a.ts",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(enc, undefined);
+    const finding = result.findings.find((f) => f.code === "media_encryption_present");
+    expect(finding).toBeDefined();
+    expect(finding?.level).toBe("info");
+  });
+
+  it("does not flag METHOD=NONE as encryption present", () => {
+    const noEnc = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      "#EXT-X-KEY:METHOD=NONE",
+      "#EXTINF:6.0,",
+      "a.ts",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(noEnc, undefined);
+    expect(result.findings.some((f) => f.code === "media_encryption_present")).toBe(false);
+  });
+
+  it("emits media_init_segment_present for EXT-X-MAP", () => {
+    const fmp4 = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      '#EXT-X-MAP:URI="init.mp4"',
+      "#EXTINF:6.0,",
+      "a.m4s",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(fmp4, undefined);
+    expect(result.findings.some((f) => f.code === "media_init_segment_present" && f.level === "info")).toBe(true);
+  });
+
+  it("emits media_discontinuity_present for EXT-X-DISCONTINUITY", () => {
+    const disc = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      "#EXTINF:6.0,",
+      "a.ts",
+      "#EXT-X-DISCONTINUITY",
+      "#EXTINF:6.0,",
+      "b.ts",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(disc, undefined);
+    expect(result.findings.some((f) => f.code === "media_discontinuity_present" && f.level === "info")).toBe(true);
+  });
+
+  it("emits media_program_date_time_present for EXT-X-PROGRAM-DATE-TIME", () => {
+    const pdt = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      "#EXT-X-PROGRAM-DATE-TIME:2026-05-01T09:00:00Z",
+      "#EXTINF:6.0,",
+      "a.ts",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(pdt, undefined);
+    expect(result.findings.some((f) => f.code === "media_program_date_time_present" && f.level === "info")).toBe(true);
+  });
+
+  it("emits each feature finding only once even if the tag appears multiple times", () => {
+    const multi = [
+      "#EXTM3U",
+      "#EXT-X-TARGETDURATION:6",
+      "#EXT-X-DISCONTINUITY",
+      "#EXTINF:6.0,",
+      "a.ts",
+      "#EXT-X-DISCONTINUITY",
+      "#EXTINF:6.0,",
+      "b.ts",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = parseMediaPlaylist(multi, undefined);
+    const count = result.findings.filter((f) => f.code === "media_discontinuity_present").length;
+    expect(count).toBe(1);
   });
 });
 

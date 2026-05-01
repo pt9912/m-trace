@@ -288,8 +288,12 @@ Sekunden, gerechnet auf den geparsten Float-Dauern.
 | `media_missing_targetduration`       | error   | RFC 8216 §4.3.3.1 macht das Tag verpflichtend; ohne es bleibt der Manifest-Konformitätscheck offen. |
 | `media_malformed_targetduration`     | error   | TARGETDURATION ist nicht parseable; weitere Auswertung läuft trotzdem.                          |
 | `media_malformed_mediasequence`      | warning | MEDIA-SEQUENCE nicht parseable; Fallback `mediaSequence = 0`.                                   |
-| `segment_duration_exceeds_target`    | error   | `round(duration) > TARGETDURATION` — Spec-Verstoß (RFC 8216 §4.3.3.1).                          |
-| `segment_duration_outlier`           | warning | Segmentdauer ist < 50 % des Mittelwerts (Apple-HLS-Authoring-Empfehlung). Letztes VOD-Segment ausgenommen. |
+| `segment_duration_exceeds_target`    | error   | `round(duration) > TARGETDURATION` — Spec-Verstoß (RFC 8216 §4.3.3.1). Deckt Upper-Drift ab.    |
+| `segment_duration_outlier`           | warning | Segmentdauer ist < 50 % des Ankers. Anker = TARGETDURATION (Apple-HLS-Authoring-Guide); fehlt das Tag, Mean-Fallback. Letztes VOD-Segment ausgenommen. Lower-Bound-Check: zu lange Segmente sind über `segment_duration_exceeds_target` abgedeckt. |
+| `media_encryption_present`           | info    | EXT-X-KEY mit aktiver Methode vorhanden; Schlüssel-/Decryption-Pfade werden nicht validiert.    |
+| `media_init_segment_present`         | info    | EXT-X-MAP (fMP4-Init-Segment) vorhanden; Init-Segment-Konsistenz wird nicht geprüft.            |
+| `media_discontinuity_present`        | info    | EXT-X-DISCONTINUITY vorhanden; Timeline-Continuity wird nicht ausgewertet.                       |
+| `media_program_date_time_present`    | info    | EXT-X-PROGRAM-DATE-TIME vorhanden; Wall-Clock-Annotationen werden nicht ausgewertet.            |
 | `segment_malformed_extinf`           | warning | EXTINF-Dauer nicht parseable; Segment wird mit `duration: 0` aufgenommen.                       |
 | `segment_missing_uri`                | error   | EXTINF ohne folgende URI-Zeile.                                                                  |
 | `segment_unexpected_uri`             | warning | Manifest-Zeile, die wie URI aussieht, ohne vorhergehendes EXTINF.                               |

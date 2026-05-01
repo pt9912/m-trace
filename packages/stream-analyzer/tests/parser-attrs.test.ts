@@ -126,4 +126,15 @@ describe("parseFloatAttr", () => {
     expect(parseFloatAttr("abc")).toBeNull();
     expect(parseFloatAttr(undefined)).toBeNull();
   });
+  it("rejects empty and whitespace-only inputs (would be Number(\"\") === 0)", () => {
+    expect(parseFloatAttr("")).toBeNull();
+    expect(parseFloatAttr("   ")).toBeNull();
+    expect(parseFloatAttr("\t")).toBeNull();
+  });
+  it("rejects Infinity and negative values", () => {
+    expect(parseFloatAttr("Infinity")).toBeNull();
+    expect(parseFloatAttr("-Infinity")).toBeNull();
+    expect(parseFloatAttr("-1.5")).toBeNull();
+    expect(parseFloatAttr("-0.001")).toBeNull();
+  });
 });
