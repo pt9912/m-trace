@@ -37,9 +37,56 @@ export interface AnalysisResult {
   readonly summary: AnalysisSummary;
   readonly findings: readonly AnalysisFinding[];
   /**
-   * Typspezifische Detail-Strukturen (Master-Playlist-Varianten,
-   * Media-Playlist-Segmente, …). Tranche 3/4 stabilisieren das Shape;
-   * `null` markiert „kein typspezifisches Detail geliefert".
+   * Typspezifische Detail-Strukturen. Bei `playlistType === "master"`
+   * ist die Form `MasterPlaylistDetails`; Tranche 4 ergänzt
+   * `MediaPlaylistDetails`. Tranche 5 zieht die Diskriminierung in
+   * den Typ. Bis dahin: `null` markiert „kein typspezifisches Detail
+   * geliefert"; Konsumenten casten nach `playlistType`.
    */
   readonly details: Readonly<Record<string, unknown>> | null;
+}
+
+/**
+ * Ein Variant aus `#EXT-X-STREAM-INF`. Pflichtfeld ist `bandwidth`;
+ * fehlt `BANDWIDTH`, wird der Eintrag dennoch aufgenommen
+ * (`bandwidth: 0`) und mit einem Error-Finding markiert. Optionale
+ * Felder fehlen, wenn das Tag sie nicht setzt.
+ */
+export interface MasterVariant {
+  readonly bandwidth: number;
+  readonly averageBandwidth?: number;
+  readonly resolution?: { readonly width: number; readonly height: number };
+  readonly codecs?: readonly string[];
+  readonly frameRate?: number;
+  readonly audio?: string;
+  readonly video?: string;
+  readonly subtitles?: string;
+  readonly closedCaptions?: string;
+  /** URI exakt wie im Manifest geliefert (relativ oder absolut). */
+  readonly uri: string;
+  /** Absolute URI nach Auflösung gegen die Base-URL, falls vorhanden. */
+  readonly resolvedUri?: string;
+}
+
+/**
+ * Eine Rendition aus `#EXT-X-MEDIA`. Pflichtfelder sind `type`,
+ * `groupId`, `name`; alles andere optional, weil je nach Typ
+ * unterschiedlich relevant.
+ */
+export interface MasterRendition {
+  readonly type: string;
+  readonly groupId: string;
+  readonly name: string;
+  readonly language?: string;
+  readonly uri?: string;
+  readonly resolvedUri?: string;
+  readonly default?: boolean;
+  readonly autoselect?: boolean;
+  readonly forced?: boolean;
+  readonly channels?: string;
+}
+
+export interface MasterPlaylistDetails {
+  readonly variants: readonly MasterVariant[];
+  readonly renditions: readonly MasterRendition[];
 }

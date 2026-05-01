@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`analyzeHlsManifest — Tranche 2 contract > snapshots the master fixture result for stability 1`] = `
+{
+  "renditions": [
+    {
+      "autoselect": true,
+      "default": true,
+      "groupId": "aud-en",
+      "language": "en",
+      "name": "English",
+      "resolvedUri": "https://cdn.example.test/audio/en/main.m3u8",
+      "type": "AUDIO",
+      "uri": "audio/en/main.m3u8",
+    },
+  ],
+  "variants": [
+    {
+      "audio": "aud-en",
+      "bandwidth": 1280000,
+      "codecs": [
+        "avc1.4d401e",
+        "mp4a.40.2",
+      ],
+      "resolution": {
+        "height": 480,
+        "width": 720,
+      },
+      "resolvedUri": "https://cdn.example.test/video/720p/main.m3u8",
+      "uri": "video/720p/main.m3u8",
+    },
+    {
+      "audio": "aud-en",
+      "bandwidth": 2560000,
+      "codecs": [
+        "avc1.4d401f",
+        "mp4a.40.2",
+      ],
+      "frameRate": 30,
+      "resolution": {
+        "height": 720,
+        "width": 1280,
+      },
+      "resolvedUri": "https://cdn.example.test/video/720p-hd/main.m3u8",
+      "uri": "video/720p-hd/main.m3u8",
+    },
+  ],
+}
+`;

@@ -8,7 +8,7 @@ Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 Tranche 2)
+## 1. Status (0.3.0 Tranche 3)
 
 - ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 % stehen.
@@ -17,15 +17,18 @@ F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
   markiert ambige Mischformen als Master-Variante mit Warning-Finding.
 - ✅ URL-Loader: HTTP/HTTPS, Timeout, Größenlimit, manuelles Redirect-
   Handling und SSRF-Schutzregeln (siehe §6).
-- ⬜ Master-Detail-Auswertung (Variants/Renditions) — Tranche 3.
+- ✅ Master-Detail-Auswertung: Variants (`#EXT-X-STREAM-INF`) mit
+  Bandbreite/Resolution/Codecs/Frame-Rate/Group-Refs, Renditions
+  (`#EXT-X-MEDIA`) mit Typ/GroupId/Name/Lang/URI/Flags, Group-Cross-Check,
+  optionale Base-URL-Auflösung als `resolvedUri`.
 - ⬜ Media-Detail-Auswertung (Segmente, Findings, Live-Latenz) — Tranche 4.
 - ⬜ Stabilisiertes JSON-Schema mit typspezifischen `details` — Tranche 5.
 - ⬜ API-Anbindung über den Driven-Port `StreamAnalyzer.AnalyzeManifest` —
   Tranche 6.
 - ⬜ CLI `pnpm m-trace check <url>` — Tranche 7.
 
-Tranche 2 liefert die Klassifikation und das robuste Lade-Subsystem; jede
-weitere Tranche erweitert die Result-Details additiv.
+Tranche 3 ergänzt das Master-Detail; jede weitere Tranche erweitert die
+Result-Details additiv.
 
 ## 2. Public API
 
@@ -49,7 +52,8 @@ Exportierte Symbole (Snapshot in
 - Typen: `ManifestInput` (`ManifestTextInput | ManifestUrlInput`),
   `AnalyzeOptions`, `FetchOptions`, `AnalysisFinding`, `FindingLevel`,
   `AnalysisInputMetadata`, `AnalysisResult`, `AnalysisSummary`,
-  `PlaylistType`, `AnalysisErrorCode`, `AnalysisErrorResult`.
+  `PlaylistType`, `AnalysisErrorCode`, `AnalysisErrorResult`,
+  `MasterPlaylistDetails`, `MasterRendition`, `MasterVariant`.
 
 ### 2.1 Eingabeformen
 
@@ -89,7 +93,48 @@ type FetchOptions = {
 }
 ```
 
-Beispiel (Media-Playlist nach Tranche 2):
+Beispiel (Master-Playlist nach Tranche 3):
+
+```json
+{
+  "status": "ok",
+  "analyzerVersion": "0.3.0",
+  "input": { "source": "text", "baseUrl": "https://cdn.example.test/" },
+  "playlistType": "master",
+  "summary": { "itemCount": 3 },
+  "findings": [],
+  "details": {
+    "variants": [
+      {
+        "bandwidth": 1280000,
+        "resolution": { "width": 720, "height": 480 },
+        "codecs": ["avc1.4d401e", "mp4a.40.2"],
+        "audio": "aud-en",
+        "uri": "video/720p/main.m3u8",
+        "resolvedUri": "https://cdn.example.test/video/720p/main.m3u8"
+      }
+    ],
+    "renditions": [
+      {
+        "type": "AUDIO",
+        "groupId": "aud-en",
+        "name": "English",
+        "language": "en",
+        "default": true,
+        "autoselect": true,
+        "uri": "audio/en/main.m3u8",
+        "resolvedUri": "https://cdn.example.test/audio/en/main.m3u8"
+      }
+    ]
+  }
+}
+```
+
+Konsumenten casten `result.details` gemäß `result.playlistType`
+(`"master"` → `MasterPlaylistDetails`). Tranche 5 wird die
+Diskriminierung in den Typ ziehen; bis dahin verlangt TypeScript einen
+expliziten Cast. Beispiel (Media-Playlist nach Tranche 2; Detail-Sektion
+folgt in Tranche 4):
 
 ```json
 {
@@ -106,7 +151,7 @@ Beispiel (Media-Playlist nach Tranche 2):
     {
       "code": "details_pending",
       "level": "info",
-      "message": "stream-analyzer 0.3.0 Tranche 2: Klassifikation abgeschlossen, typspezifische Detail-Auswertung folgt in Tranche 3/4."
+      "message": "stream-analyzer 0.3.0: Detail-Auswertung für diesen Playlist-Typ folgt in Tranche 4."
     }
   ],
   "details": null

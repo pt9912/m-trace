@@ -10,7 +10,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 const fixture = (name: string): string => readFileSync(join(fixturesDir, name), "utf8");
 
 describe("analyzeHlsManifest — Tranche 2 contract", () => {
-  it("classifies a master playlist", async () => {
+  it("classifies and parses a master playlist", async () => {
     const result = (await analyzeHlsManifest({ kind: "text", text: fixture("master.m3u8") })) as AnalysisResult;
 
     expect(result.status).toBe("ok");
@@ -18,7 +18,21 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
     expect(result.input).toEqual({ source: "text" });
     expect(result.playlistType).toBe("master");
     expect(result.findings.some((f) => f.code === "playlist_ambiguous")).toBe(false);
-    expect(result.details).toBeNull();
+    expect(result.details).not.toBeNull();
+    const details = result.details as { variants: unknown[]; renditions: unknown[] };
+    expect(details.variants).toHaveLength(2);
+    expect(details.renditions).toHaveLength(1);
+    expect(result.summary).toEqual({ itemCount: 3 });
+  });
+
+  it("snapshots the master fixture result for stability", async () => {
+    const result = (await analyzeHlsManifest({
+      kind: "text",
+      text: fixture("master.m3u8"),
+      baseUrl: "https://cdn.example.test/"
+    })) as AnalysisResult;
+    expect(result.playlistType).toBe("master");
+    expect(result.details).toMatchSnapshot();
   });
 
   it("classifies a media playlist", async () => {
