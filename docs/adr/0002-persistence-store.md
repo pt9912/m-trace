@@ -1,11 +1,11 @@
 # 0002 — Persistenz-Store für Sessions und Playback-Events
 
-> **Status**: Draft  
-> **Datum**: 2026-04-30  
+> **Status**: Accepted  
+> **Datum**: 2026-04-30 (Draft) · 2026-05-01 (Accepted)  
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)  
-> **Bezug**: `spec/lastenheft.md` OE-3, MVP-16, MVP-27, MVP-40;
+> **Bezug**: `spec/lastenheft.md` OE-3, MVP-16, MVP-27, MVP-40, RAK-32;
 > `spec/architecture.md` §11; `docs/planning/roadmap.md` §4/§5;
-> `docs/planning/plan-0.2.0.md` Tranche 6.
+> `docs/planning/plan-0.2.0.md` Tranche 6; `docs/planning/plan-0.3.0.md` §10.
 
 ---
 
@@ -24,6 +24,11 @@ entscheidet sie aber noch nicht final.
 geändert: Das Wire-Format bleibt `schema_version: "1.0"`, Events werden
 weiterhin append-only aufgenommen, und die bestehenden Session-/Event-Read-
 Endpoints bleiben unverändert.
+
+`0.3.0` liefert den Stream-Analyzer ausschliesslich stateless aus
+(`POST /api/analyze` persistiert kein Ergebnis, plan-0.3.0 §10). Damit ist
+die Persistenz-Frage durch `0.3.0` weder vergrössert noch entschärft worden;
+sie kommt unverändert in die `0.4.0`-Planung.
 
 ## 2. Entscheidungsfrage
 
@@ -52,7 +57,7 @@ Diese Punkte muss eine spätere Entscheidung berücksichtigen:
 | Retention | Store muss spätere Retention nach Zeit, Projekt und Session erlauben. |
 | Lokales Lab | `make dev` soll ohne externen Cloud-Dienst reproduzierbar bleiben. |
 
-## 4. Vorläufige Bewertung
+## 4. Bewertung der Optionen
 
 | Kriterium | A: In-Memory | B: SQLite | C: PostgreSQL |
 |---|---:|---:|---:|
@@ -63,32 +68,72 @@ Diese Punkte muss eine spätere Entscheidung berücksichtigen:
 | Produktionsnähe | niedrig | mittel | hoch |
 | Migrationsaufwand aus aktuellem Hexagon | niedrig | mittel | mittel |
 
-Vorläufige Tendenz: SQLite ist der passendste nächste Schritt für lokale
-Durability, solange Multi-Instance- und Multi-Tenant-Produktionsbetrieb noch
-nicht Ziel des nächsten Releases sind. PostgreSQL bleibt Kandidat, sobald
-Deployment-/Skalierungsanforderungen konkret werden.
+## 5. Verlauf bis zur Entscheidung
 
-## 5. Nicht-Entscheidung für `0.2.0`
+Die Persistenzentscheidung wurde bewusst zweimal verschoben:
 
-Für `0.2.0` ist kein finaler Persistenzwechsel blockierend.
+- **`0.2.0`** liefert ein publizierbares Player-SDK, keine neue Storage-API;
+  das SDK erzwingt keine neuen Persistenzgarantien gegenüber `0.1.2`. MVP-16
+  erlaubt lokale Speicherung per In-Memory oder SQLite, und die bestehenden
+  Cursor invalidieren Restart bewusst über `process_instance_id`.
+- **`0.3.0`** liefert den Stream-Analyzer stateless aus; `POST /api/analyze`
+  persistiert nichts, jeder Aufruf ist eigenständig (plan-0.3.0 §10).
 
-Begründung:
+Damit blieb die Frage „In-Memory bleibt zulässig?" bis zum `0.4.0`-Scope-Cut
+offen. Sie wird mit diesem ADR entschieden.
 
-- `0.2.0` liefert ein publizierbares Player-SDK, keine neue Storage-API.
-- Das SDK erzwingt keine neuen Persistenzgarantien gegenüber `0.1.2`.
-- MVP-16 erlaubt lokale Speicherung per In-Memory oder SQLite.
-- Die bestehenden Cursor invalidieren Restart bewusst über
-  `process_instance_id`; das ist dokumentiert und bleibt bis zur
-  Persistenzentscheidung akzeptiert.
+## 6. Entscheidung
 
-Folgearbeit: Dieser Draft muss vor einer dauerhaften Session-/Event-Historie
-oder vor stabilen Restart-Cursorn in einen `Accepted` ADR überführt werden.
+**Option B: SQLite als lokaler Durable-Store** wird als nächste Persistenz
+für m-trace gewählt.
 
-## 6. Offene Punkte
+Auslöser ist **RAK-32** in `0.4.0` (Lastenheft §13.6, *Muss*): „Dashboard
+kann Session-Verläufe auch ohne Tempo einfach anzeigen." Das verlangt eine
+durable Session-/Event-Historie, die einen API-Restart überlebt — Option A
+(In-Memory) erfüllt das nicht. Tempo (RAK-31) ist *Kann*; das durable
+Session-View-Backend muss also lokal in m-trace selbst leben.
+
+Gegen Option C (PostgreSQL) sprechen weiterhin:
+
+- `make dev` soll ohne externen Cloud-Dienst reproduzierbar bleiben (§3,
+  „Lokales Lab").
+- Multi-Instance-Deployment ist für `0.4.0` nicht im Scope; die
+  Skalierungs-Treiber für Postgres existieren noch nicht.
+- Der Repository-Port-Schnitt bleibt formatneutral, sodass ein späterer
+  Wechsel SQLite → PostgreSQL als Folge-ADR möglich bleibt, ohne `0.4.0`
+  zu blockieren.
+
+PostgreSQL bleibt als zukünftiger Folge-ADR offen, sobald Multi-Instance-,
+Multi-Tenant- oder Retention-Last-Anforderungen konkret werden.
+
+## 7. Konsequenzen
+
+- **Repository-Port-Migration als `0.4.0`-Eingangstranche.** Die heute
+  In-Memory-implementierten Driven-Adapter (Sessions, Events,
+  Ingest-Sequenz) bekommen eine SQLite-Implementierung hinter den
+  bestehenden Ports. Driving-Adapter und Anwendungsdienste bleiben
+  unverändert.
+- **Cursor-Format wird durable.** Das heutige `process_instance_id`-Cursor-
+  Format invalidiert nach Restart — mit SQLite wird es durch eine
+  Storage-getragene Form ersetzt (Sequence-ID oder opakes Token). Genaue
+  Form ist Folge-ADR (siehe roadmap §4 „Durabel-konsistente Cursor-Strategie").
+- **Schema-Versionierung.** SQLite-Schema bekommt eine eigene
+  Migrations-Versionsspur, getrennt vom Event-Wire-Schema (`schema_version`).
+  Migrationswerkzeug-Wahl ist Teil der `0.4.0`-Eingangstranche.
+- **Retention-Defaults im Lab.** SQLite-Datei hat ein dokumentiertes
+  Default-Retention-Fenster pro Projekt/Session; konkrete Defaults landen
+  in `plan-0.4.0.md` und in `docs/user/local-development.md`.
+- **Compose-Lab.** Die SQLite-Datei lebt in einem benannten Volume des
+  `api`-Service, damit `make dev`-Cycles die Daten überdauern; `make stop`
+  räumt das Volume *nicht* automatisch.
+- **Doku-Update.** `spec/architecture.md` §11 (Storage), `docs/user/local-development.md`
+  (Retention/Reset-Hinweis), `README.md` Status-Zeile (Datenhaltung) werden
+  in der Tranche, die SQLite einführt, mitgezogen.
+
+## 8. Offene Punkte (für die `0.4.0`-Eingangstranche)
 
 - Tabellenlayout für Events, Sessions und Project-Konfiguration.
-- Migrationswerkzeug für SQLite bzw. PostgreSQL.
-- Retention-Defaults für das lokale Lab.
-- Cursor-Format ohne `process_instance_id`-Invalidierung.
-- Entscheidung, ob SQLite und PostgreSQL beide über dieselben Repository-Ports
-  unterstützt werden oder ob SQLite nur lokaler MVP-Store bleibt.
+- Migrationswerkzeug für SQLite (z. B. `golang-migrate`, `goose`, eigenes
+  Embed-Schema).
+- Konkrete Retention-Defaults für das lokale Lab.
+- Cursor-Format ohne `process_instance_id`-Invalidierung — als Folge-ADR.
