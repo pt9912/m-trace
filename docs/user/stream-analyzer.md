@@ -505,7 +505,11 @@ damit nur das Analyzer-JSON auf stdout landet — sinnvoll, wenn man
 
 ### 9.2 Smoke-Test
 
-`make smoke-cli` baut das Paket und exerziert vier Pfade: `--help`,
-Master-Datei, Nicht-HLS-Datei (Erwartung Exit 1 + `manifest_not_hls`)
-und fehlende Datei (Erwartung Exit 1 mit stderr-Hinweis). Der Aufruf
-spiegelt das DoD-Smoke-Kriterium aus plan-0.3.0 §8 Tranche 7.
+`make smoke-cli` baut das Paket und exerziert sieben Pfade:
+`--help` (über die pnpm-Skript-Form), Master-Datei (Exit 0 + JSON),
+Nicht-HLS-Datei (Exit 1 + `manifest_not_hls`), fehlende Datei (Exit 1
+mit stderr-Hinweis), no-args (Exit 2), URL-Input gegen eine
+RFC1918-Adresse (Exit 1 + `fetch_blocked` — exerciert den echten
+Loader-Pfad inklusive SSRF-Schutz) und `--help` über `pnpm exec
+m-trace` (Bin-Symlink + Shebang). Der Aufruf spiegelt das
+DoD-Smoke-Kriterium aus plan-0.3.0 §8 Tranche 7.

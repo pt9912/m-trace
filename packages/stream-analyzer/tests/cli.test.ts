@@ -211,4 +211,28 @@ describe("m-trace CLI — URL input", () => {
     expect(r.stderr).toContain("Analyse fehlgeschlagen");
     expect(r.stderr).toContain("network down");
   });
+
+  it("describes non-Error analyze throws via String()", async () => {
+    const r = await run(["check", "https://example.test/m.m3u8"], {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      analyze: async () => {
+        throw "raw boom";
+      }
+    });
+    expect(r.exit).toBe(EXIT_FAILURE);
+    expect(r.stderr).toContain("Analyse fehlgeschlagen");
+    expect(r.stderr).toContain("raw boom");
+  });
+
+  it("treats uppercase HTTPS as a URL (RFC 3986 §3.1)", async () => {
+    let observedInput: ManifestInput | null = null;
+    const r = await run(["check", "HTTPS://example.test/m.m3u8"], {
+      analyze: async (input) => {
+        observedInput = input;
+        return okMaster;
+      }
+    });
+    expect(r.exit).toBe(EXIT_OK);
+    expect(observedInput).toEqual({ kind: "url", url: "HTTPS://example.test/m.m3u8" });
+  });
 });

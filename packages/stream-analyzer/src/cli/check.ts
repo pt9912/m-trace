@@ -126,7 +126,10 @@ function printUsage(out: Writable): void {
 }
 
 function isHttpUrl(value: string): boolean {
-  return value.startsWith("http://") || value.startsWith("https://");
+  // RFC 3986 §3.1: scheme ist case-insensitive. Tolerieren wir, damit
+  // copy-paste aus auto-korrigierten Quellen ("HTTP://...") nicht
+  // versehentlich als Datei-Pfad behandelt wird.
+  return /^https?:\/\//i.test(value);
 }
 
 function localBaseUrl(path: string): string | undefined {
