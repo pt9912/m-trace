@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild
 
 help:
 	@printf '%s\n' \
@@ -19,6 +19,7 @@ help:
 		'  make smoke-observability    Run the Prometheus/cardinality smoke checks' \
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
+		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
 		'  make browser-e2e            Run browser E2E checks' \
 		'  make test                   Run API Docker tests and workspace tests' \
@@ -59,6 +60,12 @@ smoke-rak10-console:
 smoke-analyzer:
 	$(COMPOSE) up -d --build analyzer-service api mediamtx stream-generator
 	bash scripts/smoke-analyzer.sh
+
+# smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
+# (plan-0.3.0 §8 Tranche 7). Hängt am workspace-build, damit das CLI-
+# Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt.
+smoke-cli: workspace-build
+	bash scripts/smoke-cli.sh
 
 seed-rak9:
 	bash scripts/seed-rak9.sh

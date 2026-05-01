@@ -34,7 +34,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ✅ |
 | 5 | JSON-Ergebnisformat und Dokumentation | ✅ |
 | 6 | API-Anbindung über StreamAnalyzer-Port | ✅ |
-| 7 | CLI-Grundlage | ⬜ |
+| 7 | CLI-Grundlage | ✅ |
 | 8 | Release-Akzeptanzkriterien `0.3.0` | ⬜ |
 
 ---
@@ -213,14 +213,14 @@ Ziel: Eine einfache CLI kann lokale oder per URL geladene HLS-Manifeste analysie
 
 DoD:
 
-- [ ] CLI-Einstieg ist im Analyzer-Paket definiert, z. B. `bin` in `package.json`.
-- [ ] Der Lastenheft-Aufruf `pnpm m-trace check <url>` funktioniert exakt als Smoke-Kriterium.
-- [ ] CLI akzeptiert mindestens Datei-Pfad oder URL als Input.
-- [ ] CLI-URL-Input ist verpflichtend und nutzt dieselben SSRF-Schutzregeln wie der Analyzer-Loader; lokale Datei-Analyse ist zusätzlich erlaubt, ersetzt aber das URL-Ziel nicht.
-- [ ] CLI gibt Analyseergebnis auf stdout als JSON aus.
-- [ ] Fehler werden mit sinnvollem Exit-Code und maschinenlesbarem Fehler-JSON oder klar dokumentiertem stderr ausgegeben.
-- [ ] CLI-Tests decken Datei-Input, URL-/Fetch-Mock, Erfolg und Fehlerfall ab.
-- [ ] Lokaler Smoke-Befehl ist in `docs/user/local-development.md` dokumentiert.
+- [x] CLI-Einstieg ist im Analyzer-Paket definiert, z. B. `bin` in `package.json` (CLI-Hash folgt mit dem Implementierungs-Commit).
+- [x] Der Lastenheft-Aufruf `pnpm m-trace check <url>` funktioniert exakt als Smoke-Kriterium (Wurzel-Skript leitet auf den gebauten CLI-Bundle, `make smoke-cli` deckt es ab).
+- [x] CLI akzeptiert mindestens Datei-Pfad oder URL als Input.
+- [x] CLI-URL-Input ist verpflichtend und nutzt dieselben SSRF-Schutzregeln wie der Analyzer-Loader; lokale Datei-Analyse ist zusätzlich erlaubt, ersetzt aber das URL-Ziel nicht.
+- [x] CLI gibt Analyseergebnis auf stdout als JSON aus.
+- [x] Fehler werden mit sinnvollem Exit-Code und maschinenlesbarem Fehler-JSON (analysis-error → stdout JSON, exit 1) oder klar dokumentiertem stderr (I/O-Fehler → stderr-Hinweis, exit 1; Usage-Fehler → stderr + exit 2) ausgegeben.
+- [x] CLI-Tests decken Datei-Input, URL-/Fetch-Mock, Erfolg und Fehlerfall ab (`tests/cli.test.ts`, 16 Cases).
+- [x] Lokaler Smoke-Befehl ist in `docs/user/local-development.md` dokumentiert.
 
 ---
 

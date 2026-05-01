@@ -8,7 +8,7 @@ Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 Tranche 6)
+## 1. Status (0.3.0 Tranche 7 — Release-bereit)
 
 - ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 % stehen.
@@ -27,12 +27,14 @@ F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 - ✅ JSON-Ergebnisformat: `AnalysisResult` als diskriminierte Union per
   `playlistType`, `analyzerKind: "hls"` als Erweiterungspfad für
   DASH/CMAF, deterministische Serialisierung, Stabilitätsregel als
-  operativer Vertrag — siehe §4 und §8.
+  operativer Vertrag — siehe §4.
 - ✅ API-Anbindung: `POST /api/analyze` reicht den Aufruf an den
   internen `analyzer-service` (Node-HTTP-Wrapper) weiter; Go-API
   bleibt distroless-static. Vollständig in `docker-compose.yml`
   verdrahtet, Smoke-Test über `make smoke-analyzer` — siehe §5.
-- ⬜ CLI `pnpm m-trace check <url>` — Tranche 7.
+- ✅ CLI `pnpm m-trace check <url-or-file>`: stdout-JSON, Exit-Codes
+  0/1/2, Datei- und URL-Input, SSRF-Schutz aus dem Loader greift
+  unverändert — siehe §9.
 
 Tranche 5 sperrt das JSON-Format. Konsumenten erkennen Erfolg/Fehler an
 `status`, schalten auf `playlistType` zur Auswahl der Detail-Form und
@@ -462,9 +464,48 @@ pnpm --filter @npm9912/stream-analyzer run test:coverage
 # Lint (tsc + Boundary-Check + Public-API-Snapshot)
 pnpm --filter @npm9912/stream-analyzer run lint
 
-# Build (ESM + CJS + d.ts)
+# Build (ESM + CJS + d.ts inkl. CLI-Bundle)
 pnpm --filter @npm9912/stream-analyzer run build
 ```
 
 Root-Aggregat: `make test`, `make lint`, `make coverage-gate`, `make build`
 beziehen das Paket über `pnpm -r --if-present` automatisch ein.
+
+## 9. CLI `m-trace check`
+
+Der Lastenheft-Aufruf `pnpm m-trace check <url-or-file>` analysiert ein
+HLS-Manifest und gibt das vollständige `AnalysisResult`-JSON auf stdout
+aus. URL-Inputs nutzen denselben Loader-Pfad wie die Bibliothek (siehe
+§6 für SSRF-Regeln); Datei-Inputs werden direkt eingelesen und als
+`kind: "text"` mit `baseUrl: "file://..."` an den Analyzer gegeben.
+
+```bash
+# URL gegen öffentlichen Stream
+pnpm m-trace check https://cdn.example.test/manifest.m3u8
+
+# Lokale Datei
+pnpm m-trace check ./fixtures/master.m3u8
+
+# Hilfe und Version
+pnpm m-trace --help
+pnpm m-trace --version
+```
+
+Empfehlung: pnpm-Output unterdrücken mit `pnpm --silent m-trace …`,
+damit nur das Analyzer-JSON auf stdout landet — sinnvoll, wenn man
+`pnpm m-trace check … | jq` oder `... > result.json` nutzt.
+
+### 9.1 Exit-Codes
+
+| Code | Bedeutung                                                        |
+| ---- | ---------------------------------------------------------------- |
+| 0    | Analyse erfolgreich (`status: "ok"`); JSON liegt auf stdout.     |
+| 1    | Analyse-Fehler (`status: "error"` auf stdout) **oder** I/O-Fehler beim Lesen der Datei (Diagnose auf stderr). |
+| 2    | Aufrufargument-/Usage-Fehler (Hilfe auf stderr).                 |
+
+### 9.2 Smoke-Test
+
+`make smoke-cli` baut das Paket und exerziert vier Pfade: `--help`,
+Master-Datei, Nicht-HLS-Datei (Erwartung Exit 1 + `manifest_not_hls`)
+und fehlende Datei (Erwartung Exit 1 mit stderr-Hinweis). Der Aufruf
+spiegelt das DoD-Smoke-Kriterium aus plan-0.3.0 §8 Tranche 7.

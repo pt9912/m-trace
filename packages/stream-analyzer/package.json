@@ -23,11 +23,14 @@
       "require": "./dist/index.cjs"
     }
   },
+  "bin": {
+    "m-trace": "./dist/cli/main.cjs"
+  },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "build": "tsup src/index.ts src/cli/main.ts --format esm,cjs --dts --clean",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit && node scripts/check-boundaries.mjs && node scripts/check-public-api.mjs"

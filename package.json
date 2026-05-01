@@ -12,7 +12,8 @@
     "test": "pnpm -r --if-present run test",
     "test:e2e": "playwright test",
     "lint": "pnpm -r --if-present run lint && node scripts/check-sdk-compat.mjs",
-    "check": "pnpm -r --if-present run check"
+    "check": "pnpm -r --if-present run check",
+    "m-trace": "node packages/stream-analyzer/dist/cli/main.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

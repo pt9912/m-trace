@@ -23,7 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   analyzer-service.
 - `make smoke-analyzer` als End-to-End-Smoke (Master-Text-Input und
   SSRF-Negativfall) im laufenden Compose-Stack.
-- Doku: `docs/user/stream-analyzer.md` (Tranche-1..6-Stand) und
+- CLI `m-trace check <url-or-file>` aus `@npm9912/stream-analyzer`:
+  bin-Eintrag, Datei- und URL-Input (URL teilt den SSRF-geschützten
+  Loader-Pfad), JSON auf stdout, Exit-Codes 0/1/2, `--help` und
+  `--version`. Smoke `make smoke-cli` deckt `--help`, Master-Datei,
+  Nicht-HLS-Datei und fehlende Datei ab.
+- Doku: `docs/user/stream-analyzer.md` (Tranche-1..7-Stand) und
   `spec/backend-api-contract.md` §3.6 Analyzer-Endpunkt.
 
 ## [0.2.0] - 2026-04-30

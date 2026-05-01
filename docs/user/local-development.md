@@ -133,9 +133,27 @@ make smoke-analyzer
 
 URL-Inputs gegen interne Compose-Services scheitern an der
 SSRF-Sperre (`http://mediamtx:8888/…` löst zu einem RFC1918-IP auf
-und wird vom analyzer-service korrekt mit 502 abgelehnt). Für lokale
-End-to-End-Tests deshalb Text-Input verwenden oder eine öffentliche
-HLS-URL nutzen.
+und wird vom analyzer-service korrekt mit 400 `fetch_blocked`
+abgelehnt). Für lokale End-to-End-Tests deshalb Text-Input
+verwenden oder eine öffentliche HLS-URL nutzen.
+
+CLI (ab `0.3.0` Tranche 7):
+
+```bash
+# Build des CLI-Bundles
+make workspace-build
+
+# Datei oder URL prüfen
+pnpm --silent m-trace check ./packages/stream-analyzer/tests/fixtures/master.m3u8
+pnpm --silent m-trace check https://cdn.example.test/manifest.m3u8
+
+# Smoke (--help, Master-Datei, Nicht-HLS, fehlende Datei)
+make smoke-cli
+```
+
+`pnpm --silent` unterdrückt das pnpm-Skript-Banner; ohne `--silent`
+landet vor dem Analyzer-JSON eine pnpm-Statuszeile auf stdout, die
+beim Pipen in `jq` stören würde.
 
 ### 2.3 Stack erweitern (`0.1.1` Dashboard, `0.1.2` Observability)
 
