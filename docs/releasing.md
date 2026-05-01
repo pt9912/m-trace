@@ -27,7 +27,7 @@ Vor jedem Release:
   dem Release-Commit.
 - `CHANGELOG.md` auf den Zielstand bringen.
 - betroffene Plan-, Status- und Nutzungsdokumente aktualisieren
-  (`docs/roadmap.md`, `docs/architecture.md`, `apps/api/README.md`).
+  (`docs/roadmap.md`, `spec/architecture.md`, `apps/api/README.md`).
 - Roadmap §1.1 und §1.2 nach dem Release-Bump neu schreiben (siehe
   `docs/roadmap.md` §7 Wartungsregel).
 - offene `OE-X` und `R-X` durchsehen — Einträge, die mit dem Release
@@ -52,7 +52,7 @@ Erfolgskriterien:
 - `make coverage-gate` umfasst API-, Player-SDK- und Dashboard-Coverage.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus
-  `docs/spike/backend-api-contract.md` §11 ab.
+  `spec/backend-api-contract.md` §11 ab.
 - Coverage-Gate liegt bei mindestens 90 %.
 - Architektur-Grenzen bleiben laut `make arch-check` intakt.
 

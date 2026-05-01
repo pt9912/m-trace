@@ -1,7 +1,7 @@
 # Implementation Plan — `0.2.0` (Publizierbares Player SDK)
 
 > **Status**: ✅ implementiert und release-bereit. Beginnt nach Abschluss von `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.7`](./lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](./architecture.md); [Telemetry-Modell](./telemetry-model.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.7`](../spec/lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](../spec/architecture.md); [Telemetry-Modell](../spec/telemetry-model.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.2.0`-Start)**:
 >
 > - [`plan-0.1.2.md`](./plan-0.1.2.md) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.2` (§4).
@@ -74,7 +74,7 @@ DoD:
 - [x] Browser-Load-Smoke lädt den Browser/IIFE-Build aus dem installierten Paket und prüft, dass der globale SDK-Einstieg nutzbar ist (`819ee17`).
 - [x] Browser-Bundle bleibt als expliziter Build-Ausgang vorhanden und ist in der Paketdoku beschrieben (`819ee17`).
 - [x] Public API wird in `packages/player-sdk/README.md` dokumentiert: Einstieg, Tracker-Lifecycle, Konfiguration, Events, hls.js-Adapter, Transport-Optionen, Fehlerverhalten (`819ee17`, `d367720`).
-- [x] Projektdokument `docs/player-sdk.md` wird angelegt und beschreibt die Player-SDK-Nutzung gemäß Lastenheft §7.6; damit wird der SDK-Anteil der Pflichtdokument-Liste aus §7.12 erfüllt. `packages/player-sdk/README.md` darf darauf verweisen, ersetzt es aber nicht (`819ee17`, `d367720`).
+- [x] Projektdokument `spec/player-sdk.md` wird angelegt und beschreibt die Player-SDK-Nutzung gemäß Lastenheft §7.6; damit wird der SDK-Anteil der Pflichtdokument-Liste aus §7.12 erfüllt. `packages/player-sdk/README.md` darf darauf verweisen, ersetzt es aber nicht (`819ee17`, `d367720`).
 - [x] Public API-Surface wird technisch abgesichert, z. B. durch TypeScript-API-Snapshot oder Export-Snapshot-Test (`819ee17`, `d367720`).
 - [x] Interne Module bleiben intern: dokumentierte Imports laufen nur über den Package-Entry-Point, nicht über tiefe Pfade (`819ee17`).
 
@@ -82,7 +82,7 @@ DoD:
 
 ## 3. Tranche 2 — Event-Schema-Versionierung und CI-Kompatibilitätscheck
 
-Bezug: RAK-13, RAK-21; `docs/telemetry-model.md`.
+Bezug: RAK-13, RAK-21; `spec/telemetry-model.md`.
 
 Ziel: SDK-Version und Event-Schema-Version sind explizit gekoppelt, damit API, SDK und Dokumentation bei Schema-Änderungen nicht auseinanderlaufen.
 
@@ -90,16 +90,16 @@ DoD:
 
 - [x] Event-Schema-Version wird im SDK als stabile Konstante exportiert (`d367720`).
 - [x] SDK-Version wird aus genau einer Quelle abgeleitet: `packages/player-sdk/package.json`, exportierte SDK-Version und die im Wire-Event gesendete `sdk.version` sind synchron (`d367720`).
-- [x] SDK sendet die Schema-Version im definierten Wire-Format aus `docs/telemetry-model.md` (`d367720`).
+- [x] SDK sendet die Schema-Version im definierten Wire-Format aus `spec/telemetry-model.md` (`d367720`).
 - [x] SDK-Tests verhindern Regressionen bei `sdk.version` und Schema-Version im erzeugten Event-Payload (`d367720`).
-- [x] `docs/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes (`d367720`).
+- [x] `spec/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes (`d367720`).
 - [x] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert (`d367720`).
 - [x] API-Tests prüfen, dass die aktuell unterstützte Schema-Version akzeptiert wird (`d367720`).
 - [x] SDK-Tests prüfen, dass jeder erzeugte Batch die aktuelle Schema-Version trägt (`d367720`).
 - [x] Maschinenlesbare Contract-Artefakte werden angelegt, z. B. `contracts/event-schema.json` und `contracts/sdk-compat.json`; sie sind Source of Truth für Schema-Version und SDK↔Schema-Kompatibilität (`d367720`).
 - [x] Contract-Ownership und Update-Regel sind dokumentiert: Änderungen an Schema-Version, SDK-Version oder API-`SupportedSchemaVersion` müssen die Contract-Artefakte im selben Commit aktualisieren (`d367720`).
 - [x] CI-Kompatibilitätscheck vergleicht SDK-Konstante, Contract-Artefakte und API-Erwartung; technische API-Quelle ist `SupportedSchemaVersion` in `apps/api/hexagon/application/register_playback_event_batch.go` (`d367720`).
-- [x] Markdown-Doku (`docs/telemetry-model.md`, `docs/player-sdk.md`) referenziert die Contract-Artefakte; CI parst nicht freitextliche Markdown-Prosa als Source of Truth (`d367720`).
+- [x] Markdown-Doku (`spec/telemetry-model.md`, `spec/player-sdk.md`) referenziert die Contract-Artefakte; CI parst nicht freitextliche Markdown-Prosa als Source of Truth (`d367720`).
 - [x] RAK-21 wird über die Contract-Artefakte geprüft: `packages/player-sdk/package.json.version`, exportierte SDK-Version, ausgesendetes `sdk.version`, ausgesendete `schema_version` und API-`SupportedSchemaVersion` müssen gemeinsam konsistent sein (`d367720`).
 - [x] CI-Kompatibilitätscheck ist an ein verbindliches Gate angebunden: entweder Bestandteil von `make test`/`make lint` oder eigenes Root-Target mit explizitem GitHub-Actions-Step (`d367720`).
 - [x] `CHANGELOG.md`-Konvention für Event-Schema-Änderungen ist dokumentiert (`d367720`).

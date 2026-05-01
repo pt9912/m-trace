@@ -37,7 +37,7 @@ Vor dem ersten Implementierungs-Branch wird ein kleiner API-Kontrakt erstellt.
 Datei:
 
 ```text
-docs/spike/backend-api-contract.md
+spec/backend-api-contract.md
 ```
 
 Dieser Kontrakt enthält:
@@ -424,7 +424,7 @@ Diese Zahlen sollen subjektive Eindrücke verankern, nicht ersetzen.
 
 ### 12.1 Tag 0: API-Kontrakt
 
-- Datei `docs/spike/backend-api-contract.md` erstellen
+- Datei `spec/backend-api-contract.md` erstellen
 - Endpunkte fixieren
 - Beispielpayloads fixieren
 - Statuscodes fixieren

@@ -112,7 +112,7 @@ Der erste MVP ist bewusst klein gehalten.
 
 ## Architekturprinzipien
 
-Die aktuelle Architektur ist in [docs/architecture.md](docs/architecture.md) beschrieben.
+Die aktuelle Architektur ist in [spec/architecture.md](spec/architecture.md) beschrieben.
 
 ---
 
@@ -220,9 +220,9 @@ make smoke
 
 SDK- und Demo-Dokumentation:
 
-- [docs/player-sdk.md](docs/player-sdk.md) beschreibt Installation, Public API, Transport, Performance-Budget und Browser-Build.
+- [spec/player-sdk.md](spec/player-sdk.md) beschreibt Installation, Public API, Transport, Performance-Budget und Browser-Build.
 - [docs/demo-integration.md](docs/demo-integration.md) beschreibt die Dashboard-Route `/demo` als lokale hls.js-/Player-SDK-Integration.
-- [docs/browser-support.md](docs/browser-support.md) dokumentiert die Browser-Support-Matrix.
+- [spec/browser-support.md](spec/browser-support.md) dokumentiert die Browser-Support-Matrix.
 
 Lokaler SDK-/Demo-Pfad:
 
@@ -363,7 +363,7 @@ Das Projekt steht bei `0.2.0`: Lastenheft `1.1.7` verbindlich, Player-SDK-Paketi
 
 Leitende Dokumente:
 
-- [docs/lastenheft.md](docs/lastenheft.md) — Anforderungen (verbindlich, 1.1.7)
+- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.7)
 - [docs/roadmap.md](docs/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/releasing.md](docs/releasing.md) — Release-Prozess

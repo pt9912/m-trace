@@ -18,18 +18,18 @@ import (
 )
 
 // MaxBodyBytes caps the request body at 256 KB
-// (docs/spike/backend-api-contract.md §5 step 2).
+// (spec/backend-api-contract.md §5 step 2).
 const MaxBodyBytes = 256 * 1024
 
 // spanName is the OTel span name for the playback-events handler.
-// Mirrors the verbindliche Tabelle in docs/telemetry-model.md §2.1
+// Mirrors the verbindliche Tabelle in spec/telemetry-model.md §2.1
 // (single span per request, scope = HTTP-Adapter).
 const spanName = "http.handler POST /api/playback-events"
 
 // PlaybackEventsHandler implements POST /api/playback-events. The
 // Tracer wraps each request in a span; ServeHTTP records the
 // http.method/route, http.status_code, batch.size and batch.outcome
-// attributes documented in docs/telemetry-model.md §2.1.
+// attributes documented in spec/telemetry-model.md §2.1.
 type PlaybackEventsHandler struct {
 	UseCase driving.PlaybackEventInbound
 	Tracer  trace.Tracer
@@ -37,14 +37,14 @@ type PlaybackEventsHandler struct {
 }
 
 // ServeHTTP follows the validation order from
-// docs/spike/backend-api-contract.md §5:
+// spec/backend-api-contract.md §5:
 //
 //	step 1: X-MTrace-Token header presence -> 401
 //	step 2: body size                      -> 413
 //	(steps 3-10 are inside the use case, mapped from domain errors)
 //
 // The whole request is wrapped in a single OTel server-span; per
-// docs/architecture.md §3.4 the HTTP adapter is one of two places
+// spec/architecture.md §3.4 the HTTP adapter is one of two places
 // allowed to import OTel directly.
 func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := h.Tracer.Start(r.Context(), spanName,
@@ -211,7 +211,7 @@ func clientIPFromRequest(r *http.Request) string {
 }
 
 // outcomeFor maps HTTP status codes to the small set of batch.outcome
-// values used in docs/telemetry-model.md §2.1. Buckets are bounded to
+// values used in spec/telemetry-model.md §2.1. Buckets are bounded to
 // avoid attribute-cardinality blow-up.
 func outcomeFor(code int) string {
 	switch {

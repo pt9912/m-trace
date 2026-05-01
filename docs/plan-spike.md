@@ -4,7 +4,7 @@
 > **Phase**: Backend-Technologie-Entscheidung
 > **Status**: Geplant
 > **Referenz**: `docs/spike/0001-backend-stack.md`;
-> `docs/lastenheft.md` §9.1, §10.1, §16.2, §17 Schritt 0;
+> `spec/lastenheft.md` §9.1, §10.1, §16.2, §17 Schritt 0;
 > `docs/adr/0001-backend-stack.md` (entsteht);
 > `README.md`.
 
@@ -24,7 +24,7 @@ Abnahmekriterien, Verifikationsschritte und eine Definition of Done auf.
 
 Konkrete Ergebnisse nach Abschluss (mit verbindlichen Pfaden):
 
-- API-Kontrakt-Datei `docs/spike/backend-api-contract.md`
+- API-Kontrakt-Datei `spec/backend-api-contract.md`
 - Branch `spike/go-api` mit lauffähigem Go-Prototyp
 - Branch `spike/micronaut-api` mit lauffähigem Micronaut-Prototyp
 - Spike-Protokoll `docs/spike/backend-stack-results.md` mit
@@ -53,7 +53,7 @@ harte Gesamtgrenze beträgt 5 Arbeitstage (0,5 + 2 + 2 + 0,5).
 
 ### 2.1 Lastenheft hält Backend-Entscheidung bewusst offen (SP-3)
 
-`docs/lastenheft.md` §9.1 nennt zwei zulässige Optionen — Go oder Micronaut —
+`spec/lastenheft.md` §9.1 nennt zwei zulässige Optionen — Go oder Micronaut —
 und bindet die Wahl explizit an einen technischen Spike. §10.1 listet die
 Mindestanforderungen unabhängig vom Stack. §16.2 führt die endgültige
 Backend-Technologie als offene Entscheidung. §17 Schritt 0 fordert den Spike
@@ -79,7 +79,7 @@ gilt die Spec.
 Aktueller Stand:
 
 - `README.md` mit Projekt-Vision
-- `docs/lastenheft.md`
+- `spec/lastenheft.md`
 - `docs/spike/0001-backend-stack.md`
 - `docs/plan-spike.md` (dieses Dokument)
 - kein `apps/`, kein `packages/`, kein `services/`
@@ -139,7 +139,7 @@ nutzt der MVP?".
 
 ### 4.1 API-Kontrakt vor jedem Implementierungsstart (SP-10)
 
-Vor `git checkout -b spike/go-api` wird `docs/spike/backend-api-contract.md`
+Vor `git checkout -b spike/go-api` wird `spec/backend-api-contract.md`
 erstellt und committed. Inhalt: Endpunkte, Beispielpayloads, Statuscodes,
 Header, Metriknamen, minimale Fehlerfälle, Testfälle.
 
@@ -272,7 +272,7 @@ Spike-Branch entweder gelöscht oder als **Tag**
 Branch). Details in §4.3 und §14.5.
 
 `main` enthält keine Prototyp-Sourcen. Die API-Kontrakt-Datei
-`docs/spike/backend-api-contract.md` wird vor dem ersten Implementierungs-
+`spec/backend-api-contract.md` wird vor dem ersten Implementierungs-
 Branch nach `main` gemerged.
 
 ### 5.2 Mindeststruktur pro Prototyp (SP-18)
@@ -386,7 +386,7 @@ Maximalbudget: 0,5 Tag.
 
 Aufgaben:
 
-- Datei `docs/spike/backend-api-contract.md` erstellen
+- Datei `spec/backend-api-contract.md` erstellen
 - Endpunkte, Pfade, Methoden, Statuscodes festschreiben
 - Beispielpayload für `POST /api/playback-events` festschreiben
 - Header-Definitionen (`X-MTrace-Token`, `Retry-After`) festschreiben
@@ -665,7 +665,7 @@ des Spikes. Lasttests, Profiling-Sessions und JVM-Tuning sind ausgeschlossen.
 
 Voraussichtlich erzeugt:
 
-- `docs/spike/backend-api-contract.md` (neu, auf `main`)
+- `spec/backend-api-contract.md` (neu, auf `main`)
 - `docs/adr/0001-backend-stack.md` (neu, auf `main`)
 - `apps/api/**` im Branch `spike/go-api` (Go-Prototyp)
 - `apps/api/**` im Branch `spike/micronaut-api` (Micronaut-Prototyp)
@@ -675,7 +675,7 @@ Bewusst nicht betroffen:
 
 - `apps/dashboard`, `packages/player-sdk`, `services/`, `examples/`,
   `observability/`, `deploy/` — werden erst im MVP `0.1.0` aufgebaut
-- `docs/lastenheft.md` — Inhalt wird erst durch ADR auf `1.0.0` gehoben,
+- `spec/lastenheft.md` — Inhalt wird erst durch ADR auf `1.0.0` gehoben,
   nicht durch den Spike selbst
 - `README.md` — Tech-Overview wird nach ADR aktualisiert, nicht währenddessen
 
@@ -767,7 +767,7 @@ Gegenmaßnahme:
 
 Der Spike ist abgeschlossen, wenn:
 
-- `docs/spike/backend-api-contract.md` auf `main` existiert
+- `spec/backend-api-contract.md` auf `main` existiert
 - Branch `spike/go-api` den Muss-Scope erfüllt und alle Pflichttests aus
   §7.1 grün hat **oder** das Scheitern inklusive fehlender bzw.
   fehlschlagender Tests im Spike-Protokoll dokumentiert ist
@@ -996,7 +996,7 @@ Verbindlich für beide Prototypen:
   Messwertbogen festgehalten.
 - npm-Package-Name in Beispielen: `@m-trace/player-sdk`
 
-Diese Konventionen sind im API-Kontrakt (`docs/spike/backend-api-contract.md`)
+Diese Konventionen sind im API-Kontrakt (`spec/backend-api-contract.md`)
 zu fixieren und dürfen zwischen den Prototypen nicht abweichen.
 
 ---

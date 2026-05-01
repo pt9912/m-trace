@@ -7,7 +7,7 @@ import (
 )
 
 // TestOutcomeFor_AllBuckets deckt jeden Status-Code-Bucket aus
-// docs/telemetry-model.md §2.1 ab. Reine Pure-Function-Tests sind
+// spec/telemetry-model.md §2.1 ab. Reine Pure-Function-Tests sind
 // günstiger als HTTP-Roundtrips, decken aber dieselbe Logik.
 func TestOutcomeFor_AllBuckets(t *testing.T) {
 	t.Parallel()

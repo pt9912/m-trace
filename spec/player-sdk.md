@@ -166,7 +166,7 @@ echtes Netzwerk.
 
 ## Browser-Support
 
-Die Browser-Matrix steht in [`docs/browser-support.md`](./browser-support.md).
+Die Browser-Matrix steht in [`browser-support.md`](./browser-support.md).
 Für `0.2.0` sind Chrome Desktop und Firefox Desktop `supported`; Safari
 Desktop ist als `documented limitation` klassifiziert.
 
@@ -174,8 +174,8 @@ Desktop ist als `documented limitation` klassifiziert.
 
 Das SDK sendet Batches mit `schema_version: "1.0"`. Jedes Event enthält
 `sdk.name` und `sdk.version`. Das vollständige Datenmodell steht in
-[`docs/telemetry-model.md`](./telemetry-model.md), der HTTP-Kontrakt in
-[`docs/spike/backend-api-contract.md`](./spike/backend-api-contract.md).
+[`telemetry-model.md`](./telemetry-model.md), der HTTP-Kontrakt in
+[`backend-api-contract.md`](./backend-api-contract.md).
 Maschinenlesbare Contract-Artefakte sind
 [`contracts/event-schema.json`](../contracts/event-schema.json) und
 [`contracts/sdk-compat.json`](../contracts/sdk-compat.json).

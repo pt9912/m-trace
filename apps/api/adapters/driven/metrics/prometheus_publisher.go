@@ -1,6 +1,6 @@
 // Package metrics holds the Prometheus exposition adapter for the
-// aggregate mtrace_* metrics from docs/lastenheft.md §7.9 and
-// docs/spike/backend-api-contract.md §7.
+// aggregate mtrace_* metrics from spec/lastenheft.md §7.9 and
+// spec/backend-api-contract.md §7.
 package metrics
 
 import (

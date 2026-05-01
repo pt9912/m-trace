@@ -25,7 +25,7 @@ import (
 
 // TestHTTP_Span_HappyPathAttributes verifies that POST /api/playback-events
 // emits exactly one span with the attributes documented in
-// docs/telemetry-model.md §2.1: http.method, http.route,
+// spec/telemetry-model.md §2.1: http.method, http.route,
 // http.status_code, batch.size and batch.outcome=accepted on the 202
 // path. SpanRecorder is used in lieu of an OTel-SDK exporter.
 func TestHTTP_Span_HappyPathAttributes(t *testing.T) {

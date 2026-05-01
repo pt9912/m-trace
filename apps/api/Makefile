@@ -42,7 +42,7 @@ compile:
 run: build
 	docker run --rm -p 8080:8080 --name m-trace-api-go $(IMAGE):go
 
-# Architecture-Boundary-Test (siehe docs/architecture.md §3.4).
+# Architecture-Boundary-Test (siehe spec/architecture.md §3.4).
 # Prüft, dass hexagon/ keine direkten Imports auf Adapter,
 # OTel, Prometheus, database/sql oder net/http enthält und die
 # Schichtengrenzen domain → application → port respektiert sind.

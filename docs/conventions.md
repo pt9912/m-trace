@@ -2,7 +2,7 @@
 
 > **Status**: temporär. Aus dem Backend-Spike verdichtete Engineering-
 > Conventions, die ab `0.1.0` verbindlich gelten. Inhalte wandern
-> beim Schreiben von `docs/architecture.md` (roadmap §2 Schritt 5)
+> beim Schreiben von `spec/architecture.md` (roadmap §2 Schritt 5)
 > und beim Ausbau von `docs/quality.md` schrittweise an die
 > thematisch passenden Stellen — siehe Migration-Plan unten.
 >
@@ -104,12 +104,12 @@ diese Conventions hierher:
 
 | Convention | Ziel-Doc | Trigger |
 |---|---|---|
-| §1 Hexagon ohne DI-Container | `docs/architecture.md` | roadmap §2 Schritt 5 |
+| §1 Hexagon ohne DI-Container | `spec/architecture.md` | roadmap §2 Schritt 5 |
 | §2 Test-Stack | `docs/quality.md` (§2 erweitern) | beim ersten Update von quality.md |
 | §3 Linting | `docs/quality.md` §1 (bereits dort) | bereits dort — §3 hier kann sofort entfernt werden, sobald migriert |
 | §4 Docker-only-Workflow | `docs/quality.md` §1/§2/§4 (bereits dort) | bereits dort |
 | §5 CI-Artifacts | `docs/quality.md` §6 (Platzhalter erweitern) | beim CI-Setup (`0.1.0`+) |
-| §6 Multi-Modul on-demand | `docs/architecture.md` | roadmap §2 Schritt 5 |
+| §6 Multi-Modul on-demand | `spec/architecture.md` | roadmap §2 Schritt 5 |
 
 Sobald alle sechs migriert sind, kann `conventions.md` ersatzlos
 entfernt werden — der Eintrag in roadmap §3 (Releases) und der

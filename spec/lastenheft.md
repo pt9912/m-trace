@@ -1132,10 +1132,10 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `CONTRIBUTING.md` | Beitragsregeln |
 | `LICENSE` | Lizenz |
 | `SECURITY.md` | Sicherheitsmeldungen |
-| `docs/architecture.md` | Architekturüberblick |
+| `spec/architecture.md` | Architekturüberblick |
 | `docs/local-development.md` | lokale Entwicklung |
-| `docs/telemetry-model.md` | Telemetrie- und Eventmodell |
-| `docs/player-sdk.md` | Player-SDK-Nutzung |
+| `spec/telemetry-model.md` | Telemetrie- und Eventmodell |
+| `spec/player-sdk.md` | Player-SDK-Nutzung |
 | `docs/stream-analyzer.md` | Stream Analyzer |
 | `docs/roadmap.md` | geplante Entwicklung |
 
@@ -1265,7 +1265,7 @@ Streaming-Observability-relevante Komponenten und Communities sind stark durch G
 
 ### 9.1 Backend-Entscheidung
 
-**Entschieden: Go.** Die Wahl ist in `docs/adr/0001-backend-stack.md` (Status: Accepted) festgehalten und beruht auf zwei Mini-Prototypen mit identischem Muss-Scope (`docs/spike/backend-api-contract.md`); das Spike-Protokoll liegt in `docs/spike/backend-stack-results.md`.
+**Entschieden: Go.** Die Wahl ist in `docs/adr/0001-backend-stack.md` (Status: Accepted) festgehalten und beruht auf zwei Mini-Prototypen mit identischem Muss-Scope (`spec/backend-api-contract.md`); das Spike-Protokoll liegt in `docs/spike/backend-stack-results.md`.
 
 Historischer Tradeoff (Stand vor dem Spike):
 
@@ -1347,7 +1347,7 @@ Backend-Technologie: **Go**, entschieden in `docs/adr/0001-backend-stack.md`.
 
 Mindestanforderungen an die Implementierung:
 
-- HTTP API für Event-Ingest gemäß `docs/spike/backend-api-contract.md` (frozen)
+- HTTP API für Event-Ingest gemäß `spec/backend-api-contract.md`
 - Health Check
 - strukturierte Logs (`slog`)
 - OpenTelemetry-kompatibles Eventmodell
@@ -1767,7 +1767,7 @@ Micronaut) im identischen Muss-Scope entschieden. Dokumentation:
 
 - Spike-Spezifikation: `docs/spike/0001-backend-stack.md`
 - Implementierungsplan: `docs/plan-spike.md`
-- API-Kontrakt (frozen): `docs/spike/backend-api-contract.md`
+- API-Kontrakt: `spec/backend-api-contract.md`
 - Spike-Protokoll: `docs/spike/backend-stack-results.md`
 - Entscheidung: `docs/adr/0001-backend-stack.md` (Status: Accepted) — **Go**
 
@@ -1840,8 +1840,8 @@ Der MVP ist fertig, wenn:
 - Das Player-SDK Events erzeugt.
 - Die API Events annimmt.
 - Das Dashboard Events anzeigt.
-- Die Architektur in `docs/architecture.md` beschrieben ist.
-- Das Eventmodell in `docs/telemetry-model.md` beschrieben ist.
+- Die Architektur in `spec/architecture.md` beschrieben ist.
+- Das Eventmodell in `spec/telemetry-model.md` beschrieben ist.
 - Tests für zentrale Use Cases vorhanden sind.
 - CI mindestens Build und Tests ausführt.
 - CHANGELOG.md einen Eintrag für `0.1.0` enthält.

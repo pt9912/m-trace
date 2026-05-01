@@ -1,16 +1,16 @@
 # Telemetry-Model — m-trace
 
 > **Status**: Verbindlich für `0.1.x`. Wire-Format und Backpressure-Limits sind harte Voraussetzung für `0.1.1` (Player-SDK); OTel-Modell und Cardinality-Regeln sind harte Voraussetzung für `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](./roadmap.md) §2 Schritt 6; [Plan `0.1.0`](./plan-0.1.0.md) §3.5; [API-Kontrakt](./spike/backend-api-contract.md); [Architektur](./architecture.md) §5.
+> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](../docs/roadmap.md) §2 Schritt 6; [Plan `0.1.0`](../docs/plan-0.1.0.md) §3.5; [API-Kontrakt](./backend-api-contract.md); [Architektur](./architecture.md) §5.
 
 ## 0. Zweck
 
-Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, OTel-Schema, Cardinality-Regeln, Time-Stempel-Konventionen, Backpressure-Politik. Implementierungs-/Setup-Aspekte (strukturierte Logs, Health-Endpoint, Prometheus- und Grafana-Konfiguration) gehören in [`plan-0.1.2.md`](./plan-0.1.2.md), nicht hierher.
+Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, OTel-Schema, Cardinality-Regeln, Time-Stempel-Konventionen, Backpressure-Politik. Implementierungs-/Setup-Aspekte (strukturierte Logs, Health-Endpoint, Prometheus- und Grafana-Konfiguration) gehören in [`plan-0.1.2.md`](../docs/plan-0.1.2.md), nicht hierher.
 
 Drei Wirkungsebenen pro Telemetrie-Datum:
 
 1. **Wire** — was zwischen Browser-SDK und API über das Netz fliegt (§1).
-2. **Ingest** — wie das Backend ankommende Daten validiert, normalisiert und persistiert (siehe `apps/api/hexagon/application/RegisterPlaybackEventBatch` und [API-Kontrakt §5](./spike/backend-api-contract.md)).
+2. **Ingest** — wie das Backend ankommende Daten validiert, normalisiert und persistiert (siehe `apps/api/hexagon/application/RegisterPlaybackEventBatch` und [API-Kontrakt §5](./backend-api-contract.md)).
 3. **Beobachtung** — was als OTel-Span/-Counter und als Prometheus-Metrik nach außen tritt (§2, §3).
 
 ---

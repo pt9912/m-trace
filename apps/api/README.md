@@ -4,7 +4,7 @@ Backend-Service für m-trace. Hexagon-Architektur mit Go 1.22 +
 stdlib `net/http` + Prometheus + OpenTelemetry, Distroless-Runtime.
 
 Stack-Entscheidung: `docs/adr/0001-backend-stack.md` (Accepted).
-Roadmap & Release-Plan: `docs/roadmap.md`, `docs/lastenheft.md`.
+Roadmap & Release-Plan: `docs/roadmap.md`, `spec/lastenheft.md`.
 Hexagon-Struktur: `docs/plan-spike.md` §12.1.
 
 ## Workflow (Docker-only)
@@ -45,4 +45,4 @@ Telemetry-Port, OTel-Span-Export und Prometheus-Mindestmetriken für
 Sessions, API-Requests, Playback-Fehler, Rebuffer-Events und Startup-Zeit
 sowie Unit- und HTTP-Integrationstests.
 
-API-Kontrakt (frozen): `docs/spike/backend-api-contract.md`.
+API-Kontrakt: `spec/backend-api-contract.md`.

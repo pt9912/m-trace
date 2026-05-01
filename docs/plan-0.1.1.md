@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: ✅ abgeschlossen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
-> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../spec/lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../spec/architecture.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
 > - Tranche 0 (Pre-MVP-Vorbereitung): `[x]` — bereits heute erfüllt.
@@ -84,7 +84,7 @@ DoD:
 - [x] **F-63**: Anbindung an ein `HTMLVideoElement` über einen klar abgegrenzten Browser-Adapter (`adapters/hlsjs/` initial; weitere Player als spätere Adapter) (`bae4a2a`).
 - [x] **F-64**: Erfassung von Playback-Events aus dem hls.js-Stream (Manifest, Segment, Bitrate-Switch, Rebuffer, Error, …) (`bae4a2a`).
 - [x] **F-65**: Erfassung einfacher Metriken pro Session (Startup-Time, Rebuffer-Dauer, …) (`cf07fda`).
-- [x] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `docs/telemetry-model.md`. Batching und Sampling konfigurierbar; Batches werden auf das API-Limit von 100 Events begrenzt und größere lokale Queues gesplittet. OpenTelemetry Web SDK bleibt optionaler späterer Transport-Pfad (`bae4a2a`, `55ccac4`).
+- [x] **F-66**: Versand der Events via HTTP an `POST /api/playback-events` mit dem Wire-Format aus `spec/telemetry-model.md`. Batching und Sampling konfigurierbar; Batches werden auf das API-Limit von 100 Events begrenzt und größere lokale Queues gesplittet. OpenTelemetry Web SDK bleibt optionaler späterer Transport-Pfad (`bae4a2a`, `55ccac4`).
 - [x] **F-67**: Trennung von Browser-Adapter (`adapters/hlsjs/`) und fachlicher Tracking-Logik (`core/`) — strukturelle Boundary, kein gegenseitiger Zugriff: `core/` darf den Browser-Adapter nicht direkt importieren (`bae4a2a`).
 - [x] Browser-Build (ESM + UMD/IIFE) (`bae4a2a`).
 - [x] OE-8 entscheiden (Paketname, Scope): `@m-trace/player-sdk` (`bae4a2a`).
@@ -118,7 +118,7 @@ DoD:
 - [x] **API-Origin-Strategie** für beide Endpoint-Klassen aus `plan-0.1.0.md` §5.1 (`1a6a6c7`):
     - **GET-Routen** (Dashboard-API-Client): im **Vite-Dev-Mode** SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS entfällt; im **Compose-Production-Build** über getrennten Origin mit den `0.1.0`-CORS-Headers für den Dashboard-Lese-Pfad.
     - **POST `/api/playback-events`** (Player-SDK auf der `/demo`-Route): immer Cross-Origin gegen `apps/api`, weil das SDK projektunabhängig konfigurierbar sein soll. Nutzt die `0.1.0`-CORS-Headers für den Player-SDK-Pfad inklusive Variante-B-Origin-Validierung (Preflight gegen globale Allowed-Origins-Union, POST-Validierung Origin↔`project_id`). Vite-Dev-Proxy ist hier **kein** Ersatz, weil das SDK unabhängig vom Dashboard ausgeliefert werden können muss; im Dev-Mode greift dasselbe CORS-Setup.
-- [x] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `docs/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`) (`35eba88`, `bae4a2a`).
+- [x] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `spec/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`) (`35eba88`, `bae4a2a`).
 - [x] Frontend-Styling: OE-4 entscheiden — eigenes CSS ohne Tailwind/UI-Library (`1a6a6c7`).
 
 ---

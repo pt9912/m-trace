@@ -21,7 +21,7 @@ type RequestMetrics interface {
 // non-matching methods fall through to a 404 from the mux.
 //
 // Tracer wraps POST /api/playback-events in a request-span
-// (docs/architecture.md §5.3 — der HTTP-Adapter ist neben
+// (spec/architecture.md §5.3 — der HTTP-Adapter ist neben
 // adapters/driven/telemetry der einzige Ort mit OTel-Imports). A nil
 // tracer falls back to a no-op tracer so tests can wire the router
 // without an OTel SDK setup.

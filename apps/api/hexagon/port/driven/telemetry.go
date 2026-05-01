@@ -4,7 +4,7 @@ import "context"
 
 // Telemetry kapselt OTel-Aufrufe hinter einer frameworkneutralen
 // Schnittstelle. Damit darf hexagon/ keinen direkten OTel-Import
-// tragen — siehe docs/architecture.md §3.4 und der Boundary-Test
+// tragen — siehe spec/architecture.md §3.4 und der Boundary-Test
 // scripts/check-architecture.sh.
 //
 // Der Use Case ruft BatchReceived am Eintritt jedes

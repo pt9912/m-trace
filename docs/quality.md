@@ -63,7 +63,7 @@ Prototyp:
   `TokenBucketRateLimiter` (Driven-Adapter).
 - Integrationstests: `POST /api/playback-events` mit
   `httptest.NewServer` für alle 10 §11-Pflichttests aus
-  `docs/spike/backend-api-contract.md`.
+  `spec/backend-api-contract.md`.
 
 Make-Target:
 
@@ -219,7 +219,7 @@ Erwartet: `HTTP 200` und `{"status":"ok"}` (Spec §6.1).
 
 ## 5. Validierungs- und Endpunkt-Verträge
 
-Verbindlich aus `docs/spike/backend-api-contract.md`:
+Verbindlich aus `spec/backend-api-contract.md`:
 
 | Vertrag                                          | Ort   | Gate                                                                                                   |
 | ------------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------ |

@@ -103,7 +103,7 @@ The SDK can emit these event names:
 
 Each batch uses `schema_version: "1.0"` and includes SDK metadata on every
 event. The full wire contract is described in
-[`docs/telemetry-model.md`](../../docs/telemetry-model.md).
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md).
 
 The tracker keeps batches within the API limits of 100 events and 256 KiB
 request body size. If a single event cannot fit into one request body, it is
@@ -173,4 +173,4 @@ pnpm --filter @npm9912/player-sdk run performance:smoke
 ```
 
 The browser matrix is maintained in
-[`docs/browser-support.md`](../../docs/browser-support.md).
+[`spec/browser-support.md`](../../spec/browser-support.md).

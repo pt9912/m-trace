@@ -3,7 +3,7 @@
 #
 # Stellt sicher, dass die Hexagon-Pakete keine direkten Imports auf
 # Adapter, Infrastruktur-Bibliotheken oder über die Hexagon-Schichten-
-# grenzen hinweg haben. Bezug: docs/architecture.md §3.2, §3.4.
+# grenzen hinweg haben. Bezug: spec/architecture.md §3.2, §3.4.
 #
 # Nutzung:
 #   cd apps/api

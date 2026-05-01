@@ -1,7 +1,7 @@
 # Browser-Support-Matrix
 
 > **Status**: `0.2.0`-Arbeitsstand. Diese Matrix konkretisiert die
-> MVP-Browser-Einstufung aus [`docs/lastenheft.md`](./lastenheft.md)
+> MVP-Browser-Einstufung aus [`lastenheft.md`](./lastenheft.md)
 > §7.5 für das Player-SDK und die Demo-Integration.
 
 ## Einstufung

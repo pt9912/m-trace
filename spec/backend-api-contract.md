@@ -1,15 +1,15 @@
-# Backend-API-Kontrakt — Spike
+# Backend-API-Kontrakt
 
-> **Status**: Frozen während Spike-Vergleich; nach ADR-0001 (Accepted)
-> ist Post-Spike-Pflege erlaubt — Änderungen werden im Commit-Body
-> begründet und aus den Pflichttests in §11 ableitbar gemacht.  
+> **Status**: Verbindlich; Änderungen werden synchron mit dem Code in
+> `apps/api/` gepflegt, im Commit-Body begründet und aus den
+> Pflichttests in §11 ableitbar gemacht.
+>
 > **Bezug**: `docs/spike/0001-backend-stack.md` §6, `docs/plan-spike.md` §7.1, §12.3.  
-> **Änderungen**: nur synchron mit dem Code in `apps/api/`; während
-> des Spikes mussten beide Prototypen identisch sein, jetzt führt der
-> Sieger-Code (`apps/api`) den Kontrakt.
+> **Historie**: Dieses Dokument entstand im Backend-Spike für zwei
+> Prototypen. Seit ADR-0001 (Accepted) ist es der laufende API-Kontrakt
+> des Sieger-Codes (`apps/api`).
 
-Dieser Kontrakt ist die normative Schnittstelle, die beide Prototypen
-(`spike/go-api`, `spike/micronaut-api`) identisch implementieren müssen.
+Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 
 ---
 
@@ -17,14 +17,13 @@ Dieser Kontrakt ist die normative Schnittstelle, die beide Prototypen
 
 - **HTTP-Header**:
   - `X-MTrace-Token` — **Pflicht** (Auth, siehe §4)
-  - `X-MTrace-Project` — reserviert für CORS-Allowlist, **im Spike nicht
-    verlangt** (Plan §12.3, §14.x); `project_id` kommt aus dem Payload.
+  - `X-MTrace-Project` — reserviert für CORS-Allowlist und spätere
+    strengere Project-Bindung; `project_id` kommt im aktuellen
+    Wire-Format aus dem Payload.
   - `Content-Type: application/json` — Pflicht für `POST`.
   - `Retry-After` — Server-Antwort bei `429`.
 - **Prometheus-Metrik-Prefix**: `mtrace_`
 - **OTel-Attribut-Prefix**: `mtrace.*`
-- **Docker-Image**: `m-trace-api-spike:<stack>` mit `<stack>` ∈
-  {`go`, `micronaut`}
 
 ---
 
@@ -35,9 +34,8 @@ Dieser Kontrakt ist die normative Schnittstelle, die beide Prototypen
 | `POST` | `/api/playback-events` | Batch von 1–100 Events annehmen | `202 Accepted` |
 | `GET`  | `/api/health`           | Liveness-Check                  | `200 OK`        |
 | `GET`  | `/api/metrics`          | Prometheus-Exposition           | `200 OK`        |
-
-Listen-/Detail-Endpunkte für Stream-Sessions sind **Bonus-Scope** (Spec
-§7) und nicht Teil dieses Pflicht-Kontrakts.
+| `GET`  | `/api/stream-sessions`  | Stream-Sessions listen          | `200 OK`        |
+| `GET`  | `/api/stream-sessions/{id}` | Stream-Session mit Events lesen | `200 OK` oder `404 Not Found` |
 
 ---
 
@@ -56,8 +54,8 @@ Listen-/Detail-Endpunkte für Stream-Sessions sind **Bonus-Scope** (Spec
       "client_timestamp": "2026-04-28T12:00:00.000Z",
       "sequence_number": 42,
       "sdk": {
-        "name": "@m-trace/player-sdk",
-        "version": "0.1.0"
+        "name": "@npm9912/player-sdk",
+        "version": "0.2.0"
       }
     }
   ]
@@ -126,8 +124,8 @@ abwärtskompatibel verhalten.
   - `project_id` im Event passt nicht zum Token → `401 Unauthorized`.
   - `project_id` im Event ist nicht in der Map → `401 Unauthorized`.
 
-- Im Spike gibt es **keine** dynamische Project-Verwaltung und **keinen**
-  Endpunkt zum Anlegen/Rotieren von Tokens.
+- Dynamische Project-Verwaltung und Endpunkte zum Anlegen oder Rotieren
+  von Tokens sind nicht Teil dieses Kontrakts.
 
 ---
 
@@ -188,7 +186,7 @@ müssen aber.
   ein 429 in einer Dimension verbraucht keine Tokens in den anderen
   („all-or-nothing"-Commit).
 - **Algorithmus**: Token-Bucket pro (Dimension, Wert), in-memory, pro
-  Prototyp. Capacity und Refill teilen sich alle Dimensionen.
+  API-Prozess. Capacity und Refill teilen sich alle Dimensionen.
 - **Antwort bei Überschreitung**: `429 Too Many Requests` mit Header
   `Retry-After: <seconds>`.
 - **Granularität**: Quote zählt **Events**, nicht Requests; ein Batch
@@ -196,7 +194,7 @@ müssen aber.
 - **Leere Dimensions-Werte** (z. B. `origin=""` im CLI/curl-Pfad) werden
   übersprungen — keine künstlichen Sentinels, kein Rate-Limit gegen den
   leeren String.
-- Verteiltes Rate-Limiting ist nicht Teil des Spikes.
+- Verteiltes Rate-Limiting ist nicht Teil dieses Kontrakts.
 
 ---
 
@@ -224,7 +222,7 @@ Verbindliche Regeln:
   ist auf `400` und `422` beschränkt.
 - **Keine** hochkardinalen Labels: `session_id`, `user_agent`,
   `segment_url`, `client_ip` und beliebige `project_id` sind verboten.
-- `mtrace_dropped_events_total` darf konstant `0` sein, wenn der Prototyp
+- `mtrace_dropped_events_total` darf konstant `0` sein, wenn die API
   keinen expliziten Drop-Pfad hat — die Metrik **muss** aber existiert sein.
 - Implementierungen dürfen weitere `mtrace_*`-Metriken ergänzen
   (z. B. `mtrace_active_sessions`), sofern Cardinality kontrolliert ist.
@@ -233,12 +231,10 @@ Verbindliche Regeln:
 
 ## 8. OpenTelemetry
 
-- Im Spike-Muss-Scope: minimaler OTel-Setup im Code (Meter oder Tracer
-  initialisiert, mindestens ein Counter oder Span erzeugt).
-- Im Post-Spike-Soll: der Use Case spricht OTel ausschließlich über
-  einen frameworkneutralen Driven Port (z. B. `Telemetry`) an —
-  `hexagon/`-Pakete dürfen **nicht** direkt OTel importieren.
-  Spans am Request-Boundary darf der HTTP-Adapter direkt erzeugen.
+- Der Use Case spricht OTel ausschließlich über einen
+  frameworkneutralen Driven Port (z. B. `Telemetry`) an — `hexagon/`
+  Pakete dürfen **nicht** direkt OTel importieren.
+- Spans am Request-Boundary darf der HTTP-Adapter direkt erzeugen.
 - Reader und Span-Exporter werden über
   `go.opentelemetry.io/contrib/exporters/autoexport` aufgelöst,
   jeweils mit explizitem No-Op-Fallback
@@ -250,8 +246,8 @@ Verbindliche Regeln:
   registriert autoexport den entsprechenden Exporter. Kein
   zusätzlicher Code-Pfad für „Dev vs. Prod".
 - Konkrete Attribute und Resource-Konfiguration sind
-  Implementierungs-Detail; bewertet wurde im Spike die **Ergonomie**
-  der OTel-Integration im jeweiligen Stack (Bewertungsraster Spec §9).
+  Implementierungs-Detail; die verbindlichen Telemetrie-Attribute stehen
+  in [`telemetry-model.md`](./telemetry-model.md).
 
 ---
 
@@ -270,15 +266,16 @@ Verbindliche Regeln:
 
 ## 10. Persistenz
 
-- Im Spike: ausschließlich In-Memory.
+- Aktuell: In-Memory.
 - Daten überleben keinen Neustart — beabsichtigt.
 - Keine SQLite, kein Redis, kein ORM.
 
 ---
 
-## 11. Pflichttests pro Prototyp
+## 11. Pflichttests für die API
 
-Aus `docs/plan-spike.md` §7.1 (deckungsgleich mit Spec §6.12):
+Ursprünglich aus `docs/plan-spike.md` §7.1 abgeleitet; weiterhin
+Pflichtabdeckung für den Ingest-Pfad:
 
 - Unit-Test `RegisterPlaybackEventBatch`: Happy Path
 - Unit-Test zentrale Domain-Validierung: Pflichtfelder, Schema-Version
@@ -313,7 +310,7 @@ curl -i -X POST http://localhost:8080/api/playback-events \
       "project_id": "demo",
       "session_id": "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
       "client_timestamp": "2026-04-28T12:00:00.000Z",
-      "sdk": { "name": "@m-trace/player-sdk", "version": "0.1.0" }
+      "sdk": { "name": "@npm9912/player-sdk", "version": "0.2.0" }
     }
   ]
 }
@@ -378,9 +375,9 @@ Erwartet: alle vier Pflichtmetriken aus §7 sichtbar.
 ## 13. Geltung und Versionsfortschreibung
 
 - Diese Datei ist normativ ab dem Merge nach `main`.
-- Vertragsänderungen während AP-1 oder AP-2 müssen
-  - in beiden Prototypen identisch landen,
-  - im Spike-Protokoll (`docs/spike/backend-stack-results.md`) begründet sein,
-  - eine Änderung dieses Dokuments mit klarem Diff erzeugen.
-- Schema-Version `1.0` ist der einzige im Spike akzeptierte Wert.
-  Eine Erhöhung (z. B. auf `1.1` oder `2.0`) ist Phase-2-Thema.
+- Vertragsänderungen müssen synchron mit `apps/api`, den Tests und den
+  maschinenlesbaren Contract-Artefakten gepflegt werden.
+- Schema-Version `1.0` ist der aktuell akzeptierte Wert. Eine Erhöhung
+  (z. B. auf `1.1` oder `2.0`) erfordert eine Aktualisierung von
+  `contracts/event-schema.json`, `contracts/sdk-compat.json`, API und SDK
+  im selben Commit.

@@ -2,8 +2,8 @@
 
 > **Stand**: 2026-04-30
 > **Phase**: Post-`0.2.0`, vor `0.3.0` Stream Analyzer  
-> **Bezug**: `docs/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
-> `docs/architecture.md` (Zielbild),
+> **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
+> `spec/architecture.md` (Zielbild),
 > `docs/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),
 > `docs/adr/0001-backend-stack.md` (Backend-Entscheidung),
 > `docs/plan-spike.md` SP-41 (Anschluss an MVP),
@@ -25,9 +25,9 @@ jedem Folge-ADR aktualisieren.
 
 | Status | Bereich             | Ergebnis                                                                                                                                         | Verweise                                                                                                                              |
 | ------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅      | Lastenheft          | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert.                        | `docs/lastenheft.md`                                                                                                                  |
+| ✅      | Lastenheft          | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert.                        | `spec/lastenheft.md`                                                                                                                  |
 | ✅      | Backend-Spike       | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/plan-spike.md` (SP-30), `docs/plan-spike.md` (SP-41) |
-| ✅      | API-Kontrakt        | Spike-API-Kontrakt erstellt, dokumentiert und eingefroren (`frozen`).                                                                            | `docs/spike/backend-api-contract.md`                                                                                                  |
+| ✅      | API-Kontrakt        | API-Kontrakt erstellt, dokumentiert und als verbindliche Schnittstelle gepflegt.                                                                 | `spec/backend-api-contract.md`                                                                                                  |
 | ✅      | ADR                 | Backend-Stack-Entscheidung entschieden und als **Accepted** festgehalten.                                                                        | `docs/adr/0001-backend-stack.md`                                                                                                      |
 | ✅      | Siegerbranch        | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`.                                                               | `spike/go-api`, ADR                                                                                                                   |
 | ✅      | Unterlegener Branch | Als Tag archiviert: `spike/backend-stack-loser-2026-04-28` (Commit `7c8bc44`), `spike/micronaut-api` gelöscht.                                   | `spike/backend-stack-loser-2026-04-28`                                                                                                |
@@ -82,8 +82,8 @@ Commit-Hashes, z. B. [`docs/plan-0.3.0.md`](./plan-0.3.0.md).
 | 2   | ✅      | Lastenheft auf `1.0.0` heben                                                                                          | Nach Schritt 1                                                  | OE-2; OE-9; SP-41                                         |
 | 3   | ✅      | README Tech-Overview anpassen                                                                                         | Nach Schritt 2                                                  | MVP-17; SP-41                                             |
 | 4   | ✅      | Phase-2-Risiken in `docs/risks-backlog.md`                                                                            | Nach Schritt 3                                                  | SP-41                                                     |
-| 5   | ✅      | `docs/architecture.md` schreiben                                                                                      | Vor `0.1.0`-DoD                                                 | AK-3, AK-10                                               |
-| 6   | ✅      | `docs/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup)                | Vor `0.1.0`-DoD                                                 | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 |
+| 5   | ✅      | `spec/architecture.md` schreiben                                                                                      | Vor `0.1.0`-DoD                                                 | AK-3, AK-10                                               |
+| 6   | ✅      | `spec/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup)                | Vor `0.1.0`-DoD                                                 | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 |
 | 7   | ✅      | `docs/local-development.md` schreiben                                                                                 | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                |
 | 8   | ✅      | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                            | Nach `0.1.0`-Release                                            | MVP-3; F-23..F-28                                         |
 | 9   | ✅      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |

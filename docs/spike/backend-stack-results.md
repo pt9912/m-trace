@@ -11,9 +11,10 @@
 
 ## 1. Vertrags-/Spec-Änderungen
 
-> Nach dem Merge von `docs/spike/backend-api-contract.md` nach `main` ist
-> der Kontrakt eingefroren. Jede Änderung **muss** hier dokumentiert sein
-> (Plan §4.1) und in beiden Prototypen identisch landen.
+> Zum Spike-Zeitpunkt war der damalige API-Kontrakt nach dem Merge nach
+> `main` eingefroren. Jede Änderung musste hier dokumentiert sein
+> (Plan §4.1) und in beiden Prototypen identisch landen. Der laufende
+> API-Kontrakt wird heute unter `spec/backend-api-contract.md` gepflegt.
 
 | Datum | Änderung | Begründung | Commit-Hash |
 |---|---|---|---|

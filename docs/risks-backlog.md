@@ -3,7 +3,7 @@
 > **Stand**: 2026-04-29  
 > **Bezug**: `docs/adr/0001-backend-stack.md` §5 (Bewertungsraster, Zeile
 > *Absehbare Phase-2-Risiken*), §8 (Konsequenzen),
-> `docs/lastenheft.md` §4.3, §10.1; `docs/roadmap.md` §4
+> `spec/lastenheft.md` §4.3, §10.1; `docs/roadmap.md` §4
 > (Folge-ADRs).
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der

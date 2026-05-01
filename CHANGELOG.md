@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publizierbares Player-SDK-Paket `@npm9912/player-sdk` mit ESM-, CJS-,
   Browser/IIFE- und Type-Definition-Builds.
 - Pack-, Publish-Dry-Run-, Install- und Browser-Load-Smokes für das SDK.
-- Projektweite SDK-Doku in `docs/player-sdk.md` sowie Paketdoku in
+- Projektweite SDK-Doku in `spec/player-sdk.md` sowie Paketdoku in
   `packages/player-sdk/README.md`.
 - Maschinenlesbare Contract-Artefakte für Event-Schema und SDK↔Schema-
   Kompatibilität.
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   90-%-Schwellen.
 - Performance-Smoke für das Player-SDK mit Bundle-, Hot-Path- und
   Queue-/Retry-Prüfungen.
-- Browser-Support-Matrix in `docs/browser-support.md`.
+- Browser-Support-Matrix in `spec/browser-support.md`.
 - Demo-Integrationsdoku für die Dashboard-Route `/demo`.
 - ADR-Draft `0002` zur Persistenzentscheidung In-Memory vs.
   SQLite/PostgreSQL.

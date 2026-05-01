@@ -3,9 +3,9 @@
 > **Status**: Accepted  
 > **Datum**: 2026-04-28  
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)  
-> **Bezug**: `docs/lastenheft.md` §9.1, §10.1; `docs/plan-spike.md`;
+> **Bezug**: `spec/lastenheft.md` §9.1, §10.1; `docs/plan-spike.md`;
 > `docs/spike/0001-backend-stack.md`;
-> `docs/spike/backend-api-contract.md`;
+> `spec/backend-api-contract.md`;
 > `docs/spike/backend-stack-results.md`.
 
 ---
@@ -15,7 +15,7 @@
 Lastenheft §9.1 hielt die Wahl zwischen Go und Micronaut bewusst offen.
 Spike gemäß `docs/spike/0001-backend-stack.md` und Implementierungsplan
 `docs/plan-spike.md` durchgeführt: zwei Prototypen mit identischem
-Muss-Scope (`docs/spike/backend-api-contract.md`), Docker-only-Workflow,
+Muss-Scope (`spec/backend-api-contract.md`), Docker-only-Workflow,
 ein gemeinsames Spike-Protokoll auf `main`.
 
 Die Stack-Auswahl entscheidet, in welcher Sprache und mit welcher
@@ -37,7 +37,7 @@ abbilden.
 ## 3. Scope
 
 Beide Prototypen erfüllen den Muss-Scope vollständig
-(`docs/spike/backend-api-contract.md` §11):
+(`spec/backend-api-contract.md` §11):
 
 - 3 Pflicht-Endpunkte: `POST /api/playback-events`,
   `GET /api/health`, `GET /api/metrics`
@@ -218,11 +218,11 @@ als Runtime. Bleibt unverändert aus dem Spike (`apps/api/Dockerfile`).
 
 ## Anhang A — Bezüge
 
-- Lastenheft (`docs/lastenheft.md`): §9.1, §10.1, §16.2.
+- Lastenheft (`spec/lastenheft.md`): §9.1, §10.1, §16.2.
 - Spike-Spec (`docs/spike/0001-backend-stack.md`): §6, §7, §9, §11, §15.
 - Spike-Plan (`docs/plan-spike.md`): §4.6 (Entscheidungsregel),
   §7.2 (Mess-Punkte), §7.3 (Bewertungsraster), §10 (DoD), §11
   (Anschluss an MVP).
-- API-Kontrakt (`docs/spike/backend-api-contract.md`): vollständig.
+- API-Kontrakt (`spec/backend-api-contract.md`): vollständig.
 - Spike-Protokoll (`docs/spike/backend-stack-results.md`): §2 (Go),
   §3 (Kotlin/Micronaut).

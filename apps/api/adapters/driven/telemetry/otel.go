@@ -1,5 +1,5 @@
 // Package telemetry implements the driven.Telemetry port via the
-// OpenTelemetry SDK. Per docs/architecture.md §3.4 this is one of two
+// OpenTelemetry SDK. Per spec/architecture.md §3.4 this is one of two
 // places (alongside adapters/driving/http) where OTel imports are
 // allowed; hexagon/ stays OTel-frei (boundary-test in
 // scripts/check-architecture.sh).
@@ -7,7 +7,7 @@
 // The Setup function returns Providers with a graceful Shutdown(ctx)
 // that combines the meter- and tracer-provider shutdown errors. Reader
 // und Span-Exporter werden via autoexport mit explizitem No-Op-Fallback
-// aufgelöst — siehe docs/architecture.md §5.3.
+// aufgelöst — siehe spec/architecture.md §5.3.
 package telemetry
 
 import (
@@ -36,7 +36,7 @@ const MeterName = "github.com/pt9912/m-trace/apps/api"
 const TracerName = "github.com/pt9912/m-trace/apps/api"
 
 // counterBatchesReceived is the OTel counter name for BatchReceived
-// calls. Per docs/telemetry-model.md §2.2 it appears in Prometheus as
+// calls. Per spec/telemetry-model.md §2.2 it appears in Prometheus as
 // mtrace_api_batches_received after the OTel→Prom translation
 // (`.` → `_`).
 const counterBatchesReceived = "mtrace.api.batches.received"
@@ -189,7 +189,7 @@ func NewOTelTelemetry(meter metric.Meter) (*OTelTelemetry, error) {
 // BatchReceived increments the counter by 1 with batch.size as
 // attribute. The size attribute is bounded (small int range), so it
 // does not violate the Prometheus cardinality rules from
-// docs/telemetry-model.md §3.
+// spec/telemetry-model.md §3.
 func (t *OTelTelemetry) BatchReceived(ctx context.Context, size int) {
 	t.counter.Add(ctx, 1, metric.WithAttributes(attribute.Int("batch.size", size)))
 }

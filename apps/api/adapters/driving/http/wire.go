@@ -1,7 +1,7 @@
 // Package http is the inbound HTTP adapter for the spike. It parses
 // the JSON wire format into driving.BatchInput, calls the use case,
 // and maps domain errors to HTTP status codes per
-// docs/spike/backend-api-contract.md §5.
+// spec/backend-api-contract.md §5.
 package http
 
 import "github.com/pt9912/m-trace/apps/api/hexagon/port/driving"

@@ -10,8 +10,8 @@ const eventSchema = readJSON("contracts/event-schema.json");
 const sdkCompat = readJSON("contracts/sdk-compat.json");
 const sdkVersionSource = readText("packages/player-sdk/src/version.ts");
 const apiSource = readText("apps/api/hexagon/application/register_playback_event_batch.go");
-const telemetryModel = readText("docs/telemetry-model.md");
-const playerSDKDoc = readText("docs/player-sdk.md");
+const telemetryModel = readText("spec/telemetry-model.md");
+const playerSDKDoc = readText("spec/player-sdk.md");
 
 const exportedSDKName = matchConst(sdkVersionSource, "PLAYER_SDK_NAME");
 const exportedSDKVersion = matchConst(sdkVersionSource, "PLAYER_SDK_VERSION");
@@ -29,8 +29,8 @@ assert(sdkCompat.api_supported_schema_version === apiSupportedSchemaVersion, "sd
 assert(apiSupportedSchemaVersion === eventSchema.schema_version, "API SupportedSchemaVersion must match contracts/event-schema.json");
 
 for (const doc of [
-  ["docs/telemetry-model.md", telemetryModel],
-  ["docs/player-sdk.md", playerSDKDoc]
+  ["spec/telemetry-model.md", telemetryModel],
+  ["spec/player-sdk.md", playerSDKDoc]
 ]) {
   assert(doc[1].includes("contracts/event-schema.json"), `${doc[0]} must reference contracts/event-schema.json`);
   assert(doc[1].includes("contracts/sdk-compat.json"), `${doc[0]} must reference contracts/sdk-compat.json`);

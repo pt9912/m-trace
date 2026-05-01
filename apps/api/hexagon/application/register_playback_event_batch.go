@@ -15,7 +15,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// SupportedSchemaVersion is the only schema_version the spike accepts.
+// SupportedSchemaVersion is the only schema_version the API accepts.
 const SupportedSchemaVersion = "1.0"
 
 // MaxBatchSize is the upper bound on events per request (Spec §6.1).
@@ -72,7 +72,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 }
 
 // RegisterPlaybackEventBatch implements the validation order of
-// docs/spike/backend-api-contract.md §5 from step 3 onwards. Steps 1
+// spec/backend-api-contract.md §5 from step 3 onwards. Steps 1
 // (X-MTrace-Token header presence) and 2 (body size) are the HTTP
 // adapter's responsibility.
 //

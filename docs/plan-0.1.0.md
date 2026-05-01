@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: ✅ abgeschlossen. `0.1.0` ist ausgeliefert; dieses Dokument bleibt als historischer Lieferstand erhalten.  
-> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](./architecture.md); [API-Kontrakt](./spike/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../spec/architecture.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -13,7 +13,7 @@ DoD-Checkboxen tracken den Lieferstand:
 - `[!]` blockiert durch Lastenheft-Inkonsistenz — Item kann erst angegangen werden, wenn ein Lastenheft-Patch (Tranche 0c, siehe §4a) den Widerspruch auflöst. Siehe `roadmap.md` §7.1 für die Konvention.
 - 🟡 in Arbeit — partiell umgesetzt mit weiteren offenen Sub-Items.
 
-Architektur-Soll steht in [`architecture.md`](./architecture.md) und enthält **kein** Status-Tracking. Differenzen Code↔Soll werden hier als offene `[ ]`-DoD-Items getrackt.
+Architektur-Soll steht in [`architecture.md`](../spec/architecture.md) und enthält **kein** Status-Tracking. Differenzen Code↔Soll werden hier als offene `[ ]`-DoD-Items getrackt.
 
 ---
 
@@ -91,7 +91,7 @@ DoD:
 
 Roadmap §2 Schritte 5–7 + zwei roadmap-externe Plan-Dokumente. Status: ✅ abgeschlossen.
 
-### 3.1 `docs/architecture.md`
+### 3.1 `spec/architecture.md`
 
 DoD:
 
@@ -129,7 +129,7 @@ DoD:
 - [x] Datei angelegt mit Tranchen 0/0a/0b/1 und vollständigem Lieferstand (`6530502`).
 - [x] Roadmap verweist auf Plan-Doku — Bezug-Liste, §1.2-Hinweis auf Tranche-0-Detail, §2-Hinweis auf granularen Lieferstand, §3-Akzeptanzkriterien-Spalte (`c172e0c`).
 
-### 3.5 `docs/telemetry-model.md` (Schritt 6)
+### 3.5 `spec/telemetry-model.md` (Schritt 6)
 
 Beschreibt das **Datenmodell** der Telemetrie — Wire-Format, Schema, Cardinality-Regeln. Implementierungs-/Setup-Aspekte (strukturierte Logs, Health-Endpoint, Prometheus- und Grafana-Konfiguration) gehören in [`plan-0.1.2.md`](./plan-0.1.2.md) Tranche 1/2 (Observability-Stack), nicht hierher.
 
@@ -165,17 +165,17 @@ Findings aus Code-Reviews der Spike-Implementation. Status: ✅ abgeschlossen.
 
 DoD:
 
-- [x] `docs/spike/backend-api-contract.md` §5: Reihenfolge auf 1=Auth-Header, 2=Body, 3=Auth-Token, 4=Rate-Limit, 5=Schema, 6/7=Batch-Form, 8=Event-Felder, 9=Token-Bindung, 10=Erfolg (`40d79d9`).
-- [x] `docs/spike/backend-api-contract.md` §5 Tabelle und Folge-Hinweis ergänzt: Body > 256 KB ohne Auth-Header → 401 (`40d79d9`).
-- [x] `docs/spike/backend-api-contract.md` §11 neuer Pflichttest „401 bei Body über 256 KB ohne Auth-Header" (`40d79d9`).
-- [x] `docs/spike/backend-api-contract.md` Frozen-Status präzisiert (Spike-Vergleichs-Schutz, danach Pflege-Erlaubnis) (`40d79d9`).
-- [x] `docs/architecture.md` §5.1 Sequenzdiagramm und Step-Nummern auf neue Reihenfolge (`40d79d9`).
+- [x] `spec/backend-api-contract.md` §5: Reihenfolge auf 1=Auth-Header, 2=Body, 3=Auth-Token, 4=Rate-Limit, 5=Schema, 6/7=Batch-Form, 8=Event-Felder, 9=Token-Bindung, 10=Erfolg (`40d79d9`).
+- [x] `spec/backend-api-contract.md` §5 Tabelle und Folge-Hinweis ergänzt: Body > 256 KB ohne Auth-Header → 401 (`40d79d9`).
+- [x] `spec/backend-api-contract.md` §11 neuer Pflichttest „401 bei Body über 256 KB ohne Auth-Header" (`40d79d9`).
+- [x] `spec/backend-api-contract.md` Frozen-Status präzisiert (Spike-Vergleichs-Schutz, danach Pflege-Erlaubnis) (`40d79d9`).
+- [x] `spec/architecture.md` §5.1 Sequenzdiagramm und Step-Nummern auf neue Reihenfolge (`40d79d9`).
 - [x] `apps/api/adapters/driving/http/handler_test.go`: neuer Test `TestHTTP_401_BodyTooLarge_NoToken` (`40d79d9`).
 - [x] Docker-Pflichttests grün (`40d79d9`).
 
 ### 4.2 Counter-Scope: invalid_events nur für 400/422, dropped_events nur für Backpressure (Hoch + Mittel C1)
 
-Soll laut [API-Kontrakt §7](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`):
+Soll laut [API-Kontrakt §7](../spec/backend-api-contract.md) (präzisiert in Commit `9fddfa1`):
 
 - `mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422`. Auth-Fehler (`401`) zählen nicht. Bei leerem Batch (`events.length == 0`) bleibt der Counter unverändert (Ablehnung sichtbar über HTTP-Status und Access-Logs).
 - `mtrace_dropped_events_total` ist für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Queue-Puffer) und darf konstant `0` sein. Synchron fehlgeschlagenes `Append` ist kein Drop und inkrementiert den Counter nicht — Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs.
@@ -192,7 +192,7 @@ DoD:
 
 ### 4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span (Mittel-Finding)
 
-Soll laut [API-Kontrakt §8](./spike/backend-api-contract.md) (präzisiert in Commit `9fddfa1`) und Architecture §5.3: OTel-Aufrufe aus dem Use Case laufen ausschließlich über einen frameworkneutralen Driven Port `Telemetry`; Request-Spans erzeugt der HTTP-Adapter direkt. `hexagon/`-Pakete dürfen kein OTel importieren.
+Soll laut [API-Kontrakt §8](../spec/backend-api-contract.md) (präzisiert in Commit `9fddfa1`) und Architecture §5.3: OTel-Aufrufe aus dem Use Case laufen ausschließlich über einen frameworkneutralen Driven Port `Telemetry`; Request-Spans erzeugt der HTTP-Adapter direkt. `hexagon/`-Pakete dürfen kein OTel importieren.
 
 **Scope-Abgrenzung gegenüber `0.1.2` Observability-Stack**: §4.3 liefert die **API-seitige Telemetrie-Vorbereitung** in `apps/api` (Port + Adapter-Implementierung + Request-Spans + autoexport-Setup). Die **Observability-Stack-Komponenten** (Prometheus-Service, Grafana-Service, OTel-Collector-Service mit ihren Compose-/Konfig-Artefakten) sind explizit nicht hier, sondern in [`plan-0.1.2.md`](./plan-0.1.2.md). Die Vorziehung der API-seitigen Vorbereitung in `0.1.0` ist bewusst — ohne den Telemetry-Port wäre die Architektur in `0.1.0` instabil (Hexagon-Boundary-Verletzungen müssten erst nachträglich aufgeräumt werden), und der API-Kontrakt §8 verlangt „mindestens einen Counter oder Span" als Spike-Erbe.
 
@@ -203,7 +203,7 @@ DoD:
 - [x] Boundary-Test-Skript `apps/api/scripts/check-architecture.sh` (per `make arch-check` aufrufbar) prüft, dass `hexagon/` keine direkten Imports auf Adapter, OTel, Prometheus, `database/sql` oder `net/http` enthält und die Schichtengrenzen domain → application → port respektiert sind. Aktueller Code besteht den Test (`5784f6e`).
 - [x] Boundary-Test in CI eingebunden (`make arch-check` im Workflow `.github/workflows/build.yml`) (`46e45ec`).
 - [x] `apps/api/hexagon/`-Pakete importieren weiterhin **kein** OTel — per Boundary-Test verifiziert (`make arch-check` grün auf `51b3812`).
-- [x] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received` (Punkt-Notation laut OTel-Semconv); Attribut `batch.size`. **Naming-Translation**: das OTel→Prometheus-Mapping ersetzt `.` durch `_`, daher erscheint der Counter in Prometheus als `mtrace_api_batches_received` (vom OTLP-Exporter automatisch konvertiert). Smoke-Test-Regex `^mtrace_.+` (Plan `0.1.2` §4) deckt beide Namen ab — den translated Counter sowie die direkten Prometheus-Counter aus `adapters/driven/metrics`. Dokumentation in `docs/telemetry-model.md` §2 erfasst diese Translation explizit (`51b3812`).
+- [x] Adapter `apps/api/adapters/driven/telemetry/otel.go`: `OTelTelemetry`-Implementierung der Schnittstelle mit OTel-`Int64Counter` `mtrace.api.batches.received` (Punkt-Notation laut OTel-Semconv); Attribut `batch.size`. **Naming-Translation**: das OTel→Prometheus-Mapping ersetzt `.` durch `_`, daher erscheint der Counter in Prometheus als `mtrace_api_batches_received` (vom OTLP-Exporter automatisch konvertiert). Smoke-Test-Regex `^mtrace_.+` (Plan `0.1.2` §4) deckt beide Namen ab — den translated Counter sowie die direkten Prometheus-Counter aus `adapters/driven/metrics`. Dokumentation in `spec/telemetry-model.md` §2 erfasst diese Translation explizit (`51b3812`).
 - [x] `apps/api/cmd/api/main.go` verdrahtet die `OTelTelemetry`-Implementierung in den Use Case (`51b3812`).
 - [x] HTTP-Adapter `apps/api/adapters/driving/http/handler.go`: Request-Span via `otel.Tracer` um den Use-Case-Aufruf; Span-Name `http.handler POST /api/playback-events`; Attribute `http.method`, `http.route`, `http.status_code`, `batch.size` (sobald JSON geparst), `batch.outcome` (`51b3812`).
 - [x] `Setup` in `adapters/driven/telemetry`: `MeterProvider` und `TracerProvider` registrieren Reader/Span-Exporter über `go.opentelemetry.io/contrib/exporters/autoexport`. Damit antwortet die Konfiguration auf die Standard-OTel-Env-Vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`) (`51b3812`).
@@ -223,7 +223,7 @@ DoD:
 
 - [x] `apps/api/hexagon/application/register_playback_event_batch.go`: Step-Kommentare auf neue Numerierung 3..10 (Steps 3 ResolveByToken, 4 RateLimit, 5 SchemaVersion, 6 BatchEmpty, 7 BatchTooLarge, 8 EventFields, 9 TokenBinding, 10 PersistAccept) (`dbdcb67`).
 - [x] `apps/api/adapters/driving/http/handler.go`: Step-Kommentare 1+2 für Auth-Header und Body; Doc-Block auf Steps 3-10 im Use Case verweisen (`dbdcb67`).
-- [x] Hinweis auf alte Numerierung in `docs/architecture.md` §5.1 entfernen — bereits in einem früheren Edit erfolgt; aktueller Stand zeigt nur die Kontrakt-Numerierung 1..10 (`dbdcb67`).
+- [x] Hinweis auf alte Numerierung in `spec/architecture.md` §5.1 entfernen — bereits in einem früheren Edit erfolgt; aktueller Stand zeigt nur die Kontrakt-Numerierung 1..10 (`dbdcb67`).
 
 ---
 
@@ -399,7 +399,7 @@ DoD:
         5. Antworten enthalten `Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers`.
         6. Keine Antwort enthält `Access-Control-Allow-Origin: *`, sobald ein Project-Token im Spiel ist.
         7. Preflight `OPTIONS /api/stream-sessions` mit registriertem Origin → `204` mit `Access-Control-Allow-Methods: GET, OPTIONS`.
-- [x] **Rate-Limit-Dimensionen erweitert (F-110)**: `RateLimiter`-Port nimmt jetzt `RateLimitKey{ProjectID, ClientIP, Origin}` an. Alle drei Dimensionen sind in 0.1.0 implementiert (jenseits der Pflicht-Mindestmenge); leere Werte werden übersprungen, der TokenBucket wendet eine all-or-nothing-Commit-Semantik an. Architektur-Sync mitgezogen: `docs/architecture.md` §3.3 (Driven-Ports-Code-Beispiel) zeigt die strukturierte Port-Signatur, das Sequenzdiagramm in §5.1 nennt Step 3b für Origin-Validierung; API-Kontrakt §6 listet die drei Dimensionen und die all-or-nothing-Semantik (`75e55e7`).
+- [x] **Rate-Limit-Dimensionen erweitert (F-110)**: `RateLimiter`-Port nimmt jetzt `RateLimitKey{ProjectID, ClientIP, Origin}` an. Alle drei Dimensionen sind in 0.1.0 implementiert (jenseits der Pflicht-Mindestmenge); leere Werte werden übersprungen, der TokenBucket wendet eine all-or-nothing-Commit-Semantik an. Architektur-Sync mitgezogen: `spec/architecture.md` §3.3 (Driven-Ports-Code-Beispiel) zeigt die strukturierte Port-Signatur, das Sequenzdiagramm in §5.1 nennt Step 3b für Origin-Validierung; API-Kontrakt §6 listet die drei Dimensionen und die all-or-nothing-Semantik (`75e55e7`).
 - [x] **F-22** Architektur-Vorbereitung — Port `hexagon/port/driven/StreamAnalyzer` mit konkretem `AnalyzeBatch(ctx, []domain.PlaybackEvent) error`-Vertrag (kein Marker-Interface). Adapter `adapters/driven/streamanalyzer/NoopStreamAnalyzer` mit Compile-Time-Check; Use Case verdrahtet den Slot, ruft die Methode aber nicht produktiv auf — Use-Case-Test verifiziert `analyzer.calls=0` (`2104092`).
 - [x] Tests: Use-Case-Test für Session-Aggregation aus Event-Batches (`9842d39` `TestHappyPath`/`TestRepoFailureDoesNotCountAsDropped`) und Lifecycle-Transitions Active → Stalled → Ended (`835f258` `TestInMemorySessionRepository_Sweep_*`); HTTP-Integrationstests für die zwei Stream-Sessions-Endpoints (`26a64e2` `TestHTTP_StreamSessions*`/`TestHTTP_StreamSessionsByID_*`).
 
@@ -436,8 +436,8 @@ Dokumentations- und prozessbezogene Items für den `0.1.0`-Release. RAK-spezifis
 
 DoD:
 
-- [x] Architektur in `docs/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
-- [x] Eventmodell in `docs/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss (`e532e1e`, `51b3812`).
+- [x] Architektur in `spec/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
+- [x] Eventmodell in `spec/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss (`e532e1e`, `51b3812`).
 - [x] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8 (`2eede43`, `504e4c9`).
 - [x] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints (`7148a8d`, `9842d39`, `796aaa7`, `26a64e2`, `835f258`, `504e4c9`).
 - [x] CI führt Build und Tests aus (verknüpft mit OE-6, MVP-32): OE-6 ist für `0.1.0` entschieden als GitHub Actions auf `ubuntu-24.04`; Workflow `.github/workflows/build.yml` läuft auf Push nach `main` und Pull Requests mit `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` (`46e45ec`).

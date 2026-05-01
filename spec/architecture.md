@@ -7,7 +7,7 @@
 | Dokument | Architektur `m-trace`                                                                                                                                                                                                                                                                  |
 | Stand    | `2026-04-29`                                                                                                                                                                                                                                                                           |
 | Status   | Verbindlich (Zielbild `0.1.0`)                                                                                                                                                                                                                                                         |
-| Bezug    | [Lastenheft `1.1.6`](./lastenheft.md), [ADR-0001](./adr/0001-backend-stack.md), [Plan-Spike](./plan-spike.md), [Plan-`0.1.0`](./plan-0.1.0.md) / [`0.1.1`](./plan-0.1.1.md) / [`0.1.2`](./plan-0.1.2.md) (Lieferstand), [Roadmap](./roadmap.md), [Risiken-Backlog](./risks-backlog.md) |
+| Bezug    | [Lastenheft `1.1.6`](./lastenheft.md), [ADR-0001](../docs/adr/0001-backend-stack.md), [Plan-Spike](../docs/plan-spike.md), [Plan-`0.1.0`](../docs/plan-0.1.0.md) / [`0.1.1`](../docs/plan-0.1.1.md) / [`0.1.2`](../docs/plan-0.1.2.md) (Lieferstand), [Roadmap](../docs/roadmap.md), [Risiken-Backlog](../docs/risks-backlog.md) |
 
 ### 0.1 Zweck
 
@@ -15,8 +15,8 @@ Dieses Dokument beschreibt das **Zielbild (Soll)** der `0.1.0`-Architektur — *
 
 **Soll/Ist-Trennung**: Dieses Dokument enthält **kein** Status-Tracking. Der Lieferstand (was umgesetzt ist, was offen ist) wird ausschließlich an folgenden Stellen geführt:
 
-- [`docs/plan-0.1.0.md`](./plan-0.1.0.md) — DoD-Checkboxen `[x]`/`[ ]` mit Commit-Hashes pro Tranche.
-- [`docs/roadmap.md`](./roadmap.md) §1.1, §1.2, §2 — Status auf Schritt-Ebene (✅/⬜/🟡).
+- [`docs/plan-0.1.0.md`](../docs/plan-0.1.0.md) — DoD-Checkboxen `[x]`/`[ ]` mit Commit-Hashes pro Tranche.
+- [`docs/roadmap.md`](../docs/roadmap.md) §1.1, §1.2, §2 — Status auf Schritt-Ebene (✅/⬜/🟡).
 - `apps/<app>/README.md` — Stand pro App-Komponente.
 - `CHANGELOG.md` — versionierter Lieferstand pro Release-Tag.
 - der Code selbst — kanonische ausführbare Wahrheit.
@@ -26,9 +26,9 @@ Differenzen Code↔Soll werden **nicht** durch weichere Architektur-Formulierung
 ### 0.2 Nicht-Ziel
 
 - Anforderungen formulieren — das ist Aufgabe von [`lastenheft.md`](./lastenheft.md).
-- Release-Plan oder Status verfolgen — siehe [`roadmap.md`](./roadmap.md).
+- Release-Plan oder Status verfolgen — siehe [`roadmap.md`](../docs/roadmap.md).
 - Stack-Entscheidungen begründen — siehe ADRs unter `docs/adr/`.
-- Risiken sammeln — siehe [`risks-backlog.md`](./risks-backlog.md).
+- Risiken sammeln — siehe [`risks-backlog.md`](../docs/risks-backlog.md).
 
 ### 0.3 Architekturstil
 
@@ -41,7 +41,7 @@ m-trace nutzt **Hexagonale Architektur (Ports & Adapters)** für Komponenten mit
 | `packages/player-sdk`      | leichte Adapter-Struktur            | Browser-Library, Hexagon ohne Mehrwert im MVP                               |
 | `packages/stream-analyzer` | hexagonal oder geschichtete Library | Einsatz pro Folge-Phase prüfen                                              |
 
-Die Backend-Stack-Wahl (Go) ist in [ADR-0001](./adr/0001-backend-stack.md) entschieden.
+Die Backend-Stack-Wahl (Go) ist in [ADR-0001](../docs/adr/0001-backend-stack.md) entschieden.
 
 ---
 
@@ -92,7 +92,7 @@ flowchart LR
 | Selbsthoster-first (Lastenheft §9.3) | einfache Deploybarkeit, Distroless-Runtime, Docker-Compose statt Kubernetes                                  |
 | OpenTelemetry-nativ (§4.2)           | OTel-SDK direkt in `apps/api`, keine vendor-spezifischen Telemetrie-Pfade                                    |
 | Cardinality-Sicherheit (§7.10)       | Prometheus nur für Aggregate, hohe Kardinalität in Trace/Event-Store                                         |
-| Player-First (§7.6)                  | Wire-Format und SDK-Budget im Lastenheft fixiert; API-Kontrakt frozen (`docs/spike/backend-api-contract.md`) |
+| Player-First (§7.6)                  | Wire-Format und SDK-Budget im Lastenheft fixiert; API-Kontrakt verbindlich (`spec/backend-api-contract.md`) |
 | Hexagon-Disziplin (§7.2 F-10..F-16)  | Application-Core ohne Framework-Abhängigkeit, technische Konzepte in Adaptern                                |
 
 ---
@@ -149,7 +149,7 @@ Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/
 | `hexagon/domain/`       | `PlaybackEvent`, `StreamSession`, `Project`, `ProjectToken`, Domain-Errors                                                      | keine HTTP-, JSON-, Prometheus-, OTel-, Persistenz-Imports                                                                                                 |
 | `hexagon/port/driving/` | `PlaybackEventInbound` (Use-Case-Eingang) und Wire-format-neutrale DTOs (`BatchInput`, `EventInput`, `SDKInput`, `BatchResult`) | keine Imports von `adapters/*`; DTOs trennen Domain von Wire-Format                                                                                        |
 | `hexagon/port/driven/`  | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher`, `Telemetry`                                            | reine Schnittstellen; Implementierungen in `adapters/driven/*`. Keine Imports von OTel, Prometheus oder anderen Adapter-Bibliotheken.                      |
-| `hexagon/application/`  | `RegisterPlaybackEventBatch` Use Case                                                                                           | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken, Telemetrie in fester Reihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) |
+| `hexagon/application/`  | `RegisterPlaybackEventBatch` Use Case                                                                                           | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken, Telemetrie in fester Reihenfolge laut [API-Kontrakt §5](./backend-api-contract.md) |
 
 Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty`, `ErrBatchTooLarge`, `ErrInvalidEvent`, `ErrRateLimited`) decken erwartete fachliche Fehlerkategorien ab. Der HTTP-Adapter mappt sie auf Status-Codes (Tabelle in §5.1). Technische Adapter-Fehler — z. B. von `EventRepository.Append` — fallen nicht in dieses Set; sie werden vom Use Case unverändert durchgereicht und vom HTTP-Adapter im Default-Zweig auf `500` gemappt.
 
@@ -271,7 +271,7 @@ m-trace/
 └── pnpm-lock.yaml
 ```
 
-Dies ist die Soll-Struktur für `0.1.0`; aktueller Implementierungsstand pro Verzeichnis steht in [`plan-0.1.0.md`](./plan-0.1.0.md) (Tranche 1) und in der Roadmap §1.1.
+Dies ist die Soll-Struktur für `0.1.0`; aktueller Implementierungsstand pro Verzeichnis steht in [`plan-0.1.0.md`](../docs/plan-0.1.0.md) (Tranche 1) und in der Roadmap §1.1.
 
 ### 4.2 Hexagon-Layout pro App (`apps/api/` exemplarisch)
 
@@ -315,7 +315,7 @@ apps/api/
 
 ### 5.1 Event-Ingest
 
-Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./spike/backend-api-contract.md) (Schritte 1 und 2 im HTTP-Adapter, Schritte 3..10 im Use Case):
+Der zentrale Datenfluss ist die Annahme eines Player-Event-Batches. Validierungsreihenfolge laut [API-Kontrakt §5](./backend-api-contract.md) (Schritte 1 und 2 im HTTP-Adapter, Schritte 3..10 im Use Case):
 
 Akteure:
 
@@ -360,7 +360,7 @@ sequenceDiagram
 
 Schritt-Nummerierung (1..10) entspricht dem API-Kontrakt §5; Schritte 1 (Auth-Header-Presence) und 2 (Body-Größe) laufen im HTTP-Adapter, Schritt 3 (Token-Auflösung) bis Schritt 10 (Erfolg) im Use Case. Auth steht bewusst **vor** dem Body-Read, damit unauthentifizierte Requests einen Fast-Reject-Pfad haben.
 
-Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contract.md), Counter laut [API-Kontrakt §7](./spike/backend-api-contract.md):
+Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./backend-api-contract.md), Counter laut [API-Kontrakt §7](./backend-api-contract.md):
 
 | Stufe          | Fehler                       | Status              | Counter                                                          | Geprüft in          |
 | -------------- | ---------------------------- | ------------------- | ---------------------------------------------------------------- | ------------------- |
@@ -375,7 +375,7 @@ Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./spike/backend-api-contrac
 | Token-Bindung  | `project_id` ≠ Token-Projekt | 401                 | —                                                                | Use Case Step 9     |
 | Persistenz     | Repository-Fehler            | 500                 | — (kein Counter; Sichtbarkeit über HTTP-5xx-Histogramm und Logs) | Use Case Step 10    |
 
-`mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422` (laut [API-Kontrakt §7](./spike/backend-api-contract.md)) — der Wertbereich ist die Anzahl betroffener Events, nicht die Anzahl Batches. Auth-Fehler (HTTP-Header-Check, `ResolveByToken`, Token-Bindung) laufen nicht in den Counter. Bei leerem Batch (`events.length == 0`) bleibt der Counter folglich unverändert; die Ablehnung ist über HTTP-Status (`422`) und Access-Logs sichtbar. Persistenz-Fehler (`500`) inkrementieren ebenfalls keinen Counter — `mtrace_dropped_events_total` ist laut Kontrakt §7 für **interne Backpressure-Drops** reserviert (z. B. ein zukünftiger Async-Channel mit überlaufendem Puffer), nicht für synchron-fehlgeschlagenes `Append`.
+`mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422` (laut [API-Kontrakt §7](./backend-api-contract.md)) — der Wertbereich ist die Anzahl betroffener Events, nicht die Anzahl Batches. Auth-Fehler (HTTP-Header-Check, `ResolveByToken`, Token-Bindung) laufen nicht in den Counter. Bei leerem Batch (`events.length == 0`) bleibt der Counter folglich unverändert; die Ablehnung ist über HTTP-Status (`422`) und Access-Logs sichtbar. Persistenz-Fehler (`500`) inkrementieren ebenfalls keinen Counter — `mtrace_dropped_events_total` ist laut Kontrakt §7 für **interne Backpressure-Drops** reserviert (z. B. ein zukünftiger Async-Channel mit überlaufendem Puffer), nicht für synchron-fehlgeschlagenes `Append`.
 
 ### 5.2 Metrics-Pfad
 
@@ -388,7 +388,7 @@ flowchart LR
     Scraper["Prometheus-Scraper"] -->|GET /api/metrics| Handler
 ```
 
-Pflicht-Counter (laut [API-Kontrakt §7](./spike/backend-api-contract.md)):
+Pflicht-Counter (laut [API-Kontrakt §7](./backend-api-contract.md)):
 
 - `mtrace_playback_events_total`
 - `mtrace_invalid_events_total`
@@ -403,7 +403,7 @@ OTel-Telemetrie verläuft über zwei sich ergänzende Pfade — beide ohne OTel-
 
 **Driven Port `Telemetry`** (Use-Case-Telemetrie):
 
-`hexagon/port/driven/Telemetry` ist eine framework-neutrale Schnittstelle. Der Use Case ruft `telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt jedes Aufrufs (siehe §5.1 Sequenzdiagramm). Der Adapter `adapters/driven/telemetry` implementiert die Methode mit einem OTel-`Int64Counter` namens `mtrace.api.batches.received`, der `batch.size` als Attribut trägt. Damit ist die Pflicht aus [API-Kontrakt §8](./spike/backend-api-contract.md) („mindestens ein Counter oder Span erzeugt") erfüllt.
+`hexagon/port/driven/Telemetry` ist eine framework-neutrale Schnittstelle. Der Use Case ruft `telemetry.BatchReceived(ctx, len(in.Events))` am Eintritt jedes Aufrufs (siehe §5.1 Sequenzdiagramm). Der Adapter `adapters/driven/telemetry` implementiert die Methode mit einem OTel-`Int64Counter` namens `mtrace.api.batches.received`, der `batch.size` als Attribut trägt. Damit ist die Pflicht aus [API-Kontrakt §8](./backend-api-contract.md) („mindestens ein Counter oder Span erzeugt") erfüllt.
 
 **Request-Span im HTTP-Adapter**:
 
@@ -446,8 +446,8 @@ Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die
 | Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §10.1                 |
 | Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8     |
 | Metriken               | Prometheus über `/api/metrics`-Endpoint, nur Aggregate                                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §7.9, §7.10           |
-| Auth                   | Header `X-MTrace-Token`, Auflösung über `ProjectResolver`                                                                                                                                                                                                                                                                                                                                                                        | Spike-Spec §6.4, Lastenheft §8.5 |
-| Rate Limiting          | In-Memory Token-Bucket, 100 Events/s/Project                                                                                                                                                                                                                                                                                                                                                                                     | Spike-Spec §6.9                  |
+| Auth                   | Header `X-MTrace-Token`, Auflösung über `ProjectResolver`                                                                                                                                                                                                                                                                                                                                                                        | API-Kontrakt §6.4, Lastenheft §8.5 |
+| Rate Limiting          | In-Memory Token-Bucket, 100 Events/s/Project                                                                                                                                                                                                                                                                                                                                                                                     | API-Kontrakt §6.9                  |
 | Konfiguration          | Konstanten in `cmd/api/main.go`; Umweltvariablen folgen ab `0.1.0`-Implementierung                                                                                                                                                                                                                                                                                                                                               | —                                |
 
 ---
@@ -458,11 +458,11 @@ Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die
 
 | ADR                                     | Status   | Inhalt                                                                           |
 | --------------------------------------- | -------- | -------------------------------------------------------------------------------- |
-| [ADR-0001](./adr/0001-backend-stack.md) | Accepted | Backend-Stack: Go 1.22, stdlib `net/http`, Prometheus, OpenTelemetry, Distroless |
+| [ADR-0001](../docs/adr/0001-backend-stack.md) | Accepted | Backend-Stack: Go 1.22, stdlib `net/http`, Prometheus, OpenTelemetry, Distroless |
 
 ### 7.2 Geplant
 
-Folge-ADRs aus [Roadmap §4](./roadmap.md):
+Folge-ADRs aus [Roadmap §4](../docs/roadmap.md):
 
 | Erwartete ADR                                    | Trigger-Release | Bezug        |
 | ------------------------------------------------ | --------------- | ------------ |
@@ -472,7 +472,7 @@ Folge-ADRs aus [Roadmap §4](./roadmap.md):
 | Coverage-Tooling für Go                          | `0.1.0`+        |              |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`)    | on demand       | R-1          |
 
-Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](./risks-backlog.md).
+Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](../docs/risks-backlog.md).
 
 ---
 
@@ -480,7 +480,7 @@ Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](./risks-back
 
 ### 8.1 Docker-only-Workflow
 
-Alle Build-, Test-, Lint- und Runtime-Schritte laufen über `docker build --target …`. Lokales Go ist optional. Der Workflow folgt [Plan-Spike §14.11](./plan-spike.md):
+Alle Build-, Test-, Lint- und Runtime-Schritte laufen über `docker build --target …`. Lokales Go ist optional. Der Workflow folgt [Plan-Spike §14.11](../docs/plan-spike.md):
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
@@ -547,8 +547,8 @@ flowchart TB
 
 Verweise auf die normativen Listen statt Duplikat:
 
-- Offene Lastenheft-Entscheidungen: [Roadmap §5](./roadmap.md) (OE-3, OE-5).
-- Bekannte Phase-2-Risiken: [`risks-backlog.md`](./risks-backlog.md) (R-1..R-3).
-- Erwartete Folge-ADRs: [Roadmap §4](./roadmap.md).
+- Offene Lastenheft-Entscheidungen: [Roadmap §5](../docs/roadmap.md) (OE-3, OE-5).
+- Bekannte Phase-2-Risiken: [`risks-backlog.md`](../docs/risks-backlog.md) (R-1..R-3).
+- Erwartete Folge-ADRs: [Roadmap §4](../docs/roadmap.md).
 
 Architekturfragen, die hier *neu* aufgerufen werden, kommen über einen Folge-ADR oder einen `risks-backlog.md`-Eintrag in den Bestand.
