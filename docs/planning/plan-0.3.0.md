@@ -1,7 +1,7 @@
 # Implementation Plan — `0.3.0` (Stream Analyzer)
 
 > **Status**: 🟡 in Arbeit. Beginnt nach Release `v0.2.0` (Publizierbares Player SDK).  
-> **Bezug**: [Lastenheft `1.1.7`](../spec/lastenheft.md) §7.7 (Stream Analyzer), §13.5 (RAK-22..RAK-28), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](../spec/architecture.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md); [ADR 0002 Persistenz-Store](./adr/0002-persistence-store.md).
+> **Bezug**: [Lastenheft `1.1.7`](../../spec/lastenheft.md) §7.7 (Stream Analyzer), §13.5 (RAK-22..RAK-28), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md); [ADR 0002 Persistenz-Store](../adr/0002-persistence-store.md).
 > **Vorgänger-Gate (Stand zum `0.3.0`-Start)**:
 >
 > - [`plan-0.2.0.md`](./plan-0.2.0.md) ist vollständig (`[x]`) und `v0.2.0` ist veröffentlicht.
@@ -49,7 +49,7 @@ DoD:
 - [x] Annotierter Release-Tag `v0.2.0` existiert und zeigt auf den Release-Commit (`a2cb66d`).
 - [x] GitHub-Release `v0.2.0` existiert und verweist auf die Changelog-Release-Notes (`a2cb66d`).
 - [x] GitHub Actions `Build` ist für den Release-Commit grün (`a2cb66d`).
-- [x] `docs/roadmap.md` §2 markiert Schritt 19 als abgeschlossen und führt die Folgearbeiten für `0.3.0` (`070b231`).
+- [x] `docs/planning/roadmap.md` §2 markiert Schritt 19 als abgeschlossen und führt die Folgearbeiten für `0.3.0` (`070b231`).
 - [x] Persistenzstatus ist geprüft: ADR 0002 bleibt nicht-blockierend, solange Analyseergebnisse nicht durable gespeichert werden (`37f20ce`).
 
 ---
@@ -191,13 +191,13 @@ DoD:
 - [ ] CLI gibt Analyseergebnis auf stdout als JSON aus.
 - [ ] Fehler werden mit sinnvollem Exit-Code und maschinenlesbarem Fehler-JSON oder klar dokumentiertem stderr ausgegeben.
 - [ ] CLI-Tests decken Datei-Input, URL-/Fetch-Mock, Erfolg und Fehlerfall ab.
-- [ ] Lokaler Smoke-Befehl ist in `docs/local-development.md` dokumentiert.
+- [ ] Lokaler Smoke-Befehl ist in `docs/user/local-development.md` dokumentiert.
 
 ---
 
 ## 9. Tranche 8 — Release-Akzeptanzkriterien `0.3.0`
 
-Bezug: RAK-22..RAK-28; `docs/releasing.md`.
+Bezug: RAK-22..RAK-28; `docs/user/releasing.md`.
 
 DoD:
 
@@ -209,11 +209,11 @@ DoD:
 - [ ] **RAK-27** API kann Analyzer nutzen.
 - [ ] **RAK-28** CLI-Grundlage existiert.
 - [ ] Versionen sind konsistent: Root-`package.json.version`, `packages/stream-analyzer/package.json.version`, `CHANGELOG.md`-Abschnitt, Release-Tag `v0.3.0` und die im JSON-Ergebnis gesendete Analyzer-Version passen zusammen oder eine bewusst abweichende Versionierungsregel ist dokumentiert und getestet.
-- [ ] `docs/stream-analyzer.md`, `docs/local-development.md`, `docs/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
+- [ ] `docs/stream-analyzer.md`, `docs/user/local-development.md`, `docs/user/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
 - [ ] `CHANGELOG.md` enthält Eintrag für `0.3.0`.
 - [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build` und ein reproduzierbarer Analyzer-CLI-Smoke für `pnpm m-trace check <url>` gegen lokales Fixture oder gemockten Fetch-Pfad.
 - [ ] Falls `make browser-e2e` nicht durch Analyzer-Änderungen betroffen ist, bleibt es ein manuelles Release-Gate; bei Dashboard-/Demo-Auswirkungen läuft es grün.
-- [ ] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.3.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
+- [ ] Release-Prozess aus `docs/user/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.3.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
 - [ ] OE-3/Persistenz ist entschieden oder explizit nicht-blockierend deferred, falls Analyseergebnisse nicht durable gespeichert werden.
 
 ---

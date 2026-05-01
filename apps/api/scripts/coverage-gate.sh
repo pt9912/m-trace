@@ -6,7 +6,7 @@
 # Erwartet eine Datei mit der Output-Form von `go tool cover -func`,
 # deren letzte Zeile mit `total:` beginnt und im dritten Whitespace-
 # Token den Prozentwert trägt (Format `89.8%`). Default-Threshold
-# ist 90 (siehe docs/quality.md §3).
+# ist 90 (siehe docs/user/quality.md §3).
 #
 # Exit-Codes:
 #   0 — Coverage >= Threshold

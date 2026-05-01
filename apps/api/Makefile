@@ -1,10 +1,10 @@
 # m-trace API spike — Go variant
-# Docker-only workflow per docs/plan-spike.md §14.11.
+# Docker-only workflow per docs/planning/plan-spike.md §14.11.
 
 IMAGE := m-trace-api-spike
 
 # Coverage-Threshold für `make coverage-gate`. 90 % als Start, Ziel 95 %
-# (siehe docs/quality.md §3). Über `make coverage-gate THRESHOLD=…`
+# (siehe docs/user/quality.md §3). Über `make coverage-gate THRESHOLD=…`
 # überschreibbar, ohne den Default-Pfad anzufassen.
 THRESHOLD ?= 90
 
@@ -50,7 +50,7 @@ arch-check:
 	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.22 \
 		bash scripts/check-architecture.sh
 
-# Coverage-Pflicht-Gate (docs/quality.md §3): misst Coverage über
+# Coverage-Pflicht-Gate (docs/user/quality.md §3): misst Coverage über
 # hexagon/ und adapters/, druckt den per-Funktion-Report und fordert
 # mindestens THRESHOLD % Total. Default-Threshold 90 %, Ziel 95 %.
 # Override: `make coverage-gate THRESHOLD=92`.

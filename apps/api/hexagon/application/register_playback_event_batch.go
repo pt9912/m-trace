@@ -1,7 +1,7 @@
 // Package application holds the use-case services. This is the
 // inner-hexagon layer that orchestrates domain logic via driven ports.
 //
-// Per docs/plan-spike.md §5.2, application code may import domain and
+// Per docs/planning/plan-spike.md §5.2, application code may import domain and
 // driven/driving ports but no adapter (HTTP, JSON, Prometheus, OTel).
 package application
 

@@ -275,7 +275,7 @@ const htmlTemplate = `<!DOCTYPE html>
   <a href="coverage-func.txt">Per-Funktion-Text ↗</a>
 </div>
 
-<p class="small">Schwächste Dateien zuerst. Coverage-Range: <code>./hexagon/...</code>, <code>./adapters/...</code>; <code>cmd/api</code> ist Wiring/Signal-Handling und bleibt absichtlich draußen (siehe <code>docs/quality.md</code> §3).</p>
+<p class="small">Schwächste Dateien zuerst. Coverage-Range: <code>./hexagon/...</code>, <code>./adapters/...</code>; <code>cmd/api</code> ist Wiring/Signal-Handling und bleibt absichtlich draußen (siehe <code>docs/user/quality.md</code> §3).</p>
 
 <table>
   <thead>

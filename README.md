@@ -221,7 +221,7 @@ make smoke
 SDK- und Demo-Dokumentation:
 
 - [spec/player-sdk.md](spec/player-sdk.md) beschreibt Installation, Public API, Transport, Performance-Budget und Browser-Build.
-- [docs/demo-integration.md](docs/demo-integration.md) beschreibt die Dashboard-Route `/demo` als lokale hls.js-/Player-SDK-Integration.
+- [docs/user/demo-integration.md](docs/user/demo-integration.md) beschreibt die Dashboard-Route `/demo` als lokale hls.js-/Player-SDK-Integration.
 - [spec/browser-support.md](spec/browser-support.md) dokumentiert die Browser-Support-Matrix.
 
 Lokaler SDK-/Demo-Pfad:
@@ -252,7 +252,7 @@ make browser-e2e
 - Grafana: <http://localhost:3000> (`admin`/`admin`, `make dev-observability`)
 - OTel Collector: OTLP `localhost:4317`/`4318`, Health <http://localhost:13133>
 
-Details stehen in [docs/local-development.md](docs/local-development.md).
+Details stehen in [docs/user/local-development.md](docs/user/local-development.md).
 
 ## Roadmap
 
@@ -364,12 +364,12 @@ Das Projekt steht bei `0.2.0`: Lastenheft `1.1.7` verbindlich, Player-SDK-Paketi
 Leitende Dokumente:
 
 - [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.7)
-- [docs/roadmap.md](docs/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
+- [docs/planning/roadmap.md](docs/planning/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
-- [docs/releasing.md](docs/releasing.md) — Release-Prozess
-- [docs/quality.md](docs/quality.md) — Qualitätsrichtlinien
+- [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess
+- [docs/user/quality.md](docs/user/quality.md) — Qualitätsrichtlinien
 
-Nächste Schritte stehen in [docs/roadmap.md](docs/roadmap.md) §2.
+Nächste Schritte stehen in [docs/planning/roadmap.md](docs/planning/roadmap.md) §2.
 
 ---
 

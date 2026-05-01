@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: ✅ abgeschlossen. `0.1.0` ist ausgeliefert; dieses Dokument bleibt als historischer Lieferstand erhalten.  
-> **Bezug**: [Lastenheft `1.1.6`](../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../spec/architecture.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](./roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -13,7 +13,7 @@ DoD-Checkboxen tracken den Lieferstand:
 - `[!]` blockiert durch Lastenheft-Inkonsistenz — Item kann erst angegangen werden, wenn ein Lastenheft-Patch (Tranche 0c, siehe §4a) den Widerspruch auflöst. Siehe `roadmap.md` §7.1 für die Konvention.
 - 🟡 in Arbeit — partiell umgesetzt mit weiteren offenen Sub-Items.
 
-Architektur-Soll steht in [`architecture.md`](../spec/architecture.md) und enthält **kein** Status-Tracking. Differenzen Code↔Soll werden hier als offene `[ ]`-DoD-Items getrackt.
+Architektur-Soll steht in [`architecture.md`](../../spec/architecture.md) und enthält **kein** Status-Tracking. Differenzen Code↔Soll werden hier als offene `[ ]`-DoD-Items getrackt.
 
 ---
 
@@ -77,7 +77,7 @@ DoD:
 
 DoD:
 
-- [x] Issue-Backlog-Form entschieden: Markdown-Datei `docs/risks-backlog.md` analog cmake-xray/d-migrate-Pattern (`953c678`).
+- [x] Issue-Backlog-Form entschieden: Markdown-Datei `docs/planning/risks-backlog.md` analog cmake-xray/d-migrate-Pattern (`953c678`).
 - [x] R-1 Hexagon-Boundaries (Disziplin-basiert, kein Compile-Time-Enforcement) eingetragen mit Verweis auf Folge-ADR „`apps/api` Multi-Modul-Aufteilung" (`953c678`).
 - [x] R-2 CGO/SRT bricht distroless-static eingetragen mit Verweis auf Folge-ADR „SRT-Binding-Stack" (`953c678`).
 - [x] R-3 Go-WebSocket-Ökosystem fragmentiert eingetragen mit Verweis auf Folge-ADR „WebSocket vs. SSE" (`953c678`).
@@ -105,13 +105,13 @@ DoD:
 - [x] Restrukturierung zu reinem Zielbild (Soll/Ist-Trennung): „geplant"-Markierungen entfernt, OTel-Wording auf Soll, §4.1+§4.2 vereint, §5.2 Pull-Richtung, §5.1 Auth-Counter-Scope, Domain-Errors-Wording (`6ab96f1`).
 - [x] Roadmap §2 Schritt 5 auf ✅ (`932f0bd`, `08811cb`). (§1.2 enthält nur die Pre-MVP-Schritte 1–4.)
 
-### 3.2 `docs/risks-backlog.md`
+### 3.2 `docs/planning/risks-backlog.md`
 
 DoD:
 
 - [x] Datei angelegt, R-1..R-3 (siehe §2.4 oben) (`953c678`).
 
-### 3.3 `docs/releasing.md` (Skeleton)
+### 3.3 `docs/user/releasing.md` (Skeleton)
 
 DoD:
 
@@ -122,7 +122,7 @@ DoD:
 - [x] §4 Asset-Liste, Source-Bundle, Container-Image-Pfad konkretisieren (`a9f0c53`).
 - [x] §6 Rollback-Szenarien analog d-migrate-Pattern (`a9f0c53`).
 
-### 3.4 `docs/plan-0.1.0.md` (dieses Dokument)
+### 3.4 `docs/planning/plan-0.1.0.md` (dieses Dokument)
 
 DoD:
 
@@ -144,7 +144,7 @@ DoD:
 - [x] Schema-Versionierung und Evolution dokumentieren (`e532e1e`).
 - [x] Roadmap §2 Schritt 6 auf ✅ (`e532e1e`).
 
-### 3.6 `docs/local-development.md` (Schritt 7)
+### 3.6 `docs/user/local-development.md` (Schritt 7)
 
 DoD:
 
@@ -175,7 +175,7 @@ DoD:
 
 ### 4.2 Counter-Scope: invalid_events nur für 400/422, dropped_events nur für Backpressure (Hoch + Mittel C1)
 
-Soll laut [API-Kontrakt §7](../spec/backend-api-contract.md) (präzisiert in Commit `9fddfa1`):
+Soll laut [API-Kontrakt §7](../../spec/backend-api-contract.md) (präzisiert in Commit `9fddfa1`):
 
 - `mtrace_invalid_events_total` zählt **abgelehnte Events** mit Status `400` oder `422`. Auth-Fehler (`401`) zählen nicht. Bei leerem Batch (`events.length == 0`) bleibt der Counter unverändert (Ablehnung sichtbar über HTTP-Status und Access-Logs).
 - `mtrace_dropped_events_total` ist für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Queue-Puffer) und darf konstant `0` sein. Synchron fehlgeschlagenes `Append` ist kein Drop und inkrementiert den Counter nicht — Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs.
@@ -192,7 +192,7 @@ DoD:
 
 ### 4.3 Telemetry-Driven-Port + OTel-Counter + Request-Span (Mittel-Finding)
 
-Soll laut [API-Kontrakt §8](../spec/backend-api-contract.md) (präzisiert in Commit `9fddfa1`) und Architecture §5.3: OTel-Aufrufe aus dem Use Case laufen ausschließlich über einen frameworkneutralen Driven Port `Telemetry`; Request-Spans erzeugt der HTTP-Adapter direkt. `hexagon/`-Pakete dürfen kein OTel importieren.
+Soll laut [API-Kontrakt §8](../../spec/backend-api-contract.md) (präzisiert in Commit `9fddfa1`) und Architecture §5.3: OTel-Aufrufe aus dem Use Case laufen ausschließlich über einen frameworkneutralen Driven Port `Telemetry`; Request-Spans erzeugt der HTTP-Adapter direkt. `hexagon/`-Pakete dürfen kein OTel importieren.
 
 **Scope-Abgrenzung gegenüber `0.1.2` Observability-Stack**: §4.3 liefert die **API-seitige Telemetrie-Vorbereitung** in `apps/api` (Port + Adapter-Implementierung + Request-Spans + autoexport-Setup). Die **Observability-Stack-Komponenten** (Prometheus-Service, Grafana-Service, OTel-Collector-Service mit ihren Compose-/Konfig-Artefakten) sind explizit nicht hier, sondern in [`plan-0.1.2.md`](./plan-0.1.2.md). Die Vorziehung der API-seitigen Vorbereitung in `0.1.0` ist bewusst — ohne den Telemetry-Port wäre die Architektur in `0.1.0` instabil (Hexagon-Boundary-Verletzungen müssten erst nachträglich aufgeräumt werden), und der API-Kontrakt §8 verlangt „mindestens einen Counter oder Span" als Spike-Erbe.
 
@@ -264,10 +264,10 @@ DoD:
 - [x] Lastenheft Header: Version `1.0.2` → `1.1.0` (`31ccb47`).
 - [x] Lastenheft §13: §13.1 (`0.1.0`-RAKs) wird in §13.1 (`0.1.0` Backend Core + Demo-Lab), §13.2 (`0.1.1` Player-SDK + Dashboard) und §13.3 (`0.1.2` Observability-Stack) aufgeteilt; RAK-1..RAK-10 werden auf die drei Sub-Releases verteilt; nachfolgende §13.x-Sections (`0.2.0`..`0.6.0`) entsprechend renumeriert auf §13.4..§13.8 (`31ccb47`).
 - [x] Lastenheft §7.3 F-22: Wording auf „Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`" — löst den Tranche-13-Findings-Block (F-22 vs MVP-21) (`31ccb47`).
-- [x] `docs/plan-0.1.0.md` schrumpft auf den neuen `0.1.0`-Scope (Backend + Lab); Player-SDK, Dashboard und Observability werden in eigene Plan-Dokumente ausgelagert (`31ccb47`).
-- [x] `docs/plan-0.1.1.md` neu angelegt — Player-SDK + Dashboard; Tranchen 0/0a/0b/0c werden referenzierend zu `plan-0.1.0.md` gehalten (`31ccb47`).
-- [x] `docs/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend (`31ccb47`).
-- [x] `docs/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt (`0c4cab6`).
+- [x] `docs/planning/plan-0.1.0.md` schrumpft auf den neuen `0.1.0`-Scope (Backend + Lab); Player-SDK, Dashboard und Observability werden in eigene Plan-Dokumente ausgelagert (`31ccb47`).
+- [x] `docs/planning/plan-0.1.1.md` neu angelegt — Player-SDK + Dashboard; Tranchen 0/0a/0b/0c werden referenzierend zu `plan-0.1.0.md` gehalten (`31ccb47`).
+- [x] `docs/planning/plan-0.1.2.md` neu angelegt — Observability-Stack; analog referenzierend (`31ccb47`).
+- [x] `docs/planning/roadmap.md` §3 Release-Übersicht auf `0.1.0`/`0.1.1`/`0.1.2`/`0.2.0`/… umgestellt (`0c4cab6`).
 - [x] Bezug-Pins (Plan §0, Architecture §0, README) auf `Lastenheft 1.1.0` aktualisiert (`0c4cab6`).
 
 ### 4a.4 Patch `1.1.1` — Mindestdienste-Hinweis für Sub-Releases
@@ -349,13 +349,13 @@ Mit `0.2.0` wird das Player-SDK erstmals publizierbar. Der ursprünglich
 für `0.1.x` dokumentierte npm-Scope `@m-trace` ist nicht als npm-Org
 reserviert; Maintainer publisht Pakete bereits unter `@npm9912`. Daher
 wird OE-8 vor der ersten Veröffentlichung neu entschieden. Details stehen
-in [`docs/migrate-package-name.md`](./migrate-package-name.md).
+in [`docs/planning/migrate-package-name.md`](./migrate-package-name.md).
 
 DoD:
 
 - [x] Lastenheft Header: Version `1.1.6` → `1.1.7`.
 - [x] Lastenheft §16.2: OE-8 resolved — Player-SDK-Paketname `@npm9912/player-sdk` ab `0.2.0`; `0.1.x`-Lieferstand unter `@m-trace/player-sdk` bleibt historische Wahrheit, wurde aber nie öffentlich publishet.
-- [x] Lebende Code-, Doku- und Package-Stellen folgen `docs/migrate-package-name.md` §2.1; historische `0.1.x`-Artefakte bleiben gemäß §2.2 unverändert.
+- [x] Lebende Code-, Doku- und Package-Stellen folgen `docs/planning/migrate-package-name.md` §2.1; historische `0.1.x`-Artefakte bleiben gemäß §2.2 unverändert.
 
 ---
 
@@ -438,10 +438,10 @@ DoD:
 
 - [x] Architektur in `spec/architecture.md` beschrieben (Tranche 0a §3.1 ausgeliefert; siehe dort für Commit-Liste).
 - [x] Eventmodell in `spec/telemetry-model.md` beschrieben (Tranche 0a §3.5) — Pflicht für `0.1.0`, weil das Wire-Format gegen die Spike-API-Kontrakt-Erweiterungen geprüft werden muss (`e532e1e`, `51b3812`).
-- [x] Local-Development-Doku in `docs/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8 (`2eede43`, `504e4c9`).
+- [x] Local-Development-Doku in `docs/user/local-development.md` (Tranche 0a §3.6) — Pflicht für RAK-8 (`2eede43`, `504e4c9`).
 - [x] Tests für zentrale Use Cases vorhanden — Application-Tests für `RegisterPlaybackEventBatch` (inkl. Tranche-0b-Korrekturen) und neue Session-Use-Cases; HTTP-Integrationstests für alle `0.1.0`-MVP-Endpoints (`7148a8d`, `9842d39`, `796aaa7`, `26a64e2`, `835f258`, `504e4c9`).
 - [x] CI führt Build und Tests aus (verknüpft mit OE-6, MVP-32): OE-6 ist für `0.1.0` entschieden als GitHub Actions auf `ubuntu-24.04`; Workflow `.github/workflows/build.yml` läuft auf Push nach `main` und Pull Requests mit `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` (`46e45ec`).
-- [x] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/releasing.md`) (`95591a5`).
+- [x] `CHANGELOG.md` enthält Eintrag für `0.1.0` (Release-Vorgehen siehe `docs/user/releasing.md`) (`95591a5`).
 
 ---
 

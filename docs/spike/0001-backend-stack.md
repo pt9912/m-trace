@@ -260,7 +260,7 @@ Es reicht ein In-Memory-Rate-Limiter. Verteiltes Rate Limiting ist nicht Teil de
   laufen über `docker build --target <stage>`. Lokale Toolchains (Go,
   JDK, Gradle-Wrapper) sind nicht erforderlich.
 - `Dockerfile` mit Multi-Stage Build pro Prototyp
-- Build-Stages (Detailstruktur in `docs/plan-spike.md` §14.11):
+- Build-Stages (Detailstruktur in `docs/planning/plan-spike.md` §14.11):
   `deps` → `compile` → `test` → `runtime`. Kotlin ergänzt zusätzlich
   eine `detekt`-Stage.
 - Build-Tooling im Docker-Image:
@@ -281,7 +281,7 @@ Es reicht ein In-Memory-Rate-Limiter. Verteiltes Rate Limiting ist nicht Teil de
 
 Tests laufen ohne externe Dienste.
 
-Pflichttests (Detailaufstellung in `docs/plan-spike.md` §7.1):
+Pflichttests (Detailaufstellung in `docs/planning/plan-spike.md` §7.1):
 
 - Unit-Test für `RegisterPlaybackEventBatch`
 - Unit-Test für zentrale Domain-Validierung
@@ -411,7 +411,7 @@ Diese Werte werden für jeden Prototyp objektiv festgehalten und in das ADR übe
 | Final Docker Image Size | `docker images` |
 | Cold Start bis erster 200 OK auf `/api/health` | `time` + Curl-Loop |
 | Build-Zeit von Scratch | `time docker build --no-cache` |
-| Größe des Dependency-Caches | isolierter Cache pro Prototyp (siehe Hinweis in `docs/plan-spike.md` §7.2) |
+| Größe des Dependency-Caches | isolierter Cache pro Prototyp (siehe Hinweis in `docs/planning/plan-spike.md` §7.2) |
 | Anzahl direkter Dependencies | direkt deklariert in `apps/api/go.mod` (`require`-Block ohne `// indirect`) bzw. `apps/api/build.gradle.kts` (`dependencies {}`-Block); transitive werden nicht mitgezählt |
 | Testlaufzeit | `time make test` oder äquivalent |
 | Anzahl direkt geschriebener Konfigurationsdateien | manuell zählen |
@@ -461,12 +461,12 @@ Stack:
 
 - Micronaut 4.x
 - Kotlin 2.1.x auf JDK 21 (Default; Begründung in
-  `docs/plan-spike.md` §14.6)
+  `docs/planning/plan-spike.md` §14.6)
 - OTel via Micronaut-OpenTelemetry-Modul oder direkte OTel SDK-Nutzung
 - Tests mit Kotest 6.x + MockK + `@MicronautTest`-Integration
-  (Default; siehe `docs/plan-spike.md` §14.10)
+  (Default; siehe `docs/planning/plan-spike.md` §14.10)
 - Logging mit Logback und optional Logstash-Encoder
-- Linting: `detekt` 1.23+ als Soll (siehe `docs/plan-spike.md` §14.9)
+- Linting: `detekt` 1.23+ als Soll (siehe `docs/planning/plan-spike.md` §14.9)
 
 ### 12.4 Tag 5: Auswertung
 

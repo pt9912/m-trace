@@ -2,7 +2,7 @@
 // entry points that adapters such as HTTP, gRPC, or future MCP
 // implementations call into.
 //
-// Per docs/plan-spike.md §5.2 nothing in this package may import any
+// Per docs/planning/plan-spike.md §5.2 nothing in this package may import any
 // driven adapter (persistence, metrics, telemetry) or any wire-format
 // concern (JSON, Prometheus, OTel). The HTTP adapter is responsible
 // for parsing JSON into BatchInput.

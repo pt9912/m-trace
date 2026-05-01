@@ -27,9 +27,9 @@ Vor jedem Release:
   dem Release-Commit.
 - `CHANGELOG.md` auf den Zielstand bringen.
 - betroffene Plan-, Status- und Nutzungsdokumente aktualisieren
-  (`docs/roadmap.md`, `spec/architecture.md`, `apps/api/README.md`).
+  (`docs/planning/roadmap.md`, `spec/architecture.md`, `apps/api/README.md`).
 - Roadmap §1.1 und §1.2 nach dem Release-Bump neu schreiben (siehe
-  `docs/roadmap.md` §7 Wartungsregel).
+  `docs/planning/roadmap.md` §7 Wartungsregel).
 - offene `OE-X` und `R-X` durchsehen — Einträge, die mit dem Release
   aufgelöst werden, aus den Tabellen entfernen.
 
@@ -98,10 +98,10 @@ gh release create "$TAG" \
 ## 5. Post-Release
 
 - `CHANGELOG.md` öffnet einen neuen `## [Unreleased]`-Abschnitt.
-- `docs/roadmap.md` §3 (Release-Übersicht) aktualisiert den Status
+- `docs/planning/roadmap.md` §3 (Release-Übersicht) aktualisiert den Status
   des veröffentlichten Releases (`⬜ → ✅`).
 - Folge-ADRs, die mit dem Release entstehen oder fällig werden,
-  in `docs/roadmap.md` §4 ergänzen.
+  in `docs/planning/roadmap.md` §4 ergänzen.
 
 ## 6. Rollback
 
@@ -135,6 +135,6 @@ Force-Push auf `main`.
 
 - Lastenheft §14 — Akzeptanzkriterien (AK-11).
 - Lastenheft §18 — Definition of Done für den MVP.
-- `docs/roadmap.md` §3 — Release-Übersicht und RAK-Akzeptanzkriterien.
-- `docs/roadmap.md` §5 — Offene Entscheidungen.
+- `docs/planning/roadmap.md` §3 — Release-Übersicht und RAK-Akzeptanzkriterien.
+- `docs/planning/roadmap.md` §5 — Offene Entscheidungen.
 - `CHANGELOG.md` — Versionsverlauf.

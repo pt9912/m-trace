@@ -1,7 +1,7 @@
 # Implementation Plan — `0.2.0` (Publizierbares Player SDK)
 
 > **Status**: ✅ implementiert und release-bereit. Beginnt nach Abschluss von `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.7`](../spec/lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](../spec/architecture.md); [Telemetry-Modell](../spec/telemetry-model.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.7`](../../spec/lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](../../spec/architecture.md); [Telemetry-Modell](../../spec/telemetry-model.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.2.0`-Start)**:
 >
 > - [`plan-0.1.2.md`](./plan-0.1.2.md) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.2` (§4).
@@ -61,7 +61,7 @@ Ziel: `packages/player-sdk` wird von einem Workspace-Paket zu einem lokal instal
 
 DoD:
 
-- [x] Paketnamen-Migration gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer (`d367720`).
+- [x] Paketnamen-Migration gemäß [`docs/planning/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/planning/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer (`d367720`).
 - [x] `packages/player-sdk/package.json` enthält publish-fähige Metadaten: `name`, `version`, `description`, `license`, `repository`, `files`, `exports`, `types`, ESM/CJS/Browser-Build-Einstiege (`819ee17`, `d367720`).
 - [x] `packages/player-sdk/package.json` setzt `version` auf `0.2.0`; Pack-/Install-Smoke-Test prüft, dass das erzeugte npm-Paket ebenfalls Version `0.2.0` meldet (`819ee17`).
 - [x] Root-`package.json` setzt `version` auf `0.2.0`; Repo-Release-Tag, Root-Metadaten und SDK-Paketversion sind konsistent oder eine bewusst abweichende Versionierungsregel ist dokumentiert (`819ee17`).
@@ -93,7 +93,7 @@ DoD:
 - [x] SDK sendet die Schema-Version im definierten Wire-Format aus `spec/telemetry-model.md` (`d367720`).
 - [x] SDK-Tests verhindern Regressionen bei `sdk.version` und Schema-Version im erzeugten Event-Payload (`d367720`).
 - [x] `spec/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes (`d367720`).
-- [x] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert (`d367720`).
+- [x] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/planning/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert (`d367720`).
 - [x] API-Tests prüfen, dass die aktuell unterstützte Schema-Version akzeptiert wird (`d367720`).
 - [x] SDK-Tests prüfen, dass jeder erzeugte Batch die aktuelle Schema-Version trägt (`d367720`).
 - [x] Maschinenlesbare Contract-Artefakte werden angelegt, z. B. `contracts/event-schema.json` und `contracts/sdk-compat.json`; sie sind Source of Truth für Schema-Version und SDK↔Schema-Kompatibilität (`d367720`).
@@ -129,7 +129,7 @@ DoD:
 
 ### 4a. Arbeitspaket 3a — Coverage-Konfiguration für Node-Workspaces
 
-Bezug: `docs/quality.md` §3; RAK-14, RAK-15, RAK-17.
+Bezug: `docs/user/quality.md` §3; RAK-14, RAK-15, RAK-17.
 
 Ziel: Die in `0.2.0` stabilisierten Node-Workspaces bekommen
 reproduzierbare Coverage-Gates. Dashboard-Coverage wird nicht
@@ -158,8 +158,8 @@ DoD:
 - [x] `.github/workflows/build.yml` führt das neue Coverage-Gate aus
   oder dokumentiert bewusst, warum es bis zum Folge-Release lokal
   bleibt (`f31fb71`).
-- [x] `docs/quality.md`, `docs/local-development.md` und
-  `docs/releasing.md` beschreiben die tatsächlichen Coverage-Kommandos
+- [x] `docs/user/quality.md`, `docs/user/local-development.md` und
+  `docs/user/releasing.md` beschreiben die tatsächlichen Coverage-Kommandos
   und Artefakte für `packages/player-sdk` (`f31fb71`, `197c058`).
 - [x] Für `apps/dashboard` ist eine Entscheidung dokumentiert:
   entweder Unit-/Component-Test-Setup plus Coverage-Scope
@@ -195,7 +195,7 @@ DoD:
 
 - [x] Dashboard-Route `/demo` ist als Beispielintegration dokumentiert: SDK-Konfiguration, API-URL, Token/Project, hls.js-Anbindung, erwartete Events (`1c5ab12`).
 - [x] `README.md` verlinkt auf die SDK-Doku und beschreibt den lokalen SDK-Install-/Demo-Pfad (`1c5ab12`).
-- [x] `docs/local-development.md` beschreibt, wie das gepackte SDK lokal gegen Dashboard/API getestet wird (`1c5ab12`).
+- [x] `docs/user/local-development.md` beschreibt, wie das gepackte SDK lokal gegen Dashboard/API getestet wird (`1c5ab12`).
 - [x] **RAK-11** SDK ist als npm-Paket baubar und lokal installierbar; Paketversion ist `0.2.0` (`819ee17`, `d367720`, `1c5ab12`).
 - [x] **RAK-12** Public API ist dokumentiert (`819ee17`, `d367720`, `1c5ab12`).
 - [x] **RAK-13** Event-Schema ist versioniert (`d367720`).
@@ -208,7 +208,7 @@ DoD:
 - [x] **RAK-20** Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert (`1c5ab12`).
 - [x] **RAK-21** Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft; der Check nutzt ein maschinenlesbares Compat-Fixture oder einen Snapshot mit SDK-Version, `sdk.version`, `schema_version` und API-`SupportedSchemaVersion` (`d367720`).
 - [x] `CHANGELOG.md` enthält Eintrag für `0.2.0` (`4797568`).
-- [x] Release-Prozess aus `docs/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar (Release-Commit `chore(release): v0.2.0`, Tag `v0.2.0`).
+- [x] Release-Prozess aus `docs/user/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.2.0` ist erstellt und das Release-Artefakt ist nachvollziehbar (Release-Commit `chore(release): v0.2.0`, Tag `v0.2.0`).
 - [x] Tranche 6 ist abgeschlossen oder explizit nicht-blockierend deferred: OE-3/Persistenz-Vorbereitung ist entweder dokumentiert oder mit Begründung, Folge-Release und Roadmap-/Risiken-Verweis verschoben (`37f20ce`).
 - [x] Arbeitspaket 3a ist abgeschlossen oder explizit deferred; bei Deferral ist dokumentiert, welche Coverage-Gates `0.2.0` tatsächlich erzwingt (`05fb496`).
 - [x] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build`, `make browser-e2e` (verifiziert nach `4c57eac`).

@@ -4,9 +4,9 @@
 > **Phase**: Post-`0.2.0`, vor `0.3.0` Stream Analyzer  
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
-> `docs/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),
+> `docs/planning/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),
 > `docs/adr/0001-backend-stack.md` (Backend-Entscheidung),
-> `docs/plan-spike.md` SP-41 (Anschluss an MVP),
+> `docs/planning/plan-spike.md` SP-41 (Anschluss an MVP),
 > `docs/spike/backend-stack-results.md` (Spike-Protokoll).
 
 Dieses Dokument ist die **Statusseite** des Projekts. Es duplikiert nicht
@@ -26,7 +26,7 @@ jedem Folge-ADR aktualisieren.
 | Status | Bereich             | Ergebnis                                                                                                                                         | Verweise                                                                                                                              |
 | ------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | ✅      | Lastenheft          | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert.                        | `spec/lastenheft.md`                                                                                                                  |
-| ✅      | Backend-Spike       | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/plan-spike.md` (SP-30), `docs/plan-spike.md` (SP-41) |
+| ✅      | Backend-Spike       | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/planning/plan-spike.md` (SP-30), `docs/planning/plan-spike.md` (SP-41) |
 | ✅      | API-Kontrakt        | API-Kontrakt erstellt, dokumentiert und als verbindliche Schnittstelle gepflegt.                                                                 | `spec/backend-api-contract.md`                                                                                                  |
 | ✅      | ADR                 | Backend-Stack-Entscheidung entschieden und als **Accepted** festgehalten.                                                                        | `docs/adr/0001-backend-stack.md`                                                                                                      |
 | ✅      | Siegerbranch        | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`.                                                               | `spike/go-api`, ADR                                                                                                                   |
@@ -35,21 +35,21 @@ jedem Folge-ADR aktualisieren.
 ### 1.2 Pre-MVP-Vorbereitung (SP-41) — abgeschlossen
 
 Reihenfolge war verbindlich (SP-41). Detail-DoD und Commit-Hashes
-in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §2.
+in [`docs/planning/plan-0.1.0.md`](./plan-0.1.0.md) §2.
 
 | Reihenfolge | Status | Aufgabe                                                                                                         | Trigger        | Verweis           |
 | ----------- | ------ | --------------------------------------------------------------------------------------------------------------- | -------------- | ----------------- |
 | 1           | ✅      | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2).                                              | Sofort         | OE-9; SP-41       |
 | 2           | ✅      | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren.               | Nach Schritt 1 | OE-2; OE-9; SP-41 |
 | 3           | ✅      | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41     |
-| 4           | ✅      | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/risks-backlog.md`.                     | Nach Schritt 3 | SP-41             |
+| 4           | ✅      | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/planning/risks-backlog.md`.                     | Nach Schritt 3 | SP-41             |
 
 ### 1.3 Verbleibend für `0.1.0`-Release
 
 Status: ✅ `0.1.0` abgeschlossen — §5.1 Backend-Erweiterung, §5.2
 Compose-Lab, RAK-1/3/4/6/8-Verifikation, CI-Setup, Lizenz- und
 Release-Konvention sind ausgeliefert. DoD-Detail
-in [`docs/plan-0.1.0.md`](./plan-0.1.0.md) §5.
+in [`docs/planning/plan-0.1.0.md`](./plan-0.1.0.md) §5.
 
 | Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
 | ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------- |
@@ -74,29 +74,29 @@ Verweise nutzen die Lastenheft-Kennungen (`F-`, `NF-`, `MVP-`, `AK-`)
 wo sie existieren; Plan- und ADR-Sektionsnummern werden behalten,
 weil dort kein ID-System existiert. Granularer Lieferstand pro Release
 steht in den jeweiligen Plan-Dateien mit DoD-Checkboxen und
-Commit-Hashes, z. B. [`docs/plan-0.3.0.md`](./plan-0.3.0.md).
+Commit-Hashes, z. B. [`docs/planning/plan-0.3.0.md`](./plan-0.3.0.md).
 
 | #   | Status | Schritt                                                                                                               | Trigger                                                         | Verweis                                                   |
 | --- | ------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------- |
 | 1   | ✅      | `spike/go-api` → `apps/api` auf `main` integrieren                                                                    | Sofort                                                          | MVP-2; OE-9; SP-41                                        |
 | 2   | ✅      | Lastenheft auf `1.0.0` heben                                                                                          | Nach Schritt 1                                                  | OE-2; OE-9; SP-41                                         |
 | 3   | ✅      | README Tech-Overview anpassen                                                                                         | Nach Schritt 2                                                  | MVP-17; SP-41                                             |
-| 4   | ✅      | Phase-2-Risiken in `docs/risks-backlog.md`                                                                            | Nach Schritt 3                                                  | SP-41                                                     |
+| 4   | ✅      | Phase-2-Risiken in `docs/planning/risks-backlog.md`                                                                            | Nach Schritt 3                                                  | SP-41                                                     |
 | 5   | ✅      | `spec/architecture.md` schreiben                                                                                      | Vor `0.1.0`-DoD                                                 | AK-3, AK-10                                               |
 | 6   | ✅      | `spec/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup)                | Vor `0.1.0`-DoD                                                 | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9 |
-| 7   | ✅      | `docs/local-development.md` schreiben                                                                                 | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                |
+| 7   | ✅      | `docs/user/local-development.md` schreiben                                                                                 | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                |
 | 8   | ✅      | Dashboard-App (`apps/dashboard`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                            | Nach `0.1.0`-Release                                            | MVP-3; F-23..F-28                                         |
 | 9   | ✅      | Player-SDK (`packages/player-sdk`) anlegen — `0.1.1` (siehe `plan-0.1.1.md`)                                          | Nach `0.1.0`-Release                                            | MVP-5; F-63..F-67                                         |
 | 10  | ✅      | Docker-Compose-Lab inkl. MediaMTX + FFmpeg (Core in `0.1.0`, `dashboard` in `0.1.1`, observability-Profil in `0.1.2`) | Core: vor `0.1.0`-DoD; Erweiterungen mit jeweiligem Sub-Release | MVP-7..MVP-9; F-82..F-88                                  |
 | 11  | ✅      | Observability-Stack (Prometheus + optional Grafana, OTel-Collector) — `0.1.2` (siehe `plan-0.1.2.md`)                 | Nach `0.1.1`-Release                                            | MVP-10, MVP-15; F-89..F-94                                |
-| 12  | ✅      | `docs/plan-0.2.0.md` anlegen und `0.2.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.1.2`-Release                                            | RAK-11..RAK-21                                            |
+| 12  | ✅      | `docs/planning/plan-0.2.0.md` anlegen und `0.2.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.1.2`-Release                                            | RAK-11..RAK-21                                            |
 | 13  | ✅      | Player-SDK-Paketierung und Public API stabilisieren                                                                   | Nach Schritt 12                                                 | RAK-11, RAK-12                                            |
 | 14  | ✅      | Event-Schema-Versionierung und SDK↔Schema-Kompatibilitätscheck in CI planen                                           | Nach Schritt 12                                                 | RAK-13, RAK-21                                            |
 | 15  | ✅      | hls.js-Adapter, HTTP-Transport sowie Batching/Sampling/Retry-Grenzen testbar absichern                                | Nach Schritt 12                                                 | RAK-14, RAK-15, RAK-17                                    |
 | 16  | ✅      | OTel-Transport-Option bewerten und Performance-Budget nachweisen                                                      | Nach Schritt 15                                                 | RAK-16, RAK-18                                            |
 | 17  | ✅      | Browser-Support-Matrix und Demo-Integrationsdoku erstellen                                                            | Nach Schritt 16                                                 | RAK-19, RAK-20                                            |
 | 18  | ✅      | OE-3-Folge-ADR für Persistenz vorbereiten                                                                             | Parallel zu `0.2.0`-Planung                                     | OE-3; MVP-16                                              |
-| 19  | ✅      | `docs/plan-0.3.0.md` anlegen und `0.3.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.2.0`-Release                                            | RAK-22..RAK-28                                            |
+| 19  | ✅      | `docs/planning/plan-0.3.0.md` anlegen und `0.3.0`-Scope in umsetzbare Tranchen schneiden                                       | Nach `0.2.0`-Release                                            | RAK-22..RAK-28                                            |
 | 20  | ⬜      | Stream-Analyzer-Paket `packages/stream-analyzer` anlegen                                                              | Nach Schritt 19                                                 | RAK-22..RAK-26; MVP-33                                    |
 | 21  | ⬜      | HLS-Manifest laden und Master-/Media-Playlist-Erkennung umsetzen                                                      | Nach Schritt 20                                                 | RAK-22, RAK-23, RAK-24                                    |
 | 22  | ⬜      | Segment-Dauern prüfen und JSON-Ergebnisformat stabilisieren                                                           | Nach Schritt 21                                                 | RAK-25, RAK-26                                            |
@@ -128,7 +128,7 @@ geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
 DoD für die erste Phase ist über **AK-1..AK-11** abgedeckt
 (Lastenheft-übergreifend, nicht Release-spezifisch). Detaillierter
 Lieferstand pro Tranche steht in den drei `0.1.x`-Plan-Dokumenten;
-Release-Vorgehen in [`docs/releasing.md`](./releasing.md).
+Release-Vorgehen in [`docs/user/releasing.md`](../user/releasing.md).
 
 ---
 
@@ -136,11 +136,11 @@ Release-Vorgehen in [`docs/releasing.md`](./releasing.md).
 
 Aus `docs/adr/0001-backend-stack.md` §8 erwartete Folge-ADRs.
 Alle sind ⬜ geplant; ADR-Nummer wird beim Schreiben vergeben. Die
-zugehörigen Risiken stehen in `docs/risks-backlog.md`.
+zugehörigen Risiken stehen in `docs/planning/risks-backlog.md`.
 
 | Erwartete ADR                                                 | Trigger-Release                                                | Begründung                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Persistenz-Wechsel In-Memory → SQLite/PostgreSQL (**MVP-16**) | `0.1.0`–`0.2.0`                                                | Draft: [`docs/adr/0002-persistence-store.md`](./adr/0002-persistence-store.md). Spike-In-Memory ist nicht ausreichend, sobald Sessions persistiert werden sollen.                                                                                                                                                                                                                                      |
+| Persistenz-Wechsel In-Memory → SQLite/PostgreSQL (**MVP-16**) | `0.1.0`–`0.2.0`                                                | Draft: [`docs/adr/0002-persistence-store.md`](../adr/0002-persistence-store.md). Spike-In-Memory ist nicht ausreichend, sobald Sessions persistiert werden sollen.                                                                                                                                                                                                                                      |
 | WebSocket vs. SSE für Live-Updates                            | `0.4.0`                                                        | Live-Update-Mechanismus für Trace/Session-Ansicht.                                                                                                                                                                                                                                                                                                                                                     |
 | SRT-Binding-Stack                                             | `0.6.0`                                                        | CGO-Bindings könnten das distroless-static-Pattern brechen.                                                                                                                                                                                                                                                                                                                                            |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`)                 | offen                                                          | Wird nur relevant, wenn Hexagon-Boundaries Disziplin-basiert nicht reichen.                                                                                                                                                                                                                                                                                                                            |
@@ -158,7 +158,7 @@ Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsrege
 
 | Kennung | Entscheidung                                                                     | Wo wird sie getroffen             | Status                                                      |
 | ------- | -------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
-| OE-3    | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | in Arbeit — ADR-Draft [`0002`](./adr/0002-persistence-store.md) |
+| OE-3    | Datenhaltung im MVP (In-Memory vs. SQLite/PostgreSQL) — verknüpft mit **MVP-16** | erste Folge-ADR (`0.1.0`–`0.2.0`) | in Arbeit — ADR-Draft [`0002`](../adr/0002-persistence-store.md) |
 | OE-5    | Live-Updates: Polling / WebSocket / SSE                                          | Folge-ADR `0.4.0`                 | offen                                                       |
 
 ---
@@ -178,7 +178,7 @@ die für `0.1.0`+ relevanten Punkte:
   `make lint` als Soll-Target im Dockerfile.
 - **Docker-only-Workflow**: alle Build-/Test-/Lint-Schritte über
   `docker build --target ...`. Lokales Go ist optional. Pattern aus
-  `docs/plan-spike.md` §14.11 wird beibehalten.
+  `docs/planning/plan-spike.md` §14.11 wird beibehalten.
 - **CI-Artifacts** (SP-41 Lessons-learned): Test-Results,
   Coverage-Reports, Lint-Reports beim CI-Setup hochladen — Pattern
   analog zu `d-migrate/.github/workflows/build.yml`.

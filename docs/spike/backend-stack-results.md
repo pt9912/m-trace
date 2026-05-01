@@ -4,7 +4,7 @@
 > (Kotlin/Micronaut) werden direkt hierher committed; AP-3 verdichtet sie
 > zum ADR `docs/adr/0001-backend-stack.md`.
 >
-> **Bezug**: `docs/plan-spike.md` (§4.1, §6.2, §6.3, §7.3, §10),
+> **Bezug**: `docs/planning/plan-spike.md` (§4.1, §6.2, §6.3, §7.3, §10),
 > `docs/spike/0001-backend-stack.md` (§9 Bewertungsraster).
 
 ---

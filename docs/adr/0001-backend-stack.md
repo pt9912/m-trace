@@ -3,7 +3,7 @@
 > **Status**: Accepted  
 > **Datum**: 2026-04-28  
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)  
-> **Bezug**: `spec/lastenheft.md` §9.1, §10.1; `docs/plan-spike.md`;
+> **Bezug**: `spec/lastenheft.md` §9.1, §10.1; `docs/planning/plan-spike.md`;
 > `docs/spike/0001-backend-stack.md`;
 > `spec/backend-api-contract.md`;
 > `docs/spike/backend-stack-results.md`.
@@ -14,7 +14,7 @@
 
 Lastenheft §9.1 hielt die Wahl zwischen Go und Micronaut bewusst offen.
 Spike gemäß `docs/spike/0001-backend-stack.md` und Implementierungsplan
-`docs/plan-spike.md` durchgeführt: zwei Prototypen mit identischem
+`docs/planning/plan-spike.md` durchgeführt: zwei Prototypen mit identischem
 Muss-Scope (`spec/backend-api-contract.md`), Docker-only-Workflow,
 ein gemeinsames Spike-Protokoll auf `main`.
 
@@ -171,7 +171,7 @@ ursprünglich offen:**
 - Coverage: Kover entfällt; `go test -cover` ist seit Pre-MVP
   `0.1.0` als Coverage-Werkzeug eingeführt — Pflicht-Gate mit
   90 %-Threshold und HTML-/Übersicht-Report (siehe
-  `docs/quality.md` §3).
+  `docs/user/quality.md` §3).
 - detekt-Konfig fällt weg; `golangci-lint` mit Default-Lintern
   ist die Soll-Vorgabe.
 
@@ -220,7 +220,7 @@ als Runtime. Bleibt unverändert aus dem Spike (`apps/api/Dockerfile`).
 
 - Lastenheft (`spec/lastenheft.md`): §9.1, §10.1, §16.2.
 - Spike-Spec (`docs/spike/0001-backend-stack.md`): §6, §7, §9, §11, §15.
-- Spike-Plan (`docs/plan-spike.md`): §4.6 (Entscheidungsregel),
+- Spike-Plan (`docs/planning/plan-spike.md`): §4.6 (Entscheidungsregel),
   §7.2 (Mess-Punkte), §7.3 (Bewertungsraster), §10 (DoD), §11
   (Anschluss an MVP).
 - API-Kontrakt (`spec/backend-api-contract.md`): vollständig.

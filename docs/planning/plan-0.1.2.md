@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.2` (Observability-Stack)
 
 > **Status**: ✅ implementiert. Observability-Profil, RAK-9 und RAK-10 sind umgesetzt und lokal verifiziert.  
-> **Bezug**: [Lastenheft `1.1.6`](../spec/lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../spec/architecture.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.2`-Start, nicht zum heutigen Zeitpunkt)**:
 >
 > - [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.1` (§5).
@@ -121,7 +121,7 @@ DoD:
 ### 4.1 Übergreifende DoD `0.1.2` (Lastenheft §18, `0.1.2`-Anteil)
 
 - [x] `CHANGELOG.md` enthält Eintrag für `0.1.2` (`79be435`).
-- [x] README/`docs/local-development.md` ergänzt um die `make dev-observability`-Variante und die Service-URLs (Prometheus, Grafana, OTel-Collector) — RAK-8-Refinement (`beabcd5`).
+- [x] README/`docs/user/local-development.md` ergänzt um die `make dev-observability`-Variante und die Service-URLs (Prometheus, Grafana, OTel-Collector) — RAK-8-Refinement (`beabcd5`).
 
 ---
 

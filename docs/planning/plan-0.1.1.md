@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: ✅ abgeschlossen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
-> **Bezug**: [Lastenheft `1.1.6`](../spec/lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../spec/architecture.md); [API-Kontrakt](../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
 > - Tranche 0 (Pre-MVP-Vorbereitung): `[x]` — bereits heute erfüllt.
@@ -118,7 +118,7 @@ DoD:
 - [x] **API-Origin-Strategie** für beide Endpoint-Klassen aus `plan-0.1.0.md` §5.1 (`1a6a6c7`):
     - **GET-Routen** (Dashboard-API-Client): im **Vite-Dev-Mode** SvelteKit/Vite-Proxy (`/api/*` → `http://localhost:8080`), damit Browser-CORS entfällt; im **Compose-Production-Build** über getrennten Origin mit den `0.1.0`-CORS-Headers für den Dashboard-Lese-Pfad.
     - **POST `/api/playback-events`** (Player-SDK auf der `/demo`-Route): immer Cross-Origin gegen `apps/api`, weil das SDK projektunabhängig konfigurierbar sein soll. Nutzt die `0.1.0`-CORS-Headers für den Player-SDK-Pfad inklusive Variante-B-Origin-Validierung (Preflight gegen globale Allowed-Origins-Union, POST-Validierung Origin↔`project_id`). Vite-Dev-Proxy ist hier **kein** Ersatz, weil das SDK unabhängig vom Dashboard ausgeliefert werden können muss; im Dev-Mode greift dasselbe CORS-Setup.
-- [x] **NF-37 CSP-Beispiele** für `connect-src`: `docs/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `spec/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`) (`35eba88`, `bae4a2a`).
+- [x] **NF-37 CSP-Beispiele** für `connect-src`: `docs/user/local-development.md` §3 ergänzt einen Mustertext (z. B. `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`) für Dashboard-Auslieferung; `spec/telemetry-model.md` §1 ergänzt SDK-bezogene `connect-src`-Beispiele für Drittanbieter-Embeds (z. B. `connect-src 'self' https://collector.example.com`) (`35eba88`, `bae4a2a`).
 - [x] Frontend-Styling: OE-4 entscheiden — eigenes CSS ohne Tailwind/UI-Library (`1a6a6c7`).
 
 ---

@@ -901,7 +901,7 @@ und MVP-28/MVP-29 in Patch `1.0.2`):
 > `stream-generator`; `0.1.1` ergänzt `dashboard`; `0.1.2` aktiviert
 > die Soll-Tabelle über das `observability`-Compose-Profil. Der
 > jeweilige Sub-Release-Pflicht-Subset steht im zugehörigen
-> Plan-Dokument (`docs/plan-0.1.x.md`).
+> Plan-Dokument (`docs/planning/plan-0.1.x.md`).
 
 #### Erwarteter Startbefehl
 
@@ -1133,11 +1133,11 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `LICENSE` | Lizenz |
 | `SECURITY.md` | Sicherheitsmeldungen |
 | `spec/architecture.md` | Architekturüberblick |
-| `docs/local-development.md` | lokale Entwicklung |
+| `docs/user/local-development.md` | lokale Entwicklung |
 | `spec/telemetry-model.md` | Telemetrie- und Eventmodell |
 | `spec/player-sdk.md` | Player-SDK-Nutzung |
 | `docs/stream-analyzer.md` | Stream Analyzer |
-| `docs/roadmap.md` | geplante Entwicklung |
+| `docs/planning/roadmap.md` | geplante Entwicklung |
 
 ---
 
@@ -1354,7 +1354,7 @@ Mindestanforderungen an die Implementierung:
 - klare Trennung von Domain, Application und Adapters (Hexagon-Layout `hexagon/{domain,application,port/{driving,driven}}`, `adapters/{driving,driven}/...`)
 - Containerisierung per Docker
 
-Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe `docs/roadmap.md` §4 Folge-ADR).
+Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe `docs/planning/roadmap.md` §4 Folge-ADR).
 
 
 ### 10.2 Frontend
@@ -1766,13 +1766,13 @@ Backend-Technologie wurde durch zwei lauffähige Mini-Prototypen (Go,
 Micronaut) im identischen Muss-Scope entschieden. Dokumentation:
 
 - Spike-Spezifikation: `docs/spike/0001-backend-stack.md`
-- Implementierungsplan: `docs/plan-spike.md`
+- Implementierungsplan: `docs/planning/plan-spike.md`
 - API-Kontrakt: `spec/backend-api-contract.md`
 - Spike-Protokoll: `docs/spike/backend-stack-results.md`
 - Entscheidung: `docs/adr/0001-backend-stack.md` (Status: Accepted) — **Go**
 
 Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
-(siehe `docs/roadmap.md` §1).
+(siehe `docs/planning/roadmap.md` §1).
 
 ---
 
