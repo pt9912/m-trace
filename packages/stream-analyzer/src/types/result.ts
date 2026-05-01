@@ -1,8 +1,14 @@
+import type { AnalysisErrorResult } from "./error.js";
 import type { AnalysisFinding } from "./finding.js";
 
 /**
  * Grobe Klassifikation der erkannten Manifestform. Weitere Werte
  * (z. B. DASH-MPD-Varianten, F-73) sind additiv erlaubt.
+ *
+ * Konsumenten, die exhaustiv über diesen Typ schalten, sollten einen
+ * `default`-Branch behalten — neue Werte werden additiv ergänzt und
+ * brechen sonst den Konsumenten-Build (siehe `docs/user/stream-
+ * analyzer.md` §4).
  */
 export type PlaylistType = "master" | "media" | "unknown";
 
@@ -28,6 +34,14 @@ export interface AnalysisSummary {
  * Kennzeichnet, welcher Analyzer das Ergebnis erzeugt hat. Heute nur
  * `"hls"`; weitere Manifestformate (DASH, CMAF — F-73) werden additiv
  * als zusätzliche Werte ergänzt, ohne den Envelope zu brechen.
+ *
+ * Forward-Note: wenn DASH/CMAF eingeführt werden, ist die natürliche
+ * Form per-kind-Variants (`HlsAnalysisResult | DashAnalysisResult`),
+ * bei denen `analyzerKind` als äußerer Diskriminator und
+ * `playlistType` (HLS-spezifisch) bzw. eine analoge Klassifikation
+ * (DASH-spezifisch) als innerer Diskriminator dient. Das aktuelle
+ * Schema blockiert das nicht; `BaseAnalysisResult` wird dann
+ * entweder pro Kind aufgespalten oder generisch.
  */
 export type AnalyzerKind = "hls";
 
@@ -56,6 +70,15 @@ export interface MediaAnalysisResult extends BaseAnalysisResult {
   readonly details: MediaPlaylistDetails;
 }
 
+/**
+ * HLS-Manifest, das als Manifest erkannt, aber weder als Master noch
+ * als Media klassifiziert wurde. `details: null` ist hier eine
+ * HLS-spezifische Entscheidung — wenn ein zukünftiger DASH-Analyzer
+ * eine analoge „unbekannt"-Variante braucht, bekommt er einen
+ * eigenen Result-Typ (siehe Forward-Note an `AnalyzerKind`) und kann
+ * dort eigene Diagnose-Felder mitliefern, ohne diese Variante zu
+ * brechen.
+ */
 export interface UnknownAnalysisResult extends BaseAnalysisResult {
   readonly playlistType: "unknown";
   readonly details: null;
@@ -74,6 +97,14 @@ export interface UnknownAnalysisResult extends BaseAnalysisResult {
  * `docs/user/stream-analyzer.md` und `docs/planning/plan-0.3.0.md`.
  */
 export type AnalysisResult = MasterAnalysisResult | MediaAnalysisResult | UnknownAnalysisResult;
+
+/**
+ * Vollständiger Rückgabetyp von `analyzeHlsManifest`. Trennt Erfolg
+ * (`status === "ok"`) und Fehler (`status === "error"`) statisch.
+ * Konsumenten sollten direkt diesen Typ verwenden, statt die Union
+ * lokal aus `AnalysisResult | AnalysisErrorResult` zusammenzusetzen.
+ */
+export type AnalyzeOutput = AnalysisResult | AnalysisErrorResult;
 
 /**
  * Ein Variant aus `#EXT-X-STREAM-INF`. Pflichtfeld ist `bandwidth`;

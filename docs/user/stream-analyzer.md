@@ -221,9 +221,14 @@ Diskriminator-Feld verlassen. Beispiel (URL gegen lokale Adresse):
   "analyzerKind": "hls",
   "code": "fetch_blocked",
   "message": "Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ip_blocked.",
-  "details": { "host": "internal.example.test", "address": "10.0.0.5", "family": 4 }
+  "details": { "hop": 0, "host": "internal.example.test", "address": "10.0.0.5", "family": 4 }
 }
 ```
+
+`details.hop` ist ein 0-basierter Zähler über die Redirect-Kette
+(0 = ursprünglicher Request, 1 = erste Weiterleitung); er taucht in
+allen `fetch_*`-Fehlern auf und ist hilfreich, um zu erkennen, in
+welchem Hop ein SSRF-Block bzw. ein Statuscode-Problem auftrat.
 
 ## 3. Scope
 
@@ -274,18 +279,35 @@ Minor unverändert bleibt:
   zeigen Konsumenten an, dass sie das Result mit einem anderen
   Detail-Schema interpretieren müssen.
 
+**Exhaustive Switches**: Konsumenten, die per `switch`-Anweisung
+über `analyzerKind`, `playlistType`, `code` (`AnalysisErrorCode`)
+oder Finding-Codes verzweigen, sollten einen `default`-Branch
+behalten. Neue Werte werden additiv ergänzt — ein TypeScript-
+Konsument ohne Default-Fall bricht beim Upgrade auf eine spätere
+Minor-Version den eigenen Build (TS bemängelt nicht-erschöpfte
+Cases). Eine Default-Behandlung als „Info ignorieren" oder
+„unbekannt loggen" ist forward-kompatibel.
+
 `analyzerVersion` aus `package.json` wird in jedem Result
-mitgeliefert (Erfolg und Fehler), damit Konsumenten Schema-Drift
-erkennen können.
+mitgeliefert (Erfolg und Fehler). Sie reflektiert die Bake-Zeit
+des Analyzer-Pakets, nicht die Laufzeit. Operativ aussagekräftig
+ist deshalb der Vergleich gegen eine **erwartete** Version aus
+Konfiguration oder Service-Discovery — nicht gegen den eigenen
+`STREAM_ANALYZER_VERSION`-Import (der ist zwangsläufig identisch).
 
 ### 4.1 Serialisierungsgarantien
 
 Diese Eigenschaften sind als Tests in
 `tests/result-stability.test.ts` festgenagelt:
 
-- **Deterministisch**: zwei Aufrufe mit identischer Eingabe liefern
-  byte-identische `JSON.stringify(result)`-Strings — keine
-  Map-Iterations-Drift, keine Zeitstempel im Result.
+- **Deterministisch innerhalb eines Prozesses**: zwei Aufrufe mit
+  identischer Eingabe liefern byte-identische
+  `JSON.stringify(result)`-Strings — keine Map-Iterations-Drift,
+  keine Zeitstempel im Result. Cross-Process-Determinismus ist nicht
+  garantiert (V8 kann z. B. Hash-Randomization für nicht-string
+  Keys nutzen); in der Praxis sind aber alle Result-Objekte aus
+  Object-Literals mit fixer Schlüsselreihenfolge gebaut, sodass
+  cross-Process-Stabilität de facto gilt.
 - **Round-Trip-stabil**: `JSON.parse(JSON.stringify(result))` ist
   deep-equal zum Original. Damit kann das Result über Prozess- oder
   Service-Grenzen geschickt werden, ohne dass strukturierte
