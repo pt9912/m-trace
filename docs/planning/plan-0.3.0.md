@@ -236,7 +236,7 @@ DoD:
 - [x] `CHANGELOG.md` enthält den Versionsabschnitt `[0.3.0] - 2026-05-01` mit Auflistung aller Tranche-1..7.5-Liefermerkmale.
 - [x] Release-Gates grün: CI führt `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make sdk-performance-smoke` und `make smoke-cli` aus. `make smoke-analyzer` (volle Compose-Topologie hochfahren) bleibt manuelles Release-Gate; lokal vor dem Tag-Schnitt verifiziert.
 - [x] `make browser-e2e` ist nicht durch Analyzer-Änderungen betroffen (kein Touch an Player-SDK-Wire-Format-Routen, Dashboard-Routen, MediaMTX-Topologie); bleibt manuelles Release-Gate gemäß DoD-Wortlaut.
-- [x] Release-Prozess aus `docs/user/releasing.md` ist durchgeführt: Release-Commit `c8d4238` existiert, annotierter Tag `v0.3.0` zeigt darauf, GitHub-Release wird nach `git push` mit `gh release create` erzeugt (Release-Notes aus dem `[0.3.0]`-CHANGELOG-Block).
+- [x] Release-Prozess aus `docs/user/releasing.md` ist durchgeführt: Release-Commit `c8d4238` existiert; Buchführungs-Folge-Commits `5389afc` (DoD-Flip) und `c0f6ef7` (Review-Fixes) bündeln den finalen Stand; annotierter Tag `v0.3.0` zeigt auf `c0f6ef7`, damit ein Clone am Tag-Stand den vollständigen Tranche-8-Lieferstand erhält. GitHub-Release wird nach `git push` mit `gh release create` erzeugt (Release-Notes aus dem `[0.3.0]`-CHANGELOG-Block).
 - [x] OE-3/Persistenz ist explizit nicht-blockierend deferred: `0.3.0` speichert Analyseergebnisse nicht durable; jeder `POST /api/analyze`-Aufruf ist stateless. Damit bleibt der ADR-0002-Draft (`docs/adr/0002-persistence-store.md`) für `0.4.0` offen, ohne `0.3.0` zu blockieren (siehe Roadmap §5 OE-3).
 
 ---
