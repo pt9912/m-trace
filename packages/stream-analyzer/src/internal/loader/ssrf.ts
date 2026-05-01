@@ -5,12 +5,15 @@
  * (IPv4 und IPv6). Die Funktionen sind reine Datenfunktionen, damit
  * sie ohne Netzwerk testbar sind.
  *
- * DNS-Rebinding-Entscheidung: der Loader löst den Host genau einmal
- * auf, prüft alle zurückgegebenen Adressen gegen die Sperrlisten und
- * dialt anschließend gegen die geprüfte IP-Adresse. Damit kann ein
- * zweiter DNS-Lookup nicht mehr auf eine private Adresse umschwenken.
- * Klartextform und Vertrag sind in `docs/user/stream-analyzer.md`
- * dokumentiert.
+ * DNS-Rebinding-Entscheidung (siehe `docs/user/stream-analyzer.md`
+ * §6): der Loader klassifiziert den Hostnamen einmal — IP-Literale
+ * werden direkt gegen die Sperrlisten geprüft, Domain-Hostnamen über
+ * `LoaderRuntime.resolveHost` aufgelöst — und delegiert die eigent-
+ * liche Verbindung anschließend an die globale `fetch`-Implemen-
+ * tierung. Ein TCP-Pin gegen die validierte IP wäre Tranche-6-Arbeit
+ * (custom Dispatcher); 0.3.0 verzichtet bewusst darauf und verlässt
+ * sich für vollen Rebinding-Schutz auf eine zusätzliche Egress-/
+ * Firewall-Schicht.
  */
 
 const ALLOWED_SCHEMES: ReadonlySet<string> = new Set(["http:", "https:"]);

@@ -107,6 +107,73 @@ describe("loadHlsManifest — SSRF runtime path", () => {
     });
   });
 
+  it("blocks IPv4 literal hostnames without consulting DNS", async () => {
+    let resolveCalled = false;
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        resolveCalled = true;
+        return [];
+      },
+      async fetch() {
+        throw new Error("should not reach");
+      }
+    };
+    await expect(loadHlsManifest("https://127.0.0.1/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+      code: "fetch_blocked"
+    });
+    expect(resolveCalled).toBe(false);
+  });
+
+  it("blocks IPv6 literal hostnames in private ranges", async () => {
+    let resolveCalled = false;
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        resolveCalled = true;
+        return [];
+      },
+      async fetch() {
+        throw new Error("should not reach");
+      }
+    };
+    await expect(loadHlsManifest("https://[fc00::1]/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+      code: "fetch_blocked"
+    });
+    expect(resolveCalled).toBe(false);
+  });
+
+  it("blocks IPv6 loopback literal", async () => {
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        throw new Error("should not reach");
+      },
+      async fetch() {
+        throw new Error("should not reach");
+      }
+    };
+    await expect(loadHlsManifest("https://[::1]/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+      code: "fetch_blocked"
+    });
+  });
+
+  it("allows public IPv6 literal hostnames", async () => {
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        throw new Error("should not reach");
+      },
+      async fetch() {
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "application/vnd.apple.mpegurl" : null) },
+          body: (async function* () {
+            yield new TextEncoder().encode("#EXTM3U\n");
+          })()
+        };
+      }
+    };
+    const result = await loadHlsManifest("https://[2001:4860:4860::8888]/m.m3u8", loadOpts(runtime));
+    expect(result.text).toBe("#EXTM3U\n");
+  });
+
   it("blocks if any resolved address is private (mixed dual-stack response)", async () => {
     const runtime = makeRuntime({
       resolve: [
@@ -282,6 +349,45 @@ describe("loadHlsManifest — fetch failures", () => {
     await expect(
       loadHlsManifest("https://slow.test/m.m3u8", loadOpts(runtime, { timeoutMs: 10 }))
     ).rejects.toMatchObject({ code: "fetch_failed" });
+  });
+
+  it("aborts slow body streams on timeout, not just header phase", async () => {
+    // Slow-Loris-Stub: Header sind sofort da, der Body trickelt
+    // jedoch über `setTimeout`-Chunks. Der Timer muss den Body
+    // abbrechen, sonst hängt der Loader bis maxBytes (Slow-Loris).
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        return [{ address: "1.1.1.1", family: 4 }];
+      },
+      async fetch(_url, init) {
+        async function* slowBody() {
+          for (let i = 0; i < 1000; i++) {
+            await new Promise<void>((resolve, reject) => {
+              const t = setTimeout(resolve, 50);
+              init.signal.addEventListener(
+                "abort",
+                () => {
+                  clearTimeout(t);
+                  reject(new DOMException("aborted", "AbortError"));
+                },
+                { once: true }
+              );
+            });
+            yield new TextEncoder().encode("x");
+          }
+        }
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "application/vnd.apple.mpegurl" : null) },
+          body: slowBody()
+        };
+      }
+    };
+    const start = Date.now();
+    await expect(
+      loadHlsManifest("https://slow.test/m.m3u8", loadOpts(runtime, { timeoutMs: 50, maxBytes: 100_000 }))
+    ).rejects.toMatchObject({ code: "fetch_failed", message: expect.stringContaining("Timeout") });
+    expect(Date.now() - start).toBeLessThan(2_000); // nicht maxBytes-gebunden
   });
 
   it("wraps generic fetch errors as fetch_failed", async () => {

@@ -58,6 +58,17 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
     expect(result.code).toBe("manifest_not_hls");
   });
 
+  it("rejects whitespace-only manifests with manifest_not_hls", async () => {
+    const result = (await analyzeHlsManifest({
+      kind: "text",
+      text: "\n\n   \n\t\n"
+    })) as AnalysisErrorResult;
+
+    expect(result.status).toBe("error");
+    expect(result.code).toBe("manifest_not_hls");
+    expect(result.message).toContain("leer");
+  });
+
   it("classifies malformed HLS files but still emits findings", async () => {
     const result = (await analyzeHlsManifest({
       kind: "text",
