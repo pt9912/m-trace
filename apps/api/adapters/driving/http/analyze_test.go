@@ -54,6 +54,7 @@ func TestAnalyzeHandler_Success_URL(t *testing.T) {
 		result: domain.StreamAnalysisResult{
 			AnalyzerVersion: "0.3.0",
 			PlaylistType:    domain.PlaylistTypeMaster,
+			Summary:         domain.StreamAnalysisSummary{ItemCount: 3},
 			Findings: []domain.StreamAnalysisFinding{
 				{Code: "playlist_ambiguous", Level: domain.FindingLevelWarning, Message: "ambiguous"},
 			},
@@ -75,6 +76,9 @@ func TestAnalyzeHandler_Success_URL(t *testing.T) {
 	got := string(body)
 	if !strings.Contains(got, `"playlistType":"master"`) || !strings.Contains(got, `"variants":[]`) {
 		t.Errorf("response missing fields: %s", got)
+	}
+	if !strings.Contains(got, `"summary":{"itemCount":3}`) {
+		t.Errorf("response missing summary.itemCount=3: %s", got)
 	}
 	if stub.gotReq.ManifestURL != "https://example.test/m.m3u8" {
 		t.Errorf("URL not propagated: %+v", stub.gotReq)

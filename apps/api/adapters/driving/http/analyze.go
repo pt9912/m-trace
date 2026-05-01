@@ -52,9 +52,21 @@ type analyzeResponseEnvelope struct {
 	Status          string                  `json:"status"`
 	AnalyzerVersion string                  `json:"analyzerVersion"`
 	AnalyzerKind    string                  `json:"analyzerKind"`
+	Input           analyzeInputPayload     `json:"input"`
 	PlaylistType    string                  `json:"playlistType"`
+	Summary         analyzeSummaryPayload   `json:"summary"`
 	Findings        []analyzeFindingPayload `json:"findings"`
 	Details         json.RawMessage         `json:"details"`
+}
+
+type analyzeInputPayload struct {
+	Source  string `json:"source"`
+	URL     string `json:"url,omitempty"`
+	BaseURL string `json:"baseUrl,omitempty"`
+}
+
+type analyzeSummaryPayload struct {
+	ItemCount int `json:"itemCount"`
 }
 
 type analyzeFindingPayload struct {
@@ -119,7 +131,13 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// (F-73) eingeführt werden, übernimmt das die Domain (per-kind
 		// Result-Variant) und das Feld kommt aus result.AnalyzerKind.
 		AnalyzerKind: "hls",
+		Input: analyzeInputPayload{
+			Source:  result.Input.Source,
+			URL:     result.Input.URL,
+			BaseURL: result.Input.BaseURL,
+		},
 		PlaylistType: string(result.PlaylistType),
+		Summary:      analyzeSummaryPayload{ItemCount: result.Summary.ItemCount},
 		Findings:     findingsToPayload(result.Findings),
 	}
 	if len(result.EncodedDetails) > 0 {

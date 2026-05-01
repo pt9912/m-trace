@@ -108,6 +108,30 @@ func (e *StreamAnalysisDomainError) Error() string {
 	return string(e.Code) + ": " + e.Message
 }
 
+// StreamAnalysisSummary aggregiert die Manifestauswertung in eine
+// kleine Top-Level-Struktur (RAK-26-konformes Wire-Format). `ItemCount`
+// zählt bei Master-Playlists Variants+Renditions, bei Media-Playlists
+// Segmente und ist 0 für `unknown`. Tranche 5 in der TS-Library hat
+// `AnalysisSummary` als gleichnamigen, additiv erweiterbaren Typ
+// dokumentiert (`docs/user/stream-analyzer.md` §2.2); diese Domain-
+// Spiegelung erlaubt dem API-Adapter, das Feld vom analyzer-service
+// in die `POST /api/analyze`-Antwort durchzureichen, statt es zu
+// verwerfen.
+type StreamAnalysisSummary struct {
+	ItemCount int
+}
+
+// StreamAnalysisInputMetadata spiegelt das `input`-Feld aus dem
+// AnalysisResult-Wire-Format (Tranche 5). `Source` ist `"text"` oder
+// `"url"`; `URL` ist nur bei `Source == "url"` gesetzt; `BaseURL`
+// trägt die finale URL nach Redirects (URL-Input) bzw. die optionale
+// Base-URL aus dem Text-Input.
+type StreamAnalysisInputMetadata struct {
+	Source  string
+	URL     string
+	BaseURL string
+}
+
 // StreamAnalysisResult ist das Domain-Modell der Analyseausgabe. Das
 // stabile JSON-Schema entsteht in plan-0.3.0 Tranche 5; bis dahin
 // reicht die Domain die analyzer-spezifischen Detail-Strukturen als
@@ -117,8 +141,14 @@ type StreamAnalysisResult struct {
 	// AnalyzerVersion stammt aus packages/stream-analyzer/package.json
 	// (plan-0.3.0 §2 Tranche 1: Versionssynchronizität).
 	AnalyzerVersion string
+	// Input spiegelt die ursprüngliche Eingabeform; vom analyzer-
+	// service durchgereicht, damit Konsumenten Text-/URL-Pfade
+	// unterscheiden können (RAK-26-Pflichtfeld).
+	Input StreamAnalysisInputMetadata
 	// PlaylistType klassifiziert das Manifest.
 	PlaylistType PlaylistType
+	// Summary ist das Aggregat (RAK-26-Pflichtfeld im Wire-Format).
+	Summary StreamAnalysisSummary
 	// Findings sind die Drei-Stufen-Befunde aus Tranche 4.
 	Findings []StreamAnalysisFinding
 	// EncodedDetails ist die typspezifische Detail-Sektion, vorcodiert

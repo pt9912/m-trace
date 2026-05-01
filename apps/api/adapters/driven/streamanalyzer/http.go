@@ -154,7 +154,9 @@ type analyzeResponseEnvelope struct {
 	Status          string                  `json:"status"`
 	AnalyzerVersion string                  `json:"analyzerVersion"`
 	AnalyzerKind    string                  `json:"analyzerKind"`
+	Input           analyzeInputPayload     `json:"input"`
 	PlaylistType    string                  `json:"playlistType"`
+	Summary         analyzeSummaryPayload   `json:"summary"`
 	Findings        []analyzeFindingPayload `json:"findings"`
 	Details         json.RawMessage         `json:"details"`
 	// Fehler-Felder (nur bei status="error" relevant). Das
@@ -164,6 +166,16 @@ type analyzeResponseEnvelope struct {
 	Code         string          `json:"code"`
 	Message      string          `json:"message"`
 	ErrorDetails json.RawMessage `json:"-"`
+}
+
+type analyzeInputPayload struct {
+	Source  string `json:"source"`
+	URL     string `json:"url,omitempty"`
+	BaseURL string `json:"baseUrl,omitempty"`
+}
+
+type analyzeSummaryPayload struct {
+	ItemCount int `json:"itemCount"`
 }
 
 // rawErrorEnvelope ist das Schmal-Schema für Domain-Fehler (`status:
@@ -200,8 +212,14 @@ func parseSuccessResponse(raw []byte) (domain.StreamAnalysisResult, error) {
 
 	result := domain.StreamAnalysisResult{
 		AnalyzerVersion: env.AnalyzerVersion,
-		PlaylistType:    mapPlaylistType(env.PlaylistType),
-		Findings:        mapFindings(env.Findings),
+		Input: domain.StreamAnalysisInputMetadata{
+			Source:  env.Input.Source,
+			URL:     env.Input.URL,
+			BaseURL: env.Input.BaseURL,
+		},
+		PlaylistType: mapPlaylistType(env.PlaylistType),
+		Summary:      domain.StreamAnalysisSummary{ItemCount: env.Summary.ItemCount},
+		Findings:     mapFindings(env.Findings),
 	}
 	// `details: null` und fehlendes Feld werden beide als leerer Slice
 	// transportiert; jeder andere Inhalt landet als JSON-Bytes in

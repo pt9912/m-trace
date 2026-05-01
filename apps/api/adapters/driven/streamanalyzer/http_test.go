@@ -66,6 +66,9 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_Master(t *testing.T) {
 	if result.PlaylistType != domain.PlaylistTypeMaster {
 		t.Errorf("playlistType: want master, got %q", result.PlaylistType)
 	}
+	if result.Summary.ItemCount != 1 {
+		t.Errorf("summary.itemCount: want 1, got %d", result.Summary.ItemCount)
+	}
 	if len(result.Findings) != 1 || result.Findings[0].Level != domain.FindingLevelInfo {
 		t.Errorf("findings unexpected: %+v", result.Findings)
 	}

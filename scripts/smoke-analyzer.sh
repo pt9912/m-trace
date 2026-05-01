@@ -88,14 +88,16 @@ if ! grep -qE '"analyzerKind":"hls"' "$tmpdir/master.body"; then
 fi
 echo "[smoke-analyzer] master case OK"
 
-# 4. SSRF-Negativfall: private IP wird vom analyzer-service abgelehnt;
-#    der Domain-Code fetch_blocked wird vom API-Adapter auf 400
-#    durchgereicht (Aufrufer hat eine unsichere URL geliefert — das
-#    ist kein Verfügbarkeitsproblem unseres Service).
+# 4. SSRF-Negativfall: Credentials in URL werden unabhängig vom
+#    ALLOW_PRIVATE_NETWORKS-Flag geblockt. Im Compose-Lab steht das
+#    Flag auf true (intern erreichbares mediamtx), deshalb ist
+#    Credentials der robustere Negativtest — der greift in Lab und
+#    Produktion. Der API-Adapter mappt den Domain-Code fetch_blocked
+#    auf 400.
 status="$(curl -sSL -o "$tmpdir/ssrf.body" -w '%{http_code}' \
   -X POST "$API_URL/api/analyze" \
   -H 'Content-Type: application/json' \
-  -d '{"kind":"url","url":"http://10.0.0.1/m.m3u8"}')"
+  -d '{"kind":"url","url":"http://user:pass@example.test/m.m3u8"}')"
 if [ "$status" != "400" ]; then
   echo "[smoke-analyzer] SSRF case: expected 400 (fetch_blocked), got $status"
   cat "$tmpdir/ssrf.body"

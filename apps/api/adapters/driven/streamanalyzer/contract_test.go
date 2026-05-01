@@ -51,6 +51,9 @@ func TestHTTPStreamAnalyzer_ContractSuccessFixture(t *testing.T) {
 	if result.PlaylistType != domain.PlaylistTypeMaster {
 		t.Errorf("PlaylistType: want master, got %q", result.PlaylistType)
 	}
+	if result.Summary.ItemCount != 2 {
+		t.Errorf("Summary.ItemCount: want 2 (1 variant + 1 rendition), got %d", result.Summary.ItemCount)
+	}
 	if len(result.Findings) != 0 {
 		t.Errorf("Findings: want empty, got %v", result.Findings)
 	}
