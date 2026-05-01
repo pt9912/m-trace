@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild
 
 help:
 	@printf '%s\n' \
@@ -30,6 +30,8 @@ help:
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
 		'  make gates                  Run test, lint, coverage and architecture gates' \
 		'  make ci                     Run gates plus build' \
+		'  make install                pnpm install --frozen-lockfile' \
+		'  make fullbuild              Install + workspace/api build + gates (CI-äquivalent von clean)' \
 		'' \
 		'Variables:' \
 		'  COMPOSE="docker compose" PNPM=pnpm API_MAKE="$(MAKE) -C apps/api"' \
@@ -69,7 +71,12 @@ test: api-test workspace-test
 api-test:
 	$(API_MAKE) test
 
-workspace-test:
+# Workspace-Pakete mit pnpm-Workspace-Deps (analyzer-service →
+# stream-analyzer) brauchen die `dist/`-Artefakte ihrer Dependencies,
+# bevor Tests/Lint/Coverage laufen können. `pnpm -r run build`
+# respektiert den Topo-Sort und baut Dependencies vor Consumern; wir
+# binden den Build deshalb als harte Vorbedingung ein.
+workspace-test: workspace-build
 	$(PNPM) run test
 
 lint: api-lint workspace-lint
@@ -77,7 +84,7 @@ lint: api-lint workspace-lint
 api-lint:
 	$(API_MAKE) lint
 
-workspace-lint:
+workspace-lint: workspace-build
 	$(PNPM) run lint
 
 build: api-build workspace-build
@@ -93,7 +100,7 @@ coverage-gate: api-coverage-gate workspace-coverage-gate
 api-coverage-gate:
 	$(API_MAKE) coverage-gate THRESHOLD="$(THRESHOLD)"
 
-workspace-coverage-gate:
+workspace-coverage-gate: workspace-build
 	$(PNPM) --filter @npm9912/player-sdk run test:coverage
 	$(PNPM) --filter @npm9912/m-trace-dashboard run test:coverage
 	$(PNPM) --filter @npm9912/stream-analyzer run test:coverage
@@ -111,3 +118,11 @@ sdk-performance-smoke:
 gates: test lint coverage-gate arch-check
 
 ci: gates build
+
+install:
+	$(PNPM) install --frozen-lockfile
+
+# fullbuild ist der kanonische End-zu-End-Lauf vom frischen Clone:
+# Dependencies installieren, alles bauen (workspace + api Docker)
+# und alle Gates laufen lassen. Spiegelt das, was CI ausführt.
+fullbuild: install ci
