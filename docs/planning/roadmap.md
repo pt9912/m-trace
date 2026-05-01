@@ -23,7 +23,7 @@ aktualisieren.
 
 | Status | Bereich                  | Ergebnis                                                                                                                              | Verweise                                                                                          |
 | ------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| ✅      | Lastenheft               | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.7`.                                                                             | `spec/lastenheft.md`                                                                              |
+| ✅      | Lastenheft               | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.8`.                                                                             | `spec/lastenheft.md`                                                                              |
 | ✅      | Architektur + ADRs       | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store (Migration in `0.4.0`).             | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`                            |
 | ✅      | Backend Core (`0.1.0`)    | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                              | [`plan-0.1.0.md`](./plan-0.1.0.md)                                                                |
 | ✅      | Player-SDK + Dashboard (`0.1.1`) | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                       | [`plan-0.1.1.md`](./plan-0.1.1.md)                                                                |
@@ -39,8 +39,8 @@ ist noch nicht geplant. Vor dem Scope-Cut:
 | Reihenfolge | Status | Aufgabe                                                                                                | Trigger                | Verweis                                |
 | ----------- | ------ | ------------------------------------------------------------------------------------------------------ | ---------------------- | -------------------------------------- |
 | 1           | ✅      | OE-3/Persistenz entschieden: SQLite als lokaler Durable-Store (ADR-0002 `Accepted`, ausgelöst durch RAK-32). | Vor `0.4.0`-Plan       | OE-3; MVP-16; ADR-0002                 |
-| 2           | ⬜      | OE-5/Live-Updates: Polling vs. WebSocket vs. SSE — Folge-ADR für `0.4.0`.                              | Vor `0.4.0`-Plan       | OE-5                                   |
-| 3           | ⬜      | `docs/planning/plan-0.4.0.md` anlegen und Scope in Tranchen schneiden.                                 | Nach OE-5              | RAK-29..RAK-35                         |
+| 2           | ✅      | OE-5/Live-Updates entschieden: SSE mit Polling-Fallback; kein WebSocket in `0.4.0`.                    | Vor `0.4.0`-Plan       | OE-5; ADR-0003                        |
+| 3           | ✅      | `docs/planning/plan-0.4.0.md` anlegen und Scope in Tranchen schneiden.                                 | Nach OE-5              | RAK-29..RAK-35                         |
 
 ---
 
@@ -81,6 +81,7 @@ Commit-Hashes, z. B. [`docs/planning/plan-0.3.0.md`](./plan-0.3.0.md).
 | 23  | ✅      | API-Anbindung über bestehenden StreamAnalyzer-Port umsetzen                                                           | Nach Schritt 22                                                 | RAK-27; F-22, F-33                                        |
 | 24  | ✅      | CLI-Grundlage für den Stream Analyzer schaffen                                                                        | Nach Schritt 22                                                 | RAK-28; MVP-34                                            |
 | 25  | ✅      | OE-3/Persistenz nach ADR-Draft neu bewerten — Entscheidung getroffen: SQLite (ADR-0002 `Accepted`, RAK-32-getrieben) | Vor `0.4.0`-Scope-Cut                                          | OE-3; MVP-16; ADR-0002                                    |
+| 26  | ✅      | OE-5/Live-Updates entscheiden — SSE mit Polling-Fallback, WebSocket deferred                           | Vor `0.4.0`-Scope-Cut                                          | OE-5; MVP-31; ADR-0003                                    |
 
 ---
 
@@ -113,12 +114,11 @@ Release-Vorgehen in [`docs/user/releasing.md`](../user/releasing.md).
 ## 4. Folge-ADRs
 
 Aus `docs/adr/0001-backend-stack.md` §8 erwartete Folge-ADRs.
-Alle sind ⬜ geplant; ADR-Nummer wird beim Schreiben vergeben. Die
-zugehörigen Risiken stehen in `docs/planning/risks-backlog.md`.
+Die zugehörigen Risiken stehen in `docs/planning/risks-backlog.md`.
 
 | Erwartete ADR                                                 | Trigger-Release                                                | Begründung                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| WebSocket vs. SSE für Live-Updates                            | `0.4.0`                                                        | Live-Update-Mechanismus für Trace/Session-Ansicht.                                                                                                                                                                                                                                                                                                                                                     |
+| [ADR 0003 — Live-Updates via SSE](../adr/0003-live-updates.md) | `0.4.0`                                                        | ✅ Entschieden: SSE mit Polling-Fallback; WebSocket bleibt deferred.                                                                                                                                                                                                                                                                                                                                    |
 | Postgres als produktionsnaher Store (**MVP-40**)              | offen, Trigger Multi-Instance/Multi-Tenant                     | ADR-0002 hat SQLite für `0.4.0` festgelegt; Postgres bleibt Folge-ADR, sobald Skalierungs- oder Multi-Tenant-Anforderungen konkret werden.                                                                                                                                                                                                                                                            |
 | SRT-Binding-Stack                                             | `0.6.0`                                                        | CGO-Bindings könnten das distroless-static-Pattern brechen.                                                                                                                                                                                                                                                                                                                                            |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`)                 | offen                                                          | Wird nur relevant, wenn Hexagon-Boundaries Disziplin-basiert nicht reichen.                                                                                                                                                                                                                                                                                                                            |
@@ -134,9 +134,9 @@ ein Issue darauf hinweist.
 
 Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsregel entfernt.
 
-| Kennung | Entscheidung                                                                     | Wo wird sie getroffen             | Status                                                      |
-| ------- | -------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
-| OE-5    | Live-Updates: Polling / WebSocket / SSE                                          | Folge-ADR `0.4.0`                 | offen                                                       |
+Derzeit keine offenen `OE-X` in der Roadmap. OE-3 ist durch
+[ADR 0002](../adr/0002-persistence-store.md) resolved; OE-5 ist durch
+[ADR 0003](../adr/0003-live-updates.md) resolved.
 
 ---
 

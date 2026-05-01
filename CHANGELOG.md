@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ADR-0003 entscheidet OE-5: Dashboard-Live-Updates in `0.4.0`
+  nutzen Server-Sent Events mit Polling-Fallback; WebSocket bleibt
+  deferred.
+- `docs/planning/plan-0.4.0.md` als Plan für Erweiterte
+  Trace-Korrelation angelegt.
+
+### Changed
+
+- Lastenheft `1.1.8` löst OE-3 und OE-5 auf: SQLite ist ab `0.4.0`
+  der lokale Durable-Store; SSE mit Polling-Fallback ist der
+  Live-Update-Mechanismus.
+
 ## [0.3.0] - 2026-05-01
 
 ### Added

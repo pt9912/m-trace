@@ -216,7 +216,7 @@ Adapter im Zielbild `0.1.0` (`apps/api/`):
 | ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `adapters/driving/http/`       | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer`                                                                   | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`.               |
 | `adapters/driven/auth/`        | Driven  | `StaticProjectResolver`                                                                                                                                                      | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
-| `adapters/driven/persistence/` | Driven  | `InMemoryEventRepository`                                                                                                                                                    | wechselt mit Persistenz-Folge-ADR (Roadmap §4) auf SQLite/PostgreSQL, OE-3.                                                         |
+| `adapters/driven/persistence/` | Driven  | `InMemoryEventRepository`                                                                                                                                                    | wechselt in `0.4.0` gemäß ADR-0002 auf SQLite.                                                         |
 | `adapters/driven/ratelimit/`   | Driven  | `TokenBucket`                                                                                                                                                                | 100 Events/s/Project laut API-Kontrakt §6.                                                                                          |
 | `adapters/driven/metrics/`     | Driven  | `PrometheusPublisher`                                                                                                                                                        | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
 | `adapters/driven/telemetry/`   | Driven  | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
@@ -466,8 +466,8 @@ Folge-ADRs aus [Roadmap §4](../docs/planning/roadmap.md):
 
 | Erwartete ADR                                    | Trigger-Release | Bezug        |
 | ------------------------------------------------ | --------------- | ------------ |
-| Persistenz-Wechsel In-Memory → SQLite/PostgreSQL | `0.1.0`–`0.2.0` | MVP-16, OE-3 |
-| WebSocket vs. SSE für Live-Updates               | `0.4.0`         | OE-5, R-3    |
+| Persistenz via SQLite                            | `0.4.0`         | ADR-0002, MVP-16, OE-3 |
+| Live-Updates via SSE                             | `0.4.0`         | ADR-0003, OE-5, R-3 |
 | SRT-Binding-Stack                                | `0.6.0`         | R-2          |
 | Coverage-Tooling für Go                          | `0.1.0`+        |              |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`)    | on demand       | R-1          |
@@ -547,7 +547,7 @@ flowchart TB
 
 Verweise auf die normativen Listen statt Duplikat:
 
-- Offene Lastenheft-Entscheidungen: [Roadmap §5](../docs/planning/roadmap.md) (OE-3, OE-5).
+- Offene Lastenheft-Entscheidungen: [Roadmap §5](../docs/planning/roadmap.md).
 - Bekannte Phase-2-Risiken: [`risks-backlog.md`](../docs/planning/risks-backlog.md) (R-1..R-3).
 - Erwartete Folge-ADRs: [Roadmap §4](../docs/planning/roadmap.md).
 

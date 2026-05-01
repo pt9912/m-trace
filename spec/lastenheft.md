@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.7<br>
+**Version:** 1.1.8<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
@@ -1748,9 +1748,9 @@ Große Plattform-Betreiber sollen erst später adressiert werden.
 |---|---|---|
 | OE-1 | resolved | Projektlizenz: **MIT** (siehe `LICENSE`) |
 | OE-2 | resolved | Backend-Technologie final: **Go** (siehe `docs/adr/0001-backend-stack.md`) |
-| OE-3 | offen | Datenhaltung im MVP: rein In-Memory oder SQLite/PostgreSQL |
+| OE-3 | resolved | Datenhaltung im MVP: **SQLite als lokaler Durable-Store** ab `0.4.0` (siehe `docs/adr/0002-persistence-store.md`) |
 | OE-4 | resolved | Frontend-Styling im MVP: **eigenes CSS ohne Tailwind/UI-Library** |
-| OE-5 | offen | Live-Updates: Polling, WebSocket oder Server-Sent Events |
+| OE-5 | resolved | Live-Updates: **Server-Sent Events mit Polling-Fallback**; WebSocket nicht in `0.4.0` (siehe `docs/adr/0003-live-updates.md`) |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
 | OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`** |
 | OE-8 | resolved | npm-Paketname Player-SDK: **`@npm9912/player-sdk`** ab `0.2.0`; Lieferstand `0.1.x` wurde unter `@m-trace/player-sdk` ausgeliefert (Lastenheft `1.1.5`, `bae4a2a`), aber nie öffentlich publishet. |

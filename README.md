@@ -375,11 +375,11 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.3.0`: Lastenheft `1.1.7` verbindlich, Player-SDK-Paketierung, Dashboard, Observability-Profil, Demo-Integration und der HLS-Stream-Analyzer (Library, analyzer-service, API-Endpunkt, CLI) sind auf `main` integriert.
+Das Projekt steht bei `0.3.0`: Lastenheft `1.1.8` verbindlich, Player-SDK-Paketierung, Dashboard, Observability-Profil, Demo-Integration und der HLS-Stream-Analyzer (Library, analyzer-service, API-Endpunkt, CLI) sind auf `main` integriert.
 
 Leitende Dokumente:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.7)
+- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.8)
 - [docs/planning/roadmap.md](docs/planning/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess

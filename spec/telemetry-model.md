@@ -207,7 +207,7 @@ Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9
 Per-Session-Daten (Stream-Health, Event-Timeline) gehen **nicht** in Prometheus, sondern in:
 
 - **OTel-Spans** mit Span-Attributen (Cardinality-Limit gilt dort nicht — Spans sind sample-basiert).
-- **Event-Store** im `apps/api`-Repository (in `0.1.0` In-Memory; in `0.2.0`+ über OE-3-Folge-ADR auf SQLite/PostgreSQL).
+- **Event-Store** im `apps/api`-Repository (in `0.1.x` In-Memory; ab `0.4.0` gemäß ADR-0002 auf SQLite).
 - **Dashboard-Trace-Ansicht** (MVP-14, plan-0.1.1.md §3) liest aus dem Event-Store, nicht aus Prometheus.
 
 Diese Trennung ist die zentrale Architektur-Aussage von F-97 und Lastenheft §7.10.

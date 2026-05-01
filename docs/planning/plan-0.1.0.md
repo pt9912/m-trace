@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](../../spec/architecture.md) und en
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | ✅ |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | ✅ |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7` | ✅ bis `1.1.7`; fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8` | ✅ bis `1.1.8`; fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ✅ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -356,6 +356,20 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.6` → `1.1.7`.
 - [x] Lastenheft §16.2: OE-8 resolved — Player-SDK-Paketname `@npm9912/player-sdk` ab `0.2.0`; `0.1.x`-Lieferstand unter `@m-trace/player-sdk` bleibt historische Wahrheit, wurde aber nie öffentlich publishet.
 - [x] Lebende Code-, Doku- und Package-Stellen folgen `docs/planning/migrate-package-name.md` §2.1; historische `0.1.x`-Artefakte bleiben gemäß §2.2 unverändert.
+
+### 4a.11 Patch `1.1.8` — OE-3 und OE-5 auflösen
+
+Mit dem `0.4.0`-Scope-Cut werden die zwei verbliebenen offenen
+Entscheidungen aus §16.2 geschlossen: ADR-0002 legt SQLite als lokalen
+Durable-Store fest, ADR-0003 legt SSE mit Polling-Fallback für
+Dashboard-Live-Updates fest.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.7` → `1.1.8`.
+- [x] Lastenheft §16.2: OE-3 resolved — SQLite als lokaler Durable-Store ab `0.4.0`.
+- [x] Lastenheft §16.2: OE-5 resolved — Server-Sent Events mit Polling-Fallback; WebSocket nicht in `0.4.0`.
+- [x] Roadmap, Architektur, Telemetry-Modell, Risiken-Backlog und `plan-0.4.0.md` referenzieren ADR-0002/ADR-0003 konsistent.
 
 ---
 
