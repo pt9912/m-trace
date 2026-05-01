@@ -48,7 +48,10 @@ export function parseAttributeList(input: string): Map<string, string> {
     } else {
       const valStart = i;
       while (i < n && input[i] !== ",") i++;
-      value = input.slice(valStart, i);
+      // Reale Manifeste haben gelegentlich Whitespace um '='; HLS
+      // verbietet das streng, wir tolerieren es durch Trim auf
+      // unquoted Werten. Quoted Werte bleiben byte-genau.
+      value = input.slice(valStart, i).trim();
     }
     result.set(key, value);
     if (i < n && input[i] === ",") i++;

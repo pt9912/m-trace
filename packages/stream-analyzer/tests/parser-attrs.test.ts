@@ -40,6 +40,17 @@ describe("parseAttributeList", () => {
     expect(result.get("KEY2")).toBe("b");
   });
 
+  it("trims whitespace around unquoted values (real-world tolerance)", () => {
+    const result = parseAttributeList("KEY = value ,KEY2= other");
+    expect(result.get("KEY")).toBe("value");
+    expect(result.get("KEY2")).toBe("other");
+  });
+
+  it("preserves whitespace inside quoted values byte-for-byte", () => {
+    const result = parseAttributeList('NAME="  spaced  "');
+    expect(result.get("NAME")).toBe("  spaced  ");
+  });
+
   it("returns an empty map for empty input", () => {
     expect(parseAttributeList("").size).toBe(0);
   });

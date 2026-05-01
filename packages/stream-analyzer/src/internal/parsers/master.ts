@@ -106,6 +106,7 @@ export function parseMasterPlaylist(text: string, baseUrl: string | undefined): 
     findings.push(missingUriFinding(pending.lineNumber));
   }
 
+  findings.push(...detectDuplicateRenditions(renditions));
   findings.push(...crossReferenceGroups(variants, renditions));
 
   return { details: { variants, renditions }, findings };
@@ -205,11 +206,14 @@ function buildRendition(
     });
   }
   const uri = attrs.get("URI");
-  if ((type === "AUDIO" || type === "VIDEO" || type === "SUBTITLES") && uri === undefined) {
+  // RFC 8216 §4.3.4.2.1: URI ist Pflicht für SUBTITLES; bei AUDIO/VIDEO
+  // bedeutet das Fehlen, dass die Rendition in der Variant-Playlist
+  // liegt — kein Fehler. Nur SUBTITLES ohne URI ist ein Spec-Verstoß.
+  if (type === "SUBTITLES" && uri === undefined) {
     findings.push({
       code: "rendition_missing_uri",
-      level: "warning",
-      message: `EXT-X-MEDIA TYPE=${type} auf Zeile ${lineNumber + 1} ohne URI; Renderer braucht in der Regel eine.`
+      level: "error",
+      message: `EXT-X-MEDIA TYPE=SUBTITLES auf Zeile ${lineNumber + 1} ohne URI; URI ist für Untertitel-Renditions Pflicht.`
     });
   }
   const resolvedUri = uri !== undefined ? resolveUri(uri, baseUrl) : null;
@@ -250,7 +254,13 @@ function crossReferenceGroups(
     findings.push(...checkGroup(i, "audio", v.audio, audioGroups));
     findings.push(...checkGroup(i, "video", v.video, videoGroups));
     findings.push(...checkGroup(i, "subtitles", v.subtitles, subtitlesGroups));
-    findings.push(...checkGroup(i, "closedCaptions", v.closedCaptions, ccGroups));
+    // RFC 8216 §4.3.4.2.1 erlaubt CLOSED-CAPTIONS=NONE als explizite
+    // „keine CC-Gruppe"-Markierung. Das ist kein Group-Reference,
+    // sondern ein Sentinel und darf keinen variant_group_undefined-
+    // Finding auslösen.
+    if (v.closedCaptions !== "NONE") {
+      findings.push(...checkGroup(i, "closedCaptions", v.closedCaptions, ccGroups));
+    }
   }
   return findings;
 }
@@ -270,6 +280,27 @@ function checkGroup(
       message: `Variant #${variantIndex + 1} referenziert ${field}="${groupRef}", aber keine passende EXT-X-MEDIA-Gruppe existiert.`
     }
   ];
+}
+
+function detectDuplicateRenditions(renditions: readonly MasterRendition[]): AnalysisFinding[] {
+  // RFC 8216 §4.3.4.1.1: Renditions mit gleichem TYPE+GROUP-ID müssen
+  // unterschiedliche NAME-Werte tragen. Bei Wiederholung melden wir
+  // den zweiten (und folgende) Eintrag als Duplikat.
+  const seen = new Set<string>();
+  const findings: AnalysisFinding[] = [];
+  for (const r of renditions) {
+    const key = `${r.type}|${r.groupId}|${r.name}`;
+    if (seen.has(key)) {
+      findings.push({
+        code: "rendition_duplicate_group_member",
+        level: "warning",
+        message: `Mehrere EXT-X-MEDIA-Einträge mit TYPE=${r.type}, GROUP-ID="${r.groupId}", NAME="${r.name}".`
+      });
+    } else {
+      seen.add(key);
+    }
+  }
+  return findings;
 }
 
 function optionalString<K extends string>(

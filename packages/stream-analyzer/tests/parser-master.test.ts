@@ -111,13 +111,29 @@ describe("parseMasterPlaylist — renditions", () => {
     expect(result.findings.some((f) => f.code === "rendition_unknown_type")).toBe(true);
   });
 
-  it("warns about AUDIO/VIDEO/SUBTITLES renditions without URI", () => {
+  it("does not warn about AUDIO renditions without URI (spec allows this)", () => {
     const result = parseMasterPlaylist(
       ["#EXTM3U", '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="g",NAME="n"'].join("\n"),
       undefined
     );
     expect(result.details.renditions).toHaveLength(1);
-    expect(result.findings.some((f) => f.code === "rendition_missing_uri")).toBe(true);
+    expect(result.findings.some((f) => f.code === "rendition_missing_uri")).toBe(false);
+  });
+
+  it("does not warn about VIDEO renditions without URI (spec allows this)", () => {
+    const result = parseMasterPlaylist(
+      ["#EXTM3U", '#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="g",NAME="n"'].join("\n"),
+      undefined
+    );
+    expect(result.findings.some((f) => f.code === "rendition_missing_uri")).toBe(false);
+  });
+
+  it("emits an error finding for SUBTITLES renditions without URI", () => {
+    const result = parseMasterPlaylist(
+      ["#EXTM3U", '#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="g",NAME="n"'].join("\n"),
+      undefined
+    );
+    expect(result.findings.some((f) => f.code === "rendition_missing_uri" && f.level === "error")).toBe(true);
   });
 
   it("does not require URI for CLOSED-CAPTIONS", () => {
@@ -126,6 +142,19 @@ describe("parseMasterPlaylist — renditions", () => {
       undefined
     );
     expect(result.findings.some((f) => f.code === "rendition_missing_uri")).toBe(false);
+  });
+
+  it("flags duplicate (TYPE, GROUP-ID, NAME) triplets as warnings", () => {
+    const result = parseMasterPlaylist(
+      [
+        "#EXTM3U",
+        '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="English",URI="a.m3u8"',
+        '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="English",URI="b.m3u8"'
+      ].join("\n"),
+      undefined
+    );
+    expect(result.details.renditions).toHaveLength(2);
+    expect(result.findings.some((f) => f.code === "rendition_duplicate_group_member" && f.level === "warning")).toBe(true);
   });
 });
 
@@ -152,6 +181,19 @@ describe("parseMasterPlaylist — cross-references", () => {
       ].join("\n"),
       undefined
     );
+    expect(result.findings.some((f) => f.code === "variant_group_undefined")).toBe(false);
+  });
+
+  it("treats CLOSED-CAPTIONS=NONE as the spec sentinel and does not flag it", () => {
+    const result = parseMasterPlaylist(
+      [
+        "#EXTM3U",
+        "#EXT-X-STREAM-INF:BANDWIDTH=1000,CLOSED-CAPTIONS=NONE",
+        "v/main.m3u8"
+      ].join("\n"),
+      undefined
+    );
+    expect(result.details.variants[0].closedCaptions).toBe("NONE");
     expect(result.findings.some((f) => f.code === "variant_group_undefined")).toBe(false);
   });
 });
