@@ -32,7 +32,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 2 | HLS-Manifest laden und Playlist-Typ erkennen | ✅ |
 | 3 | Master-Playlist-Analyse | ✅ |
 | 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ✅ |
-| 5 | JSON-Ergebnisformat und Dokumentation | ⬜ |
+| 5 | JSON-Ergebnisformat und Dokumentation | ✅ |
 | 6 | API-Anbindung über StreamAnalyzer-Port | ⬜ |
 | 7 | CLI-Grundlage | ⬜ |
 | 8 | Release-Akzeptanzkriterien `0.3.0` | ⬜ |
@@ -146,12 +146,12 @@ Ziel: Analyzer-Ergebnisse sind stabil serialisierbar, für API und CLI geeignet 
 
 DoD:
 
-- [ ] JSON-Shape ist als TypeScript-Typ und Dokumentationsbeispiel festgelegt; das Format bleibt um weitere Analyzer-Typen wie DASH/CMAF erweiterbar.
-- [ ] Ergebnis enthält mindestens Analyzer-Version aus der Paketversion, Input-Metadaten, Playlist-Typ, Summary, Findings und typspezifische Details.
-- [ ] Fehler-JSON ist klar vom Erfolgs-JSON unterscheidbar.
-- [ ] Stabilitätsregel ist dokumentiert: additive Änderungen sind erlaubt; breaking Changes benötigen Changelog und Plan-/Doku-Update.
-- [ ] JSON-Serialisierung ist getestet und enthält keine nicht-deterministischen Felder ohne explizite Normalisierung.
-- [ ] `docs/user/stream-analyzer.md` enthält Beispiele für Master Playlist, Media Playlist und Fehlerfall.
+- [x] JSON-Shape ist als TypeScript-Typ und Dokumentationsbeispiel festgelegt; das Format bleibt um weitere Analyzer-Typen wie DASH/CMAF erweiterbar (`a2c597a`).
+- [x] Ergebnis enthält mindestens Analyzer-Version aus der Paketversion, Input-Metadaten, Playlist-Typ, Summary, Findings und typspezifische Details (`a2c597a`).
+- [x] Fehler-JSON ist klar vom Erfolgs-JSON unterscheidbar (`a2c597a`).
+- [x] Stabilitätsregel ist dokumentiert: additive Änderungen sind erlaubt; breaking Changes benötigen Changelog und Plan-/Doku-Update (`a2c597a`).
+- [x] JSON-Serialisierung ist getestet und enthält keine nicht-deterministischen Felder ohne explizite Normalisierung (`a2c597a`).
+- [x] `docs/user/stream-analyzer.md` enthält Beispiele für Master Playlist, Media Playlist und Fehlerfall (`a2c597a`).
 
 ---
 
