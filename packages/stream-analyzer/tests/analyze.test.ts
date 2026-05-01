@@ -35,6 +35,16 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
     expect(result.details).toMatchSnapshot();
   });
 
+  it("snapshots the media fixture result for stability", async () => {
+    const result = (await analyzeHlsManifest({
+      kind: "text",
+      text: fixture("media.m3u8"),
+      baseUrl: "https://cdn.example.test/stream/manifest.m3u8"
+    })) as AnalysisResult;
+    expect(result.playlistType).toBe("media");
+    expect(result.details).toMatchSnapshot();
+  });
+
   it("classifies a media playlist", async () => {
     const result = (await analyzeHlsManifest({ kind: "text", text: fixture("media.m3u8") })) as AnalysisResult;
 
@@ -91,7 +101,11 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
 
     expect(result.status).toBe("ok");
     expect(result.playlistType).toBe("media");
-    expect(result.findings.some((f) => f.code === "details_pending")).toBe(true);
+    // Tranche 4: malformed.m3u8 hat ungültige EXTINF-Dauer und keinen
+    // EXT-X-ENDLIST → erwartet mindestens segment_malformed_extinf
+    // und media_missing_targetduration.
+    expect(result.findings.some((f) => f.code === "segment_malformed_extinf" && f.level === "warning")).toBe(true);
+    expect(result.findings.some((f) => f.code === "media_missing_targetduration" && f.level === "error")).toBe(true);
   });
 
   it("preserves baseUrl in input metadata when supplied", async () => {

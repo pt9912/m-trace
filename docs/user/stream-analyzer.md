@@ -8,7 +8,7 @@ Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 Tranche 3)
+## 1. Status (0.3.0 Tranche 4)
 
 - ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 % stehen.
@@ -21,14 +21,16 @@ F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
   Bandbreite/Resolution/Codecs/Frame-Rate/Group-Refs, Renditions
   (`#EXT-X-MEDIA`) mit Typ/GroupId/Name/Lang/URI/Flags, Group-Cross-Check,
   optionale Base-URL-Auflösung als `resolvedUri`.
-- ⬜ Media-Detail-Auswertung (Segmente, Findings, Live-Latenz) — Tranche 4.
+- ✅ Media-Detail-Auswertung: Segmente aus `#EXTINF`, Aggregate (Anzahl,
+  Min/Max/Mittel/Total), TARGETDURATION-Verletzung, Outlier-Erkennung,
+  Live-/VOD-Klassifikation und 3×-Latenzschätzung — siehe §7.
 - ⬜ Stabilisiertes JSON-Schema mit typspezifischen `details` — Tranche 5.
 - ⬜ API-Anbindung über den Driven-Port `StreamAnalyzer.AnalyzeManifest` —
   Tranche 6.
 - ⬜ CLI `pnpm m-trace check <url>` — Tranche 7.
 
-Tranche 3 ergänzt das Master-Detail; jede weitere Tranche erweitert die
-Result-Details additiv.
+Tranche 4 ergänzt das Media-Detail; Tranche 5 sperrt das JSON-Schema und
+löst den `details`-Cast in eine diskriminierte Union auf.
 
 ## 2. Public API
 
@@ -53,7 +55,8 @@ Exportierte Symbole (Snapshot in
   `AnalyzeOptions`, `FetchOptions`, `AnalysisFinding`, `FindingLevel`,
   `AnalysisInputMetadata`, `AnalysisResult`, `AnalysisSummary`,
   `PlaylistType`, `AnalysisErrorCode`, `AnalysisErrorResult`,
-  `MasterPlaylistDetails`, `MasterRendition`, `MasterVariant`.
+  `MasterPlaylistDetails`, `MasterRendition`, `MasterVariant`,
+  `MediaPlaylistDetails`, `MediaSegment`, `MediaSegmentSummary`.
 
 ### 2.1 Eingabeformen
 
@@ -131,10 +134,9 @@ Beispiel (Master-Playlist nach Tranche 3):
 ```
 
 Konsumenten casten `result.details` gemäß `result.playlistType`
-(`"master"` → `MasterPlaylistDetails`). Tranche 5 wird die
-Diskriminierung in den Typ ziehen; bis dahin verlangt TypeScript einen
-expliziten Cast. Beispiel (Media-Playlist nach Tranche 2; Detail-Sektion
-folgt in Tranche 4):
+(`"master"` → `MasterPlaylistDetails`, `"media"` → `MediaPlaylistDetails`).
+Tranche 5 wird die Diskriminierung in den Typ ziehen; bis dahin verlangt
+TypeScript einen expliziten Cast. Beispiel (Live-Media-Playlist):
 
 ```json
 {
@@ -142,19 +144,30 @@ folgt in Tranche 4):
   "analyzerVersion": "0.3.0",
   "input": {
     "source": "url",
-    "url": "https://cdn.example.test/manifest.m3u8",
-    "baseUrl": "https://cdn.example.test/manifest.m3u8"
+    "url": "https://cdn.example.test/live/manifest.m3u8",
+    "baseUrl": "https://cdn.example.test/live/manifest.m3u8"
   },
   "playlistType": "media",
-  "summary": { "itemCount": 0 },
-  "findings": [
-    {
-      "code": "details_pending",
-      "level": "info",
-      "message": "stream-analyzer 0.3.0: Detail-Auswertung für diesen Playlist-Typ folgt in Tranche 4."
+  "summary": { "itemCount": 4 },
+  "findings": [],
+  "details": {
+    "targetDuration": 4,
+    "mediaSequence": 8423,
+    "endList": false,
+    "live": true,
+    "liveLatencyEstimateSeconds": 12,
+    "segments": [
+      { "uri": "seg-8423.ts", "duration": 3.84, "sequenceNumber": 8423,
+        "resolvedUri": "https://cdn.example.test/live/seg-8423.ts" }
+    ],
+    "summary": {
+      "count": 4,
+      "averageDuration": 3.86,
+      "minDuration": 3.84,
+      "maxDuration": 3.92,
+      "totalDuration": 15.44
     }
-  ],
-  "details": null
+  }
 }
 ```
 
@@ -251,7 +264,57 @@ eine Netzwerk-/Firewall-Schicht, die direkt gegen IP-Bereiche filtert.
 Diese Architekturgrenze ist bewusst, dokumentiert und in Tests gepinnt
 (`tests/loader-fetch.test.ts` „DNS-Rebinding-Entscheidung").
 
-## 7. Lokale Entwicklung
+## 7. Media-Playlist-Auswertung
+
+Tranche 4 setzt Segmente aus `#EXTINF`, dazu Aggregat-Statistiken und
+Konformitätsprüfungen.
+
+### 7.1 Segmentdaten
+
+Pro Segment werden `uri`, `duration` (Sekunden, Float), optionaler
+`title` aus `#EXTINF:duration,title`, `sequenceNumber` und — bei
+gesetzter Base-URL — `resolvedUri` ausgegeben. Die Sequenznummer
+startet bei `mediaSequence` (aus `#EXT-X-MEDIA-SEQUENCE`, sonst 0)
+und steigt um 1 je Segment.
+
+`details.summary` enthält `count`, `averageDuration`, `minDuration`,
+`maxDuration` und `totalDuration` über alle Segmente — Werte in
+Sekunden, gerechnet auf den geparsten Float-Dauern.
+
+### 7.2 Toleranzregel und Findings
+
+| Finding-Code                         | Level   | Bedeutung                                                                                       |
+| ------------------------------------ | ------- | ----------------------------------------------------------------------------------------------- |
+| `media_missing_targetduration`       | error   | RFC 8216 §4.3.3.1 macht das Tag verpflichtend; ohne es bleibt der Manifest-Konformitätscheck offen. |
+| `media_malformed_targetduration`     | error   | TARGETDURATION ist nicht parseable; weitere Auswertung läuft trotzdem.                          |
+| `media_malformed_mediasequence`      | warning | MEDIA-SEQUENCE nicht parseable; Fallback `mediaSequence = 0`.                                   |
+| `segment_duration_exceeds_target`    | error   | `round(duration) > TARGETDURATION` — Spec-Verstoß (RFC 8216 §4.3.3.1).                          |
+| `segment_duration_outlier`           | warning | Segmentdauer ist < 50 % des Mittelwerts (Apple-HLS-Authoring-Empfehlung). Letztes VOD-Segment ausgenommen. |
+| `segment_malformed_extinf`           | warning | EXTINF-Dauer nicht parseable; Segment wird mit `duration: 0` aufgenommen.                       |
+| `segment_missing_uri`                | error   | EXTINF ohne folgende URI-Zeile.                                                                  |
+| `segment_unexpected_uri`             | warning | Manifest-Zeile, die wie URI aussieht, ohne vorhergehendes EXTINF.                               |
+| `segment_malformed_uri`              | warning | URI konnte nicht gegen die Base-URL aufgelöst werden.                                            |
+
+### 7.3 Live-/VOD-Erkennung und Latenzschätzung
+
+`details.endList` reflektiert `#EXT-X-ENDLIST`. `details.live = !endList`.
+Wenn `live === true` und `targetDuration` bekannt ist, liefert der
+Analyzer eine einfache Latenzschätzung nach Apples HLS-Authoring-
+Empfehlung („3×-Regel"):
+
+```
+liveLatencyEstimateSeconds = 3 × targetDuration
+```
+
+Das ist eine **Authoring-orientierte Schätzung**, kein Mess- oder
+Ende-zu-Ende-Wert. Reale Latenz hängt von Encoder, Player-Buffer,
+CDN und Client-Distanz ab. Für VOD-Playlists ist das Feld undefiniert.
+
+`details.playlistType` spiegelt `#EXT-X-PLAYLIST-TYPE` (`VOD` oder
+`EVENT`), falls gesetzt; das Feld ist informativ und greift nicht in
+die Live/VOD-Klassifikation ein (`endList` ist die maßgebliche Quelle).
+
+## 8. Lokale Entwicklung
 
 ```bash
 # Tests

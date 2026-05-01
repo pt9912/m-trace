@@ -3,10 +3,12 @@ import type {
   AnalysisInputMetadata,
   AnalysisResult,
   AnalysisSummary,
-  MasterPlaylistDetails
+  MasterPlaylistDetails,
+  MediaPlaylistDetails
 } from "../../types/result.js";
 import { classifyHlsManifest } from "./classify.js";
 import { parseMasterPlaylist } from "./master.js";
+import { parseMediaPlaylist } from "./media.js";
 
 /**
  * Setzt die Tranche-Resultate zusammen: Tranche 2 hat klassifiziert,
@@ -40,19 +42,24 @@ export function analyzeHlsManifestText(
     });
   }
 
-  let details: MasterPlaylistDetails | null = null;
+  let details: MasterPlaylistDetails | MediaPlaylistDetails | null = null;
   let summary: AnalysisSummary = { itemCount: 0 };
   if (classification.playlistType === "master") {
     const result = parseMasterPlaylist(text, inputMeta.baseUrl);
     details = result.details;
     summary = { itemCount: result.details.variants.length + result.details.renditions.length };
     findings.push(...result.findings);
-  } else if (classification.playlistType === "media" || classification.playlistType === "unknown") {
+  } else if (classification.playlistType === "media") {
+    const result = parseMediaPlaylist(text, inputMeta.baseUrl);
+    details = result.details;
+    summary = { itemCount: result.details.segments.length };
+    findings.push(...result.findings);
+  } else {
     findings.push({
       code: "details_pending",
       level: "info",
       message:
-        "stream-analyzer 0.3.0: Detail-Auswertung für diesen Playlist-Typ folgt in Tranche 4."
+        "stream-analyzer 0.3.0: Manifest ist als HLS erkannt, aber weder als Master noch als Media klassifiziert."
     });
   }
 

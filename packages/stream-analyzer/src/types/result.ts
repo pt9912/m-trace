@@ -90,3 +90,56 @@ export interface MasterPlaylistDetails {
   readonly variants: readonly MasterVariant[];
   readonly renditions: readonly MasterRendition[];
 }
+
+/**
+ * Ein Segment aus `#EXTINF` plus folgender URI-Zeile.
+ */
+export interface MediaSegment {
+  /** URI exakt wie im Manifest (Whitespace getrimmt). */
+  readonly uri: string;
+  /** Absolute URI nach Auflösung gegen die Base-URL, falls vorhanden. */
+  readonly resolvedUri?: string;
+  /** Dauer in Sekunden. */
+  readonly duration: number;
+  /** Optionaler Titel aus `#EXTINF:duration,title`. */
+  readonly title?: string;
+  /**
+   * HLS-Sequenznummer. Erstes Segment startet bei `mediaSequence`,
+   * jedes weitere +1. Fehlt `#EXT-X-MEDIA-SEQUENCE`, beginnt die
+   * Zählung bei 0.
+   */
+  readonly sequenceNumber: number;
+}
+
+/**
+ * Aggregat-Statistiken über alle Segmente. `count === 0` markiert
+ * eine Media-Playlist ohne ausgewertete Segmente; in dem Fall sind
+ * `min`/`max`/`average`/`total` 0.
+ */
+export interface MediaSegmentSummary {
+  readonly count: number;
+  readonly averageDuration: number;
+  readonly minDuration: number;
+  readonly maxDuration: number;
+  readonly totalDuration: number;
+}
+
+/**
+ * Detail-Sektion einer HLS Media Playlist (RFC 8216 §4.3.3).
+ *
+ * `live === !endList`. `liveLatencyEstimateSeconds` ist die einfache
+ * 3×-Target-Duration-Schätzung nach Apples HLS-Authoring-Empfehlung
+ * (siehe `docs/user/stream-analyzer.md` §7); für VOD-Playlists
+ * undefiniert.
+ */
+export interface MediaPlaylistDetails {
+  readonly targetDuration?: number;
+  readonly mediaSequence: number;
+  /** Wert von `#EXT-X-PLAYLIST-TYPE` (`VOD` oder `EVENT`), falls gesetzt. */
+  readonly playlistType?: string;
+  readonly endList: boolean;
+  readonly live: boolean;
+  readonly liveLatencyEstimateSeconds?: number;
+  readonly segments: readonly MediaSegment[];
+  readonly summary: MediaSegmentSummary;
+}

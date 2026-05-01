@@ -47,3 +47,46 @@ exports[`analyzeHlsManifest — Tranche 2 contract > snapshots the master fixtur
   ],
 }
 `;
+
+exports[`analyzeHlsManifest — Tranche 2 contract > snapshots the media fixture result for stability 1`] = `
+{
+  "endList": true,
+  "live": false,
+  "mediaSequence": 0,
+  "playlistType": "VOD",
+  "segments": [
+    {
+      "duration": 5.967,
+      "resolvedUri": "https://cdn.example.test/stream/seg-0.ts",
+      "sequenceNumber": 0,
+      "uri": "seg-0.ts",
+    },
+    {
+      "duration": 5.967,
+      "resolvedUri": "https://cdn.example.test/stream/seg-1.ts",
+      "sequenceNumber": 1,
+      "uri": "seg-1.ts",
+    },
+    {
+      "duration": 5.967,
+      "resolvedUri": "https://cdn.example.test/stream/seg-2.ts",
+      "sequenceNumber": 2,
+      "uri": "seg-2.ts",
+    },
+    {
+      "duration": 3.5,
+      "resolvedUri": "https://cdn.example.test/stream/seg-3.ts",
+      "sequenceNumber": 3,
+      "uri": "seg-3.ts",
+    },
+  ],
+  "summary": {
+    "averageDuration": 5.35025,
+    "count": 4,
+    "maxDuration": 5.967,
+    "minDuration": 3.5,
+    "totalDuration": 21.401,
+  },
+  "targetDuration": 6,
+}
+`;
