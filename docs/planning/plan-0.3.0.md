@@ -36,7 +36,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 6 | API-Anbindung über StreamAnalyzer-Port | ✅ |
 | 7 | CLI-Grundlage | ✅ |
 | 7.5 | Tranche-6-Folge-Issues härten | ✅ |
-| 8 | Release-Akzeptanzkriterien `0.3.0` | ⬜ |
+| 8 | Release-Akzeptanzkriterien `0.3.0` | ✅ |
 
 ---
 
@@ -224,20 +224,20 @@ Bezug: RAK-22..RAK-28; `docs/user/releasing.md`.
 
 DoD:
 
-- [ ] **RAK-22** HLS Manifest kann geladen werden.
-- [ ] **RAK-23** Master Playlist kann erkannt werden.
-- [ ] **RAK-24** Media Playlist kann erkannt werden.
-- [ ] **RAK-25** Segment-Dauern werden geprüft.
-- [ ] **RAK-26** Ergebnis wird als JSON ausgegeben.
-- [ ] **RAK-27** API kann Analyzer nutzen.
-- [ ] **RAK-28** CLI-Grundlage existiert.
-- [ ] Versionen sind konsistent: Root-`package.json.version`, `packages/stream-analyzer/package.json.version`, `CHANGELOG.md`-Abschnitt, Release-Tag `v0.3.0` und die im JSON-Ergebnis gesendete Analyzer-Version passen zusammen oder eine bewusst abweichende Versionierungsregel ist dokumentiert und getestet.
-- [ ] `docs/user/stream-analyzer.md`, `docs/user/local-development.md`, `docs/user/quality.md` und `README.md` beschreiben den tatsächlichen Analyzer-Lieferstand.
-- [ ] `CHANGELOG.md` enthält Eintrag für `0.3.0`.
-- [ ] Release-Gates laufen grün: `make test`, `make lint`, `make coverage-gate`, `make sdk-performance-smoke`, `make arch-check`, `make build` und ein reproduzierbarer Analyzer-CLI-Smoke für `pnpm m-trace check <url>` gegen lokales Fixture oder gemockten Fetch-Pfad.
-- [ ] Falls `make browser-e2e` nicht durch Analyzer-Änderungen betroffen ist, bleibt es ein manuelles Release-Gate; bei Dashboard-/Demo-Auswirkungen läuft es grün.
-- [ ] Release-Prozess aus `docs/user/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.3.0` ist erstellt und das Release-Artefakt ist nachvollziehbar.
-- [ ] OE-3/Persistenz ist entschieden oder explizit nicht-blockierend deferred, falls Analyseergebnisse nicht durable gespeichert werden.
+- [x] **RAK-22** HLS Manifest kann geladen werden — URL-Loader (`6b96d4e`) plus SSRF-Härtung (`5614684`).
+- [x] **RAK-23** Master Playlist kann erkannt werden — Klassifikator (`6b96d4e`) und Master-Detail-Parser (`18857b5`, `42ee1d8`).
+- [x] **RAK-24** Media Playlist kann erkannt werden — Klassifikator (`6b96d4e`) und Media-Detail-Parser (`1a9cc27`, `759acdc`).
+- [x] **RAK-25** Segment-Dauern werden geprüft — TARGETDURATION-Verletzung und Outlier-Findings in Tranche 4 (`1a9cc27`, `759acdc`).
+- [x] **RAK-26** Ergebnis wird als JSON ausgegeben — Schema-Stabilisierung mit diskriminierter Union (`a2c597a`, `ecb3cdb`).
+- [x] **RAK-27** API kann Analyzer nutzen — `POST /api/analyze` über internen analyzer-service (`579e7cc`, `d894556`); Tranche-7.5-Härtung in `a622ae8`/`ba337db`.
+- [x] **RAK-28** CLI-Grundlage existiert — `pnpm m-trace check <url-or-file>` (`7466c02`, `5817c62`).
+- [x] Versionen sind konsistent: Root- und Workspace-Pakete tragen `0.3.0` (`@npm9912/stream-analyzer`, `@npm9912/analyzer-service`, `@npm9912/player-sdk` synchronisiert via `check-sdk-compat`); CHANGELOG-Abschnitt `[0.3.0] - 2026-05-01`; Release-Tag `v0.3.0`; im Result emittierte `analyzerVersion` wird aus `packages/stream-analyzer/package.json` abgeleitet und durch `tests/version.test.ts` und `tests/contract.test.ts` gepinnt.
+- [x] `docs/user/stream-analyzer.md` (Status: 0.3.0 — veröffentlicht), `docs/user/local-development.md` (CLI- und Smoke-Beispiele), `docs/user/quality.md` (Coverage-Gate inkl. analyzer-service) und `README.md` („Enthalten seit v0.3.0", Status-Zeile) beschreiben den tatsächlichen Analyzer-Lieferstand.
+- [x] `CHANGELOG.md` enthält den Versionsabschnitt `[0.3.0] - 2026-05-01` mit Auflistung aller Tranche-1..7.5-Liefermerkmale.
+- [x] Release-Gates grün: `make gates` (deckt `test` + `lint` + `coverage-gate` + `arch-check` ab), `make sdk-performance-smoke`, `make build`, `make smoke-cli` (CLI-Smoke gegen lokales Fixture und SSRF-Negativ-URL).
+- [x] `make browser-e2e` ist nicht durch Analyzer-Änderungen betroffen (kein Touch an Player-SDK-Wire-Format, Dashboard-Routen, MediaMTX-Topologie); bleibt manuelles Release-Gate gemäß DoD-Wortlaut.
+- [ ] Release-Prozess aus `docs/user/releasing.md` ist durchgeführt: Release-Commit existiert, annotierter Tag `v0.3.0` ist erstellt und das Release-Artefakt ist nachvollziehbar — wird mit dem Release-Commit selbst geschlossen (Hash trägt sich nach Push ein).
+- [x] OE-3/Persistenz ist explizit nicht-blockierend deferred: `0.3.0` speichert Analyseergebnisse nicht durable; jeder `POST /api/analyze`-Aufruf ist stateless. Damit bleibt der ADR-0002-Draft (`docs/adr/0002-persistence-store.md`) für `0.4.0` offen, ohne `0.3.0` zu blockieren (siehe Roadmap §5 OE-3).
 
 ---
 

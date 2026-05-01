@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.2.0` — publizierbares Player-SDK, stabile Public API und Demo-Integration.
+> Status: `0.3.0` — HLS-Stream-Analyzer mit Library, interner HTTP-Service, API-Endpunkt `POST /api/analyze` und CLI `m-trace check`.
 
 ---
 
@@ -95,7 +95,23 @@ Der erste MVP ist bewusst klein gehalten.
 - einfache Stream-Session-Ansicht
 - einfache Event-Ansicht
 
-### Nicht im aktuellen 0.1.x-MVP enthalten
+### Enthalten seit v0.3.0
+
+- Stream-Analyzer-Bibliothek `@npm9912/stream-analyzer` mit
+  HLS-Klassifikator, SSRF-geschütztem URL-Loader und Master-/
+  Media-Detail-Parsing
+- Diskriminierter `AnalysisResult`-Typ mit Erweiterungspfad für
+  DASH/CMAF (`analyzerKind`) und Stabilitätsregel
+- Interner Node-Service `@npm9912/analyzer-service` als HTTP-
+  Wrapper, in der Compose-Topologie verdrahtet
+- API-Endpunkt `POST /api/analyze` (siehe
+  `spec/backend-api-contract.md` §3.6) mit Problem-Shape-Fehlern
+  und Prometheus-Counter `mtrace_analyze_requests_total`
+- CLI `pnpm m-trace check <url-or-file>` mit JSON-stdout und
+  definierten Exit-Codes
+- `make smoke-analyzer` und `make smoke-cli` als End-to-End-Smokes
+
+### Nicht im aktuellen 0.3.x-MVP enthalten
 
 - separate Demo-Player-App
 - separate Analyzer-API
@@ -275,12 +291,12 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
 - Batching und Sampling
 - dokumentierter Browser-Support
 
-### v0.3.0 — Stream-Analyzer
+### v0.3.0 — Stream-Analyzer (✅ veröffentlicht)
 
-- HLS-Manifest-Parsing
-- Segment-Dauer-Checks
-- Target-Duration-Checks
-- Grundlage für eigenständige CLI
+- HLS-Manifest-Parsing für Master und Media Playlists
+- Segment-Dauer-Checks und Target-Duration-Verletzung
+- API-Anbindung über internen analyzer-service
+- CLI-Grundlage `pnpm m-trace check <url-or-file>`
 
 ### v0.4.0 — Erweiterte Trace-Korrelation
 
@@ -359,7 +375,7 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.2.0`: Lastenheft `1.1.7` verbindlich, Player-SDK-Paketierung, Dashboard, Observability-Profil und Demo-Integration sind auf `main` integriert.
+Das Projekt steht bei `0.3.0`: Lastenheft `1.1.7` verbindlich, Player-SDK-Paketierung, Dashboard, Observability-Profil, Demo-Integration und der HLS-Stream-Analyzer (Library, analyzer-service, API-Endpunkt, CLI) sind auf `main` integriert.
 
 Leitende Dokumente:
 

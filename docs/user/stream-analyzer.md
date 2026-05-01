@@ -8,7 +8,7 @@ Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 Tranche 7 — Release-bereit)
+## 1. Status (0.3.0 — veröffentlicht)
 
 - ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 % stehen.

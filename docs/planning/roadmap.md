@@ -1,68 +1,46 @@
 # Roadmap
 
-> **Stand**: 2026-04-30
-> **Phase**: Post-`0.2.0`, vor `0.3.0` Stream Analyzer  
+> **Stand**: 2026-05-01
+> **Phase**: Post-`0.3.0`, vor `0.4.0` Erweiterte Trace-Korrelation
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
-> `docs/planning/plan-0.1.0.md` (DoD-Checkboxen mit Lieferstand pro Tranche),
-> `docs/adr/0001-backend-stack.md` (Backend-Entscheidung),
-> `docs/planning/plan-spike.md` SP-41 (Anschluss an MVP),
-> `docs/spike/backend-stack-results.md` (Spike-Protokoll).
+> Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
+> ADRs in `docs/adr/`.
 
 Dieses Dokument ist die **Statusseite** des Projekts. Es duplikiert nicht
 die Anforderungen pro Release (die stehen normativ im Release-Plan des
 Lastenheft), sondern verfolgt: *Wo sind wir, was kommt als nächstes,
 welche Risiken und Folge-Entscheidungen liegen vor uns.*
 
-Wartungsregel: nach jedem Release-Bump (z. B. `0.0.x → 0.1.0`) und nach
-jedem Folge-ADR aktualisieren.
+Wartungsregel: nach jedem Release-Bump und nach jedem Folge-ADR
+aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-04-28)
+## 1. Aktueller Stand (2026-05-01)
 
 ### 1.1 Was abgeschlossen ist
 
-| Status | Bereich             | Ergebnis                                                                                                                                         | Verweise                                                                                                                              |
-| ------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅      | Lastenheft          | `v0.7.0` mit Anforderungen nach IDs (`F-`, `NF-`, `MVP-`, `AK-`, `RAK-`, `OE-`) und Release-Plan vollständig versioniert.                        | `spec/lastenheft.md`                                                                                                                  |
-| ✅      | Backend-Spike       | Zwei Prototypen (Go, Micronaut) im identischen Muss-Scope abgeschlossen, Vergleich nach Plan-SP-30 (Bewertungskriterien) erfolgt, Sieger ist Go. | `docs/spike/0001-backend-stack.md`, `docs/spike/backend-stack-results.md`, `docs/planning/plan-spike.md` (SP-30), `docs/planning/plan-spike.md` (SP-41) |
-| ✅      | API-Kontrakt        | API-Kontrakt erstellt, dokumentiert und als verbindliche Schnittstelle gepflegt.                                                                 | `spec/backend-api-contract.md`                                                                                                  |
-| ✅      | ADR                 | Backend-Stack-Entscheidung entschieden und als **Accepted** festgehalten.                                                                        | `docs/adr/0001-backend-stack.md`                                                                                                      |
-| ✅      | Siegerbranch        | `spike/go-api` finalisiert (Commit `7148a8d`) als Basis für `apps/api` in `0.1.0`.                                                               | `spike/go-api`, ADR                                                                                                                   |
-| ✅      | Unterlegener Branch | Als Tag archiviert: `spike/backend-stack-loser-2026-04-28` (Commit `7c8bc44`), `spike/micronaut-api` gelöscht.                                   | `spike/backend-stack-loser-2026-04-28`                                                                                                |
+| Status | Bereich                  | Ergebnis                                                                                                                              | Verweise                                                                                          |
+| ------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ✅      | Lastenheft               | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.7`.                                                                             | `spec/lastenheft.md`                                                                              |
+| ✅      | Architektur + ADRs       | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz (Draft, OE-3 offen).                                                           | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`                            |
+| ✅      | Backend Core (`0.1.0`)    | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                              | [`plan-0.1.0.md`](./plan-0.1.0.md)                                                                |
+| ✅      | Player-SDK + Dashboard (`0.1.1`) | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                       | [`plan-0.1.1.md`](./plan-0.1.1.md)                                                                |
+| ✅      | Observability (`0.1.2`)   | Prometheus + Grafana + OTel-Collector als Profil; RAK-9, RAK-10.                                                                     | [`plan-0.1.2.md`](./plan-0.1.2.md)                                                                |
+| ✅      | Publizierbares Player-SDK (`0.2.0`) | `@npm9912/player-sdk` mit ESM/CJS/IIFE, Pack-Smokes, Browser-Support-Matrix; RAK-11..RAK-21.                              | [`plan-0.2.0.md`](./plan-0.2.0.md)                                                                |
+| ✅      | Stream-Analyzer (`0.3.0`) | `@npm9912/stream-analyzer` (Library + CLI), `analyzer-service` (interner HTTP-Wrapper), `POST /api/analyze`; RAK-22..RAK-28.        | [`plan-0.3.0.md`](./plan-0.3.0.md)                                                                |
 
-### 1.2 Pre-MVP-Vorbereitung (SP-41) — abgeschlossen
+### 1.2 Verbleibend für `0.4.0`-Scope-Cut
 
-Reihenfolge war verbindlich (SP-41). Detail-DoD und Commit-Hashes
-in [`docs/planning/plan-0.1.0.md`](./plan-0.1.0.md) §2.
+`0.3.0` ist veröffentlicht; `0.4.0` (Erweiterte Trace-Korrelation, RAK-29..RAK-35)
+ist noch nicht geplant. Vor dem Scope-Cut:
 
-| Reihenfolge | Status | Aufgabe                                                                                                         | Trigger        | Verweis           |
-| ----------- | ------ | --------------------------------------------------------------------------------------------------------------- | -------------- | ----------------- |
-| 1           | ✅      | `spike/go-api` zum `apps/api`-Skelett auf `main` ausbauen (MVP-2).                                              | Sofort         | OE-9; SP-41       |
-| 2           | ✅      | Lastenheft auf `1.0.0` heben: Backend-Entscheidung einarbeiten, offene Entscheidungen reduzieren.               | Nach Schritt 1 | OE-2; OE-9; SP-41 |
-| 3           | ✅      | `README.md` Tech-Overview auf den gewählten Stack anpassen (Go 1.22 + stdlib + Prometheus + OTel + distroless). | Nach Schritt 2 | MVP-17; SP-41     |
-| 4           | ✅      | Phase-2-Risiken aus ADR §8 in den Issue-Backlog überführen — siehe `docs/planning/risks-backlog.md`.                     | Nach Schritt 3 | SP-41             |
-
-### 1.3 Verbleibend für `0.1.0`-Release
-
-Status: ✅ `0.1.0` abgeschlossen — §5.1 Backend-Erweiterung, §5.2
-Compose-Lab, RAK-1/3/4/6/8-Verifikation, CI-Setup, Lizenz- und
-Release-Konvention sind ausgeliefert. DoD-Detail
-in [`docs/planning/plan-0.1.0.md`](./plan-0.1.0.md) §5.
-
-| Reihenfolge | Status | Aufgabe                                                                                                                                                                | Trigger                              | Verweis                                |
-| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------- |
-| 1           | ✅      | §5.1 Backend-Erweiterung (Sessions-Endpoints, MVP-16, F-22-Hook, ingest_sequence, CORS Variante B, RateLimiter-Dimensionen, Lifecycle-Sweeper).                        | nach Tranche 0                       | plan-0.1.0 §5.1; MVP-2, MVP-16, F-17..F-22 |
-| 2           | ✅      | §5.2 Compose-Lab Core (`api`, `mediamtx`, `stream-generator`) inkl. `make dev`/`make stop` und Smoke-Test (`/health`, POST events, GET sessions, HLS-Manifest).          | nach §5.1                            | plan-0.1.0 §5.2; MVP-7..MVP-9; F-82..F-88 |
-| 3           | ✅      | §5.3 RAK-1, RAK-3, RAK-4, RAK-6, RAK-8 verifiziert — fällt mit §5.2.                                                                                                   | nach §5.2                            | plan-0.1.0 §5.3                        |
-| 4           | ✅      | §5.4 Hash-Backfill für bereits gelieferte DoD-Items (Telemetry-Model, Local-Dev, Use-Case-Tests) + `CHANGELOG.md`-Eintrag für `0.1.0`.                                 | parallel zu §5.2/§5.3                | plan-0.1.0 §5.4                        |
-| 5           | ✅      | OE-6 entschieden (`ubuntu-24.04` via GitHub Actions) und Workflow `build.yml` mit `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build` aufgesetzt. | vor `0.1.0`-DoD                       | plan-0.1.0 §5.4                        |
-
-Ab dem `0.1.0`-Tag setzen `0.1.1` (Player-SDK + Dashboard) und
-`0.1.2` (Observability-Stack) auf — Detail in
-[`plan-0.1.1.md`](./plan-0.1.1.md) und
-[`plan-0.1.2.md`](./plan-0.1.2.md).
+| Reihenfolge | Status | Aufgabe                                                                                                | Trigger                | Verweis                                |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------------ | ---------------------- | -------------------------------------- |
+| 1           | ⬜      | OE-3/Persistenz neu bewerten — `0.3.0` ist stateless, ADR-0002-Draft offen.                            | Vor `0.4.0`-Plan       | OE-3; MVP-16; ADR-0002                 |
+| 2           | ⬜      | OE-5/Live-Updates: Polling vs. WebSocket vs. SSE — Folge-ADR für `0.4.0`.                              | Vor `0.4.0`-Plan       | OE-5                                   |
+| 3           | ⬜      | `docs/planning/plan-0.4.0.md` anlegen und Scope in Tranchen schneiden.                                 | Nach OE-3/OE-5         | RAK-29..RAK-35                         |
 
 ---
 
@@ -102,7 +80,7 @@ Commit-Hashes, z. B. [`docs/planning/plan-0.3.0.md`](./plan-0.3.0.md).
 | 22  | ✅      | Segment-Dauern prüfen und JSON-Ergebnisformat stabilisieren                                                           | Nach Schritt 21                                                 | RAK-25, RAK-26                                            |
 | 23  | ✅      | API-Anbindung über bestehenden StreamAnalyzer-Port umsetzen                                                           | Nach Schritt 22                                                 | RAK-27; F-22, F-33                                        |
 | 24  | ✅      | CLI-Grundlage für den Stream Analyzer schaffen                                                                        | Nach Schritt 22                                                 | RAK-28; MVP-34                                            |
-| 25  | ⬜      | OE-3/Persistenz nach ADR-Draft neu bewerten, falls Analyseergebnisse durable gespeichert werden müssen                 | Parallel zu `0.3.0`-Planung                                     | OE-3; MVP-16                                              |
+| 25  | 🟡      | OE-3/Persistenz nach ADR-Draft neu bewerten — `0.3.0` ist stateless ausgeliefert; Entscheidung bleibt für `0.4.0`-Scope offen | Vor `0.4.0`-Scope-Cut                                          | OE-3; MVP-16                                              |
 
 ---
 
@@ -117,7 +95,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.1.1` | Player-SDK + Dashboard       | ✅      | RAK-2, RAK-5, RAK-7; DoD-Tracking in [`plan-0.1.1.md`](./plan-0.1.1.md)                         |
 | `0.1.2` | Observability-Stack          | ✅      | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](./plan-0.1.2.md)                               |
 | `0.2.0` | Publizierbares Player SDK    | ✅      | RAK-11..RAK-21                                                                                  |
-| `0.3.0` | Stream Analyzer              | ⬜      | RAK-22..RAK-28                                                                                  |
+| `0.3.0` | Stream Analyzer              | ✅      | RAK-22..RAK-28; DoD-Tracking in [`plan-0.3.0.md`](./plan-0.3.0.md)                              |
 | `0.4.0` | Erweiterte Trace-Korrelation | ⬜      | RAK-29..RAK-35                                                                                  |
 | `0.5.0` | Multi-Protocol Lab           | ⬜      | RAK-36..RAK-40                                                                                  |
 | `0.6.0` | SRT Health View              | ⬜      | RAK-41..RAK-46                                                                                  |

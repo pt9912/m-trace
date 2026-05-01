@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-01
+
 ### Added
 
 - Workspace-Paket `@npm9912/stream-analyzer` mit HLS-Klassifikator,
@@ -27,17 +29,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bin-Eintrag, Datei- und URL-Input (URL teilt den SSRF-geschützten
   Loader-Pfad), JSON auf stdout, Exit-Codes 0/1/2, `--help` und
   `--version`. Smoke `make smoke-cli` deckt `--help`, Master-Datei,
-  Nicht-HLS-Datei und fehlende Datei ab.
-- Doku: `docs/user/stream-analyzer.md` (Tranche-1..7-Stand) und
-  `spec/backend-api-contract.md` §3.6 Analyzer-Endpunkt.
+  Nicht-HLS-Datei, fehlende Datei, no-args, SSRF-URL und Bin-Symlink
+  ab.
+- Doku: `docs/user/stream-analyzer.md` (vollständiger 0.3.0-Stand)
+  und `spec/backend-api-contract.md` §3.6 Analyzer-Endpunkt.
 - Tranche-7.5-Härtung der API-Anbindung:
   - Prometheus-Counter `mtrace_analyze_requests_total{outcome,code}`
     zählt jeden `POST /api/analyze`-Aufruf (`outcome` ∈ `ok|error`,
     `code` ∈ `ok|invalid_request|invalid_json|unsupported_media_type|payload_too_large|invalid_input|fetch_blocked|manifest_not_hls|fetch_failed|manifest_too_large|internal_error|analyzer_unavailable`).
-    Cardinality bleibt beschränkt.
+    Cardinality bleibt durch eine Whitelist im Publisher beschränkt.
   - `analyzer-service` respektiert `ANALYZER_ALLOW_PRIVATE_NETWORKS=true|1|yes|on`
     und reicht ein neues `FetchOptions.allowPrivateNetworks`-Flag an
-    den Loader weiter. Default bleibt: SSRF-IP-Block aktiv.
+    den Loader weiter. Default bleibt: SSRF-IP-Block aktiv. Aufrufer
+    können das Flag nicht über den Body anfordern (Service-Whitelist).
   - `apps/analyzer-service/Dockerfile` baut ohne zweiten
     pnpm-install-Schritt — `pnpm deploy --prod --legacy /deploy` in
     der Build-Stage erzeugt ein selbsttragendes Bundle, die
@@ -46,7 +50,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `spec/contract-fixtures/analyzer/`; TS-Test pinnt
     `analyzeHlsManifest`-Output gegen Spec, Go-Test parst die Kopien
     in `apps/api/.../testdata/` via `go:embed`, plus ein TS-Drift-
-    Check gegen die Spec-Quelle.
+    Check gegen die Spec-Quelle. `make sync-contract-fixtures`
+    syncronisiert die Kopien per Knopfdruck.
+
+### Tooling
+
+- Wurzel-`Makefile` deckt jetzt `install`, `fullbuild`, `smoke-analyzer`,
+  `smoke-cli` und `sync-contract-fixtures` ab; `workspace-test`,
+  `workspace-lint` und `workspace-coverage-gate` hängen am
+  `workspace-build`, damit Tests und Linter die Workspace-Dependencies
+  in Topo-Sort erst bauen.
+- `.gitattributes` setzt `text eol=lf` als Default plus harte Pflicht
+  für `*.json`/`*.m3u8`/`*.sh`, damit Windows-Checkouts keine
+  CRLF-Drift in den Contract-Fixtures erzeugen.
 
 ## [0.2.0] - 2026-04-30
 

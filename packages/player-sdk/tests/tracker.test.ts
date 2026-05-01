@@ -44,7 +44,7 @@ describe("MTracePlayerTracker", () => {
             session_id: "session-1",
             client_timestamp: "2026-04-30T00:00:00.000Z",
             sequence_number: 1,
-            sdk: { name: "@npm9912/player-sdk", version: "0.2.0" }
+            sdk: { name: "@npm9912/player-sdk", version: "0.3.0" }
           },
           {
             event_name: "segment_loaded",
@@ -52,7 +52,7 @@ describe("MTracePlayerTracker", () => {
             session_id: "session-1",
             client_timestamp: "2026-04-30T00:00:01.000Z",
             sequence_number: 2,
-            sdk: { name: "@npm9912/player-sdk", version: "0.2.0" },
+            sdk: { name: "@npm9912/player-sdk", version: "0.3.0" },
             meta: { duration_ms: 120 }
           }
         ]
