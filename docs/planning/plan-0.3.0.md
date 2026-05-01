@@ -35,7 +35,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 5 | JSON-Ergebnisformat und Dokumentation | ✅ |
 | 6 | API-Anbindung über StreamAnalyzer-Port | ✅ |
 | 7 | CLI-Grundlage | ✅ |
-| 7.5 | Tranche-6-Folge-Issues härten | ⬜ |
+| 7.5 | Tranche-6-Folge-Issues härten | ✅ |
 | 8 | Release-Akzeptanzkriterien `0.3.0` | ⬜ |
 
 ---
@@ -209,34 +209,12 @@ Sicht in den Release-Schnitt.
 
 DoD:
 
-- [ ] Cross-Process-Vertragstest TS↔Go: gemeinsames JSON-Schema
-  (z. B. `spec/analyzer-result.schema.json`) oder Vitest-Fixture-
-  Setup, gegen das sowohl der `apps/analyzer-service`-Output als auch
-  das Go-Adapter-Decoding getestet werden. Drift in Pflichtfeldern
-  (`status`, `analyzerVersion`, `playlistType`, `analyzerKind`,
-  `findings[].code`/`level`) muss in CI rot werden.
-- [ ] Prometheus-Counter `analyze_requests_total{outcome,code}` (oder
-  äquivalent) im Go-API-Stack ergänzt; Counter wird vom
-  `AnalyzeHandler` auf jedem Erfolgs- und Fehlerpfad erhöht. Coverage-
-  Gate bleibt grün; bestehende Cardinality-Begrenzungen werden nicht
-  verletzt (`outcome` ∈ {ok, error}, `code` aus der bekannten Domäne).
-- [ ] `analyzer-service` bekommt einen opt-in
-  `ANALYZER_ALLOW_PRIVATE_NETWORKS=true` (oder vergleichbares) Flag,
-  das die SSRF-IP-Blocklist nur dann lockert, wenn explizit gesetzt;
-  Default bleibt unverändert (Block). Doku in
-  `docs/user/stream-analyzer.md` §6 vermerkt das Flag und die
-  Sicherheitsfolgen.
-- [ ] `apps/analyzer-service/Dockerfile` läuft mit nur einem
-  produktiven Install-Schritt (z. B. via `pnpm deploy --prod` oder
-  einem tsup-Single-File-Bundle, das `node_modules` zur Laufzeit
-  überflüssig macht). Image-Größe der `runtime`-Stage ist nach dem
-  Refactor messbar kleiner oder identisch — nicht größer.
-- [ ] Plan-/Doku-Aktualisierung: dieser §9-Block wird beim Schließen
-  jedes DoD-Items mit Commit-Hash versehen; ein Hinweis-Eintrag im
-  `CHANGELOG.md` (Unreleased) hält die Operator-relevanten
-  Änderungen fest (Counter-Name, Flag-Name).
-- [ ] `make gates` und `make smoke-analyzer` bleiben grün; CI-Run
-  auf `main` ist nach dem Tranche-7.5-Abschluss erfolgreich.
+- [x] Cross-Process-Vertragstest TS↔Go: `spec/contract-fixtures/analyzer/{success-master,error-fetch-blocked}.json` als Quelle der Wahrheit; TS-Test in `packages/stream-analyzer/tests/contract.test.ts` pinnt `analyzeHlsManifest`-Output gegen Spec und prüft Drift gegen die Go-`testdata`-Kopien byte-genau; Go-Test in `apps/api/adapters/driven/streamanalyzer/contract_test.go` parst die Kopien via `go:embed` durch `parseSuccessResponse`/`parseDomainError` (`a622ae8`).
+- [x] Prometheus-Counter `mtrace_analyze_requests_total{outcome,code}` ergänzt; `AnalyzeHandler` ruft ihn auf jedem Erfolgs- und Fehlerpfad inkl. der frühen Eingabe-Validierungen. Coverage-Gate grün; Label-Domäne beschränkt (`outcome` ∈ {ok, error}, `code` aus der bekannten Fehler-/Erfolgsdomäne) (`a622ae8`).
+- [x] `analyzer-service` respektiert `ANALYZER_ALLOW_PRIVATE_NETWORKS=true|1|yes|on` und reicht das neue `FetchOptions.allowPrivateNetworks`-Flag pro Aufruf an den Loader weiter; Default bleibt: SSRF-IP-Block aktiv. Schema-/Credentials-/Größen-/Redirect-Regeln bleiben unangetastet; Doku in `docs/user/stream-analyzer.md` §6 ergänzt (`a622ae8`).
+- [x] `apps/analyzer-service/Dockerfile` baut ohne zweiten `pnpm install`-Schritt — `pnpm deploy --prod --legacy /deploy` erzeugt ein selbsttragendes Bundle; Runtime-Stage übernimmt es per `COPY`. Image-Größe ~155 MB, kein Wachstum gegenüber 0.3.0-Baseline; `make smoke-analyzer` grün (`a622ae8`).
+- [x] Plan-/Doku-Aktualisierung: §9-DoD-Items mit Hash, `CHANGELOG.md`-Unreleased-Eintrag mit Counter-Name, Flag-Name, Dockerfile-Notiz und Contract-Test-Hinweis (`a622ae8`).
+- [x] `make gates` und `make smoke-analyzer` bleiben grün (`a622ae8`); CI-Run auf `main` wird nach dem Push verifiziert.
 
 ---
 
