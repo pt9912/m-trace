@@ -77,7 +77,7 @@ DoD:
 - [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind hinter den bestehenden Ports implementiert; Application- und Domain-Layer bleiben frei von SQLite-Imports.
 - [ ] In-Memory-Adapter bleiben nur für Tests oder expliziten Dev-Fallback erhalten und sind nicht mehr der Default im Compose-Lab.
 - [ ] Session-Ende, Sweeper-Zustände und doppelt eintreffende Events wirken idempotent auf den gespeicherten Session-State.
-- [ ] Event-Ordering ist restart-stabil: Detailansicht sortiert konsistent nach `server_received_at`, `sequence_number` und durablem Tie-Breaker.
+- [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als durabler Tie-Breaker.
 - [ ] Cursor-Format nutzt keine `process_instance_id`-Invalidierung mehr; Cursor bleiben nach API-Restart gültig oder liefern einen dokumentierten, maschinenlesbaren Fehler.
 - [ ] Retention-Defaults für das lokale Lab sind festgelegt und dokumentiert; Reset-/Wipe-Anleitung steht in `docs/user/local-development.md`.
 - [ ] Persistenztests decken Neustart-Simulation, Migration, Cursor-Stabilität, Session-Ende, Event-Ordering und Retention ab.
@@ -109,7 +109,7 @@ DoD:
 
 Bezug: RAK-30; RAK-29; Stream Analyzer aus `0.3.0`; F-68..F-81; Telemetry-Model §1.
 
-Ziel: Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich einem Session-Verlauf zugeordnet. RAK-30 ist Soll; Lücken müssen sichtbar und erklärbar bleiben.
+Ziel: Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich einem gemeinsamen Session-Trace zugeordnet. RAK-30 ist Soll; Lücken müssen sichtbar und erklärbar bleiben.
 
 DoD:
 
@@ -117,9 +117,11 @@ DoD:
 - [ ] Event-Schema erlaubt die Unterscheidung von Manifest-Request, Segment-Request und Player-Zustandsereignis ohne Breaking Change oder mit dokumentierter Schema-Migration.
 - [ ] Segment- und Manifest-URLs werden nicht als Prometheus-Labels verwendet; Speicherung im Event-Store folgt den Datenschutz- und Retention-Regeln.
 - [ ] Backend normalisiert die eingehenden Netzwerkereignisse in den bestehenden Session-/Event-Store.
+- [ ] Manifest-, Segment- und Player-Events teilen denselben Trace- oder Korrelationskontext, wenn der Browser/SDK-Pfad die nötigen Signale liefert; Abweichungen werden pro Ereignistyp begründet.
+- [ ] Falls einzelne Manifest-/Segment-Daten nur als Event-Timeline und nicht als OTel-Span abbildbar sind, ist diese Grenze explizit dokumentiert und im Dashboard sichtbar nachvollziehbar.
 - [ ] Korrelation ist tolerant gegenüber fehlenden SDK-Feldern, blockierten Browser-Timings und CORS-/Resource-Timing-Lücken.
 - [ ] Analyzer-Ergebnisse aus `POST /api/analyze` sind optional mit einer Session verknüpfbar oder bewusst getrennt dokumentiert, damit Manifestanalyse und Player-Timeline nicht inkonsistent vermischt werden.
-- [ ] Tests decken gemischte Player-, Manifest- und Segment-Ereignisse innerhalb einer Session ab.
+- [ ] Tests decken gemischte Player-, Manifest- und Segment-Ereignisse innerhalb einer Session ab und prüfen den gemeinsamen Trace-/Korrelationskontext oder die dokumentierte Timeline-only-Ausnahme.
 - [ ] Dokumentation benennt Grenzen der Korrelation, insbesondere Browser-APIs, CORS, Service Worker, CDN-Redirects und Sampling.
 
 ---
@@ -138,6 +140,9 @@ DoD:
 - [ ] Invalid-, dropped- und rate-limited Hinweise sind in der Session- oder Statusansicht auffindbar, ohne Prometheus-Rohwissen vorauszusetzen.
 - [ ] Pagination oder inkrementelles Nachladen bleibt bei längeren Sessions bedienbar; Cursor-Verhalten ist restart-stabil.
 - [ ] SSE-Live-Update-Mechanismus aus ADR 0003 ist implementiert; Polling bleibt Fallback für Stream-Abbruch oder nicht verfügbare SSE-Verbindung.
+- [ ] SSE-Endpunkt-Schnitt ist entschieden: globaler Stream, optionaler Session-Detail-Stream, Payload-Schema, `Last-Event-ID`-/Backfill-Regel und Polling-Fallback-Intervalle sind dokumentiert.
+- [ ] Backend-Tests decken SSE-Stream-Header, EventSource-kompatibles Format, Heartbeats/Keepalive, Client-Abbruch und reconnect-freundliche Semantik ab.
+- [ ] Dashboard-Tests decken SSE-Erfolg, Reconnect/Backfill und Polling-Fallback ab.
 - [ ] Dashboard-Tests decken leere Timeline, kurze Session, lange Session, laufende Session, beendete Session und Restart-Persistenz über API-Mockdaten ab.
 - [ ] Browser-E2E-Smoke erzeugt über `/demo` eine Session und prüft, dass der Session-Verlauf im Dashboard sichtbar ist.
 
@@ -205,7 +210,7 @@ Bezug: RAK-29..RAK-35; `docs/user/releasing.md`.
 DoD:
 
 - [ ] **RAK-29** Player-Session-Traces werden konsistent erzeugt: mehrere Batches einer Session teilen stabile Korrelationsdaten; Tests decken Erfolg und fehlenden Kontext ab.
-- [ ] **RAK-30** Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich zusammengeführt; technische Grenzen sind dokumentiert.
+- [ ] **RAK-30** Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich in einem gemeinsamen Trace-/Korrelationskontext zusammengeführt; Timeline-only-Ausnahmen sind je Ereignistyp begründet und dokumentiert.
 - [ ] **RAK-31** Tempo kann optional als Trace-Backend verwendet werden oder ist bewusst als Kann-Scope deferred, ohne Muss-Kriterien zu gefährden.
 - [ ] **RAK-32** Dashboard kann Session-Verläufe ohne Tempo anzeigen; API-Restart verliert bestehende lokale Session-Historie nicht.
 - [ ] **RAK-33** Prometheus bleibt auf aggregierte Metriken beschränkt; Cardinality-Smoke ist grün.

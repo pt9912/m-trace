@@ -287,12 +287,16 @@ Vom Server gesetzt:
 
 ### 5.2 Ordering innerhalb einer Session
 
-Bevorzugte Reihenfolge (F-128):
+Kanonische API- und Cursor-Reihenfolge:
 
-1. `sequence_number` (falls gesetzt — Client kontrolliert).
-2. `(server_received_at, ingest_sequence)` als Fallback und als Pagination-Sortierschlüssel im API.
+1. `server_received_at` (Server-Eingangszeit, restart-stabil persistiert).
+2. `sequence_number` (falls gesetzt — Client kontrolliert; sortiert nur innerhalb derselben Server-Zeitgruppe).
+3. `ingest_sequence` (durabler Tie-Breaker und Pagination-Schlüssel).
 
-Das Dashboard zeigt Events bevorzugt nach `sequence_number` an, wenn vorhanden; die API liefert das Default-Ordering aus §5.2 oben aber konsistent als `(server_received_at, sequence_number, ingest_sequence)`.
+Für fachliche Session-Analyse darf das Dashboard zusätzlich die
+Client-Sequenz visualisieren. Die API liefert jedoch konsistent
+`(server_received_at, sequence_number, ingest_sequence)`, damit Cursor nicht
+durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 ### 5.3 Latenzberechnung und Time-Skew
 

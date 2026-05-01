@@ -53,7 +53,7 @@ Diese Punkte muss eine spätere Entscheidung berücksichtigen:
 | Ingest-Sequenz | `ingest_sequence` muss monoton und nach Restart konsistent fortgesetzt werden, sobald Cursor langlebig sein sollen. |
 | Session-Ende | `session_ended` und Sweeper-Zustände müssen idempotent auf Session-State wirken. |
 | Cursor-Stabilität | Cursor dürfen bei durablem Store nicht mehr pauschal an `process_instance_id` hängen; Restart darf Pagination nicht unnötig invalidieren. |
-| Sortierung | Session-Listen bleiben nach `started_at desc, session_id asc`; Event-Listen bleiben nach `server_received_at asc, ingest_sequence asc`. |
+| Sortierung | Session-Listen bleiben nach `started_at desc, session_id asc`; Event-Listen bleiben nach `server_received_at asc, sequence_number asc, ingest_sequence asc`, wobei `ingest_sequence` der durable Tie-Breaker ist. |
 | Retention | Store muss spätere Retention nach Zeit, Projekt und Session erlauben. |
 | Lokales Lab | `make dev` soll ohne externen Cloud-Dienst reproduzierbar bleiben. |
 
