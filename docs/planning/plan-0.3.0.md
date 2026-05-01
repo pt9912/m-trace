@@ -174,6 +174,35 @@ DoD:
 - [!] Metriken/Logs für Analyseaufrufe sind minimal vorhanden oder bewusst deferred — bewusst deferred auf 0.3.x: HTTPStreamAnalyzer und AnalyzeHandler loggen Fehler über den existierenden slog-Pfad; Prometheus-Counter/Histogram bleiben Tranche-0.3.x-Folge-Issue (kein Release-Blocker für Tranche 6).
 - [x] Architekturcheck bleibt grün (`579e7cc`).
 
+### 7.1 Folge-Issues nach Code-Review (offen für 0.3.x)
+
+Tranche 6 wurde mit Hash `579e7cc` ausgeliefert; ein anschließendes
+Review hat Punkte aufgedeckt, die bewusst nicht release-blockierend
+sind, aber mittelfristig adressiert werden:
+
+- **Contract-Drift TS↔Go**: das Wire-Format zwischen
+  `apps/analyzer-service` und `apps/api/adapters/driven/streamanalyzer`
+  ist heute durch separate Go-Structs und TypeScript-Typen modelliert.
+  Es gibt keinen automatischen Cross-Process-Test, der absichert, dass
+  beide Seiten byte-für-byte alignen. Die Pflichtfelder (`status`,
+  `analyzerVersion`, `playlistType`, `analyzerKind`, `findings.code`/
+  `level`) werden im Adapter aktiv gemappt, drift aber unbemerkt.
+  Lösungsidee: gemeinsame JSON-Schema-Datei in `spec/`, gegen die
+  beide Seiten testen — oder ein Vitest-Fixture, das den Service
+  startet und das Go-Adapter-Roundtrip prüft.
+- **Analyse-Metriken**: heute nur strukturierte slog-Logs auf Erfolgs-
+  und Fehler-Pfad. Ein einzelner Prometheus-Counter (`analyze_requests_total{outcome,code}`) wäre cheap-to-ship und gibt Operator-Sicht
+  auf den Endpoint-Stand. Aktueller Stand entspricht der DoD-Wahl
+  „minimal vorhanden oder bewusst deferred".
+- **SSRF-Local-Dev-Bequemlichkeit**: Compose-interne URL-Inputs
+  (`http://mediamtx:8888/...`) treffen den SSRF-Block, weil docker-
+  bridge-IPs in RFC1918 liegen. Workaround: Text-Inputs nutzen
+  (Smoke und Doku tun das). Ein opt-in `ANALYZER_ALLOW_PRIVATE_NETWORKS`-
+  Flag im analyzer-service wäre eine saubere Folge-Erweiterung.
+- **Dockerfile-Optimierung**: zwei `pnpm install`-Schritte (Build- und
+  Runtime-Stage) im `apps/analyzer-service/Dockerfile`. `pnpm deploy --prod` oder ein gebundeltes Single-File-Output via tsup würde den
+  Runtime-Stage schlanker machen.
+
 ---
 
 ## 8. Tranche 7 — CLI-Grundlage

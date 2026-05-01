@@ -224,12 +224,12 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_RejectsMalformedJSON(t *testing.T) {
 	}
 }
 
-func TestHTTPStreamAnalyzer_AnalyzeManifest_RejectsSuccess2xxWithErrorStatus(t *testing.T) {
+func TestHTTPStreamAnalyzer_AnalyzeManifest_ReturnsDomainErrorForStatusError(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"error","code":"internal_error","message":"glitch"}`))
+		_, _ = w.Write([]byte(`{"status":"error","analyzerVersion":"0.3.0","analyzerKind":"hls","code":"manifest_not_hls","message":"not HLS","details":{"firstLine":"<html>"}}`))
 	}))
 	defer server.Close()
 
@@ -240,8 +240,43 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_RejectsSuccess2xxWithErrorStatus(t *
 	if err == nil {
 		t.Fatal("expected error for 200 + status=error response")
 	}
-	if !strings.Contains(err.Error(), "internal_error") {
-		t.Errorf("error should mention code: %v", err)
+	var domainErr *domain.StreamAnalysisDomainError
+	if !errors.As(err, &domainErr) {
+		t.Fatalf("expected *StreamAnalysisDomainError, got %T: %v", err, err)
+	}
+	if domainErr.Code != domain.StreamAnalysisManifestNotHLS {
+		t.Errorf("code: want manifest_not_hls, got %q", domainErr.Code)
+	}
+	if domainErr.Message != "not HLS" {
+		t.Errorf("message not propagated: %q", domainErr.Message)
+	}
+	if got, ok := domainErr.Details["firstLine"].(string); !ok || got != "<html>" {
+		t.Errorf("details not propagated: %v", domainErr.Details)
+	}
+}
+
+func TestHTTPStreamAnalyzer_AnalyzeManifest_DomainErrorPreservesNullDetails(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"error","code":"invalid_input","message":"empty"}`))
+	}))
+	defer server.Close()
+
+	adapter := streamanalyzer.NewHTTPStreamAnalyzer(server.URL)
+	_, err := adapter.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{
+		ManifestText: "#EXTM3U\n",
+	})
+	var domainErr *domain.StreamAnalysisDomainError
+	if !errors.As(err, &domainErr) {
+		t.Fatalf("expected *StreamAnalysisDomainError, got %T: %v", err, err)
+	}
+	if domainErr.Code != domain.StreamAnalysisInvalidInput {
+		t.Errorf("code: want invalid_input, got %q", domainErr.Code)
+	}
+	if domainErr.Details != nil {
+		t.Errorf("details should be nil when omitted, got %v", domainErr.Details)
 	}
 }
 

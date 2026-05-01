@@ -346,17 +346,24 @@ Pakets; Fehler werden auf eine Problem-Shape gemappt:
 
 | HTTP | `code`                  | Anlass                                                                |
 | ---- | ----------------------- | --------------------------------------------------------------------- |
-| 400  | `invalid_request`       | Pflichtfelder fehlen oder leer.                                       |
+| 400  | `invalid_request`       | API-Eingabe fehlerhaft (Pflichtfelder, Kind unbekannt).               |
 | 400  | `invalid_json`          | Body kein gültiges JSON.                                              |
 | 415  | `unsupported_media_type`| Content-Type nicht `application/json`.                                |
 | 413  | `payload_too_large`     | Body über 1 MiB.                                                       |
-| 502  | `analyzer_unavailable`  | analyzer-service nicht erreichbar, abgelehnt (SSRF/Timeout/malformed) oder unerwartete Fehlerantwort. `details.reason` enthält den Adapter-String. |
+| 400  | `invalid_input`         | Analyzer hat den Manifest-Input als formal ungültig zurückgewiesen.    |
+| 400  | `fetch_blocked`         | SSRF-Schutz hat die URL abgelehnt (privat/loopback/Credentials).       |
+| 422  | `manifest_not_hls`      | Geladenes Manifest ist kein HLS-Inhalt.                                |
+| 502  | `fetch_failed`          | Analyzer konnte die URL nicht laden (Netzwerk/Status/Content-Type).    |
+| 502  | `manifest_too_large`    | Manifest übersteigt das Loader-Größenlimit.                            |
+| 502  | `internal_error`        | Unerwarteter Fehler im Analyzer-Stack.                                 |
+| 502  | `analyzer_unavailable`  | Transportfehler API↔analyzer-service (kein Domain-Fehler).             |
 
 Ein lokaler End-to-End-Smoke (`make smoke-analyzer`) startet den
 Stack, prüft `/health` an Service und API, sendet einen Master-
 Manifest-Text gegen `/api/analyze` und verifiziert zusätzlich, dass
-ein RFC1918-URL-Input vom SSRF-Schutz korrekt mit 502 abgelehnt
-wird.
+ein RFC1918-URL-Input vom SSRF-Schutz korrekt mit 400 `fetch_blocked`
+abgelehnt wird (kein 502 — der Analyzer hat den Aufruf bewusst
+zurückgewiesen, nicht der Service ist ausgefallen).
 
 ## 6. URL-Loader und SSRF-Schutz
 

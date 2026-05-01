@@ -157,12 +157,22 @@ type analyzeResponseEnvelope struct {
 	PlaylistType    string                  `json:"playlistType"`
 	Findings        []analyzeFindingPayload `json:"findings"`
 	Details         json.RawMessage         `json:"details"`
-	// Fehler-Felder (nur bei status="error" relevant); vom Adapter
-	// nur abgefangen, falls ein Service-Bug 200 + status="error"
-	// liefert.
+	// Fehler-Felder (nur bei status="error" relevant). Das
+	// analyzer-service-Wire-Format kapselt Domain-Fehler in 200 +
+	// status="error", siehe `@npm9912/stream-analyzer`-Doku §2.3 und
+	// `apps/analyzer-service/src/server.ts`.
+	Code         string          `json:"code"`
+	Message      string          `json:"message"`
+	ErrorDetails json.RawMessage `json:"-"`
+}
+
+// rawErrorEnvelope ist das Schmal-Schema für Domain-Fehler (`status:
+// "error"`, plus optionalen `details`-Block) aus dem analyzer-service.
+type rawErrorEnvelope struct {
+	Status  string          `json:"status"`
 	Code    string          `json:"code"`
 	Message string          `json:"message"`
-	ErrDet  json.RawMessage `json:"-"`
+	Details json.RawMessage `json:"details"`
 }
 
 type analyzeFindingPayload struct {
@@ -176,14 +186,15 @@ func parseSuccessResponse(raw []byte) (domain.StreamAnalysisResult, error) {
 	if err := json.Unmarshal(raw, &env); err != nil {
 		return domain.StreamAnalysisResult{}, fmt.Errorf("decode analyzer response: %w", err)
 	}
+	if env.Status == "error" {
+		// analyzer-service kapselt Domain-Fehler in 200 + status=error.
+		// Das ist KEIN Verfügbarkeitsproblem — der Analyzer hat den
+		// Aufruf bewusst abgelehnt und einen Code aus einer
+		// abgeschlossenen Domäne mitgeliefert. Der Driving-Adapter
+		// mappt das anhand des Codes auf den passenden HTTP-Status.
+		return domain.StreamAnalysisResult{}, parseDomainError(raw)
+	}
 	if env.Status != "ok" {
-		// Status="error" auf 2xx behandeln wir als Adapter-Inkonsistenz —
-		// das analyzer-service-Schema sieht das nicht vor (Erfolge sind
-		// 200, Fehler 4xx/5xx). Wir geben den Fehler zurück, damit der
-		// Use-Case-Pfad ihn als Domain-Fehler weiterreicht.
-		if env.Status == "error" {
-			return domain.StreamAnalysisResult{}, fmt.Errorf("analyzer-service reported error code %q: %s", env.Code, env.Message)
-		}
 		return domain.StreamAnalysisResult{}, fmt.Errorf("analyzer-service unknown status %q", env.Status)
 	}
 
@@ -199,6 +210,24 @@ func parseSuccessResponse(raw []byte) (domain.StreamAnalysisResult, error) {
 		result.EncodedDetails = append([]byte(nil), env.Details...)
 	}
 	return result, nil
+}
+
+func parseDomainError(raw []byte) error {
+	var env rawErrorEnvelope
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return fmt.Errorf("decode analyzer error envelope: %w", err)
+	}
+	domainErr := &domain.StreamAnalysisDomainError{
+		Code:    domain.StreamAnalysisErrorCode(env.Code),
+		Message: env.Message,
+	}
+	if len(env.Details) > 0 && string(env.Details) != "null" {
+		var details map[string]any
+		if err := json.Unmarshal(env.Details, &details); err == nil {
+			domainErr.Details = details
+		}
+	}
+	return domainErr
 }
 
 func mapPlaylistType(value string) domain.PlaylistType {

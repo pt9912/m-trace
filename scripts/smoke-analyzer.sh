@@ -22,6 +22,12 @@ set -euo pipefail
 API_URL="${API_URL:-http://localhost:8080}"
 ANALYZER_URL="${ANALYZER_URL:-http://localhost:7000}"
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "[smoke-analyzer] missing dependency: jq" >&2
+  echo "  install via your package manager (apt: 'apt-get install jq')." >&2
+  exit 2
+fi
+
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -83,21 +89,23 @@ fi
 echo "[smoke-analyzer] master case OK"
 
 # 4. SSRF-Negativfall: private IP wird vom analyzer-service abgelehnt;
-#    API mappt das auf 502 (analyzer_unavailable).
+#    der Domain-Code fetch_blocked wird vom API-Adapter auf 400
+#    durchgereicht (Aufrufer hat eine unsichere URL geliefert — das
+#    ist kein Verfügbarkeitsproblem unseres Service).
 status="$(curl -sSL -o "$tmpdir/ssrf.body" -w '%{http_code}' \
   -X POST "$API_URL/api/analyze" \
   -H 'Content-Type: application/json' \
   -d '{"kind":"url","url":"http://10.0.0.1/m.m3u8"}')"
-if [ "$status" != "502" ]; then
-  echo "[smoke-analyzer] SSRF case: expected 502 (analyzer_unavailable), got $status"
+if [ "$status" != "400" ]; then
+  echo "[smoke-analyzer] SSRF case: expected 400 (fetch_blocked), got $status"
   cat "$tmpdir/ssrf.body"
   exit 1
 fi
-if ! grep -qE '"code":"analyzer_unavailable"' "$tmpdir/ssrf.body"; then
-  echo "[smoke-analyzer] SSRF case: response missing analyzer_unavailable code"
+if ! grep -qE '"code":"fetch_blocked"' "$tmpdir/ssrf.body"; then
+  echo "[smoke-analyzer] SSRF case: response missing fetch_blocked code"
   cat "$tmpdir/ssrf.body"
   exit 1
 fi
-echo "[smoke-analyzer] SSRF-block correctly mapped to 502"
+echo "[smoke-analyzer] SSRF-block correctly mapped to 400 fetch_blocked"
 
 echo "[smoke-analyzer] all checks passed"

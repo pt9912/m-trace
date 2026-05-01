@@ -55,6 +55,59 @@ type StreamAnalysisFinding struct {
 	Message string
 }
 
+// StreamAnalysisErrorCode klassifiziert von analyzer-Implementierungen
+// gemeldete Fehler (RFC-7807-ähnliche Code-Domäne aus
+// `@npm9912/stream-analyzer.AnalysisErrorResult.code`). Driving-
+// Adapter mappen die Codes auf HTTP-Statuscodes (plan-0.3.0 §7).
+type StreamAnalysisErrorCode string
+
+const (
+	// StreamAnalysisInvalidInput: der Aufrufer hat eine fehlerhafte
+	// Eingabe geliefert (kind/text/url-Form). HTTP 400.
+	StreamAnalysisInvalidInput StreamAnalysisErrorCode = "invalid_input"
+	// StreamAnalysisManifestNotHLS: das Manifest ist kein HLS-Inhalt.
+	// HTTP 422 — semantisch wohlgeformt, aber inhaltlich nicht
+	// verarbeitbar.
+	StreamAnalysisManifestNotHLS StreamAnalysisErrorCode = "manifest_not_hls"
+	// StreamAnalysisFetchBlocked: die übergebene URL wurde vom
+	// SSRF-Schutz abgelehnt (privat/loopback/credentials/scheme).
+	// HTTP 400 — der Aufrufer hat eine unsichere URL geliefert.
+	StreamAnalysisFetchBlocked StreamAnalysisErrorCode = "fetch_blocked"
+	// StreamAnalysisFetchFailed: das URL-Laden ist netzwerk-/status-
+	// /content-type-bedingt fehlgeschlagen. HTTP 502 — wir agieren
+	// als Gateway, Upstream hat versagt.
+	StreamAnalysisFetchFailed StreamAnalysisErrorCode = "fetch_failed"
+	// StreamAnalysisManifestTooLarge: geladenes Manifest überschritt
+	// das maxBytes-Limit. HTTP 502.
+	StreamAnalysisManifestTooLarge StreamAnalysisErrorCode = "manifest_too_large"
+	// StreamAnalysisInternalError: unerwarteter Fehler im Analyzer
+	// selbst. HTTP 502 (Gateway-Sicht).
+	StreamAnalysisInternalError StreamAnalysisErrorCode = "internal_error"
+)
+
+// StreamAnalysisDomainError signalisiert, dass der Analyzer den
+// Aufruf bewusst abgelehnt hat (Code aus einer abgeschlossenen
+// Domäne). Das ist KEIN Transport-/Verfügbarkeitsproblem — Driving-
+// Adapter müssen die beiden Klassen unterscheiden, damit Konsumenten
+// nicht "analyzer unavailable" lesen, wenn sie tatsächlich eine
+// fehlerhafte Eingabe gesendet haben.
+type StreamAnalysisDomainError struct {
+	Code    StreamAnalysisErrorCode
+	Message string
+	// Details enthält strukturierte Zusatzinfos aus dem analyzer-
+	// Result (z. B. {host, address, family} bei fetch_blocked). Das
+	// Mapping auf HTTP-Body-Felder ist Sache des Driving-Adapters.
+	Details map[string]any
+}
+
+// Error erfüllt das error-Interface.
+func (e *StreamAnalysisDomainError) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
+	return string(e.Code) + ": " + e.Message
+}
+
 // StreamAnalysisResult ist das Domain-Modell der Analyseausgabe. Das
 // stabile JSON-Schema entsteht in plan-0.3.0 Tranche 5; bis dahin
 // reicht die Domain die analyzer-spezifischen Detail-Strukturen als

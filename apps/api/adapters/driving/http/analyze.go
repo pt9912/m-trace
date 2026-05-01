@@ -98,14 +98,24 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp := analyzeResponseEnvelope{
 		Status:          "ok",
 		AnalyzerVersion: result.AnalyzerVersion,
-		AnalyzerKind:    "hls",
-		PlaylistType:    string(result.PlaylistType),
-		Findings:        findingsToPayload(result.Findings),
+		// AnalyzerKind ist heute eine HLS-Konstante. Wenn DASH/CMAF
+		// (F-73) eingeführt werden, übernimmt das die Domain (per-kind
+		// Result-Variant) und das Feld kommt aus result.AnalyzerKind.
+		AnalyzerKind: "hls",
+		PlaylistType: string(result.PlaylistType),
+		Findings:     findingsToPayload(result.Findings),
 	}
 	if len(result.EncodedDetails) > 0 {
 		resp.Details = json.RawMessage(result.EncodedDetails)
 	} else {
 		resp.Details = json.RawMessage(`null`)
+	}
+	if h.Logger != nil {
+		h.Logger.Info("analyze ok",
+			"playlistType", string(result.PlaylistType),
+			"findingCount", len(result.Findings),
+			"analyzerVersion", result.AnalyzerVersion,
+		)
 	}
 	writeJSON(w, http.StatusOK, resp)
 }
@@ -158,21 +168,68 @@ func findingsToPayload(in []domain.StreamAnalysisFinding) []analyzeFindingPayloa
 }
 
 // mapAndWriteUseCaseError übersetzt Use-Case- und Adapter-Fehler in
-// eine Problem-Shape mit dem passenden HTTP-Statuscode. Die
-// Klassifikation ist absichtlich konservativ: Eingabe-Fehler → 400/415/413,
-// alles aus dem analyzer-service-Pfad → 502 (Bad Gateway), unbekannte
-// Fehler → 500.
+// eine Problem-Shape mit dem passenden HTTP-Statuscode (plan-0.3.0 §7
+// Tranche 6). Drei Fehlerklassen werden unterschieden:
+//
+//  1. Eingabevalidierung gegen den Use Case (ErrAnalyzeManifestEmpty)
+//     → 400 invalid_request.
+//  2. Domain-Fehler vom Analyzer (StreamAnalysisDomainError) — der
+//     Analyzer hat den Aufruf bewusst und mit Code abgelehnt. Mapping
+//     je Code: invalid_input/fetch_blocked → 400, manifest_not_hls →
+//     422, fetch_failed/manifest_too_large/internal_error → 502.
+//  3. Transportfehler (HTTP-Status, Timeout, JSON-Decode) → 502
+//     analyzer_unavailable. Die Adapter-Fehler-Message bleibt
+//     bewusst aus dem Antwort-Body (Info-Leak); sie wird strukturiert
+//     im Log abgelegt.
 func mapAndWriteUseCaseError(w http.ResponseWriter, logger *slog.Logger, err error) {
 	if errors.Is(err, application.ErrAnalyzeManifestEmpty) {
+		logWarn(logger, "analyze rejected: empty input", "code", "invalid_request")
 		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_request", err.Error(), nil)
 		return
 	}
-	if logger != nil {
-		logger.Warn("analyze manifest failed", "error", err)
+
+	var domainErr *domain.StreamAnalysisDomainError
+	if errors.As(err, &domainErr) {
+		status := domainHTTPStatus(domainErr.Code)
+		logWarn(logger, "analyze rejected by analyzer",
+			"code", string(domainErr.Code),
+			"status", status,
+		)
+		writeAnalyzeProblem(w, status, string(domainErr.Code), domainErr.Message, domainErr.Details)
+		return
 	}
-	writeAnalyzeProblem(w, http.StatusBadGateway, "analyzer_unavailable", "Analyzer-Service hat den Aufruf nicht erfolgreich beantwortet.", map[string]any{
-		"reason": err.Error(),
-	})
+
+	logWarn(logger, "analyzer transport error",
+		"code", "analyzer_unavailable",
+		"status", http.StatusBadGateway,
+		"error", err.Error(),
+	)
+	writeAnalyzeProblem(w, http.StatusBadGateway, "analyzer_unavailable",
+		"Analyzer-Service hat den Aufruf nicht erfolgreich beantwortet.", nil)
+}
+
+func domainHTTPStatus(code domain.StreamAnalysisErrorCode) int {
+	switch code {
+	case domain.StreamAnalysisInvalidInput, domain.StreamAnalysisFetchBlocked:
+		return http.StatusBadRequest
+	case domain.StreamAnalysisManifestNotHLS:
+		return http.StatusUnprocessableEntity
+	case domain.StreamAnalysisFetchFailed, domain.StreamAnalysisManifestTooLarge, domain.StreamAnalysisInternalError:
+		return http.StatusBadGateway
+	default:
+		// Unbekannter Code → konservativ als Gateway-Fehler behandeln,
+		// damit ein zukünftiger Analyzer-Code, den wir noch nicht
+		// kennen, nicht versehentlich als 4xx (Client-Fehler) gemeldet
+		// wird.
+		return http.StatusBadGateway
+	}
+}
+
+func logWarn(logger *slog.Logger, msg string, args ...any) {
+	if logger == nil {
+		return
+	}
+	logger.Warn(msg, args...)
 }
 
 func writeAnalyzeProblem(w http.ResponseWriter, status int, code, message string, details map[string]any) {

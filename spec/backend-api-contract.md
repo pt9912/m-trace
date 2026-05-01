@@ -140,13 +140,36 @@ analyzer-service hat sein eigenes Limit beim Manifest-Loading).
 
 **Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
 
+API-Eingabevalidierung (Request-Form):
+
 | HTTP | `code`                  | Anlass                                                                  |
 | ---- | ----------------------- | ----------------------------------------------------------------------- |
 | 400  | `invalid_request`       | Pflichtfelder fehlen / kind unbekannt / leerer `text`/`url`-Wert.       |
 | 400  | `invalid_json`          | Body ist kein gültiges JSON.                                            |
 | 415  | `unsupported_media_type`| `Content-Type` ist nicht `application/json`.                            |
 | 413  | `payload_too_large`     | Request-Body übersteigt 1 MiB.                                          |
-| 502  | `analyzer_unavailable`  | analyzer-service nicht erreichbar oder hat den Aufruf abgelehnt (z. B. SSRF-Block, Timeout, malformed Manifest). `details.reason` enthält die Adapter-Fehlermeldung. |
+
+Analyzer-Domain-Fehler (analyzer-service hat den Aufruf bewusst
+abgelehnt; der `code` stammt aus `@npm9912/stream-analyzer` und
+wird durchgereicht; `details` enthält strukturierte Zusatzinfos
+aus dem Analyzer-Result, nicht die freie Adapter-Message):
+
+| HTTP | `code`                | Anlass                                                                                |
+| ---- | --------------------- | ------------------------------------------------------------------------------------- |
+| 400  | `invalid_input`       | Analyzer hat die Manifest-Eingabe als formal ungültig zurückgewiesen.                 |
+| 400  | `fetch_blocked`       | Analyzer-SSRF-Schutz hat die URL abgelehnt (privat/loopback/Credentials/Schema).      |
+| 422  | `manifest_not_hls`    | Geladenes Manifest ist kein HLS-Inhalt — Eingabe semantisch nicht verarbeitbar.       |
+| 502  | `fetch_failed`        | Analyzer konnte die URL nicht laden (Netzwerk, Status, Content-Type).                 |
+| 502  | `manifest_too_large`  | Geladenes Manifest übersteigt das Loader-Größenlimit.                                 |
+| 502  | `internal_error`      | Unerwarteter Fehler im Analyzer-Stack.                                                |
+
+Transport- und Verfügbarkeitsfehler (analyzer-service nicht
+erreichbar, JSON-Decode, Antwort über Größenlimit, fremder
+HTTP-Status):
+
+| HTTP | `code`                  | Anlass                                                                |
+| ---- | ----------------------- | --------------------------------------------------------------------- |
+| 502  | `analyzer_unavailable`  | analyzer-service nicht erreichbar, lieferte malformed JSON, oder gab einen unerwarteten HTTP-Status. Der Antwort-Body trägt **keine** rohe Adapter-Fehler-Message; Details landen strukturiert im API-Log. |
 
 Der analyzer-service-Pfad bekommt einen 30-Sekunden-Timeout vom
 HTTP-Adapter sowie ein Antwortgrößen-Limit von 4 MiB. Beides ist

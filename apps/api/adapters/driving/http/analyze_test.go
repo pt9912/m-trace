@@ -206,7 +206,7 @@ func TestAnalyzeHandler_MapsErrEmptyTo400(t *testing.T) {
 	}
 }
 
-func TestAnalyzeHandler_MapsAdapterErrorTo502(t *testing.T) {
+func TestAnalyzeHandler_MapsTransportErrorTo502(t *testing.T) {
 	t.Parallel()
 	stub := &stubAnalysisInbound{err: errors.New("analyzer-service unreachable")}
 	server := httptest.NewServer(newAnalyzeHandler(stub))
@@ -223,5 +223,75 @@ func TestAnalyzeHandler_MapsAdapterErrorTo502(t *testing.T) {
 	body, _ := io.ReadAll(res.Body)
 	if !strings.Contains(string(body), `"code":"analyzer_unavailable"`) {
 		t.Errorf("body missing analyzer_unavailable code: %s", body)
+	}
+	// Defense-in-Depth: die rohe Adapter-Fehler-Message darf nicht in
+	// den Antwort-Body durchsickern (Info-Leak).
+	if strings.Contains(string(body), "analyzer-service unreachable") {
+		t.Errorf("body leaks adapter error message: %s", body)
+	}
+}
+
+func TestAnalyzeHandler_MapsDomainErrorsByCode(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name         string
+		code         domain.StreamAnalysisErrorCode
+		wantStatus   int
+		wantCodeBody string
+	}{
+		{"invalid_input → 400", domain.StreamAnalysisInvalidInput, http.StatusBadRequest, "invalid_input"},
+		{"fetch_blocked → 400", domain.StreamAnalysisFetchBlocked, http.StatusBadRequest, "fetch_blocked"},
+		{"manifest_not_hls → 422", domain.StreamAnalysisManifestNotHLS, http.StatusUnprocessableEntity, "manifest_not_hls"},
+		{"fetch_failed → 502", domain.StreamAnalysisFetchFailed, http.StatusBadGateway, "fetch_failed"},
+		{"manifest_too_large → 502", domain.StreamAnalysisManifestTooLarge, http.StatusBadGateway, "manifest_too_large"},
+		{"internal_error → 502", domain.StreamAnalysisInternalError, http.StatusBadGateway, "internal_error"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			stub := &stubAnalysisInbound{err: &domain.StreamAnalysisDomainError{
+				Code:    tc.code,
+				Message: "expected message",
+				Details: map[string]any{"hint": "structured detail"},
+			}}
+			server := httptest.NewServer(newAnalyzeHandler(stub))
+			defer server.Close()
+
+			res, err := http.Post(server.URL, "application/json", strings.NewReader(`{"kind":"url","url":"https://example.test/m.m3u8"}`))
+			if err != nil {
+				t.Fatalf("post failed: %v", err)
+			}
+			defer res.Body.Close()
+			if res.StatusCode != tc.wantStatus {
+				t.Errorf("status: want %d, got %d", tc.wantStatus, res.StatusCode)
+			}
+			body, _ := io.ReadAll(res.Body)
+			if !strings.Contains(string(body), `"code":"`+tc.wantCodeBody+`"`) {
+				t.Errorf("body missing code %q: %s", tc.wantCodeBody, body)
+			}
+			if !strings.Contains(string(body), `"hint":"structured detail"`) {
+				t.Errorf("body should pass through structured details: %s", body)
+			}
+		})
+	}
+}
+
+func TestAnalyzeHandler_DomainErrorWithoutDetailsOmitsDetails(t *testing.T) {
+	t.Parallel()
+	stub := &stubAnalysisInbound{err: &domain.StreamAnalysisDomainError{
+		Code:    domain.StreamAnalysisManifestNotHLS,
+		Message: "not HLS",
+	}}
+	server := httptest.NewServer(newAnalyzeHandler(stub))
+	defer server.Close()
+
+	res, err := http.Post(server.URL, "application/json", strings.NewReader(`{"kind":"text","text":"<html>"}`))
+	if err != nil {
+		t.Fatalf("post failed: %v", err)
+	}
+	defer res.Body.Close()
+	body, _ := io.ReadAll(res.Body)
+	if strings.Contains(string(body), `"details"`) {
+		t.Errorf("body should omit details key when domain error has none: %s", body)
 	}
 }
