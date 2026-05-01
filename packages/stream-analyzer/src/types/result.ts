@@ -25,26 +25,55 @@ export interface AnalysisSummary {
 }
 
 /**
- * Erfolgsergebnis eines Analyseaufrufs. Das Schema bleibt additiv
- * erweiterbar (plan-0.3.0 §6 Tranche 5); typspezifische Details
- * landen in `details` und werden mit Tranche 3/4 ausgefüllt.
+ * Kennzeichnet, welcher Analyzer das Ergebnis erzeugt hat. Heute nur
+ * `"hls"`; weitere Manifestformate (DASH, CMAF — F-73) werden additiv
+ * als zusätzliche Werte ergänzt, ohne den Envelope zu brechen.
  */
-export interface AnalysisResult {
+export type AnalyzerKind = "hls";
+
+/**
+ * Gemeinsame Felder aller Erfolgs-Result-Varianten. Konsumenten
+ * sollten direkt das Union-Result `AnalysisResult` verwenden, damit
+ * TypeScript via `playlistType` typgenau auf `details` schließt.
+ */
+export interface BaseAnalysisResult {
   readonly status: "ok";
+  /** Aus `packages/stream-analyzer/package.json#version` abgeleitet. */
   readonly analyzerVersion: string;
+  readonly analyzerKind: AnalyzerKind;
   readonly input: AnalysisInputMetadata;
-  readonly playlistType: PlaylistType;
   readonly summary: AnalysisSummary;
   readonly findings: readonly AnalysisFinding[];
-  /**
-   * Typspezifische Detail-Strukturen. Bei `playlistType === "master"`
-   * ist die Form `MasterPlaylistDetails`; Tranche 4 ergänzt
-   * `MediaPlaylistDetails`. Tranche 5 zieht die Diskriminierung in
-   * den Typ. Bis dahin: `null` markiert „kein typspezifisches Detail
-   * geliefert"; Konsumenten casten nach `playlistType`.
-   */
-  readonly details: Readonly<Record<string, unknown>> | null;
 }
+
+export interface MasterAnalysisResult extends BaseAnalysisResult {
+  readonly playlistType: "master";
+  readonly details: MasterPlaylistDetails;
+}
+
+export interface MediaAnalysisResult extends BaseAnalysisResult {
+  readonly playlistType: "media";
+  readonly details: MediaPlaylistDetails;
+}
+
+export interface UnknownAnalysisResult extends BaseAnalysisResult {
+  readonly playlistType: "unknown";
+  readonly details: null;
+}
+
+/**
+ * Erfolgsergebnis eines Analyseaufrufs. Diskriminiert über
+ * `playlistType`: TypeScript narrowed `details` automatisch auf den
+ * passenden Typ (kein Cast notwendig).
+ *
+ * Stabilitätsregel (plan-0.3.0 §6): additive Änderungen sind erlaubt
+ * (neue Felder, neue PlaylistType-Werte, neue analyzerKind-Werte,
+ * neue Finding-Codes). Breaking Changes (Felder löschen/umbenennen/
+ * umtypisieren, finite Wertedomänen einschränken) erfordern eine
+ * Major-Version, einen Eintrag in `CHANGELOG.md` und ein Update von
+ * `docs/user/stream-analyzer.md` und `docs/planning/plan-0.3.0.md`.
+ */
+export type AnalysisResult = MasterAnalysisResult | MediaAnalysisResult | UnknownAnalysisResult;
 
 /**
  * Ein Variant aus `#EXT-X-STREAM-INF`. Pflichtfeld ist `bandwidth`;

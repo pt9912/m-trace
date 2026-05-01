@@ -156,12 +156,21 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
     expect(result).not.toHaveProperty("details");
   });
 
-  it("returns a stable top-level shape", async () => {
+  it("returns a stable top-level shape (Tranche 5 envelope incl. analyzerKind)", async () => {
     const result = await analyzeHlsManifest({ kind: "text", text: "#EXTM3U\n" });
 
     const okKeys = Object.keys(result).sort();
     expect(okKeys).toEqual(
-      ["analyzerVersion", "details", "findings", "input", "playlistType", "status", "summary"].sort()
+      [
+        "analyzerKind",
+        "analyzerVersion",
+        "details",
+        "findings",
+        "input",
+        "playlistType",
+        "status",
+        "summary"
+      ].sort()
     );
   });
 });

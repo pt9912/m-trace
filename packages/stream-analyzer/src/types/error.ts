@@ -14,6 +14,12 @@ export type AnalysisErrorCode =
 export interface AnalysisErrorResult {
   readonly status: "error";
   readonly analyzerVersion: string;
+  /**
+   * Identifiziert den ausführenden Analyzer (heute nur `"hls"`).
+   * Macht den Envelope für künftige DASH/CMAF-Analyzer wiederverwendbar
+   * (plan-0.3.0 §6 Tranche 5).
+   */
+  readonly analyzerKind: "hls";
   readonly code: AnalysisErrorCode;
   readonly message: string;
   /**

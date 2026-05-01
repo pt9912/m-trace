@@ -122,6 +122,7 @@ function toErrorResult(error: AnalysisError): AnalysisErrorResult {
   return {
     status: "error",
     analyzerVersion: STREAM_ANALYZER_VERSION,
+    analyzerKind: "hls",
     code: error.code,
     message: error.message,
     ...(error.details !== undefined ? { details: error.details } : {})

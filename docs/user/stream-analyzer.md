@@ -8,7 +8,7 @@ Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 Tranche 4)
+## 1. Status (0.3.0 Tranche 5)
 
 - ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 % stehen.
@@ -24,13 +24,17 @@ F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
 - ✅ Media-Detail-Auswertung: Segmente aus `#EXTINF`, Aggregate (Anzahl,
   Min/Max/Mittel/Total), TARGETDURATION-Verletzung, Outlier-Erkennung,
   Live-/VOD-Klassifikation und 3×-Latenzschätzung — siehe §7.
-- ⬜ Stabilisiertes JSON-Schema mit typspezifischen `details` — Tranche 5.
+- ✅ JSON-Ergebnisformat: `AnalysisResult` als diskriminierte Union per
+  `playlistType`, `analyzerKind: "hls"` als Erweiterungspfad für
+  DASH/CMAF, deterministische Serialisierung, Stabilitätsregel als
+  operativer Vertrag — siehe §4 und §8.
 - ⬜ API-Anbindung über den Driven-Port `StreamAnalyzer.AnalyzeManifest` —
   Tranche 6.
 - ⬜ CLI `pnpm m-trace check <url>` — Tranche 7.
 
-Tranche 4 ergänzt das Media-Detail; Tranche 5 sperrt das JSON-Schema und
-löst den `details`-Cast in eine diskriminierte Union auf.
+Tranche 5 sperrt das JSON-Format. Konsumenten erkennen Erfolg/Fehler an
+`status`, schalten auf `playlistType` zur Auswahl der Detail-Form und
+filtern bei Bedarf weiter über `analyzerKind` (heute nur `"hls"`).
 
 ## 2. Public API
 
@@ -53,10 +57,32 @@ Exportierte Symbole (Snapshot in
 - `STREAM_ANALYZER_NAME`, `STREAM_ANALYZER_VERSION` — aus `package.json` abgeleitet.
 - Typen: `ManifestInput` (`ManifestTextInput | ManifestUrlInput`),
   `AnalyzeOptions`, `FetchOptions`, `AnalysisFinding`, `FindingLevel`,
-  `AnalysisInputMetadata`, `AnalysisResult`, `AnalysisSummary`,
-  `PlaylistType`, `AnalysisErrorCode`, `AnalysisErrorResult`,
-  `MasterPlaylistDetails`, `MasterRendition`, `MasterVariant`,
-  `MediaPlaylistDetails`, `MediaSegment`, `MediaSegmentSummary`.
+  `AnalysisInputMetadata`, `AnalysisResult` (Union aus
+  `MasterAnalysisResult | MediaAnalysisResult | UnknownAnalysisResult`,
+  diskriminiert per `playlistType`), `AnalysisSummary`, `AnalyzerKind`,
+  `BaseAnalysisResult`, `PlaylistType`, `AnalysisErrorCode`,
+  `AnalysisErrorResult`, `MasterPlaylistDetails`, `MasterRendition`,
+  `MasterVariant`, `MediaPlaylistDetails`, `MediaSegment`,
+  `MediaSegmentSummary`.
+
+Konsumenten brauchen keine Casts:
+
+```ts
+const result = await analyzeHlsManifest({ kind: "url", url });
+if (result.status === "error") {
+  console.error(result.code, result.details);
+  return;
+}
+if (result.playlistType === "master") {
+  // result.details: MasterPlaylistDetails (TypeScript narrowed)
+  console.log(result.details.variants.length, "variants");
+} else if (result.playlistType === "media") {
+  // result.details: MediaPlaylistDetails
+  console.log("live:", result.details.live, "segments:", result.details.segments.length);
+} else {
+  // result.playlistType === "unknown" → details: null
+}
+```
 
 ### 2.1 Eingabeformen
 
@@ -88,20 +114,23 @@ type FetchOptions = {
 {
   status: "ok",
   analyzerVersion: "0.3.0",
+  analyzerKind: "hls",
   input: { source: "text" | "url", url?: string, baseUrl?: string },
   playlistType: "master" | "media" | "unknown",
   summary: { itemCount: number },
   findings: Array<{ code: string, level: "info" | "warning" | "error", message: string }>,
-  details: Record<string, unknown> | null
+  // details ist diskriminiert per playlistType:
+  details: MasterPlaylistDetails | MediaPlaylistDetails | null
 }
 ```
 
-Beispiel (Master-Playlist nach Tranche 3):
+Beispiel (Master-Playlist):
 
 ```json
 {
   "status": "ok",
   "analyzerVersion": "0.3.0",
+  "analyzerKind": "hls",
   "input": { "source": "text", "baseUrl": "https://cdn.example.test/" },
   "playlistType": "master",
   "summary": { "itemCount": 3 },
@@ -133,15 +162,13 @@ Beispiel (Master-Playlist nach Tranche 3):
 }
 ```
 
-Konsumenten casten `result.details` gemäß `result.playlistType`
-(`"master"` → `MasterPlaylistDetails`, `"media"` → `MediaPlaylistDetails`).
-Tranche 5 wird die Diskriminierung in den Typ ziehen; bis dahin verlangt
-TypeScript einen expliziten Cast. Beispiel (Live-Media-Playlist):
+Beispiel (Live-Media-Playlist):
 
 ```json
 {
   "status": "ok",
   "analyzerVersion": "0.3.0",
+  "analyzerKind": "hls",
   "input": {
     "source": "url",
     "url": "https://cdn.example.test/live/manifest.m3u8",
@@ -177,6 +204,7 @@ TypeScript einen expliziten Cast. Beispiel (Live-Media-Playlist):
 {
   status: "error",
   analyzerVersion: "0.3.0",
+  analyzerKind: "hls",
   code: "invalid_input" | "manifest_not_hls" | "fetch_failed" | "fetch_blocked" | "manifest_too_large" | "internal_error",
   message: string,
   details?: Record<string, unknown>
@@ -190,6 +218,7 @@ Diskriminator-Feld verlassen. Beispiel (URL gegen lokale Adresse):
 {
   "status": "error",
   "analyzerVersion": "0.3.0",
+  "analyzerKind": "hls",
   "code": "fetch_blocked",
   "message": "Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ip_blocked.",
   "details": { "host": "internal.example.test", "address": "10.0.0.5", "family": 4 }
@@ -200,23 +229,75 @@ Diskriminator-Feld verlassen. Beispiel (URL gegen lokale Adresse):
 
 | Bereich       | 0.3.0   | Bemerkung                                                     |
 | ------------- | ------- | ------------------------------------------------------------- |
-| HLS Master    | ⬜ Plan | Tranche 3 implementiert Variants/Renditions (RAK-23, F-76).   |
-| HLS Media     | ⬜ Plan | Tranche 4 implementiert Segmente/Findings (RAK-24/25, F-70..). |
-| HLS via URL   | ⬜ Plan | Tranche 2 inkl. Timeout, Größenlimit, SSRF-Schutz.            |
-| DASH/CMAF     | ❌      | Out of scope — F-73 als eigener Analyzer-Typ in Folge-Release.|
-| SRT           | ❌      | Eigener Bereich (`0.6.0`).                                    |
+| HLS Master    | ✅       | Variants/Renditions, Group-Cross-Check, Base-URL-Auflösung.   |
+| HLS Media     | ✅       | Segmente, Toleranzregel, Live/VOD, 3×-Latenz.                 |
+| HLS via URL   | ✅       | Timeout, Größenlimit, SSRF-Schutz (siehe §6).                 |
+| DASH/CMAF     | ❌       | Out of scope — F-73 als zusätzlicher `analyzerKind` möglich.   |
+| SRT           | ❌       | Eigener Bereich (`0.6.0`).                                    |
 
 ## 4. Stabilitätsregel
 
-Das Result-Schema ist additiv erweiterbar:
+Das Result-Schema ist additiv erweiterbar. Konsumenten dürfen sich auf
+die folgenden Garantien verlassen, solange `analyzerVersion` Major und
+Minor unverändert bleibt:
 
-- Neue Felder dürfen jederzeit ergänzt werden.
-- Bestehende Felder bleiben in Form und Typ stabil.
-- Breaking Changes erfordern Eintrag in `CHANGELOG.md` und Update von
-  `docs/user/stream-analyzer.md` und `docs/planning/plan-0.3.0.md`.
+**Erlaubte additive Änderungen** (kein Major-Bump):
 
-Die `AnalyzerVersion` aus `package.json` wird in jedem Result mitgeliefert,
-damit Konsumenten Schema-Drift erkennen können.
+- Neue optionale Felder im Erfolgs- oder Fehler-Result.
+- Neue optionale Felder in `details.*`-Sub-Strukturen.
+- Neue Werte für `playlistType` (z. B. wenn HLS-Spec einen weiteren
+  Typ einführt).
+- Neue Werte für `analyzerKind` (z. B. `"dash"`, `"cmaf"` als
+  zusätzliche Union-Member).
+- Neue Finding-Codes oder Finding-Levels (Konsumenten dürfen
+  Unbekannte ignorieren oder als Info behandeln).
+- Neue `AnalysisErrorCode`-Werte.
+
+**Breaking Changes** (verlangen Major-Bump + Eintrag in
+`CHANGELOG.md` + Update von `docs/user/stream-analyzer.md` und
+`docs/planning/plan-0.3.0.md`):
+
+- Felder löschen oder umbenennen.
+- Den Typ eines bestehenden Felds ändern (`number → string`,
+  Optional zu Pflicht etc.).
+- Bedeutung eines bestehenden Wertes ändern (z. B. `live` plötzlich
+  `true` für VOD).
+- Discriminator-Felder ändern (`status`, `playlistType`,
+  `analyzerKind`).
+
+**Diskriminatoren**:
+
+- `result.status` trennt Erfolg (`"ok"`) und Fehler (`"error"`).
+- `result.playlistType` (nur bei `status === "ok"`) trennt
+  `MasterPlaylistDetails | MediaPlaylistDetails | null`.
+- `result.analyzerKind` ist heute immer `"hls"`; künftige Werte
+  zeigen Konsumenten an, dass sie das Result mit einem anderen
+  Detail-Schema interpretieren müssen.
+
+`analyzerVersion` aus `package.json` wird in jedem Result
+mitgeliefert (Erfolg und Fehler), damit Konsumenten Schema-Drift
+erkennen können.
+
+### 4.1 Serialisierungsgarantien
+
+Diese Eigenschaften sind als Tests in
+`tests/result-stability.test.ts` festgenagelt:
+
+- **Deterministisch**: zwei Aufrufe mit identischer Eingabe liefern
+  byte-identische `JSON.stringify(result)`-Strings — keine
+  Map-Iterations-Drift, keine Zeitstempel im Result.
+- **Round-Trip-stabil**: `JSON.parse(JSON.stringify(result))` ist
+  deep-equal zum Original. Damit kann das Result über Prozess- oder
+  Service-Grenzen geschickt werden, ohne dass strukturierte
+  Information verlorengeht.
+- **Kein `undefined` im Output**: optionale Felder werden weggelassen,
+  nicht als `undefined`-Property gesetzt. JSON-Konsumenten sehen das
+  Feld entweder oder es fehlt — nie den `undefined`-Wert, der von
+  `JSON.stringify` stillschweigend entfernt würde.
+- **Nur finite Zahlen**: keine `NaN`, kein `Infinity` im Output.
+  Eingabewerte, die so etwas erzeugen würden (z. B. unparseable
+  EXTINF-Dauer), werden als Findings gemeldet und der Wert auf einen
+  finiten Default normalisiert.
 
 ## 5. Backend-Anbindung
 
