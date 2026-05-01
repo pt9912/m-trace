@@ -1,7 +1,7 @@
-// Package streamanalyzer hält die F-22-Architektur-Vorbereitung. Der
-// produktive Pfad kommt frühestens in Phase 0.3.0; bis dahin reicht
-// der hier implementierte NoopStreamAnalyzer als Slot-Füller im Use
-// Case (siehe plan-0.1.0.md §5.1, F-22-Item).
+// Package streamanalyzer enthält den Slot-Füller-Adapter für den
+// driven.StreamAnalyzer-Port. Bis ein produktiver Analyzer-Adapter
+// (plan-0.3.0 §7 Tranche 6) angeschlossen ist, hält NoopStreamAnalyzer
+// die Compile-Time-Garantie für die Use-Case-Verdrahtung aufrecht.
 package streamanalyzer
 
 import (
@@ -10,6 +10,11 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
+
+// noopAnalyzerVersion markiert Ergebnisse aus dem Slot-Füller, damit
+// API-Konsumenten und Tests klar erkennen, dass kein produktiver
+// Analyzer angeschlossen ist (plan-0.3.0 §7 Tranche 6).
+const noopAnalyzerVersion = "noop"
 
 // NoopStreamAnalyzer erfüllt den Port driven.StreamAnalyzer ohne
 // Seiteneffekt. Damit ist die Erweiterungs-Stelle real (mit
@@ -25,6 +30,17 @@ func NewNoopStreamAnalyzer() *NoopStreamAnalyzer {
 // AnalyzeBatch macht nichts und gibt nil zurück.
 func (*NoopStreamAnalyzer) AnalyzeBatch(_ context.Context, _ []domain.PlaybackEvent) error {
 	return nil
+}
+
+// AnalyzeManifest gibt ein leeres Ergebnis mit Version "noop" zurück.
+// Damit bleibt der API-Pfad aufrufbar, bis Tranche 6 den produktiven
+// Adapter anschließt; der Aufrufer kann an AnalyzerVersion erkennen,
+// dass keine Analyse stattgefunden hat.
+func (*NoopStreamAnalyzer) AnalyzeManifest(_ context.Context, _ domain.StreamAnalysisRequest) (domain.StreamAnalysisResult, error) {
+	return domain.StreamAnalysisResult{
+		AnalyzerVersion: noopAnalyzerVersion,
+		PlaylistType:    domain.PlaylistTypeUnknown,
+	}, nil
 }
 
 // Compile-time check: NoopStreamAnalyzer implements driven.StreamAnalyzer.

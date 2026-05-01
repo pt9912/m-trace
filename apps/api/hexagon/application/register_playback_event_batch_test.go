@@ -129,6 +129,10 @@ func (s *stubTelemetry) BatchReceived(_ context.Context, size int) {
 // das System ihn nicht produktiv auf — der Slot existiert ausschließlich
 // als F-22-Architektur-Vorbereitung (siehe plan-0.1.0.md §5.1 F-22).
 // calls bleibt damit in allen Tests 0; das ist die DoD-Bedingung.
+//
+// AnalyzeManifest ist ab 0.3.0 Teil des Ports (plan-0.3.0 §2 Tranche 1)
+// und vom Batch-Use-Case ebenfalls nicht aufgerufen; der Stub
+// implementiert die Methode no-op, um den Port-Vertrag zu erfüllen.
 type stubAnalyzer struct {
 	calls int
 }
@@ -136,6 +140,10 @@ type stubAnalyzer struct {
 func (s *stubAnalyzer) AnalyzeBatch(_ context.Context, _ []domain.PlaybackEvent) error {
 	s.calls++
 	return nil
+}
+
+func (*stubAnalyzer) AnalyzeManifest(_ context.Context, _ domain.StreamAnalysisRequest) (domain.StreamAnalysisResult, error) {
+	return domain.StreamAnalysisResult{}, nil
 }
 
 // stubSequencer liefert deterministische, monoton steigende

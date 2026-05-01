@@ -43,6 +43,7 @@ coverage-gate:
 	$(MAKE) -C apps/api coverage-gate $(if $(THRESHOLD),THRESHOLD="$(THRESHOLD)")
 	pnpm --filter @npm9912/player-sdk run test:coverage
 	pnpm --filter @npm9912/m-trace-dashboard run test:coverage
+	pnpm --filter @npm9912/stream-analyzer run test:coverage
 
 arch-check:
 	$(MAKE) -C apps/api arch-check
