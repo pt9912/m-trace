@@ -30,7 +30,7 @@ Neue Lastenheft-Patches während `0.3.0` landen weiterhin zentral in `plan-0.1.0
 | 0 | Vorgänger-Gate-Verifikation | ✅ |
 | 1 | Stream-Analyzer-Paket und Public API | ✅ |
 | 2 | HLS-Manifest laden und Playlist-Typ erkennen | ✅ |
-| 3 | Master-Playlist-Analyse | ⬜ |
+| 3 | Master-Playlist-Analyse | ✅ |
 | 4 | Media-Playlist-Analyse und Segment-Dauerprüfung | ⬜ |
 | 5 | JSON-Ergebnisformat und Dokumentation | ⬜ |
 | 6 | API-Anbindung über StreamAnalyzer-Port | ⬜ |
@@ -108,12 +108,12 @@ Ziel: Master Playlists liefern ein strukturiertes Analyseergebnis mit Varianten 
 
 DoD:
 
-- [ ] Varianten aus `#EXT-X-STREAM-INF` werden extrahiert: URI, Bandbreite, optionale Auflösung, Codecs und Frame-Rate, soweit vorhanden.
-- [ ] Renditions aus `#EXT-X-MEDIA` werden extrahiert: Typ, Group-ID, Name, Sprache, URI, Default-/Autoselect-Flags, soweit vorhanden.
-- [ ] Relative URIs werden optional gegen eine Base-URL auflösbar gemacht; die Roh-URI bleibt im Ergebnis erhalten.
-- [ ] Fehlende optionale Attribute führen nicht zum Analyseabbruch.
-- [ ] Offensichtliche Inkonsistenzen werden als Findings ausgegeben, z. B. fehlende Variant-URI oder unvollständige Rendition-Referenzen.
-- [ ] JSON-Ergebnis für Master Playlists ist snapshot- oder schema-nah getestet.
+- [x] Varianten aus `#EXT-X-STREAM-INF` werden extrahiert: URI, Bandbreite, optionale Auflösung, Codecs und Frame-Rate, soweit vorhanden (`18857b5`).
+- [x] Renditions aus `#EXT-X-MEDIA` werden extrahiert: Typ, Group-ID, Name, Sprache, URI, Default-/Autoselect-Flags, soweit vorhanden (`18857b5`).
+- [x] Relative URIs werden optional gegen eine Base-URL auflösbar gemacht; die Roh-URI bleibt im Ergebnis erhalten (`18857b5`).
+- [x] Fehlende optionale Attribute führen nicht zum Analyseabbruch (`18857b5`).
+- [x] Offensichtliche Inkonsistenzen werden als Findings ausgegeben, z. B. fehlende Variant-URI oder unvollständige Rendition-Referenzen (`18857b5`).
+- [x] JSON-Ergebnis für Master Playlists ist snapshot- oder schema-nah getestet (`18857b5`).
 
 ---
 
