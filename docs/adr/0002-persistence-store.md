@@ -116,7 +116,7 @@ Multi-Tenant- oder Retention-Last-Anforderungen konkret werden.
 - **Cursor-Format wird durable.** Das heutige `process_instance_id`-Cursor-
   Format invalidiert nach Restart — mit SQLite wird es durch eine
   Storage-getragene Form ersetzt (Sequence-ID oder opakes Token). Genaue
-  Form ist Folge-ADR (siehe roadmap §4 „Durabel-konsistente Cursor-Strategie").
+  Form ist Folge-ADR (siehe roadmap §4 „Dauerhaft konsistente Cursor-Strategie").
 - **Schema-Versionierung.** SQLite-Schema bekommt eine eigene
   Migrations-Versionsspur, getrennt vom Event-Wire-Schema (`schema_version`).
   Migrationswerkzeug-Wahl ist Teil der `0.4.0`-Eingangstranche.

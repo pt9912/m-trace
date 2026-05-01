@@ -56,7 +56,7 @@ DoD:
 - [ ] `docs/planning/roadmap.md` führt `0.4.0` als aktiv geplantes Release und verweist auf dieses Dokument.
 - [x] OE-5 ist entschieden: SSE mit Polling-Fallback ist für `0.4.0` gewählt; WebSocket bleibt deferred (ADR 0003).
 - [x] Folge-ADR „Live-Updates via SSE" ist geschrieben und accepted (ADR 0003).
-- [ ] Folge-ADR „Durabel-konsistente Cursor-Strategie" ist geschrieben oder die gewählte Cursor-Form ist in dieser Tranche verbindlich festgelegt.
+- [ ] Folge-ADR „Dauerhaft konsistente Cursor-Strategie" ist geschrieben oder die gewählte Cursor-Form ist in dieser Tranche verbindlich festgelegt.
 - [ ] Offene Folge-Issues aus `plan-0.3.0.md` §9.1 sind bewertet: release-blocking für `0.4.0`, separater `0.3.x`-Fix oder bewusst deferred.
 - [ ] RAK-31 ist als optionaler Kann-Scope bestätigt: Tempo darf `0.4.0` nicht blockieren, solange RAK-29 und RAK-32 ohne Tempo erfüllt sind.
 
@@ -76,12 +76,12 @@ DoD:
 - [ ] Konfiguration erlaubt einen expliziten SQLite-Pfad für lokale Entwicklung und CI.
 - [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind hinter den bestehenden Ports implementiert; Application- und Domain-Layer bleiben frei von SQLite-Imports.
 - [ ] In-Memory-Adapter bleiben nur für Tests oder expliziten Dev-Fallback erhalten und sind nicht mehr der Default im Compose-Lab.
-- [ ] Session-Ende, Sweeper-Zustände und doppelt eintreffende Events wirken idempotent auf den gespeicherten Session-State.
+- [ ] Idempotenz-Grenzen sind vor Implementierung festgelegt: Session-State-Updates (`session_ended`, Sweeper-Zustände) sind idempotent; Event-Level-Deduplikation ist entweder über einen dokumentierten Event-Key/Hash (`project_id`, `session_id`, `sequence_number` oder dedizierte Event-ID) testbar umgesetzt oder bewusst als append-only mit sichtbar möglichen Duplikaten dokumentiert.
 - [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als durabler Tie-Breaker.
-- [ ] Cursor-Format nutzt keine `process_instance_id`-Invalidierung mehr; Cursor bleiben nach API-Restart gültig oder liefern einen dokumentierten, maschinenlesbaren Fehler.
+- [ ] Cursor-Format nutzt keine `process_instance_id`-Invalidierung mehr; Cursor bleiben nach API-Restart gültig oder liefern den im API-Kontrakt dokumentierten Fehler `400 {"error":"cursor_invalid","message":"..."}` ohne `Retry-After`; Clients recovern durch Verwerfen des Cursors und erneuten Snapshot-Load.
 - [ ] Retention-Defaults für das lokale Lab sind festgelegt und dokumentiert; Reset-/Wipe-Anleitung steht in `docs/user/local-development.md`.
 - [ ] Persistenztests decken Neustart-Simulation, Migration, Cursor-Stabilität, Session-Ende, Event-Ordering und Retention ab.
-- [ ] `spec/architecture.md`, `spec/backend-api-contract.md` und `docs/user/local-development.md` beschreiben den neuen Storage-Stand.
+- [ ] `spec/architecture.md`, `spec/backend-api-contract.md` und `docs/user/local-development.md` beschreiben Storage-Stand, Idempotenz-Grenzen, Cursor-Fehlerformat und Recovery-Verhalten.
 
 ---
 
@@ -140,11 +140,11 @@ DoD:
 - [ ] Invalid-, dropped- und rate-limited Hinweise sind in der Session- oder Statusansicht auffindbar, ohne Prometheus-Rohwissen vorauszusetzen.
 - [ ] Pagination oder inkrementelles Nachladen bleibt bei längeren Sessions bedienbar; Cursor-Verhalten ist restart-stabil.
 - [ ] SSE-Live-Update-Mechanismus aus ADR 0003 ist implementiert; Polling bleibt Fallback für Stream-Abbruch oder nicht verfügbare SSE-Verbindung.
-- [ ] SSE-Endpunkt-Schnitt ist entschieden: globaler Stream, optionaler Session-Detail-Stream, Payload-Schema, `Last-Event-ID`-/Backfill-Regel und Polling-Fallback-Intervalle sind dokumentiert.
+- [ ] SSE-Endpunkt-Schnitt ist im `spec/backend-api-contract.md` als verlässlicher Vertrag dokumentiert: globaler Stream, optionaler Session-Detail-Stream, Payload-Schema, `Last-Event-ID`-/Backfill-Regel, Fehler-/Reconnect-Semantik und Polling-Fallback-Intervalle.
 - [ ] Backend-Tests decken SSE-Stream-Header, EventSource-kompatibles Format, Heartbeats/Keepalive, Client-Abbruch und reconnect-freundliche Semantik ab.
 - [ ] Dashboard-Tests decken SSE-Erfolg, Reconnect/Backfill und Polling-Fallback ab.
 - [ ] Dashboard-Tests decken leere Timeline, kurze Session, lange Session, laufende Session, beendete Session und Restart-Persistenz über API-Mockdaten ab.
-- [ ] Browser-E2E-Smoke erzeugt über `/demo` eine Session und prüft, dass der Session-Verlauf im Dashboard sichtbar ist.
+- [ ] Browser-E2E-Smoke erzeugt eine Session über einen stabilen Test-Harness (`/demo` oder dedizierte E2E-Seed-Route/API-Fixture) und prüft, dass der Session-Verlauf im Dashboard sichtbar ist; `/demo` ist nicht die einzige zulässige Datenquelle.
 
 ---
 
@@ -219,7 +219,7 @@ DoD:
 - [ ] Versionen sind konsistent: Root- und Workspace-Pakete tragen `0.4.0`; SDK/Event-Schema-Kompatibilitätscheck bleibt grün.
 - [ ] `CHANGELOG.md` enthält den Versionsabschnitt `[0.4.0] - <Datum>` mit Trace-, Persistenz-, Dashboard-, Metrik- und Doku-Lieferstand.
 - [ ] Release-Gates grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make sdk-performance-smoke`, `make smoke-observability` und Dashboard-Tests.
-- [ ] Browser-E2E-Smoke für Demo-Session und Session-Timeline ist grün oder als manuelles Release-Gate mit Ergebnis dokumentiert.
+- [ ] Browser-E2E-Smoke für eine erzeugte Test-Session und Session-Timeline ist grün oder als manuelles Release-Gate mit Ergebnis dokumentiert; der Smoke darf `/demo` nutzen, muss aber bei späterer Demo-Änderung auf einen dedizierten Test-Harness umstellbar bleiben.
 - [ ] `docs/planning/roadmap.md` markiert `0.4.0` als abgeschlossen und verschiebt den aktiven Fokus auf `0.5.0`.
 
 ---
