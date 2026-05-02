@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.1` (Player-SDK + Dashboard)
 
 > **Status**: ✅ abgeschlossen. Beginnt nach Abschluss von `0.1.0` (Backend Core + Demo-Lab).
-> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../../spec/lastenheft.md) §13.2 (RAK-2, RAK-5, RAK-7), §18 (MVP-DoD-Anteil); [Roadmap](../in-progress/roadmap.md) §3; [Architektur (Zielbild)](../../../spec/architecture.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../open/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.1`-Start, nicht zum heutigen Zeitpunkt)**: [`plan-0.1.0.md`](./plan-0.1.0.md) muss bis zum Start dieser Plan-Doku in folgendem Zustand sein:
 >
 > - Tranche 0 (Pre-MVP-Vorbereitung): `[x]` — bereits heute erfüllt.

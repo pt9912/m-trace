@@ -380,12 +380,12 @@ Das Projekt steht bei `0.3.0`: Lastenheft `1.1.8` verbindlich, Player-SDK-Paketi
 Leitende Dokumente:
 
 - [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.8)
-- [docs/planning/roadmap.md](docs/planning/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
+- [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess
 - [docs/user/quality.md](docs/user/quality.md) — Qualitätsrichtlinien
 
-Nächste Schritte stehen in [docs/planning/roadmap.md](docs/planning/roadmap.md) §2.
+Nächste Schritte stehen in [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) §2.
 
 ---
 

@@ -4,7 +4,7 @@
 // telemetry) into the application use case and exposes the three
 // pflicht endpoints (POST /api/playback-events, GET /api/health,
 // GET /api/metrics) over HTTP. See docs/spike/0001-backend-stack.md
-// and docs/planning/plan-spike.md for scope.
+// and docs/planning/done/plan-spike.md for scope.
 package main
 
 import (

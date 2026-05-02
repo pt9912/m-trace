@@ -3,13 +3,13 @@
 > **Stand**: 2026-04-29  
 > **Bezug**: `docs/adr/0001-backend-stack.md` §5 (Bewertungsraster, Zeile
 > *Absehbare Phase-2-Risiken*), §8 (Konsequenzen),
-> `spec/lastenheft.md` §4.3, §10.1; `docs/planning/roadmap.md` §4
+> `spec/lastenheft.md` §4.3, §10.1; `docs/planning/in-progress/roadmap.md` §4
 > (Folge-ADRs).
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst
 worden sind. Folge-ADRs, die ein Risiko verbindlich entscheiden,
-stehen in `docs/planning/roadmap.md` §4; hier wird das Risiko selbst geführt,
+stehen in `docs/planning/in-progress/roadmap.md` §4; hier wird das Risiko selbst geführt,
 inklusive Status, Ziel-Phase und Mitigationspfad.
 
 Wartungsregel: ein Eintrag bleibt im Backlog, bis er durch einen
@@ -43,6 +43,6 @@ eingetreten.
 - Neue Risiken, die im Verlauf der Implementierung auftauchen und
   nicht direkt durch einen Folge-ADR adressiert werden können,
   bekommen eine fortlaufende `R-N`-Kennung.
-- Status-Änderungen folgen demselben Statusset wie `docs/planning/roadmap.md`
+- Status-Änderungen folgen demselben Statusset wie `docs/planning/in-progress/roadmap.md`
   §2/§3, ergänzt um ⬛ für Risiken, die sich nicht materialisiert
   haben.

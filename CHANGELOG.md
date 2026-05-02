@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR-0003 entscheidet OE-5: Dashboard-Live-Updates in `0.4.0`
   nutzen Server-Sent Events mit Polling-Fallback; WebSocket bleibt
   deferred.
-- `docs/planning/plan-0.4.0.md` als Plan für Erweiterte
+- `docs/planning/in-progress/plan-0.4.0.md` als Plan für Erweiterte
   Trace-Korrelation angelegt.
 
 ### Changed
@@ -154,7 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard-Lint baut das Player-SDK vor `svelte-check`, damit frische CI-Checkouts die Workspace-Typen auflösen.
 - API-CORS setzt `Access-Control-Allow-Origin` jetzt auch auf echten Dashboard-GET-Antworten, nicht nur auf Preflight-Responses.
 - Player-SDK begrenzt Batches auf maximal 100 Events, splittet größere lokale Queues und sendet beim `destroy()` ein `session_ended`-Event.
-- `docs/planning/plan-0.1.0.md` spiegelt den abgeschlossenen `0.1.0`-Lieferstand wieder.
+- `docs/planning/done/plan-0.1.0.md` spiegelt den abgeschlossenen `0.1.0`-Lieferstand wieder.
 - README und Local-Development-Doku trennen den `0.1.0`- und `0.1.1`-Scope klarer.
 
 ## [0.1.0] - 2026-04-30

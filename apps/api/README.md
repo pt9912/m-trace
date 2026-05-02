@@ -4,8 +4,8 @@ Backend-Service für m-trace. Hexagon-Architektur mit Go 1.22 +
 stdlib `net/http` + Prometheus + OpenTelemetry, Distroless-Runtime.
 
 Stack-Entscheidung: `docs/adr/0001-backend-stack.md` (Accepted).
-Roadmap & Release-Plan: `docs/planning/roadmap.md`, `spec/lastenheft.md`.
-Hexagon-Struktur: `docs/planning/plan-spike.md` §12.1.
+Roadmap & Release-Plan: `docs/planning/in-progress/roadmap.md`, `spec/lastenheft.md`.
+Hexagon-Struktur: `docs/planning/done/plan-spike.md` §12.1.
 
 ## Workflow (Docker-only)
 

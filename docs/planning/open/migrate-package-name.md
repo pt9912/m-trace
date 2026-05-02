@@ -1,7 +1,7 @@
 # Migration Plan — npm-Paketnamen `@m-trace/*` → `@npm9912/*`
 
 > **Status**: ⬜ geplant, durchzuführen vor dem `0.2.0`-Release.
-> **Bezug**: [`plan-0.2.0.md`](./plan-0.2.0.md) Tranche 1 (RAK-11, publizierbares SDK); [`lastenheft.md`](../../spec/lastenheft.md) §16.2 (OE-8).
+> **Bezug**: [`plan-0.2.0.md`](../done/plan-0.2.0.md) Tranche 1 (RAK-11, publizierbares SDK); [`lastenheft.md`](../../../spec/lastenheft.md) §16.2 (OE-8).
 > **Trigger**: Maintainer publishet npm-Pakete bereits unter dem bestehenden Scope `@npm9912`. Eine separate `@m-trace`-Org ist auf npmjs.com nicht reserviert. OE-8 wird damit faktisch wiedereröffnet und neu entschieden, bevor das SDK erstmals veröffentlicht wird.
 
 ## 1. Entscheidung
@@ -33,7 +33,7 @@
 | `spec/telemetry-model.md` | 47, 100 | Spec-Beispiel |
 | `spec/lastenheft.md` | 1043, 1756 | Beispiel-Payload + OE-8-Tabelleneintrag (§5) |
 | `docs/user/local-development.md` | 93 | Beispiel-Curl: Name **und** `sdk.version` auf `0.2.0` |
-| `docs/planning/plan-0.2.0.md` | 64 (neuer DoD-Eintrag), 69, 70 | DoD-Verweis auf diese Migration + `pnpm --filter ...`-Targets (bereits mit DoD-Eintrag normalisiert) |
+| `docs/planning/done/plan-0.2.0.md` | 64 (neuer DoD-Eintrag), 69, 70 | DoD-Verweis auf diese Migration + `pnpm --filter ...`-Targets (bereits mit DoD-Eintrag normalisiert) |
 | `README.md` | 136 | Beispiel-Payload + `sdk.version` auf `0.2.0` |
 | `CHANGELOG.md` | (neuer Eintrag in `0.2.0`-Sektion) | OE-8-Neuentscheidung dokumentieren |
 | `pnpm-lock.yaml` | 29 | regeneriert über `pnpm install` |
@@ -45,17 +45,17 @@
 | `scripts/smoke-0.1.0.sh` | reproduziert `0.1.0`-Wire-Format inkl. damaligem `sdk.name` |
 | `scripts/smoke-0.1.1.sh` | analog `0.1.1` |
 | `scripts/seed-rak9.sh` Z. 140 | sendet explizit `sdk.version: 0.1.1` (RAK-9-Verifikation, abgeschlossen) |
-| `docs/planning/plan-0.1.0.md` Z. 331 | dokumentiert OE-8-Resolution zum Zeitpunkt `0.1.0` (`bae4a2a`) |
-| `docs/planning/plan-0.1.1.md` Z. 90 | analog für `0.1.1` |
-| `docs/planning/plan-spike.md` Z. 997 | abgeschlossener Spike |
+| `docs/planning/done/plan-0.1.0.md` Z. 331 | dokumentiert OE-8-Resolution zum Zeitpunkt `0.1.0` (`bae4a2a`) |
+| `docs/planning/done/plan-0.1.1.md` Z. 90 | analog für `0.1.1` |
+| `docs/planning/done/plan-spike.md` Z. 997 | abgeschlossener Spike |
 | `docs/spike/0001-backend-stack.md` | Spike-Snapshot |
-| `docs/planning/migrate-package-name.md` | dieses Migrationsprotokoll nennt alten und neuen Namen ausdrücklich |
+| `docs/planning/open/migrate-package-name.md` | dieses Migrationsprotokoll nennt alten und neuen Namen ausdrücklich |
 | `spec/lastenheft.md` §16.2 | OE-8-Neuentscheidung enthält die historische `0.1.x`-Einordnung |
 | `CHANGELOG.md` Z. 35 | Eintrag in `0.1.1`-Sektion: „Lastenheft `1.1.5` löst OE-8 auf: `@m-trace/player-sdk`" — historische Wahrheit |
 
 ## 3. Durchführungsreihenfolge
 
-1. **Lastenheft + Cross-Cutting-Plan**: OE-8 in `spec/lastenheft.md:1756` neu fassen; in `docs/planning/plan-0.1.0.md` Tranche 0c einen neuen §4a-Eintrag ergänzen, der die Neuentscheidung begründet (Konvention aus `plan-0.2.0.md` §0).
+1. **Lastenheft + Cross-Cutting-Plan**: OE-8 in `spec/lastenheft.md:1756` neu fassen; in `docs/planning/done/plan-0.1.0.md` Tranche 0c einen neuen §4a-Eintrag ergänzen, der die Neuentscheidung begründet (Konvention aus `plan-0.2.0.md` §0).
 2. **SDK-Paket**: `package.json` (`name`, `pack:smoke`-Pfad), `src/core/tracker.ts`, Tests, `scripts/pack-smoke.mjs`, `README.md`.
 3. **Dashboard-Konsument und Workspace-Paket**: `apps/dashboard/package.json`, `Dockerfile`, `routes/demo/+page.svelte`.
 4. **Backend-Test-Fixtures**: beide Go-Tests.
@@ -91,7 +91,7 @@ CHANGELOG-Eintrag in der `0.2.0`-Sektion (Block `Changed`):
 
 > Lastenheft `1.1.7` (oder die zum Release gültige Minor-Version) entscheidet OE-8 neu: Player-SDK wird ab `0.2.0` als `@npm9912/player-sdk` veröffentlicht. Der `0.1.x`-Lieferstand wurde nie öffentlich publishet, daher kein Migrations-Pfad für externe Konsumenten erforderlich.
 
-In `docs/planning/plan-0.1.0.md` Tranche 0c als neuen §4a-Eintrag aufnehmen (cross-cutting Lastenheft-Patch — Konvention aus `plan-0.2.0.md` §0): kurze Begründung („`@m-trace` ist auf npm nicht als Org reserviert, Maintainer publishet unter `@npm9912`") und Verweis auf dieses Migrations-Dokument.
+In `docs/planning/done/plan-0.1.0.md` Tranche 0c als neuen §4a-Eintrag aufnehmen (cross-cutting Lastenheft-Patch — Konvention aus `plan-0.2.0.md` §0): kurze Begründung („`@m-trace` ist auf npm nicht als Org reserviert, Maintainer publishet unter `@npm9912`") und Verweis auf dieses Migrations-Dokument.
 
 ## 6. Risiken und offene Punkte
 

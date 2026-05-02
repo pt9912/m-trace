@@ -9,7 +9,7 @@ Docker-Prüfwege**. Aktuelle Werte (Image-Größe, Cold-Start, Test-
 Anzahl) leben in `docs/spike/backend-stack-results.md`; dieses Doc
 fixiert *wie* gemessen wird, nicht *was die letzte Messung ergab*.
 
-Bezug: `docs/planning/plan-spike.md` §14.9 (Linting), §14.11 (Dockerfile-
+Bezug: `docs/planning/done/plan-spike.md` §14.9 (Linting), §14.11 (Dockerfile-
 Stages); `docs/spike/0001-backend-stack.md` §6.6, §6.11–§6.12; ADR
 `docs/adr/0001-backend-stack.md` (Coverage-Konsequenzen).
 

@@ -4,7 +4,7 @@
 > `apps/api/` gepflegt, im Commit-Body begründet und aus den
 > Pflichttests in §11 ableitbar gemacht.
 >
-> **Bezug**: `docs/spike/0001-backend-stack.md` §6, `docs/planning/plan-spike.md` §7.1, §12.3.
+> **Bezug**: `docs/spike/0001-backend-stack.md` §6, `docs/planning/done/plan-spike.md` §7.1, §12.3.
 > **Historie**: Dieses Dokument entstand im Backend-Spike für zwei
 > Prototypen. Seit ADR-0001 (Accepted) ist es der laufende API-Kontrakt
 > des Sieger-Codes (`apps/api`).
@@ -510,7 +510,7 @@ Events angenommen wurden).
 
 ## 11. Pflichttests für die API
 
-Ursprünglich aus `docs/planning/plan-spike.md` §7.1 abgeleitet; weiterhin
+Ursprünglich aus `docs/planning/done/plan-spike.md` §7.1 abgeleitet; weiterhin
 Pflichtabdeckung für den Ingest-Pfad:
 
 - Unit-Test `RegisterPlaybackEventBatch`: Happy Path

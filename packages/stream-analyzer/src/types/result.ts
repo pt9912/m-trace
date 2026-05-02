@@ -94,7 +94,7 @@ export interface UnknownAnalysisResult extends BaseAnalysisResult {
  * neue Finding-Codes). Breaking Changes (Felder löschen/umbenennen/
  * umtypisieren, finite Wertedomänen einschränken) erfordern eine
  * Major-Version, einen Eintrag in `CHANGELOG.md` und ein Update von
- * `docs/user/stream-analyzer.md` und `docs/planning/plan-0.3.0.md`.
+ * `docs/user/stream-analyzer.md` und `docs/planning/done/plan-0.3.0.md`.
  */
 export type AnalysisResult = MasterAnalysisResult | MediaAnalysisResult | UnknownAnalysisResult;
 

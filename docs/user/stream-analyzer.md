@@ -5,7 +5,7 @@ Das Paket liefert eine Bibliotheks-API für Backend-Integration (`apps/api`),
 eine CLI (ab Tranche 7) und ein stabiles JSON-Ergebnisformat.
 
 Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
-F-68..F-81), [`docs/planning/plan-0.3.0.md`](../planning/plan-0.3.0.md),
+F-68..F-81), [`docs/planning/done/plan-0.3.0.md`](../planning/done/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
 ## 1. Status (0.3.0 — veröffentlicht)
@@ -264,7 +264,7 @@ Minor unverändert bleibt:
 
 **Breaking Changes** (verlangen Major-Bump + Eintrag in
 `CHANGELOG.md` + Update von `docs/user/stream-analyzer.md` und
-`docs/planning/plan-0.3.0.md`):
+`docs/planning/done/plan-0.3.0.md`):
 
 - Felder löschen oder umbenennen.
 - Den Typ eines bestehenden Felds ändern (`number → string`,

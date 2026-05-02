@@ -1,7 +1,7 @@
 # Implementation Plan — `0.3.0` (Stream Analyzer)
 
 > **Status**: 🟡 in Arbeit. Beginnt nach Release `v0.2.0` (Publizierbares Player SDK).  
-> **Bezug**: [Lastenheft `1.1.7`](../../spec/lastenheft.md) §7.7 (Stream Analyzer), §13.5 (RAK-22..RAK-28), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §2/§3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md); [ADR 0002 Persistenz-Store](../adr/0002-persistence-store.md).
+> **Bezug**: [Lastenheft `1.1.7`](../../../spec/lastenheft.md) §7.7 (Stream Analyzer), §13.5 (RAK-22..RAK-28), §18 (MVP-DoD-Anteil); [Roadmap](../in-progress/roadmap.md) §2/§3; [Architektur (Zielbild)](../../../spec/architecture.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../open/risks-backlog.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md).
 > **Vorgänger-Gate (Stand zum `0.3.0`-Start)**:
 >
 > - [`plan-0.2.0.md`](./plan-0.2.0.md) ist vollständig (`[x]`) und `v0.2.0` ist veröffentlicht.
@@ -50,7 +50,7 @@ DoD:
 - [x] Annotierter Release-Tag `v0.2.0` existiert und zeigt auf den Release-Commit (`a2cb66d`).
 - [x] GitHub-Release `v0.2.0` existiert und verweist auf die Changelog-Release-Notes (`a2cb66d`).
 - [x] GitHub Actions `Build` ist für den Release-Commit grün (`a2cb66d`).
-- [x] `docs/planning/roadmap.md` §2 markiert Schritt 19 als abgeschlossen und führt die Folgearbeiten für `0.3.0` (`070b231`).
+- [x] `docs/planning/in-progress/roadmap.md` §2 markiert Schritt 19 als abgeschlossen und führt die Folgearbeiten für `0.3.0` (`070b231`).
 - [x] Persistenzstatus ist geprüft: ADR 0002 bleibt nicht-blockierend, solange Analyseergebnisse nicht durable gespeichert werden (`37f20ce`).
 
 ---

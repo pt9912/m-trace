@@ -81,7 +81,7 @@ Aktueller Stand:
 - `README.md` mit Projekt-Vision
 - `spec/lastenheft.md`
 - `docs/spike/0001-backend-stack.md`
-- `docs/planning/plan-spike.md` (dieses Dokument)
+- `docs/planning/done/plan-spike.md` (dieses Dokument)
 - kein `apps/`, kein `packages/`, kein `services/`
 - keine CI, kein `Makefile`, kein `docker-compose.yml`
 

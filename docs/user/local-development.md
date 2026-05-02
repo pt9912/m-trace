@@ -1,7 +1,7 @@
 # Local Development — m-trace
 
 > **Status**: Verbindlich für `0.1.x`. Die Quickstart-Sektion wird mit jedem Sub-Release erweitert (`0.1.0` Backend Core, `0.1.1` Player-SDK + Dashboard, `0.1.2` Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](../planning/roadmap.md) §2 Schritt 7; [Plan `0.1.0`](../planning/plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](../../spec/architecture.md) §8.
+> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](../planning/in-progress/roadmap.md) §2 Schritt 7; [Plan `0.1.0`](../planning/done/plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](../../spec/architecture.md) §8.
 
 ## 0. Zweck
 

@@ -4,8 +4,8 @@
 > **Datum**: 2026-04-30 (Draft) · 2026-05-01 (Accepted)  
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)  
 > **Bezug**: `spec/lastenheft.md` OE-3, MVP-16, MVP-27, MVP-40, RAK-32;
-> `spec/architecture.md` §11; `docs/planning/roadmap.md` §4/§5;
-> `docs/planning/plan-0.2.0.md` Tranche 6; `docs/planning/plan-0.3.0.md` §10.
+> `spec/architecture.md` §11; `docs/planning/in-progress/roadmap.md` §4/§5;
+> `docs/planning/done/plan-0.2.0.md` Tranche 6; `docs/planning/done/plan-0.3.0.md` §10.
 
 ---
 

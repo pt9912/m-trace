@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.2` (Observability-Stack)
 
 > **Status**: ✅ implementiert. Observability-Profil, RAK-9 und RAK-10 sind umgesetzt und lokal verifiziert.  
-> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](./roadmap.md) §3; [Architektur (Zielbild)](../../spec/architecture.md); [API-Kontrakt](../../spec/backend-api-contract.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../../spec/lastenheft.md) §13.3 (RAK-9, RAK-10), §18 (MVP-DoD-Anteil); [Roadmap](../in-progress/roadmap.md) §3; [Architektur (Zielbild)](../../../spec/architecture.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../open/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.1.2`-Start, nicht zum heutigen Zeitpunkt)**:
 >
 > - [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.1` (§5).

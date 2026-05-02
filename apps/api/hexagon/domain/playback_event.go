@@ -1,6 +1,6 @@
 // Package domain holds the framework-free fact-types of the spike.
 //
-// Per docs/planning/plan-spike.md §5.2/§14.6 nothing in this package may import
+// Per docs/planning/done/plan-spike.md §5.2/§14.6 nothing in this package may import
 // HTTP, JSON, OpenTelemetry, Prometheus, or any other adapter concern.
 package domain
 

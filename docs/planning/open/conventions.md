@@ -78,7 +78,7 @@ Alle Build-, Test- und Lint-Schritte laufen via
 `docker build --target <stage>`. Lokales Go ist optional.
 
 - `Dockerfile` mit Stages `deps`, `compile`, `lint`, `test`,
-  `build`, `runtime` — Pattern aus `docs/planning/plan-spike.md` §14.11.
+  `build`, `runtime` — Pattern aus `docs/planning/done/plan-spike.md` §14.11.
 - `Makefile` mit `make test`, `make lint`, `make build`, `make run`,
   `make deps`, `make compile`, `make clean` — alle delegieren an
   Docker.

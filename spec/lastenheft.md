@@ -1137,7 +1137,7 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `spec/telemetry-model.md` | Telemetrie- und Eventmodell |
 | `spec/player-sdk.md` | Player-SDK-Nutzung |
 | `docs/stream-analyzer.md` | Stream Analyzer |
-| `docs/planning/roadmap.md` | geplante Entwicklung |
+| `docs/planning/in-progress/roadmap.md` | geplante Entwicklung |
 
 ---
 
@@ -1387,7 +1387,7 @@ globale Kopplung. Es umfasst:
 | `testpackage` | Ja |
 | `unparam` | Ja |
 
-Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe `docs/planning/roadmap.md` §4 Folge-ADR).
+Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe `docs/planning/in-progress/roadmap.md` §4 Folge-ADR).
 
 
 ### 10.2 Frontend
@@ -1805,13 +1805,13 @@ Backend-Technologie wurde durch zwei lauffähige Mini-Prototypen (Go,
 Micronaut) im identischen Muss-Scope entschieden. Dokumentation:
 
 - Spike-Spezifikation: `docs/spike/0001-backend-stack.md`
-- Implementierungsplan: `docs/planning/plan-spike.md`
+- Implementierungsplan: `docs/planning/done/plan-spike.md`
 - API-Kontrakt: `spec/backend-api-contract.md`
 - Spike-Protokoll: `docs/spike/backend-stack-results.md`
 - Entscheidung: `docs/adr/0001-backend-stack.md` (Status: Accepted) — **Go**
 
 Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
-(siehe `docs/planning/roadmap.md` §1).
+(siehe `docs/planning/in-progress/roadmap.md` §1).
 
 ---
 

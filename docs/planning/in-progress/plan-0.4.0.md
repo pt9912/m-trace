@@ -1,13 +1,13 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
 > **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6) und Tranche 2 §3.1–§3.4b abgeschlossen; offen: Tranche 2 §3.4c (Doku-Closeout + Roadmap Schritt 29) sowie Tranchen 3–8.
-> **Bezug**: [Lastenheft `1.1.8`](../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../spec/architecture.md); [Telemetry-Model](../../spec/telemetry-model.md); [API-Kontrakt](../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../adr/0003-live-updates.md); [Risiken-Backlog](./risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../../spec/architecture.md); [Telemetry-Model](../../../spec/telemetry-model.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../../adr/0003-live-updates.md); [Risiken-Backlog](../open/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
-> - [`plan-0.3.0.md`](./plan-0.3.0.md) ist vollständig (`[x]`) und `v0.3.0` ist veröffentlicht.
+> - [`plan-0.3.0.md`](../done/plan-0.3.0.md) ist vollständig (`[x]`) und `v0.3.0` ist veröffentlicht.
 > - GitHub Actions `Build` ist für den Release-Commit `v0.3.0` grün.
 > - ADR 0002 ist `Accepted`: SQLite ist der lokale Durable-Store für Sessions, Playback-Events und Ingest-Sequenzen.
-> - OE-5 ist durch [ADR 0003](../adr/0003-live-updates.md) entschieden:
+> - OE-5 ist durch [ADR 0003](../../adr/0003-live-updates.md) entschieden:
 >   Dashboard-Live-Updates nutzen SSE mit Polling-Fallback; WebSocket ist
 >   nicht Teil von `0.4.0`.
 >
@@ -15,7 +15,7 @@
 
 ## 0. Konvention
 
-DoD-Checkboxen tracken den Lieferstand analog [`plan-0.1.0.md`](./plan-0.1.0.md) §0:
+DoD-Checkboxen tracken den Lieferstand analog [`plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -53,7 +53,7 @@ DoD:
 - [x] `plan-0.3.0.md` ist vollständig (`[x]`), inklusive Release-Akzeptanzkriterien (Tranche 8 grün; verbleibende `[ ]`-Items in §9.1 sind non-blocking Folge-Issues, siehe Item unten).
 - [x] Annotierter Release-Tag `v0.3.0` existiert und zeigt auf den finalen Release-Stand.
 - [x] GitHub Actions `Build` ist für den Release-Commit grün (per `plan-0.3.0.md` §10 verifiziert).
-- [x] `docs/planning/roadmap.md` führt `0.4.0` als aktiv geplantes Release und verweist auf dieses Dokument (Roadmap §3 + Schritt 27 ✅).
+- [x] `docs/planning/in-progress/roadmap.md` führt `0.4.0` als aktiv geplantes Release und verweist auf dieses Dokument (Roadmap §3 + Schritt 27 ✅).
 - [x] OE-5 ist entschieden: SSE mit Polling-Fallback ist für `0.4.0` gewählt; WebSocket bleibt deferred (ADR 0003).
 - [x] Folge-ADR „Live-Updates via SSE" ist geschrieben und accepted (ADR 0003).
 - [x] Folge-ADR „Dauerhaft konsistente Cursor-Strategie" ist geschrieben (ADR 0004, `1028688`).
@@ -200,7 +200,7 @@ DoD:
 - [x] `spec/telemetry-model.md` §2.5 (neu) dokumentiert die Hybrid-Trace-ID-Strategie, das `trace_id`/`correlation_id`-Verhältnis (mit Persistenz-Quelle pro Feld), das Span-Modell mit Pflicht-Attribut-Tabelle und die Sampling-Auswirkung für `0.4.0` (`5a8ab19`).
 - [x] `spec/backend-api-contract.md` §1 dokumentiert `traceparent` als optionalen HTTP-Header auf `POST /api/playback-events` mit defensiver Server-Validierung (kein 4xx bei kaputtem Header). §3.7 ergänzt `correlation_id` (immer gesetzt) und `trace_id` (nullable) als server-vergebene Read-Felder ab `0.4.0`-§3.2-Closeout (`5a8ab19`).
 - [x] Cardinality-Regel ist in `spec/telemetry-model.md` §2.5 festgehalten: `trace_id`/`correlation_id`/`span_id` sind Prometheus-tabu — Span-Attribute, Persistenz-Spalten und Wire-Format-Felder sind die einzigen Konsumenten; Verstöße sind release-blocking via Cardinality-Smoke (`5a8ab19`).
-- [x] Folge-Item für persistenten Time-Skew-Flag ist als R-5 in `docs/planning/risks-backlog.md` aufgenommen; §5.3 in `telemetry-model.md` verweist explizit auf den Backlog-Eintrag und markiert die Persistenz-Spalte als deferred (`5a8ab19`).
+- [x] Folge-Item für persistenten Time-Skew-Flag ist als R-5 in `docs/planning/open/risks-backlog.md` aufgenommen; §5.3 in `telemetry-model.md` verweist explizit auf den Backlog-Eintrag und markiert die Persistenz-Spalte als deferred (`5a8ab19`).
 
 ### 3.2 Server-Korrelation
 
@@ -307,7 +307,7 @@ DoD:
 - [ ] Header-Casing/Whitespace-Kommentar (aus §3.3-Review, Anmerkung #5): kurze Notiz in `spec/backend-api-contract.md` §1, dass der Server `traceparent` case-insensitiv liest (HTTP-Header-Standard) und führende/abschließende Whitespaces toleriert; SDK schreibt lowercased `traceparent`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code (Hybrid-Strategie, Span-Attribute, Time-Skew, Sampling); §3.1-Entscheidungen sind festgeschrieben.
 - [ ] `spec/backend-api-contract.md` §3 / §3.7 reflektiert das `traceparent`-Header-Verhalten und die neuen Read-Felder `trace_id`/`correlation_id`.
-- [ ] `docs/planning/roadmap.md` Schritt 29 ist auf ✅ gesetzt; Status-Header und Verweis auf den Tranche-2-Closeout-Stand sind aktualisiert.
+- [ ] `docs/planning/in-progress/roadmap.md` Schritt 29 ist auf ✅ gesetzt; Status-Header und Verweis auf den Tranche-2-Closeout-Stand sind aktualisiert.
 
 ---
 
@@ -430,7 +430,7 @@ DoD:
 - [ ] `CHANGELOG.md` enthält den Versionsabschnitt `[0.4.0] - <Datum>` mit Trace-, Persistenz-, Dashboard-, Metrik- und Doku-Lieferstand.
 - [ ] Release-Gates grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make sdk-performance-smoke`, `make smoke-observability` und Dashboard-Tests.
 - [ ] Browser-E2E-Smoke für eine erzeugte Test-Session und Session-Timeline ist grün oder als manuelles Release-Gate mit Ergebnis dokumentiert; der Smoke darf `/demo` nutzen, muss aber bei späterer Demo-Änderung auf einen dedizierten Test-Harness umstellbar bleiben.
-- [ ] `docs/planning/roadmap.md` markiert `0.4.0` als abgeschlossen und verschiebt den aktiven Fokus auf `0.5.0`.
+- [ ] `docs/planning/in-progress/roadmap.md` markiert `0.4.0` als abgeschlossen und verschiebt den aktiven Fokus auf `0.5.0`.
 
 ---
 
