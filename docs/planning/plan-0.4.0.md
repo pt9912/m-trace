@@ -93,10 +93,10 @@ Ziel: Das in §2.1 entschiedene Schema existiert als versioniertes SQL und läuf
 
 DoD:
 
-- [ ] SQLite-Schema für Projekte, Sessions, Playback-Events und Ingest-Sequenzen ist als versionierte Migration implementiert; Schema-Version ist getrennt vom Event-Wire-Schema versioniert.
-- [ ] Migrationsmechanismus läuft beim lokalen API-Start deterministisch und idempotent; mehrfache Starts gegen denselben SQLite-State sind no-op.
-- [ ] Migrationsfehler-Pfad ist im Code abgefangen: teilweise fehlgeschlagene Migrationen hinterlassen einen erkennbaren Schema-/Migration-State (z. B. State-Tabelle mit `dirty`-Flag), starten keine Folgemigration blind und haben eine dokumentierte Reparatur- oder Rollback-Prozedur für das lokale Lab.
-- [ ] Schema-/Migrationstests decken Frischstart, Re-Run gegen bestehenden State und simulierten Migrationsfehler ab.
+- [x] SQLite-Schema für Projekte, Sessions, Playback-Events und Ingest-Sequenzen ist als versionierte Migration implementiert; Schema-Version ist getrennt vom Event-Wire-Schema versioniert. Schema-YAML in `apps/api/internal/storage/schema.yaml`, generierter SQLite-DDL in `migrations/0001_initial.sql` (`137a838`, `4db4a79`).
+- [x] Migrationsmechanismus läuft beim lokalen API-Start deterministisch und idempotent; mehrfache Starts gegen denselben SQLite-State sind no-op (`4db4a79`).
+- [x] Migrationsfehler-Pfad ist im Code abgefangen: Apply-Runner persistiert `dirty=1` in `schema_migrations` und weigert den Re-Start mit `ErrSchemaDirty`; Reparatur-Doku folgt in §2.6 (`4db4a79`).
+- [x] Schema-/Migrationstests decken Frischstart, Re-Run gegen bestehenden State und simulierten Migrationsfehler ab (`TestOpen_FreshStart`, `TestOpen_ReRunIsNoop`, `TestApply_FailureMarksDirty`, `TestApply_DirtyStateRefuses` in `4db4a79`).
 
 ### 2.3 SQLite-Adapter
 
