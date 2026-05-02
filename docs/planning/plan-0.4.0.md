@@ -32,7 +32,7 @@ Neue Lastenheft-Patches während `0.4.0` landen weiterhin zentral in `plan-0.1.0
 |---|---|---|
 | 0 | Vorgänger-Gate und Scope-Entscheidungen | ✅ |
 | 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | ✅ |
-| 2 | Session-Trace-Modell und OTel-Korrelation | ⬜ |
+| 2 | Session-Trace-Modell und OTel-Korrelation (siehe §3.1–§3.4) | ⬜ |
 | 3 | Manifest-/Segment-/Player-Korrelation | ⬜ |
 | 4 | Dashboard-Session-Verlauf ohne Tempo | ⬜ |
 | 5 | Optionales Tempo-Profil | ⬜ |
@@ -168,19 +168,87 @@ Bezug: RAK-29; RAK-35; Lastenheft §7.10/§7.11; Telemetry-Model §2/§3/§5; AP
 
 Ziel: Player-Sessions werden konsistent als Trace-Konzept modelliert. OTel-Spans und gespeicherte Events teilen stabile Korrelations-IDs, ohne Prometheus-Cardinality-Regeln zu verletzen.
 
+Tranche 2 ist in vier aufeinander aufbauende Sub-Tranchen geschnitten: §3.1 fixiert die Spec-Grundlagen vor jedem Code, §3.2 baut die Server-Korrelation (Spans, Persistenz, Validierung), §3.3 die SDK-Wire-Format-Erweiterung, §3.4 die Tests und finalisiert die Doku.
+
+### 3.1 Spec-Vorarbeit (Doku-only, kein Code)
+
+Bezug: RAK-29; RAK-35; Telemetry-Model §2/§3/§5; API-Kontrakt §3, §5, §8.
+
+Ziel: Vor Code-Änderungen sind Trace-ID-Strategie, Span-Modell, `correlation_id`-Vertrag, SDK-Wire-Format-Erweiterung und Validierungsregeln verbindlich entschieden, sodass §3.2–§3.4 ohne implizite Spec-Entscheidungen umgesetzt werden können. Sub-Tranchen-Ausgang: keine Code-Diffs, aber alle nachfolgenden Sub-Tranchen können auf eindeutige Spec-Aussagen verweisen.
+
+Verbindliche Entscheidungen (gehören in `spec/telemetry-model.md` und `spec/backend-api-contract.md`):
+
+- **Trace-ID-Quelle: Hybrid.** Player-SDK propagiert optional einen W3C-`traceparent`-Header (Format laut [W3C Trace Context](https://www.w3.org/TR/trace-context/)). Ist der Header gültig, übernimmt der Server `trace_id` und `parent_span_id` aus dem Header und erzeugt einen Child-Span. Fehlt der Header oder ist er ungültig, generiert der Server einen Root-Span mit eigener W3C-konformer `trace_id`. SDK-Wert hat Vorrang gegenüber Server-Generierung.
+- **`trace_id` ≠ `correlation_id`.** Beide sind getrennte Konzepte mit klarer Verantwortung:
+  - `trace_id` (TEXT, nullable, 32 Hex-Zeichen): W3C-Trace-ID — vom SDK propagiert oder server-generiert; primär für Tempo (RAK-31, optional).
+  - `correlation_id` (TEXT, immer pro Session gesetzt): server-generierte, durable Source-of-Truth für die Dashboard-Korrelation. Wird beim allerersten Event einer Session erzeugt (UUIDv4 oder vergleichbar), in `stream_sessions.correlation_id` persistiert und für **alle** Folge-Events derselben Session konstant gehalten.
+  - Dashboard-Timeline (RAK-32) nutzt `correlation_id` — Tempo-unabhängig. Tempo (RAK-31) nutzt `trace_id`, wenn das Profil aktiv ist.
+- **Span-Modell: ein HTTP-Request-Span pro Batch.** Keine Child-Spans pro Event (Cardinality-Risiko). Pflicht-Attribute am Server-Span:
+  - `mtrace.project.id` (kontrolliert; Allowlist aus dem Use-Case-Resolver)
+  - `mtrace.batch.size` (int)
+  - `mtrace.batch.outcome` (`accepted` / `invalid` / `rate_limited` / `auth_error` etc.)
+  - **Bei Single-Session-Batch (alle Events teilen `session_id`)** zusätzlich `mtrace.session.correlation_id` (und nur dieser Wert — `session_id` selbst ist Prometheus-tabu, im Span-Attribut aber zulässig, weil Spans sampled/short-lived sind).
+  - `mtrace.batch.session_count` (int) — bei Multi-Session-Batches > 1; das einzelne Event trägt seine `correlation_id` aus der Persistenz, nicht der Span.
+  - `mtrace.trace.parse_error=true` falls eingehender `traceparent` ungültig war (siehe Validierungsregel unten).
+  - `mtrace.time.skew_warning=true` falls für mindestens ein Event im Batch `|client_timestamp - server_received_at| > 60s` (Schwelle aus `telemetry-model.md` §5.3); Persistenz des Skew-Flags auf Event-Ebene ist deferred (siehe unten).
+- **Defensive Validierung des `traceparent`-Headers.** Ein ungültiger oder formal kaputter Header führt **nicht** zu 4xx und nicht zum Absturz. Stattdessen: Span-Attribut `mtrace.trace.parse_error=true`, Server-Fallback erzeugt eine eigene `trace_id`, Event wird normal verarbeitet. Die Pflicht-Validierungs-Reihenfolge aus API-Kontrakt §5 wird dadurch nicht verändert.
+- **Cardinality-Regel.** Weder `trace_id`, `correlation_id` noch `span_id` werden als Prometheus-Labels verwendet — Span-Attribute (kontrolliert), Event-Persistenz-Spalten (durable) und Wire-Format-Felder (optional) sind die einzigen Konsumenten.
+- **Time-Skew-Handling: nur Span-Attribut in `0.4.0`.** Span-Attribut `mtrace.time.skew_warning=true` aus `telemetry-model.md` §5.3 ist Pflicht in §3.2. Persistenz-Spalte und Dashboard-Anzeige sind explizit deferred — ein Folge-Tranchen-Item wird sie ergänzen, sobald Bedarf entsteht.
+
 DoD:
 
-- [ ] Trace-ID-Strategie ist festgelegt: pro Player-Session existiert eine stabile Korrelation, die Backend-Spans und gespeicherte Events verbinden kann.
-- [ ] RAK-29/RAK-32 sind Tempo-unabhängig erfüllbar: die lokale Persistenz speichert `trace_id` oder eine äquivalente `correlation_id` als Source of Truth; Tempo ist nur optionaler Export/Viewer und darf kein Pflichtpfad für Dashboard-Korrelation sein.
-- [ ] `session_id` bleibt pseudonym und wird nicht als Prometheus-Label verwendet.
-- [ ] HTTP-Request-Spans für `POST /api/playback-events` tragen kontrollierte Attribute für Project, Batch-Outcome, Event-Anzahl und bei Erfolg Session-Korrelationsdaten.
-- [ ] Event-Persistenz speichert Trace-/Span-Kontext oder eine daraus abgeleitete Korrelations-ID so, dass die Dashboard-Ansicht ohne Tempo nutzbar bleibt.
-- [ ] Player-SDK-Transport propagiert optionalen Trace-Kontext oder sendet die nötigen Korrelationsfelder ohne Breaking Change im Event-Wire-Format.
-- [ ] Server validiert eingehende Korrelationsfelder defensiv; ungültige Trace-Kontexte führen nicht zum Absturz und werden dokumentiert behandelt.
-- [ ] Time-Skew-Handling aus `spec/telemetry-model.md` §5.3 ist umgesetzt oder als explizit späterer Scope dokumentiert.
-- [ ] Tests decken Trace-Konsistenz über mehrere Batches einer Session, fehlenden Client-Kontext, ungültigen Kontext und Session-Ende ab.
-- [ ] Tests verifizieren Trace-/Korrelationskonsistenz bei deaktiviertem Tempo-Profil; dieselben Tests dürfen nicht von einem externen Trace-Backend abhängen.
-- [ ] `spec/telemetry-model.md` dokumentiert die konkrete Span-Struktur, Attribute und Sampling-Auswirkung für `0.4.0`.
+- [ ] `spec/telemetry-model.md` §5.x (oder eigener Abschnitt §5.4) dokumentiert die Hybrid-Trace-ID-Strategie, das `trace_id`/`correlation_id`-Verhältnis, das Span-Modell mit Pflicht-Attributen und die Sampling-Auswirkung für `0.4.0`.
+- [ ] `spec/backend-api-contract.md` §3 (oder §3.7-Erweiterung) dokumentiert: HTTP-Header `traceparent` als optionalen, additiven Wire-Bestandteil; abwärtskompatibel zu Schema 1.0; Server-Validierungs-Mapping (`mtrace.trace.parse_error=true`, kein 4xx); Read-Pfad-Felder `correlation_id` (immer gesetzt) und `trace_id` (nullable) in der Session-Detail-Response.
+- [ ] Cardinality-Regel ist in der Spec festgehalten: `trace_id`/`correlation_id`/`span_id` sind Prometheus-tabu; verstößt eine zukünftige Metrik dagegen, ist sie release-blocking.
+- [ ] Folge-Item für persistenten Time-Skew-Flag ist erfasst: in `risks-backlog.md` oder als Plan-Item für Tranche 4 / `0.5.0`-Backlog dokumentiert.
+
+### 3.2 Server-Korrelation
+
+Bezug: §3.1; Telemetry-Model §5.4; API-Kontrakt §3; ADR-0002 §8.1 (Schema-Spalten reserviert in §2.3).
+
+Ziel: Backend liest `traceparent` (wenn vorhanden), erzeugt einen Server-Span pro Batch, generiert/liest `correlation_id` pro Session, persistiert `trace_id`/`span_id`/`correlation_id` auf jedem Event und auf der Session, validiert defensiv. Sub-Tranchen-Ausgang: ein Batch-POST hinterlässt einen kompletten Trace mit korrelations-fähigen Persistenz-Daten — auch ohne SDK-`traceparent`.
+
+DoD:
+
+- [ ] HTTP-Adapter parst `traceparent`-Header gemäß W3C-Spec; bei valider `trace_id`/`parent_span_id` wird der Server-Span als Child gestartet, sonst als Root mit Server-`trace_id`.
+- [ ] HTTP-Request-Span für `POST /api/playback-events` trägt die in §3.1 spezifizierten Attribute (`mtrace.project.id`, `mtrace.batch.size`, `mtrace.batch.outcome`, optional `mtrace.session.correlation_id`, `mtrace.batch.session_count`, `mtrace.trace.parse_error`, `mtrace.time.skew_warning`).
+- [ ] `domain.PlaybackEvent` und `domain.StreamSession` werden um `TraceID`/`SpanID`/`CorrelationID` erweitert; Application- und Adapter-Code füllt sie konsistent.
+- [ ] `correlation_id` wird beim allerersten Event einer Session erzeugt (server-generiert, UUIDv4) und in `stream_sessions.correlation_id` persistiert; alle Folge-Events derselben Session erben sie.
+- [ ] SQLite-Adapter (Event- und Session-Repository) schreibt und liest die drei neuen Spalten korrekt — die Spalten existieren bereits aus §2.3.
+- [ ] Defensive Validierung: ungültige `traceparent`-Werte produzieren `mtrace.trace.parse_error=true`-Span-Attribut, kein 4xx, keine Persistenz von Müll-Werten.
+- [ ] Time-Skew-Detection (Schwelle 60 s aus §5.3) im Use-Case; Span-Attribut `mtrace.time.skew_warning=true` bei Treffer; Schwelle ist Konstante, kein Configuration-Item.
+- [ ] Adapter-Contract-Tests in `persistence/contract` erweitert um Trace-Felder-Roundtrip (sowohl InMemory als auch SQLite).
+
+### 3.3 SDK-Wire-Format-Erweiterung
+
+Bezug: §3.1; §3.2 (Server-Pfad muss bereit sein, bevor SDK Header schickt); RAK-29 (kein Breaking Change).
+
+Ziel: Player-SDK propagiert optional einen W3C-`traceparent`-Header, wenn der Browser-Pfad einen aktiven Span hat oder das SDK selbst eine `trace_id` führen kann. Wenn kein Trace-Kontext da ist, schickt das SDK den Header **nicht** — Server-Fallback erzeugt eine eigene `trace_id`. Schema-Version bleibt `1.0`. Sub-Tranchen-Ausgang: SDK 0.4.0 kann den Header optional schicken; Server toleriert sowohl SDKs mit als auch ohne Header.
+
+DoD:
+
+- [ ] `@npm9912/player-sdk` HTTP-Transport setzt `traceparent`-Header optional, wenn ein Trace-Kontext vorhanden ist; ohne Kontext bleibt der Header weg (kein leerer Header, kein Default-Wert).
+- [ ] SDK-Verhalten ist abwärtskompatibel: SDK ≥ 0.4.0 mit Backend < 0.4.0 sendet den Header zwar, aber Backend ignoriert unbekannte Header (Standard-HTTP-Verhalten).
+- [ ] SDK-Tests verifizieren: Header wird gesetzt, wenn Browser-API einen Trace-Kontext liefert; Header bleibt weg, wenn nicht.
+- [ ] Schema-Version bleibt `1.0`; SDK↔Backend-Kompatibilitätscheck (CI) bleibt grün.
+- [ ] SDK-Doku (`docs/user/demo-integration.md` oder `spec/player-sdk.md`) erwähnt das `traceparent`-Verhalten und seine Optionalität.
+
+### 3.4 Tests und Doku-Closeout
+
+Bezug: §3.1–§3.3.
+
+Ziel: Trace-Konsistenz ist auf allen Ebenen abgesichert (mehrere Batches einer Session teilen `correlation_id`; ungültiger Trace-Kontext führt zu sauberem Fallback; Tempo-deaktivierter Pfad funktioniert ungestört). Doku spiegelt den ausgelieferten Stand. Sub-Tranchen-Ausgang: Roadmap §2 Schritt 29 ist auf ✅ aktualisierbar.
+
+DoD:
+
+- [ ] Backend-Test deckt Trace-Konsistenz über mehrere Batches einer Session: drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber **dieselbe** `correlation_id` an allen Events und der Session.
+- [ ] Backend-Test deckt fehlenden Client-Kontext: Batch ohne `traceparent` → Server generiert `trace_id`, `mtrace.trace.parse_error` ist nicht gesetzt.
+- [ ] Backend-Test deckt ungültigen Client-Kontext: Batch mit kaputtem `traceparent` → 202 Accepted, Span-Attribut `mtrace.trace.parse_error=true`, `trace_id` ist server-generiert.
+- [ ] Backend-Test deckt Session-Ende: `session_ended`-Event innerhalb eines Batches behält die `correlation_id` der Session bei und schließt den State; nachfolgende Events in derselben Session-ID erhalten dieselbe `correlation_id` (Reihenfolge ist Tranche-1-Verhalten).
+- [ ] Backend-Test verifiziert Time-Skew-Span-Attribut bei `|client_timestamp - server_received_at| > 60s`.
+- [ ] Backend-Test verifiziert Trace-Konsistenz **bei deaktiviertem Tempo-Profil**: identisches Verhalten ohne `OTEL_TRACES_EXPORTER` — `correlation_id` bleibt gesetzt, Dashboard-Timeline ist nutzbar. Test darf kein externes Trace-Backend voraussetzen.
+- [ ] `spec/telemetry-model.md` ist final konsistent mit Code (Hybrid-Strategie, Span-Attribute, Time-Skew, Sampling); §3.1-Entscheidungen sind festgeschrieben.
+- [ ] `spec/backend-api-contract.md` §3 / §3.7 reflektiert das `traceparent`-Header-Verhalten und die neuen Read-Felder `trace_id`/`correlation_id`.
 
 ---
 
