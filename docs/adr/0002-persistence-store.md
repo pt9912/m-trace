@@ -149,17 +149,24 @@ Notwendige reduziert:
 | `schema_migrations` | `version`, `applied_at`, `dirty` | PK `version`. Vom Apply-Runner verwaltet, nicht aus der Schema-YAML generiert. |
 | `projects` | `project_id` | PK `project_id`. Minimal in `0.4.0`; weitere Project-Konfigurationsfelder bleiben Use-Case-Service-intern. |
 | `stream_sessions` | `session_id`, `project_id`, `started_at`, `last_seen_at`, `ended_at`, `state` | PK `session_id`. Index für Session-Listing nach kanonischer Sortierung (`started_at desc, session_id asc`), gefiltert nach `project_id`. |
-| `playback_events` | `ingest_sequence`, `project_id`, `session_id`, `event_name`, `client_timestamp`, `server_received_at`, `sequence_number`, `sdk_name`, `sdk_version`, `schema_version`, `meta`, `delivery_status` | PK `ingest_sequence` als `INTEGER PRIMARY KEY AUTOINCREMENT` (global monoton, durable). Index für kanonische Event-Sortierung pro Session. Dedup-Index siehe §8.3. |
+| `playback_events` | `ingest_sequence`, `project_id`, `session_id`, `event_name`, `client_timestamp`, `server_received_at`, `sequence_number`, `sdk_name`, `sdk_version`, `schema_version`, `meta`, `delivery_status` | PK `ingest_sequence` als `INTEGER PRIMARY KEY AUTOINCREMENT` (global monoton, durable). Index für kanonische Event-Sortierung pro Session. Partial-Index `idx_playback_events_dedup` auf `(project_id, session_id, sequence_number) WHERE delivery_status = 'accepted' AND sequence_number IS NOT NULL` für die Dedup-Lookup aus §8.3. |
 
 `ingest_sequence` ist global, nicht pro `project_id` + `session_id`.
 Damit ist der Cursor-Tie-Breaker aus ADR 0004 §5 erfüllt und
 `Last-Event-ID` für SSE (ADR 0003) bekommt eine eindeutige globale ID
-ohne Zusatzpräfix.
+ohne Zusatzpräfix. `INTEGER PRIMARY KEY AUTOINCREMENT` vermeidet
+ROWID-Reuse über die `sqlite_sequence`-Tabelle; Lücken nach Rollback
+sind erlaubt und vom Cursor-Kontrakt (§10.4 in
+`spec/backend-api-contract.md`) **nicht** ausgeschlossen — gefordert
+ist nur Monotonie, keine Lückenfreiheit.
 
-`meta` wird als TEXT-Spalte mit JSON-Inhalt geführt; SQLite erlaubt
-dazu JSON-Funktionen, eine Schema-Garantie über die JSON-Struktur
-gibt der Store nicht — die liegt im Wire-Format-Vertrag
-(`spec/backend-api-contract.md` §3).
+`meta` wird als TEXT-Spalte mit JSON-Inhalt geführt; der SQLite-
+Adapter validiert Inputs mit `json_valid()` (oder im Application-
+Layer vor dem Insert), damit ein späterer Postgres-Folge-ADR die
+Spalte ohne Datenmüll auf `JSONB` migrieren kann. Schema-YAML
+deklariert die Spalte typneutral; eine Schema-Garantie über die
+*innere* JSON-Struktur gibt der Store nicht — die liegt im
+Wire-Format-Vertrag (`spec/backend-api-contract.md` §3).
 
 ### 8.2 Migrationswerkzeug
 
@@ -187,10 +194,13 @@ anwendet. Verantwortlich für:
 - Anwenden in einer Transaktion pro Migration; bei Fehler `dirty=1`
   setzen und Start abbrechen.
 - Re-Run gegen sauberen Stand ist no-op.
-- Re-Start gegen `dirty=1` weigert sich („refuse to start"); die
-  Reparatur-Prozedur (manueller Reset oder gezieltes Beheben) steht
-  in `docs/user/local-development.md` (Update in §2.6 von
-  `plan-0.4.0.md`).
+- Re-Start gegen `dirty=1` weigert sich („refuse to start") — das
+  Refuse-Verhalten ist verbindlich; `plan-0.4.0.md` §2.6 darf
+  Reparatur-Wording und Schritte ergänzen, das Refuse-to-Start-
+  Verhalten aber **nicht** weichspülen (kein automatischer Retry,
+  keine Warn-only-Variante). Die Reparatur-Prozedur (manueller Reset
+  via `make wipe` oder gezieltes Beheben) steht in
+  `docs/user/local-development.md` (Update in §2.6).
 
 `golang-migrate` und `goose` werden verworfen, weil d-migrate die
 neutrale Schema-Definition zusätzlich liefert und keine
@@ -227,10 +237,10 @@ Für `0.4.0` gilt **„unlimited mit dokumentiertem Reset-Pfad"**:
 
 - Keine automatische TTL-Aufräumung in `0.4.0`. SQLite-Datei wächst
   bis zum manuellen Reset.
-- Reset-Pfad ist der dedizierte Make-Target (z. B. `make wipe`), der
-  das benannte Volume des `api`-Service löscht und beim nächsten
-  Start ein leeres Schema erzeugt. `make stop` löscht das Volume
-  **nicht**.
+- Reset-Pfad ist `make wipe` — verbindlicher Target-Name, nicht
+  beispielhaft. Es löscht das benannte Volume des `api`-Service und
+  erzeugt beim nächsten Start ein leeres Schema. `make stop` löscht
+  das Volume **nicht**.
 - Konkrete Retention-Werte (Zeitfenster, Pro-Projekt-Limit) werden
   Folge-Arbeit, sobald reale Datenmengen oder Multi-Tenant-Last
   auftreten. Bis dahin ist die Spalten-Skizze (`server_received_at`,

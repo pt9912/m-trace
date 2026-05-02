@@ -178,6 +178,22 @@ Service; die Limits sind nicht öffentlich konfigurierbar.
 
 ---
 
+### 3.7 Server-vergebene Read-Felder (ab `0.4.0`)
+
+Die folgenden Felder werden ausschließlich vom Server vergeben und
+erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR 0002 §8.1](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
+| `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. |
+
+Beide Felder sind im POST-Wire-Format (§3.2/§3.3) **nicht** zulässig;
+Clients dürfen sie nur aus Read-Antworten interpretieren. Die genaue
+Vertragssemantik (Sortierung, Idempotenz, Cursor) steht in §10.
+
+---
+
 ## 4. Authentifizierung
 
 - Header `X-MTrace-Token` ist Pflicht.
@@ -249,6 +265,9 @@ Antwort-Body bei Fehlerfällen ist **nicht** Teil des Pflicht-Kontrakts —
 Implementierungen dürfen einen JSON-Body mit Fehlerbeschreibung senden,
 müssen aber.
 
+Cursor-Endpunkte (`GET /api/stream-sessions`, `GET /api/stream-sessions/{id}`)
+folgen einer eigenen Validierungs- und Fehlerklassen-Matrix; siehe §10.3.
+
 ---
 
 ## 6. Rate Limiting
@@ -297,6 +316,10 @@ Verbindliche Regeln:
   `segment_url`, `client_ip` und beliebige `project_id` sind verboten.
 - `mtrace_dropped_events_total` darf konstant `0` sein, wenn die API
   keinen expliziten Drop-Pfad hat — die Metrik **muss** aber existiert sein.
+- `delivery_status: "duplicate_suspected"`-Events (siehe §10.2) zählen
+  zu `mtrace_playback_events_total` (sie sind angenommen, nur als
+  Duplikat klassifiziert) und **nicht** zu
+  `mtrace_invalid_events_total` oder `mtrace_dropped_events_total`.
 - Implementierungen dürfen weitere `mtrace_*`-Metriken ergänzen
   (z. B. `mtrace_active_sessions`), sofern Cardinality kontrolliert ist.
 
@@ -351,9 +374,10 @@ Implementierung.
 - Sessions, Playback-Events und Ingest-Sequenzen werden in einer
   lokalen SQLite-Datei persistiert; ein API-Restart verliert keine
   bereits angenommenen Sessions oder Events.
-- Reset des lokalen Storage geschieht ausschließlich über einen
-  expliziten Pfad (z. B. `make wipe` o. Ä., siehe
-  `docs/user/local-development.md`); `make stop` räumt nicht auf.
+- Reset des lokalen Storage geschieht ausschließlich über das
+  dedizierte `make wipe`-Target (siehe `docs/user/local-development.md`);
+  `make stop` räumt nicht auf. Andere Reset-Pfade (manuelles Löschen
+  des Volumes, etc.) sind nicht Teil des Kontrakts.
 - Postgres und andere Stores sind in `0.4.0` nicht im Scope (Folge-ADR
   aus Roadmap §4).
 
@@ -389,8 +413,10 @@ Implementierung.
 ### 10.3 Pagination und Cursor
 
 Cursor-basierte Pagination gilt für `GET /api/stream-sessions`
-(`cursor`-Query) und für die Event-Liste in
-`GET /api/stream-sessions/{id}` (`events_cursor`-Query).
+(Query-Parameter `cursor`) und für die Event-Liste in
+`GET /api/stream-sessions/{id}` (Query-Parameter `events_cursor`).
+Andere Query-Parameter-Namen oder Aliasse sind nicht Teil des
+Kontrakts.
 
 - **Wire-Format**: Cursor-Tokens sind base64url-kodiertes JSON ohne
   Padding und enthalten ab `0.4.0` ein verbindliches `v`-Feld
@@ -408,7 +434,7 @@ Cursor-basierte Pagination gilt für `GET /api/stream-sessions`
 | `accepted` | Token decodiert; `v == 2`; alle Pflichtfelder vorhanden und valide. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
 | `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden. | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 | `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
-| `cursor_expired` | Cursor referenziert eine Storage-Position, die durch Reset/Retention nicht mehr existiert. | `410 Gone`. | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert aber eine Storage-Position, die durch Reset/Retention nicht mehr existiert. In `0.4.0` ohne TTL praktisch nur nach `make wipe` erreichbar. | `410 Gone` (Token syntaktisch valide, Ziel weg). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 
 **Recovery-Verhalten**:
 
@@ -440,8 +466,11 @@ Events angenommen wurden).
   erhalten, bis ein expliziter Reset (siehe §10.1) erfolgt.
 - Konkrete TTL- oder Pro-Projekt-Limits werden Folge-Arbeit, sobald
   Multi-Tenant-Last entsteht; bis dahin gibt der Server keinen
-  Retention-Header und keine `cursor_expired`-Antwort aus, außer ein
-  Reset wurde lokal ausgeführt.
+  Retention-Header aus.
+- `cursor_expired` (§10.3) ist in `0.4.0` ohne TTL effektiv nur durch
+  `make wipe` erreichbar — Server-Implementierung muss den Pfad aber
+  vorsehen, damit Clients Retention-Folge-Arbeit ohne Wire-Format-
+  Bruch unterstützen können.
 
 ---
 

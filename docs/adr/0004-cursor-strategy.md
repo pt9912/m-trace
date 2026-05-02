@@ -85,6 +85,12 @@ Konkrete Token-Inhalte für `cursor_version: 2`:
 - **Session-Events-Cursor**:
   `{"v":2,"rcv":"<server_received_at, RFC3339Nano UTC>","seq":<int|null>,"ing":<int>}`
 
+Felder ausserhalb dieses Schemas sind in `v: 2` verboten;
+insbesondere ein `pid`-Feld (aus dem `0.1.x`-Format) führt
+deterministisch zu §6 `cursor_invalid_legacy`. Server muss zusätzliche
+unbekannte Felder ignorieren oder ablehnen — er darf sie nicht still
+durchschleifen. Das schützt vor zukünftiger Token-Format-Erosion.
+
 `ingest_sequence` (`ing`) bleibt der serverseitig durable Tie-Breaker
 und wird als globale, monoton steigende Persistenz-Sequenz aus SQLite
 geliefert (siehe ADR 0002 §8). Damit ist die kanonische Sortierung
@@ -110,17 +116,19 @@ Server entscheidet pro eingehendem Cursor anhand der Decode-Reihenfolge:
 | `accepted` | Token decodiert; `v == 2`; alle Pflichtfelder vorhanden und valide. | `200 OK` (Listen-Endpoint antwortet wie ohne Cursor, aber mit Filter). | regulärer Listen-Response. | weiter paginieren mit `next_cursor`. |
 | `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden (Hinweis auf `0.1.x`-Format). | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 | `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
-| `cursor_expired` | Cursor referenziert eine Storage-Position, die durch Retention-/Wipe-Pfad nicht mehr existiert (z. B. nach `make wipe` oder zukünftiger TTL-Aufräumung). | `410 Gone`. | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert eine Storage-Position, die durch Retention-/Wipe-Pfad nicht mehr existiert (z. B. nach `make wipe` oder zukünftiger TTL-Aufräumung). In `0.4.0` ohne TTL praktisch nur via `make wipe` erreichbar — Server-Implementierung muss den Pfad trotzdem vorsehen, damit Retention-Folge-Arbeit ohne Wire-Format-Bruch möglich bleibt. | `410 Gone` (Token syntaktisch valide, Ziel weg — Snapshot-Reload bleibt der Recovery-Pfad). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 
 Keine der Fehlerklassen liefert `Retry-After`. Recovery ist
 deterministisch: Snapshot ohne `cursor` laden; ein Retry-Loop mit
 demselben Cursor ist nutzlos und gilt als Client-Fehler.
 
-`cursor_invalid_legacy` ist eine **dauerhafte** Reject-Klasse: ein
-einzelner Legacy-Cursor wird nicht „einmalig" akzeptiert. „Einmalig"
-gilt nur für das Client-Verhalten *pro Cursor-Wert*: nach
-Snapshot-Reload darf derselbe Legacy-Cursor nicht erneut gesendet
-werden.
+`cursor_invalid_legacy` ist eine **dauerhafte** Reject-Klasse:
+
+- **Server**: Legacy-Cursor wird **immer** mit `400 cursor_invalid_legacy`
+  abgewiesen — kein One-Shot-Grace-Pfad, keine Toleranz-Periode.
+- **Client**: nach dem ersten `400` muss der Cursor verworfen werden;
+  ein erneutes Senden desselben Cursor-Werts ist Client-Bug, nicht
+  Server-State.
 
 ## 7. Konsequenzen
 
@@ -145,7 +153,17 @@ werden.
   abgedeckt; insbesondere der Legacy-Reject-Test mit echtem
   `0.1.x`-Cursor-String, ein Malformed-Test pro Decode-Stufe
   (Base64, JSON, `v`-Wert, Pflichtfeld) und ein Restart-Stabilitäts-
-  Test mit echter SQLite-Datei.
+  Test mit echter SQLite-Datei. Konkrete Test-Migrationspunkte
+  (bestehende Erwartungen auf `cursor_invalid` mit Reasons
+  `storage_restart` / `malformed`):
+  - `apps/api/adapters/driving/http/cursor_test.go` (Kommentar-
+    Bezug auf den alten Sammelbegriff entfernen).
+  - `apps/api/adapters/driving/http/sessions_handlers_test.go`
+    (alle vier Stellen, die `body["error"] == "cursor_invalid"` mit
+    Reasons `storage_restart` oder `malformed` prüfen, auf die
+    feiner aufgelösten Klassen aus §6 umstellen).
+  - Reason-Wert `storage_restart` ist in `0.4.0` deprecated und wird
+    nicht beibehalten; `cursor_invalid_legacy` deckt den Fall.
 - **Doku**: `spec/backend-api-contract.md` §10 (Persistenz, Sub-Section
   „Pagination und Cursor") führt die Matrix als Vertrag; SDK-Doku
   zeigt das Recovery-Verhalten ohne Retry-Loop.
@@ -155,11 +173,13 @@ werden.
 
 ## 8. Offene Punkte
 
-- Konkrete `cursor_expired`-Implementierung hängt davon ab, ob
-  `0.4.0` einen Retention-Pfad einführt (siehe ADR 0002 §8 und
-  `plan-0.4.0.md` §2.4 / §2.6). Solange Retention auf „unlimited mit
-  dokumentiertem Reset-Pfad" steht, ist `cursor_expired` ausschließlich
-  durch `make wipe` o. Ä. erreichbar.
+- `cursor_expired` ist in `0.4.0` ohne TTL effektiv nur via
+  `make wipe` erreichbar (siehe §6 und ADR 0002 §8.4). Der Pfad ist
+  trotzdem als Server-Vertrag implementiert, damit Retention-
+  Folge-Arbeit ohne Wire-Format-Bruch möglich bleibt. Tests dürfen
+  den Pfad mit einem synthetischen Trigger („Storage als leer
+  markiert nach Cursor-Erzeugung") abdecken; ein echtes TTL-Setup
+  ist nicht Voraussetzung für die Test-Abdeckung.
 - Postgres-Folge-ADR muss prüfen, ob `ingest_sequence` als globale
   Sequenz mit gleicher Semantik beibehalten wird oder ob ein
   expliziter portabler Sequence-Generator nötig wird. Cursor-Format
