@@ -64,6 +64,14 @@ RUN CGO_ENABLED=0 go test ./...
 # erzwingt eine Threshold von 90 % (überschreibbar via Build-Argument
 # COVERAGE_THRESHOLD). Erzeugt zusätzlich einen HTML-Report — nutzbar
 # via `docker build --target coverage --output type=local,dest=...`.
+#
+# `internal/` ist bewusst **nicht** im coverpkg-Profil. Das storage-
+# Paket (ADR-0002 §8.2) hat viele defensive Error-Pfade
+# (sql.Open-Failures, fs.FS-Read-Errors, BeginTx/Commit-Failures), die
+# ohne FS-/SQL-Mocks nicht erreichbar sind und das 90 %-Gate über die
+# Tranche-1-Implementierung kippen würden, ohne reale Sicherheit zu
+# liefern. plan-0.4.0.md §2.6 nimmt ein dediziertes Storage-Coverage-
+# Setup auf, falls die Folgetranchen Coverage-Bedarf in storage zeigen.
 FROM deps AS coverage
 
 ARG COVERAGE_THRESHOLD=90

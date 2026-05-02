@@ -150,6 +150,7 @@ DoD:
 - [ ] `spec/backend-api-contract.md` ist final konsistent mit dem Code (Cursor-Matrix, Sortier-Reihenfolge, Idempotenz-Regeln).
 - [ ] `docs/user/local-development.md` beschreibt SQLite-Pfad, Volume-Reset/Wipe-Anleitung, Retention-Defaults und Recovery-Verhalten bei Cursor-Fehlern.
 - [ ] Persistenztest-Suite deckt zusammenführend ab: Neustart-Simulation, Migration (Frischstart, Re-Run, Fehler), Cursor-Stabilität (alle Matrix-Fälle), Session-Ende-Idempotenz, Event-Ordering inkl. Tie-Breaker, Retention.
+- [ ] Coverage-Strategie für `apps/api/internal/storage/` ist entschieden: aktuell außerhalb des 90 %-Gates (defensive SQL-/FS-Error-Pfade ohne Mocks nicht erreichbar, siehe `apps/api/Dockerfile` Coverage-Stage); §2.6 entscheidet, ob ein dediziertes Storage-Coverage-Setup mit niedrigerer Threshold lohnt oder Status quo bleibt.
 - [ ] Roadmap §2 Schritt 28 ist auf ✅ aktualisiert, sobald §2.1–§2.6 alle `[x]` sind.
 
 ---

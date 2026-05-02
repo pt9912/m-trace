@@ -133,6 +133,11 @@ tmp/
 # File ist nicht-deterministisch (Timestamps, Zustand) und wird nicht
 # committet; das DDL selbst bleibt unter Versionskontrolle.
 apps/api/internal/storage/migrations/*.report.yaml
+# Backup-/Editor-Reste neben SQL-Migrationen (`go:embed migrations/*.sql`
+# greift `*.sql.bak` und `*.sql~` ohnehin nicht — Hygiene-Schutz, falls
+# ein Editor lokal Backups schreibt).
+apps/api/internal/storage/migrations/*.sql.bak
+apps/api/internal/storage/migrations/*.sql~
 
 # ---------------------------------------------------------------------------
 # Tooling state

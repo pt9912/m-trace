@@ -33,6 +33,11 @@ var embeddedMigrations embed.FS
 
 const driverName = "sqlite"
 
+// nowFn liefert den aktuellen Zeitpunkt für `applied_at`-Einträge.
+// In Tests überschreibbar, damit Reihenfolge-Assertions deterministisch
+// werden; Default ist `time.Now`.
+var nowFn = time.Now
+
 // migrationNamePattern matcht "0001_initial.sql", "0002_xxx.sql" etc.
 // Die ersten vier Ziffern sind die Versionsnummer.
 var migrationNamePattern = regexp.MustCompile(`^(\d{4})_.+\.sql$`)
@@ -222,7 +227,7 @@ func applyOne(ctx context.Context, db *sql.DB, m migration) error {
 	}
 	if _, err := tx.ExecContext(ctx,
 		"INSERT INTO schema_migrations(version, applied_at, dirty) VALUES (?, ?, 0)",
-		m.version, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+		m.version, nowFn().UTC().Format(time.RFC3339Nano)); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("record migration: %w", err)
 	}
@@ -235,8 +240,8 @@ func applyOne(ctx context.Context, db *sql.DB, m migration) error {
 func markDirty(ctx context.Context, db *sql.DB, version int64) error {
 	_, err := db.ExecContext(ctx,
 		"INSERT INTO schema_migrations(version, applied_at, dirty) VALUES (?, ?, 1) "+
-			"ON CONFLICT(version) DO UPDATE SET dirty = 1",
-		version, time.Now().UTC().Format(time.RFC3339Nano))
+			"ON CONFLICT(version) DO UPDATE SET dirty = 1, applied_at = excluded.applied_at",
+		version, nowFn().UTC().Format(time.RFC3339Nano))
 	if err != nil {
 		return fmt.Errorf("storage: mark dirty: %w", err)
 	}

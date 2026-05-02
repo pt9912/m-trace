@@ -94,12 +94,14 @@ schema-validate:
 # landet als migrations/0001_initial.sql; Generated-Timestamp im
 # DDL-Header wird auf einen festen Wert normalisiert, damit eine
 # Re-Generation ohne Schema-Änderung keinen git-Diff erzeugt.
+# `perl -i -pe` ist portabel zwischen GNU- und BSD-Plattformen, weil
+# die `sed -i`-Inline-Syntax sich zwischen Linux und macOS unterscheidet.
 schema-generate:
 	docker run --rm -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
 		$(DMIGRATE_IMAGE) schema generate \
 			--source /work/schema.yaml --target sqlite \
 			--output /work/migrations/0001_initial.sql
-	sed -i 's/Generated: [^ ]*Z$$/Generated: deterministic/' \
+	perl -i -pe 's/Generated: \S+Z$$/Generated: deterministic/' \
 		$(SCHEMA_DIR)/migrations/0001_initial.sql
 	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/0001_initial.sql"
 

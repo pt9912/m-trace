@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"sort"
+	"sync"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
 // TestOpen_FreshStart prüft, dass Open() gegen eine leere Datei das
@@ -46,7 +49,9 @@ func TestOpen_FreshStart(t *testing.T) {
 }
 
 // TestOpen_ReRunIsNoop prüft, dass ein zweites Open() gegen dieselbe
-// Datei keinen Fehler wirft und schema_migrations unverändert bleibt.
+// Datei keinen Fehler wirft, schema_migrations unverändert bleibt
+// **und** das Schema nach Re-Run weiter benutzbar ist (FK,
+// CHECK-Constraint, AUTOINCREMENT).
 func TestOpen_ReRunIsNoop(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "m-trace.db")
@@ -74,6 +79,52 @@ func TestOpen_ReRunIsNoop(t *testing.T) {
 	}
 	if !equalRows(rowsBefore, rowsAfter) {
 		t.Errorf("rows changed: before=%v after=%v", rowsBefore, rowsAfter)
+	}
+
+	// Schema-Nutzbarkeit: INSERT auf projects + playback_events.
+	if _, err := second.ExecContext(ctx,
+		"INSERT INTO projects(project_id) VALUES (?)", "p1"); err != nil {
+		t.Fatalf("insert project: %v", err)
+	}
+	if _, err := second.ExecContext(ctx,
+		"INSERT INTO playback_events(project_id, session_id, event_name, "+
+			"client_timestamp, server_received_at, sdk_name, sdk_version, "+
+			"schema_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		"p1", "s1", "rebuffer_started",
+		"2026-05-02T10:00:00Z", "2026-05-02T10:00:01Z",
+		"@npm9912/player-sdk", "0.4.0", "1.0"); err != nil {
+		t.Fatalf("insert event: %v", err)
+	}
+
+	// AUTOINCREMENT: erste Zeile bekommt ingest_sequence = 1.
+	var ing int64
+	if err := second.QueryRowContext(ctx,
+		"SELECT ingest_sequence FROM playback_events WHERE session_id = ?",
+		"s1").Scan(&ing); err != nil {
+		t.Fatalf("query ingest_sequence: %v", err)
+	}
+	if ing != 1 {
+		t.Errorf("ingest_sequence = %d, want 1 (AUTOINCREMENT)", ing)
+	}
+
+	// CHECK-Constraint: ungültiger delivery_status muss abgelehnt werden.
+	if _, err := second.ExecContext(ctx,
+		"INSERT INTO playback_events(project_id, session_id, event_name, "+
+			"client_timestamp, server_received_at, sdk_name, sdk_version, "+
+			"schema_version, delivery_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"p1", "s1", "x",
+		"2026-05-02T10:00:00Z", "2026-05-02T10:00:01Z",
+		"@npm9912/player-sdk", "0.4.0", "1.0", "bogus"); err == nil {
+		t.Error("expected CHECK violation for delivery_status='bogus', got nil")
+	}
+
+	// FK-Constraint: stream_sessions referenziert nicht-existentes Projekt.
+	if _, err := second.ExecContext(ctx,
+		"INSERT INTO stream_sessions(session_id, project_id, started_at, "+
+			"last_seen_at) VALUES (?, ?, ?, ?)",
+		"s2", "missing_project",
+		"2026-05-02T10:00:00Z", "2026-05-02T10:00:00Z"); err == nil {
+		t.Error("expected FK violation for missing project_id, got nil")
 	}
 }
 
@@ -146,6 +197,113 @@ func TestApply_DirtyStateRefuses(t *testing.T) {
 	// Sicherstellen, dass keine Folge-Migration angewandt wurde.
 	if names := tableNames(t, db); contains(names, "later") {
 		t.Errorf("later table created despite dirty refuse-to-start")
+	}
+}
+
+// TestApply_MultiStatementRollback prüft, dass ein Failure mitten in
+// einer Multi-Statement-Migration die ganze Migration rolled-back —
+// das erste CREATE TABLE darf NICHT übrig bleiben, wenn das zweite
+// scheitert. Andernfalls wäre `tx.Rollback()` in `applyOne` wirkungslos.
+func TestApply_MultiStatementRollback(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace.db")
+
+	db, err := openBareDB(ctx, path)
+	if err != nil {
+		t.Fatalf("openBareDB: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	// Erstes CREATE wäre erfolgreich; zweites scheitert (Tabellenname
+	// `a` existiert bereits aus Statement 1 derselben Tx).
+	files := fstest.MapFS{
+		"0001_multi.sql": &fstest.MapFile{
+			Data: []byte("CREATE TABLE a(id INTEGER); CREATE TABLE a(id INTEGER);"),
+		},
+	}
+
+	if err := Apply(ctx, db, files); err == nil {
+		t.Fatal("Apply: expected error, got nil")
+	}
+	if contains(tableNames(t, db), "a") {
+		t.Error("table 'a' was created despite multi-statement rollback")
+	}
+	rows, err := allMigrationRows(ctx, db)
+	if err != nil {
+		t.Fatalf("read schema_migrations: %v", err)
+	}
+	if len(rows) != 1 || rows[0].version != 1 || rows[0].dirty != 1 {
+		t.Errorf("rows = %+v, want one row with version=1 dirty=1", rows)
+	}
+}
+
+// TestApply_ConcurrentWritersDoNotDeadlock startet zwei Goroutinen,
+// die parallel je eine Schreib-Tx (`db.BeginTx` → INSERT → Commit)
+// gegen dieselbe DB ausführen. Mit `_txlock=immediate` aus
+// `buildDSN` serialisiert SQLite die Writer per DB-Lock; ohne diese
+// DSN-Konfig würde der Test mit `database is locked`-Fehlern flaky.
+// Beweis ist nicht "parallel exakt", sondern "kein Deadlock, beide
+// Tx committen".
+func TestApply_ConcurrentWritersDoNotDeadlock(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace.db")
+
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	const writers = 2
+	var (
+		wg      sync.WaitGroup
+		barrier = make(chan struct{})
+		errs    = make(chan error, writers)
+	)
+	for i := 0; i < writers; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-barrier
+			tx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				errs <- fmt.Errorf("begin %d: %w", i, err)
+				return
+			}
+			// Kurze Pause, damit beide Goroutinen ihre Tx parallel
+			// gestartet haben, bevor der Insert ausgeführt wird.
+			time.Sleep(10 * time.Millisecond)
+			if _, err := tx.ExecContext(ctx,
+				"INSERT INTO projects(project_id) VALUES (?)",
+				fmt.Sprintf("p%d", i)); err != nil {
+				_ = tx.Rollback()
+				errs <- fmt.Errorf("insert %d: %w", i, err)
+				return
+			}
+			if err := tx.Commit(); err != nil {
+				errs <- fmt.Errorf("commit %d: %w", i, err)
+				return
+			}
+			errs <- nil
+		}()
+	}
+	close(barrier)
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Errorf("concurrent writer: %v", err)
+		}
+	}
+
+	var count int
+	if err := db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM projects").Scan(&count); err != nil {
+		t.Fatalf("count projects: %v", err)
+	}
+	if count != writers {
+		t.Errorf("projects count = %d, want %d", count, writers)
 	}
 }
 
