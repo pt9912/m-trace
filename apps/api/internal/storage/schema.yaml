@@ -43,6 +43,10 @@ tables:
         required: true
       ended_at:
         type: datetime
+      event_count:
+        type: biginteger
+        required: true
+        default: 0
       correlation_id:
         type: text
     primary_key: [session_id]

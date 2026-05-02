@@ -1,4 +1,4 @@
-package persistence
+package inmemory
 
 import (
 	"context"
@@ -6,16 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// SessionEndedEventName ist der Event-Name, der eine Session direkt
-// auf Ended schaltet (plan-0.1.0.md §5.1 Sub-Item 8;
-// telemetry-model.md §1.3).
-const SessionEndedEventName = "session_ended"
-
-// InMemorySessionRepository hält die bekannten Sessions in einer Map
+// SessionRepository hält die bekannten Sessions in einer Map
 // session_id → StreamSession. Pro session_id wird die StartedAt vom
 // ersten gesehenen Event gesetzt (ServerReceivedAt); LastEventAt und
 // EventCount werden bei jedem Folge-Event aktualisiert. Lifecycle-
@@ -23,14 +19,14 @@ const SessionEndedEventName = "session_ended"
 // bleiben Sessions im State Active.
 //
 // Safe für nebenläufige Aufrufe.
-type InMemorySessionRepository struct {
+type SessionRepository struct {
 	mu       sync.Mutex
 	sessions map[string]domain.StreamSession
 }
 
-// NewInMemorySessionRepository konstruiert ein leeres Repository.
-func NewInMemorySessionRepository() *InMemorySessionRepository {
-	return &InMemorySessionRepository{
+// NewSessionRepository konstruiert ein leeres Repository.
+func NewSessionRepository() *SessionRepository {
+	return &SessionRepository{
 		sessions: make(map[string]domain.StreamSession),
 	}
 }
@@ -40,7 +36,7 @@ func NewInMemorySessionRepository() *InMemorySessionRepository {
 // EventCount. Reihenfolge folgt der Slice-Reihenfolge. Ein Event mit
 // event_name=session_ended schaltet die Session sofort auf Ended
 // (plan-0.1.0.md §5.1 Sub-Item 8).
-func (r *InMemorySessionRepository) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
+func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
 	if len(events) == 0 {
 		return nil
 	}
@@ -61,7 +57,7 @@ func (r *InMemorySessionRepository) UpsertFromEvents(_ context.Context, events [
 			s.LastEventAt = e.ServerReceivedAt
 			s.EventCount++
 		}
-		if e.EventName == SessionEndedEventName && s.State != domain.SessionStateEnded {
+		if e.EventName == persistence.SessionEndedEventName && s.State != domain.SessionStateEnded {
 			s.State = domain.SessionStateEnded
 			endedAt := e.ServerReceivedAt
 			s.EndedAt = &endedAt
@@ -74,7 +70,7 @@ func (r *InMemorySessionRepository) UpsertFromEvents(_ context.Context, events [
 // Sweep wertet zeitbasierte Lifecycle-Übergänge aus (plan-0.1.0.md
 // §5.1 Sub-Item 8). Idempotent: bereits Ended-Sessions werden nicht
 // erneut angefasst.
-func (r *InMemorySessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error {
+func (r *SessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for id, s := range r.sessions {
@@ -97,7 +93,7 @@ func (r *InMemorySessionRepository) Sweep(_ context.Context, now time.Time, stal
 
 // Snapshot gibt eine Kopie aller bekannten Sessions zurück. Reihenfolge
 // nicht garantiert; für Tests gedacht.
-func (r *InMemorySessionRepository) Snapshot() []domain.StreamSession {
+func (r *SessionRepository) Snapshot() []domain.StreamSession {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	out := make([]domain.StreamSession, 0, len(r.sessions))
@@ -110,7 +106,7 @@ func (r *InMemorySessionRepository) Snapshot() []domain.StreamSession {
 // List gibt Sessions in stabiler Sortierung (started_at desc,
 // session_id asc) zurück. After=nil → erste Seite. Wenn nach dem
 // Limit weitere Sessions vorhanden sind, ist NextAfter gesetzt.
-func (r *InMemorySessionRepository) List(_ context.Context, q driven.SessionListQuery) (driven.SessionPage, error) {
+func (r *SessionRepository) List(_ context.Context, q driven.SessionListQuery) (driven.SessionPage, error) {
 	r.mu.Lock()
 	all := make([]domain.StreamSession, 0, len(r.sessions))
 	for _, s := range r.sessions {
@@ -153,7 +149,7 @@ func (r *InMemorySessionRepository) List(_ context.Context, q driven.SessionList
 
 // Get liefert eine einzelne Session per ID. ErrSessionNotFound wenn
 // keine Session existiert (plan-0.1.0.md §5.1).
-func (r *InMemorySessionRepository) Get(_ context.Context, id string) (domain.StreamSession, error) {
+func (r *SessionRepository) Get(_ context.Context, id string) (domain.StreamSession, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	s, ok := r.sessions[id]
@@ -175,4 +171,4 @@ func sessionPageCursorPasses(s domain.StreamSession, after driven.SessionCursorP
 	return s.ID > after.SessionID
 }
 
-var _ driven.SessionRepository = (*InMemorySessionRepository)(nil)
+var _ driven.SessionRepository = (*SessionRepository)(nil)

@@ -65,13 +65,19 @@ RUN CGO_ENABLED=0 go test ./...
 # COVERAGE_THRESHOLD). Erzeugt zusätzlich einen HTML-Report — nutzbar
 # via `docker build --target coverage --output type=local,dest=...`.
 #
-# `internal/` ist bewusst **nicht** im coverpkg-Profil. Das storage-
-# Paket (ADR-0002 §8.2) hat viele defensive Error-Pfade
-# (sql.Open-Failures, fs.FS-Read-Errors, BeginTx/Commit-Failures), die
-# ohne FS-/SQL-Mocks nicht erreichbar sind und das 90 %-Gate über die
-# Tranche-1-Implementierung kippen würden, ohne reale Sicherheit zu
-# liefern. plan-0.4.0.md §2.6 nimmt ein dediziertes Storage-Coverage-
-# Setup auf, falls die Folgetranchen Coverage-Bedarf in storage zeigen.
+# Bewusst **nicht** im coverpkg-Profil:
+#   - `internal/storage` (ADR-0002 §8.2 Apply-Runner): defensive
+#     Error-Pfade (sql.Open-Failures, fs.FS-Read-Errors,
+#     BeginTx/Commit-Failures) sind ohne FS-/SQL-Mocks unerreichbar.
+#   - `adapters/driven/persistence/sqlite` (ADR-0002 §8.1 SQLite-
+#     Adapter): dieselbe Pfad-Klasse — Tx-Begin-Failures, Time-Parse-
+#     Errors, Scan-Errors brauchen Mocks.
+#   - `adapters/driven/persistence/contract`: Test-Helper-Paket (kein
+#     Produktionscode); würde Coverage-Profil künstlich beeinflussen.
+#
+# Plan-0.4.0 §2.6 trackt die Folge-Entscheidung, ob die ausgenommenen
+# Pakete ein dediziertes Storage-Coverage-Setup mit niedrigerer
+# Threshold bekommen.
 FROM deps AS coverage
 
 ARG COVERAGE_THRESHOLD=90
@@ -79,8 +85,11 @@ ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
 
 COPY . .
 RUN mkdir -p /out && \
+    COVERPKG=$(go list ./hexagon/... ./adapters/... | \
+        grep -vE 'persistence/sqlite$|persistence/contract$' | \
+        tr '\n' ',' | sed 's/,$//') && \
     CGO_ENABLED=0 go test \
-        -coverpkg=./hexagon/...,./adapters/... \
+        -coverpkg="$COVERPKG" \
         -coverprofile=/out/coverage.out \
         -covermode=atomic \
         ./... && \

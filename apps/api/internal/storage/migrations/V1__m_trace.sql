@@ -33,6 +33,7 @@ CREATE TABLE "stream_sessions" (
     "started_at" TEXT NOT NULL,
     "last_seen_at" TEXT NOT NULL,
     "ended_at" TEXT,
+    "event_count" INTEGER NOT NULL DEFAULT 0,
     "correlation_id" TEXT,
     CONSTRAINT "chk_stream_sessions_state" CHECK (state IN ('active', 'stalled', 'ended')),
     PRIMARY KEY ("session_id")

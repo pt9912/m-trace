@@ -12,7 +12,7 @@ import (
 
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
-	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
@@ -46,16 +46,16 @@ const validBody = `{
 // rate-limit test uses a stuck clock so refill cannot interfere.
 func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Server {
 	t.Helper()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
 		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
 	publisher := metrics.NewPrometheusPublisher()
-	sessionRepo := persistence.NewInMemorySessionRepository()
+	sessionRepo := inmemory.NewSessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), clock,
+		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), clock,
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
@@ -83,15 +83,15 @@ func (unlimitedLimiter) Allow(_ context.Context, _ driven.RateLimitKey, _ int) e
 // limiter (specifically the §5 step 5 batch-size check).
 func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	t.Helper()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
 		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
 	})
 	publisher := metrics.NewPrometheusPublisher()
-	sessionRepo := persistence.NewInMemorySessionRepository()
+	sessionRepo := inmemory.NewSessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, unlimitedLimiter{}, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
+		resolver, unlimitedLimiter{}, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), time.Now,
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))

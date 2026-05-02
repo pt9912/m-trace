@@ -16,7 +16,7 @@ import (
 
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
-	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
@@ -114,15 +114,15 @@ func TestHTTP_Span_AuthRejectMissingTokenAttributes(t *testing.T) {
 // caller's TracerProvider so the span attributes can be inspected.
 func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) *httptest.Server {
 	t.Helper()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo": {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, time.Now)
 	publisher := metrics.NewPrometheusPublisher()
-	sessionRepo := persistence.NewInMemorySessionRepository()
+	sessionRepo := inmemory.NewSessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), persistence.NewInMemoryIngestSequencer(), time.Now,
+		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), time.Now,
 	)
 	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))

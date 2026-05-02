@@ -1,22 +1,22 @@
-package persistence_test
+package inmemory_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// TestInMemorySessionRepository_UpsertFromEvents_CreateAndUpdate
+// TestSessionRepository_UpsertFromEvents_CreateAndUpdate
 // verifiziert die zwei Code-Pfade des Adapters: (1) erste Session-
 // Beobachtung legt an, (2) Folge-Events derselben session_id zählen
 // EventCount hoch und schieben LastEventAt vor.
-func TestInMemorySessionRepository_UpsertFromEvents_CreateAndUpdate(t *testing.T) {
+func TestSessionRepository_UpsertFromEvents_CreateAndUpdate(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	t1 := t0.Add(1 * time.Second)
@@ -67,11 +67,11 @@ func TestInMemorySessionRepository_UpsertFromEvents_CreateAndUpdate(t *testing.T
 	}
 }
 
-// TestInMemorySessionRepository_EmptyEventsIsNoop verifiziert, dass
+// TestSessionRepository_EmptyEventsIsNoop verifiziert, dass
 // ein leerer Slice keinen Fehler wirft und nichts ändert.
-func TestInMemorySessionRepository_EmptyEventsIsNoop(t *testing.T) {
+func TestSessionRepository_EmptyEventsIsNoop(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 	if err := repo.UpsertFromEvents(context.Background(), nil); err != nil {
 		t.Errorf("nil upsert: %v", err)
 	}
@@ -88,13 +88,13 @@ func indexByID(in []domain.StreamSession) map[string]domain.StreamSession {
 	return out
 }
 
-// TestInMemorySessionRepository_List_SortAndCursor verifiziert, dass
+// TestSessionRepository_List_SortAndCursor verifiziert, dass
 // List in (started_at desc, session_id asc) sortiert und dass der
 // After-Cursor die nächste Page strikt hinter dem letzten Eintrag der
 // vorherigen aufnimmt — Pagination ohne Duplikate, ohne Lücken.
-func TestInMemorySessionRepository_List_SortAndCursor(t *testing.T) {
+func TestSessionRepository_List_SortAndCursor(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 
 	// 4 sessions: s4@t0+3, s3@t0+2, s2@t0+1, s1@t0 → sort desc → s4,s3,s2,s1.
@@ -138,24 +138,24 @@ func TestInMemorySessionRepository_List_SortAndCursor(t *testing.T) {
 	}
 }
 
-// TestInMemorySessionRepository_Get_NotFound deckt den Pflicht-Pfad
+// TestSessionRepository_Get_NotFound deckt den Pflicht-Pfad
 // für 404-Mapping in plan-0.1.0.md §5.1 ab.
-func TestInMemorySessionRepository_Get_NotFound(t *testing.T) {
+func TestSessionRepository_Get_NotFound(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 	_, err := repo.Get(context.Background(), "nope")
 	if err != domain.ErrSessionNotFound {
 		t.Errorf("expected ErrSessionNotFound, got %v", err)
 	}
 }
 
-// TestInMemorySessionRepository_Sweep_ActiveToStalled verifiziert den
+// TestSessionRepository_Sweep_ActiveToStalled verifiziert den
 // ersten Lifecycle-Übergang (plan-0.1.0.md §5.1 Sub-Item 8): eine
 // Active-Session ohne Folge-Events kippt nach Ablauf des Stalled-
 // Schwellwerts auf Stalled.
-func TestInMemorySessionRepository_Sweep_ActiveToStalled(t *testing.T) {
+func TestSessionRepository_Sweep_ActiveToStalled(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 
 	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
@@ -184,12 +184,12 @@ func TestInMemorySessionRepository_Sweep_ActiveToStalled(t *testing.T) {
 	}
 }
 
-// TestInMemorySessionRepository_Sweep_StalledToEnded verifiziert den
+// TestSessionRepository_Sweep_StalledToEnded verifiziert den
 // zweiten Lifecycle-Übergang plus Idempotenz (mehrere Sweeps nach
 // Ended ändern nichts mehr).
-func TestInMemorySessionRepository_Sweep_StalledToEnded(t *testing.T) {
+func TestSessionRepository_Sweep_StalledToEnded(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
 		SessionID: "s1", ProjectID: "demo", ServerReceivedAt: t0,
@@ -216,12 +216,12 @@ func TestInMemorySessionRepository_Sweep_StalledToEnded(t *testing.T) {
 	}
 }
 
-// TestInMemorySessionRepository_ExplicitSessionEndedEvent verifiziert,
+// TestSessionRepository_ExplicitSessionEndedEvent verifiziert,
 // dass ein Event mit event_name=session_ended die Session sofort auf
 // Ended schaltet und EndedAt=ServerReceivedAt setzt.
-func TestInMemorySessionRepository_ExplicitSessionEndedEvent(t *testing.T) {
+func TestSessionRepository_ExplicitSessionEndedEvent(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewSessionRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	end := t0.Add(time.Second)
 

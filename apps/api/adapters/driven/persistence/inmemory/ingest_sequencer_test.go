@@ -1,17 +1,17 @@
-package persistence_test
+package inmemory_test
 
 import (
 	"sync"
 	"testing"
 
-	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 )
 
-// TestInMemoryIngestSequencer_StartsAtOne verifies that the first
+// TestIngestSequencer_StartsAtOne verifies that the first
 // Next() call returns 1 (plan-0.1.0.md §5.1: erste ingest_sequence ist 1).
-func TestInMemoryIngestSequencer_StartsAtOne(t *testing.T) {
+func TestIngestSequencer_StartsAtOne(t *testing.T) {
 	t.Parallel()
-	s := persistence.NewInMemoryIngestSequencer()
+	s := inmemory.NewIngestSequencer()
 	if got := s.Next(); got != 1 {
 		t.Errorf("first Next()=%d want 1", got)
 	}
@@ -20,13 +20,13 @@ func TestInMemoryIngestSequencer_StartsAtOne(t *testing.T) {
 	}
 }
 
-// TestInMemoryIngestSequencer_ConcurrentMonotonic verifies that under
+// TestIngestSequencer_ConcurrentMonotonic verifies that under
 // concurrent calls Next() returns 1..N exactly once each (no
 // duplicates, no gaps). Required because cursor pagination relies on
 // global uniqueness within a process (plan-0.1.0.md §5.1).
-func TestInMemoryIngestSequencer_ConcurrentMonotonic(t *testing.T) {
+func TestIngestSequencer_ConcurrentMonotonic(t *testing.T) {
 	t.Parallel()
-	s := persistence.NewInMemoryIngestSequencer()
+	s := inmemory.NewIngestSequencer()
 
 	const workers = 8
 	const perWorker = 250

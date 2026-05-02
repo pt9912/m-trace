@@ -1,7 +1,7 @@
 // Package persistence holds in-memory storage for the spike. Per
 // docs/spike/0001-backend-stack.md §6.10 there is no on-disk persistence;
 // data does not survive a restart, on purpose.
-package persistence
+package inmemory
 
 import (
 	"context"
@@ -12,20 +12,20 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// InMemoryEventRepository keeps accepted events in a slice. Safe for
+// EventRepository keeps accepted events in a slice. Safe for
 // concurrent use; the spike scope does not require performance tuning.
-type InMemoryEventRepository struct {
+type EventRepository struct {
 	mu     sync.Mutex
 	events []domain.PlaybackEvent
 }
 
-// NewInMemoryEventRepository constructs an empty repository.
-func NewInMemoryEventRepository() *InMemoryEventRepository {
-	return &InMemoryEventRepository{}
+// NewEventRepository constructs an empty repository.
+func NewEventRepository() *EventRepository {
+	return &EventRepository{}
 }
 
 // Append stores all events atomically.
-func (r *InMemoryEventRepository) Append(_ context.Context, events []domain.PlaybackEvent) error {
+func (r *EventRepository) Append(_ context.Context, events []domain.PlaybackEvent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.events = append(r.events, events...)
@@ -33,7 +33,7 @@ func (r *InMemoryEventRepository) Append(_ context.Context, events []domain.Play
 }
 
 // Snapshot returns a copy of the stored events. Useful for tests.
-func (r *InMemoryEventRepository) Snapshot() []domain.PlaybackEvent {
+func (r *EventRepository) Snapshot() []domain.PlaybackEvent {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	out := make([]domain.PlaybackEvent, len(r.events))
@@ -45,7 +45,7 @@ func (r *InMemoryEventRepository) Snapshot() []domain.PlaybackEvent {
 // (server_received_at asc, sequence_number asc, ingest_sequence asc).
 // After=nil → erste Seite. Wenn nach Limit weitere Events vorhanden,
 // ist NextAfter gesetzt.
-func (r *InMemoryEventRepository) ListBySession(_ context.Context, q driven.EventListQuery) (driven.EventPage, error) {
+func (r *EventRepository) ListBySession(_ context.Context, q driven.EventListQuery) (driven.EventPage, error) {
 	r.mu.Lock()
 	matching := make([]domain.PlaybackEvent, 0)
 	for _, e := range r.events {
@@ -125,4 +125,4 @@ func nullableSeqValue(p *int64) int64 {
 	return *p
 }
 
-var _ driven.EventRepository = (*InMemoryEventRepository)(nil)
+var _ driven.EventRepository = (*EventRepository)(nil)

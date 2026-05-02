@@ -137,23 +137,22 @@ demselben Cursor ist nutzlos und gilt als Client-Fehler.
 
 ## 7. Konsequenzen
 
-> **Implementierungs-Status (Stand `0.3.x`)**: Der laufende Code in
-> `apps/api/adapters/driving/http/cursor.go` und
-> `apps/api/adapters/driving/http/sessions_handlers.go` liefert
-> heute noch den Sammel-Body `{"error":"cursor_invalid","reason":...}`
-> (Reasons `storage_restart` / `malformed`). Die in §6 spezifizierte
-> Fehlerklassen-Matrix wird im Code durch
-> [`plan-0.4.0.md` §2.5](../planning/plan-0.4.0.md) umgesetzt; bis
-> dieser Tranche-Commit landet, ist die ADR/Spec-Aussage
+> **Implementierungs-Status (Stand `0.3.x`)**: Der laufende
+> HTTP-Adapter liefert heute noch den Sammel-Body
+> `{"error":"cursor_invalid","reason":...}` (Reasons `storage_restart`
+> / `malformed`). Die in §6 spezifizierte Fehlerklassen-Matrix wird im
+> Code durch [`plan-0.4.0.md` §2.5](../planning/plan-0.4.0.md)
+> umgesetzt; bis dieser Tranche-Commit landet, ist die ADR/Spec-Aussage
 > Migrations-Ziel, nicht laufendes Verhalten. Clients (insbesondere
 > das Dashboard in `plan-0.4.0.md` §5) dürfen die neuen Fehlerklassen
 > erst nach §2.5-Closeout erwarten.
 
 - **Wire-Format**: Cursor-Tokens enthalten `cursor_version` als
   `v`-Feld; Cursor ohne `v` werden als Legacy behandelt.
-- **Server**: `apps/api/adapters/driving/http/cursor.go` wird so
-  umgebaut, dass es `v`-Feld parst, Felder validiert und die obigen
-  Fehlerklassen mit definiertem Body liefert.
+- **Server**: der HTTP-Adapter parst das `v`-Feld, validiert die
+  enthaltenen Felder und liefert die in §6 definierten
+  Fehlerklassen-Bodies. Die konkrete Code-Migration steht in
+  `plan-0.4.0.md` §2.5.
 - **Domain-Cursor-Typen**: `driving.ListSessionsCursor` und
   `driving.SessionEventsCursor` verlieren das
   `ProcessInstanceID`-Feld; Application-/Domain-Layer arbeitet nur
@@ -166,21 +165,14 @@ demselben Cursor ist nutzlos und gilt als Client-Fehler.
 - **Fehlerbody**: bisheriger Body `{"error":"cursor_invalid"}` wird
   durch die feiner aufgelösten Fehlerklassen aus §6 ersetzt; der
   bisherige Sammelbegriff wird in keinem Migrationspfad beibehalten.
+  Der Reason-Wert `storage_restart` ist in `0.4.0` deprecated;
+  `cursor_invalid_legacy` deckt den Fall ab.
 - **Tests**: alle Matrix-Klassen aus §6 sind in Backend-Tests
   abgedeckt; insbesondere der Legacy-Reject-Test mit echtem
   `0.1.x`-Cursor-String, ein Malformed-Test pro Decode-Stufe
   (Base64, JSON, `v`-Wert, Pflichtfeld) und ein Restart-Stabilitäts-
-  Test mit echter SQLite-Datei. Konkrete Test-Migrationspunkte
-  (bestehende Erwartungen auf `cursor_invalid` mit Reasons
-  `storage_restart` / `malformed`):
-  - `apps/api/adapters/driving/http/cursor_test.go` (Kommentar-
-    Bezug auf den alten Sammelbegriff entfernen).
-  - `apps/api/adapters/driving/http/sessions_handlers_test.go`
-    (alle vier Stellen, die `body["error"] == "cursor_invalid"` mit
-    Reasons `storage_restart` oder `malformed` prüfen, auf die
-    feiner aufgelösten Klassen aus §6 umstellen).
-  - Reason-Wert `storage_restart` ist in `0.4.0` deprecated und wird
-    nicht beibehalten; `cursor_invalid_legacy` deckt den Fall.
+  Test mit echter SQLite-Datei. Konkrete Test-File-Migrationspunkte
+  stehen als Plan-Item in `plan-0.4.0.md` §2.5.
 - **Doku**: `spec/backend-api-contract.md` §10 (Persistenz, Sub-Section
   „Pagination und Cursor") führt die Matrix als Vertrag; SDK-Doku
   zeigt das Recovery-Verhalten ohne Retry-Loop.

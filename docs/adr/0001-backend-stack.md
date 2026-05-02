@@ -212,7 +212,7 @@ Test-Sorten ab.
 **Build-Image-Wahl:**
 
 `golang:1.22` als Build-Image, `gcr.io/distroless/static-debian12`
-als Runtime. Bleibt unverändert aus dem Spike (`apps/api/Dockerfile`).
+als Runtime. Bleibt unverändert aus dem Spike.
 
 ---
 

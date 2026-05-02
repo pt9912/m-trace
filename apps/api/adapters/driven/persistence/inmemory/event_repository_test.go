@@ -1,22 +1,22 @@
-package persistence_test
+package inmemory_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// TestInMemoryEventRepository_ListBySession_SortAndCursor verifiziert
+// TestEventRepository_ListBySession_SortAndCursor verifiziert
 // die Sort-Order (server_received_at asc, sequence_number asc,
 // ingest_sequence asc) und dass die Pagination Events strikt hinter dem
 // After-Cursor liefert — ohne Duplikate, ohne Lücken.
-func TestInMemoryEventRepository_ListBySession_SortAndCursor(t *testing.T) {
+func TestEventRepository_ListBySession_SortAndCursor(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 
 	// Mix mit absichtlich unsortierter Insertion.
@@ -80,11 +80,11 @@ func TestInMemoryEventRepository_ListBySession_SortAndCursor(t *testing.T) {
 	}
 }
 
-// TestInMemoryEventRepository_Snapshot deckt die for-Tests-gedachte
+// TestEventRepository_Snapshot deckt die for-Tests-gedachte
 // Hilfsmethode ab.
-func TestInMemoryEventRepository_Snapshot(t *testing.T) {
+func TestEventRepository_Snapshot(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	in := []domain.PlaybackEvent{
 		{SessionID: "s1", ServerReceivedAt: t0, IngestSequence: 1},
@@ -106,14 +106,14 @@ func TestInMemoryEventRepository_Snapshot(t *testing.T) {
 	}
 }
 
-// TestInMemoryEventRepository_ListBySession_NilSequenceNumberSortsFirst
+// TestEventRepository_ListBySession_NilSequenceNumberSortsFirst
 // deckt nullableSeqValue's nil-Pfad ab und verifiziert die
 // Sort-Order: bei gleichem ServerReceivedAt sortiert ein Event mit
 // nil SequenceNumber vor einem Event mit gesetzter Nummer
 // (plan-0.1.0.md §5.1).
-func TestInMemoryEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *testing.T) {
+func TestEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	intp := func(v int64) *int64 { return &v }
 	if err := repo.Append(context.Background(), []domain.PlaybackEvent{
@@ -136,11 +136,11 @@ func TestInMemoryEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *te
 	}
 }
 
-// TestInMemoryEventRepository_ListBySession_FiltersBySessionID
+// TestEventRepository_ListBySession_FiltersBySessionID
 // verifiziert, dass Events anderer Sessions nicht durchsickern.
-func TestInMemoryEventRepository_ListBySession_FiltersBySessionID(t *testing.T) {
+func TestEventRepository_ListBySession_FiltersBySessionID(t *testing.T) {
 	t.Parallel()
-	repo := persistence.NewInMemoryEventRepository()
+	repo := inmemory.NewEventRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	if err := repo.Append(context.Background(), []domain.PlaybackEvent{
 		{SessionID: "s1", ServerReceivedAt: t0, IngestSequence: 1},

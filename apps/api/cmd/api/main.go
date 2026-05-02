@@ -22,7 +22,7 @@ import (
 
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
-	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
@@ -60,8 +60,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	repo := persistence.NewInMemoryEventRepository()
-	sessions := persistence.NewInMemorySessionRepository()
+	repo := inmemory.NewEventRepository()
+	sessions := inmemory.NewSessionRepository()
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo": {
 			Token: "demo-token",
@@ -83,7 +83,7 @@ func main() {
 		return active
 	}))
 	analyzer := newAnalyzer(logger)
-	sequencer := persistence.NewInMemoryIngestSequencer()
+	sequencer := inmemory.NewIngestSequencer()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
 		resolver, limiter, repo, sessions, publisher, otelTelemetry, analyzer, sequencer, time.Now,
