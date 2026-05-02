@@ -227,11 +227,11 @@ Ziel: Player-SDK propagiert optional einen W3C-`traceparent`-Header, wenn der Br
 
 DoD:
 
-- [ ] `@npm9912/player-sdk` HTTP-Transport setzt `traceparent`-Header optional, wenn ein Trace-Kontext vorhanden ist; ohne Kontext bleibt der Header weg (kein leerer Header, kein Default-Wert).
-- [ ] SDK-Verhalten ist abwärtskompatibel: SDK ≥ 0.4.0 mit Backend < 0.4.0 sendet den Header zwar, aber Backend ignoriert unbekannte Header (Standard-HTTP-Verhalten).
-- [ ] SDK-Tests verifizieren: Header wird gesetzt, wenn Browser-API einen Trace-Kontext liefert; Header bleibt weg, wenn nicht.
-- [ ] Schema-Version bleibt `1.0`; SDK↔Backend-Kompatibilitätscheck (CI) bleibt grün.
-- [ ] SDK-Doku (`docs/user/demo-integration.md` oder `spec/player-sdk.md`) erwähnt das `traceparent`-Verhalten und seine Optionalität.
+- [x] `@npm9912/player-sdk` HTTP-Transport setzt `traceparent`-Header optional über die neue `PlayerSDKConfig.traceparent`-Provider-Funktion; ohne Provider oder bei Provider-Return `undefined`/`""` bleibt der Header weg. Provider-Throws werden im SDK still gefangen — Tracing darf den Event-Pfad nicht sabotieren (Commit folgt).
+- [x] Abwärtskompatibilität: kein Wire-Format-Bruch (Header ist additiv, Payload unverändert); ältere Backends ignorieren unbekannte Header per HTTP-Standard. SDK-Doku verweist explizit darauf (Commit folgt).
+- [x] SDK-Tests in `packages/player-sdk/tests/http-transport.test.ts` decken: Provider-Wert → Header gesetzt; Provider-`undefined` → kein Header; Provider-`""` → kein Header; kein Provider konfiguriert → kein Header; Provider-Throw → still verworfen; Provider wird pro Send aufgerufen, nicht gecached (sechs Cases) (Commit folgt).
+- [x] Schema-Version bleibt `1.0`; SDK↔Backend-Kompatibilitätscheck (CI `make gates`) bleibt grün — `EVENT_SCHEMA_VERSION` und `PLAYER_SDK_VERSION` sind unverändert (Commit folgt).
+- [x] `spec/player-sdk.md` neue Sektion „Trace-Korrelation (optional, ab `0.4.0`)" zeigt das Provider-Pattern (Beispielcode mit OpenTelemetry-Bridge), nennt die Backwards-Compat-Garantie und verweist auf den Vertrag in `spec/telemetry-model.md` §2.5 (Commit folgt).
 
 ### 3.4 Tests und Doku-Closeout
 

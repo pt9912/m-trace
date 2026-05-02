@@ -45,7 +45,11 @@ export class MTracePlayerTracker implements PlayerTracker {
     this.sampleRate = clampSampleRate(config.sampleRate ?? 1);
     this.batchSize = Math.min(maxBatchEvents, Math.max(1, Math.floor(config.batchSize ?? 10)));
     this.maxQueueEvents = Math.max(1, Math.floor(config.maxQueueEvents ?? defaultMaxQueueEvents));
-    this.transport = config.transport ?? new HttpTransport(config.endpoint, config.token);
+    this.transport =
+      config.transport ??
+      new HttpTransport(config.endpoint, config.token, {
+        traceparent: config.traceparent
+      });
 
     const flushIntervalMs = Math.max(0, Math.floor(config.flushIntervalMs ?? 5000));
     if (flushIntervalMs > 0) {

@@ -1,4 +1,4 @@
-import type { Transport } from "../types/config";
+import type { TraceParentProvider, Transport } from "../types/config";
 import type { PlaybackEventBatch } from "../types/events";
 
 type FetchFn = (input: string, init: RequestInit) => Promise<Response>;
@@ -11,6 +11,15 @@ export interface HttpTransportOptions {
   baseDelayMs?: number;
   maxDelayMs?: number;
   timeoutMs?: number;
+  /**
+   * Optionaler Provider für den W3C-`traceparent`-Header (siehe
+   * `PlayerSDKConfig.traceparent`). Wenn gesetzt und der Aufruf
+   * nicht-leer zurückgibt, sendet `send()` den Header zusätzlich
+   * zu `X-MTrace-Token`. Provider-Fehler (Throw) werden gefangen
+   * und still verworfen — Tracing darf den Event-Pfad nicht
+   * sabotieren.
+   */
+  traceparent?: TraceParentProvider;
 }
 
 export class HttpTransport implements Transport {
@@ -20,6 +29,7 @@ export class HttpTransport implements Transport {
   private readonly baseDelayMs: number;
   private readonly maxDelayMs: number;
   private readonly timeoutMs: number;
+  private readonly traceparent?: TraceParentProvider;
 
   constructor(
     private readonly endpoint: string,
@@ -32,6 +42,7 @@ export class HttpTransport implements Transport {
     this.baseDelayMs = Math.max(0, Math.floor(options.baseDelayMs ?? 250));
     this.maxDelayMs = Math.max(this.baseDelayMs, Math.floor(options.maxDelayMs ?? 5000));
     this.timeoutMs = Math.max(0, Math.floor(options.timeoutMs ?? 10000));
+    this.traceparent = options.traceparent;
   }
 
   async send(batch: PlaybackEventBatch): Promise<void> {
@@ -75,14 +86,20 @@ export class HttpTransport implements Transport {
           }, this.timeoutMs)
         : undefined;
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "X-MTrace-Token": this.token
+    };
+    const tp = this.resolveTraceParent();
+    if (tp !== undefined && tp !== "") {
+      headers.traceparent = tp;
+    }
+
     try {
       return await this.fetchFn(this.endpoint, {
         method: "POST",
         credentials: "omit",
-        headers: {
-          "Content-Type": "application/json",
-          "X-MTrace-Token": this.token
-        },
+        headers,
         body,
         signal: controller?.signal
       });
@@ -90,6 +107,24 @@ export class HttpTransport implements Transport {
       if (timeout !== undefined) {
         clearTimeout(timeout);
       }
+    }
+  }
+
+  /**
+   * resolveTraceParent ruft den optionalen Provider auf und fängt
+   * Provider-Throws still — Tracing darf den Event-Pfad nicht
+   * sabotieren. Throws sind sehr unwahrscheinlich, aber denkbar
+   * (z. B. wenn der Provider auf einen nicht-initialisierten Tracer
+   * zugreift und dabei stolpert).
+   */
+  private resolveTraceParent(): string | undefined {
+    if (this.traceparent === undefined) {
+      return undefined;
+    }
+    try {
+      return this.traceparent();
+    } catch {
+      return undefined;
     }
   }
 

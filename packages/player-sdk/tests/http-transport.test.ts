@@ -201,4 +201,89 @@ describe("HttpTransport", () => {
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
+
+  describe("traceparent propagation (plan-0.4.0 §3.3)", () => {
+    const validTraceParent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
+
+    it("sets the traceparent header when the provider returns a value", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn,
+        traceparent: () => validTraceParent
+      });
+
+      await transport.send(batch);
+
+      const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+      expect(headers.traceparent).toBe(validTraceParent);
+    });
+
+    it("omits the traceparent header when the provider returns undefined", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn,
+        traceparent: () => undefined
+      });
+
+      await transport.send(batch);
+
+      const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+      expect(headers.traceparent).toBeUndefined();
+    });
+
+    it("omits the traceparent header when the provider returns an empty string", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn,
+        traceparent: () => ""
+      });
+
+      await transport.send(batch);
+
+      const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+      expect(headers.traceparent).toBeUndefined();
+    });
+
+    it("omits the traceparent header when no provider is configured", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn
+      });
+
+      await transport.send(batch);
+
+      const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+      expect(headers.traceparent).toBeUndefined();
+    });
+
+    it("swallows provider exceptions and continues without the header", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn,
+        traceparent: () => {
+          throw new Error("tracer not initialised");
+        }
+      });
+
+      await transport.send(batch);
+
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+      const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+      expect(headers.traceparent).toBeUndefined();
+    });
+
+    it("calls the provider on every send (not cached)", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const provider = vi.fn(() => validTraceParent);
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn,
+        traceparent: provider
+      });
+
+      await transport.send(batch);
+      await transport.send(batch);
+
+      expect(provider).toHaveBeenCalledTimes(2);
+    });
+  });
 });

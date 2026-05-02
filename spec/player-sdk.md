@@ -83,6 +83,7 @@ Tiefe Imports aus `src/` oder `dist/` sind keine stabile API.
 | `sampleRate` | nein | Sampling-Rate zwischen `0` und `1`. |
 | `maxQueueEvents` | nein | Lokales Queue-Limit für normale Playback-Events; Standard ist 1000. |
 | `transport` | nein | Eigener Transport mit `send(batch)`. |
+| `traceparent` | nein | Provider-Funktion für den optionalen W3C-`traceparent`-Header pro Batch-Send (siehe „Trace-Korrelation" unten). |
 
 ## Lifecycle
 
@@ -112,6 +113,46 @@ entfernt Listener, zerstört aber nicht den Tracker; der aufrufende Code bleibt 
 auf drei Versuche. `429` mit `Retry-After` wird als Cooldown respektiert; ohne
 Header gilt der normale Backoff. Nicht-transiente `4xx` und `413 Payload Too
 Large` werden nicht erneut gesendet.
+
+## Trace-Korrelation (optional, ab `0.4.0`)
+
+Das SDK kann pro Batch-Send einen W3C-`traceparent`-Header propagieren —
+opt-in über `PlayerSDKConfig.traceparent`. Der Wert kommt aus einem
+Provider-Callback, den der Konsument bereitstellt; das SDK selbst hält
+keinen Tracer. Ohne Provider sendet das SDK keinen Header, der Server
+generiert einen Root-Span (Vertrag siehe
+[`spec/telemetry-model.md`](./telemetry-model.md) §2.5).
+
+```ts
+import { createTracker, type TraceParentProvider } from "@npm9912/player-sdk";
+
+const traceparent: TraceParentProvider = () => {
+  // Beispiel: aktiver OTel-Span via @opentelemetry/api
+  const span = activeSpan(); // Konsumenten-spezifisch
+  if (!span) return undefined;
+  const ctx = span.spanContext();
+  if (!ctx.traceId) return undefined;
+  const flags = ctx.traceFlags.toString(16).padStart(2, "0");
+  return `00-${ctx.traceId}-${ctx.spanId}-${flags}`;
+};
+
+const tracker = createTracker({
+  endpoint: "http://localhost:8080/api/playback-events",
+  token: "demo-token",
+  projectId: "demo",
+  traceparent
+});
+```
+
+Format des Header-Werts: `00-<trace_id 32 hex>-<parent_id 16 hex>-<flags 2 hex>`
+(W3C [Trace Context](https://www.w3.org/TR/trace-context/)). Das SDK
+validiert den Wert **nicht**: ein vom Provider gelieferter Müllstring
+landet beim Server, der ihn als Parse-Error markiert
+(`mtrace.trace.parse_error=true`) und zur eigenen Trace-ID zurückfällt.
+
+Provider-Throws werden im SDK still gefangen — Tracing darf den
+Event-Pfad nicht sabotieren. Abwärtskompatibel mit Backends < `0.4.0`:
+ältere Server ignorieren unbekannte Header (HTTP-Standard).
 
 ## OpenTelemetry-Vorbereitung
 
