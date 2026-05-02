@@ -1,6 +1,6 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
-> **Status**: ⬜ geplant. Beginnt nach Release `v0.3.0` (Stream Analyzer).
+> **Status**: 🟡 in Arbeit. Tranche 0 abgeschlossen; Tranche 1 in §2.1–§2.3 ausgeliefert, §2.4–§2.6 offen.
 > **Bezug**: [Lastenheft `1.1.8`](../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../spec/architecture.md); [Telemetry-Model](../../spec/telemetry-model.md); [API-Kontrakt](../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../adr/0003-live-updates.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
@@ -30,8 +30,8 @@ Neue Lastenheft-Patches während `0.4.0` landen weiterhin zentral in `plan-0.1.0
 
 | Tranche | Inhalt | Status |
 |---|---|---|
-| 0 | Vorgänger-Gate und Scope-Entscheidungen | ⬜ |
-| 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | ⬜ |
+| 0 | Vorgänger-Gate und Scope-Entscheidungen | ✅ |
+| 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | 🟡 (§2.1–§2.3 ✅, §2.4–§2.6 ⬜) |
 | 2 | Session-Trace-Modell und OTel-Korrelation | ⬜ |
 | 3 | Manifest-/Segment-/Player-Korrelation | ⬜ |
 | 4 | Dashboard-Session-Verlauf ohne Tempo | ⬜ |
