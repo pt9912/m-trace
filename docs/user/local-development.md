@@ -223,6 +223,60 @@ CSP-Beispiele für `connect-src` (NF-37):
 
 Der Status pro Service ist über `docker compose ps` und `docker compose logs <service>` einsehbar.
 
+### 3.4 SQLite-Persistenz und Reset
+
+Ab `0.4.0` persistiert der `api`-Service Sessions, Playback-Events und
+Ingest-Sequenzen durable in einer SQLite-Datei (siehe
+[ADR-0002](../adr/0002-persistence-store.md) §8.1). Konfiguration und
+Reset-Pfad:
+
+| Aspekt | Default im Compose-Lab | Override |
+|---|---|---|
+| Persistenz-Modus | `MTRACE_PERSISTENCE=sqlite` | `inmemory` für Tests/Restart-flüchtige Sessions |
+| SQLite-Pfad | `MTRACE_SQLITE_PATH=/var/lib/mtrace/m-trace.db` | beliebiger Pfad (CI: `t.TempDir()`) |
+| Volume-Name | `mtrace-data` (compose-internes Naming: `<project>_mtrace-data`) | nicht überschreibbar im Default-Compose |
+
+Nach jedem `make dev`-Cycle bleibt die SQLite-Datei im benannten
+Volume erhalten — der nächste Start liest die gleiche Session-Historie.
+`make stop` (= `docker compose down` ohne `--volumes`) lässt das Volume
+unangetastet.
+
+**Reset (destruktiv)**: ausschließlich über
+
+```bash
+make wipe
+```
+
+Das Target stoppt alle Services und entfernt gezielt das
+`mtrace-data`-Volume. Sessions, Events, Cursor-States und
+Ingest-Sequenz sind danach weg; der nächste `make dev`-Start migriert
+ein leeres Schema. Andere Reset-Wege (manuelles `docker volume rm`,
+Filesystem-Eingriffe) sind nicht Teil des Vertrags.
+
+**Cursor-Recovery**: Cursor-v2 (Wire-Format aus
+[ADR-0004](../adr/0004-cursor-strategy.md)) trägt nur durable
+Storage-Werte (kein `process_instance_id` mehr) und bleibt nach
+API-Restart gültig. Treten dennoch Cursor-Fehler auf, mappt der
+Server folgende Klassen (siehe API-Kontrakt §10.3):
+
+| HTTP | `error` | Wann | Client-Handlung |
+|---|---|---|---|
+| 400 | `cursor_invalid_legacy` | `0.1.x`/`0.2.x`/`0.3.x`-Cursor mit `pid`-Feld | Cursor verwerfen, Snapshot ohne `cursor` neu laden — kein Retry-Loop |
+| 400 | `cursor_invalid_malformed` | Decode-/Schema-Verletzung | dito |
+| 410 | `cursor_expired` | Storage-Position weg (nach `make wipe`) | dito |
+
+Kein `Retry-After`-Header — Recovery ist deterministisch durch
+Snapshot-Reload.
+
+**Migrationen**: das initiale Schema-DDL liegt unter
+`apps/api/internal/storage/migrations/V1__m_trace.sql` (aus
+`schema.yaml` per d-migrate generiert). Beim Container-Start wendet
+der eingebettete Apply-Runner offene Migrationen an; ein bereits
+applizierter Schema-State ist no-op. Schlägt eine Migration fehl,
+markiert der Runner den State als `dirty` und der nächste Start
+weigert sich (`storage: schema is in dirty state`). Reparatur:
+`make wipe` und neu starten.
+
 ---
 
 ## 4. Test-/Lint-/Coverage-Workflows

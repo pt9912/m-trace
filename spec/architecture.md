@@ -121,7 +121,7 @@ flowchart TB
     end
 
     subgraph driven["Driven Adapters"]
-        Persist["persistence<br/>InMemoryEventRepository"]
+        Persist["persistence<br/>sqlite (default) / inmemory"]
         Auth["auth<br/>StaticProjectResolver"]
         Rate["ratelimit<br/>TokenBucket"]
         Metrics["metrics<br/>PrometheusPublisher"]
@@ -216,7 +216,7 @@ Adapter im Zielbild `0.1.0` (`apps/api/`):
 | ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `adapters/driving/http/`       | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer`                                                                   | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`.               |
 | `adapters/driven/auth/`        | Driven  | `StaticProjectResolver`                                                                                                                                                      | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
-| `adapters/driven/persistence/` | Driven  | `InMemoryEventRepository`                                                                                                                                                    | wechselt in `0.4.0` gemäß ADR-0002 auf SQLite.                                                         |
+| `adapters/driven/persistence/` | Driven  | Sub-Pakete `inmemory/`, `sqlite/`, `contract/` — beide Backends erfüllen denselben Port-Vertrag (gemeinsame Test-Suite in `contract/`)                                       | SQLite ist Default ab `0.4.0` (ADR-0002 §8.1); Apply-Runner in `apps/api/internal/storage`. InMemory bleibt für Tests/Dev-Fallback. |
 | `adapters/driven/ratelimit/`   | Driven  | `TokenBucket`                                                                                                                                                                | 100 Events/s/Project laut API-Kontrakt §6.                                                                                          |
 | `adapters/driven/metrics/`     | Driven  | `PrometheusPublisher`                                                                                                                                                        | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
 | `adapters/driven/telemetry/`   | Driven  | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
@@ -292,9 +292,14 @@ apps/api/
 │   └── driven/
 │       ├── auth/
 │       ├── metrics/
-│       ├── persistence/
+│       ├── persistence/             # Sub-Pakete pro Backend (ADR-0002 §8.2):
+│       │   ├── inmemory/            # Test-/Dev-Fallback
+│       │   ├── sqlite/              # Default ab 0.4.0
+│       │   └── contract/            # gemeinsame Adapter-Test-Suite
 │       ├── ratelimit/
 │       └── telemetry/
+├── internal/
+│   └── storage/                     # SQLite-Apply-Runner + Migrationen (ADR-0002 §8.2)
 ├── go.mod                           # github.com/pt9912/m-trace/apps/api
 ├── go.sum
 ├── Dockerfile                       # multi-stage: deps, compile, lint, test, build, runtime
