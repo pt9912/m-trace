@@ -31,7 +31,7 @@ Neue Lastenheft-Patches während `0.4.0` landen weiterhin zentral in `plan-0.1.0
 | Tranche | Inhalt | Status |
 |---|---|---|
 | 0 | Vorgänger-Gate und Scope-Entscheidungen | ⬜ |
-| 1 | SQLite-Persistenz und durable Cursor | ⬜ |
+| 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | ⬜ |
 | 2 | Session-Trace-Modell und OTel-Korrelation | ⬜ |
 | 3 | Manifest-/Segment-/Player-Korrelation | ⬜ |
 | 4 | Dashboard-Session-Verlauf ohne Tempo | ⬜ |
@@ -68,23 +68,89 @@ Bezug: ADR 0002 §7/§8; RAK-32; F-18, F-30, F-38; MVP-14, MVP-16.
 
 Ziel: Sessions, Playback-Events und Ingest-Sequenzen überleben API-Restarts. Die Dashboard-Session-Ansicht liest aus m-trace selbst und ist nicht von Tempo abhängig.
 
+Tranche 1 ist in sechs aufeinander aufbauende Sub-Tranchen geschnitten: §2.1 fixiert die Spec-Grundlagen vor jedem Code, §2.2 liefert Schema und Migrationen, §2.3 die SQLite-Adapter, §2.4 das Wiring im Compose-Lab, §2.5 die Cursor-Migration im Code und §2.6 den Doku- und Test-Closeout. Die ursprüngliche, flache DoD-Liste aus früheren Plan-Ständen ist unverändert auf §2.1–§2.6 verteilt; pro Sub-Tranche werden nur die Items gelistet, die dort tatsächlich abgeschlossen werden.
+
+### 2.1 Spec-Vorarbeit (Doku-only, kein Code)
+
+Bezug: ADR 0002 §8; Folge-ADR „Dauerhaft konsistente Cursor-Strategie" (Roadmap §4); RAK-32; F-30; F-38.
+
+Ziel: Vor jeder Codeänderung sind Cursor-Format, Schema-Skizze, Migrations-Tool-Wahl, Idempotenz-Regeln und kanonische Sortierung verbindlich entschieden, damit §2.2–§2.5 ohne implizite Spec-Entscheidungen umgesetzt werden können. Sub-Tranchen-Ausgang: keine Code-Diffs, aber alle nachfolgenden Sub-Tranchen können auf eindeutige Spec-Aussagen verweisen.
+
 DoD:
 
-- [ ] SQLite-Schema für Projekte, Sessions, Playback-Events und Ingest-Sequenzen ist festgelegt und versioniert.
-- [ ] Migrationsmechanismus ist entschieden und implementiert; Migrationen laufen beim lokalen API-Start deterministisch und idempotent.
-- [ ] Migrationsfehler sind definiert: teilweise fehlgeschlagene Migrationen hinterlassen einen erkennbaren Schema-/Migration-State, starten keine Folgemigration blind und haben eine dokumentierte Reparatur- oder Rollback-Prozedur für das lokale Lab.
-- [ ] Cursor-Kompatibilitätsmatrix ist im API-Kontrakt dokumentiert: `cursor_version`, erkannte Legacy-Formate (`process_instance_id`), Verhalten je Version (`accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed`, `cursor_expired`), HTTP-Status, Body und Client-Recovery sind eindeutig festgelegt.
+- [ ] Folge-ADR „Dauerhaft konsistente Cursor-Strategie" (z. B. `docs/adr/0004-cursor-strategy.md`) ist geschrieben und `Accepted`: definiert `cursor_version`, durable Token-Form (z. B. opaker Token mit Storage-Token-ID oder durable Sequence-Generator) und Recovery-Verhalten nach API-Restart.
+- [ ] Cursor-Kompatibilitätsmatrix ist in `spec/backend-api-contract.md` festgeschrieben: `cursor_version`, erkannte Legacy-Formate (`process_instance_id`), Verhalten je Version (`accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed`, `cursor_expired`), HTTP-Status, Body-Schema und Client-Recovery sind eindeutig.
+- [ ] ADR 0002 §8 schließt die offenen Punkte: konkrete Tabellen-Skizze (Spalten, PKs, Indizes) für Projekte, Sessions, Playback-Events und Ingest-Sequenzen sowie Migrations-Tool-Wahl (z. B. `golang-migrate` embed, `goose`, eigenständig) ist verbindlich entschieden.
+- [ ] Idempotenz-Grenzen sind in ADR 0002 oder `spec/backend-api-contract.md` festgelegt: Session-State-Updates (`session_ended`, Sweeper-Zustände) sind idempotent; Event-Level-Deduplikation ist entweder über einen dokumentierten Event-Key/Hash (`project_id`, `session_id`, `sequence_number` oder dedizierte Event-ID) festgelegt oder durch persistierte Timeline-Klassifikation (`accepted`, `duplicate_suspected`, `replayed`) mit Dashboard-Anzeige.
+- [ ] Kanonische API-Event-Sortierung ist in `spec/backend-api-contract.md` festgeschrieben: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als verpflichtender, durabler Tie-Breaker; Scope und Eindeutigkeit von `ingest_sequence`/Persistenz-ID sind explizit festgelegt (global oder mindestens eindeutig innerhalb `project_id` + `session_id`).
+- [ ] Retention-Defaults für das lokale Lab sind in der Spec verankert (konkrete Werte oder bewusst „unlimited mit dokumentiertem Reset-Pfad"); Implementierungs- und Nutzerdoku folgen in §2.6.
+
+### 2.2 Schema und Migrationen
+
+Bezug: §2.1; ADR 0002.
+
+Ziel: Das in §2.1 entschiedene Schema existiert als versioniertes SQL und läuft beim API-Start deterministisch und idempotent. Sub-Tranchen-Ausgang: leeres Schema startet sauber, bestehender Schema-State bleibt bei Re-Run unverändert, Migrationsfehler hinterlässt erkennbaren State.
+
+DoD:
+
+- [ ] SQLite-Schema für Projekte, Sessions, Playback-Events und Ingest-Sequenzen ist als versionierte Migration implementiert; Schema-Version ist getrennt vom Event-Wire-Schema versioniert.
+- [ ] Migrationsmechanismus läuft beim lokalen API-Start deterministisch und idempotent; mehrfache Starts gegen denselben SQLite-State sind no-op.
+- [ ] Migrationsfehler-Pfad ist im Code abgefangen: teilweise fehlgeschlagene Migrationen hinterlassen einen erkennbaren Schema-/Migration-State (z. B. State-Tabelle mit `dirty`-Flag), starten keine Folgemigration blind und haben eine dokumentierte Reparatur- oder Rollback-Prozedur für das lokale Lab.
+- [ ] Schema-/Migrationstests decken Frischstart, Re-Run gegen bestehenden State und simulierten Migrationsfehler ab.
+
+### 2.3 SQLite-Adapter
+
+Bezug: §2.1; §2.2; ADR 0002.
+
+Ziel: Drei Driven-Adapter hinter den bestehenden Ports machen Sessions, Playback-Events und Ingest-Sequenzen restart-stabil. Application- und Domain-Layer bleiben SQLite-frei. Sub-Tranchen-Ausgang: Adapter-Contract-Tests laufen identisch gegen In-Memory- und SQLite-Implementierung.
+
+DoD:
+
+- [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind in `apps/api/adapters/driven/persistence/` als SQLite-Implementierung umgesetzt; Application- und Domain-Layer importieren keine SQLite-Pakete.
+- [ ] Idempotenz aus §2.1 ist im Adapter implementiert: Session-State-Updates sind idempotent; Event-Deduplikation folgt der dort entschiedenen Variante (Event-Key/Hash oder Timeline-Klassifikation).
+- [ ] Kanonische Event-Sortierung aus §2.1 ist im Adapter durchgesetzt; `ingest_sequence` ist als durable Tie-Breaker mit dem in §2.1 festgelegten Eindeutigkeits-Scope persistiert.
+- [ ] In-Memory-Adapter bleiben für Tests und expliziten Dev-Fallback erhalten; der Compose-Lab-Default-Wechsel selbst erfolgt in §2.4.
+- [ ] Adapter-Contract-Tests laufen gegen In-Memory- und SQLite-Adapter (gemeinsame Test-Suite oder gespiegelte Test-Matrix); Neustart-Simulation, Session-Ende, Event-Ordering und Cursor-Stabilität sind abgedeckt.
+
+### 2.4 Wiring und Compose
+
+Bezug: §2.3; ADR 0002.
+
+Ziel: API-Bootstrap wählt SQLite per Default im Compose-Lab; die Datei überlebt Container-Neustart und ist getrennt vom expliziten Reset-Pfad. Sub-Tranchen-Ausgang: `make stop` + erneuter Start zeigt vorherige Sessions weiter; Reset ist nur über einen dedizierten Pfad möglich.
+
+DoD:
+
+- [ ] `apps/api/cmd/api/main.go` wählt den Persistenz-Adapter über Konfiguration (z. B. env var `MTRACE_PERSISTENCE` oder vergleichbar); In-Memory bleibt opt-in für Tests/Dev.
+- [ ] Konfiguration erlaubt einen expliziten SQLite-Pfad für lokale Entwicklung und CI (z. B. `MTRACE_SQLITE_PATH`).
+- [ ] SQLite-Datei liegt im Compose-Lab in einem benannten Volume des `api`-Service; `make stop` entfernt das Volume nicht; ein expliziter Reset-Pfad (z. B. `make wipe` o. Ä.) ist getrennt eingeführt.
+- [ ] Compose-Lab startet per Default mit SQLite-Adapter; In-Memory ist nicht mehr Compose-Default.
+
+### 2.5 Cursor-Format im Code
+
+Bezug: §2.1 Cursor-Kompatibilitätsmatrix; §2.3 SQLite-Adapter.
+
+Ziel: Cursor-Format auf `cursor_version` umgestellt; Legacy-Verhalten entspricht der Matrix; kein `process_instance_id` mehr im Token-Inhalt. Sub-Tranchen-Ausgang: Cursor-Tests decken alle Matrix-Fälle ab und ein nach Restart fortgesetzter Cursor liefert keinen Datenverlust gegenüber In-Memory-Verhalten von `0.3.0`.
+
+DoD:
+
+- [ ] `apps/api/adapters/driving/http/cursor.go` ist auf `cursor_version` umgestellt; neue Cursor-Versionen bleiben nach API-Restart gültig oder liefern einen Fehlercode aus der Kompatibilitätsmatrix ohne `Retry-After`.
 - [ ] Legacy-`process_instance_id`-Cursor werden dauerhaft als `cursor_invalid_legacy` abgewiesen; „einmalig" gilt nur für das Client-Verhalten pro Cursor-Wert: nach Snapshot-Reload darf derselbe Legacy-Cursor nicht erneut gesendet werden.
-- [ ] SQLite-Datei liegt im Compose-Lab in einem benannten Volume des `api`-Service; `make stop` entfernt das Volume nicht.
-- [ ] Konfiguration erlaubt einen expliziten SQLite-Pfad für lokale Entwicklung und CI.
-- [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind hinter den bestehenden Ports implementiert; Application- und Domain-Layer bleiben frei von SQLite-Imports.
-- [ ] In-Memory-Adapter bleiben nur für Tests oder expliziten Dev-Fallback erhalten und sind nicht mehr der Default im Compose-Lab.
-- [ ] Idempotenz-Grenzen sind vor Implementierung festgelegt: Session-State-Updates (`session_ended`, Sweeper-Zustände) sind idempotent; Event-Level-Deduplikation ist entweder über einen dokumentierten Event-Key/Hash (`project_id`, `session_id`, `sequence_number` oder dedizierte Event-ID) testbar umgesetzt oder jedes Duplikat bekommt eine persistierte Timeline-Klassifikation (`accepted`, `duplicate_suspected`, `replayed`) mit Dashboard-Anzeige.
-- [ ] Kanonische API-Event-Sortierung ist restart-stabil und dokumentiert: `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc` als serverseitig verpflichtender, durabler Tie-Breaker für jeden persistierten Event; Scope und Eindeutigkeit von `ingest_sequence`/Persistenz-ID sind explizit festgelegt (global oder mindestens eindeutig innerhalb `project_id` + `session_id`).
-- [ ] Cursor-Format nutzt keine `process_instance_id`-Invalidierung mehr; unterstützte neue Cursor-Versionen bleiben nach API-Restart gültig oder liefern einen Fehlercode aus der Kompatibilitätsmatrix ohne `Retry-After`; Clients recovern durch Verwerfen des Cursors und erneuten Snapshot-Load.
-- [ ] Retention-Defaults für das lokale Lab sind festgelegt und dokumentiert; Reset-/Wipe-Anleitung steht in `docs/user/local-development.md`.
-- [ ] Persistenztests decken Neustart-Simulation, Migration, Cursor-Stabilität, Session-Ende, Event-Ordering und Retention ab.
-- [ ] `spec/architecture.md`, `spec/backend-api-contract.md` und `docs/user/local-development.md` beschreiben Storage-Stand, Idempotenz-Grenzen, Cursor-Fehlerformat und Recovery-Verhalten.
+- [ ] Clients recovern dokumentiert durch Verwerfen des Cursors und erneuten Snapshot-Load (kein Retry-Loop, kein `Retry-After`).
+- [ ] Cursor-Tests decken alle Matrix-Fälle aus §2.1 ab: `accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed`, `cursor_expired`, restart-stabile Cursor-Fortsetzung.
+
+### 2.6 Doku und Persistenztest-Closeout
+
+Bezug: §2.1–§2.5.
+
+Ziel: Spec-, Nutzer- und Architektur-Doku spiegeln den ausgelieferten Stand; Test-Suite ist über alle DoD-Aspekte hinweg grün. Sub-Tranchen-Ausgang: Roadmap-Schritt 28 ist auf ✅ aktualisierbar.
+
+DoD:
+
+- [ ] `spec/architecture.md` beschreibt den Storage-Stand (SQLite-Adapter, Volume, Retention) konsistent mit dem ausgelieferten Code.
+- [ ] `spec/backend-api-contract.md` ist final konsistent mit dem Code (Cursor-Matrix, Sortier-Reihenfolge, Idempotenz-Regeln).
+- [ ] `docs/user/local-development.md` beschreibt SQLite-Pfad, Volume-Reset/Wipe-Anleitung, Retention-Defaults und Recovery-Verhalten bei Cursor-Fehlern.
+- [ ] Persistenztest-Suite deckt zusammenführend ab: Neustart-Simulation, Migration (Frischstart, Re-Run, Fehler), Cursor-Stabilität (alle Matrix-Fälle), Session-Ende-Idempotenz, Event-Ordering inkl. Tie-Breaker, Retention.
+- [ ] Roadmap §2 Schritt 28 ist auf ✅ aktualisiert, sobald §2.1–§2.6 alle `[x]` sind.
 
 ---
 
