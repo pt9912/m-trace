@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures
 
 help:
 	@printf '%s\n' \
@@ -23,6 +23,7 @@ help:
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
 		'  make browser-e2e            Run browser E2E checks' \
+		'  make docs-check             Run documentation checks' \
 		'  make test                   Run API Docker tests and workspace tests' \
 		'  make lint                   Run API Docker lint and workspace lint' \
 		'  make build                  Build API runtime image and workspace packages' \
@@ -30,7 +31,7 @@ help:
 		'  make coverage-report        Export the API coverage report' \
 		'  make arch-check             Run the API architecture boundary check' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
-		'  make gates                  Run test, lint, coverage and architecture gates' \
+		'  make gates                  Run test, lint, coverage, architecture and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
 		'  make fullbuild              Install + workspace/api build + gates (CI-äquivalent von clean)' \
@@ -88,6 +89,11 @@ seed-rak9:
 browser-e2e:
 	bash scripts/test-browser-e2e.sh
 
+docs-check:
+	bash scripts/verify-doc-refs.sh
+
+docs-refs: docs-check
+
 test: api-test workspace-test
 
 api-test:
@@ -137,7 +143,7 @@ arch-check:
 sdk-performance-smoke:
 	$(PNPM) --filter @npm9912/player-sdk run performance:smoke
 
-gates: test lint coverage-gate arch-check
+gates: test lint coverage-gate arch-check docs-check
 
 ci: gates build
 
