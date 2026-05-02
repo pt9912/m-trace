@@ -188,9 +188,10 @@ mit Tranche 2.
 
 ### 8.2 Migrationswerkzeug
 
-`d-migrate` (Container `ghcr.io/pt9912/d-migrate:latest`, Quellen
-unter <https://github.com/pt9912/d-migrate>) wird als build-/dev-time-
-Werkzeug für Schema-Definition und DDL-Generierung gewählt. Begründung:
+`d-migrate` (Container `ghcr.io/pt9912/d-migrate`, Quellen unter
+<https://github.com/pt9912/d-migrate>; konkreter Versions-Pin im
+`apps/api/Makefile`) wird als build-/dev-time-Werkzeug für Schema-
+Definition und DDL-Generierung gewählt. Begründung:
 
 - Schema-YAML ist neutrale Single-Source-of-Truth; Postgres-Folge-ADR
   bekommt `--target postgresql` ohne erneute manuelle Schema-Pflege.

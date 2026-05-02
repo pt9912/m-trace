@@ -106,11 +106,11 @@ Ziel: Drei Driven-Adapter hinter den bestehenden Ports machen Sessions, Playback
 
 DoD:
 
-- [ ] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind in `apps/api/adapters/driven/persistence/` als SQLite-Implementierung umgesetzt; Application- und Domain-Layer importieren keine SQLite-Pakete.
-- [ ] Idempotenz aus §2.1 ist im Adapter implementiert: Session-State-Updates sind idempotent; Event-Deduplikation folgt der dort entschiedenen Variante (Event-Key/Hash oder Timeline-Klassifikation).
-- [ ] Kanonische Event-Sortierung aus §2.1 ist im Adapter durchgesetzt; `ingest_sequence` ist als durable Tie-Breaker mit dem in §2.1 festgelegten Eindeutigkeits-Scope persistiert.
-- [ ] In-Memory-Adapter bleiben für Tests und expliziten Dev-Fallback erhalten; der Compose-Lab-Default-Wechsel selbst erfolgt in §2.4.
-- [ ] Adapter-Contract-Tests laufen gegen In-Memory- und SQLite-Adapter (gemeinsame Test-Suite oder gespiegelte Test-Matrix); Neustart-Simulation, Session-Ende, Event-Ordering und Cursor-Stabilität sind abgedeckt.
+- [x] Driven-Adapter für `SessionRepository`, `EventRepository` und `IngestSequencer` sind in `apps/api/adapters/driven/persistence/sqlite/` als SQLite-Implementierung umgesetzt; Application- und Domain-Layer importieren keine SQLite-Pakete (Sub-Paket-Refactor: `inmemory/`, `sqlite/`, `contract/`) (`11f6d85`).
+- [x] Idempotenz aus §2.1 ist im Adapter implementiert: Session-State-Updates sind idempotent (zweimaliges `session_ended` ändert `ended_at` nicht); Event-Dedup via Timeline-Klassifikation (`accepted` / `duplicate_suspected`) auf Basis `(project_id, session_id, sequence_number)` über `BEGIN IMMEDIATE`-Serialisierung (`11f6d85`).
+- [x] Kanonische Event-Sortierung aus §2.1 ist im Adapter durchgesetzt (COALESCE-basierter Filter mit `nullSeqSentinel`); `ingest_sequence` ist global eindeutig und durable persistiert (`11f6d85`).
+- [x] In-Memory-Adapter bleiben für Tests und expliziten Dev-Fallback erhalten; Compose-Lab-Default-Wechsel selbst erfolgt in §2.4 (`11f6d85`).
+- [x] Adapter-Contract-Tests laufen gegen In-Memory- und SQLite-Adapter über eine gemeinsame Suite (`persistence/contract`); Neustart-Simulation und Cursor-Stabilität sind in SQLite-spezifischen Restart-Tests abgedeckt (`11f6d85`).
 
 ### 2.4 Wiring und Compose
 
