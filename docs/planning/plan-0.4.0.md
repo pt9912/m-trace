@@ -197,10 +197,10 @@ Verbindliche Entscheidungen (gehören in `spec/telemetry-model.md` und `spec/bac
 
 DoD:
 
-- [ ] `spec/telemetry-model.md` §5.x (oder eigener Abschnitt §5.4) dokumentiert die Hybrid-Trace-ID-Strategie, das `trace_id`/`correlation_id`-Verhältnis, das Span-Modell mit Pflicht-Attributen und die Sampling-Auswirkung für `0.4.0`.
-- [ ] `spec/backend-api-contract.md` §3 (oder §3.7-Erweiterung) dokumentiert: HTTP-Header `traceparent` als optionalen, additiven Wire-Bestandteil; abwärtskompatibel zu Schema 1.0; Server-Validierungs-Mapping (`mtrace.trace.parse_error=true`, kein 4xx); Read-Pfad-Felder `correlation_id` (immer gesetzt) und `trace_id` (nullable) in der Session-Detail-Response.
-- [ ] Cardinality-Regel ist in der Spec festgehalten: `trace_id`/`correlation_id`/`span_id` sind Prometheus-tabu; verstößt eine zukünftige Metrik dagegen, ist sie release-blocking.
-- [ ] Folge-Item für persistenten Time-Skew-Flag ist erfasst: in `risks-backlog.md` oder als Plan-Item für Tranche 4 / `0.5.0`-Backlog dokumentiert.
+- [x] `spec/telemetry-model.md` §2.5 (neu) dokumentiert die Hybrid-Trace-ID-Strategie, das `trace_id`/`correlation_id`-Verhältnis (mit Persistenz-Quelle pro Feld), das Span-Modell mit Pflicht-Attribut-Tabelle und die Sampling-Auswirkung für `0.4.0` (Commit folgt).
+- [x] `spec/backend-api-contract.md` §1 dokumentiert `traceparent` als optionalen HTTP-Header auf `POST /api/playback-events` mit defensiver Server-Validierung (kein 4xx bei kaputtem Header). §3.7 ergänzt `correlation_id` (immer gesetzt) und `trace_id` (nullable) als server-vergebene Read-Felder ab `0.4.0`-§3.2-Closeout (Commit folgt).
+- [x] Cardinality-Regel ist in `spec/telemetry-model.md` §2.5 festgehalten: `trace_id`/`correlation_id`/`span_id` sind Prometheus-tabu — Span-Attribute, Persistenz-Spalten und Wire-Format-Felder sind die einzigen Konsumenten; Verstöße sind release-blocking via Cardinality-Smoke (Commit folgt).
+- [x] Folge-Item für persistenten Time-Skew-Flag ist als R-5 in `docs/planning/risks-backlog.md` aufgenommen; §5.3 in `telemetry-model.md` verweist explizit auf den Backlog-Eintrag und markiert die Persistenz-Spalte als deferred (Commit folgt).
 
 ### 3.2 Server-Korrelation
 

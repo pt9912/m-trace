@@ -172,6 +172,49 @@ Die Default-Resource wird mit `resource.Default()` zusammengeführt, damit `proc
 
 Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken aus Lastenheft §7.9 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …).
 
+### 2.5 Trace-Korrelation in `0.4.0`
+
+> Bezug: RAK-29; RAK-32; ADR-0002 §8.1 (Schema-Spalten); `plan-0.4.0.md` §3.1.
+
+`0.4.0` führt zwei getrennte Korrelations-Konzepte ein, damit Tempo-Sichtbarkeit (RAK-31, optional) und Tempo-unabhängige Dashboard-Timeline (RAK-32, Pflicht) sauber entkoppelt sind.
+
+**Hybrid-Trace-ID-Strategie.** Player-SDK propagiert optional einen W3C-`traceparent`-Header gemäß [W3C Trace Context](https://www.w3.org/TR/trace-context/). Server-Verhalten:
+
+| Eingehender `traceparent` | Server-Aktion | Resultierender Span |
+|---|---|---|
+| valider Header (Format, Version, Flags) | übernimmt `trace_id` und `parent_span_id` aus dem Header | Child-Span mit übernommenen Trace-Identifiers |
+| ungültiger Header (Parse-Fehler) | generiert eigene `trace_id`; Header wird **nicht** auf 4xx geführt | Root-Span; Span-Attribut `mtrace.trace.parse_error=true` |
+| kein Header | generiert eigene `trace_id` | Root-Span ohne Parse-Error-Attribut |
+
+`trace_id` und `parent_span_id` aus dem `traceparent`-Header werden serverseitig defensiv geprüft (Hex-Form, Längen 32/16, Version `00`); jeder Verstoß landet im Server-Fallback-Pfad.
+
+**`trace_id` ≠ `correlation_id`.** Beide sind getrennte Konzepte mit klarer Verantwortung:
+
+| Feld | Persistenz | Quelle | Lebensdauer | Konsumenten |
+|---|---|---|---|---|
+| `trace_id` | `playback_events.trace_id` (TEXT, nullable, 32 Hex-Zeichen) | SDK-`traceparent` oder server-generiert pro Batch | pro Batch (= ein Server-Span) | Tempo (RAK-31, optional); Cross-System-Trace-Suche |
+| `correlation_id` | `stream_sessions.correlation_id` und `playback_events.correlation_id` (TEXT, immer pro Session gesetzt) | server-generiert beim allerersten Event einer Session (UUIDv4 oder vergleichbar) | pro Session, konstant über alle Batches | Dashboard-Timeline (RAK-32) — Tempo-unabhängig |
+
+`correlation_id` ist die **durable Source-of-Truth** für die Korrelation einer Session über mehrere Batches hinweg. Drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber dieselbe `correlation_id`.
+
+**Span-Modell: ein HTTP-Request-Span pro Batch.** Keine Child-Spans pro Event (Cardinality-Schutz). Pflicht- und optionale Attribute am Server-Span für `POST /api/playback-events`:
+
+| Attribut | Pflicht | Wertebereich | Bedeutung |
+|---|---|---|---|
+| `mtrace.project.id` | ja | Allowlist aus dem Use-Case-Resolver | identifiziert das Project |
+| `mtrace.batch.size` | ja | int ≥ 0 | Anzahl Events im Batch |
+| `mtrace.batch.outcome` | ja | `accepted`, `invalid`, `rate_limited`, `auth_error`, `too_large`, `error` | Klassifikation des HTTP-Outcomes |
+| `mtrace.batch.session_count` | ja | int ≥ 0 | Anzahl distinkter `session_id` im Batch |
+| `mtrace.session.correlation_id` | bei Single-Session-Batches | UUIDv4 als String | erlaubt Tempo-Suche nach Sessions ohne `session_id` zu exposen |
+| `mtrace.trace.parse_error` | optional | Boolean | gesetzt, wenn `traceparent` ungültig war |
+| `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3) |
+
+`session_id` selbst ist **nicht** als Span-Attribut gesetzt — pseudonyme ID, deren Trace-Sichtbarkeit über `correlation_id` läuft. (Die §2.1-Aussage „`session_id` darf als Span-Attribut verwendet werden" gilt für `0.1.x` weiter; ab `0.4.0` zieht der Use-Case `correlation_id` als Span-Repräsentanten vor.)
+
+**Cardinality-Regel.** Weder `trace_id`, `correlation_id` noch `span_id` werden als Prometheus-Labels verwendet. Span-Attribute (kontrolliert), Event-Persistenz-Spalten (durable) und Wire-Format-Felder (optional) sind die einzigen Konsumenten. Verstöße sind release-blocking (Cardinality-Smoke).
+
+**Sampling-Auswirkung.** Server-Span pro Batch ist niedrige Cardinality (eine Span pro HTTP-Request). Auch ohne Sampling bleibt Tempo-Storage in 0.4.0 unauffällig. Spans werden via OTLP exportiert, wenn das Tempo-Profil aktiv ist (siehe `plan-0.4.0.md` §6); ohne Profil sind Spans nur in Logs (silent autoexport-Fallback).
+
 ---
 
 ## 3. Cardinality-Regeln
@@ -302,7 +345,7 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 - Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden (F-129) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
 - Bevorzugt: Latenz = `server_received_at - client_time_origin` (skew-tolerant), nicht `server_received_at - client_timestamp`.
-- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (Default 60 s), markiert das Backend das Event mit einem Span-Attribut `mtrace.time.skew_warning=true` und einem Domain-Flag (Persistenz-Detail in `EventRepository`-Implementierung).
+- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (Default 60 s), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5). Persistenz des Skew-Flags auf Event-Ebene (Domain-Flag, dedizierte Schema-Spalte, Dashboard-Anzeige) ist in `0.4.0` explizit deferred — siehe `docs/planning/risks-backlog.md` für das Folge-Item.
 
 ---
 
