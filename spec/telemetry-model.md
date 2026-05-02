@@ -137,7 +137,7 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 
 Span-Attribute folgen [OTel HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/) wo anwendbar; m-trace-spezifische Erweiterungen nutzen den Namespace `mtrace.*` oder `batch.*`.
 
-`session_id`, `user_agent`, `segment_url` dürfen als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute).
+`session_id`, `user_agent`, `segment_url` dürfen als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute). Ab `0.4.0` setzt der HTTP-Span auf `POST /api/playback-events` statt `session_id` die `correlation_id` als Session-Marker (siehe §2.5).
 
 ### 2.2 Counter
 
@@ -203,15 +203,26 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 |---|---|---|---|
 | `mtrace.project.id` | ja | Allowlist aus dem Use-Case-Resolver | identifiziert das Project |
 | `mtrace.batch.size` | ja | int ≥ 0 | Anzahl Events im Batch |
-| `mtrace.batch.outcome` | ja | `accepted`, `invalid`, `rate_limited`, `auth_error`, `too_large`, `error` | Klassifikation des HTTP-Outcomes |
+| `mtrace.batch.outcome` | ja | `accepted`, `invalid`, `rate_limited`, `auth_error`, `too_large`, `error` | Klassifikation des HTTP-Outcomes; Mapping zu API-Kontrakt §5 unten |
 | `mtrace.batch.session_count` | ja | int ≥ 0 | Anzahl distinkter `session_id` im Batch |
-| `mtrace.session.correlation_id` | bei Single-Session-Batches | UUIDv4 als String | erlaubt Tempo-Suche nach Sessions ohne `session_id` zu exposen |
+| `mtrace.session.correlation_id` | bei Single-Session-Batch (`session_count == 1`); **nicht gesetzt** sonst (kein Empty-String, keine Komma-Liste) | UUIDv4 als String | erlaubt Tempo-Suche nach Sessions ohne `session_id` zu exposen |
 | `mtrace.trace.parse_error` | optional | Boolean | gesetzt, wenn `traceparent` ungültig war |
 | `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3) |
 
 `session_id` selbst ist **nicht** als Span-Attribut gesetzt — pseudonyme ID, deren Trace-Sichtbarkeit über `correlation_id` läuft. (Die §2.1-Aussage „`session_id` darf als Span-Attribut verwendet werden" gilt für `0.1.x` weiter; ab `0.4.0` zieht der Use-Case `correlation_id` als Span-Repräsentanten vor.)
 
-**Cardinality-Regel.** Weder `trace_id`, `correlation_id` noch `span_id` werden als Prometheus-Labels verwendet. Span-Attribute (kontrolliert), Event-Persistenz-Spalten (durable) und Wire-Format-Felder (optional) sind die einzigen Konsumenten. Verstöße sind release-blocking (Cardinality-Smoke).
+**Outcome → HTTP-Status-Mapping** (Validierungs-Reihenfolge aus API-Kontrakt §5):
+
+| `mtrace.batch.outcome` | HTTP-Status | API-Kontrakt §5 |
+|---|---|---|
+| `auth_error` | `401 Unauthorized` | Header fehlt; Token unbekannt; Project-Mismatch; Project unbekannt |
+| `too_large` | `413 Payload Too Large` | Body > 256 KB |
+| `rate_limited` | `429 Too Many Requests` | Rate-Limit-Treffer |
+| `invalid` | `400 Bad Request` (Schema-Version, JSON-Form) **oder** `422 Unprocessable Entity` (Batch-Form/-Größe, Event-Pflichtfeld) | siehe §5 Steps 5–8 |
+| `accepted` | `202 Accepted` | Happy-Path |
+| `error` | `5xx` | unerwartete Fehler (Persistenz, Telemetrie, etc.) |
+
+**Cardinality-Regel.** Weder `trace_id`, `correlation_id` noch `span_id` werden als Prometheus-Labels verwendet. Span-Attribute (kontrolliert), Event-Persistenz-Spalten (durable) und Wire-Format-Felder (optional) sind die einzigen Konsumenten. Verstöße sind release-blocking; der CI-Cardinality-Smoke (`make smoke-observability`, `scripts/smoke-observability.sh`) prüft die Pflicht-Counter aus §2.4 auf hochkardinale Labels.
 
 **Sampling-Auswirkung.** Server-Span pro Batch ist niedrige Cardinality (eine Span pro HTTP-Request). Auch ohne Sampling bleibt Tempo-Storage in 0.4.0 unauffällig. Spans werden via OTLP exportiert, wenn das Tempo-Profil aktiv ist (siehe `plan-0.4.0.md` §6); ohne Profil sind Spans nur in Logs (silent autoexport-Fallback).
 
@@ -345,7 +356,7 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 - Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden (F-129) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
 - Bevorzugt: Latenz = `server_received_at - client_time_origin` (skew-tolerant), nicht `server_received_at - client_timestamp`.
-- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (Default 60 s), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5). Persistenz des Skew-Flags auf Event-Ebene (Domain-Flag, dedizierte Schema-Spalte, Dashboard-Anzeige) ist in `0.4.0` explizit deferred — siehe `docs/planning/risks-backlog.md` für das Folge-Item.
+- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (in `0.4.0` Konstante 60 s, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5). Persistenz des Skew-Flags auf Event-Ebene (Domain-Flag, dedizierte Schema-Spalte, Dashboard-Anzeige) ist in `0.4.0` explizit deferred — siehe `docs/planning/risks-backlog.md` R-5 für das Folge-Item.
 
 ---
 

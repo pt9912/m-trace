@@ -194,13 +194,23 @@ erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
 |---|---|---|---|
 | `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | `0.1.x` | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR 0002 §8.1](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
 | `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | `0.4.0` (ab `plan-0.4.0.md` §2.3-Closeout) | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. Vor §2.3-Closeout liefern Read-Antworten dieses Feld nicht. |
-| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **immer pro Session gesetzt** | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle Events derselben Session; auch in `stream_sessions.correlation_id` exposed. Siehe `spec/telemetry-model.md` §2.5. |
-| `trace_id` | `string`, 32 Hex-Zeichen, optional | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
+| `correlation_id` | `string` (UUIDv4 oder vergleichbar), nicht-leer, **niemals null** in Read-Antworten | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Pflichtfeld in jeder Read-Antwort eines Events einer 0.4.0+-Session; konstant über alle Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). Siehe `spec/telemetry-model.md` §2.5. |
+| `trace_id` | `string`, 32 Hex-Zeichen, optional (`null` zulässig wenn weder `traceparent` noch Server-Trace gesetzt — Edge-Case) | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
 
 Diese vier Felder sind im POST-Wire-Format (§3.2/§3.3) **nicht** zulässig;
 Clients dürfen sie nur aus Read-Antworten interpretieren. Die genaue
 Vertragssemantik (Sortierung, Idempotenz, Cursor) steht in §10;
 Trace-Korrelations-Vertrag in `spec/telemetry-model.md` §2.5.
+
+#### 3.7.1 Session-Header-Read-Felder
+
+Die Session-Header-Antwort von `GET /api/stream-sessions` und
+`GET /api/stream-sessions/{id}` (Session-Block, nicht Event-Block)
+trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| `correlation_id` | `string`, nicht-leer | Spiegelt `stream_sessions.correlation_id`; identisch mit dem `correlation_id`-Wert auf jedem Event derselben Session. Dient dem Dashboard als primärer Korrelations-Schlüssel — Tempo-unabhängig. |
 
 ---
 
@@ -270,6 +280,11 @@ halten, damit die Pflichttests deterministisch sind):
 Folge der Auth-vor-Body-Reihenfolge: ein Request **ohne** Auth-Header
 und mit Body > 256 KB liefert `401`, **nicht** `413` (siehe Pflichttest
 in §11).
+
+Der `traceparent`-Header (siehe §1) ist **nicht** Teil dieser
+Validierungs-Reihenfolge: ein ungültiger Wert führt nie zu `4xx`,
+sondern wird über das Span-Attribut `mtrace.trace.parse_error=true`
+markiert (Vertrag in `spec/telemetry-model.md` §2.5).
 
 Antwort-Body bei Fehlerfällen ist **nicht** Teil des Pflicht-Kontrakts —
 Implementierungen dürfen einen JSON-Body mit Fehlerbeschreibung senden,
