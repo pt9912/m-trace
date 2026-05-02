@@ -171,7 +171,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		}
 		// Time-Skew-Detection (telemetry-model.md §5.3): Schwelle 60 s,
 		// Konstante in 0.4.0. Einmal aktiv, bleibt für den ganzen Batch.
-		if abs(now.Sub(ts)) > TimeSkewThreshold {
+		if now.Sub(ts).Abs() > TimeSkewThreshold {
 			timeSkewWarning = true
 		}
 		parsed = append(parsed, domain.PlaybackEvent{
@@ -225,6 +225,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	u.publishPlaybackMetrics(parsed)
 	return driving.BatchResult{
 		Accepted:             len(parsed),
+		ProjectID:            project.ID,
 		SessionCount:         len(correlations),
 		SessionCorrelationID: singleSessionCorrelationID(correlations),
 		TimeSkewWarning:      timeSkewWarning,
@@ -304,13 +305,6 @@ func newCorrelationID() (string, error) {
 		hexed[0:8], hexed[8:12], hexed[12:16], hexed[16:20], hexed[20:32]), nil
 }
 
-// abs liefert den Betrag einer time.Duration.
-func abs(d time.Duration) time.Duration {
-	if d < 0 {
-		return -d
-	}
-	return d
-}
 
 func hasRequiredFields(e driving.EventInput) bool {
 	return strings.TrimSpace(e.EventName) != "" &&

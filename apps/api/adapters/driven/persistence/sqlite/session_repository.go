@@ -43,11 +43,23 @@ const (
 INSERT INTO projects(project_id) VALUES (?)
 ON CONFLICT(project_id) DO NOTHING`
 
+	// `ON CONFLICT(session_id) DO NOTHING` schützt vor einem Race, in
+	// dem zwei parallele Use-Case-Aufrufe für dieselbe noch unbekannte
+	// session_id beide nach Get → ErrSessionNotFound springen und
+	// jeweils eine eigene UUIDv4 für `correlation_id` zuweisen. Ohne
+	// das ON CONFLICT würde der zweite Insert mit UNIQUE-Verstoß auf
+	// dem PK fehlschlagen → 5xx. Mit ON CONFLICT bleibt der erste
+	// Sieger durchgehen; der Verlust-Race-Aufruf hinterlässt keine
+	// Spur in `stream_sessions`. Konsequenz: für genau die Events des
+	// Verlust-Aufrufs trägt `playback_events.correlation_id` einen
+	// anderen Wert als `stream_sessions.correlation_id` — siehe R-6
+	// im risks-backlog.
 	insertSessionSQL = `
 INSERT INTO stream_sessions(
     session_id, project_id, state, started_at, last_seen_at, ended_at,
     event_count, correlation_id
-) VALUES (?, ?, ?, ?, ?, ?, 1, ?)`
+) VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+ON CONFLICT(session_id) DO NOTHING`
 
 	// Last-Seen + Event-Count werden auch dann inkrementiert, wenn die
 	// Session bereits Ended ist — verspätet eintreffende Events werden

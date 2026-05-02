@@ -593,23 +593,38 @@ func TestRegisterPlaybackEventBatch_MultiSession(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_TimeSkew verifiziert: client_timestamp
-// > 60 s vor server_received_at → TimeSkewWarning=true.
+// TestRegisterPlaybackEventBatch_TimeSkew verifiziert die drei
+// Schwellwert-Fälle aus telemetry-model §5.3 / §3.1: Skew exakt 60 s
+// → kein Warning (strict greater); 60 s + 1 ns → Warning; 120 s →
+// Warning. Server now() im Stub ist 2026-04-28T12:00:00.000Z.
 func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 	t.Parallel()
-	uc, _, _, _, _, _, _, _ := newUseCase()
-
-	in := validBatch()
-	// Server now() im Stub ist 2026-04-28T12:00:00.000Z.
-	// 2-Minuten-Skew → > 60 s.
-	in.Events[0].ClientTimestamp = "2026-04-28T11:58:00.000Z"
-
-	res, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
-	if err != nil {
-		t.Fatalf("unexpected: %v", err)
+	cases := []struct {
+		name         string
+		clientStamp  string
+		wantWarning  bool
+	}{
+		{"exactly 60s skew → no warning", "2026-04-28T11:59:00.000Z", false},
+		{"60s + 1ns → warning", "2026-04-28T11:58:59.999999999Z", true},
+		{"2min skew → warning", "2026-04-28T11:58:00.000Z", true},
 	}
-	if !res.TimeSkewWarning {
-		t.Errorf("TimeSkewWarning = false, want true (|client - server| > 60s)")
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			uc, _, _, _, _, _, _, _ := newUseCase()
+			in := validBatch()
+			in.Events[0].ClientTimestamp = c.clientStamp
+
+			res, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+			if err != nil {
+				t.Fatalf("unexpected: %v", err)
+			}
+			if res.TimeSkewWarning != c.wantWarning {
+				t.Errorf("TimeSkewWarning = %v, want %v (boundary case)",
+					res.TimeSkewWarning, c.wantWarning)
+			}
+		})
 	}
 }
 

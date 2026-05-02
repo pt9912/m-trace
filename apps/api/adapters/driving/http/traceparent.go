@@ -1,6 +1,9 @@
 package http
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // W3C Trace Context traceparent header
 // (https://www.w3.org/TR/trace-context/#traceparent-header-field-values).
@@ -24,32 +27,43 @@ const (
 )
 
 // parseTraceParent parst den Header-Wert. Liefert die hex-codierte
-// trace_id und parent_id, wenn der Wert formal gültig ist; sonst
-// ok=false und beide Strings leer.
-func parseTraceParent(raw string) (traceID, parentID string, ok bool) {
+// trace_id, parent_id und das flags-Byte (W3C Trace Context, niedrigste
+// 8 Bit; Bit 0 = sampled), wenn der Wert formal gültig ist; sonst
+// ok=false und alle Felder zero.
+//
+// Die `flags` müssen durchgeschleift werden: ohne sie würde
+// `Tracer.Start` mit einem `ParentBased(AlwaysSample)`-Sampler den
+// Server-Span als not-sampled werten, sobald der Client `flags=00`
+// schickt — und sampled-Spans (`flags=01`) gingen in der Test-Suite
+// verloren.
+func parseTraceParent(raw string) (traceID, parentID string, flags byte, ok bool) {
 	if len(raw) != traceParentLen {
-		return "", "", false
+		return "", "", 0, false
 	}
 	parts := strings.Split(raw, "-")
 	if len(parts) != 4 {
-		return "", "", false
+		return "", "", 0, false
 	}
 	if parts[0] != traceParentVersion {
-		return "", "", false
+		return "", "", 0, false
 	}
 	if len(parts[1]) != traceIDHexLen || !isLowerHex(parts[1]) {
-		return "", "", false
+		return "", "", 0, false
 	}
 	if len(parts[2]) != spanIDHexLen || !isLowerHex(parts[2]) {
-		return "", "", false
+		return "", "", 0, false
 	}
 	if len(parts[3]) != 2 || !isLowerHex(parts[3]) {
-		return "", "", false
+		return "", "", 0, false
 	}
 	if parts[1] == zeroTraceID || parts[2] == zeroSpanID {
-		return "", "", false
+		return "", "", 0, false
 	}
-	return parts[1], parts[2], true
+	flagsValue, err := strconv.ParseUint(parts[3], 16, 8)
+	if err != nil {
+		return "", "", 0, false
+	}
+	return parts[1], parts[2], byte(flagsValue), true
 }
 
 // isLowerHex prüft, ob ein String nur lower-case-Hex-Zeichen enthält.

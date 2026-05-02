@@ -66,7 +66,7 @@ func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	rec := &statusRecorder{ResponseWriter: w}
-	batchSize, result := h.serve(ctx, rec, r, span, parseError)
+	batchSize, result := h.serve(ctx, rec, r, span)
 
 	span.SetAttributes(attribute.Int("http.status_code", rec.statusCode()))
 	if batchSize >= 0 {
@@ -74,6 +74,9 @@ func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 	span.SetAttributes(attribute.String("batch.outcome", outcomeFor(rec.statusCode())))
 	if result != nil {
+		if result.ProjectID != "" {
+			span.SetAttributes(attribute.String("mtrace.project.id", result.ProjectID))
+		}
 		span.SetAttributes(attribute.Int("mtrace.batch.session_count", result.SessionCount))
 		if result.SessionCorrelationID != "" {
 			span.SetAttributes(attribute.String("mtrace.session.correlation_id", result.SessionCorrelationID))
@@ -96,11 +99,17 @@ func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 // Span entsteht dann als Root, das Span-Attribut
 // `mtrace.trace.parse_error=true` muss vom Caller gesetzt werden.
 // Empty string (= Header fehlt) → kein parseError, kein Remote-Parent.
+//
+// Die im Header übermittelten `flags` (z. B. sampled-Bit) werden in
+// den SpanContext übernommen, damit der Sampler (typischerweise
+// `ParentBased`) die Sampling-Entscheidung des Clients respektieren
+// kann. Ohne diese Übernahme würde ein `flags=01`-Header still in
+// einen not-sampled Server-Span münden.
 func withTraceParent(ctx context.Context, raw string) (context.Context, bool) {
 	if raw == "" {
 		return ctx, false
 	}
-	tid, sid, ok := parseTraceParent(raw)
+	tid, sid, flags, ok := parseTraceParent(raw)
 	if !ok {
 		return ctx, true
 	}
@@ -116,7 +125,7 @@ func withTraceParent(ctx context.Context, raw string) (context.Context, bool) {
 		TraceID:    traceID,
 		SpanID:     spanID,
 		Remote:     true,
-		TraceFlags: 0,
+		TraceFlags: trace.TraceFlags(flags),
 	})
 	return trace.ContextWithRemoteSpanContext(ctx, sc), false
 }
@@ -126,7 +135,7 @@ func withTraceParent(ctx context.Context, raw string) (context.Context, bool) {
 // BatchResult for span-attribute enrichment by ServeHTTP.
 func (h *PlaybackEventsHandler) serve(
 	ctx context.Context, w http.ResponseWriter, r *http.Request,
-	span trace.Span, parseError bool,
+	span trace.Span,
 ) (int, *driving.BatchResult) {
 	// Method routing is done by the mux (Go 1.22 method-aware patterns)
 	// but we keep an explicit guard so the handler is robust if mounted
@@ -166,9 +175,8 @@ func (h *PlaybackEventsHandler) serve(
 	}
 
 	// Trace-Kontext für den Use-Case: Server-Span-IDs (egal ob Child
-	// oder Root). ParseError haben wir oben schon im Span-Attribut
-	// markiert — wir reichen es trotzdem weiter, falls der Use-Case
-	// es persistieren möchte (heute nicht).
+	// oder Root). Parse-Error wurde oben am Span markiert — der
+	// Use-Case kennt nur die finalen Trace/Span-IDs.
 	spanCtx := span.SpanContext()
 	in := driving.BatchInput{
 		SchemaVersion: payload.SchemaVersion,
@@ -177,9 +185,8 @@ func (h *PlaybackEventsHandler) serve(
 		ClientIP:      clientIPFromRequest(r),
 		Events:        toEventInputs(payload.Events),
 		Trace: driving.BatchTraceContext{
-			TraceID:    spanCtx.TraceID().String(),
-			SpanID:     spanCtx.SpanID().String(),
-			ParseError: parseError,
+			TraceID: spanCtx.TraceID().String(),
+			SpanID:  spanCtx.SpanID().String(),
 		},
 	}
 	batchSize := len(in.Events)

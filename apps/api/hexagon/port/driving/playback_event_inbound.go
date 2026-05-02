@@ -33,19 +33,19 @@ type BatchInput struct {
 	// Trace ist der vom HTTP-Adapter aufgelöste Trace-Kontext für
 	// diesen Batch (siehe spec/telemetry-model.md §2.5). Adapter füllt
 	// `TraceID` und `SpanID` mit den IDs des Server-Spans (entweder als
-	// Child eines validen `traceparent`-Headers oder als neuer Root);
-	// `ParseError` ist true, wenn ein eingehender `traceparent` formal
-	// kaputt war. Use Case kennt OTel nicht und liest nur diese drei
-	// String-Werte.
+	// Child eines validen `traceparent`-Headers oder als neuer Root).
+	// Use Case kennt OTel nicht und liest nur die zwei Hex-Strings.
+	// Parse-Errors aus dem `traceparent`-Header markiert der Adapter
+	// direkt am Span (`mtrace.trace.parse_error=true`); der Use-Case
+	// braucht den Wert nicht zu kennen.
 	Trace BatchTraceContext
 }
 
 // BatchTraceContext ist die frameworkneutrale Sicht des HTTP-Adapters
 // auf den Server-Span. Hex-Strings, kein OTel-Import.
 type BatchTraceContext struct {
-	TraceID    string
-	SpanID     string
-	ParseError bool
+	TraceID string
+	SpanID  string
 }
 
 // EventInput carries raw fields straight from the wire. The use case
@@ -72,6 +72,10 @@ type SDKInput struct {
 // (siehe spec/telemetry-model.md §2.5).
 type BatchResult struct {
 	Accepted int
+	// ProjectID ist das aufgelöste Project (Allowlist). Setzt das
+	// Span-Attribut `mtrace.project.id` (Pflicht laut §2.5). Bei
+	// Use-Case-Errors vor der Auth-Resolution leer.
+	ProjectID string
 	// SessionCount ist die Anzahl distinkter `session_id` im Batch —
 	// für `mtrace.batch.session_count`.
 	SessionCount int
