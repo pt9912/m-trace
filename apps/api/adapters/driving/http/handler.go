@@ -45,9 +45,14 @@ type PlaybackEventsHandler struct {
 //
 // The whole request is wrapped in a single OTel server-span; per
 // spec/architecture.md §3.4 the HTTP adapter is one of two places
-// allowed to import OTel directly.
+// allowed to import OTel directly. Trace-Korrelation: ein gültiger
+// `traceparent`-Header erzeugt einen Child-Span (W3C Trace Context),
+// ein ungültiger Header → Root-Span + mtrace.trace.parse_error=true
+// (spec/telemetry-model.md §2.5).
 func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := h.Tracer.Start(r.Context(), spanName,
+	parentCtx, parseError := withTraceParent(r.Context(), r.Header.Get("traceparent"))
+
+	ctx, span := h.Tracer.Start(parentCtx, spanName,
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.String("http.method", http.MethodPost),
@@ -56,14 +61,27 @@ func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	)
 	defer span.End()
 
+	if parseError {
+		span.SetAttributes(attribute.Bool("mtrace.trace.parse_error", true))
+	}
+
 	rec := &statusRecorder{ResponseWriter: w}
-	batchSize := h.serve(ctx, rec, r)
+	batchSize, result := h.serve(ctx, rec, r, span, parseError)
 
 	span.SetAttributes(attribute.Int("http.status_code", rec.statusCode()))
 	if batchSize >= 0 {
 		span.SetAttributes(attribute.Int("batch.size", batchSize))
 	}
 	span.SetAttributes(attribute.String("batch.outcome", outcomeFor(rec.statusCode())))
+	if result != nil {
+		span.SetAttributes(attribute.Int("mtrace.batch.session_count", result.SessionCount))
+		if result.SessionCorrelationID != "" {
+			span.SetAttributes(attribute.String("mtrace.session.correlation_id", result.SessionCorrelationID))
+		}
+		if result.TimeSkewWarning {
+			span.SetAttributes(attribute.Bool("mtrace.time.skew_warning", true))
+		}
+	}
 	if rec.statusCode() >= http.StatusInternalServerError {
 		span.SetStatus(codes.Error, http.StatusText(rec.statusCode()))
 	} else {
@@ -71,15 +89,51 @@ func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// serve runs the request pipeline and returns the parsed batch size,
-// or -1 if the request was rejected before JSON parsing.
-func (h *PlaybackEventsHandler) serve(ctx context.Context, w http.ResponseWriter, r *http.Request) int {
+// withTraceParent extrahiert einen W3C-`traceparent`-Header und
+// installiert den remote-SpanContext, sodass `Tracer.Start` einen
+// Child-Span erzeugt. Bei ungültigem Header wird der Original-Context
+// unverändert zurückgegeben und parseError=true gesetzt — der Server-
+// Span entsteht dann als Root, das Span-Attribut
+// `mtrace.trace.parse_error=true` muss vom Caller gesetzt werden.
+// Empty string (= Header fehlt) → kein parseError, kein Remote-Parent.
+func withTraceParent(ctx context.Context, raw string) (context.Context, bool) {
+	if raw == "" {
+		return ctx, false
+	}
+	tid, sid, ok := parseTraceParent(raw)
+	if !ok {
+		return ctx, true
+	}
+	traceID, err := trace.TraceIDFromHex(tid)
+	if err != nil {
+		return ctx, true
+	}
+	spanID, err := trace.SpanIDFromHex(sid)
+	if err != nil {
+		return ctx, true
+	}
+	sc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    traceID,
+		SpanID:     spanID,
+		Remote:     true,
+		TraceFlags: 0,
+	})
+	return trace.ContextWithRemoteSpanContext(ctx, sc), false
+}
+
+// serve runs the request pipeline and returns the parsed batch size
+// (-1 if rejected before JSON parsing) plus, on success, the
+// BatchResult for span-attribute enrichment by ServeHTTP.
+func (h *PlaybackEventsHandler) serve(
+	ctx context.Context, w http.ResponseWriter, r *http.Request,
+	span trace.Span, parseError bool,
+) (int, *driving.BatchResult) {
 	// Method routing is done by the mux (Go 1.22 method-aware patterns)
 	// but we keep an explicit guard so the handler is robust if mounted
 	// without a method filter.
 	if r.Method != http.MethodPost {
 		writeStatus(w, http.StatusMethodNotAllowed)
-		return -1
+		return -1, nil
 	}
 
 	// Step 1 — Auth-Header presence. Origin-loser Fast-Reject vor dem
@@ -88,7 +142,7 @@ func (h *PlaybackEventsHandler) serve(ctx context.Context, w http.ResponseWriter
 	token := r.Header.Get("X-MTrace-Token")
 	if token == "" {
 		writeStatus(w, http.StatusUnauthorized)
-		return -1
+		return -1, nil
 	}
 
 	// Step 2 — Body size limit. MaxBytesReader wraps r.Body so reads
@@ -99,37 +153,47 @@ func (h *PlaybackEventsHandler) serve(ctx context.Context, w http.ResponseWriter
 		var maxBytesErr *http.MaxBytesError
 		if errors.As(err, &maxBytesErr) {
 			writeStatus(w, http.StatusRequestEntityTooLarge)
-			return -1
+			return -1, nil
 		}
 		writeStatus(w, http.StatusBadRequest)
-		return -1
+		return -1, nil
 	}
 
 	var payload wireBatch
 	if err := json.Unmarshal(body, &payload); err != nil {
 		writeStatus(w, http.StatusBadRequest)
-		return -1
+		return -1, nil
 	}
 
+	// Trace-Kontext für den Use-Case: Server-Span-IDs (egal ob Child
+	// oder Root). ParseError haben wir oben schon im Span-Attribut
+	// markiert — wir reichen es trotzdem weiter, falls der Use-Case
+	// es persistieren möchte (heute nicht).
+	spanCtx := span.SpanContext()
 	in := driving.BatchInput{
 		SchemaVersion: payload.SchemaVersion,
 		AuthToken:     token,
 		Origin:        r.Header.Get("Origin"),
 		ClientIP:      clientIPFromRequest(r),
 		Events:        toEventInputs(payload.Events),
+		Trace: driving.BatchTraceContext{
+			TraceID:    spanCtx.TraceID().String(),
+			SpanID:     spanCtx.SpanID().String(),
+			ParseError: parseError,
+		},
 	}
 	batchSize := len(in.Events)
 
 	res, err := h.UseCase.RegisterPlaybackEventBatch(ctx, in)
 	if err != nil {
 		h.writeUseCaseError(w, err)
-		return batchSize
+		return batchSize, nil
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	_ = json.NewEncoder(w).Encode(map[string]int{"accepted": res.Accepted})
-	return batchSize
+	return batchSize, &res
 }
 
 func (h *PlaybackEventsHandler) writeUseCaseError(w http.ResponseWriter, err error) {

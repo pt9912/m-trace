@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"regexp"
 	"testing"
 	"time"
 
@@ -70,6 +71,14 @@ func (s *stubRepo) ListBySession(_ context.Context, _ driven.EventListQuery) (dr
 type stubSessionRepo struct {
 	upserts  [][]domain.PlaybackEvent
 	failNext bool
+	// existing erlaubt Tests, ein Repository-Get-Resultat pro
+	// session_id vorzubereiten — z. B. um den
+	// "existing-CorrelationID-übernehmen"-Pfad in
+	// resolveCorrelationIDs abzudecken.
+	existing map[string]domain.StreamSession
+	// getError lässt Tests einen DB-Fehler-Pfad simulieren (Get
+	// returnt einen anderen Fehler als domain.ErrSessionNotFound).
+	getError error
 }
 
 func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
@@ -87,7 +96,13 @@ func (s *stubSessionRepo) List(_ context.Context, _ driven.SessionListQuery) (dr
 	return driven.SessionPage{}, nil
 }
 
-func (s *stubSessionRepo) Get(_ context.Context, _ string) (domain.StreamSession, error) {
+func (s *stubSessionRepo) Get(_ context.Context, id string) (domain.StreamSession, error) {
+	if s.getError != nil {
+		return domain.StreamSession{}, s.getError
+	}
+	if sess, ok := s.existing[id]; ok {
+		return sess, nil
+	}
 	return domain.StreamSession{}, domain.ErrSessionNotFound
 }
 
@@ -487,5 +502,187 @@ func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	}
 	if metrics.accepted != 0 {
 		t.Errorf("expected EventsAccepted=0 on repo failure, got %d", metrics.accepted)
+	}
+}
+
+// --- Trace-Korrelation und Time-Skew (plan-0.4.0 §3.2) ---------------
+
+const uuidPattern = `^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`
+
+// TestRegisterPlaybackEventBatch_NewSession_GeneratesCorrelationID
+// verifiziert: Session noch nicht im Repository → Use-Case generiert
+// eine neue UUIDv4 als CorrelationID, schreibt sie auf jedes Event und
+// reicht sie an UpsertFromEvents weiter.
+func TestRegisterPlaybackEventBatch_NewSession_GeneratesCorrelationID(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, sessions, _, _, _, _ := newUseCase()
+
+	res, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if res.SessionCount != 1 {
+		t.Errorf("SessionCount = %d, want 1", res.SessionCount)
+	}
+	if res.SessionCorrelationID == "" {
+		t.Fatalf("SessionCorrelationID empty (Single-Session-Batch erwartet)")
+	}
+	if matched, _ := regexp.MatchString(uuidPattern, res.SessionCorrelationID); !matched {
+		t.Errorf("SessionCorrelationID %q is not UUIDv4-shape", res.SessionCorrelationID)
+	}
+	if len(repo.appended) != 1 || repo.appended[0].CorrelationID != res.SessionCorrelationID {
+		t.Errorf("event CorrelationID does not match BatchResult: events=%+v result=%q",
+			repo.appended, res.SessionCorrelationID)
+	}
+	if len(sessions.upserts) != 1 || sessions.upserts[0][0].CorrelationID != res.SessionCorrelationID {
+		t.Errorf("session UpsertFromEvents did not see the assigned CorrelationID")
+	}
+}
+
+// TestRegisterPlaybackEventBatch_ExistingSession_ReusesCorrelationID
+// verifiziert: Session bereits bekannt mit CorrelationID → Use-Case
+// übernimmt sie, generiert keine neue.
+func TestRegisterPlaybackEventBatch_ExistingSession_ReusesCorrelationID(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, sessions, _, _, _, _ := newUseCase()
+	const existingCorr = "11111111-2222-4333-8444-555555555555"
+	sessions.existing = map[string]domain.StreamSession{
+		"01J7K9X4Z2QHB6V3WS5R8Y4D1F": {
+			ID:            "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+			ProjectID:     "demo",
+			State:         domain.SessionStateActive,
+			CorrelationID: existingCorr,
+		},
+	}
+
+	res, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if res.SessionCorrelationID != existingCorr {
+		t.Errorf("SessionCorrelationID = %q, want existing %q", res.SessionCorrelationID, existingCorr)
+	}
+	if repo.appended[0].CorrelationID != existingCorr {
+		t.Errorf("event CorrelationID = %q, want %q (must reuse existing session value)",
+			repo.appended[0].CorrelationID, existingCorr)
+	}
+}
+
+// TestRegisterPlaybackEventBatch_MultiSession verifiziert: zwei
+// distincte session_ids im Batch → SessionCount=2,
+// SessionCorrelationID="" (Span-Attribut wird nicht gesetzt).
+func TestRegisterPlaybackEventBatch_MultiSession(t *testing.T) {
+	t.Parallel()
+	uc, _, _, _, _, _, _, _ := newUseCase()
+
+	in := validBatch()
+	second := in.Events[0]
+	second.SessionID = "second-session"
+	in.Events = append(in.Events, second)
+
+	res, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if res.SessionCount != 2 {
+		t.Errorf("SessionCount = %d, want 2", res.SessionCount)
+	}
+	if res.SessionCorrelationID != "" {
+		t.Errorf("SessionCorrelationID = %q, want empty (multi-session batch)",
+			res.SessionCorrelationID)
+	}
+}
+
+// TestRegisterPlaybackEventBatch_TimeSkew verifiziert: client_timestamp
+// > 60 s vor server_received_at → TimeSkewWarning=true.
+func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
+	t.Parallel()
+	uc, _, _, _, _, _, _, _ := newUseCase()
+
+	in := validBatch()
+	// Server now() im Stub ist 2026-04-28T12:00:00.000Z.
+	// 2-Minuten-Skew → > 60 s.
+	in.Events[0].ClientTimestamp = "2026-04-28T11:58:00.000Z"
+
+	res, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if !res.TimeSkewWarning {
+		t.Errorf("TimeSkewWarning = false, want true (|client - server| > 60s)")
+	}
+}
+
+// TestRegisterPlaybackEventBatch_LegacySessionWithoutCorrelationID
+// verifiziert das Self-Healing aus resolveCorrelationIDs: existing
+// Session aus Vor-§3.2-Daten hat CorrelationID="" — Use-Case
+// generiert eine neue UUIDv4 und schreibt sie aufs Event.
+func TestRegisterPlaybackEventBatch_LegacySessionWithoutCorrelationID(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, sessions, _, _, _, _ := newUseCase()
+	sessions.existing = map[string]domain.StreamSession{
+		"01J7K9X4Z2QHB6V3WS5R8Y4D1F": {
+			ID:            "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+			ProjectID:     "demo",
+			State:         domain.SessionStateActive,
+			CorrelationID: "", // Legacy-Daten von vor §3.2-Closeout
+		},
+	}
+
+	res, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if res.SessionCorrelationID == "" {
+		t.Fatal("expected self-healed CorrelationID, got empty")
+	}
+	if matched, _ := regexp.MatchString(uuidPattern, res.SessionCorrelationID); !matched {
+		t.Errorf("self-healed CorrelationID %q is not UUIDv4-shape", res.SessionCorrelationID)
+	}
+	if repo.appended[0].CorrelationID != res.SessionCorrelationID {
+		t.Errorf("event CorrelationID does not match self-healed value")
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SessionRepoGetError verifiziert,
+// dass ein nicht-ErrSessionNotFound-Fehler aus Get propagiert wird —
+// wir wollen keine stillschweigend weiterlaufende Session-Anlage,
+// wenn das Repository einen DB-Fehler signalisiert.
+func TestRegisterPlaybackEventBatch_SessionRepoGetError(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, _, _, _, _ := newUseCase()
+	sessions.getError = errors.New("simulated repo failure")
+
+	_, err := uc.RegisterPlaybackEventBatch(context.Background(), validBatch())
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, sessions.getError) && err.Error() != sessions.getError.Error() {
+		t.Errorf("expected repo failure to propagate, got %v", err)
+	}
+}
+
+// TestRegisterPlaybackEventBatch_TraceContextPropagated verifiziert,
+// dass BatchInput.Trace.TraceID und .SpanID auf jedem persistierten
+// Event landen — Voraussetzung für Tempo-Korrelation und für die
+// Read-Antwort aus API-Kontrakt §3.7.
+func TestRegisterPlaybackEventBatch_TraceContextPropagated(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, _, _, _, _, _ := newUseCase()
+
+	in := validBatch()
+	in.Trace = driving.BatchTraceContext{
+		TraceID: "0af7651916cd43dd8448eb211c80319c",
+		SpanID:  "b7ad6b7169203331",
+	}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if got := repo.appended[0].TraceID; got != in.Trace.TraceID {
+		t.Errorf("event.TraceID = %q, want %q", got, in.Trace.TraceID)
+	}
+	if got := repo.appended[0].SpanID; got != in.Trace.SpanID {
+		t.Errorf("event.SpanID = %q, want %q", got, in.Trace.SpanID)
 	}
 }

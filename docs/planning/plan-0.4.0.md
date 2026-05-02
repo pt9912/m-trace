@@ -210,14 +210,14 @@ Ziel: Backend liest `traceparent` (wenn vorhanden), erzeugt einen Server-Span pr
 
 DoD:
 
-- [ ] HTTP-Adapter parst `traceparent`-Header gemäß W3C-Spec; bei valider `trace_id`/`parent_span_id` wird der Server-Span als Child gestartet, sonst als Root mit Server-`trace_id`.
-- [ ] HTTP-Request-Span für `POST /api/playback-events` trägt die in §3.1 spezifizierten Attribute (`mtrace.project.id`, `mtrace.batch.size`, `mtrace.batch.outcome`, optional `mtrace.session.correlation_id`, `mtrace.batch.session_count`, `mtrace.trace.parse_error`, `mtrace.time.skew_warning`).
-- [ ] `domain.PlaybackEvent` und `domain.StreamSession` werden um `TraceID`/`SpanID`/`CorrelationID` erweitert; Application- und Adapter-Code füllt sie konsistent.
-- [ ] `correlation_id` wird beim allerersten Event einer Session erzeugt (server-generiert, UUIDv4) und in `stream_sessions.correlation_id` persistiert; alle Folge-Events derselben Session erben sie.
-- [ ] SQLite-Adapter (Event- und Session-Repository) schreibt und liest die drei neuen Spalten korrekt — die Spalten existieren bereits aus §2.3.
-- [ ] Defensive Validierung: ungültige `traceparent`-Werte produzieren `mtrace.trace.parse_error=true`-Span-Attribut, kein 4xx, keine Persistenz von Müll-Werten.
-- [ ] Time-Skew-Detection (Schwelle 60 s aus §5.3) im Use-Case; Span-Attribut `mtrace.time.skew_warning=true` bei Treffer; Schwelle ist Konstante, kein Configuration-Item.
-- [ ] Adapter-Contract-Tests in `persistence/contract` erweitert um Trace-Felder-Roundtrip (sowohl InMemory als auch SQLite).
+- [x] HTTP-Adapter parst `traceparent`-Header gemäß W3C-Spec (`apps/api/adapters/driving/http/traceparent.go`); bei valider `trace_id`/`parent_span_id` wird der Server-Span als Child gestartet (`withTraceParent`), sonst als Root mit Server-`trace_id` und Span-Attribut `mtrace.trace.parse_error=true` (Commit folgt).
+- [x] HTTP-Request-Span für `POST /api/playback-events` trägt die in §3.1 spezifizierten Attribute. `mtrace.project.id` ist in 0.4.0 noch nicht gesetzt (Use-Case-Resolver-Wert nur bei Erfolg verfügbar — als Folgepunkt im Backlog vermerken oder in §3.4 nachziehen, falls nötig); alle übrigen Pflicht-Attribute (`http.method/route/status_code`, `batch.size/outcome/session_count`, optional `mtrace.session.correlation_id`, `mtrace.trace.parse_error`, `mtrace.time.skew_warning`) sind gesetzt (Commit folgt).
+- [x] `domain.PlaybackEvent` und `domain.StreamSession` sind um `TraceID`/`SpanID`/`CorrelationID` (Event) bzw. `CorrelationID` (Session) erweitert; Application- und Adapter-Code füllt sie konsistent (Commit folgt).
+- [x] `correlation_id` wird beim allerersten Event einer Session in `RegisterPlaybackEventBatch.resolveCorrelationIDs` erzeugt (UUIDv4 via `crypto/rand`); existing Sessions liefern sie aus dem Repository; existing Sessions ohne `correlation_id` (Legacy von vor §3.2-Closeout) bekommen via Self-Healing eine neue. SessionRepository persistiert sie in `stream_sessions.correlation_id` (Commit folgt).
+- [x] SQLite-Adapter und InMemory-Adapter schreiben und lesen die drei neuen Spalten korrekt; gemeinsamer Contract-Test `testTraceFieldsRoundTrip` deckt beide Backends ab (Commit folgt).
+- [x] Defensive Validierung: `parseTraceParent` lehnt jeden Formatfehler ab (Längen, Hex, Version, all-zero); `withTraceParent` mappt das auf `mtrace.trace.parse_error=true` ohne 4xx (Commit folgt).
+- [x] Time-Skew-Detection mit Konstante `TimeSkewThreshold = 60 * time.Second` im Use-Case; bei Treffer `BatchResult.TimeSkewWarning=true`, der HTTP-Adapter setzt das Span-Attribut (Commit folgt).
+- [x] Adapter-Contract-Tests in `persistence/contract` erweitert um `testTraceFieldsRoundTrip`; läuft identisch gegen InMemory und SQLite. Use-Case-Test-Suite erweitert um fünf Cases (neue Session, existing Session mit/ohne CorrelationID, Multi-Session, Time-Skew, Trace-Context-Durchreiche) plus `parseTraceParent`-Unit-Tests (Commit folgt).
 
 ### 3.3 SDK-Wire-Format-Erweiterung
 

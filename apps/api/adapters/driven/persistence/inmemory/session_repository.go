@@ -46,12 +46,13 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 		s, ok := r.sessions[e.SessionID]
 		if !ok {
 			s = domain.StreamSession{
-				ID:          e.SessionID,
-				ProjectID:   e.ProjectID,
-				State:       domain.SessionStateActive,
-				StartedAt:   e.ServerReceivedAt,
-				LastEventAt: e.ServerReceivedAt,
-				EventCount:  1,
+				ID:            e.SessionID,
+				ProjectID:     e.ProjectID,
+				State:         domain.SessionStateActive,
+				StartedAt:     e.ServerReceivedAt,
+				LastEventAt:   e.ServerReceivedAt,
+				EventCount:    1,
+				CorrelationID: e.CorrelationID,
 			}
 		} else {
 			s.LastEventAt = e.ServerReceivedAt

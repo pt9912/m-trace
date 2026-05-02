@@ -45,6 +45,25 @@ func nullableInt64(p *int64) any {
 	return *p
 }
 
+// nullableString mappt Empty-String-Domain-Konvention auf SQL-NULL.
+// Einsetzbar für nullable TEXT-Spalten wie trace_id/span_id/
+// correlation_id, deren Domain-Pendants als Empty-String den
+// "nicht gesetzt"-Zustand kodieren.
+func nullableString(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+// stringFromNull ist das Lese-Pendant zu nullableString.
+func stringFromNull(n sql.NullString) string {
+	if !n.Valid {
+		return ""
+	}
+	return n.String
+}
+
 // nullableTime wandelt einen optionalen Zeitpunkt in einen für
 // database/sql passenden Wert: Nil-Pointer/Zero → SQL-NULL.
 func nullableTime(p *time.Time) any {

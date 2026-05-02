@@ -30,6 +30,22 @@ type BatchInput struct {
 	Origin        string
 	ClientIP      string
 	Events        []EventInput
+	// Trace ist der vom HTTP-Adapter aufgelöste Trace-Kontext für
+	// diesen Batch (siehe spec/telemetry-model.md §2.5). Adapter füllt
+	// `TraceID` und `SpanID` mit den IDs des Server-Spans (entweder als
+	// Child eines validen `traceparent`-Headers oder als neuer Root);
+	// `ParseError` ist true, wenn ein eingehender `traceparent` formal
+	// kaputt war. Use Case kennt OTel nicht und liest nur diese drei
+	// String-Werte.
+	Trace BatchTraceContext
+}
+
+// BatchTraceContext ist die frameworkneutrale Sicht des HTTP-Adapters
+// auf den Server-Span. Hex-Strings, kein OTel-Import.
+type BatchTraceContext struct {
+	TraceID    string
+	SpanID     string
+	ParseError bool
 }
 
 // EventInput carries raw fields straight from the wire. The use case
@@ -51,7 +67,21 @@ type SDKInput struct {
 	Version string
 }
 
-// BatchResult is what the use case returns on success.
+// BatchResult is what the use case returns on success. Trace-relevante
+// Output-Felder reicht der HTTP-Adapter als Span-Attribute weiter
+// (siehe spec/telemetry-model.md §2.5).
 type BatchResult struct {
 	Accepted int
+	// SessionCount ist die Anzahl distinkter `session_id` im Batch —
+	// für `mtrace.batch.session_count`.
+	SessionCount int
+	// SessionCorrelationID ist nur gesetzt, wenn alle Events im Batch
+	// dieselbe `session_id` teilen (Single-Session-Batch); sonst leer.
+	// Adapter setzt das Span-Attribut `mtrace.session.correlation_id`
+	// nur, wenn der Wert nicht leer ist.
+	SessionCorrelationID string
+	// TimeSkewWarning ist true, wenn mindestens ein Event im Batch
+	// `|client_timestamp - server_received_at| > 60s` hat. Adapter
+	// setzt dann `mtrace.time.skew_warning=true` (siehe §5.3).
+	TimeSkewWarning bool
 }

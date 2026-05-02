@@ -45,8 +45,9 @@ ON CONFLICT(project_id) DO NOTHING`
 
 	insertSessionSQL = `
 INSERT INTO stream_sessions(
-    session_id, project_id, state, started_at, last_seen_at, ended_at, event_count
-) VALUES (?, ?, ?, ?, ?, ?, 1)`
+    session_id, project_id, state, started_at, last_seen_at, ended_at,
+    event_count, correlation_id
+) VALUES (?, ?, ?, ?, ?, ?, 1, ?)`
 
 	// Last-Seen + Event-Count werden auch dann inkrementiert, wenn die
 	// Session bereits Ended ist — verspätet eintreffende Events werden
@@ -62,12 +63,14 @@ SET state = 'ended', ended_at = ?
 WHERE session_id = ? AND state != 'ended'`
 
 	selectSessionByIDSQL = `
-SELECT session_id, project_id, state, started_at, last_seen_at, ended_at, event_count
+SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
+       event_count, correlation_id
 FROM stream_sessions
 WHERE session_id = ?`
 
 	listSessionsBaseSQL = `
-SELECT session_id, project_id, state, started_at, last_seen_at, ended_at, event_count
+SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
+       event_count, correlation_id
 FROM stream_sessions`
 
 	listSessionsCursorSQL = `
@@ -137,9 +140,10 @@ func (r *SessionRepository) UpsertFromEvents(ctx context.Context, events []domai
 }
 
 // insertNewSessionTx legt eine bisher unbekannte Session an. Beim
-// allerersten Event genügt ein Insert mit State=Active und
-// EventCount=1; ist das erste Event session_ended, wird unmittelbar
-// danach der State-Switch ausgeführt.
+// allerersten Event genügt ein Insert mit State=Active, EventCount=1
+// und der vom Use-Case zugewiesenen CorrelationID; ist das erste
+// Event session_ended, wird unmittelbar danach der State-Switch
+// ausgeführt.
 func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) error {
 	if _, err := tx.ExecContext(ctx, insertSessionSQL,
 		e.SessionID,
@@ -148,6 +152,7 @@ func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent)
 		formatTime(e.ServerReceivedAt),
 		formatTime(e.ServerReceivedAt),
 		nullableTime(nil),
+		nullableString(e.CorrelationID),
 	); err != nil {
 		return fmt.Errorf("sqlite: insert session: %w", err)
 	}
@@ -273,41 +278,49 @@ func readSessionTx(ctx context.Context, tx *sql.Tx, id string) (domain.StreamSes
 
 func scanSessionRow(row *sql.Row) (domain.StreamSession, error) {
 	var (
-		id         string
-		project    string
-		state      string
-		startedAt  string
-		lastSeen   string
-		endedAt    sql.NullString
-		eventCount int64
+		id            string
+		project       string
+		state         string
+		startedAt     string
+		lastSeen      string
+		endedAt       sql.NullString
+		eventCount    int64
+		correlationID sql.NullString
 	)
-	err := row.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt, &eventCount)
+	err := row.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt,
+		&eventCount, &correlationID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.StreamSession{}, domain.ErrSessionNotFound
 	}
 	if err != nil {
 		return domain.StreamSession{}, fmt.Errorf("sqlite: scan session: %w", err)
 	}
-	return decodeSession(id, project, state, startedAt, lastSeen, endedAt, eventCount)
+	return decodeSession(id, project, state, startedAt, lastSeen, endedAt,
+		eventCount, correlationID)
 }
 
 func scanSessionFromRows(rows *sql.Rows) (domain.StreamSession, error) {
 	var (
-		id         string
-		project    string
-		state      string
-		startedAt  string
-		lastSeen   string
-		endedAt    sql.NullString
-		eventCount int64
+		id            string
+		project       string
+		state         string
+		startedAt     string
+		lastSeen      string
+		endedAt       sql.NullString
+		eventCount    int64
+		correlationID sql.NullString
 	)
-	if err := rows.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt, &eventCount); err != nil {
+	if err := rows.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt,
+		&eventCount, &correlationID); err != nil {
 		return domain.StreamSession{}, fmt.Errorf("sqlite: scan session: %w", err)
 	}
-	return decodeSession(id, project, state, startedAt, lastSeen, endedAt, eventCount)
+	return decodeSession(id, project, state, startedAt, lastSeen, endedAt,
+		eventCount, correlationID)
 }
 
-func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string, endedAtRaw sql.NullString, eventCount int64) (domain.StreamSession, error) {
+func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
+	endedAtRaw sql.NullString, eventCount int64, correlationID sql.NullString,
+) (domain.StreamSession, error) {
 	startedAt, err := parseTime(startedAtRaw)
 	if err != nil {
 		return domain.StreamSession{}, err
@@ -325,13 +338,14 @@ func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string, endedAt
 		endedAt = &t
 	}
 	return domain.StreamSession{
-		ID:          id,
-		ProjectID:   project,
-		State:       domain.SessionState(state),
-		StartedAt:   startedAt,
-		LastEventAt: lastSeen,
-		EndedAt:     endedAt,
-		EventCount:  eventCount,
+		ID:            id,
+		ProjectID:     project,
+		State:         domain.SessionState(state),
+		StartedAt:     startedAt,
+		LastEventAt:   lastSeen,
+		EndedAt:       endedAt,
+		EventCount:    eventCount,
+		CorrelationID: stringFromNull(correlationID),
 	}, nil
 }
 

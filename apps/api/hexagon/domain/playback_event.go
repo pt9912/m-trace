@@ -25,6 +25,20 @@ type PlaybackEvent struct {
 	SequenceNumber   *int64
 	SDK              SDKInfo
 	Meta             EventMeta
+	// TraceID ist die W3C-Trace-ID (32 Hex-Zeichen) des Batches, in
+	// dem das Event registriert wurde — entweder vom SDK propagiert
+	// (`traceparent`-Header) oder server-generiert. Empty-String =
+	// nicht gesetzt (Edge-Case in Tests/Fallbacks); Read-Pfad mappt
+	// das auf JSON `null`. Siehe spec/telemetry-model.md §2.5.
+	TraceID string
+	// SpanID ist die ID des Server-Spans, der diesen Event verarbeitet
+	// hat (16 Hex-Zeichen). Empty-String = nicht gesetzt.
+	SpanID string
+	// CorrelationID ist die server-generierte, durable Source-of-Truth
+	// für die Tempo-unabhängige Dashboard-Korrelation. Beim ersten
+	// Event einer Session erzeugt (UUIDv4), für alle Folge-Events
+	// derselben Session konstant. Niemals leer in 0.4.0+-Read-Pfaden.
+	CorrelationID string
 }
 
 // SDKInfo identifies the producing player SDK.

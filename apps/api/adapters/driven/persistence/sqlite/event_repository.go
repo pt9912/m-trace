@@ -40,8 +40,9 @@ const (
 INSERT INTO playback_events(
     ingest_sequence, project_id, session_id, event_name,
     client_timestamp, server_received_at, sequence_number,
-    sdk_name, sdk_version, schema_version, meta, delivery_status
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    sdk_name, sdk_version, schema_version, meta, delivery_status,
+    trace_id, span_id, correlation_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	dedupLookupSQL = `
 SELECT 1 FROM playback_events
@@ -56,7 +57,8 @@ LIMIT 1`
 	listEventsSQL = `
 SELECT ingest_sequence, project_id, session_id, event_name,
        client_timestamp, server_received_at, sequence_number,
-       sdk_name, sdk_version, meta
+       sdk_name, sdk_version, meta,
+       trace_id, span_id, correlation_id
 FROM playback_events
 WHERE session_id = ? %s
 ORDER BY server_received_at ASC,
@@ -109,6 +111,9 @@ func (r *EventRepository) Append(ctx context.Context, events []domain.PlaybackEv
 			persistedSchemaVersion,
 			metaJSON,
 			status,
+			nullableString(e.TraceID),
+			nullableString(e.SpanID),
+			nullableString(e.CorrelationID),
 		); err != nil {
 			return fmt.Errorf("sqlite: insert event: %w", err)
 		}
@@ -199,19 +204,23 @@ func (r *EventRepository) ListBySession(ctx context.Context, q driven.EventListQ
 
 func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 	var (
-		ingest    int64
-		project   string
-		session   string
-		eventName string
-		clientTS  string
-		serverTS  string
-		seqNumber sql.NullInt64
-		sdkName   string
-		sdkVer    string
-		metaRaw   sql.NullString
+		ingest        int64
+		project       string
+		session       string
+		eventName     string
+		clientTS      string
+		serverTS      string
+		seqNumber     sql.NullInt64
+		sdkName       string
+		sdkVer        string
+		metaRaw       sql.NullString
+		traceID       sql.NullString
+		spanID        sql.NullString
+		correlationID sql.NullString
 	)
 	if err := rows.Scan(&ingest, &project, &session, &eventName,
-		&clientTS, &serverTS, &seqNumber, &sdkName, &sdkVer, &metaRaw); err != nil {
+		&clientTS, &serverTS, &seqNumber, &sdkName, &sdkVer, &metaRaw,
+		&traceID, &spanID, &correlationID); err != nil {
 		return domain.PlaybackEvent{}, fmt.Errorf("sqlite: scan: %w", err)
 	}
 	clientAt, err := parseTime(clientTS)
@@ -241,6 +250,9 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 		SequenceNumber:   seqPtr,
 		SDK:              domain.SDKInfo{Name: sdkName, Version: sdkVer},
 		Meta:             meta,
+		TraceID:          stringFromNull(traceID),
+		SpanID:           stringFromNull(spanID),
+		CorrelationID:    stringFromNull(correlationID),
 	}, nil
 }
 

@@ -50,6 +50,7 @@ func RunAll(t *testing.T, factory Factory) {
 		{"count sessions by state", testCountByState},
 		{"event meta round trips", testEventMetaRoundTrip},
 		{"session_ended as first event creates ended session", testSessionEndedAsFirstEvent},
+		{"trace fields round trip", testTraceFieldsRoundTrip},
 	}
 	for _, c := range cases {
 		c := c
@@ -540,6 +541,97 @@ func testEventMetaRoundTrip(t *testing.T, factory Factory) {
 	player, ok := got["player"].(map[string]any)
 	if !ok || player["name"] != "hls.js" || player["version"] != "1.5.0" {
 		t.Errorf("meta[player] = %v, want hls.js/1.5.0 round-trip", got["player"])
+	}
+}
+
+// testTraceFieldsRoundTrip verifiziert, dass Trace-Korrelations-Felder
+// (TraceID, SpanID, CorrelationID an Events; CorrelationID an
+// Sessions) durch Append+ListBySession und UpsertFromEvents+Get
+// byte-identisch wiederkommen — die Pflicht aus
+// `plan-0.4.0.md` §3.2 und `spec/telemetry-model.md` §2.5.
+func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
+	ctx := context.Background()
+	r := factory(t)
+	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
+
+	const (
+		traceID = "0af7651916cd43dd8448eb211c80319c"
+		spanID  = "b7ad6b7169203331"
+		corrA   = "11111111-2222-4333-8444-555555555555"
+		corrB   = "66666666-7777-4888-8999-aaaaaaaaaaaa"
+	)
+
+	// Zwei Sessions im selben Batch, jede mit eigener CorrelationID.
+	// Alle Events teilen denselben Trace (= Single-Batch).
+	a := mkEvent(r.Sequencer, "demo", "s-a", t0, seq(1))
+	a.TraceID, a.SpanID, a.CorrelationID = traceID, spanID, corrA
+	b := mkEvent(r.Sequencer, "demo", "s-b", t0.Add(time.Second), seq(2))
+	b.TraceID, b.SpanID, b.CorrelationID = traceID, spanID, corrB
+
+	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{a, b}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+	if err := r.Events.Append(ctx, []domain.PlaybackEvent{a, b}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	// Sessions persistieren ihre eigene CorrelationID, nicht die des
+	// anderen Sessions-Buckets.
+	gotA, err := r.Sessions.Get(ctx, "s-a")
+	if err != nil {
+		t.Fatalf("get s-a: %v", err)
+	}
+	if gotA.CorrelationID != corrA {
+		t.Errorf("session s-a correlation_id = %q, want %q", gotA.CorrelationID, corrA)
+	}
+	gotB, err := r.Sessions.Get(ctx, "s-b")
+	if err != nil {
+		t.Fatalf("get s-b: %v", err)
+	}
+	if gotB.CorrelationID != corrB {
+		t.Errorf("session s-b correlation_id = %q, want %q", gotB.CorrelationID, corrB)
+	}
+
+	// Folge-Events derselben Session: CorrelationID muss konstant
+	// bleiben (Server schreibt event.CorrelationID = existing-Wert,
+	// nicht den aus dem neuen Event ankommenden).
+	follow := mkEvent(r.Sequencer, "demo", "s-a", t0.Add(2*time.Second), seq(3))
+	follow.TraceID, follow.SpanID, follow.CorrelationID = traceID, spanID, corrA
+	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{follow}); err != nil {
+		t.Fatalf("upsert follow: %v", err)
+	}
+	if err := r.Events.Append(ctx, []domain.PlaybackEvent{follow}); err != nil {
+		t.Fatalf("append follow: %v", err)
+	}
+	gotA2, err := r.Sessions.Get(ctx, "s-a")
+	if err != nil {
+		t.Fatalf("get s-a #2: %v", err)
+	}
+	if gotA2.CorrelationID != corrA {
+		t.Errorf("session s-a after follow: correlation_id = %q, want %q (must stay stable)",
+			gotA2.CorrelationID, corrA)
+	}
+
+	// Event-Roundtrip: alle drei Felder kommen byte-identisch zurück.
+	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+		SessionID: "s-a", Limit: 10,
+	})
+	if err != nil {
+		t.Fatalf("list events s-a: %v", err)
+	}
+	if len(page.Events) != 2 {
+		t.Fatalf("len(events s-a) = %d, want 2", len(page.Events))
+	}
+	for i, e := range page.Events {
+		if e.TraceID != traceID {
+			t.Errorf("events[%d].TraceID = %q, want %q", i, e.TraceID, traceID)
+		}
+		if e.SpanID != spanID {
+			t.Errorf("events[%d].SpanID = %q, want %q", i, e.SpanID, spanID)
+		}
+		if e.CorrelationID != corrA {
+			t.Errorf("events[%d].CorrelationID = %q, want %q", i, e.CorrelationID, corrA)
+		}
 	}
 }
 

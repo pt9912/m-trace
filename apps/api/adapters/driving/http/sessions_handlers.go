@@ -208,24 +208,31 @@ func parseLimitWithName(s string) (int, error) {
 }
 
 // sessionWire ist die JSON-Antwortform für domain.StreamSession.
+// `correlation_id` ist ab `0.4.0` (§3.7.1 im API-Kontrakt) Teil der
+// Read-Antwort — bei Sessions, die vor §3.2-Closeout angelegt
+// wurden, kann es leer sein und wird dann als JSON-`""` ausgeliefert
+// (kein `omitempty`, damit Clients das Feld klar als „nicht gesetzt"
+// erkennen).
 type sessionWire struct {
-	ID          string  `json:"session_id"`
-	ProjectID   string  `json:"project_id"`
-	State       string  `json:"state"`
-	StartedAt   string  `json:"started_at"`
-	LastEventAt string  `json:"last_event_at"`
-	EndedAt     *string `json:"ended_at,omitempty"`
-	EventCount  int64   `json:"event_count"`
+	ID            string  `json:"session_id"`
+	ProjectID     string  `json:"project_id"`
+	State         string  `json:"state"`
+	StartedAt     string  `json:"started_at"`
+	LastEventAt   string  `json:"last_event_at"`
+	EndedAt       *string `json:"ended_at,omitempty"`
+	EventCount    int64   `json:"event_count"`
+	CorrelationID string  `json:"correlation_id"`
 }
 
 func toSessionWire(s domain.StreamSession) sessionWire {
 	out := sessionWire{
-		ID:          s.ID,
-		ProjectID:   s.ProjectID,
-		State:       string(s.State),
-		StartedAt:   s.StartedAt.UTC().Format(time.RFC3339Nano),
-		LastEventAt: s.LastEventAt.UTC().Format(time.RFC3339Nano),
-		EventCount:  s.EventCount,
+		ID:            s.ID,
+		ProjectID:     s.ProjectID,
+		State:         string(s.State),
+		StartedAt:     s.StartedAt.UTC().Format(time.RFC3339Nano),
+		LastEventAt:   s.LastEventAt.UTC().Format(time.RFC3339Nano),
+		EventCount:    s.EventCount,
+		CorrelationID: s.CorrelationID,
 	}
 	if s.EndedAt != nil {
 		ended := s.EndedAt.UTC().Format(time.RFC3339Nano)
@@ -243,6 +250,12 @@ func toSessionWireList(in []domain.StreamSession) []sessionWire {
 }
 
 // eventWire ist die JSON-Antwortform für ein Event im Detail-Response.
+// `correlation_id` und `trace_id` ab `0.4.0` (§3.7 im API-Kontrakt):
+//   - `correlation_id` ist Pflichtfeld in 0.4.0+-Read-Antworten (kein
+//     `omitempty`); Empty-String nur bei Legacy-Events, die vor
+//     §3.2-Closeout persistiert wurden.
+//   - `trace_id` ist optional (`omitempty`); fehlt bei Events ohne
+//     gültigen Trace-Kontext (Edge-Case: Server-Span ohne Trace-ID).
 type eventWire struct {
 	EventName        string         `json:"event_name"`
 	ProjectID        string         `json:"project_id"`
@@ -253,6 +266,8 @@ type eventWire struct {
 	SequenceNumber   *int64         `json:"sequence_number,omitempty"`
 	SDK              sdkWire        `json:"sdk"`
 	Meta             map[string]any `json:"meta,omitempty"`
+	CorrelationID    string         `json:"correlation_id"`
+	TraceID          string         `json:"trace_id,omitempty"`
 }
 
 type sdkWire struct {
@@ -275,7 +290,9 @@ func toEventWireList(in []domain.PlaybackEvent) []eventWire {
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
-			Meta: e.Meta,
+			Meta:          e.Meta,
+			CorrelationID: e.CorrelationID,
+			TraceID:       e.TraceID,
 		}
 	}
 	return out

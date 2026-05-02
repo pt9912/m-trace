@@ -7,6 +7,10 @@ package application
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -20,6 +24,12 @@ const SupportedSchemaVersion = "1.0"
 
 // MaxBatchSize is the upper bound on events per request (Spec §6.1).
 const MaxBatchSize = 100
+
+// TimeSkewThreshold ist die Konstante aus spec/telemetry-model.md §5.3:
+// liegt `|client_timestamp - server_received_at|` über diesem Wert,
+// markiert der Use-Case den Batch als skew-warned (kein Configuration-
+// Item in 0.4.0).
+const TimeSkewThreshold = 60 * time.Second
 
 // RegisterPlaybackEventBatchUseCase validates and persists a batch of
 // player events. It implements driving.PlaybackEventInbound.
@@ -141,6 +151,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 
 	now := u.now().UTC()
 	parsed := make([]domain.PlaybackEvent, 0, len(in.Events))
+	timeSkewWarning := false
 	for _, e := range in.Events {
 		// Step 8 — per-event field check.
 		if !hasRequiredFields(e) {
@@ -158,6 +169,11 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 			u.metrics.InvalidEvents(len(in.Events))
 			return driving.BatchResult{}, domain.ErrInvalidEvent
 		}
+		// Time-Skew-Detection (telemetry-model.md §5.3): Schwelle 60 s,
+		// Konstante in 0.4.0. Einmal aktiv, bleibt für den ganzen Batch.
+		if abs(now.Sub(ts)) > TimeSkewThreshold {
+			timeSkewWarning = true
+		}
 		parsed = append(parsed, domain.PlaybackEvent{
 			EventName:        e.EventName,
 			ProjectID:        e.ProjectID,
@@ -170,8 +186,26 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
-			Meta: domain.EventMeta(copyEventMeta(e.Meta)),
+			Meta:    domain.EventMeta(copyEventMeta(e.Meta)),
+			TraceID: in.Trace.TraceID,
+			SpanID:  in.Trace.SpanID,
 		})
+	}
+
+	// Step 9b — Trace-Korrelation (telemetry-model.md §2.5):
+	//
+	// 1. Sammle distinct session_ids aus dem Batch.
+	// 2. Pro session_id: bestehende Session aus dem Repository lesen;
+	//    falls vorhanden, übernehme deren CorrelationID; falls nicht,
+	//    generiere eine neue UUIDv4.
+	// 3. Reichere alle Events mit der ermittelten CorrelationID an —
+	//    Persistenz und Read-Pfad sehen den Wert dann auf jedem Event.
+	correlations, err := u.resolveCorrelationIDs(ctx, parsed)
+	if err != nil {
+		return driving.BatchResult{}, err
+	}
+	for i := range parsed {
+		parsed[i].CorrelationID = correlations[parsed[i].SessionID]
 	}
 
 	// Step 10 — persist + accept. Synchron fehlgeschlagenes Append ist
@@ -189,7 +223,93 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 
 	u.metrics.EventsAccepted(len(parsed))
 	u.publishPlaybackMetrics(parsed)
-	return driving.BatchResult{Accepted: len(parsed)}, nil
+	return driving.BatchResult{
+		Accepted:             len(parsed),
+		SessionCount:         len(correlations),
+		SessionCorrelationID: singleSessionCorrelationID(correlations),
+		TimeSkewWarning:      timeSkewWarning,
+	}, nil
+}
+
+// resolveCorrelationIDs liefert für jede distinct session_id im Batch
+// die zugehörige CorrelationID — entweder aus der bereits bekannten
+// Session oder neu generiert. Verhalten:
+//   - Bekannte Session mit nicht-leerer CorrelationID → übernimm.
+//   - Bekannte Session ohne CorrelationID (Legacy / Test) → generiere
+//     eine neue (Self-Healing für Daten von vor §3.2-Closeout).
+//   - Unbekannte Session → generiere eine neue. UpsertFromEvents
+//     übernimmt sie aus dem Event-Wert beim Insert.
+func (u *RegisterPlaybackEventBatchUseCase) resolveCorrelationIDs(
+	ctx context.Context, events []domain.PlaybackEvent,
+) (map[string]string, error) {
+	out := make(map[string]string)
+	for _, e := range events {
+		if _, ok := out[e.SessionID]; ok {
+			continue
+		}
+		existing, err := u.sessions.Get(ctx, e.SessionID)
+		switch {
+		case errors.Is(err, domain.ErrSessionNotFound):
+			cid, gErr := newCorrelationID()
+			if gErr != nil {
+				return nil, gErr
+			}
+			out[e.SessionID] = cid
+		case err != nil:
+			return nil, err
+		default:
+			if existing.CorrelationID != "" {
+				out[e.SessionID] = existing.CorrelationID
+				continue
+			}
+			cid, gErr := newCorrelationID()
+			if gErr != nil {
+				return nil, gErr
+			}
+			out[e.SessionID] = cid
+		}
+	}
+	return out, nil
+}
+
+// singleSessionCorrelationID liefert die einzige CorrelationID, wenn
+// alle Events im Batch dieselbe Session teilen — sonst leer. Adapter
+// setzt das Span-Attribut `mtrace.session.correlation_id` nur, wenn
+// der Wert nicht leer ist.
+func singleSessionCorrelationID(correlations map[string]string) string {
+	if len(correlations) != 1 {
+		return ""
+	}
+	for _, v := range correlations {
+		return v
+	}
+	return ""
+}
+
+// newCorrelationID generiert eine UUIDv4 (RFC 4122) als Hex-String mit
+// Bindestrichen. crypto/rand garantiert Kryptosicherheit, was hier zwar
+// nicht strikt nötig ist, aber kein zusätzlicher Aufwand und vermeidet
+// Kollisionen bei sehr hoher Session-Frequenz.
+func newCorrelationID() (string, error) {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("application: correlation_id rand: %w", err)
+	}
+	// RFC 4122 §4.4: version 4 in highest 4 bits of byte 6.
+	b[6] = (b[6] & 0x0f) | 0x40
+	// RFC 4122 §4.4: variant 10 in highest 2 bits of byte 8.
+	b[8] = (b[8] & 0x3f) | 0x80
+	hexed := hex.EncodeToString(b[:])
+	return fmt.Sprintf("%s-%s-%s-%s-%s",
+		hexed[0:8], hexed[8:12], hexed[12:16], hexed[16:20], hexed[20:32]), nil
+}
+
+// abs liefert den Betrag einer time.Duration.
+func abs(d time.Duration) time.Duration {
+	if d < 0 {
+		return -d
+	}
+	return d
 }
 
 func hasRequiredFields(e driving.EventInput) bool {

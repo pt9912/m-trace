@@ -37,4 +37,9 @@ type StreamSession struct {
 	LastEventAt time.Time
 	EndedAt     *time.Time
 	EventCount  int64
+	// CorrelationID ist die Server-generierte, durable Source-of-Truth
+	// für die Tempo-unabhängige Dashboard-Korrelation der Session. Wird
+	// beim allerersten Event der Session erzeugt (UUIDv4) und über alle
+	// Folge-Events konstant gehalten. Source spec/telemetry-model.md §2.5.
+	CorrelationID string
 }
