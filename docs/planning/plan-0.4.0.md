@@ -50,15 +50,15 @@ Ziel: Vor Implementierung ist klar, welche Entscheidungen `0.4.0` wirklich block
 
 DoD:
 
-- [ ] `plan-0.3.0.md` ist vollständig (`[x]`), inklusive Release-Akzeptanzkriterien.
-- [ ] Annotierter Release-Tag `v0.3.0` existiert und zeigt auf den finalen Release-Stand.
-- [ ] GitHub Actions `Build` ist für den Release-Commit grün.
-- [ ] `docs/planning/roadmap.md` führt `0.4.0` als aktiv geplantes Release und verweist auf dieses Dokument.
+- [x] `plan-0.3.0.md` ist vollständig (`[x]`), inklusive Release-Akzeptanzkriterien (Tranche 8 grün; verbleibende `[ ]`-Items in §9.1 sind non-blocking Folge-Issues, siehe Item unten).
+- [x] Annotierter Release-Tag `v0.3.0` existiert und zeigt auf den finalen Release-Stand.
+- [x] GitHub Actions `Build` ist für den Release-Commit grün (per `plan-0.3.0.md` §10 verifiziert).
+- [x] `docs/planning/roadmap.md` führt `0.4.0` als aktiv geplantes Release und verweist auf dieses Dokument (Roadmap §3 + Schritt 27 ✅).
 - [x] OE-5 ist entschieden: SSE mit Polling-Fallback ist für `0.4.0` gewählt; WebSocket bleibt deferred (ADR 0003).
 - [x] Folge-ADR „Live-Updates via SSE" ist geschrieben und accepted (ADR 0003).
-- [ ] Folge-ADR „Dauerhaft konsistente Cursor-Strategie" ist geschrieben oder die gewählte Cursor-Form ist in dieser Tranche verbindlich festgelegt.
-- [ ] Offene Folge-Issues aus `plan-0.3.0.md` §9.1 sind bewertet: release-blocking für `0.4.0`, separater `0.3.x`-Fix oder bewusst deferred.
-- [ ] RAK-31 ist als optionaler Kann-Scope bestätigt: Tempo darf `0.4.0` nicht blockieren, solange RAK-29 und RAK-32 ohne Tempo erfüllt sind.
+- [x] Folge-ADR „Dauerhaft konsistente Cursor-Strategie" ist geschrieben (ADR 0004, `1028688`).
+- [x] Offene Folge-Issues aus `plan-0.3.0.md` §9.1 sind bewertet: beide non-blocking für `0.4.0`, deferred zu `0.3.x`-Fix — Contract-Test-Vollständigkeitsgrenze (kein Verhaltens-Bruch, nur Test-Härtung) und CI-Workflow-Bin-Symlink-Refactor (heute durch `make smoke-cli` workaround abgedeckt).
+- [x] RAK-31 ist als optionaler Kann-Scope bestätigt: Tempo darf `0.4.0` nicht blockieren, solange RAK-29 und RAK-32 ohne Tempo erfüllt sind (Tranche 5 in §6).
 
 ---
 
