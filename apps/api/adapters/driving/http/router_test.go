@@ -37,7 +37,7 @@ func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {
 		noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(),
 		inmemory.NewIngestSequencer(), time.Now,
 	)
-	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
+	sessionsService := application.NewSessionsService(sessionRepo, repo)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	// allowlist=nil → noopAllowlist greift.

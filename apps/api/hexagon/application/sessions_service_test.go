@@ -165,15 +165,13 @@ func (r *fakeEventRepo) ListBySession(_ context.Context, q driven.EventListQuery
 	return page, nil
 }
 
-const testProcessID domain.ProcessInstanceID = "test-process-123"
-
 func TestSessionsService_ListSessions_LimitClampedToDefault(t *testing.T) {
 	t.Parallel()
 	repo := newFakeSessionRepo()
 	repo.store["s1"] = domain.StreamSession{ID: "s1", StartedAt: time.Unix(100, 0)}
 	repo.store["s2"] = domain.StreamSession{ID: "s2", StartedAt: time.Unix(200, 0)}
 
-	svc := application.NewSessionsService(repo, &fakeEventRepo{}, testProcessID)
+	svc := application.NewSessionsService(repo, &fakeEventRepo{})
 	res, err := svc.ListSessions(context.Background(), driving.ListSessionsInput{})
 	if err != nil {
 		t.Fatalf("unexpected: %v", err)
@@ -195,7 +193,7 @@ func TestSessionsService_ListSessions_LimitClampedToMax(t *testing.T) {
 		repo.store[id] = domain.StreamSession{ID: id, StartedAt: time.Unix(int64(100+i), 0)}
 	}
 
-	svc := application.NewSessionsService(repo, &fakeEventRepo{}, testProcessID)
+	svc := application.NewSessionsService(repo, &fakeEventRepo{})
 	res, err := svc.ListSessions(context.Background(), driving.ListSessionsInput{Limit: 1_000_000})
 	if err != nil {
 		t.Fatalf("unexpected: %v", err)
@@ -214,27 +212,9 @@ func TestSessionsService_ListSessions_LimitClampedToMax(t *testing.T) {
 	}
 }
 
-func TestSessionsService_ListSessions_CursorMismatchInvalidatesPagination(t *testing.T) {
-	t.Parallel()
-	repo := newFakeSessionRepo()
-	repo.store["s1"] = domain.StreamSession{ID: "s1", StartedAt: time.Unix(100, 0)}
-	svc := application.NewSessionsService(repo, &fakeEventRepo{}, testProcessID)
-
-	_, err := svc.ListSessions(context.Background(), driving.ListSessionsInput{
-		After: &driving.ListSessionsCursor{
-			ProcessInstanceID: "stale-process-from-before-restart",
-			StartedAt:         time.Unix(200, 0),
-			SessionID:         "s99",
-		},
-	})
-	if !errors.Is(err, domain.ErrCursorInvalid) {
-		t.Errorf("expected ErrCursorInvalid, got %v", err)
-	}
-}
-
 func TestSessionsService_GetSession_NotFound(t *testing.T) {
 	t.Parallel()
-	svc := application.NewSessionsService(newFakeSessionRepo(), &fakeEventRepo{}, testProcessID)
+	svc := application.NewSessionsService(newFakeSessionRepo(), &fakeEventRepo{})
 	_, err := svc.GetSession(context.Background(), driving.GetSessionInput{SessionID: "missing"})
 	if !errors.Is(err, domain.ErrSessionNotFound) {
 		t.Errorf("expected ErrSessionNotFound, got %v", err)
@@ -256,7 +236,7 @@ func TestSessionsService_GetSession_PaginatesEvents(t *testing.T) {
 		})
 	}
 
-	svc := application.NewSessionsService(repo, events, testProcessID)
+	svc := application.NewSessionsService(repo, events)
 	res, err := svc.GetSession(context.Background(), driving.GetSessionInput{
 		SessionID:   "s1",
 		EventsLimit: 2,
@@ -272,26 +252,5 @@ func TestSessionsService_GetSession_PaginatesEvents(t *testing.T) {
 	}
 	if res.NextCursor.IngestSequence != 2 {
 		t.Errorf("expected NextCursor.IngestSequence=2, got %d", res.NextCursor.IngestSequence)
-	}
-	if res.NextCursor.ProcessInstanceID != testProcessID {
-		t.Errorf("expected NextCursor.ProcessInstanceID=%q, got %q", testProcessID, res.NextCursor.ProcessInstanceID)
-	}
-}
-
-func TestSessionsService_GetSession_CursorMismatch(t *testing.T) {
-	t.Parallel()
-	repo := newFakeSessionRepo()
-	repo.store["s1"] = domain.StreamSession{ID: "s1"}
-	svc := application.NewSessionsService(repo, &fakeEventRepo{}, testProcessID)
-
-	_, err := svc.GetSession(context.Background(), driving.GetSessionInput{
-		SessionID: "s1",
-		EventsAfter: &driving.SessionEventsCursor{
-			ProcessInstanceID: "stale",
-			IngestSequence:    1,
-		},
-	})
-	if !errors.Is(err, domain.ErrCursorInvalid) {
-		t.Errorf("expected ErrCursorInvalid, got %v", err)
 	}
 }

@@ -133,11 +133,11 @@ Ziel: Cursor-Format auf `cursor_version` umgestellt; Legacy-Verhalten entspricht
 
 DoD:
 
-- [ ] `apps/api/adapters/driving/http/cursor.go` ist auf `cursor_version` umgestellt; neue Cursor-Versionen bleiben nach API-Restart gültig oder liefern einen Fehlercode aus der Kompatibilitätsmatrix ohne `Retry-After`.
-- [ ] Legacy-`process_instance_id`-Cursor werden dauerhaft als `cursor_invalid_legacy` abgewiesen; „einmalig" gilt nur für das Client-Verhalten pro Cursor-Wert: nach Snapshot-Reload darf derselbe Legacy-Cursor nicht erneut gesendet werden.
-- [ ] Clients recovern dokumentiert durch Verwerfen des Cursors und erneuten Snapshot-Load (kein Retry-Loop, kein `Retry-After`).
-- [ ] Cursor-Tests decken alle Matrix-Fälle aus §2.1 ab: `accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed`, `cursor_expired`, restart-stabile Cursor-Fortsetzung.
-- [ ] Bestehende Test-Erwartungen auf den `0.3.x`-Sammel-Body sind auf die feiner aufgelösten Fehlerklassen umgestellt: `apps/api/adapters/driving/http/cursor_test.go` (Kommentar-Bezug auf `cursor_invalid` entfernen) und `apps/api/adapters/driving/http/sessions_handlers_test.go` (alle `body["error"] == "cursor_invalid"`-Stellen mit Reasons `storage_restart` / `malformed` migrieren). Reason-Wert `storage_restart` ist deprecated.
+- [x] `apps/api/adapters/driving/http/cursor.go` ist auf `cursor_version: 2` umgestellt (Pflicht-`v`-Feld, kein `pid` mehr); JSON-Decode mit `DisallowUnknownFields` lehnt Zusatzfelder als `cursor_invalid_malformed` ab; `Retry-After`-Header wird in keiner Fehlerklasse gesetzt (Commit folgt).
+- [x] Legacy-Detection: Cursor mit `pid`-Feld oder ohne `v`/`v:1` werden dauerhaft als `errCursorInvalidLegacy` abgewiesen — kein One-Shot-Grace-Pfad. `domain.ProcessInstanceID` und `domain.ErrCursorInvalid` sind aus dem Code entfernt; Application-Layer (SessionsService) trägt keine Prozess-ID mehr (Commit folgt).
+- [x] Recovery-Verhalten ist im Body-`reason`-Feld dokumentiert (`reload snapshot`); kein `Retry-After`. Vertrag steht in API-Kontrakt §10.3 (Commit folgt).
+- [x] Cursor-Tests decken alle Decode-Stufen: Round-Trip, Empty, Malformed (Base64-/JSON-/`v`-/Pflichtfelder/Extra-Felder), Legacy (PID, fehlendes `v`, `v:1`); Matrix-Klassen `accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed` sind abgedeckt. `cursor_expired` ist als Klasse spezifiziert; Code-Pfad existiert (`writeCursorError` mappt auf 410 Gone), aber bleibt in `0.4.0` ohne TTL nicht durch decode-Pfade triggerbar — Restart-stabile Cursor-Fortsetzung ist über die SQLite-Restart-Tests in §2.3 (`TestRestartCursorStability`) abgedeckt (Commit folgt).
+- [x] `cursor_test.go` und `sessions_handlers_test.go` sind auf die feiner aufgelösten Fehlerklassen umgestellt; alle `cursor_invalid`/`storage_restart`-Erwartungen entfernt (Commit folgt).
 
 ### 2.6 Doku und Persistenztest-Closeout
 

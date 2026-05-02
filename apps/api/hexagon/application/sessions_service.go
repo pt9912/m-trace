@@ -10,7 +10,6 @@ package application
 import (
 	"context"
 
-	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
@@ -29,36 +28,30 @@ const (
 
 // SessionsService bündelt die Read-Use-Cases für Stream-Sessions.
 type SessionsService struct {
-	sessions   driven.SessionRepository
-	events     driven.EventRepository
-	processID  domain.ProcessInstanceID
+	sessions driven.SessionRepository
+	events   driven.EventRepository
 }
 
-// NewSessionsService konstruiert den Service mit den Driven Ports und
-// der ProcessInstanceID, gegen die eingehende Cursor validiert werden.
+// NewSessionsService konstruiert den Service mit den Driven Ports.
+// Cursor-Versionierung und Legacy-Detection liegen ab 0.4.0 im
+// HTTP-Adapter (ADR-0004 §7); der Application-Layer arbeitet nur
+// noch mit durable Sortier-Werten.
 func NewSessionsService(
 	sessions driven.SessionRepository,
 	events driven.EventRepository,
-	processID domain.ProcessInstanceID,
 ) *SessionsService {
 	return &SessionsService{
-		sessions:  sessions,
-		events:    events,
-		processID: processID,
+		sessions: sessions,
+		events:   events,
 	}
 }
 
-// ListSessions liefert eine geblätterte Liste der Sessions. Mismatcht
-// der Cursor die aktuelle ProcessInstanceID, gibt die Methode
-// ErrCursorInvalid zurück (Storage-Restart-Pfad, plan-0.1.0.md §5.1).
+// ListSessions liefert eine geblätterte Liste der Sessions.
 func (s *SessionsService) ListSessions(ctx context.Context, in driving.ListSessionsInput) (driving.ListSessionsResult, error) {
 	limit := clampLimit(in.Limit, DefaultSessionListLimit, MaxSessionListLimit)
 
 	var after *driven.SessionCursorPosition
 	if in.After != nil {
-		if in.After.ProcessInstanceID != s.processID {
-			return driving.ListSessionsResult{}, domain.ErrCursorInvalid
-		}
 		after = &driven.SessionCursorPosition{
 			StartedAt: in.After.StartedAt,
 			SessionID: in.After.SessionID,
@@ -76,17 +69,15 @@ func (s *SessionsService) ListSessions(ctx context.Context, in driving.ListSessi
 	out := driving.ListSessionsResult{Sessions: page.Sessions}
 	if page.NextAfter != nil {
 		out.NextCursor = &driving.ListSessionsCursor{
-			ProcessInstanceID: s.processID,
-			StartedAt:         page.NextAfter.StartedAt,
-			SessionID:         page.NextAfter.SessionID,
+			StartedAt: page.NextAfter.StartedAt,
+			SessionID: page.NextAfter.SessionID,
 		}
 	}
 	return out, nil
 }
 
 // GetSession liefert Header + geblätterte Event-Liste einer Session.
-// ErrSessionNotFound wenn die ID unbekannt; ErrCursorInvalid wenn der
-// Event-Cursor von einer fremden ProcessInstanceID kommt.
+// ErrSessionNotFound wenn die ID unbekannt.
 func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionInput) (driving.GetSessionResult, error) {
 	session, err := s.sessions.Get(ctx, in.SessionID)
 	if err != nil {
@@ -97,9 +88,6 @@ func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionI
 
 	var after *driven.EventCursorPosition
 	if in.EventsAfter != nil {
-		if in.EventsAfter.ProcessInstanceID != s.processID {
-			return driving.GetSessionResult{}, domain.ErrCursorInvalid
-		}
 		after = &driven.EventCursorPosition{
 			ServerReceivedAt: in.EventsAfter.ServerReceivedAt,
 			SequenceNumber:   in.EventsAfter.SequenceNumber,
@@ -119,10 +107,9 @@ func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionI
 	out := driving.GetSessionResult{Session: session, Events: page.Events}
 	if page.NextAfter != nil {
 		out.NextCursor = &driving.SessionEventsCursor{
-			ProcessInstanceID: s.processID,
-			ServerReceivedAt:  page.NextAfter.ServerReceivedAt,
-			SequenceNumber:    page.NextAfter.SequenceNumber,
-			IngestSequence:    page.NextAfter.IngestSequence,
+			ServerReceivedAt: page.NextAfter.ServerReceivedAt,
+			SequenceNumber:   page.NextAfter.SequenceNumber,
+			IngestSequence:   page.NextAfter.IngestSequence,
 		}
 	}
 	return out, nil

@@ -77,7 +77,8 @@ func TestHTTP_StreamSessions_InvalidLimit(t *testing.T) {
 }
 
 // TestHTTP_StreamSessions_MalformedCursor verifiziert den 400-Pfad
-// bei syntaktisch defektem Cursor.
+// bei syntaktisch defektem Cursor — Wire-Format-Klasse aus
+// API-Kontrakt §10.3 / ADR-0004 §6.
 func TestHTTP_StreamSessions_MalformedCursor(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
@@ -85,25 +86,24 @@ func TestHTTP_StreamSessions_MalformedCursor(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
-	if body["error"] != "cursor_invalid" {
-		t.Errorf("error=%v want cursor_invalid", body["error"])
+	if body["error"] != "cursor_invalid_malformed" {
+		t.Errorf("error=%v want cursor_invalid_malformed", body["error"])
 	}
 }
 
-// TestHTTP_StreamSessions_StaleCursor verifiziert den
-// Storage-Restart-Pfad: ein Cursor mit fremder process_instance_id
-// gibt 400 cursor_invalid mit reason=storage_restart.
-func TestHTTP_StreamSessions_StaleCursor(t *testing.T) {
+// TestHTTP_StreamSessions_LegacyCursor verifiziert die dauerhafte
+// Reject-Klasse: ein 0.1.x/0.2.x/0.3.x-Cursor mit `pid`-Feld liefert
+// 400 cursor_invalid_legacy (ADR-0004 §6).
+func TestHTTP_StreamSessions_LegacyCursor(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	// Wohlgeformter Cursor — andere PID als der Test-Server.
-	staleCursor := encodeCursorForTest(t, `{"pid":"other-process","sa":"2026-04-28T12:00:00Z","sid":"s1"}`)
-	resp, body := getJSON(t, srv.URL, "/api/stream-sessions?cursor="+url.QueryEscape(staleCursor))
+	legacyCursor := encodeCursorForTest(t, `{"pid":"other-process","sa":"2026-04-28T12:00:00Z","sid":"s1"}`)
+	resp, body := getJSON(t, srv.URL, "/api/stream-sessions?cursor="+url.QueryEscape(legacyCursor))
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
-	if body["error"] != "cursor_invalid" || body["reason"] != "storage_restart" {
-		t.Errorf("body=%v want cursor_invalid/storage_restart", body)
+	if body["error"] != "cursor_invalid_legacy" {
+		t.Errorf("body=%v want cursor_invalid_legacy", body)
 	}
 }
 
@@ -170,7 +170,7 @@ func TestHTTP_StreamSessionsByID_InvalidEventsLimit(t *testing.T) {
 }
 
 // TestHTTP_StreamSessionsByID_MalformedCursor deckt den
-// cursor_invalid/malformed-Pfad für ein defektes events_cursor.
+// cursor_invalid_malformed-Pfad für ein defektes events_cursor.
 func TestHTTP_StreamSessionsByID_MalformedCursor(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
@@ -178,27 +178,26 @@ func TestHTTP_StreamSessionsByID_MalformedCursor(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
-	if body["error"] != "cursor_invalid" || body["reason"] != "malformed" {
-		t.Errorf("body=%v want cursor_invalid/malformed", body)
+	if body["error"] != "cursor_invalid_malformed" {
+		t.Errorf("body=%v want cursor_invalid_malformed", body)
 	}
 }
 
-// TestHTTP_StreamSessionsByID_StaleCursor verifiziert den
-// Storage-Restart-Pfad: ein wohlgeformter events_cursor mit fremder
-// process_instance_id liefert 400 cursor_invalid/storage_restart.
-func TestHTTP_StreamSessionsByID_StaleCursor(t *testing.T) {
+// TestHTTP_StreamSessionsByID_LegacyCursor verifiziert die dauerhafte
+// Legacy-Reject-Klasse für den Event-Cursor.
+func TestHTTP_StreamSessionsByID_LegacyCursor(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
 	if r := postEvents(t, srv, "demo-token", validBody); r.StatusCode != http.StatusAccepted {
 		t.Fatalf("post: %d", r.StatusCode)
 	}
-	stale := encodeCursorForTest(t, `{"pid":"other","rcv":"2026-04-28T12:00:00Z","ing":1}`)
-	resp, body := getJSON(t, srv.URL, "/api/stream-sessions/sess-1?events_cursor="+url.QueryEscape(stale))
+	legacy := encodeCursorForTest(t, `{"pid":"other","rcv":"2026-04-28T12:00:00Z","ing":1}`)
+	resp, body := getJSON(t, srv.URL, "/api/stream-sessions/sess-1?events_cursor="+url.QueryEscape(legacy))
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
-	if body["error"] != "cursor_invalid" || body["reason"] != "storage_restart" {
-		t.Errorf("body=%v want cursor_invalid/storage_restart", body)
+	if body["error"] != "cursor_invalid_legacy" {
+		t.Errorf("body=%v want cursor_invalid_legacy", body)
 	}
 }
 

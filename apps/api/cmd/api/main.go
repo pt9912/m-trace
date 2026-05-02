@@ -9,9 +9,7 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -123,12 +121,7 @@ func run(logger *slog.Logger) error {
 		resolver, limiter, repo, sessions, publisher, otelTelemetry, analyzer, sequencer, time.Now,
 	)
 
-	processID, err := newProcessInstanceID()
-	if err != nil {
-		return fmt.Errorf("process_instance_id generation: %w", err)
-	}
-	logger.Info("process instance allocated", "process_instance_id", string(processID))
-	sessionsService := application.NewSessionsService(sessions, repo, processID)
+	sessionsService := application.NewSessionsService(sessions, repo)
 	sessionsSweeper := application.NewSessionsSweeper(sessions, time.Now, logger)
 
 	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
@@ -208,17 +201,6 @@ func newAnalyzer(logger *slog.Logger) driven.StreamAnalyzer {
 	}
 	logger.Info("analyzer adapter: http", "base_url", baseURL)
 	return streamanalyzer.NewHTTPStreamAnalyzer(baseURL)
-}
-
-// newProcessInstanceID erzeugt eine 16-Byte-Zufalls-ID und gibt sie als
-// Hex-String zurück (32 Zeichen). Verwendet als domain.ProcessInstanceID
-// im Cursor-Vertrag aus plan-0.1.0.md §5.1.
-func newProcessInstanceID() (domain.ProcessInstanceID, error) {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", err
-	}
-	return domain.ProcessInstanceID(hex.EncodeToString(b[:])), nil
 }
 
 // persistenceBundle bündelt die drei Driven-Adapter, die der Use Case

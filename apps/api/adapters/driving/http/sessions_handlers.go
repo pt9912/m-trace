@@ -67,10 +67,7 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 
 	cursor, err := decodeListSessionsCursor(r.URL.Query().Get("cursor"))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error":  "cursor_invalid",
-			"reason": "malformed",
-		})
+		writeCursorError(w, err)
 		return
 	}
 
@@ -79,13 +76,6 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		After: cursor,
 	})
 	if err != nil {
-		if errors.Is(err, domain.ErrCursorInvalid) {
-			writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error":  "cursor_invalid",
-				"reason": "storage_restart",
-			})
-			return
-		}
 		h.Logger.Error("ListSessions failed", "error", err)
 		writeStatus(w, http.StatusInternalServerError)
 		return
@@ -159,10 +149,7 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 
 	cursor, err := decodeSessionEventsCursor(r.URL.Query().Get("events_cursor"))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error":  "cursor_invalid",
-			"reason": "malformed",
-		})
+		writeCursorError(w, err)
 		return
 	}
 
@@ -175,12 +162,6 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 		switch {
 		case errors.Is(err, domain.ErrSessionNotFound):
 			writeStatus(w, http.StatusNotFound)
-			return
-		case errors.Is(err, domain.ErrCursorInvalid):
-			writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error":  "cursor_invalid",
-				"reason": "storage_restart",
-			})
 			return
 		default:
 			h.Logger.Error("GetSession failed", "error", err)
@@ -305,4 +286,30 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// writeCursorError mappt die Cursor-Fehlerklassen aus cursor.go auf
+// HTTP-Status und Body gemäß API-Kontrakt §10.3 / ADR-0004 §6.
+// Unbekannte Errors fallen auf 500 zurück (sollte nicht erreichbar
+// sein, weil decode nur die drei Klassen liefert).
+func writeCursorError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, errCursorInvalidLegacy):
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error":  "cursor_invalid_legacy",
+			"reason": "process_instance_id-based cursor no longer supported; reload snapshot",
+		})
+	case errors.Is(err, errCursorInvalidMalformed):
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error":  "cursor_invalid_malformed",
+			"reason": "cursor token failed to decode or violates v:2 schema",
+		})
+	case errors.Is(err, errCursorExpired):
+		writeJSON(w, http.StatusGone, map[string]string{
+			"error":  "cursor_expired",
+			"reason": "cursor target no longer in storage; reload snapshot",
+		})
+	default:
+		writeStatus(w, http.StatusInternalServerError)
+	}
 }

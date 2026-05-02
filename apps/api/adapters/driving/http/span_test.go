@@ -124,7 +124,7 @@ func newTestServerWithTracerProvider(t *testing.T, tp *sdktrace.TracerProvider) 
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
 		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), time.Now,
 	)
-	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
+	sessionsService := application.NewSessionsService(sessionRepo, repo)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	tracer := tp.Tracer("test")
 	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), nil, tracer, logger)

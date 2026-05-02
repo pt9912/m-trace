@@ -7,6 +7,11 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
+// ListSessionsCursor und SessionEventsCursor enthalten **keine**
+// `ProcessInstanceID` mehr — Cursor-v2 (siehe ADR-0004 §5) trägt nur
+// noch durable Storage-Werte; Restart-Stabilität liegt jetzt am
+// `ingest_sequence`-Tie-Breaker statt an einer Prozess-ID.
+
 // SessionsInbound ist der Read-Pfad zu Stream-Sessions (plan-0.1.0.md
 // §5.1, Sub-Item 4): zwei Operationen für Liste und Detail. Der HTTP-
 // Adapter encoded und decoded den opaken Wire-Cursor; hier fließen
@@ -25,12 +30,10 @@ type ListSessionsInput struct {
 }
 
 // ListSessionsCursor kapselt die Sortier-Position der Sessions-Liste:
-// (started_at desc, session_id asc). ProcessInstanceID dient zur
-// Cursor-Invalidierung nach Storage-Restart.
+// (started_at desc, session_id asc).
 type ListSessionsCursor struct {
-	ProcessInstanceID domain.ProcessInstanceID
-	StartedAt         time.Time
-	SessionID         string
+	StartedAt time.Time
+	SessionID string
 }
 
 // ListSessionsResult bündelt die geblätterte Sessions-Page. NextCursor
@@ -51,12 +54,12 @@ type GetSessionInput struct {
 // SessionEventsCursor kapselt die Sortier-Position der Event-Liste
 // einer Session: (server_received_at asc, sequence_number asc,
 // ingest_sequence asc). ingest_sequence ist serverseitig gesetzt und
-// damit der finale Tie-Breaker (plan-0.1.0.md §5.1).
+// global eindeutig (ADR-0002 §8.1) — damit der finale, restart-stabile
+// Tie-Breaker.
 type SessionEventsCursor struct {
-	ProcessInstanceID domain.ProcessInstanceID
-	ServerReceivedAt  time.Time
-	SequenceNumber    *int64
-	IngestSequence    int64
+	ServerReceivedAt time.Time
+	SequenceNumber   *int64
+	IngestSequence   int64
 }
 
 // GetSessionResult bündelt Sessions-Header und die geblätterte

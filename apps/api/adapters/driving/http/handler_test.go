@@ -57,7 +57,7 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time) *httptest.Serv
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
 		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), clock,
 	)
-	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
+	sessionsService := application.NewSessionsService(sessionRepo, repo)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), nil, nil, logger)
 	srv := httptest.NewServer(router)
@@ -93,7 +93,7 @@ func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
 		resolver, unlimitedLimiter{}, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), time.Now,
 	)
-	sessionsService := application.NewSessionsService(sessionRepo, repo, "test-process")
+	sessionsService := application.NewSessionsService(sessionRepo, repo)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, publisher.Handler(), nil, nil, logger)
 	srv := httptest.NewServer(router)
