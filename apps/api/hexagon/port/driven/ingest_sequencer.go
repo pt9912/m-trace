@@ -1,14 +1,18 @@
 package driven
 
 // IngestSequencer liefert den serverseitigen ingest_sequence-Wert für
-// jedes vom Use Case akzeptierte Event. Die produktive Implementierung
-// (apps/api/adapters/driven/persistence/InMemoryIngestSequencer) zählt
-// einen atomaren int64 hoch — pro Prozess monoton, beginnend bei 1.
+// jedes vom Use Case akzeptierte Event. Werte sind monoton steigend
+// und global eindeutig (ADR-0002 §8.1).
 //
-// Eine SQLite-Migration (OE-3-Folge-ADR) wird die Sequence-Quelle in
-// die Datenbank verlagern; bis dahin ist Restart = Sequence-Reset, was
-// in Kombination mit der process_instance_id im Cursor (siehe
-// plan-0.1.0.md §5.1) zur Cursor-Invalidierung führt.
+// Implementierungen:
+//   - InMemory zählt einen atomaren int64 — Restart = Reset.
+//   - SQLite initialisiert den Counter aus
+//     `SELECT MAX(ingest_sequence) FROM playback_events` und setzt
+//     fortlaufend in derselben durable Sequenz auf.
+//
+// Cursor-v2 (ADR-0004 §5) trägt `ingest_sequence` als finalen
+// Tie-Breaker; eine Restart-stabile Pagination verlässt sich auf die
+// SQLite-Variante.
 //
 // Implementierungen müssen für nebenläufige Aufrufe sicher sein.
 type IngestSequencer interface {

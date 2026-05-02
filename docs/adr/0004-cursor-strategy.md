@@ -137,16 +137,6 @@ demselben Cursor ist nutzlos und gilt als Client-Fehler.
 
 ## 7. Konsequenzen
 
-> **Implementierungs-Status (Stand `0.3.x`)**: Der laufende
-> HTTP-Adapter liefert heute noch den Sammel-Body
-> `{"error":"cursor_invalid","reason":...}` (Reasons `storage_restart`
-> / `malformed`). Die in §6 spezifizierte Fehlerklassen-Matrix wird im
-> Code durch [`plan-0.4.0.md` §2.5](../planning/plan-0.4.0.md)
-> umgesetzt; bis dieser Tranche-Commit landet, ist die ADR/Spec-Aussage
-> Migrations-Ziel, nicht laufendes Verhalten. Clients (insbesondere
-> das Dashboard in `plan-0.4.0.md` §5) dürfen die neuen Fehlerklassen
-> erst nach §2.5-Closeout erwarten.
-
 - **Wire-Format**: Cursor-Tokens enthalten `cursor_version` als
   `v`-Feld; Cursor ohne `v` werden als Legacy behandelt.
 - **Server**: der HTTP-Adapter parst das `v`-Feld, validiert die

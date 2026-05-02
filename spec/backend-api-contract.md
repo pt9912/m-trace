@@ -412,14 +412,6 @@ Implementierung.
 
 ### 10.3 Pagination und Cursor
 
-> **Implementierungs-Status**: Der `cursor_version: 2`-Vertrag und die
-> unten dokumentierte Fehlerklassen-Matrix gelten **ab Abschluss von
-> `plan-0.4.0.md` §2.5**. Bis dahin liefert der laufende Code
-> (`0.3.x`-Stand) noch den Sammel-Body
-> `{"error":"cursor_invalid","reason":...}` mit den Reasons
-> `storage_restart` und `malformed`. Vertragstreue Clients dürfen die
-> neuen Klassen erst nach §2.5-Closeout erwarten.
-
 Cursor-basierte Pagination gilt für `GET /api/stream-sessions`
 (Query-Parameter `cursor`) und für die Event-Liste in
 `GET /api/stream-sessions/{id}` (Query-Parameter `events_cursor`).

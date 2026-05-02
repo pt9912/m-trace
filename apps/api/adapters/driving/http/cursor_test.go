@@ -58,6 +58,8 @@ func TestDecodeListSessionsCursor_Malformed(t *testing.T) {
 	cases := map[string]string{
 		"not-base64":            "not-base64!",
 		"valid-base64-not-json": encodeRaw("AA\xFF"),
+		"v=0":                   encodeRaw(`{"v":0,"sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
+		"v=-1":                  encodeRaw(`{"v":-1,"sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
 		"unknown v":             encodeRaw(`{"v":99,"sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
 		"missing sa":            encodeRaw(`{"v":2,"sid":"s1"}`),
 		"missing sid":           encodeRaw(`{"v":2,"sa":"2026-04-28T12:00:00Z"}`),
@@ -75,7 +77,8 @@ func TestDecodeListSessionsCursor_Malformed(t *testing.T) {
 // TestDecodeListSessionsCursor_Legacy verifiziert die dauerhafte
 // Reject-Klasse: Cursor mit `pid`-Feld oder ohne/`v:1` aus dem
 // `0.1.x`/`0.2.x`/`0.3.x`-Format → `errCursorInvalidLegacy`
-// (ADR-0004 §6).
+// (ADR-0004 §6). PID-Check hat Vorrang vor v-Wert: ein hybrider
+// `v:2`-Cursor mit zusätzlichem `pid` bleibt Legacy.
 func TestDecodeListSessionsCursor_Legacy(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
@@ -83,6 +86,7 @@ func TestDecodeListSessionsCursor_Legacy(t *testing.T) {
 		"v missing":     encodeRaw(`{"sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
 		"v=1 explicit":  encodeRaw(`{"v":1,"sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
 		"v=1 plus pid":  encodeRaw(`{"v":1,"pid":"x","sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
+		"v=2 plus pid":  encodeRaw(`{"v":2,"pid":"x","sa":"2026-04-28T12:00:00Z","sid":"s1"}`),
 		"pid only":      encodeRaw(`{"pid":"only"}`),
 	}
 	for name, raw := range cases {
@@ -126,6 +130,7 @@ func TestEncodeDecodeSessionEventsCursor_RoundTrip(t *testing.T) {
 func TestDecodeSessionEventsCursor_Malformed(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
+		"v=0":                 encodeRaw(`{"v":0,"rcv":"2026-04-28T12:00:00Z","ing":1}`),
 		"unknown v":           encodeRaw(`{"v":7,"rcv":"2026-04-28T12:00:00Z","ing":1}`),
 		"missing rcv":         encodeRaw(`{"v":2,"ing":1}`),
 		"missing ing":         encodeRaw(`{"v":2,"rcv":"2026-04-28T12:00:00Z"}`),
@@ -147,6 +152,7 @@ func TestDecodeSessionEventsCursor_Legacy(t *testing.T) {
 		"pid present":  encodeRaw(`{"pid":"abc","rcv":"2026-04-28T12:00:00Z","ing":1}`),
 		"v missing":    encodeRaw(`{"rcv":"2026-04-28T12:00:00Z","ing":1}`),
 		"v=1 explicit": encodeRaw(`{"v":1,"rcv":"2026-04-28T12:00:00Z","ing":1}`),
+		"v=2 plus pid": encodeRaw(`{"v":2,"pid":"x","rcv":"2026-04-28T12:00:00Z","ing":1}`),
 	}
 	for name, raw := range cases {
 		if _, err := decodeSessionEventsCursor(raw); !errors.Is(err, errCursorInvalidLegacy) {
