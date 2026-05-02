@@ -241,6 +241,14 @@ Bezug: §3.1–§3.3.
 
 Ziel: Trace-Konsistenz ist auf allen Ebenen abgesichert (mehrere Batches einer Session teilen `correlation_id`; ungültiger Trace-Kontext führt zu sauberem Fallback; Tempo-deaktivierter Pfad funktioniert ungestört). Doku spiegelt den ausgelieferten Stand. Sub-Tranchen-Ausgang: Roadmap §2 Schritt 29 ist auf ✅ aktualisierbar.
 
+§3.4 ist in drei Sub-Tranchen geschnitten: §3.4a sichert das Server-Verhalten aus §3.2 mit Backend-Tests ab (rein server-seitig, nutzt Use-Case + HTTP-Adapter + tracetest.SpanRecorder); §3.4b deckt zwei Cross-Cutting-Pfade zwischen SDK und Server ab, die §3.3-Review als Should-fix #1/#2 markiert hat (Cross-Version-Kompat, E2E-Garbage); §3.4c finalisiert die Spec-Texte und schließt Roadmap Schritt 29.
+
+#### 3.4a Backend-Tests Trace-Konsistenz
+
+Bezug: §3.2 (Server-Pfad mit Spans, `correlation_id`-Resolver, `parseTraceParent`, Time-Skew); ADR-0002 §8.1; Telemetry-Model §2.5.
+
+Ziel: Das in §3.2 ausgelieferte Server-Verhalten ist durch wiederholbare Backend-Tests gegen Use-Case + HTTP-Adapter abgesichert; jeder spezifizierte Pfad (Multi-Batch-Konsistenz, fehlender Kontext, ungültiger Kontext, Session-Ende, Time-Skew, Tempo-deaktiviert) hat einen eigenen Test mit klaren Assertions auf `trace_id`, `correlation_id` und Span-Attributen. Sub-Tranchen-Ausgang: Reviewer kann §3.2-Lieferung gegen §3.4a-Tests nachvollziehen, ohne externes Trace-Backend zu brauchen.
+
 DoD:
 
 - [ ] Backend-Test deckt Trace-Konsistenz über mehrere Batches einer Session: drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber **dieselbe** `correlation_id` an allen Events und der Session.
@@ -248,12 +256,31 @@ DoD:
 - [ ] Backend-Test deckt ungültigen Client-Kontext: Batch mit kaputtem `traceparent` → 202 Accepted, Span-Attribut `mtrace.trace.parse_error=true`, `trace_id` ist server-generiert.
 - [ ] Backend-Test deckt Session-Ende: `session_ended`-Event innerhalb eines Batches behält die `correlation_id` der Session bei und schließt den State; nachfolgende Events in derselben Session-ID erhalten dieselbe `correlation_id` (Reihenfolge ist Tranche-1-Verhalten).
 - [ ] Backend-Test verifiziert Time-Skew-Span-Attribut bei `|client_timestamp - server_received_at| > 60s`.
-- [ ] Backend-Test verifiziert Trace-Konsistenz **bei deaktiviertem Tempo-Profil**: identisches Verhalten ohne `OTEL_TRACES_EXPORTER` — `correlation_id` bleibt gesetzt, Dashboard-Timeline ist nutzbar. Test darf kein externes Trace-Backend voraussetzen.
+- [ ] Backend-Test verifiziert Trace-Konsistenz **bei deaktiviertem Tempo-Profil**: identisches Verhalten ohne `OTEL_TRACES_EXPORTER` — `correlation_id` bleibt gesetzt, Dashboard-Timeline ist nutzbar. Test darf kein externes Trace-Backend voraussetzen (Realisierung über `tracetest.SpanRecorder` oder NoOp-`TracerProvider`).
+
+#### 3.4b Cross-Cutting-Tests SDK ↔ Server
+
+Bezug: §3.3-Review (Should-fix #1/#2); §3.2; §3.3.
+
+Ziel: Zwei Pfade, die SDK und Server überspannen, sind explizit getestet — Vorwärtskompat zu Pre-§3.2-Backends und das Garbage-Traceparent-Ende-zu-Ende-Verhalten. Sub-Tranchen-Ausgang: das §3.3-Review hat keine Test-Lücken mehr offen.
+
+DoD:
+
 - [ ] Cross-Version-Vertragstest (aus §3.3-Review, Should-fix #1): SDK `0.4.0` mit konfiguriertem `traceparent`-Provider gegen einen Server-Handler auf `0.3.x`-Verhaltensstand (kein Header-Lesen, keine `correlation_id`-Persistenz) liefert weiterhin `202 Accepted`; der Header darf nicht zu Validierungs-/Parser-Fehlern führen. Realisierung als Adapter-Test mit minimal-konfiguriertem Handler oder Snapshot des Pre-§3.2-Verhaltens.
-- [ ] E2E-Test mit kaputtem `traceparent` (aus §3.3-Review, Should-fix #2): SDK-`HttpTransport` sendet einen Provider-gelieferten Garbage-String; Server akzeptiert den Batch (`202`) und setzt `mtrace.trace.parse_error=true`; SDK-Pfad bleibt unverändert (keine Drop-, Retry-, Console-Effekte).
+- [ ] E2E-Test mit kaputtem `traceparent` (aus §3.3-Review, Should-fix #2): SDK-`HttpTransport` sendet einen Provider-gelieferten Garbage-String; Server akzeptiert den Batch (`202`) und setzt `mtrace.trace.parse_error=true`; SDK-Pfad bleibt unverändert (keine Drop-, Retry-, `console.warn`-Effekte — Garbage-String ist `typeof === "string"` und triggert deshalb nicht den §3.3-Followup-Warn).
+
+#### 3.4c Doku-Closeout und Roadmap-Marker
+
+Bezug: §3.1–§3.3; §3.4a–§3.4b.
+
+Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 29 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten.
+
+DoD:
+
 - [ ] Header-Casing/Whitespace-Kommentar (aus §3.3-Review, Anmerkung #5): kurze Notiz in `spec/backend-api-contract.md` §1, dass der Server `traceparent` case-insensitiv liest (HTTP-Header-Standard) und führende/abschließende Whitespaces toleriert; SDK schreibt lowercased `traceparent`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code (Hybrid-Strategie, Span-Attribute, Time-Skew, Sampling); §3.1-Entscheidungen sind festgeschrieben.
 - [ ] `spec/backend-api-contract.md` §3 / §3.7 reflektiert das `traceparent`-Header-Verhalten und die neuen Read-Felder `trace_id`/`correlation_id`.
+- [ ] `docs/planning/roadmap.md` Schritt 29 ist auf ✅ gesetzt; Status-Header und Verweis auf den Tranche-2-Closeout-Stand sind aktualisiert.
 
 ---
 
