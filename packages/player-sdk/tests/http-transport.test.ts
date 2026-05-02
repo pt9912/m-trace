@@ -403,5 +403,65 @@ describe("HttpTransport", () => {
         }
       });
     });
+
+    describe("garbage traceparent string (plan-0.4.0 §3.4b #2 — SDK side)", () => {
+      // Vertrag: ein vom Provider gelieferter, formatungültiger
+      // Garbage-String ist `typeof === "string"`. Der HttpTransport
+      // sendet ihn 1:1 weiter (das SDK validiert das W3C-Format
+      // bewusst nicht — siehe spec/player-sdk.md "Trace-Korrelation").
+      // Der Server markiert ihn dann als parse_error
+      // (apps/api/adapters/driving/http/traceparent_span_test.go::
+      // TestHTTP_Span_TraceParent_InvalidSetsParseError deckt diese
+      // Server-Seite). Hier sichern wir die SDK-Seite ab: kein
+      // `console.warn`, keine Drop-/Retry-Schleife, genau ein Request.
+      const garbage = "this-is-not-a-w3c-traceparent";
+
+      it("forwards the garbage string verbatim and keeps the SDK path quiet", async () => {
+        const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 202 }));
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+          fetchFn,
+          traceparent: () => garbage
+        });
+
+        try {
+          await transport.send(batch);
+
+          expect(fetchFn).toHaveBeenCalledTimes(1);
+          const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+          expect(headers.traceparent).toBe(garbage);
+          // Kein f7dcdb9-Warn-Pfad: Garbage ist string, also weder
+          // Throw noch Non-String-Return.
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("does not retry the request when the server returns 202 with garbage traceparent", async () => {
+        const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 202 }));
+        const sleep = vi.fn(async () => undefined);
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+          fetchFn,
+          sleep,
+          maxAttempts: 3,
+          traceparent: () => garbage
+        });
+
+        try {
+          await transport.send(batch);
+          await transport.send(batch);
+
+          expect(fetchFn).toHaveBeenCalledTimes(2);
+          // Kein Retry-Backoff zwischen den Sends: 202 bleibt Erfolg,
+          // unabhängig vom Header-Inhalt.
+          expect(sleep).not.toHaveBeenCalled();
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+    });
   });
 });
