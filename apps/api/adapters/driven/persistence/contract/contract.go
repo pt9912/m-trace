@@ -47,6 +47,7 @@ func RunAll(t *testing.T, factory Factory) {
 		{"single sweep can transition active to ended", testSweepActiveDirectlyToEnded},
 		{"sequencer is monotone and starts at one", testSequencerMonotonic},
 		{"session list with cursor pagination", testSessionListPagination},
+		{"count sessions by state", testCountByState},
 		{"event meta round trips", testEventMetaRoundTrip},
 		{"session_ended as first event creates ended session", testSessionEndedAsFirstEvent},
 	}
@@ -435,6 +436,45 @@ func testSessionEndedAsFirstEvent(t *testing.T, factory Factory) {
 	}
 	if got.EventCount != 1 {
 		t.Errorf("event_count = %d, want 1", got.EventCount)
+	}
+}
+
+func testCountByState(t *testing.T, factory Factory) {
+	ctx := context.Background()
+	r := factory(t)
+	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
+
+	// Drei Sessions: zwei aktiv, eine ended (via Sweep). Erwartete
+	// Zählung: 2 active, 1 ended, 0 stalled.
+	for _, sid := range []string{"s-a", "s-b", "s-c"} {
+		e := mkEvent(r.Sequencer, "demo", sid, t0, seq(1))
+		if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+			t.Fatalf("upsert %s: %v", sid, err)
+		}
+	}
+	// s-c bekommt explizit ein session_ended-Event.
+	end := mkEvent(r.Sequencer, "demo", "s-c", t0.Add(time.Second), seq(2))
+	end.EventName = persistence.SessionEndedEventName
+	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{end}); err != nil {
+		t.Fatalf("upsert session_ended: %v", err)
+	}
+
+	cases := []struct {
+		state domain.SessionState
+		want  int64
+	}{
+		{domain.SessionStateActive, 2},
+		{domain.SessionStateEnded, 1},
+		{domain.SessionStateStalled, 0},
+	}
+	for _, c := range cases {
+		got, err := r.Sessions.CountByState(ctx, c.state)
+		if err != nil {
+			t.Fatalf("CountByState(%q): %v", c.state, err)
+		}
+		if got != c.want {
+			t.Errorf("CountByState(%q) = %d, want %d", c.state, got, c.want)
+		}
 	}
 }
 

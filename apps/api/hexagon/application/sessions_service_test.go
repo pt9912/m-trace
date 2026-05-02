@@ -112,6 +112,10 @@ func (r *fakeSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Durati
 	return nil
 }
 
+func (r *fakeSessionRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {
+	return 0, nil
+}
+
 // fakeEventRepo implementiert driven.EventRepository für Tests.
 type fakeEventRepo struct {
 	events []domain.PlaybackEvent

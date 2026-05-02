@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability stop wipe smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -15,6 +15,7 @@ help:
 		'  make dev                    Start the core Docker Compose lab' \
 		'  make dev-observability      Start the lab with the observability profile' \
 		'  make stop                   Stop all Compose services, including observability' \
+		'  make wipe                   Stop services AND delete the SQLite volume (destructive)' \
 		'  make smoke                  Run the local 0.1.1 smoke checks' \
 		'  make smoke-observability    Run the Prometheus/cardinality smoke checks' \
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
@@ -50,6 +51,15 @@ dev-observability:
 
 stop:
 	$(COMPOSE) --profile observability down
+
+# `make wipe` ist der einzige unterstützte Reset-Pfad für die SQLite-
+# Datei (ADR-0002 §8.4, API-Kontrakt §10.1). Stoppt zuerst alle
+# Services (sonst bleibt das Volume vom api-Container in Benutzung)
+# und entfernt anschließend das `mtrace-data`-Volume. Beim nächsten
+# `make dev` wird ein leeres Schema migriert. **Destruktiv** —
+# Sessions und Events sind anschließend weg.
+wipe:
+	$(COMPOSE) --profile observability down --volumes
 
 smoke:
 	bash scripts/smoke-0.1.1.sh

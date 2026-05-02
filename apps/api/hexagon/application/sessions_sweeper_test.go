@@ -35,6 +35,9 @@ func (r *recordingRepo) List(_ context.Context, _ driven.SessionListQuery) (driv
 func (r *recordingRepo) Get(_ context.Context, _ string) (domain.StreamSession, error) {
 	return domain.StreamSession{}, domain.ErrSessionNotFound
 }
+func (r *recordingRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {
+	return 0, nil
+}
 func (r *recordingRepo) Sweep(_ context.Context, now time.Time, stalled, ended time.Duration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

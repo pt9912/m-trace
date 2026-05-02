@@ -95,6 +95,10 @@ func (s *stubSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Durati
 	return nil
 }
 
+func (s *stubSessionRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {
+	return 0, nil
+}
+
 type spyMetrics struct {
 	accepted, invalid, rateLimited, dropped int
 	playbackErrors, rebufferEvents          int

@@ -197,6 +197,21 @@ func (r *SessionRepository) Get(ctx context.Context, id string) (domain.StreamSe
 	return scanSessionRow(row)
 }
 
+// CountByState zählt Sessions im gegebenen Lifecycle-State über einen
+// einfachen `SELECT COUNT(*)` mit Filter; das reicht für den
+// Prometheus-Active-Sessions-Gauge (Scrape-on-demand, keine
+// Hot-Path-Last) und vermeidet ein In-Memory-Snapshot über alle
+// Sessions wie im InMemory-Adapter.
+func (r *SessionRepository) CountByState(ctx context.Context, state domain.SessionState) (int64, error) {
+	var n int64
+	if err := r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM stream_sessions WHERE state = ?",
+		string(state)).Scan(&n); err != nil {
+		return 0, fmt.Errorf("sqlite: count sessions by state: %w", err)
+	}
+	return n, nil
+}
+
 // List gibt Sessions in stabiler Sortierung (started_at desc,
 // session_id asc) mit Cursor-Pagination zurück.
 func (r *SessionRepository) List(ctx context.Context, q driven.SessionListQuery) (driven.SessionPage, error) {

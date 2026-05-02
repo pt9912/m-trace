@@ -8,11 +8,21 @@ services:
       - analyzer-service
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
+      # Persistenz-Modus: SQLite per Default ab 0.4.0 (ADR-0002 §8.1).
+      # Override mit `MTRACE_PERSISTENCE=inmemory` für Sessions, die
+      # bewusst Restart-flüchtig sein sollen.
+      MTRACE_PERSISTENCE: "sqlite"
+      MTRACE_SQLITE_PATH: "/var/lib/mtrace/m-trace.db"
       OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
       OTEL_EXPORTER_OTLP_PROTOCOL: "${OTEL_EXPORTER_OTLP_PROTOCOL:-}"
       OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-}"
       OTEL_METRICS_EXPORTER: "${OTEL_METRICS_EXPORTER:-}"
       ANALYZER_BASE_URL: "http://analyzer-service:7000"
+    volumes:
+      # SQLite-Volume überlebt `make stop`/`docker compose down` ohne
+      # `--volumes`. Reset ausschließlich über `make wipe` (siehe
+      # ADR-0002 §8.4 und API-Kontrakt §10.1).
+      - mtrace-data:/var/lib/mtrace
     ports:
       - "8080:8080"
 
@@ -144,3 +154,9 @@ services:
       - "4317:4317"
       - "4318:4318"
       - "13133:13133"
+
+volumes:
+  # Benanntes Volume für die SQLite-Datei des api-Services (ADR-0002
+  # §8.1). Bleibt bei `make stop` und `docker compose down` (ohne
+  # `--volumes`) erhalten; nur `make wipe` löscht es.
+  mtrace-data: {}

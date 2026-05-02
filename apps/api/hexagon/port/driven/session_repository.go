@@ -34,6 +34,12 @@ type SessionRepository interface {
 	//   Stalled + (now - LastEventAt > endedAfter)   → Ended (EndedAt=now)
 	// Bereits beendete Sessions werden nicht erneut angefasst. Idempotent.
 	Sweep(ctx context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error
+	// CountByState liefert die Anzahl der Sessions im gegebenen
+	// Lifecycle-State. Wird vom Active-Sessions-Gauge in Prometheus
+	// (informational, kein Pflicht-Counter aus API-Kontrakt §7)
+	// adapter-agnostisch verwendet, sodass das Wiring zwischen In-Memory
+	// und SQLite ohne Anpassung wechselt.
+	CountByState(ctx context.Context, state domain.SessionState) (int64, error)
 }
 
 // SessionListQuery ist die Eingabe für SessionRepository.List.

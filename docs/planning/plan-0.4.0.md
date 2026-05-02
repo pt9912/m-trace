@@ -120,10 +120,10 @@ Ziel: API-Bootstrap wählt SQLite per Default im Compose-Lab; die Datei überleb
 
 DoD:
 
-- [ ] `apps/api/cmd/api/main.go` wählt den Persistenz-Adapter über Konfiguration (z. B. env var `MTRACE_PERSISTENCE` oder vergleichbar); In-Memory bleibt opt-in für Tests/Dev.
-- [ ] Konfiguration erlaubt einen expliziten SQLite-Pfad für lokale Entwicklung und CI (z. B. `MTRACE_SQLITE_PATH`).
-- [ ] SQLite-Datei liegt im Compose-Lab in einem benannten Volume des `api`-Service; `make stop` entfernt das Volume nicht; ein expliziter Reset-Pfad (z. B. `make wipe` o. Ä.) ist getrennt eingeführt.
-- [ ] Compose-Lab startet per Default mit SQLite-Adapter; In-Memory ist nicht mehr Compose-Default.
+- [x] `apps/api/cmd/api/main.go` wählt den Persistenz-Adapter über `MTRACE_PERSISTENCE` (Default `sqlite` ab `0.4.0`, `inmemory` opt-in für Tests/Dev). Wahl-Logik in `newPersistence()` (Commit folgt).
+- [x] `MTRACE_SQLITE_PATH` setzt den expliziten SQLite-Pfad für lokale Entwicklung und CI; Default `/var/lib/mtrace/m-trace.db` matcht den Compose-Volume-Mountpoint (Commit folgt).
+- [x] SQLite-Datei liegt im Compose-Lab im benannten Volume `mtrace-data` des `api`-Service (`/var/lib/mtrace/m-trace.db`); `make stop` (`docker compose down`) entfernt das Volume nicht. `make wipe` ist als getrennter, dokumentierter Reset-Pfad eingeführt (`docker compose down --volumes`) (Commit folgt).
+- [x] Compose-Lab startet per Default mit SQLite-Adapter (`MTRACE_PERSISTENCE: sqlite` im `api`-Service); In-Memory ist nicht mehr Compose-Default — nur über Override `MTRACE_PERSISTENCE=inmemory` aktivierbar (Commit folgt).
 
 ### 2.5 Cursor-Format im Code
 

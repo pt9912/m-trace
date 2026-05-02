@@ -103,6 +103,19 @@ func (r *SessionRepository) Snapshot() []domain.StreamSession {
 	return out
 }
 
+// CountByState zählt Sessions im gegebenen Lifecycle-State.
+func (r *SessionRepository) CountByState(_ context.Context, state domain.SessionState) (int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var n int64
+	for _, s := range r.sessions {
+		if s.State == state {
+			n++
+		}
+	}
+	return n, nil
+}
+
 // List gibt Sessions in stabiler Sortierung (started_at desc,
 // session_id asc) zurück. After=nil → erste Seite. Wenn nach dem
 // Limit weitere Sessions vorhanden sind, ist NextAfter gesetzt.

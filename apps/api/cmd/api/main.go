@@ -10,8 +10,10 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -23,6 +25,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
+	persistencesqlite "github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/sqlite"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
@@ -30,6 +33,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/internal/storage"
 )
 
 const (
@@ -40,6 +44,14 @@ const (
 	// Spike Spec §6.9: 100 events/sec/project.
 	rateLimitCapacity = 100
 	rateLimitRefill   = 100.0
+
+	// Persistenz-Konfiguration (ADR-0002 §8.1, plan-0.4.0 §2.4):
+	// Default ab 0.4.0 ist SQLite; In-Memory bleibt opt-in für Tests
+	// oder expliziten Dev-Fallback.
+	persistenceModeSQLite   = "sqlite"
+	persistenceModeInMemory = "inmemory"
+	defaultPersistenceMode  = persistenceModeSQLite
+	defaultSQLitePath       = "/var/lib/mtrace/m-trace.db"
 )
 
 func main() {
@@ -60,8 +72,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	repo := inmemory.NewEventRepository()
-	sessions := inmemory.NewSessionRepository()
+	persistCtx := context.Background()
+	persist, err := newPersistence(persistCtx, logger)
+	if err != nil {
+		logger.Error("persistence init failed", "error", err)
+		os.Exit(1)
+	}
+	defer persist.Close()
+	repo := persist.events
+	sessions := persist.sessions
+	sequencer := persist.sequencer
+
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo": {
 			Token: "demo-token",
@@ -74,16 +95,21 @@ func main() {
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(func() float64 {
-		var active float64
-		for _, session := range sessions.Snapshot() {
-			if session.State == domain.SessionStateActive {
-				active++
-			}
+		// Prometheus-Scrape-Pfad: on-demand-Lookup über das adapter-
+		// agnostische CountByState. SQLite-Adapter macht ein
+		// `SELECT COUNT(*) WHERE state='active'`; InMemory-Adapter
+		// loopt über die in-memory Map. Errors werden geloggt und
+		// auf 0 gemappt — der Gauge bleibt damit immer lesbar.
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		n, err := sessions.CountByState(ctx, domain.SessionStateActive)
+		if err != nil {
+			logger.Warn("active sessions count failed", "error", err)
+			return 0
 		}
-		return active
+		return float64(n)
 	}))
 	analyzer := newAnalyzer(logger)
-	sequencer := inmemory.NewIngestSequencer()
 
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
 		resolver, limiter, repo, sessions, publisher, otelTelemetry, analyzer, sequencer, time.Now,
@@ -178,4 +204,66 @@ func newProcessInstanceID() (domain.ProcessInstanceID, error) {
 		return "", err
 	}
 	return domain.ProcessInstanceID(hex.EncodeToString(b[:])), nil
+}
+
+// persistenceBundle bündelt die drei Driven-Adapter, die der Use Case
+// braucht, plus einen optionalen Close-Handle für das Backend (SQLite-
+// DB schließt im Shutdown-Pfad).
+type persistenceBundle struct {
+	events    driven.EventRepository
+	sessions  driven.SessionRepository
+	sequencer driven.IngestSequencer
+	db        *sql.DB // nil im InMemory-Modus
+}
+
+// Close schließt die zugrundeliegende DB, falls vorhanden. No-op für
+// InMemory.
+func (p *persistenceBundle) Close() {
+	if p.db != nil {
+		_ = p.db.Close()
+	}
+}
+
+// newPersistence wählt den Persistenz-Adapter über die env vars
+// `MTRACE_PERSISTENCE` (Default: `sqlite`) und `MTRACE_SQLITE_PATH`
+// (Default: `/var/lib/mtrace/m-trace.db`). Im SQLite-Modus öffnet die
+// Funktion die DB via internal/storage (führt Migrationen aus) und
+// initialisiert den Sequencer aus `MAX(ingest_sequence)`.
+func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundle, error) {
+	mode := strings.TrimSpace(strings.ToLower(os.Getenv("MTRACE_PERSISTENCE")))
+	if mode == "" {
+		mode = defaultPersistenceMode
+	}
+	switch mode {
+	case persistenceModeInMemory:
+		logger.Info("persistence: in-memory (data does not survive restart)")
+		return &persistenceBundle{
+			events:    inmemory.NewEventRepository(),
+			sessions:  inmemory.NewSessionRepository(),
+			sequencer: inmemory.NewIngestSequencer(),
+		}, nil
+	case persistenceModeSQLite:
+		path := strings.TrimSpace(os.Getenv("MTRACE_SQLITE_PATH"))
+		if path == "" {
+			path = defaultSQLitePath
+		}
+		logger.Info("persistence: sqlite", "path", path)
+		db, err := storage.Open(ctx, path)
+		if err != nil {
+			return nil, fmt.Errorf("storage.Open: %w", err)
+		}
+		seq, err := persistencesqlite.NewIngestSequencer(ctx, db)
+		if err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("ingest sequencer: %w", err)
+		}
+		return &persistenceBundle{
+			events:    persistencesqlite.NewEventRepository(db),
+			sessions:  persistencesqlite.NewSessionRepository(db),
+			sequencer: seq,
+			db:        db,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown MTRACE_PERSISTENCE=%q (expected 'sqlite' or 'inmemory')", mode)
+	}
 }
