@@ -2,8 +2,8 @@ package sqlite_test
 
 import (
 	"context"
-	"database/sql"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -109,6 +109,92 @@ func TestDedupClassification(t *testing.T) {
 	}
 }
 
+// TestDedupRaceUnderConcurrentWriters startet zwei Goroutinen, die
+// parallel je ein Event mit identischem Dedup-Tupel
+// `(project_id, session_id, sequence_number)` appenden. Mit dem
+// `BEGIN IMMEDIATE`-Race-Schutz aus ADR-0002 §8.3 muss genau eine
+// Zeile als `accepted` und eine als `duplicate_suspected` landen —
+// niemals zwei `accepted` und auch keinen Constraint-Konflikt
+// (es gibt keine UNIQUE-Constraint, der Schutz lebt allein in der
+// Tx-Serialisierung).
+func TestDedupRaceUnderConcurrentWriters(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace.db")
+	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
+
+	db, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	seq, err := sqlite.NewIngestSequencer(ctx, db)
+	if err != nil {
+		t.Fatalf("seq: %v", err)
+	}
+	sess := sqlite.NewSessionRepository(db)
+	evt := sqlite.NewEventRepository(db)
+
+	// Setup: Session existiert; konkurrente Writer appenden danach.
+	bootstrap := mkSeqEvent(seq, "demo", "s1", t0, 0)
+	bootstrap.SequenceNumber = nil
+	if err := sess.UpsertFromEvents(ctx, []domain.PlaybackEvent{bootstrap}); err != nil {
+		t.Fatalf("bootstrap upsert: %v", err)
+	}
+	if err := evt.Append(ctx, []domain.PlaybackEvent{bootstrap}); err != nil {
+		t.Fatalf("bootstrap append: %v", err)
+	}
+
+	// Beide Goroutinen versuchen, sequence_number=42 für s1 als
+	// neues Event einzuschreiben. BEGIN IMMEDIATE serialisiert die
+	// Writer; der zweite muss `duplicate_suspected` sehen.
+	var (
+		wg      sync.WaitGroup
+		barrier = make(chan struct{})
+		errs    = make(chan error, 2)
+	)
+	for i := 0; i < 2; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-barrier
+			e := mkSeqEvent(seq, "demo", "s1",
+				t0.Add(time.Duration(i+1)*time.Second), 42)
+			errs <- evt.Append(ctx, []domain.PlaybackEvent{e})
+		}()
+	}
+	close(barrier)
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Errorf("concurrent append: %v", err)
+		}
+	}
+
+	var accepted, duplicates int
+	if err := db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM playback_events "+
+			"WHERE project_id='demo' AND session_id='s1' AND sequence_number=42 "+
+			"AND delivery_status='accepted'").Scan(&accepted); err != nil {
+		t.Fatalf("count accepted: %v", err)
+	}
+	if err := db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM playback_events "+
+			"WHERE project_id='demo' AND session_id='s1' AND sequence_number=42 "+
+			"AND delivery_status='duplicate_suspected'").Scan(&duplicates); err != nil {
+		t.Fatalf("count duplicates: %v", err)
+	}
+	if accepted != 1 {
+		t.Errorf("accepted = %d, want exactly 1", accepted)
+	}
+	if duplicates != 1 {
+		t.Errorf("duplicate_suspected = %d, want exactly 1", duplicates)
+	}
+}
+
 // mkSeqEvent ist ein lokales mkEvent-Pendant für Tests in diesem
 // Paket. Setzt SequenceNumber explizit (0 → nil-Mapping über Caller).
 func mkSeqEvent(s interface{ Next() int64 }, project, session string, recv time.Time, seqNum int64) domain.PlaybackEvent {
@@ -128,7 +214,3 @@ func mkSeqEvent(s interface{ Next() int64 }, project, session string, recv time.
 	}
 }
 
-// _ = sql.NullInt64{} ist ein bewusst stiller Import — der Adapter
-// nutzt sql für seinen Test-Helper indirekt. Diese Zeile dient als
-// kompilier-zeitige Garantie, dass `database/sql` verfügbar bleibt.
-var _ = sql.ErrNoRows

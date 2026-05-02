@@ -86,7 +86,7 @@ ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
 COPY . .
 RUN mkdir -p /out && \
     COVERPKG=$(go list ./hexagon/... ./adapters/... | \
-        grep -vE 'persistence/sqlite$|persistence/contract$' | \
+        grep -vE 'persistence/(sqlite|postgres|mysql|contract)$' | \
         tr '\n' ',' | sed 's/,$//') && \
     CGO_ENABLED=0 go test \
         -coverpkg="$COVERPKG" \

@@ -55,10 +55,8 @@ func nullableTime(p *time.Time) any {
 }
 
 // encodeMeta serialisiert die Domain-Meta-Map als JSON-String. nil →
-// SQL-NULL, sonst kompaktes JSON. Validierung (json.Valid) als
-// Defense-in-Depth — das neutrale Schema deklariert `meta` als
-// JSON-typneutral; ADR-0002 §8.1 fordert App-Layer-Validierung statt
-// DB-CHECK für Postgres-Portabilität.
+// SQL-NULL, sonst kompaktes JSON. ADR-0002 §8.1 fordert App-Layer-
+// Validierung statt DB-CHECK für Postgres-Portabilität.
 func encodeMeta(m domain.EventMeta) (any, error) {
 	if m == nil {
 		return nil, nil
@@ -66,9 +64,6 @@ func encodeMeta(m domain.EventMeta) (any, error) {
 	raw, err := json.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite: encode meta: %w", err)
-	}
-	if !json.Valid(raw) {
-		return nil, fmt.Errorf("sqlite: meta produced invalid JSON")
 	}
 	return string(raw), nil
 }

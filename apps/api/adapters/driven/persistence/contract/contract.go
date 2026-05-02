@@ -44,6 +44,7 @@ func RunAll(t *testing.T, factory Factory) {
 		{"session tick increments event_count", testSessionTickIncrements},
 		{"session_ended is idempotent", testSessionEndedIdempotent},
 		{"sweep transitions lifecycle", testSweepTransitions},
+		{"single sweep can transition active to ended", testSweepActiveDirectlyToEnded},
 		{"sequencer is monotone and starts at one", testSequencerMonotonic},
 		{"session list with cursor pagination", testSessionListPagination},
 		{"event meta round trips", testEventMetaRoundTrip},
@@ -303,6 +304,41 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	}
 }
 
+// testSweepActiveDirectlyToEnded prüft, dass ein einziger Sweep mit
+// hinreichend großem `now` eine Active-Session in einem Lauf bis
+// Ended schalten kann (ohne dass der Operator dazwischen zwei Sweep-
+// Calls absetzen muss). Stellt Verhaltensgleichheit zwischen
+// In-Memory (zwei `if`-Blöcke im Loop) und SQLite (zwei UPDATEs in
+// einer Tx) sicher.
+func testSweepActiveDirectlyToEnded(t *testing.T, factory Factory) {
+	ctx := context.Background()
+	r := factory(t)
+	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
+
+	e := mkEvent(r.Sequencer, "demo", "s1", t0, seq(1))
+	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	// Sweep mit `now` weit jenseits beider Schwellen (idle 30 min,
+	// stalledAfter 60s, endedAfter 600s = 10 min).
+	if err := r.Sessions.Sweep(ctx, t0.Add(30*time.Minute),
+		60*time.Second, 600*time.Second); err != nil {
+		t.Fatalf("sweep: %v", err)
+	}
+	got, err := r.Sessions.Get(ctx, "s1")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if got.State != domain.SessionStateEnded {
+		t.Errorf("state = %q, want %q (active → stalled → ended in einem Sweep)",
+			got.State, domain.SessionStateEnded)
+	}
+	if got.EndedAt == nil || !got.EndedAt.Equal(t0.Add(30*time.Minute)) {
+		t.Errorf("ended_at = %v, want %v", got.EndedAt, t0.Add(30*time.Minute))
+	}
+}
+
 func testSequencerMonotonic(t *testing.T, factory Factory) {
 	r := factory(t)
 	got := []int64{r.Sequencer.Next(), r.Sequencer.Next(), r.Sequencer.Next()}
@@ -318,15 +354,30 @@ func testSessionListPagination(t *testing.T, factory Factory) {
 	r := factory(t)
 	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
 
-	// Drei Sessions mit aufsteigendem started_at, damit DESC-Sort
-	// definiert ist.
-	for i, sess := range []string{"s-a", "s-b", "s-c"} {
-		e := mkEvent(r.Sequencer, "demo", sess,
-			t0.Add(time.Duration(i)*time.Second), seq(1))
+	// Vier Sessions: s-a und s-b teilen identisches started_at —
+	// damit testet die Suite den Tie-Breaker (session_id ASC) und
+	// nicht nur den started_at-DESC-Pfad. s-c und s-d haben
+	// größere/spätere started_at, damit der DESC-Hauptsortierer
+	// klar greift.
+	cases := []struct {
+		id      string
+		started time.Time
+	}{
+		{"s-a", t0},
+		{"s-b", t0},
+		{"s-c", t0.Add(1 * time.Second)},
+		{"s-d", t0.Add(2 * time.Second)},
+	}
+	for _, c := range cases {
+		e := mkEvent(r.Sequencer, "demo", c.id, c.started, seq(1))
 		if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
-			t.Fatalf("upsert %s: %v", sess, err)
+			t.Fatalf("upsert %s: %v", c.id, err)
 		}
 	}
+
+	// Erwartete DESC-Reihenfolge: s-d, s-c, s-a, s-b. (s-a vor s-b
+	// im Bucket gleicher started_at, weil session_id ASC.)
+	want := []string{"s-d", "s-c", "s-a", "s-b"}
 
 	page1, err := r.Sessions.List(ctx, driven.SessionListQuery{Limit: 2})
 	if err != nil {
@@ -335,23 +386,27 @@ func testSessionListPagination(t *testing.T, factory Factory) {
 	if len(page1.Sessions) != 2 || page1.NextAfter == nil {
 		t.Fatalf("page1 = %+v, want len=2 + cursor", page1)
 	}
-	// DESC-Sort: zuerst kommt s-c (jüngste), dann s-b.
-	if page1.Sessions[0].ID != "s-c" || page1.Sessions[1].ID != "s-b" {
-		t.Errorf("page1 ids = [%q, %q], want [s-c, s-b]",
-			page1.Sessions[0].ID, page1.Sessions[1].ID)
+	if page1.Sessions[0].ID != want[0] || page1.Sessions[1].ID != want[1] {
+		t.Errorf("page1 ids = [%q, %q], want [%q, %q]",
+			page1.Sessions[0].ID, page1.Sessions[1].ID, want[0], want[1])
 	}
 
+	// page2 startet exakt am tie-breaker-Übergang: nach s-c (das
+	// letzte vor dem `t0`-Bucket) muss als Nächstes s-a kommen, nicht
+	// s-b — Cursor-Filter über (started_at, session_id) muss korrekt
+	// auf den Tie-Breaker fallen.
 	page2, err := r.Sessions.List(ctx, driven.SessionListQuery{
 		Limit: 10, After: page1.NextAfter,
 	})
 	if err != nil {
 		t.Fatalf("list page2: %v", err)
 	}
-	if len(page2.Sessions) != 1 || page2.NextAfter != nil {
-		t.Fatalf("page2 = %+v, want len=1 + no cursor", page2)
+	if len(page2.Sessions) != 2 || page2.NextAfter != nil {
+		t.Fatalf("page2 = %+v, want len=2 + no cursor", page2)
 	}
-	if page2.Sessions[0].ID != "s-a" {
-		t.Errorf("page2 id = %q, want s-a", page2.Sessions[0].ID)
+	if page2.Sessions[0].ID != want[2] || page2.Sessions[1].ID != want[3] {
+		t.Errorf("page2 ids = [%q, %q], want [%q, %q]",
+			page2.Sessions[0].ID, page2.Sessions[1].ID, want[2], want[3])
 	}
 }
 
@@ -393,6 +448,14 @@ func testEventMetaRoundTrip(t *testing.T, factory Factory) {
 		"buffer_ms":   float64(1234), // JSON unmarshal als float64
 		"is_live":     true,
 		"description": "rebuffer at 12s",
+		"levels": []any{
+			map[string]any{"id": float64(1), "bitrate": float64(2_000_000)},
+			map[string]any{"id": float64(2), "bitrate": float64(4_000_000)},
+		},
+		"player": map[string]any{
+			"name":    "hls.js",
+			"version": "1.5.0",
+		},
 	}
 	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
@@ -420,6 +483,23 @@ func testEventMetaRoundTrip(t *testing.T, factory Factory) {
 	}
 	if got["description"] != "rebuffer at 12s" {
 		t.Errorf("meta[description] = %v, want %q", got["description"], "rebuffer at 12s")
+	}
+	// Nested array of objects.
+	levels, ok := got["levels"].([]any)
+	if !ok {
+		t.Fatalf("meta[levels] type = %T, want []any", got["levels"])
+	}
+	if len(levels) != 2 {
+		t.Fatalf("len(levels) = %d, want 2", len(levels))
+	}
+	first, ok := levels[0].(map[string]any)
+	if !ok || first["bitrate"] != float64(2_000_000) {
+		t.Errorf("levels[0] = %v, want bitrate=2000000", levels[0])
+	}
+	// Nested map.
+	player, ok := got["player"].(map[string]any)
+	if !ok || player["name"] != "hls.js" || player["version"] != "1.5.0" {
+		t.Errorf("meta[player] = %v, want hls.js/1.5.0 round-trip", got["player"])
 	}
 }
 
