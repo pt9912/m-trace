@@ -12,14 +12,18 @@ export interface HttpTransportOptions {
   maxDelayMs?: number;
   timeoutMs?: number;
   /**
-   * Optionaler Provider für den W3C-`traceparent`-Header (siehe
-   * `PlayerSDKConfig.traceparent`). Wenn gesetzt und der Aufruf
-   * nicht-leer zurückgibt, sendet `send()` den Header zusätzlich
-   * zu `X-MTrace-Token`. Provider-Fehler (Throw) werden gefangen
-   * und still verworfen — Tracing darf den Event-Pfad nicht
-   * sabotieren.
+   * Optionaler Provider für den W3C-`traceparent`-Header.
+   * @see TraceParentProvider für Format, Synchronitäts- und
+   *      Fehlersemantik.
    */
   traceparent?: TraceParentProvider;
+  /**
+   * Unterdrückt die einmalige `console.warn`-Diagnose, wenn der
+   * Provider einen Non-String-Wert zurückgibt oder wirft. Default
+   * `false`. Vorgesehen für Tests, die das Schluck-Verhalten
+   * absichtlich auslösen, ohne die Test-Logs zu verschmutzen.
+   */
+  silent?: boolean;
 }
 
 export class HttpTransport implements Transport {
@@ -30,6 +34,8 @@ export class HttpTransport implements Transport {
   private readonly maxDelayMs: number;
   private readonly timeoutMs: number;
   private readonly traceparent?: TraceParentProvider;
+  private readonly silent: boolean;
+  private warnedTraceParentFailure = false;
 
   constructor(
     private readonly endpoint: string,
@@ -43,6 +49,7 @@ export class HttpTransport implements Transport {
     this.maxDelayMs = Math.max(this.baseDelayMs, Math.floor(options.maxDelayMs ?? 5000));
     this.timeoutMs = Math.max(0, Math.floor(options.timeoutMs ?? 10000));
     this.traceparent = options.traceparent;
+    this.silent = options.silent ?? false;
   }
 
   async send(batch: PlaybackEventBatch): Promise<void> {
@@ -91,8 +98,13 @@ export class HttpTransport implements Transport {
       "X-MTrace-Token": this.token
     };
     const tp = this.resolveTraceParent();
-    if (typeof tp === "string" && tp.length > 0) {
-      headers.traceparent = tp;
+    if (typeof tp === "string") {
+      if (tp.length > 0) {
+        headers.traceparent = tp;
+      }
+      // Empty string is a documented "no header" sentinel → no warn.
+    } else if (tp !== undefined) {
+      this.warnTraceParentOnce(`non-string return (${typeof tp})`);
     }
 
     try {
@@ -112,13 +124,15 @@ export class HttpTransport implements Transport {
 
   /**
    * resolveTraceParent ruft den optionalen Provider auf und fängt
-   * Provider-Throws still — Tracing darf den Event-Pfad nicht
-   * sabotieren. Throws sind sehr unwahrscheinlich, aber denkbar
-   * (z. B. wenn der Provider auf einen nicht-initialisierten Tracer
-   * zugreift und dabei stolpert). Der Header-Schreiber in
-   * `trySend()` prüft den Rückgabetyp defensiv (`typeof tp === "string"`),
-   * damit ein versehentlich Non-String-liefernder Provider nicht in
-   * den Header sickert.
+   * Provider-Throws — Tracing darf den Event-Pfad nicht sabotieren.
+   * Throws sind unwahrscheinlich, aber denkbar (z. B. wenn der
+   * Provider auf einen nicht-initialisierten Tracer zugreift). Der
+   * Header-Schreiber in `trySend()` prüft den Rückgabetyp defensiv
+   * (`typeof tp === "string"`), damit ein versehentlich Non-String-
+   * liefernder Provider nicht in den Header sickert. Beide Fehler-
+   * pfade lösen einmal pro Transport-Instanz `warnTraceParentOnce`
+   * aus (sofern `silent !== true`), damit Fehlkonfigurationen sicht-
+   * bar werden, ohne den Send-Pfad zu blockieren.
    */
   private resolveTraceParent(): string | undefined {
     if (this.traceparent === undefined) {
@@ -126,9 +140,18 @@ export class HttpTransport implements Transport {
     }
     try {
       return this.traceparent();
-    } catch {
+    } catch (error) {
+      this.warnTraceParentOnce(`provider threw: ${describeError(error)}`);
       return undefined;
     }
+  }
+
+  private warnTraceParentOnce(detail: string): void {
+    if (this.silent || this.warnedTraceParentFailure) {
+      return;
+    }
+    this.warnedTraceParentFailure = true;
+    console.warn(`[m-trace] traceparent provider failed (${detail}); header omitted. Further failures on this transport will not be logged.`);
   }
 
   private retryDelayMs(response: Response, attempt: number): number {
@@ -148,6 +171,13 @@ export class HttpTransport implements Transport {
 
 function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500;
+}
+
+function describeError(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`;
+  }
+  return typeof error === "string" ? error : typeof error;
 }
 
 function parseRetryAfterMs(value: string | null): number | undefined {

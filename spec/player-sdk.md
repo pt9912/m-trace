@@ -59,6 +59,7 @@ import {
 
 - `PlayerSDKConfig`
 - `Transport`
+- `TraceParentProvider`
 - `PlayerTracker`
 - `PlaybackEventBatch`
 - `PlaybackEvent`
@@ -157,8 +158,14 @@ landet beim Server, der ihn als Parse-Error markiert
 (`mtrace.trace.parse_error=true`) und zur eigenen Trace-ID zurückfällt.
 
 Der Provider muss **synchron** antworten — er wird im Hot Path direkt
-vor `fetch()` aufgerufen. Provider-Throws werden im SDK still gefangen —
-Tracing darf den Event-Pfad nicht sabotieren. Abwärtskompatibel mit
+vor `fetch()` aufgerufen. Provider-Throws und Non-String-Rückgaben
+werden im SDK gefangen, der Batch geht trotzdem raus — Tracing darf den
+Event-Pfad nicht sabotieren. Der Default-`HttpTransport` loggt den
+Fehlfall **einmal pro Instanz** via `console.warn`, damit
+Fehlkonfigurationen (etwa ein versehentlich `Promise<string>`
+liefernder Provider) sichtbar werden; weitere Fehler derselben Instanz
+bleiben still. Tests können die Warnung über
+`HttpTransportOptions.silent` unterdrücken. Abwärtskompatibel mit
 Backends < `0.4.0`: ältere Server ignorieren unbekannte Header
 (HTTP-Standard).
 

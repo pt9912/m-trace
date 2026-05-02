@@ -233,6 +233,8 @@ DoD:
 - [x] Schema-Version bleibt `1.0`; SDK↔Backend-Kompatibilitätscheck (CI `make gates`) bleibt grün — `EVENT_SCHEMA_VERSION` und `PLAYER_SDK_VERSION` sind unverändert (`8f3011c`).
 - [x] `spec/player-sdk.md` neue Sektion „Trace-Korrelation (optional, ab `0.4.0`)" zeigt das Provider-Pattern (Beispielcode mit OpenTelemetry-Bridge), nennt die Backwards-Compat-Garantie und verweist auf den Vertrag in `spec/telemetry-model.md` §2.5 (`8f3011c`).
 
+Closeout-Notiz: Der §3.3-Code-Commit `8f3011c` hat eine zweite Lint-Regression hinterlassen (`packages/player-sdk/scripts/public-api.snapshot.txt` enthielt `TraceParentProvider` nicht, obwohl `src/index.ts` ihn exportiert). Das §3.3-Review hat den Snapshot-Drift nicht gefangen; `make workspace-lint` wäre auf `8f3011c` rot gewesen. Geheilt im Followup-Commit `7bbea4d` (siehe §3.3-Review-Followups, Drive-by-Fix). Lehre für Tranche 8 / Folge-Reviews: Reviewer muss `make workspace-lint` und nicht nur `make workspace-test` laufen lassen; Snapshot-Drift ist nicht durch `tsc --noEmit` abgedeckt.
+
 ### 3.4 Tests und Doku-Closeout
 
 Bezug: §3.1–§3.3.

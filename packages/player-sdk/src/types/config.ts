@@ -15,8 +15,11 @@ export interface Transport {
  * wird nicht awaited und landet als ungültiger Header beim Server.
  *
  * **Geworfene Fehler werden geschluckt**: Provider-Throws fängt das
- * SDK still und sendet den Batch ohne Header weiter — Tracing darf
- * den Event-Pfad nicht sabotieren.
+ * SDK und sendet den Batch ohne Header weiter — Tracing darf den
+ * Event-Pfad nicht sabotieren. Der Default-`HttpTransport` loggt den
+ * Fehlfall einmal pro Instanz via `console.warn` (Non-String-Return
+ * oder Throw), damit Fehlkonfigurationen sichtbar werden; Tests
+ * können das über `HttpTransportOptions.silent` unterdrücken.
  *
  * Der SDK-HTTP-Transport sendet den Header nur, wenn die Funktion
  * einen nicht-leeren String zurückgibt — `undefined` oder `""`

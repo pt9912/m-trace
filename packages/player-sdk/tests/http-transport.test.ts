@@ -260,6 +260,7 @@ describe("HttpTransport", () => {
       const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
       const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
         fetchFn,
+        silent: true,
         traceparent: () => {
           throw new Error("tracer not initialised");
         }
@@ -306,6 +307,7 @@ describe("HttpTransport", () => {
       const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
       const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
         fetchFn,
+        silent: true,
         traceparent: (() => 42 as unknown) as () => string | undefined
       });
 
@@ -313,6 +315,93 @@ describe("HttpTransport", () => {
 
       const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
       expect(headers.traceparent).toBeUndefined();
+    });
+
+    describe("warn-once observability", () => {
+      it("warns once on a thrown provider and stays silent on subsequent throws", async () => {
+        const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+          fetchFn,
+          traceparent: () => {
+            throw new Error("tracer not initialised");
+          }
+        });
+
+        try {
+          await transport.send(batch);
+          await transport.send(batch);
+          await transport.send(batch);
+
+          expect(warn).toHaveBeenCalledTimes(1);
+          expect(warn.mock.calls[0]?.[0]).toMatch(/\[m-trace\] traceparent provider failed \(provider threw: Error: tracer not initialised\)/);
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("warns once on a non-string return and stays silent on subsequent calls", async () => {
+        const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+          fetchFn,
+          traceparent: (() => 42 as unknown) as () => string | undefined
+        });
+
+        try {
+          await transport.send(batch);
+          await transport.send(batch);
+
+          expect(warn).toHaveBeenCalledTimes(1);
+          expect(warn.mock.calls[0]?.[0]).toMatch(/non-string return \(number\)/);
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("does not warn on documented no-header sentinels (undefined, empty string)", async () => {
+        const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transports = [
+          new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+            fetchFn,
+            traceparent: () => undefined
+          }),
+          new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+            fetchFn,
+            traceparent: () => ""
+          })
+        ];
+
+        try {
+          for (const t of transports) {
+            await t.send(batch);
+          }
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("respects silent: true to suppress the warning entirely", async () => {
+        const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+          fetchFn,
+          silent: true,
+          traceparent: () => {
+            throw new Error("any");
+          }
+        });
+
+        try {
+          await transport.send(batch);
+          await transport.send(batch);
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
     });
   });
 });
