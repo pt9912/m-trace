@@ -118,10 +118,18 @@ RUN CGO_ENABLED=0 go build \
     -o /out/api \
     ./cmd/api
 
+# Leeres Stage-Verzeichnis für `/var/lib/mtrace` mit dem nonroot-User
+# vorbereiten. Beim ersten Container-Start initialisiert Docker das
+# benannte Volume mit den Permissions des Image-Mountpoints — sonst
+# legt Docker das Volume als root:root an, und der nonroot-API-Prozess
+# kann die SQLite-Datei nicht erzeugen.
+RUN mkdir -p /staging/var/lib/mtrace
+
 # ---- runtime ---------------------------------------------------------------
 FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 
 COPY --from=build /out/api /usr/local/bin/api
+COPY --from=build --chown=65532:65532 /staging/var/lib/mtrace /var/lib/mtrace
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/api"]

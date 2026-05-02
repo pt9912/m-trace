@@ -152,6 +152,7 @@ DoD:
 - [ ] `docs/user/local-development.md` beschreibt SQLite-Pfad, Volume-Reset/Wipe-Anleitung, Retention-Defaults und Recovery-Verhalten bei Cursor-Fehlern.
 - [ ] Persistenztest-Suite deckt zusammenführend ab: Neustart-Simulation, Migration (Frischstart, Re-Run, Fehler), Cursor-Stabilität (alle Matrix-Fälle), Session-Ende-Idempotenz, Event-Ordering inkl. Tie-Breaker, Retention.
 - [ ] Coverage-Strategie für SQL-Pakete ist entschieden: aktuell außerhalb des 90 %-Gates sind `apps/api/internal/storage/`, `apps/api/adapters/driven/persistence/sqlite/` und `apps/api/adapters/driven/persistence/contract/` (defensive SQL-/FS-Error-Pfade ohne Mocks nicht erreichbar, siehe `apps/api/Dockerfile` Coverage-Stage); §2.6 entscheidet, ob ein dediziertes Storage-Coverage-Setup mit niedrigerer Threshold lohnt oder Status quo bleibt.
+- [ ] Multi-Tenant-Sichtbarkeit für `mtrace_active_sessions` ist entschieden: aktueller Gauge zählt projekt-übergreifend (`SELECT COUNT(*) FROM stream_sessions WHERE state = ?`); ein Per-Project-Label würde Cardinality erhöhen und braucht Allowlist-Schutz (siehe API-Kontrakt §7). Folge-Tranche entscheidet, ob Per-Project-Aufschlüsselung lohnt oder der Gauge global bleibt.
 - [ ] Roadmap §2 Schritt 28 ist auf ✅ aktualisiert, sobald §2.1–§2.6 alle `[x]` sind.
 
 ---

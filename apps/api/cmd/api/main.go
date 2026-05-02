@@ -60,23 +60,31 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
+	if err := run(logger); err != nil {
+		logger.Error("api shutdown with error", "error", err)
+		os.Exit(1)
+	}
+}
+
+// run hält die gesamte Bootstrap- und Shutdown-Logik zusammen, damit
+// `defer`-Cleanups (insbesondere SQLite-DB-Close) auch im Fehler-Pfad
+// garantiert ausgeführt werden — ein direktes `os.Exit` aus dem Body
+// würde sie überspringen.
+func run(logger *slog.Logger) error {
 	otelProviders, err := telemetry.Setup(context.Background(), serviceName, serviceVersion)
 	if err != nil {
-		logger.Error("otel setup failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("otel setup: %w", err)
 	}
 
 	otelTelemetry, err := telemetry.NewOTelTelemetry(otelProviders.Meter.Meter(telemetry.MeterName))
 	if err != nil {
-		logger.Error("otel telemetry adapter init failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("otel telemetry adapter init: %w", err)
 	}
 
 	persistCtx := context.Background()
 	persist, err := newPersistence(persistCtx, logger)
 	if err != nil {
-		logger.Error("persistence init failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("persistence init: %w", err)
 	}
 	defer persist.Close()
 	repo := persist.events
@@ -117,8 +125,7 @@ func main() {
 
 	processID, err := newProcessInstanceID()
 	if err != nil {
-		logger.Error("process_instance_id generation failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("process_instance_id generation: %w", err)
 	}
 	logger.Info("process instance allocated", "process_instance_id", string(processID))
 	sessionsService := application.NewSessionsService(sessions, repo, processID)
@@ -145,6 +152,7 @@ func main() {
 
 	go sessionsSweeper.Run(ctx)
 
+	listenErr := make(chan error, 1)
 	go func() {
 		logger.Info("server starting",
 			"addr", srv.Addr,
@@ -152,25 +160,32 @@ func main() {
 			"version", serviceVersion,
 		)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("server failed", "error", err)
-			os.Exit(1)
+			listenErr <- err
+			return
 		}
+		listenErr <- nil
 	}()
 
-	<-ctx.Done()
-	logger.Info("shutdown signal received")
+	select {
+	case <-ctx.Done():
+		logger.Info("shutdown signal received")
+	case err := <-listenErr:
+		if err != nil {
+			return fmt.Errorf("server: %w", err)
+		}
+	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("graceful shutdown failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("graceful shutdown: %w", err)
 	}
 	if err := otelProviders.Shutdown(shutdownCtx); err != nil {
 		logger.Error("otel shutdown failed", "error", err)
 	}
 	logger.Info("server stopped")
+	return nil
 }
 
 func listenAddr() string {

@@ -54,6 +54,13 @@ tables:
       - name: idx_stream_sessions_project_started
         columns: [project_id, started_at, session_id]
         type: btree
+      # Sweep (`UPDATE … WHERE state = 'active'`) und der active-
+      # sessions-Gauge (`SELECT COUNT(*) WHERE state = ?`) scant sonst
+      # die ganze Tabelle; dieser Index hält beide Pfade konstant in
+      # der Größenordnung des Result-Sets.
+      - name: idx_stream_sessions_state
+        columns: [state]
+        type: btree
     constraints:
       - name: chk_stream_sessions_state
         type: check

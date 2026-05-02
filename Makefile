@@ -55,11 +55,18 @@ stop:
 # `make wipe` ist der einzige unterstützte Reset-Pfad für die SQLite-
 # Datei (ADR-0002 §8.4, API-Kontrakt §10.1). Stoppt zuerst alle
 # Services (sonst bleibt das Volume vom api-Container in Benutzung)
-# und entfernt anschließend das `mtrace-data`-Volume. Beim nächsten
-# `make dev` wird ein leeres Schema migriert. **Destruktiv** —
-# Sessions und Events sind anschließend weg.
+# und entfernt anschließend gezielt das `mtrace-data`-Volume.
+#
+# Gezieltes Targeting (statt `down --volumes`), damit später
+# hinzukommende benannte Volumes (z. B. `m-trace_postgres-data`)
+# nicht versehentlich mitgewipt werden.
+WIPE_VOLUME ?= $(shell basename $(CURDIR))_mtrace-data
 wipe:
-	$(COMPOSE) --profile observability down --volumes
+	@echo "[wipe] destructive: removing volume $(WIPE_VOLUME)"
+	@echo "[wipe] sessions and events will be lost"
+	$(COMPOSE) --profile observability down
+	docker volume rm "$(WIPE_VOLUME)" 2>/dev/null || \
+		echo "[wipe] volume $(WIPE_VOLUME) not present (already wiped or never started)"
 
 smoke:
 	bash scripts/smoke-0.1.1.sh

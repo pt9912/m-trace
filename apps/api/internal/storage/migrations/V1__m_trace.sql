@@ -44,3 +44,5 @@ CREATE INDEX "idx_playback_events_session_canonical" ON "playback_events" ("proj
 CREATE INDEX "idx_playback_events_dedup" ON "playback_events" ("project_id", "session_id", "sequence_number");
 
 CREATE INDEX "idx_stream_sessions_project_started" ON "stream_sessions" ("project_id", "started_at", "session_id");
+
+CREATE INDEX "idx_stream_sessions_state" ON "stream_sessions" ("state");
