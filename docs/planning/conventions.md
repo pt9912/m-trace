@@ -44,10 +44,13 @@ erforderlich (Testify/Ginkgo/Gomega bleiben bewusst außen vor).
 
 ## 3. Linting
 
-`golangci-lint` mit Default-Lintern als Soll-Gate:
+`golangci-lint` mit Default-Lintern plus SOLID-nahem Zusatzprofil als
+Soll-Gate:
 
 - `govet`, `errcheck`, `staticcheck`, `unused`, `ineffassign`.
-- Custom-Regeln und Suppressions sind ausgeschlossen.
+- SOLID-nahe Zusatz-Linter gemäß `spec/lastenheft.md` §10.1 und
+  `docs/user/quality.md` §1.1.
+- Suppressions sind ausgeschlossen.
 - `make lint` ruft `docker build --target lint` auf (siehe
   `docs/user/quality.md` §1).
 

@@ -25,7 +25,8 @@ cd apps/api
 docker build --target lint -t m-trace-api-spike:lint .
 ```
 
-Die Stage führt `golangci-lint run ./...` mit Default-Lintern aus:
+Die Stage führt `golangci-lint run ./...` mit Default-Lintern und dem
+im Lastenheft definierten SOLID-nahen Zusatzprofil aus:
 
 | Linter        | Zweck                                            |
 | ------------- | ------------------------------------------------ |
@@ -35,15 +36,50 @@ Die Stage führt `golangci-lint run ./...` mit Default-Lintern aus:
 | `unused`      | toter Code                                       |
 | `ineffassign` | unwirksame Zuweisungen                           |
 
-Custom-Regeln, Suppressions und Toolchain-Ausbau sind im Spike-Scope
-ausgeschlossen — Default-Profil pur (Plan §14.9). Verstöße brechen
-den Build.
+Suppressions bleiben ausgeschlossen. Toolchain-Ausbau ist nur für das
+SOLID-nahe Zusatzprofil aus `spec/lastenheft.md` §10.1 vorgesehen.
+Verstöße brechen den Build.
 
 Make-Target (Soll, Plan §14.9):
 
 ```bash
 make lint    # = docker build --target lint
 ```
+
+### 1.1 SOLID-nahe Linter
+
+Die folgenden `golangci-lint`-Linter sind keine offizielle
+SOLID-Kategorie. Sie sind die verbindliche Projektauswahl für
+SOLID-nahe Designsignale: geringe Komplexität und kleine
+Verantwortlichkeiten (SRP), schlanke Interfaces (ISP), stabile
+Import-/Modulgrenzen (DIP) oder reduzierte globale Kopplung.
+
+| Linter | Kurzbeschreibung | Teil von SOLID |
+|---|---|---|
+| `containedctx` | `context.Context` nicht in Structs speichern | Y |
+| `contextcheck` | Context korrekt weiterreichen | Y |
+| `cyclop` | Zyklomatische Komplexität | Y |
+| `depguard` | Import-Regeln/Layer-Grenzen | Y |
+| `dupl` | Code-Duplikate | Y |
+| `fatcontext` | Context in Loops/Closures | Y |
+| `forbidigo` | Verbotene Identifier/APIs | Y |
+| `funlen` | Zu lange Funktionen | Y |
+| `gochecknoglobals` | Keine globalen Variablen | Y |
+| `gochecknoinits` | Keine `init()`-Funktionen | Y |
+| `gocognit` | Kognitive Komplexität | Y |
+| `gocyclo` | Zyklomatische Komplexität | Y |
+| `gomodguard` | Modul-Allow-/Blocklist | Y |
+| `iface` | Interface-Pollution vermeiden | Y |
+| `inamedparam` | Interface-Parameter benennen | Y |
+| `interfacebloat` | Zu große Interfaces | Y |
+| `ireturn` | Interfaces annehmen, konkrete Typen zurückgeben | Y |
+| `maintidx` | Maintainability Index | Y |
+| `nestif` | Tiefe `if`-Verschachtelung | Y |
+| `noctx` | HTTP-Aufrufe ohne Context | Y |
+| `reassign` | Package-Variablen nicht neu zuweisen | Y |
+| `revive` | Konfigurierbarer Stil-/Design-Linter | Y |
+| `testpackage` | Externe `_test`-Packages | Y |
+| `unparam` | Ungenutzte Parameter | Y |
 
 ---
 

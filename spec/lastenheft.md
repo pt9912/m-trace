@@ -1340,7 +1340,7 @@ Backend-Technologie: **Go**, entschieden in `docs/adr/0001-backend-stack.md`.
 | Tracing | `go.opentelemetry.io/otel` |
 | Logging | `log/slog`, JSON-Formatter |
 | Build/Runtime | Distroless-static (`gcr.io/distroless/static-debian12:nonroot`) |
-| Linting | `golangci-lint` mit Default-Lintern (`govet`, `errcheck`, `staticcheck`, `unused`, `ineffassign`) |
+| Linting | `golangci-lint` mit Default-Lintern (`govet`, `errcheck`, `staticcheck`, `unused`, `ineffassign`) plus SOLID-nahem Zusatzprofil |
 | Tests | `testing` + `httptest`, keine externen Frameworks |
 | Workflow | Docker-only (`docker build --target {test,lint,build,runtime}`); lokales Go optional |
 | Modulpfad | `github.com/pt9912/m-trace/apps/api` |
@@ -1353,6 +1353,39 @@ Mindestanforderungen an die Implementierung:
 - OpenTelemetry-kompatibles Eventmodell
 - klare Trennung von Domain, Application und Adapters (Hexagon-Layout `hexagon/{domain,application,port/{driving,driven}}`, `adapters/{driving,driven}/...`)
 - Containerisierung per Docker
+
+Das SOLID-nahe Zusatzprofil ist keine offizielle `golangci-lint`-
+Kategorie, sondern die verbindliche Projektauswahl für Designsignale:
+geringe Komplexität und kleine Verantwortlichkeiten (SRP), schlanke
+Interfaces (ISP), stabile Import-/Modulgrenzen (DIP) und reduzierte
+globale Kopplung. Es umfasst:
+
+| Linter | Pflicht |
+|---|---|
+| `containedctx` | Ja |
+| `contextcheck` | Ja |
+| `cyclop` | Ja |
+| `depguard` | Ja |
+| `dupl` | Ja |
+| `fatcontext` | Ja |
+| `forbidigo` | Ja |
+| `funlen` | Ja |
+| `gochecknoglobals` | Ja |
+| `gochecknoinits` | Ja |
+| `gocognit` | Ja |
+| `gocyclo` | Ja |
+| `gomodguard` | Ja |
+| `iface` | Ja |
+| `inamedparam` | Ja |
+| `interfacebloat` | Ja |
+| `ireturn` | Ja |
+| `maintidx` | Ja |
+| `nestif` | Ja |
+| `noctx` | Ja |
+| `reassign` | Ja |
+| `revive` | Ja |
+| `testpackage` | Ja |
+| `unparam` | Ja |
 
 Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe `docs/planning/roadmap.md` §4 Folge-ADR).
 
