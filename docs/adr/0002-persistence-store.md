@@ -150,7 +150,7 @@ Notwendige reduziert:
 | `schema_migrations` | `version`, `applied_at`, `dirty` | PK `version`. Vom Apply-Runner verwaltet, nicht aus der Schema-YAML generiert. |
 | `projects` | `project_id` | PK `project_id`. Minimal in `0.4.0`; weitere Project-Konfigurationsfelder bleiben Use-Case-Service-intern. |
 | `stream_sessions` | `session_id`, `project_id`, `started_at`, `last_seen_at`, `ended_at`, `state`, `correlation_id` | PK `session_id`. Index für Session-Listing nach kanonischer Sortierung (`started_at desc, session_id asc`), gefiltert nach `project_id`. `correlation_id` ist nullable und wird in Tranche 2 (`plan-0.4.0.md` §3) befüllt, sobald die Trace-/Korrelations-Strategie steht. |
-| `playback_events` | `ingest_sequence`, `project_id`, `session_id`, `event_name`, `client_timestamp`, `server_received_at`, `sequence_number`, `sdk_name`, `sdk_version`, `schema_version`, `meta`, `delivery_status`, `trace_id`, `span_id`, `correlation_id` | PK `ingest_sequence` als `INTEGER PRIMARY KEY AUTOINCREMENT` (global monoton, durable). Index für kanonische Event-Sortierung pro Session. **Partial UNIQUE Index** `uq_playback_events_dedup` auf `(project_id, session_id, sequence_number) WHERE delivery_status = 'accepted' AND sequence_number IS NOT NULL` — DB-erzwungener Dedup-Schutz, Adapter-Algorithmus in §8.3. `trace_id`/`span_id`/`correlation_id` sind nullable und werden in Tranche 2 befüllt; das Schema reserviert sie jetzt, damit §2.2 sie nicht nachträglich hinzufügen muss. |
+| `playback_events` | `ingest_sequence`, `project_id`, `session_id`, `event_name`, `client_timestamp`, `server_received_at`, `sequence_number`, `sdk_name`, `sdk_version`, `schema_version`, `meta`, `delivery_status`, `trace_id`, `span_id`, `correlation_id` | PK `ingest_sequence` als `INTEGER PRIMARY KEY AUTOINCREMENT` (global monoton, durable). Index für kanonische Event-Sortierung pro Session. Nicht-eindeutiger Index `idx_playback_events_dedup` auf `(project_id, session_id, sequence_number)` für die Dedup-Lookup in §8.3 (Race-Schutz dort über `BEGIN IMMEDIATE`, nicht über DB-Constraint). `trace_id`/`span_id`/`correlation_id` sind nullable und werden in Tranche 2 befüllt; das Schema reserviert sie jetzt, damit §2.2 sie nicht nachträglich hinzufügen muss. |
 
 `ingest_sequence` ist global, nicht pro `project_id` + `session_id`.
 Damit ist der Cursor-Tie-Breaker aus ADR 0004 §5 erfüllt und
@@ -218,38 +218,48 @@ Verantwortlich für:
 neutrale Schema-Definition zusätzlich liefert und keine
 Drittanbieter-Library im API-Image landet.
 
+**Migrations-File-Konvention**: alle Initial- und Folge-Migrations-
+Files werden aus `schema.yaml` per
+`d-migrate schema generate --target sqlite` erzeugt
+(`0001_initial.sql`, später `0002_…sql` usw.). Hand-gepflegte
+SQL-Files sind nicht vorgesehen, solange das neutrale Modell die
+benötigten DDL-Features ausdrückt. Falls eine Tranche ein Feature
+braucht, das d-migrate noch nicht modelliert, wird das **dort**
+entschieden — entweder ist das Feature anders lösbar (z. B.
+Race-Schutz über `BEGIN IMMEDIATE` statt Partial-Index in §8.3),
+oder d-migrate selbst wird erweitert.
+
 ### 8.3 Idempotenz und Event-Deduplikation
 
 - **Session-State-Updates** sind idempotent: `session_ended` und
   Sweeper-Übergänge nutzen ein UPSERT-Muster auf `session_id` und
   setzen `ended_at` nur, wenn noch nicht gesetzt.
 - **Event-Dedup** erfolgt als Timeline-Klassifikation, **nicht** als
-  Hard-Reject. Dedup ist DB-seitig erzwungen, damit konkurrente
-  Writer (zwei Goroutines, zwei Connections) nicht beide als
-  `accepted` landen können:
+  Hard-Reject. Race-Schutz unter konkurrenten Writern erfolgt über
+  SQLite-Schreibserialisierung mit `BEGIN IMMEDIATE`, **nicht** über
+  einen DB-Constraint:
   - Dedup-Key ist `(project_id, session_id, sequence_number)` für
     Events mit gesetzter `sequence_number`.
-  - DB-Schutz ist der Partial-UNIQUE-Index `uq_playback_events_dedup`
-    aus §8.1; höchstens **eine** Zeile mit demselben Dedup-Key kann
-    `delivery_status = 'accepted'` haben.
-  - Adapter-Algorithmus pro Insert (in einer einzigen Transaktion
-    mit `BEGIN IMMEDIATE`, das den SQLite-Write-Lock direkt
-    akquiriert):
-    1. SELECT auf den Partial-Index, um eine bereits `accepted`-
-       Zeile mit demselben Dedup-Key zu finden.
+  - Adapter-Algorithmus pro Insert (in einer einzigen Transaktion,
+    eröffnet mit `BEGIN IMMEDIATE`, das den SQLite-DB-Write-Lock
+    direkt akquiriert und alle anderen Writer bis zum Commit
+    blockiert):
+    1. SELECT mit Index-Lookup, um eine bereits `accepted`-Zeile
+       mit demselben Dedup-Key zu finden.
     2. Falls vorhanden: INSERT mit
        `delivery_status = 'duplicate_suspected'`. Commit.
     3. Falls nicht vorhanden: INSERT mit
-       `delivery_status = 'accepted'`. Bei UNIQUE-Constraint-
-       Verletzung (paralleler Writer hat zwischenzeitlich
-       eingefügt — kann durch fehlerhafte Lock-Konfiguration
-       passieren) wird der Insert mit
-       `delivery_status = 'duplicate_suspected'` wiederholt. Commit.
+       `delivery_status = 'accepted'`. Commit.
+  - SQLite serialisiert alle Writer per DB-Lock; ein zweiter
+    Writer mit demselben Dedup-Key, der erst nach dem Commit des
+    ersten startet, sieht in seinem SELECT die `accepted`-Zeile und
+    klassifiziert deterministisch als `duplicate_suspected`. Race
+    bleibt damit unmöglich, solange der Adapter `BEGIN IMMEDIATE`
+    verbindlich nutzt; Tests aus §2.3 prüfen das mit Concurrent-
+    Writern.
   - Events ohne `sequence_number` werden immer als
     `delivery_status = 'accepted'` aufgenommen; es gibt keinen
-    automatischen Dedup ohne expliziten Schlüssel. Der Partial-
-    UNIQUE-Index greift wegen `WHERE sequence_number IS NOT NULL`
-    nicht.
+    automatischen Dedup ohne expliziten Schlüssel.
 - Der Wert `delivery_status = 'replayed'` ist in der Spalte vorhanden,
   wird in `0.4.0` aber nur dann gesetzt, wenn ein Use-Case-Service
   explizit einen Replay-Pfad signalisiert. Für `0.4.0` bleibt der
