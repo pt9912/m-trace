@@ -1,0 +1,117 @@
+schema_format: "1.0"
+name: "m-trace"
+version: "1.0.0"
+
+# Quelle: docs/adr/0002-persistence-store.md §8.1.
+# Apply-Runner verwaltet die schema_migrations-Tabelle selbst und
+# erscheint daher nicht in dieser YAML.
+#
+# Generiert das Initial-DDL via:
+#   make schema-generate
+# Validiert die YAML via:
+#   make schema-validate
+
+tables:
+  projects:
+    columns:
+      project_id:
+        type: text
+        required: true
+    primary_key: [project_id]
+
+  stream_sessions:
+    columns:
+      session_id:
+        type: text
+        required: true
+      project_id:
+        type: text
+        required: true
+        references:
+          table: projects
+          column: project_id
+          on_delete: restrict
+      state:
+        type: text
+        required: true
+        default: "active"
+      started_at:
+        type: datetime
+        required: true
+      last_seen_at:
+        type: datetime
+        required: true
+      ended_at:
+        type: datetime
+      correlation_id:
+        type: text
+    primary_key: [session_id]
+    indices:
+      - name: idx_stream_sessions_project_started
+        columns: [project_id, started_at, session_id]
+        type: btree
+    constraints:
+      - name: chk_stream_sessions_state
+        type: check
+        expression: "state IN ('active', 'stalled', 'ended')"
+
+  playback_events:
+    columns:
+      ingest_sequence:
+        type: identifier
+        auto_increment: true
+      project_id:
+        type: text
+        required: true
+      session_id:
+        type: text
+        required: true
+      event_name:
+        type: text
+        required: true
+      client_timestamp:
+        type: datetime
+        required: true
+      server_received_at:
+        type: datetime
+        required: true
+      sequence_number:
+        type: biginteger
+      sdk_name:
+        type: text
+        required: true
+      sdk_version:
+        type: text
+        required: true
+      schema_version:
+        type: text
+        required: true
+      meta:
+        type: json
+      delivery_status:
+        type: text
+        required: true
+        default: "accepted"
+      trace_id:
+        type: text
+      span_id:
+        type: text
+      correlation_id:
+        type: text
+    primary_key: [ingest_sequence]
+    indices:
+      - name: idx_playback_events_session_canonical
+        columns:
+          [project_id, session_id, server_received_at, sequence_number, ingest_sequence]
+        type: btree
+      - name: idx_playback_events_dedup
+        columns: [project_id, session_id, sequence_number]
+        type: btree
+    constraints:
+      - name: chk_playback_events_delivery_status
+        type: check
+        expression: "delivery_status IN ('accepted', 'duplicate_suspected', 'replayed')"
+      # JSON-Validierung von `meta` erfolgt im Adapter (encoding/json),
+      # nicht via DB-CHECK — `json_valid()` ist nicht portabel
+      # (SQLite/MySQL builtin, PostgreSQL hat kein direktes Pendant).
+      # Siehe ADR-0002 §8.1.

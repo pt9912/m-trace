@@ -16,7 +16,13 @@ NO_CACHE_FILTER_TEST     := --no-cache-filter test
 NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 
-.PHONY: test lint build deps compile run arch-check coverage coverage-gate coverage-report clean
+.PHONY: test lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate
+
+# d-migrate Container für Schema-Definition und DDL-Generierung
+# (ADR-0002 §8.2). Build-/Dev-time-Werkzeug; das API-Image bleibt
+# JDK-frei.
+SCHEMA_DIR     := internal/storage
+DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:latest
 
 # Run unit + integration tests inside Docker.
 test:
@@ -76,6 +82,26 @@ coverage-report:
 		--output type=local,dest=build/coverage \
 		.
 	@echo "coverage-report: build/coverage/coverage.html"
+
+# Schema-YAML gegen d-migrate's neutrales Modell validieren — CI-Gate
+# (ADR-0002 §8.2). Schlägt fehl, wenn Spalten/Indizes/Constraints
+# d-migrate-Validation nicht bestehen.
+schema-validate:
+	docker run --rm -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
+		$(DMIGRATE_IMAGE) schema validate --source /work/schema.yaml
+
+# DDL aus schema.yaml für SQLite erzeugen (ADR-0002 §8.2). Output
+# landet als migrations/0001_initial.sql; Generated-Timestamp im
+# DDL-Header wird auf einen festen Wert normalisiert, damit eine
+# Re-Generation ohne Schema-Änderung keinen git-Diff erzeugt.
+schema-generate:
+	docker run --rm -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
+		$(DMIGRATE_IMAGE) schema generate \
+			--source /work/schema.yaml --target sqlite \
+			--output /work/migrations/0001_initial.sql
+	sed -i 's/Generated: [^ ]*Z$$/Generated: deterministic/' \
+		$(SCHEMA_DIR)/migrations/0001_initial.sql
+	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/0001_initial.sql"
 
 # Remove all spike-related images.
 clean:

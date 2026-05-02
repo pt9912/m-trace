@@ -161,12 +161,20 @@ sind erlaubt und vom Cursor-Kontrakt (§10.4 in
 `spec/backend-api-contract.md`) **nicht** ausgeschlossen — gefordert
 ist nur Monotonie, keine Lückenfreiheit.
 
-`meta` wird als TEXT-Spalte mit JSON-Inhalt geführt; der SQLite-
-Adapter validiert Inputs mit `json_valid()` (oder im Application-
-Layer vor dem Insert), damit ein späterer Postgres-Folge-ADR die
-Spalte ohne Datenmüll auf `JSONB` migrieren kann. Schema-YAML
-deklariert die Spalte typneutral; eine Schema-Garantie über die
-*innere* JSON-Struktur gibt der Store nicht — die liegt im
+`meta` wird im neutralen Schema als `json` deklariert. Beim
+DDL-Generate per d-migrate mappt das auf:
+
+- SQLite: `TEXT` (keine Typ-Validierung — SQLite kennt keinen JSON-Typ).
+- MySQL: `JSON` (Typ-Level-Validierung beim INSERT).
+- PostgreSQL: `JSONB` (Typ-Level-Validierung beim INSERT).
+
+JSON-Validierung erfolgt **im Application-Layer** vor dem Insert
+(z. B. via `encoding/json.Valid()` oder Decoder im Adapter). Eine
+DB-CHECK-Constraint mit `json_valid(meta)` wäre nicht portabel
+(SQLite/MySQL kennen die Funktion, PostgreSQL nicht) und gehört
+deshalb nicht in das neutrale Schema. Adapter-Tests (`plan-0.4.0.md`
+§2.3) decken den Validierungspfad ab; eine Schema-Garantie über die
+*innere* JSON-Struktur gibt der Store ohnehin nicht — die liegt im
 Wire-Format-Vertrag (`spec/backend-api-contract.md` §3).
 
 `trace_id`, `span_id` und `correlation_id` sind in `0.4.0` als TEXT-

@@ -127,6 +127,14 @@ tmp/
 .gradle-user-home/
 
 # ---------------------------------------------------------------------------
+# d-migrate Generator-Output (siehe ADR-0002 §8.2)
+# ---------------------------------------------------------------------------
+# `schema generate` schreibt einen Report neben das DDL. Das Report-
+# File ist nicht-deterministisch (Timestamps, Zustand) und wird nicht
+# committet; das DDL selbst bleibt unter Versionskontrolle.
+apps/api/internal/storage/migrations/*.report.yaml
+
+# ---------------------------------------------------------------------------
 # Tooling state
 # ---------------------------------------------------------------------------
 .claude/

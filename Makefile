@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures
+.PHONY: help dev dev-observability stop smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -30,8 +30,10 @@ help:
 		'  make coverage-gate          Run API, SDK, dashboard and analyzer coverage gates' \
 		'  make coverage-report        Export the API coverage report' \
 		'  make arch-check             Run the API architecture boundary check' \
+		'  make schema-validate        Validate apps/api schema.yaml via d-migrate' \
+		'  make schema-generate        Re-generate apps/api SQLite DDL from schema.yaml' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
-		'  make gates                  Run test, lint, coverage, architecture and docs gates' \
+		'  make gates                  Run test, lint, coverage, architecture, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
 		'  make fullbuild              Install + workspace/api build + gates (CI-äquivalent von clean)' \
@@ -140,10 +142,16 @@ coverage-report:
 arch-check:
 	$(API_MAKE) arch-check
 
+schema-validate:
+	$(API_MAKE) schema-validate
+
+schema-generate:
+	$(API_MAKE) schema-generate
+
 sdk-performance-smoke:
 	$(PNPM) --filter @npm9912/player-sdk run performance:smoke
 
-gates: test lint coverage-gate arch-check docs-check
+gates: test lint coverage-gate arch-check schema-validate docs-check
 
 ci: gates build
 
