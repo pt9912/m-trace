@@ -141,7 +141,7 @@ export class HttpTransport implements Transport {
     try {
       return this.traceparent();
     } catch (error) {
-      this.warnTraceParentOnce(`provider threw: ${describeError(error)}`);
+      this.warnTraceParentOnce(`provider threw: ${String(error)}`);
       return undefined;
     }
   }
@@ -171,13 +171,6 @@ export class HttpTransport implements Transport {
 
 function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500;
-}
-
-function describeError(error: unknown): string {
-  if (error instanceof Error) {
-    return `${error.name}: ${error.message}`;
-  }
-  return typeof error === "string" ? error : typeof error;
 }
 
 function parseRetryAfterMs(value: string | null): number | undefined {
