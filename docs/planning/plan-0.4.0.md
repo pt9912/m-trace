@@ -266,8 +266,35 @@ Ziel: Zwei Pfade, die SDK und Server überspannen, sind explizit getestet — Vo
 
 DoD:
 
-- [x] Cross-Version-Vertragstest (aus §3.3-Review, Should-fix #1): SDK `0.4.0` mit konfiguriertem `traceparent`-Provider gegen einen Server-Handler auf `0.3.x`-Verhaltensstand (kein Header-Lesen, keine `correlation_id`-Persistenz) liefert weiterhin `202 Accepted`; der Header darf nicht zu Validierungs-/Parser-Fehlern führen. Realisierung als Go-Adapter-Test mit `legacyPlaybackHandler` (Token, Body-Größe, JSON-Parse, schema_version=1.0; bewusst kein `traceparent`-Read) — `TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent` (`6fdc8d0`). Option (c) (Node-Cross-Run gegen Go-httptest) ist explizit deferred (siehe Test-Header-Comment).
-- [x] E2E-Test mit kaputtem `traceparent` (aus §3.3-Review, Should-fix #2): hybrider Schnitt — Server-Seite durch `TestHTTP_Span_TraceParent_InvalidSetsParseError` aus §3.2 abgedeckt (`c3741aa`, 202 + `mtrace.trace.parse_error=true`); SDK-Seite durch zwei neue vitest-Cases in `packages/player-sdk/tests/http-transport.test.ts` unter `describe("garbage traceparent string")` (`6fdc8d0`): Garbage-String wird 1:1 weitergereicht (`forwards the garbage string verbatim and keeps the SDK path quiet`), 202 löst keine Retry-Loop aus (`does not retry the request when the server returns 202 with garbage traceparent`); kein `console.warn` — Garbage ist `typeof === "string"` und triggert weder den Throw- noch den Non-String-Pfad aus `f7dcdb9`.
+- [x] Cross-Version-Vertragstest (aus §3.3-Review, Should-fix #1): SDK `0.4.0` mit
+  konfiguriertem `traceparent`-Provider gegen einen Server-Handler auf
+  `0.3.x`-Verhaltensstand (kein Header-Lesen, keine `correlation_id`-Persistenz)
+  liefert weiterhin `202 Accepted`; der Header darf nicht zu Validierungs-/Parser-
+  Fehlern führen. Realisierung in zwei Hälften:
+  Server-seitig `TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent`
+  mit minimalem `legacyPlaybackHandler` (snapshotted ausschließlich
+  „liest `traceparent` nicht"; keine weiteren 0.3.x-Verhaltensdetails)
+  (`6fdc8d0`).
+  SDK-seitig `cross-version against pre-§3.2 server`-Block in
+  `packages/player-sdk/tests/http-transport.test.ts` mit
+  `sends successfully against a 0.3.x-shaped mock that ignores the header`
+  — `HttpTransport.send` läuft gegen einen 202-Mock-Server, der den Header
+  nicht liest. Beide Hälften zusammen ergeben das maschinell prüfbare
+  Cross-Version-Versprechen. Option (c) (Node-Cross-Run gegen Go-httptest)
+  bleibt deferred.
+- [x] E2E-Test mit kaputtem `traceparent` (aus §3.3-Review, Should-fix #2):
+  hybrider Schnitt.
+  Server-Seite durch `TestHTTP_Span_TraceParent_InvalidSetsParseError`
+  aus §3.2 abgedeckt (`c3741aa`, 202 + `mtrace.trace.parse_error=true`).
+  SDK-Seite durch zwei vitest-Cases in
+  `packages/player-sdk/tests/http-transport.test.ts` unter
+  `describe("garbage traceparent string")` (`6fdc8d0`):
+  Garbage-String wird 1:1 weitergereicht
+  (`forwards the garbage string verbatim and keeps the SDK path quiet`);
+  202 ist Erfolg ohne Retry — genau ein `fetch`, kein Sleep
+  (`treats 202 as success and does not retry, even with a garbage traceparent`).
+  Kein `console.warn` — Garbage ist `typeof === "string"` und triggert
+  weder den Throw- noch den Non-String-Pfad aus `f7dcdb9`.
 
 #### 3.4c Doku-Closeout und Roadmap-Marker
 

@@ -66,14 +66,21 @@ func TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent(t *testing.T) {
 	}
 }
 
-// legacyPlaybackHandler simuliert das HTTP-Verhalten eines 0.3.x-
-// Backends: nur die in 0.3.x existierenden Pflichten (Token, Body-
-// Limit, JSON-Parse, schema_version=1.0). Es liest **nicht** den
-// `traceparent`-Header und schreibt **keine** `correlation_id`. Damit
-// ist der Vertrag „§3.4b-§0.3.x-Snapshot" maschinenlesbar dokumentiert
-// — wenn ein zukünftiger Reviewer wissen will, was 0.3.x mit dem
-// Header gemacht hat, ist die Antwort: gar nichts (Code = leere
-// Lese-Operation).
+// legacyPlaybackHandler ist der minimale Server-Stub für den
+// §3.4b-#1-Vertrag. Er snapshotted **eine einzige** Eigenschaft des
+// 0.3.x-Backends: dass `traceparent` im HTTP-Layer nicht gelesen wird.
+// Alle anderen 0.3.x-Pflichten (Body-Größe, Detail-Validierung,
+// schema_version-Check, Domain-Pipeline, Origin-Bindung, Rate-Limit)
+// werden **nicht** gespiegelt — andernfalls würde der Stub zur
+// halb-treuen Kopie und ein zukünftiger Reviewer könnte aus einem
+// Stub-Verhalten falsche Schlüsse über reales 0.3.x ziehen. Was hier
+// fehlt, ist absichtlich nicht da; was hier ist, ist Vertrag.
+//
+// Der Stub akzeptiert daher jede POST-Anfrage mit Token-Header und
+// JSON-parsefähigem Body als 202 — egal welche Header sonst gesetzt
+// sind. Damit ist der „unbekannter Header bricht den Server nicht"-
+// Vertrag (RFC 9110 §5.1) maschinenlesbar, ohne sich auf weitere
+// 0.3.x-Verhaltensdetails zu committen.
 func legacyPlaybackHandler(t *testing.T) http.Handler {
 	t.Helper()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,10 +92,11 @@ func legacyPlaybackHandler(t *testing.T) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		// Bewusst kein r.Header.Get("traceparent") — Pre-§3.2-Snapshot.
-		body, err := io.ReadAll(io.LimitReader(r.Body, 256*1024))
+		// Bewusst kein r.Header.Get("traceparent") — exakt das ist der
+		// §3.4b-#1-Snapshot des 0.3.x-Verhaltens.
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		var payload struct {
@@ -97,14 +105,6 @@ func legacyPlaybackHandler(t *testing.T) http.Handler {
 		}
 		if err := json.Unmarshal(body, &payload); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if payload.SchemaVersion != "1.0" {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
-		if len(payload.Events) == 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
 		w.WriteHeader(http.StatusAccepted)

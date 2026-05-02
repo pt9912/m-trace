@@ -404,6 +404,52 @@ describe("HttpTransport", () => {
       });
     });
 
+    describe("cross-version against pre-§3.2 server (plan-0.4.0 §3.4b #1 — SDK side)", () => {
+      // Vertrag: ein 0.3.x-Backend liest den `traceparent`-Header
+      // nicht (siehe legacyPlaybackHandler in
+      // apps/api/adapters/driving/http/cross_version_test.go::
+      // TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent —
+      // dort ist die Server-Hälfte gesnapshottet). Hier sichern wir
+      // die SDK-Hälfte: ein realer HttpTransport-Send mit einem
+      // gültigen W3C-Header gegen einen 202-Mock-Server, der den
+      // Header nicht liest, läuft sauber durch — keine Drop-, Retry-
+      // oder Warn-Effekte. Beide Hälften zusammen (Server-Stub +
+      // SDK-Send) sind das maschinell prüfbare Cross-Version-
+      // Versprechen; Option (c) (echter Node-Cross-Run gegen
+      // httptest) bleibt deferred (siehe Plan §3.4b).
+      const validTraceParent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
+
+      it("sends successfully against a 0.3.x-shaped mock that ignores the header", async () => {
+        // Mock spiegelt legacyPlaybackHandler: 202 unconditional,
+        // berührt den `traceparent`-Wert nicht.
+        const seenHeaders: Record<string, string>[] = [];
+        const fetchFn = vi.fn<TestFetch>(async (_url, init) => {
+          seenHeaders.push((init.headers ?? {}) as Record<string, string>);
+          return new Response(null, { status: 202 });
+        });
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const transport = new HttpTransport("http://legacy-0.3.x.example/api/playback-events", "demo-token", {
+          fetchFn,
+          traceparent: () => validTraceParent
+        });
+
+        try {
+          await transport.send(batch);
+
+          expect(fetchFn).toHaveBeenCalledTimes(1);
+          // SDK hat den Header gesetzt — der Mock-Server hätte ihn
+          // *lesen* können, tut es aber nicht; das ist genau der
+          // 0.3.x-Snapshot.
+          expect(seenHeaders[0]?.traceparent).toBe(validTraceParent);
+          // Keine Warn-Pfade auf der SDK-Seite, kein 4xx-Schluck-Pfad
+          // — 202 ist Erfolg.
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+    });
+
     describe("garbage traceparent string (plan-0.4.0 §3.4b #2 — SDK side)", () => {
       // Vertrag: ein vom Provider gelieferter, formatungültiger
       // Garbage-String ist `typeof === "string"`. Der HttpTransport
@@ -438,7 +484,7 @@ describe("HttpTransport", () => {
         }
       });
 
-      it("does not retry the request when the server returns 202 with garbage traceparent", async () => {
+      it("treats 202 as success and does not retry, even with a garbage traceparent", async () => {
         const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 202 }));
         const sleep = vi.fn(async () => undefined);
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -451,12 +497,13 @@ describe("HttpTransport", () => {
 
         try {
           await transport.send(batch);
-          await transport.send(batch);
 
-          expect(fetchFn).toHaveBeenCalledTimes(2);
-          // Kein Retry-Backoff zwischen den Sends: 202 bleibt Erfolg,
-          // unabhängig vom Header-Inhalt.
+          // Genau ein fetch — kein Retry trotz maxAttempts: 3.
+          expect(fetchFn).toHaveBeenCalledTimes(1);
+          // Kein Backoff — 202 ist Erfolg, unabhängig vom Header-Inhalt.
           expect(sleep).not.toHaveBeenCalled();
+          // Garbage ist `typeof === "string"` und triggert weder den
+          // Throw- noch den Non-String-Pfad aus f7dcdb9.
           expect(warn).not.toHaveBeenCalled();
         } finally {
           warn.mockRestore();
