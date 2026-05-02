@@ -272,9 +272,19 @@ describe("HttpTransport", () => {
       expect(headers.traceparent).toBeUndefined();
     });
 
-    it("calls the provider on every send (not cached)", async () => {
+    it("calls the provider on every send and forwards the per-send value (not cached)", async () => {
       const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
-      const provider = vi.fn(() => validTraceParent);
+      let calls = 0;
+      const traceParents = [
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+        "00-0af7651916cd43dd8448eb211c80319c-c8be7c8270314442-01",
+        "00-0af7651916cd43dd8448eb211c80319c-d9cf8d9381425553-01"
+      ];
+      const provider = vi.fn(() => {
+        const value = traceParents[calls];
+        calls += 1;
+        return value;
+      });
       const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
         fetchFn,
         traceparent: provider
@@ -282,8 +292,27 @@ describe("HttpTransport", () => {
 
       await transport.send(batch);
       await transport.send(batch);
+      await transport.send(batch);
 
-      expect(provider).toHaveBeenCalledTimes(2);
+      expect(provider).toHaveBeenCalledTimes(3);
+      expect(fetchFn).toHaveBeenCalledTimes(3);
+      for (let i = 0; i < 3; i += 1) {
+        const headers = (fetchFn.mock.calls[i]?.[1]?.headers ?? {}) as Record<string, string>;
+        expect(headers.traceparent).toBe(traceParents[i]);
+      }
+    });
+
+    it("omits the traceparent header when the provider returns a non-string value", async () => {
+      const fetchFn = vi.fn<TestFetch>(async () => new Response(null, { status: 204 }));
+      const transport = new HttpTransport("http://localhost:8080/api/playback-events", "demo-token", {
+        fetchFn,
+        traceparent: (() => 42 as unknown) as () => string | undefined
+      });
+
+      await transport.send(batch);
+
+      const headers = (fetchFn.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+      expect(headers.traceparent).toBeUndefined();
     });
   });
 });

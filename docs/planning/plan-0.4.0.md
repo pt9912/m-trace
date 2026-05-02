@@ -247,6 +247,9 @@ DoD:
 - [ ] Backend-Test deckt Session-Ende: `session_ended`-Event innerhalb eines Batches behält die `correlation_id` der Session bei und schließt den State; nachfolgende Events in derselben Session-ID erhalten dieselbe `correlation_id` (Reihenfolge ist Tranche-1-Verhalten).
 - [ ] Backend-Test verifiziert Time-Skew-Span-Attribut bei `|client_timestamp - server_received_at| > 60s`.
 - [ ] Backend-Test verifiziert Trace-Konsistenz **bei deaktiviertem Tempo-Profil**: identisches Verhalten ohne `OTEL_TRACES_EXPORTER` — `correlation_id` bleibt gesetzt, Dashboard-Timeline ist nutzbar. Test darf kein externes Trace-Backend voraussetzen.
+- [ ] Cross-Version-Vertragstest (aus §3.3-Review, Should-fix #1): SDK `0.4.0` mit konfiguriertem `traceparent`-Provider gegen einen Server-Handler auf `0.3.x`-Verhaltensstand (kein Header-Lesen, keine `correlation_id`-Persistenz) liefert weiterhin `202 Accepted`; der Header darf nicht zu Validierungs-/Parser-Fehlern führen. Realisierung als Adapter-Test mit minimal-konfiguriertem Handler oder Snapshot des Pre-§3.2-Verhaltens.
+- [ ] E2E-Test mit kaputtem `traceparent` (aus §3.3-Review, Should-fix #2): SDK-`HttpTransport` sendet einen Provider-gelieferten Garbage-String; Server akzeptiert den Batch (`202`) und setzt `mtrace.trace.parse_error=true`; SDK-Pfad bleibt unverändert (keine Drop-, Retry-, Console-Effekte).
+- [ ] Header-Casing/Whitespace-Kommentar (aus §3.3-Review, Anmerkung #5): kurze Notiz in `spec/backend-api-contract.md` §1, dass der Server `traceparent` case-insensitiv liest (HTTP-Header-Standard) und führende/abschließende Whitespaces toleriert; SDK schreibt lowercased `traceparent`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code (Hybrid-Strategie, Span-Attribute, Time-Skew, Sampling); §3.1-Entscheidungen sind festgeschrieben.
 - [ ] `spec/backend-api-contract.md` §3 / §3.7 reflektiert das `traceparent`-Header-Verhalten und die neuen Read-Felder `trace_id`/`correlation_id`.
 
@@ -367,7 +370,7 @@ DoD:
 - [ ] **RAK-33** Prometheus bleibt auf aggregierte Metriken beschränkt; Cardinality-Smoke ist grün.
 - [ ] **RAK-34** Dropped-, Rate-Limited- und Invalid-Event-Metriken sind sichtbar und testbar.
 - [ ] **RAK-35** Dokumentation beschreibt Cardinality-Grenzen und Sampling-Strategie.
-- [ ] Versionen sind konsistent: Root- und Workspace-Pakete tragen `0.4.0`; SDK/Event-Schema-Kompatibilitätscheck bleibt grün.
+- [ ] Versionen sind konsistent: Root- und Workspace-Pakete tragen `0.4.0`; SDK/Event-Schema-Kompatibilitätscheck bleibt grün. Insbesondere `PLAYER_SDK_VERSION` in `packages/player-sdk/src/version.ts` ist auf `0.4.0` gehoben (aus §3.3-Review, Anmerkung #9: aktuell noch `0.3.0`, weil §3.3 absichtlich keinen Release-Bump macht).
 - [ ] `CHANGELOG.md` enthält den Versionsabschnitt `[0.4.0] - <Datum>` mit Trace-, Persistenz-, Dashboard-, Metrik- und Doku-Lieferstand.
 - [ ] Release-Gates grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make sdk-performance-smoke`, `make smoke-observability` und Dashboard-Tests.
 - [ ] Browser-E2E-Smoke für eine erzeugte Test-Session und Session-Timeline ist grün oder als manuelles Release-Gate mit Ergebnis dokumentiert; der Smoke darf `/demo` nutzen, muss aber bei späterer Demo-Änderung auf einen dedizierten Test-Harness umstellbar bleiben.

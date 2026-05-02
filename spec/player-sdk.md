@@ -123,15 +123,21 @@ keinen Tracer. Ohne Provider sendet das SDK keinen Header, der Server
 generiert einen Root-Span (Vertrag siehe
 [`spec/telemetry-model.md`](./telemetry-model.md) §2.5).
 
+> **Scope**: Die Header-Propagation ist eine Eigenschaft des Default-
+> `HttpTransport`. Wer einen eigenen `Transport` über
+> `PlayerSDKConfig.transport` injiziert, ist selbst verantwortlich, den
+> `traceparent`-Provider an seinen Transport-Pfad zu koppeln — das SDK
+> ruft den Provider nur im eingebauten HTTP-Pfad auf.
+
 ```ts
+import { trace } from "@opentelemetry/api";
 import { createTracker, type TraceParentProvider } from "@npm9912/player-sdk";
 
 const traceparent: TraceParentProvider = () => {
-  // Beispiel: aktiver OTel-Span via @opentelemetry/api
-  const span = activeSpan(); // Konsumenten-spezifisch
+  const span = trace.getActiveSpan();
   if (!span) return undefined;
   const ctx = span.spanContext();
-  if (!ctx.traceId) return undefined;
+  if (!ctx.traceId || !ctx.spanId) return undefined;
   const flags = ctx.traceFlags.toString(16).padStart(2, "0");
   return `00-${ctx.traceId}-${ctx.spanId}-${flags}`;
 };
@@ -150,9 +156,11 @@ validiert den Wert **nicht**: ein vom Provider gelieferter Müllstring
 landet beim Server, der ihn als Parse-Error markiert
 (`mtrace.trace.parse_error=true`) und zur eigenen Trace-ID zurückfällt.
 
-Provider-Throws werden im SDK still gefangen — Tracing darf den
-Event-Pfad nicht sabotieren. Abwärtskompatibel mit Backends < `0.4.0`:
-ältere Server ignorieren unbekannte Header (HTTP-Standard).
+Der Provider muss **synchron** antworten — er wird im Hot Path direkt
+vor `fetch()` aufgerufen. Provider-Throws werden im SDK still gefangen —
+Tracing darf den Event-Pfad nicht sabotieren. Abwärtskompatibel mit
+Backends < `0.4.0`: ältere Server ignorieren unbekannte Header
+(HTTP-Standard).
 
 ## OpenTelemetry-Vorbereitung
 

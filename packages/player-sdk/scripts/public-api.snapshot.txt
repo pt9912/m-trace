@@ -9,4 +9,4 @@ export { attachHlsJs } from "./adapters/hlsjs/adapter";
 export { EVENT_SCHEMA_VERSION, PLAYER_SDK_NAME, PLAYER_SDK_VERSION } from "./version";
 export type { HlsJsAdapter } from "./adapters/hlsjs/adapter";
 export type { EventDraft, EventMeta, EventMetaValue, PlaybackEvent, PlaybackEventBatch, PlaybackEventName, SDKInfo } from "./types/events";
-export type { PlayerSDKConfig, Transport } from "./types/config";
+export type { PlayerSDKConfig, TraceParentProvider, Transport } from "./types/config";

@@ -91,7 +91,7 @@ export class HttpTransport implements Transport {
       "X-MTrace-Token": this.token
     };
     const tp = this.resolveTraceParent();
-    if (tp !== undefined && tp !== "") {
+    if (typeof tp === "string" && tp.length > 0) {
       headers.traceparent = tp;
     }
 
@@ -115,7 +115,10 @@ export class HttpTransport implements Transport {
    * Provider-Throws still — Tracing darf den Event-Pfad nicht
    * sabotieren. Throws sind sehr unwahrscheinlich, aber denkbar
    * (z. B. wenn der Provider auf einen nicht-initialisierten Tracer
-   * zugreift und dabei stolpert).
+   * zugreift und dabei stolpert). Der Header-Schreiber in
+   * `trySend()` prüft den Rückgabetyp defensiv (`typeof tp === "string"`),
+   * damit ein versehentlich Non-String-liefernder Provider nicht in
+   * den Header sickert.
    */
   private resolveTraceParent(): string | undefined {
     if (this.traceparent === undefined) {
