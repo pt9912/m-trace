@@ -1,5 +1,5 @@
 # m-trace API spike — Go variant
-# Docker-only workflow per docs/planning/plan-spike.md §14.11.
+# Docker-only workflow per docs/planning/done/plan-spike.md §14.11.
 
 IMAGE := m-trace-api-spike
 

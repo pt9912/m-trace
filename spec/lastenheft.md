@@ -901,7 +901,7 @@ und MVP-28/MVP-29 in Patch `1.0.2`):
 > `stream-generator`; `0.1.1` ergänzt `dashboard`; `0.1.2` aktiviert
 > die Soll-Tabelle über das `observability`-Compose-Profil. Der
 > jeweilige Sub-Release-Pflicht-Subset steht im zugehörigen
-> Plan-Dokument (`docs/planning/plan-0.1.x.md`).
+> Plan-Dokument (`docs/planning/done/plan-0.1.x.md`).
 
 #### Erwarteter Startbefehl
 
