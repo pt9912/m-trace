@@ -251,12 +251,12 @@ Ziel: Das in §3.2 ausgelieferte Server-Verhalten ist durch wiederholbare Backen
 
 DoD:
 
-- [ ] Backend-Test deckt Trace-Konsistenz über mehrere Batches einer Session: drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber **dieselbe** `correlation_id` an allen Events und der Session.
-- [ ] Backend-Test deckt fehlenden Client-Kontext: Batch ohne `traceparent` → Server generiert `trace_id`, `mtrace.trace.parse_error` ist nicht gesetzt.
-- [ ] Backend-Test deckt ungültigen Client-Kontext: Batch mit kaputtem `traceparent` → 202 Accepted, Span-Attribut `mtrace.trace.parse_error=true`, `trace_id` ist server-generiert.
-- [ ] Backend-Test deckt Session-Ende: `session_ended`-Event innerhalb eines Batches behält die `correlation_id` der Session bei und schließt den State; nachfolgende Events in derselben Session-ID erhalten dieselbe `correlation_id` (Reihenfolge ist Tranche-1-Verhalten).
-- [ ] Backend-Test verifiziert Time-Skew-Span-Attribut bei `|client_timestamp - server_received_at| > 60s`.
-- [ ] Backend-Test verifiziert Trace-Konsistenz **bei deaktiviertem Tempo-Profil**: identisches Verhalten ohne `OTEL_TRACES_EXPORTER` — `correlation_id` bleibt gesetzt, Dashboard-Timeline ist nutzbar. Test darf kein externes Trace-Backend voraussetzen (Realisierung über `tracetest.SpanRecorder` oder NoOp-`TracerProvider`).
+- [x] Backend-Test deckt Trace-Konsistenz über mehrere Batches einer Session: drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber **dieselbe** `correlation_id` an allen Events und der Session — `TestHTTP_Trace_MultiBatchSameSessionConsistency` (`f329d5f`).
+- [x] Backend-Test deckt fehlenden Client-Kontext: Batch ohne `traceparent` → Server generiert `trace_id`, `mtrace.trace.parse_error` ist nicht gesetzt — `TestHTTP_Trace_MissingTraceparent_ServerGeneratesTrace` (`f329d5f`); persistiert auch die server-generierte `trace_id` aufs Event.
+- [x] Backend-Test deckt ungültigen Client-Kontext: Batch mit kaputtem `traceparent` → 202 Accepted, Span-Attribut `mtrace.trace.parse_error=true`, `trace_id` ist server-generiert — bereits im §3.2-Bestand `TestHTTP_Span_TraceParent_InvalidSetsParseError` (`c3741aa`); §3.4a-Header-Comment in `trace_consistency_test.go` mappt das DoD-Item explizit dorthin (`f329d5f`).
+- [x] Backend-Test deckt Session-Ende: `session_ended`-Event innerhalb eines Batches behält die `correlation_id` der Session bei und schließt den State; nachfolgende Events in derselben Session-ID erhalten dieselbe `correlation_id` (Reihenfolge ist Tranche-1-Verhalten) — `TestHTTP_Trace_SessionEnded_PreservesCorrelationID` (`f329d5f`).
+- [x] Backend-Test verifiziert Time-Skew-Span-Attribut bei `|client_timestamp - server_received_at| > 60s` — bereits im §3.2-Bestand `TestHTTP_Span_TimeSkew_SetsWarning` (`c3741aa`); §3.4a-Header-Comment mappt das DoD-Item dorthin (`f329d5f`).
+- [x] Backend-Test verifiziert Trace-Konsistenz **bei deaktiviertem Tempo-Profil**: identisches Verhalten ohne `OTEL_TRACES_EXPORTER` — `correlation_id` bleibt gesetzt, Dashboard-Timeline ist nutzbar. Test darf kein externes Trace-Backend voraussetzen (Realisierung über `tracetest.SpanRecorder` oder NoOp-`TracerProvider`) — `TestHTTP_Trace_TempoDeactivated_CorrelationStillPersisted` mit nil-Tracer (NoOp-Pfad in `router.go`) (`f329d5f`).
 
 #### 3.4b Cross-Cutting-Tests SDK ↔ Server
 
