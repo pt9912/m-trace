@@ -180,9 +180,9 @@ mit Tranche 2.
 
 ### 8.2 Migrationswerkzeug
 
-`d-migrate` (siehe `/Development/d-migrate`,
-`ghcr.io/pt9912/d-migrate:latest`) wird als build-/dev-time-Werkzeug
-für Schema-Definition und DDL-Generierung gewählt. Begründung:
+`d-migrate` (Container `ghcr.io/pt9912/d-migrate:latest`, Quellen
+unter <https://github.com/pt9912/d-migrate>) wird als build-/dev-time-
+Werkzeug für Schema-Definition und DDL-Generierung gewählt. Begründung:
 
 - Schema-YAML ist neutrale Single-Source-of-Truth; Postgres-Folge-ADR
   bekommt `--target postgresql` ohne erneute manuelle Schema-Pflege.
@@ -196,9 +196,11 @@ für Schema-Definition und DDL-Generierung gewählt. Begründung:
   abhängig.
 
 Apply-Runner zur Laufzeit ist ein eigener kleiner Go-Bestandteil in
-`apps/api/internal/storage/` (oder vergleichbarer Pfad), der die per
-`embed.FS` eingebetteten generierten SQL-Files in Reihenfolge
-anwendet. Verantwortlich für:
+einem neuen Paket unter `apps/api/internal/`; den konkreten Pfad
+und Paketnamen legt `plan-0.4.0.md` §2.2 fest, sobald die Schema-
+YAML steht. Der Runner wendet die per `embed.FS` eingebetteten,
+aus der Schema-YAML generierten SQL-Files in Reihenfolge an.
+Verantwortlich für:
 
 - Lesen der `schema_migrations`-Tabelle, Erkennen offener Versionen.
 - Anwenden in einer Transaktion pro Migration; bei Fehler `dirty=1`

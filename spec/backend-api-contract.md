@@ -178,15 +178,15 @@ Service; die Limits sind nicht öffentlich konfigurierbar.
 
 ---
 
-### 3.7 Server-vergebene Read-Felder (ab `0.4.0`)
+### 3.7 Server-vergebene Read-Felder
 
 Die folgenden Felder werden ausschließlich vom Server vergeben und
 erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
 
-| Feld | Typ | Beschreibung |
-|---|---|---|
-| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR 0002 §8.1](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
-| `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. |
+| Feld | Typ | Verfügbar ab | Beschreibung |
+|---|---|---|---|
+| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | `0.1.x` | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR 0002 §8.1](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
+| `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | `0.4.0` (ab `plan-0.4.0.md` §2.3-Closeout) | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. Vor §2.3-Closeout liefern Read-Antworten dieses Feld nicht. |
 
 Beide Felder sind im POST-Wire-Format (§3.2/§3.3) **nicht** zulässig;
 Clients dürfen sie nur aus Read-Antworten interpretieren. Die genaue
@@ -411,6 +411,14 @@ Implementierung.
   bleiben gültig).
 
 ### 10.3 Pagination und Cursor
+
+> **Implementierungs-Status**: Der `cursor_version: 2`-Vertrag und die
+> unten dokumentierte Fehlerklassen-Matrix gelten **ab Abschluss von
+> `plan-0.4.0.md` §2.5**. Bis dahin liefert der laufende Code
+> (`0.3.x`-Stand) noch den Sammel-Body
+> `{"error":"cursor_invalid","reason":...}` mit den Reasons
+> `storage_restart` und `malformed`. Vertragstreue Clients dürfen die
+> neuen Klassen erst nach §2.5-Closeout erwarten.
 
 Cursor-basierte Pagination gilt für `GET /api/stream-sessions`
 (Query-Parameter `cursor`) und für die Event-Liste in
