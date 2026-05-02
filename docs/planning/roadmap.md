@@ -90,7 +90,8 @@ Commit-Hashes, z. B. [`docs/planning/plan-0.3.0.md`](./plan-0.3.0.md).
 | 32  | ⬜      | Optionales Tempo-Profil anbinden, ohne RAK-29/RAK-32 vom Trace-Backend abhängig zu machen                            | Nach Schritt 29                                                 | RAK-31; plan-0.4.0 Tranche 5                              |
 | 33  | ⬜      | Aggregat-Metriken, Drop-/Invalid-/Rate-Limit-Sichtbarkeit und Cardinality-/Sampling-Doku abschließen                 | Parallel zu Schritten 28–31                                     | RAK-33..RAK-35; plan-0.4.0 Tranchen 6–7                   |
 | 34  | ⬜      | Release-Akzeptanzkriterien `0.4.0` verifizieren und Roadmap auf `0.5.0` umstellen                                    | Nach Schritten 28–33                                            | RAK-29..RAK-35; plan-0.4.0 Tranche 8                      |
-| 35  | ⬜      | SOLID-nahes `golangci-lint`-Zusatzprofil konfigurieren und Lint-Findings abarbeiten                                  | Nach Lastenheft-/Quality-Doku-Festlegung                       | `spec/lastenheft.md` §10.1; `docs/user/quality.md` §1.1   |
+| 35  | ⬜      | SOLID-nahes `golangci-lint`-Zusatzprofil konfigurieren und Lint-Findings abarbeiten                                  | Nach Lastenheft-/Quality-Doku-Festlegung                       | `spec/lastenheft.md` §10.1; `docs/user/quality.md` §1.2   |
+| 36  | ⬜      | SOLID-nahes TypeScript-/Svelte-Lintprofil für Apps und Packages festlegen, konfigurieren und Findings abarbeiten     | Nach Schritt 35 oder parallel bei Workspace-Lint-Ausbau         | `spec/lastenheft.md` §10.2–§10.4; `docs/user/quality.md` §1.1 |
 
 ---
 

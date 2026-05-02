@@ -1397,6 +1397,8 @@ Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on de
 - Package Manager: pnpm
 - Styling: zunächst pragmatisch, später UI-Package möglich
 - Kommunikation: REST, später WebSocket oder SSE
+- Qualität: Typecheck, Svelte-Check, Tests und SOLID-nahe
+  Boundary-/Komplexitätsregeln für UI-Module
 
 ### 10.3 Player-SDK
 
@@ -1406,6 +1408,8 @@ Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on de
 - Ausgabeformat: ESM
 - Kernlogik frameworkfrei
 - Adapter für Browser und HTTP
+- Qualität: Typecheck, Public-API-Snapshot und SOLID-nahe
+  Boundary-Regeln zwischen Kernlogik, Transport und Browser-Adaptern
 
 ### 10.4 Stream Analyzer
 
@@ -1415,6 +1419,8 @@ Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on de
 - DASH später
 - CLI später
 - API-kompatible JSON-Ergebnisse
+- Qualität: Typecheck, Public-API-Snapshot und SOLID-nahe
+  Boundary-Regeln zwischen Public API, CLI und `internal/`
 
 ### 10.5 Infrastruktur
 

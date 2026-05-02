@@ -46,7 +46,30 @@ Make-Target (Soll, Plan §14.9):
 make lint    # = docker build --target lint
 ```
 
-### 1.1 SOLID-nahe Linter
+### 1.1 TypeScript/Svelte-Analyse
+
+Die TypeScript- und Svelte-Pakete laufen über den Root-Workspace-Lint:
+
+```bash
+pnpm run lint
+```
+
+Der aktuelle Pfad ist bewusst leichtgewichtig:
+
+| Paket/App | Gate | SOLID-naher Anteil |
+|---|---|---|
+| `packages/player-sdk` | `tsc --noEmit`, Boundary-Check, Public-API-Snapshot | `core/` darf nicht von Browser-Adaptern oder `hls.js` abhängen |
+| `packages/stream-analyzer` | `tsc --noEmit`, Boundary-Check, Public-API-Snapshot | Public Modules dürfen nicht direkt aus `internal/` importieren |
+| `apps/dashboard` | `svelte-check` | noch kein SOLID-nahes Zusatzprofil |
+| `apps/analyzer-service` | `tsc --noEmit` | noch kein SOLID-nahes Zusatzprofil |
+
+Soll-Ausbau: alle TypeScript-/Svelte-Pakete erhalten ein gemeinsames
+SOLID-nahes Zusatzprofil für Import-Boundaries, verbotene Deep Imports,
+Komplexität, Funktionslänge, Verschachtelung und stabile Public APIs.
+Das Profil muss über `make lint` laufen und darf keine lokalen Editor-
+Plugins voraussetzen.
+
+### 1.2 Go: SOLID-nahe Linter
 
 Die folgenden `golangci-lint`-Linter sind keine offizielle
 SOLID-Kategorie. Sie sind die verbindliche Projektauswahl für

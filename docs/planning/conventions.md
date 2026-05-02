@@ -44,15 +44,31 @@ erforderlich (Testify/Ginkgo/Gomega bleiben bewusst außen vor).
 
 ## 3. Linting
 
+### 3.1 Go
+
 `golangci-lint` mit Default-Lintern plus SOLID-nahem Zusatzprofil als
 Soll-Gate:
 
 - `govet`, `errcheck`, `staticcheck`, `unused`, `ineffassign`.
 - SOLID-nahe Zusatz-Linter gemäß `spec/lastenheft.md` §10.1 und
-  `docs/user/quality.md` §1.1.
+  `docs/user/quality.md` §1.2.
 - Suppressions sind ausgeschlossen.
 - `make lint` ruft `docker build --target lint` auf (siehe
   `docs/user/quality.md` §1).
+
+### 3.2 TypeScript/Svelte
+
+TypeScript- und Svelte-Pakete laufen über `pnpm run lint` und damit
+über das Root-Target `make lint`. Typecheck allein reicht nur für
+kleine Adapter-/Service-Pakete; dauerhafte Pakete und Apps brauchen
+zusätzlich SOLID-nahe Design-Gates:
+
+- Import-Boundaries zwischen Public API, Kernlogik, Adapter- und
+  `internal/`-Code.
+- stabile Public-API-Snapshots für veröffentlichte Packages.
+- Komplexitäts-, Funktionslängen- und Verschachtelungsgrenzen als
+  Warnsignal für SRP-Verletzungen.
+- keine Deep Imports aus Package-Interna durch Konsumenten.
 
 ---
 
