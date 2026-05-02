@@ -85,11 +85,16 @@ Konkrete Token-Inhalte für `cursor_version: 2`:
 - **Session-Events-Cursor**:
   `{"v":2,"rcv":"<server_received_at, RFC3339Nano UTC>","seq":<int|null>,"ing":<int>}`
 
-Felder ausserhalb dieses Schemas sind in `v: 2` verboten;
-insbesondere ein `pid`-Feld (aus dem `0.1.x`-Format) führt
-deterministisch zu §6 `cursor_invalid_legacy`. Server muss zusätzliche
-unbekannte Felder ignorieren oder ablehnen — er darf sie nicht still
-durchschleifen. Das schützt vor zukünftiger Token-Format-Erosion.
+Felder ausserhalb dieses Schemas sind in `v: 2` verboten und führen
+deterministisch zu einer Fehlerklasse aus §6:
+
+- `pid`-Feld vorhanden (`0.1.x`-Format) → `cursor_invalid_legacy`.
+- Andere unbekannte Felder (alles ausser `v`, `sa`, `sid`, `rcv`,
+  `seq`, `ing`) → `cursor_invalid_malformed`.
+
+Der Server darf unbekannte Felder **nicht** still ignorieren und
+**nicht** still durchschleifen. Das schützt vor zukünftiger
+Token-Format-Erosion und macht Tests deterministisch.
 
 `ingest_sequence` (`ing`) bleibt der serverseitig durable Tie-Breaker
 und wird als globale, monoton steigende Persistenz-Sequenz aus SQLite
@@ -115,7 +120,7 @@ Server entscheidet pro eingehendem Cursor anhand der Decode-Reihenfolge:
 |---|---|---|---|---|
 | `accepted` | Token decodiert; `v == 2`; alle Pflichtfelder vorhanden und valide. | `200 OK` (Listen-Endpoint antwortet wie ohne Cursor, aber mit Filter). | regulärer Listen-Response. | weiter paginieren mit `next_cursor`. |
 | `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden (Hinweis auf `0.1.x`-Format). | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
-| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig; oder unbekannte Zusatzfelder vorhanden (siehe §5). | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 | `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert eine Storage-Position, die durch Retention-/Wipe-Pfad nicht mehr existiert (z. B. nach `make wipe` oder zukünftiger TTL-Aufräumung). In `0.4.0` ohne TTL praktisch nur via `make wipe` erreichbar — Server-Implementierung muss den Pfad trotzdem vorsehen, damit Retention-Folge-Arbeit ohne Wire-Format-Bruch möglich bleibt. | `410 Gone` (Token syntaktisch valide, Ziel weg — Snapshot-Reload bleibt der Recovery-Pfad). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 
 Keine der Fehlerklassen liefert `Retry-After`. Recovery ist

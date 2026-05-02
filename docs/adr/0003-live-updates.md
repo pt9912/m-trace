@@ -118,6 +118,10 @@ ist:
 - Ob ein globaler SSE-Stream genügt oder zusätzlich ein Session-Detail-Stream
   gebraucht wird.
 - Konkretes Event-Payload-Schema und Reconnect-Backfill-Regel.
-- Ob `Last-Event-ID` direkt auf den durable Cursor aus der SQLite-Tranche
-  abgebildet wird oder nur eine Stream-Sequenz ist.
+- ~~Ob `Last-Event-ID` direkt auf den durable Cursor aus der SQLite-Tranche
+  abgebildet wird oder nur eine Stream-Sequenz ist.~~ **Resolved durch
+  [ADR 0002 §8.1](./0002-persistence-store.md): `Last-Event-ID` ist die
+  globale `ingest_sequence` aus der `playback_events`-Tabelle. Damit ist
+  der Reconnect-Backfill restart-stabil, ohne Zusatzpräfix und ohne
+  separaten Stream-Sequence-Generator.**
 - Konkrete Dashboard-Fallback-Intervalle für Polling.

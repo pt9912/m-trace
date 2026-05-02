@@ -17,8 +17,9 @@ zulässig, verliert Daten aber bei Neustart und invalidiert Cursor über die
 `process_instance_id`.
 
 OE-3 fragt, ob die MVP-Datenhaltung rein In-Memory bleibt oder auf
-SQLite/PostgreSQL wechselt. Dieser ADR-Entwurf bereitet die Entscheidung vor,
-entscheidet sie aber noch nicht final.
+SQLite/PostgreSQL wechselt. Dieser ADR (ursprünglich als Entwurf
+2026-04-30 gestartet, am 2026-05-01 als `Accepted` angenommen)
+beantwortet OE-3 in §6.
 
 `0.2.0` stabilisiert das Player-SDK. Dabei wurde der Storage-Vertrag nicht
 geändert: Das Wire-Format bleibt `schema_version: "1.0"`, Events werden
@@ -43,7 +44,7 @@ unterstützen?
 
 ## 3. Anforderungen aus SDK-/Schema-Sicht
 
-Diese Punkte muss eine spätere Entscheidung berücksichtigen:
+Folgende Punkte musste die Entscheidung berücksichtigen (siehe §6):
 
 | Bereich | Anforderung |
 |---|---|
@@ -148,8 +149,8 @@ Notwendige reduziert:
 |---|---|---|
 | `schema_migrations` | `version`, `applied_at`, `dirty` | PK `version`. Vom Apply-Runner verwaltet, nicht aus der Schema-YAML generiert. |
 | `projects` | `project_id` | PK `project_id`. Minimal in `0.4.0`; weitere Project-Konfigurationsfelder bleiben Use-Case-Service-intern. |
-| `stream_sessions` | `session_id`, `project_id`, `started_at`, `last_seen_at`, `ended_at`, `state` | PK `session_id`. Index für Session-Listing nach kanonischer Sortierung (`started_at desc, session_id asc`), gefiltert nach `project_id`. |
-| `playback_events` | `ingest_sequence`, `project_id`, `session_id`, `event_name`, `client_timestamp`, `server_received_at`, `sequence_number`, `sdk_name`, `sdk_version`, `schema_version`, `meta`, `delivery_status` | PK `ingest_sequence` als `INTEGER PRIMARY KEY AUTOINCREMENT` (global monoton, durable). Index für kanonische Event-Sortierung pro Session. Partial-Index `idx_playback_events_dedup` auf `(project_id, session_id, sequence_number) WHERE delivery_status = 'accepted' AND sequence_number IS NOT NULL` für die Dedup-Lookup aus §8.3. |
+| `stream_sessions` | `session_id`, `project_id`, `started_at`, `last_seen_at`, `ended_at`, `state`, `correlation_id` | PK `session_id`. Index für Session-Listing nach kanonischer Sortierung (`started_at desc, session_id asc`), gefiltert nach `project_id`. `correlation_id` ist nullable und wird in Tranche 2 (`plan-0.4.0.md` §3) befüllt, sobald die Trace-/Korrelations-Strategie steht. |
+| `playback_events` | `ingest_sequence`, `project_id`, `session_id`, `event_name`, `client_timestamp`, `server_received_at`, `sequence_number`, `sdk_name`, `sdk_version`, `schema_version`, `meta`, `delivery_status`, `trace_id`, `span_id`, `correlation_id` | PK `ingest_sequence` als `INTEGER PRIMARY KEY AUTOINCREMENT` (global monoton, durable). Index für kanonische Event-Sortierung pro Session. **Partial UNIQUE Index** `uq_playback_events_dedup` auf `(project_id, session_id, sequence_number) WHERE delivery_status = 'accepted' AND sequence_number IS NOT NULL` — DB-erzwungener Dedup-Schutz, Adapter-Algorithmus in §8.3. `trace_id`/`span_id`/`correlation_id` sind nullable und werden in Tranche 2 befüllt; das Schema reserviert sie jetzt, damit §2.2 sie nicht nachträglich hinzufügen muss. |
 
 `ingest_sequence` ist global, nicht pro `project_id` + `session_id`.
 Damit ist der Cursor-Tie-Breaker aus ADR 0004 §5 erfüllt und
@@ -167,6 +168,15 @@ Spalte ohne Datenmüll auf `JSONB` migrieren kann. Schema-YAML
 deklariert die Spalte typneutral; eine Schema-Garantie über die
 *innere* JSON-Struktur gibt der Store nicht — die liegt im
 Wire-Format-Vertrag (`spec/backend-api-contract.md` §3).
+
+`trace_id`, `span_id` und `correlation_id` sind in `0.4.0` als TEXT-
+Spalten reserviert. Konkrete Wertebereiche (W3C-Trace-Context: 32-Hex
+für `trace_id`, 16-Hex für `span_id`; `correlation_id` als
+serverseitig vergebener Fallback) und die Befüllungs-Regeln
+(Quelle: SDK-Header oder serverseitig generiert; Vererbung von
+Session zu Event) werden in Tranche 2 (`plan-0.4.0.md` §3, RAK-29)
+festgelegt. Read-Pfad-Exposure im API-Kontrakt §3.7 erfolgt zusammen
+mit Tranche 2.
 
 ### 8.2 Migrationswerkzeug
 
@@ -212,17 +222,32 @@ Drittanbieter-Library im API-Image landet.
   Sweeper-Übergänge nutzen ein UPSERT-Muster auf `session_id` und
   setzen `ended_at` nur, wenn noch nicht gesetzt.
 - **Event-Dedup** erfolgt als Timeline-Klassifikation, **nicht** als
-  Hard-Reject:
+  Hard-Reject. Dedup ist DB-seitig erzwungen, damit konkurrente
+  Writer (zwei Goroutines, zwei Connections) nicht beide als
+  `accepted` landen können:
   - Dedup-Key ist `(project_id, session_id, sequence_number)` für
     Events mit gesetzter `sequence_number`.
-  - Server prüft beim Insert, ob bereits ein Event mit demselben
-    Dedup-Key und `delivery_status = 'accepted'` existiert.
-  - Falls ja: neuer Event wird trotzdem persistiert, aber mit
-    `delivery_status = 'duplicate_suspected'`. Cursor-Sortierung und
-    Trace-Korrelation bleiben dadurch unbeschädigt.
+  - DB-Schutz ist der Partial-UNIQUE-Index `uq_playback_events_dedup`
+    aus §8.1; höchstens **eine** Zeile mit demselben Dedup-Key kann
+    `delivery_status = 'accepted'` haben.
+  - Adapter-Algorithmus pro Insert (in einer einzigen Transaktion
+    mit `BEGIN IMMEDIATE`, das den SQLite-Write-Lock direkt
+    akquiriert):
+    1. SELECT auf den Partial-Index, um eine bereits `accepted`-
+       Zeile mit demselben Dedup-Key zu finden.
+    2. Falls vorhanden: INSERT mit
+       `delivery_status = 'duplicate_suspected'`. Commit.
+    3. Falls nicht vorhanden: INSERT mit
+       `delivery_status = 'accepted'`. Bei UNIQUE-Constraint-
+       Verletzung (paralleler Writer hat zwischenzeitlich
+       eingefügt — kann durch fehlerhafte Lock-Konfiguration
+       passieren) wird der Insert mit
+       `delivery_status = 'duplicate_suspected'` wiederholt. Commit.
   - Events ohne `sequence_number` werden immer als
     `delivery_status = 'accepted'` aufgenommen; es gibt keinen
-    automatischen Dedup ohne expliziten Schlüssel.
+    automatischen Dedup ohne expliziten Schlüssel. Der Partial-
+    UNIQUE-Index greift wegen `WHERE sequence_number IS NOT NULL`
+    nicht.
 - Der Wert `delivery_status = 'replayed'` ist in der Spalte vorhanden,
   wird in `0.4.0` aber nur dann gesetzt, wenn ein Use-Case-Service
   explizit einen Replay-Pfad signalisiert. Für `0.4.0` bleibt der
