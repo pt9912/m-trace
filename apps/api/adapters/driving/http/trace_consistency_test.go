@@ -3,7 +3,6 @@ package http_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -32,7 +31,7 @@ import (
 //   §3.4a #3 Invalid client context (parse_error)    -> already covered: traceparent_span_test.go::TestHTTP_Span_TraceParent_InvalidSetsParseError
 //   §3.4a #4 session_ended preserves correlation_id  -> below: TestHTTP_Trace_SessionEnded_PreservesCorrelationID
 //   §3.4a #5 Time-skew span attribute                -> already covered: traceparent_span_test.go::TestHTTP_Span_TimeSkew_SetsWarning
-//   §3.4a #6 Tempo-deactivated correlation_id flow   -> below: TestHTTP_Trace_TempoDeactivated_CorrelationStillPersisted
+//   §3.4a #6 NoOp-Tracer correlation_id persistence  -> below: TestHTTP_Trace_NoopTracer_CorrelationStillPersisted
 //
 // The bodies below intentionally avoid the shared validBody constant
 // from handler_test.go so each test owns its session_id and event
@@ -58,7 +57,7 @@ func TestHTTP_Trace_MultiBatchSameSessionConsistency(t *testing.T) {
 		"2026-04-28T12:00:02.000Z",
 	}
 	for i, ts := range timestamps {
-		body := singleEventBody(sessionID, "rebuffer_started", ts)
+		body := singleEventBody(t, sessionID, "rebuffer_started", ts)
 		resp := postEvents(t, srv, "demo-token", body)
 		if resp.StatusCode != http.StatusAccepted {
 			t.Fatalf("batch %d: expected 202, got %d", i, resp.StatusCode)
@@ -72,6 +71,7 @@ func TestHTTP_Trace_MultiBatchSameSessionConsistency(t *testing.T) {
 
 	traceIDs := map[string]struct{}{}
 	correlationIDs := map[string]struct{}{}
+	spanCorrelationIDs := make([]string, len(spans))
 	for i, span := range spans {
 		traceIDs[span.SpanContext().TraceID().String()] = struct{}{}
 		attrs := attrMap(span.Attributes())
@@ -80,6 +80,7 @@ func TestHTTP_Trace_MultiBatchSameSessionConsistency(t *testing.T) {
 			t.Fatalf("span[%d] mtrace.session.correlation_id missing or empty: got %v", i, attrs["mtrace.session.correlation_id"])
 		}
 		correlationIDs[corr] = struct{}{}
+		spanCorrelationIDs[i] = corr
 	}
 	if len(traceIDs) != 3 {
 		t.Errorf("expected 3 distinct trace_ids, got %d (set=%v)", len(traceIDs), traceIDs)
@@ -99,6 +100,21 @@ func TestHTTP_Trace_MultiBatchSameSessionConsistency(t *testing.T) {
 		if e.CorrelationID != persisted[0].CorrelationID {
 			t.Errorf("event[%d] CorrelationID = %q, want %q (shared across batches)",
 				i, e.CorrelationID, persisted[0].CorrelationID)
+		}
+		// SF#2: jeder Batch persistiert die trace_id seines Spans —
+		// stellt sicher, dass „3 distinkte trace_ids in Spans" sich
+		// auch in der Zeile widerspiegeln.
+		spanTraceID := spans[i].SpanContext().TraceID().String()
+		if e.TraceID != spanTraceID {
+			t.Errorf("event[%d] TraceID = %q, want span[%d] TraceID %q",
+				i, e.TraceID, i, spanTraceID)
+		}
+		// Anm#3: Span-Attribut mtrace.session.correlation_id matcht
+		// die persistierte CorrelationID — schließt die Lücke
+		// Wire-Attribut ↔ DB-Spalte.
+		if spanCorrelationIDs[i] != e.CorrelationID {
+			t.Errorf("span[%d] correlation_id %q != event[%d] CorrelationID %q",
+				i, spanCorrelationIDs[i], i, e.CorrelationID)
 		}
 	}
 
@@ -182,7 +198,7 @@ func TestHTTP_Trace_SessionEnded_PreservesCorrelationID(t *testing.T) {
 
 	// Batch 1: erstes Event begründet die Session und ihre correlation_id.
 	resp1 := postEvents(t, srv, "demo-token",
-		singleEventBody(sessionID, "rebuffer_started", "2026-04-28T12:00:00.000Z"))
+		singleEventBody(t, sessionID, "rebuffer_started", "2026-04-28T12:00:00.000Z"))
 	if resp1.StatusCode != http.StatusAccepted {
 		t.Fatalf("batch 1: expected 202, got %d", resp1.StatusCode)
 	}
@@ -190,7 +206,7 @@ func TestHTTP_Trace_SessionEnded_PreservesCorrelationID(t *testing.T) {
 	// Batch 2: session_ended schließt die Session; muss die existing
 	// correlation_id übernehmen, nicht eine neue erzeugen.
 	resp2 := postEvents(t, srv, "demo-token",
-		singleEventBody(sessionID, "session_ended", "2026-04-28T12:00:01.000Z"))
+		singleEventBody(t, sessionID, "session_ended", "2026-04-28T12:00:01.000Z"))
 	if resp2.StatusCode != http.StatusAccepted {
 		t.Fatalf("batch 2 (session_ended): expected 202, got %d", resp2.StatusCode)
 	}
@@ -198,7 +214,7 @@ func TestHTTP_Trace_SessionEnded_PreservesCorrelationID(t *testing.T) {
 	// Batch 3: Nachzügler mit derselben session_id bekommt weiter die
 	// gleiche correlation_id — das Repository hat die Session noch.
 	resp3 := postEvents(t, srv, "demo-token",
-		singleEventBody(sessionID, "rebuffer_ended", "2026-04-28T12:00:02.000Z"))
+		singleEventBody(t, sessionID, "rebuffer_ended", "2026-04-28T12:00:02.000Z"))
 	if resp3.StatusCode != http.StatusAccepted {
 		t.Fatalf("batch 3 (post-end): expected 202, got %d", resp3.StatusCode)
 	}
@@ -206,6 +222,13 @@ func TestHTTP_Trace_SessionEnded_PreservesCorrelationID(t *testing.T) {
 	persisted := eventRepo.Snapshot()
 	if len(persisted) != 3 {
 		t.Fatalf("expected 3 persisted events, got %d", len(persisted))
+	}
+
+	// SF#4 Spot-Check: das mittlere Event ist tatsächlich session_ended,
+	// nicht still gedroppt — sonst wäre der „session_ended preserves
+	// correlation_id"-Vertrag des Tests gar nicht ausgeübt.
+	if got, want := persisted[1].EventName, "session_ended"; got != want {
+		t.Errorf("persisted[1].EventName = %q, want %q (Test-Setup-Sanity)", got, want)
 	}
 
 	first := persisted[0].CorrelationID
@@ -228,14 +251,18 @@ func TestHTTP_Trace_SessionEnded_PreservesCorrelationID(t *testing.T) {
 	}
 }
 
-// TestHTTP_Trace_TempoDeactivated_CorrelationStillPersisted deckt
-// §3.4a #6: ohne realen TracerProvider (NoOp via nil-Tracer im Router)
-// bleiben correlation_id-Resolver und -Persistenz funktionsfähig. Der
-// Test belegt: das Dashboard kann eine Timeline rein aus der lokalen
-// Persistenz aufbauen, auch wenn kein OTel-Exporter läuft. Spans sind
-// dabei nicht beobachtbar (NoOp), daher prüfen wir ausschließlich die
-// persistierten Events und Sessions.
-func TestHTTP_Trace_TempoDeactivated_CorrelationStillPersisted(t *testing.T) {
+// TestHTTP_Trace_NoopTracer_CorrelationStillPersisted deckt §3.4a #6:
+// mit einem NoOp-Tracer (hier via `nil` an `NewRouter`, der den
+// `tracenoop.NewTracerProvider().Tracer("noop")`-Fallback in
+// router.go aktiviert) bleiben correlation_id-Resolver und -Persistenz
+// funktionsfähig. Der Test belegt: das Dashboard kann eine Timeline
+// rein aus der lokalen Persistenz aufbauen, auch wenn kein
+// OTel-Exporter läuft. Spans sind dabei nicht beobachtbar (NoOp),
+// daher prüfen wir ausschließlich die persistierten Events und
+// Sessions. (Der frühere Name "TempoDeactivated" suggerierte einen
+// Test der Config-Resolution; tatsächlich wird hier der NoOp-Pfad
+// unter Beweis gestellt.)
+func TestHTTP_Trace_NoopTracer_CorrelationStillPersisted(t *testing.T) {
 	t.Parallel()
 
 	srv, eventRepo, sessionRepo := newTestServerWithTracerAndRepos(t, nil)
@@ -296,8 +323,11 @@ func newTestServerWithTracerAndRepos(
 // singleEventBody baut ein Wire-Payload mit genau einem Event für die
 // Multi-Batch- und Session-Ende-Tests. project_id und sdk-Block
 // kopieren das Format aus validBody (handler_test.go), damit der
-// Wire-Validator zufrieden ist.
-func singleEventBody(sessionID, eventName, clientTimestamp string) string {
+// Wire-Validator zufrieden ist. Marshal-Fehler eskalieren über
+// `t.Fatalf`, nicht über `panic`, damit ein Regression im Marshaller
+// als sauberes Test-Failure auftaucht.
+func singleEventBody(t *testing.T, sessionID, eventName, clientTimestamp string) string {
+	t.Helper()
 	type evt struct {
 		EventName       string `json:"event_name"`
 		ProjectID       string `json:"project_id"`
@@ -322,7 +352,7 @@ func singleEventBody(sessionID, eventName, clientTimestamp string) string {
 	e.SDK.Version = "0.2.0"
 	b, err := json.Marshal(batch{SchemaVersion: "1.0", Events: []evt{e}})
 	if err != nil {
-		panic(fmt.Sprintf("marshal singleEventBody: %v", err))
+		t.Fatalf("marshal singleEventBody: %v", err)
 	}
 	return string(b)
 }
