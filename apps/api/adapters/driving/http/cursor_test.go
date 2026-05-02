@@ -50,6 +50,20 @@ func TestDecodeListSessionsCursor_Empty(t *testing.T) {
 	}
 }
 
+// TestEncodeCursor_NilReturnsEmpty verifiziert die Symmetrie zum
+// decode-Empty-Pfad: der Handler ruft encode nur, wenn ein Cursor da
+// ist, aber der defensive nil-Branch in beiden Encode-Funktionen
+// muss leer + nil-Error zurückgeben.
+func TestEncodeCursor_NilReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	if got, err := encodeListSessionsCursor(nil); got != "" || err != nil {
+		t.Errorf("encodeListSessionsCursor(nil) = (%q, %v), want (empty, nil)", got, err)
+	}
+	if got, err := encodeSessionEventsCursor(nil); got != "" || err != nil {
+		t.Errorf("encodeSessionEventsCursor(nil) = (%q, %v), want (empty, nil)", got, err)
+	}
+}
+
 // TestDecodeListSessionsCursor_Malformed deckt die einzelnen Decode-
 // Stufen ab (Base64 → JSON → v-Wert → Pflichtfelder → unbekannte
 // Felder), die alle in `errCursorInvalidMalformed` münden.
