@@ -1,6 +1,6 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
-> **Status**: 🟡 in Arbeit. Tranche 0 abgeschlossen; Tranche 1 in §2.1–§2.5 ausgeliefert, §2.6 offen.
+> **Status**: 🟡 in Arbeit. Tranche 0 + Tranche 1 (§2.1–§2.6) abgeschlossen; Tranchen 2–8 offen.
 > **Bezug**: [Lastenheft `1.1.8`](../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../spec/architecture.md); [Telemetry-Model](../../spec/telemetry-model.md); [API-Kontrakt](../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../adr/0003-live-updates.md); [Risiken-Backlog](./risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
@@ -31,7 +31,7 @@ Neue Lastenheft-Patches während `0.4.0` landen weiterhin zentral in `plan-0.1.0
 | Tranche | Inhalt | Status |
 |---|---|---|
 | 0 | Vorgänger-Gate und Scope-Entscheidungen | ✅ |
-| 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | 🟡 (§2.1–§2.5 ✅, §2.6 ⬜) |
+| 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | ✅ |
 | 2 | Session-Trace-Modell und OTel-Korrelation | ⬜ |
 | 3 | Manifest-/Segment-/Player-Korrelation | ⬜ |
 | 4 | Dashboard-Session-Verlauf ohne Tempo | ⬜ |
@@ -147,9 +147,9 @@ Ziel: Spec-, Nutzer- und Architektur-Doku spiegeln den ausgelieferten Stand; Tes
 
 DoD:
 
-- [x] `spec/architecture.md` beschreibt den Storage-Stand: §3.1-Mermaid und §3.4-Adapter-Tabelle reflektieren das Sub-Paket-Layout (`inmemory/`/`sqlite/`/`contract/`); §4.2-Tree zeigt `internal/storage` für den Apply-Runner. SQLite ist als Default ab `0.4.0` markiert; ADR-0002 §8.1 bleibt die normative Schema-Quelle (Commit folgt).
+- [x] `spec/architecture.md` beschreibt den Storage-Stand: §3.1-Mermaid und §3.4-Adapter-Tabelle reflektieren das Sub-Paket-Layout (`inmemory/`/`sqlite/`/`contract/`); §4.2-Tree zeigt `internal/storage` für den Apply-Runner. SQLite ist als Default ab `0.4.0` markiert; ADR-0002 §8.1 bleibt die normative Schema-Quelle (`9dbbc52`).
 - [x] `spec/backend-api-contract.md` ist final konsistent mit dem Code: §3.7 (Server-Read-Felder), §10.1–§10.5 (Storage, Idempotenz, Cursor-Matrix v2, Sortierung, Retention) wurden in §2.1/§2.5 aktualisiert; veralteter Implementierungs-Status-Callout in §10.3 ist nach §2.5-Closeout entfernt.
-- [x] `docs/user/local-development.md` §3.4 beschreibt SQLite-Pfad, env-var-Konfiguration, `make wipe` als einzigen Reset-Pfad, Cursor-Recovery-Mapping und Migrations-Verhalten (`dirty`-Flag) (Commit folgt).
+- [x] `docs/user/local-development.md` §3.4 beschreibt SQLite-Pfad, env-var-Konfiguration, `make wipe` als einzigen Reset-Pfad, Cursor-Recovery-Mapping und Migrations-Verhalten (`dirty`-Flag) (`9dbbc52`).
 - [x] Persistenztest-Suite ist auf die folgenden Test-Files verteilt:
   - `apps/api/internal/storage/migrate_test.go` — Frischstart, Re-Run-no-op, Migrations-Fehler-Pfad mit `dirty`-Flag, Refuse-to-Start, Multi-Statement-Rollback, Concurrent-Writers (sechs Tests).
   - `apps/api/adapters/driven/persistence/{inmemory,sqlite}/contract_test.go` plus `contract/contract.go` — gemeinsame Adapter-Suite (Event-Ordering, Cursor-Pagination, Session-Ended-Idempotenz, Sweep-Lifecycle inkl. Single-Sweep-Active→Ended, Sequencer-Monotonie, Session-List-Tie-Breaker, ended-as-first-event, Meta-Roundtrip mit verschachtelten Werten, CountByState).
@@ -158,7 +158,7 @@ DoD:
   - `apps/api/adapters/driving/http/cursor_test.go` und `cursor_error_mapping_test.go` — alle vier Matrix-Klassen (`accepted`, `cursor_invalid_legacy`, `cursor_invalid_malformed`, `cursor_expired`), Encode-/Decode-Stufen, HTTP-Status-Mapping. Retention selbst wird in `0.4.0` nicht automatisch ausgeführt (siehe API-Kontrakt §10.5); der `cursor_expired`-Mapping-Pfad ist über `cursor_error_mapping_test.go` gesichert.
 - [x] Coverage-Strategie für SQL-Pakete: Status-quo bleibt — `apps/api/internal/storage/`, `apps/api/adapters/driven/persistence/sqlite/`, `persistence/contract/` (und proaktiv `postgres/`/`mysql/`) sind im Dockerfile-coverpkg-Filter ausgenommen, weil defensive Error-Pfade ohne SQL-/FS-Mocks unerreichbar sind. Restdeckung über Contract-Tests gegen echte SQLite-Dateien hält die Adapter-Logik abgesichert. Re-Evaluation, sobald ein zweites SQL-Backend (Postgres) hinzukommt.
 - [x] Multi-Tenant-Sichtbarkeit für `mtrace_active_sessions`: Status-quo bleibt — Gauge zählt projekt-übergreifend. Per-Project-Aufschlüsselung wird mit dem Postgres-Folge-ADR (Multi-Instance/Multi-Tenant) gemeinsam entschieden, weil Cardinality-Erhöhung dort erst real wird; bis dahin reicht der globale Gauge.
-- [ ] Roadmap §2 Schritt 28 ist auf ✅ aktualisiert, sobald §2.1–§2.6 alle `[x]` sind.
+- [x] Roadmap §2 Schritt 28 ist auf ✅ aktualisiert; Tranche 1 (§2.1–§2.6) abgeschlossen.
 
 ---
 
