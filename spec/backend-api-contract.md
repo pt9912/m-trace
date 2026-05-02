@@ -339,9 +339,109 @@ Verbindliche Regeln:
 
 ## 10. Persistenz
 
-- Aktuell: In-Memory.
-- Daten überleben keinen Neustart — beabsichtigt.
-- Keine SQLite, kein Redis, kein ORM.
+`0.1.x`–`0.3.x` nutzten In-Memory-Repositories (Datenverlust bei
+Neustart, beabsichtigt). Ab `0.4.0` ist der lokale Durable-Store
+SQLite (siehe [ADR 0002](../docs/adr/0002-persistence-store.md)). Die
+nachfolgenden Sub-Sections sind Vertrag gegenüber API-Konsumenten —
+sie beschreiben das beobachtbare Verhalten, nicht die interne
+Implementierung.
+
+### 10.1 Storage-Stand
+
+- Sessions, Playback-Events und Ingest-Sequenzen werden in einer
+  lokalen SQLite-Datei persistiert; ein API-Restart verliert keine
+  bereits angenommenen Sessions oder Events.
+- Reset des lokalen Storage geschieht ausschließlich über einen
+  expliziten Pfad (z. B. `make wipe` o. Ä., siehe
+  `docs/user/local-development.md`); `make stop` räumt nicht auf.
+- Postgres und andere Stores sind in `0.4.0` nicht im Scope (Folge-ADR
+  aus Roadmap §4).
+
+### 10.2 Idempotenz und Event-Deduplikation
+
+- **Session-State-Updates** sind idempotent. Insbesondere ist
+  `session_ended` vom Client mehrfach sendbar; der Server setzt das
+  Session-Ende beim ersten Eintreffen und wertet nachfolgende
+  Wiederholungen als no-op (Antwort bleibt `202 Accepted`, kein
+  Fehlerbody).
+- **Event-Deduplikation** erfolgt server-seitig als
+  Timeline-Klassifikation, nicht als Hard-Reject:
+  - Dedup-Key: `(project_id, session_id, sequence_number)` für Events
+    mit gesetzter `sequence_number` (siehe §3.3).
+  - Trifft ein Event mit demselben Dedup-Key auf einen bereits als
+    `accepted` persistierten Vorgänger, wird das neue Event ebenfalls
+    persistiert und im Read-Pfad mit `delivery_status: "duplicate_suspected"`
+    ausgeliefert.
+  - Events ohne `sequence_number` werden immer als
+    `delivery_status: "accepted"` aufgenommen; ohne expliziten
+    Dedup-Schlüssel führt der Server keine automatische Erkennung
+    durch.
+- Möglicher `delivery_status`-Wertebereich im Read-Pfad:
+  `accepted`, `duplicate_suspected`, `replayed`. `replayed` ist in
+  `0.4.0` reserviert und wird nur durch explizite Use-Case-Pfade
+  gesetzt.
+- POST-Antworten (`202 Accepted`) ändern sich durch die
+  Dedup-Klassifikation **nicht**: jeder im Batch enthaltene Event
+  zählt für `accepted` im Response-Body und für die
+  `mtrace_playback_events_total`-Metrik (Cardinality-Regeln aus §7
+  bleiben gültig).
+
+### 10.3 Pagination und Cursor
+
+Cursor-basierte Pagination gilt für `GET /api/stream-sessions`
+(`cursor`-Query) und für die Event-Liste in
+`GET /api/stream-sessions/{id}` (`events_cursor`-Query).
+
+- **Wire-Format**: Cursor-Tokens sind base64url-kodiertes JSON ohne
+  Padding und enthalten ab `0.4.0` ein verbindliches `v`-Feld
+  (Cursor-Version). Aktuelle Version ist `2`. Token-Inhalt ist
+  servergetragen und sollte vom Client als opak behandelt werden.
+- **Versionierung**: Cursor ohne `v`-Feld oder mit `v: 1` werden als
+  Legacy-Format (`process_instance_id`-basiert, `0.1.x`/`0.2.x`/`0.3.x`)
+  erkannt und dauerhaft abgewiesen. Die feingranulare Begründung steht
+  in [ADR 0004 — Cursor-Strategie](../docs/adr/0004-cursor-strategy.md).
+
+**Kompatibilitätsmatrix**:
+
+| Klasse | Erkennung | HTTP-Status | Body | Client-Recovery |
+|---|---|---|---|---|
+| `accepted` | Token decodiert; `v == 2`; alle Pflichtfelder vorhanden und valide. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
+| `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden. | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_expired` | Cursor referenziert eine Storage-Position, die durch Reset/Retention nicht mehr existiert. | `410 Gone`. | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+
+**Recovery-Verhalten**:
+
+- Keine der Fehlerklassen enthält `Retry-After`. Ein Retry-Loop mit
+  demselben Cursor ist ein Client-Fehler.
+- `cursor_invalid_legacy` ist eine **dauerhafte** Reject-Klasse. Der
+  einzelne Legacy-Cursor wird nicht „einmalig" akzeptiert; nach dem
+  ersten `400` muss der Client den Snapshot neu laden und den Cursor
+  vergessen.
+
+### 10.4 Kanonische Sortierung
+
+API-Listen sind **restart-stabil** sortiert. Die Reihenfolge wird vom
+Server garantiert und ist nicht durch Cursor-Verhalten überspielbar:
+
+| Endpoint | Sortier-Tupel | Tie-Breaker |
+|---|---|---|
+| `GET /api/stream-sessions` | `started_at desc`, `session_id asc`. | `session_id` ist innerhalb `project_id` eindeutig (siehe §1). |
+| `GET /api/stream-sessions/{id}` (Events) | `server_received_at asc`, `sequence_number asc` (falls vorhanden), `ingest_sequence asc`. | `ingest_sequence` ist global monoton steigend und durable (siehe ADR 0002 §8.1); damit eindeutig auch ohne `project_id`/`session_id`-Komposit. |
+
+`ingest_sequence` ist serverseitig pflichtend und überlebt API-Restart.
+Damit ist die Event-Reihenfolge zweier Listen-Aufrufe vor und nach
+einem Restart bei identischem Cursor identisch (sofern keine neuen
+Events angenommen wurden).
+
+### 10.5 Retention
+
+- `0.4.0` führt keine automatische Retention ein. Daten bleiben
+  erhalten, bis ein expliziter Reset (siehe §10.1) erfolgt.
+- Konkrete TTL- oder Pro-Projekt-Limits werden Folge-Arbeit, sobald
+  Multi-Tenant-Last entsteht; bis dahin gibt der Server keinen
+  Retention-Header und keine `cursor_expired`-Antwort aus, außer ein
+  Reset wurde lokal ausgeführt.
 
 ---
 
