@@ -141,7 +141,7 @@ func TestApply_FailureMarksDirty(t *testing.T) {
 	t.Cleanup(func() { _ = db.Close() })
 
 	files := fstest.MapFS{
-		"0001_broken.sql": &fstest.MapFile{
+		"V1__broken.sql": &fstest.MapFile{
 			Data: []byte("THIS IS NOT VALID SQL;"),
 		},
 	}
@@ -184,7 +184,7 @@ func TestApply_DirtyStateRefuses(t *testing.T) {
 	}
 
 	files := fstest.MapFS{
-		"0008_after_dirty.sql": &fstest.MapFile{
+		"V8__after_dirty.sql": &fstest.MapFile{
 			Data: []byte("CREATE TABLE later (id INTEGER);"),
 		},
 	}
@@ -217,7 +217,7 @@ func TestApply_MultiStatementRollback(t *testing.T) {
 	// Erstes CREATE wäre erfolgreich; zweites scheitert (Tabellenname
 	// `a` existiert bereits aus Statement 1 derselben Tx).
 	files := fstest.MapFS{
-		"0001_multi.sql": &fstest.MapFile{
+		"V1__multi.sql": &fstest.MapFile{
 			Data: []byte("CREATE TABLE a(id INTEGER); CREATE TABLE a(id INTEGER);"),
 		},
 	}

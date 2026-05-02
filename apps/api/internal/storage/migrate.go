@@ -38,9 +38,12 @@ const driverName = "sqlite"
 // werden; Default ist `time.Now`.
 var nowFn = time.Now
 
-// migrationNamePattern matcht "0001_initial.sql", "0002_xxx.sql" etc.
-// Die ersten vier Ziffern sind die Versionsnummer.
-var migrationNamePattern = regexp.MustCompile(`^(\d{4})_.+\.sql$`)
+// migrationNamePattern matcht das Flyway-File-Format
+// `V<integer>__<description>.sql` (z. B. `V1__m_trace.sql`,
+// `V2__add_trace_columns.sql`). Die Integer-Versionsnummer ist
+// numerisch sortierbar; eine spätere Erweiterung auf semver-Versionen
+// (z. B. `V1.2.3`) müsste Pattern + Sortier-Logik anpassen.
+var migrationNamePattern = regexp.MustCompile(`^V(\d+)__.+\.sql$`)
 
 // ErrSchemaDirty wird zurückgegeben, wenn schema_migrations einen
 // Eintrag mit dirty=1 hat. Der API-Start refused dann; Reparatur ist

@@ -90,20 +90,26 @@ schema-validate:
 	docker run --rm -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
 		$(DMIGRATE_IMAGE) schema validate --source /work/schema.yaml
 
-# DDL aus schema.yaml für SQLite erzeugen (ADR-0002 §8.2). Output
-# landet als migrations/0001_initial.sql; Generated-Timestamp im
-# DDL-Header wird auf einen festen Wert normalisiert, damit eine
-# Re-Generation ohne Schema-Änderung keinen git-Diff erzeugt.
-# `perl -i -pe` ist portabel zwischen GNU- und BSD-Plattformen, weil
-# die `sed -i`-Inline-Syntax sich zwischen Linux und macOS unterscheidet.
+# Baseline-DDL aus schema.yaml für SQLite erzeugen (ADR-0002 §8.2),
+# im Flyway-File-Format (`V<version>__<description>.sql`). `export
+# flyway` produziert byte-deterministischen Output ohne Generated-
+# Timestamp im Header — Re-Generation ohne Schema-Änderung erzeugt
+# keinen git-Diff, keine Workaround-Pipeline nötig.
+#
+# `--version 1` legt die Initial-Version fest; spätere Schema-
+# Evolutionen (V2+) sind hand-gepflegte Migrationen (oder via
+# `d-migrate schema migrate`, sobald das Diff-basiert verfügbar ist).
+# Re-Run dieses Targets überschreibt **nur** V1__m_trace.sql; hand-
+# gepflegte V2+-Files bleiben unangetastet. d-migrate's export-flyway
+# kennt keinen --force-Schalter, daher löscht das Target das alte
+# Initial-File vor dem Lauf explizit.
 schema-generate:
+	rm -f $(SCHEMA_DIR)/migrations/V1__m_trace.sql
 	docker run --rm -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
-		$(DMIGRATE_IMAGE) schema generate \
+		$(DMIGRATE_IMAGE) export flyway \
 			--source /work/schema.yaml --target sqlite \
-			--output /work/migrations/0001_initial.sql
-	perl -i -pe 's/Generated: \S+Z$$/Generated: deterministic/' \
-		$(SCHEMA_DIR)/migrations/0001_initial.sql
-	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/0001_initial.sql"
+			--version 1 --output /work/migrations
+	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/V1__m_trace.sql"
 
 # Remove all spike-related images.
 clean:

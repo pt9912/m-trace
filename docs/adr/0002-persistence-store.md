@@ -194,9 +194,14 @@ Werkzeug für Schema-Definition und DDL-Generierung gewählt. Begründung:
 
 - Schema-YAML ist neutrale Single-Source-of-Truth; Postgres-Folge-ADR
   bekommt `--target postgresql` ohne erneute manuelle Schema-Pflege.
-- d-migrate bietet `schema validate`, `schema generate`, `schema compare`
-  und `schema reverse`. Für `0.4.0` werden `schema validate` (CI-Gate)
-  und `schema generate --target sqlite` (DDL-Erzeugung) genutzt.
+- d-migrate bietet `schema validate`, `schema generate`, `schema compare`,
+  `schema reverse` und `export flyway|liquibase|django|knex`. Für `0.4.0`
+  werden `schema validate` (CI-Gate) und `export flyway --target sqlite`
+  (Baseline-DDL-Erzeugung im Flyway-File-Format `V<n>__<desc>.sql`) genutzt.
+  `export flyway` ist byte-deterministisch ohne Generated-Timestamp im
+  Header — Re-Generation ohne Schema-Änderung erzeugt keinen git-Diff,
+  keine Workaround-Pipeline (sed/perl) nötig. `schema generate` bleibt
+  als Alternative verfügbar, ist hier aber nicht der genutzte Pfad.
 - d-migrate wird in m-trace **nicht zur Laufzeit** eingesetzt: das
   API-Image bleibt JDK-frei.
 - d-migrate steht unter Kontrolle desselben Owners wie m-trace. Format-
@@ -226,16 +231,17 @@ Verantwortlich für:
 neutrale Schema-Definition zusätzlich liefert und keine
 Drittanbieter-Library im API-Image landet.
 
-**Migrations-File-Konvention**: alle Initial- und Folge-Migrations-
-Files werden aus `schema.yaml` per
-`d-migrate schema generate --target sqlite` erzeugt
-(`0001_initial.sql`, später `0002_…sql` usw.). Hand-gepflegte
-SQL-Files sind nicht vorgesehen, solange das neutrale Modell die
-benötigten DDL-Features ausdrückt. Falls eine Tranche ein Feature
-braucht, das d-migrate noch nicht modelliert, wird das **dort**
-entschieden — entweder ist das Feature anders lösbar (z. B.
-Race-Schutz über `BEGIN IMMEDIATE` statt Partial-Index in §8.3),
-oder d-migrate selbst wird erweitert.
+**Migrations-File-Konvention**: das Initial-Baseline-DDL
+(`V1__m_trace.sql`) wird aus `schema.yaml` per
+`d-migrate export flyway --target sqlite --version 1` erzeugt; das
+File ist regenerierbar und nicht hand-zu-pflegen. Folge-Migrationen
+(`V2__…sql`, `V3__…sql`) sind hand-gepflegt, bis `d-migrate
+schema migrate` (Diff-basiert, geplant) verfügbar ist. Apply-Runner
+behandelt beide File-Klassen identisch (Pattern `V<n>__.+\.sql`). Falls
+eine Tranche ein DDL-Feature braucht, das d-migrate noch nicht
+modelliert, wird das **dort** entschieden — entweder ist das Feature
+anders lösbar (z. B. Race-Schutz über `BEGIN IMMEDIATE` statt
+Partial-Index in §8.3), oder d-migrate selbst wird erweitert.
 
 ### 8.3 Idempotenz und Event-Deduplikation
 
