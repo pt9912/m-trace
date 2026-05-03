@@ -113,7 +113,8 @@ ist:
   nur durable Cursor-/Sequenzdaten enthalten, keine Prozess-ID. Geschützte
   Streams werden im Dashboard über einen fetch-basierten SSE-Client/Polyfill
   geöffnet, weil native Browser-`EventSource` keine `X-MTrace-Token`-Header
-  setzen kann.
+  setzen kann. Reconnect-Backfill sendet die letzte durable ID über den
+  `Last-Event-ID`-Header.
 - Lifecycle-Updates ohne Playback-Event, z. B. Sweeper-Ende, brauchen für
   SSE-Backfill eine eigene durable Session-Update-Sequenz oder werden bewusst
   nur über REST-Polling sichtbar gemacht.

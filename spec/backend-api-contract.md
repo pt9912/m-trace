@@ -257,7 +257,8 @@ Der aufgelöste `project_id` ist Filter für alle Read-Pfade; Cursor aus
 einem Project dürfen nicht für ein anderes Project akzeptiert werden.
 SSE-Read-Pfade aus Tranche 4 folgen derselben Auth-Regel; ihre
 Preflight-Routen müssen `GET, OPTIONS` und die Header `X-MTrace-Token`
-und `X-MTrace-Project` erlauben.
+`X-MTrace-Project` und `Last-Event-ID` erlauben. Fetch-basierte
+SSE-Reconnects übertragen die Backfill-Position über `Last-Event-ID`.
 
 **Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
 
