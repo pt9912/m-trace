@@ -80,14 +80,17 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 | `meta` | object | beliebige event-spezifische Felder, z. B. `bitrate`, `duration_ms`, `error_code`. Schema-Erweiterung über §6. | F-114 |
 
 Ab `plan-0.4.0.md` Tranche 3 nutzen Manifest-/Segment-nahe
-Netzwerkereignisse additive `meta.network.*`-Felder. Der
-Degradationsmarker ist normativ:
+Netzwerkereignisse additive, flache `meta`-Keys nach dem Muster
+`network.*`. Der Punkt ist Teil des Key-Namens, kein verschachteltes
+Objekt; das bleibt kompatibel mit der aktuellen SDK-Typisierung
+`EventMeta = Record<string, string | number | boolean | null>`.
+Der Degradationsmarker ist normativ:
 
 | Feld | Typ | Bedeutung |
 |---|---|---|
-| `meta.network.kind` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
-| `meta.network.detail_status` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
-| `meta.network.unavailable_reason` | string, optional | Maschinenlesbarer Grund, z. B. `cors_timing_blocked`, `resource_timing_missing`, `service_worker_intercepted`, `native_hls_unavailable`, `cdn_redirect_opaque`. |
+| `meta["network.kind"]` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
+| `meta["network.detail_status"]` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
+| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund, z. B. `cors_timing_blocked`, `resource_timing_missing`, `service_worker_intercepted`, `native_hls_unavailable`, `cdn_redirect_opaque`. |
 
 `network_detail_unavailable` ist kein Fehlerstatus und darf allein
 keinen 4xx auslösen. Das Event bleibt in der Session-Timeline sichtbar,
@@ -95,23 +98,25 @@ behält seine serverseitig vergebene `correlation_id` und kann als
 Timeline-only-Ereignis ohne OTel-Span umgesetzt werden.
 
 Wenn der Browser-/Native-HLS-Pfad gar kein Manifest-/Segment-Signal
-liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. Die
-Session-API markiert diese Grenze außerhalb des Event-Streams im
-Session-Block als `network_signal_absent`: Liste von Objekten mit
-`kind` (`manifest` oder `segment`), `adapter` (`hls.js`, `native_hls`
-oder `unknown`) und maschinenlesbarem `reason`. Persistenzvehikel ist
-eine durable Session-Metadaten-Spalte oder ein äquivalenter
-session-skopierter Capability-/Boundary-Record; der Wert darf nicht nur
-aus flüchtigem Prozesszustand abgeleitet werden und muss über
-API-Restart stabil bleiben. Dashboard-Sichtbarkeit wird im
+liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. SDK oder
+Adapter muss stattdessen bei Session-Start bzw. Capability-Erkennung ein
+session-skopiertes Boundary-/Capability-Signal an den Backend-Ingest
+senden. Die Session-API markiert diese Grenze außerhalb des
+Event-Streams im Session-Block als `network_signal_absent`: Liste von
+Objekten mit `kind` (`manifest` oder `segment`), `adapter` (`hls.js`,
+`native_hls` oder `unknown`) und maschinenlesbarem `reason`.
+Persistenzvehikel ist eine durable Session-Metadaten-Spalte oder ein
+äquivalenter session-skopierter Capability-/Boundary-Record; der Wert
+darf nicht nur aus flüchtigem Prozesszustand abgeleitet werden und muss
+über API-Restart stabil bleiben. Dashboard-Sichtbarkeit wird im
 `plan-0.4.0.md` Tranche-4-Scope umgesetzt.
 
 Tranche 3 führt keine neuen `event_name`-Werte ein. Manifest- und
 Segment-Netzwerkdetails werden über die bestehenden `manifest_loaded`
-und `segment_loaded`-Events plus additive `meta.network.*`-Felder
+und `segment_loaded`-Events plus additive flache `network.*`-Meta-Keys
 modelliert.
 
-URL-Redaction für `meta.network.*`-URL-Repräsentanten folgt einer
+URL-Redaction für `network.*`-URL-Repräsentanten in `meta` folgt einer
 festen Matrix: Scheme, Host und nicht-sensitive Pfadsegmente dürfen
 erhalten bleiben; Query und Fragment werden entfernt; `userinfo` wird
 entfernt; signierte/credential-artige Query-Parameter (`token`,

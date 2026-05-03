@@ -158,9 +158,12 @@ Session-Bindung tragen:
 Verlinkung ist nur mit gültigem Project-Kontext erlaubt. Ein Request,
 der `correlation_id` oder `session_id` setzt, muss `X-MTrace-Token`
 erfolgreich auf ein `project_id` auflösen (und später, falls aktiv,
-`X-MTrace-Project` konsistent dazu liefern). Ohne gültigen
-Project-Kontext bleibt die Analyse `detached`; es erfolgt kein
-Session-Lookup.
+`X-MTrace-Project` konsistent dazu liefern). Fehlt dieser Kontext bei
+gesetzten Link-Feldern oder ist der Token ungültig, antwortet die API
+mit dem Auth-/Kontextfehler aus §5 (`401 Unauthorized`) und führt
+keinen Session-Lookup aus. Nur Requests ohne Link-Felder dürfen ohne
+Project-Kontext erfolgreich bleiben; sie erhalten
+`session_link.status="detached"`.
 
 `correlation_id` hat innerhalb dieses Project-Kontexts Vorrang vor
 `session_id`. Wenn beide Felder gesetzt sind, muss `session_id` im
@@ -187,8 +190,8 @@ Response-Shape-Branching.
 Fallback zulässig, wenn sie auf eine bestehende oder bereits
 selbst-geheilte Session auflösbar ist. Eine unbekannte `session_id`
 erzeugt keine neue Session und liefert `not_found_detached`. Ohne beide
-Felder oder ohne gültigen Project-Kontext ist die Analyse bewusst
-session-los (`detached`). Alle Link-Lookups verwenden
+Link-Felder ist die Analyse bewusst session-los (`detached`). Alle
+Link-Lookups verwenden
 `(project_id, correlation_id)` bzw. `(project_id, session_id)`. Diese
 Bindungsfelder ändern das Analyzer-`AnalysisResult` nicht; sie steuern
 nur die optionale Dashboard-/Timeline-Verknüpfung.
@@ -516,20 +519,27 @@ Kontrakts.
 
 - **Wire-Format**: Cursor-Tokens sind base64url-kodiertes JSON ohne
   Padding und enthalten ab `0.4.0` ein verbindliches `v`-Feld
-  (Cursor-Version). Aktuelle Version ist `2`. Token-Inhalt ist
-  servergetragen und sollte vom Client als opak behandelt werden.
+  (Cursor-Version). Aktuelle Version ist bis Tranche 2 `2`; mit
+  `plan-0.4.0.md` Tranche 3 wechseln Session-List- und
+  Session-Event-Cursor wegen projekt-skopierter Read-Pfade auf `3`.
+  v3-Cursor enthalten den Project-Scope (`project_id` oder einen
+  daraus abgeleiteten Scope-Hash) zusätzlich zur Storage-Position.
+  Token-Inhalt ist servergetragen und sollte vom Client als opak
+  behandelt werden.
 - **Versionierung**: Cursor ohne `v`-Feld oder mit `v: 1` werden als
   Legacy-Format (`process_instance_id`-basiert, `0.1.x`/`0.2.x`/`0.3.x`)
-  erkannt und dauerhaft abgewiesen. Die feingranulare Begründung steht
-  in [ADR 0004 — Cursor-Strategie](../docs/adr/0004-cursor-strategy.md).
+  erkannt und dauerhaft abgewiesen. Nach Aktivierung der
+  projekt-skopierten Read-Pfade werden auch v2-Session-Cursor ohne
+  Project-Scope dauerhaft als Legacy abgewiesen. Die feingranulare
+  Begründung steht in [ADR 0004 — Cursor-Strategie](../docs/adr/0004-cursor-strategy.md).
 
 **Kompatibilitätsmatrix**:
 
 | Klasse | Erkennung | HTTP-Status | Body | Client-Recovery |
 |---|---|---|---|---|
-| `accepted` | Token decodiert; `v == 2`; alle Pflichtfelder vorhanden und valide. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
-| `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden. | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
-| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig; oder unbekannte Zusatzfelder vorhanden. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `accepted` | Token decodiert; `v == 2` vor Tranche 3 oder `v == 3` ab Tranche 3; alle Pflichtfelder vorhanden und valide; bei v3 passt der Project-Scope zum Request-Kontext. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
+| `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden; nach Aktivierung projekt-skopierter Read-Pfade auch `v == 2` für Session-Cursor ohne Project-Scope. | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig; oder unbekannte Zusatzfelder vorhanden; oder v3-Project-Scope passt nicht zum Request-Kontext. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 | `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert aber eine Storage-Position, die durch Reset/Retention nicht mehr existiert. In `0.4.0` ohne TTL praktisch nur nach `make wipe` erreichbar. | `410 Gone` (Token syntaktisch valide, Ziel weg). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 
 **Recovery-Verhalten**:
