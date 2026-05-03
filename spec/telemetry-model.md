@@ -335,6 +335,7 @@ Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich:
 |---|---|---|
 | `event_type` | feste Enum aus §1.3 | `rebuffer_started`, `playback_error` |
 | `outcome` | feste Enum | `accepted`, `invalid`, `rate_limited`, `dropped` |
+| `code` | feste Fehler-/Ergebnis-Code-Domäne pro Metrik | `invalid_request`, `analyzer_unavailable` |
 | `instance` / `job` | OTel/Prometheus-Standard | `api:8080` |
 
 Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9-Smoke-Test (`plan-0.1.2.md` §4) prüft dies via `count(count by (...) (...))`-PromQL.
@@ -399,8 +400,9 @@ Das SDK muss Sampling und Batch-Größe konfigurierbar anbieten (F-123, MVP-Soll
 | SDK-Parameter | Bedeutung | Default-Vorschlag |
 |---|---|---|
 | `sampleRate` | Anteil der erzeugten Events, die gesendet werden (0..1). | `1.0` (alle Events) |
-| `batchMaxEvents` | maximale Events pro Batch, ≤ 100. | `25` |
-| `batchMaxAgeMs` | maximale Wartezeit, bevor ein nicht-voller Batch geflusht wird. | `1000` |
+| `batchSize` | maximale Events pro Batch, hart auf ≤ 100 begrenzt. | `10` |
+| `flushIntervalMs` | maximale Wartezeit, bevor ein nicht-voller Batch geflusht wird; `0` deaktiviert den Timer. | `5000` |
+| `maxQueueEvents` | lokales Queue-Limit für normale Playback-Events, bevor neue normale Events verworfen werden. | `1000` |
 | `endpoint` | Backend-URL. | konfigurierbar, kein Default |
 
 ---
