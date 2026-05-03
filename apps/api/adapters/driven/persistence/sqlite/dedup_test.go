@@ -45,7 +45,7 @@ func TestDedupClassification(t *testing.T) {
 	noseq := mkSeqEvent(seq, "demo", "s1", t0.Add(2*time.Second), 0)
 	noseq.SequenceNumber = nil
 
-	if err := sess.UpsertFromEvents(ctx, []domain.PlaybackEvent{first, dup, noseq}); err != nil {
+	if _, err := sess.UpsertFromEvents(ctx, []domain.PlaybackEvent{first, dup, noseq}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	if err := evt.Append(ctx, []domain.PlaybackEvent{first, dup, noseq}); err != nil {
@@ -139,7 +139,7 @@ func TestDedupRaceUnderConcurrentWriters(t *testing.T) {
 	// Setup: Session existiert; konkurrente Writer appenden danach.
 	bootstrap := mkSeqEvent(seq, "demo", "s1", t0, 0)
 	bootstrap.SequenceNumber = nil
-	if err := sess.UpsertFromEvents(ctx, []domain.PlaybackEvent{bootstrap}); err != nil {
+	if _, err := sess.UpsertFromEvents(ctx, []domain.PlaybackEvent{bootstrap}); err != nil {
 		t.Fatalf("bootstrap upsert: %v", err)
 	}
 	if err := evt.Append(ctx, []domain.PlaybackEvent{bootstrap}); err != nil {

@@ -500,10 +500,15 @@ func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error")
 	}
-	// Session-Upsert läuft erst nach erfolgreichem Append; bei
-	// Repository-Fehler darf die Sessions-Sicht nicht divergieren.
-	if got := len(sessions.upserts); got != 0 {
-		t.Errorf("expected 0 SessionRepository.UpsertFromEvents calls on append failure, got %d", got)
+	// Reihenfolge ab plan-0.4.0 §4.2 C2: Session-Upsert läuft VOR dem
+	// Event-Append, damit der Use-Case die DB-finale CorrelationID
+	// kennt, bevor Events persistiert werden (R-6-Fix). Bei einem
+	// Append-Fehler ist die Session-Zeile damit bereits angelegt; das
+	// ist die dokumentierte schwächere Divergenz im Vergleich zur
+	// R-6-Inkonsistenz, die sie ersetzt. Test pinnt deshalb den
+	// **einen** UpsertFromEvents-Call.
+	if got := len(sessions.upserts); got != 1 {
+		t.Errorf("expected 1 SessionRepository.UpsertFromEvents call (sessions persisted before append, see C2 reorder), got %d", got)
 	}
 	// Synchron fehlgeschlagenes Append ist kein Backpressure-Drop;
 	// dropped_events bleibt unverändert (API-Kontrakt §7,
