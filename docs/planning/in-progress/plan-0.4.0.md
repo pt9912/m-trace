@@ -427,16 +427,18 @@ DoD:
 
 Bezug: RAK-31; RAK-29; Architektur §2/§5; README `0.4.0`.
 
-Ziel: Tempo kann als optionales Trace-Backend genutzt werden, ohne die lokale Dashboard-Ansicht zur Pflicht-Abhängigkeit zu machen.
+Ziel: Tempo kann als optionales Trace-Backend genutzt werden, ohne die lokale Dashboard-Ansicht zur Pflicht-Abhängigkeit zu machen. RAK-31 bleibt Kann-Scope: Diese Tranche darf vollständig umgesetzt oder explizit deferred werden, solange RAK-29/RAK-32, lokaler Trace-/Korrelations-Read und das bestehende `observability`-Profil ohne Tempo grün bleiben.
 
 DoD:
 
-- [ ] Compose-Profil für Tempo ist optional und startet nur bei expliziter Aktivierung.
-- [ ] OTel-Collector leitet Traces an Tempo weiter, wenn das Profil aktiv ist; ohne Profil bleibt der API-Start silent/no-op.
+- [ ] Tranche 5 hat ein binäres Scope-Gate: Entweder Tempo wird in `0.4.0` umgesetzt, oder §6 wird als Deferred mit Zielrelease markiert und darf keine Release-Gates für `0.4.0` blockieren. Deferred ist nur zulässig, wenn die Doku klar sagt, dass Tempo Debug-Tiefe ist und die Session-Timeline ohne Tempo vollständig nutzbar bleibt.
+- [ ] Tempo startet nur über ein zusätzliches Profil/Target, z. B. `tempo` bzw. `make dev-tempo`, nicht automatisch durch das bestehende `observability`-Profil. `make dev-observability` bleibt Prometheus/Grafana/OTel-Collector ohne Tempo-Backend.
+- [ ] OTel-Collector leitet Traces nur im Tempo-Profil an Tempo weiter. Ohne Tempo-Profil, aber mit aktivem `observability`-Profil, bleibt die bestehende Collector-Konfiguration gültig: OTLP vom API-Service ist erlaubt, Prometheus/Grafana bleiben grün, Traces gehen nur an den vorhandenen Debug-Exporter oder No-Op-Pfad und erzeugen keine Tempo-Connection-Errors.
+- [ ] Regressionstest oder Smoke-Check deckt alle drei Startzustände ab: Core ohne Observability (kein OTLP-Verbindungsversuch), `observability` ohne Tempo (OTLP zum Collector, keine Tempo-Exportfehler), Tempo-Profil aktiv (Collector exportiert Traces nach Tempo).
 - [ ] Ohne Tempo-Profil bleiben lokale `trace_id`/`correlation_id`, Dashboard-Timeline und RAK-29-Tests vollständig funktionsfähig.
-- [ ] Trace-Suche oder ein Link-Konzept ist dokumentiert, falls Dashboard und Tempo gemeinsam laufen.
+- [ ] Trace-Suche oder ein Link-Konzept ist dokumentiert, falls Dashboard und Tempo gemeinsam laufen: Session-Suche nutzt primär `mtrace.session.correlation_id`, wenn das Span-Attribut vorhanden ist; Event-Details können einzelne batchbezogene `trace_id`-Links anbieten. Die dokumentierte Grenze ist Pflicht: Eine Session kann mehrere `trace_id`-Werte haben, `trace_id` ist kein Session-Schlüssel, und `mtrace.session.correlation_id` darf nur bei Single-Session-Batches als Span-Attribut gesetzt werden.
 - [ ] RAK-29 ist auch ohne Tempo erfüllt; Tempo erweitert nur Debug-Tiefe.
-- [ ] Lokaler Smoke-Test oder manuelle Release-Checkliste beschreibt, wie ein Trace in Tempo sichtbar wird.
+- [ ] Lokaler Smoke-Test oder manuelle Release-Checkliste erzeugt eine Playback-Session, liest den Suchwert aus API/Dashboard/SQLite (`correlation_id` für Session-Suche oder eine konkrete Event-`trace_id`) und validiert genau diesen Wert in Tempo. "Trace sichtbar" ohne benannten Suchwert reicht nicht als Abnahme.
 - [ ] README und `docs/user/local-development.md` unterscheiden klar zwischen eingebauter Session-Timeline und optionalem Tempo.
 
 ---
