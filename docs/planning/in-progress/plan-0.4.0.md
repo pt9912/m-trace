@@ -176,14 +176,14 @@ Abnahmegrenzen für die gesamte Tranche:
 - **Wire-Kompatibilität:** Payload-Schema bleibt `1.0`; der optionale `traceparent`-Header ist additiv. SDKs ohne Header, SDKs mit gültigem Header und SDKs mit kaputtem Header müssen denselben Event-Annahme-Pfad behalten.
 - **Observability-Grenze:** `trace_id`, `span_id`, `correlation_id`, `session_id`, URLs und User-Agent bleiben Prometheus-Label-tabu. Falls sie auftauchen, ist das ein Release-Blocker und muss vor Tranche 8 behoben werden.
 - **Tempo-Unabhängigkeit:** Tests dürfen kein externes Tempo/OTLP-Backend benötigen. Tempo-Integration wird erst in Tranche 5 optional verdrahtet.
-- **Rest-Risiko:** Der bekannte `correlation_id`-Race bei paralleler Erstanlage derselben `session_id` ist als R-6 im Risiken-Backlog geführt. Er blockiert Tranche 2 nicht, solange §3.4c die Doku-Grenze klar benennt und Tranche 8 keine beobachtete Inkonsistenz findet.
+- **Rest-Risiko:** Der bekannte `correlation_id`-Race bei paralleler Erstanlage derselben `session_id` ist als R-6 im Risiken-Backlog geführt. Er blockiert Tranche 2 nicht, solange §3.4c die Doku-Grenze klar benennt, der Mitigationspfad im Backlog bleibt und Tranche 8 keine beobachtete Inkonsistenz findet. R-6 darf nicht aus dem Abschluss-Text verschwinden.
 
 Liefer-/Abnahme-Matrix:
 
 | Sub-Tranche | Ergebnis | Harte Abnahme | Status |
 |---|---|---|---|
 | §3.1 | Normativer Vertrag für Trace-ID, `correlation_id`, Span-Attribute und Defensive Parsing | Spec enthält keine impliziten Entscheidungen mehr für §3.2/§3.3 | ✅ |
-| §3.2 | Server erzeugt/persistiert `trace_id`, `span_id`, `correlation_id` und Span-Attribute | Backend- und Adapter-Tests laufen ohne externes Trace-Backend | ✅ mit Rest-Drift `mtrace.project.id` |
+| §3.2 | Server erzeugt/persistiert `trace_id`, `span_id`, `correlation_id` und Span-Attribute | Backend- und Adapter-Tests laufen ohne externes Trace-Backend; `mtrace.project.id` ist auf accepted Batches gesetzt | ✅ |
 | §3.3 | SDK kann optional `traceparent` senden | Kein Payload-/Schema-Bruch; Provider-Fehler sabotieren `send` nicht | ✅ mit nachgezogenem Snapshot-/Spec-Fix |
 | §3.4a | Backend-Trace-Konsistenz abgesichert | Multi-Batch, Missing/Invalid Header, Session-Ende, Time-Skew, NoOp-Tracer getestet | ✅ |
 | §3.4b | SDK↔Server-Cross-Cutting-Lücken geschlossen | Pre-§3.2-Backend-Kompat und Garbage-Traceparent-Pfad getestet | ✅ |
@@ -203,7 +203,7 @@ Verbindliche Entscheidungen (gehören in `spec/telemetry-model.md` und `spec/bac
   - `correlation_id` (TEXT, immer pro Session gesetzt): server-generierte, durable Source-of-Truth für die Dashboard-Korrelation. Wird beim allerersten Event einer Session erzeugt (UUIDv4 oder vergleichbar), in `stream_sessions.correlation_id` persistiert und für **alle** Folge-Events derselben Session konstant gehalten.
   - Dashboard-Timeline (RAK-32) nutzt `correlation_id` — Tempo-unabhängig. Tempo (RAK-31) nutzt `trace_id`, wenn das Profil aktiv ist.
 - **Span-Modell: ein HTTP-Request-Span pro Batch.** Keine Child-Spans pro Event (Cardinality-Risiko). Pflicht-Attribute am Server-Span:
-  - `mtrace.project.id` (kontrolliert; Allowlist aus dem Use-Case-Resolver)
+  - `mtrace.project.id` (kontrolliert; Allowlist aus dem Use-Case-Resolver) ist Pflicht für accepted Batches und für alle Pfade, in denen der Use Case ein Project erfolgreich aufgelöst hat; bei Rejects vor Project-Auflösung bleibt das Attribut bewusst unset.
   - `mtrace.batch.size` (int)
   - `mtrace.batch.outcome` (`accepted` / `invalid` / `rate_limited` / `auth_error` etc.)
   - **Bei Single-Session-Batch (alle Events teilen `session_id`)** zusätzlich `mtrace.session.correlation_id` (und nur dieser Wert — `session_id` selbst ist Prometheus-tabu, im Span-Attribut aber zulässig, weil Spans sampled/short-lived sind).
@@ -211,6 +211,7 @@ Verbindliche Entscheidungen (gehören in `spec/telemetry-model.md` und `spec/bac
   - `mtrace.trace.parse_error=true` falls eingehender `traceparent` ungültig war (siehe Validierungsregel unten).
   - `mtrace.time.skew_warning=true` falls für mindestens ein Event im Batch `|client_timestamp - server_received_at| > 60s` (Schwelle aus `telemetry-model.md` §5.3); Persistenz des Skew-Flags auf Event-Ebene ist deferred (siehe unten).
 - **Defensive Validierung des `traceparent`-Headers.** Ein ungültiger oder formal kaputter Header führt **nicht** zu 4xx und nicht zum Absturz. Stattdessen: Span-Attribut `mtrace.trace.parse_error=true`, Server-Fallback erzeugt eine eigene `trace_id`, Event wird normal verarbeitet. Die Pflicht-Validierungs-Reihenfolge aus API-Kontrakt §5 wird dadurch nicht verändert.
+- **Header-Normalisierung.** Der Header-Name ist HTTP-konform case-insensitiv (`Traceparent`, `traceparent`, `TRACEPARENT` sind derselbe Header). Der Header-Wert ist ein einzelner W3C-`traceparent`-Wert; ob führende/abschließende OWS technisch getrimmt oder als Parse-Error behandelt wird, muss in §3.4c exakt mit Code und Tests synchronisiert werden.
 - **Cardinality-Regel.** Weder `trace_id`, `correlation_id` noch `span_id` werden als Prometheus-Labels verwendet — Span-Attribute (kontrolliert), Event-Persistenz-Spalten (durable) und Wire-Format-Felder (optional) sind die einzigen Konsumenten.
 - **Time-Skew-Handling: nur Span-Attribut in `0.4.0`.** Span-Attribut `mtrace.time.skew_warning=true` aus `telemetry-model.md` §5.3 ist Pflicht in §3.2. Persistenz-Spalte und Dashboard-Anzeige sind explizit deferred — ein Folge-Tranchen-Item wird sie ergänzen, sobald Bedarf entsteht.
 
@@ -230,8 +231,8 @@ Ziel: Backend liest `traceparent` (wenn vorhanden), erzeugt einen Server-Span pr
 DoD:
 
 - [x] HTTP-Adapter parst `traceparent`-Header gemäß W3C-Spec (`apps/api/adapters/driving/http/traceparent.go`); bei valider `trace_id`/`parent_span_id` wird der Server-Span als Child gestartet (`withTraceParent`), sonst als Root mit Server-`trace_id` und Span-Attribut `mtrace.trace.parse_error=true` (`c3741aa`).
-- [x] HTTP-Request-Span für `POST /api/playback-events` trägt die in §3.1 spezifizierten Attribute. `mtrace.project.id` ist in 0.4.0 noch nicht gesetzt (Use-Case-Resolver-Wert nur bei Erfolg verfügbar — als Folgepunkt im Backlog vermerken oder in §3.4 nachziehen, falls nötig); alle übrigen Pflicht-Attribute (`http.method/route/status_code`, `batch.size/outcome/session_count`, optional `mtrace.session.correlation_id`, `mtrace.trace.parse_error`, `mtrace.time.skew_warning`) sind gesetzt (`c3741aa`).
-- [x] `domain.PlaybackEvent` und `domain.StreamSession` sind um `TraceID`/`SpanID`/`CorrelationID` (Event) bzw. `CorrelationID` (Session) erweitert; Application- und Adapter-Code füllt sie konsistent (`c3741aa`).
+- [x] HTTP-Request-Span für `POST /api/playback-events` trägt die in §3.1 spezifizierten Attribute: `http.method/route/status_code`, `mtrace.batch.size`, `mtrace.batch.outcome`, `mtrace.batch.session_count`, `mtrace.project.id` auf accepted Batches, optional `mtrace.session.correlation_id`, `mtrace.trace.parse_error`, `mtrace.time.skew_warning`. Testnachweis für `mtrace.project.id` und Single-Session-Korrelation: `TestHTTP_Span_SingleSessionBatch_SetsCorrelationID` (`c3741aa`).
+- [x] `domain.PlaybackEvent` ist um `TraceID`/`SpanID`/`CorrelationID` erweitert; `domain.StreamSession` trägt **nur** `CorrelationID` als Session-Scope-Feld. Es gibt keine stabile Session-`trace_id`: `trace_id`/`span_id` sind Event-/Batch-Felder und dürfen zwischen Batches derselben Session wechseln. Application- und Adapter-Code füllt die Felder konsistent (`c3741aa`).
 - [x] `correlation_id` wird beim allerersten Event einer Session in `RegisterPlaybackEventBatch.resolveCorrelationIDs` erzeugt (UUIDv4 via `crypto/rand`); existing Sessions liefern sie aus dem Repository; existing Sessions ohne `correlation_id` (Legacy von vor §3.2-Closeout) bekommen via Self-Healing eine neue. SessionRepository persistiert sie in `stream_sessions.correlation_id` (`c3741aa`).
 - [x] SQLite-Adapter und InMemory-Adapter schreiben und lesen die drei neuen Spalten korrekt; gemeinsamer Contract-Test `testTraceFieldsRoundTrip` deckt beide Backends ab (`c3741aa`).
 - [x] Defensive Validierung: `parseTraceParent` lehnt jeden Formatfehler ab (Längen, Hex, Version, all-zero); `withTraceParent` mappt das auf `mtrace.trace.parse_error=true` ohne 4xx (`c3741aa`).
@@ -319,7 +320,7 @@ DoD:
 
 Bezug: §3.1–§3.3; §3.4a–§3.4b.
 
-Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 31 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing) und aus dem §3.2-Review (`mtrace.project.id`-Drift, R-6-Risikogrenze) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten, ohne dass Tranche 3 Trace-Grundsatzfragen erneut entscheiden muss.
+Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 31 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing/OWS) und aus dem §3.2-Review (R-6-Risikogrenze, Session-`trace_id`-Semantik) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten, ohne dass Tranche 3 Trace-Grundsatzfragen erneut entscheiden muss.
 
 Closeout-Regeln:
 
@@ -329,10 +330,10 @@ Closeout-Regeln:
 
 DoD:
 
-- [ ] Header-Casing/Whitespace-Kommentar (aus §3.3-Review, Anmerkung #5): kurze Notiz in `spec/backend-api-contract.md` §1, dass der Server `traceparent` case-insensitiv liest (HTTP-Header-Standard) und führende/abschließende Whitespaces toleriert; SDK schreibt lowercased `traceparent`.
-- [ ] `mtrace.project.id`-Drift geschlossen: entweder Code setzt das Span-Attribut auf dem Erfolgs-Span aus dem finalen Project-Resolver-Wert **inklusive Test**, oder `spec/telemetry-model.md` stuft das Attribut für `0.4.0` explizit als deferred/optional ein und verweist auf ein Backlog-Item. Der aktuelle Zwischenstand aus §3.2 darf nicht als stiller Widerspruch bleiben.
+- [ ] Header-Casing/Whitespace-Vertrag (aus §3.3-Review, Anmerkung #5) ist in `spec/backend-api-contract.md` §1 und in Backend-Tests synchronisiert: Header-Name case-insensitiv; Header-Wert-Verhalten für führende/abschließende OWS ist exakt das implementierte Verhalten (entweder `strings.TrimSpace` + gültiger Parent oder parse_error-Fallback, aber nicht ungetesteter Fließtext); SDK schreibt lowercased `traceparent`.
+- [ ] `mtrace.project.id` ist nicht mehr als Drift geführt: `spec/telemetry-model.md` dokumentiert es als Pflichtattribut für accepted Batches bzw. nach erfolgreicher Project-Auflösung und als bewusst unset für Rejects vor Project-Auflösung; Plan verweist auf `TestHTTP_Span_SingleSessionBatch_SetsCorrelationID`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code: Hybrid-Strategie, ein Server-Span pro Batch, Persistenzquelle pro Feld, Time-Skew nur als Span-Attribut, Sampling-Auswirkung und Prometheus-Cardinality-Grenzen sind in einem zusammenhängenden Abschnitt festgeschrieben.
-- [ ] `spec/backend-api-contract.md` §1 / §3 / §3.7 reflektiert das ausgelieferte Header-Verhalten und die neuen Read-Felder: `trace_id` nullable und batch-bezogen, `correlation_id` pro Session stabil, `span_id` nur als technisches Event-Feld falls im Read-Pfad offengelegt; Fehlerklassifikation bleibt unverändert bei 202/4xx aus dem normalen Event-Vertrag.
+- [ ] `spec/backend-api-contract.md` §1 / §3 / §3.7 reflektiert das ausgelieferte Header-Verhalten und die neuen Read-Felder: `trace_id` nullable und batch-bezogen, `correlation_id` pro Session stabil, `span_id` nur als technisches Event-Feld falls im Read-Pfad offengelegt; `GET /api/stream-sessions` exponiert keine Session-`trace_id`; Fehlerklassifikation bleibt unverändert bei 202/4xx aus dem normalen Event-Vertrag.
 - [ ] `spec/player-sdk.md` bleibt synchron zum tatsächlichen SDK-Verhalten aus `f7dcdb9`: Provider wird pro Send aufgerufen, `undefined`/`""`/Non-String/Throw schicken keinen Header, Throw/Non-String warnen höchstens einmal pro `HttpTransport`-Instanz, Garbage-String wird als String unverändert weitergereicht.
 - [ ] R-6 (`correlation_id`-Race) ist im Plan-Closeout referenziert: nicht blockierend für Tranche 2, aber als explizite Restgrenze für Tranche 8/operative Beobachtung geführt. Falls vor Tranche 8 ein Mismatch zwischen `stream_sessions.correlation_id` und `playback_events.correlation_id` beobachtet wird, wird R-6 release-blocking.
 - [ ] Test-/Review-Gate für den Closeout ist dokumentiert: mindestens `make workspace-lint` plus die relevanten Backend-/SDK-Test-Slices aus §3.4a/§3.4b. Grund: §3.3 hat gezeigt, dass Snapshot- und Spec-Drift nicht durch `make workspace-test` allein auffallen.
