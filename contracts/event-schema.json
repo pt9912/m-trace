@@ -4,9 +4,35 @@
   "batch": {
     "schema_version_field": "schema_version",
     "events_field": "events",
+    "session_boundaries_field": "session_boundaries",
     "min_events": 1,
     "max_events": 100,
+    "boundary_only_batches": false,
     "max_body_bytes": 262144
+  },
+  "session_boundaries": {
+    "optional": true,
+    "kinds": [
+      "network_signal_absent"
+    ],
+    "network_kinds": [
+      "manifest",
+      "segment"
+    ],
+    "adapters": [
+      "hls.js",
+      "native_hls",
+      "unknown"
+    ],
+    "required_fields": [
+      "kind",
+      "project_id",
+      "session_id",
+      "network_kind",
+      "adapter",
+      "reason",
+      "client_timestamp"
+    ]
   },
   "event_names": [
     "manifest_loaded",

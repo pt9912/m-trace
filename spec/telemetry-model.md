@@ -99,12 +99,17 @@ Timeline-only-Ereignis ohne OTel-Span umgesetzt werden.
 
 Wenn der Browser-/Native-HLS-Pfad gar kein Manifest-/Segment-Signal
 liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. SDK oder
-Adapter muss stattdessen bei Session-Start bzw. Capability-Erkennung ein
-session-skopiertes Boundary-/Capability-Signal an den Backend-Ingest
-senden. Die Session-API markiert diese Grenze außerhalb des
-Event-Streams im Session-Block als `network_signal_absent`: Liste von
-Objekten mit `kind` (`manifest` oder `segment`), `adapter` (`hls.js`,
-`native_hls` oder `unknown`) und maschinenlesbarem `reason`.
+Adapter muss stattdessen bei Session-Start bzw. Capability-Erkennung
+einen optionalen Batch-Wrapper-Block `session_boundaries[]` an
+`POST /api/playback-events` senden. Für Tranche 3 ist darin nur
+`kind="network_signal_absent"` definiert; der Block enthält außerdem
+`project_id`, `session_id`, `network_kind` (`manifest` oder `segment`),
+`adapter` (`hls.js`, `native_hls` oder `unknown`), `reason` und
+`client_timestamp`. Dieser Block ist kein Event, besitzt kein
+`event_name`, zählt nicht in `accepted` und ändert die
+Batch-`schema_version` nicht. Die Session-API markiert diese Grenze
+außerhalb des Event-Streams im Session-Block als `network_signal_absent`:
+Liste von Objekten mit `kind`, `adapter` und maschinenlesbarem `reason`.
 Persistenzvehikel ist eine durable Session-Metadaten-Spalte oder ein
 äquivalenter session-skopierter Capability-/Boundary-Record; der Wert
 darf nicht nur aus flüchtigem Prozesszustand abgeleitet werden und muss
@@ -116,18 +121,23 @@ Segment-Netzwerkdetails werden über die bestehenden `manifest_loaded`
 und `segment_loaded`-Events plus additive flache `network.*`-Meta-Keys
 modelliert.
 
-URL-Redaction für `network.*`-URL-Repräsentanten in `meta` folgt einer
-festen Matrix: Scheme, Host und nicht-sensitive Pfadsegmente dürfen
-erhalten bleiben; Query und Fragment werden entfernt; `userinfo` wird
-entfernt; signierte/credential-artige Query-Parameter (`token`,
-`signature`, `sig`, `expires`, `key`, `policy`, case-insensitiv) werden
-nicht gespeichert. Ein Pfadsegment ist tokenartig, wenn es mindestens
-24 Zeichen lang ist und mindestens 80 % seiner Zeichen aus
+URL-Redaction für `network.*`-URL-Repräsentanten in `meta` und für alle
+URL-verdächtigen generischen Meta-Keys (`url`, `uri`, `manifest_url`,
+`segment_url`, `media_url`, `network.url`, `network.redacted_url`,
+`request.url`, `response.url`, case-insensitiv) folgt einer festen
+Matrix: Scheme, Host und nicht-sensitive Pfadsegmente dürfen erhalten
+bleiben; Query und Fragment werden entfernt; `userinfo` wird entfernt;
+signierte/credential-artige Query-Parameter (`token`, `signature`,
+`sig`, `expires`, `key`, `policy`, case-insensitiv) werden nicht
+gespeichert. Ein Pfadsegment ist tokenartig, wenn es mindestens 24
+Zeichen lang ist und mindestens 80 % seiner Zeichen aus
 `[A-Za-z0-9_-]` bestehen, wenn es ein Hex-String mit gerader Länge
 mindestens 32 ist, oder wenn es bekannte JWT-/SAS-/Signed-URL-Muster
 trägt. Tokenartige
 Pfadsegmente werden ausschließlich als `:redacted` persistiert; es wird
-kein stabiler Hash oder Gleichheitsmarker gespeichert.
+kein stabiler Hash oder Gleichheitsmarker gespeichert. Unbekannte
+Meta-Keys mit String-Werten, die als absolute URL parsebar sind oder
+`://` enthalten, werden vor Persistenz redigiert oder verworfen.
 
 ### 1.5 SDK-Identifier und Tokens
 

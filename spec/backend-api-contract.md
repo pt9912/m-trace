@@ -100,6 +100,36 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 
 Unbekannte Felder dürfen nicht zum Fehler führen (Vorwärtskompatibilität).
 
+Ab `plan-0.4.0.md` Tranche 3 darf der Batch optional
+`session_boundaries` enthalten. Dieser Block ist kein Event-Stream,
+zählt nicht in `accepted`, besitzt kein `event_name` und ändert
+`schema_version: "1.0"` nicht. Boundary-only-Batches ohne `events`
+bleiben ungültig.
+
+```json
+{
+  "schema_version": "1.0",
+  "events": [{ "...": "PlaybackEvent" }],
+  "session_boundaries": [
+    {
+      "kind": "network_signal_absent",
+      "project_id": "demo",
+      "session_id": "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+      "network_kind": "segment",
+      "adapter": "native_hls",
+      "reason": "native_hls_unavailable",
+      "client_timestamp": "2026-04-28T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+Für Tranche 3 ist nur `kind="network_signal_absent"` definiert.
+`network_kind` ist `"manifest"` oder `"segment"`, `adapter` ist
+`"hls.js"`, `"native_hls"` oder `"unknown"`, `reason` ist ein
+maschinenlesbarer String. `project_id` muss wie bei Events zum
+`X-MTrace-Token` passen; `session_id` ist Pflicht.
+
 ### 3.5 Antwort bei Erfolg
 
 `POST /api/playback-events` antwortet mit `202 Accepted`:
@@ -166,11 +196,15 @@ Project-Kontext erfolgreich bleiben; sie erhalten
 `session_link.status="detached"`.
 
 `correlation_id` hat innerhalb dieses Project-Kontexts Vorrang vor
-`session_id`. Wenn beide Felder gesetzt sind, muss `session_id` im
+`session_id`. `correlation_id` allein ohne Treffer im Project liefert
+`session_link.status="not_found_detached"`. Wenn beide Felder gesetzt
+sind, muss zuerst `correlation_id` im Project existieren; eine bekannte
+`session_id` darf eine unbekannte oder project-fremde `correlation_id`
+nicht retten. Existiert die `correlation_id`, muss `session_id` im
 gleichen Project zur Session mit dieser `correlation_id` auflösen; bei
 Mismatch bleibt das Analyzer-Ergebnis eine unabhängige Manifestanalyse
-und wird nicht in die Player-Timeline gemischt. Die API bleibt
-`200 OK`, wechselt ab Tranche 3 aber auf eine Hülle:
+und wird nicht in die Player-Timeline gemischt. Die API bleibt `200 OK`,
+wechselt ab Tranche 3 aber auf eine Hülle:
 
 ```json
 {
