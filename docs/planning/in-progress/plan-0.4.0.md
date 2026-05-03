@@ -455,11 +455,11 @@ DoD:
 
 - [ ] `mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total` und `mtrace_dropped_events_total` existieren im Compose-Lab und in Tests.
 - [ ] Alle Pflichtcounter zählen Events, nicht Batches; leere Batches, Auth-Fehler und Persistenzfehler folgen den Regeln aus API-Kontrakt §7.
-- [ ] Es gibt keinen `session_id`-, `user_agent`-, `segment_url`-, `client_ip`- oder unbounded-`project_id`-Label auf `mtrace_*`-Metriken.
+- [ ] Die vier Pflichtcounter tragen keine fachlichen Labels; erlaubte Labels sind nur technische Prometheus-/Target-Labels außerhalb des Metric-Vektors. Insbesondere sind `project_id`, `session_id`, `user_agent`, `segment_url`, `client_ip`, `trace_id`, `correlation_id` und beliebige URL-/Token-Felder auf `mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total` und `mtrace_dropped_events_total` verboten. Der Cardinality-Smoke fragt jede der vier Serien ab und failt bei jedem nicht-leeren Labelset jenseits der Prometheus-Target-Metadaten; eine spätere `project_id`-Ausnahme bräuchte eine eigene feste Label-Allowlist und bounded-Allowlist-Test.
 - [ ] Rate-Limit-Fälle sind mit `429` und Counter-Inkrement testbar.
 - [ ] Invalid-Event-Fälle mit `400`/`422` sind mit Counter-Inkrement testbar.
 - [ ] Drop-Pfad ist entweder real implementiert und testbar oder die Metrik existiert sichtbar mit `0` und der fehlende Drop-Pfad ist dokumentiert.
-- [ ] Grafana-/Prometheus-Lab zeigt die vier Pflichtcounter oder eine dokumentierte Abfrage dafür.
+- [ ] Grafana-/Prometheus-Lab zeigt die vier Pflichtcounter oder eine dokumentierte Abfrage dafür. RAK-34-Sichtbarkeit ist in Tranche 6 bewusst Prometheus/Grafana-only: Ohne zusätzlich eingeführten API-Status-Summary-Vertrag gibt es kein neues Dashboard-/Session-Status-DoD für Invalid-/Dropped-/Rate-Limit-Zähler. Falls ein API-Status-Summary eingeführt wird, muss §7 ihn mit Response-Shape, Backend-Test und Dashboard-Test explizit aufnehmen; andernfalls bleibt der Tranche-4-Handoff aus §5 als Observability-Lab-Sichtbarkeit geschlossen, nicht als In-App-Statusanzeige.
 - [ ] Falls F-40 in Tranche 4 deferred wurde, liefert Tranche 6 die Dashboard-Link-Section für Grafana, Prometheus und Media-Server-Konsole mit dokumentierten Config-Keys, Verhalten bei fehlenden URLs und Dashboard-Test; andernfalls bleibt dieses Item als nicht zutreffend markiert.
 - [ ] Cardinality-Smoke prüft, dass neue `0.4.0`-Metriken keine hochkardinalen Labels einführen.
 
