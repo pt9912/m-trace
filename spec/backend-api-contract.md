@@ -199,6 +199,11 @@ Ab `plan-0.4.0.md` Tranche 3 wird dieses Resultat bei jedem
 erfolgreichen Request unverändert unter `analysis` in der oben
 beschriebenen Hülle transportiert.
 
+Session-Read-Pfade sind ab Tranche 3 projekt-skopiert: Session-Liste,
+Session-Detail, Event-Reads und Cursor-Reuse müssen den aufgelösten
+`project_id` berücksichtigen. Cursor aus einem Project dürfen nicht für
+ein anderes Project akzeptiert werden.
+
 **Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
 
 API-Eingabevalidierung (Request-Form):

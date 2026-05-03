@@ -99,10 +99,17 @@ liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. Die
 Session-API markiert diese Grenze außerhalb des Event-Streams im
 Session-Block als `network_signal_absent`: Liste von Objekten mit
 `kind` (`manifest` oder `segment`), `adapter` (`hls.js`, `native_hls`
-oder `unknown`) und maschinenlesbarem `reason`. Der Wert darf aus
-gespeicherten Session-/SDK-Metadaten abgeleitet werden, muss aber über
+oder `unknown`) und maschinenlesbarem `reason`. Persistenzvehikel ist
+eine durable Session-Metadaten-Spalte oder ein äquivalenter
+session-skopierter Capability-/Boundary-Record; der Wert darf nicht nur
+aus flüchtigem Prozesszustand abgeleitet werden und muss über
 API-Restart stabil bleiben. Dashboard-Sichtbarkeit wird im
 `plan-0.4.0.md` Tranche-4-Scope umgesetzt.
+
+Tranche 3 führt keine neuen `event_name`-Werte ein. Manifest- und
+Segment-Netzwerkdetails werden über die bestehenden `manifest_loaded`
+und `segment_loaded`-Events plus additive `meta.network.*`-Felder
+modelliert.
 
 URL-Redaction für `meta.network.*`-URL-Repräsentanten folgt einer
 festen Matrix: Scheme, Host und nicht-sensitive Pfadsegmente dürfen
