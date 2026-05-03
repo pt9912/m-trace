@@ -120,33 +120,51 @@ func (r *SessionRepository) UpsertFromEvents(ctx context.Context, events []domai
 	defer func() { _ = tx.Rollback() }()
 
 	for _, e := range events {
-		if _, err := tx.ExecContext(ctx, upsertProjectSQL, e.ProjectID); err != nil {
-			return fmt.Errorf("sqlite: upsert project: %w", err)
-		}
-		_, err := readSessionTx(ctx, tx, e.SessionID)
-		switch {
-		case errors.Is(err, domain.ErrSessionNotFound):
-			if err := insertNewSessionTx(ctx, tx, e); err != nil {
-				return err
-			}
-		case err != nil:
+		if err := upsertSessionFromEventTx(ctx, tx, e); err != nil {
 			return err
-		default:
-			if _, err := tx.ExecContext(ctx, updateSessionTickSQL,
-				formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
-				return fmt.Errorf("sqlite: tick session: %w", err)
-			}
-			if e.EventName == persistence.SessionEndedEventName {
-				if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
-					formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
-					return fmt.Errorf("sqlite: mark session ended: %w", err)
-				}
-			}
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("sqlite: commit: %w", err)
+	}
+	return nil
+}
+
+// upsertSessionFromEventTx wendet ein einzelnes Event auf den
+// Session-State an: Project-Upsert (FK-Vorbedingung), dann je nach
+// existierender Session entweder Insert (neu) oder Tick (bekannt).
+// Eigene Funktion, damit UpsertFromEvents sich auf Tx-Lifecycle und
+// Loop konzentriert (gocognit).
+func upsertSessionFromEventTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) error {
+	if _, err := tx.ExecContext(ctx, upsertProjectSQL, e.ProjectID); err != nil {
+		return fmt.Errorf("sqlite: upsert project: %w", err)
+	}
+	_, err := readSessionTx(ctx, tx, e.SessionID)
+	switch {
+	case errors.Is(err, domain.ErrSessionNotFound):
+		return insertNewSessionTx(ctx, tx, e)
+	case err != nil:
+		return err
+	default:
+		return tickExistingSessionTx(ctx, tx, e)
+	}
+}
+
+// tickExistingSessionTx aktualisiert LastEventAt + EventCount einer
+// bekannten Session und schaltet bei session_ended-Events zusätzlich
+// den State idempotent auf Ended.
+func tickExistingSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) error {
+	if _, err := tx.ExecContext(ctx, updateSessionTickSQL,
+		formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
+		return fmt.Errorf("sqlite: tick session: %w", err)
+	}
+	if e.EventName != persistence.SessionEndedEventName {
+		return nil
+	}
+	if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
+		formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
+		return fmt.Errorf("sqlite: mark session ended: %w", err)
 	}
 	return nil
 }
