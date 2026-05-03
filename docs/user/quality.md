@@ -62,20 +62,29 @@ Die TypeScript- und Svelte-Pakete laufen über den Root-Workspace-Lint:
 pnpm run lint
 ```
 
-Der aktuelle Pfad ist bewusst leichtgewichtig:
+Alle vier Workspace-Pakete tragen das SOLID-nahe Zusatzprofil aus
+`eslint.config.shared.mjs` (Komplexität, Funktionslänge, Verschachte­
+lung, TypeScript-Idiome wie `no-floating-promises`/`no-misused-promises`/
+`no-unsafe-*` über `typescript-eslint` recommendedTypeChecked); plus
+paketspezifische Ergänzungen:
 
 | Paket/App | Gate | SOLID-naher Anteil |
 |---|---|---|
-| `packages/player-sdk` | `tsc --noEmit`, Boundary-Check, Public-API-Snapshot | `core/` darf nicht von Browser-Adaptern oder `hls.js` abhängen |
-| `packages/stream-analyzer` | `tsc --noEmit`, Boundary-Check, Public-API-Snapshot | Public Modules dürfen nicht direkt aus `internal/` importieren |
-| `apps/dashboard` | `svelte-check` | noch kein SOLID-nahes Zusatzprofil |
-| `apps/analyzer-service` | `tsc --noEmit` | noch kein SOLID-nahes Zusatzprofil |
+| `packages/player-sdk` | `tsc --noEmit`, ESLint, Boundary-Check, Public-API-Snapshot | `core/` darf nicht von Browser-Adaptern oder `hls.js` abhängen; ESLint-Profil + Browser-globals |
+| `packages/stream-analyzer` | `tsc --noEmit`, ESLint, Boundary-Check, Public-API-Snapshot | Public Modules dürfen nicht direkt aus `internal/` importieren; ESLint-Profil + Node-globals |
+| `apps/dashboard` | `svelte-check`, ESLint (inkl. `eslint-plugin-svelte`) | Komplexitäts-/Funktionslängen-Profil + Svelte-spezifische Regeln (`require-each-key`, `no-at-html-tags` etc.) |
+| `apps/analyzer-service` | `tsc --noEmit`, ESLint | Komplexitäts-/Funktionslängen-Profil + Node-globals |
 
-Soll-Ausbau: alle TypeScript-/Svelte-Pakete erhalten ein gemeinsames
-SOLID-nahes Zusatzprofil für Import-Boundaries, verbotene Deep Imports,
-Komplexität, Funktionslänge, Verschachtelung und stabile Public APIs.
-Das Profil muss über `make lint` laufen und darf keine lokalen Editor-
-Plugins voraussetzen.
+Schwellen (in `eslint.config.shared.mjs` zentral, identisch zur
+Go-Linie aus §1.2): `complexity` 15, `max-lines-per-function` 100/60
+(skipBlanks/skipComments), `max-statements` 30, `max-depth` 4,
+`max-nested-callbacks` 3.
+
+`//eslint-disable`-Pragmas bleiben analog zur Go-Linie ausgeschlossen.
+Pro-Scope-Carveouts (Tests, Skripte, dokumentierte Sonderzonen wie die
+events/errors-Pages des Dashboards) sind in den per-Paket-Konfigs mit
+einem `Why:`-Kommentar dokumentiert; sie sind keine Suppressions,
+sondern bewusste Profil-Entscheidungen. Verstöße brechen den Build.
 
 ### 1.2 Go: SOLID-nahe Linter
 
