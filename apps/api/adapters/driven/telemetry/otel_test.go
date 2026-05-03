@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
@@ -162,6 +163,18 @@ func TestSetup_BlankOTelEnv_FallsBackToNoopExporter(t *testing.T) {
 	} {
 		t.Cleanup(saveAndSetBlank(key))
 	}
+
+	// Snapshot der globalen OTel-Provider, weil Setup sie via
+	// otel.SetMeterProvider/SetTracerProvider neu registriert.
+	// Ohne Restore wäre die Test-Reihenfolge load-bearing: ein
+	// nachgelagerter Test, der otel.GetTracerProvider() liest, würde
+	// den Tempo-disabled-Provider sehen.
+	prevTracer := otel.GetTracerProvider()
+	prevMeter := otel.GetMeterProvider()
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prevTracer)
+		otel.SetMeterProvider(prevMeter)
+	})
 
 	ctx := context.Background()
 	providers, err := telemetry.Setup(ctx, "test-service-tempo-disabled", "test-version")

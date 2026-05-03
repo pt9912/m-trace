@@ -332,7 +332,7 @@ Closeout-Regeln:
 - §3.4c ist Doku-/Plan-Closeout, kein Release-Bump. `PLAYER_SDK_VERSION`, Root-Versionen und `CHANGELOG.md` bleiben Tranche-8-Arbeit.
 - Normative Aussagen stehen in `spec/telemetry-model.md`, `spec/backend-api-contract.md` und `spec/player-sdk.md`; dieser Plan referenziert nur Lieferstand, Commit und Restgrenzen.
 - Wenn Code und Spec voneinander abweichen, muss §3.4c entweder den Code nachziehen oder die Spec bewusst korrigieren/deferieren. Eine bekannte Abweichung darf nicht nur im Fließtext stehen.
-- **Tranche-3-Blocker:** Solange irgendein §3.4c-DoD-Item offen ist, bleiben Status-Header, Roadmap Schritt 31 und die Tranche-2-Matrix offen. Tranche 3 darf erst starten, wenn §3.4c vollständig abgehakt ist; einzelne bereits abgeschlossene §3.1–§3.4b-Pfade heben diesen Blocker nicht auf. Das gilt insbesondere für OWS-Verhalten, echten `0.3.x`-Cross-Version-Pfad und produktiven Tempo-disabled-Start.
+- **Tranche-3-Blocker (historisch — Gate ist passiert):** Während §3.4c offen war, blockierten alle dortigen DoD-Items den Start von Tranche 3, den Status-Header, Roadmap Schritt 31 und die Tranche-2-Matrix; einzelne bereits abgeschlossene §3.1–§3.4b-Pfade hoben diesen Blocker nicht auf. Mit Closeout-Commit `637985b` ist §3.4c vollständig abgehakt und das Gate ist passiert. Restgrenzen, die das Gate **nicht** geöffnet haben (sondern bewusst nach Tranche 3+ verschoben sind): echte `0.3.x`-Routing-/Middleware-Pipeline-Verifikation (Item #5 Smoke-Scope-Downgrade) und R-6-Mitigation (Item #10 — wird bei beobachtetem Mismatch release-blocking, blockiert aber den Start von Tranche 3 nicht).
 
 DoD:
 
