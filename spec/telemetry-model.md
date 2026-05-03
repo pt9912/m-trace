@@ -79,6 +79,21 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 | `client_time_origin` | string, RFC3339 | Setup-Zeitpunkt des SDK; erlaubt skew-tolerantere Latenz-Auswertung. | F-126 |
 | `meta` | object | beliebige event-spezifische Felder, z. B. `bitrate`, `duration_ms`, `error_code`. Schema-Erweiterung über §6. | F-114 |
 
+Ab `plan-0.4.0.md` Tranche 3 nutzen Manifest-/Segment-nahe
+Netzwerkereignisse additive `meta.network.*`-Felder. Der
+Degradationsmarker ist normativ:
+
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `meta.network.kind` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
+| `meta.network.detail_status` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
+| `meta.network.unavailable_reason` | string, optional | Maschinenlesbarer Grund, z. B. `cors_timing_blocked`, `resource_timing_missing`, `service_worker_intercepted`, `native_hls_unavailable`, `cdn_redirect_opaque`. |
+
+`network_detail_unavailable` ist kein Fehlerstatus und darf allein
+keinen 4xx auslösen. Das Event bleibt in der Session-Timeline sichtbar,
+behält seine serverseitig vergebene `correlation_id` und kann als
+Timeline-only-Ereignis ohne OTel-Span umgesetzt werden.
+
 ### 1.5 SDK-Identifier und Tokens
 
 - **Project Token (`X-MTrace-Token`)**: öffentlicher Token, der dem Browser ausgeliefert wird. Token bindet auf eine `project_id`; Mismatch bei Step 9 → `401` (siehe §5.3 unten und API-Kontrakt §5).

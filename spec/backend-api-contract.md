@@ -143,6 +143,29 @@ Pflicht; bei `kind="text"` ist `text` Pflicht und `baseUrl`
 optional. Body-Limit auf API-Ebene: 1 MiB (Defense-in-Depth; der
 analyzer-service hat sein eigenes Limit beim Manifest-Loading).
 
+Ab `plan-0.4.0.md` Tranche 3 darf der Request optional eine
+Session-Bindung tragen:
+
+```json
+{
+  "kind": "url",
+  "url": "https://cdn.example.test/manifest.m3u8",
+  "correlation_id": "2f6f1a3c-9fb9-4c0b-a78f-2f41d8f6e1e7",
+  "session_id": "01J7K9X4Z2QHB6V3WS5R8Y4D1F"
+}
+```
+
+`correlation_id` hat Vorrang vor `session_id`. Wenn beide Felder
+gesetzt sind, muss `session_id` zur Session mit dieser
+`correlation_id` auflösen; bei Mismatch bleibt das Analyzer-Ergebnis
+eine unabhängige Manifestanalyse und wird nicht in die Player-Timeline
+gemischt. Nur `session_id` ist als Fallback zulässig: der Server löst
+sie auf die bestehende oder per Self-Healing nachgezogene
+Session-`correlation_id` auf. Ohne beide Felder ist die Analyse
+bewusst session-los. Diese Bindungsfelder ändern das Analyzer-
+`AnalysisResult` nicht; sie steuern nur die optionale Dashboard-/
+Timeline-Verknüpfung.
+
 **Erfolgsantwort** (`200 OK`): vollständiges `AnalysisResult` aus
 `docs/user/stream-analyzer.md` §2.2 — diskriminiert per
 `playlistType`, mit `analyzerVersion`, `analyzerKind: "hls"`,
