@@ -28,9 +28,23 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
     **kein** 4xx — der Server fällt auf eine eigene `trace_id` zurück
     und setzt das Span-Attribut `mtrace.trace.parse_error=true`
     (siehe `spec/telemetry-model.md` §2.5). Der Header-Name ist
-    case-insensitiv; der Header-Wert wird als einzelner W3C-Wert
-    interpretiert. Das Verhalten bei führender/abschließender OWS wird
-    im `plan-0.4.0.md`-§3.4c-Closeout gegen Code und Tests finalisiert.
+    HTTP-konform case-insensitiv (`Traceparent`, `traceparent`,
+    `TRACEPARENT` sind derselbe Header); SDKs schreiben den Namen
+    lowercased. Der Header-Wert ist genau ein einzelner W3C-`traceparent`-
+    Wert (55 Zeichen, Form `00-<32 hex>-<16 hex>-<2 hex>`). Führende
+    und nachfolgende OWS (Spaces, Tabs) werden vom HTTP-Wire-Layer
+    der Go-`net/http`-Standardbibliothek bereits beim Header-Lesen
+    entfernt, bevor der Wert das Backend erreicht; ein OWS-umschlossener,
+    sonst valider Wert wird daher als gültig behandelt und führt zur
+    normalen Child-Span-Übernahme. Das Backend führt selbst kein
+    zusätzliches Trim durch und verlässt sich für die OWS-Normalisierung
+    ausschließlich auf den Wire-Layer; ein durchgereichter OWS-Wert
+    (z. B. von einem Reverse-Proxy mit abweichender Header-Verarbeitung)
+    fällt am defensiven `len == 55`-Check des Parsers auf den
+    parse_error-Pfad zurück. Test-Anker:
+    `TestHTTP_Span_TraceParent_LeadingTrailingWhitespace` für die
+    Wire-Beobachtung und `TestParseTraceParent_Invalid` für den
+    Defense-in-Depth-Pfad bei direktem Funktionsaufruf.
   - `Retry-After` — Server-Antwort bei `429`.
 - **Prometheus-Metrik-Prefix**: `mtrace_`
 - **OTel-Attribut-Prefix**: `mtrace.*`

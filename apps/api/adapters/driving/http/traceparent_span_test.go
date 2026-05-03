@@ -90,6 +90,59 @@ func TestHTTP_Span_TraceParent_InvalidSetsParseError(t *testing.T) {
 	}
 }
 
+// TestHTTP_Span_TraceParent_LeadingTrailingWhitespace zurrt das
+// beobachtete OWS-Verhalten am Wire fest (plan-0.4.0.md §3.4c, Item #1).
+// Ein `traceparent`-Header-Wert mit führender und nachfolgender OWS
+// erreicht den Backend-Code nicht mehr OWS-behaftet: Go's
+// `net/textproto.Reader` (genutzt von `net/http`) entfernt OWS auf
+// beiden Seiten beim Header-Parsing am Wire. `parseTraceParent` sieht
+// daher in einem realen HTTP-Request denselben 55-Zeichen-Wert, den
+// ein OWS-freier Sender liefert; ein OWS-umschlossener, ansonsten
+// valider Wert wird als gültig akzeptiert und der Server-Span wird
+// Child der Client-Trace.
+//
+// Das Backend führt **selbst kein** `strings.TrimSpace` durch — die
+// Normalisierung passiert ausschließlich auf der HTTP-Layer-Ebene.
+// Würde künftig ein Reverse-Proxy oder eine Middleware OWS doch
+// durchreichen, würde `parseTraceParent`s strikter `len(raw) == 55`-
+// Check defensiv auf parse_error fallen (siehe Internal-Test
+// `TestParseTraceParent_Invalid` in `traceparent_internal_test.go`).
+func TestHTTP_Span_TraceParent_LeadingTrailingWhitespace(t *testing.T) {
+	t.Parallel()
+
+	recorder := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	defer func() { _ = tp.Shutdown(context.Background()) }()
+
+	srv := newTestServerWithTracerProvider(t, tp)
+
+	const incomingTraceID = "0af7651916cd43dd8448eb211c80319c"
+	const incomingParentID = "b7ad6b7169203331"
+	tpWithOWS := " 00-" + incomingTraceID + "-" + incomingParentID + "-01 "
+
+	resp := postWithHeaders(t, srv, "demo-token", validBody, map[string]string{
+		"traceparent": tpWithOWS,
+	})
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("expected 202 (OWS must not 4xx), got %d", resp.StatusCode)
+	}
+
+	spans := recorder.Ended()
+	if len(spans) != 1 {
+		t.Fatalf("expected 1 span, got %d", len(spans))
+	}
+	span := spans[0]
+	if _, present := attrMap(span.Attributes())["mtrace.trace.parse_error"]; present {
+		t.Error("mtrace.trace.parse_error should not be set: net/textproto strips OWS at the wire layer, so parseTraceParent sees the OWS-free value")
+	}
+	if got := span.SpanContext().TraceID().String(); got != incomingTraceID {
+		t.Errorf("trace_id = %q, want %q (OWS-wrapped header should still propagate after wire-layer trim)", got, incomingTraceID)
+	}
+	if got := span.Parent().SpanID().String(); got != incomingParentID {
+		t.Errorf("parent span_id = %q, want %q (OWS-wrapped header should still produce a child span)", got, incomingParentID)
+	}
+}
+
 // TestHTTP_Span_SingleSessionBatch_SetsCorrelationID verifiziert,
 // dass für einen Single-Session-Batch die Span-Attribute
 // `mtrace.session.correlation_id` (UUIDv4-geformt),

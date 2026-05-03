@@ -41,6 +41,11 @@ func TestParseTraceParent_Invalid(t *testing.T) {
 		"all-zero parent_id":   "00-0af7651916cd43dd8448eb211c80319c-0000000000000000-01",
 		"trace_id wrong len":   "00-0af7651916cd43dd8448eb211c8031-b7ad6b7169203331111-01",
 		"parent_id wrong len":  "00-0af7651916cd43dd8448eb211c80319c-b7ad6b71692033-0101",
+		"leading space":        " 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+		"trailing space":       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01 ",
+		"leading tab":          "\t00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+		"trailing tab":         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01\t",
+		"surrounding ows":      " 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01 ",
 	}
 	for name, raw := range cases {
 		if _, _, _, ok := parseTraceParent(raw); ok {
