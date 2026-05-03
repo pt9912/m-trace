@@ -8,8 +8,7 @@ import type { ManifestInput } from "../src/types/input.js";
 
 class StringStream extends Writable {
   data = "";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _write(chunk: Buffer | string, _enc: any, cb: () => void): void {
+  _write(chunk: Buffer | string, _enc: BufferEncoding, cb: () => void): void {
     this.data += chunk.toString();
     cb();
   }
@@ -214,7 +213,6 @@ describe("m-trace CLI — URL input", () => {
 
   it("describes non-Error analyze throws via String()", async () => {
     const r = await run(["check", "https://example.test/m.m3u8"], {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       analyze: async () => {
         throw "raw boom";
       }

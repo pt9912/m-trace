@@ -68,6 +68,11 @@ export function sharedConfig({ tsconfigRootDir, tsconfigProject = ['./tsconfig.j
         '**/tsup.config.*',
         '**/svelte.config.*',
         '**/playwright.config.*',
+        // Build-/Boundary-/Snapshot-Scripts liegen häufig als .mjs
+        // vor; typescript-eslint kann sie auch bei Aufnahme in
+        // tsconfig.include nicht zuverlässig type-aware parsen.
+        // tsc --noEmit prüft sie weiterhin, ESLint bleibt draußen.
+        '**/scripts/**/*.{js,mjs,cjs}',
       ],
     },
 
@@ -166,6 +171,13 @@ export function sharedConfig({ tsconfigRootDir, tsconfigProject = ['./tsconfig.j
         '@typescript-eslint/no-unsafe-call': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
         '@typescript-eslint/no-unsafe-return': 'off',
+
+        // Tests werfen bewusst Non-Error-Objekte (Strings, Numbers,
+        // plain Objects) als Fixtures, um Error-Handling-Pfade auf
+        // Robustheit gegen unerwartete Throw-Werte zu prüfen.
+        // Produktions-Throws bleiben strikt auf Error-Klassen
+        // eingeschränkt.
+        '@typescript-eslint/only-throw-error': 'off',
       },
     },
 

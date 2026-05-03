@@ -58,7 +58,11 @@ export const defaultLoaderRuntime: LoaderRuntime = {
       headers: { get: (name) => response.headers.get(name) },
       body: response.body
         ? (async function* () {
-            const reader = response.body!.getReader();
+            // Cast: response.body!.getReader() liefert in der DOM/Node-
+            // Lib-Mischung formal ReadableStreamDefaultReader<any>;
+            // der konkrete Stream liefert Uint8Array-Chunks, was die
+            // LoaderResponse-Body-Typsignatur verlangt.
+            const reader = response.body!.getReader() as ReadableStreamDefaultReader<Uint8Array>;
             try {
               while (true) {
                 const { done, value } = await reader.read();

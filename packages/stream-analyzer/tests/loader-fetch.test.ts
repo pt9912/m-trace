@@ -443,7 +443,6 @@ describe("loadHlsManifest — fetch failures", () => {
   it("describes non-Error throw values via String()", async () => {
     const runtime: LoaderRuntime = {
       resolveHost: async () => [{ address: "1.1.1.1", family: 4 }],
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       fetch: async () => {
         throw "raw string boom";
       }
@@ -455,7 +454,6 @@ describe("loadHlsManifest — fetch failures", () => {
 
   it("turns non-Error DNS rejections into fetch_blocked with String() reason", async () => {
     const runtime: LoaderRuntime = {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       resolveHost: async () => {
         throw "non-error dns failure";
       },

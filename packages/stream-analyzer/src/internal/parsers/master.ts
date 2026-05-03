@@ -309,7 +309,7 @@ function optionalString<K extends string>(
   outKey: K
 ): { readonly [P in K]?: string } {
   const value = attrs.get(attrKey);
-  if (value === undefined || value.length === 0) return {} as { readonly [P in K]?: string };
+  if (value === undefined || value.length === 0) return {};
   return { [outKey]: value } as { readonly [P in K]?: string };
 }
 
@@ -319,7 +319,7 @@ function optionalBoolean<K extends string>(
   outKey: K
 ): { readonly [P in K]?: boolean } {
   const parsed = parseYesNo(attrs.get(attrKey));
-  if (parsed === undefined) return {} as { readonly [P in K]?: boolean };
+  if (parsed === undefined) return {};
   return { [outKey]: parsed } as { readonly [P in K]?: boolean };
 }
 
