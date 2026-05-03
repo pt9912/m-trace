@@ -137,7 +137,7 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 
 Span-Attribute folgen [OTel HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/) wo anwendbar; m-trace-spezifische Erweiterungen nutzen den Namespace `mtrace.*` oder `batch.*`.
 
-`session_id`, `user_agent`, `segment_url` dürfen als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute). Ab `0.4.0` setzt der HTTP-Span auf `POST /api/playback-events` statt `session_id` die `correlation_id` als Session-Marker (siehe §2.5).
+Vor `0.4.0` durften `session_id`, `user_agent` und `segment_url` als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute). Ab `0.4.0` setzt der HTTP-Span auf `POST /api/playback-events` keine `session_id` mehr; Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id` (siehe §2.5).
 
 ### 2.2 Counter
 
