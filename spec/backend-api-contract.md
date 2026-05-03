@@ -491,8 +491,13 @@ Verbindliche Regeln:
   weder der HTTP-seitige Header-Check noch Use-Case-seitiges
   `ResolveByToken` und Token-Bindung. `mtrace_invalid_events_total`
   ist auf `400` und `422` beschränkt.
-- **Keine** hochkardinalen Labels: `session_id`, `user_agent`,
-  `segment_url`, `client_ip` und beliebige `project_id` sind verboten.
+- Die vier Pflichtcounter tragen keine fachlichen Labels; erlaubt sind
+  nur technische Prometheus-/Target-Metadaten außerhalb des Metric-Vektors.
+  Insbesondere sind `project_id`, `session_id`, `viewer_id`, `request_id`,
+  `user_agent`, `segment_url`, andere URL-/URL-Teil-Felder, `client_ip`,
+  `trace_id`, `span_id`, `correlation_id` sowie Token-/Credential-Felder
+  verboten. Eine spätere `project_id`-Ausnahme braucht eine explizite
+  bounded Allowlist und einen passenden Cardinality-Smoke.
 - `mtrace_dropped_events_total` darf konstant `0` sein, wenn die API
   keinen expliziten Drop-Pfad hat — die Metrik **muss** aber existiert sein.
 - `delivery_status: "duplicate_suspected"`-Events (siehe §10.2) zählen

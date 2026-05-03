@@ -473,13 +473,13 @@ Ziel: Nutzer verstehen, welche Daten in Prometheus, OTel/Tempo und SQLite landen
 
 DoD:
 
-- [ ] `spec/telemetry-model.md`, `spec/player-sdk.md` und `packages/player-sdk/README.md` beschreiben synchron das `0.4.0`-Sampling für SDK-Events, Backend-Spans und optionale Tempo-Nutzung. Falls SDK-Nutzerdoku bewusst nicht geändert wird, muss §8 das ausdrücklich als Nicht-Scope begründen.
-- [ ] `docs/user/local-development.md` beschreibt lokale Storage-Retention, SQLite-Reset, Prometheus-Aggregate und den `0.4.0`-Tempo-Status: optionales Tempo-Profil, falls §6 umgesetzt wird, oder explizit deferred ohne aktives Profil.
+- [ ] `spec/telemetry-model.md`, `spec/backend-api-contract.md` §7, `spec/player-sdk.md` und `packages/player-sdk/README.md` beschreiben synchron das `0.4.0`-Sampling für SDK-Events, Backend-Spans, Pflichtcounter-Labelgrenzen und optionale Tempo-Nutzung. Falls SDK-Nutzerdoku bewusst nicht geändert wird, muss §8 das ausdrücklich als Nicht-Scope begründen.
+- [ ] `docs/user/local-development.md` beschreibt lokale Storage-Retention, SQLite-Reset, Prometheus-Aggregate und den `0.4.0`-Tempo-Status: optionales Tempo-Profil, falls §6 / Tranche 5 umgesetzt wird, oder explizit deferred ohne aktives Profil.
 - [ ] `docs/user/demo-integration.md` zeigt, wie eine Demo-Session inklusive Timeline reproduzierbar erzeugt wird.
 - [ ] `README.md` aktualisiert den `0.4.0`-Abschnitt mit tatsächlichem Lieferstand.
 - [ ] Doku enthält eine klare Tabelle: Prometheus = Aggregate, SQLite = Session-/Event-Historie, OTel/Tempo = Trace-Debugging.
 - [ ] Sampling-Grenzen erklären die aktuelle Nachweisgrenze: Das SDK sampelt normale Events eventbasiert, gesampelte Events verbrauchen keine `sequence_number`, und der Server kann fehlende Events deshalb nicht automatisch als Lücke erkennen. Vollständige Timeline-Abnahme und E2E-Smokes laufen mit `sampleRate=1`. Für `sampleRate < 1` ist Vollständigkeit ohne neues session-/batch-skopiertes Sampling-Metadaten-Signal nicht beweisbar; entweder führt eine spätere Tranche ein solches Read-Shape-/Dashboard-Signal ein, oder das Dashboard markiert Sampled-Sessions nur über dokumentierte Konfiguration/Benutzerhinweis, nicht durch serverseitige Lückenerkennung.
-- [ ] Datenschutz- und Cardinality-Hinweise nennen ausdrücklich `session_id`, URLs, User-Agent und Client-IP.
+- [ ] Datenschutz- und Cardinality-Hinweise übernehmen die vollständige Verbot-/Allowlist aus `spec/telemetry-model.md` und `spec/backend-api-contract.md` §7. Mindestnennungen sind `session_id`, URLs/URL-Teile, User-Agent, Client-IP, `viewer_id`, `request_id`, `trace_id`, `span_id`, `correlation_id`, beliebige `project_id`-Labels und Token-/Credential-Felder; kürzere Beispiel-Listen reichen nicht als Abnahme.
 - [ ] Release-Notes-Vorlage im `CHANGELOG.md`-Unreleased-Abschnitt enthält die neuen Trace-, Storage-, Metrik- und Doku-Punkte.
 
 ---
