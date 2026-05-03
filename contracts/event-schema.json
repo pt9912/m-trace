@@ -26,15 +26,8 @@
       "native_hls",
       "unknown"
     ],
-    "reasons": [
-      "native_hls_unavailable",
-      "hlsjs_signal_unavailable",
-      "browser_api_unavailable",
-      "resource_timing_unavailable",
-      "cors_timing_blocked",
-      "service_worker_opaque"
-    ],
-    "reason_pattern": "^[a-z0-9_]{1,64}$",
+    "reasons_ref": "network_unavailable_reasons",
+    "reason_pattern_ref": "network_unavailable_reason_pattern",
     "required_fields": [
       "kind",
       "project_id",
@@ -45,6 +38,7 @@
       "client_timestamp"
     ]
   },
+  "network_unavailable_reasons_anchor": "spec/telemetry-model.md §1.4",
   "network_unavailable_reasons": [
     "native_hls_unavailable",
     "hlsjs_signal_unavailable",

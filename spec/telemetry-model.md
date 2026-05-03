@@ -90,7 +90,7 @@ Der Degradationsmarker ist normativ:
 |---|---|---|
 | `meta["network.kind"]` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
 | `meta["network.detail_status"]` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
-| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund aus derselben Reason-Domäne wie `session_boundaries[].reason`: `native_hls_unavailable`, `hlsjs_signal_unavailable`, `browser_api_unavailable`, `resource_timing_unavailable`, `cors_timing_blocked`, `service_worker_opaque`; zusätzlich `^[a-z0-9_]{1,64}$`. |
+| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund aus dem normativen Reason-Enum: `native_hls_unavailable`, `hlsjs_signal_unavailable`, `browser_api_unavailable`, `resource_timing_unavailable`, `cors_timing_blocked`, `service_worker_opaque`; zusätzlich `^[a-z0-9_]{1,64}$`. **Diese Tabelle ist der einzige normative Anker des Reason-Enums** — `session_boundaries[].reason` (siehe unten), `spec/backend-api-contract.md` §3.4 und `contracts/event-schema.json` (`network_unavailable_reasons`, `network_unavailable_reason_pattern`) verweisen ausschließlich auf diese Werte. |
 | `meta["network.redacted_url"]` | string, optional | Bereits redigierter URL-Repräsentant gemäß Redaction-Matrix; rohe URLs mit Query, Fragment, `userinfo` oder tokenartigen Pfadsegmenten sind unzulässig. |
 
 `meta["network.unavailable_reason"]` ist nur zulässig, wenn
@@ -123,12 +123,10 @@ einen optionalen Batch-Wrapper-Block `session_boundaries[]` an
 Batch-`schema_version` nicht. Pro Batch sind maximal 20 Boundaries
 zulässig, sie zählen ins Body-Size-Budget, und jede Boundary muss eine
 `(project_id, session_id)`-Partition referenzieren, die mindestens ein
-Event im selben Batch trägt. `reason` verwendet dieselbe kontrollierte
-Domäne wie `meta["network.unavailable_reason"]` und darf nur
-`native_hls_unavailable`, `hlsjs_signal_unavailable`,
-`browser_api_unavailable`, `resource_timing_unavailable`,
-`cors_timing_blocked` oder `service_worker_opaque` sein; zusätzlich
-gilt `^[a-z0-9_]{1,64}$`. Die Session-API markiert diese Grenze
+Event im selben Batch trägt. `reason` verwendet denselben normativen Reason-Enum wie
+`meta["network.unavailable_reason"]` (Pflicht-Liste und Pattern siehe
+Tabelle weiter oben in §1.4); andere Werte oder Verstöße gegen
+`^[a-z0-9_]{1,64}$` führen zu `422`. Die Session-API markiert diese Grenze
 außerhalb des Event-Streams im Session-Block als `network_signal_absent`:
 Liste von Objekten mit `kind`, `adapter` und maschinenlesbarem `reason`.
 Persistenzvehikel ist eine durable Session-Metadaten-Spalte oder ein

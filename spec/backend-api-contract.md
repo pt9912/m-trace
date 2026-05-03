@@ -144,14 +144,17 @@ ist der Batch `422 Unprocessable Entity`.
 
 Für Tranche 3 ist nur `kind="network_signal_absent"` definiert.
 `network_kind` ist `"manifest"` oder `"segment"`, `adapter` ist
-`"hls.js"`, `"native_hls"` oder `"unknown"`, `reason` ist einer aus
-`{"native_hls_unavailable", "hlsjs_signal_unavailable",
-"browser_api_unavailable", "resource_timing_unavailable",
-"cors_timing_blocked", "service_worker_opaque"}` und muss zusätzlich
-`^[a-z0-9_]{1,64}$` erfüllen. Andere Werte, rohe URLs, Token-Strings
-oder HTML/Script-Fragmente werden mit `422 Unprocessable Entity`
-abgelehnt. `project_id` muss wie bei Events zum `X-MTrace-Token`
-passen; `session_id` ist Pflicht.
+`"hls.js"`, `"native_hls"` oder `"unknown"`. Die zulässige Domäne und
+das Längen-/Charset-Pattern für `reason` sind normativ in
+`spec/telemetry-model.md` §1.4 definiert (gemeinsamer Reason-Enum mit
+`meta["network.unavailable_reason"]`); `contracts/event-schema.json`
+spiegelt sie für maschinenlesbare Validierung über
+`session_boundaries.reasons_ref` und `session_boundaries.reason_pattern_ref`,
+die auf `network_unavailable_reasons` bzw.
+`network_unavailable_reason_pattern` zeigen. Andere Werte, rohe URLs,
+Token-Strings oder HTML/Script-Fragmente werden mit
+`422 Unprocessable Entity` abgelehnt. `project_id` muss wie bei Events
+zum `X-MTrace-Token` passen; `session_id` ist Pflicht.
 
 Der komplette Batch-Wrapper wird vor jedem Write validiert oder
 gemeinsam transaktional persistiert. Ein invalider Boundary-Block
