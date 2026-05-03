@@ -499,8 +499,8 @@ DoD:
 - [ ] **RAK-35** Dokumentation beschreibt Cardinality-Grenzen und Sampling-Strategie.
 - [ ] Versionen sind konsistent: Root- und Workspace-Pakete tragen `0.4.0`; SDK/Event-Schema-Kompatibilitätscheck bleibt grün. Insbesondere `PLAYER_SDK_VERSION` in `packages/player-sdk/src/version.ts` ist auf `0.4.0` gehoben (aus §3.3-Review, Anmerkung #9: aktuell noch `0.3.0`, weil §3.3 absichtlich keinen Release-Bump macht).
 - [ ] `CHANGELOG.md` enthält den Versionsabschnitt `[0.4.0] - <Datum>` mit Trace-, Persistenz-, Dashboard-, Metrik- und Doku-Lieferstand.
-- [ ] Release-Gates grün: `make test`, `make lint`, `make coverage-gate`, `make arch-check`, `make build`, `make sdk-performance-smoke`, `make smoke-observability` und Dashboard-Tests.
-- [ ] Browser-E2E-Smoke für eine erzeugte Test-Session und Session-Timeline ist grün oder als manuelles Release-Gate mit Ergebnis dokumentiert; der Smoke darf `/demo` nutzen, muss aber bei späterer Demo-Änderung auf einen dedizierten Test-Harness umstellbar bleiben.
+- [ ] Release-Gates grün: `make gates` (enthält `test`, `lint`, `coverage-gate`, `arch-check`, `schema-validate`, `docs-check`), `make build`, `make sdk-performance-smoke`, `make smoke-observability`, `make smoke-cli`, `make smoke-analyzer` und `make browser-e2e`.
+- [ ] Browser-E2E-Smoke (`make browser-e2e`) erzeugt eine Test-Session und prüft Session-Timeline/Tranche-4-Dashboard-Flows; falls er aus Umgebungsgründen manuell ersetzt wird, ist das Ergebnis als Release-Gate dokumentiert. Der Smoke darf `/demo` nutzen, muss aber bei späterer Demo-Änderung auf einen dedizierten Test-Harness umstellbar bleiben.
 - [ ] `docs/planning/in-progress/roadmap.md` markiert `0.4.0` als abgeschlossen und verschiebt den aktiven Fokus auf `0.5.0`.
 
 ---
