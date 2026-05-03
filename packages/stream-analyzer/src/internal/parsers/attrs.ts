@@ -20,43 +20,70 @@
  */
 export function parseAttributeList(input: string): Map<string, string> {
   const result = new Map<string, string>();
-  let i = 0;
   const n = input.length;
+  let i = 0;
   while (i < n) {
-    while (i < n && (input[i] === " " || input[i] === "\t")) i++;
+    i = skipSpacesAndTabs(input, i, n);
     if (i >= n) break;
-    const keyStart = i;
-    while (i < n && input[i] !== "=" && input[i] !== ",") i++;
-    const key = input.slice(keyStart, i).trim();
-    if (key.length === 0) {
-      if (i < n && input[i] === ",") i++;
+
+    const keyRead = readKey(input, i, n);
+    i = keyRead.next;
+    if (keyRead.key.length === 0) {
+      i = consumeComma(input, i, n);
       continue;
     }
     if (i >= n || input[i] !== "=") {
-      result.set(key, "");
-      if (i < n && input[i] === ",") i++;
+      result.set(keyRead.key, "");
+      i = consumeComma(input, i, n);
       continue;
     }
+
     i++; // consume '='
-    let value: string;
-    if (i < n && input[i] === '"') {
-      i++; // consume opening '"'
-      const valStart = i;
-      while (i < n && input[i] !== '"') i++;
-      value = input.slice(valStart, i);
-      if (i < n) i++; // consume closing '"'
-    } else {
-      const valStart = i;
-      while (i < n && input[i] !== ",") i++;
-      // Reale Manifeste haben gelegentlich Whitespace um '='; HLS
-      // verbietet das streng, wir tolerieren es durch Trim auf
-      // unquoted Werten. Quoted Werte bleiben byte-genau.
-      value = input.slice(valStart, i).trim();
-    }
-    result.set(key, value);
-    if (i < n && input[i] === ",") i++;
+    const valueRead = readValue(input, i, n);
+    result.set(keyRead.key, valueRead.value);
+    i = consumeComma(input, valueRead.next, n);
   }
   return result;
+}
+
+function skipSpacesAndTabs(input: string, start: number, n: number): number {
+  let cursor = start;
+  while (cursor < n && (input[cursor] === " " || input[cursor] === "\t")) cursor++;
+  return cursor;
+}
+
+function consumeComma(input: string, i: number, n: number): number {
+  return i < n && input[i] === "," ? i + 1 : i;
+}
+
+function readKey(input: string, start: number, n: number): { key: string; next: number } {
+  let cursor = start;
+  while (cursor < n && input[cursor] !== "=" && input[cursor] !== ",") cursor++;
+  return { key: input.slice(start, cursor).trim(), next: cursor };
+}
+
+function readValue(input: string, i: number, n: number): { value: string; next: number } {
+  if (i < n && input[i] === '"') {
+    return readQuotedValue(input, i + 1, n);
+  }
+  return readUnquotedValue(input, i, n);
+}
+
+function readQuotedValue(input: string, start: number, n: number): { value: string; next: number } {
+  let cursor = start;
+  while (cursor < n && input[cursor] !== '"') cursor++;
+  const value = input.slice(start, cursor);
+  // Schließendes '"' konsumieren, falls vorhanden.
+  return { value, next: cursor < n ? cursor + 1 : cursor };
+}
+
+function readUnquotedValue(input: string, start: number, n: number): { value: string; next: number } {
+  let cursor = start;
+  while (cursor < n && input[cursor] !== ",") cursor++;
+  // Reale Manifeste haben gelegentlich Whitespace um '='; HLS verbietet
+  // das streng, wir tolerieren es durch Trim auf unquoted Werten.
+  // Quoted Werte bleiben byte-genau (siehe readQuotedValue).
+  return { value: input.slice(start, cursor).trim(), next: cursor };
 }
 
 /** Liest `KEY=YES|NO` als Boolean. `undefined` für nicht gesetzt. */
