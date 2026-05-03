@@ -34,8 +34,8 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Workspace build
-        run: make workspace-build
+      - name: TS workspace build
+        run: make ts-build
 
       - name: Test
         run: make test

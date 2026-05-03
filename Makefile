@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop wipe smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test workspace-test lint api-lint workspace-lint build api-build workspace-build coverage-gate api-coverage-gate workspace-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability stop wipe smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -25,9 +25,9 @@ help:
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
 		'  make browser-e2e            Run browser E2E checks' \
 		'  make docs-check             Run documentation checks' \
-		'  make test                   Run API Docker tests and workspace tests' \
-		'  make lint                   Run API Docker lint and workspace lint' \
-		'  make build                  Build API runtime image and workspace packages' \
+		'  make test                   Run API Docker tests and TS workspace tests' \
+		'  make lint                   Run API Docker lint and TS workspace lint' \
+		'  make build                  Build API runtime image and TS workspace packages' \
 		'  make coverage-gate          Run API, SDK, dashboard and analyzer coverage gates' \
 		'  make coverage-report        Export the API coverage report' \
 		'  make arch-check             Run the API architecture boundary check' \
@@ -37,7 +37,7 @@ help:
 		'  make gates                  Run test, lint, coverage, architecture, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
-		'  make fullbuild              Install + workspace/api build + gates (CI-äquivalent von clean)' \
+		'  make fullbuild              Install + ts/api build + gates (CI-äquivalent von clean)' \
 		'' \
 		'Variables:' \
 		'  COMPOSE="docker compose" PNPM=pnpm API_MAKE="$(MAKE) -C apps/api"' \
@@ -83,12 +83,12 @@ smoke-analyzer:
 	bash scripts/smoke-analyzer.sh
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
-# (plan-0.3.0 §8 Tranche 7). Hängt am workspace-build, damit das CLI-
+# (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-
 # Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt; ein
 # zweiter `pnpm install` materialisiert die Bin-Symlinks (workspace-
 # Pakete können das beim ersten Install nicht, wenn `dist/` noch
 # fehlt — gleiches Verhalten in CI und auf frischen Clones).
-smoke-cli: workspace-build
+smoke-cli: ts-build
 	$(PNPM) install --frozen-lockfile
 	bash scripts/smoke-cli.sh
 
@@ -96,7 +96,7 @@ smoke-cli: workspace-build
 # apps/api/.../testdata/, weil der api-Docker-Build-Context nur
 # apps/api/ kennt. `make sync-contract-fixtures` kopiert die
 # Spec-Dateien in den Go-Pfad — manueller Trigger, weil derselbe
-# TS-Test (workspace-test) den Drift bereits hart prüft.
+# TS-Test (ts-test) den Drift bereits hart prüft.
 sync-contract-fixtures:
 	cp spec/contract-fixtures/analyzer/success-master.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-master.json
 	cp spec/contract-fixtures/analyzer/error-fetch-blocked.json apps/api/adapters/driven/streamanalyzer/testdata/contract-error-fetch-blocked.json
@@ -113,7 +113,7 @@ docs-check:
 
 docs-refs: docs-check
 
-test: api-test workspace-test
+test: api-test ts-test
 
 api-test:
 	$(API_MAKE) test
@@ -123,31 +123,31 @@ api-test:
 # bevor Tests/Lint/Coverage laufen können. `pnpm -r run build`
 # respektiert den Topo-Sort und baut Dependencies vor Consumern; wir
 # binden den Build deshalb als harte Vorbedingung ein.
-workspace-test: workspace-build
+ts-test: ts-build
 	$(PNPM) run test
 
-lint: api-lint workspace-lint
+lint: api-lint ts-lint
 
 api-lint:
 	$(API_MAKE) lint
 
-workspace-lint: workspace-build
+ts-lint: ts-build
 	$(PNPM) run lint
 
-build: api-build workspace-build
+build: api-build ts-build
 
 api-build:
 	$(API_MAKE) build
 
-workspace-build:
+ts-build:
 	$(PNPM) run build
 
-coverage-gate: api-coverage-gate workspace-coverage-gate
+coverage-gate: api-coverage-gate ts-coverage-gate
 
 api-coverage-gate:
 	$(API_MAKE) coverage-gate THRESHOLD="$(THRESHOLD)"
 
-workspace-coverage-gate: workspace-build
+ts-coverage-gate: ts-build
 	$(PNPM) --filter @npm9912/player-sdk run test:coverage
 	$(PNPM) --filter @npm9912/m-trace-dashboard run test:coverage
 	$(PNPM) --filter @npm9912/stream-analyzer run test:coverage

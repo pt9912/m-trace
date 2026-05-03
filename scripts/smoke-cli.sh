@@ -11,7 +11,7 @@ set -euo pipefail
 #     exit 1, Fehler-Message auf stderr.
 #  5. Aufruf ohne Argumente → Usage-Fehler, exit 2.
 #
-# Erwartet `make workspace-build` als Vorbedingung (das Makefile-Target
+# Erwartet `make ts-build` als Vorbedingung (das Makefile-Target
 # `smoke-cli` hängt schon dran).
 
 if ! command -v jq >/dev/null 2>&1; then

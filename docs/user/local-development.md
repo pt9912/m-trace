@@ -143,7 +143,7 @@ CLI (ab `0.3.0` Tranche 7):
 
 ```bash
 # Build des CLI-Bundles
-make workspace-build
+make ts-build
 
 # Datei oder URL prüfen
 pnpm --silent m-trace check ./packages/stream-analyzer/tests/fixtures/master.m3u8
