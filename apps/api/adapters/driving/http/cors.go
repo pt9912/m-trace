@@ -16,7 +16,7 @@ type OriginAllowlist interface {
 // (plan-0.1.0.md §5.1, CORS Variante B). Beide Klassen lassen
 // `Access-Control-Allow-Credentials` bewusst weg — das SDK nutzt
 // `credentials: "omit"` (NF-31/NF-32).
-var (
+const (
 	playerSDKAllowedMethods = "POST, OPTIONS"
 	dashboardAllowedMethods = "GET, OPTIONS"
 	allowedHeaders          = "Content-Type, X-MTrace-Project, X-MTrace-Token"
