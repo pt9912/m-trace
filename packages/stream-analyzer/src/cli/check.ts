@@ -36,61 +36,14 @@ export const EXIT_USAGE = 2;
  * Netzwerk geprüft werden können.
  */
 export async function runCli(opts: RunCliOptions): Promise<number> {
-  const args = [...opts.argv];
-  if (args.length === 0) {
-    printUsage(opts.stderr);
-    return EXIT_USAGE;
-  }
-  if (args[0] === "--help" || args[0] === "-h") {
-    printUsage(opts.stdout);
-    return EXIT_OK;
-  }
-  if (args[0] === "--version") {
-    const { STREAM_ANALYZER_VERSION } = await import("../version.js");
-    opts.stdout.write(`${STREAM_ANALYZER_VERSION}\n`);
-    return EXIT_OK;
-  }
+  const parsed = await parseCliArgs(opts);
+  if (parsed.kind === "exit") return parsed.code;
 
-  const command = args.shift();
-  if (command !== "check") {
-    opts.stderr.write(`m-trace: unbekanntes Kommando "${command}"\n`);
-    printUsage(opts.stderr);
-    return EXIT_USAGE;
-  }
-
-  const target = args.shift();
-  if (target === undefined || target.length === 0) {
-    opts.stderr.write("m-trace check: fehlendes Argument <url-or-file>\n");
-    printUsage(opts.stderr);
-    return EXIT_USAGE;
-  }
-
-  // Unbekannte Optionen explizit ablehnen, damit sich die CLI hart
-  // verhält und keine versehentlich falsch geschriebenen Flags
-  // schluckt.
-  if (args.length > 0) {
-    opts.stderr.write(`m-trace check: unerwartetes Argument "${args[0]}"\n`);
-    printUsage(opts.stderr);
-    return EXIT_USAGE;
-  }
+  const readFile = opts.readFile ?? defaultReadFile;
+  const input = await loadInput(parsed.target, readFile, opts.stderr);
+  if (input === null) return EXIT_FAILURE;
 
   const analyze = opts.analyze ?? analyzeHlsManifest;
-  const readFile = opts.readFile ?? defaultReadFile;
-
-  let input: ManifestInput;
-  if (isHttpUrl(target)) {
-    input = { kind: "url", url: target };
-  } else {
-    let text: string;
-    try {
-      text = await readFile(target);
-    } catch (error) {
-      opts.stderr.write(`m-trace check: Datei "${target}" konnte nicht gelesen werden: ${describeError(error)}\n`);
-      return EXIT_FAILURE;
-    }
-    input = { kind: "text", text, baseUrl: localBaseUrl(target) };
-  }
-
   let result;
   try {
     result = await analyze(input);
@@ -101,6 +54,77 @@ export async function runCli(opts: RunCliOptions): Promise<number> {
 
   opts.stdout.write(JSON.stringify(result, null, 2) + "\n");
   return result.status === "ok" ? EXIT_OK : EXIT_FAILURE;
+}
+
+type CliArgsResult =
+  | { readonly kind: "exit"; readonly code: number }
+  | { readonly kind: "continue"; readonly target: string };
+
+/** Validiert argv und fängt --help / --version / fehlende oder
+ * unerwartete Argumente ab. Schreibt Usage/Fehler nach stderr/stdout
+ * und liefert entweder einen Exit-Code (Top-Level kehrt sofort zurück)
+ * oder das aufgelöste check-Target. */
+async function parseCliArgs(opts: RunCliOptions): Promise<CliArgsResult> {
+  const args = [...opts.argv];
+  if (args.length === 0) {
+    printUsage(opts.stderr);
+    return { kind: "exit", code: EXIT_USAGE };
+  }
+  if (args[0] === "--help" || args[0] === "-h") {
+    printUsage(opts.stdout);
+    return { kind: "exit", code: EXIT_OK };
+  }
+  if (args[0] === "--version") {
+    const { STREAM_ANALYZER_VERSION } = await import("../version.js");
+    opts.stdout.write(`${STREAM_ANALYZER_VERSION}\n`);
+    return { kind: "exit", code: EXIT_OK };
+  }
+
+  const command = args.shift();
+  if (command !== "check") {
+    opts.stderr.write(`m-trace: unbekanntes Kommando "${command}"\n`);
+    printUsage(opts.stderr);
+    return { kind: "exit", code: EXIT_USAGE };
+  }
+
+  const target = args.shift();
+  if (target === undefined || target.length === 0) {
+    opts.stderr.write("m-trace check: fehlendes Argument <url-or-file>\n");
+    printUsage(opts.stderr);
+    return { kind: "exit", code: EXIT_USAGE };
+  }
+
+  // Unbekannte Optionen explizit ablehnen, damit sich die CLI hart
+  // verhält und keine versehentlich falsch geschriebenen Flags
+  // schluckt.
+  if (args.length > 0) {
+    opts.stderr.write(`m-trace check: unerwartetes Argument "${args[0]}"\n`);
+    printUsage(opts.stderr);
+    return { kind: "exit", code: EXIT_USAGE };
+  }
+
+  return { kind: "continue", target };
+}
+
+/** Baut den ManifestInput aus dem aufgelösten Target: HTTP(S) →
+ * URL-Input, sonst Datei-Input mit pathToFileURL als baseUrl.
+ * Schreibt Lese-Fehler nach stderr und liefert null (Caller exitet
+ * mit EXIT_FAILURE). */
+async function loadInput(
+  target: string,
+  readFile: ReadFileFn,
+  stderr: Writable
+): Promise<ManifestInput | null> {
+  if (isHttpUrl(target)) {
+    return { kind: "url", url: target };
+  }
+  try {
+    const text = await readFile(target);
+    return { kind: "text", text, baseUrl: localBaseUrl(target) };
+  } catch (error) {
+    stderr.write(`m-trace check: Datei "${target}" konnte nicht gelesen werden: ${describeError(error)}\n`);
+    return null;
+  }
 }
 
 function printUsage(out: Writable): void {
