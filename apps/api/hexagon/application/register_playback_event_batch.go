@@ -100,106 +100,16 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	// Requests im received-Counter erscheinen (siehe Telemetry-Port-Doc).
 	u.telemetry.BatchReceived(ctx, len(in.Events))
 
-	// Step 3 — auth-token: resolve token to project. Auth-Fehler zählen
-	// nicht in invalid_events.
-	project, err := u.projects.ResolveByToken(ctx, in.AuthToken)
+	project, err := u.authorizeAndAdmit(ctx, in)
 	if err != nil {
 		return driving.BatchResult{}, err
 	}
 
-	// Step 3b — Origin-Validierung (CORS Variante B, plan-0.1.0.md §5.1).
-	// Lauft vor Step 4, damit weder Rate-Limit-Tokens verbraucht noch
-	// Counter inkrementiert werden. Origin="" → CLI/curl/Lab-Flow,
-	// Project-Bindung wird übersprungen.
-	if !project.IsOriginAllowed(in.Origin) {
-		return driving.BatchResult{}, domain.ErrOriginNotAllowed
-	}
-
-	// Step 4 — rate limit: charged for the requested batch size, even
-	// if the batch later turns out to be malformed. This prevents a
-	// caller from probing for validation responses without paying the
-	// per-project budget. Drei Dimensionen (project_id, client_ip,
-	// origin) werden gemeinsam geprüft (plan-0.1.0.md §5.1, F-110);
-	// Mismatch in einer reicht für 429.
-	limitKey := driven.RateLimitKey{
-		ProjectID: project.ID,
-		ClientIP:  in.ClientIP,
-		Origin:    in.Origin,
-	}
-	if err := u.limiter.Allow(ctx, limitKey, len(in.Events)); err != nil {
-		u.metrics.RateLimitedEvents(len(in.Events))
+	parsed, timeSkewWarning, err := u.parseEvents(in, project.ID)
+	if err != nil {
 		return driving.BatchResult{}, err
 	}
 
-	// Step 5 — schema version.
-	if in.SchemaVersion != SupportedSchemaVersion {
-		u.metrics.InvalidEvents(len(in.Events))
-		return driving.BatchResult{}, domain.ErrSchemaVersionMismatch
-	}
-
-	// Step 6 — batch form: empty batch wird mit 422 abgelehnt; der
-	// Counter zählt Events, nicht Batches — bei n=0 also kein
-	// Counter-Increment (Lastenheft §7.9).
-	if len(in.Events) == 0 {
-		return driving.BatchResult{}, domain.ErrBatchEmpty
-	}
-	// Step 7 — batch size: zu viele Events.
-	if len(in.Events) > MaxBatchSize {
-		u.metrics.InvalidEvents(len(in.Events))
-		return driving.BatchResult{}, domain.ErrBatchTooLarge
-	}
-
-	now := u.now().UTC()
-	parsed := make([]domain.PlaybackEvent, 0, len(in.Events))
-	timeSkewWarning := false
-	for _, e := range in.Events {
-		// Step 8 — per-event field check.
-		if !hasRequiredFields(e) {
-			u.metrics.InvalidEvents(len(in.Events))
-			return driving.BatchResult{}, domain.ErrInvalidEvent
-		}
-		// Step 9 — token/project binding. Auth-Fehler (401) zählt nicht
-		// in invalid_events — Counter ist auf Validierungsfehler 400/422
-		// beschränkt.
-		if e.ProjectID != project.ID {
-			return driving.BatchResult{}, domain.ErrUnauthorized
-		}
-		ts, err := time.Parse(time.RFC3339Nano, e.ClientTimestamp)
-		if err != nil {
-			u.metrics.InvalidEvents(len(in.Events))
-			return driving.BatchResult{}, domain.ErrInvalidEvent
-		}
-		// Time-Skew-Detection (telemetry-model.md §5.3): Schwelle 60 s,
-		// Konstante in 0.4.0. Einmal aktiv, bleibt für den ganzen Batch.
-		if now.Sub(ts).Abs() > TimeSkewThreshold {
-			timeSkewWarning = true
-		}
-		parsed = append(parsed, domain.PlaybackEvent{
-			EventName:        e.EventName,
-			ProjectID:        e.ProjectID,
-			SessionID:        e.SessionID,
-			ClientTimestamp:  ts,
-			ServerReceivedAt: now,
-			IngestSequence:   u.sequencer.Next(),
-			SequenceNumber:   e.SequenceNumber,
-			SDK: domain.SDKInfo{
-				Name:    e.SDK.Name,
-				Version: e.SDK.Version,
-			},
-			Meta:    domain.EventMeta(copyEventMeta(e.Meta)),
-			TraceID: in.Trace.TraceID,
-			SpanID:  in.Trace.SpanID,
-		})
-	}
-
-	// Step 9b — Trace-Korrelation (telemetry-model.md §2.5):
-	//
-	// 1. Sammle distinct session_ids aus dem Batch.
-	// 2. Pro session_id: bestehende Session aus dem Repository lesen;
-	//    falls vorhanden, übernehme deren CorrelationID; falls nicht,
-	//    generiere eine neue UUIDv4.
-	// 3. Reichere alle Events mit der ermittelten CorrelationID an —
-	//    Persistenz und Read-Pfad sehen den Wert dann auf jedem Event.
 	correlations, err := u.resolveCorrelationIDs(ctx, parsed)
 	if err != nil {
 		return driving.BatchResult{}, err
@@ -230,6 +140,95 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		SessionCorrelationID: singleSessionCorrelationID(correlations),
 		TimeSkewWarning:      timeSkewWarning,
 	}, nil
+}
+
+// authorizeAndAdmit deckt API-Kontrakt §5 Steps 3–7 ab: Token →
+// Project, Origin-Allowlist, Rate-Limit, Schema-Version und Batch-
+// Größenbedingungen. Counter-Semantik (API-Kontrakt §7): Auth-Fehler
+// zählen nicht in invalid_events; Schema-/Größen-Rejects zählen die
+// volle Batch-Größe. Origin="" überspringt Project-Bindung
+// (CLI/curl/Lab-Flow, plan-0.1.0.md §5.1).
+func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
+	ctx context.Context, in driving.BatchInput,
+) (domain.Project, error) {
+	project, err := u.projects.ResolveByToken(ctx, in.AuthToken)
+	if err != nil {
+		return domain.Project{}, err
+	}
+	if !project.IsOriginAllowed(in.Origin) {
+		return domain.Project{}, domain.ErrOriginNotAllowed
+	}
+	limitKey := driven.RateLimitKey{
+		ProjectID: project.ID,
+		ClientIP:  in.ClientIP,
+		Origin:    in.Origin,
+	}
+	if err := u.limiter.Allow(ctx, limitKey, len(in.Events)); err != nil {
+		u.metrics.RateLimitedEvents(len(in.Events))
+		return domain.Project{}, err
+	}
+	if in.SchemaVersion != SupportedSchemaVersion {
+		u.metrics.InvalidEvents(len(in.Events))
+		return domain.Project{}, domain.ErrSchemaVersionMismatch
+	}
+	// Empty batch: 422 ohne Counter-Increment (Lastenheft §7.9 — der
+	// Counter zählt Events, nicht Batches; n=0 also kein Increment).
+	if len(in.Events) == 0 {
+		return domain.Project{}, domain.ErrBatchEmpty
+	}
+	if len(in.Events) > MaxBatchSize {
+		u.metrics.InvalidEvents(len(in.Events))
+		return domain.Project{}, domain.ErrBatchTooLarge
+	}
+	return project, nil
+}
+
+// parseEvents deckt API-Kontrakt §5 Steps 8–9 ab: per-Event-Feldcheck,
+// Token/Project-Bindung und Time-Skew-Detection (telemetry-model.md
+// §5.3, Schwelle 60 s). Liefert die domain-PlaybackEvent-Liste plus
+// das Skew-Warning-Flag, das einmal aktiv für den ganzen Batch gilt.
+func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
+	in driving.BatchInput, projectID string,
+) ([]domain.PlaybackEvent, bool, error) {
+	now := u.now().UTC()
+	parsed := make([]domain.PlaybackEvent, 0, len(in.Events))
+	timeSkewWarning := false
+	for _, e := range in.Events {
+		if !hasRequiredFields(e) {
+			u.metrics.InvalidEvents(len(in.Events))
+			return nil, false, domain.ErrInvalidEvent
+		}
+		// Token/Project-Bindung: Auth-Fehler (401) zählt nicht in
+		// invalid_events — Counter ist auf 400/422 beschränkt.
+		if e.ProjectID != projectID {
+			return nil, false, domain.ErrUnauthorized
+		}
+		ts, err := time.Parse(time.RFC3339Nano, e.ClientTimestamp)
+		if err != nil {
+			u.metrics.InvalidEvents(len(in.Events))
+			return nil, false, domain.ErrInvalidEvent
+		}
+		if now.Sub(ts).Abs() > TimeSkewThreshold {
+			timeSkewWarning = true
+		}
+		parsed = append(parsed, domain.PlaybackEvent{
+			EventName:        e.EventName,
+			ProjectID:        e.ProjectID,
+			SessionID:        e.SessionID,
+			ClientTimestamp:  ts,
+			ServerReceivedAt: now,
+			IngestSequence:   u.sequencer.Next(),
+			SequenceNumber:   e.SequenceNumber,
+			SDK: domain.SDKInfo{
+				Name:    e.SDK.Name,
+				Version: e.SDK.Version,
+			},
+			Meta:    domain.EventMeta(copyEventMeta(e.Meta)),
+			TraceID: in.Trace.TraceID,
+			SpanID:  in.Trace.SpanID,
+		})
+	}
+	return parsed, timeSkewWarning, nil
 }
 
 // resolveCorrelationIDs liefert für jede distinct session_id im Batch
