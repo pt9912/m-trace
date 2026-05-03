@@ -53,160 +53,222 @@ interface SegmentDraft {
   readonly durationParseable: boolean;
 }
 
+interface ParserState {
+  targetDuration: number | undefined;
+  mediaSequenceFromTag: number | undefined;
+  playlistType: string | undefined;
+  endList: boolean;
+  pending: PendingExtInf | null;
+  drafts: SegmentDraft[];
+  features: {
+    encryption: boolean;
+    initSegment: boolean;
+    discontinuity: boolean;
+    programDateTime: boolean;
+  };
+}
+
 export function parseMediaPlaylist(text: string, baseUrl: string | undefined): MediaParseResult {
   const lines = text.split(/\r?\n/);
   const findings: AnalysisFinding[] = [];
-
-  let targetDuration: number | undefined;
-  let mediaSequenceFromTag: number | undefined;
-  let playlistType: string | undefined;
-  let endList = false;
-  let pending: PendingExtInf | null = null;
-  const drafts: SegmentDraft[] = [];
-  const features = {
-    encryption: false,
-    initSegment: false,
-    discontinuity: false,
-    programDateTime: false
+  const state: ParserState = {
+    targetDuration: undefined,
+    mediaSequenceFromTag: undefined,
+    playlistType: undefined,
+    endList: false,
+    pending: null,
+    drafts: [],
+    features: {
+      encryption: false,
+      initSegment: false,
+      discontinuity: false,
+      programDateTime: false
+    }
   };
 
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const line = lines[lineIdx].trim();
-    if (line.length === 0) continue;
-    if (line === "#EXTM3U") continue;
-    if (line === ENDLIST_TAG) {
-      endList = true;
-      continue;
-    }
-
-    if (line.startsWith(TARGETDURATION_PREFIX)) {
-      const parsed = parseIntAttr(line.slice(TARGETDURATION_PREFIX.length).trim());
-      if (parsed === null) {
-        findings.push({
-          code: "media_malformed_targetduration",
-          level: "error",
-          message: `EXT-X-TARGETDURATION auf Zeile ${lineIdx + 1} ist nicht parseable.`
-        });
-      } else {
-        targetDuration = parsed;
-      }
-      continue;
-    }
-
-    if (line.startsWith(MEDIASEQUENCE_PREFIX)) {
-      const parsed = parseIntAttr(line.slice(MEDIASEQUENCE_PREFIX.length).trim());
-      if (parsed === null) {
-        findings.push({
-          code: "media_malformed_mediasequence",
-          level: "warning",
-          message: `EXT-X-MEDIA-SEQUENCE auf Zeile ${lineIdx + 1} ist nicht parseable; fallback auf 0.`
-        });
-      } else {
-        mediaSequenceFromTag = parsed;
-      }
-      continue;
-    }
-
-    if (line.startsWith(PLAYLISTTYPE_PREFIX)) {
-      playlistType = line.slice(PLAYLISTTYPE_PREFIX.length).trim();
-      continue;
-    }
-
-    if (line.startsWith(KEY_PREFIX)) {
-      // METHOD=NONE deaktiviert eine zuvor gesetzte Verschlüsselung;
-      // nur "echte" Methoden zählen als Feature.
-      const payload = line.slice(KEY_PREFIX.length);
-      if (!/METHOD\s*=\s*NONE/.test(payload)) {
-        features.encryption = true;
-      }
-      continue;
-    }
-    if (line.startsWith(MAP_PREFIX)) {
-      features.initSegment = true;
-      continue;
-    }
-    if (line === DISCONTINUITY_TAG || line.startsWith(DISCONTINUITY_TAG + ":")) {
-      features.discontinuity = true;
-      continue;
-    }
-    if (line.startsWith(PROGRAM_DATE_TIME_PREFIX)) {
-      features.programDateTime = true;
-      continue;
-    }
-
-    if (line.startsWith(EXTINF_PREFIX)) {
-      if (pending !== null) {
-        findings.push({
-          code: "segment_missing_uri",
-          level: "error",
-          message: `EXTINF auf Zeile ${pending.tagLine + 1} hat keine darauffolgende URI-Zeile.`
-        });
-      }
-      pending = parseExtInf(line.slice(EXTINF_PREFIX.length), lineIdx);
-      continue;
-    }
-
-    if (line.startsWith("#")) continue;
-
-    if (pending === null) {
-      // Stray URI line ohne EXTINF — RFC 8216 verbietet das.
-      findings.push({
-        code: "segment_unexpected_uri",
-        level: "warning",
-        message: `URI auf Zeile ${lineIdx + 1} ohne vorhergehendes EXTINF.`
-      });
-      continue;
-    }
-
-    const sequenceBase = mediaSequenceFromTag ?? 0;
-    const draft = buildSegmentDraft(pending, line, baseUrl, sequenceBase + drafts.length, lineIdx, findings);
-    drafts.push(draft);
-    pending = null;
+    processLine(lines[lineIdx].trim(), lineIdx, state, baseUrl, findings);
   }
 
-  if (pending !== null) {
+  finalizeManifest(state, findings);
+  return { details: buildDetails(state), findings };
+}
+
+/** Verarbeitet eine einzelne (getrimmte) Manifest-Zeile. Tag-Branches
+ * mutieren `state`; Non-Tag-Lines werden als Segment-URI im Kontext der
+ * letzten EXTINF interpretiert (oder als Stray-Finding). */
+function processLine(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  baseUrl: string | undefined,
+  findings: AnalysisFinding[]
+): void {
+  if (line.length === 0 || line === "#EXTM3U") return;
+  if (processGlobalTag(line, lineIdx, state, findings)) return;
+  if (processFeatureTag(line, state)) return;
+  if (line.startsWith(EXTINF_PREFIX)) {
+    handleExtInfTag(line, lineIdx, state, findings);
+    return;
+  }
+  if (line.startsWith("#")) return;
+  handleSegmentUri(line, lineIdx, state, baseUrl, findings);
+}
+
+/** Top-Level-Tags: ENDLIST, TARGETDURATION, MEDIA-SEQUENCE, PLAYLIST-TYPE.
+ * Liefert true, wenn die Zeile als globales Tag erkannt und konsumiert
+ * wurde — sonst false (Caller probiert die nächste Tag-Klasse). */
+function processGlobalTag(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  findings: AnalysisFinding[]
+): boolean {
+  if (line === ENDLIST_TAG) {
+    state.endList = true;
+    return true;
+  }
+  if (line.startsWith(TARGETDURATION_PREFIX)) {
+    const parsed = parseIntAttr(line.slice(TARGETDURATION_PREFIX.length).trim());
+    if (parsed === null) {
+      findings.push({
+        code: "media_malformed_targetduration",
+        level: "error",
+        message: `EXT-X-TARGETDURATION auf Zeile ${lineIdx + 1} ist nicht parseable.`
+      });
+    } else {
+      state.targetDuration = parsed;
+    }
+    return true;
+  }
+  if (line.startsWith(MEDIASEQUENCE_PREFIX)) {
+    const parsed = parseIntAttr(line.slice(MEDIASEQUENCE_PREFIX.length).trim());
+    if (parsed === null) {
+      findings.push({
+        code: "media_malformed_mediasequence",
+        level: "warning",
+        message: `EXT-X-MEDIA-SEQUENCE auf Zeile ${lineIdx + 1} ist nicht parseable; fallback auf 0.`
+      });
+    } else {
+      state.mediaSequenceFromTag = parsed;
+    }
+    return true;
+  }
+  if (line.startsWith(PLAYLISTTYPE_PREFIX)) {
+    state.playlistType = line.slice(PLAYLISTTYPE_PREFIX.length).trim();
+    return true;
+  }
+  return false;
+}
+
+/** Reine Audit-Marker (Encryption, Init-Segment, Discontinuity,
+ * Program-Date-Time). Beeinflussen Aggregate nicht; landen am Ende als
+ * Info-Findings. */
+function processFeatureTag(line: string, state: ParserState): boolean {
+  if (line.startsWith(KEY_PREFIX)) {
+    // METHOD=NONE deaktiviert eine zuvor gesetzte Verschlüsselung;
+    // nur "echte" Methoden zählen als Feature.
+    const payload = line.slice(KEY_PREFIX.length);
+    if (!/METHOD\s*=\s*NONE/.test(payload)) {
+      state.features.encryption = true;
+    }
+    return true;
+  }
+  if (line.startsWith(MAP_PREFIX)) {
+    state.features.initSegment = true;
+    return true;
+  }
+  if (line === DISCONTINUITY_TAG || line.startsWith(DISCONTINUITY_TAG + ":")) {
+    state.features.discontinuity = true;
+    return true;
+  }
+  if (line.startsWith(PROGRAM_DATE_TIME_PREFIX)) {
+    state.features.programDateTime = true;
+    return true;
+  }
+  return false;
+}
+
+function handleExtInfTag(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  findings: AnalysisFinding[]
+): void {
+  if (state.pending !== null) {
     findings.push({
       code: "segment_missing_uri",
       level: "error",
-      message: `EXTINF auf Zeile ${pending.tagLine + 1} hat keine darauffolgende URI-Zeile.`
+      message: `EXTINF auf Zeile ${state.pending.tagLine + 1} hat keine darauffolgende URI-Zeile.`
     });
   }
+  state.pending = parseExtInf(line.slice(EXTINF_PREFIX.length), lineIdx);
+}
 
-  if (targetDuration === undefined) {
+function handleSegmentUri(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  baseUrl: string | undefined,
+  findings: AnalysisFinding[]
+): void {
+  if (state.pending === null) {
+    // Stray URI line ohne EXTINF — RFC 8216 verbietet das.
+    findings.push({
+      code: "segment_unexpected_uri",
+      level: "warning",
+      message: `URI auf Zeile ${lineIdx + 1} ohne vorhergehendes EXTINF.`
+    });
+    return;
+  }
+  const sequenceBase = state.mediaSequenceFromTag ?? 0;
+  state.drafts.push(
+    buildSegmentDraft(state.pending, line, baseUrl, sequenceBase + state.drafts.length, lineIdx, findings)
+  );
+  state.pending = null;
+}
+
+function finalizeManifest(state: ParserState, findings: AnalysisFinding[]): void {
+  if (state.pending !== null) {
+    findings.push({
+      code: "segment_missing_uri",
+      level: "error",
+      message: `EXTINF auf Zeile ${state.pending.tagLine + 1} hat keine darauffolgende URI-Zeile.`
+    });
+  }
+  if (state.targetDuration === undefined) {
     findings.push({
       code: "media_missing_targetduration",
       level: "error",
       message: "EXT-X-TARGETDURATION fehlt. RFC 8216 §4.3.3.1 macht das Tag verpflichtend."
     });
   }
+  findings.push(...checkTargetViolations(state.drafts, state.targetDuration));
+  findings.push(...checkDurationOutliers(state.drafts, state.endList, state.targetDuration));
+  findings.push(...featureFindings(state.features));
+}
 
-  findings.push(...checkTargetViolations(drafts, targetDuration));
-  findings.push(...checkDurationOutliers(drafts, endList, targetDuration));
-  findings.push(...featureFindings(features));
-
-  const segments: MediaSegment[] = drafts.map((d) => ({
+function buildDetails(state: ParserState): MediaPlaylistDetails {
+  const segments: MediaSegment[] = state.drafts.map((d) => ({
     uri: d.uri,
     duration: d.duration,
     sequenceNumber: d.sequenceNumber,
     ...(d.title !== undefined ? { title: d.title } : {}),
     ...(d.resolvedUri !== undefined ? { resolvedUri: d.resolvedUri } : {})
   }));
-
-  const summary = buildSummary(segments);
-  const live = !endList;
-  const details: MediaPlaylistDetails = {
-    ...(targetDuration !== undefined ? { targetDuration } : {}),
-    mediaSequence: mediaSequenceFromTag ?? 0,
-    ...(playlistType !== undefined ? { playlistType } : {}),
-    endList,
+  const live = !state.endList;
+  return {
+    ...(state.targetDuration !== undefined ? { targetDuration: state.targetDuration } : {}),
+    mediaSequence: state.mediaSequenceFromTag ?? 0,
+    ...(state.playlistType !== undefined ? { playlistType: state.playlistType } : {}),
+    endList: state.endList,
     live,
-    ...(live && targetDuration !== undefined
-      ? { liveLatencyEstimateSeconds: targetDuration * LIVE_LATENCY_TARGET_MULTIPLIER }
+    ...(live && state.targetDuration !== undefined
+      ? { liveLatencyEstimateSeconds: state.targetDuration * LIVE_LATENCY_TARGET_MULTIPLIER }
       : {}),
     segments,
-    summary
+    summary: buildSummary(segments)
   };
-  return { details, findings };
 }
 
 function parseExtInf(payload: string, lineIdx: number): PendingExtInf {

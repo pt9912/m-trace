@@ -40,76 +40,97 @@ interface MasterParseResult {
  *  - Relative URIs bleiben als `uri` erhalten; `resolvedUri` ist
  *    die optionale absolute Form gegen `baseUrl`.
  */
+interface MasterParserState {
+  pending: PendingStreamInf | null;
+  variants: MasterVariant[];
+  renditions: MasterRendition[];
+}
+
 export function parseMasterPlaylist(text: string, baseUrl: string | undefined): MasterParseResult {
   const lines = text.split(/\r?\n/);
-  const variants: MasterVariant[] = [];
-  const renditions: MasterRendition[] = [];
   const findings: AnalysisFinding[] = [];
-
-  let pending: PendingStreamInf | null = null;
+  const state: MasterParserState = { pending: null, variants: [], renditions: [] };
 
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const line = lines[lineIdx].trim();
-    if (line.length === 0) continue;
-    if (line === "#EXTM3U") continue;
-
-    if (line.startsWith(STREAM_INF_PREFIX)) {
-      if (pending !== null) {
-        findings.push(missingUriFinding(pending.lineNumber));
-      }
-      pending = {
-        attrs: parseAttributeList(line.slice(STREAM_INF_PREFIX.length)),
-        lineNumber: lineIdx
-      };
-      continue;
-    }
-
-    if (line.startsWith(MEDIA_PREFIX)) {
-      const attrs = parseAttributeList(line.slice(MEDIA_PREFIX.length));
-      const built = buildRendition(attrs, baseUrl, lineIdx);
-      if (built !== null) {
-        renditions.push(built.rendition);
-        findings.push(...built.findings);
-      } else {
-        findings.push({
-          code: "rendition_missing_required_attr",
-          level: "error",
-          message: `EXT-X-MEDIA auf Zeile ${lineIdx + 1} hat kein TYPE, GROUP-ID oder NAME.`
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith(I_FRAME_PREFIX)) {
-      // I-Frame-Variants haben keine separate URI-Zeile (URI im Tag).
-      // Tranche 3 behandelt sie nicht eigenständig; ein Hinweis
-      // markiert sie für Tranche-3-Konsumenten.
-      findings.push({
-        code: "i_frame_variant_skipped",
-        level: "info",
-        message: `EXT-X-I-FRAME-STREAM-INF auf Zeile ${lineIdx + 1} wird in 0.3.0 nicht ausgewertet (Folge-Tranche).`
-      });
-      continue;
-    }
-
-    if (line.startsWith("#")) continue;
-
-    if (pending !== null) {
-      const built = buildVariant(pending.attrs, line, baseUrl, pending.lineNumber);
-      variants.push(built.variant);
-      findings.push(...built.findings);
-      pending = null;
-    }
+    processMasterLine(lines[lineIdx].trim(), lineIdx, state, baseUrl, findings);
   }
 
-  if (pending !== null) {
-    findings.push(missingUriFinding(pending.lineNumber));
+  if (state.pending !== null) {
+    findings.push(missingUriFinding(state.pending.lineNumber));
   }
+  findings.push(...detectDuplicateRenditions(state.renditions));
+  findings.push(...crossReferenceGroups(state.variants, state.renditions));
 
-  findings.push(...detectDuplicateRenditions(renditions));
-  findings.push(...crossReferenceGroups(variants, renditions));
+  return { details: { variants: state.variants, renditions: state.renditions }, findings };
+}
 
-  return { details: { variants, renditions }, findings };
+function processMasterLine(
+  line: string,
+  lineIdx: number,
+  state: MasterParserState,
+  baseUrl: string | undefined,
+  findings: AnalysisFinding[]
+): void {
+  if (line.length === 0 || line === "#EXTM3U") return;
+  if (line.startsWith(STREAM_INF_PREFIX)) {
+    handleStreamInfTag(line, lineIdx, state, findings);
+    return;
+  }
+  if (line.startsWith(MEDIA_PREFIX)) {
+    handleMediaTag(line, lineIdx, state, baseUrl, findings);
+    return;
+  }
+  if (line.startsWith(I_FRAME_PREFIX)) {
+    findings.push({
+      code: "i_frame_variant_skipped",
+      level: "info",
+      message: `EXT-X-I-FRAME-STREAM-INF auf Zeile ${lineIdx + 1} wird in 0.3.0 nicht ausgewertet (Folge-Tranche).`
+    });
+    return;
+  }
+  if (line.startsWith("#")) return;
+  if (state.pending !== null) {
+    const built = buildVariant(state.pending.attrs, line, baseUrl, state.pending.lineNumber);
+    state.variants.push(built.variant);
+    findings.push(...built.findings);
+    state.pending = null;
+  }
+}
+
+function handleStreamInfTag(
+  line: string,
+  lineIdx: number,
+  state: MasterParserState,
+  findings: AnalysisFinding[]
+): void {
+  if (state.pending !== null) {
+    findings.push(missingUriFinding(state.pending.lineNumber));
+  }
+  state.pending = {
+    attrs: parseAttributeList(line.slice(STREAM_INF_PREFIX.length)),
+    lineNumber: lineIdx
+  };
+}
+
+function handleMediaTag(
+  line: string,
+  lineIdx: number,
+  state: MasterParserState,
+  baseUrl: string | undefined,
+  findings: AnalysisFinding[]
+): void {
+  const attrs = parseAttributeList(line.slice(MEDIA_PREFIX.length));
+  const built = buildRendition(attrs, baseUrl, lineIdx);
+  if (built === null) {
+    findings.push({
+      code: "rendition_missing_required_attr",
+      level: "error",
+      message: `EXT-X-MEDIA auf Zeile ${lineIdx + 1} hat kein TYPE, GROUP-ID oder NAME.`
+    });
+    return;
+  }
+  state.renditions.push(built.rendition);
+  findings.push(...built.findings);
 }
 
 function missingUriFinding(lineNumber: number): AnalysisFinding {
