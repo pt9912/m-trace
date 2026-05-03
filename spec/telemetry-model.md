@@ -307,7 +307,7 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 
 **Cardinality-Regel.** Weder `trace_id`, `correlation_id` noch `span_id` werden als Prometheus-Labels verwendet. Span-Attribute (kontrolliert), Event-Persistenz-Spalten (durable) und Wire-Format-Felder (optional) sind die einzigen Konsumenten. Verstöße sind release-blocking; der CI-Cardinality-Smoke (`make smoke-observability`, `scripts/smoke-observability.sh`) prüft die Pflicht-Counter aus §2.4 auf hochkardinale Labels.
 
-**Sampling-Auswirkung.** Server-Span pro Batch ist niedrige Cardinality (eine Span pro HTTP-Request). Auch ohne Sampling bleibt Tempo-Storage in 0.4.0 unauffällig. Spans werden via OTLP exportiert, wenn das Tempo-Profil aktiv ist (siehe `plan-0.4.0.md` §6); ohne Profil sind Spans nur in Logs (silent autoexport-Fallback).
+**Sampling-Auswirkung.** Server-Span pro Batch ist niedrige Cardinality (eine Span pro HTTP-Request). Auch ohne Sampling bleibt Tempo-Storage in 0.4.0 unauffällig. Spans werden via OTLP exportiert, wenn das Tempo-Profil aktiv ist (siehe `plan-0.4.0.md` §6). Ohne Profil und mit unset `OTEL_*` nutzt der autoexport-Fallback einen No-Op-Pfad ohne Exportversuch und ohne Log-Ausgabe; Logs entstehen nur, wenn bewusst ein Debug-/Console-Exporter oder der Collector-Debug-Exporter konfiguriert ist.
 
 ---
 
