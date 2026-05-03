@@ -74,20 +74,35 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("otel setup: %w", err)
 	}
 
-	otelTelemetry, err := telemetry.NewOTelTelemetry(otelProviders.Meter.Meter(telemetry.MeterName))
-	if err != nil {
-		return fmt.Errorf("otel telemetry adapter init: %w", err)
-	}
-
-	persistCtx := context.Background()
-	persist, err := newPersistence(persistCtx, logger)
+	persist, err := newPersistence(context.Background(), logger)
 	if err != nil {
 		return fmt.Errorf("persistence init: %w", err)
 	}
 	defer persist.Close()
-	repo := persist.events
-	sessions := persist.sessions
-	sequencer := persist.sequencer
+
+	handler, sweeper, err := buildHandler(persist, otelProviders, logger)
+	if err != nil {
+		return err
+	}
+
+	srv := newHTTPServer(handler, listenAddr())
+	return serve(srv, sweeper, otelProviders, logger)
+}
+
+// buildHandler wirt die driven Adapter (Auth, Rate-Limit, Metrics,
+// Telemetry, Analyzer) mit den persistierten Repos zusammen, baut
+// die drei Use Cases und liefert den fertig konfigurierten HTTP-
+// Handler plus den Sessions-Sweeper, dessen Lifecycle der Caller
+// (run → serve) gegen den Signal-Kontext bindet.
+func buildHandler(
+	persist *persistenceBundle,
+	otelProviders *telemetry.Providers,
+	logger *slog.Logger,
+) (http.Handler, *application.SessionsSweeper, error) {
+	otelTelemetry, err := telemetry.NewOTelTelemetry(otelProviders.Meter.Meter(telemetry.MeterName))
+	if err != nil {
+		return nil, nil, fmt.Errorf("otel telemetry adapter init: %w", err)
+	}
 
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo": {
@@ -100,12 +115,27 @@ func run(logger *slog.Logger) error {
 		},
 	})
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
-	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(func() float64 {
-		// Prometheus-Scrape-Pfad: on-demand-Lookup über das adapter-
-		// agnostische CountByState. SQLite-Adapter macht ein
-		// `SELECT COUNT(*) WHERE state='active'`; InMemory-Adapter
-		// loopt über die in-memory Map. Errors werden geloggt und
-		// auf 0 gemappt — der Gauge bleibt damit immer lesbar.
+	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(activeSessionsGauge(persist.sessions, logger)))
+	analyzer := newAnalyzer(logger)
+
+	useCase := application.NewRegisterPlaybackEventBatchUseCase(
+		resolver, limiter, persist.events, persist.sessions, publisher, otelTelemetry, analyzer, persist.sequencer, time.Now,
+	)
+	sessionsService := application.NewSessionsService(persist.sessions, persist.events)
+	sessionsSweeper := application.NewSessionsSweeper(persist.sessions, time.Now, logger)
+	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
+
+	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, publisher.Handler(), publisher, tracer, logger)
+	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, nil
+}
+
+// activeSessionsGauge liefert den Gauge-Provider für
+// `mtrace_active_sessions`. On-demand-Lookup im Prometheus-Scrape-
+// Pfad, mit 2-Sekunden-Timeout und Error-to-0-Mapping, damit der
+// Gauge auch bei Backend-Aussetzern lesbar bleibt.
+func activeSessionsGauge(sessions driven.SessionRepository, logger *slog.Logger) func() float64 {
+	return func() float64 {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		n, err := sessions.CountByState(ctx, domain.SessionStateActive)
@@ -114,36 +144,35 @@ func run(logger *slog.Logger) error {
 			return 0
 		}
 		return float64(n)
-	}))
-	analyzer := newAnalyzer(logger)
+	}
+}
 
-	useCase := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, limiter, repo, sessions, publisher, otelTelemetry, analyzer, sequencer, time.Now,
-	)
-
-	sessionsService := application.NewSessionsService(sessions, repo)
-	sessionsSweeper := application.NewSessionsSweeper(sessions, time.Now, logger)
-
-	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
-
-	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, publisher.Handler(), publisher, tracer, logger)
-	router = apihttp.RequestMetricsMiddleware(router, publisher)
-	addr := listenAddr()
-
-	srv := &http.Server{
+// newHTTPServer setzt die Pflicht-Timeouts (ReadHeader/Read/Write/Idle)
+// für den API-HTTP-Server.
+func newHTTPServer(handler http.Handler, addr string) *http.Server {
+	return &http.Server{
 		Addr:              addr,
-		Handler:           router,
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+}
 
+// serve startet den Sessions-Sweeper und den HTTP-Server und führt
+// den Graceful-Shutdown aus. Beendet entweder bei SIGINT/SIGTERM oder
+// wenn ListenAndServe einen non-ErrServerClosed-Fehler liefert.
+func serve(
+	srv *http.Server,
+	sweeper *application.SessionsSweeper,
+	otelProviders *telemetry.Providers,
+	logger *slog.Logger,
+) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go sessionsSweeper.Run(ctx)
+	go sweeper.Run(ctx)
 
 	listenErr := make(chan error, 1)
 	go func() {
