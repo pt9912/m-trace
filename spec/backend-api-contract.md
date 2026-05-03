@@ -337,6 +337,11 @@ trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
 
 | Feld | Typ | Beschreibung |
 |---|---|---|
+| `state` | `"active"` oder `"ended"` | Aktueller Session-Zustand aus `stream_sessions.state`; `ended` gilt für explizites `session_ended` und Sweeper-Ende. |
+| `started_at` | string, RFC3339 | Server-/Persistenzzeitpunkt der ersten Beobachtung. |
+| `last_seen_at` | string, RFC3339 | Zeitpunkt der letzten Event-Beobachtung oder Session-Aktualisierung. |
+| `ended_at` | string, RFC3339 oder `null` | Endezeitpunkt bei `state="ended"`, sonst `null`. |
+| `event_count` | int ≥ 0 | Persistierte Event-Anzahl der Session. |
 | `correlation_id` | `string`; nicht-leer für ab §3.2 angelegte oder bereits selbst-geheilte Sessions, sonst `""` als Legacy-Fall | Spiegelt `stream_sessions.correlation_id`; identisch mit dem `correlation_id`-Wert auf ab §3.2 persistierten Events derselben Session. Historische Events vor §3.2 werden nicht backfilled. Dient dem Dashboard als primärer Korrelations-Schlüssel — Tempo-unabhängig. |
 | `network_signal_absent` | Array, Default `[]` | Session-skopierte Degradationsgrenzen aus `session_boundaries[]`; nur im Session-Block, nie als synthetisches Event. |
 
