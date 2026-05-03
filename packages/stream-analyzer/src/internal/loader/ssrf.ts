@@ -184,43 +184,73 @@ function hextets(canonical: string): Uint16Array {
 }
 
 export function parseIPv6(address: string): Uint16Array | null {
-  // Strip zone id ("fe80::1%eth0") — we do not honour it.
+  // Strip zone id ("fe80::1%eth0") — wir respektieren sie nicht.
   const zoneIdx = address.indexOf("%");
   const cleaned = zoneIdx === -1 ? address : address.slice(0, zoneIdx);
 
-  // Embedded IPv4 form: "::ffff:a.b.c.d" or "1:2:3:4:5:6:a.b.c.d".
-  const dotIdx = cleaned.lastIndexOf(".");
-  let head = cleaned;
-  let tailHextets: number[] | null = null;
-  if (dotIdx !== -1) {
-    const colonIdx = cleaned.lastIndexOf(":");
-    if (colonIdx === -1 || colonIdx > dotIdx) return null;
-    const v4 = parseIPv4(cleaned.slice(colonIdx + 1));
-    if (v4 === null) return null;
-    head = cleaned.slice(0, colonIdx);
-    tailHextets = [(v4 >>> 16) & 0xffff, v4 & 0xffff];
-  }
+  const ipv4Tail = stripEmbeddedIPv4Tail(cleaned);
+  if (ipv4Tail === null) return null;
 
-  // "::" expansion.
-  let groups: string[];
-  const dcIdx = head.indexOf("::");
-  if (dcIdx === -1) {
-    groups = head === "" ? [] : head.split(":");
-  } else {
-    if (head.indexOf("::", dcIdx + 1) !== -1) return null;
-    const left = head.slice(0, dcIdx);
-    const right = head.slice(dcIdx + 2);
-    const leftGroups = left === "" ? [] : left.split(":");
-    const rightGroups = right === "" ? [] : right.split(":");
-    const expectedTail = tailHextets ? 2 : 0;
-    const fillCount = 8 - expectedTail - leftGroups.length - rightGroups.length;
-    if (fillCount < 0) return null;
-    groups = [...leftGroups, ...Array.from({ length: fillCount }, () => "0"), ...rightGroups];
-  }
+  const groups = expandDoubleColon(ipv4Tail.head, ipv4Tail.tailHextets !== null);
+  if (groups === null) return null;
 
-  const expected = tailHextets ? 6 : 8;
+  const expected = ipv4Tail.tailHextets ? 6 : 8;
   if (groups.length !== expected) return null;
 
+  return assembleHextets(groups, ipv4Tail.tailHextets);
+}
+
+interface IPv4TailSplit {
+  /** Head ohne den IPv4-Suffix (`""` möglich). */
+  readonly head: string;
+  /** Falls eingebettete IPv4 erkannt: zwei Hextets aus den 4 Oktetten;
+   *  sonst null. */
+  readonly tailHextets: readonly [number, number] | null;
+}
+
+/** Trennt eingebettete IPv4-Form (`::ffff:a.b.c.d`,
+ * `1:2:3:4:5:6:a.b.c.d`) ab. Liefert null bei syntaktisch kaputter
+ * IPv4-Suffix-Form. */
+function stripEmbeddedIPv4Tail(cleaned: string): IPv4TailSplit | null {
+  const dotIdx = cleaned.lastIndexOf(".");
+  if (dotIdx === -1) {
+    return { head: cleaned, tailHextets: null };
+  }
+  const colonIdx = cleaned.lastIndexOf(":");
+  if (colonIdx === -1 || colonIdx > dotIdx) return null;
+  const v4 = parseIPv4(cleaned.slice(colonIdx + 1));
+  if (v4 === null) return null;
+  return {
+    head: cleaned.slice(0, colonIdx),
+    tailHextets: [(v4 >>> 16) & 0xffff, v4 & 0xffff]
+  };
+}
+
+/** Expandiert das `::`-Ausspar-Token zu einer Gruppen-Liste. Liefert
+ * null bei mehr als einem `::` oder Overflow (zu viele Gruppen). */
+function expandDoubleColon(head: string, hasIPv4Tail: boolean): string[] | null {
+  const dcIdx = head.indexOf("::");
+  if (dcIdx === -1) {
+    return head === "" ? [] : head.split(":");
+  }
+  if (head.indexOf("::", dcIdx + 1) !== -1) return null;
+  const left = head.slice(0, dcIdx);
+  const right = head.slice(dcIdx + 2);
+  const leftGroups = left === "" ? [] : left.split(":");
+  const rightGroups = right === "" ? [] : right.split(":");
+  const expectedTail = hasIPv4Tail ? 2 : 0;
+  const fillCount = 8 - expectedTail - leftGroups.length - rightGroups.length;
+  if (fillCount < 0) return null;
+  return [...leftGroups, ...Array.from({ length: fillCount }, () => "0"), ...rightGroups];
+}
+
+/** Validiert + parst Hextet-Strings und schreibt sie zusammen mit den
+ * optionalen IPv4-Tail-Hextets in einen 8-Wort-Uint16Array. Liefert
+ * null bei jedem nicht-hex Hextet. */
+function assembleHextets(
+  groups: readonly string[],
+  tailHextets: readonly [number, number] | null
+): Uint16Array | null {
   const out = new Uint16Array(8);
   for (let i = 0; i < groups.length; i++) {
     const g = groups[i];

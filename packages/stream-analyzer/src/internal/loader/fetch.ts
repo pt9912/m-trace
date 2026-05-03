@@ -68,6 +68,31 @@ export async function loadHlsManifest(url: string, options: LoadOptions): Promis
 type HopResult = { kind: "final"; text: string } | { kind: "redirect"; location: string };
 
 async function fetchHop(rawUrl: string, options: LoadOptions, hop: number): Promise<HopResult> {
+  await validateAndResolveTarget(rawUrl, options, hop);
+
+  const controller = new AbortController();
+  const timedOutBox = { value: false };
+  const timer = setTimeout(() => {
+    timedOutBox.value = true;
+    controller.abort();
+  }, options.timeoutMs);
+
+  try {
+    const response = await executeFetch(rawUrl, options, controller, timedOutBox, hop);
+    return await dispatchResponse(response, rawUrl, options, hop, () => timedOutBox.value);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Schritt 1 von fetchHop: URL parsen, statisch validieren, DNS
+ * auflösen, IP-Sperrliste prüfen. Wirft AnalysisError bei jedem
+ * SSRF-Verstoß; gibt nichts zurück, wenn alles ok ist. */
+async function validateAndResolveTarget(
+  rawUrl: string,
+  options: LoadOptions,
+  hop: number
+): Promise<void> {
   const parsed = parseUrl(rawUrl);
   const urlDecision = validateUrl(parsed);
   if (!urlDecision.ok) {
@@ -85,83 +110,92 @@ async function fetchHop(rawUrl: string, options: LoadOptions, hop: number): Prom
       host: parsed.hostname
     });
   }
-  if (!options.allowPrivateNetworks) {
-    for (const entry of candidates) {
-      const decision = validateResolvedIp(entry.address, entry.family);
-      if (!decision.ok) {
-        throw new AnalysisError(
-          "fetch_blocked",
-          `Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ${decision.reason}.`,
-          { hop, host: parsed.hostname, ...(decision.detail ?? {}) }
-        );
-      }
-    }
-  }
-
-  const controller = new AbortController();
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, options.timeoutMs);
-
-  try {
-    let response;
-    try {
-      response = await options.runtime.fetch(rawUrl, {
-        signal: controller.signal,
-        redirect: "manual",
-        headers: { accept: "application/vnd.apple.mpegurl,application/x-mpegurl,audio/mpegurl,text/plain;q=0.9" }
-      });
-    } catch (error) {
-      if (timedOut) {
-        throw new AnalysisError("fetch_failed", `Timeout nach ${options.timeoutMs} ms.`, {
-          hop,
-          url: rawUrl,
-          timeoutMs: options.timeoutMs
-        });
-      }
-      throw new AnalysisError("fetch_failed", `Netzwerkfehler beim Laden: ${describeError(error)}.`, {
-        hop,
-        url: rawUrl
-      });
-    }
-
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (location === null || location === "") {
-        throw new AnalysisError("fetch_failed", `Redirect ${response.status} ohne Location-Header.`, {
-          hop,
-          url: rawUrl,
-          status: response.status
-        });
-      }
-      return { kind: "redirect", location: new URL(location, rawUrl).toString() };
-    }
-
-    if (response.status < 200 || response.status >= 300) {
+  if (options.allowPrivateNetworks) return;
+  for (const entry of candidates) {
+    const decision = validateResolvedIp(entry.address, entry.family);
+    if (!decision.ok) {
       throw new AnalysisError(
-        "fetch_failed",
-        `HTTP-Statuscode ${response.status} ist kein Erfolgsstatus.`,
-        { hop, url: rawUrl, status: response.status }
+        "fetch_blocked",
+        `Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ${decision.reason}.`,
+        { hop, host: parsed.hostname, ...(decision.detail ?? {}) }
       );
     }
+  }
+}
 
-    const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
-    const mainType = contentType.split(";")[0].trim();
-    if (mainType !== "" && !ALLOWED_CONTENT_TYPES.has(mainType)) {
-      throw new AnalysisError("fetch_failed", `Content-Type "${mainType}" ist kein HLS-Manifest.`, {
+/** Schritt 2 von fetchHop: tatsächlicher fetch-Aufruf inkl. Timeout-/
+ * Netzwerkfehler-Mapping auf AnalysisError. timedOutBox erlaubt der
+ * inneren catch-Branch zu erkennen, dass der AbortController vom
+ * Timer und nicht vom Caller ausgelöst wurde. */
+async function executeFetch(
+  rawUrl: string,
+  options: LoadOptions,
+  controller: AbortController,
+  timedOutBox: { value: boolean },
+  hop: number
+): ReturnType<LoaderRuntime["fetch"]> {
+  try {
+    return await options.runtime.fetch(rawUrl, {
+      signal: controller.signal,
+      redirect: "manual",
+      headers: { accept: "application/vnd.apple.mpegurl,application/x-mpegurl,audio/mpegurl,text/plain;q=0.9" }
+    });
+  } catch (error) {
+    if (timedOutBox.value) {
+      throw new AnalysisError("fetch_failed", `Timeout nach ${options.timeoutMs} ms.`, {
         hop,
         url: rawUrl,
-        contentType: mainType
+        timeoutMs: options.timeoutMs
       });
     }
-
-    const text = await readBody(response.body, options, rawUrl, hop, () => timedOut);
-    return { kind: "final", text };
-  } finally {
-    clearTimeout(timer);
+    throw new AnalysisError("fetch_failed", `Netzwerkfehler beim Laden: ${describeError(error)}.`, {
+      hop,
+      url: rawUrl
+    });
   }
+}
+
+/** Schritt 3 von fetchHop: HTTP-Status klassifizieren (Redirect /
+ * Erfolg / Fehler), Content-Type prüfen und Body lesen. */
+async function dispatchResponse(
+  response: Awaited<ReturnType<LoaderRuntime["fetch"]>>,
+  rawUrl: string,
+  options: LoadOptions,
+  hop: number,
+  timedOutFn: () => boolean
+): Promise<HopResult> {
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get("location");
+    if (location === null || location === "") {
+      throw new AnalysisError("fetch_failed", `Redirect ${response.status} ohne Location-Header.`, {
+        hop,
+        url: rawUrl,
+        status: response.status
+      });
+    }
+    return { kind: "redirect", location: new URL(location, rawUrl).toString() };
+  }
+
+  if (response.status < 200 || response.status >= 300) {
+    throw new AnalysisError(
+      "fetch_failed",
+      `HTTP-Statuscode ${response.status} ist kein Erfolgsstatus.`,
+      { hop, url: rawUrl, status: response.status }
+    );
+  }
+
+  const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+  const mainType = contentType.split(";")[0].trim();
+  if (mainType !== "" && !ALLOWED_CONTENT_TYPES.has(mainType)) {
+    throw new AnalysisError("fetch_failed", `Content-Type "${mainType}" ist kein HLS-Manifest.`, {
+      hop,
+      url: rawUrl,
+      contentType: mainType
+    });
+  }
+
+  const text = await readBody(response.body, options, rawUrl, hop, timedOutFn);
+  return { kind: "final", text };
 }
 
 async function collectAddressCandidates(
