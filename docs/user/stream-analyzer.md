@@ -2,41 +2,43 @@
 
 `@npm9912/stream-analyzer` ist die HLS-Manifestanalyse der m-trace-Toolchain.
 Das Paket liefert eine Bibliotheks-API für Backend-Integration (`apps/api`),
-eine CLI (ab Tranche 7) und ein stabiles JSON-Ergebnisformat.
+eine CLI und ein stabiles JSON-Ergebnisformat.
 
 Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/done/plan-0.3.0.md`](../planning/done/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
-## 1. Status (0.3.0 — veröffentlicht)
+## 1. Lieferumfang
 
-- ✅ Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
-  und Coverage-Gate ≥ 90 % stehen.
-- ✅ Manifest-Klassifikator: erkennt Master- und Media-Playlists anhand der
+Stand seit `0.3.0` (wächst mit DASH/CMAF und weiteren CLI-Erweiterungen):
+
+- Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
+  und Coverage-Gate ≥ 90 %.
+- Manifest-Klassifikator: erkennt Master- und Media-Playlists anhand der
   Tags, lehnt Nicht-HLS und leere Manifeste mit `manifest_not_hls` ab,
   markiert ambige Mischformen als Master-Variante mit Warning-Finding.
-- ✅ URL-Loader: HTTP/HTTPS, Timeout, Größenlimit, manuelles Redirect-
+- URL-Loader: HTTP/HTTPS, Timeout, Größenlimit, manuelles Redirect-
   Handling und SSRF-Schutzregeln (siehe §6).
-- ✅ Master-Detail-Auswertung: Variants (`#EXT-X-STREAM-INF`) mit
+- Master-Detail-Auswertung: Variants (`#EXT-X-STREAM-INF`) mit
   Bandbreite/Resolution/Codecs/Frame-Rate/Group-Refs, Renditions
   (`#EXT-X-MEDIA`) mit Typ/GroupId/Name/Lang/URI/Flags, Group-Cross-Check,
   optionale Base-URL-Auflösung als `resolvedUri`.
-- ✅ Media-Detail-Auswertung: Segmente aus `#EXTINF`, Aggregate (Anzahl,
+- Media-Detail-Auswertung: Segmente aus `#EXTINF`, Aggregate (Anzahl,
   Min/Max/Mittel/Total), TARGETDURATION-Verletzung, Outlier-Erkennung,
   Live-/VOD-Klassifikation und 3×-Latenzschätzung — siehe §7.
-- ✅ JSON-Ergebnisformat: `AnalysisResult` als diskriminierte Union per
+- JSON-Ergebnisformat: `AnalysisResult` als diskriminierte Union per
   `playlistType`, `analyzerKind: "hls"` als Erweiterungspfad für
   DASH/CMAF, deterministische Serialisierung, Stabilitätsregel als
   operativer Vertrag — siehe §4.
-- ✅ API-Anbindung: `POST /api/analyze` reicht den Aufruf an den
+- API-Anbindung: `POST /api/analyze` reicht den Aufruf an den
   internen `analyzer-service` (Node-HTTP-Wrapper) weiter; Go-API
   bleibt distroless-static. Vollständig in `docker-compose.yml`
   verdrahtet, Smoke-Test über `make smoke-analyzer` — siehe §5.
-- ✅ CLI `pnpm m-trace check <url-or-file>`: stdout-JSON, Exit-Codes
+- CLI `pnpm m-trace check <url-or-file>`: stdout-JSON, Exit-Codes
   0/1/2, Datei- und URL-Input, SSRF-Schutz aus dem Loader greift
   unverändert — siehe §9.
 
-Tranche 5 sperrt das JSON-Format. Konsumenten erkennen Erfolg/Fehler an
+Das JSON-Format ist gesperrt. Konsumenten erkennen Erfolg/Fehler an
 `status`, schalten auf `playlistType` zur Auswahl der Detail-Form und
 filtern bei Bedarf weiter über `analyzerKind` (heute nur `"hls"`).
 
@@ -97,10 +99,10 @@ type ManifestInput =
 ```
 
 - `text`: Manifestinhalt direkt; optionale `baseUrl` löst relative Variant-/
-  Segment-URIs ab Tranche 3 auf.
+  Segment-URIs auf.
 - `url`: Quelle, die der Analyzer selbst lädt. `analyzeHlsManifest` setzt
   `input.baseUrl` automatisch auf die finale URL nach allen Redirects, damit
-  Tranche 3/4 relative URIs konsistent auflösen kann.
+  relative URIs konsistent aufgelöst werden.
 
 `AnalyzeOptions.fetch` justiert das URL-Laden; alle Felder optional:
 
@@ -377,8 +379,8 @@ zurückgewiesen, nicht der Service ist ausgefallen).
 
 ## 6. URL-Loader und SSRF-Schutz
 
-Tranche 2 liefert den Loader unter `internal/loader/`. Eingabe-URLs gehen
-durch eine harte Schutzkette, jeder Eintrag ist getestet:
+Der Loader liegt unter `internal/loader/`. Eingabe-URLs gehen durch
+eine harte Schutzkette, jeder Eintrag ist getestet:
 
 | Schutzregel             | Verhalten                                                                 |
 | ----------------------- | ------------------------------------------------------------------------- |
@@ -441,8 +443,8 @@ Diese Architekturgrenze ist bewusst, dokumentiert und in Tests gepinnt
 
 ## 7. Media-Playlist-Auswertung
 
-Tranche 4 setzt Segmente aus `#EXTINF`, dazu Aggregat-Statistiken und
-Konformitätsprüfungen.
+Der Analyzer extrahiert Segmente aus `#EXTINF`, dazu Aggregat-Statistiken
+und Konformitätsprüfungen.
 
 ### 7.1 Segmentdaten
 
@@ -553,4 +555,4 @@ mit stderr-Hinweis), no-args (Exit 2), URL-Input gegen eine
 RFC1918-Adresse (Exit 1 + `fetch_blocked` — exerciert den echten
 Loader-Pfad inklusive SSRF-Schutz) und `--help` über `pnpm exec
 m-trace` (Bin-Symlink + Shebang). Der Aufruf spiegelt das
-DoD-Smoke-Kriterium aus plan-0.3.0 §8 Tranche 7.
+DoD-Smoke-Kriterium aus [`plan-0.3.0`](../planning/done/plan-0.3.0.md) §8.
