@@ -36,9 +36,14 @@ im Lastenheft definierten SOLID-nahen Zusatzprofil aus:
 | `unused`      | toter Code                                       |
 | `ineffassign` | unwirksame Zuweisungen                           |
 
-Suppressions bleiben ausgeschlossen. Toolchain-Ausbau ist nur für das
-SOLID-nahe Zusatzprofil aus `spec/lastenheft.md` §10.1 vorgesehen.
-Verstöße brechen den Build.
+Die vollständige Konfiguration (5 Defaults + 24 SOLID-nahe Linter
+aus §1.2) lebt in `apps/api/.golangci.yml`. `//nolint`-Suppressions
+bleiben ausgeschlossen — falls ein Linter auf einem Pfad designseitig
+keinen Sinn ergibt (z. B. `noctx` in Tests gegen `httptest.Server`),
+wird der Pfad per `issues.exclude-rules` mit Begründung als Kommentar
+ausgenommen; dort dokumentierte Scope-Definitionen sind keine
+Suppressions, sondern bewusste Profil-Entscheidungen. Verstöße
+brechen den Build.
 
 Make-Target (Soll, Plan §14.9):
 

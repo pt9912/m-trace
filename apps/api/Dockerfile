@@ -44,7 +44,11 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /tmp/api ./cmd/api
 
 # ---- lint ------------------------------------------------------------------
-# golangci-lint with default linters per docs/planning/plan-spike.md §14.9.
+# golangci-lint mit dem SOLID-nahen Pflicht-Profil aus
+# spec/lastenheft.md §10.1 (5 Defaults + 24 SOLID-nahe Linter, ohne
+# //nolint-Suppressions). Konfiguration in apps/api/.golangci.yml;
+# Pro-Scope-Carveouts (Tests, scripts/, Test-Contract-Bibliothek) sind
+# dort dokumentiert. Bezug: docs/user/quality.md §1.2.
 FROM golangci/golangci-lint:v1.62-alpine AS lint
 
 WORKDIR /src

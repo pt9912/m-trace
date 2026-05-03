@@ -1,0 +1,221 @@
+# golangci-lint configuration for apps/api.
+#
+# Bezug:
+#   - spec/lastenheft.md §10.1 (Backend, Linting): Default-Linter +
+#     SOLID-nahes Zusatzprofil (24 Pflicht-Linter, alle "Ja").
+#   - docs/user/quality.md §1.2 (Go: SOLID-nahe Linter).
+#
+# Suppressions bleiben ausgeschlossen (quality.md §1) — Verstöße werden
+# entweder durch Code-Änderung oder durch eine begründete, hier
+# zentral dokumentierte Konfigurationsregel behoben, nicht durch
+# `//nolint`-Pragmas.
+
+run:
+  timeout: 5m
+
+linters:
+  disable-all: true
+  enable:
+    # Default-Linter (Lastenheft §10.1).
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # SOLID-nahes Zusatzprofil (Lastenheft §10.1, 24 Pflicht-Linter).
+    - containedctx
+    - contextcheck
+    - cyclop
+    - depguard
+    - dupl
+    - fatcontext
+    - forbidigo
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - gocyclo
+    - gomodguard
+    - iface
+    - inamedparam
+    - interfacebloat
+    - ireturn
+    - maintidx
+    - nestif
+    - noctx
+    - reassign
+    - revive
+    - testpackage
+    - unparam
+
+linters-settings:
+  cyclop:
+    # Iteration 1: 15 — moderate Schwelle, um die Verteilung der
+    # Findings zu sehen. Ziel-Endwert wird nach erstem Lauf justiert.
+    max-complexity: 15
+
+  funlen:
+    # Iteration 1: 100 Zeilen / 60 Statements (Default 60/40 ist sehr
+    # streng). Ziel-Endwert wird nach erstem Lauf justiert.
+    lines: 100
+    statements: 60
+
+  gocognit:
+    min-complexity: 20
+
+  gocyclo:
+    min-complexity: 15
+
+  nestif:
+    min-complexity: 5
+
+  dupl:
+    threshold: 150
+
+  maintidx:
+    # Default 20: Werte unter 20 = "schwer wartbar". Wir starten am
+    # Default und schauen, wo wir landen.
+    under: 20
+
+  interfacebloat:
+    # Hexagon-Ports sind bewusst klein. Default 10 ist locker; wir
+    # starten dort und ziehen ggf. nach.
+    max: 10
+
+  ireturn:
+    # Hexagon-Adapter geben bewusst Port-Interfaces zurück (Factory-
+    # Funktionen wie `NewHTTPHandler() port.X`). Defaults erlauben
+    # `error`, `empty`, `anon`, `stdlib`, `generic` — wir ergänzen
+    # eigene Hexagon-Ports und OTel-Stdlib-Interfaces (z. B.
+    # `metric.Meter`), die Adapter-Setup-Funktionen wie
+    # `meterProvider.Meter(name)` zwangsläufig zurückgeben.
+    allow:
+      - error
+      - empty
+      - anon
+      - stdlib
+      - generic
+      - github.com/pt9912/m-trace/apps/api/hexagon/port/driving\..*
+      - github.com/pt9912/m-trace/apps/api/hexagon/port/driven\..*
+      - go.opentelemetry.io/otel/metric\..*
+      - go.opentelemetry.io/otel/trace\..*
+
+  forbidigo:
+    # Default verbietet `fmt.Print*`. Behalten wir; `cmd/api`-Logging
+    # läuft über `log/slog` (Lastenheft §10.1), nicht über Print.
+    forbid:
+      - p: ^fmt\.Print.*$
+        msg: "use log/slog (Lastenheft §10.1)"
+
+  gomodguard:
+    # Iteration 1: kein Module-Allow-/Blocklist. Wir bauen den Eintrag
+    # auf, sobald die ersten Findings/Diskussionen konkret sind.
+    blocked:
+      modules: []
+
+  depguard:
+    # Spiegelt apps/api/scripts/check-architecture.sh:
+    # - hexagon/* darf weder Adapter noch Infrastruktur-Bibliotheken
+    #   direkt importieren.
+    # - hexagon/domain darf nicht in hexagon/application oder
+    #   hexagon/port hineinreichen.
+    # - hexagon/application und hexagon/port dürfen keine Adapter
+    #   importieren.
+    # Bezug: spec/architecture.md §3.2/§3.4.
+    rules:
+      hexagon-no-adapters-or-infra:
+        list-mode: lax
+        files:
+          - "**/hexagon/**"
+        deny:
+          - pkg: "github.com/pt9912/m-trace/apps/api/adapters"
+            desc: "hexagon must not depend on adapters (architecture.md §3.4)"
+          - pkg: "go.opentelemetry.io"
+            desc: "hexagon must not depend on OTel directly — use port"
+          - pkg: "github.com/prometheus"
+            desc: "hexagon must not depend on Prometheus directly — use port"
+          - pkg: "database/sql"
+            desc: "hexagon must not depend on database/sql — use port"
+          - pkg: "net/http"
+            desc: "hexagon must not depend on net/http — use port"
+      domain-no-application-or-port:
+        list-mode: lax
+        files:
+          - "**/hexagon/domain/**"
+        deny:
+          - pkg: "github.com/pt9912/m-trace/apps/api/hexagon/application"
+            desc: "domain must not depend on application (architecture.md §3.2)"
+          - pkg: "github.com/pt9912/m-trace/apps/api/hexagon/port"
+            desc: "domain must not depend on port (architecture.md §3.2)"
+
+issues:
+  # Defaults von golangci-lint deaktivieren bestimmte Linter in
+  # `_test.go`-Dateien pauschal. Das wollen wir nicht — Carveouts
+  # sind unten pro Linter explizit dokumentiert.
+  exclude-use-default: false
+  # Keine Limits — alle Findings sehen.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # Pro-Scope-Carveouts. Lastenheft §10.1 fixiert die 24 Linter als
+  # "Pflicht im Profil"; der Scope (Tests vs. Produktion vs. internes
+  # Tooling) ist Konfigurations-Entscheidung. Begründungen pro Eintrag.
+  exclude-rules:
+    # ----- Tests -----------------------------------------------------
+    # Tests gegen httptest.Server haben implizites
+    # t.Cleanup/server.Close()-Lifecycle; NewRequestWithContext-
+    # Boilerplate bringt im Test keinen Cancellation-Wert.
+    - path: _test\.go$
+      linters:
+        - noctx
+
+    # Test-Helper-Signaturen halten Parameter oft offen für zukünftige
+    # Test-Cases; Inlining würde das Helper-Design verengen.
+    - path: _test\.go$
+      linters:
+        - unparam
+
+    # Tests dürfen Setup-/Match-/Iterations-Logik haben — die Linter-
+    # Signale "geringe kognitive/zyklomatische Komplexität" und "wenig
+    # Verschachtelung" wirken designseitig auf Produktionscode, nicht
+    # auf Test-Fixtures.
+    - path: _test\.go$
+      linters:
+        - gocognit
+        - gocyclo
+        - cyclop
+        - nestif
+
+    # ----- Test-Contract-Bibliothek -----------------------------------
+    # adapters/driven/persistence/contract/contract.go ist eine Test-
+    # Helper-Bibliothek (Cross-Adapter-Test-Verträge, importiert von
+    # inmemory_test.go und sqlite_test.go), trägt aber konventionell
+    # keinen `_test.go`-Suffix, weil sie aus mehreren Test-Paketen
+    # importiert wird. Daher gleiche Carveouts wie für `_test.go`.
+    - path: adapters/driven/persistence/contract/
+      linters:
+        - gocognit
+        - gocyclo
+        - cyclop
+        - nestif
+        - unparam
+        - noctx
+
+    # HTTP-Handler-Stubs `func(w, r){…}` ohne r-Verwendung sind
+    # idiomatisch in Tests, die nur die Server-Seite isolieren.
+    # Andere revive-Regeln (exported-comments, redefines-builtin etc.)
+    # bleiben in Tests strikt.
+    - path: _test\.go$
+      text: 'unused-parameter'
+      linters:
+        - revive
+
+    # ----- Skript-Zone (apps/api/scripts/) ----------------------------
+    # Internes Build-/Coverage-Tooling, kein API-Runtime-Code.
+    # Tooling darf nach stdout drucken (fmt.Print*) und höhere
+    # Komplexität haben (Parser, Report-Generatoren).
+    - path: scripts/
+      linters:
+        - forbidigo
+        - gocognit
+        - gocyclo
+        - cyclop
