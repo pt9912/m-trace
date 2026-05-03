@@ -58,7 +58,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each visibleSessions as session}
+        {#each visibleSessions as session (session.session_id)}
           <tr>
             <td><a href={`/sessions/${session.session_id}`}>{session.session_id}</a></td>
             <td><span class={`pill ${session.state}`}>{session.state}</span></td>

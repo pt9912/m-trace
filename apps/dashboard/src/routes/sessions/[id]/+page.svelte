@@ -71,7 +71,7 @@
     <span class="muted">{events.length} loaded</span>
   </div>
   <div class="timeline">
-    {#each events as event}
+    {#each events as event (event.ingest_sequence)}
       <div class="timeline-row">
         <span class="muted">{formatTime(event.server_received_at)}</span>
         <strong>{event.event_name}</strong>

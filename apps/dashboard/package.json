@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "svelte-kit sync && vitest run",
     "test:coverage": "svelte-kit sync && vitest run --coverage",
-    "lint": "pnpm --filter @npm9912/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "pnpm --filter @npm9912/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && eslint .",
     "check": "pnpm --filter @npm9912/player-sdk run build && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {

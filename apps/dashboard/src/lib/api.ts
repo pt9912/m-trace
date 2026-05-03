@@ -1,7 +1,10 @@
 export interface StreamSession {
   session_id: string;
   project_id: string;
-  state: "active" | "stalled" | "ended" | string;
+  /** Backend-Domain: typischerweise "active" | "stalled" | "ended"
+   *  (siehe domain.SessionState in apps/api), kann sich aber bei
+   *  Schema-Erweiterungen vergrößern — daher als Top-Type. */
+  state: string;
   started_at: string;
   last_event_at: string;
   ended_at?: string;

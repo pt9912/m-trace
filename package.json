@@ -18,8 +18,10 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "eslint": "^10.3.0",
+    "eslint-plugin-svelte": "^3.17.1",
     "globals": "^17.6.0",
     "hls.js": "^1.6.16",
+    "svelte-eslint-parser": "^1.6.0",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1",

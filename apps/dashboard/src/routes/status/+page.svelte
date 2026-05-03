@@ -86,7 +86,7 @@
       </span>
     </div>
     <div class="status-list">
-      {#each observabilityServices as service}
+      {#each observabilityServices as service (service.name)}
         <div class="status-row">
           <div>
             <strong>{service.name}</strong>

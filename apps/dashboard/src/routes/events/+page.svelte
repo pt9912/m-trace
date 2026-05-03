@@ -43,13 +43,13 @@
   <div class="toolbar">
     <select bind:value={sessionFilter} aria-label="Session filter">
       <option value="all">All sessions</option>
-      {#each sessions as session}
+      {#each sessions as session (session.session_id)}
         <option value={session.session_id}>{session.session_id}</option>
       {/each}
     </select>
     <select bind:value={eventTypeFilter} aria-label="Event type filter">
       <option value="all">All event types</option>
-      {#each eventTypes as eventType}
+      {#each eventTypes as eventType (eventType)}
         <option value={eventType}>{eventType}</option>
       {/each}
     </select>

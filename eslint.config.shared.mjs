@@ -39,14 +39,33 @@ const MAX_NESTED_CALLBACKS = 3;
  * Verzeichnisse ihres Pakets, damit `parserOptions.project` und
  * `parserOptions.tsconfigRootDir` korrekt aufgelöst werden.
  *
+ * Alle Regel-Blöcke werden auf `tsFiles` (Default `**\/*.ts`)
+ * eingeschränkt, damit der typescript-eslint-Parser nicht versucht,
+ * Svelte-/Vue-/sonstige Non-TS-Files zu parsen. SvelteKit-Apps
+ * ergänzen ihre eigenen `**\/*.svelte`-Blöcke nach dem Spread.
+ *
  * @param {object} opts
  * @param {string} opts.tsconfigRootDir — Absoluter Pfad zum Paket
  *   (`import.meta.dirname` im Aufrufer).
  * @param {string[]} [opts.tsconfigProject=['./tsconfig.json']] —
  *   Project-Files für typescript-eslint.
+ * @param {string[]} [opts.tsFiles=['**\/*.ts']] — Glob-Filter, auf
+ *   den die TS-spezifischen Regeln eingeschränkt werden.
  * @returns {import('eslint').Linter.Config[]}
  */
-export function sharedConfig({ tsconfigRootDir, tsconfigProject = ['./tsconfig.json'] }) {
+export function sharedConfig({
+  tsconfigRootDir,
+  tsconfigProject = ['./tsconfig.json'],
+  tsFiles = ['**/*.ts'],
+}) {
+  // typescript-eslint recommendedTypeChecked liefert eine Liste von
+  // Configs; wir spread sie und ergänzen jeden Block, der Regeln
+  // enthält, um den `files`-Filter, damit .svelte/.vue/.mjs-Files
+  // nicht versuchsweise typescript-aware geparst werden.
+  const tseslintConfigs = tseslint.configs.recommendedTypeChecked.map((cfg) =>
+    cfg.rules ? { ...cfg, files: tsFiles } : cfg
+  );
+
   return [
     // Globale Ignores für alle Aufrufer. Per-Paket-Overrides können
     // weitere ignores hinzufügen. Config-Files (eslint, vitest, vite,
@@ -78,10 +97,11 @@ export function sharedConfig({ tsconfigRootDir, tsconfigProject = ['./tsconfig.j
 
     // typescript-eslint mit Type-Checked-Regeln. Liefert no-floating-
     // promises, no-misused-promises, prefer-readonly, no-unsafe-*,
-    // restrict-template-expressions usw.
-    ...tseslint.configs.recommendedTypeChecked,
+    // restrict-template-expressions usw. Auf tsFiles eingeschränkt.
+    ...tseslintConfigs,
 
     {
+      files: tsFiles,
       languageOptions: {
         parserOptions: {
           project: tsconfigProject,

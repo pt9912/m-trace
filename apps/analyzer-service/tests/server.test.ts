@@ -196,7 +196,6 @@ describe("analyzer-service — POST /analyze", () => {
 
   it("describes non-Error throws via String() in the 500 response", async () => {
     running = await startServer(async () => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw "raw boom";
     });
     const res = await fetch(`${running.url}/analyze`, {
