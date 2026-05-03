@@ -186,16 +186,18 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 | ungültiger Header (Parse-Fehler) | generiert eigene `trace_id`; Header wird **nicht** auf 4xx geführt | Root-Span; Span-Attribut `mtrace.trace.parse_error=true` |
 | kein Header | generiert eigene `trace_id` | Root-Span ohne Parse-Error-Attribut |
 
-`trace_id` und `parent_span_id` aus dem `traceparent`-Header werden serverseitig defensiv geprüft (Hex-Form, Längen 32/16, Version `00`); jeder Verstoß landet im Server-Fallback-Pfad.
+`trace_id` und `parent_span_id` aus dem `traceparent`-Header werden serverseitig defensiv geprüft (Hex-Form, Längen 32/16, Version `00`); jeder Verstoß landet im Server-Fallback-Pfad. Der Header-Name ist HTTP-konform case-insensitiv. Das exakte Verhalten bei führender/abschließender OWS im Header-Wert wird im `plan-0.4.0.md`-§3.4c-Closeout gegen Code und Tests finalisiert.
 
 **`trace_id` ≠ `correlation_id`.** Beide sind getrennte Konzepte mit klarer Verantwortung:
 
 | Feld | Persistenz | Quelle | Lebensdauer | Konsumenten |
 |---|---|---|---|---|
 | `trace_id` | `playback_events.trace_id` (TEXT, nullable, 32 Hex-Zeichen) | SDK-`traceparent` oder server-generiert pro Batch | pro Batch (= ein Server-Span) | Tempo (RAK-31, optional); Cross-System-Trace-Suche |
-| `correlation_id` | `stream_sessions.correlation_id` und `playback_events.correlation_id` (TEXT, immer pro Session gesetzt) | server-generiert beim allerersten Event einer Session (UUIDv4 oder vergleichbar) | pro Session, konstant über alle Batches | Dashboard-Timeline (RAK-32) — Tempo-unabhängig |
+| `correlation_id` | `stream_sessions.correlation_id` und `playback_events.correlation_id` (TEXT; für ab §3.2 verarbeitete Events gesetzt, historische Leerwerte möglich) | server-generiert beim allerersten Event einer Session (UUIDv4 oder vergleichbar) oder per Self-Healing beim nächsten Event einer Legacy-Session | pro Session, konstant über alle ab §3.2 geschriebenen Batches | Dashboard-Timeline (RAK-32) — Tempo-unabhängig |
 
 `correlation_id` ist die **durable Source-of-Truth** für die Korrelation einer Session über mehrere Batches hinweg. Drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber dieselbe `correlation_id`.
+
+**Legacy-Grenze:** Tranche 2 führt kein historisches Backfill für vor §3.2 persistierte `playback_events.correlation_id` aus. Bestehende Sessions ohne `stream_sessions.correlation_id` werden beim nächsten Event per Self-Healing nachgezogen; ältere Events derselben Session können im Read-Pfad weiter eine leere `correlation_id` tragen und sind ein degradierter Legacy-Fall, nicht die Norm für neu verarbeitete Events.
 
 **Span-Modell: ein HTTP-Request-Span pro Batch.** Keine Child-Spans pro Event (Cardinality-Schutz). Pflicht- und optionale Attribute am Server-Span für `POST /api/playback-events`:
 

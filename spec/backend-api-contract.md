@@ -27,7 +27,10 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
     `parent_span_id` aus dem Header. Bei ungültigem Header gibt es
     **kein** 4xx — der Server fällt auf eine eigene `trace_id` zurück
     und setzt das Span-Attribut `mtrace.trace.parse_error=true`
-    (siehe `spec/telemetry-model.md` §2.5).
+    (siehe `spec/telemetry-model.md` §2.5). Der Header-Name ist
+    case-insensitiv; der Header-Wert wird als einzelner W3C-Wert
+    interpretiert. Das Verhalten bei führender/abschließender OWS wird
+    im `plan-0.4.0.md`-§3.4c-Closeout gegen Code und Tests finalisiert.
   - `Retry-After` — Server-Antwort bei `429`.
 - **Prometheus-Metrik-Prefix**: `mtrace_`
 - **OTel-Attribut-Prefix**: `mtrace.*`
@@ -194,7 +197,7 @@ erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
 |---|---|---|---|
 | `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | `0.1.x` | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR 0002 §8.1](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
 | `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | `0.4.0` (ab `plan-0.4.0.md` §2.3-Closeout) | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. Vor §2.3-Closeout liefern Read-Antworten dieses Feld nicht. |
-| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in 0.4.0+-erzeugten Events**; bei vor §3.2-Closeout angelegten Sessions kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). Siehe `spec/telemetry-model.md` §2.5. |
+| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in ab §3.2 verarbeiteten Events**; bei vor §3.2-Closeout persistierten Events kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle ab §3.2 verarbeiteten Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). Siehe `spec/telemetry-model.md` §2.5. |
 | `trace_id` | `string`, 32 Hex-Zeichen, optional (`null` zulässig wenn weder `traceparent` noch Server-Trace gesetzt — Edge-Case) | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
 
 Diese vier Felder sind im POST-Wire-Format (§3.2/§3.3) **nicht** zulässig;
@@ -202,14 +205,17 @@ Clients dürfen sie nur aus Read-Antworten interpretieren. Die genaue
 Vertragssemantik (Sortierung, Idempotenz, Cursor) steht in §10;
 Trace-Korrelations-Vertrag in `spec/telemetry-model.md` §2.5.
 
-**Migration von Pre-§3.2-Persistenz**: Sessions, die vor `0.4.0`-§3.2
-angelegt wurden, haben kein `correlation_id`. Der Read-Pfad liefert in
-diesem Fall den leeren String — der Use-Case führt beim nächsten Event
-einer solchen Session ein Self-Healing durch (siehe `resolveCorrelationIDs`
-in der Application-Schicht), das die Session-`correlation_id` einmalig
-nachträglich setzt. Clients sollten leere `correlation_id`-Felder als
-„noch nicht gesetzt" interpretieren und den nächsten Read nach dem
-nächsten Event abwarten — nicht als Vertragsbruch behandeln.
+**Migration von Pre-§3.2-Persistenz**: Sessions und Events, die vor
+`0.4.0`-§3.2 angelegt wurden, haben kein `correlation_id`. Tranche 2
+führt **kein historisches Event-Backfill** aus: ältere
+`playback_events.correlation_id`-Leerwerte bleiben im Read-Pfad als
+JSON-`""` sichtbar und sind ein degradierter Legacy-Fall. Der Use-Case
+führt beim nächsten Event einer solchen Session ein Self-Healing durch
+(siehe `resolveCorrelationIDs` in der Application-Schicht), das die
+Session-`correlation_id` einmalig nachträglich setzt und die neu
+persistierten Events mit dieser `correlation_id` schreibt. Clients
+sollten leere `correlation_id`-Felder bei historischen Events als
+„vor §3.2 nicht gesetzt" interpretieren — nicht als Vertragsbruch.
 
 #### 3.7.1 Session-Header-Read-Felder
 
@@ -219,7 +225,7 @@ trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
 
 | Feld | Typ | Beschreibung |
 |---|---|---|
-| `correlation_id` | `string`, nicht-leer | Spiegelt `stream_sessions.correlation_id`; identisch mit dem `correlation_id`-Wert auf jedem Event derselben Session. Dient dem Dashboard als primärer Korrelations-Schlüssel — Tempo-unabhängig. |
+| `correlation_id` | `string`; nicht-leer für ab §3.2 angelegte oder bereits selbst-geheilte Sessions, sonst `""` als Legacy-Fall | Spiegelt `stream_sessions.correlation_id`; identisch mit dem `correlation_id`-Wert auf ab §3.2 persistierten Events derselben Session. Historische Events vor §3.2 werden nicht backfilled. Dient dem Dashboard als primärer Korrelations-Schlüssel — Tempo-unabhängig. |
 
 ---
 

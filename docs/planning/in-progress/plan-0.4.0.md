@@ -172,7 +172,8 @@ Tranche 2 ist in vier aufeinander aufbauende Sub-Tranchen geschnitten: §3.1 fix
 
 Abnahmegrenzen für die gesamte Tranche:
 
-- **Source-of-Truth:** `stream_sessions.correlation_id` ist der stabile Session-Zusammenhang; `playback_events.correlation_id` muss dazu passen. `trace_id` ist batch-/span-bezogen und darf zwischen Batches derselben Session wechseln.
+- **Source-of-Truth:** `stream_sessions.correlation_id` ist der stabile Session-Zusammenhang; `playback_events.correlation_id` muss für ab §3.2 verarbeitete Events dazu passen. `trace_id` und `span_id` sind batch-/span-bezogen, werden nur auf Events persistiert und dürfen zwischen Batches derselben Session wechseln.
+- **Legacy-Grenze:** Für vor §3.2 angelegte Sessions/Events gibt es in Tranche 2 kein historisches Event-Backfill. Self-Healing setzt beim nächsten Event einer Legacy-Session die Session-`correlation_id` und alle neu geschriebenen Event-`correlation_id`s; ältere `playback_events.correlation_id`-Leerwerte bleiben ein dokumentierter degradierter Read-Fall.
 - **Wire-Kompatibilität:** Payload-Schema bleibt `1.0`; der optionale `traceparent`-Header ist additiv. SDKs ohne Header, SDKs mit gültigem Header und SDKs mit kaputtem Header müssen denselben Event-Annahme-Pfad behalten.
 - **Observability-Grenze:** `trace_id`, `span_id`, `correlation_id`, `session_id`, URLs und User-Agent bleiben Prometheus-Label-tabu. Falls sie auftauchen, ist das ein Release-Blocker und muss vor Tranche 8 behoben werden.
 - **Tempo-Unabhängigkeit:** Tests dürfen kein externes Tempo/OTLP-Backend benötigen. Tempo-Integration wird erst in Tranche 5 optional verdrahtet.
@@ -183,7 +184,7 @@ Liefer-/Abnahme-Matrix:
 | Sub-Tranche | Ergebnis | Harte Abnahme | Status |
 |---|---|---|---|
 | §3.1 | Normativer Vertrag für Trace-ID, `correlation_id`, Span-Attribute und Defensive Parsing | Spec enthält keine impliziten Entscheidungen mehr für §3.2/§3.3 | ✅ |
-| §3.2 | Server erzeugt/persistiert `trace_id`, `span_id`, `correlation_id` und Span-Attribute | Backend- und Adapter-Tests laufen ohne externes Trace-Backend; `mtrace.project.id` ist auf accepted Batches gesetzt | ✅ |
+| §3.2 | Server erzeugt/persistiert batchbezogene `trace_id`/`span_id` auf Events, Session-`correlation_id` auf Session und Events sowie Span-Attribute | Backend- und Adapter-Tests laufen ohne externes Trace-Backend; `mtrace.project.id` ist auf accepted Batches gesetzt | ✅ |
 | §3.3 | SDK kann optional `traceparent` senden | Kein Payload-/Schema-Bruch; Provider-Fehler sabotieren `send` nicht | ✅ mit nachgezogenem Snapshot-/Spec-Fix |
 | §3.4a | Backend-Trace-Konsistenz abgesichert | Multi-Batch, Missing/Invalid Header, Session-Ende, Time-Skew, NoOp-Tracer getestet | ✅ |
 | §3.4b | SDK↔Server-Cross-Cutting-Lücken geschlossen | Pre-§3.2-Backend-Kompat und Garbage-Traceparent-Pfad getestet | ✅ |
@@ -200,7 +201,7 @@ Verbindliche Entscheidungen (gehören in `spec/telemetry-model.md` und `spec/bac
 - **Trace-ID-Quelle: Hybrid.** Player-SDK propagiert optional einen W3C-`traceparent`-Header (Format laut [W3C Trace Context](https://www.w3.org/TR/trace-context/)). Ist der Header gültig, übernimmt der Server `trace_id` und `parent_span_id` aus dem Header und erzeugt einen Child-Span. Fehlt der Header oder ist er ungültig, generiert der Server einen Root-Span mit eigener W3C-konformer `trace_id`. SDK-Wert hat Vorrang gegenüber Server-Generierung.
 - **`trace_id` ≠ `correlation_id`.** Beide sind getrennte Konzepte mit klarer Verantwortung:
   - `trace_id` (TEXT, nullable, 32 Hex-Zeichen): W3C-Trace-ID — vom SDK propagiert oder server-generiert; primär für Tempo (RAK-31, optional).
-  - `correlation_id` (TEXT, immer pro Session gesetzt): server-generierte, durable Source-of-Truth für die Dashboard-Korrelation. Wird beim allerersten Event einer Session erzeugt (UUIDv4 oder vergleichbar), in `stream_sessions.correlation_id` persistiert und für **alle** Folge-Events derselben Session konstant gehalten.
+  - `correlation_id` (TEXT, ab §3.2 pro Session gesetzt; historische Leerwerte möglich): server-generierte, durable Source-of-Truth für die Dashboard-Korrelation. Wird beim allerersten Event einer neuen Session erzeugt (UUIDv4 oder vergleichbar), in `stream_sessions.correlation_id` persistiert und für **alle ab §3.2 verarbeiteten** Folge-Events derselben Session konstant gehalten. Legacy-Sessions ohne `correlation_id` werden beim nächsten Event per Self-Healing auf Session und neu persistierten Events nachgezogen; ältere Events werden nicht backfilled.
   - Dashboard-Timeline (RAK-32) nutzt `correlation_id` — Tempo-unabhängig. Tempo (RAK-31) nutzt `trace_id`, wenn das Profil aktiv ist.
 - **Span-Modell: ein HTTP-Request-Span pro Batch.** Keine Child-Spans pro Event (Cardinality-Risiko). Pflicht-Attribute am Server-Span:
   - `mtrace.project.id` (kontrolliert; Allowlist aus dem Use-Case-Resolver) ist Pflicht für accepted Batches und für alle Pfade, in denen der Use Case ein Project erfolgreich aufgelöst hat; bei Rejects vor Project-Auflösung bleibt das Attribut bewusst unset.
@@ -218,7 +219,7 @@ Verbindliche Entscheidungen (gehören in `spec/telemetry-model.md` und `spec/bac
 DoD:
 
 - [x] `spec/telemetry-model.md` §2.5 (neu) dokumentiert die Hybrid-Trace-ID-Strategie, das `trace_id`/`correlation_id`-Verhältnis (mit Persistenz-Quelle pro Feld), das Span-Modell mit Pflicht-Attribut-Tabelle und die Sampling-Auswirkung für `0.4.0` (`5a8ab19`).
-- [x] `spec/backend-api-contract.md` §1 dokumentiert `traceparent` als optionalen HTTP-Header auf `POST /api/playback-events` mit defensiver Server-Validierung (kein 4xx bei kaputtem Header). §3.7 ergänzt `correlation_id` (immer gesetzt) und `trace_id` (nullable) als server-vergebene Read-Felder ab `0.4.0`-§3.2-Closeout (`5a8ab19`).
+- [x] `spec/backend-api-contract.md` §1 dokumentiert `traceparent` als optionalen HTTP-Header auf `POST /api/playback-events` mit defensiver Server-Validierung (kein 4xx bei kaputtem Header). §3.7 ergänzt `correlation_id` (ab §3.2 gesetzt; historische Leerwerte möglich) und `trace_id` (nullable) als server-vergebene Read-Felder ab `0.4.0`-§3.2-Closeout (`5a8ab19`).
 - [x] Cardinality-Regel ist in `spec/telemetry-model.md` §2.5 festgehalten: `trace_id`/`correlation_id`/`span_id` sind Prometheus-tabu — Span-Attribute, Persistenz-Spalten und Wire-Format-Felder sind die einzigen Konsumenten; Verstöße sind release-blocking via Cardinality-Smoke (`5a8ab19`).
 - [x] Folge-Item für persistenten Time-Skew-Flag ist als R-5 in `docs/planning/open/risks-backlog.md` aufgenommen; §5.3 in `telemetry-model.md` verweist explizit auf den Backlog-Eintrag und markiert die Persistenz-Spalte als deferred (`5a8ab19`).
 
@@ -226,7 +227,7 @@ DoD:
 
 Bezug: §3.1; Telemetry-Model §5.4; API-Kontrakt §3; ADR-0002 §8.1 (Schema-Spalten reserviert in §2.3).
 
-Ziel: Backend liest `traceparent` (wenn vorhanden), erzeugt einen Server-Span pro Batch, generiert/liest `correlation_id` pro Session, persistiert `trace_id`/`span_id`/`correlation_id` auf jedem Event und auf der Session, validiert defensiv. Sub-Tranchen-Ausgang: ein Batch-POST hinterlässt einen kompletten Trace mit korrelations-fähigen Persistenz-Daten — auch ohne SDK-`traceparent`.
+Ziel: Backend liest `traceparent` (wenn vorhanden), erzeugt einen Server-Span pro Batch, generiert/liest `correlation_id` pro Session, persistiert `trace_id`/`span_id` als Event-/Batch-Felder auf jedem Event und persistiert `correlation_id` als Session-Scope-Feld auf `stream_sessions` sowie auf den zugehörigen Events, validiert defensiv. `StreamSession` speichert keine stabile Session-`trace_id` und keine Session-`span_id`. Sub-Tranchen-Ausgang: ein Batch-POST hinterlässt korrelations-fähige Persistenz-Daten — auch ohne SDK-`traceparent`.
 
 DoD:
 
@@ -243,7 +244,7 @@ DoD:
 
 Bezug: §3.1; §3.2 (Server-Pfad muss bereit sein, bevor SDK Header schickt); RAK-29 (kein Breaking Change).
 
-Ziel: Player-SDK propagiert optional einen W3C-`traceparent`-Header, wenn der Browser-Pfad einen aktiven Span hat oder das SDK selbst eine `trace_id` führen kann. Wenn kein Trace-Kontext da ist, schickt das SDK den Header **nicht** — Server-Fallback erzeugt eine eigene `trace_id`. Schema-Version bleibt `1.0`. Sub-Tranchen-Ausgang: SDK 0.4.0 kann den Header optional schicken; Server toleriert sowohl SDKs mit als auch ohne Header.
+Ziel: Player-SDK propagiert optional einen W3C-`traceparent`-Header, wenn der Browser-Pfad einen aktiven Span hat oder das SDK selbst eine `trace_id` führen kann. Wenn kein Trace-Kontext da ist, schickt das SDK den Header **nicht** — Server-Fallback erzeugt eine eigene `trace_id`. Schema-Version bleibt `1.0`. Sub-Tranchen-Ausgang: SDK 0.4.0 kann den Header optional schicken; Server toleriert sowohl SDKs mit als auch ohne Header. Header-Casing ist mit §3.3 entschieden; das exakte Header-Wert-Verhalten für führende/abschließende OWS bleibt bis §3.4c bewusst offen und ist nicht Teil des §3.3-Done-Claims.
 
 DoD:
 
@@ -267,7 +268,7 @@ Ziel: Trace-Konsistenz ist auf allen Ebenen abgesichert (mehrere Batches einer S
 
 Bezug: §3.2 (Server-Pfad mit Spans, `correlation_id`-Resolver, `parseTraceParent`, Time-Skew); ADR-0002 §8.1; Telemetry-Model §2.5.
 
-Ziel: Das in §3.2 ausgelieferte Server-Verhalten ist durch wiederholbare Backend-Tests gegen Use-Case + HTTP-Adapter abgesichert; jeder spezifizierte Pfad (Multi-Batch-Konsistenz, fehlender Kontext, ungültiger Kontext, Session-Ende, Time-Skew, Tempo-deaktiviert) hat einen eigenen Test mit klaren Assertions auf `trace_id`, `correlation_id` und Span-Attributen. Sub-Tranchen-Ausgang: Reviewer kann §3.2-Lieferung gegen §3.4a-Tests nachvollziehen, ohne externes Trace-Backend zu brauchen.
+Ziel: Das in §3.2 ausgelieferte Server-Verhalten ist durch wiederholbare Backend-Tests gegen Use-Case + HTTP-Adapter abgesichert; jeder spezifizierte Pfad (Multi-Batch-Konsistenz, fehlender Kontext, ungültiger Kontext, Session-Ende, Time-Skew, Tempo-deaktiviert) hat einen eigenen Test mit klaren Assertions auf `trace_id`, `correlation_id` und Span-Attributen. Sub-Tranchen-Ausgang: Reviewer kann §3.2-Lieferung gegen §3.4a-Tests nachvollziehen, ohne externes Trace-Backend zu brauchen. Das OWS-Verhalten des `traceparent`-Header-Werts bleibt bis §3.4c eine explizite Doku-/Test-Abhängigkeit; §3.4a bestätigt nur fehlenden, validen und offensichtlich ungültigen Header-Kontext.
 
 DoD:
 
@@ -282,7 +283,7 @@ DoD:
 
 Bezug: §3.3-Review (Should-fix #1/#2); §3.2; §3.3.
 
-Ziel: Zwei Pfade, die SDK und Server überspannen, sind explizit getestet — Vorwärtskompat zu Pre-§3.2-Backends und das Garbage-Traceparent-Ende-zu-Ende-Verhalten. Sub-Tranchen-Ausgang: das §3.3-Review hat keine Test-Lücken mehr offen.
+Ziel: Zwei Pfade, die SDK und Server überspannen, sind explizit getestet — Vorwärtskompat zu Pre-§3.2-Backends und das Garbage-Traceparent-Ende-zu-Ende-Verhalten. Sub-Tranchen-Ausgang: das §3.3-Review hat keine Test-Lücken mehr offen. Der Done-Claim umfasst noch keine Entscheidung, ob führende/abschließende OWS im `traceparent`-Header-Wert getrimmt oder als Parse-Error behandelt wird; diese Abnahme bleibt §3.4c vorbehalten.
 
 DoD:
 
@@ -334,6 +335,7 @@ DoD:
 - [ ] `mtrace.project.id` ist nicht mehr als Drift geführt: `spec/telemetry-model.md` dokumentiert es als Pflichtattribut für accepted Batches bzw. nach erfolgreicher Project-Auflösung und als bewusst unset für Rejects vor Project-Auflösung; Plan verweist auf `TestHTTP_Span_SingleSessionBatch_SetsCorrelationID`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code: Hybrid-Strategie, ein Server-Span pro Batch, Persistenzquelle pro Feld, Time-Skew nur als Span-Attribut, Sampling-Auswirkung und Prometheus-Cardinality-Grenzen sind in einem zusammenhängenden Abschnitt festgeschrieben.
 - [ ] `spec/backend-api-contract.md` §1 / §3 / §3.7 reflektiert das ausgelieferte Header-Verhalten und die neuen Read-Felder: `trace_id` nullable und batch-bezogen, `correlation_id` pro Session stabil, `span_id` nur als technisches Event-Feld falls im Read-Pfad offengelegt; `GET /api/stream-sessions` exponiert keine Session-`trace_id`; Fehlerklassifikation bleibt unverändert bei 202/4xx aus dem normalen Event-Vertrag.
+- [ ] Legacy-Korrektheitsgrenze ist final dokumentiert: §3.4c entscheidet ausdrücklich gegen ein historisches Backfill für vor §3.2 geschriebene `playback_events.correlation_id`; Self-Healing gilt nur für `stream_sessions.correlation_id` und neu persistierte Events nach dem nächsten Batch. API-Kontrakt und Telemetry-Model nennen leere Legacy-Event-`correlation_id`s als degradierten Read-Fall, nicht als Vertragsbruch.
 - [ ] `spec/player-sdk.md` bleibt synchron zum tatsächlichen SDK-Verhalten aus `f7dcdb9`: Provider wird pro Send aufgerufen, `undefined`/`""`/Non-String/Throw schicken keinen Header, Throw/Non-String warnen höchstens einmal pro `HttpTransport`-Instanz, Garbage-String wird als String unverändert weitergereicht.
 - [ ] R-6 (`correlation_id`-Race) ist im Plan-Closeout referenziert: nicht blockierend für Tranche 2, aber als explizite Restgrenze für Tranche 8/operative Beobachtung geführt. Falls vor Tranche 8 ein Mismatch zwischen `stream_sessions.correlation_id` und `playback_events.correlation_id` beobachtet wird, wird R-6 release-blocking.
 - [ ] Test-/Review-Gate für den Closeout ist dokumentiert: mindestens `make ts-lint` plus die relevanten Backend-/SDK-Test-Slices aus §3.4a/§3.4b. Grund: §3.3 hat gezeigt, dass Snapshot- und Spec-Drift nicht durch `make ts-test` allein auffallen.
