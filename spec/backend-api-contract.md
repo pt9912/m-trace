@@ -104,7 +104,11 @@ Ab `plan-0.4.0.md` Tranche 3 darf der Batch optional
 `session_boundaries` enthalten. Dieser Block ist kein Event-Stream,
 zählt nicht in `accepted`, besitzt kein `event_name` und ändert
 `schema_version: "1.0"` nicht. Boundary-only-Batches ohne `events`
-bleiben ungültig.
+bleiben ungültig. Es sind maximal 20 Boundaries pro Batch erlaubt.
+Boundaries zählen in dasselbe `max_body_bytes`-Budget wie Events. Jede
+Boundary muss eine `(project_id, session_id)`-Partition referenzieren,
+für die im selben Batch mindestens ein Event vorhanden ist; andernfalls
+ist der Batch `422 Unprocessable Entity`.
 
 ```json
 {
@@ -134,6 +138,10 @@ Für Tranche 3 ist nur `kind="network_signal_absent"` definiert.
 oder HTML/Script-Fragmente werden mit `422 Unprocessable Entity`
 abgelehnt. `project_id` muss wie bei Events zum `X-MTrace-Token`
 passen; `session_id` ist Pflicht.
+
+Der komplette Batch-Wrapper wird vor jedem Write validiert oder
+gemeinsam transaktional persistiert. Ein invalider Boundary-Block
+persistiert weder Events noch Boundaries und erhöht `accepted` nicht.
 
 ### 3.5 Antwort bei Erfolg
 

@@ -7,7 +7,9 @@
     "session_boundaries_field": "session_boundaries",
     "min_events": 1,
     "max_events": 100,
+    "max_session_boundaries": 20,
     "boundary_only_batches": false,
+    "boundaries_must_match_event_partition": true,
     "max_body_bytes": 262144
   },
   "session_boundaries": {
@@ -70,7 +72,10 @@
     "network.unavailable_reason": {
       "type": "string",
       "values_ref": "network_unavailable_reasons",
-      "pattern_ref": "network_unavailable_reason_pattern"
+      "pattern_ref": "network_unavailable_reason_pattern",
+      "requires": {
+        "network.detail_status": "network_detail_unavailable"
+      }
     },
     "network.redacted_url": {
       "type": "string",
