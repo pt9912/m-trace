@@ -176,7 +176,7 @@ Abnahmegrenzen für die gesamte Tranche:
 - **Legacy-Grenze:** Für vor §3.2 angelegte Sessions/Events gibt es in Tranche 2 kein historisches Event-Backfill. Self-Healing setzt beim nächsten Event einer Legacy-Session die Session-`correlation_id` und alle neu geschriebenen Event-`correlation_id`s; ältere `playback_events.correlation_id`-Leerwerte bleiben ein dokumentierter degradierter Read-Fall.
 - **Wire-Kompatibilität:** Payload-Schema bleibt `1.0`; der optionale `traceparent`-Header ist additiv. SDKs ohne Header, SDKs mit gültigem Header und SDKs mit kaputtem Header müssen denselben Event-Annahme-Pfad behalten.
 - **Observability-Grenze:** `trace_id`, `span_id`, `correlation_id`, `session_id`, URLs und User-Agent bleiben Prometheus-Label-tabu. Falls sie auftauchen, ist das ein Release-Blocker und muss vor Tranche 8 behoben werden.
-- **Tempo-Unabhängigkeit:** Tests dürfen kein externes Tempo/OTLP-Backend benötigen. Tempo-Integration wird erst in Tranche 5 optional verdrahtet.
+- **Tempo-Unabhängigkeit:** Tests dürfen kein externes Tempo/OTLP-Backend benötigen. Tempo-Integration wird erst in Tranche 5 optional verdrahtet. Der Tranche-2-Claim ist erst vollständig erfüllt, wenn §3.4c zusätzlich den produktiven `cmd/api`-Config-Auflösungsweg ohne aktives Trace-Backend abdeckt; §3.4a allein ist nur Adapter-/Use-Case-Nachweis.
 - **Rest-Risiko:** Der bekannte `correlation_id`-Race bei paralleler Erstanlage derselben `session_id` ist als R-6 im Risiken-Backlog geführt. Er blockiert Tranche 2 nicht, solange §3.4c die Doku-Grenze klar benennt, der Mitigationspfad im Backlog bleibt und Tranche 8 keine beobachtete Inkonsistenz findet. R-6 darf nicht aus dem Abschluss-Text verschwinden.
 
 Liefer-/Abnahme-Matrix:
@@ -300,9 +300,13 @@ DoD:
   `packages/player-sdk/tests/http-transport.test.ts` mit
   `sends successfully against a 0.3.x-shaped mock that ignores the header`
   — `HttpTransport.send` läuft gegen einen 202-Mock-Server, der den Header
-  nicht liest. Beide Hälften zusammen ergeben das maschinell prüfbare
-  Cross-Version-Versprechen. Option (c) (Node-Cross-Run gegen Go-httptest)
-  bleibt deferred.
+  nicht liest. Beide Hälften zusammen ergeben nur einen Smoke-Nachweis
+  für „zusätzlicher Header sabotiert den SDK-Send-Pfad nicht" und
+  „ein Handler, der `traceparent` ignoriert, bleibt 202-fähig". Sie
+  sind **kein** vollständiger Beleg gegen die echte `0.3.x`-Routing-/
+  Middleware-Pipeline. Der reale `0.3.x`-E2E-Pfad ist deshalb ein
+  §3.4c-Closeout-Gate; bis dahin darf der Plan nicht behaupten, echte
+  `0.3.x`-Kompatibilität sei vollständig bewiesen.
 - [x] E2E-Test mit kaputtem `traceparent` (aus §3.3-Review, Should-fix #2):
   hybrider Schnitt.
   Server-Seite durch `TestHTTP_Span_TraceParent_InvalidSetsParseError`
@@ -328,14 +332,15 @@ Closeout-Regeln:
 - §3.4c ist Doku-/Plan-Closeout, kein Release-Bump. `PLAYER_SDK_VERSION`, Root-Versionen und `CHANGELOG.md` bleiben Tranche-8-Arbeit.
 - Normative Aussagen stehen in `spec/telemetry-model.md`, `spec/backend-api-contract.md` und `spec/player-sdk.md`; dieser Plan referenziert nur Lieferstand, Commit und Restgrenzen.
 - Wenn Code und Spec voneinander abweichen, muss §3.4c entweder den Code nachziehen oder die Spec bewusst korrigieren/deferieren. Eine bekannte Abweichung darf nicht nur im Fließtext stehen.
-- **Tranche-3-Blocker:** Solange irgendein §3.4c-DoD-Item offen ist, bleiben Status-Header, Roadmap Schritt 31 und die Tranche-2-Matrix offen. Tranche 3 darf erst starten, wenn §3.4c vollständig abgehakt ist; einzelne bereits abgeschlossene §3.1–§3.4b-Pfade heben diesen Blocker nicht auf.
+- **Tranche-3-Blocker:** Solange irgendein §3.4c-DoD-Item offen ist, bleiben Status-Header, Roadmap Schritt 31 und die Tranche-2-Matrix offen. Tranche 3 darf erst starten, wenn §3.4c vollständig abgehakt ist; einzelne bereits abgeschlossene §3.1–§3.4b-Pfade heben diesen Blocker nicht auf. Das gilt insbesondere für OWS-Verhalten, echten `0.3.x`-Cross-Version-Pfad und produktiven Tempo-disabled-Start.
 
 DoD:
 
-- [ ] Header-Casing/Whitespace-Vertrag (aus §3.3-Review, Anmerkung #5) ist in `spec/backend-api-contract.md` §1 und in Backend-Tests synchronisiert: Header-Name case-insensitiv; Header-Wert-Verhalten für führende/abschließende OWS ist exakt das implementierte Verhalten (entweder `strings.TrimSpace` + gültiger Parent oder parse_error-Fallback, aber nicht ungetesteter Fließtext); SDK schreibt lowercased `traceparent`.
+- [ ] Header-Casing/Whitespace-Vertrag (aus §3.3-Review, Anmerkung #5) ist in `spec/backend-api-contract.md` §1 und in Backend-Tests synchronisiert: Header-Name case-insensitiv; Header-Wert-Verhalten für führende/abschließende OWS ist exakt das implementierte Verhalten (entweder `strings.TrimSpace` + gültiger Parent oder parse_error-Fallback, aber nicht ungetesteter Fließtext); SDK schreibt lowercased `traceparent`. Solange dieser OWS-Case nicht mit mindestens einem Server-Test festgezurrt ist, bleibt §3.4c blockierend.
 - [ ] `mtrace.project.id` ist nicht mehr als Drift geführt: `spec/telemetry-model.md` dokumentiert es als Pflichtattribut für accepted Batches bzw. nach erfolgreicher Project-Auflösung und als bewusst unset für Rejects vor Project-Auflösung; Plan verweist auf `TestHTTP_Span_SingleSessionBatch_SetsCorrelationID`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code: Hybrid-Strategie, ein Server-Span pro Batch, Persistenzquelle pro Feld, Time-Skew nur als Span-Attribut, Sampling-Auswirkung und Prometheus-Cardinality-Grenzen sind in einem zusammenhängenden Abschnitt festgeschrieben.
 - [ ] `session_id`-Span-Attribut-Verbot ist konsistent dokumentiert und getestet: ab `0.4.0` setzt der Server in keinem OTel-Span `session_id`; Single-Session-Suche läuft ausschließlich über `mtrace.session.correlation_id`. Historische Aussagen zur Zulässigkeit von `session_id` als Span-Attribut sind auf `0.1.x` begrenzt und nicht Teil des Tranche-2-Vertrags.
+- [ ] Cross-Version-Kompatibilität ist scope-korrekt geschlossen: entweder läuft ein echter `0.3.x`-E2E-Pfad (alte Routing-/Middleware-Pipeline, nicht nur `legacyPlaybackHandler`/Mock) mit `traceparent`-Header auf `202`, oder der Abnahmetext wird explizit auf den bisher gelieferten Smoke-Scope downgraded und echte `0.3.x`-Kompatibilität bleibt als Restgrenze dokumentiert.
 - [ ] `spec/backend-api-contract.md` §1 / §3 / §3.7 reflektiert das ausgelieferte Header-Verhalten und die neuen Read-Felder: `trace_id` nullable und batch-bezogen, `correlation_id` pro Session stabil, `span_id` nur als technisches Event-Feld falls im Read-Pfad offengelegt; `GET /api/stream-sessions` exponiert keine Session-`trace_id`; Fehlerklassifikation bleibt unverändert bei 202/4xx aus dem normalen Event-Vertrag.
 - [ ] Tempo-deaktivierter Produktivstart ist als Closeout-Gate abgesichert: ein Test oder expliziter Config-Check deckt den `cmd/api`-Auflösungsweg ohne aktives Trace-Backend ab und zeigt, dass daraus der NoOp-/nil-Tracer-Pfad entsteht. Der §3.4a-Router-Test allein reicht für dieses Gate nicht.
 - [ ] Legacy-Korrektheitsgrenze ist final dokumentiert: §3.4c entscheidet ausdrücklich gegen ein historisches Backfill für vor §3.2 geschriebene `playback_events.correlation_id`; Self-Healing gilt nur für `stream_sessions.correlation_id` und neu persistierte Events nach dem nächsten Batch. API-Kontrakt und Telemetry-Model nennen leere Legacy-Event-`correlation_id`s als degradierten Read-Fall, nicht als Vertragsbruch.
