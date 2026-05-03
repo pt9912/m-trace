@@ -2,7 +2,9 @@ package telemetry_test
 
 import (
 	"context"
+	"os"
 	"testing"
+	"time"
 
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -118,6 +120,87 @@ func TestSetup_NoEnvVarsReturnsProvidersAndShutsDown(t *testing.T) {
 	// noopSpanExporter.Shutdown.
 	if err := providers.Shutdown(ctx); err != nil {
 		t.Errorf("Shutdown: %v", err)
+	}
+}
+
+// TestSetup_BlankOTelEnv_FallsBackToNoopExporter zurrt den
+// `cmd/api`-Produktivstart mit deaktiviertem Tempo-Profil fest
+// (plan-0.4.0.md §3.4c, Item #7). docker-compose.yml schreibt
+// `OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-}"` etc. — wenn das
+// Tempo-Profil nicht aktiv ist, kommen die Variablen also als
+// **blank-string** im Container an, nicht als unset. Der Setup-Pfad
+// muss diese drei Vars über `unsetBlankOTelEnv` neutralisieren, damit
+// `autoexport.NewSpanExporter` auf den `noopSpanExporter`-Fallback
+// auflöst statt auf OTLP gegen einen nicht existierenden Collector zu
+// pushen.
+//
+// Der §3.4a-Router-Test (`TestHTTP_Trace_NoopTracer_CorrelationStillPersisted`)
+// deckt nur den Adapter-Fallback bei `nil`-Tracer-Argument; die
+// `cmd/api`-Config-Resolution geht hingegen durch `telemetry.Setup`,
+// welches eine echte SDK-`TracerProvider` mit no-op-Exporter liefert.
+// Item #7 macht genau diesen Pfad zum Closeout-Gate.
+func TestSetup_BlankOTelEnv_FallsBackToNoopExporter(t *testing.T) {
+	// Nicht parallel: env-var-mutating und globale Provider-Registrierung.
+	saveAndSetBlank := func(key string) func() {
+		orig, hadOrig := os.LookupEnv(key)
+		if err := os.Setenv(key, ""); err != nil {
+			t.Fatalf("setenv %s: %v", key, err)
+		}
+		return func() {
+			if hadOrig {
+				_ = os.Setenv(key, orig)
+			} else {
+				_ = os.Unsetenv(key)
+			}
+		}
+	}
+	for _, key := range []string{
+		"OTEL_TRACES_EXPORTER",
+		"OTEL_METRICS_EXPORTER",
+		"OTEL_EXPORTER_OTLP_ENDPOINT",
+		"OTEL_EXPORTER_OTLP_PROTOCOL",
+	} {
+		t.Cleanup(saveAndSetBlank(key))
+	}
+
+	ctx := context.Background()
+	providers, err := telemetry.Setup(ctx, "test-service-tempo-disabled", "test-version")
+	if err != nil {
+		t.Fatalf("Setup with blank env vars: %v", err)
+	}
+	t.Cleanup(func() { _ = providers.Shutdown(context.Background()) })
+
+	// Setup muss die blank-strings entfernt haben — das ist die
+	// Vorbedingung dafür, dass autoexport den Fallback wählt statt OTLP
+	// gegen einen nicht vorhandenen Collector zu pushen.
+	for _, key := range []string{
+		"OTEL_TRACES_EXPORTER",
+		"OTEL_METRICS_EXPORTER",
+		"OTEL_EXPORTER_OTLP_ENDPOINT",
+		"OTEL_EXPORTER_OTLP_PROTOCOL",
+	} {
+		if v, ok := os.LookupEnv(key); ok {
+			t.Errorf("env %s still set after Setup (value=%q); unsetBlankOTelEnv must clear blanks for autoexport fallback", key, v)
+		}
+	}
+
+	// TracerProvider ist eine echte SDK-Instanz (kein nil und kein
+	// tracenoop) — Spans werden erzeugt, aber via noopSpanExporter
+	// verworfen. ForceFlush darf keinen Netzwerkfehler werfen.
+	if providers.Tracer == nil {
+		t.Fatal("TracerProvider is nil; cmd/api would crash on Tracer() call")
+	}
+	tracer := providers.Tracer.Tracer(telemetry.TracerName)
+	_, span := tracer.Start(ctx, "tempo-disabled-smoke")
+	if !span.SpanContext().TraceID().IsValid() {
+		t.Errorf("span has invalid TraceID; SDK TracerProvider should mint a real trace_id even when exporter is no-op")
+	}
+	span.End()
+
+	flushCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err := providers.Tracer.ForceFlush(flushCtx); err != nil {
+		t.Errorf("ForceFlush with no-op exporter: expected nil, got %v (would indicate exporter is dialing OTLP)", err)
 	}
 }
 
