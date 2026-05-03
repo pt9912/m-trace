@@ -47,18 +47,18 @@ func TestIngestSequencer_ConcurrentMonotonic(t *testing.T) {
 	close(out)
 
 	seen := make(map[int64]struct{}, total)
-	var max int64
+	var seenMax int64
 	for v := range out {
 		if _, dup := seen[v]; dup {
 			t.Fatalf("duplicate sequence value %d", v)
 		}
 		seen[v] = struct{}{}
-		if v > max {
-			max = v
+		if v > seenMax {
+			seenMax = v
 		}
 	}
-	if max != int64(total) {
-		t.Errorf("max=%d want %d (no gaps means max equals count)", max, total)
+	if seenMax != int64(total) {
+		t.Errorf("seenMax=%d want %d (no gaps means seenMax equals count)", seenMax, total)
 	}
 	if len(seen) != total {
 		t.Errorf("len(seen)=%d want %d", len(seen), total)

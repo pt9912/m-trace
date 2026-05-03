@@ -1,6 +1,7 @@
-// Package persistence holds in-memory storage for the spike. Per
-// docs/spike/0001-backend-stack.md §6.10 there is no on-disk persistence;
-// data does not survive a restart, on purpose.
+// Package inmemory liefert die In-Memory-Variante der Driven-
+// Persistence-Ports (Sessions, Events, Ingest-Sequencer). Sie wird
+// für Tests, lokale Entwicklung ohne SQLite-Volume und für Adapter-
+// Vergleichs-Contract-Tests genutzt; Daten überleben keinen Restart.
 package inmemory
 
 import (

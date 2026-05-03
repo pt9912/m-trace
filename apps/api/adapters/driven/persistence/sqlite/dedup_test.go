@@ -61,7 +61,7 @@ func TestDedupClassification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("query delivery_status: %v", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var got []struct {
 		ingest int64

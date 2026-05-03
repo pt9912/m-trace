@@ -1,3 +1,7 @@
+// Package sqlite liefert die durable Variante der Driven-Persistence-
+// Ports (Sessions, Events, Ingest-Sequencer) gegen die SQLite-Datei
+// aus internal/storage. Application- und Domain-Layer bleiben SQLite-
+// frei und sprechen ausschließlich gegen die Hexagon-Ports (ADR-0002).
 package sqlite
 
 import (
@@ -175,7 +179,7 @@ func (r *EventRepository) ListBySession(ctx context.Context, q driven.EventListQ
 	if err != nil {
 		return driven.EventPage{}, fmt.Errorf("sqlite: query events: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make([]domain.PlaybackEvent, 0, q.Limit)
 	for rows.Next() {

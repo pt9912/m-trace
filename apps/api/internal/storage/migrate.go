@@ -25,6 +25,9 @@ import (
 	"strings"
 	"time"
 
+	// modernc.org/sqlite registriert per init() den "sqlite"-
+	// database/sql-Treiber. Der Blank-Import ist die idiomatische Form
+	// (kein direktes Paket-Symbol nötig), siehe ADR-0002 §8.1.
 	_ "modernc.org/sqlite"
 )
 
@@ -61,16 +64,16 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 		return nil, fmt.Errorf("storage: open %q: %w", path, err)
 	}
 	if err := setPragmas(ctx, db); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, err
 	}
 	sub, err := fs.Sub(embeddedMigrations, "migrations")
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("storage: embed sub: %w", err)
 	}
 	if err := apply(ctx, db, sub); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, err
 	}
 	return db, nil
@@ -204,7 +207,7 @@ func appliedVersions(ctx context.Context, db *sql.DB) (map[int64]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("storage: query schema_migrations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := map[int64]bool{}
 	for rows.Next() {
 		var v int64

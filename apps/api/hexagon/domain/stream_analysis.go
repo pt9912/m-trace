@@ -62,26 +62,26 @@ type StreamAnalysisFinding struct {
 type StreamAnalysisErrorCode string
 
 const (
-	// StreamAnalysisInvalidInput: der Aufrufer hat eine fehlerhafte
-	// Eingabe geliefert (kind/text/url-Form). HTTP 400.
+	// StreamAnalysisInvalidInput meldet eine fehlerhafte Aufrufer-
+	// Eingabe (kind/text/url-Form). HTTP 400.
 	StreamAnalysisInvalidInput StreamAnalysisErrorCode = "invalid_input"
-	// StreamAnalysisManifestNotHLS: das Manifest ist kein HLS-Inhalt.
-	// HTTP 422 — semantisch wohlgeformt, aber inhaltlich nicht
-	// verarbeitbar.
+	// StreamAnalysisManifestNotHLS meldet, dass das Manifest kein
+	// HLS-Inhalt ist. HTTP 422 — semantisch wohlgeformt, aber
+	// inhaltlich nicht verarbeitbar.
 	StreamAnalysisManifestNotHLS StreamAnalysisErrorCode = "manifest_not_hls"
-	// StreamAnalysisFetchBlocked: die übergebene URL wurde vom
-	// SSRF-Schutz abgelehnt (privat/loopback/credentials/scheme).
+	// StreamAnalysisFetchBlocked meldet, dass die übergebene URL vom
+	// SSRF-Schutz abgelehnt wurde (privat/loopback/credentials/scheme).
 	// HTTP 400 — der Aufrufer hat eine unsichere URL geliefert.
 	StreamAnalysisFetchBlocked StreamAnalysisErrorCode = "fetch_blocked"
-	// StreamAnalysisFetchFailed: das URL-Laden ist netzwerk-/status-
-	// /content-type-bedingt fehlgeschlagen. HTTP 502 — wir agieren
-	// als Gateway, Upstream hat versagt.
+	// StreamAnalysisFetchFailed meldet, dass das URL-Laden netzwerk-/
+	// status-/content-type-bedingt fehlgeschlagen ist. HTTP 502 — wir
+	// agieren als Gateway, Upstream hat versagt.
 	StreamAnalysisFetchFailed StreamAnalysisErrorCode = "fetch_failed"
-	// StreamAnalysisManifestTooLarge: geladenes Manifest überschritt
-	// das maxBytes-Limit. HTTP 502.
+	// StreamAnalysisManifestTooLarge meldet, dass das geladene
+	// Manifest das maxBytes-Limit überschritten hat. HTTP 502.
 	StreamAnalysisManifestTooLarge StreamAnalysisErrorCode = "manifest_too_large"
-	// StreamAnalysisInternalError: unerwarteter Fehler im Analyzer
-	// selbst. HTTP 502 (Gateway-Sicht).
+	// StreamAnalysisInternalError meldet einen unerwarteten Fehler
+	// im Analyzer selbst. HTTP 502 (Gateway-Sicht).
 	StreamAnalysisInternalError StreamAnalysisErrorCode = "internal_error"
 )
 

@@ -68,7 +68,7 @@ func TestAnalyzeHandler_Success_URL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status: want 200, got %d", res.StatusCode)
 	}
@@ -101,7 +101,7 @@ func TestAnalyzeHandler_Success_TextWithBaseURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status: want 200, got %d", res.StatusCode)
 	}
@@ -125,7 +125,7 @@ func TestAnalyzeHandler_NullDetailsAreEmittedAsNull(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	body, _ := io.ReadAll(res.Body)
 	if !strings.Contains(string(body), `"details":null`) {
 		t.Errorf("details should be null, got %s", body)
@@ -142,7 +142,7 @@ func TestAnalyzeHandler_RejectsNonJSONContentType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusUnsupportedMediaType {
 		t.Errorf("status: want 415, got %d", res.StatusCode)
 	}
@@ -157,7 +157,7 @@ func TestAnalyzeHandler_RejectsMalformedJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusBadRequest {
 		t.Errorf("status: want 400, got %d", res.StatusCode)
 	}
@@ -183,7 +183,7 @@ func TestAnalyzeHandler_RejectsInvalidRequestShapes(t *testing.T) {
 			if err != nil {
 				t.Fatalf("post failed: %v", err)
 			}
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			if res.StatusCode != http.StatusBadRequest {
 				t.Errorf("status: want 400, got %d", res.StatusCode)
 			}
@@ -205,7 +205,7 @@ func TestAnalyzeHandler_RejectsOversizedBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusRequestEntityTooLarge {
 		t.Errorf("status: want 413, got %d", res.StatusCode)
 	}
@@ -221,7 +221,7 @@ func TestAnalyzeHandler_MapsErrEmptyTo400(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusBadRequest {
 		t.Errorf("status: want 400, got %d", res.StatusCode)
 	}
@@ -237,7 +237,7 @@ func TestAnalyzeHandler_MapsTransportErrorTo502(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusBadGateway {
 		t.Errorf("status: want 502, got %d", res.StatusCode)
 	}
@@ -282,7 +282,7 @@ func TestAnalyzeHandler_MapsDomainErrorsByCode(t *testing.T) {
 			if err != nil {
 				t.Fatalf("post failed: %v", err)
 			}
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			if res.StatusCode != tc.wantStatus {
 				t.Errorf("status: want %d, got %d", tc.wantStatus, res.StatusCode)
 			}
@@ -367,7 +367,7 @@ func TestAnalyzeHandler_RecordsOutcomeMetrics(t *testing.T) {
 			if err != nil {
 				t.Fatalf("post failed: %v", err)
 			}
-			res.Body.Close()
+			_ = res.Body.Close()
 
 			if len(metrics.recorded) != 1 {
 				t.Fatalf("expected exactly one metric record, got %d: %+v", len(metrics.recorded), metrics.recorded)
@@ -389,7 +389,7 @@ func TestAnalyzeHandler_RecordsNothingWhenMetricsNil(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	res.Body.Close()
+	_ = res.Body.Close()
 	// Kein Panic — der Handler verträgt nil-Metrics.
 }
 
@@ -406,7 +406,7 @@ func TestAnalyzeHandler_DomainErrorWithoutDetailsOmitsDetails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	body, _ := io.ReadAll(res.Body)
 	if strings.Contains(string(body), `"details"`) {
 		t.Errorf("body should omit details key when domain error has none: %s", body)

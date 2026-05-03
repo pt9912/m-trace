@@ -17,6 +17,9 @@ import "time"
 // Sweeper später entscheidet.
 type SessionState string
 
+// Session-Lifecycle-Zustände aus plan-0.1.0.md §5.1 Sub-Item 8.
+// `Active` ist der Eintrittszustand beim ersten Event; `Stalled` und
+// `Ended` werden vom Sweeper gesetzt (siehe SessionsSweeper).
 const (
 	SessionStateActive  SessionState = "active"
 	SessionStateStalled SessionState = "stalled"

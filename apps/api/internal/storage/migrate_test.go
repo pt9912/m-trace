@@ -332,7 +332,7 @@ func allMigrationRows(ctx context.Context, db *sql.DB) ([]migrationRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []migrationRow
 	for rows.Next() {
 		var r migrationRow
@@ -351,7 +351,7 @@ func tableNames(t *testing.T, db *sql.DB) []string {
 	if err != nil {
 		t.Fatalf("query tables: %v", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []string
 	for rows.Next() {
 		var n string

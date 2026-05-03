@@ -104,7 +104,7 @@ func (h *HTTPStreamAnalyzer) AnalyzeManifest(ctx context.Context, req domain.Str
 	if err != nil {
 		return domain.StreamAnalysisResult{}, fmt.Errorf("call analyzer-service: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	limited := io.LimitReader(resp.Body, h.maxResponseSize+1)
 	raw, err := io.ReadAll(limited)

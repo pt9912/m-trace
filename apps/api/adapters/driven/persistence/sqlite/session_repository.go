@@ -254,7 +254,7 @@ func (r *SessionRepository) List(ctx context.Context, q driven.SessionListQuery)
 	if err != nil {
 		return driven.SessionPage{}, fmt.Errorf("sqlite: query sessions: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make([]domain.StreamSession, 0, q.Limit)
 	for rows.Next() {
