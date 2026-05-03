@@ -255,6 +255,9 @@ Cursor-Reuse müssen `X-MTrace-Token` erfolgreich auf ein `project_id`
 auflösen. Fehlender oder ungültiger Token liefert `401 Unauthorized`.
 Der aufgelöste `project_id` ist Filter für alle Read-Pfade; Cursor aus
 einem Project dürfen nicht für ein anderes Project akzeptiert werden.
+SSE-Read-Pfade aus Tranche 4 folgen derselben Auth-Regel; ihre
+Preflight-Routen müssen `GET, OPTIONS` und die Header `X-MTrace-Token`
+und `X-MTrace-Project` erlauben.
 
 **Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
 

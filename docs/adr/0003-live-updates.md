@@ -114,6 +114,9 @@ ist:
   Streams werden im Dashboard über einen fetch-basierten SSE-Client/Polyfill
   geöffnet, weil native Browser-`EventSource` keine `X-MTrace-Token`-Header
   setzen kann.
+- Lifecycle-Updates ohne Playback-Event, z. B. Sweeper-Ende, brauchen für
+  SSE-Backfill eine eigene durable Session-Update-Sequenz oder werden bewusst
+  nur über REST-Polling sichtbar gemacht.
 - Heartbeat-Kommentare halten lokale Proxies und Browser-Verbindungen frisch.
 
 ## 8. Offene Punkte für die `0.4.0`-Tranche
