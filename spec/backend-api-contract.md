@@ -16,7 +16,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 ## 1. Verbindliche Identifier
 
 - **HTTP-Header**:
-  - `X-MTrace-Token` — **Pflicht** (Auth, siehe §4)
+  - `X-MTrace-Token` — Auth-Token; Pflicht je Endpoint gemäß §4.
   - `X-MTrace-Project` — reserviert für CORS-Allowlist und spätere
     strengere Project-Bindung; `project_id` kommt im aktuellen
     Wire-Format aus dem Payload.
@@ -359,10 +359,10 @@ trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
   Schlüssel ist `project_id`, Wert ist das erwartete Token.
 
 - Regeln:
-  - Fehlt `X-MTrace-Token` → `401 Unauthorized`.
-  - Token ungültig → `401 Unauthorized`.
-  - `project_id` im Event passt nicht zum Token → `401 Unauthorized`.
-  - `project_id` im Event ist nicht in der Map → `401 Unauthorized`.
+  - Fehlt ein nach Matrix pflichtiger `X-MTrace-Token` → `401 Unauthorized`.
+  - Ein nach Matrix ausgewerteter Token ist ungültig → `401 Unauthorized`.
+  - `project_id` im Event oder Link-Kontext passt nicht zum Token → `401 Unauthorized`.
+  - `project_id` im Event oder Link-Kontext ist nicht in der Map → `401 Unauthorized`.
 
 - Dynamische Project-Verwaltung und Endpunkte zum Anlegen oder Rotieren
   von Tokens sind nicht Teil dieses Kontrakts.
@@ -371,10 +371,11 @@ trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
 
 ## 5. Validierungsregeln und Fehlerfälle
 
-Reihenfolge der Validierung pro Request (Implementierungen müssen sich daran
-halten, damit die Pflichttests deterministisch sind):
+Reihenfolge der Validierung für tokenpflichtige Requests (Implementierungen
+müssen sich daran halten, damit die Pflichttests deterministisch sind):
 
-1. **Auth-Header**: `X-MTrace-Token` fehlt → `401 Unauthorized`. Diese
+1. **Auth-Header**: ein nach §4 pflichtiger `X-MTrace-Token` fehlt →
+   `401 Unauthorized`. Diese
    Prüfung läuft im HTTP-Adapter, vor dem Body-Read, damit
    unauthentifizierte Requests einen Fast-Reject-Pfad erhalten und
    keine Body-Bandbreite konsumieren.
@@ -397,7 +398,7 @@ halten, damit die Pflichttests deterministisch sind):
 
 | Bedingung | Status |
 |---|---:|
-| Auth-Header fehlt                        | `401` |
+| Pflichtiger Auth-Header fehlt            | `401` |
 | Body > 256 KB (mit Auth-Header)          | `413` |
 | Token unbekannt                          | `401` |
 | `project_id`/Token-Mismatch              | `401` |
@@ -408,9 +409,9 @@ halten, damit die Pflichttests deterministisch sind):
 | Event ohne Pflichtfeld                   | `422` |
 | Valider Batch                             | `202` |
 
-Folge der Auth-vor-Body-Reihenfolge: ein Request **ohne** Auth-Header
-und mit Body > 256 KB liefert `401`, **nicht** `413` (siehe Pflichttest
-in §11).
+Folge der Auth-vor-Body-Reihenfolge: ein tokenpflichtiger Request
+**ohne** Auth-Header und mit Body > 256 KB liefert `401`, **nicht**
+`413` (siehe Pflichttest in §11).
 
 Der `traceparent`-Header (siehe §1) ist **nicht** Teil dieser
 Validierungs-Reihenfolge: ein ungültiger Wert führt nie zu `4xx`,
