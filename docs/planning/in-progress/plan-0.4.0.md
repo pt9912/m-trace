@@ -166,9 +166,28 @@ DoD:
 
 Bezug: RAK-29; RAK-35; Lastenheft §7.10/§7.11; Telemetry-Model §2/§3/§5; API-Kontrakt §8.
 
-Ziel: Player-Sessions werden konsistent als Trace-Konzept modelliert. OTel-Spans und gespeicherte Events teilen stabile Korrelations-IDs, ohne Prometheus-Cardinality-Regeln zu verletzen.
+Ziel: Player-Sessions werden konsistent als Trace-Konzept modelliert. OTel-Spans und gespeicherte Events teilen stabile Korrelations-IDs, ohne Prometheus-Cardinality-Regeln zu verletzen. Das Pflichtziel ist **Tempo-unabhängig**: Dashboard- und API-Read-Pfade müssen auch ohne aktives Trace-Backend eine Session über `correlation_id` rekonstruieren können. OTel/Tempo ist in dieser Tranche nur Debug-Vertiefung über `trace_id`, nicht Source-of-Truth.
 
 Tranche 2 ist in vier aufeinander aufbauende Sub-Tranchen geschnitten: §3.1 fixiert die Spec-Grundlagen vor jedem Code, §3.2 baut die Server-Korrelation (Spans, Persistenz, Validierung), §3.3 die SDK-Wire-Format-Erweiterung, §3.4 die Tests und finalisiert die Doku.
+
+Abnahmegrenzen für die gesamte Tranche:
+
+- **Source-of-Truth:** `stream_sessions.correlation_id` ist der stabile Session-Zusammenhang; `playback_events.correlation_id` muss dazu passen. `trace_id` ist batch-/span-bezogen und darf zwischen Batches derselben Session wechseln.
+- **Wire-Kompatibilität:** Payload-Schema bleibt `1.0`; der optionale `traceparent`-Header ist additiv. SDKs ohne Header, SDKs mit gültigem Header und SDKs mit kaputtem Header müssen denselben Event-Annahme-Pfad behalten.
+- **Observability-Grenze:** `trace_id`, `span_id`, `correlation_id`, `session_id`, URLs und User-Agent bleiben Prometheus-Label-tabu. Falls sie auftauchen, ist das ein Release-Blocker und muss vor Tranche 8 behoben werden.
+- **Tempo-Unabhängigkeit:** Tests dürfen kein externes Tempo/OTLP-Backend benötigen. Tempo-Integration wird erst in Tranche 5 optional verdrahtet.
+- **Rest-Risiko:** Der bekannte `correlation_id`-Race bei paralleler Erstanlage derselben `session_id` ist als R-6 im Risiken-Backlog geführt. Er blockiert Tranche 2 nicht, solange §3.4c die Doku-Grenze klar benennt und Tranche 8 keine beobachtete Inkonsistenz findet.
+
+Liefer-/Abnahme-Matrix:
+
+| Sub-Tranche | Ergebnis | Harte Abnahme | Status |
+|---|---|---|---|
+| §3.1 | Normativer Vertrag für Trace-ID, `correlation_id`, Span-Attribute und Defensive Parsing | Spec enthält keine impliziten Entscheidungen mehr für §3.2/§3.3 | ✅ |
+| §3.2 | Server erzeugt/persistiert `trace_id`, `span_id`, `correlation_id` und Span-Attribute | Backend- und Adapter-Tests laufen ohne externes Trace-Backend | ✅ mit Rest-Drift `mtrace.project.id` |
+| §3.3 | SDK kann optional `traceparent` senden | Kein Payload-/Schema-Bruch; Provider-Fehler sabotieren `send` nicht | ✅ mit nachgezogenem Snapshot-/Spec-Fix |
+| §3.4a | Backend-Trace-Konsistenz abgesichert | Multi-Batch, Missing/Invalid Header, Session-Ende, Time-Skew, NoOp-Tracer getestet | ✅ |
+| §3.4b | SDK↔Server-Cross-Cutting-Lücken geschlossen | Pre-§3.2-Backend-Kompat und Garbage-Traceparent-Pfad getestet | ✅ |
+| §3.4c | Doku-/Roadmap-Closeout | Spec-Drift geschlossen, Roadmap Schritt 31 ✅, Tranche 2 als abgeschlossen markierbar | ⬜ |
 
 ### 3.1 Spec-Vorarbeit (Doku-only, kein Code)
 
@@ -300,14 +319,25 @@ DoD:
 
 Bezug: §3.1–§3.3; §3.4a–§3.4b.
 
-Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 31 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten.
+Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 31 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing) und aus dem §3.2-Review (`mtrace.project.id`-Drift, R-6-Risikogrenze) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten, ohne dass Tranche 3 Trace-Grundsatzfragen erneut entscheiden muss.
+
+Closeout-Regeln:
+
+- §3.4c ist Doku-/Plan-Closeout, kein Release-Bump. `PLAYER_SDK_VERSION`, Root-Versionen und `CHANGELOG.md` bleiben Tranche-8-Arbeit.
+- Normative Aussagen stehen in `spec/telemetry-model.md`, `spec/backend-api-contract.md` und `spec/player-sdk.md`; dieser Plan referenziert nur Lieferstand, Commit und Restgrenzen.
+- Wenn Code und Spec voneinander abweichen, muss §3.4c entweder den Code nachziehen oder die Spec bewusst korrigieren/deferieren. Eine bekannte Abweichung darf nicht nur im Fließtext stehen.
 
 DoD:
 
 - [ ] Header-Casing/Whitespace-Kommentar (aus §3.3-Review, Anmerkung #5): kurze Notiz in `spec/backend-api-contract.md` §1, dass der Server `traceparent` case-insensitiv liest (HTTP-Header-Standard) und führende/abschließende Whitespaces toleriert; SDK schreibt lowercased `traceparent`.
-- [ ] `spec/telemetry-model.md` ist final konsistent mit Code (Hybrid-Strategie, Span-Attribute, Time-Skew, Sampling); §3.1-Entscheidungen sind festgeschrieben.
-- [ ] `spec/backend-api-contract.md` §3 / §3.7 reflektiert das `traceparent`-Header-Verhalten und die neuen Read-Felder `trace_id`/`correlation_id`.
+- [ ] `mtrace.project.id`-Drift geschlossen: entweder Code setzt das Span-Attribut auf dem Erfolgs-Span aus dem finalen Project-Resolver-Wert **inklusive Test**, oder `spec/telemetry-model.md` stuft das Attribut für `0.4.0` explizit als deferred/optional ein und verweist auf ein Backlog-Item. Der aktuelle Zwischenstand aus §3.2 darf nicht als stiller Widerspruch bleiben.
+- [ ] `spec/telemetry-model.md` ist final konsistent mit Code: Hybrid-Strategie, ein Server-Span pro Batch, Persistenzquelle pro Feld, Time-Skew nur als Span-Attribut, Sampling-Auswirkung und Prometheus-Cardinality-Grenzen sind in einem zusammenhängenden Abschnitt festgeschrieben.
+- [ ] `spec/backend-api-contract.md` §1 / §3 / §3.7 reflektiert das ausgelieferte Header-Verhalten und die neuen Read-Felder: `trace_id` nullable und batch-bezogen, `correlation_id` pro Session stabil, `span_id` nur als technisches Event-Feld falls im Read-Pfad offengelegt; Fehlerklassifikation bleibt unverändert bei 202/4xx aus dem normalen Event-Vertrag.
+- [ ] `spec/player-sdk.md` bleibt synchron zum tatsächlichen SDK-Verhalten aus `f7dcdb9`: Provider wird pro Send aufgerufen, `undefined`/`""`/Non-String/Throw schicken keinen Header, Throw/Non-String warnen höchstens einmal pro `HttpTransport`-Instanz, Garbage-String wird als String unverändert weitergereicht.
+- [ ] R-6 (`correlation_id`-Race) ist im Plan-Closeout referenziert: nicht blockierend für Tranche 2, aber als explizite Restgrenze für Tranche 8/operative Beobachtung geführt. Falls vor Tranche 8 ein Mismatch zwischen `stream_sessions.correlation_id` und `playback_events.correlation_id` beobachtet wird, wird R-6 release-blocking.
+- [ ] Test-/Review-Gate für den Closeout ist dokumentiert: mindestens `make workspace-lint` plus die relevanten Backend-/SDK-Test-Slices aus §3.4a/§3.4b. Grund: §3.3 hat gezeigt, dass Snapshot- und Spec-Drift nicht durch `make workspace-test` allein auffallen.
 - [ ] `docs/planning/in-progress/roadmap.md` Schritt 31 ist auf ✅ gesetzt; Status-Header und Verweis auf den Tranche-2-Closeout-Stand sind aktualisiert.
+- [ ] Dieser Plan ist nach dem Closeout aktualisiert: Status-Header oben nennt Tranche 2 vollständig abgeschlossen, Tabelle in §1 markiert Tranche 2 ✅, §3.4c-DoD-Items tragen Commit-Hash, und Tranche 3 bleibt der nächste offene Trace-Korrelationsschritt.
 
 ---
 
