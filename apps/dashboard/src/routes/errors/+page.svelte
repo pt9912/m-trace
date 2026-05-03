@@ -47,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each errors as event}
+        {#each errors as event (`${event.session_id}:${event.ingest_sequence}`)}
           <tr>
             <td>{formatTime(event.server_received_at)}</td>
             <td>{event.event_name}</td>

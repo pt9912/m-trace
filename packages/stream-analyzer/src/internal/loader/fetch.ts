@@ -133,7 +133,7 @@ async function executeFetch(
   controller: AbortController,
   timedOutBox: { value: boolean },
   hop: number
-): ReturnType<LoaderRuntime["fetch"]> {
+): Promise<Awaited<ReturnType<LoaderRuntime["fetch"]>>> {
   try {
     return await options.runtime.fetch(rawUrl, {
       signal: controller.signal,

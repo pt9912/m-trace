@@ -78,7 +78,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each visibleEvents as event}
+        {#each visibleEvents as event (`${event.session_id}:${event.ingest_sequence}`)}
           <tr>
             <td>{formatTime(event.server_received_at)}</td>
             <td>{event.event_name}</td>

@@ -75,10 +75,14 @@ paketspezifische Ergänzungen:
 | `apps/dashboard` | `svelte-check`, ESLint (inkl. `eslint-plugin-svelte`) | Komplexitäts-/Funktionslängen-Profil + Svelte-spezifische Regeln (`require-each-key`, `no-at-html-tags` etc.) |
 | `apps/analyzer-service` | `tsc --noEmit`, ESLint | Komplexitäts-/Funktionslängen-Profil + Node-globals |
 
-Schwellen (in `eslint.config.shared.mjs` zentral, identisch zur
-Go-Linie aus §1.2): `complexity` 15, `max-lines-per-function` 100/60
-(skipBlanks/skipComments), `max-statements` 30, `max-depth` 4,
-`max-nested-callbacks` 3.
+Schwellen (in `eslint.config.shared.mjs` zentral): `complexity` 15,
+`max-lines-per-function` 100 (skipBlanks/skipComments),
+`max-statements` 30, `max-depth` 4, `max-nested-callbacks` 3.
+Die `complexity`-/Lines-Schwellen spiegeln die Go-Linie aus §1.2;
+`max-statements` ist mit 30 strikter als Go's `funlen.statements: 60`,
+weil TypeScript-Funktionen typischerweise über implizite
+Promise-Chains und Type-Narrowing-Statements wachsen — ein engerer
+Statement-Budget wirkt designseitig.
 
 `//eslint-disable`-Pragmas bleiben analog zur Go-Linie ausgeschlossen.
 Pro-Scope-Carveouts (Tests, Skripte, dokumentierte Sonderzonen wie die

@@ -88,7 +88,11 @@ vi.mock("$lib/api", () => ({
     }
     return {
       session: apiState.sessions.find((session) => session.session_id === sessionId) ?? apiState.sessions[0],
-      events: apiState.events
+      // Production-faithful: jede Session liefert nur ihre eigenen
+      // Events. Vor diesem Fix lieferte der Mock dasselbe Array für
+      // jede sessionId, was die events/errors-Pages mit künstlichen
+      // Cross-Session-Duplikaten konfrontierte.
+      events: apiState.events.filter((event) => event.session_id === sessionId)
     };
   }),
   isErrorEvent: vi.fn((event: { event_name: string }) => event.event_name.includes("error") || event.event_name.includes("warning")),
@@ -216,7 +220,7 @@ describe("dashboard route components", () => {
     expect(await screen.findAllByText("playback_error")).not.toHaveLength(0);
     await fireEvent.change(screen.getByLabelText("Event type filter"), { target: { value: "rebuffer_started" } });
 
-    expect(screen.getByText("2 of 4 loaded")).toBeTruthy();
+    expect(screen.getByText("1 of 2 loaded")).toBeTruthy();
     expect(screen.getAllByText("rebuffer_started")).not.toHaveLength(0);
   });
 

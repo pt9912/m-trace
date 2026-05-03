@@ -278,7 +278,7 @@ function parseExtInf(payload: string, lineIdx: number): PendingExtInf {
   const titlePart = commaIdx === -1 ? undefined : payload.slice(commaIdx + 1).trim();
   const duration = parseFloatAttr(durationPart);
   return {
-    duration: duration === null ? null : duration,
+    duration,
     ...(titlePart !== undefined && titlePart.length > 0 ? { title: titlePart } : {}),
     tagLine: lineIdx,
     raw: payload

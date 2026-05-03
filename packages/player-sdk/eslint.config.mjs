@@ -17,11 +17,7 @@ export default [
   }),
   {
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        // tsup-Build-Marker für tree-shaking (nicht als globals genutzt,
-        // aber lint-anfreundlich, falls je referenziert).
-      },
+      globals: globals.browser,
     },
   },
 ];

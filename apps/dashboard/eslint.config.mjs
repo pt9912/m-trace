@@ -36,6 +36,9 @@ export default [
       globals: globals.browser,
     },
   },
+  // Browser-globals für TS-Files (z. B. src/lib/api.ts nutzt fetch()).
+  // Überschreibt nicht den Test-Carveout aus shared, der für
+  // `**/*.test.ts`/`tests/**` Vitest- und Node-globals einsetzt.
   {
     files: ['**/*.ts'],
     languageOptions: {
@@ -45,30 +48,19 @@ export default [
 
   // Carveout: SvelteKit-2.21+ hat eine type-safe Routing-API mit
   // `resolve('/sessions/[id]', { id })` aus `$app/paths`. Die
-  // Migration aller dynamischen Pfade ist eigene Folge-Arbeit
-  // (Roadmap-Item TBD); aktuell deployment-irrelevant, weil die App
-  // ohne base-path läuft. Re-aktivieren, sobald die Migration als
-  // eigener Workstream geplant ist.
+  // Migration aller heute existierenden Routen-Anchors ist eigene
+  // Folge-Arbeit (Roadmap-Item TBD); aktuell deployment-irrelevant,
+  // weil die App ohne base-path läuft.
+  //
+  // Bewusst eng auf `routes/**` gefasst: neue Svelte-Komponenten
+  // außerhalb der Routen-Hierarchie (z. B. künftige shared
+  // Components in src/lib/) bleiben default-strict, damit der
+  // Migration-Backlog nicht stillschweigend weiterwächst.
   {
-    files: ['**/*.svelte'],
+    files: ['**/routes/**/*.svelte'],
     rules: {
       'svelte/no-navigation-without-resolve': 'off',
     },
   },
 
-  // Carveout: events- und errors-Page aggregieren Events aus
-  // mehreren Sessions per flatMap und werden bei jedem Refresh
-  // komplett neu gerendert. Positional reconciliation ist hier
-  // korrekt — eine Identitäts-basierte Key-Strategie würde nichts
-  // gewinnen (kein In-Place-Sort, keine Inline-Edits) und in
-  // bestehenden Tests fehlschlagen, weil das httpStub-Mock dasselbe
-  // Events-Array für mehrere getSession-Aufrufe liefert. Andere
-  // each-Blöcke in der App (Sessions-Liste, Filter-Dropdowns,
-  // Status-Liste) sind keyed.
-  {
-    files: ['**/routes/events/**/*.svelte', '**/routes/errors/**/*.svelte'],
-    rules: {
-      'svelte/require-each-key': 'off',
-    },
-  },
 ];
