@@ -143,6 +143,42 @@ func TestHTTP_Span_TraceParent_LeadingTrailingWhitespace(t *testing.T) {
 	}
 }
 
+// TestHTTP_Span_DoesNotSetSessionIDAttribute zurrt das
+// `session_id`-Span-Attribut-Verbot fest (plan-0.4.0.md §3.4c, Item
+// #4 / spec/telemetry-model.md §2.5). Ab `0.4.0` setzt der Server in
+// keinem Span das `session_id`-Attribut (weder in `mtrace.session.id`
+// noch unter dem rohen Schlüssel `session_id`); Single-Session-Suche
+// in Traces läuft ausschließlich über `mtrace.session.correlation_id`,
+// damit Span-Attribute keine pseudonymen IDs an Tempo exponieren.
+func TestHTTP_Span_DoesNotSetSessionIDAttribute(t *testing.T) {
+	t.Parallel()
+
+	recorder := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	defer func() { _ = tp.Shutdown(context.Background()) }()
+
+	srv := newTestServerWithTracerProvider(t, tp)
+
+	resp := postWithHeaders(t, srv, "demo-token", validBody, nil)
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", resp.StatusCode)
+	}
+
+	spans := recorder.Ended()
+	if len(spans) != 1 {
+		t.Fatalf("expected 1 span, got %d", len(spans))
+	}
+	attrs := attrMap(spans[0].Attributes())
+	for _, banned := range []string{"session_id", "mtrace.session.id", "mtrace.session_id"} {
+		if v, present := attrs[banned]; present {
+			t.Errorf("span attribute %q is forbidden in 0.4.0; got %v — Single-Session-Suche must run over mtrace.session.correlation_id only", banned, v)
+		}
+	}
+	if _, present := attrs["mtrace.session.correlation_id"]; !present {
+		t.Error("mtrace.session.correlation_id must be present on a Single-Session-Batch (sanity-check that the test fixture really triggers the Single-Session path)")
+	}
+}
+
 // TestHTTP_Span_SingleSessionBatch_SetsCorrelationID verifiziert,
 // dass für einen Single-Session-Batch die Span-Attribute
 // `mtrace.session.correlation_id` (UUIDv4-geformt),

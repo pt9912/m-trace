@@ -218,7 +218,7 @@ Meta-Keys mit String-Werten, die als absolute URL parsebar sind oder
 
 Span-Attribute folgen [OTel HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/) wo anwendbar; m-trace-spezifische Erweiterungen nutzen den Namespace `mtrace.*` oder `batch.*`.
 
-Vor `0.4.0` durften `session_id`, `user_agent` und `segment_url` als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute). Ab `0.4.0` setzt der HTTP-Span auf `POST /api/playback-events` keine `session_id` mehr; Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id` (siehe §2.5).
+Vor `0.4.0` durften `session_id`, `user_agent` und `segment_url` als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute). Ab `0.4.0` setzt der Server in **keinem** OTel-Span ein `session_id`-Attribut; Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id` (verbindlicher Vertrag in §2.5; Test-Anker `TestHTTP_Span_DoesNotSetSessionIDAttribute`). Diese Verschärfung gilt nicht nur für den `POST /api/playback-events`-Span, sondern für alle vom Server erzeugten Spans im `apps/api`-Pfad.
 
 ### 2.2 Counter
 
@@ -284,7 +284,7 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 
 | Attribut | Pflicht | Wertebereich | Bedeutung |
 |---|---|---|---|
-| `mtrace.project.id` | ja | Allowlist aus dem Use-Case-Resolver | identifiziert das Project |
+| `mtrace.project.id` | Pflicht für accepted Batches und für jeden Pfad, in dem der Use-Case-Resolver ein Project erfolgreich aufgelöst hat; **bewusst unset** für Rejects vor Project-Auflösung (z. B. `auth_error` durch fehlenden/ungültigen Token) | Allowlist aus dem Use-Case-Resolver | identifiziert das Project; Test-Anker `TestHTTP_Span_SingleSessionBatch_SetsCorrelationID` |
 | `mtrace.batch.size` | ja | int ≥ 0 | Anzahl Events im Batch |
 | `mtrace.batch.outcome` | ja | `accepted`, `invalid`, `rate_limited`, `auth_error`, `too_large`, `error` | Klassifikation des HTTP-Outcomes; Mapping zu API-Kontrakt §5 unten |
 | `mtrace.batch.session_count` | ja | int ≥ 0 | Anzahl distinkter `session_id` im Batch |
@@ -292,7 +292,7 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 | `mtrace.trace.parse_error` | optional | Boolean | gesetzt, wenn `traceparent` ungültig war |
 | `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3) |
 
-`session_id` selbst ist **nicht** als Span-Attribut gesetzt — pseudonyme ID, deren Trace-Sichtbarkeit über `correlation_id` läuft. (Die §2.1-Aussage „`session_id` darf als Span-Attribut verwendet werden" gilt für `0.1.x` weiter; ab `0.4.0` zieht der Use-Case `correlation_id` als Span-Repräsentanten vor.)
+**`session_id`-Span-Attribut-Verbot.** Ab `0.4.0` setzt der Server in **keinem** OTel-Span ein `session_id`-Attribut (weder unter dem rohen Schlüssel `session_id` noch in den Varianten `mtrace.session.id` / `mtrace.session_id`). Single-Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id`. Die historische Aussage aus §2.1, dass `session_id` als Span-Attribut zulässig sei, gilt **nur** für `0.1.x` und ist nicht Teil des Tranche-2-Vertrags. Test-Anker: `TestHTTP_Span_DoesNotSetSessionIDAttribute`.
 
 **Outcome → HTTP-Status-Mapping** (Validierungs-Reihenfolge aus API-Kontrakt §5):
 

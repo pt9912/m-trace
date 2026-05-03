@@ -153,21 +153,34 @@ const tracker = createTracker({
 
 Format des Header-Werts: `00-<trace_id 32 hex>-<parent_id 16 hex>-<flags 2 hex>`
 (W3C [Trace Context](https://www.w3.org/TR/trace-context/)). Das SDK
-validiert den Wert **nicht**: ein vom Provider gelieferter Müllstring
-landet beim Server, der ihn als Parse-Error markiert
-(`mtrace.trace.parse_error=true`) und zur eigenen Trace-ID zurückfällt.
+validiert den Wert **nicht**: ein vom Provider gelieferter, nicht-leerer
+Müllstring wird unverändert als `traceparent`-Header gesendet — der
+Server markiert ihn als Parse-Error (`mtrace.trace.parse_error=true`)
+und fällt auf seine eigene Trace-ID zurück.
 
-Der Provider muss **synchron** antworten — er wird im Hot Path direkt
-vor `fetch()` aufgerufen. Provider-Throws und Non-String-Rückgaben
-werden im SDK gefangen, der Batch geht trotzdem raus — Tracing darf den
-Event-Pfad nicht sabotieren. Der Default-`HttpTransport` loggt den
-Fehlfall **einmal pro Instanz** via `console.warn`, damit
-Fehlkonfigurationen (etwa ein versehentlich `Promise<string>`
-liefernder Provider) sichtbar werden; weitere Fehler derselben Instanz
-bleiben still. Tests können die Warnung über
-`HttpTransportOptions.silent` unterdrücken. Abwärtskompatibel mit
-Backends < `0.4.0`: ältere Server ignorieren unbekannte Header
-(HTTP-Standard).
+Der Provider wird **pro Send synchron** aus dem Default-`HttpTransport`
+aufgerufen (kein Caching zwischen Sends, kein Promise-Wrapping). Aus
+seiner Rückgabe leitet sich genau eine der folgenden Verhaltensweisen
+ab:
+
+| Provider-Rückgabe / -Verhalten | `traceparent`-Header | `console.warn` |
+|---|---|---|
+| nicht-leerer String | gesetzt auf den Rückgabewert (1:1, ohne Validierung) | nein |
+| `undefined` | nicht gesetzt (dokumentiertes Opt-out, kein Fehler) | nein |
+| `""` (leerer String) | nicht gesetzt (dokumentiertes Opt-out-Sentinel) | nein |
+| Non-String-Wert (z. B. `Promise`, `null`, `number`) | nicht gesetzt | einmal pro `HttpTransport`-Instanz |
+| Throw / Exception | nicht gesetzt | einmal pro `HttpTransport`-Instanz |
+
+Der `console.warn` läuft genau einmal pro `HttpTransport`-Instanz, damit
+Fehlkonfigurationen (etwa ein versehentlich `Promise<string>` liefernder
+Provider) sichtbar werden, ohne den Hot Path bei jedem Send mit Logs zu
+fluten. Weitere Fehler derselben Instanz bleiben still. Tests können
+die Warnung über `HttpTransportOptions.silent` unterdrücken. In allen
+Fällen geht der Batch-Send unverändert weiter — Tracing darf den
+Event-Pfad nicht sabotieren.
+
+Abwärtskompatibel mit Backends < `0.4.0`: ältere Server ignorieren
+unbekannte Header (HTTP-Standard).
 
 ## OpenTelemetry-Vorbereitung
 
