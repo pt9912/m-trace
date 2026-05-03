@@ -155,12 +155,19 @@ Session-Bindung tragen:
 }
 ```
 
-`correlation_id` hat Vorrang vor `session_id`. Wenn beide Felder
-gesetzt sind, muss `session_id` zur Session mit dieser
-`correlation_id` auflösen; bei Mismatch bleibt das Analyzer-Ergebnis
-eine unabhängige Manifestanalyse und wird nicht in die Player-Timeline
-gemischt. Die API bleibt `200 OK`, wechselt ab Tranche 3 aber auf eine
-Hülle:
+Verlinkung ist nur mit gültigem Project-Kontext erlaubt. Ein Request,
+der `correlation_id` oder `session_id` setzt, muss `X-MTrace-Token`
+erfolgreich auf ein `project_id` auflösen (und später, falls aktiv,
+`X-MTrace-Project` konsistent dazu liefern). Ohne gültigen
+Project-Kontext bleibt die Analyse `detached`; es erfolgt kein
+Session-Lookup.
+
+`correlation_id` hat innerhalb dieses Project-Kontexts Vorrang vor
+`session_id`. Wenn beide Felder gesetzt sind, muss `session_id` im
+gleichen Project zur Session mit dieser `correlation_id` auflösen; bei
+Mismatch bleibt das Analyzer-Ergebnis eine unabhängige Manifestanalyse
+und wird nicht in die Player-Timeline gemischt. Die API bleibt
+`200 OK`, wechselt ab Tranche 3 aber auf eine Hülle:
 
 ```json
 {
@@ -174,7 +181,9 @@ Hülle:
 Fallback zulässig, wenn sie auf eine bestehende oder bereits
 selbst-geheilte Session auflösbar ist. Eine unbekannte `session_id`
 erzeugt keine neue Session und liefert `not_found_detached`. Ohne beide
-Felder ist die Analyse bewusst session-los (`detached`). Diese
+Felder oder ohne gültigen Project-Kontext ist die Analyse bewusst
+session-los (`detached`). Alle Link-Lookups verwenden
+`(project_id, correlation_id)` bzw. `(project_id, session_id)`. Diese
 Bindungsfelder ändern das Analyzer-`AnalysisResult` nicht; sie steuern
 nur die optionale Dashboard-/Timeline-Verknüpfung.
 

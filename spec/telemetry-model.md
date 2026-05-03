@@ -96,8 +96,9 @@ Timeline-only-Ereignis ohne OTel-Span umgesetzt werden.
 
 Wenn der Browser-/Native-HLS-Pfad gar kein Manifest-/Segment-Signal
 liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. Die
-Session-/Dashboard-Sicht markiert diese Grenze außerhalb des
-Event-Streams als `network_signal_absent`.
+Session-API/Persistenz markiert diese Grenze außerhalb des Event-
+Streams als `network_signal_absent`; Dashboard-Sichtbarkeit wird im
+`plan-0.4.0.md` Tranche-4-Scope umgesetzt.
 
 URL-Redaction für `meta.network.*`-URL-Repräsentanten folgt einer
 festen Matrix: Scheme, Host und nicht-sensitive Pfadsegmente dürfen
