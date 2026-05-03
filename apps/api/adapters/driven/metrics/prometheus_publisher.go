@@ -195,45 +195,41 @@ func (p *PrometheusPublisher) AnalyzeRequest(outcome, code string) {
 	p.analyzeRequests.WithLabelValues(normalizeOutcome(outcome), normalizeAnalyzeCode(code)).Inc()
 }
 
-// knownAnalyzeOutcomes definiert die abgeschlossene Outcome-Domäne
-// für `mtrace_analyze_requests_total`.
-var knownAnalyzeOutcomes = map[string]struct{}{
-	"ok":    {},
-	"error": {},
-}
-
-// knownAnalyzeCodes definiert die abgeschlossene Code-Domäne für
-// `mtrace_analyze_requests_total`. API-Eingabe-Codes
-// (`invalid_request`, `invalid_json`, …) plus alle
-// `domain.StreamAnalysisErrorCode`-Werte plus `analyzer_unavailable`
-// (Transport) sind erlaubt; alles andere fällt auf "_unknown".
-var knownAnalyzeCodes = map[string]struct{}{
-	"ok":                     {},
-	"invalid_request":        {},
-	"invalid_json":           {},
-	"unsupported_media_type": {},
-	"payload_too_large":      {},
-	"invalid_input":          {},
-	"manifest_not_hls":       {},
-	"fetch_blocked":          {},
-	"fetch_failed":           {},
-	"manifest_too_large":     {},
-	"internal_error":         {},
-	"analyzer_unavailable":   {},
-}
-
+// normalizeOutcome bildet einen Outcome-Wert auf die abgeschlossene
+// Domäne {"ok","error"} ab; alles andere fällt auf "_unknown" (Cardinality-
+// Defense-in-Depth, falls je ein Aufrufer einen unklassifizierten Wert
+// übergibt — Spec §7).
 func normalizeOutcome(value string) string {
-	if _, ok := knownAnalyzeOutcomes[value]; ok {
+	switch value {
+	case "ok", "error":
 		return value
+	default:
+		return "_unknown"
 	}
-	return "_unknown"
 }
 
+// normalizeAnalyzeCode bildet einen Code-Wert auf die abgeschlossene
+// Code-Domäne von `mtrace_analyze_requests_total` ab (API-Eingabe-Codes
+// + alle `domain.StreamAnalysisErrorCode`-Werte + `analyzer_unavailable`
+// als Transport-Fall); alles andere fällt auf "_unknown".
 func normalizeAnalyzeCode(value string) string {
-	if _, ok := knownAnalyzeCodes[value]; ok {
+	switch value {
+	case "ok",
+		"invalid_request",
+		"invalid_json",
+		"unsupported_media_type",
+		"payload_too_large",
+		"invalid_input",
+		"manifest_not_hls",
+		"fetch_blocked",
+		"fetch_failed",
+		"manifest_too_large",
+		"internal_error",
+		"analyzer_unavailable":
 		return value
+	default:
+		return "_unknown"
 	}
-	return "_unknown"
 }
 
 // Handler returns the HTTP handler for GET /api/metrics.
