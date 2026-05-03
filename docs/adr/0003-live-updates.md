@@ -115,9 +115,11 @@ ist:
   geöffnet, weil native Browser-`EventSource` keine `X-MTrace-Token`-Header
   setzen kann. Reconnect-Backfill sendet die letzte durable ID über den
   `Last-Event-ID`-Header.
-- Lifecycle-Updates ohne Playback-Event, z. B. Sweeper-Ende, brauchen für
-  SSE-Backfill eine eigene durable Session-Update-Sequenz oder werden bewusst
-  nur über REST-Polling sichtbar gemacht.
+- Lifecycle-Updates ohne Playback-Event, z. B. Sweeper-Ende, sind mit der
+  `ingest_sequence`-Entscheidung nicht SSE-backfill-fähig und werden in
+  `0.4.0` bewusst nur über REST-Polling sichtbar gemacht. Eine spätere
+  SSE-Backfill-Unterstützung dafür braucht eine eigene durable
+  Session-Update-Sequenz oder typisierte Lifecycle-Event-ID.
 - Heartbeat-Kommentare halten lokale Proxies und Browser-Verbindungen frisch.
 
 ## 8. Offene Punkte für die `0.4.0`-Tranche
