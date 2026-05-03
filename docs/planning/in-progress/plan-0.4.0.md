@@ -356,20 +356,27 @@ DoD:
 
 Bezug: RAK-30; RAK-29; Stream Analyzer aus `0.3.0`; F-68..F-81; Telemetry-Model §1.
 
-Ziel: Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich einem gemeinsamen Session-Trace zugeordnet. RAK-30 ist Soll; Lücken müssen sichtbar und erklärbar bleiben.
+Ziel: Manifest-Requests, Segment-Requests und Player-Events werden einer gemeinsamen Session-Timeline zugeordnet. Normative Priorität: `correlation_id` ist der primäre Zuordnungsschlüssel und Source-of-Truth für Dashboard/API; `trace_id` bleibt optionaler, batchbezogener Debug-Kontext für Tempo und darf keine Timeline-Zuordnung allein tragen. RAK-30 ist Soll; Lücken müssen sichtbar, testbar und erklärbar bleiben.
+
+Abnahmegrenzen:
+
+- **Mindestkorrelation:** Jedes neu vom SDK erzeugte Manifest-, Segment- und Player-Ereignis muss über `session_id` in denselben Server-Resolver laufen und nach Persistenz eine zur Session passende `correlation_id` tragen. Fehlende Browser-Timing-/Resource-Daten dürfen Detailfelder reduzieren, aber nicht die Session-Zuordnung entfernen.
+- **Degradationsfälle:** Fehlende oder blockierte Resource-Timing-Daten, CORS-Lücken, Service-Worker-Interception, CDN-Redirects und native-HLS-/Browser-Limitierungen führen zu dokumentierten `network_detail_unavailable`-/Timeline-only-Fällen. Diese Fälle bleiben `202`-fähig, solange das Event-Schema valide ist, und werden in Tests als akzeptierte Degradation geprüft.
+- **Schema-Entscheidung:** Tranche 3 verwendet ausschließlich additive Felder im bestehenden Event-Wire-Schema `1.0` (z. B. `event_name`/`meta.network.kind`/Timing-Felder). Kein Breaking Change und keine neue Major-Schema-Version in `0.4.0`; falls ein benötigtes Feld nicht additiv modellierbar ist, wird es deferred statt per Migration erzwungen.
+- **URL-Datenschutz:** Segment-/Manifest-URLs dürfen weder Prometheus-Labels noch rohe, credential-haltige Persistenzwerte werden. Vor Persistenz/Anzeige gilt: Query und Fragment werden entfernt, bekannte Credential-Komponenten (`userinfo`, signierte Query-Parameter, Token-Parameter) werden nicht gespeichert; falls ein Pfad erkennbar tokenartig ist, wird statt des Rohpfads ein redigierter oder gehashter Repräsentant gespeichert. Tests decken mindestens Query-/Fragment-Redaction und einen Token-Parameter ab.
+- **Analyzer-Semantik:** `POST /api/analyze` bleibt in Tranche 3 standardmäßig getrennt von Live-Player-Sessions. Eine Verknüpfung mit einer Session ist nur zulässig, wenn die Request-Seite explizit eine vorhandene `correlation_id` oder `session_id` übergibt; andernfalls wird das Analyzer-Ergebnis als unabhängige Manifestanalyse angezeigt und nicht in die Player-Timeline gemischt.
 
 DoD:
 
-- [ ] Player-SDK erfasst Manifest- und Segment-nahe Ereignisse aus dem hls.js-Adapter, soweit hls.js sie zuverlässig liefert.
-- [ ] Event-Schema erlaubt die Unterscheidung von Manifest-Request, Segment-Request und Player-Zustandsereignis ohne Breaking Change oder mit dokumentierter Schema-Migration.
-- [ ] Segment- und Manifest-URLs werden nicht als Prometheus-Labels verwendet; Speicherung im Event-Store folgt den Datenschutz- und Retention-Regeln.
-- [ ] Backend normalisiert die eingehenden Netzwerkereignisse in den bestehenden Session-/Event-Store.
-- [ ] Manifest-, Segment- und Player-Events teilen denselben Trace- oder Korrelationskontext, wenn der Browser/SDK-Pfad die nötigen Signale liefert; Abweichungen werden pro Ereignistyp begründet.
-- [ ] Falls einzelne Manifest-/Segment-Daten nur als Event-Timeline und nicht als OTel-Span abbildbar sind, ist diese Grenze explizit dokumentiert und im Dashboard sichtbar nachvollziehbar.
-- [ ] Korrelation ist tolerant gegenüber fehlenden SDK-Feldern, blockierten Browser-Timings und CORS-/Resource-Timing-Lücken.
-- [ ] Analyzer-Ergebnisse aus `POST /api/analyze` sind optional mit einer Session verknüpfbar oder bewusst getrennt dokumentiert, damit Manifestanalyse und Player-Timeline nicht inkonsistent vermischt werden.
-- [ ] Tests decken gemischte Player-, Manifest- und Segment-Ereignisse innerhalb einer Session ab und prüfen den gemeinsamen Trace-/Korrelationskontext oder die dokumentierte Timeline-only-Ausnahme.
-- [ ] Dokumentation benennt Grenzen der Korrelation, insbesondere Browser-APIs, CORS, Service Worker, CDN-Redirects und Sampling.
+- [ ] Player-SDK erfasst aus dem hls.js-Adapter mindestens ein Manifest-nahes Ereignis und ein Segment-nahes Ereignis pro Session, wenn hls.js die Signale liefert; nicht verfügbare Signale werden als akzeptierte Degradation markiert.
+- [ ] Event-Schema bleibt `1.0` und unterscheidet Manifest-Request, Segment-Request und Player-Zustandsereignis additiv über Event-Namen und/oder `meta`-Felder. Contract-Tests sichern, dass ältere Backends unbekannte additive Felder weiter ignorieren und neue Backends die neuen Typen lesen.
+- [ ] Backend normalisiert Netzwerkereignisse in den bestehenden Session-/Event-Store; jedes akzeptierte Netzwerkereignis erhält dieselbe `correlation_id` wie die zugehörigen Player-Events derselben Session. `trace_id` darf vorhanden sein, ist aber nicht das Abnahmekriterium für Timeline-Zuordnung.
+- [ ] URL-Redaction ist vor Persistenz und Dashboard-Anzeige umgesetzt und getestet: keine Query-/Fragment-Speicherung, keine Credential-/Token-Parameter, keine URL-Labels in Prometheus. Der Event-Store enthält nur redigierte oder gehashte URL-Repräsentanten gemäß Abnahmegrenze.
+- [ ] Falls einzelne Manifest-/Segment-Daten nur als Event-Timeline und nicht als OTel-Span abbildbar sind, ist diese Grenze explizit dokumentiert und im Dashboard sichtbar nachvollziehbar; diese Events behalten trotzdem `correlation_id`.
+- [ ] Tests decken gemischte Player-, Manifest- und Segment-Ereignisse innerhalb einer Session ab und prüfen gleiche `correlation_id`, getrennte batchbezogene `trace_id`-Semantik und die dokumentierten Timeline-only-Ausnahmen.
+- [ ] Tests decken die Degradationsmatrix ab: fehlende SDK-Felder, blockierte Browser-Timings, CORS-/Resource-Timing-Lücken und mindestens ein Native-/Browser-Limitierungsfall werden als akzeptierte, sichtbare Degradation geprüft.
+- [ ] Analyzer-Ergebnisse aus `POST /api/analyze` werden ohne explizite Session-/`correlation_id`-Bindung nicht in die Player-Timeline gemischt; mit expliziter Bindung ist die Verknüpfung über `correlation_id` testbar. Beide Fälle sind dokumentiert.
+- [ ] Dokumentation benennt Grenzen der Korrelation, insbesondere Browser-APIs, CORS, Service Worker, CDN-Redirects, Native-HLS und Sampling; sie nennt `correlation_id` als Pflichtkontext und `trace_id` als optionale Debug-Vertiefung.
 
 ---
 
@@ -461,7 +468,7 @@ Bezug: RAK-29..RAK-35; `docs/user/releasing.md`.
 DoD:
 
 - [ ] **RAK-29** Player-Session-Traces werden konsistent und Tempo-unabhängig erzeugt: mehrere Batches einer Session teilen lokal persistierte Korrelationsdaten; Tests decken Erfolg, fehlenden Kontext und deaktiviertes Tempo-Profil ab.
-- [ ] **RAK-30** Manifest-Requests, Segment-Requests und Player-Events werden soweit technisch möglich in einem gemeinsamen Trace-/Korrelationskontext zusammengeführt; Timeline-only-Ausnahmen sind je Ereignistyp begründet und dokumentiert.
+- [ ] **RAK-30** Manifest-Requests, Segment-Requests und Player-Events werden über `correlation_id` einer gemeinsamen Session-Timeline zugeordnet; `trace_id` ist nur optionale Tempo-Vertiefung. Timeline-only- und Browser-Degradationsfälle sind je Ereignistyp begründet, sichtbar und getestet.
 - [ ] **RAK-31** Tempo kann optional als Trace-Backend verwendet werden oder ist bewusst als Kann-Scope deferred, ohne Muss-Kriterien zu gefährden.
 - [ ] **RAK-32** Dashboard kann Session-Verläufe ohne Tempo anzeigen; API-Restart verliert bestehende lokale Session-Historie nicht.
 - [ ] **RAK-33** Prometheus bleibt auf aggregierte Metriken beschränkt; Cardinality-Smoke ist grün.
