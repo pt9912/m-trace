@@ -2,6 +2,7 @@ package sqlite_test
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -36,22 +37,43 @@ import (
 func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 	t.Parallel()
 
+	const (
+		concurrency = 8
+		projectID   = "demo"
+		sessionID   = "01J7K9X4Z2QHB6V3WS5R8Y4D1F"
+	)
+
 	ctx := context.Background()
+	db := openRaceDB(t, ctx)
+	repo := sqlite.NewSessionRepository(db)
+	t0 := time.Date(2026, 5, 4, 12, 0, 0, 0, time.UTC)
+
+	results := runRaceUpserts(t, ctx, repo, concurrency, projectID, sessionID, t0)
+	winner := assertCanonicalWinner(t, results, concurrency)
+	assertSingleSessionRow(t, ctx, db, projectID, sessionID)
+	assertWinnerMatchesPersisted(t, ctx, repo, projectID, sessionID, winner)
+}
+
+// openRaceDB öffnet eine frische SQLite-Datei in t.TempDir().
+func openRaceDB(t *testing.T, ctx context.Context) *sql.DB {
+	t.Helper()
 	path := filepath.Join(t.TempDir(), "race.db")
 	db, err := storage.Open(ctx, path)
 	if err != nil {
 		t.Fatalf("storage.Open: %v", err)
 	}
 	t.Cleanup(func() { _ = db.Close() })
-	repo := sqlite.NewSessionRepository(db)
+	return db
+}
 
-	const (
-		concurrency = 8
-		projectID   = "demo"
-		sessionID   = "01J7K9X4Z2QHB6V3WS5R8Y4D1F"
-	)
-	t0 := time.Date(2026, 5, 4, 12, 0, 0, 0, time.UTC)
-
+// runRaceUpserts startet `concurrency` Goroutines, jede schickt einen
+// Single-Event-Batch mit eigener Kandidat-CID. Liefert die je
+// Goroutine zurückgegebene `canonical[sessionID]`-CID.
+func runRaceUpserts(
+	t *testing.T, ctx context.Context, repo *sqlite.SessionRepository,
+	concurrency int, projectID, sessionID string, t0 time.Time,
+) []string {
+	t.Helper()
 	results := make([]string, concurrency)
 	errs := make([]error, concurrency)
 	var wg sync.WaitGroup
@@ -59,7 +81,6 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 	for i := 0; i < concurrency; i++ {
 		go func(idx int) {
 			defer wg.Done()
-			candidate := candidateCID(idx)
 			canonical, err := repo.UpsertFromEvents(ctx, []domain.PlaybackEvent{{
 				ProjectID:        projectID,
 				SessionID:        sessionID,
@@ -67,7 +88,7 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 				ClientTimestamp:  t0,
 				ServerReceivedAt: t0,
 				IngestSequence:   int64(idx + 1),
-				CorrelationID:    candidate,
+				CorrelationID:    candidateCID(idx),
 				SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.4.0"},
 			}})
 			if err != nil {
@@ -78,7 +99,6 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-
 	for i, err := range errs {
 		if err != nil {
 			t.Errorf("goroutine %d: %v", i, err)
@@ -87,32 +107,37 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 	if t.Failed() {
 		t.FailNow()
 	}
+	return results
+}
 
-	// Alle Aufrufe müssen dieselbe CID zurückgeben.
+// assertCanonicalWinner verifiziert, dass alle Goroutines dieselbe CID
+// zurückbekommen und dass diese CID aus dem Kandidat-Pool stammt.
+func assertCanonicalWinner(t *testing.T, results []string, concurrency int) string {
+	t.Helper()
 	winner := results[0]
 	if winner == "" {
 		t.Fatalf("goroutine 0 returned empty canonical CID")
 	}
 	for i, got := range results {
 		if got != winner {
-			t.Errorf("goroutine %d returned canonical=%q, want %q (race produced split-brain)", i, got, winner)
+			t.Errorf("goroutine %d canonical=%q, want %q (split-brain)", i, got, winner)
 		}
 	}
-
-	// In stream_sessions lebt genau eine Zeile, und ihre correlation_id
-	// matcht den zurückgegebenen Sieger.
-	got, err := repo.Get(ctx, projectID, sessionID)
-	if err != nil {
-		t.Fatalf("repo.Get after race: %v", err)
+	for i := 0; i < concurrency; i++ {
+		if winner == candidateCID(i) {
+			return winner
+		}
 	}
-	if got.CorrelationID != winner {
-		t.Errorf("stream_sessions.correlation_id = %q, want %q (canonical mismatch)", got.CorrelationID, winner)
-	}
+	t.Errorf("winner %q is not from the candidate pool", winner)
+	return winner
+}
 
-	// Doppelte Zeilen für (project_id, session_id) sind ein Composite-
-	// PK-Verstoß und würden den Cross-Project-Schutz brechen — eigener
-	// SELECT zur Sicherheit, weil repo.Get nur die erste matching Zeile
-	// liefert.
+// assertSingleSessionRow prüft direkt in der DB, dass für
+// (project_id, session_id) genau eine Zeile existiert — weil
+// `repo.Get` nur die erste matchende Zeile liefert und einen
+// Composite-PK-Verstoß so nicht aufdecken würde.
+func assertSingleSessionRow(t *testing.T, ctx context.Context, db *sql.DB, projectID, sessionID string) {
+	t.Helper()
 	var rowCount int
 	if err := db.QueryRowContext(ctx,
 		"SELECT COUNT(*) FROM stream_sessions WHERE project_id = ? AND session_id = ?",
@@ -123,19 +148,18 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 	if rowCount != 1 {
 		t.Errorf("stream_sessions row count = %d, want 1", rowCount)
 	}
+}
 
-	// Erwartet: der Sieger ist eine der Kandidat-CIDs (irgendein idx hat
-	// gewonnen — welche ist nicht-deterministisch, aber sie muss aus dem
-	// Pool stammen).
-	winnerInPool := false
-	for i := 0; i < concurrency; i++ {
-		if winner == candidateCID(i) {
-			winnerInPool = true
-			break
-		}
+// assertWinnerMatchesPersisted lädt die DB-finale Zeile via repo.Get
+// und stellt sicher, dass `correlation_id` die Sieger-CID trägt.
+func assertWinnerMatchesPersisted(t *testing.T, ctx context.Context, repo *sqlite.SessionRepository, projectID, sessionID, winner string) {
+	t.Helper()
+	got, err := repo.Get(ctx, projectID, sessionID)
+	if err != nil {
+		t.Fatalf("repo.Get after race: %v", err)
 	}
-	if !winnerInPool {
-		t.Errorf("winner %q is not from the candidate pool", winner)
+	if got.CorrelationID != winner {
+		t.Errorf("stream_sessions.correlation_id = %q, want %q (canonical mismatch)", got.CorrelationID, winner)
 	}
 }
 

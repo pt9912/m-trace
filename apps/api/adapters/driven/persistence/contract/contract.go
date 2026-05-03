@@ -651,7 +651,35 @@ func testCrossProjectSessionIsolation(t *testing.T, factory Factory) {
 	ctx := context.Background()
 	r := factory(t)
 	t0 := time.Date(2026, 5, 4, 12, 0, 0, 0, time.UTC)
+	scope := crossProjectFixture(r, t0)
 
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{scope.eventA}); err != nil {
+		t.Fatalf("upsert project A: %v", err)
+	}
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{scope.eventB}); err != nil {
+		t.Fatalf("upsert project B: %v", err)
+	}
+	if err := r.Events.Append(ctx, []domain.PlaybackEvent{scope.eventA, scope.eventB}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	assertCrossProjectGet(t, ctx, r, scope)
+	assertCrossProjectList(t, ctx, r, scope)
+	assertCrossProjectEvents(t, ctx, r, scope)
+	assertCrossProjectCorrelationLookup(t, ctx, r, scope)
+}
+
+// crossProjectScope bündelt die Konstanten und Erst-Events der
+// Cross-Project-Test-Fixture, damit alle Sub-Asserts dieselbe Sicht
+// haben.
+type crossProjectScope struct {
+	projectA, projectB string
+	shared             string
+	corrA, corrB       string
+	eventA, eventB     domain.PlaybackEvent
+}
+
+func crossProjectFixture(r Repos, t0 time.Time) crossProjectScope {
 	const (
 		projectA = "demo"
 		projectB = "other"
@@ -659,115 +687,93 @@ func testCrossProjectSessionIsolation(t *testing.T, factory Factory) {
 		corrA    = "11111111-2222-4333-8444-555555555555"
 		corrB    = "66666666-7777-4888-8999-aaaaaaaaaaaa"
 	)
-
 	a := mkEvent(r.Sequencer, projectA, shared, t0, seq(1))
 	a.CorrelationID = corrA
 	b := mkEvent(r.Sequencer, projectB, shared, t0.Add(time.Second), seq(1))
 	b.CorrelationID = corrB
+	return crossProjectScope{
+		projectA: projectA, projectB: projectB,
+		shared: shared, corrA: corrA, corrB: corrB,
+		eventA: a, eventB: b,
+	}
+}
 
-	// Sessions getrennt persistieren — Reihenfolge spielt keine Rolle,
-	// weil der Composite-PK `(project_id, session_id)` ist.
-	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{a}); err != nil {
-		t.Fatalf("upsert project A: %v", err)
-	}
-	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{b}); err != nil {
-		t.Fatalf("upsert project B: %v", err)
-	}
-	if err := r.Events.Append(ctx, []domain.PlaybackEvent{a, b}); err != nil {
-		t.Fatalf("append: %v", err)
-	}
-
-	// Get/Detail: pro Project nur die eigene Session lesbar; Korrelations-
-	// IDs unterscheiden sich.
-	gotA, err := r.Sessions.Get(ctx, projectA, shared)
+func assertCrossProjectGet(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+	t.Helper()
+	gotA, err := r.Sessions.Get(ctx, s.projectA, s.shared)
 	if err != nil {
 		t.Fatalf("get project A: %v", err)
 	}
-	if gotA.CorrelationID != corrA {
-		t.Errorf("project A correlation_id = %q, want %q", gotA.CorrelationID, corrA)
+	if gotA.CorrelationID != s.corrA || gotA.ProjectID != s.projectA {
+		t.Errorf("project A: %+v, want corr=%q project=%q", gotA, s.corrA, s.projectA)
 	}
-	if gotA.ProjectID != projectA {
-		t.Errorf("project A session.project_id = %q, want %q", gotA.ProjectID, projectA)
-	}
-	gotB, err := r.Sessions.Get(ctx, projectB, shared)
+	gotB, err := r.Sessions.Get(ctx, s.projectB, s.shared)
 	if err != nil {
 		t.Fatalf("get project B: %v", err)
 	}
-	if gotB.CorrelationID != corrB {
-		t.Errorf("project B correlation_id = %q, want %q", gotB.CorrelationID, corrB)
-	}
-	if gotB.ProjectID != projectB {
-		t.Errorf("project B session.project_id = %q, want %q", gotB.ProjectID, projectB)
+	if gotB.CorrelationID != s.corrB || gotB.ProjectID != s.projectB {
+		t.Errorf("project B: %+v, want corr=%q project=%q", gotB, s.corrB, s.projectB)
 	}
 	if gotA.CorrelationID == gotB.CorrelationID {
 		t.Errorf("correlation_ids must differ across projects, both got %q", gotA.CorrelationID)
 	}
+}
 
-	// List: pro Project genau eine Session, und es ist die eigene.
-	listA, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: projectA, Limit: 10})
+func assertCrossProjectList(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+	t.Helper()
+	listA, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: s.projectA, Limit: 10})
 	if err != nil {
 		t.Fatalf("list project A: %v", err)
 	}
-	if len(listA.Sessions) != 1 {
-		t.Fatalf("list project A: %d sessions, want 1", len(listA.Sessions))
+	if len(listA.Sessions) != 1 || listA.Sessions[0].ProjectID != s.projectA || listA.Sessions[0].CorrelationID != s.corrA {
+		t.Errorf("list project A leaked: %+v", listA.Sessions)
 	}
-	if listA.Sessions[0].ProjectID != projectA || listA.Sessions[0].CorrelationID != corrA {
-		t.Errorf("list project A sees foreign session: %+v", listA.Sessions[0])
-	}
-	listB, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: projectB, Limit: 10})
+	listB, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: s.projectB, Limit: 10})
 	if err != nil {
 		t.Fatalf("list project B: %v", err)
 	}
-	if len(listB.Sessions) != 1 {
-		t.Fatalf("list project B: %d sessions, want 1", len(listB.Sessions))
+	if len(listB.Sessions) != 1 || listB.Sessions[0].ProjectID != s.projectB || listB.Sessions[0].CorrelationID != s.corrB {
+		t.Errorf("list project B leaked: %+v", listB.Sessions)
 	}
-	if listB.Sessions[0].ProjectID != projectB || listB.Sessions[0].CorrelationID != corrB {
-		t.Errorf("list project B sees foreign session: %+v", listB.Sessions[0])
-	}
+}
 
-	// Event-Reads: pro Project nur eigene Events, identifiziert über
-	// die CorrelationID des jeweiligen Buckets.
+func assertCrossProjectEvents(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+	t.Helper()
 	eventsA, err := r.Events.ListBySession(ctx, driven.EventListQuery{
-		ProjectID: projectA, SessionID: shared, Limit: 10,
+		ProjectID: s.projectA, SessionID: s.shared, Limit: 10,
 	})
 	if err != nil {
 		t.Fatalf("events project A: %v", err)
 	}
-	if len(eventsA.Events) != 1 || eventsA.Events[0].CorrelationID != corrA || eventsA.Events[0].ProjectID != projectA {
-		t.Errorf("events project A leaked foreign rows: %+v", eventsA.Events)
+	if len(eventsA.Events) != 1 || eventsA.Events[0].CorrelationID != s.corrA || eventsA.Events[0].ProjectID != s.projectA {
+		t.Errorf("events project A leaked: %+v", eventsA.Events)
 	}
 	eventsB, err := r.Events.ListBySession(ctx, driven.EventListQuery{
-		ProjectID: projectB, SessionID: shared, Limit: 10,
+		ProjectID: s.projectB, SessionID: s.shared, Limit: 10,
 	})
 	if err != nil {
 		t.Fatalf("events project B: %v", err)
 	}
-	if len(eventsB.Events) != 1 || eventsB.Events[0].CorrelationID != corrB || eventsB.Events[0].ProjectID != projectB {
-		t.Errorf("events project B leaked foreign rows: %+v", eventsB.Events)
+	if len(eventsB.Events) != 1 || eventsB.Events[0].CorrelationID != s.corrB || eventsB.Events[0].ProjectID != s.projectB {
+		t.Errorf("events project B leaked: %+v", eventsB.Events)
 	}
+}
 
-	// GetByCorrelationID: CorrelationID aus Project A darf in
-	// Project B nicht auflösen, und umgekehrt.
-	if _, err := r.Sessions.GetByCorrelationID(ctx, projectB, corrA); !errors.Is(err, domain.ErrSessionNotFound) {
-		t.Errorf("GetByCorrelationID(project B, corrA): err=%v, want ErrSessionNotFound (cross-project leak)", err)
+func assertCrossProjectCorrelationLookup(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+	t.Helper()
+	if _, err := r.Sessions.GetByCorrelationID(ctx, s.projectB, s.corrA); !errors.Is(err, domain.ErrSessionNotFound) {
+		t.Errorf("GetByCorrelationID(B, corrA): err=%v, want ErrSessionNotFound", err)
 	}
-	if _, err := r.Sessions.GetByCorrelationID(ctx, projectA, corrB); !errors.Is(err, domain.ErrSessionNotFound) {
-		t.Errorf("GetByCorrelationID(project A, corrB): err=%v, want ErrSessionNotFound (cross-project leak)", err)
+	if _, err := r.Sessions.GetByCorrelationID(ctx, s.projectA, s.corrB); !errors.Is(err, domain.ErrSessionNotFound) {
+		t.Errorf("GetByCorrelationID(A, corrB): err=%v, want ErrSessionNotFound", err)
 	}
-	// Eigene CorrelationID im eigenen Project muss aufgelöst werden.
-	hitA, err := r.Sessions.GetByCorrelationID(ctx, projectA, corrA)
-	if err != nil {
-		t.Fatalf("GetByCorrelationID(project A, corrA): %v", err)
+	hitA, err := r.Sessions.GetByCorrelationID(ctx, s.projectA, s.corrA)
+	if err != nil || hitA.ProjectID != s.projectA || hitA.ID != s.shared {
+		t.Errorf("GetByCorrelationID(A, corrA): %+v, %v", hitA, err)
 	}
-	if hitA.ProjectID != projectA || hitA.ID != shared {
-		t.Errorf("GetByCorrelationID(project A, corrA) returned wrong session: %+v", hitA)
-	}
-	hitB, err := r.Sessions.GetByCorrelationID(ctx, projectB, corrB)
-	if err != nil {
-		t.Fatalf("GetByCorrelationID(project B, corrB): %v", err)
-	}
-	if hitB.ProjectID != projectB || hitB.ID != shared {
-		t.Errorf("GetByCorrelationID(project B, corrB) returned wrong session: %+v", hitB)
+	hitB, err := r.Sessions.GetByCorrelationID(ctx, s.projectB, s.corrB)
+	if err != nil || hitB.ProjectID != s.projectB || hitB.ID != s.shared {
+		t.Errorf("GetByCorrelationID(B, corrB): %+v, %v", hitB, err)
 	}
 }
 
