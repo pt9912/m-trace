@@ -176,6 +176,12 @@ und wird nicht in die Player-Timeline gemischt. Die API bleibt
 }
 ```
 
+Kompatibilitätsentscheidung: Ab Tranche 3 gibt `POST /api/analyze`
+für alle erfolgreichen Requests diese Hülle zurück, auch wenn der
+Request keine Link-Felder enthält. Ungebundene Requests erhalten
+`session_link.status="detached"`; es gibt kein bedingtes
+Response-Shape-Branching.
+
 `session_link.status` ist eines aus `{"linked", "detached",
 "conflict_detached", "not_found_detached"}`. Nur `session_id` ist als
 Fallback zulässig, wenn sie auf eine bestehende oder bereits
@@ -189,8 +195,9 @@ nur die optionale Dashboard-/Timeline-Verknüpfung.
 
 **Erfolgsantwort** (`200 OK`): bis einschließlich `0.3.x`
 vollständiges `AnalysisResult` aus `docs/user/stream-analyzer.md` §2.2.
-Ab `plan-0.4.0.md` Tranche 3 wird dieses Resultat unverändert unter
-`analysis` in der oben beschriebenen Hülle transportiert.
+Ab `plan-0.4.0.md` Tranche 3 wird dieses Resultat bei jedem
+erfolgreichen Request unverändert unter `analysis` in der oben
+beschriebenen Hülle transportiert.
 
 **Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
 

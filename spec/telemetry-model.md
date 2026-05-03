@@ -96,8 +96,12 @@ Timeline-only-Ereignis ohne OTel-Span umgesetzt werden.
 
 Wenn der Browser-/Native-HLS-Pfad gar kein Manifest-/Segment-Signal
 liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. Die
-Session-API/Persistenz markiert diese Grenze außerhalb des Event-
-Streams als `network_signal_absent`; Dashboard-Sichtbarkeit wird im
+Session-API markiert diese Grenze außerhalb des Event-Streams im
+Session-Block als `network_signal_absent`: Liste von Objekten mit
+`kind` (`manifest` oder `segment`), `adapter` (`hls.js`, `native_hls`
+oder `unknown`) und maschinenlesbarem `reason`. Der Wert darf aus
+gespeicherten Session-/SDK-Metadaten abgeleitet werden, muss aber über
+API-Restart stabil bleiben. Dashboard-Sichtbarkeit wird im
 `plan-0.4.0.md` Tranche-4-Scope umgesetzt.
 
 URL-Redaction für `meta.network.*`-URL-Repräsentanten folgt einer
@@ -106,8 +110,10 @@ erhalten bleiben; Query und Fragment werden entfernt; `userinfo` wird
 entfernt; signierte/credential-artige Query-Parameter (`token`,
 `signature`, `sig`, `expires`, `key`, `policy`, case-insensitiv) werden
 nicht gespeichert. Ein Pfadsegment ist tokenartig, wenn es mindestens
-24 Zeichen lang ist und überwiegend Base64URL-/Hex-Zeichen enthält
-oder bekannte JWT-/SAS-/Signed-URL-Muster trägt. Tokenartige
+24 Zeichen lang ist und mindestens 80 % seiner Zeichen aus
+`[A-Za-z0-9_-]` bestehen, wenn es ein Hex-String mit gerader Länge
+mindestens 32 ist, oder wenn es bekannte JWT-/SAS-/Signed-URL-Muster
+trägt. Tokenartige
 Pfadsegmente werden ausschließlich als `:redacted` persistiert; es wird
 kein stabiler Hash oder Gleichheitsmarker gespeichert.
 
