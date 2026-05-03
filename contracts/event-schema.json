@@ -75,7 +75,8 @@
       "pattern_ref": "network_unavailable_reason_pattern",
       "requires": {
         "network.detail_status": "network_detail_unavailable"
-      }
+      },
+      "on_requires_mismatch": "422"
     },
     "network.redacted_url": {
       "type": "string",

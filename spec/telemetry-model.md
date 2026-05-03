@@ -96,7 +96,7 @@ Der Degradationsmarker ist normativ:
 `meta["network.unavailable_reason"]` ist nur zulässig, wenn
 `meta["network.detail_status"]="network_detail_unavailable"` ist. Bei
 `available` wird ein Reason-Wert als semantischer Widerspruch behandelt
-und vor Persistenz abgelehnt oder deterministisch verworfen.
+und mit `422` abgelehnt.
 
 Reservierte `network.*`- und `timing.*`-Keys werden inbound vor
 Persistenz typvalidiert. Objekte und Arrays sind für diese Keys
