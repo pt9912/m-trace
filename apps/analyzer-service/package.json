@@ -11,7 +11,7 @@
     "build": "tsup src/main.ts --format esm,cjs --clean",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && eslint .",
     "start": "node dist/main.cjs"
   },
   "dependencies": {

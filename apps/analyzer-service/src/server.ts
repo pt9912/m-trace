@@ -120,8 +120,12 @@ interface ReadResult {
 async function readBody(req: IncomingMessage): Promise<ReadResult | null> {
   const chunks: Buffer[] = [];
   let received = 0;
-  for await (const chunk of req) {
-    const buf = chunk instanceof Buffer ? chunk : Buffer.from(chunk);
+  // IncomingMessage iteriert in den @types/node-Definitionen als
+  // AsyncIterable<any>; das narrowing auf Buffer | string spiegelt
+  // das tatsächliche Node-Runtime-Verhalten und macht den Buffer-
+  // Konstruktor unten typsicher.
+  for await (const chunk of req as AsyncIterable<Buffer | string>) {
+    const buf: Buffer = chunk instanceof Buffer ? chunk : Buffer.from(chunk);
     received += buf.byteLength;
     if (received > MAX_REQUEST_BODY_BYTES) {
       return null;
