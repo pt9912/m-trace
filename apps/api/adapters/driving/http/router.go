@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -34,6 +35,7 @@ func NewRouter(
 	useCase driving.PlaybackEventInbound,
 	sessions driving.SessionsInbound,
 	analysis driving.StreamAnalysisInbound,
+	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
 	metricsHandler http.Handler,
 	analyzeMetrics AnalyzeMetrics,
@@ -55,14 +57,16 @@ func NewRouter(
 		Logger:  logger,
 	}
 	sessionsList := &SessionsListHandler{
-		UseCase: sessions,
-		Tracer:  tracer,
-		Logger:  logger,
+		UseCase:  sessions,
+		Resolver: resolver,
+		Tracer:   tracer,
+		Logger:   logger,
 	}
 	sessionsGet := &SessionsGetHandler{
-		UseCase: sessions,
-		Tracer:  tracer,
-		Logger:  logger,
+		UseCase:  sessions,
+		Resolver: resolver,
+		Tracer:   tracer,
+		Logger:   logger,
 	}
 
 	mux.Handle("POST /api/playback-events", playback)

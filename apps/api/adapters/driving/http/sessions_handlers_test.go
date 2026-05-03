@@ -12,7 +12,15 @@ import (
 
 func getJSON(t *testing.T, srv string, path string) (*http.Response, map[string]any) {
 	t.Helper()
-	resp, err := http.Get(srv + path)
+	req, err := http.NewRequest(http.MethodGet, srv+path, nil)
+	if err != nil {
+		t.Fatalf("new request %s: %v", path, err)
+	}
+	// Read-Endpunkte sind ab plan-0.4.0 §4.2 tokenpflichtig; Tests
+	// verwenden den im Test-Setup wired Static-Resolver (Token
+	// "demo-token", Project "demo").
+	req.Header.Set("X-MTrace-Token", "demo-token")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("get %s: %v", path, err)
 	}
@@ -207,7 +215,12 @@ func TestHTTP_StreamSessionsByID_LegacyCursor(t *testing.T) {
 func TestHTTP_StreamSessionsByID_EmptyID(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp, err := http.Get(srv.URL + "/api/stream-sessions/")
+	req, err := http.NewRequest(http.MethodGet, srv.URL+"/api/stream-sessions/", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	req.Header.Set("X-MTrace-Token", "demo-token")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}

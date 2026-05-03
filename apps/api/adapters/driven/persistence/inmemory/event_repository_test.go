@@ -41,7 +41,7 @@ func TestEventRepository_ListBySession_SortAndCursor(t *testing.T) {
 		t.Fatalf("append: %v", err)
 	}
 
-	first, err := repo.ListBySession(context.Background(), driven.EventListQuery{
+	first, err := repo.ListBySession(context.Background(), driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1",
 		Limit:     2,
 	})
@@ -60,7 +60,7 @@ func TestEventRepository_ListBySession_SortAndCursor(t *testing.T) {
 		t.Fatalf("page 1 expected NextAfter")
 	}
 
-	second, err := repo.ListBySession(context.Background(), driven.EventListQuery{
+	second, err := repo.ListBySession(context.Background(), driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1",
 		Limit:     2,
 		After:     first.NextAfter,
@@ -122,7 +122,7 @@ func TestEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *testing.T)
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
-	page, err := repo.ListBySession(context.Background(), driven.EventListQuery{
+	page, err := repo.ListBySession(context.Background(), driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 10,
 	})
 	if err != nil {
@@ -149,7 +149,7 @@ func TestEventRepository_ListBySession_FiltersBySessionID(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
-	page, err := repo.ListBySession(context.Background(), driven.EventListQuery{
+	page, err := repo.ListBySession(context.Background(), driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1",
 		Limit:     10,
 	})

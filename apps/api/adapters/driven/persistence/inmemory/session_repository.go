@@ -11,28 +11,37 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
+// sessionKey ist das projekt-skopierte Composite-Key-Tupel der
+// Session-Map ab plan-0.4.0 §4.2. Dieselbe session_id in zwei
+// Projekten landet als zwei separate Einträge mit unterschiedlichen
+// Korrelations-IDs.
+type sessionKey struct {
+	ProjectID string
+	SessionID string
+}
+
 // SessionRepository hält die bekannten Sessions in einer Map
-// session_id → StreamSession. Pro session_id wird die StartedAt vom
-// ersten gesehenen Event gesetzt (ServerReceivedAt); LastEventAt und
-// EventCount werden bei jedem Folge-Event aktualisiert. Lifecycle-
-// Übergänge (Stalled/Ended) übernimmt §5.1 Sub-Item 8 — bis dahin
-// bleiben Sessions im State Active.
+// (project_id, session_id) → StreamSession. Pro Composite-Key wird
+// die StartedAt vom ersten gesehenen Event gesetzt
+// (ServerReceivedAt); LastEventAt und EventCount werden bei jedem
+// Folge-Event aktualisiert. Lifecycle-Übergänge (Stalled/Ended)
+// übernimmt §5.1 Sub-Item 8.
 //
 // Safe für nebenläufige Aufrufe.
 type SessionRepository struct {
 	mu       sync.Mutex
-	sessions map[string]domain.StreamSession
+	sessions map[sessionKey]domain.StreamSession
 }
 
 // NewSessionRepository konstruiert ein leeres Repository.
 func NewSessionRepository() *SessionRepository {
 	return &SessionRepository{
-		sessions: make(map[string]domain.StreamSession),
+		sessions: make(map[sessionKey]domain.StreamSession),
 	}
 }
 
-// UpsertFromEvents legt für unbekannte session_id eine neue
-// StreamSession an und aktualisiert für bekannte LastEventAt und
+// UpsertFromEvents legt für unbekannte (project_id, session_id) eine
+// neue StreamSession an und aktualisiert für bekannte LastEventAt und
 // EventCount. Reihenfolge folgt der Slice-Reihenfolge. Ein Event mit
 // event_name=session_ended schaltet die Session sofort auf Ended
 // (plan-0.1.0.md §5.1 Sub-Item 8).
@@ -43,7 +52,8 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, e := range events {
-		s, ok := r.sessions[e.SessionID]
+		k := sessionKey{ProjectID: e.ProjectID, SessionID: e.SessionID}
+		s, ok := r.sessions[k]
 		if !ok {
 			s = domain.StreamSession{
 				ID:            e.SessionID,
@@ -63,18 +73,19 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 			endedAt := e.ServerReceivedAt
 			s.EndedAt = &endedAt
 		}
-		r.sessions[e.SessionID] = s
+		r.sessions[k] = s
 	}
 	return nil
 }
 
 // Sweep wertet zeitbasierte Lifecycle-Übergänge aus (plan-0.1.0.md
 // §5.1 Sub-Item 8). Idempotent: bereits Ended-Sessions werden nicht
-// erneut angefasst.
+// erneut angefasst. Sweep ist global — kein Project-Filter, weil der
+// Lifecycle-Sweeper kein Project-Fan-out macht.
 func (r *SessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	for id, s := range r.sessions {
+	for k, s := range r.sessions {
 		if s.State == domain.SessionStateEnded {
 			continue
 		}
@@ -87,7 +98,7 @@ func (r *SessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter
 			endedAt := now
 			s.EndedAt = &endedAt
 		}
-		r.sessions[id] = s
+		r.sessions[k] = s
 	}
 	return nil
 }
@@ -104,7 +115,9 @@ func (r *SessionRepository) Snapshot() []domain.StreamSession {
 	return out
 }
 
-// CountByState zählt Sessions im gegebenen Lifecycle-State.
+// CountByState zählt Sessions im gegebenen Lifecycle-State über alle
+// Projekte hinweg (Prometheus-Gauge ist project-agnostisch, siehe
+// telemetry-model §3 Cardinality-Regel).
 func (r *SessionRepository) CountByState(_ context.Context, state domain.SessionState) (int64, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -118,12 +131,16 @@ func (r *SessionRepository) CountByState(_ context.Context, state domain.Session
 }
 
 // List gibt Sessions in stabiler Sortierung (started_at desc,
-// session_id asc) zurück. After=nil → erste Seite. Wenn nach dem
-// Limit weitere Sessions vorhanden sind, ist NextAfter gesetzt.
+// session_id asc) zurück, gefiltert nach q.ProjectID. After=nil →
+// erste Seite. Wenn nach dem Limit weitere Sessions vorhanden sind,
+// ist NextAfter gesetzt.
 func (r *SessionRepository) List(_ context.Context, q driven.SessionListQuery) (driven.SessionPage, error) {
 	r.mu.Lock()
 	all := make([]domain.StreamSession, 0, len(r.sessions))
-	for _, s := range r.sessions {
+	for k, s := range r.sessions {
+		if k.ProjectID != q.ProjectID {
+			continue
+		}
 		all = append(all, s)
 	}
 	r.mu.Unlock()
@@ -161,16 +178,38 @@ func (r *SessionRepository) List(_ context.Context, q driven.SessionListQuery) (
 	return page, nil
 }
 
-// Get liefert eine einzelne Session per ID. ErrSessionNotFound wenn
-// keine Session existiert (plan-0.1.0.md §5.1).
-func (r *SessionRepository) Get(_ context.Context, id string) (domain.StreamSession, error) {
+// Get liefert eine einzelne Session per (projectID, sessionID).
+// ErrSessionNotFound wenn die Session in diesem Project nicht
+// existiert; ein Treffer in einem anderen Project gilt als nicht
+// gefunden.
+func (r *SessionRepository) Get(_ context.Context, projectID, sessionID string) (domain.StreamSession, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	s, ok := r.sessions[id]
+	s, ok := r.sessions[sessionKey{ProjectID: projectID, SessionID: sessionID}]
 	if !ok {
 		return domain.StreamSession{}, domain.ErrSessionNotFound
 	}
 	return s, nil
+}
+
+// GetByCorrelationID liefert die Session, deren CorrelationID im
+// gegebenen Project gesetzt ist. Legacy-Sessions ohne CorrelationID
+// (= Leerwert) zählen nicht als Treffer.
+func (r *SessionRepository) GetByCorrelationID(_ context.Context, projectID, correlationID string) (domain.StreamSession, error) {
+	if correlationID == "" {
+		return domain.StreamSession{}, domain.ErrSessionNotFound
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for k, s := range r.sessions {
+		if k.ProjectID != projectID {
+			continue
+		}
+		if s.CorrelationID == correlationID {
+			return s, nil
+		}
+	}
+	return domain.StreamSession{}, domain.ErrSessionNotFound
 }
 
 // sessionPageCursorPasses gibt true zurück, sobald ein Session-Eintrag

@@ -49,7 +49,7 @@ tables:
         default: 0
       correlation_id:
         type: text
-    primary_key: [session_id]
+    primary_key: [project_id, session_id]
     indices:
       - name: idx_stream_sessions_project_started
         columns: [project_id, started_at, session_id]

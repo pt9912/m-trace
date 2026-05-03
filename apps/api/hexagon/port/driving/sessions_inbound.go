@@ -21,12 +21,15 @@ type SessionsInbound interface {
 	GetSession(ctx context.Context, in GetSessionInput) (GetSessionResult, error)
 }
 
-// ListSessionsInput trägt Limit und optionalen After-Cursor. Limit wird
-// im Use Case auf das Default- bzw. Hard-Maximum-Fenster geclampt
-// (plan-0.1.0.md §5.1: Default 100, Hard-Max 1000).
+// ListSessionsInput trägt ProjectID, Limit und optionalen After-Cursor.
+// ProjectID ist ab plan-0.4.0 §4.2 Pflicht und stammt aus der
+// Token-Resolution im HTTP-Adapter; Limit wird im Use Case auf das
+// Default- bzw. Hard-Maximum-Fenster geclampt (plan-0.1.0.md §5.1:
+// Default 100, Hard-Max 1000).
 type ListSessionsInput struct {
-	Limit int
-	After *ListSessionsCursor
+	ProjectID string
+	Limit     int
+	After     *ListSessionsCursor
 }
 
 // ListSessionsCursor kapselt die Sortier-Position der Sessions-Liste:
@@ -43,9 +46,12 @@ type ListSessionsResult struct {
 	NextCursor *ListSessionsCursor
 }
 
-// GetSessionInput identifiziert eine Session und steuert die
-// Event-Pagination innerhalb der Detail-Antwort.
+// GetSessionInput identifiziert eine Session über (ProjectID, SessionID)
+// und steuert die Event-Pagination innerhalb der Detail-Antwort.
+// ProjectID ist ab plan-0.4.0 §4.2 Pflicht und stammt aus der
+// Token-Resolution im HTTP-Adapter.
 type GetSessionInput struct {
+	ProjectID   string
 	SessionID   string
 	EventsLimit int
 	EventsAfter *SessionEventsCursor

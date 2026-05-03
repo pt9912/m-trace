@@ -59,8 +59,9 @@ func (s *SessionsService) ListSessions(ctx context.Context, in driving.ListSessi
 	}
 
 	page, err := s.sessions.List(ctx, driven.SessionListQuery{
-		Limit: limit,
-		After: after,
+		ProjectID: in.ProjectID,
+		Limit:     limit,
+		After:     after,
 	})
 	if err != nil {
 		return driving.ListSessionsResult{}, err
@@ -77,9 +78,10 @@ func (s *SessionsService) ListSessions(ctx context.Context, in driving.ListSessi
 }
 
 // GetSession liefert Header + geblätterte Event-Liste einer Session.
-// ErrSessionNotFound wenn die ID unbekannt.
+// ErrSessionNotFound wenn die (ProjectID, SessionID) unbekannt; ein
+// Treffer in einem anderen Project gilt als nicht gefunden.
 func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionInput) (driving.GetSessionResult, error) {
-	session, err := s.sessions.Get(ctx, in.SessionID)
+	session, err := s.sessions.Get(ctx, in.ProjectID, in.SessionID)
 	if err != nil {
 		return driving.GetSessionResult{}, err
 	}
@@ -96,6 +98,7 @@ func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionI
 	}
 
 	page, err := s.events.ListBySession(ctx, driven.EventListQuery{
+		ProjectID: in.ProjectID,
 		SessionID: in.SessionID,
 		Limit:     limit,
 		After:     after,

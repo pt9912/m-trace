@@ -11,6 +11,7 @@ import (
 
 	"go.opentelemetry.io/otel/trace/noop"
 
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -27,6 +28,28 @@ func (erroringSessions) GetSession(_ context.Context, _ driving.GetSessionInput)
 	return driving.GetSessionResult{}, errors.New("synthetic backend failure")
 }
 
+// staticResolver löst einen festen Token auf ein festes Project auf,
+// damit die Tests ab plan-0.4.0 §4.2 die Token-Resolution-Stufe der
+// Read-Handler erfüllen, ohne ein echtes Auth-Backend zu wiren.
+type staticResolver struct {
+	token string
+	id    string
+}
+
+func (s staticResolver) ResolveByToken(_ context.Context, token string) (domain.Project, error) {
+	if token != s.token {
+		return domain.Project{}, domain.ErrUnauthorized
+	}
+	return domain.Project{ID: s.id, Token: domain.ProjectToken(token)}, nil
+}
+
+const testToken = "test-token"
+const testProjectID = "demo"
+
+func newTestResolver() staticResolver {
+	return staticResolver{token: testToken, id: testProjectID}
+}
+
 func newDiscardLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(io.Discard, nil))
 }
@@ -36,12 +59,14 @@ func newDiscardLogger() *slog.Logger {
 func TestSessionsListHandler_BackendErrorMapsTo500(t *testing.T) {
 	t.Parallel()
 	h := &SessionsListHandler{
-		UseCase: erroringSessions{},
-		Tracer:  noop.NewTracerProvider().Tracer("test"),
-		Logger:  newDiscardLogger(),
+		UseCase:  erroringSessions{},
+		Resolver: newTestResolver(),
+		Tracer:   noop.NewTracerProvider().Tracer("test"),
+		Logger:   newDiscardLogger(),
 	}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/stream-sessions", nil)
+	req.Header.Set("X-MTrace-Token", testToken)
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("status=%d want 500", rec.Code)
@@ -53,12 +78,14 @@ func TestSessionsListHandler_BackendErrorMapsTo500(t *testing.T) {
 func TestSessionsGetHandler_BackendErrorMapsTo500(t *testing.T) {
 	t.Parallel()
 	h := &SessionsGetHandler{
-		UseCase: erroringSessions{},
-		Tracer:  noop.NewTracerProvider().Tracer("test"),
-		Logger:  newDiscardLogger(),
+		UseCase:  erroringSessions{},
+		Resolver: newTestResolver(),
+		Tracer:   noop.NewTracerProvider().Tracer("test"),
+		Logger:   newDiscardLogger(),
 	}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/stream-sessions/sess-1", nil)
+	req.Header.Set("X-MTrace-Token", testToken)
 	req.SetPathValue("id", "sess-1")
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusInternalServerError {

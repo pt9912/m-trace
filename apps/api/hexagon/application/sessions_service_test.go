@@ -100,12 +100,27 @@ func sessionLess(a, b domain.StreamSession) bool {
 	return a.ID < b.ID
 }
 
-func (r *fakeSessionRepo) Get(_ context.Context, id string) (domain.StreamSession, error) {
-	s, ok := r.store[id]
+func (r *fakeSessionRepo) Get(_ context.Context, projectID, sessionID string) (domain.StreamSession, error) {
+	s, ok := r.store[sessionID]
 	if !ok {
 		return domain.StreamSession{}, domain.ErrSessionNotFound
 	}
+	if s.ProjectID != "" && projectID != "" && s.ProjectID != projectID {
+		return domain.StreamSession{}, domain.ErrSessionNotFound
+	}
 	return s, nil
+}
+
+func (r *fakeSessionRepo) GetByCorrelationID(_ context.Context, projectID, correlationID string) (domain.StreamSession, error) {
+	if correlationID == "" {
+		return domain.StreamSession{}, domain.ErrSessionNotFound
+	}
+	for _, s := range r.store {
+		if s.ProjectID == projectID && s.CorrelationID == correlationID {
+			return s, nil
+		}
+	}
+	return domain.StreamSession{}, domain.ErrSessionNotFound
 }
 
 func (r *fakeSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Duration) error {

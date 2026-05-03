@@ -36,7 +36,7 @@ CREATE TABLE "stream_sessions" (
     "event_count" INTEGER NOT NULL DEFAULT 0,
     "correlation_id" TEXT,
     CONSTRAINT "chk_stream_sessions_state" CHECK (state IN ('active', 'stalled', 'ended')),
-    PRIMARY KEY ("session_id")
+    PRIMARY KEY ("project_id", "session_id")
 );
 
 CREATE INDEX "idx_playback_events_session_canonical" ON "playback_events" ("project_id", "session_id", "server_received_at", "sequence_number", "ingest_sequence");

@@ -64,7 +64,7 @@ SELECT ingest_sequence, project_id, session_id, event_name,
        sdk_name, sdk_version, meta,
        trace_id, span_id, correlation_id
 FROM playback_events
-WHERE session_id = ? %s
+WHERE project_id = ? AND session_id = ? %s
 ORDER BY server_received_at ASC,
          COALESCE(sequence_number, ?) ASC,
          ingest_sequence ASC
@@ -158,7 +158,7 @@ func (r *EventRepository) ListBySession(ctx context.Context, q driven.EventListQ
 		return driven.EventPage{Events: []domain.PlaybackEvent{}}, nil
 	}
 
-	args := []any{q.SessionID}
+	args := []any{q.ProjectID, q.SessionID}
 	cursorClause := ""
 	if q.After != nil {
 		cursorClause = cursorFilterSQL

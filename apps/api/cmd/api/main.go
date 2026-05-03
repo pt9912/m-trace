@@ -126,7 +126,7 @@ func buildHandler(
 	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, publisher.Handler(), publisher, tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, nil
 }
 

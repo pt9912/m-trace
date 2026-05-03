@@ -50,7 +50,7 @@ func (r *EventRepository) ListBySession(_ context.Context, q driven.EventListQue
 	r.mu.Lock()
 	matching := make([]domain.PlaybackEvent, 0)
 	for _, e := range r.events {
-		if e.SessionID == q.SessionID {
+		if e.ProjectID == q.ProjectID && e.SessionID == q.SessionID {
 			matching = append(matching, e)
 		}
 	}

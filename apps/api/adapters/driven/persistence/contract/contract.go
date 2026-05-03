@@ -79,7 +79,7 @@ func testEventOrdering(t *testing.T, factory Factory) {
 		t.Fatalf("append: %v", err)
 	}
 
-	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 10,
 	})
 	if err != nil {
@@ -115,7 +115,7 @@ func testEventCursorPagination(t *testing.T, factory Factory) {
 		t.Fatalf("append: %v", err)
 	}
 
-	page1, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+	page1, err := r.Events.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 2,
 	})
 	if err != nil {
@@ -125,7 +125,7 @@ func testEventCursorPagination(t *testing.T, factory Factory) {
 		t.Fatalf("page1 = %+v, want len=2 and NextAfter set", page1)
 	}
 
-	page2, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+	page2, err := r.Events.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 2, After: page1.NextAfter,
 	})
 	if err != nil {
@@ -135,7 +135,7 @@ func testEventCursorPagination(t *testing.T, factory Factory) {
 		t.Fatalf("page2 = %+v, want len=2 and NextAfter set", page2)
 	}
 
-	page3, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+	page3, err := r.Events.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 2, After: page2.NextAfter,
 	})
 	if err != nil {
@@ -166,7 +166,7 @@ func testSessionUpsertFirstEvent(t *testing.T, factory Factory) {
 	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
-	got, err := r.Sessions.Get(ctx, "s1")
+	got, err := r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -194,7 +194,7 @@ func testSessionTickIncrements(t *testing.T, factory Factory) {
 	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{first, second}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
-	got, err := r.Sessions.Get(ctx, "s1")
+	got, err := r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -223,7 +223,7 @@ func testSessionEndedIdempotent(t *testing.T, factory Factory) {
 	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{begin, endFirst, endSecond}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
-	got, err := r.Sessions.Get(ctx, "s1")
+	got, err := r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -257,7 +257,7 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	if err := r.Sessions.Sweep(ctx, t0.Add(10*time.Second), 60*time.Second, 600*time.Second); err != nil {
 		t.Fatalf("sweep #1: %v", err)
 	}
-	got, err := r.Sessions.Get(ctx, "s1")
+	got, err := r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get #1: %v", err)
 	}
@@ -269,7 +269,7 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	if err := r.Sessions.Sweep(ctx, t0.Add(2*time.Minute), 60*time.Second, 600*time.Second); err != nil {
 		t.Fatalf("sweep #2: %v", err)
 	}
-	got, err = r.Sessions.Get(ctx, "s1")
+	got, err = r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get #2: %v", err)
 	}
@@ -281,7 +281,7 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	if err := r.Sessions.Sweep(ctx, t0.Add(20*time.Minute), 60*time.Second, 600*time.Second); err != nil {
 		t.Fatalf("sweep #3: %v", err)
 	}
-	got, err = r.Sessions.Get(ctx, "s1")
+	got, err = r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get #3: %v", err)
 	}
@@ -296,7 +296,7 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	if err := r.Sessions.Sweep(ctx, t0.Add(30*time.Minute), 60*time.Second, 600*time.Second); err != nil {
 		t.Fatalf("sweep #4: %v", err)
 	}
-	got, err = r.Sessions.Get(ctx, "s1")
+	got, err = r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get #4: %v", err)
 	}
@@ -328,7 +328,7 @@ func testSweepActiveDirectlyToEnded(t *testing.T, factory Factory) {
 		60*time.Second, 600*time.Second); err != nil {
 		t.Fatalf("sweep: %v", err)
 	}
-	got, err := r.Sessions.Get(ctx, "s1")
+	got, err := r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -381,7 +381,7 @@ func testSessionListPagination(t *testing.T, factory Factory) {
 	// im Bucket gleicher started_at, weil session_id ASC.)
 	want := []string{"s-d", "s-c", "s-a", "s-b"}
 
-	page1, err := r.Sessions.List(ctx, driven.SessionListQuery{Limit: 2})
+	page1, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: "demo", Limit: 2})
 	if err != nil {
 		t.Fatalf("list page1: %v", err)
 	}
@@ -397,7 +397,7 @@ func testSessionListPagination(t *testing.T, factory Factory) {
 	// letzte vor dem `t0`-Bucket) muss als Nächstes s-a kommen, nicht
 	// s-b — Cursor-Filter über (started_at, session_id) muss korrekt
 	// auf den Tie-Breaker fallen.
-	page2, err := r.Sessions.List(ctx, driven.SessionListQuery{
+	page2, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: "demo",
 		Limit: 10, After: page1.NextAfter,
 	})
 	if err != nil {
@@ -425,7 +425,7 @@ func testSessionEndedAsFirstEvent(t *testing.T, factory Factory) {
 	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
-	got, err := r.Sessions.Get(ctx, "s1")
+	got, err := r.Sessions.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -505,7 +505,7 @@ func testEventMetaRoundTrip(t *testing.T, factory Factory) {
 		t.Fatalf("append: %v", err)
 	}
 
-	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 10,
 	})
 	if err != nil {
@@ -577,14 +577,14 @@ func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 
 	// Sessions persistieren ihre eigene CorrelationID, nicht die des
 	// anderen Sessions-Buckets.
-	gotA, err := r.Sessions.Get(ctx, "s-a")
+	gotA, err := r.Sessions.Get(ctx, "demo", "s-a")
 	if err != nil {
 		t.Fatalf("get s-a: %v", err)
 	}
 	if gotA.CorrelationID != corrA {
 		t.Errorf("session s-a correlation_id = %q, want %q", gotA.CorrelationID, corrA)
 	}
-	gotB, err := r.Sessions.Get(ctx, "s-b")
+	gotB, err := r.Sessions.Get(ctx, "demo", "s-b")
 	if err != nil {
 		t.Fatalf("get s-b: %v", err)
 	}
@@ -603,7 +603,7 @@ func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 	if err := r.Events.Append(ctx, []domain.PlaybackEvent{follow}); err != nil {
 		t.Fatalf("append follow: %v", err)
 	}
-	gotA2, err := r.Sessions.Get(ctx, "s-a")
+	gotA2, err := r.Sessions.Get(ctx, "demo", "s-a")
 	if err != nil {
 		t.Fatalf("get s-a #2: %v", err)
 	}
@@ -613,7 +613,7 @@ func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 	}
 
 	// Event-Roundtrip: alle drei Felder kommen byte-identisch zurück.
-	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{
+	page, err := r.Events.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s-a", Limit: 10,
 	})
 	if err != nil {

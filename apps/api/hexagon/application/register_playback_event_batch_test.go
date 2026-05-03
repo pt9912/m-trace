@@ -96,13 +96,17 @@ func (s *stubSessionRepo) List(_ context.Context, _ driven.SessionListQuery) (dr
 	return driven.SessionPage{}, nil
 }
 
-func (s *stubSessionRepo) Get(_ context.Context, id string) (domain.StreamSession, error) {
+func (s *stubSessionRepo) Get(_ context.Context, _ string, sessionID string) (domain.StreamSession, error) {
 	if s.getError != nil {
 		return domain.StreamSession{}, s.getError
 	}
-	if sess, ok := s.existing[id]; ok {
+	if sess, ok := s.existing[sessionID]; ok {
 		return sess, nil
 	}
+	return domain.StreamSession{}, domain.ErrSessionNotFound
+}
+
+func (s *stubSessionRepo) GetByCorrelationID(_ context.Context, _ string, _ string) (domain.StreamSession, error) {
 	return domain.StreamSession{}, domain.ErrSessionNotFound
 }
 

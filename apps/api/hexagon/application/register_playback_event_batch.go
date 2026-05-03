@@ -247,7 +247,7 @@ func (u *RegisterPlaybackEventBatchUseCase) resolveCorrelationIDs(
 		if _, ok := out[e.SessionID]; ok {
 			continue
 		}
-		existing, err := u.sessions.Get(ctx, e.SessionID)
+		existing, err := u.sessions.Get(ctx, e.ProjectID, e.SessionID)
 		switch {
 		case errors.Is(err, domain.ErrSessionNotFound):
 			cid, gErr := newCorrelationID()

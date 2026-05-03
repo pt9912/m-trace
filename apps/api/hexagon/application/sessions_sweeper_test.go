@@ -32,7 +32,10 @@ func (r *recordingRepo) UpsertFromEvents(_ context.Context, _ []domain.PlaybackE
 func (r *recordingRepo) List(_ context.Context, _ driven.SessionListQuery) (driven.SessionPage, error) {
 	return driven.SessionPage{}, nil
 }
-func (r *recordingRepo) Get(_ context.Context, _ string) (domain.StreamSession, error) {
+func (r *recordingRepo) Get(_ context.Context, _ string, _ string) (domain.StreamSession, error) {
+	return domain.StreamSession{}, domain.ErrSessionNotFound
+}
+func (r *recordingRepo) GetByCorrelationID(_ context.Context, _ string, _ string) (domain.StreamSession, error) {
 	return domain.StreamSession{}, domain.ErrSessionNotFound
 }
 func (r *recordingRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {

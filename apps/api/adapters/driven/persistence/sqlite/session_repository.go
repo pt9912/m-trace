@@ -29,6 +29,11 @@ import (
 // FK auf projects(project_id) wird vom Aufruf-Pfad geprüft —
 // UpsertFromEvents stellt sicher, dass das Project vor der Session-
 // Insert existiert.
+//
+// Ab plan-0.4.0 §4.2 nutzt das Repository den projekt-skopierten
+// Composite-Key `(project_id, session_id)`; alle Reads filtern in
+// WHERE-Clauses nach `project_id`, der `ON CONFLICT`-Pfad zielt auf
+// den Composite-PK.
 type SessionRepository struct {
 	db *sql.DB
 }
@@ -43,23 +48,24 @@ const (
 INSERT INTO projects(project_id) VALUES (?)
 ON CONFLICT(project_id) DO NOTHING`
 
-	// `ON CONFLICT(session_id) DO NOTHING` schützt vor einem Race, in
-	// dem zwei parallele Use-Case-Aufrufe für dieselbe noch unbekannte
-	// session_id beide nach Get → ErrSessionNotFound springen und
-	// jeweils eine eigene UUIDv4 für `correlation_id` zuweisen. Ohne
-	// das ON CONFLICT würde der zweite Insert mit UNIQUE-Verstoß auf
-	// dem PK fehlschlagen → 5xx. Mit ON CONFLICT bleibt der erste
-	// Sieger durchgehen; der Verlust-Race-Aufruf hinterlässt keine
-	// Spur in `stream_sessions`. Konsequenz: für genau die Events des
-	// Verlust-Aufrufs trägt `playback_events.correlation_id` einen
-	// anderen Wert als `stream_sessions.correlation_id` — siehe R-6
-	// im risks-backlog.
+	// `ON CONFLICT(project_id, session_id) DO NOTHING` schützt vor einem
+	// Race, in dem zwei parallele Use-Case-Aufrufe für dieselbe noch
+	// unbekannte (project_id, session_id) beide nach Get →
+	// ErrSessionNotFound springen und jeweils eine eigene UUIDv4 für
+	// `correlation_id` zuweisen. Ohne das ON CONFLICT würde der zweite
+	// Insert mit UNIQUE-Verstoß auf dem Composite-PK fehlschlagen → 5xx.
+	// Mit ON CONFLICT bleibt der erste Sieger durchgehen; der Verlust-
+	// Race-Aufruf hinterlässt keine Spur in `stream_sessions`. Konsequenz
+	// in §4.2 (C1): für genau die Events des Verlust-Aufrufs trägt
+	// `playback_events.correlation_id` einen anderen Wert als
+	// `stream_sessions.correlation_id` — siehe R-6 im risks-backlog. Der
+	// Fix landet in §4.2 C2 (DB-finale CorrelationID-Rückgabe).
 	insertSessionSQL = `
 INSERT INTO stream_sessions(
     session_id, project_id, state, started_at, last_seen_at, ended_at,
     event_count, correlation_id
 ) VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-ON CONFLICT(session_id) DO NOTHING`
+ON CONFLICT(project_id, session_id) DO NOTHING`
 
 	// Last-Seen + Event-Count werden auch dann inkrementiert, wenn die
 	// Session bereits Ended ist — verspätet eintreffende Events werden
@@ -67,27 +73,35 @@ ON CONFLICT(session_id) DO NOTHING`
 	updateSessionTickSQL = `
 UPDATE stream_sessions
 SET last_seen_at = ?, event_count = event_count + 1
-WHERE session_id = ?`
+WHERE project_id = ? AND session_id = ?`
 
 	markSessionEndedSQL = `
 UPDATE stream_sessions
 SET state = 'ended', ended_at = ?
-WHERE session_id = ? AND state != 'ended'`
+WHERE project_id = ? AND session_id = ? AND state != 'ended'`
 
-	selectSessionByIDSQL = `
+	selectSessionByCompositeKeySQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
        event_count, correlation_id
 FROM stream_sessions
-WHERE session_id = ?`
+WHERE project_id = ? AND session_id = ?`
+
+	selectSessionByCorrelationIDSQL = `
+SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
+       event_count, correlation_id
+FROM stream_sessions
+WHERE project_id = ? AND correlation_id = ?
+LIMIT 1`
 
 	listSessionsBaseSQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
        event_count, correlation_id
-FROM stream_sessions`
+FROM stream_sessions
+WHERE project_id = ?`
 
 	listSessionsCursorSQL = `
-WHERE started_at < ?
-   OR (started_at = ? AND session_id > ?)`
+AND (started_at < ?
+     OR (started_at = ? AND session_id > ?))`
 
 	listSessionsOrderSQL = `
 ORDER BY started_at DESC, session_id ASC LIMIT ?`
@@ -140,7 +154,7 @@ func upsertSessionFromEventTx(ctx context.Context, tx *sql.Tx, e domain.Playback
 	if _, err := tx.ExecContext(ctx, upsertProjectSQL, e.ProjectID); err != nil {
 		return fmt.Errorf("sqlite: upsert project: %w", err)
 	}
-	_, err := readSessionTx(ctx, tx, e.SessionID)
+	_, err := readSessionTx(ctx, tx, e.ProjectID, e.SessionID)
 	switch {
 	case errors.Is(err, domain.ErrSessionNotFound):
 		return insertNewSessionTx(ctx, tx, e)
@@ -156,14 +170,14 @@ func upsertSessionFromEventTx(ctx context.Context, tx *sql.Tx, e domain.Playback
 // den State idempotent auf Ended.
 func tickExistingSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) error {
 	if _, err := tx.ExecContext(ctx, updateSessionTickSQL,
-		formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
+		formatTime(e.ServerReceivedAt), e.ProjectID, e.SessionID); err != nil {
 		return fmt.Errorf("sqlite: tick session: %w", err)
 	}
 	if e.EventName != persistence.SessionEndedEventName {
 		return nil
 	}
 	if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
-		formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
+		formatTime(e.ServerReceivedAt), e.ProjectID, e.SessionID); err != nil {
 		return fmt.Errorf("sqlite: mark session ended: %w", err)
 	}
 	return nil
@@ -188,7 +202,7 @@ func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent)
 	}
 	if e.EventName == persistence.SessionEndedEventName {
 		if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
-			formatTime(e.ServerReceivedAt), e.SessionID); err != nil {
+			formatTime(e.ServerReceivedAt), e.ProjectID, e.SessionID); err != nil {
 			return fmt.Errorf("sqlite: mark session ended: %w", err)
 		}
 	}
@@ -199,7 +213,8 @@ func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent)
 //   - active  + (now - last_seen_at) > stalledAfter → stalled
 //   - stalled + (now - last_seen_at) > endedAfter   → ended (ended_at=now)
 //
-// Idempotent (bereits Ended-Sessions werden nicht angefasst).
+// Idempotent (bereits Ended-Sessions werden nicht angefasst). Project-
+// agnostisch, weil der Sweeper alle Sessions bedient.
 func (r *SessionRepository) Sweep(ctx context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -225,10 +240,24 @@ func (r *SessionRepository) Sweep(ctx context.Context, now time.Time, stalledAft
 	return nil
 }
 
-// Get liefert eine einzelne Session per ID. ErrSessionNotFound wenn
-// keine Session existiert.
-func (r *SessionRepository) Get(ctx context.Context, id string) (domain.StreamSession, error) {
-	row := r.db.QueryRowContext(ctx, selectSessionByIDSQL, id)
+// Get liefert eine einzelne Session per (projectID, sessionID).
+// ErrSessionNotFound wenn die Session in diesem Project nicht
+// existiert; ein Treffer in einem anderen Project gilt als nicht
+// gefunden (PK-Lookup ist project-skopiert).
+func (r *SessionRepository) Get(ctx context.Context, projectID, sessionID string) (domain.StreamSession, error) {
+	row := r.db.QueryRowContext(ctx, selectSessionByCompositeKeySQL, projectID, sessionID)
+	return scanSessionRow(row)
+}
+
+// GetByCorrelationID liefert die Session mit der gegebenen
+// CorrelationID innerhalb des Projects. Leerwerte (Legacy-Sessions
+// vor §3.2-Closeout) zählen nicht als Treffer; Cross-Project-Treffer
+// liefern ErrSessionNotFound (project-skopierte WHERE-Clause + LIMIT 1).
+func (r *SessionRepository) GetByCorrelationID(ctx context.Context, projectID, correlationID string) (domain.StreamSession, error) {
+	if correlationID == "" {
+		return domain.StreamSession{}, domain.ErrSessionNotFound
+	}
+	row := r.db.QueryRowContext(ctx, selectSessionByCorrelationIDSQL, projectID, correlationID)
 	return scanSessionRow(row)
 }
 
@@ -236,7 +265,8 @@ func (r *SessionRepository) Get(ctx context.Context, id string) (domain.StreamSe
 // einfachen `SELECT COUNT(*)` mit Filter; das reicht für den
 // Prometheus-Active-Sessions-Gauge (Scrape-on-demand, keine
 // Hot-Path-Last) und vermeidet ein In-Memory-Snapshot über alle
-// Sessions wie im InMemory-Adapter.
+// Sessions wie im InMemory-Adapter. Project-agnostisch (Cardinality-
+// Regel telemetry-model §3 verbietet `project_id` als Prom-Label).
 func (r *SessionRepository) CountByState(ctx context.Context, state domain.SessionState) (int64, error) {
 	var n int64
 	if err := r.db.QueryRowContext(ctx,
@@ -248,13 +278,14 @@ func (r *SessionRepository) CountByState(ctx context.Context, state domain.Sessi
 }
 
 // List gibt Sessions in stabiler Sortierung (started_at desc,
-// session_id asc) mit Cursor-Pagination zurück.
+// session_id asc) mit Cursor-Pagination zurück, gefiltert nach
+// q.ProjectID.
 func (r *SessionRepository) List(ctx context.Context, q driven.SessionListQuery) (driven.SessionPage, error) {
 	if q.Limit <= 0 {
 		return driven.SessionPage{Sessions: []domain.StreamSession{}}, nil
 	}
 
-	args := []any{}
+	args := []any{q.ProjectID}
 	cursorClause := ""
 	if q.After != nil {
 		cursorClause = listSessionsCursorSQL
@@ -301,8 +332,8 @@ func (r *SessionRepository) List(ctx context.Context, q driven.SessionListQuery)
 // readSessionTx liest eine Session über den aktuellen Tx-Handle.
 // Nutzt Get-äquivalentes SQL, aber muss innerhalb der UpsertFromEvents-
 // Tx laufen, damit die Lesung den eigenen In-Flight-Insert sieht.
-func readSessionTx(ctx context.Context, tx *sql.Tx, id string) (domain.StreamSession, error) {
-	row := tx.QueryRowContext(ctx, selectSessionByIDSQL, id)
+func readSessionTx(ctx context.Context, tx *sql.Tx, projectID, sessionID string) (domain.StreamSession, error) {
+	row := tx.QueryRowContext(ctx, selectSessionByCompositeKeySQL, projectID, sessionID)
 	return scanSessionRow(row)
 }
 

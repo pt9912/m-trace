@@ -64,7 +64,7 @@ func TestRestartPreservesData(t *testing.T) {
 	}
 
 	sess2 := sqlite.NewSessionRepository(db2)
-	got, err := sess2.Get(ctx, "s1")
+	got, err := sess2.Get(ctx, "demo", "s1")
 	if err != nil {
 		t.Fatalf("get session: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestRestartPreservesData(t *testing.T) {
 	}
 
 	evt2 := sqlite.NewEventRepository(db2)
-	page, err := evt2.ListBySession(ctx, driven.EventListQuery{
+	page, err := evt2.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 10,
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func TestRestartCursorStability(t *testing.T) {
 		t.Fatalf("append: %v", err)
 	}
 
-	page1, err := evt1.ListBySession(ctx, driven.EventListQuery{
+	page1, err := evt1.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 2,
 	})
 	if err != nil {
@@ -140,7 +140,7 @@ func TestRestartCursorStability(t *testing.T) {
 	t.Cleanup(func() { _ = db2.Close() })
 	evt2 := sqlite.NewEventRepository(db2)
 
-	page2, err := evt2.ListBySession(ctx, driven.EventListQuery{
+	page2, err := evt2.ListBySession(ctx, driven.EventListQuery{ProjectID: "demo",
 		SessionID: "s1", Limit: 10, After: cursor,
 	})
 	if err != nil {

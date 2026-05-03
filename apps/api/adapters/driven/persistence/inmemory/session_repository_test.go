@@ -109,7 +109,7 @@ func TestSessionRepository_List_SortAndCursor(t *testing.T) {
 		}
 	}
 
-	first, err := repo.List(context.Background(), driven.SessionListQuery{Limit: 2})
+	first, err := repo.List(context.Background(), driven.SessionListQuery{ProjectID: "demo", Limit: 2})
 	if err != nil {
 		t.Fatalf("list page 1: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestSessionRepository_List_SortAndCursor(t *testing.T) {
 		t.Fatalf("page 1 expected NextAfter")
 	}
 
-	second, err := repo.List(context.Background(), driven.SessionListQuery{Limit: 2, After: first.NextAfter})
+	second, err := repo.List(context.Background(), driven.SessionListQuery{ProjectID: "demo", Limit: 2, After: first.NextAfter})
 	if err != nil {
 		t.Fatalf("list page 2: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestSessionRepository_List_SortAndCursor(t *testing.T) {
 func TestSessionRepository_Get_NotFound(t *testing.T) {
 	t.Parallel()
 	repo := inmemory.NewSessionRepository()
-	_, err := repo.Get(context.Background(), "nope")
+	_, err := repo.Get(context.Background(), "demo", "nope")
 	if err != domain.ErrSessionNotFound {
 		t.Errorf("expected ErrSessionNotFound, got %v", err)
 	}
@@ -168,14 +168,14 @@ func TestSessionRepository_Sweep_ActiveToStalled(t *testing.T) {
 
 	// Innerhalb des Stalled-Fensters → bleibt Active.
 	_ = repo.Sweep(context.Background(), t0.Add(30*time.Second), 60*time.Second, 5*time.Minute)
-	got, _ := repo.Get(context.Background(), "s1")
+	got, _ := repo.Get(context.Background(), "demo", "s1")
 	if got.State != domain.SessionStateActive {
 		t.Errorf("after 30s: state=%q want active", got.State)
 	}
 
 	// Jenseits Stalled-Fenster → Stalled.
 	_ = repo.Sweep(context.Background(), t0.Add(90*time.Second), 60*time.Second, 5*time.Minute)
-	got, _ = repo.Get(context.Background(), "s1")
+	got, _ = repo.Get(context.Background(), "demo", "s1")
 	if got.State != domain.SessionStateStalled {
 		t.Errorf("after 90s: state=%q want stalled", got.State)
 	}
@@ -199,7 +199,7 @@ func TestSessionRepository_Sweep_StalledToEnded(t *testing.T) {
 
 	end := t0.Add(10 * time.Minute)
 	_ = repo.Sweep(context.Background(), end, 60*time.Second, 5*time.Minute)
-	got, _ := repo.Get(context.Background(), "s1")
+	got, _ := repo.Get(context.Background(), "demo", "s1")
 	if got.State != domain.SessionStateEnded {
 		t.Errorf("expected ended, got %q", got.State)
 	}
@@ -210,7 +210,7 @@ func TestSessionRepository_Sweep_StalledToEnded(t *testing.T) {
 	// Idempotent: zweiter Sweep ändert nichts.
 	originalEnded := *got.EndedAt
 	_ = repo.Sweep(context.Background(), end.Add(time.Hour), 60*time.Second, 5*time.Minute)
-	got, _ = repo.Get(context.Background(), "s1")
+	got, _ = repo.Get(context.Background(), "demo", "s1")
 	if got.EndedAt == nil || !got.EndedAt.Equal(originalEnded) {
 		t.Errorf("EndedAt mutated on second sweep: %v", got.EndedAt)
 	}
@@ -232,7 +232,7 @@ func TestSessionRepository_ExplicitSessionEndedEvent(t *testing.T) {
 		t.Fatalf("upsert: %v", err)
 	}
 
-	got, _ := repo.Get(context.Background(), "s1")
+	got, _ := repo.Get(context.Background(), "demo", "s1")
 	if got.State != domain.SessionStateEnded {
 		t.Errorf("expected ended, got %q", got.State)
 	}

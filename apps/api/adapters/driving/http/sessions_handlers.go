@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -22,10 +23,16 @@ import (
 // (plan-0.1.0.md §5.1). Span-Konvention siehe telemetry-model.md §2.1
 // — Span-Name "http.handler GET /api/stream-sessions" mit
 // http.method/http.route/http.status_code-Attributen.
+//
+// Ab plan-0.4.0 §4.2 (mit dem §4.3-vorgezogenen Auth-Anteil) ist der
+// Endpoint tokenpflichtig: ohne `X-MTrace-Token` oder bei unbekanntem
+// Token wird `401 Unauthorized` zurückgegeben; der aufgelöste
+// `project_id` filtert die Sessions-Liste.
 type SessionsListHandler struct {
-	UseCase driving.SessionsInbound
-	Tracer  trace.Tracer
-	Logger  *slog.Logger
+	UseCase  driving.SessionsInbound
+	Resolver driven.ProjectResolver
+	Tracer   trace.Tracer
+	Logger   *slog.Logger
 }
 
 const sessionsListSpan = "http.handler GET /api/stream-sessions"
@@ -59,6 +66,11 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		return
 	}
 
+	projectID, ok := resolveProjectFromToken(ctx, w, r, h.Resolver)
+	if !ok {
+		return
+	}
+
 	limit, err := parseLimit(r.URL.Query().Get("limit"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "limit_invalid"})
@@ -72,8 +84,9 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	res, err := h.UseCase.ListSessions(ctx, driving.ListSessionsInput{
-		Limit: limit,
-		After: cursor,
+		ProjectID: projectID,
+		Limit:     limit,
+		After:     cursor,
 	})
 	if err != nil {
 		h.Logger.Error("ListSessions failed", "error", err)
@@ -100,10 +113,12 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 }
 
 // SessionsGetHandler implementiert GET /api/stream-sessions/{id}.
+// Tokenpflichtig ab plan-0.4.0 §4.2 (siehe SessionsListHandler-Doc).
 type SessionsGetHandler struct {
-	UseCase driving.SessionsInbound
-	Tracer  trace.Tracer
-	Logger  *slog.Logger
+	UseCase  driving.SessionsInbound
+	Resolver driven.ProjectResolver
+	Tracer   trace.Tracer
+	Logger   *slog.Logger
 }
 
 const sessionsGetSpan = "http.handler GET /api/stream-sessions/{id}"
@@ -135,6 +150,11 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 		return
 	}
 
+	projectID, ok := resolveProjectFromToken(ctx, w, r, h.Resolver)
+	if !ok {
+		return
+	}
+
 	id := r.PathValue("id")
 	if strings.TrimSpace(id) == "" {
 		writeStatus(w, http.StatusNotFound)
@@ -154,6 +174,7 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 	}
 
 	res, err := h.UseCase.GetSession(ctx, driving.GetSessionInput{
+		ProjectID:   projectID,
 		SessionID:   id,
 		EventsLimit: limit,
 		EventsAfter: cursor,
@@ -188,6 +209,26 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 		body.NextCursor = next
 	}
 	writeJSON(w, http.StatusOK, body)
+}
+
+// resolveProjectFromToken liest `X-MTrace-Token`, löst ihn über den
+// Project-Resolver auf und schreibt im Fehlerfall direkt eine 401-
+// Antwort. Rückgabe: (projectID, true) bei Erfolg, ("", false) wenn
+// der Caller den Request abbrechen soll. Ab plan-0.4.0 §4.2 sind
+// Session-/Event-Read-Endpunkte tokenpflichtig (siehe
+// SessionsListHandler/SessionsGetHandler-Doc-Strings).
+func resolveProjectFromToken(ctx context.Context, w http.ResponseWriter, r *http.Request, resolver driven.ProjectResolver) (string, bool) {
+	token := r.Header.Get("X-MTrace-Token")
+	if token == "" {
+		writeStatus(w, http.StatusUnauthorized)
+		return "", false
+	}
+	project, err := resolver.ResolveByToken(ctx, token)
+	if err != nil {
+		writeStatus(w, http.StatusUnauthorized)
+		return "", false
+	}
+	return project.ID, true
 }
 
 // parseLimit liest den optionalen `limit`-Query-Parameter. Leer → 0
