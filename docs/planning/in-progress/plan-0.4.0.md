@@ -1,6 +1,6 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
-> **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6) und Tranche 2 §3.1–§3.4b abgeschlossen; offen: Tranche 2 §3.4c (Doku-Closeout + Roadmap Schritt 29) sowie Tranchen 3–8.
+> **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6) und Tranche 2 §3.1–§3.4b abgeschlossen; offen: Tranche 2 §3.4c (Doku-Closeout + Roadmap Schritt 31) sowie Tranchen 3–8.
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../../spec/architecture.md); [Telemetry-Model](../../../spec/telemetry-model.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../../adr/0003-live-updates.md); [Risiken-Backlog](../open/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
@@ -239,9 +239,9 @@ Closeout-Notiz: Der §3.3-Code-Commit `8f3011c` hat eine zweite Lint-Regression 
 
 Bezug: §3.1–§3.3.
 
-Ziel: Trace-Konsistenz ist auf allen Ebenen abgesichert (mehrere Batches einer Session teilen `correlation_id`; ungültiger Trace-Kontext führt zu sauberem Fallback; Tempo-deaktivierter Pfad funktioniert ungestört). Doku spiegelt den ausgelieferten Stand. Sub-Tranchen-Ausgang: Roadmap §2 Schritt 29 ist auf ✅ aktualisierbar.
+Ziel: Trace-Konsistenz ist auf allen Ebenen abgesichert (mehrere Batches einer Session teilen `correlation_id`; ungültiger Trace-Kontext führt zu sauberem Fallback; Tempo-deaktivierter Pfad funktioniert ungestört). Doku spiegelt den ausgelieferten Stand. Sub-Tranchen-Ausgang: Roadmap §2 Schritt 31 ist auf ✅ aktualisierbar.
 
-§3.4 ist in drei Sub-Tranchen geschnitten: §3.4a sichert das Server-Verhalten aus §3.2 mit Backend-Tests ab (rein server-seitig, nutzt Use-Case + HTTP-Adapter + tracetest.SpanRecorder); §3.4b deckt zwei Cross-Cutting-Pfade zwischen SDK und Server ab, die §3.3-Review als Should-fix #1/#2 markiert hat (Cross-Version-Kompat, E2E-Garbage); §3.4c finalisiert die Spec-Texte und schließt Roadmap Schritt 29.
+§3.4 ist in drei Sub-Tranchen geschnitten: §3.4a sichert das Server-Verhalten aus §3.2 mit Backend-Tests ab (rein server-seitig, nutzt Use-Case + HTTP-Adapter + tracetest.SpanRecorder); §3.4b deckt zwei Cross-Cutting-Pfade zwischen SDK und Server ab, die §3.3-Review als Should-fix #1/#2 markiert hat (Cross-Version-Kompat, E2E-Garbage); §3.4c finalisiert die Spec-Texte und schließt Roadmap Schritt 31.
 
 #### 3.4a Backend-Tests Trace-Konsistenz
 
@@ -300,14 +300,14 @@ DoD:
 
 Bezug: §3.1–§3.3; §3.4a–§3.4b.
 
-Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 29 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten.
+Ziel: Spec-Texte sind final mit dem Code synchronisiert; Roadmap Schritt 31 ist als ✅ markierbar; offene Items aus dem §3.3-Review (Anmerkung #5 Header-Casing) sind eingearbeitet. Sub-Tranchen-Ausgang: Tranche 2 ist abgeschlossen, Tranche 3 kann starten.
 
 DoD:
 
 - [ ] Header-Casing/Whitespace-Kommentar (aus §3.3-Review, Anmerkung #5): kurze Notiz in `spec/backend-api-contract.md` §1, dass der Server `traceparent` case-insensitiv liest (HTTP-Header-Standard) und führende/abschließende Whitespaces toleriert; SDK schreibt lowercased `traceparent`.
 - [ ] `spec/telemetry-model.md` ist final konsistent mit Code (Hybrid-Strategie, Span-Attribute, Time-Skew, Sampling); §3.1-Entscheidungen sind festgeschrieben.
 - [ ] `spec/backend-api-contract.md` §3 / §3.7 reflektiert das `traceparent`-Header-Verhalten und die neuen Read-Felder `trace_id`/`correlation_id`.
-- [ ] `docs/planning/in-progress/roadmap.md` Schritt 29 ist auf ✅ gesetzt; Status-Header und Verweis auf den Tranche-2-Closeout-Stand sind aktualisiert.
+- [ ] `docs/planning/in-progress/roadmap.md` Schritt 31 ist auf ✅ gesetzt; Status-Header und Verweis auf den Tranche-2-Closeout-Stand sind aktualisiert.
 
 ---
 
