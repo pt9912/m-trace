@@ -44,18 +44,18 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	db := openRaceDB(t, ctx)
+	db := openRaceDB(ctx, t)
 	repo := sqlite.NewSessionRepository(db)
 	t0 := time.Date(2026, 5, 4, 12, 0, 0, 0, time.UTC)
 
-	results := runRaceUpserts(t, ctx, repo, concurrency, projectID, sessionID, t0)
+	results := runRaceUpserts(ctx, t, repo, concurrency, projectID, sessionID, t0)
 	winner := assertCanonicalWinner(t, results, concurrency)
-	assertSingleSessionRow(t, ctx, db, projectID, sessionID)
-	assertWinnerMatchesPersisted(t, ctx, repo, projectID, sessionID, winner)
+	assertSingleSessionRow(ctx, t, db, projectID, sessionID)
+	assertWinnerMatchesPersisted(ctx, t, repo, projectID, sessionID, winner)
 }
 
 // openRaceDB öffnet eine frische SQLite-Datei in t.TempDir().
-func openRaceDB(t *testing.T, ctx context.Context) *sql.DB {
+func openRaceDB(ctx context.Context, t *testing.T) *sql.DB {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "race.db")
 	db, err := storage.Open(ctx, path)
@@ -70,7 +70,7 @@ func openRaceDB(t *testing.T, ctx context.Context) *sql.DB {
 // Single-Event-Batch mit eigener Kandidat-CID. Liefert die je
 // Goroutine zurückgegebene `canonical[sessionID]`-CID.
 func runRaceUpserts(
-	t *testing.T, ctx context.Context, repo *sqlite.SessionRepository,
+	ctx context.Context, t *testing.T, repo *sqlite.SessionRepository,
 	concurrency int, projectID, sessionID string, t0 time.Time,
 ) []string {
 	t.Helper()
@@ -136,7 +136,7 @@ func assertCanonicalWinner(t *testing.T, results []string, concurrency int) stri
 // (project_id, session_id) genau eine Zeile existiert — weil
 // `repo.Get` nur die erste matchende Zeile liefert und einen
 // Composite-PK-Verstoß so nicht aufdecken würde.
-func assertSingleSessionRow(t *testing.T, ctx context.Context, db *sql.DB, projectID, sessionID string) {
+func assertSingleSessionRow(ctx context.Context, t *testing.T, db *sql.DB, projectID, sessionID string) {
 	t.Helper()
 	var rowCount int
 	if err := db.QueryRowContext(ctx,
@@ -152,7 +152,7 @@ func assertSingleSessionRow(t *testing.T, ctx context.Context, db *sql.DB, proje
 
 // assertWinnerMatchesPersisted lädt die DB-finale Zeile via repo.Get
 // und stellt sicher, dass `correlation_id` die Sieger-CID trägt.
-func assertWinnerMatchesPersisted(t *testing.T, ctx context.Context, repo *sqlite.SessionRepository, projectID, sessionID, winner string) {
+func assertWinnerMatchesPersisted(ctx context.Context, t *testing.T, repo *sqlite.SessionRepository, projectID, sessionID, winner string) {
 	t.Helper()
 	got, err := repo.Get(ctx, projectID, sessionID)
 	if err != nil {

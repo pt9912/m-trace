@@ -663,10 +663,10 @@ func testCrossProjectSessionIsolation(t *testing.T, factory Factory) {
 		t.Fatalf("append: %v", err)
 	}
 
-	assertCrossProjectGet(t, ctx, r, scope)
-	assertCrossProjectList(t, ctx, r, scope)
-	assertCrossProjectEvents(t, ctx, r, scope)
-	assertCrossProjectCorrelationLookup(t, ctx, r, scope)
+	assertCrossProjectGet(ctx, t, r, scope)
+	assertCrossProjectList(ctx, t, r, scope)
+	assertCrossProjectEvents(ctx, t, r, scope)
+	assertCrossProjectCorrelationLookup(ctx, t, r, scope)
 }
 
 // crossProjectScope bündelt die Konstanten und Erst-Events der
@@ -698,7 +698,7 @@ func crossProjectFixture(r Repos, t0 time.Time) crossProjectScope {
 	}
 }
 
-func assertCrossProjectGet(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+func assertCrossProjectGet(ctx context.Context, t *testing.T, r Repos, s crossProjectScope) {
 	t.Helper()
 	gotA, err := r.Sessions.Get(ctx, s.projectA, s.shared)
 	if err != nil {
@@ -719,7 +719,7 @@ func assertCrossProjectGet(t *testing.T, ctx context.Context, r Repos, s crossPr
 	}
 }
 
-func assertCrossProjectList(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+func assertCrossProjectList(ctx context.Context, t *testing.T, r Repos, s crossProjectScope) {
 	t.Helper()
 	listA, err := r.Sessions.List(ctx, driven.SessionListQuery{ProjectID: s.projectA, Limit: 10})
 	if err != nil {
@@ -737,7 +737,7 @@ func assertCrossProjectList(t *testing.T, ctx context.Context, r Repos, s crossP
 	}
 }
 
-func assertCrossProjectEvents(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+func assertCrossProjectEvents(ctx context.Context, t *testing.T, r Repos, s crossProjectScope) {
 	t.Helper()
 	eventsA, err := r.Events.ListBySession(ctx, driven.EventListQuery{
 		ProjectID: s.projectA, SessionID: s.shared, Limit: 10,
@@ -759,7 +759,7 @@ func assertCrossProjectEvents(t *testing.T, ctx context.Context, r Repos, s cros
 	}
 }
 
-func assertCrossProjectCorrelationLookup(t *testing.T, ctx context.Context, r Repos, s crossProjectScope) {
+func assertCrossProjectCorrelationLookup(ctx context.Context, t *testing.T, r Repos, s crossProjectScope) {
 	t.Helper()
 	if _, err := r.Sessions.GetByCorrelationID(ctx, s.projectB, s.corrA); !errors.Is(err, domain.ErrSessionNotFound) {
 		t.Errorf("GetByCorrelationID(B, corrA): err=%v, want ErrSessionNotFound", err)
