@@ -96,8 +96,10 @@ curl -i -X POST http://localhost:8080/api/playback-events \
 JSON
 # erwartet: 202 Accepted mit Body {"accepted":1}
 
-# Sessions auflisten (ab 0.1.0 §5.1 implementiert)
-curl http://localhost:8080/api/stream-sessions
+# Sessions auflisten (ab 0.1.0 §5.1 implementiert; ab 0.4.0 §4.3
+# tokenpflichtig)
+curl -H 'X-MTrace-Token: demo-token' \
+  http://localhost:8080/api/stream-sessions
 # erwartet: 200 OK mit JSON-Array, das die Session "smoke-test-1" enthält
 
 # Prometheus-Counter abfragen
@@ -360,7 +362,8 @@ http://localhost:5173/demo?session_id=local-pack-demo&autostart=1
 Nach einigen Sekunden kann die erzeugte Session geprüft werden:
 
 ```bash
-curl http://localhost:8080/api/stream-sessions/local-pack-demo/events
+curl -H 'X-MTrace-Token: demo-token' \
+  http://localhost:8080/api/stream-sessions/local-pack-demo/events
 ```
 
 Erwartet sind Playback-Events aus der Demo und nach `Stop` bzw. beim Verlassen

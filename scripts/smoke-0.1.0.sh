@@ -57,7 +57,9 @@ if [ "$post_status" != "202" ]; then
 fi
 echo "post-events: $post_status"
 
-sessions_status="$(curl -sS -o "$tmpdir/sessions.body" -w '%{http_code}' "$API_URL/api/stream-sessions")"
+sessions_status="$(curl -sS -o "$tmpdir/sessions.body" -w '%{http_code}' \
+  -H "X-MTrace-Token: $TOKEN" \
+  "$API_URL/api/stream-sessions")"
 if [ "$sessions_status" != "200" ]; then
   echo "stream-sessions: expected 200, got $sessions_status" >&2
   cat "$tmpdir/sessions.body" >&2

@@ -122,5 +122,6 @@ Manuell kann die erzeugte Session über das Dashboard geprüft werden:
 Alternativ über die API:
 
 ```bash
-curl http://localhost:8080/api/stream-sessions/demo-docs-1/events
+curl -H 'X-MTrace-Token: demo-token' \
+  http://localhost:8080/api/stream-sessions/demo-docs-1/events
 ```

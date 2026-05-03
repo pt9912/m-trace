@@ -62,8 +62,16 @@ export async function getHealth(): Promise<HealthStatus> {
 }
 
 async function getJSON<T>(url: string): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  // X-MTrace-Token ist ab plan-0.4.0 §4.2/§4.3 für alle Read-Endpunkte
+  // Pflicht. Der Token stammt aus PUBLIC_API_TOKEN; ohne Token wird
+  // der Header weggelassen — die API antwortet dann mit 401 und der
+  // Caller-Wrapper wirft den Fehler-Pfad unten.
+  if (apiToken) {
+    headers["X-MTrace-Token"] = apiToken;
+  }
   const res = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers,
     cache: "no-store"
   });
   if (!res.ok) {
@@ -89,3 +97,4 @@ export function isErrorEvent(event: PlaybackEvent): boolean {
 import { env } from "$env/dynamic/public";
 
 const apiBaseUrl = (env.PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+const apiToken = env.PUBLIC_API_TOKEN ?? "";

@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const apiURL = process.env.API_URL ?? "http://localhost:8080";
+// Read-Endpunkte sind ab plan-0.4.0 §4.3 tokenpflichtig; Playwright
+// schickt den Default-Lab-Token, der zum Project "demo" auflöst.
+const apiHeaders = { "X-MTrace-Token": process.env.API_TOKEN ?? "demo-token" };
 
 test("demo player emits events and dashboard renders the session", async ({ browserName, page, request }) => {
   const sessionId = `playwright-${browserName}-${Date.now()}`;
@@ -11,7 +14,7 @@ test("demo player emits events and dashboard renders the session", async ({ brow
   await expect
     .poll(
       async () => {
-        const response = await request.get(`${apiURL}/api/stream-sessions`);
+        const response = await request.get(`${apiURL}/api/stream-sessions`, { headers: apiHeaders });
         const body = await response.text();
         return response.ok() && body.includes(sessionId);
       },
@@ -19,7 +22,7 @@ test("demo player emits events and dashboard renders the session", async ({ brow
     )
     .toBe(true);
 
-  const detail = await request.get(`${apiURL}/api/stream-sessions/${sessionId}?events_limit=100`);
+  const detail = await request.get(`${apiURL}/api/stream-sessions/${sessionId}?events_limit=100`, { headers: apiHeaders });
   expect(detail.ok()).toBe(true);
   const payload = (await detail.json()) as { events: Array<{ event_name: string }> };
   expect(payload.events.length).toBeGreaterThan(0);

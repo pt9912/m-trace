@@ -77,7 +77,7 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		return
 	}
 
-	cursor, err := decodeListSessionsCursor(r.URL.Query().Get("cursor"))
+	cursor, err := decodeListSessionsCursor(r.URL.Query().Get("cursor"), projectID)
 	if err != nil {
 		writeCursorError(w, err)
 		return
@@ -101,7 +101,7 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		Sessions: toSessionWireList(res.Sessions),
 	}
 	if res.NextCursor != nil {
-		next, err := encodeListSessionsCursor(res.NextCursor)
+		next, err := encodeListSessionsCursor(res.NextCursor, projectID)
 		if err != nil {
 			h.Logger.Error("encode list cursor failed", "error", err)
 			writeStatus(w, http.StatusInternalServerError)
@@ -167,7 +167,7 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 		return
 	}
 
-	cursor, err := decodeSessionEventsCursor(r.URL.Query().Get("events_cursor"))
+	cursor, err := decodeSessionEventsCursor(r.URL.Query().Get("events_cursor"), projectID, id)
 	if err != nil {
 		writeCursorError(w, err)
 		return
@@ -200,7 +200,7 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 		Events:  toEventWireList(res.Events),
 	}
 	if res.NextCursor != nil {
-		next, err := encodeSessionEventsCursor(res.NextCursor)
+		next, err := encodeSessionEventsCursor(res.NextCursor, projectID, id)
 		if err != nil {
 			h.Logger.Error("encode events cursor failed", "error", err)
 			writeStatus(w, http.StatusInternalServerError)
