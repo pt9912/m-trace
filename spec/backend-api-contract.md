@@ -563,8 +563,11 @@ Kontrakts.
   (Cursor-Version). Aktuelle Version ist bis Tranche 2 `2`; mit
   `plan-0.4.0.md` Tranche 3 wechseln Session-List- und
   Session-Event-Cursor wegen projekt-skopierter Read-Pfade auf `3`.
-  v3-Cursor enthalten den Project-Scope (`project_id` oder einen
+  v3-List-Cursor enthalten den Project-Scope (`project_id` oder einen
   daraus abgeleiteten Scope-Hash) zusätzlich zur Storage-Position.
+  v3-Event-Cursor enthalten den Collection-Scope (`project_id` +
+  `session_id` oder einen daraus abgeleiteten Scope-Hash) zusätzlich
+  zur Storage-Position.
   Token-Inhalt ist servergetragen und sollte vom Client als opak
   behandelt werden.
 - **Versionierung**: Cursor ohne `v`-Feld oder mit `v: 1` werden als
@@ -578,9 +581,9 @@ Kontrakts.
 
 | Klasse | Erkennung | HTTP-Status | Body | Client-Recovery |
 |---|---|---|---|---|
-| `accepted` | Token decodiert; `v == 2` vor Tranche 3 oder `v == 3` ab Tranche 3; alle Pflichtfelder vorhanden und valide; bei v3 passt der Project-Scope zum Request-Kontext. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
+| `accepted` | Token decodiert; `v == 2` vor Tranche 3 oder `v == 3` ab Tranche 3; alle Pflichtfelder vorhanden und valide; bei v3 passt der Project-Scope zum Request-Kontext und bei Event-Cursorn zusätzlich der Session-Scope zum Pfad `{id}`. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
 | `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden; nach Aktivierung projekt-skopierter Read-Pfade auch `v == 2` für Session-Cursor ohne Project-Scope. | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
-| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig; oder unbekannte Zusatzfelder vorhanden; oder v3-Project-Scope passt nicht zum Request-Kontext. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig; oder unbekannte Zusatzfelder vorhanden; oder v3-Project-Scope passt nicht zum Request-Kontext; oder v3-Event-Cursor-Scope passt nicht zur Session im Pfad. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 | `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert aber eine Storage-Position, die durch Reset/Retention nicht mehr existiert. In `0.4.0` ohne TTL praktisch nur nach `make wipe` erreichbar. | `410 Gone` (Token syntaktisch valide, Ziel weg). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 
 **Recovery-Verhalten**:

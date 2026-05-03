@@ -91,6 +91,14 @@ Der Degradationsmarker ist normativ:
 | `meta["network.kind"]` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
 | `meta["network.detail_status"]` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
 | `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund aus derselben Reason-Domäne wie `session_boundaries[].reason`: `native_hls_unavailable`, `hlsjs_signal_unavailable`, `browser_api_unavailable`, `resource_timing_unavailable`, `cors_timing_blocked`, `service_worker_opaque`; zusätzlich `^[a-z0-9_]{1,64}$`. |
+| `meta["network.redacted_url"]` | string, optional | Bereits redigierter URL-Repräsentant gemäß Redaction-Matrix; rohe URLs mit Query, Fragment, `userinfo` oder tokenartigen Pfadsegmenten sind unzulässig. |
+
+Reservierte `network.*`- und `timing.*`-Keys werden inbound vor
+Persistenz typvalidiert. Objekte und Arrays sind für diese Keys
+unzulässig; `network.*`-Werte sind Strings mit den oben dokumentierten
+Domänen/Redaction-Regeln, `timing.*`-Werte sind Zahlen oder explizit
+dokumentierte RFC3339-Strings. Verstöße liefern `422` und werden nicht
+persistiert.
 
 `network_detail_unavailable` ist kein Fehlerstatus und darf allein
 keinen 4xx auslösen. Das Event bleibt in der Session-Timeline sichtbar,

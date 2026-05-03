@@ -52,6 +52,37 @@
     "service_worker_opaque"
   ],
   "network_unavailable_reason_pattern": "^[a-z0-9_]{1,64}$",
+  "reserved_meta_keys": {
+    "network.kind": {
+      "type": "string",
+      "values": [
+        "manifest",
+        "segment"
+      ]
+    },
+    "network.detail_status": {
+      "type": "string",
+      "values": [
+        "available",
+        "network_detail_unavailable"
+      ]
+    },
+    "network.unavailable_reason": {
+      "type": "string",
+      "values_ref": "network_unavailable_reasons",
+      "pattern_ref": "network_unavailable_reason_pattern"
+    },
+    "network.redacted_url": {
+      "type": "string",
+      "redacted_url": true
+    },
+    "timing.*": {
+      "types": [
+        "number",
+        "rfc3339_string"
+      ]
+    }
+  },
   "event_names": [
     "manifest_loaded",
     "segment_loaded",
