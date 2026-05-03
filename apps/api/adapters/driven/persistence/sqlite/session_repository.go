@@ -49,17 +49,17 @@ INSERT INTO projects(project_id) VALUES (?)
 ON CONFLICT(project_id) DO NOTHING`
 
 	// `ON CONFLICT(project_id, session_id) DO NOTHING` schützt vor einem
-	// Race, in dem zwei parallele Use-Case-Aufrufe für dieselbe noch
-	// unbekannte (project_id, session_id) beide nach Get →
-	// ErrSessionNotFound springen und jeweils eine eigene UUIDv4 für
-	// `correlation_id` zuweisen. Ohne das ON CONFLICT würde der zweite
-	// Insert mit UNIQUE-Verstoß auf dem Composite-PK fehlschlagen → 5xx.
-	// Mit ON CONFLICT bleibt der erste Sieger durchgehen; der Verlust-
-	// Race-Aufruf hinterlässt keine Spur in `stream_sessions`. Konsequenz
-	// in §4.2 (C1): für genau die Events des Verlust-Aufrufs trägt
-	// `playback_events.correlation_id` einen anderen Wert als
-	// `stream_sessions.correlation_id` — siehe R-6 im risks-backlog. Der
-	// Fix landet in §4.2 C2 (DB-finale CorrelationID-Rückgabe).
+	// UNIQUE-Verstoß auf dem Composite-PK, wenn zwei parallele
+	// Use-Case-Aufrufe für dieselbe noch unbekannte
+	// (project_id, session_id) beide nach Get → ErrSessionNotFound
+	// springen und jeweils eine eigene UUIDv4 für `correlation_id`
+	// zuweisen. Mit ON CONFLICT bleibt der Sieger durchgehen; der
+	// Verlust-Race-Aufruf signalisiert das via `RowsAffected() == 0`,
+	// woraufhin upsertSessionFromEventTx die DB-finale `correlation_id`
+	// nachliest und an UpsertFromEvents zurückreicht. Damit landen die
+	// Events des Verlust-Race-Aufrufs nach dem Use-Case-Enrichment auch
+	// mit der Sieger-CorrelationID in `playback_events` — R-6 ist
+	// technisch geschlossen (§4.2 C2).
 	insertSessionSQL = `
 INSERT INTO stream_sessions(
     session_id, project_id, state, started_at, last_seen_at, ended_at,
@@ -123,45 +123,61 @@ WHERE state = 'stalled' AND last_seen_at < ?`
 // nicht); LastEventAt + EventCount werden bei jedem Event aktualisiert,
 // auch nachdem die Session beendet wurde — verspätete Events bleiben
 // gezählt. Spiegelt das InMemory-Verhalten 1:1.
-func (r *SessionRepository) UpsertFromEvents(ctx context.Context, events []domain.PlaybackEvent) error {
+//
+// Rückgabe (R-6-Fix, plan-0.4.0 §4.2 C2): map[sessionID]canonicalCID
+// — die DB-finale CorrelationID jeder Session. Bei einem Race auf
+// einer noch unbekannten (project_id, session_id) liefert
+// `RowsAffected() == 0` aus dem ON-CONFLICT-Insert das Signal, die
+// Sieger-CorrelationID nachzulesen und zurückzugeben, sodass der Use-
+// Case Events des Verlust-Race-Aufrufs vor dem Append damit enrichen
+// kann. Damit ist
+// `playback_events.correlation_id == stream_sessions.correlation_id`
+// auch unter Concurrency garantiert.
+func (r *SessionRepository) UpsertFromEvents(ctx context.Context, events []domain.PlaybackEvent) (map[string]string, error) {
 	if len(events) == 0 {
-		return nil
+		return map[string]string{}, nil
 	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("sqlite: begin tx: %w", err)
+		return nil, fmt.Errorf("sqlite: begin tx: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
+	canonical := make(map[string]string, len(events))
 	for _, e := range events {
-		if err := upsertSessionFromEventTx(ctx, tx, e); err != nil {
-			return err
+		cid, err := upsertSessionFromEventTx(ctx, tx, e)
+		if err != nil {
+			return nil, err
 		}
+		canonical[e.SessionID] = cid
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("sqlite: commit: %w", err)
+		return nil, fmt.Errorf("sqlite: commit: %w", err)
 	}
-	return nil
+	return canonical, nil
 }
 
 // upsertSessionFromEventTx wendet ein einzelnes Event auf den
 // Session-State an: Project-Upsert (FK-Vorbedingung), dann je nach
 // existierender Session entweder Insert (neu) oder Tick (bekannt).
-// Eigene Funktion, damit UpsertFromEvents sich auf Tx-Lifecycle und
-// Loop konzentriert (gocognit).
-func upsertSessionFromEventTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) error {
+// Liefert die DB-finale CorrelationID der Session zurück, damit
+// UpsertFromEvents sie an den Use-Case zurückreichen kann.
+func upsertSessionFromEventTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) (string, error) {
 	if _, err := tx.ExecContext(ctx, upsertProjectSQL, e.ProjectID); err != nil {
-		return fmt.Errorf("sqlite: upsert project: %w", err)
+		return "", fmt.Errorf("sqlite: upsert project: %w", err)
 	}
-	_, err := readSessionTx(ctx, tx, e.ProjectID, e.SessionID)
+	existing, err := readSessionTx(ctx, tx, e.ProjectID, e.SessionID)
 	switch {
 	case errors.Is(err, domain.ErrSessionNotFound):
 		return insertNewSessionTx(ctx, tx, e)
 	case err != nil:
-		return err
+		return "", err
 	default:
-		return tickExistingSessionTx(ctx, tx, e)
+		if err := tickExistingSessionTx(ctx, tx, e); err != nil {
+			return "", err
+		}
+		return existing.CorrelationID, nil
 	}
 }
 
@@ -183,13 +199,24 @@ func tickExistingSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEve
 	return nil
 }
 
-// insertNewSessionTx legt eine bisher unbekannte Session an. Beim
-// allerersten Event genügt ein Insert mit State=Active, EventCount=1
-// und der vom Use-Case zugewiesenen CorrelationID; ist das erste
-// Event session_ended, wird unmittelbar danach der State-Switch
-// ausgeführt.
-func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) error {
-	if _, err := tx.ExecContext(ctx, insertSessionSQL,
+// insertNewSessionTx legt eine bisher unbekannte Session an und liefert
+// die DB-finale CorrelationID zurück. Beim allerersten Event genügt ein
+// Insert mit State=Active, EventCount=1 und der vom Use-Case
+// zugewiesenen CorrelationID; ist das erste Event session_ended, wird
+// unmittelbar danach der State-Switch ausgeführt.
+//
+// R-6-Fix: Bei einem Race greift `ON CONFLICT(project_id, session_id)
+// DO NOTHING`. `RowsAffected() == 0` heißt: ein konkurrenter Aufruf
+// hat die Session bereits angelegt; wir müssen dessen CorrelationID
+// einlesen und zurückgeben, damit der Use-Case unsere Events damit
+// enricht. `RowsAffected() == 1` heißt: wir haben die Session
+// angelegt; unsere Kandidat-CorrelationID ist die Sieger-CID, und der
+// optionale `markSessionEndedSQL` wird auf der von uns angelegten Zeile
+// ausgeführt. Im Verlust-Fall überspringen wir `markSessionEndedSQL`,
+// damit der Verlust-Aufruf nicht den Endzustand des Siegers
+// überschreibt.
+func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) (string, error) {
+	res, err := tx.ExecContext(ctx, insertSessionSQL,
 		e.SessionID,
 		e.ProjectID,
 		string(domain.SessionStateActive),
@@ -197,16 +224,32 @@ func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent)
 		formatTime(e.ServerReceivedAt),
 		nullableTime(nil),
 		nullableString(e.CorrelationID),
-	); err != nil {
-		return fmt.Errorf("sqlite: insert session: %w", err)
+	)
+	if err != nil {
+		return "", fmt.Errorf("sqlite: insert session: %w", err)
 	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return "", fmt.Errorf("sqlite: insert session rows-affected: %w", err)
+	}
+	if rows == 0 {
+		// Race-Verlust: ein konkurrenter Insert hat bereits commited (oder
+		// liegt im selben Snapshot vor), unser ON CONFLICT DO NOTHING ist
+		// zur No-op geworden. CorrelationID des Siegers nachlesen.
+		winner, readErr := readSessionTx(ctx, tx, e.ProjectID, e.SessionID)
+		if readErr != nil {
+			return "", fmt.Errorf("sqlite: read canonical correlation_id after race: %w", readErr)
+		}
+		return winner.CorrelationID, nil
+	}
+	// Wir haben gewonnen — Kandidat-CorrelationID ist DB-final.
 	if e.EventName == persistence.SessionEndedEventName {
 		if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
 			formatTime(e.ServerReceivedAt), e.ProjectID, e.SessionID); err != nil {
-			return fmt.Errorf("sqlite: mark session ended: %w", err)
+			return "", fmt.Errorf("sqlite: mark session ended: %w", err)
 		}
 	}
-	return nil
+	return e.CorrelationID, nil
 }
 
 // Sweep schaltet zeitbasierte Lifecycle-Übergänge:

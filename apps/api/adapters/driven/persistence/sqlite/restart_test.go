@@ -38,7 +38,7 @@ func TestRestartPreservesData(t *testing.T) {
 		mkRestartEvent(seq1, "demo", "s1", t0),
 		mkRestartEvent(seq1, "demo", "s1", t0.Add(1*time.Second)),
 	}
-	if err := sess1.UpsertFromEvents(ctx, events); err != nil {
+	if _, err := sess1.UpsertFromEvents(ctx, events); err != nil {
 		t.Fatalf("upsert #1: %v", err)
 	}
 	if err := evt1.Append(ctx, events); err != nil {
@@ -111,7 +111,7 @@ func TestRestartCursorStability(t *testing.T) {
 		events = append(events, mkRestartEvent(seq1, "demo", "s1",
 			t0.Add(time.Duration(i)*time.Second)))
 	}
-	if err := sess1.UpsertFromEvents(ctx, events); err != nil {
+	if _, err := sess1.UpsertFromEvents(ctx, events); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	if err := evt1.Append(ctx, events); err != nil {

@@ -72,7 +72,7 @@ func testEventOrdering(t *testing.T, factory Factory) {
 		mkEvent(r.Sequencer, "demo", "s1", t0.Add(1*time.Second), seq(1)),
 		mkEvent(r.Sequencer, "demo", "s1", t0.Add(3*time.Second), nil),
 	}
-	if err := r.Sessions.UpsertFromEvents(ctx, events); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, events); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	if err := r.Events.Append(ctx, events); err != nil {
@@ -108,7 +108,7 @@ func testEventCursorPagination(t *testing.T, factory Factory) {
 		events = append(events, mkEvent(r.Sequencer, "demo", "s1",
 			t0.Add(time.Duration(i)*time.Second), &s))
 	}
-	if err := r.Sessions.UpsertFromEvents(ctx, events); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, events); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	if err := r.Events.Append(ctx, events); err != nil {
@@ -163,7 +163,7 @@ func testSessionUpsertFirstEvent(t *testing.T, factory Factory) {
 	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
 
 	e := mkEvent(r.Sequencer, "demo", "s1", t0, seq(1))
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	got, err := r.Sessions.Get(ctx, "demo", "s1")
@@ -191,7 +191,7 @@ func testSessionTickIncrements(t *testing.T, factory Factory) {
 
 	first := mkEvent(r.Sequencer, "demo", "s1", t0, seq(1))
 	second := mkEvent(r.Sequencer, "demo", "s1", t0.Add(5*time.Second), seq(2))
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{first, second}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{first, second}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	got, err := r.Sessions.Get(ctx, "demo", "s1")
@@ -220,7 +220,7 @@ func testSessionEndedIdempotent(t *testing.T, factory Factory) {
 	endSecond := mkEvent(r.Sequencer, "demo", "s1", t0.Add(5*time.Second), seq(3))
 	endSecond.EventName = persistence.SessionEndedEventName
 
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{begin, endFirst, endSecond}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{begin, endFirst, endSecond}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	got, err := r.Sessions.Get(ctx, "demo", "s1")
@@ -249,7 +249,7 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
 
 	e := mkEvent(r.Sequencer, "demo", "s1", t0, seq(1))
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 
@@ -318,7 +318,7 @@ func testSweepActiveDirectlyToEnded(t *testing.T, factory Factory) {
 	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
 
 	e := mkEvent(r.Sequencer, "demo", "s1", t0, seq(1))
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 
@@ -372,7 +372,7 @@ func testSessionListPagination(t *testing.T, factory Factory) {
 	}
 	for _, c := range cases {
 		e := mkEvent(r.Sequencer, "demo", c.id, c.started, seq(1))
-		if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+		if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 			t.Fatalf("upsert %s: %v", c.id, err)
 		}
 	}
@@ -422,7 +422,7 @@ func testSessionEndedAsFirstEvent(t *testing.T, factory Factory) {
 	// Umweg über einen Active-State.
 	e := mkEvent(r.Sequencer, "demo", "s1", t0, seq(1))
 	e.EventName = persistence.SessionEndedEventName
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	got, err := r.Sessions.Get(ctx, "demo", "s1")
@@ -449,14 +449,14 @@ func testCountByState(t *testing.T, factory Factory) {
 	// Zählung: 2 active, 1 ended, 0 stalled.
 	for _, sid := range []string{"s-a", "s-b", "s-c"} {
 		e := mkEvent(r.Sequencer, "demo", sid, t0, seq(1))
-		if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+		if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 			t.Fatalf("upsert %s: %v", sid, err)
 		}
 	}
 	// s-c bekommt explizit ein session_ended-Event.
 	end := mkEvent(r.Sequencer, "demo", "s-c", t0.Add(time.Second), seq(2))
 	end.EventName = persistence.SessionEndedEventName
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{end}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{end}); err != nil {
 		t.Fatalf("upsert session_ended: %v", err)
 	}
 
@@ -498,7 +498,7 @@ func testEventMetaRoundTrip(t *testing.T, factory Factory) {
 			"version": "1.5.0",
 		},
 	}
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{e}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	if err := r.Events.Append(ctx, []domain.PlaybackEvent{e}); err != nil {
@@ -568,7 +568,7 @@ func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 	b := mkEvent(r.Sequencer, "demo", "s-b", t0.Add(time.Second), seq(2))
 	b.TraceID, b.SpanID, b.CorrelationID = traceID, spanID, corrB
 
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{a, b}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{a, b}); err != nil {
 		t.Fatalf("upsert: %v", err)
 	}
 	if err := r.Events.Append(ctx, []domain.PlaybackEvent{a, b}); err != nil {
@@ -597,7 +597,7 @@ func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 	// nicht den aus dem neuen Event ankommenden).
 	follow := mkEvent(r.Sequencer, "demo", "s-a", t0.Add(2*time.Second), seq(3))
 	follow.TraceID, follow.SpanID, follow.CorrelationID = traceID, spanID, corrA
-	if err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{follow}); err != nil {
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{follow}); err != nil {
 		t.Fatalf("upsert follow: %v", err)
 	}
 	if err := r.Events.Append(ctx, []domain.PlaybackEvent{follow}); err != nil {

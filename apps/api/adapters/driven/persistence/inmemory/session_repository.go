@@ -45,12 +45,20 @@ func NewSessionRepository() *SessionRepository {
 // EventCount. Reihenfolge folgt der Slice-Reihenfolge. Ein Event mit
 // event_name=session_ended schaltet die Session sofort auf Ended
 // (plan-0.1.0.md §5.1 Sub-Item 8).
-func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
+//
+// Rückgabe (R-6-Fix, plan-0.4.0 §4.2 C2): map[sessionID]canonicalCID
+// — die nach Upsert in der Map sichtbare CorrelationID. Im InMemory-
+// Backend ist das immer der Wert aus dem ersten Insert (alle weiteren
+// Events derselben Session lesen ihn aus der Map). Der Use-Case nutzt
+// die Map, um Events vor dem EventRepository.Append-Aufruf mit dem
+// DB-finalen Wert zu enrichen.
+func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) (map[string]string, error) {
 	if len(events) == 0 {
-		return nil
+		return map[string]string{}, nil
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	canonical := make(map[string]string, len(events))
 	for _, e := range events {
 		k := sessionKey{ProjectID: e.ProjectID, SessionID: e.SessionID}
 		s, ok := r.sessions[k]
@@ -74,8 +82,9 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 			s.EndedAt = &endedAt
 		}
 		r.sessions[k] = s
+		canonical[e.SessionID] = s.CorrelationID
 	}
-	return nil
+	return canonical, nil
 }
 
 // Sweep wertet zeitbasierte Lifecycle-Übergänge aus (plan-0.1.0.md

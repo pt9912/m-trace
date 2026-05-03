@@ -40,11 +40,16 @@ func TestOpen_FreshStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read schema_migrations: %v", err)
 	}
-	if len(rows) != 1 {
-		t.Fatalf("schema_migrations rows = %d, want 1", len(rows))
+	// Ab plan-0.4.0 §4.2 zwei Migrations-Files (V1 baseline + V2
+	// project-scoped session PK); ein Fresh-Start läuft beide an.
+	if len(rows) != 2 {
+		t.Fatalf("schema_migrations rows = %d, want 2", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
-		t.Errorf("row = %+v, want version=1 dirty=0", rows[0])
+		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
+	}
+	if rows[1].version != 2 || rows[1].dirty != 0 {
+		t.Errorf("row[1] = %+v, want version=2 dirty=0", rows[1])
 	}
 }
 

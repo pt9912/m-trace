@@ -27,7 +27,7 @@ func TestSessionRepository_UpsertFromEvents_CreateAndUpdate(t *testing.T) {
 		ProjectID:        "demo",
 		ServerReceivedAt: t0,
 	}}
-	if err := repo.UpsertFromEvents(context.Background(), first); err != nil {
+	if _, err := repo.UpsertFromEvents(context.Background(), first); err != nil {
 		t.Fatalf("first upsert: %v", err)
 	}
 
@@ -35,7 +35,7 @@ func TestSessionRepository_UpsertFromEvents_CreateAndUpdate(t *testing.T) {
 		{SessionID: "sess-A", ProjectID: "demo", ServerReceivedAt: t1},
 		{SessionID: "sess-B", ProjectID: "demo", ServerReceivedAt: t2},
 	}
-	if err := repo.UpsertFromEvents(context.Background(), second); err != nil {
+	if _, err := repo.UpsertFromEvents(context.Background(), second); err != nil {
 		t.Fatalf("second upsert: %v", err)
 	}
 
@@ -72,7 +72,7 @@ func TestSessionRepository_UpsertFromEvents_CreateAndUpdate(t *testing.T) {
 func TestSessionRepository_EmptyEventsIsNoop(t *testing.T) {
 	t.Parallel()
 	repo := inmemory.NewSessionRepository()
-	if err := repo.UpsertFromEvents(context.Background(), nil); err != nil {
+	if _, err := repo.UpsertFromEvents(context.Background(), nil); err != nil {
 		t.Errorf("nil upsert: %v", err)
 	}
 	if got := repo.Snapshot(); len(got) != 0 {
@@ -99,7 +99,7 @@ func TestSessionRepository_List_SortAndCursor(t *testing.T) {
 
 	// 4 sessions: s4@t0+3, s3@t0+2, s2@t0+1, s1@t0 → sort desc → s4,s3,s2,s1.
 	for i, id := range []string{"s1", "s2", "s3", "s4"} {
-		err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
+		_, err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
 			SessionID:        id,
 			ProjectID:        "demo",
 			ServerReceivedAt: t0.Add(time.Duration(i) * time.Second),
@@ -158,7 +158,7 @@ func TestSessionRepository_Sweep_ActiveToStalled(t *testing.T) {
 	repo := inmemory.NewSessionRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 
-	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
+	if _, err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
 		SessionID:        "s1",
 		ProjectID:        "demo",
 		ServerReceivedAt: t0,
@@ -191,7 +191,7 @@ func TestSessionRepository_Sweep_StalledToEnded(t *testing.T) {
 	t.Parallel()
 	repo := inmemory.NewSessionRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
-	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
+	if _, err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{{
 		SessionID: "s1", ProjectID: "demo", ServerReceivedAt: t0,
 	}}); err != nil {
 		t.Fatalf("upsert: %v", err)
@@ -225,7 +225,7 @@ func TestSessionRepository_ExplicitSessionEndedEvent(t *testing.T) {
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	end := t0.Add(time.Second)
 
-	if err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{
+	if _, err := repo.UpsertFromEvents(context.Background(), []domain.PlaybackEvent{
 		{EventName: "playback_started", SessionID: "s1", ProjectID: "demo", ServerReceivedAt: t0},
 		{EventName: "session_ended", SessionID: "s1", ProjectID: "demo", ServerReceivedAt: end},
 	}); err != nil {

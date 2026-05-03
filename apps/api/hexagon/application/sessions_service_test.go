@@ -23,25 +23,29 @@ func newFakeSessionRepo() *fakeSessionRepo {
 	return &fakeSessionRepo{store: make(map[string]domain.StreamSession)}
 }
 
-func (r *fakeSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
+func (r *fakeSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) (map[string]string, error) {
+	canonical := make(map[string]string, len(events))
 	for _, e := range events {
 		s, ok := r.store[e.SessionID]
 		if !ok {
 			r.store[e.SessionID] = domain.StreamSession{
-				ID:          e.SessionID,
-				ProjectID:   e.ProjectID,
-				State:       domain.SessionStateActive,
-				StartedAt:   e.ServerReceivedAt,
-				LastEventAt: e.ServerReceivedAt,
-				EventCount:  1,
+				ID:            e.SessionID,
+				ProjectID:     e.ProjectID,
+				State:         domain.SessionStateActive,
+				StartedAt:     e.ServerReceivedAt,
+				LastEventAt:   e.ServerReceivedAt,
+				EventCount:    1,
+				CorrelationID: e.CorrelationID,
 			}
+			canonical[e.SessionID] = e.CorrelationID
 			continue
 		}
 		s.LastEventAt = e.ServerReceivedAt
 		s.EventCount++
 		r.store[e.SessionID] = s
+		canonical[e.SessionID] = s.CorrelationID
 	}
-	return nil
+	return canonical, nil
 }
 
 func (r *fakeSessionRepo) List(_ context.Context, q driven.SessionListQuery) (driven.SessionPage, error) {

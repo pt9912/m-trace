@@ -26,8 +26,8 @@ type recordingRepo struct {
 	failNext    bool
 }
 
-func (r *recordingRepo) UpsertFromEvents(_ context.Context, _ []domain.PlaybackEvent) error {
-	return nil
+func (r *recordingRepo) UpsertFromEvents(_ context.Context, _ []domain.PlaybackEvent) (map[string]string, error) {
+	return map[string]string{}, nil
 }
 func (r *recordingRepo) List(_ context.Context, _ driven.SessionListQuery) (driven.SessionPage, error) {
 	return driven.SessionPage{}, nil

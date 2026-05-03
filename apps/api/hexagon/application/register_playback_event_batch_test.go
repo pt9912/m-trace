@@ -81,15 +81,22 @@ type stubSessionRepo struct {
 	getError error
 }
 
-func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) error {
+func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) (map[string]string, error) {
 	if s.failNext {
 		s.failNext = false
-		return errors.New("session repo failure")
+		return nil, errors.New("session repo failure")
 	}
 	dup := make([]domain.PlaybackEvent, len(events))
 	copy(dup, events)
 	s.upserts = append(s.upserts, dup)
-	return nil
+	canonical := make(map[string]string, len(events))
+	for _, e := range events {
+		// Stub liefert die Eingabe-CorrelationID als „canonical" zurück
+		// (kein Race-Mischen). Tests, die R-6-spezifisches Race-Verhalten
+		// brauchen, gehen direkt gegen den SQLite-Adapter.
+		canonical[e.SessionID] = e.CorrelationID
+	}
+	return canonical, nil
 }
 
 func (s *stubSessionRepo) List(_ context.Context, _ driven.SessionListQuery) (driven.SessionPage, error) {

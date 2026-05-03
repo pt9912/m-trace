@@ -27,7 +27,15 @@ type SessionRepository interface {
 	// event_name=session_ended ein, wird die Session direkt auf
 	// State=Ended gesetzt und EndedAt=event.ServerReceivedAt. Events
 	// werden anhand ihres ProjectID/SessionID-Paares zugeordnet.
-	UpsertFromEvents(ctx context.Context, events []domain.PlaybackEvent) error
+	//
+	// Rückgabe ab plan-0.4.0 §4.2 C2 (R-6-Fix): die DB-finale
+	// `correlation_id` jeder Session, gekeyed nach SessionID. Der Use-
+	// Case enricht damit die Events vor `EventRepository.Append`, sodass
+	// auch bei einem Race auf einer noch unbekannten (project, session)-
+	// Partition niemals ein Event mit einer Verlust-CorrelationID
+	// persistiert wird. Ein Batch ist single-project (validiert in der
+	// Application-Schicht), darum reicht SessionID als Map-Key.
+	UpsertFromEvents(ctx context.Context, events []domain.PlaybackEvent) (map[string]string, error)
 	// List gibt Sessions in stabiler Sortierung (started_at desc,
 	// session_id asc) zurück, gefiltert nach q.ProjectID. Der Adapter
 	// ist für die Sortierung verantwortlich; der Use Case clampt nur

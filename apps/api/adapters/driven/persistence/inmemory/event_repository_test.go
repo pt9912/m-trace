@@ -22,6 +22,7 @@ func TestEventRepository_ListBySession_SortAndCursor(t *testing.T) {
 	// Mix mit absichtlich unsortierter Insertion.
 	mk := func(sess string, recv time.Time, seq *int64, ing int64) domain.PlaybackEvent {
 		return domain.PlaybackEvent{
+			ProjectID:        "demo",
 			SessionID:        sess,
 			ServerReceivedAt: recv,
 			SequenceNumber:   seq,
@@ -117,8 +118,8 @@ func TestEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *testing.T)
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	intp := func(v int64) *int64 { return &v }
 	if err := repo.Append(context.Background(), []domain.PlaybackEvent{
-		{SessionID: "s1", ServerReceivedAt: t0, SequenceNumber: intp(5), IngestSequence: 2},
-		{SessionID: "s1", ServerReceivedAt: t0, SequenceNumber: nil, IngestSequence: 1},
+		{ProjectID: "demo", SessionID: "s1", ServerReceivedAt: t0, SequenceNumber: intp(5), IngestSequence: 2},
+		{ProjectID: "demo", SessionID: "s1", ServerReceivedAt: t0, SequenceNumber: nil, IngestSequence: 1},
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
@@ -143,9 +144,9 @@ func TestEventRepository_ListBySession_FiltersBySessionID(t *testing.T) {
 	repo := inmemory.NewEventRepository()
 	t0 := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 	if err := repo.Append(context.Background(), []domain.PlaybackEvent{
-		{SessionID: "s1", ServerReceivedAt: t0, IngestSequence: 1},
-		{SessionID: "s2", ServerReceivedAt: t0, IngestSequence: 2},
-		{SessionID: "s1", ServerReceivedAt: t0.Add(time.Second), IngestSequence: 3},
+		{ProjectID: "demo", SessionID: "s1", ServerReceivedAt: t0, IngestSequence: 1},
+		{ProjectID: "demo", SessionID: "s2", ServerReceivedAt: t0, IngestSequence: 2},
+		{ProjectID: "demo", SessionID: "s1", ServerReceivedAt: t0.Add(time.Second), IngestSequence: 3},
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}

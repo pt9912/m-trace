@@ -118,16 +118,33 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		parsed[i].CorrelationID = correlations[parsed[i].SessionID]
 	}
 
-	// Step 10 — persist + accept. Synchron fehlgeschlagenes Append ist
-	// kein Backpressure-Drop und inkrementiert dropped_events nicht;
-	// Sichtbarkeit erfolgt über HTTP-5xx-Histogramm und Logs. Session-
-	// Aggregation läuft erst nach erfolgreichem Append, damit die
-	// Sessions-Sicht nicht mit Events divergiert, die der Repository-
-	// Append nicht akzeptiert hat.
-	if err := u.events.Append(ctx, parsed); err != nil {
+	// Step 10 — persist + accept. Reihenfolge ab plan-0.4.0 §4.2 C2
+	// (R-6-Fix): zuerst Sessions upserten, damit DB-finale
+	// `correlation_id` (Sieger des Race auf einer noch unbekannten
+	// `(project_id, session_id)`) feststeht; danach Events mit dieser
+	// canonical-CID enrichen und appenden. So trägt jedes persistierte
+	// Event garantiert dieselbe CorrelationID wie die zugehörige
+	// `stream_sessions`-Zeile.
+	//
+	// Synchron fehlgeschlagenes Append ist weiter kein Backpressure-Drop
+	// und inkrementiert `dropped_events` nicht; Sichtbarkeit über
+	// HTTP-5xx + Logs. Tradeoff der Reorder: kommt es zwischen Upsert
+	// und Append zu einem 5xx, existiert die Session-Zeile mit
+	// `event_count=1` ohne korrespondierendes Event. Sweep beendet sie
+	// nach Idle-Timeout; ein Retry sieht die Session und tickt — kein
+	// CorrelationID-Mismatch entsteht. Dieser Tradeoff ist schwächer als
+	// die R-6-Inkonsistenz, die er ersetzt.
+	canonical, err := u.sessions.UpsertFromEvents(ctx, parsed)
+	if err != nil {
 		return driving.BatchResult{}, err
 	}
-	if err := u.sessions.UpsertFromEvents(ctx, parsed); err != nil {
+	for i := range parsed {
+		if cid, ok := canonical[parsed[i].SessionID]; ok && cid != "" {
+			parsed[i].CorrelationID = cid
+			correlations[parsed[i].SessionID] = cid
+		}
+	}
+	if err := u.events.Append(ctx, parsed); err != nil {
 		return driving.BatchResult{}, err
 	}
 

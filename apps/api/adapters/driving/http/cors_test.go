@@ -61,6 +61,10 @@ func getWithOrigin(t *testing.T, srvURL, path, origin string) *http.Response {
 	if origin != "" {
 		req.Header.Set("Origin", origin)
 	}
+	// Read-Endpunkte sind ab plan-0.4.0 §4.2 tokenpflichtig; CORS-Tests
+	// senden den Default-Test-Token, damit der Auth-Layer den Request
+	// nicht 401t bevor der CORS-Layer dazu kommt.
+	req.Header.Set("X-MTrace-Token", "demo-token")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
