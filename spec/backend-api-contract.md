@@ -126,9 +126,14 @@ bleiben ungültig.
 
 Für Tranche 3 ist nur `kind="network_signal_absent"` definiert.
 `network_kind` ist `"manifest"` oder `"segment"`, `adapter` ist
-`"hls.js"`, `"native_hls"` oder `"unknown"`, `reason` ist ein
-maschinenlesbarer String. `project_id` muss wie bei Events zum
-`X-MTrace-Token` passen; `session_id` ist Pflicht.
+`"hls.js"`, `"native_hls"` oder `"unknown"`, `reason` ist einer aus
+`{"native_hls_unavailable", "hlsjs_signal_unavailable",
+"browser_api_unavailable", "resource_timing_unavailable",
+"cors_timing_blocked", "service_worker_opaque"}` und muss zusätzlich
+`^[a-z0-9_]{1,64}$` erfüllen. Andere Werte, rohe URLs, Token-Strings
+oder HTML/Script-Fragmente werden mit `422 Unprocessable Entity`
+abgelehnt. `project_id` muss wie bei Events zum `X-MTrace-Token`
+passen; `session_id` ist Pflicht.
 
 ### 3.5 Antwort bei Erfolg
 

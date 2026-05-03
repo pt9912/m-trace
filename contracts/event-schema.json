@@ -24,6 +24,15 @@
       "native_hls",
       "unknown"
     ],
+    "reasons": [
+      "native_hls_unavailable",
+      "hlsjs_signal_unavailable",
+      "browser_api_unavailable",
+      "resource_timing_unavailable",
+      "cors_timing_blocked",
+      "service_worker_opaque"
+    ],
+    "reason_pattern": "^[a-z0-9_]{1,64}$",
     "required_fields": [
       "kind",
       "project_id",

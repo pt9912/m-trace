@@ -107,7 +107,11 @@ einen optionalen Batch-Wrapper-Block `session_boundaries[]` an
 `adapter` (`hls.js`, `native_hls` oder `unknown`), `reason` und
 `client_timestamp`. Dieser Block ist kein Event, besitzt kein
 `event_name`, zählt nicht in `accepted` und ändert die
-Batch-`schema_version` nicht. Die Session-API markiert diese Grenze
+Batch-`schema_version` nicht. `reason` ist kontrolliert und darf nur
+`native_hls_unavailable`, `hlsjs_signal_unavailable`,
+`browser_api_unavailable`, `resource_timing_unavailable`,
+`cors_timing_blocked` oder `service_worker_opaque` sein; zusätzlich
+gilt `^[a-z0-9_]{1,64}$`. Die Session-API markiert diese Grenze
 außerhalb des Event-Streams im Session-Block als `network_signal_absent`:
 Liste von Objekten mit `kind`, `adapter` und maschinenlesbarem `reason`.
 Persistenzvehikel ist eine durable Session-Metadaten-Spalte oder ein
