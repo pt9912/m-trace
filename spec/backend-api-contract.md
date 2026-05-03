@@ -339,7 +339,15 @@ trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
 
 ## 4. Authentifizierung
 
-- Header `X-MTrace-Token` ist Pflicht.
+`X-MTrace-Token` ist endpoint-spezifisch:
+
+| Endpoint | Token-Pflicht |
+|---|---|
+| `POST /api/playback-events` | Pflicht. |
+| `GET /api/stream-sessions` und `GET /api/stream-sessions/{id}` | Pflicht ab `plan-0.4.0.md` Tranche 3. |
+| `POST /api/analyze` ohne `correlation_id` und ohne `session_id` | Nicht erforderlich; die Analyse bleibt `session_link.status="detached"`. |
+| `POST /api/analyze` mit `correlation_id` oder `session_id` | Pflicht; fehlt der Token oder ist er ungültig, liefert die API `401 Unauthorized` und führt keinen Session-Lookup aus. |
+
 - Token-Validierung gegen eine **hardcodierte Map** (Spec §6.4):
 
   ```json
