@@ -43,6 +43,15 @@
       "client_timestamp"
     ]
   },
+  "network_unavailable_reasons": [
+    "native_hls_unavailable",
+    "hlsjs_signal_unavailable",
+    "browser_api_unavailable",
+    "resource_timing_unavailable",
+    "cors_timing_blocked",
+    "service_worker_opaque"
+  ],
+  "network_unavailable_reason_pattern": "^[a-z0-9_]{1,64}$",
   "event_names": [
     "manifest_loaded",
     "segment_loaded",

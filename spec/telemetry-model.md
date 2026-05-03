@@ -90,7 +90,7 @@ Der Degradationsmarker ist normativ:
 |---|---|---|
 | `meta["network.kind"]` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
 | `meta["network.detail_status"]` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
-| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund, z. B. `cors_timing_blocked`, `resource_timing_missing`, `service_worker_intercepted`, `native_hls_unavailable`, `cdn_redirect_opaque`. |
+| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund aus derselben Reason-Domäne wie `session_boundaries[].reason`: `native_hls_unavailable`, `hlsjs_signal_unavailable`, `browser_api_unavailable`, `resource_timing_unavailable`, `cors_timing_blocked`, `service_worker_opaque`; zusätzlich `^[a-z0-9_]{1,64}$`. |
 
 `network_detail_unavailable` ist kein Fehlerstatus und darf allein
 keinen 4xx auslösen. Das Event bleibt in der Session-Timeline sichtbar,
@@ -107,7 +107,8 @@ einen optionalen Batch-Wrapper-Block `session_boundaries[]` an
 `adapter` (`hls.js`, `native_hls` oder `unknown`), `reason` und
 `client_timestamp`. Dieser Block ist kein Event, besitzt kein
 `event_name`, zählt nicht in `accepted` und ändert die
-Batch-`schema_version` nicht. `reason` ist kontrolliert und darf nur
+Batch-`schema_version` nicht. `reason` verwendet dieselbe kontrollierte
+Domäne wie `meta["network.unavailable_reason"]` und darf nur
 `native_hls_unavailable`, `hlsjs_signal_unavailable`,
 `browser_api_unavailable`, `resource_timing_unavailable`,
 `cors_timing_blocked` oder `service_worker_opaque` sein; zusätzlich
