@@ -94,6 +94,22 @@ keinen 4xx auslösen. Das Event bleibt in der Session-Timeline sichtbar,
 behält seine serverseitig vergebene `correlation_id` und kann als
 Timeline-only-Ereignis ohne OTel-Span umgesetzt werden.
 
+Wenn der Browser-/Native-HLS-Pfad gar kein Manifest-/Segment-Signal
+liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. Die
+Session-/Dashboard-Sicht markiert diese Grenze außerhalb des
+Event-Streams als `network_signal_absent`.
+
+URL-Redaction für `meta.network.*`-URL-Repräsentanten folgt einer
+festen Matrix: Scheme, Host und nicht-sensitive Pfadsegmente dürfen
+erhalten bleiben; Query und Fragment werden entfernt; `userinfo` wird
+entfernt; signierte/credential-artige Query-Parameter (`token`,
+`signature`, `sig`, `expires`, `key`, `policy`, case-insensitiv) werden
+nicht gespeichert. Ein Pfadsegment ist tokenartig, wenn es mindestens
+24 Zeichen lang ist und überwiegend Base64URL-/Hex-Zeichen enthält
+oder bekannte JWT-/SAS-/Signed-URL-Muster trägt. Tokenartige
+Pfadsegmente werden als `:redacted:<sha256-prefix>` persistiert; der
+Hash-Präfix muss stabil für denselben Eingabewert sein.
+
 ### 1.5 SDK-Identifier und Tokens
 
 - **Project Token (`X-MTrace-Token`)**: öffentlicher Token, der dem Browser ausgeliefert wird. Token bindet auf eine `project_id`; Mismatch bei Step 9 → `401` (siehe §5.3 unten und API-Kontrakt §5).

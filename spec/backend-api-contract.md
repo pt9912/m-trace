@@ -159,12 +159,14 @@ Session-Bindung tragen:
 gesetzt sind, muss `session_id` zur Session mit dieser
 `correlation_id` auflösen; bei Mismatch bleibt das Analyzer-Ergebnis
 eine unabhängige Manifestanalyse und wird nicht in die Player-Timeline
-gemischt. Nur `session_id` ist als Fallback zulässig: der Server löst
-sie auf die bestehende oder per Self-Healing nachgezogene
-Session-`correlation_id` auf. Ohne beide Felder ist die Analyse
-bewusst session-los. Diese Bindungsfelder ändern das Analyzer-
-`AnalysisResult` nicht; sie steuern nur die optionale Dashboard-/
-Timeline-Verknüpfung.
+gemischt. Die API bleibt `200 OK`, ergänzt aber in der API-/
+Dashboard-Hülle den maschinenlesbaren Status
+`session_link.status="conflict_detached"`. Nur `session_id` ist als
+Fallback zulässig: der Server löst sie auf die bestehende oder per
+Self-Healing nachgezogene Session-`correlation_id` auf. Ohne beide
+Felder ist die Analyse bewusst session-los. Diese Bindungsfelder ändern
+das Analyzer-`AnalysisResult` nicht; sie steuern nur die optionale
+Dashboard-/Timeline-Verknüpfung.
 
 **Erfolgsantwort** (`200 OK`): vollständiges `AnalysisResult` aus
 `docs/user/stream-analyzer.md` §2.2 — diskriminiert per
