@@ -334,6 +334,18 @@ trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
 | Feld | Typ | Beschreibung |
 |---|---|---|
 | `correlation_id` | `string`; nicht-leer für ab §3.2 angelegte oder bereits selbst-geheilte Sessions, sonst `""` als Legacy-Fall | Spiegelt `stream_sessions.correlation_id`; identisch mit dem `correlation_id`-Wert auf ab §3.2 persistierten Events derselben Session. Historische Events vor §3.2 werden nicht backfilled. Dient dem Dashboard als primärer Korrelations-Schlüssel — Tempo-unabhängig. |
+| `network_signal_absent` | Array, Default `[]` | Session-skopierte Degradationsgrenzen aus `session_boundaries[]`; nur im Session-Block, nie als synthetisches Event. |
+
+`network_signal_absent[]`-Einträge haben die Form:
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| `kind` | `"manifest"` oder `"segment"` | Netzwerksignal-Typ. |
+| `adapter` | `"hls.js"`, `"native_hls"` oder `"unknown"` | SDK-/Browserpfad, der die Grenze gemeldet hat. |
+| `reason` | Reason-Enum aus `contracts/event-schema.json#network_unavailable_reasons` | Maschinenlesbarer Grund. |
+
+Sortierung ist stabil nach `kind`, dann `adapter`, dann `reason`.
+Doppelte Tripel werden im Read-Shape dedupliziert.
 
 ---
 

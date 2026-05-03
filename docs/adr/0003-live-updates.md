@@ -110,7 +110,10 @@ ist:
 - Optional `GET /api/stream-sessions/{id}/events/stream` für Detailansichten,
   falls ein globaler Stream plus REST-Backfill nicht ausreicht.
 - EventSource-kompatibles Format mit `event:`, `id:` und `data:`; `id` darf
-  nur durable Cursor-/Sequenzdaten enthalten, keine Prozess-ID.
+  nur durable Cursor-/Sequenzdaten enthalten, keine Prozess-ID. Geschützte
+  Streams werden im Dashboard über einen fetch-basierten SSE-Client/Polyfill
+  geöffnet, weil native Browser-`EventSource` keine `X-MTrace-Token`-Header
+  setzen kann.
 - Heartbeat-Kommentare halten lokale Proxies und Browser-Verbindungen frisch.
 
 ## 8. Offene Punkte für die `0.4.0`-Tranche
