@@ -107,8 +107,8 @@ entfernt; signierte/credential-artige Query-Parameter (`token`,
 nicht gespeichert. Ein Pfadsegment ist tokenartig, wenn es mindestens
 24 Zeichen lang ist und überwiegend Base64URL-/Hex-Zeichen enthält
 oder bekannte JWT-/SAS-/Signed-URL-Muster trägt. Tokenartige
-Pfadsegmente werden als `:redacted:<sha256-prefix>` persistiert; der
-Hash-Präfix muss stabil für denselben Eingabewert sein.
+Pfadsegmente werden ausschließlich als `:redacted` persistiert; es wird
+kein stabiler Hash oder Gleichheitsmarker gespeichert.
 
 ### 1.5 SDK-Identifier und Tokens
 

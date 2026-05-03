@@ -159,19 +159,29 @@ Session-Bindung tragen:
 gesetzt sind, muss `session_id` zur Session mit dieser
 `correlation_id` auflösen; bei Mismatch bleibt das Analyzer-Ergebnis
 eine unabhängige Manifestanalyse und wird nicht in die Player-Timeline
-gemischt. Die API bleibt `200 OK`, ergänzt aber in der API-/
-Dashboard-Hülle den maschinenlesbaren Status
-`session_link.status="conflict_detached"`. Nur `session_id` ist als
-Fallback zulässig: der Server löst sie auf die bestehende oder per
-Self-Healing nachgezogene Session-`correlation_id` auf. Ohne beide
-Felder ist die Analyse bewusst session-los. Diese Bindungsfelder ändern
-das Analyzer-`AnalysisResult` nicht; sie steuern nur die optionale
-Dashboard-/Timeline-Verknüpfung.
+gemischt. Die API bleibt `200 OK`, wechselt ab Tranche 3 aber auf eine
+Hülle:
 
-**Erfolgsantwort** (`200 OK`): vollständiges `AnalysisResult` aus
-`docs/user/stream-analyzer.md` §2.2 — diskriminiert per
-`playlistType`, mit `analyzerVersion`, `analyzerKind: "hls"`,
-`summary`, `findings`, `details`.
+```json
+{
+  "analysis": { "...": "AnalysisResult" },
+  "session_link": { "status": "conflict_detached" }
+}
+```
+
+`session_link.status` ist eines aus `{"linked", "detached",
+"conflict_detached", "not_found_detached"}`. Nur `session_id` ist als
+Fallback zulässig, wenn sie auf eine bestehende oder bereits
+selbst-geheilte Session auflösbar ist. Eine unbekannte `session_id`
+erzeugt keine neue Session und liefert `not_found_detached`. Ohne beide
+Felder ist die Analyse bewusst session-los (`detached`). Diese
+Bindungsfelder ändern das Analyzer-`AnalysisResult` nicht; sie steuern
+nur die optionale Dashboard-/Timeline-Verknüpfung.
+
+**Erfolgsantwort** (`200 OK`): bis einschließlich `0.3.x`
+vollständiges `AnalysisResult` aus `docs/user/stream-analyzer.md` §2.2.
+Ab `plan-0.4.0.md` Tranche 3 wird dieses Resultat unverändert unter
+`analysis` in der oben beschriebenen Hülle transportiert.
 
 **Fehler-Mapping** (Problem-Shape `{status, code, message, details?}`):
 
