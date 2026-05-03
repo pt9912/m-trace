@@ -147,6 +147,20 @@ linters-settings:
             desc: "domain must not depend on application (architecture.md §3.2)"
           - pkg: "github.com/pt9912/m-trace/apps/api/hexagon/port"
             desc: "domain must not depend on port (architecture.md §3.2)"
+      application-no-adapters:
+        list-mode: lax
+        files:
+          - "**/hexagon/application/**"
+        deny:
+          - pkg: "github.com/pt9912/m-trace/apps/api/adapters"
+            desc: "application must depend on ports, not adapter implementations (architecture.md §3.2)"
+      port-no-adapters:
+        list-mode: lax
+        files:
+          - "**/hexagon/port/**"
+        deny:
+          - pkg: "github.com/pt9912/m-trace/apps/api/adapters"
+            desc: "ports must define abstractions, not depend on adapter implementations (architecture.md §3.2)"
 
 issues:
   # Defaults von golangci-lint deaktivieren bestimmte Linter in
@@ -169,8 +183,12 @@ issues:
         - noctx
 
     # Test-Helper-Signaturen halten Parameter oft offen für zukünftige
-    # Test-Cases; Inlining würde das Helper-Design verengen.
+    # Test-Cases; Inlining würde das Helper-Design verengen. Eng gefasst
+    # auf das aktuelle unparam-Message-Format ("X always receives Y"),
+    # damit zukünftige unparam-Regeln (z. B. zu Return-Werten) auch in
+    # Tests greifen.
     - path: _test\.go$
+      text: 'always receives'
       linters:
         - unparam
 
@@ -191,7 +209,10 @@ issues:
     # inmemory_test.go und sqlite_test.go), trägt aber konventionell
     # keinen `_test.go`-Suffix, weil sie aus mehreren Test-Paketen
     # importiert wird. Daher gleiche Carveouts wie für `_test.go`.
-    - path: adapters/driven/persistence/contract/
+    # Gezielt auf die eine Datei einschränken — falls das contract-
+    # Paket je weitere Files bekommt (z. B. helpers.go), müssen die
+    # bewusst hinzugefügt werden, nicht implizit miterlaubt sein.
+    - path: adapters/driven/persistence/contract/contract\.go$
       linters:
         - gocognit
         - gocyclo
@@ -203,9 +224,10 @@ issues:
     # HTTP-Handler-Stubs `func(w, r){…}` ohne r-Verwendung sind
     # idiomatisch in Tests, die nur die Server-Seite isolieren.
     # Andere revive-Regeln (exported-comments, redefines-builtin etc.)
-    # bleiben in Tests strikt.
+    # bleiben in Tests strikt. Anker `^unused-parameter` schützt vor
+    # zukünftigen revive-Regeln mit ähnlich gestaffeltem Namen.
     - path: _test\.go$
-      text: 'unused-parameter'
+      text: '^unused-parameter'
       linters:
         - revive
 

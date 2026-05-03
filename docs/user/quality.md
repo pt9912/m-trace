@@ -37,8 +37,11 @@ im Lastenheft definierten SOLID-nahen Zusatzprofil aus:
 | `ineffassign` | unwirksame Zuweisungen                           |
 
 Die vollständige Konfiguration (5 Defaults + 24 SOLID-nahe Linter
-aus §1.2) lebt in `apps/api/.golangci.yml`. `//nolint`-Suppressions
-bleiben ausgeschlossen — falls ein Linter auf einem Pfad designseitig
+aus §1.2) lebt in `apps/api/.golangci.yml`. „Pflicht: Ja" in
+Lastenheft §10.1 fixiert die Profil-Mitgliedschaft, nicht den
+Scope: ein Linter kann pro Pfad-Klasse (Tests, internes Tooling)
+designseitig anders sinnvoll sein. `//nolint`-Suppressions bleiben
+ausgeschlossen — falls ein Linter auf einem Pfad designseitig
 keinen Sinn ergibt (z. B. `noctx` in Tests gegen `httptest.Server`),
 wird der Pfad per `issues.exclude-rules` mit Begründung als Kommentar
 ausgenommen; dort dokumentierte Scope-Definitionen sind keine
