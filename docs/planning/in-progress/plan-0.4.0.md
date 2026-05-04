@@ -1,6 +1,6 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
-> **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6) und Tranche 2 (§3.1–§3.4 inkl. §3.4c-Closeout) vollständig abgeschlossen; Roadmap Schritt 31 ist auf ✅. Offen: Tranchen 3–8. Tranche 3 ist der nächste Trace-Korrelationsschritt.
+> **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6), Tranche 2 (§3.1–§3.4 inkl. §3.4c-Closeout) und **Tranche 3 (§4.1–§4.7)** vollständig abgeschlossen; Roadmap Schritte 31 und 32 sind auf ✅. Offen: Tranchen 4–8. Tranche 4 (Dashboard-Session-Verlauf ohne Tempo) ist der nächste Schritt.
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../../spec/architecture.md); [Telemetry-Model](../../../spec/telemetry-model.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../../adr/0003-live-updates.md); [Risiken-Backlog](../open/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
@@ -33,7 +33,7 @@ Neue Lastenheft-Patches während `0.4.0` landen weiterhin zentral in `plan-0.1.0
 | 0 | Vorgänger-Gate und Scope-Entscheidungen | ✅ |
 | 1 | SQLite-Persistenz und durable Cursor (siehe §2.1–§2.6) | ✅ |
 | 2 | Session-Trace-Modell und OTel-Korrelation (siehe §3.1–§3.4) | ✅ |
-| 3 | Manifest-/Segment-/Player-Korrelation | ⬜ |
+| 3 | Manifest-/Segment-/Player-Korrelation | ✅ |
 | 4 | Dashboard-Session-Verlauf ohne Tempo | ⬜ |
 | 5 | Optionales Tempo-Profil | ⬜ |
 | 6 | Aggregat-Metriken und Drop-/Invalid-/Rate-Limit-Sichtbarkeit | ⬜ |
@@ -370,7 +370,7 @@ Liefer-/Abnahme-Matrix:
 | §4.4 | Backend-Network-Events + URL-Redaction | `network.*`-Meta-Keys typvalidiert; `session_boundaries[]` persistiert und restart-stabil; URL-Redaction vor Persistenz für alle URL-verdächtigen Meta-Keys | ✅ (`e7ac534`, `d7aaaad`) |
 | §4.5 | Analyzer-Linking + endpoint-spezifische Auth | `AnalyzeManifestResult{Analysis, SessionLink}` im Use-Case; Statusmatrix (`linked`/`detached`/`not_found_detached`/`conflict_detached`) grün; OPTIONS-Preflight für `/api/analyze`; Breaking-Change-Hülle `{analysis, session_link}` in Tests und Nutzer-Doku nachgezogen | ✅ (`175b24c`, `85096a6`) |
 | §4.6 | SDK-Manifest-/Segment-Capture | hls.js-Mapping-Tabelle festgeschrieben und getestet; jedes Manifest-/Fragment-Signal wird als `manifest_loaded`/`segment_loaded` erfasst; Dedup-Schlüssel nutzt keine URLs; optionaler `session_boundaries[]`-Send | ✅ (`ee61b46`, `4b597a9`) |
-| §4.7 | Tests, Doku und Tranche-3-Closeout | gemischte Player-/Manifest-/Segment-Korrelation getestet; Degradationsmatrix (Browser-/Native-Limitierung, CORS-/Resource-Timing) getestet; Tranche-3-Closeout-Doku, Roadmap Schritt 32 ✅, R-6 als technisch geschlossen markiert | ⬜ |
+| §4.7 | Tests, Doku und Tranche-3-Closeout | gemischte Player-/Manifest-/Segment-Korrelation getestet; Degradationsmatrix (Browser-/Native-Limitierung, CORS-/Resource-Timing) getestet; Tranche-3-Closeout-Doku, Roadmap Schritt 32 ✅, R-6 als technisch geschlossen markiert | ✅ (`eddfedd`, `daefad5`) |
 
 Abnahmegrenzen:
 
@@ -473,12 +473,12 @@ Ziel: Gemischte Korrelation und Degradationsmatrix sind End-to-End getestet, Tra
 
 DoD:
 
-- [ ] Tests decken gemischte Player-, Manifest- und Segment-Ereignisse innerhalb einer Session ab und prüfen gleiche `correlation_id`, getrennte batchbezogene `trace_id`-Semantik und die dokumentierten Timeline-only-Ausnahmen.
-- [ ] Tests decken die Degradationsmatrix ab: fehlende SDK-Felder, blockierte Browser-Timings, CORS-/Resource-Timing-Lücken als `network_detail_unavailable`-Events sowie mindestens ein Native-/Browser-Limitierungsfall ohne Netzwerksignal als durable API-/Persistenzgrenze `network_signal_absent` im Session-Read-Shape werden als akzeptierte Degradation geprüft. Zusätzlich gibt es einen Implementierungstest für den Schreibpfad: SDK-/Adapter-Capability-Signal ohne Manifest-/Segment-Event erzeugt den session-skopierten Boundary-Record; ein API-Restart-Test beweist, dass `network_signal_absent` stabil erhalten bleibt. Dashboard-Anzeige folgt in Tranche 4.
-- [ ] Falls einzelne Manifest-/Segment-Daten nur als Event-Timeline und nicht als OTel-Span abbildbar sind, ist diese Grenze im API-/Doku-Vertrag nachvollziehbar; Dashboard-Sichtbarkeit folgt in Tranche 4. Diese Events behalten trotzdem `correlation_id`.
-- [ ] Dokumentation benennt Grenzen der Korrelation, insbesondere Browser-APIs, CORS, Service Worker, CDN-Redirects, Native-HLS und Sampling; sie nennt `correlation_id` als Pflichtkontext und `trace_id` als optionale Debug-Vertiefung.
+- [x] Tests decken gemischte Player-, Manifest- und Segment-Ereignisse innerhalb einer Session ab und prüfen gleiche `correlation_id`, getrennte batchbezogene `trace_id`-Semantik und die dokumentierten Timeline-only-Ausnahmen (`apps/api/adapters/driving/http/correlation_e2e_test.go::TestE2E_MixedEventTypes_ShareCorrelationID`, `TestE2E_CrossBatch_SameCorrelationID`, `TestE2E_TraceparentPropagation_SameTraceID`; `eddfedd`).
+- [x] Tests decken die Degradationsmatrix ab: `network.detail_status="network_detail_unavailable"` mit Reason wird inbound akzeptiert und im Read-Pfad mit voller `correlation_id` exposed (`TestE2E_Degradation_NetworkDetailUnavailable`, `eddfedd`); SDK-/Adapter-Capability-Signal ohne Manifest-/Segment-Event erzeugt den session-skopierten Boundary-Record (`TestE2E_Degradation_CapabilityOnlyBoundary`, `eddfedd`); API-Restart-Test ist bereits in §4.4 D3 (`apps/api/adapters/driven/persistence/sqlite/restart_test.go::TestRestartPreservesSessionBoundaries`) abgedeckt — keine Duplizierung. Dashboard-Anzeige folgt in Tranche 4.
+- [x] Falls einzelne Manifest-/Segment-Daten nur als Event-Timeline und nicht als OTel-Span abbildbar sind, ist diese Grenze im API-/Doku-Vertrag nachvollziehbar; Dashboard-Sichtbarkeit folgt in Tranche 4. Diese Events behalten trotzdem `correlation_id` (siehe `spec/telemetry-model.md` §1.4 Absatz "`network_detail_unavailable` ist kein Fehlerstatus … Timeline-only-Ereignis ohne OTel-Span"; Test-Anker `TestE2E_Degradation_NetworkDetailUnavailable`).
+- [x] Dokumentation benennt Grenzen der Korrelation, insbesondere Browser-APIs, CORS, Service Worker, CDN-Redirects, Native-HLS und Sampling; sie nennt `correlation_id` als Pflichtkontext und `trace_id` als optionale Debug-Vertiefung (`spec/telemetry-model.md` §1.4.1 neu, `daefad5`; Operator-Sicht in `docs/user/local-development.md` §2.6).
 - [x] R-6 (`correlation_id`-Race) ist im Risiken-Backlog als technisch geschlossen markiert (Status 🟢, Begründung verweist auf §4.2-Race-Test); falls vor Release-Bump (Tranche 8) erneut ein Mismatch beobachtet wird, wird R-6 wieder geöffnet. Vorgezogen aus §4.7 in den R-1-/R-6-Cleanup-Commit, weil die technische Mitigation seit `949a265` (§4.2 C2) live ist.
-- [ ] `docs/planning/in-progress/roadmap.md` Schritt 32 ist auf ✅ gesetzt; Status-Header und §1-Tabelle in diesem Plan markieren Tranche 3 als abgeschlossen; Liefer-/Abnahme-Matrix oben zeigt §4.1–§4.7 ✅ mit Commit-Hashes.
+- [x] `docs/planning/in-progress/roadmap.md` Schritt 32 ist auf ✅ gesetzt; Status-Header und §1-Tabelle in diesem Plan markieren Tranche 3 als abgeschlossen; Liefer-/Abnahme-Matrix oben zeigt §4.1–§4.7 ✅ mit Commit-Hashes (dieser Commit).
 
 ---
 
