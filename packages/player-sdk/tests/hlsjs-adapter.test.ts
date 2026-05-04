@@ -49,6 +49,10 @@ class RecordingTracker implements PlayerTracker {
     this.events.push(event);
   }
 
+  addBoundary(): void {
+    // hls.js-Adapter ruft addBoundary nicht auf; no-op reicht.
+  }
+
   async flush(): Promise<void> {
     return undefined;
   }
