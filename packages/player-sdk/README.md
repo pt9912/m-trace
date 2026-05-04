@@ -113,18 +113,19 @@ retries and redirects do not generate semantic duplicates. Reference:
 `docs/planning/in-progress/plan-0.4.0.md` §4.6,
 [`spec/telemetry-model.md`](../../spec/telemetry-model.md) §1.4.
 
-| m-trace event | hls.js source | Trigger | Dedup key (per session) |
+| m-trace event | hls.js source | Trigger | Dedup (per session) |
 |---|---|---|---|
-| `manifest_loaded` (initial) | `MANIFEST_LOADED` | The master/media playlist is loaded the first time. Fires once per session under nominal conditions. | `("manifest", level=-1)` for the master, `("level", level=N)` per loaded variant level (additive when LEVEL_LOADED also fires). |
-| `manifest_loaded` (reload) | `LEVEL_LOADED` | Live media-playlist reloads, ABR-driven level switches that re-fetch the playlist, master refresh. Each reload emits a fresh event. | `("level", level=N, refresh=monotonic)` — refresh counter is per-`level` and ticks on every LEVEL_LOADED, so periodic reloads are surfaced. |
-| `segment_loaded` | `FRAG_LOADED` (success only) | Each successful fragment fetch, including init segments. hls.js does not emit FRAG_LOADED for failed retries (those go via FRAG_LOAD_ERROR / FRAG_LOAD_EMERGENCY_ABORTED), so retries do not duplicate. | `(level, type, sn, cc, isInit)` — `sn === "initSegment"` toggles `isInit`. |
+| `manifest_loaded` (initial) | `MANIFEST_LOADED` | The master/media playlist is loaded the first time. Fires once per session under nominal conditions. | None — every callback emits a fresh event. |
+| `manifest_loaded` (reload) | `LEVEL_LOADED` | Live media-playlist reloads, ABR-driven level switches that re-fetch the playlist, master refresh. Each callback emits a fresh event. | None — periodic reloads must remain visible in the timeline; suppressing duplicates would hide live-refresh patterns. |
+| `segment_loaded` | `FRAG_LOADED` (success only) | Each successful fragment fetch, including init segments. hls.js does not emit FRAG_LOADED for failed retries (those go via FRAG_LOAD_ERROR / FRAG_LOAD_EMERGENCY_ABORTED), so retries do not duplicate. | `(level, type, sn, cc, isInit)` — `sn === "initSegment"` toggles `isInit`. Doubled listeners or nested player setups that re-fire FRAG_LOADED for the same fragment are dropped. |
 
-The dedup keys are derived exclusively from hls.js-native fragment
-identifiers (`sn`, `cc`, `type`, `level`, init-segment marker) plus the
-SDK session context (`project_id`, `session_id`, sequence). Redacted
-URLs are persisted as diagnostics under `meta.network.redacted_url`
-and **must not** be used as dedup keys — signed URLs change on every
-refresh even though the underlying fragment identity stays stable.
+The segment dedup key is derived exclusively from hls.js-native
+fragment identifiers (`sn`, `cc`, `type`, `level`, init-segment
+marker) plus the SDK session context (`project_id`, `session_id`,
+sequence). Redacted URLs are persisted as diagnostics under
+`meta.network.redacted_url` and **must not** be used as dedup keys —
+signed URLs change on every refresh even though the underlying
+fragment identity stays stable.
 
 Each emitted event carries the reserved meta keys from
 `spec/telemetry-model.md` §1.4:

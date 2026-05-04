@@ -135,37 +135,39 @@ export class MTracePlayerTracker implements PlayerTracker {
       return;
     }
 
+    // plan-0.4.0 §4.4: Boundaries dürfen nur mit einem Batch
+    // gehen, der mindestens ein Event für dieselbe Session
+    // enthält. Da der Tracker single-session ist, reicht es,
+    // das `events.length > 0`-Predicate zu prüfen — Backend
+    // enforced den Partition-Match zusätzlich. Wir hängen die
+    // Boundaries an den **ersten** Batch dran, der durch diesen
+    // Flush-Call rausgeht; weitere Batch-Splits durch
+    // Body-Size-Limit gehen ohne Boundaries.
+    //
+    // Snapshot am Flush-Start (statt pro Loop-Iteration), damit
+    // ein `addBoundary`-Aufruf während `await transport.send` der
+    // ersten Iteration nicht in den zweiten Batch gerät und das
+    // "nur erster Batch trägt Boundaries"-Invariant verletzt.
+    // Spätere addBoundary-Aufrufe warten auf den nächsten flush-
+    // Cycle.
+    const boundariesForThisFlush = this.boundaryQueue.splice(0, this.boundaryQueue.length);
+    let pendingBoundaries: SessionBoundary[] = boundariesForThisFlush;
+
     while (this.queue.length > 0) {
-      const events = this.drainNextBatch();
+      const events = this.drainNextBatch(pendingBoundaries);
       if (events.length === 0) {
         return;
       }
-      // plan-0.4.0 §4.4: Boundaries dürfen nur mit einem Batch
-      // gehen, der mindestens ein Event für dieselbe Session
-      // enthält. Da der Tracker single-session ist, reicht es,
-      // das `events.length > 0`-Predicate zu prüfen — Backend
-      // enforced den Partition-Match zusätzlich. Wir hängen die
-      // Boundaries an den **ersten** Batch dran, der durch diesen
-      // Flush-Call rausgeht; weitere Batch-Splits durch
-      // Body-Size-Limit gehen ohne Boundaries (sie waren schon
-      // angeliefert).
-      const boundaries = this.drainBoundariesIfAny();
       const batch: PlaybackEventBatch = {
         schema_version: EVENT_SCHEMA_VERSION,
         events
       };
-      if (boundaries.length > 0) {
-        batch.session_boundaries = boundaries;
+      if (pendingBoundaries.length > 0) {
+        batch.session_boundaries = pendingBoundaries;
+        pendingBoundaries = [];
       }
       await this.transport.send(batch);
     }
-  }
-
-  private drainBoundariesIfAny(): SessionBoundary[] {
-    if (this.boundaryQueue.length === 0) {
-      return [];
-    }
-    return this.boundaryQueue.splice(0, this.boundaryQueue.length);
   }
 
   async destroy(): Promise<void> {
@@ -181,14 +183,13 @@ export class MTracePlayerTracker implements PlayerTracker {
     await this.flush();
   }
 
-  private drainNextBatch(): PlaybackEvent[] {
+  // drainNextBatch sammelt Events bis zum Body-Size- oder
+  // MaxBatch-Limit. `reservedBoundaries` zählt vorab in den Body-
+  // Size-Budget, damit ein 256 KiB-grenzwertiger Event-Stream die
+  // Boundaries nicht verdrängt; bei Folge-Batches wird ein leerer
+  // Slice übergeben (Boundaries waren bereits am ersten Batch).
+  private drainNextBatch(reservedBoundaries: SessionBoundary[]): PlaybackEvent[] {
     const events: PlaybackEvent[] = [];
-    // Boundaries werden nur an den ersten Batch dieses Flush-Calls
-    // angehängt; das ist `events.length === 0` zu Beginn. Wir
-    // reservieren ihre Größe vorab im Body-Size-Budget, damit ein
-    // 256 KiB-grenzwertiger Event-Stream nicht die Boundaries
-    // verdrängt und wir später kein 413 fangen.
-    const boundariesPreview = this.boundaryQueue;
 
     while (this.queue.length > 0 && events.length < maxBatchEvents) {
       const event = this.queue.shift();
@@ -196,7 +197,7 @@ export class MTracePlayerTracker implements PlayerTracker {
         break;
       }
 
-      if (batchSizeBytes([...events, event], boundariesPreview) <= maxBatchBodyBytes) {
+      if (batchSizeBytes([...events, event], reservedBoundaries) <= maxBatchBodyBytes) {
         events.push(event);
         continue;
       }

@@ -43,16 +43,19 @@ export function attachHlsJs(video: HTMLVideoElement, hls: Hls, tracker: PlayerTr
   const startedAt = performance.now();
   const metrics = new SessionMetrics(startedAt);
 
-  // Dedup-State: hls.js feuert unter normalen Umständen `FRAG_LOADED`
-  // nicht doppelt, aber doppelte Listener oder verschachtelte Player-
-  // Setups können das tun. Die Set-basierte Dedup-Strategie folgt der
-  // Mapping-Tabelle in der README: `(level, type, sn, cc, isInit)`.
+  // Dedup-State für `segment_loaded`: hls.js feuert unter normalen
+  // Umständen `FRAG_LOADED` nicht doppelt, aber doppelte Listener
+  // oder verschachtelte Player-Setups können das tun. Die Set-
+  // basierte Dedup-Strategie folgt der Mapping-Tabelle in der
+  // README: `(level, type, sn, cc, isInit)`.
+  //
+  // Für `manifest_loaded` gibt es bewusst keinen Dedup: jedes
+  // `MANIFEST_LOADED`/`LEVEL_LOADED` (Live-Refresh, Level-Switch,
+  // Reload) erzeugt ein eigenes Event. Doppelt gefeuerte
+  // Manifest-Events sind in der Praxis selten und tragen den
+  // Refresh-Zustand der Session — sie als Duplikate zu droppen
+  // würde Live-Refresh-Patterns unsichtbar machen.
   const seenSegments = new Set<string>();
-  // Manifest-Reload tickt einen monotonen Counter pro Level, damit
-  // jedes LEVEL_LOADED ein eigenes Event erzeugt; mehrfach gefeuerte
-  // identische Loads (selbe Level innerhalb desselben Tick) werden
-  // entkoppelt durch den Counter pro Refresh-Aufruf.
-  const levelRefreshCounts = new Map<number, number>();
 
   const onManifest = (...args: unknown[]) => {
     const meta = manifestMeta(args);
@@ -60,9 +63,6 @@ export function attachHlsJs(video: HTMLVideoElement, hls: Hls, tracker: PlayerTr
   };
   const onLevelLoaded = (...args: unknown[]) => {
     const payload = extractLevelLoadedPayload(args);
-    const level = typeof payload?.level === "number" ? payload.level : 0;
-    const refresh = (levelRefreshCounts.get(level) ?? 0) + 1;
-    levelRefreshCounts.set(level, refresh);
     const meta: EventMeta = {
       "network.kind": NETWORK_KIND_MANIFEST,
       "network.detail_status": DETAIL_AVAILABLE

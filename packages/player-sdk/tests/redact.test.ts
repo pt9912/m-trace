@@ -79,6 +79,16 @@ describe("redactUrl", () => {
       "https://cdn.example.test/playlists/"
     );
   });
+
+  it("redacts segments with invalid percent-encoding (Review-N-7)", () => {
+    // Backend's `validateRedactedURLValue` rejects URLs whose
+    // segments fail `url.PathUnescape`. The SDK matches that
+    // decision by emitting `:redacted` instead of leaking the raw
+    // bytes — keeps both sides in lockstep.
+    expect(redactUrl("https://cdn.example.test/abc%ZZdef/main.m3u8")).toBe(
+      "https://cdn.example.test/:redacted/main.m3u8"
+    );
+  });
 });
 
 describe("isTokenLikePathSegment", () => {

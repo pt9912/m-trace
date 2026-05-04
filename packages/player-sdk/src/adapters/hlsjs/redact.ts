@@ -40,9 +40,15 @@ export function redactUrl(raw: string | undefined | null): string {
     if (segment === "") {
       return segment;
     }
-    return isTokenLikePathSegment(decodePathSegment(segment))
-      ? REDACTED
-      : segment;
+    const decoded = decodePathSegmentOrNull(segment);
+    if (decoded === null) {
+      // Invalid percent-encoding — backend's
+      // `validateRedactedURLValue` would 422 the URL because
+      // `url.PathUnescape` errors there too. Redact defensively
+      // so the SDK and backend stay in lockstep.
+      return REDACTED;
+    }
+    return isTokenLikePathSegment(decoded) ? REDACTED : segment;
   });
   return `${parsed.protocol}//${parsed.host}${segments.join("/")}`;
 }
@@ -75,14 +81,12 @@ export function isTokenLikePathSegment(seg: string): boolean {
   return allowed * 100 >= seg.length * 80;
 }
 
-function decodePathSegment(seg: string): string {
+function decodePathSegmentOrNull(seg: string): string | null {
   try {
     return decodeURIComponent(seg);
   } catch {
-    // Defensively treat undecodable segments as token-like by
-    // returning a value that will trip the heuristic length check
-    // and the [A-Za-z0-9_-] ratio. The literal sentinel is the
-    // simplest such value.
-    return REDACTED;
+    // Invalid percent-encoding — caller redacts defensively to
+    // keep SDK and backend redaction-decisions in lockstep.
+    return null;
   }
 }

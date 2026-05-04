@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTracker } from "../src/core/tracker";
+import { createTracker, type PlayerTracker } from "../src/core/tracker";
 import type { PlaybackEventBatch, SessionBoundary } from "../src/types/events";
 
 class MemoryTransport {
@@ -163,6 +163,77 @@ describe("session_boundaries[] send path", () => {
     expect(transport.batches[0]?.session_boundaries?.[0]?.client_timestamp).toBe(
       "2026-04-28T12:00:00.000Z"
     );
+  });
+
+  it("snapshot-locks boundaries at flush start (Review-B-1)", async () => {
+    // Doku-Invariant: "nur erster Batch trägt Boundaries". Wenn der
+    // Caller mid-flush — während `await transport.send` für den
+    // ersten Batch läuft — eine zweite Boundary einreiht, darf die
+    // NICHT in den zweiten Batch dieses flush-Cycles geraten. Sie
+    // wartet auf den nächsten flush-Aufruf.
+    const sent: PlaybackEventBatch[] = [];
+    const transport = {
+      onSent: undefined as ((tracker: PlayerTracker) => void) | undefined,
+      tracker: undefined as PlayerTracker | undefined,
+      async send(batch: PlaybackEventBatch): Promise<void> {
+        sent.push(batch);
+        if (sent.length === 1 && this.tracker !== undefined) {
+          // Mid-flush: zweite Boundary einreihen. Muss in den
+          // Folge-Flush wandern, nicht in den nächsten Batch
+          // dieses flush-Cycles.
+          this.tracker.addBoundary({
+            networkKind: "segment",
+            adapter: "native_hls",
+            reason: "native_hls_unavailable"
+          });
+        }
+      }
+    };
+    const tracker = createTracker({
+      endpoint: "http://localhost:8080/api/playback-events",
+      token: "demo-token",
+      projectId: "demo",
+      sessionId: "session-bnd",
+      batchSize: 100,
+      flushIntervalMs: 0,
+      transport
+    });
+    transport.tracker = tracker;
+    tracker.addBoundary({
+      networkKind: "manifest",
+      adapter: "hls.js",
+      reason: "cors_timing_blocked"
+    });
+    // 99 Events bleiben unter dem Auto-Flush-Threshold (batchSize=100),
+    // damit der einzige flush-Cycle der explizite `await tracker.
+    // flush()` ist. So lässt sich das Race-Szenario deterministisch
+    // reproduzieren.
+    const largeMeta = { padding: "x".repeat(3000) };
+    for (let i = 0; i < 99; i += 1) {
+      tracker.track({ eventName: "metrics_sampled", meta: largeMeta });
+    }
+    await tracker.flush();
+
+    // Erster flush-Cycle: ≥2 Batches; erster trägt cors_timing_blocked,
+    // alle Folgebatches dieses Cycles dürfen KEINE session_boundaries
+    // tragen — die mid-send eingereihte native_hls_unavailable wartet
+    // auf den nächsten Cycle.
+    const firstCycleBatches = sent.length;
+    expect(firstCycleBatches).toBeGreaterThanOrEqual(2);
+    expect(sent[0]?.session_boundaries).toHaveLength(1);
+    expect(sent[0]?.session_boundaries?.[0]?.reason).toBe("cors_timing_blocked");
+    for (let i = 1; i < firstCycleBatches; i += 1) {
+      expect(sent[i]?.session_boundaries).toBeUndefined();
+    }
+
+    // Zweiter flush-Cycle: neues Event triggert Send; jetzt geht die
+    // mid-flush eingereihte Boundary mit raus.
+    tracker.track({ eventName: "manifest_loaded" });
+    await tracker.flush();
+    expect(sent.length).toBe(firstCycleBatches + 1);
+    const lastBatch = sent.at(-1);
+    expect(lastBatch?.session_boundaries).toHaveLength(1);
+    expect(lastBatch?.session_boundaries?.[0]?.reason).toBe("native_hls_unavailable");
   });
 
   it("ignores addBoundary calls after destroy", async () => {
