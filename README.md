@@ -301,7 +301,8 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
 ### v0.4.0 — Erweiterte Trace-Korrelation
 
 - Player-Session-Traces
-- optionale Tempo-Integration
+- optionale Tempo-Integration über `make dev-tempo` (RAK-31, Kann-Scope;
+  Dashboard-Timeline bleibt Tempo-unabhängig — RAK-32)
 - Session-Timeline-Ansicht
 - Sampling-Strategie
 

@@ -184,6 +184,46 @@ make stop
 # Profile-aware: beendet auch das observability-Profil, falls aktiv.
 ```
 
+### 2.5 Tempo (optional, ab `0.4.0`)
+
+Tempo ist ein **optionales** Trace-Backend für Debug-Tiefe (RAK-31,
+Kann-Scope) und kein Ersatz für die eingebaute Session-Timeline
+(RAK-32). Die Dashboard-Timeline und alle Read-Pfade
+(`GET /api/stream-sessions/...`) sind Tempo-unabhängig — Source-of-
+Truth ist SQLite (ADR-0002). Tempo erweitert die Sicht auf Span-Ebene
+(Header-Verarbeitung, Outcome-Klassifikation, Resource-Attribute).
+
+```bash
+make dev-tempo
+# entspricht: docker compose --profile observability --profile tempo up --build
+# zusätzlich:
+#   tempo auf http://localhost:3200  (HTTP-API für Trace-Search)
+#   Collector lädt observability/otel-collector/config-tempo.yaml und
+#   exportiert Traces zusätzlich an `otlp/tempo` (sonst nur `debug`).
+```
+
+Trace-Suche im Lab nutzt Span-Attribute aus
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §2.6:
+
+- **Primary**: Session-bezogen über
+  `mtrace.session.correlation_id` (gesetzt nur bei Single-Session-
+  Batches). Tempo-Search:
+  `GET /api/search?tags=mtrace.session.correlation_id=<UUID>`.
+- **Sekundär**: batchspezifisch über `trace_id`. Eine Session kann
+  mehrere `trace_id`-Werte haben (jeder Batch ein Trace) — `trace_id`
+  ist daher kein Session-Schlüssel.
+
+Smoke: `make smoke-tempo` (Default-State `tempo`) postet einen Single-
+Session-Batch, liest `correlation_id` über die API zurück und
+verifiziert den Tempo-Trace-Treffer. Andere Stack-Zustände
+(`SMOKE_STATE=core` ohne OTLP-Versuch, `SMOKE_STATE=observability`
+ohne Tempo-Verbindungsversuch) sind eigene Smoke-Aufrufe — siehe
+`scripts/smoke-tempo.sh`.
+
+`make stop` und `make wipe` adressieren das `tempo`-Profil mit; `wipe`
+entfernt das benannte Volume `mtrace-tempo-data` zusätzlich zum
+SQLite-Volume.
+
 ### 2.6 Korrelations-Identifier in Read-Antworten
 
 Ab `0.4.0` (Tranche 3) tragen Session- und Event-Read-Antworten zwei
