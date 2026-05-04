@@ -391,14 +391,17 @@ func waitFor(timeout time.Duration, pred func() bool) bool {
 }
 
 func sseHandlerGoroutineCount() int {
-	buf := make([]byte, 1<<16)
-	for {
+	const maxStackSnapshot = 1 << 20
+	for size := 1 << 16; size <= maxStackSnapshot; size *= 2 {
+		buf := make([]byte, size)
 		n := runtime.Stack(buf, true)
 		if n < len(buf) {
 			return strings.Count(string(buf[:n]), "SseStreamHandler).ServeHTTP")
 		}
-		buf = make([]byte, len(buf)*2)
 	}
+	buf := make([]byte, maxStackSnapshot)
+	n := runtime.Stack(buf, true)
+	return strings.Count(string(buf[:n]), "SseStreamHandler).ServeHTTP")
 }
 
 // streamBytesUntilTimeout öffnet den SSE-Endpunkt mit den

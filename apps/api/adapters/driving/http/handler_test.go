@@ -42,7 +42,8 @@ const validBody = `{
 }`
 
 type testServerConfig struct {
-	sse bool
+	sse     bool
+	limiter driven.RateLimiter
 }
 
 type testServerOption func(*testServerConfig)
@@ -50,6 +51,12 @@ type testServerOption func(*testServerConfig)
 func withSse() testServerOption {
 	return func(cfg *testServerConfig) {
 		cfg.sse = true
+	}
+}
+
+func withRateLimiter(limiter driven.RateLimiter) testServerOption {
+	return func(cfg *testServerConfig) {
+		cfg.limiter = limiter
 	}
 }
 
@@ -67,7 +74,10 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time, opts ...testSe
 		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
 		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
 	})
-	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
+	limiter := cfg.limiter
+	if limiter == nil {
+		limiter = ratelimit.NewTokenBucketRateLimiter(100, 100, clock)
+	}
 	publisher := metrics.NewPrometheusPublisher()
 	sessionRepo := inmemory.NewSessionRepository()
 	uc := application.NewRegisterPlaybackEventBatchUseCase(
@@ -113,23 +123,7 @@ func (unlimitedLimiter) Allow(_ context.Context, _ driven.RateLimitKey, _ int) e
 // rejects, so tests can reach validation rules downstream of the
 // limiter (specifically the §5 step 5 batch-size check).
 func newServerWithUnlimitedRate(t *testing.T) *httptest.Server {
-	t.Helper()
-	repo := inmemory.NewEventRepository()
-	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
-		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
-		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
-	})
-	publisher := metrics.NewPrometheusPublisher()
-	sessionRepo := inmemory.NewSessionRepository()
-	uc := application.NewRegisterPlaybackEventBatchUseCase(
-		resolver, unlimitedLimiter{}, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), time.Now,
-	)
-	sessionsService := application.NewSessionsService(sessionRepo, repo)
-	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, resolver, publisher.Handler(), nil, nil, nil, logger)
-	srv := httptest.NewServer(router)
-	t.Cleanup(srv.Close)
-	return srv
+	return newTestServerWithClock(t, time.Now, withRateLimiter(unlimitedLimiter{}))
 }
 
 func postEvents(t *testing.T, srv *httptest.Server, token, body string) *http.Response {
