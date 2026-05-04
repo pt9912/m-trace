@@ -245,6 +245,11 @@ func testSessionEndedIdempotent(t *testing.T, factory Factory) {
 	if got.EventCount != 3 {
 		t.Errorf("event_count = %d, want 3 (verspätete Events zählen weiter)", got.EventCount)
 	}
+	// plan-0.4.0 §5 H1: end_source = "client" bei explizitem
+	// session_ended.
+	if got.EndSource != domain.SessionEndSourceClient {
+		t.Errorf("end_source = %q, want %q", got.EndSource, domain.SessionEndSourceClient)
+	}
 }
 
 func testSweepTransitions(t *testing.T, factory Factory) {
@@ -294,6 +299,10 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	}
 	if got.EndedAt == nil || !got.EndedAt.Equal(t0.Add(20*time.Minute)) {
 		t.Errorf("ended_at = %v, want %v", got.EndedAt, t0.Add(20*time.Minute))
+	}
+	// plan-0.4.0 §5 H1: Sweep-Ende setzt end_source = "sweeper".
+	if got.EndSource != domain.SessionEndSourceSweeper {
+		t.Errorf("end_source after sweep = %q, want %q", got.EndSource, domain.SessionEndSourceSweeper)
 	}
 
 	// Idempotenz: nochmal Sweep ändert ended_at nicht.

@@ -158,6 +158,73 @@ func TestRestartCursorStability(t *testing.T) {
 	}
 }
 
+// TestRestartPreservesEndSource verifiziert plan-0.4.0 §5 H1
+// (Restart-Stabilität für `end_source`): nach Close + Re-Open ist
+// das Feld identisch lesbar — sowohl `client` (explizites
+// session_ended) als auch `sweeper` (zeitbasiertes Ende).
+func TestRestartPreservesEndSource(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace-endsource.db")
+	t0 := time.Date(2026, 5, 4, 14, 0, 0, 0, time.UTC)
+
+	// Pass 1: zwei Sessions — eine via client-event, eine via sweeper.
+	db1, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open #1: %v", err)
+	}
+	seq1, err := sqlite.NewIngestSequencer(ctx, db1)
+	if err != nil {
+		t.Fatalf("seq #1: %v", err)
+	}
+	sess1 := sqlite.NewSessionRepository(db1)
+
+	// Session "client-end" mit explizitem session_ended.
+	startedClient := mkRestartEvent(seq1, "demo", "client-end", t0)
+	endedClient := mkRestartEvent(seq1, "demo", "client-end", t0.Add(time.Second))
+	endedClient.EventName = "session_ended"
+	if _, err := sess1.UpsertFromEvents(ctx, []domain.PlaybackEvent{startedClient, endedClient}); err != nil {
+		t.Fatalf("upsert client-end: %v", err)
+	}
+
+	// Session "sweep-end" — wird durch Sweep nach `endedAfter` beendet.
+	startedSweep := mkRestartEvent(seq1, "demo", "sweep-end", t0)
+	if _, err := sess1.UpsertFromEvents(ctx, []domain.PlaybackEvent{startedSweep}); err != nil {
+		t.Fatalf("upsert sweep-end: %v", err)
+	}
+	// Sweep mit großem now-Offset → stalled → ended.
+	if err := sess1.Sweep(ctx, t0.Add(20*time.Minute), 60*time.Second, 600*time.Second); err != nil {
+		t.Fatalf("sweep: %v", err)
+	}
+	if err := db1.Close(); err != nil {
+		t.Fatalf("close #1: %v", err)
+	}
+
+	// Pass 2: re-open und end_source prüfen.
+	db2, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open #2: %v", err)
+	}
+	t.Cleanup(func() { _ = db2.Close() })
+	sess2 := sqlite.NewSessionRepository(db2)
+
+	gotClient, err := sess2.Get(ctx, "demo", "client-end")
+	if err != nil {
+		t.Fatalf("get client-end: %v", err)
+	}
+	if gotClient.EndSource != domain.SessionEndSourceClient {
+		t.Errorf("client-end end_source = %q, want %q", gotClient.EndSource, domain.SessionEndSourceClient)
+	}
+
+	gotSweep, err := sess2.Get(ctx, "demo", "sweep-end")
+	if err != nil {
+		t.Fatalf("get sweep-end: %v", err)
+	}
+	if gotSweep.EndSource != domain.SessionEndSourceSweeper {
+		t.Errorf("sweep-end end_source = %q, want %q", gotSweep.EndSource, domain.SessionEndSourceSweeper)
+	}
+}
+
 // TestRestartPreservesSessionBoundaries verifiziert plan-0.4.0 §4.4
 // DoD-Item 3 (Restart-Stabilität): persistierte
 // `session_boundaries[]`-Records sind nach Close + Re-Open derselben

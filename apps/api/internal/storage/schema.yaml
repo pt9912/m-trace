@@ -49,6 +49,8 @@ tables:
         default: 0
       correlation_id:
         type: text
+      end_source:
+        type: text
     primary_key: [project_id, session_id]
     indices:
       - name: idx_stream_sessions_project_started
@@ -65,6 +67,9 @@ tables:
       - name: chk_stream_sessions_state
         type: check
         expression: "state IN ('active', 'stalled', 'ended')"
+      - name: chk_stream_sessions_end_source
+        type: check
+        expression: "end_source IS NULL OR end_source IN ('client', 'sweeper')"
 
   stream_session_boundaries:
     columns:

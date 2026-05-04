@@ -406,6 +406,58 @@ func TestHTTP_StreamSessions_BoundaryRejectedDoesNotPersist(t *testing.T) {
 	}
 }
 
+// TestHTTP_StreamSessions_EndSource_NullForActiveSession pinnt
+// plan-0.4.0 §5 H1: aktive Sessions liefern `end_source: null`
+// (Pflichtfeld, kein omitempty).
+func TestHTTP_StreamSessions_EndSource_NullForActiveSession(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	if r := postEvents(t, srv, "demo-token", validBody); r.StatusCode != http.StatusAccepted {
+		t.Fatalf("post: %d", r.StatusCode)
+	}
+	resp, payload := getJSON(t, srv.URL, "/api/stream-sessions/sess-1")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("detail: %d", resp.StatusCode)
+	}
+	session, _ := payload["session"].(map[string]any)
+	raw, present := session["end_source"]
+	if !present {
+		t.Fatalf("end_source must be present (Pflichtfeld), got missing")
+	}
+	if raw != nil {
+		t.Errorf("end_source for active session must be JSON null, got %T = %v", raw, raw)
+	}
+}
+
+// TestHTTP_StreamSessions_EndSource_ClientForSessionEnded pinnt §5
+// H1: explizites `session_ended`-Event setzt
+// `end_source="client"` im Read-Shape.
+func TestHTTP_StreamSessions_EndSource_ClientForSessionEnded(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	body := `{
+	  "schema_version": "1.0",
+	  "events": [
+	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-end","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.4.0"}},
+	    {"event_name":"session_ended","project_id":"demo","session_id":"sess-end","client_timestamp":"2026-04-28T12:00:01.000Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.4.0"}}
+	  ]
+	}`
+	if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {
+		t.Fatalf("post: %d", r.StatusCode)
+	}
+	resp, payload := getJSON(t, srv.URL, "/api/stream-sessions/sess-end")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("detail: %d", resp.StatusCode)
+	}
+	session, _ := payload["session"].(map[string]any)
+	if session["end_source"] != "client" {
+		t.Errorf("end_source = %v, want \"client\"", session["end_source"])
+	}
+	if session["state"] != "ended" {
+		t.Errorf("state = %v, want \"ended\"", session["state"])
+	}
+}
+
 // encodeCursorForTest base64-url-encoded eine raw-JSON-Payload (ohne
 // Padding) — gleiche Codec-Form wie der Handler, aber bewusst gegen
 // die Wire-Form gekoppelt statt gegen die interne Codec-API.

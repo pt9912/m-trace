@@ -265,6 +265,11 @@ type sessionWire struct {
 	StartedAt           string                       `json:"started_at"`
 	LastEventAt         string                       `json:"last_event_at"`
 	EndedAt             *string                      `json:"ended_at,omitempty"`
+	// EndSource ist `"client"`, `"sweeper"` oder JSON `null` für aktive
+	// Sessions/Legacy-Einträge (Spec §3.7.1, plan-0.4.0 §5 H1). Pointer
+	// + omitempty würde den Null-Fall unterdrücken — Read-Konsumenten
+	// erwarten das Feld immer; daher *string ohne omitempty.
+	EndSource           *string                      `json:"end_source"`
 	EventCount          int64                        `json:"event_count"`
 	CorrelationID       string                       `json:"correlation_id"`
 	NetworkSignalAbsent []networkSignalAbsentWire    `json:"network_signal_absent"`
@@ -296,6 +301,10 @@ func toSessionWireWithBoundaries(s domain.StreamSession, boundaries []domain.Ses
 	if s.EndedAt != nil {
 		ended := s.EndedAt.UTC().Format(time.RFC3339Nano)
 		out.EndedAt = &ended
+	}
+	if s.EndSource != "" {
+		v := string(s.EndSource)
+		out.EndSource = &v
 	}
 	return out
 }

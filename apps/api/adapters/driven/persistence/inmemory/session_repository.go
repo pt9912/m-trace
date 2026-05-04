@@ -99,6 +99,7 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 			s.State = domain.SessionStateEnded
 			endedAt := e.ServerReceivedAt
 			s.EndedAt = &endedAt
+			s.EndSource = domain.SessionEndSourceClient
 		}
 		r.sessions[k] = s
 		canonical[e.SessionID] = s.CorrelationID
@@ -125,6 +126,7 @@ func (r *SessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter
 			s.State = domain.SessionStateEnded
 			endedAt := now
 			s.EndedAt = &endedAt
+			s.EndSource = domain.SessionEndSourceSweeper
 		}
 		r.sessions[k] = s
 	}

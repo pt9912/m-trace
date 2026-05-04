@@ -45,4 +45,24 @@ type StreamSession struct {
 	// beim allerersten Event der Session erzeugt (UUIDv4) und über alle
 	// Folge-Events konstant gehalten. Source spec/telemetry-model.md §2.5.
 	CorrelationID string
+	// EndSource benennt den Auslöser des Endzustands (plan-0.4.0 §5):
+	//   - SessionEndSourceClient  bei explizitem `session_ended`-Event
+	//   - SessionEndSourceSweeper bei zeitbasiertem Sweeper-Ende
+	//   - "" (Leerwert) wenn State != ended, oder bei Legacy-Sessions
+	//     vor dem V4-Migration-Closeout
+	// Read-Pfad mappt den Leerwert auf JSON `null` (siehe API-Kontrakt
+	// §3.7.1).
+	EndSource SessionEndSource
 }
+
+// SessionEndSource klassifiziert den Auslöser des Endzustands einer
+// Session (plan-0.4.0 §5 H1).
+type SessionEndSource string
+
+// Session-EndSource-Werte; siehe spec/backend-api-contract.md §3.7.1.
+const (
+	// SessionEndSourceClient: explizites `session_ended`-Event vom SDK.
+	SessionEndSourceClient SessionEndSource = "client"
+	// SessionEndSourceSweeper: zeitbasiertes Ende durch SessionsSweeper.
+	SessionEndSourceSweeper SessionEndSource = "sweeper"
+)

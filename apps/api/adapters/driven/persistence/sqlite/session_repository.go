@@ -63,8 +63,8 @@ ON CONFLICT(project_id) DO NOTHING`
 	insertSessionSQL = `
 INSERT INTO stream_sessions(
     session_id, project_id, state, started_at, last_seen_at, ended_at,
-    event_count, correlation_id
-) VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+    event_count, correlation_id, end_source
+) VALUES (?, ?, ?, ?, ?, ?, 1, ?, NULL)
 ON CONFLICT(project_id, session_id) DO NOTHING`
 
 	// Last-Seen + Event-Count werden auch dann inkrementiert, wenn die
@@ -77,25 +77,25 @@ WHERE project_id = ? AND session_id = ?`
 
 	markSessionEndedSQL = `
 UPDATE stream_sessions
-SET state = 'ended', ended_at = ?
+SET state = 'ended', ended_at = ?, end_source = ?
 WHERE project_id = ? AND session_id = ? AND state != 'ended'`
 
 	selectSessionByCompositeKeySQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
-       event_count, correlation_id
+       event_count, correlation_id, end_source
 FROM stream_sessions
 WHERE project_id = ? AND session_id = ?`
 
 	selectSessionByCorrelationIDSQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
-       event_count, correlation_id
+       event_count, correlation_id, end_source
 FROM stream_sessions
 WHERE project_id = ? AND correlation_id = ?
 LIMIT 1`
 
 	listSessionsBaseSQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
-       event_count, correlation_id
+       event_count, correlation_id, end_source
 FROM stream_sessions
 WHERE project_id = ?`
 
@@ -113,7 +113,7 @@ WHERE state = 'active' AND last_seen_at < ?`
 
 	sweepEndedSQL = `
 UPDATE stream_sessions
-SET state = 'ended', ended_at = ?
+SET state = 'ended', ended_at = ?, end_source = 'sweeper'
 WHERE state = 'stalled' AND last_seen_at < ?`
 
 	// Tranche 3 §4.4 D2: Insert-or-Refresh für `session_boundaries[]`.
@@ -219,7 +219,9 @@ func tickExistingSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEve
 		return nil
 	}
 	if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
-		formatTime(e.ServerReceivedAt), e.ProjectID, e.SessionID); err != nil {
+		formatTime(e.ServerReceivedAt),
+		string(domain.SessionEndSourceClient),
+		e.ProjectID, e.SessionID); err != nil {
 		return fmt.Errorf("sqlite: mark session ended: %w", err)
 	}
 	return nil
@@ -271,7 +273,9 @@ func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent)
 	// Wir haben gewonnen — Kandidat-CorrelationID ist DB-final.
 	if e.EventName == persistence.SessionEndedEventName {
 		if _, err := tx.ExecContext(ctx, markSessionEndedSQL,
-			formatTime(e.ServerReceivedAt), e.ProjectID, e.SessionID); err != nil {
+			formatTime(e.ServerReceivedAt),
+			string(domain.SessionEndSourceClient),
+			e.ProjectID, e.SessionID); err != nil {
 			return "", fmt.Errorf("sqlite: mark session ended: %w", err)
 		}
 	}
@@ -416,9 +420,10 @@ func scanSessionRow(row *sql.Row) (domain.StreamSession, error) {
 		endedAt       sql.NullString
 		eventCount    int64
 		correlationID sql.NullString
+		endSource     sql.NullString
 	)
 	err := row.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt,
-		&eventCount, &correlationID)
+		&eventCount, &correlationID, &endSource)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.StreamSession{}, domain.ErrSessionNotFound
 	}
@@ -426,7 +431,7 @@ func scanSessionRow(row *sql.Row) (domain.StreamSession, error) {
 		return domain.StreamSession{}, fmt.Errorf("sqlite: scan session: %w", err)
 	}
 	return decodeSession(id, project, state, startedAt, lastSeen, endedAt,
-		eventCount, correlationID)
+		eventCount, correlationID, endSource)
 }
 
 func scanSessionFromRows(rows *sql.Rows) (domain.StreamSession, error) {
@@ -439,17 +444,19 @@ func scanSessionFromRows(rows *sql.Rows) (domain.StreamSession, error) {
 		endedAt       sql.NullString
 		eventCount    int64
 		correlationID sql.NullString
+		endSource     sql.NullString
 	)
 	if err := rows.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt,
-		&eventCount, &correlationID); err != nil {
+		&eventCount, &correlationID, &endSource); err != nil {
 		return domain.StreamSession{}, fmt.Errorf("sqlite: scan session: %w", err)
 	}
 	return decodeSession(id, project, state, startedAt, lastSeen, endedAt,
-		eventCount, correlationID)
+		eventCount, correlationID, endSource)
 }
 
 func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
 	endedAtRaw sql.NullString, eventCount int64, correlationID sql.NullString,
+	endSource sql.NullString,
 ) (domain.StreamSession, error) {
 	startedAt, err := parseTime(startedAtRaw)
 	if err != nil {
@@ -476,6 +483,7 @@ func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
 		EndedAt:       endedAt,
 		EventCount:    eventCount,
 		CorrelationID: stringFromNull(correlationID),
+		EndSource:     domain.SessionEndSource(stringFromNull(endSource)),
 	}, nil
 }
 
