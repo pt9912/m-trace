@@ -86,7 +86,19 @@ if ! grep -qE '"analyzerKind":"hls"' "$tmpdir/master.body"; then
   cat "$tmpdir/master.body"
   exit 1
 fi
-echo "[smoke-analyzer] master case OK"
+# plan-0.4.0 §4.5: Tranche-3-Wrapper {analysis, session_link} ist
+# scharf. Ungebundene Requests ohne Link-Felder liefern detached.
+if ! grep -qE '"analysis":\{' "$tmpdir/master.body"; then
+  echo "[smoke-analyzer] /api/analyze (master) missing wrapper field analysis (§4.5)"
+  cat "$tmpdir/master.body"
+  exit 1
+fi
+if ! grep -qE '"session_link":\{[^}]*"status":"detached"' "$tmpdir/master.body"; then
+  echo "[smoke-analyzer] /api/analyze (master) missing session_link.status=detached (§4.5)"
+  cat "$tmpdir/master.body"
+  exit 1
+fi
+echo "[smoke-analyzer] master case OK (wrapper present, session_link=detached)"
 
 # 4. SSRF-Negativfall: Credentials in URL werden unabhängig vom
 #    ALLOW_PRIVATE_NETWORKS-Flag geblockt. Im Compose-Lab steht das

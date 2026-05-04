@@ -354,7 +354,46 @@ und meldet den Zustand im Startup-Log.
 **API-Endpunkt**: `POST /api/analyze` (vollständig dokumentiert in
 [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
 §3.6). Request- und Response-Schema spiegeln die Public API des
-Pakets; Fehler werden auf eine Problem-Shape gemappt:
+Pakets — mit zwei Tranche-3-Erweiterungen aus
+`plan-0.4.0.md` §4.5:
+
+1. **Optionale Session-Verknüpfung im Request**: zusätzlich zu
+   `kind`/`text`/`url`/`baseUrl` darf der Body
+   `correlation_id` und/oder `session_id` tragen, damit das
+   Analyzer-Ergebnis in eine bestehende Player-Session gemischt
+   werden kann. `correlation_id` hat Vorrang vor `session_id`;
+   beide Felder werden project-skopiert über
+   `(project_id, correlation_id)` bzw. `(project_id, session_id)`
+   aufgelöst (Statusmatrix in §3.6).
+
+2. **Antwort-Hülle `{analysis, session_link}`** (Breaking Change ab
+   Tranche 3): jede erfolgreiche `POST /api/analyze`-Antwort hat
+   ab Tranche 3 zwei Top-Level-Felder. `analysis` enthält das
+   bisherige flache Wire-Format (1:1 zu §2.2), `session_link.status`
+   ist eines aus `{"linked", "detached", "not_found_detached",
+   "conflict_detached"}`. Ungebundene Requests ohne Link-Felder
+   liefern `session_link.status="detached"` — kein
+   Response-Shape-Branching.
+
+   ```json
+   {
+     "status": "ok",
+     "analysis": { "...": "AnalysisResult, siehe §2.2" },
+     "session_link": { "status": "linked", "project_id": "demo",
+       "session_id": "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+       "correlation_id": "2f6f1a3c-9fb9-4c0b-a78f-2f41d8f6e1e7" }
+   }
+   ```
+
+3. **Endpoint-spezifische Auth** (API-Kontrakt §4): Requests ohne
+   `correlation_id` und ohne `session_id` brauchen keinen
+   `X-MTrace-Token`. Mit einem der beiden Link-Felder ist der Token
+   Pflicht und muss auf ein bekanntes Project resolvieren — fehlt
+   er oder ist er ungültig, antwortet die API mit `401 Unauthorized`
+   ohne Session-Lookup. Die übrigen Read-/Write-Endpunkte
+   (`POST /api/playback-events`, Session-Reads) bleiben tokenpflichtig.
+
+Fehler werden weiter auf eine Problem-Shape gemappt:
 
 | HTTP | `code`                  | Anlass                                                                |
 | ---- | ----------------------- | --------------------------------------------------------------------- |
