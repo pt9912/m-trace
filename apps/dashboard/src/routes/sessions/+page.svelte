@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { env } from "$env/dynamic/public";
   import { formatTime, listSessions, type StreamSession } from "$lib/api";
+  import { startSseClient, type SseClient } from "$lib/sse-client";
 
   let sessions: StreamSession[] = [];
   let filter = "all";
   let loading = true;
   let error = "";
+  let sseClient: SseClient | undefined;
 
   $: visibleSessions = filter === "all" ? sessions : sessions.filter((session) => session.state === filter);
 
@@ -21,7 +24,28 @@
     }
   }
 
-  onMount(refresh);
+  onMount(() => {
+    void refresh();
+    // §5 H5: Live-Updates via SSE; bei Frame triggert ein listSessions-
+    // Refresh, weil SSE-Frames nur Mindest-Payload liefern (REST-Read
+    // ist die Source-of-Truth, Spec §10a). Der Client fällt automatisch
+    // auf Polling zurück, wenn SSE persistent fehlschlägt (z. B. wenn
+    // kein Token gesetzt ist und der Server 401 liefert) — das schließt
+    // den ADR-0003-Vertrag.
+    const apiBaseUrl = (env.PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+    sseClient = startSseClient({
+      url: `${apiBaseUrl}/api/stream-sessions/stream`,
+      token: env.PUBLIC_API_TOKEN ?? "",
+      onAppended: () => {
+        void refresh();
+      },
+      onPollingTick: () => refresh()
+    });
+  });
+
+  onDestroy(() => {
+    sseClient?.disconnect();
+  });
 </script>
 
 <section class="page-head">

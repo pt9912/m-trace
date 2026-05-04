@@ -87,6 +87,13 @@ const events = [
   }
 ];
 
+vi.mock("$lib/sse-client", () => ({
+  // Tests rendern Sessions-Page in JSDOM ohne echten SSE-Server;
+  // wir stuben den Client als no-op, damit kein Reconnect-Loop den
+  // shared `sseConnection`-Store durcheinander wirbelt.
+  startSseClient: () => ({ disconnect: () => undefined })
+}));
+
 vi.mock("$lib/api", () => ({
   formatTime: (value: string | undefined) => (value ? `time:${value}` : "n/a"),
   getHealth: vi.fn(async () => apiState.health),
@@ -116,7 +123,7 @@ vi.mock("$lib/api", () => ({
   })
 }));
 
-beforeEach(() => {
+beforeEach(async () => {
   routeState.params = { id: "session-1" };
   apiState.sessions = sessions;
   apiState.events = events;
@@ -124,6 +131,10 @@ beforeEach(() => {
   apiState.listSessionsError = undefined;
   apiState.getSessionError = undefined;
   apiState.health = { ok: true, status: 200, text: "ok" };
+  // §5 H5: Tests können den Store mutieren; Default für den nächsten
+  // Test wieder zurücksetzen.
+  const { sseConnection } = await import("../src/lib/status");
+  sseConnection.set({ state: "not_yet_connected", changedAt: null, detail: null });
 });
 
 afterEach(() => {
