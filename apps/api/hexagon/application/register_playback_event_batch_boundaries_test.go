@@ -98,6 +98,36 @@ func TestRegisterBatch_RejectsInvalidBoundary_NoPersist(t *testing.T) {
 	}
 }
 
+// TestRegisterBatch_BoundarySessionScopedToBatchEvents pinnt die
+// Cross-Project-Disambiguation des Partition-Match (Review-F-1):
+// Eine Session-ID kann in zwei Projekten existieren. Wenn der Token
+// auf Project "demo" auflöst, alle Events im Batch zu "demo" gehören
+// und die Boundary korrekt `project_id="demo"` trägt, aber die
+// `session_id` im aktuellen Batch nicht als Event vorkommt (etwa weil
+// sie nur aus einem fremden Project bekannt wäre), wird abgelehnt —
+// `eventSessions` ist aus den Events des aktuellen Batches gebaut,
+// nicht aus globalem Repository-State.
+func TestRegisterBatch_BoundarySessionScopedToBatchEvents(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, sessions, _, _, _, _ := newUseCase()
+	in := validBatch()
+	// Events sind alle im Project "demo" (validBatch). Boundary trägt
+	// dieselbe Token-Project-ID, aber eine andere session_id. Selbst
+	// wenn diese session_id in einem fremden Project bekannt wäre,
+	// muss der Use-Case ablehnen — Partition-Match prüft gegen den
+	// **aktuellen Batch**, nicht gegen globalen State.
+	b := validBoundary()
+	b.SessionID = "cross-project-shared-session-id"
+	in.Boundaries = []driving.BoundaryInput{b}
+	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if !errors.Is(err, domain.ErrInvalidEvent) {
+		t.Fatalf("expected ErrInvalidEvent, got %v", err)
+	}
+	if len(repo.appended) != 0 || len(sessions.boundaries) != 0 {
+		t.Fatalf("cross-project-shared-session-id boundary must not persist anything")
+	}
+}
+
 func TestRegisterBatch_RejectsBoundaryForUnknownSession(t *testing.T) {
 	t.Parallel()
 	// Boundary referenziert eine session_id, für die im selben Batch

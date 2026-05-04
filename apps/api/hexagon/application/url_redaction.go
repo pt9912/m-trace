@@ -60,10 +60,15 @@ func isKnownURLMetaKey(key string) bool {
 // strikt geprüft. Reserved-Key-Validation passiert immer **vor** der
 // Redaction; Aufrufer müssen die Reihenfolge einhalten, damit ein
 // invalider `network.redacted_url`-Wert weiterhin 422 auslöst.
+//
+// Implementierung in zwei Phasen (sammeln, dann mutieren), damit die
+// Map-Iteration nicht gleichzeitig liest und überschreibt — Go-Spec
+// erlaubt das zwar für denselben Key, ist aber ein Refactor-Riecher.
 func redactEventMetaURLs(meta domain.EventMeta) {
 	if len(meta) == 0 {
 		return
 	}
+	keysToRedact := make([]string, 0, len(meta))
 	for k, v := range meta {
 		if k == metaKeyNetworkRedactedURL {
 			continue
@@ -75,6 +80,10 @@ func redactEventMetaURLs(meta domain.EventMeta) {
 		if !shouldRedactMetaValue(k, s) {
 			continue
 		}
+		keysToRedact = append(keysToRedact, k)
+	}
+	for _, k := range keysToRedact {
+		s, _ := meta[k].(string)
 		meta[k] = redactURLString(s)
 	}
 }
@@ -116,6 +125,13 @@ func redactURLString(raw string) string {
 
 // redactPathSegments ersetzt tokenartige Segmente durch ":redacted".
 // Erhält die führenden/trailing Slashes des Pfades.
+//
+// Segmente werden vor der Token-Heuristik per `url.PathUnescape`
+// dekodiert, damit prozent-encodierte JWT-/Base64URL-Werte (z. B.
+// `eyJhbGciOiJIUzI1NiJ9%2EeyJzdWIiOiJ1c2VyIn0%2Esig`) nicht durch das
+// `%`-Zeichen die `[A-Za-z0-9_-]`-Heuristik umgehen. Ein Decode-
+// Fehler wird defensiv als token-like behandelt — kein Roh-Wert läuft
+// durch.
 func redactPathSegments(escapedPath string) string {
 	if escapedPath == "" {
 		return ""
@@ -128,7 +144,12 @@ func redactPathSegments(escapedPath string) string {
 	}
 	parts := strings.Split(trimmed, "/")
 	for i, seg := range parts {
-		if isTokenLikePathSegment(seg) {
+		decoded, err := url.PathUnescape(seg)
+		if err != nil {
+			parts[i] = redactedTokenSegment
+			continue
+		}
+		if isTokenLikePathSegment(decoded) {
 			parts[i] = redactedTokenSegment
 		}
 	}
@@ -192,7 +213,11 @@ func isAlreadyRedactedURL(raw string) bool {
 		return false
 	}
 	for _, seg := range strings.Split(strings.Trim(u.EscapedPath(), "/"), "/") {
-		if isTokenLikePathSegment(seg) {
+		decoded, err := url.PathUnescape(seg)
+		if err != nil {
+			return false
+		}
+		if isTokenLikePathSegment(decoded) {
 			return false
 		}
 	}

@@ -49,6 +49,15 @@ func TestRedactURLString_RedactsTokenLikePathSegments(t *testing.T) {
 			"https://cdn.example.test/auth/:redacted",
 		},
 		{
+			// Bypass-Pin (Review-F-2): prozent-encodierte Punkte
+			// (`%2E`) dürfen die Token-Heuristik nicht umgehen —
+			// `redactPathSegments` dekodiert per `url.PathUnescape`,
+			// bevor das Pattern matched.
+			"jwt-like with percent-encoded dots",
+			"https://cdn.example.test/auth/eyJhbGciOiJIUzI1NiJ9%2EeyJzdWIiOiJ1c2VyIn0%2EsigBlockHere/playlist.m3u8",
+			"https://cdn.example.test/auth/:redacted/playlist.m3u8",
+		},
+		{
 			"normal short segment stays untouched",
 			"https://cdn.example.test/playlists/v1/main.m3u8",
 			"https://cdn.example.test/playlists/v1/main.m3u8",
@@ -177,6 +186,9 @@ func TestIsAlreadyRedactedURL(t *testing.T) {
 		"https://cdn.example.test/x#fragment",
 		"https://user:p@cdn.example.test/x",
 		"https://cdn.example.test/" + strings.Repeat("a", 32) + "/x",
+		// Bypass-Pin (Review-F-2): prozent-encodierter JWT in einem
+		// Pfadsegment muss als nicht-redigiert erkannt werden.
+		"https://cdn.example.test/eyJhbGciOiJIUzI1NiJ9%2EeyJzdWIiOiJ1c2VyIn0%2Esig",
 	}
 	for _, b := range bad {
 		if isAlreadyRedactedURL(b) {
