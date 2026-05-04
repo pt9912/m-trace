@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -30,26 +32,37 @@ type AnalyzeMetrics interface {
 }
 
 // AnalyzeHandler bedient POST /api/analyze: Manifest-Input → Analyzer-
-// Result. Erfolg gibt das vollständige domain.StreamAnalysisResult
-// als JSON zurück; Fehler werden in eine Problem-Shape (RFC 7807-nah)
-// gemappt.
+// Result mit optionaler Session-Verknüpfung. Erfolg liefert die
+// `{analysis, session_link}`-Hülle aus API-Kontrakt §3.6 als JSON;
+// Fehler werden in eine Problem-Shape (RFC 7807-nah) gemappt.
+//
+// Auth ist endpoint-spezifisch (API-Kontrakt §4): Requests ohne
+// `correlation_id` und ohne `session_id` brauchen kein Token; mit
+// einem der beiden Felder ist `X-MTrace-Token` Pflicht und muss auf
+// ein bekanntes Project resolvieren — sonst 401, ohne Use-Case-Aufruf.
 type AnalyzeHandler struct {
-	UseCase driving.StreamAnalysisInbound
-	Logger  *slog.Logger
+	UseCase  driving.StreamAnalysisInbound
+	Resolver driven.ProjectResolver
+	Logger   *slog.Logger
 	// Metrics ist optional — nil bedeutet "nicht zählen". Tests, die
 	// den Counter nicht beobachten wollen, können das Feld weglassen.
 	Metrics AnalyzeMetrics
 }
 
 type analyzeRequestPayload struct {
-	Kind    string `json:"kind"`
-	URL     string `json:"url,omitempty"`
-	Text    string `json:"text,omitempty"`
-	BaseURL string `json:"baseUrl,omitempty"`
+	Kind          string `json:"kind"`
+	URL           string `json:"url,omitempty"`
+	Text          string `json:"text,omitempty"`
+	BaseURL       string `json:"baseUrl,omitempty"`
+	CorrelationID string `json:"correlation_id,omitempty"`
+	SessionID     string `json:"session_id,omitempty"`
 }
 
-type analyzeResponseEnvelope struct {
-	Status          string                  `json:"status"`
+// analyzeAnalysisPayload spiegelt das `analysis`-Feld der Tranche-3-
+// Wrapper-Antwort (API-Kontrakt §3.6). Inhaltlich identisch zum pre-
+// §4.5 flachen Wire-Format — aber jetzt unterhalb von `{analysis: ...,
+// session_link: ...}`.
+type analyzeAnalysisPayload struct {
 	AnalyzerVersion string                  `json:"analyzerVersion"`
 	AnalyzerKind    string                  `json:"analyzerKind"`
 	Input           analyzeInputPayload     `json:"input"`
@@ -57,6 +70,25 @@ type analyzeResponseEnvelope struct {
 	Summary         analyzeSummaryPayload   `json:"summary"`
 	Findings        []analyzeFindingPayload `json:"findings"`
 	Details         json.RawMessage         `json:"details"`
+}
+
+// analyzeSessionLinkPayload ist die Wire-Hülle für `session_link`
+// (API-Kontrakt §3.6). Optional-Felder werden bei `status != linked`
+// nicht ausgegeben (`omitempty`).
+type analyzeSessionLinkPayload struct {
+	Status        string `json:"status"`
+	ProjectID     string `json:"project_id,omitempty"`
+	SessionID     string `json:"session_id,omitempty"`
+	CorrelationID string `json:"correlation_id,omitempty"`
+}
+
+// analyzeResponseEnvelope ist die Tranche-3-Wrapper-Antwort: alle
+// erfolgreichen `POST /api/analyze`-Antworten tragen sie, auch
+// detached. `Status="ok"` bleibt für Backward-Compat-Logik.
+type analyzeResponseEnvelope struct {
+	Status      string                    `json:"status"`
+	Analysis    analyzeAnalysisPayload    `json:"analysis"`
+	SessionLink analyzeSessionLinkPayload `json:"session_link"`
 }
 
 type analyzeInputPayload struct {
@@ -118,26 +150,74 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// plan-0.4.0 §4.5 — endpoint-spezifische Auth (API-Kontrakt §4):
+	// nur Requests mit `correlation_id` oder `session_id` brauchen
+	// einen gültigen `X-MTrace-Token`. Ungebundene Requests bleiben
+	// auch ohne Token erfolgreich und liefern `session_link.status=
+	// detached`.
+	if req.CorrelationID != "" || req.SessionID != "" {
+		projectID, ok := h.resolveProjectForLinkedRequest(r.Context(), w, r)
+		if !ok {
+			return
+		}
+		req.ProjectID = projectID
+	}
+
 	envelope, err := h.UseCase.AnalyzeManifest(r.Context(), req)
 	if err != nil {
 		h.mapAndWriteUseCaseError(w, err)
 		return
 	}
 
-	// E1-Übergangs-Mapping (plan-0.4.0 §4.5): das Use-Case-Result
-	// liefert seit §4.5 `{Analysis, SessionLink}`. Bis E2 die
-	// `{analysis, session_link}`-Wrapper-Antwort scharfschaltet,
-	// bleibt das HTTP-Mapping identisch zum Vor-§4.5-Stand und
-	// ignoriert den `SessionLink` — `req` setzt ihn ohnehin auf
-	// `detached`, weil der HTTP-Adapter in E1 noch keine Link-Felder
-	// liest.
+	resp := buildAnalyzeResponse(envelope)
+	if h.Logger != nil {
+		h.Logger.Info("analyze ok",
+			"playlistType", string(envelope.Analysis.PlaylistType),
+			"findingCount", len(envelope.Analysis.Findings),
+			"analyzerVersion", envelope.Analysis.AnalyzerVersion,
+			"sessionLinkStatus", string(envelope.SessionLink.Status),
+		)
+	}
+	h.recordOutcome("ok", "ok")
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// resolveProjectForLinkedRequest erzwingt für Analyze-Requests mit
+// gesetzten Link-Feldern den Token-Pflicht-Pfad: fehlender Token,
+// unbekannter Token oder fehlender Resolver liefert 401 ohne
+// Use-Case-Aufruf (API-Kontrakt §4-Regel "kein Session-Lookup ohne
+// Project").
+func (h *AnalyzeHandler) resolveProjectForLinkedRequest(
+	ctx context.Context, w http.ResponseWriter, r *http.Request,
+) (string, bool) {
+	token := r.Header.Get("X-MTrace-Token")
+	if token == "" || h.Resolver == nil {
+		writeAnalyzeProblem(w, http.StatusUnauthorized, "unauthorized",
+			"Analyze-Requests mit `correlation_id` oder `session_id` benötigen einen gültigen `X-MTrace-Token`.", nil)
+		h.recordOutcome("error", "unauthorized")
+		return "", false
+	}
+	project, err := h.Resolver.ResolveByToken(ctx, token)
+	if err != nil {
+		writeAnalyzeProblem(w, http.StatusUnauthorized, "unauthorized",
+			"`X-MTrace-Token` ist ungültig.", nil)
+		h.recordOutcome("error", "unauthorized")
+		return "", false
+	}
+	return project.ID, true
+}
+
+// buildAnalyzeResponse mappt das Use-Case-Result auf die
+// `{analysis, session_link}`-Wrapper-Antwort aus API-Kontrakt §3.6.
+// Für alle erfolgreichen Requests, auch detached.
+func buildAnalyzeResponse(envelope domain.AnalyzeManifestResult) analyzeResponseEnvelope {
 	result := envelope.Analysis
-	resp := analyzeResponseEnvelope{
-		Status:          "ok",
+	analysis := analyzeAnalysisPayload{
 		AnalyzerVersion: result.AnalyzerVersion,
 		// AnalyzerKind ist heute eine HLS-Konstante. Wenn DASH/CMAF
-		// (F-73) eingeführt werden, übernimmt das die Domain (per-kind
-		// Result-Variant) und das Feld kommt aus result.AnalyzerKind.
+		// (F-73) eingeführt werden, übernimmt das die Domain
+		// (per-kind Result-Variant) und das Feld kommt aus
+		// result.AnalyzerKind.
 		AnalyzerKind: "hls",
 		Input: analyzeInputPayload{
 			Source:  result.Input.Source,
@@ -149,19 +229,21 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Findings:     findingsToPayload(result.Findings),
 	}
 	if len(result.EncodedDetails) > 0 {
-		resp.Details = json.RawMessage(result.EncodedDetails)
+		analysis.Details = json.RawMessage(result.EncodedDetails)
 	} else {
-		resp.Details = json.RawMessage(`null`)
+		analysis.Details = json.RawMessage(`null`)
 	}
-	if h.Logger != nil {
-		h.Logger.Info("analyze ok",
-			"playlistType", string(result.PlaylistType),
-			"findingCount", len(result.Findings),
-			"analyzerVersion", result.AnalyzerVersion,
-		)
+	link := analyzeSessionLinkPayload{Status: string(envelope.SessionLink.Status)}
+	if envelope.SessionLink.Status == domain.SessionLinkStatusLinked {
+		link.ProjectID = envelope.SessionLink.ProjectID
+		link.SessionID = envelope.SessionLink.SessionID
+		link.CorrelationID = envelope.SessionLink.CorrelationID
 	}
-	h.recordOutcome("ok", "ok")
-	writeJSON(w, http.StatusOK, resp)
+	return analyzeResponseEnvelope{
+		Status:      "ok",
+		Analysis:    analysis,
+		SessionLink: link,
+	}
 }
 
 func (h *AnalyzeHandler) recordOutcome(outcome, code string) {
@@ -185,7 +267,12 @@ func payloadToRequest(p analyzeRequestPayload) (domain.StreamAnalysisRequest, *v
 				message: "kind=\"text\" verlangt ein nicht-leeres `text`-Feld.",
 			}
 		}
-		return domain.StreamAnalysisRequest{ManifestText: p.Text, BaseURL: p.BaseURL}, nil
+		return domain.StreamAnalysisRequest{
+			ManifestText:  p.Text,
+			BaseURL:       p.BaseURL,
+			CorrelationID: p.CorrelationID,
+			SessionID:     p.SessionID,
+		}, nil
 	case "url":
 		if p.URL == "" {
 			return domain.StreamAnalysisRequest{}, &validationProblem{
@@ -193,7 +280,11 @@ func payloadToRequest(p analyzeRequestPayload) (domain.StreamAnalysisRequest, *v
 				message: "kind=\"url\" verlangt ein nicht-leeres `url`-Feld.",
 			}
 		}
-		return domain.StreamAnalysisRequest{ManifestURL: p.URL}, nil
+		return domain.StreamAnalysisRequest{
+			ManifestURL:   p.URL,
+			CorrelationID: p.CorrelationID,
+			SessionID:     p.SessionID,
+		}, nil
 	default:
 		return domain.StreamAnalysisRequest{}, &validationProblem{
 			status: http.StatusBadRequest, code: "invalid_request",

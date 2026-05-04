@@ -76,9 +76,14 @@ func NewRouter(
 	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
 
 	if analysis != nil {
-		analyzeHandler := &AnalyzeHandler{UseCase: analysis, Logger: logger, Metrics: analyzeMetrics}
+		analyzeHandler := &AnalyzeHandler{
+			UseCase:  analysis,
+			Resolver: resolver,
+			Logger:   logger,
+			Metrics:  analyzeMetrics,
+		}
 		mux.Handle("POST /api/analyze", analyzeHandler)
-		mux.HandleFunc("OPTIONS /api/analyze", dashboardPreflightHandler(allowlist))
+		mux.HandleFunc("OPTIONS /api/analyze", analyzePreflightHandler(allowlist))
 	}
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und

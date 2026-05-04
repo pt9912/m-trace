@@ -19,6 +19,7 @@ type OriginAllowlist interface {
 const (
 	playerSDKAllowedMethods = "POST, OPTIONS"
 	dashboardAllowedMethods = "GET, OPTIONS"
+	analyzeAllowedMethods   = "POST, OPTIONS"
 	allowedHeaders          = "Content-Type, X-MTrace-Project, X-MTrace-Token"
 	preflightMaxAge         = "600"
 	varyHeader              = "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
@@ -71,6 +72,27 @@ func dashboardPreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", dashboardAllowedMethods)
+		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+		w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// analyzePreflightHandler bedient `OPTIONS /api/analyze` (plan-0.4.0
+// §4.5 DoD-Item 4). Methods sind `POST, OPTIONS` — analog zum
+// Player-SDK-Pfad, aber semantisch eigener Handler, weil der Body
+// und die Auth-Regeln des Analyze-Endpoints von `/api/playback-events`
+// abweichen (Token endpoint-spezifisch nach API-Kontrakt §4).
+func analyzePreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		appendVary(w)
+		origin := r.Header.Get("Origin")
+		if !allowlist.IsOriginInGlobalUnion(origin) {
+			writeStatus(w, http.StatusForbidden)
+			return
+		}
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", analyzeAllowedMethods)
 		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
 		w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
 		w.WriteHeader(http.StatusNoContent)
