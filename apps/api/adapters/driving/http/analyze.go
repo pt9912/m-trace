@@ -155,6 +155,13 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// einen gültigen `X-MTrace-Token`. Ungebundene Requests bleiben
 	// auch ohne Token erfolgreich und liefern `session_link.status=
 	// detached`.
+	//
+	// Reihenfolge weicht bewusst von API-Kontrakt §5 (Playback-Pfad
+	// `Auth-Header → Body-Read`) ab: hier hängt die Token-Pflicht
+	// vom Body-Inhalt ab, also läuft Body-Read und JSON-Parse vor
+	// dem Auth-Check. Defense-in-Depth gegen unauthentifizierte
+	// große Bodies bleibt das `maxAnalyzeRequestBytes`-Limit
+	// (1 MiB) oben in der Pipeline; Spec §3.6 erlaubt das explizit.
 	if req.CorrelationID != "" || req.SessionID != "" {
 		projectID, ok := h.resolveProjectForLinkedRequest(r.Context(), w, r)
 		if !ok {

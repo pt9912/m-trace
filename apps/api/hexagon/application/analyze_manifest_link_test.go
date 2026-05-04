@@ -227,6 +227,61 @@ func TestAnalyzeManifestLink_UnknownCorrelationIDWithKnownSessionID_NotFoundDeta
 	}
 }
 
+// TestAnalyzeManifestLink_ForeignProjectCorrelationIDPlusKnownSessionID_NotFoundDetached
+// pinnt den Spec §3.6-Halbsatz "eine bekannte session_id darf eine
+// unbekannte ODER project-fremde correlation_id nicht retten" für
+// den Mix-Fall: cid existiert nur in einem fremden Project, sid
+// existiert im eigenen Project.
+func TestAnalyzeManifestLink_ForeignProjectCorrelationIDPlusKnownSessionID_NotFoundDetached(t *testing.T) {
+	t.Parallel()
+	// Eine Session mit derselben cid existiert in Project "other";
+	// die session_id existiert in Project "demo". Resolver auf
+	// "demo" → cid-Lookup auf "demo" findet nichts, Verhalten muss
+	// not_found_detached sein, ohne durch sid-Fallback "gerettet"
+	// zu werden.
+	other := demoSession()
+	other.ProjectID = "other"
+	demo := demoSession()
+	demo.CorrelationID = "" // demo-sid existiert, aber ohne cid
+	repo := newLinkRepo(other, demo)
+	uc := application.NewAnalyzeManifestUseCase(okAnalyzer(), repo)
+	req := validAnalyzeRequest()
+	req.ProjectID = demoProject
+	req.CorrelationID = demoCID // existiert nur in "other"
+	req.SessionID = demoSID     // existiert in "demo"
+	got, _ := uc.AnalyzeManifest(context.Background(), req)
+	if got.SessionLink.Status != domain.SessionLinkStatusNotFoundDetached {
+		t.Errorf("status = %q want not_found_detached (foreign cid wins over known sid)", got.SessionLink.Status)
+	}
+}
+
+// TestAnalyzeManifestLink_LegacySessionWithoutCorrelationID pinnt
+// den Sub-Fall "sid-Treffer auf Legacy-Session (Pre-§3.2-Closeout,
+// CorrelationID leer)" → linked, aber `link.CorrelationID` bleibt
+// leer. Der HTTP-Adapter darf darauf vertrauen, dass `omitempty` das
+// Wire-Feld weglässt; Konsumenten lesen `status="linked"` plus
+// `session_id`/`project_id` ohne `correlation_id`.
+func TestAnalyzeManifestLink_LegacySessionWithoutCorrelationID(t *testing.T) {
+	t.Parallel()
+	legacy := demoSession()
+	legacy.CorrelationID = "" // Pre-§3.2 Legacy-Session
+	repo := newLinkRepo(legacy)
+	uc := application.NewAnalyzeManifestUseCase(okAnalyzer(), repo)
+	req := validAnalyzeRequest()
+	req.ProjectID = demoProject
+	req.SessionID = demoSID // sid-Pfad, kein cid
+	got, _ := uc.AnalyzeManifest(context.Background(), req)
+	if got.SessionLink.Status != domain.SessionLinkStatusLinked {
+		t.Fatalf("status = %q want linked", got.SessionLink.Status)
+	}
+	if got.SessionLink.SessionID != demoSID {
+		t.Errorf("session_id = %q want %q", got.SessionLink.SessionID, demoSID)
+	}
+	if got.SessionLink.CorrelationID != "" {
+		t.Errorf("correlation_id must be empty for legacy session, got %q", got.SessionLink.CorrelationID)
+	}
+}
+
 func TestAnalyzeManifestLink_BothKnownButMismatch_ConflictDetached(t *testing.T) {
 	t.Parallel()
 	// correlation_id zeigt auf eine andere Session als die übergebene
