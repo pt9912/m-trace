@@ -41,12 +41,14 @@ func NewEventBroker() *EventBroker {
 }
 
 // Subscribe öffnet einen project-skopierten Channel. Der Caller liest
-// daraus, bis `ctx` abgebrochen oder `Unsubscribe` gerufen wird —
-// `Subscribe` registriert einen Cleanup über den Context, sobald
-// `<-ctx.Done()` feuert. Buffer-Größe 64: bei langsamen Konsumenten
-// werden ältere Frames gedroppt (analog zum SSE-Protokoll, das den
-// Konsumenten via `Last-Event-ID`-Reconnect zur Lücken-Schließung
-// auffordert).
+// daraus, bis `ctx` abgebrochen wird. `Subscribe` registriert einen
+// Cleanup über den Context, sobald `<-ctx.Done()` feuert. Der Cleanup
+// entfernt den Subscriber aus dem Broker, schließt aber nicht den
+// Channel: `Publish` sendet nach einem lockless Snapshot, daher könnte
+// ein paralleles `close(ch)` sonst einen Send auf einen geschlossenen
+// Channel auslösen. Buffer-Größe 64: bei langsamen Konsumenten werden
+// ältere Frames gedroppt (analog zum SSE-Protokoll, das den Konsumenten
+// via `Last-Event-ID`-Reconnect zur Lücken-Schließung auffordert).
 func (b *EventBroker) Subscribe(ctx context.Context, projectID string) <-chan EventAppendedFrame {
 	ch := make(chan EventAppendedFrame, 64)
 	b.mu.Lock()
@@ -58,10 +60,7 @@ func (b *EventBroker) Subscribe(ctx context.Context, projectID string) <-chan Ev
 	go func() {
 		<-ctx.Done()
 		b.mu.Lock()
-		if sub, ok := b.subscribers[id]; ok {
-			close(sub.ch)
-			delete(b.subscribers, id)
-		}
+		delete(b.subscribers, id)
 		b.mu.Unlock()
 	}()
 	return ch

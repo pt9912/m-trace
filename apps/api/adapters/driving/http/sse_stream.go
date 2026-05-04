@@ -87,10 +87,7 @@ func (h *SseStreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			return
-		case frame, ok := <-frames:
-			if !ok {
-				return
-			}
+		case frame := <-frames:
 			if err := writeAppendedFrame(w, flusher, frame); err != nil {
 				h.logError("write append frame failed", "error", err)
 				return
