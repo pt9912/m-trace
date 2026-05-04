@@ -366,7 +366,7 @@ Liefer-/Abnahme-Matrix:
 |---|---|---|---|
 | §4.1 | Spec-Vorarbeit (Doku-only) | Wire-Format, Reason-Enum, Boundary-Wrapper, Cursor v3, URL-Redaction-Matrix, Auth-Tabelle und Analyzer-Hülle ohne implizite Code-Entscheidungen in `spec/*` und `contracts/*` festgeschrieben | ✅ (`caf6e6e` + Spec-Stand aus §3.x) |
 | §4.2 | Storage-/Repository-Prerequisite + R-6 | `(project_id, session_id)`-Schlüssel in Schema, Ports, InMemory- und SQLite-Adapter; Cross-Project-Kollisionstest grün; R-6-Race technisch unmöglich (DB-finale `correlation_id`-Rückgabe) | ✅ (`f50bd46`, `949a265`, `c602ebf`) |
-| §4.3 | HTTP-Read-Auth + Cursor v3 | `GET /api/stream-sessions*` tokenpflichtig; Cursor v3 mit Project-/Session-Scope, v2 wird als `cursor_invalid_legacy` abgewiesen; Dashboard-Client-API und Read-Doku nachgezogen | ⬜ |
+| §4.3 | HTTP-Read-Auth + Cursor v3 | `GET /api/stream-sessions*` tokenpflichtig; Cursor v3 mit Project-/Session-Scope, v2 wird als `cursor_invalid_legacy` abgewiesen; Dashboard-Client-API und Read-Doku nachgezogen | ✅ (`f50bd46`, `8812104`) |
 | §4.4 | Backend-Network-Events + URL-Redaction | `network.*`-Meta-Keys typvalidiert; `session_boundaries[]` persistiert und restart-stabil; URL-Redaction vor Persistenz für alle URL-verdächtigen Meta-Keys | ⬜ |
 | §4.5 | Analyzer-Linking + endpoint-spezifische Auth | `AnalyzeManifestResult{Analysis, SessionLink}` im Use-Case; Statusmatrix (`linked`/`detached`/`not_found_detached`/`conflict_detached`) grün; OPTIONS-Preflight für `/api/analyze`; Breaking-Change-Hülle `{analysis, session_link}` in Tests und Nutzer-Doku nachgezogen | ⬜ |
 | §4.6 | SDK-Manifest-/Segment-Capture | hls.js-Mapping-Tabelle festgeschrieben und getestet; jedes Manifest-/Fragment-Signal wird als `manifest_loaded`/`segment_loaded` erfasst; Dedup-Schlüssel nutzt keine URLs; optionaler `session_boundaries[]`-Send | ⬜ |
@@ -420,9 +420,9 @@ Ziel: HTTP-Read-Handler lösen Project-Kontext aus `X-MTrace-Token` auf, reichen
 
 DoD:
 
-- [ ] HTTP-Read-Handler lösen Project-Kontext vor Session-List, Session-Detail und Event-Read auf und reichen `project_id` in die Application-/Repository-Pfade weiter; Session-List, Session-Detail und Event-Read verlangen ab Tranche 3 `X-MTrace-Token`. Fehlender oder ungültiger Token liefert `401`; positive Tests mit gültigem Token beweisen projekt-skopierte Ergebnisse.
-- [ ] Dashboard-/Client-API sendet `X-MTrace-Token` für alle `GET /api/stream-sessions*`-Aufrufe; Nutzer-/Smoke-Doku zeigt den Header in Read-Beispielen (`docs/user/local-development.md`, Smoke-Skripte).
-- [ ] Session-List- und Event-Cursor wechseln auf `cursor_version: 3`: List-Cursor enthalten den Project-Scope, Event-Cursor den Collection-Scope `(project_id, session_id)`. v2-Cursor werden nach Aktivierung der projekt-skopierten Read-Pfade als `cursor_invalid_legacy` abgewiesen; v3-Cursor mit fremdem Project- oder Session-Scope liefern `cursor_invalid_malformed`. Tests decken Cursor-Round-Trip und beide Fehlerklassen ab.
+- [x] HTTP-Read-Handler lösen Project-Kontext vor Session-List, Session-Detail und Event-Read auf und reichen `project_id` in die Application-/Repository-Pfade weiter; Session-List, Session-Detail und Event-Read verlangen ab Tranche 3 `X-MTrace-Token`. Fehlender oder ungültiger Token liefert `401`; positive Tests mit gültigem Token beweisen projekt-skopierte Ergebnisse (Auth-Anteil vorgezogen aus §4.2 C1, `f50bd46`; Cursor-Aktivierung ergänzt in `8812104`).
+- [x] Dashboard-/Client-API sendet `X-MTrace-Token` für alle `GET /api/stream-sessions*`-Aufrufe; Nutzer-/Smoke-Doku zeigt den Header in Read-Beispielen (`docs/user/local-development.md`, Smoke-Skripte) (`8812104`).
+- [x] Session-List- und Event-Cursor wechseln auf `cursor_version: 3`: List-Cursor enthalten den Project-Scope, Event-Cursor den Collection-Scope `(project_id, session_id)`. v2-Cursor werden nach Aktivierung der projekt-skopierten Read-Pfade als `cursor_invalid_legacy` abgewiesen; v3-Cursor mit fremdem Project- oder Session-Scope liefern `cursor_invalid_malformed`. Tests decken Cursor-Round-Trip und beide Fehlerklassen ab (`cursor_internal_test.go`, `8812104`).
 
 ### 4.4 Backend-Network-Events und URL-Redaction
 
