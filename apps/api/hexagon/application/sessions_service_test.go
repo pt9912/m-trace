@@ -148,6 +148,10 @@ type fakeEventRepo struct {
 	events []domain.PlaybackEvent
 }
 
+func (r *fakeEventRepo) ListAfterIngestSequence(_ context.Context, _ string, _ int64, _ int) ([]domain.PlaybackEvent, error) {
+	return nil, nil
+}
+
 func (r *fakeEventRepo) Append(_ context.Context, events []domain.PlaybackEvent) error {
 	r.events = append(r.events, events...)
 	return nil

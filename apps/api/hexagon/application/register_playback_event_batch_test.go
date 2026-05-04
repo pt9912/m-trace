@@ -65,6 +65,10 @@ func (s *stubRepo) ListBySession(_ context.Context, _ driven.EventListQuery) (dr
 	return driven.EventPage{}, nil
 }
 
+func (s *stubRepo) ListAfterIngestSequence(_ context.Context, _ string, _ int64, _ int) ([]domain.PlaybackEvent, error) {
+	return nil, nil
+}
+
 // stubSessionRepo zeichnet UpsertFromEvents-Aufrufe auf und kann eine
 // einmalige Failure simulieren. List/Get/Sweep sind no-ops — der Use
 // Case in dieser Test-Suite ruft sie nicht.

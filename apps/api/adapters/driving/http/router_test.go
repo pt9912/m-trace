@@ -41,7 +41,7 @@ func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	// allowlist=nil → noopAllowlist greift.
-	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, nil, publisher.Handler(), nil, nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, nil, publisher.Handler(), nil, nil, nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 

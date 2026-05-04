@@ -27,6 +27,13 @@ type EventRepository interface {
 	// Adapter ist für die Sortierung verantwortlich; der Use Case
 	// clampt nur Limit und prüft Cursor-Validität (plan-0.1.0.md §5.1).
 	ListBySession(ctx context.Context, q EventListQuery) (EventPage, error)
+	// ListAfterIngestSequence liefert Events eines Projects mit
+	// `ingest_sequence > afterSeq`, sortiert aufsteigend nach
+	// `ingest_sequence`. Maximal `limit` Treffer. Nutzung: SSE-
+	// `Last-Event-ID`-Backfill (plan-0.4.0 §5 H4; spec §10a). Der
+	// Aufrufer entscheidet, ob ein Truncation-Marker an den
+	// Konsumenten geht, wenn `len(out) == limit` ist.
+	ListAfterIngestSequence(ctx context.Context, projectID string, afterSeq int64, limit int) ([]domain.PlaybackEvent, error)
 }
 
 // EventListQuery ist die Eingabe für EventRepository.ListBySession.

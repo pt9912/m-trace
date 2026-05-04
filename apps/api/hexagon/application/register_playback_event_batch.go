@@ -43,6 +43,10 @@ type RegisterPlaybackEventBatchUseCase struct {
 	analyzer  driven.StreamAnalyzer
 	sequencer driven.IngestSequencer
 	now       func() time.Time
+	// broker ist optional; wenn gesetzt, ruft der Use-Case
+	// `broker.Publish` nach erfolgreichem `EventRepository.Append`
+	// und füttert SSE-Subscriber mit Mindestframes (§5 H4).
+	broker *EventBroker
 }
 
 // NewRegisterPlaybackEventBatchUseCase wires the use case with its
@@ -79,6 +83,14 @@ func NewRegisterPlaybackEventBatchUseCase(
 		sequencer: sequencer,
 		now:       now,
 	}
+}
+
+// WithBroker setzt den optionalen EventBroker für SSE-Live-Updates
+// (plan-0.4.0 §5 H4). Production-Wiring (`cmd/api`) ruft das, Tests
+// können den Broker injizieren oder weglassen.
+func (u *RegisterPlaybackEventBatchUseCase) WithBroker(broker *EventBroker) *RegisterPlaybackEventBatchUseCase {
+	u.broker = broker
+	return u
 }
 
 // RegisterPlaybackEventBatch implements the validation order of
@@ -169,6 +181,14 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	}
 	if err := u.events.Append(ctx, parsed); err != nil {
 		return driving.BatchResult{}, err
+	}
+
+	// plan-0.4.0 §5 H4: SSE-Subscriber bekommen einen Mindestframe pro
+	// erfolgreich persistiertem Event. Publish ist non-blocking; slow
+	// Subscriber droppen den Frame und schließen die Lücke per
+	// `Last-Event-ID`-Reconnect.
+	if u.broker != nil {
+		u.broker.Publish(parsed)
 	}
 
 	u.metrics.EventsAccepted(len(parsed))

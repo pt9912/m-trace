@@ -271,7 +271,7 @@ func newRouterTestServer(t *testing.T) *httptest.Server {
 		analysis: domain.StreamAnalysisResult{AnalyzerVersion: "0.3.0"},
 	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(nil, nil, stubAnalyze, resolver, resolver, publisher.Handler(), nil, nil, logger)
+	router := apihttp.NewRouter(nil, nil, stubAnalyze, resolver, resolver, publisher.Handler(), nil, nil, nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

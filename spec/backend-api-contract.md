@@ -60,6 +60,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `GET`  | `/api/metrics`          | Prometheus-Exposition           | `200 OK`        |
 | `GET`  | `/api/stream-sessions`  | Stream-Sessions listen          | `200 OK`        |
 | `GET`  | `/api/stream-sessions/{id}` | Stream-Session mit Events lesen | `200 OK` oder `404 Not Found` |
+| `GET`  | `/api/stream-sessions/stream` | SSE-Live-Stream der Event-Append-Frames (plan-0.4.0 §5 H4) | `200 OK` (text/event-stream) oder `401` |
 | `POST` | `/api/analyze`          | HLS-Manifest analysieren (plan-0.3.0 §7) | `200 OK` |
 
 ---
@@ -682,6 +683,90 @@ Events angenommen wurden).
   `make wipe` erreichbar — Server-Implementierung muss den Pfad aber
   vorsehen, damit Clients Retention-Folge-Arbeit ohne Wire-Format-
   Bruch unterstützen können.
+
+---
+
+## 10a. SSE-Live-Stream (`GET /api/stream-sessions/stream`)
+
+Ab `0.4.0` (`plan-0.4.0.md` §5 H4) bietet die API einen Server-Sent-
+Events-Stream, der pro neu persistiertem Playback-Event einen
+Mindestframe pushed. Vertragstext und Test-Anker:
+
+**Auth.** Tokenpflichtig: fehlender oder ungültiger
+`X-MTrace-Token` → `401`. Gültiger Token scoped Stream und
+Backfill auf das aufgelöste Project.
+
+**Content-Type.** `text/event-stream; charset=utf-8`. Cache-
+Control: `no-store`. Connection: `keep-alive`.
+
+**Frame-Format.** EventSource-kompatibel:
+
+```
+id: <ingest_sequence>
+event: event_appended
+data: {"project_id":"demo","session_id":"01J7K9...","ingest_sequence":42,"event_name":"manifest_loaded"}
+
+```
+
+(Trailing-Newline + Leerzeile nach jedem Frame, `\n\n`-Terminator.)
+Pro `playback_events.ingest_sequence` wird genau ein Frame gepushed.
+Der `event`-Typ ist konstant `event_appended`. Felder im JSON-`data`
+sind exakt: `project_id`, `session_id`, `ingest_sequence`,
+`event_name`. Konsumenten laden den vollen Read-Shape (Event-Felder
+wie `server_received_at`, `correlation_id`, `meta` usw.) und den
+aktuellen Session-Header über `GET /api/stream-sessions/{id}` nach;
+der SSE-Frame ist Trigger, nicht vollständige Timeline-Zeile.
+
+**Backfill via `Last-Event-ID`.** Reconnect-Clients dürfen den
+Header `Last-Event-ID: <ingest_sequence>` setzen; der Server liefert
+dann zuerst alle Events des Projects mit
+`ingest_sequence > Last-Event-ID` als Backfill-Frames in
+`ingest_sequence`-Aufsteigender Reihenfolge, danach erst Live-Frames.
+Der Header ist optional; ohne Header startet der Stream rein live ab
+dem nächsten neuen Event.
+
+**Heartbeat.** Alle 15 Sekunden pushed der Server ein SSE-Comment-
+Frame `: heartbeat\n\n`, damit Proxies den Stream nicht als
+idle-Timeout schließen. Comments sind im EventSource-Vertrag
+definiert (Zeilen mit führendem `:`) und werden von Konsumenten
+ignoriert.
+
+**Reconnect-Semantik.** Server liefert keinen `retry`-Hint;
+Konsumenten nutzen ihre Default-Backoff-Strategie. Bei
+Server-Restart oder Stream-Abbruch hält der Client den letzten
+gesehenen `id` und reconnectet mit `Last-Event-ID`-Header — der
+Backfill schließt die Lücke.
+
+**Heart-Beat-only-Polling-Fallback.** Konsumenten, die kein SSE
+sprechen (z. B. Proxy blockiert `text/event-stream`), bleiben auf
+`GET /api/stream-sessions/{id}` mit Polling-Intervall ≥ 5s. Das
+ist ausdrückliche, dokumentierte Abwärts-Kompat; Plan-DoD §5
+verlangt den Fallback explizit.
+
+**CORS-Preflight.** `OPTIONS /api/stream-sessions/stream` →
+`Access-Control-Allow-Methods: GET, OPTIONS` und
+`Access-Control-Allow-Headers: Content-Type, X-MTrace-Token,
+X-MTrace-Project, Last-Event-ID`. Origin-Echo nur bei zugelassenem
+Origin (CORS Variante B); sonst `403`.
+
+**Cross-Project-Scope.** Frames werden nur für Events des
+authentifizierten Projects gepushed. `Last-Event-ID`-Backfill
+filtert ebenfalls nach `project_id`; ein Cross-Project-`ingest_
+sequence`-Wert im Header liefert keine fremden Events, sondern nur
+neuere des eigenen Projects.
+
+**Limits.** `Last-Event-ID`-Backfill max. 1000 Events pro
+Reconnect; bei größerer Lücke wird der Stream mit einem
+`event: backfill_truncated\ndata: {"oldest_ingest_sequence":N}\n\n`-
+Frame geöffnet, anschließend live ab `N`. Konsumenten müssen den
+Detail-Snapshot dann erneut laden.
+
+**Pflicht-Tests.** Backend-Tests pinnen: SSE-Header (Content-Type,
+Cache-Control), EventSource-Format des Mindestframes, Heartbeats
+nach Idle-Timeout, Client-Disconnect (Server stoppt Loop und gibt
+Ressourcen frei), `Last-Event-ID`-Backfill mit
+Project-Skopierung, fehlender/ungültiger Token → `401`,
+CORS-Preflight, `backfill_truncated` ab > 1000 Events.
 
 ---
 

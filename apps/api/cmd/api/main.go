@@ -118,15 +118,17 @@ func buildHandler(
 	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(activeSessionsGauge(persist.sessions, logger)))
 	analyzer := newAnalyzer(logger)
 
+	broker := application.NewEventBroker()
 	useCase := application.NewRegisterPlaybackEventBatchUseCase(
 		resolver, limiter, persist.events, persist.sessions, publisher, otelTelemetry, analyzer, persist.sequencer, time.Now,
-	)
+	).WithBroker(broker)
 	sessionsService := application.NewSessionsService(persist.sessions, persist.events)
 	sessionsSweeper := application.NewSessionsSweeper(persist.sessions, time.Now, logger)
 	analysisService := application.NewAnalyzeManifestUseCase(analyzer, persist.sessions)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, tracer, logger)
+	sseConfig := &apihttp.SseStreamConfig{Broker: broker, Events: persist.events}
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, nil
 }
 

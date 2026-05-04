@@ -260,4 +260,44 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 	}, nil
 }
 
+// listAfterIngestSequenceSQL liefert Events eines Projects mit
+// `ingest_sequence > ?`, sortiert aufsteigend, max LIMIT Treffer.
+// Backfill-Quelle für SSE-`Last-Event-ID`-Reconnect (plan-0.4.0
+// §5 H4; spec/backend-api-contract.md §10a).
+const listAfterIngestSequenceSQL = `
+SELECT ingest_sequence, project_id, session_id, event_name,
+       client_timestamp, server_received_at, sequence_number,
+       sdk_name, sdk_version, meta,
+       trace_id, span_id, correlation_id
+FROM playback_events
+WHERE project_id = ? AND ingest_sequence > ?
+ORDER BY ingest_sequence ASC
+LIMIT ?`
+
+// ListAfterIngestSequence implementiert den driven-Port-Hook für den
+// SSE-Backfill. Reine Read-Operation; keine Tx, weil SQLite-WAL den
+// konsistenten Snapshot ohnehin liefert.
+func (r *EventRepository) ListAfterIngestSequence(ctx context.Context, projectID string, afterSeq int64, limit int) ([]domain.PlaybackEvent, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	rows, err := r.db.QueryContext(ctx, listAfterIngestSequenceSQL, projectID, afterSeq, limit)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: query backfill: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]domain.PlaybackEvent, 0, limit)
+	for rows.Next() {
+		ev, err := scanEventRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, ev)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sqlite: iterate backfill: %w", err)
+	}
+	return out, nil
+}
+
 var _ driven.EventRepository = (*EventRepository)(nil)

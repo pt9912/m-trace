@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
+	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
@@ -15,6 +16,15 @@ import (
 // for aggregate request counting.
 type RequestMetrics interface {
 	APIRequests(n int)
+}
+
+// SseStreamConfig bündelt die Driven-Ports, die der SSE-Handler aus
+// dem Hexagon braucht. `nil` deaktiviert die SSE-Route — der Router
+// registriert dann weder `GET /api/stream-sessions/stream` noch den
+// CORS-Preflight (plan-0.4.0 §5 H4).
+type SseStreamConfig struct {
+	Broker *application.EventBroker
+	Events driven.EventRepository
 }
 
 // NewRouter wires the pflicht-Endpoints onto a single mux. Method
@@ -31,6 +41,9 @@ type RequestMetrics interface {
 // CORS-Preflight-Handler (plan-0.1.0.md §5.1, Variante B). nil
 // deaktiviert den CORS-Pfad — alle Preflights werden dann mit `403`
 // abgelehnt; der `Vary`-Header bleibt trotzdem auf jeder Antwort.
+//
+// sseConfig aktiviert die SSE-Route (plan-0.4.0 §5 H4); `nil`
+// deaktiviert sie für Tests, die den Stream nicht brauchen.
 func NewRouter(
 	useCase driving.PlaybackEventInbound,
 	sessions driving.SessionsInbound,
@@ -39,6 +52,7 @@ func NewRouter(
 	allowlist OriginAllowlist,
 	metricsHandler http.Handler,
 	analyzeMetrics AnalyzeMetrics,
+	sseConfig *SseStreamConfig,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -73,6 +87,20 @@ func NewRouter(
 	mux.HandleFunc("GET /api/health", HealthHandler)
 	mux.Handle("GET /api/metrics", metricsHandler)
 	mux.Handle("GET /api/stream-sessions", sessionsList)
+	// SSE-Route VOR der Catch-all-`{id}`-Pattern registrieren, damit
+	// `/api/stream-sessions/stream` nicht als `id="stream"` an den
+	// Detail-Handler routet (Go 1.22 method+path-Patterns sind
+	// präfix-spezifisch).
+	if sseConfig != nil && sseConfig.Broker != nil && sseConfig.Events != nil {
+		sseHandler := &SseStreamHandler{
+			Resolver: resolver,
+			Events:   sseConfig.Events,
+			Broker:   sseConfig.Broker,
+			Logger:   logger,
+		}
+		mux.Handle("GET /api/stream-sessions/stream", sseHandler)
+		mux.HandleFunc("OPTIONS /api/stream-sessions/stream", ssePreflightHandler(allowlist))
+	}
 	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
 
 	if analysis != nil {

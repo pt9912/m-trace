@@ -126,4 +126,30 @@ func nullableSeqValue(p *int64) int64 {
 	return *p
 }
 
+// ListAfterIngestSequence liefert Events eines Projects mit
+// `ingest_sequence > afterSeq`, sortiert aufsteigend, max `limit`
+// Treffer. Backfill-Quelle für SSE-`Last-Event-ID`-Reconnect
+// (plan-0.4.0 §5 H4).
+func (r *EventRepository) ListAfterIngestSequence(_ context.Context, projectID string, afterSeq int64, limit int) ([]domain.PlaybackEvent, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	r.mu.Lock()
+	matching := make([]domain.PlaybackEvent, 0)
+	for _, e := range r.events {
+		if e.ProjectID == projectID && e.IngestSequence > afterSeq {
+			matching = append(matching, e)
+		}
+	}
+	r.mu.Unlock()
+
+	sort.Slice(matching, func(i, j int) bool {
+		return matching[i].IngestSequence < matching[j].IngestSequence
+	})
+	if len(matching) > limit {
+		matching = matching[:limit]
+	}
+	return matching, nil
+}
+
 var _ driven.EventRepository = (*EventRepository)(nil)
