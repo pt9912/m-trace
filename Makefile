@@ -57,7 +57,7 @@ dev-observability:
 # gesteuerter Config-Pfad). RAK-31 ist Kann-Scope — ohne Profil
 # bleibt die Dashboard-Timeline (RAK-32) vollständig funktional.
 dev-tempo:
-	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability --profile tempo up --build
+	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp COLLECTOR_CONFIG=config-tempo.yaml $(COMPOSE) --profile observability --profile tempo up --build
 
 stop:
 	$(COMPOSE) --profile observability --profile tempo down

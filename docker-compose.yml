@@ -149,9 +149,17 @@ services:
     image: otel/opentelemetry-collector-contrib:0.150.1
     profiles:
       - observability
-    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    # Config-Pfad ist env-gesteuert (plan-0.4.0 §6.3). Default
+    # `config.yaml` exportiert Traces ausschließlich an den
+    # Debug-Exporter — kein Tempo-Verbindungsversuch ohne
+    # explizites `make dev-tempo` (Pflicht aus §6 DoD: "make
+    # dev-observability darf keinen Tempo-Exporter konfigurieren").
+    # Beide Config-Files werden bind-gemountet, damit kein zweiter
+    # Service-Eintrag nötig ist.
+    command: ["--config=/etc/otelcol-contrib/${COLLECTOR_CONFIG:-config.yaml}"]
     volumes:
       - ./observability/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./observability/otel-collector/config-tempo.yaml:/etc/otelcol-contrib/config-tempo.yaml:ro
     ports:
       - "4317:4317"
       - "4318:4318"
