@@ -228,6 +228,18 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 		if now.Sub(ts).Abs() > TimeSkewThreshold {
 			timeSkewWarning = true
 		}
+		// plan-0.4.0 §4.4 D1: reservierte Meta-Keys vor Persistenz
+		// typvalidieren (422 bei Domänen-/Typ-/Requires-Verstoß), dann
+		// URL-Redaction für alle URL-verdächtigen Meta-Keys ausführen.
+		// Reihenfolge ist verbindlich: Validation prüft den strikten
+		// `network.redacted_url`-Vertrag, bevor die Redaction unbekannte
+		// URL-Keys mutiert.
+		meta := domain.EventMeta(copyEventMeta(e.Meta))
+		if err := validateReservedEventMeta(meta); err != nil {
+			u.metrics.InvalidEvents(len(in.Events))
+			return nil, false, err
+		}
+		redactEventMetaURLs(meta)
 		parsed = append(parsed, domain.PlaybackEvent{
 			EventName:        e.EventName,
 			ProjectID:        e.ProjectID,
@@ -240,7 +252,7 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
-			Meta:    domain.EventMeta(copyEventMeta(e.Meta)),
+			Meta:    meta,
 			TraceID: in.Trace.TraceID,
 			SpanID:  in.Trace.SpanID,
 		})
