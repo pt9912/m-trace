@@ -78,6 +78,42 @@ for metric in "${required_metrics[@]}"; do
   echo "prometheus-required-metric-cardinality: ${metric}=${metric_cardinality}"
 done
 
+# plan-0.4.0 §7.3: pro §7-Pflichtcounter eine strikte Labelset-
+# Assertion. Der Counter darf KEINE fachlichen Labels tragen — erlaubt
+# sind nur Prometheus-Target-Metadaten (`__name__`, `instance`, `job`).
+# Jeder zusätzliche Label-Key ist ein Cardinality-Verstoß und
+# release-blockierend (API-Kontrakt §7).
+mandatory_counters=(
+  mtrace_playback_events_total
+  mtrace_invalid_events_total
+  mtrace_rate_limited_events_total
+  mtrace_dropped_events_total
+)
+
+for metric in "${mandatory_counters[@]}"; do
+  series_count="$(prom_query "count(${metric})" | prom_first_value)"
+  if [ "${series_count%.*}" != "1" ]; then
+    echo "prometheus-mandatory-counter-series: ${metric} expected exactly 1 series, got ${series_count}" >&2
+    exit 1
+  fi
+  series_labels="$(curl -sS --get "${PROMETHEUS_URL}/api/v1/series" --data-urlencode "match[]=${metric}")"
+  printf '%s' "$series_labels" | node -e '
+const p=JSON.parse(require("fs").readFileSync(0,"utf8"));
+const allowed=new Set(["__name__","instance","job"]);
+const extras=[];
+for (const series of p.data) {
+  for (const key of Object.keys(series)) {
+    if (!allowed.has(key)) extras.push({metric: series.__name__, label: key, value: series[key]});
+  }
+}
+if (extras.length) {
+  console.error("mandatory counter has extra labels: " + JSON.stringify(extras, null, 2));
+  process.exit(1);
+}
+'
+  echo "prometheus-mandatory-counter-labelset: ${metric} label-free OK"
+done
+
 series_json="$(curl -sS --get "${PROMETHEUS_URL}/api/v1/series" --data-urlencode 'match[]={__name__=~"mtrace_.+"}')"
 series_count="$(printf '%s' "$series_json" | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String(p.data.length))')"
 if [ "$series_count" -le 0 ]; then
@@ -85,12 +121,21 @@ if [ "$series_count" -le 0 ]; then
   printf '%s\n' "$series_json" >&2
   exit 1
 fi
+# plan-0.4.0 §7.3: Forbidden-Labels über alle `mtrace_*`-Serien hinweg.
+# Liste deckt §7-Vertrag (project_id/session_id/Token/etc.) plus
+# Telemetry-Model §3.1 ab. Andere `mtrace_*`-Metriken dürfen bounded
+# Aggregat-Labels (`outcome`, `code`, `event_type`) tragen — das
+# Filter ist gezielt forbidden-by-name, nicht allowlist-by-name.
 printf '%s' "$series_json" | node -e '
 const p=JSON.parse(require("fs").readFileSync(0,"utf8"));
-const forbidden=["session_id","user_agent","segment_url","client_ip"];
+const forbidden=[
+  "session_id","user_agent","segment_url","client_ip",
+  "project_id","trace_id","span_id","correlation_id",
+  "viewer_id","request_id","token","authorization"
+];
 const bad=p.data.filter((series) => forbidden.some((label) => Object.prototype.hasOwnProperty.call(series, label)));
 if (bad.length) {
-  console.error(JSON.stringify(bad, null, 2));
+  console.error("forbidden labels found: " + JSON.stringify(bad, null, 2));
   process.exit(1);
 }
 '
