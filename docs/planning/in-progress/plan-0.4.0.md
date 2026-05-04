@@ -554,6 +554,17 @@ Bezug: RAK-33; RAK-34; API-Kontrakt §7; Telemetry-Model §2.4/§3/§4.3; Lasten
 
 Ziel: Prometheus bleibt Aggregat-Backend. Die Pflichtmetriken für angenommene, invalid, rate-limited und dropped Events sind sichtbar, korrekt gezählt und cardinality-sicher.
 
+Tranche 6 ist in vier Sub-Tranchen geschnitten: §7.1 fixiert die Spec-Bestandsaufnahme und Scope-Klauseln (Drop-Pfad bleibt absichtlich Doku-Variante; API-Status-Summary explizit nicht eingeführt; F-40 ist `n/a`, weil bereits in §5 H3 erfüllt); §7.2 ergänzt Backend-Tests für Pflichtcounter-Pfade (Inkrement-Fälle und Null-Inkrement-Fälle aus API-Kontrakt §7); §7.3 verschärft den Cardinality-Smoke auf die vollständige §7-Forbidden-Liste plus Per-Pflichtcounter-Labelset-Assertion; §7.4 schließt Grafana-Dashboard-Sichtbarkeit, Plan-Tick und Roadmap-Schritt 35 ab.
+
+Liefer-/Abnahme-Matrix:
+
+| Sub-Tranche | Ergebnis | Harte Abnahme | Status |
+|---|---|---|---|
+| §7.1 | Spec-Bestandsaufnahme + Scope-Klauseln (Doku-only) | Plan §7 in §7.1–§7.4 + Liefer-Matrix; Drop-Pfad-Status (`mtrace_dropped_events_total = 0`, kein produktiver Drop-Pfad) ist normativ in API-Kontrakt §7 dokumentiert; API-Status-Summary explizit nicht eingeführt; F-40 `n/a` (in §5 H3 / `d784d30` erfüllt) | ⬜ |
+| §7.2 | Backend-Tests für Pflichtcounter-Pfade | Inkrement-Fälle (`schema_version`-invalid, `events.length > 100`, fehlendes Pflichtfeld) und Null-Inkrement-Fälle (leerer Batch, Auth-Fehler, Body-Read/Payload-Limit, malformed JSON) sind in `apps/api/adapters/driving/http/handler_test.go` als eigenständige Cases gepinnt; Rate-Limit-`429`-Counter-Inkrement und Accepted-Counter sind separate Test-Anker | ⬜ |
+| §7.3 | Cardinality-Smoke verschärft | `scripts/smoke-observability.sh` Forbidden-Labels auf vollständige §7-Liste (`project_id`, `session_id`, `user_agent`, `segment_url`, `client_ip`, `trace_id`, `span_id`, `correlation_id`, `viewer_id`, `request_id`, Token-Felder); pro-Pflichtcounter-Assertion (jede Serie hat genau das Default-Labelset); 0.4.0-spezifische `mtrace_*`-Metriken werden in den Cardinality-Cap (< 50 Serien) einbezogen | ⬜ |
+| §7.4 | Grafana-Sichtbarkeit + Closeout | `observability/grafana/dashboards/m-trace-overview.json` zeigt die vier Pflichtcounter (Verifikation oder Add-On-Row); alle 9 §7-DoD-Items mit Commit-Hashes/Test-Ankern abgehakt; Roadmap-Schritt 35 ✅; §1-Tabelle Tranche 6 ✅; Code-Review + Push | ⬜ |
+
 DoD:
 
 - [ ] `mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total` und `mtrace_dropped_events_total` existieren im Compose-Lab und in Tests.
