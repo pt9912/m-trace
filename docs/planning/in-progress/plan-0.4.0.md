@@ -518,6 +518,20 @@ Bezug: RAK-31; RAK-29; Architektur §2/§5; README `0.4.0`.
 
 Ziel: Tempo kann als optionales Trace-Backend genutzt werden, ohne die lokale Dashboard-Ansicht zur Pflicht-Abhängigkeit zu machen. RAK-31 bleibt Kann-Scope: Diese Tranche darf vollständig umgesetzt oder explizit deferred werden, solange RAK-29/RAK-32, lokaler Trace-/Korrelations-Read und das bestehende `observability`-Profil ohne Tempo grün bleiben.
 
+**Scope-Gate-Entscheidung:** `0.4.0` setzt Tempo als optionales Compose-Profil **um** (Pfad A). Deferred-Pfad B ist vom Plan-DoD zugelassen, wird hier aber nicht gewählt — RAK-31 bleibt Kann-Scope, ist aber im Lab discoverbar.
+
+Tranche 5 ist in fünf aufeinander aufbauende Sub-Tranchen geschnitten: §6.1 fixiert die Spec-Grundlagen vor jedem Code (Trace-Such-Vertrag in `telemetry-model.md` §2.6, Status-Sync mit Architektur und Plan-Liefer-Matrix); §6.2 baut den Tempo-Compose-Service plus `make dev-tempo`/`stop`/`wipe`-Schiene; §6.3 differenziert die Collector-Konfiguration in einen disabled-by-default-Pfad und einen Tempo-Pipeline-Pfad; §6.4 liefert den Smoke-Test für die drei Startzustände (Core ohne OTLP, observability ohne Tempo-Errors, tempo-aktiv mit konkretem `correlation_id`-Roundtrip via Tempo-API); §6.5 schließt Doku, README, `local-development.md` und Roadmap-Schritt 34 ab.
+
+Liefer-/Abnahme-Matrix:
+
+| Sub-Tranche | Ergebnis | Harte Abnahme | Status |
+|---|---|---|---|
+| §6.1 | Spec-Vorarbeit (Doku-only) | Trace-Such-Vertrag in `telemetry-model.md` §2.6 (Primary `mtrace.session.correlation_id`, Sekundär `trace_id`, Multi-Trace-Disclaimer, Single-Session-Batch-Pflicht); Plan §6 in §6.1–§6.5 mit Liefer-Matrix gegliedert; Architektur-Spec Tempo-Status synchronisiert | ⬜ |
+| §6.2 | Compose + Make-Target | `tempo`-Service in `docker-compose.yml` mit `profiles:[tempo]`; `observability/tempo/tempo.yml`; `make dev-tempo`, `make stop`/`make wipe` adressieren das Tempo-Profil; `make help` listet Tempo-Targets | ⬜ |
+| §6.3 | Collector-Konfig mit Disabled-Pfad | Zwei Collector-Configs (Default ohne Tempo, `config-tempo.yaml` mit Tempo-Exporter+Pipeline) plus Compose-Override; `make dev-observability` löst keinen Tempo-Verbindungsversuch aus; `make dev-tempo` startet denselben Collector mit Tempo-Pipeline | ⬜ |
+| §6.4 | Smoke für drei Startzustände | `scripts/smoke-tempo.sh`/`make smoke-tempo`: Core (`OTEL_*=""`) ohne OTLP-Versuch, observability ohne Tempo-Exportfehler, Tempo-aktiv mit konkretem `correlation_id`-Roundtrip via Tempo-Search-API | ⬜ |
+| §6.5 | Tranche-5-Closeout | README + `docs/user/local-development.md` unterscheiden eingebaute Session-Timeline und optionales Tempo; alle 11 §6-DoD-Items abgehakt; Roadmap-Schritt 34 ✅; §1-Tabelle Tranche 5 ✅; Code-Review + Push | ⬜ |
+
 DoD:
 
 - [ ] Tranche 5 hat ein binäres Scope-Gate: Entweder Tempo wird in `0.4.0` umgesetzt, oder §6 wird als Deferred mit Zielrelease markiert und darf keine Release-Gates für `0.4.0` blockieren. Deferred ist nur zulässig, wenn die Doku klar sagt, dass Tempo Debug-Tiefe ist und die Session-Timeline ohne Tempo vollständig nutzbar bleibt.

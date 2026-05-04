@@ -361,6 +361,21 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 
 **Sampling-Auswirkung.** Server-Span pro Batch ist niedrige Cardinality (eine Span pro HTTP-Request). Auch ohne Sampling bleibt Tempo-Storage in 0.4.0 unauffällig. Spans werden via OTLP exportiert, wenn das Tempo-Profil aktiv ist (siehe `plan-0.4.0.md` §6). Ohne Profil und mit unset `OTEL_*` nutzt der autoexport-Fallback einen No-Op-Pfad ohne Exportversuch und ohne Log-Ausgabe; Logs entstehen nur, wenn bewusst ein Debug-/Console-Exporter oder der Collector-Debug-Exporter konfiguriert ist.
 
+### 2.6 Trace-Suche in Tempo (`0.4.0`, optional unter `tempo`-Profil)
+
+Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`, `plan-0.4.0.md` §6), exportiert der OTel-Collector Spans nach Tempo. Für die Trace-Suche im Lab gilt verbindlich:
+
+| Such-Pfad | Suchwert | Span-Attribut / Feld | Zweck |
+|---|---|---|---|
+| **Primary (Session-Korrelation)** | `correlation_id` aus API-Read-Antwort, Dashboard oder SQLite | Span-Attribut `mtrace.session.correlation_id` | Alle Server-Spans einer Single-Session-Batch-Verarbeitung; Tempo-API: `?tags=mtrace.session.correlation_id=<UUID>` |
+| **Sekundär (Batch-Korrelation)** | `trace_id` aus `playback_events.trace_id` (nur Single-Event-Batch oder explizit gesuchter Batch) | Tempo-Trace-ID (`trace_id`-Hex) | Tempo-API: `GET /api/traces/<trace_id>` |
+
+**Multi-Trace-Disclaimer.** Eine Session kann mehrere `trace_id`-Werte haben — jeder Batch erzeugt einen neuen Server-Span (siehe §2.5). `trace_id` ist daher **kein Session-Schlüssel**. Eine Session-übergreifende Tempo-Suche per `trace_id` ist immer batchspezifisch; die vollständige Session-Trace-Liste (sortiert nach `ingest_sequence`) liefert nur das Dashboard plus Read-Pfad, nicht Tempo.
+
+**Single-Session-Batch-Pflicht für `mtrace.session.correlation_id`.** Das Span-Attribut wird ausschließlich bei `mtrace.batch.session_count == 1` gesetzt; bei Multi-Session-Batches bleibt es unset (keine Komma-Liste, kein Empty-String — siehe §2.5-Tabelle). Tempo-Suche nach Multi-Session-Batches läuft daher nicht über `mtrace.session.correlation_id`, sondern muss aus dem Read-Pfad (Dashboard/SQLite) eine Single-Session-Batch-Span finden, die zur Session gehört. Diese bewusste Grenze schließt aus, dass eine Session-`correlation_id` versehentlich an einen Span gebunden wird, der mehrere Sessions umfasst.
+
+**Tempo ist Debug-Tiefe, nicht Read-Pfad.** Die Dashboard-Session-Timeline (RAK-32, plan-0.4.0 §5) ist Tempo-unabhängig. Tempo erweitert die Sichtbarkeit auf Span-Ebene (Header-Verarbeitung, Outcome-Klassifikation, Resource-Attribute); jede Aussage über *Event-Persistenz* oder *Session-State* bleibt im Read-Pfad und in SQLite verbindlich.
+
 ---
 
 ## 3. Cardinality-Regeln
