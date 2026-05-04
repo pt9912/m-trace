@@ -184,6 +184,32 @@ make stop
 # Profile-aware: beendet auch das observability-Profil, falls aktiv.
 ```
 
+### 2.6 Korrelations-Identifier in Read-Antworten
+
+Ab `0.4.0` (Tranche 3) tragen Session- und Event-Read-Antworten zwei
+unabhängige Korrelations-Identifier (Spec
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §2.5):
+
+- **`correlation_id`** ist der **Pflichtkontext** der Session-
+  Timeline. Server-vergeben, durable, konstant über alle Events
+  derselben Session. Dashboard und API-Konsumenten korrelieren
+  ausschließlich über diesen Wert.
+- **`trace_id`** ist eine **optionale Debug-Vertiefung** für
+  Tempo/Jaeger. Batch-bezogen — der gleiche Wert spannt nur über
+  Events eines Server-Spans (= ein POST-Batch). Cross-Batch-
+  Sessions sehen wechselnde `trace_id`s; das ist gewollt.
+
+Wenn das Player-SDK den optionalen `traceparent`-Header propagiert,
+übernimmt der Server die `trace_id` aus dem Header — sonst generiert
+er einen Root-Span pro Batch.
+
+Bekannte Korrelations-Lücken (Browser-APIs, CORS, Service Worker,
+CDN-Redirects, Native HLS, Sampling) sind in
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §1.4.1
+dokumentiert und werden über `network.detail_status=
+network_detail_unavailable` (Event-Meta) bzw. `network_signal_absent`
+(Session-Block) sichtbar gemacht.
+
 ---
 
 ## 3. Compose-Stack-Topologie

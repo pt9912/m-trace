@@ -158,6 +158,51 @@ kein stabiler Hash oder Gleichheitsmarker gespeichert. Unbekannte
 Meta-Keys mit String-Werten, die als absolute URL parsebar sind oder
 `://` enthalten, werden vor Persistenz redigiert oder verworfen.
 
+#### 1.4.1 Bekannte Grenzen der Korrelation
+
+`correlation_id` ist der Pflichtkontext für jede Player-Session-
+Timeline und ist über alle Events derselben Session konstant. `trace_id`
+ist eine optionale Debug-Vertiefung für Tempo-Cross-Trace-Suche, ist
+batch-bezogen und darf eine Timeline-Zuordnung nicht alleine tragen
+(siehe §2.5).
+
+Die folgenden Grenzen sind ab `0.4.0` bekannt und akzeptiert:
+
+- **Browser-APIs / Resource Timing**: nicht alle Browser exposen
+  Resource-Timing-Daten für Cross-Origin-Fetches; gemessene
+  Latenzen können fehlen. Das Event bleibt sichtbar, `network.detail_status`
+  signalisiert `network_detail_unavailable` mit Reason
+  `browser_api_unavailable` oder `resource_timing_unavailable`.
+- **CORS**: bei fehlendem `Access-Control-Allow-Origin` oder
+  `Timing-Allow-Origin` blockt der Browser Resource-Timing-Felder.
+  Reason: `cors_timing_blocked`.
+- **Service Worker**: ein abfangender Service Worker kann
+  Manifest-/Segment-Loads ohne hls.js-Sichtbarkeit beantworten.
+  Reason: `service_worker_opaque`.
+- **CDN-Redirects / signierte URLs**: 3xx-Redirects auf
+  signierte CDN-URLs können hls.js-`FRAG_LOADED` mit veränderter
+  URL feuern. Die ursprüngliche Anfrage-URL wird **nicht**
+  persistiert; nur der redigierte URL-Repräsentant. Tokenartige
+  Pfadsegmente werden vor Persistenz durch `:redacted` ersetzt.
+- **Native HLS** (Safari iOS/macOS, ohne hls.js): liefert keine
+  Manifest-/Fragment-Events. Das SDK markiert das per
+  `session_boundaries[]`-Eintrag mit `adapter="native_hls"`,
+  Reason `native_hls_unavailable`. Der Read-Pfad zeigt das im
+  Session-Block als `network_signal_absent[]`.
+- **Sampling**: Konsumenten können das Player-SDK so
+  konfigurieren, dass Network-Events ausgesampled werden
+  (`sampleRate < 1`). Das ist ausdrückliche, dokumentierte
+  Degradation und kein Vertragsbruch — die Session-Korrelation
+  selbst (`correlation_id`) bleibt unbeeinträchtigt, weil sie
+  serverseitig vergeben wird.
+
+`POST /api/playback-events` akzeptiert `network.unavailable_reason`-Werte
+nur aus dem Reason-Enum (`network_unavailable_reasons`) plus
+`^[a-z0-9_]{1,64}$`; der gleiche Enum gilt für
+`session_boundaries[].reason`. Andere Werte werden mit `422`
+abgewiesen — die SDK-Adapter halten sich an den Enum, damit das
+Backend defensiv enforcen kann.
+
 ### 1.5 SDK-Identifier und Tokens
 
 - **Project Token (`X-MTrace-Token`)**: öffentlicher Token, der dem Browser ausgeliefert wird. Token bindet auf eine `project_id`; Mismatch bei Step 9 → `401` (siehe §5.3 unten und API-Kontrakt §5).
