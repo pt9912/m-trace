@@ -21,7 +21,8 @@ API_URL="${API_URL:-http://localhost:8080}"
 TEMPO_URL="${TEMPO_URL:-http://localhost:3200}"
 OTEL_HEALTH_URL="${OTEL_HEALTH_URL:-http://localhost:13133}"
 SMOKE_STATE="${SMOKE_STATE:-tempo}"
-TEMPO_INGEST_WAIT_SECONDS="${TEMPO_INGEST_WAIT_SECONDS:-12}"
+TEMPO_INGEST_WAIT_SECONDS="${TEMPO_INGEST_WAIT_SECONDS:-20}"
+TEMPO_SEARCH_LOOKBACK_SECONDS="${TEMPO_SEARCH_LOOKBACK_SECONDS:-300}"
 TOKEN="${TOKEN:-demo-token}"
 PROJECT_ID="${PROJECT_ID:-demo}"
 
@@ -76,6 +77,14 @@ read_correlation_id() {
     node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(p.session?.correlation_id ?? "")'
 }
 
+urlencode() {
+  node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$1"
+}
+
+tempo_trace_count() {
+  node -e 'try { const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String((p.traces||[]).length)); } catch { process.stdout.write("0"); }'
+}
+
 case "$SMOKE_STATE" in
   core)
     # State 1: Core ohne OTLP-Werte.
@@ -93,8 +102,13 @@ case "$SMOKE_STATE" in
     wait_for_status "${API_URL}/api/health" "200" "api-health-obs"
     wait_for_status "${OTEL_HEALTH_URL}/" "200" "otel-health-obs"
     # Sanity: Tempo darf NICHT erreichbar sein (Profil ist nicht aktiv).
+    # Wenn diese Probe 200 sieht, läuft fast immer ein stale Tempo-
+    # Container aus einem früheren `make dev-tempo`; die Diagnose nennt
+    # den Cleanup-Pfad explizit, statt einen Collector-Fehler zu
+    # suggerieren.
     if curl -sS -o /dev/null -w '%{http_code}' --max-time 2 "${TEMPO_URL}/ready" | grep -q "^200$"; then
-      echo "smoke-tempo[observability]: Tempo unerwartet erreichbar — Profil sollte deaktiviert sein" >&2
+      echo "smoke-tempo[observability]: Tempo ist erreichbar, obwohl das tempo-Profil inaktiv sein soll" >&2
+      echo "smoke-tempo[observability]: bitte stale Tempo-Container mit 'make stop' beenden und dev-observability neu starten" >&2
       exit 1
     fi
     echo "smoke-tempo[observability]: API + Collector up, Tempo-Profil inaktiv (kein Verbindungsversuch)"
@@ -106,6 +120,7 @@ case "$SMOKE_STATE" in
     wait_for_status "${OTEL_HEALTH_URL}/" "200" "otel-health-tempo"
     wait_for_status "${TEMPO_URL}/ready" "200" "tempo-ready"
 
+    search_start=$(($(date +%s) - TEMPO_SEARCH_LOOKBACK_SECONDS))
     session_id="smoke-tempo-$(date +%s)-$$"
     status=$(post_event "$session_id")
     if [ "$status" != "202" ]; then
@@ -126,14 +141,26 @@ case "$SMOKE_STATE" in
     echo "smoke-tempo[tempo]: waiting ${TEMPO_INGEST_WAIT_SECONDS}s for Tempo to ingest the batch span"
     sleep "$TEMPO_INGEST_WAIT_SECONDS"
 
-    # Tempo-Search-API: `?tags=mtrace.session.correlation_id=<UUID>`.
-    # Spec-Anker: `spec/telemetry-model.md` §2.6 (Trace-Such-Vertrag).
-    encoded_tag="mtrace.session.correlation_id%3D${correlation_id}"
-    search_response=$(curl -sS "${TEMPO_URL}/api/search?tags=${encoded_tag}")
-    trace_count=$(printf '%s' "$search_response" |
-      node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String((p.traces||[]).length))')
+    search_end=$(date +%s)
+
+    # Primary Tempo-Search: TraceQL mit explizitem start/end-Fenster.
+    # Legacy `tags=` bleibt nur Fallback für ältere Tempo-Setups.
+    # Spec-Anker: `spec/telemetry-model.md` §2.6.
+    traceql_query="{ span.mtrace.session.correlation_id = \"${correlation_id}\" }"
+    encoded_query=$(urlencode "$traceql_query")
+    search_response=$(curl -sS "${TEMPO_URL}/api/search?q=${encoded_query}&start=${search_start}&end=${search_end}")
+    trace_count=$(printf '%s' "$search_response" | tempo_trace_count)
     if [ "$trace_count" -le 0 ]; then
-      echo "smoke-tempo[tempo]: no traces found for correlation_id=${correlation_id}" >&2
+      encoded_tag=$(urlencode "mtrace.session.correlation_id=${correlation_id}")
+      legacy_response=$(curl -sS "${TEMPO_URL}/api/search?tags=${encoded_tag}&start=${search_start}&end=${search_end}")
+      legacy_count=$(printf '%s' "$legacy_response" | tempo_trace_count)
+      if [ "$legacy_count" -gt 0 ]; then
+        search_response="$legacy_response"
+        trace_count="$legacy_count"
+      fi
+    fi
+    if [ "$trace_count" -le 0 ]; then
+      echo "smoke-tempo[tempo]: no traces found for correlation_id=${correlation_id} in window ${search_start}..${search_end}" >&2
       printf '%s\n' "$search_response" >&2
       exit 1
     fi

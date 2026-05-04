@@ -34,8 +34,8 @@ storage:
     local:
       path: /var/tempo/blocks
 
-# Tempo-Search ueber HTTP API: `GET /api/search` mit `tags`-Query-
-# Param matcht Span-Attribute, z. B.
-# `?tags=mtrace.session.correlation_id=<UUID>`. Siehe Smoke in
-# scripts/smoke-tempo.sh (§6.4) und Trace-Such-Vertrag in
-# `spec/telemetry-model.md` §2.6.
+# Tempo-Search ueber HTTP API: `GET /api/search` primaer per TraceQL
+# plus explizitem start/end-Fenster. Der Smoke sucht konkret nach dem
+# Span-Attribut `mtrace.session.correlation_id`; `tags=` bleibt nur
+# Legacy-Fallback. Siehe Smoke in scripts/smoke-tempo.sh (§6.4) und
+# Trace-Such-Vertrag in `spec/telemetry-model.md` §2.6.

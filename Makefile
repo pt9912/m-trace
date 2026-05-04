@@ -69,9 +69,11 @@ stop:
 #
 # Gezieltes Targeting (statt `down --volumes`), damit später
 # hinzukommende benannte Volumes (z. B. `m-trace_postgres-data`)
-# nicht versehentlich mitgewipt werden.
-WIPE_VOLUME ?= $(shell basename $(CURDIR))_mtrace-data
-WIPE_TEMPO_VOLUME ?= $(shell basename $(CURDIR))_mtrace-tempo-data
+# nicht versehentlich mitgewipt werden. `COMPOSE_PROJECT_NAME` wird
+# berücksichtigt, damit Override-Stacks ihre eigenen Volumes wipen.
+WIPE_COMPOSE_PROJECT ?= $(if $(COMPOSE_PROJECT_NAME),$(COMPOSE_PROJECT_NAME),$(shell basename $(CURDIR)))
+WIPE_VOLUME ?= $(WIPE_COMPOSE_PROJECT)_mtrace-data
+WIPE_TEMPO_VOLUME ?= $(WIPE_COMPOSE_PROJECT)_mtrace-tempo-data
 wipe:
 	@echo "[wipe] destructive: removing volumes $(WIPE_VOLUME) and $(WIPE_TEMPO_VOLUME)"
 	@echo "[wipe] sessions, events and Tempo traces will be lost"

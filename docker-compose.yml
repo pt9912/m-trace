@@ -149,6 +149,10 @@ services:
     image: otel/opentelemetry-collector-contrib:0.150.1
     profiles:
       - observability
+    depends_on:
+      tempo:
+        condition: service_started
+        required: false
     # Config-Pfad ist env-gesteuert (plan-0.4.0 §6.3). Default
     # `config.yaml` exportiert Traces ausschließlich an den
     # Debug-Exporter — kein Tempo-Verbindungsversuch ohne

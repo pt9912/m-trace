@@ -207,8 +207,10 @@ Trace-Suche im Lab nutzt Span-Attribute aus
 
 - **Primary**: Session-bezogen über
   `mtrace.session.correlation_id` (gesetzt nur bei Single-Session-
-  Batches). Tempo-Search:
-  `GET /api/search?tags=mtrace.session.correlation_id=<UUID>`.
+  Batches). Tempo-Search primär via TraceQL mit explizitem Zeitfenster:
+  `GET /api/search?q={ span.mtrace.session.correlation_id = "<UUID>" }&start=<unix>&end=<unix>`.
+  `GET /api/search?tags=mtrace.session.correlation_id=<UUID>&start=<unix>&end=<unix>`
+  ist nur Legacy-Fallback.
 - **Sekundär**: batchspezifisch über `trace_id`. Eine Session kann
   mehrere `trace_id`-Werte haben (jeder Batch ein Trace) — `trace_id`
   ist daher kein Session-Schlüssel.

@@ -367,8 +367,11 @@ Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`, `plan-0.4.0.md` §6
 
 | Such-Pfad | Suchwert | Span-Attribut / Feld | Zweck |
 |---|---|---|---|
-| **Primary (Session-Korrelation)** | `correlation_id` aus API-Read-Antwort, Dashboard oder SQLite | Span-Attribut `mtrace.session.correlation_id` | Alle Server-Spans einer Single-Session-Batch-Verarbeitung; Tempo-API: `?tags=mtrace.session.correlation_id=<UUID>` |
+| **Primary (Session-Korrelation)** | `correlation_id` aus API-Read-Antwort, Dashboard oder SQLite | Span-Attribut `mtrace.session.correlation_id` | Alle Server-Spans einer Single-Session-Batch-Verarbeitung; Tempo-API: TraceQL `GET /api/search?q={ span.mtrace.session.correlation_id = "<UUID>" }&start=<unix>&end=<unix>` |
+| **Legacy (Session-Korrelation)** | `correlation_id` aus API-Read-Antwort, Dashboard oder SQLite | Span-Attribut `mtrace.session.correlation_id` | Fallback nur für ältere Tempo-Setups: `GET /api/search?tags=mtrace.session.correlation_id=<UUID>&start=<unix>&end=<unix>` |
 | **Sekundär (Batch-Korrelation)** | `trace_id` aus `playback_events.trace_id` (nur Single-Event-Batch oder explizit gesuchter Batch) | Tempo-Trace-ID (`trace_id`-Hex) | Tempo-API: `GET /api/traces/<trace_id>` |
+
+**Suchfenster-Pflicht.** Tempo-Search-Aufrufe müssen `start` und `end` als Unix-Zeitfenster setzen. `/api/search?tags=...` ohne Zeitraum ist nicht normativ; Tempo 2.x kann je nach Default-Resolution leere Treffer liefern, obwohl der Span bereits ingestiert ist.
 
 **Multi-Trace-Disclaimer.** Eine Session kann mehrere `trace_id`-Werte haben — jeder Batch erzeugt einen neuen Server-Span (siehe §2.5). `trace_id` ist daher **kein Session-Schlüssel**. Eine Session-übergreifende Tempo-Suche per `trace_id` ist immer batchspezifisch; die vollständige Session-Trace-Liste (sortiert nach `ingest_sequence`) liefert nur das Dashboard plus Read-Pfad, nicht Tempo.
 
