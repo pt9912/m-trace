@@ -176,6 +176,11 @@ Die folgenden Grenzen sind ab `0.4.0` bekannt und akzeptiert:
 - **CORS**: bei fehlendem `Access-Control-Allow-Origin` oder
   `Timing-Allow-Origin` blockt der Browser Resource-Timing-Felder.
   Reason: `cors_timing_blocked`.
+- **hls.js-spezifische Signal-Lücken**: einzelne hls.js-Versionen
+  oder -Konfigurationen exposen Manifest-/Fragment-Signale
+  unvollständig (z. B. fehlt `FRAG_LOADED.frag.url` in einer
+  Beta-Version). Das SDK degradiert mit Reason
+  `hlsjs_signal_unavailable` ohne den hls.js-Stack zu unterbrechen.
 - **Service Worker**: ein abfangender Service Worker kann
   Manifest-/Segment-Loads ohne hls.js-Sichtbarkeit beantworten.
   Reason: `service_worker_opaque`.
@@ -190,11 +195,15 @@ Die folgenden Grenzen sind ab `0.4.0` bekannt und akzeptiert:
   Reason `native_hls_unavailable`. Der Read-Pfad zeigt das im
   Session-Block als `network_signal_absent[]`.
 - **Sampling**: Konsumenten können das Player-SDK so
-  konfigurieren, dass Network-Events ausgesampled werden
+  konfigurieren, dass Events vor dem Send ausgesampelt werden
   (`sampleRate < 1`). Das ist ausdrückliche, dokumentierte
   Degradation und kein Vertragsbruch — die Session-Korrelation
-  selbst (`correlation_id`) bleibt unbeeinträchtigt, weil sie
-  serverseitig vergeben wird.
+  bleibt für jede tatsächlich beim Server eingehende Session
+  konsistent, weil `correlation_id` serverseitig vergeben wird.
+  Vollständig ausgesampelte Sessions (`sampleRate=0` oder zufällig
+  alle Events gefiltert) erreichen den Server gar nicht erst und
+  existieren in den Read-Antworten nicht — Operator-Konsequenz,
+  kein Datenintegritätsproblem.
 
 `POST /api/playback-events` akzeptiert `network.unavailable_reason`-Werte
 nur aus dem Reason-Enum (`network_unavailable_reasons`) plus

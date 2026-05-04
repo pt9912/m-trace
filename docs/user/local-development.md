@@ -195,13 +195,14 @@ unabhängige Korrelations-Identifier (Spec
   derselben Session. Dashboard und API-Konsumenten korrelieren
   ausschließlich über diesen Wert.
 - **`trace_id`** ist eine **optionale Debug-Vertiefung** für
-  Tempo/Jaeger. Batch-bezogen — der gleiche Wert spannt nur über
-  Events eines Server-Spans (= ein POST-Batch). Cross-Batch-
-  Sessions sehen wechselnde `trace_id`s; das ist gewollt.
-
-Wenn das Player-SDK den optionalen `traceparent`-Header propagiert,
-übernimmt der Server die `trace_id` aus dem Header — sonst generiert
-er einen Root-Span pro Batch.
+  Tempo/Jaeger. Standard ohne `traceparent`-Header: batch-bezogen —
+  der Server erzeugt pro POST-Batch einen Root-Span, also tragen
+  Events verschiedener Batches einer Session unterschiedliche
+  `trace_id`s. Mit propagiertem `traceparent`-Header übernimmt der
+  Server dagegen die `trace_id` aus dem Header und sie bleibt über
+  alle Batches mit demselben Header konstant (Test-Anker
+  `TestE2E_TraceparentPropagation_SameTraceID` in
+  `apps/api/adapters/driving/http/correlation_e2e_test.go`).
 
 Bekannte Korrelations-Lücken (Browser-APIs, CORS, Service Worker,
 CDN-Redirects, Native HLS, Sampling) sind in
