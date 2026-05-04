@@ -85,6 +85,16 @@ tempo_trace_count() {
   node -e 'try { const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String((p.traces||[]).length)); } catch { process.stdout.write("0"); }'
 }
 
+tempo_search() {
+  local label="$1" url="$2" body_file="$3"
+  local status
+  status=$(curl -sS -o "$body_file" -w '%{http_code}' "$url" || true)
+  if [ "$status" != "200" ]; then
+    echo "smoke-tempo[tempo]: ${label} search returned HTTP ${status}" >&2
+  fi
+  printf '%s' "$status"
+}
+
 case "$SMOKE_STATE" in
   core)
     # State 1: Core ohne OTLP-Werte.
@@ -148,11 +158,15 @@ case "$SMOKE_STATE" in
     # Spec-Anker: `spec/telemetry-model.md` §2.6.
     traceql_query="{ span.mtrace.session.correlation_id = \"${correlation_id}\" }"
     encoded_query=$(urlencode "$traceql_query")
-    search_response=$(curl -sS "${TEMPO_URL}/api/search?q=${encoded_query}&start=${search_start}&end=${search_end}")
+    traceql_body="$tmpdir/tempo-traceql.body"
+    legacy_body="$tmpdir/tempo-legacy.body"
+    traceql_status=$(tempo_search "TraceQL" "${TEMPO_URL}/api/search?q=${encoded_query}&start=${search_start}&end=${search_end}" "$traceql_body")
+    search_response=$(cat "$traceql_body")
     trace_count=$(printf '%s' "$search_response" | tempo_trace_count)
     if [ "$trace_count" -le 0 ]; then
       encoded_tag=$(urlencode "mtrace.session.correlation_id=${correlation_id}")
-      legacy_response=$(curl -sS "${TEMPO_URL}/api/search?tags=${encoded_tag}&start=${search_start}&end=${search_end}")
+      legacy_status=$(tempo_search "legacy tags" "${TEMPO_URL}/api/search?tags=${encoded_tag}&start=${search_start}&end=${search_end}" "$legacy_body")
+      legacy_response=$(cat "$legacy_body")
       legacy_count=$(printf '%s' "$legacy_response" | tempo_trace_count)
       if [ "$legacy_count" -gt 0 ]; then
         search_response="$legacy_response"
@@ -161,7 +175,12 @@ case "$SMOKE_STATE" in
     fi
     if [ "$trace_count" -le 0 ]; then
       echo "smoke-tempo[tempo]: no traces found for correlation_id=${correlation_id} in window ${search_start}..${search_end}" >&2
-      printf '%s\n' "$search_response" >&2
+      echo "smoke-tempo[tempo]: TraceQL response (HTTP ${traceql_status:-n/a}):" >&2
+      cat "$traceql_body" >&2 || true
+      echo >&2
+      echo "smoke-tempo[tempo]: legacy tags response (HTTP ${legacy_status:-n/a}):" >&2
+      cat "$legacy_body" >&2 || true
+      echo >&2
       exit 1
     fi
     echo "smoke-tempo[tempo]: Tempo returned ${trace_count} trace(s) for correlation_id=${correlation_id}"
