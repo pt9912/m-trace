@@ -41,8 +41,15 @@ type ListSessionsCursor struct {
 
 // ListSessionsResult bündelt die geblätterte Sessions-Page. NextCursor
 // ist nil, wenn die letzte Seite erreicht ist.
+//
+// Boundaries[i] gehört zur Session Sessions[i] und enthält die persistierten
+// `session_boundaries[]`-Read-Tripel (kind/adapter/reason) gemäß
+// spec/backend-api-contract.md §3.7.1. Reihenfolge ist parallel zur
+// `Sessions`-Slice; eine Session ohne Boundaries hat einen leeren
+// inneren Slice (Default `[]` im Read-Shape).
 type ListSessionsResult struct {
 	Sessions   []domain.StreamSession
+	Boundaries [][]domain.SessionBoundary
 	NextCursor *ListSessionsCursor
 }
 
@@ -70,8 +77,13 @@ type SessionEventsCursor struct {
 
 // GetSessionResult bündelt Sessions-Header und die geblätterte
 // Event-Page. NextCursor ist nil, wenn die letzte Seite erreicht ist.
+//
+// Boundaries enthält die persistierten `session_boundaries[]`-Read-
+// Tripel (kind/adapter/reason) für die abgefragte Session — Default
+// leerer Slice. Spec-Anker spec/backend-api-contract.md §3.7.1.
 type GetSessionResult struct {
 	Session    domain.StreamSession
 	Events     []domain.PlaybackEvent
+	Boundaries []domain.SessionBoundary
 	NextCursor *SessionEventsCursor
 }

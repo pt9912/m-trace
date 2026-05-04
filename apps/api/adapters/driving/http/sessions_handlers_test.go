@@ -258,6 +258,154 @@ func TestHTTP_StreamSessionsByID_HappyPath(t *testing.T) {
 	}
 }
 
+// TestHTTP_StreamSessions_NetworkSignalAbsentDefaultEmpty pinnt den
+// §4.4-D3-Default: jede Session-Read-Antwort trägt
+// `network_signal_absent` als JSON-Array, auch wenn keine Boundaries
+// persistiert sind (Spec §3.7.1: Default `[]`, kein `null`).
+func TestHTTP_StreamSessions_NetworkSignalAbsentDefaultEmpty(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	if r := postEvents(t, srv, "demo-token", validBody); r.StatusCode != http.StatusAccepted {
+		t.Fatalf("post: %d", r.StatusCode)
+	}
+
+	resp, body := getJSON(t, srv.URL, "/api/stream-sessions")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("list: %d", resp.StatusCode)
+	}
+	sessions, _ := body["sessions"].([]any)
+	first, _ := sessions[0].(map[string]any)
+	raw, present := first["network_signal_absent"]
+	if !present {
+		t.Fatalf("session is missing network_signal_absent (default `[]`)")
+	}
+	arr, ok := raw.([]any)
+	if !ok {
+		t.Fatalf("network_signal_absent is not a JSON array: %T = %v", raw, raw)
+	}
+	if len(arr) != 0 {
+		t.Errorf("expected empty default, got %v", arr)
+	}
+
+	// Detail-Read trägt das Feld ebenfalls.
+	resp, body = getJSON(t, srv.URL, "/api/stream-sessions/sess-1")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("detail: %d", resp.StatusCode)
+	}
+	session, _ := body["session"].(map[string]any)
+	rawDetail, present := session["network_signal_absent"]
+	if !present {
+		t.Fatalf("detail session is missing network_signal_absent")
+	}
+	if arr, ok := rawDetail.([]any); !ok || len(arr) != 0 {
+		t.Errorf("detail expected empty default, got %v", rawDetail)
+	}
+}
+
+// TestHTTP_StreamSessions_NetworkSignalAbsentRoundTrip pinnt den
+// vollständigen §4.4-Pfad: ein POST /api/playback-events mit
+// `session_boundaries[]` persistiert die Tripel, der Detail-Read
+// liefert das `network_signal_absent`-Read-Shape (kind=NetworkKind,
+// adapter, reason) und sortiert nach kind/adapter/reason.
+func TestHTTP_StreamSessions_NetworkSignalAbsentRoundTrip(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	body := `{
+	  "schema_version": "1.0",
+	  "events": [
+	    {
+	      "event_name": "rebuffer_started",
+	      "project_id": "demo",
+	      "session_id": "sess-bnd",
+	      "client_timestamp": "2026-04-28T12:00:00.000Z",
+	      "sdk": { "name": "@npm9912/player-sdk", "version": "0.4.0" }
+	    }
+	  ],
+	  "session_boundaries": [
+	    {
+	      "kind": "network_signal_absent",
+	      "project_id": "demo",
+	      "session_id": "sess-bnd",
+	      "network_kind": "segment",
+	      "adapter": "native_hls",
+	      "reason": "native_hls_unavailable",
+	      "client_timestamp": "2026-04-28T12:00:00.000Z"
+	    },
+	    {
+	      "kind": "network_signal_absent",
+	      "project_id": "demo",
+	      "session_id": "sess-bnd",
+	      "network_kind": "manifest",
+	      "adapter": "hls.js",
+	      "reason": "cors_timing_blocked",
+	      "client_timestamp": "2026-04-28T12:00:00.000Z"
+	    }
+	  ]
+	}`
+	if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {
+		t.Fatalf("post: %d", r.StatusCode)
+	}
+
+	resp, payload := getJSON(t, srv.URL, "/api/stream-sessions/sess-bnd")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("detail: %d", resp.StatusCode)
+	}
+	session, _ := payload["session"].(map[string]any)
+	arr, ok := session["network_signal_absent"].([]any)
+	if !ok || len(arr) != 2 {
+		t.Fatalf("expected 2 boundaries in detail, got %v", session["network_signal_absent"])
+	}
+	// Sortierung: kind asc → adapter asc → reason asc.
+	first, _ := arr[0].(map[string]any)
+	if first["kind"] != "manifest" || first["adapter"] != "hls.js" || first["reason"] != "cors_timing_blocked" {
+		t.Errorf("first boundary = %v", first)
+	}
+	second, _ := arr[1].(map[string]any)
+	if second["kind"] != "segment" || second["adapter"] != "native_hls" || second["reason"] != "native_hls_unavailable" {
+		t.Errorf("second boundary = %v", second)
+	}
+}
+
+// TestHTTP_StreamSessions_BoundaryRejectedDoesNotPersist pinnt den
+// atomaren 422-Pfad aus §4.4 D2: ein invalider Boundary-Block
+// persistiert weder Events noch Boundaries und liefert 422.
+func TestHTTP_StreamSessions_BoundaryRejectedDoesNotPersist(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(t)
+	body := `{
+	  "schema_version": "1.0",
+	  "events": [
+	    {
+	      "event_name": "rebuffer_started",
+	      "project_id": "demo",
+	      "session_id": "sess-rej",
+	      "client_timestamp": "2026-04-28T12:00:00.000Z",
+	      "sdk": { "name": "@npm9912/player-sdk", "version": "0.4.0" }
+	    }
+	  ],
+	  "session_boundaries": [
+	    {
+	      "kind": "totally_made_up",
+	      "project_id": "demo",
+	      "session_id": "sess-rej",
+	      "network_kind": "segment",
+	      "adapter": "native_hls",
+	      "reason": "native_hls_unavailable",
+	      "client_timestamp": "2026-04-28T12:00:00.000Z"
+	    }
+	  ]
+	}`
+	resp := postEvents(t, srv, "demo-token", body)
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("expected 422, got %d", resp.StatusCode)
+	}
+
+	resp, payload := getJSON(t, srv.URL, "/api/stream-sessions/sess-rej")
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("rejected batch must not create session, got status %d body=%v", resp.StatusCode, payload)
+	}
+}
+
 // encodeCursorForTest base64-url-encoded eine raw-JSON-Payload (ohne
 // Padding) — gleiche Codec-Form wie der Handler, aber bewusst gegen
 // die Wire-Form gekoppelt statt gegen die interne Codec-API.

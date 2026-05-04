@@ -158,6 +158,78 @@ func TestRestartCursorStability(t *testing.T) {
 	}
 }
 
+// TestRestartPreservesSessionBoundaries verifiziert plan-0.4.0 §4.4
+// DoD-Item 3 (Restart-Stabilität): persistierte
+// `session_boundaries[]`-Records sind nach Close + Re-Open derselben
+// SQLite-Datei identisch lesbar — kein In-Memory-only-Pfad.
+func TestRestartPreservesSessionBoundaries(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace-boundaries.db")
+	t0 := time.Date(2026, 5, 4, 12, 0, 0, 0, time.UTC)
+
+	// Pass 1: Session anlegen + zwei distinct Boundary-Tripel +
+	// Duplikat des ersten Tripels mit späterem Timestamp (Idempotenz).
+	db1, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open #1: %v", err)
+	}
+	seq1, err := sqlite.NewIngestSequencer(ctx, db1)
+	if err != nil {
+		t.Fatalf("seq #1: %v", err)
+	}
+	sess1 := sqlite.NewSessionRepository(db1)
+	if _, err := sess1.UpsertFromEvents(ctx, []domain.PlaybackEvent{
+		mkRestartEvent(seq1, "demo", "s1", t0),
+	}); err != nil {
+		t.Fatalf("seed session: %v", err)
+	}
+	first := domain.SessionBoundary{
+		Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+		NetworkKind: "segment", Adapter: "native_hls", Reason: "native_hls_unavailable",
+		ClientTimestamp: t0, ServerReceivedAt: t0,
+	}
+	second := domain.SessionBoundary{
+		Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+		NetworkKind: "manifest", Adapter: "hls.js", Reason: "cors_timing_blocked",
+		ClientTimestamp: t0, ServerReceivedAt: t0,
+	}
+	dup := first
+	dup.ServerReceivedAt = t0.Add(time.Hour)
+	if err := sess1.AppendBoundaries(ctx, []domain.SessionBoundary{first, second, dup}); err != nil {
+		t.Fatalf("AppendBoundaries: %v", err)
+	}
+	if err := db1.Close(); err != nil {
+		t.Fatalf("close #1: %v", err)
+	}
+
+	// Pass 2: re-open, Boundaries müssen identisch lesbar sein.
+	db2, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open #2: %v", err)
+	}
+	t.Cleanup(func() { _ = db2.Close() })
+	sess2 := sqlite.NewSessionRepository(db2)
+	got, err := sess2.ListBoundariesForSession(ctx, "demo", "s1")
+	if err != nil {
+		t.Fatalf("ListBoundariesForSession #2: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 deduped boundaries after restart, got %d (%+v)", len(got), got)
+	}
+	// Sortierung kind asc → adapter asc → reason asc.
+	if got[0].Adapter != "hls.js" || got[0].Reason != "cors_timing_blocked" {
+		t.Errorf("got[0] = %+v want adapter=hls.js reason=cors_timing_blocked", got[0])
+	}
+	if got[1].Adapter != "native_hls" || got[1].Reason != "native_hls_unavailable" {
+		t.Errorf("got[1] = %+v want adapter=native_hls reason=native_hls_unavailable", got[1])
+	}
+	// Duplikat hat den späteren Timestamp persistiert.
+	if !got[1].ServerReceivedAt.Equal(t0.Add(time.Hour)) {
+		t.Errorf("duplicate triple should refresh server_received_at across restart, got %v", got[1].ServerReceivedAt)
+	}
+}
+
 func mkRestartEvent(seq driven.IngestSequencer, project, session string, recv time.Time) domain.PlaybackEvent {
 	return domain.PlaybackEvent{
 		EventName:        "playback_started",

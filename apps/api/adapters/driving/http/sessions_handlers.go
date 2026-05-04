@@ -98,7 +98,7 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		Sessions   []sessionWire `json:"sessions"`
 		NextCursor string        `json:"next_cursor,omitempty"`
 	}{
-		Sessions: toSessionWireList(res.Sessions),
+		Sessions: toSessionWireListWithBoundaries(res.Sessions, res.Boundaries),
 	}
 	if res.NextCursor != nil {
 		next, err := encodeListSessionsCursor(res.NextCursor, projectID)
@@ -196,7 +196,7 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 		Events     []eventWire `json:"events"`
 		NextCursor string      `json:"next_cursor,omitempty"`
 	}{
-		Session: toSessionWire(res.Session),
+		Session: toSessionWireWithBoundaries(res.Session, res.Boundaries),
 		Events:  toEventWireList(res.Events),
 	}
 	if res.NextCursor != nil {
@@ -254,26 +254,44 @@ func parseLimitWithName(s string) (int, error) {
 // wurden, kann es leer sein und wird dann als JSON-`""` ausgeliefert
 // (kein `omitempty`, damit Clients das Feld klar als „nicht gesetzt"
 // erkennen).
+//
+// `network_signal_absent` ist ab `0.4.0` (§4.4 D3) im Read-Shape,
+// Default `[]`. Reihenfolge: kind asc, adapter asc, reason asc;
+// Tripel-Dedup erfolgt im Repository.
 type sessionWire struct {
-	ID            string  `json:"session_id"`
-	ProjectID     string  `json:"project_id"`
-	State         string  `json:"state"`
-	StartedAt     string  `json:"started_at"`
-	LastEventAt   string  `json:"last_event_at"`
-	EndedAt       *string `json:"ended_at,omitempty"`
-	EventCount    int64   `json:"event_count"`
-	CorrelationID string  `json:"correlation_id"`
+	ID                  string                       `json:"session_id"`
+	ProjectID           string                       `json:"project_id"`
+	State               string                       `json:"state"`
+	StartedAt           string                       `json:"started_at"`
+	LastEventAt         string                       `json:"last_event_at"`
+	EndedAt             *string                      `json:"ended_at,omitempty"`
+	EventCount          int64                        `json:"event_count"`
+	CorrelationID       string                       `json:"correlation_id"`
+	NetworkSignalAbsent []networkSignalAbsentWire    `json:"network_signal_absent"`
 }
 
-func toSessionWire(s domain.StreamSession) sessionWire {
+// networkSignalAbsentWire ist das Read-Shape eines
+// `session_boundaries[]`-Tripels gemäß spec/backend-api-contract.md
+// §3.7.1: `kind` ist der Netzwerksignal-Typ
+// (`manifest`/`segment`) — nicht der Boundary-`kind`-Wert
+// (`network_signal_absent`), der für alle Einträge in dieser Liste
+// implizit gilt.
+type networkSignalAbsentWire struct {
+	Kind    string `json:"kind"`
+	Adapter string `json:"adapter"`
+	Reason  string `json:"reason"`
+}
+
+func toSessionWireWithBoundaries(s domain.StreamSession, boundaries []domain.SessionBoundary) sessionWire {
 	out := sessionWire{
-		ID:            s.ID,
-		ProjectID:     s.ProjectID,
-		State:         string(s.State),
-		StartedAt:     s.StartedAt.UTC().Format(time.RFC3339Nano),
-		LastEventAt:   s.LastEventAt.UTC().Format(time.RFC3339Nano),
-		EventCount:    s.EventCount,
-		CorrelationID: s.CorrelationID,
+		ID:                  s.ID,
+		ProjectID:           s.ProjectID,
+		State:               string(s.State),
+		StartedAt:           s.StartedAt.UTC().Format(time.RFC3339Nano),
+		LastEventAt:         s.LastEventAt.UTC().Format(time.RFC3339Nano),
+		EventCount:          s.EventCount,
+		CorrelationID:       s.CorrelationID,
+		NetworkSignalAbsent: toNetworkSignalAbsentWires(boundaries),
 	}
 	if s.EndedAt != nil {
 		ended := s.EndedAt.UTC().Format(time.RFC3339Nano)
@@ -282,10 +300,34 @@ func toSessionWire(s domain.StreamSession) sessionWire {
 	return out
 }
 
-func toSessionWireList(in []domain.StreamSession) []sessionWire {
+// toSessionWireListWithBoundaries projiziert Sessions parallel zu
+// einer Boundary-Slice. `boundaries` darf kürzer/`nil` sein — fehlende
+// Indizes erhalten ein leeres `network_signal_absent[]` (Default `[]`).
+func toSessionWireListWithBoundaries(in []domain.StreamSession, boundaries [][]domain.SessionBoundary) []sessionWire {
 	out := make([]sessionWire, len(in))
 	for i, s := range in {
-		out[i] = toSessionWire(s)
+		var b []domain.SessionBoundary
+		if i < len(boundaries) {
+			b = boundaries[i]
+		}
+		out[i] = toSessionWireWithBoundaries(s, b)
+	}
+	return out
+}
+
+// toNetworkSignalAbsentWires mappt persistierte Boundaries auf das
+// Read-Shape-Tripel (kind/adapter/reason). `domain.SessionBoundary.
+// NetworkKind` wird auf das `kind`-Feld der Wire-Antwort projiziert
+// (Spec §3.7.1: kind ∈ {manifest, segment}). Default-Rückgabe für
+// `nil`/leer ist eine leere Slice (`[]`), damit JSON kein `null` ausgibt.
+func toNetworkSignalAbsentWires(in []domain.SessionBoundary) []networkSignalAbsentWire {
+	out := make([]networkSignalAbsentWire, 0, len(in))
+	for _, b := range in {
+		out = append(out, networkSignalAbsentWire{
+			Kind:    b.NetworkKind,
+			Adapter: b.Adapter,
+			Reason:  b.Reason,
+		})
 	}
 	return out
 }

@@ -1,3 +1,14 @@
+/** Tripel aus dem Read-Shape `network_signal_absent[]` (Backend-API
+ *  §3.7.1, plan-0.4.0 §4.4). Markiert Stellen, an denen das SDK kein
+ *  Manifest-/Segment-Signal beobachten konnte (Native HLS, CORS-
+ *  Block, Resource-Timing-Lücke). `kind` ist der Netzwerksignal-Typ,
+ *  nicht der Boundary-`kind`-Wert. */
+export interface NetworkSignalAbsentEntry {
+  kind: "manifest" | "segment";
+  adapter: "hls.js" | "native_hls" | "unknown";
+  reason: string;
+}
+
 export interface StreamSession {
   session_id: string;
   project_id: string;
@@ -9,6 +20,11 @@ export interface StreamSession {
   last_event_at: string;
   ended_at?: string;
   event_count: number;
+  /** Server-vergeben ab 0.4.0 §3.2-Closeout; Empty-String bei
+   *  Legacy-Sessions vor dem Closeout (siehe API-Kontrakt §3.7.1). */
+  correlation_id?: string;
+  /** Default `[]`; siehe API-Kontrakt §3.7.1, plan-0.4.0 §4.4. */
+  network_signal_absent: NetworkSignalAbsentEntry[];
 }
 
 export interface PlaybackEvent {
