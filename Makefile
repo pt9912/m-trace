@@ -87,6 +87,13 @@ smoke:
 smoke-observability:
 	bash scripts/smoke-observability.sh
 
+# `make smoke-tempo` deckt die drei Startzustände aus plan-0.4.0 §6.4
+# ab. Default-State ist `tempo` (RAK-31-Roundtrip via Tempo-Search-API);
+# `core` und `observability` lassen sich über `SMOKE_STATE=...` testen
+# (Stack vorher mit `make dev` bzw. `make dev-observability` starten).
+smoke-tempo:
+	bash scripts/smoke-tempo.sh
+
 smoke-rak10-console:
 	OTEL_TRACES_EXPORTER=console $(COMPOSE) up -d --build api
 	bash scripts/smoke-rak10-console.sh
