@@ -131,9 +131,27 @@ const p=JSON.parse(require("fs").readFileSync(0,"utf8"));
 const forbidden=[
   "session_id","user_agent","segment_url","client_ip",
   "project_id","trace_id","span_id","correlation_id",
-  "viewer_id","request_id","token","authorization"
+  "viewer_id","request_id","token","authorization",
+  "url","uri","secret"
 ];
-const bad=p.data.filter((series) => forbidden.some((label) => Object.prototype.hasOwnProperty.call(series, label)));
+const forbiddenSuffixes=["_url","_uri","_token","_secret"];
+const forbiddenLabels=(series) =>
+  Object.keys(series).filter((label) =>
+    forbidden.includes(label) ||
+    forbiddenSuffixes.some((suffix) => label.endsWith(suffix))
+  );
+const policyProbe=[
+  {__name__:"mtrace_test_total",manifest_url:"x"},
+  {__name__:"mtrace_test_total",url:"x"},
+  {__name__:"mtrace_test_total",uri:"x"},
+  {__name__:"mtrace_test_total",secret:"x"}
+];
+const missed=policyProbe.filter((series) => forbiddenLabels(series).length === 0);
+if (missed.length) {
+  console.error("forbidden label policy self-test failed: " + JSON.stringify(missed, null, 2));
+  process.exit(1);
+}
+const bad=p.data.filter((series) => forbiddenLabels(series).length > 0);
 if (bad.length) {
   console.error("forbidden labels found: " + JSON.stringify(bad, null, 2));
   process.exit(1);

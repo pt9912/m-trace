@@ -40,7 +40,10 @@ func scrapeMetrics(t *testing.T, srv *httptest.Server) string {
 	return string(body)
 }
 
-func assertCounter(t *testing.T, scrape, name string, expected int) {
+// assertLabelFreeCounter ist nur für Counter ohne Prometheus-Labels
+// geeignet. Labeltragende Counter rendern als `name{...} value` und
+// brauchen einen eigenen Matcher.
+func assertLabelFreeCounter(t *testing.T, scrape, name string, expected int) {
 	t.Helper()
 	want := name + " "
 	for _, line := range strings.Split(scrape, "\n") {
@@ -60,6 +63,76 @@ func assertCounter(t *testing.T, scrape, name string, expected int) {
 	t.Errorf("counter %s not found in scrape:\n%s", name, scrape)
 }
 
+func assertLabeledCounter(t *testing.T, scrape, name string, labels map[string]string, expected int) {
+	t.Helper()
+	wantPrefix := name + "{"
+	expectedStr := strconv.Itoa(expected)
+	for _, line := range strings.Split(scrape, "\n") {
+		if strings.HasPrefix(line, "# ") || !strings.HasPrefix(line, wantPrefix) {
+			continue
+		}
+		labelEnd := strings.Index(line, "} ")
+		if labelEnd < 0 {
+			continue
+		}
+		gotLabels, ok := parsePrometheusLabels(line[len(wantPrefix):labelEnd])
+		if !ok || !sameLabels(gotLabels, labels) {
+			continue
+		}
+		got := strings.TrimPrefix(line[labelEnd:], "} ")
+		if got == expectedStr {
+			return
+		}
+		t.Errorf("counter %s%v = %q, want %q", name, labels, got, expectedStr)
+		return
+	}
+	t.Errorf("counter %s%v not found in scrape:\n%s", name, labels, scrape)
+}
+
+func parsePrometheusLabels(raw string) (map[string]string, bool) {
+	labels := make(map[string]string)
+	if raw == "" {
+		return labels, true
+	}
+	for _, part := range strings.Split(raw, ",") {
+		key, value, ok := strings.Cut(part, "=")
+		if !ok || key == "" {
+			return nil, false
+		}
+		unquoted, err := strconv.Unquote(value)
+		if err != nil {
+			return nil, false
+		}
+		labels[key] = unquoted
+	}
+	return labels, true
+}
+
+func sameLabels(left, right map[string]string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for key, leftValue := range left {
+		if right[key] != leftValue {
+			return false
+		}
+	}
+	return true
+}
+
+func TestMetrics_LabeledCounterHelper_MatchesLabelSet(t *testing.T) {
+	t.Parallel()
+	scrape := strings.Join([]string{
+		"# HELP mtrace_analyze_requests_total Analyze requests.",
+		"# TYPE mtrace_analyze_requests_total counter",
+		`mtrace_analyze_requests_total{code="ok",outcome="success"} 3`,
+	}, "\n")
+	assertLabeledCounter(t, scrape, "mtrace_analyze_requests_total", map[string]string{
+		"code":    "ok",
+		"outcome": "success",
+	}, 3)
+}
+
 // TestMetrics_AcceptedCounter_HappyPath pinnt: ein 1-Event-Batch mit
 // 202 → `mtrace_playback_events_total += 1`.
 func TestMetrics_AcceptedCounter_HappyPath(t *testing.T) {
@@ -70,10 +143,10 @@ func TestMetrics_AcceptedCounter_HappyPath(t *testing.T) {
 		t.Fatalf("expected 202, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 1)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 0)
-	assertCounter(t, scrape, "mtrace_rate_limited_events_total", 0)
-	assertCounter(t, scrape, "mtrace_dropped_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 1)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_rate_limited_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_dropped_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_SchemaVersion pinnt: `schema_version`
@@ -87,8 +160,8 @@ func TestMetrics_InvalidCounter_SchemaVersion(t *testing.T) {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 1)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 1)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_BatchTooLarge pinnt: 101 Events → 422
@@ -103,8 +176,8 @@ func TestMetrics_InvalidCounter_BatchTooLarge(t *testing.T) {
 		t.Fatalf("expected 422, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 101)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 101)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_MissingField pinnt: ein 1-Event-Batch
@@ -118,8 +191,8 @@ func TestMetrics_InvalidCounter_MissingField(t *testing.T) {
 		t.Fatalf("expected 422, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 1)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 1)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_NoIncrement_OnEmptyBatch pinnt: leerer
@@ -133,8 +206,8 @@ func TestMetrics_InvalidCounter_NoIncrement_OnEmptyBatch(t *testing.T) {
 		t.Fatalf("expected 422, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 0)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_NoIncrement_OnAuthError pinnt: kein Token
@@ -148,8 +221,8 @@ func TestMetrics_InvalidCounter_NoIncrement_OnAuthError(t *testing.T) {
 		t.Fatalf("expected 401, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 0)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_NoIncrement_OnBodyTooLarge pinnt: Body
@@ -164,7 +237,7 @@ func TestMetrics_InvalidCounter_NoIncrement_OnBodyTooLarge(t *testing.T) {
 		t.Fatalf("expected 413, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 0)
 }
 
 // TestMetrics_InvalidCounter_NoIncrement_OnMalformedJSON pinnt:
@@ -178,8 +251,8 @@ func TestMetrics_InvalidCounter_NoIncrement_OnMalformedJSON(t *testing.T) {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_invalid_events_total", 0)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_invalid_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 0)
 }
 
 // TestMetrics_RateLimitedCounter_Increments pinnt: 429 → counter
@@ -200,8 +273,8 @@ func TestMetrics_RateLimitedCounter_Increments(t *testing.T) {
 		t.Fatalf("expected 429, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_rate_limited_events_total", 1)
-	assertCounter(t, scrape, "mtrace_playback_events_total", 100)
+	assertLabelFreeCounter(t, scrape, "mtrace_rate_limited_events_total", 1)
+	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 100)
 }
 
 // TestMetrics_DroppedCounter_StaysZero pinnt: API-Kontrakt §7
@@ -216,7 +289,7 @@ func TestMetrics_DroppedCounter_StaysZero(t *testing.T) {
 		t.Fatalf("expected 202, got %d", resp.StatusCode)
 	}
 	scrape := scrapeMetrics(t, srv)
-	assertCounter(t, scrape, "mtrace_dropped_events_total", 0)
+	assertLabelFreeCounter(t, scrape, "mtrace_dropped_events_total", 0)
 	if !strings.Contains(scrape, "mtrace_dropped_events_total") {
 		t.Errorf("dropped-events counter must be exposed even when 0; scrape:\n%s", scrape)
 	}
