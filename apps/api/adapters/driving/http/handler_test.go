@@ -69,6 +69,35 @@ func newTestServer(t *testing.T) *httptest.Server {
 	return newTestServerWithClock(t, time.Now)
 }
 
+// newTestServerWithSse wires the same router as newTestServer plus a
+// non-nil SseStreamConfig, so the SSE GET- und OPTIONS-Routen aktiv
+// sind (plan-0.4.0 §5 H4). Tests, die den SSE-Preflight oder den
+// Live-Stream-Pfad anfassen, müssen diesen Server nutzen.
+func newTestServerWithSse(t *testing.T) *httptest.Server {
+	t.Helper()
+	repo := inmemory.NewEventRepository()
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
+		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
+	})
+	limiter := ratelimit.NewTokenBucketRateLimiter(100, 100, time.Now)
+	publisher := metrics.NewPrometheusPublisher()
+	sessionRepo := inmemory.NewSessionRepository()
+	uc := application.NewRegisterPlaybackEventBatchUseCase(
+		resolver, limiter, repo, sessionRepo, publisher, noopTelemetry{}, streamanalyzer.NewNoopStreamAnalyzer(), inmemory.NewIngestSequencer(), time.Now,
+	)
+	sessionsService := application.NewSessionsService(sessionRepo, repo)
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+	sseCfg := &apihttp.SseStreamConfig{
+		Broker: application.NewEventBroker(),
+		Events: repo,
+	}
+	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, resolver, publisher.Handler(), nil, sseCfg, nil, logger)
+	srv := httptest.NewServer(router)
+	t.Cleanup(srv.Close)
+	return srv
+}
+
 // unlimitedLimiter always returns nil. It is the test-only adapter
 // used by the TooManyEvents test, which would otherwise be masked by
 // the production rate limiter (a 101-event batch can't fit in the

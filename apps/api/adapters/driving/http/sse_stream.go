@@ -127,13 +127,16 @@ func (h *SseStreamHandler) streamBackfill(
 	if limit <= 0 {
 		limit = sseBackfillLimit
 	}
-	events, err := h.Events.ListAfterIngestSequence(ctx, projectID, lastEventID, limit)
+	// `limit+1`-Probe: wir fragen ein Event mehr ab, um Truncation-
+	// Detektion ohne Off-by-One zu ermöglichen. Genau `limit` Events
+	// in der DB sind keine Lücke; nur `> limit` ist eine.
+	events, err := h.Events.ListAfterIngestSequence(ctx, projectID, lastEventID, limit+1)
 	if err != nil {
 		return err
 	}
-	// Truncation-Marker, wenn das Backfill-Limit voll ausgeschöpft ist.
-	// Konsumenten müssen dann den Detail-Snapshot neu laden.
-	if len(events) == limit {
+	truncated := len(events) > limit
+	if truncated {
+		events = events[:limit]
 		if err := writeTruncatedFrame(w, flusher, events[0].IngestSequence); err != nil {
 			return err
 		}

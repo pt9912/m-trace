@@ -99,6 +99,7 @@ class SseMachine {
   private closed = false;
   private abort: AbortController | undefined;
   private pollingHandle: (() => void) | undefined;
+  private reconnectHandle: (() => void) | undefined;
   private pollingActive = false;
   private reconnectAttempt = 0;
   private lastEventID = "";
@@ -116,6 +117,8 @@ class SseMachine {
     this.closed = true;
     this.abort?.abort();
     this.stopPolling();
+    this.reconnectHandle?.();
+    this.reconnectHandle = undefined;
     this.setState("disabled");
   }
 
@@ -237,7 +240,11 @@ class SseMachine {
     } else if (!this.pollingActive) {
       this.setState("connecting", detail);
     }
-    this.schedule(() => {
+    // Cancel-Handle des bisherigen Reconnect-Timers (falls im Anflug)
+    // wird hier neu gesetzt; `disconnect()` storniert ihn dann sauber.
+    this.reconnectHandle?.();
+    this.reconnectHandle = this.schedule(() => {
+      this.reconnectHandle = undefined;
       void this.connect();
     }, backoff);
   }

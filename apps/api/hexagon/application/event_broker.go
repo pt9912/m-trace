@@ -71,12 +71,19 @@ func (b *EventBroker) Subscribe(ctx context.Context, projectID string) <-chan Ev
 // referenzierten Projects. Slow Subscribers droppen den Frame
 // (Buffer voll → Default-Branch); SSE-Reconnect mit `Last-Event-ID`
 // schließt die Lücke. Aufruf ist non-blocking.
+//
+// Lock-Strategie: Subscriber-Liste wird unter `RLock` einmal in
+// einen lokalen Slice kopiert; der eigentliche Channel-Send läuft
+// danach lockless. So blockt ein neuer `Subscribe`-Caller nicht auf
+// den ganzen Fanout, sondern nur auf den Snapshot-Schritt.
 func (b *EventBroker) Publish(events []domain.PlaybackEvent) {
 	if len(events) == 0 {
 		return
 	}
-	b.mu.RLock()
-	defer b.mu.RUnlock()
+	subs := b.snapshotSubscribers()
+	if len(subs) == 0 {
+		return
+	}
 	for _, e := range events {
 		frame := EventAppendedFrame{
 			ProjectID:      e.ProjectID,
@@ -84,7 +91,7 @@ func (b *EventBroker) Publish(events []domain.PlaybackEvent) {
 			EventName:      e.EventName,
 			IngestSequence: e.IngestSequence,
 		}
-		for _, sub := range b.subscribers {
+		for _, sub := range subs {
 			if sub.projectID != e.ProjectID {
 				continue
 			}
@@ -96,6 +103,19 @@ func (b *EventBroker) Publish(events []domain.PlaybackEvent) {
 			}
 		}
 	}
+}
+
+func (b *EventBroker) snapshotSubscribers() []subscriber {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	if len(b.subscribers) == 0 {
+		return nil
+	}
+	out := make([]subscriber, 0, len(b.subscribers))
+	for _, sub := range b.subscribers {
+		out = append(out, sub)
+	}
+	return out
 }
 
 // SubscriberCount ist ein Test-Hook und gibt die aktuelle Anzahl

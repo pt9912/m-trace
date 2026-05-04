@@ -183,6 +183,43 @@ func TestCORS_Preflight_Dashboard_Allowed(t *testing.T) {
 	}
 }
 
+// TestCORS_Preflight_SseStream_Allowed pinnt Spec §10a: SSE-Preflight
+// liefert `Allow-Methods: GET, OPTIONS` und exakte
+// `Allow-Headers`-Liste inklusive `Last-Event-ID` für den
+// fetch-basierten Reconnect-Backfill (plan-0.4.0 §5 H4 F2).
+func TestCORS_Preflight_SseStream_Allowed(t *testing.T) {
+	t.Parallel()
+	srv := newTestServerWithSse(t)
+	resp := optionsRequest(t, srv.URL, "/api/stream-sessions/stream", "http://localhost:5173", http.MethodGet)
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Methods"); got != "GET, OPTIONS" {
+		t.Errorf("Access-Control-Allow-Methods=%q want %q", got, "GET, OPTIONS")
+	}
+	wantHeaders := "Content-Type, X-MTrace-Project, X-MTrace-Token, Last-Event-ID"
+	if got := resp.Header.Get("Access-Control-Allow-Headers"); got != wantHeaders {
+		t.Errorf("Access-Control-Allow-Headers=%q want %q", got, wantHeaders)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "http://localhost:5173" {
+		t.Errorf("Access-Control-Allow-Origin=%q want concrete origin", got)
+	}
+}
+
+// TestCORS_Preflight_SseStream_UnknownOrigin pinnt Spec §10a:
+// unbekannter Origin → 403, keine CORS-Header.
+func TestCORS_Preflight_SseStream_UnknownOrigin(t *testing.T) {
+	t.Parallel()
+	srv := newTestServerWithSse(t)
+	resp := optionsRequest(t, srv.URL, "/api/stream-sessions/stream", "http://attacker.example", http.MethodGet)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("Allow-Origin must not be set on 403, got %q", got)
+	}
+}
+
 func TestCORS_DashboardGet_AllowedOriginHeader(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)

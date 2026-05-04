@@ -259,6 +259,46 @@ func TestSse_Backfill_TruncatedMarker(t *testing.T) {
 	}
 }
 
+// TestSse_Backfill_ExactLimitNoTruncation pinnt B1-Fix: bei genau
+// `BackfillLimit` Events darf der Server keinen `backfill_truncated`-
+// Frame senden — nur > limit zählt als echte Lücke (Spec §10a "bei
+// größerer Lücke").
+func TestSse_Backfill_ExactLimitNoTruncation(t *testing.T) {
+	t.Parallel()
+	broker := application.NewEventBroker()
+	events := inmemory.NewEventRepository()
+	for i := int64(1); i <= 2; i++ {
+		_ = events.Append(context.Background(), []domain.PlaybackEvent{{
+			EventName: "manifest_loaded", ProjectID: "demo",
+			SessionID: "s", IngestSequence: i,
+		}})
+	}
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo": {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
+	})
+	handler := &apihttp.SseStreamHandler{
+		Resolver:      resolver,
+		Events:        events,
+		Broker:        broker,
+		Logger:        slog.New(slog.NewJSONHandler(io.Discard, nil)),
+		Heartbeat:     time.Hour,
+		BackfillLimit: 2, // exakt = #events in DB → KEIN truncation-frame
+	}
+	srv := httptest.NewServer(handler)
+	t.Cleanup(srv.Close)
+
+	got := streamBytesUntilTimeout(t, srv.URL, http.Header{
+		"X-MTrace-Token": []string{"demo-token"},
+		"Last-Event-ID":  []string{"0"},
+	}, 200*time.Millisecond)
+	if strings.Contains(got, "event: backfill_truncated") {
+		t.Errorf("exact-limit must not emit backfill_truncated, got %q", got)
+	}
+	if !strings.Contains(got, "id: 1") || !strings.Contains(got, "id: 2") {
+		t.Errorf("expected both events in backfill, got %q", got)
+	}
+}
+
 // TestSse_Backfill_IgnoresInvalidLastEventID pinnt: ein kaputter
 // Last-Event-ID-Wert (z. B. "abc") darf den Stream nicht 4xx-en —
 // EventSource-Browser senden den Header automatisch.
@@ -283,6 +323,60 @@ func TestSse_Backfill_IgnoresInvalidLastEventID(t *testing.T) {
 		t.Errorf("invalid Last-Event-ID must not 4xx, got %d", resp.StatusCode)
 	}
 	_, _ = io.ReadAll(resp.Body)
+}
+
+// TestSse_DisconnectCleanup pinnt Spec §10a Pflichttest "Client-
+// Disconnect (Server stoppt Loop und gibt Ressourcen frei)": nach
+// Client-Schließen muss der Broker keinen Subscriber mehr halten,
+// die Server-Goroutine darf nicht leaken.
+func TestSse_DisconnectCleanup(t *testing.T) {
+	t.Parallel()
+	broker := application.NewEventBroker()
+	events := inmemory.NewEventRepository()
+	srv := httptest.NewServer(newSseHandler(broker, events, time.Hour))
+	t.Cleanup(srv.Close)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/api/stream-sessions/stream", nil)
+	req.Header.Set("X-MTrace-Token", "demo-token")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		cancel()
+		t.Fatalf("get: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		cancel()
+		_ = resp.Body.Close()
+		t.Fatalf("status = %d want 200", resp.StatusCode)
+	}
+
+	// Wait until the broker registered the subscriber (Subscribe is
+	// async w.r.t. the HTTP handler returning headers).
+	if !waitFor(100*time.Millisecond, func() bool { return broker.SubscriberCount() == 1 }) {
+		cancel()
+		_ = resp.Body.Close()
+		t.Fatalf("subscriber not registered, count=%d", broker.SubscriberCount())
+	}
+
+	// Client-side disconnect: cancel context, close body.
+	cancel()
+	_ = resp.Body.Close()
+
+	// Server-Goroutine räumt asynchron auf — kurzer Wait.
+	if !waitFor(500*time.Millisecond, func() bool { return broker.SubscriberCount() == 0 }) {
+		t.Errorf("subscriber not cleaned up after client disconnect, count=%d", broker.SubscriberCount())
+	}
+}
+
+func waitFor(timeout time.Duration, pred func() bool) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if pred() {
+			return true
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	return pred()
 }
 
 // streamBytesUntilTimeout öffnet den SSE-Endpunkt mit den

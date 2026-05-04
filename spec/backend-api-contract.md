@@ -745,8 +745,11 @@ verlangt den Fallback explizit.
 
 **CORS-Preflight.** `OPTIONS /api/stream-sessions/stream` →
 `Access-Control-Allow-Methods: GET, OPTIONS` und
-`Access-Control-Allow-Headers: Content-Type, X-MTrace-Token,
-X-MTrace-Project, Last-Event-ID`. Origin-Echo nur bei zugelassenem
+`Access-Control-Allow-Headers: Content-Type, X-MTrace-Project,
+X-MTrace-Token, Last-Event-ID`. Reihenfolge der `Allow-Headers` ist
+nicht semantisch (Fetch-Spec behandelt den Wert als ungeordnete
+Liste), aber pinnen die Pflichttests den exakten String, damit Spec-/
+Code-Drift sofort sichtbar wird. Origin-Echo nur bei zugelassenem
 Origin (CORS Variante B); sonst `403`.
 
 **Cross-Project-Scope.** Frames werden nur für Events des
