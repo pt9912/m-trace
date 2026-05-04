@@ -53,6 +53,8 @@ func RunAll(t *testing.T, factory Factory) {
 		{"session_ended as first event creates ended session", testSessionEndedAsFirstEvent},
 		{"trace fields round trip", testTraceFieldsRoundTrip},
 		{"cross-project session isolation", testCrossProjectSessionIsolation},
+		{"session boundaries idempotent round trip", testSessionBoundariesRoundTrip},
+		{"session boundaries cross-project isolation", testSessionBoundariesCrossProject},
 	}
 	for _, c := range cases {
 		c := c
@@ -774,6 +776,105 @@ func assertCrossProjectCorrelationLookup(ctx context.Context, t *testing.T, r Re
 	hitB, err := r.Sessions.GetByCorrelationID(ctx, s.projectB, s.corrB)
 	if err != nil || hitB.ProjectID != s.projectB || hitB.ID != s.shared {
 		t.Errorf("GetByCorrelationID(B, corrB): %+v, %v", hitB, err)
+	}
+}
+
+// testSessionBoundariesRoundTrip prüft den AppendBoundaries +
+// ListBoundariesForSession-Pfad: Persistenz, Read-Shape-Sortierung
+// (kind asc, adapter asc, reason asc) und Idempotenz bei
+// Mehrfach-Sends desselben Tripels.
+func testSessionBoundariesRoundTrip(t *testing.T, factory Factory) {
+	ctx := context.Background()
+	r := factory(t)
+	t0 := time.Date(2026, 5, 4, 10, 0, 0, 0, time.UTC)
+
+	// Eine valide Session anlegen, sodass das FK-Constraint im SQLite-
+	// Adapter (FOREIGN KEY → stream_sessions) erfüllt ist.
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{
+		mkEvent(r.Sequencer, "demo", "s1", t0, nil),
+	}); err != nil {
+		t.Fatalf("seed session: %v", err)
+	}
+
+	// Drei distinkte Tripel + ein Duplikat des ersten Tripels mit
+	// späterem Timestamp. Insert-Reihenfolge ist absichtlich nicht
+	// alphabetisch — der Read-Pfad muss die Sortierung herstellen.
+	first := domain.SessionBoundary{
+		Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+		NetworkKind: "segment", Adapter: "native_hls", Reason: "native_hls_unavailable",
+		ClientTimestamp: t0, ServerReceivedAt: t0,
+	}
+	second := domain.SessionBoundary{
+		Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+		NetworkKind: "manifest", Adapter: "hls.js", Reason: "cors_timing_blocked",
+		ClientTimestamp: t0, ServerReceivedAt: t0,
+	}
+	third := domain.SessionBoundary{
+		Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+		NetworkKind: "manifest", Adapter: "hls.js", Reason: "browser_api_unavailable",
+		ClientTimestamp: t0, ServerReceivedAt: t0,
+	}
+	dupOfFirst := first
+	dupOfFirst.ClientTimestamp = t0.Add(time.Hour)
+	dupOfFirst.ServerReceivedAt = t0.Add(time.Hour)
+
+	if err := r.Sessions.AppendBoundaries(ctx, []domain.SessionBoundary{first, second, third, dupOfFirst}); err != nil {
+		t.Fatalf("AppendBoundaries: %v", err)
+	}
+
+	got, err := r.Sessions.ListBoundariesForSession(ctx, "demo", "s1")
+	if err != nil {
+		t.Fatalf("ListBoundariesForSession: %v", err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 deduped boundaries, got %d (%+v)", len(got), got)
+	}
+	// Read-Shape-Sortierung: kind asc → adapter asc → reason asc.
+	if got[0].Adapter != "hls.js" || got[0].Reason != "browser_api_unavailable" {
+		t.Errorf("got[0] = %+v want adapter=hls.js reason=browser_api_unavailable", got[0])
+	}
+	if got[1].Adapter != "hls.js" || got[1].Reason != "cors_timing_blocked" {
+		t.Errorf("got[1] = %+v want adapter=hls.js reason=cors_timing_blocked", got[1])
+	}
+	if got[2].Adapter != "native_hls" || got[2].Reason != "native_hls_unavailable" {
+		t.Errorf("got[2] = %+v want adapter=native_hls reason=native_hls_unavailable", got[2])
+	}
+	// Idempotenz: Duplikat muss die spätere Timestamp persistieren.
+	if !got[2].ServerReceivedAt.Equal(t0.Add(time.Hour)) {
+		t.Errorf("duplicate triple should refresh server_received_at, got %v", got[2].ServerReceivedAt)
+	}
+}
+
+// testSessionBoundariesCrossProject prüft, dass Boundaries einer
+// Session aus Project A nicht über einen Lookup in Project B
+// auftauchen — gleiche session_id in beiden Projekten.
+func testSessionBoundariesCrossProject(t *testing.T, factory Factory) {
+	ctx := context.Background()
+	r := factory(t)
+	t0 := time.Date(2026, 5, 4, 11, 0, 0, 0, time.UTC)
+
+	if _, err := r.Sessions.UpsertFromEvents(ctx, []domain.PlaybackEvent{
+		mkEvent(r.Sequencer, "demo", "shared", t0, nil),
+		mkEvent(r.Sequencer, "other", "shared", t0, nil),
+	}); err != nil {
+		t.Fatalf("seed sessions: %v", err)
+	}
+
+	if err := r.Sessions.AppendBoundaries(ctx, []domain.SessionBoundary{{
+		Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "shared",
+		NetworkKind: "segment", Adapter: "hls.js", Reason: "service_worker_opaque",
+		ClientTimestamp: t0, ServerReceivedAt: t0,
+	}}); err != nil {
+		t.Fatalf("AppendBoundaries: %v", err)
+	}
+
+	demo, err := r.Sessions.ListBoundariesForSession(ctx, "demo", "shared")
+	if err != nil || len(demo) != 1 {
+		t.Errorf("demo boundaries = %+v, %v", demo, err)
+	}
+	other, err := r.Sessions.ListBoundariesForSession(ctx, "other", "shared")
+	if err != nil || len(other) != 0 {
+		t.Errorf("other (cross-project) must not see demo boundaries: %+v, %v", other, err)
 	}
 }
 

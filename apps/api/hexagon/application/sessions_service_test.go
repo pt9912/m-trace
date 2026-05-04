@@ -131,6 +131,14 @@ func (r *fakeSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Durati
 	return nil
 }
 
+func (r *fakeSessionRepo) AppendBoundaries(_ context.Context, _ []domain.SessionBoundary) error {
+	return nil
+}
+
+func (r *fakeSessionRepo) ListBoundariesForSession(_ context.Context, _, _ string) ([]domain.SessionBoundary, error) {
+	return nil, nil
+}
+
 func (r *fakeSessionRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {
 	return 0, nil
 }

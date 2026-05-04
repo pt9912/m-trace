@@ -31,12 +31,31 @@ type sessionKey struct {
 type SessionRepository struct {
 	mu       sync.Mutex
 	sessions map[sessionKey]domain.StreamSession
+	// boundaries persistiert `session_boundaries[]`-Einträge pro
+	// `(project_id, session_id)`-Partition als Tripel-Map
+	// (kind/network_kind/adapter/reason → SessionBoundary). Mehrfach-
+	// Sends derselben Tripel sind idempotent (Read-Pfad dedupliziert).
+	boundaries map[sessionKey]map[boundaryTripleKey]domain.SessionBoundary
+}
+
+// boundaryTripleKey ist der Read-Shape-Dedup-Schlüssel
+// (spec/backend-api-contract.md §3.7.1: stabile Sortierung nach
+// kind/adapter/reason; doppelte Tripel werden im Read-Shape
+// dedupliziert). `network_kind` ist Bestandteil von `kind` aus dem
+// Event-Block-Sicht (manifest|segment), bleibt im Boundary-Datensatz
+// aber ein eigenständiges Feld.
+type boundaryTripleKey struct {
+	Kind        string
+	NetworkKind string
+	Adapter     string
+	Reason      string
 }
 
 // NewSessionRepository konstruiert ein leeres Repository.
 func NewSessionRepository() *SessionRepository {
 	return &SessionRepository{
-		sessions: make(map[sessionKey]domain.StreamSession),
+		sessions:   make(map[sessionKey]domain.StreamSession),
+		boundaries: make(map[sessionKey]map[boundaryTripleKey]domain.SessionBoundary),
 	}
 }
 
@@ -231,6 +250,66 @@ func sessionPageCursorPasses(s domain.StreamSession, after driven.SessionCursorP
 		return s.StartedAt.Before(after.StartedAt)
 	}
 	return s.ID > after.SessionID
+}
+
+// AppendBoundaries persistiert die übergebenen Boundaries in den
+// session-skopierten Boundary-Store (plan-0.4.0 §4.4 D2). Mehrfach-
+// Sends derselben Tripel `(kind, network_kind, adapter, reason)` für
+// eine Session sind idempotent — der spätere Datensatz überschreibt
+// den vorherigen (auf Timestamp-Ebene), ohne neue Read-Shape-Einträge
+// zu erzeugen. Eine leere Liste ist no-op.
+func (r *SessionRepository) AppendBoundaries(_ context.Context, boundaries []domain.SessionBoundary) error {
+	if len(boundaries) == 0 {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, b := range boundaries {
+		key := sessionKey{ProjectID: b.ProjectID, SessionID: b.SessionID}
+		bucket, ok := r.boundaries[key]
+		if !ok {
+			bucket = make(map[boundaryTripleKey]domain.SessionBoundary)
+			r.boundaries[key] = bucket
+		}
+		triple := boundaryTripleKey{
+			Kind:        b.Kind,
+			NetworkKind: b.NetworkKind,
+			Adapter:     b.Adapter,
+			Reason:      b.Reason,
+		}
+		bucket[triple] = b
+	}
+	return nil
+}
+
+// ListBoundariesForSession liefert die persistierten Boundaries einer
+// Session in stabiler Read-Shape-Sortierung (kind asc, adapter asc,
+// reason asc) — siehe spec/backend-api-contract.md §3.7.1.
+// Tripel-Duplikate sind durch die Insert-Logik bereits eliminiert.
+// Cross-Project-Treffer sind ausgeschlossen (Composite-Key beinhaltet
+// project_id).
+func (r *SessionRepository) ListBoundariesForSession(_ context.Context, projectID, sessionID string) ([]domain.SessionBoundary, error) {
+	r.mu.Lock()
+	bucket, ok := r.boundaries[sessionKey{ProjectID: projectID, SessionID: sessionID}]
+	if !ok {
+		r.mu.Unlock()
+		return nil, nil
+	}
+	out := make([]domain.SessionBoundary, 0, len(bucket))
+	for _, b := range bucket {
+		out = append(out, b)
+	}
+	r.mu.Unlock()
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Kind != out[j].Kind {
+			return out[i].Kind < out[j].Kind
+		}
+		if out[i].Adapter != out[j].Adapter {
+			return out[i].Adapter < out[j].Adapter
+		}
+		return out[i].Reason < out[j].Reason
+	})
+	return out, nil
 }
 
 var _ driven.SessionRepository = (*SessionRepository)(nil)

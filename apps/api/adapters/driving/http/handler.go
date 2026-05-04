@@ -184,6 +184,7 @@ func (h *PlaybackEventsHandler) serve(
 		Origin:        r.Header.Get("Origin"),
 		ClientIP:      clientIPFromRequest(r),
 		Events:        toEventInputs(payload.Events),
+		Boundaries:    toBoundaryInputs(payload.SessionBoundaries),
 		Trace: driving.BatchTraceContext{
 			TraceID: spanCtx.TraceID().String(),
 			SpanID:  spanCtx.SpanID().String(),

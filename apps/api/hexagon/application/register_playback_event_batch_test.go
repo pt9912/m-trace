@@ -79,6 +79,12 @@ type stubSessionRepo struct {
 	// getError lässt Tests einen DB-Fehler-Pfad simulieren (Get
 	// returnt einen anderen Fehler als domain.ErrSessionNotFound).
 	getError error
+	// boundaries zeichnet die Aufrufe von AppendBoundaries auf, damit
+	// §4.4 D2-Tests die persistierten Wrapper-Records prüfen können.
+	boundaries [][]domain.SessionBoundary
+	// boundariesFailNext lässt Tests einen Fehler-Pfad nach erfolgreichem
+	// UpsertFromEvents simulieren.
+	boundariesFailNext bool
 }
 
 func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) (map[string]string, error) {
@@ -115,6 +121,21 @@ func (s *stubSessionRepo) Get(_ context.Context, _ string, sessionID string) (do
 
 func (s *stubSessionRepo) GetByCorrelationID(_ context.Context, _ string, _ string) (domain.StreamSession, error) {
 	return domain.StreamSession{}, domain.ErrSessionNotFound
+}
+
+func (s *stubSessionRepo) AppendBoundaries(_ context.Context, boundaries []domain.SessionBoundary) error {
+	if s.boundariesFailNext {
+		s.boundariesFailNext = false
+		return errors.New("boundary repo failure")
+	}
+	dup := make([]domain.SessionBoundary, len(boundaries))
+	copy(dup, boundaries)
+	s.boundaries = append(s.boundaries, dup)
+	return nil
+}
+
+func (s *stubSessionRepo) ListBoundariesForSession(_ context.Context, _, _ string) ([]domain.SessionBoundary, error) {
+	return nil, nil
 }
 
 func (s *stubSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Duration) error {

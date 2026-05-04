@@ -41,6 +41,12 @@ func (r *recordingRepo) GetByCorrelationID(_ context.Context, _ string, _ string
 func (r *recordingRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {
 	return 0, nil
 }
+func (r *recordingRepo) AppendBoundaries(_ context.Context, _ []domain.SessionBoundary) error {
+	return nil
+}
+func (r *recordingRepo) ListBoundariesForSession(_ context.Context, _, _ string) ([]domain.SessionBoundary, error) {
+	return nil, nil
+}
 func (r *recordingRepo) Sweep(_ context.Context, now time.Time, stalled, ended time.Duration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

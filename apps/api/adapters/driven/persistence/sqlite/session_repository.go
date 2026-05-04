@@ -115,6 +115,32 @@ WHERE state = 'active' AND last_seen_at < ?`
 UPDATE stream_sessions
 SET state = 'ended', ended_at = ?
 WHERE state = 'stalled' AND last_seen_at < ?`
+
+	// Tranche 3 §4.4 D2: Insert-or-Refresh für `session_boundaries[]`.
+	// Read-Shape (§3.7.1) dedupliziert per Tripel
+	// `(kind, network_kind, adapter, reason)`; ON CONFLICT auf dem PK
+	// hält die Persistenz idempotent — Mehrfach-Sends derselben Tripel
+	// erzeugen keine zusätzlichen Datensätze und erneuern lediglich
+	// die Timestamps.
+	upsertSessionBoundarySQL = `
+INSERT INTO stream_session_boundaries(
+    project_id, session_id, kind, network_kind, adapter, reason,
+    client_timestamp, server_received_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(project_id, session_id, kind, network_kind, adapter, reason)
+DO UPDATE SET
+    client_timestamp   = excluded.client_timestamp,
+    server_received_at = excluded.server_received_at`
+
+	// Read-Shape-Sortierung gemäß spec/backend-api-contract.md §3.7.1:
+	// stabile Sortierung nach (kind, adapter, reason). Doppelte Tripel
+	// gibt es per Composite-PK nicht; eine zusätzliche DISTINCT-Klausel
+	// ist nicht nötig.
+	listBoundariesForSessionSQL = `
+SELECT kind, network_kind, adapter, reason, client_timestamp, server_received_at
+FROM stream_session_boundaries
+WHERE project_id = ? AND session_id = ?
+ORDER BY kind ASC, adapter ASC, reason ASC`
 )
 
 // UpsertFromEvents legt unbekannte Sessions an und aktualisiert bekannte
@@ -450,6 +476,93 @@ func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
 		EndedAt:       endedAt,
 		EventCount:    eventCount,
 		CorrelationID: stringFromNull(correlationID),
+	}, nil
+}
+
+// AppendBoundaries persistiert `session_boundaries[]`-Einträge in die
+// durable `stream_session_boundaries`-Tabelle (plan-0.4.0 §4.4 D2;
+// V3-Migration). Mehrfach-Sends derselben Tripel
+// `(kind, network_kind, adapter, reason)` für eine Session sind
+// idempotent — die Insert-Or-Refresh-Klausel hält die Tripel-Eindeutig-
+// keit pro Session und aktualisiert nur `client_timestamp` und
+// `server_received_at`. Eine leere Liste ist no-op.
+func (r *SessionRepository) AppendBoundaries(ctx context.Context, boundaries []domain.SessionBoundary) error {
+	if len(boundaries) == 0 {
+		return nil
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("sqlite: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	for _, b := range boundaries {
+		if _, err := tx.ExecContext(ctx, upsertSessionBoundarySQL,
+			b.ProjectID, b.SessionID, b.Kind, b.NetworkKind, b.Adapter, b.Reason,
+			formatTime(b.ClientTimestamp), formatTime(b.ServerReceivedAt),
+		); err != nil {
+			return fmt.Errorf("sqlite: append boundary: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("sqlite: commit boundaries: %w", err)
+	}
+	return nil
+}
+
+// ListBoundariesForSession liefert die persistierten Boundaries einer
+// `(projectID, sessionID)`-Partition in stabiler Read-Shape-Sortierung
+// (kind, adapter, reason) — spec/backend-api-contract.md §3.7.1.
+// Cross-Project-Treffer sind ausgeschlossen (project-skopiertes WHERE).
+// Eine Session ohne Boundaries liefert eine leere Slice (`nil`).
+func (r *SessionRepository) ListBoundariesForSession(ctx context.Context, projectID, sessionID string) ([]domain.SessionBoundary, error) {
+	rows, err := r.db.QueryContext(ctx, listBoundariesForSessionSQL, projectID, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: query boundaries: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var out []domain.SessionBoundary
+	for rows.Next() {
+		b, scanErr := scanBoundary(rows, projectID, sessionID)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		out = append(out, b)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sqlite: iterate boundaries: %w", err)
+	}
+	return out, nil
+}
+
+func scanBoundary(rows *sql.Rows, projectID, sessionID string) (domain.SessionBoundary, error) {
+	var (
+		kind        string
+		networkKind string
+		adapter     string
+		reason      string
+		clientTS    string
+		serverTS    string
+	)
+	if err := rows.Scan(&kind, &networkKind, &adapter, &reason, &clientTS, &serverTS); err != nil {
+		return domain.SessionBoundary{}, fmt.Errorf("sqlite: scan boundary: %w", err)
+	}
+	clientTime, err := parseTime(clientTS)
+	if err != nil {
+		return domain.SessionBoundary{}, err
+	}
+	serverTime, err := parseTime(serverTS)
+	if err != nil {
+		return domain.SessionBoundary{}, err
+	}
+	return domain.SessionBoundary{
+		Kind:             kind,
+		ProjectID:        projectID,
+		SessionID:        sessionID,
+		NetworkKind:      networkKind,
+		Adapter:          adapter,
+		Reason:           reason,
+		ClientTimestamp:  clientTime,
+		ServerReceivedAt: serverTime,
 	}, nil
 }
 

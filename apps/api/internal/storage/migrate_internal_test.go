@@ -30,6 +30,7 @@ func TestOpen_FreshStart(t *testing.T) {
 		"playback_events",
 		"projects",
 		"schema_migrations",
+		"stream_session_boundaries",
 		"stream_sessions",
 	}
 	if got := tableNames(t, db); !equalSlices(got, wantTables) {
@@ -40,16 +41,20 @@ func TestOpen_FreshStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read schema_migrations: %v", err)
 	}
-	// Ab plan-0.4.0 §4.2 zwei Migrations-Files (V1 baseline + V2
-	// project-scoped session PK); ein Fresh-Start läuft beide an.
-	if len(rows) != 2 {
-		t.Fatalf("schema_migrations rows = %d, want 2", len(rows))
+	// Ab plan-0.4.0 §4.4 D2 drei Migrations-Files (V1 baseline + V2
+	// project-scoped session PK + V3 session_boundaries); ein
+	// Fresh-Start läuft alle drei an.
+	if len(rows) != 3 {
+		t.Fatalf("schema_migrations rows = %d, want 3", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
 	}
 	if rows[1].version != 2 || rows[1].dirty != 0 {
 		t.Errorf("row[1] = %+v, want version=2 dirty=0", rows[1])
+	}
+	if rows[2].version != 3 || rows[2].dirty != 0 {
+		t.Errorf("row[2] = %+v, want version=3 dirty=0", rows[2])
 	}
 }
 

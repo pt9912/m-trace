@@ -110,6 +110,21 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, err
 	}
 
+	// plan-0.4.0 §4.4 D2: `session_boundaries[]` atomar mit den Events
+	// validieren — invalider Block persistiert weder Events noch
+	// Boundaries und erhöht `accepted` nicht (API-Kontrakt §3.4). Die
+	// Validation läuft nach den Event-Pflichtchecks, damit der
+	// Partition-Match (Boundary referenziert eine Session, die im
+	// selben Batch ein Event trägt) auf den geparsten Events arbeitet.
+	eventSessions := collectEventSessions(parsed)
+	boundaries, err := parseAndValidateBoundaries(
+		in.Boundaries, project.ID, eventSessions, u.now().UTC(),
+	)
+	if err != nil {
+		u.metrics.InvalidEvents(len(in.Events))
+		return driving.BatchResult{}, err
+	}
+
 	correlations, err := u.resolveCorrelationIDs(ctx, parsed)
 	if err != nil {
 		return driving.BatchResult{}, err
@@ -143,6 +158,14 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 			parsed[i].CorrelationID = cid
 			correlations[parsed[i].SessionID] = cid
 		}
+	}
+	// plan-0.4.0 §4.4 D2: Boundaries nach Sessions-Upsert persistieren,
+	// damit der Boundary-Record auf eine in `stream_sessions`-bestätigte
+	// Partition verweist. Reihenfolge bleibt: Sessions → Boundaries →
+	// Events; ein Boundary-Append-Fehler bricht den Batch ab, ohne
+	// dass die Events bereits geschrieben wurden.
+	if err := u.sessions.AppendBoundaries(ctx, boundaries); err != nil {
+		return driving.BatchResult{}, err
 	}
 	if err := u.events.Append(ctx, parsed); err != nil {
 		return driving.BatchResult{}, err
@@ -299,6 +322,18 @@ func (u *RegisterPlaybackEventBatchUseCase) resolveCorrelationIDs(
 		}
 	}
 	return out, nil
+}
+
+// collectEventSessions sammelt die Set der `session_id`-Werte, die im
+// geparsten Event-Array vorkommen. Boundary-Validation prüft gegen
+// dieses Set, dass jede Boundary einer Partition mit mindestens einem
+// Event im selben Batch zugeordnet ist (API-Kontrakt §3.4).
+func collectEventSessions(events []domain.PlaybackEvent) map[string]struct{} {
+	out := make(map[string]struct{}, len(events))
+	for _, e := range events {
+		out[e.SessionID] = struct{}{}
+	}
+	return out
 }
 
 // singleSessionCorrelationID liefert die einzige CorrelationID, wenn

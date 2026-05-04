@@ -24,9 +24,42 @@ type wireSDK struct {
 	Version string `json:"version"`
 }
 
+// wireBoundary spiegelt einen Eintrag aus dem optionalen
+// `session_boundaries[]`-Block (API-Kontrakt §3.4). Use-Case validiert
+// alle Felder; HTTP-Adapter dekodiert nur das Wire-Format.
+type wireBoundary struct {
+	Kind            string `json:"kind"`
+	ProjectID       string `json:"project_id"`
+	SessionID       string `json:"session_id"`
+	NetworkKind     string `json:"network_kind"`
+	Adapter         string `json:"adapter"`
+	Reason          string `json:"reason"`
+	ClientTimestamp string `json:"client_timestamp"`
+}
+
 type wireBatch struct {
-	SchemaVersion string      `json:"schema_version"`
-	Events        []wireEvent `json:"events"`
+	SchemaVersion     string         `json:"schema_version"`
+	Events            []wireEvent    `json:"events"`
+	SessionBoundaries []wireBoundary `json:"session_boundaries,omitempty"`
+}
+
+func toBoundaryInputs(boundaries []wireBoundary) []driving.BoundaryInput {
+	if len(boundaries) == 0 {
+		return nil
+	}
+	out := make([]driving.BoundaryInput, len(boundaries))
+	for i, b := range boundaries {
+		out[i] = driving.BoundaryInput{
+			Kind:            b.Kind,
+			ProjectID:       b.ProjectID,
+			SessionID:       b.SessionID,
+			NetworkKind:     b.NetworkKind,
+			Adapter:         b.Adapter,
+			Reason:          b.Reason,
+			ClientTimestamp: b.ClientTimestamp,
+		}
+	}
+	return out
 }
 
 func toEventInputs(events []wireEvent) []driving.EventInput {

@@ -66,6 +66,48 @@ tables:
         type: check
         expression: "state IN ('active', 'stalled', 'ended')"
 
+  stream_session_boundaries:
+    columns:
+      project_id:
+        type: text
+        required: true
+      session_id:
+        type: text
+        required: true
+      kind:
+        type: text
+        required: true
+      network_kind:
+        type: text
+        required: true
+      adapter:
+        type: text
+        required: true
+      reason:
+        type: text
+        required: true
+      client_timestamp:
+        type: datetime
+        required: true
+      server_received_at:
+        type: datetime
+        required: true
+    primary_key: [project_id, session_id, kind, network_kind, adapter, reason]
+    indices:
+      - name: idx_stream_session_boundaries_session
+        columns: [project_id, session_id]
+        type: btree
+    constraints:
+      - name: chk_stream_session_boundaries_kind
+        type: check
+        expression: "kind IN ('network_signal_absent')"
+      - name: chk_stream_session_boundaries_network_kind
+        type: check
+        expression: "network_kind IN ('manifest', 'segment')"
+      - name: chk_stream_session_boundaries_adapter
+        type: check
+        expression: "adapter IN ('hls.js', 'native_hls', 'unknown')"
+
   playback_events:
     columns:
       ingest_sequence:

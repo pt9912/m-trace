@@ -30,6 +30,13 @@ type BatchInput struct {
 	Origin        string
 	ClientIP      string
 	Events        []EventInput
+	// Boundaries ist der optionale `session_boundaries[]`-Wrapper aus
+	// API-Kontrakt §3.4 (plan-0.4.0 §4.4). Maximal 20 pro Batch, jede
+	// Boundary muss eine `(project_id, session_id)`-Partition
+	// referenzieren, für die mindestens ein Event im selben Batch
+	// existiert. Use-Case validiert atomar; Verstöße liefern 422 und
+	// persistieren weder Events noch Boundaries.
+	Boundaries []BoundaryInput
 	// Trace ist der vom HTTP-Adapter aufgelöste Trace-Kontext für
 	// diesen Batch (siehe spec/telemetry-model.md §2.5). Adapter füllt
 	// `TraceID` und `SpanID` mit den IDs des Server-Spans (entweder als
@@ -65,6 +72,20 @@ type EventInput struct {
 type SDKInput struct {
 	Name    string
 	Version string
+}
+
+// BoundaryInput is the wire-format-neutral representation eines
+// `session_boundaries[]`-Eintrags (API-Kontrakt §3.4). Use-Case
+// validiert Pflichtfelder, Reason-Enum/Pattern und Partition-Match
+// gegen die Events des Batches.
+type BoundaryInput struct {
+	Kind            string
+	ProjectID       string
+	SessionID       string
+	NetworkKind     string
+	Adapter         string
+	Reason          string
+	ClientTimestamp string
 }
 
 // BatchResult is what the use case returns on success. Trace-relevante

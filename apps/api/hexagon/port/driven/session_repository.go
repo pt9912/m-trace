@@ -36,6 +36,24 @@ type SessionRepository interface {
 	// persistiert wird. Ein Batch ist single-project (validiert in der
 	// Application-Schicht), darum reicht SessionID als Map-Key.
 	UpsertFromEvents(ctx context.Context, events []domain.PlaybackEvent) (map[string]string, error)
+	// AppendBoundaries persistiert die im Batch übergebenen
+	// `session_boundaries[]`-Einträge in einen durable Session-Metadaten-
+	// Store (plan-0.4.0 §4.4 D2; spec/telemetry-model.md §1.4). Aufruf
+	// erfolgt im Use-Case nach erfolgreichem UpsertFromEvents und vor
+	// EventRepository.Append. Mehrfach-Sends derselben Tripel
+	// `(kind, network_kind, adapter, reason)` für eine Session sind
+	// idempotent (Read-Pfad dedupliziert per Tripel; Adapter SHOULD
+	// ON CONFLICT DO UPDATE auf `client_timestamp`/`server_received_at`).
+	// Eine leere Liste ist no-op.
+	AppendBoundaries(ctx context.Context, boundaries []domain.SessionBoundary) error
+	// ListBoundariesForSession liefert die persistierten
+	// `session_boundaries[]`-Einträge einer (projectID, sessionID)-
+	// Partition in Read-Shape-Sortierung (kind asc, adapter asc,
+	// reason asc) mit Tripel-Dedup über
+	// (kind, network_kind, adapter, reason). Keine Boundaries → leere
+	// Slice (`nil` oder `[]`); Cross-Project-Treffer liefern `nil`.
+	// Spec-Anker spec/backend-api-contract.md §3.7.1.
+	ListBoundariesForSession(ctx context.Context, projectID, sessionID string) ([]domain.SessionBoundary, error)
 	// List gibt Sessions in stabiler Sortierung (started_at desc,
 	// session_id asc) zurück, gefiltert nach q.ProjectID. Der Adapter
 	// ist für die Sortierung verantwortlich; der Use Case clampt nur
