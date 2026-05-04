@@ -105,6 +105,60 @@ Each batch uses `schema_version: "1.0"` and includes SDK metadata on every
 event. The full wire contract is described in
 [`spec/telemetry-model.md`](../../spec/telemetry-model.md).
 
+### hls.js Mapping (network events)
+
+`attachHlsJs` maps native hls.js callbacks onto `manifest_loaded` and
+`segment_loaded` events. The mapping is kept narrow and explicit so
+retries and redirects do not generate semantic duplicates. Reference:
+`docs/planning/in-progress/plan-0.4.0.md` §4.6,
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §1.4.
+
+| m-trace event | hls.js source | Trigger | Dedup key (per session) |
+|---|---|---|---|
+| `manifest_loaded` (initial) | `MANIFEST_LOADED` | The master/media playlist is loaded the first time. Fires once per session under nominal conditions. | `("manifest", level=-1)` for the master, `("level", level=N)` per loaded variant level (additive when LEVEL_LOADED also fires). |
+| `manifest_loaded` (reload) | `LEVEL_LOADED` | Live media-playlist reloads, ABR-driven level switches that re-fetch the playlist, master refresh. Each reload emits a fresh event. | `("level", level=N, refresh=monotonic)` — refresh counter is per-`level` and ticks on every LEVEL_LOADED, so periodic reloads are surfaced. |
+| `segment_loaded` | `FRAG_LOADED` (success only) | Each successful fragment fetch, including init segments. hls.js does not emit FRAG_LOADED for failed retries (those go via FRAG_LOAD_ERROR / FRAG_LOAD_EMERGENCY_ABORTED), so retries do not duplicate. | `(level, type, sn, cc, isInit)` — `sn === "initSegment"` toggles `isInit`. |
+
+The dedup keys are derived exclusively from hls.js-native fragment
+identifiers (`sn`, `cc`, `type`, `level`, init-segment marker) plus the
+SDK session context (`project_id`, `session_id`, sequence). Redacted
+URLs are persisted as diagnostics under `meta.network.redacted_url`
+and **must not** be used as dedup keys — signed URLs change on every
+refresh even though the underlying fragment identity stays stable.
+
+Each emitted event carries the reserved meta keys from
+`spec/telemetry-model.md` §1.4:
+
+- `network.kind` — `"manifest"` or `"segment"`.
+- `network.detail_status` — `"available"` when timing or URL data is
+  usable after redaction; `"network_detail_unavailable"` when the
+  browser, CORS, Resource Timing, Service Worker, native HLS or a CDN
+  redirect blocks the detail. Documented degradation only.
+- `network.unavailable_reason` — set only when `detail_status` is
+  `"network_detail_unavailable"`. Reason enum from
+  `contracts/event-schema.json#network_unavailable_reasons`.
+- `network.redacted_url` — already-redacted URL representative
+  (scheme + host + non-token path segments only). The SDK redacts
+  fragments, queries, userinfo, signed query parameters, and
+  token-like path segments before sending; the API rejects raw URLs
+  in this key with `422`.
+
+### URL redaction at the SDK boundary
+
+The SDK applies the `spec/telemetry-model.md` §1.4 redaction matrix
+**before** the URL leaves the browser. Tokens never reach the
+collector, regardless of the browser's `connect-src` policy:
+
+- query string and fragment are dropped;
+- userinfo (`user:pass@`) is dropped;
+- token-like path segments (≥ 24 chars and ≥ 80 % `[A-Za-z0-9_-]`,
+  even hex ≥ 32, JWT-like three base64url blocks) are replaced with
+  `:redacted`;
+- prefer the network event's redacted URL over `meta.url` /
+  `meta.segment_url` / `meta.manifest_url` — those generic keys are
+  redacted defensively too, but `network.redacted_url` is the
+  documented surface.
+
 The tracker keeps batches within the API limits of 100 events and 256 KiB
 request body size. If a single event cannot fit into one request body, it is
 dropped during `flush()` instead of sending a payload the API must reject.
