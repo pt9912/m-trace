@@ -310,17 +310,18 @@ describe("startSseClient", () => {
 
   it("disconnect cancels a pending reconnect timer (F1)", async () => {
     // Server liefert 500 → Reconnect wird mit Backoff scheduled.
-    // schedule speichert die Cancel-Handle-Aufrufe; disconnect()
-    // muss den noch nicht gefeuerten Timer kassieren.
+    // schedule speichert den Timer-Callback; disconnect() muss den
+    // noch nicht gefeuerten Timer kassieren und auch ein spaeteres
+    // Callback-Feuern darf keinen zweiten Fetch starten.
     const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(
       async () => new Response("nope", { status: 500 })
     );
     const cancelCalls: string[] = [];
+    const callbacks: Array<() => void> = [];
     let scheduleId = 0;
     const schedule = (cb: () => void) => {
       const id = `t${++scheduleId}`;
-      // Timer NICHT feuern — wir wollen einen "pending" Reconnect.
-      void cb;
+      callbacks.push(cb);
       return () => {
         cancelCalls.push(id);
       };
@@ -340,6 +341,51 @@ describe("startSseClient", () => {
     // disconnect() muss die zuletzt gespeicherte Cancel-Handle gerufen
     // haben (mindestens eine cancel-call landet im Array).
     expect(cancelCalls.length).toBeGreaterThanOrEqual(1);
+    callbacks[0]?.();
+    await flushAsyncTicks();
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("fired reconnect timer is no longer cancelled on later disconnect", async () => {
+    const fetchMock = vi
+      .fn<(url: string, init?: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(new Response("nope", { status: 500 }))
+      .mockResolvedValueOnce(
+        new Response(
+          new ReadableStream<Uint8Array>({
+            pull() {
+              return new Promise(() => undefined);
+            }
+          }),
+          { status: 200 }
+        )
+      );
+    const callbacks: Array<() => void> = [];
+    const cancelCalls: string[] = [];
+    let scheduleId = 0;
+    const schedule = (cb: () => void) => {
+      const id = `t${++scheduleId}`;
+      callbacks.push(cb);
+      return () => {
+        cancelCalls.push(id);
+      };
+    };
+    const client = startSseClient({
+      url: "/api/stream-sessions/stream",
+      token: "demo-token",
+      onAppended: () => undefined,
+      fetchFn: fetchMock,
+      schedule
+    });
+    await flushAsyncTicks();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    callbacks[0]?.();
+    await flushAsyncTicks();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(cancelCalls).toEqual([]);
+
+    client.disconnect();
+    expect(cancelCalls).toEqual([]);
   });
 
   it("disconnect aborts the in-flight fetch", async () => {

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -330,7 +331,6 @@ func TestSse_Backfill_IgnoresInvalidLastEventID(t *testing.T) {
 // Client-Schließen muss der Broker keinen Subscriber mehr halten,
 // die Server-Goroutine darf nicht leaken.
 func TestSse_DisconnectCleanup(t *testing.T) {
-	t.Parallel()
 	broker := application.NewEventBroker()
 	events := inmemory.NewEventRepository()
 	srv := httptest.NewServer(newSseHandler(broker, events, time.Hour))
@@ -357,14 +357,25 @@ func TestSse_DisconnectCleanup(t *testing.T) {
 		_ = resp.Body.Close()
 		t.Fatalf("subscriber not registered, count=%d", broker.SubscriberCount())
 	}
+	if !waitFor(100*time.Millisecond, func() bool { return sseHandlerGoroutineCount() > 0 }) {
+		cancel()
+		_ = resp.Body.Close()
+		t.Fatalf("SSE handler goroutine not observed before disconnect")
+	}
 
 	// Client-side disconnect: cancel context, close body.
 	cancel()
 	_ = resp.Body.Close()
 
-	// Server-Goroutine räumt asynchron auf — kurzer Wait.
+	// Broker-Cleanup und Server-Loop-Ende passieren asynchron nach
+	// dem Client-Disconnect. Beide Invarianten sind relevant: der
+	// Broker darf keinen Slot behalten, und der Handler darf trotz
+	// Hour-Heartbeat nicht im select hängen bleiben.
 	if !waitFor(500*time.Millisecond, func() bool { return broker.SubscriberCount() == 0 }) {
 		t.Errorf("subscriber not cleaned up after client disconnect, count=%d", broker.SubscriberCount())
+	}
+	if !waitFor(500*time.Millisecond, func() bool { return sseHandlerGoroutineCount() == 0 }) {
+		t.Errorf("SSE handler goroutine still running after client disconnect")
 	}
 }
 
@@ -377,6 +388,17 @@ func waitFor(timeout time.Duration, pred func() bool) bool {
 		time.Sleep(5 * time.Millisecond)
 	}
 	return pred()
+}
+
+func sseHandlerGoroutineCount() int {
+	buf := make([]byte, 1<<16)
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			return strings.Count(string(buf[:n]), "SseStreamHandler).ServeHTTP")
+		}
+		buf = make([]byte, len(buf)*2)
+	}
 }
 
 // streamBytesUntilTimeout öffnet den SSE-Endpunkt mit den
