@@ -13,6 +13,8 @@ const apiState = vi.hoisted(() => ({
     started_at: string;
     last_event_at: string;
     event_count: number;
+    network_signal_absent: Array<{ kind: string; adapter: string; reason: string }>;
+    end_source: "client" | "sweeper" | null;
   }>,
   events: [] as Array<{
     event_name: string;
@@ -23,7 +25,9 @@ const apiState = vi.hoisted(() => ({
     ingest_sequence: number;
     sequence_number?: number;
     sdk: { name: string; version: string };
+    delivery_status?: "accepted" | "duplicate_suspected" | "replayed";
   }>,
+  nextCursor: undefined as string | undefined,
   listSessionsError: undefined as Error | undefined,
   getSessionError: undefined as Error | undefined,
   health: { ok: true, status: 200, text: "ok" }
@@ -45,7 +49,9 @@ const sessions = [
     state: "active",
     started_at: "2026-04-30T00:00:00.000Z",
     last_event_at: "2026-04-30T00:00:02.000Z",
-    event_count: 3
+    event_count: 3,
+    network_signal_absent: [] as Array<{ kind: string; adapter: string; reason: string }>,
+    end_source: null as "client" | "sweeper" | null
   },
   {
     session_id: "session-2",
@@ -53,7 +59,9 @@ const sessions = [
     state: "stalled",
     started_at: "2026-04-30T00:00:00.000Z",
     last_event_at: "2026-04-30T00:00:03.000Z",
-    event_count: 2
+    event_count: 2,
+    network_signal_absent: [],
+    end_source: null
   }
 ];
 
@@ -82,7 +90,7 @@ const events = [
 vi.mock("$lib/api", () => ({
   formatTime: (value: string | undefined) => (value ? `time:${value}` : "n/a"),
   getHealth: vi.fn(async () => apiState.health),
-  getSession: vi.fn(async (sessionId: string) => {
+  getSession: vi.fn(async (sessionId: string, _eventsLimit?: number, eventsCursor?: string) => {
     if (apiState.getSessionError) {
       throw apiState.getSessionError;
     }
@@ -92,7 +100,11 @@ vi.mock("$lib/api", () => ({
       // Events. Vor diesem Fix lieferte der Mock dasselbe Array für
       // jede sessionId, was die events/errors-Pages mit künstlichen
       // Cross-Session-Duplikaten konfrontierte.
-      events: apiState.events.filter((event) => event.session_id === sessionId)
+      events: apiState.events.filter((event) => event.session_id === sessionId),
+      // §5 H2: Pagination-Roundtrip — der Test setzt apiState.nextCursor
+      // beim ersten Call und erwartet beim zweiten Call mit cursor !== ""
+      // einen leeren Slice (drained).
+      next_cursor: eventsCursor ? undefined : apiState.nextCursor
     };
   }),
   isErrorEvent: vi.fn((event: { event_name: string }) => event.event_name.includes("error") || event.event_name.includes("warning")),
@@ -108,6 +120,7 @@ beforeEach(() => {
   routeState.params = { id: "session-1" };
   apiState.sessions = sessions;
   apiState.events = events;
+  apiState.nextCursor = undefined;
   apiState.listSessionsError = undefined;
   apiState.getSessionError = undefined;
   apiState.health = { ok: true, status: 200, text: "ok" };
@@ -397,5 +410,268 @@ describe("dashboard route components", () => {
     render(SessionDetailPage);
 
     expect(await screen.findByText("Could not load session")).toBeTruthy();
+  });
+
+  // §5 H2 — neue Read-Shape-Felder
+
+  it("shows end_source pill in session list when set", async () => {
+    apiState.sessions = [
+      {
+        session_id: "session-end-1",
+        project_id: "demo",
+        state: "ended",
+        started_at: "2026-04-30T00:00:00.000Z",
+        last_event_at: "2026-04-30T00:00:05.000Z",
+        event_count: 4,
+        network_signal_absent: [],
+        end_source: "client"
+      },
+      {
+        session_id: "session-end-2",
+        project_id: "demo",
+        state: "ended",
+        started_at: "2026-04-30T00:00:00.000Z",
+        last_event_at: "2026-04-30T00:00:06.000Z",
+        event_count: 5,
+        network_signal_absent: [],
+        end_source: "sweeper"
+      }
+    ];
+    const { default: SessionsPage } = await import("../src/routes/sessions/+page.svelte");
+    render(SessionsPage);
+    expect(await screen.findByText("via client")).toBeTruthy();
+    expect(screen.getByText("via sweeper")).toBeTruthy();
+  });
+
+  it("renders network_signal_absent section when entries are present", async () => {
+    apiState.sessions = [
+      {
+        session_id: "session-1",
+        project_id: "demo",
+        state: "active",
+        started_at: "2026-04-30T00:00:00.000Z",
+        last_event_at: "2026-04-30T00:00:02.000Z",
+        event_count: 1,
+        network_signal_absent: [
+          { kind: "segment", adapter: "native_hls", reason: "native_hls_unavailable" }
+        ],
+        end_source: null
+      }
+    ];
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    expect(await screen.findByRole("heading", { name: "Network signal absent" })).toBeTruthy();
+    expect(screen.getByText("native_hls")).toBeTruthy();
+    expect(screen.getByText("native_hls_unavailable")).toBeTruthy();
+  });
+
+  it("hides the network_signal_absent section when empty", async () => {
+    apiState.sessions = sessions; // both have network_signal_absent: []
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    await screen.findByText("playback_error");
+    expect(screen.queryByRole("heading", { name: "Network signal absent" })).toBeNull();
+  });
+
+  it("highlights non-accepted delivery_status events", async () => {
+    apiState.sessions = sessions;
+    apiState.events = [
+      {
+        event_name: "manifest_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:00.000Z",
+        server_received_at: "2026-04-30T00:00:01.000Z",
+        ingest_sequence: 1,
+        sequence_number: 1,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" },
+        delivery_status: "duplicate_suspected"
+      },
+      {
+        event_name: "segment_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:02.000Z",
+        server_received_at: "2026-04-30T00:00:03.000Z",
+        ingest_sequence: 2,
+        sequence_number: 2,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" },
+        delivery_status: "replayed"
+      }
+    ];
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    expect(await screen.findByText("duplicate suspected")).toBeTruthy();
+    expect(screen.getByText("replayed")).toBeTruthy();
+  });
+
+  it("shows a load-more button when next_cursor is present", async () => {
+    apiState.sessions = sessions;
+    apiState.nextCursor = "opaque-cursor";
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    expect(await screen.findByRole("button", { name: /Load more events/ })).toBeTruthy();
+  });
+
+  it("shows end_source on detail stats panel", async () => {
+    apiState.sessions = [
+      {
+        session_id: "session-end",
+        project_id: "demo",
+        state: "ended",
+        started_at: "2026-04-30T00:00:00.000Z",
+        last_event_at: "2026-04-30T00:00:05.000Z",
+        event_count: 4,
+        network_signal_absent: [],
+        end_source: "sweeper"
+      }
+    ];
+    routeState.params.id = "session-end";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    expect(await screen.findByText("via sweeper")).toBeTruthy();
+  });
+
+  it("renders an error when load-more fails", async () => {
+    apiState.sessions = sessions;
+    apiState.events = [
+      {
+        event_name: "manifest_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:00.000Z",
+        server_received_at: "2026-04-30T00:00:01.000Z",
+        ingest_sequence: 1,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      }
+    ];
+    apiState.nextCursor = "opaque-cursor";
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    await screen.findByText("manifest_loaded");
+    apiState.getSessionError = new Error("page 2 failed");
+    const loadMoreBtn = screen.getByRole("button", { name: /Load more events/ });
+    await fireEvent.click(loadMoreBtn);
+    expect(await screen.findByText("page 2 failed")).toBeTruthy();
+  });
+
+  it("renders unknown load-more errors with fallback text", async () => {
+    apiState.sessions = sessions;
+    apiState.events = [
+      {
+        event_name: "manifest_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:00.000Z",
+        server_received_at: "2026-04-30T00:00:01.000Z",
+        ingest_sequence: 1,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      }
+    ];
+    apiState.nextCursor = "opaque-cursor";
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    await screen.findByText("manifest_loaded");
+    apiState.getSessionError = "not an Error" as unknown as Error;
+    const loadMoreBtn = screen.getByRole("button", { name: /Load more events/ });
+    await fireEvent.click(loadMoreBtn);
+    expect(await screen.findByText("Could not load more events")).toBeTruthy();
+  });
+
+  it("categorizes manifest, segment and lifecycle events with category tags", async () => {
+    apiState.sessions = sessions;
+    apiState.events = [
+      {
+        event_name: "manifest_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:00.000Z",
+        server_received_at: "2026-04-30T00:00:01.000Z",
+        ingest_sequence: 1,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      },
+      {
+        event_name: "segment_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:02.000Z",
+        server_received_at: "2026-04-30T00:00:03.000Z",
+        ingest_sequence: 2,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      },
+      {
+        event_name: "playback_started",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:04.000Z",
+        server_received_at: "2026-04-30T00:00:05.000Z",
+        ingest_sequence: 3,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      }
+    ];
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    await screen.findByText("manifest_loaded");
+    // Drei Kategorien sind sichtbar: manifest, segment, lifecycle.
+    expect(screen.getAllByText("manifest").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("segment").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("lifecycle").length).toBeGreaterThan(0);
+  });
+
+  it("appends events on load-more click", async () => {
+    apiState.sessions = sessions;
+    apiState.events = [
+      {
+        event_name: "manifest_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:00.000Z",
+        server_received_at: "2026-04-30T00:00:01.000Z",
+        ingest_sequence: 1,
+        sequence_number: 1,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      },
+      {
+        event_name: "segment_loaded",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:02.000Z",
+        server_received_at: "2026-04-30T00:00:03.000Z",
+        ingest_sequence: 2,
+        sequence_number: 2,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      }
+    ];
+    apiState.nextCursor = "opaque-cursor";
+    routeState.params.id = "session-1";
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+    render(SessionDetailPage);
+    await screen.findByText("manifest_loaded");
+    expect(screen.getByText("2 loaded")).toBeTruthy();
+    // Beim Klick muss der Mock disjoint events liefern, sonst
+    // dupliziert Svelte-each-Block die ingest_sequence-Keys.
+    apiState.events = [
+      {
+        event_name: "rebuffer_started",
+        project_id: "demo",
+        session_id: "session-1",
+        client_timestamp: "2026-04-30T00:00:04.000Z",
+        server_received_at: "2026-04-30T00:00:05.000Z",
+        ingest_sequence: 3,
+        sequence_number: 3,
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
+      }
+    ];
+    const loadMoreBtn = screen.getByRole("button", { name: /Load more events/ });
+    await fireEvent.click(loadMoreBtn);
+    await screen.findByText("3 loaded");
+    expect(screen.getByText("rebuffer_started")).toBeTruthy();
   });
 });

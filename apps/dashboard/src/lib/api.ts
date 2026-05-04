@@ -25,6 +25,11 @@ export interface StreamSession {
   correlation_id?: string;
   /** Default `[]`; siehe API-Kontrakt §3.7.1, plan-0.4.0 §4.4. */
   network_signal_absent: NetworkSignalAbsentEntry[];
+  /** Auslöser des Endzustands (plan-0.4.0 §5 H1):
+   *  - `"client"`  bei explizitem `session_ended`-Event
+   *  - `"sweeper"` bei zeitbasiertem Sweeper-Ende
+   *  - `null` für aktive Sessions oder Legacy-Einträge */
+  end_source: "client" | "sweeper" | null;
 }
 
 export interface PlaybackEvent {
@@ -39,6 +44,16 @@ export interface PlaybackEvent {
     name: string;
     version: string;
   };
+  meta?: Record<string, unknown>;
+  /** Server-vergeben ab 0.4.0 §3.2-Closeout (API-Kontrakt §3.7.1). */
+  correlation_id?: string;
+  /** W3C-Trace-ID des Batches (32 Hex), optional. */
+  trace_id?: string;
+  /** Klassifikation des Events nach API-Kontrakt §10.2:
+   *  `"accepted"` (Default), `"duplicate_suspected"` oder
+   *  `"replayed"`. Vor §2.3-Closeout liefern Read-Antworten das
+   *  Feld nicht; daher optional. */
+  delivery_status?: "accepted" | "duplicate_suspected" | "replayed";
 }
 
 export interface SessionsResponse {
@@ -49,6 +64,8 @@ export interface SessionsResponse {
 export interface SessionDetailResponse {
   session: StreamSession;
   events: PlaybackEvent[];
+  /** Cursor für die nächste Event-Seite; fehlt bei letzter Seite
+   *  (API-Kontrakt §10.3 Cursor v3). */
   next_cursor?: string;
 }
 
@@ -62,9 +79,18 @@ export async function listSessions(limit = 100): Promise<SessionsResponse> {
   return getJSON<SessionsResponse>(`${apiBaseUrl}/api/stream-sessions?limit=${limit}`);
 }
 
-export async function getSession(sessionId: string, eventsLimit = 200): Promise<SessionDetailResponse> {
+export async function getSession(
+  sessionId: string,
+  eventsLimit = 200,
+  eventsCursor?: string
+): Promise<SessionDetailResponse> {
+  const params = new URLSearchParams();
+  params.set("events_limit", String(eventsLimit));
+  if (eventsCursor) {
+    params.set("events_cursor", eventsCursor);
+  }
   return getJSON<SessionDetailResponse>(
-    `${apiBaseUrl}/api/stream-sessions/${encodeURIComponent(sessionId)}?events_limit=${eventsLimit}`
+    `${apiBaseUrl}/api/stream-sessions/${encodeURIComponent(sessionId)}?${params.toString()}`
   );
 }
 

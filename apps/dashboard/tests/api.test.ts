@@ -43,6 +43,16 @@ describe("dashboard API client", () => {
     });
   });
 
+  it("appends events_cursor when paginating session detail", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ session: {}, events: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await getSession("session-1", 50, "opaque-cursor");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/stream-sessions/session-1?events_limit=50&events_cursor=opaque-cursor",
+      { headers: { Accept: "application/json" }, cache: "no-store" }
+    );
+  });
+
   it("maps health responses and unreachable APIs", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("ok", { status: 200 })));
     await expect(getHealth()).resolves.toEqual({ ok: true, status: 200, text: "ok" });

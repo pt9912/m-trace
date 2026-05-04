@@ -61,7 +61,19 @@
         {#each visibleSessions as session (session.session_id)}
           <tr>
             <td><a href={`/sessions/${session.session_id}`}>{session.session_id}</a></td>
-            <td><span class={`pill ${session.state}`}>{session.state}</span></td>
+            <td>
+              <span class={`pill ${session.state}`}>{session.state}</span>
+              {#if session.end_source}
+                <span
+                  class="muted end-source"
+                  title={session.end_source === "client"
+                    ? "Ended by explicit session_ended event"
+                    : "Ended by lifecycle sweeper after timeout"}
+                >
+                  via {session.end_source}
+                </span>
+              {/if}
+            </td>
             <td>{session.project_id}</td>
             <td>{session.event_count}</td>
             <td>{formatTime(session.started_at)}</td>
@@ -76,3 +88,10 @@
     </table>
   </div>
 </section>
+
+<style>
+  .end-source {
+    margin-left: 6px;
+    font-size: 0.85em;
+  }
+</style>
