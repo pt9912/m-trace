@@ -157,8 +157,26 @@ services:
       - "4318:4318"
       - "13133:13133"
 
+  # Tempo läuft nur, wenn das `tempo`-Profil aktiv ist (plan-0.4.0
+  # §6). RAK-31 ist Kann-Scope; ohne Profil bleibt RAK-29/RAK-32
+  # vollständig funktional ohne Tempo-Verbindungsversuch.
+  tempo:
+    image: grafana/tempo:2.6.1
+    profiles:
+      - tempo
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - mtrace-tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+
 volumes:
   # Benanntes Volume für die SQLite-Datei des api-Services (ADR-0002
   # §8.1). Bleibt bei `make stop` und `docker compose down` (ohne
   # `--volumes`) erhalten; nur `make wipe` löscht es.
   mtrace-data: {}
+  # Tempo-Trace-Storage (WAL + Blocks). Bleibt analog mtrace-data
+  # über `make stop` erhalten, wird über `make wipe` mit-aufgeräumt
+  # (siehe Makefile WIPE_VOLUMES).
+  mtrace-tempo-data: {}

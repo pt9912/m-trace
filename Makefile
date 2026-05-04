@@ -7,17 +7,19 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability stop wipe smoke smoke-observability smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
 		'Targets:' \
 		'  make dev                    Start the core Docker Compose lab' \
 		'  make dev-observability      Start the lab with the observability profile' \
-		'  make stop                   Stop all Compose services, including observability' \
-		'  make wipe                   Stop services AND delete the SQLite volume (destructive)' \
+		'  make dev-tempo              Start observability + Tempo profiles (RAK-31)' \
+		'  make stop                   Stop all Compose services, including observability + tempo' \
+		'  make wipe                   Stop services AND delete SQLite + Tempo volumes (destructive)' \
 		'  make smoke                  Run the local 0.1.1 smoke checks' \
 		'  make smoke-observability    Run the Prometheus/cardinality smoke checks' \
+		'  make smoke-tempo            Run the Tempo three-state smoke check' \
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
@@ -49,8 +51,16 @@ dev:
 dev-observability:
 	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability up --build
 
+# `make dev-tempo` startet observability + tempo gemeinsam (plan-0.4.0
+# §6). Der Collector-Service ist nicht doppelt definiert; derselbe
+# Container fährt in §6.3 mit der Tempo-Pipeline-Konfig hoch (env-
+# gesteuerter Config-Pfad). RAK-31 ist Kann-Scope — ohne Profil
+# bleibt die Dashboard-Timeline (RAK-32) vollständig funktional.
+dev-tempo:
+	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability --profile tempo up --build
+
 stop:
-	$(COMPOSE) --profile observability down
+	$(COMPOSE) --profile observability --profile tempo down
 
 # `make wipe` ist der einzige unterstützte Reset-Pfad für die SQLite-
 # Datei (ADR-0002 §8.4, API-Kontrakt §10.1). Stoppt zuerst alle
@@ -61,12 +71,15 @@ stop:
 # hinzukommende benannte Volumes (z. B. `m-trace_postgres-data`)
 # nicht versehentlich mitgewipt werden.
 WIPE_VOLUME ?= $(shell basename $(CURDIR))_mtrace-data
+WIPE_TEMPO_VOLUME ?= $(shell basename $(CURDIR))_mtrace-tempo-data
 wipe:
-	@echo "[wipe] destructive: removing volume $(WIPE_VOLUME)"
-	@echo "[wipe] sessions and events will be lost"
-	$(COMPOSE) --profile observability down
+	@echo "[wipe] destructive: removing volumes $(WIPE_VOLUME) and $(WIPE_TEMPO_VOLUME)"
+	@echo "[wipe] sessions, events and Tempo traces will be lost"
+	$(COMPOSE) --profile observability --profile tempo down
 	docker volume rm "$(WIPE_VOLUME)" 2>/dev/null || \
 		echo "[wipe] volume $(WIPE_VOLUME) not present (already wiped or never started)"
+	docker volume rm "$(WIPE_TEMPO_VOLUME)" 2>/dev/null || \
+		echo "[wipe] volume $(WIPE_TEMPO_VOLUME) not present (already wiped or never started)"
 
 smoke:
 	bash scripts/smoke-0.1.1.sh
