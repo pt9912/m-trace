@@ -9,6 +9,12 @@ package domain
 // konkrete Eingabevalidierung erfolgt im Adapter, weil Lade-Politik
 // (Timeout, Größe, SSRF) dort implementiert wird (plan-0.3.0 §3
 // Tranche 2).
+//
+// Ab plan-0.4.0 §4.5 trägt der Request optional Session-Link-Felder
+// (`CorrelationID`, `SessionID`) plus den vom HTTP-Adapter aufgelösten
+// `ProjectID` (aus `X-MTrace-Token`). Link-Lookups laufen über
+// `(ProjectID, CorrelationID)` bzw. `(ProjectID, SessionID)`; ein
+// Request ohne Link-Felder bleibt session-los (`detached`).
 type StreamAnalysisRequest struct {
 	// ManifestText ist der Manifestinhalt selbst.
 	ManifestText string
@@ -16,6 +22,60 @@ type StreamAnalysisRequest struct {
 	ManifestURL string
 	// BaseURL wird für relative URIs im Manifest genutzt; optional.
 	BaseURL string
+	// ProjectID ist der vom HTTP-Adapter aus `X-MTrace-Token`
+	// aufgelöste Project-Kontext. Leer für ungebundene Analyze-
+	// Requests (ohne Token, ohne Link-Felder); Pflicht, sobald
+	// `CorrelationID` oder `SessionID` gesetzt ist (Vertrag aus
+	// API-Kontrakt §3.6/§4).
+	ProjectID string
+	// CorrelationID ist die optionale Server-Korrelations-ID einer
+	// bestehenden Session. Hat innerhalb des `ProjectID`-Kontexts
+	// Vorrang vor `SessionID`.
+	CorrelationID string
+	// SessionID ist der optionale Fallback-Link auf eine bestehende
+	// Session (siehe API-Kontrakt §3.6).
+	SessionID string
+}
+
+// SessionLinkStatus ist die Statusdomäne der Analyzer-Session-Link-
+// Hülle (`{analysis, session_link}`) aus API-Kontrakt §3.6 und
+// plan-0.4.0 §4.5. Use-Case entscheidet den Wert pro Request:
+//
+//   - linked: Session ist bekannt und konsistent.
+//   - detached: Request hat keine Link-Felder — bewusst session-los.
+//   - not_found_detached: Link-Felder gesetzt, aber Session nicht im
+//     Project gefunden.
+//   - conflict_detached: beide Link-Felder gesetzt, beide bekannt, aber
+//     widersprüchlich (`session_id` zeigt nicht auf die Session der
+//     `correlation_id`).
+type SessionLinkStatus string
+
+// SessionLink-Statuswerte aus API-Kontrakt §3.6.
+const (
+	SessionLinkStatusLinked            SessionLinkStatus = "linked"
+	SessionLinkStatusDetached          SessionLinkStatus = "detached"
+	SessionLinkStatusNotFoundDetached  SessionLinkStatus = "not_found_detached"
+	SessionLinkStatusConflictDetached  SessionLinkStatus = "conflict_detached"
+)
+
+// SessionLink ist die strukturierte Link-Hülle der Analyze-Antwort
+// (API-Kontrakt §3.6, plan-0.4.0 §4.5). `Status` ist Pflicht; alle
+// anderen Felder sind optional und tragen die aufgelöste Verknüpfung
+// nur bei `Status == linked`.
+type SessionLink struct {
+	Status        SessionLinkStatus
+	ProjectID     string
+	SessionID     string
+	CorrelationID string
+}
+
+// AnalyzeManifestResult bündelt Analyzer-Ergebnis und Session-Link für
+// die Antwort `{analysis, session_link}` aus API-Kontrakt §3.6.
+// Driving-Port liefert dieses Resultat ab plan-0.4.0 §4.5; der
+// HTTP-Adapter mappt auf die JSON-Hülle.
+type AnalyzeManifestResult struct {
+	Analysis    StreamAnalysisResult
+	SessionLink SessionLink
 }
 
 // PlaylistType klassifiziert das Analyseergebnis grob. Weitere Werte

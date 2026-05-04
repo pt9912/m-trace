@@ -23,13 +23,22 @@ func (f *fakeAnalyzer) AnalyzeManifest(_ context.Context, req domain.StreamAnaly
 	return f.result, f.err
 }
 
+// newAnalyzeUseCase wired den Use-Case ohne Session-Repository — alle
+// Tests, die nur den Analyzer-Pfad pinnen, brauchen keinen Link-
+// Resolver. Tests für die Statusmatrix (siehe
+// `analyze_manifest_link_test.go`) liefern einen echten
+// SessionRepository-Stub.
+func newAnalyzeUseCase(stub *fakeAnalyzer) *application.AnalyzeManifestUseCase {
+	return application.NewAnalyzeManifestUseCase(stub, nil)
+}
+
 func TestAnalyzeManifest_PassesRequestThrough(t *testing.T) {
 	t.Parallel()
 	stub := &fakeAnalyzer{result: domain.StreamAnalysisResult{
 		AnalyzerVersion: "0.3.0",
 		PlaylistType:    domain.PlaylistTypeMaster,
 	}}
-	uc := application.NewAnalyzeManifestUseCase(stub)
+	uc := newAnalyzeUseCase(stub)
 
 	got, err := uc.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{
 		ManifestURL: "https://example.test/m.m3u8",
@@ -40,15 +49,19 @@ func TestAnalyzeManifest_PassesRequestThrough(t *testing.T) {
 	if stub.called != 1 || stub.gotReq.ManifestURL != "https://example.test/m.m3u8" {
 		t.Errorf("adapter not called correctly: %+v", stub)
 	}
-	if got.PlaylistType != domain.PlaylistTypeMaster {
-		t.Errorf("result.PlaylistType: want master, got %q", got.PlaylistType)
+	if got.Analysis.PlaylistType != domain.PlaylistTypeMaster {
+		t.Errorf("result.Analysis.PlaylistType: want master, got %q", got.Analysis.PlaylistType)
+	}
+	// Default-SessionLink ohne Link-Felder ist "detached".
+	if got.SessionLink.Status != domain.SessionLinkStatusDetached {
+		t.Errorf("expected SessionLink=detached without link fields, got %q", got.SessionLink.Status)
 	}
 }
 
 func TestAnalyzeManifest_RejectsEmptyRequest(t *testing.T) {
 	t.Parallel()
 	stub := &fakeAnalyzer{}
-	uc := application.NewAnalyzeManifestUseCase(stub)
+	uc := newAnalyzeUseCase(stub)
 
 	_, err := uc.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{})
 	if !errors.Is(err, application.ErrAnalyzeManifestEmpty) {
@@ -62,7 +75,7 @@ func TestAnalyzeManifest_RejectsEmptyRequest(t *testing.T) {
 func TestAnalyzeManifest_RejectsWhitespaceOnlyRequest(t *testing.T) {
 	t.Parallel()
 	stub := &fakeAnalyzer{}
-	uc := application.NewAnalyzeManifestUseCase(stub)
+	uc := newAnalyzeUseCase(stub)
 
 	_, err := uc.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{
 		ManifestText: "   \n\t",
@@ -77,7 +90,7 @@ func TestAnalyzeManifest_PropagatesAdapterError(t *testing.T) {
 	t.Parallel()
 	want := errors.New("adapter boom")
 	stub := &fakeAnalyzer{err: want}
-	uc := application.NewAnalyzeManifestUseCase(stub)
+	uc := newAnalyzeUseCase(stub)
 
 	_, err := uc.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{
 		ManifestText: "#EXTM3U\n",

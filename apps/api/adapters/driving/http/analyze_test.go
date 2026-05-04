@@ -21,10 +21,20 @@ type stubAnalysisInbound struct {
 	err    error
 }
 
-func (s *stubAnalysisInbound) AnalyzeManifest(_ context.Context, req domain.StreamAnalysisRequest) (domain.StreamAnalysisResult, error) {
+func (s *stubAnalysisInbound) AnalyzeManifest(_ context.Context, req domain.StreamAnalysisRequest) (domain.AnalyzeManifestResult, error) {
 	s.called++
 	s.gotReq = req
-	return s.result, s.err
+	if s.err != nil {
+		return domain.AnalyzeManifestResult{}, s.err
+	}
+	// E1: HTTP-Adapter-Tests pinnen heute noch das pre-§4.5-Mapping
+	// (das Top-Level-Wire-Format ist `analyzeResponseEnvelope`, kein
+	// Wrapper). Stub liefert daher den `Analysis`-Block aus dem
+	// Result und einen detached-`SessionLink`; E2 wird das umstellen.
+	return domain.AnalyzeManifestResult{
+		Analysis:    s.result,
+		SessionLink: domain.SessionLink{Status: domain.SessionLinkStatusDetached},
+	}, nil
 }
 
 func newAnalyzeHandler(stub *stubAnalysisInbound) http.Handler {

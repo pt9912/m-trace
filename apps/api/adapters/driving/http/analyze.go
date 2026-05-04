@@ -118,12 +118,20 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.UseCase.AnalyzeManifest(r.Context(), req)
+	envelope, err := h.UseCase.AnalyzeManifest(r.Context(), req)
 	if err != nil {
 		h.mapAndWriteUseCaseError(w, err)
 		return
 	}
 
+	// E1-Übergangs-Mapping (plan-0.4.0 §4.5): das Use-Case-Result
+	// liefert seit §4.5 `{Analysis, SessionLink}`. Bis E2 die
+	// `{analysis, session_link}`-Wrapper-Antwort scharfschaltet,
+	// bleibt das HTTP-Mapping identisch zum Vor-§4.5-Stand und
+	// ignoriert den `SessionLink` — `req` setzt ihn ohnehin auf
+	// `detached`, weil der HTTP-Adapter in E1 noch keine Link-Felder
+	// liest.
+	result := envelope.Analysis
 	resp := analyzeResponseEnvelope{
 		Status:          "ok",
 		AnalyzerVersion: result.AnalyzerVersion,

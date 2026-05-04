@@ -123,7 +123,7 @@ func buildHandler(
 	)
 	sessionsService := application.NewSessionsService(persist.sessions, persist.events)
 	sessionsSweeper := application.NewSessionsSweeper(persist.sessions, time.Now, logger)
-	analysisService := application.NewAnalyzeManifestUseCase(analyzer)
+	analysisService := application.NewAnalyzeManifestUseCase(analyzer, persist.sessions)
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, tracer, logger)
