@@ -1,50 +1,29 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { getHealth, type HealthStatus } from "$lib/api";
+  import {
+    lastReadError,
+    observabilityServices,
+    probeServices,
+    sseConnection
+  } from "$lib/status";
 
   let health: HealthStatus = { ok: false, status: 0, text: "not checked" };
   let loading = true;
 
-  type ServiceStatus = "connected" | "inactive";
-
-  let observabilityServices: Array<{ name: string; url: string; openUrl?: string; status: ServiceStatus; note: string }> = [
-    {
-      name: "Prometheus",
-      url: "http://localhost:9090/-/ready",
-      openUrl: "http://localhost:9090",
-      status: "inactive",
-      note: "observability profile"
-    },
-    {
-      name: "Grafana",
-      url: "http://localhost:3000/api/health",
-      openUrl: "http://localhost:3000",
-      status: "inactive",
-      note: "observability profile"
-    },
-    {
-      name: "OTel Collector",
-      url: "http://localhost:13133",
-      status: "inactive",
-      note: "health endpoint"
-    }
-  ];
-
-  async function probe(url: string): Promise<ServiceStatus> {
-    try {
-      await fetch(url, { mode: "no-cors", cache: "no-store" });
-      return "connected";
-    } catch {
-      return "inactive";
-    }
-  }
-
   async function refresh() {
     loading = true;
-    const [nextHealth, ...statuses] = await Promise.all([getHealth(), ...observabilityServices.map((service) => probe(service.url))]);
+    const [nextHealth, nextLinks] = await Promise.all([
+      getHealth(),
+      probeServices($observabilityServices)
+    ]);
     health = nextHealth;
-    observabilityServices = observabilityServices.map((service, index) => ({ ...service, status: statuses[index] }));
+    observabilityServices.set(nextLinks);
     loading = false;
+  }
+
+  function clearReadError() {
+    lastReadError.set(null);
   }
 
   onMount(refresh);
@@ -69,31 +48,55 @@
 
   <div class="panel">
     <div class="panel-head">
-      <h2>Core services</h2>
-      <span class="pill warning">linked</span>
+      <h2>SSE</h2>
+      <span class={`pill ${$sseConnection.state}`}>{$sseConnection.state.replace(/_/g, " ")}</span>
     </div>
-    <div class="links" style="padding: 16px;">
-      <a href="http://localhost:8888/teststream/index.m3u8" target="_blank" rel="noreferrer">MediaMTX HLS</a>
-      <a href="http://localhost:9997" target="_blank" rel="noreferrer">MediaMTX API</a>
+    <p style="padding: 0 16px 16px;" class="muted">
+      {#if $sseConnection.detail}
+        {$sseConnection.detail}
+      {:else if $sseConnection.state === "not_yet_connected"}
+        SSE-Live-Updates werden in Tranche 4 §5 H5 verdrahtet.
+      {:else if $sseConnection.changedAt}
+        Last change: {$sseConnection.changedAt}
+      {/if}
+    </p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Last read error</h2>
+      <span class={`pill ${$lastReadError ? "disconnected" : "connected"}`}>
+        {$lastReadError ? "error" : "ok"}
+      </span>
     </div>
+    {#if $lastReadError}
+      <div style="padding: 0 16px 16px;">
+        <p class="muted">{$lastReadError.occurredAt}</p>
+        <p><strong>{$lastReadError.source}</strong></p>
+        <p>{$lastReadError.message}</p>
+        <button class="button" on:click={clearReadError}>Clear</button>
+      </div>
+    {:else}
+      <p style="padding: 0 16px 16px;" class="muted">No session-read error since dashboard load.</p>
+    {/if}
   </div>
 
   <div class="panel">
     <div class="panel-head">
       <h2>Observability</h2>
-      <span class={`pill ${observabilityServices.some((service) => service.status === "connected") ? "connected" : "inactive"}`}>
-        {observabilityServices.some((service) => service.status === "connected") ? "connected" : "inactive"}
+      <span class={`pill ${$observabilityServices.some((service) => service.status === "connected") ? "connected" : "inactive"}`}>
+        {$observabilityServices.some((service) => service.status === "connected") ? "connected" : "inactive"}
       </span>
     </div>
     <div class="status-list">
-      {#each observabilityServices as service (service.name)}
+      {#each $observabilityServices as service (service.name)}
         <div class="status-row">
           <div>
             <strong>{service.name}</strong>
-            <span class="muted">{service.note}</span>
+            <span class="muted">{service.configHint}</span>
           </div>
           <div class="status-actions">
-            <span class={`pill ${service.status}`}>{service.status}</span>
+            <span class={`pill ${service.status}`}>{service.status.replace(/_/g, " ")}</span>
             {#if service.openUrl}
               <a href={service.openUrl} target="_blank" rel="noreferrer">Open</a>
             {/if}

@@ -112,14 +112,25 @@ async function getJSON<T>(url: string): Promise<T> {
   if (apiToken) {
     headers["X-MTrace-Token"] = apiToken;
   }
-  const res = await fetch(url, {
-    headers,
-    cache: "no-store"
-  });
-  if (!res.ok) {
-    throw new Error(`${url} returned ${res.status}`);
+  try {
+    const res = await fetch(url, {
+      headers,
+      cache: "no-store"
+    });
+    if (!res.ok) {
+      const err = new Error(`${url} returned ${res.status}`);
+      recordReadError(url, err);
+      throw err;
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    // Network/timeout/unreachable: nur einmal recorden, nicht doppelt
+    // bei thrown HTTP-Errors (die haben recordReadError schon oben).
+    if (!(err instanceof Error) || !err.message.includes("returned")) {
+      recordReadError(url, err);
+    }
+    throw err;
   }
-  return (await res.json()) as T;
 }
 
 export function formatTime(value: string | undefined): string {
@@ -137,6 +148,7 @@ export function isErrorEvent(event: PlaybackEvent): boolean {
   return event.event_name.includes("error") || event.event_name.includes("warning");
 }
 import { env } from "$env/dynamic/public";
+import { recordReadError } from "./status";
 
 const apiBaseUrl = (env.PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
 const apiToken = env.PUBLIC_API_TOKEN ?? "";

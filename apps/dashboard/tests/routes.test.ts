@@ -354,21 +354,97 @@ describe("dashboard route components", () => {
     expect(await screen.findByText("OTel Collector")).toBeTruthy();
     expect(screen.getByText("Prometheus")).toBeTruthy();
     expect(screen.getByText("Grafana")).toBeTruthy();
+    // §5 H3 F-40: ohne PUBLIC_*_URL-Env-Variablen sind die Service-
+    // Einträge `not configured`, nicht `inactive`.
+    expect(screen.getAllByText("not configured").length).toBeGreaterThan(0);
   });
 
-  it("renders inactive observability services", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        throw new Error("offline");
-      })
-    );
+  it("renders the SSE panel with not_yet_connected default", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
     const { default: StatusPage } = await import("../src/routes/status/+page.svelte");
 
     render(StatusPage);
 
-    expect(await screen.findByText("OTel Collector")).toBeTruthy();
-    expect(screen.getAllByText("inactive").length).toBeGreaterThan(0);
+    // Header + Default-Pill für den SSE-Block.
+    expect(await screen.findByRole("heading", { name: "SSE" })).toBeTruthy();
+    expect(screen.getByText("not yet connected")).toBeTruthy();
+    expect(
+      screen.getByText("SSE-Live-Updates werden in Tranche 4 §5 H5 verdrahtet.")
+    ).toBeTruthy();
+  });
+
+  it("renders SSE panel detail message when set", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
+    const { sseConnection } = await import("../src/lib/status");
+    sseConnection.set({
+      state: "polling_fallback",
+      detail: "network error — falling back to polling",
+      changedAt: "2026-05-04T12:00:00.000Z"
+    });
+
+    const { default: StatusPage } = await import("../src/routes/status/+page.svelte");
+    render(StatusPage);
+
+    expect(await screen.findByText("polling fallback")).toBeTruthy();
+    expect(screen.getByText("network error — falling back to polling")).toBeTruthy();
+  });
+
+  it("renders SSE last-change timestamp when no detail is set", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
+    const { sseConnection } = await import("../src/lib/status");
+    sseConnection.set({
+      state: "connected",
+      detail: null,
+      changedAt: "2026-05-04T12:34:56.000Z"
+    });
+
+    const { default: StatusPage } = await import("../src/routes/status/+page.svelte");
+    render(StatusPage);
+
+    expect(await screen.findByText("connected")).toBeTruthy();
+    expect(screen.getByText("Last change: 2026-05-04T12:34:56.000Z")).toBeTruthy();
+  });
+
+  it("renders open-link buttons for services with configured URLs", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
+    const { observabilityServices } = await import("../src/lib/status");
+    observabilityServices.set([
+      {
+        name: "Grafana",
+        envKey: "PUBLIC_GRAFANA_URL",
+        configHint: "PUBLIC_GRAFANA_URL",
+        openUrl: "https://grafana.test",
+        probeUrl: "https://grafana.test/api/health",
+        status: "connected"
+      }
+    ]);
+    const { default: StatusPage } = await import("../src/routes/status/+page.svelte");
+    render(StatusPage);
+    expect(await screen.findByRole("link", { name: "Open" })).toBeTruthy();
+    // Connected-Service triggert die "connected"-Pill auf dem
+    // Observability-Header.
+    expect(screen.getAllByText("connected").length).toBeGreaterThan(0);
+    // Reset so other tests start fresh.
+    const { buildServiceLinks } = await import("../src/lib/status");
+    observabilityServices.set(buildServiceLinks({}));
+  });
+
+  it("renders the last-read-error panel and clears it on demand", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
+    const { recordReadError, clearLastReadError } = await import("../src/lib/status");
+    clearLastReadError();
+    recordReadError("/api/stream-sessions/sess-1", new Error("boom"));
+
+    const { default: StatusPage } = await import("../src/routes/status/+page.svelte");
+    render(StatusPage);
+
+    expect(await screen.findByText("/api/stream-sessions/sess-1")).toBeTruthy();
+    expect(screen.getByText("boom")).toBeTruthy();
+    const clearBtn = screen.getByRole("button", { name: /Clear/ });
+    await fireEvent.click(clearBtn);
+    expect(
+      await screen.findByText("No session-read error since dashboard load.")
+    ).toBeTruthy();
   });
 
   it("renders a session detail timeline", async () => {

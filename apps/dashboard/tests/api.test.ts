@@ -72,6 +72,39 @@ describe("dashboard API client", () => {
     await expect(listSessions()).rejects.toThrow("/api/stream-sessions?limit=100 returned 500");
   });
 
+  it("records network errors in the read-error store (§5 H3)", async () => {
+    const { lastReadError, clearLastReadError } = await import("../src/lib/status");
+    clearLastReadError();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("offline");
+      })
+    );
+    await expect(listSessions()).rejects.toThrow("offline");
+    const { get } = await import("svelte/store");
+    const rec = get(lastReadError);
+    expect(rec?.message).toBe("offline");
+    expect(rec?.source).toContain("/api/stream-sessions");
+    clearLastReadError();
+  });
+
+  it("records non-Error throws via getJSON catch path", async () => {
+    const { lastReadError, clearLastReadError } = await import("../src/lib/status");
+    clearLastReadError();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        throw "string-instead-of-error";
+      })
+    );
+    await expect(listSessions()).rejects.toBe("string-instead-of-error");
+    const { get } = await import("svelte/store");
+    expect(get(lastReadError)?.message).toBe("string-instead-of-error");
+    clearLastReadError();
+  });
+
   it("classifies error and warning events", () => {
     expect(isErrorEvent(event("playback_error"))).toBe(true);
     expect(isErrorEvent(event("buffer_warning"))).toBe(true);
