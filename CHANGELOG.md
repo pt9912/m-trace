@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> Vorlage für den `0.5.0`-Release-Bump (Tranche 6). Lieferstand der
+> Tranchen 0–5 strukturiert nach Lab-/Beispiel-Bereichen.
+
+### Added
+
+- **examples/-Struktur (Tranche 1):** Konventions-Index
+  [`examples/README.md`](examples/README.md) mit Mindeststruktur für
+  Beispiel-READMEs, Compose-Form-Tabelle (Core-Lab vs. Eigenes
+  Compose mit Project-Name `mtrace-<name>`), Smoke-Naming und
+  Smoke-Skript-Konvention; vier Sub-Verzeichnisse mit konsistenter
+  7-Punkt-README-Struktur.
+- **MediaMTX-Beispiel (Tranche 2, RAK-36):** Core-Lab-Variante in
+  [`examples/mediamtx/README.md`](examples/mediamtx/README.md);
+  opt-in Smoke `make smoke-mediamtx` prüft den HLS-Pfad (200,
+  `#EXTM3U`-Body, Media-Referenzen) gegen ein laufendes `make dev`.
+- **SRT-Beispiel (Tranche 3, RAK-37):** eigenes Compose-Project
+  `mtrace-srt` ([`examples/srt/`](examples/srt/)) mit FFmpeg-SRT-
+  Publisher → MediaMTX-SRT-Listener → HLS auf Host-Port `8889`;
+  opt-in Smoke `make smoke-srt` mit Auto-Start/-Stop. Keine SRT-
+  Health-Metriken, kein CGO-Binding — Folge-Scope `0.6.0`
+  (Risiken-Backlog R-2 unverändert).
+- **DASH-Beispiel (Tranche 4, RAK-38):** eigenes Compose-Project
+  `mtrace-dash` ([`examples/dash/`](examples/dash/)) mit FFmpeg-
+  DASH-Live-Generator → shared Volume → nginx-Static-Server auf
+  Host-Port `8891`; opt-in Smoke `make smoke-dash` mit Auto-Start/
+  -Stop. Keine produktive DASH-Manifestanalyse oder dash.js-
+  Adapter — `analyzerKind: "hls"` bleibt einzige produktive
+  Variante; eine MPD an `POST /api/analyze` liefert `not_hls`
+  (erwartet).
+- **WebRTC-Vorbereitungspfad (Tranche 5, RAK-39):** Doku-only
+  Beispielplatz in [`examples/webrtc/README.md`](examples/webrtc/README.md);
+  kein Compose, kein Smoke in `0.5.0`. Folge-Pfad-Sektion benennt
+  vier konkrete Schritte (Lab-Compose, README-Konkretisierung,
+  `smoke-webrtc-prep`-Target, WebRTC-Telemetrie-Bewertung) für
+  spätere Tranchen.
+- **Doku-/Closeout-Updates (Tranche 6, RAK-40):**
+  [`docs/user/local-development.md`](docs/user/local-development.md)
+  §2.7 mit Quickref-Tabelle aller vier Beispiele und parallel-Stack-
+  Port-Schnitt (Core-Lab `8888`/`9997`, `mtrace-srt` `8889`/`8890`/
+  `9998`, `mtrace-dash` `8891`); README v0.5.0-Block;
+  `docs/user/releasing.md` listet die drei `0.5.0`-Smokes; jede
+  Beispiel-README hat Quickref-Verweis auf §2.7 zurück.
+
+### Changed
+
+- `apps/dashboard`-Demo-Pfad bleibt unverändert auf
+  `hls.js`/Core-Lab-`teststream` — keine DASH-/WebRTC-Demo-Route.
+- `@npm9912/player-sdk` Public-API unverändert; kein dash.js- oder
+  WebRTC-Adapter in `0.5.0`.
+- `@npm9912/stream-analyzer` und `POST /api/analyze` bleiben HLS-
+  only; DASH-/CMAF-Erweiterung ist Folge-Scope (MVP-37).
+
 ## [0.4.0] - 2026-05-05
 
 > Erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/

@@ -9,6 +9,10 @@
 > MVP-37, RAK-38;
 > [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §5
 > (Tranche 4).
+>
+> Quickref aller Multi-Protocol-Lab-Beispiele:
+> [`docs/user/local-development.md`](../../docs/user/local-development.md)
+> §2.7.
 
 ## Zweck
 

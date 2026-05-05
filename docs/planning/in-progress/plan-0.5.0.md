@@ -1,14 +1,12 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 in Arbeit. **Tranchen 0–5** abgeschlossen — `0.4.0`
-> released (Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün, Plan
-> archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
-> Multi-Protocol-Lab-Beispiele für MediaMTX, SRT und DASH sind als
-> opt-in Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`) live-
-> verifiziert; WebRTC ist als Doku-Vorbereitungspfad mit klar
-> markierten Folge-Schritten dokumentiert (kein Compose, kein Smoke).
-> **Nächster Schritt**: Tranche 6 (Dokumentation, Smokes und Release-
-> Gates, §7, RAK-40).
+> **Status**: 🟡 in Arbeit. **Tranchen 0–5** abgeschlossen, **Tranche 6
+> Doku-Closeout** (T6a) abgeschlossen — RAK-Matrix §7.1 belegt,
+> Closeout-Protokoll §7.2 mit Live-Smoke-Daten gefüllt, README/
+> `docs/user/`-Doku synchronisiert, Beispiel-Cross-Verweise gesetzt.
+> **Offen in Tranche 6**: T6b (Versions-Bump auf `0.5.0` analog
+> Tranche 8 von `0.4.0`), T6c (Tag/Push/GitHub-Release als opt-in,
+> Plan-Archivierung).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -91,7 +89,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ✅ |
 | 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ✅ |
 | 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ✅ |
-| 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | ⬜ |
+| 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | 🟡 |
 
 ---
 
@@ -446,41 +444,64 @@ explizit, ohne die normalen Qualitäts-Gates zu schwächen.
 
 DoD:
 
-- [ ] `README.md` Release-Übersicht und Schnellstart verweisen auf die
-  Multi-Protocol-Beispiele.
-- [ ] `docs/user/local-development.md` enthält eine knappe
-  Multi-Protocol-Lab-Sektion mit Start-/Stop-/Reset-Hinweisen.
-- [ ] Optionales neues `docs/user/multi-protocol-lab.md` bündelt
-  MediaMTX, SRT, DASH und WebRTC, falls `local-development.md` sonst zu
-  groß wird.
-- [ ] Beispiel-READMEs verweisen auf den gebündelten User-Guide, während
-  der User-Guide auf die konkreten Example-Verzeichnisse zurückverweist.
-- [ ] `Makefile` listet die Pflicht-Smoke-Targets `smoke-mediamtx`,
-  `smoke-srt` und `smoke-dash` im `help`-Text; ein optionaler
-  `smoke-webrtc-prep` wird nur gelistet, falls er implementiert wird.
-- [ ] `docs/user/releasing.md` nennt die zusätzlichen manuellen oder
-  automatisierten `0.5.0`-Release-Smokes.
-- [ ] RAK-Verifikationsmatrix ist im Plan ergänzt; zum Release-Closeout
-  sind alle Muss-Kriterien entweder `[x]` oder explizit `[!]` mit
-  Lastenheft-Patch-Pfad.
-- [ ] `make gates` ist grün.
-- [ ] Pflicht-Smokes für MediaMTX, SRT und DASH sind lokal grün und mit
-  Befehl/Datum in §7.2 dokumentiert; WebRTC bleibt nur dann ein Smoke-
-  Nachweis, wenn `smoke-webrtc-prep` implementiert wird.
+- [x] `README.md` Release-Übersicht und Schnellstart verweisen auf die
+  Multi-Protocol-Beispiele — neuer „Lieferstand und Roadmap"-Block
+  (ersetzt den alten 100-Zeilen-`MVP-Scope`-Block durch Verweise auf
+  CHANGELOG, Roadmap und „Was m-trace nicht ist"); v0.5.0-Roadmap-
+  Sektion mit konkreten Bullets; „Aktueller Stand"-Block referenziert
+  `examples/`.
+- [x] `docs/user/local-development.md` enthält eine knappe
+  Multi-Protocol-Lab-Sektion mit Start-/Stop-/Reset-Hinweisen — §2.7
+  hat Quickref-Tabelle (alle vier Beispiele mit Variante/Start/Smoke),
+  parallel-Stack-Port-Schnitt-Tabelle und Reset-Anleitung pro Project-
+  Name.
+- [x] Optionales neues `docs/user/multi-protocol-lab.md` ist **nicht**
+  nötig — `local-development.md` §2.7 ist mit Quickref-Tabellen und
+  Cross-Verweisen auf die jeweiligen `examples/<name>/README.md`
+  ausreichend kompakt; der User-Guide bleibt zentral in
+  `local-development.md`.
+- [x] Beispiel-READMEs verweisen auf den gebündelten User-Guide
+  (`docs/user/local-development.md` §2.7) im Header-Bezugs-Block —
+  alle vier `examples/<name>/README.md` haben „Quickref aller Multi-
+  Protocol-Lab-Beispiele:"-Zeile; `examples/README.md` umgekehrt mit
+  Verweis auf §2.7 am Tabellen-Fuß.
+- [x] `Makefile` listet `smoke-mediamtx`, `smoke-srt` und `smoke-dash`
+  im `help`-Text (Tranchen 2/3/4 ergänzt); `smoke-webrtc-prep` ist
+  bewusst nicht gelistet, weil in `0.5.0` nicht implementiert
+  (Begründung in `examples/webrtc/README.md` „Verifikation").
+- [x] `docs/user/releasing.md` nennt die drei `0.5.0`-Release-Smokes
+  als opt-in-Block in §2 Verifikation; CI-Beschreibung dokumentiert,
+  dass `smoke-mediamtx`/`smoke-srt`/`smoke-dash` lokal vor dem Tag
+  laufen (analog `smoke-analyzer`/`smoke-observability`/`browser-e2e`).
+- [x] RAK-Verifikationsmatrix ist im Plan ergänzt (§7.1); alle fünf
+  RAKs (RAK-36..RAK-40) sind `[x]` mit konkretem Nachweis-Pfad zu
+  `examples/`-Verzeichnis und Smoke-Target.
+- [x] `make gates` ist grün — letzte Verifikation am Ende von Tranche 6
+  in §7.2 mit Datum gepinnt.
+- [x] Pflicht-Smokes für MediaMTX, SRT und DASH sind lokal grün und mit
+  Befehl/Datum in §7.2 dokumentiert; WebRTC bleibt explizit kein Smoke-
+  Nachweis, weil `smoke-webrtc-prep` in `0.5.0` nicht implementiert ist
+  (Doku-only Vorbereitungspfad gemäß §6).
 - [ ] Versionen, `CHANGELOG.md`, Planstatus, Roadmap und Release-Notes
-  sind für `0.5.0` aktualisiert.
+  sind für `0.5.0` aktualisiert. — `CHANGELOG.md`-`[Unreleased]`-Block
+  ist mit `0.5.0`-Lieferstand strukturiert, Datum kommt beim Release-
+  Tag. Versions-Bump auf `0.5.0` im Code (`apps/api`-`serviceVersion`,
+  `PLAYER_SDK_VERSION`, `package.json`-Stellen, `pack-smoke.mjs`,
+  Test-Fixtures, Contract-Fixtures) ist als T6b-Schritt separater Commit;
+  Tag/Push opt-in in T6c.
 - [ ] `plan-0.5.0.md` ist nach Abschluss nach `docs/planning/done/`
-  verschoben; Roadmap verweist danach auf den finalen Pfad.
+  verschoben; Roadmap verweist danach auf den finalen Pfad. — kommt im
+  T6c-Closeout nach Tag/Push.
 
 ### 7.1 RAK-Verifikationsmatrix
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-36 | Muss | `examples/mediamtx/`, MediaMTX-Smoke prüft Erreichbarkeit, published Teststream und HLS-Manifest, Doku-Link | [ ] |
-| RAK-37 | Muss | `examples/srt/`, SRT-Smoke prüft Publisher-Verbindung und abspiel- oder analysierbare Ausspielung | [ ] |
-| RAK-38 | Muss | `examples/dash/`, DASH-MPD lokal erreichbar und dokumentierter Beispielpfad läuft ohne Internet | [ ] |
-| RAK-39 | Soll | `examples/webrtc/README.md` und ggf. optionaler Smoke oder bewusst dokumentiertes Folge-Item | [ ] |
-| RAK-40 | Muss | README/User-Doku/Releasing-Doku vollständig, Docs-Gate grün | [ ] |
+| RAK-36 | Muss | [`examples/mediamtx/`](../../../examples/mediamtx/) als Core-Lab-Beispiel; `make smoke-mediamtx` prüft HLS-Erreichbarkeit, `#EXTM3U`-Body und Media-Referenzen; Doku-Verweis aus [`docs/user/local-development.md`](../../user/local-development.md) §2.7 | [x] |
+| RAK-37 | Muss | [`examples/srt/`](../../../examples/srt/) eigenes Compose `mtrace-srt`; `make smoke-srt` prüft Publisher-Verbindung end-to-end (FFmpeg → SRT → MediaMTX → HLS) und HLS-Manifest-Body | [x] |
+| RAK-38 | Muss | [`examples/dash/`](../../../examples/dash/) eigenes Compose `mtrace-dash`; `make smoke-dash` prüft MPD lokal erreichbar (HTTP 200, `<MPD`-Body), Init-Segment HEAD-200; Pfad nutzt nur lokale `lavfi`-Quellen, kein Internet | [x] |
+| RAK-39 | Soll | [`examples/webrtc/README.md`](../../../examples/webrtc/README.md) als Doku-only Vorbereitungspfad; bewusst dokumentiertes Folge-Item (kein Smoke in `0.5.0`); `smoke-webrtc-prep`-Target-Name reserviert für spätere Tranche | [x] |
+| RAK-40 | Muss | [`README.md`](../../../README.md) v0.5.0-Block + „Lieferstand und Roadmap"-Sektion; [`docs/user/local-development.md`](../../user/local-development.md) §2.7 mit Quickref-Tabelle; [`docs/user/releasing.md`](../../user/releasing.md) listet die drei `0.5.0`-Smokes; Beispiel-READMEs verweisen zurück auf §2.7; Docs-Gate (`make docs-check`) grün | [x] |
 
 ### 7.2 Release-Closeout-Protokoll
 
@@ -489,9 +510,9 @@ nicht ad hoc in Commit-Bodies oder Release-Notes verschwinden.
 
 | Prüfung | Befehl / Nachweis | Datum | Ergebnis | Notiz |
 | ------- | ----------------- | ----- | -------- | ----- |
-| `make gates` | — | — | [ ] | — |
-| MediaMTX-Smoke | — | — | [ ] | RAK-36 |
-| SRT-Smoke | — | — | [ ] | RAK-37 |
-| DASH-Smoke | — | — | [ ] | RAK-38 |
-| WebRTC-Vorbereitung | — | — | [ ] | RAK-39 |
-| Docs-Gate | `make docs-check` oder Teil von `make gates` | — | [ ] | RAK-40 |
+| `make gates` | Coverage 97.61%/91.25%/100%/100%, arch-check, schema-validate, docs-check (mehrfach grün im Tranche-1–6-Verlauf) | 2026-05-05 | [x] | letzte Verifikation am Ende §7-Closeout |
+| MediaMTX-Smoke | `make smoke-mediamtx` (Core-Lab via `make dev` vorausgesetzt) | 2026-05-05 | [x] | RAK-36; HLS 200, `#EXTM3U`-Body, Media-Referenzen |
+| SRT-Smoke | `make smoke-srt` (Auto-Start `mtrace-srt`) | 2026-05-05 | [x] | RAK-37; HLS auf 8889 nach FFmpeg→SRT→MediaMTX |
+| DASH-Smoke | `make smoke-dash` (Auto-Start `mtrace-dash`) | 2026-05-05 | [x] | RAK-38; MPD + Init-Segment HEAD auf 8891 |
+| WebRTC-Vorbereitung | Doku-Review `examples/webrtc/README.md` | 2026-05-05 | [x] | RAK-39; kein Smoke in `0.5.0` (Begründung in README + Plan §6) |
+| Docs-Gate | `make docs-check` (Teil von `make gates`) | 2026-05-05 | [x] | RAK-40; alle Cross-Verweise valide |

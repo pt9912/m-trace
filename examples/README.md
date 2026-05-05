@@ -94,13 +94,12 @@ Anforderungen:
 
 ## Beispiele
 
-| Verzeichnis              | Tranche | Status                          |
-|--------------------------|---------|---------------------------------|
-| [`mediamtx/`](./mediamtx/) | 2     | Skelett (Konventions-konform)   |
-| [`srt/`](./srt/)         | 3       | Skelett (Konventions-konform)   |
-| [`dash/`](./dash/)       | 4       | Skelett (Konventions-konform)   |
-| [`webrtc/`](./webrtc/)   | 5       | Skelett (Vorbereitungspfad)     |
+| Verzeichnis              | Tranche | Status                                           |
+|--------------------------|---------|--------------------------------------------------|
+| [`mediamtx/`](./mediamtx/) | 2     | Core-Lab-Beispiel; Smoke `make smoke-mediamtx`   |
+| [`srt/`](./srt/)         | 3       | Eigenes Compose `mtrace-srt`; Smoke `make smoke-srt` |
+| [`dash/`](./dash/)       | 4       | Eigenes Compose `mtrace-dash`; Smoke `make smoke-dash` |
+| [`webrtc/`](./webrtc/)   | 5       | Doku-only Vorbereitungspfad; kein Smoke in `0.5.0` |
 
-Inhalte folgen in den jeweiligen Tranchen. Bis dahin ist jedes
-Sub-Verzeichnis ein READMEs-only-Platzhalter, der die Mindeststruktur
-oben belegt.
+Quickref über alle Beispiele plus parallel-Stack-Port-Schnitt:
+[`docs/user/local-development.md`](../docs/user/local-development.md) §2.7.

@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.4.0` released — erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht, optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku.
+> Status: `0.5.0` in Arbeit — Multi-Protokoll-Lab mit MediaMTX-, SRT-, DASH-Beispielen und WebRTC-Vorbereitungspfad. `0.4.0` (Erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht, optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku) ist die letzte getaggte Release.
 
 ---
 
@@ -70,85 +70,13 @@ m-trace sammelt und normalisiert Signale aus Player und Backend, sodass Stream-S
 
 ---
 
-## MVP-Scope
+## Lieferstand und Roadmap
 
-Der erste MVP ist bewusst klein gehalten.
-
-### Enthalten seit v0.1.0
-
-- Mono-Repo-Struktur
-- Backend-API unter `apps/api`
-- MediaMTX-basiertes lokales Streaming-Setup
-- FFmpeg-Teststream
-- Aufnahme von Playback-Events
-- Prometheus-kompatible Aggregat-Metriken
-- OpenTelemetry-kompatibles Eventmodell
-- In-Memory-Persistenz
-- Docker-first lokale Entwicklung
-
-### Enthalten seit v0.1.1
-
-- Dashboard unter `apps/dashboard`
-- Demo-Player als Dashboard-Route `/demo`
-- Player-SDK unter `packages/player-sdk`
-- hls.js-Adapter
-- einfache Stream-Session-Ansicht
-- einfache Event-Ansicht
-
-### Enthalten seit v0.3.0
-
-- Stream-Analyzer-Bibliothek `@npm9912/stream-analyzer` mit
-  HLS-Klassifikator, SSRF-geschütztem URL-Loader und Master-/
-  Media-Detail-Parsing
-- Diskriminierter `AnalysisResult`-Typ mit Erweiterungspfad für
-  DASH/CMAF (`analyzerKind`) und Stabilitätsregel
-- Interner Node-Service `@npm9912/analyzer-service` als HTTP-
-  Wrapper, in der Compose-Topologie verdrahtet
-- API-Endpunkt `POST /api/analyze` (siehe
-  `spec/backend-api-contract.md` §3.6) mit Problem-Shape-Fehlern
-  und Prometheus-Counter `mtrace_analyze_requests_total`
-- CLI `pnpm m-trace check <url-or-file>` mit JSON-stdout und
-  definierten Exit-Codes
-- `make smoke-analyzer` und `make smoke-cli` als End-to-End-Smokes
-
-### Enthalten seit v0.4.0
-
-- Durable SQLite-Persistenz für Sessions, Playback-Events und
-  Ingest-Sequenz statt In-Memory-Store; Cursor sind Restart-stabil
-  ([ADR-0002](docs/adr/0002-persistence-store.md))
-- `correlation_id` als durable Source-of-Truth für Player-Sessions:
-  ein Wert pro Session über alle Batches; `trace_id` ist optionale
-  Tempo-Vertiefung pro Batch (`spec/telemetry-model.md` §2.5)
-- Manifest-/Segment-/Player-Korrelation über `correlation_id` mit
-  URL-Redaction am SDK-Boundary, `session_boundaries[]`-Wrapper für
-  Degradationsfälle und `network_signal_absent[]`-Read-Shape
-- Dashboard-Session-Timeline-Ansicht (`/sessions/<id>`) mit
-  Server-Sent Events plus Polling-Fallback und Backfill-Cursor
-  ([ADR-0003](docs/adr/0003-live-updates.md))
-- Optionales Tempo-Profil `make dev-tempo` für Trace-Debugging — das
-  Dashboard bleibt Tempo-unabhängig, Source-of-Truth ist SQLite
-  (RAK-31 Kann-Scope, RAK-32 Pflicht)
-- Pflichtcounter sichtbar in Grafana, OTel-Counter
-  `mtrace_api_batches_received` ist label-frei wie die vier
-  Prometheus-Pflichtcounter; verschärfter Cardinality-Smoke
-- Endpoint-spezifische Auth: `POST /api/playback-events` und Session-
-  /Event-Reads sind tokenpflichtig; `POST /api/analyze` ist nur bei
-  gesetzter `correlation_id`/`session_id` tokenpflichtig
-- Cursor-v3 mit Project-Scope, neuer `cursor_invalid_legacy`-Code
-  für `0.1.x`/`0.2.x`/`0.3.x`-Cursor
-
-### Nicht im aktuellen 0.3.x/0.4.x-MVP enthalten
-
-- separate Demo-Player-App
-- separate Analyzer-API
-- produktive Multi-Tenancy
-- WebRTC-Monitoring
-- SRT-Health-Ansicht
-- Tempo als Pflicht-Abhängigkeit
-- Mimir oder ClickHouse
-- Kubernetes-Produktionsbetrieb
-- vollständiger HLS-/DASH-Manifest-Analyzer
-
+- **Aktueller Lieferstand pro Release**: [`CHANGELOG.md`](CHANGELOG.md).
+- **Aktive Phase und nächste Schritte**: Sektion „Roadmap" weiter
+  unten plus [`docs/planning/in-progress/`](docs/planning/in-progress/).
+- **Was m-trace bewusst nicht ist**: Sektion „Was m-trace nicht ist"
+  weiter unten.
 
 ---
 
@@ -354,11 +282,17 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
   `mtrace_api_batches_received` sind label-frei; Sampling-Grenze für
   `sampleRate < 1` dokumentiert
 
-### v0.5.0 — Multi-Protokoll-Lab
+### v0.5.0 — Multi-Protokoll-Lab (in Arbeit)
 
-- DASH-Beispiel
-- SRS-Beispiel
-- erweiterte MediaMTX-Beispiele
+- `examples/`-Struktur mit Konventions-Index und vier Sub-
+  Beispielen (MediaMTX, SRT, DASH, WebRTC-Vorbereitung)
+- MediaMTX-Beispiel als Core-Lab-Variante, SRT- und DASH-
+  Beispiele mit eigenen `mtrace-srt`/`mtrace-dash`-Compose-Stacks
+- Opt-in Smokes `make smoke-mediamtx`/`smoke-srt`/`smoke-dash` —
+  nicht in `make gates`
+- Analyzer/Player-SDK bleiben abwärtskompatibel; kein DASH-/
+  WebRTC-Code in `apps/api`, `apps/dashboard`, `packages/player-sdk`
+  oder `packages/stream-analyzer`
 
 ### v0.6.0 — SRT-Health-Ansicht
 
@@ -416,7 +350,9 @@ m-trace ist nicht:
 - eine DRM-Analytics-Plattform
 - ein CDN-Optimizer
 - eine vollständige Multi-Tenant-SaaS-Plattform
-- ein Ersatz für MediaMTX, FFmpeg, Grafana oder Prometheus
+- ein Production-Ready-Kubernetes-Deployment
+- ein Ersatz für MediaMTX, FFmpeg, Grafana, Prometheus oder
+  Production-Grade-Storage-Backends wie Mimir oder ClickHouse
 
 m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
 
@@ -424,14 +360,16 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.4.0` (released, Tag `v0.4.0`): SQLite-
-Persistenz, Trace-Korrelation, Manifest-/Segment-Korrelation, Dashboard-
-Session-Timeline mit SSE, optionales Tempo-Profil, Aggregat-Metriken-
-Sichtbarkeit und Cardinality-/Sampling-Doku sind auf `main` integriert
-und durch GitHub-Actions-`build` grün verifiziert. Plan-Datei:
+Das Projekt steht bei `0.5.0` in Arbeit: Multi-Protokoll-Lab in
+[`examples/`](examples/) mit MediaMTX-, SRT- und DASH-Beispielen
+plus WebRTC-Vorbereitungspfad ist auf `main` integriert; opt-in
+Smokes laufen lokal grün. `0.4.0` (released, Tag `v0.4.0`,
+GitHub-Actions-`build` am Release-Commit grün) bleibt der letzte
+veröffentlichte Stand mit dem vollen Trace-Korrelations-Featureset.
+Plan-Dateien:
+[`docs/planning/in-progress/plan-0.5.0.md`](docs/planning/in-progress/plan-0.5.0.md)
+und
 [`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).
-Nächste Phase: `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) — Scope-Cut
-steht aus.
 
 Leitende Dokumente:
 

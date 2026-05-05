@@ -45,6 +45,9 @@ make smoke-cli            # ab 0.3.0: Lastenheft-Aufruf `pnpm m-trace check`
 make smoke-analyzer       # ab 0.3.0: manuelles Release-Gate, fährt Compose hoch
 make smoke-observability  # ab 0.4.0: Cardinality-Smoke; Observability-Stack muss laufen
 make browser-e2e          # ab 0.4.0: Dashboard-Timeline + hls.js-Demo-Flow
+make smoke-mediamtx       # ab 0.5.0: MediaMTX-Beispiel (RAK-36); braucht laufendes `make dev`
+make smoke-srt            # ab 0.5.0: SRT-Beispiel (RAK-37); startet/stoppt Project mtrace-srt
+make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
 ```
 
 Erfolgskriterien:
@@ -71,8 +74,9 @@ Erfolgskriterien:
   Read-Pfad in Chromium und Firefox.
 
 CI deckt `make gates`, `make build`, `make sdk-performance-smoke` und
-`make smoke-cli` ab; `smoke-analyzer`, `smoke-observability` und
-`browser-e2e` laufen lokal vor dem Tag (Compose-Stack-Up bzw.
+`make smoke-cli` ab; `smoke-analyzer`, `smoke-observability`,
+`browser-e2e` und ab `0.5.0` `smoke-mediamtx`/`smoke-srt`/
+`smoke-dash` laufen lokal vor dem Tag (Compose-Stack-Up bzw.
 Browser-Stack ist zu schwergewichtig für jeden PR-Run). CI-Zielplattform
 ist GitHub Actions auf `ubuntu-24.04`, Workflow-Name: `build`.
 

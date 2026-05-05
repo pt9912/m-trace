@@ -8,6 +8,10 @@
 > Bezug: Lastenheft §7.8 F-82..F-84, RAK-37;
 > [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §4
 > (Tranche 3).
+>
+> Quickref aller Multi-Protocol-Lab-Beispiele:
+> [`docs/user/local-development.md`](../../docs/user/local-development.md)
+> §2.7.
 
 ## Zweck
 

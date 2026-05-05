@@ -255,22 +255,32 @@ network_detail_unavailable` (Event-Meta) bzw. `network_signal_absent`
 
 ### 2.7 Multi-Protocol-Lab-Beispiele (ab `0.5.0`)
 
-`examples/` bündelt protokollspezifische Lab-Setups
-([`examples/README.md`](../../examples/README.md) für Konventionen).
-MediaMTX läuft bereits als Core-Lab-Service; sein Smoke ist ein opt-in
-Wrapper:
+`examples/` bündelt protokollspezifische Lab-Setups —
+Konventionen, Project-Name-Pflicht und Smoke-Skript-Regeln stehen in
+[`examples/README.md`](../../examples/README.md). Jedes Beispiel hat
+einen opt-in Smoke und ist nicht Teil von `make gates`.
 
-```bash
-make dev               # Core-Lab inkl. mediamtx + stream-generator
-make smoke-mediamtx    # API erreichbar, teststream ready, HLS auflösbar
-```
+| Beispiel | Variante | Start | Smoke |
+|---|---|---|---|
+| [`examples/mediamtx/`](../../examples/mediamtx/) | Core-Lab-Beispiel | `make dev` | `make smoke-mediamtx` |
+| [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) |
+| [`examples/dash/`](../../examples/dash/) | Eigenes Compose, Project `mtrace-dash` | `docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build` | `make smoke-dash` (auto-up/down) |
+| [`examples/webrtc/`](../../examples/webrtc/) | Doku-only Vorbereitungspfad | — | — (kein Smoke in `0.5.0`; siehe `examples/webrtc/README.md` „Folge-Pfad") |
 
-Details in [`examples/mediamtx/README.md`](../../examples/mediamtx/README.md).
-SRT-/DASH-/WebRTC-Beispiele werden in den `0.5.0`-Folge-Tranchen mit
-eigenen Compose-Dateien ergänzt; Skelette sind unter
-[`examples/srt/`](../../examples/srt/),
-[`examples/dash/`](../../examples/dash/) und
-[`examples/webrtc/`](../../examples/webrtc/) sichtbar.
+Host-Ports sind so geschnitten, dass alle Beispiele **parallel** zum
+Core-Lab und untereinander laufen können:
+
+| Stack | Ports |
+|---|---|
+| Core-Lab (`make dev`) | `8080`/`5173`/`8888`/`9997` (API, Dashboard, MediaMTX-HLS, MediaMTX-Control) |
+| `mtrace-srt` | `8889/tcp` (HLS-Out) · `8890/udp` (SRT-Listener) · `9998/tcp` (MediaMTX-Control) |
+| `mtrace-dash` | `8891/tcp` (DASH-HTTP) |
+| `mtrace-webrtc` (geplant) | `8889/tcp` — kollidiert in `0.5.0` mit `mtrace-srt`; eine Folge-Tranche muss den Schnitt neu vornehmen |
+
+Reset pro Beispiel-Stack: `docker compose -p <project> -f
+examples/<name>/compose.yaml down [--volumes]`. Greift nur den
+jeweiligen Project-Namen — andere Stacks (Core-Lab, andere Beispiele)
+bleiben unangetastet.
 
 ---
 

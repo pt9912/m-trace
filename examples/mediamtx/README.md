@@ -9,6 +9,10 @@
 > [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §3
 > (Tranche 2);
 > [`services/media-server/mediamtx.yml`](../../services/media-server/mediamtx.yml).
+>
+> Quickref aller Multi-Protocol-Lab-Beispiele:
+> [`docs/user/local-development.md`](../../docs/user/local-development.md)
+> §2.7.
 
 ## Zweck
 

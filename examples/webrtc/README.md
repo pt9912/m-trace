@@ -10,6 +10,10 @@
 > Bezug: Lastenheft §7.6 F-62, §8.3 NF-14, §12.1 MVP-24, RAK-39;
 > [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §6
 > (Tranche 5) und §0.1 Tabellen-Zeile „WebRTC".
+>
+> Quickref aller Multi-Protocol-Lab-Beispiele:
+> [`docs/user/local-development.md`](../../docs/user/local-development.md)
+> §2.7.
 
 ## Zweck
 
