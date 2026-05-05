@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranche 0 (Plan-
+> Aktivierung + Toolchain-Hardening). Versions-Bump und finalen
+> CHANGELOG-Block setzt der `0.7.0`-Closeout (Tranche 5).
+
+### Added
+
+- Browser-E2E-Tests für `/srt-health` (Playwright) mit fünf Specs
+  gegen `page.route()`-Mocks: Empty-State, vier Pflichtmetriken
+  in der Tabelle, Stale-Pill, Detail Current+History, Detail-404.
+  Schließt eine `0.6.0`-DoD-Lücke (Tranche 7 „Dashboard-Test/E2E
+  grün"); Lab-gestützter E2E bleibt operative Übung in
+  `releasing.md` §2.1.
+- ENV `MTRACE_SRT_REQUIRED_BANDWIDTH_BPS` für die SRT-Health-
+  Bandbreitenbewertung. Adapter-Hookup
+  `mediamtxclient.WithRequiredBandwidthBPS` setzt das Domain-Feld
+  pro Sample; ohne ENV bleibt es `nil` (spec/telemetry-model.md
+  §7.4 Verhalten unverändert: angezeigt, nicht bewertet).
+- Opt-in-Pfad `SMOKE_INCLUDE_MTRACE_API=1` in
+  `scripts/smoke-srt-health.sh` probt zusätzlich
+  `GET /api/srt/health/{stream_id}` mit `X-MTrace-Token` und
+  validiert die vier RAK-43-Pflichtwerte im Wire-Format aus spec
+  §7a.2. Default-off, weil `examples/srt/compose.yaml` `apps/api`
+  nicht startet — Operator schaltet ihn beim Release-Closeout an.
+- Race-Detector-Stage `race` im `apps/api/Dockerfile`
+  (`CGO_ENABLED=1 go test -race ./...`); Targets `make race` /
+  `make api-race` mit `--no-cache-filter race`. **In `make gates`
+  aufgenommen** (Race ist Superset von `make test`); ~33 s vs.
+  ~20 s `api-test`.
+
+### Changed
+
+- Toolchain-Bump für `apps/api`: Go 1.22.7 → 1.26.0 (1.22 ist seit
+  Februar 2025 EOL); `golang:1.22` → `golang:1.26` für deps/test/
+  coverage/build-Stages und arch-check; `golangci-lint v1.62-alpine`
+  (Sep 2024, Go 1.23) → `v2.12.1-alpine` (Mai 2026, Go 1.26.2).
+  `.golangci.yml` über `golangci-lint migrate` auf v2-Schema
+  gezogen (`disable-all: true` → `default: none`,
+  `gomodguard` → `gomodguard_v2`, `run.timeout` entfällt). Runtime
+  bleibt CGO-frei `distroless-static` (Race-Stage erbt nur von
+  `deps`).
+- `make gates` ruft jetzt `api-race ts-test` statt `test` — Go-
+  Tests laufen mit Race-Detector als Pflicht-Step.
+- `mockSrtHealthRepo` (Test-Helper) mit `sync.Mutex` +
+  `appendedCount()`-Helper abgesichert. Race-Stage hatte einen
+  echten Data-Race aufgedeckt: Mock schrieb aus Collector-
+  Goroutine während Test-Body parallel `len(appended)` las.
+- `plan-0.6.0.md` (archiviert in `done/`): Status-Häkchen
+  konsistent zur Release-Realität nachgezogen — §1 Tranche 5/7
+  von `🟡`/`⬜` auf ✅, alle DoD-Boxen in §8 mit Datum 2026-05-05
+  abgehakt; neue §8.3 mit Post-Release-Code-Review-Befund-
+  Tabelle (vier Befunde mit Schwere/Korrektur/Commit) plus drei
+  Lehren für den `0.7.0`-Closeout.
+
+### Fixed
+
+- `srt_health_collector_test.go`: zwei Polling-Loops
+  `for { if X >= N { break } }` → `for X < N { ... }`
+  (staticcheck QF1006 quickfix in `golangci-lint v2.12.1`); zwei
+  parallele Reads gegen den Mock thread-safe gemacht.
+
 ## [0.6.0] - 2026-05-05
 
 > SRT-Health-View: lokaler Verbindungs-Health-Pfad mit MediaMTX-API
