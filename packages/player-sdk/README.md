@@ -244,7 +244,7 @@ The stable integration point is `Transport.send(batch)`.
 
 ## Performance and Browser Support
 
-The `0.2.0` budget is:
+The performance budget — first set in `0.2.0`, unchanged through `0.4.0` — is:
 
 | Metric | Budget |
 |---|---:|

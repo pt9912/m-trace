@@ -6,7 +6,7 @@ API. Runs as a Node container next to `apps/api`, exposes
 service via HTTP so its distroless-static image stays free of any
 Node/TypeScript runtime (plan-0.3.0 §7).
 
-Status: **0.3.0 Tranche 6**.
+Status: **0.4.0** (eingeführt in 0.3.0 Tranche 6; Versions-Bump auf 0.4.0 mit dem Mono-Repo-Release).
 
 ## Endpoints
 
@@ -55,8 +55,8 @@ pnpm --filter @npm9912/analyzer-service run start
 Dockerfile builds a multi-stage image based on `node:22-alpine`:
 
 ```bash
-docker build -f apps/analyzer-service/Dockerfile -t m-trace-analyzer:0.3.0 .
-docker run --rm -p 7000:7000 m-trace-analyzer:0.3.0
+docker build -f apps/analyzer-service/Dockerfile -t m-trace-analyzer:0.4.0 .
+docker run --rm -p 7000:7000 m-trace-analyzer:0.4.0
 ```
 
 The Compose stack starts it as `analyzer-service` and routes

@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Vorlage für den `0.4.0`-Release-Bump (Tranche 8). Lieferstand der
-> Tranchen 1–7 strukturiert nach Trace-, Storage-, Dashboard-/SSE-,
-> Tempo-, Metrik- und Doku-Bereich.
+## [0.4.0] - 2026-05-05
+
+> Erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/
+> `trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht,
+> optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/
+> Sampling-Doku. Lieferstand der Tranchen 1–7 strukturiert nach Trace-,
+> Storage-, Dashboard-/SSE-, Tempo-, Metrik- und Doku-Bereich.
 
 ### Added
 

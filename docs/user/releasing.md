@@ -1,7 +1,7 @@
 # Releasing — m-trace
 
 > **Status**: Verbindlich für alle Releases (zuletzt verifiziert mit
-> `0.3.0`). CI-Verifikation, Branching-Modell und Tag-Format sind
+> `0.4.0`). CI-Verifikation, Branching-Modell und Tag-Format sind
 > stabil; Container-Image-Veröffentlichung bleibt deferred.
 > Bezug: AK-11, DoD §18 (Lastenheft).
 
@@ -38,32 +38,43 @@ Vor jedem Release:
 Vor Tag und GitHub-Release müssen die Root-Targets grün sein:
 
 ```bash
-make test
-make lint
-make coverage-gate
-make sdk-performance-smoke
-make arch-check
+make gates                # CI-äquivalenter Komplettcheck (test+lint+coverage+arch+schema+docs)
 make build
+make sdk-performance-smoke
 make smoke-cli            # ab 0.3.0: Lastenheft-Aufruf `pnpm m-trace check`
 make smoke-analyzer       # ab 0.3.0: manuelles Release-Gate, fährt Compose hoch
+make smoke-observability  # ab 0.4.0: Cardinality-Smoke; Observability-Stack muss laufen
+make browser-e2e          # ab 0.4.0: Dashboard-Timeline + hls.js-Demo-Flow
 ```
 
 Erfolgskriterien:
 
 - alle Targets exit code 0.
-- `make coverage-gate` umfasst API-, Player-SDK-, Dashboard-,
-  stream-analyzer- und (ab `0.3.0`) analyzer-service-Coverage.
+- `make gates` umfasst `make test`, `make lint`, `make coverage-gate`,
+  `make arch-check`, `make schema-validate` und `make docs-check` —
+  einzelne Aufrufe sind möglich, aber `make gates` ist die
+  CI-äquivalente Eingangsstufe.
+- `make coverage-gate` (Teil von `make gates`) umfasst API-,
+  Player-SDK-, Dashboard-, stream-analyzer- und (ab `0.3.0`)
+  analyzer-service-Coverage.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus
   `spec/backend-api-contract.md` §11 ab.
 - Coverage-Gate liegt bei mindestens 90 %.
 - Architektur-Grenzen bleiben laut `make arch-check` intakt.
+- `make smoke-observability` setzt einen laufenden Observability-Stack
+  voraus (`make dev-observability` bzw. Compose mit
+  `--profile observability`); ohne aktiven Stack schlägt der Smoke
+  release-blockierend fehl.
+- `make browser-e2e` startet API/MediaMTX/FFmpeg/Dashboard im
+  Container und prüft die `/demo`-Route inklusive Session-Timeline-
+  Read-Pfad in Chromium und Firefox.
 
-CI deckt `test`, `lint`, `coverage-gate`, `arch-check`, `build`,
-`sdk-performance-smoke` und `smoke-cli` ab; `smoke-analyzer` läuft
-lokal vor dem Tag (Compose-Stack-Up ist zu schwergewichtig für jeden
-PR-Run). CI-Zielplattform ist GitHub Actions auf `ubuntu-24.04`,
-Workflow-Name: `build`.
+CI deckt `make gates`, `make build`, `make sdk-performance-smoke` und
+`make smoke-cli` ab; `smoke-analyzer`, `smoke-observability` und
+`browser-e2e` laufen lokal vor dem Tag (Compose-Stack-Up bzw.
+Browser-Stack ist zu schwergewichtig für jeden PR-Run). CI-Zielplattform
+ist GitHub Actions auf `ubuntu-24.04`, Workflow-Name: `build`.
 
 ```bash
 gh run watch --workflow build.yml
