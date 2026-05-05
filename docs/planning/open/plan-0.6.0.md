@@ -71,7 +71,7 @@ vollständigen Media-Server-Verwaltung wächst.
 
 | Risiko | Entscheidung für `0.6.0` | Trigger / Nachweis |
 | ------ | ------------------------ | ------------------ |
-| R-2 CGO/SRT-Bindings | Vor jeder Code-Integration entscheiden. Bevorzugt wird ein Sidecar-/Import-Pfad, der `apps/api` CGO-frei hält. Falls nur CGO sinnvoll ist, ist eine ADR Pflicht. | Tranche 1 liefert ADR oder expliziten "kein CGO in API"-Beschluss mit Smoke-Nachweis. |
+| R-2 CGO/SRT-Bindings | Vor jeder Code-Integration entscheiden. Bevorzugt wird ein Sidecar-/Import-Pfad, der `apps/api` CGO-frei hält. Falls nur CGO sinnvoll ist, ist eine ADR Pflicht. | Tranche 1 liefert ADR oder expliziten "kein CGO in API"-Beschluss mit Fixture-/Source-Probe-Nachweis; der volle Health-Smoke folgt in Tranche 2/7. |
 | R-5 Time-Skew-Persistenz | Nicht Teil der SRT-Health-Pflicht, außer SRT-Metriken brauchen Client-/Server-Zeitvergleich im Dashboard. | Wenn Health-Events Zeitversatz bewerten müssen, wird eine additive Sub-Tranche ergänzt oder R-5 separat aktiviert. |
 | R-7 Session-List-N+1 | Beobachten. SRT-Health darf Session-Listen nicht durch zusätzliche N+1-Reads verschlechtern. | Wenn SRT-Health in `GET /api/stream-sessions` eingebettet wird und p95 >= 200 ms reproduzierbar wird, Bulk-Read-Port vor Dashboard-Integration liefern. |
 | R-10 Sampling-Vollständigkeit | Nicht Teil von `0.6.0`, solange SRT-Metriken unabhängig von Player-Sampling laufen. | Aktivieren, falls Health-Ansicht Player-Event-Vollständigkeit als Diagnosevoraussetzung behauptet. |
@@ -174,6 +174,7 @@ Harte Auswahlkriterien:
 | Cardinality | Source-Rohmetriken werden nicht vom Projekt-Prometheus gescraped; nur m-trace-normalisierte bounded Aggregate dürfen exportiert werden. |
 | Freshness | Quelle liefert `observed_at` oder ein äquivalentes Sample-Zeitfenster, sodass stale Daten erkennbar sind. |
 | Failure-Mode | Quelle hat unterscheidbare Fehler für "nicht erreichbar", "keine Verbindung" und "unvollständige Rohdaten". |
+| Probe-Fähigkeit | Ein minimaler Source-Probe kann eine Rohantwort gegen Fixture/Parser prüfen, ohne `apps/api` oder Dashboard zu starten. |
 
 DoD:
 
@@ -211,6 +212,10 @@ DoD:
   `parse_error` oder äquivalente stabile Codes.
 - [ ] Metrikquelle und Fixture sind ohne externen Netzwerkzugriff in CI
   testbar.
+- [ ] Ein minimaler Source-Probe-Nachweis existiert: Parser oder
+  Probe-Skript liest die gewählte Quelle oder ein äquivalentes Fixture
+  und weist die vier Pflichtwerte plus Fehlerklassen nach, ohne
+  `apps/api`, Storage oder Dashboard zu benötigen.
 - [ ] RAK-42 und RAK-46 sind nicht allein durch diese Tranche erfüllt,
   sondern nur vorbereitet; die Verifikationsmatrix bleibt bis Tranche 7
   offen.
@@ -298,12 +303,28 @@ DoD:
 
 - [ ] `spec/telemetry-model.md` beschreibt SRT-Health-Metriken,
   Einheiten, OTel-Namen/Attribute und Cardinality-Grenzen.
+- [ ] `spec/telemetry-model.md` §3.2 und
+  `spec/backend-api-contract.md` §7 erweitern die bounded
+  Prometheus-Label-Allowlist explizit um `health_state` und, falls als
+  Label genutzt, `source_status`; ohne diese Spec-Änderung dürfen
+  `mtrace_*`-Health-Aggregate diese Labels nicht verwenden.
 - [ ] `spec/backend-api-contract.md` beschreibt den Read-Vertrag für
   SRT-Health oder verweist auf einen eigenen neuen Abschnitt.
 - [ ] Domain-/Application-Port für SRT-Health existiert in `apps/api`
   ohne Import auf konkrete Metrikquelle.
 - [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
   Tranche 1 gewählten Quelle.
+- [ ] Collector-/Import-Use-Case ist implementiert oder verbindlich
+  spezifiziert: Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
+  Fehlerpropagation, Backoff/Retry-Grenzen und Shutdown-Verhalten sind
+  dokumentiert und getestet.
+- [ ] Collector persistiert Samples transaktional: Rohwert-Normalisierung,
+  Health-Bewertung, OTel-Export und SQLite-Write haben ein definiertes
+  Fehlerverhalten, damit kein halb sichtbarer Sample-Zustand entsteht.
+- [ ] Collector-/Import-Test weist mindestens zwei aufeinanderfolgende
+  Samples mit steigendem oder verschiedenem `observed_at` nach; dadurch
+  sind Freshness, Stale-Erkennung und Verlauf nicht nur statische
+  Fixture-Felder.
 - [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
   `0.6.0`-Pflicht.
@@ -324,6 +345,8 @@ DoD:
   `/api/metrics` erscheinen.
 - [ ] Tests pinnen Einheiten- und Mapping-Verhalten anhand der Fixtures
   aus Tranche 1.
+- [ ] Smoke- oder Integrationstest weist nach, dass der Collector im Lab
+  mindestens zwei aufeinanderfolgende Samples importiert und persistiert.
 - [ ] `scripts/smoke-observability.sh` oder ein passender neuer Smoke
   prüft, dass neue `mtrace_*`-Metriken keine verbotenen Labels tragen
   und dass Source-Rohmetriken nicht als Prometheus-Targets im Projekt-
