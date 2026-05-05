@@ -85,6 +85,12 @@ remaining queue. Calling `destroy()` more than once is safe.
 | `maxQueueEvents` | no | Local queue cap before normal playback events are dropped. Defaults to 1000. |
 | `transport` | no | Custom transport implementing `send(batch)`. |
 
+The canonical source for these option semantics, value ranges and defaults
+is [`spec/telemetry-model.md`](../../spec/telemetry-model.md) §4.4. The
+table above only documents the SDK call-site shape; the contract between
+SDK configuration and backend (max 100 events per batch, 256 KiB request
+body, drop policy, time-skew) lives in `telemetry-model.md`.
+
 ## Events
 
 The SDK can emit these event names:
@@ -167,6 +173,32 @@ dropped during `flush()` instead of sending a payload the API must reject.
 Sampling is event-based for normal playback events. Sampled-out events do not
 consume `sequence_number`; `session_ended` bypasses sampling so `destroy()` can
 close the session reliably.
+
+**Timeline completeness limit for `sampleRate < 1`** (decision
+`docs/planning/in-progress/plan-0.4.0.md` §8.3, variant (b)): full
+timeline acceptance and all E2E smokes run with `sampleRate = 1`. With
+`sampleRate < 1` the timeline cannot be proven complete without a new
+session-/batch-scoped sampling metadata signal — sampled-out events do
+not consume a `sequence_number`, so the server cannot tell a sampling
+gap apart from a genuine loss. As of `0.4.0`, sampled sessions are
+flagged exclusively through documented configuration and operator
+notes, not through server-side gap detection. A future tranche may
+introduce a durable sampling metadata signal in the read response
+(schema migration, read endpoint extension, dashboard marker); that
+follow-up becomes release-blocking the moment the first
+production-or-lab session with `sampleRate < 1` requires completeness
+guarantees.
+
+## Trace correlation
+
+The SDK can propagate a W3C `traceparent` header per batch-send through
+the optional `traceparent` provider callback. With no provider the SDK
+sends no header and the server generates a root span. The full server
+contract — valid-header acceptance, invalid-header parse-error
+behavior, single-span-per-batch model, `trace_id` vs `correlation_id`
+separation — is normatively documented in
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §2.5 and
+[`spec/player-sdk.md`](../../spec/player-sdk.md) "Trace-Korrelation".
 
 ## Browser Build
 

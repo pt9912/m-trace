@@ -86,6 +86,8 @@ Tiefe Imports aus `src/` oder `dist/` sind keine stabile API.
 | `transport` | nein | Eigener Transport mit `send(batch)`. |
 | `traceparent` | nein | Provider-Funktion für den optionalen W3C-`traceparent`-Header pro Batch-Send (siehe „Trace-Korrelation" unten). |
 
+Die kanonische Quelle für Bedeutung, Wertebereich und Defaults der Sampling-/Batch-Parameter ist [`telemetry-model.md`](./telemetry-model.md) §4.4. Diese Tabelle hier listet nur die SDK-Aufruf-Optionen — wer den Vertrag zwischen SDK-Konfiguration und Backend-Vertrag (Batch-Größe ≤ 100, 256 KiB-Body, Drop-Politik, Time-Skew) nachschlagen will, sollte dort beginnen.
+
 ## Lifecycle
 
 `track()` reiht Events in die lokale Queue ein. `flush()` sendet die Queue
@@ -97,6 +99,8 @@ Payload gesendet.
 `sampleRate` wirkt eventbasiert auf normale Playback-Events. Gesampelte Events
 verbrauchen keine `sequence_number`. `session_ended` umgeht Sampling, damit
 `destroy()` die Session verlässlich schließen kann.
+
+**Timeline-Nachweisgrenze für `sampleRate < 1`** (Beschluss `plan-0.4.0.md` §8.3, Variante (b)): Vollständige Timeline-Abnahme und alle E2E-Smokes laufen mit `sampleRate = 1`. Für `sampleRate < 1` ist Vollständigkeit ohne neues session-/batch-skopiertes Sampling-Metadaten-Signal **nicht beweisbar**, weil gesampelte Events keine `sequence_number` verbrauchen — der Server kann eine fehlende `sequence_number`-Lücke nicht automatisch von einem echten Verlust unterscheiden. Konsequenz für `0.4.0`: Sampled-Sessions werden ausschließlich über dokumentierte Konfiguration und Benutzerhinweis als „sampled" markiert, nicht durch serverseitige Lückenerkennung. Eine zukünftige Tranche kann ein durables Sampling-Metadaten-Signal in der Read-Antwort einführen (Schemamigration, Read-Endpoint-Erweiterung, Dashboard-Markierung); diese Erweiterung wird release-blocking, sobald die erste Produktions- oder Lab-Session mit `sampleRate < 1` Vollständigkeitsnachweise erfordert.
 
 `destroy()` beendet die Session, erzeugt genau ein `session_ended` Event,
 stoppt Timer und flushed die Queue.
@@ -121,8 +125,11 @@ Das SDK kann pro Batch-Send einen W3C-`traceparent`-Header propagieren —
 opt-in über `PlayerSDKConfig.traceparent`. Der Wert kommt aus einem
 Provider-Callback, den der Konsument bereitstellt; das SDK selbst hält
 keinen Tracer. Ohne Provider sendet das SDK keinen Header, der Server
-generiert einen Root-Span (Vertrag siehe
-[`spec/telemetry-model.md`](./telemetry-model.md) §2.5).
+generiert einen Root-Span. Der vollständige Server-Vertrag — Annahme
+gültiger Header, Behandlung ungültiger Header (`mtrace.trace.parse_error`),
+fehlender Header, Span-Modell pro Batch, `trace_id`-vs-`correlation_id`-
+Trennung, OWS-Verhalten am Wire-Layer — steht normativ in
+[`spec/telemetry-model.md`](./telemetry-model.md) §2.5.
 
 > **Scope**: Die Header-Propagation ist eine Eigenschaft des Default-
 > `HttpTransport`. Wer einen eigenen `Transport` über
