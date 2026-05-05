@@ -171,3 +171,80 @@ if [ "${cardinality%.*}" -ge 50 ]; then
   exit 1
 fi
 echo "prometheus-cardinality: ${cardinality}"
+
+# plan-0.6.0 §4 Sub-3.7: SRT-Health-Allowlist prüfen.
+#
+# Wenn `mtrace_srt_health_*`-Serien existieren (Collector ist aktiv),
+# müssen sie sich auf die in spec/telemetry-model.md §3.2 / §7.7
+# freigegebenen bounded Labels (`health_state`, `source_status`,
+# `source_error_code`) plus Target-Metadaten (`__name__`, `instance`,
+# `job`) beschränken. Andere Labels — insbesondere Per-Verbindung-
+# Identifier wie `stream_id`, `connection_id`, MediaMTX-`id`/`path`/
+# `remoteAddr`/`state` — sind verboten (Cardinality-Vertrag §7.7).
+#
+# Wenn keine Serien existieren (Default-Lab ohne SRT-Collector),
+# überspringt der Check stillschweigend — der Collector ist opt-in
+# über `MTRACE_SRT_SOURCE_URL`.
+srt_series_json="$(curl -sS --get "${PROMETHEUS_URL}/api/v1/series" --data-urlencode 'match[]={__name__=~"mtrace_srt_health_.+"}')"
+srt_series_count="$(printf '%s' "$srt_series_json" | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String(p.data.length))')"
+if [ "$srt_series_count" -gt 0 ]; then
+  printf '%s' "$srt_series_json" | node -e '
+const p=JSON.parse(require("fs").readFileSync(0,"utf8"));
+const allowedByMetric={
+  "mtrace_srt_health_samples_total":           new Set(["__name__","instance","job","health_state"]),
+  "mtrace_srt_health_collector_runs_total":    new Set(["__name__","instance","job","source_status"]),
+  "mtrace_srt_health_collector_errors_total":  new Set(["__name__","instance","job","source_error_code"]),
+};
+const violations=[];
+for (const series of p.data) {
+  const allowed = allowedByMetric[series.__name__];
+  if (!allowed) {
+    violations.push({metric: series.__name__, reason: "unexpected mtrace_srt_health_* metric"});
+    continue;
+  }
+  for (const key of Object.keys(series)) {
+    if (!allowed.has(key)) {
+      violations.push({metric: series.__name__, label: key, value: series[key]});
+    }
+  }
+}
+if (violations.length) {
+  console.error("srt-health-allowlist violations: " + JSON.stringify(violations, null, 2));
+  process.exit(1);
+}
+'
+  echo "prometheus-srt-health-allowlist: ${srt_series_count} mtrace_srt_health_* series, allowlist OK"
+else
+  echo "prometheus-srt-health-allowlist: skipped (collector not active)"
+fi
+
+# plan-0.6.0 §0.1 + spec/telemetry-model.md §7.7:
+# Source-Rohmetriken aus MediaMTX/SRT werden nicht vom Projekt-
+# Prometheus gescraped. Wir prüfen das, indem wir die Active-Targets-
+# Liste durchgehen und nach mediamtx-/srt-typischen Job- oder
+# Address-Mustern suchen. Treffer bedeutet: ein Operator hat die
+# Forbidden-Klausel ohne separaten Folge-Scope gebrochen.
+targets_json="$(curl -sS "${PROMETHEUS_URL}/api/v1/targets" || true)"
+if [ -z "$targets_json" ]; then
+  echo "prometheus-source-targets: targets endpoint unreachable" >&2
+  exit 1
+fi
+printf '%s' "$targets_json" | node -e '
+const p=JSON.parse(require("fs").readFileSync(0,"utf8"));
+const active = (p.data && p.data.activeTargets) || [];
+const forbidden=[];
+for (const t of active) {
+  const job   = (t.labels && t.labels.job) || "";
+  const inst  = (t.labels && t.labels.instance) || "";
+  const url   = t.scrapeUrl || "";
+  const haystack = (job + " " + inst + " " + url).toLowerCase();
+  if (haystack.includes("mediamtx") || haystack.match(/(^|[^a-z])srt([^a-z]|$)/)) {
+    forbidden.push({job, instance: inst, scrapeUrl: url});
+  }
+}
+if (forbidden.length) {
+  console.error("source raw metrics scraped by project Prometheus: " + JSON.stringify(forbidden, null, 2));
+  process.exit(1);
+}
+'
+echo "prometheus-source-targets: no MediaMTX/SRT raw scrape jobs detected"

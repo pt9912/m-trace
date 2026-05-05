@@ -106,7 +106,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ✅ Quellen-Entscheidung (Sub-1.1–1.4); zwei DoD-Items in Tranche 2/3 verlagert (`required_bandwidth_bps`, formaler API-Pull-Vertrag) |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ✅ |
-| 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | 🟡 (Sub-3.1 ✅, Sub-3.2..3.7 ⬜) |
+| 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ✅ (Sub-3.1..3.7 alle ✅) |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
 | 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | ⬜ |
 | 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ⬜ |
@@ -575,7 +575,7 @@ Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
 | 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ✅ |
 | 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ✅ |
 | 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ✅ |
-| 3.7 | Smoke-/Integrationstest mit zwei Samples; `scripts/smoke-observability.sh` erweitert um SRT-Allowlist-Prüfung | Tests, Smoke | ⬜ |
+| 3.7 | Smoke-/Integrationstest mit zwei Samples; `scripts/smoke-observability.sh` erweitert um SRT-Allowlist-Prüfung | Tests, Smoke | ✅ |
 
 Sub-3.1 ist abgeschlossen; Sub-3.2 ist die nächste Arbeitsstufe.
 
@@ -702,27 +702,35 @@ DoD (offen, Sub-3.6..3.7):
   Cardinality-Defense-in-Depth. PrometheusPublisher implementiert
   die drei `SrtHealthSampleAccepted`/`SrtCollectorRun`/
   `SrtCollectorError`-Methoden auf dem MetricsPublisher-Port.
-- [ ] Neue `mtrace_srt_*`-Metriken werden allowlist-basiert geprüft:
+- [x] Neue `mtrace_srt_*`-Metriken werden allowlist-basiert geprüft:
   erlaubte Labels sind ausschließlich `__name__`, `instance`, `job`
   und die in `spec/telemetry-model.md` §3.2 /
   `spec/backend-api-contract.md` §7 neu erlaubten bounded Labels
-  (`health_state`, `source_status`, `source_error_code`). Source-
-  Labels wie `id`, `path`, `remoteAddr`, `state`, `connection_id`,
-  IP-Varianten, URL-Teile und Token-/Secret-Felder sind explizit
-  verboten, auch wenn sie nicht von der bisherigen forbidden-by-name-
-  Policy erfasst werden. **→ Sub-3.7**
-- [ ] Rohmetriken der Quelle werden nicht in den Projekt-Prometheus
-  gescraped. Nur m-trace-normalisierte Aggregate dürfen auf
-  `/api/metrics` erscheinen. **→ Sub-3.7**
-- [ ] Tests pinnen Einheiten- und Mapping-Verhalten anhand der Fixtures
-  aus Tranche 1. **→ Sub-3.4 / Sub-3.5**
-- [ ] Smoke- oder Integrationstest weist nach, dass der Collector im Lab
+  (`health_state`, `source_status`, `source_error_code`). Sub-3.7:
+  `scripts/smoke-observability.sh` macht eine pro-Metrik-Allowlist-
+  Prüfung mit explizitem `allowedByMetric`-Map; jede unerwartete
+  Label-Spalte (insbesondere `stream_id`, `connection_id`,
+  MediaMTX-`id`/`path`/`remoteAddr`/`state`) ist release-blockierend.
+  Konditional: wenn keine `mtrace_srt_health_*`-Serien existieren
+  (Collector deaktiviert), wird der Check übersprungen.
+- [x] Rohmetriken der Quelle werden nicht in den Projekt-Prometheus
+  gescraped. Sub-3.7: smoke-observability.sh fragt
+  `/api/v1/targets` ab und sucht nach `mediamtx`/`srt`-Mustern in
+  Job/Instance/Scrape-URL — Treffer ist release-blockierend.
+- [x] Tests pinnen Einheiten- und Mapping-Verhalten anhand der Fixtures
+  aus Tranche 1. Sub-3.4: `mediamtxclient`-Tests gegen go:embed-
+  Fixture (`mediamtx-srtconns-list.json`) prüfen
+  Bandbreiten-/Counter-/RTT-Mapping numerisch.
+- [x] Smoke- oder Integrationstest weist nach, dass der Collector im Lab
   mindestens zwei aufeinanderfolgende Samples importiert und persistiert.
-  **→ Sub-3.7**
-- [ ] `scripts/smoke-observability.sh` oder ein passender neuer Smoke
+  Sub-3.7: `apps/api/adapters/driven/persistence/sqlite/srt_health_collector_integration_test.go`
+  verdrahtet realen SQLite-Storage mit Mock-Source und der
+  Collector-Run-Loop; assertert ≥2 persistierte Rows mit
+  fortschreitender SourceSequence und `HealthState=healthy`.
+- [x] `scripts/smoke-observability.sh` oder ein passender neuer Smoke
   prüft neue `mtrace_srt_*`-Metriken per Label-Allowlist und weist nach,
   dass Source-Rohmetriken nicht als Prometheus-Targets im Projekt-Stack
-  konfiguriert sind. **→ Sub-3.7**
+  konfiguriert sind (Sub-3.7, siehe oben).
 
 ---
 
