@@ -462,7 +462,7 @@ Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die
 ### 5.4 SRT-Health-Pfad (`0.6.0`)
 
 > Bezug: Lastenheft §13.8 RAK-41..RAK-46;
-> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §4
+> [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md) §4
 > (Tranche 3); [`telemetry-model.md`](./telemetry-model.md) §7;
 > [`backend-api-contract.md`](./backend-api-contract.md) §7a, §10.6.
 

@@ -565,7 +565,7 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 ## 7. SRT-Health-Modell (`0.6.0`)
 
 > Bezug: Lastenheft §4.3, §13.8 RAK-41..RAK-46;
-> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md)
+> [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md)
 > §2 (Quellen-Entscheidung), §4 (Datenmodell + Storage + OTel-Vertrag);
 > [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](contract-fixtures/srt/mediamtx-srtconns-list.json).
 
@@ -654,7 +654,7 @@ Bandbreite nur angezeigt (siehe §7.1 `required_bandwidth_bps`).
 ### 7.5 Source-Status und Fehlerklassen
 
 Stabile Codes (analog Probe-Befund aus
-[`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §2.4):
+[`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md) §2.4):
 
 | `source_status` | `source_error_code` | Auslöser |
 |---|---|---|

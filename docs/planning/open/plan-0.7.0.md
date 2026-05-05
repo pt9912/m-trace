@@ -21,7 +21,7 @@
 > §6 (Tranche 5);
 > [`examples/webrtc/README.md`](../../../examples/webrtc/README.md)
 > (aktueller Doku-only Stand);
-> [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md) (vorhergehende Phase).
+> [`plan-0.6.0.md`](../done/plan-0.6.0.md) (vorhergehende Phase).
 > Beim Verschieben von `0.6.0` nach `docs/planning/done/` muss dieser
 > Link im selben Commit auf `../done/plan-0.6.0.md` umgestellt werden.
 >
@@ -51,7 +51,7 @@ kann:
 - `0.5.0` ist released (Tag `v0.5.0` auf `a56dc0b`); WebRTC-Skelett
   unter [`examples/webrtc/`](../../../examples/webrtc/) existiert.
 - `0.6.0` (SRT Health View) ist released; siehe
-  [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md). Wenn der
+  [`plan-0.6.0.md`](../done/plan-0.6.0.md). Wenn der
   Vorgängerplan im Release-Closeout bereits nach `done/` verschoben ist,
   wird dieser Link beim Aktivieren von `0.7.0` atomar auf
   `../done/plan-0.6.0.md` korrigiert.

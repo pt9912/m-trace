@@ -7,6 +7,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-05
+
+> SRT-Health-View: lokaler Verbindungs-Health-Pfad mit MediaMTX-API
+> als CGO-freier Quelle (Risiken-Backlog R-2 als CGO-frei aufgelöst);
+> durabler Health-Store, Read-API plus Dashboard-Route. RAK-41..RAK-46
+> erfüllt; Lieferstand der Tranchen 0–7 strukturiert nach Spec/Domain/
+> Adapter/UI/Doku.
+
+### Added
+
+- **SRT-Health-Smoke (Tranche 2, RAK-41):**
+  [`scripts/smoke-srt-health.sh`](scripts/smoke-srt-health.sh) +
+  `make smoke-srt-health`. Probt HLS-Baseline plus MediaMTX-API
+  `/v3/srtconns/list` und vier RAK-43-Pflichtwerte; auth-Override
+  in [`examples/srt/mediamtx.yml`](examples/srt/mediamtx.yml) per
+  `authInternalUsers`-Block.
+- **Spec-Block für SRT-Health (Tranche 3 Sub-3.1, RAK-42/RAK-46):**
+  Neue [`spec/telemetry-model.md`](spec/telemetry-model.md) §7 mit
+  Datenmodell, Health-Schwellen, Source-Status-Tabelle, Cardinality-
+  Vertrag; [`spec/backend-api-contract.md`](spec/backend-api-contract.md)
+  §7a (Read-Vertrag) und §10.6 (Persistenz);
+  [`spec/architecture.md`](spec/architecture.md) §5.4 Datenfluss-
+  Diagramm. §3.1/§3.2 Allowlist um `health_state`/`source_status`/
+  `source_error_code` erweitert; SRT-Source-Labels (`id`/`path`/
+  `remoteAddr`/`state`) explizit verboten.
+- **Domain-Modell + Driven-Ports (Sub-3.2):**
+  `apps/api/hexagon/domain/srt_health.go` mit Enums (HealthState,
+  SourceStatus, SourceErrorCode, ConnectionState) plus
+  `SrtConnectionSample`/`SrtHealthSample`-Records;
+  `port/driven/srt_source.go`, `srt_health_repository.go`,
+  `srt_errors.go` (Sentinels). Application-Use-Case
+  `SrtHealthCollector` mit reiner `Evaluate`-Funktion (RTT/Loss/
+  Bandbreiten-Schwellen aus `DefaultThresholds`).
+- **SQLite-Persistenz (Sub-3.3):** Migration `V5__srt_health_samples.sql`
+  und durable Tabelle laut spec §10.6; Adapter
+  `apps/api/adapters/driven/persistence/sqlite/srt_health_repository.go`
+  mit Dedupe-Skip auf
+  `(project_id, stream_id, connection_id, COALESCE(source_observed_at, source_sequence))`.
+- **HTTP-Client-Adapter (Sub-3.4):**
+  `apps/api/adapters/driven/srt/mediamtxclient/` implementiert
+  `SrtSource` über HTTP-Pull gegen MediaMTX `/v3/srtconns/list`,
+  CGO-frei. Auth via Basic-Auth aus ENV. Sentinel-Fehler-Wrapping
+  für die drei Source-Status-Klassen. Fixture
+  [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](spec/contract-fixtures/srt/mediamtx-srtconns-list.json)
+  pinnt das Wire-Format.
+- **Polling-Loop + cmd/api-Wiring (Sub-3.5):** Run-Methode mit
+  exponentiellem Backoff (5s → 60s); ENV-Konfig
+  `MTRACE_SRT_SOURCE_URL` / `_USER` / `_PASS` /
+  `_PROJECT_ID` / `_POLL_INTERVAL_SECONDS`. Collector ist opt-in,
+  bleibt im Default-Lab deaktiviert.
+- **Prometheus-Aggregate + OTel-Span (Sub-3.6):** drei bounded
+  CounterVecs (`mtrace_srt_health_samples_total{health_state}`,
+  `mtrace_srt_health_collector_runs_total{source_status}`,
+  `mtrace_srt_health_collector_errors_total{source_error_code}`)
+  plus Span `mtrace.srt.health.collect` mit `mtrace.srt.*`-Attributen.
+- **Smoke-Erweiterung (Sub-3.7):** Integrationstest in
+  `apps/api/adapters/driven/persistence/sqlite/srt_health_collector_integration_test.go`
+  weist zwei Samples mit fortschreitender SourceSequence in real-
+  SQLite nach; [`scripts/smoke-observability.sh`](scripts/smoke-observability.sh)
+  prüft bounded Allowlist für `mtrace_srt_health_*` und liest
+  Prometheus-Targets gegen `mediamtx`/`srt`-Muster.
+- **Read-API (Tranche 4, RAK-43):** Endpoints `GET /api/srt/health`
+  und `GET /api/srt/health/{stream_id}` mit Token-Auth analog
+  `/api/stream-sessions`. Wire-Format trennt `metrics`/`derived`/
+  `freshness`-Block (spec §7a.2); Snapshot-Test gegen
+  [`spec/contract-fixtures/api/srt-health-detail.json`](spec/contract-fixtures/api/srt-health-detail.json).
+- **Dashboard-Route (Tranche 5, RAK-43/RAK-44):** Sidebar-Tab
+  „SRT health" plus Routes `/srt-health` (Tabelle pro Stream) und
+  `/srt-health/[stream_id]` (Current + History, samples_limit=50);
+  `isSrtSampleStale`-Helper, Stale-Pill-Variante (gelb), 5s-
+  Polling. 18 Component-Tests in vitest decken Loading/Empty/
+  Error/Stale/Polling ab.
+- **Operator-Doku (Tranche 6, RAK-45):**
+  [`docs/user/srt-health.md`](docs/user/srt-health.md) mit 12
+  Sektionen — Quickstart, Datenfluss, Metriken (mit MediaMTX-
+  Mapping), Health-Zustände, Counter-vs-Rate, Bandbreite-Caveat
+  (Loopback-Gbps-Falle), Freshness/Stale, Source-Status-Tabelle,
+  acht Fehlerbilder, Cardinality-/Datenschutzvertrag, Operator-
+  Quickref, Deferred-Liste. Querverweise von
+  `examples/srt/README.md`, `docs/user/local-development.md` §2.7.1
+  und [`docs/user/releasing.md`](docs/user/releasing.md) §2.1
+  (fünf manuelle 0.6.0-Prüfschritte).
+
+### Changed
+
+- **Risiken-Backlog:** R-2 (CGO/SRT-Bindings) durch Tranche 1 als
+  CGO-frei aufgelöst und nach §1.2 verschoben — MediaMTX-API über
+  HTTP trägt alle vier RAK-43-Pflichtwerte. Folge-ADR „SRT-Binding-
+  Stack" als obsolet markiert. Stand-Notizen für R-5/R-7/R-9/R-10
+  („0.6.0 Closeout: Triggerschwelle nicht ausgelöst"). Neues R-11
+  für SRT-Health-Cursor-Pagination (samples_limit-only in 0.6.0;
+  Cursor-Pfad als ErrNotImplemented gestubbed).
+- **MetricsPublisher-Port** um drei SRT-Methoden erweitert
+  (`SrtHealthSampleAccepted`/`SrtCollectorRun`/`SrtCollectorError`);
+  Telemetry-Port um `SrtSampleRecorded`. Bestehende Mocks
+  in Test-Suite (`spyMetrics`, `noopTelemetry`, `stubTelemetry`)
+  no-op-erweitert.
+- **Versions-Bump auf 0.6.0** über alle 5 `package.json`,
+  `serviceVersion`, `PLAYER_SDK_VERSION`, `STREAM_ANALYZER_VERSION`,
+  `sdk_version`, Pack-Smoke-Tarball, plus Test-Fixtures und
+  Contract-Fixtures.
+
+### Notes
+
+- Browser-E2E für die Dashboard-Route ist als manueller 5-Schritte-
+  Test in [`docs/user/releasing.md`](docs/user/releasing.md) §2.1
+  dokumentiert; Automatisierung als Folge-Item.
+- MediaMTX-`mbpsLinkCapacity` liefert in Loopback-Lab Gbps-Werte;
+  Health-Bewertung ohne `required_bandwidth_bps` ist nur Anzeige
+  (siehe [`docs/user/srt-health.md`](docs/user/srt-health.md) §4.2).
+
 ## [0.5.0] - 2026-05-05
 
 > Multi-Protokoll-Lab: MediaMTX-, SRT-, DASH-Beispiele plus WebRTC-

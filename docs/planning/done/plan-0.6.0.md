@@ -973,12 +973,12 @@ DoD:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-41 | Muss | SRT-Testsetup aus `examples/srt/` plus Health-Smoke | [ ] |
-| RAK-42 | Muss | Metrikquelle importiert/erfasst SRT-Verbindungsmetriken; Tests/Fixture pinnen Mapping | [ ] |
-| RAK-43 | Muss | API und Dashboard zeigen RTT, Packet Loss, Retransmissions und verfügbare Bandbreite (`available_bandwidth_bps`) | [ ] |
-| RAK-44 | Muss | Dashboard-Route/Tab "SRT Health" mit Zuständen, kurzem Verlauf, Fehler-/Stale-Handling und Tests | [ ] |
-| RAK-45 | Muss | User-Doku erklärt typische SRT-Fehlerbilder anhand der gelieferten Metriken | [ ] |
-| RAK-46 | Muss | Telemetry-Model/API-Kontrakt beschreiben OTel-kompatibles Modell; Observability-Smoke prüft `mtrace_*`-Labels und dass keine Source-Rohmetriken als Projekt-Prometheus-Targets gescraped werden | [ ] |
+| RAK-41 | Muss | SRT-Testsetup aus `examples/srt/` plus `make smoke-srt-health`; Lab-Stack startet/stoppt sauber, vier RAK-43-Pflichtwerte numerisch geprüft | [x] |
+| RAK-42 | Muss | mediamtxclient-Adapter normalisiert MediaMTX-API auf `domain.SrtConnectionSample`; Fixture `spec/contract-fixtures/srt/mediamtx-srtconns-list.json` plus 11 Tests pinnen Mapping; SQLite-Persistenz via V5-Migration plus 6 Repository-Tests | [x] |
+| RAK-43 | Muss | API liefert die vier Pflichtwerte unter `metrics.{rtt_ms,packet_loss_total,retransmissions_total,available_bandwidth_bps}`; Dashboard rendert sie unter `/srt-health` plus Detail; Probe-Befund §2.4 + Snapshot-Test gegen Contract-Fixture | [x] |
+| RAK-44 | Muss | Dashboard-Route `/srt-health` mit Tabelle (Health-Pill, vier Pflichtmetriken, Stale-Hinweis); Detail-Route mit aktuellem Sample + History-Tabelle (samples_limit=50); 18 Component-Tests in vitest decken Loading/Empty/Error/Stale/Polling/Refresh ab | [x] |
+| RAK-45 | Muss | User-Doku [`docs/user/srt-health.md`](../../user/srt-health.md) §8 listet acht Fehlerbilder mit Wertebild; §6 Stale-Erkennung; §4.2 Bandbreitenbewertung-Caveat; Operator-Quickref in §10 | [x] |
+| RAK-46 | Muss | `spec/telemetry-model.md` §7 + §3.1/§3.2 + `spec/backend-api-contract.md` §7a/§10.6 beschreiben das OTel-kompatible Modell; `scripts/smoke-observability.sh` prüft pro-Metrik-Allowlist für `mtrace_srt_health_*` plus `/api/v1/targets`-Check (kein MediaMTX-Scrape im Projekt-Prometheus) | [x] |
 
 ### 8.2 Release-Closeout-Protokoll
 
@@ -987,9 +987,10 @@ nicht ad hoc in Commit-Bodies oder Release-Notes verschwinden.
 
 | Prüfung | Befehl / Nachweis | Datum | Ergebnis | Notiz |
 | ------- | ----------------- | ----- | -------- | ----- |
-| `make gates` | — | — | [ ] | — |
-| Basis-SRT-Smoke | `make smoke-srt` | — | [ ] | RAK-41 |
-| SRT-Health-Smoke | `make smoke-srt-health` oder erweiterter `make smoke-srt` | — | [ ] | RAK-42/43 |
-| Observability/Cardinality | `make smoke-observability` oder äquivalenter neuer Smoke, inklusive Nachweis "keine Source-Rohmetriken als Projekt-Prometheus-Targets" | — | [ ] | RAK-46 |
-| Dashboard-SRT-Health | Browser-E2E oder gezielter Dashboard-Smoke | — | [ ] | RAK-44 |
-| Docs-Gate | `make docs-check` oder Teil von `make gates` | — | [ ] | RAK-45 |
+| `make gates` | CI-äquivalenter Komplettcheck | 2026-05-05 | [x] | siehe Sub-7.8 |
+| Basis-SRT-Smoke | `make smoke-srt` | 2026-05-05 | [x] | RAK-41; Live-Verifikation in Tranche 2 (`make smoke-srt-health` enthält `smoke-srt`-Baseline) |
+| SRT-Health-Smoke | `make smoke-srt-health` | 2026-05-05 | [x] | RAK-42/43; Live verifiziert in Tranche 2 (msRTT=0.231ms, mbpsLinkCapacity=3623 Mbps, Loss=0, Retrans=0) |
+| Observability/Cardinality | `scripts/smoke-observability.sh` mit erweiterter SRT-Allowlist + Source-Targets-Check | siehe Notiz | [x] | RAK-46; Allowlist konditional (siehe Sub-3.7), Source-Targets-Check unconditional. Lab-Lauf folgt beim Operator-Closeout aus `releasing.md` §2.1 — Skript-Verifikation (Bash + Node) ist via `bash -n` und Sub-3.7-Tests grün |
+| Dashboard-SRT-Health | 18 Component-Tests in `apps/dashboard/tests/srt-health-pages.test.ts` plus 5 manuelle Schritte in `releasing.md` §2.1 | 2026-05-05 | [x] | RAK-44; Browser-E2E-Automatisierung als Folge-Item dokumentiert (R-11 deckt Cursor-Pagination ab, nicht E2E) |
+| Docs-Gate | `make docs-check` (Teil von `make gates`) | 2026-05-05 | [x] | RAK-45; alle neuen Cross-Refs in `srt-health.md`/`local-development.md`/`releasing.md`/`examples/srt/README.md` prüfen sauber |
+| Aktive-Risiken-Review | §1.1 in `docs/planning/open/risks-backlog.md` durchgegangen | 2026-05-05 | [x] | R-2 nach §1.2 (CGO-frei aufgelöst); R-5/-7/-9/-10 Stand `0.6.0`-Closeout-Notizen ergänzt; neues R-11 (SRT-Health-Cursor-Pagination) als Folge-Item angelegt |

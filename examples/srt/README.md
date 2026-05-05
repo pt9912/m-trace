@@ -8,7 +8,7 @@
 > Bezug: Lastenheft §7.8 F-82..F-84, RAK-37 (`0.5.0`-Smoke);
 > [`plan-0.5.0.md`](../../docs/planning/done/plan-0.5.0.md) §4
 > (Tranche 3); für die SRT-Health-Erweiterung
-> [`plan-0.6.0.md`](../../docs/planning/in-progress/plan-0.6.0.md)
+> [`plan-0.6.0.md`](../../docs/planning/done/plan-0.6.0.md)
 > §3 (Tranche 2) plus Lastenheft §13.8 RAK-41..RAK-46.
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:

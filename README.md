@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.5.0` released — Multi-Protokoll-Lab mit MediaMTX-, SRT-, DASH-Beispielen und WebRTC-Vorbereitungspfad als opt-in Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`). Player-SDK und stream-analyzer bleiben HLS-only.
+> Status: `0.6.0` released — SRT-Health-View mit MediaMTX-API als CGO-freier Quelle, durabler Health-Store, Read-API (`/api/srt/health`) und Dashboard-Route. Multi-Protokoll-Lab aus `0.5.0` bleibt unverändert. Player-SDK und stream-analyzer bleiben HLS-only.
 
 ---
 
@@ -306,15 +306,19 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.5.0` released (Tag `v0.5.0`,
-GitHub-Actions-`build` am Release-Commit grün): Multi-Protokoll-Lab
-in [`examples/`](examples/) mit MediaMTX-, SRT- und DASH-Beispielen
-plus WebRTC-Vorbereitungspfad ist auf `main` integriert; opt-in
-Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`) sind live-
-verifiziert. Nächste Phase: `0.6.0` (SRT Health View, RAK-41..RAK-46)
-— Plan-Skelett unter
-[`docs/planning/in-progress/plan-0.6.0.md`](docs/planning/in-progress/plan-0.6.0.md).
+Das Projekt steht bei `0.6.0` released: SRT-Health-View mit
+CGO-freier MediaMTX-API als Quelle (Risiken-Backlog R-2 als
+CGO-frei aufgelöst), durabler Health-Store via SQLite-V5-Migration,
+Read-API `GET /api/srt/health[/{stream_id}]` und Dashboard-Route
+`/srt-health`. Operator-Doku in
+[`docs/user/srt-health.md`](docs/user/srt-health.md).
+RAK-41..RAK-46 erfüllt; Tranchen 0–7 in
+[`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md)
+archiviert. Nächste Phase: `0.7.0` (WebRTC-Lab-Erweiterung,
+RAK-47..RAK-51) — Plan-Skelett unter
+[`docs/planning/open/plan-0.7.0.md`](docs/planning/open/plan-0.7.0.md).
 Archivierte Plan-Dateien:
+[`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md),
 [`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),
 [`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).
 

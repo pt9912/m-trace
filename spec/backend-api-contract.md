@@ -551,7 +551,7 @@ Verbindliche Regeln:
 ## 7a. SRT-Health-Read-Vertrag (`0.6.0`)
 
 > Bezug: Lastenheft §13.8 RAK-43;
-> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §5
+> [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md) §5
 > (Tranche 4); [`telemetry-model.md`](./telemetry-model.md) §7.
 
 `0.6.0` Tranche 4 liefert die Read-Endpoints. Vorgesehene Form
@@ -803,7 +803,7 @@ Events angenommen wurden).
 ### 10.6 SRT-Health-Persistenz (`0.6.0`)
 
 > Bezug: Lastenheft §13.8 RAK-42/RAK-46;
-> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §4
+> [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md) §4
 > (Tranche 3 Sub-3.3); [`telemetry-model.md`](./telemetry-model.md)
 > §7.
 

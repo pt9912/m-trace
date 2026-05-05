@@ -134,6 +134,6 @@ function event(eventName: string): PlaybackEvent {
     client_timestamp: "2026-04-30T00:00:00.000Z",
     server_received_at: "2026-04-30T00:00:00.000Z",
     ingest_sequence: 1,
-    sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+    sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
   };
 }

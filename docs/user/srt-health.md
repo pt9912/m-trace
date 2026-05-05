@@ -6,7 +6,7 @@ der Server bewertet Health-Zustände, das Dashboard zeigt sie.
 
 > Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §4.3, §13.8
 > RAK-41..RAK-46;
-> [`docs/planning/in-progress/plan-0.6.0.md`](../planning/in-progress/plan-0.6.0.md);
+> [`docs/planning/done/plan-0.6.0.md`](../planning/done/plan-0.6.0.md);
 > [`spec/telemetry-model.md`](../../spec/telemetry-model.md) §7;
 > [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
 > §7a/§10.6;
@@ -34,7 +34,7 @@ der Server bewertet Health-Zustände, das Dashboard zeigt sie.
   Detail-Ansicht mit Mini-Timeline der letzten 50 Samples.
 
 Was `0.6.0` **nicht** liefert, steht in §11 (deferred Signale) und in
-[`plan-0.6.0.md`](../planning/in-progress/plan-0.6.0.md) §0.1.
+[`plan-0.6.0.md`](../planning/done/plan-0.6.0.md) §0.1.
 
 ## 2. Quickstart
 
@@ -258,7 +258,7 @@ auswertet:
 | Detaillierte Verbindungsstabilität | Kann aus Health-Verlauf abgeleitet werden, aber kein eigener Pflichtwert in `0.6.0`. |
 | Link Health-Score (separat zu `health_state`) | `health_state` deckt die operative Sicht; ein detaillierter Score (z. B. 0–100) ist Folge-Scope. |
 | Failover-Zustände | `0.6.0` hat kein Multi-Path-/Failover-Lab; deferred. |
-| Cursor-Pagination im History-Read-Pfad | spec §7a.3 dokumentiert das Wire-Format; SQLite-Adapter ist als ErrNotImplemented gestubbed (siehe [`plan-0.6.0.md`](../planning/in-progress/plan-0.6.0.md) §4 Sub-3.3). |
+| Cursor-Pagination im History-Read-Pfad | spec §7a.3 dokumentiert das Wire-Format; SQLite-Adapter ist als ErrNotImplemented gestubbed (siehe [`plan-0.6.0.md`](../planning/done/plan-0.6.0.md) §4 Sub-3.3). |
 
 Operator-Hinweis: wenn ein deferred Signal produktiv gebraucht wird,
 ist der Pfad ein Folge-Plan (nicht ein lokaler Hotfix), weil die

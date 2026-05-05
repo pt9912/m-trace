@@ -77,7 +77,7 @@ const events = [
     server_received_at: "2026-04-30T00:00:02.000Z",
     ingest_sequence: 2,
     sequence_number: 2,
-    sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+    sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
   },
   {
     event_name: "rebuffer_started",
@@ -86,7 +86,7 @@ const events = [
     client_timestamp: "2026-04-30T00:00:00.000Z",
     server_received_at: "2026-04-30T00:00:01.000Z",
     ingest_sequence: 1,
-    sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+    sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
   }
 ];
 
@@ -255,7 +255,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:04.000Z",
         server_received_at: "2026-04-30T00:00:04.000Z",
         ingest_sequence: 4,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     const { default: EventsPage } = await import("../src/routes/events/+page.svelte");
@@ -319,7 +319,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:04.000Z",
         server_received_at: "2026-04-30T00:00:04.000Z",
         ingest_sequence: 4,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     await fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
@@ -603,7 +603,7 @@ describe("dashboard route components", () => {
         server_received_at: "2026-04-30T00:00:01.000Z",
         ingest_sequence: 1,
         sequence_number: 1,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" },
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" },
         delivery_status: "duplicate_suspected"
       },
       {
@@ -614,7 +614,7 @@ describe("dashboard route components", () => {
         server_received_at: "2026-04-30T00:00:03.000Z",
         ingest_sequence: 2,
         sequence_number: 2,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" },
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" },
         delivery_status: "replayed"
       }
     ];
@@ -663,7 +663,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:00.000Z",
         server_received_at: "2026-04-30T00:00:01.000Z",
         ingest_sequence: 1,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     apiState.nextCursor = "opaque-cursor";
@@ -687,7 +687,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:00.000Z",
         server_received_at: "2026-04-30T00:00:01.000Z",
         ingest_sequence: 1,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     apiState.nextCursor = "opaque-cursor";
@@ -711,7 +711,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:00.000Z",
         server_received_at: "2026-04-30T00:00:01.000Z",
         ingest_sequence: 1,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       },
       {
         event_name: "segment_loaded",
@@ -720,7 +720,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:02.000Z",
         server_received_at: "2026-04-30T00:00:03.000Z",
         ingest_sequence: 2,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       },
       {
         event_name: "playback_started",
@@ -729,7 +729,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:04.000Z",
         server_received_at: "2026-04-30T00:00:05.000Z",
         ingest_sequence: 3,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     routeState.params.id = "session-1";
@@ -753,7 +753,7 @@ describe("dashboard route components", () => {
         server_received_at: "2026-04-30T00:00:01.000Z",
         ingest_sequence: 1,
         sequence_number: 1,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       },
       {
         event_name: "segment_loaded",
@@ -763,7 +763,7 @@ describe("dashboard route components", () => {
         server_received_at: "2026-04-30T00:00:03.000Z",
         ingest_sequence: 2,
         sequence_number: 2,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     apiState.nextCursor = "opaque-cursor";
@@ -783,7 +783,7 @@ describe("dashboard route components", () => {
         server_received_at: "2026-04-30T00:00:05.000Z",
         ingest_sequence: 3,
         sequence_number: 3,
-        sdk: { name: "@npm9912/player-sdk", version: "0.5.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.6.0" }
       }
     ];
     const loadMoreBtn = screen.getByRole("button", { name: /Load more events/ });

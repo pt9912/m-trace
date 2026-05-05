@@ -89,7 +89,7 @@ func runRaceUpserts(
 				ServerReceivedAt: t0,
 				IngestSequence:   int64(idx + 1),
 				CorrelationID:    candidateCID(idx),
-				SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.5.0"},
+				SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.6.0"},
 			}})
 			if err != nil {
 				errs[idx] = err

@@ -41,7 +41,7 @@ async function run(
 
 const okMaster: AnalysisResult = {
   status: "ok",
-  analyzerVersion: "0.5.0",
+  analyzerVersion: "0.6.0",
   analyzerKind: "hls",
   input: { source: "text" },
   playlistType: "master",
@@ -52,7 +52,7 @@ const okMaster: AnalysisResult = {
 
 const errNotHls: AnalysisErrorResult = {
   status: "error",
-  analyzerVersion: "0.5.0",
+  analyzerVersion: "0.6.0",
   analyzerKind: "hls",
   code: "manifest_not_hls",
   message: "not HLS"
@@ -185,7 +185,7 @@ describe("m-trace CLI — URL input", () => {
   it("returns exit 1 with JSON on URL analysis error", async () => {
     const errBlocked: AnalysisErrorResult = {
       status: "error",
-      analyzerVersion: "0.5.0",
+      analyzerVersion: "0.6.0",
       analyzerKind: "hls",
       code: "fetch_blocked",
       message: "blocked",
