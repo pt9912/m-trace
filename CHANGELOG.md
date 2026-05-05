@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Vorlage für den `0.5.0`-Release-Bump (Tranche 6). Lieferstand der
-> Tranchen 0–5 strukturiert nach Lab-/Beispiel-Bereichen.
+## [0.5.0] - 2026-05-05
+
+> Multi-Protokoll-Lab: MediaMTX-, SRT-, DASH-Beispiele plus WebRTC-
+> Vorbereitungspfad. Lieferstand der Tranchen 0–6 strukturiert nach
+> Lab-/Beispiel-Bereichen.
 
 ### Added
 
