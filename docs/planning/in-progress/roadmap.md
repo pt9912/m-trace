@@ -1,7 +1,7 @@
 # Roadmap
 
-> **Stand**: 2026-05-03
-> **Phase**: `0.4.0` (Erweiterte Trace-Korrelation) in Arbeit; Tranche 1–6 (SQLite-Persistenz, Session-Trace-Modell, Manifest-/Segment-Korrelation, Dashboard-Session-Verlauf inkl. SSE, optionales Tempo-Profil, Aggregat-Metriken + RAK-33/34-Sichtbarkeit) abgeschlossen; Tranche 7 (Cardinality- und Sampling-Dokumentation, RAK-35) ist der nächste offene Schritt.
+> **Stand**: 2026-05-05
+> **Phase**: `0.4.0` (Erweiterte Trace-Korrelation) in Arbeit; Tranchen 1–7 (SQLite-Persistenz, Session-Trace-Modell, Manifest-/Segment-Korrelation, Dashboard-Session-Verlauf inkl. SSE, optionales Tempo-Profil, Aggregat-Metriken + RAK-33/34-Sichtbarkeit, Cardinality- und Sampling-Doku RAK-35) abgeschlossen; Tranche 8 (Release-Akzeptanz `0.4.0`) ist der nächste offene Schritt.
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -90,7 +90,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 32  | ✅      | Manifest-, Segment- und Player-Ereignisse in gemeinsamen Trace-/Korrelationskontext integrieren                       | Nach Schritt 31                                                 | RAK-30; plan-0.4.0 Tranche 3                                  |
 | 33  | ✅      | Dashboard-Session-Verlauf ohne Tempo inkl. SSE, Backfill, Polling-Fallback und SQLite-Restart-Test umsetzen           | Nach Schritt 30                                                 | RAK-32; ADR-0003; plan-0.4.0 Tranche 4                        |
 | 34  | ✅      | Optionales Tempo-Profil anbinden, ohne RAK-29/RAK-32 vom Trace-Backend abhängig zu machen                             | Nach Schritt 31                                                 | RAK-31; plan-0.4.0 Tranche 5                                  |
-| 35  | 🟡      | Aggregat-Metriken, Drop-/Invalid-/Rate-Limit-Sichtbarkeit und Cardinality-/Sampling-Doku abschließen                  | Parallel zu Schritten 30–33                                     | RAK-33..RAK-35; plan-0.4.0 Tranchen 6 (✅) und 7 (offen)       |
+| 35  | ✅      | Aggregat-Metriken, Drop-/Invalid-/Rate-Limit-Sichtbarkeit und Cardinality-/Sampling-Doku abschließen                  | Parallel zu Schritten 30–33                                     | RAK-33..RAK-35; plan-0.4.0 Tranchen 6 (✅) und 7 (✅)           |
 | 36  | ⬜      | Release-Akzeptanzkriterien `0.4.0` verifizieren und Roadmap auf `0.5.0` umstellen                                     | Nach Schritten 30–35                                            | RAK-29..RAK-35; plan-0.4.0 Tranche 8                          |
 
 ---
