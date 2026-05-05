@@ -5,7 +5,7 @@
 > und released sein; insbesondere muss das SRT-Beispiel aus
 > `plan-0.5.0.md` Tranche 3 als reproduzierbarer Lab-Pfad vorliegen.
 > Der Vorgängerplan liegt bis zum `0.5.0`-Release unter
-> `../in-progress/plan-0.5.0.md`; beim Aktivieren von `0.6.0` gilt
+> `../done/plan-0.5.0.md`; beim Aktivieren von `0.6.0` gilt
 > `../done/plan-0.5.0.md`. Diese Pfade sind bewusst nicht als
 > Markdown-Link gesetzt, damit der Doc-Ref-Check nicht während der
 > Archivierung kippt.

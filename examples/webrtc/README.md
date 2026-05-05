@@ -8,7 +8,7 @@
 > Folge-Scope.
 >
 > Bezug: Lastenheft §7.6 F-62, §8.3 NF-14, §12.1 MVP-24, RAK-39;
-> [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §6
+> [`plan-0.5.0.md`](../../docs/planning/done/plan-0.5.0.md) §6
 > (Tranche 5) und §0.1 Tabellen-Zeile „WebRTC".
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:
@@ -120,25 +120,9 @@ Folgepunkte einer späteren Tranche:
   bleibt in `0.5.0` auf hls.js-Quellen aus `0.4.0` Tranche 4
   beschränkt.
 
-## Folge-Pfad (jenseits `0.5.0`)
-
-Was eine spätere Phase aus diesem Vorbereitungspfad eine produktive
-WebRTC-Lab-Erweiterung machen würde, in grober Reihenfolge:
-
-1. **Lab-Compose** unter `examples/webrtc/compose.yaml` mit
-   MediaMTX-WHIP-/WHEP-Endpoint und `coturn`-Container (falls
-   nicht-localhost-Pfade getestet werden sollen).
-2. **README-Konkretisierung** mit Operator-Befehlen, Port-Schnitt
-   gegen die anderen Lab-Beispiele und Browser-Handcheck-Anleitung.
-3. **`make smoke-webrtc-prep`-Target**, das ausschließlich
-   Vorbereitungsgrenzen prüft (Compose hochgefahren, Endpoints
-   antworten, kein Playback-/`getStats()`-Anspruch). Reservierter
-   Target-Name siehe `examples/README.md` Sektion „Smoke-Targets".
-4. **Bewertung WebRTC-Telemetrie** in einem eigenen Plan-Schnitt:
-   bounded Allowlist-Labels, `getStats()`-Subset-Auswahl, Schema-
-   Drift-Strategie. Erst danach würde ein produktiver Pfad ins
-   `apps/api`/Dashboard-System kommen.
-
-Diese Schritte sind ausdrücklich **nicht** Teil von `0.5.0` und
-nicht in der `0.5.0`-Roadmap als Pflicht aufgenommen — das
-Multi-Protocol-Lab fokussiert MediaMTX, SRT und DASH.
+Eine produktive WebRTC-Lab-Erweiterung (Lab-Compose, Smoke, Player-
+SDK-Anbindung, Telemetrie-Schnitt) ist als
+[`docs/planning/open/plan-0.7.0.md`](../../docs/planning/open/plan-0.7.0.md)
+geplant. Der reservierte Smoke-Target-Name `make smoke-webrtc-prep`
+(siehe [`examples/README.md`](../README.md) Sektion „Smoke-Targets")
+wartet darauf, in jenem Folge-Plan ausgefüllt zu werden.

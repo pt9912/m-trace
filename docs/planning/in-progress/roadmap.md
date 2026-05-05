@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-05
-> **Phase**: `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) in Arbeit, Tranchen 0–5 abgeschlossen, Tranche 6 Doku-Closeout (T6a) abgeschlossen; offen sind T6b Versions-Bump auf `0.5.0` und T6c Tag/Push (opt-in). Plan: [`plan-0.5.0.md`](./plan-0.5.0.md). Vorgänger: `0.4.0` released (Tag `v0.4.0` auf `9e4fdb3`, GitHub-Actions-Run 25359933129 grün, Plan archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md)).
+> **Phase**: `0.5.0` released — Tag `v0.5.0` auf `a56dc0b`, GitHub-Actions-`build`-Workflow am Release-Commit grün (Run 25364250989). RAK-36..RAK-40 erfüllt; Plan-Datei nach [`docs/planning/done/plan-0.5.0.md`](../done/plan-0.5.0.md) archiviert. Nächste Phase: `0.6.0` (SRT Health View, RAK-41..RAK-46) — Plan-Skelett unter [`docs/planning/open/plan-0.6.0.md`](../open/plan-0.6.0.md).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -31,22 +31,25 @@ aktualisieren.
 | ✅      | Publizierbares Player-SDK (`0.2.0`) | `@npm9912/player-sdk` mit ESM/CJS/IIFE, Pack-Smokes, Browser-Support-Matrix; RAK-11..RAK-21.                                 | [`plan-0.2.0.md`](../done/plan-0.2.0.md)                               |
 | ✅      | Stream-Analyzer (`0.3.0`)           | `@npm9912/stream-analyzer` (Library + CLI), `analyzer-service` (interner HTTP-Wrapper), `POST /api/analyze`; RAK-22..RAK-28. | [`plan-0.3.0.md`](../done/plan-0.3.0.md)                               |
 | ✅      | Erweiterte Trace-Korrelation (`0.4.0`) | SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline (SSE + Polling-Fallback), optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku; RAK-29..RAK-35 erfüllt. | [`plan-0.4.0.md`](../done/plan-0.4.0.md)                            |
+| ✅      | Multi-Protocol Lab (`0.5.0`)        | `examples/`-Konventions-Index plus MediaMTX-/SRT-/DASH-Beispiele und WebRTC-Vorbereitungspfad; opt-in Smokes `make smoke-mediamtx`/`smoke-srt`/`smoke-dash`. RAK-36..RAK-40 erfüllt. | [`plan-0.5.0.md`](../done/plan-0.5.0.md)                            |
 
-### 1.2 Aktive `0.5.0`-Phase
+### 1.2 Nächste Phase `0.6.0`
 
-`0.4.0` ist veröffentlicht; `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40)
-ist die aktive Phase. Detaillierte DoD-Tracker und Tranchen-Übersicht
-stehen in [`plan-0.5.0.md`](./plan-0.5.0.md). Sub-Tranchen-Eingang:
+`0.5.0` ist veröffentlicht; `0.6.0` (SRT Health View, RAK-41..RAK-46)
+ist die nächste aktive Phase. Plan-Skelett unter
+[`plan-0.6.0.md`](../open/plan-0.6.0.md). Lieferübersicht der `0.5.0`-
+Tranchen (zur Historie, finaler Stand siehe
+[`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
 
 | Tranche | Status | Inhalt                                                  | Verweis                                                                              |
 | ------- | ------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| 0       | ✅     | Vorgänger-Gate und Scope-Festlegung                     | [`plan-0.5.0.md`](./plan-0.5.0.md) §1a                                               |
-| 1       | ✅     | Example-Struktur und Lab-Konventionen                   | [`plan-0.5.0.md`](./plan-0.5.0.md) §2                                                |
-| 2       | ✅     | MediaMTX-Beispiel erweitern (RAK-36)                    | [`plan-0.5.0.md`](./plan-0.5.0.md) §3                                                |
-| 3       | ✅     | SRT-Beispiel als Lab-Szenario (RAK-37)                  | [`plan-0.5.0.md`](./plan-0.5.0.md) §4                                                |
-| 4       | ✅     | DASH-Beispiel und Analyzer-Grenze (RAK-38)              | [`plan-0.5.0.md`](./plan-0.5.0.md) §5                                                |
-| 5       | ✅     | WebRTC vorbereitet, nicht produktiv (RAK-39)            | [`plan-0.5.0.md`](./plan-0.5.0.md) §6                                                |
-| 6       | 🟡     | Dokumentation, Smokes und Release-Gates (RAK-40)        | [`plan-0.5.0.md`](./plan-0.5.0.md) §7 (Doku-Closeout T6a fertig; T6b Versions-Bump + T6c Tag/Push offen) |
+| 0       | ✅     | Vorgänger-Gate und Scope-Festlegung                     | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §1a                                               |
+| 1       | ✅     | Example-Struktur und Lab-Konventionen                   | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §2                                                |
+| 2       | ✅     | MediaMTX-Beispiel erweitern (RAK-36)                    | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §3                                                |
+| 3       | ✅     | SRT-Beispiel als Lab-Szenario (RAK-37)                  | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §4                                                |
+| 4       | ✅     | DASH-Beispiel und Analyzer-Grenze (RAK-38)              | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §5                                                |
+| 5       | ✅     | WebRTC vorbereitet, nicht produktiv (RAK-39)            | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §6                                                |
+| 6       | ✅     | Dokumentation, Smokes und Release-Gates (RAK-40)        | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §7 |
 
 ---
 
@@ -98,6 +101,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 34  | ✅      | Optionales Tempo-Profil anbinden, ohne RAK-29/RAK-32 vom Trace-Backend abhängig zu machen                             | Nach Schritt 31                                                 | RAK-31; plan-0.4.0 Tranche 5                                  |
 | 35  | ✅      | Aggregat-Metriken, Drop-/Invalid-/Rate-Limit-Sichtbarkeit und Cardinality-/Sampling-Doku abschließen                  | Parallel zu Schritten 30–33                                     | RAK-33..RAK-35; plan-0.4.0 Tranchen 6 (✅) und 7 (✅)           |
 | 36  | ✅      | Release-Akzeptanzkriterien `0.4.0` verifizieren und Roadmap auf `0.5.0` umstellen                                     | Nach Schritten 30–35                                            | RAK-29..RAK-35; plan-0.4.0 Tranche 8; Tag `v0.4.0` auf `9e4fdb3`, CI grün                                       |
+| 37  | ✅      | Multi-Protocol-Lab (`examples/`) plus opt-in Smokes ausliefern und Roadmap auf `0.6.0` umstellen                      | Nach Schritt 36                                                 | RAK-36..RAK-40; plan-0.5.0 Tranchen 0–6; Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün                      |
 
 ---
 
@@ -114,8 +118,9 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.2.0` | Publizierbares Player SDK    | ✅      | RAK-11..RAK-21                                                                                        |
 | `0.3.0` | Stream Analyzer              | ✅      | RAK-22..RAK-28; DoD-Tracking in [`plan-0.3.0.md`](../done/plan-0.3.0.md)                              |
 | `0.4.0` | Erweiterte Trace-Korrelation | ✅      | RAK-29..RAK-35; Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün                                   |
-| `0.5.0` | Multi-Protocol Lab           | ⬜      | RAK-36..RAK-40                                                                                        |
+| `0.5.0` | Multi-Protocol Lab           | ✅      | RAK-36..RAK-40; Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün                                   |
 | `0.6.0` | SRT Health View              | ⬜      | RAK-41..RAK-46                                                                                        |
+| `0.7.0` | WebRTC-Lab-Erweiterung       | ⬜      | RAK-47..RAK-N (Vorschlag in [`open/plan-0.7.0.md`](../open/plan-0.7.0.md) §0.2; Lastenheft-Patch ausstehend) |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

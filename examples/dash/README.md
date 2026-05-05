@@ -7,7 +7,7 @@
 >
 > Bezug: Lastenheft §7.6 F-58, §7.7 F-73, §7.8 F-82..F-84, §12.3
 > MVP-37, RAK-38;
-> [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §5
+> [`plan-0.5.0.md`](../../docs/planning/done/plan-0.5.0.md) §5
 > (Tranche 4).
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:

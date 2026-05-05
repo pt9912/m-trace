@@ -1,17 +1,15 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 in Arbeit. **Tranchen 0–5** abgeschlossen, **Tranche 6
-> Doku-Closeout** (T6a) abgeschlossen — RAK-Matrix §7.1 belegt,
-> Closeout-Protokoll §7.2 mit Live-Smoke-Daten gefüllt, README/
-> `docs/user/`-Doku synchronisiert, Beispiel-Cross-Verweise gesetzt.
-> **Offen in Tranche 6**: T6b (Versions-Bump auf `0.5.0` analog
-> Tranche 8 von `0.4.0`), T6c (Tag/Push/GitHub-Release als opt-in,
-> Plan-Archivierung).
+> **Status**: ✅ released. Alle Tranchen 0–6 abgeschlossen. Tag
+> `v0.5.0` auf `a56dc0b`; GitHub-Actions-Run 25364250989 in 4m37s grün;
+> Release-Notes auf https://github.com/pt9912/m-trace/releases/tag/v0.5.0.
+> Plan ist nach `docs/planning/done/` archiviert. Roadmap-Fokus auf
+> `0.6.0` (SRT Health View, RAK-41..RAK-46) verschoben.
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
 > (lokales Streaming-Lab), §8.3 (Erweiterbarkeit), §10.5 (Infrastruktur),
-> §13.7 (RAK-36..RAK-40); [Roadmap](./roadmap.md) §3/§4;
+> §13.7 (RAK-36..RAK-40); [Roadmap](../in-progress/roadmap.md) §3/§4;
 > [Architektur](../../../spec/architecture.md) §8.2; [Local Development](../../user/local-development.md);
 > [Stream Analyzer](../../user/stream-analyzer.md); [Risiken-Backlog](../open/risks-backlog.md).
 >
@@ -89,7 +87,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ✅ |
 | 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ✅ |
 | 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ✅ |
-| 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | 🟡 |
+| 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | ✅ |
 
 ---
 
@@ -424,12 +422,17 @@ DoD:
   Prüfumfang explizit auf Vorbereitungsgrenze begrenzt (kein
   Playback-Qualitäts- oder `getStats()`-Anspruch).
 - [x] Roadmap/Folge-Plan nennt, was aus der Vorbereitung später
-  echte WebRTC-Metrikunterstützung macht — README-Sektion „Folge-
-  Pfad (jenseits `0.5.0`)" listet vier konkrete Schritte
-  (Lab-Compose, README-Konkretisierung, `smoke-webrtc-prep`-Target,
-  Bewertung WebRTC-Telemetrie). Diese Schritte sind ausdrücklich
-  **nicht** Teil von `0.5.0` und nicht in der Roadmap als Pflicht
-  aufgenommen.
+  echte WebRTC-Metrikunterstützung macht — `examples/webrtc/README.md`
+  „Bekannte Grenzen" benennt die vier strukturellen Out-of-Scope-
+  Klauseln (kein Signaling, kein `getStats()`, keine Aggregat-
+  Metriken, kein Dashboard-Hook) und verweist auf
+  [`docs/planning/open/plan-0.7.0.md`](../open/plan-0.7.0.md) als
+  Folge-Plan. Detaillierte Folge-Schritte (Lab-Compose, README-
+  Konkretisierung, `smoke-webrtc-prep`-Target, WebRTC-Telemetrie-
+  Bewertung) gehören in `plan-0.7.0.md`, nicht in die Beispiel-
+  README — Konsequenz aus T6c-Review. `plan-0.7.0.md` §0.2 schlägt
+  zusätzlich die Lastenheft-Erweiterung um RAK-47..RAK-N als
+  Pflicht-Vorarbeit vor.
 
 ---
 
@@ -482,16 +485,26 @@ DoD:
   Befehl/Datum in §7.2 dokumentiert; WebRTC bleibt explizit kein Smoke-
   Nachweis, weil `smoke-webrtc-prep` in `0.5.0` nicht implementiert ist
   (Doku-only Vorbereitungspfad gemäß §6).
-- [ ] Versionen, `CHANGELOG.md`, Planstatus, Roadmap und Release-Notes
-  sind für `0.5.0` aktualisiert. — `CHANGELOG.md`-`[Unreleased]`-Block
-  ist mit `0.5.0`-Lieferstand strukturiert, Datum kommt beim Release-
-  Tag. Versions-Bump auf `0.5.0` im Code (`apps/api`-`serviceVersion`,
-  `PLAYER_SDK_VERSION`, `package.json`-Stellen, `pack-smoke.mjs`,
-  Test-Fixtures, Contract-Fixtures) ist als T6b-Schritt separater Commit;
-  Tag/Push opt-in in T6c.
-- [ ] `plan-0.5.0.md` ist nach Abschluss nach `docs/planning/done/`
-  verschoben; Roadmap verweist danach auf den finalen Pfad. — kommt im
-  T6c-Closeout nach Tag/Push.
+- [x] Versionen, `CHANGELOG.md`, Planstatus, Roadmap und Release-Notes
+  sind für `0.5.0` aktualisiert (T6b `f25e40e`, T6c CHANGELOG-Datierung
+  `a56dc0b`). Alle 21+ versionsführenden Stellen (5 `package.json`,
+  `apps/api/cmd/api/main.go` `serviceVersion`, `PLAYER_SDK_VERSION`,
+  `contracts/sdk-compat.json`, `pack-smoke.mjs` `expectedVersion`,
+  `pack:smoke`-Tarballname, `stream-analyzer/.../parsers/hls.ts`-
+  Fehlertext, alle Test-/Contract-Fixtures, 3 Doku-Stellen in
+  `apps/analyzer-service/README.md` und `packages/player-sdk/README.md`)
+  auf `0.5.0`. Schema-Versionen unverändert (`wire_schema_version=1.0`).
+  CHANGELOG-Block `[0.5.0] - 2026-05-05`. GitHub-Release auf
+  https://github.com/pt9912/m-trace/releases/tag/v0.5.0 mit Auszug
+  als Notes.
+- [x] `plan-0.5.0.md` ist nach Abschluss nach `docs/planning/done/`
+  verschoben; Roadmap verweist danach auf den finalen Pfad (T6c).
+  `git mv` zum `done/`-Pfad; interner Roadmap-Verweis im Bezugs-
+  Block auf `../in-progress/roadmap.md` korrigiert (war vor `git mv`
+  noch `./roadmap.md`); Cross-Verweise in
+  `README.md`, `examples/{README,mediamtx,srt,dash,webrtc}/README.md`
+  und `docs/planning/open/plan-0.6.0.md` auf `done/plan-0.5.0.md`
+  nachgezogen.
 
 ### 7.1 RAK-Verifikationsmatrix
 

@@ -1,9 +1,9 @@
 # `examples/` — Multi-Protocol Lab Beispiele
 
-> **Status**: `0.5.0`-Lieferung in Arbeit. Diese Stelle liefert
-> reproduzierbare lokale Beispiele für die Streaming-Protokolle, die
-> das Multi-Protocol Lab (Lastenheft §7.8 + RAK-36..RAK-39) abdeckt.
-> Bezug: [`docs/planning/in-progress/plan-0.5.0.md`](../docs/planning/in-progress/plan-0.5.0.md).
+> **Status**: `0.5.0` released. Diese Stelle liefert reproduzierbare
+> lokale Beispiele für die Streaming-Protokolle, die das Multi-Protocol
+> Lab (Lastenheft §7.8 + RAK-36..RAK-40) abdeckt. Bezug:
+> [`docs/planning/done/plan-0.5.0.md`](../docs/planning/done/plan-0.5.0.md).
 
 ## Zweck
 
@@ -70,14 +70,14 @@ existierenden Naming `smoke-<name>` (analog `smoke-observability`,
 oder lange Medien-Starts brauchen, die jeder PR-Run nicht tragen kann.
 (Beschluss `plan-0.5.0.md` §0.1 Zeile „Smoke-Targets".)
 
-Geplante Targets in `0.5.0`:
+Targets in `0.5.0`:
 
 | Target                  | Tranche | Status                              |
 |-------------------------|---------|-------------------------------------|
-| `make smoke-mediamtx`   | 2       | ⬜                                  |
-| `make smoke-srt`        | 3       | ⬜                                  |
-| `make smoke-dash`       | 4       | ⬜                                  |
-| `make smoke-webrtc-prep`| 5       | ⬜ — nur falls headless stabil      |
+| `make smoke-mediamtx`   | 2       | ✅ (Core-Lab)                        |
+| `make smoke-srt`        | 3       | ✅ (Project `mtrace-srt`)            |
+| `make smoke-dash`       | 4       | ✅ (Project `mtrace-dash`)           |
+| `make smoke-webrtc-prep`| 5       | ⬜ — nicht in `0.5.0`, Folge-Scope   |
 
 ### Smoke-Skript-Konvention
 

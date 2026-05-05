@@ -6,7 +6,7 @@
 > `make smoke-mediamtx`.
 >
 > Bezug: Lastenheft §7.8 F-82..F-84, RAK-36;
-> [`plan-0.5.0.md`](../../docs/planning/in-progress/plan-0.5.0.md) §3
+> [`plan-0.5.0.md`](../../docs/planning/done/plan-0.5.0.md) §3
 > (Tranche 2);
 > [`services/media-server/mediamtx.yml`](../../services/media-server/mediamtx.yml).
 >

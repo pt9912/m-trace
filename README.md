@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.5.0` in Arbeit — Multi-Protokoll-Lab mit MediaMTX-, SRT-, DASH-Beispielen und WebRTC-Vorbereitungspfad. `0.4.0` (Erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht, optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku) ist die letzte getaggte Release.
+> Status: `0.5.0` released — Multi-Protokoll-Lab mit MediaMTX-, SRT-, DASH-Beispielen und WebRTC-Vorbereitungspfad als opt-in Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`). Player-SDK und stream-analyzer bleiben HLS-only.
 
 ---
 
@@ -241,65 +241,11 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
 
 ## Roadmap
 
-### v0.1.0 — OTel-native lokale Demo
-
-- MediaMTX-Lokal-Setup
-- hls.js-Demo-Route
-- Aufnahme von Player-Events
-- einfache Session-Ansicht
-- einfache Event-Ansicht
-- Prometheus-Aggregat-Metriken
-- OpenTelemetry-kompatibles Eventmodell
-
-### v0.2.0 — Publizierbares Player-SDK
-
-- npm-Paket
-- stabile Public API
-- hls.js-Adapter-Tests
-- Event-Schema-Kompatibilitätstests
-- Batching und Sampling
-- dokumentierter Browser-Support
-
-### v0.3.0 — Stream-Analyzer (✅ veröffentlicht)
-
-- HLS-Manifest-Parsing für Master und Media Playlists
-- Segment-Dauer-Checks und Target-Duration-Verletzung
-- API-Anbindung über internen analyzer-service
-- CLI-Grundlage `pnpm m-trace check <url-or-file>`
-
-### v0.4.0 — Erweiterte Trace-Korrelation (✅ veröffentlicht)
-
-- durable SQLite-Persistenz mit `make wipe` als verbindlichem
-  Reset-Pfad (ADR-0002)
-- Player-Session-Korrelation über `correlation_id` (durable, Tempo-
-  unabhängig); `trace_id` ist optionale Per-Batch-Vertiefung
-- Manifest-/Segment-/Player-Trace mit URL-Redaction am SDK-Boundary
-- Dashboard-Session-Timeline (`/sessions/<id>`) mit SSE und
-  Polling-Fallback (ADR-0003)
-- optionales Tempo-Profil `make dev-tempo` (RAK-31, Kann-Scope;
-  Dashboard-Timeline bleibt Tempo-unabhängig — RAK-32)
-- Cardinality-/Sampling-Doku: Pflichtcounter und
-  `mtrace_api_batches_received` sind label-frei; Sampling-Grenze für
-  `sampleRate < 1` dokumentiert
-
-### v0.5.0 — Multi-Protokoll-Lab (in Arbeit)
-
-- `examples/`-Struktur mit Konventions-Index und vier Sub-
-  Beispielen (MediaMTX, SRT, DASH, WebRTC-Vorbereitung)
-- MediaMTX-Beispiel als Core-Lab-Variante, SRT- und DASH-
-  Beispiele mit eigenen `mtrace-srt`/`mtrace-dash`-Compose-Stacks
-- Opt-in Smokes `make smoke-mediamtx`/`smoke-srt`/`smoke-dash` —
-  nicht in `make gates`
-- Analyzer/Player-SDK bleiben abwärtskompatibel; kein DASH-/
-  WebRTC-Code in `apps/api`, `apps/dashboard`, `packages/player-sdk`
-  oder `packages/stream-analyzer`
-
-### v0.6.0 — SRT-Health-Ansicht
-
-- SRT-Metriken
-- RTT, Packet Loss, Retransmissions
-- Link-Health-Dashboard
-- SRT-Troubleshooting-Doku
+Status pro Release, aktive Phase, nächste Schritte und Folge-ADRs
+stehen kanonisch in
+[`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
+Pro-Release-Lieferstand mit Bullet-Listen siehe
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -360,15 +306,16 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.5.0` in Arbeit: Multi-Protokoll-Lab in
-[`examples/`](examples/) mit MediaMTX-, SRT- und DASH-Beispielen
+Das Projekt steht bei `0.5.0` released (Tag `v0.5.0`,
+GitHub-Actions-`build` am Release-Commit grün): Multi-Protokoll-Lab
+in [`examples/`](examples/) mit MediaMTX-, SRT- und DASH-Beispielen
 plus WebRTC-Vorbereitungspfad ist auf `main` integriert; opt-in
-Smokes laufen lokal grün. `0.4.0` (released, Tag `v0.4.0`,
-GitHub-Actions-`build` am Release-Commit grün) bleibt der letzte
-veröffentlichte Stand mit dem vollen Trace-Korrelations-Featureset.
-Plan-Dateien:
-[`docs/planning/in-progress/plan-0.5.0.md`](docs/planning/in-progress/plan-0.5.0.md)
-und
+Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`) sind live-
+verifiziert. Nächste Phase: `0.6.0` (SRT Health View, RAK-41..RAK-46)
+— Plan-Skelett unter
+[`docs/planning/open/plan-0.6.0.md`](docs/planning/open/plan-0.6.0.md).
+Archivierte Plan-Dateien:
+[`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),
 [`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).
 
 Leitende Dokumente:
