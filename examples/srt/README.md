@@ -36,6 +36,10 @@ MediaMTX `/v3/srtconns/list` probt und die vier RAK-43-Pflichtwerte
 verifiziert. Smoke-Baseline `make smoke-srt` (HLS-Pfad) bleibt
 unverändert grün und ist weiterhin der `0.5.0`-RAK-37-Nachweis.
 
+Operator-Doku zur SRT-Health-View (Datenfluss, Metrik-Mapping,
+Health-Schwellen, Fehlerbilder, Cardinality-Grenzen):
+[`docs/user/srt-health.md`](../../docs/user/srt-health.md).
+
 ## Voraussetzungen
 
 - Docker Engine ≥ 24.0, Docker Compose v2.20.

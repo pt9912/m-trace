@@ -109,7 +109,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ✅ (Sub-3.1..3.7 alle ✅) |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ✅ |
 | 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | 🟡 (UI ✅, Browser-E2E → Tranche 7) |
-| 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ⬜ |
+| 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ✅ |
 | 7 | Smokes, Gates und Release-Closeout (RAK-41..RAK-46) | ⬜ |
 
 ---
@@ -903,30 +903,34 @@ Health-Score und Failover-Zustände.
 
 DoD:
 
-- [ ] `docs/user/srt-health.md` oder eine passende User-Doku-Seite
-  erklärt SRT-Health-View, Metriken, Einheiten, Health-Zustände und
-  Grenzen.
-- [ ] `examples/srt/README.md` verlinkt auf die Health-Doku und enthält
-  kurze Smoke-/Troubleshooting-Hinweise.
-- [ ] `docs/user/local-development.md` nennt den SRT-Health-Startpfad
-  und die relevanten URLs/Make-Targets.
-- [ ] `docs/user/releasing.md` nennt zusätzliche `0.6.0`-Smokes und
-  manuelle Prüfungen.
-- [ ] Dokumentation erklärt die typischen Fehlerbilder aus der Tabelle
-  mit konkreten Messwerten oder Zustandsbeispielen.
-- [ ] Dokumentation erklärt Counter-vs.-Rate-Semantik, Sample-Fenster
-  und stale/unknown-Zustände, damit Operatoren Werte nicht als
-  absolute Momentaufnahme missverstehen.
-- [ ] Dokumentation erklärt die Bandbreitenbewertung: Unterschied
-  zwischen verfügbarer Bandbreite und Durchsatz, Herkunft von
-  `required_bandwidth_bps` und Verhalten, wenn keine Schwelle bekannt
-  ist.
-- [ ] Dokumentation enthält eine Deferred-Liste für Send-/Receive-
-  Buffer, Verbindungsstabilität, Link Health und Failover-Zustände,
-  falls diese Signale nicht in `0.6.0` ausgeliefert werden.
-- [ ] Dokumentation benennt Datenschutz-/Cardinality-Grenzen: keine
-  per-Verbindung-Identifier in Prometheus-Labels, keine Secrets in
-  Metriken.
+- [x] `docs/user/srt-health.md` ist die zentrale User-Doku. Zwölf
+  Sektionen: Lieferumfang, Quickstart (Smoke + Collector + Read +
+  Dashboard), Datenfluss-Diagramm, Metriken-Tabelle inkl. MediaMTX-
+  Mapping, Health-Zustände mit Default-Schwellen, Freshness/Stale-
+  Erkennung, Source-Status-Tabelle, Fehlerbilder, Cardinality-
+  Vertrag, Operator-Quickref, Deferred-Liste, Querverweise.
+- [x] `examples/srt/README.md` verlinkt auf
+  `docs/user/srt-health.md` (Operator-Doku-Hinweis im Zweck-Abschnitt).
+- [x] `docs/user/local-development.md` §2.7 Tabelle erweitert um
+  `make smoke-srt-health`-Hinweis; neuer §2.7.1 SRT-Health-View
+  mit Quickref und Verlinkung auf `srt-health.md`.
+- [x] `docs/user/releasing.md` §2 Smoke-Liste um `make smoke-srt-health`
+  ergänzt; neuer §2.1 manuelle `0.6.0`-Prüfungen (Lab + Collector-
+  ENV + Dashboard-Route + Stale-Pfad-Test).
+- [x] Fehlerbilder-Tabelle in §8 srt-health.md mit acht Mustern
+  (RTT, Loss, Retransmissions, Bandbreite, Keine Verbindung, Stale,
+  API blockiert, Schema-Drift) plus konkreter Wertebild-Beschreibung.
+- [x] §4.1 (Counter vs Rate) und §6 (Freshness) erklären Sample-
+  Window, Reset-Verhalten, `bytesReceived`-Surrogat und
+  Stale-Erkennung.
+- [x] §4.2 (Bandbreite richtig lesen) trennt `available` vs
+  `throughput`, dokumentiert Loopback-Gbps-Caveat und das
+  Verhalten ohne `required_bandwidth_bps`.
+- [x] §11 Deferred/Out-of-Scope listet Buffer-Felder, Verbindungs-
+  stabilität, Link-Health-Score, Failover, Cursor-Pagination.
+- [x] §9 Cardinality-/Datenschutz-Block benennt verbotene Labels
+  und ENV-/Geheimnis-Pflicht für Auth-Credentials.
+- [x] Alle neuen Doku-Links laufen durch `make docs-check`.
 - [ ] Alle neuen Doku-Links laufen durch `scripts/verify-doc-refs.sh`
   oder `make gates`.
 

@@ -263,7 +263,7 @@ einen opt-in Smoke und ist nicht Teil von `make gates`.
 | Beispiel | Variante | Start | Smoke |
 |---|---|---|---|
 | [`examples/mediamtx/`](../../examples/mediamtx/) | Core-Lab-Beispiel | `make dev` | `make smoke-mediamtx` |
-| [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) |
+| [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) plus `make smoke-srt-health` ab `0.6.0` für Health-API-Probe |
 | [`examples/dash/`](../../examples/dash/) | Eigenes Compose, Project `mtrace-dash` | `docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build` | `make smoke-dash` (auto-up/down) |
 | [`examples/webrtc/`](../../examples/webrtc/) | Doku-only Vorbereitungspfad | — | — (kein Smoke in `0.5.0`; siehe `examples/webrtc/README.md` „Folge-Pfad") |
 
@@ -281,6 +281,19 @@ Reset pro Beispiel-Stack: `docker compose -p <project> -f
 examples/<name>/compose.yaml down [--volumes]`. Greift nur den
 jeweiligen Project-Namen — andere Stacks (Core-Lab, andere Beispiele)
 bleiben unangetastet.
+
+### 2.7.1 SRT-Health-View (`0.6.0`)
+
+`0.6.0` ergänzt einen lokalen SRT-Verbindungs-Health-Pfad:
+
+- **Lab-Smoke** `make smoke-srt-health` (verifiziert HLS + MediaMTX-API
+  `/v3/srtconns/list` + vier RAK-43-Pflichtwerte).
+- **Collector** im API-Prozess (opt-in via `MTRACE_SRT_SOURCE_URL`).
+- **Read-Endpoints** `GET /api/srt/health[/{stream_id}]`.
+- **Dashboard-Route** `/srt-health` mit Tabelle + Mini-Timeline.
+
+Vollständige Operator-Doku (Metriken, Schwellen, Fehlerbilder,
+Cardinality-Grenzen, Deferred-Liste): [`srt-health.md`](./srt-health.md).
 
 ---
 

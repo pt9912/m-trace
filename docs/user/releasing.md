@@ -47,6 +47,7 @@ make smoke-observability  # ab 0.4.0: Cardinality-Smoke; Observability-Stack mus
 make browser-e2e          # ab 0.4.0: Dashboard-Timeline + hls.js-Demo-Flow
 make smoke-mediamtx       # ab 0.5.0: MediaMTX-Beispiel (RAK-36); braucht laufendes `make dev`
 make smoke-srt            # ab 0.5.0: SRT-Beispiel (RAK-37); startet/stoppt Project mtrace-srt
+make smoke-srt-health     # ab 0.6.0: SRT-Health-Smoke (RAK-41/RAK-42); startet/stoppt mtrace-srt + probt MediaMTX-API
 make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
 ```
 
@@ -76,9 +77,32 @@ Erfolgskriterien:
 CI deckt `make gates`, `make build`, `make sdk-performance-smoke` und
 `make smoke-cli` ab; `smoke-analyzer`, `smoke-observability`,
 `browser-e2e` und ab `0.5.0` `smoke-mediamtx`/`smoke-srt`/
-`smoke-dash` laufen lokal vor dem Tag (Compose-Stack-Up bzw.
-Browser-Stack ist zu schwergewichtig für jeden PR-Run). CI-Zielplattform
-ist GitHub Actions auf `ubuntu-24.04`, Workflow-Name: `build`.
+`smoke-dash` (plus ab `0.6.0` `smoke-srt-health`) laufen lokal vor
+dem Tag (Compose-Stack-Up bzw. Browser-Stack ist zu schwergewichtig
+für jeden PR-Run). CI-Zielplattform ist GitHub Actions auf
+`ubuntu-24.04`, Workflow-Name: `build`.
+
+### 2.1 Manuelle `0.6.0`-Prüfungen (SRT-Health-View)
+
+Zusätzlich zu den oben gelisteten Smokes braucht der `0.6.0`-Release
+eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
+
+1. `make dev` plus `examples/srt/`-Stack (`docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build`).
+2. ENV `MTRACE_SRT_SOURCE_URL=http://localhost:9998` auf den `apps/api`-
+   Prozess setzen und neu starten — Log meldet
+   „srt-health collector enabled".
+3. Dashboard-Route <http://localhost:5173/srt-health> öffnen — die
+   Tabelle muss `srt-test` mit Health-Pill `healthy`, RTT < 5 ms und
+   Bandbreite im Mbit/s-Bereich zeigen.
+4. Detail-Route `/srt-health/srt-test` — History muss mindestens
+   zwei Samples mit fortschreitender Source-Sequence haben (Polling
+   alle 5 s).
+5. Stale-Pfad: Publisher kurz stoppen
+   (`docker compose -p mtrace-srt stop srt-publisher`); nach
+   ≥ 15 s muss die Pill auf `healthy (stale)` (gelb) wechseln.
+
+Vollständige Operator-Doku:
+[`srt-health.md`](./srt-health.md).
 
 ```bash
 gh run watch --workflow build.yml
