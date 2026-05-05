@@ -51,9 +51,13 @@ kann:
 - `0.6.0` (SRT Health View) ist released; siehe
   [`plan-0.6.0.md`](./plan-0.6.0.md).
 - Lastenheft `1.1.9` ist um RAK-47..RAK-51 für `0.7.0` erweitert (§13.9 + §4a.12 in `done/plan-0.1.0.md`); siehe §0.2.
-- Headless-Browser-WebRTC-Stabilität in CI ist bewertet (siehe
-  Tranche 3 unten); falls als zu instabil eingestuft, bleibt der
-  Smoke aus dem Scope.
+
+`smoke-webrtc-prep` (RAK-48 Muss) ist endpoint-/compose-only und
+benötigt **keinen** headless-Browser-Pfad — Headless-Browser-
+Stabilität ist daher kein Vorgänger-Gate. Eine separate
+Browser-Stabilitätsbewertung wird in Tranche 3 ausschließlich für
+optionale Erweiterungen (Browser-Handcheck, getStats()-Sammlung)
+geführt und kann das Muss-Target nicht aus dem Scope kippen.
 
 ### 0.2 Lastenheft-Erweiterung (ausgeliefert in `1.1.9`)
 
@@ -68,9 +72,12 @@ dokumentiert. Inhalt für die Tranchen-DoD unten:
 | RAK-48 | Muss | `make smoke-webrtc-prep`-Target prüft Vorbereitungsgrenze (Endpoints antworten, kein Playback-/`getStats()`-Anspruch). |
 | RAK-49 | Soll | `getStats()`-Subset ist als bounded Allowlist in `spec/telemetry-model.md` §3.2 dokumentiert; Schema-Drift-Strategie zwischen Browser-Versionen ist definiert. |
 | RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert. |
-| RAK-51 | Kann | Player-SDK exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`. |
+| RAK-51 | Kann | Player-SDK exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`. **Nicht Teil dieses Plans** — Lastenheft-Anker für eine Folge-Tranche/-Release; DoD wird in einem späteren Plan formuliert. |
 
-Die DoD-Items in §1–§5 unten referenzieren diese RAKs verbindlich.
+Die DoD-Items in §1–§5 unten referenzieren RAK-47..RAK-50
+verbindlich; RAK-51 bleibt bewusst ohne Tranche und ist im
+[`plan-0.7.0.md`](./plan-0.7.0.md)-Wartungsblock §6 als Folge-
+Punkt vermerkt.
 
 ### 0.3 Out-of-Scope-Klauseln (durchgängig)
 
@@ -154,7 +161,10 @@ Bezug: Tranche 1; [`examples/README.md`](../../../examples/README.md)
 
 Ziel: Ein opt-in Smoke-Target, das ausschließlich
 **Vorbereitungsgrenzen** prüft — kein Playback-Qualitäts- oder
-`getStats()`-Anspruch.
+`getStats()`-Anspruch. Verifikation läuft endpoint-/compose-only
+(HTTP-Status, Container-Health) und benötigt **keinen** headless-
+Browser — RAK-48 ist damit ohne Browser-Stabilitäts-Vorbedingung
+erfüllbar.
 
 DoD:
 
@@ -162,15 +172,18 @@ DoD:
   `[smoke-webrtc-prep]`-Stderr-Präfix, Cleanup nur für
   `mtrace-webrtc`-Project-Name (Konvention aus
   `examples/README.md`).
-- [ ] Smoke prüft: WebRTC-WHIP/-WHEP-Endpoint antwortet (HTTP-Status,
-  kein Playback), Compose-Stack ist hochgefahren, ggf. STUN/TURN-
-  Container läuft.
-- [ ] Smoke-Stabilität in CI ist bewertet — wenn Headless-Browser-
-  Pfad reproduzierbar grün läuft, Target wird ergänzt; sonst bleibt
-  Tranche 3 mit `[!]` blockiert und Tranche 4 entscheidet, ob der
-  Pfad ganz aus dem Scope fällt.
+- [ ] Smoke prüft endpoint-/compose-only: WebRTC-WHIP/-WHEP-Endpoint
+  antwortet (HTTP-Status), Compose-Stack ist hochgefahren, ggf.
+  STUN/TURN-Container läuft. Kein Browser, kein Playback,
+  kein `getStats()`.
 - [ ] `Makefile` listet `smoke-webrtc-prep` im `help`-Text und
   `.PHONY`; opt-in (nicht in `make gates`).
+- [ ] Optional / nicht release-blockierend: Headless-Browser-
+  Erweiterung (Browser-Handcheck-Automatisierung, getStats()-Smoke)
+  ist separat bewertet — wenn reproduzierbar grün, ergänzt sich
+  ein zusätzliches Target, sonst bleibt der Browser-Pfad bei
+  Tranche 2 (manueller Handcheck). Diese Bewertung kann das
+  Muss-Target `smoke-webrtc-prep` nicht aus dem Scope kippen.
 
 ---
 
@@ -195,8 +208,14 @@ DoD:
   gesammelt werden soll, plus die Schema-Drift-Strategie zwischen
   Chromium-/Firefox-/Safari-Versionen.
 - [ ] Risiken-Backlog erweitert (R-N) den Schema-Drift als
-  release-blockierende Schwelle: „bei Browser-Major-Version X ändert
-  sich `getStats()`-Schema, Smoke muss aktualisiert werden".
+  **Spec-/Adapter-Review-Gate**: bei Browser-Major-Version X mit
+  `getStats()`-Schema-Änderung wird die WebRTC-Allowlist in
+  `spec/telemetry-model.md` §3.2 plus die WebRTC-Adapter-Spec
+  (Tranche 4 Item 2) reviewed; konkrete Smoke-/Contract-Test-
+  Updates sind erst dann release-blockierend, wenn ein produktiver
+  WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan). Vor
+  diesem Punkt ist `smoke-webrtc-prep` (endpoint-/compose-only)
+  vom Schema-Drift nicht betroffen.
 - [ ] Cardinality-Smoke (`scripts/smoke-observability.sh`) wird auf
   die neuen WebRTC-Allowlist-Labels erweitert — sobald irgendein
   produktiver `mtrace_webrtc_*`-Counter im Code steht.
@@ -213,6 +232,15 @@ DoD:
   [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c.
   Plan kann nach `docs/planning/in-progress/` ziehen, sobald
   Vorgänger-Gates aus §0.1 grün sind.
+- RAK-51 (Player-SDK-WebRTC-Adapter, „Kann") ist bewusst **nicht**
+  Teil der Tranchen 1–4 — der Lastenheft-Anker bleibt für eine
+  Folge-Tranche/-Release reserviert. Auslöser für eine Folge-
+  Planung: Lab-Erfahrungen aus Tranche 1–3 zeigen einen konkreten
+  Operator-Use-Case oder Tranche 4 schließt die `getStats()`-
+  Allowlist + Schema-Drift-Strategie so weit ab, dass ein
+  produktiver Adapter-Pfad ohne Spec-Lücke implementierbar ist.
+  Das Folge-Dokument benennt dann eine eigene Tranche 5 mit
+  Public-API-Definition, hls.js-Pfad-Trennung und Compat-Tests.
 - Wenn der WebRTC-Pfad nach Bewertung als „nie produktiv"
   entschieden wird, dieses Dokument als historische Notiz nach
   `docs/planning/done/` ziehen oder löschen — je nachdem, ob die
