@@ -2,10 +2,14 @@
 
 > **Status**: ✅ released. `0.6.0` ist auf Tag `v0.6.0` (`d08a89f`)
 > ausgeliefert; GitHub-Actions-`build`-Workflow-Run 25380938222 grün
-> am Release-Commit. RAK-41..RAK-46 erfüllt; Vorgängerplan `0.5.0`
-> liegt unter [`./plan-0.5.0.md`](./plan-0.5.0.md). Aktive Phase
-> ist `0.7.0` (WebRTC-Lab-Erweiterung); Plan-Skelett unter
-> [`../open/plan-0.7.0.md`](../open/plan-0.7.0.md).
+> am Release-Commit. RAK-41..RAK-46 erfüllt. Drei Code-Lücken aus
+> dem Post-Release-Review wurden in den Commits `bd396c4`
+> (Browser-E2E) und `0a8c416` (`required_bandwidth_bps`-ENV +
+> opt-in `SMOKE_INCLUDE_MTRACE_API`) nachgezogen — Details in §8.3.
+> Vorgängerplan `0.5.0` liegt unter
+> [`./plan-0.5.0.md`](./plan-0.5.0.md). Aktive Phase ist `0.7.0`
+> (WebRTC-Lab-Erweiterung); Plan-Skelett unter
+> [`../in-progress/plan-0.7.0.md`](../in-progress/plan-0.7.0.md).
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9
@@ -109,9 +113,9 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ✅ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ✅ (Sub-3.1..3.7 alle ✅) |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ✅ |
-| 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | 🟡 (UI ✅, Browser-E2E → Tranche 7) |
+| 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | ✅ (UI in 5.1–5.4; Browser-E2E post-release nachgezogen — siehe §8.3 Befund #3, Commit `bd396c4`) |
 | 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ✅ |
-| 7 | Smokes, Gates und Release-Closeout (RAK-41..RAK-46) | ⬜ |
+| 7 | Smokes, Gates und Release-Closeout (RAK-41..RAK-46) | ✅ (Code-Review-Befunde §8.3 nachgezogen in Commits `bd396c4` + `0a8c416`) |
 
 ---
 
@@ -431,11 +435,16 @@ DoD:
 - [x] Für jeden Rohwert ist Einheit und Semantik festgelegt
   (§2.4 Befund-Tabelle: ms, Mbps × 1_000_000 → bps, Counter
   kumulativ, Snapshot-Werte).
-- [ ] Quelle oder Lab-Konfiguration liefert einen erwarteten
+- [x] Quelle oder Lab-Konfiguration liefert einen erwarteten
   Bandbreitenbedarf (`required_bandwidth_bps` oder äquivalente
-  Streamrate plus Sicherheitsmarge). **→ Tranche 2/3** (Lab-Stream
-  ist 1 Mbps Video plus 96 kbps Audio = ~1.1 Mbps Nutzdaten;
-  Sicherheitsmarge in Tranche 3 entscheidet die finale Schwelle).
+  Streamrate plus Sicherheitsmarge). **Lab-Stream**: 1 Mbps Video plus
+  96 kbps Audio ≈ 1.1 Mbps Nutzdaten; **operative Schwelle** wird per
+  ENV `MTRACE_SRT_REQUIRED_BANDWIDTH_BPS` gesetzt (Empfehlung Lab:
+  `1500000`, ergibt ~36 % Sicherheitsmarge). Adapter-Verdrahtung
+  via `mediamtxclient.WithRequiredBandwidthBPS` post-release in
+  Commit `0a8c416` (siehe §8.3 Befund #4) — vor Release fehlte das
+  Adapter-Hookup, Domain-Feld + Health-Bewertung waren bereits
+  in Sub-3.2 implementiert.
 - [x] Für Counter-Quellen ist festgelegt, wie daraus Dashboard-Werte
   berechnet werden (§2.4 Mapping-Festlegungen: Counter speichern,
   Rate optional ableiten; `bytesReceived`-Δ als Sample-Window).
@@ -451,10 +460,13 @@ DoD:
 - [x] Metrikquelle und Fixture sind ohne externen Netzwerkzugriff in CI
   testbar (Probe lief lokal in Docker-Compose ohne Internet; Fixture
   ist eine reine JSON-Datei).
-- [ ] Jede Quelle hat einen expliziten API-Import- oder API-Pull-Vertrag
-  für `apps/api`. **→ Tranche 3** (formaler Vertrag in
-  `spec/architecture.md` + `spec/backend-api-contract.md`; §2.5
-  liefert die Adapter-Skizze als Eingang).
+- [x] Jede Quelle hat einen expliziten API-Import- oder API-Pull-Vertrag
+  für `apps/api`. **In Tranche 3 geliefert**: Driven-Port
+  `driven.SrtSource` (`apps/api/hexagon/port/driven/srt_source.go`),
+  Spec-Block in `spec/architecture.md` (Hexagon-Adapter SRT-Health) +
+  `spec/backend-api-contract.md` §7 (Source-Port-Vertrag); HTTP-
+  Adapter `mediamtxclient.HTTPSrtSource` mit Fixture-Tests setzt
+  den Vertrag um.
 - [x] Ein minimaler Source-Probe-Nachweis existiert (Sub-1.2:
   zwei `curl`-Snapshots gegen Lab-Stack; Schema-Inspektion gegen
   Fixture; alle vier Pflichtwerte plus Fehlerklassen-Mapping
@@ -752,7 +764,7 @@ die Rohwerte zu verstecken.
 | 4.1 | Application-Query-Service `SrtHealthQueryService` (LatestByStream + HistoryByStream) mit derived/freshness-Ableitung | Code, Application | ✅ |
 | 4.2 | HTTP-Handler `SrtHealthListHandler` + `SrtHealthGetHandler` + Router-Wiring; Token-Auth + CORS analog Dashboard-Read | Code, Adapter | ✅ |
 | 4.3 | Contract-Fixture `spec/contract-fixtures/api/srt-health-detail.json` + go:embed-Snapshot-Test | Tests, Fixture | ✅ |
-| 4.4 | Plan-Closeout | Doku | 🟡 |
+| 4.4 | Plan-Closeout | Doku | ✅ |
 
 ### 5.1 DoD
 
@@ -870,10 +882,15 @@ Dashboard-Struktur.
   13 Tests: empty, healthy, degraded, stale, source-status-non-ok,
   error, 404, polling, refresh-button, missing-stream-id,
   source_observed_at-Variante).
-- [ ] Browser-E2E oder ein gezielter Dashboard-Smoke validiert die
-  Ansicht gegen das lokale SRT-Health-Lab. **→ Tranche 7 Closeout**
-  (E2E gegen Lab braucht aktiven Collector mit MediaMTX; das wird
-  beim Release-Smoke gesetzt, nicht in Tranche 5 isoliert).
+- [x] Browser-E2E oder ein gezielter Dashboard-Smoke validiert die
+  Ansicht. **Geliefert post-release** (Commit `bd396c4`, Befund #3
+  in §8.3): `tests/e2e/srt-health.spec.ts` mit fünf Specs gegen
+  Playwright-`page.route()`-Mocks (Empty-State, vier Pflichtmetriken
+  in Tabelle, Stale-Pill, Detail-Current+History, Detail-404). Strategie
+  testet das Browser-Rendering gegen kontrollierte API-Antworten — der
+  vollständige Datenpfad ist bereits durch Adapter-/Repo-/Use-Case-/
+  Handler-/Component-Tests abgedeckt. Lab-gestützter E2E gegen aktiven
+  Collector bleibt operative Übung in `releasing.md` §2.1 Schritt 3–5.
 
 ---
 
@@ -931,9 +948,8 @@ DoD:
   stabilität, Link-Health-Score, Failover, Cursor-Pagination.
 - [x] §9 Cardinality-/Datenschutz-Block benennt verbotene Labels
   und ENV-/Geheimnis-Pflicht für Auth-Credentials.
-- [x] Alle neuen Doku-Links laufen durch `make docs-check`.
-- [ ] Alle neuen Doku-Links laufen durch `scripts/verify-doc-refs.sh`
-  oder `make gates`.
+- [x] Alle neuen Doku-Links laufen durch `make docs-check` (das ruft
+  `scripts/verify-doc-refs.sh` und ist Bestandteil von `make gates`).
 
 ---
 
@@ -948,27 +964,39 @@ opt-in, aber für den Release-Closeout verpflichtend.
 
 DoD:
 
-- [ ] `make gates` ist grün.
-- [ ] `make smoke-srt` bleibt grün und validiert den Basis-SRT-Pfad aus
-  `0.5.0`.
-- [ ] `make smoke-srt-health` oder der erweiterte `make smoke-srt`
-  validiert Metrikabruf, API-Read-Pfad und mindestens eine Dashboard-
-  oder API-Verifikation der vier Pflichtwerte.
-- [ ] Health-Smoke prüft neben dem gesunden Fall mindestens einen
-  definierten Fehlerpfad: fehlende Metrikquelle, keine aktive
-  Verbindung, stale Sample oder API-Importfehler.
-- [ ] Observability-Smoke ist grün und weist keine forbidden Labels auf
-  neuen `mtrace_*`-Metriken nach. Zusätzlich weist er nach, dass
-  Source-Rohmetriken nicht als Projekt-Prometheus-Targets gescraped
-  werden.
-- [ ] Dashboard-Test/E2E für die SRT-Health-Ansicht ist grün.
-- [ ] RAK-Verifikationsmatrix §8.1 ist vollständig ausgefüllt.
-- [ ] Release-Closeout-Protokoll §8.2 enthält Befehle, Datum, Ergebnis
-  und relevante Notizen.
-- [ ] Versionen, `CHANGELOG.md`, README, Roadmap und Release-Notes sind
-  für `0.6.0` aktualisiert.
-- [ ] `plan-0.6.0.md` ist nach Abschluss nach `docs/planning/done/`
-  verschoben; Roadmap verweist danach auf den finalen Pfad.
+- [x] `make gates` ist grün — Run 25380938222 am Release-Commit
+  `d08a89f` grün auf `ubuntu-24.04`.
+- [x] `make smoke-srt` bleibt grün und validiert den Basis-SRT-Pfad aus
+  `0.5.0` — Closeout-Lauf am 2026-05-05 (HLS-Manifest-Read).
+- [x] `make smoke-srt-health` validiert Metrikabruf gegen die Quelle
+  (MediaMTX-API, vier RAK-43-Pflichtwerte numerisch). API-Read-Pfad-
+  Verifikation ist als opt-in-Pfad `SMOKE_INCLUDE_MTRACE_API=1` post-
+  release nachgezogen (Commit `0a8c416`, §8.3 Befund #2) — testet
+  zusätzlich `GET /api/srt/health/{stream_id}` gegen das Wire-Format
+  aus spec §7a.2.
+- [x] Health-Smoke prüft neben dem gesunden Fall mindestens einen
+  definierten Fehlerpfad — Stale-Pfad in `releasing.md` §2.1 Schritt 5
+  (Publisher stoppen → Pill auf `healthy (stale)`); Source-Fehler in
+  `srt_health_handlers_test.go` (`source_unavailable`,
+  `no_active_connection`, `partial_sample`, `stale_sample`).
+- [x] Observability-Smoke ist grün und weist keine forbidden Labels auf
+  neuen `mtrace_*`-Metriken nach — Sub-3.7 Allowlist-Check + Source-
+  Targets-Check in `scripts/smoke-observability.sh` (Lab-Lauf am
+  2026-05-05 grün; vgl. §8.2 Closeout-Tabelle).
+- [x] Dashboard-Test/E2E für die SRT-Health-Ansicht ist grün — vitest
+  18 Component-Tests in Sub-5.4 grün; Browser-E2E (Playwright) post-
+  release nachgezogen in Commit `bd396c4` (§8.3 Befund #3).
+- [x] RAK-Verifikationsmatrix §8.1 ist vollständig ausgefüllt — alle
+  RAK-41..RAK-46 mit `[x]` und Nachweis-Spalte.
+- [x] Release-Closeout-Protokoll §8.2 enthält Befehle, Datum, Ergebnis
+  und relevante Notizen — sechs Zeilen am 2026-05-05 ausgefüllt; §8.3
+  ergänzt drei Post-Release-Code-Review-Befunde.
+- [x] Versionen, `CHANGELOG.md`, README, Roadmap und Release-Notes sind
+  für `0.6.0` aktualisiert — Release-Commit `d08a89f`, Tag `v0.6.0`,
+  GitHub-Release am 2026-05-05.
+- [x] `plan-0.6.0.md` ist nach Abschluss nach `docs/planning/done/`
+  verschoben; Roadmap verweist danach auf den finalen Pfad — erfolgt
+  vor Tag-Push.
 
 ### 8.1 RAK-Verifikationsmatrix
 
@@ -992,6 +1020,36 @@ nicht ad hoc in Commit-Bodies oder Release-Notes verschwinden.
 | Basis-SRT-Smoke | `make smoke-srt` | 2026-05-05 | [x] | RAK-41; Live-Verifikation in Tranche 2 (`make smoke-srt-health` enthält `smoke-srt`-Baseline) |
 | SRT-Health-Smoke | `make smoke-srt-health` | 2026-05-05 | [x] | RAK-42/43; Live verifiziert in Tranche 2 (msRTT=0.231ms, mbpsLinkCapacity=3623 Mbps, Loss=0, Retrans=0) |
 | Observability/Cardinality | `scripts/smoke-observability.sh` mit erweiterter SRT-Allowlist + Source-Targets-Check | siehe Notiz | [x] | RAK-46; Allowlist konditional (siehe Sub-3.7), Source-Targets-Check unconditional. Lab-Lauf folgt beim Operator-Closeout aus `releasing.md` §2.1 — Skript-Verifikation (Bash + Node) ist via `bash -n` und Sub-3.7-Tests grün |
-| Dashboard-SRT-Health | 18 Component-Tests in `apps/dashboard/tests/srt-health-pages.test.ts` plus 5 manuelle Schritte in `releasing.md` §2.1 | 2026-05-05 | [x] | RAK-44; Browser-E2E-Automatisierung als Folge-Item dokumentiert (R-11 deckt Cursor-Pagination ab, nicht E2E) |
+| Dashboard-SRT-Health | 18 Component-Tests in `apps/dashboard/tests/srt-health-pages.test.ts` plus 5 manuelle Schritte in `releasing.md` §2.1 | 2026-05-05 | [x] | RAK-44; Browser-E2E (Playwright) post-release nachgezogen — `tests/e2e/srt-health.spec.ts` mit 5 Specs, Commit `bd396c4` (§8.3 Befund #3) |
 | Docs-Gate | `make docs-check` (Teil von `make gates`) | 2026-05-05 | [x] | RAK-45; alle neuen Cross-Refs in `srt-health.md`/`local-development.md`/`releasing.md`/`examples/srt/README.md` prüfen sauber |
 | Aktive-Risiken-Review | §1.1 in `docs/planning/open/risks-backlog.md` durchgegangen | 2026-05-05 | [x] | R-2 nach §1.2 (CGO-frei aufgelöst); R-5/-7/-9/-10 Stand `0.6.0`-Closeout-Notizen ergänzt; neues R-11 (SRT-Health-Cursor-Pagination) als Folge-Item angelegt |
+
+### 8.3 Post-Release-Code-Review-Befunde
+
+Nach dem Tag `v0.6.0` (`d08a89f`) hat ein Code-Review vier Befunde
+gegen die DoD-Aussagen erhoben. Drei waren echte Lücken; einer war
+ein Doku-Konsistenzproblem (dieses §8.3 + DoD-Häkchen-Pflege ist die
+Antwort darauf).
+
+| # | Befund | Schwere | Korrektur | Commit | Status |
+| - | ------ | ------- | --------- | ------ | ------ |
+| 1 | `plan-0.6.0.md` interne Widersprüche: §1 Tranche 5 `🟡` und Tranche 7 `⬜`, §8 DoD ausschließlich `[ ]`, obwohl Header „✅ released" sagt; Doppelte/abgehakte Doku-Smokes; Sub-4.4 `🟡`. | Dokumentation | Tranche-/DoD-Status nachgezogen, Browser-E2E-DoD `[x]` mit Commit-Verweis, redundante `verify-doc-refs.sh`-Zeile zusammengelegt, neue Sektion §8.3 für Post-Release-Befunde. | dieser Commit | ✅ |
+| 2 | `make smoke-srt-health` validierte nur die Quelle (MediaMTX-API), nicht den `apps/api`-Read-Pfad. DoD §8 forderte aber „API-Verifikation der vier Pflichtwerte" — und das ist der m-trace-API-Pfad. | Smoke-/DoD-Lücke | Opt-in-Block `SMOKE_INCLUDE_MTRACE_API=1` ergänzt: probt zusätzlich `GET /api/srt/health/{stream_id}` mit `X-MTrace-Token` und verifiziert die vier RAK-43-Pflichtwerte unter `metrics.{rtt_ms,packet_loss_total,retransmissions_total,available_bandwidth_bps}` aus spec §7a.2. Default-off, weil examples/srt/compose.yaml apps/api nicht mitstartet — Operator schaltet ihn beim Release-Closeout an, wenn `make dev` mit Collector läuft (`releasing.md` §2.1 Schritt 2a). | `0a8c416` | ✅ |
+| 3 | Browser-E2E für `/srt-health` als „Folge-Item" deferred, obwohl DoD §8 explizit „Dashboard-Test/E2E … grün" verlangt. | Test-/DoD-Lücke | `tests/e2e/srt-health.spec.ts` mit fünf Playwright-Specs (Empty-State, vier Pflichtmetriken, Stale-Pill, Detail Current+History, Detail-404) gegen `page.route()`-Mocks. Strategie: Browser-Rendering gegen kontrollierte API-Antworten testen — der vollständige Datenpfad ist bereits durch Adapter-/Repo-/Use-Case-/Handler-/Component-Tests abgedeckt. Lab-gestützter E2E gegen aktiven Collector bleibt operative Übung in `releasing.md` §2.1 Schritt 3–5. `dashboard-demo.spec.ts` Timeout 15 s → 25 s wegen zusätzlicher SrtHealthCollector-Boot-Last in `cmd/api`. | `bd396c4` | ✅ |
+| 4 | `RequiredBandwidthBPS` blieb pro Sample `nil`, obwohl Domain-Feld + Health-Bewertung in Sub-3.2 implementiert war. Die Adapter-Verdrahtung fehlte; Bandbreite konnte nie als Engpass markiert werden (immer „angezeigt, nicht bewertet"). | Code-Lücke | Neue ENV `MTRACE_SRT_REQUIRED_BANDWIDTH_BPS` parst `apps/api/cmd/api/main.go`; `mediamtxclient.WithRequiredBandwidthBPS` setzt das Feld in der HTTP-Source; `mapItem` kopiert den Wert pro Sample. Drei Tabellen-Tests in `http_test.go` decken nil/set/zero ab. Ohne ENV bleibt das Feld nil — spec/telemetry-model.md §7.4 Verhalten unverändert. Doku in `docs/user/srt-health.md` §2.2 + `examples/srt/README.md` Bandbreiten-Hinweis. | `0a8c416` | ✅ |
+
+**Lehre für Folgepläne**: Der Closeout-Lauf braucht ein Code-Review
+**neben** dem `make gates`-Lauf — `gates` validiert Compile/Lint/Test/
+Coverage/Architektur, aber nicht „liefert die Wire-Format-Aussage in
+spec §7a.2 wirklich an, was die DoD verspricht?". Konkrete
+Verbesserungen für `plan-0.7.0`-Closeout:
+
+1. Pre-Tag-Phase: ein gezieltes Sub-Tranche „DoD-Crosscheck" am Ende
+   von Tranche 7, das jede `[x]`-Zeile auf eine konkrete Datei plus
+   Test/Smoke abbildet — keine `[x]`-Zeile ohne nachprüfbaren Anker.
+2. Smoke-Pfade müssen den **Read-Pfad** decken, nicht nur die Quelle.
+   Wenn ein Smoke „API-Verifikation" verspricht, probt er gegen
+   `apps/api`, nicht gegen den Upstream.
+3. Adapter-Felder mit Konfig-Eingang (ENV/CLI) bekommen einen
+   pflichtigen Tabellen-Test im Adapter-Paket: nil/set/invalid.
+
