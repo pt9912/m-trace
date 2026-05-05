@@ -1,6 +1,6 @@
 {
   "name": "@npm9912/player-sdk",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Browser Player SDK for sending m-trace playback telemetry.",
   "type": "module",
   "license": "MIT",
@@ -39,7 +39,7 @@
     "test:coverage": "vitest run --coverage",
     "performance:smoke": "pnpm run build && node scripts/performance-smoke.mjs",
     "lint": "tsc --noEmit && eslint . && node scripts/check-boundaries.mjs && node scripts/check-public-api.mjs",
-    "pack:smoke": "pnpm run build && pnpm pack --pack-destination ../../.tmp/player-sdk-pack && node scripts/pack-smoke.mjs ../../.tmp/player-sdk-pack/npm9912-player-sdk-0.4.0.tgz",
+    "pack:smoke": "pnpm run build && pnpm pack --pack-destination ../../.tmp/player-sdk-pack && node scripts/pack-smoke.mjs ../../.tmp/player-sdk-pack/npm9912-player-sdk-0.5.0.tgz",
     "publish:dry-run": "npm_config_cache=$PWD/../../.tmp/npm-cache pnpm publish --dry-run --no-git-checks"
   },
   "peerDependencies": {

@@ -898,7 +898,7 @@ func mkEvent(seq driven.IngestSequencer, project, session string, recv time.Time
 		ServerReceivedAt: recv,
 		IngestSequence:   seq.Next(),
 		SequenceNumber:   sequenceNumber,
-		SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.4.0"},
+		SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.5.0"},
 	}
 }
 

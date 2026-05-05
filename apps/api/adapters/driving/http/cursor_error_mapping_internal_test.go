@@ -12,7 +12,7 @@ import (
 // der drei Cursor-Sentinel-Errors auf HTTP-Status und Body gemäß
 // API-Kontrakt §10.3 / ADR-0004 §6. Der `errCursorExpired`-Pfad ist
 // aus dem Decode-Pfad heute nicht erreichbar (Retention-Folge-Arbeit
-// in 0.5.0+), wird aber hier am Mapping-Helper verifiziert, damit der
+// in 0.4.0+), wird aber hier am Mapping-Helper verifiziert, damit der
 // 410-Vertrag eingefroren bleibt.
 func TestWriteCursorError_MapsAllSentinelErrors(t *testing.T) {
 	t.Parallel()

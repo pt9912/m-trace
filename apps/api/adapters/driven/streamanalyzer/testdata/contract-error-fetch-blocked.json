@@ -1,6 +1,6 @@
 {
   "status": "error",
-  "analyzerVersion": "0.4.0",
+  "analyzerVersion": "0.5.0",
   "analyzerKind": "hls",
   "code": "fetch_blocked",
   "message": "Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ip_blocked.",

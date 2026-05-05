@@ -1,6 +1,6 @@
 {
   "package_name": "@npm9912/player-sdk",
-  "sdk_version": "0.4.0",
+  "sdk_version": "0.5.0",
   "wire_schema_version": "1.0",
   "api_supported_schema_version": "1.0",
   "update_rule": "Changes to package version, exported SDK version, wire schema version, or API SupportedSchemaVersion must update this file in the same commit."

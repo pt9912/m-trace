@@ -91,7 +91,7 @@ func TestAnalyze_WrapperShape_DetachedDefault(t *testing.T) {
 	t.Parallel()
 	stub := &linkAwareAnalysisInbound{
 		analysis: domain.StreamAnalysisResult{
-			AnalyzerVersion: "0.4.0", PlaylistType: domain.PlaylistTypeMaster,
+			AnalyzerVersion: "0.5.0", PlaylistType: domain.PlaylistTypeMaster,
 		},
 	}
 	srv := newAnalyzeServer(t, stub)
@@ -127,7 +127,7 @@ func TestAnalyze_WrapperShape_LinkedFields(t *testing.T) {
 	t.Parallel()
 	stub := &linkAwareAnalysisInbound{
 		analysis: domain.StreamAnalysisResult{
-			AnalyzerVersion: "0.4.0", PlaylistType: domain.PlaylistTypeMedia,
+			AnalyzerVersion: "0.5.0", PlaylistType: domain.PlaylistTypeMedia,
 		},
 		resultLink: domain.SessionLink{
 			Status:        domain.SessionLinkStatusLinked,
@@ -158,7 +158,7 @@ func TestAnalyze_WrapperShape_LinkedFields(t *testing.T) {
 func TestAnalyze_AuthMatrix_NoTokenNoLinkFields_200Detached(t *testing.T) {
 	t.Parallel()
 	stub := &linkAwareAnalysisInbound{
-		analysis: domain.StreamAnalysisResult{AnalyzerVersion: "0.4.0"},
+		analysis: domain.StreamAnalysisResult{AnalyzerVersion: "0.5.0"},
 	}
 	srv := newAnalyzeServer(t, stub)
 	body := `{"kind":"url","url":"https://cdn.example.test/m.m3u8"}`
@@ -268,7 +268,7 @@ func newRouterTestServer(t *testing.T) *httptest.Server {
 	})
 	publisher := metrics.NewPrometheusPublisher()
 	stubAnalyze := &linkAwareAnalysisInbound{
-		analysis: domain.StreamAnalysisResult{AnalyzerVersion: "0.4.0"},
+		analysis: domain.StreamAnalysisResult{AnalyzerVersion: "0.5.0"},
 	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	router := apihttp.NewRouter(nil, nil, stubAnalyze, resolver, resolver, publisher.Handler(), nil, nil, nil, logger)
