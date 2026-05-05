@@ -1,13 +1,14 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 in Arbeit. **Tranchen 0–4** abgeschlossen — `0.4.0`
+> **Status**: 🟡 in Arbeit. **Tranchen 0–5** abgeschlossen — `0.4.0`
 > released (Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün, Plan
 > archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
 > Multi-Protocol-Lab-Beispiele für MediaMTX, SRT und DASH sind als
 > opt-in Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`) live-
-> verifiziert. Analyzer-Grenze (HLS-only) und Player-SDK-Abwärts-
-> kompatibilität bleiben gewahrt. **Nächster Schritt**: Tranche 5
-> (WebRTC vorbereitet, nicht produktiv, §6, RAK-39).
+> verifiziert; WebRTC ist als Doku-Vorbereitungspfad mit klar
+> markierten Folge-Schritten dokumentiert (kein Compose, kein Smoke).
+> **Nächster Schritt**: Tranche 6 (Dokumentation, Smokes und Release-
+> Gates, §7, RAK-40).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -89,7 +90,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | 2 | MediaMTX-Beispiel erweitern (RAK-36) | ✅ |
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ✅ |
 | 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ✅ |
-| 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ⬜ |
+| 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ✅ |
 | 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | ⬜ |
 
 ---
@@ -391,24 +392,46 @@ belasten.
 
 DoD:
 
-- [ ] `examples/webrtc/README.md` existiert und beschreibt den
-  geplanten lokalen WebRTC-Pfad, Mindestdienste, offene Entscheidungen
-  und Nicht-Ziele.
-- [ ] Wenn MediaMTX-WebRTC genutzt werden soll, sind notwendige Ports,
-  NAT-/ICE-Hinweise und Browser-Grenzen dokumentiert.
-- [ ] Die README enthält eine klare Entscheidungsmarke, ob `0.5.0`
-  lediglich Port-/Konfigurationsvorbereitung liefert oder zusätzlich
-  einen lokalen Browser-Handcheck beschreibt.
-- [ ] Es gibt keine produktive Behauptung für WebRTC-Metriken in
-  Dashboard, API oder Telemetry-Model.
-- [ ] Ein optionaler Smoke ist entweder implementiert oder bewusst als
-  Folge-Item dokumentiert, weil headless WebRTC in CI zusätzliche
-  Browser-/Netzwerkstabilitätsrisiken hat.
-- [ ] Falls ein Smoke implementiert wird, ist er als
-  `make smoke-webrtc-prep` gekennzeichnet und prüft nur die
-  Vorbereitungsgrenze, nicht Playback-Qualität oder `getStats()`.
-- [ ] Roadmap/Folge-Plan nennt, was aus der Vorbereitung später echte
-  WebRTC-Metrikunterstützung macht.
+- [x] `examples/webrtc/README.md` existiert und beschreibt den
+  geplanten lokalen WebRTC-Pfad (MediaMTX-WHIP-/WHEP),
+  Mindestdienste (MediaMTX, optional `coturn`-STUN/TURN), offene
+  Entscheidungen (Port-Schnitt gegen `examples/srt/`) und Nicht-
+  Ziele (kein Signaling-Server, keine `getStats()`-Erfassung,
+  keine Dashboard-Sichtbarkeit).
+- [x] MediaMTX-WebRTC: notwendige Ports (geplant `8889/tcp` für
+  WHIP/WHEP, kollidiert in `0.5.0` mit dem SRT-Beispiel — Folge-
+  Tranche muss Port-Mapping pro Beispiel neu schneiden), NAT-/ICE-
+  Hinweise (STUN/TURN nur nötig, falls Lab-Pfad nicht-localhost
+  abdecken soll) und Browser-Grenzen (Chromium/Firefox supported,
+  Safari documented limitation) sind in `examples/webrtc/README.md`
+  dokumentiert.
+- [x] Klare Entscheidungsmarke: `0.5.0` liefert **ausschließlich
+  Port-/Konfigurationsvorbereitung als Doku**, **keinen** Browser-
+  Handcheck und **kein** `compose.yaml` — README-Header und „Start"-
+  Sektion pinnen das explizit.
+- [x] Keine produktive Behauptung für WebRTC-Metriken in Dashboard,
+  API oder Telemetry-Model: `examples/webrtc/README.md` „Bekannte
+  Grenzen" zählt explizit auf, dass kein Signaling-Server in
+  `apps/api`, keine `getStats()`-Sammlung im `@npm9912/player-sdk`,
+  keine WebRTC-Aggregat-Metriken in Prometheus und kein Dashboard-
+  Hook geliefert werden.
+- [x] Optionaler Smoke ist bewusst als Folge-Item dokumentiert,
+  **nicht** in `0.5.0` implementiert — Begründung in der
+  README-Sektion „Verifikation": headless-WebRTC ist instabil in
+  CI, `getStats()` browser-spezifisch, Lab-Wert ohne Smoke begrenzt.
+- [x] Falls ein Smoke implementiert wird, ist er als
+  `make smoke-webrtc-prep` gekennzeichnet — Target-Name ist
+  reserviert in [`examples/README.md`](../../../examples/README.md)
+  Sektion „Smoke-Targets" mit Status `⬜ — nur falls headless stabil`,
+  Prüfumfang explizit auf Vorbereitungsgrenze begrenzt (kein
+  Playback-Qualitäts- oder `getStats()`-Anspruch).
+- [x] Roadmap/Folge-Plan nennt, was aus der Vorbereitung später
+  echte WebRTC-Metrikunterstützung macht — README-Sektion „Folge-
+  Pfad (jenseits `0.5.0`)" listet vier konkrete Schritte
+  (Lab-Compose, README-Konkretisierung, `smoke-webrtc-prep`-Target,
+  Bewertung WebRTC-Telemetrie). Diese Schritte sind ausdrücklich
+  **nicht** Teil von `0.5.0` und nicht in der Roadmap als Pflicht
+  aufgenommen.
 
 ---
 
