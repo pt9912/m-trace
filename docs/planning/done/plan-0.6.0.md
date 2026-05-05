@@ -1,10 +1,11 @@
 # Implementation Plan — `0.6.0` (SRT Health View)
 
-> **Status**: 🟡 aktiv. `0.5.0` (Multi-Protocol Lab) ist released
-> (Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün); Vorgängerplan
-> ist nach [`../done/plan-0.5.0.md`](../done/plan-0.5.0.md) archiviert.
-> Tranche 0 (Vorgänger-Gate) ist abgeschlossen; Tranche 1 (SRT-
-> Metrikquelle und Binding-Entscheidung) ist die nächste Arbeitsstufe.
+> **Status**: ✅ released. `0.6.0` ist auf Tag `v0.6.0` (`d08a89f`)
+> ausgeliefert; GitHub-Actions-`build`-Workflow-Run 25380938222 grün
+> am Release-Commit. RAK-41..RAK-46 erfüllt; Vorgängerplan `0.5.0`
+> liegt unter [`./plan-0.5.0.md`](./plan-0.5.0.md). Aktive Phase
+> ist `0.7.0` (WebRTC-Lab-Erweiterung); Plan-Skelett unter
+> [`../open/plan-0.7.0.md`](../open/plan-0.7.0.md).
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9
