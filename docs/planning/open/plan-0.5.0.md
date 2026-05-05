@@ -20,6 +20,9 @@
 >   Release-Commit grün.
 > - Roadmap §1/§2/§3 ist auf `0.5.0` als nächstes aktives Release
 >   umgestellt.
+> - Historische Statusquellen aus `0.4.0` enthalten keine widersprüchlichen
+>   Restmarker mehr (z. B. `🟡 in Arbeit` in archivierten Abschlusszeilen
+>   oder alte `0.4.0`-Scope-Cut-Texte in der Roadmap).
 > - `0.4.0`-Folgerisiken, die Lab-Start oder Smoke-Gates beeinflussen,
 >   sind im Risiken-Backlog bewertet.
 >
@@ -42,6 +45,34 @@ Scope-Grenze: `0.5.0` liefert **Beispiele und verifizierbare lokale
 Lab-Pfade**. Es liefert keine produktive Ingest-Verwaltung, keine
 SRT-Health-Metriken und kein WebRTC-Monitoring. Diese Themen bleiben
 Folge-Scope (`0.6.0` bzw. spätere Releases).
+
+### 0.1 Vorab-Entscheidungen für den Scope-Cut
+
+Diese Entscheidungen verhindern, dass `0.5.0` während der Umsetzung in
+mehrere Richtungen wächst:
+
+| Thema | Entscheidung für `0.5.0` | Nicht-Ziel |
+| ----- | ------------------------ | ---------- |
+| Compose-Form | Beispiele bevorzugen eigene `examples/<name>/compose.yaml`-Dateien. Root-Compose bleibt Core-Lab. | Root-Compose mit vielen optionalen Beispielprofilen überfrachten. |
+| Smoke-Targets | Root-`Makefile` bekommt opt-in Targets `smoke-mediamtx`, `smoke-srt`, `smoke-dash`; WebRTC höchstens `smoke-webrtc-prep`, falls stabil. | Neue Streaming-Smokes in `make gates` erzwingen. |
+| Doku-Form | Kurze README je Beispiel plus gebündelter User-Guide `docs/user/multi-protocol-lab.md`, falls die Inhalte über reine Verweise hinausgehen. | Lange Protokoll-Tutorials in `README.md`. |
+| DASH | `0.5.0` liefert ein lokal erreichbares MPD-/DASH-Ausspielungsbeispiel. | Vollständige DASH-Manifestanalyse oder dash.js-Adapter als Release-Pflicht. |
+| SRT | `0.5.0` liefert SRT-Publish-/Ausspielungs-Smoke. | SRT-Health-Metriken, CGO-Bindings oder API-Runtime-Integration. |
+| WebRTC | Dokumentierter Vorbereitungspfad mit Ports/Grenzen; Smoke nur, wenn headless stabil genug ist. | WebRTC-Observability, Signaling-Service oder `getStats()`-Normalisierung. |
+
+### 0.2 Risiko-Triage aus `0.4.0`
+
+Diese Tabelle schneidet die offenen Folgepunkte aus
+[`risks-backlog.md`](./risks-backlog.md) für den `0.5.0`-Scope. Sie
+verhindert, dass Lab-Beispiele versehentlich Backend- oder Dashboard-
+Schulden aus `0.4.0` miterledigen müssen.
+
+| Risiko | Entscheidung für `0.5.0` | Trigger / Nachweis |
+| ------ | ------------------------ | ------------------ |
+| R-2 CGO/SRT-Bindings | Beobachten. `0.5.0` nutzt SRT nur über Lab-Container; keine CGO- oder API-Runtime-Entscheidung. | Wenn das SRT-Beispiel ein Binding in `apps/api` erzwingen würde, wird R-2 präzisiert und der Umfang auf `0.6.0` verschoben. |
+| R-5 Time-Skew-Persistenz | Nicht Teil des Multi-Protocol-Lab. Deferred, solange Lab-Smokes keine skew-betroffenen Operator-Flows erzeugen. | Aktivieren nur bei Backlog-Trigger: ≥ 5 relevante `mtrace.time.skew_warning=true`-Spans außerhalb von Synthetik-Tests oder konkreter Operator-Report. |
+| R-7 Session-List-N+1 | Nicht als `0.5.0`-Pflicht einplanen; bei Smoke-Arbeit nur beobachten. | Falls neue Lab-Smokes `GET /api/stream-sessions` p95 ≥ 200 ms reproduzierbar machen, wird ein Bulk-Read-Port als additive Tranche ergänzt. |
+| R-10 Sampling-Vollständigkeit | Deferred. `0.5.0`-Lab-Smokes bleiben bei vollständigen Testdaten (`sampleRate = 1`). | Wieder öffnen, sobald ein Lab- oder Produktionspfad `sampleRate < 1` semantisch vollständig nachweisen muss. |
 
 ---
 
@@ -77,14 +108,17 @@ DoD:
 - [ ] GitHub Actions `Build` ist für den `v0.4.0`-Commit grün.
 - [ ] `docs/planning/in-progress/roadmap.md` markiert `0.5.0` als
   aktive Phase und verweist auf dieses Dokument.
+- [ ] Historische `0.4.0`-Statusquellen sind konsistent: archivierter
+  Plan, Roadmap und README enthalten keine widersprüchlichen Restmarker
+  oder alten Scope-Cut-Texte mehr.
 - [ ] Scope-Entscheidung ist dokumentiert: SRT in `0.5.0` bedeutet
   Beispiel/Smoke, **nicht** SRT-Health-View, SRT-Metrikimport oder
   CGO-Binding in `apps/api`.
 - [ ] WebRTC in `0.5.0` ist als vorbereiteter Beispielplatz
   festgelegt; produktive `getStats()`-Erfassung bleibt out of scope.
-- [ ] Bestehende R-2-CGO/SRT-Risiken sind geprüft; falls ein
-  SRT-Beispiel zusätzliche Runtime-Risiken erzeugt, wird
-  `risks-backlog.md` aktualisiert.
+- [ ] Bestehende `0.4.0`-Folgerisiken R-2, R-5, R-7 und R-10 sind gemäß
+  §0.2 triagiert; falls Lab-Smokes einen Trigger auslösen, wird
+  `risks-backlog.md` aktualisiert oder eine additive Tranche ergänzt.
 
 ---
 
@@ -111,16 +145,25 @@ DoD:
 
 - [ ] `examples/` ist angelegt und enthält je Protokoll-Beispiel ein
   eigenes Unterverzeichnis mit `README.md`.
+- [ ] Jede Beispiel-README folgt derselben Mindeststruktur: Zweck,
+  Voraussetzungen, Start, Verifikation, Stop/Reset, Troubleshooting,
+  bekannte Grenzen.
 - [ ] Jedes Beispiel benennt Zweck, Startbefehl, erwartete Ports/URLs,
   Abbruch-/Reset-Pfad und bekannte Grenzen.
 - [ ] Compose-Erweiterungen liegen entweder als klar benannte Override-
   Dateien unter `examples/<name>/compose.yaml` oder als Profile im
   Root-Compose; die Entscheidung ist einheitlich dokumentiert.
+- [ ] Für eigene Example-Compose-Dateien ist der Projektname im
+  Startbefehl dokumentiert, damit Volumes/Container nicht versehentlich
+  mit dem Core-Lab kollidieren.
 - [ ] `make dev` bleibt das Core-Lab und startet keine zusätzlichen
   optionalen Beispiele.
-- [ ] Neue Smoke-Targets sind opt-in und hängen nicht an `make gates`,
+- [ ] Neue Smoke-Targets sind opt-in (`make smoke-mediamtx`,
+  `make smoke-srt`, `make smoke-dash`) und hängen nicht an `make gates`,
   solange sie zusätzliche Streaming-Images oder lange Medien-Starts
   benötigen.
+- [ ] Smoke-Skripte sind unter `scripts/` abgelegt, failen mit klaren
+  Fehlermeldungen und räumen keine fremden Volumes/Container auf.
 - [ ] `scripts/verify-doc-refs.sh` bleibt grün; neue Doku-Links werden
   vom bestehenden Docs-Gate erfasst.
 
@@ -141,6 +184,8 @@ DoD:
 - [ ] `examples/mediamtx/README.md` beschreibt den bestehenden
   MediaMTX-Pfad aus Root-Compose, inklusive `mediamtx`, `stream-generator`,
   HLS-URL und API/Status-Port.
+- [ ] `make smoke-mediamtx` ist als dünner Wrapper dokumentiert und nutzt
+  ein Skript, das den bestehenden Core-Lab-Pfad validiert.
 - [ ] MediaMTX-Konfiguration ist so dokumentiert, dass die aktiven
   Protokolle und Ports (`RTSP`, `HLS`, API/Status; optional `RTMP`, falls
   im Beispiel aktiviert) aus einem frischen Clone nachvollziehbar sind.
@@ -149,6 +194,9 @@ DoD:
 - [ ] Ein Smoke-Pfad prüft mindestens: MediaMTX erreichbar,
   Teststream published, HLS-Manifest unter der dokumentierten URL
   erreichbar.
+- [ ] Der Smoke nutzt bounded Waits mit Diagnoseausgabe aus MediaMTX
+  API/Status oder Container-Logs; ein noch startender Teststream führt
+  nicht zu einem flakigen Sofort-Fehler.
 - [ ] Dashboard-Demo und `POST /api/analyze` können die dokumentierte
   HLS-URL weiterhin nutzen; private-Netzwerk-Analyzer-Flag bleibt auf das
   lokale Lab beschränkt.
@@ -172,10 +220,18 @@ DoD:
   Ziel, Ausspielungs-URL und erwarteten Erfolg.
 - [ ] Das Beispiel nutzt bevorzugt vorhandene Container-Images
   (MediaMTX + FFmpeg) und vermeidet neue API-Runtime-Abhängigkeiten.
+- [ ] Das Beispiel pinnt explizit SRT-Port, Stream-Name und Container-
+  Richtung (Publisher → MediaMTX → HLS/anderer Ausspielungspfad), statt
+  sich auf implizite MediaMTX-Defaults zu verlassen.
 - [ ] Ein Startpfad ist dokumentiert, z. B. ein Compose-Profil oder
   `docker compose -f examples/srt/compose.yaml up --build`.
+- [ ] `make smoke-srt` startet nur die für das SRT-Beispiel nötigen
+  Dienste und beendet sich deterministisch mit Erfolg oder Diagnose.
 - [ ] Der Smoke-Pfad prüft mindestens, dass ein SRT-Publisher verbinden
   kann und daraus eine abspiel- oder analysierbare Ausspielung entsteht.
+- [ ] Der Smoke validiert nicht nur offene Ports, sondern ruft das
+  erzeugte Manifest oder eine vergleichbare Media-Ausspielung tatsächlich
+  ab.
 - [ ] Keine SRT-Verbindungsmetriken werden als erfüllt behauptet; RAK-41
   bis RAK-46 bleiben explizit `0.6.0`-Scope.
 - [ ] R-2 bleibt unverändert oder wird präzisiert, falls das Beispiel
@@ -198,6 +254,10 @@ DoD:
   inklusive MPD-URL, Startpfad und erwarteter Player-/CLI-Nutzung.
 - [ ] Das Beispiel erzeugt oder liefert deterministische DASH-Artefakte,
   die ohne externe Netzwerkabhängigkeit im lokalen Lab nutzbar sind.
+- [ ] Bevorzugter Pfad ist ein kleiner lokaler DASH-Origin im
+  Example-Compose: FFmpeg erzeugt oder ein statischer HTTP-Server liefert
+  MPD/Segmente aus einem Example-Verzeichnis. Externe CDNs sind nicht
+  Teil des Smoke.
 - [ ] Wenn `dash.js` im Dashboard-Demo-Pfad verwendet wird, bleibt der
   bestehende HLS-Demo-Pfad unverändert und die neue Adapter-Logik ist
   optional.
@@ -207,7 +267,8 @@ DoD:
   erhält einen ausdrücklich geplanten additiven DASH-Pfad. Falls keine
   DASH-Analyse geliefert wird, dokumentieren API- und Analyzer-Doku diese
   Grenze unmissverständlich.
-- [ ] Smoke-Pfad prüft mindestens, dass die dokumentierte MPD erreichbar
+- [ ] `make smoke-dash` prüft mindestens, dass die dokumentierte MPD
+  erreichbar ist, mindestens ein referenziertes Segment lokal abrufbar
   ist und der Beispielpfad ohne Internet läuft.
 
 ---
@@ -227,11 +288,17 @@ DoD:
   und Nicht-Ziele.
 - [ ] Wenn MediaMTX-WebRTC genutzt werden soll, sind notwendige Ports,
   NAT-/ICE-Hinweise und Browser-Grenzen dokumentiert.
+- [ ] Die README enthält eine klare Entscheidungsmarke, ob `0.5.0`
+  lediglich Port-/Konfigurationsvorbereitung liefert oder zusätzlich
+  einen lokalen Browser-Handcheck beschreibt.
 - [ ] Es gibt keine produktive Behauptung für WebRTC-Metriken in
   Dashboard, API oder Telemetry-Model.
 - [ ] Ein optionaler Smoke ist entweder implementiert oder bewusst als
   Folge-Item dokumentiert, weil headless WebRTC in CI zusätzliche
   Browser-/Netzwerkstabilitätsrisiken hat.
+- [ ] Falls ein Smoke implementiert wird, ist er als
+  `make smoke-webrtc-prep` gekennzeichnet und prüft nur die
+  Vorbereitungsgrenze, nicht Playback-Qualität oder `getStats()`.
 - [ ] Roadmap/Folge-Plan nennt, was aus der Vorbereitung später echte
   WebRTC-Metrikunterstützung macht.
 
@@ -255,18 +322,24 @@ DoD:
 - [ ] Optionales neues `docs/user/multi-protocol-lab.md` bündelt
   MediaMTX, SRT, DASH und WebRTC, falls `local-development.md` sonst zu
   groß wird.
-- [ ] `Makefile` listet die neuen opt-in Smoke-Targets im `help`-Text,
-  falls solche Targets implementiert werden.
+- [ ] Beispiel-READMEs verweisen auf den gebündelten User-Guide, während
+  der User-Guide auf die konkreten Example-Verzeichnisse zurückverweist.
+- [ ] `Makefile` listet die Pflicht-Smoke-Targets `smoke-mediamtx`,
+  `smoke-srt` und `smoke-dash` im `help`-Text; ein optionaler
+  `smoke-webrtc-prep` wird nur gelistet, falls er implementiert wird.
 - [ ] `docs/user/releasing.md` nennt die zusätzlichen manuellen oder
   automatisierten `0.5.0`-Release-Smokes.
 - [ ] RAK-Verifikationsmatrix ist im Plan ergänzt; zum Release-Closeout
   sind alle Muss-Kriterien entweder `[x]` oder explizit `[!]` mit
   Lastenheft-Patch-Pfad.
 - [ ] `make gates` ist grün.
-- [ ] Relevante optionale Smokes sind lokal grün und mit Befehl/Datum in
-  §7.2 dokumentiert.
+- [ ] Pflicht-Smokes für MediaMTX, SRT und DASH sind lokal grün und mit
+  Befehl/Datum in §7.2 dokumentiert; WebRTC bleibt nur dann ein Smoke-
+  Nachweis, wenn `smoke-webrtc-prep` implementiert wird.
 - [ ] Versionen, `CHANGELOG.md`, Planstatus, Roadmap und Release-Notes
   sind für `0.5.0` aktualisiert.
+- [ ] `plan-0.5.0.md` ist nach Abschluss nach `docs/planning/done/`
+  verschoben; Roadmap verweist danach auf den finalen Pfad.
 
 ### 7.1 RAK-Verifikationsmatrix
 
