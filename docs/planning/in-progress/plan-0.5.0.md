@@ -1,12 +1,14 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
 > **Status**: 🟡 in Arbeit. **Tranche 0** (Vorgänger-Gate +
-> Scope-Festlegung) abgeschlossen — `0.4.0` ist released (Tag `v0.4.0`
-> auf `9e4fdb3`, CI-Run 25359933129 grün, Plan archiviert in
-> [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md)); Roadmap
-> auf `0.5.0` als aktive Phase umgestellt; SRT-/WebRTC-Scope und R-2/
-> R-5/R-7/R-10-Triage fixiert. **Nächster Schritt**: Tranche 1
-> (Example-Struktur und Lab-Konventionen, §2).
+> Scope-Festlegung) und **Tranche 1** (Example-Struktur und Lab-
+> Konventionen) abgeschlossen — `0.4.0` released (Tag `v0.4.0` auf
+> `9e4fdb3`, CI-Run 25359933129 grün, Plan archiviert in
+> [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
+> `examples/`-Skelett mit Konventions-Index und vier Sub-Verzeichnissen
+> angelegt; Compose-Form, Project-Name-Konvention und Smoke-Naming
+> verbindlich dokumentiert. **Nächster Schritt**: Tranche 2 (MediaMTX-
+> Beispiel erweitern, §3, RAK-36).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -84,7 +86,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
-| 1 | Example-Struktur und Lab-Konventionen | ⬜ |
+| 1 | Example-Struktur und Lab-Konventionen | ✅ |
 | 2 | MediaMTX-Beispiel erweitern (RAK-36) | ⬜ |
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ⬜ |
 | 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ⬜ |
@@ -155,29 +157,46 @@ examples/
 
 DoD:
 
-- [ ] `examples/` ist angelegt und enthält je Protokoll-Beispiel ein
-  eigenes Unterverzeichnis mit `README.md`.
-- [ ] Jede Beispiel-README folgt derselben Mindeststruktur: Zweck,
+- [x] `examples/` ist angelegt und enthält je Protokoll-Beispiel ein
+  eigenes Unterverzeichnis mit `README.md` (`examples/{mediamtx,srt,
+  dash,webrtc}/README.md` plus Konventions-Index `examples/README.md`).
+- [x] Jede Beispiel-README folgt derselben Mindeststruktur: Zweck,
   Voraussetzungen, Start, Verifikation, Stop/Reset, Troubleshooting,
-  bekannte Grenzen.
-- [ ] Jedes Beispiel benennt Zweck, Startbefehl, erwartete Ports/URLs,
-  Abbruch-/Reset-Pfad und bekannte Grenzen.
-- [ ] Compose-Erweiterungen liegen entweder als klar benannte Override-
-  Dateien unter `examples/<name>/compose.yaml` oder als Profile im
-  Root-Compose; die Entscheidung ist einheitlich dokumentiert.
-- [ ] Für eigene Example-Compose-Dateien ist der Projektname im
-  Startbefehl dokumentiert, damit Volumes/Container nicht versehentlich
-  mit dem Core-Lab kollidieren.
-- [ ] `make dev` bleibt das Core-Lab und startet keine zusätzlichen
-  optionalen Beispiele.
-- [ ] Neue Smoke-Targets sind opt-in (`make smoke-mediamtx`,
-  `make smoke-srt`, `make smoke-dash`) und hängen nicht an `make gates`,
-  solange sie zusätzliche Streaming-Images oder lange Medien-Starts
-  benötigen.
-- [ ] Smoke-Skripte sind unter `scripts/` abgelegt, failen mit klaren
-  Fehlermeldungen und räumen keine fremden Volumes/Container auf.
-- [ ] `scripts/verify-doc-refs.sh` bleibt grün; neue Doku-Links werden
-  vom bestehenden Docs-Gate erfasst.
+  bekannte Grenzen — verbindlich dokumentiert in `examples/README.md`
+  Sektion „README-Mindeststruktur" und in allen vier Skelett-READMEs
+  konsistent verwendet.
+- [x] Jedes Beispiel benennt Zweck, Startbefehl, erwartete Ports/URLs,
+  Abbruch-/Reset-Pfad und bekannte Grenzen — wo Inhalte erst durch
+  Tranche 2–5 produktiv werden, ist das per `_Liefert Tranche X._`-
+  Marker explizit benannt; Project-Name-Konvention `mtrace-<name>` ist
+  in allen Skeletten gepinnt.
+- [x] Compose-Erweiterungen liegen als eigene Override-Dateien unter
+  `examples/<name>/compose.yaml` (Beschluss `plan-0.5.0.md` §0.1
+  „Compose-Form"; Konvention dokumentiert in `examples/README.md`
+  Sektion „Compose-Form").
+- [x] Für eigene Example-Compose-Dateien ist der Projektname im
+  Startbefehl dokumentiert (`docker compose -p mtrace-<name> -f
+  examples/<name>/compose.yaml up …`); Konvention zentral in
+  `examples/README.md` und in jeder Skelett-README am Start-Befehl
+  belegt.
+- [x] `make dev` bleibt das Core-Lab und startet keine zusätzlichen
+  optionalen Beispiele — Tranche 1 fügt keine `make dev`-Diffs ein,
+  und die Konvention in `examples/README.md` schreibt fest, dass
+  Beispiele über eigene Compose-Projekte starten.
+- [x] Neue Smoke-Targets sind opt-in (`make smoke-mediamtx`,
+  `make smoke-srt`, `make smoke-dash`, ggf. `make smoke-webrtc-prep`)
+  und hängen nicht an `make gates` — Konvention dokumentiert in
+  `examples/README.md` Sektion „Smoke-Targets". Tranche 1 ergänzt
+  noch keine Targets im Makefile; sie kommen pro Tranche 2–5 mit
+  ihrem Compose-/Smoke-Inhalt.
+- [x] Smoke-Skripte sind unter `scripts/` abgelegt, failen mit klaren
+  Fehlermeldungen und räumen keine fremden Volumes/Container auf —
+  Konvention dokumentiert in `examples/README.md` Sektion „Smoke-
+  Skript-Konvention" (set -euo pipefail; `[smoke-<name>]`-Präfix;
+  Compose-Down nur für `mtrace-<name>`-Project-Name).
+- [x] `scripts/verify-doc-refs.sh` bleibt grün; neue Doku-Links werden
+  vom bestehenden Docs-Gate erfasst — `make gates` (Stage `docs-check`
+  ruft `verify-doc-refs.sh`) ist nach Tranche 1 grün.
 
 ---
 
