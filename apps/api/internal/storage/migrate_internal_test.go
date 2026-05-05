@@ -41,13 +41,14 @@ func TestOpen_FreshStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read schema_migrations: %v", err)
 	}
-	// Ab plan-0.4.0 §5 H1 vier Migrations-Files (V1 baseline + V2
+	// Ab plan-0.6.0 §4 Sub-3.3 fünf Migrations-Files (V1 baseline + V2
 	// project-scoped session PK + V3 session_boundaries + V4
-	// end_source-Spalte); ein Fresh-Start läuft alle vier an.
-	if len(rows) != 4 {
-		t.Fatalf("schema_migrations rows = %d, want 4", len(rows))
+	// end_source-Spalte + V5 srt_health_samples); ein Fresh-Start
+	// läuft alle fünf an.
+	if len(rows) != 5 {
+		t.Fatalf("schema_migrations rows = %d, want 5", len(rows))
 	}
-	for i, want := range []int64{1, 2, 3, 4} {
+	for i, want := range []int64{1, 2, 3, 4, 5} {
 		if rows[i].version != want || rows[i].dirty != 0 {
 			t.Errorf("row[%d] = %+v, want version=%d dirty=0", i, rows[i], want)
 		}

@@ -173,3 +173,94 @@ tables:
       # nicht via DB-CHECK — `json_valid()` ist nicht portabel
       # (SQLite/MySQL builtin, PostgreSQL hat kein direktes Pendant).
       # Siehe ADR-0002 §8.1.
+
+  # SRT-Health-Samples (plan-0.6.0 §4 Sub-3.3, RAK-42/RAK-46).
+  # Spec: spec/backend-api-contract.md §10.6, spec/telemetry-model.md §7.
+  # Dedupe-Regel: Eindeutigkeit über
+  #   (project_id, stream_id, connection_id,
+  #    COALESCE(source_observed_at, source_sequence)).
+  # Adapter setzt das mit ON CONFLICT DO NOTHING um — collected_at
+  # allein ist kein stabiler Schlüssel.
+  srt_health_samples:
+    columns:
+      id:
+        type: identifier
+        auto_increment: true
+      project_id:
+        type: text
+        required: true
+        references:
+          table: projects
+          column: project_id
+          on_delete: restrict
+      stream_id:
+        type: text
+        required: true
+      connection_id:
+        type: text
+        required: true
+      source_observed_at:
+        type: datetime
+      source_sequence:
+        type: text
+      collected_at:
+        type: datetime
+        required: true
+      ingested_at:
+        type: datetime
+        required: true
+      rtt_ms:
+        type: float
+        required: true
+      packet_loss_total:
+        type: biginteger
+        required: true
+      packet_loss_rate:
+        type: float
+      retransmissions_total:
+        type: biginteger
+        required: true
+      available_bandwidth_bps:
+        type: biginteger
+        required: true
+      throughput_bps:
+        type: biginteger
+      required_bandwidth_bps:
+        type: biginteger
+      sample_window_ms:
+        type: biginteger
+      source_status:
+        type: text
+        required: true
+      source_error_code:
+        type: text
+        required: true
+      connection_state:
+        type: text
+        required: true
+      health_state:
+        type: text
+        required: true
+    primary_key: [id]
+    indices:
+      # Latest-First-Reads für GET /api/srt/health[/{stream_id}].
+      - name: idx_srt_health_samples_stream_ingested
+        columns: [project_id, stream_id, ingested_at, id]
+        type: btree
+      # Dedupe-Lookup vor INSERT (Adapter prüft Vorhandensein).
+      - name: idx_srt_health_samples_dedupe
+        columns: [project_id, stream_id, connection_id, source_observed_at, source_sequence]
+        type: btree
+    constraints:
+      - name: chk_srt_health_samples_source_status
+        type: check
+        expression: "source_status IN ('ok', 'unavailable', 'partial', 'stale', 'no_active_connection')"
+      - name: chk_srt_health_samples_source_error_code
+        type: check
+        expression: "source_error_code IN ('none', 'source_unavailable', 'no_active_connection', 'partial_sample', 'stale_sample', 'parse_error')"
+      - name: chk_srt_health_samples_connection_state
+        type: check
+        expression: "connection_state IN ('connected', 'no_active_connection', 'unknown')"
+      - name: chk_srt_health_samples_health_state
+        type: check
+        expression: "health_state IN ('healthy', 'degraded', 'critical', 'unknown')"

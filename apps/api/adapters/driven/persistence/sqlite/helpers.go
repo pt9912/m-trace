@@ -73,6 +73,25 @@ func nullableTime(p *time.Time) any {
 	return formatTime(*p)
 }
 
+// timePtrOrNil liefert einen Pointer auf t, falls gesetzt; sonst nil.
+// Hilft, time.Time-Felder mit Zero-Wert auf SQL-NULL zu mappen, ohne
+// dass der Aufrufer explizit auf IsZero prüfen muss.
+func timePtrOrNil(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
+// nullableFloat64 wandelt einen optionalen *float64 in einen für
+// database/sql passenden Wert: nil → SQL-NULL, sonst der Wert.
+func nullableFloat64(p *float64) any {
+	if p == nil {
+		return nil
+	}
+	return *p
+}
+
 // encodeMeta serialisiert die Domain-Meta-Map als JSON-String. nil →
 // SQL-NULL, sonst kompaktes JSON. ADR-0002 §8.1 fordert App-Layer-
 // Validierung statt DB-CHECK für Postgres-Portabilität.

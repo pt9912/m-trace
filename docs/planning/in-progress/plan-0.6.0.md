@@ -571,7 +571,7 @@ Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
 | --- | ------ | ---- | ------ |
 | 3.1 | Spec-Block: `telemetry-model.md` §3.1/§3.2/§7, `backend-api-contract.md` §7/§7a/§10.6, `architecture.md` §3.3/§3.4/§5.4 | Doku | ✅ (siehe §4.1 unten) |
 | 3.2 | Domain-Modell + Driven-Ports (`SrtSource`, `SrtHealthRepository`); Application-Use-Case `SrtHealthCollector` mit Health-Bewertung; Sentinel-Compile-Checks | Code, Hexagon | ✅ |
-| 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ⬜ |
+| 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ✅ |
 | 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ⬜ |
 | 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ⬜ |
 | 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ⬜ |
@@ -637,22 +637,27 @@ DoD:
   `source_sequence`/Generation-ID oder fortschreitendem Sample-Window
   nach. Stale-Bewertung muss Source-Zeit oder explizite Source-
   Freshness nutzen, nicht `collected_at` oder `ingested_at` allein. **→ Sub-3.5**
-- [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
+- [x] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
-  `0.6.0`-Pflicht. **→ Sub-3.3**
-- [ ] Retention-Grenze ist entschieden: unbegrenzt wie bestehende
-  lokale SQLite-Demo-Daten oder bounded Snapshot-Historie mit
-  dokumentiertem Reset-/Prune-Pfad. **→ Sub-3.3** (Spec-Default
-  „unbegrenzt + `make wipe`" ist in `backend-api-contract.md` §10.6
-  schon vorgegeben).
-- [ ] Schema-Migration ist idempotent und mit Restart-/Migrationstests
-  abgedeckt. **→ Sub-3.3**
-- [ ] Dedupe-/Upsert-Regel ist festgelegt: Ein Sample ist eindeutig über
-  Quelle, Stream/Connection, `source_observed_at` oder
-  `source_sequence`/Generation-ID und ggf. Sample-Window. `collected_at`
-  allein ist kein stabiler Dedupe-Schlüssel. **→ Sub-3.3** (Regel in
-  `backend-api-contract.md` §10.6 dokumentiert; Tests folgen mit
-  Sub-3.3).
+  `0.6.0`-Pflicht. Sub-3.3: `apps/api/adapters/driven/persistence/sqlite/srt_health_repository.go`
+  + `srt_health_scan.go`; `TestSrtHealth_RestartPreservesData`
+  weist Close + Re-Open + LatestByStream/HistoryByStream nach.
+- [x] Retention-Grenze ist entschieden: unbegrenzt wie bestehende
+  lokale SQLite-Demo-Daten — `backend-api-contract.md` §10.6 + V5-
+  Migration-Header dokumentieren das. Bounded Snapshot-Historie
+  mit Reset-/Prune-Pfad bleibt Folge-Scope.
+- [x] Schema-Migration ist idempotent und mit Restart-/Migrationstests
+  abgedeckt. V5 läuft via `internal/storage/migrate.go`-Apply-Runner;
+  `TestOpen_FreshStart` pinnt `schema_migrations rows = 5`;
+  `TestOpen_ReRunIsNoop` deckt Re-Open auf bestehender DB ab.
+  `make schema-validate` grün (5 Tabellen, 53 Spalten, 7 Indices,
+  10 Constraints).
+- [x] Dedupe-/Upsert-Regel ist festgelegt: ein Sample ist eindeutig über
+  `(project_id, stream_id, connection_id, COALESCE(source_observed_at, source_sequence))`.
+  Adapter macht Vorab-Lookup auf `idx_srt_health_samples_dedupe`,
+  überspringt vorhandene Einträge. `TestSrtHealth_DedupeSkipsIdenticalKey`
+  pinnt das Verhalten — `collected_at` allein erzeugt **keine**
+  zusätzliche Row.
 
 ### 4.3 Telemetry + Tests (Sub-3.6..3.7)
 
