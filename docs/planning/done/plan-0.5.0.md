@@ -426,7 +426,7 @@ DoD:
   „Bekannte Grenzen" benennt die vier strukturellen Out-of-Scope-
   Klauseln (kein Signaling, kein `getStats()`, keine Aggregat-
   Metriken, kein Dashboard-Hook) und verweist auf
-  [`docs/planning/open/plan-0.7.0.md`](../open/plan-0.7.0.md) als
+  [`docs/planning/in-progress/plan-0.7.0.md`](../in-progress/plan-0.7.0.md) als
   Folge-Plan. Detaillierte Folge-Schritte (Lab-Compose, README-
   Konkretisierung, `smoke-webrtc-prep`-Target, WebRTC-Telemetrie-
   Bewertung) gehören in `plan-0.7.0.md`, nicht in die Beispiel-

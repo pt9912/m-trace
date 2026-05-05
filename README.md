@@ -316,7 +316,7 @@ RAK-41..RAK-46 erfüllt; Tranchen 0–7 in
 [`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md)
 archiviert. Nächste Phase: `0.7.0` (WebRTC-Lab-Erweiterung,
 RAK-47..RAK-51) — Plan-Skelett unter
-[`docs/planning/open/plan-0.7.0.md`](docs/planning/open/plan-0.7.0.md).
+[`docs/planning/in-progress/plan-0.7.0.md`](docs/planning/in-progress/plan-0.7.0.md).
 Archivierte Plan-Dateien:
 [`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md),
 [`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),

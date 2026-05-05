@@ -122,7 +122,7 @@ Folgepunkte einer späteren Tranche:
 
 Eine produktive WebRTC-Lab-Erweiterung (Lab-Compose, Smoke, Player-
 SDK-Anbindung, Telemetrie-Schnitt) ist als
-[`docs/planning/open/plan-0.7.0.md`](../../docs/planning/open/plan-0.7.0.md)
+[`docs/planning/in-progress/plan-0.7.0.md`](../../docs/planning/in-progress/plan-0.7.0.md)
 geplant. Der reservierte Smoke-Target-Name `make smoke-webrtc-prep`
 (siehe [`examples/README.md`](../README.md) Sektion „Smoke-Targets")
 wartet darauf, in jenem Folge-Plan ausgefüllt zu werden.

@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-05
-> **Phase**: `0.6.0` released — RAK-41..RAK-46 erfüllt; Plan-Datei nach [`docs/planning/done/plan-0.6.0.md`](../done/plan-0.6.0.md) archiviert. Aktive Phase: `0.7.0` (WebRTC-Lab-Erweiterung, RAK-47..RAK-51) — Plan-Skelett unter [`docs/planning/open/plan-0.7.0.md`](../open/plan-0.7.0.md). `0.5.0` (Multi-Protocol Lab) bleibt unverändert auf Tag `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.6.0` released — RAK-41..RAK-46 erfüllt; Plan-Datei nach [`docs/planning/done/plan-0.6.0.md`](../done/plan-0.6.0.md) archiviert. Aktive Phase: `0.7.0` (WebRTC-Lab-Erweiterung, RAK-47..RAK-51) — Plan-Skelett unter [`docs/planning/in-progress/plan-0.7.0.md`](./plan-0.7.0.md). `0.5.0` (Multi-Protocol Lab) bleibt unverändert auf Tag `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -38,7 +38,7 @@ aktualisieren.
 
 `0.6.0` ist veröffentlicht; `0.7.0` (WebRTC-Lab-Erweiterung,
 RAK-47..RAK-51) ist die nächste aktive Phase. Plan-Skelett unter
-[`plan-0.7.0.md`](../open/plan-0.7.0.md). Lieferübersicht der `0.5.0`-
+[`plan-0.7.0.md`](../in-progress/plan-0.7.0.md). Lieferübersicht der `0.5.0`-
 Tranchen (zur Historie, finaler Stand siehe
 [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
 
@@ -121,7 +121,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.4.0` | Erweiterte Trace-Korrelation | ✅      | RAK-29..RAK-35; Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün                                   |
 | `0.5.0` | Multi-Protocol Lab           | ✅      | RAK-36..RAK-40; Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün                                   |
 | `0.6.0` | SRT Health View              | ✅      | RAK-41..RAK-46; DoD-Tracking in [`done/plan-0.6.0.md`](../done/plan-0.6.0.md)                        |
-| `0.7.0` | WebRTC-Lab-Erweiterung       | ⬜      | RAK-47..RAK-51 (Lastenheft `1.1.9` §13.9); DoD-Tracking in [`open/plan-0.7.0.md`](../open/plan-0.7.0.md)     |
+| `0.7.0` | WebRTC-Lab-Erweiterung       | 🟡      | RAK-47..RAK-51 (Lastenheft `1.1.9` §13.9); DoD-Tracking in [`in-progress/plan-0.7.0.md`](../in-progress/plan-0.7.0.md)     |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

@@ -1,8 +1,7 @@
 # Implementation Plan — `0.7.0` (WebRTC-Lab-Erweiterung)
 
-> **Status**: ⬜ geplant. Beginnt erst nach abgeschlossenem
-> Release-Artefakt `v0.6.0` (SRT Health View). Liegt unter
-> `docs/planning/open/`, bis das Vorgänger-Gate steht — dann nach
+> **Status**: 🟡 in Arbeit (Tranche 0 aktiviert am 2026-05-05; Vorgänger
+> `v0.6.0` ist released, Tag `d08a89f`). Liegt unter
 > `docs/planning/in-progress/`. Sammelt die Folge-Schritte aus
 > `0.5.0` Tranche 5 und macht aus dem WebRTC-Vorbereitungspfad eine
 > produktive Lab-Erweiterung.
