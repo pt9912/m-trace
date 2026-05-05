@@ -79,7 +79,7 @@ export function analyzeHlsManifestText(
     code: "details_pending",
     level: "info",
     message:
-      "stream-analyzer 0.3.0: Manifest ist als HLS erkannt, aber weder als Master noch als Media klassifiziert."
+      "stream-analyzer 0.4.0: Manifest ist als HLS erkannt, aber weder als Master noch als Media klassifiziert."
   });
 
   return {

@@ -74,7 +74,7 @@ const events = [
     server_received_at: "2026-04-30T00:00:02.000Z",
     ingest_sequence: 2,
     sequence_number: 2,
-    sdk: { name: "@npm9912/player-sdk", version: "0.2.0" }
+    sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
   },
   {
     event_name: "rebuffer_started",
@@ -83,7 +83,7 @@ const events = [
     client_timestamp: "2026-04-30T00:00:00.000Z",
     server_received_at: "2026-04-30T00:00:01.000Z",
     ingest_sequence: 1,
-    sdk: { name: "@npm9912/player-sdk", version: "0.2.0" }
+    sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
   }
 ];
 
@@ -225,7 +225,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:04.000Z",
         server_received_at: "2026-04-30T00:00:04.000Z",
         ingest_sequence: 4,
-        sdk: { name: "@npm9912/player-sdk", version: "0.2.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
       }
     ];
     const { default: EventsPage } = await import("../src/routes/events/+page.svelte");
@@ -289,7 +289,7 @@ describe("dashboard route components", () => {
         client_timestamp: "2026-04-30T00:00:04.000Z",
         server_received_at: "2026-04-30T00:00:04.000Z",
         ingest_sequence: 4,
-        sdk: { name: "@npm9912/player-sdk", version: "0.2.0" }
+        sdk: { name: "@npm9912/player-sdk", version: "0.4.0" }
       }
     ];
     await fireEvent.click(screen.getByRole("button", { name: "Refresh" }));

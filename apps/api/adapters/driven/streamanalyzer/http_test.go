@@ -22,7 +22,7 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_Master(t *testing.T) {
 
 	successBody := `{
 		"status": "ok",
-		"analyzerVersion": "0.3.0",
+		"analyzerVersion": "0.4.0",
 		"analyzerKind": "hls",
 		"input": { "source": "url", "url": "https://example.test/m.m3u8" },
 		"playlistType": "master",
@@ -60,8 +60,8 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_Master(t *testing.T) {
 	if parsed["kind"] != "url" || parsed["url"] != "https://example.test/m.m3u8" {
 		t.Errorf("request body wrong: %v", parsed)
 	}
-	if result.AnalyzerVersion != "0.3.0" {
-		t.Errorf("analyzerVersion: want 0.3.0, got %q", result.AnalyzerVersion)
+	if result.AnalyzerVersion != "0.4.0" {
+		t.Errorf("analyzerVersion: want 0.4.0, got %q", result.AnalyzerVersion)
 	}
 	if result.PlaylistType != domain.PlaylistTypeMaster {
 		t.Errorf("playlistType: want master, got %q", result.PlaylistType)
@@ -85,7 +85,7 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_TextWithBaseURL(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		receivedBody = string(body)
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","analyzerVersion":"0.3.0","analyzerKind":"hls","playlistType":"unknown","details":null,"findings":[]}`))
+		_, _ = w.Write([]byte(`{"status":"ok","analyzerVersion":"0.4.0","analyzerKind":"hls","playlistType":"unknown","details":null,"findings":[]}`))
 	}))
 	defer server.Close()
 
@@ -111,7 +111,7 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_NullDetailsBecomeEmpty(t *testing.T)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","analyzerVersion":"0.3.0","analyzerKind":"hls","playlistType":"unknown","details":null,"findings":[]}`))
+		_, _ = w.Write([]byte(`{"status":"ok","analyzerVersion":"0.4.0","analyzerKind":"hls","playlistType":"unknown","details":null,"findings":[]}`))
 	}))
 	defer server.Close()
 
@@ -194,7 +194,7 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_LimitsResponseSize(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		// 5 KB Antwort, Limit aber 1 KB → muss abbrechen.
-		_, _ = w.Write([]byte(`{"status":"ok","analyzerVersion":"0.3.0","analyzerKind":"hls","playlistType":"unknown","details":"`))
+		_, _ = w.Write([]byte(`{"status":"ok","analyzerVersion":"0.4.0","analyzerKind":"hls","playlistType":"unknown","details":"`))
 		_, _ = w.Write([]byte(strings.Repeat("x", 5_000)))
 		_, _ = w.Write([]byte(`","findings":[]}`))
 	}))
@@ -232,7 +232,7 @@ func TestHTTPStreamAnalyzer_AnalyzeManifest_ReturnsDomainErrorForStatusError(t *
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"error","analyzerVersion":"0.3.0","analyzerKind":"hls","code":"manifest_not_hls","message":"not HLS","details":{"firstLine":"<html>"}}`))
+		_, _ = w.Write([]byte(`{"status":"error","analyzerVersion":"0.4.0","analyzerKind":"hls","code":"manifest_not_hls","message":"not HLS","details":{"firstLine":"<html>"}}`))
 	}))
 	defer server.Close()
 
@@ -289,7 +289,7 @@ func TestHTTPStreamAnalyzer_WithHTTPClient(t *testing.T) {
 	called := 0
 	rt := roundTripperFunc(func(_ *http.Request) (*http.Response, error) {
 		called++
-		body := `{"status":"ok","analyzerVersion":"0.3.0","analyzerKind":"hls","playlistType":"unknown","details":null,"findings":[]}`
+		body := `{"status":"ok","analyzerVersion":"0.4.0","analyzerKind":"hls","playlistType":"unknown","details":null,"findings":[]}`
 		return &http.Response{
 			StatusCode: 200,
 			Body:       io.NopCloser(strings.NewReader(body)),

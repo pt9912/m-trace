@@ -85,7 +85,7 @@ func validAnalyzeRequest() domain.StreamAnalysisRequest {
 
 func okAnalyzer() *fakeAnalyzer {
 	return &fakeAnalyzer{result: domain.StreamAnalysisResult{
-		AnalyzerVersion: "0.3.0", PlaylistType: domain.PlaylistTypeMedia,
+		AnalyzerVersion: "0.4.0", PlaylistType: domain.PlaylistTypeMedia,
 	}}
 }
 

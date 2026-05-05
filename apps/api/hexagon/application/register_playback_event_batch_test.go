@@ -222,7 +222,7 @@ func validBatch() driving.BatchInput {
 				ProjectID:       "demo",
 				SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
 				ClientTimestamp: "2026-04-28T12:00:00.000Z",
-				SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.2.0"},
+				SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.4.0"},
 			},
 		},
 	}

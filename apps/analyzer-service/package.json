@@ -1,6 +1,6 @@
 {
   "name": "@npm9912/analyzer-service",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Internal HTTP wrapper around @npm9912/stream-analyzer for the m-trace API.",
   "type": "module",
