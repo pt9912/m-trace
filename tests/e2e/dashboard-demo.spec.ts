@@ -31,12 +31,17 @@ test("demo player emits events and dashboard renders the session", async ({ brow
 
   await page.goto(`/sessions/${sessionId}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByText(sessionId)).toBeVisible();
-  await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible();
+  // Timeline rendert Events über SSE plus Backfill-Cursor. Chromium
+  // braucht für den SSE-Setup-Pfad spürbar länger als Firefox (Default
+  // 5s reicht in Chromium nicht; Firefox ist konsistent unter 2s
+  // durch). 15s gibt dem Backfill-Polling-Fallback genug Spielraum,
+  // ohne den Gesamt-Test merklich zu verlängern.
+  await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible({ timeout: 15_000 });
 
   await page.goto("/events", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Session filter").selectOption(sessionId);
   await page.getByLabel("Event type filter").selectOption(eventName);
   await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
   const eventRow = page.getByRole("row", { name: new RegExp(`${eventName} ${sessionId}`) });
-  await expect(eventRow).toBeVisible();
+  await expect(eventRow).toBeVisible({ timeout: 15_000 });
 });
