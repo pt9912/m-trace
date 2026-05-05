@@ -104,7 +104,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
-| 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | 🟡 (Sub-1.1 ✅, 1.2 Probe ⬜) |
+| 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | 🟡 (Sub-1.1 ✅, Sub-1.2 ✅, 1.3/1.4 ⬜) |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ⬜ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ⬜ |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
@@ -268,6 +268,105 @@ Ergebnis-Pfade aus Sub-1.2:
   CGO-freie HTTP-Quelle".
 - **Negativ** (mind. ein Pflichtwert fehlt): Sub-1.3 prüft Option 2
   (Sidecar) oder Lastenheft-Patch §4.3, dann ggf. Option 4 mit ADR.
+
+### 2.4 Probe-Befund (Sub-Tranche 1.2, 2026-05-05)
+
+Probe ausgeführt auf `examples/srt/`-Stack (separate Compose-Probe-
+Variante mit auth-Override; Smoke-Baseline `examples/srt/mediamtx.yml`
+unangefasst). MediaMTX `bluenviron/mediamtx:1` (1.x-Linie), API auf
+`localhost:9998` → `:9997`-intern. Zwei Snapshots im Abstand von 5 s.
+
+**Befund: positiv — alle vier RAK-43-Pflichtwerte vorhanden.**
+
+| RAK-43-Wert | MediaMTX-Feld | Typ / Einheit | Probe-Beispielwert |
+| ----------- | ------------- | ------------- | ------------------ |
+| RTT | `msRTT` | Snapshot, Millisekunden | `0.365` ms |
+| Packet Loss (counter) | `packetsReceivedLoss` | Counter, kumulativ | `0` |
+| Packet Loss (rate) | `packetsReceivedLossRate` | Rate, Snapshot | `0` |
+| Retransmissions (sent) | `packetsRetrans` | Counter, kumulativ | `0` |
+| Retransmissions (recv) | `packetsReceivedRetrans` | Counter, kumulativ | `0` |
+| Verfügbare Bandbreite | `mbpsLinkCapacity` | Snapshot, Mbps | `4352.2` Mbps |
+| Tatsächliche Empfangsrate | `mbpsReceiveRate` | Snapshot, Mbps | `1.14` Mbps |
+
+Δt-Validierung (5 s): `bytesReceived` 36.4 M → 37.2 M (monoton +793 KB),
+`packetsReceived` 30 136 → 30 797 (monoton +661). `msRTT` und
+`mbpsReceiveRate` variieren als Snapshot-Werte (nicht kumulativ),
+`packetsReceivedLoss`/`packetsReceivedRetrans` bleiben `0` im
+gesunden Lab.
+
+**Mapping-Festlegungen für den späteren Adapter:**
+
+- `available_bandwidth_bps = mbpsLinkCapacity × 1_000_000`. Achtung:
+  `mbpsLinkCapacity` ist die SRT-eigene **Schätzung** der maximalen
+  Linkkapazität, nicht der konfigurierte Maximalwert (`mbpsMaxBW = -1`
+  bedeutet „unlimitiert" und ist getrennt zu behandeln). Lab-Werte
+  liegen wegen Loopback-Bandbreite in der Größenordnung mehrerer
+  Gbps und sind kein realistischer „verfügbarer"-Wert; Plan §4
+  (Tranche 3) muss klären, ob diese Schätzung als Health-Indikator
+  in nicht-localhost-Netzen tragfähig ist (Folge-Punkt für
+  Tranche 3).
+- `throughput_bps = mbpsReceiveRate × 1_000_000` (optional; erfüllt
+  RAK-43 nicht allein, siehe §0.1 Tabelle „Erweiterte SRT-Signale").
+- Loss-Modell: Quelle liefert beide Formen (Counter + Rate). Adapter
+  speichert Counter (`packets_received_loss_total`); Rate ist
+  abgeleitet und im Read-Pfad zusätzlich erlaubt.
+- Retransmissions: zwei separate Counter (`Retrans` Sender-seitig,
+  `ReceivedRetrans` Empfänger-seitig). Für Health-Bewertung relevant
+  ist `packetsReceivedRetrans` (was der Receiver tatsächlich nochmal
+  bekommt); `packetsRetrans` ist 0 für reine Publish-Verbindungen.
+
+**Freshness-Strategie**: MediaMTX liefert **keinen** expliziten
+`source_observed_at`. Adapter setzt `collected_at` zum Polling-
+Zeitpunkt; als Source-Sample-Window nutzt er `bytesReceived`-Δ
+zwischen aufeinanderfolgenden Polls (monoton steigend bestätigt).
+Stale-Erkennung: identischer `bytesReceived` zwischen zwei Polls
+plus Verbindung weiterhin im `state: "publish"` zeigt einen
+stagnierenden Stream — `source_status: stale_sample` ist das richtige
+Mapping. Verbindung verschwindet aus `items[]` →
+`source_status: no_active_connection`.
+
+**Fehlerklassen-Mapping**:
+
+| Beobachtung | `source_status` | `source_error_code` |
+| ----------- | --------------- | ------------------- |
+| HTTP `200 OK`, Item für `path=srt-test` vorhanden, alle Pflichtfelder gesetzt | `ok` | `none` |
+| HTTP `200 OK`, `items[]` leer | `no_active_connection` | `no_active_connection` |
+| HTTP `200 OK`, Item gefunden, einzelne Pflichtfelder fehlen / non-numeric | `partial` | `partial_sample` |
+| HTTP `200 OK`, identisches `bytesReceived` über N Polls trotz `state: "publish"` | `stale` | `stale_sample` |
+| HTTP `401`/`403` | `unavailable` | `source_unavailable` |
+| HTTP `5xx` oder Connection refused | `unavailable` | `source_unavailable` |
+| JSON-Parse-Fehler / Schema-Drift | `unavailable` | `parse_error` |
+
+**Fixture**: [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](../../../spec/contract-fixtures/srt/mediamtx-srtconns-list.json)
+(anonymisiert: `id`, `remoteAddr`; reale Probe-Werte aus 2026-05-05).
+
+**Auth-Konsequenz für `0.6.0`**: MediaMTX 1.14+ Default ist auth-
+pflichtig. Der Adapter braucht einen Auth-Mechanismus (z. B.
+`Authorization: Basic ...` mit Lab-Token in `mediamtx.yml`
+`authInternalUsers`). Tranche 2 (SRT-Testsetup härten) muss
+entscheiden, ob `examples/srt/mediamtx.yml` im `0.6.0`-Stand einen
+expliziten Probe-/Health-User bekommt — dieser User braucht
+mindestens `action: api`-Permission. Smoke-srt selbst nutzt die API
+nicht und bleibt auth-frei für den HLS-Pfad.
+
+**Offene Folge-Punkte für Tranche 3 / 4**:
+
+1. `mbpsLinkCapacity`-Health-Schwelle: in Loopback-Netzen produziert
+   die SRT-Schätzung Werte im Gbps-Bereich, die nicht als
+   „verfügbare Bandbreite" für Health interpretiert werden können.
+   Tranche 3 muss `required_bandwidth_bps` (z. B. 1.5 Mbps für den
+   Lab-Stream plus Sicherheitsmarge) gegen `mbpsLinkCapacity`
+   bewerten und/oder zu `mbpsReceiveRate`-basierte Heuristik
+   wechseln, wenn die Linkkapazitäts-Schätzung nicht aussagekräftig
+   ist.
+2. `mbpsLinkCapacity = -1` ist kein Probe-Wert hier (`mbpsMaxBW`
+   liefert `-1`); Tranche 3/4 muss prüfen, was MediaMTX bei
+   getrennter / unbekannter Verbindung liefert.
+3. Erweiterte Lastenheft-§4.3-Signale aus dem Probe verfügbar:
+   `msReceiveBuf`, `bytesReceiveBuf`, `packetsReceiveBuf` (Receive-
+   Buffer-Status), `outboundFramesDiscarded`, `packetsReorderTolerance`.
+   §0.1-Tabelle „Erweiterte SRT-Signale" entscheidet, welche davon
+   ohne Zusatzrisiko mitfallen.
 
 DoD:
 
