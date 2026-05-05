@@ -149,10 +149,12 @@ DoD:
 - [ ] Host-Port-Schnitt ist in `examples/README.md` dokumentiert, falls
   die Project-Konvention oder Parallelbetriebshinweise angepasst werden
   müssen.
-- [ ] Publisher-Mechanik ist entschieden und dokumentiert: FFmpeg/
-  GStreamer/MediaMTX-Testpublisher oder ein dedizierter Browser-Sender.
-  Wenn ein Publisher nicht zuverlässig headless läuft, bleibt er
-  manueller RAK-50-Handcheck und nicht Teil des Muss-Smokes.
+- [ ] FFmpeg-basierte Teststream-Mechanik ist entschieden und
+  dokumentiert (F-84 Muss). GStreamer, MediaMTX-Testpublisher oder ein
+  dedizierter Browser-Sender dürfen ergänzende Lab-/Handcheck-Pfade
+  sein, ersetzen aber nicht den FFmpeg-Nachweis. Wenn ein Publisher nicht
+  zuverlässig headless läuft, bleibt er manueller RAK-50-Handcheck und
+  nicht Teil des Muss-Smokes.
 - [ ] WHEP-Readiness hängt nicht von einem echten Browser ab: Der
   Stack stellt einen stabil prüfbaren Endpoint bereit, dessen
   erwarteter Status/Fehlercode dokumentiert ist (z. B. `OPTIONS`,
@@ -250,10 +252,16 @@ DoD:
   erweitert: erlaubte bounded Aggregat-Labels (z. B.
   `connection_state`, `ice_state`, `dtls_state`) mit festem
   Wertebereich.
-- [ ] `source_id`, `peer_connection_id`, `candidate_id`, IP-Adresse,
-  URL, Codec-String und Browser-User-Agent bleiben als Prometheus-
-  Labels verboten; falls sie im `getStats()`-Subset vorkommen, sind sie
-  nur als Event-/Debug-Daten für einen späteren Read-Pfad zulässig.
+- [ ] Unbounded WebRTC-/`getStats()`-Identifier bleiben als Prometheus-
+  Labels verboten. Dazu zählen mindestens `source_id`, `id`/Report-ID,
+  `peer_connection_id`, `track_id`, `transport_id`,
+  `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`,
+  `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-
+  Fingerprints, IP-Adresse, URL, Codec-String und Browser-User-Agent.
+  Falls diese Werte im `getStats()`-Subset vorkommen, sind sie nur als
+  Event-/Debug-Daten für einen späteren Read-Pfad zulässig; Prometheus
+  bekommt ausschließlich die in Item 1 explizit erlaubten bounded
+  Aggregat-Labels.
 - [ ] `spec/player-sdk.md` (oder ein neues `spec/webrtc-adapter.md`)
   beschreibt das Subset von `getStats()`-Reports, das produktiv
   gesammelt werden soll, plus die Schema-Drift-Strategie zwischen
@@ -271,13 +279,16 @@ DoD:
   WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan). Vor
   diesem Punkt ist `smoke-webrtc-prep` (endpoint-/compose-only)
   vom Schema-Drift nicht betroffen.
-- [ ] Cardinality-Smoke (`scripts/smoke-observability.sh`) wird auf
-  die neuen WebRTC-Allowlist-Labels erweitert — sobald irgendein
-  produktiver `mtrace_webrtc_*`-Counter im Code steht.
 - [ ] Tranche 4 dokumentiert ausdrücklich, dass RAK-49 nur die
   Telemetrie-Spezifikation vorbereitet. Sie aktiviert keine produktive
   `getStats()`-Sammlung und keine Prometheus-Metrik in `0.7.0`, sofern
   nicht ein separater Codepfad geplant und abgenommen wird.
+- [ ] `0.7.0` dokumentiert als negative Cardinality-Prüfung: im Release-
+  Scope existiert kein produktiver `mtrace_webrtc_*`-Counter und kein
+  WebRTC-Prometheus-Exportpfad. Die Erweiterung von
+  `scripts/smoke-observability.sh` auf WebRTC-Allowlist-Labels ist ein
+  Folge-DoD für den ersten Plan, der eine produktive WebRTC-Metrik
+  einführt.
 
 ---
 
@@ -297,7 +308,9 @@ DoD:
   zusätzlichen manuellen/opt-in Release-Smoke für `0.7.0`.
 - [ ] `examples/README.md` listet `smoke-webrtc-prep` konsistent mit
   den anderen Example-Smokes.
-- [ ] RAK-Verifikationsmatrix §6.1 ist vollständig ausgefüllt.
+- [ ] RAK-Verifikationsmatrix §6.1 ist vollständig ausgefüllt; bewusst
+  verschobene Kann-Anforderungen stehen als `deferred / Folgeplan` statt
+  als offene 0.7.0-Checkbox.
 - [ ] `./scripts/verify-doc-refs.sh` ist grün.
 - [ ] `plan-0.7.0.md` wird beim Release-Closeout nach
   `docs/planning/done/` verschoben und Roadmap §3 zeigt `0.7.0`
@@ -311,7 +324,7 @@ DoD:
 | RAK-48 | Muss | `make smoke-webrtc-prep` endpoint-/compose-only, opt-in dokumentiert, kein Playback-/`getStats()`-Anspruch | [ ] |
 | RAK-49 | Soll | `spec/telemetry-model.md` §3.2 + WebRTC-Adapter-/`getStats()`-Spec mit Schema-Drift-Strategie | [ ] |
 | RAK-50 | Kann | Manueller Browser-Handcheck in `examples/webrtc/README.md` dokumentiert | [ ] |
-| RAK-51 | Kann | Deferred; eigener Folgeplan für Player-SDK-WebRTC-Adapter | [ ] |
+| RAK-51 | Kann | Deferred; eigener Folgeplan für Player-SDK-WebRTC-Adapter | deferred / Folgeplan |
 
 ---
 
