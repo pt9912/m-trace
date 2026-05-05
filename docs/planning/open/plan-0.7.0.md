@@ -21,7 +21,7 @@
 > §6 (Tranche 5);
 > [`examples/webrtc/README.md`](../../../examples/webrtc/README.md)
 > (aktueller Doku-only Stand);
-> [`plan-0.6.0.md`](./plan-0.6.0.md) (vorhergehende Phase).
+> [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md) (vorhergehende Phase).
 >
 > **Nachfolger**: `plan-0.8.0.md` (offen).
 
@@ -37,9 +37,9 @@ DoD-Checkboxen tracken den Lieferstand analog
 
 Scope-Grenze: dieser Plan beschreibt eine **produktive WebRTC-Lab-
 Erweiterung** als Folge-Pfad zum Vorbereitungs-Skelett aus `0.5.0`.
-Er beschreibt **nicht**, wann oder in welchem Release das ausgeliefert
-wird — das ist eine Lastenheft-/Roadmap-Entscheidung außerhalb dieses
-Dokuments.
+Er liefert einen lokal startbaren WHIP-/WHEP-Lab-Pfad und einen
+opt-in Smoke für die Vorbereitungsgrenze. Er liefert keine produktive
+WebRTC-Telemetrie im Ingest-Pfad und keinen Player-SDK-WebRTC-Adapter.
 
 ### 0.1 Vorgänger-Gate
 
@@ -49,7 +49,7 @@ kann:
 - `0.5.0` ist released (Tag `v0.5.0` auf `a56dc0b`); WebRTC-Skelett
   unter [`examples/webrtc/`](../../../examples/webrtc/) existiert.
 - `0.6.0` (SRT Health View) ist released; siehe
-  [`plan-0.6.0.md`](./plan-0.6.0.md).
+  [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md).
 - Lastenheft `1.1.9` ist um RAK-47..RAK-51 für `0.7.0` erweitert (§13.9 + §4a.12 in `done/plan-0.1.0.md`); siehe §0.2.
 
 `smoke-webrtc-prep` (RAK-48 Muss) ist endpoint-/compose-only und
@@ -74,9 +74,9 @@ dokumentiert. Inhalt für die Tranchen-DoD unten:
 | RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert. |
 | RAK-51 | Kann | Player-SDK exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`. **Nicht Teil dieses Plans** — Lastenheft-Anker für eine Folge-Tranche/-Release; DoD wird in einem späteren Plan formuliert. |
 
-Die DoD-Items in §1–§5 unten referenzieren RAK-47..RAK-50
+Die DoD-Items in §1–§6 unten referenzieren RAK-47..RAK-50
 verbindlich; RAK-51 bleibt bewusst ohne Tranche und ist im
-[`plan-0.7.0.md`](./plan-0.7.0.md)-Wartungsblock §6 als Folge-
+[`plan-0.7.0.md`](./plan-0.7.0.md)-Wartungsblock §7 als Folge-
 Punkt vermerkt.
 
 ### 0.3 Out-of-Scope-Klauseln (durchgängig)
@@ -89,6 +89,27 @@ Punkt vermerkt.
   §3.2 erweitert sind.
 - Keine Vermischung mit dem `hls.js`-Demo-Pfad in `apps/dashboard`;
   WebRTC bekommt eine eigene Demo-Route oder bleibt im Lab-Beispiel.
+- Kein eigener Signaling-Service in `apps/api`. `0.7.0` nutzt einen
+  Lab-Media-Server mit WHIP-/WHEP-Endpunkten; falls ein eigener
+  Signaling-Pfad nötig wird, ist das ein Folgeplan.
+- Kein TLS-/Public-Internet-/NAT-Produktionssetup. localhost ist der
+  Pflichtpfad; STUN/TURN ist optional und darf RAK-47/RAK-48 nicht
+  blockieren.
+
+### 0.4 Sequenzierung und harte Gates
+
+1. Tranche 1 entscheidet Media-Server-Image, Endpoint-Pfade, Ports und
+   Publisher-Mechanik. Tranche 2/3 dürfen keine impliziten WebRTC-
+   Defaults voraussetzen.
+2. Tranche 3 ist endpoint-/compose-only. Ein Browser- oder Playback-
+   Handcheck kann RAK-50 unterstützen, darf aber RAK-48 nicht ersetzen
+   und darf `make smoke-webrtc-prep` nicht flakig machen.
+3. Tranche 4 ist Spec-Arbeit für spätere produktive Telemetrie. Sie
+   darf keine `mtrace_webrtc_*`-Metrik in Code oder Prometheus
+   behaupten, solange kein produktiver WebRTC-Telemetriepfad existiert.
+4. RAK-51 bleibt Folge-Scope. Jede Änderung an `packages/player-sdk`
+   braucht eine eigene Public-API-Tranche mit hls.js-Kompatibilitäts-
+   nachweis.
 
 ## 1. Tranchen-Übersicht
 
@@ -98,6 +119,7 @@ Punkt vermerkt.
 | 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | ⬜ |
 | 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ⬜ |
 | 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ⬜ |
+| 5 | Release-Doku, RAK-Matrix und Closeout | ⬜ |
 
 ---
 
@@ -116,16 +138,30 @@ DoD:
 - [ ] `examples/webrtc/compose.yaml` definiert mindestens MediaMTX
   mit WHIP-/WHEP-Listener; optional `coturn`-Container für nicht-
   localhost-Pfade.
+- [ ] Media-Server-Image ist gepinnt (kein floating `latest`) und die
+  README nennt die getestete WHIP-/WHEP-Pfadform des Images. Wenn sich
+  MediaMTX-Endpunkte zwischen Versionen ändern, blockiert das Tranche 1
+  bis zur Doku-/Smoke-Anpassung.
 - [ ] Host-Port-Schnitt ist aufgelöst — der `0.5.0`-Skelett-Stand
   notiert einen geplanten Konflikt mit `examples/srt/` auf `8889/tcp`;
   Tranche 1 entscheidet, ob WebRTC einen anderen Host-Port bekommt
   oder SRT-Beispiel umschnitten wird.
-- [ ] FFmpeg-Test-Publisher (analog `examples/srt/ffmpeg-srt-loop.sh`)
-  schickt einen synthetischen WebRTC-Stream; oder ein dedizierter
-  Browser-Sender im Lab-Setup.
+- [ ] Host-Port-Schnitt ist in `examples/README.md` dokumentiert, falls
+  die Project-Konvention oder Parallelbetriebshinweise angepasst werden
+  müssen.
+- [ ] Publisher-Mechanik ist entschieden und dokumentiert: FFmpeg/
+  GStreamer/MediaMTX-Testpublisher oder ein dedizierter Browser-Sender.
+  Wenn ein Publisher nicht zuverlässig headless läuft, bleibt er
+  manueller RAK-50-Handcheck und nicht Teil des Muss-Smokes.
+- [ ] WHEP-Readiness hängt nicht von einem echten Browser ab: Der
+  Stack stellt einen stabil prüfbaren Endpoint bereit, dessen
+  erwarteter Status/Fehlercode dokumentiert ist (z. B. `OPTIONS`,
+  `405`, `415`, `404 path missing` vs. `200` je nach Serververtrag).
 - [ ] `examples/webrtc/README.md` „Start"-Sektion zeigt den
   `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml
   up -d --build`-Befehl mit konkreten Ports.
+- [ ] Stop/Reset ist auf das `mtrace-webrtc`-Projekt begrenzt und
+  entfernt keine Core-/SRT-/DASH-Volumes.
 
 ---
 
@@ -142,6 +178,8 @@ DoD:
 
 - [ ] „Voraussetzungen" listet konkrete Tool-Versionen (Browser,
   ggf. STUN/TURN-Setup, Compose-Version).
+- [ ] README benennt den exakten WHIP-/WHEP-URL-Satz inklusive Stream-
+  Namen, Host-Port und Container-Port.
 - [ ] „Verifikation" beschreibt einen Browser-Handcheck (manuell)
   und/oder den `make smoke-webrtc-prep`-Pfad, sobald Tranche 3
   liefert.
@@ -151,6 +189,9 @@ DoD:
 - [ ] „Bekannte Grenzen" wird auf das reduziert, was nach den
   Tranchen 1–3 nicht im Scope ist (typisch: produktive Telemetrie,
   Multi-Tenant, TLS-Setup).
+- [ ] README erklärt klar, dass `make smoke-webrtc-prep` keine
+  Playback-Qualität, keine ICE-Erfolgsquote und keine `getStats()`-
+  Stabilität beweist.
 
 ---
 
@@ -172,10 +213,16 @@ DoD:
   `[smoke-webrtc-prep]`-Stderr-Präfix, Cleanup nur für
   `mtrace-webrtc`-Project-Name (Konvention aus
   `examples/README.md`).
-- [ ] Smoke prüft endpoint-/compose-only: WebRTC-WHIP/-WHEP-Endpoint
-  antwortet (HTTP-Status), Compose-Stack ist hochgefahren, ggf.
+- [ ] Smoke prüft endpoint-/compose-only: Compose-Stack ist
+  hochgefahren, WebRTC-WHIP/-WHEP-Endpoint antwortet mit dem in
+  Tranche 1 dokumentierten erwarteten Status/Fehlercode, ggf.
   STUN/TURN-Container läuft. Kein Browser, kein Playback,
   kein `getStats()`.
+- [ ] Smoke unterscheidet Fehlerklassen: Compose nicht gestartet,
+  Endpoint nicht erreichbar, falscher Status/Serververtrag, Port-
+  Konflikt, optionaler TURN-Container down.
+- [ ] Smoke nutzt bounded Waits und gibt bei Fehlern relevante
+  Container-Logs oder Compose-Service-Status aus.
 - [ ] `Makefile` listet `smoke-webrtc-prep` im `help`-Text und
   `.PHONY`; opt-in (nicht in `make gates`).
 - [ ] Optional / nicht release-blockierend: Headless-Browser-
@@ -203,10 +250,18 @@ DoD:
   erweitert: erlaubte bounded Aggregat-Labels (z. B.
   `connection_state`, `ice_state`, `dtls_state`) mit festem
   Wertebereich.
+- [ ] `source_id`, `peer_connection_id`, `candidate_id`, IP-Adresse,
+  URL, Codec-String und Browser-User-Agent bleiben als Prometheus-
+  Labels verboten; falls sie im `getStats()`-Subset vorkommen, sind sie
+  nur als Event-/Debug-Daten für einen späteren Read-Pfad zulässig.
 - [ ] `spec/player-sdk.md` (oder ein neues `spec/webrtc-adapter.md`)
   beschreibt das Subset von `getStats()`-Reports, das produktiv
   gesammelt werden soll, plus die Schema-Drift-Strategie zwischen
   Chromium-/Firefox-/Safari-Versionen.
+- [ ] Das `getStats()`-Subset trennt Muss-/Soll-Felder und benennt
+  Fallback-Verhalten bei fehlenden Browser-Feldern. Eine Browser-Version
+  ohne einzelnes Soll-Feld darf keinen vollständigen Telemetriepfad
+  blockieren, solange Muss-Felder stabil bleiben.
 - [ ] Risiken-Backlog erweitert (R-N) den Schema-Drift als
   **Spec-/Adapter-Review-Gate**: bei Browser-Major-Version X mit
   `getStats()`-Schema-Änderung wird die WebRTC-Allowlist in
@@ -219,10 +274,48 @@ DoD:
 - [ ] Cardinality-Smoke (`scripts/smoke-observability.sh`) wird auf
   die neuen WebRTC-Allowlist-Labels erweitert — sobald irgendein
   produktiver `mtrace_webrtc_*`-Counter im Code steht.
+- [ ] Tranche 4 dokumentiert ausdrücklich, dass RAK-49 nur die
+  Telemetrie-Spezifikation vorbereitet. Sie aktiviert keine produktive
+  `getStats()`-Sammlung und keine Prometheus-Metrik in `0.7.0`, sofern
+  nicht ein separater Codepfad geplant und abgenommen wird.
 
 ---
 
-## 6. Wartung
+## 6. Tranche 5 — Release-Doku, RAK-Matrix und Closeout
+
+Bezug: RAK-47..RAK-50; `docs/user/local-development.md`;
+`docs/user/releasing.md`; `README.md`.
+
+Ziel: Die WebRTC-Lab-Erweiterung ist auffindbar, klar abgegrenzt und
+mit den Release-Gates nachweisbar. RAK-51 bleibt sichtbar deferred.
+
+DoD:
+
+- [ ] `README.md` und `docs/user/local-development.md` verweisen auf
+  `examples/webrtc/` mit Start-/Stop-/Smoke-Befehlen.
+- [ ] `docs/user/releasing.md` nennt `make smoke-webrtc-prep` als
+  zusätzlichen manuellen/opt-in Release-Smoke für `0.7.0`.
+- [ ] `examples/README.md` listet `smoke-webrtc-prep` konsistent mit
+  den anderen Example-Smokes.
+- [ ] RAK-Verifikationsmatrix §6.1 ist vollständig ausgefüllt.
+- [ ] `./scripts/verify-doc-refs.sh` ist grün.
+- [ ] `plan-0.7.0.md` wird beim Release-Closeout nach
+  `docs/planning/done/` verschoben und Roadmap §3 zeigt `0.7.0`
+  released.
+
+### 6.1 RAK-Verifikationsmatrix
+
+| RAK | Priorität | Nachweis | Status |
+| --- | --------- | -------- | ------ |
+| RAK-47 | Muss | `examples/webrtc/compose.yaml`, Project `mtrace-webrtc`, lokale WHIP-/WHEP-Endpunkte, Portkonflikt entschieden | [ ] |
+| RAK-48 | Muss | `make smoke-webrtc-prep` endpoint-/compose-only, opt-in dokumentiert, kein Playback-/`getStats()`-Anspruch | [ ] |
+| RAK-49 | Soll | `spec/telemetry-model.md` §3.2 + WebRTC-Adapter-/`getStats()`-Spec mit Schema-Drift-Strategie | [ ] |
+| RAK-50 | Kann | Manueller Browser-Handcheck in `examples/webrtc/README.md` dokumentiert | [ ] |
+| RAK-51 | Kann | Deferred; eigener Folgeplan für Player-SDK-WebRTC-Adapter | [ ] |
+
+---
+
+## 7. Wartung
 
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`,
   Commit-Hash anhängen.
@@ -239,7 +332,7 @@ DoD:
   Operator-Use-Case oder Tranche 4 schließt die `getStats()`-
   Allowlist + Schema-Drift-Strategie so weit ab, dass ein
   produktiver Adapter-Pfad ohne Spec-Lücke implementierbar ist.
-  Das Folge-Dokument benennt dann eine eigene Tranche 5 mit
+  Das Folge-Dokument benennt dann eine eigene Tranche mit
   Public-API-Definition, hls.js-Pfad-Trennung und Compat-Tests.
 - Wenn der WebRTC-Pfad nach Bewertung als „nie produktiv"
   entschieden wird, dieses Dokument als historische Notiz nach
