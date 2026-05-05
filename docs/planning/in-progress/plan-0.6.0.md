@@ -570,7 +570,7 @@ Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
 | Sub | Inhalt | Form | Status |
 | --- | ------ | ---- | ------ |
 | 3.1 | Spec-Block: `telemetry-model.md` §3.1/§3.2/§7, `backend-api-contract.md` §7/§7a/§10.6, `architecture.md` §3.3/§3.4/§5.4 | Doku | ✅ (siehe §4.1 unten) |
-| 3.2 | Domain-Modell + Driven-Ports (`SrtSource`, `SrtHealthRepository`); Application-Use-Case `SrtHealthCollector` mit Health-Bewertung; Sentinel-Compile-Checks | Code, Hexagon | ⬜ |
+| 3.2 | Domain-Modell + Driven-Ports (`SrtSource`, `SrtHealthRepository`); Application-Use-Case `SrtHealthCollector` mit Health-Bewertung; Sentinel-Compile-Checks | Code, Hexagon | ✅ |
 | 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ⬜ |
 | 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ⬜ |
 | 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ⬜ |
@@ -606,10 +606,17 @@ DoD:
   Auth-Pfad, Cardinality-Vertrag).
 ### 4.2 Domain + Application + Adapter + Storage (Sub-3.2..3.5)
 
-DoD (offen, Sub-3.2..3.5):
+Sub-3.2 abgeschlossen 2026-05-05; Sub-3.3..3.5 offen.
 
-- [ ] Domain-/Application-Port für SRT-Health existiert in `apps/api`
-  ohne Import auf konkrete Metrikquelle. **→ Sub-3.2**
+DoD:
+
+- [x] Domain-/Application-Port für SRT-Health existiert in `apps/api`
+  ohne Import auf konkrete Metrikquelle. Sub-3.2: `domain/srt_health.go`
+  (Sample-/Enum-Typen), `port/driven/srt_source.go`,
+  `port/driven/srt_health_repository.go`, Application-Use-Case
+  `SrtHealthCollector` mit reiner Bewertungsfunktion `Evaluate`.
+  Mocks in Test-File belegen Port-Compile-Time-Compliance via
+  Sentinel-Checks; `make arch-check` grün.
 - [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
   Tranche 1 gewählten Quelle. **→ Sub-3.4**
 - [ ] Collector-/Import-Use-Case ist implementiert und getestet:
