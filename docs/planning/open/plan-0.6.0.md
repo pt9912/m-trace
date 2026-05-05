@@ -3,11 +3,12 @@
 > **Status**: ⬜ offen. Dieser Plan ist vorbereitet, aber noch nicht
 > aktive Phase. `0.5.0` (Multi-Protocol Lab) muss vorher abgeschlossen
 > und released sein; insbesondere muss das SRT-Beispiel aus
-> [`plan-0.5.0.md`](../in-progress/plan-0.5.0.md) Tranche 3 als
-> reproduzierbarer Lab-Pfad vorliegen.
-> Beim Aktivieren von `0.6.0` wird dieser Link auf
-> `../done/plan-0.5.0.md` umgestellt, weil Tranche 0 den Vorgängerplan
-> archiviert voraussetzt.
+> `plan-0.5.0.md` Tranche 3 als reproduzierbarer Lab-Pfad vorliegen.
+> Der Vorgängerplan liegt bis zum `0.5.0`-Release unter
+> `../in-progress/plan-0.5.0.md`; beim Aktivieren von `0.6.0` gilt
+> `../done/plan-0.5.0.md`. Diese Pfade sind bewusst nicht als
+> Markdown-Link gesetzt, damit der Doc-Ref-Check nicht während der
+> Archivierung kippt.
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9
@@ -163,7 +164,7 @@ Zu bewertende Quellen:
 | Option | Idee | Bewertungskriterium |
 | ------ | ---- | ------------------- |
 | MediaMTX-/Server-API | SRT-Verbindungsdaten vom lokalen Media-Server lesen. | Bevorzugt, wenn RTT/Loss/Retransmissions/verfügbare Bandbreite vollständig und stabil verfügbar sind. |
-| Sidecar-Exporter | Separater Container sammelt SRT-Stats und liefert HTTP/JSON oder OTLP an `apps/api`. | Bevorzugt, wenn `apps/api` CGO-frei bleiben soll und die Quelle trotzdem vollständig ist. |
+| Sidecar-Exporter | Separater Container sammelt SRT-Stats und liefert sie über einen expliziten API-Import- oder API-Pull-Vertrag an `apps/api`; OTLP ist nur Zusatzexport. | Bevorzugt, wenn `apps/api` CGO-frei bleiben soll und die Quelle trotzdem vollständig ist. Reines OTLP zu Collector/Tempo erfüllt den Dashboard-Read-Pfad nicht. |
 | Log-/CLI-Import | Lab-Smoke oder Sidecar normalisiert bekannte SRT-Tool-Ausgabe. | Nur akzeptabel, wenn deterministisch testbar und nicht fragil gegen lokalisierte Logtexte. |
 | Direktes libsrt-Binding | `apps/api` liest SRT-Stats direkt über Binding. | Nur mit ADR und bewusst akzeptierter Runtime-/Image-Konsequenz. |
 
@@ -175,7 +176,7 @@ Harte Auswahlkriterien:
 | Reproduzierbarkeit | Fixtures und Smoke laufen ohne Internet und ohne manuelle SRT-Tools auf dem Host. |
 | Runtime-Grenze | `apps/api` bleibt CGO-frei oder die Runtime-Änderung ist per ADR akzeptiert. |
 | Cardinality | Source-Rohmetriken werden nicht vom Projekt-Prometheus gescraped; nur m-trace-normalisierte bounded Aggregate dürfen exportiert werden. |
-| Freshness | Quelle liefert `source_observed_at` oder ein äquivalentes Source-Sample-Zeitfenster, sodass stale Daten anhand der Source-Zeit erkennbar sind; Importzeit allein darf Freshness nicht beweisen. |
+| Freshness | Quelle liefert `source_observed_at` oder ein äquivalentes quellen-nahes Freshness-Signal wie Sample-Window, Generation-ID oder monotone Source-Sequenz; Importzeit allein darf Freshness nicht beweisen. |
 | Failure-Mode | Quelle hat unterscheidbare Fehler für "nicht erreichbar", "keine Verbindung" und "unvollständige Rohdaten". |
 | Probe-Fähigkeit | Ein minimaler Source-Probe kann eine Rohantwort gegen Fixture/Parser prüfen, ohne `apps/api` oder Dashboard zu starten. |
 
@@ -209,17 +210,28 @@ DoD:
 - [ ] Für jeden Rohwert ist Einheit und Semantik festgelegt
   (z. B. Millisekunden, Bytes/s oder Bits/s, absolute Counter vs.
   Intervallwert).
+- [ ] Quelle oder Lab-Konfiguration liefert einen erwarteten
+  Bandbreitenbedarf (`required_bandwidth_bps` oder äquivalente
+  Streamrate plus Sicherheitsmarge). Ohne diese Schwelle darf
+  `available_bandwidth_bps` angezeigt, aber nicht als Engpass bewertet
+  werden.
 - [ ] Für Counter-Quellen ist festgelegt, wie daraus Dashboard-Werte
   berechnet werden: Roh-Counter anzeigen, Intervallrate ableiten oder
   beides liefern. Das Intervall und Reset-Verhalten sind dokumentiert.
 - [ ] Freshness-Semantik ist entschieden: Source-Sample-Intervall,
   stale-Schwelle, Verhalten bei fehlendem Source-Zeitstempel und
   Trennung von `source_observed_at`, `collected_at` und `ingested_at`.
+  Fehlt `source_observed_at`, ist ein quellen-nahes Ersatzsignal
+  Pflicht (`source_sequence`, Generation-ID oder Sample-Window);
+  wiederholt importierte Altwerte dürfen dadurch nicht frisch wirken.
 - [ ] Fehlerklassen der Quelle sind normalisiert:
   `source_unavailable`, `no_active_connection`, `partial_sample`,
   `parse_error` oder äquivalente stabile Codes.
 - [ ] Metrikquelle und Fixture sind ohne externen Netzwerkzugriff in CI
   testbar.
+- [ ] Jede Quelle hat einen expliziten API-Import- oder API-Pull-Vertrag
+  für `apps/api`; OTLP darf zusätzlich exportieren, aber nie der einzige
+  Pfad für SQLite, API-Response oder Dashboard sein.
 - [ ] Ein minimaler Source-Probe-Nachweis existiert: Parser oder
   Probe-Skript liest die gewählte Quelle oder ein äquivalentes Fixture
   und weist die vier Pflichtwerte plus Fehlerklassen nach, ohne
@@ -289,6 +301,7 @@ Vorgeschlagenes Mindestmodell:
 | `stream_id` | lokaler SRT-Lab-Stream oder Ingest-Name | string, nicht als Prometheus-Label |
 | `connection_id` | Quellseitige Verbindung oder normalisierte ID | string, nicht als Prometheus-Label |
 | `source_observed_at` | Zeitpunkt, zu dem die Quelle den SRT-Zustand gemessen hat | timestamp, nullable nur wenn Quelle keine Zeit liefert |
+| `source_sequence` | monotone Source-Sample-Sequenz oder Generation-ID, falls Quelle keine Sample-Zeit liefert | integer/string, optional aber Pflicht als Freshness-Ersatz ohne `source_observed_at` |
 | `collected_at` | Zeitpunkt, zu dem m-trace/Sidecar die Quelle gelesen hat | timestamp |
 | `ingested_at` | Zeitpunkt, zu dem `apps/api` das normalisierte Sample persistiert hat | timestamp |
 | `rtt_ms` | Round-trip time | number |
@@ -296,6 +309,7 @@ Vorgeschlagenes Mindestmodell:
 | `retransmissions_total` | Retransmission-Counter | counter |
 | `available_bandwidth_bps` | verfügbare Link-Bandbreite laut Quelle; nicht bloßer Stream-Durchsatz | bits/s |
 | `throughput_bps` | tatsächlich beobachteter Stream-Durchsatz, falls Quelle ihn zusätzlich liefert | bits/s, optional; erfüllt RAK-43 nicht allein |
+| `required_bandwidth_bps` | erwarteter Bandbreitenbedarf des Lab-Streams oder der Stream-Konfiguration | bits/s |
 | `sample_window_ms` | Zeitfenster für aus Countern abgeleitete Raten, falls relevant | integer, optional |
 | `source_status` | Status der Metrikquelle | enum: `ok`, `unavailable`, `partial`, `stale`, `no_active_connection` |
 | `source_error_code` | stabile Fehlerklasse bei nicht-`ok`-Status | enum: `source_unavailable`, `no_active_connection`, `partial_sample`, `parse_error`, `stale_sample`, optional `none` |
@@ -323,6 +337,9 @@ DoD:
   `mtrace_*`-Health-Aggregate diese Labels nicht verwenden.
 - [ ] `spec/backend-api-contract.md` beschreibt den Read-Vertrag für
   SRT-Health oder verweist auf einen eigenen neuen Abschnitt.
+- [ ] `spec/architecture.md` beschreibt den neuen SRT-Health-Datenfluss
+  inklusive Source/Sidecar, Import-/Pull-Vertrag, Application-Port,
+  Driven-Adapter, Collector/Importer, Storage und Dashboard-Read-Pfad.
 - [ ] Domain-/Application-Port für SRT-Health existiert in `apps/api`
   ohne Import auf konkrete Metrikquelle.
 - [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
@@ -331,6 +348,9 @@ DoD:
   Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
   Fehlerpropagation, Backoff/Retry-Grenzen und Shutdown-Verhalten sind
   dokumentiert und über Tests abgesichert.
+- [ ] Collector nutzt den expliziten API-Import-/Pull-Vertrag aus
+  Tranche 1; reiner OTLP-Export ohne SQLite-/API-Importpfad ist ein
+  Blocker für Tranche 3.
 - [ ] Collector persistiert Samples transaktional für den lokalen
   Read-Pfad: Rohwert-Normalisierung, Health-Bewertung und SQLite-Write
   committen gemeinsam oder gar nicht. OTel-Export läuft nach Commit als
@@ -338,9 +358,10 @@ DoD:
   Verfügbarkeit darf Persistenz nicht blockieren.
 - [ ] Collector-/Import-Test weist mindestens zwei aufeinanderfolgende
   Samples mit steigendem oder verschiedenem `source_observed_at` oder,
-  falls die Quelle keine Source-Zeit liefert, unterschiedlichem
-  `collected_at` nach. Stale-Bewertung muss Source-Zeit oder explizite
-  Source-Freshness nutzen, nicht nur `ingested_at`.
+  falls die Quelle keine Source-Zeit liefert, steigendem
+  `source_sequence`/Generation-ID oder fortschreitendem Sample-Window
+  nach. Stale-Bewertung muss Source-Zeit oder explizite Source-
+  Freshness nutzen, nicht `collected_at` oder `ingested_at` allein.
 - [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
   `0.6.0`-Pflicht.
@@ -350,8 +371,9 @@ DoD:
 - [ ] Schema-Migration ist idempotent und mit Restart-/Migrationstests
   abgedeckt.
 - [ ] Dedupe-/Upsert-Regel ist festgelegt: Ein Sample ist eindeutig über
-  Quelle, Stream/Connection, `source_observed_at` oder `collected_at`
-  und ggf. Sample-Sequenz.
+  Quelle, Stream/Connection, `source_observed_at` oder
+  `source_sequence`/Generation-ID und ggf. Sample-Window. `collected_at`
+  allein ist kein stabiler Dedupe-Schlüssel.
 - [ ] OTel-Export ist kompatibel mit dem bestehenden Telemetry-Port und
   vermeidet forbidden Prometheus-Labels.
 - [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
@@ -396,10 +418,14 @@ DoD:
   `GET /api/srt/health/{stream_id}`.
 - [ ] Read-Responses enthalten mindestens RTT, Packet Loss,
   Retransmissions, `available_bandwidth_bps`, `source_observed_at`,
-  `collected_at`, `ingested_at`, `health_state` und eine
-  Quellen-/Freshness-Angabe.
+  `collected_at`, `ingested_at`, `required_bandwidth_bps`,
+  `health_state` und eine Quellen-/Freshness-Angabe.
 - [ ] `health_state`-Schwellen sind dokumentiert und testbar; `unknown`
   ist der definierte Zustand bei fehlender oder stale Metrikquelle.
+- [ ] Bandbreiten-Health vergleicht `available_bandwidth_bps` gegen
+  `required_bandwidth_bps` oder eine dokumentierte quellspezifische
+  Schwelle. Fehlt diese Schwelle, darf Bandbreite keinen
+  `degraded`/`critical`-Zustand auslösen.
 - [ ] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
   `metrics`, `derived`, `health_state`, `source_status`,
   `source_error_code` oder eine gleichwertige Struktur.
@@ -446,7 +472,8 @@ DoD:
   erreichbar.
 - [ ] Ansicht zeigt pro SRT-Stream oder Verbindung mindestens
   `health_state`, RTT, Packet Loss, Retransmissions,
-  `available_bandwidth_bps`, letzte Aktualisierung und Quelle/Freshness.
+  `available_bandwidth_bps`, `required_bandwidth_bps`, letzte
+  Aktualisierung und Quelle/Freshness.
 - [ ] Werte sind mit Einheiten und Zeitbezug sichtbar: RTT in ms,
   verfügbare Bandbreite in bit/s oder Mbit/s, optionaler Durchsatz klar
   getrennt davon, Loss/Retransmission als Counter oder Rate gemäß
@@ -510,6 +537,10 @@ DoD:
 - [ ] Dokumentation erklärt Counter-vs.-Rate-Semantik, Sample-Fenster
   und stale/unknown-Zustände, damit Operatoren Werte nicht als
   absolute Momentaufnahme missverstehen.
+- [ ] Dokumentation erklärt die Bandbreitenbewertung: Unterschied
+  zwischen verfügbarer Bandbreite und Durchsatz, Herkunft von
+  `required_bandwidth_bps` und Verhalten, wenn keine Schwelle bekannt
+  ist.
 - [ ] Dokumentation enthält eine Deferred-Liste für Send-/Receive-
   Buffer, Verbindungsstabilität, Link Health und Failover-Zustände,
   falls diese Signale nicht in `0.6.0` ausgeliefert werden.
