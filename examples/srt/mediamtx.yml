@@ -3,10 +3,29 @@
 # mit dem Core-Lab geteilt; dort liefert services/media-server/mediamtx.yml
 # RTSP-Ingest und HLS-Auslieferung des FFmpeg-Generators.
 
-# Control-API (Operator-Diagnose; ab MediaMTX 1.14+ standardmäßig
-# auth-pflichtig — der Smoke nutzt sie nicht).
+# Control-API (Operator-Diagnose plus SRT-Health-Smoke ab plan-0.6.0
+# Tranche 2). MediaMTX 1.14+ ist standardmäßig auth-pflichtig — der
+# `authInternalUsers`-Block weiter unten schaltet api/metrics zusammen
+# mit publish/read frei.
 api: yes
 apiAddress: :9997
+
+# Auth-Override für das Lab (plan-0.6.0 Tranche 2): single-user `any`
+# mit leerem Passwort und allen Lab-Aktionen erlaubt. Das hält
+# `make smoke-srt` unverändert grün (Pfad benötigt `read`) und gibt
+# `make smoke-srt-health` zugleich Zugriff auf `/v3/srtconns/list`
+# (Pfad benötigt `api`). Auth-Modus ist absichtlich offen, weil das
+# Beispiel auf localhost läuft; ein produktiver SRT-Setup würde
+# mindestens `pass` plus IP-Allowlist erzwingen.
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: api
+      - action: metrics
 
 # SRT-Listener für eingehenden Publisher (Lastenheft §7.8 SRT).
 srt: yes

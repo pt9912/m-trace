@@ -105,7 +105,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | ------- | ------ | ------ |
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ✅ Quellen-Entscheidung (Sub-1.1–1.4); zwei DoD-Items in Tranche 2/3 verlagert (`required_bandwidth_bps`, formaler API-Pull-Vertrag) |
-| 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ⬜ |
+| 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ✅ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ⬜ |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
 | 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | ⬜ |
@@ -480,34 +480,43 @@ kann mindestens einen Normalzustand sicher nachweisen.
 
 DoD:
 
-- [ ] `examples/srt/compose.yaml` oder der finale `0.5.0`-Startpfad
+- [x] `examples/srt/compose.yaml` oder der finale `0.5.0`-Startpfad
   enthält alle Container, Ports und Umgebungsvariablen, die für
-  Health-Metriken nötig sind.
-- [ ] Der SRT-Publisher erzeugt einen deterministischen Teststream mit
-  begrenzter Laufzeit oder klarer Stop-Bedingung.
-- [ ] Das Setup liefert neben der Media-Ausspielung auch eine
-  erreichbare Metrikquelle aus Tranche 1.
-- [ ] Das Lab benennt die Datenflussrichtung eindeutig:
-  Publisher → SRT-Receiver/Media-Server → Metrikquelle → `apps/api`
-  → Dashboard.
-- [ ] `make smoke-srt` wird erweitert oder ein neues
-  `make smoke-srt-health` wird ergänzt; der Befehl prüft Publish,
-  Ausspielung und Metrikabruf.
-- [ ] Der Smoke prüft mindestens den gesunden Fall: Verbindung aktiv,
-  RTT vorhanden, Packet-Loss-Signal vorhanden, Retransmission-Signal
-  vorhanden und `available_bandwidth_bps > 0` oder eine explizit
-  dokumentierte Source-Semantik, die nicht mit verfügbarem Link-Budget
-  verwechselt wird.
-- [ ] Smoke-Waits sind bounded und liefern Diagnoseausgabe aus
-  Metrikquelle, Media-Server und Publisher.
-- [ ] Smoke-Fehler sind kategorisiert: Publish fehlgeschlagen,
-  Ausspielung fehlt, Metrikquelle fehlt, Sample unvollständig. API-
-  Import-Fehler sind erst ab Tranche 4/7 Scope, nachdem der API-Vertrag
-  festliegt.
-- [ ] Stop/Reset räumt nur das `mtrace-srt`-Compose-Projekt auf und
-  greift nicht in Core-Lab-Volumes ein.
-- [ ] `examples/srt/README.md` beschreibt den Health-Erweiterungspfad
-  ohne die normale `0.5.0`-SRT-Verifikation zu ersetzen.
+  Health-Metriken nötig sind (Compose unverändert; `mediamtx.yml`
+  um `authInternalUsers`-Block für `action: api`/`metrics` erweitert,
+  damit der Health-Smoke `/v3/srtconns/list` lesen darf).
+- [x] Der SRT-Publisher erzeugt einen deterministischen Teststream
+  (`testsrc2 + sine` aus `ffmpeg-srt-loop.sh`); Stop-Bedingung ist
+  Container-Down (Endlos-Loop wird per `docker compose down`
+  beendet).
+- [x] Das Setup liefert neben der Media-Ausspielung auch eine
+  erreichbare Metrikquelle aus Tranche 1 (`http://localhost:9998/v3/srtconns/list`).
+- [x] Das Lab benennt die Datenflussrichtung eindeutig
+  (`examples/srt/README.md` „Verifikation" → Datenfluss-Block für
+  den Health-Pfad: `srt-publisher → mediamtx :8890/udp → /v3/srtconns/list :9997 → host :9998 → smoke-srt-health`).
+- [x] `make smoke-srt-health` ergänzt; prüft Publish, Ausspielung und
+  Metrikabruf (`scripts/smoke-srt-health.sh`).
+- [x] Der Smoke prüft den gesunden Fall (live verifiziert
+  2026-05-05, beide Smokes grün): `state=publish`, `msRTT >= 0`,
+  `packetsReceivedLoss >= 0`, `packetsReceivedRetrans >= 0`,
+  `mbpsLinkCapacity > 0`. Caveat zu Linkkapazität (Loopback liefert
+  Gbps-Werte, kein realistischer „verfügbarer"-Wert) ist in §2.4
+  Folge-Punkt 1 für Tranche 3 dokumentiert.
+- [x] Smoke-Waits sind bounded (`WAIT_SECONDS=45`) und liefern bei
+  Fehler Diagnose-Hinweise auf `docker compose logs mediamtx` und
+  `srt-publisher`.
+- [x] Smoke-Fehler kategorisiert: HLS-Manifest unreachable,
+  MediaMTX-API unreachable / leerer Body (Auth-Hinweis), JSON-Parse-
+  Fehler, Item-Filter (`path`/`state`) negativ, Pflichtfeld
+  fehlt/falsch typisiert. API-Import-Fehler sind weiterhin erst ab
+  Tranche 4/7 Scope.
+- [x] Stop/Reset räumt nur das `mtrace-srt`-Compose-Projekt auf
+  (`docker compose -p mtrace-srt down` im Cleanup-Trap; Smoke
+  nutzt keine fremden Project-Namen oder Volumes).
+- [x] `examples/srt/README.md` beschreibt den Health-Erweiterungspfad
+  ohne die normale `0.5.0`-SRT-Verifikation zu ersetzen (eigener
+  „make smoke-srt-health"-Block; Baseline `make smoke-srt` bleibt
+  als RAK-37-Nachweis dokumentiert).
 
 ---
 

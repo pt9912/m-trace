@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-dash smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -24,6 +24,7 @@ help:
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
 		'  make smoke-mediamtx         Run the MediaMTX example smoke check (needs make dev)' \
 		'  make smoke-srt              Run the SRT example smoke (starts/stops mtrace-srt project)' \
+		'  make smoke-srt-health       Run the SRT health smoke (HLS + MediaMTX-API; plan-0.6.0 Tranche 2)' \
 		'  make smoke-dash             Run the DASH example smoke (starts/stops mtrace-dash project)' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
@@ -122,6 +123,14 @@ smoke-mediamtx:
 # Opt-in (nicht in `make gates`).
 smoke-srt:
 	bash scripts/smoke-srt.sh
+
+# `make smoke-srt-health` erweitert smoke-srt um eine API-Probe gegen
+# MediaMTX `/v3/srtconns/list` (plan-0.6.0 §3 Tranche 2). Verifiziert
+# zusätzlich vier RAK-43-Pflichtwerte (msRTT, packetsReceivedLoss,
+# packetsReceivedRetrans, mbpsLinkCapacity > 0). Opt-in (nicht in
+# `make gates`); braucht python3 für JSON-Validierung.
+smoke-srt-health:
+	bash scripts/smoke-srt-health.sh
 
 # `make smoke-dash` startet das DASH-Beispiel (plan-0.5.0 §5 Tranche 4,
 # RAK-38) als Project `mtrace-dash`: FFmpeg generiert DASH in ein
