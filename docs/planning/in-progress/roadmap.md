@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-05
-> **Phase**: `0.4.0` released — Tag `v0.4.0` auf `9e4fdb3`, GitHub-Actions-`build`-Workflow am Release-Commit grün (run 25359933129). RAK-29..RAK-35 erfüllt; Plan-Datei nach `docs/planning/done/plan-0.4.0.md` archiviert. Nächste Phase: `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) — Scope-Cut steht aus.
+> **Phase**: `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) in Arbeit, Tranche 0 abgeschlossen, Tranche 1 (Example-Struktur und Lab-Konventionen) als nächster Schritt. Plan: [`plan-0.5.0.md`](./plan-0.5.0.md). Vorgänger: `0.4.0` released (Tag `v0.4.0` auf `9e4fdb3`, GitHub-Actions-Run 25359933129 grün, Plan archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md)).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -32,16 +32,21 @@ aktualisieren.
 | ✅      | Stream-Analyzer (`0.3.0`)           | `@npm9912/stream-analyzer` (Library + CLI), `analyzer-service` (interner HTTP-Wrapper), `POST /api/analyze`; RAK-22..RAK-28. | [`plan-0.3.0.md`](../done/plan-0.3.0.md)                               |
 | ✅      | Erweiterte Trace-Korrelation (`0.4.0`) | SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline (SSE + Polling-Fallback), optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku; RAK-29..RAK-35 erfüllt. | [`plan-0.4.0.md`](../done/plan-0.4.0.md)                            |
 
-### 1.2 Verbleibend für `0.4.0`-Scope-Cut
+### 1.2 Aktive `0.5.0`-Phase
 
-`0.3.0` ist veröffentlicht; `0.4.0` (Erweiterte Trace-Korrelation, RAK-29..RAK-35)
-ist noch nicht geplant. Vor dem Scope-Cut:
+`0.4.0` ist veröffentlicht; `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40)
+ist die aktive Phase. Detaillierte DoD-Tracker und Tranchen-Übersicht
+stehen in [`plan-0.5.0.md`](./plan-0.5.0.md). Sub-Tranchen-Eingang:
 
-| Reihenfolge | Status | Aufgabe                                                                                                      | Trigger          | Verweis                |
-| ----------- | ------ | ------------------------------------------------------------------------------------------------------------ | ---------------- | ---------------------- |
-| 1           | ✅      | OE-3/Persistenz entschieden: SQLite als lokaler Durable-Store (ADR-0002 `Accepted`, ausgelöst durch RAK-32). | Vor `0.4.0`-Plan | OE-3; MVP-16; ADR-0002 |
-| 2           | ✅      | OE-5/Live-Updates entschieden: SSE mit Polling-Fallback; kein WebSocket in `0.4.0`.                          | Vor `0.4.0`-Plan | OE-5; ADR-0003         |
-| 3           | ✅      | `docs/planning/done/plan-0.4.0.md` anlegen und Scope in Tranchen schneiden.                           | Nach OE-5        | RAK-29..RAK-35         |
+| Tranche | Status | Inhalt                                                  | Verweis                                                                              |
+| ------- | ------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 0       | ✅     | Vorgänger-Gate und Scope-Festlegung                     | [`plan-0.5.0.md`](./plan-0.5.0.md) §1a                                               |
+| 1       | ⬜     | Example-Struktur und Lab-Konventionen                   | [`plan-0.5.0.md`](./plan-0.5.0.md) §2                                                |
+| 2       | ⬜     | MediaMTX-Beispiel erweitern (RAK-36)                    | [`plan-0.5.0.md`](./plan-0.5.0.md) §3                                                |
+| 3       | ⬜     | SRT-Beispiel als Lab-Szenario (RAK-37)                  | [`plan-0.5.0.md`](./plan-0.5.0.md) §4                                                |
+| 4       | ⬜     | DASH-Beispiel und Analyzer-Grenze (RAK-38)              | [`plan-0.5.0.md`](./plan-0.5.0.md) §5                                                |
+| 5       | ⬜     | WebRTC vorbereitet, nicht produktiv (RAK-39)            | [`plan-0.5.0.md`](./plan-0.5.0.md) §6                                                |
+| 6       | ⬜     | Dokumentation, Smokes und Release-Gates (RAK-40)        | [`plan-0.5.0.md`](./plan-0.5.0.md) §7                                                |
 
 ---
 

@@ -1,10 +1,12 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 Scope-Cut. `0.4.0` ist released (Tag `v0.4.0` auf
-> `9e4fdb3`, CI-Run 25359933129 grün, Plan in
-> `docs/planning/done/plan-0.4.0.md`). `plan-0.5.0.md` ist nach
-> `docs/planning/in-progress/` verschoben und tritt als aktive Phase in
-> Tranche 0 ein.
+> **Status**: 🟡 in Arbeit. **Tranche 0** (Vorgänger-Gate +
+> Scope-Festlegung) abgeschlossen — `0.4.0` ist released (Tag `v0.4.0`
+> auf `9e4fdb3`, CI-Run 25359933129 grün, Plan archiviert in
+> [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md)); Roadmap
+> auf `0.5.0` als aktive Phase umgestellt; SRT-/WebRTC-Scope und R-2/
+> R-5/R-7/R-10-Triage fixiert. **Nächster Schritt**: Tranche 1
+> (Example-Struktur und Lab-Konventionen, §2).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -81,7 +83,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Vorgänger-Gate und Scope-Festlegung | ⬜ |
+| 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | Example-Struktur und Lab-Konventionen | ⬜ |
 | 2 | MediaMTX-Beispiel erweitern (RAK-36) | ⬜ |
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ⬜ |
@@ -101,23 +103,32 @@ neue Betriebsmetriken, liefert.
 
 DoD:
 
-- [ ] `plan-0.4.0.md` ist vollständig abgeschlossen, nach
+- [x] `plan-0.4.0.md` ist vollständig abgeschlossen, nach
   `docs/planning/done/` verschoben und mit finalen Commit-Hashes
-  versehen.
-- [ ] Annotierter Release-Tag `v0.4.0` existiert und zeigt auf den
-  finalen Release-Commit.
-- [ ] GitHub Actions `Build` ist für den `v0.4.0`-Commit grün.
-- [ ] `docs/planning/in-progress/roadmap.md` markiert `0.5.0` als
-  aktive Phase und verweist auf dieses Dokument.
-- [ ] Historische `0.4.0`-Statusquellen sind konsistent: archivierter
-  Plan, Roadmap und README enthalten keine widersprüchlichen Restmarker
-  oder alten Scope-Cut-Texte mehr.
-- [ ] Scope-Entscheidung ist dokumentiert: SRT in `0.5.0` bedeutet
+  versehen (`da883af` plus Sub-Tranchen-Hashes in §9-Matrix).
+- [x] Annotierter Release-Tag `v0.4.0` existiert und zeigt auf den
+  finalen Release-Commit (`9e4fdb3`).
+- [x] GitHub Actions `Build` ist für den `v0.4.0`-Commit grün
+  (Run 25359933129 in 4m59s).
+- [x] `docs/planning/in-progress/roadmap.md` markiert `0.5.0` als
+  aktive Phase und verweist auf dieses Dokument: Status-Header auf
+  „`0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) in Arbeit, Tranche 0";
+  §1.2 als „Aktive `0.5.0`-Phase" mit Tranchen-Übersicht 0–6 und
+  Verweis auf [`plan-0.5.0.md`](./plan-0.5.0.md).
+- [x] Historische `0.4.0`-Statusquellen sind konsistent: archivierter
+  Plan §9.6-Matrix-Zeile auf ✅ (`da883af`); README "Aktueller Stand"
+  und v0.4.0-Roadmap-Block tragen "released" statt "in Arbeit"; Roadmap
+  §1.1-Zeile `0.4.0` ✅, §3-Release-Übersicht ✅, Schritt 36 ✅; Audit
+  per `grep -rn "0.4.0.*in Arbeit\|0.4.0-Scope-Cut"` zeigt keine
+  Treffer außerhalb der Doku-Konvention-Legende.
+- [x] Scope-Entscheidung ist dokumentiert: SRT in `0.5.0` bedeutet
   Beispiel/Smoke, **nicht** SRT-Health-View, SRT-Metrikimport oder
-  CGO-Binding in `apps/api`.
-- [ ] WebRTC in `0.5.0` ist als vorbereiteter Beispielplatz
-  festgelegt; produktive `getStats()`-Erfassung bleibt out of scope.
-- [ ] Bestehende `0.4.0`-Folgerisiken R-2, R-5, R-7 und R-10 sind gemäß
+  CGO-Binding in `apps/api` (siehe §0.1 SRT-Zeile, Tranche 3 §4
+  und §0.2 R-2-Zeile).
+- [x] WebRTC in `0.5.0` ist als vorbereiteter Beispielplatz
+  festgelegt; produktive `getStats()`-Erfassung bleibt out of scope
+  (siehe §0.1 WebRTC-Zeile und Tranche 5 §6).
+- [x] Bestehende `0.4.0`-Folgerisiken R-2, R-5, R-7 und R-10 sind gemäß
   §0.2 triagiert; falls Lab-Smokes einen Trigger auslösen, wird
   `risks-backlog.md` aktualisiert oder eine additive Tranche ergänzt.
 
