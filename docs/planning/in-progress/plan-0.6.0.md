@@ -71,7 +71,7 @@ vollständigen Media-Server-Verwaltung wächst.
 
 | Risiko | Entscheidung für `0.6.0` | Trigger / Nachweis |
 | ------ | ------------------------ | ------------------ |
-| R-2 CGO/SRT-Bindings | Vor jeder Code-Integration entscheiden. Bevorzugt wird ein Sidecar-/Import-Pfad, der `apps/api` CGO-frei hält. Falls nur CGO sinnvoll ist, ist eine ADR Pflicht. | Tranche 1 liefert ADR oder expliziten "kein CGO in API"-Beschluss mit Fixture-/Source-Probe-Nachweis; der volle Health-Smoke folgt in Tranche 2/7. |
+| R-2 CGO/SRT-Bindings | **Aufgelöst durch Sub-1.3**: Option 1 (MediaMTX-API über HTTP) gewählt. `apps/api` bleibt CGO-frei; `distroless-static`-Pattern unangefasst. Folge-ADR „SRT-Binding-Stack" entfällt. | Sub-1.2 Probe liefert vier Pflichtwerte; §2.4/§2.5 dokumentiert; risks-backlog R-2 nach §1.2 verschoben. |
 | R-5 Time-Skew-Persistenz | Nicht Teil der SRT-Health-Pflicht, außer SRT-Metriken brauchen Client-/Server-Zeitvergleich im Dashboard. | Wenn Health-Events Zeitversatz bewerten müssen, wird eine additive Sub-Tranche ergänzt oder R-5 separat aktiviert. |
 | R-7 Session-List-N+1 | Beobachten. SRT-Health darf Session-Listen nicht durch zusätzliche N+1-Reads verschlechtern. | Wenn SRT-Health in `GET /api/stream-sessions` eingebettet wird und p95 >= 200 ms reproduzierbar wird, Bulk-Read-Port vor Dashboard-Integration liefern. |
 | R-10 Sampling-Vollständigkeit | Nicht Teil von `0.6.0`, solange SRT-Metriken unabhängig von Player-Sampling laufen. | Aktivieren, falls Health-Ansicht Player-Event-Vollständigkeit als Diagnosevoraussetzung behauptet. |
@@ -104,7 +104,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
-| 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | 🟡 (Sub-1.1 ✅, Sub-1.2 ✅, 1.3/1.4 ⬜) |
+| 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ✅ Quellen-Entscheidung (Sub-1.1–1.4); zwei DoD-Items in Tranche 2/3 verlagert (`required_bandwidth_bps`, formaler API-Pull-Vertrag) |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ⬜ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ⬜ |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
@@ -368,65 +368,104 @@ nicht und bleibt auth-frei für den HLS-Pfad.
    §0.1-Tabelle „Erweiterte SRT-Signale" entscheidet, welche davon
    ohne Zusatzrisiko mitfallen.
 
+### 2.5 Verbindliche Wahl (Sub-Tranche 1.3, 2026-05-05)
+
+**Entschieden: Option 1 — MediaMTX-/Server-API über HTTP.**
+
+Begründung anhand der Probe aus §2.4:
+
+- Vollständigkeit der vier RAK-43-Pflichtwerte direkt nachgewiesen
+  (`msRTT`, `packetsReceivedLoss`, `packetsRetrans`/`packetsReceivedRetrans`,
+  `mbpsLinkCapacity`).
+- `apps/api` bleibt CGO-frei: HTTP-Client gegen `:9997`/`:9998`,
+  `distroless-static`-Pattern unangefasst.
+- Reproduzierbar im lokalen Compose-Lab ohne Internet, ohne Sidecar-
+  Build, ohne externe SRT-Tools.
+- Cardinality kontrolliert über den Adapter (Source-Rohmetriken
+  werden nicht vom Projekt-Prometheus gescraped; per-Verbindung-
+  Felder gehen in SQLite und/oder OTel-Spans, nicht in Prometheus-
+  Labels — Plan §0.1).
+- Fixture als Adapter-Parser-Baseline ist abgelegt
+  ([`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](../../../spec/contract-fixtures/srt/mediamtx-srtconns-list.json)).
+
+**Konsequenz für R-2** (Risiken-Backlog): aufgelöst durch CGO-freie
+HTTP-Quelle. Eintrag wandert mit Sub-Tranche 1.4 von §1.1 (Aktiv) nach
+§1.2 (Historisch) mit Verweis auf diesen Plan-Block.
+
+**Keine ADR „SRT-Binding-Stack" nötig.** Diese ADR war als Folge-ADR
+für libsrt-CGO-Bindings gedacht; mit der CGO-freien Wahl ist sie
+obsolet. Roadmap §4 wird im 0.6.0-Closeout entsprechend aktualisiert.
+
+**Adapter-Skizze** (Detail in Tranche 3 / §4):
+
+- Driven-Port `driven.SrtSource` mit `SnapshotConnections(ctx) ([]SrtConnectionSample, error)`.
+- HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` ruft
+  `GET {base}/v3/srtconns/list` mit `Authorization: Basic ...` und
+  parst die Response gegen das in §2.4 dokumentierte Mapping.
+- Keine direkte CGO-/libsrt-Abhängigkeit in `apps/api`.
+- Tranche 3 formalisiert das als API-Pull-Vertrag in
+  `spec/architecture.md` und `spec/backend-api-contract.md`.
+
 DoD:
 
-- [ ] Eine Metrikquelle ist verbindlich gewählt und in einer kurzen ADR
-  oder in diesem Plan mit Entscheidungsbegründung dokumentiert.
-- [ ] Die Entscheidung benennt explizit, ob `apps/api` CGO-frei bleibt.
-- [ ] Falls CGO oder eine andere Runtime-Änderung nötig ist, existiert
+- [x] Eine Metrikquelle ist verbindlich gewählt und in einer kurzen ADR
+  oder in diesem Plan mit Entscheidungsbegründung dokumentiert
+  (Option 1 MediaMTX-API; Begründung §2.4 Probe-Befund + §2.5
+  Verbindliche Wahl).
+- [x] Die Entscheidung benennt explizit, ob `apps/api` CGO-frei bleibt
+  (CGO-frei; HTTP-Client-Adapter; §2.5).
+- [-] Falls CGO oder eine andere Runtime-Änderung nötig ist, existiert
   eine accepted ADR "SRT-Binding-Stack" und `risks-backlog.md` R-2 ist
-  entsprechend aktualisiert.
-- [ ] Die gewählte Quelle kann RTT, Packet Loss, Retransmissions und
-  **verfügbare Bandbreite** vollständig liefern. Der Bandbreitenwert
-  heißt im Modell `available_bandwidth_bps`; falls die Quelle nur
-  tatsächlichen Stream-Durchsatz oder eine andere Bandbreiten-Semantik
-  liefert, ist das explizit zu dokumentieren und darf RAK-43 nicht als
-  "verfügbare Bandbreite" erfüllen. Fehlt einer dieser vier RAK-43-Werte,
-  blockiert Tranche 1 (`[!]`) und es braucht entweder eine andere Quelle
-  oder einen Lastenheft-Patch; eine bloß dokumentierte Mapping-Grenze
-  reicht für RAK-43 nicht.
-- [ ] Falls die gewählte Quelle eigene Prometheus-Metriken anbietet
-  (z. B. MediaMTX-SRT-Metrics), werden diese Rohmetriken nicht in den
-  Projekt-Prometheus gescraped. Es gibt in `0.6.0` keine Ausnahme über
-  die bestehende Forbidden-Label-Policy, weil sie Source-Labels wie
-  `id`, `path`, `remoteAddr` oder `state` nicht ausreichend abdeckt.
-  Wenn Source-Scraping später nötig wird, braucht es einen separaten
-  Folge-Scope mit expliziter Source-Label-Allowlist.
-- [ ] Ein minimales Fixture für rohe SRT-Metrikdaten liegt unter
-  `spec/contract-fixtures/` oder einem komponentennahen `testdata/`
-  Verzeichnis.
-- [ ] Für jeden Rohwert ist Einheit und Semantik festgelegt
-  (z. B. Millisekunden, Bytes/s oder Bits/s, absolute Counter vs.
-  Intervallwert).
+  entsprechend aktualisiert. **N/A** — keine CGO-Wahl. R-2 wird in
+  Sub-1.4 als aufgelöst nach §1.2 verschoben.
+- [x] Die gewählte Quelle kann RTT, Packet Loss, Retransmissions und
+  **verfügbare Bandbreite** vollständig liefern (Probe §2.4
+  Befund-Tabelle).
+- [x] Falls die gewählte Quelle eigene Prometheus-Metriken anbietet,
+  werden diese Rohmetriken nicht in den Projekt-Prometheus gescraped
+  (Plan §0.1; Tranche 7 Smoke verifiziert das per
+  `scripts/smoke-observability.sh`-Erweiterung).
+- [x] Ein minimales Fixture für rohe SRT-Metrikdaten liegt unter
+  `spec/contract-fixtures/srt/mediamtx-srtconns-list.json`.
+- [x] Für jeden Rohwert ist Einheit und Semantik festgelegt
+  (§2.4 Befund-Tabelle: ms, Mbps × 1_000_000 → bps, Counter
+  kumulativ, Snapshot-Werte).
 - [ ] Quelle oder Lab-Konfiguration liefert einen erwarteten
   Bandbreitenbedarf (`required_bandwidth_bps` oder äquivalente
-  Streamrate plus Sicherheitsmarge). Ohne diese Schwelle darf
-  `available_bandwidth_bps` angezeigt, aber nicht als Engpass bewertet
-  werden.
-- [ ] Für Counter-Quellen ist festgelegt, wie daraus Dashboard-Werte
-  berechnet werden: Roh-Counter anzeigen, Intervallrate ableiten oder
-  beides liefern. Das Intervall und Reset-Verhalten sind dokumentiert.
-- [ ] Freshness-Semantik ist entschieden: Source-Sample-Intervall,
-  stale-Schwelle, Verhalten bei fehlendem Source-Zeitstempel und
-  Trennung von `source_observed_at`, `collected_at` und `ingested_at`.
-  Fehlt `source_observed_at`, ist ein quellen-nahes Ersatzsignal
-  Pflicht (`source_sequence`, Generation-ID oder Sample-Window);
-  wiederholt importierte Altwerte dürfen dadurch nicht frisch wirken.
-- [ ] Fehlerklassen der Quelle sind normalisiert:
-  `source_unavailable`, `no_active_connection`, `partial_sample`,
-  `parse_error` oder äquivalente stabile Codes.
-- [ ] Metrikquelle und Fixture sind ohne externen Netzwerkzugriff in CI
-  testbar.
+  Streamrate plus Sicherheitsmarge). **→ Tranche 2/3** (Lab-Stream
+  ist 1 Mbps Video plus 96 kbps Audio = ~1.1 Mbps Nutzdaten;
+  Sicherheitsmarge in Tranche 3 entscheidet die finale Schwelle).
+- [x] Für Counter-Quellen ist festgelegt, wie daraus Dashboard-Werte
+  berechnet werden (§2.4 Mapping-Festlegungen: Counter speichern,
+  Rate optional ableiten; `bytesReceived`-Δ als Sample-Window).
+- [x] Freshness-Semantik ist entschieden (§2.4 „Freshness-
+  Strategie"-Block: kein Source-Timestamp im API-Schema; Adapter
+  setzt `collected_at`; Sample-Window via `bytesReceived`-Δ als
+  Source-Sequence-Surrogat; Stale = identischer `bytesReceived`
+  trotz `state: publish`).
+- [x] Fehlerklassen der Quelle sind normalisiert (§2.4 „Fehlerklassen-
+  Mapping"-Tabelle: `ok`, `no_active_connection`, `partial`,
+  `stale`, `unavailable` × `none`/`no_active_connection`/
+  `partial_sample`/`stale_sample`/`source_unavailable`/`parse_error`).
+- [x] Metrikquelle und Fixture sind ohne externen Netzwerkzugriff in CI
+  testbar (Probe lief lokal in Docker-Compose ohne Internet; Fixture
+  ist eine reine JSON-Datei).
 - [ ] Jede Quelle hat einen expliziten API-Import- oder API-Pull-Vertrag
-  für `apps/api`; OTLP darf zusätzlich exportieren, aber nie der einzige
-  Pfad für SQLite, API-Response oder Dashboard sein.
-- [ ] Ein minimaler Source-Probe-Nachweis existiert: Parser oder
-  Probe-Skript liest die gewählte Quelle oder ein äquivalentes Fixture
-  und weist die vier Pflichtwerte plus Fehlerklassen nach, ohne
-  `apps/api`, Storage oder Dashboard zu benötigen.
-- [ ] RAK-42 und RAK-46 sind nicht allein durch diese Tranche erfüllt,
+  für `apps/api`. **→ Tranche 3** (formaler Vertrag in
+  `spec/architecture.md` + `spec/backend-api-contract.md`; §2.5
+  liefert die Adapter-Skizze als Eingang).
+- [x] Ein minimaler Source-Probe-Nachweis existiert (Sub-1.2:
+  zwei `curl`-Snapshots gegen Lab-Stack; Schema-Inspektion gegen
+  Fixture; alle vier Pflichtwerte plus Fehlerklassen-Mapping
+  abgedeckt).
+- [x] RAK-42 und RAK-46 sind nicht allein durch diese Tranche erfüllt,
   sondern nur vorbereitet; die Verifikationsmatrix bleibt bis Tranche 7
   offen.
+
+**Übergang in Folgetranchen**: zwei DoD-Items bleiben offen und sind
+explizit in Tranche 2/3 verlagert — `required_bandwidth_bps`-Schwelle
+und formaler API-Pull-Vertrag. Sub-Tranche 1.4 (R-2 schließen) ist
+der letzte Schritt von Tranche 1.
 
 ---
 
