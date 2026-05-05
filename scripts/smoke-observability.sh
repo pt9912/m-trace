@@ -132,7 +132,12 @@ const forbidden=[
   "session_id","user_agent","segment_url","client_ip",
   "project_id","trace_id","span_id","correlation_id",
   "viewer_id","request_id","token","authorization",
-  "url","uri","secret"
+  "url","uri","secret",
+  // plan-0.4.0 §8.2 / spec/telemetry-model.md §3.1: batch_size is
+  // forbidden because mtrace.api.batches.received runs in use case
+  // Step 0 (vor MaxBatchSize-Validierung) — a rejected batch with
+  // events.length=250 would otherwise emit batch_size="250".
+  "batch_size"
 ];
 const forbiddenSuffixes=["_url","_uri","_token","_secret"];
 const forbiddenLabels=(series) =>
@@ -144,7 +149,8 @@ const policyProbe=[
   {__name__:"mtrace_test_total",manifest_url:"x"},
   {__name__:"mtrace_test_total",url:"x"},
   {__name__:"mtrace_test_total",uri:"x"},
-  {__name__:"mtrace_test_total",secret:"x"}
+  {__name__:"mtrace_test_total",secret:"x"},
+  {__name__:"mtrace_test_total",batch_size:"7"}
 ];
 const missed=policyProbe.filter((series) => forbiddenLabels(series).length === 0);
 if (missed.length) {

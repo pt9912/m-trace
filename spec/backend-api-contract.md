@@ -515,7 +515,11 @@ Verbindliche Regeln:
   `user_agent`, `segment_url`, andere URL-/URL-Teil-Felder, `client_ip`,
   `trace_id`, `span_id`, `correlation_id` sowie Token-/Credential-Felder
   verboten. Eine spätere `project_id`-Ausnahme braucht eine explizite
-  bounded Allowlist und einen passenden Cardinality-Smoke.
+  bounded Allowlist und einen passenden Cardinality-Smoke. Die normative,
+  vollständige Forbidden-Liste über alle `mtrace_*`-Metriken hinweg
+  (inklusive Suffix-Regeln `_url`/`_uri`/`_token`/`_secret`) steht in
+  [`telemetry-model.md`](./telemetry-model.md) §3.1; `scripts/smoke-observability.sh`
+  spiegelt diese Liste und ist release-blockierend.
 - `mtrace_dropped_events_total` darf konstant `0` sein, wenn die API
   keinen expliziten Drop-Pfad hat — die Metrik **muss** aber existiert sein.
 - `delivery_status: "duplicate_suspected"`-Events (siehe §10.2) zählen
@@ -523,7 +527,13 @@ Verbindliche Regeln:
   Duplikat klassifiziert) und **nicht** zu
   `mtrace_invalid_events_total` oder `mtrace_dropped_events_total`.
 - Implementierungen dürfen weitere `mtrace_*`-Metriken ergänzen
-  (z. B. `mtrace_active_sessions`), sofern Cardinality kontrolliert ist.
+  (z. B. `mtrace_active_sessions`, der OTel-translated `mtrace_api_batches_received`
+  oder `mtrace_analyze_requests_total{outcome,code}`), sofern Cardinality
+  kontrolliert ist: entweder label-frei oder ausschließlich bounded
+  Aggregat-Labels aus [`telemetry-model.md`](./telemetry-model.md) §3.2.
+  `mtrace_api_batches_received` ist ab `0.4.0` Tranche 7 explizit label-frei
+  — `batch.size` lebt nur als Span-Attribut, nicht als Counter-Attribut
+  (siehe `telemetry-model.md` §2.2 und `plan-0.4.0.md` §8.2).
 
 ---
 

@@ -186,12 +186,17 @@ func NewOTelTelemetry(meter metric.Meter) (*OTelTelemetry, error) {
 	return &OTelTelemetry{counter: counter}, nil
 }
 
-// BatchReceived increments the counter by 1 with batch.size as
-// attribute. The size attribute is bounded (small int range), so it
-// does not violate the Prometheus cardinality rules from
-// spec/telemetry-model.md §3.
-func (t *OTelTelemetry) BatchReceived(ctx context.Context, size int) {
-	t.counter.Add(ctx, 1, metric.WithAttributes(attribute.Int("batch.size", size)))
+// BatchReceived increments the counter by 1. The counter is label-free
+// — `batch.size` would create an unbounded label domain because the
+// counter runs in use case Step 0, before the MaxBatchSize=100
+// validation; a rejected batch with events.length=250 would emit
+// `batch_size="250"` to Prometheus. The per-request batch size lives on
+// the `http.handler POST /api/playback-events` span instead (see
+// adapters/driving/http/handler.go:73). See spec/telemetry-model.md
+// §2.2 / §3.1 and docs/planning/in-progress/plan-0.4.0.md §8.2 for the
+// full cardinality contract.
+func (t *OTelTelemetry) BatchReceived(ctx context.Context, _ int) {
+	t.counter.Add(ctx, 1)
 }
 
 // Compile-time check: OTelTelemetry implements driven.Telemetry.

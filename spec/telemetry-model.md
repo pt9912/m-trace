@@ -278,9 +278,11 @@ Der Use Case ruft am Eintritt jedes `RegisterPlaybackEventBatch`-Aufrufs einen f
 
 | OTel-Counter | Typ | Aufrufstelle | Attribute |
 |---|---|---|---|
-| `mtrace.api.batches.received` | `Int64Counter` | Use Case Step 0 (vor Auth) | `batch.size=<int>` |
+| `mtrace.api.batches.received` | `Int64Counter` | Use Case Step 0 (vor Auth) | (keine — Counter ist label-frei wie die vier Pflichtcounter aus §2.4) |
 
 **Naming-Translation**: das OTel-→-Prometheus-Mapping ersetzt `.` durch `_`; in Prometheus erscheint der Counter als `mtrace_api_batches_received` (vom OTLP-Exporter automatisch konvertiert). Smoke-Test-Regex `^mtrace_.+` aus `plan-0.1.2.md` §4 deckt sowohl den translated OTel-Counter als auch die direkten Prometheus-Counter aus `adapters/driven/metrics` ab.
+
+**Cardinality-Beschluss (`plan-0.4.0.md` §8.2, Variante (a))**: `mtrace.api.batches.received` wird **ohne** `batch.size`-Attribut inkrementiert. Der Counter läuft im Use-Case Step 0 vor jeder Validierung — eine `batch.size = len(in.Events)`-Annotation würde im Reject-Pfad (`events.length > 100` → `422`) eine unbegrenzte Wertedomäne erzeugen, die per Prometheus-Naming-Translation als `batch_size`-Label auf `mtrace_api_batches_received` landen würde. Die Per-Request-Sicht „wie groß war dieser Batch?" bleibt über das Span-Attribut `batch.size` auf dem `http.handler POST /api/playback-events`-Span (siehe §2.1) erhalten — Span-Cardinality ist sample-basiert und im Cardinality-Vertrag aus §3 nicht bindend. Über `mtrace_api_batches_received / mtrace_playback_events_total` lässt sich der Mittelwert weiterhin abschätzen. Smoke-Schutz gegen Re-Introduction: `batch_size` ist in `scripts/smoke-observability.sh` zur Forbidden-Liste aus §3.1 hinzugefügt.
 
 ### 2.3 Resource-Attribute
 
@@ -303,7 +305,7 @@ Die Default-Resource wird mit `resource.Default()` zusammengeführt, damit `proc
 | `mtrace_rate_limited_events_total` | `…RateLimitedEvents(n)` | Step 4 — bei Rate-Limit-Treffer |
 | `mtrace_dropped_events_total` | `…DroppedEvents(n)` | nur Backpressure-Drops, **nicht** synchrone Persistenz-Fehler (siehe API-Kontrakt §7) |
 
-Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken aus Lastenheft §7.9 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …).
+Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken aus Lastenheft §7.9 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ab `0.4.0` Tranche 7 ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
 
 ### 2.5 Trace-Korrelation in `0.4.0`
 
@@ -387,38 +389,54 @@ Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`, `plan-0.4.0.md` §6
 
 ### 3.1 Verbotene Prometheus-Labels
 
-Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardinality-Explosion verursachen:
+Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardinality-Explosion verursachen oder Datenschutz-/Trace-Identifier sind. Diese Liste ist die normative Quelle für `scripts/smoke-observability.sh` und für jeden neuen `mtrace_*`-Metrik-Vorschlag — sie deckt die Mindest-Verbote aus API-Kontrakt §7 vollständig ab; kürzere Beispiel-Listen reichen nicht als Abnahme:
 
 | Label | Begründung | Bezug |
 |---|---|---|
-| `session_id` | hochkardinale Pseudonym-IDs; potentiell Millionen Sessions/Tag. | F-96, F-105 |
+| `session_id` | hochkardinale Pseudonym-IDs; potentiell Millionen Sessions/Tag. | F-96, F-105; API-Kontrakt §7 |
 | `user_agent` | quasi-unbegrenzter Wertebereich. | API-Kontrakt §7 |
-| `segment_url` | URL-Variation pro CDN/Player-Adaptation. | API-Kontrakt §7 |
+| `segment_url`, `manifest_url`, beliebige `*_url` / `*_uri` | URL-Variation pro CDN/Player-Adaptation. | API-Kontrakt §7 |
 | `client_ip` | DSGVO-Risiko + hohe Cardinality. | API-Kontrakt §7 |
 | beliebige `project_id` | bei Multi-Tenant explosiv; nur kontrollierte Allowlist erlaubt. | API-Kontrakt §7 |
+| `viewer_id`, `request_id` | hochkardinale Per-Request-Identifier. | API-Kontrakt §7 |
+| `trace_id`, `span_id`, `correlation_id` | Trace-/Session-Korrelations-Identifier; Cross-System-Suche läuft über Tempo/Read-Pfad, nicht Prometheus. | API-Kontrakt §7; §2.5 |
+| `token`, `authorization`, beliebige `*_token` / `*_secret` | Credentials gehören niemals in eine Metrik-Serie. | API-Kontrakt §7 |
+| `batch_size` | unbegrenzte Integer-Domäne, weil der OTel-Counter `mtrace.api.batches.received` vor der `MaxBatchSize=100`-Validierung läuft (siehe §2.2). Ab `0.4.0` Tranche 7 entfernt; `batch.size` bleibt nur als Span-Attribut. | §2.2; `plan-0.4.0.md` §8.2 |
+
+Erlaubt sind ausschließlich die bounded Aggregat-Labels aus §3.2. Die Forbidden-Liste in `scripts/smoke-observability.sh` deckt die Tabelle plus generische Suffixe (`_url`, `_uri`, `_token`, `_secret`) defensiv ab; jeder Treffer ist release-blockierend.
 
 ### 3.2 Erlaubte Aggregat-Labels
 
-Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich:
+Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich. Jede neue `mtrace_*`-Metrik mit Vector-Labels muss ihren Labelsatz in dieser Tabelle (oder einer ausgewiesenen Erweiterung) belegen — beliebige Labelnamen sind nicht zulässig:
 
-| Label | Wertebereich | Beispiel |
-|---|---|---|
-| `event_type` | feste Enum aus §1.3 | `rebuffer_started`, `playback_error` |
-| `outcome` | feste Enum | `accepted`, `invalid`, `rate_limited`, `dropped` |
-| `code` | feste Fehler-/Ergebnis-Code-Domäne pro Metrik | `invalid_request`, `analyzer_unavailable` |
-| `instance` / `job` | OTel/Prometheus-Standard | `api:8080` |
+| Label | Wertebereich | Beispiel | Erlaubt auf |
+|---|---|---|---|
+| `event_type` | feste Enum aus §1.3 | `rebuffer_started`, `playback_error` | per-event-type-Aggregate (zukünftige Metriken) |
+| `outcome` | feste Enum | `accepted`, `invalid`, `rate_limited`, `dropped`, `analyzer_unavailable`, `analyzer_error`, … | `mtrace_analyze_requests_total{outcome,code}` (Tranche 6 §3) |
+| `code` | feste Fehler-/Ergebnis-Code-Domäne pro Metrik | `invalid_request`, `analyzer_unavailable`, `fetch_blocked` | `mtrace_analyze_requests_total{outcome,code}` |
+| `instance` / `job` | OTel/Prometheus-Standard | `api:8080` | alle Metriken (Target-Metadaten) |
 
-Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9-Smoke-Test (`plan-0.1.2.md` §4) prüft dies via `count(count by (...) (...))`-PromQL.
+Die vier Pflichtcounter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`) und der OTel-translated Counter `mtrace_api_batches_received` tragen **gar keine** fachlichen Vector-Labels (siehe API-Kontrakt §7 und §2.4). `batch_size` ist explizit nicht in der Allowlist (siehe §3.1) — die Per-Request-Sicht „Batchgröße" lebt nur am Span.
+
+Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9-Smoke-Test (`plan-0.1.2.md` §4) prüft dies via `count(count by (...) (...))`-PromQL; der verschärfte Smoke aus `plan-0.4.0.md` §7.3 (`scripts/smoke-observability.sh`) prüft pro Pflichtcounter zusätzlich, dass das Labelset auf `__name__`/`instance`/`job` beschränkt ist.
 
 ### 3.3 Trennung Aggregat vs Per-Session
 
-Per-Session-Daten (Stream-Health, Event-Timeline) gehen **nicht** in Prometheus, sondern in:
+Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nicht** in Prometheus. Die drei Backends teilen die Verantwortung wie folgt — diese Tabelle ist die normative Quelle für `README.md`, `docs/user/local-development.md` und jede neue Telemetrie-Diskussion:
 
-- **OTel-Spans** mit Span-Attributen (Cardinality-Limit gilt dort nicht — Spans sind sample-basiert).
-- **Event-Store** im `apps/api`-Repository (in `0.1.x` In-Memory; ab `0.4.0` gemäß ADR-0002 auf SQLite).
-- **Dashboard-Trace-Ansicht** (MVP-14, plan-0.1.1.md §3) liest aus dem Event-Store, nicht aus Prometheus.
+| Backend | Daten | Cardinality-Verträglichkeit | Konsumenten |
+|---|---|---|---|
+| **Prometheus** | Aggregat-Metriken (counts, rates, optional gauges); ausschließlich bounded Aggregat-Labels aus §3.2 | hart begrenzt auf wenige Serien pro Metrik; Forbidden-Liste aus §3.1 ist release-blockierend | Grafana-Dashboards (`observability/grafana/dashboards/m-trace-overview.json`); Alerting; RAK-9-Cardinality-Smoke |
+| **SQLite** (ADR-0002) | Session-/Event-Historie mit allen Per-Session-Identifiern (`session_id`, `correlation_id`, `trace_id`, `span_id`, redacted URLs, `network_signal_absent`-Boundary-Records) | unbeschränkt — durable Event-Store, kein Cardinality-Vertrag | Dashboard-Session-Timeline (RAK-32); Read-Pfad `GET /api/stream-sessions/...`; SDK-Cursor-Pagination |
+| **OTel/Tempo** | Per-Request-Trace-Spans mit allen Span-Attributen (`mtrace.session.correlation_id`, `batch.size`, `mtrace.batch.outcome`, …); ein Server-Span pro Batch | sample-basiert; Span-Cardinality ist im Cardinality-Vertrag aus §3.1 nicht bindend | Tempo-Trace-Suche (`make dev-tempo`, RAK-31, optional); Span-Ebene-Debugging beim Header-Verarbeitung-/Outcome-Pfad |
 
-Diese Trennung ist die zentrale Architektur-Aussage von F-97 und Lastenheft §7.10.
+Diese Trennung ist die zentrale Architektur-Aussage von F-97 und Lastenheft §7.10. Praktische Konsequenzen:
+
+- **Aggregate-Anfrage** („wie viele 4xx-Antworten in den letzten 5 Minuten?") → Prometheus; nie SQLite, nie Tempo.
+- **Konkrete-Session-Anfrage** („zeig mir die Timeline von `session_id = abc-123`") → Read-Pfad/Dashboard auf SQLite; nie Prometheus, nie zwingend Tempo.
+- **Cross-System-Trace-Vertiefung** („was ist im Server-Span passiert, der diesen Batch verarbeitet hat?") → Tempo (falls aktives Profil); Per-Span-Detail, nicht Per-Session-Aggregat.
+
+Tempo ist daher Debug-Tiefe, **nicht** Read-Pfad. Die Dashboard-Session-Timeline (RAK-32) ist ausdrücklich Tempo-unabhängig (siehe §2.6); jede Aussage über Event-Persistenz oder Session-State bleibt in SQLite verbindlich.
 
 ### 3.4 Datenschutz
 

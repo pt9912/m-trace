@@ -17,6 +17,12 @@ import (
 // BatchReceived increments the OTel counter mtrace.api.batches.received
 // once per call. Uses a ManualReader to introspect collected metrics
 // without an exporter.
+//
+// plan-0.4.0.md §8.2 / spec/telemetry-model.md §2.2: the counter is
+// label-free — `batch.size` is no longer attached as a counter
+// attribute, so all calls collapse into a single data point regardless
+// of the size argument. The per-request batch size lives on the HTTP
+// handler span (adapters/driving/http/handler.go:73).
 func TestOTelTelemetry_BatchReceivedIncrementsCounter(t *testing.T) {
 	t.Parallel()
 
@@ -39,15 +45,17 @@ func TestOTelTelemetry_BatchReceivedIncrementsCounter(t *testing.T) {
 	}
 
 	got := findCounter(t, &rm, "mtrace.api.batches.received")
-	// Three calls, each with a different batch.size attribute → three
-	// distinct data points, each with Value=1.
-	if len(got.DataPoints) != 3 {
-		t.Fatalf("expected 3 data points (one per batch.size), got %d", len(got.DataPoints))
+	// Counter is label-free, so all three calls collapse into one data
+	// point with Value=3.
+	if len(got.DataPoints) != 1 {
+		t.Fatalf("expected 1 data point (label-free counter), got %d", len(got.DataPoints))
 	}
-	for _, dp := range got.DataPoints {
-		if dp.Value != 1 {
-			t.Errorf("expected each data point Value=1, got %d", dp.Value)
-		}
+	if got.DataPoints[0].Value != 3 {
+		t.Errorf("expected single data point Value=3, got %d", got.DataPoints[0].Value)
+	}
+	// Defensive: no fachliche Vector-Labels on the data point.
+	if attrs := got.DataPoints[0].Attributes.Len(); attrs != 0 {
+		t.Errorf("expected label-free counter, got %d attributes", attrs)
 	}
 }
 
