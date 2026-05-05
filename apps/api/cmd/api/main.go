@@ -25,6 +25,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	persistencesqlite "github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/sqlite"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/srt/mediamtxclient"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
@@ -32,6 +33,14 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
+)
+
+const (
+	envSrtSourceURL    = "MTRACE_SRT_SOURCE_URL"
+	envSrtSourceUser   = "MTRACE_SRT_SOURCE_USER"
+	envSrtSourcePass   = "MTRACE_SRT_SOURCE_PASS"
+	envSrtPollInterval = "MTRACE_SRT_POLL_INTERVAL_SECONDS"
+	envSrtProjectID    = "MTRACE_SRT_PROJECT_ID"
 )
 
 const (
@@ -85,8 +94,71 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	srtCollector := buildSrtHealthCollector(persist, logger)
+
 	srv := newHTTPServer(handler, listenAddr())
-	return serve(srv, sweeper, otelProviders, logger)
+	return serve(srv, sweeper, srtCollector, otelProviders, logger)
+}
+
+// buildSrtHealthCollector verdrahtet den SRT-Health-Pfad
+// (plan-0.6.0 §4 Sub-3.5). Wenn `MTRACE_SRT_SOURCE_URL` leer ist,
+// bleibt der Collector deaktiviert (nil) — der Default-Lab-Pfad
+// wird damit nicht durch fehlende ENV-Variablen blockiert.
+func buildSrtHealthCollector(persist *persistenceBundle, logger *slog.Logger) *application.SrtHealthCollector {
+	baseURL := strings.TrimSpace(os.Getenv(envSrtSourceURL))
+	if baseURL == "" {
+		logger.Info("srt-health collector disabled (MTRACE_SRT_SOURCE_URL not set)")
+		return nil
+	}
+	if persist.db == nil {
+		logger.Warn("srt-health collector disabled (persistence is in-memory; SQLite required)")
+		return nil
+	}
+	projectID := strings.TrimSpace(os.Getenv(envSrtProjectID))
+	if projectID == "" {
+		projectID = "demo"
+	}
+	user := os.Getenv(envSrtSourceUser)
+	pass := os.Getenv(envSrtSourcePass)
+
+	source := mediamtxclient.New(baseURL, mediamtxclient.WithBasicAuth(user, pass))
+	repo := persistencesqlite.NewSrtHealthRepository(persist.db)
+
+	collector, err := application.NewSrtHealthCollector(
+		source, repo, projectID, time.Now, application.DefaultThresholds(),
+	)
+	if err != nil {
+		logger.Error("srt-health collector init failed", "error", err)
+		return nil
+	}
+	collector.WithLogger(logger).WithPollInterval(parseSrtPollInterval(logger))
+	logger.Info(
+		"srt-health collector enabled",
+		"source_url", baseURL,
+		"project_id", projectID,
+		"auth", user != "" || pass != "",
+	)
+	return collector
+}
+
+// parseSrtPollInterval liest `MTRACE_SRT_POLL_INTERVAL_SECONDS`. Bei
+// fehlendem oder ungültigem Wert bleibt der Default aus
+// application.DefaultSrtHealthPollInterval gültig.
+func parseSrtPollInterval(logger *slog.Logger) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(envSrtPollInterval))
+	if raw == "" {
+		return application.DefaultSrtHealthPollInterval
+	}
+	secs, err := time.ParseDuration(raw + "s")
+	if err != nil || secs <= 0 {
+		logger.Warn(
+			"srt-health poll interval ignored (invalid)",
+			"raw", raw,
+			"default_seconds", int(application.DefaultSrtHealthPollInterval.Seconds()),
+		)
+		return application.DefaultSrtHealthPollInterval
+	}
+	return secs
 }
 
 // buildHandler wirt die driven Adapter (Auth, Rate-Limit, Metrics,
@@ -162,12 +234,14 @@ func newHTTPServer(handler http.Handler, addr string) *http.Server {
 	}
 }
 
-// serve startet den Sessions-Sweeper und den HTTP-Server und führt
-// den Graceful-Shutdown aus. Beendet entweder bei SIGINT/SIGTERM oder
-// wenn ListenAndServe einen non-ErrServerClosed-Fehler liefert.
+// serve startet den Sessions-Sweeper plus optional den SRT-Health-
+// Collector und den HTTP-Server und führt den Graceful-Shutdown aus.
+// Beendet entweder bei SIGINT/SIGTERM oder wenn ListenAndServe einen
+// non-ErrServerClosed-Fehler liefert.
 func serve(
 	srv *http.Server,
 	sweeper *application.SessionsSweeper,
+	srtCollector *application.SrtHealthCollector,
 	otelProviders *telemetry.Providers,
 	logger *slog.Logger,
 ) error {
@@ -175,6 +249,9 @@ func serve(
 	defer stop()
 
 	go sweeper.Run(ctx)
+	if srtCollector != nil {
+		go srtCollector.Run(ctx)
+	}
 
 	listenErr := make(chan error, 1)
 	go func() {

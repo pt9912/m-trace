@@ -18,13 +18,17 @@ var (
 )
 
 type mockSrtSource struct {
-	samples []domain.SrtConnectionSample
-	err     error
-	calls   int
+	samples    []domain.SrtConnectionSample
+	err        error
+	calls      int
+	snapshotFn func() ([]domain.SrtConnectionSample, error)
 }
 
 func (m *mockSrtSource) SnapshotConnections(_ context.Context) ([]domain.SrtConnectionSample, error) {
 	m.calls++
+	if m.snapshotFn != nil {
+		return m.snapshotFn()
+	}
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -369,6 +373,160 @@ func TestCollect_StaleViaPreviousLookup(t *testing.T) {
 	got := repo.appended[0]
 	if got.HealthState != domain.HealthStateUnknown || got.SourceStatus != domain.SourceStatusStale {
 		t.Fatalf("expected stale, got health=%s status=%s", got.HealthState, got.SourceStatus)
+	}
+}
+
+// Run: zwei aufeinanderfolgende Samples mit fortschreitendem
+// SourceSequence werden persistiert (DoD aus plan-0.6.0 §4 für
+// Sub-3.5 — „mindestens zwei Samples mit steigender Source-
+// Sequence").
+func TestRun_AppendsTwoConsecutiveSamples(t *testing.T) {
+	src := &mockSrtSource{}
+	repo := &mockSrtHealthRepo{}
+	c, err := application.NewSrtHealthCollector(src, repo, projectID, fixedNow, application.DefaultThresholds())
+	if err != nil {
+		t.Fatalf("NewSrtHealthCollector: %v", err)
+	}
+	c.WithPollInterval(5 * time.Millisecond).WithMaxBackoff(20 * time.Millisecond)
+
+	// Source liefert beim ersten Call Sample mit seq-1, beim zweiten
+	// Call Sample mit seq-2 (steigender SourceSequence).
+	calls := 0
+	src.snapshotFn = func() ([]domain.SrtConnectionSample, error) {
+		calls++
+		seq := "seq-1"
+		if calls == 2 {
+			seq = "seq-2"
+		}
+		return []domain.SrtConnectionSample{{
+			StreamID:              "srt-test",
+			ConnectionID:          "c1",
+			ConnectionState:       domain.ConnectionStateConnected,
+			RTTMillis:             10,
+			AvailableBandwidthBPS: 10_000_000,
+			SourceSequence:        seq,
+		}}, nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		c.Run(ctx)
+		close(done)
+	}()
+
+	// Warten, bis Collect mindestens zweimal lief, dann abbrechen.
+	deadline := time.NewTimer(500 * time.Millisecond)
+	defer deadline.Stop()
+	for {
+		if len(repo.appended) >= 2 {
+			break
+		}
+		select {
+		case <-deadline.C:
+			cancel()
+			<-done
+			t.Fatalf("only %d samples appended within deadline", len(repo.appended))
+		case <-time.After(2 * time.Millisecond):
+		}
+	}
+	cancel()
+	<-done
+
+	if len(repo.appended) < 2 {
+		t.Fatalf("expected >=2 appended samples, got %d", len(repo.appended))
+	}
+	first, second := repo.appended[0], repo.appended[1]
+	if first.SourceSequence != "seq-1" || second.SourceSequence != "seq-2" {
+		t.Fatalf("expected seq-1/seq-2 progression, got %q/%q", first.SourceSequence, second.SourceSequence)
+	}
+}
+
+// Run: Source-Fehler → Backoff verdoppelt sich, Loop bricht aber nicht
+// ab; nach Recovery wird wieder persistiert.
+func TestRun_BackoffOnSourceError(t *testing.T) {
+	src := &mockSrtSource{}
+	repo := &mockSrtHealthRepo{}
+	c, err := application.NewSrtHealthCollector(src, repo, projectID, fixedNow, application.DefaultThresholds())
+	if err != nil {
+		t.Fatalf("NewSrtHealthCollector: %v", err)
+	}
+	c.WithPollInterval(2 * time.Millisecond).WithMaxBackoff(50 * time.Millisecond)
+
+	calls := 0
+	src.snapshotFn = func() ([]domain.SrtConnectionSample, error) {
+		calls++
+		// Erste 2 Calls schlagen fehl, ab Call 3 liefert die Quelle.
+		if calls < 3 {
+			return nil, errors.New("source down")
+		}
+		return []domain.SrtConnectionSample{{
+			StreamID:              "srt-test",
+			ConnectionID:          "c1",
+			ConnectionState:       domain.ConnectionStateConnected,
+			RTTMillis:             10,
+			AvailableBandwidthBPS: 10_000_000,
+			SourceSequence:        "seq-recovered",
+		}}, nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		c.Run(ctx)
+		close(done)
+	}()
+
+	deadline := time.NewTimer(500 * time.Millisecond)
+	defer deadline.Stop()
+	for {
+		if len(repo.appended) >= 1 {
+			break
+		}
+		select {
+		case <-deadline.C:
+			cancel()
+			<-done
+			t.Fatalf("expected recovery within deadline; calls=%d appended=%d", calls, len(repo.appended))
+		case <-time.After(2 * time.Millisecond):
+		}
+	}
+	cancel()
+	<-done
+
+	if calls < 3 {
+		t.Fatalf("expected >=3 source calls (2 errors + 1 success), got %d", calls)
+	}
+	if len(repo.appended) < 1 || repo.appended[0].SourceSequence != "seq-recovered" {
+		t.Fatalf("expected seq-recovered sample, got %+v", repo.appended)
+	}
+}
+
+// Run: Context-Cancel beendet den Loop sauber.
+func TestRun_ShutdownOnCancel(t *testing.T) {
+	src := &mockSrtSource{}
+	repo := &mockSrtHealthRepo{}
+	c, err := application.NewSrtHealthCollector(src, repo, projectID, fixedNow, application.DefaultThresholds())
+	if err != nil {
+		t.Fatalf("NewSrtHealthCollector: %v", err)
+	}
+	c.WithPollInterval(50 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		c.Run(ctx)
+		close(done)
+	}()
+
+	// Cancel sofort — Run muss dann zurückkehren, ohne den ersten
+	// Tick abzuwarten.
+	cancel()
+	select {
+	case <-done:
+		// ok
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("Run did not return after cancel")
 	}
 }
 

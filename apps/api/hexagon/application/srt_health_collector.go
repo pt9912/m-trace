@@ -12,10 +12,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+)
+
+// Default-Werte für den Polling-Loop (plan-0.6.0 §4 Sub-3.5).
+// `DefaultSrtHealthPollInterval` ist das Intervall für erfolgreiche
+// Polls; `DefaultSrtHealthMaxBackoff` deckelt das exponentielle
+// Backoff auf Source-Fehlern.
+const (
+	DefaultSrtHealthPollInterval = 5 * time.Second
+	DefaultSrtHealthMaxBackoff   = 60 * time.Second
 )
 
 // SrtHealthThresholds bündelt die Schwellen aus
@@ -216,14 +226,18 @@ func worstHealth(states ...domain.HealthState) domain.HealthState {
 }
 
 // SrtHealthCollector orchestriert Snapshot → Bewertung → Persistenz.
-// Polling-Loop, Backoff und Shutdown wandern in Sub-3.5; Collect ist
-// Single-Shot und thread-safe.
+// `Collect` ist Single-Shot und thread-safe; `Run` startet den
+// Polling-Loop mit exponentiellem Backoff bei Source-Fehlern und
+// Shutdown via Context-Cancel.
 type SrtHealthCollector struct {
-	source     driven.SrtSource
-	repo       driven.SrtHealthRepository
-	now        func() time.Time
-	thresholds SrtHealthThresholds
-	projectID  string
+	source       driven.SrtSource
+	repo         driven.SrtHealthRepository
+	now          func() time.Time
+	thresholds   SrtHealthThresholds
+	projectID    string
+	pollInterval time.Duration
+	maxBackoff   time.Duration
+	logger       *slog.Logger
 }
 
 // NewSrtHealthCollector verdrahtet die Driven-Ports. ProjectID ist
@@ -251,12 +265,41 @@ func NewSrtHealthCollector(
 		now = time.Now
 	}
 	return &SrtHealthCollector{
-		source:     source,
-		repo:       repo,
-		now:        now,
-		thresholds: thresholds,
-		projectID:  projectID,
+		source:       source,
+		repo:         repo,
+		now:          now,
+		thresholds:   thresholds,
+		projectID:    projectID,
+		pollInterval: DefaultSrtHealthPollInterval,
+		maxBackoff:   DefaultSrtHealthMaxBackoff,
+		logger:       slog.Default(),
 	}, nil
+}
+
+// WithPollInterval überschreibt das Intervall zwischen erfolgreichen
+// Polls (Default 5 s). Werte ≤ 0 bleiben am Default.
+func (c *SrtHealthCollector) WithPollInterval(d time.Duration) *SrtHealthCollector {
+	if d > 0 {
+		c.pollInterval = d
+	}
+	return c
+}
+
+// WithMaxBackoff deckelt das exponentielle Backoff bei Source-Fehlern
+// (Default 60 s). Werte ≤ 0 bleiben am Default.
+func (c *SrtHealthCollector) WithMaxBackoff(d time.Duration) *SrtHealthCollector {
+	if d > 0 {
+		c.maxBackoff = d
+	}
+	return c
+}
+
+// WithLogger injiziert einen Logger (sonst slog.Default).
+func (c *SrtHealthCollector) WithLogger(logger *slog.Logger) *SrtHealthCollector {
+	if logger != nil {
+		c.logger = logger
+	}
+	return c
 }
 
 // Collect liest einen Snapshot, bewertet jede Verbindung gegen die
@@ -333,4 +376,57 @@ func (c *SrtHealthCollector) Collect(ctx context.Context) error {
 		return fmt.Errorf("srt-health-repo append: %w", err)
 	}
 	return nil
+}
+
+// Run startet den Polling-Loop des Collectors und gibt erst nach
+// `ctx.Done()` zurück. Das Intervall zwischen erfolgreichen Polls ist
+// `pollInterval`; bei Source-Fehlern verdoppelt sich das Wait-Intervall
+// bis `maxBackoff`. Erfolgreiche Polls setzen das Backoff auf
+// `pollInterval` zurück.
+//
+// Run loggt Fehler und macht weiter — der Collector bricht den Loop
+// nur ab, wenn der Context geschlossen wird. Synthetische
+// `unavailable`-Samples werden in 0.6.0 nicht persistiert (Spec §7.5
+// dokumentiert die Fehlerklassen, aber Sub-3.2 Collect schreibt sie
+// nicht für historisch bekannte Streams; das ist Folge-Scope, falls
+// das Dashboard einen „letzter bekannter Healthy-Zeitpunkt"-Indikator
+// braucht).
+func (c *SrtHealthCollector) Run(ctx context.Context) {
+	wait := c.pollInterval
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(wait):
+		}
+		if err := c.Collect(ctx); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+			c.logger.Warn(
+				"srt health collect failed",
+				"error", err,
+				"backoff", wait,
+				"project_id", c.projectID,
+			)
+			wait = nextBackoff(wait, c.pollInterval, c.maxBackoff)
+			continue
+		}
+		wait = c.pollInterval
+	}
+}
+
+// nextBackoff verdoppelt die aktuelle Wait-Dauer bis maxBackoff.
+// Wenn `current` bereits unter `pollInterval` liegt, wird auf
+// pollInterval gesetzt — der Loop steigt also vom Erfolg-Intervall
+// startend exponentiell.
+func nextBackoff(current, pollInterval, maxBackoff time.Duration) time.Duration {
+	if current < pollInterval {
+		return pollInterval
+	}
+	doubled := current * 2
+	if doubled > maxBackoff {
+		return maxBackoff
+	}
+	return doubled
 }

@@ -573,7 +573,7 @@ Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
 | 3.2 | Domain-Modell + Driven-Ports (`SrtSource`, `SrtHealthRepository`); Application-Use-Case `SrtHealthCollector` mit Health-Bewertung; Sentinel-Compile-Checks | Code, Hexagon | ✅ |
 | 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ✅ |
 | 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ✅ |
-| 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ⬜ |
+| 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ✅ |
 | 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ⬜ |
 | 3.7 | Smoke-/Integrationstest mit zwei Samples; `scripts/smoke-observability.sh` erweitert um SRT-Allowlist-Prüfung | Tests, Smoke | ⬜ |
 
@@ -630,24 +630,37 @@ DoD:
   (Auth, 401, 403, 5xx, Body-Parse-Drift, Empty-Items,
   Unknown-State, Missing-Bandwidth, Response-Too-Large,
   Context-Cancel).
-- [ ] Collector-/Import-Use-Case ist implementiert und getestet:
+- [x] Collector-/Import-Use-Case ist implementiert und getestet:
   Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
   Fehlerpropagation, Backoff/Retry-Grenzen und Shutdown-Verhalten sind
-  dokumentiert und über Tests abgesichert. **→ Sub-3.5**
-- [ ] Collector nutzt den expliziten API-Import-/Pull-Vertrag aus
-  Tranche 1; reiner OTLP-Export ohne SQLite-/API-Importpfad ist ein
-  Blocker für Tranche 3. **→ Sub-3.5**
-- [ ] Collector persistiert Samples transaktional für den lokalen
-  Read-Pfad: Rohwert-Normalisierung, Health-Bewertung und SQLite-Write
-  committen gemeinsam oder gar nicht. OTel-Export läuft nach Commit als
-  best-effort Pfad oder über eine explizit dokumentierte Outbox; OTel-
-  Verfügbarkeit darf Persistenz nicht blockieren. **→ Sub-3.5**
-- [ ] Collector-/Import-Test weist mindestens zwei aufeinanderfolgende
-  Samples mit steigendem oder verschiedenem `source_observed_at` oder,
-  falls die Quelle keine Source-Zeit liefert, steigendem
-  `source_sequence`/Generation-ID oder fortschreitendem Sample-Window
-  nach. Stale-Bewertung muss Source-Zeit oder explizite Source-
-  Freshness nutzen, nicht `collected_at` oder `ingested_at` allein. **→ Sub-3.5**
+  dokumentiert und über Tests abgesichert. Sub-3.5: `Run(ctx)` auf
+  `SrtHealthCollector` mit `pollInterval`/`maxBackoff`-Optionen
+  (`WithPollInterval`/`WithMaxBackoff`/`WithLogger`); exponentielles
+  Backoff bei Source-Fehlern bis `DefaultSrtHealthMaxBackoff = 60s`.
+  ENV-Konfig in `cmd/api/main.go`: `MTRACE_SRT_SOURCE_URL` (opt-in),
+  `MTRACE_SRT_PROJECT_ID` (Default `demo`),
+  `MTRACE_SRT_SOURCE_USER`/`_PASS`,
+  `MTRACE_SRT_POLL_INTERVAL_SECONDS`. Collector nur aktiv mit
+  SQLite (InMemory wird bewusst übersprungen).
+- [x] Collector nutzt den expliziten API-Import-/Pull-Vertrag aus
+  Tranche 1: HTTP-Client gegen MediaMTX `/v3/srtconns/list` über
+  `mediamtxclient`-Adapter. Kein OTLP-only-Pfad — der Adapter ist
+  rein Pull-basiert, OTel kommt erst in Sub-3.6 als Zusatz-Export.
+- [x] Collector persistiert Samples transaktional: `SrtHealthRepository.Append`
+  (Sub-3.3) öffnet eine SQLite-Transaktion (`BEGIN IMMEDIATE`), führt
+  Dedupe-Lookup + INSERT pro Sample aus und committet — ein Fehler
+  rollt die ganze Charge zurück. OTel-Export ist nicht Pflicht-
+  bestandteil von `Append`; das Wiring folgt in Sub-3.6 als
+  best-effort nach Commit.
+- [x] Collector-/Import-Test weist mindestens zwei aufeinanderfolgende
+  Samples mit steigendem `source_sequence` nach
+  (`TestRun_AppendsTwoConsecutiveSamples`); MediaMTX-Quelle liefert
+  keinen `source_observed_at`, `bytesReceived`-Surrogat funktioniert
+  als monotones Sample-Window. Stale-Bewertung greift in
+  `TestEvaluate_Stale` und `TestCollect_StaleViaPreviousLookup`
+  (Sub-3.2): identischer `source_sequence` über `StaleAfterMillis`
+  → `unknown` / `stale_sample`. Backoff- und Shutdown-Verhalten in
+  `TestRun_BackoffOnSourceError` / `TestRun_ShutdownOnCancel`.
 - [x] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
   `0.6.0`-Pflicht. Sub-3.3: `apps/api/adapters/driven/persistence/sqlite/srt_health_repository.go`
