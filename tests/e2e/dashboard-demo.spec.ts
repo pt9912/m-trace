@@ -34,9 +34,12 @@ test("demo player emits events and dashboard renders the session", async ({ brow
   // Timeline rendert Events über SSE plus Backfill-Cursor. Chromium
   // braucht für den SSE-Setup-Pfad spürbar länger als Firefox (Default
   // 5s reicht in Chromium nicht; Firefox ist konsistent unter 2s
-  // durch). 15s gibt dem Backfill-Polling-Fallback genug Spielraum,
-  // ohne den Gesamt-Test merklich zu verlängern.
-  await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible({ timeout: 15_000 });
+  // durch). Ab `0.6.0` zusätzlich SRT-Health-Collector-Setup-Last in
+  // `cmd/api` (auch wenn ohne `MTRACE_SRT_SOURCE_URL` der Collector
+  // selbst deaktiviert bleibt — die Driving-Port-Verdrahtung läuft
+  // trotzdem); 25s gibt dem Backfill-Polling-Fallback in Chromium
+  // ausreichend Spielraum.
+  await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible({ timeout: 25_000 });
 
   await page.goto("/events", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Session filter").selectOption(sessionId);
