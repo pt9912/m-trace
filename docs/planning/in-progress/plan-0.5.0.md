@@ -1,16 +1,17 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: ⬜ geplant. Beginnt erst nach abgeschlossenem Release-Artefakt
-> `v0.4.0` (Release-Commit, annotierter Tag, Push, GitHub-Release und grüne
-> GitHub Actions am Tag-Commit). Dieses Dokument liegt bis zum Scope-Cut unter
-> `docs/planning/open/`.
+> **Status**: 🟡 Scope-Cut. `0.4.0` ist released (Tag `v0.4.0` auf
+> `9e4fdb3`, CI-Run 25359933129 grün, Plan in
+> `docs/planning/done/plan-0.4.0.md`). `plan-0.5.0.md` ist nach
+> `docs/planning/in-progress/` verschoben und tritt als aktive Phase in
+> Tranche 0 ein.
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
 > (lokales Streaming-Lab), §8.3 (Erweiterbarkeit), §10.5 (Infrastruktur),
-> §13.7 (RAK-36..RAK-40); [Roadmap](../in-progress/roadmap.md) §3/§4;
+> §13.7 (RAK-36..RAK-40); [Roadmap](./roadmap.md) §3/§4;
 > [Architektur](../../../spec/architecture.md) §8.2; [Local Development](../../user/local-development.md);
-> [Stream Analyzer](../../user/stream-analyzer.md); [Risiken-Backlog](./risks-backlog.md).
+> [Stream Analyzer](../../user/stream-analyzer.md); [Risiken-Backlog](../open/risks-backlog.md).
 >
 > **Vorgänger-Gate (Stand zum `0.5.0`-Start)**:
 >
@@ -63,7 +64,7 @@ mehrere Richtungen wächst:
 ### 0.2 Risiko-Triage aus `0.4.0`
 
 Diese Tabelle schneidet die offenen Folgepunkte aus
-[`risks-backlog.md`](./risks-backlog.md) für den `0.5.0`-Scope. Sie
+[`risks-backlog.md`](../open/risks-backlog.md) für den `0.5.0`-Scope. Sie
 verhindert, dass Lab-Beispiele versehentlich Backend- oder Dashboard-
 Schulden aus `0.4.0` miterledigen müssen.
 
