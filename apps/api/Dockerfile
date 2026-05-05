@@ -62,6 +62,19 @@ FROM deps AS test
 COPY . .
 RUN CGO_ENABLED=0 go test ./...
 
+# ---- race ------------------------------------------------------------------
+# Race-Detector-Stage: `go test -race ./...` mit CGO_ENABLED=1. Opt-in
+# (nicht in `make gates`), ~5–10× langsamer als der `test`-Stage.
+# Runtime-Image bleibt CGO-frei `distroless-static` — diese Stage
+# erbt nur `deps` und nutzt den GCC, der im Debian-`golang:1.26`-
+# Base-Image bereits installiert ist. Aufruf via `make race` ruft
+# mit `--no-cache-filter race`, damit ein einmal grüner Race-Lauf
+# keinen späteren flaky Race über den Layer-Cache verdeckt.
+FROM deps AS race
+
+COPY . .
+RUN CGO_ENABLED=1 go test -race ./...
+
 # ---- coverage --------------------------------------------------------------
 # Misst Coverage über hexagon/ und adapters/ (cmd/api ist Wiring +
 # Signal-Handling; bewusst aus dem Coverage-Range ausgenommen) und

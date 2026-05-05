@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -73,6 +74,14 @@ func (m *mockSrtSource) SnapshotConnections(_ context.Context) ([]domain.SrtConn
 }
 
 type mockSrtHealthRepo struct {
+	// mu schützt appended/appendCalls gegen die Polling-Loop-Tests
+	// (TestRun_*), die in einer Goroutine `Run(ctx)` starten und
+	// parallel im Test-Body `len(appended)` lesen — `make api-race`
+	// hat das Pattern korrekt als data race klassifiziert.
+	// Serielle Tests laufen weiterhin ohne Lock-Kontention; die
+	// Mutex hat nur Wirkung im Polling-Pfad.
+	mu sync.Mutex
+
 	latest    []domain.SrtHealthSample
 	latestErr error
 
@@ -82,12 +91,23 @@ type mockSrtHealthRepo struct {
 }
 
 func (m *mockSrtHealthRepo) Append(_ context.Context, samples []domain.SrtHealthSample) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.appendCalls++
 	if m.appendErr != nil {
 		return m.appendErr
 	}
 	m.appended = append(m.appended, samples...)
 	return nil
+}
+
+// appendedCount liefert die Anzahl persistierter Samples thread-safe;
+// für Polling-Tests, die in der Test-Goroutine pollen, während die
+// Collector-Goroutine schreibt.
+func (m *mockSrtHealthRepo) appendedCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.appended)
 }
 
 func (m *mockSrtHealthRepo) LatestByStream(_ context.Context, _ string) ([]domain.SrtHealthSample, error) {
@@ -455,12 +475,12 @@ func TestRun_AppendsTwoConsecutiveSamples(t *testing.T) {
 	// Warten, bis Collect mindestens zweimal lief, dann abbrechen.
 	deadline := time.NewTimer(500 * time.Millisecond)
 	defer deadline.Stop()
-	for len(repo.appended) < 2 {
+	for repo.appendedCount() < 2 {
 		select {
 		case <-deadline.C:
 			cancel()
 			<-done
-			t.Fatalf("only %d samples appended within deadline", len(repo.appended))
+			t.Fatalf("only %d samples appended within deadline", repo.appendedCount())
 		case <-time.After(2 * time.Millisecond):
 		}
 	}
@@ -513,12 +533,12 @@ func TestRun_BackoffOnSourceError(t *testing.T) {
 
 	deadline := time.NewTimer(500 * time.Millisecond)
 	defer deadline.Stop()
-	for len(repo.appended) < 1 {
+	for repo.appendedCount() < 1 {
 		select {
 		case <-deadline.C:
 			cancel()
 			<-done
-			t.Fatalf("expected recovery within deadline; calls=%d appended=%d", calls, len(repo.appended))
+			t.Fatalf("expected recovery within deadline; calls=%d appended=%d", calls, repo.appendedCount())
 		case <-time.After(2 * time.Millisecond):
 		}
 	}

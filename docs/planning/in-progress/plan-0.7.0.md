@@ -121,11 +121,70 @@ Punkt vermerkt.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
+| 0 | Plan-Aktivierung (open/ → in-progress/) + Toolchain-Hardening (Go 1.22 → 1.26, golangci-lint v1.62 → v2.12.1, neue `race`-Stage in gates) | ✅ |
 | 1 | Lab-Compose `examples/webrtc/compose.yaml` mit MediaMTX-WHIP/-WHEP plus optionalem `coturn` | ⬜ |
 | 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | ⬜ |
 | 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ⬜ |
 | 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ⬜ |
 | 5 | Release-Doku, RAK-Matrix und Closeout | ⬜ |
+
+---
+
+## 1a. Tranche 0 — Plan-Aktivierung + Toolchain-Hardening
+
+Bezug: keine RAK direkt; Wartungs-/Hygiene-Tranche, die `0.7.0`
+auf eine non-EOL Toolchain stellt und `make gates` um eine
+Race-Detector-Stage erweitert. Sammelt drei Lieferungen, die
+**vor** Tranche 1 (echtem Lab-Compose-Code) ausgeführt sind, damit
+die nachfolgenden Tranchen auf einer aktuellen Build-/Test-Basis
+aufsetzen.
+
+DoD:
+
+- [x] Plan-Skelett von `docs/planning/open/plan-0.7.0.md` nach
+  `docs/planning/in-progress/plan-0.7.0.md` verschoben; Status
+  `⬜ geplant` → `🟡 in Arbeit`. Cross-Refs in Roadmap §0/§1/§3,
+  README, examples/webrtc/README.md, plan-0.1.0.md Tranche 0c und
+  plan-0.5.0.md Tranche 6 nachgezogen. Sed-Drift-Artefakte in
+  plan-0.1.0/plan-0.5.0 (`docs/planni../in-progress/...`)
+  bereinigt. Commit `3156ef4`.
+- [x] Go-Toolchain-Bump auf aktuelle non-EOL-Linie:
+  `apps/api/go.mod` `go 1.22.7` (EOL Februar 2025) → `go 1.26.0`
+  (Release 2026-02-10); `apps/api/Dockerfile` `golang:1.22` →
+  `golang:1.26` für deps/test/coverage/build-Stages und
+  `apps/api/Makefile` arch-check; `apps/api/README.md`-Hinweis.
+  golangci-lint von `v1.62-alpine` (Sep 2024, Go 1.23) auf
+  `v2.12.1-alpine` (Mai 2026, Go 1.26.2) gehoben — v1.62
+  verweigert das Linting mit „Go language version (go1.23) used
+  to build golangci-lint is lower than the targeted Go version
+  (1.26.0)". `.golangci.yml` über `golangci-lint migrate` auf
+  v2-Schema gezogen (`disable-all: true` → `default: none`,
+  `gomodguard` → `gomodguard_v2`, `run.timeout` entfällt).
+  staticcheck QF1006 (lift-condition-into-loop) in
+  `srt_health_collector_test.go` zwei Stellen umgesetzt.
+  Commit `ccf68b1`.
+- [x] Race-Detector-Stage in `apps/api/Dockerfile` neu
+  (`FROM deps AS race` mit `CGO_ENABLED=1 go test -race ./...`);
+  `make race`-Target in `apps/api/Makefile` mit
+  `--no-cache-filter race`, damit ein einmal grüner Race-Lauf
+  keinen späteren flaky Race über den Layer-Cache verdeckt;
+  `make api-race` im root Makefile. **In `make gates`
+  aufgenommen** (`api-test` durch `api-race` ersetzt — Race ist
+  Superset). Lokaler Lauf ~33 s vs. ~20 s `api-test` (~1.7×); CI-
+  Mehraufwand ist tragbar. Erster Lauf hat sofort einen echten
+  Race in `mockSrtHealthRepo` gefunden (Test-Helper schreibt aus
+  Collector-Goroutine, Test-Body liest `len(repo.appended)` aus
+  Test-Goroutine ohne Sync); Mock mit `sync.Mutex` +
+  `appendedCount()`-Helper abgesichert. `releasing.md` §2
+  Beschreibung des `make gates`-Inhalts nachgezogen.
+
+**Lehre für `0.7.0`-Tranchen 1–5**: Toolchain-Pflege gehört in
+eine eigene Tranche 0, nicht in Bug-Fix-Commits. Wenn die
+nachfolgenden Tranchen in 0.7.0 neuen Concurrency-Code anlegen
+(Lab-Compose-Adapter, Smoke-Helper), greift die Race-Stage
+automatisch über `make gates`. Plan-0.6.0 §8.3 Lehre #3 (Adapter-
+Felder mit Konfig-Eingang brauchen Tabellen-Test) ist ergänzend
+gültig.
 
 ---
 

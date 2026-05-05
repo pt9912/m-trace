@@ -15,8 +15,9 @@ THRESHOLD ?= 90
 NO_CACHE_FILTER_TEST     := --no-cache-filter test
 NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
+NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate
+.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002 §8.2). Build-/Dev-time-Werkzeug; das API-Image bleibt
@@ -29,6 +30,15 @@ DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:0.9.5
 # Run unit + integration tests inside Docker.
 test:
 	docker build $(NO_CACHE_FILTER_TEST) --target test -t $(IMAGE):go-test .
+
+# Run `go test -race ./...` (Go Race Detector, opt-in). Braucht
+# CGO_ENABLED=1 + GCC (im Debian-`golang:1.26`-Base-Image vorhanden).
+# Nicht Teil von `make gates` — 5–10× langsamer als `make test` und
+# fängt nur Races im aktiv ausgeführten Code; PR-Critical-Path bleibt
+# `make test`. Ziel-Use-Case: vor dem Tag-Push und beim Touch von
+# Concurrency-Code (Polling-Loops, Channels, sync-Primitiven).
+race:
+	docker build $(NO_CACHE_FILTER_RACE) --target race -t $(IMAGE):go-race .
 
 # Run golangci-lint (Soll, plan §14.9 / §14.11).
 lint:

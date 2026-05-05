@@ -38,7 +38,7 @@ Vor jedem Release:
 Vor Tag und GitHub-Release müssen die Root-Targets grün sein:
 
 ```bash
-make gates                # CI-äquivalenter Komplettcheck (test+lint+coverage+arch+schema+docs)
+make gates                # CI-äquivalenter Komplettcheck (api-race+ts-test+lint+coverage+arch+schema+docs)
 make build
 make sdk-performance-smoke
 make smoke-cli            # ab 0.3.0: Lastenheft-Aufruf `pnpm m-trace check`
@@ -54,10 +54,12 @@ make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Pro
 Erfolgskriterien:
 
 - alle Targets exit code 0.
-- `make gates` umfasst `make test`, `make lint`, `make coverage-gate`,
-  `make arch-check`, `make schema-validate` und `make docs-check` —
-  einzelne Aufrufe sind möglich, aber `make gates` ist die
-  CI-äquivalente Eingangsstufe.
+- `make gates` umfasst `make api-race` (Go-Tests mit Race-Detector,
+  CGO=1; ab `0.7.0` Tranche 0 in gates statt `api-test`, weil
+  Race-Detection ein Superset ist), `make ts-test`, `make lint`,
+  `make coverage-gate`, `make arch-check`, `make schema-validate`
+  und `make docs-check` — einzelne Aufrufe sind möglich, aber
+  `make gates` ist die CI-äquivalente Eingangsstufe.
 - `make coverage-gate` (Teil von `make gates`) umfasst API-,
   Player-SDK-, Dashboard-, stream-analyzer- und (ab `0.3.0`)
   analyzer-service-Coverage.

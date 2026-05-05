@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -32,6 +32,7 @@ help:
 		'  make browser-e2e            Run browser E2E checks' \
 		'  make docs-check             Run documentation checks' \
 		'  make test                   Run API Docker tests and TS workspace tests' \
+		'  make api-race               Run API Go race-detector tests (CGO=1, -race; opt-in, in gates)' \
 		'  make lint                   Run API Docker lint and TS workspace lint' \
 		'  make build                  Build API runtime image and TS workspace packages' \
 		'  make coverage-gate          Run API, SDK, dashboard and analyzer coverage gates' \
@@ -40,7 +41,7 @@ help:
 		'  make schema-validate        Validate apps/api schema.yaml via d-migrate' \
 		'  make schema-generate        Re-generate apps/api SQLite DDL from schema.yaml' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
-		'  make gates                  Run test, lint, coverage, architecture, schema and docs gates' \
+		'  make gates                  Run api-race + ts-test, lint, coverage, architecture, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
 		'  make fullbuild              Install + ts/api build + gates (CI-äquivalent von clean)' \
@@ -179,6 +180,14 @@ test: api-test ts-test
 api-test:
 	$(API_MAKE) test
 
+# Opt-in Race-Detector-Lauf für apps/api (Go Race Detector,
+# `go test -race ./...`). Bewusst nicht Teil von `make test` /
+# `make gates` — 5–10× langsamer und nur sinnvoll, wenn
+# Concurrency-Code geändert wurde. Lauf vor Tag-Push, siehe
+# `docs/user/releasing.md` §2 Smoke-Block.
+api-race:
+	$(API_MAKE) race
+
 # Workspace-Pakete mit pnpm-Workspace-Deps (analyzer-service →
 # stream-analyzer) brauchen die `dist/`-Artefakte ihrer Dependencies,
 # bevor Tests/Lint/Coverage laufen können. `pnpm -r run build`
@@ -229,7 +238,7 @@ schema-generate:
 sdk-performance-smoke:
 	$(PNPM) --filter @npm9912/player-sdk run performance:smoke
 
-gates: test lint coverage-gate arch-check schema-validate docs-check
+gates: api-race ts-test lint coverage-gate arch-check schema-validate docs-check
 
 ci: gates build
 
