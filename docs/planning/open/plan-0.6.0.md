@@ -172,7 +172,7 @@ Harte Auswahlkriterien:
 | Reproduzierbarkeit | Fixtures und Smoke laufen ohne Internet und ohne manuelle SRT-Tools auf dem Host. |
 | Runtime-Grenze | `apps/api` bleibt CGO-frei oder die Runtime-Änderung ist per ADR akzeptiert. |
 | Cardinality | Source-Rohmetriken werden nicht vom Projekt-Prometheus gescraped; nur m-trace-normalisierte bounded Aggregate dürfen exportiert werden. |
-| Freshness | Quelle liefert `observed_at` oder ein äquivalentes Sample-Zeitfenster, sodass stale Daten erkennbar sind. |
+| Freshness | Quelle liefert `source_observed_at` oder ein äquivalentes Source-Sample-Zeitfenster, sodass stale Daten anhand der Source-Zeit erkennbar sind; Importzeit allein darf Freshness nicht beweisen. |
 | Failure-Mode | Quelle hat unterscheidbare Fehler für "nicht erreichbar", "keine Verbindung" und "unvollständige Rohdaten". |
 | Probe-Fähigkeit | Ein minimaler Source-Probe kann eine Rohantwort gegen Fixture/Parser prüfen, ohne `apps/api` oder Dashboard zu starten. |
 
@@ -205,8 +205,9 @@ DoD:
 - [ ] Für Counter-Quellen ist festgelegt, wie daraus Dashboard-Werte
   berechnet werden: Roh-Counter anzeigen, Intervallrate ableiten oder
   beides liefern. Das Intervall und Reset-Verhalten sind dokumentiert.
-- [ ] Freshness-Semantik ist entschieden: Sample-Intervall, stale-
-  Schwelle und Verhalten bei fehlendem Zeitstempel.
+- [ ] Freshness-Semantik ist entschieden: Source-Sample-Intervall,
+  stale-Schwelle, Verhalten bei fehlendem Source-Zeitstempel und
+  Trennung von `source_observed_at`, `collected_at` und `ingested_at`.
 - [ ] Fehlerklassen der Quelle sind normalisiert:
   `source_unavailable`, `no_active_connection`, `partial_sample`,
   `parse_error` oder äquivalente stabile Codes.
@@ -279,14 +280,17 @@ Vorgeschlagenes Mindestmodell:
 | `project_id` | kontrollierter Project-Kontext | string, bounded durch Project-Resolver |
 | `stream_id` | lokaler SRT-Lab-Stream oder Ingest-Name | string, nicht als Prometheus-Label |
 | `connection_id` | Quellseitige Verbindung oder normalisierte ID | string, nicht als Prometheus-Label |
-| `observed_at` | Serverzeit der Messung | timestamp |
+| `source_observed_at` | Zeitpunkt, zu dem die Quelle den SRT-Zustand gemessen hat | timestamp, nullable nur wenn Quelle keine Zeit liefert |
+| `collected_at` | Zeitpunkt, zu dem m-trace/Sidecar die Quelle gelesen hat | timestamp |
+| `ingested_at` | Zeitpunkt, zu dem `apps/api` das normalisierte Sample persistiert hat | timestamp |
 | `rtt_ms` | Round-trip time | number |
 | `packet_loss_total` oder `packet_loss_rate` | Verlustsignal laut Quelle | counter oder ratio, Quelle entscheidet |
 | `retransmissions_total` | Retransmission-Counter | counter |
 | `bandwidth_bps` | geschätzte oder gemessene Bandbreite | bits/s |
 | `sample_window_ms` | Zeitfenster für aus Countern abgeleitete Raten, falls relevant | integer, optional |
-| `source_status` | Status der Metrikquelle | enum: `ok`, `unavailable`, `partial`, `stale` |
+| `source_status` | Status der Metrikquelle | enum: `ok`, `unavailable`, `partial`, `stale`, `no_active_connection` |
 | `source_error_code` | stabile Fehlerklasse bei nicht-`ok`-Status | enum: `source_unavailable`, `no_active_connection`, `partial_sample`, `parse_error`, `stale_sample`, optional `none` |
+| `connection_state` | SRT-Verbindungszustand getrennt vom Quellenstatus | enum: `connected`, `no_active_connection`, `unknown` |
 | `health_state` | `healthy`, `degraded`, `critical`, `unknown` | enum |
 
 Deferred gegenüber Lastenheft §4.3, sofern die gewählte Quelle sie nicht
@@ -314,17 +318,20 @@ DoD:
   ohne Import auf konkrete Metrikquelle.
 - [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
   Tranche 1 gewählten Quelle.
-- [ ] Collector-/Import-Use-Case ist implementiert oder verbindlich
-  spezifiziert: Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
+- [ ] Collector-/Import-Use-Case ist implementiert und getestet:
+  Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
   Fehlerpropagation, Backoff/Retry-Grenzen und Shutdown-Verhalten sind
-  dokumentiert und getestet.
-- [ ] Collector persistiert Samples transaktional: Rohwert-Normalisierung,
-  Health-Bewertung, OTel-Export und SQLite-Write haben ein definiertes
-  Fehlerverhalten, damit kein halb sichtbarer Sample-Zustand entsteht.
+  dokumentiert und über Tests abgesichert.
+- [ ] Collector persistiert Samples transaktional für den lokalen
+  Read-Pfad: Rohwert-Normalisierung, Health-Bewertung und SQLite-Write
+  committen gemeinsam oder gar nicht. OTel-Export läuft nach Commit als
+  best-effort Pfad oder über eine explizit dokumentierte Outbox; OTel-
+  Verfügbarkeit darf Persistenz nicht blockieren.
 - [ ] Collector-/Import-Test weist mindestens zwei aufeinanderfolgende
-  Samples mit steigendem oder verschiedenem `observed_at` nach; dadurch
-  sind Freshness, Stale-Erkennung und Verlauf nicht nur statische
-  Fixture-Felder.
+  Samples mit steigendem oder verschiedenem `source_observed_at` oder,
+  falls die Quelle keine Source-Zeit liefert, unterschiedlichem
+  `collected_at` nach. Stale-Bewertung muss Source-Zeit oder explizite
+  Source-Freshness nutzen, nicht nur `ingested_at`.
 - [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
   `0.6.0`-Pflicht.
@@ -334,7 +341,8 @@ DoD:
 - [ ] Schema-Migration ist idempotent und mit Restart-/Migrationstests
   abgedeckt.
 - [ ] Dedupe-/Upsert-Regel ist festgelegt: Ein Sample ist eindeutig über
-  Quelle, Stream/Connection, `observed_at` und ggf. Sample-Sequenz.
+  Quelle, Stream/Connection, `source_observed_at` oder `collected_at`
+  und ggf. Sample-Sequenz.
 - [ ] OTel-Export ist kompatibel mit dem bestehenden Telemetry-Port und
   vermeidet forbidden Prometheus-Labels.
 - [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
@@ -370,15 +378,19 @@ DoD:
   z. B. `GET /api/srt/health` und optional
   `GET /api/srt/health/{stream_id}`.
 - [ ] Read-Responses enthalten mindestens RTT, Packet Loss,
-  Retransmissions, Bandbreite, `observed_at`, `health_state` und eine
-  Quellen-/Freshness-Angabe.
+  Retransmissions, Bandbreite, `source_observed_at`, `collected_at`,
+  `ingested_at`, `health_state` und eine Quellen-/Freshness-Angabe.
 - [ ] `health_state`-Schwellen sind dokumentiert und testbar; `unknown`
   ist der definierte Zustand bei fehlender oder stale Metrikquelle.
 - [ ] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
   `metrics`, `derived`, `health_state`, `source_status`,
   `source_error_code` oder eine gleichwertige Struktur.
-- [ ] Freshness ist im Response sichtbar, z. B. `observed_at`,
-  `sample_age_ms`, `stale_after_ms` und `source_status`.
+- [ ] Freshness ist im Response sichtbar, z. B.
+  `source_observed_at`, `collected_at`, `ingested_at`,
+  `sample_age_ms`, `stale_after_ms`, `source_status` und
+  `connection_state`. `sample_age_ms` darf nicht allein aus
+  `ingested_at` abgeleitet werden, wenn eine ältere Source-Zeit
+  vorhanden ist.
 - [ ] CORS-/Auth-Verhalten folgt den bestehenden Dashboard-Read-Pfaden
   und ist im API-Kontrakt beschrieben.
 - [ ] Fehlerfälle sind stabil: Metrikquelle nicht erreichbar,
