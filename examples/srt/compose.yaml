@@ -1,0 +1,37 @@
+# SRT-Beispiel — plan-0.5.0 §4 Tranche 3 (RAK-37).
+#
+# Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
+# Name `mtrace-srt` ist Pflicht im Startbefehl (siehe
+# examples/README.md, "Compose-Form" Tabelle Variante "Eigenes Compose"):
+#
+#   docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build
+#
+# Ports auf dem Host sind absichtlich verschoben, damit das Beispiel
+# parallel zum Core-Lab (`make dev`, mediamtx auf 8888/9997) starten
+# kann:
+#   8889 → MediaMTX-HLS (innen 8888)
+#   8890 → MediaMTX-SRT-Listener (innen 8890, UDP)
+#   9998 → MediaMTX-Control-API (innen 9997)
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "8889:8888"
+      - "8890:8890/udp"
+      - "9998:9997"
+
+  srt-publisher:
+    image: jrottenberg/ffmpeg:8.1-ubuntu2404
+    depends_on:
+      - mediamtx
+    volumes:
+      - ./ffmpeg-srt-loop.sh:/ffmpeg-srt-loop.sh:ro
+    entrypoint: ["/bin/sh"]
+    command: ["/ffmpeg-srt-loop.sh"]
+    environment:
+      # Container-internes Routing: srt-publisher → mediamtx-Service-
+      # name → SRT-Listener-Port 8890. Kein Host-Roundtrip nötig.
+      SRT_URL: "srt://mediamtx:8890?streamid=publish:srt-test&pkt_size=1316"

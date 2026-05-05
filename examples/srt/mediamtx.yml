@@ -1,0 +1,30 @@
+# MediaMTX-Konfiguration für das SRT-Beispiel.
+# plan-0.5.0 §4 Tranche 3 (RAK-37). Eigenständige Lab-Konfig — nicht
+# mit dem Core-Lab geteilt; dort liefert services/media-server/mediamtx.yml
+# RTSP-Ingest und HLS-Auslieferung des FFmpeg-Generators.
+
+# Control-API (Operator-Diagnose; ab MediaMTX 1.14+ standardmäßig
+# auth-pflichtig — der Smoke nutzt sie nicht).
+api: yes
+apiAddress: :9997
+
+# SRT-Listener für eingehenden Publisher (Lastenheft §7.8 SRT).
+srt: yes
+srtAddress: :8890
+
+# HLS-Auslieferung — Smoke-Pfad analog zum MediaMTX-Beispiel.
+hls: yes
+hlsAddress: :8888
+
+# RTSP wird in diesem Beispiel nicht gebraucht — Container-Surface
+# bleibt so klein wie möglich.
+rtsp: no
+rtmp: no
+
+paths:
+  # Stream-Name `srt-test` ist absichtlich anders als `teststream`
+  # aus dem Core-Lab (services/media-server/mediamtx.yml), damit eine
+  # parallel laufende `make dev`-Instanz nicht versehentlich Pfade
+  # kollidieren lässt.
+  srt-test:
+    source: publisher

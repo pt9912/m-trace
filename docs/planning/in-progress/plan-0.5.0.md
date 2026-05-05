@@ -1,12 +1,14 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 in Arbeit. **Tranchen 0–2** abgeschlossen — `0.4.0`
+> **Status**: 🟡 in Arbeit. **Tranchen 0–3** abgeschlossen — `0.4.0`
 > released (Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün, Plan
 > archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
 > `examples/`-Skelett mit Konventions-Index angelegt; MediaMTX-Beispiel
-> nutzt das Core-Lab und ist über `make smoke-mediamtx` smoke-getestet
-> (HLS-Pfad). **Nächster Schritt**: Tranche 3 (SRT-Beispiel als
-> Lab-Szenario, §4, RAK-37).
+> nutzt das Core-Lab und ist über `make smoke-mediamtx` smoke-getestet;
+> SRT-Beispiel hat eigenes `mtrace-srt`-Compose-Project (FFmpeg →
+> MediaMTX-SRT → HLS) und ist über `make smoke-srt` live-verifiziert.
+> **Nächster Schritt**: Tranche 4 (DASH-Beispiel und Analyzer-Grenze,
+> §5, RAK-38).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -86,7 +88,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | Example-Struktur und Lab-Konventionen | ✅ |
 | 2 | MediaMTX-Beispiel erweitern (RAK-36) | ✅ |
-| 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ⬜ |
+| 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ✅ |
 | 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ⬜ |
 | 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ⬜ |
 | 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | ⬜ |
@@ -275,26 +277,52 @@ Metriken und importiert keine SRT-Bindings in die Go-API.
 
 DoD:
 
-- [ ] `examples/srt/README.md` beschreibt SRT-Sender, Media-Server-
-  Ziel, Ausspielungs-URL und erwarteten Erfolg.
-- [ ] Das Beispiel nutzt bevorzugt vorhandene Container-Images
-  (MediaMTX + FFmpeg) und vermeidet neue API-Runtime-Abhängigkeiten.
-- [ ] Das Beispiel pinnt explizit SRT-Port, Stream-Name und Container-
-  Richtung (Publisher → MediaMTX → HLS/anderer Ausspielungspfad), statt
-  sich auf implizite MediaMTX-Defaults zu verlassen.
-- [ ] Ein Startpfad ist dokumentiert, z. B. ein Compose-Profil oder
-  `docker compose -f examples/srt/compose.yaml up --build`.
-- [ ] `make smoke-srt` startet nur die für das SRT-Beispiel nötigen
-  Dienste und beendet sich deterministisch mit Erfolg oder Diagnose.
-- [ ] Der Smoke-Pfad prüft mindestens, dass ein SRT-Publisher verbinden
-  kann und daraus eine abspiel- oder analysierbare Ausspielung entsteht.
-- [ ] Der Smoke validiert nicht nur offene Ports, sondern ruft das
-  erzeugte Manifest oder eine vergleichbare Media-Ausspielung tatsächlich
-  ab.
-- [ ] Keine SRT-Verbindungsmetriken werden als erfüllt behauptet; RAK-41
-  bis RAK-46 bleiben explizit `0.6.0`-Scope.
-- [ ] R-2 bleibt unverändert oder wird präzisiert, falls das Beispiel
-  eine neue CGO-/Runtime-Entscheidung für `0.6.0` sichtbar macht.
+- [x] `examples/srt/README.md` beschreibt SRT-Sender (FFmpeg-Loop-
+  Container `srt-publisher`), Media-Server-Ziel (MediaMTX-Container
+  `mediamtx`), Ausspielungs-URL (`http://localhost:8889/srt-test/index.m3u8`)
+  und erwarteten Erfolg (`make smoke-srt` grün nach 10–25 s).
+- [x] Das Beispiel nutzt bevorzugt vorhandene Container-Images:
+  `bluenviron/mediamtx:1` (gleiche Major-Version wie das Core-Lab in
+  `docker-compose.yml`) und `jrottenberg/ffmpeg:8.1-ubuntu2404`
+  (gleiche Image-Linie wie `services/stream-generator`). Keine neuen
+  API-Runtime-Abhängigkeiten — `apps/api` bleibt
+  `distroless-static` ohne CGO.
+- [x] Das Beispiel pinnt explizit SRT-Port (`8890/udp`), Stream-Name
+  (`srt-test`, absichtlich anders als `teststream` aus dem Core-Lab,
+  damit Pfade nicht kollidieren) und Container-Richtung (Publisher
+  → MediaMTX → HLS) statt sich auf implizite MediaMTX-Defaults zu
+  verlassen — siehe `examples/srt/mediamtx.yml` und
+  `examples/srt/compose.yaml`.
+- [x] Ein Startpfad ist dokumentiert: `docker compose -p mtrace-srt
+  -f examples/srt/compose.yaml up -d --build` in
+  `examples/srt/README.md` Sektion „Start"; gleiche Befehlszeile
+  liegt im Smoke-Skript für die Auto-Start-Variante.
+- [x] `make smoke-srt` startet nur die für das SRT-Beispiel nötigen
+  Dienste (Project `mtrace-srt`, eigenes Compose) und beendet sich
+  deterministisch mit Erfolg oder Diagnose — Stack-Up + Smoke + Stack-
+  Down per `trap cleanup EXIT`; bei Timeout konkrete Diagnose-Hints
+  (`docker compose logs srt-publisher|mediamtx`) auf stderr.
+- [x] Der Smoke-Pfad prüft, dass ein SRT-Publisher verbinden kann und
+  daraus eine abspiel- oder analysierbare Ausspielung entsteht — wenn
+  das HLS-Manifest auf `:8889/srt-test/index.m3u8` mit `200`
+  antwortet **und** Media-Referenzen enthält, ist sowohl der SRT-
+  Ingress als auch der HLS-Egress nachweislich funktional.
+- [x] Der Smoke validiert nicht nur offene Ports, sondern ruft das
+  erzeugte Manifest tatsächlich ab und prüft den Body
+  (`#EXTM3U`-Header plus Media-Referenzen `.m3u8`/`.ts`/`.m4s`/
+  `.aac`).
+- [x] Keine SRT-Verbindungsmetriken werden als erfüllt behauptet;
+  RAK-41..RAK-46 bleiben explizit `0.6.0`-Scope —
+  `examples/srt/README.md` „Bekannte Grenzen" pinnt das.
+- [x] R-2 bleibt unverändert: das Beispiel triggert keine neue CGO-/
+  Runtime-Entscheidung für `0.6.0`, weil SRT ausschließlich im
+  MediaMTX-Container läuft — keine `apps/api`-Code-Änderung nötig.
+  Die R-2-Triage in §0.2 bleibt damit gültig.
+
+Live-verifiziert:
+- `make smoke-srt` → "[smoke-srt] all checks passed" mit Stack-Up
+  in Project `mtrace-srt`, HLS-200 nach < 45 s, sauberer Compose-Down
+  am Ende.
 
 ---
 

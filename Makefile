@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -23,6 +23,7 @@ help:
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
 		'  make smoke-mediamtx         Run the MediaMTX example smoke check (needs make dev)' \
+		'  make smoke-srt              Run the SRT example smoke (starts/stops mtrace-srt project)' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
@@ -113,6 +114,13 @@ smoke-analyzer:
 # Opt-in (nicht in `make gates`).
 smoke-mediamtx:
 	bash scripts/smoke-mediamtx.sh
+
+# `make smoke-srt` startet das eigene SRT-Beispiel (plan-0.5.0 §4
+# Tranche 3, RAK-37) als Project `mtrace-srt`, prüft den HLS-Pfad
+# auf 8889 (FFmpeg→SRT→MediaMTX→HLS) und beendet den Stack wieder.
+# Opt-in (nicht in `make gates`).
+smoke-srt:
+	bash scripts/smoke-srt.sh
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-
