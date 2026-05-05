@@ -146,6 +146,12 @@ DoD:
   notiert einen geplanten Konflikt mit `examples/srt/` auf `8889/tcp`;
   Tranche 1 entscheidet, ob WebRTC einen anderen Host-Port bekommt
   oder SRT-Beispiel umschnitten wird.
+- [ ] ICE-/Media-Port-Schnitt ist explizit entschieden: für MediaMTX-
+  WebRTC im Container ist der UDP-Pfad (typisch `8189/udp`) inklusive
+  Docker-Port-Mapping dokumentiert, oder ein bewusst getesteter TCP-/
+  TURN-Fallback ist als RAK-50-Handcheck-Grenze beschrieben. Ein grüner
+  WHIP-/WHEP-HTTP-Endpoint allein reicht nicht als Browser-Pfad-
+  Nachweis.
 - [ ] Host-Port-Schnitt ist in `examples/README.md` dokumentiert, falls
   die Project-Konvention oder Parallelbetriebshinweise angepasst werden
   müssen.
@@ -270,15 +276,16 @@ DoD:
   Fallback-Verhalten bei fehlenden Browser-Feldern. Eine Browser-Version
   ohne einzelnes Soll-Feld darf keinen vollständigen Telemetriepfad
   blockieren, solange Muss-Felder stabil bleiben.
-- [ ] Risiken-Backlog erweitert (R-N) den Schema-Drift als
-  **Spec-/Adapter-Review-Gate**: bei Browser-Major-Version X mit
-  `getStats()`-Schema-Änderung wird die WebRTC-Allowlist in
-  `spec/telemetry-model.md` §3.2 plus die WebRTC-Adapter-Spec
-  (Tranche 4 Item 2) reviewed; konkrete Smoke-/Contract-Test-
-  Updates sind erst dann release-blockierend, wenn ein produktiver
-  WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan). Vor
-  diesem Punkt ist `smoke-webrtc-prep` (endpoint-/compose-only)
-  vom Schema-Drift nicht betroffen.
+- [ ] Risiken-Backlog erweitert den Schema-Drift als
+  **Spec-/Adapter-Review-Gate** und setzt dabei atomar die nächste freie
+  Kennung (Stand Planerstellung: `R-11`, da `R-1`..`R-10` vergeben
+  sind): bei Browser-Major-Version X mit `getStats()`-Schema-Änderung
+  wird die WebRTC-Allowlist in `spec/telemetry-model.md` §3.2 plus die
+  WebRTC-Adapter-Spec (Tranche 4 Item 2) reviewed; konkrete Smoke-/
+  Contract-Test-Updates sind erst dann release-blockierend, wenn ein
+  produktiver WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan).
+  Vor diesem Punkt ist `smoke-webrtc-prep` (endpoint-/compose-only) vom
+  Schema-Drift nicht betroffen.
 - [ ] Tranche 4 dokumentiert ausdrücklich, dass RAK-49 nur die
   Telemetrie-Spezifikation vorbereitet. Sie aktiviert keine produktive
   `getStats()`-Sammlung und keine Prometheus-Metrik in `0.7.0`, sofern
@@ -320,7 +327,7 @@ DoD:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-47 | Muss | `examples/webrtc/compose.yaml`, Project `mtrace-webrtc`, lokale WHIP-/WHEP-Endpunkte, Portkonflikt entschieden | [ ] |
+| RAK-47 | Muss | `examples/webrtc/compose.yaml`, Project `mtrace-webrtc`, lokale WHIP-/WHEP-Endpunkte, HTTP- und ICE-/Media-Portkonflikte entschieden | [ ] |
 | RAK-48 | Muss | `make smoke-webrtc-prep` endpoint-/compose-only, opt-in dokumentiert, kein Playback-/`getStats()`-Anspruch | [ ] |
 | RAK-49 | Soll | `spec/telemetry-model.md` §3.2 + WebRTC-Adapter-/`getStats()`-Spec mit Schema-Drift-Strategie | [ ] |
 | RAK-50 | Kann | Manueller Browser-Handcheck in `examples/webrtc/README.md` dokumentiert | [ ] |
