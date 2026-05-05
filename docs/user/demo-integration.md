@@ -112,16 +112,41 @@ make browser-e2e
 Das Browser-E2E-Gate startet API, MediaMTX, FFmpeg-Teststream und Dashboard im
 Container und prüft die Demo-Route in Chromium und Firefox.
 
-Manuell kann die erzeugte Session über das Dashboard geprüft werden:
+Manuell lässt sich die erzeugte Session reproduzierbar inklusive
+Timeline und über einen API-Restart hinweg verifizieren — beides ist
+Tempo-unabhängig (RAK-32):
 
-1. `http://localhost:5173/demo?session_id=demo-docs-1&autostart=1` öffnen.
-2. Nach einigen Sekunden `Stop` klicken.
-3. `http://localhost:5173/sessions/demo-docs-1` öffnen.
-4. Prüfen, dass Playback-Events und `session_ended` sichtbar sind.
+### Reproduzierbare Demo-Session inklusive Timeline
 
-Alternativ über die API:
+1. `http://localhost:5173/demo?session_id=demo-docs-1&autostart=1` öffnen — der Query-Parameter pinnt die Session-ID, sodass Folge-Schritte denselben Read-Pfad nutzen können.
+2. Nach einigen Sekunden Playback `Stop` klicken — Demo-UI ruft `tracker.destroy()` und schickt das `session_ended`-Event.
+3. `http://localhost:5173/sessions/demo-docs-1` öffnen — die Session-Timeline-Ansicht (Tranche 4, plan-0.4.0 §5) zeigt alle Events der Session sortiert nach `(server_received_at, sequence_number, ingest_sequence)`. Sichtbar: `manifest_loaded`, `segment_loaded`, `playback_started`, `bitrate_switch` (falls ABR-Wechsel auftrat), `rebuffer_started`/`rebuffer_ended`, `startup_time_measured`, `metrics_sampled`, `session_ended`. Jede Zeile trägt eine `correlation_id` — Single-Session-Batches teilen denselben Wert über alle Events; sichtbar auch in der Detailansicht pro Event.
+4. Optional Tempo-Vertiefung (nur unter `make dev-tempo`): pro Server-Span eine `trace_id`. Eine Session kann mehrere `trace_id`s haben, weil jeder Batch einen eigenen Server-Span produziert (`spec/telemetry-model.md` §2.5). `correlation_id` ist die durable Source-of-Truth, `trace_id` ist Debug-Vertiefung.
+
+### Restart-Stabilität (SQLite-Persistenz)
+
+Die Demo-Session überlebt einen API-Restart, weil ab `0.4.0` Sessions
+und Events in SQLite persistiert werden (siehe
+[`local-development.md`](./local-development.md) §3.4 + ADR-0002 §8.1):
+
+```bash
+make stop                              # docker compose down ohne --volumes
+make dev                               # API liest SQLite-Datei aus dem mtrace-data-Volume
+curl -H 'X-MTrace-Token: demo-token' \
+  http://localhost:8080/api/stream-sessions/demo-docs-1/events
+# → dieselbe Event-Historie wie vor `make stop`; correlation_id bleibt konstant
+```
+
+Erst `make wipe` (verbindlicher Reset-Pfad gemäß ADR-0002 §8.4)
+entfernt das `mtrace-data`-Volume und damit Sessions, Events,
+Cursor-States und Ingest-Sequenz.
+
+### Direkter API-Read
 
 ```bash
 curl -H 'X-MTrace-Token: demo-token' \
   http://localhost:8080/api/stream-sessions/demo-docs-1/events
 ```
+
+Erwartet: JSON-Liste mit den oben genannten Event-Typen, sortiert nach
+der kanonischen Reihenfolge aus `spec/telemetry-model.md` §5.2.

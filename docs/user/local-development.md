@@ -312,6 +312,15 @@ Volume erhalten — der nächste Start liest die gleiche Session-Historie.
 `make stop` (= `docker compose down` ohne `--volumes`) lässt das Volume
 unangetastet.
 
+**Storage-Retention in `0.4.0`**: „unlimited mit dokumentiertem
+Reset-Pfad" gemäß [ADR-0002](../adr/0002-persistence-store.md) §8.4.
+Sessions, Playback-Events und Ingest-Sequenzen wachsen ungebunden, bis
+der Reset-Pfad ausgeführt wird. Konkrete Retention-Werte (Zeitfenster,
+Pro-Projekt-Limit) sind ausdrücklich für eine Folge-Phase deferred —
+Schema und Indizes (`occurred_at`, `started_at`, `project_id`,
+`session_id`) sind so gewählt, dass eine spätere Retention-Implementierung
+ohne erneute Migration ansetzen kann.
+
 **Reset (destruktiv)**: ausschließlich über
 
 ```bash
@@ -347,6 +356,37 @@ applizierter Schema-State ist no-op. Schlägt eine Migration fehl,
 markiert der Runner den State als `dirty` und der nächste Start
 weigert sich (`storage: schema is in dirty state`). Reparatur:
 `make wipe` und neu starten.
+
+### 3.5 Prometheus-Aggregate (Quickref)
+
+Prometheus ist Aggregat-Backend, nicht Per-Session-Store. Die drei
+Backends teilen die Verantwortung wie folgt (kanonische 3-Spalten-
+Tabelle:
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §3.3):
+
+| Backend | Rolle | Lab-Endpoint |
+|---|---|---|
+| Prometheus | Aggregat-Metriken (Counter, Rates) mit bounded Aggregat-Labels | `http://localhost:9090` (im observability-Profil) |
+| SQLite | Per-Session-Historie (Sessions, Events, Cursor, `session_boundaries`) | `/var/lib/mtrace/m-trace.db` im API-Container; gelesen über `GET /api/stream-sessions/...` |
+| OTel/Tempo | Per-Request-Trace-Spans für Debug-Tiefe | `http://localhost:3200` (im `tempo`-Profil — siehe §2.5) |
+
+Die vier Pflichtcounter aus
+[`spec/backend-api-contract.md`](../../spec/backend-api-contract.md) §7
+und der OTel-translated `mtrace_api_batches_received` sind ab `0.4.0`
+Tranche 7 alle **label-frei** (kein `batch_size`, kein `session_id`,
+kein `project_id`); andere `mtrace_*`-Metriken dürfen ausschließlich
+bounded Aggregat-Labels aus
+[`spec/telemetry-model.md`](../../spec/telemetry-model.md) §3.2 tragen
+(`event_type`, `outcome`, `code`, `instance`/`job`). Die normative
+Forbidden-Liste über alle Metriken steht in
+[`telemetry-model.md`](../../spec/telemetry-model.md) §3.1; der
+verschärfte Cardinality-Smoke (`make smoke-observability`) prüft sie
+release-blockierend.
+
+Hochkardinale Werte (`session_id`, `correlation_id`, URL, User-Agent,
+Token, …) gehören grundsätzlich **nicht** in Prometheus-Labels — sie
+landen in SQLite (durable Read-Pfad) und/oder Tempo-Spans (sample-
+basiertes Debug-Backend).
 
 ---
 
