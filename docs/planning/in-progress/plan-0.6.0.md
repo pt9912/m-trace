@@ -108,7 +108,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ✅ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ✅ (Sub-3.1..3.7 alle ✅) |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ✅ |
-| 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | ⬜ |
+| 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | 🟡 (UI ✅, Browser-E2E → Tranche 7) |
 | 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ⬜ |
 | 7 | Smokes, Gates und Release-Closeout (RAK-41..RAK-46) | ⬜ |
 
@@ -822,33 +822,57 @@ aktuellen Zustand schnell lesbar macht und die Rohwerte für Diagnose
 zeigt. Sie bleibt operativ schlicht und passt zur bestehenden
 Dashboard-Struktur.
 
-DoD:
+### 6.0 Sub-Tranchen
 
-- [ ] Neue Route oder Tab für SRT-Health ist in der Dashboard-Navigation
-  erreichbar.
-- [ ] Ansicht zeigt pro SRT-Stream oder Verbindung mindestens
-  `health_state`, RTT, Packet Loss, Retransmissions,
-  `available_bandwidth_bps`, `required_bandwidth_bps`, letzte
-  Aktualisierung und Quelle/Freshness.
-- [ ] Werte sind mit Einheiten und Zeitbezug sichtbar: RTT in ms,
-  verfügbare Bandbreite in bit/s oder Mbit/s, optionaler Durchsatz klar
-  getrennt davon, Loss/Retransmission als Counter oder Rate gemäß
-  API-Vertrag.
-- [ ] Warnzustände unterscheiden `degraded`, `critical`, `unknown` und
-  normalen Zustand visuell und textlich eindeutig.
-- [ ] Verlauf oder Mini-Timeline der letzten Health-Samples ist
-  vorhanden; eine reine Snapshot-Ansicht erfüllt RAK-44 in diesem Plan
-  nicht.
-- [ ] Loading-, Empty-, Error- und Stale-Zustände sind implementiert und
-  getestet.
-- [ ] Dashboard ruft nur dokumentierte API-Endpunkte auf und dupliziert
-  keine Health-Schwellenlogik, außer reine UI-Formatierung.
-- [ ] Stale-Daten werden nicht als gesunder Zustand angezeigt; die UI
-  muss Freshness/Quelle sichtbar machen.
-- [ ] Tests decken Rendering der vier Pflichtmetriken, Health-Zustände
-  und API-Fehler ab.
+| Sub | Inhalt | Form | Status |
+| --- | ------ | ---- | ------ |
+| 5.1 | API-Helper `listSrtHealth` / `getSrtHealthDetail` mit Wire-Format-Typen aus spec §7a.2 | Code, Frontend-Library | ✅ |
+| 5.2 | Route `/srt-health` mit Tabelle pro Stream (Health-Badge, vier Pflichtmetriken, Freshness, Stale-Hinweis) | Code, SvelteKit-Route | ✅ |
+| 5.3 | Detail-Route `/srt-health/[stream_id]` mit aktuellem Sample und Mini-Timeline der letzten 50 Samples | Code, SvelteKit-Route | ✅ |
+| 5.4 | Sidebar-Navigation, vitest-Tests (List/Detail/Polling), Plan-Closeout | Tests, Doku | ✅ |
+
+### 6.1 DoD
+
+- [x] Neue Route für SRT-Health in der Sidebar-Navigation
+  (`apps/dashboard/src/routes/+layout.svelte`); Tab „SRT health"
+  zwischen Errors und Status.
+- [x] Ansicht zeigt pro SRT-Stream `health_state` (Pill mit Stale-
+  Variante), `rtt_ms`, `packet_loss_total`, `retransmissions_total`,
+  `available_bandwidth_bps`, `required_bandwidth_bps` (Detail),
+  letzte Aktualisierung mit Sekunden-Alter, Source-Status und
+  Source-Error-Code.
+- [x] Werte mit Einheiten: `rtt_ms` als ms, `available_bandwidth_bps`
+  über `formatBandwidthMbps` als Mbit/s mit drei Nachkommastellen,
+  `throughput_bps` separat im Detail; Loss/Retrans als absolute
+  Counter (Rate optional via `packet_loss_rate`).
+- [x] Warnzustände: CSS-Pill-Klassen `pill healthy`/`degraded`/
+  `critical`/`unknown` plus separater `pill stale`-Variant; bei
+  Stale-Drift wird der Pill-Text um `(stale)` ergänzt; Source-Status
+  ≠ `ok` zeigt eine Source-Hint-Spalte mit Title-Tooltip.
+- [x] Mini-Timeline: Detail-Route `/srt-health/[stream_id]` zeigt
+  History-Tabelle mit den letzten 50 Samples (samples_limit=50);
+  reine Snapshot-Ansicht ist explizit nicht implementiert.
+- [x] Loading-/Empty-/Error-/Stale-Zustände implementiert: leere
+  Liste → Hinweis „Collector may be disabled"; `notFound` →
+  „has no persisted health samples"; sonstige Fehler → `<p
+  class="error">{error}</p>`; Stale via `isSrtSampleStale` (entweder
+  `source_status = stale` oder `sample_age_ms > stale_after_ms`).
+- [x] Dashboard ruft nur die zwei dokumentierten Endpoints
+  (`GET /api/srt/health[/{stream_id}]`); keine UI-Schwellenlogik
+  (Health-State kommt vom Server via `application.Evaluate`).
+- [x] Stale-Daten werden nicht als gesunder Zustand angezeigt:
+  `pillClass(item)` priorisiert `stale` über `health_state`; das
+  Stale-CSS hat eigene Farbe (gelb-orange) statt grün.
+- [x] Tests decken Rendering der vier Pflichtmetriken, Health-Zustände,
+  API-Fehler und Polling ab — `apps/dashboard/tests/srt-health.test.ts`
+  (API-Helper) plus `srt-health-pages.test.ts` (List + Detail mit
+  13 Tests: empty, healthy, degraded, stale, source-status-non-ok,
+  error, 404, polling, refresh-button, missing-stream-id,
+  source_observed_at-Variante).
 - [ ] Browser-E2E oder ein gezielter Dashboard-Smoke validiert die
-  Ansicht gegen das lokale SRT-Health-Lab.
+  Ansicht gegen das lokale SRT-Health-Lab. **→ Tranche 7 Closeout**
+  (E2E gegen Lab braucht aktiven Collector mit MediaMTX; das wird
+  beim Release-Smoke gesetzt, nicht in Tranche 5 isoliert).
 
 ---
 

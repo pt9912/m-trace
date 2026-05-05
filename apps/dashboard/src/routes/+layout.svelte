@@ -13,6 +13,7 @@
       <a href="/sessions">Sessions</a>
       <a href="/events">Events</a>
       <a href="/errors">Errors</a>
+      <a href="/srt-health">SRT health</a>
       <a href="/status">Status</a>
       <a href="/demo">Demo player</a>
     </nav>

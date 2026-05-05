@@ -94,6 +94,109 @@ export async function getSession(
   );
 }
 
+// SRT-Health-Wire-Format aus spec/backend-api-contract.md §7a.2
+// (plan-0.6.0 §5 Tranche 4). Felder kommen direkt aus dem
+// Go-Adapter `srtHealthWireItem` und sind hier 1:1 typisiert,
+// inklusive der drei Sub-Blöcke `metrics`/`derived`/`freshness`.
+
+export type SrtHealthState = "healthy" | "degraded" | "critical" | "unknown";
+export type SrtSourceStatus =
+  | "ok"
+  | "unavailable"
+  | "partial"
+  | "stale"
+  | "no_active_connection";
+export type SrtSourceErrorCode =
+  | "none"
+  | "source_unavailable"
+  | "no_active_connection"
+  | "partial_sample"
+  | "stale_sample"
+  | "parse_error";
+export type SrtConnectionState = "connected" | "no_active_connection" | "unknown";
+
+export interface SrtHealthMetrics {
+  rtt_ms: number;
+  packet_loss_total: number;
+  packet_loss_rate?: number;
+  retransmissions_total: number;
+  available_bandwidth_bps: number;
+  throughput_bps?: number;
+  required_bandwidth_bps?: number;
+}
+
+export interface SrtHealthDerived {
+  bandwidth_headroom_factor?: number;
+}
+
+export interface SrtHealthFreshness {
+  source_observed_at: string | null;
+  source_sequence?: string;
+  collected_at: string;
+  ingested_at: string;
+  sample_age_ms: number;
+  stale_after_ms: number;
+}
+
+export interface SrtHealthItem {
+  stream_id: string;
+  connection_id: string;
+  health_state: SrtHealthState;
+  source_status: SrtSourceStatus;
+  source_error_code: SrtSourceErrorCode;
+  connection_state: SrtConnectionState;
+  metrics: SrtHealthMetrics;
+  derived: SrtHealthDerived;
+  freshness: SrtHealthFreshness;
+}
+
+export interface SrtHealthListResponse {
+  items: SrtHealthItem[];
+}
+
+export interface SrtHealthDetailResponse {
+  stream_id: string;
+  items: SrtHealthItem[];
+}
+
+/** Liefert pro StreamID den jüngsten persistierten Health-Sample
+ *  (`GET /api/srt/health`). 404/500 propagieren als Error vom
+ *  `getJSON`-Pfad. */
+export async function listSrtHealth(): Promise<SrtHealthListResponse> {
+  return getJSON<SrtHealthListResponse>(`${apiBaseUrl}/api/srt/health`);
+}
+
+/** Liefert die letzten `samplesLimit` Samples für eine StreamID
+ *  (`GET /api/srt/health/{stream_id}`). 404 → `streamUnknown` */
+export async function getSrtHealthDetail(
+  streamId: string,
+  samplesLimit = 100
+): Promise<SrtHealthDetailResponse> {
+  const params = new URLSearchParams({ samples_limit: String(samplesLimit) });
+  return getJSON<SrtHealthDetailResponse>(
+    `${apiBaseUrl}/api/srt/health/${encodeURIComponent(streamId)}?${params.toString()}`
+  );
+}
+
+/** Stale-Bewertung im UI: ein Sample ist stale, wenn entweder
+ *  source_status === "stale" persistiert ist (Server hat Drift
+ *  erkannt) ODER sample_age_ms > stale_after_ms zum Lesezeitpunkt.
+ *  Die zweite Variante deckt den Fall ab, dass der Collector
+ *  zwischen zwei Polls keinen frischen Sample erzeugt hat. */
+export function isSrtSampleStale(item: SrtHealthItem): boolean {
+  if (item.source_status === "stale") {
+    return true;
+  }
+  return item.freshness.sample_age_ms > item.freshness.stale_after_ms;
+}
+
+/** Formatiert eine Bandbreite in bit/s als Mbit/s mit drei Nach-
+ *  kommastellen (Lab-Werte sind im Gbps-Bereich; Mbit/s ist die
+ *  Operator-Lesbarkeit). */
+export function formatBandwidthMbps(bps: number): string {
+  return `${(bps / 1_000_000).toFixed(3)} Mbit/s`;
+}
+
 export async function getHealth(): Promise<HealthStatus> {
   try {
     const res = await fetch(`${apiBaseUrl}/api/health`, { cache: "no-store" });
