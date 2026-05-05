@@ -22,6 +22,8 @@
 > [`examples/webrtc/README.md`](../../../examples/webrtc/README.md)
 > (aktueller Doku-only Stand);
 > [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md) (vorhergehende Phase).
+> Beim Verschieben von `0.6.0` nach `docs/planning/done/` muss dieser
+> Link im selben Commit auf `../done/plan-0.6.0.md` umgestellt werden.
 >
 > **Nachfolger**: `plan-0.8.0.md` (offen).
 
@@ -49,7 +51,10 @@ kann:
 - `0.5.0` ist released (Tag `v0.5.0` auf `a56dc0b`); WebRTC-Skelett
   unter [`examples/webrtc/`](../../../examples/webrtc/) existiert.
 - `0.6.0` (SRT Health View) ist released; siehe
-  [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md).
+  [`plan-0.6.0.md`](../in-progress/plan-0.6.0.md). Wenn der
+  Vorgängerplan im Release-Closeout bereits nach `done/` verschoben ist,
+  wird dieser Link beim Aktivieren von `0.7.0` atomar auf
+  `../done/plan-0.6.0.md` korrigiert.
 - Lastenheft `1.1.9` ist um RAK-47..RAK-51 für `0.7.0` erweitert (§13.9 + §4a.12 in `done/plan-0.1.0.md`); siehe §0.2.
 
 `smoke-webrtc-prep` (RAK-48 Muss) ist endpoint-/compose-only und
@@ -104,9 +109,11 @@ Punkt vermerkt.
 2. Tranche 3 ist endpoint-/compose-only. Ein Browser- oder Playback-
    Handcheck kann RAK-50 unterstützen, darf aber RAK-48 nicht ersetzen
    und darf `make smoke-webrtc-prep` nicht flakig machen.
-3. Tranche 4 ist Spec-Arbeit für spätere produktive Telemetrie. Sie
-   darf keine `mtrace_webrtc_*`-Metrik in Code oder Prometheus
-   behaupten, solange kein produktiver WebRTC-Telemetriepfad existiert.
+3. Tranche 4 ist Spec-Arbeit für spätere produktive Telemetrie in
+   `spec/telemetry-model.md`. Sie darf keine `mtrace_webrtc_*`-Metrik in
+   Code oder Prometheus behaupten und keine Player-SDK-/Adapter-Public-
+   API spezifizieren, solange kein produktiver WebRTC-Telemetriepfad
+   existiert.
 4. RAK-51 bleibt Folge-Scope. Jede Änderung an `packages/player-sdk`
    braucht eine eigene Public-API-Tranche mit hls.js-Kompatibilitäts-
    nachweis.
@@ -247,10 +254,11 @@ DoD:
 Bezug: [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
 §3.1/§3.2; Risiken-Backlog; Lastenheft §8.3 NF-14.
 
-Ziel: Klare Spec-Aussage, was eine produktive WebRTC-Telemetrie-
-Anbindung bräuchte — bounded Allowlist-Labels, `getStats()`-Subset,
-Schema-Drift-Strategie. Diese Tranche kann **vor** Tranche 1–3
-erledigt werden (Spec-Vorarbeit) oder nach den Lab-Erfahrungen.
+Ziel: Klare Telemetrie-Modell-Aussage, was eine spätere produktive
+WebRTC-Telemetrie-Anbindung bräuchte — bounded Allowlist-Labels,
+`getStats()`-Subset, Schema-Drift-Strategie. Diese Tranche kann **vor**
+Tranche 1–3 erledigt werden (Spec-Vorarbeit) oder nach den
+Lab-Erfahrungen. Sie erzeugt keinen Player-SDK-/Adapter-Vertrag.
 
 DoD:
 
@@ -268,22 +276,23 @@ DoD:
   Event-/Debug-Daten für einen späteren Read-Pfad zulässig; Prometheus
   bekommt ausschließlich die in Item 1 explizit erlaubten bounded
   Aggregat-Labels.
-- [ ] `spec/player-sdk.md` (oder ein neues `spec/webrtc-adapter.md`)
-  beschreibt das Subset von `getStats()`-Reports, das produktiv
-  gesammelt werden soll, plus die Schema-Drift-Strategie zwischen
-  Chromium-/Firefox-/Safari-Versionen.
-- [ ] Das `getStats()`-Subset trennt Muss-/Soll-Felder und benennt
-  Fallback-Verhalten bei fehlenden Browser-Feldern. Eine Browser-Version
-  ohne einzelnes Soll-Feld darf keinen vollständigen Telemetriepfad
-  blockieren, solange Muss-Felder stabil bleiben.
+- [ ] `spec/telemetry-model.md` §3.2 dokumentiert das
+  `getStats()`-Subset ausschließlich als Future-Telemetry-Notiz für
+  bounded Aggregation: Report-Gruppen, Muss-/Soll-Felder und die
+  Schema-Drift-Strategie zwischen Chromium-/Firefox-/Safari-Versionen.
+  Diese Notiz ist kein Player-SDK-/Adapter-Public-API-Vertrag.
+- [ ] Das `getStats()`-Subset benennt Fallback-Verhalten bei fehlenden
+  Browser-Feldern. Eine Browser-Version ohne einzelnes Soll-Feld darf
+  keinen späteren vollständigen Telemetriepfad blockieren, solange
+  Muss-Felder stabil bleiben.
 - [ ] Risiken-Backlog erweitert den Schema-Drift als
   **Spec-/Adapter-Review-Gate** und setzt dabei atomar die nächste freie
   Kennung (Stand Planerstellung: `R-11`, da `R-1`..`R-10` vergeben
   sind): bei Browser-Major-Version X mit `getStats()`-Schema-Änderung
-  wird die WebRTC-Allowlist in `spec/telemetry-model.md` §3.2 plus die
-  WebRTC-Adapter-Spec (Tranche 4 Item 2) reviewed; konkrete Smoke-/
-  Contract-Test-Updates sind erst dann release-blockierend, wenn ein
-  produktiver WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan).
+  wird die WebRTC-Allowlist plus Future-Telemetry-Notiz in
+  `spec/telemetry-model.md` §3.2 reviewed; konkrete Smoke-/Contract-
+  Test-Updates sind erst dann release-blockierend, wenn ein produktiver
+  WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan).
   Vor diesem Punkt ist `smoke-webrtc-prep` (endpoint-/compose-only) vom
   Schema-Drift nicht betroffen.
 - [ ] Tranche 4 dokumentiert ausdrücklich, dass RAK-49 nur die
@@ -329,7 +338,7 @@ DoD:
 | --- | --------- | -------- | ------ |
 | RAK-47 | Muss | `examples/webrtc/compose.yaml`, Project `mtrace-webrtc`, lokale WHIP-/WHEP-Endpunkte, HTTP- und ICE-/Media-Portkonflikte entschieden | [ ] |
 | RAK-48 | Muss | `make smoke-webrtc-prep` endpoint-/compose-only, opt-in dokumentiert, kein Playback-/`getStats()`-Anspruch | [ ] |
-| RAK-49 | Soll | `spec/telemetry-model.md` §3.2 + WebRTC-Adapter-/`getStats()`-Spec mit Schema-Drift-Strategie | [ ] |
+| RAK-49 | Soll | `spec/telemetry-model.md` §3.2 mit WebRTC-`getStats()`-Future-Telemetry-Notiz und Schema-Drift-Strategie | [ ] |
 | RAK-50 | Kann | Manueller Browser-Handcheck in `examples/webrtc/README.md` dokumentiert | [ ] |
 | RAK-51 | Kann | Deferred; eigener Folgeplan für Player-SDK-WebRTC-Adapter | deferred / Folgeplan |
 
@@ -349,9 +358,9 @@ DoD:
   Teil der Tranchen 1–4 — der Lastenheft-Anker bleibt für eine
   Folge-Tranche/-Release reserviert. Auslöser für eine Folge-
   Planung: Lab-Erfahrungen aus Tranche 1–3 zeigen einen konkreten
-  Operator-Use-Case oder Tranche 4 schließt die `getStats()`-
-  Allowlist + Schema-Drift-Strategie so weit ab, dass ein
-  produktiver Adapter-Pfad ohne Spec-Lücke implementierbar ist.
+  Operator-Use-Case oder ein Folgeplan überführt die `getStats()`-
+  Allowlist + Schema-Drift-Strategie aus `spec/telemetry-model.md` in
+  einen produktiven Adapter-Pfad ohne Spec-Lücke.
   Das Folge-Dokument benennt dann eine eigene Tranche mit
   Public-API-Definition, hls.js-Pfad-Trennung und Compat-Tests.
 - Wenn der WebRTC-Pfad nach Bewertung als „nie produktiv"
