@@ -1,14 +1,10 @@
 # Implementation Plan — `0.6.0` (SRT Health View)
 
-> **Status**: ⬜ offen. Dieser Plan ist vorbereitet, aber noch nicht
-> aktive Phase. `0.5.0` (Multi-Protocol Lab) muss vorher abgeschlossen
-> und released sein; insbesondere muss das SRT-Beispiel aus
-> `plan-0.5.0.md` Tranche 3 als reproduzierbarer Lab-Pfad vorliegen.
-> Der Vorgängerplan liegt bis zum `0.5.0`-Release unter
-> `../done/plan-0.5.0.md`; beim Aktivieren von `0.6.0` gilt
-> `../done/plan-0.5.0.md`. Diese Pfade sind bewusst nicht als
-> Markdown-Link gesetzt, damit der Doc-Ref-Check nicht während der
-> Archivierung kippt.
+> **Status**: 🟡 aktiv. `0.5.0` (Multi-Protocol Lab) ist released
+> (Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün); Vorgängerplan
+> ist nach [`../done/plan-0.5.0.md`](../done/plan-0.5.0.md) archiviert.
+> Tranche 0 (Vorgänger-Gate) ist abgeschlossen; Tranche 1 (SRT-
+> Metrikquelle und Binding-Entscheidung) ist die nächste Arbeitsstufe.
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9
@@ -18,7 +14,7 @@
 > [Architektur](../../../spec/architecture.md);
 > [Telemetry-Model](../../../spec/telemetry-model.md);
 > [API-Kontrakt](../../../spec/backend-api-contract.md);
-> [Risiken-Backlog](./risks-backlog.md) R-2.
+> [Risiken-Backlog](../open/risks-backlog.md) R-2.
 >
 > **Vorgänger-Gate (Soll zum `0.6.0`-Start)**:
 >
@@ -107,7 +103,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Vorgänger-Gate und Scope-Festlegung | ⬜ |
+| 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ⬜ |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ⬜ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ⬜ |
@@ -128,24 +124,28 @@ Ingest-Orchestrierung oder produktive SRT-Betriebsverwaltung.
 
 DoD:
 
-- [ ] `plan-0.5.0.md` ist vollständig abgeschlossen, nach
+- [x] `plan-0.5.0.md` ist vollständig abgeschlossen, nach
   `docs/planning/done/` verschoben und mit finalen Commit-Hashes
-  versehen.
-- [ ] Annotierter Release-Tag `v0.5.0` existiert und GitHub Actions
-  `Build` ist für den Release-Commit grün.
-- [ ] `examples/srt/README.md` beschreibt den finalen `0.5.0`-SRT-Pfad
+  versehen (T6c-Closeout `486324e`).
+- [x] Annotierter Release-Tag `v0.5.0` existiert und GitHub Actions
+  `Build` ist für den Release-Commit grün (`v0.5.0` auf `a56dc0b`,
+  CI-Run 25364250989).
+- [x] `examples/srt/README.md` beschreibt den finalen `0.5.0`-SRT-Pfad
   inklusive Start, Verifikation, Stop/Reset, Troubleshooting und
-  bekannter Grenzen.
-- [ ] `make smoke-srt` ist auf dem `0.5.0`-Release-Stand grün und als
-  Baseline für `0.6.0` dokumentiert.
-- [ ] Roadmap §1.2 und §3 markieren `0.6.0` als aktive Phase und
-  verweisen auf diesen Plan.
-- [ ] R-2 ist für den Startzustand präzisiert: bekannte Metrikquellen,
+  bekannter Grenzen (Lieferstand aus `plan-0.5.0` Tranche 3 RAK-37).
+- [x] `make smoke-srt` ist auf dem `0.5.0`-Release-Stand grün und als
+  Baseline für `0.6.0` dokumentiert (`scripts/smoke-srt.sh`,
+  `examples/srt/README.md` „Verifikation").
+- [x] Roadmap §1.2 und §3 markieren `0.6.0` als aktive Phase und
+  verweisen auf diesen Plan (Tranche 0 dieses Plans).
+- [x] R-2 ist für den Startzustand präzisiert: bekannte Metrikquellen,
   Runtime-Auswirkungen und offene ADR-Frage sind im Risiken-Backlog
-  aktuell.
-- [ ] Scope-Grenze ist in README/User-Doku sichtbar: `0.6.0` liefert
+  aktuell ([`risks-backlog.md`](../open/risks-backlog.md) R-2
+  verweist auf §2-Optionentabelle).
+- [x] Scope-Grenze ist in README/User-Doku sichtbar: `0.6.0` liefert
   SRT-Health, nicht Stream-Key-Verwaltung, SRT-Auth, Multi-Publisher-
-  Routing oder Kubernetes.
+  Routing oder Kubernetes (`README.md` Roadmap-Block + §0
+  Scope-Grenze dieses Plans).
 
 ---
 

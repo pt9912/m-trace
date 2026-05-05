@@ -313,7 +313,7 @@ plus WebRTC-Vorbereitungspfad ist auf `main` integriert; opt-in
 Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`) sind live-
 verifiziert. Nächste Phase: `0.6.0` (SRT Health View, RAK-41..RAK-46)
 — Plan-Skelett unter
-[`docs/planning/open/plan-0.6.0.md`](docs/planning/open/plan-0.6.0.md).
+[`docs/planning/in-progress/plan-0.6.0.md`](docs/planning/in-progress/plan-0.6.0.md).
 Archivierte Plan-Dateien:
 [`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),
 [`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).
