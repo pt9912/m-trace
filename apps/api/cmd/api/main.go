@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -36,11 +37,12 @@ import (
 )
 
 const (
-	envSrtSourceURL    = "MTRACE_SRT_SOURCE_URL"
-	envSrtSourceUser   = "MTRACE_SRT_SOURCE_USER"
-	envSrtSourcePass   = "MTRACE_SRT_SOURCE_PASS"
-	envSrtPollInterval = "MTRACE_SRT_POLL_INTERVAL_SECONDS"
-	envSrtProjectID    = "MTRACE_SRT_PROJECT_ID"
+	envSrtSourceURL          = "MTRACE_SRT_SOURCE_URL"
+	envSrtSourceUser         = "MTRACE_SRT_SOURCE_USER"
+	envSrtSourcePass         = "MTRACE_SRT_SOURCE_PASS"
+	envSrtPollInterval       = "MTRACE_SRT_POLL_INTERVAL_SECONDS"
+	envSrtProjectID          = "MTRACE_SRT_PROJECT_ID"
+	envSrtRequiredBandwidth  = "MTRACE_SRT_REQUIRED_BANDWIDTH_BPS"
 )
 
 const (
@@ -129,8 +131,15 @@ func buildSrtHealthCollector(
 	}
 	user := os.Getenv(envSrtSourceUser)
 	pass := os.Getenv(envSrtSourcePass)
+	requiredBandwidth := parseSrtRequiredBandwidth(logger)
 
-	source := mediamtxclient.New(baseURL, mediamtxclient.WithBasicAuth(user, pass))
+	sourceOpts := []mediamtxclient.Option{
+		mediamtxclient.WithBasicAuth(user, pass),
+	}
+	if requiredBandwidth > 0 {
+		sourceOpts = append(sourceOpts, mediamtxclient.WithRequiredBandwidthBPS(requiredBandwidth))
+	}
+	source := mediamtxclient.New(baseURL, sourceOpts...)
 	repo := persistencesqlite.NewSrtHealthRepository(persist.db)
 
 	collector, err := application.NewSrtHealthCollector(
@@ -150,8 +159,31 @@ func buildSrtHealthCollector(
 		"source_url", baseURL,
 		"project_id", projectID,
 		"auth", user != "" || pass != "",
+		"required_bandwidth_bps", requiredBandwidth,
 	)
 	return collector
+}
+
+// parseSrtRequiredBandwidth liest `MTRACE_SRT_REQUIRED_BANDWIDTH_BPS`.
+// Ohne ENV oder bei ungültigem/non-positivem Wert wird 0 zurück-
+// gegeben — der Adapter setzt `RequiredBandwidthBPS` dann nicht und
+// die Health-Bewertung wertet die Bandbreite gemäß spec/telemetry-
+// model.md §7.4 nur an, ohne sie zu bewerten.
+func parseSrtRequiredBandwidth(logger *slog.Logger) int64 {
+	raw := strings.TrimSpace(os.Getenv(envSrtRequiredBandwidth))
+	if raw == "" {
+		return 0
+	}
+	bps, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || bps <= 0 {
+		logger.Warn(
+			"srt-health required bandwidth ignored (invalid)",
+			"raw", raw,
+			"hint", "set MTRACE_SRT_REQUIRED_BANDWIDTH_BPS to a positive bit/s value",
+		)
+		return 0
+	}
+	return bps
 }
 
 // parseSrtPollInterval liest `MTRACE_SRT_POLL_INTERVAL_SECONDS`. Bei

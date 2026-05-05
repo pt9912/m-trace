@@ -40,6 +40,13 @@ Operator-Doku zur SRT-Health-View (Datenfluss, Metrik-Mapping,
 Health-Schwellen, Fehlerbilder, Cardinality-Grenzen):
 [`docs/user/srt-health.md`](../../docs/user/srt-health.md).
 
+Hinweis zur Bandbreiten-Bewertung: ohne
+`MTRACE_SRT_REQUIRED_BANDWIDTH_BPS` zeigt das Dashboard die
+verfügbare Bandbreite **nur an**; Bandbreiten-Health greift erst,
+wenn die ENV gesetzt ist (z. B. `1500000` für den Lab-Stream).
+Details in [`docs/user/srt-health.md`](../../docs/user/srt-health.md)
+§2.2 und §4.2.
+
 ## Voraussetzungen
 
 - Docker Engine ≥ 24.0, Docker Compose v2.20.

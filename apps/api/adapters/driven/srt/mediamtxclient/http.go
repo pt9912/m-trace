@@ -46,12 +46,13 @@ const (
 
 // HTTPSrtSource implementiert driven.SrtSource gegen MediaMTX.
 type HTTPSrtSource struct {
-	client          *http.Client
-	baseURL         string
-	username        string
-	password        string
-	maxResponseSize int64
-	now             func() time.Time
+	client               *http.Client
+	baseURL              string
+	username             string
+	password             string
+	maxResponseSize      int64
+	requiredBandwidthBPS *int64
+	now                  func() time.Time
 }
 
 // Option justiert den Adapter beim Konstruieren.
@@ -82,6 +83,21 @@ func WithMaxResponseBytes(n int64) Option {
 	return func(s *HTTPSrtSource) {
 		if n > 0 {
 			s.maxResponseSize = n
+		}
+	}
+}
+
+// WithRequiredBandwidthBPS setzt die erwartete Stream-Bandbreite (in
+// bit/s), die der Adapter pro Sample als `RequiredBandwidthBPS`
+// emittiert. Ohne diese Schwelle bleibt das Feld nil und Health-
+// Bewertung wertet die Bandbreite nicht (spec/telemetry-model.md
+// §7.4: „Ohne Schwelle darf available_bandwidth_bps angezeigt, aber
+// nicht als Engpass bewertet werden"). Werte ≤ 0 bleiben no-op.
+func WithRequiredBandwidthBPS(bps int64) Option {
+	return func(s *HTTPSrtSource) {
+		if bps > 0 {
+			value := bps
+			s.requiredBandwidthBPS = &value
 		}
 	}
 }
@@ -132,7 +148,7 @@ func (s *HTTPSrtSource) SnapshotConnections(ctx context.Context) ([]domain.SrtCo
 	collectedAt := s.now().UTC()
 	out := make([]domain.SrtConnectionSample, 0, len(resp.Items))
 	for _, it := range resp.Items {
-		out = append(out, mapItem(it, collectedAt))
+		out = append(out, mapItem(it, collectedAt, s.requiredBandwidthBPS))
 	}
 	return out, nil
 }

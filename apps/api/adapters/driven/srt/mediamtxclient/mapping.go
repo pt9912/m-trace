@@ -50,11 +50,18 @@ type srtConnItem struct {
 //   - bytesReceived (string) → SourceSequence (Surrogat-Sequence)
 //   - state ∈ {"publish","read"} → ConnectionStateConnected
 //
+// `requiredBandwidth` ist optional — nil deaktiviert die
+// Bandbreiten-Bewertung (Evaluate behandelt das gemäß spec §7.4 als
+// „angezeigt, aber nicht bewertet"). Wenn gesetzt, kommt der Wert
+// aus `MTRACE_SRT_REQUIRED_BANDWIDTH_BPS` über
+// `mediamtxclient.WithRequiredBandwidthBPS` und wird pro Sample
+// kopiert.
+//
 // Wenn ein Pflichtfeld semantisch fehlt (z. B. mbpsLinkCapacity ≤ 0,
 // state leer), markiert der Adapter ConnectionState als `unknown` —
 // Evaluate in der Application-Schicht klassifiziert das als
 // `partial`.
-func mapItem(it srtConnItem, collectedAt time.Time) domain.SrtConnectionSample {
+func mapItem(it srtConnItem, collectedAt time.Time, requiredBandwidth *int64) domain.SrtConnectionSample {
 	state := mapState(it.State)
 	available := int64(it.MbpsLinkCapacity * 1_000_000)
 	if it.MbpsLinkCapacity <= 0 {
@@ -83,11 +90,24 @@ func mapItem(it srtConnItem, collectedAt time.Time) domain.SrtConnectionSample {
 		RetransmissionsTotal:  it.PacketsReceivedRetrans,
 		AvailableBandwidthBPS: available,
 		ThroughputBPS:         throughput,
+		RequiredBandwidthBPS:  copyOptionalInt64(requiredBandwidth),
 
 		ConnectionState: state,
 	}
 
 	return sample
+}
+
+// copyOptionalInt64 kopiert den Pointer-Wert, damit jeder Sample
+// seinen eigenen Pointer auf einen separaten Wert hat — verhindert
+// dass spätere Mutationen am Adapter-Feld bestehende Samples
+// verändern.
+func copyOptionalInt64(p *int64) *int64 {
+	if p == nil {
+		return nil
+	}
+	v := *p
+	return &v
 }
 
 // mapState bildet den MediaMTX-`state` auf domain.ConnectionState.

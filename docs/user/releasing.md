@@ -88,9 +88,15 @@ Zusätzlich zu den oben gelisteten Smokes braucht der `0.6.0`-Release
 eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
 
 1. `make dev` plus `examples/srt/`-Stack (`docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build`).
-2. ENV `MTRACE_SRT_SOURCE_URL=http://localhost:9998` auf den `apps/api`-
+2. ENV `MTRACE_SRT_SOURCE_URL=http://localhost:9998` und optional
+   `MTRACE_SRT_REQUIRED_BANDWIDTH_BPS=1500000` auf den `apps/api`-
    Prozess setzen und neu starten — Log meldet
    „srt-health collector enabled".
+2a. Optional automatisierte API-Probe:
+   `SMOKE_INCLUDE_MTRACE_API=1 make smoke-srt-health` —
+   probt zusätzlich zum MediaMTX-Pfad gegen
+   `GET /api/srt/health/{stream_id}` und verifiziert die vier
+   RAK-43-Pflichtwerte im Wire-Format aus spec §7a.2.
 3. Dashboard-Route <http://localhost:5173/srt-health> öffnen — die
    Tabelle muss `srt-test` mit Health-Pill `healthy`, RTT < 5 ms und
    Bandbreite im Mbit/s-Bereich zeigen.

@@ -87,6 +87,48 @@ func TestSnapshot_FromFixture(t *testing.T) {
 	}
 }
 
+// TestSnapshot_RequiredBandwidthBPS: WithRequiredBandwidthBPS setzt
+// das Domain-Feld pro Sample. Ohne Option bleibt RequiredBandwidthBPS
+// nil; mit gesetztem Wert kommt er aus der ENV-Konfig durch.
+func TestSnapshot_RequiredBandwidthBPS(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(fixtureBody)
+	}))
+	t.Cleanup(srv.Close)
+
+	t.Run("nil without option", func(t *testing.T) {
+		src := mediamtxclient.New(srv.URL)
+		got, err := src.SnapshotConnections(context.Background())
+		if err != nil || len(got) != 1 {
+			t.Fatalf("snapshot: items=%d err=%v", len(got), err)
+		}
+		if got[0].RequiredBandwidthBPS != nil {
+			t.Errorf("expected nil RequiredBandwidthBPS without option, got %v", *got[0].RequiredBandwidthBPS)
+		}
+	})
+
+	t.Run("set via WithRequiredBandwidthBPS", func(t *testing.T) {
+		src := mediamtxclient.New(srv.URL, mediamtxclient.WithRequiredBandwidthBPS(1_500_000))
+		got, err := src.SnapshotConnections(context.Background())
+		if err != nil || len(got) != 1 {
+			t.Fatalf("snapshot: items=%d err=%v", len(got), err)
+		}
+		if got[0].RequiredBandwidthBPS == nil || *got[0].RequiredBandwidthBPS != 1_500_000 {
+			t.Errorf("expected RequiredBandwidthBPS=1_500_000, got %v", got[0].RequiredBandwidthBPS)
+		}
+	})
+
+	t.Run("zero or negative is no-op", func(t *testing.T) {
+		src := mediamtxclient.New(srv.URL, mediamtxclient.WithRequiredBandwidthBPS(0))
+		got, _ := src.SnapshotConnections(context.Background())
+		if len(got) > 0 && got[0].RequiredBandwidthBPS != nil {
+			t.Errorf("expected nil for zero option, got %v", *got[0].RequiredBandwidthBPS)
+		}
+	})
+}
+
 // TestSnapshot_BasicAuth: Adapter setzt Authorization-Header, wenn
 // WithBasicAuth gesetzt ist.
 func TestSnapshot_BasicAuth(t *testing.T) {

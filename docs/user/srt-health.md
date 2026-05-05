@@ -60,9 +60,18 @@ Per Default ist der Collector deaktiviert. Setzen:
 export MTRACE_SRT_SOURCE_URL="http://localhost:9998"
 export MTRACE_SRT_SOURCE_USER="any"
 export MTRACE_SRT_SOURCE_PASS=""
-export MTRACE_SRT_PROJECT_ID="demo"        # default
-export MTRACE_SRT_POLL_INTERVAL_SECONDS=5  # default
+export MTRACE_SRT_PROJECT_ID="demo"             # default
+export MTRACE_SRT_POLL_INTERVAL_SECONDS=5       # default
+export MTRACE_SRT_REQUIRED_BANDWIDTH_BPS=1500000 # optional, aktiviert Bandbreiten-Health
 ```
+
+`MTRACE_SRT_REQUIRED_BANDWIDTH_BPS` ist optional: ohne den Wert
+zeigt das Dashboard `available_bandwidth_bps` an, bewertet die
+Bandbreite aber **nicht** (siehe §4.2). Mit gesetztem Wert greifen
+die Schwellen aus §5 (`available ≥ required × 1.5` → healthy,
+`available < required` → critical). Lab-Stream `srt-test` hat ~1.1
+Mbit/s Nutzdaten — `1500000` (= 1.5 Mbit/s) ist eine sinnvolle
+Default-Schwelle für den Lab-Pfad.
 
 Im Compose-Lab ist die SQLite-Persistenz Pflicht — der Collector
 schreibt nicht in In-Memory-DB.
@@ -240,6 +249,7 @@ Operator-Faustregeln aus dem Lab plus Lastenheft §4.3:
 | Aufgabe | Befehl |
 |---------|--------|
 | Lab + Smoke | `make smoke-srt-health` |
+| Lab + Smoke + m-trace-API-Probe | `SMOKE_INCLUDE_MTRACE_API=1 make smoke-srt-health` (setzt laufendes `make dev` mit aktivem Collector voraus) |
 | Nur Lab starten | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` |
 | MediaMTX-API roh prüfen | `curl -sS http://localhost:9998/v3/srtconns/list` |
 | Health-Liste über API | `curl -H "X-MTrace-Token: demo-token" http://localhost:8080/api/srt/health` |
