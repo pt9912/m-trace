@@ -253,6 +253,25 @@ dokumentiert und werden über `network.detail_status=
 network_detail_unavailable` (Event-Meta) bzw. `network_signal_absent`
 (Session-Block) sichtbar gemacht.
 
+### 2.7 Multi-Protocol-Lab-Beispiele (ab `0.5.0`)
+
+`examples/` bündelt protokollspezifische Lab-Setups
+([`examples/README.md`](../../examples/README.md) für Konventionen).
+MediaMTX läuft bereits als Core-Lab-Service; sein Smoke ist ein opt-in
+Wrapper:
+
+```bash
+make dev               # Core-Lab inkl. mediamtx + stream-generator
+make smoke-mediamtx    # API erreichbar, teststream ready, HLS auflösbar
+```
+
+Details in [`examples/mediamtx/README.md`](../../examples/mediamtx/README.md).
+SRT-/DASH-/WebRTC-Beispiele werden in den `0.5.0`-Folge-Tranchen mit
+eigenen Compose-Dateien ergänzt; Skelette sind unter
+[`examples/srt/`](../../examples/srt/),
+[`examples/dash/`](../../examples/dash/) und
+[`examples/webrtc/`](../../examples/webrtc/) sichtbar.
+
 ---
 
 ## 3. Compose-Stack-Topologie

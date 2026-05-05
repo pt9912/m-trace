@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -22,6 +22,7 @@ help:
 		'  make smoke-tempo            Run the Tempo three-state smoke check' \
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
+		'  make smoke-mediamtx         Run the MediaMTX example smoke check (needs make dev)' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
@@ -103,6 +104,15 @@ smoke-rak10-console:
 smoke-analyzer:
 	$(COMPOSE) up -d --build analyzer-service api mediamtx stream-generator
 	bash scripts/smoke-analyzer.sh
+
+# `make smoke-mediamtx` verifiziert den bestehenden Core-Lab-MediaMTX-
+# Pfad (plan-0.5.0 §3 Tranche 2, RAK-36): MediaMTX-API erreichbar,
+# teststream ready, HLS-Manifest auflösbar. Erwartet ein laufendes
+# Core-Lab (`make dev`) — der Smoke startet nichts selbst, damit der
+# Operator entscheidet, welche Stack-Variante er prüfen will.
+# Opt-in (nicht in `make gates`).
+smoke-mediamtx:
+	bash scripts/smoke-mediamtx.sh
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-

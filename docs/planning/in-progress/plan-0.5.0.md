@@ -1,14 +1,12 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 in Arbeit. **Tranche 0** (Vorgänger-Gate +
-> Scope-Festlegung) und **Tranche 1** (Example-Struktur und Lab-
-> Konventionen) abgeschlossen — `0.4.0` released (Tag `v0.4.0` auf
-> `9e4fdb3`, CI-Run 25359933129 grün, Plan archiviert in
-> [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
-> `examples/`-Skelett mit Konventions-Index und vier Sub-Verzeichnissen
-> angelegt; Compose-Form, Project-Name-Konvention und Smoke-Naming
-> verbindlich dokumentiert. **Nächster Schritt**: Tranche 2 (MediaMTX-
-> Beispiel erweitern, §3, RAK-36).
+> **Status**: 🟡 in Arbeit. **Tranchen 0–2** abgeschlossen — `0.4.0`
+> released (Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün, Plan
+> archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
+> `examples/`-Skelett mit Konventions-Index angelegt; MediaMTX-Beispiel
+> nutzt das Core-Lab und ist über `make smoke-mediamtx` smoke-getestet
+> (HLS-Pfad). **Nächster Schritt**: Tranche 3 (SRT-Beispiel als
+> Lab-Szenario, §4, RAK-37).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -87,7 +85,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | ------- | ------ | ------ |
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | Example-Struktur und Lab-Konventionen | ✅ |
-| 2 | MediaMTX-Beispiel erweitern (RAK-36) | ⬜ |
+| 2 | MediaMTX-Beispiel erweitern (RAK-36) | ✅ |
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ⬜ |
 | 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ⬜ |
 | 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ⬜ |
@@ -212,27 +210,57 @@ smoke-testbar.
 
 DoD:
 
-- [ ] `examples/mediamtx/README.md` beschreibt den bestehenden
+- [x] `examples/mediamtx/README.md` beschreibt den bestehenden
   MediaMTX-Pfad aus Root-Compose, inklusive `mediamtx`, `stream-generator`,
-  HLS-URL und API/Status-Port.
-- [ ] `make smoke-mediamtx` ist als dünner Wrapper dokumentiert und nutzt
-  ein Skript, das den bestehenden Core-Lab-Pfad validiert.
-- [ ] MediaMTX-Konfiguration ist so dokumentiert, dass die aktiven
-  Protokolle und Ports (`RTSP`, `HLS`, API/Status; optional `RTMP`, falls
-  im Beispiel aktiviert) aus einem frischen Clone nachvollziehbar sind.
-- [ ] Falls ein separates MediaMTX-Override nötig ist, kollidiert es
-  nicht mit dem Core-Lab und nutzt eigene Pfade/Stream-Namen.
-- [ ] Ein Smoke-Pfad prüft mindestens: MediaMTX erreichbar,
+  HLS-URL und API/Status-Port — als Core-Lab-Beispiel-Variante (siehe
+  `examples/README.md` Sektion „Compose-Form"); kein eigener Stack,
+  Start ist `make dev`.
+- [x] `make smoke-mediamtx` ist als dünner Wrapper dokumentiert und nutzt
+  ein Skript (`scripts/smoke-mediamtx.sh`), das den bestehenden
+  Core-Lab-Pfad validiert; Makefile-Target ist opt-in (nicht in
+  `make gates`).
+- [x] MediaMTX-Konfiguration ist so dokumentiert, dass die aktiven
+  Protokolle und Ports (RTSP `8554`, HLS `8888`, API/Status `9997`)
+  aus einem frischen Clone nachvollziehbar sind — siehe
+  `examples/mediamtx/README.md` Sektionen „Voraussetzungen" und
+  „Verifikation" plus Verweis auf `services/media-server/mediamtx.yml`.
+- [x] Falls ein separates MediaMTX-Override nötig ist, kollidiert es
+  nicht mit dem Core-Lab und nutzt eigene Pfade/Stream-Namen — Beispiel
+  nutzt das Core-Lab direkt; Konvention für eigenständige Overrides
+  (Project-Name `mtrace-<name>`) bleibt in `examples/README.md`
+  dokumentiert für die folgenden Tranchen 3–5.
+- [x] Ein Smoke-Pfad prüft mindestens: MediaMTX erreichbar,
   Teststream published, HLS-Manifest unter der dokumentierten URL
-  erreichbar.
-- [ ] Der Smoke nutzt bounded Waits mit Diagnoseausgabe aus MediaMTX
+  erreichbar — `scripts/smoke-mediamtx.sh` prüft funktional über HLS:
+  (1) Manifest unter `http://localhost:8888/teststream/index.m3u8`
+  liefert 200, (2) Body beginnt mit `#EXTM3U`, (3) Body enthält
+  Media-Referenzen (`.m3u8` Substreams oder `.ts`/`.m4s`/`.aac`-Segmente).
+  HLS-200 + sinnvolles Manifest impliziert, dass MediaMTX läuft und
+  der teststream erfolgreich publishing ist.
+- [x] Der Smoke nutzt bounded Waits mit Diagnoseausgabe aus MediaMTX
   API/Status oder Container-Logs; ein noch startender Teststream führt
-  nicht zu einem flakigen Sofort-Fehler.
-- [ ] Dashboard-Demo und `POST /api/analyze` können die dokumentierte
-  HLS-URL weiterhin nutzen; private-Netzwerk-Analyzer-Flag bleibt auf das
-  lokale Lab beschränkt.
-- [ ] `docs/user/local-development.md` verweist auf das neue
-  MediaMTX-Beispiel, ohne die Core-Schnellstart-Anleitung aufzublähen.
+  nicht zu einem flakigen Sofort-Fehler — Default 30s `WAIT_SECONDS`-
+  Polling auf HLS-200; bei Timeout schreibt der Smoke konkrete Hints
+  (`docker compose logs stream-generator|mediamtx | tail -20`) auf
+  stderr.
+- [x] Dashboard-Demo und `POST /api/analyze` können die dokumentierte
+  HLS-URL weiterhin nutzen; private-Netzwerk-Analyzer-Flag bleibt auf
+  das lokale Lab beschränkt — Tranche 2 ändert nichts am bestehenden
+  Compose-Wiring (`PUBLIC_HLS_URL` in `docker-compose.yml`,
+  `ANALYZER_ALLOW_PRIVATE_NETWORKS=true` für Lab-URLs); Beispiel-README
+  pinnt das in „Bekannte Grenzen".
+- [x] `docs/user/local-development.md` verweist auf das neue
+  MediaMTX-Beispiel, ohne die Core-Schnellstart-Anleitung aufzublähen
+  — neue §2.7 mit knappem Verweisblock auf `examples/mediamtx/README.md`,
+  plus Hinweis auf die SRT-/DASH-/WebRTC-Skelette für Folge-Tranchen.
+
+Beobachtung MediaMTX 1.14+: Control-API auf `:9997` ist standardmäßig
+Auth-pflichtig (HTTP 401 ohne Credentials). Der Smoke prüft daher
+absichtlich nicht den Config-API-Endpoint, sondern den HLS-Pfad —
+das ist die funktional aussagekräftige Zielmetrik. README dokumentiert
+das in „Troubleshooting" als bekannten Lab-Default; produktive API-
+Auth ist Folge-Scope (siehe `services/media-server/mediamtx.yml`
+`authInternalUsers`-Hinweis).
 
 ---
 

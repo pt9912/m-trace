@@ -38,14 +38,21 @@ neuer Operator den Pfad ohne Code-Lesen findet:
 
 ### Compose-Form
 
-Jedes Beispiel hat eine eigene `examples/<name>/compose.yaml`. Das
-Root-`docker-compose.yml` bleibt das Core-Lab; es wird nicht mit
-optionalen Beispiel-Profilen überfrachtet. (Beschluss
-`plan-0.5.0.md` §0.1 Zeile „Compose-Form".)
+Jedes Beispiel zeigt entweder auf das Core-Lab (`make dev` startet die
+nötigen Services bereits) oder bringt eine eigene
+`examples/<name>/compose.yaml`. Das Root-`docker-compose.yml` bleibt
+das Core-Lab; es wird nicht mit optionalen Beispiel-Profilen
+überfrachtet. (Beschluss `plan-0.5.0.md` §0.1 Zeile „Compose-Form".)
 
-**Project-Name-Pflicht**: weil eigene Compose-Dateien sonst per Default
-denselben Project-Namen wie das Core-Lab nutzen würden, schreibt jede
-README explizit `-p mtrace-<name>` im Startbefehl vor:
+| Variante | Wann | Project-Name |
+|---|---|---|
+| Core-Lab-Beispiel | Wenn der Pfad bereits in der Root-`docker-compose.yml` als Pflicht-Service oder Profile verfügbar ist (z. B. MediaMTX über `make dev`). | Default `mtrace` aus dem Core-Lab; kein eigener `-p`-Flag im Startbefehl. |
+| Eigenes Compose | Wenn das Beispiel zusätzliche Container, Ports oder Konfigurationen braucht, die das Core-Lab nicht bereitstellt (SRT, DASH, ggf. WebRTC). | Pflicht: `-p mtrace-<name>` (siehe unten). |
+
+**Project-Name-Pflicht für eigenes Compose**: weil eigene Compose-
+Dateien sonst per Default denselben Project-Namen wie das Core-Lab
+nutzen würden, schreibt jede README explizit `-p mtrace-<name>` im
+Startbefehl vor:
 
 ```bash
 docker compose -p mtrace-<name> -f examples/<name>/compose.yaml up -d --build
