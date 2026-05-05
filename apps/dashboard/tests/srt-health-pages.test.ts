@@ -7,11 +7,16 @@ const routeState = vi.hoisted<{ params: { stream_id?: string } }>(() => ({
   params: { stream_id: "srt-test" }
 }));
 
-const apiState = vi.hoisted(() => ({
-  list: { items: [] } as SrtHealthListResponse,
-  detail: { stream_id: "srt-test", items: [] } as SrtHealthDetailResponse,
-  listError: undefined as Error | undefined,
-  detailError: undefined as Error | undefined
+const apiState = vi.hoisted<{
+  list: SrtHealthListResponse;
+  detail: SrtHealthDetailResponse;
+  listError: Error | undefined;
+  detailError: Error | undefined;
+}>(() => ({
+  list: { items: [] },
+  detail: { stream_id: "srt-test", items: [] },
+  listError: undefined,
+  detailError: undefined
 }));
 
 vi.mock("$app/stores", () => ({
