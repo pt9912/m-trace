@@ -1,0 +1,37 @@
+# DASH-Beispiel — plan-0.5.0 §5 Tranche 4 (RAK-38).
+#
+# Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
+# Name `mtrace-dash` ist Pflicht im Startbefehl (siehe
+# examples/README.md, "Compose-Form" Tabelle Variante "Eigenes Compose"):
+#
+#   docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build
+#
+# Architektur:
+#   dash-generator (FFmpeg) → shared volume `dash-output` → dash-server
+#   (nginx) → Host-Port 8891.
+#
+# Host-Port 8891 ist absichtlich gegen Core-Lab (`8888` HLS) und
+# SRT-Beispiel (`8889`/`8890`/`9998`) verschoben, damit alle drei
+# Stacks parallel laufen können.
+
+services:
+  dash-generator:
+    image: jrottenberg/ffmpeg:8.1-ubuntu2404
+    volumes:
+      - dash-output:/dash/output
+      - ./ffmpeg-dash-loop.sh:/ffmpeg-dash-loop.sh:ro
+    entrypoint: ["/bin/sh"]
+    command: ["/ffmpeg-dash-loop.sh"]
+
+  dash-server:
+    image: nginx:1-alpine
+    depends_on:
+      - dash-generator
+    volumes:
+      - dash-output:/usr/share/nginx/html/dash:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8891:80"
+
+volumes:
+  dash-output:

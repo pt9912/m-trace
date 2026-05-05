@@ -1,14 +1,13 @@
 # Implementation Plan — `0.5.0` (Multi-Protocol Lab)
 
-> **Status**: 🟡 in Arbeit. **Tranchen 0–3** abgeschlossen — `0.4.0`
+> **Status**: 🟡 in Arbeit. **Tranchen 0–4** abgeschlossen — `0.4.0`
 > released (Tag `v0.4.0` auf `9e4fdb3`, CI-Run 25359933129 grün, Plan
 > archiviert in [`docs/planning/done/plan-0.4.0.md`](../done/plan-0.4.0.md));
-> `examples/`-Skelett mit Konventions-Index angelegt; MediaMTX-Beispiel
-> nutzt das Core-Lab und ist über `make smoke-mediamtx` smoke-getestet;
-> SRT-Beispiel hat eigenes `mtrace-srt`-Compose-Project (FFmpeg →
-> MediaMTX-SRT → HLS) und ist über `make smoke-srt` live-verifiziert.
-> **Nächster Schritt**: Tranche 4 (DASH-Beispiel und Analyzer-Grenze,
-> §5, RAK-38).
+> Multi-Protocol-Lab-Beispiele für MediaMTX, SRT und DASH sind als
+> opt-in Smokes (`make smoke-mediamtx`/`smoke-srt`/`smoke-dash`) live-
+> verifiziert. Analyzer-Grenze (HLS-only) und Player-SDK-Abwärts-
+> kompatibilität bleiben gewahrt. **Nächster Schritt**: Tranche 5
+> (WebRTC vorbereitet, nicht produktiv, §6, RAK-39).
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.1
 > (Repo-Struktur, `examples/`), §7.6 (Player-Adapter-Folgeoptionen), §7.8
@@ -89,7 +88,7 @@ Schulden aus `0.4.0` miterledigen müssen.
 | 1 | Example-Struktur und Lab-Konventionen | ✅ |
 | 2 | MediaMTX-Beispiel erweitern (RAK-36) | ✅ |
 | 3 | SRT-Beispiel als Lab-Szenario (RAK-37) | ✅ |
-| 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ⬜ |
+| 4 | DASH-Beispiel und Analyzer-Grenze (RAK-38) | ✅ |
 | 5 | WebRTC vorbereitet, nicht produktiv (RAK-39) | ⬜ |
 | 6 | Dokumentation, Smokes und Release-Gates (RAK-40) | ⬜ |
 
@@ -337,26 +336,48 @@ vollständiger DASH-Manifestanalyse (`MVP-37`, Kann-Folge-Scope).
 
 DoD:
 
-- [ ] `examples/dash/README.md` beschreibt einen lokalen DASH-Stream
-  inklusive MPD-URL, Startpfad und erwarteter Player-/CLI-Nutzung.
-- [ ] Das Beispiel erzeugt oder liefert deterministische DASH-Artefakte,
-  die ohne externe Netzwerkabhängigkeit im lokalen Lab nutzbar sind.
-- [ ] Bevorzugter Pfad ist ein kleiner lokaler DASH-Origin im
-  Example-Compose: FFmpeg erzeugt oder ein statischer HTTP-Server liefert
-  MPD/Segmente aus einem Example-Verzeichnis. Externe CDNs sind nicht
-  Teil des Smoke.
-- [ ] Wenn `dash.js` im Dashboard-Demo-Pfad verwendet wird, bleibt der
-  bestehende HLS-Demo-Pfad unverändert und die neue Adapter-Logik ist
-  optional.
-- [ ] `packages/player-sdk` bleibt abwärtskompatibel; ein möglicher
-  dash.js-Adapter darf die hls.js-Public-API nicht brechen.
-- [ ] `POST /api/analyze` bleibt in `0.5.0` entweder klar HLS-only oder
-  erhält einen ausdrücklich geplanten additiven DASH-Pfad. Falls keine
-  DASH-Analyse geliefert wird, dokumentieren API- und Analyzer-Doku diese
-  Grenze unmissverständlich.
-- [ ] `make smoke-dash` prüft mindestens, dass die dokumentierte MPD
-  erreichbar ist, mindestens ein referenziertes Segment lokal abrufbar
-  ist und der Beispielpfad ohne Internet läuft.
+- [x] `examples/dash/README.md` beschreibt einen lokalen DASH-Stream
+  inklusive MPD-URL (`http://localhost:8891/manifest.mpd`), Startpfad
+  (`docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build`)
+  und erwarteter Player-Nutzung (Shaka-Player- bzw. dash.js-Reference-
+  Player-Verlinkung als manueller Test, plus `curl`-Schnellprüfung).
+- [x] Das Beispiel erzeugt oder liefert deterministische DASH-Artefakte
+  ohne externe Netzwerkabhängigkeit: FFmpeg-`testsrc2`-Generator
+  schreibt einen synthetischen Stream als CMAF/fMP4-Segmentkette in
+  ein shared Volume; nginx servisiert das Volume statisch — kein CDN,
+  kein Internet-Zugriff im laufenden Stack.
+- [x] Bevorzugter Pfad ist ein kleiner lokaler DASH-Origin im
+  Example-Compose: zwei Container im Compose
+  (`dash-generator` mit `jrottenberg/ffmpeg:8.1-ubuntu2404` plus
+  `dash-server` mit `nginx:1-alpine`). MPD und Segmente liegen im
+  shared `dash-output`-Volume; `examples/dash/nginx.conf` konfiguriert
+  CORS und MIME-Types für DASH (`application/dash+xml`,
+  `video/iso.segment`).
+- [x] Wenn `dash.js` im Dashboard-Demo-Pfad verwendet wird, bleibt der
+  bestehende HLS-Demo-Pfad unverändert — `0.5.0` liefert **keinen**
+  DASH-Demo-Player im `apps/dashboard`-Code; der existierende
+  `hls.js`-Pfad in `apps/dashboard/src/routes/demo/` ist unverändert.
+  README pinnt das in „Bekannte Grenzen".
+- [x] `packages/player-sdk` bleibt abwärtskompatibel: `0.5.0` liefert
+  **keinen** dash.js-Adapter; `attachHlsJs`, `createTracker`,
+  Public-API und Wire-Format bleiben unverändert. Kein neuer Test,
+  kein neuer Public-API-Snapshot-Eintrag.
+- [x] `POST /api/analyze` bleibt in `0.5.0` klar HLS-only — keine
+  zusätzliche DASH-Analyse-Route, keine Schemaerweiterung in
+  `contracts/sdk-compat.json` oder `contracts/event-schema.json`.
+  README dokumentiert die Grenze: wer aus dem Beispiel heraus eine
+  MPD an `POST /api/analyze` schickt, bekommt einen `not_hls`-Fehler
+  — erwartet in `0.5.0`.
+- [x] `make smoke-dash` prüft, dass die dokumentierte MPD erreichbar
+  ist (HTTP 200 + `<MPD`-Body), mindestens ein referenziertes Segment
+  lokal abrufbar ist (`init-stream0.m4s` HEAD-200) und der
+  Beispielpfad ohne Internet läuft (FFmpeg-Generator nutzt nur
+  lavfi-Quellen, nginx serviert nur das lokale Volume).
+
+Live-verifiziert:
+- `make smoke-dash` → "[smoke-dash] all checks passed" mit Stack-Up
+  in Project `mtrace-dash`, MPD-200 nach < 45 s, Init-Segment
+  HEAD-200, sauberer Compose-Down inkl. `--volumes` am Ende.
 
 ---
 

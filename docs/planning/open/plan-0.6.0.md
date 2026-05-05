@@ -5,6 +5,9 @@
 > und released sein; insbesondere muss das SRT-Beispiel aus
 > [`plan-0.5.0.md`](../in-progress/plan-0.5.0.md) Tranche 3 als
 > reproduzierbarer Lab-Pfad vorliegen.
+> Beim Aktivieren von `0.6.0` wird dieser Link auf
+> `../done/plan-0.5.0.md` umgestellt, weil Tranche 0 den Vorgängerplan
+> archiviert voraussetzt.
 >
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9
@@ -65,7 +68,7 @@ vollständigen Media-Server-Verwaltung wächst.
 | Dashboard | Eine eigene SRT-Health-Ansicht zeigt aktuelle Verbindung, Freshness, Warnzustände und die letzten Samples als kurzer Verlauf. Ein Snapshot-only-Abschluss ist für `0.6.0` nicht ausreichend. | Vollständige Media-Server-Konsole oder Stream-Key-Verwaltung. |
 | Lab | `0.6.0` baut auf `examples/srt/` aus `0.5.0` auf und härtet es für Health-Nachweise. | Neues paralleles SRT-Lab ohne Bezug zum bestehenden Beispiel. |
 | Fehlerbilder | Dokumentation erklärt typische SRT-Probleme anhand der gelieferten Metriken. | Allgemeines SRT-Lehrbuch oder produktive Netzwerk-Tuning-Anleitung. |
-| Erweiterte SRT-Signale | `0.6.0` priorisiert die RAK-43-Pflichtwerte RTT, Packet Loss, Retransmissions und Bandbreite. Send-/Receive-Buffer, Verbindungsstabilität, Link Health und Failover-Zustände aus Lastenheft §4.3 werden als Deferred-Liste geführt, sofern sie nicht ohne Zusatzrisiko aus der gewählten Quelle mitfallen. | RAK-43 durch nicht geforderte Zusatzwerte erweitern und damit den Release-Scope aufblasen. |
+| Erweiterte SRT-Signale | `0.6.0` priorisiert die RAK-43-Pflichtwerte RTT, Packet Loss, Retransmissions und verfügbare Bandbreite. Send-/Receive-Buffer, Verbindungsstabilität, Link Health und Failover-Zustände aus Lastenheft §4.3 werden als Deferred-Liste geführt, sofern sie nicht ohne Zusatzrisiko aus der gewählten Quelle mitfallen. | RAK-43 durch nicht geforderte Zusatzwerte erweitern und damit den Release-Scope aufblasen. |
 
 ### 0.2 Risiko-Triage aus dem Backlog
 
@@ -159,7 +162,7 @@ Zu bewertende Quellen:
 
 | Option | Idee | Bewertungskriterium |
 | ------ | ---- | ------------------- |
-| MediaMTX-/Server-API | SRT-Verbindungsdaten vom lokalen Media-Server lesen. | Bevorzugt, wenn RTT/Loss/Retransmissions/Bandbreite vollständig und stabil verfügbar sind. |
+| MediaMTX-/Server-API | SRT-Verbindungsdaten vom lokalen Media-Server lesen. | Bevorzugt, wenn RTT/Loss/Retransmissions/verfügbare Bandbreite vollständig und stabil verfügbar sind. |
 | Sidecar-Exporter | Separater Container sammelt SRT-Stats und liefert HTTP/JSON oder OTLP an `apps/api`. | Bevorzugt, wenn `apps/api` CGO-frei bleiben soll und die Quelle trotzdem vollständig ist. |
 | Log-/CLI-Import | Lab-Smoke oder Sidecar normalisiert bekannte SRT-Tool-Ausgabe. | Nur akzeptabel, wenn deterministisch testbar und nicht fragil gegen lokalisierte Logtexte. |
 | Direktes libsrt-Binding | `apps/api` liest SRT-Stats direkt über Binding. | Nur mit ADR und bewusst akzeptierter Runtime-/Image-Konsequenz. |
@@ -168,7 +171,7 @@ Harte Auswahlkriterien:
 
 | Kriterium | Muss erfüllt sein |
 | --------- | ----------------- |
-| Vollständigkeit | RTT, Packet Loss, Retransmissions und Bandbreite sind alle verfügbar und semantisch erklärbar. |
+| Vollständigkeit | RTT, Packet Loss, Retransmissions und verfügbare Bandbreite sind alle verfügbar und semantisch erklärbar. |
 | Reproduzierbarkeit | Fixtures und Smoke laufen ohne Internet und ohne manuelle SRT-Tools auf dem Host. |
 | Runtime-Grenze | `apps/api` bleibt CGO-frei oder die Runtime-Änderung ist per ADR akzeptiert. |
 | Cardinality | Source-Rohmetriken werden nicht vom Projekt-Prometheus gescraped; nur m-trace-normalisierte bounded Aggregate dürfen exportiert werden. |
@@ -185,7 +188,11 @@ DoD:
   eine accepted ADR "SRT-Binding-Stack" und `risks-backlog.md` R-2 ist
   entsprechend aktualisiert.
 - [ ] Die gewählte Quelle kann RTT, Packet Loss, Retransmissions und
-  Bandbreite vollständig liefern. Fehlt einer dieser vier RAK-43-Werte,
+  **verfügbare Bandbreite** vollständig liefern. Der Bandbreitenwert
+  heißt im Modell `available_bandwidth_bps`; falls die Quelle nur
+  tatsächlichen Stream-Durchsatz oder eine andere Bandbreiten-Semantik
+  liefert, ist das explizit zu dokumentieren und darf RAK-43 nicht als
+  "verfügbare Bandbreite" erfüllen. Fehlt einer dieser vier RAK-43-Werte,
   blockiert Tranche 1 (`[!]`) und es braucht entweder eine andere Quelle
   oder einen Lastenheft-Patch; eine bloß dokumentierte Mapping-Grenze
   reicht für RAK-43 nicht.
@@ -249,8 +256,9 @@ DoD:
   Ausspielung und Metrikabruf.
 - [ ] Der Smoke prüft mindestens den gesunden Fall: Verbindung aktiv,
   RTT vorhanden, Packet-Loss-Signal vorhanden, Retransmission-Signal
-  vorhanden und Bandbreite > 0 oder ein quellspezifisch korrekt
-  normalisierter Wert.
+  vorhanden und `available_bandwidth_bps > 0` oder eine explizit
+  dokumentierte Source-Semantik, die nicht mit verfügbarem Link-Budget
+  verwechselt wird.
 - [ ] Smoke-Waits sind bounded und liefern Diagnoseausgabe aus
   Metrikquelle, Media-Server und Publisher.
 - [ ] Smoke-Fehler sind kategorisiert: Publish fehlgeschlagen,
@@ -286,7 +294,8 @@ Vorgeschlagenes Mindestmodell:
 | `rtt_ms` | Round-trip time | number |
 | `packet_loss_total` oder `packet_loss_rate` | Verlustsignal laut Quelle | counter oder ratio, Quelle entscheidet |
 | `retransmissions_total` | Retransmission-Counter | counter |
-| `bandwidth_bps` | geschätzte oder gemessene Bandbreite | bits/s |
+| `available_bandwidth_bps` | verfügbare Link-Bandbreite laut Quelle; nicht bloßer Stream-Durchsatz | bits/s |
+| `throughput_bps` | tatsächlich beobachteter Stream-Durchsatz, falls Quelle ihn zusätzlich liefert | bits/s, optional; erfüllt RAK-43 nicht allein |
 | `sample_window_ms` | Zeitfenster für aus Countern abgeleitete Raten, falls relevant | integer, optional |
 | `source_status` | Status der Metrikquelle | enum: `ok`, `unavailable`, `partial`, `stale`, `no_active_connection` |
 | `source_error_code` | stabile Fehlerklasse bei nicht-`ok`-Status | enum: `source_unavailable`, `no_active_connection`, `partial_sample`, `parse_error`, `stale_sample`, optional `none` |
@@ -348,6 +357,14 @@ DoD:
 - [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
   Health-Samples nach `health_state`; keine `stream_id`,
   `connection_id`, URL, IP oder Token als Label.
+- [ ] Neue `mtrace_srt_*`-Metriken werden allowlist-basiert geprüft:
+  erlaubte Labels sind ausschließlich `__name__`, `instance`, `job`
+  und die in `spec/telemetry-model.md` §3.2 /
+  `spec/backend-api-contract.md` §7 neu erlaubten bounded Labels
+  (`health_state`, ggf. `source_status`). Source-Labels wie `id`,
+  `path`, `remoteAddr`, `state`, `connection_id`, IP-Varianten, URL-
+  Teile und Token-/Secret-Felder sind explizit verboten, auch wenn sie
+  nicht von der bisherigen forbidden-by-name-Policy erfasst werden.
 - [ ] Rohmetriken der Quelle werden nicht in den Projekt-Prometheus
   gescraped. Nur m-trace-normalisierte Aggregate dürfen auf
   `/api/metrics` erscheinen.
@@ -356,9 +373,9 @@ DoD:
 - [ ] Smoke- oder Integrationstest weist nach, dass der Collector im Lab
   mindestens zwei aufeinanderfolgende Samples importiert und persistiert.
 - [ ] `scripts/smoke-observability.sh` oder ein passender neuer Smoke
-  prüft, dass neue `mtrace_*`-Metriken keine verbotenen Labels tragen
-  und dass Source-Rohmetriken nicht als Prometheus-Targets im Projekt-
-  Stack konfiguriert sind.
+  prüft neue `mtrace_srt_*`-Metriken per Label-Allowlist und weist nach,
+  dass Source-Rohmetriken nicht als Prometheus-Targets im Projekt-Stack
+  konfiguriert sind.
 
 ---
 
@@ -369,8 +386,8 @@ API-Kontrakt; Dashboard-Lese-Pfade.
 
 Ziel: Dashboard und Nutzer können SRT-Health über stabile API-
 Endpunkte lesen. Der Server berechnet einen einfachen Health-Zustand
-aus RTT, Packet Loss, Retransmissions und Bandbreite, ohne die Rohwerte
-zu verstecken.
+aus RTT, Packet Loss, Retransmissions und verfügbarer Bandbreite, ohne
+die Rohwerte zu verstecken.
 
 DoD:
 
@@ -378,8 +395,9 @@ DoD:
   z. B. `GET /api/srt/health` und optional
   `GET /api/srt/health/{stream_id}`.
 - [ ] Read-Responses enthalten mindestens RTT, Packet Loss,
-  Retransmissions, Bandbreite, `source_observed_at`, `collected_at`,
-  `ingested_at`, `health_state` und eine Quellen-/Freshness-Angabe.
+  Retransmissions, `available_bandwidth_bps`, `source_observed_at`,
+  `collected_at`, `ingested_at`, `health_state` und eine
+  Quellen-/Freshness-Angabe.
 - [ ] `health_state`-Schwellen sind dokumentiert und testbar; `unknown`
   ist der definierte Zustand bei fehlender oder stale Metrikquelle.
 - [ ] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
@@ -427,11 +445,12 @@ DoD:
 - [ ] Neue Route oder Tab für SRT-Health ist in der Dashboard-Navigation
   erreichbar.
 - [ ] Ansicht zeigt pro SRT-Stream oder Verbindung mindestens
-  `health_state`, RTT, Packet Loss, Retransmissions, Bandbreite,
-  letzte Aktualisierung und Quelle/Freshness.
+  `health_state`, RTT, Packet Loss, Retransmissions,
+  `available_bandwidth_bps`, letzte Aktualisierung und Quelle/Freshness.
 - [ ] Werte sind mit Einheiten und Zeitbezug sichtbar: RTT in ms,
-  Bandbreite in bit/s oder Mbit/s, Loss/Retransmission als Counter oder
-  Rate gemäß API-Vertrag.
+  verfügbare Bandbreite in bit/s oder Mbit/s, optionaler Durchsatz klar
+  getrennt davon, Loss/Retransmission als Counter oder Rate gemäß
+  API-Vertrag.
 - [ ] Warnzustände unterscheiden `degraded`, `critical`, `unknown` und
   normalen Zustand visuell und textlich eindeutig.
 - [ ] Verlauf oder Mini-Timeline der letzten Health-Samples ist
@@ -465,8 +484,8 @@ Mindestens zu erklärende Fehlerbilder:
 | ---------- | ----------------- |
 | Hohe RTT | `rtt_ms` steigt, Health wird degraded/critical je nach Schwelle. |
 | Paketverlust | Loss-Signal steigt, Retransmissions können folgen. |
-| Retransmission-Spirale | Retransmissions steigen dauerhaft, Bandbreite kann sinken oder instabil werden. |
-| Bandbreitenengpass | `bandwidth_bps` unter erwarteter Streamrate oder stark schwankend. |
+| Retransmission-Spirale | Retransmissions steigen dauerhaft, verfügbare Bandbreite kann sinken oder instabil werden. |
+| Bandbreitenengpass | `available_bandwidth_bps` liegt unter erwarteter Streamrate oder schwankt stark; optionaler `throughput_bps` allein beweist keinen Engpass. |
 | Keine Verbindung | Health `unknown` oder `critical`, stale/freshness-Hinweis. |
 | Metrikquelle stale | Ausspielung kann noch laufen, aber Health-Samples sind veraltet. |
 
@@ -541,7 +560,7 @@ DoD:
 | --- | --------- | -------- | ------ |
 | RAK-41 | Muss | SRT-Testsetup aus `examples/srt/` plus Health-Smoke | [ ] |
 | RAK-42 | Muss | Metrikquelle importiert/erfasst SRT-Verbindungsmetriken; Tests/Fixture pinnen Mapping | [ ] |
-| RAK-43 | Muss | API und Dashboard zeigen RTT, Packet Loss, Retransmissions und Bandbreite | [ ] |
+| RAK-43 | Muss | API und Dashboard zeigen RTT, Packet Loss, Retransmissions und verfügbare Bandbreite (`available_bandwidth_bps`) | [ ] |
 | RAK-44 | Muss | Dashboard-Route/Tab "SRT Health" mit Zuständen, kurzem Verlauf, Fehler-/Stale-Handling und Tests | [ ] |
 | RAK-45 | Muss | User-Doku erklärt typische SRT-Fehlerbilder anhand der gelieferten Metriken | [ ] |
 | RAK-46 | Muss | Telemetry-Model/API-Kontrakt beschreiben OTel-kompatibles Modell; Observability-Smoke prüft `mtrace_*`-Labels und dass keine Source-Rohmetriken als Projekt-Prometheus-Targets gescraped werden | [ ] |
