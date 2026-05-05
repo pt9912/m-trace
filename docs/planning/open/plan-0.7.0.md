@@ -7,18 +7,18 @@
 > `0.5.0` Tranche 5 und macht aus dem WebRTC-Vorbereitungspfad eine
 > produktive Lab-Erweiterung.
 >
-> **Lastenheft-Status**: das Lastenheft `1.1.8` enthält noch keine
-> RAKs für `0.7.0`. RAK-39 (in `0.5.0`-Block §13.7) deckt den
-> Vorbereitungspfad ab; produktive WebRTC-RAKs müssen als Lastenheft-
-> Patch ergänzt werden, bevor dieser Plan in `in-progress/` zieht.
-> Konvention: Lastenheft-Patches sammeln sich zentral in
+> **Lastenheft-Status**: ausgeliefert in `1.1.9` — §13.9 enthält
+> RAK-47..RAK-51 für die produktive WebRTC-Lab-Erweiterung; RAK-39
+> (in `0.5.0`-Block §13.7) deckt unverändert den Vorbereitungspfad
+> ab. Lastenheft-Patch ist als §4a.12 in
 > [`docs/planning/done/plan-0.1.0.md`](../done/plan-0.1.0.md)
-> Tranche 0c (siehe §0.2 unten).
+> Tranche 0c dokumentiert.
 >
-> **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §7.6
+> **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §7.6
 > F-62 (Player-Adapter-Folgeoptionen), §8.3 NF-14 (Erweiterbarkeit),
-> §12.1 MVP-24, §13.7 RAK-39 (Vorbereitungspfad);
-> [`done/plan-0.5.0.md`](../done/plan-0.5.0.md) §6 (Tranche 5);
+> §12.1 MVP-24, §13.7 RAK-39 (Vorbereitungspfad), §13.9 RAK-47..RAK-51
+> (Lab-Erweiterung); [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)
+> §6 (Tranche 5);
 > [`examples/webrtc/README.md`](../../../examples/webrtc/README.md)
 > (aktueller Doku-only Stand);
 > [`plan-0.6.0.md`](./plan-0.6.0.md) (vorhergehende Phase).
@@ -50,31 +50,29 @@ kann:
   unter [`examples/webrtc/`](../../../examples/webrtc/) existiert.
 - `0.6.0` (SRT Health View) ist released; siehe
   [`plan-0.6.0.md`](./plan-0.6.0.md).
-- Lastenheft `1.1.8`+ ist um RAKs für `0.7.0` erweitert (siehe §0.2).
+- Lastenheft `1.1.9` ist um RAK-47..RAK-51 für `0.7.0` erweitert (§13.9 + §4a.12 in `done/plan-0.1.0.md`); siehe §0.2.
 - Headless-Browser-WebRTC-Stabilität in CI ist bewertet (siehe
   Tranche 3 unten); falls als zu instabil eingestuft, bleibt der
   Smoke aus dem Scope.
 
-### 0.2 Lastenheft-Erweiterung (vor Tranche 0)
+### 0.2 Lastenheft-Erweiterung (ausgeliefert in `1.1.9`)
 
-`spec/lastenheft.md` `1.1.8` endet mit RAK-46 (`0.6.0` SRT). `0.7.0`
-braucht eigene RAK-Pflicht-/Soll-Aussagen. Vorschlag (zur Ergänzung
-durch eine Patch-Tranche in
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c):
+`spec/lastenheft.md` `1.1.9` enthält in §13.9 die RAK-Pflicht-/Soll-/
+Kann-Aussagen für `0.7.0`. Patch ist als §4a.12 in
+[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+dokumentiert. Inhalt für die Tranchen-DoD unten:
 
-| RAK | Priorität | Inhalt (Vorschlag) |
-| --- | --------- | ------------------ |
+| RAK | Priorität | Inhalt (`spec/lastenheft.md` §13.9) |
+| --- | --------- | ----------------------------------- |
 | RAK-47 | Muss | WebRTC-Lab-Setup mit lokalem WHIP-/WHEP-Endpoint und Compose-Stack `mtrace-webrtc`. |
 | RAK-48 | Muss | `make smoke-webrtc-prep`-Target prüft Vorbereitungsgrenze (Endpoints antworten, kein Playback-/`getStats()`-Anspruch). |
 | RAK-49 | Soll | `getStats()`-Subset ist als bounded Allowlist in `spec/telemetry-model.md` §3.2 dokumentiert; Schema-Drift-Strategie zwischen Browser-Versionen ist definiert. |
 | RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert. |
 | RAK-51 | Kann | Player-SDK exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`. |
 
-Diese Vorschläge sind **nicht** verbindlich — die finale Auswahl
-und Formulierung erfolgt im Lastenheft-Patch. Bis dahin sind die
-DoD-Items in §1–§5 unten als „voraussichtlich" zu lesen.
+Die DoD-Items in §1–§5 unten referenzieren diese RAKs verbindlich.
 
-### 0.2 Out-of-Scope-Klauseln (durchgängig)
+### 0.3 Out-of-Scope-Klauseln (durchgängig)
 
 - Keine produktive `getStats()`-Sammlung im `apps/api`-Ingress, solange
   Schema-Drift zwischen Browser-Versionen (Chromium/Firefox/Safari)
@@ -209,12 +207,12 @@ DoD:
 
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`,
   Commit-Hash anhängen.
-- Vor Tranche-1-Start: Lastenheft-Patch (siehe §0.2) als §4a.x in
-  [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
-  ergänzen, dann `spec/lastenheft.md` auf `1.1.9`+ heben mit den
-  finalen RAK-47..RAK-N-Texten und einer §13.9-Sektion „Version
-  0.7.0". Erst danach Plan nach `docs/planning/in-progress/`
-  verschieben.
+- Lastenheft-Patch ist erledigt: `spec/lastenheft.md` steht auf
+  `1.1.9` mit §13.9-Sektion „Version 0.7.0" und RAK-47..RAK-51;
+  Eintrag als §4a.12 in
+  [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c.
+  Plan kann nach `docs/planning/in-progress/` ziehen, sobald
+  Vorgänger-Gates aus §0.1 grün sind.
 - Wenn der WebRTC-Pfad nach Bewertung als „nie produktiv"
   entschieden wird, dieses Dokument als historische Notiz nach
   `docs/planning/done/` ziehen oder löschen — je nachdem, ob die

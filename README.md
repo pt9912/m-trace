@@ -320,7 +320,7 @@ Archivierte Plan-Dateien:
 
 Leitende Dokumente:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.8)
+- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.9)
 - [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess

@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.8<br>
+**Version:** 1.1.9<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
@@ -1698,6 +1698,24 @@ Akzeptanzkriterien:
 | RAK-44 | Muss | Dashboard enthält eine SRT-Health-Ansicht. |
 | RAK-45 | Muss | Dokumentation erklärt typische SRT-Fehlerbilder. |
 | RAK-46 | Muss | SRT-Metriken werden OTel-kompatibel modelliert. |
+
+### 13.9 Version 0.7.0: WebRTC-Lab-Erweiterung
+
+Ziel: Den WebRTC-Vorbereitungspfad aus `0.5.0` (RAK-39, Lab-Skelett mit
+Doku-only `examples/webrtc/`) zu einer produktiven Lab-Erweiterung
+ausbauen — inklusive lokalem WHIP-/WHEP-Endpoint, opt-in Smoke und
+kontrolliertem Telemetrie-Schnitt. Kein Vermischen mit dem
+`hls.js`-Demo-Pfad in `apps/dashboard`; WebRTC bleibt eigenständig.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-47 | Muss | WebRTC-Lab-Setup mit lokalem WHIP-/WHEP-Endpoint und Compose-Stack `mtrace-webrtc` (analog `examples/srt/`/`examples/dash/`); Project-Name-Konvention aus `examples/README.md` ist eingehalten. |
+| RAK-48 | Muss | `make smoke-webrtc-prep` prüft die Vorbereitungsgrenze (Endpoints antworten, Compose-Stack hochgefahren, kein Playback-Qualitäts- oder `getStats()`-Anspruch) und ist als opt-in Target dokumentiert (analog `make smoke-srt`/`make smoke-dash`). |
+| RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist in `spec/telemetry-model.md` §3.2 dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
+| RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert; ergänzt den Smoke um eine Operator-sichtbare Stelle. |
+| RAK-51 | Kann | `@npm9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. |
 
 ---
 

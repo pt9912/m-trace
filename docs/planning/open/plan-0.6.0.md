@@ -10,7 +10,7 @@
 > Markdown-Link gesetzt, damit der Doc-Ref-Check nicht während der
 > Archivierung kippt.
 >
-> **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §4.3
+> **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9
 > (Observability), §7.10 (Telemetry/Cardinality), §8.3 NF-11
 > (SRT-Ingest-Metriken), §13.8 (RAK-41..RAK-46);

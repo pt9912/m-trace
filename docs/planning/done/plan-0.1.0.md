@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](../../../spec/architecture.md) und
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | ✅ |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | ✅ |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8` | ✅ bis `1.1.8`; fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8`, `1.1.9` | ✅ bis `1.1.9`; fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ✅ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -370,6 +370,17 @@ DoD:
 - [x] Lastenheft §16.2: OE-3 resolved — SQLite als lokaler Durable-Store ab `0.4.0`.
 - [x] Lastenheft §16.2: OE-5 resolved — Server-Sent Events mit Polling-Fallback; WebSocket nicht in `0.4.0`.
 - [x] Roadmap, Architektur, Telemetry-Modell, Risiken-Backlog und `plan-0.4.0.md` referenzieren ADR-0002/ADR-0003 konsistent.
+
+### 4a.12 Patch `1.1.9` — `0.7.0` WebRTC-Lab-Erweiterung als Folge zum `0.5.0`-Vorbereitungspfad
+
+Mit dem `0.5.0`-Release (Multi-Protocol Lab) wurde der WebRTC-Pfad bewusst als Doku-only Vorbereitungspfad geschnitten (RAK-39): `examples/webrtc/` enthält ausschließlich Konfigurations-/Out-of-Scope-Doku, kein Compose-Stack, kein Smoke. Die produktive Lab-Erweiterung wird in `0.7.0` ausgeliefert; dafür braucht das Lastenheft eine eigene §13.9-Zielsektion mit fünf neuen RAKs (RAK-47..RAK-51), die den Übergang vom Vorbereitungs- zum Lab-Pfad sauber trennen vom `hls.js`-Demo-Pfad in `apps/dashboard`.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.8` → `1.1.9`.
+- [x] Lastenheft §13.9 neu: WebRTC-Lab-Erweiterung mit RAK-47..RAK-51 (Compose-Stack, opt-in Smoke `make smoke-webrtc-prep`, `getStats()`-Allowlist + Schema-Drift-Strategie, Browser-Handcheck, optionaler Player-SDK-Adapter-Pfad).
+- [x] [`docs/planning/open/plan-0.7.0.md`](../open/plan-0.7.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.9`" hochgezogen.
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §3 0.7.0-Zeile: Hinweis „Lastenheft-Patch ausstehend" entfernt; RAK-Verteilung referenziert §13.9.
 
 ---
 
