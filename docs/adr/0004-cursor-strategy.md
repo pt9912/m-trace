@@ -5,7 +5,7 @@
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)  
 > **Bezug**: `spec/lastenheft.md` RAK-32; `docs/adr/0002-persistence-store.md`;
 > `docs/planning/in-progress/roadmap.md` §4 (Folge-ADR „Dauerhaft konsistente Cursor-Strategie");
-> `docs/planning/in-progress/plan-0.4.0.md` §2.1, §2.5; `spec/backend-api-contract.md` §10.
+> `docs/planning/done/plan-0.4.0.md` §2.1, §2.5; `spec/backend-api-contract.md` §10.
 
 ---
 

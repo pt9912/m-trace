@@ -5,7 +5,7 @@
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)  
 > **Bezug**: `spec/lastenheft.md` OE-5, MVP-31, RAK-29, RAK-32;
 > `docs/planning/in-progress/roadmap.md` §4/§5; `docs/planning/open/risks-backlog.md` R-3;
-> `docs/planning/in-progress/plan-0.4.0.md`.
+> `docs/planning/done/plan-0.4.0.md`.
 
 ---
 

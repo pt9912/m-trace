@@ -116,7 +116,7 @@ event. The full wire contract is described in
 `attachHlsJs` maps native hls.js callbacks onto `manifest_loaded` and
 `segment_loaded` events. The mapping is kept narrow and explicit so
 retries and redirects do not generate semantic duplicates. Reference:
-`docs/planning/in-progress/plan-0.4.0.md` §4.6,
+`docs/planning/done/plan-0.4.0.md` §4.6,
 [`spec/telemetry-model.md`](../../spec/telemetry-model.md) §1.4.
 
 | m-trace event | hls.js source | Trigger | Dedup (per session) |
@@ -175,7 +175,7 @@ consume `sequence_number`; `session_ended` bypasses sampling so `destroy()` can
 close the session reliably.
 
 **Timeline completeness limit for `sampleRate < 1`** (decision
-`docs/planning/in-progress/plan-0.4.0.md` §8.3, variant (b)): full
+`docs/planning/done/plan-0.4.0.md` §8.3, variant (b)): full
 timeline acceptance and all E2E smokes run with `sampleRate = 1`. With
 `sampleRate < 1` the timeline cannot be proven complete without a new
 session-/batch-scoped sampling metadata signal — sampled-out events do

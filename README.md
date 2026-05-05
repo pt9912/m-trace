@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.4.0` in Arbeit — erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht, optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit. `0.3.0` (HLS-Stream-Analyzer mit Library, interner HTTP-Service, API-Endpunkt `POST /api/analyze`, CLI `m-trace check`) ist die letzte getaggte Release.
+> Status: `0.4.0` released — erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht, optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku.
 
 ---
 
@@ -111,7 +111,7 @@ Der erste MVP ist bewusst klein gehalten.
   definierten Exit-Codes
 - `make smoke-analyzer` und `make smoke-cli` als End-to-End-Smokes
 
-### Enthalten seit v0.4.0 (in Arbeit)
+### Enthalten seit v0.4.0
 
 - Durable SQLite-Persistenz für Sessions, Playback-Events und
   Ingest-Sequenz statt In-Memory-Store; Cursor sind Restart-stabil
@@ -339,7 +339,7 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
 - API-Anbindung über internen analyzer-service
 - CLI-Grundlage `pnpm m-trace check <url-or-file>`
 
-### v0.4.0 — Erweiterte Trace-Korrelation (in Arbeit)
+### v0.4.0 — Erweiterte Trace-Korrelation (✅ veröffentlicht)
 
 - durable SQLite-Persistenz mit `make wipe` als verbindlichem
   Reset-Pfad (ADR-0002)
@@ -424,13 +424,14 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.4.0` in Arbeit: `0.3.0` ist die letzte getaggte
-Release; Tranchen 1–7 von `0.4.0` (SQLite-Persistenz, Trace-Korrelation,
-Manifest-/Segment-Korrelation, Dashboard-Session-Timeline mit SSE,
-optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/
-Sampling-Doku) sind auf `main` integriert. Tranche 8 (Release-Akzeptanz
-und Versions-Bump) ist der nächste offene Schritt — siehe
-[`docs/planning/in-progress/plan-0.4.0.md`](docs/planning/in-progress/plan-0.4.0.md) §9.
+Das Projekt steht bei `0.4.0` (released, Tag `v0.4.0`): SQLite-
+Persistenz, Trace-Korrelation, Manifest-/Segment-Korrelation, Dashboard-
+Session-Timeline mit SSE, optionales Tempo-Profil, Aggregat-Metriken-
+Sichtbarkeit und Cardinality-/Sampling-Doku sind auf `main` integriert
+und durch GitHub-Actions-`build` grün verifiziert. Plan-Datei:
+[`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).
+Nächste Phase: `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) — Scope-Cut
+steht aus.
 
 Leitende Dokumente:
 
