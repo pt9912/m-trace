@@ -61,8 +61,8 @@ vollständigen Media-Server-Verwaltung wächst.
 | ----- | ------------------------ | ---------- |
 | Metrikquelle | Eine konkrete, lokal reproduzierbare Quelle wird in Tranche 1 festgelegt: MediaMTX-/SRT-Stats-API, Sidecar-Exporter oder kontrollierter Log-/CLI-Import. | Direkte libsrt-CGO-Bindings in `apps/api`, solange R-2 nicht per ADR entschieden ist. |
 | Datenmodell | SRT-Health wird als getrenntes Verbindungs-/Ingest-Signal modelliert und OTel-kompatibel beschrieben. | SRT-Werte als Player-Playback-Events vortäuschen. |
-| Prometheus | Nur bounded Aggregate sind erlaubt. Per-Verbindung-/Per-Stream-Details gehen in SQLite und/oder OTel-Spans/Events, nicht in Prometheus-Labels. Rohmetriken aus MediaMTX oder anderen Quellen werden nicht in den Projekt-Prometheus gescraped, solange sie Labels wie `id`, `path`, `remoteAddr`, `state`, Connection-ID oder IP enthalten; alternativ muss der Smoke diese Source-Targets mit derselben Forbidden-Label-Policy prüfen. | `stream_id`, `session_id`, URL, Token, IP oder Connection-ID als Prometheus-Label. |
-| Dashboard | Eine eigene SRT-Health-Ansicht zeigt aktuelle Verbindung, Verlauf und Warnzustände. | Vollständige Media-Server-Konsole oder Stream-Key-Verwaltung. |
+| Prometheus | Nur bounded Aggregate sind erlaubt. Per-Verbindung-/Per-Stream-Details gehen in SQLite und/oder OTel-Spans/Events, nicht in Prometheus-Labels. Rohmetriken aus MediaMTX oder anderen Quellen werden **nicht** in den Projekt-Prometheus gescraped; sie werden über Adapter/Sidecar gelesen und kontrolliert normalisiert. | `stream_id`, `session_id`, URL, Token, IP, Connection-ID oder Source-Labels wie `id`, `path`, `remoteAddr`, `state` als Prometheus-Label. |
+| Dashboard | Eine eigene SRT-Health-Ansicht zeigt aktuelle Verbindung, Freshness, Warnzustände und die letzten Samples als kurzer Verlauf. Ein Snapshot-only-Abschluss ist für `0.6.0` nicht ausreichend. | Vollständige Media-Server-Konsole oder Stream-Key-Verwaltung. |
 | Lab | `0.6.0` baut auf `examples/srt/` aus `0.5.0` auf und härtet es für Health-Nachweise. | Neues paralleles SRT-Lab ohne Bezug zum bestehenden Beispiel. |
 | Fehlerbilder | Dokumentation erklärt typische SRT-Probleme anhand der gelieferten Metriken. | Allgemeines SRT-Lehrbuch oder produktive Netzwerk-Tuning-Anleitung. |
 | Erweiterte SRT-Signale | `0.6.0` priorisiert die RAK-43-Pflichtwerte RTT, Packet Loss, Retransmissions und Bandbreite. Send-/Receive-Buffer, Verbindungsstabilität, Link Health und Failover-Zustände aus Lastenheft §4.3 werden als Deferred-Liste geführt, sofern sie nicht ohne Zusatzrisiko aus der gewählten Quelle mitfallen. | RAK-43 durch nicht geforderte Zusatzwerte erweitern und damit den Release-Scope aufblasen. |
@@ -83,7 +83,9 @@ Lab-Tranchen, weil die Metrikquelle Runtime, Cardinality und Dashboard-
 Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 
 1. Tranche 1 blockiert jede produktive Code-Integration, die eine
-   SRT-Metrikquelle in `apps/api`, Prometheus oder Dashboard verdrahtet.
+   SRT-Metrikquelle in `apps/api` oder Dashboard verdrahtet. Projekt-
+   Prometheus-Scraping von Source-Rohmetriken bleibt generell außerhalb
+   des `0.6.0`-Scopes.
 2. Tranche 2 darf nur gegen die in Tranche 1 gewählte Quelle härten;
    parallele zweite SRT-Testpfade sind nicht Teil des Plans.
 3. Tranche 3 muss Telemetry-Model, API-Kontrakt und Storage-Shape
@@ -169,7 +171,7 @@ Harte Auswahlkriterien:
 | Vollständigkeit | RTT, Packet Loss, Retransmissions und Bandbreite sind alle verfügbar und semantisch erklärbar. |
 | Reproduzierbarkeit | Fixtures und Smoke laufen ohne Internet und ohne manuelle SRT-Tools auf dem Host. |
 | Runtime-Grenze | `apps/api` bleibt CGO-frei oder die Runtime-Änderung ist per ADR akzeptiert. |
-| Cardinality | Rohdaten gelangen nicht ungefiltert mit Per-Verbindung-/IP-Labels in Prometheus. |
+| Cardinality | Source-Rohmetriken werden nicht vom Projekt-Prometheus gescraped; nur m-trace-normalisierte bounded Aggregate dürfen exportiert werden. |
 | Freshness | Quelle liefert `observed_at` oder ein äquivalentes Sample-Zeitfenster, sodass stale Daten erkennbar sind. |
 | Failure-Mode | Quelle hat unterscheidbare Fehler für "nicht erreichbar", "keine Verbindung" und "unvollständige Rohdaten". |
 
@@ -188,10 +190,11 @@ DoD:
   reicht für RAK-43 nicht.
 - [ ] Falls die gewählte Quelle eigene Prometheus-Metriken anbietet
   (z. B. MediaMTX-SRT-Metrics), werden diese Rohmetriken nicht in den
-  Projekt-Prometheus gescraped, solange sie verbotene Per-Verbindung-,
-  Pfad-, IP- oder Connection-ID-Labels tragen. Wenn sie doch gescraped
-  werden müssen, ist ein Smoke-Gate Pflicht, das Source-Metriken und
-  `mtrace_*`-Metriken mit derselben Forbidden-Label-Policy prüft.
+  Projekt-Prometheus gescraped. Es gibt in `0.6.0` keine Ausnahme über
+  die bestehende Forbidden-Label-Policy, weil sie Source-Labels wie
+  `id`, `path`, `remoteAddr` oder `state` nicht ausreichend abdeckt.
+  Wenn Source-Scraping später nötig wird, braucht es einen separaten
+  Folge-Scope mit expliziter Source-Label-Allowlist.
 - [ ] Ein minimales Fixture für rohe SRT-Metrikdaten liegt unter
   `spec/contract-fixtures/` oder einem komponentennahen `testdata/`
   Verzeichnis.
@@ -245,8 +248,9 @@ DoD:
 - [ ] Smoke-Waits sind bounded und liefern Diagnoseausgabe aus
   Metrikquelle, Media-Server und Publisher.
 - [ ] Smoke-Fehler sind kategorisiert: Publish fehlgeschlagen,
-  Ausspielung fehlt, Metrikquelle fehlt, Sample unvollständig,
-  API-Import fehlgeschlagen.
+  Ausspielung fehlt, Metrikquelle fehlt, Sample unvollständig. API-
+  Import-Fehler sind erst ab Tranche 4/7 Scope, nachdem der API-Vertrag
+  festliegt.
 - [ ] Stop/Reset räumt nur das `mtrace-srt`-Compose-Projekt auf und
   greift nicht in Core-Lab-Volumes ein.
 - [ ] `examples/srt/README.md` beschreibt den Health-Erweiterungspfad
@@ -277,6 +281,7 @@ Vorgeschlagenes Mindestmodell:
 | `bandwidth_bps` | geschätzte oder gemessene Bandbreite | bits/s |
 | `sample_window_ms` | Zeitfenster für aus Countern abgeleitete Raten, falls relevant | integer, optional |
 | `source_status` | Status der Metrikquelle | enum: `ok`, `unavailable`, `partial`, `stale` |
+| `source_error_code` | stabile Fehlerklasse bei nicht-`ok`-Status | enum: `source_unavailable`, `no_active_connection`, `partial_sample`, `parse_error`, `stale_sample`, optional `none` |
 | `health_state` | `healthy`, `degraded`, `critical`, `unknown` | enum |
 
 Deferred gegenüber Lastenheft §4.3, sofern die gewählte Quelle sie nicht
@@ -300,8 +305,8 @@ DoD:
 - [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
   Tranche 1 gewählten Quelle.
 - [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
-  historische Health-Snapshots restart-stabil, falls die Dashboard-
-  Ansicht Verlauf zeigen soll.
+  historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
+  `0.6.0`-Pflicht.
 - [ ] Retention-Grenze ist entschieden: unbegrenzt wie bestehende
   lokale SQLite-Demo-Daten oder bounded Snapshot-Historie mit
   dokumentiertem Reset-/Prune-Pfad.
@@ -314,14 +319,15 @@ DoD:
 - [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
   Health-Samples nach `health_state`; keine `stream_id`,
   `connection_id`, URL, IP oder Token als Label.
-- [ ] Rohmetriken der Quelle werden entweder gar nicht in den
-  Projekt-Prometheus gescraped oder durch ein Smoke-Gate auf dieselbe
-  Forbidden-Label-Liste geprüft wie `mtrace_*`-Metriken.
+- [ ] Rohmetriken der Quelle werden nicht in den Projekt-Prometheus
+  gescraped. Nur m-trace-normalisierte Aggregate dürfen auf
+  `/api/metrics` erscheinen.
 - [ ] Tests pinnen Einheiten- und Mapping-Verhalten anhand der Fixtures
   aus Tranche 1.
 - [ ] `scripts/smoke-observability.sh` oder ein passender neuer Smoke
-  prüft, dass neue `mtrace_*`-Metriken und, falls gescraped, Source-
-  Metriken keine verbotenen Labels tragen.
+  prüft, dass neue `mtrace_*`-Metriken keine verbotenen Labels tragen
+  und dass Source-Rohmetriken nicht als Prometheus-Targets im Projekt-
+  Stack konfiguriert sind.
 
 ---
 
@@ -346,14 +352,18 @@ DoD:
 - [ ] `health_state`-Schwellen sind dokumentiert und testbar; `unknown`
   ist der definierte Zustand bei fehlender oder stale Metrikquelle.
 - [ ] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
-  `metrics`, `derived`, `health_state`, `source_status` oder eine
-  gleichwertige Struktur.
+  `metrics`, `derived`, `health_state`, `source_status`,
+  `source_error_code` oder eine gleichwertige Struktur.
 - [ ] Freshness ist im Response sichtbar, z. B. `observed_at`,
   `sample_age_ms`, `stale_after_ms` und `source_status`.
 - [ ] CORS-/Auth-Verhalten folgt den bestehenden Dashboard-Read-Pfaden
   und ist im API-Kontrakt beschrieben.
 - [ ] Fehlerfälle sind stabil: Metrikquelle nicht erreichbar,
   unvollständige Rohdaten, stale Daten, ungültige Stream-ID.
+- [ ] API-/Import-Fehler sind kategorisiert, inklusive
+  `source_unavailable`, `no_active_connection`, `partial_sample`,
+  `parse_error`, `stale_sample` und einem stabilen Code für
+  Persistenz-/Importfehler.
 - [ ] Unit-/Handler-Tests decken Normalfall, degraded/critical,
   unknown/stale und Auth/CORS ab.
 - [ ] API-Read-Pfad fügt keine N+1-Erweiterung zu bestehenden
@@ -389,9 +399,9 @@ DoD:
   Rate gemäß API-Vertrag.
 - [ ] Warnzustände unterscheiden `degraded`, `critical`, `unknown` und
   normalen Zustand visuell und textlich eindeutig.
-- [ ] Verlauf oder Mini-Timeline ist vorhanden, wenn Tranche 3
-  historische Snapshots persistiert; andernfalls ist die Ansicht klar
-  als aktueller Snapshot gekennzeichnet.
+- [ ] Verlauf oder Mini-Timeline der letzten Health-Samples ist
+  vorhanden; eine reine Snapshot-Ansicht erfüllt RAK-44 in diesem Plan
+  nicht.
 - [ ] Loading-, Empty-, Error- und Stale-Zustände sind implementiert und
   getestet.
 - [ ] Dashboard ruft nur dokumentierte API-Endpunkte auf und dupliziert
@@ -476,9 +486,11 @@ DoD:
   oder API-Verifikation der vier Pflichtwerte.
 - [ ] Health-Smoke prüft neben dem gesunden Fall mindestens einen
   definierten Fehlerpfad: fehlende Metrikquelle, keine aktive
-  Verbindung oder stale Sample.
+  Verbindung, stale Sample oder API-Importfehler.
 - [ ] Observability-Smoke ist grün und weist keine forbidden Labels auf
-  neuen `mtrace_*`-Metriken und, falls gescraped, Source-Metriken nach.
+  neuen `mtrace_*`-Metriken nach. Zusätzlich weist er nach, dass
+  Source-Rohmetriken nicht als Projekt-Prometheus-Targets gescraped
+  werden.
 - [ ] Dashboard-Test/E2E für die SRT-Health-Ansicht ist grün.
 - [ ] RAK-Verifikationsmatrix §8.1 ist vollständig ausgefüllt.
 - [ ] Release-Closeout-Protokoll §8.2 enthält Befehle, Datum, Ergebnis
@@ -495,9 +507,9 @@ DoD:
 | RAK-41 | Muss | SRT-Testsetup aus `examples/srt/` plus Health-Smoke | [ ] |
 | RAK-42 | Muss | Metrikquelle importiert/erfasst SRT-Verbindungsmetriken; Tests/Fixture pinnen Mapping | [ ] |
 | RAK-43 | Muss | API und Dashboard zeigen RTT, Packet Loss, Retransmissions und Bandbreite | [ ] |
-| RAK-44 | Muss | Dashboard-Route/Tab "SRT Health" mit Zuständen, Fehler-/Stale-Handling und Tests | [ ] |
+| RAK-44 | Muss | Dashboard-Route/Tab "SRT Health" mit Zuständen, kurzem Verlauf, Fehler-/Stale-Handling und Tests | [ ] |
 | RAK-45 | Muss | User-Doku erklärt typische SRT-Fehlerbilder anhand der gelieferten Metriken | [ ] |
-| RAK-46 | Muss | Telemetry-Model/API-Kontrakt beschreiben OTel-kompatibles Modell; Observability-Smoke prüft `mtrace_*` und ggf. Source-Metriken auf verbotene Labels | [ ] |
+| RAK-46 | Muss | Telemetry-Model/API-Kontrakt beschreiben OTel-kompatibles Modell; Observability-Smoke prüft `mtrace_*`-Labels und dass keine Source-Rohmetriken als Projekt-Prometheus-Targets gescraped werden | [ ] |
 
 ### 8.2 Release-Closeout-Protokoll
 
@@ -509,6 +521,6 @@ nicht ad hoc in Commit-Bodies oder Release-Notes verschwinden.
 | `make gates` | — | — | [ ] | — |
 | Basis-SRT-Smoke | `make smoke-srt` | — | [ ] | RAK-41 |
 | SRT-Health-Smoke | `make smoke-srt-health` oder erweiterter `make smoke-srt` | — | [ ] | RAK-42/43 |
-| Observability/Cardinality | `make smoke-observability` oder äquivalenter neuer Smoke, inklusive Source-Metriken falls gescraped | — | [ ] | RAK-46 |
+| Observability/Cardinality | `make smoke-observability` oder äquivalenter neuer Smoke, inklusive Nachweis "keine Source-Rohmetriken als Projekt-Prometheus-Targets" | — | [ ] | RAK-46 |
 | Dashboard-SRT-Health | Browser-E2E oder gezielter Dashboard-Smoke | — | [ ] | RAK-44 |
 | Docs-Gate | `make docs-check` oder Teil von `make gates` | — | [ ] | RAK-45 |
