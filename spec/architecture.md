@@ -198,9 +198,24 @@ type MetricsPublisher interface {
 type Telemetry interface {
     BatchReceived(ctx context.Context, size int)
 }
+
+// Ab 0.6.0 (plan-0.6.0 §4 Tranche 3): SRT-Health-Ports.
+// Vollständiges Datenmodell in spec/telemetry-model.md §7 und
+// spec/backend-api-contract.md §10.6 / §7a.
+type SrtSource interface {
+    SnapshotConnections(ctx context.Context) ([]domain.SrtConnectionSample, error)
+}
+
+type SrtHealthRepository interface {
+    Append(ctx context.Context, samples []domain.SrtHealthSample) error
+    LatestByStream(ctx context.Context, projectID string) ([]domain.SrtHealthSample, error)
+    HistoryByStream(ctx context.Context, projectID, streamID string, limit int, cursor *Cursor) ([]domain.SrtHealthSample, *Cursor, error)
+}
 ```
 
 `Telemetry` ist die framework-neutrale Fassade für OTel-Aufrufe aus dem Use Case. Implementierung in `adapters/driven/telemetry` mappt `BatchReceived` auf einen `Int64Counter` (`mtrace.api.batches.received`) mit `batch.size` als Attribut. Weitere Methoden (z. B. `BatchValidated`, `BatchPersisted`) werden bei Bedarf ergänzt — die Domain kennt nur die Port-Signatur, nicht OTel.
+
+`SrtSource` ist der Driven-Port für die SRT-Metrikquelle (in `0.6.0` MediaMTX-Control-API über HTTP). Die Domain kennt **keine** MediaMTX-spezifischen Felder; der Adapter normalisiert das Quellschema gegen `SrtConnectionSample`. `SrtHealthRepository` ist der durable-Storage-Port; SQLite-Adapter liefert die `0.6.0`-Default-Implementierung (siehe §3.4).
 
 ### 3.4 Adapter
 
@@ -220,6 +235,8 @@ Adapter im Zielbild `0.1.0` (`apps/api/`):
 | `adapters/driven/ratelimit/`   | Driven  | `TokenBucket`                                                                                                                                                                | 100 Events/s/Project laut API-Kontrakt §6.                                                                                          |
 | `adapters/driven/metrics/`     | Driven  | `PrometheusPublisher`                                                                                                                                                        | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
 | `adapters/driven/telemetry/`   | Driven  | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
+| `adapters/driven/srt/mediamtxclient/` | Driven (`0.6.0`) | implementiert `SrtSource`-Port via HTTP-Client gegen MediaMTX `/v3/srtconns/list`; parst gegen Mapping aus `spec/telemetry-model.md` §7 plus Fixture `spec/contract-fixtures/srt/mediamtx-srtconns-list.json` | CGO-frei, kein libsrt-Import; Auth via `Authorization: Basic` aus ENV. |
+| `adapters/driven/persistence/sqlite/srt_health/` | Driven (`0.6.0`) | implementiert `SrtHealthRepository` über die `srt_health_samples`-Tabelle aus `spec/backend-api-contract.md` §10.6 | Migration läuft im selben Apply-Runner wie `playback_events`/`stream_sessions`. |
 
 OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zulässig:
 
@@ -441,6 +458,72 @@ Damit gilt für die [Standard-OTel-Env-Vars](https://opentelemetry.io/docs/specs
 | `OTEL_TRACES_EXPORTER=none` (analog Metrics)                      | explizit kein Exporter — ist auch ohne Fallback silent.                                                                                   |
 
 Lokales Dev läuft ohne Konfiguration silent durch; produktive Setups setzen die Env-Vars und brauchen keinen Code-Patch. `autoexport` ist die einzige zusätzliche OTel-Abhängigkeit, die das Soll vorsieht; die exakte autoexport-Version wird in `apps/api/go.mod` gepinnt.
+
+### 5.4 SRT-Health-Pfad (`0.6.0`)
+
+> Bezug: Lastenheft §13.8 RAK-41..RAK-46;
+> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §4
+> (Tranche 3); [`telemetry-model.md`](./telemetry-model.md) §7;
+> [`backend-api-contract.md`](./backend-api-contract.md) §7a, §10.6.
+
+Der SRT-Health-Pfad ist **getrennt** vom Player-Event-Ingest-Pfad
+(§5.1) und nutzt einen eigenen Use Case mit eigenen Driven-Ports.
+Datenfluss:
+
+```text
+mediamtx (SRT-Listener :8890/udp + Control-API :9997)
+  │  GET /v3/srtconns/list  (HTTP, Basic-Auth)
+  ▼
+adapters/driven/srt/mediamtxclient   ← parst gegen Fixture aus
+  │                                    spec/contract-fixtures/srt/
+  │ []domain.SrtConnectionSample
+  ▼
+hexagon/application/SrtHealthCollector  ← Use Case
+  │  - berechnet health_state aus Schwellen
+  │  - normalisiert source_status / source_error_code
+  │  - berechnet sample_age via bytesReceived-Δ
+  │
+  ├──► hexagon/port/driven/SrtHealthRepository ─► sqlite/srt_health
+  ├──► hexagon/port/driven/MetricsPublisher    ─► PrometheusPublisher
+  │      (mtrace_srt_health_samples_total{health_state})
+  └──► hexagon/port/driven/Telemetry           ─► OTel-Span
+         (mtrace.srt.health.collect)
+
+adapters/driving/http/SrtHealthHandler  ← Read-Pfad (§5.X)
+  │
+  └──► hexagon/application/SrtHealthQuery ─► SrtHealthRepository
+```
+
+**Polling-Modell** (Tranche 5 / Sub-3.5):
+
+- Collector-Loop läuft als Goroutine in `cmd/api`-Setup, ruft
+  `SrtSource.SnapshotConnections` mit konfigurierbarem Intervall
+  (Vorschlag: `5s`).
+- Backoff bei Fehlerklassen: bei `source_unavailable` exponentielles
+  Backoff bis max `60s`; bei `parse_error` sofortiger Stopp plus
+  Operator-Log (Schema-Drift erfordert manuelles Re-Reviewen).
+- Shutdown via `context.Context`-Cancel, identisch zum Session-
+  Sweeper aus `plan-0.1.0.md` §5.1.
+- **Transaktion**: Rohwert-Normalisierung, Health-Bewertung und
+  SQLite-Write committen gemeinsam oder gar nicht. OTel-Export
+  läuft nach Commit als best-effort; OTel-Verfügbarkeit darf
+  Persistenz nicht blockieren.
+
+**Auth-Pfad**: MediaMTX 1.14+ verlangt für `/v3/...` einen
+`Authorization`-Header. Der Adapter liest Username/Password aus
+ENV (`MTRACE_SRT_SOURCE_USER`, `MTRACE_SRT_SOURCE_PASS`); beide
+sind nicht in Logs, nicht in Span-Attributen, nicht in Error-Bodies
+sichtbar. Lab-Default sind die Werte aus `examples/srt/mediamtx.yml`
+(`any`/leer).
+
+**Cardinality-Vertrag**: Per-Verbindung-Felder gehen ausschließlich
+in SQLite (`SrtHealthRepository`) und OTel-Spans
+(`mtrace.srt.health.collect` mit `mtrace.srt.connection_id`-Attribut).
+Prometheus erhält ausschließlich `mtrace_srt_health_*` mit den
+Bounded-Labels aus
+[`telemetry-model.md`](./telemetry-model.md) §7.7. MediaMTX-eigene
+Prometheus-Targets werden **nicht** in den Projekt-Prometheus
+gescraped (plan-0.6.0 §0.1).
 
 ---
 

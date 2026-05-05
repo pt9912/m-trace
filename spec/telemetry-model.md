@@ -402,6 +402,7 @@ Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardina
 | `trace_id`, `span_id`, `correlation_id` | Trace-/Session-Korrelations-Identifier; Cross-System-Suche läuft über Tempo/Read-Pfad, nicht Prometheus. | API-Kontrakt §7; §2.5 |
 | `token`, `authorization`, beliebige `*_token` / `*_secret` | Credentials gehören niemals in eine Metrik-Serie. | API-Kontrakt §7 |
 | `batch_size` | unbegrenzte Integer-Domäne, weil der OTel-Counter `mtrace.api.batches.received` vor der `MaxBatchSize=100`-Validierung läuft (siehe §2.2). Ab `0.4.0` Tranche 7 entfernt; `batch.size` bleibt nur als Span-Attribut. | §2.2; `plan-0.4.0.md` §8.2 |
+| SRT-Source-Labels (`id`, `path`, `remoteAddr`, `state`, `connection_id`, `stream_id` als Per-Stream-Identifier) sowie URL-/IP-/Token-Varianten aus MediaMTX `/v3/srtconns/list` | hochkardinale Per-Verbindung-Identifier; werden in SQLite/OTel-Spans persistiert, **nie** als Prometheus-Label. | §7; `plan-0.6.0.md` §4 |
 
 Erlaubt sind ausschließlich die bounded Aggregat-Labels aus §3.2. Die Forbidden-Liste in `scripts/smoke-observability.sh` deckt die Tabelle plus generische Suffixe (`_url`, `_uri`, `_token`, `_secret`) defensiv ab; jeder Treffer ist release-blockierend.
 
@@ -414,6 +415,8 @@ Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich. Jede neue `mtrace_
 | `event_type` | feste Enum aus §1.3 | `rebuffer_started`, `playback_error` | per-event-type-Aggregate (zukünftige Metriken) |
 | `outcome` | feste Enum | `accepted`, `invalid`, `rate_limited`, `dropped`, `analyzer_unavailable`, `analyzer_error`, … | `mtrace_analyze_requests_total{outcome,code}` (Tranche 6 §3) |
 | `code` | feste Fehler-/Ergebnis-Code-Domäne pro Metrik | `invalid_request`, `analyzer_unavailable`, `fetch_blocked` | `mtrace_analyze_requests_total{outcome,code}` |
+| `health_state` | feste Enum aus §7.4: `healthy`, `degraded`, `critical`, `unknown` | `degraded` | `mtrace_srt_health_samples_total{health_state}` (`plan-0.6.0.md` §4) |
+| `source_status` | feste Enum aus §7.5: `ok`, `unavailable`, `partial`, `stale`, `no_active_connection` | `stale` | `mtrace_srt_health_collector_runs_total{source_status}` (`plan-0.6.0.md` §4) |
 | `instance` / `job` | OTel/Prometheus-Standard | `api:8080` | alle Metriken (Target-Metadaten) |
 
 Die vier Pflichtcounter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`) und der OTel-translated Counter `mtrace_api_batches_received` tragen **gar keine** fachlichen Vector-Labels (siehe API-Kontrakt §7 und §2.4). `batch_size` ist explizit nicht in der Allowlist (siehe §3.1) — die Per-Request-Sicht „Batchgröße" lebt nur am Span.
@@ -556,3 +559,161 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 
 - `schema_version` ≠ `1.0` → API-Kontrakt §5 Step 5 → `400 Bad Request`. Strikte Major.Minor-Prüfung, kein Range-Match in `0.1.x`.
 - Mit künftiger Multi-Version-Unterstützung wird das Step 5-Wording erweitert; Folge-ADR dokumentiert die Übergangsstrategie.
+
+---
+
+## 7. SRT-Health-Modell (`0.6.0`)
+
+> Bezug: Lastenheft §4.3, §13.8 RAK-41..RAK-46;
+> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md)
+> §2 (Quellen-Entscheidung), §4 (Datenmodell + Storage + OTel-Vertrag);
+> [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](contract-fixtures/srt/mediamtx-srtconns-list.json).
+
+SRT-Health-Metriken sind **getrenntes Verbindungs-/Ingest-Signal** und nicht
+mit Player-Playback-Events vermischt (plan-0.6.0 §0.1). Die Quelle ist in
+`0.6.0` MediaMTX-Control-API über HTTP (`/v3/srtconns/list`); `apps/api`
+bleibt CGO-frei (R-2 in `risks-backlog.md` §1.2 aufgelöst).
+
+### 7.1 Datenmodell
+
+Ein **Sample** repräsentiert eine SRT-Verbindung zu einem Polling-Zeitpunkt
+und ist in `apps/api` durable persistiert (SQLite, ADR-0002). Pflicht- und
+Optional-Felder im Domain-Modell:
+
+| Feld | Pflicht | Typ | Einheit / Bedeutung |
+|---|---|---|---|
+| `project_id` | Muss | string (bounded Project-Resolver) | Tenant-Anker; nicht als Prometheus-Label exposed (siehe §3.1). |
+| `stream_id` | Muss | string | Lab-Stream-Name (z. B. `srt-test`); Per-Stream-Identifier, nur SQLite/OTel. |
+| `connection_id` | Muss | string | Quellseitige Verbindungs-ID (in MediaMTX `items[].id`); Per-Verbindung-Identifier, nur SQLite/OTel. |
+| `source_observed_at` | Soll | timestamp (RFC3339, ms) | Wann die Quelle den SRT-Zustand gemessen hat. **Optional**, weil MediaMTX-API in `0.6.0` keinen expliziten Timestamp liefert. |
+| `source_sequence` | Pflicht ohne `source_observed_at` | string oder integer | Monotones Surrogat — z. B. `bytesReceived`-Counter aus dem Sample, Generation-ID, Sample-Window-Endzeit. Wird von der Stale-Bewertung als Source-Sequence gewertet. |
+| `collected_at` | Muss | timestamp (RFC3339, ms) | Zeitpunkt des Polls durch den Collector (m-trace-eigene Uhr). Allein **nicht** ausreichend für Freshness-Bewertung. |
+| `ingested_at` | Muss | timestamp (RFC3339, ms) | Zeitpunkt der SQLite-Persistenz. |
+| `rtt_ms` | Muss | number | RTT in Millisekunden. Snapshot-Wert; bei MediaMTX-API: `msRTT`. |
+| `packet_loss_total` | Muss | integer (counter, kumulativ) | Empfänger-Paketverlust seit Verbindungsstart. Bei MediaMTX-API: `packetsReceivedLoss`. |
+| `packet_loss_rate` | Optional | number (0..1) | Verlustrate als Snapshot, falls Quelle sie zusätzlich liefert. Nicht release-blockierend, weil Counter-Diff abgeleitet werden kann. |
+| `retransmissions_total` | Muss | integer (counter, kumulativ) | Empfänger-Retransmissions. Bei MediaMTX-API: `packetsReceivedRetrans`. Sender-seitige `packetsRetrans` ist optional. |
+| `available_bandwidth_bps` | Muss | integer (bits/s) | Linkkapazitäts-Schätzung der Quelle. Bei MediaMTX-API: `mbpsLinkCapacity × 1_000_000`. **Caveat**: in localhost-/Loopback-Netzen liefert MediaMTX Werte im Gbps-Bereich, die kein realistischer „verfügbarer"-Wert sind — Health-Bewertung in §7.4 kompensiert das via `required_bandwidth_bps`-Vergleich. |
+| `throughput_bps` | Optional | integer (bits/s) | Tatsächlich beobachteter Stream-Durchsatz. Bei MediaMTX-API: `mbpsReceiveRate × 1_000_000`. Erfüllt RAK-43 nicht allein. |
+| `required_bandwidth_bps` | Optional | integer (bits/s) | Erwarteter Bandbreitenbedarf (aus Lab-Konfig oder Stream-Konfiguration). Ohne diese Schwelle darf `available_bandwidth_bps` angezeigt, aber **nicht** als Engpass bewertet werden. |
+| `sample_window_ms` | Optional | integer | Zeitfenster für aus Countern abgeleitete Raten, falls relevant. |
+| `source_status` | Muss | enum (§7.5) | `ok`, `unavailable`, `partial`, `stale`, `no_active_connection`. |
+| `source_error_code` | Muss | enum (§7.5) | Stabile Fehlerklasse bei nicht-`ok`-Status. `none` bei `ok`. |
+| `connection_state` | Muss | enum | `connected`, `no_active_connection`, `unknown`. Getrennt vom Quellenstatus, weil eine erreichbare Quelle ohne aktive Verbindung ein anderer Fall ist als eine nicht erreichbare Quelle. |
+| `health_state` | Muss | enum (§7.4) | `healthy`, `degraded`, `critical`, `unknown`. Server-seitig berechnet aus den Pflicht-Werten plus Schwellen. |
+
+### 7.2 Erweiterte SRT-Signale (deferred in `0.6.0`, sofern nicht ohne Zusatzrisiko aus der Quelle mitfallen)
+
+Lastenheft §4.3 listet weitere SRT-Signale; plan-0.6.0 §0.1 priorisiert
+explizit RAK-43-Pflichtwerte. Folgende Signale sind aus MediaMTX-API
+verfügbar und können **als Zusatzfelder** im Datenmodell mitfallen,
+sind aber nicht release-blockierend:
+
+| Quellfeld | Bedeutung | Mapping (Vorschlag) |
+|---|---|---|
+| `msReceiveBuf` | Receiver-TSBPD-Buffer-Tiefe (ms) | `receive_buffer_ms` |
+| `bytesReceiveBuf` | Receiver-Buffer-Bytes | `receive_buffer_bytes` |
+| `packetsReceiveBuf` | Receiver-Buffer-Paketanzahl | `receive_buffer_packets` |
+| `outboundFramesDiscarded` | Verworfene Frames | `frames_discarded_total` (counter) |
+| `packetsReorderTolerance` | Reorder-Toleranz | `reorder_tolerance_packets` |
+
+Send-/Receive-Buffer-Detail, Verbindungsstabilität, separater Link-
+Health-Score und Failover-Zustände aus Lastenheft §4.3 bleiben
+deferred.
+
+### 7.3 Counter-vs-Rate und Sample-Window
+
+- **Counter** (kumulativ ab Verbindungsstart): `packet_loss_total`,
+  `retransmissions_total`, `frames_discarded_total`. Adapter speichert
+  den absoluten Counter; Dashboard kann die Intervallrate aus zwei
+  aufeinanderfolgenden Samples ableiten (Δ Counter / Δ
+  `source_sequence`-Surrogat).
+- **Snapshot** (Momentaufnahme): `rtt_ms`, `available_bandwidth_bps`,
+  `throughput_bps`, `connection_state`, Buffer-Werte.
+- **Reset-Verhalten**: Counter resetten bei Verbindungs-Reconnect
+  (`connection_id`-Wechsel). Adapter erkennt Wechsel an neuer
+  `connection_id` und beginnt mit neuem Counter-Verlauf.
+
+### 7.4 Health-Bewertung
+
+`health_state` ist server-seitig aus den Pflicht-Werten berechnet.
+Schwellen sind dokumentiert und über Tests fixiert (Tranche 4 setzt
+die finalen Schwellen):
+
+| Zustand | Bedingung (Vorschlag, Tranche 4 final) |
+|---|---|
+| `healthy` | Alle Pflicht-Werte verfügbar; `rtt_ms < 100`; `packet_loss_total`-Δ pro Sample-Window unter 1 % der `bytesReceived`-Δ-äquivalenten Paketanzahl; `available_bandwidth_bps >= required_bandwidth_bps × 1.5` (oder kein `required_bandwidth_bps` bekannt → keine Bandbreiten-Bewertung). |
+| `degraded` | `rtt_ms` zwischen 100 und 250 ms ODER Paketverlust 1–5 % ODER Retransmissions-Anteil > 0,5 %. |
+| `critical` | `rtt_ms ≥ 250` ODER Paketverlust > 5 % ODER `available_bandwidth_bps < required_bandwidth_bps`. |
+| `unknown` | `source_status ≠ ok`, oder Pflicht-Werte teilweise fehlen, oder Stale-Erkennung schlägt an. |
+
+Bandbreiten-Health darf nur dann `degraded`/`critical` auslösen, wenn
+`required_bandwidth_bps` bekannt ist. Ohne Schwelle wird die
+Bandbreite nur angezeigt (siehe §7.1 `required_bandwidth_bps`).
+
+### 7.5 Source-Status und Fehlerklassen
+
+Stabile Codes (analog Probe-Befund aus
+[`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §2.4):
+
+| `source_status` | `source_error_code` | Auslöser |
+|---|---|---|
+| `ok` | `none` | Quelle erreichbar, alle Pflichtfelder gesetzt. |
+| `no_active_connection` | `no_active_connection` | Quelle erreichbar, aber `items[]` enthält keine Verbindung mit erwartetem Pfad/State. |
+| `partial` | `partial_sample` | Quelle erreichbar, Item gefunden, einzelne Pflichtfelder fehlen oder sind non-numeric. |
+| `stale` | `stale_sample` | Quelle erreichbar, Pflichtfelder gesetzt, aber `bytesReceived` (oder das gewählte Source-Sequence-Surrogat) hat sich über N Polls nicht verändert, obwohl `state: publish`. |
+| `unavailable` | `source_unavailable` | HTTP `4xx`/`5xx`, Connection refused, Timeout. |
+| `unavailable` | `parse_error` | HTTP `200`, aber Body ist kein gültiges JSON oder Schema-Drift. |
+
+### 7.6 Freshness-Strategie
+
+- `source_observed_at` ist die Source-of-Truth, falls die Quelle ihn
+  liefert. MediaMTX-API liefert ihn in `0.6.0` **nicht** — Adapter
+  nutzt stattdessen `collected_at` plus ein **Source-Sequence-
+  Surrogat**: monoton steigender `bytesReceived` zwischen Polls.
+- **Stale-Erkennung**: identischer `bytesReceived` (oder gewähltes
+  Surrogat) zwischen `N` aufeinanderfolgenden Polls trotz
+  `connection_state = connected` → `source_status: stale` mit
+  `source_error_code: stale_sample`. `N` ist konfigurierbar
+  (Vorschlag Tranche 4: `N = 3`, ≈ 15 s bei 5-s-Polling).
+- **Importzeit allein** (`collected_at` oder `ingested_at`) darf
+  Freshness niemals beweisen. Wiederholt importierte Altwerte mit
+  identischem Surrogat sind stale, auch wenn `collected_at` neu ist.
+
+### 7.7 Cardinality-Vertrag
+
+- `health_state` und `source_status` sind in §3.2 als bounded
+  Aggregat-Labels freigegeben.
+- Per-Verbindung-Felder (`stream_id`, `connection_id`, `id`,
+  `remoteAddr`, `path`, `state`) sind in §3.1 verboten.
+- Rohmetriken aus MediaMTX werden nicht in den Projekt-Prometheus
+  gescraped (plan-0.6.0 §0.1). MediaMTX-eigene Prometheus-Targets
+  bleiben außerhalb des m-trace-Stacks.
+
+Erlaubte `mtrace_srt_*`-Aggregate (Tranche 6 finalisiert):
+
+| Metrik | Typ | Labels |
+|---|---|---|
+| `mtrace_srt_health_samples_total` | Counter | `health_state` |
+| `mtrace_srt_health_collector_runs_total` | Counter | `source_status` |
+| `mtrace_srt_health_collector_errors_total` | Counter | `source_error_code` |
+
+### 7.8 OTel-Modell
+
+- Span pro Collector-Run: `mtrace.srt.health.collect`. Attribute:
+  `mtrace.srt.connection_id`, `mtrace.srt.stream_id`, `mtrace.srt.health_state`,
+  `mtrace.srt.source_status`, `mtrace.srt.rtt_ms`,
+  `mtrace.srt.available_bandwidth_bps`. Keine Token-/IP-Felder.
+- Counter (translated to Prometheus über §2.4): identisch zu §7.7.
+- Resource-Attribute folgen §2.3.
+
+### 7.9 Datenschutz
+
+- `connection_id` und `remoteAddr` sind Per-Verbindung-Identifier;
+  in MediaMTX-Lab sind das Docker-interne IPs ohne PII-Bezug. In
+  produktiven Setups sind das ggf. öffentliche IPs — Persistenz nur
+  in SQLite/OTel-Spans, **niemals** in Prometheus, und Retention
+  folgt §3.4 plus dem allgemeinen GDPR-Pfad (`EventRepository`-
+  Löschanfrage-Äquivalent für `SrtHealthRepository`).
+- MediaMTX-Auth-Credentials für die API (z. B. `authInternalUsers`-
+  Pass) gehören in ENV / Geheimnis-Store, nicht in Code oder Logs.

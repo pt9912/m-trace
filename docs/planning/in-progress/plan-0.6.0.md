@@ -106,7 +106,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
 | 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ✅ Quellen-Entscheidung (Sub-1.1–1.4); zwei DoD-Items in Tranche 2/3 verlagert (`required_bandwidth_bps`, formaler API-Pull-Vertrag) |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ✅ |
-| 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ⬜ |
+| 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | 🟡 (Sub-3.1 ✅, Sub-3.2..3.7 ⬜) |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
 | 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | ⬜ |
 | 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ⬜ |
@@ -562,78 +562,121 @@ ohne zusätzliche Runtime- oder Cardinality-Risiken liefert:
 | Link Health | Wird durch `health_state` repräsentiert; detaillierter Link-Score bleibt Folge-Scope. |
 | Failover-Zustände | Deferred, weil `0.6.0` kein Multi-Path-/Failover-Lab liefert. |
 
+### 4.0 Sub-Tranchen-Aufteilung
+
+Tranche 3 ist groß (~21 DoD-Items über Spec, Domain, Storage, Adapter,
+Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
+
+| Sub | Inhalt | Form | Status |
+| --- | ------ | ---- | ------ |
+| 3.1 | Spec-Block: `telemetry-model.md` §3.1/§3.2/§7, `backend-api-contract.md` §7/§7a/§10.6, `architecture.md` §3.3/§3.4/§5.4 | Doku | ✅ (siehe §4.1 unten) |
+| 3.2 | Domain-Modell + Driven-Ports (`SrtSource`, `SrtHealthRepository`); Application-Use-Case `SrtHealthCollector` mit Health-Bewertung; Sentinel-Compile-Checks | Code, Hexagon | ⬜ |
+| 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ⬜ |
+| 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ⬜ |
+| 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ⬜ |
+| 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ⬜ |
+| 3.7 | Smoke-/Integrationstest mit zwei Samples; `scripts/smoke-observability.sh` erweitert um SRT-Allowlist-Prüfung | Tests, Smoke | ⬜ |
+
+Sub-3.1 ist abgeschlossen; Sub-3.2 ist die nächste Arbeitsstufe.
+
+### 4.1 Spec-Block (Sub-3.1, ✅ 2026-05-05)
+
 DoD:
 
-- [ ] `spec/telemetry-model.md` beschreibt SRT-Health-Metriken,
-  Einheiten, OTel-Namen/Attribute und Cardinality-Grenzen.
-- [ ] `spec/telemetry-model.md` §3.2 und
-  `spec/backend-api-contract.md` §7 erweitern die bounded
-  Prometheus-Label-Allowlist explizit um `health_state` und, falls als
-  Label genutzt, `source_status`; ohne diese Spec-Änderung dürfen
-  `mtrace_*`-Health-Aggregate diese Labels nicht verwenden.
-- [ ] `spec/backend-api-contract.md` beschreibt den Read-Vertrag für
-  SRT-Health oder verweist auf einen eigenen neuen Abschnitt.
-- [ ] `spec/architecture.md` beschreibt den neuen SRT-Health-Datenfluss
-  inklusive Source/Sidecar, Import-/Pull-Vertrag, Application-Port,
-  Driven-Adapter, Collector/Importer, Storage und Dashboard-Read-Pfad.
+- [x] `spec/telemetry-model.md` beschreibt SRT-Health-Metriken,
+  Einheiten, OTel-Namen/Attribute und Cardinality-Grenzen (neue §7
+  mit Sub-Sektionen 7.1–7.9: Datenmodell, deferred Signale, Counter-
+  vs-Rate, Health-Bewertung, Source-Status, Freshness, Cardinality,
+  OTel, Datenschutz).
+- [x] `spec/telemetry-model.md` §3.1 und §3.2 erweitern die
+  Prometheus-Label-Allowlist explizit um `health_state` und
+  `source_status`; gleichzeitig SRT-Source-Labels (`id`, `path`,
+  `remoteAddr`, `state`, `connection_id`, `stream_id`) explizit in
+  §3.1 als verboten. `spec/backend-api-contract.md` §7 referenziert
+  beide Erweiterungen mit `mtrace_srt_health_*`-Aggregat-Liste.
+- [x] `spec/backend-api-contract.md` beschreibt den Read-Vertrag für
+  SRT-Health (neue §7a: Endpoints, Response-Struktur mit
+  `metrics`/`derived`/`freshness`-Block, Pagination, Fehlerverhalten,
+  Pflichttest-Anker) plus Persistenz-Vertrag (neue §10.6: Tabellen-
+  schema, Dedupe-/Upsert-Regel, Retention, Migration).
+- [x] `spec/architecture.md` beschreibt den neuen SRT-Health-Datenfluss
+  (§3.3 Driven-Ports `SrtSource`/`SrtHealthRepository`; §3.4
+  Adapter-Tabelle ergänzt um `mediamtxclient` und `sqlite/srt_health/`;
+  §5.4 Datenfluss-Diagramm mit Polling-Modell, Backoff, Shutdown,
+  Auth-Pfad, Cardinality-Vertrag).
+### 4.2 Domain + Application + Adapter + Storage (Sub-3.2..3.5)
+
+DoD (offen, Sub-3.2..3.5):
+
 - [ ] Domain-/Application-Port für SRT-Health existiert in `apps/api`
-  ohne Import auf konkrete Metrikquelle.
+  ohne Import auf konkrete Metrikquelle. **→ Sub-3.2**
 - [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
-  Tranche 1 gewählten Quelle.
+  Tranche 1 gewählten Quelle. **→ Sub-3.4**
 - [ ] Collector-/Import-Use-Case ist implementiert und getestet:
   Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
   Fehlerpropagation, Backoff/Retry-Grenzen und Shutdown-Verhalten sind
-  dokumentiert und über Tests abgesichert.
+  dokumentiert und über Tests abgesichert. **→ Sub-3.5**
 - [ ] Collector nutzt den expliziten API-Import-/Pull-Vertrag aus
   Tranche 1; reiner OTLP-Export ohne SQLite-/API-Importpfad ist ein
-  Blocker für Tranche 3.
+  Blocker für Tranche 3. **→ Sub-3.5**
 - [ ] Collector persistiert Samples transaktional für den lokalen
   Read-Pfad: Rohwert-Normalisierung, Health-Bewertung und SQLite-Write
   committen gemeinsam oder gar nicht. OTel-Export läuft nach Commit als
   best-effort Pfad oder über eine explizit dokumentierte Outbox; OTel-
-  Verfügbarkeit darf Persistenz nicht blockieren.
+  Verfügbarkeit darf Persistenz nicht blockieren. **→ Sub-3.5**
 - [ ] Collector-/Import-Test weist mindestens zwei aufeinanderfolgende
   Samples mit steigendem oder verschiedenem `source_observed_at` oder,
   falls die Quelle keine Source-Zeit liefert, steigendem
   `source_sequence`/Generation-ID oder fortschreitendem Sample-Window
   nach. Stale-Bewertung muss Source-Zeit oder explizite Source-
-  Freshness nutzen, nicht `collected_at` oder `ingested_at` allein.
+  Freshness nutzen, nicht `collected_at` oder `ingested_at` allein. **→ Sub-3.5**
 - [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil; der Dashboard-Verlauf ist
-  `0.6.0`-Pflicht.
+  `0.6.0`-Pflicht. **→ Sub-3.3**
 - [ ] Retention-Grenze ist entschieden: unbegrenzt wie bestehende
   lokale SQLite-Demo-Daten oder bounded Snapshot-Historie mit
-  dokumentiertem Reset-/Prune-Pfad.
+  dokumentiertem Reset-/Prune-Pfad. **→ Sub-3.3** (Spec-Default
+  „unbegrenzt + `make wipe`" ist in `backend-api-contract.md` §10.6
+  schon vorgegeben).
 - [ ] Schema-Migration ist idempotent und mit Restart-/Migrationstests
-  abgedeckt.
+  abgedeckt. **→ Sub-3.3**
 - [ ] Dedupe-/Upsert-Regel ist festgelegt: Ein Sample ist eindeutig über
   Quelle, Stream/Connection, `source_observed_at` oder
   `source_sequence`/Generation-ID und ggf. Sample-Window. `collected_at`
-  allein ist kein stabiler Dedupe-Schlüssel.
+  allein ist kein stabiler Dedupe-Schlüssel. **→ Sub-3.3** (Regel in
+  `backend-api-contract.md` §10.6 dokumentiert; Tests folgen mit
+  Sub-3.3).
+
+### 4.3 Telemetry + Tests (Sub-3.6..3.7)
+
+DoD (offen, Sub-3.6..3.7):
+
 - [ ] OTel-Export ist kompatibel mit dem bestehenden Telemetry-Port und
-  vermeidet forbidden Prometheus-Labels.
+  vermeidet forbidden Prometheus-Labels. **→ Sub-3.6**
 - [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
   Health-Samples nach `health_state`; keine `stream_id`,
-  `connection_id`, URL, IP oder Token als Label.
+  `connection_id`, URL, IP oder Token als Label. **→ Sub-3.6**
 - [ ] Neue `mtrace_srt_*`-Metriken werden allowlist-basiert geprüft:
   erlaubte Labels sind ausschließlich `__name__`, `instance`, `job`
   und die in `spec/telemetry-model.md` §3.2 /
   `spec/backend-api-contract.md` §7 neu erlaubten bounded Labels
-  (`health_state`, ggf. `source_status`). Source-Labels wie `id`,
-  `path`, `remoteAddr`, `state`, `connection_id`, IP-Varianten, URL-
-  Teile und Token-/Secret-Felder sind explizit verboten, auch wenn sie
-  nicht von der bisherigen forbidden-by-name-Policy erfasst werden.
+  (`health_state`, `source_status`, `source_error_code`). Source-
+  Labels wie `id`, `path`, `remoteAddr`, `state`, `connection_id`,
+  IP-Varianten, URL-Teile und Token-/Secret-Felder sind explizit
+  verboten, auch wenn sie nicht von der bisherigen forbidden-by-name-
+  Policy erfasst werden. **→ Sub-3.7**
 - [ ] Rohmetriken der Quelle werden nicht in den Projekt-Prometheus
   gescraped. Nur m-trace-normalisierte Aggregate dürfen auf
-  `/api/metrics` erscheinen.
+  `/api/metrics` erscheinen. **→ Sub-3.7**
 - [ ] Tests pinnen Einheiten- und Mapping-Verhalten anhand der Fixtures
-  aus Tranche 1.
+  aus Tranche 1. **→ Sub-3.4 / Sub-3.5**
 - [ ] Smoke- oder Integrationstest weist nach, dass der Collector im Lab
   mindestens zwei aufeinanderfolgende Samples importiert und persistiert.
+  **→ Sub-3.7**
 - [ ] `scripts/smoke-observability.sh` oder ein passender neuer Smoke
   prüft neue `mtrace_srt_*`-Metriken per Label-Allowlist und weist nach,
   dass Source-Rohmetriken nicht als Prometheus-Targets im Projekt-Stack
-  konfiguriert sind.
+  konfiguriert sind. **→ Sub-3.7**
 
 ---
 

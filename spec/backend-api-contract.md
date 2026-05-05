@@ -534,6 +534,112 @@ Verbindliche Regeln:
   `mtrace_api_batches_received` ist ab `0.4.0` Tranche 7 explizit label-frei
   — `batch.size` lebt nur als Span-Attribut, nicht als Counter-Attribut
   (siehe `telemetry-model.md` §2.2 und `plan-0.4.0.md` §8.2).
+- **SRT-Health-Aggregate** (`0.6.0`, plan-0.6.0 §4): Tranche 6
+  liefert `mtrace_srt_health_samples_total{health_state}`,
+  `mtrace_srt_health_collector_runs_total{source_status}` und
+  `mtrace_srt_health_collector_errors_total{source_error_code}`.
+  Erlaubte Labelwerte sind die Enums aus
+  [`telemetry-model.md`](./telemetry-model.md) §7.4/§7.5; die
+  Allowlist ist in §3.2 dort entsprechend ergänzt. Per-Verbindung-
+  Felder (`stream_id`, `connection_id`, MediaMTX-`id`/`path`/
+  `remoteAddr`/`state`) bleiben in §3.1 verboten und gehen
+  ausschließlich in SQLite/OTel-Spans (siehe §10.6 SRT-Health-
+  Persistenz und §7a SRT-Health-Read-Vertrag unten).
+
+---
+
+## 7a. SRT-Health-Read-Vertrag (`0.6.0`)
+
+> Bezug: Lastenheft §13.8 RAK-43;
+> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §5
+> (Tranche 4); [`telemetry-model.md`](./telemetry-model.md) §7.
+
+`0.6.0` Tranche 4 liefert die Read-Endpoints. Vorgesehene Form
+(Tranche 4 finalisiert):
+
+### 7a.1 Endpoints
+
+| Endpoint | Bedeutung |
+|---|---|
+| `GET /api/srt/health` | Aktuelle Health-Snapshots aller bekannten SRT-Streams (eine Zeile pro `stream_id`). |
+| `GET /api/srt/health/{stream_id}` | Detail plus Verlauf der letzten N Samples. |
+
+CORS- und Auth-Verhalten folgt den bestehenden Dashboard-Lese-Pfaden
+aus §4 Authentifizierung — kein Project-Token im Read-Pfad,
+Origin-Validierung gegen globale Allowlist (analog
+`/api/stream-sessions`).
+
+### 7a.2 Response-Struktur
+
+Trennt Rohwerte, abgeleitete Werte und Bewertung explizit:
+
+```json
+{
+  "stream_id": "srt-test",
+  "connection_id": "00000000-0000-0000-0000-000000000001",
+  "health_state": "healthy",
+  "source_status": "ok",
+  "source_error_code": "none",
+  "connection_state": "connected",
+  "metrics": {
+    "rtt_ms": 0.231,
+    "packet_loss_total": 0,
+    "packet_loss_rate": 0,
+    "retransmissions_total": 0,
+    "available_bandwidth_bps": 3623031946,
+    "throughput_bps": 1153142,
+    "required_bandwidth_bps": 1500000
+  },
+  "derived": {
+    "loss_per_window": 0,
+    "retrans_per_window": 0,
+    "bandwidth_headroom_factor": 2415.354
+  },
+  "freshness": {
+    "source_observed_at": null,
+    "source_sequence": "37208036",
+    "collected_at": "2026-05-05T08:48:01Z",
+    "ingested_at": "2026-05-05T08:48:01.250Z",
+    "sample_age_ms": 250,
+    "stale_after_ms": 15000
+  }
+}
+```
+
+`sample_age_ms` ist die Zeit seit dem letzten **Source-Wechsel**
+(monoton steigender `source_sequence`-Wert), **nicht** seit
+`ingested_at`. Wenn die Quelle keinen `source_observed_at` liefert
+und `source_sequence` über N Polls identisch bleibt, steigt
+`sample_age_ms` an, bis `stale_after_ms` überschritten wird —
+dann setzt der Server `source_status: stale`.
+
+### 7a.3 Pagination und Limits
+
+- Default-Limit pro Stream-Verlauf: 100 Samples; hartes Maximum 1000
+  (Query-Parameter `samples_limit`).
+- Kanonische Sortierung: `(ingested_at desc, id desc)` (analog §10.4).
+- Cursor-Pagination via Query-Parameter `samples_cursor` (opaker Token,
+  kapselt `(ingested_at, id)`-Position plus `process_instance_id`
+  analog §10.3).
+
+### 7a.4 Fehlerverhalten
+
+- `404` bei unbekannter `stream_id`.
+- `200` mit `health_state: unknown`, `source_status: unavailable`,
+  `metrics: {}` falls die Quelle aktuell nicht erreichbar ist (Stream
+  war früher bekannt, aktuell kein Sample vorhanden). Operator-
+  sichtbar als „Health unbekannt" plus stale-Hinweis.
+- `400 cursor_invalid` bei `process_instance_id`-Mismatch (analog
+  §10.3).
+- `Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers`
+  in jeder Antwort (analog §3.5).
+
+### 7a.5 Pflichttest-Anker
+
+- Snapshot-Test pinnt das oben gezeigte Response-Schema gegen
+  ein OpenAPI-/Contract-Fixture (Tranche 4 finalisiert den Pfad).
+- Health-State-Schwellen-Tests (Tranche 4) decken Normalfall,
+  `degraded`, `critical`, `unknown`/`stale` ab.
 
 ---
 
@@ -693,6 +799,57 @@ Events angenommen wurden).
   `make wipe` erreichbar — Server-Implementierung muss den Pfad aber
   vorsehen, damit Clients Retention-Folge-Arbeit ohne Wire-Format-
   Bruch unterstützen können.
+
+### 10.6 SRT-Health-Persistenz (`0.6.0`)
+
+> Bezug: Lastenheft §13.8 RAK-42/RAK-46;
+> [`plan-0.6.0.md`](../docs/planning/in-progress/plan-0.6.0.md) §4
+> (Tranche 3 Sub-3.3); [`telemetry-model.md`](./telemetry-model.md)
+> §7.
+
+SRT-Health-Samples sind durable in SQLite persistiert (ADR-0002).
+Tabelle (Vorschlag, Tranche 3 Sub-3.3 finalisiert über
+`apps/api/internal/storage/schema.yaml`):
+
+| Spalte | Typ | Bemerkung |
+|---|---|---|
+| `id` | INTEGER PRIMARY KEY AUTOINCREMENT | Surrogat-PK. |
+| `project_id` | TEXT NOT NULL | Aus `application/Project`-Resolver. |
+| `stream_id` | TEXT NOT NULL | Lab-Stream-Name; nicht Prometheus-Label. |
+| `connection_id` | TEXT NOT NULL | Quellseitige Verbindungs-ID. |
+| `source_observed_at` | TEXT NULL | RFC3339-Timestamp; bei MediaMTX-Quelle in `0.6.0` `NULL`. |
+| `source_sequence` | TEXT NULL | Source-Sequence-Surrogat; Pflicht bei `NULL`-`source_observed_at`. |
+| `collected_at` | TEXT NOT NULL | Polling-Zeitpunkt des Collectors. |
+| `ingested_at` | TEXT NOT NULL | SQLite-Persistenz-Zeitpunkt. |
+| `rtt_ms` | REAL NOT NULL | Snapshot. |
+| `packet_loss_total` | INTEGER NOT NULL | Counter. |
+| `packet_loss_rate` | REAL NULL | Rate, optional. |
+| `retransmissions_total` | INTEGER NOT NULL | Counter. |
+| `available_bandwidth_bps` | INTEGER NOT NULL | Berechnet aus `mbpsLinkCapacity × 1_000_000`. |
+| `throughput_bps` | INTEGER NULL | Optional. |
+| `required_bandwidth_bps` | INTEGER NULL | Aus Lab-Konfig oder Stream-Konfiguration. |
+| `sample_window_ms` | INTEGER NULL | Optional. |
+| `source_status` | TEXT NOT NULL | Enum aus `telemetry-model.md` §7.5. |
+| `source_error_code` | TEXT NOT NULL | Enum aus §7.5. |
+| `connection_state` | TEXT NOT NULL | Enum aus §7.1. |
+| `health_state` | TEXT NOT NULL | Enum aus §7.4. |
+
+**Dedupe-/Upsert-Regel**: ein Sample ist eindeutig über
+`(project_id, stream_id, connection_id, COALESCE(source_observed_at, source_sequence))`.
+`collected_at` allein ist **kein** stabiler Dedupe-Schlüssel
+(Wiederholtes Lesen identischer Quellen-Daten würde sonst neue Zeilen
+erzeugen). Index auf `(project_id, stream_id, connection_id, ingested_at)`
+für Latest-First-Reads.
+
+**Retention**: in `0.6.0` analog zur SQLite-Demo-Daten-Politik
+(unbegrenzt; `make wipe`-äquivalent reicht). Bounded Snapshot-
+Historie mit dokumentiertem Reset-/Prune-Pfad ist Folge-Scope
+(plan-0.6.0 §4 DoD).
+
+**Schema-Migration** ist idempotent und mit Restart-Tests
+abgesichert (analog `plan-0.4.0.md` §2.5 / `apps/api/internal/storage/`-
+Migrationspfad). Tranche 7 verifiziert die Migration über
+`make schema-validate`.
 
 ---
 
