@@ -156,12 +156,15 @@ type spyMetrics struct {
 	startupTimes                            []float64
 }
 
-func (s *spyMetrics) EventsAccepted(n int)    { s.accepted += n }
-func (s *spyMetrics) InvalidEvents(n int)     { s.invalid += n }
-func (s *spyMetrics) RateLimitedEvents(n int) { s.rateLimited += n }
-func (s *spyMetrics) DroppedEvents(n int)     { s.dropped += n }
-func (s *spyMetrics) PlaybackErrors(n int)    { s.playbackErrors += n }
-func (s *spyMetrics) RebufferEvents(n int)    { s.rebufferEvents += n }
+func (s *spyMetrics) EventsAccepted(n int)                       { s.accepted += n }
+func (s *spyMetrics) InvalidEvents(n int)                        { s.invalid += n }
+func (s *spyMetrics) RateLimitedEvents(n int)                    { s.rateLimited += n }
+func (s *spyMetrics) DroppedEvents(n int)                        { s.dropped += n }
+func (s *spyMetrics) PlaybackErrors(n int)                       { s.playbackErrors += n }
+func (s *spyMetrics) RebufferEvents(n int)                       { s.rebufferEvents += n }
+func (s *spyMetrics) SrtHealthSampleAccepted(_ domain.HealthState) {}
+func (s *spyMetrics) SrtCollectorRun(_ domain.SourceStatus)      {}
+func (s *spyMetrics) SrtCollectorError(_ domain.SourceErrorCode) {}
 func (s *spyMetrics) StartupTimeMS(ms float64) {
 	s.startupTimes = append(s.startupTimes, ms)
 }
@@ -179,6 +182,8 @@ func (s *stubTelemetry) BatchReceived(_ context.Context, size int) {
 	s.totalSize += size
 	s.lastSize = size
 }
+
+func (s *stubTelemetry) SrtSampleRecorded(_ context.Context, _ driven.SrtSampleAttrs) {}
 
 // stubAnalyzer zählt AnalyzeBatch-Aufrufe. Im 0.1.0-Use-Case ruft
 // das System ihn nicht produktiv auf — der Slot existiert ausschließlich

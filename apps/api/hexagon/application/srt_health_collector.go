@@ -232,6 +232,8 @@ func worstHealth(states ...domain.HealthState) domain.HealthState {
 type SrtHealthCollector struct {
 	source       driven.SrtSource
 	repo         driven.SrtHealthRepository
+	metrics      driven.MetricsPublisher
+	telemetry    driven.Telemetry
 	now          func() time.Time
 	thresholds   SrtHealthThresholds
 	projectID    string
@@ -276,6 +278,21 @@ func NewSrtHealthCollector(
 	}, nil
 }
 
+// WithMetrics injiziert den Driven-Port für die SRT-Health-Aggregat-
+// Counter (spec/telemetry-model.md §7.7). nil bleibt no-op (für
+// Tests und Lab-Setups ohne Prometheus).
+func (c *SrtHealthCollector) WithMetrics(m driven.MetricsPublisher) *SrtHealthCollector {
+	c.metrics = m
+	return c
+}
+
+// WithTelemetry injiziert den Driven-Port für SRT-Sample-Spans
+// (spec/telemetry-model.md §7.8). nil bleibt no-op.
+func (c *SrtHealthCollector) WithTelemetry(t driven.Telemetry) *SrtHealthCollector {
+	c.telemetry = t
+	return c
+}
+
 // WithPollInterval überschreibt das Intervall zwischen erfolgreichen
 // Polls (Default 5 s). Werte ≤ 0 bleiben am Default.
 func (c *SrtHealthCollector) WithPollInterval(d time.Duration) *SrtHealthCollector {
@@ -303,17 +320,18 @@ func (c *SrtHealthCollector) WithLogger(logger *slog.Logger) *SrtHealthCollector
 }
 
 // Collect liest einen Snapshot, bewertet jede Verbindung gegen die
-// vorhergehende und persistiert die resultierenden Samples. Bei
-// Source-Fehler wird ein synthetisches `unavailable`-Sample pro
-// bekanntem Stream nicht erzeugt (das wäre Folge-Logik in Sub-3.5,
-// wo der Collector Vorgänger-Samples cached); stattdessen gibt
-// Collect den Fehler zurück und der Aufrufer (Polling-Loop) zählt
-// den Fehler für `mtrace_srt_health_collector_errors_total`.
+// vorhergehende und persistiert die resultierenden Samples. Sample-
+// und Run-Counter sowie OTel-Spans werden via WithMetrics/
+// WithTelemetry am Ende emittiert (no-op, falls die Ports nicht
+// verdrahtet sind). Bei Source-Fehler erhöht Collect zusätzlich den
+// Errors-Counter mit der passenden Source-Error-Code-Klasse und gibt
+// den Fehler an den Aufrufer (Run-Loop) zurück.
 func (c *SrtHealthCollector) Collect(ctx context.Context) error {
 	now := c.now()
 
 	samples, err := c.source.SnapshotConnections(ctx)
 	if err != nil {
+		c.recordRunFailure(err)
 		return fmt.Errorf("srt-source snapshot: %w", err)
 	}
 
@@ -322,6 +340,7 @@ func (c *SrtHealthCollector) Collect(ctx context.Context) error {
 		// 0.6.0 Sub-3.2. Sub-3.5 entscheidet, ob ein synthetisches
 		// `no_active_connection`-Sample für historisch bekannte
 		// Streams geschrieben wird.
+		c.recordRunOutcome(domain.SourceStatusNoActiveConnection)
 		return nil
 	}
 
@@ -373,9 +392,112 @@ func (c *SrtHealthCollector) Collect(ctx context.Context) error {
 	}
 
 	if err := c.repo.Append(ctx, out); err != nil {
+		c.recordRunOutcome(domain.SourceStatusUnavailable)
+		if c.metrics != nil {
+			c.metrics.SrtCollectorError(domain.SourceErrorCodeSourceUnavailable)
+		}
 		return fmt.Errorf("srt-health-repo append: %w", err)
 	}
+
+	c.recordSamples(ctx, out)
+	c.recordRunOutcomeFromSamples(out)
 	return nil
+}
+
+// recordSamples emittiert pro persistiertem Sample einen Sample-
+// Counter (Prometheus) plus einen kurzlebigen OTel-Span. Der Aufruf
+// ist best-effort: wenn die Ports nicht verdrahtet sind oder
+// Telemetry-Adapter Fehler werfen, blockiert das die Persistenz
+// nicht (spec/architecture.md §5.4 Transaktions-Klausel).
+func (c *SrtHealthCollector) recordSamples(ctx context.Context, samples []domain.SrtHealthSample) {
+	for _, s := range samples {
+		if c.metrics != nil {
+			c.metrics.SrtHealthSampleAccepted(s.HealthState)
+			if s.SourceErrorCode != domain.SourceErrorCodeNone {
+				c.metrics.SrtCollectorError(s.SourceErrorCode)
+			}
+		}
+		if c.telemetry != nil {
+			c.telemetry.SrtSampleRecorded(ctx, driven.SrtSampleAttrs{
+				StreamID:              s.StreamID,
+				ConnectionID:          s.ConnectionID,
+				HealthState:           s.HealthState,
+				SourceStatus:          s.SourceStatus,
+				RTTMillis:             s.RTTMillis,
+				AvailableBandwidthBPS: s.AvailableBandwidthBPS,
+			})
+		}
+	}
+}
+
+// recordRunOutcomeFromSamples wählt einen Run-Level-SourceStatus aus
+// der Sample-Liste. Reihenfolge:
+//   1. unavailable überschreibt alles (Persistenz-Fehler kommt nicht
+//      bis hierher; aber Source-Status-Fehler in einzelnen Samples
+//      sind möglich, falls Adapter `partial`/`unknown` zurückgibt).
+//   2. stale > partial > no_active_connection > ok.
+// Damit zeigt der Run-Counter den schlimmsten Sample-Status,
+// während der Sample-Counter pro Sample granular ist.
+func (c *SrtHealthCollector) recordRunOutcomeFromSamples(samples []domain.SrtHealthSample) {
+	worst := domain.SourceStatusOK
+	for _, s := range samples {
+		worst = worseSourceStatus(worst, s.SourceStatus)
+	}
+	c.recordRunOutcome(worst)
+}
+
+func (c *SrtHealthCollector) recordRunOutcome(status domain.SourceStatus) {
+	if c.metrics == nil {
+		return
+	}
+	c.metrics.SrtCollectorRun(status)
+}
+
+// recordRunFailure mappt einen Source-Fehler auf
+// SourceErrorCode (spec §7.5) und emittiert Run + Error. Run ist
+// immer `unavailable`, weil ein nicht-erfolgreicher Source-Call die
+// Quelle als `unavailable` klassifiziert (spec §7.5 Tabelle).
+func (c *SrtHealthCollector) recordRunFailure(err error) {
+	if c.metrics == nil {
+		return
+	}
+	c.metrics.SrtCollectorRun(domain.SourceStatusUnavailable)
+	c.metrics.SrtCollectorError(classifySourceErrorCode(err))
+}
+
+// classifySourceErrorCode bildet die Sentinel-Fehler aus
+// `port/driven/srt_errors.go` auf SourceErrorCode ab. Unbekannte
+// Fehler fallen auf source_unavailable.
+func classifySourceErrorCode(err error) domain.SourceErrorCode {
+	switch {
+	case errors.Is(err, driven.ErrSrtSourceParseError):
+		return domain.SourceErrorCodeParseError
+	default:
+		return domain.SourceErrorCodeSourceUnavailable
+	}
+}
+
+// worseSourceStatus liefert den „schlimmeren" der zwei Werte gemäß
+// der in recordRunOutcomeFromSamples dokumentierten Reihenfolge.
+func worseSourceStatus(a, b domain.SourceStatus) domain.SourceStatus {
+	rank := func(s domain.SourceStatus) int {
+		switch s {
+		case domain.SourceStatusUnavailable:
+			return 4
+		case domain.SourceStatusStale:
+			return 3
+		case domain.SourceStatusPartial:
+			return 2
+		case domain.SourceStatusNoActiveConnection:
+			return 1
+		default:
+			return 0
+		}
+	}
+	if rank(a) >= rank(b) {
+		return a
+	}
+	return b
 }
 
 // Run startet den Polling-Loop des Collectors und gibt erst nach

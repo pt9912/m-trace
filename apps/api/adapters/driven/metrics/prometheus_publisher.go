@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
@@ -47,6 +48,13 @@ type PrometheusPublisher struct {
 	activeSessions    prometheus.GaugeFunc
 	startupTimeMS     prometheus.Gauge
 	analyzeRequests   *prometheus.CounterVec
+
+	// SRT-Health-Aggregate (plan-0.6.0 §4 Sub-3.6,
+	// spec/telemetry-model.md §7.7). Bounded Labels; Wertebereiche
+	// kommen aus den Domain-Enums.
+	srtHealthSamples         *prometheus.CounterVec
+	srtCollectorRuns         *prometheus.CounterVec
+	srtCollectorErrors       *prometheus.CounterVec
 }
 
 // NewPrometheusPublisher creates and registers the aggregate metrics.
@@ -112,6 +120,10 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 			[]string{"outcome", "code"},
 		),
 	}
+	srtSamples, srtRuns, srtErrors := newSrtHealthCounters()
+	p.srtHealthSamples = srtSamples
+	p.srtCollectorRuns = srtRuns
+	p.srtCollectorErrors = srtErrors
 	registry.MustRegister(
 		p.eventsAccepted,
 		p.invalidEvents,
@@ -123,6 +135,9 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		p.activeSessions,
 		p.startupTimeMS,
 		p.analyzeRequests,
+		p.srtHealthSamples,
+		p.srtCollectorRuns,
+		p.srtCollectorErrors,
 	)
 	return p
 }
@@ -232,9 +247,90 @@ func normalizeAnalyzeCode(value string) string {
 	}
 }
 
+// newSrtHealthCounters konstruiert die drei SRT-Health-Aggregate
+// (plan-0.6.0 §4 Sub-3.6 — spec/telemetry-model.md §7.7). Werte-
+// bereiche je Label kommen aus den Domain-Enums; §3.2 hat sie als
+// bounded Aggregat-Labels freigegeben.
+func newSrtHealthCounters() (samples, runs, errs *prometheus.CounterVec) {
+	samples = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mtrace_srt_health_samples_total",
+			Help: "Total number of SRT health samples persisted, by health_state.",
+		},
+		[]string{"health_state"},
+	)
+	runs = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mtrace_srt_health_collector_runs_total",
+			Help: "Total number of SRT health collector runs, by source_status.",
+		},
+		[]string{"source_status"},
+	)
+	errs = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mtrace_srt_health_collector_errors_total",
+			Help: "Total number of SRT health collector errors, by source_error_code.",
+		},
+		[]string{"source_error_code"},
+	)
+	return samples, runs, errs
+}
+
 // Handler returns the HTTP handler for GET /api/metrics.
 func (p *PrometheusPublisher) Handler() http.Handler {
 	return promhttp.HandlerFor(p.registry, promhttp.HandlerOpts{})
+}
+
+// SrtHealthSampleAccepted incrementiert den Sample-Counter für das
+// gegebene HealthState-Label. Unbekannte Domain-Werte werden via
+// Allowlist abgefangen (Cardinality-Defense-in-Depth, Spec §7.7).
+func (p *PrometheusPublisher) SrtHealthSampleAccepted(state domain.HealthState) {
+	p.srtHealthSamples.WithLabelValues(normalizeHealthState(state)).Inc()
+}
+
+// SrtCollectorRun incrementiert den Run-Counter für das gegebene
+// SourceStatus-Label.
+func (p *PrometheusPublisher) SrtCollectorRun(status domain.SourceStatus) {
+	p.srtCollectorRuns.WithLabelValues(normalizeSourceStatus(status)).Inc()
+}
+
+// SrtCollectorError incrementiert den Error-Counter für das gegebene
+// SourceErrorCode-Label. `none` ist explizit kein Fehler — der Aufrufer
+// (Collector) ruft die Methode nur bei nicht-`none` Werten.
+func (p *PrometheusPublisher) SrtCollectorError(code domain.SourceErrorCode) {
+	p.srtCollectorErrors.WithLabelValues(normalizeSourceErrorCode(code)).Inc()
+}
+
+func normalizeHealthState(state domain.HealthState) string {
+	switch state {
+	case domain.HealthStateHealthy, domain.HealthStateDegraded,
+		domain.HealthStateCritical, domain.HealthStateUnknown:
+		return string(state)
+	default:
+		return "_unknown"
+	}
+}
+
+func normalizeSourceStatus(status domain.SourceStatus) string {
+	switch status {
+	case domain.SourceStatusOK, domain.SourceStatusUnavailable,
+		domain.SourceStatusPartial, domain.SourceStatusStale,
+		domain.SourceStatusNoActiveConnection:
+		return string(status)
+	default:
+		return "_unknown"
+	}
+}
+
+func normalizeSourceErrorCode(code domain.SourceErrorCode) string {
+	switch code {
+	case domain.SourceErrorCodeNone, domain.SourceErrorCodeSourceUnavailable,
+		domain.SourceErrorCodeNoActiveConnection, domain.SourceErrorCodePartialSample,
+		domain.SourceErrorCodeStaleSample, domain.SourceErrorCodeParseError:
+		return string(code)
+	default:
+		return "_unknown"
+	}
 }
 
 var _ driven.MetricsPublisher = (*PrometheusPublisher)(nil)

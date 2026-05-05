@@ -124,7 +124,7 @@ func TestSnapshot_Unauthorized(t *testing.T) {
 
 	src := mediamtxclient.New(srv.URL)
 	_, err := src.SnapshotConnections(context.Background())
-	if !errors.Is(err, mediamtxclient.ErrSourceUnauthorized) {
+	if !errors.Is(err, driven.ErrSrtSourceUnauthorized) {
 		t.Fatalf("expected ErrSourceUnauthorized, got %v", err)
 	}
 }
@@ -139,7 +139,7 @@ func TestSnapshot_Forbidden(t *testing.T) {
 
 	src := mediamtxclient.New(srv.URL)
 	_, err := src.SnapshotConnections(context.Background())
-	if !errors.Is(err, mediamtxclient.ErrSourceUnauthorized) {
+	if !errors.Is(err, driven.ErrSrtSourceUnauthorized) {
 		t.Fatalf("expected ErrSourceUnauthorized, got %v", err)
 	}
 }
@@ -154,7 +154,7 @@ func TestSnapshot_ServerError(t *testing.T) {
 
 	src := mediamtxclient.New(srv.URL)
 	_, err := src.SnapshotConnections(context.Background())
-	if !errors.Is(err, mediamtxclient.ErrSourceUnavailable) {
+	if !errors.Is(err, driven.ErrSrtSourceUnavailable) {
 		t.Fatalf("expected ErrSourceUnavailable, got %v", err)
 	}
 }
@@ -169,7 +169,7 @@ func TestSnapshot_BodyParseError(t *testing.T) {
 
 	src := mediamtxclient.New(srv.URL)
 	_, err := src.SnapshotConnections(context.Background())
-	if !errors.Is(err, mediamtxclient.ErrSourceParseError) {
+	if !errors.Is(err, driven.ErrSrtSourceParseError) {
 		t.Fatalf("expected ErrSourceParseError, got %v", err)
 	}
 }
@@ -249,7 +249,7 @@ func TestSnapshot_ResponseTooLarge(t *testing.T) {
 
 	src := mediamtxclient.New(srv.URL, mediamtxclient.WithMaxResponseBytes(1024))
 	_, err := src.SnapshotConnections(context.Background())
-	if !errors.Is(err, mediamtxclient.ErrSourceParseError) {
+	if !errors.Is(err, driven.ErrSrtSourceParseError) {
 		t.Fatalf("expected ErrSourceParseError on truncated body, got %v", err)
 	}
 }
@@ -267,7 +267,7 @@ func TestSnapshot_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 	_, err := src.SnapshotConnections(ctx)
-	if !errors.Is(err, mediamtxclient.ErrSourceUnavailable) {
+	if !errors.Is(err, driven.ErrSrtSourceUnavailable) {
 		t.Fatalf("expected ErrSourceUnavailable on context cancel, got %v", err)
 	}
 }

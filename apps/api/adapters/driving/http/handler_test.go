@@ -26,7 +26,8 @@ import (
 // (adapters/driven/telemetry).
 type noopTelemetry struct{}
 
-func (noopTelemetry) BatchReceived(_ context.Context, _ int) {}
+func (noopTelemetry) BatchReceived(_ context.Context, _ int)                       {}
+func (noopTelemetry) SrtSampleRecorded(_ context.Context, _ driven.SrtSampleAttrs) {}
 
 const validBody = `{
   "schema_version": "1.0",

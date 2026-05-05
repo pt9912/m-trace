@@ -89,22 +89,31 @@ func run(logger *slog.Logger) error {
 	}
 	defer persist.Close()
 
-	handler, sweeper, err := buildHandler(persist, otelProviders, logger)
+	handler, sweeper, publisher, otelTelemetry, err := buildHandler(persist, otelProviders, logger)
 	if err != nil {
 		return err
 	}
 
-	srtCollector := buildSrtHealthCollector(persist, logger)
+	srtCollector := buildSrtHealthCollector(persist, publisher, otelTelemetry, logger)
 
 	srv := newHTTPServer(handler, listenAddr())
 	return serve(srv, sweeper, srtCollector, otelProviders, logger)
 }
 
 // buildSrtHealthCollector verdrahtet den SRT-Health-Pfad
-// (plan-0.6.0 §4 Sub-3.5). Wenn `MTRACE_SRT_SOURCE_URL` leer ist,
-// bleibt der Collector deaktiviert (nil) — der Default-Lab-Pfad
+// (plan-0.6.0 §4 Sub-3.5/3.6). Wenn `MTRACE_SRT_SOURCE_URL` leer
+// ist, bleibt der Collector deaktiviert (nil) — der Default-Lab-Pfad
 // wird damit nicht durch fehlende ENV-Variablen blockiert.
-func buildSrtHealthCollector(persist *persistenceBundle, logger *slog.Logger) *application.SrtHealthCollector {
+//
+// Sub-3.6 verdrahtet zusätzlich den geteilten PrometheusPublisher
+// (für `mtrace_srt_health_*`-Aggregate) und den OTel-Telemetry-Adapter
+// (`mtrace.srt.health.collect`-Spans).
+func buildSrtHealthCollector(
+	persist *persistenceBundle,
+	publisher driven.MetricsPublisher,
+	otelTelemetry driven.Telemetry,
+	logger *slog.Logger,
+) *application.SrtHealthCollector {
 	baseURL := strings.TrimSpace(os.Getenv(envSrtSourceURL))
 	if baseURL == "" {
 		logger.Info("srt-health collector disabled (MTRACE_SRT_SOURCE_URL not set)")
@@ -131,7 +140,11 @@ func buildSrtHealthCollector(persist *persistenceBundle, logger *slog.Logger) *a
 		logger.Error("srt-health collector init failed", "error", err)
 		return nil
 	}
-	collector.WithLogger(logger).WithPollInterval(parseSrtPollInterval(logger))
+	collector.
+		WithLogger(logger).
+		WithPollInterval(parseSrtPollInterval(logger)).
+		WithMetrics(publisher).
+		WithTelemetry(otelTelemetry)
 	logger.Info(
 		"srt-health collector enabled",
 		"source_url", baseURL,
@@ -170,10 +183,10 @@ func buildHandler(
 	persist *persistenceBundle,
 	otelProviders *telemetry.Providers,
 	logger *slog.Logger,
-) (http.Handler, *application.SessionsSweeper, error) {
+) (http.Handler, *application.SessionsSweeper, *metrics.PrometheusPublisher, *telemetry.OTelTelemetry, error) {
 	otelTelemetry, err := telemetry.NewOTelTelemetry(otelProviders.Meter.Meter(telemetry.MeterName))
 	if err != nil {
-		return nil, nil, fmt.Errorf("otel telemetry adapter init: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("otel telemetry adapter init: %w", err)
 	}
 
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
@@ -201,7 +214,7 @@ func buildHandler(
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	sseConfig := &apihttp.SseStreamConfig{Broker: broker, Events: persist.events}
 	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, tracer, logger)
-	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, nil
+	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 
 // activeSessionsGauge liefert den Gauge-Provider für

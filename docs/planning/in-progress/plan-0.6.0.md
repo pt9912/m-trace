@@ -574,7 +574,7 @@ Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
 | 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ✅ |
 | 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ✅ |
 | 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ✅ |
-| 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ⬜ |
+| 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ✅ |
 | 3.7 | Smoke-/Integrationstest mit zwei Samples; `scripts/smoke-observability.sh` erweitert um SRT-Allowlist-Prüfung | Tests, Smoke | ⬜ |
 
 Sub-3.1 ist abgeschlossen; Sub-3.2 ist die nächste Arbeitsstufe.
@@ -687,11 +687,21 @@ DoD:
 
 DoD (offen, Sub-3.6..3.7):
 
-- [ ] OTel-Export ist kompatibel mit dem bestehenden Telemetry-Port und
-  vermeidet forbidden Prometheus-Labels. **→ Sub-3.6**
-- [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
-  Health-Samples nach `health_state`; keine `stream_id`,
-  `connection_id`, URL, IP oder Token als Label. **→ Sub-3.6**
+- [x] OTel-Export ist kompatibel mit dem bestehenden Telemetry-Port und
+  vermeidet forbidden Prometheus-Labels. Sub-3.6:
+  `Telemetry.SrtSampleRecorded` nimmt `SrtSampleAttrs` (StreamID,
+  ConnectionID, HealthState, SourceStatus, RTT, AvailableBandwidth)
+  und erzeugt einen Span `mtrace.srt.health.collect` mit
+  `mtrace.srt.*`-Attributen — Per-Verbindung-Identifier wandern in
+  den Span (sample-basiert), nie in Prometheus-Labels.
+- [x] Prometheus erhält höchstens bounded Aggregate. Sub-3.6:
+  `mtrace_srt_health_samples_total{health_state}`,
+  `mtrace_srt_health_collector_runs_total{source_status}`,
+  `mtrace_srt_health_collector_errors_total{source_error_code}` —
+  Werte aus den Domain-Enums, mit `_unknown`-Fallback als
+  Cardinality-Defense-in-Depth. PrometheusPublisher implementiert
+  die drei `SrtHealthSampleAccepted`/`SrtCollectorRun`/
+  `SrtCollectorError`-Methoden auf dem MetricsPublisher-Port.
 - [ ] Neue `mtrace_srt_*`-Metriken werden allowlist-basiert geprüft:
   erlaubte Labels sind ausschließlich `__name__`, `instance`, `job`
   und die in `spec/telemetry-model.md` §3.2 /

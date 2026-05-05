@@ -24,9 +24,16 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
+
+// spanNameSrtHealthCollect ist der Span-Name aus
+// spec/telemetry-model.md §7.8 für SRT-Health-Samples (plan-0.6.0
+// §4 Sub-3.6).
+const spanNameSrtHealthCollect = "mtrace.srt.health.collect"
 
 // MeterName is the OTel scope used for instrumentation.
 const MeterName = "github.com/pt9912/m-trace/apps/api"
@@ -161,17 +168,19 @@ func Meter() metric.Meter {
 }
 
 // OTelTelemetry implements driven.Telemetry by mapping BatchReceived
-// onto an OTel Int64Counter. The counter is created lazily on the
-// first call so that Setup may not yet have run during construction
-// in tests; production code wires Setup before calling the use case.
+// onto an OTel Int64Counter and SrtSampleRecorded onto kurzlebige
+// OTel-Spans (`mtrace.srt.health.collect`). Counter und Tracer werden
+// lazy beim ersten Aufruf genutzt; production code verdrahtet Setup
+// vor dem ersten Use-Case-Call.
 type OTelTelemetry struct {
 	counter metric.Int64Counter
+	tracer  trace.Tracer
 }
 
 // NewOTelTelemetry returns a telemetry implementation that uses the
-// given meter to create the Int64Counter `mtrace.api.batches.received`.
-// If meter is nil, a no-op meter is used (useful for tests that do
-// not wire the SDK).
+// given meter to create the Int64Counter `mtrace.api.batches.received`
+// und nimmt einen Tracer für `mtrace.srt.health.collect`-Spans aus
+// dem globalen TracerProvider. Beide Provider sind nil-safe.
 func NewOTelTelemetry(meter metric.Meter) (*OTelTelemetry, error) {
 	if meter == nil {
 		meter = noop.NewMeterProvider().Meter(MeterName)
@@ -183,7 +192,18 @@ func NewOTelTelemetry(meter metric.Meter) (*OTelTelemetry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &OTelTelemetry{counter: counter}, nil
+	return &OTelTelemetry{counter: counter, tracer: otel.Tracer(TracerName)}, nil
+}
+
+// WithTracer überschreibt den default-Tracer (z. B. für Tests, die
+// einen In-Memory-SpanRecorder nutzen). nil → globaler Tracer aus
+// `otel.Tracer(TracerName)`.
+func (t *OTelTelemetry) WithTracer(tr trace.Tracer) *OTelTelemetry {
+	if tr == nil {
+		tr = tracenoop.NewTracerProvider().Tracer(TracerName)
+	}
+	t.tracer = tr
+	return t
 }
 
 // BatchReceived increments the counter by 1. The counter is label-free
@@ -197,6 +217,26 @@ func NewOTelTelemetry(meter metric.Meter) (*OTelTelemetry, error) {
 // full cardinality contract.
 func (t *OTelTelemetry) BatchReceived(ctx context.Context, _ int) {
 	t.counter.Add(ctx, 1)
+}
+
+// SrtSampleRecorded erzeugt einen kurzlebigen Span pro persistiertem
+// SRT-Health-Sample. Span-Name und Attribute folgen
+// spec/telemetry-model.md §7.8. Per-Verbindung-Identifier wandern
+// als Span-Attribut, nicht als Prometheus-Label (Cardinality-
+// Vertrag §7.7).
+func (t *OTelTelemetry) SrtSampleRecorded(ctx context.Context, attrs driven.SrtSampleAttrs) {
+	if t.tracer == nil {
+		return
+	}
+	_, span := t.tracer.Start(ctx, spanNameSrtHealthCollect, trace.WithAttributes(
+		attribute.String("mtrace.srt.stream_id", attrs.StreamID),
+		attribute.String("mtrace.srt.connection_id", attrs.ConnectionID),
+		attribute.String("mtrace.srt.health_state", string(attrs.HealthState)),
+		attribute.String("mtrace.srt.source_status", string(attrs.SourceStatus)),
+		attribute.Float64("mtrace.srt.rtt_ms", attrs.RTTMillis),
+		attribute.Int64("mtrace.srt.available_bandwidth_bps", attrs.AvailableBandwidthBPS),
+	))
+	span.End()
 }
 
 // Compile-time check: OTelTelemetry implements driven.Telemetry.

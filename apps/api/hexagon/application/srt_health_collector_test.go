@@ -15,7 +15,44 @@ import (
 var (
 	_ driven.SrtSource           = (*mockSrtSource)(nil)
 	_ driven.SrtHealthRepository = (*mockSrtHealthRepo)(nil)
+	_ driven.MetricsPublisher    = (*mockMetricsPublisher)(nil)
+	_ driven.Telemetry           = (*mockTelemetry)(nil)
 )
+
+// mockMetricsPublisher tracks die SRT-spezifischen Counter; alle
+// anderen Methoden des MetricsPublisher-Ports sind no-op.
+type mockMetricsPublisher struct {
+	samples []domain.HealthState
+	runs    []domain.SourceStatus
+	errors  []domain.SourceErrorCode
+}
+
+func (m *mockMetricsPublisher) EventsAccepted(int)            {}
+func (m *mockMetricsPublisher) InvalidEvents(int)             {}
+func (m *mockMetricsPublisher) RateLimitedEvents(int)         {}
+func (m *mockMetricsPublisher) DroppedEvents(int)             {}
+func (m *mockMetricsPublisher) PlaybackErrors(int)            {}
+func (m *mockMetricsPublisher) RebufferEvents(int)            {}
+func (m *mockMetricsPublisher) StartupTimeMS(float64)         {}
+func (m *mockMetricsPublisher) SrtHealthSampleAccepted(state domain.HealthState) {
+	m.samples = append(m.samples, state)
+}
+func (m *mockMetricsPublisher) SrtCollectorRun(status domain.SourceStatus) {
+	m.runs = append(m.runs, status)
+}
+func (m *mockMetricsPublisher) SrtCollectorError(code domain.SourceErrorCode) {
+	m.errors = append(m.errors, code)
+}
+
+// mockTelemetry erfasst SrtSampleRecorded-Aufrufe.
+type mockTelemetry struct {
+	samples []driven.SrtSampleAttrs
+}
+
+func (m *mockTelemetry) BatchReceived(_ context.Context, _ int) {}
+func (m *mockTelemetry) SrtSampleRecorded(_ context.Context, attrs driven.SrtSampleAttrs) {
+	m.samples = append(m.samples, attrs)
+}
 
 type mockSrtSource struct {
 	samples    []domain.SrtConnectionSample
@@ -527,6 +564,92 @@ func TestRun_ShutdownOnCancel(t *testing.T) {
 		// ok
 	case <-time.After(200 * time.Millisecond):
 		t.Fatal("Run did not return after cancel")
+	}
+}
+
+// Sub-3.6: Sample-Counter werden pro persistiertem Sample erhöht;
+// Run-Counter steht am Ende auf SourceStatusOK (alle Samples healthy);
+// Telemetry-Span wird pro Sample emittiert.
+func TestCollect_EmitsMetricsAndSpans(t *testing.T) {
+	src := &mockSrtSource{samples: []domain.SrtConnectionSample{{
+		StreamID:              "srt-test",
+		ConnectionID:          "c1",
+		ConnectionState:       domain.ConnectionStateConnected,
+		RTTMillis:             10,
+		AvailableBandwidthBPS: 10_000_000,
+		SourceSequence:        "seq-1",
+	}}}
+	repo := &mockSrtHealthRepo{}
+	metrics := &mockMetricsPublisher{}
+	telemetry := &mockTelemetry{}
+	c := newCollector(t, src, repo)
+	c.WithMetrics(metrics).WithTelemetry(telemetry)
+
+	if err := c.Collect(context.Background()); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if len(metrics.samples) != 1 || metrics.samples[0] != domain.HealthStateHealthy {
+		t.Fatalf("expected 1 healthy sample counter, got %v", metrics.samples)
+	}
+	if len(metrics.runs) != 1 || metrics.runs[0] != domain.SourceStatusOK {
+		t.Fatalf("expected 1 ok run counter, got %v", metrics.runs)
+	}
+	if len(metrics.errors) != 0 {
+		t.Fatalf("expected 0 error counters on healthy run, got %v", metrics.errors)
+	}
+	if len(telemetry.samples) != 1 || telemetry.samples[0].StreamID != "srt-test" {
+		t.Fatalf("expected 1 telemetry sample for srt-test, got %v", telemetry.samples)
+	}
+}
+
+// Sub-3.6: Bei Source-Fehler wird der run-Counter auf
+// SourceStatusUnavailable gesetzt + ein passender Error-Code
+// emittiert.
+func TestCollect_SourceErrorClassification(t *testing.T) {
+	cases := []struct {
+		name     string
+		err      error
+		wantCode domain.SourceErrorCode
+	}{
+		{"unauthorized → source_unavailable", driven.ErrSrtSourceUnauthorized, domain.SourceErrorCodeSourceUnavailable},
+		{"unavailable → source_unavailable", driven.ErrSrtSourceUnavailable, domain.SourceErrorCodeSourceUnavailable},
+		{"parse error → parse_error", driven.ErrSrtSourceParseError, domain.SourceErrorCodeParseError},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			src := &mockSrtSource{err: tc.err}
+			repo := &mockSrtHealthRepo{}
+			metrics := &mockMetricsPublisher{}
+			c := newCollector(t, src, repo)
+			c.WithMetrics(metrics)
+
+			err := c.Collect(context.Background())
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if len(metrics.runs) != 1 || metrics.runs[0] != domain.SourceStatusUnavailable {
+				t.Fatalf("expected unavailable run, got %v", metrics.runs)
+			}
+			if len(metrics.errors) != 1 || metrics.errors[0] != tc.wantCode {
+				t.Fatalf("expected error code %s, got %v", tc.wantCode, metrics.errors)
+			}
+		})
+	}
+}
+
+// Sub-3.6: Empty-Snapshot wird als no_active_connection-Run gezählt.
+func TestCollect_EmptySnapshotReportsNoActiveConnection(t *testing.T) {
+	src := &mockSrtSource{samples: nil}
+	repo := &mockSrtHealthRepo{}
+	metrics := &mockMetricsPublisher{}
+	c := newCollector(t, src, repo)
+	c.WithMetrics(metrics)
+
+	if err := c.Collect(context.Background()); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if len(metrics.runs) != 1 || metrics.runs[0] != domain.SourceStatusNoActiveConnection {
+		t.Fatalf("expected no_active_connection run, got %v", metrics.runs)
 	}
 }
 

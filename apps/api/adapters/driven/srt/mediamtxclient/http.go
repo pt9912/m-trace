@@ -16,7 +16,6 @@ package mediamtxclient
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 	"time"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 const (
@@ -38,13 +38,11 @@ const (
 	srtConnsListPath = "/v3/srtconns/list"
 )
 
-// Sentinel-Fehler für die Use-Case-Klassifikation in Sub-3.5
-// (spec/telemetry-model.md §7.5).
-var (
-	ErrSourceUnauthorized = errors.New("mediamtxclient: source unauthorized")
-	ErrSourceUnavailable  = errors.New("mediamtxclient: source unavailable")
-	ErrSourceParseError   = errors.New("mediamtxclient: source parse error")
-)
+// Sentinel-Fehler werden in `port/driven/srt_errors.go` gepflegt
+// (`driven.ErrSrtSourceUnauthorized` / `…Unavailable` / `…ParseError`).
+// Der Adapter wrappt seine HTTP-/Parse-Fehler darauf, damit der Use
+// Case ohne Adapter-Import via `errors.Is` klassifizieren kann
+// (Hexagon-Boundary).
 
 // HTTPSrtSource implementiert driven.SrtSource gegen MediaMTX.
 type HTTPSrtSource struct {
@@ -128,7 +126,7 @@ func (s *HTTPSrtSource) SnapshotConnections(ctx context.Context) ([]domain.SrtCo
 
 	var resp srtConnsListResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrSourceParseError, err)
+		return nil, fmt.Errorf("%w: %v", driven.ErrSrtSourceParseError, err)
 	}
 
 	collectedAt := s.now().UTC()
@@ -142,7 +140,7 @@ func (s *HTTPSrtSource) SnapshotConnections(ctx context.Context) ([]domain.SrtCo
 func (s *HTTPSrtSource) fetchSrtConnsList(ctx context.Context) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.baseURL+srtConnsListPath, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: build request: %v", ErrSourceUnavailable, err)
+		return nil, fmt.Errorf("%w: build request: %v", driven.ErrSrtSourceUnavailable, err)
 	}
 	if s.username != "" || s.password != "" {
 		req.SetBasicAuth(s.username, s.password)
@@ -151,20 +149,20 @@ func (s *HTTPSrtSource) fetchSrtConnsList(ctx context.Context) ([]byte, error) {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: do: %v", ErrSourceUnavailable, err)
+		return nil, fmt.Errorf("%w: do: %v", driven.ErrSrtSourceUnavailable, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, s.maxResponseSize))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read body: %v", ErrSourceUnavailable, err)
+		return nil, fmt.Errorf("%w: read body: %v", driven.ErrSrtSourceUnavailable, err)
 	}
 
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return nil, fmt.Errorf("%w: status=%d", ErrSourceUnauthorized, resp.StatusCode)
+		return nil, fmt.Errorf("%w: status=%d", driven.ErrSrtSourceUnauthorized, resp.StatusCode)
 	case resp.StatusCode >= http.StatusBadRequest:
-		return nil, fmt.Errorf("%w: status=%d body=%s", ErrSourceUnavailable, resp.StatusCode, truncate(body, 200))
+		return nil, fmt.Errorf("%w: status=%d body=%s", driven.ErrSrtSourceUnavailable, resp.StatusCode, truncate(body, 200))
 	}
 
 	return body, nil
