@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
@@ -157,6 +158,51 @@ func TestSse_Heartbeat(t *testing.T) {
 	}, 200*time.Millisecond)
 	if !strings.Contains(got, ": heartbeat") {
 		t.Errorf("did not see heartbeat comment in stream output: %q", got)
+	}
+}
+
+// TestSse_StreamSurvivesShortWriteTimeout pinnt: ein produktiver
+// `http.Server` mit `WriteTimeout` kürzer als der SSE-Heartbeat darf
+// den Stream NICHT vor dem ersten Heartbeat abbrechen. `cmd/api/main.go`
+// setzt WriteTimeout=10s während der Heartbeat erst nach 15s kommt;
+// ohne `SetWriteDeadline(time.Time{})` im SSE-Handler killt der Server
+// die Connection mid-stream. `httptest.NewServer` setzt keinen
+// WriteTimeout, deckt dieses Risiko also nicht ab — dieser Test nutzt
+// einen echten `http.Server` mit aggressivem WriteTimeout, der ohne
+// den SetWriteDeadline-Fix garantiert vor dem ersten Heartbeat
+// zuschlägt. Spec §10a + plan-0.4.0 §9.4 (Findings post-§9.4-Closeout).
+func TestSse_StreamSurvivesShortWriteTimeout(t *testing.T) {
+	t.Parallel()
+	broker := application.NewEventBroker()
+	events := inmemory.NewEventRepository()
+	handler := newSseHandler(broker, events, 80*time.Millisecond)
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	server := &http.Server{
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		// Aggressiver WriteTimeout: deutlich unter dem 80ms-Heartbeat.
+		// Ohne SetWriteDeadline-Fix killt das den Stream, bevor der
+		// erste Heartbeat-Write durchkommt.
+		WriteTimeout: 50 * time.Millisecond,
+	}
+	t.Cleanup(func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer cancel()
+		_ = server.Shutdown(shutdownCtx)
+	})
+	go func() { _ = server.Serve(listener) }()
+
+	baseURL := "http://" + listener.Addr().String()
+	got := streamBytesUntilTimeout(t, baseURL, http.Header{
+		"X-MTrace-Token": []string{"demo-token"},
+	}, 300*time.Millisecond)
+	// 300ms gibt mindestens drei Heartbeat-Ticks Spielraum (alle 80ms).
+	if !strings.Contains(got, ": heartbeat") {
+		t.Errorf("expected heartbeat through short WriteTimeout, got %q", got)
 	}
 }
 

@@ -39,6 +39,13 @@
       onAppended: () => {
         void refresh();
       },
+      // backend-api-contract.md §10a: bei Reconnect-Lücke > 1000 Events
+      // sendet der Server `backfill_truncated`; der Konsument muss dann
+      // den Snapshot neu laden, weil keine Live-`event_appended`-Frames
+      // die Lücke schließen.
+      onTruncated: () => {
+        void refresh();
+      },
       onPollingTick: () => refresh()
     });
   });

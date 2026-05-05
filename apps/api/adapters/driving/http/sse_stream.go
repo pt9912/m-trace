@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -58,6 +59,19 @@ func (h *SseStreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.logError("ResponseWriter does not implement http.Flusher")
 		writeStatus(w, http.StatusInternalServerError)
 		return
+	}
+
+	// Per-Connection-Write-Deadline für diesen SSE-Stream deaktivieren.
+	// `cmd/api/main.go` setzt `WriteTimeout: 10s` auf dem `http.Server`,
+	// was einen long-lived SSE-Stream vor dem ersten 15s-Heartbeat
+	// (`sseHeartbeatInterval`) abbrechen würde. `time.Time{}` (Zero-Value)
+	// löscht die Deadline nur für diese Verbindung; andere Endpoints
+	// behalten den globalen Timeout. Wenn der Test-Writer
+	// `SetWriteDeadline` nicht implementiert (`http.ErrNotSupported`),
+	// gilt sowieso kein produktiver WriteTimeout — wir loggen andere
+	// Fehler defensiv.
+	if err := http.NewResponseController(w).SetWriteDeadline(time.Time{}); err != nil && !errors.Is(err, http.ErrNotSupported) {
+		h.logError("clear SSE write deadline failed", "error", err)
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")

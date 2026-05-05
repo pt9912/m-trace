@@ -1,6 +1,9 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { startSseClient } from "../src/lib/sse-client";
+import { listSessions } from "../src/lib/api";
+
 const routeState = vi.hoisted<{ params: { id?: string } }>(() => ({
   params: { id: "session-1" }
 }));
@@ -89,9 +92,10 @@ const events = [
 
 vi.mock("$lib/sse-client", () => ({
   // Tests rendern Sessions-Page in JSDOM ohne echten SSE-Server;
-  // wir stuben den Client als no-op, damit kein Reconnect-Loop den
-  // shared `sseConnection`-Store durcheinander wirbelt.
-  startSseClient: () => ({ disconnect: () => undefined })
+  // wir stuben den Client als `vi.fn()`-Spy, damit Tests an die
+  // übergebenen Optionen (z. B. `onTruncated`) kommen, ohne einen
+  // Reconnect-Loop oder den shared `sseConnection`-Store anzufassen.
+  startSseClient: vi.fn(() => ({ disconnect: () => undefined }))
 }));
 
 vi.mock("$lib/api", () => ({
@@ -173,6 +177,32 @@ describe("dashboard route components", () => {
 
     expect(screen.getByText("No matching sessions.")).toBeTruthy();
     expect(screen.queryByText("session-1")).toBeNull();
+  });
+
+  // Spec backend-api-contract.md §10a verlangt, dass der Konsument
+  // bei `backfill_truncated` den Snapshot neu lädt — sonst bleiben
+  // Sessions stale, wenn die Reconnect-Lücke > sseBackfillLimit ist.
+  // Vor diesem Fix übergab `+page.svelte` keinen `onTruncated`-Handler,
+  // also ist der Vertragsbruch im Test nicht detektiert worden.
+  it("triggers a sessions refresh on backfill_truncated", async () => {
+    const sseSpy = vi.mocked(startSseClient);
+    sseSpy.mockClear();
+
+    const { default: SessionsPage } = await import("../src/routes/sessions/+page.svelte");
+    render(SessionsPage);
+    await screen.findByText("session-1");
+
+    expect(sseSpy).toHaveBeenCalledTimes(1);
+    const options = sseSpy.mock.calls[0]?.[0];
+    expect(options?.onTruncated).toBeTypeOf("function");
+
+    const listSpy = vi.mocked(listSessions);
+    const callsBefore = listSpy.mock.calls.length;
+    options?.onTruncated?.({ oldest_ingest_sequence: 100 });
+    // refresh ist async; auf den nächsten Microtask warten.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(listSpy.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
   it("renders session loading errors", async () => {

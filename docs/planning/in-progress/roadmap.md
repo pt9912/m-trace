@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-05
-> **Phase**: `0.4.0` (Erweiterte Trace-Korrelation) in Arbeit; Tranchen 1–7 (SQLite-Persistenz, Session-Trace-Modell, Manifest-/Segment-Korrelation, Dashboard-Session-Verlauf inkl. SSE, optionales Tempo-Profil, Aggregat-Metriken + RAK-33/34-Sichtbarkeit, Cardinality- und Sampling-Doku RAK-35) abgeschlossen; Tranche 8 (Release-Akzeptanz `0.4.0`) ist der nächste offene Schritt.
+> **Phase**: `0.4.0` lokal abgeschlossen (Tranchen 1–7 + §9.1–§9.4 + §9.6 lokaler Closeout). Versionen sind auf `0.4.0` gehoben, alle Release-Gates lokal grün, `CHANGELOG.md` trägt `[0.4.0] - 2026-05-05`. **Offen: §9.5 Release-Artefakt** (Release-Commit + annotierter Tag `v0.4.0` + Push + GitHub-Release + GitHub-Actions-`build` grün am Tag-Commit). §9.5 ist opt-in durch den Nutzer und kein autonomer Schritt — siehe `plan-0.4.0.md` §9.5 für die Befehlsreihenfolge.
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -30,6 +30,7 @@ aktualisieren.
 | ✅      | Observability (`0.1.2`)             | Prometheus + Grafana + OTel-Collector als Profil; RAK-9, RAK-10.                                                             | [`plan-0.1.2.md`](../done/plan-0.1.2.md)                               |
 | ✅      | Publizierbares Player-SDK (`0.2.0`) | `@npm9912/player-sdk` mit ESM/CJS/IIFE, Pack-Smokes, Browser-Support-Matrix; RAK-11..RAK-21.                                 | [`plan-0.2.0.md`](../done/plan-0.2.0.md)                               |
 | ✅      | Stream-Analyzer (`0.3.0`)           | `@npm9912/stream-analyzer` (Library + CLI), `analyzer-service` (interner HTTP-Wrapper), `POST /api/analyze`; RAK-22..RAK-28. | [`plan-0.3.0.md`](../done/plan-0.3.0.md)                               |
+| 🟡      | Erweiterte Trace-Korrelation (`0.4.0`) | SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline (SSE + Polling-Fallback), optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/Sampling-Doku; lokal abgeschlossen, Tag-Push opt-in (RAK-29..RAK-35). | [`plan-0.4.0.md`](./plan-0.4.0.md)                                  |
 
 ### 1.2 Verbleibend für `0.4.0`-Scope-Cut
 
@@ -91,7 +92,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 33  | ✅      | Dashboard-Session-Verlauf ohne Tempo inkl. SSE, Backfill, Polling-Fallback und SQLite-Restart-Test umsetzen           | Nach Schritt 30                                                 | RAK-32; ADR-0003; plan-0.4.0 Tranche 4                        |
 | 34  | ✅      | Optionales Tempo-Profil anbinden, ohne RAK-29/RAK-32 vom Trace-Backend abhängig zu machen                             | Nach Schritt 31                                                 | RAK-31; plan-0.4.0 Tranche 5                                  |
 | 35  | ✅      | Aggregat-Metriken, Drop-/Invalid-/Rate-Limit-Sichtbarkeit und Cardinality-/Sampling-Doku abschließen                  | Parallel zu Schritten 30–33                                     | RAK-33..RAK-35; plan-0.4.0 Tranchen 6 (✅) und 7 (✅)           |
-| 36  | ⬜      | Release-Akzeptanzkriterien `0.4.0` verifizieren und Roadmap auf `0.5.0` umstellen                                     | Nach Schritten 30–35                                            | RAK-29..RAK-35; plan-0.4.0 Tranche 8                          |
+| 36  | 🟡      | Release-Akzeptanzkriterien `0.4.0` verifizieren und Roadmap auf `0.5.0` umstellen                                     | Nach Schritten 30–35                                            | RAK-29..RAK-35; plan-0.4.0 Tranche 8 (§9.1–§9.4 + §9.6 lokal abgeschlossen; §9.5 Release-Artefakt opt-in offen) |
 
 ---
 
@@ -107,7 +108,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.1.2` | Observability-Stack          | ✅      | RAK-9, RAK-10; DoD-Tracking in [`plan-0.1.2.md`](../done/plan-0.1.2.md)                               |
 | `0.2.0` | Publizierbares Player SDK    | ✅      | RAK-11..RAK-21                                                                                        |
 | `0.3.0` | Stream Analyzer              | ✅      | RAK-22..RAK-28; DoD-Tracking in [`plan-0.3.0.md`](../done/plan-0.3.0.md)                              |
-| `0.4.0` | Erweiterte Trace-Korrelation | ⬜      | RAK-29..RAK-35                                                                                        |
+| `0.4.0` | Erweiterte Trace-Korrelation | 🟡      | RAK-29..RAK-35; lokal abgeschlossen, Tag/Push opt-in (`plan-0.4.0.md` §9.5)                            |
 | `0.5.0` | Multi-Protocol Lab           | ⬜      | RAK-36..RAK-40                                                                                        |
 | `0.6.0` | SRT Health View              | ⬜      | RAK-41..RAK-46                                                                                        |
 
