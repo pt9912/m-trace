@@ -1,6 +1,6 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
-> **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6), Tranche 2 (§3.1–§3.4 inkl. §3.4c-Closeout), **Tranche 3 (§4.1–§4.7)**, **Tranche 4 (§5 H1–H6)**, **Tranche 5 (§6.1–§6.5)**, **Tranche 6 (§7.1–§7.4)** und **Tranche 7 (§8.1–§8.6)** vollständig abgeschlossen; Roadmap Schritte 31, 32, 33, 34 und 35 sind auf ✅. Offen: nur noch Tranche 8. **Tranche 8** (Release-Akzeptanzkriterien `0.4.0`, Versions-Bump, Tag, Release-Notes) ist der nächste offene Schritt.
+> **Status**: 🟡 in Arbeit. Tranche 0, Tranche 1 (§2.1–§2.6), Tranche 2 (§3.1–§3.4 inkl. §3.4c-Closeout), **Tranche 3 (§4.1–§4.7)**, **Tranche 4 (§5 H1–H6)**, **Tranche 5 (§6.1–§6.5)**, **Tranche 6 (§7.1–§7.4)** und **Tranche 7 (§8.1–§8.6)** vollständig abgeschlossen; Roadmap Schritte 31, 32, 33, 34 und 35 sind auf ✅. **Tranche 8** (Release-Akzeptanzkriterien `0.4.0`, Versions-Bump, Tag, Release-Notes) ist in Arbeit; §9.1 (Versions-Bestandsaufnahme + Liefer-Matrix + RAK-Verifikations-Matrix) ist der erste Sub-Tranchen-Schritt.
 > **Bezug**: [Lastenheft `1.1.8`](../../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](./roadmap.md) §1.2/§3/§4/§5; [Architektur](../../../spec/architecture.md); [Telemetry-Model](../../../spec/telemetry-model.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../../adr/0003-live-updates.md); [Risiken-Backlog](../open/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
@@ -38,7 +38,7 @@ Neue Lastenheft-Patches während `0.4.0` landen weiterhin zentral in `plan-0.1.0
 | 5       | Optionales Tempo-Profil                                      | ✅      |
 | 6       | Aggregat-Metriken und Drop-/Invalid-/Rate-Limit-Sichtbarkeit | ✅      |
 | 7       | Cardinality- und Sampling-Dokumentation                      | ✅      |
-| 8       | Release-Akzeptanzkriterien `0.4.0`                           | ⬜      |
+| 8       | Release-Akzeptanzkriterien `0.4.0`                           | 🟡      |
 
 ---
 
@@ -679,7 +679,77 @@ DoD (Tranche-7-gesamt; pinnt sich in §8.2–§8.6):
 
 Bezug: RAK-29..RAK-35; `docs/user/releasing.md`.
 
-DoD:
+Tranche 8 ist in sechs aufeinander aufbauende Sub-Tranchen geschnitten: §9.1 fixiert die Versions-Bestandsaufnahme, das Versionsinventar und die RAK-Verifikations-Matrix; §9.2 macht den Versions-Bump-Diff verbindlich (alle hardcodierten Versionsstrings auf `0.4.0`, Test-Fixtures, `pack:smoke`); §9.3 schreibt `CHANGELOG.md` `[Unreleased]` → `[0.4.0] - <Datum>` um und synchronisiert `docs/user/releasing.md` (oder markiert §9 als Override); §9.4 verifiziert die Release-Gates inklusive `make build`, `make sdk-performance-smoke`, `make smoke-observability`, `make smoke-cli`, `make smoke-analyzer` und `make browser-e2e`; §9.5 setzt den Release-Commit auf `main`, den annotierten Tag `v0.4.0` und das GitHub-Release; §9.6 schließt mit Roadmap-Bump auf `0.5.0`, Plan-Archivierung und Memory-Update ab.
+
+Liefer-/Abnahme-Matrix:
+
+| Sub-Tranche | Ergebnis | Harte Abnahme | Status |
+|---|---|---|---|
+| §9.1 | Versions-Bestandsaufnahme + RAK-Verifikations-Matrix + Liefer-Matrix (Doku-only) | Plan §9 in §9.1–§9.6 + Matrix; Versionsinventar pinnt jede versionsführende Stelle (Soll vs. Ist); RAK-29..RAK-35 sind tabellarisch mit Lieferzeile (Tranche/Commit/Test-Anker) belegt; `docs/user/releasing.md`-Override-Frage entschieden | 🟡 in Arbeit |
+| §9.2 | Versions-Bump-Diff | Alle hardcodierten Versionsstrings auf `0.4.0` (siehe §9.1-Inventar); SDK/Event-Schema-Kompatibilitätscheck bleibt grün; `make gates` grün; Test-Fixtures (`tracker.test.ts`, `version.test.ts`, `cli.test.ts`) angepasst; `pack:smoke`-`expectedVersion` mitgehoben | ⬜ |
+| §9.3 | CHANGELOG `[0.4.0]` + releasing.md | `CHANGELOG.md` `[Unreleased]`-Block in datierten `[0.4.0] - <Release-Datum>`-Block umgeschrieben (Tranchen-1–7-Lieferstand übernommen); leerer `[Unreleased]`-Block für `0.5.0` neu eingefügt; `docs/user/releasing.md` ist entweder auf den `0.4.0`-Gate-Set synchronisiert oder markiert §9 explizit als strengeren Override mit Begründung | ⬜ |
+| §9.4 | Release-Gates verifiziert | `make gates`, `make build`, `make sdk-performance-smoke`, `make smoke-observability` (mit laufendem Observability-Profil), `make smoke-cli`, `make smoke-analyzer`, `make browser-e2e` jeweils grün; Ergebnis als Release-Gate-Liste im Plan-Closeout-Text dokumentiert | ⬜ |
+| §9.5 | Release-Artefakt | Release-Commit auf `main`; annotierter Tag `v0.4.0`; Push von Commit und Tag; GitHub-Release mit Notes aus `CHANGELOG.md`; GitHub-Actions-`build`-Workflow am Release-Commit grün; **opt-in** durch Nutzer (Push, Tag, Release sind nicht Auto-Schritte) | ⬜ |
+| §9.6 | Roadmap-Bump + Closeout | `docs/planning/in-progress/roadmap.md` markiert `0.4.0` als abgeschlossen und stellt Fokus auf `0.5.0`; `plan-0.4.0.md` wandert nach `docs/planning/done/`; Memory-Eintrag aktualisiert auf „`0.4.0` released, `0.5.0` ist die nächste Phase"; ggf. neue `0.5.0`-Folge-Punkte aus Risks-Backlog (R-5, R-7, R-10) als Tranche-Eingang sichtbar | ⬜ |
+
+### 9.1 Versions-Bestandsaufnahme und RAK-Verifikations-Matrix
+
+Bezug: alle versionsführenden Stellen im Repository; Lastenheft RAK-29..RAK-35; `docs/user/releasing.md`.
+
+Ziel: Vor jedem Versions-Diff sind die Quellen vollständig erfasst und die sieben RAK-Kriterien tabellarisch mit Lieferzeile belegt, sodass §9.2–§9.4 nur Diffs gegen einen verbindlichen Soll-Stand sind. Sub-Tranchen-Ausgang: keine Code-Diffs, aber alle nachfolgenden Sub-Tranchen können auf eindeutige Quellen-Listen verweisen.
+
+**Versionsinventar (Stand vor §9.2; Soll = `0.4.0` für alle Bumps):**
+
+| Quelle | Ist | Soll | Anmerkung |
+|---|---|---|---|
+| `package.json` (Repo-Root) | `0.3.0` | `0.4.0` | Workspace-Root |
+| `apps/dashboard/package.json` | `0.1.2` | `0.4.0` | Drift: Dashboard wurde nicht in `0.3.0`-Bump mitgeführt; jetzt synchron heben |
+| `apps/analyzer-service/package.json` | `0.3.0` | `0.4.0` | Compose-Service |
+| `packages/player-sdk/package.json` | `0.3.0` | `0.4.0` | publish-relevant; `pack:smoke`-Tarballname leitet sich daraus ab |
+| `packages/stream-analyzer/package.json` | `0.3.0` | `0.4.0` | `STREAM_ANALYZER_VERSION` importiert aus dieser `package.json` (kein zweiter hardcodierter Wert) |
+| `apps/api/cmd/api/main.go:39` `serviceVersion` | `0.1.2` | `0.4.0` | Drift: API-`service.version`-Resource wurde nicht in `0.3.0`-Bump mitgeführt; OTel-Resource trägt sonst die falsche Version |
+| `packages/player-sdk/src/version.ts` `PLAYER_SDK_VERSION` | `0.3.0` | `0.4.0` | hardcodiert (nicht aus `package.json`); Wire-Format `sdk.version` pro Event nutzt diesen Wert |
+| `contracts/sdk-compat.json` `sdk_version` | `0.3.0` | `0.4.0` | `update_rule` selbst verlangt: bei jedem Paket-/SDK-Bump in selbem Commit |
+| `contracts/event-schema.json` `wire_schema_version` | `1.0` | bleibt `1.0` | additive Schema-Evolution in `0.4.0`; kein Major-Bump |
+| `apps/api/hexagon/application/register_playback_event_batch.go:23` `SupportedSchemaVersion` | `1.0` | bleibt `1.0` | dito |
+| `apps/api/adapters/driven/persistence/sqlite/helpers.go:21` `persistedSchemaVersion` | `1.0` | bleibt `1.0` | dito (Persistenz-Schema-Version, nicht Wire-Schema) |
+| `packages/player-sdk/scripts/pack-smoke.mjs:12` `expectedVersion` | `"0.2.0"` | `"0.4.0"` | Drift: pack-smoke wurde weder in `0.2.x→0.3.0` noch danach gebumped; in §9.2 mitziehen |
+| `packages/player-sdk/tests/tracker.test.ts:47,55` Fixtures | `"0.3.0"` | `"0.4.0"` | SDK-Wire-Format-Test-Fixtures |
+| `packages/stream-analyzer/tests/version.test.ts:20` Pin | `"0.3.0"` | `"0.4.0"` | `STREAM_ANALYZER_VERSION`-Test |
+| `packages/stream-analyzer/tests/cli.test.ts:44,55,188+` Fixtures | `"0.3.0"` | `"0.4.0"` | CLI-Output-Test-Fixtures |
+
+Zusatz-Findings, die im Inventar mitlaufen müssen:
+
+- **Drift-Beobachtung Dashboard und API**: `apps/dashboard/package.json` und `apps/api/cmd/api/main.go` wurden in keinem der bisherigen Releases (`0.1.2`/`0.2.0`/`0.3.0`) gebumped. §9.2 hebt beide direkt von `0.1.2` auf `0.4.0`. Das ist beabsichtigt — der einzige verbindliche Versionscheck ist „Lieferstand = `0.4.0`", nicht „lückenlose Historie pro Datei".
+- **Drift-Beobachtung pack-smoke**: `packages/player-sdk/scripts/pack-smoke.mjs:12` `expectedVersion = "0.2.0"` ist jünger als der `0.3.0`-Release-Stand und somit ein bekannter Test-Drift. §9.2 hebt es auf `"0.4.0"` mit; der Smoke (`make sdk-performance-smoke`) muss in §9.4 grün laufen.
+- **`stream-analyzer` ohne hardcodierten Versionsstring**: `packages/stream-analyzer/src/version.ts` importiert aus `package.json`. §9.2 muss daher nur die `package.json` heben; `STREAM_ANALYZER_VERSION` zieht automatisch nach.
+- **SQLite-Schema bleibt `v1.0.0`**: `apps/api/internal/storage/schema.yaml` und Migrations-DDL sind ab `0.4.0` Tranche 1 stabil; Tranche 8 macht keinen Schema-Bump (additive Evolution gemäß `spec/backend-api-contract.md` §10.3). Der `make schema-validate`-Gate-Schritt bleibt grün.
+
+**RAK-Verifikations-Matrix (RAK-29..RAK-35 → Lieferzeile):**
+
+| RAK | Anforderung (kurz) | Lieferung | Verifikation in §9.4 |
+|---|---|---|---|
+| RAK-29 | Player-Session-Traces konsistent und Tempo-unabhängig | Tranche 2 §3.1–§3.4c; `correlation_id`-Vertrag in `spec/telemetry-model.md` §2.5; `playback_events.correlation_id`/`stream_sessions.correlation_id` durable; Backend-Tests `TestHTTP_Trace_*` (apps/api/adapters/driving/http/correlation_e2e_test.go) | `make test`/`make gates` deckt Trace-Tests ab; `make smoke-observability` zeigt OTel-Counter |
+| RAK-30 | Manifest-/Segment-/Player-Korrelation über `correlation_id` | Tranche 3 §4.1–§4.7; SDK-Manifest/Segment-Capture (`packages/player-sdk/src/hls.ts`); Server-Reads enthalten `correlation_id`/`network_signal_absent[]`; Degradationsmatrix in `spec/telemetry-model.md` §1.4.1 + Reason-Enum in `contracts/event-schema.json` | `make ts-test` deckt SDK-Mapping; Backend-Tests pinnen Read-Shape; `make browser-e2e` exerciert hls.js-Pfad |
+| RAK-31 | Tempo optional als Trace-Backend | Tranche 5 §6.1–§6.5; `make dev-tempo`-Profil; `scripts/smoke-tempo.sh` mit drei Stack-Zuständen (`core`/`observability`/`tempo`) | `make smoke-tempo` (optional, nicht im Pflicht-Gate-Set; RAK-31 bleibt Kann-Scope) |
+| RAK-32 | Dashboard zeigt Session-Verläufe ohne Tempo; SQLite überlebt Restart | Tranche 1 (SQLite) + Tranche 4 (Dashboard-Timeline + SSE); `apps/dashboard/src/routes/sessions/[sessionId]/+page.svelte` + SSE-Client | `make browser-e2e` deckt Timeline-Flow; manuelle Restart-Verifikation in `docs/user/demo-integration.md` |
+| RAK-33 | Prometheus auf Aggregate beschränkt; Cardinality-Smoke grün | Tranche 6 §7.3 (`scripts/smoke-observability.sh` verschärft); Tranche 7 §8.2 (Forbidden-Liste in `spec/telemetry-model.md` §3.1; `batch_size` verboten) | `make smoke-observability` |
+| RAK-34 | Dropped-/Rate-Limited-/Invalid-Event-Metriken sichtbar und testbar | Tranche 6 §7.2 (`metrics_counter_test.go`); Grafana-Dashboard `m-trace-overview.json` Panels „Playback Events"/„Invalid Events"/„Rate Limited Events"/„Dropped Events" | `make api-test` (Metrik-Tests); `make smoke-observability` |
+| RAK-35 | Doku beschreibt Cardinality-Grenzen und Sampling-Strategie | Tranche 7 §8.2/§8.3/§8.4/§8.5 (`spec/telemetry-model.md` §3.1/§3.2/§3.3, `spec/player-sdk.md` Lifecycle, `packages/player-sdk/README.md`, `docs/user/local-development.md` §3.5, `README.md` Metriken-Block); R-10-Folge-Punkt für `sampleRate < 1`-Read-Shape | `make docs-check` (Verlinkung); manuelle Doku-Sichtprüfung |
+
+**`docs/user/releasing.md`-Override-Entscheidung**: §9 ergänzt `releasing.md` um sieben harte `0.4.0`-Gates (`make build`, `make sdk-performance-smoke`, `make smoke-observability`, `make smoke-cli`, `make smoke-analyzer`, `make browser-e2e` und `make gates`). `releasing.md` listet heute `make test`/`make lint`/`make coverage-gate`/`make sdk-performance-smoke`/`make arch-check`/`make build`/`make smoke-cli`/`make smoke-analyzer`. Beschluss §9.1: `releasing.md` wird in §9.3 auf den vereinheitlichten `make gates`-+-Smoke-Set synchronisiert (kein Override-Block). Begründung: `make gates` deckt `test`/`lint`/`coverage-gate`/`arch-check`/`schema-validate`/`docs-check` zentral ab; die zusätzlichen Smokes sind in §9 explizit genannt. Eine Override-Sektion wäre Doku-Drift-Risiko.
+
+**§9.5-Vorbehalt**: Push, Tag und GitHub-Release sind opt-in-Schritte und werden in §9.5 erst nach expliziter Nutzer-Freigabe ausgeführt. §9.4 (lokale Gates) ist davon unabhängig und wird vollständig autonom abgearbeitet.
+
+DoD §9.1:
+
+- [ ] `docs/planning/in-progress/plan-0.4.0.md` §9 enthält Sub-Tranchen-Beschreibung §9.1–§9.6 plus Liefer-/Abnahme-Matrix.
+- [ ] §9.1 oben enthält das Versionsinventar als Soll-/Ist-Tabelle (jede versionsführende Stelle, Drift-Beobachtungen explizit).
+- [ ] §9.1 oben enthält die RAK-Verifikations-Matrix (RAK-29..RAK-35 → Lieferzeile + Verifikationsschritt in §9.4).
+- [ ] §9.1 oben fixiert die `docs/user/releasing.md`-Override-Entscheidung (synchronisiert in §9.3, kein Override-Block).
+- [ ] `make gates` ist nach §9.1-Commit grün.
+
+DoD (Tranche-8-gesamt; pinnt sich in §9.2–§9.6):
 
 - [ ] **RAK-29** Player-Session-Traces werden konsistent und Tempo-unabhängig erzeugt: mehrere Batches einer Session teilen lokal persistierte Korrelationsdaten; Tests decken Erfolg, fehlenden Kontext und deaktiviertes Tempo-Profil ab.
 - [ ] **RAK-30** Manifest-Requests, Segment-Requests und Player-Events werden über `correlation_id` einer gemeinsamen Session-Timeline zugeordnet; `trace_id` ist nur optionale Tempo-Vertiefung. Timeline-only- und Browser-Degradationsfälle sind je Ereignistyp begründet, sichtbar und getestet.
