@@ -53,6 +53,7 @@ func NewRouter(
 	metricsHandler http.Handler,
 	analyzeMetrics AnalyzeMetrics,
 	sseConfig *SseStreamConfig,
+	srtHealth SrtHealthInbound,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -114,6 +115,8 @@ func NewRouter(
 		mux.HandleFunc("OPTIONS /api/analyze", analyzePreflightHandler(allowlist))
 	}
 
+	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, tracer, logger)
+
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
 	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
 	mux.HandleFunc("OPTIONS /api/playback-events", playerSDKPreflightHandler(allowlist))
@@ -122,6 +125,39 @@ func NewRouter(
 	mux.HandleFunc("OPTIONS /api/health", dashboardPreflightHandler(allowlist))
 
 	return corsMiddleware(mux, allowlist)
+}
+
+// registerSrtHealthRoutes verdrahtet die SRT-Health-Read-Pfade
+// (plan-0.6.0 §5 Tranche 4 — RAK-43, spec/backend-api-contract.md
+// §7a). Wenn `srtHealth` nil ist (Sub-3.5 verdrahtet das opt-in über
+// `MTRACE_SRT_SOURCE_URL`), bleibt die Funktion no-op.
+func registerSrtHealthRoutes(
+	mux *http.ServeMux,
+	srtHealth SrtHealthInbound,
+	resolver driven.ProjectResolver,
+	allowlist OriginAllowlist,
+	tracer trace.Tracer,
+	logger *slog.Logger,
+) {
+	if srtHealth == nil {
+		return
+	}
+	listHandler := &SrtHealthListHandler{
+		UseCase:  srtHealth,
+		Resolver: resolver,
+		Tracer:   tracer,
+		Logger:   logger,
+	}
+	getHandler := &SrtHealthGetHandler{
+		UseCase:  srtHealth,
+		Resolver: resolver,
+		Tracer:   tracer,
+		Logger:   logger,
+	}
+	mux.Handle("GET /api/srt/health", listHandler)
+	mux.Handle("GET /api/srt/health/{stream_id}", getHandler)
+	mux.HandleFunc("OPTIONS /api/srt/health", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/srt/health/{stream_id}", dashboardPreflightHandler(allowlist))
 }
 
 // RequestMetricsMiddleware counts every HTTP request that enters the

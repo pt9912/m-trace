@@ -213,7 +213,18 @@ func buildHandler(
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	sseConfig := &apihttp.SseStreamConfig{Broker: broker, Events: persist.events}
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, tracer, logger)
+	srtHealthService, err := application.NewSrtHealthQueryService(persistencesqlite.NewSrtHealthRepository(persist.db), time.Now, application.DefaultThresholds())
+	if err != nil {
+		// Persist ist InMemory → kein durable SRT-Health-Storage; Read-
+		// Pfad bleibt deaktiviert. Logger-Notice in Sub-3.5 hat das schon
+		// geloggt; hier nur Service als nil weiterreichen.
+		srtHealthService = nil
+	}
+	var srtHealthInbound apihttp.SrtHealthInbound
+	if srtHealthService != nil {
+		srtHealthInbound = srtHealthService
+	}
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 

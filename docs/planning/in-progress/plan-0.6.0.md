@@ -107,7 +107,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ✅ Quellen-Entscheidung (Sub-1.1–1.4); zwei DoD-Items in Tranche 2/3 verlagert (`required_bandwidth_bps`, formaler API-Pull-Vertrag) |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ✅ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ✅ (Sub-3.1..3.7 alle ✅) |
-| 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
+| 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ✅ |
 | 5 | Dashboard-SRT-Health-Ansicht (RAK-43, RAK-44) | ⬜ |
 | 6 | Fehlerbild-Dokumentation und Operator-Guide (RAK-45) | ⬜ |
 | 7 | Smokes, Gates und Release-Closeout (RAK-41..RAK-46) | ⬜ |
@@ -744,48 +744,71 @@ Endpunkte lesen. Der Server berechnet einen einfachen Health-Zustand
 aus RTT, Packet Loss, Retransmissions und verfügbarer Bandbreite, ohne
 die Rohwerte zu verstecken.
 
-DoD:
+### 5.0 Sub-Tranchen
 
-- [ ] API-Endpunkt(e) für SRT-Health sind festgelegt und dokumentiert,
-  z. B. `GET /api/srt/health` und optional
-  `GET /api/srt/health/{stream_id}`.
-- [ ] Read-Responses enthalten mindestens RTT, Packet Loss,
-  Retransmissions, `available_bandwidth_bps`, `source_observed_at`,
-  `collected_at`, `ingested_at`, `required_bandwidth_bps`,
-  `health_state` und eine Quellen-/Freshness-Angabe.
-- [ ] `health_state`-Schwellen sind dokumentiert und testbar; `unknown`
-  ist der definierte Zustand bei fehlender oder stale Metrikquelle.
-- [ ] Bandbreiten-Health vergleicht `available_bandwidth_bps` gegen
-  `required_bandwidth_bps` oder eine dokumentierte quellspezifische
-  Schwelle. Fehlt diese Schwelle, darf Bandbreite keinen
-  `degraded`/`critical`-Zustand auslösen.
-- [ ] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
-  `metrics`, `derived`, `health_state`, `source_status`,
-  `source_error_code` oder eine gleichwertige Struktur.
-- [ ] Freshness ist im Response sichtbar, z. B.
-  `source_observed_at`, `collected_at`, `ingested_at`,
-  `sample_age_ms`, `stale_after_ms`, `source_status` und
-  `connection_state`. `sample_age_ms` darf nicht allein aus
-  `ingested_at` abgeleitet werden, wenn eine ältere Source-Zeit
-  vorhanden ist.
-- [ ] CORS-/Auth-Verhalten folgt den bestehenden Dashboard-Read-Pfaden
-  und ist im API-Kontrakt beschrieben.
-- [ ] Fehlerfälle sind stabil: Metrikquelle nicht erreichbar,
-  unvollständige Rohdaten, stale Daten, ungültige Stream-ID.
-- [ ] API-/Import-Fehler sind kategorisiert, inklusive
-  `source_unavailable`, `no_active_connection`, `partial_sample`,
-  `parse_error`, `stale_sample` und einem stabilen Code für
-  Persistenz-/Importfehler.
-- [ ] Unit-/Handler-Tests decken Normalfall, degraded/critical,
-  unknown/stale und Auth/CORS ab.
-- [ ] API-Read-Pfad fügt keine N+1-Erweiterung zu bestehenden
-  Session-Listen hinzu; falls Integration in `GET /api/stream-sessions`
-  nötig ist, existiert ein Bulk-Read-Port oder ein begründeter
-  separater Endpoint.
-- [ ] Pagination oder Limitierung für historische Samples ist definiert;
-  unbeschränkte Zeitreihen-Antworten sind nicht zulässig.
-- [ ] OpenAPI-/Contract-Fixtures oder Snapshot-Tests pinnen den
-  Response-Shape.
+| Sub | Inhalt | Form | Status |
+| --- | ------ | ---- | ------ |
+| 4.1 | Application-Query-Service `SrtHealthQueryService` (LatestByStream + HistoryByStream) mit derived/freshness-Ableitung | Code, Application | ✅ |
+| 4.2 | HTTP-Handler `SrtHealthListHandler` + `SrtHealthGetHandler` + Router-Wiring; Token-Auth + CORS analog Dashboard-Read | Code, Adapter | ✅ |
+| 4.3 | Contract-Fixture `spec/contract-fixtures/api/srt-health-detail.json` + go:embed-Snapshot-Test | Tests, Fixture | ✅ |
+| 4.4 | Plan-Closeout | Doku | 🟡 |
+
+### 5.1 DoD
+
+- [x] API-Endpunkt(e) für SRT-Health sind festgelegt und dokumentiert:
+  `GET /api/srt/health` und `GET /api/srt/health/{stream_id}`
+  (`adapters/driving/http/srt_health_handlers.go`; spec
+  `backend-api-contract.md` §7a).
+- [x] Read-Responses enthalten alle Pflichtfelder. Sub-4.2:
+  `srtHealthWireItem` mit `metrics`/`derived`/`freshness`-Block
+  und Top-Level `health_state`/`source_status`/`source_error_code`/
+  `connection_state`. Tests gegen Contract-Fixture
+  `spec/contract-fixtures/api/srt-health-detail.json` bestätigen
+  das Schema.
+- [x] `health_state`-Schwellen sind in `application.DefaultThresholds()`
+  dokumentiert und über Tabellen-Tests in
+  `srt_health_collector_test.go` getestet (RTT 100/250 ms, Loss
+  1 %/5 %, Headroom-Faktor 1.5, StaleAfter 15 s).
+- [x] Bandbreiten-Health vergleicht `available_bandwidth_bps` gegen
+  `required_bandwidth_bps` (Sub-3.2 `evaluateBandwidthHealth`):
+  ohne Schwelle bleibt Bandbreite ohne Bewertung, keine
+  `degraded`/`critical`-Eskalation.
+- [x] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
+  `metrics` (rtt, loss, retrans, available_bandwidth, throughput,
+  required_bandwidth), `derived` (bandwidth_headroom_factor),
+  Top-Level Bewertungsfelder.
+- [x] Freshness ist sichtbar (`source_observed_at`, `source_sequence`,
+  `collected_at`, `ingested_at`, `sample_age_ms`, `stale_after_ms`).
+  `sample_age_ms` wird vom Query-Service als Zeit seit
+  `IngestedAt` zum Lesezeitpunkt berechnet — kombiniert mit der
+  Stale-Schwelle aus `DefaultThresholds`.
+- [x] CORS-/Auth-Verhalten folgt Dashboard-Read-Pfaden:
+  `resolveProjectFromToken` für Auth, `dashboardPreflightHandler`
+  für OPTIONS — analog `/api/stream-sessions`.
+- [x] Fehlerfälle stabil: `404 stream_unknown`, `400
+  samples_limit_invalid`, `401` ohne Token, `500` bei Repo-Fehler;
+  alle in `srt_health_handlers_test.go` abgedeckt.
+- [x] API-/Import-Fehler sind kategorisiert: `source_unavailable`,
+  `no_active_connection`, `partial_sample`, `parse_error`,
+  `stale_sample` (Sub-3.2 EvaluateInput / Sub-3.6
+  classifySourceErrorCode).
+- [x] Unit-/Handler-Tests decken Normalfall, 404, 401, 400, 500 plus
+  Schema-Snapshot ab. Health-State-Tests (degraded/critical/
+  unknown/stale) bleiben in der Application-Test-Suite (Sub-3.2),
+  weil dort die reine Bewertungsfunktion lebt.
+- [x] API-Read-Pfad fügt keine N+1-Erweiterung zu bestehenden
+  Session-Listen hinzu: SRT-Health läuft auf eigenen Endpoints
+  (`/api/srt/health`), keine Integration in
+  `GET /api/stream-sessions`.
+- [x] Pagination/Limitierung für historische Samples ist definiert:
+  `samples_limit` (default 100, max 1000) im Detail-Endpoint;
+  Cursor-Pagination ist als Folge-Item dokumentiert (spec §7a.3
+  beschrieben, Sub-3.3 SQLite-Adapter gibt explizit
+  ErrNotImplemented bis Folge-Tranche).
+- [x] OpenAPI-/Contract-Fixtures oder Snapshot-Tests pinnen den
+  Response-Shape: `spec/contract-fixtures/api/srt-health-detail.json`
+  + `TestSrtHealthDetail_SchemaMatchesFixture` mit
+  Schlüssel-Subset-Vergleich.
 
 ---
 

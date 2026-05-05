@@ -126,14 +126,3 @@ type SrtHealthSample struct {
 	HealthState     HealthState
 }
 
-// HasSourceObservedAt meldet, ob die Source einen expliziten
-// Sample-Zeitstempel geliefert hat. Falls false, ist SourceSequence
-// das Pflicht-Surrogat für Freshness-Bewertung.
-func (s SrtConnectionSample) HasSourceObservedAt() bool {
-	return !s.SourceObservedAt.IsZero()
-}
-
-// HasSourceObservedAt — gleicher Vertrag für den persistierten Sample.
-func (s SrtHealthSample) HasSourceObservedAt() bool {
-	return !s.SourceObservedAt.IsZero()
-}

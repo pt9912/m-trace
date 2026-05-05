@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/srt/health/{stream_id}",
+    "spec": "spec/backend-api-contract.md §7a.2",
+    "plan": "plan-0.6.0 §5 Tranche 4 Sub-4.3",
+    "captured": "Synthetisches Beispiel — pinnt das Wire-Format gegen plan-0.6.0 §5 DoD und die Probe-Befund-Mappings aus Sub-1.2.",
+    "anonymisierung": "stream_id/connection_id sind Lab-Werte; remoteAddr ist nicht im Wire-Format. Timestamps sind Beispiele."
+  },
+  "stream_id": "srt-test",
+  "items": [
+    {
+      "stream_id": "srt-test",
+      "connection_id": "00000000-0000-0000-0000-000000000001",
+      "health_state": "healthy",
+      "source_status": "ok",
+      "source_error_code": "none",
+      "connection_state": "connected",
+      "metrics": {
+        "rtt_ms": 0.231,
+        "packet_loss_total": 0,
+        "retransmissions_total": 0,
+        "available_bandwidth_bps": 4352217617,
+        "throughput_bps": 1153142
+      },
+      "derived": {},
+      "freshness": {
+        "source_observed_at": null,
+        "source_sequence": "37208036",
+        "collected_at": "2026-05-05T08:48:01.000Z",
+        "ingested_at": "2026-05-05T08:48:01.250Z",
+        "sample_age_ms": 250,
+        "stale_after_ms": 15000
+      }
+    }
+  ]
+}

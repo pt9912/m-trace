@@ -159,7 +159,9 @@ sync-contract-fixtures:
 	cp spec/contract-fixtures/analyzer/error-fetch-blocked.json apps/api/adapters/driven/streamanalyzer/testdata/contract-error-fetch-blocked.json
 	mkdir -p apps/api/adapters/driven/srt/mediamtxclient/testdata
 	cp spec/contract-fixtures/srt/mediamtx-srtconns-list.json apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json
-	@echo "[sync-contract-fixtures] copied 3 fixture(s) into apps/api/.../testdata/"
+	mkdir -p apps/api/adapters/driving/http/testdata
+	cp spec/contract-fixtures/api/srt-health-detail.json apps/api/adapters/driving/http/testdata/srt-health-detail.json
+	@echo "[sync-contract-fixtures] copied 4 fixture(s) into apps/api/.../testdata/"
 
 seed-rak9:
 	bash scripts/seed-rak9.sh

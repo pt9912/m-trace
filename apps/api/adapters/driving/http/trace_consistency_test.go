@@ -314,7 +314,7 @@ func newTestServerWithTracerAndRepos(
 	sessionsService := application.NewSessionsService(sessionRepo, repo)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, resolver,
-		publisher.Handler(), nil, nil, tracer, logger)
+		publisher.Handler(), nil, nil, nil, tracer, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv, repo, sessionRepo
