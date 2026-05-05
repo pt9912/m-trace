@@ -572,7 +572,7 @@ Collector, OTel, Tests). Aufteilung in sieben Sub-Tranchen:
 | 3.1 | Spec-Block: `telemetry-model.md` §3.1/§3.2/§7, `backend-api-contract.md` §7/§7a/§10.6, `architecture.md` §3.3/§3.4/§5.4 | Doku | ✅ (siehe §4.1 unten) |
 | 3.2 | Domain-Modell + Driven-Ports (`SrtSource`, `SrtHealthRepository`); Application-Use-Case `SrtHealthCollector` mit Health-Bewertung; Sentinel-Compile-Checks | Code, Hexagon | ✅ |
 | 3.3 | SQLite-Schema `srt_health_samples`, Migration im Apply-Runner, Idempotenz-/Restart-Tests; SQLite-Adapter implementiert `SrtHealthRepository` | Code, Storage | ✅ |
-| 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ⬜ |
+| 3.4 | HTTP-Client-Adapter `adapters/driven/srt/mediamtxclient` gegen Fixture aus Sub-1.2 | Code, Adapter | ✅ |
 | 3.5 | Collector-Goroutine in `cmd/api`-Setup mit Polling, Backoff, Shutdown; transaktionale Persistenz | Code, Application | ⬜ |
 | 3.6 | OTel-Span `mtrace.srt.health.collect` + Prometheus bounded Aggregate (`mtrace_srt_health_*`) | Code, Telemetry | ⬜ |
 | 3.7 | Smoke-/Integrationstest mit zwei Samples; `scripts/smoke-observability.sh` erweitert um SRT-Allowlist-Prüfung | Tests, Smoke | ⬜ |
@@ -617,8 +617,19 @@ DoD:
   `SrtHealthCollector` mit reiner Bewertungsfunktion `Evaluate`.
   Mocks in Test-File belegen Port-Compile-Time-Compliance via
   Sentinel-Checks; `make arch-check` grün.
-- [ ] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
-  Tranche 1 gewählten Quelle. **→ Sub-3.4**
+- [x] Driven-Adapter importiert oder normalisiert Rohmetriken aus der in
+  Tranche 1 gewählten Quelle. Sub-3.4: `adapters/driven/srt/mediamtxclient/`
+  (`http.go`, `mapping.go`) implementiert `SrtSource` via HTTP-
+  Client gegen `/v3/srtconns/list`; mappt MediaMTX-Felder gemäß
+  spec/telemetry-model.md §7.1 (`mbpsLinkCapacity × 1_000_000`,
+  `bytesReceived` als Source-Sequence-Surrogat,
+  `state ∈ {publish,read}` → `connected`). Drei Sentinel-Fehler
+  (`ErrSourceUnauthorized`, `ErrSourceUnavailable`,
+  `ErrSourceParseError`) für Sub-3.5-Klassifikation. Tests gegen
+  go:embed-Fixture aus Sub-1.2 plus 9 weitere Tests
+  (Auth, 401, 403, 5xx, Body-Parse-Drift, Empty-Items,
+  Unknown-State, Missing-Bandwidth, Response-Too-Large,
+  Context-Cancel).
 - [ ] Collector-/Import-Use-Case ist implementiert und getestet:
   Poll-Intervall, Start/Stop-Verhalten, Konfiguration,
   Fehlerpropagation, Backoff/Retry-Grenzen und Shutdown-Verhalten sind
