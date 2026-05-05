@@ -7,19 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> Vorlage für den `0.4.0`-Release-Bump (Tranche 8). Lieferstand der
+> Tranchen 1–7 strukturiert nach Trace-, Storage-, Dashboard-/SSE-,
+> Tempo-, Metrik- und Doku-Bereich.
+
 ### Added
 
-- ADR-0003 entscheidet OE-5: Dashboard-Live-Updates in `0.4.0`
-  nutzen Server-Sent Events mit Polling-Fallback; WebSocket bleibt
-  deferred.
-- `docs/planning/in-progress/plan-0.4.0.md` als Plan für Erweiterte
-  Trace-Korrelation angelegt.
+- **Persistenz (Tranche 1):** durable SQLite-Persistenz für
+  `stream_sessions`, `playback_events` und `ingest_sequence`; Cursor
+  sind Restart-stabil ([ADR-0002](docs/adr/0002-persistence-store.md));
+  Reset-Pfad ist `make wipe`; Cursor-v3 mit Project-Scope plus
+  `cursor_invalid_legacy`/`cursor_invalid_malformed`/`cursor_expired`-
+  Codes (siehe `spec/backend-api-contract.md` §10.3).
+- **Trace-Korrelation (Tranche 2):** `correlation_id` als durable
+  Source-of-Truth pro Player-Session über alle Batches hinweg;
+  `trace_id` ist optionale Per-Batch-Vertiefung. Hybrid-`traceparent`-
+  Strategie: SDK propagiert optional einen W3C-Header; Server toleriert
+  fehlende oder ungültige Header (Server-Span-Attribut
+  `mtrace.trace.parse_error=true`). Span-Modell pro Batch mit
+  `mtrace.session.correlation_id` für Single-Session-Batches; das
+  `session_id`-Span-Attribut ist ab `0.4.0` verboten
+  (`spec/telemetry-model.md` §2.5).
+- **Manifest-/Segment-/Player-Korrelation (Tranche 3):** alle
+  Network-Events (`manifest_loaded`, `segment_loaded`) tragen
+  `correlation_id` und URL-Redaction am SDK-Boundary;
+  `session_boundaries[]`-Wrapper und `network_signal_absent[]`-Read-
+  Shape decken Browser-/CORS-/Service-Worker-/Native-HLS-/CDN-
+  Degradationen ab. Endpoint-spezifische Auth: `POST /api/playback-
+  events` und Session-/Event-Reads sind tokenpflichtig; ungebundene
+  `POST /api/analyze`-Requests bleiben tokenfrei und liefern
+  `session_link.status="detached"` ([R-6](docs/planning/open/risks-backlog.md)
+  technisch geschlossen).
+- **Dashboard-Session-Timeline (Tranche 4):** Timeline-Ansicht
+  `/sessions/<id>` mit Server-Sent Events ([ADR-0003](docs/adr/0003-live-updates.md))
+  plus Polling-Fallback und Backfill-Cursor; Mini-Status-Panels und
+  konfigurierbare Service-Links (F-39/F-40); Tempo-unabhängig (RAK-32).
+- **Optionales Tempo-Profil (Tranche 5):** `make dev-tempo` startet
+  Tempo neben Prometheus/Grafana/OTel-Collector;
+  `scripts/smoke-tempo.sh` deckt drei Stack-Zustände ab (`core`,
+  `observability`, `tempo`); RAK-31 Kann-Scope erfüllt.
+- **Aggregat-Metriken (Tranche 6):** vier Pflichtcounter
+  (`mtrace_playback_events_total`, `mtrace_invalid_events_total`,
+  `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`)
+  bleiben label-frei; Backend-Tests pinnen Inkrement- und Null-
+  Inkrement-Pfade in `metrics_counter_test.go`. Cardinality-Smoke
+  (`scripts/smoke-observability.sh`) verschärft auf vollständige
+  Forbidden-Liste plus Per-Pflichtcounter-Labelset-Whitelist und
+  Cardinality-Cap < 50 Serien. Grafana-Dashboard
+  `m-trace-overview.json` zeigt die vier Pflichtcounter.
+- **Cardinality-/Sampling-Doku (Tranche 7):**
+  `spec/backend-api-contract.md` §7 verweist auf
+  `spec/telemetry-model.md` §3.1 als kanonische Forbidden-Liste; §3.1
+  deckt §7-Mindestliste vollständig ab inklusive Suffix-Regeln
+  (`*_url`/`*_uri`/`*_token`/`*_secret`). Der OTel-Counter
+  `mtrace.api.batches.received` ist ab `0.4.0` Tranche 7 label-frei
+  (`batch.size` lebt nur am Span); `batch_size` ist in Smoke
+  `scripts/smoke-observability.sh` und in §3.1 verboten. Sampling-
+  Nachweisgrenze für `sampleRate < 1` dokumentiert in
+  `spec/player-sdk.md` und `packages/player-sdk/README.md`.
+- **Doku:** `docs/user/local-development.md` §3.4 dokumentiert
+  Storage-Retention ("unlimited mit dokumentiertem Reset-Pfad"), §3.5
+  ergänzt Prometheus-Aggregate-Quickref; `docs/user/demo-integration.md`
+  zeigt reproduzierbare Demo-Session inkl. Timeline-Verifikation und
+  SQLite-Restart-Stabilität.
 
 ### Changed
 
 - Lastenheft `1.1.8` löst OE-3 und OE-5 auf: SQLite ist ab `0.4.0`
   der lokale Durable-Store; SSE mit Polling-Fallback ist der
   Live-Update-Mechanismus.
+- `POST /api/analyze` antwortet ab Tranche 3 für **alle**
+  erfolgreichen Requests mit der Hülle `{analysis, session_link}`;
+  ungebundene Requests erhalten `session_link.status="detached"`
+  (Breaking Change gegenüber `0.3.x`).
+- `mtrace.api.batches.received` ist ab Tranche 7 label-frei — der
+  bisherige `batch.size`/`batch_size`-Counter-Attribut-Pfad ist
+  entfernt; Span-Attribut bleibt für Trace-Debugging unverändert.
 
 ## [0.3.0] - 2026-05-01
 

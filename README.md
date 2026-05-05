@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.3.0` — HLS-Stream-Analyzer mit Library, interner HTTP-Service, API-Endpunkt `POST /api/analyze` und CLI `m-trace check`.
+> Status: `0.4.0` in Arbeit — erweiterte Trace-Korrelation: SQLite-Persistenz, `correlation_id`/`trace_id`-Trennung, Dashboard-Session-Timeline ohne Tempo-Pflicht, optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit. `0.3.0` (HLS-Stream-Analyzer mit Library, interner HTTP-Service, API-Endpunkt `POST /api/analyze`, CLI `m-trace check`) ist die letzte getaggte Release.
 
 ---
 
@@ -111,7 +111,33 @@ Der erste MVP ist bewusst klein gehalten.
   definierten Exit-Codes
 - `make smoke-analyzer` und `make smoke-cli` als End-to-End-Smokes
 
-### Nicht im aktuellen 0.3.x-MVP enthalten
+### Enthalten seit v0.4.0 (in Arbeit)
+
+- Durable SQLite-Persistenz für Sessions, Playback-Events und
+  Ingest-Sequenz statt In-Memory-Store; Cursor sind Restart-stabil
+  ([ADR-0002](docs/adr/0002-persistence-store.md))
+- `correlation_id` als durable Source-of-Truth für Player-Sessions:
+  ein Wert pro Session über alle Batches; `trace_id` ist optionale
+  Tempo-Vertiefung pro Batch (`spec/telemetry-model.md` §2.5)
+- Manifest-/Segment-/Player-Korrelation über `correlation_id` mit
+  URL-Redaction am SDK-Boundary, `session_boundaries[]`-Wrapper für
+  Degradationsfälle und `network_signal_absent[]`-Read-Shape
+- Dashboard-Session-Timeline-Ansicht (`/sessions/<id>`) mit
+  Server-Sent Events plus Polling-Fallback und Backfill-Cursor
+  ([ADR-0003](docs/adr/0003-live-updates.md))
+- Optionales Tempo-Profil `make dev-tempo` für Trace-Debugging — das
+  Dashboard bleibt Tempo-unabhängig, Source-of-Truth ist SQLite
+  (RAK-31 Kann-Scope, RAK-32 Pflicht)
+- Pflichtcounter sichtbar in Grafana, OTel-Counter
+  `mtrace_api_batches_received` ist label-frei wie die vier
+  Prometheus-Pflichtcounter; verschärfter Cardinality-Smoke
+- Endpoint-spezifische Auth: `POST /api/playback-events` und Session-
+  /Event-Reads sind tokenpflichtig; `POST /api/analyze` ist nur bei
+  gesetzter `correlation_id`/`session_id` tokenpflichtig
+- Cursor-v3 mit Project-Scope, neuer `cursor_invalid_legacy`-Code
+  für `0.1.x`/`0.2.x`/`0.3.x`-Cursor
+
+### Nicht im aktuellen 0.3.x/0.4.x-MVP enthalten
 
 - separate Demo-Player-App
 - separate Analyzer-API
@@ -173,9 +199,17 @@ Das Backend muss Schema-Evolution, Time Skew, Rate Limits und ungültige Event-B
 
 ## Metriken
 
-Prometheus wird ausschließlich für Aggregat-Metriken genutzt.
+Prometheus wird ausschließlich für Aggregat-Metriken genutzt. Die
+drei Backends teilen die Verantwortung wie folgt (kanonische 3-Spalten-
+Tabelle: [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.3):
 
-Beispiele:
+| Backend | Rolle | Cardinality |
+|---|---|---|
+| **Prometheus** | Aggregat-Metriken (Counter, Rates) | bounded — Forbidden-Liste aus [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1 release-blockierend |
+| **SQLite** (ADR-0002) | Per-Session-Historie inkl. `session_id`, `correlation_id`, `trace_id`, redacted URLs | unbeschränkt |
+| **OTel/Tempo** | Per-Request-Trace-Spans (sample-basiert) | nicht im Cardinality-Vertrag |
+
+Beispiele für Prometheus-Counter (alle label-frei):
 
 ```text
 mtrace_playback_events_total
@@ -183,11 +217,18 @@ mtrace_invalid_events_total
 mtrace_rate_limited_events_total
 mtrace_dropped_events_total
 mtrace_active_sessions
+mtrace_api_batches_received
 ```
 
-Hochkardinale Werte wie `session_id`, `user_agent` oder `segment_url` dürfen nicht als Prometheus-Labels verwendet werden.
+Hochkardinale Werte wie `session_id`, `correlation_id`, `trace_id`,
+`user_agent`, `segment_url`, `client_ip` oder Token-/Credential-Felder
+dürfen **nicht** als Prometheus-Labels verwendet werden — die
+vollständige Forbidden-Liste plus Suffix-Regeln (`*_url`, `*_uri`,
+`*_token`, `*_secret`) steht in
+[`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1.
 
-Per-Session-Debugging soll als Trace modelliert oder in einem geeigneten Event-/Session-Store abgelegt werden.
+Per-Session-Debugging läuft über die durable SQLite-Persistenz und
+optional über Tempo-Spans (`make dev-tempo`) — niemals über Prometheus.
 
 ---
 
@@ -298,13 +339,20 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
 - API-Anbindung über internen analyzer-service
 - CLI-Grundlage `pnpm m-trace check <url-or-file>`
 
-### v0.4.0 — Erweiterte Trace-Korrelation
+### v0.4.0 — Erweiterte Trace-Korrelation (in Arbeit)
 
-- Player-Session-Traces
-- optionale Tempo-Integration über `make dev-tempo` (RAK-31, Kann-Scope;
+- durable SQLite-Persistenz mit `make wipe` als verbindlichem
+  Reset-Pfad (ADR-0002)
+- Player-Session-Korrelation über `correlation_id` (durable, Tempo-
+  unabhängig); `trace_id` ist optionale Per-Batch-Vertiefung
+- Manifest-/Segment-/Player-Trace mit URL-Redaction am SDK-Boundary
+- Dashboard-Session-Timeline (`/sessions/<id>`) mit SSE und
+  Polling-Fallback (ADR-0003)
+- optionales Tempo-Profil `make dev-tempo` (RAK-31, Kann-Scope;
   Dashboard-Timeline bleibt Tempo-unabhängig — RAK-32)
-- Session-Timeline-Ansicht
-- Sampling-Strategie
+- Cardinality-/Sampling-Doku: Pflichtcounter und
+  `mtrace_api_batches_received` sind label-frei; Sampling-Grenze für
+  `sampleRate < 1` dokumentiert
 
 ### v0.5.0 — Multi-Protokoll-Lab
 
@@ -376,7 +424,13 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.3.0`: Lastenheft `1.1.8` verbindlich, Player-SDK-Paketierung, Dashboard, Observability-Profil, Demo-Integration und der HLS-Stream-Analyzer (Library, analyzer-service, API-Endpunkt, CLI) sind auf `main` integriert.
+Das Projekt steht bei `0.4.0` in Arbeit: `0.3.0` ist die letzte getaggte
+Release; Tranchen 1–7 von `0.4.0` (SQLite-Persistenz, Trace-Korrelation,
+Manifest-/Segment-Korrelation, Dashboard-Session-Timeline mit SSE,
+optionales Tempo-Profil, Aggregat-Metriken-Sichtbarkeit, Cardinality-/
+Sampling-Doku) sind auf `main` integriert. Tranche 8 (Release-Akzeptanz
+und Versions-Bump) ist der nächste offene Schritt — siehe
+[`docs/planning/in-progress/plan-0.4.0.md`](docs/planning/in-progress/plan-0.4.0.md) §9.
 
 Leitende Dokumente:
 
