@@ -259,11 +259,12 @@ DoD:
   falls solche Targets implementiert werden.
 - [ ] `docs/user/releasing.md` nennt die zusätzlichen manuellen oder
   automatisierten `0.5.0`-Release-Smokes.
-- [ ] RAK-Verifikationsmatrix ist im Plan ergänzt und alle Muss-Kriterien
-  sind entweder `[x]` oder explizit `[!]` mit Lastenheft-Patch-Pfad.
+- [ ] RAK-Verifikationsmatrix ist im Plan ergänzt; zum Release-Closeout
+  sind alle Muss-Kriterien entweder `[x]` oder explizit `[!]` mit
+  Lastenheft-Patch-Pfad.
 - [ ] `make gates` ist grün.
-- [ ] Relevante optionale Smokes sind lokal grün und mit Befehl/Datum im
-  Abschlussabschnitt dokumentiert.
+- [ ] Relevante optionale Smokes sind lokal grün und mit Befehl/Datum in
+  §7.2 dokumentiert.
 - [ ] Versionen, `CHANGELOG.md`, Planstatus, Roadmap und Release-Notes
   sind für `0.5.0` aktualisiert.
 
@@ -271,8 +272,22 @@ DoD:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-36 | Muss | `examples/mediamtx/`, MediaMTX-Smoke, Doku-Link | ⬜ |
-| RAK-37 | Muss | `examples/srt/`, SRT-Smoke oder dokumentierter lokaler Startnachweis | ⬜ |
-| RAK-38 | Muss | `examples/dash/`, DASH-MPD lokal erreichbar, Doku-Link | ⬜ |
-| RAK-39 | Soll | `examples/webrtc/README.md` und ggf. optionaler Smoke | ⬜ |
-| RAK-40 | Muss | README/User-Doku/Releasing-Doku vollständig, Docs-Gate grün | ⬜ |
+| RAK-36 | Muss | `examples/mediamtx/`, MediaMTX-Smoke prüft Erreichbarkeit, published Teststream und HLS-Manifest, Doku-Link | [ ] |
+| RAK-37 | Muss | `examples/srt/`, SRT-Smoke prüft Publisher-Verbindung und abspiel- oder analysierbare Ausspielung | [ ] |
+| RAK-38 | Muss | `examples/dash/`, DASH-MPD lokal erreichbar und dokumentierter Beispielpfad läuft ohne Internet | [ ] |
+| RAK-39 | Soll | `examples/webrtc/README.md` und ggf. optionaler Smoke oder bewusst dokumentiertes Folge-Item | [ ] |
+| RAK-40 | Muss | README/User-Doku/Releasing-Doku vollständig, Docs-Gate grün | [ ] |
+
+### 7.2 Release-Closeout-Protokoll
+
+Dieser Abschnitt wird während Tranche 6 gefüllt, damit Smoke-Nachweise
+nicht ad hoc in Commit-Bodies oder Release-Notes verschwinden.
+
+| Prüfung | Befehl / Nachweis | Datum | Ergebnis | Notiz |
+| ------- | ----------------- | ----- | -------- | ----- |
+| `make gates` | — | — | [ ] | — |
+| MediaMTX-Smoke | — | — | [ ] | RAK-36 |
+| SRT-Smoke | — | — | [ ] | RAK-37 |
+| DASH-Smoke | — | — | [ ] | RAK-38 |
+| WebRTC-Vorbereitung | — | — | [ ] | RAK-39 |
+| Docs-Gate | `make docs-check` oder Teil von `make gates` | — | [ ] | RAK-40 |
