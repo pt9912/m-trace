@@ -76,6 +76,25 @@ vollständigen Media-Server-Verwaltung wächst.
 | R-7 Session-List-N+1 | Beobachten. SRT-Health darf Session-Listen nicht durch zusätzliche N+1-Reads verschlechtern. | Wenn SRT-Health in `GET /api/stream-sessions` eingebettet wird und p95 >= 200 ms reproduzierbar wird, Bulk-Read-Port vor Dashboard-Integration liefern. |
 | R-10 Sampling-Vollständigkeit | Nicht Teil von `0.6.0`, solange SRT-Metriken unabhängig von Player-Sampling laufen. | Aktivieren, falls Health-Ansicht Player-Event-Vollständigkeit als Diagnosevoraussetzung behauptet. |
 
+### 0.3 Sequenzierung und harte Gates
+
+`0.6.0` hat eine höhere Fehlentscheidungsgefahr als die vorherigen
+Lab-Tranchen, weil die Metrikquelle Runtime, Cardinality und Dashboard-
+Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
+
+1. Tranche 1 blockiert jede produktive Code-Integration, die eine
+   SRT-Metrikquelle in `apps/api`, Prometheus oder Dashboard verdrahtet.
+2. Tranche 2 darf nur gegen die in Tranche 1 gewählte Quelle härten;
+   parallele zweite SRT-Testpfade sind nicht Teil des Plans.
+3. Tranche 3 muss Telemetry-Model, API-Kontrakt und Storage-Shape
+   festlegen, bevor Tranche 4 HTTP-Handler oder Dashboard-Client-Code
+   darauf aufbauen.
+4. Tranche 5 darf keine eigene Health-Bewertung implementieren; die
+   Bewertung kommt aus Tranche 4 oder ist als reine UI-Formatierung
+   dokumentiert.
+5. Tranche 7 darf RAK-43 erst schließen, wenn die vier Pflichtwerte aus
+   derselben End-to-End-Quelle in API und Dashboard sichtbar sind.
+
 ---
 
 ## 1. Tranchen-Übersicht
@@ -143,6 +162,17 @@ Zu bewertende Quellen:
 | Log-/CLI-Import | Lab-Smoke oder Sidecar normalisiert bekannte SRT-Tool-Ausgabe. | Nur akzeptabel, wenn deterministisch testbar und nicht fragil gegen lokalisierte Logtexte. |
 | Direktes libsrt-Binding | `apps/api` liest SRT-Stats direkt über Binding. | Nur mit ADR und bewusst akzeptierter Runtime-/Image-Konsequenz. |
 
+Harte Auswahlkriterien:
+
+| Kriterium | Muss erfüllt sein |
+| --------- | ----------------- |
+| Vollständigkeit | RTT, Packet Loss, Retransmissions und Bandbreite sind alle verfügbar und semantisch erklärbar. |
+| Reproduzierbarkeit | Fixtures und Smoke laufen ohne Internet und ohne manuelle SRT-Tools auf dem Host. |
+| Runtime-Grenze | `apps/api` bleibt CGO-frei oder die Runtime-Änderung ist per ADR akzeptiert. |
+| Cardinality | Rohdaten gelangen nicht ungefiltert mit Per-Verbindung-/IP-Labels in Prometheus. |
+| Freshness | Quelle liefert `observed_at` oder ein äquivalentes Sample-Zeitfenster, sodass stale Daten erkennbar sind. |
+| Failure-Mode | Quelle hat unterscheidbare Fehler für "nicht erreichbar", "keine Verbindung" und "unvollständige Rohdaten". |
+
 DoD:
 
 - [ ] Eine Metrikquelle ist verbindlich gewählt und in einer kurzen ADR
@@ -168,6 +198,14 @@ DoD:
 - [ ] Für jeden Rohwert ist Einheit und Semantik festgelegt
   (z. B. Millisekunden, Bytes/s oder Bits/s, absolute Counter vs.
   Intervallwert).
+- [ ] Für Counter-Quellen ist festgelegt, wie daraus Dashboard-Werte
+  berechnet werden: Roh-Counter anzeigen, Intervallrate ableiten oder
+  beides liefern. Das Intervall und Reset-Verhalten sind dokumentiert.
+- [ ] Freshness-Semantik ist entschieden: Sample-Intervall, stale-
+  Schwelle und Verhalten bei fehlendem Zeitstempel.
+- [ ] Fehlerklassen der Quelle sind normalisiert:
+  `source_unavailable`, `no_active_connection`, `partial_sample`,
+  `parse_error` oder äquivalente stabile Codes.
 - [ ] Metrikquelle und Fixture sind ohne externen Netzwerkzugriff in CI
   testbar.
 - [ ] RAK-42 und RAK-46 sind nicht allein durch diese Tranche erfüllt,
@@ -194,6 +232,9 @@ DoD:
   begrenzter Laufzeit oder klarer Stop-Bedingung.
 - [ ] Das Setup liefert neben der Media-Ausspielung auch eine
   erreichbare Metrikquelle aus Tranche 1.
+- [ ] Das Lab benennt die Datenflussrichtung eindeutig:
+  Publisher → SRT-Receiver/Media-Server → Metrikquelle → `apps/api`
+  → Dashboard.
 - [ ] `make smoke-srt` wird erweitert oder ein neues
   `make smoke-srt-health` wird ergänzt; der Befehl prüft Publish,
   Ausspielung und Metrikabruf.
@@ -203,6 +244,9 @@ DoD:
   normalisierter Wert.
 - [ ] Smoke-Waits sind bounded und liefern Diagnoseausgabe aus
   Metrikquelle, Media-Server und Publisher.
+- [ ] Smoke-Fehler sind kategorisiert: Publish fehlgeschlagen,
+  Ausspielung fehlt, Metrikquelle fehlt, Sample unvollständig,
+  API-Import fehlgeschlagen.
 - [ ] Stop/Reset räumt nur das `mtrace-srt`-Compose-Projekt auf und
   greift nicht in Core-Lab-Volumes ein.
 - [ ] `examples/srt/README.md` beschreibt den Health-Erweiterungspfad
@@ -231,6 +275,8 @@ Vorgeschlagenes Mindestmodell:
 | `packet_loss_total` oder `packet_loss_rate` | Verlustsignal laut Quelle | counter oder ratio, Quelle entscheidet |
 | `retransmissions_total` | Retransmission-Counter | counter |
 | `bandwidth_bps` | geschätzte oder gemessene Bandbreite | bits/s |
+| `sample_window_ms` | Zeitfenster für aus Countern abgeleitete Raten, falls relevant | integer, optional |
+| `source_status` | Status der Metrikquelle | enum: `ok`, `unavailable`, `partial`, `stale` |
 | `health_state` | `healthy`, `degraded`, `critical`, `unknown` | enum |
 
 Deferred gegenüber Lastenheft §4.3, sofern die gewählte Quelle sie nicht
@@ -256,8 +302,13 @@ DoD:
 - [ ] SQLite- oder anderer lokaler Persistenzpfad speichert aktuelle und
   historische Health-Snapshots restart-stabil, falls die Dashboard-
   Ansicht Verlauf zeigen soll.
+- [ ] Retention-Grenze ist entschieden: unbegrenzt wie bestehende
+  lokale SQLite-Demo-Daten oder bounded Snapshot-Historie mit
+  dokumentiertem Reset-/Prune-Pfad.
 - [ ] Schema-Migration ist idempotent und mit Restart-/Migrationstests
   abgedeckt.
+- [ ] Dedupe-/Upsert-Regel ist festgelegt: Ein Sample ist eindeutig über
+  Quelle, Stream/Connection, `observed_at` und ggf. Sample-Sequenz.
 - [ ] OTel-Export ist kompatibel mit dem bestehenden Telemetry-Port und
   vermeidet forbidden Prometheus-Labels.
 - [ ] Prometheus erhält höchstens bounded Aggregate, z. B. Anzahl
@@ -294,6 +345,11 @@ DoD:
   Quellen-/Freshness-Angabe.
 - [ ] `health_state`-Schwellen sind dokumentiert und testbar; `unknown`
   ist der definierte Zustand bei fehlender oder stale Metrikquelle.
+- [ ] API-Response trennt Rohwerte, abgeleitete Werte und Bewertung:
+  `metrics`, `derived`, `health_state`, `source_status` oder eine
+  gleichwertige Struktur.
+- [ ] Freshness ist im Response sichtbar, z. B. `observed_at`,
+  `sample_age_ms`, `stale_after_ms` und `source_status`.
 - [ ] CORS-/Auth-Verhalten folgt den bestehenden Dashboard-Read-Pfaden
   und ist im API-Kontrakt beschrieben.
 - [ ] Fehlerfälle sind stabil: Metrikquelle nicht erreichbar,
@@ -304,6 +360,8 @@ DoD:
   Session-Listen hinzu; falls Integration in `GET /api/stream-sessions`
   nötig ist, existiert ein Bulk-Read-Port oder ein begründeter
   separater Endpoint.
+- [ ] Pagination oder Limitierung für historische Samples ist definiert;
+  unbeschränkte Zeitreihen-Antworten sind nicht zulässig.
 - [ ] OpenAPI-/Contract-Fixtures oder Snapshot-Tests pinnen den
   Response-Shape.
 
@@ -326,6 +384,9 @@ DoD:
 - [ ] Ansicht zeigt pro SRT-Stream oder Verbindung mindestens
   `health_state`, RTT, Packet Loss, Retransmissions, Bandbreite,
   letzte Aktualisierung und Quelle/Freshness.
+- [ ] Werte sind mit Einheiten und Zeitbezug sichtbar: RTT in ms,
+  Bandbreite in bit/s oder Mbit/s, Loss/Retransmission als Counter oder
+  Rate gemäß API-Vertrag.
 - [ ] Warnzustände unterscheiden `degraded`, `critical`, `unknown` und
   normalen Zustand visuell und textlich eindeutig.
 - [ ] Verlauf oder Mini-Timeline ist vorhanden, wenn Tranche 3
@@ -335,6 +396,8 @@ DoD:
   getestet.
 - [ ] Dashboard ruft nur dokumentierte API-Endpunkte auf und dupliziert
   keine Health-Schwellenlogik, außer reine UI-Formatierung.
+- [ ] Stale-Daten werden nicht als gesunder Zustand angezeigt; die UI
+  muss Freshness/Quelle sichtbar machen.
 - [ ] Tests decken Rendering der vier Pflichtmetriken, Health-Zustände
   und API-Fehler ab.
 - [ ] Browser-E2E oder ein gezielter Dashboard-Smoke validiert die
@@ -380,6 +443,9 @@ DoD:
   manuelle Prüfungen.
 - [ ] Dokumentation erklärt die typischen Fehlerbilder aus der Tabelle
   mit konkreten Messwerten oder Zustandsbeispielen.
+- [ ] Dokumentation erklärt Counter-vs.-Rate-Semantik, Sample-Fenster
+  und stale/unknown-Zustände, damit Operatoren Werte nicht als
+  absolute Momentaufnahme missverstehen.
 - [ ] Dokumentation enthält eine Deferred-Liste für Send-/Receive-
   Buffer, Verbindungsstabilität, Link Health und Failover-Zustände,
   falls diese Signale nicht in `0.6.0` ausgeliefert werden.
@@ -408,6 +474,9 @@ DoD:
 - [ ] `make smoke-srt-health` oder der erweiterte `make smoke-srt`
   validiert Metrikabruf, API-Read-Pfad und mindestens eine Dashboard-
   oder API-Verifikation der vier Pflichtwerte.
+- [ ] Health-Smoke prüft neben dem gesunden Fall mindestens einen
+  definierten Fehlerpfad: fehlende Metrikquelle, keine aktive
+  Verbindung oder stale Sample.
 - [ ] Observability-Smoke ist grün und weist keine forbidden Labels auf
   neuen `mtrace_*`-Metriken und, falls gescraped, Source-Metriken nach.
 - [ ] Dashboard-Test/E2E für die SRT-Health-Ansicht ist grün.
