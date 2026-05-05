@@ -104,7 +104,7 @@ Vertrag gleichzeitig beeinflusst. Daher gelten diese Reihenfolgen:
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Vorgänger-Gate und Scope-Festlegung | ✅ |
-| 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | ⬜ |
+| 1 | SRT-Metrikquelle und Binding-Entscheidung (R-2, RAK-42) | 🟡 (Sub-1.1 ✅, 1.2 Probe ⬜) |
 | 2 | SRT-Testsetup zum Health-Lab härten (RAK-41) | ⬜ |
 | 3 | SRT-Health-Datenmodell, Storage und OTel-Vertrag (RAK-42, RAK-46) | ⬜ |
 | 4 | API-Read-Pfad und Health-Bewertung (RAK-43) | ⬜ |
@@ -179,6 +179,95 @@ Harte Auswahlkriterien:
 | Freshness | Quelle liefert `source_observed_at` oder ein äquivalentes quellen-nahes Freshness-Signal wie Sample-Window, Generation-ID oder monotone Source-Sequenz; Importzeit allein darf Freshness nicht beweisen. |
 | Failure-Mode | Quelle hat unterscheidbare Fehler für "nicht erreichbar", "keine Verbindung" und "unvollständige Rohdaten". |
 | Probe-Fähigkeit | Ein minimaler Source-Probe kann eine Rohantwort gegen Fixture/Parser prüfen, ohne `apps/api` oder Dashboard zu starten. |
+
+### 2.1 Evaluations-Stand vor Probe (Sub-Tranche 1.1)
+
+Bewertung der vier Optionen gegen die sieben Kriterien anhand des
+aktuellen Wissensstands (vor Lab-Probe). Legende: ✅ erfüllt /
+🟡 erfüllbar, aber Aufwand · ❓ unbekannt, Probe nötig · ❌ nicht
+erfüllbar.
+
+| Kriterium | (1) MediaMTX-API | (2) Sidecar-Exporter | (3) Log-/CLI-Import | (4) libsrt-Binding |
+| --------- | :--------------: | :------------------: | :-----------------: | :----------------: |
+| Vollständigkeit | ❓ | ✅ | 🟡 | ✅ |
+| Reproduzierbarkeit | ✅ | 🟡 | ❌ | 🟡 |
+| Runtime-Grenze | ✅ | ✅ | ✅ | ❌ |
+| Cardinality | ✅ | ✅ | ✅ | ✅ |
+| Freshness | 🟡 | ✅ | 🟡 | ✅ |
+| Failure-Mode | ✅ | ✅ | 🟡 | ✅ |
+| Probe-Fähigkeit | ✅ | 🟡 | ✅ | 🟡 |
+
+Begründungen:
+
+- **(1) MediaMTX-API** — Reproduzierbar (lokales Compose, Standard-
+  HTTP-API auf `:9997`), Runtime-Grenze ist trivial (HTTP-Client in
+  Go), Cardinality kontrollierbar (Adapter normalisiert, Projekt-
+  Prometheus scrapt nichts). Probe ist `curl` plus Auth-Token.
+  **Offene Hauptfrage**: liefert `/v3/srtconns/list` die vier RAK-43-
+  Pflichtwerte (RTT, Packet Loss, Retransmissions, verfügbare
+  Bandbreite) als first-class Felder oder nur Verbindungs-Metadaten
+  plus Bytes-Counter? Das entscheidet Sub-Tranche 1.2 (Lab-Probe).
+  Freshness: kein expliziter Source-Sample-Timestamp im API-Schema
+  bekannt — Adapter muss `collected_at` setzen plus optional ein
+  monotones Sample-Window aus `created`/`bytesReceived`-Δ ableiten.
+- **(2) Sidecar-Exporter** — Vollständigkeit ist Implementierungs-
+  entscheidung (eigener Container kann libsrt-Stats voll nutzen);
+  apps/api bleibt CGO-frei, das CGO ist im Sidecar isoliert. Freshness
+  ist Sidecar-kontrolliert (eigener `source_observed_at`). Reproduzier-
+  barkeit/Probe-Aufwand höher als bei (1), weil das Sidecar-Image erst
+  gebaut/gepinnt werden muss. **Bevorzugter Fallback**, falls (1) die
+  vier Pflichtwerte nicht trägt.
+- **(3) Log-/CLI-Import** — Plan §2 Optionentabelle qualifiziert das
+  selbst: „nur akzeptabel, wenn deterministisch testbar und nicht
+  fragil gegen lokalisierte Logtexte". MediaMTX-Logs sind text-
+  formattiert und versionsabhängig; `srt-live-transmit --stats` hat
+  CSV-Format, aber externe Tool-Abhängigkeit auf dem Lab-Host.
+  Reproduzierbarkeit reißt damit. **Effektives Plan-Veto** — keine
+  ernsthafte Option für `0.6.0`.
+- **(4) libsrt-Binding** — CGO-Pflicht reißt distroless-static
+  (R-2). Voll erfüllt sonst alle Kriterien. **Notausgang** mit
+  accepted ADR „SRT-Binding-Stack" und R-2-Update auf konkrete
+  Runtime-Konsequenz.
+
+### 2.2 Empfehlung als Probe-Default
+
+**Bevorzugter Pfad**: Option 1 (MediaMTX-API). Bestätigt durch
+Reproduzierbarkeit, Runtime-Grenze, Cardinality, Probe-Fähigkeit. Die
+einzige offene Hard-Kriterium-Frage ist Vollständigkeit — RAK-43
+verlangt RTT, Packet Loss, Retransmissions, verfügbare Bandbreite.
+
+**Fallback-Reihenfolge** bei negativem Probe-Ergebnis aus Sub-1.2:
+1. Option 1 + ergänzende MediaMTX-Konfig oder neuere MediaMTX-Version,
+   falls die fehlenden Felder dort exponiert werden.
+2. Option 2 (Sidecar-Exporter) — eigener Container liest libsrt direkt
+   und liefert über expliziten HTTP-Pull-Vertrag an `apps/api`.
+3. Option 4 (libsrt in `apps/api`) nur, falls 1+2 unmöglich; mit
+   accepted ADR und R-2-Update auf gewähltes Runtime-Profil.
+
+Option 3 (Log/CLI) bleibt aus dem Rennen (Plan-Veto).
+
+### 2.3 Probe-Plan für Sub-Tranche 1.2
+
+Ziel: anhand von zwei aufeinanderfolgenden API-Antworten aus dem
+Lab nachweisen, ob Option 1 die vier RAK-43-Pflichtwerte trägt.
+
+| Schritt | Aktion | Erwartung |
+| ------- | ------ | --------- |
+| P1 | `examples/srt/`-Stack starten (`docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build`); FFmpeg-Loop publiziert auf `srt://:8890?streamid=publish:srt-test`. | MediaMTX-Container `Healthy`, FFmpeg-Container running. |
+| P2 | MediaMTX-Auth temporär für Probe konfigurieren: `mediamtx.yml` `authInternalUsers` mit Lab-Token oder API-Auth-Override; **außerhalb** des smoke-srt-Pfads, damit die `0.5.0`-Baseline grün bleibt. | API auf `:9997` mit `Authorization`-Header erreichbar. |
+| P3 | `curl -sS http://localhost:9997/v3/srtconns/list` während Publisher läuft; Response speichern. | JSON mit `items[]`-Array, mindestens ein Eintrag mit `state: "publish"` (oder analog). |
+| P4 | Schema-Inspektion: enthält jedes `items[]`-Element ein RTT-Feld, ein Loss-Feld, ein Retransmissions-Feld, ein Bandbreiten-Feld? Felder-Namen und Einheiten dokumentieren. | Vier Pflichtwerte vorhanden ODER negativer Befund. |
+| P5 | Zweiten Request nach 5 s. | `bytesReceived` höher; falls vorhanden, `pktRetransTotal`/`pktLossTotal` monoton oder dokumentierter Reset. |
+| P6 | Response-Snapshot in `spec/contract-fixtures/srt/mediamtx-srtconns-list.json` speichern (anonymisiert: keine echten IPs als Lab-Daten). | Fixture für späteren Adapter-Parser. |
+
+Ergebnis-Pfade aus Sub-1.2:
+
+- **Positiv** (alle vier Pflichtwerte vorhanden): Sub-1.3 dokumentiert
+  Option 1 als verbindliche Wahl im Plan; Adapter-Skizze + Einheiten/
+  Counter-vs-Rate-Mapping; Sub-1.4 setzt R-2 auf „aufgelöst durch
+  CGO-freie HTTP-Quelle".
+- **Negativ** (mind. ein Pflichtwert fehlt): Sub-1.3 prüft Option 2
+  (Sidecar) oder Lastenheft-Patch §4.3, dann ggf. Option 4 mit ADR.
 
 DoD:
 
