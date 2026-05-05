@@ -21,7 +21,7 @@
 # ---------------------------------------------------------------------------
 
 # ---- deps ------------------------------------------------------------------
-FROM golang:1.22 AS deps
+FROM golang:1.26 AS deps
 
 WORKDIR /src
 ENV GOFLAGS="-mod=readonly" \
@@ -49,7 +49,7 @@ RUN CGO_ENABLED=0 go build -o /tmp/api ./cmd/api
 # //nolint-Suppressions). Konfiguration in apps/api/.golangci.yml;
 # Pro-Scope-Carveouts (Tests, scripts/, Test-Contract-Bibliothek) sind
 # dort dokumentiert. Bezug: docs/user/quality.md §1.2.
-FROM golangci/golangci-lint:v1.62-alpine AS lint
+FROM golangci/golangci-lint:v2.12.1-alpine AS lint
 
 WORKDIR /src
 COPY --from=deps /go/pkg/mod /go/pkg/mod

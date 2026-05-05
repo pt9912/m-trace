@@ -455,10 +455,7 @@ func TestRun_AppendsTwoConsecutiveSamples(t *testing.T) {
 	// Warten, bis Collect mindestens zweimal lief, dann abbrechen.
 	deadline := time.NewTimer(500 * time.Millisecond)
 	defer deadline.Stop()
-	for {
-		if len(repo.appended) >= 2 {
-			break
-		}
+	for len(repo.appended) < 2 {
 		select {
 		case <-deadline.C:
 			cancel()
@@ -516,10 +513,7 @@ func TestRun_BackoffOnSourceError(t *testing.T) {
 
 	deadline := time.NewTimer(500 * time.Millisecond)
 	defer deadline.Stop()
-	for {
-		if len(repo.appended) >= 1 {
-			break
-		}
+	for len(repo.appended) < 1 {
 		select {
 		case <-deadline.C:
 			cancel()

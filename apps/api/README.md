@@ -17,7 +17,7 @@ make run      # docker run -p 8080:8080
 ```
 
 Lokales Go ist **nicht erforderlich** — das Build-Image
-`golang:1.22` bringt die Toolchain mit.
+`golang:1.26` bringt die Toolchain mit.
 
 ## Verzeichnisstruktur
 

@@ -1,4 +1,5 @@
-# golangci-lint configuration for apps/api.
+# golangci-lint configuration for apps/api (v2 schema, since 0.7.0
+# Tranche 0 Go-Bump auf 1.26).
 #
 # Bezug:
 #   - spec/lastenheft.md §10.1 (Backend, Linting): Default-Linter +
@@ -9,25 +10,22 @@
 # entweder durch Code-Änderung oder durch eine begründete, hier
 # zentral dokumentierte Konfigurationsregel behoben, nicht durch
 # `//nolint`-Pragmas.
+#
+# Migration v1 → v2: `golangci-lint migrate` aus v2.12.1; `run.timeout`
+# entfällt (v2-Default = unlimitiert), `disable-all: true` →
+# `default: none`. Linters-Liste, Linter-Settings und Exclusions
+# unverändert.
 
-run:
-  timeout: 5m
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    # Default-Linter (Lastenheft §10.1).
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    # SOLID-nahes Zusatzprofil (Lastenheft §10.1, 24 Pflicht-Linter).
     - containedctx
     - contextcheck
     - cyclop
     - depguard
     - dupl
+    - errcheck
     - fatcontext
     - forbidigo
     - funlen
@@ -35,9 +33,11 @@ linters:
     - gochecknoinits
     - gocognit
     - gocyclo
-    - gomodguard
+    - gomodguard_v2
+    - govet
     - iface
     - inamedparam
+    - ineffassign
     - interfacebloat
     - ireturn
     - maintidx
@@ -45,199 +45,128 @@ linters:
     - noctx
     - reassign
     - revive
+    - staticcheck
     - testpackage
     - unparam
-
-linters-settings:
-  cyclop:
-    # Iteration 1: 15 — moderate Schwelle, um die Verteilung der
-    # Findings zu sehen. Ziel-Endwert wird nach erstem Lauf justiert.
-    max-complexity: 15
-
-  funlen:
-    # Iteration 1: 100 Zeilen / 60 Statements (Default 60/40 ist sehr
-    # streng). Ziel-Endwert wird nach erstem Lauf justiert.
-    lines: 100
-    statements: 60
-
-  gocognit:
-    min-complexity: 20
-
-  gocyclo:
-    min-complexity: 15
-
-  nestif:
-    min-complexity: 5
-
-  dupl:
-    threshold: 150
-
-  maintidx:
-    # Default 20: Werte unter 20 = "schwer wartbar". Wir starten am
-    # Default und schauen, wo wir landen.
-    under: 20
-
-  interfacebloat:
-    # Hexagon-Ports sind bewusst klein. Default 10 ist locker; wir
-    # starten dort und ziehen ggf. nach.
-    max: 10
-
-  ireturn:
-    # Hexagon-Adapter geben bewusst Port-Interfaces zurück (Factory-
-    # Funktionen wie `NewHTTPHandler() port.X`). Defaults erlauben
-    # `error`, `empty`, `anon`, `stdlib`, `generic` — wir ergänzen
-    # eigene Hexagon-Ports und OTel-Stdlib-Interfaces (z. B.
-    # `metric.Meter`), die Adapter-Setup-Funktionen wie
-    # `meterProvider.Meter(name)` zwangsläufig zurückgeben.
-    allow:
-      - error
-      - empty
-      - anon
-      - stdlib
-      - generic
-      - github.com/pt9912/m-trace/apps/api/hexagon/port/driving\..*
-      - github.com/pt9912/m-trace/apps/api/hexagon/port/driven\..*
-      - go.opentelemetry.io/otel/metric\..*
-      - go.opentelemetry.io/otel/trace\..*
-
-  forbidigo:
-    # Default verbietet `fmt.Print*`. Behalten wir; `cmd/api`-Logging
-    # läuft über `log/slog` (Lastenheft §10.1), nicht über Print.
-    forbid:
-      - p: ^fmt\.Print.*$
-        msg: "use log/slog (Lastenheft §10.1)"
-
-  gomodguard:
-    # Iteration 1: kein Module-Allow-/Blocklist. Wir bauen den Eintrag
-    # auf, sobald die ersten Findings/Diskussionen konkret sind.
-    blocked:
-      modules: []
-
-  depguard:
-    # Spiegelt apps/api/scripts/check-architecture.sh:
-    # - hexagon/* darf weder Adapter noch Infrastruktur-Bibliotheken
-    #   direkt importieren.
-    # - hexagon/domain darf nicht in hexagon/application oder
-    #   hexagon/port hineinreichen.
-    # - hexagon/application und hexagon/port dürfen keine Adapter
-    #   importieren.
-    # Bezug: spec/architecture.md §3.2/§3.4.
+    - unused
+  settings:
+    cyclop:
+      max-complexity: 15
+    depguard:
+      rules:
+        application-no-adapters:
+          list-mode: lax
+          files:
+            - '**/hexagon/application/**'
+          deny:
+            - pkg: github.com/pt9912/m-trace/apps/api/adapters
+              desc: application must depend on ports, not adapter implementations (architecture.md §3.2)
+        domain-no-application-or-port:
+          list-mode: lax
+          files:
+            - '**/hexagon/domain/**'
+          deny:
+            - pkg: github.com/pt9912/m-trace/apps/api/hexagon/application
+              desc: domain must not depend on application (architecture.md §3.2)
+            - pkg: github.com/pt9912/m-trace/apps/api/hexagon/port
+              desc: domain must not depend on port (architecture.md §3.2)
+        hexagon-no-adapters-or-infra:
+          list-mode: lax
+          files:
+            - '**/hexagon/**'
+          deny:
+            - pkg: github.com/pt9912/m-trace/apps/api/adapters
+              desc: hexagon must not depend on adapters (architecture.md §3.4)
+            - pkg: go.opentelemetry.io
+              desc: hexagon must not depend on OTel directly — use port
+            - pkg: github.com/prometheus
+              desc: hexagon must not depend on Prometheus directly — use port
+            - pkg: database/sql
+              desc: hexagon must not depend on database/sql — use port
+            - pkg: net/http
+              desc: hexagon must not depend on net/http — use port
+        port-no-adapters:
+          list-mode: lax
+          files:
+            - '**/hexagon/port/**'
+          deny:
+            - pkg: github.com/pt9912/m-trace/apps/api/adapters
+              desc: ports must define abstractions, not depend on adapter implementations (architecture.md §3.2)
+    dupl:
+      threshold: 150
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print.*$
+          msg: use log/slog (Lastenheft §10.1)
+    funlen:
+      lines: 100
+      statements: 60
+    gocognit:
+      min-complexity: 20
+    gocyclo:
+      min-complexity: 15
+    interfacebloat:
+      max: 10
+    ireturn:
+      allow:
+        - error
+        - empty
+        - anon
+        - stdlib
+        - generic
+        - github.com/pt9912/m-trace/apps/api/hexagon/port/driving\..*
+        - github.com/pt9912/m-trace/apps/api/hexagon/port/driven\..*
+        - go.opentelemetry.io/otel/metric\..*
+        - go.opentelemetry.io/otel/trace\..*
+    maintidx:
+      under: 20
+    nestif:
+      min-complexity: 5
+  exclusions:
+    generated: lax
     rules:
-      hexagon-no-adapters-or-infra:
-        list-mode: lax
-        files:
-          - "**/hexagon/**"
-        deny:
-          - pkg: "github.com/pt9912/m-trace/apps/api/adapters"
-            desc: "hexagon must not depend on adapters (architecture.md §3.4)"
-          - pkg: "go.opentelemetry.io"
-            desc: "hexagon must not depend on OTel directly — use port"
-          - pkg: "github.com/prometheus"
-            desc: "hexagon must not depend on Prometheus directly — use port"
-          - pkg: "database/sql"
-            desc: "hexagon must not depend on database/sql — use port"
-          - pkg: "net/http"
-            desc: "hexagon must not depend on net/http — use port"
-      domain-no-application-or-port:
-        list-mode: lax
-        files:
-          - "**/hexagon/domain/**"
-        deny:
-          - pkg: "github.com/pt9912/m-trace/apps/api/hexagon/application"
-            desc: "domain must not depend on application (architecture.md §3.2)"
-          - pkg: "github.com/pt9912/m-trace/apps/api/hexagon/port"
-            desc: "domain must not depend on port (architecture.md §3.2)"
-      application-no-adapters:
-        list-mode: lax
-        files:
-          - "**/hexagon/application/**"
-        deny:
-          - pkg: "github.com/pt9912/m-trace/apps/api/adapters"
-            desc: "application must depend on ports, not adapter implementations (architecture.md §3.2)"
-      port-no-adapters:
-        list-mode: lax
-        files:
-          - "**/hexagon/port/**"
-        deny:
-          - pkg: "github.com/pt9912/m-trace/apps/api/adapters"
-            desc: "ports must define abstractions, not depend on adapter implementations (architecture.md §3.2)"
-
+      - linters:
+          - noctx
+        path: _test\.go$
+      - linters:
+          - unparam
+        path: _test\.go$
+        text: always receives
+      - linters:
+          - cyclop
+          - gocognit
+          - gocyclo
+          - nestif
+        path: _test\.go$
+      - linters:
+          - cyclop
+          - gocognit
+          - gocyclo
+          - nestif
+          - noctx
+          - unparam
+        path: adapters/driven/persistence/contract/contract\.go$
+      - linters:
+          - revive
+        path: _test\.go$
+        text: ^unused-parameter
+      - linters:
+          - cyclop
+          - forbidigo
+          - gocognit
+          - gocyclo
+        path: scripts/
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  # Defaults von golangci-lint deaktivieren bestimmte Linter in
-  # `_test.go`-Dateien pauschal. Das wollen wir nicht — Carveouts
-  # sind unten pro Linter explizit dokumentiert.
-  exclude-use-default: false
-  # Keine Limits — alle Findings sehen.
   max-issues-per-linter: 0
   max-same-issues: 0
-  # Pro-Scope-Carveouts. Lastenheft §10.1 fixiert die 24 Linter als
-  # "Pflicht im Profil"; der Scope (Tests vs. Produktion vs. internes
-  # Tooling) ist Konfigurations-Entscheidung. Begründungen pro Eintrag.
-  exclude-rules:
-    # ----- Tests -----------------------------------------------------
-    # Tests gegen httptest.Server haben implizites
-    # t.Cleanup/server.Close()-Lifecycle; NewRequestWithContext-
-    # Boilerplate bringt im Test keinen Cancellation-Wert.
-    - path: _test\.go$
-      linters:
-        - noctx
-
-    # Test-Helper-Signaturen halten Parameter oft offen für zukünftige
-    # Test-Cases; Inlining würde das Helper-Design verengen. Eng gefasst
-    # auf das aktuelle unparam-Message-Format ("X always receives Y"),
-    # damit zukünftige unparam-Regeln (z. B. zu Return-Werten) auch in
-    # Tests greifen.
-    - path: _test\.go$
-      text: 'always receives'
-      linters:
-        - unparam
-
-    # Tests dürfen Setup-/Match-/Iterations-Logik haben — die Linter-
-    # Signale "geringe kognitive/zyklomatische Komplexität" und "wenig
-    # Verschachtelung" wirken designseitig auf Produktionscode, nicht
-    # auf Test-Fixtures.
-    - path: _test\.go$
-      linters:
-        - gocognit
-        - gocyclo
-        - cyclop
-        - nestif
-
-    # ----- Test-Contract-Bibliothek -----------------------------------
-    # adapters/driven/persistence/contract/contract.go ist eine Test-
-    # Helper-Bibliothek (Cross-Adapter-Test-Verträge, importiert von
-    # inmemory_test.go und sqlite_test.go), trägt aber konventionell
-    # keinen `_test.go`-Suffix, weil sie aus mehreren Test-Paketen
-    # importiert wird. Daher gleiche Carveouts wie für `_test.go`.
-    # Gezielt auf die eine Datei einschränken — falls das contract-
-    # Paket je weitere Files bekommt (z. B. helpers.go), müssen die
-    # bewusst hinzugefügt werden, nicht implizit miterlaubt sein.
-    - path: adapters/driven/persistence/contract/contract\.go$
-      linters:
-        - gocognit
-        - gocyclo
-        - cyclop
-        - nestif
-        - unparam
-        - noctx
-
-    # HTTP-Handler-Stubs `func(w, r){…}` ohne r-Verwendung sind
-    # idiomatisch in Tests, die nur die Server-Seite isolieren.
-    # Andere revive-Regeln (exported-comments, redefines-builtin etc.)
-    # bleiben in Tests strikt. Anker `^unused-parameter` schützt vor
-    # zukünftigen revive-Regeln mit ähnlich gestaffeltem Namen.
-    - path: _test\.go$
-      text: '^unused-parameter'
-      linters:
-        - revive
-
-    # ----- Skript-Zone (apps/api/scripts/) ----------------------------
-    # Internes Build-/Coverage-Tooling, kein API-Runtime-Code.
-    # Tooling darf nach stdout drucken (fmt.Print*) und höhere
-    # Komplexität haben (Parser, Report-Generatoren).
-    - path: scripts/
-      linters:
-        - forbidigo
-        - gocognit
-        - gocyclo
-        - cyclop
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

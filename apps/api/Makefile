@@ -55,7 +55,7 @@ run: build
 # OTel, Prometheus, database/sql oder net/http enthält und die
 # Schichtengrenzen domain → application → port respektiert sind.
 arch-check:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.22 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26 \
 		bash scripts/check-architecture.sh
 
 # Coverage-Pflicht-Gate (docs/user/quality.md §3): misst Coverage über

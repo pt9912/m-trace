@@ -1,8 +1,6 @@
 module github.com/pt9912/m-trace/apps/api
 
-go 1.22.7
-
-toolchain go1.22.12
+go 1.26.0
 
 require (
 	github.com/prometheus/client_golang v1.20.5
@@ -12,6 +10,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.32.0
 	go.opentelemetry.io/otel/sdk/metric v1.32.0
 	go.opentelemetry.io/otel/trace v1.32.0
+	modernc.org/sqlite v1.34.5
 )
 
 require (
@@ -56,5 +55,4 @@ require (
 	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.34.5 // indirect
 )
