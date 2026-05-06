@@ -61,7 +61,7 @@ Ziel: `packages/player-sdk` wird von einem Workspace-Paket zu einem lokal instal
 
 DoD:
 
-- [x] Paketnamen-Migration gemäß [`docs/planning/open/migrate-package-name.md`](../open/migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/planning/open/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer (`d367720`).
+- [x] Paketnamen-Migration gemäß [`docs/planning/done/migrate-package-name.md`](./migrate-package-name.md) durchgeführt: OE-8 neu entschieden (`@npm9912/player-sdk` ab `0.2.0`), alle unter §2.1 gelisteten Stellen umgestellt, Such-Gate aus `docs/planning/done/migrate-package-name.md` §4 liefert nur noch die dort erlaubten historischen Treffer (`d367720`).
 - [x] `packages/player-sdk/package.json` enthält publish-fähige Metadaten: `name`, `version`, `description`, `license`, `repository`, `files`, `exports`, `types`, ESM/CJS/Browser-Build-Einstiege (`819ee17`, `d367720`).
 - [x] `packages/player-sdk/package.json` setzt `version` auf `0.2.0`; Pack-/Install-Smoke-Test prüft, dass das erzeugte npm-Paket ebenfalls Version `0.2.0` meldet (`819ee17`).
 - [x] Root-`package.json` setzt `version` auf `0.2.0`; Repo-Release-Tag, Root-Metadaten und SDK-Paketversion sind konsistent oder eine bewusst abweichende Versionierungsregel ist dokumentiert (`819ee17`).
@@ -93,7 +93,7 @@ DoD:
 - [x] SDK sendet die Schema-Version im definierten Wire-Format aus `spec/telemetry-model.md` (`d367720`).
 - [x] SDK-Tests verhindern Regressionen bei `sdk.version` und Schema-Version im erzeugten Event-Payload (`d367720`).
 - [x] `spec/telemetry-model.md` beschreibt die aktuelle Schema-Version, Kompatibilitätsregeln und erlaubte additive/breaking Changes (`d367720`).
-- [x] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/planning/open/migrate-package-name.md`](../open/migrate-package-name.md) §2.2 unverändert (`d367720`).
+- [x] Lebende Doku referenziert die Contract-Artefakte oder ist mit ihnen synchronisiert; historische Spike-Snapshots bleiben gemäß [`docs/planning/done/migrate-package-name.md`](./migrate-package-name.md) §2.2 unverändert (`d367720`).
 - [x] API-Tests prüfen, dass die aktuell unterstützte Schema-Version akzeptiert wird (`d367720`).
 - [x] SDK-Tests prüfen, dass jeder erzeugte Batch die aktuelle Schema-Version trägt (`d367720`).
 - [x] Maschinenlesbare Contract-Artefakte werden angelegt, z. B. `contracts/event-schema.json` und `contracts/sdk-compat.json`; sie sind Source of Truth für Schema-Version und SDK↔Schema-Kompatibilität (`d367720`).

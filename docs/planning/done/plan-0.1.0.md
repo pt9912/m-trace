@@ -349,13 +349,13 @@ Mit `0.2.0` wird das Player-SDK erstmals publizierbar. Der ursprünglich
 für `0.1.x` dokumentierte npm-Scope `@m-trace` ist nicht als npm-Org
 reserviert; Maintainer publisht Pakete bereits unter `@npm9912`. Daher
 wird OE-8 vor der ersten Veröffentlichung neu entschieden. Details stehen
-in [`docs/planning/open/migrate-package-name.md`](../open/migrate-package-name.md).
+in [`docs/planning/done/migrate-package-name.md`](./migrate-package-name.md) (im `0.8.0`-Wartungs-Sweep nach `done/` archiviert).
 
 DoD:
 
 - [x] Lastenheft Header: Version `1.1.6` → `1.1.7`.
 - [x] Lastenheft §16.2: OE-8 resolved — Player-SDK-Paketname `@npm9912/player-sdk` ab `0.2.0`; `0.1.x`-Lieferstand unter `@m-trace/player-sdk` bleibt historische Wahrheit, wurde aber nie öffentlich publishet.
-- [x] Lebende Code-, Doku- und Package-Stellen folgen `docs/planning/open/migrate-package-name.md` §2.1; historische `0.1.x`-Artefakte bleiben gemäß §2.2 unverändert.
+- [x] Lebende Code-, Doku- und Package-Stellen folgen `docs/planning/done/migrate-package-name.md` §2.1; historische `0.1.x`-Artefakte bleiben gemäß §2.2 unverändert.
 
 ### 4a.11 Patch `1.1.8` — OE-3 und OE-5 auflösen
 

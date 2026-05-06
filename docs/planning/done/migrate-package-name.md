@@ -1,8 +1,19 @@
 # Migration Plan — npm-Paketnamen `@m-trace/*` → `@npm9912/*`
 
-> **Status**: ⬜ geplant, durchzuführen vor dem `0.2.0`-Release.
-> **Bezug**: [`plan-0.2.0.md`](../done/plan-0.2.0.md) Tranche 1 (RAK-11, publizierbares SDK); [`lastenheft.md`](../../../spec/lastenheft.md) §16.2 (OE-8).
-> **Trigger**: Maintainer publishet npm-Pakete bereits unter dem bestehenden Scope `@npm9912`. Eine separate `@m-trace`-Org ist auf npmjs.com nicht reserviert. OE-8 wird damit faktisch wiedereröffnet und neu entschieden, bevor das SDK erstmals veröffentlicht wird.
+> **Status**: ✅ ausgeliefert mit `0.2.0`-Release (Commit `d367720`); im
+> `0.8.0`-Wartungs-Sweep nach `docs/planning/done/` archiviert.
+> Nachschlagewerk für die OE-8-Neuentscheidung; lebende Code-/Doku-
+> Stellen sind seitdem auf `@npm9912/player-sdk` und
+> `@npm9912/m-trace-dashboard` umgestellt, historische `0.1.x`-
+> Artefakte bleiben gemäß §2.2 unverändert.
+>
+> **Bezug**: [`plan-0.2.0.md`](./plan-0.2.0.md) Tranche 1 (RAK-11,
+> publizierbares SDK); [`lastenheft.md`](../../../spec/lastenheft.md)
+> §16.2 (OE-8 resolved).
+> **Trigger (historisch)**: Maintainer publishet npm-Pakete bereits
+> unter dem bestehenden Scope `@npm9912`. Eine separate `@m-trace`-
+> Org ist auf npmjs.com nicht reserviert. OE-8 wurde damit faktisch
+> wiedereröffnet und vor dem ersten SDK-Publish neu entschieden.
 
 ## 1. Entscheidung
 
@@ -49,7 +60,7 @@
 | `docs/planning/done/plan-0.1.1.md` Z. 90 | analog für `0.1.1` |
 | `docs/planning/done/plan-spike.md` Z. 997 | abgeschlossener Spike |
 | `docs/spike/0001-backend-stack.md` | Spike-Snapshot |
-| `docs/planning/open/migrate-package-name.md` | dieses Migrationsprotokoll nennt alten und neuen Namen ausdrücklich |
+| `docs/planning/done/migrate-package-name.md` | dieses Migrationsprotokoll nennt alten und neuen Namen ausdrücklich (im `0.8.0`-Wartungs-Sweep aus `open/` nach `done/` verschoben) |
 | `spec/lastenheft.md` §16.2 | OE-8-Neuentscheidung enthält die historische `0.1.x`-Einordnung |
 | `CHANGELOG.md` Z. 35 | Eintrag in `0.1.1`-Sektion: „Lastenheft `1.1.5` löst OE-8 auf: `@m-trace/player-sdk`" — historische Wahrheit |
 
@@ -104,4 +115,10 @@ In `docs/planning/done/plan-0.1.0.md` Tranche 0c als neuen §4a-Eintrag aufnehme
 ## 7. Wartung
 
 - Beim Auslagern eines `[ ]`-Items in einen Commit Status mit Hash markieren analog `plan-0.2.0.md` §0.
-- Nach Abschluss dieses Plans wird das Dokument im `0.2.0`-Release als „durchgeführt" markiert; eine Archivierung erfolgt mit dem Bump auf `0.3.0`.
+- Plan ist mit `0.2.0` (Commit `d367720`) durchgeführt; im `0.8.0`-
+  post-Release-Sweep nach `docs/planning/done/` archiviert. Wenn
+  künftige Releases einen weiteren Paketnamen-Wechsel (z. B. neuer
+  npm-Scope) brauchen, wird ein eigenständiges Migrationsdokument
+  unter `open/` aufgenommen, nicht dieses fortgeschrieben — der
+  historische Pfad zum alten `@m-trace`-Scope bleibt hier
+  nachschlagbar.
