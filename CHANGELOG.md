@@ -7,11 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.7.0`-Sammelblock plus `0.8.0` Tranchen 0–3 (Plan-
+> Post-`0.7.0`-Sammelblock plus `0.8.0` Tranchen 0–4 (Plan-
 > Aktivierung + Lastenheft-Patch `1.1.10`, Public-API-Vertrag,
-> WebRTC-Adapter-Implementation, produktive WebRTC-Telemetrie).
-> Versions-Bump und finalen CHANGELOG-Block setzt der `0.8.0`-
-> Closeout (Tranche 5).
+> WebRTC-Adapter-Implementation, produktive WebRTC-Telemetrie,
+> Compat-Tests + Browser-Support-Matrix). Versions-Bump und finalen
+> CHANGELOG-Block setzt der `0.8.0`-Closeout (Tranche 5).
+
+### Added (Tranche 4 — Compat-Tests + Browser-Support-Matrix)
+
+- `packages/player-sdk/scripts/pack-smoke.mjs` validiert
+  `attachWebRtc` in allen drei Bundle-Entries (ESM, CJS, IIFE) plus
+  TypeScript-Type-Deklarationen (`WebRtcAdapter`,
+  `WebRtcAdapterOptions`) in `dist/index.d.ts`.
+- `packages/player-sdk/scripts/performance-smoke.mjs` importiert
+  `attachWebRtc` aus dem produktiven Bundle und prüft die
+  Funktion-Surface; Bundle-Size-Budget (< 30 KiB gzip ESM) bleibt
+  unverändert und greift jetzt inklusive WebRTC-Adapter.
+- `packages/player-sdk/README.md` §Performance and Browser Support
+  um eine dedizierte WebRTC-Adapter-Browser-Matrix erweitert
+  (Chromium 120+ Required, Firefox 120+ Required, Safari 17+ Best-
+  effort) plus CI-Policy-Block (Release-blockierend vs. opt-in).
+- `tests/e2e/dashboard-demo-webrtc.spec.ts` (neu, Playwright,
+  RAK-55 Kann): rendert `/demo-webrtc?autostart=1` und verifiziert
+  über `GET /api/stream-sessions/{id}`, dass mindestens ein Event
+  mit reservierten `webrtc.*`-Meta-Keys in der Session-Timeline
+  ankommt. Default prüft den Error-Pfad (`whep_signaling_failed`);
+  `MTRACE_WEBRTC_LAB=1` flippt auf `playback_started`.
 
 ### Added (Tranche 3 — produktive WebRTC-Telemetrie)
 

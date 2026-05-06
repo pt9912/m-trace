@@ -158,7 +158,7 @@ WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 | 1 | Public-API-Spec für Adapter-Auswahl in `@npm9912/player-sdk` (RAK-51 / RAK-52) | ✅ |
 | 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ✅ |
 | 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ✅ |
-| 4 | Compat-Tests + Browser-Support-Matrix-Erweiterung; Pack-Smoke; SDK-Performance-Budget verifizieren | ⬜ |
+| 4 | Compat-Tests + Browser-Support-Matrix-Erweiterung; Pack-Smoke; SDK-Performance-Budget verifizieren | ✅ |
 | 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.7.0 → 0.8.0, Plan nach `done/`, Tag `v0.8.0`) | ⬜ |
 
 ---
@@ -427,26 +427,38 @@ SDK-Performance-Budget ist eingehalten.
 
 DoD:
 
-- [ ] Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad
-  ist als opt-in im `make browser-e2e`-Workflow ergänzt; Lab-
-  abhängig (benötigt `mtrace-webrtc`-Compose hochgefahren).
-- [ ] Pack-Smoke (`packages/player-sdk/scripts/pack-smoke.mjs`)
-  prüft, dass der WebRTC-Adapter im Tarball verfügbar und gegen
-  die Public-API testbar ist; geprüft werden ESM, CJS und IIFE-
-  Entry. `expectedVersion` bleibt durch Versions-Bump in Tranche 5
-  abgedeckt.
-- [ ] Browser-Support-Matrix in `packages/player-sdk/README.md`
-  ist um WebRTC-spezifische Hinweise erweitert (Chromium 120+,
-  Firefox 120+, Safari Best-Effort; `getStats()`-Verfügbarkeit
-  pro Engine analog §3.5.3).
-- [ ] `make sdk-performance-smoke` (oder Pendant) verifiziert,
-  dass der WebRTC-Adapter das Performance-Budget aus RAK-18
-  einhält; Adapter-Code wird gegen die Player-SDK-Bundle-Größen-
-  Grenze gemessen.
-- [ ] CI-Policy ist ausdrücklich dokumentiert: WebRTC-Browser-E2E
-  bleibt opt-in/lab-abhängig, aber SDK-Unit-Tests, Public-API-
-  Snapshot, Pack-Smoke und Performance-Smoke sind release-
-  blockierend.
+- [x] Browser-E2E-Smoke
+  `tests/e2e/dashboard-demo-webrtc.spec.ts` (neu, Playwright):
+  rendert `/demo-webrtc?autostart=1`, pollt das Session-Detail
+  über `GET /api/stream-sessions/{id}` und verifiziert mindestens
+  ein Event mit `webrtc.peer_connection_run_id` in der Meta. Im
+  Default-Mode (CI ohne `mtrace-webrtc`) erwartet der Test ein
+  `playback_error` mit `webrtc.error_code`; ENV
+  `MTRACE_WEBRTC_LAB=1` flippt die Assertion auf `playback_started`.
+  Lab-abhängig im Sinne des Happy-Path; Fehlerpfad ist auch ohne
+  Lab E2E-getestet.
+- [x] Pack-Smoke (`packages/player-sdk/scripts/pack-smoke.mjs`)
+  erweitert: prüft im ESM-, CJS- und IIFE-Entry-Pfad, dass
+  `attachWebRtc` als Funktion exportiert ist; zusätzlich validiert
+  der Smoke, dass `dist/index.d.ts` die TypeScript-Symbole
+  `attachWebRtc`, `WebRtcAdapter` und `WebRtcAdapterOptions`
+  deklariert (Public-API-Type-Vertrag).
+- [x] Browser-Support-Matrix in `packages/player-sdk/README.md`
+  erweitert: dedizierte WebRTC-Adapter-Tabelle mit Chromium 120+
+  (Required), Firefox 120+ (Required), Safari 17+ (Best-effort,
+  Schema-Drift-Hinweis) und Out-of-Scope-Klausel für mobile
+  WebViews. Verlinkt auf `spec/telemetry-model.md` §3.5.2/§3.5.3.
+- [x] `make sdk-performance-smoke` verifiziert das Bundle-Size-
+  Budget (< 30 KiB gzip ESM, additiv inkl. WebRTC-Adapter) und
+  importiert `attachWebRtc` aus dem Bundle (Smoke-Assert: ist als
+  Funktion verfügbar). Der Adapter sprengt das Budget nicht; CI-
+  Pipeline misst gegen den unveränderten Schwellwert aus `0.2.0`.
+- [x] CI-Policy in `packages/player-sdk/README.md` §Performance and
+  Browser Support dokumentiert: SDK-Unit-Tests, Public-API-Snapshot
+  (`check-public-api.mjs`), Pack-Smoke (ESM+CJS+IIFE+`dist/index.d.ts`)
+  und Performance-Smoke sind release-blockierend (laufen in
+  `make gates` und `make sdk-performance-smoke`); Browser-E2E
+  bleibt opt-in/lab-abhängig.
 
 ---
 

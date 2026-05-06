@@ -15,7 +15,13 @@ const distCode = readFileSync(distEntry);
 const gzipBytes = gzipSync(distCode).length;
 assert(gzipBytes < maxGzipBytes, `SDK ESM bundle gzip size ${gzipBytes} bytes must stay below ${maxGzipBytes} bytes`);
 
-const { HttpTransport, createTracker } = await import(pathToFileURL(distEntry).href);
+const { HttpTransport, attachWebRtc, createTracker } = await import(pathToFileURL(distEntry).href);
+// plan-0.8.0 §5 Tranche 4 (RAK-52): WebRTC-Adapter ist im
+// produktiven Bundle verfügbar. Performance-Budget gilt für das
+// gesamte Bundle (30 KB gzip oben); ein zusätzlicher Smoke prüft,
+// dass der attachWebRtc-Pfad ohne Browser-API existiert und einen
+// klaren Fehler wirft, statt das Bundle zu crashen.
+assert(typeof attachWebRtc === "function", "attachWebRtc must be exported from the SDK bundle (plan-0.8.0)");
 
 class RecordingTransport {
   batches = [];

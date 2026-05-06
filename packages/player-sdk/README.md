@@ -281,11 +281,11 @@ The stable integration point is `Transport.send(batch)`.
 
 ## Performance and Browser Support
 
-The performance budget — first set in `0.2.0`, unchanged through `0.5.0` — is:
+The performance budget — first set in `0.2.0`, unchanged through `0.8.0` — is:
 
 | Metric | Budget |
 |---|---:|
-| Bundle size | < 30 KiB gzip without hls.js |
+| Bundle size | < 30 KiB gzip without hls.js (incl. additive WebRTC adapter) |
 | Event processing | < 5 ms per event in the normal path |
 | Hot path | no synchronous network calls |
 | Playback safety | telemetry failures must not abort playback |
@@ -296,5 +296,28 @@ Run the reproducible smoke with:
 pnpm --filter @npm9912/player-sdk run performance:smoke
 ```
 
-The browser matrix is maintained in
+The general browser matrix is maintained in
 [`spec/browser-support.md`](../../spec/browser-support.md).
+
+### WebRTC adapter browser matrix (`0.8.0`)
+
+| Browser | Status | Notes |
+|---|---|---|
+| Chromium 120+ | Required | `getStats()` shape matches `spec/telemetry-model.md` §3.5.2; `connection_state`, `ice_state`, `dtls_state` are stable Muss-Felder. |
+| Firefox 120+ | Required | Same Muss-Felder; `nominated`/`selected` semantics on `candidate-pair` reports differ slightly but the adapter's "first valid wins" fallback (see `sampling.ts`) covers both. |
+| Safari 17+ | Best-effort | `RTCDtlsTransport.dtlsState` and parts of `inbound-rtp` may be missing in older Safari majors. Per the Schema-Drift-Strategy (`spec/telemetry-model.md` §3.5.3) the adapter drops the sample silently rather than emitting an `unknown` surrogate; the WHEP handshake itself remains testable. |
+| Other (mobile, embedded) | Out of scope | The lab compose ships only HTTP/WHEP signaling; mobile WebViews and SDK-only consumers without a `<video>` element are out of scope for the production telemetry path in `0.8.0`. |
+
+CI policy (Tranche 4):
+
+- **Release-blocking:** Vitest unit tests, `check-public-api.mjs`
+  snapshot, `pack-smoke.mjs` (ESM + CJS + IIFE entries plus
+  `dist/index.d.ts`), `performance-smoke.mjs`. These run in
+  `make gates` and `make sdk-performance-smoke`.
+- **Opt-in / lab-dependent:** Browser-E2E
+  (`tests/e2e/dashboard-demo-webrtc.spec.ts`) needs a running
+  `mtrace-webrtc` lab compose to exercise the happy path; without
+  the lab the test still validates the error path
+  (`whep_signaling_failed`) end-to-end through the API session
+  detail. Set `MTRACE_WEBRTC_LAB=1` to flip the assertion to
+  `playback_started`.

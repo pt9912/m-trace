@@ -59,11 +59,15 @@ try {
   const esmModule = await import(pathToFileURL(esmEntry).href);
   assert(typeof esmModule.createTracker === "function", "ESM entry must export createTracker");
   assert(typeof esmModule.HttpTransport === "function", "ESM entry must export HttpTransport");
+  assert(typeof esmModule.attachHlsJs === "function", "ESM entry must export attachHlsJs");
+  assert(typeof esmModule.attachWebRtc === "function", "ESM entry must export attachWebRtc (plan-0.8.0 RAK-52)");
 
   const require = createRequire(path.join(appDir, "package.json"));
   const cjsModule = require("@npm9912/player-sdk");
   assert(typeof cjsModule.createTracker === "function", "CJS entry must export createTracker");
   assert(typeof cjsModule.HttpTransport === "function", "CJS entry must export HttpTransport");
+  assert(typeof cjsModule.attachHlsJs === "function", "CJS entry must export attachHlsJs");
+  assert(typeof cjsModule.attachWebRtc === "function", "CJS entry must export attachWebRtc (plan-0.8.0 RAK-52)");
 
   const browserEntry = installedPackageJson.browser;
   assert(typeof browserEntry === "string" && browserEntry.length > 0, "installed package must expose a browser entry");
@@ -72,6 +76,13 @@ try {
   vm.createContext(context);
   vm.runInContext(browserCode, context);
   assert(typeof context.MTracePlayerSDK?.createTracker === "function", "IIFE build must expose MTracePlayerSDK.createTracker");
+  assert(typeof context.MTracePlayerSDK?.attachHlsJs === "function", "IIFE build must expose MTracePlayerSDK.attachHlsJs");
+  assert(typeof context.MTracePlayerSDK?.attachWebRtc === "function", "IIFE build must expose MTracePlayerSDK.attachWebRtc (plan-0.8.0 RAK-52)");
+
+  const dtsContent = readFileSync(path.join(installedPackageDir, "dist", "index.d.ts"), "utf8");
+  assert(dtsContent.includes("attachWebRtc"), "dist/index.d.ts must declare attachWebRtc (Public-API-Type-Vertrag)");
+  assert(dtsContent.includes("WebRtcAdapter"), "dist/index.d.ts must declare WebRtcAdapter type");
+  assert(dtsContent.includes("WebRtcAdapterOptions"), "dist/index.d.ts must declare WebRtcAdapterOptions type");
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
