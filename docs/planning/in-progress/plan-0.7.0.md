@@ -123,8 +123,8 @@ Punkt vermerkt.
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (open/ → in-progress/) + Toolchain-Hardening (Go 1.22 → 1.26, golangci-lint v1.62 → v2.12.1, neue `race`-Stage in gates) | ✅ |
 | 1 | Lab-Compose `examples/webrtc/compose.yaml` mit MediaMTX-WHIP/-WHEP plus FFmpeg-RTSP-Publisher | ✅ |
-| 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | 🟡 (überlappt mit Tranche 1; Voraussetzungen/Start/Verifikation/Stop/Troubleshooting/Grenzen sind drin, „Start"-konkrete Lab-Befehle ergänzen sich aus Tranche 1) |
-| 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ⬜ |
+| 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | ✅ |
+| 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ✅ |
 | 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ⬜ |
 | 5 | Release-Doku, RAK-Matrix und Closeout | ⬜ |
 
@@ -258,22 +258,33 @@ sondern konkrete Operator-Befehle.
 
 DoD:
 
-- [ ] „Voraussetzungen" listet konkrete Tool-Versionen (Browser,
-  ggf. STUN/TURN-Setup, Compose-Version).
-- [ ] README benennt den exakten WHIP-/WHEP-URL-Satz inklusive Stream-
-  Namen, Host-Port und Container-Port.
-- [ ] „Verifikation" beschreibt einen Browser-Handcheck (manuell)
-  und/oder den `make smoke-webrtc-prep`-Pfad, sobald Tranche 3
-  liefert.
-- [ ] „Stop / Reset" und „Troubleshooting" sind mit echten
-  Fehlerbildern gefüllt (ICE-Negotiation, Codec-Negotiation,
-  Headless-Restriktionen).
-- [ ] „Bekannte Grenzen" wird auf das reduziert, was nach den
-  Tranchen 1–3 nicht im Scope ist (typisch: produktive Telemetrie,
-  Multi-Tenant, TLS-Setup).
-- [ ] README erklärt klar, dass `make smoke-webrtc-prep` keine
-  Playback-Qualität, keine ICE-Erfolgsquote und keine `getStats()`-
-  Stabilität beweist.
+- [x] „Voraussetzungen" listet Chromium 120+/Firefox 120+, Safari als
+  Best-Effort, Docker Engine ≥ 24.0, Compose v2.20, freie Host-Ports
+  (8892/8189/9999) und die localhost-Pflichtgrenze. STUN/TURN-Setup
+  ist als Folge-Scope vermerkt, nicht erforderlich für den
+  localhost-Lab-Pfad.
+- [x] README benennt den exakten WHIP-/WHEP-URL-Satz in der Tabelle
+  „WHIP-/WHEP-URL-Form": Stream `webrtc-test`, Host-Port 8892,
+  Container-Port 8889 (`webrtcAddress`), MediaMTX-Version `1.18.1`
+  (über `:1` gepinnt).
+- [x] „Verifikation" beschreibt zwei Pfade nebeneinander:
+  Endpoint-Probe (browserfrei, Tranche-3-Smoke-Vorlage mit
+  Statussatz-Tabelle) und manueller Browser-Handcheck (RAK-50)
+  über die MediaMTX-Read-Demo-Seite.
+- [x] „Stop / Reset" zeigt `down [--volumes]` ausschließlich für
+  `mtrace-webrtc`. „Troubleshooting" mit echten Fehlerbildern:
+  Port-Konflikt-Diagnose, `OPTIONS → 500` ohne Stream, Browser
+  zeigt schwarzes Bild (ICE-Auswahl), LAN-/STUN-Grenze, FFmpeg-
+  Opus-Encoder-Hinweis (`libopus` vs. native `opus`), MediaMTX-
+  Auth (`-u any:`).
+- [x] „Bekannte Grenzen" reduziert auf den Restscope: kein
+  produktiver `apps/api`-Ingress, kein Player-SDK-WebRTC-Adapter
+  (RAK-51 deferred), kein TLS/Public-Internet/LAN-NAT, kein
+  Dashboard-Hook, Headless-Browser-Smoke optional.
+- [x] README erklärt im Abschnitt nach der Statussatz-Tabelle
+  wörtlich, dass die Probe **nicht** Playback-Qualität, **nicht**
+  ICE-Erfolgsquote und **nicht** `getStats()`-Stabilität nachweist
+  — diese drei Aspekte deckt nur der Browser-Handcheck ab.
 
 ---
 
@@ -291,28 +302,37 @@ erfüllbar.
 
 DoD:
 
-- [ ] `scripts/smoke-webrtc-prep.sh` existiert, `set -euo pipefail`,
-  `[smoke-webrtc-prep]`-Stderr-Präfix, Cleanup nur für
-  `mtrace-webrtc`-Project-Name (Konvention aus
-  `examples/README.md`).
-- [ ] Smoke prüft endpoint-/compose-only: Compose-Stack ist
-  hochgefahren, WebRTC-WHIP/-WHEP-Endpoint antwortet mit dem in
-  Tranche 1 dokumentierten erwarteten Status/Fehlercode, ggf.
-  STUN/TURN-Container läuft. Kein Browser, kein Playback,
-  kein `getStats()`.
-- [ ] Smoke unterscheidet Fehlerklassen: Compose nicht gestartet,
-  Endpoint nicht erreichbar, falscher Status/Serververtrag, Port-
-  Konflikt, optionaler TURN-Container down.
-- [ ] Smoke nutzt bounded Waits und gibt bei Fehlern relevante
-  Container-Logs oder Compose-Service-Status aus.
-- [ ] `Makefile` listet `smoke-webrtc-prep` im `help`-Text und
-  `.PHONY`; opt-in (nicht in `make gates`).
-- [ ] Optional / nicht release-blockierend: Headless-Browser-
-  Erweiterung (Browser-Handcheck-Automatisierung, getStats()-Smoke)
-  ist separat bewertet — wenn reproduzierbar grün, ergänzt sich
-  ein zusätzliches Target, sonst bleibt der Browser-Pfad bei
-  Tranche 2 (manueller Handcheck). Diese Bewertung kann das
-  Muss-Target `smoke-webrtc-prep` nicht aus dem Scope kippen.
+- [x] `scripts/smoke-webrtc-prep.sh` existiert, `set -euo pipefail`,
+  `[smoke-webrtc-prep]`-Stderr-Präfix, `cleanup`-Trap startet/stoppt
+  ausschließlich `mtrace-webrtc` (`SMOKE_WEBRTC_AUTOSTART=0` für
+  manuellen Aufruf gegen vorhandenen Stack); fremde
+  Volumes/Container werden nicht angefasst.
+- [x] Smoke prüft endpoint-/compose-only fünf Stufen: (1) MediaMTX-
+  API antwortet `200`, (2) Stream-Pfad `webrtc-test` ist
+  `ready=true`, (3) `OPTIONS …/whep → 204`, (4) `OPTIONS …/whip →
+  204`, (5) Negativ-Probe für unbekannten Pfad antwortet **nicht**
+  `204`. Kein Browser, kein Playback, kein `getStats()`.
+- [x] Fehlerklassen sind durch eigenständige Meldungen
+  unterscheidbar: „MediaMTX-API unreachable" (Compose nicht oben /
+  Port-Konflikt 9999), „stream path … not ready" (FFmpeg-Publisher
+  liefert keinen Frame), „WHEP/WHIP OPTIONS unexpected status"
+  (falscher Listener-Status), „negative probe failed" (Pfad-Filter
+  greift nicht). Lokal manuell verifiziert mit
+  `SMOKE_WEBRTC_AUTOSTART=0` (Compose down) und mit `STREAM=…`
+  auf nicht existierenden Pfad.
+- [x] Bounded Waits über `WAIT_SECONDS` (Default 30 s, je 1 s
+  Sleep); bei Fehlern werden `docker compose ps` und Tail-Logs
+  (`mediamtx`, `webrtc-publisher`) als Diagnose-Hinweise auf
+  stderr aufgeführt.
+- [x] Root-`Makefile`: `smoke-webrtc-prep` in `.PHONY` aufgenommen,
+  im `help`-Text mit Hinweis „endpoint-only" gelistet, eigenes
+  Target ruft `bash scripts/smoke-webrtc-prep.sh` auf. Opt-in,
+  nicht in `make gates`.
+- [x] Optional / nicht release-blockierend: Headless-Browser-
+  Erweiterung bleibt bewusst out-of-scope; die README dokumentiert
+  diese Grenze in „Bekannte Grenzen". Eine spätere
+  Browser-Smoke-Tranche kann sich additiv anhängen, ohne diesen
+  Muss-Smoke zu kippen.
 
 ---
 

@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranche 0 (Plan-
-> Aktivierung + Toolchain-Hardening) und Tranche 1 (WebRTC-Lab-
-> Compose). Versions-Bump und finalen CHANGELOG-Block setzt der
-> `0.7.0`-Closeout (Tranche 5).
+> Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranchen 0–3 (Plan-
+> Aktivierung + Toolchain-Hardening, WebRTC-Lab-Compose,
+> README-Konkretisierung, Vorbereitungs-Smoke). Versions-Bump und
+> finalen CHANGELOG-Block setzt der `0.7.0`-Closeout (Tranche 5).
 
 ### Added
 
+- `make smoke-webrtc-prep` (RAK-48, plan-0.7.0 Tranche 3) startet/
+  stoppt `mtrace-webrtc` und prüft endpoint-/compose-only fünf
+  Stufen: MediaMTX-API ready, Stream-Pfad `webrtc-test` ready=true,
+  `OPTIONS …/whep|whip → 204`, Negativ-Probe für unbekannten Pfad
+  liefert ≠ 204. Kein Browser, kein Playback, kein `getStats()` —
+  diese Aspekte deckt nur der manuelle Browser-Handcheck. Opt-in,
+  nicht in `make gates`.
 - WebRTC-Lab-Compose `examples/webrtc/compose.yaml` (Project
   `mtrace-webrtc`, RAK-47): MediaMTX `bluenviron/mediamtx:1` mit
   WHIP-/WHEP-Listener auf Host-Port `8892`, ICE-UDP `8189`,
@@ -22,8 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (synthetischer H264+Opus-Stream); MediaMTX re-published auf
   WHEP-Pfad `/webrtc-test/whep`. `examples/webrtc/README.md` auf
   7-Punkt-Standard mit Browser-Handcheck (RAK-50, manuell) plus
-  live verifiziertem Endpoint-Statussatz für Tranche-3-Smoke
-  (`OPTIONS …/whep|whip → 204` aktiv, `→ 500` unbekannter Pfad).
+  live verifiziertem Endpoint-Statussatz.
 - Browser-E2E-Tests für `/srt-health` (Playwright) mit fünf Specs
   gegen `page.route()`-Mocks: Empty-State, vier Pflichtmetriken
   in der Tabelle, Stale-Pill, Detail Current+History, Detail-404.

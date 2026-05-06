@@ -265,7 +265,7 @@ einen opt-in Smoke und ist nicht Teil von `make gates`.
 | [`examples/mediamtx/`](../../examples/mediamtx/) | Core-Lab-Beispiel | `make dev` | `make smoke-mediamtx` |
 | [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) plus `make smoke-srt-health` ab `0.6.0` für Health-API-Probe |
 | [`examples/dash/`](../../examples/dash/) | Eigenes Compose, Project `mtrace-dash` | `docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build` | `make smoke-dash` (auto-up/down) |
-| [`examples/webrtc/`](../../examples/webrtc/) | Eigenes Compose, Project `mtrace-webrtc` | `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build` | `make smoke-webrtc-prep` (geplant ab `0.7.0` Tranche 3, opt-in/endpoint-only) |
+| [`examples/webrtc/`](../../examples/webrtc/) | Eigenes Compose, Project `mtrace-webrtc` | `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build` | `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (auto-up/down, opt-in/endpoint-only) |
 
 Host-Ports sind so geschnitten, dass alle Beispiele **parallel** zum
 Core-Lab und untereinander laufen können:

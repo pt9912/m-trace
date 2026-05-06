@@ -94,8 +94,16 @@ Erwarteter Statussatz für die spätere Smoke-Implementierung
 
 Die Probe weist nach, dass MediaMTX läuft, der Stream registriert
 ist und die WHIP-/WHEP-Listener bedient sind. Sie weist **nicht**
-nach, dass ein realer Browser einen Stream sehen kann — dafür ist
-der Browser-Handcheck.
+nach:
+
+- dass ein realer Browser einen Stream **abspielen** kann
+  (Playback-Qualität),
+- dass die ICE-Aushandlung mit einem Browser **erfolgreich** ist
+  (ICE-Erfolgsquote),
+- dass `getStats()` zwischen Browser-Versionen **stabile** Felder
+  liefert (Schema-Drift, siehe Tranche 4).
+
+Diese drei Aspekte deckt nur der Browser-Handcheck ab.
 
 ### Browser-Handcheck (RAK-50, manuell)
 
