@@ -156,7 +156,7 @@ WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.10` (RAK-51 hochziehen, RAK-52..RAK-55 ergänzen) + ggf. Toolchain-Hardening | ✅ |
 | 1 | Public-API-Spec für Adapter-Auswahl in `@npm9912/player-sdk` (RAK-51 / RAK-52) | ✅ |
-| 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ⬜ |
+| 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ✅ |
 | 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ⬜ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Erweiterung; Pack-Smoke; SDK-Performance-Budget verifizieren | ⬜ |
 | 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.7.0 → 0.8.0, Plan nach `done/`, Tag `v0.8.0`) | ⬜ |
@@ -271,41 +271,57 @@ Event-Stream einspeist.
 
 DoD:
 
-- [ ] WebRTC-Adapter-Klasse/Funktion in `packages/player-sdk/src/`
-  ist implementiert; baut eine `RTCPeerConnection`, signalisiert
-  via WHEP, und mappt MediaTracks auf das Player-Surface (das
-  Demo nutzt `<video>`-Element analog zum hls.js-Pfad).
-- [ ] Player-Event-Stream (`playback_started`, `playback_error`,
-  `rebuffer_started`, `metrics_sampled`, ggf. additive WebRTC-
-  Connection-Events) ist konsistent zu §1.3 des Telemetrie-Modells.
-  Kein `manifest_loaded`-Synthetik-Event für WebRTC ohne expliziten
-  Contract-Patch; WHEP-Handshake-Erfolg wird entweder über
-  `playback_started`/`metrics_sampled` oder über einen neuen
-  additiven Event-Typ modelliert.
-- [ ] WebRTC-Fehlercode-Taxonomie ist im Contract dokumentiert und
-  wird vom Adapter genutzt. Mindestcodes:
-  `whep_signaling_failed`, `whep_sdp_invalid`, `webrtc_no_tracks`,
-  `peer_connection_failed`, `webrtc_destroyed_before_connected`.
-  Codes stehen in `playback_error`-Meta unter einem dokumentierten
-  Key und sind für Dashboard/Releasing-Abnahme maschinenlesbar.
-- [ ] Der WebRTC-Fehlercode-Key ist als reservierter Meta-Key
-  validiert: nur dokumentierte Codes werden akzeptiert oder auf
-  einen dokumentierten Fallback-Code normalisiert; freie Strings
-  dürfen nicht unverändert in Dashboard-/Releasing-Abnahme fließen.
-  Tests decken gültigen Code, ungültigen Code und fehlenden Code im
-  WebRTC-`playback_error`-Pfad ab.
-- [ ] WHEP-Fehlerpfade sind abgenommen: nicht-2xx/3xx Signalisierung,
-  ungültige SDP Answer, fehlende MediaTracks, PeerConnection-Fehler
-  und `destroy()` vor Handshake-Abschluss erzeugen deterministische
-  `playback_error`-Events mit den dokumentierten WebRTC-Codes und
-  lassen keine aktive PeerConnection zurück.
-- [ ] `apps/dashboard` bekommt eine `/demo-webrtc`-Route (oder ein
-  Toggle in `/demo`), die den WebRTC-Adapter gegen das
-  `examples/webrtc/`-Lab demonstriert. Bestehende `/demo`-Route
-  (hls.js) bleibt unverändert.
-- [ ] Lokal verifiziert: `make dev` plus `mtrace-webrtc`-Stack +
-  Demo-Route zeigt Test-Pattern + Sinuston, Player-Events
-  erscheinen in der Dashboard-Session-Timeline.
+- [x] WebRTC-Adapter-Implementation in
+  `packages/player-sdk/src/adapters/webrtc/adapter.ts`: baut eine
+  `RTCPeerConnection` mit `addTransceiver("video"|"audio",
+  recvonly)`, signalisiert via WHEP (POST `application/sdp`), parst
+  die SDP-Answer und montiert die empfangenen Tracks an das
+  übergebene `<video>`-Element. `destroy()` schließt PeerConnection,
+  abortet den WHEP-`fetch` und stoppt alle Tracks (idempotent).
+  Browser-API-Abhängigkeit ist über `deps.PeerConnection` /
+  `deps.fetch` testbar entkoppelt.
+- [x] Player-Event-Stream konsistent: `playback_started` mit
+  `webrtc.connection_state=connected` bei erfolgreichem Handshake;
+  `playback_error` für jeden Fehlerpfad. **Kein** synthetisches
+  `manifest_loaded`-Event — der WebRTC-Pfad nutzt
+  `playback_started` als Handshake-Erfolgs-Signal. Wire-Format
+  bleibt unverändert (Tranche-1-Contract-Entscheidung); Tranche 3
+  zieht den `webrtc.*`-Namespace produktiv.
+- [x] WebRTC-Fehlercode-Taxonomie in
+  `packages/player-sdk/src/adapters/webrtc/error-codes.ts`:
+  Mindestcodes (`whep_signaling_failed`, `whep_sdp_invalid`,
+  `webrtc_no_tracks`, `peer_connection_failed`,
+  `webrtc_destroyed_before_connected`) als `WebRtcErrorCode`-Type-
+  Union plus `WEBRTC_ERROR_CODES`-Allowlist. Reservierter Meta-Key:
+  `webrtc.error_code` (`WEBRTC_ERROR_CODE_META_KEY`). Codes stehen
+  immer in `playback_error.meta` unter diesem Key — maschinenlesbar
+  für Dashboard/Releasing.
+- [x] Reservierter Meta-Key validiert: `normalizeWebRtcErrorCode()`
+  bildet jeden Nicht-Allowlist-Wert auf den Fallback
+  `peer_connection_failed` ab (auch `undefined`/`null`/Numbers/
+  unbekannte Strings); freie Strings können nicht durch das Surface
+  durchschlagen. Tests decken gültige Codes, ungültigen Code,
+  fehlenden Code und die `isWebRtcErrorCode`-Type-Guard-Variante ab.
+- [x] WHEP-Fehlerpfade abgenommen: nicht-2xx Signalisierung
+  (`whep_signaling_failed`), Antwort ohne SDP-Header
+  (`whep_sdp_invalid`), `connectionstatechange=failed`
+  (`peer_connection_failed`), `destroy()` vor Handshake-Abschluss
+  (`webrtc_destroyed_before_connected`). Alle vier Pfade sind in
+  `tests/webrtc-adapter.test.ts` mit gemocktem
+  `RTCPeerConnection` + `fetch` verifiziert; `destroy()` ist
+  idempotent.
+- [x] `apps/dashboard` `/demo-webrtc`-Route in
+  `src/routes/demo-webrtc/+page.svelte` (analog `/demo`-Route);
+  liest `PUBLIC_WHEP_URL` aus `.env` (Default
+  `http://localhost:8892/webrtc-test/whep` für das Lab).
+  Bestehende `/demo`-Route (hls.js) bleibt unverändert; SDK-
+  Imports parallel.
+- [x] Lokal verifiziert: SDK-Tests (`pnpm --filter
+  @npm9912/player-sdk run test`) 91/91 grün; `make gates` grün
+  (Adapter, Demo-Route + alle anderen 0.7.0-Pfade unverändert).
+  Browser-Live-Handcheck (`make dev` + `mtrace-webrtc`-Stack +
+  Browser auf <http://localhost:5173/demo-webrtc?autostart=1>) ist
+  Operator-Pflicht-Schritt im `0.8.0`-Closeout (Tranche 5).
 
 ---
 

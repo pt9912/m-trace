@@ -83,6 +83,21 @@ untouched. Tranche 3 introduces a reserved `webrtc.*` meta namespace
 in the wire schema for production WebRTC telemetry; until then,
 events emitted via either adapter share the same shape.
 
+#### WebRTC error codes (Tranche 2)
+
+`attachWebRtc` emits a single `playback_error` event per failure with
+the reserved meta key `webrtc.error_code`. The SDK normalises any
+unknown value to `peer_connection_failed`; consumers can therefore
+match the code list directly without sanitising free strings:
+
+| Code | Emitted when |
+|------|--------------|
+| `whep_signaling_failed` | WHEP `POST` returned non-2xx, or the request itself errored before the server replied. |
+| `whep_sdp_invalid` | The WHEP response body did not parse as an SDP answer (no `v=` prefix, or `createOffer()` returned an empty SDP). |
+| `webrtc_no_tracks` | Handshake completed but the `RTCPeerConnection` exposed neither audio nor video transceivers. |
+| `peer_connection_failed` | `connectionstatechange` reached `failed`/`disconnected`/`closed` before or after `connected`. Generic fallback for unmapped errors. |
+| `webrtc_destroyed_before_connected` | Consumer called `adapter.destroy()` before the peer connection reported `connected`. |
+
 ## Tracker Lifecycle
 
 `track(event)` queues a playback event. The tracker flushes automatically when
