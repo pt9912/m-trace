@@ -158,11 +158,7 @@ ein Issue darauf hinweist.
 
 ## 5. Offene Entscheidungen
 
-Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsregel entfernt.
-
-Derzeit keine offenen `OE-X` in der Roadmap. OE-3 ist durch
-[ADR 0002](../../adr/0002-persistence-store.md) resolved; OE-5 ist durch
-[ADR 0003](../../adr/0003-live-updates.md) resolved.
+Verbleibende Lastenheft-`OE-X`; aufgelöste Einträge sind nach §7-Wartungsregel entfernt. Derzeit keine offenen `OE-X` in der Roadmap — historische `OE-X` sind im [Lastenheft](../../../spec/lastenheft.md) als `resolved` geführt.
 
 ---
 
