@@ -155,7 +155,7 @@ WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.10` (RAK-51 hochziehen, RAK-52..RAK-55 ergänzen) + ggf. Toolchain-Hardening | ✅ |
-| 1 | Public-API-Spec für Adapter-Auswahl in `@npm9912/player-sdk` (RAK-51 / RAK-52) | ⬜ |
+| 1 | Public-API-Spec für Adapter-Auswahl in `@npm9912/player-sdk` (RAK-51 / RAK-52) | ✅ |
 | 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ⬜ |
 | 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ⬜ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Erweiterung; Pack-Smoke; SDK-Performance-Budget verifizieren | ⬜ |
@@ -209,32 +209,54 @@ und unverändert; WebRTC ist opt-in pro Player-Instanz.
 
 DoD:
 
-- [ ] Public-API-Erweiterung in `packages/player-sdk/src/` ist als
-  TypeScript-Vertrag (Types + JSDoc) ausgegliedert; hls.js-Pfad
-  ist explizit als Default markiert.
-- [ ] `packages/player-sdk/scripts/public-api.snapshot.txt` ist
-  bewusst aktualisiert; `check-public-api.mjs` bleibt das Gate gegen
-  versehentliche Export-Änderungen.
-- [ ] Contract-Entscheidung für die Adapter-Auswahl ist festgelegt:
-  entweder rein SDK-intern ohne Wire-Schema-Änderung, oder mit
-  explizitem Contract-Patch in `contracts/event-schema.json`,
-  `contracts/sdk-compat.json` und `spec/backend-api-contract.md`.
-  Die Entscheidung steht im selben Commit wie die Public-API-Types.
-- [ ] `packages/player-sdk/README.md` (oder eigenständiges
-  `docs/sdk-webrtc.md`) dokumentiert Adapter-Auswahl, opt-in-Form
-  und Browser-Anforderungen.
-- [ ] Versions-Strategie für die Adapter-Auswahl ist im
-  `contracts/sdk-compat.json` widergespiegelt (z. B. Feld-
-  Erweiterung), damit Schema-Drift-Tests den neuen Pfad
-  erkennen.
-- [ ] Migrations-/Compat-Hinweis: bestehender hls.js-only Code
-  (z. B. `apps/dashboard` `/demo`-Route) bleibt unverändert
-  funktionsfähig; entsprechende Tests und der Pack-Smoke aus
-  `0.2.0` bleiben grün.
-- [ ] Testform ist festgelegt: mindestens ein SDK-Unit-Test pinnt
-  `attachWebRtc`/Options-Typen ohne Browser-Signalisierung; ein
-  Public-API-Snapshot-Test pinnt die neuen Exports; Dashboard-Mocks
-  bleiben für `/demo` hls.js-only unverändert.
+- [x] Public-API-Erweiterung in `packages/player-sdk/src/adapters/
+  webrtc/adapter.ts` ist als TypeScript-Vertrag mit JSDoc
+  ausgegliedert: `WebRtcAdapter` (Lifecycle mit `destroy()`),
+  `WebRtcAdapterOptions` (`whepUrl` Pflicht; `peerConnectionConfig`
+  und `signal` optional) und `attachWebRtc(video, options, tracker)`-
+  Funktion. hls.js-Pfad bleibt Default — README §Public-API listet
+  ihn explizit als „default playback path", WebRTC als „additive
+  and opt-in".
+- [x] `packages/player-sdk/scripts/public-api.snapshot.txt`
+  bewusst aktualisiert (zwei neue `export`-Zeilen); `check-public-
+  api.mjs` bleibt das Gate gegen versehentliche Export-Änderungen.
+- [x] Contract-Entscheidung: **rein SDK-intern**. Tranche 1 macht
+  keinen Patch in `contracts/event-schema.json`,
+  `contracts/sdk-compat.json` oder `spec/backend-api-contract.md`.
+  Begründung: Adapter-Auswahl ist Sache des SDK-Konsumenten (opt-in
+  pro Player-Instanz); Wire-Format und API-Ingress bleiben in
+  Tranche 1 unverändert. Tranche 3 erweitert das Wire-Schema um
+  den reservierten `webrtc.*`-Meta-Namespace, wenn die produktive
+  Telemetrie-Aktivierung das verlangt. Die Entscheidung ist im
+  Adapter-JSDoc dokumentiert.
+- [x] `packages/player-sdk/README.md` §Public-API erweitert:
+  `attachWebRtc`/`WebRtcAdapter`/`WebRtcAdapterOptions` als
+  Public-Exports gelistet; neuer Abschnitt „Adapter selection
+  (hls.js vs. WebRTC)" dokumentiert opt-in-Form, Browser-
+  Anforderungen (Chromium 120+, Firefox 120+, Safari best-effort)
+  und die Tranche-1/3-Trennung der Wire-Schema-Wirkung.
+- [x] Versions-Strategie für die Adapter-Auswahl: bewusst **nicht**
+  in `contracts/sdk-compat.json` widergespiegelt. Begründung: das
+  Wire-Schema bleibt in Tranche 1 unverändert (siehe Contract-
+  Entscheidung); ein Feld dort jetzt einzuführen, das in Tranche 3
+  inhaltlich ersetzt würde, wäre Doku-Drift. Tranche 3 erweitert
+  `sdk-compat.json` zusammen mit dem `webrtc.*`-Meta-Namespace.
+- [x] Migrations-/Compat-Hinweis: bestehender hls.js-Pfad
+  unverändert. `apps/dashboard` `/demo`-Route, `tests/hlsjs-
+  adapter.test.ts`, Pack-Smoke aus `0.2.0` und alle anderen
+  `tests/`-Pfade bleiben grün — es wurden ausschließlich neue
+  Files (`adapters/webrtc/adapter.ts`, `tests/webrtc-adapter.test.ts`)
+  und additive Index-Exports angelegt.
+- [x] Testform: `tests/webrtc-adapter.test.ts` pinnt vier
+  Eigenschaften: (1) `attachWebRtc` ist als Funktion exportiert,
+  (2) wirft deterministisch `not implemented (plan-0.8.0
+  Tranche 2)` (Schutz gegen versehentlichen Produktiv-Einsatz vor
+  Tranche 2), (3) `WebRtcAdapterOptions` mit allen optionalen
+  Feldern (`peerConnectionConfig`, `signal`) als Type-Vertrag,
+  (4) `WebRtcAdapter` exposed `destroy()`-Surface. Public-API-
+  Snapshot-Test ist der vorhandene `check-public-api.mjs`-Pfad
+  (geprüft via `make ts-lint`). Dashboard-Mocks bleiben hls.js-only
+  unverändert.
 
 ---
 

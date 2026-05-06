@@ -49,17 +49,39 @@ window.addEventListener("pagehide", () => {
 - `createTracker(config)` creates a `PlayerTracker`.
 - `MTracePlayerTracker` is the concrete tracker implementation.
 - `HttpTransport` sends batches to the m-trace API.
-- `attachHlsJs(video, hls, tracker)` wires video and hls.js events into a tracker.
+- `attachHlsJs(video, hls, tracker)` wires video and hls.js events into a tracker (default playback path).
+- `attachWebRtc(video, options, tracker)` is the additive WebRTC/WHEP adapter; opt-in per player instance. Public-API contract is shipped in `0.8.0` Tranche 1; the WHEP handshake implementation lands in Tranche 2.
 - `createSessionId()` creates a browser-safe random session id.
 - `SessionMetrics` tracks startup and rebuffer measurements.
 
 Type exports cover the wire payload and configuration surface:
 `PlayerSDKConfig`, `Transport`, `PlaybackEventBatch`, `PlaybackEvent`,
 `PlaybackEventName`, `EventDraft`, `EventMeta`, `SDKInfo`, `HlsJsAdapter`,
-`PlayerTracker`, `SessionMetricsSnapshot`, and `RebufferMeasurement`.
+`WebRtcAdapter`, `WebRtcAdapterOptions`, `PlayerTracker`,
+`SessionMetricsSnapshot`, and `RebufferMeasurement`.
 
 Deep imports from `src/` or `dist/` are not public API. Import from
 `@npm9912/player-sdk`.
+
+### Adapter selection (hls.js vs. WebRTC)
+
+The SDK ships two playback adapters that share the same `PlayerTracker`
+event surface. Adapter selection is the consumer's choice — pick one
+per player instance:
+
+- **hls.js** (`attachHlsJs`) is the default and unchanged. Use it for
+  HLS manifests; it is the path exercised by `apps/dashboard`'s
+  `/demo` route.
+- **WebRTC/WHEP** (`attachWebRtc`) is additive and opt-in. It targets
+  a WHEP endpoint such as the `examples/webrtc/` lab compose
+  (`http://localhost:8892/webrtc-test/whep`). Browser support: Chromium
+  120+ and Firefox 120+ are required; Safari is best-effort.
+
+Adapter selection is purely an SDK concern in `0.8.0` Tranche 1: the
+wire format, `contracts/sdk-compat.json` and the API ingress are
+untouched. Tranche 3 introduces a reserved `webrtc.*` meta namespace
+in the wire schema for production WebRTC telemetry; until then,
+events emitted via either adapter share the same shape.
 
 ## Tracker Lifecycle
 
