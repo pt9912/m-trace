@@ -1,0 +1,44 @@
+# Vulnerability-Ignore-Liste fuer plan-0.8.5 Quality-Gates Wave 1.
+#
+# Reservierte Stelle fuer dokumentierte False-Positives oder
+# bewusst akzeptierte Findings aus `make vuln-check` (govulncheck)
+# und `make image-scan` (Trivy). Jeder Eintrag braucht eine
+# Begruendung mit Datum und Trigger fuer das naechste Re-Review.
+#
+# Schema (Trivy-kompatibel):
+#
+#   trivy:
+#     # CVE-Liste, die Trivy ignorieren soll.
+#     ignore:
+#       - id: CVE-YYYY-NNNNN
+#         reason: "kurze Begruendung"
+#         expires: YYYY-MM-DD
+#         scope: "image-name oder *"
+#
+#   govulncheck:
+#     # GO-VULN-Liste, die govulncheck als not-affected behandeln soll.
+#     # Hinweis: govulncheck unterstuetzt selbst kein Ignore-File. Ein
+#     # Treffer hier bedeutet, dass die Build-Pipeline den Befund
+#     # bewusst nicht release-blockierend behandelt; die Begruendung
+#     # ist Pflicht-Audit-Trail.
+#     ignore:
+#       - id: GO-YYYY-NNNN
+#         reason: "kurze Begruendung"
+#         expires: YYYY-MM-DD
+#
+# Wartungsregel:
+#   - `expires` ist Pflicht. Default 90 Tage; danach muss der
+#     Eintrag erneuert oder entfernt werden.
+#   - Bei `expires`-Ueberschreitung bricht `make security-gates`
+#     den Lauf mit Fehlermeldung; das Upgrade- oder Begruendungs-
+#     Update gehoert in einen Folge-Commit.
+#   - Plan-0.8.5 Tranche 1 fuehrt diese Datei initial leer ein;
+#     die Wartungs-Mechanik (expires-Check, automatische Erinnerung)
+#     ist ein Folge-Item fuer plan-0.9.5 (Wave 2 / Mutation Testing
+#     baut darauf auf).
+
+trivy:
+  ignore: []
+
+govulncheck:
+  ignore: []

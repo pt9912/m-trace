@@ -19,6 +19,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (Plan-Move + Container-Scanner-Wahl Trivy + Toolchain-Check
   ohne Bump-Bedarf, weil Go 1.26 / golangci-lint v2.12.1 / Node 22
   LTS aus `0.7.0` Tranche 0 aktuell sind).
+- Security-Gates Wave 1 (plan-0.8.5 Tranche 1):
+  - `make vuln-check`: govulncheck (gepinnt auf `v1.1.4`) gegen
+    `apps/api/...`-Go-Dependencies in einem `golang:1.26`-Container.
+  - `make audit-ts`: `pnpm audit --audit-level high` über den
+    gesamten pnpm-Workspace (`apps/dashboard`,
+    `apps/analyzer-service`, `packages/*`); Schwelle = `high`,
+    `moderate`/`low` werden berichtet, brechen aber den Lauf nicht.
+    Pendant zu `vuln-check` für die TypeScript-Seite — bewusst
+    Bestandteil derselben Wave, weil die Go-/Image-Gates allein
+    den npm-Pfad nicht abdecken (`extra-gates.md` §3.1 nannte
+    ursprünglich nur Go + Container, der TS-Gate ist die Lücke).
+  - `make image-scan`: Trivy (gepinnt auf `aquasec/trivy:0.59.1`)
+    scannt `apps/api`-Runtime-Image plus die Dashboard- und
+    Analyzer-Service-Container; Policy `CRITICAL,HIGH` mit
+    Exit-Code 1; Cache unter `.security/.trivy-cache`.
+  - Wrapper
+    `make security-gates: vuln-check audit-ts image-scan`.
+  - `.security/vulnignore.yaml` als Ignorierregel-Pfad mit
+    `expires`-Pflicht und Begründungs-Spalte; initial leer.
+  - `.github/workflows/build.yml` um zweiten Job `security`
+    erweitert (parallel zum bestehenden `build`-Job, PR-blockierend,
+    Trivy-Cache als Workflow-Artefakt mit 7 Tagen Retention).
+
+### Changed
+
+- OpenTelemetry-Stack in `apps/api/go.mod` von `v1.32.0`/`v0.57.0`/
+  `v0.8.0` auf `v1.43.0`/`v0.68.0`/`v0.19.0` angehoben — direkter
+  Auslöser war `make vuln-check` (`GO-2026-4394`: PATH-Hijacking in
+  `go.opentelemetry.io/otel/sdk@v1.32.0`, fixed in `v1.40.0`). Da
+  die contrib-/exporter-Pakete denselben Release-Schwarm wie der
+  Core nutzen, wurde der gesamte Stack koordiniert auf den aktuell
+  jüngsten Stable-Stand bezahlt. Folge-Anpassung: `semconv`-Import
+  in `apps/api/adapters/driven/telemetry/otel.go` von `v1.26.0`
+  auf `v1.40.0` umgestellt, damit der Schema-URL-Merge im SDK-
+  Default-Resource nicht mehr in einen `conflicting Schema URL`-
+  Fehler läuft. `make api-test` und `make gates` grün; keine
+  Anpassungen am restlichen Telemetrie-Code nötig.
 
 ## [0.8.0] - 2026-05-06
 

@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates
 
 help:
 	@printf '%s\n' \
@@ -43,6 +43,10 @@ help:
 		'  make schema-generate        Re-generate apps/api SQLite DDL from schema.yaml' \
 		'  make sdk-pack-smoke         Run the Player-SDK pack/public-entry smoke check' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
+		'  make vuln-check             Run govulncheck on apps/api Go dependencies (plan-0.8.5 Tranche 1)' \
+		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace (plan-0.8.5 Tranche 1)' \
+		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
+		'  make security-gates         Run vuln-check + audit-ts + image-scan together (plan-0.8.5 Tranche 1)' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
@@ -253,6 +257,80 @@ sdk-pack-smoke:
 	$(PNPM) --filter @npm9912/player-sdk run pack:smoke
 
 gates: api-race ts-test lint coverage-gate arch-check schema-validate sdk-pack-smoke sdk-performance-smoke docs-check
+
+# plan-0.8.5 Tranche 1 — Quality-Gates Wave 1. Security-Gates laufen
+# parallel zu `make gates` (separater CI-Job in build.yml), nicht in
+# `make gates`-Pipeline integriert: Vulnerability-Datenbank-Download
+# kann lokal 30-60 s dauern, sollte den schnellen Inner-Loop nicht
+# blockieren.
+
+# govulncheck-Version explizit gepinnt (analog d-migrate-Image-Pin).
+# v1.1.4 ist die letzte stable mit Go 1.26-Kompatibilitaet.
+GOVULNCHECK_VERSION ?= v1.1.4
+
+# Trivy-Image gepinnt (analog d-migrate-Image-Pin). 0.59.1 ist die
+# stable Linie mit guter Default-Policy fuer CRITICAL/HIGH.
+TRIVY_IMAGE ?= aquasec/trivy:0.59.1
+
+# `make vuln-check` prueft Go-Dependencies in apps/api gegen die
+# Go Vulnerability Database (https://pkg.go.dev/vuln/). govulncheck
+# scannt nur tatsaechlich aufgerufene Funktionen — False-Positive-
+# Rate ist niedriger als bei statischen Tools.
+vuln-check:
+	docker run --rm -v "$(CURDIR)/apps/api:/src" -w /src golang:1.26 \
+		bash -c "go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) && govulncheck ./..."
+
+# `make audit-ts` prueft die npm-Dependency-Closure des pnpm-Workspaces
+# (apps/dashboard, apps/analyzer-service, packages/*) gegen den GitHub
+# Advisory Feed. Schwelle = high — moderate/low werden lediglich
+# berichtet, brechen aber den Lauf nicht. Pendant zu vuln-check fuer
+# die TypeScript-Seite; ohne diesen Gate wuerde eine bekannte CVE in
+# einer Frontend-/SDK-Dependency die Security-Wave bestehen.
+audit-ts:
+	$(PNPM) audit --audit-level high
+
+# `make image-scan` baut die drei Runtime-Images und scannt sie mit
+# Trivy. Policy: CRITICAL und HIGH brechen den Lauf; MEDIUM wird
+# berichtet. Cache-Verzeichnis liegt unter .security/.trivy-cache,
+# damit lokale Wiederholungen nicht jedes Mal die Vuln-DB neu laden.
+#
+# Dashboard- und Analyzer-Service-Images brauchen TS-Build-Artefakte
+# (`pnpm run build` in den jeweiligen Workspaces). Wir bauen sie hier
+# explizit, weil `make build` bislang nur api-build + ts-build
+# ausfuehrt, nicht die Multi-Stage-Container fuer dashboard/analyzer-
+# service.
+image-scan:
+	docker build --target runtime -t mtrace-api:scan apps/api
+	$(PNPM) run build
+	docker build -t mtrace-dashboard:scan apps/dashboard
+	docker build -t mtrace-analyzer-service:scan apps/analyzer-service
+	mkdir -p .security/.trivy-cache
+	docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
+		$(TRIVY_IMAGE) image \
+		--severity CRITICAL,HIGH \
+		--exit-code 1 \
+		--no-progress \
+		mtrace-api:scan
+	docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
+		$(TRIVY_IMAGE) image \
+		--severity CRITICAL,HIGH \
+		--exit-code 1 \
+		--no-progress \
+		mtrace-dashboard:scan
+	docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
+		$(TRIVY_IMAGE) image \
+		--severity CRITICAL,HIGH \
+		--exit-code 1 \
+		--no-progress \
+		mtrace-analyzer-service:scan
+
+security-gates: vuln-check audit-ts image-scan
 
 ci: gates build
 

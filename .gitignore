@@ -140,6 +140,16 @@ apps/api/internal/storage/migrations/*.sql.bak
 apps/api/internal/storage/migrations/*.sql~
 
 # ---------------------------------------------------------------------------
+# Security-Gates (plan-0.8.5 Tranche 1)
+# ---------------------------------------------------------------------------
+# `make image-scan` legt die Trivy-Vuln-DB unter `.security/.trivy-cache/`
+# ab, damit lokale Wiederholungen sie nicht jedes Mal neu laden. Der
+# Cache ist non-deterministisch und groß (mehrere hundert MB) — deshalb
+# nur das Cache-Subverzeichnis ignorieren, nicht das ganze
+# `.security/`-Verzeichnis (`vulnignore.yaml` muss committet bleiben).
+.security/.trivy-cache/
+
+# ---------------------------------------------------------------------------
 # Tooling state
 # ---------------------------------------------------------------------------
 .claude/

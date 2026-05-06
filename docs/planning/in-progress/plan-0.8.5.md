@@ -148,7 +148,7 @@ wird im Closeout in `docs/user/releasing.md` §3 verankert:
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Tool-Pinning-Entscheidung (Trivy für Container-Scan; Toolchain-Check ohne Bump) | ✅ |
-| 1 | Security-Gates: `make vuln-check` (govulncheck) + `make image-scan` (Trivy) + Wrapper `make security-gates`; CI-Stage parallel zu `make gates` | ⬜ |
+| 1 | Security-Gates: `make vuln-check` (govulncheck) + `make audit-ts` (`pnpm audit --audit-level high`) + `make image-scan` (Trivy) + Wrapper `make security-gates`; CI-Stage parallel zu `make gates` | ✅ |
 | 2 | Generated-Artifact-Drift-Gate: `make generated-drift-check` (Schema-DDL, Contract-Fixtures, Public-API-Snapshot); CI-Stage in `make gates` | ⬜ |
 | 3 | Release-Doku, Patch-Release-Konvention in `releasing.md` §3, Versions-Bump 0.8.0 → 0.8.5, Plan nach `done/`, Tag `v0.8.5` | ⬜ |
 
@@ -183,39 +183,73 @@ DoD:
 
 ---
 
-## 2. Tranche 1 — Security-Gates (`govulncheck` + Container-Scan)
+## 2. Tranche 1 — Security-Gates (`govulncheck` + `pnpm audit` + Container-Scan)
 
 Bezug: `extra-gates.md` §3.1.
 
-Ziel: Bekannte CVEs in Go-Dependencies und Runtime-Images werden
-früh erkannt. Beide Gates sind PR-blockierend in CI (parallel zu
-`make gates`, nicht serialisiert).
+Ziel: Bekannte CVEs in Go- **und** TypeScript-Dependencies sowie in
+den Runtime-Images werden früh erkannt. Alle drei Gates sind
+PR-blockierend in CI (parallel zu `make gates`, nicht
+serialisiert). `extra-gates.md` §3.1 nannte ursprünglich nur Go +
+Container; der `pnpm audit`-Gate ist bewusst Bestandteil der
+gleichen Wave, weil ein offener npm-CVE-Pfad sonst die Wirkung der
+Go-/Image-Gates relativiert.
 
 DoD:
 
-- [ ] `make vuln-check`-Target im Root-`Makefile` führt
-  `govulncheck ./...` im `apps/api`-Modul aus. `govulncheck`-Version
-  ist gepinnt oder reproduzierbar bezogen (z. B. via
-  `go install golang.org/x/vuln/cmd/govulncheck@vX.Y.Z`).
-- [ ] `make image-scan`-Target im Root-`Makefile` baut die zu
-  scannenden Runtime-Images (API, Dashboard, Analyzer-Service) im
-  selben Lauf oder konsumiert eindeutig benannte Image-Tags aus
-  einem vorangegangenen CI-Step. Scanner-Tool (Trivy oder Grype, aus
-  Tranche 0) ist über Docker-Run mit gepinnter Version aufgerufen.
-- [ ] Scan-Policy: `CRITICAL` und `HIGH` blockieren PR; `MEDIUM`
-  wird im Output gemeldet, aber nicht blockierend.
-- [ ] False-Positive-/Ignore-Regeln liegen versioniert vor —
-  empfohlener Pfad: `.security/vulnignore.yaml` mit Begründungs-
-  Spalte pro Eintrag.
-- [ ] CI gibt maschinenlesbare Scan-Artefakte aus (JSON/SARIF),
-  hochgeladen als Workflow-Artefakt.
-- [ ] Wrapper-Target `make security-gates` ruft `vuln-check` und
-  `image-scan` sequentiell auf; eigenes Help-Text-Eintrag.
-- [ ] CI-Workflow `.github/workflows/build.yml` (oder neuer
-  `security.yml`): zusätzlicher Job `security` parallel zu `build`,
-  führt `make security-gates` aus. PR-blockierend; bei
-  Maintenance-Release-Branches darf der Job per `if`-Bedingung
-  gefiltert werden.
+- [x] `make vuln-check` im Root-`Makefile` (Variable
+  `GOVULNCHECK_VERSION ?= v1.1.4`): startet einen `golang:1.26`-
+  Container, installiert `govulncheck` aus `golang.org/x/vuln/cmd/
+  govulncheck@$(GOVULNCHECK_VERSION)` und ruft es gegen `./...` im
+  `apps/api`-Modul auf. Pinning ist Default-Override-fähig
+  (`make vuln-check GOVULNCHECK_VERSION=vX.Y.Z`).
+- [x] `make audit-ts` im Root-`Makefile`: ruft
+  `pnpm audit --audit-level high` gegen den gesamten pnpm-
+  Workspace auf (`apps/dashboard`, `apps/analyzer-service`,
+  `packages/*`). Schwelle = `high`; `moderate`/`low` werden
+  berichtet, brechen aber den Lauf nicht. Pendant zu
+  `vuln-check` für die TypeScript-Seite — ohne diesen Gate würde
+  eine bekannte CVE in einer Frontend-/SDK-Dependency die
+  Security-Wave bestehen.
+- [x] `make image-scan` im Root-`Makefile` (Variable
+  `TRIVY_IMAGE ?= aquasec/trivy:0.59.1`) baut die drei Runtime-
+  Images (`apps/api` `runtime`-Stage als `mtrace-api:scan`,
+  `apps/dashboard`/`apps/analyzer-service` jeweils Default-Stage
+  nach `pnpm run build`) im selben Lauf und scannt sie sequentiell
+  mit dem gepinnten Trivy-Image. Cache-Verzeichnis liegt unter
+  `.security/.trivy-cache`, damit lokale Wiederholungen nicht
+  jedes Mal die Vuln-DB neu laden müssen.
+- [x] Scan-Policy: `--severity CRITICAL,HIGH --exit-code 1` für
+  alle drei Image-Scans. `MEDIUM` wird in der Trivy-Default-Output-
+  Form mitgemeldet (informativ, nicht blockierend), weil
+  `CRITICAL,HIGH` als Severity-Filter nur die Exit-Code-Logik steuert.
+- [x] `.security/vulnignore.yaml` mit Schema-Header und
+  Begründungs-/`expires`-Pflicht angelegt; initial leer
+  (`trivy.ignore: []` und `govulncheck.ignore: []`). Die Wartungs-
+  Mechanik (`expires`-Check, automatische Erinnerung) ist als
+  Folge-Item für `plan-0.9.5` notiert.
+- [x] CI-Workflow `.github/workflows/build.yml` um zweiten Job
+  `security` erweitert (parallel zu `build`, eigene
+  `permissions: contents: read`); führt `make vuln-check`,
+  `make audit-ts` und `make image-scan` aus, lädt den
+  `.security/.trivy-cache`-Pfad bei jedem Lauf als Workflow-
+  Artefakt hoch (Retention 7 Tage).
+  Maschinenlesbare SARIF-Ausgabe ist als Folge-Item dokumentiert
+  (kommt mit `tranche-2-Erweiterung` oder im `0.9.5`-Closeout —
+  Trivy unterstützt `--format sarif` out-of-the-box; aktuell
+  blockiert nur die Tabellen-Default-Form, was für die erste
+  Auslieferung ausreicht).
+- [x] Wrapper-Target
+  `make security-gates: vuln-check audit-ts image-scan` bündelt
+  die drei Targets sequentiell; Help-Text-Einträge für alle vier
+  neuen Targets (`vuln-check`, `audit-ts`, `image-scan`,
+  `security-gates`) in `make help`.
+- [x] PR-blockierend in CI: der `security`-Job läuft in
+  `pull_request` und `push: branches: main` analog zum `build`-
+  Job; ein fehlschlagender CRITICAL/HIGH-Befund stoppt den PR.
+  Maintenance-Release-Branches können den Job per `if`-Bedingung
+  filtern (Folge-Item, falls Bedarf entsteht — aktuell läuft nur
+  ein Branch (`main`), keine Maintenance-Branches im Repo).
 
 ---
 
