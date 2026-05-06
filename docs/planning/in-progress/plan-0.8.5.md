@@ -250,6 +250,42 @@ DoD:
   Maintenance-Release-Branches können den Job per `if`-Bedingung
   filtern (Folge-Item, falls Bedarf entsteht — aktuell läuft nur
   ein Branch (`main`), keine Maintenance-Branches im Repo).
+- [x] Image-Hardening (Tranche-1-Closeout, getriggert vom ersten
+  CI-Lauf des `image-scan`-Targets):
+  - Dashboard- und Analyzer-Service-Dockerfile beide auf
+    `node:22-trixie-slim` (Debian 13) angehoben — eliminiert
+    5 CVEs gegenüber `bookworm-slim`. Analyzer-Service vorher
+    `node:22-alpine`; Wechsel von musl zurück zu glibc, weil
+    musl bei multi-threaded Workloads (libuv-Worker-Pool,
+    V8-GC/JIT) gegenüber glibc spürbar pessimisiert ist.
+  - `pnpm deploy --prod --legacy /deploy` als build-Stage in
+    beiden Service-Dockerfiles (Dashboard war vorher
+    `COPY --from=build /app /app` mit allen dev-deps): schneidet
+    `vitest`, `tsup`, `typescript-eslint`, `sucrase` und ihre
+    `picomatch`-Range-Deklarationen ab.
+  - Runtime-Stages entfernen explizit das gebündelte
+    `npm`-Tooling (`rm -rf /usr/local/lib/node_modules/npm
+    /usr/local/bin/npm /usr/local/bin/npx`), weil npm im Node-
+    Base-Image eine eigene `picomatch@4.0.3`-Kopie mitführt
+    (CVE-2026-33671); die Runtime startet direkt mit `node ...`
+    und braucht npm nicht.
+  - `pnpm.overrides`-Block in Root-`package.json` hebt
+    `picomatch` workspace-weit auf `^4.0.4` (Belt-and-
+    Suspenders gegenüber dem npm-Removal).
+  - `.security/vulnignore.yaml` mit drei dokumentierten Trivy-
+    Ignores für die verbleibenden Trixie-OS-CVEs ohne Upstream-
+    Fix (`CVE-2025-69720`, `CVE-2026-29111`, `CVE-2026-4878`),
+    je mit Begründung, Scope (`mtrace-dashboard,
+    mtrace-analyzer-service`) und 90-Tage-`expires`.
+  - `scripts/render-trivyignore.sh` rendert
+    `.security/.trivyignore` aus `vulnignore.yaml` (Audit-
+    Source-of-Truth bleibt YAML; Trivy konsumiert das Plain-
+    Text-Format via `--ignorefile`); bricht ab, sobald ein
+    `expires` überschritten ist (Wartungsregel).
+  - `make image-scan` ruft den Generator vor jedem Trivy-Lauf
+    auf; `.trivyignore` ist gitignored.
+  - R-13 in `risks-backlog.md` als Folge-Risiko: Trixie-Point-
+    Release-Re-Review oder Distroless-Wechsel vor 1.0.
 
 ---
 

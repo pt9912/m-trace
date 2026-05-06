@@ -310,29 +310,40 @@ image-scan:
 	docker build -f apps/dashboard/Dockerfile -t mtrace-dashboard:scan .
 	docker build -f apps/analyzer-service/Dockerfile -t mtrace-analyzer-service:scan .
 	mkdir -p .security/.trivy-cache
+	# `.security/.trivyignore` wird aus `.security/vulnignore.yaml`
+	# generiert (single-source-of-truth + audit trail). Der Generator
+	# bricht ab, falls ein Eintrag das `expires`-Datum ueberschritten
+	# hat — Wartungsregel laut plan-0.8.5 §2.
+	bash scripts/render-trivyignore.sh
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
+		-v "$(CURDIR)/.security/.trivyignore:/work/.trivyignore:ro" \
 		$(TRIVY_IMAGE) image \
 		--severity CRITICAL,HIGH \
 		--exit-code 1 \
 		--no-progress \
+		--ignorefile /work/.trivyignore \
 		mtrace-api:scan
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
+		-v "$(CURDIR)/.security/.trivyignore:/work/.trivyignore:ro" \
 		$(TRIVY_IMAGE) image \
 		--severity CRITICAL,HIGH \
 		--exit-code 1 \
 		--no-progress \
+		--ignorefile /work/.trivyignore \
 		mtrace-dashboard:scan
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
+		-v "$(CURDIR)/.security/.trivyignore:/work/.trivyignore:ro" \
 		$(TRIVY_IMAGE) image \
 		--severity CRITICAL,HIGH \
 		--exit-code 1 \
 		--no-progress \
+		--ignorefile /work/.trivyignore \
 		mtrace-analyzer-service:scan
 
 security-gates: vuln-check audit-ts image-scan

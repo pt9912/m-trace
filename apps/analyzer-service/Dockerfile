@@ -3,7 +3,7 @@
 # konsolidiert die produktiven Artefakte über `pnpm deploy --prod`
 # in `/deploy`. Damit braucht die Runtime-Stage keinen weiteren
 # pnpm-install-Schritt mehr (plan-0.3.0 §9 Tranche 7.5/3).
-FROM node:22-alpine AS build
+FROM node:22-trixie-slim AS build
 WORKDIR /workspace
 
 RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
@@ -32,8 +32,18 @@ RUN pnpm --filter @npm9912/analyzer-service deploy --prod --legacy /deploy
 
 # Runtime stage — startet direkt aus dem deploy-Bundle, ohne pnpm
 # binär oder einen weiteren install-Schritt.
-FROM node:22-alpine AS runtime
+FROM node:22-trixie-slim AS runtime
 WORKDIR /app
+
+# `node:*-trixie-slim`-Images bringen `npm` unter
+# `/usr/local/lib/node_modules/npm/` mit. NPM tragt eine eigene
+# `picomatch@4.0.3`-Kopie in seinen internen `node_modules`, die
+# Trivy als HIGH meldet (CVE-2026-33671). Im Runtime-Image starten
+# wir mit `node dist/main.cjs` und brauchen npm nicht — entfernen
+# schliesst diese CVE-Quelle ohne Workarounds (analog Dashboard-
+# Dockerfile, plan-0.8.5 Tranche 1 Closeout).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
 ENV NODE_ENV=production \
     ANALYZER_LISTEN_HOST=0.0.0.0 \
     ANALYZER_LISTEN_PORT=7000

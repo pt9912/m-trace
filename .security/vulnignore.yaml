@@ -38,7 +38,40 @@
 #     baut darauf auf).
 
 trivy:
-  ignore: []
+  ignore:
+    # CVE-2025-69720 (ncurses): Buffer Overflow. Trifft libtinfo6,
+    # ncurses-base und ncurses-bin im Debian-13-Trixie-Slim-Base des
+    # Dashboard-Images. Debian hat aktuell (Stand 2026-05-06) keinen
+    # Fix freigegeben. Ausnutzung erfordert lokal kontrollierte
+    # Terminal-Inputs — im Dashboard-Container ohne TTY-Anbindung
+    # nicht erreichbar. Folge-Trigger R-N-13 (s. risks-backlog.md):
+    # bei naechstem Trixie-Point-Release oder spaetestens vor 1.0
+    # Distroless-/Hardening-Variante pruefen.
+    - id: CVE-2025-69720
+      reason: "ncurses Buffer Overflow in Debian-13-Trixie-Slim-Base; kein Upstream-Fix verfuegbar; Container hat keinen TTY-Pfad zur Ausnutzung. Re-Review bei Trixie-Point-Release."
+      expires: 2026-08-04
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
+    # CVE-2026-29111 (systemd): Arbitrary Code Execution / DoS via
+    # spurious IPC. Trifft libsystemd0 und libudev1 im Trixie-Slim-
+    # Base. Ohne Upstream-Fix in Debian 13. Container startet als
+    # USER node, ohne systemd-PID-1 und ohne IPC-Socket-Mounts; der
+    # Vektor ist im m-trace-Runtime nicht aktivierbar. Re-Review
+    # gemeinsam mit R-N-13.
+    - id: CVE-2026-29111
+      reason: "systemd Arbitrary Code Exec via IPC; Trixie-Slim-Base ohne Upstream-Fix; Container ohne systemd/IPC-Mounts. Re-Review bei Trixie-Point-Release."
+      expires: 2026-08-04
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
+    # CVE-2026-4878 (libcap): Privilege Escalation via TOCTOU race
+    # in cap_set_file(). Trifft libcap2 im Trixie-Slim-Base. Ohne
+    # Upstream-Fix in Debian 13. Container startet als unprivileged
+    # USER node; die TOCTOU-Race greift den setcap-Pfad an, den wir
+    # nicht auslosen. Re-Review gemeinsam mit R-N-13.
+    - id: CVE-2026-4878
+      reason: "libcap TOCTOU-Race in cap_set_file(); Trixie-Slim-Base ohne Upstream-Fix; Container laeuft als unprivilegierter user node. Re-Review bei Trixie-Point-Release."
+      expires: 2026-08-04
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
 
 govulncheck:
   ignore: []

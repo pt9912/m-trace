@@ -148,6 +148,11 @@ apps/api/internal/storage/migrations/*.sql~
 # nur das Cache-Subverzeichnis ignorieren, nicht das ganze
 # `.security/`-Verzeichnis (`vulnignore.yaml` muss committet bleiben).
 .security/.trivy-cache/
+# `.security/.trivyignore` wird aus `.security/vulnignore.yaml` per
+# `scripts/render-trivyignore.sh` generiert; `make image-scan` ruft
+# den Generator vor dem Trivy-Lauf auf. Source-of-truth ist
+# `vulnignore.yaml` (mit `reason`/`expires`/`scope`-Audit-Feldern).
+.security/.trivyignore
 
 # ---------------------------------------------------------------------------
 # Tooling state

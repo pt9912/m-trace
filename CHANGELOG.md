@@ -41,6 +41,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `.github/workflows/build.yml` um zweiten Job `security`
     erweitert (parallel zum bestehenden `build`-Job, PR-blockierend,
     Trivy-Cache als Workflow-Artefakt mit 7 Tagen Retention).
+  - Image-Hardening als Tranche-1-Closeout (getriggert durch den
+    ersten CI-Lauf): Dashboard- und Analyzer-Service-Dockerfile
+    beide auf `node:22-trixie-slim`, dev-deps werden via
+    `pnpm deploy --prod --legacy /deploy` ausgeschnitten,
+    Runtime-Stages entfernen das gebündelte npm-Tooling
+    (eliminiert die `picomatch@4.0.3`-CVE-Kopie aus npm).
+    Analyzer-Service vorher `node:22-alpine`; Wechsel zu glibc,
+    weil musl bei multi-threaded Workloads (libuv-Worker-Pool,
+    V8-GC/JIT) pessimisiert. Drei verbleibende Trixie-OS-CVEs
+    ohne Upstream-Fix (`CVE-2025-69720`, `CVE-2026-29111`,
+    `CVE-2026-4878`) per `.security/vulnignore.yaml` mit 90-
+    Tage-`expires` dokumentiert; Generator
+    `scripts/render-trivyignore.sh` rendert `.trivyignore`
+    daraus und bricht ab, sobald ein `expires` überschritten
+    ist (Wartungsregel). `pnpm.overrides`-Block in Root-
+    `package.json` hebt `picomatch` workspace-weit auf
+    `^4.0.4`. Folge-Risiko R-13 in `risks-backlog.md`
+    (Trixie-Point-Release-Re-Review oder Distroless-Wechsel
+    vor 1.0).
 - Generated-Artifact-Drift-Gate Wave 1 (plan-0.8.5 Tranche 2):
   - `make generated-drift-check`: ruft `make schema-generate`,
     `make sync-contract-fixtures` und das Player-SDK-Public-API-

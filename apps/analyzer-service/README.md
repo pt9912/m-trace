@@ -52,11 +52,16 @@ pnpm --filter @npm9912/analyzer-service run start
 
 ## Container
 
-Dockerfile builds a multi-stage image based on `node:22-alpine`:
+Dockerfile builds a multi-stage image based on `node:22-trixie-slim`
+(Debian 13/glibc; switched from `node:22-alpine` in plan-0.8.5
+Tranche 1 to avoid musl's multi-threading pessimisation on the libuv
+worker pool / V8 GC/JIT). Build context is the repo root because the
+build stage references `packages/stream-analyzer` and the workspace
+lockfile.
 
 ```bash
-docker build -f apps/analyzer-service/Dockerfile -t m-trace-analyzer:0.5.0 .
-docker run --rm -p 7000:7000 m-trace-analyzer:0.5.0
+docker build -f apps/analyzer-service/Dockerfile -t m-trace-analyzer:0.8.0 .
+docker run --rm -p 7000:7000 m-trace-analyzer:0.8.0
 ```
 
 The Compose stack starts it as `analyzer-service` and routes
