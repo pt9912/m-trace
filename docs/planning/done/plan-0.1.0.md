@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](../../../spec/architecture.md) und
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | ✅ |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | ✅ |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8`, `1.1.9` | ✅ bis `1.1.9`; fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8`, `1.1.9`, `1.1.10` | ✅ bis `1.1.10`; fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ✅ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -381,6 +381,18 @@ DoD:
 - [x] Lastenheft §13.9 neu: WebRTC-Lab-Erweiterung mit RAK-47..RAK-51 (Compose-Stack, opt-in Smoke `make smoke-webrtc-prep`, `getStats()`-Allowlist + Schema-Drift-Strategie, Browser-Handcheck, optionaler Player-SDK-Adapter-Pfad).
 - [x] [`docs/planning/done/plan-0.7.0.md`](./plan-0.7.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.9`" hochgezogen (im `0.7.0`-Closeout nach `done/` verschoben).
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §3 0.7.0-Zeile: Hinweis „Lastenheft-Patch ausstehend" entfernt; RAK-Verteilung referenziert §13.9.
+
+### 4a.13 Patch `1.1.10` — `0.8.0` Player-SDK-WebRTC-Adapter (RAK-51 Hochstufung + RAK-52..RAK-55)
+
+Mit dem `0.7.0`-Release ist die WebRTC-Lab-Erweiterung ausgeliefert (RAK-47..RAK-50; `examples/webrtc/`-Compose, opt-in Smoke `make smoke-webrtc-prep`, Future-Telemetry-Notiz in `spec/telemetry-model.md` §3.5, R-12 als Schema-Drift-Review-Gate). RAK-51 (Player-SDK-WebRTC-Adapter) bleibt in §13.9 „Kann" / deferred. `0.8.0` zieht RAK-51 verbindlich aus dem Kann-Status; der Patch hebt RAK-51 in einer eigenen §13.10 zu „Muss" und ergänzt vier Sub-RAK (RAK-52..RAK-55) für Public-API + hls.js-Trennung, produktive WebRTC-Telemetrie auf bounded Allowlist und Compat-Tests. §13.9 bleibt unverändert als historische Aussage zum `0.7.0`-Stand; ein Hinweis dort verweist auf §13.10.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.9` → `1.1.10`.
+- [x] Lastenheft §13.10 neu: `0.8.0` Player-SDK-WebRTC-Adapter mit RAK-51 (Hochstufung) + RAK-52..RAK-55 (Public-API/Pack-Smoke, produktive WebRTC-Telemetrie auf §3.2-Allowlist, `getStats()`-Sammlung mit Schema-Drift-Strategie, opt-in Browser-E2E).
+- [x] Lastenheft §13.9 RAK-51-Zeile bekommt einen Hinweis auf die Hochstufung in §13.10; der historische `0.7.0`-Wortlaut bleibt erhalten.
+- [x] [`docs/planning/open/plan-0.8.0.md`](../open/plan-0.8.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.10`" hochgezogen; §0.1 Vorgänger-Gate entsprechend nachgezogen.
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 Schritt 40 abgehakt (✅); §1.2 verweist auf den ausgelieferten Patch.
 
 ---
 

@@ -8,13 +8,15 @@
 > `1.1.10` fertig ist (siehe §0.2). Plan wandert dann atomar nach
 > `docs/planning/in-progress/`.
 >
-> **Lastenheft-Status**: `1.1.9` führt RAK-51 als „Kann"
-> (`@npm9912/player-sdk` exposed einen optionalen WebRTC-Adapter-
-> Pfad ohne Vermischung mit `hls.js`; Public-API bleibt
-> abwärtskompatibel). `0.8.0` zieht RAK-51 verbindlich aus dem
-> deferred-Status; der Lastenheft-Patch `1.1.10` (siehe §0.2)
-> hebt RAK-51 auf „Muss" und ergänzt 4 neue RAK für die
-> Sub-Items.
+> **Lastenheft-Status**: ausgeliefert in `1.1.10` — §13.10 enthält
+> RAK-51 (hochgestuft auf „Muss") plus RAK-52..RAK-55 für die
+> Sub-Items (Public-API + hls.js-Trennung, produktive WebRTC-
+> Telemetrie auf bounded Allowlist, `getStats()`-Sammlung mit
+> Schema-Drift-Strategie, opt-in Browser-E2E). §13.9 (Block für
+> `0.7.0`) bleibt historisch unverändert mit einem Hinweis auf
+> §13.10. Lastenheft-Patch ist als §4a.13 in
+> [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+> dokumentiert.
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §7.6
 > F-62 (Player-Adapter-Folgeoptionen), §8.3 NF-14 (Erweiterbarkeit),
@@ -56,25 +58,24 @@ kann:
   unter [`examples/webrtc/`](../../../examples/webrtc/),
   `make smoke-webrtc-prep` opt-in grün, `spec/telemetry-model.md`
   §3.5 als Future-Telemetry-Notiz vorhanden.
-- Lastenheft-Patch `1.1.10` (siehe §0.2) ist akzeptiert; RAK-51
-  steht auf „Muss" und neue RAK-52..RAK-55 sind im Lastenheft
-  §13.10 (oder analog) verankert.
+- Lastenheft-Patch `1.1.10` ist ausgeliefert; RAK-51 steht in
+  §13.10 auf „Muss" und neue RAK-52..RAK-55 sind dort verankert
+  (siehe §0.2).
 - Browser-Support-Matrix-Strategie für WebRTC ist bestätigt:
   Chromium 120+ und Firefox 120+ sind Pflicht; Safari ist
   Best-Effort (analog zur RAK-19-Linie aus `plan-0.2.0.md`).
 
-### 0.2 Lastenheft-Patch `1.1.10` (Vorschlag)
+### 0.2 Lastenheft-Patch `1.1.10` (ausgeliefert)
 
 Der Patch hebt RAK-51 verbindlich aus dem Kann-Status und ergänzt
-4 neue RAK für die Sub-Items, die `0.8.0` ausliefert. Die genauen
-Wortlaute sind beim Tranche-0-Closeout in `spec/lastenheft.md` §13.10
-(neuer Block) und im Wartungslog (analog `done/plan-0.1.0.md`
-Tranche 0c) festzuhalten:
+vier neue RAK für die Sub-Items, die `0.8.0` ausliefert. Patch ist
+als §4a.13 in [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+dokumentiert. Inhalt für die Tranchen-DoD unten:
 
-| RAK | Priorität | Inhalt (Vorschlag für `spec/lastenheft.md` §13.10) |
-| --- | --------- | -------------------------------------------------- |
+| RAK | Priorität | Inhalt (`spec/lastenheft.md` §13.10) |
+| --- | --------- | ------------------------------------ |
 | RAK-51 | Muss | `@npm9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von 1.1.9 §13.9 „Kann" auf „Muss".** |
-| RAK-52 | Muss | Public-API für Adapter-Auswahl (`Hls`/`WebRTC`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
+| RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
 | RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` §3.2 (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
 | RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
