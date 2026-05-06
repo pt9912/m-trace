@@ -253,11 +253,17 @@ DoD:
   Contract-Patch; WHEP-Handshake-Erfolg wird entweder über
   `playback_started`/`metrics_sampled` oder über einen neuen
   additiven Event-Typ modelliert.
+- [ ] WebRTC-Fehlercode-Taxonomie ist im Contract dokumentiert und
+  wird vom Adapter genutzt. Mindestcodes:
+  `whep_signaling_failed`, `whep_sdp_invalid`, `webrtc_no_tracks`,
+  `peer_connection_failed`, `webrtc_destroyed_before_connected`.
+  Codes stehen in `playback_error`-Meta unter einem dokumentierten
+  Key und sind für Dashboard/Releasing-Abnahme maschinenlesbar.
 - [ ] WHEP-Fehlerpfade sind abgenommen: nicht-2xx/3xx Signalisierung,
   ungültige SDP Answer, fehlende MediaTracks, PeerConnection-Fehler
   und `destroy()` vor Handshake-Abschluss erzeugen deterministische
-  `playback_error`-Events und lassen keine aktive PeerConnection
-  zurück.
+  `playback_error`-Events mit den dokumentierten WebRTC-Codes und
+  lassen keine aktive PeerConnection zurück.
 - [ ] `apps/dashboard` bekommt eine `/demo-webrtc`-Route (oder ein
   Toggle in `/demo`), die den WebRTC-Adapter gegen das
   `examples/webrtc/`-Lab demonstriert. Bestehende `/demo`-Route
@@ -289,6 +295,13 @@ DoD:
   dokumentierte `webrtc.*`-Meta-Keys; `contracts/event-schema.json`,
   `contracts/sdk-compat.json`, `spec/backend-api-contract.md` und
   `spec/telemetry-model.md` werden im selben Commit aktualisiert.
+- [ ] API-Validierung für `webrtc.*`-Meta-Keys ist hart: nur
+  dokumentierte Keys, Typen und Enum-Werte werden vor dem
+  Metrikexport akzeptiert; unbekannte oder ungültige `webrtc.*`-
+  Keys führen zu `422` und erzeugen keine `mtrace_webrtc_*`-
+  Metrik. Tests decken mindestens unbekannter Key, falscher Typ,
+  ungültiger State-Enum-Wert und verbotener Identifier (`track_id`,
+  `candidate_pair_id` oder `user_agent`) ab.
 - [ ] API-Ingress erkennt WebRTC-Aggregat-Labels und exportiert
   `mtrace_webrtc_*`-Metriken. Mindestset:
   `mtrace_webrtc_connection_state_total{connection_state}`,
@@ -309,11 +322,14 @@ DoD:
   ausdrücklich festlegen.
 - [ ] Counter-Semantik ist dokumentiert: State-Counter zählen
   angenommene WebRTC-Metrik-Samples, nicht aktuelle Zustands-Gauges;
-  `packetsLost`/`bytesReceived`/`bytesSent` werden als nichtnegative
-  Deltas aus den kumulativen `getStats()`-Zählern übertragen oder
-  serverseitig abgeleitet. Retry-/Duplikatverhalten folgt explizit
-  dem bestehenden Playback-Event-Vertrag oder wird als neuer
-  Idempotenz-Vertrag in `spec/backend-api-contract.md` festgelegt.
+  `packetsLost`/`bytesReceived`/`bytesSent` werden als absolute
+  Samples mit einem monotonen Sample-Schlüssel (`webrtc.sample_id`
+  oder äquivalenter per-session Sequenz) übertragen, serverseitig
+  pro `(project_id, session_id, metric)` differenziert und erst als
+  nichtnegative Deltas in Prometheus-Counter geschrieben. Duplicate-
+  oder Retry-Samples mit gleichem Sample-Schlüssel dürfen die
+  `mtrace_webrtc_*_total`-Counter nicht erneut erhöhen; Tests decken
+  Monotonie, Counter-Reset/negative Delta und Duplicate-Sample ab.
 - [ ] `scripts/smoke-observability.sh` spiegelt die WebRTC-
   Forbidden-Liste aus `spec/telemetry-model.md` §3.1 und prüft
   die WebRTC-Counter auf bounded Cardinality (RAK-9-Stil). Der
