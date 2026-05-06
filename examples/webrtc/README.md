@@ -7,7 +7,7 @@
 >
 > Bezug: Lastenheft `1.1.9` §7.6 F-62, §7.8 F-82..F-84, §8.3 NF-14,
 > §12.1 MVP-24, §13.9 RAK-47..RAK-50;
-> [`docs/planning/in-progress/plan-0.7.0.md`](../../docs/planning/in-progress/plan-0.7.0.md)
+> [`docs/planning/done/plan-0.7.0.md`](../../docs/planning/done/plan-0.7.0.md)
 > §2 Tranche 1.
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:
@@ -81,7 +81,7 @@ curl -sS -o /dev/null -w "%{http_code}\n" -X OPTIONS http://localhost:8892/webrt
 ```
 
 Erwarteter Statussatz für die spätere Smoke-Implementierung
-([`plan-0.7.0.md`](../../docs/planning/in-progress/plan-0.7.0.md) Tranche 3):
+([`plan-0.7.0.md`](../../docs/planning/done/plan-0.7.0.md) Tranche 3):
 
 | Methode | Pfad | Bedingung | Status |
 |---|---|---|---|

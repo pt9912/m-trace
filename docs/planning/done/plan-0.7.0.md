@@ -1,35 +1,32 @@
 # Implementation Plan — `0.7.0` (WebRTC-Lab-Erweiterung)
 
-> **Status**: 🟡 in Arbeit (Tranche 0 aktiviert am 2026-05-05; Vorgänger
-> `v0.6.0` ist released, Tag `d08a89f`). Liegt unter
-> `docs/planning/in-progress/`. Sammelt die Folge-Schritte aus
-> `0.5.0` Tranche 5 und macht aus dem WebRTC-Vorbereitungspfad eine
-> produktive Lab-Erweiterung.
+> **Status**: ✅ released am 2026-05-06 (Tranchen 0–5 abgeschlossen;
+> Tag `v0.7.0` setzt der Closeout-Commit). Liegt unter
+> `docs/planning/done/`. Vorgänger `v0.6.0` (Tag auf `d08a89f`) ist
+> released. RAK-47..RAK-50 erfüllt; RAK-51 (Player-SDK-WebRTC-
+> Adapter, Kann) bleibt deferred — Folgeplan steht aus (siehe §7).
 >
 > **Lastenheft-Status**: ausgeliefert in `1.1.9` — §13.9 enthält
 > RAK-47..RAK-51 für die produktive WebRTC-Lab-Erweiterung; RAK-39
 > (in `0.5.0`-Block §13.7) deckt unverändert den Vorbereitungspfad
 > ab. Lastenheft-Patch ist als §4a.12 in
-> [`docs/planning/done/plan-0.1.0.md`](../done/plan-0.1.0.md)
-> Tranche 0c dokumentiert.
+> [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c dokumentiert.
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §7.6
 > F-62 (Player-Adapter-Folgeoptionen), §8.3 NF-14 (Erweiterbarkeit),
 > §12.1 MVP-24, §13.7 RAK-39 (Vorbereitungspfad), §13.9 RAK-47..RAK-51
-> (Lab-Erweiterung); [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)
+> (Lab-Erweiterung); [`plan-0.5.0.md`](./plan-0.5.0.md)
 > §6 (Tranche 5);
 > [`examples/webrtc/README.md`](../../../examples/webrtc/README.md)
-> (aktueller Doku-only Stand);
-> [`plan-0.6.0.md`](../done/plan-0.6.0.md) (vorhergehende Phase).
-> Beim Verschieben von `0.6.0` nach `docs/planning/done/` muss dieser
-> Link im selben Commit auf `../done/plan-0.6.0.md` umgestellt werden.
+> (Lab-Compose ab Tranche 1);
+> [`plan-0.6.0.md`](./plan-0.6.0.md) (vorhergehende Phase).
 >
-> **Nachfolger**: `plan-0.8.0.md` (offen).
+> **Nachfolger**: offen — kein `plan-0.8.0.md` vorbereitet.
 
 ## 0. Konvention
 
 DoD-Checkboxen tracken den Lieferstand analog
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
+[`plan-0.1.0.md`](./plan-0.1.0.md) §0:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -50,11 +47,10 @@ kann:
 - `0.5.0` ist released (Tag `v0.5.0` auf `a56dc0b`); WebRTC-Skelett
   unter [`examples/webrtc/`](../../../examples/webrtc/) existiert.
 - `0.6.0` (SRT Health View) ist released; siehe
-  [`plan-0.6.0.md`](../done/plan-0.6.0.md). Wenn der
-  Vorgängerplan im Release-Closeout bereits nach `done/` verschoben ist,
-  wird dieser Link beim Aktivieren von `0.7.0` atomar auf
-  `../done/plan-0.6.0.md` korrigiert.
-- Lastenheft `1.1.9` ist um RAK-47..RAK-51 für `0.7.0` erweitert (§13.9 + §4a.12 in `done/plan-0.1.0.md`); siehe §0.2.
+  [`plan-0.6.0.md`](./plan-0.6.0.md) (im Closeout von `0.7.0`
+  ist dieser Plan ebenfalls nach `done/` gewandert; der Link auf
+  `0.6.0` zeigt jetzt direkt im selben Verzeichnis).
+- Lastenheft `1.1.9` ist um RAK-47..RAK-51 für `0.7.0` erweitert (§13.9 + §4a.12 in [`plan-0.1.0.md`](./plan-0.1.0.md)); siehe §0.2.
 
 `smoke-webrtc-prep` (RAK-48 Muss) ist endpoint-/compose-only und
 benötigt **keinen** headless-Browser-Pfad — Headless-Browser-
@@ -67,7 +63,7 @@ geführt und kann das Muss-Target nicht aus dem Scope kippen.
 
 `spec/lastenheft.md` `1.1.9` enthält in §13.9 die RAK-Pflicht-/Soll-/
 Kann-Aussagen für `0.7.0`. Patch ist als §4a.12 in
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+[`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c
 dokumentiert. Inhalt für die Tranchen-DoD unten:
 
 | RAK | Priorität | Inhalt (`spec/lastenheft.md` §13.9) |
@@ -126,7 +122,7 @@ Punkt vermerkt.
 | 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | ✅ |
 | 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ✅ |
 | 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ✅ |
-| 5 | Release-Doku, RAK-Matrix und Closeout | ⬜ |
+| 5 | Release-Doku, RAK-Matrix und Closeout | ✅ |
 
 ---
 
@@ -411,29 +407,41 @@ mit den Release-Gates nachweisbar. RAK-51 bleibt sichtbar deferred.
 
 DoD:
 
-- [ ] `README.md` und `docs/user/local-development.md` verweisen auf
-  `examples/webrtc/` mit Start-/Stop-/Smoke-Befehlen.
-- [ ] `docs/user/releasing.md` nennt `make smoke-webrtc-prep` als
-  zusätzlichen manuellen/opt-in Release-Smoke für `0.7.0`.
-- [ ] `examples/README.md` listet `smoke-webrtc-prep` konsistent mit
-  den anderen Example-Smokes.
-- [ ] RAK-Verifikationsmatrix §6.1 ist vollständig ausgefüllt; bewusst
-  verschobene Kann-Anforderungen stehen als `deferred / Folgeplan` statt
-  als offene 0.7.0-Checkbox.
-- [ ] `./scripts/verify-doc-refs.sh` ist grün.
-- [ ] `plan-0.7.0.md` wird beim Release-Closeout nach
-  `docs/planning/done/` verschoben und Roadmap §3 zeigt `0.7.0`
-  released.
+- [x] `README.md` Status-Block auf „`0.7.0` released" und Verweis auf
+  `examples/webrtc/` mit Start-/Stop-/Smoke-Befehlen umgestellt;
+  `docs/user/local-development.md` §2.7 mit Project `mtrace-webrtc`,
+  Host-Port-Schnitt 8892/8189/9999 und `make smoke-webrtc-prep`-
+  Eintrag (auto-up/down, opt-in) versorgt — beides bereits in
+  Tranche 1+3 vorbereitet, Closeout zieht den Status-Header nach.
+- [x] `docs/user/releasing.md` §2.x neuer Block für `0.7.0`-Smokes:
+  `make smoke-webrtc-prep` als opt-in Release-Smoke (auto-up/down,
+  endpoint-only) plus optionaler Browser-Handcheck als RAK-50-
+  Manueller-Pfad.
+- [x] `examples/README.md` listet `smoke-webrtc-prep` konsistent
+  ✅ mit den anderen Example-Smokes (auto-up/down, Project
+  `mtrace-webrtc`, endpoint-only) — wurde in Tranche 3 erledigt;
+  Closeout bestätigt den Stand.
+- [x] RAK-Verifikationsmatrix §6.1 vollständig ausgefüllt: RAK-47..
+  RAK-50 ✅ mit Commit-Verweisen, RAK-51 als `deferred / Folgeplan`
+  bestätigt. Keine offene 0.7.0-Checkbox.
+- [x] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
+  Closeout-Commit.
+- [x] `plan-0.7.0.md` von `docs/planning/in-progress/` nach
+  `docs/planning/done/` verschoben (`git mv` im Closeout-Commit);
+  alle relativen Cross-Refs im Plan und in den anderen
+  `done/`-Plans (`plan-0.1.0.md` Tranche 0c, `plan-0.5.0.md` §6,
+  `plan-0.6.0.md`) sowie `examples/webrtc/README.md` und
+  `roadmap.md` §0/§1.2/§3 angepasst. Roadmap §3 zeigt `0.7.0` ✅.
 
 ### 6.1 RAK-Verifikationsmatrix
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-47 | Muss | `examples/webrtc/compose.yaml`, Project `mtrace-webrtc`, lokale WHIP-/WHEP-Endpunkte, HTTP- und ICE-/Media-Portkonflikte entschieden | [ ] |
-| RAK-48 | Muss | `make smoke-webrtc-prep` endpoint-/compose-only, opt-in dokumentiert, kein Playback-/`getStats()`-Anspruch | [ ] |
-| RAK-49 | Soll | `spec/telemetry-model.md` §3.2 mit WebRTC-`getStats()`-Future-Telemetry-Notiz und Schema-Drift-Strategie | [ ] |
-| RAK-50 | Kann | Manueller Browser-Handcheck in `examples/webrtc/README.md` dokumentiert | [ ] |
-| RAK-51 | Kann | Deferred; eigener Folgeplan für Player-SDK-WebRTC-Adapter | deferred / Folgeplan |
+| RAK-47 | Muss | `examples/webrtc/compose.yaml` (Project `mtrace-webrtc`); Host-Port-Schnitt 8892/tcp (WHIP/WHEP) + 8189/udp (ICE) + 9999/tcp (API) kollisionsfrei zu Core/`mtrace-srt`/`mtrace-dash`; `mediamtx.yml` mit `webrtcAdditionalHosts: [127.0.0.1, mediamtx]`. Commit `f99ce82`. | ✅ |
+| RAK-48 | Muss | `make smoke-webrtc-prep` (`scripts/smoke-webrtc-prep.sh`) endpoint-/compose-only, fünf Probes (API ready, Stream `webrtc-test` ready=true, `OPTIONS …/whep|whip → 204`, Negativ-Probe ≠ 204); opt-in (nicht in `make gates`); `examples/webrtc/README.md` „Verifikation" dokumentiert ohne Playback-/ICE-Erfolgsquote-/`getStats()`-Anspruch. Commit `ed0dcff`. | ✅ |
+| RAK-49 | Soll | `spec/telemetry-model.md` §3.5 (Future-Telemetry-Notiz) mit `getStats()`-Subset pro `RTCStatsType`-Gruppe (Muss-/Soll-Felder), Schema-Drift-Strategie und Fallback-Verhalten; §3.1 um WebRTC-Forbidden-Identifier, §3.2 um W3C-Enum-Aggregat-Labels (`connection_state`, `ice_state`, `dtls_state`); R-12 als Spec-/Adapter-Review-Gate im Risiken-Backlog. Commit `d7ae6d7`. | ✅ |
+| RAK-50 | Kann | `examples/webrtc/README.md` „Browser-Handcheck (RAK-50, manuell)" mit MediaMTX-Read-Demo-URL `http://localhost:8892/webrtc-test`, `chrome://webrtc-internals` / `about:webrtc`-Hinweis und Erwartungswerten (`connection_state=connected`, `ice_state=connected`, `dtls_state=connected`). Commit `f99ce82`. | ✅ |
+| RAK-51 | Kann | Deferred; eigener Folgeplan für Player-SDK-WebRTC-Adapter (siehe §7 Wartung) — keine Code-Änderung in `packages/player-sdk` im `0.7.0`-Scope. | deferred / Folgeplan |
 
 ---
 
@@ -444,7 +452,7 @@ DoD:
 - Lastenheft-Patch ist erledigt: `spec/lastenheft.md` steht auf
   `1.1.9` mit §13.9-Sektion „Version 0.7.0" und RAK-47..RAK-51;
   Eintrag als §4a.12 in
-  [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c.
+  [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c.
   Plan kann nach `docs/planning/in-progress/` ziehen, sobald
   Vorgänger-Gates aus §0.1 grün sind.
 - RAK-51 (Player-SDK-WebRTC-Adapter, „Kann") ist bewusst **nicht**

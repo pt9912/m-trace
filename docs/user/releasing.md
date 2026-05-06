@@ -49,6 +49,7 @@ make smoke-mediamtx       # ab 0.5.0: MediaMTX-Beispiel (RAK-36); braucht laufen
 make smoke-srt            # ab 0.5.0: SRT-Beispiel (RAK-37); startet/stoppt Project mtrace-srt
 make smoke-srt-health     # ab 0.6.0: SRT-Health-Smoke (RAK-41/RAK-42); startet/stoppt mtrace-srt + probt MediaMTX-API
 make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
+make smoke-webrtc-prep    # ab 0.7.0: WebRTC-Lab-Vorbereitungs-Smoke (RAK-48); startet/stoppt mtrace-webrtc; endpoint-only (kein Browser/Playback/getStats)
 ```
 
 Erfolgskriterien:
@@ -79,10 +80,10 @@ Erfolgskriterien:
 CI deckt `make gates`, `make build`, `make sdk-performance-smoke` und
 `make smoke-cli` ab; `smoke-analyzer`, `smoke-observability`,
 `browser-e2e` und ab `0.5.0` `smoke-mediamtx`/`smoke-srt`/
-`smoke-dash` (plus ab `0.6.0` `smoke-srt-health`) laufen lokal vor
-dem Tag (Compose-Stack-Up bzw. Browser-Stack ist zu schwergewichtig
-für jeden PR-Run). CI-Zielplattform ist GitHub Actions auf
-`ubuntu-24.04`, Workflow-Name: `build`.
+`smoke-dash` (plus ab `0.6.0` `smoke-srt-health`, ab `0.7.0`
+`smoke-webrtc-prep`) laufen lokal vor dem Tag (Compose-Stack-Up bzw.
+Browser-Stack ist zu schwergewichtig für jeden PR-Run). CI-Zielplattform
+ist GitHub Actions auf `ubuntu-24.04`, Workflow-Name: `build`.
 
 ### 2.1 Manuelle `0.6.0`-Prüfungen (SRT-Health-View)
 
@@ -111,6 +112,32 @@ eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
 
 Vollständige Operator-Doku:
 [`srt-health.md`](./srt-health.md).
+
+### 2.2 Manuelle `0.7.0`-Prüfungen (WebRTC-Lab-Erweiterung)
+
+Zusätzlich zu `make smoke-webrtc-prep` (auto-up/down, endpoint-only)
+braucht der `0.7.0`-Release einen kurzen manuellen Browser-Handcheck
+gegen ein laufendes Lab (RAK-50, „Kann"; nicht release-blockierend,
+aber Bestandteil der dokumentierten Verifikationspfade):
+
+1. `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build`.
+2. `make smoke-webrtc-prep` (oder `SMOKE_WEBRTC_AUTOSTART=0
+   bash scripts/smoke-webrtc-prep.sh` gegen den laufenden Stack)
+   muss alle fünf Probes grün durchlaufen.
+3. Browser-Read-Demo öffnen: <http://localhost:8892/webrtc-test> in
+   Chromium 120+ oder Firefox 120+ — Test-Pattern + 1 kHz Sinuston
+   müssen latenzarm laufen.
+4. `chrome://webrtc-internals` (Chromium) bzw. `about:webrtc`
+   (Firefox) zeigt eine aktive `RTCPeerConnection` mit
+   `connection_state=connected`, `ice_state=connected`,
+   `dtls_state=connected`. Diese Werte sind in
+   `spec/telemetry-model.md` §3.5.2 als Muss-Felder dokumentiert.
+5. `docker compose -p mtrace-webrtc … down` räumt nur den
+   `mtrace-webrtc`-Stack ab; Core-Lab und andere Beispiele bleiben
+   unangetastet.
+
+Vollständige Operator-Doku:
+[`examples/webrtc/README.md`](../../examples/webrtc/README.md).
 
 ```bash
 gh run watch --workflow build.yml

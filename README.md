@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.6.0` released — SRT-Health-View mit MediaMTX-API als CGO-freier Quelle, durabler Health-Store, Read-API (`/api/srt/health`) und Dashboard-Route. Multi-Protokoll-Lab aus `0.5.0` bleibt unverändert. Player-SDK und stream-analyzer bleiben HLS-only.
+> Status: `0.7.0` released — WebRTC-Lab-Erweiterung mit lokalem WHIP-/WHEP-Compose (Project `mtrace-webrtc`), opt-in `make smoke-webrtc-prep` (endpoint-only) und WebRTC-Telemetrie-Vorbereitung in `spec/telemetry-model.md` §3.5. SRT-Health-View aus `0.6.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert. Player-SDK und stream-analyzer bleiben HLS-only (Player-SDK-WebRTC-Adapter ist deferred / Folgeplan).
 
 ---
 
@@ -306,18 +306,23 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.6.0` released: SRT-Health-View mit
-CGO-freier MediaMTX-API als Quelle (Risiken-Backlog R-2 als
-CGO-frei aufgelöst), durabler Health-Store via SQLite-V5-Migration,
-Read-API `GET /api/srt/health[/{stream_id}]` und Dashboard-Route
-`/srt-health`. Operator-Doku in
-[`docs/user/srt-health.md`](docs/user/srt-health.md).
-RAK-41..RAK-46 erfüllt; Tranchen 0–7 in
-[`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md)
-archiviert. Nächste Phase: `0.7.0` (WebRTC-Lab-Erweiterung,
-RAK-47..RAK-51) — Plan-Skelett unter
-[`docs/planning/in-progress/plan-0.7.0.md`](docs/planning/in-progress/plan-0.7.0.md).
+Das Projekt steht bei `0.7.0` released: WebRTC-Lab-Compose
+([`examples/webrtc/`](examples/webrtc/), Project `mtrace-webrtc`)
+mit MediaMTX-WHIP/-WHEP-Listener (Host-Ports `8892/tcp`/`8189/udp`/
+`9999/tcp`) und FFmpeg-RTSP-Publisher; opt-in `make smoke-webrtc-prep`
+(endpoint-/compose-only, kein Browser/Playback/`getStats()`-Anspruch);
+WebRTC-Telemetrie-Vorbereitung in
+[`spec/telemetry-model.md`](spec/telemetry-model.md) §3.5 mit
+bounded Aggregat-Allowlist, `getStats()`-Subset und Schema-Drift-
+Strategie (R-12 als Spec-/Adapter-Review-Gate). SRT-Health-View aus
+`0.6.0` (Operator-Doku [`docs/user/srt-health.md`](docs/user/srt-health.md))
+und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert.
+RAK-47..RAK-50 erfüllt; RAK-51 (Player-SDK-WebRTC-Adapter, Kann)
+bleibt deferred — Tranchen 0–5 in
+[`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md)
+archiviert. Nächste Phase: offen — kein `plan-0.8.0.md` vorbereitet.
 Archivierte Plan-Dateien:
+[`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md),
 [`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md),
 [`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),
 [`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).

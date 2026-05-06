@@ -7,9 +7,9 @@
 > (Browser-E2E) und `0a8c416` (`required_bandwidth_bps`-ENV +
 > opt-in `SMOKE_INCLUDE_MTRACE_API`) nachgezogen — Details in §8.3.
 > Vorgängerplan `0.5.0` liegt unter
-> [`./plan-0.5.0.md`](./plan-0.5.0.md). Aktive Phase ist `0.7.0`
-> (WebRTC-Lab-Erweiterung); Plan-Skelett unter
-> [`../in-progress/plan-0.7.0.md`](../in-progress/plan-0.7.0.md).
+> [`./plan-0.5.0.md`](./plan-0.5.0.md). Nachfolger `0.7.0`
+> (WebRTC-Lab-Erweiterung) ist released; Plan archiviert unter
+> [`./plan-0.7.0.md`](./plan-0.7.0.md).
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §4.3
 > (SRT als späterer starker Hebel), §7.8 (lokales Streaming-Lab), §7.9

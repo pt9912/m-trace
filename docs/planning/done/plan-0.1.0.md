@@ -379,7 +379,7 @@ DoD:
 
 - [x] Lastenheft Header: Version `1.1.8` → `1.1.9`.
 - [x] Lastenheft §13.9 neu: WebRTC-Lab-Erweiterung mit RAK-47..RAK-51 (Compose-Stack, opt-in Smoke `make smoke-webrtc-prep`, `getStats()`-Allowlist + Schema-Drift-Strategie, Browser-Handcheck, optionaler Player-SDK-Adapter-Pfad).
-- [x] [`docs/planning/in-progress/plan-0.7.0.md`](../in-progress/plan-0.7.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.9`" hochgezogen.
+- [x] [`docs/planning/done/plan-0.7.0.md`](./plan-0.7.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.9`" hochgezogen (im `0.7.0`-Closeout nach `done/` verschoben).
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §3 0.7.0-Zeile: Hinweis „Lastenheft-Patch ausstehend" entfernt; RAK-Verteilung referenziert §13.9.
 
 ---

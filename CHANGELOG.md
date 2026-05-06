@@ -7,11 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranchen 0–4 (Plan-
-> Aktivierung + Toolchain-Hardening, WebRTC-Lab-Compose, README-
-> Konkretisierung, Vorbereitungs-Smoke, Telemetrie-Bewertung).
-> Versions-Bump und finalen CHANGELOG-Block setzt der `0.7.0`-Closeout
-> (Tranche 5).
+> Sammelblock für post-`0.7.0`-Befunde. Versions-Bump und finalen
+> CHANGELOG-Block setzt der jeweils nächste Release-Closeout.
+
+## [0.7.0] - 2026-05-06
+
+> WebRTC-Lab-Erweiterung: lokal startbares WHIP-/WHEP-Compose
+> ([`examples/webrtc/`](examples/webrtc/), Project `mtrace-webrtc`)
+> mit FFmpeg-RTSP-Publisher; opt-in `make smoke-webrtc-prep`
+> (endpoint-/compose-only); WebRTC-Telemetrie-Vorbereitung in
+> `spec/telemetry-model.md` §3.5 (bounded Allowlist, `getStats()`-
+> Subset, Schema-Drift-Strategie); R-12 als Spec-/Adapter-Review-
+> Gate. RAK-47..RAK-50 erfüllt; RAK-51 (Player-SDK-WebRTC-Adapter)
+> deferred. Lieferstand der Tranchen 0–5 strukturiert nach
+> Plan-Aktivierung+Toolchain → Lab-Compose → README → Smoke →
+> Telemetrie-Bewertung → Closeout. Post-`0.6.0`-Befunde sind in
+> diesem Block mit verarbeitet (siehe „Changed"/„Fixed").
 
 ### Added
 
