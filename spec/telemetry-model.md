@@ -403,6 +403,7 @@ Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardina
 | `token`, `authorization`, beliebige `*_token` / `*_secret` | Credentials gehören niemals in eine Metrik-Serie. | API-Kontrakt §7 |
 | `batch_size` | unbegrenzte Integer-Domäne, weil der OTel-Counter `mtrace.api.batches.received` vor der `MaxBatchSize=100`-Validierung läuft (siehe §2.2). Ab `0.4.0` Tranche 7 entfernt; `batch.size` bleibt nur als Span-Attribut. | §2.2; `plan-0.4.0.md` §8.2 |
 | SRT-Source-Labels (`id`, `path`, `remoteAddr`, `state`, `connection_id`, `stream_id` als Per-Stream-Identifier) sowie URL-/IP-/Token-Varianten aus MediaMTX `/v3/srtconns/list` | hochkardinale Per-Verbindung-Identifier; werden in SQLite/OTel-Spans persistiert, **nie** als Prometheus-Label. | §7; `plan-0.6.0.md` §4 |
+| WebRTC-/`getStats()`-Identifier (`peer_connection_id`, Report-`id`, `track_id`, `transport_id`, `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`, `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-Fingerprints, beliebige IP-Adressen, URLs, Codec-Strings, Browser-`user_agent`) sowie ein generisches `source_id`-Label aus einem WebRTC-Adapter-Pfad | hochkardinale Per-Verbindung-Identifier oder potenziell PII; gehören in einen späteren Read-Pfad (Event/Debug), niemals in Prometheus-Labels. Verbot ist **release-blockierend, sobald** der erste produktive `mtrace_webrtc_*`-Counter eingeführt wird; bis dahin ist die Spiegelung in `scripts/smoke-observability.sh` **Folge-DoD** (kein WebRTC-Counter im `0.7.0`-Scope, siehe §3.5). | §3.5; `plan-0.7.0.md` §5 (RAK-49) |
 
 Erlaubt sind ausschließlich die bounded Aggregat-Labels aus §3.2. Die Forbidden-Liste in `scripts/smoke-observability.sh` deckt die Tabelle plus generische Suffixe (`_url`, `_uri`, `_token`, `_secret`) defensiv ab; jeder Treffer ist release-blockierend.
 
@@ -418,6 +419,9 @@ Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich. Jede neue `mtrace_
 | `health_state` | feste Enum aus §7.4: `healthy`, `degraded`, `critical`, `unknown` | `degraded` | `mtrace_srt_health_samples_total{health_state}` (`plan-0.6.0.md` §4) |
 | `source_status` | feste Enum aus §7.5: `ok`, `unavailable`, `partial`, `stale`, `no_active_connection` | `stale` | `mtrace_srt_health_collector_runs_total{source_status}` (`plan-0.6.0.md` §4) |
 | `instance` / `job` | OTel/Prometheus-Standard | `api:8080` | alle Metriken (Target-Metadaten) |
+| `connection_state` | feste Enum aus W3C `RTCPeerConnectionState`: `new`, `connecting`, `connected`, `disconnected`, `failed`, `closed` | `connected` | zukünftige WebRTC-Aggregate (siehe §3.5; **kein** produktiver Counter in `0.7.0`) |
+| `ice_state` | feste Enum aus W3C `RTCIceConnectionState`: `new`, `checking`, `connected`, `completed`, `failed`, `disconnected`, `closed` | `checking` | zukünftige WebRTC-Aggregate (siehe §3.5) |
+| `dtls_state` | feste Enum aus W3C `RTCDtlsTransportState`: `new`, `connecting`, `connected`, `closed`, `failed` | `connected` | zukünftige WebRTC-Aggregate (siehe §3.5) |
 
 Die vier Pflichtcounter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`) und der OTel-translated Counter `mtrace_api_batches_received` tragen **gar keine** fachlichen Vector-Labels (siehe API-Kontrakt §7 und §2.4). `batch_size` ist explizit nicht in der Allowlist (siehe §3.1) — die Per-Request-Sicht „Batchgröße" lebt nur am Span.
 
@@ -449,6 +453,102 @@ Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet (F-100):
 - IP-Adressen werden nicht unnötig persistiert; falls erfasst, dann nur in OTel-Spans, nicht in Prometheus-Labels.
 - User-Agent-Felder dürfen reduzierbar sein (z. B. nur Major-Version).
 - GDPR-konformer Betrieb: Event-Store muss eine Löschanfrage pro `session_id` bedienen können — Implementierung über das `EventRepository` in der jeweiligen Persistenz-Variante.
+
+### 3.5 WebRTC-Telemetrie-Vorbereitung (Future-Telemetry-Notiz)
+
+> Bezug: Lastenheft `1.1.9` §13.9 RAK-49, `plan-0.7.0.md` §5 Tranche 4,
+> [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose ab `0.7.0`
+> Tranche 1).
+
+Diese Sektion ist eine **Future-Telemetry-Notiz**: sie spezifiziert das
+`getStats()`-Subset, dessen Bounded-Aggregat-Allowlist (siehe §3.2) und
+die Schema-Drift-Strategie für eine spätere produktive WebRTC-Telemetrie-
+Anbindung. Sie ist **kein** Player-SDK-/Adapter-Public-API-Vertrag —
+RAK-51 (Player-SDK-WebRTC-Adapter) ist als Folgeplan deferred (`plan-0.7.0.md`
+§7).
+
+#### 3.5.1 Negative Cardinality-Prüfung im `0.7.0`-Scope
+
+`0.7.0` führt **keinen** produktiven `mtrace_webrtc_*`-Counter und
+**keinen** WebRTC-Prometheus-Exportpfad ein. Konsequenzen:
+
+- Die in §3.1 hinzugefügten WebRTC-Forbidden-Labels und die in §3.2
+  hinzugefügten WebRTC-Aggregat-Labels (`connection_state`,
+  `ice_state`, `dtls_state`) sind **Spec-Vorbereitung**. Bis ein
+  produktiver Counter existiert, ist nichts zu spiegeln.
+- Die Erweiterung von [`scripts/smoke-observability.sh`](../scripts/smoke-observability.sh)
+  auf WebRTC-Allowlist-Labels ist **Folge-DoD** für den ersten Plan,
+  der eine produktive WebRTC-Metrik einführt — nicht Teil von `0.7.0`.
+- Der `make smoke-webrtc-prep`-Smoke (`plan-0.7.0.md` §4 Tranche 3) ist
+  endpoint-/compose-only und vom WebRTC-Schema-Drift **nicht**
+  betroffen. Er prüft `OPTIONS …/whip|whep`-Statuscodes, keine
+  `getStats()`-Felder.
+
+#### 3.5.2 `getStats()`-Subset (Report-Gruppen, Muss-/Soll-Felder)
+
+Die [W3C-WebRTC-Stats-Spezifikation](https://www.w3.org/TR/webrtc-stats/)
+gruppiert `getStats()`-Reports nach `RTCStatsType`. Für eine spätere
+bounded Aggregation kommen die folgenden Gruppen in Betracht; jede
+Gruppe ist mit Muss-/Soll-Feldern markiert. Muss-Felder müssen für eine
+produktive Anbindung über alle drei Browser stabil verfügbar sein;
+fehlt ein Soll-Feld, läuft der Adapter mit Fallback (siehe §3.5.3).
+
+| `RTCStatsType` | Zweck | Muss-Felder (bounded oder reduzierbar) | Soll-Felder (bei Verfügbarkeit) |
+|---|---|---|---|
+| `peer-connection` | Verbindungs-Aggregat | `connectionState` → `connection_state`-Label | `dataChannelsOpened`, `dataChannelsClosed` (Counter, ohne Vector-Label) |
+| `transport` | DTLS-Transport-Status | `dtlsState` → `dtls_state`-Label | `selectedCandidatePairChanges` (Counter), `tlsVersion` *(reduziert auf Major, nur Span/Read-Pfad)* |
+| `candidate-pair` | ICE-Kandidatenpaar | `state` → `ice_state`-Label *(über aggregierte Mehrheits-/Worst-Bewertung pro PeerConnection, **nicht** pro Pair als Per-Identifier-Label)* | `roundTripTime`, `availableOutgoingBitrate` (Histogram/Gauge ohne Per-Pair-ID) |
+| `inbound-rtp` / `outbound-rtp` | Stream-Qualität | Aggregat-Counter `packetsLost`, `bytesReceived`, `bytesSent` (pro PeerConnection summiert) | `jitter`, `roundTripTime`, `framesDecoded`, `framesPerSecond` (Histogram) |
+
+Per-Identifier-Felder (`id`, `transportId`, `localCandidateId`,
+`remoteCandidateId`, `mediaSourceId`, `trackIdentifier`, `ssrc`,
+Codec-`mimeType`-String, Browser-`userAgent`) sind in §3.1 verboten;
+sie dürfen ausschließlich in einen späteren Read-Pfad (Event-Stream,
+Debug-Pane) gehen, niemals als Prometheus-Label.
+
+#### 3.5.3 Schema-Drift-Strategie und Fallback
+
+Browser-Engines (Chromium, Firefox, Safari) liefern `getStats()`-Felder
+mit unterschiedlicher Vollständigkeit und unterschiedlichen Major-
+Version-Schemata. Eine produktive WebRTC-Telemetrie-Anbindung folgt
+dieser Drift-Strategie:
+
+1. **Muss-Felder sind Pflichtbedingung für die Aggregat-Metrik**.
+   Liefert eine Browser-Major-Version ein in §3.5.2 als Muss markiertes
+   Feld nicht (Beispiel: `RTCDtlsTransport.dtlsState` fehlt in
+   einem Safari-Major), bleibt die zugehörige Aggregat-Metrik in dieser
+   Engine **leer** statt mit einem `unknown`-Surrogat zu emittieren.
+   `unknown` würde die Allowlist (§3.2) implizit erweitern und ist
+   damit Cardinality-Risiko.
+2. **Soll-Felder sind opt-in pro Engine**. Ein Adapter, der ein Soll-
+   Feld nicht findet, lässt das zugehörige Histogram/Gauge weg und
+   emittiert die übrigen Metriken normal weiter. Eine Browser-Version
+   ohne einzelnes Soll-Feld blockiert keinen Telemetriepfad.
+3. **Schema-Drift ist ein Spec-/Adapter-Review-Gate, kein automatischer
+   Release-Block**. Der entsprechende Risiko-Eintrag steht im
+   [`risks-backlog.md`](../docs/planning/open/risks-backlog.md) als
+   **R-12** (Stand `0.7.0`-Closeout): bei Browser-Major-Version mit
+   `getStats()`-Schema-Änderung wird die WebRTC-Allowlist plus diese
+   Notiz reviewed, aber ein konkretes Smoke-/Contract-Test-Update ist
+   erst dann release-blockierend, wenn ein produktiver WebRTC-Telemetrie-
+   Pfad existiert.
+4. **Vor dem produktiven Pfad ist `smoke-webrtc-prep` vom Schema-Drift
+   nicht betroffen**. Tranche 3 prüft nur HTTP-OPTIONS-Statuscodes;
+   `getStats()`-Felder werden gar nicht angefasst.
+
+#### 3.5.4 Out-of-Scope-Klauseln für `0.7.0`
+
+Diese Sektion klammert ausdrücklich aus:
+
+- Eine `mtrace_webrtc_*`-Counter-/Gauge-/Histogram-Definition. Solche
+  Definitionen sind Lieferung des ersten produktiven WebRTC-Telemetrie-
+  Plans, nicht von `0.7.0`.
+- Einen Player-SDK-WebRTC-Adapter-Public-API-Vertrag. Der
+  `@npm9912/player-sdk` bleibt in `0.7.0` auf `hls.js`-only ohne
+  WebRTC-Codepfad; RAK-51 ist als Folgeplan deferred.
+- Eine produktive `getStats()`-Sammelroutine im `apps/api`-Ingress. Die
+  oben beschriebene Bounded-Allowlist und die Schema-Drift-Strategie
+  sind Vorab-Spezifikation für einen späteren Codepfad.
 
 ---
 

@@ -125,7 +125,7 @@ Punkt vermerkt.
 | 1 | Lab-Compose `examples/webrtc/compose.yaml` mit MediaMTX-WHIP/-WHEP plus FFmpeg-RTSP-Publisher | ✅ |
 | 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | ✅ |
 | 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ✅ |
-| 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ⬜ |
+| 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ✅ |
 | 5 | Release-Doku, RAK-Matrix und Closeout | ⬜ |
 
 ---
@@ -349,47 +349,53 @@ Lab-Erfahrungen. Sie erzeugt keinen Player-SDK-/Adapter-Vertrag.
 
 DoD:
 
-- [ ] `spec/telemetry-model.md` §3.2 ist um eine WebRTC-Sub-Tabelle
-  erweitert: erlaubte bounded Aggregat-Labels (z. B.
-  `connection_state`, `ice_state`, `dtls_state`) mit festem
-  Wertebereich.
-- [ ] Unbounded WebRTC-/`getStats()`-Identifier bleiben als Prometheus-
-  Labels verboten. Dazu zählen mindestens `source_id`, `id`/Report-ID,
-  `peer_connection_id`, `track_id`, `transport_id`,
-  `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`,
-  `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-
-  Fingerprints, IP-Adresse, URL, Codec-String und Browser-User-Agent.
-  Falls diese Werte im `getStats()`-Subset vorkommen, sind sie nur als
-  Event-/Debug-Daten für einen späteren Read-Pfad zulässig; Prometheus
-  bekommt ausschließlich die in Item 1 explizit erlaubten bounded
-  Aggregat-Labels.
-- [ ] `spec/telemetry-model.md` §3.2 dokumentiert das
-  `getStats()`-Subset ausschließlich als Future-Telemetry-Notiz für
-  bounded Aggregation: Report-Gruppen, Muss-/Soll-Felder und die
-  Schema-Drift-Strategie zwischen Chromium-/Firefox-/Safari-Versionen.
-  Diese Notiz ist kein Player-SDK-/Adapter-Public-API-Vertrag.
-- [ ] Das `getStats()`-Subset benennt Fallback-Verhalten bei fehlenden
-  Browser-Feldern. Eine Browser-Version ohne einzelnes Soll-Feld darf
-  keinen späteren vollständigen Telemetriepfad blockieren, solange
-  Muss-Felder stabil bleiben.
-- [ ] Risiken-Backlog erweitert den Schema-Drift als
-  **Spec-/Adapter-Review-Gate** und setzt dabei atomar die nächste freie
-  Kennung (Stand Planerstellung: `R-11`, da `R-1`..`R-10` vergeben
-  sind): bei Browser-Major-Version X mit `getStats()`-Schema-Änderung
-  wird die WebRTC-Allowlist plus Future-Telemetry-Notiz in
-  `spec/telemetry-model.md` §3.2 reviewed; konkrete Smoke-/Contract-
-  Test-Updates sind erst dann release-blockierend, wenn ein produktiver
-  WebRTC-Telemetrie-Pfad existiert (RAK-51 / Folge-Plan).
-  Vor diesem Punkt ist `smoke-webrtc-prep` (endpoint-/compose-only) vom
-  Schema-Drift nicht betroffen.
-- [ ] Tranche 4 dokumentiert ausdrücklich, dass RAK-49 nur die
-  Telemetrie-Spezifikation vorbereitet. Sie aktiviert keine produktive
-  `getStats()`-Sammlung und keine Prometheus-Metrik in `0.7.0`, sofern
-  nicht ein separater Codepfad geplant und abgenommen wird.
-- [ ] `0.7.0` dokumentiert als negative Cardinality-Prüfung: im Release-
-  Scope existiert kein produktiver `mtrace_webrtc_*`-Counter und kein
-  WebRTC-Prometheus-Exportpfad. Die Erweiterung von
-  `scripts/smoke-observability.sh` auf WebRTC-Allowlist-Labels ist ein
+- [x] `spec/telemetry-model.md` §3.2 um drei WebRTC-Aggregat-Label-
+  Zeilen erweitert: `connection_state` (W3C `RTCPeerConnectionState`-
+  Enum), `ice_state` (W3C `RTCIceConnectionState`-Enum), `dtls_state`
+  (W3C `RTCDtlsTransportState`-Enum); jeweils klar als „zukünftige
+  WebRTC-Aggregate (siehe §3.5; **kein** produktiver Counter in
+  `0.7.0`)" gekennzeichnet.
+- [x] §3.1 um eine WebRTC-Forbidden-Zeile erweitert: `peer_connection_id`,
+  Report-`id`, `track_id`, `transport_id`, `candidate_pair_id`,
+  `local_candidate_id`, `remote_candidate_id`, `candidate_id`, `ssrc`,
+  ICE-User-Fragmente, DTLS-/Zertifikats-Fingerprints, IP-Adressen,
+  URLs, Codec-Strings, Browser-`user_agent`, generisches `source_id`-
+  Label aus einem WebRTC-Adapter-Pfad. Verbot ist release-blockierend,
+  sobald der erste produktive `mtrace_webrtc_*`-Counter eingeführt
+  wird; bis dahin ist die Spiegelung in `scripts/smoke-observability.sh`
+  Folge-DoD.
+- [x] Neue §3.5 „WebRTC-Telemetrie-Vorbereitung (Future-Telemetry-Notiz)"
+  in `spec/telemetry-model.md`: §3.5.2 listet das `getStats()`-Subset
+  als Tabelle pro `RTCStatsType` (`peer-connection`, `transport`,
+  `candidate-pair`, `inbound-rtp`/`outbound-rtp`) mit Muss-/Soll-Feldern;
+  Per-Identifier-Felder werden explizit auf §3.1 verwiesen (nur Read-
+  Pfad/Span, niemals Prometheus-Label). Notiz ist explizit kein
+  Player-SDK-/Adapter-Public-API-Vertrag.
+- [x] §3.5.3 dokumentiert die Schema-Drift-Strategie und das
+  Fallback-Verhalten: Muss-Felder sind Pflichtbedingung (sonst Metrik
+  leer statt `unknown`-Surrogat); Soll-Felder sind opt-in pro Engine
+  (Histogram/Gauge weglassen, übrige Metriken bleiben aktiv); Schema-
+  Drift ist Spec-/Adapter-Review-Gate, kein automatischer Release-
+  Block; vor produktivem Pfad ist `smoke-webrtc-prep` vom Drift nicht
+  betroffen.
+- [x] `docs/planning/open/risks-backlog.md` §1.1 um **R-12** erweitert
+  (nicht R-11 — der ist seit `0.6.0`-Closeout für SRT-Health-Cursor-
+  Pagination vergeben, Plan-Stand „R-11 frei" war zur Plan-Erstellung
+  korrekt, ist durch atomare Vergabe inzwischen überholt). R-12 ist
+  als Spec-/Adapter-Review-Gate formuliert mit klarer Triggerschwelle
+  (Browser-Major-Bump mit Schema-Änderung ODER Beginn produktiver
+  WebRTC-Telemetrie-Implementierung). Stand-Datum im Header auf
+  2026-05-06 nachgezogen.
+- [x] §3.5.4 hält die RAK-49-Klausel wörtlich fest: keine produktive
+  `getStats()`-Sammlung, keine `mtrace_webrtc_*`-Counter, kein Player-
+  SDK-WebRTC-Adapter-Public-API-Vertrag in `0.7.0`. Diese Out-of-Scope-
+  Klauseln sind redundant zu §0.3 dieses Plans und mit den Tranchen 1–3
+  konsistent (Lab-Compose, Smoke endpoint-only, README-Folge-Pfad-
+  Hinweis).
+- [x] §3.5.1 dokumentiert die negative Cardinality-Prüfung explizit:
+  im `0.7.0`-Release-Scope existiert kein produktiver `mtrace_webrtc_*`-
+  Counter und kein WebRTC-Prometheus-Exportpfad; die Erweiterung von
+  `scripts/smoke-observability.sh` auf WebRTC-Allowlist-Labels ist
   Folge-DoD für den ersten Plan, der eine produktive WebRTC-Metrik
   einführt.
 

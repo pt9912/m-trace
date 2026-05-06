@@ -7,13 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranchen 0–3 (Plan-
-> Aktivierung + Toolchain-Hardening, WebRTC-Lab-Compose,
-> README-Konkretisierung, Vorbereitungs-Smoke). Versions-Bump und
-> finalen CHANGELOG-Block setzt der `0.7.0`-Closeout (Tranche 5).
+> Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranchen 0–4 (Plan-
+> Aktivierung + Toolchain-Hardening, WebRTC-Lab-Compose, README-
+> Konkretisierung, Vorbereitungs-Smoke, Telemetrie-Bewertung).
+> Versions-Bump und finalen CHANGELOG-Block setzt der `0.7.0`-Closeout
+> (Tranche 5).
 
 ### Added
 
+- `spec/telemetry-model.md` §3.5 (Future-Telemetry-Notiz für WebRTC,
+  RAK-49, plan-0.7.0 Tranche 4): `getStats()`-Subset pro
+  `RTCStatsType`-Gruppe mit Muss-/Soll-Feldern, Schema-Drift-Strategie
+  zwischen Chromium/Firefox/Safari, Fallback-Verhalten bei fehlenden
+  Soll-Feldern, negative Cardinality-Prüfung (kein produktiver
+  `mtrace_webrtc_*`-Counter im `0.7.0`-Scope), Out-of-Scope-Klauseln.
+  §3.1 um WebRTC-Forbidden-Identifier (`peer_connection_id`, `ssrc`,
+  …, Codec-/User-Agent-Strings) und §3.2 um drei W3C-Enum-Labels
+  (`connection_state`, `ice_state`, `dtls_state`) ergänzt — Spec-
+  Vorbereitung, Smoke-Spiegelung ist Folge-DoD.
+- `docs/planning/open/risks-backlog.md` R-12 (Spec-/Adapter-Review-Gate
+  für WebRTC-`getStats()`-Schema-Drift; nicht R-11, der ist seit
+  `0.6.0`-Closeout für SRT-Health-Cursor-Pagination vergeben). Trigger-
+  schwelle: Browser-Major-Bump mit Schema-Änderung ODER Beginn
+  produktiver WebRTC-Telemetrie-Implementierung.
 - `make smoke-webrtc-prep` (RAK-48, plan-0.7.0 Tranche 3) startet/
   stoppt `mtrace-webrtc` und prüft endpoint-/compose-only fünf
   Stufen: MediaMTX-API ready, Stream-Pfad `webrtc-test` ready=true,
