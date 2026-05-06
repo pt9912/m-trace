@@ -280,6 +280,15 @@ DoD:
   `application/dash+xml`; Funktions-/Fehlertexte sprechen von
   Manifest statt „HLS-Manifest"; URL-Tests decken DASH-Content-Type
   und weiterhin geblockte Nicht-Manifest-Typen ab.
+- [ ] Fehlercode-Strategie festgelegt und umgesetzt:
+  `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-
+  Pfad erhalten; für Eingaben, die weder HLS noch DASH sind, kommt
+  ein additiver Public-Code (z. B. `manifest_not_supported`) in
+  `packages/stream-analyzer/src/types/error.ts`,
+  `docs/user/stream-analyzer.md`, `apps/api/hexagon/domain/
+  stream_analysis.go`, HTTP-Status-Mapping, API-Metrik-Allowlist
+  und CLI/API-Tests. Fehlermeldungen dürfen nicht mehr behaupten,
+  eine DASH-MPD sei „kein HLS-Manifest".
 - [ ] MPD-Parser parst `MPD/Period/AdaptationSet/Representation/
   SegmentTemplate`-Hierarchie. Mindest-Felder im Result:
   `playlistType` (`"dash"`), `summary.itemCount` (Anzahl
@@ -363,7 +372,15 @@ DoD:
   `contracts/sdk-compat.json` `sdk_version` und allen Test-
   Fixtures (analog `0.8.0` Tranche 5; der hartkodierte Tarball-
   Pfad in `packages/player-sdk/package.json` Script `pack:smoke`
-  ist ausdrücklich mitzuprüfen).
+  ist ausdrücklich mitzuprüfen). Zusätzlich alle hartkodierten
+  Analyzer-/API-/Dashboard-Test-Erwartungen nachziehen, insbesondere
+  `packages/stream-analyzer/tests/version.test.ts`,
+  `packages/stream-analyzer/tests/cli.test.ts`,
+  `apps/analyzer-service/tests/server.test.ts`,
+  `apps/api/adapters/driven/streamanalyzer/*_test.go`,
+  `apps/api/adapters/driving/http/*analyze*_test.go` und weitere
+  `sdk.version`-/`analyzerVersion`-Fixtures, soweit sie den
+  Release-Stand statt historische Kompatibilitätsfälle pinnen.
 - [ ] CHANGELOG: [Unreleased]-Block in `[0.9.0] - YYYY-MM-DD`
   umgewandelt; neuer leerer [Unreleased]-Block obenauf.
 - [ ] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün
