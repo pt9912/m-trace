@@ -391,7 +391,7 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.9` → `1.1.10`.
 - [x] Lastenheft §13.10 neu: `0.8.0` Player-SDK-WebRTC-Adapter mit RAK-51 (Hochstufung) + RAK-52..RAK-55 (Public-API/Pack-Smoke, produktive WebRTC-Telemetrie auf §3.2-Allowlist, `getStats()`-Sammlung mit Schema-Drift-Strategie, opt-in Browser-E2E).
 - [x] Lastenheft §13.9 RAK-51-Zeile bekommt einen Hinweis auf die Hochstufung in §13.10; der historische `0.7.0`-Wortlaut bleibt erhalten.
-- [x] [`docs/planning/in-progress/plan-0.8.0.md`](../in-progress/plan-0.8.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.10`" hochgezogen; §0.1 Vorgänger-Gate entsprechend nachgezogen.
+- [x] [`docs/planning/done/plan-0.8.0.md`](./plan-0.8.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.10`" hochgezogen; §0.1 Vorgänger-Gate entsprechend nachgezogen (im `0.8.0`-Closeout nach `done/` verschoben).
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 Schritt 40 abgehakt (✅); §1.2 verweist auf den ausgelieferten Patch.
 
 ---

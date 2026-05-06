@@ -139,6 +139,45 @@ aber Bestandteil der dokumentierten Verifikationspfade):
 Vollständige Operator-Doku:
 [`examples/webrtc/README.md`](../../examples/webrtc/README.md).
 
+### 2.3 Manuelle `0.8.0`-Prüfungen (Player-SDK-WebRTC-Adapter)
+
+Zusätzlich zu `make smoke-webrtc-prep` und dem `0.7.0`-Browser-
+Handcheck braucht der `0.8.0`-Release einen produktiven End-to-End-
+Lauf des Player-SDK-WebRTC-Adapters gegen das laufende Lab. Pflicht-
+Schritte (RAK-51..RAK-54):
+
+1. `make dev` (Core-Lab, API + MediaMTX + Dashboard) plus
+   `mtrace-webrtc`-Stack (`docker compose -p mtrace-webrtc -f
+   examples/webrtc/compose.yaml up -d --build`).
+2. Browser auf <http://localhost:5173/demo-webrtc?autostart=1>
+   öffnen. Erwartung in Chromium 120+ und Firefox 120+:
+   - Test-Pattern + 1 kHz Sinuston spielen latenzarm.
+   - `chrome://webrtc-internals` (Chromium) bzw. `about:webrtc`
+     (Firefox) zeigt eine aktive `RTCPeerConnection` mit
+     `connection_state=connected`,
+     `ice_state` in `connected`/`completed`,
+     `dtls_state=connected`.
+3. `curl -sS http://localhost:8080/api/metrics | grep
+   '^mtrace_webrtc_'` listet die sechs Counter:
+   `mtrace_webrtc_connection_state_total{connection_state="connected"}`,
+   `mtrace_webrtc_ice_state_total{ice_state}`,
+   `mtrace_webrtc_dtls_state_total{dtls_state}`,
+   `mtrace_webrtc_packets_lost_total`,
+   `mtrace_webrtc_bytes_received_total`,
+   `mtrace_webrtc_bytes_sent_total`. Keine `peer_connection_run_id`-,
+   `ssrc`-, `track_id`-Labels (Cardinality-Vertrag aus
+   `spec/telemetry-model.md` §3.1).
+4. Optional automatisierter Browser-E2E:
+   `MTRACE_WEBRTC_LAB=1 make browser-e2e` flippt
+   `tests/e2e/dashboard-demo-webrtc.spec.ts` auf den Happy-Path
+   (`playback_started` mit `webrtc.peer_connection_run_id`).
+5. Stop: `docker compose -p mtrace-webrtc … down`. Greift weder
+   Core-Lab noch andere Beispiele an.
+
+Vollständige Operator-Doku:
+[`packages/player-sdk/README.md`](../../packages/player-sdk/README.md)
+§Performance and Browser Support.
+
 ```bash
 gh run watch --workflow build.yml
 ```

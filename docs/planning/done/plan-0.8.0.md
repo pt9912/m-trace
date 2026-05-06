@@ -1,11 +1,11 @@
 # Implementation Plan — `0.8.0` (Player-SDK-WebRTC-Adapter)
 
-> **Status**: 🟡 in Arbeit (Tranche 0 aktiviert am 2026-05-06;
-> liegt unter `docs/planning/in-progress/`). Vorgänger `v0.7.0` ist
-> released (Tag `v0.7.0` auf `11a3368`, CI-Run 25418640334 grün;
-> Plan archiviert in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)).
-> Lastenheft-Patch `1.1.10` ist ausgeliefert (Commit `17a4507`,
-> §13.10 mit RAK-51..RAK-55).
+> **Status**: ✅ released am 2026-05-06 (Tranchen 0–5 abgeschlossen;
+> Tag `v0.8.0` setzt der Closeout-Commit). Liegt unter
+> `docs/planning/done/`. Vorgänger `v0.7.0` (Tag auf `11a3368`,
+> CI-Run 25418640334 grün) bleibt unverändert. RAK-51..RAK-55
+> erfüllt; Lastenheft-Patch `1.1.10` (Commit `17a4507`, §13.10) ist
+> der zugehörige Vertrag.
 >
 > **Lastenheft-Status**: ausgeliefert in `1.1.10` — §13.10 enthält
 > RAK-51 (hochgestuft auf „Muss") plus RAK-52..RAK-55 für die
@@ -14,13 +14,13 @@
 > Schema-Drift-Strategie, opt-in Browser-E2E). §13.9 (Block für
 > `0.7.0`) bleibt historisch unverändert mit einem Hinweis auf
 > §13.10. Lastenheft-Patch ist als §4a.13 in
-> [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+> [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c
 > dokumentiert.
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §7.6
 > F-62 (Player-Adapter-Folgeoptionen), §8.3 NF-14 (Erweiterbarkeit),
 > §12.1 MVP-24, §13.9 RAK-51 (Player-SDK-WebRTC-Adapter, Kann);
-> [`done/plan-0.7.0.md`](../done/plan-0.7.0.md) §7 (Folge-Anker
+> [`plan-0.7.0.md`](./plan-0.7.0.md) §7 (Folge-Anker
 > RAK-51); [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
 > §3.2 (WebRTC-Aggregat-Allowlist) und §3.5 (Future-Telemetry-Notiz —
 > wird in dieser Phase produktiv aktiviert);
@@ -32,7 +32,7 @@
 ## 0. Konvention
 
 DoD-Checkboxen tracken den Lieferstand analog
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
+[`plan-0.1.0.md`](./plan-0.1.0.md) §0:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -68,7 +68,7 @@ kann:
 
 Der Patch hebt RAK-51 verbindlich aus dem Kann-Status und ergänzt
 vier neue RAK für die Sub-Items, die `0.8.0` ausliefert. Patch ist
-als §4a.13 in [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+als §4a.13 in [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c
 dokumentiert. Inhalt für die Tranchen-DoD unten:
 
 | RAK | Priorität | Inhalt (`spec/lastenheft.md` §13.10) |
@@ -159,7 +159,7 @@ WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 | 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ✅ |
 | 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ✅ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Erweiterung; Pack-Smoke; SDK-Performance-Budget verifizieren | ✅ |
-| 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.7.0 → 0.8.0, Plan nach `done/`, Tag `v0.8.0`) | ⬜ |
+| 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.7.0 → 0.8.0, Plan nach `done/`, Tag `v0.8.0`) | ✅ |
 
 ---
 
@@ -183,7 +183,7 @@ DoD:
   RAK-51 in §13.10 von „Kann" auf „Muss" hochgezogen; RAK-52..
   RAK-55 als Sub-Items ergänzt; §13.9 RAK-51-Zeile bekommt Hinweis
   auf §13.10. Patch-Log als §4a.13 in
-  [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
+  [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c
   dokumentiert.
 - [x] Toolchain-Bump-Check: keine Anpassung nötig. Go (`1.26`),
   golangci-lint (`v2.12.1`), Node (`22 LTS`), pnpm sind seit
@@ -472,50 +472,56 @@ durchgezogen, Tag `v0.8.0` gesetzt.
 
 DoD:
 
-- [ ] `README.md` und `docs/user/local-development.md` erwähnen
-  den WebRTC-Adapter-Pfad und verweisen auf
-  `packages/player-sdk/README.md` plus `apps/dashboard/`
-  Demo-Route.
-- [ ] `docs/user/releasing.md` bekommt einen `0.8.0`-Block
-  (manuelle Browser-Handcheck-Prüfung gegen `mtrace-webrtc` plus
-  optionaler Browser-E2E-Smoke). Der Block enthält absolute
-  Erwartungswerte für Chromium und Firefox: Video spielt,
-  `connection_state=connected`, `ice_state` in `connected|completed`,
-  `dtls_state=connected`, WebRTC-Metriken in Prometheus ohne
-  Forbidden-Labels.
-- [ ] RAK-Verifikationsmatrix §6.1 (siehe unten) ist mit Commit-
-  Verweisen ausgefüllt; deferred Kann-Anforderungen sind als
-  `deferred / Folgeplan` markiert.
-- [ ] Versions-Bump 0.7.0 → 0.8.0 in allen package.json (root,
-  apps, packages) plus `apps/api/cmd/api/main.go` `serviceVersion`,
-  `packages/player-sdk/src/version.ts`, `packages/player-sdk/
-  scripts/pack-smoke.mjs`, `contracts/sdk-compat.json`
-  (`sdk_version`) und allen Test-Fixtures, die SDK-/Analyzer-
-  Versions-Strings hartkodieren (analog `0.7.0` Tranche 5;
-  der hartkodierte Tarball-Pfad in
-  `packages/player-sdk/package.json` Script `pack:smoke` ist
-  ausdrücklich mitzuprüfen, weil er nicht zuverlässig durch einen
-  reinen `"0.7.0"`-Bulk-Fix erfasst wird).
-- [ ] CHANGELOG: [Unreleased]-Block in `[0.8.0] - YYYY-MM-DD`
-  umgewandelt; neuer leerer [Unreleased]-Block obenauf.
-- [ ] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
-  Closeout-Commit; `make gates` grün.
-- [ ] `plan-0.8.0.md` von `docs/planning/in-progress/` nach
-  `docs/planning/done/` verschoben; alle relativen Cross-Refs
-  angepasst (analog `0.7.0` Closeout in Commit `11a3368`); Roadmap
-  §3 zeigt `0.8.0` ✅.
-- [ ] Tag `v0.8.0` annotiert; Push opt-in (User-Bestätigung);
-  GitHub-Release mit CHANGELOG-Block als Notes-Body.
+- [x] `README.md` Status-Block auf „`0.8.0` released — Player-SDK-
+  WebRTC-Adapter und produktive WebRTC-Telemetrie" umgestellt;
+  `docs/user/local-development.md` §2.7 verweist auf
+  `apps/dashboard` `/demo-webrtc`-Route plus
+  `packages/player-sdk/README.md` für die Adapter-Auswahl.
+- [x] `docs/user/releasing.md` neue §2.3 für `0.8.0` mit dem
+  manuellen Browser-Handcheck-Skript: `make dev` plus
+  `mtrace-webrtc`-Compose hochfahren, `/demo-webrtc?autostart=1`
+  öffnen, prüfen dass das Video spielt, `chrome://webrtc-internals`
+  bzw. `about:webrtc` zeigt `connection_state=connected`,
+  `ice_state` in `connected|completed`, `dtls_state=connected`,
+  und `GET /api/metrics` listet `mtrace_webrtc_*`-Counter ohne
+  Forbidden-Labels. Browser-E2E-opt-in via
+  `MTRACE_WEBRTC_LAB=1 make browser-e2e`.
+- [x] RAK-Verifikationsmatrix §6.1 vollständig mit Commit-Hashes
+  ausgefüllt; RAK-55 (Kann) ist mit dem opt-in Browser-E2E
+  abgenommen.
+- [x] Versions-Bump 0.7.0 → 0.8.0 durchgezogen: 5 package.json
+  (root + 2 apps + 2 packages), `apps/api/cmd/api/main.go`
+  `serviceVersion`, `packages/player-sdk/src/version.ts`,
+  `packages/player-sdk/scripts/pack-smoke.mjs` `expectedVersion`,
+  `contracts/sdk-compat.json` `sdk_version`, alle Test-Fixtures
+  mit hartkodierten SDK-/Analyzer-Versions-Strings (Bulk-Fix per
+  `xargs sed -i 's/"0\.7\.0"/"0.8.0"/g'` über die `_test.go`/
+  `.test.ts`-Files plus `spec/contract-fixtures/analyzer/*.json`
+  und `apps/api/.../testdata/contract-*.json`). Hartkodierter
+  Tarball-Pfad in `packages/player-sdk/package.json` Script
+  `pack:smoke` explizit nachgezogen.
+- [x] CHANGELOG: [Unreleased]-Block in `[0.8.0] - 2026-05-06`
+  umgewandelt mit Release-Header; neuer leerer [Unreleased]-Block
+  obenauf vorbereitet.
+- [x] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
+  Closeout-Commit; `make gates` grün im Closeout-Commit.
+- [x] `plan-0.8.0.md` von `docs/planning/in-progress/` nach
+  `docs/planning/done/` verschoben (`git mv` im Closeout-Commit);
+  alle relativen Cross-Refs angepasst (analog `0.7.0` Closeout in
+  Commit `11a3368`); Roadmap §1.2/§3 zeigen `0.8.0` ✅.
+- [x] Tag `v0.8.0` annotiert; Push opt-in (User-Bestätigung im
+  Closeout-Workflow); GitHub-Release mit CHANGELOG-`[0.8.0]`-Block
+  als Notes-Body.
 
 ### 6.1 RAK-Verifikationsmatrix
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-51 | Muss | Public-API in `packages/player-sdk/src/` exposed produktiven WebRTC-Adapter; hls.js-Pfad unverändert. | [ ] |
-| RAK-52 | Muss | Adapter-Auswahl dokumentiert in `packages/player-sdk/README.md`; Pack-Smoke + Browser-Support-Matrix erweitert. | [ ] |
-| RAK-53 | Soll | `mtrace_webrtc_*`-Counter exportiert; `scripts/smoke-observability.sh` spiegelt §3.1 WebRTC-Forbidden + §3.2 Allowlist. | [ ] |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; §3.5.2-Muss-Felder (`connectionState`, `dtlsState`, ICE-State-Aggregat, `packetsLost`, `bytesReceived`, `bytesSent`) sind per Contract + Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 im Adapter-Code; R-12 release-blockierend. | [ ] |
-| RAK-55 | Kann | Browser-E2E-Smoke (Playwright) gegen `examples/webrtc/`-Lab; opt-in. | [ ] |
+| RAK-51 | Muss | `packages/player-sdk/src/adapters/webrtc/adapter.ts` exposed produktiven WebRTC-Adapter (`attachWebRtc`/`WebRtcAdapter`/`WebRtcAdapterOptions`); hls.js-Pfad unverändert (`tests/hlsjs-adapter.test.ts` grün). Public-API-Snapshot in `scripts/public-api.snapshot.txt` aktualisiert. Commits `f9e17c2` (Tranche 1, Vertrag), `d11fc7f` (Tranche 2, WHEP-Implementation). | ✅ |
+| RAK-52 | Muss | Adapter-Auswahl dokumentiert in `packages/player-sdk/README.md` §Public-API + neuer Adapter-selection-Block; Pack-Smoke prüft `attachWebRtc` in ESM/CJS/IIFE plus `dist/index.d.ts` für `WebRtcAdapter`/`WebRtcAdapterOptions`-Types; Browser-Support-Matrix mit Chromium 120+ Required, Firefox 120+ Required, Safari 17+ Best-effort. Commit `c49c81a` (Tranche 4). | ✅ |
+| RAK-53 | Soll | `apps/api/adapters/driven/metrics/webrtc_metrics.go` exportiert sechs `mtrace_webrtc_*`-Counter (drei State-Counter mit bounded Labels + drei label-freie Delta-Counter); `scripts/smoke-observability.sh` spiegelt §3.1 WebRTC-Forbidden (peer_connection_run_id, ssrc, track_id, …) und prüft die §3.2-Allowlist gegen aktive `mtrace_webrtc_*`-Series. Commit `55f965b` (Tranche 3 Phase B). | ✅ |
+| RAK-54 | Soll | `packages/player-sdk/src/adapters/webrtc/sampling.ts` sammelt `getStats()`-Reports und extrahiert §3.5.2-Muss-Felder (`connectionState`, `dtlsState`, ICE-State-Aggregat, `packetsLost`, `bytesReceived`, `bytesSent`); Wire-Vertrag in `spec/telemetry-model.md` §1.4/§3.5 + `contracts/event-schema.json` `reserved_meta_keys`-Block; Schema-Drift-Strategie aus §3.5.3 als „Muss-Feld fehlt → kein Sample" implementiert (kein unknown-Surrogat). R-12 ist im `risks-backlog.md` auf release-blockierend angehoben. Commits `9e0d561` (Tranche 3 Phase A) + `55f965b` (Phase B). | ✅ |
+| RAK-55 | Kann | `tests/e2e/dashboard-demo-webrtc.spec.ts` (Playwright) prüft `/demo-webrtc?autostart=1` gegen die Session-Timeline; Default-Mode validiert Error-Pfad (`whep_signaling_failed`), `MTRACE_WEBRTC_LAB=1` flippt auf Happy-Path. Commit `c49c81a` (Tranche 4). | ✅ |
 
 ---
 

@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.7.0`-Sammelblock plus `0.8.0` Tranchen 0–4 (Plan-
-> Aktivierung + Lastenheft-Patch `1.1.10`, Public-API-Vertrag,
-> WebRTC-Adapter-Implementation, produktive WebRTC-Telemetrie,
-> Compat-Tests + Browser-Support-Matrix). Versions-Bump und finalen
-> CHANGELOG-Block setzt der `0.8.0`-Closeout (Tranche 5).
+> Sammelblock für post-`0.8.0`-Befunde. Versions-Bump und finalen
+> CHANGELOG-Block setzt der jeweils nächste Release-Closeout.
+
+## [0.8.0] - 2026-05-06
+
+> Player-SDK-WebRTC-Adapter und produktive WebRTC-Telemetrie:
+> `attachWebRtc(video, options, tracker)` als additiver Pfad neben
+> `attachHlsJs`; reservierter `webrtc.*`-Meta-Namespace mit harter
+> API-Validation; sechs `mtrace_webrtc_*`-Counter mit serverseitiger
+> Delta-Berechnung über `(project_id, session_id, peer_connection_run_id,
+> metric)` und Sample-ID-Idempotenz; `scripts/smoke-observability.sh`
+> spiegelt §3.1-Forbidden und §3.2-Allowlist; R-12 release-blockierend
+> ab nächstem Browser-Major-Bump; Browser-Support-Matrix Chromium
+> 120+/Firefox 120+ Required, Safari 17+ Best-effort. RAK-51..RAK-55
+> erfüllt. Lieferstand der Tranchen 0–5 strukturiert nach
+> Plan-Aktivierung+Lastenheft-Patch `1.1.10` → Public-API-Vertrag
+> → WHEP-Adapter-Implementation → produktive WebRTC-Telemetrie →
+> Compat-Tests+Browser-Matrix → Closeout. Post-`0.7.0`-Sammelblock
+> mitverarbeitet.
 
 ### Added (Tranche 4 — Compat-Tests + Browser-Support-Matrix)
 

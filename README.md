@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.7.0` released — WebRTC-Lab-Erweiterung mit lokalem WHIP-/WHEP-Compose (Project `mtrace-webrtc`), opt-in `make smoke-webrtc-prep` (endpoint-only) und WebRTC-Telemetrie-Vorbereitung in `spec/telemetry-model.md` §3.5. SRT-Health-View aus `0.6.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert. Player-SDK und stream-analyzer bleiben HLS-only (Player-SDK-WebRTC-Adapter ist deferred / Folgeplan).
+> Status: `0.8.0` released — Player-SDK-WebRTC-Adapter (`attachWebRtc`) plus produktive WebRTC-Telemetrie: `webrtc.*`-Meta-Namespace mit harter API-Validation, sechs `mtrace_webrtc_*`-Counter mit Delta-Semantik, Schema-Drift-Strategie aktiv. R-12 ist release-blockierend; SRT-Health-View aus `0.6.0`, WebRTC-Lab aus `0.7.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert.
 
 ---
 
@@ -306,22 +306,26 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.7.0` released: WebRTC-Lab-Compose
-([`examples/webrtc/`](examples/webrtc/), Project `mtrace-webrtc`)
-mit MediaMTX-WHIP/-WHEP-Listener (Host-Ports `8892/tcp`/`8189/udp`/
-`9999/tcp`) und FFmpeg-RTSP-Publisher; opt-in `make smoke-webrtc-prep`
-(endpoint-/compose-only, kein Browser/Playback/`getStats()`-Anspruch);
-WebRTC-Telemetrie-Vorbereitung in
-[`spec/telemetry-model.md`](spec/telemetry-model.md) §3.5 mit
-bounded Aggregat-Allowlist, `getStats()`-Subset und Schema-Drift-
-Strategie (R-12 als Spec-/Adapter-Review-Gate). SRT-Health-View aus
-`0.6.0` (Operator-Doku [`docs/user/srt-health.md`](docs/user/srt-health.md))
-und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert.
-RAK-47..RAK-50 erfüllt; RAK-51 (Player-SDK-WebRTC-Adapter, Kann)
-bleibt deferred — Tranchen 0–5 in
-[`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md)
-archiviert. Nächste Phase: offen — kein `plan-0.8.0.md` vorbereitet.
+Das Projekt steht bei `0.8.0` released: produktiver Player-SDK-
+WebRTC-Adapter (`attachWebRtc(video, options, tracker)` in
+[`packages/player-sdk/`](packages/player-sdk/)), additiv neben
+`attachHlsJs`; opt-in pro Player-Instanz mit reserviertem
+`webrtc.*`-Wire-Namespace und harter API-Validation (HTTP 422 bei
+unbekannten/falschen Keys). Server-side Counter-Semantik mit Delta-
+Berechnung über `(project_id, session_id, peer_connection_run_id,
+metric)` plus Sample-ID-Idempotenz; sechs `mtrace_webrtc_*`-Counter
+exportiert, `scripts/smoke-observability.sh` spiegelt §3.1-Forbidden
+und §3.2-Allowlist. WebRTC-Lab-Compose
+([`examples/webrtc/`](examples/webrtc/)) und SRT-Health-View aus
+`0.6.0` bleiben unverändert. R-12 (`getStats()`-Schema-Drift) ist
+release-blockierend ab nächstem Browser-Major-Bump; Operator-Doku in
+[`packages/player-sdk/README.md`](packages/player-sdk/README.md) mit
+Browser-Support-Matrix (Chromium 120+ und Firefox 120+ Required,
+Safari 17+ Best-effort). RAK-51..RAK-55 erfüllt; Tranchen 0–5 in
+[`docs/planning/done/plan-0.8.0.md`](docs/planning/done/plan-0.8.0.md)
+archiviert. Nächste Phase: offen — kein `plan-0.9.0.md` vorbereitet.
 Archivierte Plan-Dateien:
+[`docs/planning/done/plan-0.8.0.md`](docs/planning/done/plan-0.8.0.md),
 [`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md),
 [`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md),
 [`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),
