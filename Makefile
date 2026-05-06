@@ -303,8 +303,12 @@ audit-ts:
 image-scan:
 	docker build --target runtime -t mtrace-api:scan apps/api
 	$(PNPM) run build
-	docker build -t mtrace-dashboard:scan apps/dashboard
-	docker build -t mtrace-analyzer-service:scan apps/analyzer-service
+	# Dashboard- und Analyzer-Service-Images referenzieren in
+	# `COPY packages/...` und `COPY apps/.../package.json` Pfade
+	# außerhalb von `apps/<svc>/`. Build-Context muss daher der
+	# Repo-Root sein; das Dockerfile wird über `-f` adressiert.
+	docker build -f apps/dashboard/Dockerfile -t mtrace-dashboard:scan .
+	docker build -f apps/analyzer-service/Dockerfile -t mtrace-analyzer-service:scan .
 	mkdir -p .security/.trivy-cache
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
