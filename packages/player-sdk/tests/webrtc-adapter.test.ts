@@ -404,7 +404,7 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
 describe("collectAggregate (Tranche 3)", () => {
   function makeReport(entries: Record<string, unknown>[]): RTCStatsReport {
     const map = new Map<string, unknown>(entries.map((e, i) => [String(i), e]));
-    return map as unknown as RTCStatsReport;
+    return map;
   }
 
   const happyEntries: Record<string, unknown>[] = [
@@ -472,7 +472,7 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
     let tickFn: (() => void) | undefined;
     const fakeSetInterval = vi.fn((cb: () => void) => {
       tickFn = cb;
-      return 1 as unknown as ReturnType<typeof setInterval>;
+      return 1;
     }) as unknown as typeof setInterval;
     const fakeClearInterval = vi.fn() as unknown as typeof clearInterval;
 
@@ -517,7 +517,7 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
     let tickFn: (() => void) | undefined;
     const fakeSetInterval = vi.fn((cb: () => void) => {
       tickFn = cb;
-      return 1 as unknown as ReturnType<typeof setInterval>;
+      return 1;
     }) as unknown as typeof setInterval;
     const fakeClearInterval = vi.fn() as unknown as typeof clearInterval;
 
@@ -541,7 +541,7 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
   it("destroy() stoppt das Sampling-Intervall", () => {
     const tracker = new StubTracker();
     const fakePc = makeFakePeerConnection({});
-    const fakeSetInterval = vi.fn(() => 42 as unknown as ReturnType<typeof setInterval>) as unknown as typeof setInterval;
+    const fakeSetInterval = vi.fn(() => 42) as unknown as typeof setInterval;
     const fakeClearInterval = vi.fn() as unknown as typeof clearInterval;
 
     const adapter = attachWebRtc(
@@ -594,11 +594,12 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
   it("Tick ohne pc.getStats() emittiert kein metrics_sampled", async () => {
     const tracker = new StubTracker();
     const fakePc = makeFakePeerConnection({});
-    delete (fakePc as Partial<typeof fakePc>).getStats;
+    // makeFakePeerConnection({}) liefert absichtlich kein getStats —
+    // der Tick-Pfad muss den Sample leise verwerfen.
     let tickFn: (() => void) | undefined;
     const fakeSetInterval = vi.fn((cb: () => void) => {
       tickFn = cb;
-      return 1 as unknown as ReturnType<typeof setInterval>;
+      return 1;
     }) as unknown as typeof setInterval;
     attachWebRtc(
       fakeVideo,

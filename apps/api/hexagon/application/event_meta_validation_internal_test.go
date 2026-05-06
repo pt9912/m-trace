@@ -174,3 +174,164 @@ func TestValidateReservedEventMeta_ForwardCompatibility(t *testing.T) {
 		t.Fatalf("expected forward-compat acceptance, got %v", err)
 	}
 }
+
+// plan-0.8.0 Tranche 3 — alle Codes der WebRTC-Fehlercode-Allowlist.
+func TestValidateReservedEventMeta_WebRTCErrorCodesAccepted(t *testing.T) {
+	t.Parallel()
+	codes := []string{
+		"whep_signaling_failed",
+		"whep_sdp_invalid",
+		"webrtc_no_tracks",
+		"peer_connection_failed",
+		"webrtc_destroyed_before_connected",
+	}
+	for _, c := range codes {
+		t.Run(c, func(t *testing.T) {
+			t.Parallel()
+			meta := domain.EventMeta{"webrtc.error_code": c}
+			if err := validateReservedEventMeta(meta); err != nil {
+				t.Fatalf("expected error_code %q to validate, got %v", c, err)
+			}
+		})
+	}
+}
+
+// plan-0.8.0 Tranche 3 — webrtc.*-Allowlist-Tests.
+func TestValidateReservedEventMeta_WebRTCHappyPath(t *testing.T) {
+	t.Parallel()
+	meta := domain.EventMeta{
+		"webrtc.peer_connection_run_id": "run-id-1",
+		"webrtc.sample_id":              int64(7),
+		"webrtc.connection_state":       "connected",
+		"webrtc.ice_state":              "completed",
+		"webrtc.dtls_state":             "connected",
+		"webrtc.packets_lost":           int64(2),
+		"webrtc.bytes_received":         float64(123456),
+		"webrtc.bytes_sent":             int64(78910),
+	}
+	if err := validateReservedEventMeta(meta); err != nil {
+		t.Fatalf("expected webrtc happy path to pass, got %v", err)
+	}
+}
+
+// Float64-Wire-Repräsentation für Counter-Felder (JSON-Decoder
+// liefert Numbers als float64).
+func TestValidateReservedEventMeta_WebRTCFloat64Accepted(t *testing.T) {
+	t.Parallel()
+	meta := domain.EventMeta{
+		"webrtc.peer_connection_run_id": "run-a",
+		"webrtc.sample_id":              float64(0),
+		"webrtc.connection_state":       "connected",
+		"webrtc.ice_state":              "completed",
+		"webrtc.dtls_state":             "connected",
+		"webrtc.packets_lost":           float64(2),
+		"webrtc.bytes_received":         float64(123),
+		"webrtc.bytes_sent":             float64(456),
+	}
+	if err := validateReservedEventMeta(meta); err != nil {
+		t.Fatalf("expected float64 wire form to pass, got %v", err)
+	}
+}
+
+// requireBoundedString akzeptiert kurze Strings.
+func TestValidateReservedEventMeta_WebRTCErrorDetailWithinLimit(t *testing.T) {
+	t.Parallel()
+	meta := domain.EventMeta{"webrtc.error_detail": "short detail"}
+	if err := validateReservedEventMeta(meta); err != nil {
+		t.Fatalf("expected short error_detail to pass, got %v", err)
+	}
+}
+
+func TestValidateReservedEventMeta_WebRTCRejections(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		meta domain.EventMeta
+	}{
+		{
+			"unknown webrtc.* key",
+			domain.EventMeta{"webrtc.unknown_field": "value"},
+		},
+		{
+			"forbidden per-identifier (track_id)",
+			domain.EventMeta{"webrtc.track_id": "track-1"},
+		},
+		{
+			"forbidden per-identifier (ssrc)",
+			domain.EventMeta{"webrtc.ssrc": int64(12345)},
+		},
+		{
+			"forbidden per-identifier (user_agent)",
+			domain.EventMeta{"webrtc.user_agent": "Mozilla/5.0"},
+		},
+		{
+			"connection_state outside enum",
+			domain.EventMeta{"webrtc.connection_state": "stalled"},
+		},
+		{
+			"ice_state outside enum",
+			domain.EventMeta{"webrtc.ice_state": "frozen"},
+		},
+		{
+			"dtls_state outside enum",
+			domain.EventMeta{"webrtc.dtls_state": "negotiating"},
+		},
+		{
+			"connection_state wrong type",
+			domain.EventMeta{"webrtc.connection_state": int64(1)},
+		},
+		{
+			"sample_id negative",
+			domain.EventMeta{"webrtc.sample_id": int64(-1)},
+		},
+		{
+			"sample_id non-integer float",
+			domain.EventMeta{"webrtc.sample_id": float64(3.5)},
+		},
+		{
+			"packets_lost wrong type",
+			domain.EventMeta{"webrtc.packets_lost": "5"},
+		},
+		{
+			"bytes_received negative",
+			domain.EventMeta{"webrtc.bytes_received": int64(-1)},
+		},
+		{
+			"run_id pattern violation",
+			domain.EventMeta{"webrtc.peer_connection_run_id": "INVALID Spaces!"},
+		},
+		{
+			"run_id wrong type",
+			domain.EventMeta{"webrtc.peer_connection_run_id": int64(1)},
+		},
+		{
+			"error_code outside enum",
+			domain.EventMeta{"webrtc.error_code": "made_up"},
+		},
+		{
+			"error_detail too long",
+			domain.EventMeta{"webrtc.error_detail": stringOfLen(257)},
+		},
+		{
+			"error_detail wrong type",
+			domain.EventMeta{"webrtc.error_detail": int64(1)},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			err := validateReservedEventMeta(tc.meta)
+			if !errors.Is(err, domain.ErrInvalidEvent) {
+				t.Fatalf("expected ErrInvalidEvent for %s, got %v", tc.name, err)
+			}
+		})
+	}
+}
+
+func stringOfLen(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = 'a'
+	}
+	return string(b)
+}

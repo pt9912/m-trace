@@ -193,6 +193,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 
 	u.metrics.EventsAccepted(len(parsed))
 	u.publishPlaybackMetrics(parsed)
+	u.publishWebRTCSamples(parsed)
 	return driving.BatchResult{
 		Accepted:             len(parsed),
 		ProjectID:            project.ID,
@@ -415,6 +416,80 @@ func (u *RegisterPlaybackEventBatchUseCase) publishPlaybackMetrics(events []doma
 	}
 	u.metrics.PlaybackErrors(playbackErrors)
 	u.metrics.RebufferEvents(rebufferEvents)
+}
+
+// publishWebRTCSamples ruft `MetricsPublisher.WebRTCSample` für jedes
+// `metrics_sampled`-Event mit reservierten webrtc.*-Keys auf
+// (plan-0.8.0 §4 Tranche 3, spec/telemetry-model.md §3.5.1). Die
+// Wire-Validierung in `validateReservedEventMeta` hat zu diesem
+// Zeitpunkt schon sichergestellt, dass alle Pflichtfelder typkorrekt
+// und in der Allowlist sind; fehlende optionale Felder lassen die
+// Snapshot-Konstruktion auf 0 zurückfallen.
+func (u *RegisterPlaybackEventBatchUseCase) publishWebRTCSamples(events []domain.PlaybackEvent) {
+	for _, e := range events {
+		if e.EventName != "metrics_sampled" {
+			continue
+		}
+		snapshot, ok := buildWebRTCSampleSnapshot(e)
+		if !ok {
+			continue
+		}
+		u.metrics.WebRTCSample(snapshot)
+	}
+}
+
+// buildWebRTCSampleSnapshot extrahiert die Sample-Daten aus einem
+// validierten `metrics_sampled`-Event. Liefert (snapshot, false), wenn
+// das Event keine WebRTC-Samples enthält oder Pflichtfelder fehlen.
+func buildWebRTCSampleSnapshot(e domain.PlaybackEvent) (driven.WebRTCSampleSnapshot, bool) {
+	runID, ok := e.Meta[metaKeyWebRTCRunID].(string)
+	if !ok || runID == "" {
+		return driven.WebRTCSampleSnapshot{}, false
+	}
+	connectionState, ok := e.Meta[metaKeyWebRTCConnectionState].(string)
+	if !ok {
+		return driven.WebRTCSampleSnapshot{}, false
+	}
+	iceState, ok := e.Meta[metaKeyWebRTCIceState].(string)
+	if !ok {
+		return driven.WebRTCSampleSnapshot{}, false
+	}
+	dtlsState, ok := e.Meta[metaKeyWebRTCDtlsState].(string)
+	if !ok {
+		return driven.WebRTCSampleSnapshot{}, false
+	}
+	return driven.WebRTCSampleSnapshot{
+		ProjectID:       e.ProjectID,
+		SessionID:       e.SessionID,
+		RunID:           runID,
+		SampleID:        intMeta(e.Meta, metaKeyWebRTCSampleID),
+		ConnectionState: connectionState,
+		IceState:        iceState,
+		DtlsState:       dtlsState,
+		PacketsLost:     intMeta(e.Meta, metaKeyWebRTCPacketsLost),
+		BytesReceived:   intMeta(e.Meta, metaKeyWebRTCBytesReceived),
+		BytesSent:       intMeta(e.Meta, metaKeyWebRTCBytesSent),
+	}, true
+}
+
+// intMeta liest einen non-negativen Integer-Wert aus dem Meta-Slot.
+// Validation hat negative/non-int-Werte schon ausgesondert; hier
+// reicht ein bester Pfad pro Wire-Repräsentation.
+func intMeta(meta domain.EventMeta, key string) int64 {
+	switch v := meta[key].(type) {
+	case int64:
+		return v
+	case float64:
+		return int64(v)
+	case jsonNumber:
+		f, err := v.Float64()
+		if err != nil {
+			return 0
+		}
+		return int64(f)
+	default:
+		return 0
+	}
 }
 
 func numericMeta(meta domain.EventMeta, key string) (float64, bool) {

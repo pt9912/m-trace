@@ -157,7 +157,7 @@ WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.10` (RAK-51 hochziehen, RAK-52..RAK-55 ergänzen) + ggf. Toolchain-Hardening | ✅ |
 | 1 | Public-API-Spec für Adapter-Auswahl in `@npm9912/player-sdk` (RAK-51 / RAK-52) | ✅ |
 | 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ✅ |
-| 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ⬜ |
+| 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ✅ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Erweiterung; Pack-Smoke; SDK-Performance-Budget verifizieren | ⬜ |
 | 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.7.0 → 0.8.0, Plan nach `done/`, Tag `v0.8.0`) | ⬜ |
 
@@ -337,76 +337,83 @@ Tranche release-blockierend.
 
 DoD:
 
-- [ ] WebRTC-Adapter sammelt `getStats()`-Reports gemäß §3.5.2
-  Muss-/Soll-Felder; nur die in §3.2 dokumentierten bounded
-  Aggregat-Labels werden in das Wire-Format eingespeist;
-  Per-Identifier-Felder (§3.1 Forbidden) werden hart gefiltert.
-- [ ] WebRTC-Wire-Vertrag ist normativ gepinnt: `metrics_sampled`
-  oder ein explizit neuer, additiver Event-Typ transportiert nur
-  dokumentierte `webrtc.*`-Meta-Keys; `contracts/event-schema.json`,
-  `contracts/sdk-compat.json`, `spec/backend-api-contract.md` und
-  `spec/telemetry-model.md` werden im selben Commit aktualisiert.
-- [ ] API-Validierung für `webrtc.*`-Meta-Keys ist hart: nur
-  dokumentierte Keys, Typen und Enum-Werte werden vor dem
-  Metrikexport akzeptiert; unbekannte oder ungültige `webrtc.*`-
-  Keys führen zu `422` und erzeugen keine `mtrace_webrtc_*`-
-  Metrik. Tests decken mindestens unbekannter Key, falscher Typ,
-  ungültiger State-Enum-Wert und verbotener Identifier (`track_id`,
-  `candidate_pair_id` oder `user_agent`) ab.
-- [ ] `webrtc.*` ist in `contracts/event-schema.json` und
-  `spec/telemetry-model.md` ausdrücklich als reservierter Meta-
-  Namespace markiert. Die strikte Allowlist gilt nur für reservierte
-  `webrtc.*`-Keys; unbekannte nicht-reservierte Meta-Keys bleiben
-  gemäß Forward-Compatibility-Regel des Event-Schemas zulässig.
-- [ ] API-Ingress erkennt WebRTC-Aggregat-Labels und exportiert
-  `mtrace_webrtc_*`-Metriken. Mindestset:
-  `mtrace_webrtc_connection_state_total{connection_state}`,
-  `mtrace_webrtc_ice_state_total{ice_state}`,
-  `mtrace_webrtc_dtls_state_total{dtls_state}`,
-  `mtrace_webrtc_packets_lost_total`,
-  `mtrace_webrtc_bytes_received_total`,
-  `mtrace_webrtc_bytes_sent_total`. Labelsets bleiben auf §3.2 +
-  `instance`/`job` beschränkt; die drei Byte-/Loss-Counter sind
-  label-frei außer Target-Metadaten.
-- [ ] Die übrigen §3.5.2-Muss-Felder sind nicht nur gesammelt,
-  sondern mit Namen, Typ und Einheit abgenommen: mindestens
-  `packetsLost`, `bytesReceived` und `bytesSent` werden pro
-  PeerConnection aggregiert und als label-freie oder ausschließlich
-  bounded gelabelte `mtrace_webrtc_*`-Metriken exportiert. Falls ein
-  Feld bewusst nicht als Prometheus-Metrik geeignet ist, muss
-  `spec/telemetry-model.md` den alternativen Read-/Event-Pfad
-  ausdrücklich festlegen.
-- [ ] Counter-Semantik ist dokumentiert: State-Counter zählen
-  angenommene WebRTC-Metrik-Samples, nicht aktuelle Zustands-Gauges;
-  `packetsLost`/`bytesReceived`/`bytesSent` werden als absolute
-  Samples mit einem monotonen Sample-Schlüssel (`webrtc.sample_id`
-  oder äquivalenter per-session Sequenz) übertragen, serverseitig
-  pro `(project_id, session_id, peer_connection_run_id, metric)`
-  differenziert und erst als nichtnegative Deltas in Prometheus-
-  Counter geschrieben. Der Last-Sample-State ist entweder durable
-  persistiert oder das Baseline-Verhalten nach API-Restart ist
-  explizit definiert: erster Sample nach unbekanntem Vorgänger setzt
-  nur die Baseline und erhöht keinen Delta-Counter. Duplicate- oder
-  Retry-Samples mit gleichem Sample-Schlüssel dürfen die
-  `mtrace_webrtc_*_total`-Counter nicht erneut erhöhen; Tests decken
-  Monotonie, Counter-Reset/negative Delta, Duplicate-Sample,
-  API-Restart und Reconnect/Counter-Reset mit neuem
-  `peer_connection_run_id` ab.
-- [ ] `scripts/smoke-observability.sh` spiegelt die WebRTC-
-  Forbidden-Liste aus `spec/telemetry-model.md` §3.1 und prüft
-  die WebRTC-Counter auf bounded Cardinality (RAK-9-Stil). Der
-  Smoke prüft neben Forbidden-Labels auch, dass die drei State-
-  Counter keine anderen fachlichen Labels als ihr jeweiliges
-  State-Label tragen und die Byte-/Loss-Counter fachlich label-frei
-  bleiben.
-- [ ] R-12 wird im Risiken-Backlog von „Triggerschwelle nicht
-  ausgelöst" auf „release-blockierend, sobald Browser-Major-Bump
-  Schema ändert" angehoben; ein Browser-Drift-Smoke-Plan ist im
-  Plan-/Releasing-Doku verankert.
-- [ ] Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code
-  umgesetzt: fehlt ein Muss-Feld, wird die Aggregat-Metrik nicht
-  emittiert (kein `unknown`-Surrogat); fehlt ein Soll-Feld,
-  läuft die übrige Metrik weiter.
+- [x] WebRTC-Adapter sammelt `getStats()`-Reports gemäß §3.5.2-Muss-
+  Feldern: `packages/player-sdk/src/adapters/webrtc/sampling.ts`
+  iteriert das `RTCStatsReport` und extrahiert `transport.dtlsState`,
+  `candidate-pair.state` (mit nominated/selected-Bevorzugung) sowie
+  `inbound-rtp`/`outbound-rtp`-Counter (`packetsLost`,
+  `bytesReceived`, `bytesSent`). Per-Identifier-Felder gehen nicht
+  ins Wire-Format; nur die in §1.4 / §3.2 freigegebenen bounded
+  Aggregat-Labels werden gesendet (Phase A, Commit `9e0d561`).
+- [x] WebRTC-Wire-Vertrag normativ gepinnt: `spec/telemetry-model.md`
+  §1.4 (webrtc.*-Tabelle), `spec/backend-api-contract.md` §3.4a,
+  `contracts/event-schema.json` (`reserved_meta_keys` plus
+  `reserved_meta_namespace_webrtc`-Block), `contracts/sdk-compat.json`
+  (`reserved_meta_namespaces`-Liste) — alle vier in Phase A
+  zusammen mit dem SDK-Sampling committet.
+- [x] API-Validierung hart: `apps/api/hexagon/application/event_meta_validation.go`
+  prüft jeden `webrtc.*`-Key gegen die Allowlist. Unbekannte Keys,
+  falsche Typen, ungültige Enum-Werte, negative Counter-Werte,
+  Pattern-Verletzung bei `peer_connection_run_id` und Forbidden-
+  Identifier (`webrtc.track_id`, `webrtc.candidate_pair_id`,
+  `webrtc.ssrc`, `webrtc.user_agent`, weitere) liefern
+  `domain.ErrInvalidEvent` → HTTP 422; die `WebRTCSample`-Counter
+  werden nicht aufgerufen. Tests in
+  `event_meta_validation_internal_test.go` decken alle Fälle aus
+  dem Plan-DoD plus weitere Edge-Cases ab.
+- [x] Reservierter Meta-Namespace dokumentiert in
+  `contracts/event-schema.json#reserved_meta_namespace_webrtc` und
+  `spec/telemetry-model.md` §1.4. Strikte Allowlist nur für
+  `webrtc.*`-Keys; nicht-reservierte Meta-Keys (z. B. `future_marker`,
+  `experimental`) bleiben Forward-Compatibility-konform akzeptiert
+  (Test `TestValidateReservedEventMeta_ForwardCompatibility` ist
+  unverändert grün).
+- [x] `mtrace_webrtc_*`-Counter exportiert:
+  `apps/api/adapters/driven/metrics/webrtc_metrics.go` registriert
+  drei State-CounterVec (`connection_state_total{connection_state}`,
+  `ice_state_total{ice_state}`, `dtls_state_total{dtls_state}`)
+  plus drei label-freie Delta-Counter (`packets_lost_total`,
+  `bytes_received_total`, `bytes_sent_total`); Wertebereiche aus
+  §3.2 sind hartcodiert in der Validation, Smoke prüft Allowlist
+  defense-in-depth.
+- [x] §3.5.2-Muss-Felder als Counter abgenommen: `packetsLost`,
+  `bytesReceived`, `bytesSent` werden pro PeerConnection summiert
+  (Adapter-Side) und serverseitig deltadiffenziert. Andere
+  Soll-Felder (`jitter`, `roundTripTime`, …) bleiben für eine
+  spätere Histogram-Tranche; `spec/telemetry-model.md` §3.5.2
+  markiert sie weiterhin als „bei Verfügbarkeit".
+- [x] Counter-Semantik dokumentiert in `spec/telemetry-model.md`
+  §3.5.1 und implementiert in `webrtc_metrics.go`: State-Counter
+  zählen Samples; Delta-Counter aus `(project_id, session_id,
+  peer_connection_run_id, metric)`-State-Map mit Sample-ID-Idempotenz
+  (Duplicate/Retry-Samples mit `sample_id ≤ last_sample_id`
+  inkrementieren keinen Counter); Reconnect mit neuer
+  `peer_connection_run_id` startet eine eigene Baseline; negative
+  Deltas bleiben aus dem Counter. In-memory-State, kein durable
+  Persist — Baseline-Reset nach API-Restart ist explizites
+  Verhalten (§3.5.1 Punkt 2). Tests in
+  `webrtc_metrics_test.go` decken Baseline, positive Delta,
+  negativer Delta, Duplicate, Reconnect, State-Counter-Independence
+  und No-Forbidden-Labels.
+- [x] `scripts/smoke-observability.sh` erweitert:
+  WebRTC-Forbidden-Liste (peer_connection_run_id, ssrc, track_id,
+  candidate_pair_id, transport_id, local/remote_candidate_id,
+  mime_type) plus vier Self-Tests; eine zweite WebRTC-Allowlist-
+  Sektion prüft (sobald `mtrace_webrtc_*`-Series da sind), dass die
+  State-Counter nur ihr State-Label tragen und Byte-/Loss-Counter
+  fachlich label-frei sind.
+- [x] R-12 angehoben: `risks-backlog.md` Status-Header auf
+  „release-blockierend ab nächstem Browser-Major-Bump" gesetzt;
+  Eintrag verweist auf den ausgelieferten produktiven Pfad
+  (Adapter-Sammlung + Wire-Validation + `mtrace_webrtc_*`); konkrete
+  Drift-Smoke-Spezifikation bleibt Folgeplan.
+- [x] Schema-Drift-Strategie aus §3.5.3 im Adapter-Code:
+  `collectAggregate()` in `sampling.ts` gibt `null` zurück, wenn
+  ein Muss-Feld (`dtlsState`/`iceState`/connection-State, oder
+  weder inbound noch outbound RTP-Daten) fehlt — kein
+  `unknown`-Surrogat. Soll-Felder sind in dieser Tranche nicht
+  emittiert (würden von API als unbekannte `webrtc.*`-Keys 422
+  abweisen); ein Folgeplan kann sie additiv aufnehmen.
 
 ---
 

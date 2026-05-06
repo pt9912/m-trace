@@ -55,6 +55,10 @@ type PrometheusPublisher struct {
 	srtHealthSamples         *prometheus.CounterVec
 	srtCollectorRuns         *prometheus.CounterVec
 	srtCollectorErrors       *prometheus.CounterVec
+
+	// WebRTC-Aggregate (plan-0.8.0 §4 Tranche 3,
+	// spec/telemetry-model.md §3.5).
+	webrtc *webrtcMetrics
 }
 
 // NewPrometheusPublisher creates and registers the aggregate metrics.
@@ -124,6 +128,7 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 	p.srtHealthSamples = srtSamples
 	p.srtCollectorRuns = srtRuns
 	p.srtCollectorErrors = srtErrors
+	p.webrtc = newWebRTCMetrics()
 	registry.MustRegister(
 		p.eventsAccepted,
 		p.invalidEvents,
@@ -139,7 +144,16 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		p.srtCollectorRuns,
 		p.srtCollectorErrors,
 	)
+	registry.MustRegister(p.webrtc.collectors()...)
 	return p
+}
+
+// WebRTCSample inkrementiert die `mtrace_webrtc_*`-Counter und
+// pflegt den Sample-State (plan-0.8.0 §4 Tranche 3,
+// spec/telemetry-model.md §3.5.1). State-Counter zählen Samples;
+// Counter-Felder werden deltadiffenziert.
+func (p *PrometheusPublisher) WebRTCSample(s driven.WebRTCSampleSnapshot) {
+	p.webrtc.record(s)
 }
 
 // EventsAccepted increments the accepted counter by n.

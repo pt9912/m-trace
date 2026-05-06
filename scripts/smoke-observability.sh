@@ -137,7 +137,16 @@ const forbidden=[
   // forbidden because mtrace.api.batches.received runs in use case
   // Step 0 (vor MaxBatchSize-Validierung) — a rejected batch with
   // events.length=250 would otherwise emit batch_size="250".
-  "batch_size"
+  "batch_size",
+  // plan-0.8.0 §4 Tranche 3 / spec/telemetry-model.md §3.1: Per-
+  // Identifier-Felder aus `getStats()` sind verboten als Labels.
+  // mtrace_webrtc_*-Counter dürfen ausschließlich {connection_state,
+  // ice_state, dtls_state} tragen; Byte-/Loss-Counter bleiben
+  // label-frei. Per-Identifier-Felder gehören in Spans/SQLite, nicht
+  // in Prometheus.
+  "peer_connection_id","peer_connection_run_id","track_id",
+  "transport_id","candidate_pair_id","local_candidate_id",
+  "remote_candidate_id","candidate_id","ssrc","mime_type"
 ];
 const forbiddenSuffixes=["_url","_uri","_token","_secret"];
 const forbiddenLabels=(series) =>
@@ -150,7 +159,12 @@ const policyProbe=[
   {__name__:"mtrace_test_total",url:"x"},
   {__name__:"mtrace_test_total",uri:"x"},
   {__name__:"mtrace_test_total",secret:"x"},
-  {__name__:"mtrace_test_total",batch_size:"7"}
+  {__name__:"mtrace_test_total",batch_size:"7"},
+  // plan-0.8.0 §4 Tranche 3: WebRTC-Forbidden-Self-Tests.
+  {__name__:"mtrace_webrtc_test_total",peer_connection_run_id:"x"},
+  {__name__:"mtrace_webrtc_test_total",ssrc:"x"},
+  {__name__:"mtrace_webrtc_test_total",track_id:"x"},
+  {__name__:"mtrace_webrtc_test_total",candidate_pair_id:"x"}
 ];
 const missed=policyProbe.filter((series) => forbiddenLabels(series).length === 0);
 if (missed.length) {
@@ -216,6 +230,51 @@ if (violations.length) {
   echo "prometheus-srt-health-allowlist: ${srt_series_count} mtrace_srt_health_* series, allowlist OK"
 else
   echo "prometheus-srt-health-allowlist: skipped (collector not active)"
+fi
+
+# plan-0.8.0 §4 Tranche 3: WebRTC-Allowlist prüfen.
+#
+# Wenn `mtrace_webrtc_*`-Serien existieren (Adapter sendet
+# metrics_sampled-Events), müssen sie sich auf die in
+# spec/telemetry-model.md §3.2 / §3.5 freigegebenen bounded Labels
+# (`connection_state`, `ice_state`, `dtls_state`) plus Target-
+# Metadaten beschränken. Byte-/Loss-Counter sind label-frei (außer
+# Target-Metadaten). Wenn keine Serien existieren (Default-Lab ohne
+# WebRTC-Adapter), überspringt der Check stillschweigend.
+webrtc_series_json="$(curl -sS --get "${PROMETHEUS_URL}/api/v1/series" --data-urlencode 'match[]={__name__=~"mtrace_webrtc_.+"}')"
+webrtc_series_count="$(printf '%s' "$webrtc_series_json" | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(String(p.data.length))')"
+if [ "$webrtc_series_count" -gt 0 ]; then
+  printf '%s' "$webrtc_series_json" | node -e '
+const p=JSON.parse(require("fs").readFileSync(0,"utf8"));
+const allowedByMetric={
+  "mtrace_webrtc_connection_state_total": new Set(["__name__","instance","job","connection_state"]),
+  "mtrace_webrtc_ice_state_total":        new Set(["__name__","instance","job","ice_state"]),
+  "mtrace_webrtc_dtls_state_total":       new Set(["__name__","instance","job","dtls_state"]),
+  "mtrace_webrtc_packets_lost_total":     new Set(["__name__","instance","job"]),
+  "mtrace_webrtc_bytes_received_total":   new Set(["__name__","instance","job"]),
+  "mtrace_webrtc_bytes_sent_total":       new Set(["__name__","instance","job"])
+};
+const violations=[];
+for (const series of p.data) {
+  const allowed = allowedByMetric[series.__name__];
+  if (!allowed) {
+    violations.push({metric: series.__name__, error: "unknown mtrace_webrtc_* metric"});
+    continue;
+  }
+  for (const key of Object.keys(series)) {
+    if (!allowed.has(key)) {
+      violations.push({metric: series.__name__, label: key, value: series[key]});
+    }
+  }
+}
+if (violations.length) {
+  console.error("webrtc-allowlist violations: " + JSON.stringify(violations, null, 2));
+  process.exit(1);
+}
+'
+  echo "prometheus-webrtc-allowlist: ${webrtc_series_count} mtrace_webrtc_* series, allowlist OK"
+else
+  echo "prometheus-webrtc-allowlist: skipped (no WebRTC samples observed)"
 fi
 
 # plan-0.6.0 §0.1 + spec/telemetry-model.md §7.7:

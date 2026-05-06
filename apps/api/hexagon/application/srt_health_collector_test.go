@@ -44,6 +44,7 @@ func (m *mockMetricsPublisher) SrtCollectorRun(status domain.SourceStatus) {
 func (m *mockMetricsPublisher) SrtCollectorError(code domain.SourceErrorCode) {
 	m.errors = append(m.errors, code)
 }
+func (m *mockMetricsPublisher) WebRTCSample(driven.WebRTCSampleSnapshot) {}
 
 // mockTelemetry erfasst SrtSampleRecorded-Aufrufe.
 type mockTelemetry struct {

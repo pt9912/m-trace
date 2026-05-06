@@ -19,8 +19,22 @@ const (
 	metaKeyNetworkUnavailableReason = "network.unavailable_reason"
 	metaKeyNetworkRedactedURL       = "network.redacted_url"
 	metaKeyTimingPrefix             = "timing."
+	metaKeyWebRTCPrefix             = "webrtc."
+
+	metaKeyWebRTCRunID           = "webrtc.peer_connection_run_id"
+	metaKeyWebRTCSampleID        = "webrtc.sample_id"
+	metaKeyWebRTCConnectionState = "webrtc.connection_state"
+	metaKeyWebRTCIceState        = "webrtc.ice_state"
+	metaKeyWebRTCDtlsState       = "webrtc.dtls_state"
+	metaKeyWebRTCPacketsLost     = "webrtc.packets_lost"
+	metaKeyWebRTCBytesReceived   = "webrtc.bytes_received"
+	metaKeyWebRTCBytesSent       = "webrtc.bytes_sent"
+	metaKeyWebRTCErrorCode       = "webrtc.error_code"
+	metaKeyWebRTCErrorDetail     = "webrtc.error_detail"
 
 	networkDetailStatusUnavailable = "network_detail_unavailable"
+
+	webRTCErrorDetailMaxLen = 256
 )
 
 // networkUnavailableReasonPattern entspricht
@@ -28,6 +42,11 @@ const (
 // `regexp.MustCompile`-Globals werden vom Linter-Default
 // gochecknoglobals ignoriert (kompilierte Regex ohne Mutationsfläche).
 var networkUnavailableReasonPattern = regexp.MustCompile(`^[a-z0-9_]{1,64}$`)
+
+// webRTCRunIDPattern entspricht
+// contracts/event-schema.json#reserved_meta_keys["webrtc.peer_connection_run_id"].pattern
+// (alphanumeric + Bindestrich/Underscore, 1..64).
+var webRTCRunIDPattern = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
 // isReservedNetworkKindValue spiegelt
 // contracts/event-schema.json#reserved_meta_keys["network.kind"].values.
@@ -102,6 +121,120 @@ func validateReservedKeyValue(k string, v any) error {
 	}
 	if strings.HasPrefix(k, metaKeyTimingPrefix) {
 		return validateTimingValue(k, v)
+	}
+	if strings.HasPrefix(k, metaKeyWebRTCPrefix) {
+		return validateWebRTCKeyValue(k, v)
+	}
+	return nil
+}
+
+// validateWebRTCKeyValue prüft den reservierten webrtc.*-Namespace
+// gegen contracts/event-schema.json#reserved_meta_keys (`webrtc.*`-
+// Allowlist) und das Forbidden-Verbot aus
+// spec/telemetry-model.md §3.1 (Per-Identifier-Felder wie track_id,
+// candidate_pair_id, ssrc, user_agent). Unbekannte webrtc.*-Keys
+// werden mit 422 abgewiesen — der Adapter darf nur in der Allowlist
+// dokumentierte Keys senden.
+func validateWebRTCKeyValue(k string, v any) error {
+	switch k {
+	case metaKeyWebRTCRunID:
+		return requireStringPattern(k, v, webRTCRunIDPattern)
+	case metaKeyWebRTCSampleID:
+		return requireNonNegativeInt(k, v)
+	case metaKeyWebRTCConnectionState:
+		return requireEnumString(k, v, isWebRTCConnectionState)
+	case metaKeyWebRTCIceState:
+		return requireEnumString(k, v, isWebRTCIceState)
+	case metaKeyWebRTCDtlsState:
+		return requireEnumString(k, v, isWebRTCDtlsState)
+	case metaKeyWebRTCPacketsLost,
+		metaKeyWebRTCBytesReceived,
+		metaKeyWebRTCBytesSent:
+		return requireNonNegativeInt(k, v)
+	case metaKeyWebRTCErrorCode:
+		return requireEnumString(k, v, isWebRTCErrorCode)
+	case metaKeyWebRTCErrorDetail:
+		return requireBoundedString(k, v, webRTCErrorDetailMaxLen)
+	default:
+		return fmt.Errorf("%w: meta[%q] is not in the reserved webrtc.* allowlist", domain.ErrInvalidEvent, k)
+	}
+}
+
+func isWebRTCConnectionState(s string) bool {
+	switch s {
+	case "new", "connecting", "connected", "disconnected", "failed", "closed":
+		return true
+	default:
+		return false
+	}
+}
+
+func isWebRTCIceState(s string) bool {
+	switch s {
+	case "new", "checking", "connected", "completed", "failed", "disconnected", "closed":
+		return true
+	default:
+		return false
+	}
+}
+
+func isWebRTCDtlsState(s string) bool {
+	switch s {
+	case "new", "connecting", "connected", "closed", "failed":
+		return true
+	default:
+		return false
+	}
+}
+
+func isWebRTCErrorCode(s string) bool {
+	switch s {
+	case "whep_signaling_failed",
+		"whep_sdp_invalid",
+		"webrtc_no_tracks",
+		"peer_connection_failed",
+		"webrtc_destroyed_before_connected":
+		return true
+	default:
+		return false
+	}
+}
+
+func requireStringPattern(key string, v any, pattern *regexp.Regexp) error {
+	s, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("%w: meta[%q] must be string", domain.ErrInvalidEvent, key)
+	}
+	if !pattern.MatchString(s) {
+		return fmt.Errorf("%w: meta[%q] violates pattern %s", domain.ErrInvalidEvent, key, pattern.String())
+	}
+	return nil
+}
+
+func requireNonNegativeInt(key string, v any) error {
+	switch typed := v.(type) {
+	case int64:
+		if typed < 0 {
+			return fmt.Errorf("%w: meta[%q] must be ≥ 0", domain.ErrInvalidEvent, key)
+		}
+		return nil
+	case float64:
+		if typed < 0 || typed != float64(int64(typed)) {
+			return fmt.Errorf("%w: meta[%q] must be a non-negative integer", domain.ErrInvalidEvent, key)
+		}
+		return nil
+	default:
+		return fmt.Errorf("%w: meta[%q] must be integer", domain.ErrInvalidEvent, key)
+	}
+}
+
+func requireBoundedString(key string, v any, maxLen int) error {
+	s, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("%w: meta[%q] must be string", domain.ErrInvalidEvent, key)
+	}
+	if len(s) > maxLen {
+		return fmt.Errorf("%w: meta[%q] exceeds %d-char limit", domain.ErrInvalidEvent, key, maxLen)
 	}
 	return nil
 }

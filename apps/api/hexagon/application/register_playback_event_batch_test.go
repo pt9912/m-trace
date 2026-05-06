@@ -154,6 +154,7 @@ type spyMetrics struct {
 	accepted, invalid, rateLimited, dropped int
 	playbackErrors, rebufferEvents          int
 	startupTimes                            []float64
+	webrtcSamples                           []driven.WebRTCSampleSnapshot
 }
 
 func (s *spyMetrics) EventsAccepted(n int)                       { s.accepted += n }
@@ -165,6 +166,9 @@ func (s *spyMetrics) RebufferEvents(n int)                       { s.rebufferEve
 func (s *spyMetrics) SrtHealthSampleAccepted(_ domain.HealthState) {}
 func (s *spyMetrics) SrtCollectorRun(_ domain.SourceStatus)      {}
 func (s *spyMetrics) SrtCollectorError(_ domain.SourceErrorCode) {}
+func (s *spyMetrics) WebRTCSample(snapshot driven.WebRTCSampleSnapshot) {
+	s.webrtcSamples = append(s.webrtcSamples, snapshot)
+}
 func (s *spyMetrics) StartupTimeMS(ms float64) {
 	s.startupTimes = append(s.startupTimes, ms)
 }
@@ -745,5 +749,104 @@ func TestRegisterPlaybackEventBatch_TraceContextPropagated(t *testing.T) {
 	}
 	if got := repo.appended[0].SpanID; got != in.Trace.SpanID {
 		t.Errorf("event.SpanID = %q, want %q", got, in.Trace.SpanID)
+	}
+}
+
+// plan-0.8.0 Tranche 3 — metrics_sampled-Events mit reservierten
+// webrtc.*-Keys werden nach erfolgreicher Validation an
+// MetricsPublisher.WebRTCSample weitergegeben.
+func TestRegister_WebRTCSamplePropagatedToMetrics(t *testing.T) {
+	t.Parallel()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events = []driving.EventInput{
+		{
+			EventName:       "metrics_sampled",
+			ProjectID:       "demo",
+			SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+			ClientTimestamp: "2026-04-28T12:00:00.000Z",
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.7.0"},
+			Meta: map[string]any{
+				"webrtc.peer_connection_run_id": "run-a",
+				"webrtc.sample_id":              int64(1),
+				"webrtc.connection_state":       "connected",
+				"webrtc.ice_state":              "completed",
+				"webrtc.dtls_state":             "connected",
+				"webrtc.packets_lost":           int64(2),
+				"webrtc.bytes_received":         int64(12345),
+				"webrtc.bytes_sent":             int64(6789),
+			},
+		},
+	}
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(metrics.webrtcSamples) != 1 {
+		t.Fatalf("expected 1 webrtc sample propagated, got %d", len(metrics.webrtcSamples))
+	}
+	got := metrics.webrtcSamples[0]
+	if got.RunID != "run-a" {
+		t.Errorf("RunID = %q, want %q", got.RunID, "run-a")
+	}
+	if got.SampleID != 1 {
+		t.Errorf("SampleID = %d, want 1", got.SampleID)
+	}
+	if got.ConnectionState != "connected" || got.IceState != "completed" || got.DtlsState != "connected" {
+		t.Errorf("state fields wrong: %+v", got)
+	}
+	if got.PacketsLost != 2 || got.BytesReceived != 12345 || got.BytesSent != 6789 {
+		t.Errorf("counter fields wrong: %+v", got)
+	}
+}
+
+// metrics_sampled ohne webrtc.*-Keys (z. B. SDK-internes Sampling
+// ohne WebRTC-Adapter) wird nicht zum Metrik-Adapter durchgereicht.
+func TestRegister_WebRTCSampleSkippedForNonWebRTCEvents(t *testing.T) {
+	t.Parallel()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events = []driving.EventInput{
+		{
+			EventName:       "metrics_sampled",
+			ProjectID:       "demo",
+			SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+			ClientTimestamp: "2026-04-28T12:00:00.000Z",
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.7.0"},
+			// Keine webrtc.*-Keys.
+		},
+	}
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(metrics.webrtcSamples) != 0 {
+		t.Fatalf("expected 0 webrtc samples, got %d", len(metrics.webrtcSamples))
+	}
+}
+
+// metrics_sampled mit unbekanntem webrtc.*-Key wird mit 422 abgewiesen
+// und löst keinen WebRTCSample-Aufruf aus.
+func TestRegister_WebRTCSampleRejected422OnUnknownKey(t *testing.T) {
+	t.Parallel()
+	uc, _, _, _, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events = []driving.EventInput{
+		{
+			EventName:       "metrics_sampled",
+			ProjectID:       "demo",
+			SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
+			ClientTimestamp: "2026-04-28T12:00:00.000Z",
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.7.0"},
+			Meta: map[string]any{
+				"webrtc.peer_connection_run_id": "run-a",
+				"webrtc.unknown_field":          "value",
+			},
+		},
+	}
+	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if !errors.Is(err, domain.ErrInvalidEvent) {
+		t.Fatalf("expected ErrInvalidEvent, got %v", err)
+	}
+	if len(metrics.webrtcSamples) != 0 {
+		t.Fatalf("expected 0 webrtc samples on rejected batch, got %d", len(metrics.webrtcSamples))
 	}
 }

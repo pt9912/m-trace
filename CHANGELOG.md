@@ -7,9 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.7.0`-Sammelblock plus `0.8.0` Tranche 0 (Plan-Aktivierung
-> + Lastenheft-Patch `1.1.10`). Versions-Bump und finalen CHANGELOG-
-> Block setzt der `0.8.0`-Closeout (Tranche 5).
+> Post-`0.7.0`-Sammelblock plus `0.8.0` Tranchen 0–3 (Plan-
+> Aktivierung + Lastenheft-Patch `1.1.10`, Public-API-Vertrag,
+> WebRTC-Adapter-Implementation, produktive WebRTC-Telemetrie).
+> Versions-Bump und finalen CHANGELOG-Block setzt der `0.8.0`-
+> Closeout (Tranche 5).
+
+### Added (Tranche 3 — produktive WebRTC-Telemetrie)
+
+- `webrtc.*`-Meta-Namespace ist ab `0.8.0` produktiv: `spec/
+  telemetry-model.md` §1.4 listet die Allowlist (peer_connection_run_id,
+  sample_id, connection_state/ice_state/dtls_state,
+  packets_lost/bytes_received/bytes_sent, error_code, error_detail);
+  `contracts/event-schema.json` (`reserved_meta_keys` +
+  `reserved_meta_namespace_webrtc`) und `contracts/sdk-compat.json`
+  (`reserved_meta_namespaces`) spiegeln den Vertrag.
+- `apps/api/hexagon/application/event_meta_validation.go` weist
+  unbekannte `webrtc.*`-Keys, falsche Typen, ungültige Enum-Werte,
+  negative Counter, Pattern-Verletzungen und Per-Identifier-Felder
+  (`webrtc.track_id`, `webrtc.ssrc`, …) hart mit HTTP 422 ab — keine
+  `mtrace_webrtc_*`-Metrik wird in diesem Pfad erzeugt.
+- `apps/api/adapters/driven/metrics/webrtc_metrics.go`: drei State-
+  CounterVec (`mtrace_webrtc_{connection,ice,dtls}_state_total`) plus
+  drei label-freie Delta-Counter (`packets_lost_total`,
+  `bytes_received_total`, `bytes_sent_total`). Server-side Sample-
+  State (`(project_id, session_id, peer_connection_run_id, metric)`-
+  Map) berechnet nichtnegative Deltas; Sample-ID-Idempotenz für
+  Duplicates; Reconnect mit neuer Run-ID startet eigene Baseline.
+- `packages/player-sdk/src/adapters/webrtc/sampling.ts`:
+  `collectAggregate()` extrahiert §3.5.2-Muss-Felder aus
+  `RTCStatsReport`; fehlende Muss-Felder lassen das Sample fallen
+  (kein unknown-Surrogat). `startSampling()` registriert ein
+  setInterval-Tick gegen `pc.getStats()` und sendet
+  `metrics_sampled`-Events.
+- `attachWebRtc(...)` neue Option `samplingIntervalMs` (Default
+  1000 ms; 0 deaktiviert). `peer_connection_run_id` aus
+  `crypto.randomUUID()` wird in `playback_started`,
+  `playback_error` und allen `metrics_sampled`-Events mitgeliefert.
+- `scripts/smoke-observability.sh` erweitert: WebRTC-Forbidden-
+  Identifier in der Forbidden-Liste plus Self-Tests; neue Allowlist-
+  Sektion validiert State-Counter (nur State-Label) und Byte-/Loss-
+  Counter (label-frei) gegen `mtrace_webrtc_*`-Series.
+- `docs/planning/open/risks-backlog.md` R-12 von „Triggerschwelle
+  nicht ausgelöst" auf „release-blockierend ab nächstem Browser-
+  Major-Bump" angehoben — produktive WebRTC-Telemetrie ist live;
+  Drift-Review-Pflicht vor jedem Release-Tag.
 
 ### Added
 
