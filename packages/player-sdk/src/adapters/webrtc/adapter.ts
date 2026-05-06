@@ -13,7 +13,7 @@ import { newPeerConnectionRunId, startSampling, type SamplingDeps } from "./samp
  * attachHlsJs} und liefert Player-Events in den geteilten
  * `PlayerTracker`-Stream.
  *
- * Bezug: `docs/planning/in-progress/plan-0.8.0.md` §0.5
+ * Bezug: `docs/planning/done/plan-0.8.0.md` §0.5
  * (Implementierungsleitplanken — WHEP als einziger Signalisierungsweg)
  * und §3 Tranche 2 DoD.
  *
@@ -60,12 +60,13 @@ interface AdapterState {
   destroyed: boolean;
   connected: boolean;
   errored: boolean;
+  whepResourceUrl?: string;
 }
 
 /**
  * Aktiviert einen WebRTC-/WHEP-Read-Pfad auf dem übergebenen
  * `<video>`-Element. Der Aufrufer ist für DOM-Mounting und -Cleanup
- * verantwortlich; `destroy()` schließt nur die WebRTC-Ressourcen.
+ * verantwortlich; `destroy()` schließt WebRTC- und WHEP-Ressourcen.
  *
  * **Fehlerbehandlung**: jeder Fehler erzeugt genau ein
  * `playback_error`-Event mit dem reservierten Meta-Key
@@ -116,7 +117,9 @@ export function attachWebRtc(
     });
   }
 
-  void runWhepHandshake(pc, options.whepUrl, fetchImpl, composedSignal).catch((err: unknown) => {
+  void runWhepHandshake(pc, options.whepUrl, fetchImpl, composedSignal, (url) => {
+    state.whepResourceUrl = url;
+  }).catch((err: unknown) => {
     if (state.destroyed) {
       return;
     }
@@ -135,7 +138,7 @@ export function attachWebRtc(
         stopSampling();
         stopSampling = undefined;
       }
-      destroyAdapter(state, tracker, tracks, pc, video, localAbort, runId);
+      destroyAdapter(state, tracker, tracks, pc, video, localAbort, runId, fetchImpl);
     }
   };
 }
@@ -207,7 +210,8 @@ function destroyAdapter(
   pc: RTCPeerConnection,
   video: HTMLVideoElement,
   localAbort: AbortController,
-  runId: string
+  runId: string,
+  fetchImpl: typeof fetch
 ): void {
   if (state.destroyed) {
     return;
@@ -223,6 +227,12 @@ function destroyAdapter(
     });
   }
   localAbort.abort();
+  if (state.whepResourceUrl) {
+    void fetchImpl(state.whepResourceUrl, { method: "DELETE" }).catch(() => {
+      // Best-effort WHEP resource cleanup; local resource teardown must
+      // not depend on the remote endpoint still being reachable.
+    });
+  }
   for (const track of tracks) {
     track.stop();
   }
@@ -239,7 +249,8 @@ async function runWhepHandshake(
   pc: RTCPeerConnection,
   whepUrl: string,
   fetchImpl: typeof fetch,
-  signal: AbortSignal
+  signal: AbortSignal,
+  onResourceUrl: (url: string) => void
 ): Promise<void> {
   pc.addTransceiver("video", { direction: "recvonly" });
   pc.addTransceiver("audio", { direction: "recvonly" });
@@ -261,6 +272,10 @@ async function runWhepHandshake(
   if (!response.ok) {
     throw new Error(`WHEP signaling failed: HTTP ${String(response.status)}`);
   }
+  const resourceUrl = parseWhepResourceUrl(response, whepUrl);
+  if (resourceUrl) {
+    onResourceUrl(resourceUrl);
+  }
   const answerSdp = await response.text();
   if (!answerSdp.startsWith("v=")) {
     throw new WhepSdpError("WHEP response is not a valid SDP answer");
@@ -270,6 +285,18 @@ async function runWhepHandshake(
   }
 
   await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+}
+
+function parseWhepResourceUrl(response: Response, whepUrl: string): string | undefined {
+  const location = typeof response.headers?.get === "function" ? response.headers.get("Location") : null;
+  if (!location) {
+    return undefined;
+  }
+  try {
+    return new URL(location, whepUrl).toString();
+  } catch {
+    return location;
+  }
 }
 
 function composeSignals(...signals: Array<AbortSignal | undefined>): AbortSignal {

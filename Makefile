@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate
 
 help:
 	@printf '%s\n' \
@@ -41,8 +41,9 @@ help:
 		'  make arch-check             Run the API architecture boundary check' \
 		'  make schema-validate        Validate apps/api schema.yaml via d-migrate' \
 		'  make schema-generate        Re-generate apps/api SQLite DDL from schema.yaml' \
+		'  make sdk-pack-smoke         Run the Player-SDK pack/public-entry smoke check' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
-		'  make gates                  Run api-race + ts-test, lint, coverage, architecture, schema and docs gates' \
+		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
 		'  make fullbuild              Install + ts/api build + gates (CI-äquivalent von clean)' \
@@ -248,7 +249,10 @@ schema-generate:
 sdk-performance-smoke:
 	$(PNPM) --filter @npm9912/player-sdk run performance:smoke
 
-gates: api-race ts-test lint coverage-gate arch-check schema-validate docs-check
+sdk-pack-smoke:
+	$(PNPM) --filter @npm9912/player-sdk run pack:smoke
+
+gates: api-race ts-test lint coverage-gate arch-check schema-validate sdk-pack-smoke sdk-performance-smoke docs-check
 
 ci: gates build
 

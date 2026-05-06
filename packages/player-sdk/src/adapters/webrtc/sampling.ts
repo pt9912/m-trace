@@ -57,7 +57,7 @@ const VALID_ICE_STATES: readonly IceState[] = [
 const VALID_DTLS_STATES: readonly DtlsState[] = ["new", "connecting", "connected", "closed", "failed"];
 
 interface AggregateAccumulator {
-  iceState?: IceState;
+  candidatePairState?: CandidatePairState;
   dtlsState?: DtlsState;
   packetsLost: number;
   bytesReceived: number;
@@ -66,8 +66,22 @@ interface AggregateAccumulator {
   hasOutbound: boolean;
 }
 
+type CandidatePairState = "frozen" | "waiting" | "in-progress" | "failed" | "succeeded";
+
+const VALID_CANDIDATE_PAIR_STATES: readonly CandidatePairState[] = [
+  "frozen",
+  "waiting",
+  "in-progress",
+  "failed",
+  "succeeded"
+];
+
 /** Wandelt ein `RTCStatsReport` in das Aggregat aus §3.5.2 um. */
-export function collectAggregate(stats: RTCStatsReport, connectionState: string): SampleAggregate | null {
+export function collectAggregate(
+  stats: RTCStatsReport,
+  connectionState: string,
+  iceConnectionState?: string
+): SampleAggregate | null {
   if (!isConnectionState(connectionState)) {
     return null;
   }
@@ -86,7 +100,11 @@ export function collectAggregate(stats: RTCStatsReport, connectionState: string)
     accumulateStat(acc, report as Record<string, unknown>);
   });
 
-  if (!acc.iceState || !acc.dtlsState) {
+  const iceState: IceState | undefined =
+    typeof iceConnectionState === "string" && isIceState(iceConnectionState)
+      ? iceConnectionState
+      : mapCandidatePairState(acc.candidatePairState);
+  if (!iceState || !acc.dtlsState) {
     return null;
   }
   if (!acc.hasInbound && !acc.hasOutbound) {
@@ -94,7 +112,7 @@ export function collectAggregate(stats: RTCStatsReport, connectionState: string)
   }
   return {
     connectionState,
-    iceState: acc.iceState,
+    iceState,
     dtlsState: acc.dtlsState,
     packetsLost: acc.packetsLost,
     bytesReceived: acc.bytesReceived,
@@ -128,16 +146,16 @@ function accumulateStat(acc: AggregateAccumulator, r: Record<string, unknown>): 
 
 function accumulateCandidatePair(acc: AggregateAccumulator, r: Record<string, unknown>): void {
   const state = typeof r.state === "string" ? r.state : "";
-  if (!isIceState(state)) {
+  if (!isCandidatePairState(state)) {
     return;
   }
   // Aggregat: nominated/selected pair gewinnt; sonst der erste valide.
   if (r.nominated === true || r.selected === true) {
-    acc.iceState = state;
+    acc.candidatePairState = state;
     return;
   }
-  if (!acc.iceState) {
-    acc.iceState = state;
+  if (!acc.candidatePairState) {
+    acc.candidatePairState = state;
   }
 }
 
@@ -149,6 +167,24 @@ function isIceState(s: string): s is IceState {
 }
 function isDtlsState(s: string): s is DtlsState {
   return (VALID_DTLS_STATES as readonly string[]).includes(s);
+}
+function isCandidatePairState(s: string): s is CandidatePairState {
+  return (VALID_CANDIDATE_PAIR_STATES as readonly string[]).includes(s);
+}
+function mapCandidatePairState(s?: CandidatePairState): IceState | undefined {
+  switch (s) {
+    case "succeeded":
+      return "connected";
+    case "in-progress":
+      return "checking";
+    case "waiting":
+    case "frozen":
+      return "new";
+    case "failed":
+      return "failed";
+    default:
+      return undefined;
+  }
 }
 function toNonNegativeInt(v: unknown): number {
   if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
@@ -179,7 +215,7 @@ export function startSampling(
     void pc
       .getStats()
       .then((stats) => {
-        const aggregate = collectAggregate(stats, pc.connectionState);
+        const aggregate = collectAggregate(stats, pc.connectionState, pc.iceConnectionState);
         if (!aggregate) {
           return;
         }

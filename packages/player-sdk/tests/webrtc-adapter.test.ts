@@ -42,6 +42,7 @@ function makeFakePeerConnection(opts: FakePcOptions) {
   const transceivers: unknown[] = [];
   const fakePc = {
     connectionState: "new" as RTCPeerConnectionState,
+    iceConnectionState: "new" as RTCIceConnectionState,
     addEventListener(event: string, cb: (e: unknown) => void): void {
       if (!listeners.has(event)) {
         listeners.set(event, new Set());
@@ -97,6 +98,11 @@ function makeFakeFetch(answer: { ok?: boolean; status?: number; sdp?: string }):
     return {
       ok: answer.ok ?? true,
       status: answer.status ?? 200,
+      headers: {
+        get() {
+          return null;
+        }
+      },
       async text() {
         // Default-Answer enthält m=video + m=audio, damit happy-path-
         // Tests den Track-Pfad durchlaufen; spezielle Tests übergeben
@@ -291,6 +297,40 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
     expect(() => adapter.destroy()).not.toThrow();
   });
 
+  it("destroy() gibt eine WHEP-Resource per DELETE frei, wenn der Server Location liefert", async () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({});
+    const fetchSpy = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE") {
+        return { ok: true, status: 200, headers: { get: () => null }, async text() { return ""; } };
+      }
+      return {
+        ok: true,
+        status: 201,
+        headers: {
+          get(name: string) {
+            return name.toLowerCase() === "location" ? "/webrtc-test/whep/session-a" : null;
+          }
+        },
+        async text() {
+          return "v=0\no=- 1 1 IN IP4 0.0.0.0\ns=-\nm=video 9 UDP/TLS/RTP/SAVPF 96\n";
+        }
+      };
+    }) as unknown as typeof fetch;
+
+    const adapter = attachWebRtc(fakeVideo, baseOptions, tracker, {
+      PeerConnection: function () {
+        return fakePc;
+      } as unknown as typeof RTCPeerConnection,
+      fetch: fetchSpy
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    adapter.destroy();
+    await new Promise((r) => setTimeout(r, 5));
+
+    expect(fetchSpy).toHaveBeenCalledWith("http://localhost:8892/webrtc-test/whep/session-a", { method: "DELETE" });
+  });
+
   it("destroy() stoppt alle bisher mounted MediaTracks", async () => {
     const tracker = new StubTracker();
     const fakePc = makeFakePeerConnection({ emitTrack: true });
@@ -410,7 +450,7 @@ describe("collectAggregate (Tranche 3)", () => {
   const happyEntries: Record<string, unknown>[] = [
     { type: "transport", dtlsState: "connected" },
     { type: "candidate-pair", state: "succeeded" },
-    { type: "candidate-pair", state: "connected", nominated: true },
+    { type: "candidate-pair", state: "succeeded", nominated: true },
     { type: "inbound-rtp", packetsLost: 5, bytesReceived: 12345 },
     { type: "outbound-rtp", bytesSent: 6789 }
   ];
@@ -440,10 +480,30 @@ describe("collectAggregate (Tranche 3)", () => {
     expect(collectAggregate(makeReport(happyEntries), "garbage-state")).toBeNull();
   });
 
+  it("bevorzugt pc.iceConnectionState gegenüber Candidate-Pair-Fallback", () => {
+    const entries = [
+      { type: "transport", dtlsState: "connected" },
+      { type: "candidate-pair", state: "failed", nominated: true },
+      { type: "inbound-rtp", packetsLost: 0, bytesReceived: 1 }
+    ];
+    const out = collectAggregate(makeReport(entries), "connected", "completed");
+    expect(out?.iceState).toBe("completed");
+  });
+
+  it("mappt echte RTCStatsIceCandidatePairState-Werte als Fallback", () => {
+    const entries = [
+      { type: "transport", dtlsState: "connected" },
+      { type: "candidate-pair", state: "succeeded", nominated: true },
+      { type: "inbound-rtp", packetsLost: 0, bytesReceived: 1 }
+    ];
+    const out = collectAggregate(makeReport(entries), "connected");
+    expect(out?.iceState).toBe("connected");
+  });
+
   it("ignoriert negative Counter-Werte (pin auf nicht-negative Integer)", () => {
     const entries = [
       { type: "transport", dtlsState: "connected" },
-      { type: "candidate-pair", state: "connected", nominated: true },
+      { type: "candidate-pair", state: "succeeded", nominated: true },
       { type: "inbound-rtp", packetsLost: -1, bytesReceived: 100 },
       { type: "outbound-rtp", bytesSent: 50 }
     ];
@@ -456,6 +516,7 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
   function makePcWithStats(stats: RTCStatsReport, connectionState = "connected") {
     const fakePc = makeFakePeerConnection({});
     fakePc.connectionState = connectionState as RTCPeerConnectionState;
+    fakePc.iceConnectionState = connectionState === "connected" ? "connected" : "new";
     (fakePc as unknown as { getStats: () => Promise<RTCStatsReport> }).getStats = async () => stats;
     return fakePc;
   }
@@ -583,12 +644,12 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
   it("nimmt erstes valides candidate-pair, wenn keines nominated/selected ist", () => {
     const stats = new Map<string, unknown>([
       ["t", { type: "transport", dtlsState: "connected" }],
-      ["p1", { type: "candidate-pair", state: "checking" }],
+      ["p1", { type: "candidate-pair", state: "waiting" }],
       ["p2", { type: "candidate-pair", state: "succeeded" }],
       ["i", { type: "inbound-rtp", packetsLost: 0, bytesReceived: 1 }]
     ]) as unknown as RTCStatsReport;
     const out = collectAggregate(stats, "connecting");
-    expect(out?.iceState).toBe("checking");
+    expect(out?.iceState).toBe("new");
   });
 
   it("Tick ohne pc.getStats() emittiert kein metrics_sampled", async () => {

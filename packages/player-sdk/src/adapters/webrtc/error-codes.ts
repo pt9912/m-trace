@@ -1,7 +1,7 @@
 /**
  * WebRTC-Adapter-Fehlercode-Taxonomie für `0.8.0` Tranche 2.
  *
- * Bezug: `docs/planning/in-progress/plan-0.8.0.md` §3 Tranche 2 DoD —
+ * Bezug: `docs/planning/done/plan-0.8.0.md` §3 Tranche 2 DoD —
  * "WebRTC-Fehlercode-Taxonomie ist im Contract dokumentiert und wird
  * vom Adapter genutzt".
  *

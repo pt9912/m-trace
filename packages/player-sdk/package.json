@@ -39,7 +39,7 @@
     "test:coverage": "vitest run --coverage",
     "performance:smoke": "pnpm run build && node scripts/performance-smoke.mjs",
     "lint": "tsc --noEmit && eslint . && node scripts/check-boundaries.mjs && node scripts/check-public-api.mjs",
-    "pack:smoke": "pnpm run build && pnpm pack --pack-destination ../../.tmp/player-sdk-pack && node scripts/pack-smoke.mjs ../../.tmp/player-sdk-pack/npm9912-player-sdk-0.6.0.tgz",
+    "pack:smoke": "pnpm run build && pnpm pack --pack-destination ../../.tmp/player-sdk-pack && node scripts/pack-smoke.mjs ../../.tmp/player-sdk-pack/npm9912-player-sdk-$npm_package_version.tgz",
     "publish:dry-run": "npm_config_cache=$PWD/../../.tmp/npm-cache pnpm publish --dry-run --no-git-checks"
   },
   "peerDependencies": {
