@@ -1,9 +1,19 @@
 # Extra Quality Gates
 
-> **Status**: Vorschlag / Backlog-Plan. Dieses Dokument ist noch kein
-> aktiver Implementierungsplan und fuehrt keine neuen Gates ein. Es
-> priorisiert zusaetzliche Quality-Gates, die spaeter in eine konkrete
-> Release-Tranche oder ADR ueberfuehrt werden koennen.
+> **Status**: Master-Backlog fuer die sechs vorgeschlagenen Quality-
+> Gates. Aktiv konkretisiert in zwei Folge-Plaenen:
+>
+> - [`plan-0.8.5.md`](./plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
+>   + Container-Scan, §3.4 Generated-Artifact-Drift-Gate
+>   (deterministisch, schnell, PR-blockierend; vor `0.9.0`).
+> - [`plan-0.9.5.md`](./plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
+>   Smoke, §3.3 Nightly-`benchstat`, §3.5 Fuzzing/Property,
+>   §3.6 Mutation Testing (statistisch + langlaufend; nach `0.9.0`).
+>
+> Dieses Dokument bleibt als Backlog/Master-Uebersicht erhalten und
+> ist die Quelle fuer DoD-Wortlaute, Implementierungsleitplanken und
+> die Benchmarking-Policy. Neue Quality-Gate-Vorschlaege landen
+> zuerst hier, bevor sie in einem Folge-Plan konkretisiert werden.
 
 ## 1. Zweck
 

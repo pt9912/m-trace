@@ -191,6 +191,27 @@ Release-Konvention für `0.1.x`:
 - annotierte SemVer-Tags im Format `vX.Y.Z`.
 - kein Pre-Release-Suffix für Hauptreleases.
 
+### 3.1 Patch-Release-Konvention (`0.X.Y`, ab `0.8.5`)
+
+Erstmals eingeführt mit `0.8.5` (Quality-Gates Wave 1). Patch-
+Releases gelten für CI-/Tooling-/Doku-Lieferungen ohne neue
+User-Surface:
+
+| Release-Typ | Versions-Schema | Lastenheft-Patch | RAK-Verifikationsmatrix | Beispielhaftes Material |
+| --- | --- | --- | --- | --- |
+| **Patch** | `0.X.Y` | nicht nötig | nicht geführt | Quality-/Security-Gates, Generated-Artifact-Drift, CI-Tooling, Doku-only-Bugfixes |
+| **Minor** | `0.X.0` | Pflicht (`1.1.X`-Patch mit neuen RAK) | Pflicht in §6.1 des Plans | neue User-Surface, neue Wire-Verträge, neue Lab-/Adapter-Pfade |
+| **Major** | `1.0.0` | Pflicht plus Folge-ADR | Pflicht plus Public-API-Versprechen | erstmaliges öffentliches Public-API-Versprechen (aktuell Folge-ADR-Thema) |
+
+Versions-Bump bei Patch-Release umfasst alle Stellen, die ein
+Minor-Bump auch berührt (`package.json` × 5, `main.go`
+`serviceVersion`, `version.ts`, `pack-smoke.mjs` `expectedVersion`,
+`contracts/sdk-compat.json` `sdk_version`, Test-Fixtures mit
+hartkodierten Versions-Strings) — sonst entsteht Drift zwischen
+SDK-Bundle, API-Service-Version und CI-Smokes. Plan-DoD-Items
+ersetzen die RAK-Verifikationsmatrix; ein Patch-Release-Plan trägt
+keinen `§6.1`-Block.
+
 ```bash
 git commit -m "chore(release): vX.Y.Z"
 git tag -a "$TAG" -m "Release X.Y.Z"

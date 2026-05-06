@@ -38,9 +38,22 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.8.0` ist veröffentlicht. Die nächste Release-Phase ist offen;
-`plan-0.9.0.md` ist als Plan-Skelett vorbereitet, aber noch nicht
-aktiviert.
+`0.8.0` ist veröffentlicht. Drei Plan-Skelette liegen unter
+`docs/planning/open/`, alle noch nicht aktiviert:
+
+- [`plan-0.8.5.md`](../open/plan-0.8.5.md) — **Patch-Release** mit
+  Quality-Gates Wave 1 (govulncheck + Container-Scan +
+  Generated-Artifact-Drift); erstmaliger Patch-Release im Repo,
+  vor `0.9.0` lieferbar.
+- [`plan-0.9.0.md`](../open/plan-0.9.0.md) — Minor-Release mit
+  Drift-Smoke (R-12), SRS-Lab (MVP-36) und DASH-Analyse (MVP-37).
+- [`plan-0.9.5.md`](../open/plan-0.9.5.md) — Patch-Release mit
+  Quality-Gates Wave 2 (Benchmark-Smoke + Nightly-`benchstat` +
+  Fuzzing + Mutation Testing); nach `0.9.0`.
+
+Master-Backlog für Quality-Gates ist
+[`extra-gates.md`](../open/extra-gates.md); die zwei Wellen-Pläne
+zitieren ihn aber führen keine neuen Backlog-Items.
 Lieferübersicht der `0.5.0`-Tranchen (zur Historie, finaler Stand
 siehe [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
 
@@ -129,6 +142,9 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.6.0` | SRT Health View              | ✅      | RAK-41..RAK-46; DoD-Tracking in [`done/plan-0.6.0.md`](../done/plan-0.6.0.md)                        |
 | `0.7.0` | WebRTC-Lab-Erweiterung       | ✅      | RAK-47..RAK-50; RAK-51 deferred / Folgeplan; DoD-Tracking in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)               |
 | `0.8.0` | Player-SDK-WebRTC-Adapter    | ✅      | RAK-51..RAK-55; DoD-Tracking in [`done/plan-0.8.0.md`](../done/plan-0.8.0.md)                                                                              |
+| `0.8.5` | Quality-Gates Wave 1 (Patch) | ⬜      | Security (govulncheck + Container-Scan) und Generated-Artifact-Drift-Gate; Plan-Skelett in [`open/plan-0.8.5.md`](../open/plan-0.8.5.md). Erster Patch-Release im Repo. |
+| `0.9.0` | Drift-Smoke + SRS + DASH     | ⬜      | RAK-56..RAK-59 (geplanter Lastenheft-Patch `1.1.11`); Plan-Skelett in [`open/plan-0.9.0.md`](../open/plan-0.9.0.md)                                       |
+| `0.9.5` | Quality-Gates Wave 2 (Patch) | ⬜      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Skelett in [`open/plan-0.9.5.md`](../open/plan-0.9.5.md). Nach `0.9.0`.            |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

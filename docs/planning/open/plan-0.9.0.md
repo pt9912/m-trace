@@ -107,6 +107,12 @@ Begründung des Bündels:
   als Out-of-Scope dokumentiert und Folge-Plan.
 - Keine Multi-Tenant-Erweiterungen (Postgres MVP-40, K8s MVP-42,
   ClickHouse MVP-41). Diese Themen brauchen eigene Phase.
+- Keine Quality-Gates (govulncheck, Benchmark-Smoke, Fuzzing,
+  Mutation Testing, Generated-Artifact-Drift). Diese sind in
+  [`plan-0.8.5.md`](./plan-0.8.5.md) (Wave 1, vor `0.9.0`) und
+  [`plan-0.9.5.md`](./plan-0.9.5.md) (Wave 2, nach `0.9.0`)
+  konkretisiert; Master-Backlog steht in
+  [`extra-gates.md`](./extra-gates.md).
 
 ### 0.4 Sequenzierung und harte Gates
 
