@@ -259,6 +259,12 @@ DoD:
   `peer_connection_failed`, `webrtc_destroyed_before_connected`.
   Codes stehen in `playback_error`-Meta unter einem dokumentierten
   Key und sind für Dashboard/Releasing-Abnahme maschinenlesbar.
+- [ ] Der WebRTC-Fehlercode-Key ist als reservierter Meta-Key
+  validiert: nur dokumentierte Codes werden akzeptiert oder auf
+  einen dokumentierten Fallback-Code normalisiert; freie Strings
+  dürfen nicht unverändert in Dashboard-/Releasing-Abnahme fließen.
+  Tests decken gültigen Code, ungültigen Code und fehlenden Code im
+  WebRTC-`playback_error`-Pfad ab.
 - [ ] WHEP-Fehlerpfade sind abgenommen: nicht-2xx/3xx Signalisierung,
   ungültige SDP Answer, fehlende MediaTracks, PeerConnection-Fehler
   und `destroy()` vor Handshake-Abschluss erzeugen deterministische
@@ -302,6 +308,11 @@ DoD:
   Metrik. Tests decken mindestens unbekannter Key, falscher Typ,
   ungültiger State-Enum-Wert und verbotener Identifier (`track_id`,
   `candidate_pair_id` oder `user_agent`) ab.
+- [ ] `webrtc.*` ist in `contracts/event-schema.json` und
+  `spec/telemetry-model.md` ausdrücklich als reservierter Meta-
+  Namespace markiert. Die strikte Allowlist gilt nur für reservierte
+  `webrtc.*`-Keys; unbekannte nicht-reservierte Meta-Keys bleiben
+  gemäß Forward-Compatibility-Regel des Event-Schemas zulässig.
 - [ ] API-Ingress erkennt WebRTC-Aggregat-Labels und exportiert
   `mtrace_webrtc_*`-Metriken. Mindestset:
   `mtrace_webrtc_connection_state_total{connection_state}`,
@@ -325,11 +336,17 @@ DoD:
   `packetsLost`/`bytesReceived`/`bytesSent` werden als absolute
   Samples mit einem monotonen Sample-Schlüssel (`webrtc.sample_id`
   oder äquivalenter per-session Sequenz) übertragen, serverseitig
-  pro `(project_id, session_id, metric)` differenziert und erst als
-  nichtnegative Deltas in Prometheus-Counter geschrieben. Duplicate-
-  oder Retry-Samples mit gleichem Sample-Schlüssel dürfen die
+  pro `(project_id, session_id, peer_connection_run_id, metric)`
+  differenziert und erst als nichtnegative Deltas in Prometheus-
+  Counter geschrieben. Der Last-Sample-State ist entweder durable
+  persistiert oder das Baseline-Verhalten nach API-Restart ist
+  explizit definiert: erster Sample nach unbekanntem Vorgänger setzt
+  nur die Baseline und erhöht keinen Delta-Counter. Duplicate- oder
+  Retry-Samples mit gleichem Sample-Schlüssel dürfen die
   `mtrace_webrtc_*_total`-Counter nicht erneut erhöhen; Tests decken
-  Monotonie, Counter-Reset/negative Delta und Duplicate-Sample ab.
+  Monotonie, Counter-Reset/negative Delta, Duplicate-Sample,
+  API-Restart und Reconnect/Counter-Reset mit neuem
+  `peer_connection_run_id` ab.
 - [ ] `scripts/smoke-observability.sh` spiegelt die WebRTC-
   Forbidden-Liste aus `spec/telemetry-model.md` §3.1 und prüft
   die WebRTC-Counter auf bounded Cardinality (RAK-9-Stil). Der
