@@ -35,20 +35,16 @@ aktualisieren.
 | ✅      | SRT Health View (`0.6.0`)           | MediaMTX-API als CGO-freie SRT-Quelle (R-2 aufgelöst), durabler Health-Store, Read-API + Dashboard-Route, Operator-Doku. RAK-41..RAK-46 erfüllt; opt-in Smoke `make smoke-srt-health`. | [`plan-0.6.0.md`](../done/plan-0.6.0.md)                            |
 | ✅      | WebRTC-Lab-Erweiterung (`0.7.0`)    | Lab-Compose `examples/webrtc/` (Project `mtrace-webrtc`) mit MediaMTX-WHIP/-WHEP und FFmpeg-RTSP-Publisher; opt-in Smoke `make smoke-webrtc-prep` (endpoint-only); WebRTC-Telemetrie-Vorbereitung in `spec/telemetry-model.md` §3.5; R-12 als Schema-Drift-Review-Gate. RAK-47..RAK-50 erfüllt; RAK-51 deferred. | [`plan-0.7.0.md`](../done/plan-0.7.0.md)                            |
 
-### 1.2 Nächste Phase `0.8.0`
+### 1.2 Aktive Phase `0.8.0`
 
-`0.7.0` ist veröffentlicht; `0.8.0` (Player-SDK-WebRTC-Adapter)
-ist die nächste geplante Phase. Sie löst RAK-51 (Lastenheft `1.1.10`
-§13.10) als produktive Lieferung ein und aktiviert den WebRTC-
-Telemetrie-Pfad aus [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
-§3.5. Plan-Skelett unter [`plan-0.8.0.md`](../open/plan-0.8.0.md)
-(Status `⬜ geplant`, in `open/`); Lastenheft-Patch `1.1.10` ist
-ausgeliefert (RAK-51 von „Kann" auf „Muss" hochgezogen, RAK-52..
-RAK-55 für Public-API + hls.js-Trennung, produktive WebRTC-
-Telemetrie und Compat-Tests in §13.10 verankert, Patch-Log in
-[`plan-0.1.0.md`](../done/plan-0.1.0.md) §4a.13). Tranche-0-Aktivierung
-ist damit freigegeben. Lieferübersicht der `0.5.0`-Tranchen (zur
-Historie, finaler Stand siehe
+`0.7.0` ist veröffentlicht; `0.8.0` (Player-SDK-WebRTC-Adapter,
+RAK-51..RAK-55) ist die aktive Phase. Plan unter
+[`plan-0.8.0.md`](./plan-0.8.0.md) (Status `🟡 in Arbeit`, in
+`in-progress/`); Tranche 0 (Plan-Aktivierung + Lastenheft-Patch
+`1.1.10` + Toolchain-Check) ist abgeschlossen. Tranche 1 (Public-
+API-Spec für Adapter-Auswahl in `@npm9912/player-sdk`) ist als
+Nächstes dran. Lieferübersicht der `0.5.0`-Tranchen (zur Historie,
+finaler Stand siehe
 [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
 
 | Tranche | Status | Inhalt                                                  | Verweis                                                                              |
@@ -114,8 +110,8 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 37  | ✅      | Multi-Protocol-Lab (`examples/`) plus opt-in Smokes ausliefern und Roadmap auf `0.6.0` umstellen                      | Nach Schritt 36                                                 | RAK-36..RAK-40; plan-0.5.0 Tranchen 0–6; Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün                      |
 | 38  | ✅      | SRT Health View (`0.6.0`) mit MediaMTX-API als Quelle plus Read-API/Dashboard ausliefern                              | Nach Schritt 37                                                 | RAK-41..RAK-46; plan-0.6.0 Tranchen 0–7; Tag `v0.6.0` auf `d08a89f`, CI-Run 25380938222 grün                      |
 | 39  | ✅      | WebRTC-Lab-Erweiterung (`0.7.0`) mit Lab-Compose, opt-in Smoke und Telemetrie-Vorbereitung ausliefern                 | Nach Schritt 38                                                 | RAK-47..RAK-50; plan-0.7.0 Tranchen 0–5; Tag `v0.7.0` (Closeout-Commit)                                          |
-| 40  | ✅      | Lastenheft-Patch `1.1.10` schreiben — RAK-51 von „Kann" auf „Muss" hochgezogen + neue RAK-52..RAK-55 in §13.10 für Public-API/hls.js-Trennung, produktive WebRTC-Telemetrie und Compat-Tests definiert     | Vor Tranche-0-Aktivierung von `0.8.0`                            | RAK-51, MVP-24; [`plan-0.8.0.md`](../open/plan-0.8.0.md) §0.2; Patch-Log §4a.13 in [`plan-0.1.0.md`](../done/plan-0.1.0.md)            |
-| 41  | ⬜      | `0.8.0` Player-SDK-WebRTC-Adapter ausliefern: Public-API + hls.js-Trennung, WHEP-Adapter gegen `examples/webrtc/`, produktive WebRTC-Telemetrie auf `spec/telemetry-model.md` §3.2/§3.5-Allowlist (R-12 wird release-blockierend), Compat-Tests | Nach Schritt 40                                                  | RAK-51 (+ neue RAK aus 1.1.10); [`plan-0.8.0.md`](../open/plan-0.8.0.md) Tranchen 0–5                             |
+| 40  | ✅      | Lastenheft-Patch `1.1.10` schreiben — RAK-51 von „Kann" auf „Muss" hochgezogen + neue RAK-52..RAK-55 in §13.10 für Public-API/hls.js-Trennung, produktive WebRTC-Telemetrie und Compat-Tests definiert     | Vor Tranche-0-Aktivierung von `0.8.0`                            | RAK-51, MVP-24; [`plan-0.8.0.md`](./plan-0.8.0.md) §0.2; Patch-Log §4a.13 in [`plan-0.1.0.md`](../done/plan-0.1.0.md)            |
+| 41  | 🟡      | `0.8.0` Player-SDK-WebRTC-Adapter ausliefern: Public-API + hls.js-Trennung, WHEP-Adapter gegen `examples/webrtc/`, produktive WebRTC-Telemetrie auf `spec/telemetry-model.md` §3.2/§3.5-Allowlist (R-12 wird release-blockierend), Compat-Tests | Nach Schritt 40                                                  | RAK-51..RAK-55 (Lastenheft `1.1.10` §13.10); [`plan-0.8.0.md`](./plan-0.8.0.md) Tranche 0 ✅, 1–5 offen           |
 
 ---
 
@@ -135,7 +131,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.5.0` | Multi-Protocol Lab           | ✅      | RAK-36..RAK-40; Tag `v0.5.0` auf `a56dc0b`, CI-Run 25364250989 grün                                   |
 | `0.6.0` | SRT Health View              | ✅      | RAK-41..RAK-46; DoD-Tracking in [`done/plan-0.6.0.md`](../done/plan-0.6.0.md)                        |
 | `0.7.0` | WebRTC-Lab-Erweiterung       | ✅      | RAK-47..RAK-50; RAK-51 deferred / Folgeplan; DoD-Tracking in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)               |
-| `0.8.0` | Player-SDK-WebRTC-Adapter    | ⬜      | RAK-51..RAK-55 (Lastenheft `1.1.10` §13.10); Plan-Skelett in [`open/plan-0.8.0.md`](../open/plan-0.8.0.md) |
+| `0.8.0` | Player-SDK-WebRTC-Adapter    | 🟡      | RAK-51..RAK-55 (Lastenheft `1.1.10` §13.10); DoD-Tracking in [`in-progress/plan-0.8.0.md`](./plan-0.8.0.md)                                                |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

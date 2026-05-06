@@ -1,12 +1,11 @@
 # Implementation Plan — `0.8.0` (Player-SDK-WebRTC-Adapter)
 
-> **Status**: ⬜ geplant (Plan-Skelett, liegt unter
-> `docs/planning/open/`). Vorgänger `v0.7.0` ist released
-> (Tag `v0.7.0` auf `11a3368`, CI-Run 25418640334 grün; Plan archiviert
-> in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)). Tranche 0
-> aktiviert die Phase, sobald der zugehörige Lastenheft-Patch
-> `1.1.10` fertig ist (siehe §0.2). Plan wandert dann atomar nach
-> `docs/planning/in-progress/`.
+> **Status**: 🟡 in Arbeit (Tranche 0 aktiviert am 2026-05-06;
+> liegt unter `docs/planning/in-progress/`). Vorgänger `v0.7.0` ist
+> released (Tag `v0.7.0` auf `11a3368`, CI-Run 25418640334 grün;
+> Plan archiviert in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)).
+> Lastenheft-Patch `1.1.10` ist ausgeliefert (Commit `17a4507`,
+> §13.10 mit RAK-51..RAK-55).
 >
 > **Lastenheft-Status**: ausgeliefert in `1.1.10` — §13.10 enthält
 > RAK-51 (hochgestuft auf „Muss") plus RAK-52..RAK-55 für die
@@ -155,7 +154,7 @@ WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.10` (RAK-51 hochziehen, RAK-52..RAK-55 ergänzen) + ggf. Toolchain-Hardening | ⬜ |
+| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.10` (RAK-51 hochziehen, RAK-52..RAK-55 ergänzen) + ggf. Toolchain-Hardening | ✅ |
 | 1 | Public-API-Spec für Adapter-Auswahl in `@npm9912/player-sdk` (RAK-51 / RAK-52) | ⬜ |
 | 2 | WebRTC-Adapter-Implementation gegen WHEP-Pfad aus `examples/webrtc/` | ⬜ |
 | 3 | Produktive WebRTC-Telemetrie aktivieren (Allowlist aus §3.2/§3.5; `mtrace_webrtc_*`-Counter; `smoke-observability` spiegelt §3.1; R-12 release-blockierend) | ⬜ |
@@ -171,21 +170,28 @@ Bezug: keine RAK direkt; Wartungs-/Hygiene-Tranche analog
 
 DoD:
 
-- [ ] Plan-Skelett von `docs/planning/open/plan-0.8.0.md` nach
+- [x] Plan-Skelett von `docs/planning/open/plan-0.8.0.md` nach
   `docs/planning/in-progress/plan-0.8.0.md` verschoben (Status
-  `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3, README,
-  `done/plan-0.7.0.md` §7 (falls aktiv) und ggf. `examples/webrtc/`
-  README nachgezogen.
-- [ ] Lastenheft-Patch `1.1.10` schreiben: RAK-51 von „Kann" auf
-  „Muss" hochgezogen; neuer Block §13.10 mit RAK-52..RAK-55 (siehe
-  §0.2 Vorschlag). Patch ist als Eintrag im jeweiligen
-  `done/`-Plan-Wartungslog (analog `plan-0.1.0.md` Tranche 0c)
+  `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3 nachgezogen.
+  README zeigt seit `0.7.0`-Closeout „nächste Phase offen" — der
+  Hinweis bleibt bis zum `0.8.0`-Release-Closeout, weil die Phase
+  „in Arbeit" und nicht „released" ist. `done/plan-0.7.0.md` §7
+  ist statisch released und wird nicht angefasst (`done/`-Pläne
+  sind historisch). `examples/webrtc/` README betrifft nur den
+  Lab-Pfad aus `0.7.0` und ist nicht `0.8.0`-spezifisch.
+- [x] Lastenheft-Patch `1.1.10` ist ausgeliefert (Commit `17a4507`):
+  RAK-51 in §13.10 von „Kann" auf „Muss" hochgezogen; RAK-52..
+  RAK-55 als Sub-Items ergänzt; §13.9 RAK-51-Zeile bekommt Hinweis
+  auf §13.10. Patch-Log als §4a.13 in
+  [`done/plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c
   dokumentiert.
-- [ ] Optional: Toolchain-Bump prüfen (Go-/Node-/golangci-lint-/
-  pnpm-Linien gegen aktuelle non-EOL-Versionen). Wenn Bump nötig
-  ist, eigener DoD-Block analog `plan-0.7.0.md` Tranche 0 mit
-  Race-/Schema-Stage in `make gates`. Wenn nicht, dokumentieren
-  warum nicht.
+- [x] Toolchain-Bump-Check: keine Anpassung nötig. Go (`1.26`),
+  golangci-lint (`v2.12.1`), Node (`22 LTS`), pnpm sind seit
+  `0.7.0` Tranche 0 (Commits `ccf68b1` + `8bfad21`) aktuell und
+  non-EOL. Race-Detector-Stage ist in `make gates` enthalten. Ein
+  erneuter Bump wäre Aufwand ohne fachlichen Nutzen — bei
+  konkreter EOL-Schwelle oder Security-Advisory wäre er
+  nachzuholen.
 
 ---
 

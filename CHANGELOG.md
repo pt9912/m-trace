@@ -7,8 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Sammelblock für post-`0.7.0`-Befunde. Versions-Bump und finalen
-> CHANGELOG-Block setzt der jeweils nächste Release-Closeout.
+> Post-`0.7.0`-Sammelblock plus `0.8.0` Tranche 0 (Plan-Aktivierung
+> + Lastenheft-Patch `1.1.10`). Versions-Bump und finalen CHANGELOG-
+> Block setzt der `0.8.0`-Closeout (Tranche 5).
+
+### Added
+
+- Lastenheft-Patch `1.1.10` (`spec/lastenheft.md` Header + §13.10 +
+  §13.9-Notiz; Patch-Log in `done/plan-0.1.0.md` §4a.13): RAK-51
+  von „Kann" auf „Muss" hochgezogen, RAK-52..RAK-55 für
+  Public-API + hls.js-Trennung, produktive WebRTC-Telemetrie auf
+  `spec/telemetry-model.md` §3.2-Allowlist, `getStats()`-Sammlung
+  mit Schema-Drift-Strategie und opt-in Browser-E2E. Vorgänger-
+  Gate für `0.8.0` Tranche 0 erfüllt.
+- `0.8.0`-Plan unter `docs/planning/in-progress/plan-0.8.0.md` aus
+  `open/` aktiviert (Status `🟡 in Arbeit`); Tranche 0 abgeschlossen
+  (Plan-Move + Lastenheft-Patch + Toolchain-Check ohne Bump-Bedarf
+  weil `0.7.0` Tranche 0 die Toolchain frisch gehoben hat).
 
 ## [0.7.0] - 2026-05-06
 
