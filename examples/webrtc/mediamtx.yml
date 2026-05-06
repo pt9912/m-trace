@@ -1,0 +1,64 @@
+# MediaMTX-Konfiguration für das WebRTC-Beispiel.
+# plan-0.7.0 §2 Tranche 1 (RAK-47). Eigenständige Lab-Konfig — nicht
+# mit dem Core-Lab oder dem SRT-Beispiel geteilt.
+
+# Control-API (Operator-Diagnose; nicht Smoke-relevant in 0.7.0).
+# MediaMTX 1.14+ ist standardmäßig auth-pflichtig — der
+# `authInternalUsers`-Block weiter unten schaltet api/metrics zusammen
+# mit publish/read frei.
+api: yes
+apiAddress: :9997
+
+# Auth-Override für das Lab (analog zum SRT-Beispiel): single-user `any`
+# mit leerem Passwort und allen Lab-Aktionen erlaubt. Auth-Modus ist
+# absichtlich offen, weil das Beispiel auf localhost läuft; ein
+# produktiver WebRTC-Setup würde mindestens `pass` plus IP-Allowlist
+# erzwingen.
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: api
+      - action: metrics
+
+# WebRTC-WHIP/-WHEP-HTTP-Listener (Lastenheft §7.8 WebRTC, plan-0.7.0
+# Tranche 1). 8889 ist der MediaMTX-Default; im Compose auf Host-Port
+# 8892 gemappt, um Konflikte mit dem SRT-Beispiel (Host 8889) zu
+# vermeiden.
+webrtc: yes
+webrtcAddress: :8889
+# ICE-UDP-Port — muss im Compose als Host-Port gemappt sein, damit ein
+# Browser auf dem Host Media-Pakete an die advertised ICE-Kandidaten
+# senden kann.
+webrtcLocalUDPAddress: :8189
+# ICE-Kandidaten, die MediaMTX dem Browser ankündigt. `127.0.0.1` ist
+# der Pflichtpfad für den localhost-Handcheck; `mediamtx` deckt
+# Container-zu-Container-Tests im selben Compose-Netzwerk ab.
+webrtcAdditionalHosts: [127.0.0.1, mediamtx]
+# STUN/TURN bleibt opt-in. Für reine localhost-Tests (Browser auf demselben
+# Host wie Compose) ist STUN nicht nötig; für Lab-Pfade über LAN würde
+# eine spätere Tranche `coturn` als zusätzlichen Service ergänzen.
+webrtcICEServers2: []
+
+# RTSP-Listener für den FFmpeg-Container-internen Push. Nicht via
+# Host-Port exposed — nur intern im Compose-Netzwerk genutzt. MediaMTX
+# re-published den Stream automatisch auf alle aktivierten Read-Pfade
+# (WHEP).
+rtsp: yes
+rtspAddress: :8554
+
+# Andere Protokolle bleiben aus, damit die Container-Surface klein und
+# eindeutig bleibt.
+hls: no
+rtmp: no
+srt: no
+
+paths:
+  # Stream-Name `webrtc-test` ist absichtlich anders als `srt-test`
+  # (examples/srt/) und `teststream` (Core-Lab), damit eine parallele
+  # Instanz nicht versehentlich Pfade kollidieren lässt.
+  webrtc-test:
+    source: publisher

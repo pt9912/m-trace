@@ -77,7 +77,7 @@ Targets in `0.5.0`:
 | `make smoke-mediamtx`   | 2       | ✅ (Core-Lab)                        |
 | `make smoke-srt`        | 3       | ✅ (Project `mtrace-srt`)            |
 | `make smoke-dash`       | 4       | ✅ (Project `mtrace-dash`)           |
-| `make smoke-webrtc-prep`| 5       | ⬜ — nicht in `0.5.0`, Folge-Scope   |
+| `make smoke-webrtc-prep`| 5       | ⬜ — geplant in `0.7.0` Tranche 3 (Project `mtrace-webrtc`) |
 
 ### Smoke-Skript-Konvention
 
@@ -99,7 +99,7 @@ Anforderungen:
 | [`mediamtx/`](./mediamtx/) | 2     | Core-Lab-Beispiel; Smoke `make smoke-mediamtx`   |
 | [`srt/`](./srt/)         | 3       | Eigenes Compose `mtrace-srt`; Smoke `make smoke-srt` |
 | [`dash/`](./dash/)       | 4       | Eigenes Compose `mtrace-dash`; Smoke `make smoke-dash` |
-| [`webrtc/`](./webrtc/)   | 5       | Doku-only Vorbereitungspfad; kein Smoke in `0.5.0` |
+| [`webrtc/`](./webrtc/)   | 5       | Eigenes Compose `mtrace-webrtc` (ab `0.7.0` Tranche 1); Smoke `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 |
 
 Quickref über alle Beispiele plus parallel-Stack-Port-Schnitt:
 [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7.

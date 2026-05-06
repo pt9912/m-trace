@@ -8,11 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 > Post-`0.6.0`-Code-Review-Fixes plus `0.7.0` Tranche 0 (Plan-
-> Aktivierung + Toolchain-Hardening). Versions-Bump und finalen
-> CHANGELOG-Block setzt der `0.7.0`-Closeout (Tranche 5).
+> Aktivierung + Toolchain-Hardening) und Tranche 1 (WebRTC-Lab-
+> Compose). Versions-Bump und finalen CHANGELOG-Block setzt der
+> `0.7.0`-Closeout (Tranche 5).
 
 ### Added
 
+- WebRTC-Lab-Compose `examples/webrtc/compose.yaml` (Project
+  `mtrace-webrtc`, RAK-47): MediaMTX `bluenviron/mediamtx:1` mit
+  WHIP-/WHEP-Listener auf Host-Port `8892`, ICE-UDP `8189`,
+  Control-API `9999` (kollisionsfrei zu Core-Lab/`mtrace-srt`/
+  `mtrace-dash`). FFmpeg-RTSP-Publisher `ffmpeg-rtsp-loop.sh`
+  (synthetischer H264+Opus-Stream); MediaMTX re-published auf
+  WHEP-Pfad `/webrtc-test/whep`. `examples/webrtc/README.md` auf
+  7-Punkt-Standard mit Browser-Handcheck (RAK-50, manuell) plus
+  live verifiziertem Endpoint-Statussatz für Tranche-3-Smoke
+  (`OPTIONS …/whep|whip → 204` aktiv, `→ 500` unbekannter Pfad).
 - Browser-E2E-Tests für `/srt-health` (Playwright) mit fünf Specs
   gegen `page.route()`-Mocks: Empty-State, vier Pflichtmetriken
   in der Tabelle, Stale-Pill, Detail Current+History, Detail-404.

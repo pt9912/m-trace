@@ -265,7 +265,7 @@ einen opt-in Smoke und ist nicht Teil von `make gates`.
 | [`examples/mediamtx/`](../../examples/mediamtx/) | Core-Lab-Beispiel | `make dev` | `make smoke-mediamtx` |
 | [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) plus `make smoke-srt-health` ab `0.6.0` für Health-API-Probe |
 | [`examples/dash/`](../../examples/dash/) | Eigenes Compose, Project `mtrace-dash` | `docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build` | `make smoke-dash` (auto-up/down) |
-| [`examples/webrtc/`](../../examples/webrtc/) | Doku-only Vorbereitungspfad | — | — (kein Smoke in `0.5.0`; siehe `examples/webrtc/README.md` „Folge-Pfad") |
+| [`examples/webrtc/`](../../examples/webrtc/) | Eigenes Compose, Project `mtrace-webrtc` | `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build` | `make smoke-webrtc-prep` (geplant ab `0.7.0` Tranche 3, opt-in/endpoint-only) |
 
 Host-Ports sind so geschnitten, dass alle Beispiele **parallel** zum
 Core-Lab und untereinander laufen können:
@@ -275,7 +275,7 @@ Core-Lab und untereinander laufen können:
 | Core-Lab (`make dev`) | `8080`/`5173`/`8888`/`9997` (API, Dashboard, MediaMTX-HLS, MediaMTX-Control) |
 | `mtrace-srt` | `8889/tcp` (HLS-Out) · `8890/udp` (SRT-Listener) · `9998/tcp` (MediaMTX-Control) |
 | `mtrace-dash` | `8891/tcp` (DASH-HTTP) |
-| `mtrace-webrtc` (geplant) | `8889/tcp` — kollidiert in `0.5.0` mit `mtrace-srt`; eine Folge-Tranche muss den Schnitt neu vornehmen |
+| `mtrace-webrtc` | `8892/tcp` (WHIP/WHEP-HTTP) · `8189/udp` (WebRTC-ICE) · `9999/tcp` (MediaMTX-Control) |
 
 Reset pro Beispiel-Stack: `docker compose -p <project> -f
 examples/<name>/compose.yaml down [--volumes]`. Greift nur den

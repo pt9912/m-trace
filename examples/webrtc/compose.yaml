@@ -1,0 +1,43 @@
+# WebRTC-Beispiel — plan-0.7.0 §2 Tranche 1 (RAK-47).
+#
+# Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
+# Name `mtrace-webrtc` ist Pflicht im Startbefehl (siehe
+# examples/README.md, "Compose-Form" Tabelle Variante "Eigenes Compose"):
+#
+#   docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build
+#
+# Host-Port-Schnitt (kollisionsfrei zu Core-Lab, mtrace-srt, mtrace-dash):
+#   8892 → MediaMTX-WHIP/-WHEP-HTTP-Listener (innen 8889)
+#   8189 → MediaMTX-WebRTC-ICE-UDP (innen 8189)
+#   9999 → MediaMTX-Control-API (innen 9997)
+#
+# Publisher-Mechanik (F-84 Muss):
+#   FFmpeg → RTSP-Push (Container-internes Routing zu mediamtx:8554) →
+#   MediaMTX. MediaMTX exposed denselben Stream zusätzlich als WHIP-
+#   Publish- und WHEP-Read-Endpoint für einen Browser-Handcheck. WHIP-
+#   FFmpeg ist nicht der Pflichtpfad; ein Browser-WHIP-Push ist als
+#   RAK-50-Handcheck dokumentiert.
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "8892:8889"
+      - "8189:8189/udp"
+      - "9999:9997"
+
+  webrtc-publisher:
+    image: jrottenberg/ffmpeg:8.1-ubuntu2404
+    depends_on:
+      - mediamtx
+    volumes:
+      - ./ffmpeg-rtsp-loop.sh:/ffmpeg-rtsp-loop.sh:ro
+    entrypoint: ["/bin/sh"]
+    command: ["/ffmpeg-rtsp-loop.sh"]
+    environment:
+      # Container-internes Routing: webrtc-publisher → mediamtx-Service-
+      # name → RTSP-Listener-Port 8554. MediaMTX Re-Publish nach WebRTC
+      # läuft serverintern; kein Host-Roundtrip nötig.
+      RTSP_URL: "rtsp://mediamtx:8554/webrtc-test"

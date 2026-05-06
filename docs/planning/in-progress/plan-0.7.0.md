@@ -122,8 +122,8 @@ Punkt vermerkt.
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (open/ → in-progress/) + Toolchain-Hardening (Go 1.22 → 1.26, golangci-lint v1.62 → v2.12.1, neue `race`-Stage in gates) | ✅ |
-| 1 | Lab-Compose `examples/webrtc/compose.yaml` mit MediaMTX-WHIP/-WHEP plus optionalem `coturn` | ⬜ |
-| 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | ⬜ |
+| 1 | Lab-Compose `examples/webrtc/compose.yaml` mit MediaMTX-WHIP/-WHEP plus FFmpeg-RTSP-Publisher | ✅ |
+| 2 | README-Konkretisierung — Operator-Befehle, Port-Schnitt, Browser-Handcheck | 🟡 (überlappt mit Tranche 1; Voraussetzungen/Start/Verifikation/Stop/Troubleshooting/Grenzen sind drin, „Start"-konkrete Lab-Befehle ergänzen sich aus Tranche 1) |
 | 3 | `make smoke-webrtc-prep`-Target mit reservierter Vorbereitungs-Verifikation | ⬜ |
 | 4 | WebRTC-Telemetrie-Bewertung — bounded Allowlist, `getStats()`-Subset, Schema-Drift-Strategie | ⬜ |
 | 5 | Release-Doku, RAK-Matrix und Closeout | ⬜ |
@@ -200,41 +200,50 @@ WHIP-/WHEP-Pfad ohne Internet-Abhängigkeit. Project-Name
 
 DoD:
 
-- [ ] `examples/webrtc/compose.yaml` definiert mindestens MediaMTX
-  mit WHIP-/WHEP-Listener; optional `coturn`-Container für nicht-
-  localhost-Pfade.
-- [ ] Media-Server-Image ist gepinnt (kein floating `latest`) und die
-  README nennt die getestete WHIP-/WHEP-Pfadform des Images. Wenn sich
-  MediaMTX-Endpunkte zwischen Versionen ändern, blockiert das Tranche 1
-  bis zur Doku-/Smoke-Anpassung.
-- [ ] Host-Port-Schnitt ist aufgelöst — der `0.5.0`-Skelett-Stand
-  notiert einen geplanten Konflikt mit `examples/srt/` auf `8889/tcp`;
-  Tranche 1 entscheidet, ob WebRTC einen anderen Host-Port bekommt
-  oder SRT-Beispiel umschnitten wird.
-- [ ] ICE-/Media-Port-Schnitt ist explizit entschieden: für MediaMTX-
-  WebRTC im Container ist der UDP-Pfad (typisch `8189/udp`) inklusive
-  Docker-Port-Mapping dokumentiert, oder ein bewusst getesteter TCP-/
-  TURN-Fallback ist als RAK-50-Handcheck-Grenze beschrieben. Ein grüner
-  WHIP-/WHEP-HTTP-Endpoint allein reicht nicht als Browser-Pfad-
-  Nachweis.
-- [ ] Host-Port-Schnitt ist in `examples/README.md` dokumentiert, falls
-  die Project-Konvention oder Parallelbetriebshinweise angepasst werden
-  müssen.
-- [ ] FFmpeg-basierte Teststream-Mechanik ist entschieden und
-  dokumentiert (F-84 Muss). GStreamer, MediaMTX-Testpublisher oder ein
-  dedizierter Browser-Sender dürfen ergänzende Lab-/Handcheck-Pfade
-  sein, ersetzen aber nicht den FFmpeg-Nachweis. Wenn ein Publisher nicht
-  zuverlässig headless läuft, bleibt er manueller RAK-50-Handcheck und
-  nicht Teil des Muss-Smokes.
-- [ ] WHEP-Readiness hängt nicht von einem echten Browser ab: Der
-  Stack stellt einen stabil prüfbaren Endpoint bereit, dessen
-  erwarteter Status/Fehlercode dokumentiert ist (z. B. `OPTIONS`,
-  `405`, `415`, `404 path missing` vs. `200` je nach Serververtrag).
-- [ ] `examples/webrtc/README.md` „Start"-Sektion zeigt den
+- [x] `examples/webrtc/compose.yaml` definiert MediaMTX mit WHIP-/WHEP-
+  Listener (`webrtc: yes`, `webrtcAddress: :8889` intern) plus FFmpeg-
+  RTSP-Publisher als zweiten Service. `coturn` ist als Folge-Scope in
+  der README dokumentiert (LAN-Pfad), nicht in Tranche 1 enthalten.
+- [x] Media-Server-Image gepinnt auf `bluenviron/mediamtx:1` (konsistent
+  mit Core-Lab und `examples/srt/`). README nennt die getestete WHIP-/
+  WHEP-Pfadform für MediaMTX `1.18.1` (über `:1` aktuell ausgelieferte
+  Version): `http://localhost:8892/<stream>/{whip,whep}`. Drift zwischen
+  Major-Versionen blockiert die Doku, der Major-Pin verhindert das im
+  Lab-Pfad.
+- [x] Host-Port-Schnitt entschieden: WebRTC weicht aus, weil
+  `examples/srt/` (released in `0.5.0`) Host-Port `8889/tcp` belegt.
+  WebRTC-Lab nutzt `8892/tcp` (WHIP/WHEP-HTTP) → MediaMTX-`8889`,
+  `9999/tcp` → MediaMTX-API-`9997`. SRT-Beispiel bleibt unverändert.
+- [x] ICE-/Media-Port-Schnitt explizit: `8189/udp` Host → MediaMTX-
+  `webrtcLocalUDPAddress: :8189`. `webrtcAdditionalHosts:
+  [127.0.0.1, mediamtx]` in `mediamtx.yml` advertised lokale + Docker-
+  interne ICE-Kandidaten. TCP-/TURN-Fallback ist Folge-Scope; LAN-Pfad
+  ist als RAK-50-Handcheck-Grenze in der README dokumentiert.
+- [x] Host-Port-Schnitt in `examples/README.md` Tabelle „Beispiele"
+  und `docs/user/local-development.md` §2.7 Port-Quickref nachgezogen:
+  `mtrace-webrtc | 8892/tcp · 8189/udp · 9999/tcp`.
+- [x] FFmpeg-Publisher-Mechanik entschieden: RTSP-Push in
+  `examples/webrtc/ffmpeg-rtsp-loop.sh` (analog
+  `examples/srt/ffmpeg-srt-loop.sh`); MediaMTX re-published den Stream
+  serverintern auf den WHEP-Read-Pfad. Begründung: FFmpeg-`f whip`
+  benötigt Build-Zeit-WebRTC-Stack im FFmpeg-Image, der bei
+  `jrottenberg/ffmpeg:8.1` nicht zugesichert ist. RTSP-Push erfüllt
+  F-84 ohne Sonder-Build und MediaMTX gewährleistet die Re-Publish-
+  Brücke. Browser-WHIP-Push bleibt manueller RAK-50-Handcheck.
+- [x] WHEP-Readiness browserfrei prüfbar: live verifizierter
+  Statussatz in `examples/webrtc/README.md` „Verifikation":
+  `OPTIONS /webrtc-test/whep` und `…/whip` → `204` bei aktivem
+  Stream, `→ 500` für unbekannten Pfad, `GET/HEAD → 405`,
+  `POST` ohne SDP → `400`, fehlender Compose-Stack → Connection
+  refused. Tranche 3 baut ihren Smoke darauf auf.
+- [x] `examples/webrtc/README.md` „Start"-Sektion zeigt den
   `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml
-  up -d --build`-Befehl mit konkreten Ports.
-- [ ] Stop/Reset ist auf das `mtrace-webrtc`-Projekt begrenzt und
-  entfernt keine Core-/SRT-/DASH-Volumes.
+  up -d --build`-Befehl plus die Port-Tabelle (8892 WHIP/WHEP, 8189
+  ICE, 9999 API).
+- [x] Stop/Reset auf `mtrace-webrtc` begrenzt: README zeigt
+  `docker compose -p mtrace-webrtc … down [--volumes]`. Greift weder
+  Core-Lab- (`mtrace`) noch SRT- (`mtrace-srt`) noch DASH-Volumes
+  (`mtrace-dash`) an.
 
 ---
 
