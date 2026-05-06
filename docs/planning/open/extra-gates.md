@@ -59,6 +59,14 @@ DoD:
 - Tool-Versionen sind gepinnt oder reproduzierbar bezogen.
 - CI gibt maschinenlesbare Scan-Artefakte aus.
 - False-Positive-/Ignore-Regeln liegen versioniert mit Begruendung vor.
+- `make image-scan` baut die zu scannenden Runtime-Images im selben
+  Lauf oder konsumiert eindeutig benannte Image-Tags aus einem
+  vorangegangenen CI-Step. Dashboard und Analyzer-Service duerfen
+  nicht implizit als vorhanden angenommen werden, weil `make build`
+  aktuell nur API-Image plus TypeScript-Artefakte baut.
+- Wenn Security-Gates PR-blockierend werden, ist der GitHub-Actions-
+  Workflow explizit erweitert oder auf ein zentrales Target umgestellt,
+  das diese Gates enthaelt. Ein neues Make-Target allein reicht nicht.
 
 ### 3.2 Benchmark-Smoke fuer API und Stream-Analyzer
 
@@ -91,6 +99,11 @@ Policy:
   geschaerft.
 - Budget-Smokes messen Hot Paths mit synthetischen, repo-lokalen
   Fixtures; keine Netzwerkabhaengigkeit.
+- PR-Budgets gelten zunaechst fuer GitHub Actions auf `ubuntu-24.04`.
+  Jeder Lauf druckt mindestens Runner-OS, CPU-Modell und relevante
+  Runtime-Versionen, damit Budget-Failures einordenbar bleiben.
+- Neue oder geaenderte Budgets laufen erst fuer mehrere gruene CI-
+  Beobachtungslaeufe nicht-blockierend mit, bevor sie PRs blockieren.
 
 Erste Ziel-Targets:
 
@@ -103,6 +116,9 @@ DoD:
 - Jeder Smoke druckt Laufzeit, Allokationen oder Durchsatz lesbar aus.
 - Budgetverletzung erzeugt eine eindeutige Fehlermeldung mit Ist/Soll.
 - Die Fixtures sind stabil und versioniert.
+- Wenn `make benchmark-smoke` PR-blockierend wird, ist der
+  GitHub-Actions-Workflow explizit erweitert oder auf ein zentrales
+  Target umgestellt, das den Smoke enthaelt.
 
 ### 3.3 Nightly `benchstat`-Regressionen
 
@@ -159,6 +175,9 @@ DoD:
 - Das Gate laeuft ohne Netzwerk.
 - Es prueft nur deterministische Artefakte.
 - Der Fehlertext nennt den konkreten Regenerierungsbefehl.
+- Wenn `make generated-drift-check` PR-blockierend wird, ist der
+  GitHub-Actions-Workflow explizit erweitert oder auf ein zentrales
+  Target umgestellt, das den Check enthaelt.
 
 ### 3.5 Selektives Fuzzing / Property Tests
 
@@ -201,7 +220,7 @@ Kandidaten:
 
 - Event-Validierung.
 - Cursor-Logik.
-- HLS-/DASH-Parser.
+- HLS-Parser; DASH-Parser erst, sobald DASH-Analyse produktiv ist.
 - SRT-Health-Mapping.
 - Security-relevante URL-/SSRF-Pruefung.
 
