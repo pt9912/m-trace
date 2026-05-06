@@ -149,7 +149,7 @@ wird im Closeout in `docs/user/releasing.md` §3 verankert:
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Tool-Pinning-Entscheidung (Trivy für Container-Scan; Toolchain-Check ohne Bump) | ✅ |
 | 1 | Security-Gates: `make vuln-check` (govulncheck) + `make audit-ts` (`pnpm audit --audit-level high`) + `make image-scan` (Trivy) + Wrapper `make security-gates`; CI-Stage parallel zu `make gates` | ✅ |
-| 2 | Generated-Artifact-Drift-Gate: `make generated-drift-check` (Schema-DDL, Contract-Fixtures, Public-API-Snapshot); CI-Stage in `make gates` | ⬜ |
+| 2 | Generated-Artifact-Drift-Gate: Sub-2a Migrations-Konsolidierung (V2..V5 in rolling V1, Composite-FK in `schema.yaml`); Sub-2b `make generated-drift-check` (Schema-DDL, Contract-Fixtures, Public-API-Snapshot); CI-Stage in `make gates` | ✅ |
 | 3 | Release-Doku, Patch-Release-Konvention in `releasing.md` §3, Versions-Bump 0.8.0 → 0.8.5, Plan nach `done/`, Tag `v0.8.5` | ⬜ |
 
 ---
@@ -260,27 +260,81 @@ Bezug: `extra-gates.md` §3.4.
 Ziel: Generierte Artefakte bleiben synchron zu ihren Quellen.
 Drift bricht den PR mit klarer Regenerierungs-Anweisung.
 
+> Vorab-Befund (vor Implementierung des Gates): `make schema-generate`
+> erzeugte ein V1__m_trace.sql, das gegenüber dem committeten Stand
+> 50 Zeilen Drift hatte — die historischen V2..V5-Migrationen waren
+> inkrementell hinzugefügt worden, statt in V1 zurückzuführen. Da
+> noch kein Production-State existiert, wurden V2..V5 in der rolling
+> V1 konsolidiert (s. Sub-Tranche 2a). Damit ist `schema.yaml` Single-
+> Source-of-Truth; der Drift-Gate kann V1 als generiertes Artefakt
+> prüfen, ohne dass inkrementelle Migrationen bewusst auseinander
+> driften.
+
+### Sub-Tranche 2a — Migrations-Konsolidierung (Vorbedingung)
+
 DoD:
 
-- [ ] `make generated-drift-check`-Target im Root-`Makefile`:
-  ruft die Generierungs-/Sync-Targets auf (`make schema-generate`,
-  `make sync-contract-fixtures`, `pnpm --filter @npm9912/player-sdk
-  exec node scripts/check-public-api.mjs`) und führt anschließend
-  `git diff --exit-code` auf die erwarteten Pfade aus.
-- [ ] Geprüfte Artefakte: `apps/api/internal/storage/schema.sql`
-  (aus `schema.yaml`),
-  `apps/api/adapters/driven/streamanalyzer/testdata/contract-*.json`
-  (aus `spec/contract-fixtures/analyzer/*.json`),
-  `packages/player-sdk/scripts/public-api.snapshot.txt`
-  (aus `index.ts`).
-- [ ] Fehlertext nennt den konkreten Regenerierungsbefehl pro Pfad
-  (z. B. „Run `make schema-generate` to regenerate schema.sql").
-- [ ] Gate läuft ohne Netzwerk (Generierung verwendet repo-lokale
-  Fixtures plus die bereits gepinnten Tools).
-- [ ] In `make gates` aufgenommen: ist deterministisch und schnell
-  genug, um nicht parallelisiert werden zu müssen.
-- [ ] CI-Workflow erbt die `make gates`-Erweiterung; kein neuer
-  Job nötig.
+- [x] Composite-FK `stream_session_boundaries → stream_sessions
+  (project_id, session_id) ON DELETE CASCADE` in `schema.yaml` als
+  `constraints[]`-Eintrag mit `type: foreign_key` ergänzt — vorher
+  lebte er nur in der inkrementellen V3-Migration und wäre beim
+  Konsolidieren verlorengegangen. Verifiziert via
+  `d-migrate schema reverse` über eine V1+V2+V3+V4+V5-DB: Diff zur
+  vorhandenen `schema.yaml` zeigte ausschließlich diesen FK.
+- [x] V1__m_trace.sql aus aktualisierter `schema.yaml` regeneriert
+  (`make schema-generate`); enthält alle 5 Tabellen plus den neu
+  ergänzten Composite-FK.
+- [x] V2..V5-Files (`V2__project_session_pk.sql`,
+  `V3__session_boundaries.sql`, `V4__session_end_source.sql`,
+  `V5__srt_health_samples.sql`) gelöscht (`git rm`); kein
+  Production-State erreicht, also legitim.
+- [x] Apply-Runner (`apps/api/internal/storage/migrate.go`)
+  funktional unverändert: ignoriert applied-Versionen ohne File,
+  d. h. bestehende Dev-DBs mit V2..V5 als applied bleiben
+  funktional. Ein Fresh-Start läuft genau **eine** Migration an
+  (V1 mit Endzustand).
+- [x] `migrate_internal_test.go::TestOpen_FreshStart` von
+  `len(rows) == 5` auf `len(rows) == 1` angepasst; Kommentar
+  dokumentiert die Konsolidierung und den Reset-Pfad-Hinweis.
+- [x] `docs/adr/0002-persistence-store.md` §8.2 ergänzt: rolling
+  V1 als Pre-Production-Privileg, Hand-pflege erst ab erstem
+  Production-Stand, Hinweis auf die historischen V2..V5.
+- [x] `make api-test` grün; `make schema-validate` grün.
+
+### Sub-Tranche 2b — Drift-Gate
+
+DoD:
+
+- [x] `make generated-drift-check`-Target im Root-`Makefile`:
+  ruft `make schema-generate`, `make sync-contract-fixtures` und
+  `pnpm --filter @npm9912/player-sdk exec node scripts/check-public-api.mjs`
+  auf und führt anschließend `git diff --exit-code HEAD --` auf
+  die generierten Pfade aus. `HEAD` (nicht Index) ist der
+  Vergleichspunkt, damit ein vorzeitiges `git add` einen Drift
+  nicht maskiert.
+- [x] Geprüfte Artefakte:
+  `apps/api/internal/storage/migrations/V1__m_trace.sql` (aus
+  `schema.yaml`),
+  `apps/api/adapters/driven/streamanalyzer/testdata/contract-success-master.json`
+  und `contract-error-fetch-blocked.json` (aus
+  `spec/contract-fixtures/analyzer/*.json`),
+  `apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json`
+  (aus `spec/contract-fixtures/srt/`),
+  `apps/api/adapters/driving/http/testdata/srt-health-detail.json`
+  (aus `spec/contract-fixtures/api/`),
+  `packages/player-sdk/scripts/public-api.snapshot.txt` (aus
+  `packages/player-sdk/src/index.ts`, Verifikation read-only via
+  `check-public-api.mjs`).
+- [x] Fehlertext nennt den konkreten Regenerier-Befehl pro Pfad
+  (z. B. „--> run: make schema-generate") plus Hinweis, das Target
+  nach dem Fix erneut auszuführen.
+- [x] Gate läuft ohne Netzwerk, sobald die `d-migrate`- und
+  `golang:1.26`-Images lokal gepullt sind (CI-Cache trägt das mit).
+- [x] In `make gates` zwischen `schema-validate` und
+  `sdk-pack-smoke` aufgenommen — deterministisch und schnell
+  genug, keine Parallelisierung nötig.
+- [x] CI-Workflow erbt die `make gates`-Erweiterung über den
+  bestehenden `build`-Job; kein neuer Job nötig.
 
 ---
 

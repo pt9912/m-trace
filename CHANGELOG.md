@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.8.0`-Sammelblock plus `0.8.5` Tranche 0 (Plan-Aktivierung,
-> Container-Scanner-Wahl Trivy, Toolchain-Check ohne Bump).
-> Versions-Bump und finalen CHANGELOG-Block setzt der `0.8.5`-
+> Post-`0.8.0`-Sammelblock plus `0.8.5` Tranche 0..2 (Plan-Aktivierung,
+> Quality-Gates Wave 1: Security-Gates und Generated-Artifact-Drift-
+> Gate). Versions-Bump und finalen CHANGELOG-Block setzt der `0.8.5`-
 > Closeout (Tranche 3).
 
 ### Added
@@ -41,8 +41,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `.github/workflows/build.yml` um zweiten Job `security`
     erweitert (parallel zum bestehenden `build`-Job, PR-blockierend,
     Trivy-Cache als Workflow-Artefakt mit 7 Tagen Retention).
+- Generated-Artifact-Drift-Gate Wave 1 (plan-0.8.5 Tranche 2):
+  - `make generated-drift-check`: ruft `make schema-generate`,
+    `make sync-contract-fixtures` und das Player-SDK-Public-API-
+    Snapshot-Skript auf und vergleicht anschließend die generierten
+    Pfade per `git diff --exit-code HEAD --` mit dem committeten
+    Stand. Drift-Befund nennt den konkreten Regenerier-Befehl pro
+    Pfad. In `make gates` zwischen `schema-validate` und
+    `sdk-pack-smoke` aufgenommen.
+  - Geprüfte Artefakte: `apps/api/internal/storage/migrations/V1__m_trace.sql`,
+    vier Contract-Fixtures (`testdata/contract-success-master.json`,
+    `contract-error-fetch-blocked.json`, `mediamtx-srtconns-list.json`,
+    `srt-health-detail.json`),
+    `packages/player-sdk/scripts/public-api.snapshot.txt`.
 
 ### Changed
+
+- Migrations-Konsolidierung: rolling V1 als Single-Source-of-Truth
+  (plan-0.8.5 Tranche 2 Sub-2a). Die historischen V2..V5-Migrationen
+  (`V2__project_session_pk.sql`, `V3__session_boundaries.sql`,
+  `V4__session_end_source.sql`, `V5__srt_health_samples.sql`) wurden
+  in der aus `schema.yaml` regenerierten V1 zusammengefasst und
+  gelöscht; legitim, weil m-trace noch keinen Production-State
+  erreicht hat. Vorbedingung war, dass der Composite-FK
+  `stream_session_boundaries → stream_sessions(project_id, session_id)
+  ON DELETE CASCADE` aus V3 als `constraints[]`-Eintrag mit
+  `type: foreign_key` in `schema.yaml` ergänzt werden musste —
+  vorher modellierte `schema.yaml` nur Single-Column-FKs und hätte
+  den FK beim Konsolidieren verloren. Apply-Runner unverändert:
+  ignoriert applied-Versionen ohne File, deshalb bleiben Dev-DBs
+  mit V2..V5-applied funktional. ADR-0002 §8.2 dokumentiert die
+  rolling-V1-Strategie und das Pre-Production-Privileg. Auslöser
+  war ein Drift-Befund während der Tranche-2-Implementierung —
+  schema-generate erzeugte 50 Zeilen Diff, weil V1 hinter
+  `schema.yaml` zurückgefallen war.
+- OpenTelemetry-Stack in `apps/api/go.mod` von `v1.32.0`/`v0.57.0`/
+  `v0.8.0` auf `v1.43.0`/`v0.68.0`/`v0.19.0` angehoben — direkter
+  Auslöser war `make vuln-check` (`GO-2026-4394`: PATH-Hijacking in
+  `go.opentelemetry.io/otel/sdk@v1.32.0`, fixed in `v1.40.0`). Da
+  die contrib-/exporter-Pakete denselben Release-Schwarm wie der
+  Core nutzen, wurde der gesamte Stack koordiniert auf den aktuell
+  jüngsten Stable-Stand bezahlt. Folge-Anpassung: `semconv`-Import
+  in `apps/api/adapters/driven/telemetry/otel.go` von `v1.26.0`
+  auf `v1.40.0` umgestellt, damit der Schema-URL-Merge im SDK-
+  Default-Resource nicht mehr in einen `conflicting Schema URL`-
+  Fehler läuft. `make api-test` und `make gates` grün; keine
+  Anpassungen am restlichen Telemetrie-Code nötig.
+
+### Removed
+
+- `apps/api/internal/storage/migrations/V2__project_session_pk.sql`,
+  `V3__session_boundaries.sql`, `V4__session_end_source.sql`,
+  `V5__srt_health_samples.sql` — in der rolling V1 konsolidiert
+  (s. Changed-Block oben).
 
 - OpenTelemetry-Stack in `apps/api/go.mod` von `v1.32.0`/`v0.57.0`/
   `v0.8.0` auf `v1.43.0`/`v0.68.0`/`v0.19.0` angehoben — direkter

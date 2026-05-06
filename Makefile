@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check
 
 help:
 	@printf '%s\n' \
@@ -47,6 +47,7 @@ help:
 		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace (plan-0.8.5 Tranche 1)' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
 		'  make security-gates         Run vuln-check + audit-ts + image-scan together (plan-0.8.5 Tranche 1)' \
+		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift (plan-0.8.5 Tranche 2)' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                pnpm install --frozen-lockfile' \
@@ -256,7 +257,7 @@ sdk-performance-smoke:
 sdk-pack-smoke:
 	$(PNPM) --filter @npm9912/player-sdk run pack:smoke
 
-gates: api-race ts-test lint coverage-gate arch-check schema-validate sdk-pack-smoke sdk-performance-smoke docs-check
+gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke docs-check
 
 # plan-0.8.5 Tranche 1 — Quality-Gates Wave 1. Security-Gates laufen
 # parallel zu `make gates` (separater CI-Job in build.yml), nicht in
@@ -331,6 +332,53 @@ image-scan:
 		mtrace-analyzer-service:scan
 
 security-gates: vuln-check audit-ts image-scan
+
+# `make generated-drift-check` ruft die drei Generierungs-/Sync-
+# Pfade auf und stellt sicher, dass keine erzeugten Artefakte vom
+# committeten Stand abweichen. Bei Drift wird der konkrete
+# Regenerier-Befehl pro Pfad gemeldet, damit der Fix nicht raten
+# muss, welches Target die Quelle ist. Ohne Netzwerk lauffähig,
+# sobald die `d-migrate`- und `golang:1.26`-Images lokal gepullt
+# sind (CI-Cache trägt das mit).
+#
+# Geprüfte Artefakte (Single-Source-of-Truth links, Generated rechts):
+#   - schema.yaml             → migrations/V1__m_trace.sql
+#   - spec/contract-fixtures/ → apps/api/.../testdata/contract-*.json
+#                               apps/api/.../testdata/mediamtx-*.json
+#                               apps/api/.../testdata/srt-health-*.json
+#   - packages/player-sdk/src/index.ts → public-api.snapshot.txt
+#     (check-public-api.mjs ist read-only und exited bei Drift mit 1;
+#     deshalb separater Aufruf, kein git-diff danach.)
+generated-drift-check:
+	@echo "[drift-check] Re-generating schema DDL (V1__m_trace.sql)..."
+	@$(MAKE) --no-print-directory schema-generate >/dev/null
+	@echo "[drift-check] Re-syncing contract fixtures..."
+	@$(MAKE) --no-print-directory sync-contract-fixtures >/dev/null
+	@echo "[drift-check] Verifying public API snapshot..."
+	@$(PNPM) --filter @npm9912/player-sdk exec node scripts/check-public-api.mjs
+	@echo "[drift-check] Verifying working tree is clean for generated paths..."
+	@# `git diff --exit-code HEAD -- ...` vergleicht Working-Tree gegen
+	@# HEAD (nicht gegen den Index), damit ein vorzeitiges `git add`
+	@# einen Drift nicht maskiert. CI mit shallow checkout (depth=1)
+	@# hat HEAD verfügbar.
+	@if ! git diff --exit-code HEAD -- \
+		apps/api/internal/storage/migrations/V1__m_trace.sql \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-master.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-error-fetch-blocked.json \
+		apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json \
+		apps/api/adapters/driving/http/testdata/srt-health-detail.json; then \
+		echo ""; \
+		echo "Generated artifacts are out of sync with their sources."; \
+		echo "  - schema DDL (V1__m_trace.sql)        --> run: make schema-generate"; \
+		echo "  - api/streamanalyzer/testdata/*.json   --> run: make sync-contract-fixtures"; \
+		echo "  - api/srt/mediamtxclient/testdata/...  --> run: make sync-contract-fixtures"; \
+		echo "  - api/driving/http/testdata/...        --> run: make sync-contract-fixtures"; \
+		echo "  - player-sdk public API snapshot       --> update packages/player-sdk/scripts/public-api.snapshot.txt"; \
+		echo ""; \
+		echo "Re-run 'make generated-drift-check' afterwards to verify."; \
+		exit 1; \
+	fi
+	@echo "[drift-check] OK -- no drift detected."
 
 ci: gates build
 

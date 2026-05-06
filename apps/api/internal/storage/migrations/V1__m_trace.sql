@@ -7,6 +7,22 @@ CREATE TABLE "projects" (
     PRIMARY KEY ("project_id")
 );
 
+CREATE TABLE "stream_session_boundaries" (
+    "project_id" TEXT NOT NULL,
+    "session_id" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "network_kind" TEXT NOT NULL,
+    "adapter" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "client_timestamp" TEXT NOT NULL,
+    "server_received_at" TEXT NOT NULL,
+    CONSTRAINT "chk_stream_session_boundaries_kind" CHECK (kind IN ('network_signal_absent')),
+    CONSTRAINT "chk_stream_session_boundaries_network_kind" CHECK (network_kind IN ('manifest', 'segment')),
+    CONSTRAINT "chk_stream_session_boundaries_adapter" CHECK (adapter IN ('hls.js', 'native_hls', 'unknown')),
+    CONSTRAINT "fk_stream_session_boundaries_session" FOREIGN KEY ("project_id", "session_id") REFERENCES "stream_sessions" ("project_id", "session_id") ON DELETE CASCADE,
+    PRIMARY KEY ("project_id", "session_id", "kind", "network_kind", "adapter", "reason")
+);
+
 CREATE TABLE "playback_events" (
     "ingest_sequence" INTEGER PRIMARY KEY AUTOINCREMENT,
     "project_id" TEXT NOT NULL,
@@ -35,9 +51,40 @@ CREATE TABLE "stream_sessions" (
     "ended_at" TEXT,
     "event_count" INTEGER NOT NULL DEFAULT 0,
     "correlation_id" TEXT,
+    "end_source" TEXT,
     CONSTRAINT "chk_stream_sessions_state" CHECK (state IN ('active', 'stalled', 'ended')),
+    CONSTRAINT "chk_stream_sessions_end_source" CHECK (end_source IS NULL OR end_source IN ('client', 'sweeper')),
     PRIMARY KEY ("project_id", "session_id")
 );
+
+CREATE TABLE "srt_health_samples" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "project_id" TEXT NOT NULL REFERENCES "projects"("project_id") ON DELETE RESTRICT,
+    "stream_id" TEXT NOT NULL,
+    "connection_id" TEXT NOT NULL,
+    "source_observed_at" TEXT,
+    "source_sequence" TEXT,
+    "collected_at" TEXT NOT NULL,
+    "ingested_at" TEXT NOT NULL,
+    "rtt_ms" REAL NOT NULL,
+    "packet_loss_total" INTEGER NOT NULL,
+    "packet_loss_rate" REAL,
+    "retransmissions_total" INTEGER NOT NULL,
+    "available_bandwidth_bps" INTEGER NOT NULL,
+    "throughput_bps" INTEGER,
+    "required_bandwidth_bps" INTEGER,
+    "sample_window_ms" INTEGER,
+    "source_status" TEXT NOT NULL,
+    "source_error_code" TEXT NOT NULL,
+    "connection_state" TEXT NOT NULL,
+    "health_state" TEXT NOT NULL,
+    CONSTRAINT "chk_srt_health_samples_source_status" CHECK (source_status IN ('ok', 'unavailable', 'partial', 'stale', 'no_active_connection')),
+    CONSTRAINT "chk_srt_health_samples_source_error_code" CHECK (source_error_code IN ('none', 'source_unavailable', 'no_active_connection', 'partial_sample', 'stale_sample', 'parse_error')),
+    CONSTRAINT "chk_srt_health_samples_connection_state" CHECK (connection_state IN ('connected', 'no_active_connection', 'unknown')),
+    CONSTRAINT "chk_srt_health_samples_health_state" CHECK (health_state IN ('healthy', 'degraded', 'critical', 'unknown'))
+);
+
+CREATE INDEX "idx_stream_session_boundaries_session" ON "stream_session_boundaries" ("project_id", "session_id");
 
 CREATE INDEX "idx_playback_events_session_canonical" ON "playback_events" ("project_id", "session_id", "server_received_at", "sequence_number", "ingest_sequence");
 
@@ -46,3 +93,7 @@ CREATE INDEX "idx_playback_events_dedup" ON "playback_events" ("project_id", "se
 CREATE INDEX "idx_stream_sessions_project_started" ON "stream_sessions" ("project_id", "started_at", "session_id");
 
 CREATE INDEX "idx_stream_sessions_state" ON "stream_sessions" ("state");
+
+CREATE INDEX "idx_srt_health_samples_stream_ingested" ON "srt_health_samples" ("project_id", "stream_id", "ingested_at", "id");
+
+CREATE INDEX "idx_srt_health_samples_dedupe" ON "srt_health_samples" ("project_id", "stream_id", "connection_id", "source_observed_at", "source_sequence");

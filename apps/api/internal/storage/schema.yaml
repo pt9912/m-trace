@@ -112,6 +112,19 @@ tables:
       - name: chk_stream_session_boundaries_adapter
         type: check
         expression: "adapter IN ('hls.js', 'native_hls', 'unknown')"
+      # Composite-FK auf stream_sessions(project_id, session_id) mit
+      # ON DELETE CASCADE: beim späteren Löschen einer Session sollen
+      # keine verwaisten Boundaries zurückbleiben (ADR-0002 §8.4
+      # Reset-Pfad). Vor plan-0.8.5 Tranche 2 lebte dieser FK nur in
+      # der inkrementellen V3-Migration; mit der Migrations-Konsoli-
+      # dierung ist `schema.yaml` jetzt Single-Source-of-Truth.
+      - name: fk_stream_session_boundaries_session
+        type: foreign_key
+        columns: [project_id, session_id]
+        references:
+          table: stream_sessions
+          columns: [project_id, session_id]
+          on_delete: cascade
 
   playback_events:
     columns:

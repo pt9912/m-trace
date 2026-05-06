@@ -235,14 +235,30 @@ Drittanbieter-Library im API-Image landet.
 **Migrations-File-Konvention**: das Initial-Baseline-DDL
 (`V1__m_trace.sql`) wird aus `schema.yaml` per
 `d-migrate export flyway --target sqlite --version 1` erzeugt; das
-File ist regenerierbar und nicht hand-zu-pflegen. Folge-Migrationen
-(`V2__…sql`, `V3__…sql`) sind hand-gepflegt, bis `d-migrate
-schema migrate` (Diff-basiert, geplant) verfügbar ist. Apply-Runner
-behandelt beide File-Klassen identisch (Pattern `V<n>__.+\.sql`). Falls
-eine Tranche ein DDL-Feature braucht, das d-migrate noch nicht
-modelliert, wird das **dort** entschieden — entweder ist das Feature
-anders lösbar (z. B. Race-Schutz über `BEGIN IMMEDIATE` statt
-Partial-Index in §8.3), oder d-migrate selbst wird erweitert.
+File ist regenerierbar und nicht hand-zu-pflegen. `schema.yaml` ist
+Single-Source-of-Truth: jede Schema-Änderung wird dort eingetragen und
+führt zu einer regenerierten `V1__m_trace.sql` (rolling Baseline).
+Folge-Migrationen werden erst hand-gepflegt, sobald m-trace einen
+ersten Production-Stand erreicht hat — vorher gilt das Pre-Production-
+Privileg, dass die rolling Baseline neu erzeugt werden darf. Nach
+Erstauslieferung übernimmt entweder `d-migrate schema migrate`
+(Diff-basiert, geplant) oder hand-gepflegte `V<n>__…sql`-Migrationen
+die Diff-Pflege; Apply-Runner behandelt beide File-Klassen identisch
+(Pattern `V<n>__.+\.sql`). Falls eine Tranche ein DDL-Feature braucht,
+das d-migrate noch nicht modelliert, wird das **dort** entschieden —
+entweder ist das Feature anders lösbar (z. B. Race-Schutz über
+`BEGIN IMMEDIATE` statt Partial-Index in §8.3), oder d-migrate selbst
+wird erweitert.
+
+> Historisch existierten in 0.4.0–0.6.0 inkrementelle Migrationen
+> `V2__project_session_pk.sql` … `V5__srt_health_samples.sql`. Mit
+> plan-0.8.5 Tranche 2 (Migrations-Konsolidierung) wurden sie in die
+> rolling V1 zurückgeführt und gelöscht; einzige Voraussetzung war,
+> dass der Composite-FK aus V3 (`stream_session_boundaries → stream_
+> sessions ON DELETE CASCADE`) als `constraints[]`-Eintrag in
+> `schema.yaml` ergänzt werden musste. Bestehende Dev-DBs mit V2–V5
+> als applied bleiben funktional, weil der Apply-Runner nur fehlende
+> Versionen anwendet und applied-Versionen ohne File ignoriert.
 
 ### 8.3 Idempotenz und Event-Deduplikation
 

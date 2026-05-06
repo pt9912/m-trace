@@ -41,17 +41,17 @@ func TestOpen_FreshStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read schema_migrations: %v", err)
 	}
-	// Ab plan-0.6.0 §4 Sub-3.3 fünf Migrations-Files (V1 baseline + V2
-	// project-scoped session PK + V3 session_boundaries + V4
-	// end_source-Spalte + V5 srt_health_samples); ein Fresh-Start
-	// läuft alle fünf an.
-	if len(rows) != 5 {
-		t.Fatalf("schema_migrations rows = %d, want 5", len(rows))
+	// Ab plan-0.8.5 Tranche 2 (Migrations-Konsolidierung) ist V1 die
+	// rolling Baseline und enthält den vollen Zielzustand aus
+	// schema.yaml; die historischen V2..V5 wurden gelöscht (kein
+	// Production-State). Ein Fresh-Start läuft genau eine Migration an.
+	// Bestehende Dev-DBs mit V2..V5 als applied bleiben funktional —
+	// der Apply-Runner ignoriert applied-Versionen ohne File.
+	if len(rows) != 1 {
+		t.Fatalf("schema_migrations rows = %d, want 1", len(rows))
 	}
-	for i, want := range []int64{1, 2, 3, 4, 5} {
-		if rows[i].version != want || rows[i].dirty != 0 {
-			t.Errorf("row[%d] = %+v, want version=%d dirty=0", i, rows[i], want)
-		}
+	if rows[0].version != 1 || rows[0].dirty != 0 {
+		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
 	}
 }
 
