@@ -1,9 +1,11 @@
 # Implementation Plan — `0.8.5` (Quality-Gates Wave 1: Security + Generated-Artifact-Drift)
 
-> **Status**: ⬜ geplant (Plan-Skelett, liegt unter
-> `docs/planning/open/`). Vorgänger `v0.8.0` ist released
-> (Tag `v0.8.0`). Tranche 0 aktiviert die Phase. Plan wandert dann
-> atomar nach `docs/planning/in-progress/`.
+> **Status**: 🟡 in Arbeit (Tranche 0 aktiviert am 2026-05-06;
+> liegt unter `docs/planning/in-progress/`). Vorgänger `v0.8.0` ist
+> released (Tag `v0.8.0` auf `8df263a`, GitHub-Release veröffentlicht).
+> Container-Scanner-Wahl in Tranche 0: **Trivy** (Default aus
+> §0.4 — etablierter, breitere Image-Format-Unterstützung, bessere
+> Default-Policy als Grype).
 >
 > **Release-Typ**: erstmaliger **Patch-Release** im m-trace-Repo
 > (siehe §0.6). Alle bisherigen Releases (`0.1.0`..`0.8.0`) waren
@@ -17,7 +19,7 @@
 > Surface), wird ein eigenständiger Lastenheft-Patch in einem
 > Folge-Plan aufgenommen.
 >
-> **Bezug**: [`extra-gates.md`](./extra-gates.md) §3.1
+> **Bezug**: [`extra-gates.md`](../open/extra-gates.md) §3.1
 > (`govulncheck` + Container-Scan) und §3.4 (Generated-Artifact-
 > Drift-Gate) — Master-Backlog für die sechs vorgeschlagenen
 > Quality-Gates; `0.8.5` liefert die deterministisch-schnellen
@@ -30,9 +32,9 @@
 > Commit und Tag — wird im Closeout um Patch-Release-Konvention
 > erweitert).
 >
-> **Nachfolger**: [`plan-0.9.0.md`](./plan-0.9.0.md) (Player-SDK-
+> **Nachfolger**: [`plan-0.9.0.md`](../open/plan-0.9.0.md) (Player-SDK-
 > WebRTC-Folge-Themen, separat) und
-> [`plan-0.9.5.md`](./plan-0.9.5.md) (Quality-Gates Wave 2, nach
+> [`plan-0.9.5.md`](../open/plan-0.9.5.md) (Quality-Gates Wave 2, nach
 > `0.9.0`).
 
 ## 0. Konvention
@@ -145,8 +147,8 @@ wird im Closeout in `docs/user/releasing.md` §3 verankert:
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Tool-Pinning-Entscheidung (Trivy vs. Grype für Container-Scan) | ⬜ |
-| 1 | Security-Gates: `make vuln-check` (govulncheck) + `make image-scan` (Trivy/Grype) + Wrapper `make security-gates`; CI-Stage parallel zu `make gates` | ⬜ |
+| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Tool-Pinning-Entscheidung (Trivy für Container-Scan; Toolchain-Check ohne Bump) | ✅ |
+| 1 | Security-Gates: `make vuln-check` (govulncheck) + `make image-scan` (Trivy) + Wrapper `make security-gates`; CI-Stage parallel zu `make gates` | ⬜ |
 | 2 | Generated-Artifact-Drift-Gate: `make generated-drift-check` (Schema-DDL, Contract-Fixtures, Public-API-Snapshot); CI-Stage in `make gates` | ⬜ |
 | 3 | Release-Doku, Patch-Release-Konvention in `releasing.md` §3, Versions-Bump 0.8.0 → 0.8.5, Plan nach `done/`, Tag `v0.8.5` | ⬜ |
 
@@ -159,17 +161,25 @@ Bezug: keine RAK direkt; Wartungs-/Hygiene-Tranche analog
 
 DoD:
 
-- [ ] Plan-Skelett von `docs/planning/open/plan-0.8.5.md` nach
+- [x] Plan-Skelett von `docs/planning/open/plan-0.8.5.md` nach
   `docs/planning/in-progress/plan-0.8.5.md` verschoben (Status
-  `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3 und
-  `extra-gates.md`-Header nachgezogen.
-- [ ] Container-Scanner-Wahl entschieden: Trivy oder Grype. Default-
-  Empfehlung: Trivy (etablierter, breitere Image-Format-Unterstützung,
-  bessere Default-Policy). Falls Grype, Begründung im Plan-Closeout.
-- [ ] Toolchain-Bump-Check: Go/Node/golangci-lint sind seit `0.7.0`
-  Tranche 0 aktuell — kein Bump nötig. Wenn ein Sicherheits-CVE in
-  einer Toolchain-Version vorliegt, eigene Sub-Tranche analog
-  `0.7.0`.
+  `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3 nachgezogen
+  (Statusspalte 0.8.5 von ⬜ auf 🟡); `extra-gates.md`-Header
+  ist seit Plan-Anlage-Commit konsistent (Master-Backlog-Form mit
+  Verweis auf 0.8.5/0.9.5).
+- [x] Container-Scanner-Wahl: **Trivy**. Begründung: etabliert in der
+  Open-Source-Sicherheits-Pipeline, breitere Image-Format-Unterstützung
+  als Grype (zusätzlich Filesystem-/SBOM-Scans), bessere
+  Out-of-the-box-Policy für CRITICAL/HIGH/MEDIUM-Klassifizierung.
+  Aufruf-Form in Tranche 1: `aquasec/trivy:0.X.Y` Container-Image
+  mit gepinnter Version, kein lokaler Binary-Pin nötig.
+- [x] Toolchain-Bump-Check: keine Anpassung nötig. Go (`1.26`),
+  golangci-lint (`v2.12.1`), Node (`22 LTS`), pnpm sind seit
+  `0.7.0` Tranche 0 (Commits `ccf68b1` + `8bfad21`) aktuell und
+  non-EOL. Race-Detector-Stage ist in `make gates` enthalten.
+  `govulncheck` selbst wird in Tranche 1 mit eigener gepinnter
+  Version (`go install golang.org/x/vuln/cmd/govulncheck@vX.Y.Z`)
+  installiert; keine Auswirkung auf die Repo-Toolchain.
 
 ---
 

@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Sammelblock für post-`0.8.0`-Befunde. Versions-Bump und finalen
-> CHANGELOG-Block setzt der jeweils nächste Release-Closeout.
+> Post-`0.8.0`-Sammelblock plus `0.8.5` Tranche 0 (Plan-Aktivierung,
+> Container-Scanner-Wahl Trivy, Toolchain-Check ohne Bump).
+> Versions-Bump und finalen CHANGELOG-Block setzt der `0.8.5`-
+> Closeout (Tranche 3).
+
+### Added
+
+- `0.8.5`-Plan unter `docs/planning/in-progress/plan-0.8.5.md` aus
+  `open/` aktiviert (Status `🟡 in Arbeit`); Tranche 0 abgeschlossen
+  (Plan-Move + Container-Scanner-Wahl Trivy + Toolchain-Check
+  ohne Bump-Bedarf, weil Go 1.26 / golangci-lint v2.12.1 / Node 22
+  LTS aus `0.7.0` Tranche 0 aktuell sind).
 
 ## [0.8.0] - 2026-05-06
 

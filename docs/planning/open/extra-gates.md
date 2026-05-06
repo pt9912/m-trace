@@ -3,7 +3,7 @@
 > **Status**: Master-Backlog fuer die sechs vorgeschlagenen Quality-
 > Gates. Aktiv konkretisiert in zwei Folge-Plaenen:
 >
-> - [`plan-0.8.5.md`](./plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
+> - [`plan-0.8.5.md`](../in-progress/plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
 >   + Container-Scan, §3.4 Generated-Artifact-Drift-Gate
 >   (deterministisch, schnell, PR-blockierend; vor `0.9.0`).
 > - [`plan-0.9.5.md`](./plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
