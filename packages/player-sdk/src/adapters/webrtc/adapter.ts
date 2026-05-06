@@ -5,6 +5,7 @@ import {
   normalizeWebRtcErrorCode,
   type WebRtcErrorCode
 } from "./error-codes";
+import { newPeerConnectionRunId, startSampling, type SamplingDeps } from "./sampling";
 
 /**
  * WebRTC-/WHEP-Adapter für `@npm9912/player-sdk`. Implementiert den
@@ -36,6 +37,12 @@ export interface WebRtcAdapterOptions {
   peerConnectionConfig?: RTCConfiguration;
   /** Optionales `AbortSignal` zum Abbruch der WHEP-Signalisierung. */
   signal?: AbortSignal;
+  /**
+   * `getStats()`-Sampling-Intervall in Millisekunden für
+   * `metrics_sampled`-Events (`plan-0.8.0` Tranche 3). Default 1000 ms;
+   * `0` deaktiviert das Sampling vollständig.
+   */
+  samplingIntervalMs?: number;
 }
 
 interface AdapterDeps {
@@ -43,6 +50,10 @@ interface AdapterDeps {
   PeerConnection?: typeof RTCPeerConnection;
   /** `fetch`-Implementation. Test-Override-fähig. */
   fetch?: typeof fetch;
+  /** Test-Overrides für `setInterval`/`clearInterval` (Sample-Loop). */
+  sampling?: SamplingDeps;
+  /** Test-Override für die `peer_connection_run_id`-Generierung. */
+  newRunId?: () => string;
 }
 
 interface AdapterState {
@@ -83,17 +94,27 @@ export function attachWebRtc(
   const state: AdapterState = { destroyed: false, connected: false, errored: false };
   const localAbort = new AbortController();
   const composedSignal = composeSignals(options.signal, localAbort.signal);
+  const runId = (deps.newRunId ?? newPeerConnectionRunId)();
 
   const reportError = (code: WebRtcErrorCode, detail?: string): void => {
     if (state.errored || state.destroyed) {
       return;
     }
     state.errored = true;
-    tracker.track({ eventName: "playback_error", meta: errorMeta(code, detail) });
+    tracker.track({ eventName: "playback_error", meta: errorMeta(code, runId, detail) });
   };
 
   pc.addEventListener("track", (event: RTCTrackEvent) => attachTrack(state, video, tracks, event));
-  pc.addEventListener("connectionstatechange", () => handleConnectionStateChange(pc, tracker, state, reportError));
+  pc.addEventListener("connectionstatechange", () => handleConnectionStateChange(pc, tracker, state, runId, reportError));
+
+  let stopSampling: (() => void) | undefined;
+  const samplingIntervalMs = options.samplingIntervalMs ?? 1000;
+  if (samplingIntervalMs > 0) {
+    stopSampling = startSampling(pc, tracker, runId, {
+      ...deps.sampling,
+      intervalMs: samplingIntervalMs
+    });
+  }
 
   void runWhepHandshake(pc, options.whepUrl, fetchImpl, composedSignal).catch((err: unknown) => {
     if (state.destroyed) {
@@ -110,15 +131,22 @@ export function attachWebRtc(
 
   return {
     destroy(): void {
-      destroyAdapter(state, tracker, tracks, pc, video, localAbort);
+      if (stopSampling) {
+        stopSampling();
+        stopSampling = undefined;
+      }
+      destroyAdapter(state, tracker, tracks, pc, video, localAbort, runId);
     }
   };
 }
 
-function errorMeta(code: WebRtcErrorCode, detail?: string): EventMeta {
-  const meta: EventMeta = { [WEBRTC_ERROR_CODE_META_KEY]: normalizeWebRtcErrorCode(code) };
+function errorMeta(code: WebRtcErrorCode, runId: string, detail?: string): EventMeta {
+  const meta: EventMeta = {
+    [WEBRTC_ERROR_CODE_META_KEY]: normalizeWebRtcErrorCode(code),
+    "webrtc.peer_connection_run_id": runId
+  };
   if (typeof detail === "string" && detail.length > 0) {
-    meta["webrtc.error_detail"] = detail;
+    meta["webrtc.error_detail"] = detail.slice(0, 256);
   }
   return meta;
 }
@@ -149,12 +177,19 @@ function handleConnectionStateChange(
   pc: RTCPeerConnection,
   tracker: PlayerTracker,
   state: AdapterState,
+  runId: string,
   reportError: (code: WebRtcErrorCode, detail?: string) => void
 ): void {
   const cs = pc.connectionState;
   if (cs === "connected" && !state.connected) {
     state.connected = true;
-    tracker.track({ eventName: "playback_started", meta: { "webrtc.connection_state": cs } });
+    tracker.track({
+      eventName: "playback_started",
+      meta: {
+        "webrtc.connection_state": cs,
+        "webrtc.peer_connection_run_id": runId
+      }
+    });
     return;
   }
   if (cs === "failed" || cs === "disconnected" || cs === "closed") {
@@ -171,7 +206,8 @@ function destroyAdapter(
   tracks: MediaStreamTrack[],
   pc: RTCPeerConnection,
   video: HTMLVideoElement,
-  localAbort: AbortController
+  localAbort: AbortController,
+  runId: string
 ): void {
   if (state.destroyed) {
     return;
@@ -181,7 +217,10 @@ function destroyAdapter(
   // dokumentierten Code synchron.
   if (!state.connected && !state.errored) {
     state.errored = true;
-    tracker.track({ eventName: "playback_error", meta: errorMeta("webrtc_destroyed_before_connected") });
+    tracker.track({
+      eventName: "playback_error",
+      meta: errorMeta("webrtc_destroyed_before_connected", runId)
+    });
   }
   localAbort.abort();
   for (const track of tracks) {

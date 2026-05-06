@@ -105,6 +105,33 @@ Domänen/Redaction-Regeln, `timing.*`-Werte sind Zahlen oder explizit
 dokumentierte RFC3339-Strings. Verstöße liefern `422` und werden nicht
 persistiert.
 
+Ab `plan-0.8.0.md` Tranche 3 ist `webrtc.*` ein zusätzlicher
+**reservierter Meta-Namespace** für den produktiven WebRTC-Telemetrie-
+Pfad (siehe §3.5). Die folgende Tabelle ist die normative Allowlist;
+jeder andere `webrtc.*`-Key liefert `422`. Nicht-reservierte Meta-Keys
+außerhalb von `network.*`/`timing.*`/`webrtc.*` bleiben gemäß
+Vorwärtskompatibilitäts-Regel des API-Kontrakts unangetastet.
+
+| Feld | Typ | Bedeutung | Erlaubt auf event_name |
+|---|---|---|---|
+| `meta["webrtc.peer_connection_run_id"]` | string, `^[a-z0-9_-]{1,64}$` | Identifier pro `RTCPeerConnection`-Lebenszyklus. Wechselt bei Reconnect; persistiert in SQLite/OTel-Spans, nicht als Prometheus-Label (§3.1). | `metrics_sampled`, `playback_started`, `playback_error` |
+| `meta["webrtc.sample_id"]` | int64 ≥ 0 | Monoton aufsteigender Sample-Schlüssel pro `peer_connection_run_id`. Server-side Delta-Berechnung nutzt dieses Feld als Idempotenz-Anker; Duplicate/Retry-Samples mit gleichem Schlüssel inkrementieren keinen Counter. | `metrics_sampled` |
+| `meta["webrtc.connection_state"]` | string aus W3C `RTCPeerConnectionState`: `new`, `connecting`, `connected`, `disconnected`, `failed`, `closed` | Aktueller Verbindungszustand der `RTCPeerConnection`. | `metrics_sampled`, `playback_started`, `playback_error` |
+| `meta["webrtc.ice_state"]` | string aus W3C `RTCIceConnectionState`: `new`, `checking`, `connected`, `completed`, `failed`, `disconnected`, `closed` | Aggregierter ICE-Zustand (Mehrheits-/Worst-Case der Candidate-Pairs). | `metrics_sampled` |
+| `meta["webrtc.dtls_state"]` | string aus W3C `RTCDtlsTransportState`: `new`, `connecting`, `connected`, `closed`, `failed` | DTLS-Transport-Zustand. | `metrics_sampled` |
+| `meta["webrtc.packets_lost"]` | int64 ≥ 0 | Absoluter Sample-Wert (kumuliert über die Lebenszeit der `peer_connection_run_id`). Server berechnet Delta zum Vorgänger-Sample. | `metrics_sampled` |
+| `meta["webrtc.bytes_received"]` | int64 ≥ 0 | Absoluter Sample-Wert. Server berechnet Delta. | `metrics_sampled` |
+| `meta["webrtc.bytes_sent"]` | int64 ≥ 0 | Absoluter Sample-Wert. Server berechnet Delta. | `metrics_sampled` |
+| `meta["webrtc.error_code"]` | string aus fester Allowlist (siehe `packages/player-sdk/src/adapters/webrtc/error-codes.ts`): `whep_signaling_failed`, `whep_sdp_invalid`, `webrtc_no_tracks`, `peer_connection_failed`, `webrtc_destroyed_before_connected` | Maschinenlesbarer Fehlercode des Adapter-Pfads. | `playback_error` |
+| `meta["webrtc.error_detail"]` | string, optional, max 256 Zeichen | Diagnostischer Detail-Text. Geht ausschließlich in den Read-Pfad (SQLite/Spans), nicht in Prometheus-Labels. | `playback_error` |
+
+Reservierte `webrtc.*`-Keys werden inbound typvalidiert. Negative
+Werte für `packets_lost`/`bytes_received`/`bytes_sent`, Werte
+außerhalb der Enum-Domäne, falsche Typen oder unbekannte
+`webrtc.*`-Keys liefern `422`. Per-Identifier-Felder aus §3.1
+(z. B. `webrtc.track_id`, `webrtc.candidate_pair_id`, `webrtc.ssrc`)
+sind explizit verboten und liefern unverändert `422`.
+
 `network_detail_unavailable` ist kein Fehlerstatus und darf allein
 keinen 4xx auslösen. Das Event bleibt in der Session-Timeline sichtbar,
 behält seine serverseitig vergebene `correlation_id` und kann als
@@ -454,35 +481,51 @@ Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet (F-100):
 - User-Agent-Felder dürfen reduzierbar sein (z. B. nur Major-Version).
 - GDPR-konformer Betrieb: Event-Store muss eine Löschanfrage pro `session_id` bedienen können — Implementierung über das `EventRepository` in der jeweiligen Persistenz-Variante.
 
-### 3.5 WebRTC-Telemetrie-Vorbereitung (Future-Telemetry-Notiz)
+### 3.5 WebRTC-Telemetrie (produktiv ab `0.8.0`)
 
-> Bezug: Lastenheft `1.1.9` §13.9 RAK-49, `plan-0.7.0.md` §5 Tranche 4,
-> [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose ab `0.7.0`
-> Tranche 1).
+> Bezug: Lastenheft `1.1.10` §13.10 RAK-51..RAK-55, `plan-0.8.0.md`
+> §4 Tranche 3, [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose
+> ab `0.7.0` Tranche 1).
+>
+> **Statusbruch zu `0.7.0`-Stand**: Diese Sektion war bis Lastenheft
+> `1.1.9` eine Future-Telemetry-Notiz. `0.8.0` Tranche 3 zieht den
+> Pfad produktiv: das SDK sammelt `getStats()`-Reports im
+> WebRTC-Adapter, der API-Ingress validiert die `webrtc.*`-Allowlist
+> und exportiert `mtrace_webrtc_*`-Counter. R-12 (Browser-`getStats()`-
+> Schema-Drift) wird damit release-blockierend.
 
-Diese Sektion ist eine **Future-Telemetry-Notiz**: sie spezifiziert das
-`getStats()`-Subset, dessen Bounded-Aggregat-Allowlist (siehe §3.2) und
-die Schema-Drift-Strategie für eine spätere produktive WebRTC-Telemetrie-
-Anbindung. Sie ist **kein** Player-SDK-/Adapter-Public-API-Vertrag —
-RAK-51 (Player-SDK-WebRTC-Adapter) ist als Folgeplan deferred (`plan-0.7.0.md`
-§7).
+#### 3.5.1 Counter-Semantik und Sample-Modell
 
-#### 3.5.1 Negative Cardinality-Prüfung im `0.7.0`-Scope
+State-Counter (`mtrace_webrtc_connection_state_total{connection_state}`,
+`mtrace_webrtc_ice_state_total{ice_state}`,
+`mtrace_webrtc_dtls_state_total{dtls_state}`) zählen **angenommene
+Samples**, nicht aktuelle Zustands-Gauges. Jedes
+`metrics_sampled`-Event mit gültigem State-Feld erhöht den jeweiligen
+State-Counter um 1.
 
-`0.7.0` führt **keinen** produktiven `mtrace_webrtc_*`-Counter und
-**keinen** WebRTC-Prometheus-Exportpfad ein. Konsequenzen:
+Verlust-/Byte-Counter (`mtrace_webrtc_packets_lost_total`,
+`mtrace_webrtc_bytes_received_total`, `mtrace_webrtc_bytes_sent_total`)
+sind **label-frei** (außer `instance`/`job`-Target-Metadaten). Das
+SDK liefert absolute Sample-Werte über die Lebenszeit der
+`peer_connection_run_id`; der API-Ingress berechnet Deltas
+serverseitig:
 
-- Die in §3.1 hinzugefügten WebRTC-Forbidden-Labels und die in §3.2
-  hinzugefügten WebRTC-Aggregat-Labels (`connection_state`,
-  `ice_state`, `dtls_state`) sind **Spec-Vorbereitung**. Bis ein
-  produktiver Counter existiert, ist nichts zu spiegeln.
-- Die Erweiterung von [`scripts/smoke-observability.sh`](../scripts/smoke-observability.sh)
-  auf WebRTC-Allowlist-Labels ist **Folge-DoD** für den ersten Plan,
-  der eine produktive WebRTC-Metrik einführt — nicht Teil von `0.7.0`.
-- Der `make smoke-webrtc-prep`-Smoke (`plan-0.7.0.md` §4 Tranche 3) ist
-  endpoint-/compose-only und vom WebRTC-Schema-Drift **nicht**
-  betroffen. Er prüft `OPTIONS …/whip|whep`-Statuscodes, keine
-  `getStats()`-Felder.
+1. **Sample-Schlüssel**: `(project_id, session_id, peer_connection_run_id, metric)`
+   plus `webrtc.sample_id` (monoton aufsteigend).
+2. **Erster Sample**: setzt nur die Baseline und inkrementiert keinen
+   Counter. Dasselbe Verhalten gilt nach API-Restart: in-memory-State
+   ist nicht durable persistiert in `0.8.0`, der erste Sample nach
+   Restart einer Session läuft als Baseline.
+3. **Folge-Samples**: Counter wird um `max(0, current - last)`
+   inkrementiert. Negative Deltas (Counter-Reset, ungewöhnliche
+   getStats()-Werte) inkrementieren keinen Counter und aktualisieren
+   nur die Baseline auf den neuen Wert.
+4. **Duplicate/Retry**: Samples mit `webrtc.sample_id ≤ last_sample_id`
+   inkrementieren keinen Counter (idempotent).
+5. **Reconnect**: Eine neue `peer_connection_run_id` startet mit
+   eigener Baseline; der vorherige State-Eintrag bleibt bis zum
+   Session-Ende oder zur LRU-Eviction (Hard-Cap pro `apps/api`-
+   Prozess) erhalten.
 
 #### 3.5.2 `getStats()`-Subset (Report-Gruppen, Muss-/Soll-Felder)
 
@@ -524,31 +567,18 @@ dieser Drift-Strategie:
    Feld nicht findet, lässt das zugehörige Histogram/Gauge weg und
    emittiert die übrigen Metriken normal weiter. Eine Browser-Version
    ohne einzelnes Soll-Feld blockiert keinen Telemetriepfad.
-3. **Schema-Drift ist ein Spec-/Adapter-Review-Gate, kein automatischer
-   Release-Block**. Der entsprechende Risiko-Eintrag steht im
+3. **Schema-Drift ist ab `0.8.0` release-blockierend**. Der
+   Risiko-Eintrag steht im
    [`risks-backlog.md`](../docs/planning/open/risks-backlog.md) als
-   **R-12** (Stand `0.7.0`-Closeout): bei Browser-Major-Version mit
-   `getStats()`-Schema-Änderung wird die WebRTC-Allowlist plus diese
-   Notiz reviewed, aber ein konkretes Smoke-/Contract-Test-Update ist
-   erst dann release-blockierend, wenn ein produktiver WebRTC-Telemetrie-
-   Pfad existiert.
-4. **Vor dem produktiven Pfad ist `smoke-webrtc-prep` vom Schema-Drift
-   nicht betroffen**. Tranche 3 prüft nur HTTP-OPTIONS-Statuscodes;
-   `getStats()`-Felder werden gar nicht angefasst.
-
-#### 3.5.4 Out-of-Scope-Klauseln für `0.7.0`
-
-Diese Sektion klammert ausdrücklich aus:
-
-- Eine `mtrace_webrtc_*`-Counter-/Gauge-/Histogram-Definition. Solche
-  Definitionen sind Lieferung des ersten produktiven WebRTC-Telemetrie-
-  Plans, nicht von `0.7.0`.
-- Einen Player-SDK-WebRTC-Adapter-Public-API-Vertrag. Der
-  `@npm9912/player-sdk` bleibt in `0.7.0` auf `hls.js`-only ohne
-  WebRTC-Codepfad; RAK-51 ist als Folgeplan deferred.
-- Eine produktive `getStats()`-Sammelroutine im `apps/api`-Ingress. Die
-  oben beschriebene Bounded-Allowlist und die Schema-Drift-Strategie
-  sind Vorab-Spezifikation für einen späteren Codepfad.
+   **R-12** (Stand `0.8.0` Tranche 3): bei Browser-Major-Version mit
+   `getStats()`-Schema-Änderung muss die `webrtc.*`-Allowlist
+   gegen die neuen Browser-Felder reviewed und ggf. die
+   `WEBRTC_ERROR_CODES`-Liste erweitert werden, bevor das nächste
+   Release ausgeliefert werden darf.
+4. **Smoke-Spiegelung**: `scripts/smoke-observability.sh` prüft die
+   `webrtc.*`-Forbidden-Liste aus §3.1 und die bounded Cardinality
+   der `mtrace_webrtc_*`-Counter (RAK-9-Stil) — analog zum
+   `network.*`-Pfad. Verstöße sind release-blockierend.
 
 ---
 

@@ -3,5 +3,10 @@
   "sdk_version": "0.7.0",
   "wire_schema_version": "1.0",
   "api_supported_schema_version": "1.0",
-  "update_rule": "Changes to package version, exported SDK version, wire schema version, or API SupportedSchemaVersion must update this file in the same commit."
+  "reserved_meta_namespaces": [
+    "network.",
+    "timing.",
+    "webrtc."
+  ],
+  "update_rule": "Changes to package version, exported SDK version, wire schema version, API SupportedSchemaVersion or reserved meta namespaces must update this file in the same commit."
 }

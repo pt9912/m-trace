@@ -10,6 +10,7 @@ import {
   isWebRtcErrorCode,
   normalizeWebRtcErrorCode
 } from "../src/adapters/webrtc/error-codes";
+import { collectAggregate } from "../src/adapters/webrtc/sampling";
 import type { PlayerTracker } from "../src/core/tracker";
 import type { EventDraft } from "../src/types/events";
 
@@ -110,7 +111,10 @@ function makeFakeFetch(answer: { ok?: boolean; status?: number; sdp?: string }):
 }
 
 const baseOptions: WebRtcAdapterOptions = {
-  whepUrl: "http://localhost:8892/webrtc-test/whep"
+  whepUrl: "http://localhost:8892/webrtc-test/whep",
+  // Tests deaktivieren das Sampling-Intervall standardmäßig — die
+  // Sampling-Tests setzen es explizit über deps.sampling.setInterval.
+  samplingIntervalMs: 0
 };
 
 const fakeVideo = {} as HTMLVideoElement;
@@ -394,6 +398,254 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
     await new Promise((r) => setTimeout(r, 5));
     const err = tracker.events.find((e) => e.eventName === "playback_error");
     expect(err?.meta?.[WEBRTC_ERROR_CODE_META_KEY]).toBe("whep_signaling_failed");
+  });
+});
+
+describe("collectAggregate (Tranche 3)", () => {
+  function makeReport(entries: Record<string, unknown>[]): RTCStatsReport {
+    const map = new Map<string, unknown>(entries.map((e, i) => [String(i), e]));
+    return map as unknown as RTCStatsReport;
+  }
+
+  const happyEntries: Record<string, unknown>[] = [
+    { type: "transport", dtlsState: "connected" },
+    { type: "candidate-pair", state: "succeeded" },
+    { type: "candidate-pair", state: "connected", nominated: true },
+    { type: "inbound-rtp", packetsLost: 5, bytesReceived: 12345 },
+    { type: "outbound-rtp", bytesSent: 6789 }
+  ];
+
+  it("aggregiert dtls/ice/connection plus Counter-Felder", () => {
+    const out = collectAggregate(makeReport(happyEntries), "connected");
+    expect(out).not.toBeNull();
+    expect(out?.connectionState).toBe("connected");
+    expect(out?.dtlsState).toBe("connected");
+    expect(out?.iceState).toBe("connected");
+    expect(out?.packetsLost).toBe(5);
+    expect(out?.bytesReceived).toBe(12345);
+    expect(out?.bytesSent).toBe(6789);
+  });
+
+  it("liefert null, wenn ein Muss-Feld fehlt (dtls)", () => {
+    const entries = happyEntries.filter((e) => e.type !== "transport");
+    expect(collectAggregate(makeReport(entries), "connected")).toBeNull();
+  });
+
+  it("liefert null, wenn weder inbound noch outbound vorhanden sind", () => {
+    const entries = happyEntries.filter((e) => e.type !== "inbound-rtp" && e.type !== "outbound-rtp");
+    expect(collectAggregate(makeReport(entries), "connected")).toBeNull();
+  });
+
+  it("liefert null bei ungültigem connectionState (kein unknown-Surrogat)", () => {
+    expect(collectAggregate(makeReport(happyEntries), "garbage-state")).toBeNull();
+  });
+
+  it("ignoriert negative Counter-Werte (pin auf nicht-negative Integer)", () => {
+    const entries = [
+      { type: "transport", dtlsState: "connected" },
+      { type: "candidate-pair", state: "connected", nominated: true },
+      { type: "inbound-rtp", packetsLost: -1, bytesReceived: 100 },
+      { type: "outbound-rtp", bytesSent: 50 }
+    ];
+    const out = collectAggregate(makeReport(entries), "connected");
+    expect(out?.packetsLost).toBe(0);
+  });
+});
+
+describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
+  function makePcWithStats(stats: RTCStatsReport, connectionState = "connected") {
+    const fakePc = makeFakePeerConnection({});
+    fakePc.connectionState = connectionState as RTCPeerConnectionState;
+    (fakePc as unknown as { getStats: () => Promise<RTCStatsReport> }).getStats = async () => stats;
+    return fakePc;
+  }
+
+  it("emittiert metrics_sampled mit reservierten webrtc.*-Keys", async () => {
+    const tracker = new StubTracker();
+    const stats = new Map<string, unknown>([
+      ["t", { type: "transport", dtlsState: "connected" }],
+      ["p", { type: "candidate-pair", state: "connected", nominated: true }],
+      ["i", { type: "inbound-rtp", packetsLost: 7, bytesReceived: 1000 }],
+      ["o", { type: "outbound-rtp", bytesSent: 500 }]
+    ]) as unknown as RTCStatsReport;
+    const fakePc = makePcWithStats(stats, "connected");
+    let tickFn: (() => void) | undefined;
+    const fakeSetInterval = vi.fn((cb: () => void) => {
+      tickFn = cb;
+      return 1 as unknown as ReturnType<typeof setInterval>;
+    }) as unknown as typeof setInterval;
+    const fakeClearInterval = vi.fn() as unknown as typeof clearInterval;
+
+    attachWebRtc(
+      fakeVideo,
+      { whepUrl: baseOptions.whepUrl, samplingIntervalMs: 100 },
+      tracker,
+      {
+        PeerConnection: function () {
+          return fakePc;
+        } as unknown as typeof RTCPeerConnection,
+        fetch: makeFakeFetch({}),
+        sampling: { setInterval: fakeSetInterval, clearInterval: fakeClearInterval },
+        newRunId: () => "run-id-test"
+      }
+    );
+    expect(fakeSetInterval).toHaveBeenCalledTimes(1);
+
+    tickFn?.();
+    await new Promise((r) => setTimeout(r, 5));
+
+    const sampled = tracker.events.find((e) => e.eventName === "metrics_sampled");
+    expect(sampled).toBeDefined();
+    expect(sampled?.meta).toEqual({
+      "webrtc.peer_connection_run_id": "run-id-test",
+      "webrtc.sample_id": 0,
+      "webrtc.connection_state": "connected",
+      "webrtc.ice_state": "connected",
+      "webrtc.dtls_state": "connected",
+      "webrtc.packets_lost": 7,
+      "webrtc.bytes_received": 1000,
+      "webrtc.bytes_sent": 500
+    });
+  });
+
+  it("emittiert kein metrics_sampled, wenn die Sample-Aggregation null ist", async () => {
+    const tracker = new StubTracker();
+    const stats = new Map<string, unknown>([
+      ["i", { type: "inbound-rtp", packetsLost: 1, bytesReceived: 1 }]
+    ]) as unknown as RTCStatsReport;
+    const fakePc = makePcWithStats(stats, "connected");
+    let tickFn: (() => void) | undefined;
+    const fakeSetInterval = vi.fn((cb: () => void) => {
+      tickFn = cb;
+      return 1 as unknown as ReturnType<typeof setInterval>;
+    }) as unknown as typeof setInterval;
+    const fakeClearInterval = vi.fn() as unknown as typeof clearInterval;
+
+    attachWebRtc(
+      fakeVideo,
+      { whepUrl: baseOptions.whepUrl, samplingIntervalMs: 100 },
+      tracker,
+      {
+        PeerConnection: function () {
+          return fakePc;
+        } as unknown as typeof RTCPeerConnection,
+        fetch: makeFakeFetch({}),
+        sampling: { setInterval: fakeSetInterval, clearInterval: fakeClearInterval }
+      }
+    );
+    tickFn?.();
+    await new Promise((r) => setTimeout(r, 5));
+    expect(tracker.events.find((e) => e.eventName === "metrics_sampled")).toBeUndefined();
+  });
+
+  it("destroy() stoppt das Sampling-Intervall", () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({});
+    const fakeSetInterval = vi.fn(() => 42 as unknown as ReturnType<typeof setInterval>) as unknown as typeof setInterval;
+    const fakeClearInterval = vi.fn() as unknown as typeof clearInterval;
+
+    const adapter = attachWebRtc(
+      fakeVideo,
+      { whepUrl: baseOptions.whepUrl, samplingIntervalMs: 100 },
+      tracker,
+      {
+        PeerConnection: function () {
+          return fakePc;
+        } as unknown as typeof RTCPeerConnection,
+        fetch: makeFakeFetch({}),
+        sampling: { setInterval: fakeSetInterval, clearInterval: fakeClearInterval }
+      }
+    );
+    adapter.destroy();
+    expect(fakeClearInterval).toHaveBeenCalled();
+  });
+
+  it("samplingIntervalMs=0 deaktiviert das Sampling vollständig", () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({});
+    const fakeSetInterval = vi.fn() as unknown as typeof setInterval;
+
+    attachWebRtc(
+      fakeVideo,
+      { whepUrl: baseOptions.whepUrl, samplingIntervalMs: 0 },
+      tracker,
+      {
+        PeerConnection: function () {
+          return fakePc;
+        } as unknown as typeof RTCPeerConnection,
+        fetch: makeFakeFetch({}),
+        sampling: { setInterval: fakeSetInterval }
+      }
+    );
+    expect(fakeSetInterval).not.toHaveBeenCalled();
+  });
+
+  it("nimmt erstes valides candidate-pair, wenn keines nominated/selected ist", () => {
+    const stats = new Map<string, unknown>([
+      ["t", { type: "transport", dtlsState: "connected" }],
+      ["p1", { type: "candidate-pair", state: "checking" }],
+      ["p2", { type: "candidate-pair", state: "succeeded" }],
+      ["i", { type: "inbound-rtp", packetsLost: 0, bytesReceived: 1 }]
+    ]) as unknown as RTCStatsReport;
+    const out = collectAggregate(stats, "connecting");
+    expect(out?.iceState).toBe("checking");
+  });
+
+  it("Tick ohne pc.getStats() emittiert kein metrics_sampled", async () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({});
+    delete (fakePc as Partial<typeof fakePc>).getStats;
+    let tickFn: (() => void) | undefined;
+    const fakeSetInterval = vi.fn((cb: () => void) => {
+      tickFn = cb;
+      return 1 as unknown as ReturnType<typeof setInterval>;
+    }) as unknown as typeof setInterval;
+    attachWebRtc(
+      fakeVideo,
+      { whepUrl: baseOptions.whepUrl, samplingIntervalMs: 100 },
+      tracker,
+      {
+        PeerConnection: function () {
+          return fakePc;
+        } as unknown as typeof RTCPeerConnection,
+        fetch: makeFakeFetch({}),
+        sampling: { setInterval: fakeSetInterval, clearInterval: vi.fn() as unknown as typeof clearInterval }
+      }
+    );
+    tickFn?.();
+    await new Promise((r) => setTimeout(r, 5));
+    expect(tracker.events.find((e) => e.eventName === "metrics_sampled")).toBeUndefined();
+  });
+
+  it("nutzt crypto.randomUUID, wenn keine newRunId-deps gegeben ist", async () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({ emitConnected: true });
+    attachWebRtc(fakeVideo, baseOptions, tracker, {
+      PeerConnection: function () {
+        return fakePc;
+      } as unknown as typeof RTCPeerConnection,
+      fetch: makeFakeFetch({})
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    const started = tracker.events.find((e) => e.eventName === "playback_started");
+    const runId = started?.meta?.["webrtc.peer_connection_run_id"];
+    expect(typeof runId).toBe("string");
+    expect((runId as string).length).toBeGreaterThan(0);
+  });
+
+  it("playback_started enthält peer_connection_run_id", async () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({ emitConnected: true });
+    attachWebRtc(fakeVideo, baseOptions, tracker, {
+      PeerConnection: function () {
+        return fakePc;
+      } as unknown as typeof RTCPeerConnection,
+      fetch: makeFakeFetch({}),
+      newRunId: () => "fixed-run-id"
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    const started = tracker.events.find((e) => e.eventName === "playback_started");
+    expect(started?.meta?.["webrtc.peer_connection_run_id"]).toBe("fixed-run-id");
   });
 });
 

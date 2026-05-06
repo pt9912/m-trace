@@ -161,6 +161,28 @@ Der komplette Batch-Wrapper wird vor jedem Write validiert oder
 gemeinsam transaktional persistiert. Ein invalider Boundary-Block
 persistiert weder Events noch Boundaries und erhöht `accepted` nicht.
 
+#### 3.4a Reservierter `webrtc.*`-Meta-Namespace (`0.8.0`)
+
+Ab `plan-0.8.0.md` Tranche 3 ist `webrtc.*` ein reservierter Meta-
+Namespace; der vollständige Schlüsselsatz, die Wertedomänen und die
+Counter-Semantik sind normativ in `spec/telemetry-model.md` §1.4
+und §3.5 verankert. `contracts/event-schema.json` (`reserved_meta_keys`
+und `reserved_meta_namespace_webrtc`) spiegelt die Allowlist für
+maschinenlesbare Validierung. Pflichtverhalten des API-Ingress:
+
+- Jeder `webrtc.*`-Schlüssel muss in der Allowlist stehen, mit dem
+  dort dokumentierten Typ und (bei Strings) der dort dokumentierten
+  Enum-/Pattern-Domäne. Verstöße liefern `422 Unprocessable Entity`
+  und werden nicht persistiert; eine `mtrace_webrtc_*`-Metrik wird
+  nicht erzeugt.
+- Per-Identifier-Felder aus `spec/telemetry-model.md` §3.1
+  (`webrtc.track_id`, `webrtc.candidate_pair_id`, `webrtc.ssrc`,
+  `webrtc.user_agent`, weitere) sind explizit verboten und liefern
+  `422`.
+- Nicht-`webrtc.*`-Meta-Keys bleiben gemäß additiver Forward-
+  Compatibility-Regel (§3.4) unangetastet — alte Backends ignorieren
+  unbekannte additive Keys, neue SDK-Versionen dürfen sie ergänzen.
+
 ### 3.5 Antwort bei Erfolg
 
 `POST /api/playback-events` antwortet mit `202 Accepted`:

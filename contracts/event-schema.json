@@ -81,7 +81,78 @@
         "number",
         "rfc3339_string"
       ]
+    },
+    "webrtc.peer_connection_run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{1,64}$"
+    },
+    "webrtc.sample_id": {
+      "type": "integer",
+      "min": 0
+    },
+    "webrtc.connection_state": {
+      "type": "string",
+      "values": [
+        "new",
+        "connecting",
+        "connected",
+        "disconnected",
+        "failed",
+        "closed"
+      ]
+    },
+    "webrtc.ice_state": {
+      "type": "string",
+      "values": [
+        "new",
+        "checking",
+        "connected",
+        "completed",
+        "failed",
+        "disconnected",
+        "closed"
+      ]
+    },
+    "webrtc.dtls_state": {
+      "type": "string",
+      "values": [
+        "new",
+        "connecting",
+        "connected",
+        "closed",
+        "failed"
+      ]
+    },
+    "webrtc.packets_lost": {
+      "type": "integer",
+      "min": 0
+    },
+    "webrtc.bytes_received": {
+      "type": "integer",
+      "min": 0
+    },
+    "webrtc.bytes_sent": {
+      "type": "integer",
+      "min": 0
+    },
+    "webrtc.error_code": {
+      "type": "string",
+      "values": [
+        "whep_signaling_failed",
+        "whep_sdp_invalid",
+        "webrtc_no_tracks",
+        "peer_connection_failed",
+        "webrtc_destroyed_before_connected"
+      ]
+    },
+    "webrtc.error_detail": {
+      "type": "string",
+      "max_length": 256
     }
+  },
+  "reserved_meta_namespace_webrtc": {
+    "anchor": "spec/telemetry-model.md §1.4 / §3.5",
+    "rule": "All `webrtc.*` keys must appear in the `reserved_meta_keys` allowlist above. Unknown `webrtc.*` keys are rejected with HTTP 422 and do not produce a `mtrace_webrtc_*` metric. Non-`webrtc.*` keys remain forward-compatible per existing additive-meta convention."
   },
   "event_names": [
     "manifest_loaded",
