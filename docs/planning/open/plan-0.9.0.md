@@ -145,8 +145,11 @@ Playback-/Telemetrie-Anspruch).
 Sniffing) und einen MPD-Parser; das JSON-Result-Schema bekommt
 `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert).
 `createCLI`-Dispatcher detektiert Eingabetyp aus `Content-Type`
-oder Datei-Endung. Wire-Vertrag (`spec/contract-fixtures/analyzer/`)
-um zwei DASH-Beispiele erweitert.
+oder Datei-Endung. Der gemeinsame Manifest-Loader wird dabei von
+HLS-spezifischen Namen/Fehlermeldungen auf HLS+DASH generalisiert,
+damit `application/dash+xml` nicht vor dem Parser geblockt wird.
+Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus
+Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 
 ## 1. Tranchen-Übersicht
 
@@ -272,6 +275,11 @@ DoD:
 - [ ] DASH-Detector in `packages/stream-analyzer/src/`: XML-Header-
   Sniffing (`<?xml`/`<MPD`) plus optionale Content-Type-Heuristik
   (`application/dash+xml`). Gibt `"dash"` oder `"hls"` zurück.
+- [ ] Manifest-Loader von HLS-only auf HLS+DASH generalisiert:
+  Content-Type-Allowlist und `Accept`-Header enthalten
+  `application/dash+xml`; Funktions-/Fehlertexte sprechen von
+  Manifest statt „HLS-Manifest"; URL-Tests decken DASH-Content-Type
+  und weiterhin geblockte Nicht-Manifest-Typen ab.
 - [ ] MPD-Parser parst `MPD/Period/AdaptationSet/Representation/
   SegmentTemplate`-Hierarchie. Mindest-Felder im Result:
   `playlistType` (`"dash"`), `summary.itemCount` (Anzahl
@@ -279,9 +287,14 @@ DoD:
   `mimeType`, `codecs`, `bandwidth`, `width`/`height`).
 - [ ] `analyzerKind: "dash"` ist in `spec/contract-fixtures/
   analyzer/` mit zwei neuen Beispielen verankert: ein VOD-MPD
-  und ein einfaches Live-MPD. Wire-Schema-Update in
-  `contracts/event-schema.json` (`analyzerKind`-Allowlist um
-  `"dash"` erweitert).
+  und ein einfaches Live-MPD. `spec/contract-fixtures/analyzer/
+  README.md`, `packages/stream-analyzer/tests/contract.test.ts`,
+  `apps/api/adapters/driven/streamanalyzer/testdata/` und
+  `apps/api/adapters/driven/streamanalyzer/contract_test.go`
+  werden synchron erweitert; `make sync-contract-fixtures` kopiert
+  auch die neuen DASH-Fixtures. Kein Update von
+  `contracts/event-schema.json`: diese Datei gehört zum Playback-
+  Event-Meta-Vertrag, nicht zum Analyzer-Result.
 - [ ] HLS-Pfad bleibt unverändert: bestehende
   `contract-success-master.json` und alle `0.3.0`-Tests bleiben
   grün; DASH-Pfad ist additiv.
@@ -292,9 +305,12 @@ DoD:
 - [ ] `make smoke-cli` erweitert: zusätzlich zu HLS-Smoke wird
   ein DASH-MPD-Beispiel geprüft.
 - [ ] `apps/api`-Adapter (`adapters/driven/streamanalyzer/`):
-  HTTP-Adapter weiterleitet DASH-Anfragen unverändert; keine API-
-  Vertrags-Änderung nötig (analyzerKind ist bereits ein freies
-  Feld im Result).
+  HTTP-Adapter übernimmt `analyzerKind` aus dem Analyzer-Result ins
+  Domain-Modell; Driving-HTTP gibt `analysis.analyzerKind: "dash"`
+  statt der bisherigen HLS-Konstante aus. `playlistType: "dash"`
+  wird als additiver Domain-/Wire-Wert durchgereicht, nicht auf
+  `unknown` normalisiert. Tests decken Adapter-Parsing,
+  `/api/analyze`-Response und HLS-Backward-Compat ab.
 
 ---
 
@@ -365,7 +381,7 @@ DoD:
 | --- | --------- | -------- | ------ |
 | RAK-56 | Soll | `tests/e2e/webrtc-stats-drift.spec.ts` plus `make smoke-webrtc-stats-drift`; Nightly-CI-Job; R-12 im Risiken-Backlog auf „automatisiert detektiert" angehoben. | [ ] |
 | RAK-57 | Kann | `examples/srs/compose.yaml` (Project `mtrace-srs`) plus `make smoke-srs`; `examples/srs/README.md` 7-Punkt-Standard; Port-Quickref nachgezogen. | [ ] |
-| RAK-58 | Muss | `@npm9912/stream-analyzer` versteht DASH-MPD; `analyzerKind: "dash"` mit Wire-Schema-Eintrag und zwei Contract-Fixtures; HLS-Pfad unverändert. | [ ] |
+| RAK-58 | Muss | `@npm9912/stream-analyzer` versteht DASH-MPD; `analyzerKind: "dash"` mit Analyzer-Contract-Fixtures, Go-Testdata-Sync und API-Durchreichung; HLS-Pfad unverändert. | [ ] |
 | RAK-59 | Kann | `pnpm m-trace check <file.mpd>` dispatcht auf DASH und liefert valides Result; `make smoke-cli` erweitert. | [ ] |
 
 ---
