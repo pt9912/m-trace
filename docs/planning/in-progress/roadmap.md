@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-06
-> **Phase**: `0.8.0` released — RAK-51..RAK-55 erfüllt; Plan-Datei nach [`docs/planning/done/plan-0.8.0.md`](../done/plan-0.8.0.md) archiviert. Nächste Phase offen — kein `plan-0.9.0.md` vorbereitet. `0.7.0` (WebRTC-Lab) bleibt auf Tag `v0.7.0` (`11a3368`); `0.6.0` (SRT Health View) auf `v0.6.0` (`d08a89f`); `0.5.0` (Multi-Protocol Lab) auf `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.8.0` released — RAK-51..RAK-55 erfüllt; Plan-Datei nach [`docs/planning/done/plan-0.8.0.md`](../done/plan-0.8.0.md) archiviert. `plan-0.9.0.md` liegt als offenes Plan-Skelett unter [`docs/planning/open/`](../open/plan-0.9.0.md). `0.7.0` (WebRTC-Lab) bleibt auf Tag `v0.7.0` (`11a3368`); `0.6.0` (SRT Health View) auf `v0.6.0` (`d08a89f`); `0.5.0` (Multi-Protocol Lab) auf `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -38,8 +38,9 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.8.0` ist veröffentlicht. Die nächste Release-Phase ist offen — es
-existiert kein `plan-0.9.0.md` und kein vereinbarter Scope-Cut.
+`0.8.0` ist veröffentlicht. Die nächste Release-Phase ist offen;
+`plan-0.9.0.md` ist als Plan-Skelett vorbereitet, aber noch nicht
+aktiviert.
 Lieferübersicht der `0.5.0`-Tranchen (zur Historie, finaler Stand
 siehe [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
 
@@ -107,7 +108,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 38  | ✅      | SRT Health View (`0.6.0`) mit MediaMTX-API als Quelle plus Read-API/Dashboard ausliefern                              | Nach Schritt 37                                                 | RAK-41..RAK-46; plan-0.6.0 Tranchen 0–7; Tag `v0.6.0` auf `d08a89f`, CI-Run 25380938222 grün                      |
 | 39  | ✅      | WebRTC-Lab-Erweiterung (`0.7.0`) mit Lab-Compose, opt-in Smoke und Telemetrie-Vorbereitung ausliefern                 | Nach Schritt 38                                                 | RAK-47..RAK-50; plan-0.7.0 Tranchen 0–5; Tag `v0.7.0` (Closeout-Commit)                                          |
 | 40  | ✅      | Lastenheft-Patch `1.1.10` schreiben — RAK-51 von „Kann" auf „Muss" hochgezogen + neue RAK-52..RAK-55 in §13.10 für Public-API/hls.js-Trennung, produktive WebRTC-Telemetrie und Compat-Tests definiert     | Vor Tranche-0-Aktivierung von `0.8.0`                            | RAK-51, MVP-24; [`plan-0.8.0.md`](../done/plan-0.8.0.md) §0.2; Patch-Log §4a.13 in [`plan-0.1.0.md`](../done/plan-0.1.0.md)            |
-| 41  | ✅      | `0.8.0` Player-SDK-WebRTC-Adapter ausliefern: Public-API + hls.js-Trennung, WHEP-Adapter gegen `examples/webrtc/`, produktive WebRTC-Telemetrie auf `spec/telemetry-model.md` §3.2/§3.5-Allowlist (R-12 release-blockierend), Compat-Tests | Nach Schritt 40                                                  | RAK-51..RAK-55 (Lastenheft `1.1.10` §13.10); [`plan-0.8.0.md`](../done/plan-0.8.0.md) Tranchen 0–5; Tag `v0.8.0` (Closeout-Commit) |
+| 41  | ✅      | `0.8.0` Player-SDK-WebRTC-Adapter ausliefern: Public-API + hls.js-Trennung, WHEP-Adapter gegen `examples/webrtc/`, produktive WebRTC-Telemetrie auf `spec/telemetry-model.md` §3.2/§3.5-Allowlist (R-12 release-blockierend), Compat-Tests | Nach Schritt 40                                                  | RAK-51..RAK-55 (Lastenheft `1.1.10` §13.10); [`plan-0.8.0.md`](../done/plan-0.8.0.md) Tranchen 0–5; Tag `v0.8.0` (Release-Gate-Fix nach Closeout) |
 
 ---
 

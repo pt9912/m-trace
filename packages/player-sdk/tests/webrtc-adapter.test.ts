@@ -331,6 +331,40 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
     expect(fetchSpy).toHaveBeenCalledWith("http://localhost:8892/webrtc-test/whep/session-a", { method: "DELETE" });
   });
 
+  it("destroy() nutzt unverändert eine nicht parsebare WHEP-Location", async () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({});
+    const fetchSpy = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE") {
+        return { ok: true, status: 200, headers: { get: () => null }, async text() { return ""; } };
+      }
+      return {
+        ok: true,
+        status: 201,
+        headers: {
+          get(name: string) {
+            return name.toLowerCase() === "location" ? "http://[" : null;
+          }
+        },
+        async text() {
+          return "v=0\no=- 1 1 IN IP4 0.0.0.0\ns=-\nm=video 9 UDP/TLS/RTP/SAVPF 96\n";
+        }
+      };
+    }) as unknown as typeof fetch;
+
+    const adapter = attachWebRtc(fakeVideo, baseOptions, tracker, {
+      PeerConnection: function () {
+        return fakePc;
+      } as unknown as typeof RTCPeerConnection,
+      fetch: fetchSpy
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    adapter.destroy();
+    await new Promise((r) => setTimeout(r, 5));
+
+    expect(fetchSpy).toHaveBeenCalledWith("http://[", { method: "DELETE" });
+  });
+
   it("destroy() stoppt alle bisher mounted MediaTracks", async () => {
     const tracker = new StubTracker();
     const fakePc = makeFakePeerConnection({ emitTrack: true });
@@ -352,6 +386,27 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
     adapter.destroy();
     expect(t1Stop).toHaveBeenCalled();
     expect(t2Stop).toHaveBeenCalled();
+  });
+
+  it("nutzt den Track-Fallback, wenn kein globaler MediaStream vorhanden ist", async () => {
+    const tracker = new StubTracker();
+    const fakePc = makeFakePeerConnection({});
+    const originalMediaStream = (globalThis as { MediaStream?: unknown }).MediaStream;
+    (globalThis as { MediaStream?: unknown }).MediaStream = undefined;
+    try {
+      const adapter = attachWebRtc(fakeVideo, baseOptions, tracker, {
+        PeerConnection: function () {
+          return fakePc;
+        } as unknown as typeof RTCPeerConnection,
+        fetch: makeFakeFetch({})
+      });
+      const stop = vi.fn();
+      fakePc.emit("track", { track: { stop } as unknown as MediaStreamTrack, streams: [] });
+      adapter.destroy();
+      expect(stop).toHaveBeenCalled();
+    } finally {
+      (globalThis as { MediaStream?: unknown }).MediaStream = originalMediaStream;
+    }
   });
 
   it("ignoriert track-Events nach destroy()", () => {
@@ -500,6 +555,25 @@ describe("collectAggregate (Tranche 3)", () => {
     expect(out?.iceState).toBe("connected");
   });
 
+  it("mappt weitere Candidate-Pair-Fallback-States", () => {
+    const base = [
+      { type: "transport", dtlsState: "connected" },
+      { type: "inbound-rtp", packetsLost: 0, bytesReceived: 1 }
+    ];
+    expect(collectAggregate(makeReport([{ type: "candidate-pair", state: "in-progress" }, ...base]), "connecting")?.iceState).toBe("checking");
+    expect(collectAggregate(makeReport([{ type: "candidate-pair", state: "failed" }, ...base]), "failed")?.iceState).toBe("failed");
+    expect(collectAggregate(makeReport([{ type: "candidate-pair", state: "frozen" }, ...base]), "new")?.iceState).toBe("new");
+  });
+
+  it("liefert null bei nicht mapbarem Candidate-Pair-State", () => {
+    const entries = [
+      { type: "transport", dtlsState: "connected" },
+      { type: "candidate-pair", state: "connected" },
+      { type: "inbound-rtp", packetsLost: 0, bytesReceived: 1 }
+    ];
+    expect(collectAggregate(makeReport(entries), "connected")).toBeNull();
+  });
+
   it("ignoriert negative Counter-Werte (pin auf nicht-negative Integer)", () => {
     const entries = [
       { type: "transport", dtlsState: "connected" },
@@ -509,6 +583,19 @@ describe("collectAggregate (Tranche 3)", () => {
     ];
     const out = collectAggregate(makeReport(entries), "connected");
     expect(out?.packetsLost).toBe(0);
+  });
+
+  it("normalisiert nicht-finite und gebrochene Counter-Werte", () => {
+    const entries = [
+      { type: "transport", dtlsState: "connected" },
+      { type: "candidate-pair", state: "succeeded", nominated: true },
+      { type: "inbound-rtp", packetsLost: Number.POSITIVE_INFINITY, bytesReceived: "100" },
+      { type: "outbound-rtp", bytesSent: 50.9 }
+    ];
+    const out = collectAggregate(makeReport(entries), "connected");
+    expect(out?.packetsLost).toBe(0);
+    expect(out?.bytesReceived).toBe(0);
+    expect(out?.bytesSent).toBe(50);
   });
 });
 

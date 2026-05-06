@@ -2,7 +2,7 @@
 
 > **Status**: ⬜ geplant (Plan-Skelett, liegt unter
 > `docs/planning/open/`). Vorgänger `v0.8.0` ist released
-> (Tag `v0.8.0` auf `8df263a`, CI-Run 25441030771 grün; Plan
+> (Tag `v0.8.0` auf dem Release-Gate-Fix nach `8df263a`; Plan
 > archiviert in [`done/plan-0.8.0.md`](../done/plan-0.8.0.md)).
 > Tranche 0 aktiviert die Phase, sobald der zugehörige Lastenheft-
 > Patch `1.1.11` fertig ist (siehe §0.2). Plan wandert dann atomar
@@ -51,7 +51,8 @@ Patch) und Tranche 5 (Closeout) den Rahmen bilden.
 Voraussetzungen, bevor dieser Plan in `in-progress/` gezogen werden
 kann:
 
-- `0.8.0` ist released (Tag `v0.8.0` auf `8df263a`); produktive
+- `0.8.0` ist released (Tag `v0.8.0` auf dem Release-Gate-Fix nach
+  `8df263a`); produktive
   WebRTC-Telemetrie ist live mit `mtrace_webrtc_*`-Countern und
   release-blockierendem R-12.
 - Lastenheft-Patch `1.1.11` (siehe §0.2) ist akzeptiert; RAK-56..
@@ -353,8 +354,8 @@ DoD:
   vor Closeout-Commit; `make gates` grün.
 - [ ] `plan-0.9.0.md` von `docs/planning/in-progress/` nach
   `docs/planning/done/` verschoben (`git mv`); alle relativen
-  Cross-Refs angepasst (analog `0.8.0` Closeout in Commit
-  `8df263a`); Roadmap §3 zeigt `0.9.0` ✅.
+  Cross-Refs angepasst (analog `0.8.0` Closeout plus Release-Gate-
+  Fix); Roadmap §3 zeigt `0.9.0` ✅.
 - [ ] Tag `v0.9.0` annotiert; Push opt-in (User-Bestätigung);
   GitHub-Release mit CHANGELOG-`[0.9.0]`-Block als Notes-Body.
 

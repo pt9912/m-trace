@@ -1,7 +1,7 @@
 # Implementation Plan — `0.8.0` (Player-SDK-WebRTC-Adapter)
 
 > **Status**: ✅ released am 2026-05-06 (Tranchen 0–5 abgeschlossen;
-> Tag `v0.8.0` setzt der Closeout-Commit). Liegt unter
+> Tag `v0.8.0` setzt den Release-Gate-Fix nach dem Closeout). Liegt unter
 > `docs/planning/done/`. Vorgänger `v0.7.0` (Tag auf `11a3368`,
 > CI-Run 25418640334 grün) bleibt unverändert. RAK-51..RAK-55
 > erfüllt; Lastenheft-Patch `1.1.10` (Commit `17a4507`, §13.10) ist
@@ -27,7 +27,8 @@
 > [`examples/webrtc/`](../../../examples/webrtc/) (Lab-Compose ab
 > `0.7.0` Tranche 1).
 >
-> **Nachfolger**: offen — kein `plan-0.9.0.md` vorbereitet.
+> **Nachfolger**: [`plan-0.9.0.md`](../open/plan-0.9.0.md) ist als
+> offenes Plan-Skelett vorbereitet.
 
 ## 0. Konvention
 
@@ -504,14 +505,15 @@ DoD:
   umgewandelt mit Release-Header; neuer leerer [Unreleased]-Block
   obenauf vorbereitet.
 - [x] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
-  Closeout-Commit; `make gates` grün im Closeout-Commit.
+  Closeout-Commit; `make gates` grün im Release-Gate-Fix nach dem
+  Closeout.
 - [x] `plan-0.8.0.md` von `docs/planning/in-progress/` nach
   `docs/planning/done/` verschoben (`git mv` im Closeout-Commit);
   alle relativen Cross-Refs angepasst (analog `0.7.0` Closeout in
   Commit `11a3368`); Roadmap §1.2/§3 zeigen `0.8.0` ✅.
 - [x] Tag `v0.8.0` annotiert; Push opt-in (User-Bestätigung im
-  Closeout-Workflow); GitHub-Release mit CHANGELOG-`[0.8.0]`-Block
-  als Notes-Body.
+  Closeout-/Release-Gate-Workflow); GitHub-Release mit CHANGELOG-
+  `[0.8.0]`-Block als Notes-Body.
 
 ### 6.1 RAK-Verifikationsmatrix
 
