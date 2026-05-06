@@ -13,7 +13,7 @@
 > Pfad ohne Vermischung mit `hls.js`; Public-API bleibt
 > abwärtskompatibel). `0.8.0` zieht RAK-51 verbindlich aus dem
 > deferred-Status; der Lastenheft-Patch `1.1.10` (siehe §0.2)
-> hebt RAK-51 auf „Muss/Soll" und ergänzt 2–3 neue RAK für die
+> hebt RAK-51 auf „Muss" und ergänzt 4 neue RAK für die
 > Sub-Items.
 >
 > **Bezug**: [Lastenheft `1.1.9`](../../../spec/lastenheft.md) §7.6
@@ -57,7 +57,7 @@ kann:
   `make smoke-webrtc-prep` opt-in grün, `spec/telemetry-model.md`
   §3.5 als Future-Telemetry-Notiz vorhanden.
 - Lastenheft-Patch `1.1.10` (siehe §0.2) ist akzeptiert; RAK-51
-  steht auf „Muss/Soll" und neue RAK-52..RAK-55 sind im Lastenheft
+  steht auf „Muss" und neue RAK-52..RAK-55 sind im Lastenheft
   §13.10 (oder analog) verankert.
 - Browser-Support-Matrix-Strategie für WebRTC ist bestätigt:
   Chromium 120+ und Firefox 120+ sind Pflicht; Safari ist
@@ -76,7 +76,7 @@ Tranche 0c) festzuhalten:
 | RAK-51 | Muss | `@npm9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von 1.1.9 §13.9 „Kann" auf „Muss".** |
 | RAK-52 | Muss | Public-API für Adapter-Auswahl (`Hls`/`WebRTC`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
 | RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` §3.2 (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus §3.5.2 werden geliefert; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 wird ab diesem Punkt release-blockierend. |
+| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
 
 Begründung der Hochstufung: das `0.7.0`-Lab hat alle Vorbedingungen
@@ -112,9 +112,13 @@ im Dashboard.
    Defaults im hls.js-Pfad voraussetzen.
 2. Tranche 3 (Telemetrie-Aktivierung) ist der Punkt, an dem R-12
    (WebRTC-`getStats()`-Schema-Drift) release-blockierend wird;
-   ab hier muss `scripts/smoke-observability.sh` die WebRTC-
-   Forbidden-Liste aus `spec/telemetry-model.md` §3.1 spiegeln und
-   die Allowlist-Labels aus §3.2 als bounded prüfen.
+   ab hier müssen `contracts/event-schema.json`,
+   `contracts/sdk-compat.json`, `spec/backend-api-contract.md` und
+   `spec/telemetry-model.md` den produktiven WebRTC-Wire-/Ingress-/
+   Metrikvertrag normativ pinnen. `scripts/smoke-observability.sh`
+   muss die WebRTC-Forbidden-Liste aus `spec/telemetry-model.md`
+   §3.1 spiegeln und die Allowlist-Labels aus §3.2 als bounded
+   prüfen.
 3. Tranche 4 (Compat-Tests) erweitert die Browser-Support-Matrix
    aus `0.2.0` Tranche 5; ein Pack-Smoke-Bug im WebRTC-Adapter ist
    release-blockierend.
@@ -122,6 +126,29 @@ im Dashboard.
    bumpt die Versionen 0.7.0 → 0.8.0 in allen package.json/Test-
    Fixtures (analog `0.7.0` Tranche 5; `contracts/sdk-compat.json`
    ist mit dabei) und setzt den Tag `v0.8.0`.
+
+### 0.5 Ziel-Schnitt und Implementierungsleitplanken
+
+Die bevorzugte SDK-Form folgt der bestehenden Paketoberfläche:
+`createTracker(...)` bleibt der Telemetrie-Anker, `attachHlsJs(...)`
+bleibt der hls.js-Adapter, und WebRTC kommt additiv als eigener
+Attach-Pfad hinzu (z. B. `attachWebRtc(video, options, tracker)` plus
+`WebRtcAdapter`/`WebRtcAdapterOptions`). Eine neue übergreifende
+`createPlayer(...)`-Abstraktion ist nur zulässig, wenn Tranche 1
+nachweist, dass sie die bestehende `attachHlsJs`-Surface nicht
+entwertet und keine Migration für bestehende Konsumenten erzwingt.
+
+Public-Exports sind Teil des Vertrags: `packages/player-sdk/src/index.ts`
+und `packages/player-sdk/scripts/public-api.snapshot.txt` müssen im
+gleichen Commit aktualisiert werden. Deep Imports aus `src/` oder
+`dist/` bleiben weiterhin nicht public.
+
+Für den lokalen WebRTC-Pfad gilt WHEP als einziger Signalisierungsweg:
+SDK erzeugt SDP Offer, POSTet gegen den WHEP-Endpoint aus
+`examples/webrtc/`, verarbeitet die SDP Answer, hängt empfangene
+MediaTracks an das übergebene `<video>`-Element und räumt PeerConnection
+plus WHEP-Resource bei `destroy()` auf. Trickle-ICE, TURN, Auth am
+WHEP-Endpoint und Public-Internet-Betrieb bleiben außerhalb dieses Plans.
 
 ## 1. Tranchen-Übersicht
 
@@ -168,15 +195,24 @@ Bezug: Lastenheft `1.1.9` §7.6 F-62 (Player-Adapter-Folgeoptionen);
 `packages/player-sdk/src/`.
 
 Ziel: Eine Adapter-Auswahl-API ist als Public-API-Vertrag
-spezifiziert (z. B. `createPlayer({ kind: "hls" | "webrtc", … })`).
-hls.js-Pfad bleibt Default und unverändert; WebRTC ist opt-in pro
-Player-Instanz.
+spezifiziert. Standard ist ein additiver Attach-Pfad analog
+`attachHlsJs(...)`; eine neue `createPlayer(...)`-Facade ist nur nach
+expliziter Tranche-1-Entscheidung zulässig. hls.js-Pfad bleibt Default
+und unverändert; WebRTC ist opt-in pro Player-Instanz.
 
 DoD:
 
 - [ ] Public-API-Erweiterung in `packages/player-sdk/src/` ist als
   TypeScript-Vertrag (Types + JSDoc) ausgegliedert; hls.js-Pfad
   ist explizit als Default markiert.
+- [ ] `packages/player-sdk/scripts/public-api.snapshot.txt` ist
+  bewusst aktualisiert; `check-public-api.mjs` bleibt das Gate gegen
+  versehentliche Export-Änderungen.
+- [ ] Contract-Entscheidung für die Adapter-Auswahl ist festgelegt:
+  entweder rein SDK-intern ohne Wire-Schema-Änderung, oder mit
+  explizitem Contract-Patch in `contracts/event-schema.json`,
+  `contracts/sdk-compat.json` und `spec/backend-api-contract.md`.
+  Die Entscheidung steht im selben Commit wie die Public-API-Types.
 - [ ] `packages/player-sdk/README.md` (oder eigenständiges
   `docs/sdk-webrtc.md`) dokumentiert Adapter-Auswahl, opt-in-Form
   und Browser-Anforderungen.
@@ -188,6 +224,10 @@ DoD:
   (z. B. `apps/dashboard` `/demo`-Route) bleibt unverändert
   funktionsfähig; entsprechende Tests und der Pack-Smoke aus
   `0.2.0` bleiben grün.
+- [ ] Testform ist festgelegt: mindestens ein SDK-Unit-Test pinnt
+  `attachWebRtc`/Options-Typen ohne Browser-Signalisierung; ein
+  Public-API-Snapshot-Test pinnt die neuen Exports; Dashboard-Mocks
+  bleiben für `/demo` hls.js-only unverändert.
 
 ---
 
@@ -207,10 +247,17 @@ DoD:
   via WHEP, und mappt MediaTracks auf das Player-Surface (das
   Demo nutzt `<video>`-Element analog zum hls.js-Pfad).
 - [ ] Player-Event-Stream (`playback_started`, `playback_error`,
-  `rebuffer_started`, `manifest_loaded`-Pendant für WebRTC, …)
-  ist konsistent zu §1.3 des Telemetrie-Modells; ggf. spec-Patch
-  für WebRTC-spezifische Event-Felder (z. B.
-  `peer_connection_state_changed`).
+  `rebuffer_started`, `metrics_sampled`, ggf. additive WebRTC-
+  Connection-Events) ist konsistent zu §1.3 des Telemetrie-Modells.
+  Kein `manifest_loaded`-Synthetik-Event für WebRTC ohne expliziten
+  Contract-Patch; WHEP-Handshake-Erfolg wird entweder über
+  `playback_started`/`metrics_sampled` oder über einen neuen
+  additiven Event-Typ modelliert.
+- [ ] WHEP-Fehlerpfade sind abgenommen: nicht-2xx/3xx Signalisierung,
+  ungültige SDP Answer, fehlende MediaTracks, PeerConnection-Fehler
+  und `destroy()` vor Handshake-Abschluss erzeugen deterministische
+  `playback_error`-Events und lassen keine aktive PeerConnection
+  zurück.
 - [ ] `apps/dashboard` bekommt eine `/demo-webrtc`-Route (oder ein
   Toggle in `/demo`), die den WebRTC-Adapter gegen das
   `examples/webrtc/`-Lab demonstriert. Bestehende `/demo`-Route
@@ -237,15 +284,43 @@ DoD:
   Muss-/Soll-Felder; nur die in §3.2 dokumentierten bounded
   Aggregat-Labels werden in das Wire-Format eingespeist;
   Per-Identifier-Felder (§3.1 Forbidden) werden hart gefiltert.
+- [ ] WebRTC-Wire-Vertrag ist normativ gepinnt: `metrics_sampled`
+  oder ein explizit neuer, additiver Event-Typ transportiert nur
+  dokumentierte `webrtc.*`-Meta-Keys; `contracts/event-schema.json`,
+  `contracts/sdk-compat.json`, `spec/backend-api-contract.md` und
+  `spec/telemetry-model.md` werden im selben Commit aktualisiert.
 - [ ] API-Ingress erkennt WebRTC-Aggregat-Labels und exportiert
-  `mtrace_webrtc_*`-Counter (z. B.
+  `mtrace_webrtc_*`-Metriken. Mindestset:
   `mtrace_webrtc_connection_state_total{connection_state}`,
   `mtrace_webrtc_ice_state_total{ice_state}`,
-  `mtrace_webrtc_dtls_state_total{dtls_state}`); Labelset bleibt
-  auf §3.2 + `instance`/`job` beschränkt.
+  `mtrace_webrtc_dtls_state_total{dtls_state}`,
+  `mtrace_webrtc_packets_lost_total`,
+  `mtrace_webrtc_bytes_received_total`,
+  `mtrace_webrtc_bytes_sent_total`. Labelsets bleiben auf §3.2 +
+  `instance`/`job` beschränkt; die drei Byte-/Loss-Counter sind
+  label-frei außer Target-Metadaten.
+- [ ] Die übrigen §3.5.2-Muss-Felder sind nicht nur gesammelt,
+  sondern mit Namen, Typ und Einheit abgenommen: mindestens
+  `packetsLost`, `bytesReceived` und `bytesSent` werden pro
+  PeerConnection aggregiert und als label-freie oder ausschließlich
+  bounded gelabelte `mtrace_webrtc_*`-Metriken exportiert. Falls ein
+  Feld bewusst nicht als Prometheus-Metrik geeignet ist, muss
+  `spec/telemetry-model.md` den alternativen Read-/Event-Pfad
+  ausdrücklich festlegen.
+- [ ] Counter-Semantik ist dokumentiert: State-Counter zählen
+  angenommene WebRTC-Metrik-Samples, nicht aktuelle Zustands-Gauges;
+  `packetsLost`/`bytesReceived`/`bytesSent` werden als nichtnegative
+  Deltas aus den kumulativen `getStats()`-Zählern übertragen oder
+  serverseitig abgeleitet. Retry-/Duplikatverhalten folgt explizit
+  dem bestehenden Playback-Event-Vertrag oder wird als neuer
+  Idempotenz-Vertrag in `spec/backend-api-contract.md` festgelegt.
 - [ ] `scripts/smoke-observability.sh` spiegelt die WebRTC-
   Forbidden-Liste aus `spec/telemetry-model.md` §3.1 und prüft
-  die WebRTC-Counter auf bounded Cardinality (RAK-9-Stil).
+  die WebRTC-Counter auf bounded Cardinality (RAK-9-Stil). Der
+  Smoke prüft neben Forbidden-Labels auch, dass die drei State-
+  Counter keine anderen fachlichen Labels als ihr jeweiliges
+  State-Label tragen und die Byte-/Loss-Counter fachlich label-frei
+  bleiben.
 - [ ] R-12 wird im Risiken-Backlog von „Triggerschwelle nicht
   ausgelöst" auf „release-blockierend, sobald Browser-Major-Bump
   Schema ändert" angehoben; ein Browser-Drift-Smoke-Plan ist im
@@ -272,8 +347,9 @@ DoD:
   abhängig (benötigt `mtrace-webrtc`-Compose hochgefahren).
 - [ ] Pack-Smoke (`packages/player-sdk/scripts/pack-smoke.mjs`)
   prüft, dass der WebRTC-Adapter im Tarball verfügbar und gegen
-  die Public-API testbar ist; `expectedVersion` bleibt durch
-  Versions-Bump in Tranche 5 abgedeckt.
+  die Public-API testbar ist; geprüft werden ESM, CJS und IIFE-
+  Entry. `expectedVersion` bleibt durch Versions-Bump in Tranche 5
+  abgedeckt.
 - [ ] Browser-Support-Matrix in `packages/player-sdk/README.md`
   ist um WebRTC-spezifische Hinweise erweitert (Chromium 120+,
   Firefox 120+, Safari Best-Effort; `getStats()`-Verfügbarkeit
@@ -282,6 +358,10 @@ DoD:
   dass der WebRTC-Adapter das Performance-Budget aus RAK-18
   einhält; Adapter-Code wird gegen die Player-SDK-Bundle-Größen-
   Grenze gemessen.
+- [ ] CI-Policy ist ausdrücklich dokumentiert: WebRTC-Browser-E2E
+  bleibt opt-in/lab-abhängig, aber SDK-Unit-Tests, Public-API-
+  Snapshot, Pack-Smoke und Performance-Smoke sind release-
+  blockierend.
 
 ---
 
@@ -301,7 +381,11 @@ DoD:
   Demo-Route.
 - [ ] `docs/user/releasing.md` bekommt einen `0.8.0`-Block
   (manuelle Browser-Handcheck-Prüfung gegen `mtrace-webrtc` plus
-  optionaler Browser-E2E-Smoke).
+  optionaler Browser-E2E-Smoke). Der Block enthält absolute
+  Erwartungswerte für Chromium und Firefox: Video spielt,
+  `connection_state=connected`, `ice_state` in `connected|completed`,
+  `dtls_state=connected`, WebRTC-Metriken in Prometheus ohne
+  Forbidden-Labels.
 - [ ] RAK-Verifikationsmatrix §6.1 (siehe unten) ist mit Commit-
   Verweisen ausgefüllt; deferred Kann-Anforderungen sind als
   `deferred / Folgeplan` markiert.
@@ -311,8 +395,10 @@ DoD:
   scripts/pack-smoke.mjs`, `contracts/sdk-compat.json`
   (`sdk_version`) und allen Test-Fixtures, die SDK-/Analyzer-
   Versions-Strings hartkodieren (analog `0.7.0` Tranche 5;
-  Bulk-Fix per `xargs sed -i 's/"0\.7\.0"/"0.8.0"/g'` über die
-  Test-Files).
+  der hartkodierte Tarball-Pfad in
+  `packages/player-sdk/package.json` Script `pack:smoke` ist
+  ausdrücklich mitzuprüfen, weil er nicht zuverlässig durch einen
+  reinen `"0.7.0"`-Bulk-Fix erfasst wird).
 - [ ] CHANGELOG: [Unreleased]-Block in `[0.8.0] - YYYY-MM-DD`
   umgewandelt; neuer leerer [Unreleased]-Block obenauf.
 - [ ] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
@@ -331,7 +417,7 @@ DoD:
 | RAK-51 | Muss | Public-API in `packages/player-sdk/src/` exposed produktiven WebRTC-Adapter; hls.js-Pfad unverändert. | [ ] |
 | RAK-52 | Muss | Adapter-Auswahl dokumentiert in `packages/player-sdk/README.md`; Pack-Smoke + Browser-Support-Matrix erweitert. | [ ] |
 | RAK-53 | Soll | `mtrace_webrtc_*`-Counter exportiert; `scripts/smoke-observability.sh` spiegelt §3.1 WebRTC-Forbidden + §3.2 Allowlist. | [ ] |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Schema-Drift-Strategie aus §3.5.3 im Adapter-Code; R-12 release-blockierend. | [ ] |
+| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; §3.5.2-Muss-Felder (`connectionState`, `dtlsState`, ICE-State-Aggregat, `packetsLost`, `bytesReceived`, `bytesSent`) sind per Contract + Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 im Adapter-Code; R-12 release-blockierend. | [ ] |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) gegen `examples/webrtc/`-Lab; opt-in. | [ ] |
 
 ---
@@ -341,9 +427,10 @@ DoD:
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`,
   Commit-Hash anhängen (analog `done/plan-0.7.0.md` §7).
 - Lastenheft-Patch `1.1.10` (siehe §0.2) ist Vorgänger-Gate für
-  Tranche 1; vor Tranche-0-Closeout darf RAK-52..RAK-55 nicht in
-  DoD-Items referenziert werden, weil sie noch nicht im Lastenheft
-  stehen.
+  Tranche 1. Bis Tranche 0 abgeschlossen ist, sind RAK-52..RAK-55
+  in diesem Dokument nur geplante RAK aus dem Patch-Vorschlag; beim
+  Tranche-0-Closeout müssen alle Referenzen auf die finalen
+  Lastenheft-IDs und Prioritäten abgeglichen werden.
 - Wenn ein `0.8.0`-Item in einer Folge-Phase neu bewertet wird
   (z. B. „Cross-Browser-Auto-Failover" doch nötig), entweder
   Folgeplan eröffnen oder hier als Wartungs-Eintrag vermerken.
