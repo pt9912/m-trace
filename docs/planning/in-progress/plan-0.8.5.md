@@ -1,11 +1,14 @@
 # Implementation Plan — `0.8.5` (Quality-Gates Wave 1: Security + Generated-Artifact-Drift)
 
-> **Status**: 🟡 in Arbeit (Tranche 0 aktiviert am 2026-05-06;
-> liegt unter `docs/planning/in-progress/`). Vorgänger `v0.8.0` ist
-> released (Tag `v0.8.0` auf `8df263a`, GitHub-Release veröffentlicht).
-> Container-Scanner-Wahl in Tranche 0: **Trivy** (Default aus
-> §0.4 — etablierter, breitere Image-Format-Unterstützung, bessere
-> Default-Policy als Grype).
+> **Status**: 🟡 in Arbeit (Tranche 0..2 abgeschlossen am
+> 2026-05-06: Plan-Aktivierung, Security-Gates, Generated-Drift-
+> Gate inkl. Migrations-Konsolidierung sowie Image-Hardening-
+> Closeout; Tranche 3 — Release-Doku, Versions-Bump und Tag —
+> offen). Plan liegt unter `docs/planning/in-progress/`. Vorgänger
+> `v0.8.0` ist released (Tag `v0.8.0` auf `8df263a`, GitHub-Release
+> veröffentlicht). Container-Scanner-Wahl in Tranche 0: **Trivy**
+> (Default aus §0.4 — etablierter, breitere Image-Format-
+> Unterstützung, bessere Default-Policy als Grype).
 >
 > **Release-Typ**: erstmaliger **Patch-Release** im m-trace-Repo
 > (siehe §0.6). Alle bisherigen Releases (`0.1.0`..`0.8.0`) waren

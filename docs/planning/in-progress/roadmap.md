@@ -42,9 +42,10 @@ aktualisieren.
 `docs/planning/open/`, alle noch nicht aktiviert:
 
 - [`plan-0.8.5.md`](./plan-0.8.5.md) — **Patch-Release in Arbeit
-  (Tranche 0 ✅, ab 2026-05-06)** mit Quality-Gates Wave 1
-  (govulncheck + Container-Scan via Trivy +
-  Generated-Artifact-Drift); erstmaliger Patch-Release im Repo,
+  (Tranche 0..2 ✅ am 2026-05-06, Tranche 3 Closeout offen)** mit
+  Quality-Gates Wave 1 (govulncheck + pnpm audit +
+  Container-Scan via Trivy + Generated-Artifact-Drift inkl.
+  Migrations-Konsolidierung); erstmaliger Patch-Release im Repo,
   vor `0.9.0` lieferbar.
 - [`plan-0.9.0.md`](../open/plan-0.9.0.md) — Minor-Release mit
   Drift-Smoke (R-12), SRS-Lab (MVP-36) und DASH-Analyse (MVP-37).
@@ -143,7 +144,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.6.0` | SRT Health View              | ✅      | RAK-41..RAK-46; DoD-Tracking in [`done/plan-0.6.0.md`](../done/plan-0.6.0.md)                        |
 | `0.7.0` | WebRTC-Lab-Erweiterung       | ✅      | RAK-47..RAK-50; RAK-51 deferred / Folgeplan; DoD-Tracking in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)               |
 | `0.8.0` | Player-SDK-WebRTC-Adapter    | ✅      | RAK-51..RAK-55; DoD-Tracking in [`done/plan-0.8.0.md`](../done/plan-0.8.0.md)                                                                              |
-| `0.8.5` | Quality-Gates Wave 1 (Patch) | 🟡      | Security (govulncheck + Container-Scan via Trivy) und Generated-Artifact-Drift-Gate; Plan-Tracking in [`in-progress/plan-0.8.5.md`](./plan-0.8.5.md), Tranche 0 ✅. Erster Patch-Release im Repo. |
+| `0.8.5` | Quality-Gates Wave 1 (Patch) | 🟡      | Security (govulncheck + pnpm audit + Container-Scan via Trivy) und Generated-Artifact-Drift-Gate inkl. Migrations-Konsolidierung; Plan-Tracking in [`in-progress/plan-0.8.5.md`](./plan-0.8.5.md), Tranche 0..2 ✅, Tranche 3 (Closeout: Release-Doku, Versions-Bump, Tag) offen. Erster Patch-Release im Repo. |
 | `0.9.0` | Drift-Smoke + SRS + DASH     | ⬜      | RAK-56..RAK-59 (geplanter Lastenheft-Patch `1.1.11`); Plan-Skelett in [`open/plan-0.9.0.md`](../open/plan-0.9.0.md)                                       |
 | `0.9.5` | Quality-Gates Wave 2 (Patch) | ⬜      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Skelett in [`open/plan-0.9.5.md`](../open/plan-0.9.5.md). Nach `0.9.0`.            |
 
