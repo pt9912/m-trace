@@ -169,7 +169,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | ✅ |
-| 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ⬜ |
+| 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ✅ |
 | 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ⬜ |
 | 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ⬜ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Pflege; Pack-Smoke + CLI-Smoke erweitert | ⬜ |
@@ -220,34 +220,62 @@ vor jedem Release-Tag, sondern auto-detektiert.
 
 DoD:
 
-- [ ] `tests/e2e/webrtc-stats-drift.spec.ts` (neu, Playwright):
-  rendert `/demo-webrtc?autostart=1` mit aktivem `mtrace-webrtc`-
-  Stack; nach erfolgreichem Handshake ruft die Spec `pc.getStats()`
-  auf (entweder direkt im Page-Context oder über einen Hook-Test-
-  Endpoint im Adapter) und sammelt alle Reports.
-- [ ] Spec validiert für jede `RTCStatsType`-Gruppe aus §3.5.2,
-  dass alle Muss-Felder existieren; Drift bricht den Smoke mit
-  klarer Fehlermeldung („Browser X.Y dropped field Z from
-  RTCStatsType.foo"). Soll-Felder werden geloggt aber nicht
-  release-blockierend geprüft.
-- [ ] Spec validiert, dass alle gefundenen `connectionState`/
-  `iceConnectionState`/`dtlsState`-Werte in der §1.4-Allowlist
-  liegen. Unbekannter Enum-Wert → Smoke-Fail.
-- [ ] `make smoke-webrtc-stats-drift`-Target opt-in (nicht in
+- [x] `tests/e2e/webrtc-stats-drift.spec.ts` (neu, Playwright):
+  öffnet im Page-Context (eigene `RTCPeerConnection`, kein
+  Adapter-Hook nötig — Plan §0.5 gibt beide Pfade frei) eine
+  WHEP-Verbindung gegen `http://localhost:8892/webrtc-test/whep`
+  mit recvonly video+audio Transceivers; nach `connectionState=
+  connected` ruft die Spec `pc.getStats()` auf und sammelt alle
+  Reports. Die Spec ist via `MTRACE_WEBRTC_STATS_DRIFT=1` opt-in,
+  damit `make browser-e2e` (anderer Stack, kein `mtrace-webrtc`-
+  Lab) sie nicht versehentlich auslöst (Tranche-1.1-Commit).
+- [x] Spec validiert für jede `RTCStatsType`-Gruppe aus §3.5.2,
+  dass alle Muss-Felder existieren (peer-connection.connectionState,
+  transport.dtlsState, candidate-pair.state, inbound-rtp.
+  packetsLost+bytesReceived, outbound-rtp.bytesSent — letzteres
+  legitim leer bei recvonly); Drift bricht den Smoke mit klarer
+  Fehlermeldung („Browser X dropped field Z from RTCStatsType.foo
+  (id=…)"). Soll-Felder werden über `console.log` als
+  `[drift-soll]` geloggt, brechen den Smoke aber nicht
+  (Tranche-1.1-Commit).
+- [x] Spec validiert, dass `pc.connectionState` ∈ §1.4
+  `connection_state`-Allowlist, `pc.iceConnectionState` ∈
+  `ice_state`-Allowlist und alle `transport.dtlsState`-Werte ∈
+  `dtls_state`-Allowlist liegen; unbekannter Enum-Wert → Smoke-Fail
+  (Tranche-1.1-Commit).
+- [x] `make smoke-webrtc-stats-drift`-Target opt-in (nicht in
   `make gates`); Help-Eintrag analog `smoke-webrtc-prep`. Default-
-  Browser sind Chromium und Firefox aus dem Playwright-Bundle;
+  Browser sind `chromium,firefox` aus dem Playwright-Bundle;
   `MTRACE_WEBRTC_DRIFT_BROWSERS=chromium,firefox,webkit` toggelt
-  Safari/WebKit opt-in.
-- [ ] CI-Workflow `.github/workflows/webrtc-drift.yml` (neu,
-  Nightly via `schedule: cron`): startet `mtrace-webrtc`-Stack,
-  führt den Smoke aus, eröffnet bei Failure automatisch ein
-  Issue mit Browser-Version und Drift-Befund (gh-cli oder
-  Action). Issue-Auto-Erstellung ist opt-in über
-  `secrets.DRIFT_AUTO_ISSUE`.
-- [ ] R-12 im `risks-backlog.md` von „release-blockierend ab
-  nächstem Browser-Major-Bump" auf „automatisiert detektiert,
-  Drift bricht den Drift-Smoke" angehoben; Release-Pfad in
-  `releasing.md` referenziert den Drift-Smoke.
+  Safari/WebKit opt-in. Skript `scripts/smoke-webrtc-stats-drift.sh`
+  fährt den `mtrace-webrtc`-Stack via `docker compose -p mtrace-
+  webrtc up -d --build` hoch, delegiert die Endpoint-Probe an
+  `scripts/smoke-webrtc-prep.sh` (`SMOKE_WEBRTC_AUTOSTART=0`-Modus
+  hält den Stack offen) und ruft anschließend
+  `pnpm exec playwright test tests/e2e/webrtc-stats-drift.spec.ts
+  --project=$browser` für jeden Browser. Cleanup räumt nur den
+  `mtrace-webrtc`-Project-Namen ab (Tranche-1.2-Commit).
+- [x] CI-Workflow `.github/workflows/webrtc-drift.yml` (neu, Nightly
+  via `schedule: cron '30 3 * * *'` plus `workflow_dispatch`):
+  Setup-Steps wie `build.yml` (Checkout, pnpm 10.18.0, Node 22 aus
+  `.nvmrc`, `pnpm install --frozen-lockfile`); installiert die
+  Playwright-Browser explizit via
+  `pnpm exec playwright install --with-deps chromium firefox`;
+  führt `make smoke-webrtc-stats-drift`. Bei Failure wird (opt-in
+  über das Repository-Secret `DRIFT_AUTO_ISSUE=1`, gemappt auf
+  job-level `env.DRIFT_AUTO_ISSUE`) ein Issue mit Title, Workflow-
+  Run-URL, Playwright-Stand und Reaktions-Pfad erstellt;
+  `permissions: issues: write` ist auf Workflow-Ebene gesetzt
+  (Tranche-1.3-Commit).
+- [x] R-12 im `risks-backlog.md` von „release-blockierend ab
+  nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift
+  bricht den Drift-Smoke" angehoben; Manuell-Review entfällt;
+  Reaktions-Pfad bleibt dokumentiert (Allowlist-Update + Spec-Patch
+  + lokaler Smoke). Release-Pfad in `docs/user/releasing.md` neue
+  §2.4 referenziert den Drift-Smoke und nennt die Cron-Zeit + den
+  `MTRACE_WEBRTC_DRIFT_BROWSERS`-Toggle für WebKit/Safari; die
+  Smoke-Liste in §2 listet `make smoke-webrtc-stats-drift` als
+  `0.9.0`-Smoke (Tranche-1.4-Commit).
 
 ---
 

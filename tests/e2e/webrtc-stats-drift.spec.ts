@@ -1,0 +1,274 @@
+import { expect, test } from "@playwright/test";
+
+// plan-0.9.0 §2 Tranche 1 (RAK-56) — Browser-Drift-Smoke gegen das
+// `mtrace-webrtc`-Lab. Schließt R-12 als „automatisiert detektiert,
+// Drift bricht den Drift-Smoke" und löst die manuelle Drift-Review-
+// Pflicht aus `releasing.md` ab.
+//
+// Ablauf (im Page-Context, ohne Adapter-Hook — Plan §0.5 gibt beide
+// Pfade frei): eigene `RTCPeerConnection` mit recvonly video+audio
+// gegen den WHEP-Endpoint (`http://localhost:8892/webrtc-test/whep`),
+// nach erfolgreichem Handshake `pc.getStats()` aufrufen und gegen
+// den Spec-§3.5.2-Muss-Felder-Korpus plus die §1.4-Enum-Allowlist
+// validieren.
+//
+// Validierungen:
+//   1. `pc.connectionState` ∈ §1.4 `connection_state`-Allowlist und
+//      ist im Endzustand `connected`.
+//   2. `pc.iceConnectionState` ∈ §1.4 `ice_state`-Allowlist.
+//   3. Für jede `RTCStatsType`-Gruppe aus §3.5.2 (peer-connection,
+//      transport, candidate-pair, inbound-rtp) sind die
+//      Muss-Felder vorhanden (Drift = Fehler).
+//   4. `transport.dtlsState` ∈ §1.4 `dtls_state`-Allowlist.
+//   5. Soll-Felder werden geloggt, aber nicht release-blockierend
+//      geprüft (§3.5.2 Soll-Spalte).
+//
+// outbound-rtp ist legitim leer, weil der Smoke nur recvonly-
+// Transceivers verhandelt; in einer echten Bidi-Session wäre der
+// Report verpflichtend. Der Smoke skippt outbound-rtp deshalb.
+//
+// Opt-in via Env: setzt `MTRACE_WEBRTC_STATS_DRIFT=1` der Smoke-
+// Skript (`scripts/smoke-webrtc-stats-drift.sh`). Ohne diese Env
+// skippt der Test, damit `make browser-e2e` (anderer Stack, kein
+// `mtrace-webrtc`-Lab) ihn nicht aufruft.
+
+const driftActive = process.env.MTRACE_WEBRTC_STATS_DRIFT === "1";
+
+const WHEP_URL =
+  process.env.MTRACE_WEBRTC_DRIFT_WHEP_URL ??
+  "http://localhost:8892/webrtc-test/whep";
+const HANDSHAKE_TIMEOUT_MS = Number(
+  process.env.MTRACE_WEBRTC_DRIFT_HANDSHAKE_TIMEOUT_MS ?? "20000"
+);
+const SAMPLE_COLLECT_MS = Number(
+  process.env.MTRACE_WEBRTC_DRIFT_SAMPLE_COLLECT_MS ?? "1500"
+);
+
+const ALLOWED_CONNECTION_STATES = new Set<string>([
+  "new",
+  "connecting",
+  "connected",
+  "disconnected",
+  "failed",
+  "closed",
+]);
+const ALLOWED_ICE_STATES = new Set<string>([
+  "new",
+  "checking",
+  "connected",
+  "completed",
+  "failed",
+  "disconnected",
+  "closed",
+]);
+const ALLOWED_DTLS_STATES = new Set<string>([
+  "new",
+  "connecting",
+  "connected",
+  "closed",
+  "failed",
+]);
+
+const REQUIRED_FIELDS_BY_TYPE: Record<string, readonly string[]> = {
+  "peer-connection": ["connectionState"],
+  transport: ["dtlsState"],
+  "candidate-pair": ["state"],
+  "inbound-rtp": ["packetsLost", "bytesReceived"],
+  "outbound-rtp": ["bytesSent"],
+};
+
+const SOLL_FIELDS_BY_TYPE: Record<string, readonly string[]> = {
+  "peer-connection": ["dataChannelsOpened", "dataChannelsClosed"],
+  transport: ["selectedCandidatePairChanges"],
+  "candidate-pair": ["roundTripTime", "availableOutgoingBitrate"],
+  "inbound-rtp": ["jitter", "roundTripTime", "framesDecoded", "framesPerSecond"],
+  "outbound-rtp": ["framesPerSecond"],
+};
+
+interface DriftReport {
+  id: string;
+  type: string;
+  fields: Record<string, unknown>;
+}
+
+interface DriftPayload {
+  connectionState: string;
+  iceConnectionState: string;
+  reports: DriftReport[];
+}
+
+test.describe("WebRTC getStats() drift smoke (RAK-56)", () => {
+  test.skip(
+    !driftActive,
+    "drift-smoke is opt-in via make smoke-webrtc-stats-drift (sets MTRACE_WEBRTC_STATS_DRIFT=1)"
+  );
+
+  test("getStats() reports include §3.5.2 must-fields and §1.4 enum values", async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto("about:blank");
+
+    const payload = (await page.evaluate(
+      async ({ whepUrl, handshakeTimeoutMs, sampleCollectMs }) => {
+        const pc = new RTCPeerConnection();
+        pc.addTransceiver("video", { direction: "recvonly" });
+        pc.addTransceiver("audio", { direction: "recvonly" });
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        // Wait for ICE-gathering to be complete (Plan-§0.5: WHEP-
+        // POST mit dem vollständigen Local-SDP, kein Trickle).
+        await new Promise<void>((resolve) => {
+          if (pc.iceGatheringState === "complete") {
+            resolve();
+            return;
+          }
+          const onChange = () => {
+            if (pc.iceGatheringState === "complete") {
+              pc.removeEventListener("icegatheringstatechange", onChange);
+              resolve();
+            }
+          };
+          pc.addEventListener("icegatheringstatechange", onChange);
+          // Safety timeout for browsers that never reach "complete".
+          setTimeout(resolve, 3_000);
+        });
+
+        const localSdp = pc.localDescription?.sdp ?? "";
+        const response = await fetch(whepUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/sdp" },
+          body: localSdp,
+        });
+        if (!response.ok) {
+          const body = await response.text();
+          throw new Error(
+            `WHEP handshake failed: status=${response.status} body=${body.slice(0, 200)}`
+          );
+        }
+        const answerSdp = await response.text();
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+
+        const deadline = performance.now() + handshakeTimeoutMs;
+        while (
+          pc.connectionState !== "connected" &&
+          pc.connectionState !== "failed" &&
+          pc.connectionState !== "closed" &&
+          performance.now() < deadline
+        ) {
+          await new Promise((r) => setTimeout(r, 100));
+        }
+
+        // Let inbound-rtp accumulate at least one frame counter.
+        await new Promise((r) => setTimeout(r, sampleCollectMs));
+
+        const stats = await pc.getStats();
+        const reports: Array<{
+          id: string;
+          type: string;
+          fields: Record<string, unknown>;
+        }> = [];
+        stats.forEach((stat) => {
+          const fields: Record<string, unknown> = {};
+          for (const key of Object.keys(stat)) {
+            fields[key] = (stat as Record<string, unknown>)[key];
+          }
+          reports.push({ id: String(stat.id), type: String(stat.type), fields });
+        });
+
+        const out = {
+          connectionState: pc.connectionState,
+          iceConnectionState: pc.iceConnectionState,
+          reports,
+        };
+
+        try {
+          pc.close();
+        } catch {
+          // ignore
+        }
+
+        return out;
+      },
+      {
+        whepUrl: WHEP_URL,
+        handshakeTimeoutMs: HANDSHAKE_TIMEOUT_MS,
+        sampleCollectMs: SAMPLE_COLLECT_MS,
+      }
+    )) as DriftPayload;
+
+    expect(
+      ALLOWED_CONNECTION_STATES.has(payload.connectionState),
+      `Browser ${browserName} reports unknown connectionState=${payload.connectionState} (§1.4 connection_state allowlist)`
+    ).toBe(true);
+    expect(
+      ALLOWED_ICE_STATES.has(payload.iceConnectionState),
+      `Browser ${browserName} reports unknown iceConnectionState=${payload.iceConnectionState} (§1.4 ice_state allowlist)`
+    ).toBe(true);
+    expect(payload.connectionState).toBe("connected");
+
+    const reportsByType = new Map<string, DriftReport[]>();
+    for (const report of payload.reports) {
+      const list = reportsByType.get(report.type) ?? [];
+      list.push(report);
+      reportsByType.set(report.type, list);
+    }
+
+    const drift: string[] = [];
+    for (const [type, requiredFields] of Object.entries(REQUIRED_FIELDS_BY_TYPE)) {
+      const reports = reportsByType.get(type) ?? [];
+      if (reports.length === 0) {
+        if (type === "outbound-rtp") {
+          // recvonly handshake → no outbound-rtp; legitimate skip.
+          continue;
+        }
+        drift.push(
+          `Browser ${browserName} dropped RTCStatsType.${type} entirely`
+        );
+        continue;
+      }
+      for (const report of reports) {
+        for (const field of requiredFields) {
+          if (!(field in report.fields)) {
+            drift.push(
+              `Browser ${browserName} dropped field ${field} from RTCStatsType.${type} (id=${report.id})`
+            );
+          }
+        }
+      }
+    }
+
+    for (const transport of reportsByType.get("transport") ?? []) {
+      const dtls = transport.fields["dtlsState"];
+      if (typeof dtls === "string" && !ALLOWED_DTLS_STATES.has(dtls)) {
+        drift.push(
+          `Browser ${browserName} reports unknown dtlsState=${dtls} (§1.4 dtls_state allowlist; transport id=${transport.id})`
+        );
+      }
+    }
+
+    const sollMissing: string[] = [];
+    for (const [type, sollFields] of Object.entries(SOLL_FIELDS_BY_TYPE)) {
+      const reports = reportsByType.get(type) ?? [];
+      for (const report of reports) {
+        for (const field of sollFields) {
+          if (!(field in report.fields)) {
+            sollMissing.push(
+              `Browser ${browserName} drops soll-field ${field} from RTCStatsType.${type} (id=${report.id})`
+            );
+          }
+        }
+      }
+    }
+
+    for (const note of sollMissing) {
+      // Soll-Felder sind opt-in pro Engine (§3.5.3) — Logs only,
+      // nicht release-blockierend.
+      console.log(`[drift-soll] ${note}`);
+    }
+
+    expect(drift, drift.join("\n")).toEqual([]);
+  });
+});

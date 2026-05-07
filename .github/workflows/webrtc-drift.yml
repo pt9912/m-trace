@@ -1,0 +1,114 @@
+name: WebRTC drift smoke
+
+# plan-0.9.0 §2 Tranche 1 (RAK-56) — Browser-Drift-Smoke fuer den
+# `getStats()`-Schema-Drift zwischen Browser-Major-Versionen
+# (Chromium, Firefox; WebKit/Safari opt-in im Smoke-Skript). Schliesst
+# R-12 als „automatisiert detektiert, Drift bricht den Drift-Smoke";
+# loest die manuelle Drift-Review-Pflicht aus `releasing.md` ab.
+#
+# Trigger:
+#   - schedule: nightlich um 03:30 UTC (entspannte Stunde, in der die
+#     Lab-Compose-Stacks selten kollidieren).
+#   - workflow_dispatch: manueller Trigger fuer ad-hoc-Drift-Reviews
+#     (z. B. nach einem Browser-Major-Release).
+#
+# Bei Failure (Schema-Drift erkannt) wird optional ein Issue mit dem
+# Drift-Befund eroeffnet — opt-in ueber das Repository-Secret
+# `DRIFT_AUTO_ISSUE` (Wert `1` aktiviert die Auto-Erstellung). Ohne
+# das Secret bleibt der Workflow-Run rot, aber ohne automatisches
+# Issue.
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift-smoke:
+    name: WebRTC getStats() drift smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    env:
+      DRIFT_AUTO_ISSUE: ${{ secrets.DRIFT_AUTO_ISSUE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5.0.0
+        with:
+          version: 10.18.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (chromium + firefox)
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Run drift smoke
+        id: drift-smoke
+        env:
+          MTRACE_WEBRTC_DRIFT_BROWSERS: chromium,firefox
+        run: make smoke-webrtc-stats-drift
+
+      - name: Capture browser versions
+        if: always()
+        id: browser-versions
+        run: |
+          set -eu
+          chromium_ver="$(pnpm exec playwright -V 2>/dev/null || echo unknown)"
+          # Spezifischer pro-Browser-Stand laesst sich aus dem Cache
+          # auslesen; fuer das Issue-Body reicht der Playwright-Stand
+          # plus die Spec-Datei-URL.
+          {
+            echo "playwright_version=${chromium_ver}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open drift issue (opt-in via DRIFT_AUTO_ISSUE secret)
+        if: failure() && steps.drift-smoke.outcome == 'failure' && env.DRIFT_AUTO_ISSUE == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLAYWRIGHT_VERSION: ${{ steps.browser-versions.outputs.playwright_version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -eu
+          title="WebRTC drift detected ($(date -u +%Y-%m-%d))"
+          body=$(cat <<EOF
+          The nightly WebRTC drift smoke (\`make smoke-webrtc-stats-drift\`,
+          tests/e2e/webrtc-stats-drift.spec.ts) failed. This is the
+          automated R-12 detector from plan-0.9.0 §2 Tranche 1.
+
+          - Workflow run: ${RUN_URL}
+          - Playwright: ${PLAYWRIGHT_VERSION}
+          - Browsers: chromium, firefox
+
+          Next steps:
+          1. Open the run logs and read the \`expect(drift).toEqual([])\`
+             failure message — it names the dropped field plus the
+             affected RTCStatsType group.
+          2. Review the impacted spec sections:
+             - \`spec/telemetry-model.md\` §3.5.2 (RTCStatsType muss-fields)
+             - \`spec/telemetry-model.md\` §1.4 (webrtc.* enum allowlist)
+          3. Update the allowlist or the SDK adapter
+             (packages/player-sdk/src/adapters/webrtc/sampling.ts) and
+             re-run \`make smoke-webrtc-stats-drift\` locally before
+             closing this issue.
+          EOF
+          )
+          gh issue create \
+            --title "$title" \
+            --body "$body" \
+            --label "drift,webrtc,plan-0.9.0"

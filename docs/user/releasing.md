@@ -50,6 +50,7 @@ make smoke-srt            # ab 0.5.0: SRT-Beispiel (RAK-37); startet/stoppt Proj
 make smoke-srt-health     # ab 0.6.0: SRT-Health-Smoke (RAK-41/RAK-42); startet/stoppt mtrace-srt + probt MediaMTX-API
 make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
 make smoke-webrtc-prep    # ab 0.7.0: WebRTC-Lab-Vorbereitungs-Smoke (RAK-48); startet/stoppt mtrace-webrtc; endpoint-only (kein Browser/Playback/getStats)
+make smoke-webrtc-stats-drift # ab 0.9.0: WebRTC-`getStats()`-Drift-Smoke (RAK-56); startet/stoppt mtrace-webrtc + ruft Playwright-Spec gegen Chromium/Firefox; opt-in lokal, produktiv im Nightly-Workflow `.github/workflows/webrtc-drift.yml`
 ```
 
 Erfolgskriterien:
@@ -178,8 +179,30 @@ Vollständige Operator-Doku:
 [`packages/player-sdk/README.md`](../../packages/player-sdk/README.md)
 §Performance and Browser Support.
 
+### 2.4 WebRTC-Drift-Smoke (`0.9.0` Tranche 1, RAK-56)
+
+Seit `0.9.0` Tranche 1 ist der Drift-Review aus R-12 automatisiert.
+Vor jedem Release-Tag (auch Patch) genügt ein Blick auf den letzten
+Nightly-Lauf des Workflows
+[`.github/workflows/webrtc-drift.yml`](../../.github/workflows/webrtc-drift.yml):
+
+- **Cron**: `30 3 * * *` (UTC); `workflow_dispatch` für ad-hoc-
+  Trigger nach einem Browser-Major-Release.
+- **Browser-Set**: Chromium und Firefox aus dem Playwright-Bundle
+  (Default); WebKit/Safari opt-in über
+  `MTRACE_WEBRTC_DRIFT_BROWSERS=chromium,firefox,webkit`.
+- **Befund-Pfad**: bei Schema-Drift bricht der Smoke; das Issue-
+  Template steht im Workflow-`if`-Block (opt-in via
+  `secrets.DRIFT_AUTO_ISSUE=1`).
+- **Reaktion**: `webrtc.*`-Allowlist in
+  [`spec/telemetry-model.md`](../../spec/telemetry-model.md) §1.4 +
+  §3.5.2, `contracts/event-schema.json#reserved_meta_keys` und
+  `packages/player-sdk/src/adapters/webrtc/sampling.ts` synchron
+  aktualisieren; lokal `make smoke-webrtc-stats-drift` grün ziehen.
+
 ```bash
 gh run watch --workflow build.yml
+gh run list --workflow webrtc-drift.yml --limit 5
 ```
 
 ## 3. Release-Commit und Tag
