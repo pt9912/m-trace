@@ -5,7 +5,9 @@
 > Vorgänger `0.9.5` ist released; Plan archiviert in
 > [`done/plan-0.9.5.md`](../done/plan-0.9.5.md).
 >
-> **Release-Typ**: Patch-Release nach `0.9.5`. Ziel ist
+> **Release-Typ**: Patch-Release nach `0.9.5` mit vollständigem
+> Versions-Bump und Tag `v0.9.6` analog
+> [`docs/user/releasing.md`](../../user/releasing.md) §3.1. Ziel ist
 > Lastenheft-Konvergenz und fehlende Repository-Artefakte, keine neue
 > Produktfunktion.
 >
@@ -68,7 +70,7 @@ präzise und maschinen-/reviewbar:
 
 ### 0.3 Sequenzierung und harte Gates
 
-1. Tranche 0 (Plan-Aktivierung + Audit-Snapshot) ist Pflicht.
+1. Tranche 0 (Audit-Snapshot + Plan-Aktivierung) ist Pflicht.
 2. Tranche 1 (fehlende Repo-Artefakte) kann unabhängig von Tranche 2
    umgesetzt werden.
 3. Tranche 2 (Lastenheft-Patch `1.1.12`) muss vor Tranche 3
@@ -95,7 +97,7 @@ berührt:
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung + auditierbare Befundliste aus Lastenheft vs. Repo | ⬜ |
+| 0 | Audit-Snapshot + Plan-Aktivierung + auditierbare Befundliste aus Lastenheft vs. Repo | ⬜ |
 | 1 | Fehlende Muss-Artefakte ergänzen (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`) | ⬜ |
 | 2 | Lastenheft-Patch `1.1.12`: Scope-Widersprüche und stale Pfade bereinigen | ⬜ |
 | 3 | Roadmap/Risiken/README mit Patch-Status synchronisieren | ⬜ |
@@ -103,20 +105,20 @@ berührt:
 
 ---
 
-## 2. Tranche 0 — Plan-Aktivierung + Audit-Snapshot
+## 2. Tranche 0 — Audit-Snapshot + Plan-Aktivierung
 
 Ziel: die bekannten Befunde festhalten, bevor Dateien geändert werden.
 
 DoD:
 
+- [ ] `git status --short` vor erster Änderung dokumentiert, damit
+  unrelated User-Änderungen nicht vermischt werden.
 - [ ] Plan von `docs/planning/open/plan-0.9.6.md` nach
   `docs/planning/in-progress/plan-0.9.6.md` verschoben.
 - [ ] Roadmap §1.2/§3 auf `0.9.6` als aktive Folgephase umgestellt.
 - [ ] Audit-Snapshot im Plan ergänzt: Tabelle mit Lastenheft-Kennung,
   Ist-Zustand, Entscheidung (`implementieren`, `Lastenheft patchen`,
   `Folge-Plan`) und Ziel-Tranche.
-- [ ] `git status --short` vor erster Änderung dokumentiert, damit
-  unrelated User-Änderungen nicht vermischt werden.
 
 Bekannte Startbefunde aus dem Audit:
 
@@ -174,6 +176,9 @@ DoD:
   auf `1.1.12` erhöht.
 - [ ] Patch-Notiz ergänzt: „Lastenheft-Konvergenz nach `0.9.5`;
   keine neue Produktfunktion".
+- [ ] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
+  `4a.15 Patch 1.1.12` ergänzt und die fortlaufende Patch-Übersicht
+  von `1.1.11` auf `1.1.12` nachgezogen.
 - [ ] §7.1 F-7 präzisiert: `deploy/` ist Struktur-Anker für spätere
   Deployment-Artefakte; lokale Compose-Root-Datei bleibt aktuell der
   primäre unterstützte Pfad.
@@ -234,15 +239,17 @@ DoD:
 - [ ] Wenn Tranche 1 `.env.example` oder Deployment-Doku mit
   Operator-Relevanz ergänzt: `make smoke-observability` geprüft oder
   begründet nicht nötig.
-- [ ] Versions-/Release-Entscheidung getroffen:
-  - entweder reiner Docs-/Artefakt-Patch ohne Package-Version-Bump,
-  - oder vollständiger `0.9.5` → `0.9.6`-Bump in Root-/Package-
-    Manifesten und Fixtures analog Patch-Release-Konvention.
+- [ ] Vollständiger `0.9.5` → `0.9.6`-Versions-Bump in allen
+  versionsführenden Stellen analog Patch-Release-Konvention aus
+  [`docs/user/releasing.md`](../../user/releasing.md) §3.1:
+  Root-/Package-Manifeste, `serviceVersion`, `version.ts`,
+  `pack-smoke.mjs`, `contracts/sdk-compat.json` und Test-/Contract-
+  Fixtures mit hartkodierten Versionsstrings.
 - [ ] `CHANGELOG.md`: `[Unreleased]` in `[0.9.6] - YYYY-MM-DD`
   überführt.
 - [ ] Plan nach `docs/planning/done/plan-0.9.6.md` verschoben und
   Status auf ✅ released aktualisiert.
-- [ ] Annotierter Tag `v0.9.6` erstellt, falls Version-Bump erfolgt.
+- [ ] Annotierter Tag `v0.9.6` erstellt.
 
 ## 7. Nicht-Ziele für Review
 
