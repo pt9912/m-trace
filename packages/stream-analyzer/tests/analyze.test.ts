@@ -61,36 +61,43 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
     expect(result.findings.find((f) => f.code === "playlist_ambiguous")).toMatchObject({ level: "warning" });
   });
 
-  it("rejects non-HLS content with manifest_not_hls", async () => {
+  it("rejects non-HLS, non-DASH content with manifest_not_supported", async () => {
+    // plan-0.9.0 §4 Tranche 3: HTML/JSON/Plain-Text-Bodies werden
+    // vom Detector nicht als HLS oder DASH erkannt und bekommen
+    // den additiven Public-Code `manifest_not_supported`.
+    // `manifest_not_hls` bleibt nur erhalten, wenn der Detector
+    // den Input als HLS klassifiziert hat (erste Zeile beginnt
+    // mit `#EXTM3U`-Präfix), der HLS-Parser ihn dann aber selbst
+    // ablehnt.
     const result = (await analyzeHlsManifest({
       kind: "text",
       text: fixture("not-hls.txt")
     })) as AnalysisErrorResult;
 
     expect(result.status).toBe("error");
-    expect(result.code).toBe("manifest_not_hls");
+    expect(result.code).toBe("manifest_not_supported");
     expect(result.details).toMatchObject({ firstLine: expect.stringContaining("<html>") });
   });
 
-  it("rejects empty manifests with manifest_not_hls", async () => {
+  it("rejects empty manifests with manifest_not_supported", async () => {
     const result = (await analyzeHlsManifest({
       kind: "text",
       text: fixture("empty.m3u8")
     })) as AnalysisErrorResult;
 
     expect(result.status).toBe("error");
-    expect(result.code).toBe("manifest_not_hls");
+    expect(result.code).toBe("manifest_not_supported");
   });
 
-  it("rejects whitespace-only manifests with manifest_not_hls", async () => {
+  it("rejects whitespace-only manifests with manifest_not_supported", async () => {
     const result = (await analyzeHlsManifest({
       kind: "text",
       text: "\n\n   \n\t\n"
     })) as AnalysisErrorResult;
 
     expect(result.status).toBe("error");
-    expect(result.code).toBe("manifest_not_hls");
-    expect(result.message).toContain("leer");
+    expect(result.code).toBe("manifest_not_supported");
+    expect(result.message).toContain("weder als HLS");
   });
 
   it("classifies malformed HLS files but still emits findings", async () => {

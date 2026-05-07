@@ -234,3 +234,89 @@ describe("m-trace CLI — URL input", () => {
     expect(observedInput).toEqual({ kind: "url", url: "HTTPS://example.test/m.m3u8" });
   });
 });
+
+// plan-0.9.0 §4 Tranche 3 (RAK-59) — DASH-Pfad: der CLI-Dispatcher
+// liefert ein DASH-Result, sobald analyze() ein analyzerKind="dash"-
+// Result zurückgibt. Der CLI-Code selbst entscheidet nichts — das
+// macht der Detector in analyze.ts.
+describe("m-trace CLI — DASH dispatch (RAK-59)", () => {
+  const okDash: AnalysisResult = {
+    status: "ok",
+    analyzerVersion: "0.8.5",
+    analyzerKind: "dash",
+    input: { source: "text" },
+    playlistType: "dash",
+    summary: { itemCount: 1 },
+    findings: [],
+    details: {
+      type: "static",
+      live: false,
+      periodCount: 1,
+      adaptationSets: [
+        {
+          representations: [
+            {
+              id: "v0",
+              bandwidth: 1500000,
+              width: 1280,
+              height: 720,
+              codecs: "avc1.4d401e",
+              mimeType: "video/mp4"
+            }
+          ]
+        }
+      ]
+    }
+  };
+
+  it("prints the analyzer DASH result for an .mpd file path", async () => {
+    let observedInput: ManifestInput | null = null;
+    const r = await run(["check", "/abs/test.mpd"], {
+      analyze: async (input) => {
+        observedInput = input;
+        return okDash;
+      },
+      readFile: async () =>
+        '<?xml version="1.0"?><MPD type="static"><Period><AdaptationSet><Representation id="v0" bandwidth="1500000" width="1280" height="720" codecs="avc1.4d401e" mimeType="video/mp4"/></AdaptationSet></Period></MPD>'
+    });
+    expect(r.exit).toBe(EXIT_OK);
+    expect(observedInput).toMatchObject({ kind: "text" });
+    const parsed = JSON.parse(r.stdout);
+    expect(parsed.analyzerKind).toBe("dash");
+    expect(parsed.playlistType).toBe("dash");
+    expect(parsed.details.adaptationSets[0].representations).toHaveLength(1);
+  });
+
+  it("dispatches an https://-MPD URL identically to HLS URLs", async () => {
+    let observedInput: ManifestInput | null = null;
+    const r = await run(["check", "https://cdn.example.test/manifest.mpd"], {
+      analyze: async (input) => {
+        observedInput = input;
+        return okDash;
+      }
+    });
+    expect(r.exit).toBe(EXIT_OK);
+    expect(observedInput).toEqual({
+      kind: "url",
+      url: "https://cdn.example.test/manifest.mpd"
+    });
+  });
+
+  it("returns exit 1 for an unsupported manifest body (e.g. HTML)", async () => {
+    const errUnsupported: AnalysisErrorResult = {
+      status: "error",
+      analyzerVersion: "0.8.5",
+      analyzerKind: "hls",
+      code: "manifest_not_supported",
+      message: "Manifest-Body wurde weder als HLS noch als DASH erkannt.",
+      details: { firstLine: "<html>" }
+    };
+    const r = await run(["check", "/abs/index.html"], {
+      analyze: async () => errUnsupported,
+      readFile: async () => "<html><body>404</body></html>"
+    });
+    expect(r.exit).toBe(EXIT_FAILURE);
+    const parsed = JSON.parse(r.stdout);
+    expect(parsed.code).toBe("manifest_not_supported");
+  });
+});

@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke für plan-0.3.0 Tranche 7:
+# Smoke für plan-0.3.0 Tranche 7 (HLS) plus plan-0.9.0 Tranche 3
+# Erweiterung um den DASH-Pfad (RAK-58/RAK-59 / NF-12):
 #  1. `pnpm --silent m-trace --help` zeigt die Usage und exit 0.
-#  2. `pnpm --silent m-trace check <file>` analysiert eine Master-Manifest-
-#     Fixture, gibt JSON auf stdout aus, exit 0.
-#  3. `pnpm --silent m-trace check <not-hls>` bricht ab mit exit 1 und JSON,
-#     das `status:"error"` mit `code:"manifest_not_hls"` trägt.
-#  4. `pnpm --silent m-trace check /nonexistent.m3u8` läuft auf IO-Fehler,
+#  2. `pnpm --silent m-trace check <file.m3u8>` analysiert eine
+#     Master-HLS-Manifest-Fixture, gibt JSON auf stdout aus, exit 0
+#     (`analyzerKind:"hls"`, `playlistType:"master"`).
+#  3. `pnpm --silent m-trace check <file.mpd>` analysiert eine VOD-
+#     DASH-MPD-Fixture, gibt JSON auf stdout aus, exit 0
+#     (`analyzerKind:"dash"`, `playlistType:"dash"`). Ab plan-0.9.0
+#     Tranche 3.
+#  4. `pnpm --silent m-trace check <not-supported>` (HTML-Body)
+#     bricht ab mit exit 1 und JSON, das `status:"error"` mit
+#     `code:"manifest_not_supported"` trägt — neuer Detector-Pfad
+#     ab plan-0.9.0 Tranche 3.
+#  5. `pnpm --silent m-trace check /nonexistent.m3u8` läuft auf IO-Fehler,
 #     exit 1, Fehler-Message auf stderr.
-#  5. Aufruf ohne Argumente → Usage-Fehler, exit 2.
+#  6. Aufruf ohne Argumente → Usage-Fehler, exit 2.
+#  7. URL-Loader-Pfad (SSRF-Block) → exit 1 + fetch_blocked.
+#  8. bin-Pfad via consumer .bin → Usage.
 #
 # Erwartet `make ts-build` als Vorbedingung (das Makefile-Target
 # `smoke-cli` hängt schon dran).
@@ -35,9 +45,23 @@ cat > "$master" <<'M3U'
 video/720p.m3u8
 M3U
 
-# Non-HLS-Fixture
+# Non-HLS-/Non-DASH-Fixture (HTML-Body) — wird vom Detector in
+# plan-0.9.0 Tranche 3 als `manifest_not_supported` zurückgewiesen.
 nothls="$tmpdir/not-hls.txt"
 echo "<html><body>not a manifest</body></html>" > "$nothls"
+
+# DASH-VOD-Fixture (plan-0.9.0 Tranche 3)
+dash_vod="$tmpdir/vod.mpd"
+cat > "$dash_vod" <<'MPD'
+<?xml version="1.0" encoding="UTF-8"?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" mediaPresentationDuration="PT10M0S" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011">
+  <Period>
+    <AdaptationSet id="1" contentType="video" mimeType="video/mp4">
+      <Representation id="v1" bandwidth="1280000" width="1280" height="720" codecs="avc1.4d401e" frameRate="30"/>
+    </AdaptationSet>
+  </Period>
+</MPD>
+MPD
 
 # 1. --help
 help_out="$(pnpm --silent m-trace --help 2>&1)"
@@ -57,21 +81,35 @@ if ! echo "$master_out" | jq -e '.status == "ok" and .playlistType == "master"' 
 fi
 echo "[smoke-cli] check master fixture OK"
 
-# 3. non-HLS → analysis-error → exit 1
+# 3. DASH-VOD → analyzerKind=dash, playlistType=dash, exit 0
+dash_out="$(pnpm --silent m-trace check "$dash_vod")"
+if ! echo "$dash_out" | jq -e '.status == "ok" and .analyzerKind == "dash" and .playlistType == "dash"' >/dev/null; then
+  echo "[smoke-cli] DASH VOD case did not return ok/dash/dash:"
+  echo "$dash_out"
+  exit 1
+fi
+if ! echo "$dash_out" | jq -e '.details.adaptationSets | length >= 1' >/dev/null; then
+  echo "[smoke-cli] DASH VOD result has no adaptationSets:"
+  echo "$dash_out"
+  exit 1
+fi
+echo "[smoke-cli] check DASH VOD fixture OK (analyzerKind=dash, playlistType=dash)"
+
+# 4. unsupported (HTML) → analysis-error manifest_not_supported → exit 1
 set +e
 nothls_out="$(pnpm --silent m-trace check "$nothls" 2>/dev/null)"
 nothls_exit=$?
 set -e
 if [ "$nothls_exit" != "1" ]; then
-  echo "[smoke-cli] non-HLS expected exit 1, got $nothls_exit"
+  echo "[smoke-cli] unsupported expected exit 1, got $nothls_exit"
   exit 1
 fi
-if ! echo "$nothls_out" | jq -e '.status == "error" and .code == "manifest_not_hls"' >/dev/null; then
-  echo "[smoke-cli] non-HLS did not return manifest_not_hls:"
+if ! echo "$nothls_out" | jq -e '.status == "error" and .code == "manifest_not_supported"' >/dev/null; then
+  echo "[smoke-cli] unsupported did not return manifest_not_supported:"
   echo "$nothls_out"
   exit 1
 fi
-echo "[smoke-cli] check non-HLS fixture OK (exit 1, manifest_not_hls)"
+echo "[smoke-cli] check unsupported fixture OK (exit 1, manifest_not_supported)"
 
 # 4. missing file → IO error → exit 1, stderr message
 set +e

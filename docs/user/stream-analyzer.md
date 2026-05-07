@@ -210,12 +210,29 @@ Beispiel (Live-Media-Playlist):
 {
   status: "error",
   analyzerVersion: "0.3.0",
-  analyzerKind: "hls",
-  code: "invalid_input" | "manifest_not_hls" | "fetch_failed" | "fetch_blocked" | "manifest_too_large" | "internal_error",
+  analyzerKind: "hls" | "dash",
+  code:
+    | "invalid_input"
+    | "manifest_not_hls"
+    | "manifest_not_supported"
+    | "fetch_failed"
+    | "fetch_blocked"
+    | "manifest_too_large"
+    | "internal_error",
   message: string,
   details?: Record<string, unknown>
 }
 ```
+
+`manifest_not_hls` ist HLS-spezifisch: der HLS-Parser hat das
+Manifest abgelehnt, obwohl der Detector es als HLS klassifiziert
+hat (erste Zeile beginnt mit `#EXTM3U`-Präfix). `manifest_not_supported`
+(ab `0.9.0` Tranche 3, siehe §3) ist die Sammelantwort des
+Detectors für Eingaben, die weder als HLS noch als DASH erkannt
+werden — HTML-Bodies, JSON-Bodies, Plain-Text ohne Manifest-Marker,
+leere Bodies. Die zwei Codes trennen damit „erkanntes HLS, aber
+defekt" von „nicht als Manifest erkennbar"; HTTP-Adapter mappen
+beide auf 422.
 
 `status` trennt Erfolg und Fehler statisch — Konsumenten dürfen sich auf das
 Diskriminator-Feld verlassen. Beispiel (URL gegen lokale Adresse):
@@ -238,12 +255,15 @@ welchem Hop ein SSRF-Block bzw. ein Statuscode-Problem auftrat.
 
 ## 3. Scope
 
-| Bereich       | 0.3.0   | Bemerkung                                                     |
+| Bereich       | Stand   | Bemerkung                                                     |
 | ------------- | ------- | ------------------------------------------------------------- |
 | HLS Master    | ✅       | Variants/Renditions, Group-Cross-Check, Base-URL-Auflösung.   |
 | HLS Media     | ✅       | Segmente, Toleranzregel, Live/VOD, 3×-Latenz.                 |
 | HLS via URL   | ✅       | Timeout, Größenlimit, SSRF-Schutz (siehe §6).                 |
-| DASH/CMAF     | ❌       | Out of scope — F-73 als zusätzlicher `analyzerKind` möglich.   |
+| DASH-MPD VOD  | ✅ ab `0.9.0` | `analyzerKind:"dash"` / `playlistType:"dash"`; MPD/Period/AdaptationSet/Representation-Hierarchie mit Mindest-Feldern (`bandwidth`, `width`/`height`, `codecs`, `mimeType`); `details.type:"static"`. RAK-58 / NF-12. |
+| DASH-MPD Live | ✅ ab `0.9.0` | Wie VOD plus `details.type:"dynamic"` / `details.live:true` / `minimumUpdatePeriod` / `availabilityStartTime`. SegmentTemplate-Edge-Cases (`$Time$`-Variablen, `availabilityStartTime`-Drift) sind Folge-Plan-Material. |
+| DASH via URL  | ✅ ab `0.9.0` | Loader generalisiert auf HLS+DASH (Content-Type-Allowlist `application/dash+xml`/`application/xml`/`text/xml`); Detector entscheidet am Body, nicht am Content-Type. SSRF-Schutz unverändert (§6).                  |
+| CMAF          | ❌       | Out of scope — F-73, Folge-Plan.                              |
 | SRT           | ❌       | Eigener Bereich (`0.6.0`).                                    |
 
 ## 4. Stabilitätsregel
@@ -555,18 +575,27 @@ beziehen das Paket über `pnpm -r --if-present` automatisch ein.
 
 ## 9. CLI `m-trace check`
 
-Der Lastenheft-Aufruf `pnpm m-trace check <url-or-file>` analysiert ein
-HLS-Manifest und gibt das vollständige `AnalysisResult`-JSON auf stdout
-aus. URL-Inputs nutzen denselben Loader-Pfad wie die Bibliothek (siehe
-§6 für SSRF-Regeln); Datei-Inputs werden direkt eingelesen und als
-`kind: "text"` mit `baseUrl: "file://..."` an den Analyzer gegeben.
+Der Lastenheft-Aufruf `pnpm m-trace check <url-or-file>` analysiert
+ein HLS- **oder DASH-Manifest** und gibt das vollständige
+`AnalysisResult`-JSON auf stdout aus. Ab `0.9.0` Tranche 3 (RAK-59)
+dispatcht der CLI automatisch: der Detector im
+`@npm9912/stream-analyzer`-Paket sieht den Body-Anfang an und
+schickt ihn an den HLS- oder DASH-Parser; CLI-Aufrufer müssen das
+Format nicht angeben. URL-Inputs nutzen denselben Loader-Pfad wie
+die Bibliothek (siehe §6 für SSRF-Regeln); Datei-Inputs werden
+direkt eingelesen und als `kind: "text"` mit `baseUrl: "file://..."`
+an den Analyzer gegeben.
 
 ```bash
-# URL gegen öffentlichen Stream
+# URL gegen öffentlichen HLS-Stream
 pnpm m-trace check https://cdn.example.test/manifest.m3u8
 
-# Lokale Datei
+# URL gegen DASH-MPD (ab 0.9.0)
+pnpm m-trace check https://cdn.example.test/manifest.mpd
+
+# Lokale Datei (HLS oder DASH — Detection erfolgt am Body)
 pnpm m-trace check ./fixtures/master.m3u8
+pnpm m-trace check ./fixtures/vod.mpd
 
 # Hilfe und Version
 pnpm m-trace --help

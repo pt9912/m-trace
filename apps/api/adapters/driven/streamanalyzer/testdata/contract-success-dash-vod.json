@@ -1,0 +1,63 @@
+{
+  "status": "ok",
+  "analyzerVersion": "0.8.5",
+  "analyzerKind": "dash",
+  "input": {
+    "source": "text",
+    "baseUrl": "https://cdn.example.test/"
+  },
+  "playlistType": "dash",
+  "summary": {
+    "itemCount": 3
+  },
+  "findings": [],
+  "details": {
+    "profiles": "urn:mpeg:dash:profile:isoff-on-demand:2011",
+    "type": "static",
+    "live": false,
+    "mediaPresentationDuration": "PT10M0S",
+    "periodCount": 1,
+    "adaptationSets": [
+      {
+        "id": "1",
+        "mimeType": "video/mp4",
+        "contentType": "video",
+        "representations": [
+          {
+            "id": "v1",
+            "bandwidth": 1280000,
+            "width": 1280,
+            "height": 720,
+            "frameRate": "30",
+            "codecs": "avc1.4d401e",
+            "mimeType": "video/mp4"
+          },
+          {
+            "id": "v2",
+            "bandwidth": 2560000,
+            "width": 1920,
+            "height": 1080,
+            "frameRate": "30",
+            "codecs": "avc1.640028",
+            "mimeType": "video/mp4"
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "mimeType": "audio/mp4",
+        "contentType": "audio",
+        "lang": "en",
+        "representations": [
+          {
+            "id": "a1",
+            "bandwidth": 128000,
+            "codecs": "mp4a.40.2",
+            "mimeType": "audio/mp4",
+            "audioSamplingRate": "48000"
+          }
+        ]
+      }
+    ]
+  }
+}

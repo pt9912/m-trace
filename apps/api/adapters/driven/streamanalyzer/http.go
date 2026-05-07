@@ -212,6 +212,7 @@ func parseSuccessResponse(raw []byte) (domain.StreamAnalysisResult, error) {
 
 	result := domain.StreamAnalysisResult{
 		AnalyzerVersion: env.AnalyzerVersion,
+		AnalyzerKind:    mapAnalyzerKind(env.AnalyzerKind),
 		Input: domain.StreamAnalysisInputMetadata{
 			Source:  env.Input.Source,
 			URL:     env.Input.URL,
@@ -254,8 +255,25 @@ func mapPlaylistType(value string) domain.PlaylistType {
 		return domain.PlaylistTypeMaster
 	case "media":
 		return domain.PlaylistTypeMedia
+	case "dash":
+		return domain.PlaylistTypeDash
 	default:
 		return domain.PlaylistTypeUnknown
+	}
+}
+
+// mapAnalyzerKind übersetzt das Wire-Format-Feld `analyzerKind`
+// in den Domain-Type. Unbekannte Werte landen konservativ auf HLS,
+// damit ein zukünftiger Analyzer-Stand kein UI-Crash auslöst —
+// sichtbar wird der Drift dann am Contract-Test.
+func mapAnalyzerKind(value string) domain.AnalyzerKind {
+	switch value {
+	case "dash":
+		return domain.AnalyzerKindDASH
+	case "hls", "":
+		return domain.AnalyzerKindHLS
+	default:
+		return domain.AnalyzerKindHLS
 	}
 }
 

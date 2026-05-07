@@ -250,6 +250,7 @@ func normalizeAnalyzeCode(value string) string {
 		"payload_too_large",
 		"invalid_input",
 		"manifest_not_hls",
+		"manifest_not_supported",
 		"fetch_blocked",
 		"fetch_failed",
 		"manifest_too_large",

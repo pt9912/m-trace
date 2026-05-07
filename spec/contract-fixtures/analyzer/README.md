@@ -8,6 +8,17 @@ testen gegen dieselben Dateien:
 - `success-master.json` — Erfolgsfall mit `playlistType: "master"`,
   einem Variant und einer Rendition. Pinnt das volle Envelope-Schema
   inklusive `analyzerKind`, `findings`-Form und `details`-Struktur.
+- `success-dash-vod.json` — Erfolgsfall mit `analyzerKind: "dash"` /
+  `playlistType: "dash"` (VOD-MPD, `type=static`, on-demand-Profile;
+  ab `0.9.0` Tranche 3, RAK-58). Pinnt die DASH-Variante des
+  Envelopes mit `details.profiles` / `type` / `live` / `periodCount`
+  / `adaptationSets`-Hierarchie inklusive Mindest-Felder pro
+  `Representation` (`bandwidth`, `width`/`height`, `codecs`,
+  `mimeType`).
+- `success-dash-live.json` — Erfolgsfall mit `type: "dynamic"` /
+  `live: true` (Live-MPD mit `minimumUpdatePeriod` und
+  `availabilityStartTime`); pinnt die Live-spezifischen
+  Detail-Felder.
 - `error-fetch-blocked.json` — Fehlerfall mit `status: "error"`,
   `code: "fetch_blocked"`. Pinnt die Error-Envelope-Form.
 

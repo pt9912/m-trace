@@ -21,15 +21,39 @@ export interface LoadResult {
   readonly finalUrl: string;
 }
 
+// Content-Type-Allowlist für den HTTP-Loader. HLS-Manifeste werden
+// üblicherweise als `application/vnd.apple.mpegurl` /
+// `application/x-mpegurl` / `audio/mpegurl` / `text/plain` ausgeliefert;
+// DASH-MPDs (ab `0.9.0` Tranche 3, RAK-58) als `application/dash+xml`
+// oder generisch `application/xml`/`text/xml`. Der Loader sortiert
+// nicht zwischen den Manifest-Formaten — der Detector in
+// `detect.ts` macht das nach erfolgreichem Body-Read anhand des
+// Header-Bytes.
 const ALLOWED_CONTENT_TYPES: ReadonlySet<string> = new Set([
+  // HLS
   "application/vnd.apple.mpegurl",
   "application/x-mpegurl",
   "audio/mpegurl",
+  // DASH
+  "application/dash+xml",
+  "application/xml",
+  "text/xml",
+  // Generic fallback (lab/CDN-Konfigurationen, die HLS oder DASH als
+  // text/plain ausliefern; der Detector entscheidet danach am Body).
   "text/plain"
 ]);
 
+const ACCEPT_HEADER =
+  "application/vnd.apple.mpegurl,application/x-mpegurl,audio/mpegurl," +
+  "application/dash+xml,application/xml,text/xml," +
+  "text/plain;q=0.9";
+
 /**
- * Lädt ein HLS-Manifest unter den Tranche-2-Schutzregeln.
+ * Lädt ein Streaming-Manifest (HLS oder DASH) unter den
+ * Tranche-2-Schutzregeln. Ab `0.9.0` Tranche 3 trägt die
+ * Content-Type-Allowlist `application/dash+xml`; der Detector
+ * hinter dem Loader entscheidet am Body-Anfang, welcher Parser
+ * den Text bekommt.
  *
  * Ablauf pro Hop:
  *   1. URL-Form prüfen (Schema, Credentials, Host).
@@ -49,7 +73,7 @@ const ALLOWED_CONTENT_TYPES: ReadonlySet<string> = new Set([
  * danach kommt noch der finale Hop. Bei `maxRedirects = 5` sind also
  * höchstens 6 fetches insgesamt.
  */
-export async function loadHlsManifest(url: string, options: LoadOptions): Promise<LoadResult> {
+export async function loadManifest(url: string, options: LoadOptions): Promise<LoadResult> {
   let currentUrl = url;
   for (let hop = 0; hop <= options.maxRedirects; hop++) {
     const next = await fetchHop(currentUrl, options, hop);
@@ -138,7 +162,7 @@ async function executeFetch(
     return await options.runtime.fetch(rawUrl, {
       signal: controller.signal,
       redirect: "manual",
-      headers: { accept: "application/vnd.apple.mpegurl,application/x-mpegurl,audio/mpegurl,text/plain;q=0.9" }
+      headers: { accept: ACCEPT_HEADER }
     });
   } catch (error) {
     if (timedOutBox.value) {
@@ -187,7 +211,7 @@ async function dispatchResponse(
   const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
   const mainType = contentType.split(";")[0].trim();
   if (mainType !== "" && !ALLOWED_CONTENT_TYPES.has(mainType)) {
-    throw new AnalysisError("fetch_failed", `Content-Type "${mainType}" ist kein HLS-Manifest.`, {
+    throw new AnalysisError("fetch_failed", `Content-Type "${mainType}" ist kein unterstütztes Manifest-Format (HLS/DASH).`, {
       hop,
       url: rawUrl,
       contentType: mainType

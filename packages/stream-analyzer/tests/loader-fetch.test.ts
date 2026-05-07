@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LoaderRuntime, LoaderResponse, ResolvedAddress } from "../src/internal/loader/runtime.js";
-import { loadHlsManifest } from "../src/internal/loader/fetch.js";
+import { loadManifest } from "../src/internal/loader/fetch.js";
 import { AnalysisError } from "../src/index.js";
 import { analyzeWithRuntime } from "../src/analyze.js";
 
@@ -76,7 +76,7 @@ function loadOpts(
   };
 }
 
-describe("loadHlsManifest — happy path", () => {
+describe("loadManifest — happy path", () => {
   it("returns body text and final URL on 200", async () => {
     const runtime = makeRuntime({
       responses: {
@@ -87,16 +87,16 @@ describe("loadHlsManifest — happy path", () => {
         }
       }
     });
-    const result = await loadHlsManifest("https://example.test/manifest.m3u8", loadOpts(runtime));
+    const result = await loadManifest("https://example.test/manifest.m3u8", loadOpts(runtime));
     expect(result.text).toBe("#EXTM3U\n");
     expect(result.finalUrl).toBe("https://example.test/manifest.m3u8");
   });
 });
 
-describe("loadHlsManifest — SSRF runtime path", () => {
+describe("loadManifest — SSRF runtime path", () => {
   it("blocks scheme via fetch-stage validation", async () => {
     const runtime = makeRuntime({ responses: {} });
-    await expect(loadHlsManifest("ftp://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("ftp://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
   });
@@ -106,7 +106,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
       resolve: [{ address: "10.0.0.5", family: 4 }],
       responses: {}
     });
-    await expect(loadHlsManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
   });
@@ -122,7 +122,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
         throw new Error("should not reach");
       }
     };
-    await expect(loadHlsManifest("https://127.0.0.1/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://127.0.0.1/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
     expect(resolveCalled).toBe(false);
@@ -139,7 +139,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
         throw new Error("should not reach");
       }
     };
-    await expect(loadHlsManifest("https://[fc00::1]/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://[fc00::1]/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
     expect(resolveCalled).toBe(false);
@@ -160,7 +160,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
         };
       }
     };
-    const result = await loadHlsManifest(
+    const result = await loadManifest(
       "https://internal.test/m.m3u8",
       loadOpts(runtime, { allowPrivateNetworks: true })
     );
@@ -171,11 +171,11 @@ describe("loadHlsManifest — SSRF runtime path", () => {
     const runtime = makeRuntime({ responses: {} });
     // Credentials in URL bleibt geblockt.
     await expect(
-      loadHlsManifest("https://user:pass@example.test/m.m3u8", loadOpts(runtime, { allowPrivateNetworks: true }))
+      loadManifest("https://user:pass@example.test/m.m3u8", loadOpts(runtime, { allowPrivateNetworks: true }))
     ).rejects.toMatchObject({ code: "fetch_blocked" });
     // ftp-Schema bleibt geblockt.
     await expect(
-      loadHlsManifest("ftp://example.test/m.m3u8", loadOpts(runtime, { allowPrivateNetworks: true }))
+      loadManifest("ftp://example.test/m.m3u8", loadOpts(runtime, { allowPrivateNetworks: true }))
     ).rejects.toMatchObject({ code: "fetch_blocked" });
   });
 
@@ -188,7 +188,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
         throw new Error("should not reach");
       }
     };
-    await expect(loadHlsManifest("https://[::1]/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://[::1]/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
   });
@@ -208,7 +208,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
         };
       }
     };
-    const result = await loadHlsManifest("https://[2001:4860:4860::8888]/m.m3u8", loadOpts(runtime));
+    const result = await loadManifest("https://[2001:4860:4860::8888]/m.m3u8", loadOpts(runtime));
     expect(result.text).toBe("#EXTM3U\n");
   });
 
@@ -220,7 +220,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
       ],
       responses: {}
     });
-    await expect(loadHlsManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
   });
@@ -228,7 +228,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
   it("blocks credentials in the URL", async () => {
     const runtime = makeRuntime({ responses: {} });
     await expect(
-      loadHlsManifest("https://user:pass@example.test/x", loadOpts(runtime))
+      loadManifest("https://user:pass@example.test/x", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_blocked" });
   });
 
@@ -238,7 +238,7 @@ describe("loadHlsManifest — SSRF runtime path", () => {
       resolveError: new Error("ENOTFOUND"),
       responses: {}
     });
-    await expect(loadHlsManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
   });
@@ -248,13 +248,13 @@ describe("loadHlsManifest — SSRF runtime path", () => {
       resolve: [],
       responses: {}
     });
-    await expect(loadHlsManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://example.test/x", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_blocked"
     });
   });
 });
 
-describe("loadHlsManifest — redirects", () => {
+describe("loadManifest — redirects", () => {
   it("follows up to maxRedirects", async () => {
     const runtime = makeRuntime({
       responses: {
@@ -269,7 +269,7 @@ describe("loadHlsManifest — redirects", () => {
         }
       }
     });
-    const result = await loadHlsManifest("https://a.test/m.m3u8", loadOpts(runtime, { maxRedirects: 1 }));
+    const result = await loadManifest("https://a.test/m.m3u8", loadOpts(runtime, { maxRedirects: 1 }));
     expect(result.text).toBe("#EXTM3U\nseg.ts\n");
     expect(result.finalUrl).toBe("https://b.test/m.m3u8");
   });
@@ -283,7 +283,7 @@ describe("loadHlsManifest — redirects", () => {
       }
     });
     await expect(
-      loadHlsManifest("https://a.test/m.m3u8", loadOpts(runtime, { maxRedirects: 1 }))
+      loadManifest("https://a.test/m.m3u8", loadOpts(runtime, { maxRedirects: 1 }))
     ).rejects.toMatchObject({ code: "fetch_blocked" });
   });
 
@@ -301,7 +301,7 @@ describe("loadHlsManifest — redirects", () => {
       }
     });
     await expect(
-      loadHlsManifest("https://public.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://public.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_blocked" });
   });
 
@@ -311,7 +311,7 @@ describe("loadHlsManifest — redirects", () => {
         "https://a.test/m.m3u8": { status: 302, headers: {} }
       }
     });
-    await expect(loadHlsManifest("https://a.test/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
+    await expect(loadManifest("https://a.test/m.m3u8", loadOpts(runtime))).rejects.toMatchObject({
       code: "fetch_failed"
     });
   });
@@ -328,12 +328,12 @@ describe("loadHlsManifest — redirects", () => {
       }
     });
     await expect(
-      loadHlsManifest("https://a.test/m.m3u8", loadOpts(runtime, { maxBytes: 100 }))
+      loadManifest("https://a.test/m.m3u8", loadOpts(runtime, { maxBytes: 100 }))
     ).rejects.toMatchObject({ code: "manifest_too_large" });
   });
 });
 
-describe("loadHlsManifest — fetch failures", () => {
+describe("loadManifest — fetch failures", () => {
   it("maps non-2xx statuses to fetch_failed", async () => {
     const runtime = makeRuntime({
       responses: {
@@ -341,7 +341,7 @@ describe("loadHlsManifest — fetch failures", () => {
       }
     });
     await expect(
-      loadHlsManifest("https://example.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_failed" });
   });
 
@@ -356,7 +356,7 @@ describe("loadHlsManifest — fetch failures", () => {
       }
     });
     await expect(
-      loadHlsManifest("https://example.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_failed" });
   });
 
@@ -366,7 +366,7 @@ describe("loadHlsManifest — fetch failures", () => {
         "https://example.test/m.m3u8": { status: 200, headers: {}, body: "#EXTM3U\n" }
       }
     });
-    const result = await loadHlsManifest(
+    const result = await loadManifest(
       "https://example.test/m.m3u8",
       loadOpts(runtime)
     );
@@ -385,7 +385,7 @@ describe("loadHlsManifest — fetch failures", () => {
       }
     });
     await expect(
-      loadHlsManifest("https://slow.test/m.m3u8", loadOpts(runtime, { timeoutMs: 10 }))
+      loadManifest("https://slow.test/m.m3u8", loadOpts(runtime, { timeoutMs: 10 }))
     ).rejects.toMatchObject({ code: "fetch_failed" });
   });
 
@@ -423,7 +423,7 @@ describe("loadHlsManifest — fetch failures", () => {
     };
     const start = Date.now();
     await expect(
-      loadHlsManifest("https://slow.test/m.m3u8", loadOpts(runtime, { timeoutMs: 50, maxBytes: 100_000 }))
+      loadManifest("https://slow.test/m.m3u8", loadOpts(runtime, { timeoutMs: 50, maxBytes: 100_000 }))
     ).rejects.toMatchObject({ code: "fetch_failed", message: expect.stringContaining("Timeout") });
     expect(Date.now() - start).toBeLessThan(2_000); // nicht maxBytes-gebunden
   });
@@ -436,7 +436,7 @@ describe("loadHlsManifest — fetch failures", () => {
       }
     };
     await expect(
-      loadHlsManifest("https://example.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_failed" });
   });
 
@@ -448,7 +448,7 @@ describe("loadHlsManifest — fetch failures", () => {
       }
     };
     await expect(
-      loadHlsManifest("https://example.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_failed", message: expect.stringContaining("raw string boom") });
   });
 
@@ -460,13 +460,13 @@ describe("loadHlsManifest — fetch failures", () => {
       fetch: async () => ({ status: 200, headers: { get: () => null }, body: null })
     };
     await expect(
-      loadHlsManifest("https://example.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_blocked", message: expect.stringContaining("non-error dns failure") });
   });
 
   it("rejects unparseable URLs with invalid_input", async () => {
     const runtime = makeRuntime({ responses: {} });
-    await expect(loadHlsManifest("not a url", loadOpts(runtime))).rejects.toBeInstanceOf(AnalysisError);
+    await expect(loadManifest("not a url", loadOpts(runtime))).rejects.toBeInstanceOf(AnalysisError);
   });
 });
 
@@ -556,7 +556,7 @@ describe("DNS-Rebinding-Entscheidung (Dokumentationspunkt)", () => {
       }
     };
     await expect(
-      loadHlsManifest("https://example.test/m.m3u8", loadOpts(runtime))
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
     ).rejects.toMatchObject({ code: "fetch_blocked" });
     expect(calls).toEqual(["resolve:example.test"]);
   });

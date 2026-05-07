@@ -79,8 +79,7 @@ type AnalyzeManifestResult struct {
 }
 
 // PlaylistType klassifiziert das Analyseergebnis grob. Weitere Werte
-// (z. B. DASH-MPD-Varianten) sind additiv erlaubt, ohne bestehende
-// Konsumenten zu brechen.
+// werden additiv ergänzt, ohne bestehende Konsumenten zu brechen.
 type PlaylistType string
 
 const (
@@ -91,6 +90,26 @@ const (
 	PlaylistTypeMaster PlaylistType = "master"
 	// PlaylistTypeMedia steht für eine HLS Media Playlist.
 	PlaylistTypeMedia PlaylistType = "media"
+	// PlaylistTypeDash steht für ein DASH-MPD (ab plan-0.9.0
+	// Tranche 3, RAK-58 / NF-12). DASH hat keine analoge Master/
+	// Media-Trennung in der Manifest-Form selbst — die Period/
+	// AdaptationSet/Representation-Hierarchie wird immer in einem
+	// MPD geliefert; der Live-/VOD-Status lebt in
+	// `details.type` (`static`/`dynamic`).
+	PlaylistTypeDash PlaylistType = "dash"
+)
+
+// AnalyzerKind identifiziert den ausführenden Analyzer-Pfad.
+// Aktuelle Werte: `hls` (seit plan-0.3.0) und `dash` (seit
+// plan-0.9.0 Tranche 3, RAK-58 / NF-12). Weitere Formate (CMAF,
+// F-73) werden additiv ergänzt.
+type AnalyzerKind string
+
+const (
+	// AnalyzerKindHLS markiert ein HLS-Analyse-Result.
+	AnalyzerKindHLS AnalyzerKind = "hls"
+	// AnalyzerKindDASH markiert ein DASH-MPD-Analyse-Result.
+	AnalyzerKindDASH AnalyzerKind = "dash"
 )
 
 // FindingLevel folgt der Drei-Stufen-Skala aus plan-0.3.0 Tranche 4.
@@ -125,10 +144,19 @@ const (
 	// StreamAnalysisInvalidInput meldet eine fehlerhafte Aufrufer-
 	// Eingabe (kind/text/url-Form). HTTP 400.
 	StreamAnalysisInvalidInput StreamAnalysisErrorCode = "invalid_input"
-	// StreamAnalysisManifestNotHLS meldet, dass das Manifest kein
-	// HLS-Inhalt ist. HTTP 422 — semantisch wohlgeformt, aber
-	// inhaltlich nicht verarbeitbar.
+	// StreamAnalysisManifestNotHLS meldet, dass das Manifest vom
+	// HLS-Parser abgelehnt wurde, obwohl der Detector es als HLS
+	// klassifiziert hat (erste Zeile beginnt mit `#EXTM3U`-Präfix).
+	// HTTP 422 — semantisch wohlgeformt, aber inhaltlich nicht
+	// verarbeitbar.
 	StreamAnalysisManifestNotHLS StreamAnalysisErrorCode = "manifest_not_hls"
+	// StreamAnalysisManifestNotSupported meldet, dass der Detector
+	// das Manifest weder als HLS (#EXTM3U-Header) noch als DASH
+	// (`<?xml`/`<MPD`-Header) klassifizieren konnte. Beispiele:
+	// HTML-Bodies, JSON-Bodies, Plain-Text ohne Manifest-Marker,
+	// leere Bodies. HTTP 422 (analog `manifest_not_hls`). Ab
+	// plan-0.9.0 Tranche 3 / RAK-58.
+	StreamAnalysisManifestNotSupported StreamAnalysisErrorCode = "manifest_not_supported"
 	// StreamAnalysisFetchBlocked meldet, dass die übergebene URL vom
 	// SSRF-Schutz abgelehnt wurde (privat/loopback/credentials/scheme).
 	// HTTP 400 — der Aufrufer hat eine unsichere URL geliefert.
@@ -201,6 +229,11 @@ type StreamAnalysisResult struct {
 	// AnalyzerVersion stammt aus packages/stream-analyzer/package.json
 	// (plan-0.3.0 §2 Tranche 1: Versionssynchronizität).
 	AnalyzerVersion string
+	// AnalyzerKind identifiziert den Analyzer-Pfad (`hls` oder
+	// `dash`). Ab plan-0.9.0 Tranche 3 / RAK-58 wird er aus dem
+	// analyzer-service-Wire-Format durchgereicht; ältere Releases
+	// hatten ihn als HLS-Konstante in der API.
+	AnalyzerKind AnalyzerKind
 	// Input spiegelt die ursprüngliche Eingabeform; vom analyzer-
 	// service durchgereicht, damit Konsumenten Text-/URL-Pfade
 	// unterscheiden können (RAK-26-Pflichtfeld).

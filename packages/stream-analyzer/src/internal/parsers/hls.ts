@@ -2,8 +2,7 @@ import type { AnalysisFinding } from "../../types/finding.js";
 import type {
   AnalysisInputMetadata,
   AnalysisResult,
-  AnalysisSummary,
-  BaseAnalysisResult
+  AnalysisSummary
 } from "../../types/result.js";
 import { classifyHlsManifest } from "./classify.js";
 import { parseMasterPlaylist } from "./master.js";
@@ -34,10 +33,10 @@ export function analyzeHlsManifestText(
     });
   }
 
-  const base: Omit<BaseAnalysisResult, "summary" | "findings"> = {
-    status: "ok",
+  const base = {
+    status: "ok" as const,
     analyzerVersion,
-    analyzerKind: "hls",
+    analyzerKind: "hls" as const,
     input: inputMeta
   };
 

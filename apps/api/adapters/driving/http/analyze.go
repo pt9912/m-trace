@@ -221,11 +221,12 @@ func buildAnalyzeResponse(envelope domain.AnalyzeManifestResult) analyzeResponse
 	result := envelope.Analysis
 	analysis := analyzeAnalysisPayload{
 		AnalyzerVersion: result.AnalyzerVersion,
-		// AnalyzerKind ist heute eine HLS-Konstante. Wenn DASH/CMAF
-		// (F-73) eingeführt werden, übernimmt das die Domain
-		// (per-kind Result-Variant) und das Feld kommt aus
-		// result.AnalyzerKind.
-		AnalyzerKind: "hls",
+		// AnalyzerKind kommt seit plan-0.9.0 Tranche 3 (RAK-58 /
+		// NF-12) aus dem Domain-Modell, weil der Analyzer-Pfad
+		// jetzt `hls` oder `dash` liefern kann. Fallback `"hls"`
+		// hält den Wire-Vertrag stabil, falls ein älterer
+		// Analyzer-Stand das Feld leer lässt.
+		AnalyzerKind: analyzerKindOrDefault(result.AnalyzerKind),
 		Input: analyzeInputPayload{
 			Source:  result.Input.Source,
 			URL:     result.Input.URL,
@@ -363,7 +364,7 @@ func domainHTTPStatus(code domain.StreamAnalysisErrorCode) int {
 	switch code {
 	case domain.StreamAnalysisInvalidInput, domain.StreamAnalysisFetchBlocked:
 		return http.StatusBadRequest
-	case domain.StreamAnalysisManifestNotHLS:
+	case domain.StreamAnalysisManifestNotHLS, domain.StreamAnalysisManifestNotSupported:
 		return http.StatusUnprocessableEntity
 	case domain.StreamAnalysisFetchFailed, domain.StreamAnalysisManifestTooLarge, domain.StreamAnalysisInternalError:
 		return http.StatusBadGateway
@@ -374,6 +375,16 @@ func domainHTTPStatus(code domain.StreamAnalysisErrorCode) int {
 		// wird.
 		return http.StatusBadGateway
 	}
+}
+
+// analyzerKindOrDefault stabilisiert den Wire-Vertrag bei leerem
+// `result.AnalyzerKind` (z. B. wenn ein älterer Analyzer-Stand das
+// Feld nicht mitliefert).
+func analyzerKindOrDefault(kind domain.AnalyzerKind) string {
+	if kind == "" {
+		return string(domain.AnalyzerKindHLS)
+	}
+	return string(kind)
 }
 
 func logWarn(logger *slog.Logger, msg string, args ...any) {

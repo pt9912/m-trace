@@ -171,7 +171,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | ✅ |
 | 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ✅ |
 | 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ✅ |
-| 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ⬜ |
+| 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ✅ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Pflege; Pack-Smoke + CLI-Smoke erweitert | ⬜ |
 | 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.8.0 → 0.9.0, Plan nach `done/`, Tag `v0.9.0`) | ⬜ |
 
@@ -346,54 +346,96 @@ unverändert. CLI dispatcht automatisch.
 
 DoD:
 
-- [ ] DASH-Detector in `packages/stream-analyzer/src/`: XML-Header-
-  Sniffing (`<?xml`/`<MPD`) plus optionale Content-Type-Heuristik
-  (`application/dash+xml`). Gibt `"dash"` oder `"hls"` zurück.
-- [ ] Manifest-Loader von HLS-only auf HLS+DASH generalisiert:
-  Content-Type-Allowlist und `Accept`-Header enthalten
-  `application/dash+xml`; Funktions-/Fehlertexte sprechen von
-  Manifest statt „HLS-Manifest"; URL-Tests decken DASH-Content-Type
-  und weiterhin geblockte Nicht-Manifest-Typen ab.
-- [ ] Fehlercode-Strategie festgelegt und umgesetzt:
+- [x] DASH-Detector in
+  `packages/stream-analyzer/src/internal/parsers/detect.ts`:
+  XML-Header-Sniffing (`<?xml`/`<MPD`) plus optionaler BOM-Strip;
+  liefert `"dash"`, `"hls"` oder `"unsupported"` plus erste
+  nicht-leere Zeile (max. 80 Zeichen) für Diagnose-Findings
+  (Tranche-3a-Commit).
+- [x] Manifest-Loader von HLS-only auf HLS+DASH generalisiert
+  (`packages/stream-analyzer/src/internal/loader/fetch.ts`,
+  Funktion `loadManifest`): Content-Type-Allowlist um
+  `application/dash+xml` / `application/xml` / `text/xml`
+  erweitert, `Accept`-Header listet alle drei DASH-Typen vor
+  `text/plain;q=0.9`. Fehlertext `Content-Type "<X>" ist kein
+  unterstütztes Manifest-Format (HLS/DASH)` statt der
+  HLS-spezifischen Variante; bestehende SSRF-/Größen-/Redirect-
+  Regeln unverändert (Tranche-3a-Commit).
+- [x] Fehlercode-Strategie festgelegt und umgesetzt:
   `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-
-  Pfad erhalten; für Eingaben, die weder HLS noch DASH sind, kommt
-  ein additiver Public-Code (z. B. `manifest_not_supported`) in
+  Pfad erhalten (HLS-Detector hat klassifiziert, HLS-Parser hat
+  abgelehnt); `manifest_not_supported` als additiver Public-Code
+  für Eingaben ohne HLS-/DASH-Marker in
   `packages/stream-analyzer/src/types/error.ts`,
-  `docs/user/stream-analyzer.md`, `apps/api/hexagon/domain/
-  stream_analysis.go`, HTTP-Status-Mapping, API-Metrik-Allowlist
-  und CLI/API-Tests. Fehlermeldungen dürfen nicht mehr behaupten,
-  eine DASH-MPD sei „kein HLS-Manifest".
-- [ ] MPD-Parser parst `MPD/Period/AdaptationSet/Representation/
-  SegmentTemplate`-Hierarchie. Mindest-Felder im Result:
-  `playlistType` (`"dash"`), `summary.itemCount` (Anzahl
-  Representations), `details.adaptationSets` (Array mit
-  `mimeType`, `codecs`, `bandwidth`, `width`/`height`).
-- [ ] `analyzerKind: "dash"` ist in `spec/contract-fixtures/
-  analyzer/` mit zwei neuen Beispielen verankert: ein VOD-MPD
-  und ein einfaches Live-MPD. `spec/contract-fixtures/analyzer/
-  README.md`, `packages/stream-analyzer/tests/contract.test.ts`,
-  `apps/api/adapters/driven/streamanalyzer/testdata/` und
-  `apps/api/adapters/driven/streamanalyzer/contract_test.go`
-  werden synchron erweitert; `make sync-contract-fixtures` kopiert
-  auch die neuen DASH-Fixtures. Kein Update von
-  `contracts/event-schema.json`: diese Datei gehört zum Playback-
-  Event-Meta-Vertrag, nicht zum Analyzer-Result.
-- [ ] HLS-Pfad bleibt unverändert: bestehende
+  `docs/user/stream-analyzer.md` §2.3,
+  `apps/api/hexagon/domain/stream_analysis.go`
+  (`StreamAnalysisManifestNotSupported`-Konstante), HTTP-Status-
+  Mapping (`domainHTTPStatus` → 422 für beide), API-Metrik-
+  Allowlist (`normalizeAnalyzeCode`) und CLI/API-Tests
+  (Tranche-3a/3c-Commits).
+- [x] MPD-Parser
+  (`packages/stream-analyzer/src/internal/parsers/dash.ts`)
+  parst `MPD/Period/AdaptationSet/Representation`-Hierarchie
+  regex-basiert (keine externe XML-Dependency). Mindest-Felder im
+  Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl
+  Representations über alle Periods/AdaptationSets),
+  `details.adaptationSets[].representations[]` mit `bandwidth`
+  (Pflicht laut MPEG-DASH §5.3.5; fehlend → Error-Finding),
+  `width`/`height` (optional, Audio-Streams haben sie nicht),
+  `codecs`, `mimeType` (mit Inheritance vom AdaptationSet-Level).
+  `details.type` aus `MPD@type` (`static`/`dynamic`, Default
+  `static`); `details.live = type === "dynamic"`. Out-of-Scope:
+  SegmentTemplate-`$Time$`-Variablen, `availabilityStartTime`-
+  Drift (Plan §0.3) (Tranche-3a-Commit).
+- [x] `analyzerKind: "dash"` ist in `spec/contract-fixtures/
+  analyzer/` mit zwei neuen Beispielen verankert:
+  `success-dash-vod.json` (VOD-MPD, `type=static`, on-demand-
+  Profil, 2 video + 1 audio Representation, itemCount=3) und
+  `success-dash-live.json` (Live-MPD, `type=dynamic`, `live=true`,
+  `minimumUpdatePeriod=PT2S`, `availabilityStartTime`, 1 video
+  Representation, itemCount=1). `spec/contract-fixtures/analyzer/
+  README.md` listet beide; `packages/stream-analyzer/tests/
+  contract.test.ts` pinnt jede Fixture mit byte-equal-Test gegen
+  einen synthetischen MPD-Source-String; `make sync-contract-
+  fixtures` kopiert die zwei Files synchron als
+  `contract-success-dash-{vod,live}.json` nach `apps/api/.../
+  testdata/`; `make generated-drift-check` validiert die Kopien
+  (Tranche-3b-Commit). Kein Update von
+  `contracts/event-schema.json` (Playback-Event-Meta-Vertrag,
+  nicht Analyzer-Result).
+- [x] HLS-Pfad bleibt unverändert: bestehende
   `contract-success-master.json` und alle `0.3.0`-Tests bleiben
-  grün; DASH-Pfad ist additiv.
-- [ ] CLI-Pfad (`packages/stream-analyzer/src/cli/`): `pnpm
-  m-trace check <url-or-file.mpd>` detektiert MPD und liefert
-  DASH-Result. Tests in `packages/stream-analyzer/tests/cli.test.ts`
-  decken HLS- und DASH-Pfad parallel.
-- [ ] `make smoke-cli` erweitert: zusätzlich zu HLS-Smoke wird
-  ein DASH-MPD-Beispiel geprüft.
-- [ ] `apps/api`-Adapter (`adapters/driven/streamanalyzer/`):
-  HTTP-Adapter übernimmt `analyzerKind` aus dem Analyzer-Result ins
-  Domain-Modell; Driving-HTTP gibt `analysis.analyzerKind: "dash"`
-  statt der bisherigen HLS-Konstante aus. `playlistType: "dash"`
-  wird als additiver Domain-/Wire-Wert durchgereicht, nicht auf
-  `unknown` normalisiert. Tests decken Adapter-Parsing,
-  `/api/analyze`-Response und HLS-Backward-Compat ab.
+  grün; DASH-Pfad ist additiv. Drei `analyze.test.ts`-Tests
+  (Whitespace-only / leeres Manifest / HTML-Body), die zuvor
+  `manifest_not_hls` erwarteten, sind auf `manifest_not_supported`
+  aktualisiert — der Detector klassifiziert diese Inputs jetzt vor
+  dem HLS-Parser ab (Tranche-3a-Commit).
+- [x] CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert
+  MPD über den gemeinsamen Detector und liefert DASH-Result; CLI-
+  Code selbst entscheidet nichts. Tests in
+  `packages/stream-analyzer/tests/cli.test.ts` decken DASH-File-
+  Pfad, DASH-URL-Pfad und `manifest_not_supported`-Fehlerpfad
+  parallel zu den HLS-Tests (Tranche-3a-Commit).
+- [x] `make smoke-cli` erweitert (`scripts/smoke-cli.sh`): neuer
+  Block 3 prüft `m-trace check <vod.mpd>` → `analyzerKind=dash` /
+  `playlistType=dash` plus mindestens ein `details.adaptationSets[]`-
+  Eintrag; vorheriger Block 3 (HTML-Body) auf
+  `manifest_not_supported` umgestellt; bestehende HLS-Master-/
+  SSRF-/IO-Smoke-Pfade unverändert. Live verifiziert
+  (Tranche-3d-Commit).
+- [x] `apps/api`-Adapter
+  (`adapters/driven/streamanalyzer/http.go`): HTTP-Adapter
+  übernimmt `analyzerKind` aus dem Analyzer-Result ins Domain-
+  Modell (`StreamAnalysisResult.AnalyzerKind` als neuer
+  `AnalyzerKind`-Type-Domain-Field, plus `mapAnalyzerKind`-Helper);
+  Driving-HTTP (`analyze.go`) gibt `analysis.analyzerKind` aus
+  `result.AnalyzerKind` aus statt der HLS-Konstante.
+  `playlistType: "dash"` als additiver Domain-/Wire-Wert
+  durchgereicht (`PlaylistTypeDash` in `domain/stream_analysis.go`,
+  `mapPlaylistType`-Erweiterung um `case "dash"`); `unknown`-Pfad
+  unverändert. Adapter-Tests in `contract_test.go` decken VOD- und
+  Live-Fixture mit `AnalyzerKindDASH`/`PlaylistTypeDash`-Assertions
+  ab; HLS-Tests bleiben grün (Tranche-3c-Commit).
 
 ---
 

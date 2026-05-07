@@ -273,6 +273,7 @@ func TestAnalyzeHandler_MapsDomainErrorsByCode(t *testing.T) {
 		{"invalid_input → 400", domain.StreamAnalysisInvalidInput, http.StatusBadRequest, "invalid_input"},
 		{"fetch_blocked → 400", domain.StreamAnalysisFetchBlocked, http.StatusBadRequest, "fetch_blocked"},
 		{"manifest_not_hls → 422", domain.StreamAnalysisManifestNotHLS, http.StatusUnprocessableEntity, "manifest_not_hls"},
+		{"manifest_not_supported → 422", domain.StreamAnalysisManifestNotSupported, http.StatusUnprocessableEntity, "manifest_not_supported"},
 		{"fetch_failed → 502", domain.StreamAnalysisFetchFailed, http.StatusBadGateway, "fetch_failed"},
 		{"manifest_too_large → 502", domain.StreamAnalysisManifestTooLarge, http.StatusBadGateway, "manifest_too_large"},
 		{"internal_error → 502", domain.StreamAnalysisInternalError, http.StatusBadGateway, "internal_error"},
