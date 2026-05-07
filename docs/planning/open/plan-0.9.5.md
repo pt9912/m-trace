@@ -48,9 +48,9 @@ Voraussetzungen, bevor dieser Plan in `in-progress/` gezogen werden
 kann:
 
 - **`0.9.0` ist released** (Tag `v0.9.0`). Der Drift-Smoke aus
-  [`plan-0.9.0.md`](../in-progress/plan-0.9.0.md) Tranche 1 ist
-  live; SRS-Lab und DASH-Analyse sind ausgeliefert. `0.9.5` ist
-  das Quality-Hardening-Patch **nach** dem Feature-Release.
+  [`plan-0.9.0.md`](../done/plan-0.9.0.md) Tranche 1 ist live;
+  SRS-Lab und DASH-Analyse sind ausgeliefert. `0.9.5` ist das
+  Quality-Hardening-Patch **nach** dem Feature-Release.
 - `0.8.5` ist released (Tag `v0.8.5`); Wave-1-Gates (Security +
   Generated-Drift) sind aktiv und PR-blockierend.
 - `extra-gates.md` §6 (offene Entscheidungen) ist bei Tranche 0

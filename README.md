@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.8.5` released — erstmaliger **Patch-Release** im Repo (Quality-Gates Wave 1: Security-Gates `vuln-check`/`audit-ts`/`image-scan` plus Generated-Artifact-Drift-Gate; Migrations-Konsolidierung als rolling V1; Image-Hardening auf Trixie-slim; OpenTelemetry-Stack-Bump als Vuln-Fix-Folge). Patch-Release-Konvention (`0.X.Y`) in [`docs/user/releasing.md`](docs/user/releasing.md) §3.1 verankert. Keine User-Surface-Änderung gegenüber `0.8.0`; Player-SDK-WebRTC-Adapter (`attachWebRtc`) und produktive WebRTC-Telemetrie aus `0.8.0`, SRT-Health-View aus `0.6.0`, WebRTC-Lab aus `0.7.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert. R-12 (`getStats()`-Schema-Drift) bleibt release-blockierend.
+> Status: `0.9.0` released — Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse (RAK-56..RAK-59 / Lastenheft `1.1.11` §13.11). Browser-`getStats()`-Drift wird seit Tranche 1 vom Nightly-Workflow `webrtc-drift.yml` automatisiert detektiert (R-12 von release-blockierend auf „automatisiert detektiert"); SRS-Lab `examples/srs/` als fünftes Multi-Protocol-Beispiel mit opt-in `make smoke-srs` (MVP-36 eingelöst); `@npm9912/stream-analyzer` versteht DASH-MPD-Eingaben zusätzlich zu HLS (NF-12 erfüllt; MVP-37 hochgestuft auf Muss; CLI-Dispatch über `m-trace check <file.mpd>`; `manifest_not_supported` als additiver Public-Code für Eingaben weder HLS noch DASH). Quality-Gates Wave 1 aus `0.8.5`, Player-SDK-WebRTC-Adapter aus `0.8.0`, SRT-Health-View aus `0.6.0` bleiben unverändert.
 
 ---
 
@@ -306,34 +306,65 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.8.5` released: erstmaliger **Patch-Release**
-im m-trace-Repo (Quality-Gates Wave 1). Liefert zwei deterministisch-
-schnelle, PR-blockierende CI-Stages: `make security-gates` (Wrapper
-für `vuln-check` (govulncheck), `audit-ts` (`pnpm audit --audit-level
-high`) und `image-scan` (Trivy) — eigener `security`-Job parallel zu
-`build` in `.github/workflows/build.yml`) plus
-`make generated-drift-check` als Bestandteil von `make gates` (prüft
-Schema-DDL, Contract-Fixtures und Player-SDK-Public-API-Snapshot
-gegen ihre Quellen). Migrations-Konsolidierung als rolling V1
-(historische V2..V5 in V1 zusammengezogen, ADR-0002 §8.2 zur
-Strategie); Image-Hardening auf `node:22-trixie-slim` plus
-`pnpm deploy --prod`-Snip und npm-Removal in den Runtime-Stages;
-OpenTelemetry-Stack auf `v1.43.0`/`v0.68.0`/`v0.19.0` als
-Vuln-Fix-Folge (`GO-2026-4394`). Patch-Release-Konvention `0.X.Y`
-in [`docs/user/releasing.md`](docs/user/releasing.md) §3.1 verankert.
-Keine User-Surface-Änderung gegenüber `0.8.0`; Player-SDK-WebRTC-
-Adapter (`attachWebRtc(video, options, tracker)` in
-[`packages/player-sdk/`](packages/player-sdk/)) und produktive
-WebRTC-Telemetrie aus `0.8.0`, SRT-Health-View aus `0.6.0`,
-WebRTC-Lab aus `0.7.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben
-unverändert. R-12 (`getStats()`-Schema-Drift) bleibt release-
-blockierend ab nächstem Browser-Major-Bump. Tranchen 0–3 in
-[`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md)
-archiviert. Nächste Phase: `plan-0.9.0.md` (Player-SDK-WebRTC-Folge-
-Themen) und `plan-0.9.5.md` (Quality-Gates Wave 2 — Benchmark-Smoke,
-Nightly-benchstat, Fuzzing, Mutation Testing) liegen unter
-[`docs/planning/open/`](docs/planning/open/).
+Das Projekt steht bei `0.9.0` released: drei thematisch getrennte
+Liefergegenstände in einem Minor-Release.
+
+**Tranche 1 — Browser-Drift-Smoke (RAK-56)**: automatisiert R-12 ab.
+`tests/e2e/webrtc-stats-drift.spec.ts` (Playwright) öffnet im Page-
+Context eine eigene `RTCPeerConnection` gegen das `mtrace-webrtc`-
+Lab, ruft `pc.getStats()` und vergleicht gegen die Muss-Felder pro
+`RTCStatsType`-Gruppe aus
+[`spec/telemetry-model.md`](spec/telemetry-model.md) §3.5.2 plus die
+Enum-Allowlists aus §1.4. Nightly-Workflow
+[`.github/workflows/webrtc-drift.yml`](.github/workflows/webrtc-drift.yml)
+führt `make smoke-webrtc-stats-drift` gegen Chromium und Firefox aus
+dem Playwright-Bundle aus; bei Schema-Drift bricht der Smoke und
+optional erstellt der Workflow ein Issue (opt-in über
+`secrets.DRIFT_AUTO_ISSUE=1`). R-12 wandert von „release-blockierend"
+auf „automatisiert detektiert".
+
+**Tranche 2 — SRS-Lab (RAK-57 / MVP-36)**:
+[`examples/srs/`](examples/srs/) als fünftes Multi-Protocol-Beispiel
+analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`. Eigener
+Compose-Project `mtrace-srs` mit `ossrs/srs:5` plus FFmpeg-RTMP-
+Publisher; Host-Ports 1935 (RTMP) / 1985 (HTTP-API) / 8088 (HTTP-FLV)
+kollisionsfrei zu Core-Lab und anderen Stacks. Opt-in `make smoke-srs`
+prüft endpoint-/compose-only HTTP-API + FFmpeg-Stream-Registrierung +
+FLV-Magic-Header. Kein produktiver Telemetriepfad.
+
+**Tranche 3 — DASH-Manifest-Analyse (RAK-58 / RAK-59 / NF-12 /
+MVP-37)**: `@npm9912/stream-analyzer` versteht DASH-MPD-Eingaben
+zusätzlich zu HLS-Manifesten. Auto-Detection am Body-Anfang
+(`<?xml`/`<MPD` → DASH; `#EXTM3U` → HLS); Manifest-Loader
+generalisiert auf HLS+DASH (Content-Type-Allowlist um
+`application/dash+xml`); regex-basierter MPD-Parser ohne externe
+XML-Dependency deckt MPD/Period/AdaptationSet/Representation für
+VOD- und einfache Live-MPDs ab. JSON-Result-Schema bekommt
+`analyzerKind:"dash"` / `playlistType:"dash"` als zweite Variante;
+HLS-Pfad bleibt unverändert (additiv). Neuer Public-Code
+`manifest_not_supported` für Eingaben weder HLS noch DASH (HTTP
+422); `manifest_not_hls` bleibt HLS-Parser-spezifisch.
+`pnpm m-trace check <file.mpd>` dispatcht automatisch; `make
+smoke-cli` validiert den Pfad live.
+
+Lastenheft-Patch `1.1.11` ergänzt §13.11 mit RAK-56..RAK-59 und
+zieht MVP-37 entsprechend NF-12 von „Kann" auf „Muss" hoch
+(Patch-Log §4a.14 in
+[`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)).
+Operator-Verifikation in
+[`docs/user/releasing.md`](docs/user/releasing.md) §2.4 (drei Sub-
+Blöcke: Drift-Smoke / SRS-Lab-Boot / DASH-CLI-Probe).
+
+Quality-Gates Wave 1 aus `0.8.5` (Security-Gates + Generated-
+Artifact-Drift), Player-SDK-WebRTC-Adapter aus `0.8.0`, SRT-Health-
+View aus `0.6.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben
+unverändert. Tranchen 0–5 in
+[`docs/planning/done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md)
+archiviert. Nächste Phase: `plan-0.9.5.md` (Quality-Gates Wave 2 —
+Benchmark-Smoke, Nightly-benchstat, Fuzzing, Mutation Testing) liegt
+unter [`docs/planning/open/`](docs/planning/open/).
 Archivierte Plan-Dateien:
+[`docs/planning/done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md),
 [`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md),
 [`docs/planning/done/plan-0.8.0.md`](docs/planning/done/plan-0.8.0.md),
 [`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md),

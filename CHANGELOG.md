@@ -7,6 +7,166 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-05-07
+
+> Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse — Minor-Release mit
+> drei thematisch getrennten Liefergegenständen aus
+> [`done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md). RAK-56
+> (Browser-Drift-Smoke, automatisiert detektiert R-12) Soll;
+> RAK-57 (SRS-Lab `examples/srs/`) Kann (MVP-36 eingelöst);
+> RAK-58 (DASH-Manifest-Analyse) Muss (NF-12 eingelöst, MVP-37
+> hochgestuft auf Muss); RAK-59 (DASH-CLI-Pfad) Kann. Lastenheft-
+> Patch `1.1.11` ergänzt §13.11 mit RAK-56..RAK-59 und zieht MVP-37
+> entsprechend NF-12 von „Kann" auf „Muss". Lieferstand der
+> Tranchen 0–5 strukturiert nach Plan-Aktivierung+Lastenheft-Patch
+> → Drift-Smoke → SRS-Lab → DASH-Analyse → Doku-Pflege → Closeout.
+
+### Added (Tranche 1 — Browser-Drift-Smoke / R-12 / RAK-56)
+
+- `tests/e2e/webrtc-stats-drift.spec.ts` (neu, Playwright):
+  öffnet im Page-Context eine eigene `RTCPeerConnection` mit
+  recvonly video+audio gegen den WHEP-Endpoint
+  `http://localhost:8892/webrtc-test/whep`; nach
+  `connectionState=connected` sammelt die Spec `pc.getStats()` und
+  validiert gegen `spec/telemetry-model.md` §3.5.2 Muss-Felder pro
+  `RTCStatsType`-Gruppe (peer-connection.connectionState,
+  transport.dtlsState, candidate-pair.state, inbound-rtp.packetsLost
+  +bytesReceived). §1.4-Allowlists für `connectionState`,
+  `iceConnectionState` und `dtlsState` ebenfalls geprüft;
+  unbekannter Enum → Fail. Soll-Felder werden als `[drift-soll]`
+  geloggt, brechen den Smoke aber nicht. Spec ist via
+  `MTRACE_WEBRTC_STATS_DRIFT=1` opt-in.
+- `make smoke-webrtc-stats-drift` (Skript
+  `scripts/smoke-webrtc-stats-drift.sh`): fährt das `mtrace-webrtc`-
+  Lab via `docker compose -p mtrace-webrtc up -d --build` hoch,
+  delegiert Endpoint-Probe an `smoke-webrtc-prep.sh` und ruft
+  `pnpm exec playwright test` mit `--project=$browser` für jeden
+  Browser aus `MTRACE_WEBRTC_DRIFT_BROWSERS` (Default
+  `chromium,firefox`; WebKit/Safari opt-in über
+  `chromium,firefox,webkit`). Opt-in (NICHT in `make gates`).
+- `.github/workflows/webrtc-drift.yml` (neu, Nightly via
+  `schedule: cron '30 3 * * *'` plus `workflow_dispatch`):
+  installiert Playwright-Browser, ruft den Smoke; bei Failure wird
+  optional ein Issue mit Workflow-Run-URL und Reaktions-Pfad
+  erstellt (opt-in über `secrets.DRIFT_AUTO_ISSUE=1`).
+- `docs/planning/open/risks-backlog.md` R-12 von
+  „release-blockierend ab nächstem Browser-Major-Bump" auf
+  „automatisiert detektiert, Drift bricht den Drift-Smoke"
+  angehoben; Manuell-Review-Pflicht entfällt.
+- `docs/user/releasing.md` neue §2.4.1 mit Cron-Zeit, Browser-Set
+  und Reaktions-Pfad bei Befund.
+
+### Added (Tranche 2 — SRS-Lab `examples/srs/` / RAK-57 / MVP-36)
+
+- `examples/srs/compose.yaml`: SRS-Container `ossrs/srs:5` plus
+  FFmpeg-RTMP-Publisher; Project-Name `mtrace-srs`; Host-Ports
+  1935 (RTMP) / 1985 (HTTP-API) / 8088 (HTTP-FLV) kollisionsfrei
+  zu Core-Lab und mtrace-srt/dash/webrtc.
+- `examples/srs/srs.conf`: minimale Konfiguration (RTMP-Listener,
+  HTTP-API, HTTP-FLV-Egress mit `http_remux`); kein HLS/DASH/
+  WebRTC-Output (das sind die anderen Beispiele).
+- `examples/srs/ffmpeg-rtmp-loop.sh`: synthetischer Test-Stream
+  (testsrc2 720p30 + 1 kHz Sine) per RTMP an
+  `rtmp://srs:1935/live/srs-test`.
+- `examples/srs/README.md` auf 7-Punkt-Standard analog
+  `examples/srt/`/`examples/dash/`/`examples/webrtc/`.
+- `make smoke-srs` (Skript `scripts/smoke-srs.sh`): opt-in Smoke
+  (auto-up/down auf `mtrace-srs`-Project) mit drei Probes:
+  HTTP-API antwortet 200, Stream `live/srs-test` registriert mit
+  `publish.active=true`, HTTP-FLV-Egress liefert FLV-Magic-Header
+  `FLV`. NICHT in `make gates`.
+- `examples/README.md` Smoke-Tabelle und Beispiele-Tabelle um
+  SRS-Eintrag erweitert; `docs/user/local-development.md` §2.7
+  Port-Quickref um `mtrace-srs`-Zeile (1935/1985/8088).
+- `docs/user/releasing.md` neue §2.4.2 (SRS-Lab-Boot-Verifikation).
+
+### Added (Tranche 3 — DASH-Manifest-Analyse / RAK-58 / RAK-59 / NF-12)
+
+- `@npm9912/stream-analyzer` versteht DASH-MPD-Eingaben zusätzlich
+  zu HLS-Manifesten:
+  - `internal/parsers/detect.ts`: Detector klassifiziert den
+    Body-Anfang als HLS (`#EXTM3U`-Header), DASH (`<?xml`/`<MPD`-
+    Header) oder unsupported; BOM-Strip; liefert auch erste Zeile
+    für Diagnose-Findings.
+  - `internal/parsers/dash.ts`: regex-basierter MPD-Parser ohne
+    externe XML-Dependency; deckt VOD- und einfache Live-MPDs ab;
+    AdaptationSet-Inheritance für mimeType/codecs;
+    bandwidth-Pflicht laut MPEG-DASH §5.3.5 mit Error-Finding bei
+    Verstoß. SegmentTemplate-Edge-Cases (`$Time$`-Variablen,
+    `availabilityStartTime`-Drift) sind Out-of-Scope.
+  - `analyze.ts` dispatcht über den Detector; Public-Funktion
+    `analyzeHlsManifest` bleibt Backward-Kompat-Alias, neuer
+    generischer Name `analyzeManifest`.
+  - `internal/loader/fetch.ts`: `loadHlsManifest` →
+    `loadManifest`; Content-Type-Allowlist um
+    `application/dash+xml`/`application/xml`/`text/xml`;
+    Accept-Header generalisiert.
+- Neue Result-Types: `AnalyzerKind = "hls" | "dash"`,
+  `PlaylistType` union erweitert um `"dash"`,
+  `DashAnalysisResult` mit Diskriminator-Paar
+  `analyzerKind:"dash"` + `playlistType:"dash"`,
+  `DashManifestDetails` / `DashAdaptationSet` /
+  `DashRepresentation` für die MPD-Hierarchie.
+- Neuer Public-Code `manifest_not_supported` als Detector-
+  Sammelfehler (HTML/JSON/leerer Body); `manifest_not_hls` bleibt
+  HLS-Parser-spezifisch. Beide Codes mappen auf HTTP 422.
+- `apps/api`-Adapter: `domain.AnalyzerKind`-Type plus
+  `AnalyzerKindHLS`/`AnalyzerKindDASH`; `PlaylistTypeDash`-
+  Konstante; `StreamAnalysisManifestNotSupported`-ErrorCode;
+  `mapAnalyzerKind`-Helper im HTTP-Adapter; Driving-HTTP gibt
+  `analyzerKind` aus dem Result statt der HLS-Konstante;
+  Prometheus-Allowlist `mtrace_analyze_requests_total` um
+  `manifest_not_supported` erweitert.
+- `spec/contract-fixtures/analyzer/`: zwei neue Fixtures
+  (`success-dash-vod.json` + `success-dash-live.json`) plus
+  Sync-Pfad nach `apps/api/.../testdata/`; `make sync-contract-
+  fixtures` kopiert 6 statt 4 Files; `make generated-drift-check`
+  validiert die Kopien.
+- `make smoke-cli` (Skript `scripts/smoke-cli.sh`) erweitert:
+  zusätzlich zur HLS-Master-Probe und zu den IO-/SSRF-/Bin-Tests
+  jetzt auch `m-trace check <vod.mpd>` →
+  `analyzerKind=dash`/`playlistType=dash`, plus negativer Pfad
+  HTML-Body → `manifest_not_supported`. Live verifiziert.
+- `docs/user/stream-analyzer.md` §2.3 listet beide Codes mit
+  klarer Trennung; §3 Scope-Tabelle erweitert um DASH-MPD-Pfade
+  (VOD ✅, Live ✅, URL ✅; CMAF Folge-Plan); §9 CLI-Block listet
+  DASH-Beispiele.
+- `packages/stream-analyzer/README.md`: Diskriminator-Tabelle für
+  `analyzerKind` + `playlistType`, gekürztes JSON-Beispiel mit
+  Verweis auf Spec-Fixture; CLI-Dispatcher-Sektion mit Auto-
+  Detection und der `manifest_not_hls`/`manifest_not_supported`-
+  Trennung; Status-Block auf `0.9.0`.
+- `docs/user/releasing.md` neue §2.4.3 (DASH-CLI-Probe).
+
+### Added (Tranche 0)
+
+- `0.9.0`-Plan unter `docs/planning/in-progress/plan-0.9.0.md` aus
+  `open/` aktiviert (Status `⬜ → 🟡 → ✅`); Tranche 0
+  abgeschlossen mit Plan-Move, Lastenheft-Patch `1.1.11` und
+  Toolchain-Bump-Check ohne Bump-Bedarf (Go 1.26 / golangci-lint
+  v2.12.1-alpine / Node 22-trixie-slim / pnpm 10 sind seit
+  `0.7.0`/`0.8.5` aktuell).
+- Lastenheft-Patch `1.1.11` (`spec/lastenheft.md` Header + §13.11
+  + §12.3-Note für MVP-37; Patch-Log §4a.14 in
+  `docs/planning/done/plan-0.1.0.md`): RAK-56 (Drift-Smoke, Soll),
+  RAK-57 (SRS-Lab, Kann), RAK-58 (DASH-Manifest-Analyse, Muss),
+  RAK-59 (DASH-CLI, Kann); MVP-37 von „Kann" auf „Muss"
+  hochgezogen entsprechend NF-12.
+- `docs/planning/in-progress/roadmap.md` §2 neue Schritte 42
+  (Lastenheft-Patch ✅) und 43 (`0.9.0` ausliefern, jetzt ✅).
+
+### Changed
+
+- Versions-Bump auf `0.9.0` (Tranche 5 Closeout): alle 5
+  `package.json` (root, `apps/dashboard`, `apps/analyzer-service`,
+  `packages/player-sdk`, `packages/stream-analyzer`),
+  `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts` `PLAYER_SDK_VERSION`,
+  `packages/player-sdk/scripts/pack-smoke.mjs` `expectedVersion`,
+  `contracts/sdk-compat.json` `sdk_version` plus alle Test-
+  Fixtures und Contract-Fixtures, die Versions-Strings
+  hartkodieren. Gleicher Bulk-Sed-Pfad wie `0.8.5` Closeout.
+
 ## [0.8.5] - 2026-05-07
 
 > Erstmaliger **Patch-Release** im m-trace-Repo (Quality-Gates Wave 1):

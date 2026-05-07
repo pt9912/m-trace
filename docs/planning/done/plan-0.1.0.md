@@ -403,7 +403,7 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.10` → `1.1.11`.
 - [x] Lastenheft §13.11 neu: `0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse mit RAK-56 (Browser-Drift-Smoke gegen `examples/webrtc/`-Lab, Nightly-CI-Job), RAK-57 (SRS-Lab `examples/srs/`, opt-in `make smoke-srs`), RAK-58 (DASH-Manifest-Analyse mit `analyzerKind: "dash"`, Wire-Vertrag plus API-Durchreichung; HLS-Pfad unverändert) und RAK-59 (DASH-CLI über `pnpm m-trace check`).
 - [x] Lastenheft §12.3 MVP-37-Zeile von „Kann" auf „Muss" gezogen mit Patch-Note auf §13.11; historische Kann-Stufung als Ausgangspunkt im Zellentext erhalten.
-- [x] [`docs/planning/in-progress/plan-0.9.0.md`](../in-progress/plan-0.9.0.md) §0.2 (Patch-Vorschlag) von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.11`" hochgezogen; §0.1 Vorgänger-Gate entsprechend abgehakt; Tranche 0 DoD-Item 2 abgehakt.
+- [x] [`docs/planning/done/plan-0.9.0.md`](./plan-0.9.0.md) §0.2 (Patch-Vorschlag) von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.11`" hochgezogen; §0.1 Vorgänger-Gate entsprechend abgehakt; Tranche 0 DoD-Item 2 abgehakt.
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 42 abgehakt (✅); §1.2 verweist auf den ausgelieferten Patch.
 
 ---

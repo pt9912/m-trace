@@ -1,15 +1,17 @@
 # Implementation Plan — `0.9.0` (Drift-Smoke + SRS-Lab + DASH-Analyse)
 
-> **Status**: 🟡 in Arbeit (Plan-Skelett am 2026-05-07 von
-> `docs/planning/open/` nach `docs/planning/in-progress/` gezogen,
-> Tranche 0 abgeschlossen — Plan-Aktivierung, Lastenheft-Patch
-> `1.1.11` mit RAK-56..RAK-59 und MVP-37-Hochstufung sowie
-> Toolchain-Bump-Check ohne Bump-Bedarf). Vorgänger `v0.8.5` ist released
+> **Status**: ✅ released am 2026-05-07 (Tranchen 0..5 abgeschlossen:
+> Plan-Aktivierung + Lastenheft-Patch `1.1.11`, Browser-Drift-Smoke
+> für R-12, SRS-Lab `examples/srs/`, DASH-Manifest-Analyse mit
+> `analyzerKind:"dash"`, Doku-Pflege und Closeout mit
+> Versions-Bump 0.8.5 → 0.9.0 plus Tag `v0.9.0`). Plan liegt nach
+> dem Closeout-`git mv` unter `docs/planning/done/`. Vorgänger
+> `v0.8.5` ist released
 > (Tag `v0.8.5` auf `ce05e3b`, GitHub-Release veröffentlicht; Plan
-> archiviert in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md)). `0.8.0`
+> archiviert in [`done/plan-0.8.5.md`](./plan-0.8.5.md)). `0.8.0`
 > (Player-SDK-WebRTC-Adapter) bleibt auf Tag `v0.8.0` (`8df263a`,
 > Release-Gate-Fix-Closeout); Plan archiviert in
-> [`done/plan-0.8.0.md`](../done/plan-0.8.0.md). Lastenheft-Patch
+> [`done/plan-0.8.0.md`](./plan-0.8.0.md). Lastenheft-Patch
 > `1.1.11` wird im Rahmen von Tranche 0b ausgeliefert (siehe §0.2).
 >
 > **Lastenheft-Status**: `1.1.10` §13.10 ist abgeschlossen. `0.9.0`
@@ -22,9 +24,9 @@
 > **Bezug**: [Lastenheft `1.1.10`](../../../spec/lastenheft.md) §8.x
 > NF-12 (DASH-Analyse, Muss), §12.3 MVP-36 (SRS-Beispiel, Kann),
 > §12.3 MVP-37 (DASH-Analyse, Kann);
-> [`done/plan-0.8.0.md`](../done/plan-0.8.0.md) §4 Tranche 3 (R-12
+> [`done/plan-0.8.0.md`](./plan-0.8.0.md) §4 Tranche 3 (R-12
 > wurde dort release-blockierend angehoben);
-> [`done/plan-0.8.5.md`](../done/plan-0.8.5.md) (Quality-Gates Wave 1,
+> [`done/plan-0.8.5.md`](./plan-0.8.5.md) (Quality-Gates Wave 1,
 > Vorgänger-Patch);
 > [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
 > §3.5.3 (WebRTC-Schema-Drift-Strategie);
@@ -37,7 +39,7 @@
 ## 0. Konvention
 
 DoD-Checkboxen tracken den Lieferstand analog
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
+[`done/plan-0.1.0.md`](./plan-0.1.0.md) §0:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -116,7 +118,7 @@ Begründung des Bündels:
   ClickHouse MVP-41). Diese Themen brauchen eigene Phase.
 - Keine Quality-Gates (govulncheck, Benchmark-Smoke, Fuzzing,
   Mutation Testing, Generated-Artifact-Drift). Diese sind in
-  [`plan-0.8.5.md`](../done/plan-0.8.5.md) (Wave 1, vor `0.9.0`) und
+  [`plan-0.8.5.md`](./plan-0.8.5.md) (Wave 1, vor `0.9.0`) und
   [`plan-0.9.5.md`](../open/plan-0.9.5.md) (Wave 2, nach `0.9.0`)
   konkretisiert; Master-Backlog steht in
   [`extra-gates.md`](../open/extra-gates.md).
@@ -173,7 +175,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 | 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ✅ |
 | 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ✅ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Pflege; Pack-Smoke + CLI-Smoke erweitert | ✅ |
-| 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.8.0 → 0.9.0, Plan nach `done/`, Tag `v0.9.0`) | ⬜ |
+| 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.8.5 → 0.9.0, Plan nach `done/`, Tag `v0.9.0`) | ✅ |
 
 ---
 
@@ -492,47 +494,53 @@ durchgezogen, Tag `v0.9.0` gesetzt.
 
 DoD:
 
-- [ ] `README.md` Status-Block auf „`0.9.0` released" und
-  Verweise auf `examples/srs/` plus DASH-Analyzer-Pfad.
-- [ ] `docs/user/releasing.md` neue §2.4 mit manuellen `0.9.0`-
-  Prüfungen (DASH-CLI-Probe, SRS-Lab-Boot, Drift-Smoke-Trigger).
-- [ ] RAK-Verifikationsmatrix §6.1 (siehe unten) ist mit Commit-
-  Verweisen ausgefüllt.
-- [ ] Versions-Bump 0.8.0 → 0.9.0 in allen package.json (root,
+- [x] `README.md` Status-Block auf „`0.9.0` released" und Verweise
+  auf `examples/srs/` plus DASH-Analyzer-Pfad; „Aktueller Stand"-
+  Block auf den drei-Tranchen-Lieferstand mit Tranche-Beschreibung
+  pro Liefergegenstand (Tranche-5-Commit).
+- [x] `docs/user/releasing.md` §2.4 mit manuellen `0.9.0`-Prüfungen
+  (Drift-Smoke / SRS-Lab-Boot / DASH-CLI-Probe) als drei Sub-Blöcke
+  §2.4.1–§2.4.3 — bereits in Tranche 4 vollständig.
+- [x] RAK-Verifikationsmatrix §6.1 mit Commit-Verweisen ausgefüllt
+  (Tranche-5-Commit).
+- [x] Versions-Bump 0.8.5 → 0.9.0 in allen package.json (root,
   apps, packages) plus `apps/api/cmd/api/main.go` `serviceVersion`,
   `packages/player-sdk/src/version.ts`, `packages/player-sdk/
   scripts/pack-smoke.mjs` `expectedVersion`,
   `contracts/sdk-compat.json` `sdk_version` und allen Test-
-  Fixtures (analog `0.8.0` Tranche 5; der hartkodierte Tarball-
-  Pfad in `packages/player-sdk/package.json` Script `pack:smoke`
-  ist ausdrücklich mitzuprüfen). Zusätzlich alle hartkodierten
-  Analyzer-/API-/Dashboard-Test-Erwartungen nachziehen, insbesondere
-  `packages/stream-analyzer/tests/version.test.ts`,
-  `packages/stream-analyzer/tests/cli.test.ts`,
-  `apps/analyzer-service/tests/server.test.ts`,
-  `apps/api/adapters/driven/streamanalyzer/*_test.go`,
-  `apps/api/adapters/driving/http/*analyze*_test.go` und weitere
-  `sdk.version`-/`analyzerVersion`-Fixtures, soweit sie den
-  Release-Stand statt historische Kompatibilitätsfälle pinnen.
-- [ ] CHANGELOG: [Unreleased]-Block in `[0.9.0] - YYYY-MM-DD`
-  umgewandelt; neuer leerer [Unreleased]-Block obenauf.
-- [ ] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün
-  vor Closeout-Commit; `make gates` grün.
-- [ ] `plan-0.9.0.md` von `docs/planning/in-progress/` nach
+  Fixtures (Bulk-`xargs sed -i 's/"0\.8\.5"/"0.9.0"/g'` über
+  `_test.go`/`.test.ts`-Files plus `spec/contract-fixtures/
+  analyzer/*.json`, plus `apps/api/adapters/driven/persistence/
+  contract/contract.go` als Test-Helper-Pfad). Drei unquoted
+  Errorf-/Test-Title-Strings (`contract_test.go`, `http_test.go`,
+  `version.test.ts`) separat nachgezogen — analog `0.8.5` Closeout
+  (Tranche-5-Commit).
+- [x] CHANGELOG: [Unreleased]-Block in `[0.9.0] - 2026-05-07`
+  umgewandelt; neuer leerer [Unreleased]-Block obenauf
+  (Tranche-5-Commit).
+- [x] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
+  Closeout-Commit; `make gates` grün **nach** Closeout-Commit
+  (analog `done/plan-0.8.5.md` §4 Release-Gate-Fix-Konvention:
+  `generated-drift-check` vergleicht Working-Tree gegen HEAD und
+  wertet einen noch nicht committeten Versions-Bump als Drift,
+  obwohl Quelle und generierte Kopie synchron auf `0.9.0` sind;
+  nach dem Commit ist `git diff HEAD` clean und das Gate grün).
+- [x] `plan-0.9.0.md` von `docs/planning/in-progress/` nach
   `docs/planning/done/` verschoben (`git mv`); alle relativen
-  Cross-Refs angepasst (analog `0.8.0` Closeout plus Release-Gate-
-  Fix); Roadmap §3 zeigt `0.9.0` ✅.
-- [ ] Tag `v0.9.0` annotiert; Push opt-in (User-Bestätigung);
-  GitHub-Release mit CHANGELOG-`[0.9.0]`-Block als Notes-Body.
+  Cross-Refs angepasst; Roadmap §3 zeigt `0.9.0` ✅
+  (Tranche-5-Commit).
+- [x] Tag `v0.9.0` annotiert; Push opt-in (User-Bestätigung);
+  GitHub-Release mit CHANGELOG-`[0.9.0]`-Block als Notes-Body
+  (Tranche-5-Commit).
 
 ### 6.1 RAK-Verifikationsmatrix
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-56 | Soll | `tests/e2e/webrtc-stats-drift.spec.ts` plus `make smoke-webrtc-stats-drift`; Nightly-CI-Job; R-12 im Risiken-Backlog auf „automatisiert detektiert" angehoben. | [ ] |
-| RAK-57 | Kann | `examples/srs/compose.yaml` (Project `mtrace-srs`) plus `make smoke-srs`; `examples/srs/README.md` 7-Punkt-Standard; Port-Quickref nachgezogen. | [ ] |
-| RAK-58 | Muss | `@npm9912/stream-analyzer` versteht DASH-MPD; `analyzerKind: "dash"` mit Analyzer-Contract-Fixtures, Go-Testdata-Sync und API-Durchreichung; HLS-Pfad unverändert. | [ ] |
-| RAK-59 | Kann | `pnpm m-trace check <file.mpd>` dispatcht auf DASH und liefert valides Result; `make smoke-cli` erweitert. | [ ] |
+| RAK-56 | Soll | `tests/e2e/webrtc-stats-drift.spec.ts` plus `make smoke-webrtc-stats-drift` (Skript `scripts/smoke-webrtc-stats-drift.sh`); Nightly-CI-Job `.github/workflows/webrtc-drift.yml` (Cron `30 3 * * *` UTC plus `workflow_dispatch`); R-12 im Risiken-Backlog auf „automatisiert detektiert, Drift bricht den Drift-Smoke" angehoben (Commit `207b6b0`). | ✅ |
+| RAK-57 | Kann | `examples/srs/compose.yaml` (Project `mtrace-srs`, `ossrs/srs:5` plus FFmpeg-RTMP-Publisher) plus `examples/srs/srs.conf` und `examples/srs/ffmpeg-rtmp-loop.sh`; `examples/srs/README.md` 7-Punkt-Standard; `make smoke-srs` (Skript `scripts/smoke-srs.sh`) drei Probes; `examples/README.md` Smoke-Tabelle und Beispiele-Tabelle erweitert; `docs/user/local-development.md` §2.7 Port-Quickref `mtrace-srs` 1935/1985/8088 (Commit `7d7ccdc`). | ✅ |
+| RAK-58 | Muss | `@npm9912/stream-analyzer` versteht DASH-MPD: Detector `internal/parsers/detect.ts` (XML-Header-Sniffing) plus regex-basierter MPD-Parser `internal/parsers/dash.ts` ohne externe XML-Dependency; `analyzerKind: "dash"` / `playlistType: "dash"` als zweite Result-Variante; Manifest-Loader generalisiert auf HLS+DASH; Contract-Fixtures `success-dash-vod.json` + `success-dash-live.json` plus Sync-Pfad nach `apps/api/.../testdata/`; `make sync-contract-fixtures` und `make generated-drift-check` erweitert; `apps/api`-Adapter reicht `analyzerKind` ins Domain-Modell durch (`AnalyzerKindHLS`/`AnalyzerKindDASH` plus `mapAnalyzerKind`-Helper); `manifest_not_supported` als additiver Public-Code (HTTP 422 in der API, Prometheus-Allowlist erweitert); HLS-Pfad unverändert grün (Commit `b241b7d`). | ✅ |
+| RAK-59 | Kann | `pnpm m-trace check <file.mpd>` dispatcht über den gemeinsamen Detector auf DASH und liefert valides Result (`analyzerKind:"dash"` / `playlistType:"dash"` mit `details.adaptationSets[]`-Hierarchie); `packages/stream-analyzer/tests/cli.test.ts` deckt DASH-File- und URL-Pfade plus `manifest_not_supported`-Fehlerpfad; `make smoke-cli` erweitert um DASH-VOD-Probe und `manifest_not_supported`-Negativpfad — live verifiziert (alle 8 Smoke-Schritte grün). `docs/user/stream-analyzer.md` §9 listet DASH-CLI-Beispiele; `packages/stream-analyzer/README.md` dokumentiert CLI-Dispatcher (Commit `b241b7d`). | ✅ |
 
 ---
 

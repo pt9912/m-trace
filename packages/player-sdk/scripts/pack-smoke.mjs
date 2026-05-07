@@ -9,7 +9,7 @@ import { gunzipSync } from "node:zlib";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageDir = path.resolve(scriptDir, "..");
-const expectedVersion = "0.8.5";
+const expectedVersion = "0.9.0";
 const requiredTarballEntries = [
   "package/dist/index.js",
   "package/dist/index.cjs",
