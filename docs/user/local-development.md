@@ -265,7 +265,8 @@ einen opt-in Smoke und ist nicht Teil von `make gates`.
 | [`examples/mediamtx/`](../../examples/mediamtx/) | Core-Lab-Beispiel | `make dev` | `make smoke-mediamtx` |
 | [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) plus `make smoke-srt-health` ab `0.6.0` für Health-API-Probe |
 | [`examples/dash/`](../../examples/dash/) | Eigenes Compose, Project `mtrace-dash` | `docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build` | `make smoke-dash` (auto-up/down) |
-| [`examples/webrtc/`](../../examples/webrtc/) | Eigenes Compose, Project `mtrace-webrtc` | `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build` | `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (auto-up/down, opt-in/endpoint-only) |
+| [`examples/webrtc/`](../../examples/webrtc/) | Eigenes Compose, Project `mtrace-webrtc` | `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build` | `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (auto-up/down, opt-in/endpoint-only) plus `make smoke-webrtc-stats-drift` ab `0.9.0` Tranche 1 für Browser-Drift-Detektion |
+| [`examples/srs/`](../../examples/srs/) | Eigenes Compose, Project `mtrace-srs` | `docker compose -p mtrace-srs -f examples/srs/compose.yaml up -d --build` | `make smoke-srs` ab `0.9.0` Tranche 2 (auto-up/down, opt-in/endpoint-only; RAK-57 / MVP-36) |
 
 Host-Ports sind so geschnitten, dass alle Beispiele **parallel** zum
 Core-Lab und untereinander laufen können:
@@ -276,6 +277,7 @@ Core-Lab und untereinander laufen können:
 | `mtrace-srt` | `8889/tcp` (HLS-Out) · `8890/udp` (SRT-Listener) · `9998/tcp` (MediaMTX-Control) |
 | `mtrace-dash` | `8891/tcp` (DASH-HTTP) |
 | `mtrace-webrtc` | `8892/tcp` (WHIP/WHEP-HTTP) · `8189/udp` (WebRTC-ICE) · `9999/tcp` (MediaMTX-Control) |
+| `mtrace-srs` | `1935/tcp` (SRS-RTMP-Ingest) · `1985/tcp` (SRS-HTTP-API) · `8088/tcp` (SRS-HTTP-FLV-Egress) |
 
 Reset pro Beispiel-Stack: `docker compose -p <project> -f
 examples/<name>/compose.yaml down [--volumes]`. Greift nur den

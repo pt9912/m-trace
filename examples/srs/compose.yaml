@@ -1,0 +1,45 @@
+# SRS-Beispiel — plan-0.9.0 §3 Tranche 2 (RAK-57 / MVP-36).
+#
+# Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
+# Name `mtrace-srs` ist Pflicht im Startbefehl (siehe
+# examples/README.md, "Compose-Form" Tabelle Variante "Eigenes Compose"):
+#
+#   docker compose -p mtrace-srs -f examples/srs/compose.yaml up -d --build
+#
+# Host-Ports sind absichtlich gewählt, damit das Beispiel parallel zum
+# Core-Lab (`make dev`, api 8080 / mediamtx 8888 / dashboard 5173) und
+# zu den anderen Multi-Protocol-Beispielen (`mtrace-srt` 8889/8890/9998,
+# `mtrace-dash` 8891, `mtrace-webrtc` 8892/8189/9999) starten kann:
+#   1935 → SRS-RTMP-Listener (innen 1935)
+#   8088 → SRS-HTTP-FLV (innen 8088)
+#   1985 → SRS-HTTP-API (innen 1985)
+#
+# Scope (RAK-57, Kann): endpoint-/compose-only. Kein produktiver
+# Telemetriepfad, kein `mtrace_srs_*`-Counter, kein Lastenheft-/Wire-
+# Vertrag — analog `examples/srt/`. Operator-Pfad ist HTTP-API +
+# HTTP-FLV-Read; `make smoke-srs` prüft die beiden Endpoints und
+# verifiziert, dass der FFmpeg-Publisher den Stream registriert hat.
+
+services:
+  srs:
+    image: ossrs/srs:5
+    volumes:
+      - ./srs.conf:/usr/local/srs/conf/srs.conf:ro
+    command: ["./objs/srs", "-c", "/usr/local/srs/conf/srs.conf"]
+    ports:
+      - "1935:1935"
+      - "8088:8088"
+      - "1985:1985"
+
+  srs-publisher:
+    image: jrottenberg/ffmpeg:8.1-ubuntu2404
+    depends_on:
+      - srs
+    volumes:
+      - ./ffmpeg-rtmp-loop.sh:/ffmpeg-rtmp-loop.sh:ro
+    entrypoint: ["/bin/sh"]
+    command: ["/ffmpeg-rtmp-loop.sh"]
+    environment:
+      # Container-internes Routing: srs-publisher → srs-Service-
+      # name → RTMP-Listener-Port 1935. Kein Host-Roundtrip nötig.
+      RTMP_URL: "rtmp://srs:1935/live/srs-test"

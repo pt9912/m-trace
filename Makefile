@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check
 
 help:
 	@printf '%s\n' \
@@ -28,6 +28,7 @@ help:
 		'  make smoke-dash             Run the DASH example smoke (starts/stops mtrace-dash project)' \
 		'  make smoke-webrtc-prep      Run the WebRTC lab prep smoke (starts/stops mtrace-webrtc project; endpoint-only)' \
 		'  make smoke-webrtc-stats-drift Run the WebRTC getStats() drift smoke against mtrace-webrtc (plan-0.9.0 Tranche 1, RAK-56; opt-in)' \
+		'  make smoke-srs              Run the SRS example smoke (starts/stops mtrace-srs project; endpoint-only; plan-0.9.0 Tranche 2, RAK-57)' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
@@ -168,6 +169,16 @@ smoke-webrtc-prep:
 # `.github/workflows/webrtc-drift.yml`.
 smoke-webrtc-stats-drift:
 	bash scripts/smoke-webrtc-stats-drift.sh
+
+# `make smoke-srs` ist der SRS-Lab-Smoke aus plan-0.9.0 §3 Tranche 2
+# (RAK-57, MVP-36 als eingelöst). Fährt examples/srs/compose.yaml
+# als Project mtrace-srs hoch (RTMP-Listener + HTTP-API +
+# HTTP-FLV-Egress), prüft endpoint-/compose-only, dass die SRS-
+# HTTP-API erreichbar ist, der FFmpeg-Publisher den Stream
+# live/srs-test registriert hat und HTTP-FLV-Egress den FLV-Magic-
+# Header liefert. Opt-in (NICHT in `make gates`).
+smoke-srs:
+	bash scripts/smoke-srs.sh
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-

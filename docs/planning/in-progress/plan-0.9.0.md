@@ -170,7 +170,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | ✅ |
 | 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ✅ |
-| 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ⬜ |
+| 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ✅ |
 | 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ⬜ |
 | 4 | Compat-Tests + Browser-Support-Matrix-Pflege; Pack-Smoke + CLI-Smoke erweitert | ⬜ |
 | 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.8.0 → 0.9.0, Plan nach `done/`, Tag `v0.9.0`) | ⬜ |
@@ -291,23 +291,44 @@ Smoke prüft Compose-Stack-Boot und Endpoint-Statussatz.
 
 DoD:
 
-- [ ] `examples/srs/compose.yaml` (neu): SRS-Container
-  (`ossrs/srs:5` gepinnt) mit RTMP-Listener (1935), HTTP-FLV
-  (8088), HTTP-API (1985); FFmpeg-Publisher pushed RTMP-Stream
-  via lokalem Compose-Netzwerk. Project-Name `mtrace-srs`.
-- [ ] Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/
-  `mtrace-dash`/`mtrace-webrtc`: voraussichtlich `1935/tcp` (RTMP)
-  + `8088/tcp` (FLV) + `1985/tcp` (API). Aktualisierung von
-  `docs/user/local-development.md` §2.7 Port-Quickref.
-- [ ] `examples/srs/README.md` auf 7-Punkt-Standard mit Start/
-  Verifikation/Stop/Troubleshooting/Bekannte Grenzen; verlinkt
-  auf `examples/README.md` Konvention.
-- [ ] `make smoke-srs` (neu) startet `mtrace-srs`-Stack, prüft
-  HTTP-API-Erreichbarkeit + FFmpeg-Stream-Registrierung; opt-in
-  (nicht in `make gates`); Cleanup auf `mtrace-srs`-Project
-  beschränkt.
-- [ ] `examples/README.md` Smoke-Tabelle und Beispiele-Tabelle
-  um SRS-Eintrag erweitert.
+- [x] `examples/srs/compose.yaml` (neu): SRS-Container
+  (`ossrs/srs:5` gepinnt auf Major-Tag) mit RTMP-Listener (1935),
+  HTTP-FLV (8088), HTTP-API (1985); FFmpeg-Publisher
+  (`jrottenberg/ffmpeg:8.1-ubuntu2404`) pushed RTMP-Stream über
+  das Compose-interne Netzwerk an `rtmp://srs:1935/live/srs-test`.
+  Project-Name `mtrace-srs`. Eigene minimale `examples/srs/srs.conf`
+  aktiviert HTTP-API auf `1985`, HTTP-Server auf `8088` und
+  `http_remux` für `[vhost]/[app]/[stream].flv` (Tranche-2-Commit).
+- [x] Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/
+  `mtrace-dash`/`mtrace-webrtc`: `1935/tcp` (RTMP) + `8088/tcp`
+  (HTTP-FLV) + `1985/tcp` (HTTP-API). `docs/user/local-development.md`
+  §2.7 Beispiele-Tabelle und Port-Quickref um `mtrace-srs`-Zeile
+  erweitert; Beispiele-Spalte zusätzlich um den `make
+  smoke-webrtc-stats-drift`-Eintrag aus Tranche 1 ergänzt
+  (Tranche-2-Commit).
+- [x] `examples/srs/README.md` auf 7-Punkt-Standard analog
+  `examples/srt/`/`examples/dash/`/`examples/webrtc/`: Zweck,
+  Voraussetzungen, Start, Verifikation, Stop/Reset, Troubleshooting,
+  Bekannte Grenzen; verlinkt auf `examples/README.md`-Konvention
+  (Project-Name-Pflicht). Markiert MVP-36 als „eingelöst, MVP-
+  Priorität bleibt Kann"; nennt explizit Out-of-Scope
+  (`mtrace_srs_*`-Counter, Player-SDK-Hookup, HLS-/DASH-/WebRTC-
+  Output) (Tranche-2-Commit).
+- [x] `make smoke-srs` (neu) startet `mtrace-srs`-Stack via
+  `docker compose up -d --build`, prüft endpoint-/compose-only:
+  (1) SRS-HTTP-API antwortet 200 auf `/api/v1/streams/`,
+  (2) Stream `live/srs-test` ist registriert mit
+  `publish.active=true`, (3) HTTP-FLV-Egress
+  `http://localhost:8088/live/srs-test.flv` liefert 200 plus
+  FLV-Magic-Header (`FLV`-Bytes). Skript
+  `scripts/smoke-srs.sh` mit `SMOKE_SRS_AUTOSTART=0`-Modus für
+  manuelle Aufrufe; Cleanup auf `mtrace-srs`-Project beschränkt.
+  Opt-in (NICHT in `make gates`); Help-Eintrag analog `smoke-srt`/
+  `smoke-dash` (Tranche-2-Commit).
+- [x] `examples/README.md` Smoke-Tabelle und Beispiele-Tabelle
+  um SRS-Eintrag erweitert (Tranche `—` weil außerhalb der
+  `0.5.0`-Tranchen-Numerik; Status verweist auf `0.9.0` Tranche 2)
+  (Tranche-2-Commit).
 
 ---
 

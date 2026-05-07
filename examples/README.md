@@ -78,6 +78,7 @@ Targets in `0.5.0`:
 | `make smoke-srt`        | 3       | ✅ (Project `mtrace-srt`)            |
 | `make smoke-dash`       | 4       | ✅ (Project `mtrace-dash`)           |
 | `make smoke-webrtc-prep`| 5       | ✅ ab `0.7.0` Tranche 3 (Project `mtrace-webrtc`, endpoint-only) |
+| `make smoke-srs`        | —       | ✅ ab `0.9.0` Tranche 2 (Project `mtrace-srs`, endpoint-only; RAK-57) |
 
 ### Smoke-Skript-Konvention
 
@@ -100,6 +101,7 @@ Anforderungen:
 | [`srt/`](./srt/)         | 3       | Eigenes Compose `mtrace-srt`; Smoke `make smoke-srt` |
 | [`dash/`](./dash/)       | 4       | Eigenes Compose `mtrace-dash`; Smoke `make smoke-dash` |
 | [`webrtc/`](./webrtc/)   | 5       | Eigenes Compose `mtrace-webrtc` (ab `0.7.0` Tranche 1); Smoke `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (endpoint-only) |
+| [`srs/`](./srs/)         | —       | Eigenes Compose `mtrace-srs` (ab `0.9.0` Tranche 2); Smoke `make smoke-srs` (endpoint-only; RAK-57 / MVP-36) |
 
 Quickref über alle Beispiele plus parallel-Stack-Port-Schnitt:
 [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7.
