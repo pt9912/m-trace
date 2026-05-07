@@ -6,7 +6,7 @@
 > - [`plan-0.8.5.md`](../done/plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
 >   + Container-Scan, §3.4 Generated-Artifact-Drift-Gate
 >   (deterministisch, schnell, PR-blockierend; vor `0.9.0`).
-> - [`plan-0.9.5.md`](../in-progress/plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
+> - [`plan-0.9.5.md`](../done/plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
 >   Smoke, §3.3 Nightly-`benchstat`, §3.5 Fuzzing/Property,
 >   §3.6 Mutation Testing (statistisch + langlaufend; nach `0.9.0`).
 >

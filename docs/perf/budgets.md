@@ -1,7 +1,7 @@
 # Performance-Budgets
 
 > **Status**: Initial-Tabelle — **Tranche-0-Stand** aus
-> [`docs/planning/in-progress/plan-0.9.5.md`](../planning/in-progress/plan-0.9.5.md)
+> [`docs/planning/done/plan-0.9.5.md`](../planning/done/plan-0.9.5.md)
 > §1a. Werte sind bewusst großzügig (Architektur-basiert, **noch
 > nicht** mess-basiert). Tranche 1 ersetzt die Initial-Werte nach
 > N=3-5 grünen Beobachtungsläufen durch realistische Schwellen

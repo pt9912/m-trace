@@ -1,11 +1,13 @@
 # Implementation Plan — `0.9.5` (Quality-Gates Wave 2: Benchmarks + Fuzzing + Mutation)
 
-> **Status**: 🟡 in Arbeit (Plan-Skelett am 2026-05-07 von
-> `docs/planning/open/` nach `docs/planning/in-progress/` gezogen,
-> Tranche 0 aktiviert). Vorgänger `v0.9.1` ist released (Wartungs-
-> Patch nach `v0.9.0`); damit ist die Voraussetzung „`extra-gates.md`
-> §6 (offene Entscheidungen) bei Tranche 0 zu klären" der einzige
-> noch offene Schritt der Plan-Aktivierung.
+> **Status**: ✅ released (Tag `v0.9.5` am 2026-05-07; Plan-File am
+> selben Tag von `docs/planning/in-progress/` nach
+> `docs/planning/done/` verschoben). Tranchen 0..5 alle ✅.
+> Vorgänger `v0.9.1` (Wartungs-Patch nach `v0.9.0`) bleibt im
+> Release-Verlauf; `0.9.5` ist Patch-Release ohne User-Surface-
+> Änderung — Inhalt: Benchmark-Smoke, Nightly-`benchstat`-
+> Regressionen, selektives Fuzzing + TS-Property-Tests, Mutation-
+> Testing als Nightly-Report.
 >
 > **Release-Typ**: Patch-Release nach `0.9.0`/`0.9.1` (Konvention aus
 > [`plan-0.8.5.md`](../done/plan-0.8.5.md) §0.6 /
@@ -131,7 +133,7 @@ package.json-lesen).
 | 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ✅ |
 | 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ✅ |
 | 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ✅ |
-| 5 | Release-Doku, Versions-Bump 0.9.0 → 0.9.5, Plan nach `done/`, Tag `v0.9.5` | ⬜ |
+| 5 | Release-Doku, Versions-Bump 0.9.0 → 0.9.5, Plan nach `done/`, Tag `v0.9.5` | ✅ |
 
 ---
 
@@ -483,23 +485,40 @@ Bezug: `plan-0.8.5.md` §6 als Vorlage.
 
 DoD:
 
-- [ ] `docs/user/releasing.md` §3 referenziert Wave-2-Gates
+- [x] `docs/user/releasing.md` §3 referenziert Wave-2-Gates
   (`make benchmark-smoke` PR-blockierend, `make fuzz-check` und
   `make mutation-report` opt-in/Nightly); Release-Voraussetzung
-  ist „letzter Nightly-Benchmark grün".
-- [ ] `README.md` Status-Block erwähnt `0.9.5` als Patch-Release
-  mit Quality-Gates Wave 2.
-- [ ] Versions-Bump 0.9.0 → 0.9.5 (analog `plan-0.8.5.md` §4
-  Closeout-Mechanik).
-- [ ] CHANGELOG: [Unreleased]-Block in `[0.9.5] - YYYY-MM-DD`
-  umgewandelt.
-- [ ] `make docs-check` grün; `make gates` grün;
+  ist „letzter Nightly-Benchmark grün". `releasing.md` §2.6 neu
+  hinzugefügt (Fuzz- und Mutation-Beobachtungs-Gates), §3.1
+  ergänzt um Wave-2-Quality-Gates-Voraussetzung pro Release-Tag
+  (Tranche-5-Commit).
+- [x] `README.md` Status-Block erwähnt `0.9.5` als Patch-Release
+  mit Quality-Gates Wave 2. Header-Block und Sektion „Aktueller
+  Stand" listen die vier Tranche-Lieferungen explizit
+  (Tranche-5-Commit).
+- [x] Versions-Bump 0.9.0 → 0.9.5 (analog `plan-0.8.5.md` §4
+  Closeout-Mechanik). 39 Dateien per Bulk-`xargs sed` von
+  `"0.9.1"` → `"0.9.5"`; drei zusätzliche Stellen mit Versions-
+  Strings in Test-Error-Messages (`apps/api/.../streamanalyzer/
+  contract_test.go`, `http_test.go`, `packages/stream-analyzer/
+  tests/version.test.ts`) per Edit nachgezogen (Tranche-5-Commit).
+- [x] CHANGELOG: [Unreleased]-Block in `[0.9.5] - 2026-05-07`
+  umgewandelt; Block listet die vier Tranche-Lieferungen plus
+  den Erstfund aus `FuzzMapMediaMtxItem` und den Versions-Bump
+  (Tranche-5-Commit).
+- [x] `make docs-check` grün; `make gates` grün;
   `make benchmark-smoke` grün; Nightly-Workflow läuft sauber
-  durch.
-- [ ] `plan-0.9.5.md` von `docs/planning/in-progress/` nach
+  durch. `make gates` nach dem Closeout-Commit (Plan-DoD §0.5
+  Pflicht: Drift-Gate vergleicht working-tree gegen HEAD; vor-
+  Commit würde der Versions-Bump als Drift gewertet).
+  `benchmark-smoke` ist opt-in und läuft im Beobachtungs-Nightly,
+  daher nicht Teil von `make gates` — separat verifiziert
+  (Tranche-5-Commit).
+- [x] `plan-0.9.5.md` von `docs/planning/in-progress/` nach
   `docs/planning/done/` verschoben; Cross-Refs angepasst;
-  Roadmap §3 zeigt `0.9.5` ✅.
-- [ ] Tag `v0.9.5` annotiert; Push opt-in; GitHub-Release.
+  Roadmap §3 zeigt `0.9.5` ✅ (Tranche-5-Commit).
+- [x] Tag `v0.9.5` annotiert; Push opt-in; GitHub-Release
+  (Tranche-5-Commit; Tag-Hash siehe Release-Notes).
 
 ---
 

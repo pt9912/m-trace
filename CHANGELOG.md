@@ -7,6 +7,178 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-05-07
+
+> **Quality-Gates Wave 2** — Patch-Release nach `0.9.0`/`0.9.1`
+> (Patch-Release-Konvention `0.X.Y`, siehe
+> [`docs/user/releasing.md`](docs/user/releasing.md) §3.1) ohne
+> User-Surface-Änderung. Liefert die vier statistisch- bzw.
+> langlaufenden Quality-Gates aus
+> [`docs/planning/open/extra-gates.md`](docs/planning/open/extra-gates.md):
+> Benchmark-Smoke (PR-Pfad) + Nightly-`benchstat`-Regressionen
+> (§3.2/§3.3), selektives Fuzzing + TS-Property-Tests (§3.5) und
+> Mutation-Testing als Nightly-Report (§3.6). Kein Lastenheft-Patch
+> (Quality-Gates, keine User-Surface). Plan in
+> [`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md).
+
+### Added (Tranche 0 — Plan-Aktivierung + Baseline-Entscheidungen)
+
+- [`docs/perf/budgets.md`](docs/perf/budgets.md) als Single-Source
+  für Performance-Budgets pro Modul (API + Stream-Analyzer);
+  initiale Werte als „Tranche-0-Stand, noch nicht mess-basiert"
+  markiert; Tranche-1-Beobachtungsphase schärft sie nach.
+- Baseline-Pfad für Tranche 2 entschieden: Git-Branch
+  `benchmark-baseline` (orphan, File `benchmarks/api-bench.txt`),
+  begründet in `plan-0.9.5.md` §1a Tranche 0.
+- Quarantäne-Policy: maximal 30 Tage Skip mit Begründungs-
+  Kommentar plus Backlog-Item in
+  [`docs/planning/open/risks-backlog.md`](docs/planning/open/risks-backlog.md);
+  Verlängerung ist Plan-DoD-Item-Änderung im jeweiligen Folge-Plan.
+
+### Added (Tranche 1 — Benchmark-Smoke API + Stream-Analyzer)
+
+- Go-Benchmark-Suite in `apps/api` für vier Hot-Paths (Plan-DoD
+  §2-1): `BenchmarkRegisterPlaybackEventBatch_{Typical,MaxBatch}`,
+  `BenchmarkEventRepository_AppendBatch_100`,
+  `BenchmarkSessionsService_ListSessions_DefaultPage`,
+  `BenchmarkCursorEncodeDecode_Pair`. Pfade in
+  `*_bench_test.go`/`*_bench_internal_test.go`.
+- TS-Benchmark-Suite
+  `packages/stream-analyzer/benchmarks/analyzer.bench.ts` für
+  sieben Hot-Paths (Plan-DoD §2-2): HLS Master/Media,
+  DASH-MPD VOD/Live, Detector über 256-KiB-Body, SSRF-URL-
+  Klassifizierung. Synthetische Fixtures deterministisch im
+  Bench-File generiert; separater
+  `vitest.bench.config.ts`.
+- `make api-benchmark-smoke` + `make analyzer-benchmark-smoke` +
+  Wrapper `make benchmark-smoke` (Plan-DoD §2-3); beide drucken
+  zuerst Runner-Info via `scripts/print-bench-runner-info.sh`.
+- `scripts/check-bench-budgets.mjs` parst beide Bench-Backends
+  (Vitest-Bench-stdout + Go-Bench-stdout) gegen die Budget-
+  Tabelle aus `docs/perf/budgets.md`; Output-Form
+  `[bench-budget] FAIL <name>: ist=<X> ms soll=<Y> ms`.
+- `.github/workflows/benchmark-observation.yml` (Cron `30 2 * * *`
+  UTC + `workflow_dispatch`) als Beobachtungs-Nightly mit
+  `continue-on-error: true`; Bench-Output als Artefakt
+  `bench-observation-<run_id>` mit 14 Tagen Retention.
+- `make benchmark-smoke` ist **nicht** in `make gates`; PR-
+  Blockierung folgt nach N=3..5 grünen Beobachtungsläufen
+  (Folge-Commit nimmt `continue-on-error` raus + Aufnahme in
+  `make gates`).
+
+### Added (Tranche 2 — Nightly-`benchstat`-Regressionen)
+
+- `.github/workflows/benchmark.yml` (Cron `0 4 * * *` UTC +
+  `workflow_dispatch`): `go test -bench=. -benchmem -count=10
+  -benchtime=2s` auf API-Hot-Paths, Baseline aus orphan-Branch
+  `benchmark-baseline` als File `benchmarks/api-bench.txt`,
+  Vergleich via `benchstat` aus `golang.org/x/perf`.
+- `scripts/check-benchstat-regression.mjs` mit
+  `--threshold-percent`-Flag (Default 15): Regressions-Schwelle
+  +15 % auf statistisch signifikantem Ergebnis (p < 0.05).
+- benchstat-Output als Workflow-Artefakt
+  `bench-regression-<run_id>` (30 Tage Retention) mit
+  `current.txt`, `baseline.txt`, `comparison.txt`.
+- Auto-Issue bei Regression mit Workflow-Run-URL,
+  benchstat-Diff-Block, Repro-Befehl und Drift-Akzeptanz-Pfad;
+  Labels `performance,benchmark,plan-0.9.5`.
+- Quarantäne-Mechanik: `// bench:quarantine YYYY-MM-DD reason:
+  <text>`-Kommentar direkt über `func BenchmarkX(...)` (Go) bzw.
+  dem `bench("...", ...)`-Aufruf (TS). Skript
+  `scripts/check-bench-quarantines.mjs` scant `apps/api` und
+  `packages/stream-analyzer` und failed bei Tag älter als 30 Tage.
+- Release-Gate-Doku in
+  [`docs/user/releasing.md`](docs/user/releasing.md) §2.5
+  („Benchmark-Regression-Gate"): Pflicht-Voraussetzung für
+  Minor-Releases; Patch-Releases sind ausgenommen.
+
+### Added (Tranche 3 — Selektives Fuzzing + Property Tests)
+
+- Sechs Go-Fuzz-Targets in vier Packages (Plan-DoD §4-1):
+  - `apps/api/adapters/driving/http/cursor_fuzz_internal_test.go`:
+    `FuzzDecodeListSessionsCursor`, `FuzzDecodeSessionEventsCursor`.
+  - `apps/api/adapters/driving/http/wire_fuzz_internal_test.go`:
+    `FuzzWireBatchDecode`.
+  - `apps/api/hexagon/application/event_meta_validation_fuzz_internal_test.go`:
+    `FuzzValidateReservedEventMeta`, `FuzzValidateUnavailableReason`.
+  - `apps/api/adapters/driven/srt/mediamtxclient/mapping_fuzz_internal_test.go`:
+    `FuzzMapMediaMtxItem`.
+- Drei TS-Property-Test-Suites via `fast-check@4.4.0` (Plan-DoD
+  §4-2):
+  - `packages/stream-analyzer/tests/hls-parser.property.test.ts`
+    (zwei Properties).
+  - `packages/stream-analyzer/tests/dash-parser.property.test.ts`
+    (drei Properties).
+  - `packages/player-sdk/tests/redact.property.test.ts` (drei
+    Properties).
+- `make api-fuzz-check` + `make fuzz-check` (Plan-DoD §4-3) mit
+  `FUZZTIME`-Override (Default 30 s pro Target); greppt
+  `^func Fuzz...` automatisch — keine Registry-Pflege. Opt-in
+  (NICHT in `make gates`).
+- `.github/workflows/fuzz.yml` (Cron `0 5 * * *` UTC +
+  `workflow_dispatch`): Default 5 min pro Target ⇒ ≈ 30 min Total;
+  Crash-Inputs via `find -newer go.mod` aus
+  `testdata/fuzz/<Target>/`; Artefakt `fuzz-nightly-<run_id>` mit
+  30 Tagen Retention; Auto-Issue mit Repo-Pfad
+  `apps/api/<package>/testdata/fuzz/<Target>/<id>` als Regression-
+  Seed (Labels `fuzz,quality,plan-0.9.5`).
+- [`docs/dev/fuzzing.md`](docs/dev/fuzzing.md): Liste der Fuzz-
+  Targets, lokale Reproduktion, Crash-Repro-Pfad aus dem Nightly,
+  Korpus-Schichten, fast-check-Discard-Loop-Lehre.
+
+### Fixed (Tranche 3 — Erstfund durch FuzzMapMediaMtxItem)
+
+- `apps/api/adapters/driven/srt/mediamtxclient/mapping.go`:
+  `mbpsLinkCapacity=-1` produzierte
+  `AvailableBandwidthBPS=-1_000_000` (negativer Wert leakt durch
+  in den Wire-Vertrag). Fix: `AvailableBandwidthBPS` wird nur
+  gesetzt, wenn `mbpsLinkCapacity > 0`; sonst bleibt das Feld
+  leer und `state` wechselt auf `unknown`. Erstfund vom Fuzz-
+  Target im selben Tranche-3a-Commit.
+
+### Added (Tranche 4 — Mutation Testing als Nightly-Report)
+
+- Tool-Auswahl: **gremlins** (`github.com/go-gremlins/gremlins`)
+  für Go statt go-mutesting (Substitution begründet in
+  [`docs/dev/mutation-testing.md`](docs/dev/mutation-testing.md)
+  §1: go-mutesting seit ~2022 unmaintained, AST-Brüche auf
+  Go 1.21+); **StrykerJS** + `@stryker-mutator/vitest-runner` für
+  TS.
+- Pilot-Module:
+  `apps/api/hexagon/application/event_meta_validation.go` (Go)
+  und `packages/player-sdk/src/adapters/webrtc/sampling.ts` (TS)
+  — beide sicherheits-relevant.
+- `make api-mutation-report` (gremlins via golang:1.26-Container,
+  `go install`-zur-Laufzeit) + `make ts-mutation-report` (Stryker
+  via `pnpm dlx`, kein devDep-Pinning im player-sdk) + Wrapper
+  `make mutation-report`. Stryker-Konfig
+  `packages/player-sdk/stryker.conf.cjs` mit `mutate`-Scope auf
+  das eine File. Opt-in (NICHT in `make gates`).
+- `.github/workflows/mutation.yml` (Cron `0 6 * * *` UTC +
+  `workflow_dispatch`): zwei Jobs (`mutation-go` + `mutation-ts`),
+  beide `continue-on-error: true` (nicht-blockierend); Artefakte
+  `mutation-{go,ts}-<run_id>` mit 30 Tagen Retention.
+- Score-Schwelle dokumentiert in
+  [`docs/dev/mutation-testing.md`](docs/dev/mutation-testing.md)
+  §3: > 70 % Wunsch-Ziel; PR-Blockierung erst, wenn das Modul
+  drei Nightly-Runs in Folge > 70 % erreicht.
+
+### Changed
+
+- Versions-Bump auf `0.9.5` (Patch-Release): alle 5 `package.json`
+  (root, `apps/dashboard`, `apps/analyzer-service`,
+  `packages/player-sdk`, `packages/stream-analyzer`),
+  `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts` `PLAYER_SDK_VERSION`,
+  `packages/player-sdk/scripts/pack-smoke.mjs` `expectedVersion`,
+  `contracts/sdk-compat.json` `sdk_version` plus Test-Fixtures
+  und Contract-Fixtures, die Versions-Strings hartkodieren.
+  Gleicher Bulk-Sed-Pfad wie `0.8.5`/`0.9.0`/`0.9.1` Closeout.
+- [`docs/user/releasing.md`](docs/user/releasing.md) §3 erwähnt
+  Wave-2-Gates (`make benchmark-smoke` opt-in/PR-blockierend
+  nach Beobachtungsphase, `make fuzz-check` und
+  `make mutation-report` opt-in/Nightly).
+
 ## [0.9.1] - 2026-05-07
 
 > Wartungs-Patch nach `0.9.0` (Patch-Release-Konvention `0.X.Y`,

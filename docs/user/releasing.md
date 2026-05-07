@@ -292,6 +292,36 @@ und das Tag entfernen, oder das Tag mit einer Plan-DoD-Item-
 node scripts/check-bench-quarantines.mjs apps/api packages/stream-analyzer
 ```
 
+### 2.6 Fuzz- und Mutation-Beobachtungs-Gates (`0.9.5` Tranche 3+4, RAK-Wave-2)
+
+Seit `plan-0.9.5` Tranchen 3 und 4 laufen zwei weitere Nightly-
+Workflows als **nicht-blockierende Beobachtungs-Gates**:
+
+- [`.github/workflows/fuzz.yml`](../../.github/workflows/fuzz.yml)
+  (Cron `0 5 * * *` UTC, sechs Go-Fuzz-Targets, 5 min/Target).
+  Crash-Funde landen als Issue mit Repo-Pfad
+  `apps/api/<package>/testdata/fuzz/<Target>/<id>` (Labels
+  `fuzz,quality,plan-0.9.5`); offenes Crash-Issue **blockiert
+  den nächsten Release-Tag** (Patch *und* Minor), bis das
+  Crash-File als Regression-Seed im Repo gelandet und der Bug
+  gefixt ist.
+  Operator-Doku: [`docs/dev/fuzzing.md`](../dev/fuzzing.md).
+- [`.github/workflows/mutation.yml`](../../.github/workflows/mutation.yml)
+  (Cron `0 6 * * *` UTC, gremlins für Go + StrykerJS für TS;
+  beide Jobs `continue-on-error: true`). **Initial nicht-
+  blockierend** (Plan-DoD §5: nur Reporting). Score-Trend wird
+  über die HTML/JSON-Artefakte verfolgt; PR-Blockierung erst,
+  wenn ein Modul drei Beobachtungsläufe in Folge > 70 % Score
+  zeigt — Übergangs-Pfad in
+  [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md) §3.
+
+PR-Pfad-Wrapper (opt-in, NICHT in `make gates`):
+
+```bash
+make fuzz-check        # FUZZTIME=30s pro Target (Default)
+make mutation-report   # gremlins (Go) + StrykerJS (TS) auf den Pilot-Modulen
+```
+
 ## 3. Release-Commit und Tag
 
 Release-Konvention für `0.1.x`:
@@ -321,6 +351,22 @@ hartkodierten Versions-Strings) — sonst entsteht Drift zwischen
 SDK-Bundle, API-Service-Version und CI-Smokes. Plan-DoD-Items
 ersetzen die RAK-Verifikationsmatrix; ein Patch-Release-Plan trägt
 keinen `§6.1`-Block.
+
+**Wave-2-Quality-Gates-Voraussetzung** (ab `0.9.5`): vor jedem
+Release-Tag (Patch *und* Minor) zusätzlich prüfen:
+
+- §2.5 Benchmark-Regression-Gate — letzter
+  `benchmark.yml`-Nightly grün (Pflicht für Minor; Patch nur
+  über `make benchmark-smoke` PR-Pfad).
+- §2.6 Fuzz-Beobachtungs-Gate — kein offenes Issue mit Label
+  `fuzz` aus dem letzten `fuzz.yml`-Nightly. Offenes
+  Crash-Issue blockt den Tag, bis das Crash-File als
+  Regression-Seed im Repo gelandet ist.
+- §2.6 Mutation-Beobachtungs-Gate — Score-Trend in den letzten
+  drei Nightly-Artefakten geprüft (kein hartes Gate; Score-
+  Senkung ist begründungspflichtig, siehe
+  [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)
+  §3).
 
 ```bash
 git commit -m "chore(release): vX.Y.Z"

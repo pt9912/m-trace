@@ -1,7 +1,7 @@
 # Roadmap
 
-> **Stand**: 2026-05-06
-> **Phase**: `0.9.5` Tranche 0 in Arbeit — Plan-Skelett am 2026-05-07 von `docs/planning/open/` nach [`docs/planning/in-progress/plan-0.9.5.md`](./plan-0.9.5.md) gezogen; Baseline-Entscheidungen aus `extra-gates.md` §6 abgeschlossen (Git-Branch `benchmark-baseline`; initiale Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md); Quarantäne-Policy 30 Tage). Vorgänger `v0.9.1` (Wartungs-Patch nach `v0.9.0`) bleibt aktiver Stand; `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) ist archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). Frühere Releases: `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
+> **Stand**: 2026-05-07
+> **Phase**: `0.9.5` released (Quality-Gates Wave 2; Patch-Release ohne User-Surface). Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md). Inhalt: Benchmark-Smoke (PR-Pfad opt-in, Beobachtungsphase läuft), Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik, selektives Fuzzing (sechs Go-Targets, drei TS-Property-Suites), Mutation-Testing als nicht-blockierender Nightly-Report (gremlins + StrykerJS). Erstfund über `FuzzMapMediaMtxItem` mit Fix in `apps/api/.../mediamtxclient/mapping.go`. Vorgänger `v0.9.1` (Drift-Smoke-Robustheit) und `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). Frühere Releases: `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -37,18 +37,32 @@ aktualisieren.
 | ✅      | Player-SDK-WebRTC-Adapter (`0.8.0`) | Produktiver `attachWebRtc`-Adapter in `@npm9912/player-sdk` (additiv zu `attachHlsJs`); reservierter `webrtc.*`-Meta-Namespace mit harter API-Validation; sechs `mtrace_webrtc_*`-Counter mit Delta-Semantik (Server-side Sample-State, Sample-ID-Idempotenz); `scripts/smoke-observability.sh` spiegelt §3.1-Forbidden und §3.2-Allowlist; R-12 release-blockierend ab nächstem Browser-Major-Bump. Browser-Support-Matrix Chromium 120+/Firefox 120+ Required, Safari 17+ Best-effort. RAK-51..RAK-55 erfüllt. | [`plan-0.8.0.md`](../done/plan-0.8.0.md)                            |
 | ✅      | Quality-Gates Wave 1 (`0.8.5`)      | Erstmaliger Patch-Release im Repo: Security-Gates (`vuln-check`/`audit-ts`/`image-scan`/`security-gates`) als zweiter PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate (`make generated-drift-check`) als Bestandteil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim` mit `pnpm deploy --prod`-Snip; OpenTelemetry-Stack-Bump als `GO-2026-4394`-Fix; Patch-Release-Konvention in `docs/user/releasing.md` §3.1 verankert. Keine User-Surface-Änderung. | [`plan-0.8.5.md`](../done/plan-0.8.5.md)                            |
 | ✅      | Drift-Smoke + SRS + DASH (`0.9.0`)  | Browser-`getStats()`-Drift-Smoke mit Nightly-Workflow `webrtc-drift.yml` (R-12 von release-blockierend auf automatisiert detektiert); SRS-Lab `examples/srs/` als fünftes Multi-Protocol-Beispiel (MVP-36 eingelöst); DASH-Manifest-Analyse im `@npm9912/stream-analyzer` mit `analyzerKind:"dash"`/`playlistType:"dash"`, Detector + regex-basierter MPD-Parser, `manifest_not_supported` als additiver Public-Code, CLI-Dispatch (NF-12 erfüllt; MVP-37 hochgestuft auf Muss). Lastenheft-Patch `1.1.11` aktiv. RAK-56..RAK-59 erfüllt. | [`plan-0.9.0.md`](../done/plan-0.9.0.md)                            |
+| ✅      | Quality-Gates Wave 2 (`0.9.5`)      | Patch-Release ohne User-Surface. Benchmark-Smoke (Go + TS) mit Single-Source-Budgets in `docs/perf/budgets.md` und Beobachtungs-Nightly `benchmark-observation.yml` (Cron 02:30); Nightly-`benchstat`-Regressionen `benchmark.yml` (Cron 04:00) gegen orphan-Branch `benchmark-baseline`, Schwelle +15 % auf p<0.05, Auto-Issue plus Quarantäne-Tag-Mechanik (max. 30 Tage); selektives Fuzzing mit sechs Go-Fuzz-Targets und drei TS-Property-Test-Suites via `fast-check@4.4.0` plus Nightly `fuzz.yml` (Cron 05:00) — Erstfund über `FuzzMapMediaMtxItem` (`mbpsLinkCapacity=-1` leakte als negativer `AvailableBandwidthBPS`, Fix in `apps/api/.../mediamtxclient/mapping.go`); Mutation-Testing mit gremlins (Go) + StrykerJS (TS) als nicht-blockierender Nightly-Report `mutation.yml` (Cron 06:00). Operator-Doku in `docs/dev/fuzzing.md` und `docs/dev/mutation-testing.md`. Kein Lastenheft-Patch (Quality-Gates, keine User-Surface). | [`plan-0.9.5.md`](../done/plan-0.9.5.md)                            |
 
 ### 1.2 Nächste Phase
 
-`0.9.0` ist veröffentlicht (plus Wartungs-Patch `0.9.1`). `0.9.5`
-ist seit 2026-05-07 in Arbeit (Tranche 0 abgeschlossen):
+`0.9.5` ist released (Quality-Gates Wave 2 — Patch-Release ohne
+User-Surface; alle fünf Tranchen ✅; Plan in
+[`done/plan-0.9.5.md`](../done/plan-0.9.5.md)). Folge-Phase ist
+offen: kein `plan-0.10.0.md` vorbereitet. Pending-Folge-Punkte
+aus der Wave-2-Lieferung (Trigger-Schwellen werden im jeweiligen
+Folge-Plan aktiviert, sobald sie erreicht sind):
 
-- [`plan-0.9.5.md`](./plan-0.9.5.md) — **Patch-Release in Arbeit
-  (Tranche 0 ✅ am 2026-05-07)**: Quality-Gates Wave 2 mit
-  Benchmark-Smoke (PR-blockierend nach Beobachtungsphase) +
-  Nightly-`benchstat`-Regressionen + selektives Fuzzing +
-  Mutation Testing. Baseline-Pfad: Git-Branch `benchmark-baseline`;
-  Initial-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md).
+- **Benchmark-Smoke PR-Blockierung** — N=3..5 grüne
+  Beobachtungsläufe von [`benchmark-observation.yml`](../../../.github/workflows/benchmark-observation.yml)
+  abwarten; Folge-Commit nimmt die drei `continue-on-error: true`-
+  Marker raus und nimmt `make benchmark-smoke` in `make gates`
+  auf.
+- **Mutation-PR-Blockierung** — Score > 70 % drei Nightly-Runs
+  in Folge auf einem Pilot-Modul (siehe
+  [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md)
+  §3); Folge-Commit setzt `--threshold-break=70` für das Modul.
+- **Erweiterung der Wave-2-Module** —
+  [`extra-gates.md`](../open/extra-gates.md) §3.5 listet weitere
+  Fuzz-Kandidaten (HLS-Parser, SRT-Health-Mapping); §3.6 listet
+  weitere Mutation-Kandidaten (Cursor-Logik, HLS/DASH-Parser,
+  SSRF-Prüfung). Aufnahme in einem Folge-Plan nach Auswertung
+  der ersten Beobachtungsläufe.
 
 Master-Backlog für Quality-Gates ist
 [`extra-gates.md`](../open/extra-gates.md); die zwei Wellen-Pläne
@@ -146,7 +160,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.8.5` | Quality-Gates Wave 1 (Patch) | ✅      | Security-Gates (`vuln-check`/`audit-ts`/`image-scan`) als PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate Teil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim`; OTel-Stack-Bump als Vuln-Fix-Folge. Erster Patch-Release im Repo; Patch-Release-Konvention in `docs/user/releasing.md` §3.1. DoD-Tracking in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md). |
 | `0.9.0` | Drift-Smoke + SRS + DASH     | ✅      | Drift-Smoke (Nightly-Workflow `webrtc-drift.yml`, R-12 automatisiert detektiert) + SRS-Lab `examples/srs/` (MVP-36 eingelöst) + DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (NF-12 erfüllt; MVP-37 hochgestuft auf Muss). RAK-56..RAK-59 (Lastenheft `1.1.11` §13.11). DoD-Tracking in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). |
 | `0.9.1` | Drift-Smoke-Robustheit (Patch) | ✅      | Wartungs-Patch nach `0.9.0` ohne eigenen Plan-File: WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]` statt Fail); Spec-Korrekturen in `spec/telemetry-model.md` §3.5.2/§3.5.3; Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout. CHANGELOG-`[0.9.1]`-Block. Kein Lastenheft-Patch. |
-| `0.9.5` | Quality-Gates Wave 2 (Patch) | 🟡      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Tracking in [`in-progress/plan-0.9.5.md`](./plan-0.9.5.md), Tranche 0 (Plan-Aktivierung + Baseline-Entscheidungen) ✅ am 2026-05-07. Initiale Performance-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md). |
+| `0.9.5` | Quality-Gates Wave 2 (Patch) | ✅      | Patch-Release am 2026-05-07. Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md). Lieferungen: Benchmark-Smoke (PR-Pfad opt-in mit Beobachtungs-Nightly `benchmark-observation.yml`); Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik (`benchmark.yml`); sechs Go-Fuzz-Targets + drei TS-Property-Test-Suites via `fast-check` (`make fuzz-check` + Nightly `fuzz.yml`) inkl. Erstfund + Fix `mbpsLinkCapacity=-1` in `apps/api/.../mediamtxclient/mapping.go`; Mutation-Testing mit gremlins (Go) + StrykerJS (TS) als Nightly-Report (`mutation.yml`). Single-Source-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md); Operator-Doku in [`docs/dev/fuzzing.md`](../../dev/fuzzing.md) und [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md). Kein Lastenheft-Patch. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

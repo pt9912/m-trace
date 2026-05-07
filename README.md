@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.9.1` released — Wartungs-Patch nach `0.9.0` (Patch-Release-Konvention `0.X.Y`): WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus dem Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]`); Spec-Korrekturen in [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.5.2/§3.5.3 („Muss-Felder pro Engine, leer statt `unknown`-Surrogat"); Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout-Move. Liefergegenstände aus `0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, RAK-56..RAK-59 / Lastenheft `1.1.11` §13.11) und früher bleiben unverändert.
+> Status: `0.9.5` released — Quality-Gates Wave 2 (Patch-Release-Konvention `0.X.Y`): vier Tranche-Lieferungen ohne User-Surface aus [`docs/planning/done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md) — Benchmark-Smoke (PR-Pfad, opt-in bis Beobachtungsphase abgeschlossen; `make benchmark-smoke`), Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik (`.github/workflows/benchmark.yml`), selektives Fuzzing (sechs Go-Targets) plus TS-Property-Tests via `fast-check` (`make fuzz-check`, `.github/workflows/fuzz.yml`), Mutation-Testing als nicht-blockierender Nightly-Report mit gremlins (Go) und StrykerJS (TS) (`make mutation-report`, `.github/workflows/mutation.yml`). Erstfund über `FuzzMapMediaMtxItem` ([`mapping.go`](apps/api/adapters/driven/srt/mediamtxclient/mapping.go) — `mbpsLinkCapacity=-1` leakte als negativer `AvailableBandwidthBPS`). Kein Lastenheft-Patch (Quality-Gates, keine User-Surface). Vorgänger `v0.9.1` (Drift-Smoke-Robustheit) und `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, RAK-56..RAK-59 / Lastenheft `1.1.11` §13.11) bleiben unverändert.
 
 ---
 
@@ -306,17 +306,62 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.9.1` released — Wartungs-Patch nach
-`0.9.0` (Patch-Release-Konvention `0.X.Y`, siehe
-[`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Inhalt:
-WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-
-Signalisierung aus dem Playwright-Node-Kontext, Firefox audio-only,
-fehlende `RTCStatsType.transport`-Reports als `[drift-soll]` statt
-harter Fail) plus Spec-Präzisierung in `spec/telemetry-model.md`
-§3.5.2/§3.5.3 (Muss-Felder pro Engine, „leer statt `unknown`") und
-Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout-`git mv`. Kein
-Lastenheft-Patch, kein eigener Plan-File. Lieferstand `0.9.0` und
-früher bleibt unverändert:
+Das Projekt steht bei `0.9.5` released — Quality-Gates Wave 2
+Patch-Release nach `0.9.0`/`0.9.1` (Patch-Release-Konvention
+`0.X.Y`, siehe [`docs/user/releasing.md`](docs/user/releasing.md)
+§3.1). Inhalt: vier statistisch- bzw. langlaufende Quality-Gates
+aus [`docs/planning/open/extra-gates.md`](docs/planning/open/extra-gates.md)
+in einem Patch-Release ausgeliefert, Plan-File in
+[`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md). Kein
+Lastenheft-Patch (Quality-Gates, keine User-Surface).
+
+**Tranche 1 — Benchmark-Smoke**: Go-Bench-Suite in `apps/api`
+für vier Hot-Paths (RegisterPlaybackEventBatch typical+max,
+EventRepository AppendBatch, SessionsService ListSessions,
+Cursor encode/decode), TS-Bench-Suite
+`packages/stream-analyzer/benchmarks/analyzer.bench.ts` für
+sieben Hot-Paths (HLS Master/Media, DASH-MPD VOD/Live, Detector,
+SSRF-URL-Klassifizierung). Single-Source-Budgets in
+[`docs/perf/budgets.md`](docs/perf/budgets.md). Wrapper
+`make benchmark-smoke` plus Validator
+`scripts/check-bench-budgets.mjs`. Beobachtungs-Nightly
+[`.github/workflows/benchmark-observation.yml`](.github/workflows/benchmark-observation.yml)
+(Cron `30 2 * * *` UTC, `continue-on-error: true`); PR-
+Blockierung folgt nach N=3..5 grünen Beobachtungsläufen.
+
+**Tranche 2 — Nightly-`benchstat`-Regressionen**:
+[`.github/workflows/benchmark.yml`](.github/workflows/benchmark.yml)
+(Cron `0 4 * * *` UTC) führt 10× `go test -bench=.` aus,
+vergleicht via `benchstat` gegen Baseline aus orphan-Branch
+`benchmark-baseline`. Schwelle +15 % auf p<0.05; Auto-Issue mit
+benchstat-Diff-Block. Quarantäne-Mechanik via
+`// bench:quarantine YYYY-MM-DD reason: <text>` (max. 30 Tage),
+Validator `scripts/check-bench-quarantines.mjs`.
+
+**Tranche 3 — Selektives Fuzzing + Property Tests**: sechs
+Go-Fuzz-Targets in vier Packages (Cursor encode/decode, wireBatch
+Decode, Reserved-Event-Meta, Unavailable-Reason, MediaMTX-Item-
+Mapping); drei TS-Property-Test-Suites via `fast-check@4.4.0`
+(HLS- und DASH-Parser, URL-Redaction). `make fuzz-check`-Target
+mit `FUZZTIME`-Override (Default 30 s) plus Nightly
+[`.github/workflows/fuzz.yml`](.github/workflows/fuzz.yml)
+(Cron `0 5 * * *` UTC, 5 min/Target, Auto-Issue mit Crash-Repo-
+Pfad). Erstfund: `FuzzMapMediaMtxItem` zeigte
+`mbpsLinkCapacity=-1` → `AvailableBandwidthBPS=-1_000_000` in
+[`mapping.go`](apps/api/adapters/driven/srt/mediamtxclient/mapping.go).
+Operator-Doku in [`docs/dev/fuzzing.md`](docs/dev/fuzzing.md).
+
+**Tranche 4 — Mutation Testing (Nightly-Report)**: Pilot-Module
+`apps/api/hexagon/application/event_meta_validation.go` (gremlins
+statt unmaintainted go-mutesting) und
+`packages/player-sdk/src/adapters/webrtc/sampling.ts` (StrykerJS
++ vitest-runner). `make mutation-report` als Wrapper. Nightly
+[`.github/workflows/mutation.yml`](.github/workflows/mutation.yml)
+(Cron `0 6 * * *` UTC, beide Jobs `continue-on-error: true`).
+Score-Schwelle und Übergangs-Pfad zur PR-Blockierung in
+[`docs/dev/mutation-testing.md`](docs/dev/mutation-testing.md).
+
+Lieferstand `0.9.0` und früher bleibt unverändert:
 
 **Tranche 1 — Browser-Drift-Smoke (RAK-56)**: automatisiert R-12 ab.
 `tests/e2e/webrtc-stats-drift.spec.ts` (Playwright) öffnet im Page-
