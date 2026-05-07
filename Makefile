@@ -251,6 +251,36 @@ api-fuzz-check:
 fuzz-check: api-fuzz-check
 	$(PNPM) -r --if-present run test
 
+# `make api-mutation-report` ist der Go-Mutation-Test (plan-0.9.5
+# §5 Tranche 4, RAK-Wave-2 / extra-gates.md §3.6). Pilot-Modul:
+# `apps/api/hexagon/application/event_meta_validation.go` (gemutiert
+# als Teil des `hexagon/application`-Packages). Tool: gremlins
+# (Substitution für unmaintainted go-mutesting; Begründung in
+# `docs/dev/mutation-testing.md` §1). Output:
+#   - `apps/api/.tmp/mutation/api-mutation-report.txt` (stdout-Spiegel)
+#   - `apps/api/.tmp/mutation/api-mutation-report.json` (Maschinen-Form)
+# Initial nicht-blockierend; opt-in (NICHT in `make gates`). Lokaler
+# Lauf zieht das gremlins-CLI per `go install` zur Laufzeit, daher
+# Netz erforderlich (selbe Mechanik wie `benchmark-smoke`).
+api-mutation-report:
+	$(API_MAKE) mutation-report
+
+# `make ts-mutation-report` ist das TS-Pendant. Pilot-Modul:
+# `packages/player-sdk/src/adapters/webrtc/sampling.ts`. Tool:
+# StrykerJS via `pnpm dlx` (kein devDep im player-sdk-Manifest, damit
+# der Stryker-Versions-Bump nicht im Lockfile pinned). Vitest-Runner
+# (selbe Vitest-Version wie `make ts-test`). Output:
+#   - `packages/player-sdk/reports/mutation/mutation.html` (visuell)
+#   - `packages/player-sdk/reports/mutation/mutation.json` (Trend-Tracking)
+# Initial nicht-blockierend; opt-in. Lokaler Lauf braucht Node + pnpm
+# (host-side, kein Container — selbe Voraussetzung wie `make ts-test`).
+ts-mutation-report:
+	$(PNPM) --filter @npm9912/player-sdk run mutation
+
+# `make mutation-report` bündelt Go + TS in einem Aufruf
+# (Plan-DoD §5-2 Wrapper). Bleibt opt-in.
+mutation-report: api-mutation-report ts-mutation-report
+
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-
 # Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt; ein

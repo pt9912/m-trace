@@ -1,0 +1,123 @@
+name: Mutation nightly
+
+# plan-0.9.5 §5 Tranche 4 (RAK-Wave-2 / extra-gates.md §3.6) —
+# Nightly-Mutation-Testing für die zwei Pilot-Module:
+#   - Go: `apps/api/hexagon/application/event_meta_validation.go`
+#         via gremlins (Container-Lauf in golang:1.26).
+#   - TS: `packages/player-sdk/src/adapters/webrtc/sampling.ts`
+#         via StrykerJS (host-side, vitest-runner).
+#
+# **Initial nicht-blockierend** (Plan-DoD §5: "nur Reporting").
+# Beide Jobs tragen `continue-on-error: true`; Score wird nur als
+# Trend verfolgt (HTML-Report-Artefakt). PR-Blockierung erst, wenn
+# das Modul drei Beobachtungsläufe in Folge > 70 % Mutation-Score
+# erreicht — Übergangs-Trigger in `docs/dev/mutation-testing.md` §3.
+#
+# Trigger:
+#   - schedule: nightlich um 06:00 UTC (kein Konflikt mit den
+#     anderen Nightlies: benchmark-observation 02:30, webrtc-drift
+#     03:30, benchmark.yml 04:00, fuzz.yml 05:00).
+#   - workflow_dispatch: manueller Trigger nach Touch der Pilot-
+#     Module oder ihrer Test-Suites.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-go:
+    name: Go mutation (gremlins)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          check-latest: false
+
+      - name: Print runner info
+        run: bash scripts/print-bench-runner-info.sh
+
+      - name: Run gremlins on hexagon/application
+        id: mutation
+        env:
+          GREMLINS_VERSION: v0.5.0
+        working-directory: apps/api
+        run: |
+          set -eu
+          go install "github.com/go-gremlins/gremlins/cmd/gremlins@${GREMLINS_VERSION}"
+          mkdir -p .tmp/mutation
+          gpath="$(go env GOPATH)/bin/gremlins"
+          echo "[mutation-go] gremlins version: $(${gpath} --version 2>/dev/null || echo ${GREMLINS_VERSION})"
+          # Plan-DoD §5: nicht-blockierend. `|| true` schluckt
+          # gremlins-Exit (kann z. B. an Score-Schwelle scheitern,
+          # wir wollen das Artefakt aber trotzdem hochladen).
+          ${gpath} unleash \
+            --output=.tmp/mutation/api-mutation-report.json \
+            ./hexagon/application \
+            | tee .tmp/mutation/api-mutation-report.txt \
+            || true
+
+      - name: Upload Go mutation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-go-${{ github.run_id }}
+          path: apps/api/.tmp/mutation/
+          retention-days: 30
+          if-no-files-found: warn
+
+  mutation-ts:
+    name: TS mutation (StrykerJS)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Print runner info
+        run: bash scripts/print-bench-runner-info.sh
+
+      - name: Run StrykerJS on player-sdk
+        # Plan-DoD §5: nicht-blockierend. `|| true` schluckt
+        # Stryker-Exit (würde nur an `break`-Schwelle scheitern, die
+        # in `stryker.conf.cjs` auf 0 gesetzt ist; defensives `|| true`
+        # für Tool-Pannen während der Beobachtungsphase).
+        run: |
+          set -eu
+          pnpm --filter @npm9912/player-sdk run mutation || true
+
+      - name: Upload TS mutation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-ts-${{ github.run_id }}
+          path: packages/player-sdk/reports/mutation/
+          retention-days: 30
+          if-no-files-found: warn

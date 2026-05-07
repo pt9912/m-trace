@@ -164,6 +164,39 @@ fuzz-check:
 				go test -run="^$$" -fuzz="^$$name$$" -fuzztime=$(FUZZTIME) "./$$pkg"; \
 			done'
 
+# Mutation-Testing-Suite (plan-0.9.5 §5 Tranche 4, RAK-Wave-2 /
+# extra-gates.md §3.6). Pilot-Modul:
+# `apps/api/hexagon/application/event_meta_validation.go` (das Package
+# `hexagon/application` wird komplett mutiert; das Pilot-File ist der
+# dominante Beitrag im Score).
+#
+# Tool: `gremlins.tools` (`github.com/go-gremlins/gremlins`).
+# Begründung: das in Plan-DoD §5-1 ursprünglich vorgeschlagene
+# `go-mutesting` ist seit 2022 unmaintained und scheitert auf Go-1.26-
+# ASTs; gremlins ist die aktiv gepflegte Alternative mit JSON-Output
+# und Coverage-aware Mutator-Selektion. Tool-Substitution ist in
+# `docs/dev/mutation-testing.md` §1 dokumentiert.
+#
+# Initial nicht-blockierend (Plan-DoD §5: "nur Reporting"). PR-
+# Blockierung erst, wenn der Score drei Beobachtungsläufe in Folge
+# > 70 % erreicht (siehe Doku §3 Score-Schwelle).
+#
+# Container-Lauf in `golang:1.26` (konsistent mit `benchmark-smoke`/
+# `fuzz-check`); Tool wird per `go install` zur Laufzeit gezogen,
+# damit kein neuer Eintrag in `go.mod` nötig ist.
+GREMLINS_VERSION ?= v0.5.0
+mutation-report:
+	mkdir -p .tmp/mutation
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26 \
+		bash -c 'set -eu; \
+			go install github.com/go-gremlins/gremlins/cmd/gremlins@$(GREMLINS_VERSION); \
+			gpath=$$(go env GOPATH)/bin/gremlins; \
+			echo "[mutation-report] gremlins $$($$gpath --version 2>/dev/null || echo $(GREMLINS_VERSION))"; \
+			$$gpath unleash \
+				--output=.tmp/mutation/api-mutation-report.json \
+				--tags="" \
+				./hexagon/application | tee .tmp/mutation/api-mutation-report.txt'
+
 # Remove all spike-related images.
 clean:
 	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps $(IMAGE):go-coverage

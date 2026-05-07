@@ -130,7 +130,7 @@ package.json-lesen).
 | 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | 🟡 |
 | 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ✅ |
 | 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ✅ |
-| 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ⬜ |
+| 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ✅ |
 | 5 | Release-Doku, Versions-Bump 0.9.0 → 0.9.5, Plan nach `done/`, Tag `v0.9.5` | ⬜ |
 
 ---
@@ -421,20 +421,59 @@ blockierend; nur Reporting.
 
 DoD:
 
-- [ ] Mutation-Tool entschieden: `go-mutesting` für Go (Modul-
-  Auswahl: `apps/api/hexagon/application/event_meta_validation.go`
-  als Erst-Kandidat); StrykerJS für TypeScript
-  (`packages/player-sdk/src/adapters/webrtc/sampling.ts` als
-  Erst-Kandidat).
-- [ ] `make mutation-report`-Target im Root-`Makefile`; läuft auf
-  einem Modul gleichzeitig (nicht repo-weit).
-- [ ] Nightly-Workflow erweitert: führt das Target aus, lädt den
-  HTML-Report als Artefakt hoch.
-- [ ] Score-Schwelle dokumentiert (z. B. > 70 % Mutation-Score als
+- [x] Mutation-Tool entschieden: **gremlins** (`github.com/go-
+  gremlins/gremlins`) für Go statt go-mutesting (Substitution
+  begründet in [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md) §1:
+  go-mutesting seit 2022 unmaintained, AST-Brüche auf Go 1.21+);
+  Modul: `apps/api/hexagon/application/event_meta_validation.go`
+  (gemutiert als Teil des `hexagon/application`-Packages).
+  **StrykerJS** + `@stryker-mutator/vitest-runner` für TypeScript;
+  Modul: `packages/player-sdk/src/adapters/webrtc/sampling.ts`
+  (Stryker `mutate`-Scope auf das eine File begrenzt). Beide
+  Module sind sicherheits-relevant (Event-Meta-Reserved-
+  Namespace + WebRTC-`getStats()`-Wire-Mapping); Test-Surface
+  jeweils > 1× LoC der Pilot-Datei. Auswahl-Begründung in
+  Doku §2 (Tranche-4-Commit).
+- [x] `make mutation-report`-Target im Root-`Makefile`; läuft auf
+  einem Modul gleichzeitig (nicht repo-weit). Wrapper für
+  `make api-mutation-report` (gremlins via golang:1.26-Container,
+  `go install`-zur-Laufzeit) und `make ts-mutation-report`
+  (StrykerJS via `pnpm dlx`, kein devDep-Pinning im player-sdk).
+  Beide Sub-Targets sind opt-in (NICHT in `make gates`); Stryker-
+  Konfig in `packages/player-sdk/stryker.conf.cjs` mit `mutate`-
+  Scope auf `src/adapters/webrtc/sampling.ts` (Tranche-4-Commit).
+- [x] Nightly-Workflow erweitert: führt das Target aus, lädt den
+  HTML-Report als Artefakt hoch. Neuer Workflow
+  `.github/workflows/mutation.yml` mit Cron `0 6 * * *` UTC
+  (Slot nach fuzz.yml 05:00, kein Konflikt). Zwei Jobs
+  (`mutation-go` + `mutation-ts`), beide `continue-on-error:
+  true` (Plan-DoD §5: nicht-blockierend). Artefakte
+  `mutation-go-<run_id>` (gremlins-JSON + stdout) und
+  `mutation-ts-<run_id>` (Stryker-HTML + JSON) mit 30 Tagen
+  Retention (Tranche-4-Commit).
+- [x] Score-Schwelle dokumentiert (z. B. > 70 % Mutation-Score als
   Wunsch-Ziel; PR-Blockierung erst, wenn das Modul die Schwelle
   drei Beobachtungsläufe in Folge erreicht).
-- [ ] Doku in `docs/dev/mutation-testing.md`: Liste der Module,
+  [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md) §3 dokumentiert die
+  Übergangs-Mechanik: < 60 % → Folge-Backlog-Item; 60-70 % →
+  Beobachtungsphase-Mittelfeld; > 70 % drei Nightly-Runs in
+  Folge → Folge-Commit nimmt `continue-on-error: true` raus und
+  setzt `--threshold-break=70`. > 80 % gilt als „grün" (Stryker
+  `thresholds.high`). Score-Senkungen sind begründungspflichtig
+  (Tranche-4-Commit).
+- [x] Doku in `docs/dev/mutation-testing.md`: Liste der Module,
   aktueller Score, lokale Reproduktion.
+  [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md) listet die zwei
+  Pilot-Module mit Test-Surface, dokumentiert Tool-Substitution
+  (gremlins statt go-mutesting), Score-Schwelle und Übergangs-
+  Pfad zur PR-Blockierung, lokale Reproduktion (`make
+  mutation-report` / `api-mutation-report` /
+  `ts-mutation-report`), Trend-Tracking via `gh run download`,
+  und Quarantäne-Politik (kein expliziter Quarantäne-Pfad —
+  Mutation-Tests sind nicht-blockierend, flaky Läufe rauschen im
+  Trend durch). Aktueller Score wird **nicht** statisch
+  eingetragen — der nächste Nightly liefert den ersten Wert
+  (Tranche-4-Commit).
 
 ---
 
