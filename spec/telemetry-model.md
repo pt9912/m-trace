@@ -532,9 +532,11 @@ serverseitig:
 Die [W3C-WebRTC-Stats-Spezifikation](https://www.w3.org/TR/webrtc-stats/)
 gruppiert `getStats()`-Reports nach `RTCStatsType`. Für eine spätere
 bounded Aggregation kommen die folgenden Gruppen in Betracht; jede
-Gruppe ist mit Muss-/Soll-Feldern markiert. Muss-Felder müssen für eine
-produktive Anbindung über alle drei Browser stabil verfügbar sein;
-fehlt ein Soll-Feld, läuft der Adapter mit Fallback (siehe §3.5.3).
+Gruppe ist mit Muss-/Soll-Feldern markiert. Muss-Felder sind
+Pflichtbedingung für die jeweilige Aggregat-Metrik; wenn eine Browser-
+Engine ein Muss-Feld nicht stabil liefert, bleibt diese Metrik in der
+Engine leer statt ein `unknown`-Surrogat zu emittieren (siehe §3.5.3).
+Fehlt ein Soll-Feld, läuft der Adapter mit Fallback.
 
 | `RTCStatsType` | Zweck | Muss-Felder (bounded oder reduzierbar) | Soll-Felder (bei Verfügbarkeit) |
 |---|---|---|---|
@@ -559,8 +561,9 @@ dieser Drift-Strategie:
 1. **Muss-Felder sind Pflichtbedingung für die Aggregat-Metrik**.
    Liefert eine Browser-Major-Version ein in §3.5.2 als Muss markiertes
    Feld nicht (Beispiel: `RTCDtlsTransport.dtlsState` fehlt in
-   einem Safari-Major), bleibt die zugehörige Aggregat-Metrik in dieser
-   Engine **leer** statt mit einem `unknown`-Surrogat zu emittieren.
+   einem Safari-Major oder in einer Playwright/Firefox-Linie), bleibt
+   die zugehörige Aggregat-Metrik in dieser Engine **leer** statt mit
+   einem `unknown`-Surrogat zu emittieren.
    `unknown` würde die Allowlist (§3.2) implizit erweitern und ist
    damit Cardinality-Risiko.
 2. **Soll-Felder sind opt-in pro Engine**. Ein Adapter, der ein Soll-

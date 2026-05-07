@@ -6,7 +6,7 @@
 > Variante „Eigenes Compose").
 >
 > Bezug: Lastenheft §12.3 MVP-36 (SRS-Beispiel, „Kann"); RAK-57 aus
-> Lastenheft §13.11; [`plan-0.9.0.md`](../../docs/planning/in-progress/plan-0.9.0.md)
+> Lastenheft §13.11; [`plan-0.9.0.md`](../../docs/planning/done/plan-0.9.0.md)
 > §3 (Tranche 2). MVP-36 wird mit diesem Beispiel als eingelöst
 > betrachtet, ohne die MVP-Priorität zu ändern.
 >

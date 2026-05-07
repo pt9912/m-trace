@@ -13,7 +13,7 @@ import { AnalysisError } from "../../types/error.js";
  * MPD-Parser für DASH-Manifests (`plan-0.9.0` §4 Tranche 3, RAK-58 /
  * NF-12). Der Parser extrahiert die Mindest-Felder aus
  * `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie
- * pro `docs/planning/in-progress/plan-0.9.0.md` §0.5:
+ * pro `docs/planning/done/plan-0.9.0.md` §0.5:
  *
  *   - `details.profiles` (aus `MPD@profiles`)
  *   - `details.type` (`MPD@type` ∈ `static` / `dynamic`, Default `static`)

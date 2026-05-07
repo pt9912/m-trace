@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- WebRTC-Drift-Smoke robuster gemacht: WHEP-Signalisierung läuft aus
+  dem Playwright-Node-Kontext statt browserseitig gegen den lokalen
+  MediaMTX-Endpoint; Firefox verhandelt im Smoke audio-only und
+  fehlende `RTCStatsType.transport`-Reports werden als
+  `[drift-soll]` geloggt statt als falscher Drift-Fail gewertet.
+- Veraltete `docs/planning/in-progress/plan-0.9.0.md`-Referenzen nach
+  dem Closeout-Move auf `docs/planning/done/plan-0.9.0.md`
+  korrigiert.
+
 ## [0.9.0] - 2026-05-07
 
 > Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse — Minor-Release mit
@@ -140,9 +151,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (Tranche 0)
 
-- `0.9.0`-Plan unter `docs/planning/in-progress/plan-0.9.0.md` aus
-  `open/` aktiviert (Status `⬜ → 🟡 → ✅`); Tranche 0
-  abgeschlossen mit Plan-Move, Lastenheft-Patch `1.1.11` und
+- `0.9.0`-Plan aus `open/` aktiviert und nach Closeout unter
+  `docs/planning/done/plan-0.9.0.md` archiviert (Status
+  `⬜ → 🟡 → ✅`); Tranche 0 abgeschlossen mit Plan-Move,
+  Lastenheft-Patch `1.1.11` und
   Toolchain-Bump-Check ohne Bump-Bedarf (Go 1.26 / golangci-lint
   v2.12.1-alpine / Node 22-trixie-slim / pnpm 10 sind seit
   `0.7.0`/`0.8.5` aktuell).

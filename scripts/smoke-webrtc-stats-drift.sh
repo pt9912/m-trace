@@ -41,6 +41,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-examples/webrtc/compose.yaml}"
 WHEP_URL="${MTRACE_WEBRTC_DRIFT_WHEP_URL:-http://localhost:8892/webrtc-test/whep}"
 DRIFT_BROWSERS="${MTRACE_WEBRTC_DRIFT_BROWSERS:-chromium,firefox}"
 SMOKE_WEBRTC_AUTOSTART="${SMOKE_WEBRTC_AUTOSTART:-1}"
+PLAYWRIGHT_TEST_RESULTS_DIR="${PLAYWRIGHT_TEST_RESULTS_DIR:-${TMPDIR:-/tmp}/mtrace-webrtc-drift-results-$$}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "[drift-smoke] missing dependency: docker" >&2
@@ -75,6 +76,7 @@ fi
 
 echo "[drift-smoke] target WHEP url: $WHEP_URL"
 echo "[drift-smoke] driver browsers: $DRIFT_BROWSERS"
+echo "[drift-smoke] playwright output: $PLAYWRIGHT_TEST_RESULTS_DIR"
 
 project_args=()
 IFS=',' read -ra browser_list <<<"$DRIFT_BROWSERS"
@@ -95,6 +97,7 @@ fi
 # dass `make browser-e2e` den drift-smoke versehentlich mitläuft).
 MTRACE_WEBRTC_STATS_DRIFT=1 \
 MTRACE_WEBRTC_DRIFT_WHEP_URL="$WHEP_URL" \
+PLAYWRIGHT_TEST_RESULTS_DIR="$PLAYWRIGHT_TEST_RESULTS_DIR" \
   pnpm exec playwright test tests/e2e/webrtc-stats-drift.spec.ts "${project_args[@]}"
 
 echo "[drift-smoke] all checks passed"

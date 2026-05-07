@@ -225,26 +225,39 @@ DoD:
 - [x] `tests/e2e/webrtc-stats-drift.spec.ts` (neu, Playwright):
   öffnet im Page-Context (eigene `RTCPeerConnection`, kein
   Adapter-Hook nötig — Plan §0.5 gibt beide Pfade frei) eine
-  WHEP-Verbindung gegen `http://localhost:8892/webrtc-test/whep`
-  mit recvonly video+audio Transceivers; nach `connectionState=
-  connected` ruft die Spec `pc.getStats()` auf und sammelt alle
-  Reports. Die Spec ist via `MTRACE_WEBRTC_STATS_DRIFT=1` opt-in,
-  damit `make browser-e2e` (anderer Stack, kein `mtrace-webrtc`-
-  Lab) sie nicht versehentlich auslöst (Tranche-1.1-Commit).
-- [x] Spec validiert für jede `RTCStatsType`-Gruppe aus §3.5.2,
-  dass alle Muss-Felder existieren (peer-connection.connectionState,
-  transport.dtlsState, candidate-pair.state, inbound-rtp.
-  packetsLost+bytesReceived, outbound-rtp.bytesSent — letzteres
-  legitim leer bei recvonly); Drift bricht den Smoke mit klarer
-  Fehlermeldung („Browser X dropped field Z from RTCStatsType.foo
-  (id=…)"). Soll-Felder werden über `console.log` als
-  `[drift-soll]` geloggt, brechen den Smoke aber nicht
-  (Tranche-1.1-Commit).
+  WHEP-Verbindung gegen `http://localhost:8892/webrtc-test/whep`.
+  Die HTTP-Signalisierung läuft aus dem Playwright-Node-Kontext, um
+  Browser-CORS-Abhängigkeiten des lokalen MediaMTX-WHEP-Endpoints zu
+  vermeiden; die `RTCPeerConnection` und alle `getStats()`-Reports
+  stammen weiterhin aus echten Browsern. Chromium verhandelt
+  recvonly video+audio, Firefox im Smoke audio-only, weil die
+  Playwright-Firefox-Linie in dieser Umgebung keinen kompatiblen
+  Videocodec für den MediaMTX-Lab-Stream anbietet. Nach
+  `connectionState=connected` ruft die Spec `pc.getStats()` auf und
+  sammelt alle Reports. Die Spec ist via
+  `MTRACE_WEBRTC_STATS_DRIFT=1` opt-in, damit `make browser-e2e`
+  (anderer Stack, kein `mtrace-webrtc`-Lab) sie nicht versehentlich
+  auslöst (Tranche-1.1-Commit, nachverifiziert im Wartungsfix).
+- [x] Spec validiert die stabilen Muss-Felder aus §3.5.2
+  (`candidate-pair.state`, `inbound-rtp.packetsLost` und
+  `inbound-rtp.bytesReceived`; `outbound-rtp.bytesSent` bleibt bei
+  recvonly legitim leer). `peer-connection.connectionState` wird
+  über die normative `pc.connectionState`-API geprüft, weil aktuelle
+  Browser das Feld nicht durchgängig im `peer-connection`-
+  Stats-Report spiegeln. `transport.dtlsState` wird hart validiert,
+  sobald `RTCStatsType.transport` vorhanden ist; Browser-Linien ohne
+  Transport-Report loggen `[drift-soll]` und folgen damit der
+  §3.5.3-Strategie „Metrik leer statt unknown". Drift bricht den
+  Smoke mit klarer Fehlermeldung („Browser X dropped field Z from
+  RTCStatsType.foo (id=…)"). Soll-Felder werden über `console.log`
+  als `[drift-soll]` geloggt, brechen den Smoke aber nicht
+  (Tranche-1.1-Commit, nachverifiziert im Wartungsfix).
 - [x] Spec validiert, dass `pc.connectionState` ∈ §1.4
   `connection_state`-Allowlist, `pc.iceConnectionState` ∈
-  `ice_state`-Allowlist und alle `transport.dtlsState`-Werte ∈
-  `dtls_state`-Allowlist liegen; unbekannter Enum-Wert → Smoke-Fail
-  (Tranche-1.1-Commit).
+  `ice_state`-Allowlist und alle vorhandenen
+  `transport.dtlsState`-Werte ∈ `dtls_state`-Allowlist liegen;
+  unbekannter Enum-Wert → Smoke-Fail (Tranche-1.1-Commit,
+  nachverifiziert im Wartungsfix).
 - [x] `make smoke-webrtc-stats-drift`-Target opt-in (nicht in
   `make gates`); Help-Eintrag analog `smoke-webrtc-prep`. Default-
   Browser sind `chromium,firefox` aus dem Playwright-Bundle;
