@@ -191,9 +191,16 @@ smoke-srs:
 # in apps/api/.../**/*_bench_test.go. Initial-Budgets sind in
 # `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung erst
 # nach Beobachtungsphase (DoD §2-6).
+#
+# Workflow: apps/api/Makefile::benchmark-smoke schreibt den Go-
+# Bench-Output nach .tmp/bench/api-bench.txt (im Container an
+# /src/.tmp gemountet); `scripts/check-bench-budgets.mjs --kind go`
+# parst per stdin und prüft Budgets aus §3.
 api-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
-	$(API_MAKE) benchmark-smoke
+	@mkdir -p .tmp/bench
+	$(API_MAKE) benchmark-smoke | tee .tmp/bench/api-bench.txt
+	node scripts/check-bench-budgets.mjs --kind go < .tmp/bench/api-bench.txt
 
 # `make analyzer-benchmark-smoke` ist das TS-Pendant aus plan-0.9.5
 # §2 Tranche 1 für `@npm9912/stream-analyzer` (extra-gates.md §3.2
@@ -201,9 +208,19 @@ api-benchmark-smoke:
 # API (`vitest bench --run --config vitest.bench.config.ts`); keine
 # zusätzliche Tinybench-Dependency. Initial-Budgets in
 # `docs/perf/budgets.md` §4. Opt-in (NICHT in `make gates`).
+#
+# Workflow: vitest-bench schreibt JSON nach
+# `.tmp/bench/analyzer-bench.json` (eigenes Output-Dir, damit
+# Lab-Compose-Outputs den File-Pfad nicht überrennen);
+# `scripts/check-bench-budgets.mjs --kind ts --input ...` parst das
+# JSON und prüft jeden Bench gegen das Budget aus §4 (Plan-DoD §2-4
+# „Budget-Verletzung erzeugt eindeutige Fehlermeldung mit Ist/
+# Soll").
 analyzer-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
-	$(PNPM) --filter @npm9912/stream-analyzer run bench
+	@mkdir -p .tmp/bench
+	@bash -o pipefail -c '$(PNPM) --filter @npm9912/stream-analyzer run bench 2>&1 | tee .tmp/bench/analyzer-bench.txt'
+	node scripts/check-bench-budgets.mjs --kind ts < .tmp/bench/analyzer-bench.txt
 
 # `make benchmark-smoke` bündelt beide Bench-Smokes in einem
 # Aufruf. Plan-DoD §2-3: Wrapper-Target. Bleibt opt-in, bis die

@@ -226,22 +226,37 @@ DoD:
   Durchsatz lesbar: Go-Benchmarks drucken `ns/op`, `B/op`,
   `allocs/op`; Vitest-Bench druckt `hz`, `mean`, `p75`, `p99`,
   `rme`. Budget-Verletzung mit eindeutiger Ist/Soll-Fehlermeldung
-  ist Tranche-1c-Item (Budget-Validator-Skript parst den Output
-  und vergleicht mit `docs/perf/budgets.md`).
+  über `scripts/check-bench-budgets.mjs` (Tranche-1c-Commit) — der
+  Validator parst die Text-Tabellen beider Bench-Backends (`--kind
+  ts` für Vitest-Bench-stdout, `--kind go` für Go-Bench-stdout) und
+  vergleicht `mean` und `p99` (TS) bzw. `ns/op→ms` (Go) gegen die
+  Budget-Tabelle (Single-Source: `docs/perf/budgets.md` §3 / §4,
+  parallel als JS-Object im Validator-Skript). Output-Form:
+  `[bench-budget] FAIL <name>: ist=<X> ms soll=<Y> ms (over by
+  <Z>%)`. Vitest-JSON-Reporter mit `--outputFile` ist nicht nutzbar
+  — vitest 4.1 wirft dort einen internen Server-Setup-Fehler;
+  Text-Parsing ist resilient und versionsstabil.
 - [x] Fixtures sind stabil und versioniert (keine Netzwerk-
   Abhängigkeit). Go-Benchmarks nutzen In-Memory-Stubs aus
   `_test.go`-Files plus `b.TempDir()` für SQLite. TS-Benchmarks
   nutzen `master.m3u8` aus dem Fixtures-Pfad und generieren große
   Master/Media-Manifeste plus DASH-MPDs synthetisch im Bench-File
   (Tranche-1b-Commit).
-- [ ] Beobachtungsphase: erste 3-5 grüne CI-Läufe sind nicht-
+- [/] Beobachtungsphase: erste 3-5 grüne CI-Läufe sind nicht-
   blockierend; danach wird `make benchmark-smoke` PR-blockierend
   (in `make gates` aufgenommen). **Stand 2026-05-07
-  (Tranche-1b-Commit)**: Smoke ist als opt-in Make-Target
-  verfügbar, nicht in `make gates`. Tranche-1c-Closeout (nach N=3-5
-  CI-Beobachtungsläufen) liefert Budget-Validator-Skript +
-  CI-Workflow `benchmark-observation.yml` (`continue-on-error: true`)
-  + finalen Switch auf PR-Blockierung.
+  (Tranche-1c-Commit)**: Beobachtungsphase **läuft**.
+  CI-Workflow `.github/workflows/benchmark-observation.yml` ist
+  aktiv (Cron `30 2 * * *` UTC plus `workflow_dispatch`); beide
+  Bench-Steps und der Job selbst tragen `continue-on-error: true`,
+  damit Drift-Failures während der Beobachtung den Workflow nicht
+  rot markieren. Bench-Output wird als Artefakt
+  `bench-observation-<run_id>` mit 14 Tagen Retention hochgeladen
+  — Vorbereitung für Tranche 2 (Nightly-`benchstat`-Regressionen).
+  Folge-Commit (nach N=3-5 grünen Läufen) entfernt die drei
+  `continue-on-error: true`-Marker und nimmt `make benchmark-smoke`
+  in `make gates` auf; Tranchen-Tabelle Tranche 1 wechselt dann
+  von 🟡 auf ✅.
 - [x] Jeder Lauf druckt Runner-OS, CPU-Modell und Runtime-Versionen
   (Go, Node, pnpm), damit Budget-Failures einordenbar bleiben:
   `scripts/print-bench-runner-info.sh` läuft als erstes Step in
