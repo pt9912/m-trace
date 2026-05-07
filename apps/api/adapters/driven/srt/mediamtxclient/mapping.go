@@ -63,9 +63,16 @@ type srtConnItem struct {
 // `partial`.
 func mapItem(it srtConnItem, collectedAt time.Time, requiredBandwidth *int64) domain.SrtConnectionSample {
 	state := mapState(it.State)
-	available := int64(it.MbpsLinkCapacity * 1_000_000)
-	if it.MbpsLinkCapacity <= 0 {
-		// Markiere die Quelle als partial — Evaluate hat das Mapping.
+	// `mbpsLinkCapacity` <= 0 markiert die Quelle als partial; das
+	// abgeleitete `AvailableBandwidthBPS`-Domain-Feld bleibt dann
+	// 0, statt einen negativen oder Float-Truncation-Sentinel ins
+	// Domain leaken zu lassen (Fuzz-Befund plan-0.9.5 §4 Tranche 3:
+	// `mbpsLinkCapacity=-1` produzierte zuvor
+	// `AvailableBandwidthBPS=-1_000_000`).
+	var available int64
+	if it.MbpsLinkCapacity > 0 {
+		available = int64(it.MbpsLinkCapacity * 1_000_000)
+	} else {
 		state = domain.ConnectionStateUnknown
 	}
 
