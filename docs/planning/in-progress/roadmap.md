@@ -58,14 +58,14 @@ Folge-Plan aktiviert, sobald sie erreicht sind):
   [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md)
   §3); Folge-Commit setzt `--threshold-break=70` für das Modul.
 - **Erweiterung der Wave-2-Module** —
-  [`extra-gates.md`](../open/extra-gates.md) §3.5 listet weitere
+  [`extra-gates.md`](../in-progress/extra-gates.md) §3.5 listet weitere
   Fuzz-Kandidaten (HLS-Parser, SRT-Health-Mapping); §3.6 listet
   weitere Mutation-Kandidaten (Cursor-Logik, HLS/DASH-Parser,
   SSRF-Prüfung). Aufnahme in einem Folge-Plan nach Auswertung
   der ersten Beobachtungsläufe.
 
 Master-Backlog für Quality-Gates ist
-[`extra-gates.md`](../open/extra-gates.md); die zwei Wellen-Pläne
+[`extra-gates.md`](../in-progress/extra-gates.md); die zwei Wellen-Pläne
 zitieren ihn aber führen keine neuen Backlog-Items.
 Lieferübersicht der `0.5.0`-Tranchen (zur Historie, finaler Stand
 siehe [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
@@ -97,7 +97,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 1   | ✅      | `spike/go-api` → `apps/api` auf `main` integrieren                                                                    | Sofort                                                          | MVP-2; OE-9; SP-41                                            |
 | 2   | ✅      | Lastenheft auf `1.0.0` heben                                                                                          | Nach Schritt 1                                                  | OE-2; OE-9; SP-41                                             |
 | 3   | ✅      | README Tech-Overview anpassen                                                                                         | Nach Schritt 2                                                  | MVP-17; SP-41                                                 |
-| 4   | ✅      | Phase-2-Risiken in `docs/planning/open/risks-backlog.md`                                                              | Nach Schritt 3                                                  | SP-41                                                         |
+| 4   | ✅      | Phase-2-Risiken in `docs/planning/in-progress/risks-backlog.md`                                                              | Nach Schritt 3                                                  | SP-41                                                         |
 | 5   | ✅      | `spec/architecture.md` schreiben                                                                                      | Vor `0.1.0`-DoD                                                 | AK-3, AK-10                                                   |
 | 6   | ✅      | `spec/telemetry-model.md` schreiben (Datenmodell, Wire-Format, Cardinality — kein Observability-Setup)                | Vor `0.1.0`-DoD                                                 | F-91, F-92, F-95..F-105, F-106..F-115, F-118..F-130, AK-9     |
 | 7   | ✅      | `docs/user/local-development.md` schreiben                                                                            | Vor `0.1.0`-DoD                                                 | AK-1, AK-2                                                    |
@@ -175,7 +175,7 @@ Release-Vorgehen in [`docs/user/releasing.md`](../../user/releasing.md).
 ## 4. Folge-ADRs
 
 Aus `docs/adr/0001-backend-stack.md` §8 erwartete Folge-ADRs.
-Die zugehörigen Risiken stehen in `docs/planning/open/risks-backlog.md`;
+Die zugehörigen Risiken stehen in `docs/planning/in-progress/risks-backlog.md`;
 erledigte oder obsolete Einträge sind nach §7-Wartungsregel entfernt
 (beschlossene ADRs siehe [`docs/adr/`](../../adr/)).
 

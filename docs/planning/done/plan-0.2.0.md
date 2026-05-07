@@ -1,7 +1,7 @@
 # Implementation Plan — `0.2.0` (Publizierbares Player SDK)
 
 > **Status**: ✅ implementiert und release-bereit. Beginnt nach Abschluss von `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.7`](../../../spec/lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](../in-progress/roadmap.md) §2/§3; [Architektur (Zielbild)](../../../spec/architecture.md); [Telemetry-Modell](../../../spec/telemetry-model.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../open/risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.7`](../../../spec/lastenheft.md) §13.4 (RAK-11..RAK-21), §18 (MVP-DoD-Anteil); [Roadmap](../in-progress/roadmap.md) §2/§3; [Architektur (Zielbild)](../../../spec/architecture.md); [Telemetry-Modell](../../../spec/telemetry-model.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../in-progress/risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.2.0`-Start)**:
 >
 > - [`plan-0.1.2.md`](./plan-0.1.2.md) muss vollständig (`[x]`) sein, inklusive Release-Akzeptanzkriterien `0.1.2` (§4).

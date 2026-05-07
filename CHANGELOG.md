@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) §3.1) ohne
 > User-Surface-Änderung. Liefert die vier statistisch- bzw.
 > langlaufenden Quality-Gates aus
-> [`docs/planning/open/extra-gates.md`](docs/planning/open/extra-gates.md):
+> [`docs/planning/in-progress/extra-gates.md`](docs/planning/in-progress/extra-gates.md):
 > Benchmark-Smoke (PR-Pfad) + Nightly-`benchstat`-Regressionen
 > (§3.2/§3.3), selektives Fuzzing + TS-Property-Tests (§3.5) und
 > Mutation-Testing als Nightly-Report (§3.6). Kein Lastenheft-Patch
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   begründet in `plan-0.9.5.md` §1a Tranche 0.
 - Quarantäne-Policy: maximal 30 Tage Skip mit Begründungs-
   Kommentar plus Backlog-Item in
-  [`docs/planning/open/risks-backlog.md`](docs/planning/open/risks-backlog.md);
+  [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md);
   Verlängerung ist Plan-DoD-Item-Änderung im jeweiligen Folge-Plan.
 
 ### Added (Tranche 1 — Benchmark-Smoke API + Stream-Analyzer)
@@ -285,7 +285,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   installiert Playwright-Browser, ruft den Smoke; bei Failure wird
   optional ein Issue mit Workflow-Run-URL und Reaktions-Pfad
   erstellt (opt-in über `secrets.DRIFT_AUTO_ISSUE=1`).
-- `docs/planning/open/risks-backlog.md` R-12 von
+- `docs/planning/in-progress/risks-backlog.md` R-12 von
   „release-blockierend ab nächstem Browser-Major-Bump" auf
   „automatisiert detektiert, Drift bricht den Drift-Smoke"
   angehoben; Manuell-Review-Pflicht entfällt.
@@ -610,7 +610,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Identifier in der Forbidden-Liste plus Self-Tests; neue Allowlist-
   Sektion validiert State-Counter (nur State-Label) und Byte-/Loss-
   Counter (label-frei) gegen `mtrace_webrtc_*`-Series.
-- `docs/planning/open/risks-backlog.md` R-12 von „Triggerschwelle
+- `docs/planning/in-progress/risks-backlog.md` R-12 von „Triggerschwelle
   nicht ausgelöst" auf „release-blockierend ab nächstem Browser-
   Major-Bump" angehoben — produktive WebRTC-Telemetrie ist live;
   Drift-Review-Pflicht vor jedem Release-Tag.
@@ -655,7 +655,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   …, Codec-/User-Agent-Strings) und §3.2 um drei W3C-Enum-Labels
   (`connection_state`, `ice_state`, `dtls_state`) ergänzt — Spec-
   Vorbereitung, Smoke-Spiegelung ist Folge-DoD.
-- `docs/planning/open/risks-backlog.md` R-12 (Spec-/Adapter-Review-Gate
+- `docs/planning/in-progress/risks-backlog.md` R-12 (Spec-/Adapter-Review-Gate
   für WebRTC-`getStats()`-Schema-Drift; nicht R-11, der ist seit
   `0.6.0`-Closeout für SRT-Health-Cursor-Pagination vergeben). Trigger-
   schwelle: Browser-Major-Bump mit Schema-Änderung ODER Beginn
@@ -929,7 +929,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Degradationen ab. Endpoint-spezifische Auth: `POST /api/playback-
   events` und Session-/Event-Reads sind tokenpflichtig; ungebundene
   `POST /api/analyze`-Requests bleiben tokenfrei und liefern
-  `session_link.status="detached"` ([R-6](docs/planning/open/risks-backlog.md)
+  `session_link.status="detached"` ([R-6](docs/planning/in-progress/risks-backlog.md)
   technisch geschlossen).
 - **Dashboard-Session-Timeline (Tranche 4):** Timeline-Ansicht
   `/sessions/<id>` mit Server-Sent Events ([ADR-0003](docs/adr/0003-live-updates.md))

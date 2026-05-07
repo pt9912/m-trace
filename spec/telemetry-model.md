@@ -572,7 +572,7 @@ dieser Drift-Strategie:
    ohne einzelnes Soll-Feld blockiert keinen Telemetriepfad.
 3. **Schema-Drift ist ab `0.8.0` release-blockierend**. Der
    Risiko-Eintrag steht im
-   [`risks-backlog.md`](../docs/planning/open/risks-backlog.md) als
+   [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md) als
    **R-12** (Stand `0.8.0` Tranche 3): bei Browser-Major-Version mit
    `getStats()`-Schema-Änderung muss die `webrtc.*`-Allowlist
    gegen die neuen Browser-Felder reviewed und ggf. die
@@ -665,7 +665,7 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 - Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden (F-129) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
 - Bevorzugt: Latenz = `server_received_at - client_time_origin` (skew-tolerant), nicht `server_received_at - client_timestamp`.
-- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (in `0.4.0` Konstante 60 s, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5). Persistenz des Skew-Flags auf Event-Ebene (Domain-Flag, dedizierte Schema-Spalte, Dashboard-Anzeige) ist in `0.4.0` explizit deferred — siehe `docs/planning/open/risks-backlog.md` R-5 für das Folge-Item.
+- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (in `0.4.0` Konstante 60 s, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5). Persistenz des Skew-Flags auf Event-Ebene (Domain-Flag, dedizierte Schema-Spalte, Dashboard-Anzeige) ist in `0.4.0` explizit deferred — siehe `docs/planning/in-progress/risks-backlog.md` R-5 für das Folge-Item.
 
 ---
 

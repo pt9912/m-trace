@@ -7,7 +7,7 @@
 | Dokument | Architektur `m-trace`                                                                                                                                                                                                                                                                  |
 | Stand    | `2026-04-29`                                                                                                                                                                                                                                                                           |
 | Status   | Verbindlich (Zielbild `0.1.0`)                                                                                                                                                                                                                                                         |
-| Bezug    | [Lastenheft `1.1.6`](./lastenheft.md), [ADR-0001](../docs/adr/0001-backend-stack.md), [Plan-Spike](../docs/planning/done/plan-spike.md), [Plan-`0.1.0`](../docs/planning/done/plan-0.1.0.md) / [`0.1.1`](../docs/planning/done/plan-0.1.1.md) / [`0.1.2`](../docs/planning/done/plan-0.1.2.md) (Lieferstand), [Roadmap](../docs/planning/in-progress/roadmap.md), [Risiken-Backlog](../docs/planning/open/risks-backlog.md) |
+| Bezug    | [Lastenheft `1.1.6`](./lastenheft.md), [ADR-0001](../docs/adr/0001-backend-stack.md), [Plan-Spike](../docs/planning/done/plan-spike.md), [Plan-`0.1.0`](../docs/planning/done/plan-0.1.0.md) / [`0.1.1`](../docs/planning/done/plan-0.1.1.md) / [`0.1.2`](../docs/planning/done/plan-0.1.2.md) (Lieferstand), [Roadmap](../docs/planning/in-progress/roadmap.md), [Risiken-Backlog](../docs/planning/in-progress/risks-backlog.md) |
 
 ### 0.1 Zweck
 
@@ -28,7 +28,7 @@ Differenzen Code↔Soll werden **nicht** durch weichere Architektur-Formulierung
 - Anforderungen formulieren — das ist Aufgabe von [`lastenheft.md`](./lastenheft.md).
 - Release-Plan oder Status verfolgen — siehe [`roadmap.md`](../docs/planning/in-progress/roadmap.md).
 - Stack-Entscheidungen begründen — siehe ADRs unter `docs/adr/`.
-- Risiken sammeln — siehe [`risks-backlog.md`](../docs/planning/open/risks-backlog.md).
+- Risiken sammeln — siehe [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md).
 
 ### 0.3 Architekturstil
 
@@ -560,7 +560,7 @@ Folge-ADRs aus [Roadmap §4](../docs/planning/in-progress/roadmap.md):
 | Coverage-Tooling für Go                          | `0.1.0`+        |              |
 | `apps/api` Multi-Modul-Aufteilung (`go.work`)    | on demand       | R-1          |
 
-Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](../docs/planning/open/risks-backlog.md).
+Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md).
 
 ---
 
@@ -636,7 +636,7 @@ flowchart TB
 Verweise auf die normativen Listen statt Duplikat:
 
 - Offene Lastenheft-Entscheidungen: [Roadmap §5](../docs/planning/in-progress/roadmap.md).
-- Bekannte Phase-2-Risiken: [`risks-backlog.md`](../docs/planning/open/risks-backlog.md) (R-1..R-3).
+- Bekannte Phase-2-Risiken: [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md) (R-1..R-3).
 - Erwartete Folge-ADRs: [Roadmap §4](../docs/planning/in-progress/roadmap.md).
 
 Architekturfragen, die hier *neu* aufgerufen werden, kommen über einen Folge-ADR oder einen `risks-backlog.md`-Eintrag in den Bestand.

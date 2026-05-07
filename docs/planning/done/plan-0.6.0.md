@@ -19,7 +19,7 @@
 > [Architektur](../../../spec/architecture.md);
 > [Telemetry-Model](../../../spec/telemetry-model.md);
 > [API-Kontrakt](../../../spec/backend-api-contract.md);
-> [Risiken-Backlog](../open/risks-backlog.md) R-2.
+> [Risiken-Backlog](../in-progress/risks-backlog.md) R-2.
 >
 > **Vorgänger-Gate (Soll zum `0.6.0`-Start)**:
 >
@@ -145,7 +145,7 @@ DoD:
   verweisen auf diesen Plan (Tranche 0 dieses Plans).
 - [x] R-2 ist für den Startzustand präzisiert: bekannte Metrikquellen,
   Runtime-Auswirkungen und offene ADR-Frage sind im Risiken-Backlog
-  aktuell ([`risks-backlog.md`](../open/risks-backlog.md) R-2
+  aktuell ([`risks-backlog.md`](../in-progress/risks-backlog.md) R-2
   verweist auf §2-Optionentabelle).
 - [x] Scope-Grenze ist in README/User-Doku sichtbar: `0.6.0` liefert
   SRT-Health, nicht Stream-Key-Verwaltung, SRT-Auth, Multi-Publisher-
@@ -1022,7 +1022,7 @@ nicht ad hoc in Commit-Bodies oder Release-Notes verschwinden.
 | Observability/Cardinality | `scripts/smoke-observability.sh` mit erweiterter SRT-Allowlist + Source-Targets-Check | siehe Notiz | [x] | RAK-46; Allowlist konditional (siehe Sub-3.7), Source-Targets-Check unconditional. Lab-Lauf folgt beim Operator-Closeout aus `releasing.md` §2.1 — Skript-Verifikation (Bash + Node) ist via `bash -n` und Sub-3.7-Tests grün |
 | Dashboard-SRT-Health | 18 Component-Tests in `apps/dashboard/tests/srt-health-pages.test.ts` plus 5 manuelle Schritte in `releasing.md` §2.1 | 2026-05-05 | [x] | RAK-44; Browser-E2E (Playwright) post-release nachgezogen — `tests/e2e/srt-health.spec.ts` mit 5 Specs, Commit `bd396c4` (§8.3 Befund #3) |
 | Docs-Gate | `make docs-check` (Teil von `make gates`) | 2026-05-05 | [x] | RAK-45; alle neuen Cross-Refs in `srt-health.md`/`local-development.md`/`releasing.md`/`examples/srt/README.md` prüfen sauber |
-| Aktive-Risiken-Review | §1.1 in `docs/planning/open/risks-backlog.md` durchgegangen | 2026-05-05 | [x] | R-2 nach §1.2 (CGO-frei aufgelöst); R-5/-7/-9/-10 Stand `0.6.0`-Closeout-Notizen ergänzt; neues R-11 (SRT-Health-Cursor-Pagination) als Folge-Item angelegt |
+| Aktive-Risiken-Review | §1.1 in `docs/planning/in-progress/risks-backlog.md` durchgegangen | 2026-05-05 | [x] | R-2 nach §1.2 (CGO-frei aufgelöst); R-5/-7/-9/-10 Stand `0.6.0`-Closeout-Notizen ergänzt; neues R-11 (SRT-Health-Cursor-Pagination) als Folge-Item angelegt |
 
 ### 8.3 Post-Release-Code-Review-Befunde
 

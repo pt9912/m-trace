@@ -310,7 +310,7 @@ Das Projekt steht bei `0.9.5` released — Quality-Gates Wave 2
 Patch-Release nach `0.9.0`/`0.9.1` (Patch-Release-Konvention
 `0.X.Y`, siehe [`docs/user/releasing.md`](docs/user/releasing.md)
 §3.1). Inhalt: vier statistisch- bzw. langlaufende Quality-Gates
-aus [`docs/planning/open/extra-gates.md`](docs/planning/open/extra-gates.md)
+aus [`docs/planning/in-progress/extra-gates.md`](docs/planning/in-progress/extra-gates.md)
 in einem Patch-Release ausgeliefert, Plan-File in
 [`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md). Kein
 Lastenheft-Patch (Quality-Gates, keine User-Surface).

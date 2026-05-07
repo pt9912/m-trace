@@ -16,7 +16,7 @@
 > **Lastenheft-Status**: kein Lastenheft-Patch nötig (Quality-Gates,
 > keine User-Surface).
 >
-> **Bezug**: [`extra-gates.md`](../open/extra-gates.md) §3.2 (Benchmark-
+> **Bezug**: [`extra-gates.md`](../in-progress/extra-gates.md) §3.2 (Benchmark-
 > Smoke), §3.3 (Nightly-`benchstat`-Regressionen), §3.5 (Selektives
 > Fuzzing / Property Tests), §3.6 (Mutation Testing) — die vier
 > statistisch-langlaufenden Wave-2-Gates aus dem Master-Backlog;
@@ -155,7 +155,7 @@ DoD:
      standardmäßig nach 90 Tagen; Release-Assets sind an Tags
      gebunden und nicht rolling-fortschreibbar ohne Tag-Move).
   3. Identisch zur Default-Empfehlung in §0.4 dieses Plans und in
-     [`extra-gates.md`](../open/extra-gates.md) §3.3.
+     [`extra-gates.md`](../in-progress/extra-gates.md) §3.3.
   Mechanik (für Tranche 2 Implementation): Nightly-Workflow
   pusht den `benchstat`-tauglichen Output nach `benchmark-baseline`
   als orphan-branch-File `benchmarks/<module>.txt`; PR-Reviews
@@ -173,7 +173,7 @@ DoD:
 - [x] **Quarantäne-Policy für laute Benchmarks**: ein Benchmark
   darf maximal **30 Tage** in Quarantäne (markiert `t.Skip` mit
   Begründung-Kommentar plus Backlog-Item in
-  `docs/planning/open/risks-backlog.md`). Danach: entweder
+  `docs/planning/in-progress/risks-backlog.md`). Danach: entweder
   Drift-Fix landed, oder der Benchmark wird aus dem Smoke
   entfernt. Quarantäne-Beginn und Trigger werden im jeweiligen
   Backlog-Item dokumentiert; reine „flaky"-Vermutungen ohne

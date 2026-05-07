@@ -30,7 +30,7 @@
 > Vorgänger-Patch);
 > [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
 > §3.5.3 (WebRTC-Schema-Drift-Strategie);
-> [`docs/planning/open/risks-backlog.md`](../open/risks-backlog.md) R-12;
+> [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md) R-12;
 > [`packages/stream-analyzer/`](../../../packages/stream-analyzer/)
 > (HLS-Stand `0.3.0`, RAK-22..RAK-28).
 >
@@ -121,7 +121,7 @@ Begründung des Bündels:
   [`plan-0.8.5.md`](./plan-0.8.5.md) (Wave 1, vor `0.9.0`) und
   [`plan-0.9.5.md`](../done/plan-0.9.5.md) (Wave 2, seit 2026-05-07 in Arbeit)
   konkretisiert; Master-Backlog steht in
-  [`extra-gates.md`](../open/extra-gates.md).
+  [`extra-gates.md`](../in-progress/extra-gates.md).
 
 ### 0.4 Sequenzierung und harte Gates
 

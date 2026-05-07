@@ -22,7 +22,7 @@
 > Surface), wird ein eigenständiger Lastenheft-Patch in einem
 > Folge-Plan aufgenommen.
 >
-> **Bezug**: [`extra-gates.md`](../open/extra-gates.md) §3.1
+> **Bezug**: [`extra-gates.md`](../in-progress/extra-gates.md) §3.1
 > (`govulncheck` + Container-Scan) und §3.4 (Generated-Artifact-
 > Drift-Gate) — Master-Backlog für die sechs vorgeschlagenen
 > Quality-Gates; `0.8.5` liefert die deterministisch-schnellen

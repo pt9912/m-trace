@@ -330,7 +330,7 @@ DoD:
 ## 4. Tranche 3 — Produktive WebRTC-Telemetrie
 
 Bezug: `spec/telemetry-model.md` §3.2/§3.5;
-`docs/planning/open/risks-backlog.md` R-12;
+`docs/planning/in-progress/risks-backlog.md` R-12;
 `scripts/smoke-observability.sh`.
 
 Ziel: WebRTC-Telemetrie ist auf der bounded Allowlist aktiv;

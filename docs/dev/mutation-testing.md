@@ -1,7 +1,7 @@
 # Mutation Testing
 
 > **Status**: Aktiv seit `plan-0.9.5` Tranche 4 (RAK-Wave-2 /
-> [`extra-gates.md`](../planning/open/extra-gates.md) §3.6).
+> [`extra-gates.md`](../planning/in-progress/extra-gates.md) §3.6).
 > **Initial nicht-blockierend**: nur Nightly-Reporting; PR-
 > Blockierung erst nach Beobachtungsphase (siehe §3 Score-Schwelle).
 > Workflow:
@@ -139,5 +139,5 @@ xdg-open packages/player-sdk/reports/mutation/mutation.html
   Quarantäne gelegt — Mutation-Tests sind nicht-blockierend, der
   flaky Lauf rauscht im Trend einfach durch. Sollte gremlins/
   Stryker selbst persistente Crashes zeigen, wandert das in
-  `docs/planning/open/risks-backlog.md` als R-N-Eintrag plus
+  `docs/planning/in-progress/risks-backlog.md` als R-N-Eintrag plus
   Tool-Update-Trigger.

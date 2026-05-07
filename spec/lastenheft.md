@@ -1733,7 +1733,7 @@ Akzeptanzkriterien:
 | RAK-51 | Muss | `@npm9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
 | RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
 | RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` §3.2 (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus `spec/telemetry-model.md` §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 (`docs/planning/open/risks-backlog.md`) wird ab diesem Punkt release-blockierend. |
+| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus `spec/telemetry-model.md` §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 (`docs/planning/in-progress/risks-backlog.md`) wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
 
 ### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse

@@ -12,7 +12,7 @@
 
 Single-Source-of-Truth für die `make api-benchmark-smoke` /
 `make analyzer-benchmark-smoke` / `make benchmark-smoke`-Targets aus
-[`extra-gates.md`](../planning/open/extra-gates.md) §3.2. Jeder
+[`extra-gates.md`](../planning/in-progress/extra-gates.md) §3.2. Jeder
 Smoke schlägt als PR-Block fehl, wenn ein Hot-Path die hier
 gelistete Schwelle überschreitet. Die Schwellen sind **absolute
 Obergrenzen**, kein Vergleich gegen den letzten Commit (das ist

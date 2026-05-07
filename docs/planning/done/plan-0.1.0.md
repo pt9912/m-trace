@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: ✅ abgeschlossen. `0.1.0` ist ausgeliefert; dieses Dokument bleibt als historischer Lieferstand erhalten.  
-> **Bezug**: [Lastenheft `1.1.6`](../../../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](../in-progress/roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../../../spec/architecture.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../open/risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](../in-progress/roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../../../spec/architecture.md); [API-Kontrakt](../../../spec/backend-api-contract.md); [Risiken-Backlog](../in-progress/risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -77,7 +77,7 @@ DoD:
 
 DoD:
 
-- [x] Issue-Backlog-Form entschieden: Markdown-Datei `docs/planning/open/risks-backlog.md` analog cmake-xray/d-migrate-Pattern (`953c678`).
+- [x] Issue-Backlog-Form entschieden: Markdown-Datei `docs/planning/in-progress/risks-backlog.md` analog cmake-xray/d-migrate-Pattern (`953c678`).
 - [x] R-1 Hexagon-Boundaries (Disziplin-basiert, kein Compile-Time-Enforcement) eingetragen mit Verweis auf Folge-ADR „`apps/api` Multi-Modul-Aufteilung" (`953c678`).
 - [x] R-2 CGO/SRT bricht distroless-static eingetragen mit Verweis auf Folge-ADR „SRT-Binding-Stack" (`953c678`).
 - [x] R-3 Go-WebSocket-Ökosystem fragmentiert eingetragen mit Verweis auf Folge-ADR „WebSocket vs. SSE" (`953c678`).
@@ -105,7 +105,7 @@ DoD:
 - [x] Restrukturierung zu reinem Zielbild (Soll/Ist-Trennung): „geplant"-Markierungen entfernt, OTel-Wording auf Soll, §4.1+§4.2 vereint, §5.2 Pull-Richtung, §5.1 Auth-Counter-Scope, Domain-Errors-Wording (`6ab96f1`).
 - [x] Roadmap §2 Schritt 5 auf ✅ (`932f0bd`, `08811cb`). (§1.2 enthält nur die Pre-MVP-Schritte 1–4.)
 
-### 3.2 `docs/planning/open/risks-backlog.md`
+### 3.2 `docs/planning/in-progress/risks-backlog.md`
 
 DoD:
 
@@ -497,6 +497,6 @@ DoD:
 ## 6. Wartung
 
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`, Commit-Hash anhängen (Format ```Item-Beschreibung (`<hash>`)```), gegebenenfalls Sub-Items detaillieren.
-- Neue Findings landen entweder als neues `[ ]`-Item in der passenden Tranche oder, wenn architekturrelevant und langfristig, in [`risks-backlog.md`](../open/risks-backlog.md) als `R-X`.
+- Neue Findings landen entweder als neues `[ ]`-Item in der passenden Tranche oder, wenn architekturrelevant und langfristig, in [`risks-backlog.md`](../in-progress/risks-backlog.md) als `R-X`.
 - Beim Schritt-Abschluss: `roadmap.md` §1.2/§2 auf ✅ flippen.
 - Nach `0.1.0`-Release: dieses Dokument als historisch archivieren; Folge-Pläne sind [`plan-0.1.1.md`](./plan-0.1.1.md) und [`plan-0.1.2.md`](./plan-0.1.2.md), danach `plan-0.2.0.md`.

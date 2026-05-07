@@ -374,7 +374,7 @@ DoD:
   Drift ist Spec-/Adapter-Review-Gate, kein automatischer Release-
   Block; vor produktivem Pfad ist `smoke-webrtc-prep` vom Drift nicht
   betroffen.
-- [x] `docs/planning/open/risks-backlog.md` §1.1 um **R-12** erweitert
+- [x] `docs/planning/in-progress/risks-backlog.md` §1.1 um **R-12** erweitert
   (nicht R-11 — der ist seit `0.6.0`-Closeout für SRT-Health-Cursor-
   Pagination vergeben, Plan-Stand „R-11 frei" war zur Plan-Erstellung
   korrekt, ist durch atomare Vergabe inzwischen überholt). R-12 ist
