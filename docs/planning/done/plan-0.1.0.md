@@ -24,7 +24,7 @@ Architektur-Soll steht in [`architecture.md`](../../../spec/architecture.md) und
 | 0 | Pre-MVP-Vorbereitung — Spike-Sieger auf `main`, Lastenheft `1.0.0`, README/Roadmap, Risiken-Backlog | ✅ |
 | 0a | Architektur- und Plan-Doku — `architecture.md`, `releasing.md`, `plan-0.1.0.md`, `telemetry-model.md`, `local-development.md` | ✅ |
 | 0b | Spike-Code-Korrekturen aus Code-Reviews — Auth-vor-Body, InvalidEvents-Scope, OTel-Counter, Step-Numbering | ✅ |
-| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8`, `1.1.9`, `1.1.10` | ✅ bis `1.1.10`; fortlaufend |
+| 0c | Lastenheft-Patches (fortlaufend) — `1.0.1`, `1.0.2`, `1.1.0` (Restrukturierung), `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.1.5`, `1.1.6`, `1.1.7`, `1.1.8`, `1.1.9`, `1.1.10`, `1.1.11` | ✅ bis `1.1.11`; fortlaufend |
 | 1 | MVP `0.1.0` — Backend-Erweiterung (Sessions-Endpoints, MVP-16 Persistenz, Lifecycle, F-22-Hook) + Compose-Lab Core | ✅ |
 
 Player-SDK + Dashboard sind in [`plan-0.1.1.md`](./plan-0.1.1.md), Observability-Stack in [`plan-0.1.2.md`](./plan-0.1.2.md) ausgegliedert (Lastenheft `1.1.0` Restrukturierung).
@@ -393,6 +393,18 @@ DoD:
 - [x] Lastenheft §13.9 RAK-51-Zeile bekommt einen Hinweis auf die Hochstufung in §13.10; der historische `0.7.0`-Wortlaut bleibt erhalten.
 - [x] [`docs/planning/done/plan-0.8.0.md`](./plan-0.8.0.md) §0.2 von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.10`" hochgezogen; §0.1 Vorgänger-Gate entsprechend nachgezogen (im `0.8.0`-Closeout nach `done/` verschoben).
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 Schritt 40 abgehakt (✅); §1.2 verweist auf den ausgelieferten Patch.
+
+### 4a.14 Patch `1.1.11` — `0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse (RAK-56..RAK-59 + MVP-37 Hochstufung)
+
+Mit dem `0.8.0`-Release ist die produktive WebRTC-Telemetrie ausgeliefert (RAK-51..RAK-55; `webrtc.*`-Wire-Allowlist, sechs `mtrace_webrtc_*`-Counter mit Delta-Semantik, `getStats()`-Sampling im SDK, R-12 release-blockierend ab nächstem Browser-Major-Bump). Mit `0.8.5` ist die Quality-Gates Wave 1 (Security-Gates + Generated-Artifact-Drift-Gate) als erstmaliger Patch-Release ausgeliefert; die Patch-Release-Konvention `0.X.Y` ist seitdem in `docs/user/releasing.md` §3.1 verankert. Der Drift-Smoke aus R-12 sowie zwei seit dem MVP-Backlog offene Liefergegenstände — SRS-Lab (MVP-36, `examples/srs/` analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`) und DASH-Manifest-Analyse (MVP-37 / NF-12) — sind einzeln zu klein für eine eigene Phase, aber zusammen tragen sie einen Minor-Release. Der Patch bündelt sie in einem neuen §13.11-Block mit RAK-56 (Drift-Smoke, Soll), RAK-57 (SRS-Lab, Kann), RAK-58 (DASH-Analyse, Muss) und RAK-59 (DASH-CLI, Kann); MVP-37 wird entsprechend NF-12 von „Kann" auf „Muss" hochgezogen. §13.5 (`0.3.0`-HLS-Analyzer) bleibt unverändert; der DASH-Pfad ist additiv (`analyzerKind: "dash"` zusätzlich zu `"hls"`).
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.10` → `1.1.11`.
+- [x] Lastenheft §13.11 neu: `0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse mit RAK-56 (Browser-Drift-Smoke gegen `examples/webrtc/`-Lab, Nightly-CI-Job), RAK-57 (SRS-Lab `examples/srs/`, opt-in `make smoke-srs`), RAK-58 (DASH-Manifest-Analyse mit `analyzerKind: "dash"`, Wire-Vertrag plus API-Durchreichung; HLS-Pfad unverändert) und RAK-59 (DASH-CLI über `pnpm m-trace check`).
+- [x] Lastenheft §12.3 MVP-37-Zeile von „Kann" auf „Muss" gezogen mit Patch-Note auf §13.11; historische Kann-Stufung als Ausgangspunkt im Zellentext erhalten.
+- [x] [`docs/planning/in-progress/plan-0.9.0.md`](../in-progress/plan-0.9.0.md) §0.2 (Patch-Vorschlag) von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.11`" hochgezogen; §0.1 Vorgänger-Gate entsprechend abgehakt; Tranche 0 DoD-Item 2 abgehakt.
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 42 abgehakt (✅); §1.2 verweist auf den ausgelieferten Patch.
 
 ---
 

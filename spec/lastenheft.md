@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.10<br>
+**Version:** 1.1.11<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
@@ -1538,7 +1538,7 @@ Nicht im `0.1.0`-MVP:
 | MVP-34 | Kann | CLI für Stream Analyzer |
 | MVP-35 | Kann | Tempo-Integration |
 | MVP-36 | Kann | SRS-Beispiel |
-| MVP-37 | Kann | DASH-Analyse |
+| MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). |
 | MVP-38 | Kann | SRT-Ingest-Beispiel |
 | MVP-39 | Kann | SRT-Health-View |
 | MVP-40 | Kann | Persistenz mit PostgreSQL |
@@ -1735,6 +1735,19 @@ Akzeptanzkriterien:
 | RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` §3.2 (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
 | RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus `spec/telemetry-model.md` §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 (`docs/planning/open/risks-backlog.md`) wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
+
+### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse
+
+Ziel: Drei thematisch getrennte, einzeln zu kleine Liefergegenstände in einem Minor-Release bündeln. Erstens den Browser-`getStats()`-Schema-Drift aus R-12 von einem manuellen Drift-Review-Gate auf einen automatisierten Smoke heben. Zweitens das SRS-Lab analog zu `examples/srt/`/`examples/dash/`/`examples/webrtc/` als opt-in Multi-Protocol-Lab-Pfad ausliefern. Drittens die offene NF-12-Pflicht (DASH-Analyse, Muss) durch eine produktive DASH-Manifest-Analyse im `@npm9912/stream-analyzer` einlösen. MVP-37 wird entsprechend NF-12 von „Kann" auf „Muss" hochgezogen (siehe §12.3-Patch-Note); §13.5 (`0.3.0`-HLS-Analyzer) bleibt unverändert.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist aus `spec/telemetry-model.md` §1.4 / §3.5.2. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 im `risks-backlog.md` von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
+| RAK-57 | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; `docs/user/local-development.md` §2.7 Port-Quickref nachgezogen. |
+| RAK-58 | Muss | DASH-Manifest-Analyse im `@npm9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
+| RAK-59 | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
 
 ---
 

@@ -67,12 +67,13 @@ kann:
   Bei Bedarf eigene Toolchain-Hardening-Sub-Tranche analog
   `0.7.0`.
 
-### 0.2 Lastenheft-Patch `1.1.11` (Vorschlag)
+### 0.2 Lastenheft-Patch `1.1.11` (ausgeliefert)
 
 Der Patch ergänzt vier neue RAK in einem neuen §13.11-Block und
-zieht MVP-37 entsprechend NF-12 auf „Muss". Genaue Wortlaute werden
-beim Tranche-0-Closeout in `spec/lastenheft.md` und im Wartungslog
-(neuer §4a.14 in `done/plan-0.1.0.md`) festgehalten:
+zieht MVP-37 entsprechend NF-12 auf „Muss". Lieferstand mit
+Tranche-0b-Commit (Header-Bump `1.1.10` → `1.1.11`, neuer §13.11,
+§12.3 MVP-37-Patch-Note, Patch-Log §4a.14 in `done/plan-0.1.0.md`,
+roadmap.md §2 Schritt 42):
 
 | RAK | Priorität | Inhalt (Vorschlag für `spec/lastenheft.md` §13.11) |
 | --- | --------- | -------------------------------------------------- |
@@ -185,10 +186,11 @@ DoD:
   `docs/planning/in-progress/plan-0.9.0.md` verschoben (Status
   `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3 nachgezogen
   (Tranche-0a-Commit).
-- [ ] Lastenheft-Patch `1.1.11` schreiben: §13.11 neu mit RAK-56..
+- [x] Lastenheft-Patch `1.1.11` schreiben: §13.11 neu mit RAK-56..
   RAK-59; §12.3 MVP-37 von „Kann" auf „Muss" hochgezogen entsprechend
   NF-12 (Hinweis: §12.3 historisch beibehalten mit Patch-Note).
-  Patch-Eintrag als §4a.14 in `done/plan-0.1.0.md` Tranche 0c.
+  Patch-Eintrag als §4a.14 in `done/plan-0.1.0.md` Tranche 0c
+  (Tranche-0b-Commit).
 - [ ] Toolchain-Bump-Check (Go/Node/pnpm/golangci-lint). Wenn kein
   Bump nötig, dokumentieren warum nicht.
 
