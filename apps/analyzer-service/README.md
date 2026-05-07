@@ -60,8 +60,8 @@ build stage references `packages/stream-analyzer` and the workspace
 lockfile.
 
 ```bash
-docker build -f apps/analyzer-service/Dockerfile -t m-trace-analyzer:0.8.0 .
-docker run --rm -p 7000:7000 m-trace-analyzer:0.8.0
+docker build -f apps/analyzer-service/Dockerfile -t m-trace-analyzer:0.8.5 .
+docker run --rm -p 7000:7000 m-trace-analyzer:0.8.5
 ```
 
 The Compose stack starts it as `analyzer-service` and routes

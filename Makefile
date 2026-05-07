@@ -310,11 +310,13 @@ image-scan:
 	docker build -f apps/dashboard/Dockerfile -t mtrace-dashboard:scan .
 	docker build -f apps/analyzer-service/Dockerfile -t mtrace-analyzer-service:scan .
 	mkdir -p .security/.trivy-cache
-	# `.security/.trivyignore` wird aus `.security/vulnignore.yaml`
-	# generiert (single-source-of-truth + audit trail). Der Generator
-	# bricht ab, falls ein Eintrag das `expires`-Datum ueberschritten
-	# hat — Wartungsregel laut plan-0.8.5 §2.
-	bash scripts/render-trivyignore.sh
+	# `.security/.trivyignore` wird pro Image aus
+	# `.security/vulnignore.yaml` generiert (single-source-of-truth +
+	# audit trail). Der Generator bricht ab, falls ein Eintrag das
+	# `expires`-Datum ueberschritten hat — Wartungsregel laut
+	# plan-0.8.5 §2. Scope-Filterung verhindert, dass ein CVE-Ignore
+	# fuer ein Runtime-Image global alle Image-Scans maskiert.
+	bash scripts/render-trivyignore.sh mtrace-api
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
@@ -325,6 +327,7 @@ image-scan:
 		--no-progress \
 		--ignorefile /work/.trivyignore \
 		mtrace-api:scan
+	bash scripts/render-trivyignore.sh mtrace-dashboard
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \
@@ -335,6 +338,7 @@ image-scan:
 		--no-progress \
 		--ignorefile /work/.trivyignore \
 		mtrace-dashboard:scan
+	bash scripts/render-trivyignore.sh mtrace-analyzer-service
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(CURDIR)/.security/.trivy-cache:/root/.cache/trivy" \

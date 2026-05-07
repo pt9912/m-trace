@@ -34,26 +34,11 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: TS workspace build
-        run: make ts-build
-
-      - name: Test
-        run: make test
-
-      - name: Lint
-        run: make lint
-
-      - name: Coverage gate
-        run: make coverage-gate
-
-      - name: Architecture check
-        run: make arch-check
+      - name: Quality gates
+        run: make gates
 
       - name: Build
         run: make build
-
-      - name: Player-SDK performance smoke
-        run: make sdk-performance-smoke
 
       - name: CLI smoke
         run: make smoke-cli

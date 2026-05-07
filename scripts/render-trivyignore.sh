@@ -12,7 +12,8 @@
 # Wartungsregel; volle automatische Erinnerung kommt mit plan-0.9.5).
 #
 # Usage:
-#   bash scripts/render-trivyignore.sh
+#   bash scripts/render-trivyignore.sh [scope]
+#   bash scripts/render-trivyignore.sh mtrace-dashboard
 # Output:
 #   .security/.trivyignore (overwrites)
 
@@ -21,6 +22,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE="${ROOT_DIR}/.security/vulnignore.yaml"
 TARGET="${ROOT_DIR}/.security/.trivyignore"
+SCOPE_FILTER="${1:-}"
+TARGET_TMP="${TARGET}.$$.tmp"
+
+trap 'rm -f "${TARGET_TMP}"' EXIT
 
 if [[ ! -f "${SOURCE}" ]]; then
     echo "render-trivyignore: ${SOURCE} not found" >&2
@@ -40,7 +45,7 @@ today_epoch="$(date -u +%s)"
 # yq waere bequemer, ist aber nicht ueberall installiert. Awk reicht
 # fuer das Schema, weil wir die Struktur strikt halten.
 
-awk -v today="${today_epoch}" '
+awk -v today="${today_epoch}" -v scope_filter="${SCOPE_FILTER}" '
     BEGIN {
         in_trivy = 0; in_ignore = 0
         cur_id = ""; cur_reason = ""; cur_expires = ""; cur_scope = ""
@@ -81,6 +86,28 @@ awk -v today="${today_epoch}" '
 
     END { if (cur_id != "") emit(); exit had_error }
 
+    function trim(s) {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+        return s
+    }
+
+    function scope_matches(scope,   n, i, parts, item) {
+        if (scope_filter == "") {
+            return 1
+        }
+        if (scope == "") {
+            return 0
+        }
+        n = split(scope, parts, ",")
+        for (i = 1; i <= n; i++) {
+            item = trim(parts[i])
+            if (item == "*" || item == scope_filter) {
+                return 1
+            }
+        }
+        return 0
+    }
+
     function emit(   exp_epoch, cmd, line) {
         if (cur_expires == "") {
             print "render-trivyignore: " cur_id " has no `expires` field — abort." > "/dev/stderr"
@@ -95,16 +122,20 @@ awk -v today="${today_epoch}" '
             had_error = 1
             return
         }
+        if (!scope_matches(cur_scope)) {
+            return
+        }
         print "# " cur_id " — " cur_reason " (expires " cur_expires ", scope " (cur_scope == "" ? "*" : cur_scope) ")"
         print cur_id
     }
-' "${SOURCE}" > "${TARGET}.tmp"
+' "${SOURCE}" > "${TARGET_TMP}"
 
-if [[ -s "${TARGET}.tmp" ]]; then
-    mv "${TARGET}.tmp" "${TARGET}"
-    echo "render-trivyignore: wrote ${TARGET} ($(grep -c "^CVE-\|^GHSA-" "${TARGET}" || echo 0) entr$(grep -c "^CVE-\|^GHSA-" "${TARGET}" 2>/dev/null | awk '{print ($1==1?"y":"ies")}'))"
+if [[ -s "${TARGET_TMP}" ]]; then
+    mv "${TARGET_TMP}" "${TARGET}"
+    entry_count="$(grep -Ec '^(CVE-|GHSA-)' "${TARGET}" || true)"
+    entry_word="$(awk -v count="${entry_count}" 'BEGIN { print (count == 1 ? "entry" : "entries") }')"
+    echo "render-trivyignore: wrote ${TARGET} (${entry_count} ${entry_word})"
 else
-    rm -f "${TARGET}.tmp"
     echo "render-trivyignore: no entries — removed ${TARGET}"
     rm -f "${TARGET}"
 fi

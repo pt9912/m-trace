@@ -32,10 +32,9 @@
 #   - Bei `expires`-Ueberschreitung bricht `make security-gates`
 #     den Lauf mit Fehlermeldung; das Upgrade- oder Begruendungs-
 #     Update gehoert in einen Folge-Commit.
-#   - Plan-0.8.5 Tranche 1 fuehrt diese Datei initial leer ein;
-#     die Wartungs-Mechanik (expires-Check, automatische Erinnerung)
-#     ist ein Folge-Item fuer plan-0.9.5 (Wave 2 / Mutation Testing
-#     baut darauf auf).
+#   - `scripts/render-trivyignore.sh` erzwingt den `expires`-Check
+#     und rendert die Trivy-Ignores pro Image-Scope. Automatische
+#     Erinnerungen bleiben ein Folge-Item fuer plan-0.9.5.
 
 trivy:
   ignore:
