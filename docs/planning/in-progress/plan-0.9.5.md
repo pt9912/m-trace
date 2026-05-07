@@ -127,7 +127,7 @@ package.json-lesen).
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung + Baseline-Entscheidungen aus `extra-gates.md` §6 (Baseline-Pfad, initiale Budgets, Quarantäne-Policy) | ✅ |
-| 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | ⬜ |
+| 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | 🟡 |
 | 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ⬜ |
 | 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ⬜ |
 | 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ⬜ |
@@ -190,24 +190,64 @@ Budgets sind absolute Schwellen, nicht Diffs.
 
 DoD:
 
-- [ ] Go-Benchmark-Suite in `apps/api/...` für mindestens
-  `RegisterPlaybackEventBatch` (typische + maximale Batch-Größe),
-  SQLite-Ingest, Session-Listing/Pagination, Cursor Encode/Decode.
-- [ ] TypeScript-Benchmark-Suite in `packages/stream-analyzer/...`
-  für mindestens HLS-Master/Media-Manifest klein/groß plus
-  SSRF-/URL-Klassifizierung; DASH-Manifest-Benchmarks ergänzt,
-  sobald `0.9.0` Tranche 3 die DASH-Analyse produktiv hat.
-- [ ] `make api-benchmark-smoke` und `make analyzer-benchmark-smoke`-
-  Targets im Root-`Makefile`; Wrapper `make benchmark-smoke`.
-- [ ] Output enthält Laufzeit, Allokationen oder Durchsatz lesbar;
-  Budget-Verletzung erzeugt eindeutige Fehlermeldung mit Ist/Soll.
-- [ ] Fixtures sind stabil und versioniert (keine
-  Netzwerkabhängigkeit).
+- [x] Go-Benchmark-Suite in `apps/api/...` für vier Hot-Paths aus
+  `docs/perf/budgets.md` §3:
+  `BenchmarkRegisterPlaybackEventBatch_Typical` und `_MaxBatch` in
+  `hexagon/application/register_playback_event_batch_bench_test.go`,
+  `BenchmarkEventRepository_AppendBatch_100` in
+  `adapters/driven/persistence/sqlite/event_repository_bench_test.go`,
+  `BenchmarkSessionsService_ListSessions_DefaultPage` in
+  `hexagon/application/sessions_service_bench_test.go`,
+  `BenchmarkCursorEncodeDecode_Pair` in
+  `adapters/driving/http/cursor_bench_internal_test.go`. Test-
+  Helper-Stubs werden aus den jeweiligen `_test.go`-Files
+  wiederverwendet (Tranche-1a-Commit `afbcafd`).
+- [x] TypeScript-Benchmark-Suite in
+  `packages/stream-analyzer/benchmarks/analyzer.bench.ts` (eingebaute
+  Vitest-Bench-API, separate Config `vitest.bench.config.ts`) für
+  sieben Hot-Paths aus `docs/perf/budgets.md` §4: HLS Master klein
+  (5 Variants + 1 Rendition), HLS Master groß (50 Variants + 20
+  Renditions), HLS Media (1.000 Segmente), DASH-MPD VOD/Live,
+  Detector über 256-KiB-Body, SSRF-URL-Klassifizierung 100 Calls.
+  Synthetische Fixtures werden im Bench-File generiert
+  (deterministisch, repo-lokal); `master.m3u8` wird aus dem
+  bestehenden Fixtures-Pfad gelesen (Tranche-1b-Commit).
+- [x] `make api-benchmark-smoke` und `make analyzer-benchmark-smoke`
+  im Root-`Makefile`; Wrapper `make benchmark-smoke` (Plan-DoD §2-3).
+  Beide drucken zuerst Runner-Info (`scripts/print-bench-runner-
+  info.sh`), dann den Bench-Lauf. `make api-benchmark-smoke`
+  delegiert an `apps/api/Makefile::benchmark-smoke`, das einen
+  golang:1.26-Container startet und `go test -bench=. -benchmem
+  -benchtime 1s ./hexagon/... ./adapters/...` ausführt.
+  `make analyzer-benchmark-smoke` ruft `pnpm run bench` über das
+  Workspace-Filter (`@npm9912/stream-analyzer`) auf
+  (Tranche-1b-Commit).
+- [x] Output enthält Laufzeit, Allokationen (`-benchmem`) und
+  Durchsatz lesbar: Go-Benchmarks drucken `ns/op`, `B/op`,
+  `allocs/op`; Vitest-Bench druckt `hz`, `mean`, `p75`, `p99`,
+  `rme`. Budget-Verletzung mit eindeutiger Ist/Soll-Fehlermeldung
+  ist Tranche-1c-Item (Budget-Validator-Skript parst den Output
+  und vergleicht mit `docs/perf/budgets.md`).
+- [x] Fixtures sind stabil und versioniert (keine Netzwerk-
+  Abhängigkeit). Go-Benchmarks nutzen In-Memory-Stubs aus
+  `_test.go`-Files plus `b.TempDir()` für SQLite. TS-Benchmarks
+  nutzen `master.m3u8` aus dem Fixtures-Pfad und generieren große
+  Master/Media-Manifeste plus DASH-MPDs synthetisch im Bench-File
+  (Tranche-1b-Commit).
 - [ ] Beobachtungsphase: erste 3-5 grüne CI-Läufe sind nicht-
   blockierend; danach wird `make benchmark-smoke` PR-blockierend
-  (in `make gates` aufgenommen).
-- [ ] Jeder Lauf druckt Runner-OS, CPU-Modell und Runtime-Versionen
-  (Go, Node), damit Budget-Failures einordenbar bleiben.
+  (in `make gates` aufgenommen). **Stand 2026-05-07
+  (Tranche-1b-Commit)**: Smoke ist als opt-in Make-Target
+  verfügbar, nicht in `make gates`. Tranche-1c-Closeout (nach N=3-5
+  CI-Beobachtungsläufen) liefert Budget-Validator-Skript +
+  CI-Workflow `benchmark-observation.yml` (`continue-on-error: true`)
+  + finalen Switch auf PR-Blockierung.
+- [x] Jeder Lauf druckt Runner-OS, CPU-Modell und Runtime-Versionen
+  (Go, Node, pnpm), damit Budget-Failures einordenbar bleiben:
+  `scripts/print-bench-runner-info.sh` läuft als erstes Step in
+  beiden Make-Targets — druckt Date, Kernel, OS-PrettyName,
+  CPU-Modell + Cores, Node-/pnpm-/Go-Versionen
+  (Tranche-1b-Commit).
 
 ---
 

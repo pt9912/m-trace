@@ -62,7 +62,7 @@ und wird ab Tranche 1 mit gemessen.
 | `internal/parsers/media.ts` | HLS Media Playlist mit 1.000 `#EXTINF`-Segmenten | ≤ 50 ms | Segment-Aggregat-Statistiken plus Toleranzregel-Findings. |
 | `internal/parsers/dash.ts` | DASH-MPD VOD (1 Period, 2 AdaptationSets, 5 Representations) | ≤ 5 ms | Regex-Parser ohne Dependency; 0.9.0-Tranche-3-Spec-Stand. |
 | `internal/parsers/dash.ts` | DASH-MPD Live (`type=dynamic`, 3 AdaptationSets, 10 Representations) | ≤ 10 ms | wie VOD, plus Live-Felder; SegmentTemplate-Edge-Cases out-of-scope. |
-| `internal/parsers/detect.ts` | Detector über ein 256-KiB-Body-Sample | ≤ 250 µs | nur Header-Sniffing der ersten Zeilen; sollte unabhängig von Body-Größe sein. |
+| `internal/parsers/detect.ts` | Detector über ein 256-KiB-Body-Sample | ≤ 500 µs | erster lokaler Bench-Lauf (Tranche 1b, 2026-05-07): mean 207 µs / p75 268 µs auf Dev-Rechner — `firstNonEmptyLine` scannt aktuell den ganzen Body via `split(/\r?\n/)` statt nur das Präfix; Optimierung ist Folge-Plan, Budget bleibt großzügig (Faktor ~2× über mean) damit der CI-Runner-Faktor und der p75-Drift Headroom haben. |
 | `internal/loader/ssrf.ts` | URL-Klassifizierung (typischer Allowlist- + Blocklist-Mix, 100 Calls) | ≤ 5 ms / 100 Calls | regex-basierte Hostname-Klassifikation plus IPv4/IPv6-Parser. |
 
 ## 5. Wartung

@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke
 
 help:
 	@printf '%s\n' \
@@ -49,6 +49,9 @@ help:
 		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace (plan-0.8.5 Tranche 1)' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
 		'  make security-gates         Run vuln-check + audit-ts + image-scan together (plan-0.8.5 Tranche 1)' \
+		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (plan-0.9.5 Tranche 1, opt-in/observation; not in gates)' \
+		'  make analyzer-benchmark-smoke Run TypeScript stream-analyzer hot-path benchmarks (plan-0.9.5 Tranche 1, opt-in/observation)' \
+		'  make benchmark-smoke        Run both api- and analyzer-benchmark-smokes (plan-0.9.5 Tranche 1)' \
 		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift (plan-0.8.5 Tranche 2)' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
@@ -179,6 +182,34 @@ smoke-webrtc-stats-drift:
 # Header liefert. Opt-in (NICHT in `make gates`).
 smoke-srs:
 	bash scripts/smoke-srs.sh
+
+# `make api-benchmark-smoke` ist die Go-Hot-Path-Bench-Suite aus
+# plan-0.9.5 §2 Tranche 1 (extra-gates.md §3.2). Druckt zuerst die
+# Runner-Identifikation (OS, CPU, Go-Stand) damit Budget-Failures
+# einordenbar bleiben (Plan-DoD §2-7), dann läuft die Bench-Suite
+# in einem golang:1.26-Container über alle `Benchmark*`-Funktionen
+# in apps/api/.../**/*_bench_test.go. Initial-Budgets sind in
+# `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung erst
+# nach Beobachtungsphase (DoD §2-6).
+api-benchmark-smoke:
+	@bash scripts/print-bench-runner-info.sh
+	$(API_MAKE) benchmark-smoke
+
+# `make analyzer-benchmark-smoke` ist das TS-Pendant aus plan-0.9.5
+# §2 Tranche 1 für `@npm9912/stream-analyzer` (extra-gates.md §3.2
+# Stream-Analyzer-Kandidaten). Nutzt die eingebaute Vitest-Bench-
+# API (`vitest bench --run --config vitest.bench.config.ts`); keine
+# zusätzliche Tinybench-Dependency. Initial-Budgets in
+# `docs/perf/budgets.md` §4. Opt-in (NICHT in `make gates`).
+analyzer-benchmark-smoke:
+	@bash scripts/print-bench-runner-info.sh
+	$(PNPM) --filter @npm9912/stream-analyzer run bench
+
+# `make benchmark-smoke` bündelt beide Bench-Smokes in einem
+# Aufruf. Plan-DoD §2-3: Wrapper-Target. Bleibt opt-in, bis die
+# Beobachtungsphase abgeschlossen und PR-Blockierung in Tranche 1c
+# eingeschaltet ist.
+benchmark-smoke: api-benchmark-smoke analyzer-benchmark-smoke
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-

@@ -14,5 +14,5 @@
     "noEmit": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.mjs"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "benchmarks/**/*.ts", "scripts/**/*.mjs", "vitest.bench.config.ts"]
 }

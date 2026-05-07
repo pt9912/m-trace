@@ -17,7 +17,7 @@ NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate
+.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate benchmark-smoke
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002 §8.2). Build-/Dev-time-Werkzeug; das API-Image bleibt
@@ -122,6 +122,22 @@ schema-generate:
 			--source /work/schema.yaml --target sqlite \
 			--version 1 --output /work/migrations
 	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/V1__m_trace.sql"
+
+# Go-Benchmark-Suite (plan-0.9.5 §2 Tranche 1, RAK-Wave-2). Läuft
+# alle `Benchmark*`-Funktionen aus apps/api/.../**/*_bench_test.go
+# mit `-benchmem` in einem golang:1.26-Container. Initial-Budgets
+# (Architektur-basiert großzügig, noch nicht mess-basiert) sind in
+# `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung erst nach
+# Beobachtungsphase (Plan-DoD §2-6). Opt-in (NICHT in `make gates`).
+#
+# `--no-cache-filter test` zwingt BuildKit den test-Stage neu zu
+# evaluieren, damit der Bench-Output nicht aus einem alten Layer-
+# Cache kommt. `-benchtime 1s` hält den Lauf kurz für PR-Pfad-
+# Charakter (~5-10s pro Bench); längere Runs sind Tranche 2
+# Nightly-Workflow.
+benchmark-smoke:
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26 \
+		go test -run='^$$' -bench=. -benchmem -benchtime 1s ./hexagon/... ./adapters/...
 
 # Remove all spike-related images.
 clean:
