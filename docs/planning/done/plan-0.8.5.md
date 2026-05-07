@@ -37,8 +37,8 @@
 >
 > **Nachfolger**: [`plan-0.9.0.md`](./plan-0.9.0.md) (Drift-Smoke +
 > SRS-Lab + DASH-Analyse, released am 2026-05-07) und
-> [`plan-0.9.5.md`](../open/plan-0.9.5.md) (Quality-Gates Wave 2, nach
-> `0.9.0`).
+> [`plan-0.9.5.md`](../in-progress/plan-0.9.5.md) (Quality-Gates Wave 2,
+> seit 2026-05-07 in Arbeit).
 
 ## 0. Konvention
 

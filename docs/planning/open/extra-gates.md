@@ -6,7 +6,7 @@
 > - [`plan-0.8.5.md`](../done/plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
 >   + Container-Scan, §3.4 Generated-Artifact-Drift-Gate
 >   (deterministisch, schnell, PR-blockierend; vor `0.9.0`).
-> - [`plan-0.9.5.md`](./plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
+> - [`plan-0.9.5.md`](../in-progress/plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
 >   Smoke, §3.3 Nightly-`benchstat`, §3.5 Fuzzing/Property,
 >   §3.6 Mutation Testing (statistisch + langlaufend; nach `0.9.0`).
 >
@@ -278,11 +278,27 @@ Release-Gates.
 
 ## 6. Offene Entscheidungen
 
-- Welcher Container-Scanner wird Standard: Trivy oder Grype?
-- Werden Security-Gates direkt Teil von `make gates` oder zuerst ein
-  separates `make security-gates`?
-- Wo lebt die Benchmark-Baseline: Git-Repo, GitHub Actions Artefakt
-  oder Release-Asset?
-- Welche Performance-Budgets gelten initial fuer API und
-  Stream-Analyzer?
-- Ab welcher Regression blockiert `benchstat` ein Release?
+Wave 1 (`plan-0.8.5.md` Tranche 0):
+
+- ✅ Container-Scanner: **Trivy** (`plan-0.8.5.md` §0.4 Default,
+  Tranche-0-Commit `836452f`).
+- ✅ Security-Gates separat: **`make security-gates`** als Wrapper
+  von `vuln-check` + `audit-ts` + `image-scan`; eigener CI-Job
+  `security` parallel zu `build` (`plan-0.8.5.md` Tranche 1,
+  Commit `927555a`).
+
+Wave 2 (`plan-0.9.5.md` Tranche 0):
+
+- ✅ Benchmark-Baseline: **Git-Branch `benchmark-baseline`**
+  (Default-Empfehlung; deterministische Historie + kein Retention-
+  Limit; `plan-0.9.5.md` §1a Tranche-0-Commit).
+- ✅ Initiale Performance-Budgets: in
+  [`docs/perf/budgets.md`](../../perf/budgets.md) dokumentiert —
+  Architektur-basiert großzügig, Tranche-1-Beobachtungsphase
+  schärft nach realen Messungen (`plan-0.9.5.md` §1a
+  Tranche-0-Commit).
+- ✅ `benchstat`-Regressions-Schwelle: **> 15 % auf statistisch
+  signifikantem Benchmark** als Issue-Auto-Erstellung; **>=15 %
+  bestätigt = Release-Block** (Tranche 2 implementiert das in
+  `.github/workflows/benchmark.yml`; `extra-gates.md` §3.3 ist
+  normativer Anker).

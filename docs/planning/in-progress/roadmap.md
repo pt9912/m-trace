@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-06
-> **Phase**: `0.9.1` released am 2026-05-07 — Wartungs-Patch nach `0.9.0` (Patch-Release-Konvention `0.X.Y`, kein eigener Plan-File): WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]`); Spec-Korrekturen in `spec/telemetry-model.md` §3.5.2/§3.5.3 (Muss-Felder pro Engine, „leer statt `unknown`"); Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout-Move. Vorgänger `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) bleibt unverändert; Plan-Datei archiviert in [`docs/planning/done/plan-0.9.0.md`](../done/plan-0.9.0.md). `plan-0.9.5.md` (Quality-Gates Wave 2) bleibt offenes Plan-Skelett unter [`docs/planning/open/`](../open/). Frühere Releases: `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.9.5` Tranche 0 in Arbeit — Plan-Skelett am 2026-05-07 von `docs/planning/open/` nach [`docs/planning/in-progress/plan-0.9.5.md`](./plan-0.9.5.md) gezogen; Baseline-Entscheidungen aus `extra-gates.md` §6 abgeschlossen (Git-Branch `benchmark-baseline`; initiale Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md); Quarantäne-Policy 30 Tage). Vorgänger `v0.9.1` (Wartungs-Patch nach `v0.9.0`) bleibt aktiver Stand; `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) ist archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). Frühere Releases: `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -40,12 +40,15 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.9.0` ist veröffentlicht. Ein offenes Plan-Skelett liegt unter
-`docs/planning/open/`:
+`0.9.0` ist veröffentlicht (plus Wartungs-Patch `0.9.1`). `0.9.5`
+ist seit 2026-05-07 in Arbeit (Tranche 0 abgeschlossen):
 
-- [`plan-0.9.5.md`](../open/plan-0.9.5.md) — Patch-Release mit
-  Quality-Gates Wave 2 (Benchmark-Smoke + Nightly-`benchstat` +
-  Fuzzing + Mutation Testing); nach `0.9.0` lieferbar.
+- [`plan-0.9.5.md`](./plan-0.9.5.md) — **Patch-Release in Arbeit
+  (Tranche 0 ✅ am 2026-05-07)**: Quality-Gates Wave 2 mit
+  Benchmark-Smoke (PR-blockierend nach Beobachtungsphase) +
+  Nightly-`benchstat`-Regressionen + selektives Fuzzing +
+  Mutation Testing. Baseline-Pfad: Git-Branch `benchmark-baseline`;
+  Initial-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md).
 
 Master-Backlog für Quality-Gates ist
 [`extra-gates.md`](../open/extra-gates.md); die zwei Wellen-Pläne
@@ -143,7 +146,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.8.5` | Quality-Gates Wave 1 (Patch) | ✅      | Security-Gates (`vuln-check`/`audit-ts`/`image-scan`) als PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate Teil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim`; OTel-Stack-Bump als Vuln-Fix-Folge. Erster Patch-Release im Repo; Patch-Release-Konvention in `docs/user/releasing.md` §3.1. DoD-Tracking in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md). |
 | `0.9.0` | Drift-Smoke + SRS + DASH     | ✅      | Drift-Smoke (Nightly-Workflow `webrtc-drift.yml`, R-12 automatisiert detektiert) + SRS-Lab `examples/srs/` (MVP-36 eingelöst) + DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (NF-12 erfüllt; MVP-37 hochgestuft auf Muss). RAK-56..RAK-59 (Lastenheft `1.1.11` §13.11). DoD-Tracking in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). |
 | `0.9.1` | Drift-Smoke-Robustheit (Patch) | ✅      | Wartungs-Patch nach `0.9.0` ohne eigenen Plan-File: WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]` statt Fail); Spec-Korrekturen in `spec/telemetry-model.md` §3.5.2/§3.5.3; Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout. CHANGELOG-`[0.9.1]`-Block. Kein Lastenheft-Patch. |
-| `0.9.5` | Quality-Gates Wave 2 (Patch) | ⬜      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Skelett in [`open/plan-0.9.5.md`](../open/plan-0.9.5.md). Nach `0.9.1`.            |
+| `0.9.5` | Quality-Gates Wave 2 (Patch) | 🟡      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Tracking in [`in-progress/plan-0.9.5.md`](./plan-0.9.5.md), Tranche 0 (Plan-Aktivierung + Baseline-Entscheidungen) ✅ am 2026-05-07. Initiale Performance-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md). |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

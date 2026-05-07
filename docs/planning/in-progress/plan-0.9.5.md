@@ -1,34 +1,38 @@
 # Implementation Plan — `0.9.5` (Quality-Gates Wave 2: Benchmarks + Fuzzing + Mutation)
 
-> **Status**: ⬜ geplant (Plan-Skelett, liegt unter
-> `docs/planning/open/`). Vorgänger `v0.9.0` muss released sein,
-> bevor dieser Plan in `in-progress/` ziehen darf — siehe §0.1.
-> Tranche 0 aktiviert die Phase. Plan wandert dann atomar nach
-> `docs/planning/in-progress/`.
+> **Status**: 🟡 in Arbeit (Plan-Skelett am 2026-05-07 von
+> `docs/planning/open/` nach `docs/planning/in-progress/` gezogen,
+> Tranche 0 aktiviert). Vorgänger `v0.9.1` ist released (Wartungs-
+> Patch nach `v0.9.0`); damit ist die Voraussetzung „`extra-gates.md`
+> §6 (offene Entscheidungen) bei Tranche 0 zu klären" der einzige
+> noch offene Schritt der Plan-Aktivierung.
 >
-> **Release-Typ**: Patch-Release nach `0.9.0` (Konvention aus
-> `plan-0.8.5.md` §0.6 / `docs/user/releasing.md` §3).
+> **Release-Typ**: Patch-Release nach `0.9.0`/`0.9.1` (Konvention aus
+> [`plan-0.8.5.md`](../done/plan-0.8.5.md) §0.6 /
+> [`docs/user/releasing.md`](../../user/releasing.md) §3.1).
 >
 > **Lastenheft-Status**: kein Lastenheft-Patch nötig (Quality-Gates,
 > keine User-Surface).
 >
-> **Bezug**: [`extra-gates.md`](./extra-gates.md) §3.2 (Benchmark-
+> **Bezug**: [`extra-gates.md`](../open/extra-gates.md) §3.2 (Benchmark-
 > Smoke), §3.3 (Nightly-`benchstat`-Regressionen), §3.5 (Selektives
 > Fuzzing / Property Tests), §3.6 (Mutation Testing) — die vier
 > statistisch-langlaufenden Wave-2-Gates aus dem Master-Backlog;
 > [`plan-0.8.5.md`](../done/plan-0.8.5.md) Wave 1 (Security + Generated-
 > Drift) als Vorlage für die Patch-Release-Mechanik;
-> [`done/plan-0.4.0.md`](../done/plan-0.4.0.md) Tranche 1 (Cursor
+> [`plan-0.4.0.md`](../done/plan-0.4.0.md) Tranche 1 (Cursor
 > v2 — bevorzugter Fuzz-Kandidat aus §3.5);
 > [`packages/stream-analyzer/`](../../../packages/stream-analyzer/)
-> (Manifest-Parser — bevorzugter Property-Test-Kandidat).
+> (Manifest-Parser — bevorzugter Property-Test-Kandidat);
+> [`docs/perf/budgets.md`](../../perf/budgets.md) (initiale
+> Performance-Budgets pro Modul, Tranche 0).
 >
 > **Nachfolger**: offen — kein `plan-0.10.0.md` vorbereitet.
 
 ## 0. Konvention
 
 DoD-Checkboxen tracken den Lieferstand analog
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
+[`plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -122,7 +126,7 @@ package.json-lesen).
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung + Baseline-Entscheidungen aus `extra-gates.md` §6 (Baseline-Pfad, initiale Budgets, Quarantäne-Policy) | ⬜ |
+| 0 | Plan-Aktivierung + Baseline-Entscheidungen aus `extra-gates.md` §6 (Baseline-Pfad, initiale Budgets, Quarantäne-Policy) | ✅ |
 | 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | ⬜ |
 | 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ⬜ |
 | 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ⬜ |
@@ -137,18 +141,43 @@ Bezug: `extra-gates.md` §6 (offene Entscheidungen).
 
 DoD:
 
-- [ ] Plan-Skelett von `docs/planning/open/plan-0.9.5.md` nach
-  `docs/planning/in-progress/plan-0.9.5.md` verschoben.
-- [ ] Baseline-Pfad entschieden: Git-Branch `benchmark-baseline`,
-  GitHub-Actions-Artefakt mit Retention oder Release-Asset.
-  Default-Empfehlung: Git-Branch (deterministische Historie, kein
-  Retention-Limit).
-- [ ] Initiale Performance-Budgets pro Modul dokumentiert (Tabelle
-  im Plan oder in einem `docs/perf/budgets.md`); Werte sind
-  bewusst großzügig (Faktor 2-3 über aktueller Messung).
-- [ ] Quarantäne-Policy für laute Benchmarks formuliert: ein
-  Benchmark darf max. 30 Tage in Quarantäne, danach entweder
-  fix oder entfernt.
+- [x] Plan-Skelett von `docs/planning/open/plan-0.9.5.md` nach
+  `docs/planning/in-progress/plan-0.9.5.md` verschoben (Status
+  `⬜ → 🟡 → ✅` für Tranche 0; Cross-Refs in `roadmap.md` §1.2/§3
+  und `risks-backlog.md`-Header nachgezogen) (Tranche-0-Commit).
+- [x] **Baseline-Pfad entschieden**: **Git-Branch
+  `benchmark-baseline`**. Begründungen:
+  1. Deterministische Historie via `git log` — `benchstat`-Vergleiche
+     sind über jeden Commit-SHA reproduzierbar.
+  2. Kein Retention-Limit (GitHub-Actions-Artefakte verfallen
+     standardmäßig nach 90 Tagen; Release-Assets sind an Tags
+     gebunden und nicht rolling-fortschreibbar ohne Tag-Move).
+  3. Identisch zur Default-Empfehlung in §0.4 dieses Plans und in
+     [`extra-gates.md`](../open/extra-gates.md) §3.3.
+  Mechanik (für Tranche 2 Implementation): Nightly-Workflow
+  pusht den `benchstat`-tauglichen Output nach `benchmark-baseline`
+  als orphan-branch-File `benchmarks/<module>.txt`; PR-Reviews
+  vergleichen mit `benchstat baseline.txt new.txt` (Tranche-0-Commit).
+- [x] **Initiale Performance-Budgets pro Modul dokumentiert** in
+  [`docs/perf/budgets.md`](../../perf/budgets.md) — eigene
+  Single-Source-of-Truth außerhalb des Plans, weil die Tabelle
+  über mehrere Tranchen wächst (Tranche 1 Schärfung nach realen
+  Messungen, Tranche 2 Drift-Schwellen). Initial-Werte sind
+  Architektur-basiert großzügig (Plan-DoD: „Faktor 2-3 über
+  aktueller Messung"), explizit als „Tranche-0-Stand,
+  noch nicht mess-basiert" markiert; Tranche-1-Beobachtungsphase
+  schärft sie nach N=3-5 grünen Läufen pro Hot-Path
+  (Tranche-0-Commit).
+- [x] **Quarantäne-Policy für laute Benchmarks**: ein Benchmark
+  darf maximal **30 Tage** in Quarantäne (markiert `t.Skip` mit
+  Begründung-Kommentar plus Backlog-Item in
+  `docs/planning/open/risks-backlog.md`). Danach: entweder
+  Drift-Fix landed, oder der Benchmark wird aus dem Smoke
+  entfernt. Quarantäne-Beginn und Trigger werden im jeweiligen
+  Backlog-Item dokumentiert; reine „flaky"-Vermutungen ohne
+  Drift-Hinweis brauchen einen Skip-Grund. Verlängerung über 30
+  Tage hinaus ist eine Plan-DoD-Item-Änderung im jeweiligen
+  Folge-Plan, kein stiller Re-Skip (Tranche-0-Commit).
 
 ---
 

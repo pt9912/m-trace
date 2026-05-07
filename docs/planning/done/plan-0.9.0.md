@@ -119,7 +119,7 @@ Begründung des Bündels:
 - Keine Quality-Gates (govulncheck, Benchmark-Smoke, Fuzzing,
   Mutation Testing, Generated-Artifact-Drift). Diese sind in
   [`plan-0.8.5.md`](./plan-0.8.5.md) (Wave 1, vor `0.9.0`) und
-  [`plan-0.9.5.md`](../open/plan-0.9.5.md) (Wave 2, nach `0.9.0`)
+  [`plan-0.9.5.md`](../in-progress/plan-0.9.5.md) (Wave 2, seit 2026-05-07 in Arbeit)
   konkretisiert; Master-Backlog steht in
   [`extra-gates.md`](../open/extra-gates.md).
 
