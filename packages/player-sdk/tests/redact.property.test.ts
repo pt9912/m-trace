@@ -51,7 +51,7 @@ describe("redactUrl property tests (RAK-Wave-2)", () => {
           fc.constant(null)
         ),
         (input) => {
-          const out = redactUrl(input as string | undefined | null);
+          const out = redactUrl(input);
           expect(typeof out).toBe("string");
           expect(out.length).toBeGreaterThan(0);
         }

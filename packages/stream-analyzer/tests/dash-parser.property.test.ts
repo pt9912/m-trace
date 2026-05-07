@@ -45,12 +45,22 @@ describe("DASH parser property tests (RAK-Wave-2)", () => {
   });
 
   it("any well-formed MPD with Period/AdaptationSet/Representation produces a deterministic dash result", async () => {
+    // Lehre aus Tranche 3b (siehe docs/dev/fuzzing.md §3): kein
+    // `.filter(...)` auf `fc.string`, weil fast-check 4.4 bei vielen
+    // Discards in eine CPU-Schleife läuft. Stattdessen deterministische
+    // Generators mit fixer Alphabet-Quelle.
+    const idChar = fc.constantFrom(
+      "a", "b", "c", "d", "e", "f", "0", "1", "2", "3", "_", "-"
+    );
+    const arbId = fc
+      .array(idChar, { minLength: 1, maxLength: 16 })
+      .map((cs) => cs.join(""));
     const arbAdaptationSet = fc.record({
       contentType: fc.constantFrom("video", "audio", "text"),
       mimeType: fc.constantFrom("video/mp4", "audio/mp4", "application/mp4"),
       reps: fc.array(
         fc.record({
-          id: fc.string({ minLength: 1, maxLength: 16 }).filter((s) => /^[A-Za-z0-9_-]+$/.test(s)),
+          id: arbId,
           bandwidth: fc.integer({ min: 64_000, max: 10_000_000 }),
         }),
         { minLength: 0, maxLength: 5 }
@@ -79,14 +89,17 @@ describe("DASH parser property tests (RAK-Wave-2)", () => {
 
           const result = await analyzeManifest({ kind: "text", text });
           expect(result.status).toBe("ok");
-          if (result.status === "ok") {
+          if (result.status === "ok" && result.playlistType === "dash") {
             expect(result.analyzerKind).toBe("dash");
-            expect(result.playlistType).toBe("dash");
             expect(result.details.type).toBe(mpdType);
             expect(result.details.live).toBe(mpdType === "dynamic");
             expect(result.summary.itemCount).toBeGreaterThanOrEqual(0);
             const totalReps = sets.reduce((acc, s) => acc + s.reps.length, 0);
             expect(result.summary.itemCount).toBe(totalReps);
+          } else if (result.status === "ok") {
+            throw new Error(
+              `expected playlistType "dash", got ${result.playlistType}`
+            );
           }
         }
       ),
