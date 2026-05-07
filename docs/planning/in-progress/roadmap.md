@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-06
-> **Phase**: `0.8.5` released — erstmaliger Patch-Release im Repo (Quality-Gates Wave 1: Security-Gates + Generated-Artifact-Drift-Gate inkl. Migrations-Konsolidierung); Plan-Datei nach [`docs/planning/done/plan-0.8.5.md`](../done/plan-0.8.5.md) archiviert. `plan-0.9.0.md` und `plan-0.9.5.md` liegen als offene Plan-Skelette unter [`docs/planning/open/`](../open/). `0.8.0` (Player-SDK-WebRTC-Adapter) bleibt auf Tag `v0.8.0` (`8df263a`); `0.7.0` (WebRTC-Lab) auf `v0.7.0` (`11a3368`); `0.6.0` (SRT Health View) auf `v0.6.0` (`d08a89f`); `0.5.0` (Multi-Protocol Lab) auf `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.9.0` Tranche 0 in Arbeit — Plan-Skelett am 2026-05-07 von `docs/planning/open/` nach [`docs/planning/in-progress/plan-0.9.0.md`](./plan-0.9.0.md) gezogen; Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) als nächster Schritt. Vorgänger `v0.8.5` (erstmaliger Patch-Release, Quality-Gates Wave 1) bleibt auf Tag `v0.8.5` (`ce05e3b`); Plan-Datei archiviert in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md). `plan-0.9.5.md` (Quality-Gates Wave 2) bleibt offenes Plan-Skelett unter [`docs/planning/open/`](../open/). `0.8.0` (Player-SDK-WebRTC-Adapter) bleibt auf Tag `v0.8.0` (`8df263a`); `0.7.0` (WebRTC-Lab) auf `v0.7.0` (`11a3368`); `0.6.0` (SRT Health View) auf `v0.6.0` (`d08a89f`); `0.5.0` (Multi-Protocol Lab) auf `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -39,11 +39,15 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.8.5` ist veröffentlicht. Zwei Plan-Skelette liegen unter
-`docs/planning/open/`, beide noch nicht aktiviert:
+`0.8.5` ist veröffentlicht. `0.9.0` ist seit 2026-05-07 in Arbeit
+(Tranche 0 aktiviert; Lastenheft-Patch `1.1.11` ist Vorgänger-Gate
+für die Themen-Tranchen 1..3):
 
-- [`plan-0.9.0.md`](../open/plan-0.9.0.md) — Minor-Release mit
-  Drift-Smoke (R-12), SRS-Lab (MVP-36) und DASH-Analyse (MVP-37).
+- [`plan-0.9.0.md`](./plan-0.9.0.md) — **Minor-Release in Arbeit
+  (Tranche 0 aktiviert am 2026-05-07)** mit Drift-Smoke für R-12
+  (RAK-56), SRS-Lab für MVP-36 (RAK-57) und DASH-Manifest-Analyse
+  für MVP-37/NF-12 (RAK-58/RAK-59); Lastenheft-Patch `1.1.11` mit
+  RAK-56..RAK-59 + MVP-37-Hochstufung als Tranche-0b-Liefergegenstand.
 - [`plan-0.9.5.md`](../open/plan-0.9.5.md) — Patch-Release mit
   Quality-Gates Wave 2 (Benchmark-Smoke + Nightly-`benchstat` +
   Fuzzing + Mutation Testing); nach `0.9.0`.
@@ -140,7 +144,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.7.0` | WebRTC-Lab-Erweiterung       | ✅      | RAK-47..RAK-50; RAK-51 deferred / Folgeplan; DoD-Tracking in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)               |
 | `0.8.0` | Player-SDK-WebRTC-Adapter    | ✅      | RAK-51..RAK-55; DoD-Tracking in [`done/plan-0.8.0.md`](../done/plan-0.8.0.md)                                                                              |
 | `0.8.5` | Quality-Gates Wave 1 (Patch) | ✅      | Security-Gates (`vuln-check`/`audit-ts`/`image-scan`) als PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate Teil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim`; OTel-Stack-Bump als Vuln-Fix-Folge. Erster Patch-Release im Repo; Patch-Release-Konvention in `docs/user/releasing.md` §3.1. DoD-Tracking in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md). |
-| `0.9.0` | Drift-Smoke + SRS + DASH     | ⬜      | RAK-56..RAK-59 (geplanter Lastenheft-Patch `1.1.11`); Plan-Skelett in [`open/plan-0.9.0.md`](../open/plan-0.9.0.md)                                       |
+| `0.9.0` | Drift-Smoke + SRS + DASH     | 🟡      | RAK-56..RAK-59 (Lastenheft-Patch `1.1.11` als Tranche-0b-Liefergegenstand); Plan-Tracking in [`in-progress/plan-0.9.0.md`](./plan-0.9.0.md), Tranche 0a (Plan-Aktivierung) ✅ am 2026-05-07. |
 | `0.9.5` | Quality-Gates Wave 2 (Patch) | ⬜      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Skelett in [`open/plan-0.9.5.md`](../open/plan-0.9.5.md). Nach `0.9.0`.            |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases

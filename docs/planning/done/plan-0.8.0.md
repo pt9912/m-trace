@@ -27,8 +27,9 @@
 > [`examples/webrtc/`](../../../examples/webrtc/) (Lab-Compose ab
 > `0.7.0` Tranche 1).
 >
-> **Nachfolger**: [`plan-0.9.0.md`](../open/plan-0.9.0.md) ist als
-> offenes Plan-Skelett vorbereitet.
+> **Nachfolger**: [`plan-0.8.5.md`](./plan-0.8.5.md) (Quality-Gates
+> Wave 1, Patch-Release) ausgeliefert; [`plan-0.9.0.md`](../in-progress/plan-0.9.0.md)
+> seit 2026-05-07 in Arbeit (Tranche 0 aktiviert).
 
 ## 0. Konvention
 

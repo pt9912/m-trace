@@ -1,12 +1,14 @@
 # Implementation Plan — `0.9.0` (Drift-Smoke + SRS-Lab + DASH-Analyse)
 
-> **Status**: ⬜ geplant (Plan-Skelett, liegt unter
-> `docs/planning/open/`). Vorgänger `v0.8.0` ist released
-> (Tag `v0.8.0` auf dem Release-Gate-Fix nach `8df263a`; Plan
-> archiviert in [`done/plan-0.8.0.md`](../done/plan-0.8.0.md)).
-> Tranche 0 aktiviert die Phase, sobald der zugehörige Lastenheft-
-> Patch `1.1.11` fertig ist (siehe §0.2). Plan wandert dann atomar
-> nach `docs/planning/in-progress/`.
+> **Status**: 🟡 in Arbeit (Plan-Skelett am 2026-05-07 von
+> `docs/planning/open/` nach `docs/planning/in-progress/` gezogen,
+> Tranche 0a abgeschlossen). Vorgänger `v0.8.5` ist released
+> (Tag `v0.8.5` auf `ce05e3b`, GitHub-Release veröffentlicht; Plan
+> archiviert in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md)). `0.8.0`
+> (Player-SDK-WebRTC-Adapter) bleibt auf Tag `v0.8.0` (`8df263a`,
+> Release-Gate-Fix-Closeout); Plan archiviert in
+> [`done/plan-0.8.0.md`](../done/plan-0.8.0.md). Lastenheft-Patch
+> `1.1.11` wird im Rahmen von Tranche 0b ausgeliefert (siehe §0.2).
 >
 > **Lastenheft-Status**: `1.1.10` §13.10 ist abgeschlossen. `0.9.0`
 > bündelt drei eigenständige Liefergegenstände (Browser-Drift-Smoke
@@ -20,9 +22,11 @@
 > §12.3 MVP-37 (DASH-Analyse, Kann);
 > [`done/plan-0.8.0.md`](../done/plan-0.8.0.md) §4 Tranche 3 (R-12
 > wurde dort release-blockierend angehoben);
+> [`done/plan-0.8.5.md`](../done/plan-0.8.5.md) (Quality-Gates Wave 1,
+> Vorgänger-Patch);
 > [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
 > §3.5.3 (WebRTC-Schema-Drift-Strategie);
-> [`docs/planning/open/risks-backlog.md`](./risks-backlog.md) R-12;
+> [`docs/planning/open/risks-backlog.md`](../open/risks-backlog.md) R-12;
 > [`packages/stream-analyzer/`](../../../packages/stream-analyzer/)
 > (HLS-Stand `0.3.0`, RAK-22..RAK-28).
 >
@@ -110,9 +114,9 @@ Begründung des Bündels:
 - Keine Quality-Gates (govulncheck, Benchmark-Smoke, Fuzzing,
   Mutation Testing, Generated-Artifact-Drift). Diese sind in
   [`plan-0.8.5.md`](../done/plan-0.8.5.md) (Wave 1, vor `0.9.0`) und
-  [`plan-0.9.5.md`](./plan-0.9.5.md) (Wave 2, nach `0.9.0`)
+  [`plan-0.9.5.md`](../open/plan-0.9.5.md) (Wave 2, nach `0.9.0`)
   konkretisiert; Master-Backlog steht in
-  [`extra-gates.md`](./extra-gates.md).
+  [`extra-gates.md`](../open/extra-gates.md).
 
 ### 0.4 Sequenzierung und harte Gates
 
@@ -161,7 +165,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | ⬜ |
+| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | 🟡 |
 | 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ⬜ |
 | 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ⬜ |
 | 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ⬜ |
@@ -177,9 +181,10 @@ Bezug: keine RAK direkt; Wartungs-/Hygiene-Tranche analog
 
 DoD:
 
-- [ ] Plan-Skelett von `docs/planning/open/plan-0.9.0.md` nach
+- [x] Plan-Skelett von `docs/planning/open/plan-0.9.0.md` nach
   `docs/planning/in-progress/plan-0.9.0.md` verschoben (Status
-  `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3 nachgezogen.
+  `⬜ → 🟡`); Cross-Refs in `roadmap.md` §1.2/§3 nachgezogen
+  (Tranche-0a-Commit).
 - [ ] Lastenheft-Patch `1.1.11` schreiben: §13.11 neu mit RAK-56..
   RAK-59; §12.3 MVP-37 von „Kann" auf „Muss" hochgezogen entsprechend
   NF-12 (Hinweis: §12.3 historisch beibehalten mit Patch-Note).

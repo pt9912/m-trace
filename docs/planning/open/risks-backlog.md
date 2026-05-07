@@ -1,6 +1,6 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-06 (post-`0.8.0`-Release; Tag `v0.8.0` auf dem Release-Gate-Fix nach `8df263a` + `plan-0.9.0`-Skelett unter `docs/planning/open/`). R-12 ist seit `0.8.0` Tranche 3 release-blockierend; der konkrete Drift-Smoke-Folgeplan steht als Tranche 1 in `plan-0.9.0.md`. R-5/-7/-9/-10/-11 sind aus `0.7.0`/`0.8.0` inhaltlich unverändert; Triggerschwellen unausgelöst.  
+> **Stand**: 2026-05-07 (post-`0.8.5`-Release: Tag `v0.8.5` auf `ce05e3b`, Quality-Gates Wave 1 ausgeliefert; `plan-0.9.0` ist seit 2026-05-07 in `docs/planning/in-progress/` aktiviert, Lastenheft-Patch `1.1.11` in Vorbereitung). R-12 ist seit `0.8.0` Tranche 3 release-blockierend; der konkrete Drift-Smoke-Folgeplan steht als Tranche 1 in `plan-0.9.0.md` (RAK-56). R-13 (drei Trixie-OS-CVEs ohne Upstream-Fix) ist seit `0.8.5` Tranche 1 als dokumentierte Trivy-Ignore-Wartungsregel aktiv, `expires` 2026-08-04. R-5/-7/-9/-10/-11 sind aus `0.7.0`/`0.8.0` inhaltlich unverändert; Triggerschwellen unausgelöst.  
 > **Bezug**: `docs/adr/0001-backend-stack.md` §5 (Bewertungsraster, Zeile
 > *Absehbare Phase-2-Risiken*), §8 (Konsequenzen);
 > `docs/adr/0002-persistence-store.md` (löst R-4);
