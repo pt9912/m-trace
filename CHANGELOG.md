@@ -7,10 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> Post-`0.8.0`-Sammelblock plus `0.8.5` Tranche 0..2 (Plan-Aktivierung,
-> Quality-Gates Wave 1: Security-Gates und Generated-Artifact-Drift-
-> Gate). Versions-Bump und finalen CHANGELOG-Block setzt der `0.8.5`-
-> Closeout (Tranche 3).
+## [0.8.5] - 2026-05-07
+
+> Erstmaliger **Patch-Release** im m-trace-Repo (Quality-Gates Wave 1):
+> Security-Gates (`vuln-check`/`audit-ts`/`image-scan`/`security-gates`)
+> und Generated-Artifact-Drift-Gate; Migrations-Konsolidierung als
+> rolling V1; Image-Hardening (Trixie-slim + dev-dep-Snip + npm-
+> Removal); OpenTelemetry-Stack-Bump als Vuln-Fix-Folge. Patch-Release-
+> Konvention (`0.X.Y`) in `docs/user/releasing.md` §3.1 verankert. Keine
+> User-Surface-Änderung, kein Lastenheft-Patch, keine RAK-
+> Verifikationsmatrix (Plan-DoD-Items reichen). Lieferstand der
+> Tranchen 0–3 in [`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md)
+> archiviert.
 
 ### Added
 
@@ -73,6 +81,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `contract-error-fetch-blocked.json`, `mediamtx-srtconns-list.json`,
     `srt-health-detail.json`),
     `packages/player-sdk/scripts/public-api.snapshot.txt`.
+- Patch-Release-Konvention `0.X.Y` (plan-0.8.5 Tranche 3, §0.6
+  des Plans): `docs/user/releasing.md` §3.1 dokumentiert die drei
+  Release-Typen (Patch/Minor/Major) als Tabelle inklusive
+  Lastenheft-Pflicht und RAK-Verifikationsmatrix-Pflicht. Patch-
+  Release umfasst alle Versions-Bump-Stellen, die ein Minor-Bump
+  auch berührt — sonst entsteht Drift zwischen SDK-Bundle, API-
+  Service-Version und CI-Smokes. `0.8.5` ist der erste Patch-
+  Release im Repo.
 
 ### Changed
 
@@ -106,6 +122,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Default-Resource nicht mehr in einen `conflicting Schema URL`-
   Fehler läuft. `make api-test` und `make gates` grün; keine
   Anpassungen am restlichen Telemetrie-Code nötig.
+- Versions-Bump auf `0.8.5` (plan-0.8.5 Tranche 3): alle 5
+  `package.json` (root, `apps/dashboard`, `apps/analyzer-service`,
+  `packages/player-sdk`, `packages/stream-analyzer`),
+  `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts` `PLAYER_SDK_VERSION`,
+  `packages/player-sdk/scripts/pack-smoke.mjs` `expectedVersion`,
+  `contracts/sdk-compat.json` `sdk_version` plus alle Test-Fixtures
+  und Contract-Fixtures, die Versions-Strings hartkodieren. Folge-
+  Backlog-Item: Tests sollten die Version aus `package.json` lesen
+  statt hartzukodieren (separater Plan).
 
 ### Removed
 
@@ -113,19 +139,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `V3__session_boundaries.sql`, `V4__session_end_source.sql`,
   `V5__srt_health_samples.sql` — in der rolling V1 konsolidiert
   (s. Changed-Block oben).
-
-- OpenTelemetry-Stack in `apps/api/go.mod` von `v1.32.0`/`v0.57.0`/
-  `v0.8.0` auf `v1.43.0`/`v0.68.0`/`v0.19.0` angehoben — direkter
-  Auslöser war `make vuln-check` (`GO-2026-4394`: PATH-Hijacking in
-  `go.opentelemetry.io/otel/sdk@v1.32.0`, fixed in `v1.40.0`). Da
-  die contrib-/exporter-Pakete denselben Release-Schwarm wie der
-  Core nutzen, wurde der gesamte Stack koordiniert auf den aktuell
-  jüngsten Stable-Stand bezahlt. Folge-Anpassung: `semconv`-Import
-  in `apps/api/adapters/driven/telemetry/otel.go` von `v1.26.0`
-  auf `v1.40.0` umgestellt, damit der Schema-URL-Merge im SDK-
-  Default-Resource nicht mehr in einen `conflicting Schema URL`-
-  Fehler läuft. `make api-test` und `make gates` grün; keine
-  Anpassungen am restlichen Telemetrie-Code nötig.
 
 ## [0.8.0] - 2026-05-06
 

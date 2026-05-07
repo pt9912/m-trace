@@ -46,7 +46,7 @@ describe("analyzer-service — POST /analyze", () => {
   it("forwards the analyzer result on a valid text request", async () => {
     const stubResult = {
       status: "ok",
-      analyzerVersion: "0.8.0",
+      analyzerVersion: "0.8.5",
       analyzerKind: "hls",
       input: { source: "text" },
       playlistType: "unknown",

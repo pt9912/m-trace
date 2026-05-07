@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-06
-> **Phase**: `0.8.0` released — RAK-51..RAK-55 erfüllt; Plan-Datei nach [`docs/planning/done/plan-0.8.0.md`](../done/plan-0.8.0.md) archiviert. `plan-0.9.0.md` liegt als offenes Plan-Skelett unter [`docs/planning/open/`](../open/plan-0.9.0.md). `0.7.0` (WebRTC-Lab) bleibt auf Tag `v0.7.0` (`11a3368`); `0.6.0` (SRT Health View) auf `v0.6.0` (`d08a89f`); `0.5.0` (Multi-Protocol Lab) auf `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.8.5` released — erstmaliger Patch-Release im Repo (Quality-Gates Wave 1: Security-Gates + Generated-Artifact-Drift-Gate inkl. Migrations-Konsolidierung); Plan-Datei nach [`docs/planning/done/plan-0.8.5.md`](../done/plan-0.8.5.md) archiviert. `plan-0.9.0.md` und `plan-0.9.5.md` liegen als offene Plan-Skelette unter [`docs/planning/open/`](../open/). `0.8.0` (Player-SDK-WebRTC-Adapter) bleibt auf Tag `v0.8.0` (`8df263a`); `0.7.0` (WebRTC-Lab) auf `v0.7.0` (`11a3368`); `0.6.0` (SRT Health View) auf `v0.6.0` (`d08a89f`); `0.5.0` (Multi-Protocol Lab) auf `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -35,18 +35,13 @@ aktualisieren.
 | ✅      | SRT Health View (`0.6.0`)           | MediaMTX-API als CGO-freie SRT-Quelle (R-2 aufgelöst), durabler Health-Store, Read-API + Dashboard-Route, Operator-Doku. RAK-41..RAK-46 erfüllt; opt-in Smoke `make smoke-srt-health`. | [`plan-0.6.0.md`](../done/plan-0.6.0.md)                            |
 | ✅      | WebRTC-Lab-Erweiterung (`0.7.0`)    | Lab-Compose `examples/webrtc/` (Project `mtrace-webrtc`) mit MediaMTX-WHIP/-WHEP und FFmpeg-RTSP-Publisher; opt-in Smoke `make smoke-webrtc-prep` (endpoint-only); WebRTC-Telemetrie-Vorbereitung in `spec/telemetry-model.md` §3.5; R-12 als Schema-Drift-Review-Gate. RAK-47..RAK-50 erfüllt; RAK-51 deferred. | [`plan-0.7.0.md`](../done/plan-0.7.0.md)                            |
 | ✅      | Player-SDK-WebRTC-Adapter (`0.8.0`) | Produktiver `attachWebRtc`-Adapter in `@npm9912/player-sdk` (additiv zu `attachHlsJs`); reservierter `webrtc.*`-Meta-Namespace mit harter API-Validation; sechs `mtrace_webrtc_*`-Counter mit Delta-Semantik (Server-side Sample-State, Sample-ID-Idempotenz); `scripts/smoke-observability.sh` spiegelt §3.1-Forbidden und §3.2-Allowlist; R-12 release-blockierend ab nächstem Browser-Major-Bump. Browser-Support-Matrix Chromium 120+/Firefox 120+ Required, Safari 17+ Best-effort. RAK-51..RAK-55 erfüllt. | [`plan-0.8.0.md`](../done/plan-0.8.0.md)                            |
+| ✅      | Quality-Gates Wave 1 (`0.8.5`)      | Erstmaliger Patch-Release im Repo: Security-Gates (`vuln-check`/`audit-ts`/`image-scan`/`security-gates`) als zweiter PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate (`make generated-drift-check`) als Bestandteil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim` mit `pnpm deploy --prod`-Snip; OpenTelemetry-Stack-Bump als `GO-2026-4394`-Fix; Patch-Release-Konvention in `docs/user/releasing.md` §3.1 verankert. Keine User-Surface-Änderung. | [`plan-0.8.5.md`](../done/plan-0.8.5.md)                            |
 
 ### 1.2 Nächste Phase
 
-`0.8.0` ist veröffentlicht. Drei Plan-Skelette liegen unter
-`docs/planning/open/`, alle noch nicht aktiviert:
+`0.8.5` ist veröffentlicht. Zwei Plan-Skelette liegen unter
+`docs/planning/open/`, beide noch nicht aktiviert:
 
-- [`plan-0.8.5.md`](./plan-0.8.5.md) — **Patch-Release in Arbeit
-  (Tranche 0..2 ✅ am 2026-05-06, Tranche 3 Closeout offen)** mit
-  Quality-Gates Wave 1 (govulncheck + pnpm audit +
-  Container-Scan via Trivy + Generated-Artifact-Drift inkl.
-  Migrations-Konsolidierung); erstmaliger Patch-Release im Repo,
-  vor `0.9.0` lieferbar.
 - [`plan-0.9.0.md`](../open/plan-0.9.0.md) — Minor-Release mit
   Drift-Smoke (R-12), SRS-Lab (MVP-36) und DASH-Analyse (MVP-37).
 - [`plan-0.9.5.md`](../open/plan-0.9.5.md) — Patch-Release mit
@@ -144,7 +139,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.6.0` | SRT Health View              | ✅      | RAK-41..RAK-46; DoD-Tracking in [`done/plan-0.6.0.md`](../done/plan-0.6.0.md)                        |
 | `0.7.0` | WebRTC-Lab-Erweiterung       | ✅      | RAK-47..RAK-50; RAK-51 deferred / Folgeplan; DoD-Tracking in [`done/plan-0.7.0.md`](../done/plan-0.7.0.md)               |
 | `0.8.0` | Player-SDK-WebRTC-Adapter    | ✅      | RAK-51..RAK-55; DoD-Tracking in [`done/plan-0.8.0.md`](../done/plan-0.8.0.md)                                                                              |
-| `0.8.5` | Quality-Gates Wave 1 (Patch) | 🟡      | Security (govulncheck + pnpm audit + Container-Scan via Trivy) und Generated-Artifact-Drift-Gate inkl. Migrations-Konsolidierung; Plan-Tracking in [`in-progress/plan-0.8.5.md`](./plan-0.8.5.md), Tranche 0..2 ✅, Tranche 3 (Closeout: Release-Doku, Versions-Bump, Tag) offen. Erster Patch-Release im Repo. |
+| `0.8.5` | Quality-Gates Wave 1 (Patch) | ✅      | Security-Gates (`vuln-check`/`audit-ts`/`image-scan`) als PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate Teil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim`; OTel-Stack-Bump als Vuln-Fix-Folge. Erster Patch-Release im Repo; Patch-Release-Konvention in `docs/user/releasing.md` §3.1. DoD-Tracking in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md). |
 | `0.9.0` | Drift-Smoke + SRS + DASH     | ⬜      | RAK-56..RAK-59 (geplanter Lastenheft-Patch `1.1.11`); Plan-Skelett in [`open/plan-0.9.0.md`](../open/plan-0.9.0.md)                                       |
 | `0.9.5` | Quality-Gates Wave 2 (Patch) | ⬜      | Benchmark-Smoke + Nightly-`benchstat` + Fuzzing + Mutation Testing; Plan-Skelett in [`open/plan-0.9.5.md`](../open/plan-0.9.5.md). Nach `0.9.0`.            |
 

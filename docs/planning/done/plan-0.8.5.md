@@ -1,11 +1,11 @@
 # Implementation Plan — `0.8.5` (Quality-Gates Wave 1: Security + Generated-Artifact-Drift)
 
-> **Status**: 🟡 in Arbeit (Tranche 0..2 abgeschlossen am
-> 2026-05-06: Plan-Aktivierung, Security-Gates, Generated-Drift-
-> Gate inkl. Migrations-Konsolidierung sowie Image-Hardening-
-> Closeout; Tranche 3 — Release-Doku, Versions-Bump und Tag —
-> offen). Plan liegt unter `docs/planning/in-progress/`. Vorgänger
-> `v0.8.0` ist released (Tag `v0.8.0` auf `8df263a`, GitHub-Release
+> **Status**: ✅ released am 2026-05-07 (Tranchen 0..3 abgeschlossen:
+> Plan-Aktivierung, Security-Gates, Generated-Drift-Gate inkl.
+> Migrations-Konsolidierung und Image-Hardening, Closeout mit
+> Versions-Bump 0.8.0 → 0.8.5 und Tag `v0.8.5`). Plan liegt nach dem
+> Closeout-`git mv` unter `docs/planning/done/`. Vorgänger `v0.8.0`
+> ist released (Tag `v0.8.0` auf `8df263a`, GitHub-Release
 > veröffentlicht). Container-Scanner-Wahl in Tranche 0: **Trivy**
 > (Default aus §0.4 — etablierter, breitere Image-Format-
 > Unterstützung, bessere Default-Policy als Grype).
@@ -28,7 +28,7 @@
 > Quality-Gates; `0.8.5` liefert die deterministisch-schnellen
 > Wave-1-Gates, `0.9.5` (Folge-Patch nach `0.9.0`) liefert die
 > statistisch-langlaufenden Wave-2-Gates;
-> [`done/plan-0.2.0.md`](../done/plan-0.2.0.md) §6 (Pack-Smoke +
+> [`done/plan-0.2.0.md`](./plan-0.2.0.md) §6 (Pack-Smoke +
 > Public-API-Snapshot — bestehende deterministische Drift-Gates,
 > auf denen das Generated-Artifact-Drift-Gate aufsetzt);
 > [`docs/user/releasing.md`](../../user/releasing.md) §3 (Release-
@@ -43,7 +43,7 @@
 ## 0. Konvention
 
 DoD-Checkboxen tracken den Lieferstand analog
-[`done/plan-0.1.0.md`](../done/plan-0.1.0.md) §0:
+[`plan-0.1.0.md`](./plan-0.1.0.md) §0:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -153,7 +153,7 @@ wird im Closeout in `docs/user/releasing.md` §3 verankert:
 | 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Tool-Pinning-Entscheidung (Trivy für Container-Scan; Toolchain-Check ohne Bump) | ✅ |
 | 1 | Security-Gates: `make vuln-check` (govulncheck) + `make audit-ts` (`pnpm audit --audit-level high`) + `make image-scan` (Trivy) + Wrapper `make security-gates`; CI-Stage parallel zu `make gates` | ✅ |
 | 2 | Generated-Artifact-Drift-Gate: Sub-2a Migrations-Konsolidierung (V2..V5 in rolling V1, Composite-FK in `schema.yaml`); Sub-2b `make generated-drift-check` (Schema-DDL, Contract-Fixtures, Public-API-Snapshot); CI-Stage in `make gates` | ✅ |
-| 3 | Release-Doku, Patch-Release-Konvention in `releasing.md` §3, Versions-Bump 0.8.0 → 0.8.5, Plan nach `done/`, Tag `v0.8.5` | ⬜ |
+| 3 | Release-Doku, Patch-Release-Konvention in `releasing.md` §3, Versions-Bump 0.8.0 → 0.8.5, Plan nach `done/`, Tag `v0.8.5` | ✅ |
 
 ---
 
@@ -387,30 +387,44 @@ in `releasing.md` §3 verankert, Tag `v0.8.5` gesetzt.
 
 DoD:
 
-- [ ] `docs/user/releasing.md` §3 erweitert um einen kurzen Block
-  „Patch-Release-Konvention (`0.X.Y`)" — Definition aus §0.6 plus
-  Hinweis, dass Patch-Releases keinen Lastenheft-Patch brauchen
-  und keine RAK-Verifikationsmatrix führen.
-- [ ] `README.md` Status-Block erwähnt `0.8.5` als Patch-Release
+- [x] `docs/user/releasing.md` §3.1 „Patch-Release-Konvention
+  (`0.X.Y`, ab `0.8.5`)" mit Tabelle Patch/Minor/Major plus Hinweis,
+  dass Patch-Releases keinen Lastenheft-Patch brauchen und keine
+  RAK-Verifikationsmatrix führen — bereits mit Plan-Anlage-Commit
+  `69c3621` ausgeliefert (vor Tranche-0-Aktivierung verfasst, weil
+  die Konvention auch §0.6 dieses Plans speist).
+- [x] `README.md` Status-Block erwähnt `0.8.5` als Patch-Release
   mit Quality-Gates Wave 1 (Security + Generated-Drift); kein
-  Feature-Release-Hinweis.
-- [ ] Versions-Bump 0.8.0 → 0.8.5 in allen package.json (root,
+  Feature-Release-Hinweis (Closeout-Commit).
+- [x] Versions-Bump 0.8.0 → 0.8.5 in allen package.json (root,
   apps, packages) plus `apps/api/cmd/api/main.go` `serviceVersion`,
   `packages/player-sdk/src/version.ts`, `packages/player-sdk/
   scripts/pack-smoke.mjs` `expectedVersion`,
   `contracts/sdk-compat.json` `sdk_version` und allen Test-
   Fixtures, die Versions-Strings hartkodieren (Bulk-Fix per
   `xargs sed -i 's/"0\.8\.0"/"0.8.5"/g'` über die `_test.go`/
-  `.test.ts`-Files plus `spec/contract-fixtures/analyzer/*.json`).
-- [ ] CHANGELOG: [Unreleased]-Block in `[0.8.5] - YYYY-MM-DD`
-  umgewandelt; neuer leerer [Unreleased]-Block obenauf.
-- [ ] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
-  Closeout-Commit; `make gates` grün; `make security-gates` grün.
-- [ ] `plan-0.8.5.md` von `docs/planning/in-progress/` nach
+  `.test.ts`-Files plus `spec/contract-fixtures/analyzer/*.json`;
+  zusätzlich Test-Helper `apps/api/adapters/driven/persistence/
+  contract/contract.go` und drei Fehlertext-Strings, die der
+  sed nicht erfasste, weil sie unquoted sind) (Closeout-Commit).
+- [x] CHANGELOG: [Unreleased]-Block in `[0.8.5] - 2026-05-07`
+  umgewandelt; neuer leerer [Unreleased]-Block obenauf
+  (Closeout-Commit).
+- [x] `./scripts/verify-doc-refs.sh` (`make docs-check`) grün vor
+  Closeout-Commit; `make security-gates` grün vor Closeout-Commit;
+  `make gates` grün **nach** Closeout-Commit (analog `plan-0.8.0.md`
+  §7 Release-Gate-Fix: das `generated-drift-check`-Target vergleicht
+  Working-Tree gegen HEAD und wertet einen noch nicht committeten
+  Versions-Bump als Drift, obwohl Quelle und generierte Kopie
+  synchron auf `0.8.5` sind; nach dem Commit ist `git diff HEAD`
+  clean und das Gate grün).
+- [x] `plan-0.8.5.md` von `docs/planning/in-progress/` nach
   `docs/planning/done/` verschoben (`git mv`); alle relativen
-  Cross-Refs angepasst; Roadmap §3 zeigt `0.8.5` ✅.
-- [ ] Tag `v0.8.5` annotiert; Push opt-in (User-Bestätigung);
-  GitHub-Release mit CHANGELOG-`[0.8.5]`-Block als Notes-Body.
+  Cross-Refs angepasst; Roadmap §3 zeigt `0.8.5` ✅
+  (Closeout-Commit).
+- [x] Tag `v0.8.5` annotiert; Push opt-in (User-Bestätigung);
+  GitHub-Release mit CHANGELOG-`[0.8.5]`-Block als Notes-Body
+  (Closeout-Commit).
 
 ---
 

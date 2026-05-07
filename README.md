@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.8.0` released — Player-SDK-WebRTC-Adapter (`attachWebRtc`) plus produktive WebRTC-Telemetrie: `webrtc.*`-Meta-Namespace mit harter API-Validation, sechs `mtrace_webrtc_*`-Counter mit Delta-Semantik, Schema-Drift-Strategie aktiv. R-12 ist release-blockierend; SRT-Health-View aus `0.6.0`, WebRTC-Lab aus `0.7.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert.
+> Status: `0.8.5` released — erstmaliger **Patch-Release** im Repo (Quality-Gates Wave 1: Security-Gates `vuln-check`/`audit-ts`/`image-scan` plus Generated-Artifact-Drift-Gate; Migrations-Konsolidierung als rolling V1; Image-Hardening auf Trixie-slim; OpenTelemetry-Stack-Bump als Vuln-Fix-Folge). Patch-Release-Konvention (`0.X.Y`) in [`docs/user/releasing.md`](docs/user/releasing.md) §3.1 verankert. Keine User-Surface-Änderung gegenüber `0.8.0`; Player-SDK-WebRTC-Adapter (`attachWebRtc`) und produktive WebRTC-Telemetrie aus `0.8.0`, SRT-Health-View aus `0.6.0`, WebRTC-Lab aus `0.7.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben unverändert. R-12 (`getStats()`-Schema-Drift) bleibt release-blockierend.
 
 ---
 
@@ -306,25 +306,35 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.8.0` released: produktiver Player-SDK-
-WebRTC-Adapter (`attachWebRtc(video, options, tracker)` in
-[`packages/player-sdk/`](packages/player-sdk/)), additiv neben
-`attachHlsJs`; opt-in pro Player-Instanz mit reserviertem
-`webrtc.*`-Wire-Namespace und harter API-Validation (HTTP 422 bei
-unbekannten/falschen Keys). Server-side Counter-Semantik mit Delta-
-Berechnung über `(project_id, session_id, peer_connection_run_id,
-metric)` plus Sample-ID-Idempotenz; sechs `mtrace_webrtc_*`-Counter
-exportiert, `scripts/smoke-observability.sh` spiegelt §3.1-Forbidden
-und §3.2-Allowlist. WebRTC-Lab-Compose
-([`examples/webrtc/`](examples/webrtc/)) und SRT-Health-View aus
-`0.6.0` bleiben unverändert. R-12 (`getStats()`-Schema-Drift) ist
-release-blockierend ab nächstem Browser-Major-Bump; Operator-Doku in
-[`packages/player-sdk/README.md`](packages/player-sdk/README.md) mit
-Browser-Support-Matrix (Chromium 120+ und Firefox 120+ Required,
-Safari 17+ Best-effort). RAK-51..RAK-55 erfüllt; Tranchen 0–5 in
-[`docs/planning/done/plan-0.8.0.md`](docs/planning/done/plan-0.8.0.md)
-archiviert. Nächste Phase: offen — kein `plan-0.9.0.md` vorbereitet.
+Das Projekt steht bei `0.8.5` released: erstmaliger **Patch-Release**
+im m-trace-Repo (Quality-Gates Wave 1). Liefert zwei deterministisch-
+schnelle, PR-blockierende CI-Stages: `make security-gates` (Wrapper
+für `vuln-check` (govulncheck), `audit-ts` (`pnpm audit --audit-level
+high`) und `image-scan` (Trivy) — eigener `security`-Job parallel zu
+`build` in `.github/workflows/build.yml`) plus
+`make generated-drift-check` als Bestandteil von `make gates` (prüft
+Schema-DDL, Contract-Fixtures und Player-SDK-Public-API-Snapshot
+gegen ihre Quellen). Migrations-Konsolidierung als rolling V1
+(historische V2..V5 in V1 zusammengezogen, ADR-0002 §8.2 zur
+Strategie); Image-Hardening auf `node:22-trixie-slim` plus
+`pnpm deploy --prod`-Snip und npm-Removal in den Runtime-Stages;
+OpenTelemetry-Stack auf `v1.43.0`/`v0.68.0`/`v0.19.0` als
+Vuln-Fix-Folge (`GO-2026-4394`). Patch-Release-Konvention `0.X.Y`
+in [`docs/user/releasing.md`](docs/user/releasing.md) §3.1 verankert.
+Keine User-Surface-Änderung gegenüber `0.8.0`; Player-SDK-WebRTC-
+Adapter (`attachWebRtc(video, options, tracker)` in
+[`packages/player-sdk/`](packages/player-sdk/)) und produktive
+WebRTC-Telemetrie aus `0.8.0`, SRT-Health-View aus `0.6.0`,
+WebRTC-Lab aus `0.7.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben
+unverändert. R-12 (`getStats()`-Schema-Drift) bleibt release-
+blockierend ab nächstem Browser-Major-Bump. Tranchen 0–3 in
+[`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md)
+archiviert. Nächste Phase: `plan-0.9.0.md` (Player-SDK-WebRTC-Folge-
+Themen) und `plan-0.9.5.md` (Quality-Gates Wave 2 — Benchmark-Smoke,
+Nightly-benchstat, Fuzzing, Mutation Testing) liegen unter
+[`docs/planning/open/`](docs/planning/open/).
 Archivierte Plan-Dateien:
+[`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md),
 [`docs/planning/done/plan-0.8.0.md`](docs/planning/done/plan-0.8.0.md),
 [`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md),
 [`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md),

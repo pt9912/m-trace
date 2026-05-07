@@ -16,7 +16,7 @@
 > Smoke), §3.3 (Nightly-`benchstat`-Regressionen), §3.5 (Selektives
 > Fuzzing / Property Tests), §3.6 (Mutation Testing) — die vier
 > statistisch-langlaufenden Wave-2-Gates aus dem Master-Backlog;
-> [`plan-0.8.5.md`](../in-progress/plan-0.8.5.md) Wave 1 (Security + Generated-
+> [`plan-0.8.5.md`](../done/plan-0.8.5.md) Wave 1 (Security + Generated-
 > Drift) als Vorlage für die Patch-Release-Mechanik;
 > [`done/plan-0.4.0.md`](../done/plan-0.4.0.md) Tranche 1 (Cursor
 > v2 — bevorzugter Fuzz-Kandidat aus §3.5);
