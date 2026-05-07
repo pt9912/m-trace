@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -54,6 +54,9 @@ help:
 		'  make benchmark-smoke        Run both api- and analyzer-benchmark-smokes (plan-0.9.5 Tranche 1)' \
 		'  make api-fuzz-check         Run Go fuzz targets (-fuzztime, default 30s; plan-0.9.5 Tranche 3, opt-in)' \
 		'  make fuzz-check             Run all fuzz targets (Go + TS property tests; opt-in)' \
+		'  make api-mutation-report    Run Go mutation report for the API pilot module (plan-0.9.5 Tranche 4, opt-in)' \
+		'  make ts-mutation-report     Run TS mutation report for the player-sdk pilot module (plan-0.9.5 Tranche 4, opt-in)' \
+		'  make mutation-report        Run Go + TS mutation reports (plan-0.9.5 Tranche 4, opt-in/nightly)' \
 		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift (plan-0.8.5 Tranche 2)' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
@@ -211,13 +214,11 @@ api-benchmark-smoke:
 # zusätzliche Tinybench-Dependency. Initial-Budgets in
 # `docs/perf/budgets.md` §4. Opt-in (NICHT in `make gates`).
 #
-# Workflow: vitest-bench schreibt JSON nach
-# `.tmp/bench/analyzer-bench.json` (eigenes Output-Dir, damit
-# Lab-Compose-Outputs den File-Pfad nicht überrennen);
-# `scripts/check-bench-budgets.mjs --kind ts --input ...` parst das
-# JSON und prüft jeden Bench gegen das Budget aus §4 (Plan-DoD §2-4
-# „Budget-Verletzung erzeugt eindeutige Fehlermeldung mit Ist/
-# Soll").
+# Workflow: vitest-bench-stdout wird nach
+# `.tmp/bench/analyzer-bench.txt` gespiegelt; `scripts/check-bench-
+# budgets.mjs --kind ts` parst die Texttabelle und prüft jeden Bench
+# gegen das Budget aus §4 (Plan-DoD §2-4 „Budget-Verletzung erzeugt
+# eindeutige Fehlermeldung mit Ist/Soll").
 analyzer-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
 	@mkdir -p .tmp/bench

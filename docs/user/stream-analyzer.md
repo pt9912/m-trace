@@ -1,8 +1,9 @@
 # Stream Analyzer
 
-`@npm9912/stream-analyzer` ist die HLS-Manifestanalyse der m-trace-Toolchain.
-Das Paket liefert eine Bibliotheks-API für Backend-Integration (`apps/api`),
-eine CLI und ein stabiles JSON-Ergebnisformat.
+`@npm9912/stream-analyzer` ist die HLS- und DASH-Manifestanalyse der
+m-trace-Toolchain. Das Paket liefert eine Bibliotheks-API für
+Backend-Integration (`apps/api`), eine CLI und ein stabiles
+JSON-Ergebnisformat.
 
 Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
 F-68..F-81), [`docs/planning/done/plan-0.3.0.md`](../planning/done/plan-0.3.0.md),
@@ -10,13 +11,15 @@ F-68..F-81), [`docs/planning/done/plan-0.3.0.md`](../planning/done/plan-0.3.0.md
 
 ## 1. Lieferumfang
 
-Stand seit `0.3.0` (wächst mit DASH/CMAF und weiteren CLI-Erweiterungen):
+Basis seit `0.3.0`, DASH-Erweiterung seit `0.9.0` (wächst mit
+CMAF und weiteren CLI-Erweiterungen):
 
 - Public API, Result-/Fehlerschema, Versionssynchronizität, Build-Pipeline
   und Coverage-Gate ≥ 90 %.
-- Manifest-Klassifikator: erkennt Master- und Media-Playlists anhand der
-  Tags, lehnt Nicht-HLS und leere Manifeste mit `manifest_not_hls` ab,
-  markiert ambige Mischformen als Master-Variante mit Warning-Finding.
+- Manifest-Klassifikator: erkennt HLS Master-/Media-Playlists anhand
+  der Tags und DASH-MPDs anhand des XML-/`<MPD`-Headers, lehnt nicht
+  unterstützte oder leere Manifeste mit `manifest_not_supported` ab und
+  markiert ambige HLS-Mischformen als Master-Variante mit Warning-Finding.
 - URL-Loader: HTTP/HTTPS, Timeout, Größenlimit, manuelles Redirect-
   Handling und SSRF-Schutzregeln (siehe §6).
 - Master-Detail-Auswertung: Variants (`#EXT-X-STREAM-INF`) mit
@@ -27,9 +30,9 @@ Stand seit `0.3.0` (wächst mit DASH/CMAF und weiteren CLI-Erweiterungen):
   Min/Max/Mittel/Total), TARGETDURATION-Verletzung, Outlier-Erkennung,
   Live-/VOD-Klassifikation und 3×-Latenzschätzung — siehe §7.
 - JSON-Ergebnisformat: `AnalysisResult` als diskriminierte Union per
-  `playlistType`, `analyzerKind: "hls"` als Erweiterungspfad für
-  DASH/CMAF, deterministische Serialisierung, Stabilitätsregel als
-  operativer Vertrag — siehe §4.
+  `analyzerKind` (`"hls"`/`"dash"`) und `playlistType`
+  (`"master"`/`"media"`/`"unknown"`/`"dash"`), deterministische
+  Serialisierung, Stabilitätsregel als operativer Vertrag — siehe §4.
 - API-Anbindung: `POST /api/analyze` reicht den Aufruf an den
   internen `analyzer-service` (Node-HTTP-Wrapper) weiter; Go-API
   bleibt distroless-static. Vollständig in `docker-compose.yml`
@@ -40,14 +43,15 @@ Stand seit `0.3.0` (wächst mit DASH/CMAF und weiteren CLI-Erweiterungen):
 
 Das JSON-Format ist gesperrt. Konsumenten erkennen Erfolg/Fehler an
 `status`, schalten auf `playlistType` zur Auswahl der Detail-Form und
-filtern bei Bedarf weiter über `analyzerKind` (heute nur `"hls"`).
+filtern bei Bedarf weiter über `analyzerKind` (heute `"hls"` oder
+`"dash"`).
 
 ## 2. Public API
 
 ```ts
-import { analyzeHlsManifest, STREAM_ANALYZER_VERSION } from "@npm9912/stream-analyzer";
+import { analyzeManifest, STREAM_ANALYZER_VERSION } from "@npm9912/stream-analyzer";
 
-const result = await analyzeHlsManifest({ kind: "text", text: manifest });
+const result = await analyzeManifest({ kind: "text", text: manifest });
 if (result.status === "ok") {
   console.log(result.playlistType, result.findings);
 } else {
@@ -58,23 +62,28 @@ if (result.status === "ok") {
 Exportierte Symbole (Snapshot in
 `packages/stream-analyzer/scripts/public-api.snapshot.txt`):
 
+- `analyzeManifest(input, options?) → Promise<AnalysisResult | AnalysisErrorResult>`
 - `analyzeHlsManifest(input, options?) → Promise<AnalysisResult | AnalysisErrorResult>`
+  — kompatibler Alias; dispatcht seit `0.9.0` ebenfalls HLS und DASH.
 - `AnalysisError` — Fehlerklasse für Adapter; Konsumenten nutzen normalerweise das Result.
 - `STREAM_ANALYZER_NAME`, `STREAM_ANALYZER_VERSION` — aus `package.json` abgeleitet.
 - Typen: `ManifestInput` (`ManifestTextInput | ManifestUrlInput`),
   `AnalyzeOptions`, `FetchOptions`, `AnalysisFinding`, `FindingLevel`,
   `AnalysisInputMetadata`, `AnalysisResult` (Union aus
-  `MasterAnalysisResult | MediaAnalysisResult | UnknownAnalysisResult`,
-  diskriminiert per `playlistType`), `AnalysisSummary`, `AnalyzerKind`,
-  `BaseAnalysisResult`, `PlaylistType`, `AnalysisErrorCode`,
-  `AnalysisErrorResult`, `MasterPlaylistDetails`, `MasterRendition`,
+  `MasterAnalysisResult`, `MediaAnalysisResult`, `UnknownAnalysisResult`
+  und `DashAnalysisResult`, diskriminiert per `playlistType`),
+  `AnalysisSummary`, `AnalyzerKind`,
+  `AnalyzeOutput`, `BaseAnalysisResult`, `PlaylistType`,
+  `AnalysisErrorCode`, `AnalysisErrorResult`, `DashAdaptationSet`,
+  `DashManifestDetails`, `DashRepresentation`, `MasterPlaylistDetails`,
+  `MasterRendition`,
   `MasterVariant`, `MediaPlaylistDetails`, `MediaSegment`,
   `MediaSegmentSummary`.
 
 Konsumenten brauchen keine Casts:
 
 ```ts
-const result = await analyzeHlsManifest({ kind: "url", url });
+const result = await analyzeManifest({ kind: "url", url });
 if (result.status === "error") {
   console.error(result.code, result.details);
   return;
@@ -100,9 +109,10 @@ type ManifestInput =
 
 - `text`: Manifestinhalt direkt; optionale `baseUrl` löst relative Variant-/
   Segment-URIs auf.
-- `url`: Quelle, die der Analyzer selbst lädt. `analyzeHlsManifest` setzt
-  `input.baseUrl` automatisch auf die finale URL nach allen Redirects, damit
-  relative URIs konsistent aufgelöst werden.
+- `url`: Quelle, die der Analyzer selbst lädt. `analyzeManifest` und
+  der kompatible Alias `analyzeHlsManifest` setzen `input.baseUrl`
+  automatisch auf die finale URL nach allen Redirects, damit relative
+  URIs konsistent aufgelöst werden.
 
 `AnalyzeOptions.fetch` justiert das URL-Laden; alle Felder optional:
 
@@ -119,14 +129,14 @@ type FetchOptions = {
 ```ts
 {
   status: "ok",
-  analyzerVersion: "0.3.0",
-  analyzerKind: "hls",
+  analyzerVersion: "0.9.5",
+  analyzerKind: "hls" | "dash",
   input: { source: "text" | "url", url?: string, baseUrl?: string },
-  playlistType: "master" | "media" | "unknown",
+  playlistType: "master" | "media" | "unknown" | "dash",
   summary: { itemCount: number },
   findings: Array<{ code: string, level: "info" | "warning" | "error", message: string }>,
   // details ist diskriminiert per playlistType:
-  details: MasterPlaylistDetails | MediaPlaylistDetails | null
+  details: MasterPlaylistDetails | MediaPlaylistDetails | DashManifestDetails | null
 }
 ```
 
@@ -135,7 +145,7 @@ Beispiel (Master-Playlist):
 ```json
 {
   "status": "ok",
-  "analyzerVersion": "0.3.0",
+  "analyzerVersion": "0.9.5",
   "analyzerKind": "hls",
   "input": { "source": "text", "baseUrl": "https://cdn.example.test/" },
   "playlistType": "master",
@@ -173,7 +183,7 @@ Beispiel (Live-Media-Playlist):
 ```json
 {
   "status": "ok",
-  "analyzerVersion": "0.3.0",
+  "analyzerVersion": "0.9.5",
   "analyzerKind": "hls",
   "input": {
     "source": "url",
@@ -209,7 +219,7 @@ Beispiel (Live-Media-Playlist):
 ```ts
 {
   status: "error",
-  analyzerVersion: "0.3.0",
+  analyzerVersion: "0.9.5",
   analyzerKind: "hls" | "dash",
   code:
     | "invalid_input"
@@ -240,7 +250,7 @@ Diskriminator-Feld verlassen. Beispiel (URL gegen lokale Adresse):
 ```json
 {
   "status": "error",
-  "analyzerVersion": "0.3.0",
+  "analyzerVersion": "0.9.5",
   "analyzerKind": "hls",
   "code": "fetch_blocked",
   "message": "Aufgelöste IP-Adresse verletzt SSRF-Sperrliste: ip_blocked.",
@@ -278,8 +288,8 @@ Minor unverändert bleibt:
 - Neue optionale Felder in `details.*`-Sub-Strukturen.
 - Neue Werte für `playlistType` (z. B. wenn HLS-Spec einen weiteren
   Typ einführt).
-- Neue Werte für `analyzerKind` (z. B. `"dash"`, `"cmaf"` als
-  zusätzliche Union-Member).
+- Neue Werte für `analyzerKind` (z. B. `"cmaf"` als zusätzliches
+  Union-Member).
 - Neue Finding-Codes oder Finding-Levels (Konsumenten dürfen
   Unbekannte ignorieren oder als Info behandeln).
 - Neue `AnalysisErrorCode`-Werte.
@@ -308,10 +318,11 @@ analyzer-service-Container setzt; Aufrufer der API können es **nicht**
 
 - `result.status` trennt Erfolg (`"ok"`) und Fehler (`"error"`).
 - `result.playlistType` (nur bei `status === "ok"`) trennt
-  `MasterPlaylistDetails | MediaPlaylistDetails | null`.
-- `result.analyzerKind` ist heute immer `"hls"`; künftige Werte
-  zeigen Konsumenten an, dass sie das Result mit einem anderen
-  Detail-Schema interpretieren müssen.
+  `MasterPlaylistDetails`, `MediaPlaylistDetails`, `DashManifestDetails`
+  und `null`.
+- `result.analyzerKind` trennt heute `"hls"` und `"dash"`;
+  künftige Werte zeigen Konsumenten an, dass sie das Result mit einem
+  weiteren Detail-Schema interpretieren müssen.
 
 **Exhaustive Switches**: Konsumenten, die per `switch`-Anweisung
 über `analyzerKind`, `playlistType`, `code` (`AnalysisErrorCode`)
@@ -423,7 +434,8 @@ Fehler werden weiter auf eine Problem-Shape gemappt:
 | 413  | `payload_too_large`     | Body über 1 MiB.                                                       |
 | 400  | `invalid_input`         | Analyzer hat den Manifest-Input als formal ungültig zurückgewiesen.    |
 | 400  | `fetch_blocked`         | SSRF-Schutz hat die URL abgelehnt (privat/loopback/Credentials).       |
-| 422  | `manifest_not_hls`      | Geladenes Manifest ist kein HLS-Inhalt.                                |
+| 422  | `manifest_not_hls`      | Als HLS erkanntes Manifest ist syntaktisch kein gültiges HLS.           |
+| 422  | `manifest_not_supported`| Geladener Body ist weder als HLS noch als DASH erkennbar.              |
 | 502  | `fetch_failed`          | Analyzer konnte die URL nicht laden (Netzwerk/Status/Content-Type).    |
 | 502  | `manifest_too_large`    | Manifest übersteigt das Loader-Größenlimit.                            |
 | 502  | `internal_error`        | Unerwarteter Fehler im Analyzer-Stack.                                 |
@@ -616,11 +628,15 @@ damit nur das Analyzer-JSON auf stdout landet — sinnvoll, wenn man
 
 ### 9.2 Smoke-Test
 
-`make smoke-cli` baut das Paket und exerziert sieben Pfade:
-`--help` (über die pnpm-Skript-Form), Master-Datei (Exit 0 + JSON),
-Nicht-HLS-Datei (Exit 1 + `manifest_not_hls`), fehlende Datei (Exit 1
-mit stderr-Hinweis), no-args (Exit 2), URL-Input gegen eine
-RFC1918-Adresse (Exit 1 + `fetch_blocked` — exerciert den echten
-Loader-Pfad inklusive SSRF-Schutz) und `--help` über `pnpm exec
-m-trace` (Bin-Symlink + Shebang). Der Aufruf spiegelt das
-DoD-Smoke-Kriterium aus [`plan-0.3.0`](../planning/done/plan-0.3.0.md) §8.
+`make smoke-cli` baut das Paket und exerziert acht Pfade:
+`--help` (über die pnpm-Skript-Form), HLS-Master-Datei (Exit 0 + JSON),
+DASH-VOD-Datei (Exit 0 + `analyzerKind:"dash"` /
+`playlistType:"dash"`), nicht unterstützte HTML-Datei (Exit 1 +
+`manifest_not_supported`), fehlende Datei (Exit 1 mit stderr-Hinweis),
+no-args (Exit 2), URL-Input gegen eine RFC1918-Adresse (Exit 1 +
+`fetch_blocked` — exerciert den echten Loader-Pfad inklusive
+SSRF-Schutz) und `--help` über `pnpm exec m-trace` (Bin-Symlink +
+Shebang). Der Aufruf spiegelt das DoD-Smoke-Kriterium aus
+[`plan-0.3.0`](../planning/done/plan-0.3.0.md) §8 und die
+DASH-Erweiterung aus [`plan-0.9.0`](../planning/done/plan-0.9.0.md)
+Tranche 3.

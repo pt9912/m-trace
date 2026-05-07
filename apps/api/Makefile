@@ -17,7 +17,7 @@ NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate benchmark-smoke fuzz-check
+.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate benchmark-smoke fuzz-check mutation-report
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002 §8.2). Build-/Dev-time-Werkzeug; das API-Image bleibt

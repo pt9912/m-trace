@@ -493,12 +493,13 @@ Bezug: `plan-0.8.5.md` §6 als Vorlage.
 DoD:
 
 - [x] `docs/user/releasing.md` §3 referenziert Wave-2-Gates
-  (`make benchmark-smoke` PR-blockierend, `make fuzz-check` und
+  (`make benchmark-smoke` als opt-in/Beobachtungs-Gate bis zur
+  PR-Blockierung nach N=3..5 grünen Läufen, `make fuzz-check` und
   `make mutation-report` opt-in/Nightly); Release-Voraussetzung
   ist „letzter Nightly-Benchmark grün". `releasing.md` §2.6 neu
   hinzugefügt (Fuzz- und Mutation-Beobachtungs-Gates), §3.1
   ergänzt um Wave-2-Quality-Gates-Voraussetzung pro Release-Tag
-  (Tranche-5-Commit).
+  (Tranche-5-Commit; Status-Präzisierung nach Review).
 - [x] `README.md` Status-Block erwähnt `0.9.5` als Patch-Release
   mit Quality-Gates Wave 2. Header-Block und Sektion „Aktueller
   Stand" listen die vier Tranche-Lieferungen explizit

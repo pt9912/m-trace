@@ -412,11 +412,12 @@ Blöcke: Drift-Smoke / SRS-Lab-Boot / DASH-CLI-Probe).
 Quality-Gates Wave 1 aus `0.8.5` (Security-Gates + Generated-
 Artifact-Drift), Player-SDK-WebRTC-Adapter aus `0.8.0`, SRT-Health-
 View aus `0.6.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben
-unverändert. Tranchen 0–5 in
+unverändert. Tranchen 0–5 aus `0.9.0` sind in
 [`docs/planning/done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md)
-archiviert. Nächste Phase: `plan-0.9.5.md` (Quality-Gates Wave 2 —
-Benchmark-Smoke, Nightly-benchstat, Fuzzing, Mutation Testing) liegt
-unter [`docs/planning/open/`](docs/planning/open/).
+archiviert; `0.9.5` ist in
+[`docs/planning/done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md)
+archiviert. Offener Folgepunkt aus Wave 2 ist nur noch die
+Benchmark-Smoke-PR-Blockierung nach N=3..5 grünen Beobachtungsläufen.
 Archivierte Plan-Dateien:
 [`docs/planning/done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md),
 [`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md),
