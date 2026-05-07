@@ -7,16 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-05-07
+
+> Wartungs-Patch nach `0.9.0` (Patch-Release-Konvention `0.X.Y`,
+> siehe [`docs/user/releasing.md`](docs/user/releasing.md) §3.1):
+> WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten plus
+> Pfad-Korrekturen nach dem `git mv` von `plan-0.9.0.md` zu `done/`.
+> Kein Lastenheft-Patch, kein eigener Plan-File — alle Inhalte
+> stammen aus dem Wartungs-Commit `f3a0ddf` direkt nach dem
+> `0.9.0`-Tag.
+
 ### Fixed
 
-- WebRTC-Drift-Smoke robuster gemacht: WHEP-Signalisierung läuft aus
-  dem Playwright-Node-Kontext statt browserseitig gegen den lokalen
-  MediaMTX-Endpoint; Firefox verhandelt im Smoke audio-only und
-  fehlende `RTCStatsType.transport`-Reports werden als
-  `[drift-soll]` geloggt statt als falscher Drift-Fail gewertet.
-- Veraltete `docs/planning/in-progress/plan-0.9.0.md`-Referenzen nach
-  dem Closeout-Move auf `docs/planning/done/plan-0.9.0.md`
-  korrigiert.
+- WebRTC-Drift-Smoke (`tests/e2e/webrtc-stats-drift.spec.ts`)
+  robuster gemacht für reale Browser-Eigenheiten:
+  - WHEP-Signalisierung läuft jetzt aus dem Playwright-Node-Kontext
+    statt browserseitig — vermeidet Browser-CORS-Abhängigkeiten des
+    lokalen MediaMTX-WHEP-Endpoints; die `RTCPeerConnection` und
+    alle `getStats()`-Reports stammen weiterhin aus echten Browsern.
+  - Firefox im Smoke audio-only (Chromium bleibt video+audio), weil
+    die Playwright-Firefox-Linie in dieser Umgebung keinen
+    kompatiblen Videocodec für den MediaMTX-Lab-Stream anbietet.
+  - Fehlende `RTCStatsType.transport`-Reports werden als
+    `[drift-soll]` geloggt statt als harter Drift-Fail gewertet —
+    folgt damit `spec/telemetry-model.md` §3.5.3 („Metrik leer
+    statt `unknown`-Surrogat", per Engine).
+  - `peer-connection.connectionState` wird über die normative
+    `pc.connectionState`-API geprüft, weil aktuelle Browser das
+    Feld nicht durchgängig im `peer-connection`-Stats-Report
+    spiegeln.
+- `playwright.config.ts` und `scripts/smoke-webrtc-stats-drift.sh`
+  unterstützen `PLAYWRIGHT_TEST_RESULTS_DIR` als Env-Override; der
+  Drift-Smoke schreibt seine Artefakte standardmäßig nach
+  `${TMPDIR:-/tmp}/mtrace-webrtc-drift-results-$$` statt in das
+  lokale `test-results/` (vermeidet Rechte-Konflikte mit Docker-
+  Compose-Ausgaben).
+- `spec/telemetry-model.md` §3.5.2 Einleitungstext und §3.5.3
+  Punkt 1 präzisiert: Muss-Felder sind Pflichtbedingung **pro
+  Engine** für die jeweilige Aggregat-Metrik (nicht „über alle drei
+  Browser stabil"); fehlt ein Muss-Feld, bleibt die Metrik in dieser
+  Engine leer (`unknown`-Surrogat ist Cardinality-Risiko).
+- `packages/player-sdk/README.md` Browser-Support-Matrix Zeile
+  Firefox 120+ präzisiert: `RTCStatsType.transport` ist nicht in
+  allen Playwright-Firefox-Builds sichtbar; Adapter folgt §3.5.3
+  und droppt das `dtls_state`-Aggregat anstatt ein `unknown`-
+  Surrogat zu emittieren.
+- Veraltete `docs/planning/in-progress/plan-0.9.0.md`-Referenzen in
+  Code-Kommentaren und Markdown-Verweisen
+  (`packages/stream-analyzer/src/internal/parsers/dash.ts`,
+  `examples/srs/README.md`, `docs/planning/done/plan-0.9.0.md` DoD-
+  Texte) nach dem Closeout-`git mv` auf
+  `docs/planning/done/plan-0.9.0.md` korrigiert.
+
+### Changed
+
+- Versions-Bump auf `0.9.1` (Patch-Release): alle 5 `package.json`
+  (root, `apps/dashboard`, `apps/analyzer-service`,
+  `packages/player-sdk`, `packages/stream-analyzer`),
+  `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts` `PLAYER_SDK_VERSION`,
+  `packages/player-sdk/scripts/pack-smoke.mjs` `expectedVersion`,
+  `contracts/sdk-compat.json` `sdk_version` plus Test-Fixtures und
+  Contract-Fixtures, die Versions-Strings hartkodieren. Gleicher
+  Bulk-Sed-Pfad wie `0.8.5` und `0.9.0` Closeout.
 
 ## [0.9.0] - 2026-05-07
 

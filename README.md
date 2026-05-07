@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.9.0` released — Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse (RAK-56..RAK-59 / Lastenheft `1.1.11` §13.11). Browser-`getStats()`-Drift wird seit Tranche 1 vom Nightly-Workflow `webrtc-drift.yml` automatisiert detektiert (R-12 von release-blockierend auf „automatisiert detektiert"); SRS-Lab `examples/srs/` als fünftes Multi-Protocol-Beispiel mit opt-in `make smoke-srs` (MVP-36 eingelöst); `@npm9912/stream-analyzer` versteht DASH-MPD-Eingaben zusätzlich zu HLS (NF-12 erfüllt; MVP-37 hochgestuft auf Muss; CLI-Dispatch über `m-trace check <file.mpd>`; `manifest_not_supported` als additiver Public-Code für Eingaben weder HLS noch DASH). Quality-Gates Wave 1 aus `0.8.5`, Player-SDK-WebRTC-Adapter aus `0.8.0`, SRT-Health-View aus `0.6.0` bleiben unverändert.
+> Status: `0.9.1` released — Wartungs-Patch nach `0.9.0` (Patch-Release-Konvention `0.X.Y`): WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus dem Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]`); Spec-Korrekturen in [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.5.2/§3.5.3 („Muss-Felder pro Engine, leer statt `unknown`-Surrogat"); Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout-Move. Liefergegenstände aus `0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, RAK-56..RAK-59 / Lastenheft `1.1.11` §13.11) und früher bleiben unverändert.
 
 ---
 
@@ -306,8 +306,17 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.9.0` released: drei thematisch getrennte
-Liefergegenstände in einem Minor-Release.
+Das Projekt steht bei `0.9.1` released — Wartungs-Patch nach
+`0.9.0` (Patch-Release-Konvention `0.X.Y`, siehe
+[`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Inhalt:
+WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-
+Signalisierung aus dem Playwright-Node-Kontext, Firefox audio-only,
+fehlende `RTCStatsType.transport`-Reports als `[drift-soll]` statt
+harter Fail) plus Spec-Präzisierung in `spec/telemetry-model.md`
+§3.5.2/§3.5.3 (Muss-Felder pro Engine, „leer statt `unknown`") und
+Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout-`git mv`. Kein
+Lastenheft-Patch, kein eigener Plan-File. Lieferstand `0.9.0` und
+früher bleibt unverändert:
 
 **Tranche 1 — Browser-Drift-Smoke (RAK-56)**: automatisiert R-12 ab.
 `tests/e2e/webrtc-stats-drift.spec.ts` (Playwright) öffnet im Page-

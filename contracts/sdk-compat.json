@@ -1,6 +1,6 @@
 {
   "package_name": "@npm9912/player-sdk",
-  "sdk_version": "0.9.0",
+  "sdk_version": "0.9.1",
   "wire_schema_version": "1.0",
   "api_supported_schema_version": "1.0",
   "reserved_meta_namespaces": [

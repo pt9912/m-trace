@@ -231,7 +231,7 @@ func validBatch() driving.BatchInput {
 				ProjectID:       "demo",
 				SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
 				ClientTimestamp: "2026-04-28T12:00:00.000Z",
-				SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.0"},
+				SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.1"},
 			},
 		},
 	}
@@ -765,7 +765,7 @@ func TestRegister_WebRTCSamplePropagatedToMetrics(t *testing.T) {
 			ProjectID:       "demo",
 			SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
 			ClientTimestamp: "2026-04-28T12:00:00.000Z",
-			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.0"},
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.1"},
 			Meta: map[string]any{
 				"webrtc.peer_connection_run_id": "run-a",
 				"webrtc.sample_id":              int64(1),
@@ -811,7 +811,7 @@ func TestRegister_WebRTCSampleSkippedForNonWebRTCEvents(t *testing.T) {
 			ProjectID:       "demo",
 			SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
 			ClientTimestamp: "2026-04-28T12:00:00.000Z",
-			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.0"},
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.1"},
 			// Keine webrtc.*-Keys.
 		},
 	}
@@ -835,7 +835,7 @@ func TestRegister_WebRTCSampleRejected422OnUnknownKey(t *testing.T) {
 			ProjectID:       "demo",
 			SessionID:       "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
 			ClientTimestamp: "2026-04-28T12:00:00.000Z",
-			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.0"},
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.1"},
 			Meta: map[string]any{
 				"webrtc.peer_connection_run_id": "run-a",
 				"webrtc.unknown_field":          "value",
