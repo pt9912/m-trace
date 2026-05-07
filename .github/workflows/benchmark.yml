@@ -1,0 +1,179 @@
+name: Benchmark regression (nightly)
+
+# plan-0.9.5 §3 Tranche 2 (RAK-Wave-2 / extra-gates.md §3.3) —
+# Statistisch belastbare Trend-Erkennung mit Baseline-Vergleich.
+# **Nicht im PR-Pfad**; Nightly + Release-blockierend.
+#
+# Mechanik:
+#   1. Cron 04:00 UTC (kein Konflikt mit benchmark-observation
+#      02:30 oder webrtc-drift 03:30).
+#   2. Bench-Lauf mit `-count=10 -benchtime=2s` für statistische
+#      Signifikanz; Output nach `.tmp/bench/current.txt`.
+#   3. Baseline aus orphan-Branch `benchmark-baseline` als File
+#      `benchmarks/api-bench.txt` ziehen. Falls Branch oder File
+#      fehlt: Workflow-Run gilt als initiale Baseline-Etablierung
+#      (Operator pusht `current.txt` manuell via workflow_dispatch
+#      job `update-baseline`, siehe README-Mechanik unten).
+#   4. `benchstat baseline current` produziert Vergleichstabelle.
+#   5. `scripts/check-benchstat-regression.mjs` parst die Tabelle
+#      und failed bei +15% Regression auf statistisch signifikantem
+#      Ergebnis (p<0.05; Schwelle in
+#      `docs/perf/budgets.md` §3 Wartung dokumentiert).
+#   6. Alle Outputs landen als Artefakt mit 30 Tagen Retention.
+#
+# Baseline-Pflege:
+#   - Initiale Etablierung: Operator pusht den aktuellen Bench-
+#     Output in den orphan-Branch `benchmark-baseline` als File
+#     `benchmarks/api-bench.txt`. Erst danach laufen Folge-Nightlies
+#     mit echtem Vergleich.
+#   - Drift-Akzeptanz: nach einem absichtlichen Performance-Tradeoff
+#     pusht der Operator den neuen Bench-Output erneut nach
+#     `benchmark-baseline`.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  benchmark-regression:
+    name: Benchmark regression scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          check-latest: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5.0.0
+        with:
+          version: 10.18.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install benchstat
+        run: |
+          go install golang.org/x/perf/cmd/benchstat@latest
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
+      - name: Print runner info
+        run: bash scripts/print-bench-runner-info.sh
+
+      - name: Run Go benchmarks (current HEAD, count=10)
+        working-directory: apps/api
+        run: |
+          mkdir -p ../.tmp/bench
+          go test -bench=. -benchmem -count=10 -benchtime=2s \
+            ./hexagon/... ./adapters/... \
+            > ../.tmp/bench/current.txt
+          echo "[benchmark] head bench written to .tmp/bench/current.txt"
+
+      - name: Fetch baseline from orphan branch
+        id: baseline
+        run: |
+          if git fetch --depth=1 origin benchmark-baseline 2>/dev/null; then
+            if git show origin/benchmark-baseline:benchmarks/api-bench.txt > .tmp/bench/baseline.txt 2>/dev/null; then
+              echo "found=1" >> "$GITHUB_OUTPUT"
+              echo "[benchmark] baseline pulled from orphan branch benchmark-baseline"
+            else
+              echo "found=0" >> "$GITHUB_OUTPUT"
+              echo "[benchmark] orphan branch exists but benchmarks/api-bench.txt is missing"
+            fi
+          else
+            echo "found=0" >> "$GITHUB_OUTPUT"
+            echo "[benchmark] orphan branch benchmark-baseline does not yet exist"
+          fi
+
+      - name: Compare with benchstat
+        if: steps.baseline.outputs.found == '1'
+        id: compare
+        continue-on-error: true
+        run: |
+          benchstat .tmp/bench/baseline.txt .tmp/bench/current.txt \
+            > .tmp/bench/comparison.txt
+          cat .tmp/bench/comparison.txt
+          node scripts/check-benchstat-regression.mjs --threshold-percent 15 \
+            .tmp/bench/comparison.txt
+
+      - name: Skip note (no baseline)
+        if: steps.baseline.outputs.found == '0'
+        run: |
+          echo "::notice title=Bench baseline missing::orphan-Branch benchmark-baseline existiert noch nicht oder enthaelt kein benchmarks/api-bench.txt. Initial-Etablierung: aktuellen Bench-Output manuell in den orphan-Branch pushen. Ohne Baseline ist kein Vergleich moeglich; dieser Run gilt als observation-only."
+
+      - name: Open regression issue (on bench compare failure)
+        if: steps.compare.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -eu
+          title="Benchmark regression detected ($(date -u +%Y-%m-%d))"
+          comparison="$(cat .tmp/bench/comparison.txt 2>/dev/null || echo '<comparison missing>')"
+          body=$(cat <<EOF
+          The nightly benchmark workflow (\`make api-benchmark-smoke\`
+          equivalent with \`-count=10\`) detected one or more statistically
+          significant regressions over the +15% threshold.
+
+          - Workflow run: ${RUN_URL}
+          - Threshold: +15% at p<0.05
+          - Baseline source: orphan-branch benchmark-baseline / benchmarks/api-bench.txt
+
+          ## benchstat comparison
+
+          \`\`\`
+          ${comparison}
+          \`\`\`
+
+          ## Reaction
+
+          1. Open the run logs and read the regression detail
+             (\`scripts/check-benchstat-regression.mjs\` output names every
+             regressed Benchmark plus its delta and p-value).
+          2. Reproduce locally:
+             \`\`\`
+             cd apps/api
+             go test -bench=. -benchmem -count=10 -benchtime=2s ./hexagon/... ./adapters/...
+             \`\`\`
+          3. Either fix the regression and re-run the workflow, or
+             accept the new performance characteristic and push the
+             current bench output to the \`benchmark-baseline\` orphan
+             branch (drift-acceptance path).
+          EOF
+          )
+          gh issue create \
+            --title "$title" \
+            --body "$body" \
+            --label "performance,benchmark,plan-0.9.5"
+
+      - name: Upload bench artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-regression-${{ github.run_id }}
+          path: .tmp/bench/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Fail on regression
+        if: steps.compare.outcome == 'failure'
+        run: |
+          echo "::error title=Benchmark regression::Significant regression detected; see comparison artifact and auto-issue."
+          exit 1

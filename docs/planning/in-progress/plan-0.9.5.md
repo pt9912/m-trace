@@ -128,7 +128,7 @@ package.json-lesen).
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung + Baseline-Entscheidungen aus `extra-gates.md` §6 (Baseline-Pfad, initiale Budgets, Quarantäne-Policy) | ✅ |
 | 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | 🟡 |
-| 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ⬜ |
+| 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | 🟡 |
 | 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ⬜ |
 | 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ⬜ |
 | 5 | Release-Doku, Versions-Bump 0.9.0 → 0.9.5, Plan nach `done/`, Tag `v0.9.5` | ⬜ |
@@ -275,24 +275,39 @@ Nicht im PR-Pfad; Nightly + Release-blockierend.
 
 DoD:
 
-- [ ] CI-Workflow `.github/workflows/benchmark.yml` (`on: schedule:
-  cron`) führt die Go-Benchmarks mit `-count=10` aus, lädt die
-  Baseline aus dem Pfad aus Tranche 0 und vergleicht via
-  `benchstat`.
-- [ ] Regressions-Schwelle ist explizit (z. B. > 15 % bei
-  statistisch signifikantem Ergebnis); Schwelle ist im Workflow
-  oder in `docs/perf/budgets.md` dokumentiert.
-- [ ] `benchstat`-Output wird als Workflow-Artefakt gespeichert
-  (Retention ≥ 30 Tage).
-- [ ] Bei Regression: Auto-Issue oder Slack-/Mail-Alert (in
-  Tranche 0 entschieden).
+- [x] CI-Workflow `.github/workflows/benchmark.yml` (`on: schedule:
+  cron '0 4 * * *'` UTC plus `workflow_dispatch`) führt die
+  Go-Benchmarks via `cd apps/api; go test -bench=. -benchmem
+  -count=10 -benchtime=2s ./hexagon/... ./adapters/...` aus, lädt
+  die Baseline aus dem Tranche-0-Pfad (orphan-Branch
+  `benchmark-baseline` als File `benchmarks/api-bench.txt`) und
+  vergleicht via `benchstat` aus `golang.org/x/perf/cmd/benchstat`.
+  Ohne Baseline läuft der Workflow als observation-only mit Notice
+  und exitet ohne Vergleich (Tranche-2a-Commit).
+- [x] Regressions-Schwelle ist explizit: **+15 % auf statistisch
+  signifikantem Ergebnis (p < 0.05)**. Implementiert in
+  `scripts/check-benchstat-regression.mjs`; Schwelle als
+  `--threshold-percent`-Flag konfigurierbar, Default 15. Schwelle
+  ist im Workflow als Aufruf-Argument dokumentiert; parallel-
+  Eintrag in `docs/perf/budgets.md` §5 Wartung folgt mit Tranche-
+  2b-Commit (Tranche-2a-Commit).
+- [x] `benchstat`-Output wird als Workflow-Artefakt
+  `bench-regression-<run_id>` gespeichert mit **30 Tagen
+  Retention** — enthält `current.txt`, `baseline.txt` (falls
+  vorhanden) und `comparison.txt` (Tranche-2a-Commit).
+- [x] Bei Regression: Auto-Issue mit Workflow-Run-URL,
+  benchstat-Diff im `comparison.txt`-Block, lokaler Repro-Befehl
+  und Drift-Akzeptanz-Pfad. Labels `performance,benchmark,
+  plan-0.9.5`. Issue wird unconditional erstellt (kein
+  `secrets.*`-Gate; Performance-Drift ist immer team-relevant)
+  (Tranche-2a-Commit).
 - [ ] Release-Gate in `releasing.md` referenziert den letzten
   grünen Nightly-Run vor Release-Tag als Pflicht-Voraussetzung
-  für Minor-Releases.
+  für Minor-Releases (Tranche-2b-Commit).
 - [ ] Quarantäne-Mechanik: ein Benchmark kann via
   `// bench:quarantine`-Tag aus dem Vergleich genommen werden;
   Tag verfällt nach 30 Tagen automatisch (Workflow-Skript prüft
-  Tag-Alter).
+  Tag-Alter; Tranche-2b-Commit).
 
 ---
 
