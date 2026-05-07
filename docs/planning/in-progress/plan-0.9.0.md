@@ -2,7 +2,9 @@
 
 > **Status**: 🟡 in Arbeit (Plan-Skelett am 2026-05-07 von
 > `docs/planning/open/` nach `docs/planning/in-progress/` gezogen,
-> Tranche 0a abgeschlossen). Vorgänger `v0.8.5` ist released
+> Tranche 0 abgeschlossen — Plan-Aktivierung, Lastenheft-Patch
+> `1.1.11` mit RAK-56..RAK-59 und MVP-37-Hochstufung sowie
+> Toolchain-Bump-Check ohne Bump-Bedarf). Vorgänger `v0.8.5` ist released
 > (Tag `v0.8.5` auf `ce05e3b`, GitHub-Release veröffentlicht; Plan
 > archiviert in [`done/plan-0.8.5.md`](../done/plan-0.8.5.md)). `0.8.0`
 > (Player-SDK-WebRTC-Adapter) bleibt auf Tag `v0.8.0` (`8df263a`,
@@ -166,7 +168,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | 🟡 |
+| 0 | Plan-Aktivierung (`open/` → `in-progress/`) + Lastenheft-Patch `1.1.11` (RAK-56..RAK-59 + MVP-37-Hochstufung) + ggf. Toolchain-Hardening | ✅ |
 | 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ⬜ |
 | 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ⬜ |
 | 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ⬜ |
@@ -191,8 +193,18 @@ DoD:
   NF-12 (Hinweis: §12.3 historisch beibehalten mit Patch-Note).
   Patch-Eintrag als §4a.14 in `done/plan-0.1.0.md` Tranche 0c
   (Tranche-0b-Commit).
-- [ ] Toolchain-Bump-Check (Go/Node/pnpm/golangci-lint). Wenn kein
-  Bump nötig, dokumentieren warum nicht.
+- [x] Toolchain-Bump-Check: keine Anpassung nötig. Go (`1.26`),
+  golangci-lint (`v2.12.1-alpine`), Node (`22-trixie-slim`, seit
+  `0.8.5` Tranche 1) und pnpm (`>=10 <11`) sind seit `0.7.0`
+  Tranche 0 (Commits `ccf68b1` + `8bfad21`) und `0.8.5` Tranche 1
+  (Image-Hardening, Commits `927555a` + `388491e`) aktuell und
+  non-EOL. Race-Detector-Stage (`make api-race`) ist seit `0.7.0`
+  in `make gates` enthalten; Generated-Drift-Gate (`make
+  generated-drift-check`) seit `0.8.5` ebenso. Keine `0.9.0`-
+  spezifischen neuen Tools — der DASH-Parser in Tranche 3 nutzt
+  ausschließlich Workspace-interne TypeScript-Dependencies, und
+  der Drift-Smoke in Tranche 1 läuft auf dem bestehenden
+  Playwright-Container aus `0.4.0` (Tranche-0c-Commit).
 
 ---
 
