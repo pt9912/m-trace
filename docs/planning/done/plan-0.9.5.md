@@ -2,12 +2,19 @@
 
 > **Status**: ✅ released (Tag `v0.9.5` am 2026-05-07; Plan-File am
 > selben Tag von `docs/planning/in-progress/` nach
-> `docs/planning/done/` verschoben). Tranchen 0..5 alle ✅.
-> Vorgänger `v0.9.1` (Wartungs-Patch nach `v0.9.0`) bleibt im
-> Release-Verlauf; `0.9.5` ist Patch-Release ohne User-Surface-
-> Änderung — Inhalt: Benchmark-Smoke, Nightly-`benchstat`-
-> Regressionen, selektives Fuzzing + TS-Property-Tests, Mutation-
-> Testing als Nightly-Report.
+> `docs/planning/done/` verschoben). Tranchen 0, 2, 3, 4, 5 ✅.
+> Tranche 1 ist als Lieferung **ausgeliefert**, läuft aber mit
+> einer 🟡-markierten Beobachtungsphase weiter (Nightly-Workflow
+> `benchmark-observation.yml` `continue-on-error: true`); ein
+> Folge-Commit nach N=3..5 grünen Läufen entfernt die `continue-
+> on-error`-Marker und nimmt `make benchmark-smoke` in
+> `make gates` auf — siehe Plan-DoD §2-6 und Roadmap §1.2 Folge-
+> Punkt „Benchmark-Smoke PR-Blockierung". Vorgänger `v0.9.1`
+> (Wartungs-Patch nach `v0.9.0`) bleibt im Release-Verlauf;
+> `0.9.5` ist Patch-Release ohne User-Surface-Änderung —
+> Inhalt: Benchmark-Smoke, Nightly-`benchstat`-Regressionen,
+> selektives Fuzzing + TS-Property-Tests, Mutation-Testing als
+> Nightly-Report.
 >
 > **Release-Typ**: Patch-Release nach `0.9.0`/`0.9.1` (Konvention aus
 > [`plan-0.8.5.md`](../done/plan-0.8.5.md) §0.6 /
