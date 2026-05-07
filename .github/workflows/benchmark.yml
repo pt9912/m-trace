@@ -77,6 +77,13 @@ jobs:
       - name: Print runner info
         run: bash scripts/print-bench-runner-info.sh
 
+      - name: Check bench quarantines (max 30 Tage)
+        run: |
+          mkdir -p .tmp/bench
+          node scripts/check-bench-quarantines.mjs \
+            --output .tmp/bench/quarantine.json \
+            apps/api packages/stream-analyzer
+
       - name: Run Go benchmarks (current HEAD, count=10)
         working-directory: apps/api
         run: |

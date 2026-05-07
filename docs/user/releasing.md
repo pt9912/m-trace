@@ -247,6 +247,51 @@ gh run watch --workflow build.yml
 gh run list --workflow webrtc-drift.yml --limit 5
 ```
 
+### 2.5 Benchmark-Regression-Gate (`0.9.5` Tranche 2, RAK-Wave-2)
+
+Seit `plan-0.9.5` Tranche 2 ist
+[`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml)
+Nightly aktiv und failed bei statistisch signifikanten
+Performance-Regressionen über +15 % (p < 0.05) gegenüber der
+Baseline im orphan-Branch `benchmark-baseline`.
+
+**Pflicht für Minor-Releases (`0.X.0`)**: Vor dem Release-Tag muss
+der letzte Nightly-Lauf des `benchmark.yml`-Workflows **grün** sein
+(oder als observation-only ohne Baseline gelaufen sein, falls die
+Phase noch initial ist). Patch-Releases (`0.X.Y`) sind davon
+ausgenommen — sie dürfen die Performance-Charakteristik nicht
+ändern und werden über `make benchmark-smoke` (PR-Pfad)
+abgesichert.
+
+```bash
+gh run list --workflow benchmark.yml --limit 5
+gh run view <run-id>            # benchstat-Output im Log
+gh run download <run-id>        # comparison.txt + current.txt + baseline.txt
+```
+
+Bei Regression öffnet der Workflow automatisch ein Issue mit
+Workflow-Run-URL, vollständigem `benchstat`-Diff, lokalem
+Repro-Befehl und dem Drift-Akzeptanz-Pfad. Ein offenes Issue
+**blockiert** den Minor-Release-Tag, bis es geschlossen ist (Fix
+landed oder Drift wurde durch Update des `benchmark-baseline`-
+Branches akzeptiert).
+
+**Quarantäne-Mechanik** (Plan-DoD-Wartungsregel): ein einzelner
+lauter Benchmark kann temporär aus dem Vergleich genommen werden.
+Format: ein Kommentar `// bench:quarantine YYYY-MM-DD reason: <text>`
+**direkt** über der `func BenchmarkX(...)`-Definition (Go) bzw.
+über dem `bench("...", ...)`-Aufruf (TS). Das Skript
+[`scripts/check-bench-quarantines.mjs`](../../scripts/check-bench-quarantines.mjs)
+läuft als erster Step im Workflow und failed, wenn ein Tag älter
+als 30 Tage ist — Operator muss dann entweder den Bench fixen
+und das Tag entfernen, oder das Tag mit einer Plan-DoD-Item-
+Änderung im Folge-Plan verlängern (kein stiller Re-Skip).
+
+```bash
+# Manuelle Prüfung lokal:
+node scripts/check-bench-quarantines.mjs apps/api packages/stream-analyzer
+```
+
 ## 3. Release-Commit und Tag
 
 Release-Konvention für `0.1.x`:

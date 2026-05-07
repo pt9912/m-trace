@@ -128,7 +128,7 @@ package.json-lesen).
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung + Baseline-Entscheidungen aus `extra-gates.md` §6 (Baseline-Pfad, initiale Budgets, Quarantäne-Policy) | ✅ |
 | 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | 🟡 |
-| 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | 🟡 |
+| 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ✅ |
 | 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ⬜ |
 | 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ⬜ |
 | 5 | Release-Doku, Versions-Bump 0.9.0 → 0.9.5, Plan nach `done/`, Tag `v0.9.5` | ⬜ |
@@ -301,13 +301,28 @@ DoD:
   plan-0.9.5`. Issue wird unconditional erstellt (kein
   `secrets.*`-Gate; Performance-Drift ist immer team-relevant)
   (Tranche-2a-Commit).
-- [ ] Release-Gate in `releasing.md` referenziert den letzten
-  grünen Nightly-Run vor Release-Tag als Pflicht-Voraussetzung
-  für Minor-Releases (Tranche-2b-Commit).
-- [ ] Quarantäne-Mechanik: ein Benchmark kann via
-  `// bench:quarantine`-Tag aus dem Vergleich genommen werden;
-  Tag verfällt nach 30 Tagen automatisch (Workflow-Skript prüft
-  Tag-Alter; Tranche-2b-Commit).
+- [x] Release-Gate in `docs/user/releasing.md` neue §2.5
+  („Benchmark-Regression-Gate") referenziert den letzten grünen
+  Nightly-Run vor Release-Tag als **Pflicht-Voraussetzung für
+  Minor-Releases** (`0.X.0`); Patch-Releases (`0.X.Y`) sind
+  ausgenommen, weil sie die Performance-Charakteristik nicht
+  ändern und über `make benchmark-smoke` (PR-Pfad) abgesichert
+  werden. Block dokumentiert auch Quarantäne-Tag-Format und
+  Operator-Pfad bei Regression-Issue (Tranche-2b-Commit).
+- [x] Quarantäne-Mechanik: ein Benchmark kann via
+  `// bench:quarantine YYYY-MM-DD reason: <text>`-Kommentar direkt
+  über der `func BenchmarkX(...)` (Go) bzw. dem `bench("...",
+  ...)`-Aufruf (TS) aus dem Vergleich genommen werden. Skript
+  `scripts/check-bench-quarantines.mjs` (executable) scant
+  `apps/api` und `packages/stream-analyzer` rekursiv, mappt jeden
+  Tag auf den nachfolgenden Bench-Namen (max. 5 Zeilen Suchradius)
+  und failed mit Exit-1, sobald ein Tag älter als die
+  konfigurierbare Maximal-Quarantäne (Default 30 Tage) ist. Liste
+  aktiver Quarantänen wird optional als JSON unter `--output
+  <path>` für Folge-Konsumenten geschrieben. Workflow ruft den
+  Check als ersten Step nach Setup; expired Tag = Workflow-Failure
+  vor benchstat-Lauf. Operator-Doku in `docs/user/releasing.md`
+  §2.5 (Tranche-2b-Commit).
 
 ---
 
