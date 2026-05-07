@@ -340,9 +340,38 @@ DoD:
   ADR-0004), HTTP-Validation für Playback-Event-Batches,
   Event-Meta-Validation (`webrtc.*`-Allowlist aus `0.8.0`),
   SRT-Health-Mapping.
-- [ ] TypeScript-Property-Tests via `fast-check` für mindestens:
-  HLS-Manifest-Parser, DASH-Manifest-Parser (sobald `0.9.0`
-  Tranche 3 das produktiv hat), URL-Redaction.
+- [x] TypeScript-Property-Tests via `fast-check` (4.4.0,
+  devDependency in `packages/stream-analyzer` und
+  `packages/player-sdk`) für die drei Pflicht-Bereiche:
+  - `packages/stream-analyzer/tests/hls-parser.property.test.ts`:
+    zwei Properties — beliebige Eingaben mit `#EXTM3U`-Header
+    produzieren ein deterministisches `AnalysisResult` (kein
+    Crash, `analyzerKind:"hls"`, `playlistType` ∈ `master`/
+    `media`/`unknown`); non-HLS/non-DASH-Bodies ergeben hart
+    `manifest_not_supported`.
+  - `packages/stream-analyzer/tests/dash-parser.property.test.ts`:
+    drei Properties — Detector-Klassifikation `<?xml`/`<MPD`-
+    Präfix → `dash`; well-formed MPD → deterministisches Result
+    mit `analyzerKind:"dash"` / `playlistType:"dash"` /
+    `details.type` (static/dynamic) und passendem
+    `summary.itemCount`. Plan-§4 verlangte DASH „sobald 0.9.0
+    Tranche 3 produktiv ist" — seit Commit `b241b7d` der Fall.
+  - `packages/player-sdk/tests/redact.property.test.ts`: drei
+    Properties — bounded ASCII/Sentinel-Inputs throwen nicht;
+    JWT-Shape-Pfadsegmente werden zu `:redacted`; lange Hex-
+    Pfadsegmente werden zu `:redacted`. Lehre aus dem ersten
+    Bench-Lauf: `fc.webUrl(...)` und `fc.stringMatching(...).filter(...)`
+    haben fast-check 4.4 in einen Discard-Loop geschickt
+    (vitest-Workers liefen 30+ min auf 97% CPU). Lösung in der
+    Spec dokumentiert: alle Properties nutzen deterministische
+    Generators mit fixer Länge (`fc.constantFrom` + `fc.array`),
+    kein `.filter()`-Pfad. Plus `interruptAfterTimeLimit: 4_000`
+    als Schutznetz; Folge-Backlog-Item für vollständigen URL-
+    Redaction-Korpus mit `fc.webUrl` sobald fast-check den
+    Discard-Pfad hardened.
+  Tests laufen über `make ts-test` (Plan-DoD §4-2-Item;
+  vitest-Bench-fertig); 14 zusätzliche Property-Tests dazu, alle
+  grün.
 - [ ] `make fuzz-check`-Target im Root-`Makefile` mit kurzem
   `-fuzztime` (Default `30s`); CI-Stage opt-in (manueller Trigger
   oder Nightly).
