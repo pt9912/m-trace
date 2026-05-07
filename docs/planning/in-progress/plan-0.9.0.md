@@ -172,7 +172,7 @@ Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert.
 | 1 | Browser-Drift-Smoke für WebRTC-`getStats()` (RAK-56) | ✅ |
 | 2 | SRS-Lab `examples/srs/` (RAK-57, MVP-36) | ✅ |
 | 3 | DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (RAK-58/RAK-59, MVP-37, NF-12) | ✅ |
-| 4 | Compat-Tests + Browser-Support-Matrix-Pflege; Pack-Smoke + CLI-Smoke erweitert | ⬜ |
+| 4 | Compat-Tests + Browser-Support-Matrix-Pflege; Pack-Smoke + CLI-Smoke erweitert | ✅ |
 | 5 | Release-Doku, RAK-Verifikationsmatrix und Closeout (Versions-Bump 0.8.0 → 0.9.0, Plan nach `done/`, Tag `v0.9.0`) | ⬜ |
 
 ---
@@ -449,19 +449,36 @@ Browser-Support-Matrix-Pflege; CI-Policy bleibt explizit.
 
 DoD:
 
-- [ ] Pack-Smoke (`packages/stream-analyzer/scripts/`?): falls
-  Stream-Analyzer ein eigenes Pack-Smoke hat, prüft er den
-  DASH-Pfad in ESM/CJS. Wenn nicht, Folge-DoD analog
-  `0.8.0` Tranche 4 für Player-SDK — kein Stream-Analyzer-
-  Pack-Smoke in `0.9.0` Pflicht.
-- [ ] `packages/stream-analyzer/README.md` (oder neuer Abschnitt)
-  dokumentiert DASH-Eingabeform und CLI-Dispatcher-Logik.
-- [ ] `examples/README.md` listet `smoke-srs` konsistent.
-- [ ] `docs/user/local-development.md` §2.7 Port-Quickref mit
-  `mtrace-srs`-Eintrag.
-- [ ] `docs/user/releasing.md` neue §2.4 für `0.9.0`-Smokes
-  (Drift-Smoke + DASH-Smoke + SRS-Smoke) als opt-in im Release-
-  Pfad analog `smoke-srt-health`/`smoke-webrtc-prep`.
+- [x] Pack-Smoke: `packages/stream-analyzer/scripts/` hat aktuell
+  kein eigenes Pack-Smoke (anders als `packages/player-sdk/scripts/
+  pack-smoke.mjs`). Plan-Vorgabe: „kein Stream-Analyzer-Pack-Smoke
+  in `0.9.0` Pflicht." Der DASH-Pfad ist über `make smoke-cli`
+  (Library-Pfad via `m-trace check <vod.mpd>`) plus die Go-
+  Adapter-Contract-Tests gegen das produktive analyzer-service-
+  Image geprüft; ESM-/CJS-Bundle-spezifische Drifts würde der
+  bestehende `tsc`-Type-Check + Vitest-Tests fangen. Folge-DoD
+  (eigenes Stream-Analyzer-Pack-Smoke analog Player-SDK) ist
+  Backlog-Material für eine spätere Phase.
+- [x] `packages/stream-analyzer/README.md` dokumentiert DASH-
+  Eingabeform und CLI-Dispatcher-Logik in zwei neuen Sektionen
+  (DASH-Eingabeform mit Diskriminator-Tabelle + Beispiel-JSON +
+  Verweis auf die Spec-Fixture; CLI-Dispatcher mit Auto-Detection
+  am Body und `manifest_not_supported`-Pfad). Status-Block auf
+  `0.9.0`-Stand aktualisiert; `analyzeManifest` als generischer
+  Schnellstart, `analyzeHlsManifest` als Backward-Kompat-Alias
+  (Tranche-4-Commit).
+- [x] `examples/README.md` listet `smoke-srs` konsistent (bereits
+  in Tranche 2 erledigt; Smoke-Tabelle und Beispiele-Tabelle
+  zeigen den `mtrace-srs`-Eintrag).
+- [x] `docs/user/local-development.md` §2.7 Port-Quickref mit
+  `mtrace-srs`-Eintrag (1935 RTMP / 1985 HTTP-API / 8088 HTTP-FLV;
+  bereits in Tranche 2 erledigt).
+- [x] `docs/user/releasing.md` §2.4 ist auf den vollen `0.9.0`-
+  Verifikationspfad ausgebaut (Drift-Smoke / SRS-Lab-Boot / DASH-
+  CLI-Probe), jeweils mit eigenem Sub-Block (§2.4.1–§2.4.3) und
+  konkreten Endpoint-/Make-Aufrufen. WebRTC-Drift-Block aus
+  Tranche 1 bleibt erhalten und wandert unter §2.4.1
+  (Tranche-4-Commit).
 
 ---
 

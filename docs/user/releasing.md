@@ -179,7 +179,14 @@ Vollständige Operator-Doku:
 [`packages/player-sdk/README.md`](../../packages/player-sdk/README.md)
 §Performance and Browser Support.
 
-### 2.4 WebRTC-Drift-Smoke (`0.9.0` Tranche 1, RAK-56)
+### 2.4 Manuelle `0.9.0`-Prüfungen (Drift-Smoke + DASH + SRS)
+
+`0.9.0` bündelt drei thematisch getrennte Liefergegenstände
+(plan-0.9.0 Tranchen 1–3); vor dem Release-Tag laufen drei
+operative Verifikationspfade an, die alle als opt-in Smokes lokal
+reproduzierbar sind und nicht in `make gates` enthalten:
+
+#### 2.4.1 WebRTC-Drift-Smoke (Tranche 1, RAK-56)
 
 Seit `0.9.0` Tranche 1 ist der Drift-Review aus R-12 automatisiert.
 Vor jedem Release-Tag (auch Patch) genügt ein Blick auf den letzten
@@ -199,6 +206,41 @@ Nightly-Lauf des Workflows
   §3.5.2, `contracts/event-schema.json#reserved_meta_keys` und
   `packages/player-sdk/src/adapters/webrtc/sampling.ts` synchron
   aktualisieren; lokal `make smoke-webrtc-stats-drift` grün ziehen.
+
+#### 2.4.2 SRS-Lab-Boot (Tranche 2, RAK-57)
+
+`make smoke-srs` fährt das `mtrace-srs`-Compose hoch, prüft drei
+Probes (HTTP-API erreichbar, Stream `live/srs-test` registriert,
+HTTP-FLV-Egress liefert FLV-Magic-Header) und räumt den Stack ab.
+Erwartete Endpoints:
+
+```bash
+make smoke-srs
+# HTTP-API: http://localhost:1985/api/v1/streams/
+# HTTP-FLV: http://localhost:8088/live/srs-test.flv
+```
+
+Ports `1935/1985/8088` müssen frei sein; Operator-Doku siehe
+[`examples/srs/README.md`](../../examples/srs/README.md).
+
+#### 2.4.3 DASH-CLI-Probe (Tranche 3, RAK-58/RAK-59)
+
+`make smoke-cli` ist seit `0.9.0` Tranche 3 um einen DASH-Pfad
+erweitert: zusätzlich zum HLS-Master-Test prüft der Smoke, dass
+`pnpm m-trace check <vod.mpd>` ein Result mit
+`analyzerKind:"dash"` / `playlistType:"dash"` und mindestens einer
+`details.adaptationSets[]`-Entry liefert. Ein zweiter Block testet
+den Negativ-Pfad: ein HTML-Body wird vom Detector als
+`manifest_not_supported` zurückgewiesen (HTTP 422 in der API).
+
+```bash
+make smoke-cli  # 8 Probes inkl. DASH VOD und manifest_not_supported
+```
+
+Der DASH-Pfad nutzt die produktive Library, keine Stubs — die
+Smoke-Schritte exerzieren den vollen Detector + MPD-Parser-Pfad.
+
+#### Workflow-Übersicht
 
 ```bash
 gh run watch --workflow build.yml
