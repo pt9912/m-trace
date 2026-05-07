@@ -1,0 +1,140 @@
+name: Fuzz nightly
+
+# plan-0.9.5 §4 Tranche 3 (RAK-Wave-2 / extra-gates.md §3.5) —
+# Nightly-Fuzz-Workflow mit längerem Budget pro Target. **Nicht im
+# PR-Pfad** (das ist `make fuzz-check` mit kurzem -fuzztime opt-in).
+# Crash-Funde werden als GitHub-Issue mit Repro-Path automatisch
+# erstellt.
+#
+# Trigger:
+#   - schedule: nightlich um 05:00 UTC (kein Konflikt mit den
+#     anderen Nightlies: benchmark-observation 02:30, webrtc-drift
+#     03:30, benchmark.yml 04:00).
+#   - workflow_dispatch: manueller Trigger für ad-hoc-Läufe nach
+#     Touch von Validation-/Cursor-/Mapping-Code.
+#
+# Budget: 5 min pro Target (FUZZTIME=300s); bei sechs aktiven
+# Fuzz-Targets ≈ 30 min Gesamt-Laufzeit. Override über
+# `workflow_dispatch`-Input `fuzztime` möglich.
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        description: '-fuzztime per target (Go-format, e.g. 300s, 5m, 10m)'
+        required: false
+        default: '5m'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  fuzz:
+    name: Go fuzz (nightly)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          check-latest: false
+
+      - name: Print runner info
+        run: bash scripts/print-bench-runner-info.sh
+
+      - name: Run go fuzz targets (longer budget)
+        id: fuzz
+        continue-on-error: true
+        env:
+          FUZZTIME: ${{ inputs.fuzztime || '5m' }}
+        working-directory: apps/api
+        run: |
+          set -eu
+          mkdir -p ../.tmp/fuzz
+          # We invoke per-target so each Fuzz target gets the full
+          # FUZZTIME (Go's `go test -fuzz` only fuzzes one target per
+          # invocation). Crash inputs land under
+          # `testdata/fuzz/<Target>/<id>` automatically and turn into
+          # deterministic regression seeds for the next regular
+          # `make api-test` run.
+          # The grep produces "func FuzzName" rows; we extract the
+          # name and resolve the package via a second grep.
+          grep -rEho "^func (Fuzz[A-Za-z0-9_]+)" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
+            ./hexagon ./adapters | sort -u | while read -r line; do
+            name=$(echo "$line" | sed -e "s/^func //")
+            pkg=$(grep -rEl "^func $name" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
+              ./hexagon ./adapters | head -1 | xargs dirname)
+            echo "[fuzz-nightly] running $name in $pkg ($FUZZTIME)" \
+              | tee -a ../.tmp/fuzz/run.log
+            go test -run='^$' -fuzz="^${name}$" -fuzztime="$FUZZTIME" "./$pkg" \
+              2>&1 | tee -a ../.tmp/fuzz/run.log
+          done
+
+      - name: Collect crash inputs
+        id: crashes
+        if: always()
+        working-directory: apps/api
+        run: |
+          set -eu
+          mkdir -p ../.tmp/fuzz/crashes
+          if find . -path "*/testdata/fuzz/*" -type f -newer go.mod 2>/dev/null | grep -q .; then
+            find . -path "*/testdata/fuzz/*" -type f -newer go.mod -print0 \
+              | xargs -0 -I {} cp --parents {} ../.tmp/fuzz/crashes/ 2>/dev/null || true
+            echo "found=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload fuzz artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-nightly-${{ github.run_id }}
+          path: .tmp/fuzz/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Open fuzz issue (on crash)
+        if: steps.fuzz.outcome == 'failure' || steps.crashes.outputs.found == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FUZZTIME: ${{ inputs.fuzztime || '5m' }}
+        run: |
+          set -eu
+          title="Fuzz crash detected ($(date -u +%Y-%m-%d))"
+          body=$(cat <<EOF
+          The nightly Go-Fuzz workflow (\`make api-fuzz-check FUZZTIME=$FUZZTIME\`)
+          detected one or more crashes.
+
+          - Workflow run: $RUN_URL
+          - Per-target budget: $FUZZTIME
+          - Crash inputs: see workflow artifact \`fuzz-nightly-${{ github.run_id }}\`
+            (the \`crashes/\`-Subverzeichnis spiegelt die produktiven
+            \`testdata/fuzz/<Target>/<id>\`-Pfade).
+
+          ## Reaction
+
+          1. Download the artifact and place each crash file under
+             \`apps/api/<package>/testdata/fuzz/<TargetName>/<id>\` —
+             at the same path the next regular \`make api-test\` run
+             will pick it up as deterministic regression seed.
+          2. Reproduce locally with \`make api-test\` (the seed is
+             folded into the unit-test pass automatically) or with
+             \`go test -run='Fuzz<Target>/<id>' ./<package>\`.
+          3. Fix the underlying bug; the seed stays in the repo as
+             permanent regression test.
+          EOF
+          )
+          gh issue create \
+            --title "$title" \
+            --body "$body" \
+            --label "fuzz,quality,plan-0.9.5"

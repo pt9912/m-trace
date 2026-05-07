@@ -17,7 +17,7 @@ NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate benchmark-smoke
+.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate benchmark-smoke fuzz-check
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002 §8.2). Build-/Dev-time-Werkzeug; das API-Image bleibt
@@ -138,6 +138,31 @@ schema-generate:
 benchmark-smoke:
 	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26 \
 		go test -run='^$$' -bench=. -benchmem -benchtime 1s ./hexagon/... ./adapters/...
+
+# Go-Fuzz-Suite (plan-0.9.5 §4 Tranche 3, RAK-Wave-2). Findet alle
+# `Fuzz*`-Targets in `**/*_fuzz_test.go` und ruft pro Target
+# `go test -run='^$$' -fuzz=^Fuzz...$$ -fuzztime=$(FUZZTIME) <pkg>`
+# in einem golang:1.26-Container. Default $(FUZZTIME) = 30s pro
+# Target — kurzer Pre-Commit-Pfad. Override über die Root-
+# Makefile-Variable: `make api-fuzz-check FUZZTIME=10m` für
+# Nightly-Budget.
+#
+# Crash-Reproduktionen landen automatisch unter
+# `testdata/fuzz/<TargetName>/<id>` (deterministisch, fix beim
+# nächsten Bench-/Test-Lauf reproduzierbar). Plan-DoD-Item 4
+# verlangt opt-in (kein PR-Pfad).
+FUZZTIME ?= 30s
+fuzz-check:
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26 \
+		bash -c 'set -eu; \
+			grep -rEho "^func (Fuzz[A-Za-z0-9_]+)" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
+				./hexagon ./adapters | sort -u | while read -r line; do \
+				name=$$(echo $$line | sed -e "s/^func //"); \
+				pkg=$$(grep -rEl "^func $$name" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
+					./hexagon ./adapters | head -1 | xargs dirname); \
+				echo "[fuzz-check] $$name in $$pkg ($(FUZZTIME))"; \
+				go test -run="^$$" -fuzz="^$$name$$" -fuzztime=$(FUZZTIME) "./$$pkg"; \
+			done'
 
 # Remove all spike-related images.
 clean:

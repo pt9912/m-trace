@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check
 
 help:
 	@printf '%s\n' \
@@ -52,6 +52,8 @@ help:
 		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (plan-0.9.5 Tranche 1, opt-in/observation; not in gates)' \
 		'  make analyzer-benchmark-smoke Run TypeScript stream-analyzer hot-path benchmarks (plan-0.9.5 Tranche 1, opt-in/observation)' \
 		'  make benchmark-smoke        Run both api- and analyzer-benchmark-smokes (plan-0.9.5 Tranche 1)' \
+		'  make api-fuzz-check         Run Go fuzz targets (-fuzztime, default 30s; plan-0.9.5 Tranche 3, opt-in)' \
+		'  make fuzz-check             Run all fuzz targets (Go + TS property tests; opt-in)' \
 		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift (plan-0.8.5 Tranche 2)' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
@@ -227,6 +229,27 @@ analyzer-benchmark-smoke:
 # Beobachtungsphase abgeschlossen und PR-Blockierung in Tranche 1c
 # eingeschaltet ist.
 benchmark-smoke: api-benchmark-smoke analyzer-benchmark-smoke
+
+# `make api-fuzz-check` ist die Go-Fuzz-Suite aus plan-0.9.5 §4
+# Tranche 3 (extra-gates.md §3.5). Läuft alle `Fuzz*`-Targets aus
+# `apps/api/.../**/*_fuzz_test.go` sequenziell mit kurzem
+# `-fuzztime` (Default 30s; override via `FUZZTIME=120s make
+# api-fuzz-check`). Crash-Funde werden von go test fuzz automatisch
+# unter `testdata/fuzz/Fuzz<X>/<id>` als deterministische
+# Reproduktion abgelegt — beim nächsten regulären `make api-test`-
+# Lauf wirken sie als Regression-Tests. Opt-in (NICHT in
+# `make gates`).
+FUZZTIME ?= 30s
+api-fuzz-check:
+	@bash scripts/print-bench-runner-info.sh
+	$(API_MAKE) fuzz-check FUZZTIME=$(FUZZTIME)
+
+# `make fuzz-check` bündelt Go-Fuzz und die TS-Property-Tests (die
+# über `make ts-test` ohnehin laufen, hier als expliziter Aufruf
+# für den Tranche-3-Pfad). Plan-DoD §4-3: opt-in (NICHT in
+# `make gates`); Nightly-CI hat eigene Längere-Budget-Stage.
+fuzz-check: api-fuzz-check
+	$(PNPM) -r --if-present run test
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
 # (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-

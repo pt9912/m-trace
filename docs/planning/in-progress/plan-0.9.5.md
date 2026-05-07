@@ -129,7 +129,7 @@ package.json-lesen).
 | 0 | Plan-Aktivierung + Baseline-Entscheidungen aus `extra-gates.md` §6 (Baseline-Pfad, initiale Budgets, Quarantäne-Policy) | ✅ |
 | 1 | Benchmark-Smoke für API + Stream-Analyzer mit konservativen Budgets, opt-in PR-blockierend nach N grünen Beobachtungsläufen | 🟡 |
 | 2 | Nightly-`benchstat`-Regressionen mit Baseline-Vergleich; CI-Workflow `benchmark.yml` (cron) | ✅ |
-| 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ⬜ |
+| 3 | Selektives Fuzzing (Go) + Property Tests (TypeScript) für Cursor/Parser/URL-Klassifizierung | ✅ |
 | 4 | Mutation Testing als nicht-blockierender Nightly-Report für ein bis zwei kritische Module | ⬜ |
 | 5 | Release-Doku, Versions-Bump 0.9.0 → 0.9.5, Plan nach `done/`, Tag `v0.9.5` | ⬜ |
 
@@ -336,10 +336,17 @@ Nightly mit längerem Budget.
 
 DoD:
 
-- [ ] Go-Fuzz-Targets für mindestens: Cursor Encode/Decode (aus
+- [x] Go-Fuzz-Targets für mindestens: Cursor Encode/Decode (aus
   ADR-0004), HTTP-Validation für Playback-Event-Batches,
   Event-Meta-Validation (`webrtc.*`-Allowlist aus `0.8.0`),
-  SRT-Health-Mapping.
+  SRT-Health-Mapping. Sechs Fuzz-Targets in vier Packages
+  (`apps/api/adapters/driving/http/cursor_fuzz_internal_test.go`,
+  `apps/api/adapters/driving/http/wire_fuzz_internal_test.go`,
+  `apps/api/hexagon/application/event_meta_validation_fuzz_internal_test.go`,
+  `apps/api/adapters/driven/srt/mediamtxclient/mapping_fuzz_internal_test.go`).
+  Erstfund über `FuzzMapMediaMtxItem`: `mbpsLinkCapacity=-1` leakte
+  in `AvailableBandwidthBPS=-1_000_000`; Fix in `mapping.go`
+  (Tranche-3a-Commit `53adbab`).
 - [x] TypeScript-Property-Tests via `fast-check` (4.4.0,
   devDependency in `packages/stream-analyzer` und
   `packages/player-sdk`) für die drei Pflicht-Bereiche:
@@ -372,14 +379,36 @@ DoD:
   Tests laufen über `make ts-test` (Plan-DoD §4-2-Item;
   vitest-Bench-fertig); 14 zusätzliche Property-Tests dazu, alle
   grün.
-- [ ] `make fuzz-check`-Target im Root-`Makefile` mit kurzem
+- [x] `make fuzz-check`-Target im Root-`Makefile` mit kurzem
   `-fuzztime` (Default `30s`); CI-Stage opt-in (manueller Trigger
-  oder Nightly).
-- [ ] Nightly-Workflow erweitert: längeres Fuzz-Budget (z. B.
+  oder Nightly). `make fuzz-check` ist Wrapper auf
+  `apps/api/Makefile::fuzz-check` (Container-basierter Go-Fuzz-Lauf
+  in `golang:1.26`) plus die TS-Property-Tests via `make ts-test`.
+  Greppt alle `^func Fuzz...` aus `*_fuzz_test.go`/
+  `*_fuzz_internal_test.go` automatisch — keine Registry-Pflege.
+  Override `FUZZTIME` per Env (`FUZZTIME=120s make api-fuzz-check`).
+  **Opt-in**, nicht in `make gates` (Tranche-3c-Commit).
+- [x] Nightly-Workflow erweitert: längeres Fuzz-Budget (z. B.
   10 min pro Target); gefundene Regressions werden als Issue
-  auto-erstellt mit Repro-Test.
-- [ ] Doku in `docs/dev/fuzzing.md` (oder ähnlich): Liste der
+  auto-erstellt mit Repro-Test. `.github/workflows/fuzz.yml`:
+  Cron `0 5 * * *` UTC plus `workflow_dispatch`-Input `fuzztime`
+  (Default `5m` pro Target ⇒ ≈ 30 min Gesamt-Laufzeit über sechs
+  Targets). Crash-Inputs werden via `find -newer go.mod` aus
+  `testdata/fuzz/<Target>/` eingesammelt, als Artefakt
+  `fuzz-nightly-<run_id>` mit 30 Tagen Retention hochgeladen, und
+  ein Issue mit Labels `fuzz,quality,plan-0.9.5` wird automatisch
+  geöffnet — der Issue-Body verweist auf den Repo-Pfad
+  `apps/api/<package>/testdata/fuzz/<Target>/<id>` als permanenter
+  Regression-Seed (Tranche-3c-Commit).
+- [x] Doku in `docs/dev/fuzzing.md` (oder ähnlich): Liste der
   aktiven Fuzz-Targets, lokale Reproduktion, Sample-Korpus-Pfad.
+  [`docs/dev/fuzzing.md`](../../dev/fuzzing.md) listet alle sechs
+  Go-Fuzz-Targets plus die drei TS-Property-Test-Suites mit
+  Pflicht-Invariante, dokumentiert den `make fuzz-check`-Pfad,
+  die `gh run download`-Mechanik aus dem Nightly-Workflow, die
+  zwei Korpus-Schichten (`f.Add`-Seeds vs. generierte
+  `testdata/fuzz/`-Files) und die Tranche-3b-Lehre zu
+  fast-check-Discard-Loops (Tranche-3c-Commit).
 
 ---
 
