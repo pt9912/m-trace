@@ -5,7 +5,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-> Status: `0.9.6` released — Lastenheft-Konvergenz-Patch nach `0.9.5` (Patch-Release-Konvention `0.X.Y`) ohne neue Produktfunktion und ohne User-Surface- oder Wire-Vertragsänderung. Plan in [`docs/planning/done/plan-0.9.6.md`](docs/planning/done/plan-0.9.6.md). Lieferungen: fehlende Muss-Repo-Artefakte ([`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), [`.env.example`](.env.example), [`deploy/`](deploy/)-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisiert, MVP-19..MVP-26 redaktionell entzerrt; Patch-Log §4a.15 in [`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)) und Go-Build-Image-Pin `golang:1.26` → `golang:1.26.3` als Folge der `go1.26.3`-Stdlib-CVE-Fixes (GO-2026-4982/4980/4971/4918, analog der `0.8.5`-OTel-Bump-Präzedenz). Vorgänger `0.9.5` (Quality-Gates Wave 2; Plan in [`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md)), `v0.9.1` (Drift-Smoke-Robustheit) und `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, RAK-56..RAK-59 / Lastenheft `1.1.11` §13.11) bleiben unverändert.
+Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase und nächste Schritte: [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
 
 ---
 
