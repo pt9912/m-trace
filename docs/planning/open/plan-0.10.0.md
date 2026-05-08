@@ -57,10 +57,17 @@ In Scope:
     analysiertem Media-Manifest.
   - DASH: `SegmentTemplate@initialization` oder
     `SegmentList/Initialization@sourceURL` plus erstes ableitbares
-    fMP4-Media-Segment je repräsentativem AdaptationSet. Für
-    `SegmentList` gilt nur explizit referenziertes
-    `SegmentURL@media` als ableitbares Media-Segment; fehlt es, wird
-    nicht geraten, sondern deterministisch `skipped`.
+    fMP4-Media-Segment je deterministisch ausgewählter
+    Representation. Die Pflichtprüfungsmenge entsteht in Manifest-
+    Reihenfolge aus jeder `Period` und jedem `AdaptationSet`, das
+    mindestens ein CMAF-relevantes Signal trägt. Pro AdaptationSet wird
+    genau eine Representation geprüft: bevorzugt die erste
+    Representation mit eigener oder geerbter Initialization- und Media-
+    Referenz; sonst die erste Representation des Sets. Diese Auswahl
+    wird über stabile Manifestanker dokumentiert und bildet die Basis
+    für `requiredSegmentChecks`. Für `SegmentList` gilt nur explizit
+    referenziertes `SegmentURL@media` als ableitbares Media-Segment;
+    fehlt es, wird nicht geraten, sondern deterministisch `skipped`.
   - Byte-Parser für ISO-BMFF-Boxen mit Nachweis mindestens von `ftyp`,
     `moov`, `moof`, `traf` und `tfdt`; `sidx` wird erkannt, ist aber
     kein Pflicht-Nachweis.
@@ -85,7 +92,12 @@ In Scope:
   `details.cmaf.binary.status:"passed"` abgeleitet werden. Deshalb
   bekommt das Schema kein boolesches `present:true`-Feld. DASH-
   Resultate mit nur `video/mp4`/`audio/mp4`/`application/mp4` bekommen
-  ein schwaches `confidence:"inferred"`-Summary; die bestehenden DASH-
+  ein schwaches `confidence:"inferred"`-Summary. Bei Default
+  `cmaf.binary.enabled:true` tragen sie zusätzlich
+  `details.cmaf.binary.status:"skipped"` mit
+  `segment_reference_missing`, weil keine Init-/Media-Referenzen für
+  eine binäre Pflichtprüfung vorliegen; nur HLS-Master-Summaries
+  bleiben grundsätzlich ohne `binary`-Objekt. Die bestehenden DASH-
   Contract-Fixtures werden absichtlich additiv aktualisiert und sind
   danach nicht byte-kompatibel zum `0.9.x`-Stand. HLS-`unknown` mit
   `details:null` bleibt ohne `cmaf`.
@@ -304,6 +316,14 @@ DoD:
   `enabled:true`, `maxSegmentBytes=2_000_000`,
   `maxBinarySegments=6`. Diese Limits gelten zusätzlich zu
   `fetch.maxBytes`, das ausschließlich das Manifest-Body-Limit bleibt.
+- [ ] `AnalyzeOptions.fetch`-Semantik ist in
+  `packages/stream-analyzer/src/types/input.ts`,
+  `docs/user/stream-analyzer.md` und
+  `packages/stream-analyzer/README.md` synchronisiert: Timeout,
+  Redirect- und SSRF-Optionen gelten für URL-Manifeste und für binäre
+  Segment-Fetches aus Text-Inputs mit sicherer HTTP(S)-`baseUrl`;
+  `fetch.maxBytes` bleibt ausschließlich das Manifest-Body-Limit und
+  wird nicht als Segment-Byte-Limit verwendet.
 - [ ] Binary-Status- und Failure-Code-Vertrag ist vor Parser-/Loader-
   Implementierung festgelegt und in Fixtures/Testnamen sichtbar:
   - `binary_disabled`: `skipped`, wenn Binary-Prüfung per Option
@@ -482,6 +502,13 @@ DoD:
   Variablen sind in `0.10.0` nicht ableitbar und führen im Binary-Pfad
   zu `dash_template_unresolved`. Die manifestbasierten Signale bleiben
   trotzdem sichtbar.
+- [ ] DASH-Repräsentationsauswahl für den Binary-Pfad ist
+  deterministisch getestet: pro `Period`/`AdaptationSet` mit CMAF-
+  Signal wird in Manifest-Reihenfolge genau eine Representation
+  ausgewählt, bevorzugt die erste mit eigener oder geerbter
+  Initialization- und Media-Referenz, sonst die erste Representation
+  des Sets. `requiredSegmentChecks` und `segmentsChecked[].manifestAnchor`
+  werden aus dieser Auswahl abgeleitet.
 - [ ] Confidence-Regeln sind getestet: MP4-MIME allein erzeugt nur
   `confidence:"inferred"`; Initialization-Informationen plus fMP4-
   Segmentmuster erzeugen ein stärkeres manifestbasiertes Signal.
@@ -559,9 +586,10 @@ DoD:
   genutzt; erneutes Ad-hoc-Parsen der Manifestzeile im Binary-Pfad ist
   nicht zulässig.
 - [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
-  fMP4-Media-Segment je repräsentativem AdaptationSet. Ableitbar sind
-  nur explizite `SegmentList/SegmentURL@media`-Referenzen oder
-  Templates aus dem Scope von Tranche 3:
+  fMP4-Media-Segment je deterministisch ausgewählter Representation
+  aus Tranche 3. Ableitbar sind nur explizite
+  `SegmentList/SegmentURL@media`-Referenzen oder Templates aus dem
+  Scope von Tranche 3:
   `$RepresentationID$`, `$Bandwidth$`, `$Number$` und
   `$Number%0Nd$` mit `startNumber` bzw. Default `1`. `$Time$`,
   `SegmentTimeline`-abhängige Auflösung oder unbekannte Variablen werden
@@ -578,6 +606,10 @@ DoD:
   - `failed` bei geladener, aber nicht konformer Box-Struktur,
   - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
     ladbarer Segmentreferenz,
+  - DASH-MP4-MIME-only ohne Initialization-/Media-Referenzen erzeugt
+    bei Default `cmaf.binary.enabled:true`
+    `details.cmaf.binary.status:"skipped"` mit
+    `segment_reference_missing`, nicht ein fehlendes `binary`-Objekt,
   - `binary_disabled`, `segment_base_url_missing`,
     `segment_uri_blocked`, `segment_reference_missing`,
     `hls_map_byterange_unsupported`,
