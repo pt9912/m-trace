@@ -118,18 +118,25 @@ In Scope:
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
 - Binäre Segment-Fetches werden für `kind:"url"` gegen die finale
   Manifest-URL und für `kind:"text"` nur bei gesetzter, sicherer
-  `http:`-/`https:`-`baseUrl` ausgeführt. Text-Input ohne `baseUrl`
-  behält manifestbasierte Signale; sobald eine manifestseitig
-  vorhandene relative Segment-Referenz deshalb nicht auflösbar ist,
-  bekommt die betroffene Prüfung
+  `http:`-/`https:`-`baseUrl` ausgeführt. Diese `baseUrl` ist im
+  Text-Pfad der Trust-Anker für alle Segment-Fetches: relative
+  Segment-URIs werden gegen sie aufgelöst; absolute Segment-URIs werden
+  nur gefetched, wenn eine sichere HTTP(S)-`baseUrl` vorhanden ist und
+  die absolute Segment-URL selbst die Segment-URI-Sicherheitsregeln
+  erfüllt. Text-Input ohne `baseUrl` behält manifestbasierte Signale;
+  sobald eine manifestseitig vorhandene Init-/Media-Segment-Referenz
+  deshalb nicht ladbar ist, bekommt die betroffene Prüfung
   `details.cmaf.binary.status:"skipped"` mit Failure-Code
-  `segment_base_url_missing`. Fehlt dagegen bereits die
+  `segment_base_url_missing` unabhängig davon, ob die Manifest-Referenz
+  relativ oder absolut notiert ist. Fehlt dagegen bereits die
   manifestseitige Init-/Media-Referenz, gewinnt
   `segment_reference_missing` gemäß der Failure-Code-Präzedenz aus
   Tranche 1. Text-Input mit `file:`- oder anderem Nicht-HTTP(S)-
   `baseUrl` wird nicht lokal gelesen; betroffene Segment-Prüfungen
   werden deterministisch als `skipped` mit Failure-Code
-  `segment_uri_blocked` berichtet.
+  `segment_uri_blocked` berichtet. Ist eine sichere HTTP(S)-`baseUrl`
+  vorhanden, blocken unsichere absolute Segment-URIs ebenfalls mit
+  `segment_uri_blocked`.
 
 Out of scope:
 
@@ -360,7 +367,10 @@ DoD:
     Detail-Scope vorhanden ist (HLS Media-Playlist oder DASH-MPD; HLS-
     Master-Summaries tragen kein `binary`-Objekt).
   - `segment_base_url_missing`: `skipped`, wenn Text-Input keine sichere
-    `baseUrl` für relative Segmente liefert.
+    HTTP(S)-`baseUrl` als Trust-Anker für manifestseitig vorhandene
+    Init-/Media-Segment-Referenzen liefert. Das gilt für relative und
+    absolute Segment-URIs im Text-Manifest; absolute URLs im Manifest
+    ersetzen die fehlende `baseUrl` nicht.
   - `segment_uri_blocked`: `skipped`, wenn eine relative/absolute
     Segment-URI nicht sicher auflösbar ist, die `baseUrl` oder Segment-
     URL kein `http:`-/`https:`-Scheme nutzt, oder Scheme, Credentials,
@@ -386,7 +396,10 @@ DoD:
     oder das Body-Read-Limit überschreitet.
   - `not_planned_due_to_limit`: `skipped`, wenn eine manifestseitig
     verpflichtende Init-/Media-Prüfung wegen `maxBinarySegments` nicht
-    mehr gefetched wird.
+    mehr geplant wird. Der Code wird unmittelbar nach Bildung der
+    Pflichtprüfungsmenge vergeben, noch vor Base-URL-/URI-Auflösung, und
+    gewinnt für überzählige Checks gegenüber späteren URI- oder Fetch-
+    Ursachen.
   - `cmaf_box_validation_failed`: `failed`, wenn ein geladenes Init-/
     Media-Segment fachlich nicht konforme Box-/Brand-Struktur hat.
   - `invalid_box_structure`: `failed`, wenn Box-Größe, Überlappung oder
@@ -404,16 +417,18 @@ DoD:
      `segment_reference_missing`, `dash_template_unresolved`,
      `hls_map_byterange_unsupported`,
      `hls_media_byterange_unsupported`.
-  3. Base-URL-/URI-Sicherheitsauflösung:
+  3. Planungs-Cap nach gebildeter Pflichtprüfungsmenge:
+     `not_planned_due_to_limit`.
+  4. Base-URL-/URI-Sicherheitsauflösung:
      `segment_base_url_missing`, `segment_uri_blocked`.
-  4. Fetch-/Read-Grenzen nach sicherer Auflösung:
+  5. Fetch-/Read-Grenzen nach sicherer Auflösung:
      `segment_fetch_failed`, `segment_content_type_unsupported`,
-     `segment_too_large`, `not_planned_due_to_limit`.
+     `segment_too_large`.
   Damit erzeugt z. B. DASH MP4-MIME-only ohne Initialization-/Media-
   Referenzen auch bei Text-Input ohne `baseUrl`
   `segment_reference_missing`, während ein manifestseitig vorhandenes
-  relatives Segment ohne sichere `baseUrl` zu
-  `segment_base_url_missing` führt.
+  Segment ohne sichere `baseUrl` zu `segment_base_url_missing` führt,
+  auch wenn die Segment-URI im Text-Manifest absolut notiert ist.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] Options-Wire-Vertrag ist festgelegt: `cmaf.binary.*` ist Public-
@@ -483,6 +498,13 @@ DoD:
   gegen `baseUrl` aufgelöste URI, falls möglich. Diese Daten dürfen
   intern oder additiv in `details` leben, müssen aber vom Binary-Pfad
   ohne erneutes String-Parsing nutzbar sein.
+- [ ] Media-Playlist-Parser extrahiert `#EXT-X-BYTERANGE` strukturiert
+  und bindet den Wert deterministisch an die darauffolgende Segment-URI:
+  rohe Byte-Range-Angabe, optionale Länge/Offset-Werte,
+  Manifestanker der Byte-Range-Zeile und Segmentanker des betroffenen
+  Media-Segments. Diese Daten dürfen intern oder additiv in `details`
+  leben, müssen aber vom Binary-Pfad ohne erneutes String-Parsing
+  nutzbar sein.
 - [ ] `EXT-X-MAP` mit `BYTERANGE` wird in `0.10.0` nicht per HTTP
   Range geladen. Das Manifest-Signal bleibt sichtbar; die binäre Init-
   Prüfung bekommt `status:"skipped"` bzw. einen Segment-Einzelstatus
@@ -669,21 +691,23 @@ DoD:
     gewertet.
 - [ ] Segment-Resolver lädt nur manifestreferenzierte Init-/Media-
   Segment-URIs. URL-Input löst relative Pfade gegen die finale
-  Manifest-URL auf; Text-Input löst relative Pfade nur bei gesetzter
-  sicherer `http:`-/`https:`-`baseUrl` auf. Ohne `baseUrl`, mit
-  Nicht-HTTP(S)-`baseUrl` oder bei unsicherer/nicht auflösbarer URI wird
-  nicht gefetched, sondern `skipped` mit eindeutigem Failure-Code
+  Manifest-URL auf; Text-Input nutzt eine gesetzte sichere
+  `http:`-/`https:`-`baseUrl` als Trust-Anker für relative und absolute
+  Segment-URIs. Ohne sichere `baseUrl` wird im Text-Pfad kein Segment
+  gefetched, auch keine absolute HTTP(S)-Segment-URI aus dem Manifest.
+  Mit Nicht-HTTP(S)-`baseUrl` oder bei unsicherer/nicht auflösbarer URI
+  wird nicht gefetched, sondern `skipped` mit eindeutigem Failure-Code
   berichtet.
 - [ ] HLS-Binary-Pfad prüft `EXT-X-MAP` plus erstes fMP4-Media-Segment;
   wenn eine der beiden URIs fehlt oder nicht ladbar ist, entsteht
   `details.cmaf.binary.status:"skipped"` oder `"failed"` mit
   nachvollziehbarem Failure-Code, kein stiller Erfolg.
-  `EXT-X-MAP`-Attribute werden aus der strukturierten Parser-Ausgabe
-  genutzt; erneutes Ad-hoc-Parsen der Manifestzeile im Binary-Pfad ist
-  nicht zulässig. `EXT-X-MAP` mit `BYTERANGE` und
-  `#EXT-X-BYTERANGE` vor dem ersten fMP4-Media-Segment werden nicht
-  per Vollressourcen-Download ersetzt, sondern als Skip-Codes aus
-  Tranche 1 berichtet.
+  `EXT-X-MAP`-Attribute und `#EXT-X-BYTERANGE`-Bindungen werden aus der
+  strukturierten Parser-Ausgabe genutzt; erneutes Ad-hoc-Parsen der
+  Manifestzeile im Binary-Pfad ist nicht zulässig. `EXT-X-MAP` mit
+  `BYTERANGE` und `#EXT-X-BYTERANGE` vor dem ersten fMP4-Media-Segment
+  werden nicht per Vollressourcen-Download ersetzt, sondern als
+  Skip-Codes aus Tranche 1 berichtet.
 - [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
   fMP4-Media-Segment je deterministisch ausgewählter Representation
   aus Tranche 3. Ableitbar sind nur explizite
