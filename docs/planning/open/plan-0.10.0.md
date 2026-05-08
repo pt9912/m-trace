@@ -57,7 +57,10 @@ In Scope:
     analysiertem Media-Manifest.
   - DASH: `SegmentTemplate@initialization` oder
     `SegmentList/Initialization@sourceURL` plus erstes ableitbares
-    fMP4-Media-Segment je repräsentativem AdaptationSet.
+    fMP4-Media-Segment je repräsentativem AdaptationSet. Für
+    `SegmentList` gilt nur explizit referenziertes
+    `SegmentURL@media` als ableitbares Media-Segment; fehlt es, wird
+    nicht geraten, sondern deterministisch `skipped`.
   - Byte-Parser für ISO-BMFF-Boxen mit Nachweis mindestens von `ftyp`,
     `moov`, `moof`, `traf` und `tfdt`; `sidx` wird erkannt, ist aber
     kein Pflicht-Nachweis.
@@ -224,7 +227,9 @@ DoD:
     eingeführt, weil jedes Summary unter genau einem HLS- oder DASH-
     Detail-Objekt lebt.
   - `confidence: "binary" | "manifest" | "inferred"` als aggregierte
-    stärkste Confidence des Summary-Objekts.
+    stärkste Confidence des Summary-Objekts. Die normative Ordnung ist
+    `binary` > `manifest` > `inferred`; gemischte Signale aggregieren
+    deterministisch auf den stärksten vorhandenen Wert.
   - `signals[]` mit `code`, `level`, `manifestAnchor` und eigener
     `confidence: "binary" | "manifest" | "inferred"`, damit gemischte
     starke und schwache Indizien auditierbar bleiben. `level` nutzt
@@ -289,6 +294,11 @@ DoD:
     Segment-URI nicht sicher auflösbar ist, die `baseUrl` oder Segment-
     URL kein `http:`-/`https:`-Scheme nutzt, oder Scheme, Credentials,
     SSRF- oder Redirect-Regeln verletzt.
+  - `segment_reference_missing`: `skipped`, wenn für eine im Binary-
+    Scope verpflichtende Init- oder Media-Prüfung keine Manifest-
+    Referenz vorhanden ist, z. B. HLS ohne `EXT-X-MAP` im sonst
+    binär prüfbaren fMP4-Pfad oder DASH `SegmentList` ohne
+    `SegmentURL@media`.
   - `hls_map_byterange_unsupported`: `skipped` für HLS `EXT-X-MAP` mit
     `BYTERANGE`.
   - `dash_template_unresolved`: `skipped`, wenn DASH-Template-Variablen
@@ -415,13 +425,15 @@ DoD:
 - [ ] DASH-Parser wertet `mimeType` `video/mp4`, `audio/mp4` und
   `application/mp4` als CMAF-relevante Indizien, aber nicht allein als
   Konformitätsnachweis.
-- [ ] `SegmentTemplate@initialization`, `SegmentList/Initialization`
-  und `Representation`-Codecs fließen in die Signalbewertung ein.
+- [ ] `SegmentTemplate@initialization`, `SegmentTemplate@media`,
+  `SegmentList/Initialization`, `SegmentList/SegmentURL@media` und
+  `Representation`-Codecs fließen in die Signalbewertung ein.
 - [ ] DASH-Schema und Parser erfassen Initialization-Informationen
   explizit und vererbungsbewusst mindestens auf
   `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene:
   `SegmentTemplate@initialization`, `SegmentTemplate@media`,
-  `SegmentList/Initialization@sourceURL` sowie relevante
+  `SegmentList/Initialization@sourceURL`,
+  `SegmentList/SegmentURL@media` sowie relevante
   `BaseURL`-/URI-Muster. Diese Felder können als interne Parse-
   Metadaten oder additive `details`-Felder umgesetzt werden, müssen
   aber in `DashManifestDetails.cmaf` nachvollziehbare Manifest-Anker
@@ -455,8 +467,8 @@ DoD:
 - [ ] DASH-Tests pinnen Vererbung und URI-Auflösung getrennt:
   `BaseURL` auf MPD-/Period-/AdaptationSet-/Representation-Ebene,
   `SegmentTemplate`-Vererbung und Override-Verhalten, `SegmentList`
-  mit `Initialization@sourceURL`, sowie mehrperiodige stabile
-  Manifestanker bei fehlenden IDs.
+  mit `Initialization@sourceURL` und `SegmentURL@media`, sowie
+  mehrperiodige stabile Manifestanker bei fehlenden IDs.
 - [ ] DASH-Live- und VOD-Fixtures behalten bestehende Mindestfelder
   aus RAK-58.
 - [ ] Tests decken DASH-CMAF positiv, DASH ohne Initialization-Signal
@@ -521,12 +533,15 @@ DoD:
   nicht zulässig.
 - [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
   fMP4-Media-Segment je repräsentativem AdaptationSet. Ableitbar sind
-  nur Templates aus dem Scope von Tranche 3:
+  nur explizite `SegmentList/SegmentURL@media`-Referenzen oder
+  Templates aus dem Scope von Tranche 3:
   `$RepresentationID$`, `$Bandwidth$`, `$Number$` und
   `$Number%0Nd$` mit `startNumber` bzw. Default `1`. `$Time$`,
   `SegmentTimeline`-abhängige Auflösung oder unbekannte Variablen werden
   nicht geraten, sondern als `skipped` mit Failure-Code
-  `dash_template_unresolved` gemeldet.
+  `dash_template_unresolved` gemeldet. Fehlt bei `SegmentList` die
+  Media-Referenz vollständig, wird `segment_reference_missing`
+  gemeldet.
 - [ ] Positive und negative Binär-Fixtures decken Init, Media, fehlende
   Pflichtboxen, kaputte Boxgrößen, Größenlimit und nicht auflösbare
   Segment-URIs ab.
@@ -536,7 +551,8 @@ DoD:
   - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
     ladbarer Segmentreferenz,
   - `binary_disabled`, `segment_base_url_missing`,
-    `segment_uri_blocked`, `hls_map_byterange_unsupported`,
+    `segment_uri_blocked`, `segment_reference_missing`,
+    `hls_map_byterange_unsupported`,
     `dash_template_unresolved`, `segment_fetch_failed`,
     `segment_content_type_unsupported`, `segment_too_large`,
     `cmaf_box_validation_failed` und `invalid_box_structure` nach der
