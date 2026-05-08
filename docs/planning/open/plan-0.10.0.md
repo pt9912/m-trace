@@ -110,10 +110,14 @@ markiert NF-13 als in `0.10.0` für den Stream-Analyzer-Scope erfüllt:
 manifestbasierte Signale plus begrenzte binäre CMAF-
 Konformitätsprüfung. Folge-Scope bleibt nur für Low-Latency-CMAF,
 vollständige Segmentset-Abdeckung und Player-/CDN-Sonderfälle offen.
+Der bisherige Begriff „CMAF-Vollanalyse" wird dabei normativ
+präzisiert: Vollständig heißt in `0.10.0` vollständig für den
+Analyzer-Scope aus diesem Plan, nicht vollständige Prüfung aller
+Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 
 | RAK | Priorität | Inhalt |
 | --- | --------- | ------ |
-| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse plus begrenzte binäre Prüfung ausgewählter HLS-/DASH-Init- und Media-Segmente; NF-13 gilt nur für diesen Analyzer-Scope als erfüllt. |
+| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse plus begrenzte binäre Prüfung ausgewählter HLS-/DASH-Init- und Media-Segmente; das Lastenheft präzisiert „CMAF-Vollanalyse" als vollständige Erfüllung dieses Analyzer-Scopes, nicht als vollständige Segmentset-/Codec-/Player-Prüfung. |
 | RAK-61 | Muss | HLS-CMAF-Signale: `EXT-X-MAP`, fMP4-Segmentmuster und relevante Tags erzeugen stabile `cmaf`-Signals mit Confidence-Semantik im Analyseergebnis. |
 | RAK-62 | Muss | DASH-CMAF-Signale: MPD-`mimeType`, `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `cmaf`-Signals mit Confidence-Semantik; MP4-MIME allein gilt nur als Indiz, nicht als CMAF-Konformitätsnachweis. |
 | RAK-63 | Muss | CLI, API-Adapter, Contract-Fixtures und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. |
@@ -144,6 +148,11 @@ DoD:
 - [ ] `git status --short` vor erster Änderung dokumentiert.
 - [ ] `spec/lastenheft.md` Header auf `1.1.13` erhöht.
 - [ ] RAK-60..RAK-64 im Lastenheft ergänzt.
+- [ ] NF-13-Text im Lastenheft von „CMAF-Vollanalyse" auf
+  „CMAF-Analyse im Stream-Analyzer-Scope" präzisiert: erfüllt durch
+  manifestbasierte Signale plus begrenzte binäre Init-/Media-Segment-
+  Prüfung; explizit nicht umfasst sind vollständige Segmentset-
+  Abdeckung, Codec-Decoding, Low-Latency-CMAF und Player-Laufzeitpfade.
 - [ ] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
   `4a.16 Patch 1.1.13` ergänzt.
 - [ ] [`roadmap.md`](../in-progress/roadmap.md) vor erster
@@ -206,6 +215,15 @@ DoD:
     `status:"skipped"` ist zulässig, wenn keine sicher ladbare Init-/
     Media-Segment-URI vorliegt; manifestbasierte Signale bleiben dann
     sichtbar, aber nicht konformitätsbeweisend.
+    Aggregation ist deterministisch: Gesamtstatus `failed`, sobald
+    irgendeine geladene Pflichtprüfung fehlschlägt; `passed` nur, wenn
+    alle geplanten Pflichtprüfungen für den gewählten Scope bestanden
+    wurden; `skipped`, wenn keine Pflichtprüfung fehlgeschlagen ist,
+    aber mindestens eine geplante Pflichtprüfung wegen fehlender,
+    nicht sicher auflösbarer oder durch Limits blockierter Segment-
+    Referenz nicht ausgeführt wurde. `segmentsChecked[]` trägt den
+    jeweiligen Einzelstatus, damit gemischte DASH-AdaptationSet-
+    Ergebnisse auditierbar bleiben.
   - `note?: string` darf knapp beschreiben, welcher Anteil nur
     manifestbasiert und welcher Anteil binär verifiziert wurde; Pflicht
     ist diese Klarstellung in Doku und README, nicht in jedem JSON-
@@ -337,7 +355,10 @@ DoD:
     `segment:media[0]:moof/traf/tfdt`) für `details.cmaf.binary`.
 - [ ] CMAF-Init-Prüfung validiert mindestens:
   - `ftyp` vorhanden,
-  - kompatible Brand-Liste enthält CMAF-/ISO-BMFF-kompatible Hinweise,
+  - Brand-Policy ist als getestete Allowlist umgesetzt: `cmfc` und
+    `cmfs` gelten als CMAF-kompatible Brands; generische MP4-/ISO-
+    BMFF-Brands wie `isom`, `iso6`, `mp41` oder `mp42` reichen allein
+    nicht für `status:"passed"`,
   - `moov` vorhanden,
   - keine offensichtlich widersprüchliche Top-Level-Box-Struktur.
 - [ ] CMAF-Media-Fragment-Prüfung validiert mindestens:
@@ -365,7 +386,9 @@ DoD:
   - `passed` nur bei bestandener Init- und Media-Prüfung,
   - `failed` bei geladener, aber nicht konformer Box-Struktur,
   - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
-    ladbarer Segmentreferenz.
+    ladbarer Segmentreferenz,
+  - gemischte DASH-Ergebnisse aggregieren nach der Regel aus Tranche 1:
+    jeder Fehler gewinnt vor `skipped`, `skipped` gewinnt vor `passed`.
 - [ ] Fehler aus binärer Prüfung bleiben Findings oder
   `details.cmaf.binary.failures[]`; sie ändern nicht das bestehende
   `status:"ok"` des Analyse-Results, solange das Manifest selbst
@@ -392,7 +415,11 @@ DoD:
   Nachweis.
 - [ ] CLI gibt die neuen Signale unverändert im JSON aus.
 - [ ] `make smoke-cli` um mindestens eine CMAF-HLS- oder CMAF-DASH-
-  Probe mit bestandener binärer Prüfung erweitert.
+  Probe mit bestandener binärer Prüfung erweitert. Der Smoke nutzt
+  einen lokalen Fixture-HTTP-Server, der Manifest, Init-Segment und
+  Media-Segment aus `spec/contract-fixtures/analyzer/` ausliefert;
+  externe Netzabhängigkeit oder öffentliche Testmedien sind für den
+  Release-Nachweis nicht zulässig.
 - [ ] [`docs/user/stream-analyzer.md`](../../user/stream-analyzer.md)
   beschreibt Scope, Beispiele, Grenzen, Binary-Statuswerte und Exit-/
   Fehlerverhalten.
@@ -410,7 +437,7 @@ DoD:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; NF-13 im begrenzten Analyzer-Scope als manifestbasierte plus binäre CMAF-Prüfung geschlossen | [ ] |
+| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; NF-13 als „CMAF-Analyse im Stream-Analyzer-Scope" präzisiert und in diesem Scope durch manifestbasierte plus binäre CMAF-Prüfung geschlossen | [ ] |
 | RAK-61 | Muss | HLS-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, CLI-Smoke | [ ] |
 | RAK-62 | Muss | DASH-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, API-Contract | [ ] |
 | RAK-63 | Muss | API-/CLI-/Doku-Nachweise, Contract-Fixtures | [ ] |
