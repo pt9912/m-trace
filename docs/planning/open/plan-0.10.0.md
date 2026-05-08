@@ -61,8 +61,12 @@ In Scope:
   Konformitätsaussage missverstanden werden. Das `cmaf`-Objekt bedeutet
   ausschließlich „CMAF-Signale erkannt", nicht „CMAF-Konformität
   nachgewiesen"; deshalb bekommt das Schema kein boolesches
-  `present:true`-Feld. HLS-`unknown` mit `details:null` bleibt ohne
-  `cmaf`.
+  `present:true`-Feld. DASH-Resultate mit nur `video/mp4`/`audio/mp4`/
+  `application/mp4` bekommen deshalb ein schwaches
+  `confidence:"inferred"`-Summary; die bestehenden DASH-Contract-
+  Fixtures werden absichtlich additiv aktualisiert und sind danach
+  nicht byte-kompatibel zum `0.9.x`-Stand. HLS-`unknown` mit
+  `details:null` bleibt ohne `cmaf`.
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
 
 Out of scope:
@@ -133,9 +137,10 @@ DoD:
 - [ ] Fixture-Inventar angelegt:
   - HLS CMAF VOD mit `EXT-X-MAP` und `.m4s`-Segmenten.
   - HLS TS als Negativ-/Regression-Pfad.
-  - DASH MP4-MIME-only als schwacher/inferred Pfad, weil bestehende
-    DASH-Contract-Fixtures mit `video/mp4`/`audio/mp4` sonst nicht mehr
-    byte-kompatibel bleiben.
+  - DASH MP4-MIME-only als schwacher/inferred Pfad; bestehende DASH-
+    Contract-Fixtures mit `video/mp4`/`audio/mp4` werden dafür additiv
+    um `details.cmaf` erweitert und verlieren bewusst ihre
+    Byte-Kompatibilität zum `0.9.x`-Stand.
   - DASH CMAF VOD mit `SegmentTemplate@initialization` plus fMP4-
     Segmentmuster als starker manifestbasierter Pfad.
   - DASH ohne CMAF-Signale als Negativ-/Regression-Pfad, z. B. ohne
@@ -165,9 +170,9 @@ DoD:
     Detail-Objekt lebt.
   - `confidence: "manifest" | "inferred"` als aggregierte stärkste
     Confidence des Summary-Objekts.
-  - `signals[]` mit `code`, `severity`, `manifestAnchor` und eigener
+  - `signals[]` mit `code`, `level`, `manifestAnchor` und eigener
     `confidence: "manifest" | "inferred"`, damit gemischte starke und
-    schwache Indizien auditierbar bleiben. `severity` nutzt dieselbe
+    schwache Indizien auditierbar bleiben. `level` nutzt dieselbe
     Wertedomäne wie `AnalysisFinding.level`: `"info" | "warning" |
     "error"`.
   - `note?: string` darf knapp beschreiben, dass die Summary nur
@@ -182,11 +187,21 @@ DoD:
   Stream-Analyzer-Snapshot in dieser Tranche zusätzlich als
   Generated-Artefakt aufnehmen soll, werden `Makefile`-Kommentar,
   Prüfkommando und Drift-Meldung im selben Commit erweitert.
-- [ ] Bestehende HLS-/DASH-Result-Fixtures bleiben byte-kompatibel
-  oder werden mit dokumentierter additiver Schema-Erweiterung
-  aktualisiert.
+- [ ] Bestehende HLS-Result-Fixtures ohne CMAF-Signale bleiben
+  byte-kompatibel. Bestehende DASH-Result-Fixtures mit MP4-MIME werden
+  mit dokumentierter additiver `details.cmaf`-Erweiterung aktualisiert,
+  weil MP4-MIME-only ab `0.10.0` bewusst als
+  `confidence:"inferred"`-Signal sichtbar wird.
 - [ ] Contract-Fixtures in `spec/contract-fixtures/analyzer/` und
   Go-Testdata-Kopien für API-Adapter ergänzt.
+- [ ] `Makefile`-Fixture-Sync ist synchron erweitert:
+  `sync-contract-fixtures` kopiert alle neuen Analyzer-CMAF-Fixtures in
+  `apps/api/adapters/driven/streamanalyzer/testdata/`,
+  `generated-drift-check` diffed diese neuen Kopien, die
+  Drift-Fehlermeldung nennt `make sync-contract-fixtures` als Fix, und
+  `spec/contract-fixtures/analyzer/README.md` beschreibt die neuen
+  Fixtures. Die kopierte Fixture-Anzahl in der Make-Ausgabe wird
+  angepasst.
 - [ ] Go-Adapter-Kontrakt ist explizit geprüft: weil `cmaf` in
   `details` liegt, reichen `apps/api/adapters/driven/streamanalyzer`
   und `apps/api/adapters/driving/http` die Signale über
@@ -219,11 +234,17 @@ DoD:
   zusätzliche Signale dokumentiert, aber nicht allein als CMAF-
   Nachweis gewertet.
 - [ ] Master-Playlist-Parser schreibt ein konservatives
-  `MasterPlaylistDetails.cmaf`: Variant-URI-/Codec-Hinweise dürfen
-  nur ein Summary mit `confidence:"inferred"` erzeugen; starke
-  `EXT-X-MAP`-Signale entstehen erst in Media-Playlists. Das Summary
-  darf nicht als bestätigte CMAF-Konformität dokumentiert werden.
+  `MasterPlaylistDetails.cmaf`: Variant-URI-Hinweise auf fMP4-/CMAF-
+  Media-Playlists oder fMP4-spezifische Variant-Kontexte dürfen nur ein
+  Summary mit `confidence:"inferred"` erzeugen. `CODECS` allein erzeugt
+  kein CMAF-Signal, weil klassische TS-HLS-Master ebenfalls Codecs
+  tragen. Starke `EXT-X-MAP`-Signale entstehen erst in Media-Playlists.
+  Das Summary darf nicht als bestätigte CMAF-Konformität dokumentiert
+  werden.
 - [ ] Tests decken positive, negative und gemischte HLS-Fälle ab.
+- [ ] HLS-Master-Negativfixture pinnt eine Master-Playlist mit
+  `CODECS` und TS-basierten Variant-URIs/Media-Playlists; daraus darf
+  kein `MasterPlaylistDetails.cmaf` entstehen.
 - [ ] Bestehender HLS-Master-/Media-Pfad bleibt grün.
 
 ---
