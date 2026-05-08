@@ -235,14 +235,21 @@ DoD:
     `status:"skipped"` ist zulässig, wenn keine sicher ladbare Init-/
     Media-Segment-URI vorliegt; manifestbasierte Signale bleiben dann
     sichtbar, aber nicht konformitätsbeweisend.
-    Aggregation ist deterministisch: Gesamtstatus `failed`, sobald
-    irgendeine geladene Pflichtprüfung fehlschlägt; `passed` nur, wenn
-    alle geplanten Pflichtprüfungen für den gewählten Scope bestanden
-    wurden; `skipped`, wenn keine Pflichtprüfung fehlgeschlagen ist,
-    aber mindestens eine geplante Pflichtprüfung wegen fehlender,
-    nicht sicher auflösbarer oder durch Limits blockierter Segment-
-    Referenz nicht ausgeführt wurde. `segmentsChecked[]` trägt den
-    jeweiligen Einzelstatus, damit gemischte DASH-AdaptationSet-
+    Aggregation ist deterministisch: Zuerst wird die geplante
+    Pflichtprüfungsmenge aus Manifest-Scope und Limits gebildet
+    (`maxBinarySegments` cappt die Menge vor dem Fetch; wegen dieses
+    Caps nicht ausgewählte weitere Representations/Segmente werden als
+    `not_planned_due_to_limit` in `note`/`limits` auditierbar, erzeugen
+    aber keinen `skipped`-Einzelstatus und verhindern kein `passed`).
+    Danach gilt: Gesamtstatus `failed`, sobald irgendeine geplante und
+    geladene Pflichtprüfung fehlschlägt; `passed` nur, wenn alle
+    geplanten Pflichtprüfungen für den gewählten, gecappten Scope
+    bestanden wurden; `skipped`, wenn keine Pflichtprüfung
+    fehlgeschlagen ist, aber mindestens eine geplante Pflichtprüfung
+    wegen fehlender, nicht sicher auflösbarer, per Byte-Range
+    ausgeschlossener oder beim Fetch/Read durch Limits blockierter
+    Segment-Referenz nicht ausgeführt wurde. `segmentsChecked[]` trägt
+    den jeweiligen Einzelstatus, damit gemischte DASH-AdaptationSet-
     Ergebnisse auditierbar bleiben.
     `limits` serialisiert mindestens `maxSegmentBytes`,
     `maxBinarySegments`, `timeoutMs` und `maxRedirects`, damit
@@ -260,6 +267,16 @@ DoD:
   `fetch.maxBytes`, das ausschließlich das Manifest-Body-Limit bleibt.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
+- [ ] Options-Wire-Vertrag ist festgelegt: `cmaf.binary.*` ist Public-
+  TypeScript-API und wird vom analyzer-service als optionales
+  Request-Feld akzeptiert, typ-/range-gefiltert und an
+  `analyzeManifest` weitergereicht. `apps/api` nutzt in `0.10.0`
+  standardmäßig die Analyzer-Defaults; wenn `/api/analyze` ebenfalls
+  `cmaf.binary.*` entgegennehmen soll, werden HTTP-Request-Schema,
+  Domain-Request, driven Adapter, öffentliche Doku und Tests in
+  derselben Tranche erweitert. Ohne diese explizite Erweiterung darf
+  der API-Pfad nicht behaupten, caller-setzbare CMAF-Binary-Limits
+  durchzureichen.
 - [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
   synchron aktualisiert; der Stream-Analyzer-Public-API-Check im
   Paket-`lint` bleibt grün. Falls `make generated-drift-check` den
@@ -456,6 +473,9 @@ DoD:
   - `failed` bei geladener, aber nicht konformer Box-Struktur,
   - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
     ladbarer Segmentreferenz,
+  - `maxBinarySegments` cappt die geplante Pflichtprüfungsmenge vor dem
+    Fetch; nicht geplante weitere Segmente/Representations verhindern
+    kein `passed`, müssen aber über `limits`/`note` auditierbar sein,
   - gemischte DASH-Ergebnisse aggregieren nach der Regel aus Tranche 1:
     jeder Fehler gewinnt vor `skipped`, `skipped` gewinnt vor `passed`.
 - [ ] Fehler aus binärer Prüfung bleiben Findings oder
@@ -476,6 +496,19 @@ DoD:
   prüfen, dass HLS-CMAF, DASH-CMAF und
   `analysis.details.cmaf.binary.status` im HTTP-Result sichtbar
   bleiben.
+- [ ] `apps/analyzer-service` akzeptiert optional
+  `{ "cmaf": { "binary": { "enabled", "maxSegmentBytes",
+  "maxBinarySegments" } } }`, filtert ungültige Werte wie beim
+  bestehenden `fetch`-Block, merged die Werte mit Analyzer-Defaults und
+  dokumentiert, dass `allowPrivateNetworks` weiterhin ausschließlich
+  service-seitig über `ANALYZER_ALLOW_PRIVATE_NETWORKS` gesetzt werden
+  kann.
+- [ ] `/api/analyze`-Vertrag ist bewusst entschieden und getestet:
+  entweder bleibt `cmaf.binary.*` im öffentlichen API-Request
+  unsupported und der API-Pfad nutzt Defaults, oder Request-Payload,
+  Domain-Modell und driven Adapter leiten die drei Binary-Optionen
+  explizit an den analyzer-service durch. Der gewählte Pfad steht in
+  `docs/user/stream-analyzer.md` und in den HTTP-Contract-Tests.
 - [ ] HTTP-Contract-/Adapter-Tests decken HLS-CMAF und DASH-CMAF ab.
   Mindestens ein Test pinnt die öffentliche `/api/analyze`-Antwort mit
   `{analysis, session_link}`-Wrapper und verifiziert
@@ -483,12 +516,21 @@ DoD:
   Fixture alleine reicht für RAK-63/RAK-64 nicht als HTTP-Wire-
   Nachweis.
 - [ ] CLI gibt die neuen Signale unverändert im JSON aus.
+- [ ] CLI bekommt einen dokumentierten, bewusst opt-in Schalter für
+  lokale Fixture-/Lab-URLs, z. B. Env
+  `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true`, der ausschließlich
+  `fetch.allowPrivateNetworks=true` an den Analyzer weitergibt.
+  Ohne diesen Schalter bleibt der bestehende SSRF-Default aktiv und der
+  vorhandene URL-SSRF-Smoke muss weiterhin `fetch_blocked` liefern.
 - [ ] `make smoke-cli` um mindestens eine CMAF-HLS- oder CMAF-DASH-
   Probe mit bestandener binärer Prüfung erweitert. Der Smoke nutzt
   einen lokalen Fixture-HTTP-Server, der Manifest, Init-Segment und
-  Media-Segment aus `spec/contract-fixtures/analyzer/` ausliefert;
-  externe Netzabhängigkeit oder öffentliche Testmedien sind für den
-  Release-Nachweis nicht zulässig.
+  Media-Segment aus `spec/contract-fixtures/analyzer/` ausliefert, und
+  setzt den neuen CLI-Opt-in-Schalter für private/loopback URLs nur für
+  diese eine Probe. Datei-Input mit `file://`-`baseUrl` gilt nicht als
+  Ersatz für diesen Nachweis, weil der Segment-Loader HTTP(S)-SSRF-
+  Regeln nutzt. Externe Netzabhängigkeit oder öffentliche Testmedien
+  sind für den Release-Nachweis nicht zulässig.
 - [ ] [`docs/user/stream-analyzer.md`](../../user/stream-analyzer.md)
   beschreibt Scope, Beispiele, Grenzen, Binary-Statuswerte und Exit-/
   Fehlerverhalten.
