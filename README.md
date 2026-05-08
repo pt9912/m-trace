@@ -13,7 +13,7 @@ Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase 
 
 m-trace richtet sich an Entwickler, Selbsthoster, kleine Streaming-Plattformen, Broadcaster und technische Teams, die verstehen wollen, was in ihrer Streaming-Pipeline passiert — ohne sich von einem proprietären SaaS-Analytics-Silo abhängig zu machen.
 
-Das erste Ziel ist einfach:
+Das erste Ziel ist einfach — ein lokales Lab, in dem ein Live-HLS-Stream in einem Demo-Player läuft und seine Telemetrie sauber in API, Dashboard und OpenTelemetry-Modell landet:
 
 ```mermaid
 flowchart LR
@@ -22,6 +22,12 @@ flowchart LR
   A --> D[Dashboard]
   A --> O[OpenTelemetry-Modell]
 ```
+
+- **MediaMTX** — liefert ein lokales HLS-Manifest (FFmpeg-Teststream als Quelle).
+- **hls.js Demo-Player** — `/demo`-Route im Dashboard, spielt das Manifest und sendet Player-Events.
+- **m-trace API** — nimmt Playback-Events an, persistiert Sessions (SQLite per Default).
+- **Dashboard** — zeigt Sessions, Events und Session-Timeline.
+- **OpenTelemetry-Modell** — Aggregat-Metriken in Prometheus, optional Traces über den OTel-Collector.
 
 Das langfristige Ziel ist breiter — Media-Streams Schicht für Schicht von Ingest bis Player nachverfolgen:
 
