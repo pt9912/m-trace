@@ -229,7 +229,15 @@ DoD:
   - `confidence: "binary" | "manifest" | "inferred"` als aggregierte
     stärkste Confidence des Summary-Objekts. Die normative Ordnung ist
     `binary` > `manifest` > `inferred`; gemischte Signale aggregieren
-    deterministisch auf den stärksten vorhandenen Wert.
+    deterministisch auf den stärksten positiven Nachweis. Summary-
+    `confidence:"binary"` entsteht nur, wenn
+    `details.cmaf.binary.status:"passed"` ist. Einzelne bestandene
+    Segmentnachweise dürfen eigene `signals[].confidence:"binary"`
+    tragen, erhöhen die Summary-Confidence aber nicht auf `binary`,
+    solange der Binary-Gesamtstatus `failed` oder `skipped` ist.
+    Fehlgeschlagene oder übersprungene Binary-Prüfungen werden in
+    `binary.status`, `segmentsChecked[]` und `failures[]` sichtbar,
+    erhöhen aber nicht positiv die Summary-Confidence.
   - `signals[]` mit `code`, `level`, `manifestAnchor` und eigener
     `confidence: "binary" | "manifest" | "inferred"`, damit gemischte
     starke und schwache Indizien auditierbar bleiben. `level` nutzt
@@ -253,24 +261,38 @@ DoD:
     werden; sie tragen auch bei deaktivierter Binary-Prüfung kein
     `binary`-Objekt.
     Aggregation ist deterministisch: Zuerst wird die geplante
-    Pflichtprüfungsmenge aus Manifest-Scope und Limits gebildet
-    (`maxBinarySegments` cappt die Menge vor dem Fetch; wegen dieses
-    Caps nicht ausgewählte weitere Representations/Segmente werden als
-    `not_planned_due_to_limit` in `note`/`limits` auditierbar, erzeugen
-    aber keinen `skipped`-Einzelstatus und verhindern kein `passed`).
+    Pflichtprüfungsmenge aus dem Manifest-Scope gebildet; danach cappt
+    `maxBinarySegments` die tatsächlichen Fetches. Wegen dieses Caps
+    nicht geladene weitere Pflichtprüfungen werden als
+    `segmentsChecked[].status:"skipped"` mit Failure-Code
+    `not_planned_due_to_limit` und zusätzlich in `limits` auditierbar.
+    Sie verhindern `passed`, weil `passed` nur bedeuten darf: alle
+    manifestseitig verpflichtenden Prüfungen im definierten Analyzer-
+    Scope wurden tatsächlich ausgeführt und bestanden.
     Danach gilt: Gesamtstatus `failed`, sobald irgendeine geplante und
     geladene Pflichtprüfung fehlschlägt; `passed` nur, wenn alle
-    geplanten Pflichtprüfungen für den gewählten, gecappten Scope
-    bestanden wurden; `skipped`, wenn keine Pflichtprüfung
-    fehlgeschlagen ist, aber mindestens eine geplante Pflichtprüfung
-    wegen fehlender, nicht sicher auflösbarer, per Byte-Range
-    ausgeschlossener oder beim Fetch/Read durch Limits blockierter
-    Segment-Referenz nicht ausgeführt wurde. `segmentsChecked[]` trägt
-    den jeweiligen Einzelstatus, damit gemischte DASH-AdaptationSet-
-    Ergebnisse auditierbar bleiben.
+    Pflichtprüfungen im Manifest-Scope bestanden wurden; `skipped`,
+    wenn keine Pflichtprüfung fehlgeschlagen ist, aber mindestens eine
+    Pflichtprüfung wegen fehlender, nicht sicher auflösbarer, per Byte-
+    Range ausgeschlossener, durch `maxBinarySegments` nicht geplanter
+    oder beim Fetch/Read durch Limits blockierter Segment-Referenz nicht
+    ausgeführt wurde. `segmentsChecked[]` trägt den jeweiligen
+    Einzelstatus, damit gemischte DASH-AdaptationSet-Ergebnisse
+    auditierbar bleiben.
     `limits` serialisiert mindestens `maxSegmentBytes`,
-    `maxBinarySegments`, `timeoutMs` und `maxRedirects`, damit
+    `maxBinarySegments`, `timeoutMs`, `maxRedirects`,
+    `requiredSegmentChecks` und `plannedSegmentFetches`, damit
     ausgelassene Prüfungen reproduzierbar bleiben.
+    `segmentsChecked[]`-Einträge haben mindestens:
+    `kind:"init"|"media"`, `source:"hls"|"dash"`, `manifestAnchor`,
+    `uri?`, `resolvedUrl?`, `status:"passed"|"failed"|"skipped"`,
+    `failureCode?`, `message?`, `contentType?`, `bytesRead?` und
+    `boxes[]` mit Box-Ankern. `boxes[]` auf Binary-Ebene sammelt die
+    eindeutigen Box-Nachweise mit mindestens `segmentAnchor`, `path`
+    (z. B. `moof/traf/tfdt`), `type`, `offset` und `size`. `failures[]`
+    hat mindestens `code`, `level`, `message`, `manifestAnchor?`,
+    `segmentAnchor?` und `boxPath?`. Diese Feldnamen sind Contract-
+    Bestandteil und werden in Fixtures gepinnt.
   - `note?: string` darf knapp beschreiben, welcher Anteil nur
     manifestbasiert und welcher Anteil binär verifiziert wurde; Pflicht
     ist diese Klarstellung in Doku und README, nicht in jedem JSON-
@@ -309,6 +331,9 @@ DoD:
     Content-Type nicht MP4-/Byte-kompatibel ist.
   - `segment_too_large`: `skipped`, wenn ein Segment `maxSegmentBytes`
     oder das Body-Read-Limit überschreitet.
+  - `not_planned_due_to_limit`: `skipped`, wenn eine manifestseitig
+    verpflichtende Init-/Media-Prüfung wegen `maxBinarySegments` nicht
+    mehr gefetched wird.
   - `cmaf_box_validation_failed`: `failed`, wenn ein geladenes Init-/
     Media-Segment fachlich nicht konforme Box-/Brand-Struktur hat.
   - `invalid_box_structure`: `failed`, wenn Box-Größe, Überlappung oder
@@ -494,7 +519,9 @@ DoD:
   - gibt Bytes zurück, nicht UTF-8-Text,
   - sendet einen MP4-orientierten `Accept`-Header,
   - erlaubt mindestens `video/mp4`, `audio/mp4`, `application/mp4`,
-    `application/octet-stream` und leeren Content-Type,
+    `video/iso.segment`, `audio/iso.segment`,
+    `application/iso.segment`, `application/octet-stream` und leeren
+    Content-Type,
   - nutzt dieselbe URL-Validierung, DNS-/SSRF-Prüfung,
     Redirect-Behandlung und Timeout-Mechanik wie der Manifest-Loader,
   - erzwingt `maxSegmentBytes` pro Segment und
@@ -546,7 +573,8 @@ DoD:
   Pflichtboxen, kaputte Boxgrößen, Größenlimit und nicht auflösbare
   Segment-URIs ab.
 - [ ] Tests pinnen Status-Mapping:
-  - `passed` nur bei bestandener Init- und Media-Prüfung,
+  - `passed` nur bei bestandenen manifestseitig verpflichtenden Init-
+    und Media-Prüfungen,
   - `failed` bei geladener, aber nicht konformer Box-Struktur,
   - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
     ladbarer Segmentreferenz,
@@ -555,11 +583,14 @@ DoD:
     `hls_map_byterange_unsupported`,
     `dash_template_unresolved`, `segment_fetch_failed`,
     `segment_content_type_unsupported`, `segment_too_large`,
-    `cmaf_box_validation_failed` und `invalid_box_structure` nach der
-    Status-/Failure-Code-Tabelle aus Tranche 1,
-  - `maxBinarySegments` cappt die geplante Pflichtprüfungsmenge vor dem
-    Fetch; nicht geplante weitere Segmente/Representations verhindern
-    kein `passed`, müssen aber über `limits`/`note` auditierbar sein,
+    `not_planned_due_to_limit`, `cmaf_box_validation_failed` und
+    `invalid_box_structure` nach der Status-/Failure-Code-Tabelle aus
+    Tranche 1,
+  - `maxBinarySegments` cappt die Fetch-Menge nach Bildung der
+    manifestseitigen Pflichtprüfungsmenge; nicht gefetchte weitere
+    Pflichtprüfungen werden als `skipped` mit
+    `not_planned_due_to_limit` berichtet, verhindern `passed` und sind
+    über `limits`/`note` auditierbar,
   - gemischte DASH-Ergebnisse aggregieren nach der Regel aus Tranche 1:
     jeder Fehler gewinnt vor `skipped`, `skipped` gewinnt vor `passed`.
 - [ ] Fehler aus binärer Prüfung bleiben Findings oder
