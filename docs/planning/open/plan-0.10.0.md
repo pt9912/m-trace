@@ -89,10 +89,13 @@ In Scope:
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
 - Binäre Segment-Fetches werden für `kind:"url"` gegen die finale
   Manifest-URL und für `kind:"text"` nur bei gesetzter, sicherer
-  `baseUrl` ausgeführt. Text-Input ohne `baseUrl` behält
-  manifestbasierte Signale, bekommt aber
+  `http:`-/`https:`-`baseUrl` ausgeführt. Text-Input ohne `baseUrl`
+  behält manifestbasierte Signale, bekommt aber
   `details.cmaf.binary.status:"skipped"` mit Failure-Code
-  `segment_base_url_missing`.
+  `segment_base_url_missing`. Text-Input mit `file:`- oder anderem
+  Nicht-HTTP(S)-`baseUrl` wird nicht lokal gelesen; betroffene Segment-
+  Prüfungen werden deterministisch als `skipped` mit Failure-Code
+  `segment_uri_blocked` berichtet.
 
 Out of scope:
 
@@ -236,10 +239,14 @@ DoD:
     Media-Segment-URI vorliegt; manifestbasierte Signale bleiben dann
     sichtbar, aber nicht konformitätsbeweisend.
     Wenn `cmaf.binary.enabled:false` gesetzt ist und ein `cmaf`-Summary
-    ausgegeben wird, wird `binary` nicht weggelassen, sondern als
-    `status:"skipped"` mit Failure-Code `binary_disabled` serialisiert;
-    so bleibt für Konsumenten sichtbar, dass keine binäre Aussage
-    versucht wurde.
+    in einem binär prüfbaren Detail-Scope ausgegeben wird (HLS Media-
+    Playlist oder DASH-MPD), wird `binary` nicht weggelassen, sondern
+    als `status:"skipped"` mit Failure-Code `binary_disabled`
+    serialisiert; so bleibt für Konsumenten sichtbar, dass keine binäre
+    Aussage versucht wurde. HLS-Master-Summaries sind in `0.10.0` nicht
+    binär prüfbar, weil referenzierte Media-Playlists nicht nachgeladen
+    werden; sie tragen auch bei deaktivierter Binary-Prüfung kein
+    `binary`-Objekt.
     Aggregation ist deterministisch: Zuerst wird die geplante
     Pflichtprüfungsmenge aus Manifest-Scope und Limits gebildet
     (`maxBinarySegments` cappt die Menge vor dem Fetch; wegen dieses
@@ -273,11 +280,14 @@ DoD:
 - [ ] Binary-Status- und Failure-Code-Vertrag ist vor Parser-/Loader-
   Implementierung festgelegt und in Fixtures/Testnamen sichtbar:
   - `binary_disabled`: `skipped`, wenn Binary-Prüfung per Option
-    deaktiviert ist, aber `details.cmaf` vorhanden ist.
+    deaktiviert ist, aber `details.cmaf` in einem binär prüfbaren
+    Detail-Scope vorhanden ist (HLS Media-Playlist oder DASH-MPD; HLS-
+    Master-Summaries tragen kein `binary`-Objekt).
   - `segment_base_url_missing`: `skipped`, wenn Text-Input keine sichere
     `baseUrl` für relative Segmente liefert.
   - `segment_uri_blocked`: `skipped`, wenn eine relative/absolute
-    Segment-URI nicht sicher auflösbar ist oder Scheme, Credentials,
+    Segment-URI nicht sicher auflösbar ist, die `baseUrl` oder Segment-
+    URL kein `http:`-/`https:`-Scheme nutzt, oder Scheme, Credentials,
     SSRF- oder Redirect-Regeln verletzt.
   - `hls_map_byterange_unsupported`: `skipped` für HLS `EXT-X-MAP` mit
     `BYTERANGE`.
@@ -426,6 +436,15 @@ DoD:
   mit Vererbungsfixtures abgesichert, oder Tranche 3 migriert auf eine
   kleine XML-Parser-Abhängigkeit. Die Entscheidung wird im Plan-DoD
   dokumentiert; stille Teilvererbung reicht für RAK-62/RAK-64 nicht.
+- [ ] DASH-Template-Auflösungs-Scope ist fixiert und getestet:
+  `SegmentTemplate@initialization` und `@media` dürfen in `0.10.0`
+  deterministisch nur `$RepresentationID$`, `$Bandwidth$`, `$Number$`
+  sowie printf-artige `$Number%0Nd$`-Platzhalter verwenden. `startNumber`
+  wird berücksichtigt; fehlt es, gilt DASH-Default `1`. `$Time$`,
+  `SegmentTimeline`-abhängige Auflösung und unbekannte Template-
+  Variablen sind in `0.10.0` nicht ableitbar und führen im Binary-Pfad
+  zu `dash_template_unresolved`. Die manifestbasierten Signale bleiben
+  trotzdem sichtbar.
 - [ ] Confidence-Regeln sind getestet: MP4-MIME allein erzeugt nur
   `confidence:"inferred"`; Initialization-Informationen plus fMP4-
   Segmentmuster erzeugen ein stärkeres manifestbasiertes Signal.
@@ -489,9 +508,10 @@ DoD:
 - [ ] Segment-Resolver lädt nur manifestreferenzierte Init-/Media-
   Segment-URIs. URL-Input löst relative Pfade gegen die finale
   Manifest-URL auf; Text-Input löst relative Pfade nur bei gesetzter
-  `baseUrl` auf. Ohne `baseUrl` oder bei unsicherer/nicht auflösbarer
-  URI wird nicht gefetched, sondern `skipped` mit eindeutigem
-  Failure-Code berichtet.
+  sicherer `http:`-/`https:`-`baseUrl` auf. Ohne `baseUrl`, mit
+  Nicht-HTTP(S)-`baseUrl` oder bei unsicherer/nicht auflösbarer URI wird
+  nicht gefetched, sondern `skipped` mit eindeutigem Failure-Code
+  berichtet.
 - [ ] HLS-Binary-Pfad prüft `EXT-X-MAP` plus erstes fMP4-Media-Segment;
   wenn eine der beiden URIs fehlt oder nicht ladbar ist, entsteht
   `details.cmaf.binary.status:"skipped"` oder `"failed"` mit
@@ -500,9 +520,13 @@ DoD:
   genutzt; erneutes Ad-hoc-Parsen der Manifestzeile im Binary-Pfad ist
   nicht zulässig.
 - [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
-  fMP4-Media-Segment je repräsentativem AdaptationSet; Template-
-  Variablen, die in `0.10.0` nicht sicher auflösbar sind, werden als
-  `skipped` mit dokumentiertem Grund gemeldet.
+  fMP4-Media-Segment je repräsentativem AdaptationSet. Ableitbar sind
+  nur Templates aus dem Scope von Tranche 3:
+  `$RepresentationID$`, `$Bandwidth$`, `$Number$` und
+  `$Number%0Nd$` mit `startNumber` bzw. Default `1`. `$Time$`,
+  `SegmentTimeline`-abhängige Auflösung oder unbekannte Variablen werden
+  nicht geraten, sondern als `skipped` mit Failure-Code
+  `dash_template_unresolved` gemeldet.
 - [ ] Positive und negative Binär-Fixtures decken Init, Media, fehlende
   Pflichtboxen, kaputte Boxgrößen, Größenlimit und nicht auflösbare
   Segment-URIs ab.
