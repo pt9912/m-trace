@@ -23,11 +23,22 @@ flowchart LR
   A --> O[OpenTelemetry-Modell]
 ```
 
-Das langfristige Ziel ist breiter:
+Das langfristige Ziel ist breiter — Media-Streams Schicht für Schicht von Ingest bis Player nachverfolgen:
 
-```text
-Media-Streams von Ingest bis Player nachverfolgen.
+```mermaid
+flowchart LR
+  I[Ingest<br/>RTMP · SRT · WebRTC] --> S[Media Server<br/>MediaMTX · SRS]
+  S --> D[Distribution<br/>HLS · DASH · WebRTC]
+  D --> P[Player<br/>hls.js · dash.js · WHEP]
+  P -->|Player-Telemetrie| T[m-trace<br/>API · Stream-Analyzer · Dashboard · OTel]
+  D -.->|Manifest-Probe| T
 ```
+
+- **Ingest** — RTMP, SRT, WebRTC (WHIP).
+- **Media Server** — MediaMTX, SRS.
+- **Distribution** — HLS, DASH, WebRTC (WHEP).
+- **Player** — hls.js, dash.js, native WHEP-Adapter.
+- **m-trace** — API + Stream-Analyzer + Dashboard, OpenTelemetry-kompatibel; korreliert Player-Telemetrie und Manifest-Proben in einer Session-Sicht.
 
 ---
 
