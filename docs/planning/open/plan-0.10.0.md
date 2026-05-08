@@ -6,16 +6,16 @@
 > Aktivierung erst nach dessen Release-Closeout.
 >
 > **Release-Typ**: Minor-Release nach `0.9.6` mit Lastenheft-Patch
-> `1.1.13`, neuer RAK-Gruppe `RAK-60`..`RAK-63`,
+> `1.1.13`, neuer RAK-Gruppe `RAK-60`..`RAK-64`,
 > RAK-Verifikationsmatrix und Tag `v0.10.0`.
 >
-> **Ziel**: NF-13 (`CMAF-Analyse`, Muss) wird in `0.10.0` bewusst nur
-> als additive, manifestbasierte CMAF-Signal-Analyse im Stream Analyzer
-> adressiert. `F-73` bleibt der historische Vorbereitungsschritt; NF-13
-> wird mit diesem Plan **nicht vollständig geschlossen**, weil keine
-> binäre CMAF-Konformitätsprüfung geliefert wird. Der Release macht
-> CMAF-Indizien auditierbar und hält die spätere Segment-/Box-Analyse
-> als Folge-Muss offen.
+> **Ziel**: NF-13 (`CMAF-Analyse`, Muss) wird in `0.10.0` vollständig
+> für den bewusst begrenzten Analyzer-Scope umgesetzt: additive
+> manifestbasierte CMAF-Signal-Analyse plus binäre CMAF-
+> Konformitätsprüfung ausgewählter Init-/Media-Segmente. `F-73` bleibt
+> der historische Vorbereitungsschritt; NF-13 wird mit diesem Plan nicht
+> über einen neuen Manifesttyp, sondern über HLS-/DASH-Details mit
+> prüfbarer CMAF-Semantik geschlossen.
 >
 > **Bezug**:
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) F-73, NF-13,
@@ -25,8 +25,8 @@
 > [`packages/stream-analyzer/`](../../../packages/stream-analyzer/);
 > [`apps/api/hexagon/domain/stream_analysis.go`](../../../apps/api/hexagon/domain/stream_analysis.go).
 >
-> **Nachfolger**: Folge-Plan für binäre CMAF-/ISO-BMFF-Segment- und
-> Box-Analyse zur vollständigen NF-13-Schließung.
+> **Nachfolger**: offen für Low-Latency-CMAF, vollständige Segmentset-
+> Abdeckung, CDN-/Byte-Range-Sonderfälle und Player-SDK-CMAF-Support.
 
 ## 0. Konvention
 
@@ -39,9 +39,10 @@ DoD-Checkboxen tracken den Lieferstand:
 
 ### 0.1 Scope-Definition
 
-`0.10.0` liefert **manifestbasierte CMAF-Signal-Analyse**, nicht
-allgemeine ISO-BMFF-/MP4-Binäranalyse und keine vollständige
-CMAF-Konformitätsprüfung.
+`0.10.0` liefert **CMAF-Analyse** als Kombination aus manifestbasierter
+Signal-Erkennung und begrenzter binärer CMAF-Konformitätsprüfung.
+Keine neue Analyzer-Art entsteht: CMAF bleibt ein Signal- und
+Verifikationsmodell innerhalb der bestehenden HLS-/DASH-Analyse.
 
 In Scope:
 
@@ -50,30 +51,44 @@ In Scope:
 - DASH/CMAF-Erkennung über `mimeType` `video/mp4`/`audio/mp4`/
   `application/mp4`, `SegmentTemplate`/`SegmentList`-Initialisierung
   und Representation-Metadaten.
+- Begrenzte binäre CMAF-Konformitätsprüfung für ausgewählte,
+  manifestreferenzierte Init- und Media-Segmente:
+  - HLS: `EXT-X-MAP`-Init-Segment plus erstes fMP4-Media-Segment je
+    analysiertem Media-Manifest.
+  - DASH: `SegmentTemplate@initialization` oder
+    `SegmentList/Initialization@sourceURL` plus erstes ableitbares
+    fMP4-Media-Segment je repräsentativem AdaptationSet.
+  - Byte-Parser für ISO-BMFF-Boxen mit Nachweis mindestens von `ftyp`,
+    `moov`, `moof`, `traf` und `tfdt`; `sidx` wird erkannt, ist aber
+    kein Pflicht-Nachweis.
+  - Strikte Fetch-/Read-Grenzen: maximale Segmentgröße, maximale Anzahl
+    geladener Segmente, Timeout und SSRF-/Scheme-Regeln entsprechen dem
+    bestehenden Manifest-Loader-Sicherheitsmodell.
 - Additives Result-Schema für `details.cmaf` unter den bestehenden
   HLS- und DASH-Detail-Objekten, ohne bestehende HLS-/DASH-Felder zu
   brechen und ohne neues Top-Level-Feld im Analyzer/API-Envelope.
   `details.cmaf` ist optional und wird nur ausgegeben, wenn mindestens
   ein CMAF-Signal vorliegt; Negativ-/Regression-Fixtures ohne CMAF-
   Signale behalten ihre bisherige Detail-Form ohne `cmaf`. Jedes
-  einzelne Signal trägt eine Confidence (`manifest` oder `inferred`),
-  damit manifestbasierte Indizien nicht als binäre
-  Konformitätsaussage missverstanden werden. Das `cmaf`-Objekt bedeutet
-  ausschließlich „CMAF-Signale erkannt", nicht „CMAF-Konformität
-  nachgewiesen"; deshalb bekommt das Schema kein boolesches
-  `present:true`-Feld. DASH-Resultate mit nur `video/mp4`/`audio/mp4`/
-  `application/mp4` bekommen deshalb ein schwaches
-  `confidence:"inferred"`-Summary; die bestehenden DASH-Contract-
-  Fixtures werden absichtlich additiv aktualisiert und sind danach
-  nicht byte-kompatibel zum `0.9.x`-Stand. HLS-`unknown` mit
+  einzelne Signal trägt eine Confidence (`binary`, `manifest` oder
+  `inferred`). Das `cmaf`-Objekt bedeutet „CMAF-Signale oder
+  CMAF-Verifikation vorhanden"; eine Konformitätsaussage darf nur aus
+  `details.cmaf.binary.status:"passed"` abgeleitet werden. Deshalb
+  bekommt das Schema kein boolesches `present:true`-Feld. DASH-
+  Resultate mit nur `video/mp4`/`audio/mp4`/`application/mp4` bekommen
+  ein schwaches `confidence:"inferred"`-Summary; die bestehenden DASH-
+  Contract-Fixtures werden absichtlich additiv aktualisiert und sind
+  danach nicht byte-kompatibel zum `0.9.x`-Stand. HLS-`unknown` mit
   `details:null` bleibt ohne `cmaf`.
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
 
 Out of scope:
 
-- Kein Download oder Parsing echter `.m4s`-/`.mp4`-Segmente.
-- Keine Validierung von MP4-Boxen (`ftyp`, `moov`, `moof`, `traf`,
-  `tfdt`, `sidx`) über Byte-Parsing.
+- Keine vollständige ISO-BMFF-/MP4-Dateivalidierung außerhalb der für
+  CMAF nötigen Box-/Fragment-Indizien.
+- Kein Download aller Segmente eines Streams und keine CDN-/Origin-
+  Qualitätsprüfung.
+- Keine Audio-/Video-Codec-Bitstream-Validierung und kein Decoding.
 - Keine Low-Latency-CMAF-Spezialfälle (`#EXT-X-PART`, chunked CMAF)
   über dokumentierte Folgehinweise hinaus.
 - Kein neuer Player-SDK-Adapter und keine Wire-Änderung am Playback-
@@ -90,18 +105,19 @@ Out of scope:
 
 ### 0.3 Lastenheft-Patch `1.1.13` (Vorschlag)
 
-Der Patch ergänzt `spec/lastenheft.md` mit RAK-60..RAK-63 und
-markiert NF-13 als in `0.10.0` nur manifestbasiert teiladressiert.
-NF-13 bleibt bis zur späteren binären CMAF-Konformitätsprüfung offen;
-der Patch darf die Muss-Anforderung nicht als vollständig erfüllt
-markieren.
+Der Patch ergänzt `spec/lastenheft.md` mit RAK-60..RAK-64 und
+markiert NF-13 als in `0.10.0` für den Stream-Analyzer-Scope erfüllt:
+manifestbasierte Signale plus begrenzte binäre CMAF-
+Konformitätsprüfung. Folge-Scope bleibt nur für Low-Latency-CMAF,
+vollständige Segmentset-Abdeckung und Player-/CDN-Sonderfälle offen.
 
 | RAK | Priorität | Inhalt |
 | --- | --------- | ------ |
-| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse für HLS/fMP4 und DASH/CMAF; Segment-/MP4-Box-Parsing bleibt Folge-Scope, NF-13 bleibt bis dahin offen und darf nicht als vollständig erfüllt markiert werden. |
+| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse plus begrenzte binäre Prüfung ausgewählter HLS-/DASH-Init- und Media-Segmente; NF-13 gilt nur für diesen Analyzer-Scope als erfüllt. |
 | RAK-61 | Muss | HLS-CMAF-Signale: `EXT-X-MAP`, fMP4-Segmentmuster und relevante Tags erzeugen stabile `cmaf`-Signals mit Confidence-Semantik im Analyseergebnis. |
 | RAK-62 | Muss | DASH-CMAF-Signale: MPD-`mimeType`, `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `cmaf`-Signals mit Confidence-Semantik; MP4-MIME allein gilt nur als Indiz, nicht als CMAF-Konformitätsnachweis. |
 | RAK-63 | Muss | CLI, API-Adapter, Contract-Fixtures und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. |
+| RAK-64 | Muss | Binäre CMAF-Konformitätsprüfung: ISO-BMFF-Box-Parser validiert ausgewählte Init-/Media-Segmente bounded und meldet `details.cmaf.binary.status` mit nachvollziehbaren Box-/Segment-Nachweisen. |
 
 ## 1. Tranchen-Übersicht
 
@@ -111,8 +127,9 @@ markieren.
 | 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | ⬜ |
 | 2 | HLS/fMP4-CMAF-Erkennung | ⬜ |
 | 3 | DASH/CMAF-Erkennung | ⬜ |
-| 4 | API-/CLI-Durchleitung, Doku und Smokes | ⬜ |
-| 5 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
+| 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ⬜ |
+| 5 | API-/CLI-Durchleitung, Doku und Smokes | ⬜ |
+| 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
 ---
 
@@ -126,13 +143,13 @@ DoD:
   `docs/planning/in-progress/plan-0.10.0.md` verschoben.
 - [ ] `git status --short` vor erster Änderung dokumentiert.
 - [ ] `spec/lastenheft.md` Header auf `1.1.13` erhöht.
-- [ ] RAK-60..RAK-63 im Lastenheft ergänzt.
+- [ ] RAK-60..RAK-64 im Lastenheft ergänzt.
 - [ ] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
   `4a.16 Patch 1.1.13` ergänzt.
 - [ ] [`roadmap.md`](../in-progress/roadmap.md) vor erster
-  Implementierung von „NF-13-Vollumsetzung" auf manifestbasierte
-  CMAF-Signal-Analyse / NF-13-Teiladressierung korrigiert, damit
-  Folgephasen-Status und Plan-Scope nicht während der Umsetzung
+  Implementierung auf `0.10.0` als CMAF-Analyse mit manifestbasierten
+  Signalen plus begrenzter binärer Konformitätsprüfung korrigiert,
+  damit Folgephasen-Status und Plan-Scope nicht während der Umsetzung
   widersprechen.
 - [ ] Fixture-Inventar angelegt:
   - HLS CMAF VOD mit `EXT-X-MAP` und `.m4s`-Segmenten.
@@ -145,6 +162,12 @@ DoD:
     Segmentmuster als starker manifestbasierter Pfad.
   - DASH ohne CMAF-Signale als Negativ-/Regression-Pfad, z. B. ohne
     MP4-MIME, ohne Initialization und ohne fMP4-URI-Muster.
+  - Binäre Positive-Fixtures: minimales CMAF-Init-Segment mit `ftyp` +
+    `moov` und minimales fragmentiertes Media-Segment mit `moof` /
+    `traf` / `tfdt`.
+  - Binäre Negativ-Fixtures: fehlendes oder inkompatibles `ftyp`,
+    fehlendes `moof`, fehlendes `tfdt`, ungültige Box-Größe und Segment
+    über dem konfigurierten Größenlimit.
 
 ---
 
@@ -168,17 +191,25 @@ DoD:
   - `source: "hls" | "dash"`; ein `mixed`-Wert wird in `0.10.0` nicht
     eingeführt, weil jedes Summary unter genau einem HLS- oder DASH-
     Detail-Objekt lebt.
-  - `confidence: "manifest" | "inferred"` als aggregierte stärkste
-    Confidence des Summary-Objekts.
+  - `confidence: "binary" | "manifest" | "inferred"` als aggregierte
+    stärkste Confidence des Summary-Objekts.
   - `signals[]` mit `code`, `level`, `manifestAnchor` und eigener
-    `confidence: "manifest" | "inferred"`, damit gemischte starke und
-    schwache Indizien auditierbar bleiben. `level` nutzt dieselbe
-    Wertedomäne wie `AnalysisFinding.level`: `"info" | "warning" |
-    "error"`.
-  - `note?: string` darf knapp beschreiben, dass die Summary nur
-    manifestbasierte Signale meldet und keine binäre CMAF-
-    Konformitätsaussage trifft; Pflicht ist diese Klarstellung in Doku
-    und README, nicht in jedem JSON-Result.
+    `confidence: "binary" | "manifest" | "inferred"`, damit gemischte
+    starke und schwache Indizien auditierbar bleiben. `level` nutzt
+    dieselbe Wertedomäne wie `AnalysisFinding.level`: `"info" |
+    "warning" | "error"`.
+  - `binary?: CmafBinaryVerification` mit `status: "passed" |
+    "failed" | "skipped"`, `segmentsChecked[]`, `boxes[]`,
+    `failures[]`, `limits` und `note?`. `status:"passed"` ist die
+    einzige Stelle, aus der Doku und Konsumenten eine binäre CMAF-
+    Konformitätsaussage für den geprüften Scope ableiten dürfen.
+    `status:"skipped"` ist zulässig, wenn keine sicher ladbare Init-/
+    Media-Segment-URI vorliegt; manifestbasierte Signale bleiben dann
+    sichtbar, aber nicht konformitätsbeweisend.
+  - `note?: string` darf knapp beschreiben, welcher Anteil nur
+    manifestbasiert und welcher Anteil binär verifiziert wurde; Pflicht
+    ist diese Klarstellung in Doku und README, nicht in jedem JSON-
+    Result.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
@@ -291,7 +322,58 @@ DoD:
 
 ---
 
-## 6. Tranche 4 — API, CLI und Doku
+## 6. Tranche 4 — Binäre CMAF-Konformitätsprüfung
+
+Ziel: CMAF wird nicht nur als Manifest-Indiz erkannt, sondern im
+begrenzten Analyzer-Scope über echte Segment-/Box-Daten geprüft.
+
+DoD:
+
+- [ ] ISO-BMFF-Box-Reader implementiert:
+  - liest 32-bit und `largesize`-Boxgrößen bounds-checkend,
+  - erkennt ungültige, überlappende oder nicht fortschreitende Boxen,
+  - bricht bei konfiguriertem Byte-Limit deterministisch ab,
+  - liefert stabile Box-Anker (`segment:init:ftyp`,
+    `segment:media[0]:moof/traf/tfdt`) für `details.cmaf.binary`.
+- [ ] CMAF-Init-Prüfung validiert mindestens:
+  - `ftyp` vorhanden,
+  - kompatible Brand-Liste enthält CMAF-/ISO-BMFF-kompatible Hinweise,
+  - `moov` vorhanden,
+  - keine offensichtlich widersprüchliche Top-Level-Box-Struktur.
+- [ ] CMAF-Media-Fragment-Prüfung validiert mindestens:
+  - `moof` vorhanden,
+  - mindestens ein `traf` unter `moof`,
+  - `tfdt` unter `traf` vorhanden,
+  - optionales `sidx` wird erkannt und berichtet, aber nicht als Muss
+    gewertet.
+- [ ] Segment-Resolver lädt für Text-/URL-Input nur manifestreferenzierte
+  Init-/Media-Segment-URIs, löst relative Pfade gegen `baseUrl` bzw.
+  finale Manifest-URL auf und erbt SSRF-, Scheme-, Timeout- und
+  Größenlimit-Regeln aus dem bestehenden Loader.
+- [ ] HLS-Binary-Pfad prüft `EXT-X-MAP` plus erstes fMP4-Media-Segment;
+  wenn eine der beiden URIs fehlt oder nicht ladbar ist, entsteht
+  `details.cmaf.binary.status:"skipped"` oder `"failed"` mit
+  nachvollziehbarem Failure-Code, kein stiller Erfolg.
+- [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
+  fMP4-Media-Segment je repräsentativem AdaptationSet; Template-
+  Variablen, die in `0.10.0` nicht sicher auflösbar sind, werden als
+  `skipped` mit dokumentiertem Grund gemeldet.
+- [ ] Positive und negative Binär-Fixtures decken Init, Media, fehlende
+  Pflichtboxen, kaputte Boxgrößen, Größenlimit und nicht auflösbare
+  Segment-URIs ab.
+- [ ] Tests pinnen Status-Mapping:
+  - `passed` nur bei bestandener Init- und Media-Prüfung,
+  - `failed` bei geladener, aber nicht konformer Box-Struktur,
+  - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
+    ladbarer Segmentreferenz.
+- [ ] Fehler aus binärer Prüfung bleiben Findings oder
+  `details.cmaf.binary.failures[]`; sie ändern nicht das bestehende
+  `status:"ok"` des Analyse-Results, solange das Manifest selbst
+  erfolgreich analysiert wurde.
+
+---
+
+## 7. Tranche 5 — API, CLI und Doku
 
 Ziel: CMAF-Signale sind über alle bestehenden Analyzer-Pfade nutzbar.
 
@@ -299,23 +381,26 @@ DoD:
 
 - [ ] `apps/api`-StreamAnalyzer-Adapter reicht `details.cmaf` im
   bestehenden Domain-Modell über `EncodedDetails` additiv durch; Tests
-  prüfen, dass HLS-CMAF und DASH-CMAF im HTTP-`analysis.details.cmaf`
-  sichtbar bleiben.
+  prüfen, dass HLS-CMAF, DASH-CMAF und
+  `analysis.details.cmaf.binary.status` im HTTP-Result sichtbar
+  bleiben.
 - [ ] HTTP-Contract-/Adapter-Tests decken HLS-CMAF und DASH-CMAF ab.
   Mindestens ein Test pinnt die öffentliche `/api/analyze`-Antwort mit
-  `{analysis, session_link}`-Wrapper und verifiziert `analysis.details.cmaf`;
-  die interne driven-Adapter-Fixture alleine reicht für RAK-63 nicht
-  als HTTP-Wire-Nachweis.
+  `{analysis, session_link}`-Wrapper und verifiziert
+  `analysis.details.cmaf.binary.status`; die interne driven-Adapter-
+  Fixture alleine reicht für RAK-63/RAK-64 nicht als HTTP-Wire-
+  Nachweis.
 - [ ] CLI gibt die neuen Signale unverändert im JSON aus.
 - [ ] `make smoke-cli` um mindestens eine CMAF-HLS- oder CMAF-DASH-
-  Probe erweitert.
+  Probe mit bestandener binärer Prüfung erweitert.
 - [ ] [`docs/user/stream-analyzer.md`](../../user/stream-analyzer.md)
-  beschreibt Scope, Beispiele, Grenzen und Exit-/Fehlerverhalten.
+  beschreibt Scope, Beispiele, Grenzen, Binary-Statuswerte und Exit-/
+  Fehlerverhalten.
 - [ ] `packages/stream-analyzer/README.md` synchronisiert.
 
 ---
 
-## 7. Tranche 5 — Gates, Matrix und Release-Closeout
+## 8. Tranche 6 — Gates, Matrix und Release-Closeout
 
 Ziel: `0.10.0` wird als Minor-Release sauber abgeschlossen.
 
@@ -325,10 +410,11 @@ DoD:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; Segment-/Box-Parsing ausdrücklich offen; NF-13 nicht vollständig geschlossen | [ ] |
+| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; NF-13 im begrenzten Analyzer-Scope als manifestbasierte plus binäre CMAF-Prüfung geschlossen | [ ] |
 | RAK-61 | Muss | HLS-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, CLI-Smoke | [ ] |
 | RAK-62 | Muss | DASH-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, API-Contract | [ ] |
 | RAK-63 | Muss | API-/CLI-/Doku-Nachweise, Contract-Fixtures | [ ] |
+| RAK-64 | Muss | ISO-BMFF-Box-Parser, Binär-Fixtures, Binary-Status-Tests, bounded Segment-Loader, HTTP-/CLI-Nachweis | [ ] |
 
 - [ ] `make docs-check` grün.
 - [ ] `make build` grün.
@@ -355,20 +441,21 @@ DoD:
 - [ ] Vollständiger Versions-Bump `0.9.6` → `0.10.0` in allen
   versionsführenden Stellen analog Release-Konvention.
 - [ ] `CHANGELOG.md` mit `[0.10.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap-Status und Release-Übersicht auf `0.10.0` released und
-  Folgephase offen
-  aktualisiert.
+- [ ] Roadmap-Status und Release-Übersicht auf `0.10.0` released
+  aktualisiert; Folgephase beschreibt nur noch bewusst ausgegrenzte
+  CMAF-Erweiterungen wie Low-Latency-CMAF oder vollständige
+  Segmentset-Abdeckung, nicht die NF-13-Basiserfüllung.
 - [ ] Plan nach `docs/planning/done/plan-0.10.0.md` verschoben und
   Status auf ✅ released aktualisiert.
 - [ ] Annotierter Tag `v0.10.0` erstellt.
 
-## 8. Nicht-Ziele für Review
+## 9. Nicht-Ziele für Review
 
 Review-Kommentare zu folgenden Themen sollen in Folge-Pläne, nicht in
 `0.10.0`:
 
-- Binäres MP4-/CMAF-Box-Parsing.
 - Low-Latency-CMAF-Chunks und `#EXT-X-PART`-Analyse.
-- Segment-Download, CDN-Checks oder Byte-Range-Verifikation.
+- Vollständiger Download aller Segmente, CDN-Checks oder Byte-Range-
+  Verifikation.
 - Player-SDK-CMAF-Playback-Support.
 - Neue Storage-, Multi-Tenant- oder Kubernetes-Scope-Erweiterungen.
