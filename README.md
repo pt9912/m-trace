@@ -13,7 +13,8 @@ Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase 
 
 m-trace richtet sich an Entwickler, Selbsthoster, kleine Streaming-Plattformen, Broadcaster und technische Teams, die verstehen wollen, was in ihrer Streaming-Pipeline passiert — ohne sich von einem proprietären SaaS-Analytics-Silo abhängig zu machen.
 
-Das erste Ziel ist einfach — ein lokales Lab, in dem ein Live-HLS-Stream in einem Demo-Player läuft und seine Telemetrie sauber in API, Dashboard und OpenTelemetry-Modell landet:
+### Das erste Ziel
+ist einfach — ein lokales Lab, in dem ein Live-HLS-Stream in einem Demo-Player läuft und seine Telemetrie sauber in API, Dashboard und OpenTelemetry-Modell landet:
 
 ```mermaid
 flowchart LR
@@ -29,7 +30,8 @@ flowchart LR
 - **Dashboard** — zeigt Sessions, Events und Session-Timeline.
 - **OpenTelemetry-Modell** — Aggregat-Metriken in Prometheus, optional Traces über den OTel-Collector.
 
-Das langfristige Ziel ist breiter — Media-Streams Schicht für Schicht von Ingest bis Player nachverfolgen:
+### Das langfristige Ziel 
+ist breiter — Media-Streams Schicht für Schicht von Ingest bis Player nachverfolgen:
 
 ```mermaid
 flowchart LR
@@ -152,11 +154,11 @@ Prometheus wird ausschließlich für Aggregat-Metriken genutzt. Die
 drei Backends teilen die Verantwortung wie folgt (kanonische 3-Spalten-
 Tabelle: [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.3):
 
-| Backend | Rolle | Cardinality |
-|---|---|---|
-| **Prometheus** | Aggregat-Metriken (Counter, Rates) | bounded — Forbidden-Liste aus [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1 release-blockierend |
-| **SQLite** (ADR-0002) | Per-Session-Historie inkl. `session_id`, `correlation_id`, `trace_id`, redacted URLs | unbeschränkt |
-| **OTel/Tempo** | Per-Request-Trace-Spans (sample-basiert) | nicht im Cardinality-Vertrag |
+| Backend               | Rolle                                                                                | Cardinality                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **Prometheus**        | Aggregat-Metriken (Counter, Rates)                                                   | bounded — Forbidden-Liste aus [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1 release-blockierend |
+| **SQLite** (ADR-0002) | Per-Session-Historie inkl. `session_id`, `correlation_id`, `trace_id`, redacted URLs | unbeschränkt                                                                                                |
+| **OTel/Tempo**        | Per-Request-Trace-Spans (sample-basiert)                                             | nicht im Cardinality-Vertrag                                                                                |
 
 Beispiele für Prometheus-Counter (alle label-frei):
 
