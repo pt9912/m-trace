@@ -323,11 +323,25 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.9.5` released — Quality-Gates Wave 2
-Patch-Release nach `0.9.0`/`0.9.1` (Patch-Release-Konvention
-`0.X.Y`, siehe [`docs/user/releasing.md`](docs/user/releasing.md)
-§3.1). Inhalt: vier statistisch- bzw. langlaufende Quality-Gates
-aus [`docs/planning/in-progress/extra-gates.md`](docs/planning/in-progress/extra-gates.md)
+Aktiv in Arbeit ist `0.9.6` 🟡 — Lastenheft-Konvergenz-Patch nach
+`0.9.5` (Patch-Release-Konvention `0.X.Y`, siehe
+[`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Inhalt:
+fehlende Muss-Repo-Artefakte ergänzt
+([`CONTRIBUTING.md`](CONTRIBUTING.md),
+[`SECURITY.md`](SECURITY.md), [`.env.example`](.env.example),
+[`deploy/`](deploy/)-Struktur) und Lastenheft-Patch `1.1.12`
+(F-7-Status, neue Pflichtdokumente-Kennung `F-131`,
+NF-13/NF-18 harmonisiert, MVP-19..MVP-26 redaktionell entzerrt;
+Patch-Log §4a.15 in
+[`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)).
+Keine neue Produktfunktion, keine User-Surface- oder
+Wire-Vertragsänderung. Plan in
+[`docs/planning/in-progress/plan-0.9.6.md`](docs/planning/in-progress/plan-0.9.6.md).
+
+Davor steht `0.9.5` released — Quality-Gates Wave 2 Patch-Release
+nach `0.9.0`/`0.9.1`. Inhalt: vier statistisch- bzw. langlaufende
+Quality-Gates aus
+[`docs/planning/in-progress/extra-gates.md`](docs/planning/in-progress/extra-gates.md)
 in einem Patch-Release ausgeliefert, Plan-File in
 [`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md). Kein
 Lastenheft-Patch (Quality-Gates, keine User-Surface).
@@ -446,7 +460,7 @@ Archivierte Plan-Dateien:
 
 Leitende Dokumente:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.9)
+- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.12)
 - [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess

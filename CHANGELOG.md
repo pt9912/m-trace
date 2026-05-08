@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> **0.9.6 in Arbeit** — Lastenheft-Konvergenz-Patch nach `0.9.5`
+> (Patch-Release-Konvention `0.X.Y`, siehe
+> [`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Keine
+> neue Produktfunktion, keine User-Surface- oder Wire-
+> Vertragsänderung. Plan in
+> [`docs/planning/in-progress/plan-0.9.6.md`](docs/planning/in-progress/plan-0.9.6.md).
+
+### Added
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): Beitragsregeln mit
+  Make-/Setup-/Release-Verweisen und Issue-/PR-Erwartung.
+- [`SECURITY.md`](SECURITY.md): unterstützte Versionen,
+  vertraulicher Meldeweg, Bezug auf die `0.8.5`-Security-Gates.
+- [`.env.example`](.env.example): dokumentierte, nicht geheime
+  Beispielwerte für API/Analyzer/Dashboard/Observability/SRT-
+  Health.
+- [`deploy/`](deploy/)-Struktur (`deploy/README.md` plus leere
+  Unterordner `deploy/compose/`, `deploy/docker/`, `deploy/k8s/`)
+  als Strukturanker für `F-7`; `docker-compose.yml` im Repo-Root
+  bleibt der primäre lokale Pfad.
+
+### Changed
+
+- [`spec/lastenheft.md`](spec/lastenheft.md) Header
+  `1.1.11` → `1.1.12`; kompakte Patch-Note nach dem Frontmatter.
+- `F-7`, Pflichtdokumente-Block (neu `F-131`, mit
+  `docs/user/stream-analyzer.md`-Pfadkorrektur), `NF-13`,
+  `NF-18`, `MVP-19`..`MVP-26`, `MVP-37` und `MVP-42` mit
+  `1.1.12`-Status- bzw. Lieferstand-Vermerk redaktionell
+  geschärft, ohne Anforderungen zu senken oder zu heben.
+- [`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)
+  §4a.15 als neuer Patch-Log-Eintrag.
+- [`README.md`](README.md): neuer Abschnitt „Mitarbeit und
+  Sicherheitsmeldungen", `cp .env.example .env`-Hinweis im
+  Lokal-Setup, Statusblock auf `0.9.6` umgestellt.
+- [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+  und
+  [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  Header und Phase-Beschreibung auf den `0.9.6`-Stand
+  aktualisiert; keine inhaltliche Änderung an aktiven R-Items.
+
 ## [0.9.5] - 2026-05-07
 
 > **Quality-Gates Wave 2** — Patch-Release nach `0.9.0`/`0.9.1`

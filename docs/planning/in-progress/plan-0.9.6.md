@@ -270,21 +270,25 @@ bleibt.
 
 DoD:
 
-- [ ] [`roadmap.md`](./roadmap.md) Statusblock und
-  Release-Übersicht ergänzen
-  `0.9.6` als Lastenheft-Konvergenz-Patch.
-- [ ] [`roadmap.md`](./roadmap.md) Folge-ADRs bleiben bei
-  Postgres/Multi-Tenant-Folge-ADRs, ergänzt aber nur neue Folge-ADRs,
-  falls Tranche 2 wirklich eine neue Entscheidung erzeugt.
-- [ ] [`risks-backlog.md`](./risks-backlog.md) Header
-  auf `0.9.6`-Stand aktualisiert; R-9/R-13 nur dann inhaltlich
-  geändert, wenn der Lastenheft-Patch ihre Trigger beeinflusst.
-- [ ] [`README.md`](../../../README.md) Statusblock und
-  Abgrenzungsabschnitt bleiben konsistent: kein Production-K8s,
-  keine Multi-Tenant-SaaS-Plattform, kein Production-Grade-
-  Storage-Backend.
-- [ ] `CHANGELOG.md` erhält einen `[Unreleased]`-Eintrag für
-  Lastenheft-/Repo-Artefakt-Konvergenz.
+- [x] [`roadmap.md`](./roadmap.md) Statusblock (§1 Header, §1.2)
+  und Release-Übersicht (§3) ergänzt: `0.9.6` als
+  Lastenheft-Konvergenz-Patch; §2 Schritt 44 (🟡 in Arbeit) mit
+  Inhaltsbeschreibung.
+- [x] [`roadmap.md`](./roadmap.md) Folge-ADRs unverändert
+  (Postgres/Multi-Tenant-Folge-ADRs aus Roadmap §4 — Patch
+  `1.1.12` erzeugt keine neue Folge-ADR-Entscheidung).
+- [x] [`risks-backlog.md`](./risks-backlog.md) Header auf
+  `0.9.6`-Stand aktualisiert; R-9/R-13 inhaltlich unverändert
+  (der `1.1.12`-NF-18-Patch bestätigt nur den bestehenden
+  „K8s-Smoke-Einführung"-Trigger, ohne ihn zu verschieben).
+- [x] [`README.md`](../../../README.md) Statusblock auf `0.9.6`
+  in Arbeit umgestellt; Abgrenzungsabschnitt „Was m-trace nicht
+  ist" unverändert (kein Production-K8s, keine Multi-Tenant-SaaS-
+  Plattform, kein Production-Grade-Storage-Backend);
+  „Leitende Dokumente"-Verweis auf Lastenheft `1.1.12` nachgezogen.
+- [x] [`CHANGELOG.md`](../../../CHANGELOG.md) erhält einen
+  `[Unreleased]`-Eintrag mit „0.9.6 in Arbeit"-Block, Added- und
+  Changed-Listen für Repo-Artefakte und Lastenheft-Patch.
 
 ---
 
