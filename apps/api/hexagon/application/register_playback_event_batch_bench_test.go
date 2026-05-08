@@ -79,7 +79,7 @@ func makeBatch(n int, withReservedMeta bool) driving.BatchInput {
 			SessionID:       fmt.Sprintf("01J7K9X4Z2QHB6V3WS5R8Y%03dF", i%1000),
 			ClientTimestamp: base.Add(time.Duration(i) * time.Millisecond).Format(time.RFC3339Nano),
 			SequenceNumber:  int64Ptr(int64(i + 1)),
-			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.5"},
+			SDK:             driving.SDKInput{Name: "@npm9912/player-sdk", Version: "0.9.6"},
 		}
 		if withReservedMeta {
 			event.Meta = map[string]any{

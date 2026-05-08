@@ -62,7 +62,7 @@ func TestAnalyzeHandler_Success_URL(t *testing.T) {
 	t.Parallel()
 	stub := &stubAnalysisInbound{
 		result: domain.StreamAnalysisResult{
-			AnalyzerVersion: "0.9.5",
+			AnalyzerVersion: "0.9.6",
 			PlaylistType:    domain.PlaylistTypeMaster,
 			Summary:         domain.StreamAnalysisSummary{ItemCount: 3},
 			Findings: []domain.StreamAnalysisFinding{
@@ -99,7 +99,7 @@ func TestAnalyzeHandler_Success_TextWithBaseURL(t *testing.T) {
 	t.Parallel()
 	stub := &stubAnalysisInbound{
 		result: domain.StreamAnalysisResult{
-			AnalyzerVersion: "0.9.5",
+			AnalyzerVersion: "0.9.6",
 			PlaylistType:    domain.PlaylistTypeMedia,
 		},
 	}
@@ -124,7 +124,7 @@ func TestAnalyzeHandler_NullDetailsAreEmittedAsNull(t *testing.T) {
 	t.Parallel()
 	stub := &stubAnalysisInbound{
 		result: domain.StreamAnalysisResult{
-			AnalyzerVersion: "0.9.5",
+			AnalyzerVersion: "0.9.6",
 			PlaylistType:    domain.PlaylistTypeUnknown,
 		},
 	}
@@ -322,7 +322,7 @@ func TestAnalyzeHandler_RecordsOutcomeMetrics(t *testing.T) {
 	}{
 		{
 			name:        "success → outcome=ok, code=ok",
-			stubResult:  domain.StreamAnalysisResult{AnalyzerVersion: "0.9.5", PlaylistType: domain.PlaylistTypeMaster},
+			stubResult:  domain.StreamAnalysisResult{AnalyzerVersion: "0.9.6", PlaylistType: domain.PlaylistTypeMaster},
 			body:        `{"kind":"text","text":"#EXTM3U\n"}`,
 			contentType: "application/json",
 			wantOutcome: "ok",
@@ -393,7 +393,7 @@ func TestAnalyzeHandler_RecordsOutcomeMetrics(t *testing.T) {
 
 func TestAnalyzeHandler_RecordsNothingWhenMetricsNil(t *testing.T) {
 	t.Parallel()
-	stub := &stubAnalysisInbound{result: domain.StreamAnalysisResult{AnalyzerVersion: "0.9.5", PlaylistType: domain.PlaylistTypeUnknown}}
+	stub := &stubAnalysisInbound{result: domain.StreamAnalysisResult{AnalyzerVersion: "0.9.6", PlaylistType: domain.PlaylistTypeUnknown}}
 	server := httptest.NewServer(newAnalyzeHandler(stub))
 	defer server.Close()
 	res, err := http.Post(server.URL, "application/json", strings.NewReader(`{"kind":"text","text":"#EXTM3U\n"}`))

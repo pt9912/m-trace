@@ -41,7 +41,7 @@ async function run(
 
 const okMaster: AnalysisResult = {
   status: "ok",
-  analyzerVersion: "0.9.5",
+  analyzerVersion: "0.9.6",
   analyzerKind: "hls",
   input: { source: "text" },
   playlistType: "master",
@@ -52,7 +52,7 @@ const okMaster: AnalysisResult = {
 
 const errNotHls: AnalysisErrorResult = {
   status: "error",
-  analyzerVersion: "0.9.5",
+  analyzerVersion: "0.9.6",
   analyzerKind: "hls",
   code: "manifest_not_hls",
   message: "not HLS"
@@ -185,7 +185,7 @@ describe("m-trace CLI — URL input", () => {
   it("returns exit 1 with JSON on URL analysis error", async () => {
     const errBlocked: AnalysisErrorResult = {
       status: "error",
-      analyzerVersion: "0.9.5",
+      analyzerVersion: "0.9.6",
       analyzerKind: "hls",
       code: "fetch_blocked",
       message: "blocked",
@@ -242,7 +242,7 @@ describe("m-trace CLI — URL input", () => {
 describe("m-trace CLI — DASH dispatch (RAK-59)", () => {
   const okDash: AnalysisResult = {
     status: "ok",
-    analyzerVersion: "0.9.5",
+    analyzerVersion: "0.9.6",
     analyzerKind: "dash",
     input: { source: "text" },
     playlistType: "dash",
@@ -305,7 +305,7 @@ describe("m-trace CLI — DASH dispatch (RAK-59)", () => {
   it("returns exit 1 for an unsupported manifest body (e.g. HTML)", async () => {
     const errUnsupported: AnalysisErrorResult = {
       status: "error",
-      analyzerVersion: "0.9.5",
+      analyzerVersion: "0.9.6",
       analyzerKind: "hls",
       code: "manifest_not_supported",
       message: "Manifest-Body wurde weder als HLS noch als DASH erkannt.",
