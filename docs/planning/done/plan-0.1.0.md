@@ -406,6 +406,22 @@ DoD:
 - [x] [`docs/planning/done/plan-0.9.0.md`](./plan-0.9.0.md) §0.2 (Patch-Vorschlag) von „Vorschlag" auf „ausgeliefert in Lastenheft `1.1.11`" hochgezogen; §0.1 Vorgänger-Gate entsprechend abgehakt; Tranche 0 DoD-Item 2 abgehakt.
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 42 abgehakt (✅); §1.2 verweist auf den ausgelieferten Patch.
 
+### 4a.15 Patch `1.1.12` — `0.9.6` Lastenheft-Konvergenz (F-7-Status, F-131 neu, NF-13/NF-18 harmonisieren, MVP-19..MVP-26/MVP-37/MVP-42 redaktionell entzerren)
+
+Mit `0.9.5` ist die Quality-Gates Wave 2 ausgeliefert. Beim Audit „Ist alles aus dem Lastenheft umgesetzt?" werden mehrere Lieferstands-Unschärfen sichtbar, die keine neue Produktfunktion brauchen, aber das Lastenheft stale aussehen lassen: `F-7` fordert eine `deploy/`-Struktur, die noch nicht existiert (mit `0.9.6` Tranche 1 angelegt); der Pflichtdokumente-Block in §7.12 hat keine eigene Kennung und referenziert den überholten Pfad `docs/stream-analyzer.md` statt `docs/user/stream-analyzer.md`; `NF-13` (CMAF) wirkt durch `F-73` „erledigt", deckt aber nur die Vorbereitung; `NF-18` (Kubernetes Deployment) widerspricht der README-Abgrenzung und der Kann-Stufung von `MVP-42`; die Tabelle „Nicht im `0.1.0`-MVP" (MVP-19..MVP-26) wird heute oft als offene Muss-Liste fehlgelesen, obwohl der Großteil entweder ausgeliefert (`MVP-21` in `0.3.0`, `MVP-24` in `0.7.0`/`0.8.0`/`0.9.0`, `MVP-25` in `0.6.0`) oder bewusst gegenteilig entschieden wurde (`MVP-22` Tempo als Kann, `MVP-23` Mimir/ClickHouse out of scope, `MVP-26` Multi-Tenant out of scope). Der Patch hebt nichts und senkt nichts inhaltlich; er verankert nur Status, Pfade und Folge-Plan-Verweise.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.11` → `1.1.12`; kompakte Patch-Note unmittelbar nach dem Frontmatter („Lastenheft-Konvergenz nach `0.9.5`; keine neue Produktfunktion").
+- [x] Lastenheft §7.1 `F-7` mit `1.1.12`-Status-Präzisierung: `deploy/` ist Strukturanker; `docker-compose.yml` im Repo-Root bleibt der primäre lokale Pfad; `deploy/k8s/` Folge-Scope (`MVP-42`).
+- [x] Lastenheft §7.12 Pflichtdokumente: neue Anforderung `F-131` (Muss) eingeführt; `docs/stream-analyzer.md` auf den realen Pfad `docs/user/stream-analyzer.md` korrigiert; übrige Pflichtdokumente unverändert.
+- [x] Lastenheft §8.3 `NF-13` mit `1.1.12`-Lieferstand-Präzisierung: `F-73` deckt nur die vorbereitete Erweiterbarkeit; CMAF-Vollanalyse bleibt offen und verweist auf [`docs/planning/open/plan-0.10.0.md`](../open/plan-0.10.0.md).
+- [x] Lastenheft §8.3 `NF-18` mit `1.1.12`-Scope-Präzisierung: Production-K8s nicht in der ersten Phase; `MVP-42` bleibt `Kann`; R-9 bleibt Trigger-Risiko.
+- [x] Lastenheft §12.1 „Nicht im `0.1.0`-MVP"-Tabelle redaktionell entzerrt: neue Spalte „Status (Patch `1.1.12`)" mit verbindlicher Aussage pro Item (erfüllt / anders entschieden / out of scope); historische „Prioritaet"-Spalte zur Audit-Nachvollziehbarkeit erhalten.
+- [x] Lastenheft §12.3 `MVP-37` mit Lieferstand-Vermerk (in `0.9.0` ausgeliefert); `MVP-42` mit Status-Vermerk (Strukturanker leer, kein Production-K8s).
+- [x] Kein neuer Scope-Widerspruch: README-Abgrenzungsabschnitt „Was m-trace nicht ist", `NF-13`, `NF-18`, `MVP-19`..`MVP-26`, `MVP-40`..`MVP-42` sind nach dem Patch konsistent.
+- [ ] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 44 abgehakt (✅) wird mit dem `0.9.6`-Closeout in Tranche 4 nachgezogen; Aktivierungs-Eintrag in §1/§1.2 ist mit Tranche 0 schon erfolgt.
+
 ---
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)

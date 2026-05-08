@@ -2,11 +2,26 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.11<br>
+**Version:** 1.1.12<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
+
+> **Patch `1.1.12` (Lastenheft-Konvergenz nach `0.9.5`)**: Keine
+> neue Produktfunktion, keine User-Surface- oder Wire-Vertrags-
+> änderung. Bereinigt die nach dem `0.9.5`-Audit sichtbaren
+> Lieferstands-Unschärfen: `F-7` als Struktur-Anker präzisiert
+> (Compose-Lab im Repo-Root bleibt der primäre Pfad), neue
+> Pflichtdokumente-Kennung `F-131` mit harmonisierten Repo-Pfaden,
+> `NF-13` (CMAF-Vollanalyse) bleibt offen und verweist auf den
+> Folge-Plan `0.10.0`, `NF-18` (Kubernetes Production) als
+> Folge-Scope abgegrenzt, `MVP-19`..`MVP-26`/`MVP-37`
+> redaktionell so geschärft, dass die historische
+> „Nicht im `0.1.0`-MVP"-Liste nicht als heutige offene Muss-
+> Lücke missverstanden wird. Patch-Log siehe
+> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
+> Tranche 0c §4a.15.
 
 ---
 
@@ -225,7 +240,7 @@ Das Projekt muss als Mono-Repo organisiert werden.
 | F-4 | Muss | Hilfsdienste müssen unter `services/` liegen. |
 | F-5 | Muss | Beispiele müssen unter `examples/` liegen. |
 | F-6 | Muss | Observability-Konfigurationen müssen unter `observability/` liegen. |
-| F-7 | Muss | Deployment-Artefakte müssen unter `deploy/` liegen. |
+| F-7 | Muss | Deployment-Artefakte müssen unter `deploy/` liegen. **Patch `1.1.12` (Status-Präzisierung):** `deploy/` ist Struktur-Anker für reproduzierbare Deployment-Artefakte. Der primäre unterstützte lokale Deployment-Pfad bleibt das Compose-Lab über die Root-Datei `docker-compose.yml`. `deploy/k8s/` ist Folge-Scope (`MVP-42`, `Kann`) und ausdrücklich kein Production-Ready-K8s-Stand; siehe README-Abschnitt „Was m-trace nicht ist" und `deploy/README.md`. |
 | F-8 | Muss | Dokumentation muss unter `docs/` liegen. |
 | F-9 | Muss | Skripte müssen unter `scripts/` liegen. |
 
@@ -1125,6 +1140,10 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 
 #### Pflichtdokumente
 
+| Kennung | Prioritaet | Anforderung |
+|---|---|---|
+| F-131 | Muss | Die folgenden Pflichtdokumente müssen vorhanden und auf die aktuellen Repository-Pfade harmonisiert sein. **Eingeführt in Patch `1.1.12`** (vorher trug der Block keine eigene Kennung); `docs/stream-analyzer.md` aus früheren Lastenheft-Ständen ist auf den realen Pfad `docs/user/stream-analyzer.md` korrigiert. |
+
 | Datei | Zweck |
 |---|---|
 | `README.md` | Einstieg und Schnellstart |
@@ -1136,7 +1155,7 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `docs/user/local-development.md` | lokale Entwicklung |
 | `spec/telemetry-model.md` | Telemetrie- und Eventmodell |
 | `spec/player-sdk.md` | Player-SDK-Nutzung |
-| `docs/stream-analyzer.md` | Stream Analyzer |
+| `docs/user/stream-analyzer.md` | Stream Analyzer |
 | `docs/planning/in-progress/roadmap.md` | geplante Entwicklung |
 
 ---
@@ -1171,12 +1190,12 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 | NF-10 | Muss | MediaMTX-Adapter |
 | NF-11 | Muss | SRT-Ingest-Metriken |
 | NF-12 | Muss | DASH-Analyse |
-| NF-13 | Muss | CMAF-Analyse |
+| NF-13 | Muss | CMAF-Analyse. **Patch `1.1.12` (Lieferstand-Präzisierung):** `F-73` aus §7.7 deckt nur die *vorbereitete Erweiterbarkeit*; die CMAF-Vollanalyse bleibt offen und wird **nicht** durch `0.9.6` geschlossen. Umsetzung im Folge-Plan [`docs/planning/open/plan-0.10.0.md`](../docs/planning/open/plan-0.10.0.md) mit eigener RAK und eigener Akzeptanzmatrix. |
 | NF-14 | Muss | WebRTC-Metriken |
 | NF-15 | Muss | Datenbankpersistenz |
 | NF-16 | Muss | Authentifizierung |
 | NF-17 | Muss | Multi-Stream-Betrieb |
-| NF-18 | Muss | Kubernetes Deployment |
+| NF-18 | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase und widerspricht dem README-Abgrenzungsabschnitt „Was m-trace nicht ist" (kein Production-Ready-Kubernetes-Deployment). Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 (`docs/planning/in-progress/risks-backlog.md`) bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. |
 | NF-19 | Muss | CI-basierte Stream-Checks |
 
 ### 8.4 Performance
@@ -1506,16 +1525,24 @@ Muss-Anforderungen für die Gesamt-`0.1.x`-Phase:
 
 Nicht im `0.1.0`-MVP:
 
-| Kennung | Prioritaet | Anforderung |
-|---|---|---|
-| MVP-19 | Muss | separate `apps/demo-player` |
-| MVP-20 | Muss | separate `apps/analyzer-api` |
-| MVP-21 | Muss | `packages/stream-analyzer` als fertiges Paket |
-| MVP-22 | Muss | Tempo als Pflichtkomponente |
-| MVP-23 | Muss | Mimir oder ClickHouse |
-| MVP-24 | Muss | WebRTC |
-| MVP-25 | Muss | SRT-Health-View |
-| MVP-26 | Muss | Multi-Tenant-Betrieb |
+> **Hinweis (Patch `1.1.12`)**: Die folgende Tabelle dokumentiert
+> historisch *aus dem `0.1.0`-MVP herausgehaltene* Themen. Sie ist
+> ausdrücklich **keine** offene Muss-Lücke der heutigen `0.9.x`-
+> Reihe. Der jeweils aktuelle Lieferstand bzw. Scope-Status steht
+> in der „Status (Patch `1.1.12`)"-Spalte; die ursprüngliche
+> Spalte „Prioritaet" bleibt für Audit-Nachvollziehbarkeit
+> erhalten. Verbindlich ist der Status-Eintrag.
+
+| Kennung | Prioritaet | Anforderung | Status (Patch `1.1.12`) |
+|---|---|---|---|
+| MVP-19 | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
+| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, Folge-Scope offen:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; eine eigenständige nach außen exponierte `apps/analyzer-api` ist Folge-Scope. |
+| MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
+| MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil (ADR-0003); die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
+| MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** widerspricht README-Abgrenzung „kein Production-Grade-Storage-Backend wie Mimir oder ClickHouse". Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap §4). |
+| MVP-24 | Muss (historisch) | WebRTC | **Erfüllt:** WebRTC-Lab ab `0.7.0` (RAK-47..RAK-50), produktiver Player-SDK-Adapter ab `0.8.0` (RAK-51..RAK-55), Drift-Smoke ab `0.9.0` (RAK-56). |
+| MVP-25 | Muss (historisch) | SRT-Health-View | **Erfüllt:** SRT-Health-View ab `0.6.0` (RAK-41..RAK-46). |
+| MVP-26 | Muss (historisch) | Multi-Tenant-Betrieb | **Out of scope:** widerspricht README-Abgrenzung „keine Multi-Tenant-SaaS-Plattform". Bleibt Folge-ADR-Trigger; siehe Roadmap §4. |
 
 
 ### 12.2 Soll-Anforderungen
@@ -1538,12 +1565,12 @@ Nicht im `0.1.0`-MVP:
 | MVP-34 | Kann | CLI für Stream Analyzer |
 | MVP-35 | Kann | Tempo-Integration |
 | MVP-36 | Kann | SRS-Beispiel |
-| MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). |
+| MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@npm9912/stream-analyzer`); kein offener Folge-Scope. |
 | MVP-38 | Kann | SRT-Ingest-Beispiel |
 | MVP-39 | Kann | SRT-Health-View |
 | MVP-40 | Kann | Persistenz mit PostgreSQL |
 | MVP-41 | Kann | ClickHouse- oder VictoriaMetrics-Anbindung |
-| MVP-42 | Kann | Kubernetes-Manifeste |
+| MVP-42 | Kann | Kubernetes-Manifeste. **Patch `1.1.12` (Status-Vermerk):** bleibt `Kann` und Folge-Plan; Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer (kein Production-Ready-K8s, siehe `NF-18`-Patch und `deploy/README.md`). |
 | MVP-43 | Kann | Devcontainer |
 | MVP-44 | Kann | Release-Automatisierung |
 

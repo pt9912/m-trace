@@ -214,40 +214,52 @@ Phase korrekt ausdrücken.
 
 DoD:
 
-- [ ] Header von [`spec/lastenheft.md`](../../../spec/lastenheft.md)
+- [x] Header von [`spec/lastenheft.md`](../../../spec/lastenheft.md)
   auf `1.1.12` erhöht.
-- [ ] Patch-Notiz ergänzt: „Lastenheft-Konvergenz nach `0.9.5`;
-  keine neue Produktfunktion".
-- [ ] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
-  `4a.15 Patch 1.1.12` ergänzt und die fortlaufende Patch-Übersicht
-  von `1.1.11` auf `1.1.12` nachgezogen.
-- [ ] `F-7` präzisiert: `deploy/` ist Struktur-Anker für spätere
-  Deployment-Artefakte; lokale Compose-Root-Datei bleibt aktuell der
-  primäre unterstützte Pfad.
-- [ ] Pflichtdokumente-Block erhält die neue Kennung `F-131`
-  (`Muss`: Pflichtdokumente müssen vorhanden und auf aktuelle
-  Repository-Pfade harmonisiert sein).
-- [ ] `F-131` auf reale Pfade harmonisiert:
-  `docs/user/stream-analyzer.md` statt `docs/stream-analyzer.md`;
-  `CONTRIBUTING.md`, `SECURITY.md`, `.env.example` als vorhanden
-  referenziert.
-- [ ] `NF-13` präzisiert: `F-73` ist nur die vorbereitete
+- [x] Patch-Notiz ergänzt unmittelbar nach dem Header-Frontmatter
+  („Lastenheft-Konvergenz nach `0.9.5`; keine neue
+  Produktfunktion"; verweist auf den Patch-Log-Eintrag in
+  `plan-0.1.0.md` §4a.15).
+- [x] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c §4a.15
+  ergänzt: Begründung + DoD; die fortlaufende Patch-Übersicht ist
+  damit von `1.1.11` (§4a.14) auf `1.1.12` nachgezogen.
+- [x] `F-7` präzisiert (§7.1): `deploy/` ist Struktur-Anker für
+  spätere Deployment-Artefakte; `docker-compose.yml` im Repo-Root
+  bleibt aktuell der primäre unterstützte Pfad; `deploy/k8s/` ist
+  ausdrücklich Folge-Scope (`MVP-42`).
+- [x] Pflichtdokumente-Block (§7.12) erhält die neue Kennung
+  `F-131` (`Muss`: Pflichtdokumente müssen vorhanden und auf
+  aktuelle Repository-Pfade harmonisiert sein).
+- [x] `F-131` auf reale Pfade harmonisiert: `docs/user/stream-analyzer.md`
+  statt `docs/stream-analyzer.md`; `CONTRIBUTING.md`,
+  `SECURITY.md` (mit Tranche 1 angelegt) und `.env.example` (mit
+  Tranche 1 angelegt) sind in der Pflichtdokumente-Tabelle
+  vorhanden bzw. werden vom Patch implizit referenziert.
+- [x] `NF-13` präzisiert: `F-73` ist nur die vorbereitete
   Erweiterbarkeit; die CMAF-Vollanalyse bleibt als offene Muss-
-  Anforderung bestehen und wird nicht durch `0.9.6` geschlossen. Für
-  die Umsetzung verweist das Lastenheft auf
-  [`plan-0.10.0.md`](../open/plan-0.10.0.md) mit neuer RAK und eigener
-  Akzeptanzmatrix.
-- [ ] `NF-18` präzisiert: Kubernetes Production ist nicht
-  Bestandteil der ersten Projektphase; `MVP-42` bleibt Kann/Folge-
-  Plan. R-9 bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage.
-- [ ] `MVP-19`..`MVP-26` und `MVP-37` redaktionell bereinigt:
-  historische „Nicht im `0.1.0`-MVP"-Einträge dürfen nicht mehr als
-  offene `0.9.x`-Muss-Lücken missverstanden werden. Erledigte spätere
-  Muss-Hebungen (`MVP-24`, `MVP-25`, `MVP-37`) bleiben mit Verweis auf
-  die jeweiligen RAKs markiert; weiterhin optionale Themen (`MVP-40`..
-  `MVP-42`) bleiben Folge-Scope.
-- [ ] Kein neuer Scope-Widerspruch zwischen README-Abgrenzung,
-  `NF-13`, `NF-18`, `MVP-19`..`MVP-26` und `MVP-40`..`MVP-42`.
+  Anforderung bestehen und wird nicht durch `0.9.6` geschlossen.
+  Für die Umsetzung verweist das Lastenheft auf
+  [`plan-0.10.0.md`](../open/plan-0.10.0.md) mit neuer RAK und
+  eigener Akzeptanzmatrix.
+- [x] `NF-18` präzisiert: Kubernetes Production ist nicht
+  Bestandteil der ersten Projektphase; `MVP-42` bleibt
+  Kann/Folge-Plan; R-9 bleibt Trigger-Risiko für eine künftige
+  K8s-Smoke-Stage; Strukturanker `deploy/k8s/` mit `0.9.6`
+  angelegt, aber leer.
+- [x] `MVP-19`..`MVP-26` und `MVP-37` redaktionell bereinigt
+  (§12.1, §12.3): „Nicht im `0.1.0`-MVP"-Tabelle bekam eine
+  zusätzliche Spalte „Status (Patch `1.1.12`)" mit verbindlicher
+  Aussage pro Item (erfüllt anders / erfüllt / out of scope /
+  bewusst gegenteilig entschieden); die historische „Prioritaet"-
+  Spalte bleibt zur Audit-Nachvollziehbarkeit erhalten. Erledigte
+  spätere Muss-Hebungen (`MVP-24` `0.7.0`/`0.8.0`/`0.9.0`,
+  `MVP-25` `0.6.0`, `MVP-37` `0.9.0`) sind mit RAK-Verweis
+  markiert; `MVP-40`..`MVP-42` bleiben Folge-Scope.
+- [x] Kein neuer Scope-Widerspruch zwischen README-Abgrenzung,
+  `NF-13`, `NF-18`, `MVP-19`..`MVP-26` und `MVP-40`..`MVP-42`:
+  alle drei Stellen verweisen auf denselben Lieferstand
+  (CMAF/K8s/Multi-Tenant out of scope für die erste Phase, mit
+  Folge-Plan- bzw. Folge-ADR-Trigger).
 
 ---
 
