@@ -194,6 +194,7 @@ Das lokale Core-Lab startet Backend-API, Dashboard, MediaMTX und einen FFmpeg-Te
 ```bash
 git clone https://github.com/pt9912/m-trace.git
 cd m-trace
+cp .env.example .env   # optional, Default-Lab-Werte sind bereits in docker-compose.yml gesetzt
 make dev
 ```
 
@@ -301,6 +302,22 @@ m-trace ist nicht:
   Production-Grade-Storage-Backends wie Mimir oder ClickHouse
 
 m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
+
+---
+
+## Mitarbeit und Sicherheitsmeldungen
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — lokales Setup, Build/Test
+  über `make`, Commit- und Release-Konventionen, Erwartung an
+  Issues/PRs.
+- [`SECURITY.md`](SECURITY.md) — unterstützte Versionen,
+  vertraulicher Meldeweg für Sicherheitslücken, Disclosure-
+  Verfahren.
+- [`.env.example`](.env.example) — dokumentierte, nicht geheime
+  Beispielwerte für API, Analyzer, Dashboard und Observability.
+- [`deploy/README.md`](deploy/README.md) — Status der
+  Deployment-Artefakte (Compose-Lab bleibt der unterstützte
+  lokale Pfad; Kubernetes ist Folge-Scope).
 
 ---
 

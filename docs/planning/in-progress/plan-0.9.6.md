@@ -168,27 +168,42 @@ Produktfunktionen zu bauen.
 
 DoD:
 
-- [ ] `CONTRIBUTING.md` angelegt mit:
+- [x] [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) angelegt mit:
   - lokalem Setup-Verweis auf [`docs/user/local-development.md`](../../user/local-development.md),
-  - Build/Test-Hinweis über `make`,
+  - Build/Test-Hinweis über `make` (Single-Entry-Point, keine
+    direkten `pnpm`/`docker`-Aufrufe),
   - Commit-/Release-Konventionsverweis auf [`docs/user/releasing.md`](../../user/releasing.md),
-  - Erwartung an Issues/PRs und Security-Meldungen.
-- [ ] `SECURITY.md` angelegt mit:
-  - unterstützten Versionen (`0.9.x` aktuell),
-  - Meldeweg für Sicherheitslücken,
-  - Hinweis, keine Secrets/Exploits öffentlich in Issues zu posten,
-  - Bezug auf Security-Gates aus `0.8.5`.
-- [ ] `.env.example` angelegt mit dokumentierten, nicht geheimen
-  Beispielwerten für lokale API-/Dashboard-/Analyzer-/OTel-
-  Konfiguration. Keine realen Tokens, keine privaten URLs.
-- [ ] `deploy/`-Struktur angelegt:
-  - `deploy/README.md` als expliziter Status: Compose ist aktuell der
-    unterstützte lokale Deployment-Pfad; `deploy/k8s/` ist
-    Folge-Scope und kein Production-Ready-K8s.
-  - leere Unterordner nur mit `.gitkeep`, falls nötig:
-    `deploy/compose/`, `deploy/docker/`, `deploy/k8s/`.
-- [ ] README- oder Local-Development-Links ergänzt, falls die neuen
-  Artefakte sonst nicht auffindbar sind.
+  - Erwartung an Issues/PRs (Lastenheft-Bezug) und
+    Security-Meldungen über `SECURITY.md`.
+- [x] [`SECURITY.md`](../../../SECURITY.md) angelegt mit:
+  - unterstützten Versionen (`0.9.x` aktiv, `0.8.x` und älter
+    nicht mehr),
+  - vertraulichem Meldeweg (GitHub Security Advisories bzw.
+    Maintainer-Mail), Bestätigung in 7 Tagen,
+  - Hinweis, keine Secrets/Exploits öffentlich in Issues zu
+    posten,
+  - Bezug auf Security-Gates aus `0.8.5` (`vuln-check`,
+    `audit-ts`, `image-scan`, Generated-Drift-Gate),
+  - Disclosure-Pfad über Patch-Release-Konvention und
+    `CHANGELOG`.
+- [x] [`.env.example`](../../../.env.example) angelegt mit
+  dokumentierten, nicht geheimen Beispielwerten für API,
+  Analyzer, Dashboard, Observability (alle aktuell in
+  `docker-compose.yml` referenzierten `MTRACE_*`/`ANALYZER_*`/
+  `PUBLIC_*`/`OTEL_*`/`MEDIAMTX_*`-Vars). Keine realen Tokens,
+  keine privaten URLs; SRT-Health-Vars als Kommentar-Block
+  optional.
+- [x] `deploy/`-Struktur angelegt:
+  - [`deploy/README.md`](../../../deploy/README.md) macht
+    expliziten Status: `docker-compose.yml` im Repo-Root bleibt
+    der unterstützte lokale Pfad; `deploy/k8s/` ist Folge-Scope
+    (`MVP-42`) und kein Production-Ready-K8s.
+  - Unterordner `deploy/compose/`, `deploy/docker/`,
+    `deploy/k8s/` jeweils mit `.gitkeep` belegt.
+- [x] README ergänzt: `cp .env.example .env`-Hinweis im
+  Lokal-Setup, neuer Abschnitt „Mitarbeit und
+  Sicherheitsmeldungen" mit Links auf `CONTRIBUTING.md`,
+  `SECURITY.md`, `.env.example`, `deploy/README.md`.
 
 ---
 
