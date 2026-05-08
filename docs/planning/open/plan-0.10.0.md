@@ -235,6 +235,11 @@ DoD:
     `status:"skipped"` ist zulässig, wenn keine sicher ladbare Init-/
     Media-Segment-URI vorliegt; manifestbasierte Signale bleiben dann
     sichtbar, aber nicht konformitätsbeweisend.
+    Wenn `cmaf.binary.enabled:false` gesetzt ist und ein `cmaf`-Summary
+    ausgegeben wird, wird `binary` nicht weggelassen, sondern als
+    `status:"skipped"` mit Failure-Code `binary_disabled` serialisiert;
+    so bleibt für Konsumenten sichtbar, dass keine binäre Aussage
+    versucht wurde.
     Aggregation ist deterministisch: Zuerst wird die geplante
     Pflichtprüfungsmenge aus Manifest-Scope und Limits gebildet
     (`maxBinarySegments` cappt die Menge vor dem Fetch; wegen dieses
@@ -265,6 +270,35 @@ DoD:
   `enabled:true`, `maxSegmentBytes=2_000_000`,
   `maxBinarySegments=6`. Diese Limits gelten zusätzlich zu
   `fetch.maxBytes`, das ausschließlich das Manifest-Body-Limit bleibt.
+- [ ] Binary-Status- und Failure-Code-Vertrag ist vor Parser-/Loader-
+  Implementierung festgelegt und in Fixtures/Testnamen sichtbar:
+  - `binary_disabled`: `skipped`, wenn Binary-Prüfung per Option
+    deaktiviert ist, aber `details.cmaf` vorhanden ist.
+  - `segment_base_url_missing`: `skipped`, wenn Text-Input keine sichere
+    `baseUrl` für relative Segmente liefert.
+  - `segment_uri_blocked`: `skipped`, wenn eine relative/absolute
+    Segment-URI nicht sicher auflösbar ist oder Scheme, Credentials,
+    SSRF- oder Redirect-Regeln verletzt.
+  - `hls_map_byterange_unsupported`: `skipped` für HLS `EXT-X-MAP` mit
+    `BYTERANGE`.
+  - `dash_template_unresolved`: `skipped`, wenn DASH-Template-Variablen
+    in `0.10.0` nicht deterministisch auflösbar sind.
+  - `segment_fetch_failed`: `skipped` bei Segment-Fetch-Timeout oder
+    HTTP-/Transportfehler vor erfolgreichem Body-Read.
+  - `segment_content_type_unsupported`: `skipped`, wenn der Segment-
+    Content-Type nicht MP4-/Byte-kompatibel ist.
+  - `segment_too_large`: `skipped`, wenn ein Segment `maxSegmentBytes`
+    oder das Body-Read-Limit überschreitet.
+  - `cmaf_box_validation_failed`: `failed`, wenn ein geladenes Init-/
+    Media-Segment fachlich nicht konforme Box-/Brand-Struktur hat.
+  - `invalid_box_structure`: `failed`, wenn Box-Größe, Überlappung oder
+    Parser-Fortschritt strukturell ungültig sind.
+
+  `failed` ist damit für geladene, aber fachlich nicht konforme oder
+  strukturell kaputte Bytes reserviert. `skipped` bedeutet, dass der
+  Analyzer im sicheren/bounded Scope keine binäre Konformitätsaussage
+  treffen konnte. Die `segmentsChecked[]`-Einträge tragen dieselben
+  Codes; der Gesamtstatus aggregiert nach Fehler vor Skip vor Pass.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] Options-Wire-Vertrag ist festgelegt: `cmaf.binary.*` ist Public-
@@ -349,6 +383,10 @@ DoD:
   klassische TS-HLS-Master ebenfalls Codecs tragen. Starke
   `EXT-X-MAP`-Signale entstehen erst in Media-Playlists. Das Summary
   darf nicht als bestätigte CMAF-Konformität dokumentiert werden.
+  Master-Summaries tragen in `0.10.0` kein `binary`-Objekt, weil der
+  Binary-Scope keine referenzierten Media-Playlists nachlädt; binäre
+  `passed`-/`failed`-/`skipped`-Status entstehen erst bei separater
+  Analyse einer Media-Playlist.
 - [ ] Tests decken positive, negative und gemischte HLS-Fälle ab.
 - [ ] HLS-Master-Negativfixture pinnt eine Master-Playlist mit
   `CODECS` und TS-basierten Variant-URIs/Media-Playlists; daraus darf
@@ -473,6 +511,12 @@ DoD:
   - `failed` bei geladener, aber nicht konformer Box-Struktur,
   - `skipped` bei fehlender oder aus Sicherheits-/Scope-Gründen nicht
     ladbarer Segmentreferenz,
+  - `binary_disabled`, `segment_base_url_missing`,
+    `segment_uri_blocked`, `hls_map_byterange_unsupported`,
+    `dash_template_unresolved`, `segment_fetch_failed`,
+    `segment_content_type_unsupported`, `segment_too_large`,
+    `cmaf_box_validation_failed` und `invalid_box_structure` nach der
+    Status-/Failure-Code-Tabelle aus Tranche 1,
   - `maxBinarySegments` cappt die geplante Pflichtprüfungsmenge vor dem
     Fetch; nicht geplante weitere Segmente/Representations verhindern
     kein `passed`, müssen aber über `limits`/`note` auditierbar sein,
@@ -522,15 +566,15 @@ DoD:
   `fetch.allowPrivateNetworks=true` an den Analyzer weitergibt.
   Ohne diesen Schalter bleibt der bestehende SSRF-Default aktiv und der
   vorhandene URL-SSRF-Smoke muss weiterhin `fetch_blocked` liefern.
-- [ ] `make smoke-cli` um mindestens eine CMAF-HLS- oder CMAF-DASH-
-  Probe mit bestandener binärer Prüfung erweitert. Der Smoke nutzt
-  einen lokalen Fixture-HTTP-Server, der Manifest, Init-Segment und
-  Media-Segment aus `spec/contract-fixtures/analyzer/` ausliefert, und
-  setzt den neuen CLI-Opt-in-Schalter für private/loopback URLs nur für
-  diese eine Probe. Datei-Input mit `file://`-`baseUrl` gilt nicht als
-  Ersatz für diesen Nachweis, weil der Segment-Loader HTTP(S)-SSRF-
-  Regeln nutzt. Externe Netzabhängigkeit oder öffentliche Testmedien
-  sind für den Release-Nachweis nicht zulässig.
+- [ ] `make smoke-cli` um je eine CMAF-HLS- und CMAF-DASH-Probe mit
+  bestandener binärer Prüfung erweitert. Der Smoke nutzt einen lokalen
+  Fixture-HTTP-Server, der Manifest, Init-Segment und Media-Segment aus
+  `spec/contract-fixtures/analyzer/` ausliefert, und setzt den neuen
+  CLI-Opt-in-Schalter für private/loopback URLs nur für diese beiden
+  Probes. Datei-Input mit `file://`-`baseUrl` gilt nicht als Ersatz für
+  diesen Nachweis, weil der Segment-Loader HTTP(S)-SSRF-Regeln nutzt.
+  Externe Netzabhängigkeit oder öffentliche Testmedien sind für den
+  Release-Nachweis nicht zulässig.
 - [ ] [`docs/user/stream-analyzer.md`](../../user/stream-analyzer.md)
   beschreibt Scope, Beispiele, Grenzen, Binary-Statuswerte und Exit-/
   Fehlerverhalten.
