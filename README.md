@@ -15,8 +15,12 @@ m-trace richtet sich an Entwickler, Selbsthoster, kleine Streaming-Plattformen, 
 
 Das erste Ziel ist einfach:
 
-```text
-MediaMTX + hls.js-Demo-Player + Playback-Events + Dashboard + OpenTelemetry-kompatibles Modell
+```mermaid
+flowchart LR
+  M[MediaMTX] --> P[hls.js Demo-Player]
+  P -->|Playback-Events| A[m-trace API]
+  A --> D[Dashboard]
+  A --> O[OpenTelemetry-Modell]
 ```
 
 Das langfristige Ziel ist breiter:
