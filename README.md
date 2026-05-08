@@ -323,143 +323,15 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Das Projekt steht bei `0.9.6` released — Lastenheft-Konvergenz-
-Patch nach `0.9.5` (Patch-Release-Konvention `0.X.Y`, siehe
-[`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Inhalt:
-fehlende Muss-Repo-Artefakte ergänzt
-([`CONTRIBUTING.md`](CONTRIBUTING.md),
-[`SECURITY.md`](SECURITY.md), [`.env.example`](.env.example),
-[`deploy/`](deploy/)-Struktur), Lastenheft-Patch `1.1.12`
-(F-7-Status, neue Pflichtdokumente-Kennung `F-131`,
-NF-13/NF-18 harmonisiert, MVP-19..MVP-26 redaktionell entzerrt;
-Patch-Log §4a.15 in
-[`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md))
-und Go-Build-Image-Bump auf `golang:1.26.3` als Folge der
-`go1.26.3`-Stdlib-CVE-Fixes (GO-2026-4982/4980/4971/4918, analog
-der `0.8.5`-OTel-Bump-Präzedenz). Keine neue Produktfunktion,
-keine User-Surface- oder Wire-Vertragsänderung. Plan archiviert
-in
-[`docs/planning/done/plan-0.9.6.md`](docs/planning/done/plan-0.9.6.md).
+Aktuelle Version, Lieferstand pro Release und Folge-Punkte stehen
+in den dafür vorgesehenen Single-Source-Dokumenten:
 
-Davor steht `0.9.5` released — Quality-Gates Wave 2 Patch-Release
-nach `0.9.0`/`0.9.1`. Inhalt: vier statistisch- bzw. langlaufende
-Quality-Gates aus
-[`docs/planning/in-progress/extra-gates.md`](docs/planning/in-progress/extra-gates.md)
-in einem Patch-Release ausgeliefert, Plan-File in
-[`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md). Kein
-Lastenheft-Patch (Quality-Gates, keine User-Surface).
-
-**Tranche 1 — Benchmark-Smoke**: Go-Bench-Suite in `apps/api`
-für vier Hot-Paths (RegisterPlaybackEventBatch typical+max,
-EventRepository AppendBatch, SessionsService ListSessions,
-Cursor encode/decode), TS-Bench-Suite
-`packages/stream-analyzer/benchmarks/analyzer.bench.ts` für
-sieben Hot-Paths (HLS Master/Media, DASH-MPD VOD/Live, Detector,
-SSRF-URL-Klassifizierung). Single-Source-Budgets in
-[`docs/perf/budgets.md`](docs/perf/budgets.md). Wrapper
-`make benchmark-smoke` plus Validator
-`scripts/check-bench-budgets.mjs`. Beobachtungs-Nightly
-[`.github/workflows/benchmark-observation.yml`](.github/workflows/benchmark-observation.yml)
-(Cron `30 2 * * *` UTC, `continue-on-error: true`); PR-
-Blockierung folgt nach N=3..5 grünen Beobachtungsläufen.
-
-**Tranche 2 — Nightly-`benchstat`-Regressionen**:
-[`.github/workflows/benchmark.yml`](.github/workflows/benchmark.yml)
-(Cron `0 4 * * *` UTC) führt 10× `go test -bench=.` aus,
-vergleicht via `benchstat` gegen Baseline aus orphan-Branch
-`benchmark-baseline`. Schwelle +15 % auf p<0.05; Auto-Issue mit
-benchstat-Diff-Block. Quarantäne-Mechanik via
-`// bench:quarantine YYYY-MM-DD reason: <text>` (max. 30 Tage),
-Validator `scripts/check-bench-quarantines.mjs`.
-
-**Tranche 3 — Selektives Fuzzing + Property Tests**: sechs
-Go-Fuzz-Targets in vier Packages (Cursor encode/decode, wireBatch
-Decode, Reserved-Event-Meta, Unavailable-Reason, MediaMTX-Item-
-Mapping); drei TS-Property-Test-Suites via `fast-check@4.4.0`
-(HLS- und DASH-Parser, URL-Redaction). `make fuzz-check`-Target
-mit `FUZZTIME`-Override (Default 30 s) plus Nightly
-[`.github/workflows/fuzz.yml`](.github/workflows/fuzz.yml)
-(Cron `0 5 * * *` UTC, 5 min/Target, Auto-Issue mit Crash-Repo-
-Pfad). Erstfund: `FuzzMapMediaMtxItem` zeigte
-`mbpsLinkCapacity=-1` → `AvailableBandwidthBPS=-1_000_000` in
-[`mapping.go`](apps/api/adapters/driven/srt/mediamtxclient/mapping.go).
-Operator-Doku in [`docs/dev/fuzzing.md`](docs/dev/fuzzing.md).
-
-**Tranche 4 — Mutation Testing (Nightly-Report)**: Pilot-Module
-`apps/api/hexagon/application/event_meta_validation.go` (gremlins
-statt unmaintainted go-mutesting) und
-`packages/player-sdk/src/adapters/webrtc/sampling.ts` (StrykerJS
-+ vitest-runner). `make mutation-report` als Wrapper. Nightly
-[`.github/workflows/mutation.yml`](.github/workflows/mutation.yml)
-(Cron `0 6 * * *` UTC, beide Jobs `continue-on-error: true`).
-Score-Schwelle und Übergangs-Pfad zur PR-Blockierung in
-[`docs/dev/mutation-testing.md`](docs/dev/mutation-testing.md).
-
-Lieferstand `0.9.0` und früher bleibt unverändert:
-
-**Tranche 1 — Browser-Drift-Smoke (RAK-56)**: automatisiert R-12 ab.
-`tests/e2e/webrtc-stats-drift.spec.ts` (Playwright) öffnet im Page-
-Context eine eigene `RTCPeerConnection` gegen das `mtrace-webrtc`-
-Lab, ruft `pc.getStats()` und vergleicht gegen die Muss-Felder pro
-`RTCStatsType`-Gruppe aus
-[`spec/telemetry-model.md`](spec/telemetry-model.md) §3.5.2 plus die
-Enum-Allowlists aus §1.4. Nightly-Workflow
-[`.github/workflows/webrtc-drift.yml`](.github/workflows/webrtc-drift.yml)
-führt `make smoke-webrtc-stats-drift` gegen Chromium und Firefox aus
-dem Playwright-Bundle aus; bei Schema-Drift bricht der Smoke und
-optional erstellt der Workflow ein Issue (opt-in über
-`secrets.DRIFT_AUTO_ISSUE=1`). R-12 wandert von „release-blockierend"
-auf „automatisiert detektiert".
-
-**Tranche 2 — SRS-Lab (RAK-57 / MVP-36)**:
-[`examples/srs/`](examples/srs/) als fünftes Multi-Protocol-Beispiel
-analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`. Eigener
-Compose-Project `mtrace-srs` mit `ossrs/srs:5` plus FFmpeg-RTMP-
-Publisher; Host-Ports 1935 (RTMP) / 1985 (HTTP-API) / 8088 (HTTP-FLV)
-kollisionsfrei zu Core-Lab und anderen Stacks. Opt-in `make smoke-srs`
-prüft endpoint-/compose-only HTTP-API + FFmpeg-Stream-Registrierung +
-FLV-Magic-Header. Kein produktiver Telemetriepfad.
-
-**Tranche 3 — DASH-Manifest-Analyse (RAK-58 / RAK-59 / NF-12 /
-MVP-37)**: `@npm9912/stream-analyzer` versteht DASH-MPD-Eingaben
-zusätzlich zu HLS-Manifesten. Auto-Detection am Body-Anfang
-(`<?xml`/`<MPD` → DASH; `#EXTM3U` → HLS); Manifest-Loader
-generalisiert auf HLS+DASH (Content-Type-Allowlist um
-`application/dash+xml`); regex-basierter MPD-Parser ohne externe
-XML-Dependency deckt MPD/Period/AdaptationSet/Representation für
-VOD- und einfache Live-MPDs ab. JSON-Result-Schema bekommt
-`analyzerKind:"dash"` / `playlistType:"dash"` als zweite Variante;
-HLS-Pfad bleibt unverändert (additiv). Neuer Public-Code
-`manifest_not_supported` für Eingaben weder HLS noch DASH (HTTP
-422); `manifest_not_hls` bleibt HLS-Parser-spezifisch.
-`pnpm m-trace check <file.mpd>` dispatcht automatisch; `make
-smoke-cli` validiert den Pfad live.
-
-Lastenheft-Patch `1.1.11` ergänzt §13.11 mit RAK-56..RAK-59 und
-zieht MVP-37 entsprechend NF-12 von „Kann" auf „Muss" hoch
-(Patch-Log §4a.14 in
-[`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)).
-Operator-Verifikation in
-[`docs/user/releasing.md`](docs/user/releasing.md) §2.4 (drei Sub-
-Blöcke: Drift-Smoke / SRS-Lab-Boot / DASH-CLI-Probe).
-
-Quality-Gates Wave 1 aus `0.8.5` (Security-Gates + Generated-
-Artifact-Drift), Player-SDK-WebRTC-Adapter aus `0.8.0`, SRT-Health-
-View aus `0.6.0` und Multi-Protokoll-Lab aus `0.5.0` bleiben
-unverändert. Tranchen 0–5 aus `0.9.0` sind in
-[`docs/planning/done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md)
-archiviert; `0.9.5` ist in
-[`docs/planning/done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md)
-archiviert. Offener Folgepunkt aus Wave 2 ist nur noch die
-Benchmark-Smoke-PR-Blockierung nach N=3..5 grünen Beobachtungsläufen.
-Archivierte Plan-Dateien:
-[`docs/planning/done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md),
-[`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md),
-[`docs/planning/done/plan-0.8.0.md`](docs/planning/done/plan-0.8.0.md),
-[`docs/planning/done/plan-0.7.0.md`](docs/planning/done/plan-0.7.0.md),
-[`docs/planning/done/plan-0.6.0.md`](docs/planning/done/plan-0.6.0.md),
-[`docs/planning/done/plan-0.5.0.md`](docs/planning/done/plan-0.5.0.md),
-[`docs/planning/done/plan-0.4.0.md`](docs/planning/done/plan-0.4.0.md).
+- [`CHANGELOG.md`](CHANGELOG.md) — Keep-a-Changelog-Lieferstand
+  pro Release-Tag (Added/Changed/Security/Removed).
+- [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+  — aktive Phase, nächste Schritte und Folge-ADRs.
+- [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  — aktive Risiken inklusive Triggerschwellen.
 
 Leitende Dokumente:
 
