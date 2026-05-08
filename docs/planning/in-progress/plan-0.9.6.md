@@ -1,8 +1,7 @@
 # Implementation Plan — `0.9.6` (Lastenheft-Konvergenz + Repo-Artefakte)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst nach
-> explizitem Move nach `docs/planning/in-progress/` umgesetzt werden.
-> Vorgänger `0.9.5` ist released; Plan archiviert in
+> **Status**: 🟡 in Arbeit — am 2026-05-08 nach `in-progress/`
+> aktiviert. Vorgänger `0.9.5` ist released; Plan archiviert in
 > [`done/plan-0.9.5.md`](../done/plan-0.9.5.md).
 >
 > **Release-Typ**: Patch-Release nach `0.9.5` mit vollständigem
@@ -25,14 +24,14 @@
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) F-7, F-131
 > (neu), NF-13, NF-18, NF-25, NF-29, MVP-19..MVP-26,
 > MVP-40..MVP-42;
-> [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
+> [`docs/planning/in-progress/roadmap.md`](./roadmap.md)
 > Release-Übersicht und Folge-ADRs;
-> [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
+> [`docs/planning/in-progress/risks-backlog.md`](./risks-backlog.md)
 > R-9/R-13;
 > [`README.md`](../../../README.md) mit der Überschrift
 > „Was m-trace nicht ist".
 >
-> **Nachfolger**: [`plan-0.10.0.md`](./plan-0.10.0.md) für NF-13 /
+> **Nachfolger**: [`plan-0.10.0.md`](../open/plan-0.10.0.md) für NF-13 /
 > CMAF-Analyse vorbereitet.
 
 ## 0. Konvention
@@ -132,27 +131,33 @@ Ziel: die bekannten Befunde festhalten, bevor Dateien geändert werden.
 
 DoD:
 
-- [ ] `git status --short` vor erster Änderung dokumentiert, damit
-  unrelated User-Änderungen nicht vermischt werden.
-- [ ] Plan von `docs/planning/open/plan-0.9.6.md` nach
-  `docs/planning/in-progress/plan-0.9.6.md` verschoben.
-- [ ] Roadmap-Status und Release-Übersicht auf `0.9.6` als aktive
-  Folgephase umgestellt.
-- [ ] Audit-Snapshot im Plan ergänzt: Tabelle mit Lastenheft-Kennung,
-  Ist-Zustand, Entscheidung (`implementieren`, `Lastenheft patchen`,
-  `Folge-Plan`) und Ziel-Tranche.
+- [x] `git status --short` vor erster Änderung dokumentiert
+  (Vor-Aktivierungs-Snapshot 2026-05-08: clean, HEAD `7d64381`).
+  Damit sind keine unrelated User-Änderungen mit dieser Tranche
+  vermischt.
+- [x] Plan von `docs/planning/open/plan-0.9.6.md` nach
+  `docs/planning/in-progress/plan-0.9.6.md` verschoben (`git mv`,
+  Status `R`; Tranche-3 wird Roadmap/Risiken erst nach
+  Lastenheft-Patch nachziehen).
+- [x] Roadmap-Status und Release-Übersicht auf `0.9.6` als aktive
+  Folgephase umgestellt (`roadmap.md` Stand 2026-05-08, §1
+  Header + §1.2 + §2 Schritt 44 + §3 Release-Übersicht).
+- [x] Audit-Snapshot im Plan ergänzt: Tabelle unten mit
+  Lastenheft-Kennung, Ist-Zustand, Entscheidung
+  (`implementieren` / `Lastenheft patchen` / `Folge-Plan`) und
+  Ziel-Tranche.
 
-Bekannte Startbefunde aus dem Audit:
+Audit-Snapshot 2026-05-08:
 
-| Kennung | Befund | Vorläufige Entscheidung |
-| ------- | ------ | ----------------------- |
-| F-7 | `deploy/` wird als Muss-Struktur gefordert, existiert nicht. | Implementieren: minimale Struktur + README. |
-| Pflichtdokumente-Block → F-131 (Zielkennung) | Pflichtdokumente haben noch keine eigene Kennung; `CONTRIBUTING.md` und `SECURITY.md` fehlen; `docs/stream-analyzer.md` ist stale, real ist `docs/user/stream-analyzer.md`. | `F-131` für Pflichtdokumente einführen; Artefakte ergänzen; Lastenheft-Pfad korrigieren. |
-| NF-25 | `.env.example` fehlt. | Implementieren. |
-| NF-29 | `SECURITY.md` fehlt. | Implementieren. |
-| NF-13 | CMAF-Analyse steht als Muss; `F-73` deckt nur die Vorbereitung ab, nicht die Vollimplementierung. | Nicht als erledigt markieren: offene Muss-Lücke in [`plan-0.10.0.md`](./plan-0.10.0.md) mit neuer RAK verankern. |
-| NF-18 / MVP-42 | Kubernetes Deployment steht als Muss, widerspricht README-Abgrenzung und `MVP-42` Kann-Scope. | Lastenheft harmonisieren: K8s Production bleibt out of scope; K8s-Manifeste `MVP-42` optional/Folge-Plan. |
-| MVP-19..MVP-26 | „Nicht im `0.1.0`-MVP" enthält Muss-Einträge, die historisch missverständlich sind. | Lastenheft redaktionell klären: historische Nicht-`0.1.0`-Liste vs. heutiger Stand. |
+| Kennung | Befund / Ist-Zustand | Entscheidung | Ziel-Tranche |
+| ------- | -------------------- | ------------ | ------------ |
+| F-7 | `deploy/` wird als Muss-Struktur gefordert; im Repo nicht vorhanden (`ls deploy/` → not found). | implementieren (Struktur + README) + Lastenheft patchen (Status-Präzisierung: Compose-Root bleibt primärer Pfad). | Tranche 1 (Struktur), Tranche 2 (Patch). |
+| Pflichtdokumente-Block → F-131 (Zielkennung) | Block hat keine eigene Kennung; `CONTRIBUTING.md` und `SECURITY.md` fehlen; `docs/stream-analyzer.md` ist stale (nur `docs/user/stream-analyzer.md` existiert). | implementieren (Artefakte) + Lastenheft patchen (`F-131` einführen, Pfade korrigieren). | Tranche 1 (Artefakte), Tranche 2 (`F-131`). |
+| NF-25 | `.env.example` als Muss; im Repo nicht vorhanden. | implementieren. | Tranche 1. |
+| NF-29 | `SECURITY.md` als Muss; im Repo nicht vorhanden. | implementieren. | Tranche 1. |
+| NF-13 | CMAF-Analyse als Muss; `F-73` deckt nur die Erweiterbarkeit, nicht die Vollanalyse. | Folge-Plan: in [`plan-0.10.0.md`](../open/plan-0.10.0.md) mit neuer RAK verankern; Lastenheft patchen (Verweis auf Folge-Plan, kein Down-Grade). | Tranche 2 (Verweis), Folge-Plan `0.10.0`. |
+| NF-18 / MVP-42 | K8s-Deployment als Muss steht im Widerspruch zur README-Abgrenzung („kein Production-K8s") und zum `MVP-42`-Kann-Scope. | Lastenheft patchen: K8s Production bleibt out of scope; `MVP-42` als optional/Folge-Plan; R-9 bleibt Trigger-Risiko. | Tranche 2 (Patch), Tranche 3 (Risk-Header). |
+| MVP-19..MVP-26 | „Nicht im `0.1.0`-MVP"-Liste enthält historisch ausgelieferte Einträge (`MVP-24`, `MVP-25`) und einen später auf Muss hochgezogenen Eintrag (`MVP-37`); zusätzlich offene Kann-Themen (`MVP-40`..`MVP-42`). | Lastenheft patchen: redaktionell so klären, dass die historische Nicht-`0.1.0`-Liste nicht als heutige offene Muss-Lücke missverstanden wird. | Tranche 2. |
 
 ---
 
@@ -215,7 +220,7 @@ DoD:
   Erweiterbarkeit; die CMAF-Vollanalyse bleibt als offene Muss-
   Anforderung bestehen und wird nicht durch `0.9.6` geschlossen. Für
   die Umsetzung verweist das Lastenheft auf
-  [`plan-0.10.0.md`](./plan-0.10.0.md) mit neuer RAK und eigener
+  [`plan-0.10.0.md`](../open/plan-0.10.0.md) mit neuer RAK und eigener
   Akzeptanzmatrix.
 - [ ] `NF-18` präzisiert: Kubernetes Production ist nicht
   Bestandteil der ersten Projektphase; `MVP-42` bleibt Kann/Folge-
@@ -238,13 +243,13 @@ bleibt.
 
 DoD:
 
-- [ ] [`roadmap.md`](../in-progress/roadmap.md) Statusblock und
+- [ ] [`roadmap.md`](./roadmap.md) Statusblock und
   Release-Übersicht ergänzen
   `0.9.6` als Lastenheft-Konvergenz-Patch.
-- [ ] [`roadmap.md`](../in-progress/roadmap.md) Folge-ADRs bleiben bei
+- [ ] [`roadmap.md`](./roadmap.md) Folge-ADRs bleiben bei
   Postgres/Multi-Tenant-Folge-ADRs, ergänzt aber nur neue Folge-ADRs,
   falls Tranche 2 wirklich eine neue Entscheidung erzeugt.
-- [ ] [`risks-backlog.md`](../in-progress/risks-backlog.md) Header
+- [ ] [`risks-backlog.md`](./risks-backlog.md) Header
   auf `0.9.6`-Stand aktualisiert; R-9/R-13 nur dann inhaltlich
   geändert, wenn der Lastenheft-Patch ihre Trigger beeinflusst.
 - [ ] [`README.md`](../../../README.md) Statusblock und

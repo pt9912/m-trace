@@ -1,7 +1,7 @@
 # Roadmap
 
-> **Stand**: 2026-05-07
-> **Phase**: `0.9.5` released (Quality-Gates Wave 2; Patch-Release ohne User-Surface). Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md). Inhalt: Benchmark-Smoke (PR-Pfad opt-in, Beobachtungsphase läuft), Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik, selektives Fuzzing (sechs Go-Targets, drei TS-Property-Suites), Mutation-Testing als nicht-blockierender Nightly-Report (gremlins + StrykerJS). Erstfund über `FuzzMapMediaMtxItem` mit Fix in `apps/api/.../mediamtxclient/mapping.go`. Vorgänger `v0.9.1` (Drift-Smoke-Robustheit) und `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). Frühere Releases: `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
+> **Stand**: 2026-05-08
+> **Phase**: `0.9.6` 🟡 in Arbeit — Lastenheft-Konvergenz-Patch nach `0.9.5`. Plan in [`in-progress/plan-0.9.6.md`](./plan-0.9.6.md). Scope: fehlende Repo-Muss-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur) und Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren). Keine neue Produktfunktion, keine User-Surface-/Wire-Änderung. Vorgänger `0.9.5` released (Quality-Gates Wave 2; Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md)). Frühere Releases: `v0.9.1` (Drift-Smoke-Robustheit) und `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md); `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -41,12 +41,21 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.9.5` ist released (Quality-Gates Wave 2 — Patch-Release ohne
-User-Surface; alle fünf Tranchen ✅; Plan in
-[`done/plan-0.9.5.md`](../done/plan-0.9.5.md)). Folge-Phase ist
-offen: kein `plan-0.10.0.md` vorbereitet. Pending-Folge-Punkte
-aus der Wave-2-Lieferung (Trigger-Schwellen werden im jeweiligen
-Folge-Plan aktiviert, sobald sie erreicht sind):
+`0.9.6` ist 🟡 in Arbeit (Lastenheft-Konvergenz-Patch nach `0.9.5`;
+Plan in [`in-progress/plan-0.9.6.md`](./plan-0.9.6.md)). Inhalt:
+fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`,
+`.env.example`, `deploy/`-Struktur) plus Lastenheft-Patch
+`1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`,
+NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell
+entzerren). Keine User-Surface- oder Wire-Vertragsänderung.
+Folge-Pläne `0.10.0` (CMAF-Analyse, NF-13-Vollumsetzung),
+`0.11.0`/`0.12.0`/`0.13.0` liegen in
+[`docs/planning/open/`](../open/) bereit und sind erst nach
+`0.9.6`-Release zu aktivieren.
+
+Pending-Folge-Punkte aus der Wave-2-Lieferung in `0.9.5`
+(Trigger-Schwellen werden im jeweiligen Folge-Plan aktiviert,
+sobald sie erreicht sind):
 
 - **Benchmark-Smoke PR-Blockierung** — N=3..5 grüne
   Beobachtungsläufe von [`benchmark-observation.yml`](../../../.github/workflows/benchmark-observation.yml)
@@ -137,6 +146,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 41  | ✅      | `0.8.0` Player-SDK-WebRTC-Adapter ausliefern: Public-API + hls.js-Trennung, WHEP-Adapter gegen `examples/webrtc/`, produktive WebRTC-Telemetrie auf `spec/telemetry-model.md` §3.2/§3.5-Allowlist (R-12 release-blockierend), Compat-Tests | Nach Schritt 40                                                  | RAK-51..RAK-55 (Lastenheft `1.1.10` §13.10); [`plan-0.8.0.md`](../done/plan-0.8.0.md) Tranchen 0–5; Tag `v0.8.0` (Release-Gate-Fix nach Closeout) |
 | 42  | ✅      | Lastenheft-Patch `1.1.11` schreiben — neuer §13.11 mit RAK-56 (Drift-Smoke, Soll), RAK-57 (SRS-Lab, Kann), RAK-58 (DASH-Manifest-Analyse, Muss) und RAK-59 (DASH-CLI, Kann); §12.3 MVP-37 von „Kann" auf „Muss" entsprechend NF-12 hochgezogen | Vor Tranchen 1–4 von `0.9.0`                                     | RAK-56..RAK-59, MVP-36, MVP-37, NF-12; [`plan-0.9.0.md`](../done/plan-0.9.0.md) §0.2; Patch-Log §4a.14 in [`plan-0.1.0.md`](../done/plan-0.1.0.md) |
 | 43  | ✅      | `0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse ausliefern: Browser-Drift-Smoke gegen `examples/webrtc/`-Lab plus Nightly-CI (R-12 wandert auf „automatisiert detektiert"), `examples/srs/`-Lab analog der anderen Multi-Protocol-Beispiele, DASH-MPD-Pfad im `@npm9912/stream-analyzer` mit `analyzerKind: "dash"` und CLI-Dispatcher | Nach Schritt 42                                                  | RAK-56..RAK-59 (Lastenheft `1.1.11` §13.11); [`plan-0.9.0.md`](../done/plan-0.9.0.md) Tranchen 0–5; Tag `v0.9.0` |
+| 44  | 🟡     | `0.9.6` Lastenheft-Konvergenz-Patch ausliefern: fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur) plus Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren); keine User-Surface-Änderung | Nach Schritt 43                                                  | F-7, F-131 (neu), NF-13, NF-18, NF-25, NF-29, MVP-19..MVP-26, MVP-40..MVP-42; [`plan-0.9.6.md`](./plan-0.9.6.md) Tranchen 0–4 |
 
 ---
 
@@ -161,6 +171,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.9.0` | Drift-Smoke + SRS + DASH     | ✅      | Drift-Smoke (Nightly-Workflow `webrtc-drift.yml`, R-12 automatisiert detektiert) + SRS-Lab `examples/srs/` (MVP-36 eingelöst) + DASH-Manifest-Analyse im `@npm9912/stream-analyzer` (NF-12 erfüllt; MVP-37 hochgestuft auf Muss). RAK-56..RAK-59 (Lastenheft `1.1.11` §13.11). DoD-Tracking in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md). |
 | `0.9.1` | Drift-Smoke-Robustheit (Patch) | ✅      | Wartungs-Patch nach `0.9.0` ohne eigenen Plan-File: WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]` statt Fail); Spec-Korrekturen in `spec/telemetry-model.md` §3.5.2/§3.5.3; Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout. CHANGELOG-`[0.9.1]`-Block. Kein Lastenheft-Patch. |
 | `0.9.5` | Quality-Gates Wave 2 (Patch) | ✅      | Patch-Release am 2026-05-07. Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md). Lieferungen: Benchmark-Smoke (PR-Pfad opt-in mit Beobachtungs-Nightly `benchmark-observation.yml`); Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik (`benchmark.yml`); sechs Go-Fuzz-Targets + drei TS-Property-Test-Suites via `fast-check` (`make fuzz-check` + Nightly `fuzz.yml`) inkl. Erstfund + Fix `mbpsLinkCapacity=-1` in `apps/api/.../mediamtxclient/mapping.go`; Mutation-Testing mit gremlins (Go) + StrykerJS (TS) als Nightly-Report (`mutation.yml`). Single-Source-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md); Operator-Doku in [`docs/dev/fuzzing.md`](../../dev/fuzzing.md) und [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md). Kein Lastenheft-Patch. |
+| `0.9.6` | Lastenheft-Konvergenz (Patch) | 🟡     | Aktiver Patch-Release nach `0.9.5`. Plan in [`in-progress/plan-0.9.6.md`](./plan-0.9.6.md). Scope: fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur) plus Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren). Keine User-Surface- oder Wire-Vertragsänderung. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
