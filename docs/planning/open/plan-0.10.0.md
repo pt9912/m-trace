@@ -72,8 +72,14 @@ In Scope:
     referenziertes `SegmentURL@media` als ableitbares Media-Segment;
     fehlt es, wird nicht geraten, sondern deterministisch `skipped`.
   - Byte-Parser für ISO-BMFF-Boxen mit Nachweis mindestens von `ftyp`,
-    `moov`, `moof`, `traf`, `tfdt` und `mdat`; `sidx` wird erkannt,
-    ist aber kein Pflicht-Nachweis.
+    `moov`, `styp`, `moof`, `traf`, `tfdt` und `mdat`; `sidx` wird
+    erkannt, ist aber kein Pflicht-Nachweis. Der normative Brand-Scope
+    für `0.10.0` ist bewusst fixiert: CMAF-Header müssen `cmfc` oder
+    `cmf2` im `ftyp` tragen; CMAF-Media-Segmente müssen einen `styp`
+    mit mindestens einem CMAF-Segment-/Track-Brand aus `cmfs`, `cmff`,
+    `cmfc` oder `cmf2` tragen. `cmf1` und neuere Structural-Brand-
+    Profile bleiben Folge-Scope, bis sie in Projekt-Doku, Fixtures und
+    Kompatibilitätsaussage explizit aufgenommen werden.
   - Separater bounded Binary-Segment-Loader statt Zweckentfremdung des
     bestehenden Manifest-Text-Loaders: Segment-Fetches liefern Bytes
     (`Uint8Array`), akzeptieren MP4-/Byte-Content-Types, nutzen aber
@@ -226,10 +232,12 @@ DoD:
     fMP4-Media-Segment; das Manifest-Signal bleibt sichtbar, die Media-
     Segment-Prüfung wird mit `hls_media_byterange_unsupported`
     übersprungen.
-  - Binäre Positive-Fixtures: minimales CMAF-Init-Segment mit `ftyp` +
-    `moov` und minimales fragmentiertes Media-Segment mit `moof` /
+  - Binäre Positive-Fixtures: minimales CMAF-Init-Segment mit `ftyp`
+    (`cmfc` oder `cmf2`) + `moov` und minimales fragmentiertes Media-
+    Segment mit `styp` (`cmfs`, `cmff`, `cmfc` oder `cmf2`) + `moof` /
     `traf` / `tfdt` / `mdat`.
   - Binäre Negativ-Fixtures: fehlendes oder inkompatibles `ftyp`,
+    `ftyp` nur mit `cmfs`, fehlendes oder inkompatibles `styp`,
     fehlendes `moof`, fehlendes `tfdt`, fehlendes `mdat`, ungültige
     Box-Größe und Segment über dem konfigurierten Größenlimit.
 
@@ -607,8 +615,8 @@ DoD:
   - erkennt ungültige, überlappende oder nicht fortschreitende Boxen,
   - bricht bei konfiguriertem Byte-Limit deterministisch ab,
   - liefert stabile Box-Anker (`segment:init:ftyp`,
-    `segment:media[0]:moof/traf/tfdt`, `segment:media[0]:mdat`) für
-    `details.cmaf.binary`.
+    `segment:media[0]:styp`, `segment:media[0]:moof/traf/tfdt`,
+    `segment:media[0]:mdat`) für `details.cmaf.binary`.
 - [ ] Bounded Binary-Segment-Loader implementiert getrennt von
   `loadManifest`:
   - gibt Bytes zurück, nicht UTF-8-Text,
@@ -629,18 +637,29 @@ DoD:
   - `ftyp` vorhanden,
   - Brand-Policy ist als getestete Allowlist umgesetzt: `ftyp.major_brand`
     oder mindestens ein Eintrag aus `ftyp.compatible_brands` muss `cmfc`
-    oder `cmfs` sein. `cmfc` steht für CMAF-Track-/Header-Scope,
-    `cmfs` für CMAF-Segment-Scope; für die begrenzte Init-Segment-
-    Prüfung in `0.10.0` genügt einer dieser beiden Brands an einer der
-    genannten `ftyp`-Positionen. Generische MP4-/ISO-BMFF-Brands wie
-    `isom`, `iso6`, `mp41` oder `mp42` dürfen zusätzlich vorkommen,
-    reichen aber allein nicht für `status:"passed"`. Fixtures pinnen
-    mindestens diese Fälle: `cmfc` als `major_brand`, `cmfs` nur in
-    `compatible_brands`, ausschließlich generische Brands und fehlendes
+    oder `cmf2` sein. `cmfc` und `cmf2` sind die in `0.10.0`
+    unterstützten CMAF-Header-/Track-Structural-Brands. `cmfs` ist ein
+    CMAF-Segment-Brand für `styp` und darf im Init-`ftyp` nicht als
+    Header-Konformitätsnachweis zählen. Generische MP4-/ISO-BMFF-Brands
+    wie `isom`, `iso6`, `mp41` oder `mp42` dürfen zusätzlich vorkommen,
+    reichen aber allein nicht für `status:"passed"`. Neuere
+    Structural-Brand-Profile wie `cmf1` bleiben in `0.10.0`
+    `cmaf_box_validation_failed`, bis der Projekt-Scope sie explizit
+    aufnimmt. Fixtures pinnen mindestens diese Fälle: `cmfc` als
+    `major_brand`, `cmf2` nur in `compatible_brands`, `cmfs` nur in
+    `compatible_brands` als negativer Init-Fall, ausschließlich
+    generische Brands, `cmf1` ohne expliziten Support und fehlendes
     `ftyp`,
   - `moov` vorhanden,
   - keine offensichtlich widersprüchliche Top-Level-Box-Struktur.
 - [ ] CMAF-Media-Fragment-Prüfung validiert mindestens:
+  - `styp` vorhanden,
+  - `styp.major_brand` oder mindestens ein Eintrag aus
+    `styp.compatible_brands` trägt einen in `0.10.0` unterstützten
+    CMAF-Media-Brand: `cmfs`, `cmff`, `cmfc` oder `cmf2`. Generische
+    MP4-/DASH-Brands reichen allein nicht für `status:"passed"`;
+    `cmfl`/chunked CMAF bleibt wegen des Low-Latency-Out-of-Scope
+    bewusst Folge-Scope,
   - `moof` vorhanden,
   - mindestens ein `traf` unter `moof`,
   - `tfdt` unter `traf` vorhanden,
@@ -679,8 +698,8 @@ DoD:
   Alternativen werden nicht durchprobiert. Fehlt bei `SegmentList` die
   Media-Referenz vollständig, wird `segment_reference_missing` gemeldet.
 - [ ] Positive und negative Binär-Fixtures decken Init, Media, fehlende
-  Pflichtboxen inklusive `mdat`, kaputte Boxgrößen, Größenlimit und
-  nicht auflösbare Segment-URIs ab.
+  Pflichtboxen inklusive `styp` und `mdat`, kaputte Boxgrößen,
+  Größenlimit und nicht auflösbare Segment-URIs ab.
 - [ ] Tests pinnen Status-Mapping:
   - `passed` nur bei bestandenen manifestseitig verpflichtenden Init-
     und Media-Prüfungen,
