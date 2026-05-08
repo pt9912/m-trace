@@ -58,8 +58,11 @@ In Scope:
   Signale behalten ihre bisherige Detail-Form ohne `cmaf`. Jedes
   einzelne Signal trägt eine Confidence (`manifest` oder `inferred`),
   damit manifestbasierte Indizien nicht als binäre
-  Konformitätsaussage missverstanden werden. HLS-`unknown` mit
-  `details:null` bleibt ohne `cmaf`.
+  Konformitätsaussage missverstanden werden. Das `cmaf`-Objekt bedeutet
+  ausschließlich „CMAF-Signale erkannt", nicht „CMAF-Konformität
+  nachgewiesen"; deshalb bekommt das Schema kein boolesches
+  `present:true`-Feld. HLS-`unknown` mit `details:null` bleibt ohne
+  `cmaf`.
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
 
 Out of scope:
@@ -130,8 +133,13 @@ DoD:
 - [ ] Fixture-Inventar angelegt:
   - HLS CMAF VOD mit `EXT-X-MAP` und `.m4s`-Segmenten.
   - HLS TS als Negativ-/Regression-Pfad.
-  - DASH CMAF VOD mit `SegmentTemplate initialization`.
-  - DASH ohne CMAF-Signale als Negativ-/Regression-Pfad.
+  - DASH MP4-MIME-only als schwacher/inferred Pfad, weil bestehende
+    DASH-Contract-Fixtures mit `video/mp4`/`audio/mp4` sonst nicht mehr
+    byte-kompatibel bleiben.
+  - DASH CMAF VOD mit `SegmentTemplate@initialization` plus fMP4-
+    Segmentmuster als starker manifestbasierter Pfad.
+  - DASH ohne CMAF-Signale als Negativ-/Regression-Pfad, z. B. ohne
+    MP4-MIME, ohne Initialization und ohne fMP4-URI-Muster.
 
 ---
 
@@ -147,19 +155,25 @@ DoD:
   den bestehenden Detail-Objekten lebt:
   `MasterPlaylistDetails.cmaf?`, `MediaPlaylistDetails.cmaf?` und
   `DashManifestDetails.cmaf?`. `cmaf` wird ausgelassen, wenn keine
-  CMAF-Signale vorliegen; es wird nicht als `present:false`-Platzhalter
-  in bestehenden Negativ-Details serialisiert. Der Analyzer-Envelope
-  bekommt kein Top-Level-`cmaf`; `UnknownAnalysisResult.details` bleibt
-  `null`.
+  CMAF-Signale vorliegen; es wird nicht als `present:false`- oder
+  `present:true`-Platzhalter in bestehenden Details serialisiert. Der
+  Analyzer-Envelope bekommt kein Top-Level-`cmaf`;
+  `UnknownAnalysisResult.details` bleibt `null`.
   Modellfelder:
-  - `present: boolean` (bei ausgegebenem Objekt immer `true`; die
-    Abwesenheit von `cmaf` ist der negative Fall)
-  - `source: "hls" | "dash" | "mixed"`
+  - `source: "hls" | "dash"`; ein `mixed`-Wert wird in `0.10.0` nicht
+    eingeführt, weil jedes Summary unter genau einem HLS- oder DASH-
+    Detail-Objekt lebt.
   - `confidence: "manifest" | "inferred"` als aggregierte stärkste
     Confidence des Summary-Objekts.
-  - `signals[]` mit Code, Severity, Manifest-Anker und eigener
+  - `signals[]` mit `code`, `severity`, `manifestAnchor` und eigener
     `confidence: "manifest" | "inferred"`, damit gemischte starke und
-    schwache Indizien auditierbar bleiben.
+    schwache Indizien auditierbar bleiben. `severity` nutzt dieselbe
+    Wertedomäne wie `AnalysisFinding.level`: `"info" | "warning" |
+    "error"`.
+  - `note?: string` darf knapp beschreiben, dass die Summary nur
+    manifestbasierte Signale meldet und keine binäre CMAF-
+    Konformitätsaussage trifft; Pflicht ist diese Klarstellung in Doku
+    und README, nicht in jedem JSON-Result.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
@@ -206,8 +220,9 @@ DoD:
   Nachweis gewertet.
 - [ ] Master-Playlist-Parser schreibt ein konservatives
   `MasterPlaylistDetails.cmaf`: Variant-URI-/Codec-Hinweise dürfen
-  `present` nur mit `confidence:"inferred"` setzen; starke
-  `EXT-X-MAP`-Signale entstehen erst in Media-Playlists.
+  nur ein Summary mit `confidence:"inferred"` erzeugen; starke
+  `EXT-X-MAP`-Signale entstehen erst in Media-Playlists. Das Summary
+  darf nicht als bestätigte CMAF-Konformität dokumentiert werden.
 - [ ] Tests decken positive, negative und gemischte HLS-Fälle ab.
 - [ ] Bestehender HLS-Master-/Media-Pfad bleibt grün.
 
@@ -233,10 +248,18 @@ DoD:
   `BaseURL`-/URI-Muster. Diese Felder können als interne Parse-
   Metadaten oder additive `details`-Felder umgesetzt werden, müssen
   aber in `DashManifestDetails.cmaf` nachvollziehbare Manifest-Anker
-  erzeugen.
+  erzeugen. Für mehrperiodige MPDs muss der Anker eindeutig sein, z. B.
+  `MPD/Period[0]/AdaptationSet[id=video]/Representation[id=v1]/...`;
+  bei fehlenden IDs werden stabile Index-Anker verwendet. Das konkrete
+  Signal-Feld benennt zusätzlich das auslösende Attribut, etwa
+  `SegmentTemplate@initialization`.
 - [ ] Confidence-Regeln sind getestet: MP4-MIME allein erzeugt nur
   `confidence:"inferred"`; Initialization-Informationen plus fMP4-
   Segmentmuster erzeugen ein stärkeres manifestbasiertes Signal.
+- [ ] DASH-Tests pinnen drei getrennte Fälle: MP4-MIME-only als
+  `confidence:"inferred"`, Initialization plus fMP4-Segmentmuster als
+  `confidence:"manifest"` und ein echtes Negativ-Fixture ohne MP4-MIME,
+  ohne Initialization und ohne fMP4-URI-Muster.
 - [ ] DASH-Live- und VOD-Fixtures behalten bestehende Mindestfelder
   aus RAK-58.
 - [ ] Tests decken DASH-CMAF positiv, DASH ohne Initialization-Signal
