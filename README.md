@@ -323,20 +323,23 @@ m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Strea
 
 ## Aktueller Stand
 
-Aktiv in Arbeit ist `0.9.6` 🟡 — Lastenheft-Konvergenz-Patch nach
-`0.9.5` (Patch-Release-Konvention `0.X.Y`, siehe
+Das Projekt steht bei `0.9.6` released — Lastenheft-Konvergenz-
+Patch nach `0.9.5` (Patch-Release-Konvention `0.X.Y`, siehe
 [`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Inhalt:
 fehlende Muss-Repo-Artefakte ergänzt
 ([`CONTRIBUTING.md`](CONTRIBUTING.md),
 [`SECURITY.md`](SECURITY.md), [`.env.example`](.env.example),
-[`deploy/`](deploy/)-Struktur) und Lastenheft-Patch `1.1.12`
+[`deploy/`](deploy/)-Struktur), Lastenheft-Patch `1.1.12`
 (F-7-Status, neue Pflichtdokumente-Kennung `F-131`,
 NF-13/NF-18 harmonisiert, MVP-19..MVP-26 redaktionell entzerrt;
 Patch-Log §4a.15 in
-[`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)).
-Keine neue Produktfunktion, keine User-Surface- oder
-Wire-Vertragsänderung. Plan in
-[`docs/planning/in-progress/plan-0.9.6.md`](docs/planning/in-progress/plan-0.9.6.md).
+[`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md))
+und Go-Build-Image-Bump auf `golang:1.26.3` als Folge der
+`go1.26.3`-Stdlib-CVE-Fixes (GO-2026-4982/4980/4971/4918, analog
+der `0.8.5`-OTel-Bump-Präzedenz). Keine neue Produktfunktion,
+keine User-Surface- oder Wire-Vertragsänderung. Plan archiviert
+in
+[`docs/planning/done/plan-0.9.6.md`](docs/planning/done/plan-0.9.6.md).
 
 Davor steht `0.9.5` released — Quality-Gates Wave 2 Patch-Release
 nach `0.9.0`/`0.9.1`. Inhalt: vier statistisch- bzw. langlaufende

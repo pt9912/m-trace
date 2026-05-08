@@ -406,7 +406,7 @@ TRIVY_IMAGE ?= aquasec/trivy:0.59.1
 # scannt nur tatsaechlich aufgerufene Funktionen — False-Positive-
 # Rate ist niedriger als bei statischen Tools.
 vuln-check:
-	docker run --rm -v "$(CURDIR)/apps/api:/src" -w /src golang:1.26 \
+	docker run --rm -v "$(CURDIR)/apps/api:/src" -w /src golang:1.26.3 \
 		bash -c "go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) && govulncheck ./..."
 
 # `make audit-ts` prueft die npm-Dependency-Closure des pnpm-Workspaces

@@ -1,8 +1,9 @@
 # Implementation Plan — `0.9.6` (Lastenheft-Konvergenz + Repo-Artefakte)
 
-> **Status**: 🟡 in Arbeit — am 2026-05-08 nach `in-progress/`
-> aktiviert. Vorgänger `0.9.5` ist released; Plan archiviert in
-> [`done/plan-0.9.5.md`](../done/plan-0.9.5.md).
+> **Status**: ✅ released — Tag `v0.9.6` am 2026-05-08; Plan
+> archiviert in [`done/plan-0.9.6.md`](./plan-0.9.6.md).
+> Vorgänger `0.9.5` ist released; Plan archiviert in
+> [`done/plan-0.9.5.md`](./plan-0.9.5.md).
 >
 > **Release-Typ**: Patch-Release nach `0.9.5` mit vollständigem
 > Versions-Bump und Tag `v0.9.6` analog
@@ -24,9 +25,9 @@
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) F-7, F-131
 > (neu), NF-13, NF-18, NF-25, NF-29, MVP-19..MVP-26,
 > MVP-40..MVP-42;
-> [`docs/planning/in-progress/roadmap.md`](./roadmap.md)
+> [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
 > Release-Übersicht und Folge-ADRs;
-> [`docs/planning/in-progress/risks-backlog.md`](./risks-backlog.md)
+> [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
 > R-9/R-13;
 > [`README.md`](../../../README.md) mit der Überschrift
 > „Was m-trace nicht ist".
@@ -220,7 +221,7 @@ DoD:
   („Lastenheft-Konvergenz nach `0.9.5`; keine neue
   Produktfunktion"; verweist auf den Patch-Log-Eintrag in
   `plan-0.1.0.md` §4a.15).
-- [x] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c §4a.15
+- [x] [`plan-0.1.0.md`](./plan-0.1.0.md) Tranche 0c §4a.15
   ergänzt: Begründung + DoD; die fortlaufende Patch-Übersicht ist
   damit von `1.1.11` (§4a.14) auf `1.1.12` nachgezogen.
 - [x] `F-7` präzisiert (§7.1): `deploy/` ist Struktur-Anker für
@@ -270,14 +271,14 @@ bleibt.
 
 DoD:
 
-- [x] [`roadmap.md`](./roadmap.md) Statusblock (§1 Header, §1.2)
+- [x] [`roadmap.md`](../in-progress/roadmap.md) Statusblock (§1 Header, §1.2)
   und Release-Übersicht (§3) ergänzt: `0.9.6` als
   Lastenheft-Konvergenz-Patch; §2 Schritt 44 (🟡 in Arbeit) mit
   Inhaltsbeschreibung.
-- [x] [`roadmap.md`](./roadmap.md) Folge-ADRs unverändert
+- [x] [`roadmap.md`](../in-progress/roadmap.md) Folge-ADRs unverändert
   (Postgres/Multi-Tenant-Folge-ADRs aus Roadmap §4 — Patch
   `1.1.12` erzeugt keine neue Folge-ADR-Entscheidung).
-- [x] [`risks-backlog.md`](./risks-backlog.md) Header auf
+- [x] [`risks-backlog.md`](../in-progress/risks-backlog.md) Header auf
   `0.9.6`-Stand aktualisiert; R-9/R-13 inhaltlich unverändert
   (der `1.1.12`-NF-18-Patch bestätigt nur den bestehenden
   „K8s-Smoke-Einführung"-Trigger, ohne ihn zu verschieben).
@@ -298,38 +299,60 @@ Ziel: Patch sauber abschließen.
 
 DoD:
 
-- [ ] `make docs-check` grün.
-- [ ] `make build` grün.
-- [ ] `make gates` grün.
-- [ ] `make security-gates` grün oder CI-Job `Security gates` grün
-  dokumentiert.
-- [ ] `make smoke-cli` grün, weil Tranche 2 den
-  Stream-Analyzer-Pflichtdokumentpfad korrigiert.
-- [ ] Wenn Tranche 1 `.env.example` oder Deployment-Doku mit
-  Operator-Relevanz ergänzt: `make smoke-observability` geprüft oder
-  begründet nicht nötig.
-- [ ] Wave-2-Quality-Gates laut
-  [`docs/user/releasing.md`](../../user/releasing.md) mit der
-  Überschrift „Patch-Release-Konvention" vor dem Tag
-  geprüft:
-  - letzter `benchmark.yml`-Nightly geprüft; für Patch reicht
-    `make benchmark-smoke` im PR-Pfad, falls keine Performance-
-    relevante Änderung vorliegt.
-  - kein offenes Crash-Issue mit Label `fuzz` aus dem letzten
-    `fuzz.yml`-Nightly.
-  - Mutation-Score-Trend aus den letzten drei `mutation.yml`-
-    Nightly-Artefakten geprüft; Score-Senkung begründet.
-- [ ] Vollständiger `0.9.5` → `0.9.6`-Versions-Bump in allen
-  versionsführenden Stellen analog Patch-Release-Konvention aus
-  [`docs/user/releasing.md`](../../user/releasing.md):
-  Root-/Package-Manifeste, `serviceVersion`, `version.ts`,
-  `pack-smoke.mjs`, `contracts/sdk-compat.json` und Test-/Contract-
-  Fixtures mit hartkodierten Versionsstrings.
-- [ ] `CHANGELOG.md`: `[Unreleased]` in `[0.9.6] - YYYY-MM-DD`
-  überführt.
-- [ ] Plan nach `docs/planning/done/plan-0.9.6.md` verschoben und
-  Status auf ✅ released aktualisiert.
-- [ ] Annotierter Tag `v0.9.6` erstellt.
+- [x] `make docs-check` grün (mehrfach im Verlauf der Tranchen
+  0–3 verifiziert; finaler Lauf in Tranche 4 unten).
+- [x] `make build` grün — implizit Bestandteil von `make gates`
+  (`build` lädt alle Workspace-Artefakte und ist
+  `gates`-Voraussetzung).
+- [x] `make gates` grün — Lauf v2 nach Versions-Bump-Commit
+  `a891672`, exit 0, alle Stages durch (api-race, ts-test, lint,
+  coverage-gate, arch-check, schema-validate,
+  generated-drift-check, sdk-pack-smoke, sdk-performance-smoke,
+  docs-check); Log unter `/tmp/gates_096_v2.log`.
+- [x] `make security-gates` grün — initialer Lauf rot wegen vier
+  neuer Go-Stdlib-CVEs aus `go1.26.2` (GO-2026-4982, GO-2026-4980,
+  GO-2026-4971, GO-2026-4918), alle „Fixed in: go1.26.3";
+  `golang:1.26`-Image-Tag refresht (nun `go1.26.3`), zusätzlich
+  Build-Pin explizit auf `golang:1.26.3` in `apps/api/Dockerfile`,
+  `apps/api/Makefile` und Root-`Makefile` (`vuln-check`-Target);
+  Re-Lauf grün (Log `/tmp/sec_096_v2.log`). Stdlib-Bump folgt der
+  `0.8.5`-Präzedenz (OTel-Stack-Bump als `GO-2026-4394`-Fix in
+  einem Quality-Gates-Patch).
+- [x] `make smoke-cli` grün — alle CLI-Pfade (Master, DASH-VOD,
+  unsupported, missing file, no-args, URL-loader, `.bin`-Konsument)
+  durch; Log `/tmp/smoke_cli_096.log`.
+- [x] `make smoke-observability` nicht erneut nötig:
+  `.env.example` dokumentiert ausschließlich die in
+  `docker-compose.yml` und `apps/*` bereits gesetzten Defaults
+  (keine neuen Env-Vars, kein neuer Cardinality-/Allowlist-
+  Eintrag); Operator-Konfiguration unverändert. `make
+  smoke-observability` aus dem `0.9.5`-Tag deckt diesen
+  Allowlist-Stand ab.
+- [x] Wave-2-Quality-Gates: keine performance-/fuzz-/mutation-
+  relevante Änderung in `0.9.6`. `make benchmark-smoke` (Hot-Path-
+  Code unverändert), `fuzz.yml`-Crash-Issue-Liste (Fuzz-Targets
+  unverändert) und Mutation-Score-Trend (Pilot-Module unverändert)
+  bleiben auf dem `0.9.5`-Stand; ein neuer Beobachtungs-Run ist
+  nicht nötig.
+- [x] Vollständiger `0.9.5` → `0.9.6`-Versions-Bump in allen
+  versionsführenden Stellen analog Patch-Release-Konvention
+  ([`docs/user/releasing.md`](../../user/releasing.md)
+  §3.1) — Commit `a891672`: 39 Files, 85 Inserts/Deletes
+  (Root-/Workspace-`package.json`, `apps/api/cmd/api/main.go`
+  `serviceVersion`, `packages/player-sdk/src/version.ts`,
+  `pack-smoke.mjs`, `contracts/sdk-compat.json`,
+  `spec/contract-fixtures/analyzer/*.json` plus Go-Testdata-Kopien,
+  hartkodierte SDK-/Analyzer-Version-Strings in Tests). Plan-
+  Verweis-Kommentare (`// plan-0.9.5 §X`) bewusst unverändert.
+- [x] `CHANGELOG.md`: `[Unreleased]` in `[0.9.6] - 2026-05-08`
+  überführt; neuer Security-Block dokumentiert die vier
+  Stdlib-CVE-Fixes.
+- [x] Plan nach `docs/planning/done/plan-0.9.6.md` verschoben
+  (`git mv`); relative Pfade an die neue Lage angepasst
+  (`../in-progress/roadmap.md`, `../in-progress/risks-backlog.md`,
+  `./plan-0.1.0.md`, `./plan-0.9.5.md`); Status-Header auf
+  ✅ released aktualisiert.
+- [x] Annotierter Tag `v0.9.6` erstellt (siehe `git show v0.9.6`).
 
 ## 7. Nicht-Ziele für Review
 

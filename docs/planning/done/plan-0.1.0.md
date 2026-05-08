@@ -420,7 +420,7 @@ DoD:
 - [x] Lastenheft §12.1 „Nicht im `0.1.0`-MVP"-Tabelle redaktionell entzerrt: neue Spalte „Status (Patch `1.1.12`)" mit verbindlicher Aussage pro Item (erfüllt / anders entschieden / out of scope); historische „Prioritaet"-Spalte zur Audit-Nachvollziehbarkeit erhalten.
 - [x] Lastenheft §12.3 `MVP-37` mit Lieferstand-Vermerk (in `0.9.0` ausgeliefert); `MVP-42` mit Status-Vermerk (Strukturanker leer, kein Production-K8s).
 - [x] Kein neuer Scope-Widerspruch: README-Abgrenzungsabschnitt „Was m-trace nicht ist", `NF-13`, `NF-18`, `MVP-19`..`MVP-26`, `MVP-40`..`MVP-42` sind nach dem Patch konsistent.
-- [ ] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 44 abgehakt (✅) wird mit dem `0.9.6`-Closeout in Tranche 4 nachgezogen; Aktivierungs-Eintrag in §1/§1.2 ist mit Tranche 0 schon erfolgt.
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 44 abgehakt (✅); §1 Header und §1.2 verweisen auf den ausgelieferten Patch (`0.9.6` released, Plan archiviert in `done/plan-0.9.6.md`).
 
 ---
 

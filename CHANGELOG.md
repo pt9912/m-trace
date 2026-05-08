@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **0.9.6 in Arbeit** — Lastenheft-Konvergenz-Patch nach `0.9.5`
+## [0.9.6] - 2026-05-08
+
+> **Lastenheft-Konvergenz-Patch** nach `0.9.5`
 > (Patch-Release-Konvention `0.X.Y`, siehe
 > [`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Keine
 > neue Produktfunktion, keine User-Surface- oder Wire-
 > Vertragsänderung. Plan in
-> [`docs/planning/in-progress/plan-0.9.6.md`](docs/planning/in-progress/plan-0.9.6.md).
+> [`docs/planning/done/plan-0.9.6.md`](docs/planning/done/plan-0.9.6.md).
 
 ### Added
 
@@ -41,12 +43,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   §4a.15 als neuer Patch-Log-Eintrag.
 - [`README.md`](README.md): neuer Abschnitt „Mitarbeit und
   Sicherheitsmeldungen", `cp .env.example .env`-Hinweis im
-  Lokal-Setup, Statusblock auf `0.9.6` umgestellt.
+  Lokal-Setup, Statusblock auf `0.9.6`.
 - [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
   und
   [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
   Header und Phase-Beschreibung auf den `0.9.6`-Stand
   aktualisiert; keine inhaltliche Änderung an aktiven R-Items.
+- Versions-Bump `0.9.5` → `0.9.6` in allen versionsführenden
+  Stellen analog Patch-Release-Konvention: Root- und Workspace-
+  `package.json`, `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts`, `pack-smoke.mjs`,
+  `contracts/sdk-compat.json`,
+  `spec/contract-fixtures/analyzer/*.json` plus Go-Testdata-
+  Kopien, hartkodierte SDK-/Analyzer-Version-Strings in Tests.
+
+### Security
+
+- Go-Build-Image-Pin `golang:1.26` → `golang:1.26.3` in
+  `apps/api/Dockerfile`, `apps/api/Makefile` und Root-`Makefile`
+  (`vuln-check`-Target). Adressiert vier Go-Stdlib-CVEs aus
+  `go1.26.2`, alle „Fixed in: go1.26.3":
+  - **GO-2026-4982** — Bypass des `meta`-Content-URL-Escapings
+    führt zu XSS in `html/template`.
+  - **GO-2026-4980** — Escaper-Bypass führt zu XSS in
+    `html/template`.
+  - **GO-2026-4971** — Panic in `net.Dial`/`LookupPort` beim
+    Verarbeiten eines NUL-Bytes auf Windows.
+  - **GO-2026-4918** — Endlosschleife im HTTP/2-Transport bei
+    schlechtem `SETTINGS_MAX_FRAME_SIZE`.
+  Folgt der `0.8.5`-Präzedenz (OTel-Stack-Bump als
+  `GO-2026-4394`-Fix in einem Quality-Gates-Patch).
 
 ## [0.9.5] - 2026-05-07
 
