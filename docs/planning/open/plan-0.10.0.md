@@ -61,9 +61,15 @@ In Scope:
   - Byte-Parser für ISO-BMFF-Boxen mit Nachweis mindestens von `ftyp`,
     `moov`, `moof`, `traf` und `tfdt`; `sidx` wird erkannt, ist aber
     kein Pflicht-Nachweis.
-  - Strikte Fetch-/Read-Grenzen: maximale Segmentgröße, maximale Anzahl
-    geladener Segmente, Timeout und SSRF-/Scheme-Regeln entsprechen dem
-    bestehenden Manifest-Loader-Sicherheitsmodell.
+  - Separater bounded Binary-Segment-Loader statt Zweckentfremdung des
+    bestehenden Manifest-Text-Loaders: Segment-Fetches liefern Bytes
+    (`Uint8Array`), akzeptieren MP4-/Byte-Content-Types, nutzen aber
+    dieselben SSRF-, Scheme-, Redirect- und Timeout-Regeln wie
+    `loadManifest`.
+  - Strikte Fetch-/Read-Grenzen: Default `maxSegmentBytes=2_000_000`,
+    Default `maxBinarySegments=6`, Timeout/Redirects aus
+    `AnalyzeOptions.fetch`, und deterministische `skipped`-/`failed`-
+    Ergebnisse bei Limit-Verstößen.
 - Additives Result-Schema für `details.cmaf` unter den bestehenden
   HLS- und DASH-Detail-Objekten, ohne bestehende HLS-/DASH-Felder zu
   brechen und ohne neues Top-Level-Feld im Analyzer/API-Envelope.
@@ -81,6 +87,12 @@ In Scope:
   danach nicht byte-kompatibel zum `0.9.x`-Stand. HLS-`unknown` mit
   `details:null` bleibt ohne `cmaf`.
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
+- Binäre Segment-Fetches werden für `kind:"url"` gegen die finale
+  Manifest-URL und für `kind:"text"` nur bei gesetzter, sicherer
+  `baseUrl` ausgeführt. Text-Input ohne `baseUrl` behält
+  manifestbasierte Signale, bekommt aber
+  `details.cmaf.binary.status:"skipped"` mit Failure-Code
+  `segment_base_url_missing`.
 
 Out of scope:
 
@@ -171,6 +183,14 @@ DoD:
     Segmentmuster als starker manifestbasierter Pfad.
   - DASH ohne CMAF-Signale als Negativ-/Regression-Pfad, z. B. ohne
     MP4-MIME, ohne Initialization und ohne fMP4-URI-Muster.
+  - DASH-Vererbungsfixtures mit `BaseURL` und `SegmentTemplate` auf
+    `MPD`-, `Period`-, `AdaptationSet`- und `Representation`-Ebene;
+    mindestens ein mehrperiodiges Fixture pinnt stabile Index-/ID-
+    Manifestanker.
+  - HLS-`EXT-X-MAP`-Fixtures mit `URI`, relativer URI, absoluter URI
+    und `BYTERANGE`; `BYTERANGE` wird in `0.10.0` erkannt und
+    dokumentiert, aber nicht binär geladen, sondern als `skipped`
+    berichtet.
   - Binäre Positive-Fixtures: minimales CMAF-Init-Segment mit `ftyp` +
     `moov` und minimales fragmentiertes Media-Segment mit `moof` /
     `traf` / `tfdt`.
@@ -224,10 +244,20 @@ DoD:
     Referenz nicht ausgeführt wurde. `segmentsChecked[]` trägt den
     jeweiligen Einzelstatus, damit gemischte DASH-AdaptationSet-
     Ergebnisse auditierbar bleiben.
+    `limits` serialisiert mindestens `maxSegmentBytes`,
+    `maxBinarySegments`, `timeoutMs` und `maxRedirects`, damit
+    ausgelassene Prüfungen reproduzierbar bleiben.
   - `note?: string` darf knapp beschreiben, welcher Anteil nur
     manifestbasiert und welcher Anteil binär verifiziert wurde; Pflicht
     ist diese Klarstellung in Doku und README, nicht in jedem JSON-
     Result.
+- [ ] `packages/stream-analyzer/src/types/input.ts` ergänzt eine
+  additive Optionssektion für die binäre CMAF-Prüfung, z. B.
+  `cmaf.binary.enabled`, `cmaf.binary.maxSegmentBytes` und
+  `cmaf.binary.maxBinarySegments`. Defaults sind dokumentiert:
+  `enabled:true`, `maxSegmentBytes=2_000_000`,
+  `maxBinarySegments=6`. Diese Limits gelten zusätzlich zu
+  `fetch.maxBytes`, das ausschließlich das Manifest-Body-Limit bleibt.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
@@ -277,6 +307,15 @@ DoD:
 - [ ] Media-Playlist-Parser erkennt `EXT-X-MAP` als starkes
   CMAF/fMP4-Signal und schreibt es nach
   `MediaPlaylistDetails.cmaf.signals[]`.
+- [ ] Media-Playlist-Parser extrahiert `EXT-X-MAP` strukturiert:
+  `URI`, optional `BYTERANGE`, Manifestanker, rohe Attributwerte und
+  gegen `baseUrl` aufgelöste URI, falls möglich. Diese Daten dürfen
+  intern oder additiv in `details` leben, müssen aber vom Binary-Pfad
+  ohne erneutes String-Parsing nutzbar sein.
+- [ ] `EXT-X-MAP` mit `BYTERANGE` wird in `0.10.0` nicht per HTTP
+  Range geladen. Das Manifest-Signal bleibt sichtbar; die binäre Init-
+  Prüfung bekommt `status:"skipped"` bzw. einen Segment-Einzelstatus
+  `skipped` mit Failure-Code `hls_map_byterange_unsupported`.
 - [ ] Segment-URI-Muster `.m4s`/`.cmfv`/`.cmfa` werden als
   schwächere manifestbasierte Hinweise erfasst.
 - [ ] `EXT-X-INDEPENDENT-SEGMENTS` und Codec-/Map-Kontext werden als
@@ -326,6 +365,12 @@ DoD:
   bei fehlenden IDs werden stabile Index-Anker verwendet. Das konkrete
   Signal-Feld benennt zusätzlich das auslösende Attribut, etwa
   `SegmentTemplate@initialization`.
+- [ ] DASH-Parser-Strategie ist vor Umsetzung festgelegt: entweder
+  der bestehende regex-basierte Parser wird gezielt um die benötigten
+  `BaseURL`-/`SegmentTemplate`-/`SegmentList`-Metadaten erweitert und
+  mit Vererbungsfixtures abgesichert, oder Tranche 3 migriert auf eine
+  kleine XML-Parser-Abhängigkeit. Die Entscheidung wird im Plan-DoD
+  dokumentiert; stille Teilvererbung reicht für RAK-62/RAK-64 nicht.
 - [ ] Confidence-Regeln sind getestet: MP4-MIME allein erzeugt nur
   `confidence:"inferred"`; Initialization-Informationen plus fMP4-
   Segmentmuster erzeugen ein stärkeres manifestbasiertes Signal.
@@ -333,6 +378,11 @@ DoD:
   `confidence:"inferred"`, Initialization plus fMP4-Segmentmuster als
   `confidence:"manifest"` und ein echtes Negativ-Fixture ohne MP4-MIME,
   ohne Initialization und ohne fMP4-URI-Muster.
+- [ ] DASH-Tests pinnen Vererbung und URI-Auflösung getrennt:
+  `BaseURL` auf MPD-/Period-/AdaptationSet-/Representation-Ebene,
+  `SegmentTemplate`-Vererbung und Override-Verhalten, `SegmentList`
+  mit `Initialization@sourceURL`, sowie mehrperiodige stabile
+  Manifestanker bei fehlenden IDs.
 - [ ] DASH-Live- und VOD-Fixtures behalten bestehende Mindestfelder
   aus RAK-58.
 - [ ] Tests decken DASH-CMAF positiv, DASH ohne Initialization-Signal
@@ -353,6 +403,20 @@ DoD:
   - bricht bei konfiguriertem Byte-Limit deterministisch ab,
   - liefert stabile Box-Anker (`segment:init:ftyp`,
     `segment:media[0]:moof/traf/tfdt`) für `details.cmaf.binary`.
+- [ ] Bounded Binary-Segment-Loader implementiert getrennt von
+  `loadManifest`:
+  - gibt Bytes zurück, nicht UTF-8-Text,
+  - sendet einen MP4-orientierten `Accept`-Header,
+  - erlaubt mindestens `video/mp4`, `audio/mp4`, `application/mp4`,
+    `application/octet-stream` und leeren Content-Type,
+  - nutzt dieselbe URL-Validierung, DNS-/SSRF-Prüfung,
+    Redirect-Behandlung und Timeout-Mechanik wie der Manifest-Loader,
+  - erzwingt `maxSegmentBytes` pro Segment und
+    `maxBinarySegments` über den gesamten Analyseaufruf,
+  - mappt blockierte, zu große, nicht ladbare oder Content-Type-
+    inkompatible Segment-Fetches auf auditierbare
+    `segmentsChecked[]`-/`failures[]`-Einträge statt auf einen
+    Top-Level-Analysefehler.
 - [ ] CMAF-Init-Prüfung validiert mindestens:
   - `ftyp` vorhanden,
   - Brand-Policy ist als getestete Allowlist umgesetzt: `cmfc` und
@@ -367,14 +431,19 @@ DoD:
   - `tfdt` unter `traf` vorhanden,
   - optionales `sidx` wird erkannt und berichtet, aber nicht als Muss
     gewertet.
-- [ ] Segment-Resolver lädt für Text-/URL-Input nur manifestreferenzierte
-  Init-/Media-Segment-URIs, löst relative Pfade gegen `baseUrl` bzw.
-  finale Manifest-URL auf und erbt SSRF-, Scheme-, Timeout- und
-  Größenlimit-Regeln aus dem bestehenden Loader.
+- [ ] Segment-Resolver lädt nur manifestreferenzierte Init-/Media-
+  Segment-URIs. URL-Input löst relative Pfade gegen die finale
+  Manifest-URL auf; Text-Input löst relative Pfade nur bei gesetzter
+  `baseUrl` auf. Ohne `baseUrl` oder bei unsicherer/nicht auflösbarer
+  URI wird nicht gefetched, sondern `skipped` mit eindeutigem
+  Failure-Code berichtet.
 - [ ] HLS-Binary-Pfad prüft `EXT-X-MAP` plus erstes fMP4-Media-Segment;
   wenn eine der beiden URIs fehlt oder nicht ladbar ist, entsteht
   `details.cmaf.binary.status:"skipped"` oder `"failed"` mit
   nachvollziehbarem Failure-Code, kein stiller Erfolg.
+  `EXT-X-MAP`-Attribute werden aus der strukturierten Parser-Ausgabe
+  genutzt; erneutes Ad-hoc-Parsen der Manifestzeile im Binary-Pfad ist
+  nicht zulässig.
 - [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
   fMP4-Media-Segment je repräsentativem AdaptationSet; Template-
   Variablen, die in `0.10.0` nicht sicher auflösbar sind, werden als
