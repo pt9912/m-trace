@@ -72,8 +72,8 @@ In Scope:
     referenziertes `SegmentURL@media` als ableitbares Media-Segment;
     fehlt es, wird nicht geraten, sondern deterministisch `skipped`.
   - Byte-Parser für ISO-BMFF-Boxen mit Nachweis mindestens von `ftyp`,
-    `moov`, `moof`, `traf` und `tfdt`; `sidx` wird erkannt, ist aber
-    kein Pflicht-Nachweis.
+    `moov`, `moof`, `traf`, `tfdt` und `mdat`; `sidx` wird erkannt,
+    ist aber kein Pflicht-Nachweis.
   - Separater bounded Binary-Segment-Loader statt Zweckentfremdung des
     bestehenden Manifest-Text-Loaders: Segment-Fetches liefern Bytes
     (`Uint8Array`), akzeptieren MP4-/Byte-Content-Types, nutzen aber
@@ -82,7 +82,12 @@ In Scope:
   - Strikte Fetch-/Read-Grenzen: Default `maxSegmentBytes=2_000_000`,
     Default `maxBinarySegments=6`, Timeout/Redirects aus
     `AnalyzeOptions.fetch`, und deterministische `skipped`-/`failed`-
-    Ergebnisse bei Limit-Verstößen.
+    Ergebnisse bei Limit-Verstößen. Der Default deckt bewusst bis zu
+    drei DASH-AdaptationSets mit je Init- und erstem Media-Segment ab;
+    größere Pflichtprüfmengen werden nicht als bestanden gewertet,
+    sondern bekommen für die überschüssigen Checks
+    `not_planned_due_to_limit`, sofern der Aufrufer
+    `maxBinarySegments` nicht erhöht.
 - Additives Result-Schema für `details.cmaf` unter den bestehenden
   HLS- und DASH-Detail-Objekten, ohne bestehende HLS-/DASH-Felder zu
   brechen und ohne neues Top-Level-Feld im Analyzer/API-Envelope.
@@ -223,10 +228,10 @@ DoD:
     übersprungen.
   - Binäre Positive-Fixtures: minimales CMAF-Init-Segment mit `ftyp` +
     `moov` und minimales fragmentiertes Media-Segment mit `moof` /
-    `traf` / `tfdt`.
+    `traf` / `tfdt` / `mdat`.
   - Binäre Negativ-Fixtures: fehlendes oder inkompatibles `ftyp`,
-    fehlendes `moof`, fehlendes `tfdt`, ungültige Box-Größe und Segment
-    über dem konfigurierten Größenlimit.
+    fehlendes `moof`, fehlendes `tfdt`, fehlendes `mdat`, ungültige
+    Box-Größe und Segment über dem konfigurierten Größenlimit.
 
 ---
 
@@ -313,10 +318,10 @@ DoD:
     `failureCode?`, `message?`, `contentType?`, `bytesRead?` und
     `boxes[]` mit Box-Ankern. `boxes[]` auf Binary-Ebene sammelt die
     eindeutigen Box-Nachweise mit mindestens `segmentAnchor`, `path`
-    (z. B. `moof/traf/tfdt`), `type`, `offset` und `size`. `failures[]`
-    hat mindestens `code`, `level`, `message`, `manifestAnchor?`,
-    `segmentAnchor?` und `boxPath?`. Diese Feldnamen sind Contract-
-    Bestandteil und werden in Fixtures gepinnt.
+    (z. B. `moof/traf/tfdt` oder `mdat`), `type`, `offset` und `size`.
+    `failures[]` hat mindestens `code`, `level`, `message`,
+    `manifestAnchor?`, `segmentAnchor?` und `boxPath?`. Diese Feldnamen
+    sind Contract-Bestandteil und werden in Fixtures gepinnt.
   - `note?: string` darf knapp beschreiben, welcher Anteil nur
     manifestbasiert und welcher Anteil binär verifiziert wurde; Pflicht
     ist diese Klarstellung in Doku und README, nicht in jedem JSON-
@@ -326,8 +331,12 @@ DoD:
   `cmaf.binary.enabled`, `cmaf.binary.maxSegmentBytes` und
   `cmaf.binary.maxBinarySegments`. Defaults sind dokumentiert:
   `enabled:true`, `maxSegmentBytes=2_000_000`,
-  `maxBinarySegments=6`. Diese Limits gelten zusätzlich zu
-  `fetch.maxBytes`, das ausschließlich das Manifest-Body-Limit bleibt.
+  `maxBinarySegments=6`. Die `maxBinarySegments`-Defaultgrenze deckt
+  bewusst höchstens drei DASH-AdaptationSets mit je Init- und Media-
+  Prüfung ab; größere Pflichtprüfmengen bleiben auditierbar, verhindern
+  aber `binary.status:"passed"`, sofern der Aufrufer das Limit nicht
+  erhöht. Diese Limits gelten zusätzlich zu `fetch.maxBytes`, das
+  ausschließlich das Manifest-Body-Limit bleibt.
 - [ ] `AnalyzeOptions.fetch`-Semantik ist in
   `packages/stream-analyzer/src/types/input.ts`,
   `docs/user/stream-analyzer.md` und
@@ -546,6 +555,18 @@ DoD:
   Variablen sind in `0.10.0` nicht ableitbar und führen im Binary-Pfad
   zu `dash_template_unresolved`. Die manifestbasierten Signale bleiben
   trotzdem sichtbar.
+- [ ] DASH-`BaseURL`-Auflösung ist deterministisch fixiert und getestet:
+  pro Ebene (`MPD`, `Period`, `AdaptationSet`, `Representation`) wird
+  höchstens ein aktiver `BaseURL`-Wert verwendet, nämlich der erste
+  sichere Eintrag in Manifest-Reihenfolge. Relative `BaseURL`-Werte
+  werden gegen die bereits geerbte sichere Base-URL aufgelöst; absolute
+  `http:`-/`https:`-Werte ersetzen die geerbte Base nur, wenn sie die
+  Segment-URI-Sicherheitsregeln erfüllen. Mehrere `BaseURL`-Alternativen
+  werden in `0.10.0` nicht als Fallback-Set ausprobiert. Gibt es auf
+  einer Ebene nur unsichere, nicht auflösbare oder Nicht-HTTP(S)-
+  `BaseURL`-Werte, bleibt das Manifest-Signal sichtbar, der betroffene
+  Binary-Check wird aber `skipped` mit `segment_uri_blocked` oder
+  `segment_base_url_missing` gemäß der Präzedenz aus Tranche 1.
 - [ ] DASH-Repräsentationsauswahl für den Binary-Pfad ist
   deterministisch getestet: pro `Period`/`AdaptationSet` mit CMAF-
   Signal wird in Manifest-Reihenfolge genau eine Representation
@@ -562,6 +583,8 @@ DoD:
   ohne Initialization und ohne fMP4-URI-Muster.
 - [ ] DASH-Tests pinnen Vererbung und URI-Auflösung getrennt:
   `BaseURL` auf MPD-/Period-/AdaptationSet-/Representation-Ebene,
+  erste-sichere-`BaseURL`-Auswahl bei mehreren Einträgen, relative
+  BaseURL-Ketten, unsichere BaseURL-Skip-Codes,
   `SegmentTemplate`-Vererbung und Override-Verhalten, `SegmentList`
   mit `Initialization@sourceURL` und `SegmentURL@media`, sowie
   mehrperiodige stabile Manifestanker bei fehlenden IDs.
@@ -584,7 +607,8 @@ DoD:
   - erkennt ungültige, überlappende oder nicht fortschreitende Boxen,
   - bricht bei konfiguriertem Byte-Limit deterministisch ab,
   - liefert stabile Box-Anker (`segment:init:ftyp`,
-    `segment:media[0]:moof/traf/tfdt`) für `details.cmaf.binary`.
+    `segment:media[0]:moof/traf/tfdt`, `segment:media[0]:mdat`) für
+    `details.cmaf.binary`.
 - [ ] Bounded Binary-Segment-Loader implementiert getrennt von
   `loadManifest`:
   - gibt Bytes zurück, nicht UTF-8-Text,
@@ -603,16 +627,25 @@ DoD:
     Top-Level-Analysefehler.
 - [ ] CMAF-Init-Prüfung validiert mindestens:
   - `ftyp` vorhanden,
-  - Brand-Policy ist als getestete Allowlist umgesetzt: `cmfc` und
-    `cmfs` gelten als CMAF-kompatible Brands; generische MP4-/ISO-
-    BMFF-Brands wie `isom`, `iso6`, `mp41` oder `mp42` reichen allein
-    nicht für `status:"passed"`,
+  - Brand-Policy ist als getestete Allowlist umgesetzt: `ftyp.major_brand`
+    oder mindestens ein Eintrag aus `ftyp.compatible_brands` muss `cmfc`
+    oder `cmfs` sein. `cmfc` steht für CMAF-Track-/Header-Scope,
+    `cmfs` für CMAF-Segment-Scope; für die begrenzte Init-Segment-
+    Prüfung in `0.10.0` genügt einer dieser beiden Brands an einer der
+    genannten `ftyp`-Positionen. Generische MP4-/ISO-BMFF-Brands wie
+    `isom`, `iso6`, `mp41` oder `mp42` dürfen zusätzlich vorkommen,
+    reichen aber allein nicht für `status:"passed"`. Fixtures pinnen
+    mindestens diese Fälle: `cmfc` als `major_brand`, `cmfs` nur in
+    `compatible_brands`, ausschließlich generische Brands und fehlendes
+    `ftyp`,
   - `moov` vorhanden,
   - keine offensichtlich widersprüchliche Top-Level-Box-Struktur.
 - [ ] CMAF-Media-Fragment-Prüfung validiert mindestens:
   - `moof` vorhanden,
   - mindestens ein `traf` unter `moof`,
   - `tfdt` unter `traf` vorhanden,
+  - `mdat` als Media-Data-Box vorhanden, damit `status:"passed"` nicht
+    allein auf Fragment-Metadaten ohne Nutzdaten basiert,
   - optionales `sidx` wird erkannt und berichtet, aber nicht als Muss
     gewertet.
 - [ ] Segment-Resolver lädt nur manifestreferenzierte Init-/Media-
@@ -641,12 +674,13 @@ DoD:
   `$Number%0Nd$` mit `startNumber` bzw. Default `1`. `$Time$`,
   `SegmentTimeline`-abhängige Auflösung oder unbekannte Variablen werden
   nicht geraten, sondern als `skipped` mit Failure-Code
-  `dash_template_unresolved` gemeldet. Fehlt bei `SegmentList` die
-  Media-Referenz vollständig, wird `segment_reference_missing`
-  gemeldet.
+  `dash_template_unresolved` gemeldet. `BaseURL` wird nach der
+  erste-sichere-`BaseURL`-Regel aus Tranche 3 aufgelöst; mehrere
+  Alternativen werden nicht durchprobiert. Fehlt bei `SegmentList` die
+  Media-Referenz vollständig, wird `segment_reference_missing` gemeldet.
 - [ ] Positive und negative Binär-Fixtures decken Init, Media, fehlende
-  Pflichtboxen, kaputte Boxgrößen, Größenlimit und nicht auflösbare
-  Segment-URIs ab.
+  Pflichtboxen inklusive `mdat`, kaputte Boxgrößen, Größenlimit und
+  nicht auflösbare Segment-URIs ab.
 - [ ] Tests pinnen Status-Mapping:
   - `passed` nur bei bestandenen manifestseitig verpflichtenden Init-
     und Media-Prüfungen,
