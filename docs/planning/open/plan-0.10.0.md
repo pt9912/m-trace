@@ -54,7 +54,10 @@ In Scope:
 - Begrenzte binäre CMAF-Konformitätsprüfung für ausgewählte,
   manifestreferenzierte Init- und Media-Segmente:
   - HLS: `EXT-X-MAP`-Init-Segment plus erstes fMP4-Media-Segment je
-    analysiertem Media-Manifest.
+    analysiertem Media-Manifest. HLS-Byte-Range-Segmente werden in
+    `0.10.0` nicht per HTTP Range geladen; `EXT-X-MAP` mit
+    `BYTERANGE` und `#EXT-X-BYTERANGE` auf dem ersten fMP4-Media-
+    Segment führen deterministisch zu `skipped`.
   - DASH: `SegmentTemplate@initialization` oder
     `SegmentList/Initialization@sourceURL` plus erstes ableitbares
     fMP4-Media-Segment je deterministisch ausgewählter
@@ -105,11 +108,16 @@ In Scope:
 - Binäre Segment-Fetches werden für `kind:"url"` gegen die finale
   Manifest-URL und für `kind:"text"` nur bei gesetzter, sicherer
   `http:`-/`https:`-`baseUrl` ausgeführt. Text-Input ohne `baseUrl`
-  behält manifestbasierte Signale, bekommt aber
+  behält manifestbasierte Signale; sobald eine manifestseitig
+  vorhandene relative Segment-Referenz deshalb nicht auflösbar ist,
+  bekommt die betroffene Prüfung
   `details.cmaf.binary.status:"skipped"` mit Failure-Code
-  `segment_base_url_missing`. Text-Input mit `file:`- oder anderem
-  Nicht-HTTP(S)-`baseUrl` wird nicht lokal gelesen; betroffene Segment-
-  Prüfungen werden deterministisch als `skipped` mit Failure-Code
+  `segment_base_url_missing`. Fehlt dagegen bereits die
+  manifestseitige Init-/Media-Referenz, gewinnt
+  `segment_reference_missing` gemäß der Failure-Code-Präzedenz aus
+  Tranche 1. Text-Input mit `file:`- oder anderem Nicht-HTTP(S)-
+  `baseUrl` wird nicht lokal gelesen; betroffene Segment-Prüfungen
+  werden deterministisch als `skipped` mit Failure-Code
   `segment_uri_blocked` berichtet.
 
 Out of scope:
@@ -209,6 +217,10 @@ DoD:
     und `BYTERANGE`; `BYTERANGE` wird in `0.10.0` erkannt und
     dokumentiert, aber nicht binär geladen, sondern als `skipped`
     berichtet.
+  - HLS-Media-Byte-Range-Fixture mit `#EXT-X-BYTERANGE` vor dem ersten
+    fMP4-Media-Segment; das Manifest-Signal bleibt sichtbar, die Media-
+    Segment-Prüfung wird mit `hls_media_byterange_unsupported`
+    übersprungen.
   - Binäre Positive-Fixtures: minimales CMAF-Init-Segment mit `ftyp` +
     `moov` und minimales fragmentiertes Media-Segment mit `moof` /
     `traf` / `tfdt`.
@@ -343,6 +355,10 @@ DoD:
     `SegmentURL@media`.
   - `hls_map_byterange_unsupported`: `skipped` für HLS `EXT-X-MAP` mit
     `BYTERANGE`.
+  - `hls_media_byterange_unsupported`: `skipped` für HLS-
+    Media-Segmente mit `#EXT-X-BYTERANGE`, weil `0.10.0` keine HTTP-
+    Range-Requests ausführt und nicht die ganze Ressource als Segment
+    fehlinterpretieren darf.
   - `dash_template_unresolved`: `skipped`, wenn DASH-Template-Variablen
     in `0.10.0` nicht deterministisch auflösbar sind.
   - `segment_fetch_failed`: `skipped` bei Segment-Fetch-Timeout oder
@@ -364,18 +380,40 @@ DoD:
   Analyzer im sicheren/bounded Scope keine binäre Konformitätsaussage
   treffen konnte. Die `segmentsChecked[]`-Einträge tragen dieselben
   Codes; der Gesamtstatus aggregiert nach Fehler vor Skip vor Pass.
+  Bei mehreren möglichen Skip-Ursachen gilt deterministisch diese
+  Präzedenz:
+  1. Caller-/Options-Entscheidung: `binary_disabled`.
+  2. Manifest-Scope fehlt oder ist nicht ableitbar:
+     `segment_reference_missing`, `dash_template_unresolved`,
+     `hls_map_byterange_unsupported`,
+     `hls_media_byterange_unsupported`.
+  3. Base-URL-/URI-Sicherheitsauflösung:
+     `segment_base_url_missing`, `segment_uri_blocked`.
+  4. Fetch-/Read-Grenzen nach sicherer Auflösung:
+     `segment_fetch_failed`, `segment_content_type_unsupported`,
+     `segment_too_large`, `not_planned_due_to_limit`.
+  Damit erzeugt z. B. DASH MP4-MIME-only ohne Initialization-/Media-
+  Referenzen auch bei Text-Input ohne `baseUrl`
+  `segment_reference_missing`, während ein manifestseitig vorhandenes
+  relatives Segment ohne sichere `baseUrl` zu
+  `segment_base_url_missing` führt.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] Options-Wire-Vertrag ist festgelegt: `cmaf.binary.*` ist Public-
   TypeScript-API und wird vom analyzer-service als optionales
   Request-Feld akzeptiert, typ-/range-gefiltert und an
   `analyzeManifest` weitergereicht. `apps/api` nutzt in `0.10.0`
-  standardmäßig die Analyzer-Defaults; wenn `/api/analyze` ebenfalls
-  `cmaf.binary.*` entgegennehmen soll, werden HTTP-Request-Schema,
-  Domain-Request, driven Adapter, öffentliche Doku und Tests in
-  derselben Tranche erweitert. Ohne diese explizite Erweiterung darf
-  der API-Pfad nicht behaupten, caller-setzbare CMAF-Binary-Limits
-  durchzureichen.
+  standardmäßig die Analyzer-Defaults, solange der öffentliche
+  `/api/analyze`-Request diese Optionen nicht end-to-end modelliert.
+  Wichtig: Der API-Pfad darf einen vorhandenen `cmaf`-/`cmaf.binary`-
+  Request-Block nicht still ignorieren. Entweder werden HTTP-Request-
+  Schema, Domain-Request, driven Adapter, öffentliche Doku und Tests in
+  derselben Tranche erweitert und die Optionen durchgereicht, oder
+  `/api/analyze` lehnt Requests mit `cmaf`-/`cmaf.binary`-Block
+  explizit mit `400 invalid_request` ab. Stiller Fallback auf Defaults
+  ist verboten, weil sonst z. B. caller-seitig gesetztes
+  `enabled:false` ignoriert und trotzdem Segment-Fetches ausgelöst
+  werden könnten.
 - [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
   synchron aktualisiert; der Stream-Analyzer-Public-API-Check im
   Paket-`lint` bleibt grün. Falls `make generated-drift-check` den
@@ -432,6 +470,12 @@ DoD:
   Range geladen. Das Manifest-Signal bleibt sichtbar; die binäre Init-
   Prüfung bekommt `status:"skipped"` bzw. einen Segment-Einzelstatus
   `skipped` mit Failure-Code `hls_map_byterange_unsupported`.
+- [ ] `#EXT-X-BYTERANGE` auf dem ersten fMP4-Media-Segment wird in
+  `0.10.0` ebenfalls nicht per HTTP Range geladen und nicht durch einen
+  Vollressourcen-Download ersetzt. Das Manifest-Signal bleibt sichtbar;
+  die Media-Segment-Prüfung bekommt `status:"skipped"` bzw. einen
+  Segment-Einzelstatus `skipped` mit Failure-Code
+  `hls_media_byterange_unsupported`.
 - [ ] Segment-URI-Muster `.m4s`/`.cmfv`/`.cmfa` werden als
   schwächere manifestbasierte Hinweise erfasst.
 - [ ] `EXT-X-INDEPENDENT-SEGMENTS` und Codec-/Map-Kontext werden als
@@ -584,7 +628,10 @@ DoD:
   nachvollziehbarem Failure-Code, kein stiller Erfolg.
   `EXT-X-MAP`-Attribute werden aus der strukturierten Parser-Ausgabe
   genutzt; erneutes Ad-hoc-Parsen der Manifestzeile im Binary-Pfad ist
-  nicht zulässig.
+  nicht zulässig. `EXT-X-MAP` mit `BYTERANGE` und
+  `#EXT-X-BYTERANGE` vor dem ersten fMP4-Media-Segment werden nicht
+  per Vollressourcen-Download ersetzt, sondern als Skip-Codes aus
+  Tranche 1 berichtet.
 - [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
   fMP4-Media-Segment je deterministisch ausgewählter Representation
   aus Tranche 3. Ableitbar sind nur explizite
@@ -613,6 +660,7 @@ DoD:
   - `binary_disabled`, `segment_base_url_missing`,
     `segment_uri_blocked`, `segment_reference_missing`,
     `hls_map_byterange_unsupported`,
+    `hls_media_byterange_unsupported`,
     `dash_template_unresolved`, `segment_fetch_failed`,
     `segment_content_type_unsupported`, `segment_too_large`,
     `not_planned_due_to_limit`, `cmaf_box_validation_failed` und
@@ -652,9 +700,11 @@ DoD:
   kann.
 - [ ] `/api/analyze`-Vertrag ist bewusst entschieden und getestet:
   entweder bleibt `cmaf.binary.*` im öffentlichen API-Request
-  unsupported und der API-Pfad nutzt Defaults, oder Request-Payload,
+  unsupported und Requests mit vorhandenem `cmaf`-/`cmaf.binary`-Block
+  werden mit `400 invalid_request` abgelehnt, oder Request-Payload,
   Domain-Modell und driven Adapter leiten die drei Binary-Optionen
-  explizit an den analyzer-service durch. Der gewählte Pfad steht in
+  explizit an den analyzer-service durch. Stilles Ignorieren gesetzter
+  CMAF-Binary-Optionen ist nicht zulässig. Der gewählte Pfad steht in
   `docs/user/stream-analyzer.md` und in den HTTP-Contract-Tests.
 - [ ] HTTP-Contract-/Adapter-Tests decken HLS-CMAF und DASH-CMAF ab.
   Mindestens ein Test pinnt die öffentliche `/api/analyze`-Antwort mit
