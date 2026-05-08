@@ -53,7 +53,10 @@ In Scope:
 - Additives Result-Schema für `details.cmaf` unter den bestehenden
   HLS- und DASH-Detail-Objekten, ohne bestehende HLS-/DASH-Felder zu
   brechen und ohne neues Top-Level-Feld im Analyzer/API-Envelope.
-  Jedes Signal trägt eine Confidence (`manifest` oder `inferred`),
+  `details.cmaf` ist optional und wird nur ausgegeben, wenn mindestens
+  ein CMAF-Signal vorliegt; Negativ-/Regression-Fixtures ohne CMAF-
+  Signale behalten ihre bisherige Detail-Form ohne `cmaf`. Jedes
+  einzelne Signal trägt eine Confidence (`manifest` oder `inferred`),
   damit manifestbasierte Indizien nicht als binäre
   Konformitätsaussage missverstanden werden. HLS-`unknown` mit
   `details:null` bleibt ohne `cmaf`.
@@ -142,18 +145,29 @@ DoD:
 - [ ] `packages/stream-analyzer/src/types/result.ts` um ein
   additives `CmafSignalSummary`-Modell ergänzt, das ausschließlich in
   den bestehenden Detail-Objekten lebt:
-  `MasterPlaylistDetails.cmaf`, `MediaPlaylistDetails.cmaf` und
-  `DashManifestDetails.cmaf`. Der Analyzer-Envelope bekommt kein
-  Top-Level-`cmaf`; `UnknownAnalysisResult.details` bleibt `null`.
+  `MasterPlaylistDetails.cmaf?`, `MediaPlaylistDetails.cmaf?` und
+  `DashManifestDetails.cmaf?`. `cmaf` wird ausgelassen, wenn keine
+  CMAF-Signale vorliegen; es wird nicht als `present:false`-Platzhalter
+  in bestehenden Negativ-Details serialisiert. Der Analyzer-Envelope
+  bekommt kein Top-Level-`cmaf`; `UnknownAnalysisResult.details` bleibt
+  `null`.
   Modellfelder:
-  - `present: boolean`
+  - `present: boolean` (bei ausgegebenem Objekt immer `true`; die
+    Abwesenheit von `cmaf` ist der negative Fall)
   - `source: "hls" | "dash" | "mixed"`
-  - `confidence: "manifest" | "inferred"`
-  - `signals[]` mit Code, Severity und Manifest-Anker.
+  - `confidence: "manifest" | "inferred"` als aggregierte stärkste
+    Confidence des Summary-Objekts.
+  - `signals[]` mit Code, Severity, Manifest-Anker und eigener
+    `confidence: "manifest" | "inferred"`, damit gemischte starke und
+    schwache Indizien auditierbar bleiben.
 - [ ] Public API exportiert die neuen CMAF-Typen über
   `packages/stream-analyzer/src/index.ts`.
 - [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
-  synchron aktualisiert; `make generated-drift-check` bleibt grün.
+  synchron aktualisiert; der Stream-Analyzer-Public-API-Check im
+  Paket-`lint` bleibt grün. Falls `make generated-drift-check` den
+  Stream-Analyzer-Snapshot in dieser Tranche zusätzlich als
+  Generated-Artefakt aufnehmen soll, werden `Makefile`-Kommentar,
+  Prüfkommando und Drift-Meldung im selben Commit erweitert.
 - [ ] Bestehende HLS-/DASH-Result-Fixtures bleiben byte-kompatibel
   oder werden mit dokumentierter additiver Schema-Erweiterung
   aktualisiert.
@@ -269,6 +283,12 @@ DoD:
 - [ ] `make build` grün.
 - [ ] `make gates` grün.
 - [ ] `make smoke-cli` grün.
+- [ ] Release-Smokes laut [`docs/user/releasing.md`](../../user/releasing.md)
+  §2 vollständig geprüft oder begründet gewaved:
+  `make smoke-analyzer`, `make smoke-observability`, `make browser-e2e`,
+  `make smoke-mediamtx`, `make smoke-srt`, `make smoke-srt-health`,
+  `make smoke-dash`, `make smoke-webrtc-prep`,
+  `make smoke-webrtc-stats-drift` und `make smoke-srs`.
 - [ ] `make security-gates` grün oder CI-Job `Security gates` grün
   dokumentiert.
 - [ ] Wave-2-Quality-Gates laut
