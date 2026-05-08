@@ -119,6 +119,11 @@ DoD:
 - [ ] RAK-60..RAK-63 im Lastenheft ergänzt.
 - [ ] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
   `4a.16 Patch 1.1.13` ergänzt.
+- [ ] [`roadmap.md`](../in-progress/roadmap.md) vor erster
+  Implementierung von „NF-13-Vollumsetzung" auf manifestbasierte
+  CMAF-Signal-Analyse / NF-13-Teiladressierung korrigiert, damit
+  Folgephasen-Status und Plan-Scope nicht während der Umsetzung
+  widersprechen.
 - [ ] Fixture-Inventar angelegt:
   - HLS CMAF VOD mit `EXT-X-MAP` und `.m4s`-Segmenten.
   - HLS TS als Negativ-/Regression-Pfad.
