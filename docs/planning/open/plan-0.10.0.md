@@ -9,12 +9,13 @@
 > `1.1.13`, neuer RAK-Gruppe `RAK-60`..`RAK-63`,
 > RAK-Verifikationsmatrix und Tag `v0.10.0`.
 >
-> **Ziel**: NF-13 (`CMAF-Analyse`, Muss) wird im ersten Schritt als
-> additive, manifestbasierte CMAF-Signal-Analyse im Stream Analyzer
-> umgesetzt. `F-73` bleibt der historische Vorbereitungsschritt; dieser
-> Plan liefert keine binäre CMAF-Konformitätsprüfung, sondern macht
-> CMAF-Indizien auditierbar und dokumentiert die Grenze zur späteren
-> Segment-/Box-Analyse.
+> **Ziel**: NF-13 (`CMAF-Analyse`, Muss) wird in `0.10.0` bewusst nur
+> als additive, manifestbasierte CMAF-Signal-Analyse im Stream Analyzer
+> adressiert. `F-73` bleibt der historische Vorbereitungsschritt; NF-13
+> wird mit diesem Plan **nicht vollständig geschlossen**, weil keine
+> binäre CMAF-Konformitätsprüfung geliefert wird. Der Release macht
+> CMAF-Indizien auditierbar und hält die spätere Segment-/Box-Analyse
+> als Folge-Muss offen.
 >
 > **Bezug**:
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) F-73, NF-13,
@@ -24,7 +25,8 @@
 > [`packages/stream-analyzer/`](../../../packages/stream-analyzer/);
 > [`apps/api/hexagon/domain/stream_analysis.go`](../../../apps/api/hexagon/domain/stream_analysis.go).
 >
-> **Nachfolger**: offen.
+> **Nachfolger**: Folge-Plan für binäre CMAF-/ISO-BMFF-Segment- und
+> Box-Analyse zur vollständigen NF-13-Schließung.
 
 ## 0. Konvention
 
@@ -48,11 +50,13 @@ In Scope:
 - DASH/CMAF-Erkennung über `mimeType` `video/mp4`/`audio/mp4`/
   `application/mp4`, `SegmentTemplate`/`SegmentList`-Initialisierung
   und Representation-Metadaten.
-- Additives Result-Schema für `cmaf`-Signals unter HLS- und DASH-
-  Ergebnissen, ohne bestehende HLS-/DASH-Felder zu brechen. Jedes
-  Signal trägt eine Confidence (`manifest` oder `inferred`), damit
-  manifestbasierte Indizien nicht als binäre Konformitätsaussage
-  missverstanden werden.
+- Additives Result-Schema für `details.cmaf` unter den bestehenden
+  HLS- und DASH-Detail-Objekten, ohne bestehende HLS-/DASH-Felder zu
+  brechen und ohne neues Top-Level-Feld im Analyzer/API-Envelope.
+  Jedes Signal trägt eine Confidence (`manifest` oder `inferred`),
+  damit manifestbasierte Indizien nicht als binäre
+  Konformitätsaussage missverstanden werden. HLS-`unknown` mit
+  `details:null` bleibt ohne `cmaf`.
 - CLI/API-Durchleitung und Doku für die neuen CMAF-Signale.
 
 Out of scope:
@@ -77,12 +81,14 @@ Out of scope:
 ### 0.3 Lastenheft-Patch `1.1.13` (Vorschlag)
 
 Der Patch ergänzt `spec/lastenheft.md` mit RAK-60..RAK-63 und
-markiert NF-13 als in `0.10.0` manifestbasiert adressiert. Eine
-spätere binäre CMAF-Konformitätsprüfung bleibt Folge-Scope.
+markiert NF-13 als in `0.10.0` nur manifestbasiert teiladressiert.
+NF-13 bleibt bis zur späteren binären CMAF-Konformitätsprüfung offen;
+der Patch darf die Muss-Anforderung nicht als vollständig erfüllt
+markieren.
 
 | RAK | Priorität | Inhalt |
 | --- | --------- | ------ |
-| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse für HLS/fMP4 und DASH/CMAF; Segment-/MP4-Box-Parsing bleibt Folge-Scope und darf nicht als erfüllt markiert werden. |
+| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse für HLS/fMP4 und DASH/CMAF; Segment-/MP4-Box-Parsing bleibt Folge-Scope, NF-13 bleibt bis dahin offen und darf nicht als vollständig erfüllt markiert werden. |
 | RAK-61 | Muss | HLS-CMAF-Signale: `EXT-X-MAP`, fMP4-Segmentmuster und relevante Tags erzeugen stabile `cmaf`-Signals mit Confidence-Semantik im Analyseergebnis. |
 | RAK-62 | Muss | DASH-CMAF-Signale: MPD-`mimeType`, `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `cmaf`-Signals mit Confidence-Semantik; MP4-MIME allein gilt nur als Indiz, nicht als CMAF-Konformitätsnachweis. |
 | RAK-63 | Muss | CLI, API-Adapter, Contract-Fixtures und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. |
@@ -129,7 +135,12 @@ ausgebaut wird.
 DoD:
 
 - [ ] `packages/stream-analyzer/src/types/result.ts` um ein
-  additives `cmaf`-Signalmodell ergänzt, z. B.:
+  additives `CmafSignalSummary`-Modell ergänzt, das ausschließlich in
+  den bestehenden Detail-Objekten lebt:
+  `MasterPlaylistDetails.cmaf`, `MediaPlaylistDetails.cmaf` und
+  `DashManifestDetails.cmaf`. Der Analyzer-Envelope bekommt kein
+  Top-Level-`cmaf`; `UnknownAnalysisResult.details` bleibt `null`.
+  Modellfelder:
   - `present: boolean`
   - `source: "hls" | "dash" | "mixed"`
   - `confidence: "manifest" | "inferred"`
@@ -143,6 +154,11 @@ DoD:
   aktualisiert.
 - [ ] Contract-Fixtures in `spec/contract-fixtures/analyzer/` und
   Go-Testdata-Kopien für API-Adapter ergänzt.
+- [ ] Go-Adapter-Kontrakt ist explizit geprüft: weil `cmaf` in
+  `details` liegt, reichen `apps/api/adapters/driven/streamanalyzer`
+  und `apps/api/adapters/driving/http` die Signale über
+  `EncodedDetails`/`details` unverändert durch; kein unbekanntes
+  Top-Level-Feld darf still verworfen werden.
 - [ ] Backward-Compatibility-Notiz in Stream-Analyzer-README:
   bestehende `analyzerKind:"hls"`/`"dash"` bleiben unverändert;
   CMAF ist ein Signal, kein dritter Manifesttyp.
@@ -162,12 +178,17 @@ Ziel: HLS-Manifeste mit CMAF/fMP4-Struktur werden zuverlässig erkannt.
 DoD:
 
 - [ ] Media-Playlist-Parser erkennt `EXT-X-MAP` als starkes
-  CMAF/fMP4-Signal.
+  CMAF/fMP4-Signal und schreibt es nach
+  `MediaPlaylistDetails.cmaf.signals[]`.
 - [ ] Segment-URI-Muster `.m4s`/`.cmfv`/`.cmfa` werden als
   schwächere manifestbasierte Hinweise erfasst.
 - [ ] `EXT-X-INDEPENDENT-SEGMENTS` und Codec-/Map-Kontext werden als
   zusätzliche Signale dokumentiert, aber nicht allein als CMAF-
   Nachweis gewertet.
+- [ ] Master-Playlist-Parser schreibt ein konservatives
+  `MasterPlaylistDetails.cmaf`: Variant-URI-/Codec-Hinweise dürfen
+  `present` nur mit `confidence:"inferred"` setzen; starke
+  `EXT-X-MAP`-Signale entstehen erst in Media-Playlists.
 - [ ] Tests decken positive, negative und gemischte HLS-Fälle ab.
 - [ ] Bestehender HLS-Master-/Media-Pfad bleibt grün.
 
@@ -185,6 +206,15 @@ DoD:
   Konformitätsnachweis.
 - [ ] `SegmentTemplate@initialization`, `SegmentList/Initialization`
   und `Representation`-Codecs fließen in die Signalbewertung ein.
+- [ ] DASH-Schema und Parser erfassen Initialization-Informationen
+  explizit und vererbungsbewusst mindestens auf
+  `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene:
+  `SegmentTemplate@initialization`, `SegmentTemplate@media`,
+  `SegmentList/Initialization@sourceURL` sowie relevante
+  `BaseURL`-/URI-Muster. Diese Felder können als interne Parse-
+  Metadaten oder additive `details`-Felder umgesetzt werden, müssen
+  aber in `DashManifestDetails.cmaf` nachvollziehbare Manifest-Anker
+  erzeugen.
 - [ ] Confidence-Regeln sind getestet: MP4-MIME allein erzeugt nur
   `confidence:"inferred"`; Initialization-Informationen plus fMP4-
   Segmentmuster erzeugen ein stärkeres manifestbasiertes Signal.
@@ -201,8 +231,10 @@ Ziel: CMAF-Signale sind über alle bestehenden Analyzer-Pfade nutzbar.
 
 DoD:
 
-- [ ] `apps/api`-StreamAnalyzer-Adapter reicht `cmaf`-Signale im
-  Domain-Modell additiv durch.
+- [ ] `apps/api`-StreamAnalyzer-Adapter reicht `details.cmaf` im
+  bestehenden Domain-Modell über `EncodedDetails` additiv durch; Tests
+  prüfen, dass HLS-CMAF und DASH-CMAF im HTTP-`analysis.details.cmaf`
+  sichtbar bleiben.
 - [ ] HTTP-Contract-/Adapter-Tests decken HLS-CMAF und DASH-CMAF ab.
 - [ ] CLI gibt die neuen Signale unverändert im JSON aus.
 - [ ] `make smoke-cli` um mindestens eine CMAF-HLS- oder CMAF-DASH-
@@ -223,7 +255,7 @@ DoD:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; Segment-/Box-Parsing ausdrücklich offen | [ ] |
+| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; Segment-/Box-Parsing ausdrücklich offen; NF-13 nicht vollständig geschlossen | [ ] |
 | RAK-61 | Muss | HLS-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, CLI-Smoke | [ ] |
 | RAK-62 | Muss | DASH-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, API-Contract | [ ] |
 | RAK-63 | Muss | API-/CLI-/Doku-Nachweise, Contract-Fixtures | [ ] |
