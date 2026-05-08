@@ -236,11 +236,14 @@ DoD:
 - [ ] Master-Playlist-Parser schreibt ein konservatives
   `MasterPlaylistDetails.cmaf`: Variant-URI-Hinweise auf fMP4-/CMAF-
   Media-Playlists oder fMP4-spezifische Variant-Kontexte dürfen nur ein
-  Summary mit `confidence:"inferred"` erzeugen. `CODECS` allein erzeugt
-  kein CMAF-Signal, weil klassische TS-HLS-Master ebenfalls Codecs
-  tragen. Starke `EXT-X-MAP`-Signale entstehen erst in Media-Playlists.
-  Das Summary darf nicht als bestätigte CMAF-Konformität dokumentiert
-  werden.
+  Summary mit `confidence:"inferred"` erzeugen. Der Master-Pfad bleibt
+  eine Single-Manifest-Analyse und lädt referenzierte Media-Playlists
+  nicht nach; wenn eine Variant-URI auf eine Media-Playlist zeigt,
+  wird diese erst bei einem separaten Analyzer-Aufruf als eigenes
+  Manifest geprüft. `CODECS` allein erzeugt kein CMAF-Signal, weil
+  klassische TS-HLS-Master ebenfalls Codecs tragen. Starke
+  `EXT-X-MAP`-Signale entstehen erst in Media-Playlists. Das Summary
+  darf nicht als bestätigte CMAF-Konformität dokumentiert werden.
 - [ ] Tests decken positive, negative und gemischte HLS-Fälle ab.
 - [ ] HLS-Master-Negativfixture pinnt eine Master-Playlist mit
   `CODECS` und TS-basierten Variant-URIs/Media-Playlists; daraus darf
@@ -299,6 +302,10 @@ DoD:
   prüfen, dass HLS-CMAF und DASH-CMAF im HTTP-`analysis.details.cmaf`
   sichtbar bleiben.
 - [ ] HTTP-Contract-/Adapter-Tests decken HLS-CMAF und DASH-CMAF ab.
+  Mindestens ein Test pinnt die öffentliche `/api/analyze`-Antwort mit
+  `{analysis, session_link}`-Wrapper und verifiziert `analysis.details.cmaf`;
+  die interne driven-Adapter-Fixture alleine reicht für RAK-63 nicht
+  als HTTP-Wire-Nachweis.
 - [ ] CLI gibt die neuen Signale unverändert im JSON aus.
 - [ ] `make smoke-cli` um mindestens eine CMAF-HLS- oder CMAF-DASH-
   Probe erweitert.
