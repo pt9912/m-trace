@@ -12,7 +12,7 @@
 > **Ziel**: Die bisher als Kann geführten Ingest-Gateway-Funktionen
 > `F-46`..`F-51` werden in einen umsetzbaren Produkt-Scope geschnitten:
 > ein lokal betreibbarer Stream-Control-Pfad für Lab-Streams,
-> Stream-Keys, Ingest-Endpunkte, Routing-Regeln, Webhook-
+> Stream-Keys, Ingest-Endpunkte, Routing-Regeln, lokale
 > Lifecycle-Events und MediaMTX-nahe Konfigurationsartefakte.
 > `0.11.0` liefert ausdrücklich keine mandantenfähige Control-Plane
 > und keine produktive SaaS-Orchestrierung.
@@ -75,7 +75,7 @@ In Scope:
     exportierbar.
 - `F-49`: Stream-Lifecycle-Events vorbereiten und lokal verifizieren.
   - Eventmodell für `stream_started` und `stream_ended`.
-  - Webhook-Adapter kann Events exemplarisch empfangen oder in einem
+  - Lifecycle-Adapter kann Events exemplarisch empfangen oder in einem
     lokalen Smoke auslösen; produktive Zustellung an externe Systeme
     ist optionaler Folge-Scope.
   - Events enthalten keine Klartext-Keys.
@@ -96,6 +96,9 @@ Out of scope:
 - Keine mandantenfähige Control-Plane.
 - Keine produktive Secret-Verwaltung und keine KMS-/Vault-Integration.
 - Keine globale Stream-Key-Rotation über mehrere Deployments.
+- Keine produktive Media-Server-Auth-/Key-Enforcement-Kopplung; die
+  Key-Prüfung bleibt ein lokaler API-/Smoke-Nachweis und ist kein
+  Ersatz für spätere signierte Tokens oder MediaMTX/SRS-Auth-Hooks.
 - Keine automatische Provisionierung externer Media-Server.
 - Kein Kubernetes-Operator und keine K8s-Manifeste.
 - Keine Auth-/Token-Lifecycle-Arbeiten aus `0.12.0`.
@@ -156,10 +159,10 @@ ist die neue RAK-Gruppe.
 | RAK | Priorität | Inhalt |
 | --- | --------- | ------ |
 | RAK-65 | Muss | Ingest-Control-Scope ist normativ begrenzt: lokale/lab-nahe Stream-Verwaltung, keine Multi-Tenant-Control-Plane, keine produktive Secret-Verwaltung, keine externe Media-Server-Provisionierung. |
-| RAK-66 | Muss | Stream-Key-Verwaltung: Streams können angelegt, gelistet und rotiert werden; Klartext-Keys erscheinen nur bei Anlage/Rotation, nicht in Logs, Fixtures oder Persistenz. |
+| RAK-66 | Muss | Stream-Key-Verwaltung: Streams können angelegt, gelistet, lokal validiert und rotiert werden; Klartext-Keys erscheinen nur bei Anlage/Rotation, nicht in Logs, Fixtures oder Persistenz. |
 | RAK-67 | Muss | Ingest-Endpunkt- und Routing-Modell: `srt`/`rtmp`-Endpunkte, Stream-Ziele und einfache 1:1-Routing-Regeln sind validiert, dokumentiert und per API/Artefakt stabil beschreibbar. |
-| RAK-68 | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für den Lab-Scope können generiert oder validiert werden; bestehende Multi-Protocol-Lab-Beispiele und Smokes bleiben grün. |
-| RAK-69 | Muss | Lifecycle-Webhooks: `stream_started` und `stream_ended` besitzen ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder exemplarisch ausgelöst; Events enthalten keine Klartext-Keys. |
+| RAK-68 | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für SRT und RTMP im Lab-Scope können generiert oder validiert werden; bestehende Multi-Protocol-Lab-Beispiele und Smokes bleiben grün. |
+| RAK-69 | Muss | Lifecycle-Events: `stream_started` und `stream_ended` besitzen ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder exemplarisch ausgelöst; Events enthalten keine Klartext-Keys. |
 | RAK-70 | Muss | Doku, API-/Contract-Tests und Release-Smokes beschreiben den lokalen Stream-Control-Workflow, die Sicherheitsgrenzen und den Unterschied zu Auth-/Tenant-Folge-Scope `0.12.0`. |
 
 ### 0.6 Öffentliche API und Modell-Skizze
@@ -167,21 +170,32 @@ ist die neue RAK-Gruppe.
 Die finale Pfadwahl hängt von der Architekturentscheidung ab. Für
 Variante B werden die Lastenheft-Pfade unter `apps/api` verwendet:
 
+Alle `/api/ingest/*`-Endpunkte sind tokenpflichtig und folgen der
+bestehenden `X-MTrace-Token`-/Project-Resolver-Konvention aus
+`spec/backend-api-contract.md` §4. `project_id` wird serverseitig aus
+dem Token abgeleitet; ein optionaler Request-`project_id`-Wert darf nur
+als Konsistenzcheck dienen und muss zum Token passen. Listen, Details,
+Rotation, Key-Validierung und Lifecycle-Events sind immer auf das
+aufgelöste Project gefiltert. CORS-Preflight und Fehlerreihenfolge
+werden im API-Kontrakt mitgepflegt.
+
 | Methode | Pfad | Zweck |
 | ------- | ---- | ----- |
 | `POST` | `/api/ingest/streams` | Ingest-Stream anlegen; gibt Stream-Metadaten plus Klartext-Key genau einmal zurück |
 | `GET` | `/api/ingest/streams` | Streams listen; ohne Klartext-Key |
 | `GET` | `/api/ingest/streams/{id}` | Stream-Details, Endpunkte und Routing-Regel lesen; ohne Klartext-Key |
 | `POST` | `/api/ingest/streams/{id}/rotate-key` | Key rotieren; gibt neuen Klartext-Key genau einmal zurück |
-| `POST` | `/api/ingest/hooks/stream-started` | lokalen Start-Webhook empfangen oder Smoke-Event einspeisen |
-| `POST` | `/api/ingest/hooks/stream-ended` | lokalen Ende-Webhook empfangen oder Smoke-Event einspeisen |
+| `POST` | `/api/ingest/streams/{id}/validate-key` | lokalen Stream-Key gegen aktive Fingerprints prüfen; Antwort enthält keinen Klartext-Key und ist kein produktiver Media-Server-Auth-Pfad |
+| `POST` | `/api/ingest/hooks/stream-started` | lokales Start-Event empfangen oder Smoke-Event einspeisen |
+| `POST` | `/api/ingest/hooks/stream-ended` | lokales Ende-Event empfangen oder Smoke-Event einspeisen |
 | `GET` | `/api/ingest/media-server-config` | generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern |
 
 Pflicht-Domainobjekte:
 
 - `IngestStream`: `id`, `project_id`, `display_name`, `protocol`,
   `endpoint_id`, `target_id`, `routing_rule_id`, `status`,
-  `created_at`, `updated_at`.
+  `created_at`, `updated_at`; `project_id` stammt aus dem
+  authentifizierten Project-Kontext.
 - `StreamKey`: `stream_id`, `fingerprint`, `created_at`,
   `rotated_at?`, `disabled_at?`; kein Klartextfeld in Persistenz.
 - `IngestEndpoint`: `id`, `protocol`, `listen_host`, `listen_port`,
@@ -200,18 +214,22 @@ Validierungsregeln:
 - `protocol` ist in `0.11.0` nur `srt` oder `rtmp`.
 - Host/Port dürfen keine externen Server implizit provisionieren.
 - Routing-Ziel muss existieren und `kind:"mediamtx"` sein.
-- Rotierte oder deaktivierte Key-Fingerprints akzeptiert kein
-  Validierungspfad mehr.
+- Der lokale Key-Validierungspfad akzeptiert nur den aktuell aktiven
+  Hash/Fingerprint; rotierte oder deaktivierte Fingerprints müssen
+  stabil abgelehnt werden.
 - Fehlercodes sind stabil und werden in Contract-Tests gepinnt, z. B.
   `ingest_stream_duplicate`, `ingest_protocol_unsupported`,
   `ingest_endpoint_missing`, `ingest_route_invalid`,
-  `ingest_key_not_found`.
+  `ingest_key_not_found`, `ingest_key_invalid`.
 
 ### 0.7 Security- und Logging-Grenzen
 
 `0.11.0` darf Security nicht vortäuschen. Deshalb gilt:
 
 - Kein Auth-Versprechen jenseits bestehender API-Mechanismen.
+- `/api/ingest/*` nutzt diese bestehenden API-Mechanismen verbindlich:
+  fehlender oder ungültiger `X-MTrace-Token` führt zu `401`, und alle
+  Datenzugriffe sind project-gescoped.
 - Keine tenant-spezifischen Policies; Verweis auf `0.12.0`.
 - Stream-Keys sind lokale Lab-Secrets, nicht produktive Zugangsdaten.
 - Klartext-Keys dürfen nur im Create-/Rotate-Response und in
@@ -227,9 +245,9 @@ Validierungsregeln:
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | ⬜ |
 | 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ⬜ |
-| 2 | API-/Persistenzpfad für Streams, Listing und Key-Rotation | ⬜ |
+| 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ⬜ |
 | 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | ⬜ |
-| 4 | Lifecycle-Webhooks und lokale Lab-Verifikation | ⬜ |
+| 4 | Lifecycle-Events und lokale Lab-Verifikation | ⬜ |
 | 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
@@ -249,6 +267,9 @@ DoD:
 - [ ] RAK-65..RAK-70 im Lastenheft ergänzt.
 - [ ] `F-46`..`F-51` im Lastenheft für den `0.11.0`-Scope
   nachvollziehbar von Kann-Historie auf Release-Muss abgebildet.
+- [ ] `spec/backend-api-contract.md` erweitert die Endpunktmatrix,
+  Auth-Matrix, CORS-Preflights und Fehlerreihenfolge für
+  `/api/ingest/*`; `project_id` wird aus `X-MTrace-Token` abgeleitet.
 - [ ] Patch-Log in `docs/planning/done/plan-0.1.0.md` um
   `Patch 1.1.14` ergänzt.
 - [ ] Architekturentscheidung dokumentiert: Variante A
@@ -289,16 +310,22 @@ wurde.
 DoD:
 
 - [ ] `POST /api/ingest/streams` legt Stream, Endpoint-Bezug,
-  Routing-Regel und initialen Stream-Key an.
+  Routing-Regel und initialen Stream-Key im per Token aufgelösten
+  Project an.
 - [ ] `GET /api/ingest/streams` listet Streams ohne Klartext-Key.
 - [ ] `GET /api/ingest/streams/{id}` liefert Details ohne
   Klartext-Key.
 - [ ] `POST /api/ingest/streams/{id}/rotate-key` deaktiviert den
   alten Fingerprint und gibt den neuen Klartext-Key genau einmal
   zurück.
+- [ ] `POST /api/ingest/streams/{id}/validate-key` prüft einen
+  Kandidaten-Key lokal gegen aktive Fingerprints, lehnt rotierte/
+  deaktivierte Keys ab und gibt keinen Klartext-Key zurück.
 - [ ] Persistenz- oder Artefaktpfad hat Contract-Tests für Create,
-  List, Detail, Rotation, Duplicate, Missing und Invalid.
+  List, Detail, Rotation, Validate, Duplicate, Missing und Invalid.
 - [ ] HTTP-Fehlercodes sind stabil und im API-Kontrakt dokumentiert.
+- [ ] Alle Ingest-HTTP-Handler haben Contract-Tests für fehlenden Token,
+  ungültigen Token, Project-Mismatch und Cross-Project-Isolation.
 - [ ] Logs und Request-Metriken enthalten keine Klartext-Keys.
 - [ ] Falls SQLite genutzt wird: Migration ist versioniert, Drift-Check
   grün und In-Memory-/SQLite-Adapter teilen Contract-Tests.
@@ -316,6 +343,9 @@ DoD:
   validiert werden.
 - [ ] SRT- und RTMP-Beispiele enthalten klare Endpoint-/URL-Templates
   und trennen Ingest-URL, Playback-/HLS-URL und Control-API-URL.
+- [ ] RTMP wird im `0.11.0`-Pflichtpfad über ein additives
+  MediaMTX-Artefakt oder einen MediaMTX-Validator nachgewiesen; der
+  bestehende SRS-Pfad darf nur Kompatibilitäts-/Dokuhintergrund sein.
 - [ ] Bestehende `examples/mediamtx`, `examples/srt` und
   `examples/srs` bleiben unverändert nutzbar oder werden nur additiv
   dokumentiert.
@@ -324,7 +354,7 @@ DoD:
   Mindeststruktur, opt-in Smoke.
 - [ ] Artefakte enthalten nur Beispiel- oder redigierte Stream-Keys.
 
-## 6. Tranche 4 — Lifecycle-Webhooks und Lab-Verifikation
+## 6. Tranche 4 — Lifecycle-Events und Lab-Verifikation
 
 Ziel: Stream-Start und Stream-Ende sind als lokale Ereignisse
 modelliert und reproduzierbar verifizierbar.
@@ -333,7 +363,7 @@ DoD:
 
 - [ ] Eventmodell für `stream_started` und `stream_ended` ist
   dokumentiert.
-- [ ] Webhook-Endpoint akzeptiert valide Start-/Ende-Events und weist
+- [ ] Lifecycle-Endpoint akzeptiert valide Start-/Ende-Events und weist
   unbekannte Streams, ungültige Eventtypen und malformed Payloads
   stabil ab.
 - [ ] Lifecycle-Events enthalten `stream_id`, `observed_at`, `source`
@@ -343,7 +373,9 @@ DoD:
   reproduzierbar.
 - [ ] Falls echte MediaMTX-Hooks in `0.11.0` nicht angebunden werden,
   ist die Entscheidung als `[!]`-Folge-Scope mit RAK-69-Nachweis
-  dokumentiert: Eventmodell + exemplarische lokale Auslösung genügen.
+  dokumentiert: Eventmodell + exemplarische lokale Auslösung genügen;
+  der Plan behauptet dann keine ausgehende produktive Webhook-
+  Zustellung.
 
 ## 7. Tranche 5 — Doku, Contracts und Smokes
 
@@ -354,8 +386,8 @@ verwechseln.
 DoD:
 
 - [ ] User-Doku beschreibt den lokalen Stream-Control-Workflow:
-  Stream anlegen, Key verwenden, Route prüfen, MediaMTX-Artefakt
-  ansehen, Key rotieren.
+  Stream anlegen, Key verwenden/lokal validieren, Route prüfen,
+  MediaMTX-Artefakt ansehen, Key rotieren.
 - [ ] API-Kontrakt dokumentiert Endpunkte, Erfolgsantworten,
   Fehlercodes und Redaktionsregeln für Secrets.
 - [ ] README grenzt `0.11.0` gegen Control-Plane, Multi-Tenant-
@@ -364,8 +396,9 @@ DoD:
   verlinkt den Smoke- und Beispielpfad.
 - [ ] Relevante Smokes sind im Makefile dokumentiert; Lab-Smokes
   bleiben opt-in und werden nicht ungeprüft in `make gates` gezogen.
-- [ ] Contract-Fixtures oder API-Snapshots pinnen Create/List/Rotate
-  und mindestens einen Webhook-Fehlerfall.
+- [ ] Contract-Fixtures oder API-Snapshots pinnen
+  Create/List/Validate/Rotate, Auth-/Project-Fehler und mindestens
+  einen Lifecycle-Fehlerfall.
 - [ ] Doku enthält eine kurze Security-Grenze mit Verweis auf
   `0.12.0` für Token Lifecycle und tenant-spezifische Policies.
 
@@ -379,6 +412,14 @@ DoD:
 - [ ] `make gates` grün.
 - [ ] `make security-gates` grün oder CI-Job `Security gates` grün
   dokumentiert.
+- [ ] Release-Gate-Liste aus `docs/user/releasing.md` §2 geprüft und
+  dokumentiert, insbesondere `make sdk-performance-smoke`,
+  `make smoke-cli`, `make smoke-analyzer`,
+  `make smoke-observability`, `make browser-e2e` sowie die bestehenden
+  opt-in Lab-Smokes (`smoke-mediamtx`, `smoke-srt`,
+  `smoke-srt-health`, `smoke-dash`, `smoke-webrtc-prep`,
+  `smoke-webrtc-stats-drift`, `smoke-srs`) oder jeweils begründet
+  `[!]`.
 - [ ] Relevante opt-in Lab-Smokes dokumentiert; mindestens der neue
   Stream-Control-Smoke grün oder begründet `[!]`.
 - [ ] Wave-2-Quality-Gates vor dem Tag geprüft.
@@ -398,11 +439,11 @@ Commit-/Datei-/Testnachweis.
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
 | RAK-65 | Muss | Scope-Verankerung in Lastenheft `1.1.14`, Plan §0.1/§0.7, README-Abgrenzung. | [ ] |
-| RAK-66 | Muss | Stream-Key-API, Rotation, Persistenz ohne Klartext, Log-/Fixture-Redaktion, Tests für Create/List/Rotate. | [ ] |
+| RAK-66 | Muss | Stream-Key-API, lokale Key-Validierung, Rotation, Persistenz ohne Klartext, Log-/Fixture-Redaktion, Tests für Create/List/Validate/Rotate. | [ ] |
 | RAK-67 | Muss | Domainmodell und API-/Artefaktvertrag für `srt`/`rtmp`-Endpunkte, Targets und 1:1-Routing; Validierungstests. | [ ] |
-| RAK-68 | Muss | MediaMTX-Artefakt-Generator oder Validator, Beispiel-/Smoke-Nachweis, Regression bestehender Lab-Beispiele. | [ ] |
-| RAK-69 | Muss | Webhook-Eventmodell, lokale Start-/Ende-Verifikation, Fehlerfalltests, kein Klartext-Key in Events. | [ ] |
-| RAK-70 | Muss | User-Doku, API-Kontrakt, README-Scope-Grenze, Smokes und Release-Gates. | [ ] |
+| RAK-68 | Muss | MediaMTX-Artefakt-Generator oder Validator inklusive SRT-/RTMP-Nachweis, Beispiel-/Smoke-Nachweis, Regression bestehender Lab-Beispiele. | [ ] |
+| RAK-69 | Muss | Lifecycle-Eventmodell, lokale Start-/Ende-Verifikation, Fehlerfalltests, kein Klartext-Key in Events; echte MediaMTX-/SRS-Hooks nur bei expliziter Umsetzung. | [ ] |
+| RAK-70 | Muss | User-Doku, API-Kontrakt inklusive Auth-/Project-Scope für `/api/ingest/*`, README-Scope-Grenze, Smokes und Release-Gates. | [ ] |
 
 ## 10. Folge-Scope nach `0.11.0`
 
@@ -415,4 +456,4 @@ Commit-/Datei-/Testnachweis.
 - Später: Dashboard-UI für Stream-Control, falls API-/Doku-Pfad
   produktreif genug ist.
 - Später: echte MediaMTX-/SRS-Hook-Integration, falls Tranche 4 nur
-  exemplarische lokale Webhook-Auslösung liefert.
+  exemplarische lokale Lifecycle-Auslösung liefert.
