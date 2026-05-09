@@ -2,11 +2,11 @@
 
 ## 0. Dokumenteninformationen
 
-| Feld     | Wert                                                                                                                                                                                                                                                                                   |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dokument | Architektur `m-trace`                                                                                                                                                                                                                                                                  |
-| Stand    | `2026-04-29`                                                                                                                                                                                                                                                                           |
-| Status   | Verbindlich (Zielbild `0.1.0`)                                                                                                                                                                                                                                                         |
+| Feld     | Wert                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dokument | Architektur `m-trace`                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Stand    | `2026-04-29`                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Status   | Verbindlich (Zielbild `0.1.0`)                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Bezug    | [Lastenheft `1.1.6`](./lastenheft.md), [ADR-0001](../docs/adr/0001-backend-stack.md), [Plan-Spike](../docs/planning/done/plan-spike.md), [Plan-`0.1.0`](../docs/planning/done/plan-0.1.0.md) / [`0.1.1`](../docs/planning/done/plan-0.1.1.md) / [`0.1.2`](../docs/planning/done/plan-0.1.2.md) (Lieferstand), [Roadmap](../docs/planning/in-progress/roadmap.md), [Risiken-Backlog](../docs/planning/in-progress/risks-backlog.md) |
 
 ### 0.1 Zweck
@@ -64,7 +64,7 @@ Die Akzeptanzkriterien aus Lastenheft §14 sind die Leitplanken für dieses Doku
 ### 2.1 Systemkontext
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart LR
     Browser["Browser-Player<br/>(hls.js + Player-SDK)"]
     FFmpeg["FFmpeg / OBS<br/>(Encoder)"]
@@ -87,13 +87,13 @@ flowchart LR
 
 ### 2.2 Architekturtreiber
 
-| Treiber                              | Konsequenz                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Selbsthoster-first (Lastenheft §9.3) | einfache Deploybarkeit, Distroless-Runtime, Docker-Compose statt Kubernetes                                  |
-| OpenTelemetry-nativ (§4.2)           | OTel-SDK direkt in `apps/api`, keine vendor-spezifischen Telemetrie-Pfade                                    |
-| Cardinality-Sicherheit (§7.10)       | Prometheus nur für Aggregate, hohe Kardinalität in Trace/Event-Store                                         |
+| Treiber                              | Konsequenz                                                                                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Selbsthoster-first (Lastenheft §9.3) | einfache Deploybarkeit, Distroless-Runtime, Docker-Compose statt Kubernetes                                 |
+| OpenTelemetry-nativ (§4.2)           | OTel-SDK direkt in `apps/api`, keine vendor-spezifischen Telemetrie-Pfade                                   |
+| Cardinality-Sicherheit (§7.10)       | Prometheus nur für Aggregate, hohe Kardinalität in Trace/Event-Store                                        |
 | Player-First (§7.6)                  | Wire-Format und SDK-Budget im Lastenheft fixiert; API-Kontrakt verbindlich (`spec/backend-api-contract.md`) |
-| Hexagon-Disziplin (§7.2 F-10..F-16)  | Application-Core ohne Framework-Abhängigkeit, technische Konzepte in Adaptern                                |
+| Hexagon-Disziplin (§7.2 F-10..F-16)  | Application-Core ohne Framework-Abhängigkeit, technische Konzepte in Adaptern                               |
 
 ---
 
@@ -102,7 +102,7 @@ flowchart LR
 ### 3.1 Übersicht
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart TB
     subgraph driving["Driving Adapters"]
         HTTP["HTTP<br/>adapters/driving/http"]
@@ -144,11 +144,11 @@ Naming: in `apps/api/` stehen die Pakete unter `port/driving/` und `port/driven/
 
 `hexagon/` enthält ausschließlich frameworkfreien Code:
 
-| Paket                   | Inhalt                                                                                                                          | Regeln                                                                                                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hexagon/domain/`       | `PlaybackEvent`, `StreamSession`, `Project`, `ProjectToken`, Domain-Errors                                                      | keine HTTP-, JSON-, Prometheus-, OTel-, Persistenz-Imports                                                                                                 |
-| `hexagon/port/driving/` | `PlaybackEventInbound` (Use-Case-Eingang) und Wire-format-neutrale DTOs (`BatchInput`, `EventInput`, `SDKInput`, `BatchResult`) | keine Imports von `adapters/*`; DTOs trennen Domain von Wire-Format                                                                                        |
-| `hexagon/port/driven/`  | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher`, `Telemetry`                                            | reine Schnittstellen; Implementierungen in `adapters/driven/*`. Keine Imports von OTel, Prometheus oder anderen Adapter-Bibliotheken.                      |
+| Paket                   | Inhalt                                                                                                                          | Regeln                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hexagon/domain/`       | `PlaybackEvent`, `StreamSession`, `Project`, `ProjectToken`, Domain-Errors                                                      | keine HTTP-, JSON-, Prometheus-, OTel-, Persistenz-Imports                                                                                           |
+| `hexagon/port/driving/` | `PlaybackEventInbound` (Use-Case-Eingang) und Wire-format-neutrale DTOs (`BatchInput`, `EventInput`, `SDKInput`, `BatchResult`) | keine Imports von `adapters/*`; DTOs trennen Domain von Wire-Format                                                                                  |
+| `hexagon/port/driven/`  | `EventRepository`, `ProjectResolver`, `RateLimiter`, `MetricsPublisher`, `Telemetry`                                            | reine Schnittstellen; Implementierungen in `adapters/driven/*`. Keine Imports von OTel, Prometheus oder anderen Adapter-Bibliotheken.                |
 | `hexagon/application/`  | `RegisterPlaybackEventBatch` Use Case                                                                                           | orchestriert Validierung, Auth, Rate-Limit, Persistenz, Metriken, Telemetrie in fester Reihenfolge laut [API-Kontrakt §5](./backend-api-contract.md) |
 
 Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty`, `ErrBatchTooLarge`, `ErrInvalidEvent`, `ErrRateLimited`) decken erwartete fachliche Fehlerkategorien ab. Der HTTP-Adapter mappt sie auf Status-Codes (Tabelle in §5.1). Technische Adapter-Fehler — z. B. von `EventRepository.Append` — fallen nicht in dieses Set; sie werden vom Use Case unverändert durchgereicht und vom HTTP-Adapter im Default-Zweig auf `500` gemappt.
@@ -227,16 +227,16 @@ var _ driven.EventRepository = (*InMemoryEventRepository)(nil)
 
 Adapter im Zielbild `0.1.0` (`apps/api/`):
 
-| Pfad                           | Rolle   | Implementierung                                                                                                                                                              | Hinweis                                                                                                                             |
-| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `adapters/driving/http/`       | Driving | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer`                                                                   | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`.               |
-| `adapters/driven/auth/`        | Driven  | `StaticProjectResolver`                                                                                                                                                      | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
-| `adapters/driven/persistence/` | Driven  | Sub-Pakete `inmemory/`, `sqlite/`, `contract/` — beide Backends erfüllen denselben Port-Vertrag (gemeinsame Test-Suite in `contract/`)                                       | SQLite ist Default ab `0.4.0` (ADR-0002 §8.1); Apply-Runner in `apps/api/internal/storage`. InMemory bleibt für Tests/Dev-Fallback. |
-| `adapters/driven/ratelimit/`   | Driven  | `TokenBucket`                                                                                                                                                                | 100 Events/s/Project laut API-Kontrakt §6.                                                                                          |
-| `adapters/driven/metrics/`     | Driven  | `PrometheusPublisher`                                                                                                                                                        | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
-| `adapters/driven/telemetry/`   | Driven  | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
-| `adapters/driven/srt/mediamtxclient/` | Driven (`0.6.0`) | implementiert `SrtSource`-Port via HTTP-Client gegen MediaMTX `/v3/srtconns/list`; parst gegen Mapping aus `spec/telemetry-model.md` §7 plus Fixture `spec/contract-fixtures/srt/mediamtx-srtconns-list.json` | CGO-frei, kein libsrt-Import; Auth via `Authorization: Basic` aus ENV. |
-| `adapters/driven/persistence/sqlite/srt_health/` | Driven (`0.6.0`) | implementiert `SrtHealthRepository` über die `srt_health_samples`-Tabelle aus `spec/backend-api-contract.md` §10.6 | Migration läuft im selben Apply-Runner wie `playback_events`/`stream_sessions`. |
+| Pfad                                             | Rolle            | Implementierung                                                                                                                                                                                               | Hinweis                                                                                                                             |
+| ------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `adapters/driving/http/`                         | Driving          | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer`                                                                                                    | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`.               |
+| `adapters/driven/auth/`                          | Driven           | `StaticProjectResolver`                                                                                                                                                                                       | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
+| `adapters/driven/persistence/`                   | Driven           | Sub-Pakete `inmemory/`, `sqlite/`, `contract/` — beide Backends erfüllen denselben Port-Vertrag (gemeinsame Test-Suite in `contract/`)                                                                        | SQLite ist Default ab `0.4.0` (ADR-0002 §8.1); Apply-Runner in `apps/api/internal/storage`. InMemory bleibt für Tests/Dev-Fallback. |
+| `adapters/driven/ratelimit/`                     | Driven           | `TokenBucket`                                                                                                                                                                                                 | 100 Events/s/Project laut API-Kontrakt §6.                                                                                          |
+| `adapters/driven/metrics/`                       | Driven           | `PrometheusPublisher`                                                                                                                                                                                         | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
+| `adapters/driven/telemetry/`                     | Driven           | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter                                  | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
+| `adapters/driven/srt/mediamtxclient/`            | Driven (`0.6.0`) | implementiert `SrtSource`-Port via HTTP-Client gegen MediaMTX `/v3/srtconns/list`; parst gegen Mapping aus `spec/telemetry-model.md` §7 plus Fixture `spec/contract-fixtures/srt/mediamtx-srtconns-list.json` | CGO-frei, kein libsrt-Import; Auth via `Authorization: Basic` aus ENV.                                                              |
+| `adapters/driven/persistence/sqlite/srt_health/` | Driven (`0.6.0`) | implementiert `SrtHealthRepository` über die `srt_health_samples`-Tabelle aus `spec/backend-api-contract.md` §10.6                                                                                            | Migration läuft im selben Apply-Runner wie `playback_events`/`stream_sessions`.                                                     |
 
 OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zulässig:
 
@@ -351,7 +351,7 @@ Akteure:
 - **Metrics** — `adapters/driven/metrics.PrometheusPublisher`
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 sequenceDiagram
     autonumber
     participant Browser
@@ -402,7 +402,7 @@ Fehlerpfade — Status-Codes laut [API-Kontrakt §5](./backend-api-contract.md),
 ### 5.2 Metrics-Pfad
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart LR
     App["application<br/>Use Case"] -->|EventsAccepted, InvalidEvents,<br/>RateLimitedEvents, DroppedEvents| Pub["adapters/driven/metrics<br/>PrometheusPublisher"]
     Pub -->|registriert| Reg["prometheus.Registry"]
@@ -529,14 +529,14 @@ gescraped (plan-0.6.0 §0.1).
 
 ## 6. Querschnittsthemen
 
-| Thema                  | Umsetzung                                                                                                                                                                                                                                                                                                                                                                                                                        | Bezug                            |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §10.1                 |
-| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8     |
-| Metriken               | Prometheus über `/api/metrics`-Endpoint, nur Aggregate                                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §7.9, §7.10           |
+| Thema                  | Umsetzung                                                                                                                                                                                                                                                                                                                                                                                                                        | Bezug                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §10.1                   |
+| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001 §5; API-Kontrakt §8       |
+| Metriken               | Prometheus über `/api/metrics`-Endpoint, nur Aggregate                                                                                                                                                                                                                                                                                                                                                                           | Lastenheft §7.9, §7.10             |
 | Auth                   | Header `X-MTrace-Token`, Auflösung über `ProjectResolver`                                                                                                                                                                                                                                                                                                                                                                        | API-Kontrakt §6.4, Lastenheft §8.5 |
 | Rate Limiting          | In-Memory Token-Bucket, 100 Events/s/Project                                                                                                                                                                                                                                                                                                                                                                                     | API-Kontrakt §6.9                  |
-| Konfiguration          | Konstanten in `cmd/api/main.go`; Umweltvariablen folgen ab `0.1.0`-Implementierung                                                                                                                                                                                                                                                                                                                                               | —                                |
+| Konfiguration          | Konstanten in `cmd/api/main.go`; Umweltvariablen folgen ab `0.1.0`-Implementierung                                                                                                                                                                                                                                                                                                                                               | —                                  |
 
 ---
 
@@ -544,21 +544,21 @@ gescraped (plan-0.6.0 §0.1).
 
 ### 7.1 Bestand
 
-| ADR                                     | Status   | Inhalt                                                                           |
-| --------------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| ADR                                           | Status   | Inhalt                                                                           |
+| --------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
 | [ADR-0001](../docs/adr/0001-backend-stack.md) | Accepted | Backend-Stack: Go 1.22, stdlib `net/http`, Prometheus, OpenTelemetry, Distroless |
 
 ### 7.2 Geplant
 
 Folge-ADRs aus [Roadmap §4](../docs/planning/in-progress/roadmap.md):
 
-| Erwartete ADR                                    | Trigger-Release | Bezug        |
-| ------------------------------------------------ | --------------- | ------------ |
-| Persistenz via SQLite                            | `0.4.0`         | ADR-0002, MVP-16, OE-3 |
-| Live-Updates via SSE                             | `0.4.0`         | ADR-0003, OE-5, R-3 |
-| SRT-Binding-Stack                                | `0.6.0`         | R-2          |
-| Coverage-Tooling für Go                          | `0.1.0`+        |              |
-| `apps/api` Multi-Modul-Aufteilung (`go.work`)    | on demand       | R-1          |
+| Erwartete ADR                                 | Trigger-Release | Bezug                  |
+| --------------------------------------------- | --------------- | ---------------------- |
+| Persistenz via SQLite                         | `0.4.0`         | ADR-0002, MVP-16, OE-3 |
+| Live-Updates via SSE                          | `0.4.0`         | ADR-0003, OE-5, R-3    |
+| SRT-Binding-Stack                             | `0.6.0`         | R-2                    |
+| Coverage-Tooling für Go                       | `0.1.0`+        |                        |
+| `apps/api` Multi-Modul-Aufteilung (`go.work`) | on demand       | R-1                    |
 
 Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md).
 
@@ -571,7 +571,7 @@ Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](../docs/plan
 Alle Build-, Test-, Lint- und Runtime-Schritte laufen über `docker build --target …`. Lokales Go ist optional. Der Workflow folgt [Plan-Spike §14.11](../docs/planning/done/plan-spike.md):
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart LR
     Source["apps/api/<br/>Source"] --> Deps["deps<br/>go mod download"]
     Deps --> Compile["compile<br/>go build"]
@@ -595,7 +595,7 @@ flowchart LR
 Das `0.1.0`-Compose-Setup startet drei Core-Services aus dem Repo-Wurzelverzeichnis:
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#0f172a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart TB
     User["Entwickler<br/>(Browser)"]
 

@@ -17,6 +17,7 @@ m-trace richtet sich an Entwickler, Selbsthoster, kleine Streaming-Plattformen, 
 ist einfach — ein lokales Lab, in dem ein Live-HLS-Stream in einem Demo-Player läuft und seine Telemetrie sauber in API, Dashboard und OpenTelemetry-Modell landet:
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart LR
   M[MediaMTX] --> P[hls.js Demo-Player]
   P -->|Playback-Events| A[m-trace API]
@@ -34,6 +35,8 @@ flowchart LR
 ist breiter — Media-Streams Schicht für Schicht von Ingest bis Player nachverfolgen:
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
+
 flowchart LR
   I[Ingest<br/>RTMP · SRT · WebRTC] --> S[Media Server<br/>MediaMTX · SRS]
   S --> D[Distribution<br/>HLS · DASH · WebRTC]
