@@ -203,7 +203,7 @@ gesetzt sind:
 | 6 | Alle Tokens sind für sich gültig, binden aber unterschiedliche Projects | `401 auth_project_mismatch` |
 | 7 | Session Token ist für falsche Audience/Session/Origin gebunden | `403 auth_session_scope_denied` |
 | 8 | Project Policy lehnt Origin/Methode/Header/Scope ab | `403 auth_policy_denied` |
-| 9 | Issuance-/Auth-Rate-Limit überschritten | `429 auth_issuance_rate_limited` oder endpoint-spezifischer Rate-Limit-Code |
+| 9 | Endpoint-spezifisches Rate-Limit nach erfolgreicher Auth/Policy-Prüfung überschritten | `429` mit dem im Endpoint-Vertrag definierten Rate-Limit-Code |
 
 Diese Präzedenz verhindert stillen Fallback: ein ungültiger
 höher-priorisierter Token neben einem gültigen niedriger-priorisierten
@@ -212,6 +212,13 @@ nur geprüft, wenn alle präsentierten Tokens vorher syntaktisch,
 kryptografisch und zeitlich gültig sind. Fremde `Authorization`-
 Header ohne `mtr_st_`-Bearer-Token sind kein m-trace Auth-Versuch und
 blockieren den Legacy-Project-Token-Pfad nicht.
+
+Rate-Limits sind bewusst endpoint-spezifisch: Die Präzedenzmatrix legt
+nur fest, dass `429` nach den Auth-, Scope- und Policy-Entscheidungen
+kommt. `POST /api/auth/session-tokens` verwendet dafür ausschließlich
+`auth_issuance_rate_limited`; andere Endpoints müssen ihren eigenen
+Rate-Limit-Code im API-Kontrakt nennen und dürfen
+`auth_issuance_rate_limited` nicht wiederverwenden.
 
 **CORS-Preflight-Modell.**
 
@@ -282,10 +289,12 @@ weglassen.
 
 `ttl_seconds` hat im `0.12.0`-Pflichtpfad eine harte globale Obergrenze
 von 900 Sekunden. Project Policies dürfen eine niedrigere Grenze
-definieren, aber keine höhere. Fehlt `ttl_seconds`, verwendet der
-Server `min(project_max_ttl_seconds, 900)`. Ist `ttl_seconds` kleiner
-oder gleich 0 oder größer als die wirksame Project-Grenze, liefert die
-API `422 auth_token_ttl_too_large`; es gibt keinen stillen Clamp.
+definieren, aber keine höhere. `project_max_ttl_seconds` ist für jedes
+Project effektiv vorhanden: fehlt der Wert in Config oder Persistenz,
+gilt exakt der Default `900`. Fehlt `ttl_seconds`, verwendet der Server
+`min(project_max_ttl_seconds, 900)`. Ist `ttl_seconds` kleiner oder
+gleich 0 oder größer als die wirksame Project-Grenze, liefert die API
+`422 auth_token_ttl_too_large`; es gibt keinen stillen Clamp.
 
 Response:
 
@@ -470,15 +479,21 @@ DoD:
   Response zurückgegeben; ein gesetzter Mismatch liefert
   `401 auth_project_mismatch`.
 - [ ] `ttl_seconds` ist deterministisch: maximale Pflichtgrenze 900
-  Sekunden, Project Policies dürfen nur niedriger begrenzen, fehlende
-  Werte nutzen die wirksame Project-Grenze, und Werte `<= 0` oder
-  oberhalb der wirksamen Grenze liefern `422
+  Sekunden, Project Policies dürfen nur niedriger begrenzen, fehlendes
+  `project_max_ttl_seconds` defaultet pro Project auf exakt 900,
+  fehlende Request-Werte nutzen die wirksame Project-Grenze, und Werte
+  `<= 0` oder oberhalb der wirksamen Grenze liefern `422
   auth_token_ttl_too_large` ohne stilles Clamping.
 - [ ] Issuance-Endpoint hat eigene Abuse-Grenzen: mindestens globale
   und Project-Quote. Überschreitungen liefern
   `429 auth_issuance_rate_limited`; Policy-Ablehnungen liefern
   `403 auth_policy_denied`. Origin-/IP-nahe Quoten sind optionaler
   Zusatz und bei Nicht-Umsetzung als Folge-Scope zu dokumentieren.
+- [ ] `auth_issuance_rate_limited` ist ausschließlich der
+  Rate-Limit-Code von `POST /api/auth/session-tokens`; generische Auth-
+  Präzedenz beschreibt nur die Position von `429` nach Auth/Scope/
+  Policy. Andere Endpoints definieren eigene Rate-Limit-Codes im API-
+  Vertrag.
 - [ ] `POST /api/playback-events` akzeptiert zusätzlich zu
   `X-MTrace-Token` ein Session Token über `Authorization: Bearer` oder
   `X-MTrace-Session-Token`.
@@ -502,7 +517,7 @@ DoD:
 - [ ] Auth-Fehlerpräzedenz ist als Entscheidungstabelle im API-
   Kontrakt gepinnt und getestet: malformed/invalid vor revoked vor
   expired vor not-yet-valid vor Project-Mismatch vor Scope-/Policy-
-  Denial vor Rate-Limit.
+  Denial vor endpoint-spezifischem Rate-Limit.
 - [ ] Session Token validiert Signatur, `kid`, `exp`, `nbf`,
   `audience`, `project_id`, optional `session_id` und `origin`.
 - [ ] Signing-Key-Ring ist restart-stabil: aktive Signing-Keys und
