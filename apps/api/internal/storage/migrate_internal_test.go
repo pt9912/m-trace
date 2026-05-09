@@ -44,14 +44,17 @@ func TestOpen_FreshStart(t *testing.T) {
 	// Ab plan-0.8.5 Tranche 2 (Migrations-Konsolidierung) ist V1 die
 	// rolling Baseline und enthält den vollen Zielzustand aus
 	// schema.yaml; die historischen V2..V5 wurden gelöscht (kein
-	// Production-State). Ein Fresh-Start läuft genau eine Migration an.
-	// Bestehende Dev-DBs mit V2..V5 als applied bleiben funktional —
-	// der Apply-Runner ignoriert applied-Versionen ohne File.
-	if len(rows) != 1 {
-		t.Fatalf("schema_migrations rows = %d, want 1", len(rows))
+	// Production-State). plan-0.11.0 Tranche 2 fügt eine neue
+	// hand-gepflegte V2__ingest.sql für den Ingest-Control-Pfad an
+	// — Fresh-Start läuft jetzt zwei Migrationen.
+	if len(rows) != 2 {
+		t.Fatalf("schema_migrations rows = %d, want 2", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
+	}
+	if rows[1].version != 2 || rows[1].dirty != 0 {
+		t.Errorf("row[1] = %+v, want version=2 dirty=0", rows[1])
 	}
 }
 

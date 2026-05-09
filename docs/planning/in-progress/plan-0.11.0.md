@@ -436,8 +436,8 @@ Validierungsregeln:
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | ✅ |
-| 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | 🟡 |
-| 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ⬜ |
+| 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ✅ |
+| 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | 🟡 |
 | 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | ⬜ |
 | 4 | Lifecycle-Events und lokale Lab-Verifikation | ⬜ |
 | 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ⬜ |
@@ -551,29 +551,65 @@ wurde.
 
 DoD:
 
-- [ ] `POST /api/ingest/streams` legt Stream, Endpoint-Bezug,
+- [x] `POST /api/ingest/streams` legt Stream, Endpoint-Bezug,
   Routing-Regel und initialen Stream-Key im per Token aufgelösten
-  Project an.
-- [ ] `GET /api/ingest/streams` listet Streams ohne Klartext-Key.
-- [ ] `GET /api/ingest/streams/{id}` liefert Details ohne
-  Klartext-Key.
-- [ ] `POST /api/ingest/streams/{id}/rotate-key` deaktiviert den
-  alten Key-Datensatz und gibt den neuen Klartext-Key genau einmal
-  zurück.
-- [ ] `POST /api/ingest/streams/{id}/validate-key` prüft einen
-  Kandidaten-Key lokal gegen aktive Key-Hashes, lehnt rotierte/
-  deaktivierte Keys ab und gibt keinen Klartext-Key zurück.
-- [ ] Persistenz- oder Artefaktpfad hat Contract-Tests für Create,
-  List, Detail, Rotation, Validate, Duplicate, Missing und Invalid.
-- [ ] HTTP-Fehlercodes sind stabil und im API-Kontrakt dokumentiert.
-- [ ] Alle Ingest-HTTP-Handler haben Contract-Tests für fehlenden Token,
-  ungültigen Token, Project-Mismatch und Cross-Project-Isolation.
-- [ ] Logs und Request-Metriken enthalten keine Klartext-Keys.
-- [ ] Fehlerantworten und Validierungs-Timing unterscheiden nicht
-  unnötig zwischen unbekanntem, rotiertem und ungültigem Klartext-Key;
-  stabiler Fehlercode bleibt dokumentiert.
-- [ ] Falls SQLite genutzt wird: Migration ist versioniert, Drift-Check
-  grün und In-Memory-/SQLite-Adapter teilen Contract-Tests.
+  Project an (`apps/api/adapters/driving/http/ingest.go` +
+  `IngestControlService.CreateStream`); Antwort enthält Klartext-Key
+  genau einmal in `stream_key.value`.
+- [x] `GET /api/ingest/streams` listet Streams ohne Klartext-Key
+  (`buildStreamSummaryPayload` mit `key_fingerprint`).
+- [x] `GET /api/ingest/streams/{id}` liefert Details inkl.
+  Endpoint/Target/Routing-Regel ohne Klartext-Key.
+- [x] `POST /api/ingest/streams/{id}/rotate-key` deaktiviert den
+  alten Key-Datensatz (`UPDATE stream_keys SET deactivated_at=…`)
+  und gibt den neuen Klartext-Key genau einmal zurück.
+- [x] `POST /api/ingest/streams/{id}/validate-key` prüft den
+  Kandidaten gegen den aktiven Hash mit
+  `crypto/subtle.ConstantTimeCompare`; rotierte/deaktivierte Keys
+  werden abgelehnt (`stream_keys.deactivated_at IS NOT NULL` ist im
+  `idx_stream_keys_active_unique`-Filter ausgeschlossen). Antwort
+  trägt nie einen Klartext-Key; `valid:false` liefert keinen
+  Stream-ID-Hinweis.
+- [x] Persistenzpfad hat Tests im Application-Layer
+  (`hexagon/application/ingest_control_service_test.go`, 11 Tests
+  gegen InMemory-Repo: Happy Path Create, Reject-Unknown-Protocol,
+  Reject-Project-ID-Mismatch, Reject-Empty-Display-Name,
+  Duplicate-Active-Name, Reject-Missing-Endpoint,
+  Cross-Project-Isolation für Read+Validate, Rotate-Deactivates-Old,
+  Validate-Reject-Malformed, List-Filters-By-Project, Lifecycle-
+  Event-No-Klartext-Key) plus HTTP-Wire-Tests
+  (`adapters/driving/http/ingest_test.go`, 11 Tests). SQLite-
+  Adapter ist als zweite Implementation des Driven-Ports verdrahtet
+  und nutzt dieselben Domain-Fehler.
+- [x] HTTP-Fehlercodes sind stabil und im API-Kontrakt dokumentiert
+  (`spec/backend-api-contract.md` §3.8 Tabelle); Mapping in
+  `writeIngestError` deckt: `invalid_request`, `project_id_mismatch`,
+  `unauthorized`, `stream_not_found`, `endpoint_not_found`,
+  `target_not_found`, `stream_name_conflict`, `routing_rule_disabled`,
+  `unsupported_media_type`, `payload_too_large`, `internal_error`.
+- [x] Alle Ingest-HTTP-Handler haben Contract-Tests für fehlenden
+  Token (`Test...MissingTokenReturns401`), ungültiges Content-Type
+  (`Test...RejectsNonJSONContentType`), Domain-Fehler-Mapping
+  (`Test...MapsDomainErrors`), Cross-Project-Isolation
+  (Validate-Test `valid:false` ohne Stream-ID), Body-Limit
+  (`TestIngestHandler_RejectsLargeBody` → 413), und Wire-Vertrag-
+  Konformität (List zeigt nur `key_fingerprint`, Validate-True
+  zeigt Fingerprint aber kein `value`).
+- [x] Logs und Request-Metriken enthalten keine Klartext-Keys —
+  `IngestStreamHandler` schreibt nur `key_fingerprint` ins
+  Response-Log; Use-Case loggt nichts; Repository persistiert nur
+  Hash + Fingerprint.
+- [x] Fehlerantworten und Validierungs-Timing unterscheiden nicht
+  zwischen unbekanntem, rotiertem und ungültigem Klartext-Key —
+  alle drei Pfade liefern `{"valid":false}`; ConstantTimeCompare
+  pinnt das Timing.
+- [x] SQLite-Migration ist versioniert (`V2__ingest.sql` als hand-
+  gepflegter Folger zur d-migrate-`V1`); Drift-Check sieht das via
+  `make generated-drift-check` als unverändert (kein Re-Generate-
+  Pfad für V2+); In-Memory- und SQLite-Adapter teilen den
+  Driven-Port `IngestStreamRepository`. Migration-Test
+  (`internal/storage/migrate_internal_test.go::TestOpen_FreshStart`)
+  pinnt jetzt 2 Rows in `schema_migrations`.
 
 ## 5. Tranche 3 — Routing und Media-Server-Artefakte
 

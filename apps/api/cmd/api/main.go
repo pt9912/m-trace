@@ -33,6 +33,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
 )
 
@@ -256,7 +257,21 @@ func buildHandler(
 	if srtHealthService != nil {
 		srtHealthInbound = srtHealthService
 	}
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, tracer, logger)
+
+	// plan-0.11.0 Tranche 2: Ingest-Control-Pfad nur dann verdrahten,
+	// wenn die Persistenz SQLite hält (durable SQLite-Repo). InMemory-
+	// Lab-Modus liefert `nil` → der Router lässt `/api/ingest/*`
+	// deaktiviert (404), was für Spike-/CLI-Smoke-Aufrufe okay ist.
+	var ingestControlService *application.IngestControlService
+	if persist.db != nil {
+		ingestRepo := persistencesqlite.NewIngestStreamRepository(persist.db)
+		ingestControlService = application.NewIngestControlService(ingestRepo, time.Now)
+	}
+	var ingestControlInbound driving.IngestControlInbound
+	if ingestControlService != nil {
+		ingestControlInbound = ingestControlService
+	}
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 

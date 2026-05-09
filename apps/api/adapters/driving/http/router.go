@@ -54,6 +54,7 @@ func NewRouter(
 	analyzeMetrics AnalyzeMetrics,
 	sseConfig *SseStreamConfig,
 	srtHealth SrtHealthInbound,
+	ingestControl driving.IngestControlInbound,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -116,6 +117,7 @@ func NewRouter(
 	}
 
 	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, tracer, logger)
+	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, logger)
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
 	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
@@ -158,6 +160,36 @@ func registerSrtHealthRoutes(
 	mux.Handle("GET /api/srt/health/{stream_id}", getHandler)
 	mux.HandleFunc("OPTIONS /api/srt/health", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/srt/health/{stream_id}", dashboardPreflightHandler(allowlist))
+}
+
+// registerIngestControlRoutes verdrahtet die Ingest-Control-Pfade
+// (`0.11.0` Tranche 2, NF-13 / RAK-65..RAK-70). `nil`-Use-Case
+// deaktiviert den Pfad — der Router registriert dann keine
+// `/api/ingest/*`-Routen, was Tests (z. B. ohne SQLite-Volume) und
+// alte Compose-Stände abdeckt.
+func registerIngestControlRoutes(
+	mux *http.ServeMux,
+	ingest driving.IngestControlInbound,
+	resolver driven.ProjectResolver,
+	allowlist OriginAllowlist,
+	logger *slog.Logger,
+) {
+	if ingest == nil {
+		return
+	}
+	collection := &IngestStreamHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
+	detail := &IngestStreamDetailHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
+	rotate := &IngestStreamRotateHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
+	validate := &IngestStreamValidateHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
+	mux.Handle("POST /api/ingest/streams", collection)
+	mux.Handle("GET /api/ingest/streams", collection)
+	mux.Handle("GET /api/ingest/streams/{id}", detail)
+	mux.Handle("POST /api/ingest/streams/{id}/rotate-key", rotate)
+	mux.Handle("POST /api/ingest/streams/{id}/validate-key", validate)
+	mux.HandleFunc("OPTIONS /api/ingest/streams", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", dashboardPreflightHandler(allowlist))
 }
 
 // RequestMetricsMiddleware counts every HTTP request that enters the
