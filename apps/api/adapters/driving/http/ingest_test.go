@@ -51,6 +51,10 @@ type stubIngestControl struct {
 
 	mediaConfigResult driving.MediaServerConfigResult
 	mediaConfigErr    error
+
+	lifecycleResult driving.LifecycleEventResult
+	lifecycleErr    error
+	lifecycleReqs   []driving.LifecycleHookRequest
 }
 
 func (s *stubIngestControl) CreateStream(_ context.Context, _ driving.CreateStreamRequest) (driving.CreateStreamResult, error) {
@@ -89,8 +93,21 @@ func (s *stubIngestControl) ValidateKey(_ context.Context, _, _, _ string) (driv
 	return s.validateResult, nil
 }
 
-func (s *stubIngestControl) RecordLifecycleEvent(_ context.Context, _, _ string, _ domain.StreamLifecycleEventKind, _ time.Time, _ domain.StreamLifecycleEventSource) error {
-	return nil
+func (s *stubIngestControl) RecordLifecycleEvent(_ context.Context, req driving.LifecycleHookRequest) (driving.LifecycleEventResult, error) {
+	s.lifecycleReqs = append(s.lifecycleReqs, req)
+	if s.lifecycleErr != nil {
+		return driving.LifecycleEventResult{}, s.lifecycleErr
+	}
+	if s.lifecycleResult.EventID == "" {
+		// Fallback-Default für Happy-Path-Tests, die keinen Result-Stub setzen.
+		return driving.LifecycleEventResult{
+			EventID:    "evt_stub",
+			StreamID:   req.StreamID,
+			Kind:       req.Kind,
+			ObservedAt: req.ObservedAt,
+		}, nil
+	}
+	return s.lifecycleResult, nil
 }
 
 func (s *stubIngestControl) GetMediaServerConfig(_ context.Context, _, _ string) (driving.MediaServerConfigResult, error) {
@@ -893,5 +910,190 @@ func TestIngestHandler_EmptyDisplayNameMapsTo400(t *testing.T) {
 	body, _ := io.ReadAll(res.Body)
 	if !bytes.Contains(body, []byte(`"code":"invalid_request"`)) {
 		t.Errorf("body missing code: %s", body)
+	}
+}
+
+// `0.11.0` Tranche 4 — Lifecycle-Hook-Handler.
+
+func TestIngestLifecycleHook_StartedHappyPath(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{
+		lifecycleResult: driving.LifecycleEventResult{
+			EventID:    "evt_abc123",
+			StreamID:   ingestStreamID,
+			Kind:       domain.StreamLifecycleEventStarted,
+			ObservedAt: time.Date(2026, 5, 9, 10, 1, 0, 0, time.UTC),
+		},
+	}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
+			"stream_id":     ingestStreamID,
+			"observed_at":   "2026-05-09T10:01:00Z",
+			"source":        "local-smoke",
+			"connection_id": "srtconn-1",
+		}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusAccepted {
+		body, _ := io.ReadAll(res.Body)
+		t.Fatalf("status: want 202, got %d: %s", res.StatusCode, body)
+	}
+	body, _ := io.ReadAll(res.Body)
+	for _, want := range []string{`"accepted":true`, `"event_id":"evt_abc123"`, `"type":"stream_started"`, `"stream_id":"` + ingestStreamID + `"`} {
+		if !bytes.Contains(body, []byte(want)) {
+			t.Errorf("body missing %q: %s", want, body)
+		}
+	}
+	if len(stub.lifecycleReqs) != 1 {
+		t.Fatalf("want 1 lifecycle call, got %d", len(stub.lifecycleReqs))
+	}
+	if stub.lifecycleReqs[0].Kind != domain.StreamLifecycleEventStarted {
+		t.Errorf("kind: want started, got %q", stub.lifecycleReqs[0].Kind)
+	}
+	if stub.lifecycleReqs[0].ConnectionID != "srtconn-1" {
+		t.Errorf("connection_id not propagated: %q", stub.lifecycleReqs[0].ConnectionID)
+	}
+}
+
+func TestIngestLifecycleHook_EndedKindFromURLNotBody(t *testing.T) {
+	t.Parallel()
+	// Selbst wenn der Aufrufer einen `type:"stream_started"`-Wert
+	// im Body schickt, muss der Handler den Stop-Endpoint als
+	// `stream_ended` interpretieren.
+	stub := &stubIngestControl{}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-ended", map[string]any{
+			"stream_id":   ingestStreamID,
+			"observed_at": "2026-05-09T10:05:00Z",
+			"source":      "local-smoke",
+			"type":        "stream_started", // muss ignoriert werden
+		}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusAccepted {
+		t.Fatalf("status: want 202, got %d", res.StatusCode)
+	}
+	if len(stub.lifecycleReqs) != 1 || stub.lifecycleReqs[0].Kind != domain.StreamLifecycleEventEnded {
+		t.Errorf("kind from URL must override body type")
+	}
+}
+
+func TestIngestLifecycleHook_MissingObservedAt400(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
+			"stream_id": ingestStreamID,
+		}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("status: want 400, got %d", res.StatusCode)
+	}
+}
+
+func TestIngestLifecycleHook_StreamNotFound404(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestStreamNotFound}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
+			"stream_id":   "ing_unknown",
+			"observed_at": "2026-05-09T10:01:00Z",
+			"source":      "local-smoke",
+		}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("status: want 404, got %d", res.StatusCode)
+	}
+}
+
+func TestIngestLifecycleHook_DisabledRouting409(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestRoutingRuleDisabled}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-ended", map[string]any{
+			"stream_id":   ingestStreamID,
+			"observed_at": "2026-05-09T10:05:00Z",
+			"source":      "local-smoke",
+		}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusConflict {
+		t.Errorf("status: want 409, got %d", res.StatusCode)
+	}
+}
+
+func TestIngestLifecycleHook_UnauthorizedWithoutToken(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{}
+	srv := newIngestRouter(t, stub)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-started",
+		bytes.NewReader([]byte(`{"stream_id":"x","observed_at":"2026-05-09T10:00:00Z","source":"local-smoke"}`)))
+	req.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status: want 401, got %d", res.StatusCode)
+	}
+	if len(stub.lifecycleReqs) != 0 {
+		t.Errorf("use case must not be called without token")
+	}
+}
+
+func TestIngestLifecycleHook_MalformedJSON400(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{}
+	srv := newIngestRouter(t, stub)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-started",
+		bytes.NewReader([]byte(`{not json`)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-MTrace-Token", ingestToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("status: want 400, got %d", res.StatusCode)
+	}
+}
+
+func TestIngestLifecycleHook_UnknownSource400(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestLifecycleSourceUnknown}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
+			"stream_id":   ingestStreamID,
+			"observed_at": "2026-05-09T10:00:00Z",
+			"source":      "evil",
+		}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("status: want 400, got %d", res.StatusCode)
 	}
 }

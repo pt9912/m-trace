@@ -44,17 +44,22 @@ func TestOpen_FreshStart(t *testing.T) {
 	// Ab plan-0.8.5 Tranche 2 (Migrations-Konsolidierung) ist V1 die
 	// rolling Baseline und enthält den vollen Zielzustand aus
 	// schema.yaml; die historischen V2..V5 wurden gelöscht (kein
-	// Production-State). plan-0.11.0 Tranche 2 fügt eine neue
-	// hand-gepflegte V2__ingest.sql für den Ingest-Control-Pfad an
-	// — Fresh-Start läuft jetzt zwei Migrationen.
-	if len(rows) != 2 {
-		t.Fatalf("schema_migrations rows = %d, want 2", len(rows))
+	// Production-State). plan-0.11.0 Tranche 2 fügt V2__ingest.sql
+	// für den Ingest-Control-Pfad an, Tranche 4 dann V3 für die
+	// Lifecycle-Hook-Felder (`event_id` opak, `connection_id`,
+	// `reason`, Source-Allowlist `local-smoke`/`mediamtx-hook`).
+	// Fresh-Start läuft damit drei Migrationen.
+	if len(rows) != 3 {
+		t.Fatalf("schema_migrations rows = %d, want 3", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
 	}
 	if rows[1].version != 2 || rows[1].dirty != 0 {
 		t.Errorf("row[1] = %+v, want version=2 dirty=0", rows[1])
+	}
+	if rows[2].version != 3 || rows[2].dirty != 0 {
+		t.Errorf("row[2] = %+v, want version=3 dirty=0", rows[2])
 	}
 }
 

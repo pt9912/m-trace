@@ -93,9 +93,13 @@ mountet `compose.yaml` sie read-only als
 - **Verifikation der Generator-Form**: `make api-test` läuft
   `application.GenerateMediaMTXConfig`-Tests, die deterministischen
   Output und Klartext-Key-Schutz pinnen.
-- **Smoke**: opt-in geplant für `0.11.0` Tranche 5 als
-  `make smoke-ingest-control`. Bis dahin manuelle Verifikation
-  über die Kurzanleitung oben.
+- **Smoke**: `make smoke-ingest-control` (opt-in, NICHT Teil von
+  `make gates`) verifiziert den Lifecycle-Hook-Pfad reproduzierbar:
+  Stream anlegen → `stream-started` einspeisen → `stream-ended`
+  einspeisen, jeweils `202 accepted:true` und unterschiedliche
+  `event_id`. Default-API-URL `http://localhost:8080`,
+  Default-Token `demo-token`; beides via Env-Vars überschreibbar.
+  Das Script `smoke-lifecycle.sh` lebt direkt in diesem Verzeichnis.
 - **Compose-Konvention**: Project-Name `mtrace-ingest-control`,
   eigene Volumes, Host-Port-Schnitt kollisionsfrei zu Core-Lab.
 - **Bestehende Beispiele bleiben unangetastet**: dieses Verzeichnis
@@ -108,7 +112,9 @@ mountet `compose.yaml` sie read-only als
   keine Auth, keine IP-Allowlist, kein Replay-Schutz.
 - **Kein** Performance-Test. FFmpeg-`testsrc` ist synthetisch und
   steht für funktionalen Smoke, nicht für Lastmessung.
-- **Kein** Webhook-Endpoint. Lifecycle-Events
-  (`/api/ingest/hooks/stream-{started,ended}`) lassen sich aus diesem
-  Lab heraus an `apps/api` einspeisen, sobald Tranche 4 die HTTP-
-  Hooks ausliefert.
+- **Kein** Webhook-Endpoint nach außen. Eingehende Lifecycle-Events
+  (`/api/ingest/hooks/stream-{started,ended}`) sind in `0.11.0`
+  Tranche 4 ausgeliefert und lassen sich aus diesem Lab heraus per
+  `make smoke-ingest-control` an `apps/api` einspeisen — ausgehende
+  produktive Webhook-Zustellung an externe Systeme bleibt
+  Folge-Scope.

@@ -207,14 +207,22 @@ func TestSQLiteIngestRepo_AppendLifecycleEvent(t *testing.T) {
 	now := time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC)
 	created, _ := repo.CreateStream(context.Background(), mkSqliteInput("p1", "Lab", mkSqliteKey(t, now)))
 	if err := repo.AppendLifecycleEvent(context.Background(), domain.StreamLifecycleEvent{
-		Kind: domain.StreamLifecycleEventStarted, StreamID: created.ID, ProjectID: "p1",
+		EventID: "evt_sqlite1", Kind: domain.StreamLifecycleEventStarted, StreamID: created.ID, ProjectID: "p1",
 		OccurredAt: now, Source: domain.StreamLifecycleSourceSmoke, KeyFingerprint: created.Key.Fingerprint,
+		ConnectionID: "srtconn-1", Reason: "smoke-test",
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
+	// Empty event_id wird abgelehnt — der Service muss event_id setzen.
+	if err := repo.AppendLifecycleEvent(context.Background(), domain.StreamLifecycleEvent{
+		Kind: domain.StreamLifecycleEventEnded, StreamID: created.ID, ProjectID: "p1",
+		OccurredAt: now, Source: domain.StreamLifecycleSourceSmoke,
+	}); err == nil {
+		t.Errorf("empty event_id must be rejected by sqlite repo")
+	}
 	// Cross-Project-Append wird abgelehnt.
 	if err := repo.AppendLifecycleEvent(context.Background(), domain.StreamLifecycleEvent{
-		StreamID: created.ID, ProjectID: "other",
+		EventID: "evt_xproj", StreamID: created.ID, ProjectID: "other",
 	}); !errors.Is(err, domain.ErrIngestStreamNotFound) {
 		t.Errorf("cross-project lifecycle: want ErrIngestStreamNotFound, got %v", err)
 	}

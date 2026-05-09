@@ -8,6 +8,7 @@ import (
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
@@ -182,17 +183,29 @@ func registerIngestControlRoutes(
 	rotate := &IngestStreamRotateHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
 	validate := &IngestStreamValidateHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
 	mediaConfig := &IngestMediaServerConfigHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
+	hookStarted := &IngestLifecycleHookHandler{
+		UseCase: ingest, Resolver: resolver, Logger: logger,
+		Kind: domain.StreamLifecycleEventStarted,
+	}
+	hookEnded := &IngestLifecycleHookHandler{
+		UseCase: ingest, Resolver: resolver, Logger: logger,
+		Kind: domain.StreamLifecycleEventEnded,
+	}
 	mux.Handle("POST /api/ingest/streams", collection)
 	mux.Handle("GET /api/ingest/streams", collection)
 	mux.Handle("GET /api/ingest/streams/{id}", detail)
 	mux.Handle("POST /api/ingest/streams/{id}/rotate-key", rotate)
 	mux.Handle("POST /api/ingest/streams/{id}/validate-key", validate)
 	mux.Handle("GET /api/ingest/media-server-config", mediaConfig)
+	mux.Handle("POST /api/ingest/hooks/stream-started", hookStarted)
+	mux.Handle("POST /api/ingest/hooks/stream-ended", hookEnded)
 	mux.HandleFunc("OPTIONS /api/ingest/streams", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-started", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-ended", dashboardPreflightHandler(allowlist))
 }
 
 // RequestMetricsMiddleware counts every HTTP request that enters the

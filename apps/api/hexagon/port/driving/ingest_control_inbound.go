@@ -27,8 +27,35 @@ type IngestControlInbound interface {
 	GetStreamDetail(ctx context.Context, projectID, streamID string) (StreamDetail, error)
 	RotateKey(ctx context.Context, projectID, streamID string) (RotateKeyResult, error)
 	ValidateKey(ctx context.Context, projectID, streamID, candidateKey string) (ValidateKeyResult, error)
-	RecordLifecycleEvent(ctx context.Context, projectID, streamID string, kind domain.StreamLifecycleEventKind, occurredAt time.Time, source domain.StreamLifecycleEventSource) error
+	RecordLifecycleEvent(ctx context.Context, req LifecycleHookRequest) (LifecycleEventResult, error)
 	GetMediaServerConfig(ctx context.Context, projectID, targetID string) (MediaServerConfigResult, error)
+}
+
+// LifecycleHookRequest bündelt die Driving-Port-Eingabe für
+// `POST /api/ingest/hooks/stream-{started,ended}` (`0.11.0` Tranche
+// 4 / RAK-69). `Kind` wird vom HTTP-Adapter aus dem URL-Suffix
+// abgeleitet (nicht aus dem Body), damit ein POST auf den Stop-
+// Endpoint nicht mit einem manipulierten `type:"stream_started"`-
+// Feld einen falschen Lifecycle einspeisen kann.
+type LifecycleHookRequest struct {
+	ResolvedProjectID string
+	StreamID          string
+	Kind              domain.StreamLifecycleEventKind
+	ObservedAt        time.Time
+	Source            domain.StreamLifecycleEventSource
+	ConnectionID      string
+	Reason            string
+}
+
+// LifecycleEventResult ist die Use-Case-Antwort für
+// Lifecycle-Hook-Calls. Der HTTP-Adapter echo't den `EventID`-Wert
+// im Acknowledgement; Klartext-Keys oder Hash-Werte erscheinen
+// nicht.
+type LifecycleEventResult struct {
+	EventID    string
+	StreamID   string
+	Kind       domain.StreamLifecycleEventKind
+	ObservedAt time.Time
 }
 
 // MediaServerConfigResult ist die Antwort auf

@@ -564,10 +564,61 @@ func TestIngestControlService_RotateKey_StreamNotFound(t *testing.T) {
 func TestIngestControlService_RecordLifecycleEvent_StreamNotFound(t *testing.T) {
 	t.Parallel()
 	svc, _ := newSeededService(t)
-	err := svc.RecordLifecycleEvent(context.Background(), testProjectA, "missing",
-		domain.StreamLifecycleEventStarted, time.Now().UTC(), domain.StreamLifecycleSourceSmoke)
+	_, err := svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          "missing",
+		Kind:              domain.StreamLifecycleEventStarted,
+		ObservedAt:        time.Now().UTC(),
+		Source:            domain.StreamLifecycleSourceSmoke,
+	})
 	if !errors.Is(err, domain.ErrIngestStreamNotFound) {
 		t.Errorf("err: want ErrIngestStreamNotFound, got %v", err)
+	}
+}
+
+func TestIngestControlService_RecordLifecycleEvent_RejectsZeroObservedAt(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	_, err := svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          "ing_x",
+		Kind:              domain.StreamLifecycleEventStarted,
+		Source:            domain.StreamLifecycleSourceSmoke,
+	})
+	if !errors.Is(err, domain.ErrIngestLifecycleObservedAtRequired) {
+		t.Errorf("err: want ErrIngestLifecycleObservedAtRequired, got %v", err)
+	}
+}
+
+func TestIngestControlService_RecordLifecycleEvent_RejectsUnknownSource(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	_, err := svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          "ing_x",
+		Kind:              domain.StreamLifecycleEventStarted,
+		ObservedAt:        time.Now().UTC(),
+		Source:            domain.StreamLifecycleEventSource("attacker-controlled"),
+	})
+	if !errors.Is(err, domain.ErrIngestLifecycleSourceUnknown) {
+		t.Errorf("err: want ErrIngestLifecycleSourceUnknown, got %v", err)
+	}
+}
+
+func TestIngestControlService_RecordLifecycleEvent_RejectsLongFields(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	huge := strings.Repeat("x", domain.MaxLifecycleStringField+1)
+	_, err := svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          "ing_x",
+		Kind:              domain.StreamLifecycleEventStarted,
+		ObservedAt:        time.Now().UTC(),
+		Source:            domain.StreamLifecycleSourceSmoke,
+		ConnectionID:      huge,
+	})
+	if !errors.Is(err, domain.ErrIngestLifecycleFieldTooLong) {
+		t.Errorf("err: want ErrIngestLifecycleFieldTooLong, got %v", err)
 	}
 }
 
@@ -753,20 +804,39 @@ func TestIngestControlService_RecordLifecycleEvent_NoKlartextKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	if err := svc.RecordLifecycleEvent(context.Background(), testProjectA, created.Stream.ID,
-		domain.StreamLifecycleEventStarted, time.Now().UTC(), domain.StreamLifecycleSourceSmoke); err != nil {
+	result, err := svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          created.Stream.ID,
+		Kind:              domain.StreamLifecycleEventStarted,
+		ObservedAt:        time.Now().UTC(),
+		Source:            domain.StreamLifecycleSourceSmoke,
+		ConnectionID:      "srtconn-1",
+	})
+	if err != nil {
 		t.Fatalf("record: %v", err)
+	}
+	if !strings.HasPrefix(result.EventID, "evt_") {
+		t.Errorf("event_id must have evt_ prefix, got %q", result.EventID)
 	}
 	events := repo.lifecycleSnapshot()
 	if len(events) != 1 {
 		t.Fatalf("want 1 event, got %d", len(events))
 	}
 	ev := events[0]
+	if ev.EventID != result.EventID {
+		t.Errorf("event_id mismatch: persisted %q vs returned %q", ev.EventID, result.EventID)
+	}
+	if ev.ConnectionID != "srtconn-1" {
+		t.Errorf("connection_id: want srtconn-1, got %q", ev.ConnectionID)
+	}
 	if ev.KeyFingerprint == "" {
 		t.Errorf("fingerprint must be present in lifecycle event")
 	}
 	// Plan T1/T4 DoD: Lifecycle-Events tragen niemals Klartext-Keys.
 	if ev.KeyFingerprint == created.Material.Value {
 		t.Errorf("lifecycle event must NOT carry klartext key")
+	}
+	if strings.Contains(ev.Reason, created.Material.Value) || strings.Contains(ev.ConnectionID, created.Material.Value) {
+		t.Errorf("optional fields must not echo klartext key value")
 	}
 }

@@ -2,6 +2,8 @@ package application
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -285,27 +287,72 @@ func distinctOtherTargetIDs(streams []domain.IngestStream, selected string) []st
 	return out
 }
 
-// RecordLifecycleEvent persistiert ein Lifecycle-Event in T2 als
-// Vorbereitung für T4. `key_fingerprint` wird aus dem aktiven Key
-// abgeleitet — Klartext-Werte landen niemals im Eventlog.
-func (s *IngestControlService) RecordLifecycleEvent(ctx context.Context, projectID, streamID string, kind domain.StreamLifecycleEventKind, occurredAt time.Time, source domain.StreamLifecycleEventSource) error {
-	stream, err := s.repo.GetStreamByID(ctx, projectID, streamID)
-	if err != nil {
-		return err
+// RecordLifecycleEvent persistiert ein Lifecycle-Event (Plan §0.11.0
+// Tranche 4 / RAK-69). Der `event_id`-Wert wird hier serverseitig
+// erzeugt und mit dem Event in den Adapter zurückgereicht — der
+// HTTP-Hook-Handler echo't ihn als Acknowledgement. `KeyFingerprint`
+// wird aus dem aktiven Key abgeleitet; Klartext-Werte landen niemals
+// im Eventlog.
+//
+// Source-Werte werden hier auf die Domain-Allowlist gefiltert. Der
+// HTTP-Adapter prüft Längenlimits **bevor** er hierher kommt; der
+// Service prüft trotzdem nochmal, weil der Driving-Port auch von
+// CLI/Tests direkt aufgerufen werden kann.
+func (s *IngestControlService) RecordLifecycleEvent(ctx context.Context, req driving.LifecycleHookRequest) (driving.LifecycleEventResult, error) {
+	if req.ObservedAt.IsZero() {
+		return driving.LifecycleEventResult{}, domain.ErrIngestLifecycleObservedAtRequired
 	}
-	rule, err := s.repo.GetRoutingRuleByID(ctx, projectID, streamID)
+	if !req.Source.IsKnown() {
+		return driving.LifecycleEventResult{}, domain.ErrIngestLifecycleSourceUnknown
+	}
+	if len(req.ConnectionID) > domain.MaxLifecycleStringField || len(req.Reason) > domain.MaxLifecycleStringField {
+		return driving.LifecycleEventResult{}, domain.ErrIngestLifecycleFieldTooLong
+	}
+	stream, err := s.repo.GetStreamByID(ctx, req.ResolvedProjectID, req.StreamID)
 	if err != nil {
-		return err
+		return driving.LifecycleEventResult{}, err
+	}
+	rule, err := s.repo.GetRoutingRuleByID(ctx, req.ResolvedProjectID, req.StreamID)
+	if err != nil {
+		return driving.LifecycleEventResult{}, err
 	}
 	if !rule.Enabled {
-		return domain.ErrIngestRoutingRuleDisabled
+		return driving.LifecycleEventResult{}, domain.ErrIngestRoutingRuleDisabled
 	}
-	return s.repo.AppendLifecycleEvent(ctx, domain.StreamLifecycleEvent{
-		Kind:           kind,
-		StreamID:       streamID,
-		ProjectID:      projectID,
-		OccurredAt:     occurredAt.UTC(),
-		Source:         source,
+	eventID, err := newLifecycleEventID()
+	if err != nil {
+		return driving.LifecycleEventResult{}, err
+	}
+	observed := req.ObservedAt.UTC()
+	if err := s.repo.AppendLifecycleEvent(ctx, domain.StreamLifecycleEvent{
+		EventID:        eventID,
+		Kind:           req.Kind,
+		StreamID:       req.StreamID,
+		ProjectID:      req.ResolvedProjectID,
+		OccurredAt:     observed,
+		Source:         req.Source,
 		KeyFingerprint: stream.Key.Fingerprint,
-	})
+		ConnectionID:   strings.TrimSpace(req.ConnectionID),
+		Reason:         strings.TrimSpace(req.Reason),
+	}); err != nil {
+		return driving.LifecycleEventResult{}, err
+	}
+	return driving.LifecycleEventResult{
+		EventID:    eventID,
+		StreamID:   req.StreamID,
+		Kind:       req.Kind,
+		ObservedAt: observed,
+	}, nil
+}
+
+// newLifecycleEventID erzeugt einen opaken Event-Identifier mit
+// Prefix `evt_` und 12 Byte crypto/rand-Hex (192 Bit Entropie).
+// Kollisionsraum genügt für Lab-Smokes; CSPRNG verhindert
+// Vorhersagbarkeit, falls Hooks später öffentlich exponiert werden.
+func newLifecycleEventID() (string, error) {
+	var raw [12]byte
+	if _, err := cryptorand.Read(raw[:]); err != nil {
+		return "", fmt.Errorf("ingest: lifecycle event_id rand: %w", err)
+	}
+	return "evt_" + hex.EncodeToString(raw[:]), nil
 }

@@ -439,7 +439,7 @@ Validierungsregeln:
 | 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ✅ |
 | 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ✅ |
 | 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | 🟡 |
-| 4 | Lifecycle-Events und lokale Lab-Verifikation | ⬜ |
+| 4 | Lifecycle-Events und lokale Lab-Verifikation | ✅ |
 | 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
@@ -667,21 +667,28 @@ modelliert und reproduzierbar verifizierbar.
 
 DoD:
 
-- [ ] Eventmodell für `stream_started` und `stream_ended` ist
-  dokumentiert.
-- [ ] Lifecycle-Endpoint akzeptiert valide Start-/Ende-Events und weist
+- [x] Eventmodell für `stream_started` und `stream_ended` ist
+  dokumentiert (`spec/backend-api-contract.md` §3.8 Wire-Skizze
+  inkl. Response-Form mit `event_id`, `accepted:true`).
+- [x] Lifecycle-Endpoint akzeptiert valide Start-/Ende-Events und weist
   unbekannte Streams, ungültige Eventtypen und malformed Payloads
-  stabil ab.
-- [ ] Lifecycle-Events enthalten `stream_id`, `observed_at`, `source`
+  stabil ab — `IngestLifecycleHookHandler` mit URL-getriebenem
+  `Kind` (Body-`type` wird ignoriert), Source-Allowlist
+  `local-smoke`/`mediamtx-hook`, Längenlimits über
+  `domain.MaxLifecycleStringField`.
+- [x] Lifecycle-Events enthalten `stream_id`, `observed_at`, `source`
   und optional `connection_id`/`reason`; sie enthalten keinen
-  Klartext-Key.
-- [ ] Lokaler Smoke verifiziert mindestens einen Start-/Ende-Pfad
-  reproduzierbar.
-- [ ] Falls echte MediaMTX-Hooks in `0.11.0` nicht angebunden werden,
-  ist die Entscheidung als `[!]`-Folge-Scope mit RAK-69-Nachweis
-  dokumentiert: Eventmodell + exemplarische lokale Auslösung genügen;
-  der Plan und das Lastenheft behaupten dann keine ausgehende
-  produktive Webhook-Zustellung für `F-49`.
+  Klartext-Key (Service-Test
+  `RecordLifecycleEvent_NoKlartextKey` pinnt das auch für die
+  optionalen Felder).
+- [x] Lokaler Smoke verifiziert mindestens einen Start-/Ende-Pfad
+  reproduzierbar — `make smoke-ingest-control` →
+  `examples/ingest-control/smoke-lifecycle.sh`.
+- [x] Echte MediaMTX-Hooks werden in `0.11.0` **nicht** angebunden
+  (`!`-Folge-Scope nach §10): das Eventmodell plus exemplarische
+  lokale Auslösung über `local-smoke` decken RAK-69 ab; ausgehende
+  produktive Webhook-Zustellung bleibt Folge-Scope (siehe R-16 im
+  `risks-backlog.md`).
 
 ## 7. Tranche 5 — Doku, Contracts und Smokes
 
@@ -752,7 +759,7 @@ Commit-/Datei-/Testnachweis.
 | RAK-66 | Muss | Stream-Key-API, lokale Key-Validierung, Rotation, Persistenz ohne Klartext, Log-/Fixture-Redaktion, Tests für Create/List/Validate/Rotate. | [ ] |
 | RAK-67 | Muss | Domainmodell und API-/Artefaktvertrag für `srt`/`rtmp`-Endpunkte, Targets und 1:1-Routing; Validierungstests. | [ ] |
 | RAK-68 | Muss | MediaMTX-Artefakt-Generator oder Validator inklusive SRT-/RTMP-Nachweis, Beispiel-/Smoke-Nachweis, Regression bestehender Lab-Beispiele. | [ ] |
-| RAK-69 | Muss | Lifecycle-Eventmodell, lokale Start-/Ende-Verifikation, Fehlerfalltests, kein Klartext-Key in Events; echte MediaMTX-/SRS-Hooks nur bei expliziter Umsetzung. | [ ] |
+| RAK-69 | Muss | Lifecycle-Eventmodell, lokale Start-/Ende-Verifikation, Fehlerfalltests, kein Klartext-Key in Events; echte MediaMTX-/SRS-Hooks nur bei expliziter Umsetzung. | [x] T4 — Hook-Handler `IngestLifecycleHookHandler`, Service `RecordLifecycleEvent` mit typisierten Validierungen, V3 Migration mit opaker `event_id`/`connection_id`/`reason`, Smoke `make smoke-ingest-control`. Echte MediaMTX-/SRS-Hooks bleiben Folge-Scope. |
 | RAK-70 | Muss | User-Doku, API-Kontrakt inklusive Auth-/Project-Scope für `/api/ingest/*`, README-Scope-Grenze, Smokes und Release-Gates. | [ ] |
 
 ## 10. Folge-Scope nach `0.11.0`

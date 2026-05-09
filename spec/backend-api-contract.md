@@ -485,15 +485,34 @@ nicht zum selben Project gehören).
 ```json
 {
   "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
-  "occurred_at": "2026-05-09T10:05:30.123Z",
-  "source": "smoke"
+  "observed_at": "2026-05-09T10:05:30.123Z",
+  "source": "local-smoke",
+  "connection_id": "srtconn-1",
+  "reason": "smoke_complete"
 }
 ```
 
-Lifecycle-Events tragen **keine** Klartext-Keys; höchstens den
-`key_fingerprint`. `source` benennt den Auslöser (`smoke`,
-`mediamtx-hook`, ...). Produktive ausgehende Webhook-Zustellung
-an externe Systeme ist nicht Teil des `0.11.0`-Vertrags.
+`POST /api/ingest/hooks/stream-{started,ended}` Response (`202`):
+
+```json
+{
+  "accepted": true,
+  "event_id": "evt_3f2a91c4...",
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "type": "stream_started",
+  "observed_at": "2026-05-09T10:05:30.123Z"
+}
+```
+
+Das Event-`type`-Feld der Antwort wird ausschließlich aus dem
+URL-Suffix abgeleitet — ein gegenteiliger `type`-Wert im Body hat
+keinen Effekt. Lifecycle-Events tragen **keine** Klartext-Keys;
+höchstens den `key_fingerprint`. `source` muss aus der Allowlist
+`local-smoke` oder `mediamtx-hook` stammen; unbekannte Werte werden
+auf `400 invalid_request` gemappt. `connection_id` und `reason` sind
+optional und längenbegrenzt (≤ 256 Zeichen). Produktive ausgehende
+Webhook-Zustellung an externe Systeme ist nicht Teil des
+`0.11.0`-Vertrags.
 
 `GET /api/ingest/media-server-config` Response:
 

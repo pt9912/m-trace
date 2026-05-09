@@ -153,6 +153,88 @@ func writeMediaServerConfigError(w http.ResponseWriter, logger *slog.Logger, err
 	}
 }
 
+// IngestLifecycleHookHandler bedient
+// `POST /api/ingest/hooks/stream-started` und
+// `POST /api/ingest/hooks/stream-ended` (`0.11.0` Tranche 4 /
+// RAK-69). Das Event-`type` wird ausschließlich aus `Kind`
+// abgeleitet — Body-Felder mit gegenteiligem `type` haben keinen
+// Effekt, damit ein POST auf den Stop-Endpoint nicht heimlich ein
+// Start-Event einspeisen kann.
+type IngestLifecycleHookHandler struct {
+	UseCase  driving.IngestControlInbound
+	Resolver driven.ProjectResolver
+	Logger   *slog.Logger
+	Kind     domain.StreamLifecycleEventKind
+}
+
+// ServeHTTP führt die siebenstufige Fehlerreihenfolge aus
+// `spec/backend-api-contract.md` §3.8 durch:
+// Content-Type → Body-Größe → JSON → Auth → Schema → Domain →
+// UseCase. Antwort ist immer JSON.
+func (h *IngestLifecycleHookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !ensureContentType(w, r) {
+		return
+	}
+	body, err := readIngestBody(w, r)
+	if err != nil {
+		return
+	}
+	projectID, ok := resolveIngestProject(w, r, h.Resolver)
+	if !ok {
+		return
+	}
+	var req struct {
+		StreamID     string `json:"stream_id"`
+		ObservedAt   string `json:"observed_at"`
+		Source       string `json:"source"`
+		ConnectionID string `json:"connection_id,omitempty"`
+		Reason       string `json:"reason,omitempty"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeIngestProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.")
+		return
+	}
+	streamID := strings.TrimSpace(req.StreamID)
+	if streamID == "" {
+		writeIngestProblem(w, http.StatusBadRequest, "invalid_request", "stream_id darf nicht leer sein.")
+		return
+	}
+	observed, parseErr := time.Parse(time.RFC3339Nano, strings.TrimSpace(req.ObservedAt))
+	if parseErr != nil {
+		// RFC3339 ohne Nanos ist auch zulässig.
+		observed, parseErr = time.Parse(time.RFC3339, strings.TrimSpace(req.ObservedAt))
+	}
+	if parseErr != nil {
+		writeIngestProblem(w, http.StatusBadRequest, "invalid_request",
+			"observed_at muss ein RFC3339-Timestamp sein.")
+		return
+	}
+	source := domain.StreamLifecycleEventSource(strings.TrimSpace(req.Source))
+	if source == "" {
+		source = domain.StreamLifecycleSourceSmoke
+	}
+	result, err := h.UseCase.RecordLifecycleEvent(r.Context(), driving.LifecycleHookRequest{
+		ResolvedProjectID: projectID,
+		StreamID:          streamID,
+		Kind:              h.Kind,
+		ObservedAt:        observed,
+		Source:            source,
+		ConnectionID:      req.ConnectionID,
+		Reason:            req.Reason,
+	})
+	if err != nil {
+		writeIngestError(w, h.Logger, "lifecycle", err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, map[string]any{
+		"accepted":    true,
+		"event_id":    result.EventID,
+		"stream_id":   result.StreamID,
+		"type":        string(result.Kind),
+		"observed_at": result.ObservedAt.UTC().Format(time.RFC3339Nano),
+	})
+}
+
 // IngestStreamValidateHandler bedient
 // `POST /api/ingest/streams/{id}/validate-key`.
 type IngestStreamValidateHandler struct {
@@ -340,7 +422,10 @@ func readIngestBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 func writeIngestError(w http.ResponseWriter, logger *slog.Logger, op string, err error) {
 	switch {
 	case errors.Is(err, domain.ErrIngestProtocolUnknown),
-		errors.Is(err, domain.ErrIngestDisplayNameRequired):
+		errors.Is(err, domain.ErrIngestDisplayNameRequired),
+		errors.Is(err, domain.ErrIngestLifecycleObservedAtRequired),
+		errors.Is(err, domain.ErrIngestLifecycleSourceUnknown),
+		errors.Is(err, domain.ErrIngestLifecycleFieldTooLong):
 		writeIngestProblem(w, http.StatusBadRequest, "invalid_request", err.Error())
 	case errors.Is(err, domain.ErrIngestProjectIDMismatch):
 		writeIngestProblem(w, http.StatusBadRequest, "project_id_mismatch", err.Error())

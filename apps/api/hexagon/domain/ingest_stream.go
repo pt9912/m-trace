@@ -35,6 +35,14 @@ const (
 	IngestProtocolRTMP IngestProtocol = "rtmp"
 )
 
+// MaxLifecycleStringField ist die obere Grenze für ConnectionID/
+// Reason im Hook-Body. Defense-in-Depth gegen Log-/Storage-
+// Aufblähung; jenseits davon mappt der HTTP-Adapter auf
+// `400 invalid_request`. Wert ist absichtlich großzügig (256
+// Zeichen reichen für jede sinnvolle Korrelation, sind aber nicht
+// in der Größenordnung „beliebiger Free-Text").
+const MaxLifecycleStringField = 256
+
 // IsKnown prüft, ob ein Protocol-Wert in der `0.11.0`-Allowlist
 // vertreten ist. Der HTTP-Adapter mappt unbekannte Werte auf
 // `400 invalid_request`; der Generator-Pfad lehnt sie strukturell
@@ -167,24 +175,50 @@ const (
 // in `0.11.0` aber nicht aktiv.
 type StreamLifecycleEventSource string
 
-// StreamLifecycleEventSource-Werte: `smoke` für lokal eingespeiste
-// Events, `mediamtx-hook` reserviert den späteren Adapter-Pfad.
+// StreamLifecycleEventSource-Werte: `local-smoke` für lokal
+// eingespeiste Events (Plan §0.11.0 Tranche 4 / RAK-69),
+// `mediamtx-hook` reserviert den späteren Adapter-Pfad.
 const (
-	StreamLifecycleSourceSmoke        StreamLifecycleEventSource = "smoke"
+	StreamLifecycleSourceSmoke        StreamLifecycleEventSource = "local-smoke"
 	StreamLifecycleSourceMediaMTXHook StreamLifecycleEventSource = "mediamtx-hook"
 )
+
+// IsKnown prüft, ob ein Source-Wert in der `0.11.0`-Allowlist steht.
+// Der Hook-Handler mappt unbekannte Werte auf `400 invalid_request`.
+func (s StreamLifecycleEventSource) IsKnown() bool {
+	switch s {
+	case StreamLifecycleSourceSmoke, StreamLifecycleSourceMediaMTXHook:
+		return true
+	default:
+		return false
+	}
+}
 
 // StreamLifecycleEvent ist das normative Eventmodell. `KeyFingerprint`
 // ist der **einzige** Key-bezogene Wert, der hier auftaucht — der
 // Klartext darf weder in Logs noch in Persistenz noch in Webhook-
 // Payloads erscheinen (RAK-66/RAK-69).
+//
+// `EventID` ist ein server-generierter, opaker Identifier (Prefix
+// `evt_` + crypto/rand-Hex), den der Hook-Adapter im Response-Body
+// echo't, damit Aufrufer ein Acknowledgement haben.
+//
+// `ConnectionID` und `Reason` sind dokumentarische Optional-Felder
+// aus der HTTP-Hook-Payload (Plan §3.8 / RAK-69) — sie helfen beim
+// Korrelieren in lokalen Lab-Smokes und beim späteren Anbinden
+// echter MediaMTX-Hooks. Beide werden persistiert, aber **nicht**
+// validiert (außer Längenlimit zur DoS-Abwehr) und **nie** als
+// Schlüsselmaterial behandelt.
 type StreamLifecycleEvent struct {
+	EventID        string
 	Kind           StreamLifecycleEventKind
 	StreamID       string
 	ProjectID      string
 	OccurredAt     time.Time
 	Source         StreamLifecycleEventSource
 	KeyFingerprint string
+	ConnectionID   string
+	Reason         string
 }
 
 // Validation-/Domain-Errors für Ingest-Control. HTTP-Mapping in
@@ -206,6 +240,18 @@ var (
 	// Ergebnis explizit über `errors.Is` mapt und nicht über eine
 	// brüchige String-Heuristik (Plan-0.11.0-Review-Fix).
 	ErrIngestDisplayNameRequired = errors.New("display_name must not be empty")
+	// ErrIngestLifecycleObservedAtRequired meldet, dass der
+	// Hook-Body kein parsebares `observed_at` enthält. HTTP-Mapping:
+	// 400 invalid_request.
+	ErrIngestLifecycleObservedAtRequired = errors.New("observed_at must be RFC3339")
+	// ErrIngestLifecycleSourceUnknown meldet einen Source-Wert, der
+	// nicht in der `0.11.0`-Allowlist steht. HTTP-Mapping: 400
+	// invalid_request.
+	ErrIngestLifecycleSourceUnknown = errors.New("lifecycle source must be one of: local-smoke, mediamtx-hook")
+	// ErrIngestLifecycleFieldTooLong meldet, dass `connection_id`
+	// oder `reason` länger als `MaxLifecycleStringField` ist.
+	// HTTP-Mapping: 400 invalid_request.
+	ErrIngestLifecycleFieldTooLong = errors.New("lifecycle string field exceeds length limit")
 )
 
 // ValidateIngestProtocol normalisiert (Whitespace, Lowercase) und

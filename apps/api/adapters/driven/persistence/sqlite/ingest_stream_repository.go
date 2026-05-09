@@ -291,17 +291,24 @@ FROM ingest_routing_rules WHERE project_id = ? AND stream_id = ?`, projectID, st
 }
 
 // AppendLifecycleEvent persistiert ein Lifecycle-Event in
-// `stream_lifecycle_events` (append-only).
+// `stream_lifecycle_events` (append-only). Der Aufrufer muss
+// `EventID` setzen — der Service generiert ihn beim Empfang des
+// Hooks (Plan §0.11.0 Tranche 4 / RAK-69).
 func (r *IngestStreamRepository) AppendLifecycleEvent(ctx context.Context, event domain.StreamLifecycleEvent) error {
 	if _, err := r.scanStream(ctx, r.db, event.ProjectID, event.StreamID); err != nil {
 		return err
 	}
+	if event.EventID == "" {
+		return fmt.Errorf("ingest: append lifecycle event: empty event_id")
+	}
 	occurredAt := event.OccurredAt.UTC().Format(time.RFC3339Nano)
 	receivedAt := time.Now().UTC().Format(time.RFC3339Nano)
 	if _, err := r.db.ExecContext(ctx, `
-INSERT INTO stream_lifecycle_events(project_id, stream_id, kind, occurred_at, received_at, source, key_fingerprint)
-VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		event.ProjectID, event.StreamID, string(event.Kind), occurredAt, receivedAt, string(event.Source), event.KeyFingerprint); err != nil {
+INSERT INTO stream_lifecycle_events(event_id, project_id, stream_id, kind, occurred_at, received_at, source, key_fingerprint, connection_id, reason)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		event.EventID, event.ProjectID, event.StreamID, string(event.Kind),
+		occurredAt, receivedAt, string(event.Source), event.KeyFingerprint,
+		event.ConnectionID, event.Reason); err != nil {
 		return fmt.Errorf("ingest: insert lifecycle event: %w", err)
 	}
 	return nil

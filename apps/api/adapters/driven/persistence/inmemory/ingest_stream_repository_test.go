@@ -218,7 +218,7 @@ func TestInMemoryIngestRepo_RoutingRuleAndLifecycle(t *testing.T) {
 	}
 	// Lifecycle-Event-Append + Snapshot.
 	if err := repo.AppendLifecycleEvent(context.Background(), domain.StreamLifecycleEvent{
-		Kind: domain.StreamLifecycleEventStarted, StreamID: created.ID, ProjectID: "p1",
+		EventID: "evt_test1", Kind: domain.StreamLifecycleEventStarted, StreamID: created.ID, ProjectID: "p1",
 		OccurredAt: now, Source: domain.StreamLifecycleSourceSmoke, KeyFingerprint: created.Key.Fingerprint,
 	}); err != nil {
 		t.Fatalf("append lifecycle: %v", err)

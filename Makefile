@@ -7,7 +7,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -187,6 +187,16 @@ smoke-webrtc-stats-drift:
 # Header liefert. Opt-in (NICHT in `make gates`).
 smoke-srs:
 	bash scripts/smoke-srs.sh
+
+# `make smoke-ingest-control` ist der Lab-Smoke aus plan-0.11.0
+# Tranche 4 (RAK-69). Erstellt einen Stream über die HTTP-API und
+# spielt einen Start-/Ende-Lifecycle-Hook ein; verifiziert
+# `accepted:true` und unterschiedliche `event_id`-Werte. Erwartet
+# eine erreichbare apps/api (Default `MTRACE_API_URL=http://localhost:8080`)
+# und ein gültiges Token (`MTRACE_API_TOKEN=demo-token`).
+# Opt-in (NICHT in `make gates`).
+smoke-ingest-control:
+	bash examples/ingest-control/smoke-lifecycle.sh
 
 # `make api-benchmark-smoke` ist die Go-Hot-Path-Bench-Suite aus
 # plan-0.9.5 §2 Tranche 1 (extra-gates.md §3.2). Druckt zuerst die
