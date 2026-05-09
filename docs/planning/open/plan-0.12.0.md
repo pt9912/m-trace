@@ -123,7 +123,7 @@ ist Folge-Scope.
 | Thema | Entscheidungsvorschlag | Begründung |
 | --- | --- | --- |
 | Session-Token-Format | kompaktes, eigenes HMAC-SHA-256-signiertes Token mit Prefix `mtr_st_`, `kid`, canonical JSON Claims und Base64url-Encoding | keine neue Runtime-Abhängigkeit, auditierbar, genügt für lokalen/API-nahen Scope |
-| Signaturschlüssel | Server-seitige Key-Ring-Konfiguration über ENV/File; `kid` erlaubt Rotation | keine Secrets im Repo; später auf KMS/Vault migrierbar |
+| Signaturschlüssel | Server-seitige Key-Ring-Konfiguration über ENV/File; `kid` erlaubt Rotation; alte Verify-Keys bleiben bis zum Ablauf aller damit signierten Tokens geladen | keine Secrets im Repo; restart-stabiler Dauerbetrieb; später auf KMS/Vault migrierbar |
 | Project-Token-Persistenz | SQLite über bestehende API-Persistenz plus InMemory-Testadapter | Rotation braucht dauerhafte Generationen und Restart-Nachweis |
 | Klartext-Token | nur bei Erzeugung/Rotation oder in markierten Demo-Fixtures; persistiert wird Hash + Fingerprint | analog Stream-Key-Grenze aus `0.11.0` |
 | Admin-Oberfläche | keine UI; Rotation wird über Application-Service/Repository und optional Operator-CLI/Script nachgewiesen | vermeidet Control-Plane-Scope |
@@ -215,6 +215,14 @@ kann Preflight auf project-spezifische Policies umgestellt werden.
 }
 ```
 
+`audience` ist kein freies Client-Feld. Der Server akzeptiert nur
+Audiences aus der Project Policy; im `0.12.0`-Pflichtpfad ist
+`playback-events` die einzige Muss-Audience. Unbekannte oder für das
+Project nicht erlaubte Audiences liefern `403 auth_session_scope_denied`
+und erzeugen keinen Token. Neue Audiences für weitere Endpoints müssen
+jeweils im API-Kontrakt, in der Policy-Allowlist und in Contract-Tests
+ergänzt werden.
+
 Der Request ist mit einem gültigen Project Token authentifiziert
 (`X-MTrace-Token`). `project_id` ist optional und dient als
 Konsistenzcheck zum Token: fehlt es, wird das Project ausschließlich
@@ -279,7 +287,9 @@ Mindestinhalte für Tranche 0 und Doku:
   Restart-stabile Quelle für die Grace-Entscheidung. Session Tokens
   werden nicht rückwirkend unendlich gültig.
 - **Signatur-Key-Rotation**: `kid` im Session Token ermöglicht
-  parallele Signatur-Keys; unbekannter `kid` liefert `401`.
+  parallele Signatur-Keys; alte Verify-Keys bleiben über Deployments
+  und Restarts geladen, bis alle damit signierten Session Tokens
+  abgelaufen sind. Unbekannter `kid` liefert `401`.
 - **Rate Limits**: Policy-Grenzen gelten mindestens pro Project; wo
   technisch vorhanden zusätzlich pro Origin/IP-Bereich.
 - **Abgrenzung**: keine Production-Secret-Verwaltung, kein OAuth/OIDC,
@@ -373,6 +383,10 @@ DoD:
 - [ ] Application-Service stellt Session Tokens aus, wenn ein gültiges
   Project Token präsentiert wird und die Project Policy den Request
   erlaubt.
+- [ ] Session-Token-Audience wird serverseitig gegen die Project-
+  Policy-Allowlist geprüft; `0.12.0` erlaubt als Muss-Pfad nur
+  `playback-events`. Nicht erlaubte oder unbekannte Audiences liefern
+  `403 auth_session_scope_denied`.
 - [ ] Token-Issuance-Endpoint
   `POST /api/auth/session-tokens` implementiert; `project_id` im Body
   ist optionaler Konsistenzcheck zum Project Token. Fehlt
@@ -390,6 +404,11 @@ DoD:
   Fallback auf niedriger priorisierte gültige Tokens.
 - [ ] Session Token validiert Signatur, `kid`, `exp`, `nbf`,
   `audience`, `project_id`, optional `session_id` und `origin`.
+- [ ] Signing-Key-Ring ist restart-stabil: aktive Signing-Keys und
+  alte Verify-Keys sind über ENV/File-Konfiguration reproduzierbar.
+  Tests pinnen, dass ein vor Key-Switch ausgestellter, noch nicht
+  abgelaufener Session Token nach Wechsel des aktiven `kid` und nach
+  Reinitialisierung weiterhin validiert wird.
 - [ ] Abgelaufene, manipulierte, falsch gebundene und mit unbekanntem
   `kid` signierte Tokens liefern stabile Fehlercodes ohne
   Identifier-Leak.
@@ -533,7 +552,7 @@ Datei-, Test- und Doku-Nachweis.
 | RAK | Priorität | Nachweis | Status |
 | --- | --- | --- | --- |
 | RAK-71 | Muss | Lastenheft-Patch, Scope-Grenze, README-/Doku-Abgrenzung gegen OAuth/OIDC, Admin-UI, KMS/Vault und SaaS-Tenant-Management. | [ ] |
-| RAK-72 | Muss | Session-Token-Issuance, Signaturvalidierung, Claims-Validierung, Fehlercodes und Contract-Tests. | [ ] |
+| RAK-72 | Muss | Session-Token-Issuance, serverseitige Audience-Allowlist, Signaturvalidierung, Claims-Validierung, restart-stabiler Signing-Key-Ring, Fehlercodes und Contract-Tests. | [ ] |
 | RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, persistiertes `grace_until`, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
 | RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, globale konservative Preflight-Regeln, project-spezifisches POST-Enforcement und Policy-Denial-Tests. | [ ] |
 | RAK-75 | Muss | Kompatibilität mit bestehenden Project-Token-Flows, SDK/Demo/Analyze/Session/Ingest-Tests und Migrationsdoku. | [ ] |
