@@ -435,8 +435,8 @@ Validierungsregeln:
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | 🟡 |
-| 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ⬜ |
+| 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | ✅ |
+| 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | 🟡 |
 | 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ⬜ |
 | 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | ⬜ |
 | 4 | Lifecycle-Events und lokale Lab-Verifikation | ⬜ |
@@ -507,21 +507,41 @@ Storage oder Media-Server-Artefakte angebunden werden.
 
 DoD:
 
-- [ ] Domainobjekte `IngestStream`, `StreamKey`, `IngestEndpoint`,
-  `RoutingRule`, `MediaServerTarget` und `StreamLifecycleEvent`
-  definiert.
-- [ ] Protocol-Enum ist auf `srt` und `rtmp` begrenzt; unbekannte
-  Werte liefern stabilen Fehlercode.
-- [ ] Stream-Key-Erzeugung nutzt CSPRNG mit mindestens 256 Bit Entropie,
-  dokumentiert das URL-sichere Ausgabeformat und berechnet `key_hash`
-  sowie redigierten `fingerprint` getrennt vom Klartext.
-- [ ] Key-Validierung nutzt den vollständigen `key_hash`; `fingerprint`
-  ist nur Anzeige-/Audit-Hilfe und kein verifier.
-- [ ] Validierungsregeln decken ungültige Keys, doppelte aktive
-  Stream-Namen, fehlende Endpunkte, fehlende Targets und deaktivierte
-  Routing-Regeln ab.
-- [ ] Domain-Tests laufen ohne HTTP-Server, Docker oder MediaMTX.
-- [ ] Kein Domain-Test speichert oder snapshotet echte Klartext-Keys.
+- [x] Domainobjekte `IngestStream`, `StreamKey`, `IngestEndpoint`,
+  `RoutingRule`, `MediaServerTarget` und `StreamLifecycleEvent` in
+  `apps/api/hexagon/domain/ingest_stream.go` definiert.
+- [x] `IngestProtocol`-Enum auf `srt`/`rtmp` begrenzt
+  (`IngestProtocol.IsKnown` + `ValidateIngestProtocol`); unbekannte
+  Werte liefern `ErrIngestProtocolUnknown`. HTTP-Adapter mappt das
+  in T2 auf `400 invalid_request`.
+- [x] Stream-Key-Erzeugung
+  (`apps/api/hexagon/domain/stream_key.go`,
+  `GenerateStreamKey`) nutzt `crypto/rand` mit 32 Byte = 256 Bit
+  Entropie. URL-sicheres `base64.RawURLEncoding` mit Prefix
+  `mtr_ing_`; SHA-256-Hex-Hash und redigierter Fingerprint
+  (`mtr_ing_<head8>...<tail4>`) getrennt vom Klartext berechnet.
+  `StreamKeyMaterial.ToPersistable()` extrahiert die persistente
+  Sicht ohne Klartext.
+- [x] Key-Validierung (`ValidateStreamKey`) nutzt den vollständigen
+  Hash mit `crypto/subtle.ConstantTimeCompare`; Fingerprint ist
+  reine Anzeigeform und kein verifier (Doku-Comment +
+  `TestStreamKeyMaterial_ToPersistableExcludesValue`).
+- [x] Validierungsregeln + Fehler-Konstanten:
+  `ErrIngestProtocolUnknown`, `ErrIngestStreamNotFound`,
+  `ErrIngestStreamNameConflict`, `ErrIngestEndpointNotFound`,
+  `ErrIngestTargetNotFound`, `ErrIngestRoutingRuleDisabled`,
+  `ErrIngestProjectIDMismatch`, `ErrIngestKeyInvalid`,
+  `ErrIngestMediaServerConfigUnavailable`,
+  `ErrStreamKeyMalformed`. Cross-Project-Leak-Schutz über
+  `FilterStreamForProject` (Streams aus fremden Projekten →
+  `ErrIngestStreamNotFound`, kein Hinweis auf Existenz).
+- [x] Domain-Tests
+  (`ingest_stream_test.go` + `stream_key_test.go`, ~13 Tests)
+  laufen ohne HTTP-Server, Docker oder MediaMTX — reine
+  In-Memory-Validierung.
+- [x] Kein Domain-Test speichert oder snapshotet echte
+  Klartext-Keys; `TestGenerateStreamKey_Uniqueness` prüft 1000
+  Keys auf Eindeutigkeit ohne sie zu loggen.
 
 ## 4. Tranche 2 — API, Persistenz und Key-Rotation
 
