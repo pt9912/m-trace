@@ -62,6 +62,14 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `GET`  | `/api/stream-sessions/{id}` | Stream-Session mit Events lesen | `200 OK` oder `404 Not Found` |
 | `GET`  | `/api/stream-sessions/stream` | SSE-Live-Stream der Event-Append-Frames (plan-0.4.0 §5 H4) | `200 OK` (text/event-stream) oder `401` |
 | `POST` | `/api/analyze`          | HLS-Manifest analysieren (plan-0.3.0 §7) | `200 OK` |
+| `POST` | `/api/ingest/streams`   | Ingest-Stream anlegen; gibt Stream-Metadaten plus Klartext-Key genau einmal zurück (plan-0.11.0 §0.6, RAK-66) | `201 Created` |
+| `GET`  | `/api/ingest/streams`   | Streams im aufgelösten Project listen, ohne Klartext-Key (RAK-66/RAK-70) | `200 OK` |
+| `GET`  | `/api/ingest/streams/{id}` | Stream-Details inkl. Endpunkt und Routing-Regel lesen, ohne Klartext-Key (RAK-67) | `200 OK` oder `404 Not Found` |
+| `POST` | `/api/ingest/streams/{id}/rotate-key` | Stream-Key rotieren; gibt neuen Klartext-Key genau einmal zurück (RAK-66) | `200 OK` |
+| `POST` | `/api/ingest/streams/{id}/validate-key` | Lokalen Stream-Key gegen aktive `key_hash`-Werte prüfen; **kein** produktiver Media-Server-Auth-Pfad (RAK-65/RAK-66) | `200 OK` |
+| `POST` | `/api/ingest/hooks/stream-started` | Lokales Start-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
+| `POST` | `/api/ingest/hooks/stream-ended` | Lokales Ende-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
+| `GET`  | `/api/ingest/media-server-config` | Generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern (RAK-68) | `200 OK` |
 
 ---
 
@@ -337,6 +345,186 @@ Der analyzer-service-Pfad bekommt einen 30-Sekunden-Timeout vom
 HTTP-Adapter sowie ein Antwortgrößen-Limit von 4 MiB. Beides ist
 Defense-in-Depth gegen einen kompromittierten oder hängenden
 Service; die Limits sind nicht öffentlich konfigurierbar.
+
+---
+
+### 3.8 Ingest-Control-Endpunkte (`0.11.0`, RAK-65..RAK-70)
+
+Der `/api/ingest/*`-Pfad implementiert lokales Stream Control für
+Lab-/Demo-Flows (`apps/api`-Modul, Variante B aus
+[`docs/planning/in-progress/plan-0.11.0.md`](../docs/planning/in-progress/plan-0.11.0.md)
+§0.3). Der Pfad ist **kein** produktiver Auth-Replacement und
+**kein** mandantenfähiger Control-Plane-Pfad — siehe README-
+Abgrenzung „Was m-trace nicht ist".
+
+**Auth-Matrix.** Alle `/api/ingest/*`-Endpunkte sind tokenpflichtig
+und folgen der bestehenden `X-MTrace-Token`-/Project-Resolver-
+Konvention aus §4. `project_id` wird serverseitig aus dem Token
+abgeleitet; ein Request-`project_id`-Wert (z. B. in
+`POST /api/ingest/streams`) darf nur als Konsistenzcheck dienen
+und muss zum Token passen. Listen, Details, Rotation, Key-
+Validierung und Lifecycle-Events sind immer auf das aufgelöste
+Project gefiltert; ein Stream eines fremden Projects wird wie
+nicht-existent behandelt (`404`, kein leakender Hinweis auf
+Existenz).
+
+**CORS-Preflight.** Standard-Browser-Aufrufe gegen
+`/api/ingest/*` werden im Preflight wie der Dashboard-Lese-Pfad
+behandelt (siehe Spec §10a für SSE; analog OPTIONS/Allow-Origin
+gegen die globale Origin-Allowlist), weil Ingest-Control im
+`0.11.0`-Scope kein produktiver Browser-Schreibpfad ist. Die
+konkrete Origin-Politik wird mit dem Plan-Closeout beschrieben.
+
+**Fehlerreihenfolge.** Der Handler prüft in dieser Reihenfolge,
+analog zum bestehenden `/api/analyze`-Pfad:
+
+1. Content-Type (`application/json`) → `415` bei Verstoß.
+2. Body-Größe ≤ `maxIngestRequestBytes` (1 MiB Default) → `413`
+   bei Überlauf.
+3. JSON-Parsing → `400 invalid_json`.
+4. `X-MTrace-Token` vorhanden und resolvierbar → `401 unauthorized`
+   sonst.
+5. Schema-Validierung (Pflicht-/Optionalfelder, `protocol`-
+   Allowlist, `project_id`-Konsistenz) → `400 invalid_request`.
+6. Domain-Vorbedingungen (Stream existiert, Endpoint/Target
+   existiert, Routing-Regel aktiv) → `404 not_found` /
+   `409 conflict` je nach Fall.
+7. Use-Case-Aufruf.
+
+**Wire-Skizzen.**
+
+`POST /api/ingest/streams` Request:
+
+```json
+{
+  "display_name": "Lab SRT",
+  "protocol": "srt",
+  "endpoint_id": "mediamtx-srt-local",
+  "target_id": "mediamtx-local",
+  "project_id": "demo"
+}
+```
+
+`project_id` ist optional; fehlt das Feld, wird es serverseitig
+aus dem Token abgeleitet. Stimmt es nicht mit dem Token überein,
+liefert der Server `400 invalid_request` mit
+`code:"project_id_mismatch"`.
+
+`POST /api/ingest/streams` und
+`POST /api/ingest/streams/{id}/rotate-key` Response:
+
+```json
+{
+  "stream": {
+    "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "project_id": "demo",
+    "display_name": "Lab SRT",
+    "protocol": "srt",
+    "endpoint_id": "mediamtx-srt-local",
+    "target_id": "mediamtx-local",
+    "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "status": "ready",
+    "created_at": "2026-05-09T10:00:00Z",
+    "updated_at": "2026-05-09T10:00:00Z"
+  },
+  "stream_key": {
+    "value": "mtr_ing_7YQ3pVh4v0hT8x2l9b6nR4c1A5sD0eF2gH3jK8mN9pQ",
+    "fingerprint": "mtr_ing_7YQ3...N9pQ",
+    "created_at": "2026-05-09T10:00:00Z"
+  }
+}
+```
+
+`stream_key.value` darf ausschließlich in Create-/Rotate-Antworten
+erscheinen. List-, Detail-, Event-, Fehler- und Artefakt-Antworten
+enthalten höchstens `key_fingerprint`.
+
+`GET /api/ingest/streams` Response:
+
+```json
+{
+  "streams": [
+    {
+      "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+      "project_id": "demo",
+      "display_name": "Lab SRT",
+      "protocol": "srt",
+      "endpoint_id": "mediamtx-srt-local",
+      "target_id": "mediamtx-local",
+      "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+      "status": "ready",
+      "key_fingerprint": "mtr_ing_7YQ3...N9pQ",
+      "created_at": "2026-05-09T10:00:00Z",
+      "updated_at": "2026-05-09T10:00:00Z"
+    }
+  ]
+}
+```
+
+`POST /api/ingest/streams/{id}/validate-key` Request/Response:
+
+```json
+{ "stream_key": "mtr_ing_7YQ3pVh4v0hT8x2l9b6nR4c1A5sD0eF2gH3jK8mN9pQ" }
+```
+
+```json
+{
+  "valid": true,
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "key_fingerprint": "mtr_ing_7YQ3...N9pQ"
+}
+```
+
+Das Validate-Endpoint ist explizit **kein** produktiver Auth-Pfad.
+Es gibt keinen Hinweis auf Existenz fremder Streams (immer
+`{ "valid": false }` ohne Detail-Stream-ID, wenn Token und Stream
+nicht zum selben Project gehören).
+
+`POST /api/ingest/hooks/stream-{started,ended}` Request:
+
+```json
+{
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "occurred_at": "2026-05-09T10:05:30.123Z",
+  "source": "smoke"
+}
+```
+
+Lifecycle-Events tragen **keine** Klartext-Keys; höchstens den
+`key_fingerprint`. `source` benennt den Auslöser (`smoke`,
+`mediamtx-hook`, ...). Produktive ausgehende Webhook-Zustellung
+an externe Systeme ist nicht Teil des `0.11.0`-Vertrags.
+
+`GET /api/ingest/media-server-config` Response:
+
+```json
+{
+  "target_id": "mediamtx-local",
+  "kind": "mediamtx",
+  "config_path": "examples/ingest-control/mediamtx.generated.yml",
+  "config_yaml": "paths:\n  publish:{stream_path}:\n    source: publisher\n",
+  "warnings": []
+}
+```
+
+`config_yaml` ist das tatsächlich von `apps/api` generierte oder
+validierte Artefakt; `config_path` zeigt, wohin der Smoke das
+Artefakt schreibt. Das Endpoint produziert kein I/O auf
+laufenden externen Media-Servern.
+
+**Fehler-Codes (zusätzlich zu den Schema-/Auth-Codes oben).**
+
+| HTTP | `code` | Anlass |
+| ---- | ------ | ------ |
+| 400  | `invalid_request` | Pflichtfeld fehlt, `protocol` außerhalb der Allowlist, oder `project_id` widerspricht dem Token. |
+| 400  | `project_id_mismatch` | Request-`project_id` weicht vom Token ab. |
+| 401  | `unauthorized` | `X-MTrace-Token` fehlt oder ist ungültig. |
+| 404  | `stream_not_found` | Stream-ID gehört nicht zum Project oder existiert nicht. |
+| 404  | `endpoint_not_found` / `target_not_found` | Referenziertes Endpunkt-/Target-Objekt fehlt. |
+| 409  | `stream_name_conflict` | Aktiver Stream mit gleichem `display_name` im Project existiert. |
+| 409  | `routing_rule_disabled` | Routing-Regel ist deaktiviert; Lifecycle-Hook lehnt ab. |
+| 422  | `key_invalid` | `validate-key`-Response trägt `valid:false` (Wire-Form `{valid:false}` ohne Stream-ID). |
+| 503  | `media_server_config_unavailable` | Konfigurations-Artefakt konnte nicht generiert/validiert werden. |
 
 ---
 

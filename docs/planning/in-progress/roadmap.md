@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-08
-> **Phase**: `0.10.0` released — CMAF-Analyse im Stream-Analyzer-Scope (NF-13 / RAK-60..RAK-64). Plan archiviert in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md). Lieferungen: additives `details.cmaf`-Signalmodell unter HLS-/DASH-Detail-Objekten (kein neuer `analyzerKind`); HLS- und DASH-Manifest-Detection mit Confidence-Domäne `binary`/`manifest`/`inferred`; bounded binäre CMAF-Konformitätsprüfung mit ISO-BMFF-Box-Parser, Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff` und 13 normativ definierten `CmafFailureCode`-Werten; CLI-Opt-in `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS` für lokale Lab-Server; CMAF-Probes in `make smoke-cli`. Lastenheft-Patch `1.1.13` mit §13.12. Vorgänger `0.9.6` released (Lastenheft-Konvergenz; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md); Lastenheft `1.1.12`). Frühere Releases: `v0.9.5` (Quality-Gates Wave 2), `v0.9.1` (Drift-Smoke-Robustheit), `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md); `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.11.0` aktiviert — Ingest-Gateway / Stream Control (F-46..F-51, MVP-38, RAK-65..RAK-70 / §13.13). Plan in [`in-progress/plan-0.11.0.md`](./plan-0.11.0.md). Architektur Variante B (Modul in `apps/api`, kein eigener `apps/ingest-gateway`-Service). Lastenheft-Patch `1.1.14` hebt `F-46`..`F-51` und `MVP-38` für den begrenzten lokalen/lab-nahen Stream-Control-Pfad auf Release-Muss; Wire-Vertrag für `/api/ingest/*` in [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md) §2 + §3.8. Vorgänger `0.10.0` released — CMAF-Analyse im Stream-Analyzer-Scope (NF-13 / RAK-60..RAK-64). Plan archiviert in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md); Lastenheft vor `0.11.0`: `1.1.13`. Frühere Releases: `v0.9.6` (Lastenheft-Konvergenz; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md)), `v0.9.5` (Quality-Gates Wave 2), `v0.9.1` (Drift-Smoke-Robustheit), `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md); `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -41,13 +41,29 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.10.0` ist released (CMAF-Analyse im Stream-Analyzer-Scope,
-NF-13 / RAK-60..RAK-64; Plan in
-[`done/plan-0.10.0.md`](../done/plan-0.10.0.md); Lastenheft
-`1.1.13`). Folge-Phase ist offen — Folge-Pläne
-`0.11.0`/`0.12.0`/`0.13.0` liegen in
-[`docs/planning/open/`](../open/). Bewusst ausgegrenzte
-CMAF-Erweiterungen (Folge-Scope, **nicht** Teil von `0.10.0`):
+`0.11.0` ist als Folge-Phase aktiviert: Plan-Move nach
+[`docs/planning/in-progress/plan-0.11.0.md`](./plan-0.11.0.md),
+Lastenheft-Patch `1.1.14` mit RAK-65..RAK-70 (§13.13) verankert
+den begrenzten lokalen/lab-nahen Ingest-Control-Scope (F-46..F-51
+und MVP-38 auf `0.11.0`-Release-Muss). Architektur: **Variante B**
+— Ingest-Control als Modul in `apps/api`; ein eigener
+`apps/ingest-gateway`-Service bleibt Folge-Scope. Wire-Vertrag
+für `/api/ingest/*` in
+[`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+§2 + §3.8.
+
+Out of Scope für `0.11.0` (wandern nach `0.12.0` oder später):
+mandantenfähige Control-Plane, KMS-/Vault-Secrets, globale
+Stream-Key-Rotation, produktive Media-Server-Auth-Hooks,
+automatische externe Provisionierung, K8s-Operator,
+Auth-/Token-Lifecycle (`F-111`..`F-113`, NF-16), produktive
+ausgehende Webhook-Zustellung an externe Systeme.
+
+Vorgänger `0.10.0` released (CMAF-Analyse im Stream-Analyzer-
+Scope, NF-13 / RAK-60..RAK-64; Plan in
+[`done/plan-0.10.0.md`](../done/plan-0.10.0.md); Lastenheft vor
+diesem Patch: `1.1.13`). Bewusst ausgegrenzte CMAF-Erweiterungen
+bleiben Folge-Scope nach `0.11.0`/`0.12.0`/`0.13.0`:
 
 - Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF, `cmfl`-Profil).
 - Vollständige Segmentset-Abdeckung jenseits Init + erstes
@@ -57,9 +73,8 @@ CMAF-Erweiterungen (Folge-Scope, **nicht** Teil von `0.10.0`):
   `#EXT-X-BYTERANGE`-Media-Segmente.
 - `cmf1` und neuere Structural-Brand-Profile.
 
-Vorgänger `0.9.6` released (Lastenheft-Konvergenz-Patch nach
-`0.9.5`; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md);
-Lastenheft vor `0.10.0`: `1.1.12`).
+Weitere Folge-Pläne `0.12.0`/`0.13.0` liegen in
+[`docs/planning/open/`](../open/).
 
 Pending-Folge-Punkte aus der Wave-2-Lieferung in `0.9.5`
 (Trigger-Schwellen werden im jeweiligen Folge-Plan aktiviert,
@@ -156,7 +171,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 43  | ✅      | `0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse ausliefern: Browser-Drift-Smoke gegen `examples/webrtc/`-Lab plus Nightly-CI (R-12 wandert auf „automatisiert detektiert"), `examples/srs/`-Lab analog der anderen Multi-Protocol-Beispiele, DASH-MPD-Pfad im `@npm9912/stream-analyzer` mit `analyzerKind: "dash"` und CLI-Dispatcher | Nach Schritt 42                                                  | RAK-56..RAK-59 (Lastenheft `1.1.11` §13.11); [`plan-0.9.0.md`](../done/plan-0.9.0.md) Tranchen 0–5; Tag `v0.9.0` |
 | 44  | ✅      | `0.9.6` Lastenheft-Konvergenz-Patch ausliefern: fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren) und Go-Stdlib-Bump `golang:1.26.3` (GO-2026-4982/4980/4971/4918); keine User-Surface-Änderung | Nach Schritt 43                                                  | F-7, F-131 (neu), NF-13, NF-18, NF-25, NF-29, MVP-19..MVP-26, MVP-40..MVP-42; [`plan-0.9.6.md`](../done/plan-0.9.6.md) Tranchen 0–4 |
 | 45  | ✅      | `0.10.0` CMAF-Analyse ausgeliefert (NF-13-Vollumsetzung im Stream-Analyzer-Scope): manifestbasierte HLS-/DASH-CMAF-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente; Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12; additives `details.cmaf`-Schema unter HLS-/DASH-Detail-Objekten ohne neuen `analyzerKind`; ISO-BMFF-Box-Parser und bounded Segment-Loader (Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff`; Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6`) | Nach Schritt 44 | NF-13, RAK-60..RAK-64; [`done/plan-0.10.0.md`](../done/plan-0.10.0.md) Tranchen 0–6 |
-| 46  | ⬜      | `0.11.0` Ingest-Gateway / Stream Control ausliefern: F-46..F-51 aus dem Lastenheft (bisher Kann) in einen umsetzbaren Stream-Control-Pfad geschnitten — Stream-Key, Ingest-Endpunkt und Stream-Ziel als Datenmodell; lokal betreibbarer Ingest-Pfad ohne Multi-Tenant-SaaS-Plattform und ohne Control-Plane-Anspruch. Minor-Release mit eigenem Lastenheft-Patch und neuer RAK-Gruppe. | Nach Schritt 45 (Aktivierung erst nach `0.10.0`-Closeout) | F-46..F-51, MVP-38; [`open/plan-0.11.0.md`](../open/plan-0.11.0.md) |
+| 46  | 🟡      | `0.11.0` Ingest-Gateway / Stream Control ausliefern: F-46..F-51 aus dem Lastenheft (Patch `1.1.14` Hochstufung von Kann auf Release-Muss) in einen umsetzbaren Stream-Control-Pfad geschnitten — CSPRNG-Stream-Keys (nur `key_hash` persistiert), `srt`/`rtmp`-Endpunkte, 1:1-Routing-Regeln, MediaMTX-nahe Konfigurationsartefakte und lokal reproduzierbares Lifecycle-Eventmodell. Architektur Variante B (Modul in `apps/api`, kein eigener `apps/ingest-gateway`-Service). Lastenheft-Patch `1.1.14` mit RAK-65..RAK-70 in §13.13. | Nach Schritt 45 | F-46..F-51, MVP-38, RAK-65..RAK-70; [`in-progress/plan-0.11.0.md`](./plan-0.11.0.md) |
 | 47  | ⬜      | `0.12.0` Auth / Token Lifecycle ausliefern: F-111..F-113 als zusammenhängender Security-/Auth-Scope — serverseitig signierte Session Tokens, rotierbare Project Tokens und tenant-spezifische Ingest Policies. Berührt NF-16, NF-24..NF-29, NF-30..NF-37 und NF-38..NF-44. Minor-Release mit eigenem Lastenheft-Patch und neuer RAK-Gruppe. | Nach Schritt 46 | F-106..F-113, NF-16, NF-24..NF-44; [`open/plan-0.12.0.md`](../open/plan-0.12.0.md) |
 | 48  | ⬜      | `0.13.0` Production / Ops Backends ausliefern: MVP-40 (Postgres), MVP-41 (ClickHouse/VictoriaMetrics), MVP-42 (Kubernetes-Manifeste), MVP-43 (Devcontainer), MVP-44 (Release-Automatisierung). NF-18 wird mit MVP-42 harmonisiert. Minor-Release mit eigenem Lastenheft-Patch und neuer RAK-Gruppe. | Nach Schritt 47 | NF-18, MVP-40..MVP-44; [`open/plan-0.13.0.md`](../open/plan-0.13.0.md) |
 
@@ -185,7 +200,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.9.5` | Quality-Gates Wave 2 (Patch) | ✅      | Patch-Release am 2026-05-07. Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md). Lieferungen: Benchmark-Smoke (PR-Pfad opt-in mit Beobachtungs-Nightly `benchmark-observation.yml`); Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik (`benchmark.yml`); sechs Go-Fuzz-Targets + drei TS-Property-Test-Suites via `fast-check` (`make fuzz-check` + Nightly `fuzz.yml`) inkl. Erstfund + Fix `mbpsLinkCapacity=-1` in `apps/api/.../mediamtxclient/mapping.go`; Mutation-Testing mit gremlins (Go) + StrykerJS (TS) als Nightly-Report (`mutation.yml`). Single-Source-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md); Operator-Doku in [`docs/dev/fuzzing.md`](../../dev/fuzzing.md) und [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md). Kein Lastenheft-Patch. |
 | `0.9.6` | Lastenheft-Konvergenz (Patch) | ✅     | Patch-Release am 2026-05-08. Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md). Lieferungen: fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren) und Go-Stdlib-Bump `golang:1.26.3` als Folge der GO-2026-4982/4980/4971/4918-CVE-Fixes (analog `0.8.5`-OTel-Bump). Keine User-Surface- oder Wire-Vertragsänderung. |
 | `0.10.0` | CMAF-Analyse | ✅     | Minor-Release am 2026-05-09. Plan in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md). NF-13-Vollumsetzung im Stream-Analyzer-Scope: manifestbasierte HLS-/DASH-CMAF-Signale (`details.cmaf` additiv unter HLS-/DASH-Detail-Objekten, kein neuer `analyzerKind`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (ISO-BMFF-Box-Parser, bounded Segment-Loader). Brand-Allowlist `cmfc`/`cmf2` (Init-`ftyp`) und `cmfs`/`cmff`/`cmfc`/`cmf2` (Media-`styp`); Defaults `maxSegmentBytes=2_000_000`, `maxBinarySegments=6`. Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12. Out of scope: vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF, Player-Laufzeitpfade. |
-| `0.11.0` | Ingest-Gateway / Stream Control | ⬜ | Plan in [`open/plan-0.11.0.md`](../open/plan-0.11.0.md), aktivierbar nach `0.10.0`-Closeout. Schneidet `F-46`..`F-51` (bisher Kann) in einen lokal betreibbaren Stream-Control-Pfad: Datenmodell für Stream-Key, Ingest-Endpunkt und Stream-Ziel; **kein** Multi-Tenant-SaaS, **keine** Control-Plane. Minor-Release mit eigenem Lastenheft-Patch + neuer RAK-Gruppe + Tag `v0.11.0`. |
+| `0.11.0` | Ingest-Gateway / Stream Control | 🟡 | Plan in [`in-progress/plan-0.11.0.md`](./plan-0.11.0.md), aktiviert nach `0.10.0`-Closeout. Variante B (Modul in `apps/api`). Lastenheft-Patch `1.1.14` mit RAK-65..RAK-70 in §13.13 hebt `F-46`..`F-51` und `MVP-38` für den lokalen/lab-nahen Ingest-Control-Pfad auf Release-Muss: CSPRNG-Stream-Keys (nur `key_hash` persistiert; Klartext nur in Create-/Rotate-Antworten), `srt`/`rtmp`-Endpunkte, 1:1-Routing, MediaMTX-Lab-Artefakte, lokal reproduzierbares Lifecycle-Eventmodell. Wire-Vertrag in [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md) §2 + §3.8. **Out of scope:** Multi-Tenant-Control-Plane, KMS/Vault, produktive Auth-Hooks, externe Provisionierung, K8s-Operator, produktive Webhook-Zustellung. |
 | `0.12.0` | Auth / Token Lifecycle | ⬜ | Plan in [`open/plan-0.12.0.md`](../open/plan-0.12.0.md), aktivierbar nach `0.11.0`. Bündelt `F-111`..`F-113`: serverseitig signierte Session Tokens, rotierbare Project Tokens und tenant-spezifische Ingest Policies; berührt `NF-16` und die `NF-24`..`NF-44`-Sicherheits-/CORS-/Telemetrie-Cluster. Minor-Release mit eigenem Lastenheft-Patch + neuer RAK-Gruppe + Tag `v0.12.0`. |
 | `0.13.0` | Production / Ops Backends | ⬜ | Plan in [`open/plan-0.13.0.md`](../open/plan-0.13.0.md), aktivierbar nach `0.12.0`. Überführt die Production-/Ops-nahen Folgepunkte in einen entscheidbaren Scope: `MVP-40` Postgres, `MVP-41` ClickHouse/VictoriaMetrics, `MVP-42` Kubernetes-Manifeste, `MVP-43` Devcontainer, `MVP-44` Release-Automatisierung. `NF-18` wird mit `MVP-42` harmonisiert. Minor-Release mit eigenem Lastenheft-Patch + neuer RAK-Gruppe + Tag `v0.13.0`. |
 

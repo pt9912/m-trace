@@ -1,9 +1,8 @@
 # Implementation Plan — `0.11.0` (Ingest-Gateway / Stream Control)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst nach
-> explizitem Move nach `docs/planning/in-progress/` umgesetzt werden.
-> Vorgänger ist `0.10.0` (CMAF-Analyse / NF-13; Tag `v0.10.0`);
-> Aktivierung erst nach dessen Release-Closeout.
+> **Status**: 🟡 in Arbeit — Plan aktiviert mit T0-Move; Vorgänger
+> `0.10.0` ist released (Tag `v0.10.0` auf `d384569`, Plan in
+> [`done/plan-0.10.0.md`](../done/plan-0.10.0.md)).
 >
 > **Release-Typ**: Minor-Release mit Lastenheft-Patch `1.1.14`
 > (Vorschlag), neuer RAK-Gruppe `RAK-65`..`RAK-70`,
@@ -436,7 +435,7 @@ Validierungsregeln:
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | ⬜ |
+| 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | 🟡 |
 | 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ⬜ |
 | 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ⬜ |
 | 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | ⬜ |
@@ -453,30 +452,53 @@ architektonisch geschlossen.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.11.0.md` nach
+- [x] Plan von `docs/planning/open/plan-0.11.0.md` nach
   `docs/planning/in-progress/plan-0.11.0.md` verschoben.
-- [ ] `git status --short` vor erster Änderung dokumentiert.
-- [ ] `spec/lastenheft.md` Header auf `1.1.14` erhöht.
-- [ ] RAK-65..RAK-70 im Lastenheft ergänzt.
-- [ ] `F-46`..`F-51` im Lastenheft für den `0.11.0`-Scope
-  nachvollziehbar von Kann-Historie auf Release-Muss abgebildet.
-- [ ] `MVP-38` im Lastenheft als lokaler SRT-/RTMP-Ingest-Control-
-  Smoke für MediaMTX-nahe Lab-Artefakte präzisiert und für den
-  `0.11.0`-Scope auf Release-Muss abgebildet.
-- [ ] `spec/backend-api-contract.md` erweitert die Endpunktmatrix,
-  Auth-Matrix, CORS-Preflights und Fehlerreihenfolge für
-  `/api/ingest/*` inklusive der Wire-Skizzen aus §0.6;
-  `project_id` wird aus `X-MTrace-Token` abgeleitet.
-- [ ] Patch-Log in `docs/planning/done/plan-0.1.0.md` um
-  `Patch 1.1.14` ergänzt.
-- [ ] Architekturentscheidung dokumentiert: `0.11.0` nutzt verbindlich
-  Variante B als `apps/api`-Modul; Variante A ist nur Folge-Scope.
-- [ ] Persistenzentscheidung dokumentiert: SQLite oder rein
-  artefaktbasiert, inklusive Migrations-/Testfolge.
-- [ ] Roadmap-Status und Release-Übersicht auf `0.11.0` als aktive
-  Folgephase umgestellt.
-- [ ] Risiko-/Folge-Scope-Liste aktualisiert: Auth/Tenant/Policy nach
-  `0.12.0`, externe Provisionierung offen.
+- [x] `git status --short` vor erster Änderung dokumentiert: working
+  tree clean (Tag `v0.10.0` auf `d384569`; danach
+  `68e83a3`/`055e56e`/`6ba7a17`/`11b1185`/`3ba39fb`/`86e71c4`
+  Plan-Tightening-Commits + CMAF-Contract-Fixtures auf `main`).
+- [x] `spec/lastenheft.md` Header auf `1.1.14` erhöht.
+- [x] RAK-65..RAK-70 im Lastenheft ergänzt (neuer §13.13).
+- [x] `F-46`..`F-51` im Lastenheft für den `0.11.0`-Scope
+  nachvollziehbar von Kann-Historie auf Release-Muss abgebildet
+  (jeweils mit „Muss (`0.11.0`-Scope, Patch `1.1.14`)"-Stufung und
+  Verweis auf RAK-66/RAK-67/RAK-68/RAK-69 in §13.13).
+- [x] `MVP-38` im Lastenheft als lokaler SRT-/RTMP-Ingest-Control-
+  Smoke (`make smoke-ingest-control`) für MediaMTX-nahe Lab-
+  Artefakte präzisiert und für den `0.11.0`-Scope auf Release-Muss
+  abgebildet (Verweis auf RAK-68 in §13.13).
+- [x] `spec/backend-api-contract.md` erweitert die Endpunktmatrix
+  (§2 — neun neue Zeilen `POST/GET /api/ingest/*`) plus neuen
+  §3.8 mit Auth-Matrix, CORS-Preflight, sieben-stufiger
+  Fehlerreihenfolge und Wire-Skizzen aus Plan §0.6 (Create/Rotate-
+  Response mit `stream_key.value`, List/Detail-Response mit
+  `key_fingerprint`, Validate-Endpoint ohne Cross-Project-Leak,
+  Lifecycle-Hook-Payload, Media-Server-Config-Antwort) plus
+  zusätzlicher Fehler-Code-Tabelle (`project_id_mismatch`,
+  `stream_not_found`, `endpoint_not_found`/`target_not_found`,
+  `stream_name_conflict`, `routing_rule_disabled`, `key_invalid`,
+  `media_server_config_unavailable`).
+- [x] Patch-Log in `docs/planning/done/plan-0.1.0.md` um
+  `Patch 1.1.14` (§4a.17) ergänzt.
+- [x] Architekturentscheidung dokumentiert: `0.11.0` nutzt
+  verbindlich Variante B als `apps/api`-Modul (Plan §0.3,
+  Lastenheft §13.13 RAK-65, Roadmap §1.2); Variante A ist nur
+  Folge-Scope.
+- [x] Persistenzentscheidung dokumentiert: **SQLite** über die
+  bestehende API-Persistenz mit neuer Migration (Plan §0.4 +
+  T2-DoD); Stream-IDs überleben API-Restarts, Key-Rotation
+  deaktiviert alte `key_hash`-Werte, Contract-Tests laufen ohne
+  Testreihenfolge-Abhängigkeit. Reine Artefakt-only-Variante
+  bewusst verworfen, weil Validate-Endpoint persistente
+  Hash-Lookup-Garantie braucht.
+- [x] Roadmap-Status und Release-Übersicht auf `0.11.0` als
+  aktive Folgephase umgestellt (§1 Phase-Header, §1.2 Folge-Scope,
+  §2 Schritt 46 von ⬜ auf 🟡, §3 Tabellenzeile auf 🟡).
+- [x] Risiko-/Folge-Scope-Liste aktualisiert: Auth/Tenant/Policy
+  nach `0.12.0`, externe Provisionierung Folge-Scope, produktive
+  Webhook-Zustellung Folge-Scope (Roadmap §1.2 Out-of-Scope-
+  Block).
 
 ## 3. Tranche 1 — Domainmodell und Validierung
 

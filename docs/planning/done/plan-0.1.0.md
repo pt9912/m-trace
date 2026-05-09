@@ -457,6 +457,62 @@ DoD:
   §1.2 / §3 auf `0.10.0` als aktivierte Folge-Phase aktualisiert; §2
   neuer Schritt 45 für die `0.10.0`-Auslieferung als ⬜ angelegt.
 
+### 4a.17 Patch `1.1.14` — `0.11.0` Ingest-Control-Scope (F-46..F-51 für lokales Lab-Control auf Release-Muss, RAK-65..RAK-70)
+
+`0.10.0` hat `NF-13` durch die CMAF-Analyse im
+Stream-Analyzer-Scope geschlossen. Dieser Patch hebt für `0.11.0`
+die historisch als Kann geführten Ingest-Gateway-Funktionen
+`F-46`..`F-51` und `MVP-38` für einen begrenzten lokalen/lab-nahen
+Stream-Control-Pfad auf Release-Muss und führt die neue RAK-Gruppe
+`RAK-65`..`RAK-70` in §13.13 ein. Architekturentscheidung
+**Variante B** (Modul in `apps/api`, kein eigener
+`apps/ingest-gateway`-Service in `0.11.0`); eine spätere
+Ausgliederung bleibt möglich, ist aber Folge-Scope. Out of Scope
+und damit nicht durch diesen Patch erfüllt: mandantenfähige
+Control-Plane, KMS-/Vault-Secrets, globale Stream-Key-Rotation,
+produktive Media-Server-Auth-Hooks, automatische externe
+Provisionierung, K8s-Operator, Auth-/Token-Lifecycle-Themen aus
+`0.12.0`, produktive ausgehende Webhook-Zustellung. Wire-Vertrag
+für `/api/ingest/*` lebt in
+[`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+§2 + §3.8 (Endpunktmatrix, Auth-Matrix, CORS-Preflight,
+sieben-stufige Fehlerreihenfolge, Wire-Skizzen, Fehler-Codes).
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.13` → `1.1.14`; Patch-Note
+  unmittelbar nach Patch `1.1.13` als zweiter Block im Frontmatter.
+- [x] Lastenheft §7.5.4 `F-46`..`F-51` für den `0.11.0`-Scope auf
+  „Muss (`0.11.0`-Scope, Patch `1.1.14`)" gehoben; jeweils mit
+  Verweis auf RAK-66/RAK-67/RAK-68/RAK-69 in §13.13 plus
+  expliziter Out-of-Scope-Klammer (CSPRNG-only Persistenz; keine
+  produktiven Auth-Hooks; produktive Webhook-Zustellung
+  Folge-Scope).
+- [x] Lastenheft §12.3 `MVP-38` als lokaler SRT-/RTMP-Ingest-
+  Control-Smoke (`make smoke-ingest-control`) für MediaMTX-nahe
+  Lab-Artefakte präzisiert und für den `0.11.0`-Scope auf
+  Release-Muss gezogen; historische Kann-Stufung bleibt als
+  auditierbarer Stand bis `1.1.13` erhalten.
+- [x] Lastenheft §13.13 (neu) mit Akzeptanzkriterien
+  `RAK-65`..`RAK-70` (alle Muss): RAK-65 Scope-Verankerung;
+  RAK-66 Stream-Key-Verwaltung mit CSPRNG/Hash/Fingerprint;
+  RAK-67 Endpunkt-/Routing-Modell (`srt`/`rtmp`, 1:1-Routing);
+  RAK-68 MediaMTX-Artefakte; RAK-69 Lifecycle-Events
+  (`stream_started`/`stream_ended`, **keine** Klartext-Keys,
+  **keine** produktive Webhook-Zustellung); RAK-70 Doku-/
+  Smoke-/Sicherheits-Vertrag.
+- [x] [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+  §2 Endpunktmatrix um neun `/api/ingest/*`-Zeilen ergänzt; neuer
+  §3.8 mit Auth-/CORS-/Fehler-/Wire-Vertrag (Create-Response mit
+  `stream_key.value`, List-/Detail-Response mit
+  `key_fingerprint`, Validate-Endpoint ohne Cross-Project-Leak,
+  Lifecycle-Hook-Payload, Media-Server-Config-Antwort,
+  zusätzlicher Fehler-Code-Tabelle).
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
+  §1.2 / §3 auf `0.11.0` als aktivierte Folge-Phase aktualisiert;
+  §2 Schritt 46 für die `0.11.0`-Auslieferung von ⬜ auf 🟡
+  hochgesetzt.
+
 ---
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)

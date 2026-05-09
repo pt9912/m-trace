@@ -2,12 +2,33 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.13<br>
+**Version:** 1.1.14<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.14` (Ingest-Control-Scope für `0.11.0`)**: Hebt
+> `F-46`..`F-51` (Ingest-Gateway / Stream Control, bisher Kann-
+> Historie) für den begrenzten `0.11.0`-Lab-Control-Scope auf
+> Release-Muss und führt die neue RAK-Gruppe `RAK-65`..`RAK-70` in
+> §13.13 ein. `MVP-38` wird als lokaler SRT-/RTMP-Ingest-Control-
+> Smoke für MediaMTX-nahe Lab-Artefakte präzisiert und für diesen
+> Scope auf Release-Muss gezogen; die ältere Kann-Stufung bleibt
+> auditierbar. **Out of Scope** und damit nicht durch diesen Patch
+> erfüllt: mandantenfähige Control-Plane, KMS-/Vault-Secrets,
+> globale Stream-Key-Rotation, produktive Media-Server-Auth-Hooks,
+> automatische externe Provisionierung, Kubernetes-Operator,
+> Auth-/Token-Lifecycle-Themen aus `0.12.0`, produktive ausgehende
+> Webhook-Zustellung. Architekturentscheidung für `0.11.0`:
+> Variante B — Ingest-Control als Modul in `apps/api`, **kein**
+> eigener `apps/ingest-gateway`-Service. Eine spätere Ausgliederung
+> bleibt möglich, ist aber Folge-Scope. Wire-Erweiterung in
+> `spec/backend-api-contract.md` für `/api/ingest/*`. Patch-Log
+> siehe
+> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
+> Tranche 0c §4a.17.
+>
 > **Patch `1.1.13` (CMAF-Analyse-Scope für `0.10.0`)**: Verankert den
 > normativ begrenzten Analyzer-Scope für `NF-13` und führt die neue
 > RAK-Gruppe `RAK-60`..`RAK-64` in §13.12 ein. `NF-13` ist nicht mehr
@@ -563,12 +584,12 @@ Hauptaufgaben:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-46 | Kann | Stream-Keys verwalten |
-| F-47 | Kann | Ingest-Endpunkte beschreiben |
-| F-48 | Kann | Routing-Regeln für Streams definieren |
-| F-49 | Kann | Webhooks bei Stream-Start und Stream-Ende auslösen |
-| F-50 | Kann | SRT-/RTMP-Konfigurationen vorbereiten |
-| F-51 | Kann | Media-Server-Konfigurationen generieren oder validieren |
+| F-46 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Stream-Keys verwalten — lokale/lab-nahe CSPRNG-Erzeugung mit URL-sicherem Output, Persistenz speichert nur `key_hash` und redigierten `fingerprint`, Klartext-Keys nur bei Anlage/Rotation in Antworten. Historische Kann-Stufung gilt für `apps/ingest-gateway`-Ausgliederung; siehe RAK-66 in §13.13. |
+| F-47 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Ingest-Endpunkte beschreiben — Protokoll-Allowlist `srt`/`rtmp`, Host/Port/Path plus Lab-/Egress-Hinweise. Externe Infrastruktur-Provisionierung bleibt Folge-Scope; siehe RAK-67 in §13.13. |
+| F-48 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Routing-Regeln für Streams definieren — 1:1-Mapping `IngestStream` ↔ `MediaServerTarget`, deterministisch validierbar. Priorisierung, Fan-out und Failover bleiben Folge-Scope; siehe RAK-67. |
+| F-49 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Stream-Lifecycle-Events — `stream_started`/`stream_ended` als stabiles Eventmodell, lokal reproduzierbar empfangbar/auslösbar; **keine** Klartext-Keys. Produktive ausgehende Webhook-Zustellung an externe Systeme bleibt Folge-Scope; siehe RAK-69 in §13.13. |
+| F-50 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-/RTMP-Konfigurationen vorbereiten — beschreibbare, reviewbare Lab-Artefakte, kein Direkt-Manipulation laufender externer Server; siehe RAK-68 in §13.13. |
+| F-51 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Media-Server-Konfigurationen generieren oder validieren — normativer Zielserver MediaMTX im Lab-Scope; SRS bleibt Kompatibilitäts-/Dokuhintergrund. Bestehende `examples/`-Stacks bleiben grün; siehe RAK-68. |
 
 Mögliche Endpunkte:
 
@@ -1581,7 +1602,7 @@ Nicht im `0.1.0`-MVP:
 | MVP-35 | Kann | Tempo-Integration |
 | MVP-36 | Kann | SRS-Beispiel |
 | MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@npm9912/stream-analyzer`); kein offener Folge-Scope. |
-| MVP-38 | Kann | SRT-Ingest-Beispiel |
+| MVP-38 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-Ingest-Beispiel — präzisiert auf lokalen SRT-/RTMP-Ingest-Control-Smoke (`make smoke-ingest-control`) für MediaMTX-nahe Lab-Artefakte (Generierung/Validierung). Historische Kann-Stufung bleibt als auditierbarer Stand bis `1.1.13` erhalten; verbindlich ist die Muss-Stufung im `0.11.0`-Lab-Control-Scope (siehe RAK-68 in §13.13). |
 | MVP-39 | Kann | SRT-Health-View |
 | MVP-40 | Kann | Persistenz mit PostgreSQL |
 | MVP-41 | Kann | ClickHouse- oder VictoriaMetrics-Anbindung |
@@ -1812,6 +1833,32 @@ Akzeptanzkriterien:
 | RAK-62 | Muss | DASH-CMAF-Signale: MPD-`mimeType` (`video/mp4`/`audio/mp4`/`application/mp4`), `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik; MP4-MIME allein gilt nur als `confidence:"inferred"`-Indiz, nicht als CMAF-Konformitätsnachweis. Vererbung von `BaseURL`/`SegmentTemplate` auf `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene wird deterministisch aufgelöst. |
 | RAK-63 | Muss | CLI, API-Adapter, Contract-Fixtures (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. `details.cmaf` lebt unter den bestehenden HLS-/DASH-Detail-Objekten — kein neuer Top-Level-Envelope-Wert, kein neuer `analyzerKind`. `apps/api`-Adapter reicht `details.cmaf` über `EncodedDetails` unverändert durch. |
 | RAK-64 | Muss | Binäre CMAF-Konformitätsprüfung: ISO-BMFF-Box-Parser validiert ausgewählte Init-/Media-Segmente bounded und meldet `details.cmaf.binary.status:"passed"|"failed"|"skipped"` mit nachvollziehbaren Box-/Segment-Nachweisen. Brand-Allowlist (`0.10.0`): Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Pflicht-Boxen: Init `ftyp`+`moov`; Media-Fragment `styp`+`moof`+`traf`+`tfdt`+`mdat`; `sidx` optional. Bounded Segment-Loader mit Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6` nutzt dieselben SSRF-/Scheme-/Redirect-Regeln wie der Manifest-Loader. |
+
+### 13.13 Version 0.11.0: Ingest-Gateway / Stream Control (F-46..F-51)
+
+Ziel: Die historisch als Kann geführten Ingest-Gateway-Funktionen
+`F-46`..`F-51` werden für einen begrenzten lokalen/lab-nahen
+Stream-Control-Pfad auf Release-Muss gehoben — Stream-Keys (CSPRNG,
+nur Hash persistiert), `srt`/`rtmp`-Endpunkte, einfache
+1:1-Routing-Regeln, MediaMTX-nahe Konfigurationsartefakte und ein
+lokal reproduzierbares Lifecycle-Eventmodell. Architektur:
+**Variante B** — Ingest-Control als Modul in `apps/api`, **kein**
+eigener `apps/ingest-gateway`-Service in `0.11.0`. Out of Scope
+sind Multi-Tenant-Control-Plane, KMS-/Vault-Secrets, produktive
+Auth-Hooks, externe Provisionierung, K8s-Operator und produktive
+ausgehende Webhook-Zustellung — diese Themen wandern in `0.12.0`
+oder spätere Releases.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-65 | Muss | Ingest-Control-Scope ist normativ begrenzt: lokale/lab-nahe Stream-Verwaltung in `apps/api` (Variante B), keine Multi-Tenant-Control-Plane, keine produktive Secret-Verwaltung (kein KMS/Vault), keine globale Stream-Key-Rotation über mehrere Deployments, keine produktive Media-Server-Auth-Kopplung, keine automatische externe Media-Server-Provisionierung, kein K8s-Operator. |
+| RAK-66 | Muss | Stream-Key-Verwaltung: Streams können angelegt, gelistet, lokal validiert und rotiert werden. CSPRNG mit mindestens 256 Bit Entropie; URL-sicheres Output-Format dokumentiert; `key_hash` und redigierter `fingerprint` getrennt vom Klartext berechnet. Klartext-Keys erscheinen ausschließlich in den Antworten von `POST /api/ingest/streams` und `POST /api/ingest/streams/{id}/rotate-key` und nicht in Logs, Fixtures, Persistenz oder Lifecycle-Events. Validate-Endpoint nutzt den vollständigen `key_hash` als verifier; `fingerprint` ist nur Anzeige-/Audit-Hilfe. |
+| RAK-67 | Muss | Ingest-Endpunkt- und Routing-Modell: `srt`/`rtmp`-Endpunkte (Host/Port/Path, Lab-Stack-Hinweis, optionaler Egress-Hinweis), Stream-Ziele (`MediaServerTarget`) und 1:1-Routing-Regeln sind validiert, dokumentiert und per API/Artefakt stabil beschreibbar. Priorisierung, Fan-out, Failover und dynamisches Load-Balancing bleiben Folge-Scope. |
+| RAK-68 | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für SRT und RTMP im Lab-Scope können generiert oder validiert werden (`GET /api/ingest/media-server-config`). Bestehende Multi-Protocol-Lab-Beispiele (`examples/srt/`, `examples/mediamtx/`, `examples/srs/`) und Smokes bleiben unverändert grün; SRS bleibt Kompatibilitäts-/Dokuhintergrund, ist aber kein Pflicht-Target. |
+| RAK-69 | Muss | Stream-Lifecycle-Events: `stream_started` und `stream_ended` haben ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder über `POST /api/ingest/hooks/stream-{started,ended}` exemplarisch ausgelöst. Events tragen **keine** Klartext-Keys (höchstens `key_fingerprint`). Produktive ausgehende Webhook-Zustellung an externe Systeme ist nicht Teil des `0.11.0`-Nachweises und darf nicht als erfüllt behauptet werden. |
+| RAK-70 | Muss | Doku, API-/Contract-Tests und Release-Smokes (`make smoke-ingest-control`) beschreiben den lokalen Stream-Control-Workflow, die Sicherheitsgrenzen (Klartext-Key nur einmal, kein produktiver Auth-Pfad) und den Unterschied zu Auth-/Tenant-Folge-Scope `0.12.0`. README-Abgrenzungsabschnitt „Was m-trace nicht ist" ist konsistent mit dem Lab-Control-Scope. |
 
 ---
 
