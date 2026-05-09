@@ -302,11 +302,27 @@ sync-contract-fixtures:
 	cp spec/contract-fixtures/analyzer/success-dash-vod.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-vod.json
 	cp spec/contract-fixtures/analyzer/success-dash-live.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-live.json
 	cp spec/contract-fixtures/analyzer/error-fetch-blocked.json apps/api/adapters/driven/streamanalyzer/testdata/contract-error-fetch-blocked.json
+	cp spec/contract-fixtures/analyzer/success-hls-cmaf-vod.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-cmaf-vod.json
+	cp spec/contract-fixtures/analyzer/success-hls-ts-negative.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-ts-negative.json
+	cp spec/contract-fixtures/analyzer/success-hls-master-codecs-only.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-master-codecs-only.json
+	cp spec/contract-fixtures/analyzer/success-hls-map-byterange.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-map-byterange.json
+	cp spec/contract-fixtures/analyzer/success-hls-media-byterange.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-media-byterange.json
+	cp spec/contract-fixtures/analyzer/success-dash-mp4-mime-only.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-mp4-mime-only.json
+	cp spec/contract-fixtures/analyzer/success-dash-cmaf-vod.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-cmaf-vod.json
+	cp spec/contract-fixtures/analyzer/success-dash-no-cmaf-signals.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-no-cmaf-signals.json
+	cp spec/contract-fixtures/analyzer/success-dash-baseurl-inheritance.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-baseurl-inheritance.json
+	cp spec/contract-fixtures/analyzer/success-dash-segmentlist.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-segmentlist.json
+	cp spec/contract-fixtures/analyzer/error-cmaf-binary-validation.json apps/api/adapters/driven/streamanalyzer/testdata/contract-error-cmaf-binary-validation.json
+	cp spec/contract-fixtures/analyzer/error-cmaf-invalid-box-structure.json apps/api/adapters/driven/streamanalyzer/testdata/contract-error-cmaf-invalid-box-structure.json
+	cp spec/contract-fixtures/analyzer/success-cmaf-skipped-too-large.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-too-large.json
+	cp spec/contract-fixtures/analyzer/success-cmaf-skipped-content-type.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-content-type.json
+	cp spec/contract-fixtures/analyzer/success-cmaf-skipped-binary-disabled.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-binary-disabled.json
+	cp spec/contract-fixtures/analyzer/success-cmaf-skipped-not-planned.json apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-not-planned.json
 	mkdir -p apps/api/adapters/driven/srt/mediamtxclient/testdata
 	cp spec/contract-fixtures/srt/mediamtx-srtconns-list.json apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json
 	mkdir -p apps/api/adapters/driving/http/testdata
 	cp spec/contract-fixtures/api/srt-health-detail.json apps/api/adapters/driving/http/testdata/srt-health-detail.json
-	@echo "[sync-contract-fixtures] copied 6 fixture(s) into apps/api/.../testdata/"
+	@echo "[sync-contract-fixtures] copied 22 fixture(s) into apps/api/.../testdata/"
 
 seed-rak9:
 	bash scripts/seed-rak9.sh
@@ -514,6 +530,22 @@ generated-drift-check:
 		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-vod.json \
 		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-live.json \
 		apps/api/adapters/driven/streamanalyzer/testdata/contract-error-fetch-blocked.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-cmaf-vod.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-ts-negative.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-master-codecs-only.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-map-byterange.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-hls-media-byterange.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-mp4-mime-only.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-cmaf-vod.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-no-cmaf-signals.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-baseurl-inheritance.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-dash-segmentlist.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-error-cmaf-binary-validation.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-error-cmaf-invalid-box-structure.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-too-large.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-content-type.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-binary-disabled.json \
+		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-not-planned.json \
 		apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json \
 		apps/api/adapters/driving/http/testdata/srt-health-detail.json; then \
 		echo ""; \

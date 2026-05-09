@@ -1,0 +1,34 @@
+{
+  "status": "ok",
+  "analyzerVersion": "0.10.0",
+  "analyzerKind": "dash",
+  "input": {
+    "source": "text",
+    "baseUrl": "https://cdn.example.test/dash/"
+  },
+  "summary": {
+    "itemCount": 1
+  },
+  "findings": [],
+  "playlistType": "dash",
+  "details": {
+    "type": "static",
+    "live": false,
+    "periodCount": 1,
+    "adaptationSets": [
+      {
+        "id": "v",
+        "mimeType": "video/webm",
+        "contentType": "video",
+        "representations": [
+          {
+            "id": "v1",
+            "bandwidth": 1280000,
+            "codecs": "vp09.00.10.08",
+            "mimeType": "video/webm"
+          }
+        ]
+      }
+    ]
+  }
+}

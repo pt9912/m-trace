@@ -1,0 +1,396 @@
+{
+  "status": "ok",
+  "analyzerVersion": "0.10.0",
+  "analyzerKind": "dash",
+  "input": {
+    "source": "text",
+    "baseUrl": "https://cdn.example.test/dash/"
+  },
+  "summary": {
+    "itemCount": 4
+  },
+  "findings": [],
+  "playlistType": "dash",
+  "details": {
+    "type": "static",
+    "live": false,
+    "periodCount": 1,
+    "adaptationSets": [
+      {
+        "id": "a0",
+        "mimeType": "video/mp4",
+        "representations": [
+          {
+            "id": "r0",
+            "bandwidth": 1000,
+            "mimeType": "video/mp4"
+          }
+        ]
+      },
+      {
+        "id": "a1",
+        "mimeType": "video/mp4",
+        "representations": [
+          {
+            "id": "r1",
+            "bandwidth": 2000,
+            "mimeType": "video/mp4"
+          }
+        ]
+      },
+      {
+        "id": "a2",
+        "mimeType": "video/mp4",
+        "representations": [
+          {
+            "id": "r2",
+            "bandwidth": 3000,
+            "mimeType": "video/mp4"
+          }
+        ]
+      },
+      {
+        "id": "a3",
+        "mimeType": "video/mp4",
+        "representations": [
+          {
+            "id": "r3",
+            "bandwidth": 4000,
+            "mimeType": "video/mp4"
+          }
+        ]
+      }
+    ],
+    "cmaf": {
+      "source": "dash",
+      "confidence": "manifest",
+      "signals": [
+        {
+          "code": "dash_segment_template_initialization",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a0]/Representation[id=r0]/SegmentTemplate@initialization",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_media",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a0]/Representation[id=r0]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_extension_fmp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a0]/Representation[id=r0]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_mime_video_mp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a0]/Representation[id=r0]/@mimeType",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_initialization",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@initialization",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_media",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_extension_fmp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_mime_video_mp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/@mimeType",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_initialization",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@initialization",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_media",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_extension_fmp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_mime_video_mp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/@mimeType",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_initialization",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@initialization",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_media",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_extension_fmp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_mime_video_mp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/@mimeType",
+          "confidence": "manifest"
+        }
+      ],
+      "binary": {
+        "status": "skipped",
+        "segmentsChecked": [
+          {
+            "kind": "init",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a0]/Representation[id=r0]/SegmentTemplate@initialization",
+            "uri": "init.mp4",
+            "resolvedUrl": "https://cdn.example.test/dash/init.mp4",
+            "status": "passed",
+            "contentType": "video/mp4",
+            "bytesRead": 52,
+            "boxes": [
+              {
+                "segmentAnchor": "segment:init",
+                "path": "segment:init:ftyp",
+                "type": "ftyp",
+                "offset": 0,
+                "size": 16
+              },
+              {
+                "segmentAnchor": "segment:init",
+                "path": "segment:init:moov",
+                "type": "moov",
+                "offset": 16,
+                "size": 36
+              }
+            ]
+          },
+          {
+            "kind": "media",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a0]/Representation[id=r0]/SegmentTemplate@media",
+            "uri": "seg-$Number$.m4s",
+            "resolvedUrl": "https://cdn.example.test/dash/seg-1.m4s",
+            "status": "passed",
+            "contentType": "video/mp4",
+            "bytesRead": 72,
+            "boxes": [
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:styp",
+                "type": "styp",
+                "offset": 0,
+                "size": 16
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof",
+                "type": "moof",
+                "offset": 16,
+                "size": 32
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:mdat",
+                "type": "mdat",
+                "offset": 48,
+                "size": 24
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof/traf",
+                "type": "traf",
+                "offset": 24,
+                "size": 24
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof/traf/tfdt",
+                "type": "tfdt",
+                "offset": 32,
+                "size": 16
+              }
+            ]
+          },
+          {
+            "kind": "init",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@initialization",
+            "uri": "init.mp4",
+            "status": "skipped",
+            "failureCode": "not_planned_due_to_limit",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant."
+          },
+          {
+            "kind": "media",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@media",
+            "uri": "seg-$Number$.m4s",
+            "status": "skipped",
+            "failureCode": "not_planned_due_to_limit",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant."
+          },
+          {
+            "kind": "init",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@initialization",
+            "uri": "init.mp4",
+            "status": "skipped",
+            "failureCode": "not_planned_due_to_limit",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant."
+          },
+          {
+            "kind": "media",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@media",
+            "uri": "seg-$Number$.m4s",
+            "status": "skipped",
+            "failureCode": "not_planned_due_to_limit",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant."
+          },
+          {
+            "kind": "init",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@initialization",
+            "uri": "init.mp4",
+            "status": "skipped",
+            "failureCode": "not_planned_due_to_limit",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant."
+          },
+          {
+            "kind": "media",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@media",
+            "uri": "seg-$Number$.m4s",
+            "status": "skipped",
+            "failureCode": "not_planned_due_to_limit",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant."
+          }
+        ],
+        "boxes": [
+          {
+            "segmentAnchor": "segment:init",
+            "path": "segment:init:ftyp",
+            "type": "ftyp",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "segmentAnchor": "segment:init",
+            "path": "segment:init:moov",
+            "type": "moov",
+            "offset": 16,
+            "size": 36
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:styp",
+            "type": "styp",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof",
+            "type": "moof",
+            "offset": 16,
+            "size": 32
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:mdat",
+            "type": "mdat",
+            "offset": 48,
+            "size": 24
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof/traf",
+            "type": "traf",
+            "offset": 24,
+            "size": 24
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof/traf/tfdt",
+            "type": "tfdt",
+            "offset": 32,
+            "size": 16
+          }
+        ],
+        "failures": [
+          {
+            "code": "not_planned_due_to_limit",
+            "level": "warning",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@initialization"
+          },
+          {
+            "code": "not_planned_due_to_limit",
+            "level": "warning",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a1]/Representation[id=r1]/SegmentTemplate@media"
+          },
+          {
+            "code": "not_planned_due_to_limit",
+            "level": "warning",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@initialization"
+          },
+          {
+            "code": "not_planned_due_to_limit",
+            "level": "warning",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a2]/Representation[id=r2]/SegmentTemplate@media"
+          },
+          {
+            "code": "not_planned_due_to_limit",
+            "level": "warning",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@initialization"
+          },
+          {
+            "code": "not_planned_due_to_limit",
+            "level": "warning",
+            "message": "Pflichtprüfung über maxBinarySegments=2 hinaus nicht geplant.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=a3]/Representation[id=r3]/SegmentTemplate@media"
+          }
+        ],
+        "limits": {
+          "maxSegmentBytes": 2000000,
+          "maxBinarySegments": 2,
+          "timeoutMs": 10000,
+          "maxRedirects": 5,
+          "requiredSegmentChecks": 8,
+          "plannedSegmentFetches": 2
+        }
+      }
+    }
+  }
+}

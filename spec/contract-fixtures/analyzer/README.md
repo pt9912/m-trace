@@ -21,17 +21,22 @@ testen gegen dieselben Dateien:
   Detail-Felder.
 - `error-fetch-blocked.json` — Fehlerfall mit `status: "error"`,
   `code: "fetch_blocked"`. Pinnt die Error-Envelope-Form.
+- Die CMAF-spezifischen Fixtures stehen im Inventar unten und pinnen
+  HLS-/DASH-Signale, Binary-Statuswerte und Failure-Codes aus
+  `0.10.0`.
 
 ## Tests
 
 - TypeScript: `packages/stream-analyzer/tests/contract.test.ts` —
-  speist eine bekannte Manifest-Eingabe in `analyzeHlsManifest`,
-  serialisiert das Result und vergleicht byte-equal gegen
-  `success-master.json`. Jede TS-Output-Drift bricht den Test.
+  speist bekannte Manifest-Eingaben in den Analyzer, vergleicht die
+  kanonischen Basis-Fixtures byte-equal gegen Live-Output und prüft
+  zusätzlich, dass alle Spec-Fixtures bytegleich in den Go-Testdata-
+  Pfad kopiert sind.
 - Go: `apps/api/adapters/driven/streamanalyzer/contract_test.go` —
-  liest beide Dateien per `go:embed`, parst sie via
-  `parseSuccessResponse` / `parseDomainError`, und prüft die
-  resultierenden Domain-Strukturen feldgenau. Jede Drift, die das
+  liest die kanonischen Fixtures per `go:embed`, parst sie via
+  `parseSuccessResponse` / `parseDomainError`, prüft die
+  resultierenden Domain-Strukturen feldgenau und decodiert alle
+  CMAF-Contract-Fixtures über den HTTP-Adapter. Jede Drift, die das
   Go-Decoding bricht, fällt auf.
 
 ## Updates
@@ -48,14 +53,12 @@ Wenn das Format absichtlich erweitert wird:
 
 ## CMAF-Fixture-Inventar (Plan `0.10.0`, Tranche 0)
 
-Der `0.10.0`-Plan sieht folgende Fixtures vor; sie werden nicht
-alle in Tranche 0 angelegt, sondern in der Tranche, die das
-Code-Pendant liefert (Tranche 2 für HLS, Tranche 3 für DASH,
-Tranche 4 für binäre Box-Prüfung). Die Inventartabelle ist
-Vertrag, damit `details.cmaf`-Erweiterungen reproduzierbar
-geprüft werden.
+Der `0.10.0`-Plan liefert folgende Fixtures. Die Inventartabelle ist
+Vertrag, damit `details.cmaf`-Erweiterungen reproduzierbar geprüft
+werden; `make sync-contract-fixtures` kopiert jede Datei als
+`contract-*.json` in den Go-Testdata-Pfad.
 
-| Datei (geplant) | Tranche | Was die Fixture pinnt |
+| Datei | Tranche | Was die Fixture pinnt |
 | --- | --- | --- |
 | `success-hls-cmaf-vod.json` | 2 | HLS Media-Playlist mit `EXT-X-MAP` und `.m4s`-Segmenten; `details.cmaf` mit starkem manifestbasiertem Signal und `binary.status:"passed"`. |
 | `success-hls-ts-negative.json` | 2 | HLS Media-Playlist mit `.ts`-Segmenten ohne `EXT-X-MAP` als Negativ-/Regression-Pfad; kein `details.cmaf`. |

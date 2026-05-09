@@ -1,0 +1,179 @@
+{
+  "status": "ok",
+  "analyzerVersion": "0.10.0",
+  "analyzerKind": "hls",
+  "input": {
+    "source": "text",
+    "baseUrl": "https://cdn.example.test/hls/"
+  },
+  "summary": {
+    "itemCount": 1
+  },
+  "findings": [
+    {
+      "code": "media_init_segment_present",
+      "level": "info",
+      "message": "Manifest enthält EXT-X-MAP (fMP4-Init-Segment); Analyzer prüft Init-Segment-Konsistenz nicht."
+    }
+  ],
+  "playlistType": "media",
+  "details": {
+    "targetDuration": 4,
+    "mediaSequence": 0,
+    "endList": true,
+    "live": false,
+    "segments": [
+      {
+        "uri": "seg-0.m4s",
+        "duration": 4,
+        "sequenceNumber": 0,
+        "resolvedUri": "https://cdn.example.test/hls/seg-0.m4s"
+      }
+    ],
+    "summary": {
+      "count": 1,
+      "averageDuration": 4,
+      "minDuration": 4,
+      "maxDuration": 4,
+      "totalDuration": 4
+    },
+    "cmaf": {
+      "source": "hls",
+      "confidence": "manifest",
+      "signals": [
+        {
+          "code": "hls_ext_x_map",
+          "level": "info",
+          "manifestAnchor": "media:line:5",
+          "confidence": "manifest"
+        },
+        {
+          "code": "hls_ext_x_map_byterange",
+          "level": "info",
+          "manifestAnchor": "media:line:5",
+          "confidence": "manifest"
+        },
+        {
+          "code": "hls_segment_extension_fmp4",
+          "level": "info",
+          "manifestAnchor": "media:line:7",
+          "confidence": "manifest"
+        }
+      ],
+      "binary": {
+        "status": "skipped",
+        "segmentsChecked": [
+          {
+            "kind": "init",
+            "source": "hls",
+            "manifestAnchor": "media:line:5",
+            "uri": "init.mp4",
+            "status": "skipped",
+            "failureCode": "hls_map_byterange_unsupported",
+            "message": "EXT-X-MAP mit BYTERANGE wird in 0.10.0 nicht per HTTP Range geladen."
+          },
+          {
+            "kind": "media",
+            "source": "hls",
+            "manifestAnchor": "media:line:7",
+            "uri": "seg-0.m4s",
+            "resolvedUrl": "https://cdn.example.test/hls/seg-0.m4s",
+            "status": "passed",
+            "contentType": "video/mp4",
+            "bytesRead": 72,
+            "boxes": [
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:styp",
+                "type": "styp",
+                "offset": 0,
+                "size": 16
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof",
+                "type": "moof",
+                "offset": 16,
+                "size": 32
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:mdat",
+                "type": "mdat",
+                "offset": 48,
+                "size": 24
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof/traf",
+                "type": "traf",
+                "offset": 24,
+                "size": 24
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof/traf/tfdt",
+                "type": "tfdt",
+                "offset": 32,
+                "size": 16
+              }
+            ]
+          }
+        ],
+        "boxes": [
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:styp",
+            "type": "styp",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof",
+            "type": "moof",
+            "offset": 16,
+            "size": 32
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:mdat",
+            "type": "mdat",
+            "offset": 48,
+            "size": 24
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof/traf",
+            "type": "traf",
+            "offset": 24,
+            "size": 24
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof/traf/tfdt",
+            "type": "tfdt",
+            "offset": 32,
+            "size": 16
+          }
+        ],
+        "failures": [
+          {
+            "code": "hls_map_byterange_unsupported",
+            "level": "warning",
+            "message": "EXT-X-MAP mit BYTERANGE wird in 0.10.0 nicht per HTTP Range geladen.",
+            "manifestAnchor": "media:line:5"
+          }
+        ],
+        "limits": {
+          "maxSegmentBytes": 2000000,
+          "maxBinarySegments": 6,
+          "timeoutMs": 10000,
+          "maxRedirects": 5,
+          "requiredSegmentChecks": 2,
+          "plannedSegmentFetches": 1
+        }
+      }
+    }
+  }
+}

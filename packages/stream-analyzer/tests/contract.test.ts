@@ -7,6 +7,28 @@ import { analyzeHlsManifest, analyzeManifest } from "../src/index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesRoot = join(here, "..", "..", "..", "spec", "contract-fixtures", "analyzer");
+const analyzerFixturePairs = [
+  ["success-master.json", "contract-success-master.json"],
+  ["success-dash-vod.json", "contract-success-dash-vod.json"],
+  ["success-dash-live.json", "contract-success-dash-live.json"],
+  ["error-fetch-blocked.json", "contract-error-fetch-blocked.json"],
+  ["success-hls-cmaf-vod.json", "contract-success-hls-cmaf-vod.json"],
+  ["success-hls-ts-negative.json", "contract-success-hls-ts-negative.json"],
+  ["success-hls-master-codecs-only.json", "contract-success-hls-master-codecs-only.json"],
+  ["success-hls-map-byterange.json", "contract-success-hls-map-byterange.json"],
+  ["success-hls-media-byterange.json", "contract-success-hls-media-byterange.json"],
+  ["success-dash-mp4-mime-only.json", "contract-success-dash-mp4-mime-only.json"],
+  ["success-dash-cmaf-vod.json", "contract-success-dash-cmaf-vod.json"],
+  ["success-dash-no-cmaf-signals.json", "contract-success-dash-no-cmaf-signals.json"],
+  ["success-dash-baseurl-inheritance.json", "contract-success-dash-baseurl-inheritance.json"],
+  ["success-dash-segmentlist.json", "contract-success-dash-segmentlist.json"],
+  ["error-cmaf-binary-validation.json", "contract-error-cmaf-binary-validation.json"],
+  ["error-cmaf-invalid-box-structure.json", "contract-error-cmaf-invalid-box-structure.json"],
+  ["success-cmaf-skipped-too-large.json", "contract-success-cmaf-skipped-too-large.json"],
+  ["success-cmaf-skipped-content-type.json", "contract-success-cmaf-skipped-content-type.json"],
+  ["success-cmaf-skipped-binary-disabled.json", "contract-success-cmaf-skipped-binary-disabled.json"],
+  ["success-cmaf-skipped-not-planned.json", "contract-success-cmaf-skipped-not-planned.json"]
+] as const;
 
 function readContractFixture(name: string): unknown {
   const path = join(fixturesRoot, name);
@@ -104,12 +126,7 @@ describe("contract fixture parity (TS-Producer vs spec/contract-fixtures/analyze
   // und prüfen hier, dass die Kopien byte-gleich mit der Spec-Quelle
   // sind. Drift fällt damit beim ersten workspace-test auf — bevor
   // Go-Tests gegen eine veraltete Kopie grün laufen.
-  it.each([
-    ["success-master.json", "contract-success-master.json"],
-    ["success-dash-vod.json", "contract-success-dash-vod.json"],
-    ["success-dash-live.json", "contract-success-dash-live.json"],
-    ["error-fetch-blocked.json", "contract-error-fetch-blocked.json"]
-  ])("Go testdata copy of %s is byte-equal to the spec source", (specName, goName) => {
+  it.each(analyzerFixturePairs)("Go testdata copy of %s is byte-equal to the spec source", (specName, goName) => {
     const specPath = join(fixturesRoot, specName);
     const goPath = join(
       here,
@@ -127,5 +144,30 @@ describe("contract fixture parity (TS-Producer vs spec/contract-fixtures/analyze
     const spec = readFileSync(specPath, "utf8");
     const goCopy = readFileSync(goPath, "utf8");
     expect(goCopy).toBe(spec);
+  });
+
+  it("pins the complete CMAF contract fixture inventory", () => {
+    expect(analyzerFixturePairs.map(([specName]) => specName).sort()).toEqual([
+      "error-cmaf-binary-validation.json",
+      "error-cmaf-invalid-box-structure.json",
+      "error-fetch-blocked.json",
+      "success-cmaf-skipped-binary-disabled.json",
+      "success-cmaf-skipped-content-type.json",
+      "success-cmaf-skipped-not-planned.json",
+      "success-cmaf-skipped-too-large.json",
+      "success-dash-baseurl-inheritance.json",
+      "success-dash-cmaf-vod.json",
+      "success-dash-live.json",
+      "success-dash-mp4-mime-only.json",
+      "success-dash-no-cmaf-signals.json",
+      "success-dash-segmentlist.json",
+      "success-dash-vod.json",
+      "success-hls-cmaf-vod.json",
+      "success-hls-map-byterange.json",
+      "success-hls-master-codecs-only.json",
+      "success-hls-media-byterange.json",
+      "success-hls-ts-negative.json",
+      "success-master.json"
+    ]);
   });
 });

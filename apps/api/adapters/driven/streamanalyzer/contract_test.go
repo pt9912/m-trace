@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
@@ -209,6 +211,75 @@ func TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped(t *testing.T) {
 		if c.FailureCode != "segment_reference_missing" {
 			t.Errorf("segmentsChecked[%d].failureCode: want segment_reference_missing, got %q", i, c.FailureCode)
 		}
+	}
+}
+
+// TestHTTPStreamAnalyzer_CMAFContractFixturesDecode stellt sicher,
+// dass alle additiven CMAF-Contract-Fixtures aus plan-0.10.0 über den
+// Go-Adapter decodierbar bleiben. Die fachlichen Einzelpfade sind im
+// TypeScript-Analyzer gepinnt; hier geht es um den Wire-Vertrag und
+// die unveränderte Durchleitung von `details.cmaf` in EncodedDetails.
+func TestHTTPStreamAnalyzer_CMAFContractFixturesDecode(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		wantCMAF bool
+	}{
+		{"contract-success-hls-cmaf-vod.json", true},
+		{"contract-success-hls-ts-negative.json", false},
+		{"contract-success-hls-master-codecs-only.json", false},
+		{"contract-success-hls-map-byterange.json", true},
+		{"contract-success-hls-media-byterange.json", true},
+		{"contract-success-dash-mp4-mime-only.json", true},
+		{"contract-success-dash-cmaf-vod.json", true},
+		{"contract-success-dash-no-cmaf-signals.json", false},
+		{"contract-success-dash-baseurl-inheritance.json", true},
+		{"contract-success-dash-segmentlist.json", true},
+		{"contract-error-cmaf-binary-validation.json", true},
+		{"contract-error-cmaf-invalid-box-structure.json", true},
+		{"contract-success-cmaf-skipped-too-large.json", true},
+		{"contract-success-cmaf-skipped-content-type.json", true},
+		{"contract-success-cmaf-skipped-binary-disabled.json", true},
+		{"contract-success-cmaf-skipped-not-planned.json", true},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			payload, err := os.ReadFile(filepath.Join("testdata", tt.name))
+			if err != nil {
+				t.Fatalf("read fixture: %v", err)
+			}
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(payload)
+			}))
+			defer server.Close()
+
+			adapter := streamanalyzer.NewHTTPStreamAnalyzer(server.URL)
+			result, err := adapter.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{
+				ManifestText: "#EXTM3U\n",
+			})
+			if err != nil {
+				t.Fatalf("expected nil error, got %v", err)
+			}
+			if len(result.EncodedDetails) == 0 {
+				t.Fatal("EncodedDetails: want non-empty")
+			}
+
+			var details map[string]json.RawMessage
+			if err := json.Unmarshal(result.EncodedDetails, &details); err != nil {
+				t.Fatalf("decode EncodedDetails: %v", err)
+			}
+			_, hasCMAF := details["cmaf"]
+			if hasCMAF != tt.wantCMAF {
+				t.Fatalf("details.cmaf presence: want %v, got %v", tt.wantCMAF, hasCMAF)
+			}
+		})
 	}
 }
 

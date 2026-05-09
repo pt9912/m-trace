@@ -1,0 +1,35 @@
+{
+  "status": "ok",
+  "analyzerVersion": "0.10.0",
+  "analyzerKind": "hls",
+  "input": {
+    "source": "text",
+    "baseUrl": "https://cdn.example.test/hls/"
+  },
+  "summary": {
+    "itemCount": 1
+  },
+  "findings": [],
+  "playlistType": "media",
+  "details": {
+    "targetDuration": 6,
+    "mediaSequence": 0,
+    "endList": true,
+    "live": false,
+    "segments": [
+      {
+        "uri": "seg-0.ts",
+        "duration": 6,
+        "sequenceNumber": 0,
+        "resolvedUri": "https://cdn.example.test/hls/seg-0.ts"
+      }
+    ],
+    "summary": {
+      "count": 1,
+      "averageDuration": 6,
+      "minDuration": 6,
+      "maxDuration": 6,
+      "totalDuration": 6
+    }
+  }
+}

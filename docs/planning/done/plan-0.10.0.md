@@ -480,19 +480,19 @@ DoD:
   um `details.cmaf` erweitert; in T1 bleibt die Fixture-Form
   unverändert, weil der Parser noch keine CMAF-Signale emittiert und
   der TS-Contract-Test sonst byte-equal bricht.
-- [ ] Contract-Fixtures in `spec/contract-fixtures/analyzer/` und
-  Go-Testdata-Kopien für API-Adapter ergänzt — folgt mit den Tranchen
-  2/3/4 zusammen mit dem jeweiligen Parser-Output (T0 hat den
-  Inventarvertrag in `spec/contract-fixtures/analyzer/README.md`
-  gepinnt).
-- [ ] `Makefile`-Fixture-Sync ist synchron erweitert:
+- [x] Contract-Fixtures in `spec/contract-fixtures/analyzer/` und
+  Go-Testdata-Kopien für API-Adapter ergänzt: Die 16 CMAF-Fixtures aus
+  dem Inventarvertrag sind als Spec-Quelle angelegt und werden als
+  `contract-*.json` nach
+  `apps/api/adapters/driven/streamanalyzer/testdata/` synchronisiert.
+- [x] `Makefile`-Fixture-Sync ist synchron erweitert:
   `sync-contract-fixtures` kopiert alle neuen Analyzer-CMAF-Fixtures in
   `apps/api/adapters/driven/streamanalyzer/testdata/`,
   `generated-drift-check` diffed diese neuen Kopien, die
   Drift-Fehlermeldung nennt `make sync-contract-fixtures` als Fix, und
   `spec/contract-fixtures/analyzer/README.md` beschreibt die neuen
-  Fixtures. Die kopierte Fixture-Anzahl in der Make-Ausgabe wird
-  angepasst. — folgt mit T2/T3/T4 zusammen mit der Fixture-Auslieferung.
+  Fixtures. Die kopierte Fixture-Anzahl in der Make-Ausgabe ist auf
+  22 Gesamt-Fixtures angepasst.
 - [x] Go-Adapter-Kontrakt ist explizit geprüft: weil `cmaf` in
   `details` liegt, reichen `apps/api/adapters/driven/streamanalyzer`
   und `apps/api/adapters/driving/http` die Signale über

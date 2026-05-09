@@ -1,0 +1,200 @@
+{
+  "status": "ok",
+  "analyzerVersion": "0.10.0",
+  "analyzerKind": "dash",
+  "input": {
+    "source": "text",
+    "baseUrl": "https://cdn.example.test/dash/"
+  },
+  "summary": {
+    "itemCount": 1
+  },
+  "findings": [],
+  "playlistType": "dash",
+  "details": {
+    "type": "static",
+    "live": false,
+    "periodCount": 1,
+    "adaptationSets": [
+      {
+        "id": "v",
+        "mimeType": "video/mp4",
+        "representations": [
+          {
+            "id": "v1",
+            "bandwidth": 1280000,
+            "mimeType": "video/mp4"
+          }
+        ]
+      }
+    ],
+    "cmaf": {
+      "source": "dash",
+      "confidence": "binary",
+      "signals": [
+        {
+          "code": "dash_segment_template_initialization",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v1]/SegmentTemplate@initialization",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_template_media",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v1]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_segment_extension_fmp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v1]/SegmentTemplate@media",
+          "confidence": "manifest"
+        },
+        {
+          "code": "dash_mime_video_mp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v1]/@mimeType",
+          "confidence": "manifest"
+        }
+      ],
+      "binary": {
+        "status": "passed",
+        "segmentsChecked": [
+          {
+            "kind": "init",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v1]/SegmentTemplate@initialization",
+            "uri": "init-$RepresentationID$.mp4",
+            "resolvedUrl": "https://cdn.example.test/dash/init-v1.mp4",
+            "status": "passed",
+            "contentType": "video/mp4",
+            "bytesRead": 52,
+            "boxes": [
+              {
+                "segmentAnchor": "segment:init",
+                "path": "segment:init:ftyp",
+                "type": "ftyp",
+                "offset": 0,
+                "size": 16
+              },
+              {
+                "segmentAnchor": "segment:init",
+                "path": "segment:init:moov",
+                "type": "moov",
+                "offset": 16,
+                "size": 36
+              }
+            ]
+          },
+          {
+            "kind": "media",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v1]/SegmentTemplate@media",
+            "uri": "seg-$Number%05d$.m4s",
+            "resolvedUrl": "https://cdn.example.test/dash/seg-00001.m4s",
+            "status": "passed",
+            "contentType": "video/mp4",
+            "bytesRead": 72,
+            "boxes": [
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:styp",
+                "type": "styp",
+                "offset": 0,
+                "size": 16
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof",
+                "type": "moof",
+                "offset": 16,
+                "size": 32
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:mdat",
+                "type": "mdat",
+                "offset": 48,
+                "size": 24
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof/traf",
+                "type": "traf",
+                "offset": 24,
+                "size": 24
+              },
+              {
+                "segmentAnchor": "segment:media[0]",
+                "path": "segment:media[0]:moof/traf/tfdt",
+                "type": "tfdt",
+                "offset": 32,
+                "size": 16
+              }
+            ]
+          }
+        ],
+        "boxes": [
+          {
+            "segmentAnchor": "segment:init",
+            "path": "segment:init:ftyp",
+            "type": "ftyp",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "segmentAnchor": "segment:init",
+            "path": "segment:init:moov",
+            "type": "moov",
+            "offset": 16,
+            "size": 36
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:styp",
+            "type": "styp",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof",
+            "type": "moof",
+            "offset": 16,
+            "size": 32
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:mdat",
+            "type": "mdat",
+            "offset": 48,
+            "size": 24
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof/traf",
+            "type": "traf",
+            "offset": 24,
+            "size": 24
+          },
+          {
+            "segmentAnchor": "segment:media[0]",
+            "path": "segment:media[0]:moof/traf/tfdt",
+            "type": "tfdt",
+            "offset": 32,
+            "size": 16
+          }
+        ],
+        "failures": [],
+        "limits": {
+          "maxSegmentBytes": 2000000,
+          "maxBinarySegments": 6,
+          "timeoutMs": 10000,
+          "maxRedirects": 5,
+          "requiredSegmentChecks": 2,
+          "plannedSegmentFetches": 2
+        }
+      }
+    }
+  }
+}
