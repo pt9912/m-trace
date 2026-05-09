@@ -73,8 +73,12 @@ In Scope:
     nicht über eine öffentliche Admin-UI.
 - `F-113`: tenant-spezifische Ingest Policies im Project-Scope.
   - Project Policy umfasst erlaubte Origins, Methoden, Header,
-    Rate-Limit-Buckets pro Project/Origin/IP-Bereich und optionale
-    Ingest-Grenzen für den `0.11.0`-Stream-Control-Pfad.
+    verpflichtende Rate-Limit-Buckets pro Project und optionale
+    Ingest-Grenzen für den `0.11.0`-Stream-Control-Pfad. Origin- und
+    IP-nahe Buckets sind nur dann Teil des `0.12.0`-Muss-Scopes, wenn
+    die bestehende Rate-Limit-Infrastruktur sie ohne größere
+    Architekturänderung tragen kann; andernfalls werden sie als
+    Folge-Scope dokumentiert.
   - Policies sind Project-gebunden; es gibt noch kein User-/Org-
     Rollenmodell.
   - Bestehende CORS-Regeln aus `NF-30`..`NF-37` werden in den
@@ -218,8 +222,7 @@ informationsarme Allowlist:
 
 - erlaubte Methoden maximal `POST, OPTIONS`;
 - erlaubte Header maximal `Content-Type`, `Authorization`,
-  `X-MTrace-Token`, `X-MTrace-Session-Token`, `X-MTrace-Project`,
-  `traceparent`;
+  `X-MTrace-Token`, `X-MTrace-Session-Token`, `traceparent`;
 - bekannte Origins aus der globalen Union aller konfigurierten
   Project-Origins können mit dem konkreten Origin gespiegelt werden,
   nie mit `*`; erfolgreiche Preflights liefern exakt `204`, leeren
@@ -330,10 +333,13 @@ Mindestinhalte für Tranche 0 und Doku:
 - **Replay**: Session Tokens sind kurzlebig, optional an
   `session_id`/`origin` gebunden und tragen `exp`/`nbf`.
 - **Issuance-Abuse**: `POST /api/auth/session-tokens` ist ein eigener
-  Missbrauchspfad. Auch mit gültigem Project Token gelten globale,
-  Project-, Origin- und IP-nahe Quoten; Überschreitung liefert
-  `429 auth_issuance_rate_limited`. Token-Issuance darf keine
-  unbegrenzten Logs, DB-Zeilen oder teuren Signaturpfade erzeugen.
+  Missbrauchspfad. Auch mit gültigem Project Token gelten globale und
+  Project-Quoten; Überschreitung liefert
+  `429 auth_issuance_rate_limited`. Origin- und IP-nahe Quoten sind
+  Defense-in-Depth und werden nur umgesetzt, wenn die bestehende
+  Infrastruktur sie ohne größere Architekturänderung tragen kann.
+  Token-Issuance darf keine unbegrenzten Logs, DB-Zeilen oder teuren
+  Signaturpfade erzeugen.
 - **Issuance-Leakage und Caching**: Clients sollen kurzlebige Session
   Tokens bis knapp vor `expires_at` wiederverwenden statt pro Event
   neu zu minten. Doku und SDK-Beispiele müssen Caching mit sicherem
@@ -355,8 +361,9 @@ Mindestinhalte für Tranche 0 und Doku:
   parallele Signatur-Keys; alte Verify-Keys bleiben über Deployments
   und Restarts geladen, bis alle damit signierten Session Tokens
   abgelaufen sind. Unbekannter `kid` liefert `401`.
-- **Rate Limits**: Policy-Grenzen gelten mindestens pro Project; wo
-  technisch vorhanden zusätzlich pro Origin/IP-Bereich.
+- **Rate Limits**: Policy-Grenzen gelten als Muss mindestens global und
+  pro Project; Origin-/IP-nahe Buckets sind optionaler Zusatz oder
+  Folge-Scope.
 - **Abgrenzung**: keine Production-Secret-Verwaltung, kein OAuth/OIDC,
   kein Media-Server-Auth-Hook-Versprechen.
 
@@ -468,9 +475,10 @@ DoD:
   oberhalb der wirksamen Grenze liefern `422
   auth_token_ttl_too_large` ohne stilles Clamping.
 - [ ] Issuance-Endpoint hat eigene Abuse-Grenzen: mindestens globale
-  und Project-Quote, nach Möglichkeit zusätzlich Origin/IP-nahe Quote.
-  Überschreitungen liefern `429 auth_issuance_rate_limited`; Policy-
-  Ablehnungen liefern `403 auth_policy_denied`.
+  und Project-Quote. Überschreitungen liefern
+  `429 auth_issuance_rate_limited`; Policy-Ablehnungen liefern
+  `403 auth_policy_denied`. Origin-/IP-nahe Quoten sind optionaler
+  Zusatz und bei Nicht-Umsetzung als Folge-Scope zu dokumentieren.
 - [ ] `POST /api/playback-events` akzeptiert zusätzlich zu
   `X-MTrace-Token` ein Session Token über `Authorization: Bearer` oder
   `X-MTrace-Session-Token`.
@@ -480,6 +488,12 @@ DoD:
   `401 auth_project_mismatch`, ungültige zusätzlich präsentierte
   Tokens liefern `401 auth_token_invalid`, und es gibt keinen stillen
   Fallback auf niedriger priorisierte gültige Tokens.
+- [ ] Contract-Tests decken Mischfälle explizit ab: malformed
+  `Authorization: Bearer mtr_st_*` plus gültiger Legacy-Header liefert
+  `401 auth_token_invalid`; gültiger höher priorisierter Session Token
+  plus gültiger Legacy-Header mit anderem Project liefert
+  `401 auth_project_mismatch`; fremder `Authorization`-Header plus
+  gültiger Legacy-Header bleibt erlaubt.
 - [ ] Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als
   nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header
   vorhanden ist; ohne gültigen m-trace Header liefern sie
@@ -533,6 +547,11 @@ DoD:
   widerrufene/abgelaufene Generationen deterministisch ab. `grace_until`
   darf nicht aus volatilem Prozesszustand oder aus `rotated_from`
   rekonstruiert werden.
+- [ ] Migrations-/Rollback-Kriterien für Rotation sind dokumentiert und
+  getestet: alte Generationen bleiben bis `grace_until` gültig, solange
+  `revoked_at` nicht gesetzt ist; `revoked_at` beendet Grace sofort;
+  Rollback auf eine vorherige Config darf keine bereits widerrufene
+  oder abgelaufene Generation reaktivieren.
 - [ ] Keine Persistenz, Fixtures oder Logs enthalten Klartext-Project-
   Tokens.
 - [ ] Tests decken aktive, neue, grace, abgelaufene, widerrufene,
@@ -550,7 +569,9 @@ DoD:
 
 - [ ] Policy-Modell definiert erlaubte Origins, Methoden, Header,
   Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-
-  Parameter inklusive separater Issuance-Quote.
+  Parameter inklusive separater Issuance-Quote. Muss-Pfad sind globale
+  und Project-Buckets; Origin-/IP-nahe Buckets sind optionaler Zusatz
+  oder Folge-Scope.
 - [ ] CORS-Preflight nutzt eine dokumentierte globale, konservative
   Allowlist, weil `OPTIONS` ohne validierbares Project-/Session-Token
   kein deterministisches Project-Enforcement erlaubt. Project-
@@ -568,10 +589,10 @@ DoD:
   Pfad ohne `Origin` gemäß API-Kontrakt.
 - [ ] `POST /api/playback-events` und `/api/ingest/*` prüfen
   relevante Policies vor Use-Case-Seiteneffekten.
-- [ ] Rate-Limit-Key wird mindestens um Origin/IP-Bereich erweitert,
-  soweit die vorhandene Rate-Limit-Infrastruktur das ohne größere
-  Architekturänderung trägt; andernfalls wird `[!]` mit Folge-Scope
-  dokumentiert.
+- [ ] Rate-Limit-Key enthält im Muss-Pfad das Project. Origin-/IP-
+  Bereich wird nur ergänzt, soweit die vorhandene Rate-Limit-
+  Infrastruktur das ohne größere Architekturänderung trägt; andernfalls
+  wird `[!]` mit Folge-Scope dokumentiert und blockiert RAK-74 nicht.
 - [ ] Tests decken erlaubte globale Preflight-Origin, unbekannte
   Preflight-Origin, falsche Preflight-Methode, nicht erlaubten
   Preflight-Header, exakte Header-Sets für bekannte und unbekannte
@@ -612,6 +633,10 @@ DoD:
 - [ ] Contract-Fixtures unter `spec/contract-fixtures/api/` pinnen
   mindestens Session-Token-Issuance, Playback mit Session Token,
   Expired Token, Policy Denied und Project-Token-Rotation.
+- [ ] Kompatibilitätsnachweise pinnen konkrete bestehende Flows:
+  Analyze-/Session-Link-Auth mit Project Token, SDK/Demo-Playback mit
+  Project Token, SDK/Demo-Playback mit Session Token und fremder
+  `Authorization`-Header plus gültigem `X-MTrace-Token`.
 - [ ] `make sync-contract-fixtures` kopiert neue API-Fixtures in
   `apps/api/adapters/driving/http/testdata/`.
 - [ ] `make generated-drift-check` deckt neue Fixtures ab.
@@ -655,7 +680,7 @@ Datei-, Test- und Doku-Nachweis.
 | RAK-71 | Muss | Lastenheft-Patch, Scope-Grenze, README-/Doku-Abgrenzung gegen OAuth/OIDC, Admin-UI, KMS/Vault und SaaS-Tenant-Management. | [ ] |
 | RAK-72 | Muss | Session-Token-Issuance, serverseitige Audience-Allowlist, harte TTL-Grenze ohne Clamp, Issuance-Abuse-Limits, Signaturvalidierung, Claims-Validierung, `token_id`/`jti`-Mapping, restart-stabiler Signing-Key-Ring, Fehlerpräzedenz, Fehlercodes und Contract-Tests. | [ ] |
 | RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, persistiertes `grace_until`, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
-| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, separate Issuance-Quoten, globale konservative Preflight-Regeln mit exakt gepinnten `204`-Antworten und minimierter Signalisierung, project-spezifisches POST-Enforcement und Policy-Denial-Tests. | [ ] |
+| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, globale und Project-Rate-Limit-Buckets, separate Issuance-Quoten, globale konservative Preflight-Regeln mit exakt gepinnten `204`-Antworten und minimierter Signalisierung, project-spezifisches POST-Enforcement und Policy-Denial-Tests; Origin-/IP-Buckets sind Zusatz oder Folge-Scope. | [ ] |
 | RAK-75 | Muss | Kompatibilität mit bestehenden Project-Token-Flows inklusive fremder `Authorization`-Header, SDK/Demo/Analyze/Session/Ingest-Tests und Migrationsdoku. | [ ] |
 | RAK-76 | Muss | Security-Doku, Threat Model, Datenschutz-/GDPR-Grenzen, CSP-Beispiele, Contract-Fixtures, Smokes und Drift-Check. | [ ] |
 
@@ -671,3 +696,5 @@ Datei-, Test- und Doku-Nachweis.
   Publish-Tokens, falls ein konkreter Lab-/Staging-Bedarf entsteht.
 - Später: globale Stream-Key- und Project-Token-Rotation über mehrere
   Deployments.
+- Später: Origin-/IP-nahe Rate-Limit-Buckets, falls die `0.12.0`-
+  Infrastruktur nur globale und Project-Buckets trägt.
