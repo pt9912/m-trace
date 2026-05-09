@@ -205,6 +205,60 @@ func TestAnalyzeHandler_RejectsInvalidRequestShapes(t *testing.T) {
 	}
 }
 
+// TestAnalyzeHandler_RejectsCmafOptionsBlock pinnt den
+// plan-0.10.0-Tranche-1-Vertrag: das öffentliche `/api/analyze`
+// akzeptiert in `0.10.0` keinen `cmaf`-/`cmaf.binary`-Block im
+// Request-Body. Stilles Ignorieren wäre ein Sicherheits-/
+// Konformitätsrisiko, weil ein vom Aufrufer gesetztes
+// `cmaf.binary.enabled:false` sonst nicht durchgereicht wird, der
+// analyzer-service aber per Default Segment-Fetches auslösen kann.
+func TestAnalyzeHandler_RejectsCmafOptionsBlock(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "cmaf with binary disabled",
+			body: `{"kind":"text","text":"#EXTM3U\n","cmaf":{"binary":{"enabled":false}}}`,
+		},
+		{
+			name: "cmaf with maxSegmentBytes",
+			body: `{"kind":"url","url":"https://cdn.example.test/m.m3u8","cmaf":{"binary":{"maxSegmentBytes":1000000}}}`,
+		},
+		{
+			name: "empty cmaf object still rejected",
+			body: `{"kind":"text","text":"#EXTM3U\n","cmaf":{}}`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			stub := &stubAnalysisInbound{}
+			server := httptest.NewServer(newAnalyzeHandler(stub))
+			defer server.Close()
+			res, err := http.Post(server.URL, "application/json", strings.NewReader(tc.body))
+			if err != nil {
+				t.Fatalf("post failed: %v", err)
+			}
+			defer func() { _ = res.Body.Close() }()
+			if res.StatusCode != http.StatusBadRequest {
+				t.Errorf("status: want 400, got %d", res.StatusCode)
+			}
+			body, _ := io.ReadAll(res.Body)
+			if !strings.Contains(string(body), `"code":"invalid_request"`) {
+				t.Errorf("body missing invalid_request code: %s", body)
+			}
+			if !strings.Contains(string(body), "cmaf") {
+				t.Errorf("body missing cmaf reference: %s", body)
+			}
+			if stub.called != 0 {
+				t.Errorf("use case must not be invoked when cmaf block is present, called=%d", stub.called)
+			}
+		})
+	}
+}
+
 func TestAnalyzeHandler_RejectsOversizedBody(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(newAnalyzeHandler(&stubAnalysisInbound{}))

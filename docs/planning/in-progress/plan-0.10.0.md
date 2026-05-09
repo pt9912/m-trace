@@ -182,8 +182,8 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | 🟡 |
-| 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | ⬜ |
+| 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | ✅ |
+| 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | 🟡 (Schema/API fertig; Fixture-Sync folgt mit T2/T3/T4) |
 | 2 | HLS/fMP4-CMAF-Erkennung | ⬜ |
 | 3 | DASH/CMAF-Erkennung | ⬜ |
 | 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ⬜ |
@@ -265,7 +265,7 @@ ausgebaut wird.
 
 DoD:
 
-- [ ] `packages/stream-analyzer/src/types/result.ts` um ein
+- [x] `packages/stream-analyzer/src/types/result.ts` um ein
   additives `CmafSignalSummary`-Modell ergänzt, das ausschließlich in
   den bestehenden Detail-Objekten lebt:
   `MasterPlaylistDetails.cmaf?`, `MediaPlaylistDetails.cmaf?` und
@@ -349,7 +349,7 @@ DoD:
     manifestbasiert und welcher Anteil binär verifiziert wurde; Pflicht
     ist diese Klarstellung in Doku und README, nicht in jedem JSON-
     Result.
-- [ ] `packages/stream-analyzer/src/types/input.ts` ergänzt eine
+- [x] `packages/stream-analyzer/src/types/input.ts` ergänzt eine
   additive Optionssektion für die binäre CMAF-Prüfung, z. B.
   `cmaf.binary.enabled`, `cmaf.binary.maxSegmentBytes` und
   `cmaf.binary.maxBinarySegments`. Defaults sind dokumentiert:
@@ -360,7 +360,7 @@ DoD:
   aber `binary.status:"passed"`, sofern der Aufrufer das Limit nicht
   erhöht. Diese Limits gelten zusätzlich zu `fetch.maxBytes`, das
   ausschließlich das Manifest-Body-Limit bleibt.
-- [ ] `AnalyzeOptions.fetch`-Semantik ist in
+- [x] `AnalyzeOptions.fetch`-Semantik ist in
   `packages/stream-analyzer/src/types/input.ts`,
   `docs/user/stream-analyzer.md` und
   `packages/stream-analyzer/README.md` synchronisiert: Timeout,
@@ -368,8 +368,14 @@ DoD:
   Segment-Fetches aus Text-Inputs mit sicherer HTTP(S)-`baseUrl`;
   `fetch.maxBytes` bleibt ausschließlich das Manifest-Body-Limit und
   wird nicht als Segment-Byte-Limit verwendet.
-- [ ] Binary-Status- und Failure-Code-Vertrag ist vor Parser-/Loader-
-  Implementierung festgelegt und in Fixtures/Testnamen sichtbar:
+- [x] Binary-Status- und Failure-Code-Vertrag ist vor Parser-/Loader-
+  Implementierung festgelegt: typisierte Domäne `CmafFailureCode` in
+  `packages/stream-analyzer/src/types/result.ts` mit Doku-Block
+  Präzedenz (1 Caller-Optionen → 2 Manifest-Scope → 3 Planungs-Cap →
+  4 Base-URL-Auflösung → 5 Fetch-Grenzen). Sichtbarkeit in
+  Fixtures/Testnamen folgt mit den Tranchen 2/3/4 und ist im
+  Fixture-Inventar (`spec/contract-fixtures/analyzer/README.md`,
+  T0) bereits namentlich gepinnt:
   - `binary_disabled`: `skipped`, wenn Binary-Prüfung per Option
     deaktiviert ist, aber `details.cmaf` in einem binär prüfbaren
     Detail-Scope vorhanden ist (HLS Media-Playlist oder DASH-MPD; HLS-
@@ -437,9 +443,12 @@ DoD:
   `segment_reference_missing`, während ein manifestseitig vorhandenes
   Segment ohne sichere `baseUrl` zu `segment_base_url_missing` führt,
   auch wenn die Segment-URI im Text-Manifest absolut notiert ist.
-- [ ] Public API exportiert die neuen CMAF-Typen über
-  `packages/stream-analyzer/src/index.ts`.
-- [ ] Options-Wire-Vertrag ist festgelegt: `cmaf.binary.*` ist Public-
+- [x] Public API exportiert die neuen CMAF-Typen über
+  `packages/stream-analyzer/src/index.ts` (`CmafAnalyzeOptions`,
+  `CmafBinaryOptions`, `CmafBinaryVerification`, `CmafBoxAnchor`,
+  `CmafFailure`, `CmafFailureCode`, `CmafLimits`, `CmafSegmentCheck`,
+  `CmafSignal`, `CmafSignalSummary`).
+- [x] Options-Wire-Vertrag ist festgelegt: `cmaf.binary.*` ist Public-
   TypeScript-API und wird vom analyzer-service als optionales
   Request-Feld akzeptiert, typ-/range-gefiltert und an
   `analyzeManifest` weitergereicht. `apps/api` nutzt in `0.10.0`
@@ -454,19 +463,26 @@ DoD:
   ist verboten, weil sonst z. B. caller-seitig gesetztes
   `enabled:false` ignoriert und trotzdem Segment-Fetches ausgelöst
   werden könnten.
-- [ ] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
+- [x] `packages/stream-analyzer/scripts/public-api.snapshot.txt` ist
   synchron aktualisiert; der Stream-Analyzer-Public-API-Check im
-  Paket-`lint` bleibt grün. Falls `make generated-drift-check` den
-  Stream-Analyzer-Snapshot in dieser Tranche zusätzlich als
-  Generated-Artefakt aufnehmen soll, werden `Makefile`-Kommentar,
-  Prüfkommando und Drift-Meldung im selben Commit erweitert.
-- [ ] Bestehende HLS-Result-Fixtures ohne CMAF-Signale bleiben
-  byte-kompatibel. Bestehende DASH-Result-Fixtures mit MP4-MIME werden
-  mit dokumentierter additiver `details.cmaf`-Erweiterung aktualisiert,
-  weil MP4-MIME-only ab `0.10.0` bewusst als
-  `confidence:"inferred"`-Signal sichtbar wird.
+  Paket-`lint` bleibt grün. `make generated-drift-check` bleibt in
+  T1 unverändert — der Stream-Analyzer-Snapshot ist bereits Teil
+  des Paket-Lints (`scripts/check-public-api.mjs` läuft im
+  `generated-drift-check`-Block) und braucht keine separate
+  Drift-Meldung; Makefile-Erweiterungen für CMAF-Fixture-Sync folgen
+  in T2/T3 zusammen mit den Fixture-Updates.
+- [x] Bestehende HLS-Result-Fixtures ohne CMAF-Signale bleiben
+  byte-kompatibel (in T1 unverändert; T2 verifiziert dies erneut beim
+  Ausbau der HLS-CMAF-Erkennung). Bestehende DASH-Result-Fixtures mit
+  MP4-MIME werden in T3 zusammen mit dem DASH-Parser-Output additiv
+  um `details.cmaf` erweitert; in T1 bleibt die Fixture-Form
+  unverändert, weil der Parser noch keine CMAF-Signale emittiert und
+  der TS-Contract-Test sonst byte-equal bricht.
 - [ ] Contract-Fixtures in `spec/contract-fixtures/analyzer/` und
-  Go-Testdata-Kopien für API-Adapter ergänzt.
+  Go-Testdata-Kopien für API-Adapter ergänzt — folgt mit den Tranchen
+  2/3/4 zusammen mit dem jeweiligen Parser-Output (T0 hat den
+  Inventarvertrag in `spec/contract-fixtures/analyzer/README.md`
+  gepinnt).
 - [ ] `Makefile`-Fixture-Sync ist synchron erweitert:
   `sync-contract-fixtures` kopiert alle neuen Analyzer-CMAF-Fixtures in
   `apps/api/adapters/driven/streamanalyzer/testdata/`,
@@ -474,16 +490,22 @@ DoD:
   Drift-Fehlermeldung nennt `make sync-contract-fixtures` als Fix, und
   `spec/contract-fixtures/analyzer/README.md` beschreibt die neuen
   Fixtures. Die kopierte Fixture-Anzahl in der Make-Ausgabe wird
-  angepasst.
-- [ ] Go-Adapter-Kontrakt ist explizit geprüft: weil `cmaf` in
+  angepasst. — folgt mit T2/T3/T4 zusammen mit der Fixture-Auslieferung.
+- [x] Go-Adapter-Kontrakt ist explizit geprüft: weil `cmaf` in
   `details` liegt, reichen `apps/api/adapters/driven/streamanalyzer`
   und `apps/api/adapters/driving/http` die Signale über
-  `EncodedDetails`/`details` unverändert durch; kein unbekanntes
-  Top-Level-Feld darf still verworfen werden.
-- [ ] Backward-Compatibility-Notiz in Stream-Analyzer-README:
-  bestehende `analyzerKind:"hls"`/`"dash"` bleiben unverändert;
-  CMAF ist ein Signal, kein dritter Manifesttyp.
-- [ ] Bestehende Forward-Compat-Hinweise in
+  `EncodedDetails`/`details` unverändert durch (Domain-Modell
+  `StreamAnalysisResult.EncodedDetails` ist `[]byte` mit JSON-
+  Roundtrip; `analyze.go` mappt es auf `json.RawMessage` ohne Feld-
+  Filter). `cmaf`-/`cmaf.binary`-Top-Level-Block im Request wird mit
+  `400 invalid_request` abgelehnt, damit caller-seitig gesetztes
+  `enabled:false` nicht still verworfen wird (Test
+  `TestAnalyzeHandler_RejectsCmafOptionsBlock`).
+- [x] Backward-Compatibility-Notiz in Stream-Analyzer-README
+  (`packages/stream-analyzer/README.md` §Scope): bestehende
+  `analyzerKind:"hls"`/`"dash"` bleiben unverändert; CMAF ist ein
+  Signal, kein dritter Manifesttyp.
+- [x] Bestehende Forward-Compat-Hinweise in
   `docs/user/stream-analyzer.md`, `packages/stream-analyzer/README.md`,
   `packages/stream-analyzer/src/types/result.ts` und
   `apps/api/hexagon/domain/stream_analysis.go` sind synchronisiert:
@@ -879,3 +901,31 @@ Review-Kommentare zu folgenden Themen sollen in Folge-Pläne, nicht in
   Verifikation.
 - Player-SDK-CMAF-Playback-Support.
 - Neue Storage-, Multi-Tenant- oder Kubernetes-Scope-Erweiterungen.
+
+## 10. Folge-Patch-Trigger (`0.10.1`-Entscheidung)
+
+Beim `0.10.0`-Closeout (Tranche 6) wird **bewusst entschieden**, ob
+ein `plan-0.10.1.md` benötigt wird oder ob offene Folgepunkte direkt
+in `0.11.0` wandern. `0.10.1` ist nur dann gerechtfertigt, wenn nach
+Tag `v0.10.0` einer dieser Trigger eintritt:
+
+- **CVE-/Stdlib-Bump erzwingt Image-Update** (analog `0.8.5`-OTel-
+  Bump oder `0.9.6`-Go-Stdlib-Bump): Go-/Node-/Distroless-Basis-Image
+  muss aus Sicherheitsgründen kurzfristig hochgezogen werden, ohne
+  neuen Minor-Scope.
+- **Lastenheft-Audit-Konvergenz nach Release** (analog `0.9.6`-Patch
+  nach `0.9.5`): Beim Audit „Ist `NF-13` wirklich erfüllt?" werden
+  Lieferstands-Unschärfen sichtbar, die einen Lastenheft-Patch
+  brauchen, aber keine neue Produktfunktion.
+- **Kleiner CMAF-Bug aus realem Lab-Use** zu klein für einen
+  eigenen Minor (z. B. eine Brand-Kombination, die in der Praxis
+  vorkommt aber nicht von der `cmfc`/`cmf2`/`cmfs`/`cmff`-Allowlist
+  erfasst wird, ohne dass es eine Scope-Erweiterung ist).
+
+Größere Folge-Themen (Low-Latency-CMAF, vollständige Segmentset-
+Abdeckung, Player-SDK-CMAF, vollständige `cmf1`-Aufnahme,
+Byte-Range-Loader) gehen direkt in `0.11.0`+ und nicht in einen
+Patch-Plan. Während der `0.10.0`-Implementierung aufkommende
+deferred Tradeoffs gehören als R-N-Eintrag mit Triggerschwelle in
+[`docs/planning/in-progress/risks-backlog.md`](./risks-backlog.md),
+nicht in einen leeren Patch-Plan-Stub.

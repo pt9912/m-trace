@@ -273,7 +273,7 @@ welchem Hop ein SSRF-Block bzw. ein Statuscode-Problem auftrat.
 | DASH-MPD VOD  | ✅ ab `0.9.0` | `analyzerKind:"dash"` / `playlistType:"dash"`; MPD/Period/AdaptationSet/Representation-Hierarchie mit Mindest-Feldern (`bandwidth`, `width`/`height`, `codecs`, `mimeType`); `details.type:"static"`. RAK-58 / NF-12. |
 | DASH-MPD Live | ✅ ab `0.9.0` | Wie VOD plus `details.type:"dynamic"` / `details.live:true` / `minimumUpdatePeriod` / `availabilityStartTime`. SegmentTemplate-Edge-Cases (`$Time$`-Variablen, `availabilityStartTime`-Drift) sind Folge-Plan-Material. |
 | DASH via URL  | ✅ ab `0.9.0` | Loader generalisiert auf HLS+DASH (Content-Type-Allowlist `application/dash+xml`/`application/xml`/`text/xml`); Detector entscheidet am Body, nicht am Content-Type. SSRF-Schutz unverändert (§6).                  |
-| CMAF          | ❌       | Out of scope — F-73, Folge-Plan.                              |
+| CMAF-Analyse  | 🟡 ab `0.10.0` | NF-13 / RAK-60..RAK-64. **Kein neuer `analyzerKind`** — CMAF lebt als additives `details.cmaf`-Signalmodell unter `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` / `DashManifestDetails.cmaf?`. Manifestbasierte HLS-/DASH-Signale (`EXT-X-MAP`, `.m4s`/`.cmfv`/`.cmfa`-Segmentmuster, MP4-MIME, `SegmentTemplate@initialization`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (Brand-Allowlist `cmfc`/`cmf2` für Init-`ftyp`, `cmfs`/`cmff`/`cmfc`/`cmf2` für Media-`styp`; Defaults `cmaf.binary.maxSegmentBytes=2_000_000`, `cmaf.binary.maxBinarySegments=6`). Eine CMAF-Konformitätsaussage darf nur aus `details.cmaf.binary.status:"passed"` abgeleitet werden. Out of scope bleiben Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Support. |
 | SRT           | ❌       | Eigener Bereich (`0.6.0`).                                    |
 
 ## 4. Stabilitätsregel
@@ -288,8 +288,11 @@ Minor unverändert bleibt:
 - Neue optionale Felder in `details.*`-Sub-Strukturen.
 - Neue Werte für `playlistType` (z. B. wenn HLS-Spec einen weiteren
   Typ einführt).
-- Neue Werte für `analyzerKind` (z. B. `"cmaf"` als zusätzliches
-  Union-Member).
+- Neue Werte für `analyzerKind`. **Hinweis (`0.10.0`):** CMAF
+  bekommt **keinen** eigenen `analyzerKind`; es lebt als additives
+  `details.cmaf`-Signalmodell unter den bestehenden HLS-/DASH-
+  Detail-Objekten. Künftige Manifestformate können weiterhin als
+  zusätzliches Union-Member ergänzt werden.
 - Neue Finding-Codes oder Finding-Levels (Konsumenten dürfen
   Unbekannte ignorieren oder als Info behandeln).
 - Neue `AnalysisErrorCode`-Werte.

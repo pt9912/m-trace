@@ -39,14 +39,21 @@ export interface AnalysisSummary {
 /**
  * Kennzeichnet, welcher Analyzer das Ergebnis erzeugt hat. Aktuelle
  * Werte: `"hls"` (seit `0.3.0`) und `"dash"` (ab `0.9.0` Tranche 3,
- * NF-12 / RAK-58); weitere Manifestformate (CMAF — F-73) werden
- * additiv ergänzt, ohne den Envelope zu brechen.
+ * NF-12 / RAK-58).
  *
  * Konsumenten unterscheiden HLS-Variants über `playlistType`
  * (`"master"`/`"media"`/`"unknown"`); DASH liefert `playlistType:
  * "dash"` als einzige Variante (DASH hat keine analoge Master/Media-
  * Trennung in der Manifest-Form selbst — die Period/AdaptationSet/
  * Representation-Hierarchie ist immer in einem MPD geliefert).
+ *
+ * **CMAF (`0.10.0`, NF-13 / RAK-60..RAK-64) ist kein neuer
+ * `AnalyzerKind`-Wert.** CMAF-Erkennung lebt als additives
+ * `details.cmaf`-Signalmodell unter den bestehenden HLS-/DASH-
+ * Detail-Objekten (`MasterPlaylistDetails.cmaf?`,
+ * `MediaPlaylistDetails.cmaf?`, `DashManifestDetails.cmaf?`); siehe
+ * `CmafSignalSummary`. Künftige Manifestformate werden weiterhin
+ * additiv ergänzt, ohne den Envelope zu brechen.
  */
 export type AnalyzerKind = "hls" | "dash";
 
@@ -177,6 +184,14 @@ export interface MasterRendition {
 export interface MasterPlaylistDetails {
   readonly variants: readonly MasterVariant[];
   readonly renditions: readonly MasterRendition[];
+  /**
+   * Optionales CMAF-Signal-Summary (`0.10.0`, NF-13 / RAK-61). Wird
+   * nur ausgegeben, wenn manifestbasierte CMAF-Indizien erkannt
+   * wurden; HLS-Master-Pfad lädt referenzierte Media-Playlists nicht
+   * nach und trägt deshalb in `0.10.0` kein `binary`-Objekt — siehe
+   * `CmafSignalSummary` und Plan-Tranche 2.
+   */
+  readonly cmaf?: CmafSignalSummary;
 }
 
 /**
@@ -230,6 +245,14 @@ export interface MediaPlaylistDetails {
   readonly liveLatencyEstimateSeconds?: number;
   readonly segments: readonly MediaSegment[];
   readonly summary: MediaSegmentSummary;
+  /**
+   * Optionales CMAF-Signal-Summary (`0.10.0`, NF-13 / RAK-61 /
+   * RAK-64). Wird nur ausgegeben, wenn `EXT-X-MAP`, fMP4-Segmentmuster
+   * oder verwandte Indizien erkannt wurden; trägt im Default
+   * (`cmaf.binary.enabled:true`) auch ein `binary`-Objekt mit
+   * Segment-Pflichtprüfungen.
+   */
+  readonly cmaf?: CmafSignalSummary;
 }
 
 /**
@@ -288,4 +311,219 @@ export interface DashManifestDetails {
   readonly availabilityStartTime?: string;
   readonly periodCount: number;
   readonly adaptationSets: readonly DashAdaptationSet[];
+  /**
+   * Optionales CMAF-Signal-Summary (`0.10.0`, NF-13 / RAK-62 /
+   * RAK-64). Wird ausgegeben, sobald MP4-MIME, Initialization-/
+   * SegmentTemplate-Hinweise oder fMP4-URI-Muster erkannt sind. MP4-
+   * MIME allein erzeugt nur `confidence:"inferred"`; Initialization-
+   * plus fMP4-Segmentmuster sind ein stärkeres manifestbasiertes
+   * Signal. Trägt im Default (`cmaf.binary.enabled:true`) ein
+   * `binary`-Objekt: bei MP4-MIME-only ohne Initialization-/Media-
+   * Referenzen ist `binary.status:"skipped"` mit
+   * `segment_reference_missing`.
+   */
+  readonly cmaf?: CmafSignalSummary;
 }
+
+/**
+ * CMAF-Signal-Summary (`0.10.0`, NF-13 / RAK-60..RAK-64). Lebt
+ * additiv unter `MasterPlaylistDetails.cmaf`,
+ * `MediaPlaylistDetails.cmaf` oder `DashManifestDetails.cmaf` — kein
+ * Top-Level-Feld im Analyzer-Envelope. Das Vorhandensein bedeutet
+ * „CMAF-Signale oder CMAF-Verifikation vorhanden"; eine
+ * Konformitätsaussage darf nur aus `binary.status:"passed"`
+ * abgeleitet werden.
+ *
+ * Confidence-Aggregation ist deterministisch: `binary` >
+ * `manifest` > `inferred`. Summary-`confidence:"binary"` entsteht
+ * nur, wenn `binary.status:"passed"` ist; einzelne bestandene
+ * Segmentnachweise dürfen eigene `signals[].confidence:"binary"`
+ * tragen, erhöhen die Summary-Confidence aber nicht auf `binary`,
+ * solange der Binary-Gesamtstatus `failed` oder `skipped` ist.
+ */
+export interface CmafSignalSummary {
+  /**
+   * Quelle des Summary-Objekts. Ein `mixed`-Wert wird in `0.10.0`
+   * nicht eingeführt, weil jedes Summary unter genau einem HLS- oder
+   * DASH-Detail-Objekt lebt.
+   */
+  readonly source: "hls" | "dash";
+  /**
+   * Aggregierte stärkste Confidence des Summary-Objekts. Normative
+   * Ordnung: `binary` > `manifest` > `inferred`.
+   */
+  readonly confidence: "binary" | "manifest" | "inferred";
+  /**
+   * Einzelne Indizien mit Manifest-Anker und eigener Confidence,
+   * damit gemischte starke und schwache Signale auditierbar bleiben.
+   * `level` nutzt dieselbe Wertedomäne wie `AnalysisFinding.level`.
+   */
+  readonly signals: readonly CmafSignal[];
+  /**
+   * Optionale binäre Verifikation. In binär prüfbaren Detail-Scopes
+   * (HLS Media-Playlist, DASH-MPD) wird das Feld immer gesetzt — auch
+   * bei `cmaf.binary.enabled:false` (`status:"skipped"` mit
+   * `binary_disabled`). HLS-Master-Summaries tragen in `0.10.0` kein
+   * `binary`-Objekt, weil referenzierte Media-Playlists nicht
+   * nachgeladen werden.
+   */
+  readonly binary?: CmafBinaryVerification;
+  /**
+   * Knapper Klartext-Hinweis, welcher Anteil nur manifestbasiert und
+   * welcher Anteil binär verifiziert wurde. Pflicht ist diese
+   * Klarstellung in Doku und README, nicht in jedem JSON-Result.
+   */
+  readonly note?: string;
+}
+
+/**
+ * Einzelnes CMAF-Indiz mit stabiler Confidence und Manifest-Anker
+ * (`0.10.0`, RAK-61 / RAK-62).
+ */
+export interface CmafSignal {
+  /**
+   * Stabiler Code für das Signal, z. B. `hls_ext_x_map`,
+   * `hls_segment_extension_m4s`, `dash_mime_video_mp4`,
+   * `dash_segment_template_initialization`.
+   */
+  readonly code: string;
+  /** Drei-Stufen-Skala analog `AnalysisFinding.level`. */
+  readonly level: "info" | "warning" | "error";
+  /** Eindeutiger Anker im Manifest, z. B. Zeile/Tag oder XPath-artig. */
+  readonly manifestAnchor: string;
+  /** Einzel-Confidence dieses Indizes. */
+  readonly confidence: "binary" | "manifest" | "inferred";
+}
+
+/**
+ * Bounded Binary-Verifikation der manifestreferenzierten Init-/Media-
+ * Segmente (`0.10.0`, RAK-64).
+ *
+ * `status:"passed"` ist die einzige Stelle, aus der Doku und
+ * Konsumenten eine binäre CMAF-Konformitätsaussage für den geprüften
+ * Scope ableiten dürfen. `status:"skipped"` ist zulässig, wenn keine
+ * sicher ladbare Init-/Media-Segment-URI vorliegt; manifestbasierte
+ * Signale bleiben dann sichtbar, aber nicht konformitätsbeweisend.
+ *
+ * Aggregation: Fehler vor Skip vor Pass. `passed` nur, wenn alle
+ * manifestseitig verpflichtenden Prüfungen im Analyzer-Scope geladen
+ * **und** bestanden wurden.
+ */
+export interface CmafBinaryVerification {
+  readonly status: "passed" | "failed" | "skipped";
+  /** Auditierbare Einzelstatus pro Pflichtprüfung. */
+  readonly segmentsChecked: readonly CmafSegmentCheck[];
+  /** Eindeutige Box-Nachweise quer über `segmentsChecked`. */
+  readonly boxes: readonly CmafBoxAnchor[];
+  /** Strukturierte Fehler-/Skip-Begründungen. */
+  readonly failures: readonly CmafFailure[];
+  /** Reproduzierbare Limits/Plan-Mengen für überzählige Skip-Codes. */
+  readonly limits: CmafLimits;
+  /**
+   * Knappe Hervorhebung, welcher Anteil binär verifiziert ist.
+   * Doppelung zu `CmafSignalSummary.note` ist erlaubt, aber nicht
+   * verpflichtend.
+   */
+  readonly note?: string;
+}
+
+/**
+ * Pflichtprüfungs-Eintrag im Binary-Pfad. `kind` unterscheidet
+ * Init-Segment von Media-Fragment; `manifestAnchor` ist immer
+ * gesetzt, `uri`/`resolvedUrl` nur bei aufgelöster Referenz.
+ */
+export interface CmafSegmentCheck {
+  readonly kind: "init" | "media";
+  readonly source: "hls" | "dash";
+  readonly manifestAnchor: string;
+  readonly uri?: string;
+  readonly resolvedUrl?: string;
+  readonly status: "passed" | "failed" | "skipped";
+  readonly failureCode?: CmafFailureCode;
+  readonly message?: string;
+  readonly contentType?: string;
+  readonly bytesRead?: number;
+  readonly boxes?: readonly CmafBoxAnchor[];
+}
+
+/**
+ * ISO-BMFF-Box-Anker für ein geladenes Segment. `path` benennt den
+ * relativen Box-Pfad (`moof/traf/tfdt`, `mdat`), `offset`/`size` sind
+ * absolute Bytes-Werte im Segment.
+ */
+export interface CmafBoxAnchor {
+  readonly segmentAnchor: string;
+  readonly path: string;
+  readonly type: string;
+  readonly offset: number;
+  readonly size: number;
+}
+
+/**
+ * Fehler-/Skip-Eintrag mit Pflichtfeldern `code`, `level`, `message`
+ * und optionalen Ankern. `boxPath` ist nur gesetzt, wenn der Fehler
+ * im Box-Parser entsteht.
+ */
+export interface CmafFailure {
+  readonly code: CmafFailureCode;
+  readonly level: "info" | "warning" | "error";
+  readonly message: string;
+  readonly manifestAnchor?: string;
+  readonly segmentAnchor?: string;
+  readonly boxPath?: string;
+}
+
+/**
+ * Reproduzierbarkeits-Block für überzählige Pflichtprüfungen
+ * (`0.10.0`, RAK-64). `requiredSegmentChecks` ist die manifestseitig
+ * verpflichtende Anzahl, `plannedSegmentFetches` die nach Anwendung
+ * von `maxBinarySegments` tatsächlich geplante Fetch-Menge.
+ */
+export interface CmafLimits {
+  readonly maxSegmentBytes: number;
+  readonly maxBinarySegments: number;
+  readonly timeoutMs: number;
+  readonly maxRedirects: number;
+  readonly requiredSegmentChecks: number;
+  readonly plannedSegmentFetches: number;
+}
+
+/**
+ * Stabile Failure-Code-Domäne für `CmafBinaryVerification`,
+ * `CmafSegmentCheck` und `CmafFailure` (`0.10.0` Tranche 1).
+ *
+ * Präzedenz bei mehreren möglichen Skip-Ursachen (deterministisch):
+ *   1. Caller-/Options-Entscheidung: `binary_disabled`.
+ *   2. Manifest-Scope fehlt oder ist nicht ableitbar:
+ *      `segment_reference_missing`, `dash_template_unresolved`,
+ *      `hls_map_byterange_unsupported`,
+ *      `hls_media_byterange_unsupported`.
+ *   3. Planungs-Cap nach gebildeter Pflichtprüfungsmenge:
+ *      `not_planned_due_to_limit`.
+ *   4. Base-URL-/URI-Sicherheitsauflösung:
+ *      `segment_base_url_missing`, `segment_uri_blocked`.
+ *   5. Fetch-/Read-Grenzen nach sicherer Auflösung:
+ *      `segment_fetch_failed`, `segment_content_type_unsupported`,
+ *      `segment_too_large`.
+ *
+ * `failed` ist für geladene, aber fachlich nicht konforme oder
+ * strukturell kaputte Bytes reserviert: `cmaf_box_validation_failed`
+ * (Brand-/Box-Konformität) und `invalid_box_structure` (Boxgröße,
+ * Überlappung, fehlende Fortschritt). `passed` bedeutet nur: alle
+ * manifestseitig verpflichtenden Prüfungen im definierten Analyzer-
+ * Scope wurden tatsächlich ausgeführt und bestanden.
+ */
+export type CmafFailureCode =
+  | "binary_disabled"
+  | "segment_reference_missing"
+  | "dash_template_unresolved"
+  | "hls_map_byterange_unsupported"
+  | "hls_media_byterange_unsupported"
+  | "not_planned_due_to_limit"
+  | "segment_base_url_missing"
+  | "segment_uri_blocked"
+  | "segment_fetch_failed"
+  | "segment_content_type_unsupported"
+  | "segment_too_large"
+  | "cmaf_box_validation_failed"
+  | "invalid_box_structure";

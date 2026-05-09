@@ -1,9 +1,14 @@
 package domain
 
 // StreamAnalysisRequest beschreibt einen Manifestanalyse-Auftrag,
-// unabhängig vom konkreten Manifestformat. 0.3.0 deckt HLS ab; weitere
-// Formate (DASH/CMAF, F-73) werden additiv ergänzt, ohne den Vertrag
-// zu brechen (plan-0.3.0 §2 Tranche 1).
+// unabhängig vom konkreten Manifestformat. 0.3.0 deckt HLS ab; DASH-
+// MPD ist seit 0.9.0 (RAK-58 / NF-12) zweiter `AnalyzerKind`-Wert.
+// CMAF (NF-13 / RAK-60..RAK-64, ab 0.10.0) ist **kein** neuer
+// AnalyzerKind, sondern ein additives `details.cmaf`-Signalmodell
+// unter den bestehenden HLS-/DASH-Detail-Objekten — der Adapter
+// reicht es als Bestandteil von `EncodedDetails` unverändert durch.
+// Weitere Formate werden additiv ergänzt, ohne den Vertrag zu
+// brechen (plan-0.3.0 §2 Tranche 1).
 //
 // Genau eines von ManifestText oder ManifestURL muss gesetzt sein. Die
 // konkrete Eingabevalidierung erfolgt im Adapter, weil Lade-Politik
@@ -101,8 +106,12 @@ const (
 
 // AnalyzerKind identifiziert den ausführenden Analyzer-Pfad.
 // Aktuelle Werte: `hls` (seit plan-0.3.0) und `dash` (seit
-// plan-0.9.0 Tranche 3, RAK-58 / NF-12). Weitere Formate (CMAF,
-// F-73) werden additiv ergänzt.
+// plan-0.9.0 Tranche 3, RAK-58 / NF-12). CMAF (NF-13 / RAK-60..RAK-64,
+// ab plan-0.10.0) bekommt **keinen** eigenen AnalyzerKind — die
+// CMAF-Erkennung lebt als additives `details.cmaf`-Signalmodell
+// unter den HLS-/DASH-Detail-Objekten (siehe `StreamAnalysisResult.
+// EncodedDetails`). Weitere Manifestformate werden weiterhin additiv
+// ergänzt.
 type AnalyzerKind string
 
 const (

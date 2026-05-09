@@ -92,7 +92,15 @@ async function handleAnalyze(
     return;
   }
   const fetchOptions = mergeFetchOptions(parseFetchOptions(parsed), allowPrivateNetworks);
-  const result = await analyze(input, fetchOptions ? { fetch: fetchOptions } : undefined);
+  const cmafOptions = parseCmafOptions(parsed);
+  const analyzeOptions: AnalyzeOptions | undefined =
+    fetchOptions || cmafOptions
+      ? {
+          ...(fetchOptions ? { fetch: fetchOptions } : {}),
+          ...(cmafOptions ? { cmaf: cmafOptions } : {})
+        }
+      : undefined;
+  const result = await analyze(input, analyzeOptions);
   writeJson(res, 200, result);
 }
 
@@ -150,6 +158,40 @@ function parseManifestInput(value: unknown): ManifestInput | null {
     return { kind: "url", url: v.url };
   }
   return null;
+}
+
+/**
+ * Parst und filtert den optionalen `cmaf.binary`-Block aus dem
+ * Request-Body (plan-0.10.0 Tranche 1, NF-13 / RAK-64). Akzeptiert
+ * `enabled` (Boolean), `maxSegmentBytes` (positive Zahl) und
+ * `maxBinarySegments` (Zahl ≥ 0); ungültige oder fremde Felder
+ * werden verworfen — dieselbe Filter-Strategie wie für
+ * `fetch`-Optionen oben. `allowPrivateNetworks` bleibt nicht
+ * Body-konfigurierbar; das Flag setzt ausschließlich der Operator
+ * über `ANALYZER_ALLOW_PRIVATE_NETWORKS` auf dem Container (siehe
+ * `mergeFetchOptions`-Kommentar).
+ */
+function parseCmafOptions(value: unknown): NonNullable<AnalyzeOptions["cmaf"]> | null {
+  if (typeof value !== "object" || value === null) return null;
+  const v = value as Record<string, unknown>;
+  const cmaf = v.cmaf;
+  if (typeof cmaf !== "object" || cmaf === null) return null;
+  const c = cmaf as Record<string, unknown>;
+  const binary = c.binary;
+  if (typeof binary !== "object" || binary === null) return null;
+  const b = binary as Record<string, unknown>;
+  const out: { enabled?: boolean; maxSegmentBytes?: number; maxBinarySegments?: number } = {};
+  if (typeof b.enabled === "boolean") {
+    out.enabled = b.enabled;
+  }
+  if (typeof b.maxSegmentBytes === "number" && Number.isFinite(b.maxSegmentBytes) && b.maxSegmentBytes > 0) {
+    out.maxSegmentBytes = b.maxSegmentBytes;
+  }
+  if (typeof b.maxBinarySegments === "number" && Number.isFinite(b.maxBinarySegments) && b.maxBinarySegments >= 0) {
+    out.maxBinarySegments = b.maxBinarySegments;
+  }
+  if (Object.keys(out).length === 0) return null;
+  return { binary: out };
 }
 
 function parseFetchOptions(value: unknown): NonNullable<AnalyzeOptions["fetch"]> | null {

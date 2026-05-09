@@ -137,6 +137,26 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// plan-0.10.0 Tranche 1: `cmaf`-/`cmaf.binary`-Block im
+	// öffentlichen `/api/analyze`-Request bleibt unsupported — stilles
+	// Ignorieren wäre ein Sicherheits- und Konformitätsrisiko, weil
+	// caller-seitig gesetztes `cmaf.binary.enabled:false` nicht
+	// durchgereicht wird. Vor dem typisierten Decode wird der Body
+	// generisch geprüft und Requests mit `cmaf`-Key explizit mit
+	// 400 invalid_request abgelehnt.
+	var rawFields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &rawFields); err != nil {
+		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.", nil)
+		h.recordOutcome("error", "invalid_json")
+		return
+	}
+	if _, hasCMAF := rawFields["cmaf"]; hasCMAF {
+		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_request",
+			"`cmaf`-/`cmaf.binary`-Optionen werden vom öffentlichen `/api/analyze` in `0.10.0` nicht akzeptiert; CMAF-Defaults werden serverseitig vom analyzer-service gesetzt.", nil)
+		h.recordOutcome("error", "invalid_request")
+		return
+	}
+
 	var payload analyzeRequestPayload
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.", nil)

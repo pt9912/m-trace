@@ -237,6 +237,92 @@ describe("analyzer-service — POST /analyze", () => {
     });
     expect(res.status).toBe(200);
   });
+
+  // plan-0.10.0 Tranche 1 (NF-13 / RAK-64): direkte analyzer-service-
+  // Aufrufer dürfen `cmaf.binary.{enabled,maxSegmentBytes,
+  // maxBinarySegments}` setzen; ungültige oder fremde Felder werden
+  // analog zur fetch-Filter-Strategie verworfen. `allowPrivateNetworks`
+  // bleibt nicht body-konfigurierbar — das wird durch den dedizierten
+  // Test in der `allowPrivateNetworks`-describe-Suite gepinnt.
+  it("passes cmaf.binary options through with valid values", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    });
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "url",
+        url: "https://example.test/m.m3u8",
+        cmaf: { binary: { enabled: false, maxSegmentBytes: 1_000_000, maxBinarySegments: 3 } }
+      })
+    });
+    expect(res.status).toBe(200);
+    expect(observedOptions).toEqual({
+      cmaf: { binary: { enabled: false, maxSegmentBytes: 1_000_000, maxBinarySegments: 3 } }
+    });
+  });
+
+  it("filters cmaf.binary fields with invalid types or out-of-range values", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    });
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "url",
+        url: "https://example.test/m.m3u8",
+        cmaf: { binary: { enabled: "yes", maxSegmentBytes: 0, maxBinarySegments: -1, foo: "bar" } }
+      })
+    });
+    expect(res.status).toBe(200);
+    // Alle drei Felder ungültig (enabled non-boolean, maxSegmentBytes
+    // nicht > 0, maxBinarySegments < 0); kein cmaf-Block fließt durch.
+    expect(observedOptions).toBeUndefined();
+  });
+
+  it("ignores cmaf without a binary object", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    });
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "url", url: "https://example.test/m.m3u8", cmaf: { foo: "bar" } })
+    });
+    expect(res.status).toBe(200);
+    expect(observedOptions).toBeUndefined();
+  });
+
+  it("merges cmaf.binary with fetch options when both are set", async () => {
+    let observedOptions: AnalyzeOptions | undefined;
+    running = await startServer(async (_input, options) => {
+      observedOptions = options;
+      return { status: "ok" } as unknown as AnalyzeOutput;
+    });
+    const res = await fetch(`${running.url}/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "url",
+        url: "https://example.test/m.m3u8",
+        fetch: { timeoutMs: 7000 },
+        cmaf: { binary: { maxBinarySegments: 4 } }
+      })
+    });
+    expect(res.status).toBe(200);
+    expect(observedOptions).toEqual({
+      fetch: { timeoutMs: 7000 },
+      cmaf: { binary: { maxBinarySegments: 4 } }
+    });
+  });
 });
 
 describe("analyzer-service — allowPrivateNetworks", () => {

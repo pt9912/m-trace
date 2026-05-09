@@ -134,9 +134,20 @@ dann aber selbst ablehnt (defektes `#EXTM3U`-Manifest).
 - ✅ HLS via URL mit SSRF-Schutz, Größenlimit, Redirects (RAK-27 / RAK-28).
 - ✅ DASH-MPD VOD und einfache Live-MPDs (RAK-58 / NF-12 seit `0.9.0`).
 - ✅ DASH via URL — Loader generalisiert, SSRF-Schutz unverändert.
+- 🟡 CMAF-Analyse im Stream-Analyzer-Scope (NF-13, RAK-60..RAK-64) —
+  in `0.10.0` als additives `details.cmaf`-Signalmodell unter den
+  bestehenden HLS-/DASH-Detail-Objekten; manifestbasierte HLS-/DASH-
+  Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter
+  Init-/Media-Segmente (Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff`,
+  Defaults `maxSegmentBytes=2_000_000`, `maxBinarySegments=6`). **Kein
+  neuer `analyzerKind`** — `details.cmaf` lebt unter
+  `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` /
+  `DashManifestDetails.cmaf?`.
 - ⬜ DASH SegmentTemplate-Edge-Cases (`$Time$`-Variablen,
   `availabilityStartTime`-Drift) — Folge-Plan (Out of Scope laut
   `plan-0.9.0.md` §0.3).
-- ⬜ CMAF — F-73, Folge-Plan.
+- ⬜ Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), vollständige
+  Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Support —
+  bewusst Folge-Scope nach `0.10.0`.
 
 Vollständige Doku: [`docs/user/stream-analyzer.md`](../../docs/user/stream-analyzer.md).
