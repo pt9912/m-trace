@@ -56,7 +56,7 @@ In Scope:
   - API-Antworten dürfen den Klartext-Key nur beim Anlegen bzw.
     Rotieren zurückgeben.
   - Persistenz speichert kein Klartext-Secret; falls persistiert wird,
-    dann nur Hash/Fingerprint plus Metadaten.
+    dann nur Key-Hash, redigierter Fingerprint plus Metadaten.
   - Logs, Fixtures, Doku und Smokes verwenden ausschließlich
     Beispielwerte oder redigierte Keys.
 - `F-47`: Ingest-Endpunkte beschreiben.
@@ -76,8 +76,8 @@ In Scope:
 - `F-49`: Stream-Lifecycle-Events vorbereiten und lokal verifizieren.
   - Eventmodell für `stream_started` und `stream_ended`.
   - Lifecycle-Adapter kann Events exemplarisch empfangen oder in einem
-    lokalen Smoke auslösen; produktive Zustellung an externe Systeme
-    ist optionaler Folge-Scope.
+    lokalen Smoke auslösen; produktive ausgehende Webhook-Zustellung
+    an externe Systeme ist optionaler Folge-Scope.
   - Events enthalten keine Klartext-Keys.
 - `F-50`: SRT-/RTMP-Konfigurationen als beschreibbare Artefakte
   vorbereiten.
@@ -119,22 +119,24 @@ Out of scope:
 - SRT-Health aus `0.6.0`, WebRTC aus `0.7.0`/`0.8.0`, SRS aus
   `0.9.0` und CMAF aus `0.10.0` bleiben Regression-Baseline.
 
-### 0.3 Architekturentscheidung (vor Tranche 1 zu schließen)
+### 0.3 Architekturentscheidung
 
-Vor Implementierung muss eine von zwei Varianten verbindlich gewählt
-und im Plan dokumentiert werden.
+Für `0.11.0` ist **Variante B verbindlich**: Ingest-Control wird als
+Modul in `apps/api` umgesetzt. Variante A bleibt ein möglicher späterer
+Ausgliederungspfad, ist aber nicht Teil dieses Release-Scope.
 
 | Variante | Beschreibung | Vorteil | Risiko |
 | -------- | ------------ | ------- | ------ |
 | A | eigenes `apps/ingest-gateway` nach Lastenheft §7.5.4 | klare Service-Grenze für spätere Control-Plane | neue App, Dockerfile, Port, CI- und Doku-Aufwand für lokalen Scope |
 | B | Ingest-Control als Modul in `apps/api` | nutzt vorhandene HTTP-, SQLite-, Metrik- und Test-Infrastruktur | Name `ingest-gateway` bleibt zunächst konzeptionell, spätere Ausgliederung braucht Migration |
 
-Vorschlag für `0.11.0`: **Variante B**, sofern Tranche 0 keine
-zwingende Service-Grenze findet. Begründung: Der Release ist bewusst
-lokal/lab-nah. Ein zusätzlicher Prozess wäre für `F-46`..`F-51` noch
-mehr Betriebsoberfläche als Produktnutzen. Die Domain soll aber so
-geschnitten werden, dass eine spätere Ausgliederung in
-`apps/ingest-gateway` möglich bleibt.
+Begründung: Der Release ist bewusst lokal/lab-nah. Ein zusätzlicher
+Prozess wäre für `F-46`..`F-51` mehr Betriebsoberfläche als
+Produktnutzen. Die Domain muss aber so geschnitten werden, dass eine
+spätere Ausgliederung in `apps/ingest-gateway` möglich bleibt. Deshalb
+gelten für Tranche 1 explizite Hexagon-/Port-Grenzen innerhalb
+`apps/api`; HTTP, SQLite, Auth-/Project-Resolver, CORS und Metriken
+werden aus der bestehenden API-Infrastruktur wiederverwendet.
 
 ### 0.4 Persistenzentscheidung (vor Tranche 1 zu schließen)
 
@@ -143,7 +145,7 @@ Variante B gewählt wird. Reine Konfigurationsartefakte sind nur
 zulässig, wenn folgende Punkte trotzdem stabil erfüllt werden:
 
 - Stream-IDs bleiben über API-Restarts reproduzierbar.
-- Rotierte Keys können alte Fingerprints deaktivieren.
+- Rotierte Keys können alte Key-Hashes deaktivieren.
 - Contract-Tests können Listen, Lesen, Rotieren und Validieren ohne
   Testreihenfolge-Abhängigkeit prüfen.
 - Doku macht klar, ob Daten in SQLite oder nur in generierten
@@ -154,7 +156,10 @@ zulässig, wenn folgende Punkte trotzdem stabil erfüllt werden:
 Der Patch ergänzt `spec/lastenheft.md` um RAK-65..RAK-70 und hebt
 `F-46`..`F-51` für den begrenzten `0.11.0`-Lab-Control-Scope von
 Kann auf Release-Muss. Die Kann-Historie bleibt auditierbar; verbindlich
-ist die neue RAK-Gruppe.
+ist die neue RAK-Gruppe. `F-49` wird dabei für `0.11.0` ausdrücklich
+als lokales Lifecycle-Eventmodell plus reproduzierbarer Empfang/
+Auslösung präzisiert; produktive ausgehende Webhook-Zustellung bleibt
+Folge-Scope und darf nicht als erfüllt behauptet werden.
 
 | RAK | Priorität | Inhalt |
 | --- | --------- | ------ |
@@ -162,7 +167,7 @@ ist die neue RAK-Gruppe.
 | RAK-66 | Muss | Stream-Key-Verwaltung: Streams können angelegt, gelistet, lokal validiert und rotiert werden; Klartext-Keys erscheinen nur bei Anlage/Rotation, nicht in Logs, Fixtures oder Persistenz. |
 | RAK-67 | Muss | Ingest-Endpunkt- und Routing-Modell: `srt`/`rtmp`-Endpunkte, Stream-Ziele und einfache 1:1-Routing-Regeln sind validiert, dokumentiert und per API/Artefakt stabil beschreibbar. |
 | RAK-68 | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für SRT und RTMP im Lab-Scope können generiert oder validiert werden; bestehende Multi-Protocol-Lab-Beispiele und Smokes bleiben grün. |
-| RAK-69 | Muss | Lifecycle-Events: `stream_started` und `stream_ended` besitzen ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder exemplarisch ausgelöst; Events enthalten keine Klartext-Keys. |
+| RAK-69 | Muss | Lifecycle-Events: `stream_started` und `stream_ended` besitzen ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder exemplarisch ausgelöst; Events enthalten keine Klartext-Keys. Produktive ausgehende Webhook-Zustellung ist nicht Teil des `0.11.0`-Nachweises. |
 | RAK-70 | Muss | Doku, API-/Contract-Tests und Release-Smokes beschreiben den lokalen Stream-Control-Workflow, die Sicherheitsgrenzen und den Unterschied zu Auth-/Tenant-Folge-Scope `0.12.0`. |
 
 ### 0.6 Öffentliche API und Modell-Skizze
@@ -185,7 +190,7 @@ werden im API-Kontrakt mitgepflegt.
 | `GET` | `/api/ingest/streams` | Streams listen; ohne Klartext-Key |
 | `GET` | `/api/ingest/streams/{id}` | Stream-Details, Endpunkte und Routing-Regel lesen; ohne Klartext-Key |
 | `POST` | `/api/ingest/streams/{id}/rotate-key` | Key rotieren; gibt neuen Klartext-Key genau einmal zurück |
-| `POST` | `/api/ingest/streams/{id}/validate-key` | lokalen Stream-Key gegen aktive Fingerprints prüfen; Antwort enthält keinen Klartext-Key und ist kein produktiver Media-Server-Auth-Pfad |
+| `POST` | `/api/ingest/streams/{id}/validate-key` | lokalen Stream-Key gegen aktive Key-Hashes prüfen; Antwort enthält keinen Klartext-Key und ist kein produktiver Media-Server-Auth-Pfad |
 | `POST` | `/api/ingest/hooks/stream-started` | lokales Start-Event empfangen oder Smoke-Event einspeisen |
 | `POST` | `/api/ingest/hooks/stream-ended` | lokales Ende-Event empfangen oder Smoke-Event einspeisen |
 | `GET` | `/api/ingest/media-server-config` | generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern |
@@ -196,8 +201,10 @@ Pflicht-Domainobjekte:
   `endpoint_id`, `target_id`, `routing_rule_id`, `status`,
   `created_at`, `updated_at`; `project_id` stammt aus dem
   authentifizierten Project-Kontext.
-- `StreamKey`: `stream_id`, `fingerprint`, `created_at`,
-  `rotated_at?`, `disabled_at?`; kein Klartextfeld in Persistenz.
+- `StreamKey`: `stream_id`, `key_hash`, `fingerprint`, `created_at`,
+  `rotated_at?`, `disabled_at?`; kein
+  Klartextfeld in Persistenz. `fingerprint` ist nur ein redigierter
+  Anzeige-/Audit-Wert und darf nicht als verifier ausreichen.
 - `IngestEndpoint`: `id`, `protocol`, `listen_host`, `listen_port`,
   `path_template`, `lab_stack`, `public_url_hint?`.
 - `RoutingRule`: `id`, `stream_id`, `target_id`, `mode:"single"`,
@@ -215,8 +222,15 @@ Validierungsregeln:
 - Host/Port dürfen keine externen Server implizit provisionieren.
 - Routing-Ziel muss existieren und `kind:"mediamtx"` sein.
 - Der lokale Key-Validierungspfad akzeptiert nur den aktuell aktiven
-  Hash/Fingerprint; rotierte oder deaktivierte Fingerprints müssen
-  stabil abgelehnt werden.
+  `key_hash`; rotierte oder deaktivierte Key-Hashes müssen stabil
+  abgelehnt werden. Vergleiche laufen konstantzeitnah und antworten
+  ohne Klartext-Key.
+- Stream-Keys werden mit einem CSPRNG mit mindestens 256 Bit Entropie
+  erzeugt und in einem dokumentierten, URL-sicheren Format ausgegeben
+  (z. B. Prefix plus Base64url-Token). Persistiert wird ein
+  verifier-tauglicher Hash über den vollständigen Key; zusätzlich darf
+  ein kurzer redigierter Fingerprint für Logs, Audit und UI-Diagnose
+  gespeichert werden.
 - Fehlercodes sind stabil und werden in Contract-Tests gepinnt, z. B.
   `ingest_stream_duplicate`, `ingest_protocol_unsupported`,
   `ingest_endpoint_missing`, `ingest_route_invalid`,
@@ -272,8 +286,8 @@ DoD:
   `/api/ingest/*`; `project_id` wird aus `X-MTrace-Token` abgeleitet.
 - [ ] Patch-Log in `docs/planning/done/plan-0.1.0.md` um
   `Patch 1.1.14` ergänzt.
-- [ ] Architekturentscheidung dokumentiert: Variante A
-  `apps/ingest-gateway` oder Variante B `apps/api`-Modul.
+- [ ] Architekturentscheidung dokumentiert: `0.11.0` nutzt verbindlich
+  Variante B als `apps/api`-Modul; Variante A ist nur Folge-Scope.
 - [ ] Persistenzentscheidung dokumentiert: SQLite oder rein
   artefaktbasiert, inklusive Migrations-/Testfolge.
 - [ ] Roadmap-Status und Release-Übersicht auf `0.11.0` als aktive
@@ -293,8 +307,11 @@ DoD:
   definiert.
 - [ ] Protocol-Enum ist auf `srt` und `rtmp` begrenzt; unbekannte
   Werte liefern stabilen Fehlercode.
-- [ ] Stream-Key-Erzeugung erzeugt ausreichend zufällige lokale Keys
-  und berechnet Fingerprint/Hash getrennt vom Klartext.
+- [ ] Stream-Key-Erzeugung nutzt CSPRNG mit mindestens 256 Bit Entropie,
+  dokumentiert das URL-sichere Ausgabeformat und berechnet `key_hash`
+  sowie redigierten `fingerprint` getrennt vom Klartext.
+- [ ] Key-Validierung nutzt den vollständigen `key_hash`; `fingerprint`
+  ist nur Anzeige-/Audit-Hilfe und kein verifier.
 - [ ] Validierungsregeln decken ungültige Keys, doppelte aktive
   Stream-Namen, fehlende Endpunkte, fehlende Targets und deaktivierte
   Routing-Regeln ab.
@@ -316,10 +333,10 @@ DoD:
 - [ ] `GET /api/ingest/streams/{id}` liefert Details ohne
   Klartext-Key.
 - [ ] `POST /api/ingest/streams/{id}/rotate-key` deaktiviert den
-  alten Fingerprint und gibt den neuen Klartext-Key genau einmal
+  alten Key-Datensatz und gibt den neuen Klartext-Key genau einmal
   zurück.
 - [ ] `POST /api/ingest/streams/{id}/validate-key` prüft einen
-  Kandidaten-Key lokal gegen aktive Fingerprints, lehnt rotierte/
+  Kandidaten-Key lokal gegen aktive Key-Hashes, lehnt rotierte/
   deaktivierte Keys ab und gibt keinen Klartext-Key zurück.
 - [ ] Persistenz- oder Artefaktpfad hat Contract-Tests für Create,
   List, Detail, Rotation, Validate, Duplicate, Missing und Invalid.
@@ -327,6 +344,9 @@ DoD:
 - [ ] Alle Ingest-HTTP-Handler haben Contract-Tests für fehlenden Token,
   ungültigen Token, Project-Mismatch und Cross-Project-Isolation.
 - [ ] Logs und Request-Metriken enthalten keine Klartext-Keys.
+- [ ] Fehlerantworten und Validierungs-Timing unterscheiden nicht
+  unnötig zwischen unbekanntem, rotiertem und ungültigem Klartext-Key;
+  stabiler Fehlercode bleibt dokumentiert.
 - [ ] Falls SQLite genutzt wird: Migration ist versioniert, Drift-Check
   grün und In-Memory-/SQLite-Adapter teilen Contract-Tests.
 
@@ -374,8 +394,8 @@ DoD:
 - [ ] Falls echte MediaMTX-Hooks in `0.11.0` nicht angebunden werden,
   ist die Entscheidung als `[!]`-Folge-Scope mit RAK-69-Nachweis
   dokumentiert: Eventmodell + exemplarische lokale Auslösung genügen;
-  der Plan behauptet dann keine ausgehende produktive Webhook-
-  Zustellung.
+  der Plan und das Lastenheft behaupten dann keine ausgehende
+  produktive Webhook-Zustellung für `F-49`.
 
 ## 7. Tranche 5 — Doku, Contracts und Smokes
 
@@ -422,7 +442,11 @@ DoD:
   `[!]`.
 - [ ] Relevante opt-in Lab-Smokes dokumentiert; mindestens der neue
   Stream-Control-Smoke grün oder begründet `[!]`.
-- [ ] Wave-2-Quality-Gates vor dem Tag geprüft.
+- [ ] Wave-2-Quality-Gates vor dem Tag geprüft: `make benchmark-smoke`
+  oder grüner `benchmark.yml`-Nightly für Minor-Releases;
+  `make fuzz-check`; `make mutation-report` oder dokumentierter
+  Beobachtungs-/CI-Nachweis. Nicht lokal ausführbare Gates werden mit
+  konkretem `[!]`-Grund und Ersatznachweis dokumentiert.
 - [ ] Vollständiger Versions-Bump auf `0.11.0`.
 - [ ] `CHANGELOG.md` mit `[0.11.0] - YYYY-MM-DD` aktualisiert.
 - [ ] Roadmap auf released `0.11.0` und Folgephase `0.12.0`
