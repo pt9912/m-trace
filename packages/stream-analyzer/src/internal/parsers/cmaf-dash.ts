@@ -102,10 +102,15 @@ export interface ResolvedBaseUrl {
 
 export function resolveBaseUrlChain(
   candidates: readonly string[],
-  parent: string | undefined
+  parent: string | undefined,
+  parentBlocked: boolean = false
 ): ResolvedBaseUrl {
   if (candidates.length === 0) {
-    return { baseUrl: parent, blocked: false };
+    // Keine eigenen Kandidaten → Vererbung von Parent (inklusive
+    // Block-Zustand: ein in höherer Ebene gesetzter Block bleibt
+    // sichtbar, damit Tranche 4 bei der Pflichtprüfung
+    // segment_uri_blocked statt segment_base_url_missing meldet).
+    return { baseUrl: parent, blocked: parentBlocked };
   }
   for (const raw of candidates) {
     const trimmed = raw.trim();

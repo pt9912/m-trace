@@ -1,23 +1,46 @@
-import type { AnalyzeOptions, FetchOptions, ManifestInput } from "./types/input.js";
+import type {
+  AnalyzeOptions,
+  CmafBinaryOptions,
+  FetchOptions,
+  ManifestInput
+} from "./types/input.js";
 import type {
   AnalysisInputMetadata,
   AnalysisResult,
-  AnalyzerKind
+  AnalyzerKind,
+  CmafBinaryVerification,
+  CmafSignalSummary,
+  DashAnalysisResult,
+  MediaAnalysisResult
 } from "./types/result.js";
 import type { AnalysisErrorResult } from "./types/error.js";
 import { AnalysisError } from "./types/error.js";
 import { STREAM_ANALYZER_VERSION } from "./version.js";
-import { analyzeHlsManifestText } from "./internal/parsers/hls.js";
-import { analyzeDashManifestText } from "./internal/parsers/dash.js";
+import { analyzeHlsManifestText, type HlsAnalyzeOutput } from "./internal/parsers/hls.js";
+import {
+  analyzeDashManifestText,
+  type DashAnalyzeOutput
+} from "./internal/parsers/dash.js";
 import { detectManifestKind } from "./internal/parsers/detect.js";
 import { loadManifest } from "./internal/loader/fetch.js";
 import { defaultLoaderRuntime, type LoaderRuntime } from "./internal/loader/runtime.js";
+import {
+  verifyBinaryCmaf,
+  withBinaryConfidenceUpgrade,
+  type BinaryVerifyOptions
+} from "./internal/cmaf/binary-verify.js";
 
 const FETCH_DEFAULTS: Required<FetchOptions> = {
   timeoutMs: 10_000,
   maxBytes: 5_000_000,
   maxRedirects: 5,
   allowPrivateNetworks: false
+};
+
+const CMAF_BINARY_DEFAULTS: Required<CmafBinaryOptions> = {
+  enabled: true,
+  maxSegmentBytes: 2_000_000,
+  maxBinarySegments: 6
 };
 
 /**
@@ -65,25 +88,26 @@ export async function analyzeWithRuntime(
     return toErrorResult(validation.error, "hls");
   }
   const validInput = validation.input;
+  const fetchOpts: Required<FetchOptions> = {
+    ...FETCH_DEFAULTS,
+    ...(options.fetch ?? {})
+  };
   if (validInput.kind === "url") {
-    return loadAndAnalyzeUrl(validInput.url, options, runtime);
+    return loadAndAnalyzeUrl(validInput.url, options, fetchOpts, runtime);
   }
   const inputMeta: AnalysisInputMetadata =
     validInput.baseUrl !== undefined
       ? { source: "text", baseUrl: validInput.baseUrl }
       : { source: "text" };
-  return runParser(validInput.text, inputMeta);
+  return runParserAndVerify(validInput.text, inputMeta, options, fetchOpts, runtime);
 }
 
 async function loadAndAnalyzeUrl(
   url: string,
   options: AnalyzeOptions,
+  fetchOpts: Required<FetchOptions>,
   runtime: LoaderRuntime
 ): Promise<AnalysisResult | AnalysisErrorResult> {
-  const fetchOpts: Required<FetchOptions> = {
-    ...FETCH_DEFAULTS,
-    ...(options.fetch ?? {})
-  };
   let loaded;
   try {
     loaded = await loadManifest(url, {
@@ -104,10 +128,16 @@ async function loadAndAnalyzeUrl(
     url,
     baseUrl: loaded.finalUrl
   };
-  return runParser(loaded.text, inputMeta);
+  return runParserAndVerify(loaded.text, inputMeta, options, fetchOpts, runtime);
 }
 
-function runParser(text: string, inputMeta: AnalysisInputMetadata): AnalysisResult | AnalysisErrorResult {
+async function runParserAndVerify(
+  text: string,
+  inputMeta: AnalysisInputMetadata,
+  options: AnalyzeOptions,
+  fetchOpts: Required<FetchOptions>,
+  runtime: LoaderRuntime
+): Promise<AnalysisResult | AnalysisErrorResult> {
   const detected = detectManifestKind(text);
   if (detected.kind === "unsupported") {
     return toErrorResult(
@@ -121,15 +151,88 @@ function runParser(text: string, inputMeta: AnalysisInputMetadata): AnalysisResu
   }
   try {
     if (detected.kind === "dash") {
-      return analyzeDashManifestText(text, inputMeta, STREAM_ANALYZER_VERSION);
+      const dashOut = analyzeDashManifestText(text, inputMeta, STREAM_ANALYZER_VERSION);
+      return await maybeVerifyDash(dashOut, options, fetchOpts, runtime, inputMeta.baseUrl);
     }
-    return analyzeHlsManifestText(text, inputMeta, STREAM_ANALYZER_VERSION);
+    const hlsOut = analyzeHlsManifestText(text, inputMeta, STREAM_ANALYZER_VERSION);
+    return await maybeVerifyHls(hlsOut, options, fetchOpts, runtime, inputMeta.baseUrl);
   } catch (error) {
     if (error instanceof AnalysisError) {
       return toErrorResult(error, detected.kind);
     }
     throw error;
   }
+}
+
+async function maybeVerifyHls(
+  out: HlsAnalyzeOutput,
+  options: AnalyzeOptions,
+  fetchOpts: Required<FetchOptions>,
+  runtime: LoaderRuntime,
+  baseUrl: string | undefined
+): Promise<AnalysisResult> {
+  if (out.result.playlistType !== "media") return out.result;
+  const summary = out.result.details.cmaf;
+  if (summary === undefined) return out.result;
+  const binary = await verifyBinaryCmaf(
+    { source: "hls", mediaCmaf: out.cmafMeta },
+    buildVerifyOptions(options, fetchOpts, runtime, baseUrl)
+  );
+  return attachHlsBinary(out.result, summary, binary);
+}
+
+async function maybeVerifyDash(
+  out: DashAnalyzeOutput,
+  options: AnalyzeOptions,
+  fetchOpts: Required<FetchOptions>,
+  runtime: LoaderRuntime,
+  baseUrl: string | undefined
+): Promise<AnalysisResult> {
+  const summary = out.result.details.cmaf;
+  if (summary === undefined) return out.result;
+  const binary = await verifyBinaryCmaf(
+    { source: "dash", dashCmaf: out.cmafMeta },
+    buildVerifyOptions(options, fetchOpts, runtime, baseUrl)
+  );
+  return attachDashBinary(out.result, summary, binary);
+}
+
+function buildVerifyOptions(
+  options: AnalyzeOptions,
+  fetchOpts: Required<FetchOptions>,
+  runtime: LoaderRuntime,
+  baseUrl: string | undefined
+): BinaryVerifyOptions {
+  return {
+    cmafBinary: { ...CMAF_BINARY_DEFAULTS, ...(options.cmaf?.binary ?? {}) },
+    timeoutMs: fetchOpts.timeoutMs,
+    maxRedirects: fetchOpts.maxRedirects,
+    allowPrivateNetworks: fetchOpts.allowPrivateNetworks,
+    runtime,
+    baseUrl
+  };
+}
+
+function attachHlsBinary(
+  result: MediaAnalysisResult,
+  summary: CmafSignalSummary,
+  binary: CmafBinaryVerification
+): MediaAnalysisResult {
+  return {
+    ...result,
+    details: { ...result.details, cmaf: withBinaryConfidenceUpgrade(summary, binary) }
+  };
+}
+
+function attachDashBinary(
+  result: DashAnalysisResult,
+  summary: CmafSignalSummary,
+  binary: CmafBinaryVerification
+): DashAnalysisResult {
+  return {
+    ...result,
+    details: { ...result.details, cmaf: withBinaryConfidenceUpgrade(summary, binary) }
+  };
 }
 
 type Validation = { kind: "ok"; input: ManifestInput } | { kind: "error"; error: AnalysisError };

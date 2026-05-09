@@ -5,8 +5,21 @@ import type {
   AnalysisSummary
 } from "../../types/result.js";
 import { classifyHlsManifest } from "./classify.js";
+import type { HlsMediaCmafMetadata } from "./cmaf-hls.js";
 import { parseMasterPlaylist } from "./master.js";
 import { parseMediaPlaylist } from "./media.js";
+
+/**
+ * Output des HLS-Pfads — `result` ist die Public-`AnalysisResult`-Form,
+ * `cmafMeta` trägt die internen Tranche-4-Eingabedaten für die binäre
+ * Konformitätsprüfung im Media-Playlist-Pfad. `cmafMeta` ist nur bei
+ * Media-Playlists mit CMAF-Signalen gesetzt; Master-/Unknown-Pfad
+ * tragen es nicht.
+ */
+export interface HlsAnalyzeOutput {
+  readonly result: AnalysisResult;
+  readonly cmafMeta?: HlsMediaCmafMetadata;
+}
 
 /**
  * Setzt die Tranche-Resultate zusammen: Tranche 2 hat klassifiziert,
@@ -20,7 +33,7 @@ export function analyzeHlsManifestText(
   text: string,
   inputMeta: AnalysisInputMetadata,
   analyzerVersion: string
-): AnalysisResult {
+): HlsAnalyzeOutput {
   const classification = classifyHlsManifest(text);
 
   const findings: AnalysisFinding[] = [];
@@ -47,11 +60,13 @@ export function analyzeHlsManifestText(
       itemCount: result.details.variants.length + result.details.renditions.length
     };
     return {
-      ...base,
-      summary,
-      findings,
-      playlistType: "master",
-      details: result.details
+      result: {
+        ...base,
+        summary,
+        findings,
+        playlistType: "master",
+        details: result.details
+      }
     };
   }
 
@@ -60,11 +75,14 @@ export function analyzeHlsManifestText(
     findings.push(...result.findings);
     const summary: AnalysisSummary = { itemCount: result.details.segments.length };
     return {
-      ...base,
-      summary,
-      findings,
-      playlistType: "media",
-      details: result.details
+      result: {
+        ...base,
+        summary,
+        findings,
+        playlistType: "media",
+        details: result.details
+      },
+      ...(result.cmafMeta !== undefined ? { cmafMeta: result.cmafMeta } : {})
     };
   }
 
@@ -82,10 +100,12 @@ export function analyzeHlsManifestText(
   });
 
   return {
-    ...base,
-    summary: { itemCount: 0 },
-    findings,
-    playlistType: "unknown",
-    details: null
+    result: {
+      ...base,
+      summary: { itemCount: 0 },
+      findings,
+      playlistType: "unknown",
+      details: null
+    }
   };
 }

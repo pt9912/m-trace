@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { parseByteRangePayload } from "../src/internal/parsers/cmaf-hls.js";
 import {
+  aggregateConfidence,
+  isFmp4SegmentUri,
+  masterAnchor,
+  mediaAnchor,
+  parseByteRangePayload
+} from "../src/internal/parsers/cmaf-hls.js";
+import {
+  buildDashAnchor,
+  isFmp4DashUri,
+  isMp4MimeType,
   resolveBaseUrlChain,
   resolveDashTemplate,
   resolveSegmentUri
@@ -12,6 +21,87 @@ import {
  * Decken Edge-Cases ab, die der Public-Pfad (Manifest-Tests) nicht
  * isoliert auslöst — Plan `0.10.0` Tranche 3 / RAK-62 / RAK-64.
  */
+
+describe("cmaf-hls — aggregateConfidence", () => {
+  it("returns inferred when no signal carries higher confidence", () => {
+    expect(
+      aggregateConfidence([
+        { code: "x", level: "info", manifestAnchor: "a", confidence: "inferred" }
+      ])
+    ).toBe("inferred");
+  });
+
+  it("upgrades to manifest when at least one signal carries it", () => {
+    expect(
+      aggregateConfidence([
+        { code: "x", level: "info", manifestAnchor: "a", confidence: "inferred" },
+        { code: "y", level: "info", manifestAnchor: "b", confidence: "manifest" }
+      ])
+    ).toBe("manifest");
+  });
+
+  it("short-circuits on binary even with later manifest entries", () => {
+    expect(
+      aggregateConfidence([
+        { code: "x", level: "info", manifestAnchor: "a", confidence: "binary" },
+        { code: "y", level: "info", manifestAnchor: "b", confidence: "manifest" }
+      ])
+    ).toBe("binary");
+  });
+
+  it("returns inferred for an empty array", () => {
+    expect(aggregateConfidence([])).toBe("inferred");
+  });
+});
+
+describe("cmaf-hls / cmaf-dash — anchor + URI helpers", () => {
+  it("mediaAnchor / masterAnchor format 1-based line numbers", () => {
+    expect(mediaAnchor(0)).toBe("media:line:1");
+    expect(masterAnchor(4)).toBe("master:line:5");
+  });
+
+  it("isFmp4SegmentUri ignores empty input", () => {
+    expect(isFmp4SegmentUri("")).toBe(false);
+  });
+
+  it("isFmp4DashUri ignores empty input", () => {
+    expect(isFmp4DashUri("")).toBe(false);
+  });
+
+  it("isFmp4DashUri matches .mp4 suffix as well", () => {
+    expect(isFmp4DashUri("seg-001.mp4")).toBe(true);
+    expect(isFmp4DashUri("seg-001.ts")).toBe(false);
+  });
+
+  it("isMp4MimeType accepts the three CMAF-relevant MP4 MIME values", () => {
+    expect(isMp4MimeType("video/mp4")).toBe(true);
+    expect(isMp4MimeType("audio/mp4")).toBe(true);
+    expect(isMp4MimeType("application/mp4")).toBe(true);
+    expect(isMp4MimeType("VIDEO/MP4")).toBe(true);
+    expect(isMp4MimeType(undefined)).toBe(false);
+    expect(isMp4MimeType("video/mp2t")).toBe(false);
+  });
+
+  it("buildDashAnchor uses index when id is missing on each level", () => {
+    expect(
+      buildDashAnchor({
+        periodIdx: 0,
+        adaptationSetIdx: 1,
+        representationIdx: 2
+      })
+    ).toBe("MPD/Period[0]/AdaptationSet[1]/Representation[2]");
+  });
+
+  it("buildDashAnchor stops at the deepest provided level", () => {
+    expect(buildDashAnchor({ periodIdx: 0 })).toBe("MPD/Period[0]");
+  });
+
+  it("buildDashAnchor appends an attribute when supplied", () => {
+    expect(
+      buildDashAnchor({ periodIdx: 0 }, "@profiles")
+    ).toBe("MPD/Period[0]/@profiles");
+  });
+});
 
 describe("cmaf-hls — parseByteRangePayload", () => {
   it("returns length-only when no @offset is present", () => {

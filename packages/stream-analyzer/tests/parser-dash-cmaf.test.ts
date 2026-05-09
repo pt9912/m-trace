@@ -17,7 +17,7 @@ function analyze(mpd: string, baseUrl: string | undefined = "https://cdn.example
     mpd,
     baseUrl !== undefined ? { source: "text", baseUrl } : { source: "text" },
     VERSION
-  );
+  ).result;
 }
 
 describe("DASH-CMAF — Confidence-Regeln (RAK-62)", () => {

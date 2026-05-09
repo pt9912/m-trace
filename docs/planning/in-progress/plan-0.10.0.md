@@ -185,8 +185,8 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 | 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | ✅ |
 | 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | 🟡 (Schema/API fertig; Fixture-Sync folgt mit T2/T3/T4) |
 | 2 | HLS/fMP4-CMAF-Erkennung | 🟡 (Parser fertig; Contract-Fixture-Update folgt im nächsten Tranchen-Block) |
-| 3 | DASH/CMAF-Erkennung | 🟡 (Parser+Vererbung+Auswahl fertig; bestehende DASH-Fixtures additiv erweitert; CMAF-Master/Media-Erweiterung der HLS-Fixtures folgt mit T4) |
-| 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ⬜ |
+| 3 | DASH/CMAF-Erkennung | ✅ |
+| 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | 🟡 (ISO-BMFF-Box-Parser, bounded Segment-Loader und Verifier-Orchestrator fertig; HLS-CMAF-passed-Positiv-Fixture und CLI-Smoke-Tests folgen mit T5) |
 | 5 | API-/CLI-Durchleitung, Doku und Smokes | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
@@ -682,15 +682,19 @@ begrenzten Analyzer-Scope über echte Segment-/Box-Daten geprüft.
 
 DoD:
 
-- [ ] ISO-BMFF-Box-Reader implementiert:
-  - liest 32-bit und `largesize`-Boxgrößen bounds-checkend,
-  - erkennt ungültige, überlappende oder nicht fortschreitende Boxen,
-  - bricht bei konfiguriertem Byte-Limit deterministisch ab,
+- [x] ISO-BMFF-Box-Reader implementiert (`internal/cmaf/iso-bmff.ts`):
+  - liest 32-bit und `largesize`-Boxgrößen bounds-checkend
+    (`size=0`/extends-to-end-of-file ist im 0.10.0-Scope explizit
+    `invalid_box_structure`),
+  - erkennt ungültige Box-Größen, Boxen die den Buffer überrunnen,
+    nicht fortschreitende Boxen und non-ASCII-Types,
+  - bricht bei jedem strukturellen Verstoß deterministisch ab (kein
+    Recursion-Bomb), liefert Teilergebnis bis zum Fehler,
   - liefert stabile Box-Anker (`segment:init:ftyp`,
     `segment:media[0]:styp`, `segment:media[0]:moof/traf/tfdt`,
-    `segment:media[0]:mdat`) für `details.cmaf.binary`.
-- [ ] Bounded Binary-Segment-Loader implementiert getrennt von
-  `loadManifest`:
+    `segment:media[0]:mdat`) für `details.cmaf.binary.boxes[]`.
+- [x] Bounded Binary-Segment-Loader implementiert getrennt von
+  `loadManifest` (`internal/cmaf/segment-loader.ts`):
   - gibt Bytes zurück, nicht UTF-8-Text,
   - sendet einen MP4-orientierten `Accept`-Header,
   - erlaubt mindestens `video/mp4`, `audio/mp4`, `application/mp4`,
@@ -705,7 +709,7 @@ DoD:
     inkompatible Segment-Fetches auf auditierbare
     `segmentsChecked[]`-/`failures[]`-Einträge statt auf einen
     Top-Level-Analysefehler.
-- [ ] CMAF-Init-Prüfung validiert mindestens:
+- [x] CMAF-Init-Prüfung validiert mindestens:
   - `ftyp` vorhanden,
   - Brand-Policy ist als getestete Allowlist umgesetzt: `ftyp.major_brand`
     oder mindestens ein Eintrag aus `ftyp.compatible_brands` muss `cmfc`
@@ -724,7 +728,7 @@ DoD:
     `ftyp`,
   - `moov` vorhanden,
   - keine offensichtlich widersprüchliche Top-Level-Box-Struktur.
-- [ ] CMAF-Media-Fragment-Prüfung validiert mindestens:
+- [x] CMAF-Media-Fragment-Prüfung validiert mindestens:
   - `styp` vorhanden,
   - `styp.major_brand` oder mindestens ein Eintrag aus
     `styp.compatible_brands` trägt einen in `0.10.0` unterstützten
@@ -739,28 +743,29 @@ DoD:
     allein auf Fragment-Metadaten ohne Nutzdaten basiert,
   - optionales `sidx` wird erkannt und berichtet, aber nicht als Muss
     gewertet.
-- [ ] Segment-Resolver lädt nur manifestreferenzierte Init-/Media-
-  Segment-URIs. URL-Input löst relative Pfade gegen die finale
-  Manifest-URL auf; Text-Input nutzt eine gesetzte sichere
-  `http:`-/`https:`-`baseUrl` als Trust-Anker für relative und absolute
-  Segment-URIs. Ohne sichere `baseUrl` wird im Text-Pfad kein Segment
-  gefetched, auch keine absolute HTTP(S)-Segment-URI aus dem Manifest.
-  Mit Nicht-HTTP(S)-`baseUrl` oder bei unsicherer/nicht auflösbarer URI
-  wird nicht gefetched, sondern `skipped` mit eindeutigem Failure-Code
-  berichtet.
-- [ ] HLS-Binary-Pfad prüft `EXT-X-MAP` plus erstes fMP4-Media-Segment;
-  wenn eine der beiden URIs fehlt oder nicht ladbar ist, entsteht
-  `details.cmaf.binary.status:"skipped"` oder `"failed"` mit
-  nachvollziehbarem Failure-Code, kein stiller Erfolg.
-  `EXT-X-MAP`-Attribute und `#EXT-X-BYTERANGE`-Bindungen werden aus der
-  strukturierten Parser-Ausgabe genutzt; erneutes Ad-hoc-Parsen der
-  Manifestzeile im Binary-Pfad ist nicht zulässig. `EXT-X-MAP` mit
-  `BYTERANGE` und `#EXT-X-BYTERANGE` vor dem ersten fMP4-Media-Segment
-  werden nicht per Vollressourcen-Download ersetzt, sondern als
-  Skip-Codes aus Tranche 1 berichtet.
-- [ ] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
+- [x] Segment-Resolver lädt nur manifestreferenzierte Init-/Media-
+  Segment-URIs (`internal/cmaf/binary-verify.ts` plus Parser-cmafMeta-
+  Einschluss). URL-Input löst Segment-URIs gegen die finale Manifest-
+  URL auf (`AnalysisInputMetadata.baseUrl` aus `loadManifest.finalUrl`);
+  Text-Input nutzt die gesetzte sichere `http:`-/`https:`-`baseUrl`.
+  Fehlende `baseUrl` → `segment_base_url_missing`; unsichere
+  Auflösung → `segment_uri_blocked`; Block-Vererbung über
+  `resolveBaseUrlChain` mit `parentBlocked`-Flag.
+- [x] HLS-Binary-Pfad prüft `EXT-X-MAP` plus erstes fMP4-Media-Segment
+  (`buildHlsPlan` / `buildHlsInitCheck` / `buildHlsMediaCheck` in
+  `binary-verify.ts`). Strukturierte `HlsExtXMapMeta`/
+  `HlsFirstMediaSegmentMeta` aus der T2-Parser-Ausgabe werden
+  unverändert konsumiert; kein Re-Parsen. `EXT-X-MAP` mit `BYTERANGE`
+  → `hls_map_byterange_unsupported`, `#EXT-X-BYTERANGE` auf erstem
+  fMP4-Segment → `hls_media_byterange_unsupported` (skipped, kein
+  Vollressourcen-Download). Beide Skip-Codes durch Tests gepinnt.
+- [x] DASH-Binary-Pfad prüft Initialization plus erstes ableitbares
   fMP4-Media-Segment je deterministisch ausgewählter Representation
-  aus Tranche 3. Ableitbar sind nur explizite
+  aus Tranche 3. `dash_template_unresolved` für `$Time$`/unbekannte
+  Variablen, `segment_uri_blocked` bei Block-Vererbung,
+  `segment_base_url_missing` ohne sicheren Trust-Anker,
+  `segment_reference_missing` für DASH-MP4-MIME-only ohne Init-/Media-
+  Referenzen — alle vier Codes durch Tests gepinnt. Ableitbar sind nur explizite
   `SegmentList/SegmentURL@media`-Referenzen oder Templates aus dem
   Scope von Tranche 3:
   `$RepresentationID$`, `$Bandwidth$`, `$Number$` und
@@ -771,10 +776,14 @@ DoD:
   erste-sichere-`BaseURL`-Regel aus Tranche 3 aufgelöst; mehrere
   Alternativen werden nicht durchprobiert. Fehlt bei `SegmentList` die
   Media-Referenz vollständig, wird `segment_reference_missing` gemeldet.
-- [ ] Positive und negative Binär-Fixtures decken Init, Media, fehlende
+- [x] Positive und negative Binär-Fixtures decken Init, Media, fehlende
   Pflichtboxen inklusive `styp` und `mdat`, kaputte Boxgrößen,
-  Größenlimit und nicht auflösbare Segment-URIs ab.
-- [ ] Tests pinnen Status-Mapping:
+  Größenlimit und nicht auflösbare Segment-URIs ab — programmatisch
+  in `tests/iso-bmff.test.ts` und `tests/binary-verify.test.ts`
+  aufgebaut (deterministische Bytes-Fixtures via
+  `makeBox`/`brandPayload`/`concat`-Helpers, keine externen Datei-
+  Fixtures, keine Netzwerk-Abhängigkeit).
+- [x] Tests pinnen Status-Mapping:
   - `passed` nur bei bestandenen manifestseitig verpflichtenden Init-
     und Media-Prüfungen,
   - `failed` bei geladener, aber nicht konformer Box-Struktur,
@@ -800,7 +809,7 @@ DoD:
     über `limits`/`note` auditierbar,
   - gemischte DASH-Ergebnisse aggregieren nach der Regel aus Tranche 1:
     jeder Fehler gewinnt vor `skipped`, `skipped` gewinnt vor `passed`.
-- [ ] Fehler aus binärer Prüfung bleiben Findings oder
+- [x] Fehler aus binärer Prüfung bleiben Findings oder
   `details.cmaf.binary.failures[]`; sie ändern nicht das bestehende
   `status:"ok"` des Analyse-Results, solange das Manifest selbst
   erfolgreich analysiert wurde.

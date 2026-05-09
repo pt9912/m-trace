@@ -93,11 +93,16 @@ export interface DashCmafMetadata {
   readonly representations: readonly DashCmafRepresentationEntry[];
 }
 
+export interface DashAnalyzeOutput {
+  readonly result: DashAnalysisResult;
+  readonly cmafMeta?: DashCmafMetadata;
+}
+
 export function analyzeDashManifestText(
   text: string,
   inputMeta: AnalysisInputMetadata,
   analyzerVersion: string
-): DashAnalysisResult {
+): DashAnalyzeOutput {
   const parsed = parseDashManifest(text, inputMeta.baseUrl);
   const summary: AnalysisSummary = {
     itemCount: parsed.details.adaptationSets.reduce(
@@ -106,14 +111,17 @@ export function analyzeDashManifestText(
     )
   };
   return {
-    status: "ok",
-    analyzerVersion,
-    analyzerKind: "dash",
-    input: inputMeta,
-    summary,
-    findings: parsed.findings,
-    playlistType: "dash",
-    details: parsed.details
+    result: {
+      status: "ok",
+      analyzerVersion,
+      analyzerKind: "dash",
+      input: inputMeta,
+      summary,
+      findings: parsed.findings,
+      playlistType: "dash",
+      details: parsed.details
+    },
+    ...(parsed.cmafMeta !== undefined ? { cmafMeta: parsed.cmafMeta } : {})
   };
 }
 
@@ -200,7 +208,7 @@ function collectPeriods(
   for (let pIdx = 0; pIdx < periods.length; pIdx++) {
     const period = periods[pIdx];
     const periodAttrs = parseAttributes(period.openTag);
-    const periodBase = resolveBaseUrlChain(extractBaseURLs(period.body), mpdBase.baseUrl);
+    const periodBase = resolveBaseUrlChain(extractBaseURLs(period.body), mpdBase.baseUrl, mpdBase.blocked);
     const periodAnchor: DashAnchorPath = {
       periodIdx: pIdx,
       ...(periodAttrs.get("id") !== undefined ? { periodId: periodAttrs.get("id") } : {})
@@ -245,7 +253,7 @@ function parseAdaptationSet(
   const setCodecs = setAttrs.get("codecs");
   const setContentType = setAttrs.get("contentType");
   const setLang = setAttrs.get("lang");
-  const setBase = resolveBaseUrlChain(extractBaseURLs(setMatch.body), parentBase.baseUrl);
+  const setBase = resolveBaseUrlChain(extractBaseURLs(setMatch.body), parentBase.baseUrl, parentBase.blocked);
   const setTemplate = parseSegmentTemplate(setMatch.body);
   const setList = parseSegmentList(setMatch.body);
 
@@ -323,7 +331,7 @@ function parseRepresentation(
   const repAttrs = parseAttributes(repMatch.openTag);
   const id = repAttrs.get("id") ?? "";
   const bandwidth = checkRequiredRepresentationAttrs(repAttrs, id, findings);
-  const repBase = resolveBaseUrlChain(extractBaseURLs(repMatch.body), parentBase.baseUrl);
+  const repBase = resolveBaseUrlChain(extractBaseURLs(repMatch.body), parentBase.baseUrl, parentBase.blocked);
   const finalMimeType = repAttrs.get("mimeType") ?? inheritedMimeType;
   const finalCodecs = repAttrs.get("codecs") ?? inheritedCodecs;
   const repAnchor: DashAnchorPath = {

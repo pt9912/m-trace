@@ -46,7 +46,51 @@
           "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/@mimeType",
           "confidence": "inferred"
         }
-      ]
+      ],
+      "binary": {
+        "status": "skipped",
+        "segmentsChecked": [
+          {
+            "kind": "init",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/Initialization",
+            "status": "skipped",
+            "failureCode": "segment_reference_missing",
+            "message": "Representation ohne Init-Referenz."
+          },
+          {
+            "kind": "media",
+            "source": "dash",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/Media",
+            "status": "skipped",
+            "failureCode": "segment_reference_missing",
+            "message": "Representation ohne Media-Referenz."
+          }
+        ],
+        "boxes": [],
+        "failures": [
+          {
+            "code": "segment_reference_missing",
+            "level": "warning",
+            "message": "Representation ohne Init-Referenz.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/Initialization"
+          },
+          {
+            "code": "segment_reference_missing",
+            "level": "warning",
+            "message": "Representation ohne Media-Referenz.",
+            "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/Media"
+          }
+        ],
+        "limits": {
+          "maxSegmentBytes": 2000000,
+          "maxBinarySegments": 6,
+          "timeoutMs": 10000,
+          "maxRedirects": 5,
+          "requiredSegmentChecks": 2,
+          "plannedSegmentFetches": 0
+        }
+      }
     }
   }
 }
