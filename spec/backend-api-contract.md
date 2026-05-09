@@ -352,7 +352,7 @@ Service; die Limits sind nicht öffentlich konfigurierbar.
 
 Der `/api/ingest/*`-Pfad implementiert lokales Stream Control für
 Lab-/Demo-Flows (`apps/api`-Modul, Variante B aus
-[`docs/planning/in-progress/plan-0.11.0.md`](../docs/planning/in-progress/plan-0.11.0.md)
+[`docs/planning/done/plan-0.11.0.md`](../docs/planning/done/plan-0.11.0.md)
 §0.3). Der Pfad ist **kein** produktiver Auth-Replacement und
 **kein** mandantenfähiger Control-Plane-Pfad — siehe README-
 Abgrenzung „Was m-trace nicht ist".

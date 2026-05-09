@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-05-09
+
+> **Minor-Release** mit Lastenheft-Patch `1.1.14` (F-49 +
+> RAK-65..RAK-70 in §13.13, NF-13 um „lokaler Stream-Control-Pfad"
+> erweitert). Plan in
+> [`docs/planning/done/plan-0.11.0.md`](docs/planning/done/plan-0.11.0.md).
+
+### Added
+
+- **Lokaler Stream-Control-Pfad** (NF-13 / RAK-65..RAK-70):
+  `apps/api` bekommt einen Ingest-Control-Use-Case mit Persistenz,
+  HTTP-API, MediaMTX-Konfigurationsgenerator und Lifecycle-Hooks.
+  **Kein** produktiver Multi-Tenant-Token-Lifecycle, keine signierten
+  Sessions, kein Secret-Management — siehe
+  [`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5.
+- **Stream-Keys** mit 256-Bit-Entropie (RAK-66): Generierung über
+  `crypto/rand`, URL-safer Base64-Repräsentation mit Prefix
+  `mtr_ing_`, Persistenz nur als SHA-256-Hash plus
+  `key_fingerprint`; Klartext erscheint genau einmal im
+  Create-/Rotate-Response. Validate-Endpoint mit Constant-Time-
+  Compare und responsiv-blinder Antwort (`valid:false` ohne
+  Identifier-Hinweise — Cross-Project-Leak-Schutz).
+- **Domainmodell** (RAK-67): `IngestStream`, `IngestEndpoint`,
+  `MediaServerTarget`, `RoutingRule` (`mode:"single"`),
+  `StreamKey` und `StreamLifecycleEvent` in
+  `apps/api/hexagon/domain/`. Allowlist `srt`/`rtmp` für
+  `IngestProtocol`; SRS-Targets sind dokumentarisch verfügbar
+  (`MediaServerKind`). Validate-Helfer für Protocol-Allowlist und
+  Project-ID-Konsistenz.
+- **HTTP-API** unter `/api/ingest/streams` (Create/List/Detail/
+  Rotate/Validate), `/api/ingest/media-server-config` und
+  `/api/ingest/hooks/stream-{started,ended}` (RAK-65..RAK-70).
+  7-stufige Fehlerreihenfolge nach
+  [`spec/backend-api-contract.md`](spec/backend-api-contract.md)
+  §3.8; alle Domain-Fehler werden typisiert über `errors.Is`
+  gemappt (keine String-Heuristiken).
+- **MediaMTX-Artefakt-Generator** (RAK-68):
+  `application.GenerateMediaMTXConfig` produziert deterministisches
+  YAML mit sanitized `display_name` und `key_fingerprint` —
+  Klartext-Stream-Keys erscheinen niemals im Output.
+  Multi-Target-Auto-Pick liefert einen Warning mit den
+  unselected Target-IDs zurück, wenn der Aufrufer kein
+  `?target_id=` setzt. HLS-Adresse `:8888` passend zur
+  Compose-Mapping `8892:8888`.
+- **Beispiel-Stack** [`examples/ingest-control/`](examples/ingest-control/):
+  `compose.yaml` (MediaMTX + generiertes YAML), `mediamtx.generated.yml`
+  (commit-stabiler Output mit redigierten Fingerprints) und
+  README mit Risiko-Hinweisen R-14/R-15/R-16. Bestehende
+  Lab-Beispiele unter `examples/srt/`, `examples/mediamtx/` und
+  `examples/srs/` bleiben unverändert.
+- **Lifecycle-Hook-Endpoints** (RAK-69):
+  `POST /api/ingest/hooks/stream-{started,ended}` mit
+  URL-getriebenem Event-`Kind` (Body-`type` wird ignoriert),
+  Source-Allowlist `local-smoke`/`mediamtx-hook`, server-generierter
+  `event_id` (Prefix `evt_`, 12 Byte `crypto/rand`),
+  `connection_id`/`reason` als optionale Dokumentationsfelder
+  (≤ 256 Zeichen). Antwort `202` mit `accepted:true`, **kein**
+  Klartext-Key. Ausgehende produktive Webhook-Zustellung an
+  externe Systeme bleibt Folge-Scope (R-16).
+- **SQLite-Persistenz** (V2/V3): hand-gepflegte Migrationen
+  `V2__ingest.sql` (Streams, Endpoints, Targets, Routing-Rules,
+  Stream-Keys, Lifecycle-Events) und
+  `V3__ingest_lifecycle_extras.sql` (opake `event_id`-PK,
+  `connection_id`, `reason`, Source-CHECK-Constraint
+  `local-smoke`/`mediamtx-hook`). Partial UNIQUE Indexes für
+  aktive Display-Names und aktive Stream-Keys. InMemory-Adapter
+  als Test-/Demo-Variante.
+- **Lab-Smoke** `make smoke-ingest-control` (opt-in, NICHT in
+  `make gates`): legt einen Stream an, spielt
+  `stream-started`/`stream-ended` ein und prüft `202`,
+  `accepted:true` sowie unterschiedliche `event_id`-Werte.
+- **User-Dokumentation**:
+  [`docs/user/ingest-control.md`](docs/user/ingest-control.md) mit
+  Quickstart, Endpunktmatrix, Redaktionsregeln und expliziter
+  Security-Grenze; [`docs/user/local-development.md`](docs/user/local-development.md)
+  §2.7.2 verlinkt den Smoke-Pfad. README hat eine neue
+  Abgrenzungs-Bullet in `Was m-trace nicht ist`.
+- **Contract-Fixtures**: 8 neue JSONs unter
+  [`spec/contract-fixtures/api/ingest-*.json`](spec/contract-fixtures/api/),
+  pinned über `apps/api/adapters/driving/http/ingest_contract_test.go`
+  mit Schlüssel-Subset-Vergleich und Sicherheits-Pins
+  (Validate-Blind: kein `stream_id`/`key_fingerprint`/`project_id`
+  im Body; Stream-Not-Found: kein Cross-Project-Identifier).
+  `make sync-contract-fixtures` zieht jetzt 30 Fixtures.
+
+### Changed
+
+- **Lastenheft 1.1.13 → 1.1.14**: F-49 (Stream-Lifecycle-Events) und
+  RAK-65..RAK-70 in §13.13 verankert; NF-13 um den lokalen
+  Stream-Control-Pfad erweitert.
+- **`spec/backend-api-contract.md`** §3.8 dokumentiert die neue
+  Endpunktmatrix, Auth-Matrix, Wire-Skizzen (Request/Response)
+  und Redaktionsregeln. Lifecycle-Hook-Antwort hat Status `202`
+  und enthält `event_id`/`accepted:true`.
+- **Roadmap** auf released `0.11.0` und Folgephase `0.12.0`
+  umgestellt.
+
 ## [0.10.0] - 2026-05-09
 
 > **Minor-Release** mit Lastenheft-Patch `1.1.13` (RAK-60..RAK-64
