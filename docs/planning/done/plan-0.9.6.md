@@ -32,7 +32,7 @@
 > [`README.md`](../../../README.md) mit der Überschrift
 > „Was m-trace nicht ist".
 >
-> **Nachfolger**: [`plan-0.10.0.md`](../open/plan-0.10.0.md) für NF-13 /
+> **Nachfolger**: [`plan-0.10.0.md`](../in-progress/plan-0.10.0.md) für NF-13 /
 > CMAF-Analyse vorbereitet.
 
 ## 0. Konvention
@@ -156,7 +156,7 @@ Audit-Snapshot 2026-05-08:
 | Pflichtdokumente-Block → F-131 (Zielkennung) | Block hat keine eigene Kennung; `CONTRIBUTING.md` und `SECURITY.md` fehlen; `docs/stream-analyzer.md` ist stale (nur `docs/user/stream-analyzer.md` existiert). | implementieren (Artefakte) + Lastenheft patchen (`F-131` einführen, Pfade korrigieren). | Tranche 1 (Artefakte), Tranche 2 (`F-131`). |
 | NF-25 | `.env.example` als Muss; im Repo nicht vorhanden. | implementieren. | Tranche 1. |
 | NF-29 | `SECURITY.md` als Muss; im Repo nicht vorhanden. | implementieren. | Tranche 1. |
-| NF-13 | CMAF-Analyse als Muss; `F-73` deckt nur die Erweiterbarkeit, nicht die Vollanalyse. | Folge-Plan: in [`plan-0.10.0.md`](../open/plan-0.10.0.md) mit neuer RAK verankern; Lastenheft patchen (Verweis auf Folge-Plan, kein Down-Grade). | Tranche 2 (Verweis), Folge-Plan `0.10.0`. |
+| NF-13 | CMAF-Analyse als Muss; `F-73` deckt nur die Erweiterbarkeit, nicht die Vollanalyse. | Folge-Plan: in [`plan-0.10.0.md`](../in-progress/plan-0.10.0.md) mit neuer RAK verankern; Lastenheft patchen (Verweis auf Folge-Plan, kein Down-Grade). | Tranche 2 (Verweis), Folge-Plan `0.10.0`. |
 | NF-18 / MVP-42 | K8s-Deployment als Muss steht im Widerspruch zur README-Abgrenzung („kein Production-K8s") und zum `MVP-42`-Kann-Scope. | Lastenheft patchen: K8s Production bleibt out of scope; `MVP-42` als optional/Folge-Plan; R-9 bleibt Trigger-Risiko. | Tranche 2 (Patch), Tranche 3 (Risk-Header). |
 | MVP-19..MVP-26 | „Nicht im `0.1.0`-MVP"-Liste enthält historisch ausgelieferte Einträge (`MVP-24`, `MVP-25`) und einen später auf Muss hochgezogenen Eintrag (`MVP-37`); zusätzlich offene Kann-Themen (`MVP-40`..`MVP-42`). | Lastenheft patchen: redaktionell so klären, dass die historische Nicht-`0.1.0`-Liste nicht als heutige offene Muss-Lücke missverstanden wird. | Tranche 2. |
 
@@ -240,7 +240,7 @@ DoD:
   Erweiterbarkeit; die CMAF-Vollanalyse bleibt als offene Muss-
   Anforderung bestehen und wird nicht durch `0.9.6` geschlossen.
   Für die Umsetzung verweist das Lastenheft auf
-  [`plan-0.10.0.md`](../open/plan-0.10.0.md) mit neuer RAK und
+  [`plan-0.10.0.md`](../in-progress/plan-0.10.0.md) mit neuer RAK und
   eigener Akzeptanzmatrix.
 - [x] `NF-18` präzisiert: Kubernetes Production ist nicht
   Bestandteil der ersten Projektphase; `MVP-42` bleibt

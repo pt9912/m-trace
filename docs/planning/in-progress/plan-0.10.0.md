@@ -1,9 +1,8 @@
 # Implementation Plan — `0.10.0` (CMAF-Analyse / NF-13)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst nach
-> explizitem Move nach `docs/planning/in-progress/` umgesetzt werden.
-> Vorgänger ist `0.9.6` (Lastenheft-Konvergenz + Repo-Artefakte);
-> Aktivierung erst nach dessen Release-Closeout.
+> **Status**: 🟡 in Arbeit — Plan aktiviert mit T0-Move; Vorgänger
+> `0.9.6` ist released (Tag `v0.9.6` auf `ad20228`, Plan in
+> [`done/plan-0.9.6.md`](../done/plan-0.9.6.md)).
 >
 > **Release-Typ**: Minor-Release nach `0.9.6` mit Lastenheft-Patch
 > `1.1.13`, neuer RAK-Gruppe `RAK-60`..`RAK-64`,
@@ -183,7 +182,7 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
-| 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | ⬜ |
+| 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | 🟡 |
 | 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | ⬜ |
 | 2 | HLS/fMP4-CMAF-Erkennung | ⬜ |
 | 3 | DASH/CMAF-Erkennung | ⬜ |
@@ -199,24 +198,33 @@ Ziel: NF-13 wird vor Implementierung eindeutig messbar.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.10.0.md` nach
+- [x] Plan von `docs/planning/open/plan-0.10.0.md` nach
   `docs/planning/in-progress/plan-0.10.0.md` verschoben.
-- [ ] `git status --short` vor erster Änderung dokumentiert.
-- [ ] `spec/lastenheft.md` Header auf `1.1.13` erhöht.
-- [ ] RAK-60..RAK-64 im Lastenheft ergänzt.
-- [ ] NF-13-Text im Lastenheft von „CMAF-Vollanalyse" auf
+- [x] `git status --short` vor erster Änderung dokumentiert: working tree
+  clean (Tag `v0.9.6` auf `ad20228`, danach nur README-Politur ohne
+  Repo-Drift).
+- [x] `spec/lastenheft.md` Header auf `1.1.13` erhöht.
+- [x] RAK-60..RAK-64 im Lastenheft ergänzt (neuer §13.12).
+- [x] NF-13-Text im Lastenheft von „CMAF-Vollanalyse" auf
   „CMAF-Analyse im Stream-Analyzer-Scope" präzisiert: erfüllt durch
   manifestbasierte Signale plus begrenzte binäre Init-/Media-Segment-
   Prüfung; explizit nicht umfasst sind vollständige Segmentset-
   Abdeckung, Codec-Decoding, Low-Latency-CMAF und Player-Laufzeitpfade.
-- [ ] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
+- [x] [`plan-0.1.0.md`](../done/plan-0.1.0.md) Tranche 0c um
   `4a.16 Patch 1.1.13` ergänzt.
-- [ ] [`roadmap.md`](../in-progress/roadmap.md) vor erster
+- [x] [`roadmap.md`](../in-progress/roadmap.md) vor erster
   Implementierung auf `0.10.0` als CMAF-Analyse mit manifestbasierten
-  Signalen plus begrenzter binärer Konformitätsprüfung korrigiert,
-  damit Folgephasen-Status und Plan-Scope nicht während der Umsetzung
-  widersprechen.
-- [ ] Fixture-Inventar angelegt:
+  Signalen plus begrenzter binärer Konformitätsprüfung korrigiert
+  (§1.2 Aktivierung, §2 Schritt 45 angelegt, §3 Release-Tabellenzeile
+  ergänzt), damit Folgephasen-Status und Plan-Scope nicht während der
+  Umsetzung widersprechen.
+- [x] Fixture-Inventar angelegt: tabellarisch in
+  [`spec/contract-fixtures/analyzer/README.md`](../../../spec/contract-fixtures/analyzer/README.md)
+  unter „CMAF-Fixture-Inventar (Plan `0.10.0`, Tranche 0)" mit Pflicht-
+  Brand-Allowlist, Tranchen-Zuordnung (T2 HLS, T3 DASH, T4 binär) und
+  Hinweis, dass `success-dash-vod.json`/`success-dash-live.json`
+  additiv und bewusst nicht byte-kompatibel zum `0.9.x`-Stand erweitert
+  werden. Detailbullets aus dem Plan-Original:
   - HLS CMAF VOD mit `EXT-X-MAP` und `.m4s`-Segmenten.
   - HLS TS als Negativ-/Regression-Pfad.
   - DASH MP4-MIME-only als schwacher/inferred Pfad; bestehende DASH-

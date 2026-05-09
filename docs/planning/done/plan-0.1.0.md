@@ -415,12 +415,47 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.11` → `1.1.12`; kompakte Patch-Note unmittelbar nach dem Frontmatter („Lastenheft-Konvergenz nach `0.9.5`; keine neue Produktfunktion").
 - [x] Lastenheft §7.1 `F-7` mit `1.1.12`-Status-Präzisierung: `deploy/` ist Strukturanker; `docker-compose.yml` im Repo-Root bleibt der primäre lokale Pfad; `deploy/k8s/` Folge-Scope (`MVP-42`).
 - [x] Lastenheft §7.12 Pflichtdokumente: neue Anforderung `F-131` (Muss) eingeführt; `docs/stream-analyzer.md` auf den realen Pfad `docs/user/stream-analyzer.md` korrigiert; übrige Pflichtdokumente unverändert.
-- [x] Lastenheft §8.3 `NF-13` mit `1.1.12`-Lieferstand-Präzisierung: `F-73` deckt nur die vorbereitete Erweiterbarkeit; CMAF-Vollanalyse bleibt offen und verweist auf [`docs/planning/open/plan-0.10.0.md`](../open/plan-0.10.0.md).
+- [x] Lastenheft §8.3 `NF-13` mit `1.1.12`-Lieferstand-Präzisierung: `F-73` deckt nur die vorbereitete Erweiterbarkeit; CMAF-Vollanalyse bleibt offen und verweist auf [`docs/planni../in-progress/plan-0.10.0.md`](../in-progress/plan-0.10.0.md).
 - [x] Lastenheft §8.3 `NF-18` mit `1.1.12`-Scope-Präzisierung: Production-K8s nicht in der ersten Phase; `MVP-42` bleibt `Kann`; R-9 bleibt Trigger-Risiko.
 - [x] Lastenheft §12.1 „Nicht im `0.1.0`-MVP"-Tabelle redaktionell entzerrt: neue Spalte „Status (Patch `1.1.12`)" mit verbindlicher Aussage pro Item (erfüllt / anders entschieden / out of scope); historische „Prioritaet"-Spalte zur Audit-Nachvollziehbarkeit erhalten.
 - [x] Lastenheft §12.3 `MVP-37` mit Lieferstand-Vermerk (in `0.9.0` ausgeliefert); `MVP-42` mit Status-Vermerk (Strukturanker leer, kein Production-K8s).
 - [x] Kein neuer Scope-Widerspruch: README-Abgrenzungsabschnitt „Was m-trace nicht ist", `NF-13`, `NF-18`, `MVP-19`..`MVP-26`, `MVP-40`..`MVP-42` sind nach dem Patch konsistent.
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md) §2 neuer Schritt 44 abgehakt (✅); §1 Header und §1.2 verweisen auf den ausgelieferten Patch (`0.9.6` released, Plan archiviert in `done/plan-0.9.6.md`).
+
+### 4a.16 Patch `1.1.13` — `0.10.0` CMAF-Analyse-Scope (NF-13-Vollumsetzung im Stream-Analyzer-Scope, RAK-60..RAK-64)
+
+`0.9.6` hat `NF-13` als offene Muss-Vollimplementierung auf den
+Folge-Plan `0.10.0` verwiesen. Dieser Patch verankert den normativ
+begrenzten Analyzer-Scope für `NF-13` im Lastenheft, bevor die
+Implementierung in `0.10.0` Tranchen 1–6 startet: manifestbasierte
+HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung
+ausgewählter Init-/Media-Segmente. Vollständige Segmentset-Abdeckung,
+Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und
+Player-Laufzeitpfade bleiben Folge-Scope. Der Patch ändert keine
+Wire-Verträge — die Result-Schema-Erweiterungen (`details.cmaf`,
+`cmaf.binary.*`-Optionen) leben in
+[`docs/planning/in-progress/plan-0.10.0.md`](../in-progress/plan-0.10.0.md)
+Tranche 1.
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.12` → `1.1.13`; Patch-Note
+  unmittelbar nach Patch `1.1.12` als zweiter Block im Frontmatter.
+- [x] Lastenheft §8.3 `NF-13`-Text von „CMAF-Vollanalyse" auf
+  „CMAF-Analyse im Stream-Analyzer-Scope" präzisiert; Brand-Allowlist
+  (`cmfc`/`cmf2` für Init-`ftyp`, `cmfs`/`cmff`/`cmfc`/`cmf2` für
+  Media-`styp`) und explizit ausgegrenzte Folge-Scopes (vollständige
+  Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF,
+  Player-Laufzeitpfade) im Anforderungstext verankert; Verweis auf
+  [`plan-0.10.0.md`](../in-progress/plan-0.10.0.md) und §13.12.
+- [x] Lastenheft §13.12 (neu) mit Akzeptanzkriterien `RAK-60`..`RAK-64`
+  (alle Muss): RAK-60 Scope-Verankerung; RAK-61 HLS-CMAF-Signale; RAK-62
+  DASH-CMAF-Signale; RAK-63 CLI-/API-/Contract-Durchleitung; RAK-64
+  binäre CMAF-Konformitätsprüfung mit ISO-BMFF-Box-Parser und bounded
+  Segment-Loader.
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
+  §1.2 / §3 auf `0.10.0` als aktivierte Folge-Phase aktualisiert; §2
+  neuer Schritt 45 für die `0.10.0`-Auslieferung als ⬜ angelegt.
 
 ---
 

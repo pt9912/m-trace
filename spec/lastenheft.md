@@ -2,12 +2,27 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.12<br>
+**Version:** 1.1.13<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.13` (CMAF-Analyse-Scope für `0.10.0`)**: Verankert den
+> normativ begrenzten Analyzer-Scope für `NF-13` und führt die neue
+> RAK-Gruppe `RAK-60`..`RAK-64` in §13.12 ein. `NF-13` ist nicht mehr
+> als „CMAF-Vollanalyse" beschrieben, sondern als „CMAF-Analyse im
+> Stream-Analyzer-Scope": manifestbasierte HLS-/DASH-Signale plus
+> begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/
+> Media-Segmente. Vollständige Segmentset-Abdeckung, Codec-Decoding,
+> Low-Latency-CMAF und Player-Laufzeitpfade bleiben explizit
+> Folge-Scope. Der Patch ändert keine Wire-Verträge — die
+> Result-Schema-Erweiterungen (`details.cmaf`, `cmaf.binary.*`-
+> Optionen) leben in [`docs/planning/in-progress/plan-0.10.0.md`](../docs/planning/in-progress/plan-0.10.0.md)
+> Tranche 1. Patch-Log siehe
+> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
+> Tranche 0c §4a.16.
+>
 > **Patch `1.1.12` (Lastenheft-Konvergenz nach `0.9.5`)**: Keine
 > neue Produktfunktion, keine User-Surface- oder Wire-Vertrags-
 > änderung. Bereinigt die nach dem `0.9.5`-Audit sichtbaren
@@ -1190,7 +1205,7 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 | NF-10 | Muss | MediaMTX-Adapter |
 | NF-11 | Muss | SRT-Ingest-Metriken |
 | NF-12 | Muss | DASH-Analyse |
-| NF-13 | Muss | CMAF-Analyse. **Patch `1.1.12` (Lieferstand-Präzisierung):** `F-73` aus §7.7 deckt nur die *vorbereitete Erweiterbarkeit*; die CMAF-Vollanalyse bleibt offen und wird **nicht** durch `0.9.6` geschlossen. Umsetzung im Folge-Plan [`docs/planning/open/plan-0.10.0.md`](../docs/planning/open/plan-0.10.0.md) mit eigener RAK und eigener Akzeptanzmatrix. |
+| NF-13 | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung im Plan [`docs/planning/in-progress/plan-0.10.0.md`](../docs/planning/in-progress/plan-0.10.0.md) mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
 | NF-14 | Muss | WebRTC-Metriken |
 | NF-15 | Muss | Datenbankpersistenz |
 | NF-16 | Muss | Authentifizierung |
@@ -1775,6 +1790,28 @@ Akzeptanzkriterien:
 | RAK-57 | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; `docs/user/local-development.md` §2.7 Port-Quickref nachgezogen. |
 | RAK-58 | Muss | DASH-Manifest-Analyse im `@npm9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
 | RAK-59 | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
+
+### 13.12 Version 0.10.0: CMAF-Analyse (NF-13)
+
+Ziel: Die offene `NF-13`-Pflicht (CMAF-Analyse, Muss) im
+Stream-Analyzer-Scope schließen — nicht über einen neuen
+Manifesttyp, sondern über additive HLS-/DASH-CMAF-Signale plus
+begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/
+Media-Segmente. Der bisherige Lastenheft-Begriff
+„CMAF-Vollanalyse" wird in §8.3 normativ präzisiert: vollständig
+heißt vollständig für den Analyzer-Scope aus `0.10.0`, nicht
+vollständige Prüfung aller Segmente, Codecs, Byte-Ranges oder
+Player-Laufzeitpfade.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse plus begrenzte binäre Prüfung ausgewählter HLS-/DASH-Init- und Media-Segmente; das Lastenheft präzisiert „CMAF-Vollanalyse" als vollständige Erfüllung dieses Analyzer-Scopes, nicht als vollständige Segmentset-/Codec-/Player-Prüfung. Out of scope sind Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), CDN-/Byte-Range-Vollprüfung und Player-SDK-CMAF-Playback. |
+| RAK-61 | Muss | HLS-CMAF-Signale: `EXT-X-MAP`, fMP4-Segmentmuster (`.m4s`/`.cmfv`/`.cmfa`) und relevante Tags erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik (`binary` > `manifest` > `inferred`) im Analyseergebnis. `EXT-X-MAP` und `#EXT-X-BYTERANGE` werden strukturiert extrahiert; HLS-Master-Summaries bleiben konservativ ohne `binary`-Objekt. |
+| RAK-62 | Muss | DASH-CMAF-Signale: MPD-`mimeType` (`video/mp4`/`audio/mp4`/`application/mp4`), `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik; MP4-MIME allein gilt nur als `confidence:"inferred"`-Indiz, nicht als CMAF-Konformitätsnachweis. Vererbung von `BaseURL`/`SegmentTemplate` auf `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene wird deterministisch aufgelöst. |
+| RAK-63 | Muss | CLI, API-Adapter, Contract-Fixtures (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. `details.cmaf` lebt unter den bestehenden HLS-/DASH-Detail-Objekten — kein neuer Top-Level-Envelope-Wert, kein neuer `analyzerKind`. `apps/api`-Adapter reicht `details.cmaf` über `EncodedDetails` unverändert durch. |
+| RAK-64 | Muss | Binäre CMAF-Konformitätsprüfung: ISO-BMFF-Box-Parser validiert ausgewählte Init-/Media-Segmente bounded und meldet `details.cmaf.binary.status:"passed"|"failed"|"skipped"` mit nachvollziehbaren Box-/Segment-Nachweisen. Brand-Allowlist (`0.10.0`): Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Pflicht-Boxen: Init `ftyp`+`moov`; Media-Fragment `styp`+`moof`+`traf`+`tfdt`+`mdat`; `sidx` optional. Bounded Segment-Loader mit Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6` nutzt dieselben SSRF-/Scheme-/Redirect-Regeln wie der Manifest-Loader. |
 
 ---
 
