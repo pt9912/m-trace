@@ -158,7 +158,8 @@ Neue oder geänderte Wire-Verträge werden in
 | `POST` | `/api/playback-events` | akzeptiert weiterhin `X-MTrace-Token`; zusätzlich `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` |
 | `POST` | `/api/ingest/*` | bleibt Project-tokenpflichtig; Policy-Grenzen werden zusätzlich geprüft |
 
-**Auth-Header-Priorität für tokenpflichtige Requests.**
+**Auth-Header-Priorität und Fehlerpräzedenz für tokenpflichtige
+Requests.**
 
 1. `Authorization: Bearer mtr_st_*` ist der bevorzugte Session-
    Token-Pfad.
@@ -180,20 +181,47 @@ Neue oder geänderte Wire-Verträge werden in
    für sich genommen gültig wäre.
 
 Diese Regeln werden in `spec/backend-api-contract.md` gepinnt und mit
-Tests für alle Header-Kombinationen abgedeckt.
+Tests für alle Header-Kombinationen abgedeckt. Zusätzlich gilt eine
+deterministische Fehlerpräzedenz, wenn mehrere Auth-Header gleichzeitig
+gesetzt sind:
+
+| Priorität | Bedingung | Status/Code |
+| ---: | --- | --- |
+| 1 | Pflicht-Auth fehlt vollständig | `401 auth_token_missing` |
+| 2 | Ein präsentierter Token ist syntaktisch malformed oder Signatur/Hash ungültig | `401 auth_token_invalid` |
+| 3 | Ein präsentierter Token ist widerrufen | `401 auth_token_revoked` |
+| 4 | Ein präsentierter Token ist abgelaufen | `401 auth_token_expired` |
+| 5 | Ein präsentierter Token ist noch nicht gültig | `401 auth_token_not_yet_valid` |
+| 6 | Alle Tokens sind für sich gültig, binden aber unterschiedliche Projects | `401 auth_project_mismatch` |
+| 7 | Session Token ist für falsche Audience/Session/Origin gebunden | `403 auth_session_scope_denied` |
+| 8 | Project Policy lehnt Origin/Methode/Header/Scope ab | `403 auth_policy_denied` |
+| 9 | Issuance-/Auth-Rate-Limit überschritten | `429 auth_issuance_rate_limited` oder endpoint-spezifischer Rate-Limit-Code |
+
+Diese Präzedenz verhindert stillen Fallback: ein ungültiger
+höher-priorisierter Token neben einem gültigen niedriger-priorisierten
+Token liefert weiter `401 auth_token_invalid`. Project-Mismatch wird
+nur geprüft, wenn alle präsentierten Tokens vorher syntaktisch,
+kryptografisch und zeitlich gültig sind.
 
 **CORS-Preflight-Modell.**
 
 Browser-Preflights enthalten in der Praxis kein Project- oder Session-
 Token, das der Server verlässlich validieren kann. Deshalb nutzt
-`0.12.0` für `OPTIONS` eine globale, konservative Allowlist:
+`0.12.0` für `OPTIONS` eine globale, konservative und
+informationsarme Allowlist:
 
 - erlaubte Methoden maximal `POST, OPTIONS`;
 - erlaubte Header maximal `Content-Type`, `Authorization`,
   `X-MTrace-Token`, `X-MTrace-Session-Token`, `X-MTrace-Project`,
   `traceparent`;
-- erlaubte Origins sind die globale Union aller konfigurierten
-  Project-Origins, nie `*`;
+- bekannte Origins aus der globalen Union aller konfigurierten
+  Project-Origins können mit dem konkreten Origin gespiegelt werden,
+  nie mit `*`;
+- unbekannte Origins erhalten eine minimale Ablehnung ohne
+  `Access-Control-Allow-Origin` und ohne project-spezifische
+  Diagnose. Response-Body ist leer; Status wird im API-Kontrakt
+  festgelegt und in Tests gepinnt (`204` ohne Allow-Header oder
+  `403`, aber keine Origin-Liste und keine Project-Hinweise);
 - project-spezifische Policy-Entscheidungen passieren erst beim
   tatsächlichen `POST`, wenn Project-/Session-Token ausgewertet werden
   können.
@@ -202,6 +230,9 @@ RAK-74 gilt damit für Request-Enforcement; Preflight ist ein
 konservativer Browser-Kompatibilitätsfilter. Falls ein späterer Scope
 projekt-festes Routing wie `/api/projects/{project_id}/...` einführt,
 kann Preflight auf project-spezifische Policies umgestellt werden.
+Das akzeptierte Informationsniveau ist: Ein Client darf erkennen, ob
+sein eigener Origin global bekannt ist, aber nicht welche Projects
+existieren oder welche anderen Origins konfiguriert sind.
 
 `POST /api/auth/session-tokens` Request:
 
@@ -265,6 +296,7 @@ Fehlercodes (Vorschlag, final in API-Kontrakt zu pinnen):
 | `auth_policy_denied` | `403` | Project Policy lehnt Origin/Methode/Header/Scope ab |
 | `auth_session_scope_denied` | `403` | Session Token passt nicht zu Audience oder Session |
 | `auth_token_ttl_too_large` | `422` | gewünschte TTL überschreitet Server-Maximum |
+| `auth_issuance_rate_limited` | `429` | Session-Token-Issuance-Quote überschritten |
 
 ### 0.6 Threat Model
 
@@ -274,6 +306,16 @@ Mindestinhalte für Tranche 0 und Doku:
   Kritikalität, aber dürfen nicht dauerhaft oder grenzenlos wirken.
 - **Replay**: Session Tokens sind kurzlebig, optional an
   `session_id`/`origin` gebunden und tragen `exp`/`nbf`.
+- **Issuance-Abuse**: `POST /api/auth/session-tokens` ist ein eigener
+  Missbrauchspfad. Auch mit gültigem Project Token gelten globale,
+  Project-, Origin- und IP-nahe Quoten; Überschreitung liefert
+  `429 auth_issuance_rate_limited`. Token-Issuance darf keine
+  unbegrenzten Logs, DB-Zeilen oder teuren Signaturpfade erzeugen.
+- **Issuance-Leakage und Caching**: Clients sollen kurzlebige Session
+  Tokens bis knapp vor `expires_at` wiederverwenden statt pro Event
+  neu zu minten. Doku und SDK-Beispiele müssen Caching mit sicherem
+  Refresh-Fenster zeigen und dürfen Session Tokens nicht in
+  persistenten Browser-Speichern empfehlen.
 - **Leakage**: Klartext-Tokens nie in Logs, Traces, Metriken,
   Contract-Fixtures oder Screenshots; Tests pinnen Redaktionsregeln.
 - **Privacy**: Session-Token-Claims und Token-Metadaten enthalten nur
@@ -393,6 +435,10 @@ DoD:
   `project_id`, wird das Project aus dem Token abgeleitet und in der
   Response zurückgegeben; ein gesetzter Mismatch liefert
   `401 auth_project_mismatch`.
+- [ ] Issuance-Endpoint hat eigene Abuse-Grenzen: mindestens globale
+  und Project-Quote, nach Möglichkeit zusätzlich Origin/IP-nahe Quote.
+  Überschreitungen liefern `429 auth_issuance_rate_limited`; Policy-
+  Ablehnungen liefern `403 auth_policy_denied`.
 - [ ] `POST /api/playback-events` akzeptiert zusätzlich zu
   `X-MTrace-Token` ein Session Token über `Authorization: Bearer` oder
   `X-MTrace-Session-Token`.
@@ -402,6 +448,10 @@ DoD:
   `401 auth_project_mismatch`, ungültige zusätzlich präsentierte
   Tokens liefern `401 auth_token_invalid`, und es gibt keinen stillen
   Fallback auf niedriger priorisierte gültige Tokens.
+- [ ] Auth-Fehlerpräzedenz ist als Entscheidungstabelle im API-
+  Kontrakt gepinnt und getestet: malformed/invalid vor revoked vor
+  expired vor not-yet-valid vor Project-Mismatch vor Scope-/Policy-
+  Denial vor Rate-Limit.
 - [ ] Session Token validiert Signatur, `kid`, `exp`, `nbf`,
   `audience`, `project_id`, optional `session_id` und `origin`.
 - [ ] Signing-Key-Ring ist restart-stabil: aktive Signing-Keys und
@@ -417,7 +467,8 @@ DoD:
   oder Fingerprint.
 - [ ] Contract-Tests pinnen Issuance-Happy-Path, Expired,
   Signature-Mismatch, Project-Mismatch, Audience-Mismatch, Origin-
-  Mismatch und fehlenden Auth-Header.
+  Mismatch, fehlenden Auth-Header und
+  `auth_issuance_rate_limited`.
 - [ ] Bestehende Project-Token-Tests für Playback Events bleiben grün.
 
 ## 5. Tranche 3 — Project-Token-Rotation
@@ -462,13 +513,14 @@ DoD:
 
 - [ ] Policy-Modell definiert erlaubte Origins, Methoden, Header,
   Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-
-  Parameter.
+  Parameter inklusive separater Issuance-Quote.
 - [ ] CORS-Preflight nutzt eine dokumentierte globale, konservative
   Allowlist, weil `OPTIONS` ohne validierbares Project-/Session-Token
   kein deterministisches Project-Enforcement erlaubt. Project-
   spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST`.
   `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige
-  Browser-Telemetrie.
+  Browser-Telemetrie. Unbekannte Origins erhalten keine Origin-Liste,
+  keine Project-Hinweise und keine diagnostischen Bodies.
 - [ ] `Origin`-Validierung unterscheidet Browser-Pfad und CLI/curl-
   Pfad ohne `Origin` gemäß API-Kontrakt.
 - [ ] `POST /api/playback-events` und `/api/ingest/*` prüfen
@@ -479,8 +531,9 @@ DoD:
   dokumentiert.
 - [ ] Tests decken erlaubte globale Preflight-Origin, unbekannte
   Preflight-Origin, falsche Preflight-Methode, nicht erlaubten
-  Preflight-Header, project-spezifischen POST-Origin-Miss, leeren
-  Origin im CLI-Pfad und Policy-Denial mit `403` ab.
+  Preflight-Header, minimierte Signalisierung ohne Project-/Origin-
+  Enumeration, project-spezifischen POST-Origin-Miss, leeren Origin im
+  CLI-Pfad und Policy-Denial mit `403` ab.
 - [ ] `0.11.0` Ingest-Control-Validate bleibt explizit kein
   produktiver Media-Server-Auth-Pfad; Doku und Tests verhindern diese
   Verwechslung.
@@ -505,6 +558,10 @@ DoD:
   IP-/User-Agent-Speicherung nicht ausgeweitet wird.
 - [ ] SDK-Doku beschreibt kompatible Token-Nutzung: Project Token
   direkt bleibt erlaubt, Session Token wird bevorzugter Browser-Pfad.
+- [ ] Doku und SDK-Beispiele beschreiben Session-Token-Caching:
+  Token bis kurz vor `expires_at` wiederverwenden, Refresh-Fenster
+  nutzen, keine Speicherung in `localStorage`/persistenten Browser-
+  Stores empfehlen.
 - [ ] Player-SDK braucht keine Secret-Verwaltung; falls API-Optionen
   ergänzt werden, bleiben ESM/CJS/IIFE und Public-API-Snapshot stabil
   oder bewusst additiv aktualisiert.
@@ -552,9 +609,9 @@ Datei-, Test- und Doku-Nachweis.
 | RAK | Priorität | Nachweis | Status |
 | --- | --- | --- | --- |
 | RAK-71 | Muss | Lastenheft-Patch, Scope-Grenze, README-/Doku-Abgrenzung gegen OAuth/OIDC, Admin-UI, KMS/Vault und SaaS-Tenant-Management. | [ ] |
-| RAK-72 | Muss | Session-Token-Issuance, serverseitige Audience-Allowlist, Signaturvalidierung, Claims-Validierung, restart-stabiler Signing-Key-Ring, Fehlercodes und Contract-Tests. | [ ] |
+| RAK-72 | Muss | Session-Token-Issuance, serverseitige Audience-Allowlist, Issuance-Abuse-Limits, Signaturvalidierung, Claims-Validierung, restart-stabiler Signing-Key-Ring, Fehlerpräzedenz, Fehlercodes und Contract-Tests. | [ ] |
 | RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, persistiertes `grace_until`, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
-| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, globale konservative Preflight-Regeln, project-spezifisches POST-Enforcement und Policy-Denial-Tests. | [ ] |
+| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, separate Issuance-Quoten, globale konservative Preflight-Regeln mit minimierter Signalisierung, project-spezifisches POST-Enforcement und Policy-Denial-Tests. | [ ] |
 | RAK-75 | Muss | Kompatibilität mit bestehenden Project-Token-Flows, SDK/Demo/Analyze/Session/Ingest-Tests und Migrationsdoku. | [ ] |
 | RAK-76 | Muss | Security-Doku, Threat Model, Datenschutz-/GDPR-Grenzen, CSP-Beispiele, Contract-Fixtures, Smokes und Drift-Check. | [ ] |
 
