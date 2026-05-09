@@ -6,7 +6,7 @@
 > Variante „Eigenes Compose").
 >
 > Bezug: Lastenheft §7.5.4 `F-46`..`F-51`, §13.13 `RAK-65`..`RAK-70`
-> (Patch `1.1.13`); [`plan-0.11.0.md`](../../docs/planning/in-progress/plan-0.11.0.md)
+> (Patch `1.1.14`); [`plan-0.11.0.md`](../../docs/planning/done/plan-0.11.0.md)
 > Tranche 3.
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:

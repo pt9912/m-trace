@@ -8,7 +8,7 @@ Lab-Stack ab, und Lifecycle-Hooks lassen sich lokal einspeisen.
 
 > Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §1.1.14,
 > RAK-65..RAK-70 / NF-13;
-> [`docs/planning/in-progress/plan-0.11.0.md`](../planning/done/plan-0.11.0.md);
+> [`docs/planning/done/plan-0.11.0.md`](../planning/done/plan-0.11.0.md);
 > [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md) §3.8;
 > [`examples/ingest-control/README.md`](../../examples/ingest-control/README.md).
 

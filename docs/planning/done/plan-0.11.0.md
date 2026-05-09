@@ -35,12 +35,12 @@
 
 ## 0. Konvention
 
-DoD-Checkboxen tracken den Lieferstand:
+DoD-Checkboxen tracken den Lieferstand. In diesem archivierten
+Release-Plan sind keine aktiven In-Arbeit-Marker mehr offen:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
 - `[!]` blockiert durch Scope-, Security- oder Architekturentscheidung.
-- 🟡 in Arbeit.
 
 ### 0.1 Scope-Definition
 
@@ -438,7 +438,7 @@ Validierungsregeln:
 | 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | ✅ |
 | 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ✅ |
 | 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ✅ |
-| 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | 🟡 |
+| 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | ✅ |
 | 4 | Lifecycle-Events und lokale Lab-Verifikation | ✅ |
 | 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ✅ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ✅ |
@@ -492,9 +492,10 @@ DoD:
   Testreihenfolge-Abhängigkeit. Reine Artefakt-only-Variante
   bewusst verworfen, weil Validate-Endpoint persistente
   Hash-Lookup-Garantie braucht.
-- [x] Roadmap-Status und Release-Übersicht auf `0.11.0` als
-  aktive Folgephase umgestellt (§1 Phase-Header, §1.2 Folge-Scope,
-  §2 Schritt 46 von ⬜ auf 🟡, §3 Tabellenzeile auf 🟡).
+- [x] Roadmap-Status und Release-Übersicht zunächst auf `0.11.0` als
+  aktive Folgephase umgestellt und im Closeout auf released
+  aktualisiert (§1 Phase-Header, §1.2 Folge-Scope, §2 Schritt 46,
+  §3 Tabellenzeile).
 - [x] Risiko-/Folge-Scope-Liste aktualisiert: Auth/Tenant/Policy
   nach `0.12.0`, externe Provisionierung Folge-Scope, produktive
   Webhook-Zustellung Folge-Scope (Roadmap §1.2 Out-of-Scope-
@@ -733,6 +734,22 @@ DoD:
 DoD:
 
 - [x] RAK-Verifikationsmatrix in §9 vollständig ausgefüllt.
+- [x] Beispiele und Verifikationsartefakte vollständig gegengeprüft:
+  `examples/ingest-control/README.md`, `compose.yaml`,
+  `mediamtx.generated.yml` und `smoke-lifecycle.sh`; Makefile-
+  Verdrahtung von `smoke-ingest-control`,
+  `sync-contract-fixtures`, `generated-drift-check` und `gates`;
+  Contract-Fixtures `spec/contract-fixtures/api/ingest-*.json`
+  plus Testdata-Kopien in
+  `apps/api/adapters/driving/http/testdata/`.
+- [x] Nachprüfung 2026-05-09: `make docs-check`, `make api-test`,
+  `make generated-drift-check`,
+  `bash -n examples/ingest-control/smoke-lifecycle.sh` und
+  `docker compose -f examples/ingest-control/compose.yaml config`
+  grün. Anschließend `make gates` grün nach Fix des
+  SDK-Pack-Smoke-Versionspins. `make smoke-ingest-control` bleibt ein
+  opt-in Runtime-Smoke gegen eine laufende `apps/api` und ist nicht
+  Bestandteil von `make gates`.
 - [x] `make docs-check` grün (Closeout-Lauf 2026-05-09).
 - [x] `make build` grün (im Rahmen von `make gates` ausgeführt).
 - [x] `make gates` grün — Go-Coverage 90.2 % (≥ 90), TS-Branch-
@@ -777,8 +794,8 @@ DoD:
 
 ## 9. RAK-Verifikationsmatrix
 
-Wird während der Umsetzung gepflegt. Jede Zeile braucht vor Closeout
-Commit-/Datei-/Testnachweis.
+Die Matrix wurde im Closeout vollständig mit Datei-, Test- und
+Artefaktnachweisen befüllt.
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |

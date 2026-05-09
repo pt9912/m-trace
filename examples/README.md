@@ -102,7 +102,7 @@ Anforderungen:
 | [`dash/`](./dash/)       | 4       | Eigenes Compose `mtrace-dash`; Smoke `make smoke-dash` |
 | [`webrtc/`](./webrtc/)   | 5       | Eigenes Compose `mtrace-webrtc` (ab `0.7.0` Tranche 1); Smoke `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (endpoint-only) |
 | [`srs/`](./srs/)         | —       | Eigenes Compose `mtrace-srs` (ab `0.9.0` Tranche 2); Smoke `make smoke-srs` (endpoint-only; RAK-57 / MVP-36) |
-| [`ingest-control/`](./ingest-control/) | — | Eigenes Compose `mtrace-ingest-control` (ab `0.11.0` Tranche 3); deterministisches MediaMTX-Artefakt aus `apps/api` Ingest-Control-Domain (RAK-68); SRT- und RTMP-Listener parallel. Smoke folgt mit `0.11.0` Tranche 5. |
+| [`ingest-control/`](./ingest-control/) | — | Eigenes Compose `mtrace-ingest-control` (ab `0.11.0` Tranche 3); deterministisches MediaMTX-Artefakt aus `apps/api` Ingest-Control-Domain (RAK-68); SRT- und RTMP-Listener parallel. Opt-in-Smoke: `make smoke-ingest-control`. |
 
 Quickref über alle Beispiele plus parallel-Stack-Port-Schnitt:
 [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7.

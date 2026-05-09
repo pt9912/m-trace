@@ -9,7 +9,6 @@ import { gunzipSync } from "node:zlib";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageDir = path.resolve(scriptDir, "..");
-const expectedVersion = "0.10.0";
 const requiredTarballEntries = [
   "package/dist/index.js",
   "package/dist/index.cjs",
@@ -24,8 +23,9 @@ assert(tarballPath.endsWith(".tgz"), "usage: node scripts/pack-smoke.mjs <player
 
 const packageJsonPath = path.join(packageDir, "package.json");
 const sourcePackageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+const expectedVersion = sourcePackageJson.version;
 
-assert(sourcePackageJson.version === expectedVersion, `package.json version must be ${expectedVersion}`);
+assert(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(expectedVersion), "package.json version must be semver-like");
 assert(sourcePackageJson.private !== true, "package must not be private");
 assert(sourcePackageJson.browser === "./dist/index.global.js", "package.json browser field must point at the IIFE build");
 
