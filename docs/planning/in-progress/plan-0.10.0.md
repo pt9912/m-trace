@@ -184,7 +184,7 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | ✅ |
 | 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | 🟡 (Schema/API fertig; Fixture-Sync folgt mit T2/T3/T4) |
-| 2 | HLS/fMP4-CMAF-Erkennung | ⬜ |
+| 2 | HLS/fMP4-CMAF-Erkennung | 🟡 (Parser fertig; Contract-Fixture-Update folgt im nächsten Tranchen-Block) |
 | 3 | DASH/CMAF-Erkennung | ⬜ |
 | 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ⬜ |
 | 5 | API-/CLI-Durchleitung, Doku und Smokes | ⬜ |
@@ -520,37 +520,42 @@ Ziel: HLS-Manifeste mit CMAF/fMP4-Struktur werden zuverlässig erkannt.
 
 DoD:
 
-- [ ] Media-Playlist-Parser erkennt `EXT-X-MAP` als starkes
+- [x] Media-Playlist-Parser erkennt `EXT-X-MAP` als starkes
   CMAF/fMP4-Signal und schreibt es nach
-  `MediaPlaylistDetails.cmaf.signals[]`.
-- [ ] Media-Playlist-Parser extrahiert `EXT-X-MAP` strukturiert:
-  `URI`, optional `BYTERANGE`, Manifestanker, rohe Attributwerte und
-  gegen `baseUrl` aufgelöste URI, falls möglich. Diese Daten dürfen
-  intern oder additiv in `details` leben, müssen aber vom Binary-Pfad
-  ohne erneutes String-Parsing nutzbar sein.
-- [ ] Media-Playlist-Parser extrahiert `#EXT-X-BYTERANGE` strukturiert
-  und bindet den Wert deterministisch an die darauffolgende Segment-URI:
-  rohe Byte-Range-Angabe, optionale Länge/Offset-Werte,
-  Manifestanker der Byte-Range-Zeile und Segmentanker des betroffenen
-  Media-Segments. Diese Daten dürfen intern oder additiv in `details`
-  leben, müssen aber vom Binary-Pfad ohne erneutes String-Parsing
-  nutzbar sein.
-- [ ] `EXT-X-MAP` mit `BYTERANGE` wird in `0.10.0` nicht per HTTP
-  Range geladen. Das Manifest-Signal bleibt sichtbar; die binäre Init-
-  Prüfung bekommt `status:"skipped"` bzw. einen Segment-Einzelstatus
-  `skipped` mit Failure-Code `hls_map_byterange_unsupported`.
-- [ ] `#EXT-X-BYTERANGE` auf dem ersten fMP4-Media-Segment wird in
-  `0.10.0` ebenfalls nicht per HTTP Range geladen und nicht durch einen
-  Vollressourcen-Download ersetzt. Das Manifest-Signal bleibt sichtbar;
-  die Media-Segment-Prüfung bekommt `status:"skipped"` bzw. einen
-  Segment-Einzelstatus `skipped` mit Failure-Code
-  `hls_media_byterange_unsupported`.
-- [ ] Segment-URI-Muster `.m4s`/`.cmfv`/`.cmfa` werden als
-  schwächere manifestbasierte Hinweise erfasst.
-- [ ] `EXT-X-INDEPENDENT-SEGMENTS` und Codec-/Map-Kontext werden als
-  zusätzliche Signale dokumentiert, aber nicht allein als CMAF-
-  Nachweis gewertet.
-- [ ] Master-Playlist-Parser schreibt ein konservatives
+  `MediaPlaylistDetails.cmaf.signals[]` (`hls_ext_x_map` mit
+  `confidence:"manifest"`).
+- [x] Media-Playlist-Parser extrahiert `EXT-X-MAP` strukturiert:
+  `URI`, optional `BYTERANGE`, Manifestanker (`media:line:N`), rohe
+  Attributwerte und gegen `baseUrl` aufgelöste URI. Liegt intern auf
+  `MediaParseResult.cmafMeta.initSegment` (Tranche-4-Eingabe ohne
+  Re-Tokenisierung).
+- [x] Media-Playlist-Parser extrahiert `#EXT-X-BYTERANGE` strukturiert
+  und bindet den Wert deterministisch an die darauffolgende
+  Segment-URI; rohe Byte-Range-Angabe, Length/Offset, Manifestanker
+  der Tag-Zeile und Segmentanker liegen intern auf
+  `MediaParseResult.cmafMeta.firstMediaSegment.byterange` und in
+  `SegmentDraft.byterange*`. Verwaiste BYTERANGE → Finding
+  `media_byterange_orphan`; Duplikat → `media_byterange_duplicate`;
+  unparsbar → `media_byterange_malformed`.
+- [x] `EXT-X-MAP` mit `BYTERANGE` und `#EXT-X-BYTERANGE`-Bindung
+  bleiben sichtbar (Manifestsignal `hls_ext_x_map_byterange` und
+  strukturierte Daten in `cmafMeta`); der binäre Skip-Pfad mit
+  Failure-Codes `hls_map_byterange_unsupported` und
+  `hls_media_byterange_unsupported` greift in T4, sobald der
+  Binary-Loader läuft (kein Vollressourcen-Download).
+- [x] Segment-URI-Muster `.m4s`/`.cmfv`/`.cmfa` werden als
+  schwächere manifestbasierte Hinweise erfasst (`isFmp4SegmentUri`
+  in `cmaf-hls.ts`; Query-/Fragment-Suffixe werden vor dem Match
+  abgeschnitten). Erstes Treffer-Segment wird in `signals[]` mit
+  `hls_segment_extension_fmp4` gepinnt; `confidence:"manifest"`,
+  wenn parallel ein `EXT-X-MAP`-Signal vorliegt, sonst
+  `"inferred"`.
+- [x] `EXT-X-INDEPENDENT-SEGMENTS` als zusätzliches Signal
+  (`hls_independent_segments`, `confidence:"inferred"`) — nur, wenn
+  bereits ein anderes CMAF-Signal vorhanden ist (sonst Falsch-
+  Positiv-Risiko bei klassischen TS-Manifesten mit Tag).
+  `CODECS`/Map-Kontext erzeugen kein eigenes Signal.
+- [x] Master-Playlist-Parser schreibt ein konservatives
   `MasterPlaylistDetails.cmaf`: Variant-URI-Hinweise auf fMP4-/CMAF-
   Media-Playlists oder fMP4-spezifische Variant-Kontexte dürfen nur ein
   Summary mit `confidence:"inferred"` erzeugen. Der Master-Pfad bleibt
@@ -565,11 +570,20 @@ DoD:
   Binary-Scope keine referenzierten Media-Playlists nachlädt; binäre
   `passed`-/`failed`-/`skipped`-Status entstehen erst bei separater
   Analyse einer Media-Playlist.
-- [ ] Tests decken positive, negative und gemischte HLS-Fälle ab.
-- [ ] HLS-Master-Negativfixture pinnt eine Master-Playlist mit
-  `CODECS` und TS-basierten Variant-URIs/Media-Playlists; daraus darf
-  kein `MasterPlaylistDetails.cmaf` entstehen.
-- [ ] Bestehender HLS-Master-/Media-Pfad bleibt grün.
+- [x] Tests decken positive, negative und gemischte HLS-Fälle ab
+  (`packages/stream-analyzer/tests/parser-media-cmaf.test.ts`,
+  `parser-master-cmaf.test.ts`): EXT-X-MAP mit/ohne BYTERANGE,
+  fMP4-Suffix-only inferred, TS-Negativ ohne `cmaf`, Query-/
+  Fragment-Suffix-Filter, INDEPENDENT-SEGMENTS-Audit-Signal,
+  `media_byterange_orphan`/`malformed`/`duplicate`-Findings.
+- [x] HLS-Master-Negativfixture pinnt eine Master-Playlist mit
+  `CODECS` und `.m3u8`-Variant-URIs ohne fMP4-Suffix; daraus
+  entsteht kein `MasterPlaylistDetails.cmaf`
+  (`parser-master-cmaf.test.ts` „does not emit cmaf for a CODECS-
+  only TS master").
+- [x] Bestehender HLS-Master-/Media-Pfad bleibt grün (232 Bestands-
+  Tests + 15 neue CMAF-Tests = 247 Tests grün; Lint inklusive
+  Boundary- und Public-API-Snapshot grün).
 
 ---
 

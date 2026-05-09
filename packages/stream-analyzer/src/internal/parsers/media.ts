@@ -1,10 +1,22 @@
 import type { AnalysisFinding } from "../../types/finding.js";
 import type {
+  CmafSignal,
+  CmafSignalSummary,
   MediaPlaylistDetails,
   MediaSegment,
   MediaSegmentSummary
 } from "../../types/result.js";
-import { parseFloatAttr, parseIntAttr } from "./attrs.js";
+import { parseAttributeList, parseFloatAttr, parseIntAttr } from "./attrs.js";
+import {
+  aggregateConfidence,
+  isFmp4SegmentUri,
+  mediaAnchor,
+  parseByteRangePayload,
+  type HlsByteRange,
+  type HlsExtXMapMeta,
+  type HlsFirstMediaSegmentMeta,
+  type HlsMediaCmafMetadata
+} from "./cmaf-hls.js";
 
 const TARGETDURATION_PREFIX = "#EXT-X-TARGETDURATION:";
 const MEDIASEQUENCE_PREFIX = "#EXT-X-MEDIA-SEQUENCE:";
@@ -13,6 +25,8 @@ const EXTINF_PREFIX = "#EXTINF:";
 const ENDLIST_TAG = "#EXT-X-ENDLIST";
 const KEY_PREFIX = "#EXT-X-KEY:";
 const MAP_PREFIX = "#EXT-X-MAP:";
+const BYTERANGE_PREFIX = "#EXT-X-BYTERANGE:";
+const INDEPENDENT_SEGMENTS_TAG = "#EXT-X-INDEPENDENT-SEGMENTS";
 const DISCONTINUITY_TAG = "#EXT-X-DISCONTINUITY";
 const PROGRAM_DATE_TIME_PREFIX = "#EXT-X-PROGRAM-DATE-TIME:";
 
@@ -34,6 +48,13 @@ const LIVE_LATENCY_TARGET_MULTIPLIER = 3;
 interface MediaParseResult {
   readonly details: MediaPlaylistDetails;
   readonly findings: readonly AnalysisFinding[];
+  /**
+   * Interne CMAF-Metadaten für den Tranche-4-Binary-Pfad. Liegt nur
+   * bewusst neben dem Public-Result, damit Tranche 4 keine Manifest-
+   * zeilen erneut tokenisieren muss. Konsumenten bekommen das
+   * Public-Summary über `details.cmaf`.
+   */
+  readonly cmafMeta?: HlsMediaCmafMetadata;
 }
 
 interface PendingExtInf {
@@ -41,6 +62,11 @@ interface PendingExtInf {
   readonly title?: string;
   readonly tagLine: number;
   readonly raw: string;
+}
+
+interface PendingByteRange {
+  readonly value: HlsByteRange;
+  readonly tagLine: number;
 }
 
 interface SegmentDraft {
@@ -51,6 +77,27 @@ interface SegmentDraft {
   readonly sequenceNumber: number;
   /** Für Toleranzregel: war die Dauer in EXTINF parsbar? */
   readonly durationParseable: boolean;
+  /** Stabile 1-basierte Zeile der URI für CMAF-Anker. */
+  readonly uriLine: number;
+  /**
+   * Strukturierter `#EXT-X-BYTERANGE`-Wert, der unmittelbar vor der
+   * Segment-URI gesetzt wurde. Tranche 4 nutzt ihn für `skipped`-
+   * Mapping mit `hls_media_byterange_unsupported`.
+   */
+  readonly byterange?: HlsByteRange;
+  /** Zeilennummer der `#EXT-X-BYTERANGE`-Zeile (1-basiert), falls vorhanden. */
+  readonly byterangeLine?: number;
+  /**
+   * `true`, wenn die URI ein fMP4-Segment-Suffix (`.m4s`/`.cmfv`/
+   * `.cmfa`) trägt. Schwacher CMAF-Hinweis, im Manifest-Anker
+   * sichtbar.
+   */
+  readonly isFmp4Uri: boolean;
+}
+
+interface ExtXMapDraft {
+  readonly attrs: Map<string, string>;
+  readonly tagLine: number;
 }
 
 interface ParserState {
@@ -59,12 +106,17 @@ interface ParserState {
   playlistType: string | undefined;
   endList: boolean;
   pending: PendingExtInf | null;
+  pendingByteRange: PendingByteRange | null;
   drafts: SegmentDraft[];
   features: {
     encryption: boolean;
     initSegment: boolean;
     discontinuity: boolean;
     programDateTime: boolean;
+    independentSegments: boolean;
+  };
+  cmaf: {
+    extXMap: ExtXMapDraft | null;
   };
 }
 
@@ -77,12 +129,17 @@ export function parseMediaPlaylist(text: string, baseUrl: string | undefined): M
     playlistType: undefined,
     endList: false,
     pending: null,
+    pendingByteRange: null,
     drafts: [],
     features: {
       encryption: false,
       initSegment: false,
       discontinuity: false,
-      programDateTime: false
+      programDateTime: false,
+      independentSegments: false
+    },
+    cmaf: {
+      extXMap: null
     }
   };
 
@@ -91,7 +148,12 @@ export function parseMediaPlaylist(text: string, baseUrl: string | undefined): M
   }
 
   finalizeManifest(state, findings);
-  return { details: buildDetails(state), findings };
+  const cmafBuild = buildCmaf(state, baseUrl);
+  return {
+    details: buildDetails(state, cmafBuild?.summary),
+    findings,
+    ...(cmafBuild?.metadata !== undefined ? { cmafMeta: cmafBuild.metadata } : {})
+  };
 }
 
 /** Verarbeitet eine einzelne (getrimmte) Manifest-Zeile. Tag-Branches
@@ -106,7 +168,7 @@ function processLine(
 ): void {
   if (line.length === 0 || line === "#EXTM3U") return;
   if (processGlobalTag(line, lineIdx, state, findings)) return;
-  if (processFeatureTag(line, state)) return;
+  if (processFeatureTag(line, lineIdx, state, findings)) return;
   if (line.startsWith(EXTINF_PREFIX)) {
     handleExtInfTag(line, lineIdx, state, findings);
     return;
@@ -163,8 +225,16 @@ function processGlobalTag(
 
 /** Reine Audit-Marker (Encryption, Init-Segment, Discontinuity,
  * Program-Date-Time). Beeinflussen Aggregate nicht; landen am Ende als
- * Info-Findings. */
-function processFeatureTag(line: string, state: ParserState): boolean {
+ * Info-Findings. EXT-X-MAP, EXT-X-INDEPENDENT-SEGMENTS und
+ * #EXT-X-BYTERANGE werden zusätzlich strukturiert erfasst, damit der
+ * Tranche-4-Binary-Pfad keine Manifestzeilen erneut tokenisieren muss
+ * (`0.10.0` Tranche 2, NF-13 / RAK-61). */
+function processFeatureTag(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  findings: AnalysisFinding[]
+): boolean {
   if (line.startsWith(KEY_PREFIX)) {
     // METHOD=NONE deaktiviert eine zuvor gesetzte Verschlüsselung;
     // nur "echte" Methoden zählen als Feature.
@@ -176,6 +246,15 @@ function processFeatureTag(line: string, state: ParserState): boolean {
   }
   if (line.startsWith(MAP_PREFIX)) {
     state.features.initSegment = true;
+    handleExtXMapTag(line, lineIdx, state, findings);
+    return true;
+  }
+  if (line === INDEPENDENT_SEGMENTS_TAG) {
+    state.features.independentSegments = true;
+    return true;
+  }
+  if (line.startsWith(BYTERANGE_PREFIX)) {
+    handleByteRangeTag(line, lineIdx, state, findings);
     return true;
   }
   if (line === DISCONTINUITY_TAG || line.startsWith(DISCONTINUITY_TAG + ":")) {
@@ -187,6 +266,64 @@ function processFeatureTag(line: string, state: ParserState): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Strukturierte Erfassung von `#EXT-X-MAP` (RFC 8216 §4.3.2.5).
+ * Pflicht-Attribut ist `URI`; `BYTERANGE` ist optional. In `0.10.0`
+ * werden nur die letzten beiden Werte für den Binary-Pfad verwendet;
+ * eventuell vorhandene `KEYFORMAT`/`KEYFORMATVERSIONS` bleiben in
+ * `rawAttributes` verfügbar.
+ */
+function handleExtXMapTag(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  findings: AnalysisFinding[]
+): void {
+  const attrs = parseAttributeList(line.slice(MAP_PREFIX.length));
+  const uri = attrs.get("URI");
+  if (uri === undefined || uri.length === 0) {
+    findings.push({
+      code: "media_map_missing_uri",
+      level: "error",
+      message: `EXT-X-MAP auf Zeile ${lineIdx + 1} hat kein URI-Attribut.`
+    });
+    return;
+  }
+  state.cmaf.extXMap = { attrs, tagLine: lineIdx };
+}
+
+/**
+ * Bindet `#EXT-X-BYTERANGE` (RFC 8216 §4.3.2.2) an die nächste
+ * Segment-URI. Mehrere BYTERANGE-Tags vor derselben URI sind ein
+ * Spec-Verstoß und werden als Warning gemeldet — der zweite Wert
+ * gewinnt, weil er der Manifestzeile am nächsten ist.
+ */
+function handleByteRangeTag(
+  line: string,
+  lineIdx: number,
+  state: ParserState,
+  findings: AnalysisFinding[]
+): void {
+  const payload = line.slice(BYTERANGE_PREFIX.length);
+  const parsed = parseByteRangePayload(payload);
+  if (parsed === null) {
+    findings.push({
+      code: "media_byterange_malformed",
+      level: "warning",
+      message: `EXT-X-BYTERANGE auf Zeile ${lineIdx + 1} ist nicht parseable ("${payload.trim()}").`
+    });
+    return;
+  }
+  if (state.pendingByteRange !== null) {
+    findings.push({
+      code: "media_byterange_duplicate",
+      level: "warning",
+      message: `EXT-X-BYTERANGE auf Zeile ${lineIdx + 1} überschreibt einen vorherigen Wert (Zeile ${state.pendingByteRange.tagLine + 1}).`
+    });
+  }
+  state.pendingByteRange = { value: parsed, tagLine: lineIdx };
 }
 
 function handleExtInfTag(
@@ -219,13 +356,23 @@ function handleSegmentUri(
       level: "warning",
       message: `URI auf Zeile ${lineIdx + 1} ohne vorhergehendes EXTINF.`
     });
+    state.pendingByteRange = null;
     return;
   }
   const sequenceBase = state.mediaSequenceFromTag ?? 0;
   state.drafts.push(
-    buildSegmentDraft(state.pending, line, baseUrl, sequenceBase + state.drafts.length, lineIdx, findings)
+    buildSegmentDraft(
+      state.pending,
+      state.pendingByteRange,
+      line,
+      baseUrl,
+      sequenceBase + state.drafts.length,
+      lineIdx,
+      findings
+    )
   );
   state.pending = null;
+  state.pendingByteRange = null;
 }
 
 function finalizeManifest(state: ParserState, findings: AnalysisFinding[]): void {
@@ -234,6 +381,13 @@ function finalizeManifest(state: ParserState, findings: AnalysisFinding[]): void
       code: "segment_missing_uri",
       level: "error",
       message: `EXTINF auf Zeile ${state.pending.tagLine + 1} hat keine darauffolgende URI-Zeile.`
+    });
+  }
+  if (state.pendingByteRange !== null) {
+    findings.push({
+      code: "media_byterange_orphan",
+      level: "warning",
+      message: `EXT-X-BYTERANGE auf Zeile ${state.pendingByteRange.tagLine + 1} hat keine darauffolgende Segment-URI.`
     });
   }
   if (state.targetDuration === undefined) {
@@ -248,7 +402,10 @@ function finalizeManifest(state: ParserState, findings: AnalysisFinding[]): void
   findings.push(...featureFindings(state.features));
 }
 
-function buildDetails(state: ParserState): MediaPlaylistDetails {
+function buildDetails(
+  state: ParserState,
+  cmaf: CmafSignalSummary | undefined
+): MediaPlaylistDetails {
   const segments: MediaSegment[] = state.drafts.map((d) => ({
     uri: d.uri,
     duration: d.duration,
@@ -267,7 +424,133 @@ function buildDetails(state: ParserState): MediaPlaylistDetails {
       ? { liveLatencyEstimateSeconds: state.targetDuration * LIVE_LATENCY_TARGET_MULTIPLIER }
       : {}),
     segments,
-    summary: buildSummary(segments)
+    summary: buildSummary(segments),
+    ...(cmaf !== undefined ? { cmaf } : {})
+  };
+}
+
+interface CmafBuildResult {
+  readonly summary: CmafSignalSummary;
+  readonly metadata?: HlsMediaCmafMetadata;
+}
+
+/**
+ * Baut `details.cmaf`-Summary plus interne Tranche-4-Metadaten aus
+ * dem Parser-State (`0.10.0` Tranche 2, NF-13 / RAK-61). Ohne ein
+ * starkes (`EXT-X-MAP`) oder schwaches (`.m4s`/`.cmfv`/`.cmfa`-URI)
+ * CMAF-Signal wird kein `cmaf` emittiert — Negativ-Fixtures bleiben
+ * byte-kompatibel zum `0.9.x`-Stand.
+ *
+ * Tranche 2 erzeugt **kein** `binary`-Objekt. Status `passed`/
+ * `failed`/`skipped` entstehen erst in Tranche 4 mit dem bounded
+ * Segment-Loader; bis dahin ist `binary` schlicht abwesend (das
+ * Schema lässt das ausdrücklich zu, weil `binary?:` optional ist).
+ */
+function buildCmaf(
+  state: ParserState,
+  baseUrl: string | undefined
+): CmafBuildResult | undefined {
+  const signals: CmafSignal[] = [];
+
+  const initMeta = buildInitSegmentMeta(state.cmaf.extXMap, baseUrl);
+  if (initMeta !== undefined) {
+    pushInitSignals(signals, initMeta, state.cmaf.extXMap!.tagLine);
+  }
+
+  const firstFmp4 = state.drafts.find((d) => d.isFmp4Uri);
+  if (firstFmp4 !== undefined) {
+    signals.push({
+      code: "hls_segment_extension_fmp4",
+      level: "info",
+      manifestAnchor: mediaAnchor(firstFmp4.uriLine),
+      confidence: state.cmaf.extXMap !== null ? "manifest" : "inferred"
+    });
+  }
+
+  if (state.features.independentSegments && (initMeta !== undefined || firstFmp4 !== undefined)) {
+    signals.push({
+      code: "hls_independent_segments",
+      level: "info",
+      manifestAnchor: "media:tag:#EXT-X-INDEPENDENT-SEGMENTS",
+      confidence: "inferred"
+    });
+  }
+
+  if (signals.length === 0) return undefined;
+
+  const summary: CmafSignalSummary = {
+    source: "hls",
+    confidence: aggregateConfidence(signals),
+    signals
+  };
+
+  const firstMediaMeta = firstFmp4 !== undefined ? buildFirstMediaMeta(firstFmp4) : undefined;
+  const metadata: HlsMediaCmafMetadata = {
+    ...(initMeta !== undefined ? { initSegment: initMeta } : {}),
+    ...(firstMediaMeta !== undefined ? { firstMediaSegment: firstMediaMeta } : {})
+  };
+
+  return {
+    summary,
+    ...(initMeta !== undefined || firstMediaMeta !== undefined ? { metadata } : {})
+  };
+}
+
+/**
+ * Strukturierte Sicht auf `EXT-X-MAP` für Tranche 4: URI,
+ * optionale BYTERANGE, gegen `baseUrl` aufgelöste URI und
+ * Roh-Attribute. Liefert `undefined`, wenn der Parser den Tag
+ * nicht erfolgreich tokenisiert hat (URI leer / fehlend).
+ */
+function buildInitSegmentMeta(
+  draft: ExtXMapDraft | null,
+  baseUrl: string | undefined
+): HlsExtXMapMeta | undefined {
+  if (draft === null) return undefined;
+  const uri = draft.attrs.get("URI") ?? "";
+  if (uri.length === 0) return undefined;
+  const byterangeRaw = draft.attrs.get("BYTERANGE");
+  const byterange = byterangeRaw !== undefined ? parseByteRangePayload(byterangeRaw) : null;
+  const resolvedUri = resolveUri(uri, baseUrl);
+  const rawAttributes: Record<string, string> = {};
+  for (const [k, v] of draft.attrs) rawAttributes[k] = v;
+  return {
+    uri,
+    ...(byterange !== null ? { byterange } : {}),
+    ...(resolvedUri !== null ? { resolvedUri } : {}),
+    rawAttributes,
+    manifestAnchor: mediaAnchor(draft.tagLine)
+  };
+}
+
+function pushInitSignals(
+  signals: CmafSignal[],
+  init: HlsExtXMapMeta,
+  tagLine: number
+): void {
+  signals.push({
+    code: "hls_ext_x_map",
+    level: "info",
+    manifestAnchor: mediaAnchor(tagLine),
+    confidence: "manifest"
+  });
+  if (init.byterange !== undefined) {
+    signals.push({
+      code: "hls_ext_x_map_byterange",
+      level: "info",
+      manifestAnchor: mediaAnchor(tagLine),
+      confidence: "manifest"
+    });
+  }
+}
+
+function buildFirstMediaMeta(draft: SegmentDraft): HlsFirstMediaSegmentMeta {
+  return {
+    uri: draft.uri,
+    ...(draft.resolvedUri !== undefined ? { resolvedUri: draft.resolvedUri } : {}),
+    ...(draft.byterange !== undefined ? { byterange: draft.byterange } : {}),
+    sequenceNumber: draft.sequenceNumber,
+    manifestAnchor: mediaAnchor(draft.uriLine)
   };
 }
 
@@ -287,6 +570,7 @@ function parseExtInf(payload: string, lineIdx: number): PendingExtInf {
 
 function buildSegmentDraft(
   pending: PendingExtInf,
+  pendingByteRange: PendingByteRange | null,
   uri: string,
   baseUrl: string | undefined,
   sequenceNumber: number,
@@ -318,7 +602,12 @@ function buildSegmentDraft(
     ...(pending.title !== undefined ? { title: pending.title } : {}),
     ...(resolvedUri !== null ? { resolvedUri } : {}),
     sequenceNumber,
-    durationParseable
+    durationParseable,
+    uriLine: uriLineIdx,
+    ...(pendingByteRange !== null
+      ? { byterange: pendingByteRange.value, byterangeLine: pendingByteRange.tagLine }
+      : {}),
+    isFmp4Uri: isFmp4SegmentUri(uri)
   };
 }
 

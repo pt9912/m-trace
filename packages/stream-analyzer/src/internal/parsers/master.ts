@@ -1,5 +1,11 @@
 import type { AnalysisFinding } from "../../types/finding.js";
-import type { MasterPlaylistDetails, MasterRendition, MasterVariant } from "../../types/result.js";
+import type {
+  CmafSignal,
+  CmafSignalSummary,
+  MasterPlaylistDetails,
+  MasterRendition,
+  MasterVariant
+} from "../../types/result.js";
 import {
   parseAttributeList,
   parseCodecs,
@@ -8,6 +14,7 @@ import {
   parseResolution,
   parseYesNo
 } from "./attrs.js";
+import { aggregateConfidence, isFmp4SegmentUri, masterAnchor } from "./cmaf-hls.js";
 
 const STREAM_INF_PREFIX = "#EXT-X-STREAM-INF:";
 const MEDIA_PREFIX = "#EXT-X-MEDIA:";
@@ -43,13 +50,20 @@ interface MasterParseResult {
 interface MasterParserState {
   pending: PendingStreamInf | null;
   variants: MasterVariant[];
+  /**
+   * Parallel zur `variants`-Liste: 0-basierte Zeilennummer der
+   * Variant-URI für CMAF-Manifestanker (`0.10.0` Tranche 2). Bleibt
+   * intern, weil der Public-`MasterVariant` keine Zeilenangaben
+   * trägt und auch nicht tragen soll (Wire-Vertrag stabil).
+   */
+  variantUriLines: number[];
   renditions: MasterRendition[];
 }
 
 export function parseMasterPlaylist(text: string, baseUrl: string | undefined): MasterParseResult {
   const lines = text.split(/\r?\n/);
   const findings: AnalysisFinding[] = [];
-  const state: MasterParserState = { pending: null, variants: [], renditions: [] };
+  const state: MasterParserState = { pending: null, variants: [], variantUriLines: [], renditions: [] };
 
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     processMasterLine(lines[lineIdx].trim(), lineIdx, state, baseUrl, findings);
@@ -61,7 +75,15 @@ export function parseMasterPlaylist(text: string, baseUrl: string | undefined): 
   findings.push(...detectDuplicateRenditions(state.renditions));
   findings.push(...crossReferenceGroups(state.variants, state.renditions));
 
-  return { details: { variants: state.variants, renditions: state.renditions }, findings };
+  const cmaf = buildMasterCmaf(state);
+  return {
+    details: {
+      variants: state.variants,
+      renditions: state.renditions,
+      ...(cmaf !== undefined ? { cmaf } : {})
+    },
+    findings
+  };
 }
 
 function processMasterLine(
@@ -92,6 +114,7 @@ function processMasterLine(
   if (state.pending !== null) {
     const built = buildVariant(state.pending.attrs, line, baseUrl, state.pending.lineNumber);
     state.variants.push(built.variant);
+    state.variantUriLines.push(lineIdx);
     findings.push(...built.findings);
     state.pending = null;
   }
@@ -351,4 +374,37 @@ function resolveUri(rawUri: string, baseUrl: string | undefined): string | null 
   } catch {
     return null;
   }
+}
+
+/**
+ * Konservatives `details.cmaf` für Master-Playlists (`0.10.0`
+ * Tranche 2, NF-13 / RAK-61). Master-Pfad lädt referenzierte Media-
+ * Playlists nicht nach; CMAF-Vermutung darf deshalb nur
+ * `confidence:"inferred"` ergeben. `CODECS` allein erzeugt **kein**
+ * Signal, weil klassische TS-HLS-Master ebenfalls Codecs tragen.
+ *
+ * Master-Summaries tragen in `0.10.0` kein `binary`-Objekt, weil der
+ * Binary-Scope keine Media-Playlists nachlädt — eine binäre
+ * `passed`-/`failed`-/`skipped`-Aussage entsteht erst beim separaten
+ * Analyzer-Aufruf einer Media-Playlist.
+ */
+function buildMasterCmaf(state: MasterParserState): CmafSignalSummary | undefined {
+  const signals: CmafSignal[] = [];
+  for (let i = 0; i < state.variants.length; i++) {
+    const v = state.variants[i];
+    if (isFmp4SegmentUri(v.uri)) {
+      signals.push({
+        code: "hls_master_variant_fmp4_uri",
+        level: "info",
+        manifestAnchor: masterAnchor(state.variantUriLines[i]),
+        confidence: "inferred"
+      });
+    }
+  }
+  if (signals.length === 0) return undefined;
+  return {
+    source: "hls",
+    confidence: aggregateConfidence(signals),
+    signals
+  };
 }
