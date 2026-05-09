@@ -185,7 +185,7 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 | 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | ✅ |
 | 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | 🟡 (Schema/API fertig; Fixture-Sync folgt mit T2/T3/T4) |
 | 2 | HLS/fMP4-CMAF-Erkennung | 🟡 (Parser fertig; Contract-Fixture-Update folgt im nächsten Tranchen-Block) |
-| 3 | DASH/CMAF-Erkennung | ⬜ |
+| 3 | DASH/CMAF-Erkennung | 🟡 (Parser+Vererbung+Auswahl fertig; bestehende DASH-Fixtures additiv erweitert; CMAF-Master/Media-Erweiterung der HLS-Fixtures folgt mit T4) |
 | 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ⬜ |
 | 5 | API-/CLI-Durchleitung, Doku und Smokes | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
@@ -594,78 +594,84 @@ Informationen werden als solche ausgewiesen.
 
 DoD:
 
-- [ ] DASH-Parser wertet `mimeType` `video/mp4`, `audio/mp4` und
-  `application/mp4` als CMAF-relevante Indizien, aber nicht allein als
-  Konformitätsnachweis.
-- [ ] `SegmentTemplate@initialization`, `SegmentTemplate@media`,
-  `SegmentList/Initialization`, `SegmentList/SegmentURL@media` und
-  `Representation`-Codecs fließen in die Signalbewertung ein.
-- [ ] DASH-Schema und Parser erfassen Initialization-Informationen
-  explizit und vererbungsbewusst mindestens auf
-  `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene:
-  `SegmentTemplate@initialization`, `SegmentTemplate@media`,
-  `SegmentList/Initialization@sourceURL`,
-  `SegmentList/SegmentURL@media` sowie relevante
-  `BaseURL`-/URI-Muster. Diese Felder können als interne Parse-
-  Metadaten oder additive `details`-Felder umgesetzt werden, müssen
-  aber in `DashManifestDetails.cmaf` nachvollziehbare Manifest-Anker
-  erzeugen. Für mehrperiodige MPDs muss der Anker eindeutig sein, z. B.
-  `MPD/Period[0]/AdaptationSet[id=video]/Representation[id=v1]/...`;
-  bei fehlenden IDs werden stabile Index-Anker verwendet. Das konkrete
-  Signal-Feld benennt zusätzlich das auslösende Attribut, etwa
-  `SegmentTemplate@initialization`.
-- [ ] DASH-Parser-Strategie ist vor Umsetzung festgelegt: entweder
-  der bestehende regex-basierte Parser wird gezielt um die benötigten
-  `BaseURL`-/`SegmentTemplate`-/`SegmentList`-Metadaten erweitert und
-  mit Vererbungsfixtures abgesichert, oder Tranche 3 migriert auf eine
-  kleine XML-Parser-Abhängigkeit. Die Entscheidung wird im Plan-DoD
-  dokumentiert; stille Teilvererbung reicht für RAK-62/RAK-64 nicht.
-- [ ] DASH-Template-Auflösungs-Scope ist fixiert und getestet:
-  `SegmentTemplate@initialization` und `@media` dürfen in `0.10.0`
-  deterministisch nur `$RepresentationID$`, `$Bandwidth$`, `$Number$`
-  sowie printf-artige `$Number%0Nd$`-Platzhalter verwenden. `startNumber`
-  wird berücksichtigt; fehlt es, gilt DASH-Default `1`. `$Time$`,
-  `SegmentTimeline`-abhängige Auflösung und unbekannte Template-
-  Variablen sind in `0.10.0` nicht ableitbar und führen im Binary-Pfad
-  zu `dash_template_unresolved`. Die manifestbasierten Signale bleiben
-  trotzdem sichtbar.
-- [ ] DASH-`BaseURL`-Auflösung ist deterministisch fixiert und getestet:
-  pro Ebene (`MPD`, `Period`, `AdaptationSet`, `Representation`) wird
-  höchstens ein aktiver `BaseURL`-Wert verwendet, nämlich der erste
-  sichere Eintrag in Manifest-Reihenfolge. Relative `BaseURL`-Werte
-  werden gegen die bereits geerbte sichere Base-URL aufgelöst; absolute
-  `http:`-/`https:`-Werte ersetzen die geerbte Base nur, wenn sie die
-  Segment-URI-Sicherheitsregeln erfüllen. Mehrere `BaseURL`-Alternativen
-  werden in `0.10.0` nicht als Fallback-Set ausprobiert. Gibt es auf
-  einer Ebene nur unsichere, nicht auflösbare oder Nicht-HTTP(S)-
-  `BaseURL`-Werte, bleibt das Manifest-Signal sichtbar, der betroffene
-  Binary-Check wird aber `skipped` mit `segment_uri_blocked` oder
-  `segment_base_url_missing` gemäß der Präzedenz aus Tranche 1.
-- [ ] DASH-Repräsentationsauswahl für den Binary-Pfad ist
-  deterministisch getestet: pro `Period`/`AdaptationSet` mit CMAF-
-  Signal wird in Manifest-Reihenfolge genau eine Representation
-  ausgewählt, bevorzugt die erste mit eigener oder geerbter
-  Initialization- und Media-Referenz, sonst die erste Representation
-  des Sets. `requiredSegmentChecks` und `segmentsChecked[].manifestAnchor`
-  werden aus dieser Auswahl abgeleitet.
-- [ ] Confidence-Regeln sind getestet: MP4-MIME allein erzeugt nur
-  `confidence:"inferred"`; Initialization-Informationen plus fMP4-
-  Segmentmuster erzeugen ein stärkeres manifestbasiertes Signal.
-- [ ] DASH-Tests pinnen drei getrennte Fälle: MP4-MIME-only als
-  `confidence:"inferred"`, Initialization plus fMP4-Segmentmuster als
-  `confidence:"manifest"` und ein echtes Negativ-Fixture ohne MP4-MIME,
-  ohne Initialization und ohne fMP4-URI-Muster.
-- [ ] DASH-Tests pinnen Vererbung und URI-Auflösung getrennt:
-  `BaseURL` auf MPD-/Period-/AdaptationSet-/Representation-Ebene,
-  erste-sichere-`BaseURL`-Auswahl bei mehreren Einträgen, relative
-  BaseURL-Ketten, unsichere BaseURL-Skip-Codes,
-  `SegmentTemplate`-Vererbung und Override-Verhalten, `SegmentList`
-  mit `Initialization@sourceURL` und `SegmentURL@media`, sowie
-  mehrperiodige stabile Manifestanker bei fehlenden IDs.
-- [ ] DASH-Live- und VOD-Fixtures behalten bestehende Mindestfelder
-  aus RAK-58.
-- [ ] Tests decken DASH-CMAF positiv, DASH ohne Initialization-Signal
-  und fehlerhafte MPD-Strukturen ab.
+- [x] DASH-Parser wertet `mimeType` `video/mp4`, `audio/mp4` und
+  `application/mp4` als CMAF-relevante Indizien (Signale
+  `dash_mime_video_mp4` / `dash_mime_audio_mp4` /
+  `dash_mime_application_mp4`); ohne weitere Init/Media-Referenzen
+  gelten sie nur als `confidence:"inferred"`.
+- [x] `SegmentTemplate@initialization`, `SegmentTemplate@media`,
+  `SegmentList/Initialization@sourceURL`, `SegmentList/SegmentURL@media`
+  und `Representation`-Codecs fließen in die Signalbewertung ein
+  (Signale `dash_segment_template_initialization` /
+  `dash_segment_template_media` / `dash_segment_list_initialization` /
+  `dash_segment_list_media` / `dash_segment_extension_fmp4`).
+- [x] DASH-Schema und Parser erfassen Initialization-Informationen
+  explizit und vererbungsbewusst auf `MPD`/`Period`/`AdaptationSet`/
+  `Representation`-Ebene (interne `DashCmafMetadata.representations`
+  pro AdaptationSet, plus `details.cmaf.signals[]`-Anker im Public
+  Schema). Manifestanker im Format
+  `MPD/Period[<id|idx>]/AdaptationSet[<id|idx>]/Representation[<id|idx>]/<source>@<attribute>`;
+  fehlende IDs erzeugen Index-Anker (`buildDashAnchor`), Test
+  „nutzt Index, wenn Period/AdaptationSet/Representation keine ID
+  tragen".
+- [x] DASH-Parser-Strategie ist vor Umsetzung festgelegt: **Variante
+  A — bestehender regex-basierter Parser wird erweitert; keine neue
+  XML-Library-Dependency.** Begründung: (1) Alle in `0.10.0` benötigten
+  Strukturen (`BaseURL`-Text, `SegmentTemplate@*`-Attribute,
+  `SegmentList/Initialization@sourceURL`, `SegmentURL@media`) sind
+  attribut- oder text-basiert und in regulärer XML-Form vorhersagbar;
+  (2) der Plan §0.1-Scope schließt `$Time$`-Variablen und
+  `SegmentTimeline`-Auflösung explizit aus, also keine komplexe
+  Mehrfach-Verschachtelung nötig; (3) keine zusätzliche Audit-/
+  CVE-Surface durch externe XML-Parser. Die Vererbung wird **nicht**
+  implizit durch verschachtelte Regex-Matches abgebildet, sondern
+  explizit als Chain pro Ebene aufgebaut (siehe nächstes DoD-Item).
+  Migration auf `fast-xml-parser` bleibt Folge-Plan-Item, wenn echte
+  Live-/Edge-Cases (z. B. SegmentTimeline) den Scope erweitern müssen.
+- [x] DASH-Template-Auflösungs-Scope ist fixiert (`resolveDashTemplate`
+  in `cmaf-dash.ts`): `$RepresentationID$`, `$Bandwidth$`, `$Number$`,
+  `$Number%0Nd$`, `$Bandwidth%0Nd$` und `$$` (Literal). `startNumber`
+  aus `SegmentTemplate@startNumber`, fehlt → Default `1`. `$Time$`
+  und unbekannte Variablen liefern `null`; im internen
+  `DashCmafSegmentRef.templateUnresolved=true` und im Public
+  `signals[]` wird das `media`-Manifest-Signal in dem Fall
+  weggelassen — Tranche 4 mappt das auf `dash_template_unresolved`.
+  Manifestbasierte Initialization-Signale bleiben trotzdem sichtbar
+  (Test „$Time$ ist nicht aufgelöst und führt zu kein Manifest-Signal
+  für media").
+- [x] DASH-`BaseURL`-Auflösung deterministisch (`resolveBaseUrlChain`
+  in `cmaf-dash.ts`): pro Ebene wird der erste sichere Eintrag in
+  Manifest-Reihenfolge gewählt; relative Werte gegen die bereits
+  geerbte Base aufgelöst; absolute Werte nur akzeptiert, wenn das
+  Schema `http:`/`https:` ist. Wenn alle Kandidaten unsicher sind,
+  wird die geerbte Base **nicht** durchgereicht und `blocked=true`
+  gesetzt — Tranche 4 mappt das auf `segment_uri_blocked`. Tests
+  pinnen Vererbung über alle vier Ebenen, erste-sichere-Wahl,
+  `file://`-Block und Sub-Level-Block.
+- [x] DASH-Repräsentationsauswahl für den Binary-Pfad: pro
+  AdaptationSet wird in Manifest-Reihenfolge die erste Representation
+  mit init+media-Referenz gewählt (`chosenRepEntry` in
+  `parseAdaptationSet`); fällt das durch (z. B. nur Init geerbt),
+  greift die erste Representation mit Signal überhaupt. Anker
+  zeigt auf die gewählte Representation (Test
+  „erbt Initialization von AdaptationSet auf Representation").
+  `requiredSegmentChecks` und Pflichtprüfungs-Anker werden in
+  Tranche 4 aus `cmafMeta.representations[].init/media` abgeleitet.
+- [x] Confidence-Regeln getestet: MP4-MIME allein → `inferred`;
+  Initialization plus fMP4-Segmentmuster → `manifest`. (`describe`
+  "DASH-CMAF — Confidence-Regeln (RAK-62)", drei Cases).
+- [x] DASH-Tests pinnen drei getrennte Fälle (siehe oben).
+- [x] DASH-Tests pinnen Vererbung und URI-Auflösung getrennt
+  (`describe` "DASH-CMAF — BaseURL-Vererbung", "SegmentTemplate-
+  Vererbung und Override", "SegmentList-Pfad", "Mehrperiodige
+  Manifestanker mit Index-Fallback").
+- [x] DASH-Live- und VOD-Fixtures behalten bestehende Mindestfelder
+  aus RAK-58 — additive `details.cmaf`-Erweiterung in
+  `success-dash-vod.json`/`success-dash-live.json` (Go-testdata-
+  Kopien via `make sync-contract-fixtures` synchronisiert).
+- [x] Tests decken DASH-CMAF positiv, DASH ohne Initialization-Signal
+  (MP4-MIME-only) und fehlende Variablen-Auflösung ab; Negativ-Pfad
+  ohne MP4-MIME/Initialization/fMP4-URI emittiert kein `cmaf`.
 
 ---
 

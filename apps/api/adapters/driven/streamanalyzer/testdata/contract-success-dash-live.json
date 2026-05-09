@@ -35,6 +35,18 @@
           }
         ]
       }
-    ]
+    ],
+    "cmaf": {
+      "source": "dash",
+      "confidence": "inferred",
+      "signals": [
+        {
+          "code": "dash_mime_video_mp4",
+          "level": "info",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/@mimeType",
+          "confidence": "inferred"
+        }
+      ]
+    }
   }
 }
