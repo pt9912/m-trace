@@ -155,11 +155,14 @@ zulässig, wenn folgende Punkte trotzdem stabil erfüllt werden:
 
 Der Patch ergänzt `spec/lastenheft.md` um RAK-65..RAK-70 und hebt
 `F-46`..`F-51` für den begrenzten `0.11.0`-Lab-Control-Scope von
-Kann auf Release-Muss. Die Kann-Historie bleibt auditierbar; verbindlich
-ist die neue RAK-Gruppe. `F-49` wird dabei für `0.11.0` ausdrücklich
-als lokales Lifecycle-Eventmodell plus reproduzierbarer Empfang/
-Auslösung präzisiert; produktive ausgehende Webhook-Zustellung bleibt
-Folge-Scope und darf nicht als erfüllt behauptet werden.
+Kann auf Release-Muss. `MVP-38` wird dabei ausdrücklich als lokaler
+SRT-/RTMP-Ingest-Control-Smoke für MediaMTX-nahe Lab-Artefakte
+präzisiert und für diesen begrenzten Scope auf Release-Muss gezogen;
+die ältere Kann-Historie bleibt auditierbar. Verbindlich ist die neue
+RAK-Gruppe. `F-49` wird für `0.11.0` ausdrücklich als lokales
+Lifecycle-Eventmodell plus reproduzierbarer Empfang/Auslösung
+präzisiert; produktive ausgehende Webhook-Zustellung bleibt Folge-Scope
+und darf nicht als erfüllt behauptet werden.
 
 | RAK | Priorität | Inhalt |
 | --- | --------- | ------ |
@@ -172,8 +175,7 @@ Folge-Scope und darf nicht als erfüllt behauptet werden.
 
 ### 0.6 Öffentliche API und Modell-Skizze
 
-Die finale Pfadwahl hängt von der Architekturentscheidung ab. Für
-Variante B werden die Lastenheft-Pfade unter `apps/api` verwendet:
+Für Variante B werden die Lastenheft-Pfade unter `apps/api` verwendet:
 
 Alle `/api/ingest/*`-Endpunkte sind tokenpflichtig und folgen der
 bestehenden `X-MTrace-Token`-/Project-Resolver-Konvention aus
@@ -194,6 +196,183 @@ werden im API-Kontrakt mitgepflegt.
 | `POST` | `/api/ingest/hooks/stream-started` | lokales Start-Event empfangen oder Smoke-Event einspeisen |
 | `POST` | `/api/ingest/hooks/stream-ended` | lokales Ende-Event empfangen oder Smoke-Event einspeisen |
 | `GET` | `/api/ingest/media-server-config` | generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern |
+
+Normative Wire-Skizze für Contract-Tests:
+
+`POST /api/ingest/streams` Request:
+
+```json
+{
+  "display_name": "Lab SRT",
+  "protocol": "srt",
+  "endpoint_id": "mediamtx-srt-local",
+  "target_id": "mediamtx-local",
+  "project_id": "demo"
+}
+```
+
+`project_id` ist optional und dient nur als Konsistenzcheck zum
+`X-MTrace-Token`; fehlt das Feld, wird es serverseitig aus dem Token
+abgeleitet.
+
+`POST /api/ingest/streams` und
+`POST /api/ingest/streams/{id}/rotate-key` Response:
+
+```json
+{
+  "stream": {
+    "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "project_id": "demo",
+    "display_name": "Lab SRT",
+    "protocol": "srt",
+    "endpoint_id": "mediamtx-srt-local",
+    "target_id": "mediamtx-local",
+    "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "status": "ready",
+    "created_at": "2026-05-09T10:00:00Z",
+    "updated_at": "2026-05-09T10:00:00Z"
+  },
+  "stream_key": {
+    "value": "mtr_ing_7YQ3pVh4v0hT8x2l9b6nR4c1A5sD0eF2gH3jK8mN9pQ",
+    "fingerprint": "mtr_ing_7YQ3...N9pQ",
+    "created_at": "2026-05-09T10:00:00Z"
+  }
+}
+```
+
+`stream_key.value` darf ausschließlich in Create-/Rotate-Antworten
+erscheinen. List-, Detail-, Event-, Fehler- und Artefakt-Antworten
+enthalten höchstens `fingerprint`.
+
+`GET /api/ingest/streams` Response:
+
+```json
+{
+  "streams": [
+    {
+      "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+      "project_id": "demo",
+      "display_name": "Lab SRT",
+      "protocol": "srt",
+      "endpoint_id": "mediamtx-srt-local",
+      "target_id": "mediamtx-local",
+      "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+      "status": "ready",
+      "key_fingerprint": "mtr_ing_7YQ3...N9pQ",
+      "created_at": "2026-05-09T10:00:00Z",
+      "updated_at": "2026-05-09T10:00:00Z"
+    }
+  ]
+}
+```
+
+`GET /api/ingest/streams/{id}` Response ergänzt die referenzierten
+Objekte, aber keinen Klartext-Key:
+
+```json
+{
+  "stream": {
+    "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "project_id": "demo",
+    "display_name": "Lab SRT",
+    "protocol": "srt",
+    "endpoint_id": "mediamtx-srt-local",
+    "target_id": "mediamtx-local",
+    "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "status": "ready",
+    "key_fingerprint": "mtr_ing_7YQ3...N9pQ",
+    "created_at": "2026-05-09T10:00:00Z",
+    "updated_at": "2026-05-09T10:00:00Z"
+  },
+  "endpoint": {
+    "id": "mediamtx-srt-local",
+    "protocol": "srt",
+    "listen_host": "127.0.0.1",
+    "listen_port": 8890,
+    "path_template": "publish:{stream_path}",
+    "lab_stack": "mtrace-srt",
+    "public_url_hint": "srt://localhost:8890?streamid=publish:{stream_path}"
+  },
+  "routing_rule": {
+    "id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "target_id": "mediamtx-local",
+    "mode": "single",
+    "enabled": true
+  },
+  "target": {
+    "id": "mediamtx-local",
+    "kind": "mediamtx",
+    "config_path": "examples/ingest-control/mediamtx.generated.yml",
+    "hls_url_template": "http://localhost:8889/{stream_path}/index.m3u8",
+    "control_api_url": "http://localhost:9998"
+  }
+}
+```
+
+`POST /api/ingest/streams/{id}/validate-key` Request/Response:
+
+```json
+{
+  "stream_key": "mtr_ing_7YQ3pVh4v0hT8x2l9b6nR4c1A5sD0eF2gH3jK8mN9pQ"
+}
+```
+
+```json
+{
+  "valid": true,
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "key_fingerprint": "mtr_ing_7YQ3...N9pQ"
+}
+```
+
+Ungültige, unbekannte, rotierte oder deaktivierte Keys liefern denselben
+dokumentierten Fehlercode `ingest_key_invalid`; Tests dürfen keine
+unterscheidbaren Fehlerantworten oder Timing-Annahmen für diese Fälle
+einführen.
+
+`POST /api/ingest/hooks/stream-started` Request:
+
+```json
+{
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "observed_at": "2026-05-09T10:01:00Z",
+  "source": "local-smoke",
+  "connection_id": "srtconn-1"
+}
+```
+
+`POST /api/ingest/hooks/stream-ended` Request:
+
+```json
+{
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "observed_at": "2026-05-09T10:05:00Z",
+  "source": "local-smoke",
+  "connection_id": "srtconn-1",
+  "reason": "smoke_complete"
+}
+```
+
+Lifecycle-Erfolgsantworten enthalten mindestens `event_id`,
+`stream_id`, `type`, `observed_at` und `accepted:true`; sie enthalten
+keinen Klartext-Key.
+
+`GET /api/ingest/media-server-config` Response:
+
+```json
+{
+  "kind": "mediamtx",
+  "format": "yaml",
+  "artifact_path": "examples/ingest-control/mediamtx.generated.yml",
+  "generated_at": "2026-05-09T10:00:00Z",
+  "streams": ["ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9"],
+  "warnings": []
+}
+```
+
+Das Artefakt selbst darf nur Beispielwerte oder redigierte
+Fingerprints enthalten.
 
 Pflicht-Domainobjekte:
 
@@ -281,9 +460,13 @@ DoD:
 - [ ] RAK-65..RAK-70 im Lastenheft ergänzt.
 - [ ] `F-46`..`F-51` im Lastenheft für den `0.11.0`-Scope
   nachvollziehbar von Kann-Historie auf Release-Muss abgebildet.
+- [ ] `MVP-38` im Lastenheft als lokaler SRT-/RTMP-Ingest-Control-
+  Smoke für MediaMTX-nahe Lab-Artefakte präzisiert und für den
+  `0.11.0`-Scope auf Release-Muss abgebildet.
 - [ ] `spec/backend-api-contract.md` erweitert die Endpunktmatrix,
   Auth-Matrix, CORS-Preflights und Fehlerreihenfolge für
-  `/api/ingest/*`; `project_id` wird aus `X-MTrace-Token` abgeleitet.
+  `/api/ingest/*` inklusive der Wire-Skizzen aus §0.6;
+  `project_id` wird aus `X-MTrace-Token` abgeleitet.
 - [ ] Patch-Log in `docs/planning/done/plan-0.1.0.md` um
   `Patch 1.1.14` ergänzt.
 - [ ] Architekturentscheidung dokumentiert: `0.11.0` nutzt verbindlich
