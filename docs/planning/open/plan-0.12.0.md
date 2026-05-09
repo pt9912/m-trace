@@ -140,7 +140,7 @@ Kann auf Release-Muss und ergänzt eine neue RAK-Gruppe.
 | RAK-71 | Muss | Auth-Scope ist normativ begrenzt: kurzlebige Session Tokens, Project-Token-Generationen und Project-Policies; keine User-/Org-Verwaltung, kein OAuth/OIDC, keine Admin-UI, keine KMS-/Vault-Pflicht. |
 | RAK-72 | Muss | Signierte Session Tokens: API kann kurzlebige Tokens ausstellen und validieren; Tokens sind an Project, Ablaufzeit, Audience und optional Session/Origin gebunden; ungültige, abgelaufene oder falsch gebundene Tokens liefern stabile `401`/`403`-Fehler ohne Secret-Leak. |
 | RAK-73 | Muss | Project-Token-Rotation: mehrere Generationen pro Project sind modelliert; aktive, Grace-, abgelaufene und widerrufene Tokens werden deterministisch validiert; Persistenz speichert nur Hash/Fingerprint und Metadaten. |
-| RAK-74 | Muss | Ingest Policies: erlaubte Origins, Methoden, Header und Rate-Limit-Grenzen sind Project-gebunden konfigurierbar und werden in Request-, CORS- und Preflight-Pfaden erzwungen. |
+| RAK-74 | Muss | Ingest Policies: erlaubte Origins, Methoden, Header und Rate-Limit-Grenzen sind Project-gebunden konfigurierbar und werden in Request-Pfaden erzwungen; Preflight nutzt dokumentierte globale, konservative Regeln, solange das Project nicht deterministisch aus Route oder Header bestimmbar ist. |
 | RAK-75 | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Flows, Demo, SDK, Analyze-/Session-Link-Auth und `0.11.0` Ingest-Control bleiben kompatibel oder haben dokumentierte Migrationstests. |
 | RAK-76 | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP/CORS-Beispiele, GDPR-/Datenschutzgrenzen und den Unterschied zu Production-Secret-Backends aus Folge-Scope. |
 
@@ -155,6 +155,51 @@ Neue oder geänderte Wire-Verträge werden in
 | `POST` | `/api/playback-events` | akzeptiert weiterhin `X-MTrace-Token`; zusätzlich `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` |
 | `POST` | `/api/ingest/*` | bleibt Project-tokenpflichtig; Policy-Grenzen werden zusätzlich geprüft |
 
+**Auth-Header-Priorität für tokenpflichtige Requests.**
+
+1. `Authorization: Bearer mtr_st_*` ist der bevorzugte Session-
+   Token-Pfad.
+2. `X-MTrace-Session-Token` ist der alternative Session-Token-Pfad
+   für Umgebungen, in denen `Authorization` nicht verwendet werden
+   soll.
+3. `X-MTrace-Token` ist der Legacy-/Project-Token-Pfad und bleibt im
+   `0.12.0`-Compatibility-Fenster gültig.
+4. Wenn mehr als ein Auth-Mechanismus gleichzeitig präsentiert wird,
+   müssen alle präsentierten Tokens zum selben `project_id` passen.
+   Widersprüche liefern stabil `401 auth_project_mismatch`; ein
+   ungültiger zusätzlicher Token liefert `401 auth_token_invalid`.
+   Es gibt keinen stillen Fallback von einem ungültigen höher
+   priorisierten Token auf einen gültigen niedriger priorisierten
+   Token.
+5. Wenn `Authorization` und `X-MTrace-Session-Token` beide gesetzt
+   sind und unterschiedliche Session Tokens enthalten, liefert die API
+   stabil `401 auth_token_invalid`, auch wenn einer der beiden Tokens
+   für sich genommen gültig wäre.
+
+Diese Regeln werden in `spec/backend-api-contract.md` gepinnt und mit
+Tests für alle Header-Kombinationen abgedeckt.
+
+**CORS-Preflight-Modell.**
+
+Browser-Preflights enthalten in der Praxis kein Project- oder Session-
+Token, das der Server verlässlich validieren kann. Deshalb nutzt
+`0.12.0` für `OPTIONS` eine globale, konservative Allowlist:
+
+- erlaubte Methoden maximal `POST, OPTIONS`;
+- erlaubte Header maximal `Content-Type`, `Authorization`,
+  `X-MTrace-Token`, `X-MTrace-Session-Token`, `X-MTrace-Project`,
+  `traceparent`;
+- erlaubte Origins sind die globale Union aller konfigurierten
+  Project-Origins, nie `*`;
+- project-spezifische Policy-Entscheidungen passieren erst beim
+  tatsächlichen `POST`, wenn Project-/Session-Token ausgewertet werden
+  können.
+
+RAK-74 gilt damit für Request-Enforcement; Preflight ist ein
+konservativer Browser-Kompatibilitätsfilter. Falls ein späterer Scope
+projekt-festes Routing wie `/api/projects/{project_id}/...` einführt,
+kann Preflight auf project-spezifische Policies umgestellt werden.
+
 `POST /api/auth/session-tokens` Request:
 
 ```json
@@ -168,8 +213,14 @@ Neue oder geänderte Wire-Verträge werden in
 ```
 
 Der Request ist mit einem gültigen Project Token authentifiziert
-(`X-MTrace-Token`). `project_id` dient nur als Konsistenzcheck zum
-Token. `ttl_seconds` wird serverseitig gedeckelt.
+(`X-MTrace-Token`). `project_id` ist optional und dient als
+Konsistenzcheck zum Token: fehlt es, wird das Project ausschließlich
+aus dem Token abgeleitet und die Response enthält das abgeleitete
+`project_id`; ist es gesetzt und passt nicht zum Token, liefert die API
+`401 auth_project_mismatch`. `ttl_seconds` wird serverseitig gedeckelt.
+Clients sollen `project_id` setzen, wenn sie mehrere Projects verwalten
+oder präzise Debugging-Signale brauchen; einfache SDK-Flows dürfen es
+weglassen.
 
 Response:
 
@@ -316,13 +367,19 @@ DoD:
   erlaubt.
 - [ ] Token-Issuance-Endpoint
   `POST /api/auth/session-tokens` implementiert; `project_id` im Body
-  ist optionaler Konsistenzcheck zum Project Token.
+  ist optionaler Konsistenzcheck zum Project Token. Fehlt
+  `project_id`, wird das Project aus dem Token abgeleitet und in der
+  Response zurückgegeben; ein gesetzter Mismatch liefert
+  `401 auth_project_mismatch`.
 - [ ] `POST /api/playback-events` akzeptiert zusätzlich zu
   `X-MTrace-Token` ein Session Token über `Authorization: Bearer` oder
   `X-MTrace-Session-Token`.
-- [ ] Auth-Priorität ist dokumentiert und getestet, z. B.
-  `Authorization: Bearer` schlägt `X-MTrace-Session-Token`, während
-  doppelt widersprüchliche Auth-Header stabil `401` liefern.
+- [ ] Auth-Priorität ist für alle Kombinationen dokumentiert und
+  getestet: `Authorization: Bearer`, `X-MTrace-Session-Token` und
+  `X-MTrace-Token`; widersprüchliche Project-Bindungen liefern
+  `401 auth_project_mismatch`, ungültige zusätzlich präsentierte
+  Tokens liefern `401 auth_token_invalid`, und es gibt keinen stillen
+  Fallback auf niedriger priorisierte gültige Tokens.
 - [ ] Session Token validiert Signatur, `kid`, `exp`, `nbf`,
   `audience`, `project_id`, optional `session_id` und `origin`.
 - [ ] Abgelaufene, manipulierte, falsch gebundene und mit unbekanntem
@@ -376,9 +433,12 @@ DoD:
 - [ ] Policy-Modell definiert erlaubte Origins, Methoden, Header,
   Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-
   Parameter.
-- [ ] CORS-Preflight nutzt Project-/Policy-Daten statt pauschaler
-  globaler Annahmen; `Access-Control-Allow-Origin` wird nie `*` für
-  tokenpflichtige Browser-Telemetrie.
+- [ ] CORS-Preflight nutzt eine dokumentierte globale, konservative
+  Allowlist, weil `OPTIONS` ohne validierbares Project-/Session-Token
+  kein deterministisches Project-Enforcement erlaubt. Project-
+  spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST`.
+  `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige
+  Browser-Telemetrie.
 - [ ] `Origin`-Validierung unterscheidet Browser-Pfad und CLI/curl-
   Pfad ohne `Origin` gemäß API-Kontrakt.
 - [ ] `POST /api/playback-events` und `/api/ingest/*` prüfen
@@ -387,9 +447,10 @@ DoD:
   soweit die vorhandene Rate-Limit-Infrastruktur das ohne größere
   Architekturänderung trägt; andernfalls wird `[!]` mit Folge-Scope
   dokumentiert.
-- [ ] Tests decken erlaubte Origin, unbekannte Origin, falsche
-  Methode, nicht erlaubten Header, Preflight, leeren Origin im
-  CLI-Pfad und Policy-Denial mit `403` ab.
+- [ ] Tests decken erlaubte globale Preflight-Origin, unbekannte
+  Preflight-Origin, falsche Preflight-Methode, nicht erlaubten
+  Preflight-Header, project-spezifischen POST-Origin-Miss, leeren
+  Origin im CLI-Pfad und Policy-Denial mit `403` ab.
 - [ ] `0.11.0` Ingest-Control-Validate bleibt explizit kein
   produktiver Media-Server-Auth-Pfad; Doku und Tests verhindern diese
   Verwechslung.
@@ -463,7 +524,7 @@ Datei-, Test- und Doku-Nachweis.
 | RAK-71 | Muss | Lastenheft-Patch, Scope-Grenze, README-/Doku-Abgrenzung gegen OAuth/OIDC, Admin-UI, KMS/Vault und SaaS-Tenant-Management. | [ ] |
 | RAK-72 | Muss | Session-Token-Issuance, Signaturvalidierung, Claims-Validierung, Fehlercodes und Contract-Tests. | [ ] |
 | RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
-| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, CORS-/Preflight-Tests und Policy-Denial-Tests. | [ ] |
+| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, globale konservative Preflight-Regeln, project-spezifisches POST-Enforcement und Policy-Denial-Tests. | [ ] |
 | RAK-75 | Muss | Kompatibilität mit bestehenden Project-Token-Flows, SDK/Demo/Analyze/Session/Ingest-Tests und Migrationsdoku. | [ ] |
 | RAK-76 | Muss | Security-Doku, Threat Model, Datenschutz-/GDPR-Grenzen, CSP-Beispiele, Contract-Fixtures, Smokes und Drift-Check. | [ ] |
 
