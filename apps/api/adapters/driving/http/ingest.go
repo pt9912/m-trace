@@ -331,9 +331,16 @@ func readIngestBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 	return raw, nil
 }
 
+// writeIngestError mappt Domain-/Validation-Fehler auf HTTP-Status
+// + JSON-Body. Wichtig: ausschließlich `errors.Is`-Branches —
+// String-Heuristiken sind verboten, weil gewrappte Repo-Fehler
+// (z. B. `fmt.Errorf("ingest: insert ...: %w", err)` aus dem
+// SQLite-Adapter) sonst fälschlich als `400 invalid_request`
+// rauskämen statt als `500 internal_error`.
 func writeIngestError(w http.ResponseWriter, logger *slog.Logger, op string, err error) {
 	switch {
-	case errors.Is(err, domain.ErrIngestProtocolUnknown):
+	case errors.Is(err, domain.ErrIngestProtocolUnknown),
+		errors.Is(err, domain.ErrIngestDisplayNameRequired):
 		writeIngestProblem(w, http.StatusBadRequest, "invalid_request", err.Error())
 	case errors.Is(err, domain.ErrIngestProjectIDMismatch):
 		writeIngestProblem(w, http.StatusBadRequest, "project_id_mismatch", err.Error())
@@ -356,13 +363,6 @@ func writeIngestError(w http.ResponseWriter, logger *slog.Logger, op string, err
 	default:
 		if logger != nil {
 			logger.Warn("ingest handler error", "op", op, "err", err.Error())
-		}
-		// Validation-Errors aus dem Use-Case (display_name leer u. ä.):
-		// auf 400 invalid_request mappen, ohne die Detail-Message zu
-		// verlieren.
-		if strings.HasPrefix(err.Error(), "ingest:") || strings.Contains(err.Error(), "must not be empty") {
-			writeIngestProblem(w, http.StatusBadRequest, "invalid_request", err.Error())
-			return
 		}
 		writeIngestProblem(w, http.StatusInternalServerError, "internal_error",
 			"Ingest-Operation fehlgeschlagen.")

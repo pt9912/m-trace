@@ -107,7 +107,10 @@ func GenerateMediaMTXConfig(input MediaMTXConfigInput) (MediaMTXConfigArtifact, 
 		b.WriteString("rtmp: no\n")
 	}
 	b.WriteString("hls: yes\n")
-	b.WriteString("hlsAddress: :8889\n")
+	// MediaMTX-Default-HLS-Port. Compose-Stacks in `examples/`
+	// mappen den Host-Port (`8892:8888`); ein nicht-Default-Wert
+	// hier würde den Compose-Port-Schnitt brechen.
+	b.WriteString("hlsAddress: :8888\n")
 	b.WriteString("\n")
 	b.WriteString("paths:\n")
 

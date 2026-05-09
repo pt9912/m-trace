@@ -13,7 +13,7 @@ srtAddress: :8890
 rtmp: yes
 rtmpAddress: :1935
 hls: yes
-hlsAddress: :8889
+hlsAddress: :8888
 
 paths:
   lab-rtmp:

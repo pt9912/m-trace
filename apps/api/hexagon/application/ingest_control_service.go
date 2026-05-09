@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ func (s *IngestControlService) CreateStream(ctx context.Context, req driving.Cre
 	}
 	displayName := strings.TrimSpace(req.DisplayName)
 	if displayName == "" {
-		return driving.CreateStreamResult{}, errors.New("ingest: display_name must not be empty")
+		return driving.CreateStreamResult{}, domain.ErrIngestDisplayNameRequired
 	}
 	protocol, err := domain.ValidateIngestProtocol(req.Protocol)
 	if err != nil {
@@ -190,6 +191,12 @@ func (s *IngestControlService) ValidateKey(ctx context.Context, projectID, strea
 // optional — leer wählt das Target aus dem ersten Stream; konkret
 // gesetzt prüft Existenz im Repository.
 //
+// Wenn das Project mehrere distinkte Targets nutzt und der Aufrufer
+// keinen `target_id`-Filter setzt, wird der Auto-Pick **nicht
+// stillschweigend** durchgeführt: der Result trägt einen Warning,
+// der das gewählte Target und alle übrigen Target-IDs nennt — die
+// HTTP-Antwort reicht den Warning ungekürzt durch.
+//
 // Sicherheitsprofil: das generierte YAML enthält ausschließlich
 // Display-Name (sanitized) und `key_fingerprint`. Klartext-Stream-
 // Keys werden niemals serialisiert — die Funktion ruft den
@@ -204,9 +211,20 @@ func (s *IngestControlService) GetMediaServerConfig(ctx context.Context, project
 	if len(streams) == 0 {
 		return driving.MediaServerConfigResult{}, ErrMediaMTXConfigNoStreams
 	}
-	resolvedTargetID := strings.TrimSpace(targetID)
+	requestedTargetID := strings.TrimSpace(targetID)
+	resolvedTargetID := requestedTargetID
+	autoPickWarning := ""
 	if resolvedTargetID == "" {
 		resolvedTargetID = streams[0].TargetID
+		// Multi-Target-Diagnose: alle distinkten Target-IDs sammeln,
+		// damit der Warning den Aufrufer nicht im Dunkeln lässt.
+		others := distinctOtherTargetIDs(streams, resolvedTargetID)
+		if len(others) > 0 {
+			autoPickWarning = fmt.Sprintf(
+				"multiple target ids in project [%s]; auto-selected %q — pass ?target_id=... to choose explicitly",
+				strings.Join(others, ", "), resolvedTargetID,
+			)
+		}
 	}
 	target, err := s.repo.GetTargetByID(ctx, resolvedTargetID)
 	if err != nil {
@@ -232,13 +250,39 @@ func (s *IngestControlService) GetMediaServerConfig(ctx context.Context, project
 	if err != nil {
 		return driving.MediaServerConfigResult{}, err
 	}
+	warnings := artifact.Warnings
+	if autoPickWarning != "" {
+		warnings = append([]string{autoPickWarning}, warnings...)
+	}
 	return driving.MediaServerConfigResult{
 		TargetID:   target.ID,
 		Kind:       target.Kind,
 		ConfigPath: target.ConfigPath,
 		ConfigYAML: artifact.YAML,
-		Warnings:   artifact.Warnings,
+		Warnings:   warnings,
 	}, nil
+}
+
+// distinctOtherTargetIDs liefert alle Target-IDs aus `streams`, die
+// nicht dem `selected`-Wert entsprechen, sortiert und dedupliziert.
+// Wird ausschließlich für den Multi-Target-Auto-Pick-Warning genutzt.
+func distinctOtherTargetIDs(streams []domain.IngestStream, selected string) []string {
+	seen := map[string]struct{}{}
+	for _, s := range streams {
+		if s.TargetID == "" || s.TargetID == selected {
+			continue
+		}
+		seen[s.TargetID] = struct{}{}
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(seen))
+	for id := range seen {
+		out = append(out, id)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // RecordLifecycleEvent persistiert ein Lifecycle-Event in T2 als

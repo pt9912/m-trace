@@ -190,15 +190,22 @@ type StreamLifecycleEvent struct {
 // Validation-/Domain-Errors für Ingest-Control. HTTP-Mapping in
 // `spec/backend-api-contract.md` §3.8 dokumentiert.
 var (
-	ErrIngestProtocolUnknown      = errors.New("ingest protocol must be one of: srt, rtmp")
-	ErrIngestStreamNotFound       = errors.New("ingest stream not found in project")
-	ErrIngestStreamNameConflict   = errors.New("active ingest stream with same display_name already exists in project")
-	ErrIngestEndpointNotFound     = errors.New("ingest endpoint not found")
-	ErrIngestTargetNotFound       = errors.New("media-server target not found")
-	ErrIngestRoutingRuleDisabled  = errors.New("routing rule is disabled")
-	ErrIngestProjectIDMismatch    = errors.New("request project_id does not match resolved token")
-	ErrIngestKeyInvalid           = errors.New("stream key validation failed")
+	ErrIngestProtocolUnknown              = errors.New("ingest protocol must be one of: srt, rtmp")
+	ErrIngestStreamNotFound               = errors.New("ingest stream not found in project")
+	ErrIngestStreamNameConflict           = errors.New("active ingest stream with same display_name already exists in project")
+	ErrIngestEndpointNotFound             = errors.New("ingest endpoint not found")
+	ErrIngestTargetNotFound               = errors.New("media-server target not found")
+	ErrIngestRoutingRuleDisabled          = errors.New("routing rule is disabled")
+	ErrIngestProjectIDMismatch            = errors.New("request project_id does not match resolved token")
+	ErrIngestKeyInvalid                   = errors.New("stream key validation failed")
 	ErrIngestMediaServerConfigUnavailable = errors.New("media-server configuration could not be generated")
+	// ErrIngestDisplayNameRequired wird vom Use-Case zurückgegeben,
+	// wenn `display_name` leer oder nur Whitespace ist. HTTP-Mapping:
+	// 400 invalid_request. Vorher als anonymer `errors.New(...)`-Wert
+	// gemeldet — eingeführt, damit der HTTP-Adapter das Validation-
+	// Ergebnis explizit über `errors.Is` mapt und nicht über eine
+	// brüchige String-Heuristik (Plan-0.11.0-Review-Fix).
+	ErrIngestDisplayNameRequired = errors.New("display_name must not be empty")
 )
 
 // ValidateIngestProtocol normalisiert (Whitespace, Lowercase) und

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -346,8 +347,8 @@ func TestIngestControlService_CreateStream_RejectsEmptyDisplayName(t *testing.T)
 		EndpointID:        testEndpoint,
 		TargetID:          testTarget,
 	})
-	if err == nil {
-		t.Errorf("expected error for empty display_name")
+	if !errors.Is(err, domain.ErrIngestDisplayNameRequired) {
+		t.Errorf("err: want ErrIngestDisplayNameRequired, got %v", err)
 	}
 }
 
@@ -640,6 +641,102 @@ func TestIngestControlService_GetMediaServerConfig_TargetNotFound(t *testing.T) 
 	_, err := svc.GetMediaServerConfig(context.Background(), testProjectA, "missing-target")
 	if !errors.Is(err, domain.ErrIngestTargetNotFound) {
 		t.Errorf("err: want ErrIngestTargetNotFound, got %v", err)
+	}
+}
+
+func TestIngestControlService_GetMediaServerConfig_MultipleTargetsAutoPickWarns(t *testing.T) {
+	t.Parallel()
+	// Plan-0.11.0-Review-Fix: hat ein Project mehrere distinkte Targets
+	// und der Aufrufer setzt **kein** ?target_id=, dann wählt der
+	// Service zwar eines aus (das des ersten Streams), gibt aber einen
+	// Warning mit den restlichen Target-IDs zurück. So bleibt der
+	// Auto-Pick deterministisch und gleichzeitig sichtbar.
+	svc, repo := newSeededService(t)
+	const secondTarget = "tgt-mediamtx-secondary"
+	repo.seedTarget(domain.MediaServerTarget{
+		ID:             secondTarget,
+		Kind:           domain.MediaServerKindMediaMTX,
+		ConfigPath:     "examples/ingest-control/mediamtx.secondary.yml",
+		HLSURLTemplate: "http://localhost:18889/{stream_path}/index.m3u8",
+	})
+	if _, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Primary",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          testTarget,
+	}); err != nil {
+		t.Fatalf("create primary: %v", err)
+	}
+	if _, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Secondary",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          secondTarget,
+	}); err != nil {
+		t.Fatalf("create secondary: %v", err)
+	}
+	result, err := svc.GetMediaServerConfig(context.Background(), testProjectA, "")
+	if err != nil {
+		t.Fatalf("config: %v", err)
+	}
+	if result.TargetID != testTarget {
+		t.Errorf("auto-pick must use first stream's target; got %q", result.TargetID)
+	}
+	if len(result.Warnings) == 0 {
+		t.Fatalf("expected at least one warning for multi-target auto-pick")
+	}
+	want := result.Warnings[0]
+	if !strings.Contains(want, secondTarget) {
+		t.Errorf("warning must name the unselected target %q; got %q", secondTarget, want)
+	}
+	if !strings.Contains(want, "?target_id=") {
+		t.Errorf("warning should hint how to disambiguate; got %q", want)
+	}
+}
+
+func TestIngestControlService_GetMediaServerConfig_ExplicitTargetSuppressesWarning(t *testing.T) {
+	t.Parallel()
+	// Setzt der Aufrufer ?target_id=... explizit, gibt es keinen
+	// Auto-Pick-Warning — auch wenn andere Targets existieren.
+	svc, repo := newSeededService(t)
+	const secondTarget = "tgt-mediamtx-secondary"
+	repo.seedTarget(domain.MediaServerTarget{
+		ID:             secondTarget,
+		Kind:           domain.MediaServerKindMediaMTX,
+		ConfigPath:     "examples/ingest-control/mediamtx.secondary.yml",
+		HLSURLTemplate: "http://localhost:18889/{stream_path}/index.m3u8",
+	})
+	if _, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Primary",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          testTarget,
+	}); err != nil {
+		t.Fatalf("create primary: %v", err)
+	}
+	if _, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Secondary",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          secondTarget,
+	}); err != nil {
+		t.Fatalf("create secondary: %v", err)
+	}
+	result, err := svc.GetMediaServerConfig(context.Background(), testProjectA, secondTarget)
+	if err != nil {
+		t.Fatalf("config: %v", err)
+	}
+	if result.TargetID != secondTarget {
+		t.Errorf("target_id: want %q, got %q", secondTarget, result.TargetID)
+	}
+	for _, w := range result.Warnings {
+		if strings.Contains(w, "auto-selected") {
+			t.Errorf("explicit target_id must not produce auto-pick warning; got %q", w)
+		}
 	}
 }
 

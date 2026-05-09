@@ -821,11 +821,11 @@ func TestIngestHandler_MediaServerConfig_MissingTokenReturns401(t *testing.T) {
 
 func TestIngestHandler_DisabledRouting_ConflictMapsTo409(t *testing.T) {
 	t.Parallel()
-	// Indirekter Test über RotateKey-Pfad — das Handler-Mapping ist
-	// shared (writeIngestError); ein dedizierter
-	// ErrIngestRoutingRuleDisabled-Pfad existiert nicht direkt am
-	// Rotate-Endpoint, aber die zentrale Mapping-Funktion deckt ihn ab.
-	stub := &stubIngestControl{rotateErr: errors.New("ingest: synthetic")}
+	// RotateKey ist nur einer von mehreren Endpoints, deren Lifecycle-
+	// Pfade in T4 mit ErrIngestRoutingRuleDisabled antworten können.
+	// Hier wird das zentrale Mapping (writeIngestError) auf den
+	// typisierten Fehler getestet, **nicht** auf eine String-Heuristik.
+	stub := &stubIngestControl{rotateErr: domain.ErrIngestRoutingRuleDisabled}
 	srv := newIngestRouter(t, stub)
 	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", map[string]any{}))
@@ -833,8 +833,65 @@ func TestIngestHandler_DisabledRouting_ConflictMapsTo409(t *testing.T) {
 		t.Fatalf("do: %v", err)
 	}
 	defer func() { _ = res.Body.Close() }()
-	if res.StatusCode != http.StatusBadRequest {
+	if res.StatusCode != http.StatusConflict {
 		body, _ := io.ReadAll(res.Body)
-		t.Errorf("status: want 400 (ingest:-prefixed err mapped to invalid_request), got %d: %s", res.StatusCode, body)
+		t.Errorf("status: want 409, got %d: %s", res.StatusCode, body)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !bytes.Contains(body, []byte(`"code":"routing_rule_disabled"`)) {
+		t.Errorf("body missing code: %s", body)
+	}
+}
+
+// TestIngestHandler_UnclassifiedRepoErrorMapsTo500 pinnt den
+// Plan-0.11.0-Review-Fix: ein gewrappter Repository-Fehler (z. B.
+// `fmt.Errorf("ingest: insert routing rule: %w", err)` aus dem
+// SQLite-Adapter) MUSS auf 500 internal_error landen — nicht auf
+// 400 invalid_request, wie es eine String-Heuristik tun würde.
+func TestIngestHandler_UnclassifiedRepoErrorMapsTo500(t *testing.T) {
+	t.Parallel()
+	// Synthetischer Fehler genau in der Form, die die SQLite-Repo-
+	// Methoden produzieren.
+	stub := &stubIngestControl{rotateErr: errors.New("ingest: insert rotated key: disk full")}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", map[string]any{}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusInternalServerError {
+		body, _ := io.ReadAll(res.Body)
+		t.Errorf("status: want 500, got %d: %s", res.StatusCode, body)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !bytes.Contains(body, []byte(`"code":"internal_error"`)) {
+		t.Errorf("body missing code: %s", body)
+	}
+}
+
+// TestIngestHandler_EmptyDisplayNameMapsTo400 deckt den
+// ErrIngestDisplayNameRequired-Branch ab — typisiert, nicht über
+// die alte String-Heuristik.
+func TestIngestHandler_EmptyDisplayNameMapsTo400(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{createErr: domain.ErrIngestDisplayNameRequired}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
+		"display_name": "",
+		"protocol":     "srt",
+		"endpoint_id":  "ep",
+		"target_id":    "tgt",
+	}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("status: want 400, got %d", res.StatusCode)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !bytes.Contains(body, []byte(`"code":"invalid_request"`)) {
+		t.Errorf("body missing code: %s", body)
 	}
 }
