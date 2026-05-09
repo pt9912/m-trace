@@ -181,15 +181,18 @@ func registerIngestControlRoutes(
 	detail := &IngestStreamDetailHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
 	rotate := &IngestStreamRotateHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
 	validate := &IngestStreamValidateHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
+	mediaConfig := &IngestMediaServerConfigHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
 	mux.Handle("POST /api/ingest/streams", collection)
 	mux.Handle("GET /api/ingest/streams", collection)
 	mux.Handle("GET /api/ingest/streams/{id}", detail)
 	mux.Handle("POST /api/ingest/streams/{id}/rotate-key", rotate)
 	mux.Handle("POST /api/ingest/streams/{id}/validate-key", validate)
+	mux.Handle("GET /api/ingest/media-server-config", mediaConfig)
 	mux.HandleFunc("OPTIONS /api/ingest/streams", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", dashboardPreflightHandler(allowlist))
 }
 
 // RequestMetricsMiddleware counts every HTTP request that enters the

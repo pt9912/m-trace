@@ -185,6 +185,62 @@ func (s *IngestControlService) ValidateKey(ctx context.Context, projectID, strea
 	}, nil
 }
 
+// GetMediaServerConfig generiert ein MediaMTX-Konfigurations-
+// Artefakt aus den aktiven Streams des Projects. `targetID` ist
+// optional — leer wählt das Target aus dem ersten Stream; konkret
+// gesetzt prüft Existenz im Repository.
+//
+// Sicherheitsprofil: das generierte YAML enthält ausschließlich
+// Display-Name (sanitized) und `key_fingerprint`. Klartext-Stream-
+// Keys werden niemals serialisiert — die Funktion ruft den
+// Generator-Pfad in `mediamtx_config.go`, der Klartext-Werte gar
+// nicht zu Gesicht bekommt (Repository liefert nur
+// `domain.StreamKey` ohne Klartext).
+func (s *IngestControlService) GetMediaServerConfig(ctx context.Context, projectID, targetID string) (driving.MediaServerConfigResult, error) {
+	streams, err := s.repo.ListByProject(ctx, projectID)
+	if err != nil {
+		return driving.MediaServerConfigResult{}, err
+	}
+	if len(streams) == 0 {
+		return driving.MediaServerConfigResult{}, ErrMediaMTXConfigNoStreams
+	}
+	resolvedTargetID := strings.TrimSpace(targetID)
+	if resolvedTargetID == "" {
+		resolvedTargetID = streams[0].TargetID
+	}
+	target, err := s.repo.GetTargetByID(ctx, resolvedTargetID)
+	if err != nil {
+		return driving.MediaServerConfigResult{}, err
+	}
+	if target.Kind != domain.MediaServerKindMediaMTX {
+		return driving.MediaServerConfigResult{}, fmt.Errorf("ingest: media-server config supports only mediamtx, got %q", target.Kind)
+	}
+	// Pro Target nur passende Streams einbeziehen.
+	matching := make([]domain.IngestStream, 0, len(streams))
+	for _, stream := range streams {
+		if stream.TargetID == target.ID {
+			matching = append(matching, stream)
+		}
+	}
+	if len(matching) == 0 {
+		return driving.MediaServerConfigResult{}, ErrMediaMTXConfigNoStreams
+	}
+	artifact, err := GenerateMediaMTXConfig(MediaMTXConfigInput{
+		Target:  *target,
+		Streams: matching,
+	})
+	if err != nil {
+		return driving.MediaServerConfigResult{}, err
+	}
+	return driving.MediaServerConfigResult{
+		TargetID:   target.ID,
+		Kind:       target.Kind,
+		ConfigPath: target.ConfigPath,
+		ConfigYAML: artifact.YAML,
+		Warnings:   artifact.Warnings,
+	}, nil
+}
+
 // RecordLifecycleEvent persistiert ein Lifecycle-Event in T2 als
 // Vorbereitung für T4. `key_fingerprint` wird aus dem aktiven Key
 // abgeleitet — Klartext-Werte landen niemals im Eventlog.

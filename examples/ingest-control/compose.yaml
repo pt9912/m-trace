@@ -1,0 +1,32 @@
+# Ingest-Control-Beispiel — plan-0.11.0 Tranche 3 (RAK-68).
+#
+# Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
+# Name `mtrace-ingest-control` ist Pflicht im Startbefehl (siehe
+# examples/README.md, "Compose-Form" Tabelle Variante "Eigenes Compose"):
+#
+#   docker compose -p mtrace-ingest-control \
+#     -f examples/ingest-control/compose.yaml up -d --build
+#
+# Ports auf dem Host sind absichtlich verschoben, damit das Beispiel
+# parallel zum Core-Lab (`make dev`, mediamtx auf 8888/9997) und
+# parallel zu `examples/srt/` (8889/8890/9998) starten kann:
+#
+#   8892 → MediaMTX-HLS (innen 8888)
+#   8891 → MediaMTX-SRT-Listener (innen 8890, UDP)
+#   1936 → MediaMTX-RTMP-Listener (innen 1935, TCP)
+#   9999 → MediaMTX-Control-API (innen 9997)
+#
+# Die `mediamtx.generated.yml` in diesem Verzeichnis ist die genaue
+# Form, die apps/api über GET /api/ingest/media-server-config
+# generiert — deterministisch, ohne Klartext-Stream-Keys.
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    volumes:
+      - ./mediamtx.generated.yml:/mediamtx.yml:ro
+    ports:
+      - "8892:8888"
+      - "8891:8890/udp"
+      - "1936:1935"
+      - "9999:9997"

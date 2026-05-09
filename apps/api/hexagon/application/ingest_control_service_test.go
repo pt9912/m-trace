@@ -589,6 +589,60 @@ func TestIngestControlService_NewIngestControlService_NilClock(t *testing.T) {
 	}
 }
 
+func TestIngestControlService_GetMediaServerConfig_HappyPath(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	if _, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          testTarget,
+	}); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	result, err := svc.GetMediaServerConfig(context.Background(), testProjectA, "")
+	if err != nil {
+		t.Fatalf("config: %v", err)
+	}
+	if result.TargetID != testTarget {
+		t.Errorf("target_id: want %q, got %q", testTarget, result.TargetID)
+	}
+	if result.Kind != domain.MediaServerKindMediaMTX {
+		t.Errorf("kind: want mediamtx, got %q", result.Kind)
+	}
+	if result.ConfigYAML == "" {
+		t.Errorf("config_yaml must be present")
+	}
+}
+
+func TestIngestControlService_GetMediaServerConfig_NoStreams(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	_, err := svc.GetMediaServerConfig(context.Background(), testProjectA, "")
+	if !errors.Is(err, application.ErrMediaMTXConfigNoStreams) {
+		t.Errorf("err: want ErrMediaMTXConfigNoStreams, got %v", err)
+	}
+}
+
+func TestIngestControlService_GetMediaServerConfig_TargetNotFound(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	if _, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          testTarget,
+	}); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	_, err := svc.GetMediaServerConfig(context.Background(), testProjectA, "missing-target")
+	if !errors.Is(err, domain.ErrIngestTargetNotFound) {
+		t.Errorf("err: want ErrIngestTargetNotFound, got %v", err)
+	}
+}
+
 func TestIngestControlService_RecordLifecycleEvent_NoKlartextKey(t *testing.T) {
 	t.Parallel()
 	svc, repo := newSeededService(t)

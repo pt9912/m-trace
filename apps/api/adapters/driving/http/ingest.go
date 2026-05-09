@@ -107,6 +107,52 @@ func (h *IngestStreamRotateHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 	writeJSON(w, http.StatusOK, buildStreamWithKeyPayload(result.Stream, &result.Material))
 }
 
+// IngestMediaServerConfigHandler bedient
+// `GET /api/ingest/media-server-config` (`0.11.0` Tranche 3,
+// RAK-68). Antwort enthält das deterministisch generierte
+// MediaMTX-YAML-Artefakt; Klartext-Stream-Keys erscheinen niemals.
+type IngestMediaServerConfigHandler struct {
+	UseCase  driving.IngestControlInbound
+	Resolver driven.ProjectResolver
+	Logger   *slog.Logger
+}
+
+// ServeHTTP implementiert net/http.Handler.
+func (h *IngestMediaServerConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	projectID, ok := resolveIngestProject(w, r, h.Resolver)
+	if !ok {
+		return
+	}
+	targetID := strings.TrimSpace(r.URL.Query().Get("target_id"))
+	result, err := h.UseCase.GetMediaServerConfig(r.Context(), projectID, targetID)
+	if err != nil {
+		writeMediaServerConfigError(w, h.Logger, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"target_id":   result.TargetID,
+		"kind":        string(result.Kind),
+		"config_path": result.ConfigPath,
+		"config_yaml": result.ConfigYAML,
+		"warnings":    result.Warnings,
+	})
+}
+
+func writeMediaServerConfigError(w http.ResponseWriter, logger *slog.Logger, err error) {
+	switch {
+	case errors.Is(err, domain.ErrIngestTargetNotFound):
+		writeIngestProblem(w, http.StatusNotFound, "target_not_found", "MediaServerTarget nicht im aufgelösten Project gefunden.")
+	default:
+		// `ErrMediaMTXConfigNoStreams` und mediamtx-only-Konflikte landen
+		// hier — nach Plan §3.8 ist das `503 media_server_config_unavailable`.
+		if logger != nil {
+			logger.Warn("media-server-config error", "err", err.Error())
+		}
+		writeIngestProblem(w, http.StatusServiceUnavailable, "media_server_config_unavailable",
+			"MediaServer-Konfiguration konnte nicht generiert werden.")
+	}
+}
+
 // IngestStreamValidateHandler bedient
 // `POST /api/ingest/streams/{id}/validate-key`.
 type IngestStreamValidateHandler struct {

@@ -437,8 +437,8 @@ Validierungsregeln:
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung, Lastenheft-Patch `1.1.14`, RAK-Gruppe, Architektur- und Persistenzentscheidung | ✅ |
 | 1 | Stream-Key-, Ingest-Endpunkt- und Routing-Domainmodell | ✅ |
-| 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | 🟡 |
-| 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | ⬜ |
+| 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ✅ |
+| 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | 🟡 |
 | 4 | Lifecycle-Events und lokale Lab-Verifikation | ⬜ |
 | 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
@@ -619,21 +619,46 @@ verändern.
 
 DoD:
 
-- [ ] Routing-Regeln sind als stabile JSON-Konfiguration beschreibbar.
-- [ ] MediaMTX-nahe Konfigurationsartefakte können generiert oder
-  validiert werden.
-- [ ] SRT- und RTMP-Beispiele enthalten klare Endpoint-/URL-Templates
-  und trennen Ingest-URL, Playback-/HLS-URL und Control-API-URL.
-- [ ] RTMP wird im `0.11.0`-Pflichtpfad über ein additives
-  MediaMTX-Artefakt oder einen MediaMTX-Validator nachgewiesen; der
-  bestehende SRS-Pfad darf nur Kompatibilitäts-/Dokuhintergrund sein.
-- [ ] Bestehende `examples/mediamtx`, `examples/srt` und
-  `examples/srs` bleiben unverändert nutzbar oder werden nur additiv
-  dokumentiert.
-- [ ] Falls ein neues Beispiel entsteht, folgt es
-  `examples/README.md`: eigener Project-Name, eigene README-
-  Mindeststruktur, opt-in Smoke.
-- [ ] Artefakte enthalten nur Beispiel- oder redigierte Stream-Keys.
+- [x] Routing-Regeln sind als stabile JSON-Konfiguration über
+  `GET /api/ingest/streams/{id}` (`routing_rule`-Block) und
+  `GET /api/ingest/media-server-config` (mit Stream-IDs als
+  YAML-Comment) beschreibbar; das `RoutingRule`-Domainmodell aus T1
+  wird in T3 deterministisch ins YAML-Artefakt übersetzt.
+- [x] MediaMTX-nahe Konfigurationsartefakte werden über
+  `apps/api/hexagon/application/mediamtx_config.go`
+  (`GenerateMediaMTXConfig`) deterministisch generiert; HTTP-Endpoint
+  `GET /api/ingest/media-server-config` reicht das YAML als
+  `config_yaml`-Feld durch (`apps/api/adapters/driving/http/ingest.go`
+  `IngestMediaServerConfigHandler`).
+- [x] SRT- und RTMP-Beispiele in `examples/ingest-control/README.md`
+  trennen Ingest-URL (`srt://localhost:8891`, `rtmp://localhost:1936`),
+  Playback-/HLS-URL (`http://localhost:8892/{path}/index.m3u8`) und
+  Control-API-URL (`http://localhost:9999`) explizit; Port-Tabelle
+  fixiert die Host-Mappings.
+- [x] RTMP wird im `0.11.0`-Pflichtpfad über das additive MediaMTX-
+  Artefakt nachgewiesen: `GenerateMediaMTXConfig` schaltet
+  `rtmp: yes`/`rtmpAddress: :1935` ein, sobald mindestens ein Stream
+  `protocol:"rtmp"` hat (`TestGenerateMediaMTXConfig_TogglesProtocolListeners`
+  pinnt das); die `examples/ingest-control/mediamtx.generated.yml`
+  zeigt den RTMP-Pfad-Block exemplarisch. Der `examples/srs/`-Pfad
+  bleibt Kompatibilitäts-/Dokuhintergrund — der Generator lehnt
+  `MediaServerKindSRS` mit einem expliziten Fehler ab.
+- [x] Bestehende `examples/mediamtx`, `examples/srt`, `examples/dash`,
+  `examples/webrtc` und `examples/srs` bleiben unverändert; nur
+  `examples/README.md` bekommt eine zusätzliche Tabellen-Zeile für
+  `ingest-control/`.
+- [x] Neues Beispiel `examples/ingest-control/` folgt
+  `examples/README.md`-Standard: eigener Project-Name
+  `mtrace-ingest-control`, README mit 7-Punkt-Standard
+  (Zweck/Kurzanleitung/Port-Verteilung/Generator-Dynamik/Wartung/
+  Was-es-nicht-ist/Risiko-Hinweise), opt-in Smoke geplant für
+  Tranche 5 (`make smoke-ingest-control`).
+- [x] Artefakte enthalten nur Beispiel-/redigierte Stream-Keys: das
+  Generator-Output trägt ausschließlich `key_fingerprint`-
+  Comments — niemals den Klartext-Wert
+  (`TestGenerateMediaMTXConfig_NoKlartextKeyInOutput` pinnt das);
+  `mediamtx.generated.yml` im Repo nutzt sichtbar redigierte
+  Beispiel-Fingerprints (`mtr_ing_SRT...DEMO`, `mtr_ing_RTMP...DEMO`).
 
 ## 6. Tranche 4 — Lifecycle-Events und Lab-Verifikation
 

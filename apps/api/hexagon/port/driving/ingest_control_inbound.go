@@ -28,6 +28,22 @@ type IngestControlInbound interface {
 	RotateKey(ctx context.Context, projectID, streamID string) (RotateKeyResult, error)
 	ValidateKey(ctx context.Context, projectID, streamID, candidateKey string) (ValidateKeyResult, error)
 	RecordLifecycleEvent(ctx context.Context, projectID, streamID string, kind domain.StreamLifecycleEventKind, occurredAt time.Time, source domain.StreamLifecycleEventSource) error
+	GetMediaServerConfig(ctx context.Context, projectID, targetID string) (MediaServerConfigResult, error)
+}
+
+// MediaServerConfigResult ist die Antwort auf
+// `GET /api/ingest/media-server-config` (`0.11.0` Tranche 3,
+// RAK-68). `ConfigYAML` enthält das deterministisch generierte
+// MediaMTX-Artefakt; Klartext-Stream-Keys erscheinen niemals im
+// Output (siehe Plan §0.7 + RAK-66). `Warnings` listet
+// non-fatal Hinweise (z. B. übersprungene Streams mit
+// nicht-konformem `display_name`).
+type MediaServerConfigResult struct {
+	TargetID   string
+	Kind       domain.MediaServerKind
+	ConfigPath string
+	ConfigYAML string
+	Warnings   []string
 }
 
 // CreateStreamRequest ist die Driving-Port-Eingabe für

@@ -15,6 +15,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
+	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
@@ -47,6 +48,9 @@ type stubIngestControl struct {
 
 	validateResult driving.ValidateKeyResult
 	validateErr    error
+
+	mediaConfigResult driving.MediaServerConfigResult
+	mediaConfigErr    error
 }
 
 func (s *stubIngestControl) CreateStream(_ context.Context, _ driving.CreateStreamRequest) (driving.CreateStreamResult, error) {
@@ -87,6 +91,13 @@ func (s *stubIngestControl) ValidateKey(_ context.Context, _, _, _ string) (driv
 
 func (s *stubIngestControl) RecordLifecycleEvent(_ context.Context, _, _ string, _ domain.StreamLifecycleEventKind, _ time.Time, _ domain.StreamLifecycleEventSource) error {
 	return nil
+}
+
+func (s *stubIngestControl) GetMediaServerConfig(_ context.Context, _, _ string) (driving.MediaServerConfigResult, error) {
+	if s.mediaConfigErr != nil {
+		return driving.MediaServerConfigResult{}, s.mediaConfigErr
+	}
+	return s.mediaConfigResult, nil
 }
 
 func ingestTestResolver() *auth.StaticProjectResolver {
@@ -713,6 +724,91 @@ func TestIngestHandler_ListStreams_MissingTokenReturns401(t *testing.T) {
 	stub := &stubIngestControl{}
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/streams", nil)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status: want 401, got %d", res.StatusCode)
+	}
+}
+
+// TestIngestHandler_MediaServerConfig_HappyPath pinnt RAK-68:
+// generierter MediaMTX-YAML wird unverändert über den HTTP-Wire
+// durchgereicht.
+func TestIngestHandler_MediaServerConfig_HappyPath(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{
+		mediaConfigResult: driving.MediaServerConfigResult{
+			TargetID:   "tgt-mediamtx",
+			Kind:       domain.MediaServerKindMediaMTX,
+			ConfigPath: "examples/ingest-control/mediamtx.generated.yml",
+			ConfigYAML: "paths:\n  lab:\n    source: publisher\n",
+			Warnings:   []string{},
+		},
+	}
+	srv := newIngestRouter(t, stub)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config", nil)
+	req.Header.Set("X-MTrace-Token", ingestToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(res.Body)
+		t.Fatalf("status: want 200, got %d: %s", res.StatusCode, body)
+	}
+	body, _ := io.ReadAll(res.Body)
+	for _, want := range []string{`"target_id"`, `"kind":"mediamtx"`, `"config_yaml"`, `"config_path"`, `"warnings"`} {
+		if !bytes.Contains(body, []byte(want)) {
+			t.Errorf("response missing %q: %s", want, body)
+		}
+	}
+}
+
+func TestIngestHandler_MediaServerConfig_NotAvailable(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{mediaConfigErr: application.ErrMediaMTXConfigNoStreams}
+	srv := newIngestRouter(t, stub)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config", nil)
+	req.Header.Set("X-MTrace-Token", ingestToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("status: want 503, got %d", res.StatusCode)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !bytes.Contains(body, []byte(`"code":"media_server_config_unavailable"`)) {
+		t.Errorf("body missing code: %s", body)
+	}
+}
+
+func TestIngestHandler_MediaServerConfig_TargetNotFound(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{mediaConfigErr: domain.ErrIngestTargetNotFound}
+	srv := newIngestRouter(t, stub)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config?target_id=missing", nil)
+	req.Header.Set("X-MTrace-Token", ingestToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("status: want 404, got %d", res.StatusCode)
+	}
+}
+
+func TestIngestHandler_MediaServerConfig_MissingTokenReturns401(t *testing.T) {
+	t.Parallel()
+	stub := &stubIngestControl{}
+	srv := newIngestRouter(t, stub)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config", nil)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
