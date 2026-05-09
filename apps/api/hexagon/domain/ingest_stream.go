@@ -29,6 +29,7 @@ import (
 // und werden additiv ergänzt — bestehende Werte bleiben stabil.
 type IngestProtocol string
 
+// IngestProtocol-Werte aus der `0.11.0`-Allowlist (RAK-67).
 const (
 	IngestProtocolSRT  IngestProtocol = "srt"
 	IngestProtocolRTMP IngestProtocol = "rtmp"
@@ -54,6 +55,9 @@ func (p IngestProtocol) IsKnown() bool {
 // Override (z. B. wenn die Routing-Regel manuell deaktiviert wurde).
 type IngestStreamStatus string
 
+// IngestStreamStatus-Werte für den Lifecycle-Zustand eines lokalen
+// Streams. Übergänge laut Plan §0.6 (`ready → live → ended`); `disabled`
+// ist ein Operator-Override.
 const (
 	IngestStreamStatusReady    IngestStreamStatus = "ready"
 	IngestStreamStatusLive     IngestStreamStatus = "live"
@@ -68,6 +72,7 @@ const (
 // Pflicht-Target.
 type MediaServerKind string
 
+// MediaServerKind-Werte für `MediaServerTarget.Kind` (RAK-68).
 const (
 	MediaServerKindMediaMTX MediaServerKind = "mediamtx"
 	MediaServerKindSRS      MediaServerKind = "srs"
@@ -124,6 +129,8 @@ type MediaServerTarget struct {
 // Enum modelliert, damit Folge-Releases additiv erweitern können.
 type RoutingRuleMode string
 
+// RoutingRuleMode-Werte aus dem `0.11.0`-Scope. Fan-out/Failover/
+// Load-Balancing sind Folge-Scope.
 const (
 	RoutingRuleModeSingle RoutingRuleMode = "single"
 )
@@ -146,6 +153,8 @@ type RoutingRule struct {
 // `risks-backlog.md`).
 type StreamLifecycleEventKind string
 
+// StreamLifecycleEventKind-Werte aus RAK-69 (`stream_started` /
+// `stream_ended`).
 const (
 	StreamLifecycleEventStarted StreamLifecycleEventKind = "stream_started"
 	StreamLifecycleEventEnded   StreamLifecycleEventKind = "stream_ended"
@@ -158,8 +167,10 @@ const (
 // in `0.11.0` aber nicht aktiv.
 type StreamLifecycleEventSource string
 
+// StreamLifecycleEventSource-Werte: `smoke` für lokal eingespeiste
+// Events, `mediamtx-hook` reserviert den späteren Adapter-Pfad.
 const (
-	StreamLifecycleSourceSmoke       StreamLifecycleEventSource = "smoke"
+	StreamLifecycleSourceSmoke        StreamLifecycleEventSource = "smoke"
 	StreamLifecycleSourceMediaMTXHook StreamLifecycleEventSource = "mediamtx-hook"
 )
 
