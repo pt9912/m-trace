@@ -61,9 +61,12 @@ In Scope:
 - `F-112`: rotierbare Project Tokens.
   - Project Tokens werden als Generationen modelliert: `token_id`,
     `project_id`, Hash/Fingerprint, Status, `not_before`,
-    `expires_at?`, `revoked_at?`.
+    `grace_until?`, `expires_at?`, `revoked_at?`.
   - Rotation erlaubt eine zeitlich begrenzte Grace-Phase, in der alte
-    und neue Generation gültig sind.
+    und neue Generation gültig sind. `grace_until` ist dabei das
+    persistierte Feld für die alte Generation und die Quelle der
+    Restart-stabilen Grace-Validierung; `expires_at` ist das optionale
+    harte Ablaufdatum einer Generation.
   - Persistenz speichert keinen Klartext-Token; Klartext erscheint nur
     in bewusst markierten Operator-/Test-Fixtures, falls überhaupt.
   - Rotation wird über Repository/Config/Operator-Pfad nachgewiesen,
@@ -139,7 +142,7 @@ Kann auf Release-Muss und ergänzt eine neue RAK-Gruppe.
 | --- | --- | --- |
 | RAK-71 | Muss | Auth-Scope ist normativ begrenzt: kurzlebige Session Tokens, Project-Token-Generationen und Project-Policies; keine User-/Org-Verwaltung, kein OAuth/OIDC, keine Admin-UI, keine KMS-/Vault-Pflicht. |
 | RAK-72 | Muss | Signierte Session Tokens: API kann kurzlebige Tokens ausstellen und validieren; Tokens sind an Project, Ablaufzeit, Audience und optional Session/Origin gebunden; ungültige, abgelaufene oder falsch gebundene Tokens liefern stabile `401`/`403`-Fehler ohne Secret-Leak. |
-| RAK-73 | Muss | Project-Token-Rotation: mehrere Generationen pro Project sind modelliert; aktive, Grace-, abgelaufene und widerrufene Tokens werden deterministisch validiert; Persistenz speichert nur Hash/Fingerprint und Metadaten. |
+| RAK-73 | Muss | Project-Token-Rotation: mehrere Generationen pro Project sind modelliert; aktive, Grace-, abgelaufene und widerrufene Tokens werden deterministisch validiert; Persistenz speichert nur Hash/Fingerprint, `grace_until` und Metadaten. |
 | RAK-74 | Muss | Ingest Policies: erlaubte Origins, Methoden, Header und Rate-Limit-Grenzen sind Project-gebunden konfigurierbar und werden in Request-Pfaden erzwungen; Preflight nutzt dokumentierte globale, konservative Regeln, solange das Project nicht deterministisch aus Route oder Header bestimmbar ist. |
 | RAK-75 | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Flows, Demo, SDK, Analyze-/Session-Link-Auth und `0.11.0` Ingest-Control bleiben kompatibel oder haben dokumentierte Migrationstests. |
 | RAK-76 | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP/CORS-Beispiele, GDPR-/Datenschutzgrenzen und den Unterschied zu Production-Secret-Backends aus Folge-Scope. |
@@ -272,8 +275,9 @@ Mindestinhalte für Tranche 0 und Doku:
   geprüft; leerer Origin bleibt für CLI/curl nur dort erlaubt, wo der
   Kontrakt das explizit vorsieht.
 - **Rotation**: alte Project-Token-Generationen haben klare Grace- und
-  Revocation-Regeln; Session Tokens werden nicht rückwirkend
-  unendlich gültig.
+  Revocation-Regeln; `grace_until` wird persistiert und ist die
+  Restart-stabile Quelle für die Grace-Entscheidung. Session Tokens
+  werden nicht rückwirkend unendlich gültig.
 - **Signatur-Key-Rotation**: `kid` im Session Token ermöglicht
   parallele Signatur-Keys; unbekannter `kid` liefert `401`.
 - **Rate Limits**: Policy-Grenzen gelten mindestens pro Project; wo
@@ -310,7 +314,11 @@ DoD:
   Scope nachvollziehbar von Kann-Historie auf Release-Muss
   abgebildet.
 - [ ] RAK-71..RAK-76 im Lastenheft ergänzt.
-- [ ] Patch-Log in `docs/planning/done/plan-0.1.0.md` ergänzt.
+- [ ] Patch-Log im aktivierten `plan-0.12.0.md` geführt und im
+  Closeout über Roadmap, `CHANGELOG.md` und
+  `docs/planning/done/plan-0.12.0.md` tracebar gemacht. Historische
+  Pläne wie `plan-0.1.0.md` werden nicht als Pflichtziel für diesen
+  Release-Patch verwendet.
 - [ ] Architekturentscheidung dokumentiert: Auth bleibt in `apps/api`
   oder explizit begründete Abweichung.
 - [ ] Persistenzentscheidung dokumentiert: SQLite + InMemory-Testpfad
@@ -406,15 +414,18 @@ DoD:
   grace/deaktivierte Generationen pro Project möglich sind.
 - [ ] InMemory- und SQLite-Implementierungen speichern Hash,
   Fingerprint, `token_id`, `project_id`, Status, `not_before`,
-  `expires_at?`, `revoked_at?`, `created_at`, `rotated_from?`.
+  `grace_until?`, `expires_at?`, `revoked_at?`, `created_at`,
+  `rotated_from?`.
 - [ ] Migration ist versioniert und Restart-Test weist nach, dass
-  Token-Generationen persistent bleiben.
+  Token-Generationen inklusive `grace_until` persistent bleiben.
 - [ ] Static-Resolver aus der bisherigen hardcodierten Map bleibt als
   Dev-/Test-Fallback oder wird über einen klaren Kompatibilitäts-
   Adapter abgelöst.
 - [ ] Rotation erzeugt eine neue Generation, lässt alte Generationen
-  optional bis `grace_until` gültig und lehnt widerrufene/abgelaufene
-  Generationen deterministisch ab.
+  optional bis zum persistierten `grace_until` gültig und lehnt
+  widerrufene/abgelaufene Generationen deterministisch ab. `grace_until`
+  darf nicht aus volatilem Prozesszustand oder aus `rotated_from`
+  rekonstruiert werden.
 - [ ] Keine Persistenz, Fixtures oder Logs enthalten Klartext-Project-
   Tokens.
 - [ ] Tests decken aktive, neue, grace, abgelaufene, widerrufene,
@@ -523,7 +534,7 @@ Datei-, Test- und Doku-Nachweis.
 | --- | --- | --- | --- |
 | RAK-71 | Muss | Lastenheft-Patch, Scope-Grenze, README-/Doku-Abgrenzung gegen OAuth/OIDC, Admin-UI, KMS/Vault und SaaS-Tenant-Management. | [ ] |
 | RAK-72 | Muss | Session-Token-Issuance, Signaturvalidierung, Claims-Validierung, Fehlercodes und Contract-Tests. | [ ] |
-| RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
+| RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, persistiertes `grace_until`, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
 | RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, globale konservative Preflight-Regeln, project-spezifisches POST-Enforcement und Policy-Denial-Tests. | [ ] |
 | RAK-75 | Muss | Kompatibilität mit bestehenden Project-Token-Flows, SDK/Demo/Analyze/Session/Ingest-Tests und Migrationsdoku. | [ ] |
 | RAK-76 | Muss | Security-Doku, Threat Model, Datenschutz-/GDPR-Grenzen, CSP-Beispiele, Contract-Fixtures, Smokes und Drift-Check. | [ ] |
