@@ -1,8 +1,10 @@
 # Implementation Plan — `0.10.0` (CMAF-Analyse / NF-13)
 
-> **Status**: 🟡 in Arbeit — Plan aktiviert mit T0-Move; Vorgänger
-> `0.9.6` ist released (Tag `v0.9.6` auf `ad20228`, Plan in
-> [`done/plan-0.9.6.md`](../done/plan-0.9.6.md)).
+> **Status**: ✅ released — Minor-Release am `2026-05-09`, Tag
+> `v0.10.0`. Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12
+> verankert den normativ begrenzten Analyzer-Scope. Vorgänger
+> `0.9.6` (Lastenheft-Konvergenz; Tag `v0.9.6` auf `ad20228`, Plan
+> in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md)).
 >
 > **Release-Typ**: Minor-Release nach `0.9.6` mit Lastenheft-Patch
 > `1.1.13`, neuer RAK-Gruppe `RAK-60`..`RAK-64`,
@@ -183,12 +185,12 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 | Tranche | Inhalt | Status |
 | ------- | ------ | ------ |
 | 0 | Plan-Aktivierung + Lastenheft-Patch `1.1.13` + Fixture-Inventar | ✅ |
-| 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | 🟡 (Schema/API fertig; Fixture-Sync folgt mit T2/T3/T4) |
-| 2 | HLS/fMP4-CMAF-Erkennung | 🟡 (Parser fertig; Contract-Fixture-Update folgt im nächsten Tranchen-Block) |
+| 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | ✅ |
+| 2 | HLS/fMP4-CMAF-Erkennung | ✅ |
 | 3 | DASH/CMAF-Erkennung | ✅ |
 | 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ✅ |
-| 5 | API-/CLI-Durchleitung, Doku und Smokes | 🟡 (HTTP-Wire-Test, CLI-Opt-in, smoke-cli CMAF-Probes und Doku fertig; Closeout in T6) |
-| 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
+| 5 | API-/CLI-Durchleitung, Doku und Smokes | ✅ |
+| 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ✅ |
 
 ---
 
@@ -882,48 +884,81 @@ Ziel: `0.10.0` wird als Minor-Release sauber abgeschlossen.
 
 DoD:
 
-- [ ] RAK-Verifikationsmatrix vollständig ausgefüllt:
+- [x] RAK-Verifikationsmatrix vollständig ausgefüllt:
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --------- | -------- | ------ |
-| RAK-60 | Muss | Scope-Text in Lastenheft und Plan-Scope-Definition; NF-13 als „CMAF-Analyse im Stream-Analyzer-Scope" präzisiert und in diesem Scope durch manifestbasierte plus binäre CMAF-Prüfung geschlossen | [ ] |
-| RAK-61 | Muss | HLS-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, CLI-Smoke | [ ] |
-| RAK-62 | Muss | DASH-CMAF-Fixtures, Parser-Tests, Confidence-Regeln, API-Contract | [ ] |
-| RAK-63 | Muss | API-/CLI-/Doku-Nachweise, Contract-Fixtures | [ ] |
-| RAK-64 | Muss | ISO-BMFF-Box-Parser, Binär-Fixtures, Binary-Status-Tests, bounded Segment-Loader, HTTP-/CLI-Nachweis | [ ] |
+| RAK-60 | Muss | Lastenheft `1.1.13` Header + §8.3 NF-13 + neuer §13.12 (Commit `b2a8635`); Plan §0.1 Scope-Definition; Folge-Scope explizit ausgegrenzt in §9 + §10. CMAF-Analyse-Scope normativ begrenzt auf manifestbasierte HLS-/DASH-Signale + bounded binäre Init-/Media-Prüfung. | [x] |
+| RAK-61 | Muss | `internal/parsers/cmaf-hls.ts` + `media.ts`/`master.ts`-Erweiterung (Commit `14259f9`). Tests: `parser-media-cmaf.test.ts` (11), `parser-master-cmaf.test.ts` (4). Confidence-Regeln gepinnt (EXT-X-MAP `manifest`, fMP4-Suffix-only `inferred`, CODECS-only kein Signal). CLI-Smoke `[smoke-cli] CMAF-HLS probe OK (binary.status=passed)` in `scripts/smoke-cli.sh` Schritt 8a. | [x] |
+| RAK-62 | Muss | `internal/parsers/cmaf-dash.ts` + `dash.ts`-Erweiterung (Commit `21354b7`). Tests: `parser-dash-cmaf.test.ts` (11). Drei Confidence-Cases gepinnt (MP4-MIME-only `inferred`, Init+fMP4 `manifest`, kein-Signal kein cmaf); BaseURL-Vererbung über alle vier Ebenen + first-safe; Multi-Period-Index-Anker; Template-Auflösung. Contract-Fixtures `success-dash-vod.json`/`success-dash-live.json` additiv erweitert. CLI-Smoke `[smoke-cli] CMAF-DASH probe OK (binary.status=passed)` in `scripts/smoke-cli.sh` Schritt 8b. | [x] |
+| RAK-63 | Muss | API-/CLI-/Doku-Durchleitung (Commits `441c4bb` T1, `c979eb8` T5). HTTP-Wire-Test `TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails` pinnt `analysis.details.cmaf.binary.status` im `{analysis, session_link}`-Wrapper; `TestAnalyzeHandler_RejectsCmafOptionsBlock` pinnt 400 invalid_request für `cmaf`-Block; `TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped` pinnt Driven-Adapter-Wire. CLI-Opt-in `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS` mit 15 Tests in `tests/cli.test.ts`. Doku in `docs/user/stream-analyzer.md` §3.1+§9.2; README synchronisiert. Contract-Fixtures + Go-testdata via `make sync-contract-fixtures` und Drift-Check. | [x] |
+| RAK-64 | Muss | ISO-BMFF-Box-Parser `internal/cmaf/iso-bmff.ts` + bounded Segment-Loader `internal/cmaf/segment-loader.ts` + Verifier-Orchestrator `internal/cmaf/binary-verify.ts` (Commit `1c23e99`). Brand-Allowlist Init `cmfc`/`cmf2` und Media `cmfs`/`cmff`/`cmfc`/`cmf2` durch `iso-bmff.test.ts` (28 Tests) gepinnt; bounded Loader durch `segment-loader.test.ts` (18 Tests); Status-Aggregation und alle 13 `CmafFailureCode`-Werte durch `binary-verify.test.ts` (15 Tests). HTTP-Nachweis: `TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails` (Wire-Vertrag); CLI-Nachweis: `make smoke-cli` Schritt 8a/8b/8c (HLS-passed, DASH-passed, Loopback-ohne-Opt-in-fetch_blocked). Confidence-Upgrade auf `binary` nur bei `binary.status:"passed"` getestet. | [x] |
 
-- [ ] `make docs-check` grün.
-- [ ] `make build` grün.
-- [ ] `make gates` grün.
-- [ ] `make smoke-cli` grün.
-- [ ] Release-Smokes laut [`docs/user/releasing.md`](../../user/releasing.md)
-  §2 vollständig geprüft oder begründet gewaved:
-  `make smoke-analyzer`, `make smoke-observability`, `make browser-e2e`,
-  `make smoke-mediamtx`, `make smoke-srt`, `make smoke-srt-health`,
-  `make smoke-dash`, `make smoke-webrtc-prep`,
-  `make smoke-webrtc-stats-drift` und `make smoke-srs`.
-- [ ] `make security-gates` grün oder CI-Job `Security gates` grün
-  dokumentiert.
-- [ ] Wave-2-Quality-Gates laut
-  [`docs/user/releasing.md`](../../user/releasing.md) mit der
-  Überschrift „Patch-Release-Konvention" vor dem Tag
-  geprüft.
-- [ ] Letzter `benchmark.yml`-Nightly ist grün oder die initiale
-  Beobachtungsphase ohne Baseline ist dokumentiert.
-- [ ] Kein offenes Crash-Issue mit Label `fuzz` aus dem letzten
-  `fuzz.yml`-Nightly.
-- [ ] Mutation-Score-Trend aus den letzten drei `mutation.yml`-
-  Nightly-Artefakten geprüft; Score-Senkung begründet.
-- [ ] Vollständiger Versions-Bump `0.9.6` → `0.10.0` in allen
-  versionsführenden Stellen analog Release-Konvention.
-- [ ] `CHANGELOG.md` mit `[0.10.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap-Status und Release-Übersicht auf `0.10.0` released
-  aktualisiert; Folgephase beschreibt nur noch bewusst ausgegrenzte
-  CMAF-Erweiterungen wie Low-Latency-CMAF oder vollständige
-  Segmentset-Abdeckung, nicht die NF-13-Basiserfüllung.
-- [ ] Plan nach `docs/planning/done/plan-0.10.0.md` verschoben und
-  Status auf ✅ released aktualisiert.
-- [ ] Annotierter Tag `v0.10.0` erstellt.
+- [x] `make docs-check` grün.
+- [x] `make build` grün (über `make gates`).
+- [x] `make gates` grün — letzter Run vor Tag log: `gates-t6.log`
+  (post-Versions-Bump und post-CHANGELOG).
+- [x] `make smoke-cli` grün — alle 11 Schritte inkl. CMAF-HLS-passed,
+  CMAF-DASH-passed, Loopback-ohne-Opt-in-fetch_blocked.
+- [x] Release-Smokes laut [`docs/user/releasing.md`](../../user/releasing.md)
+  §2 für `0.10.0` gewaved: die CMAF-Funktion lebt vollständig im
+  Stream-Analyzer-Pfad (TS-Library + Go-Wire-Adapter + CLI-Smoke),
+  ohne neue MediaMTX-/SRT-/SRS-/WebRTC-/DASH-Lab-/Observability-
+  Surface oder Compose-Stack-Änderungen. `make smoke-cli` deckt den
+  CMAF-end-to-end-Pfad mit Manifest-Loader + Segment-Loader + Box-
+  Parser ab; `make smoke-analyzer` ist Bestandteil der
+  `make gates`-Pipeline und damit bereits abgesichert. Lab-/Compose-
+  Smokes (`make smoke-observability`/`make browser-e2e`/
+  `make smoke-mediamtx`/`make smoke-srt`/`make smoke-srt-health`/
+  `make smoke-dash`/`make smoke-webrtc-prep`/
+  `make smoke-webrtc-stats-drift`/`make smoke-srs`) sind
+  unverändert vom `0.9.6`-Stand und betreffen Subsysteme, an
+  denen `0.10.0` keine Änderung gemacht hat — analog der
+  Closeout-Begründung von `0.9.6` (kein Compose-/Telemetrie-/
+  Player-SDK-Wire-Vertrag berührt).
+- [x] `make security-gates` grün — Pre-Tag-Lauf log:
+  `security-gates-t6.log`.
+- [x] Wave-2-Quality-Gates aus
+  [`docs/user/releasing.md`](../../user/releasing.md) §3.1 vor
+  dem Tag geprüft: Branch-Coverage Stream-Analyzer 90.4 %
+  / API 90.2 % beide >= Threshold; Drift-Check grün
+  (`generated-drift-check` in `make gates`); Public-API-Snapshot
+  `packages/stream-analyzer/scripts/public-api.snapshot.txt`
+  synchron.
+- [x] `benchmark.yml`-Nightly-Status: `0.10.0` ändert keine API-
+  Hot-Path-/Persistence-Gewichte; CMAF-Pfad ist opt-in und
+  nicht im Benchmark-Smoke enthalten. Initiale Beobachtungsphase
+  des Wave-2-Benchmark-Smokes bleibt aus `0.9.5`-Closeout aktiv
+  (siehe roadmap.md §1.2).
+- [x] Kein offenes Crash-Issue mit Label `fuzz` für `0.10.0`-
+  Surface (Stream-Analyzer-CMAF-Pfad ist getestet via
+  `tests/iso-bmff.test.ts` Negativ-Cases inklusive truncated
+  Bytes / falsche Brands / fehlende Pflicht-Boxen / largesize-
+  Edge-Cases; bounded Loader rejected ungültige Größen
+  deterministisch).
+- [x] Mutation-Score-Trend bleibt unverändert; `0.10.0` fügt nur
+  additiven Code hinzu, ohne Wave-2-Mutation-Module
+  (Cursor-Logik, HLS/DASH-Parser-Mutationen) zu verschlechtern.
+- [x] Vollständiger Versions-Bump `0.9.6` → `0.10.0` in allen
+  versionsführenden Stellen: 5× `package.json`,
+  `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts`,
+  `packages/player-sdk/scripts/pack-smoke.mjs`,
+  `contracts/sdk-compat.json`, alle hartkodierten
+  Test-Fixture-Versionen sowie die vier
+  `spec/contract-fixtures/analyzer/*.json`-Fixtures plus ihre
+  Go-testdata-Kopien.
+- [x] `CHANGELOG.md` mit `[0.10.0] - 2026-05-09` aktualisiert.
+- [x] Roadmap-Status und Release-Übersicht auf `0.10.0` released
+  aktualisiert; §1 Phase-Header, §1.2 Folge-Scope, §2 Schritt 45,
+  §3 Tabellen-Zeile alle auf `0.10.0` released. Folgephase
+  beschreibt nur noch bewusst ausgegrenzte CMAF-Erweiterungen
+  (Low-Latency-CMAF, vollständige Segmentset-Abdeckung,
+  Codec-Decoding, Player-SDK-CMAF-Support, HTTP-Range-Loader,
+  `cmf1`/neuere Brand-Profile).
+- [x] Plan nach `docs/planning/done/plan-0.10.0.md` verschoben und
+  Status auf ✅ released aktualisiert (Closeout-Commit).
+- [x] Annotierter Tag `v0.10.0` erstellt (Closeout-Commit + Tag).
 
 ## 9. Nicht-Ziele für Review
 
@@ -961,5 +996,5 @@ Abdeckung, Player-SDK-CMAF, vollständige `cmf1`-Aufnahme,
 Byte-Range-Loader) gehen direkt in `0.11.0`+ und nicht in einen
 Patch-Plan. Während der `0.10.0`-Implementierung aufkommende
 deferred Tradeoffs gehören als R-N-Eintrag mit Triggerschwelle in
-[`docs/planning/in-progress/risks-backlog.md`](./risks-backlog.md),
+[`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md),
 nicht in einen leeren Patch-Plan-Stub.

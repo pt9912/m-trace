@@ -415,7 +415,7 @@ DoD:
 - [x] Lastenheft Header: Version `1.1.11` → `1.1.12`; kompakte Patch-Note unmittelbar nach dem Frontmatter („Lastenheft-Konvergenz nach `0.9.5`; keine neue Produktfunktion").
 - [x] Lastenheft §7.1 `F-7` mit `1.1.12`-Status-Präzisierung: `deploy/` ist Strukturanker; `docker-compose.yml` im Repo-Root bleibt der primäre lokale Pfad; `deploy/k8s/` Folge-Scope (`MVP-42`).
 - [x] Lastenheft §7.12 Pflichtdokumente: neue Anforderung `F-131` (Muss) eingeführt; `docs/stream-analyzer.md` auf den realen Pfad `docs/user/stream-analyzer.md` korrigiert; übrige Pflichtdokumente unverändert.
-- [x] Lastenheft §8.3 `NF-13` mit `1.1.12`-Lieferstand-Präzisierung: `F-73` deckt nur die vorbereitete Erweiterbarkeit; CMAF-Vollanalyse bleibt offen und verweist auf [`docs/planni../in-progress/plan-0.10.0.md`](../in-progress/plan-0.10.0.md).
+- [x] Lastenheft §8.3 `NF-13` mit `1.1.12`-Lieferstand-Präzisierung: `F-73` deckt nur die vorbereitete Erweiterbarkeit; CMAF-Vollanalyse bleibt offen und verweist auf [`docs/planni../done/plan-0.10.0.md`](../done/plan-0.10.0.md).
 - [x] Lastenheft §8.3 `NF-18` mit `1.1.12`-Scope-Präzisierung: Production-K8s nicht in der ersten Phase; `MVP-42` bleibt `Kann`; R-9 bleibt Trigger-Risiko.
 - [x] Lastenheft §12.1 „Nicht im `0.1.0`-MVP"-Tabelle redaktionell entzerrt: neue Spalte „Status (Patch `1.1.12`)" mit verbindlicher Aussage pro Item (erfüllt / anders entschieden / out of scope); historische „Prioritaet"-Spalte zur Audit-Nachvollziehbarkeit erhalten.
 - [x] Lastenheft §12.3 `MVP-37` mit Lieferstand-Vermerk (in `0.9.0` ausgeliefert); `MVP-42` mit Status-Vermerk (Strukturanker leer, kein Production-K8s).
@@ -434,7 +434,7 @@ Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und
 Player-Laufzeitpfade bleiben Folge-Scope. Der Patch ändert keine
 Wire-Verträge — die Result-Schema-Erweiterungen (`details.cmaf`,
 `cmaf.binary.*`-Optionen) leben in
-[`docs/planning/in-progress/plan-0.10.0.md`](../in-progress/plan-0.10.0.md)
+[`docs/planning/done/plan-0.10.0.md`](../done/plan-0.10.0.md)
 Tranche 1.
 
 DoD:
@@ -447,7 +447,7 @@ DoD:
   Media-`styp`) und explizit ausgegrenzte Folge-Scopes (vollständige
   Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF,
   Player-Laufzeitpfade) im Anforderungstext verankert; Verweis auf
-  [`plan-0.10.0.md`](../in-progress/plan-0.10.0.md) und §13.12.
+  [`plan-0.10.0.md`](../done/plan-0.10.0.md) und §13.12.
 - [x] Lastenheft §13.12 (neu) mit Akzeptanzkriterien `RAK-60`..`RAK-64`
   (alle Muss): RAK-60 Scope-Verankerung; RAK-61 HLS-CMAF-Signale; RAK-62
   DASH-CMAF-Signale; RAK-63 CLI-/API-/Contract-Durchleitung; RAK-64

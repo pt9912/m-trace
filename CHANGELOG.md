@@ -7,6 +7,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-09
+
+> **Minor-Release** mit Lastenheft-Patch `1.1.13` (RAK-60..RAK-64
+> in §13.12, NF-13 als „CMAF-Analyse im Stream-Analyzer-Scope"
+> präzisiert). Plan in
+> [`docs/planning/done/plan-0.10.0.md`](docs/planning/done/plan-0.10.0.md).
+
+### Added
+
+- **CMAF-Analyse im Stream-Analyzer-Scope** (NF-13 / RAK-60..RAK-64):
+  additives `details.cmaf`-Signalmodell unter
+  `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` /
+  `DashManifestDetails.cmaf?`. **Kein neuer `analyzerKind`**.
+- HLS-CMAF-Erkennung (RAK-61): `EXT-X-MAP` strukturiert mit
+  Roh-Attributen + optionalem `BYTERANGE`; `#EXT-X-BYTERANGE`
+  deterministisch an nächste Segment-URI gebunden;
+  `.m4s`/`.cmfv`/`.cmfa`-Suffix-Detektion; konservative
+  Master-Pfad-Inferenz aus Variant-URIs (CODECS allein erzeugt
+  kein Signal).
+- DASH-CMAF-Erkennung (RAK-62): MP4-MIME (`video/mp4`/`audio/mp4`/
+  `application/mp4`), `SegmentTemplate@initialization|@media`,
+  `SegmentList/Initialization@sourceURL` und `SegmentURL@media`.
+  BaseURL-Vererbung MPD→Period→AdaptationSet→Representation mit
+  „erste-sichere-`http(s)`"-Regel; SegmentTemplate-Inheritance/
+  Override; deterministische Representation-Auswahl pro
+  AdaptationSet; Template-Resolver für `$RepresentationID$` /
+  `$Bandwidth$` / `$Number$` / `$Number%0Nd$` / `$Bandwidth%0Nd$`
+  mit `startNumber` (`$Time$` und `SegmentTimeline` bleiben
+  Folge-Scope und liefern `dash_template_unresolved`).
+- Bounded **binäre CMAF-Konformitätsprüfung** (RAK-64):
+  ISO-BMFF-Box-Parser (32-bit + largesize, deterministisches
+  Reject von strukturellen Verstößen), Brand-Allowlist Init
+  `cmfc`/`cmf2` und Media `cmfs`/`cmff`/`cmfc`/`cmf2`,
+  Pflicht-Boxen Init `ftyp`+`moov` und Media-Fragment
+  `styp`+`moof`+`traf`+`tfdt`+`mdat` (`sidx` optional). Bounded
+  Segment-Loader getrennt von `loadManifest`: Bytes-Return,
+  MP4-Content-Type-Allowlist, `maxSegmentBytes`-Cap (Default
+  `2_000_000`), gleiche SSRF-/DNS-/Redirect-/Timeout-Regeln.
+  `details.cmaf.binary` mit `status: passed | failed | skipped`,
+  `segmentsChecked[]`, `boxes[]`, `failures[]`, `limits`. Alle
+  13 `CmafFailureCode`-Werte (`binary_disabled`,
+  `segment_reference_missing`, `dash_template_unresolved`,
+  `hls_map_byterange_unsupported`,
+  `hls_media_byterange_unsupported`, `not_planned_due_to_limit`,
+  `segment_base_url_missing`, `segment_uri_blocked`,
+  `segment_fetch_failed`, `segment_content_type_unsupported`,
+  `segment_too_large`, `cmaf_box_validation_failed`,
+  `invalid_box_structure`) durch Tests gepinnt; Aggregation
+  „failed > skipped > passed"; Confidence wird auf `binary`
+  gehoben nur bei `binary.status:"passed"`.
+- CLI-Opt-in `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS` (RAK-63):
+  reicht ausschließlich `fetch.allowPrivateNetworks=true` an die
+  Analyzer-Library durch; akzeptierte Werte
+  `1`/`true`/`TRUE`/`yes`/`on` (case-insensitive, getrimmt).
+  Default off; vorhandener URL-SSRF-Smoke bleibt
+  `fetch_blocked`. Help-Text dokumentiert das Sicherheitsprofil.
+- `make smoke-cli` um drei CMAF-Probes erweitert: HLS-passed +
+  DASH-passed gegen lokalen `python3 -u -m http.server` mit
+  deterministischen CMAF-Bytes (`scripts/cmaf-fixture-builder.mjs`),
+  plus Loopback-ohne-Opt-in-`fetch_blocked`.
+- Library-Optionen `cmaf.binary.{enabled,maxSegmentBytes,maxBinarySegments}`
+  als Public TS-API; `apps/analyzer-service` akzeptiert/filtert
+  den Block analog zum bestehenden `fetch`-Block.
+- `docs/user/stream-analyzer.md` §3.1 (CMAF-Binary-Verifikation)
+  und §9.2 (CMAF-Lab-Modus) mit vollständiger Failure-Code-
+  Tabelle, Brand-Allowlist und `/api/analyze`-Vertrag.
+
+### Changed
+
+- [`spec/lastenheft.md`](spec/lastenheft.md) Header
+  `1.1.12` → `1.1.13`; Patch-Note nach dem Frontmatter; `NF-13`-
+  Text auf „CMAF-Analyse im Stream-Analyzer-Scope" präzisiert
+  (Vollständigkeit gilt für den Plan-Scope, nicht für
+  vollständige Segmentset-/Codec-/Player-Prüfung); neuer §13.12
+  mit RAK-60..RAK-64.
+- DASH-Contract-Fixtures `success-dash-vod.json` /
+  `success-dash-live.json` additiv um `details.cmaf` (inkl.
+  `binary.status:"skipped"` mit
+  `segment_reference_missing`-Einträgen für MP4-MIME-only-Pfade)
+  erweitert; Go-testdata-Kopien synchron via
+  `make sync-contract-fixtures`. **Bewusst nicht byte-kompatibel
+  zum `0.9.x`-Stand**, weil MP4-MIME-only ab `0.10.0` als
+  `confidence:"inferred"`-Signal sichtbar wird.
+- `details.cmaf` bekommt Confidence-Domäne `binary` >
+  `manifest` > `inferred` mit deterministischer Aggregation.
+- HLS-Master-Pfad emittiert `details.cmaf` nur konservativ
+  (`confidence:"inferred"` aus fMP4-Variant-URIs); kein
+  Nachladen referenzierter Media-Playlists, kein `binary`-Objekt.
+- `/api/analyze` (öffentlicher API-Endpoint) lehnt
+  `cmaf`-/`cmaf.binary`-Request-Block mit `400 invalid_request`
+  ab, damit caller-seitig gesetztes `enabled:false` nicht still
+  ignoriert wird (siehe `docs/user/stream-analyzer.md` §3.1).
+- `apps/api/hexagon/domain/stream_analysis.go` Doc-Comments:
+  CMAF lebt in `EncodedDetails`-Roundtrip, kein neuer
+  `AnalyzerKind`-Wert.
+- Versions-Bump `0.9.6` → `0.10.0` in `package.json`-Familie,
+  `apps/api/cmd/api/main.go` `serviceVersion`,
+  `packages/player-sdk/src/version.ts`,
+  `packages/player-sdk/scripts/pack-smoke.mjs` `expectedVersion`,
+  `contracts/sdk-compat.json` `sdk_version` und allen
+  hartkodierten Test-Fixture-Versions-Strings.
+
+### Notes
+
+- Branch-Coverage `@npm9912/stream-analyzer` >= 90 %; alle
+  `make gates`-Stages grün vor Tag.
+- Out of scope (siehe Plan §9 / §10): Low-Latency-CMAF
+  (`#EXT-X-PART`, chunked CMAF), vollständige
+  Segmentset-Abdeckung, Codec-Decoding, Player-SDK-CMAF-Support,
+  `cmf1`/neuere Structural-Brand-Profile, HTTP-Range-Loader für
+  `EXT-X-MAP`-/`#EXT-X-BYTERANGE`-Segmente.
+
 ## [0.9.6] - 2026-05-08
 
 > **Lastenheft-Konvergenz-Patch** nach `0.9.5`

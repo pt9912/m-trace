@@ -55,7 +55,7 @@ func BenchmarkEventRepository_AppendBatch_100(b *testing.B) {
 				ServerReceivedAt: ts,
 				IngestSequence:   seq.Next(),
 				SequenceNumber:   &seqNum,
-				SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.9.6"},
+				SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.10.0"},
 			})
 		}
 		b.StartTimer()

@@ -1,7 +1,7 @@
 # Roadmap
 
 > **Stand**: 2026-05-08
-> **Phase**: `0.9.6` released — Lastenheft-Konvergenz-Patch nach `0.9.5`. Plan archiviert in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md). Scope: fehlende Repo-Muss-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren) und Go-Build-Image-Bump auf `golang:1.26.3` als Folge der `go1.26.3`-Stdlib-CVE-Fixes (GO-2026-4982/4980/4971/4918, analog `0.8.5`-Vorgehen). Keine neue Produktfunktion, keine User-Surface- oder Wire-Vertragsänderung. Vorgänger `0.9.5` released (Quality-Gates Wave 2; Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md)). Frühere Releases: `v0.9.1` (Drift-Smoke-Robustheit) und `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md); `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
+> **Phase**: `0.10.0` released — CMAF-Analyse im Stream-Analyzer-Scope (NF-13 / RAK-60..RAK-64). Plan archiviert in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md). Lieferungen: additives `details.cmaf`-Signalmodell unter HLS-/DASH-Detail-Objekten (kein neuer `analyzerKind`); HLS- und DASH-Manifest-Detection mit Confidence-Domäne `binary`/`manifest`/`inferred`; bounded binäre CMAF-Konformitätsprüfung mit ISO-BMFF-Box-Parser, Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff` und 13 normativ definierten `CmafFailureCode`-Werten; CLI-Opt-in `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS` für lokale Lab-Server; CMAF-Probes in `make smoke-cli`. Lastenheft-Patch `1.1.13` mit §13.12. Vorgänger `0.9.6` released (Lastenheft-Konvergenz; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md); Lastenheft `1.1.12`). Frühere Releases: `v0.9.5` (Quality-Gates Wave 2), `v0.9.1` (Drift-Smoke-Robustheit), `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md); `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,
@@ -41,21 +41,25 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.10.0` ist als Folge-Phase aktiviert: Plan-Move nach
-[`docs/planning/in-progress/plan-0.10.0.md`](./plan-0.10.0.md),
-Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 (§13.12) verankert
-den normativ begrenzten CMAF-Analyzer-Scope (manifestbasierte
-HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung
-ausgewählter Init-/Media-Segmente). Vollständige
-Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF
-(`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade bleiben
-explizit Folge-Scope.
+`0.10.0` ist released (CMAF-Analyse im Stream-Analyzer-Scope,
+NF-13 / RAK-60..RAK-64; Plan in
+[`done/plan-0.10.0.md`](../done/plan-0.10.0.md); Lastenheft
+`1.1.13`). Folge-Phase ist offen — Folge-Pläne
+`0.11.0`/`0.12.0`/`0.13.0` liegen in
+[`docs/planning/open/`](../open/). Bewusst ausgegrenzte
+CMAF-Erweiterungen (Folge-Scope, **nicht** Teil von `0.10.0`):
+
+- Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF, `cmfl`-Profil).
+- Vollständige Segmentset-Abdeckung jenseits Init + erstes
+  fMP4-Media-Segment pro Manifest-Scope.
+- Codec-Decoding und Player-SDK-CMAF-Playback-Support.
+- HTTP-Range-Loader für `EXT-X-MAP`-`BYTERANGE` und
+  `#EXT-X-BYTERANGE`-Media-Segmente.
+- `cmf1` und neuere Structural-Brand-Profile.
 
 Vorgänger `0.9.6` released (Lastenheft-Konvergenz-Patch nach
 `0.9.5`; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md);
-Lastenheft vor diesem Patch: `1.1.12`). Weitere Folge-Pläne
-`0.11.0`/`0.12.0`/`0.13.0` liegen in
-[`docs/planning/open/`](../open/) bereit.
+Lastenheft vor `0.10.0`: `1.1.12`).
 
 Pending-Folge-Punkte aus der Wave-2-Lieferung in `0.9.5`
 (Trigger-Schwellen werden im jeweiligen Folge-Plan aktiviert,
@@ -151,7 +155,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 42  | ✅      | Lastenheft-Patch `1.1.11` schreiben — neuer §13.11 mit RAK-56 (Drift-Smoke, Soll), RAK-57 (SRS-Lab, Kann), RAK-58 (DASH-Manifest-Analyse, Muss) und RAK-59 (DASH-CLI, Kann); §12.3 MVP-37 von „Kann" auf „Muss" entsprechend NF-12 hochgezogen | Vor Tranchen 1–4 von `0.9.0`                                     | RAK-56..RAK-59, MVP-36, MVP-37, NF-12; [`plan-0.9.0.md`](../done/plan-0.9.0.md) §0.2; Patch-Log §4a.14 in [`plan-0.1.0.md`](../done/plan-0.1.0.md) |
 | 43  | ✅      | `0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse ausliefern: Browser-Drift-Smoke gegen `examples/webrtc/`-Lab plus Nightly-CI (R-12 wandert auf „automatisiert detektiert"), `examples/srs/`-Lab analog der anderen Multi-Protocol-Beispiele, DASH-MPD-Pfad im `@npm9912/stream-analyzer` mit `analyzerKind: "dash"` und CLI-Dispatcher | Nach Schritt 42                                                  | RAK-56..RAK-59 (Lastenheft `1.1.11` §13.11); [`plan-0.9.0.md`](../done/plan-0.9.0.md) Tranchen 0–5; Tag `v0.9.0` |
 | 44  | ✅      | `0.9.6` Lastenheft-Konvergenz-Patch ausliefern: fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren) und Go-Stdlib-Bump `golang:1.26.3` (GO-2026-4982/4980/4971/4918); keine User-Surface-Änderung | Nach Schritt 43                                                  | F-7, F-131 (neu), NF-13, NF-18, NF-25, NF-29, MVP-19..MVP-26, MVP-40..MVP-42; [`plan-0.9.6.md`](../done/plan-0.9.6.md) Tranchen 0–4 |
-| 45  | 🟡      | `0.10.0` CMAF-Analyse ausliefern (NF-13-Vollumsetzung im Stream-Analyzer-Scope): manifestbasierte HLS-/DASH-CMAF-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente; Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12; additives `details.cmaf`-Schema unter HLS-/DASH-Detail-Objekten ohne neuen `analyzerKind`; ISO-BMFF-Box-Parser und bounded Segment-Loader (Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff`; Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6`) | Nach Schritt 44 | NF-13, RAK-60..RAK-64; [`plan-0.10.0.md`](./plan-0.10.0.md) Tranchen 0–6 |
+| 45  | ✅      | `0.10.0` CMAF-Analyse ausgeliefert (NF-13-Vollumsetzung im Stream-Analyzer-Scope): manifestbasierte HLS-/DASH-CMAF-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente; Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12; additives `details.cmaf`-Schema unter HLS-/DASH-Detail-Objekten ohne neuen `analyzerKind`; ISO-BMFF-Box-Parser und bounded Segment-Loader (Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff`; Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6`) | Nach Schritt 44 | NF-13, RAK-60..RAK-64; [`done/plan-0.10.0.md`](../done/plan-0.10.0.md) Tranchen 0–6 |
 
 ---
 
@@ -177,7 +181,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.9.1` | Drift-Smoke-Robustheit (Patch) | ✅      | Wartungs-Patch nach `0.9.0` ohne eigenen Plan-File: WebRTC-Drift-Smoke robuster gegen reale Browser-Eigenheiten (WHEP-POST aus Node-Kontext, Firefox audio-only, fehlende `transport`-Reports als `[drift-soll]` statt Fail); Spec-Korrekturen in `spec/telemetry-model.md` §3.5.2/§3.5.3; Pfad-Korrekturen nach dem `plan-0.9.0`-Closeout. CHANGELOG-`[0.9.1]`-Block. Kein Lastenheft-Patch. |
 | `0.9.5` | Quality-Gates Wave 2 (Patch) | ✅      | Patch-Release am 2026-05-07. Plan in [`done/plan-0.9.5.md`](../done/plan-0.9.5.md). Lieferungen: Benchmark-Smoke (PR-Pfad opt-in mit Beobachtungs-Nightly `benchmark-observation.yml`); Nightly-`benchstat`-Regressionen mit Quarantäne-Mechanik (`benchmark.yml`); sechs Go-Fuzz-Targets + drei TS-Property-Test-Suites via `fast-check` (`make fuzz-check` + Nightly `fuzz.yml`) inkl. Erstfund + Fix `mbpsLinkCapacity=-1` in `apps/api/.../mediamtxclient/mapping.go`; Mutation-Testing mit gremlins (Go) + StrykerJS (TS) als Nightly-Report (`mutation.yml`). Single-Source-Budgets in [`docs/perf/budgets.md`](../../perf/budgets.md); Operator-Doku in [`docs/dev/fuzzing.md`](../../dev/fuzzing.md) und [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md). Kein Lastenheft-Patch. |
 | `0.9.6` | Lastenheft-Konvergenz (Patch) | ✅     | Patch-Release am 2026-05-08. Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md). Lieferungen: fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren) und Go-Stdlib-Bump `golang:1.26.3` als Folge der GO-2026-4982/4980/4971/4918-CVE-Fixes (analog `0.8.5`-OTel-Bump). Keine User-Surface- oder Wire-Vertragsänderung. |
-| `0.10.0` | CMAF-Analyse | 🟡     | Plan in [`in-progress/plan-0.10.0.md`](./plan-0.10.0.md), aktiviert nach `0.9.6`-Closeout. NF-13-Vollumsetzung im Stream-Analyzer-Scope: manifestbasierte HLS-/DASH-CMAF-Signale (`details.cmaf` additiv unter HLS-/DASH-Detail-Objekten, kein neuer `analyzerKind`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (ISO-BMFF-Box-Parser, bounded Segment-Loader). Brand-Allowlist `cmfc`/`cmf2` (Init-`ftyp`) und `cmfs`/`cmff`/`cmfc`/`cmf2` (Media-`styp`); Defaults `maxSegmentBytes=2_000_000`, `maxBinarySegments=6`. Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12. Out of scope: vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF, Player-Laufzeitpfade. |
+| `0.10.0` | CMAF-Analyse | ✅     | Minor-Release am 2026-05-09. Plan in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md). NF-13-Vollumsetzung im Stream-Analyzer-Scope: manifestbasierte HLS-/DASH-CMAF-Signale (`details.cmaf` additiv unter HLS-/DASH-Detail-Objekten, kein neuer `analyzerKind`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (ISO-BMFF-Box-Parser, bounded Segment-Loader). Brand-Allowlist `cmfc`/`cmf2` (Init-`ftyp`) und `cmfs`/`cmff`/`cmfc`/`cmf2` (Media-`styp`); Defaults `maxSegmentBytes=2_000_000`, `maxBinarySegments=6`. Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12. Out of scope: vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF, Player-Laufzeitpfade. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

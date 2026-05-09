@@ -18,7 +18,7 @@
 > Low-Latency-CMAF und Player-Laufzeitpfade bleiben explizit
 > Folge-Scope. Der Patch ändert keine Wire-Verträge — die
 > Result-Schema-Erweiterungen (`details.cmaf`, `cmaf.binary.*`-
-> Optionen) leben in [`docs/planning/in-progress/plan-0.10.0.md`](../docs/planning/in-progress/plan-0.10.0.md)
+> Optionen) leben in [`docs/planning/done/plan-0.10.0.md`](../docs/planning/done/plan-0.10.0.md)
 > Tranche 1. Patch-Log siehe
 > [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
 > Tranche 0c §4a.16.
@@ -1205,7 +1205,7 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 | NF-10 | Muss | MediaMTX-Adapter |
 | NF-11 | Muss | SRT-Ingest-Metriken |
 | NF-12 | Muss | DASH-Analyse |
-| NF-13 | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung im Plan [`docs/planning/in-progress/plan-0.10.0.md`](../docs/planning/in-progress/plan-0.10.0.md) mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
+| NF-13 | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung im Plan [`docs/planning/done/plan-0.10.0.md`](../docs/planning/done/plan-0.10.0.md) mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
 | NF-14 | Muss | WebRTC-Metriken |
 | NF-15 | Muss | Datenbankpersistenz |
 | NF-16 | Muss | Authentifizierung |
