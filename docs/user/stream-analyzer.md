@@ -276,6 +276,111 @@ welchem Hop ein SSRF-Block bzw. ein Statuscode-Problem auftrat.
 | CMAF-Analyse  | 🟡 ab `0.10.0` | NF-13 / RAK-60..RAK-64. **Kein neuer `analyzerKind`** — CMAF lebt als additives `details.cmaf`-Signalmodell unter `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` / `DashManifestDetails.cmaf?`. Manifestbasierte HLS-/DASH-Signale (`EXT-X-MAP`, `.m4s`/`.cmfv`/`.cmfa`-Segmentmuster, MP4-MIME, `SegmentTemplate@initialization`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (Brand-Allowlist `cmfc`/`cmf2` für Init-`ftyp`, `cmfs`/`cmff`/`cmfc`/`cmf2` für Media-`styp`; Defaults `cmaf.binary.maxSegmentBytes=2_000_000`, `cmaf.binary.maxBinarySegments=6`). Eine CMAF-Konformitätsaussage darf nur aus `details.cmaf.binary.status:"passed"` abgeleitet werden. Out of scope bleiben Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Support. |
 | SRT           | ❌       | Eigener Bereich (`0.6.0`).                                    |
 
+### 3.1 CMAF-Binary-Verifikation (`0.10.0`)
+
+`details.cmaf.binary` (NF-13 / RAK-64) führt eine **bounded** binäre
+CMAF-Konformitätsprüfung der manifestseitig referenzierten Init-
+und Media-Segmente aus, sobald CMAF-Manifestsignale erkannt sind.
+Die Prüfung läuft im Default automatisch:
+
+- **Scope**: pro HLS-Media-Playlist genau Init-Segment (`EXT-X-MAP`)
+  plus erstes fMP4-Media-Segment; pro DASH-AdaptationSet mit
+  CMAF-Signal eine deterministisch ausgewählte Representation mit
+  Init+Media.
+- **Brand-Allowlist** (`0.10.0`): Init-`ftyp` `cmfc` oder `cmf2`;
+  Media-`styp` `cmfs`, `cmff`, `cmfc` oder `cmf2`. `cmf1`,
+  Low-Latency-CMAF und neuere Structural-Brand-Profile sind
+  Folge-Scope.
+- **Pflicht-Boxen**: Init `ftyp`+`moov`; Media-Fragment
+  `styp`+`moof`+`traf`+`tfdt`+`mdat`. `sidx` wird als optional
+  informational erkannt.
+- **Defaults**: `cmaf.binary.maxSegmentBytes=2_000_000`,
+  `cmaf.binary.maxBinarySegments=6`, gleiche Timeout-/Redirect-/
+  SSRF-Regeln wie der Manifest-Loader (§6).
+
+Konformitätsaussage: nur `binary.status:"passed"` lässt sich als
+„CMAF-konformer Analyzer-Scope geprüft und bestanden" lesen. Die
+Summary-Confidence im umgebenden `details.cmaf` wird in dem Fall
+auf `"binary"` gehoben. `failed`/`skipped` lassen die Confidence
+unverändert; `details.cmaf.signals[]` bleibt sichtbar, ist aber
+kein Konformitätsnachweis.
+
+Beispiel (DASH-MPD ohne Initialization-Referenzen — typischer
+MP4-MIME-only-Pfad):
+
+```json
+{
+  "details": {
+    "cmaf": {
+      "source": "dash",
+      "confidence": "inferred",
+      "signals": [
+        { "code": "dash_mime_video_mp4", "confidence": "inferred",
+          "manifestAnchor": "MPD/Period[0]/AdaptationSet[id=v]/Representation[id=v0]/@mimeType",
+          "level": "info" }
+      ],
+      "binary": {
+        "status": "skipped",
+        "segmentsChecked": [
+          { "kind": "init", "source": "dash", "status": "skipped",
+            "failureCode": "segment_reference_missing", ... }
+        ],
+        "limits": { "requiredSegmentChecks": 2, "plannedSegmentFetches": 0, ... }
+      }
+    }
+  }
+}
+```
+
+#### Failure-Code-Domäne
+
+`binary.status:"skipped"` und `"failed"` tragen einen
+deterministischen Code, der die Skip-/Fail-Ursache klassifiziert.
+Reihenfolge entspricht der normativen Präzedenz aus Plan §3:
+
+| Code                              | Status   | Bedeutung |
+| --------------------------------- | -------- | --------- |
+| `binary_disabled`                 | skipped  | Caller hat `cmaf.binary.enabled:false` gesetzt; sichtbar bleiben Manifestsignale, kein Fetch. |
+| `segment_reference_missing`       | skipped  | Manifestseitig keine Init-/Media-Referenz ableitbar (z. B. DASH MP4-MIME-only, HLS ohne `EXT-X-MAP`). |
+| `dash_template_unresolved`        | skipped  | DASH-Template nutzt `$Time$` / `SegmentTimeline` / unbekannte Variablen — im `0.10.0`-Scope nicht ableitbar. |
+| `hls_map_byterange_unsupported`   | skipped  | `EXT-X-MAP` mit `BYTERANGE`; in `0.10.0` kein HTTP-Range-Loader. |
+| `hls_media_byterange_unsupported` | skipped  | `#EXT-X-BYTERANGE` vor erstem fMP4-Segment; analog. |
+| `not_planned_due_to_limit`        | skipped  | Pflichtprüfungsmenge übersteigt `maxBinarySegments`; überschüssige Checks werden auditierbar berichtet, verhindern aber `passed`. |
+| `segment_base_url_missing`        | skipped  | Text-Input ohne sichere HTTP(S)-`baseUrl` als Trust-Anker für relative/absolute Segment-URI. |
+| `segment_uri_blocked`             | skipped  | URI verstößt gegen Schema-/Credentials-/SSRF-/Redirect-Regeln; auch eine in höherer Ebene blockierte BaseURL-Chain. |
+| `segment_fetch_failed`            | skipped  | Timeout, HTTP-Fehler oder Transportfehler vor erfolgreichem Body-Read. |
+| `segment_content_type_unsupported`| skipped  | Antwort-Content-Type ist nicht MP4-/Byte-kompatibel (Allowlist: `video/mp4`, `audio/mp4`, `application/mp4`, `*iso.segment`-Varianten, `application/octet-stream`, leer). |
+| `segment_too_large`               | skipped  | Segment überschreitet `maxSegmentBytes`. |
+| `cmaf_box_validation_failed`      | failed   | Bytes geladen, aber Brand-Allowlist verletzt oder Pflicht-Box fehlt (z. B. fehlendes `mdat`, generische Brands ohne `cmfs`/`cmff`/`cmfc`/`cmf2`). |
+| `invalid_box_structure`           | failed   | Bytes geladen, aber Boxgröße/Überlappung/Fortschritt strukturell ungültig. |
+
+#### Aufrufer-Steuerung über `cmaf.binary.*`
+
+Library-Aufrufer dürfen die Binary-Prüfung opt-in/opt-out steuern:
+
+```ts
+import { analyzeManifest } from "@npm9912/stream-analyzer";
+
+await analyzeManifest({ kind: "url", url }, {
+  cmaf: {
+    binary: {
+      enabled: false,         // ergibt status:"skipped" mit binary_disabled
+      maxSegmentBytes: 1_000_000,
+      maxBinarySegments: 4
+    }
+  }
+});
+```
+
+Der öffentliche `/api/analyze`-Endpoint der m-trace-API lehnt einen
+`cmaf`-/`cmaf.binary`-Block im Request-Body in `0.10.0` mit
+`400 invalid_request` ab — caller-seitig gesetztes
+`enabled:false` darf nicht still ignoriert werden, weshalb Defaults
+ausschließlich service-seitig gesetzt werden. Der direkte
+analyzer-service-HTTP-Endpoint (`POST /analyze`) akzeptiert den
+Block, validiert die drei Werte, verwirft ungültige Felder analog
+zum bestehenden `fetch`-Block.
+
 ## 4. Stabilitätsregel
 
 Das Result-Schema ist additiv erweiterbar. Konsumenten dürfen sich auf
@@ -629,7 +734,42 @@ damit nur das Analyzer-JSON auf stdout landet — sinnvoll, wenn man
 | 1    | Analyse-Fehler (`status: "error"` auf stdout) **oder** I/O-Fehler beim Lesen der Datei (Diagnose auf stderr). |
 | 2    | Aufrufargument-/Usage-Fehler (Hilfe auf stderr).                 |
 
-### 9.2 Smoke-Test
+### 9.2 CMAF-Lab-Modus (`MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`)
+
+Ab `0.10.0` (NF-13 / RAK-63) bietet die CLI einen bewusst opt-in
+Schalter für lokale Lab- und Fixture-HTTP-Server:
+
+```bash
+# Default: SSRF-Schutz blockt loopback / private / link-local IPs.
+pnpm m-trace check http://127.0.0.1:8000/master.m3u8
+# → status:"error", code:"fetch_blocked"
+
+# Opt-in: lockert ausschließlich die IP-Sperrlisten.
+MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true \
+  pnpm m-trace check http://127.0.0.1:8000/master.m3u8
+```
+
+Akzeptierte „aktiviert"-Werte: `1`, `true`, `TRUE`, `yes`, `on`
+(case-insensitive, Whitespace getrimmt). Alles andere (inklusive
+`false`, `0`, `no`, fehlende Variable) lässt den Default-SSRF-Block
+unverändert.
+
+Das Flag setzt **ausschließlich** `fetch.allowPrivateNetworks=true`
+durch; alle anderen Schutzregeln bleiben aktiv:
+
+- `http`/`https`-Schema-Whitelist
+- Credentials-Block (`https://user:pw@…` lehnt der Loader ab)
+- `maxBytes`/`maxRedirects`/Timeout
+
+Der vorhandene URL-SSRF-Smoke (`make smoke-cli` § „URL-Input gegen
+eine RFC1918-Adresse") muss ohne dieses Flag weiterhin
+`fetch_blocked` liefern; mit Flag wird der Aufruf erfolgreich
+geladen, sofern Manifest und Segmente korrekt vom Lab-Server
+ausgeliefert werden.
+
+Produktionsdeployments sollten das Flag NICHT setzen.
+
+### 9.3 Smoke-Test
 
 `make smoke-cli` baut das Paket und exerziert acht Pfade:
 `--help` (über die pnpm-Skript-Form), HLS-Master-Datei (Exit 0 + JSON),

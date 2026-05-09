@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -118,6 +119,140 @@ func TestAnalyzeHandler_Success_TextWithBaseURL(t *testing.T) {
 	if stub.gotReq.ManifestText != "#EXTM3U\n" || stub.gotReq.BaseURL != "https://cdn.test/" {
 		t.Errorf("text/baseUrl not propagated: %+v", stub.gotReq)
 	}
+}
+
+// dashCMAFFixtureDetails ist die EncodedDetails-Form der DASH-CMAF-
+// Binary-Wire-Vertrag-Fixture für TestAnalyzeHandler_PassesCmaf...
+// (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64).
+const dashCMAFFixtureDetails = `{
+		"profiles": "urn:mpeg:dash:profile:isoff-on-demand:2011",
+		"type": "static",
+		"live": false,
+		"periodCount": 1,
+		"adaptationSets": [],
+		"cmaf": {
+			"source": "dash",
+			"confidence": "inferred",
+			"signals": [{"code":"dash_mime_video_mp4","level":"info","manifestAnchor":"MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/@mimeType","confidence":"inferred"}],
+			"binary": {
+				"status": "skipped",
+				"segmentsChecked": [{
+					"kind": "init",
+					"source": "dash",
+					"manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/Initialization",
+					"status": "skipped",
+					"failureCode": "segment_reference_missing",
+					"message": "Representation ohne Init-Referenz."
+				}],
+				"boxes": [],
+				"failures": [{
+					"code": "segment_reference_missing",
+					"level": "warning",
+					"message": "Representation ohne Init-Referenz.",
+					"manifestAnchor": "MPD/Period[0]/AdaptationSet[id=0]/Representation[id=v0]/Initialization"
+				}],
+				"limits": {
+					"maxSegmentBytes": 2000000,
+					"maxBinarySegments": 6,
+					"timeoutMs": 10000,
+					"maxRedirects": 5,
+					"requiredSegmentChecks": 1,
+					"plannedSegmentFetches": 0
+				}
+			}
+		}
+	}`
+
+type analyzeWrapperEnvelope struct {
+	Status   string `json:"status"`
+	Analysis struct {
+		AnalyzerKind string `json:"analyzerKind"`
+		Details      struct {
+			CMAF struct {
+				Confidence string `json:"confidence"`
+				Binary     struct {
+					Status          string `json:"status"`
+					SegmentsChecked []struct {
+						FailureCode string `json:"failureCode"`
+					} `json:"segmentsChecked"`
+					Limits struct {
+						MaxSegmentBytes       int `json:"maxSegmentBytes"`
+						MaxBinarySegments     int `json:"maxBinarySegments"`
+						RequiredSegmentChecks int `json:"requiredSegmentChecks"`
+					} `json:"limits"`
+				} `json:"binary"`
+			} `json:"cmaf"`
+		} `json:"details"`
+	} `json:"analysis"`
+	SessionLink struct {
+		Status string `json:"status"`
+	} `json:"session_link"`
+}
+
+// TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails pinnt
+// (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64) den HTTP-Wire-
+// Vertrag für CMAF-Binary-Daten: /api/analyze leitet
+// `details.cmaf.binary` als Bestandteil von EncodedDetails über die
+// `{analysis, session_link}`-Wrapper-Antwort an den Aufrufer durch.
+// Die interne Driven-Adapter-Fixture allein reicht laut Plan T5-DoD
+// nicht als Wire-Nachweis.
+func TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails(t *testing.T) {
+	t.Parallel()
+	envelope := postCmafBinaryRequest(t)
+	if envelope.Status != "ok" {
+		t.Errorf("envelope.status: want ok, got %q", envelope.Status)
+	}
+	if envelope.SessionLink.Status != "detached" {
+		t.Errorf("session_link.status: want detached, got %q", envelope.SessionLink.Status)
+	}
+	if envelope.Analysis.AnalyzerKind != "dash" {
+		t.Errorf("analyzerKind: want dash, got %q", envelope.Analysis.AnalyzerKind)
+	}
+	if envelope.Analysis.Details.CMAF.Confidence != "inferred" {
+		t.Errorf("cmaf.confidence: want inferred, got %q", envelope.Analysis.Details.CMAF.Confidence)
+	}
+	if envelope.Analysis.Details.CMAF.Binary.Status != "skipped" {
+		t.Errorf("cmaf.binary.status: want skipped, got %q", envelope.Analysis.Details.CMAF.Binary.Status)
+	}
+	if got := len(envelope.Analysis.Details.CMAF.Binary.SegmentsChecked); got != 1 {
+		t.Fatalf("segmentsChecked: want 1, got %d", got)
+	}
+	if got := envelope.Analysis.Details.CMAF.Binary.SegmentsChecked[0].FailureCode; got != "segment_reference_missing" {
+		t.Errorf("segmentsChecked[0].failureCode: want segment_reference_missing, got %q", got)
+	}
+	if envelope.Analysis.Details.CMAF.Binary.Limits.MaxSegmentBytes != 2000000 {
+		t.Errorf("limits.maxSegmentBytes: want 2000000, got %d", envelope.Analysis.Details.CMAF.Binary.Limits.MaxSegmentBytes)
+	}
+}
+
+func postCmafBinaryRequest(t *testing.T) analyzeWrapperEnvelope {
+	t.Helper()
+	stub := &stubAnalysisInbound{
+		result: domain.StreamAnalysisResult{
+			AnalyzerVersion: "0.10.0",
+			AnalyzerKind:    domain.AnalyzerKindDASH,
+			PlaylistType:    domain.PlaylistTypeDash,
+			Summary:         domain.StreamAnalysisSummary{ItemCount: 1},
+			EncodedDetails:  []byte(dashCMAFFixtureDetails),
+		},
+	}
+	server := httptest.NewServer(newAnalyzeHandler(stub))
+	defer server.Close()
+
+	res, err := http.Post(server.URL, "application/json", strings.NewReader(`{"kind":"text","text":"<MPD type=\"static\"/>"}`))
+	if err != nil {
+		t.Fatalf("post failed: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	body, _ := io.ReadAll(res.Body)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status: want 200, got %d (body: %s)", res.StatusCode, body)
+	}
+	var envelope analyzeWrapperEnvelope
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		t.Fatalf("decode envelope: %v\nbody: %s", err, body)
+	}
+	return envelope
 }
 
 func TestAnalyzeHandler_NullDetailsAreEmittedAsNull(t *testing.T) {

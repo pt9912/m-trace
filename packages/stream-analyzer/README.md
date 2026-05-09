@@ -134,15 +134,21 @@ dann aber selbst ablehnt (defektes `#EXTM3U`-Manifest).
 - ✅ HLS via URL mit SSRF-Schutz, Größenlimit, Redirects (RAK-27 / RAK-28).
 - ✅ DASH-MPD VOD und einfache Live-MPDs (RAK-58 / NF-12 seit `0.9.0`).
 - ✅ DASH via URL — Loader generalisiert, SSRF-Schutz unverändert.
-- 🟡 CMAF-Analyse im Stream-Analyzer-Scope (NF-13, RAK-60..RAK-64) —
+- ✅ CMAF-Analyse im Stream-Analyzer-Scope (NF-13, RAK-60..RAK-64) —
   in `0.10.0` als additives `details.cmaf`-Signalmodell unter den
   bestehenden HLS-/DASH-Detail-Objekten; manifestbasierte HLS-/DASH-
-  Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter
-  Init-/Media-Segmente (Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff`,
-  Defaults `maxSegmentBytes=2_000_000`, `maxBinarySegments=6`). **Kein
-  neuer `analyzerKind`** — `details.cmaf` lebt unter
-  `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` /
-  `DashManifestDetails.cmaf?`.
+  Signale plus bounded binäre CMAF-Konformitätsprüfung ausgewählter
+  Init-/Media-Segmente (ISO-BMFF-Box-Parser, Brand-Allowlist
+  `cmfc`/`cmf2`/`cmfs`/`cmff`, Defaults `maxSegmentBytes=2_000_000`,
+  `maxBinarySegments=6`). **Kein neuer `analyzerKind`** —
+  `details.cmaf` lebt unter `MasterPlaylistDetails.cmaf?` /
+  `MediaPlaylistDetails.cmaf?` / `DashManifestDetails.cmaf?`.
+  Konformitätsaussage nur aus `details.cmaf.binary.status:"passed"`.
+  Caller-Steuerung über `cmaf.binary.{enabled,maxSegmentBytes,maxBinarySegments}`;
+  CLI-Opt-in `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true` für lokale
+  Lab-/Fixture-Server (siehe
+  [`docs/user/stream-analyzer.md`](../../docs/user/stream-analyzer.md)
+  §3.1 + §9.2).
 - ⬜ DASH SegmentTemplate-Edge-Cases (`$Time$`-Variablen,
   `availabilityStartTime`-Drift) — Folge-Plan (Out of Scope laut
   `plan-0.9.0.md` §0.3).

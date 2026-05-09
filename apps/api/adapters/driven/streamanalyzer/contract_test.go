@@ -3,6 +3,7 @@ package streamanalyzer_test
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -135,6 +136,79 @@ func TestHTTPStreamAnalyzer_ContractDashLiveFixture(t *testing.T) {
 	}
 	if result.Summary.ItemCount != 1 {
 		t.Errorf("Summary.ItemCount: want 1 (single video rep), got %d", result.Summary.ItemCount)
+	}
+}
+
+// TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped verifiziert
+// (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64), dass das additive
+// `details.cmaf.binary`-Schema aus T4 unverändert über den Driven-
+// Adapter durchgereicht wird. Der Test JSON-decodiert das
+// EncodedDetails-Feld des Domain-Results und pinnt den Skipped-Status
+// plus den Failure-Code `segment_reference_missing`, weil die VOD-
+// Fixture nur MP4-MIME-Signale ohne Init-/Media-Referenzen trägt.
+func TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(contractSuccessDashVod)
+	}))
+	defer server.Close()
+
+	adapter := streamanalyzer.NewHTTPStreamAnalyzer(server.URL)
+	result, err := adapter.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{
+		ManifestText: `<?xml version="1.0"?><MPD type="static"></MPD>`,
+	})
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+
+	var details struct {
+		CMAF struct {
+			Source     string `json:"source"`
+			Confidence string `json:"confidence"`
+			Signals    []struct {
+				Code string `json:"code"`
+			} `json:"signals"`
+			Binary struct {
+				Status          string `json:"status"`
+				SegmentsChecked []struct {
+					Kind        string `json:"kind"`
+					Status      string `json:"status"`
+					FailureCode string `json:"failureCode"`
+				} `json:"segmentsChecked"`
+				Limits struct {
+					RequiredSegmentChecks int `json:"requiredSegmentChecks"`
+				} `json:"limits"`
+			} `json:"binary"`
+		} `json:"cmaf"`
+	}
+	if err := json.Unmarshal(result.EncodedDetails, &details); err != nil {
+		t.Fatalf("decode EncodedDetails: %v", err)
+	}
+
+	if details.CMAF.Source != "dash" {
+		t.Errorf("cmaf.source: want dash, got %q", details.CMAF.Source)
+	}
+	if details.CMAF.Confidence != "inferred" {
+		t.Errorf("cmaf.confidence: want inferred, got %q", details.CMAF.Confidence)
+	}
+	if details.CMAF.Binary.Status != "skipped" {
+		t.Errorf("cmaf.binary.status: want skipped, got %q", details.CMAF.Binary.Status)
+	}
+	if details.CMAF.Binary.Limits.RequiredSegmentChecks != 4 {
+		t.Errorf("cmaf.binary.limits.requiredSegmentChecks: want 4, got %d", details.CMAF.Binary.Limits.RequiredSegmentChecks)
+	}
+	if got := len(details.CMAF.Binary.SegmentsChecked); got != 4 {
+		t.Errorf("cmaf.binary.segmentsChecked: want 4, got %d", got)
+	}
+	for i, c := range details.CMAF.Binary.SegmentsChecked {
+		if c.Status != "skipped" {
+			t.Errorf("segmentsChecked[%d].status: want skipped, got %q", i, c.Status)
+		}
+		if c.FailureCode != "segment_reference_missing" {
+			t.Errorf("segmentsChecked[%d].failureCode: want segment_reference_missing, got %q", i, c.FailureCode)
+		}
 	}
 }
 

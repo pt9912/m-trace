@@ -22,6 +22,12 @@ export interface RunCliOptions {
   readonly analyze?: AnalyzeFn;
   /** Test-Hook: Default ist `fs/promises.readFile(path, "utf8")`. */
   readonly readFile?: ReadFileFn;
+  /**
+   * Test-Hook: Default ist `process.env`. Ermöglicht Tests des
+   * `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`-Opt-in (`0.10.0` Tranche 5
+   * / RAK-63), ohne den Prozess-Env-State zu mutieren.
+   */
+  readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
 /** Exit-Codes — orientiert an klassischer Unix-Konvention. */
@@ -46,7 +52,7 @@ export async function runCli(opts: RunCliOptions): Promise<number> {
   const analyze = opts.analyze ?? analyzeHlsManifest;
   let result;
   try {
-    result = await analyze(input);
+    result = await analyze(input, buildAnalyzeOptions(opts.env));
   } catch (error) {
     opts.stderr.write(`m-trace check: Analyse fehlgeschlagen: ${describeError(error)}\n`);
     return EXIT_FAILURE;
@@ -141,6 +147,15 @@ function printUsage(out: Writable): void {
       "  -h, --help      Zeigt diese Hilfe an.",
       "  --version       Gibt die Analyzer-Version aus.",
       "",
+      "Umgebungsvariablen:",
+      "  MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true",
+      "                  Lockert die SSRF-IP-Sperrlisten (loopback, private,",
+      "                  link-local) für lokale Lab-/Fixture-Server. Default",
+      "                  ist `false`; der vorhandene URL-SSRF-Smoke muss ohne",
+      "                  dieses Flag weiterhin `fetch_blocked` liefern. Alle",
+      "                  anderen Schutzregeln (http/https-Schema, Credentials-",
+      "                  Block, maxBytes/maxRedirects/Timeout) bleiben aktiv.",
+      "",
       "Exit-Codes:",
       "  0  Analyse erfolgreich (status:\"ok\").",
       "  1  Analyse oder I/O fehlgeschlagen.",
@@ -166,6 +181,36 @@ function localBaseUrl(path: string): string | undefined {
 
 function defaultReadFile(path: string): Promise<string> {
   return fsReadFile(path, "utf8");
+}
+
+/**
+ * Liest den `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`-Opt-in-Schalter aus
+ * der Env (`0.10.0` Tranche 5, NF-13 / RAK-63). Akzeptiert
+ * `1`, `true`, `TRUE`, `yes`, `on` als „aktiviert"; alle anderen
+ * Werte (inklusive Abwesenheit) lassen den SSRF-Default unverändert.
+ *
+ * Sicherheitsprofil: das Flag setzt ausschließlich
+ * `fetch.allowPrivateNetworks=true` durch zur Analyzer-Library; alle
+ * anderen Schutzregeln (`http`/`https`-Schema-Whitelist, Credentials-
+ * Block, `maxBytes`/`maxRedirects`/Timeout) bleiben aktiv. Der
+ * vorhandene URL-SSRF-Smoke (`scripts/smoke-cli.sh`) muss ohne diesen
+ * Schalter weiterhin `fetch_blocked` liefern — siehe `docs/user/
+ * stream-analyzer.md` und `packages/stream-analyzer/README.md`.
+ */
+function buildAnalyzeOptions(
+  env: Readonly<Record<string, string | undefined>> | undefined
+): AnalyzeOptions | undefined {
+  const source = env ?? process.env;
+  if (!isAllowPrivateNetworksEnabled(source.MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS)) {
+    return undefined;
+  }
+  return { fetch: { allowPrivateNetworks: true } };
+}
+
+function isAllowPrivateNetworksEnabled(value: string | undefined): boolean {
+  if (value === undefined) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 
 function describeError(error: unknown): string {

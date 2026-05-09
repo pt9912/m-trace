@@ -174,4 +174,115 @@ if ! grep -q "Usage: m-trace check" <<<"$help_via_bin"; then
 fi
 echo "[smoke-cli] bin via consumer .bin OK"
 
+# 8. CMAF-HLS- und CMAF-DASH-Probe mit lokalem HTTP-Server
+#    (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64). Erzeugt
+#    deterministische CMAF-Init-/Media-Bytes via
+#    scripts/cmaf-fixture-builder.mjs, serviert sie über
+#    `python3 -m http.server` und ruft die CLI mit
+#    `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true` auf. Erwartet
+#    `analysis.details.cmaf.binary.status="passed"` für beide
+#    Manifest-Formate. Datei-Input mit `file://`-baseUrl gilt laut
+#    Plan T5-DoD nicht als Ersatz, weil der Segment-Loader strikt
+#    HTTP(S)-SSRF-Regeln nutzt.
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[smoke-cli] CMAF probes skipped — python3 not available" >&2
+  echo "[smoke-cli] all checks passed (CMAF probes skipped)"
+  exit 0
+fi
+
+cmaf_dir="$tmpdir/cmaf"
+node scripts/cmaf-fixture-builder.mjs "$cmaf_dir" >/dev/null
+
+cat > "$cmaf_dir/master.m3u8" <<'M3U'
+#EXTM3U
+#EXT-X-VERSION:7
+#EXT-X-TARGETDURATION:4
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-MAP:URI="init.mp4"
+#EXTINF:4.0,
+seg-0.m4s
+#EXT-X-ENDLIST
+M3U
+
+# DASH-MPD mit SegmentTemplate (init.mp4 + seg-$Number$.m4s; das
+# erste Segment ist seg-1.m4s — Builder erzeugt seg-0.m4s als
+# Default. Wir benennen die Datei deshalb nach dem Templating um.)
+cp "$cmaf_dir/seg-0.m4s" "$cmaf_dir/seg-1.m4s"
+cat > "$cmaf_dir/manifest.mpd" <<'MPD'
+<?xml version="1.0" encoding="UTF-8"?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" mediaPresentationDuration="PT10M0S" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011">
+  <Period>
+    <AdaptationSet id="v" mimeType="video/mp4">
+      <SegmentTemplate initialization="init.mp4" media="seg-$Number$.m4s" startNumber="1"/>
+      <Representation id="v1" bandwidth="1280000" width="1280" height="720" codecs="avc1.4d401e"/>
+    </AdaptationSet>
+  </Period>
+</MPD>
+MPD
+
+# Pick a random free port and start python3 -m http.server in
+# tmpdir. The server is killed on EXIT via the existing trap; we
+# extend that trap to also stop the python pid.
+http_port=0
+# Try a few candidate ports; bind quickly with a tiny python wrapper.
+http_log="$tmpdir/http-server.log"
+( cd "$cmaf_dir" && exec python3 -u -m http.server 0 ) >"$http_log" 2>&1 &
+http_pid=$!
+trap 'rm -rf "$tmpdir"; kill "$http_pid" 2>/dev/null || true' EXIT
+
+# Wait until the server printed its bound port (max ~5s).
+for _ in $(seq 1 50); do
+  if grep -q "Serving HTTP" "$http_log" 2>/dev/null; then
+    break
+  fi
+  sleep 0.1
+done
+http_port="$(grep -oE 'port [0-9]+' "$http_log" | awk '{print $2}' | head -n1)"
+if [ -z "$http_port" ]; then
+  echo "[smoke-cli] failed to bring up python3 http.server on tmpdir:"
+  cat "$http_log"
+  exit 1
+fi
+echo "[smoke-cli] CMAF probe HTTP server up on port $http_port"
+
+# 8a. CMAF-HLS-Probe.
+cmaf_hls_url="http://127.0.0.1:${http_port}/master.m3u8"
+cmaf_hls_out="$(MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true pnpm --silent m-trace check "$cmaf_hls_url")"
+if ! echo "$cmaf_hls_out" | jq -e '.status == "ok" and .playlistType == "media" and .details.cmaf.binary.status == "passed"' >/dev/null; then
+  echo "[smoke-cli] CMAF-HLS probe did not return binary.status=passed:"
+  echo "$cmaf_hls_out"
+  exit 1
+fi
+echo "[smoke-cli] CMAF-HLS probe OK (binary.status=passed)"
+
+# 8b. CMAF-DASH-Probe.
+cmaf_dash_url="http://127.0.0.1:${http_port}/manifest.mpd"
+cmaf_dash_out="$(MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true pnpm --silent m-trace check "$cmaf_dash_url")"
+if ! echo "$cmaf_dash_out" | jq -e '.status == "ok" and .analyzerKind == "dash" and .details.cmaf.binary.status == "passed"' >/dev/null; then
+  echo "[smoke-cli] CMAF-DASH probe did not return binary.status=passed:"
+  echo "$cmaf_dash_out"
+  exit 1
+fi
+echo "[smoke-cli] CMAF-DASH probe OK (binary.status=passed)"
+
+# 8c. Doppel-check: ohne MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS muss der
+# Loopback-Aufruf weiterhin fetch_blocked liefern (der vorhandene
+# URL-SSRF-Smoke aus Schritt 7 schützt RFC1918; hier zusätzlich
+# gegen 127.0.0.1).
+set +e
+loopback_out="$(pnpm --silent m-trace check "$cmaf_hls_url" 2>/dev/null)"
+loopback_exit=$?
+set -e
+if [ "$loopback_exit" != "1" ]; then
+  echo "[smoke-cli] loopback without opt-in expected exit 1, got $loopback_exit"
+  echo "$loopback_out"
+  exit 1
+fi
+if ! echo "$loopback_out" | jq -e '.status == "error" and .code == "fetch_blocked"' >/dev/null; then
+  echo "[smoke-cli] loopback without opt-in did not return fetch_blocked:"
+  echo "$loopback_out"
+  exit 1
+fi
+echo "[smoke-cli] loopback without opt-in still blocked (fetch_blocked)"
+
 echo "[smoke-cli] all checks passed"

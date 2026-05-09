@@ -186,8 +186,8 @@ Segmente, Codecs, Byte-Ranges oder Player-Laufzeitpfade.
 | 1 | Result-Schema, Public API und Fixture-Vertrag für CMAF-Signale | 🟡 (Schema/API fertig; Fixture-Sync folgt mit T2/T3/T4) |
 | 2 | HLS/fMP4-CMAF-Erkennung | 🟡 (Parser fertig; Contract-Fixture-Update folgt im nächsten Tranchen-Block) |
 | 3 | DASH/CMAF-Erkennung | ✅ |
-| 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | 🟡 (ISO-BMFF-Box-Parser, bounded Segment-Loader und Verifier-Orchestrator fertig; HLS-CMAF-passed-Positiv-Fixture und CLI-Smoke-Tests folgen mit T5) |
-| 5 | API-/CLI-Durchleitung, Doku und Smokes | ⬜ |
+| 4 | Binäre CMAF-Konformitätsprüfung für Init-/Media-Segmente | ✅ |
+| 5 | API-/CLI-Durchleitung, Doku und Smokes | 🟡 (HTTP-Wire-Test, CLI-Opt-in, smoke-cli CMAF-Probes und Doku fertig; Closeout in T6) |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
 ---
@@ -822,52 +822,57 @@ Ziel: CMAF-Signale sind über alle bestehenden Analyzer-Pfade nutzbar.
 
 DoD:
 
-- [ ] `apps/api`-StreamAnalyzer-Adapter reicht `details.cmaf` im
-  bestehenden Domain-Modell über `EncodedDetails` additiv durch; Tests
-  prüfen, dass HLS-CMAF, DASH-CMAF und
-  `analysis.details.cmaf.binary.status` im HTTP-Result sichtbar
-  bleiben.
-- [ ] `apps/analyzer-service` akzeptiert optional
-  `{ "cmaf": { "binary": { "enabled", "maxSegmentBytes",
-  "maxBinarySegments" } } }`, filtert ungültige Werte wie beim
-  bestehenden `fetch`-Block, merged die Werte mit Analyzer-Defaults und
-  dokumentiert, dass `allowPrivateNetworks` weiterhin ausschließlich
-  service-seitig über `ANALYZER_ALLOW_PRIVATE_NETWORKS` gesetzt werden
-  kann.
-- [ ] `/api/analyze`-Vertrag ist bewusst entschieden und getestet:
-  entweder bleibt `cmaf.binary.*` im öffentlichen API-Request
-  unsupported und Requests mit vorhandenem `cmaf`-/`cmaf.binary`-Block
-  werden mit `400 invalid_request` abgelehnt, oder Request-Payload,
-  Domain-Modell und driven Adapter leiten die drei Binary-Optionen
-  explizit an den analyzer-service durch. Stilles Ignorieren gesetzter
-  CMAF-Binary-Optionen ist nicht zulässig. Der gewählte Pfad steht in
-  `docs/user/stream-analyzer.md` und in den HTTP-Contract-Tests.
-- [ ] HTTP-Contract-/Adapter-Tests decken HLS-CMAF und DASH-CMAF ab.
-  Mindestens ein Test pinnt die öffentliche `/api/analyze`-Antwort mit
-  `{analysis, session_link}`-Wrapper und verifiziert
-  `analysis.details.cmaf.binary.status`; die interne driven-Adapter-
-  Fixture alleine reicht für RAK-63/RAK-64 nicht als HTTP-Wire-
-  Nachweis.
-- [ ] CLI gibt die neuen Signale unverändert im JSON aus.
-- [ ] CLI bekommt einen dokumentierten, bewusst opt-in Schalter für
-  lokale Fixture-/Lab-URLs, z. B. Env
-  `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true`, der ausschließlich
-  `fetch.allowPrivateNetworks=true` an den Analyzer weitergibt.
-  Ohne diesen Schalter bleibt der bestehende SSRF-Default aktiv und der
-  vorhandene URL-SSRF-Smoke muss weiterhin `fetch_blocked` liefern.
-- [ ] `make smoke-cli` um je eine CMAF-HLS- und CMAF-DASH-Probe mit
-  bestandener binärer Prüfung erweitert. Der Smoke nutzt einen lokalen
-  Fixture-HTTP-Server, der Manifest, Init-Segment und Media-Segment aus
-  `spec/contract-fixtures/analyzer/` ausliefert, und setzt den neuen
-  CLI-Opt-in-Schalter für private/loopback URLs nur für diese beiden
-  Probes. Datei-Input mit `file://`-`baseUrl` gilt nicht als Ersatz für
-  diesen Nachweis, weil der Segment-Loader HTTP(S)-SSRF-Regeln nutzt.
-  Externe Netzabhängigkeit oder öffentliche Testmedien sind für den
-  Release-Nachweis nicht zulässig.
-- [ ] [`docs/user/stream-analyzer.md`](../../user/stream-analyzer.md)
-  beschreibt Scope, Beispiele, Grenzen, Binary-Statuswerte und Exit-/
-  Fehlerverhalten.
-- [ ] `packages/stream-analyzer/README.md` synchronisiert.
+- [x] `apps/api`-StreamAnalyzer-Adapter reicht `details.cmaf` über
+  `EncodedDetails` additiv durch (Test
+  `TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped` in
+  `apps/api/adapters/driven/streamanalyzer/contract_test.go`
+  decoded das vollständige `cmaf.binary`-Subobjekt aus der
+  Spec-Fixture). HTTP-Wire-Nachweis für `analysis.details.cmaf.
+  binary.status` im `/api/analyze`-Wrapper läuft über
+  `TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails`.
+- [x] `apps/analyzer-service` akzeptiert `cmaf.binary.{enabled,
+  maxSegmentBytes,maxBinarySegments}` und filtert ungültige Werte
+  analog zum bestehenden `fetch`-Block (T1-Commit `441c4bb`,
+  `parseCmafOptions` in `src/server.ts`); `allowPrivateNetworks`
+  bleibt env-only über `ANALYZER_ALLOW_PRIVATE_NETWORKS`.
+- [x] `/api/analyze`-Vertrag ist explizit für die Reject-Variante
+  entschieden: Requests mit `cmaf`-/`cmaf.binary`-Block werden mit
+  `400 invalid_request` abgelehnt (T1-Commit `441c4bb`,
+  `analyze.go` Pre-Decode-Check + Test
+  `TestAnalyzeHandler_RejectsCmafOptionsBlock`). Begründung und
+  Caller-Steuerung über die Library-Optionen in
+  `docs/user/stream-analyzer.md` §3.1.
+- [x] HTTP-Contract-/Adapter-Tests decken HLS- und DASH-Wire-Pfad
+  ab. `TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails`
+  pinnt die öffentliche `{analysis, session_link}`-Wrapper-Antwort
+  mit `analysis.details.cmaf.binary.status`; die existierenden
+  Driven-Adapter-Tests pinnen das Decoder-Verhalten gegen die
+  Spec-Fixtures (HLS-Master + DASH-VOD inkl. Binary-Subobjekt).
+- [x] CLI gibt die neuen Signale unverändert im JSON aus
+  (`runCli` schreibt `JSON.stringify(result, null, 2)`; CMAF-Smoke
+  in `scripts/smoke-cli.sh` Schritt 8 verifiziert
+  `binary.status="passed"` über jq).
+- [x] CLI-Opt-in-Schalter `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`
+  reicht ausschließlich `fetch.allowPrivateNetworks=true` an die
+  Library durch; akzeptierte Werte `1`/`true`/`TRUE`/`yes`/`on`
+  (case-insensitive, getrimmt). Default off → `fetch_blocked`
+  bleibt bei Loopback-URLs sichtbar (Smoke-Schritt 8c). Tests in
+  `tests/cli.test.ts` decken Default-Off, alle akzeptierten Werte,
+  alle abgelehnten Werte und die Help-Text-Doku.
+- [x] `make smoke-cli` um drei CMAF-Probes erweitert: HLS-passed,
+  DASH-passed, Loopback-ohne-Opt-in-fetch_blocked. Lokaler
+  HTTP-Server via `python3 -u -m http.server 0` aus tmpdir mit
+  per `scripts/cmaf-fixture-builder.mjs` deterministisch erzeugten
+  Init-/Media-Bytes; Datei-Input mit `file://` ist explizit nicht
+  Teil des Smokes, weil der Segment-Loader strikt HTTP(S)-SSRF-
+  Regeln nutzt.
+- [x] [`docs/user/stream-analyzer.md`](../../user/stream-analyzer.md)
+  §3.1 (CMAF-Binary-Verifikation) und §9.2 (CMAF-Lab-Modus)
+  beschreiben Scope, Beispiele, Brand-Allowlist, Defaults, alle 13
+  CmafFailureCode-Werte mit Status-Mapping, Caller-Steuerung,
+  `/api/analyze`-Vertrag und Opt-in-Env-Variable.
+- [x] `packages/stream-analyzer/README.md` synchronisiert (CMAF-
+  Block ✅ statt 🟡; Verweis auf §3.1+§9.2 für Details).
 
 ---
 

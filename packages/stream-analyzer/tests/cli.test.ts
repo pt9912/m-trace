@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { runCli, EXIT_OK, EXIT_FAILURE, EXIT_USAGE } from "../src/cli/check.js";
 import type { AnalysisErrorResult } from "../src/types/error.js";
 import type { AnalysisResult } from "../src/types/result.js";
-import type { ManifestInput } from "../src/types/input.js";
+import type { AnalyzeOptions, ManifestInput } from "../src/types/input.js";
 
 class StringStream extends Writable {
   data = "";
@@ -23,8 +23,9 @@ interface RunResult {
 async function run(
   argv: string[],
   options: {
-    analyze?: (input: ManifestInput) => Promise<AnalysisResult | AnalysisErrorResult>;
+    analyze?: (input: ManifestInput, opts?: AnalyzeOptions) => Promise<AnalysisResult | AnalysisErrorResult>;
     readFile?: (path: string) => Promise<string>;
+    env?: Readonly<Record<string, string | undefined>>;
   } = {}
 ): Promise<RunResult> {
   const stdout = new StringStream();
@@ -34,7 +35,8 @@ async function run(
     stdout,
     stderr,
     analyze: options.analyze,
-    readFile: options.readFile
+    readFile: options.readFile,
+    env: options.env
   });
   return { exit, stdout: stdout.data, stderr: stderr.data };
 }
@@ -318,5 +320,75 @@ describe("m-trace CLI — DASH dispatch (RAK-59)", () => {
     expect(r.exit).toBe(EXIT_FAILURE);
     const parsed = JSON.parse(r.stdout);
     expect(parsed.code).toBe("manifest_not_supported");
+  });
+});
+
+/**
+ * Plan `0.10.0` Tranche 5 (NF-13 / RAK-63): Opt-in-Env-Schalter
+ * `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS` reicht ausschließlich
+ * `fetch.allowPrivateNetworks=true` an die Analyzer-Library durch.
+ * Default bleibt unverändert; der vorhandene URL-SSRF-Smoke muss
+ * ohne dieses Flag weiterhin `fetch_blocked` liefern.
+ */
+describe("m-trace CLI — MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS opt-in", () => {
+  it("does not pass allowPrivateNetworks when env is unset", async () => {
+    let observed: AnalyzeOptions | undefined;
+    const r = await run(["check", "https://cdn.example.test/m.m3u8"], {
+      analyze: async (_, opts) => {
+        observed = opts;
+        return okMaster;
+      },
+      env: {}
+    });
+    expect(r.exit).toBe(EXIT_OK);
+    expect(observed).toBeUndefined();
+  });
+
+  it("passes fetch.allowPrivateNetworks=true when env is 'true'", async () => {
+    let observed: AnalyzeOptions | undefined;
+    await run(["check", "https://cdn.example.test/m.m3u8"], {
+      analyze: async (_, opts) => {
+        observed = opts;
+        return okMaster;
+      },
+      env: { MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS: "true" }
+    });
+    expect(observed).toEqual({ fetch: { allowPrivateNetworks: true } });
+  });
+
+  it.each(["1", "TRUE", "yes", "on", "  true  "])(
+    "treats %p as enabled",
+    async (value) => {
+      let observed: AnalyzeOptions | undefined;
+      await run(["check", "https://cdn.example.test/m.m3u8"], {
+        analyze: async (_, opts) => {
+          observed = opts;
+          return okMaster;
+        },
+        env: { MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS: value }
+      });
+      expect(observed).toEqual({ fetch: { allowPrivateNetworks: true } });
+    }
+  );
+
+  it.each(["false", "0", "no", "off", "", "anything-else"])(
+    "treats %p as not enabled",
+    async (value) => {
+      let observed: AnalyzeOptions | undefined;
+      await run(["check", "https://cdn.example.test/m.m3u8"], {
+        analyze: async (_, opts) => {
+          observed = opts;
+          return okMaster;
+        },
+        env: { MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS: value }
+      });
+      expect(observed).toBeUndefined();
+    }
+  );
+
+  it("documents the opt-in switch in the help output", async () => {
+    const r = await run(["--help"]);
+    expect(r.stdout).toContain("MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS");
+    expect(r.stdout).toContain("fetch_blocked");
   });
 });
