@@ -1,0 +1,10 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/ingest/streams/{id}/validate-key",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §3 Tranche 2 (RAK-66, Cross-Project-Leak-Schutz)",
+    "captured": "Synthetisches Beispiel — pinnt die responsiv-blinde Antwort: weder stream_id noch key_fingerprint dürfen erscheinen, wenn der Schlüssel nicht zum Stream passt oder Cross-Project ist.",
+    "anonymisierung": "Keine Identifier im Body."
+  },
+  "valid": false
+}

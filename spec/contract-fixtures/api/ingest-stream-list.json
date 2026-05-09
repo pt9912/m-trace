@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/ingest/streams",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §3 Tranche 2 (RAK-65/RAK-66)",
+    "captured": "Synthetisches Beispiel — pinnt das Wire-Format der Liste; Stream-Keys werden hier NICHT mitgegeben (RAK-66).",
+    "anonymisierung": "stream_id und key_fingerprint sind Lab-Werte."
+  },
+  "streams": [
+    {
+      "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+      "project_id": "demo",
+      "display_name": "Lab SRT",
+      "protocol": "srt",
+      "endpoint_id": "ep-srt",
+      "target_id": "tgt-mediamtx",
+      "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+      "status": "ready",
+      "key_fingerprint": "mtr_ing_3f2a...c4d1",
+      "created_at": "2026-05-09T10:00:00Z",
+      "updated_at": "2026-05-09T10:00:00Z"
+    }
+  ]
+}

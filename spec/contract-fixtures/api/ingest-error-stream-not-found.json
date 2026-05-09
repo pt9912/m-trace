@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/ingest/streams/{id} — Cross-Project-Lookup",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §3 Tranche 2 (RAK-66, Cross-Project-Leak-Schutz)",
+    "captured": "Synthetisches Beispiel — pinnt, dass Streams aus fremden Projekten wie nicht-existent behandelt werden (kein Existenz-Hinweis im Body).",
+    "anonymisierung": "Keine Identifier im Body."
+  },
+  "status": "error",
+  "code": "stream_not_found",
+  "message": "Ingest-Stream existiert nicht im aufgelösten Project."
+}

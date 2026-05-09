@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/ingest/streams/{id}/rotate-key",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §3 Tranche 2 (RAK-66)",
+    "captured": "Synthetisches Beispiel — pinnt das Wire-Format der Rotation; der neue Klartext-Key wird genau einmal mitgegeben.",
+    "anonymisierung": "stream_key.value ist ein Fixture-Marker, kein produktiver Token."
+  },
+  "stream": {
+    "id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "project_id": "demo",
+    "display_name": "Lab SRT",
+    "protocol": "srt",
+    "endpoint_id": "ep-srt",
+    "target_id": "tgt-mediamtx",
+    "routing_rule_id": "route_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "status": "ready",
+    "created_at": "2026-05-09T10:00:00Z",
+    "updated_at": "2026-05-09T10:01:00Z"
+  },
+  "stream_key": {
+    "value": "mtr_ing_ROTATED_FIXTURE_ONLY",
+    "fingerprint": "mtr_ing_77bb...9912",
+    "created_at": "2026-05-09T10:01:00Z"
+  }
+}

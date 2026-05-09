@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/ingest/hooks/stream-{started,ended}",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §6 Tranche 4 (RAK-69)",
+    "captured": "Synthetisches Beispiel — pinnt den Lifecycle-Hook-Acknowledgement: 202 mit accepted:true, server-generierter event_id, kein Klartext-Key.",
+    "anonymisierung": "stream_id und event_id sind Lab-Werte."
+  },
+  "accepted": true,
+  "event_id": "evt_3f2a91c4b7e8f0d1a2b3c4d5",
+  "stream_id": "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "type": "stream_started",
+  "observed_at": "2026-05-09T10:01:00Z"
+}

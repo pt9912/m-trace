@@ -440,7 +440,7 @@ Validierungsregeln:
 | 2 | API-/Persistenzpfad für Streams, Listing, Key-Validierung und Key-Rotation | ✅ |
 | 3 | MediaMTX-Artefakte und SRT-/RTMP-Lab-Konfiguration | 🟡 |
 | 4 | Lifecycle-Events und lokale Lab-Verifikation | ✅ |
-| 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ⬜ |
+| 5 | Doku, Contract-Tests, Smokes und README-Abgrenzung | ✅ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
 ---
@@ -698,22 +698,35 @@ verwechseln.
 
 DoD:
 
-- [ ] User-Doku beschreibt den lokalen Stream-Control-Workflow:
+- [x] User-Doku beschreibt den lokalen Stream-Control-Workflow:
   Stream anlegen, Key verwenden/lokal validieren, Route prüfen,
-  MediaMTX-Artefakt ansehen, Key rotieren.
-- [ ] API-Kontrakt dokumentiert Endpunkte, Erfolgsantworten,
-  Fehlercodes und Redaktionsregeln für Secrets.
-- [ ] README grenzt `0.11.0` gegen Control-Plane, Multi-Tenant-
-  Betrieb und Secret-Management ab.
-- [ ] `docs/user/local-development.md` oder ein neues User-Dokument
-  verlinkt den Smoke- und Beispielpfad.
-- [ ] Relevante Smokes sind im Makefile dokumentiert; Lab-Smokes
-  bleiben opt-in und werden nicht ungeprüft in `make gates` gezogen.
-- [ ] Contract-Fixtures oder API-Snapshots pinnen
-  Create/List/Validate/Rotate, Auth-/Project-Fehler und mindestens
-  einen Lifecycle-Fehlerfall.
-- [ ] Doku enthält eine kurze Security-Grenze mit Verweis auf
-  `0.12.0` für Token Lifecycle und tenant-spezifische Policies.
+  MediaMTX-Artefakt ansehen, Key rotieren —
+  `docs/user/ingest-control.md` §2 Quickstart.
+- [x] API-Kontrakt dokumentiert Endpunkte, Erfolgsantworten,
+  Fehlercodes und Redaktionsregeln für Secrets —
+  `spec/backend-api-contract.md` §3.8 plus
+  `docs/user/ingest-control.md` §3.
+- [x] README grenzt `0.11.0` gegen Control-Plane, Multi-Tenant-
+  Betrieb und Secret-Management ab — neue Bullet-Zeile in
+  `Was m-trace nicht ist`-Sektion mit Verweis auf
+  `docs/user/ingest-control.md` §5.
+- [x] `docs/user/local-development.md` verlinkt den Smoke- und
+  Beispielpfad — neuer §2.7.2 mit `make smoke-ingest-control` und
+  Verweis auf `docs/user/ingest-control.md`.
+- [x] Relevante Smokes sind im Makefile dokumentiert;
+  Lab-Smokes bleiben opt-in. `make smoke-ingest-control` ist
+  in `.PHONY` aufgeführt und **nicht** in `make gates`
+  eingebunden.
+- [x] Contract-Fixtures pinnen Create/List/Validate/Rotate, Auth-/
+  Project-Fehler und mindestens einen Lifecycle-Fehlerfall —
+  8 neue JSONs unter `spec/contract-fixtures/api/ingest-*.json`
+  plus `apps/api/adapters/driving/http/ingest_contract_test.go`
+  mit Schlüssel-Subset-Vergleich und Sicherheits-Pins
+  (Validate-Blind: kein `stream_id`/`key_fingerprint`/`project_id`
+  im Body; Stream-Not-Found: kein Cross-Project-Identifier).
+- [x] Doku enthält eine kurze Security-Grenze mit Verweis auf
+  `0.12.0` für Token Lifecycle und tenant-spezifische Policies —
+  `docs/user/ingest-control.md` §5.
 
 ## 8. Tranche 6 — Release-Closeout
 
@@ -760,7 +773,7 @@ Commit-/Datei-/Testnachweis.
 | RAK-67 | Muss | Domainmodell und API-/Artefaktvertrag für `srt`/`rtmp`-Endpunkte, Targets und 1:1-Routing; Validierungstests. | [ ] |
 | RAK-68 | Muss | MediaMTX-Artefakt-Generator oder Validator inklusive SRT-/RTMP-Nachweis, Beispiel-/Smoke-Nachweis, Regression bestehender Lab-Beispiele. | [ ] |
 | RAK-69 | Muss | Lifecycle-Eventmodell, lokale Start-/Ende-Verifikation, Fehlerfalltests, kein Klartext-Key in Events; echte MediaMTX-/SRS-Hooks nur bei expliziter Umsetzung. | [x] T4 — Hook-Handler `IngestLifecycleHookHandler`, Service `RecordLifecycleEvent` mit typisierten Validierungen, V3 Migration mit opaker `event_id`/`connection_id`/`reason`, Smoke `make smoke-ingest-control`. Echte MediaMTX-/SRS-Hooks bleiben Folge-Scope. |
-| RAK-70 | Muss | User-Doku, API-Kontrakt inklusive Auth-/Project-Scope für `/api/ingest/*`, README-Scope-Grenze, Smokes und Release-Gates. | [ ] |
+| RAK-70 | Muss | User-Doku, API-Kontrakt inklusive Auth-/Project-Scope für `/api/ingest/*`, README-Scope-Grenze, Smokes und Release-Gates. | [x] T5 — `docs/user/ingest-control.md` (Quickstart + Endpunktmatrix + Security-Grenze), `spec/backend-api-contract.md` §3.8 Wire-Skizzen, README-Bullet zu `Was m-trace nicht ist`, `docs/user/local-development.md` §2.7.2-Verweis, Contract-Fixtures + `ingest_contract_test.go`. |
 
 ## 10. Folge-Scope nach `0.11.0`
 

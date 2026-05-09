@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "Beliebiger /api/ingest/...-Endpunkt ohne X-MTrace-Token",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §3 Tranche 2/4 (RAK-66/RAK-70)",
+    "captured": "Synthetisches Beispiel — pinnt den Auth-Fehler-Wirevertrag.",
+    "anonymisierung": "Keine Identifier im Body."
+  },
+  "status": "error",
+  "code": "unauthorized",
+  "message": "`X-MTrace-Token` fehlt oder ist ungültig."
+}

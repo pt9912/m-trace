@@ -326,6 +326,11 @@ m-trace ist nicht:
 - ein Production-Ready-Kubernetes-Deployment
 - ein Ersatz für MediaMTX, FFmpeg, Grafana, Prometheus oder
   Production-Grade-Storage-Backends wie Mimir oder ClickHouse
+- eine produktive Stream-Control-Plane: der ab `0.11.0` ausgelieferte
+  Ingest-Control-Pfad (`/api/ingest/...`) ist ein **lokaler
+  Lab-Workflow** ohne Multi-Tenant-Token-Lifecycle, ohne signierte
+  Sessions und ohne Secret-Management; siehe
+  [`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5
 
 m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
 

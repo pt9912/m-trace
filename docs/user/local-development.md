@@ -297,6 +297,24 @@ bleiben unangetastet.
 Vollständige Operator-Doku (Metriken, Schwellen, Fehlerbilder,
 Cardinality-Grenzen, Deferred-Liste): [`srt-health.md`](./srt-health.md).
 
+### 2.7.2 Ingest-Control (`0.11.0`)
+
+`0.11.0` ergänzt einen lokalen **Stream-Control-Pfad**:
+
+- **Lab-Smoke** `make smoke-ingest-control` (Stream anlegen +
+  Lifecycle-Hooks `stream-started` / `stream-ended` einspeisen,
+  prüft `202 accepted:true`).
+- **HTTP-API** unter `/api/ingest/streams` (CRUD, Key-Rotation,
+  Validate) plus `/api/ingest/media-server-config` (deterministisches
+  MediaMTX-YAML) und `/api/ingest/hooks/stream-{started,ended}`.
+- **Beispiel-Stack** `examples/ingest-control/` mit MediaMTX +
+  generiertem YAML + curl-Smoke.
+- **Persistenz** in SQLite über die Migrationen V2/V3.
+
+Vollständige Operator-Doku (Endpunktmatrix, Redaktionsregeln,
+Security-Grenze, Deferred-Liste):
+[`ingest-control.md`](./ingest-control.md).
+
 ---
 
 ## 3. Compose-Stack-Topologie

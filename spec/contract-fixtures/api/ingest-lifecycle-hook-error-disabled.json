@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/ingest/hooks/stream-{started,ended} mit deaktivierter RoutingRule",
+    "spec": "spec/backend-api-contract.md §3.8",
+    "plan": "plan-0.11.0 §6 Tranche 4 (RAK-69, RAK-70)",
+    "captured": "Synthetisches Beispiel — pinnt den Lifecycle-Fehlerfall, wenn die RoutingRule für den Stream deaktiviert ist (409 routing_rule_disabled).",
+    "anonymisierung": "Keine Identifier im Body."
+  },
+  "status": "error",
+  "code": "routing_rule_disabled",
+  "message": "routing rule is disabled"
+}

@@ -332,7 +332,15 @@ sync-contract-fixtures:
 	cp spec/contract-fixtures/srt/mediamtx-srtconns-list.json apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json
 	mkdir -p apps/api/adapters/driving/http/testdata
 	cp spec/contract-fixtures/api/srt-health-detail.json apps/api/adapters/driving/http/testdata/srt-health-detail.json
-	@echo "[sync-contract-fixtures] copied 22 fixture(s) into apps/api/.../testdata/"
+	cp spec/contract-fixtures/api/ingest-stream-create.json apps/api/adapters/driving/http/testdata/ingest-stream-create.json
+	cp spec/contract-fixtures/api/ingest-stream-list.json apps/api/adapters/driving/http/testdata/ingest-stream-list.json
+	cp spec/contract-fixtures/api/ingest-stream-rotate.json apps/api/adapters/driving/http/testdata/ingest-stream-rotate.json
+	cp spec/contract-fixtures/api/ingest-stream-validate-blind.json apps/api/adapters/driving/http/testdata/ingest-stream-validate-blind.json
+	cp spec/contract-fixtures/api/ingest-error-unauthorized.json apps/api/adapters/driving/http/testdata/ingest-error-unauthorized.json
+	cp spec/contract-fixtures/api/ingest-error-stream-not-found.json apps/api/adapters/driving/http/testdata/ingest-error-stream-not-found.json
+	cp spec/contract-fixtures/api/ingest-lifecycle-hook-success.json apps/api/adapters/driving/http/testdata/ingest-lifecycle-hook-success.json
+	cp spec/contract-fixtures/api/ingest-lifecycle-hook-error-disabled.json apps/api/adapters/driving/http/testdata/ingest-lifecycle-hook-error-disabled.json
+	@echo "[sync-contract-fixtures] copied 30 fixture(s) into apps/api/.../testdata/"
 
 seed-rak9:
 	bash scripts/seed-rak9.sh
