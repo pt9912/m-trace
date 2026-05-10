@@ -513,6 +513,68 @@ DoD:
   §2 Schritt 46 für die `0.11.0`-Auslieferung von ⬜ auf 🟡
   hochgesetzt.
 
+### 4a.18 Patch `1.1.15` — `0.12.0` Auth / Token Lifecycle (F-111..F-113 für Auth-/Security-Scope auf Release-Muss, RAK-71..RAK-76)
+
+`0.11.0` hat den lokalen/lab-nahen Ingest-Control-Pfad geschlossen.
+Dieser Patch hebt für `0.12.0` die historisch als Kann geführten
+Erweiterungen `F-111`..`F-113` für einen begrenzten Auth-/Security-
+Scope auf Release-Muss und führt die neue RAK-Gruppe
+`RAK-71`..`RAK-76` in §13.14 ein. Architekturentscheidung
+**Variante B** (Auth als Modul in `apps/api`, kein eigener Auth-
+Service in `0.12.0`); eine spätere Ausgliederung bleibt möglich, ist
+aber Folge-Scope. Persistenz: SQLite über bestehende API-Persistenz
+plus InMemory-Testadapter; Klartext-Tokens werden nicht persistiert.
+Bestehende `X-MTrace-Token`-Project-Token-Flows bleiben im
+`0.12.0`-Compatibility-Fenster gültig. Out of Scope und damit nicht
+durch diesen Patch erfüllt: User-/Org-Verwaltung, OAuth/OIDC, SSO,
+Admin-UI, mandantenfähige SaaS-Control-Plane, KMS-/Vault-/Cloud-
+Secret-Manager, produktive MediaMTX-/SRS-Auth-Hook-Kopplung,
+globale Stream-Key-Rotation über mehrere Deployments,
+Production-Ops-Backends aus `0.13.0`, Cookies für Player-Telemetrie.
+Wire-Vertrag für `POST /api/auth/session-tokens` und die zusätzlichen
+Auth-Header für `POST /api/playback-events` lebt in
+[`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+(Auth-Matrix, Header-Priorität, Fehlerpräzedenz, CORS-Preflight,
+Wire-Skizzen, Fehler-Codes — wird in Tranche 0 dieses Patches
+ergänzt).
+
+DoD:
+
+- [x] Lastenheft Header: Version `1.1.14` → `1.1.15`; Patch-Note
+  unmittelbar vor Patch `1.1.14` als erster Block im Frontmatter.
+- [x] Lastenheft §7.11 `F-111`..`F-113` für den `0.12.0`-Scope auf
+  „Muss (`0.12.0`-Scope, Patch `1.1.15`)" gehoben; jeweils mit
+  Verweis auf RAK-72/RAK-73/RAK-74 in §13.14 plus expliziter
+  Out-of-Scope-Klammer (Klartext-Token nur in Issuance-Antwort;
+  Persistenz nie Klartext; Origin-/IP-nahe Rate-Limit-Buckets
+  optionaler Zusatz oder Folge-Scope). Historische Kann-Stufung
+  bleibt als auditierbarer Stand bis `1.1.14` erhalten.
+- [x] Lastenheft §13.14 (neu) mit Akzeptanzkriterien
+  `RAK-71`..`RAK-76` (alle Muss): RAK-71 Scope-Verankerung;
+  RAK-72 Session-Token-Issuance/-Validierung mit Audience-
+  Allowlist, harter TTL-Grenze ohne Clamp, restart-stabilem
+  Signing-Key-Ring, Issuance-Quoten, gepinnter Fehlerpräzedenz
+  und ohne Secret-Leak; RAK-73 Project-Token-Generationen mit
+  persistiertem `grace_until` und Migrations-/Rollback-Regeln;
+  RAK-74 Project Policies + globale konservative Preflight-
+  Allowlist mit exakt gepinnten `204`-Antworten ohne Project-/
+  Origin-Enumeration; RAK-75 Backward Compatibility inklusive
+  fremder `Authorization`-Header; RAK-76 Doku-/Threat-Model-/
+  Datenschutz-/Contract-Fixture-/Smoke-Vertrag.
+- [ ] [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+  bekommt einen `0.12.0`-Abschnitt mit Auth-Matrix, Token-Issuance-
+  Wire (`POST /api/auth/session-tokens`), Header-Priorität für
+  `Authorization: Bearer mtr_st_*` / `X-MTrace-Session-Token` /
+  `X-MTrace-Token`, neunstufiger Fehlerpräzedenz und Fehler-Codes
+  (`auth_token_missing`/`_invalid`/`_revoked`/`_expired`/
+  `_not_yet_valid`/`auth_project_mismatch`/
+  `auth_session_scope_denied`/`auth_policy_denied`/
+  `auth_token_ttl_too_large`/`auth_issuance_rate_limited`).
+- [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
+  §1.2 / §3 auf `0.12.0` als aktivierte Folge-Phase aktualisiert;
+  §2 Schritt 47 für die `0.12.0`-Auslieferung von ⬜ auf 🟡
+  hochgesetzt (Commit `530c240`).
+
 ---
 
 ## 5. Tranche 1 — MVP `0.1.0` (Backend Core + Demo-Lab)

@@ -401,16 +401,20 @@ DoD:
 - [x] `git status --short` vor erster Änderung dokumentiert: clean
   (Repo-Status auf Tag `v0.11.0` (`200cd1b`); seither nur Plan-Patches
   unter `docs/planning/open/plan-0.12.0.md`).
-- [ ] Lastenheft-Header auf `1.1.15` erhöht.
-- [ ] `F-111`..`F-113` im Lastenheft für den begrenzten `0.12.0`-
+- [x] Lastenheft-Header auf `1.1.15` erhöht.
+- [x] `F-111`..`F-113` im Lastenheft für den begrenzten `0.12.0`-
   Scope nachvollziehbar von Kann-Historie auf Release-Muss
-  abgebildet.
-- [ ] RAK-71..RAK-76 im Lastenheft ergänzt.
-- [ ] Patch-Log im aktivierten `plan-0.12.0.md` geführt und im
+  abgebildet (`spec/lastenheft.md` §7.11; historische Kann-Stufung
+  bis `1.1.14` bleibt als auditierbarer Stand erhalten).
+- [x] RAK-71..RAK-76 im Lastenheft ergänzt (`spec/lastenheft.md`
+  §13.14).
+- [x] Patch-Log im aktivierten `plan-0.12.0.md` geführt und im
   Closeout über Roadmap, `CHANGELOG.md` und
-  `docs/planning/done/plan-0.12.0.md` tracebar gemacht. Historische
-  Pläne wie `plan-0.1.0.md` werden nicht als Pflichtziel für diesen
-  Release-Patch verwendet.
+  `docs/planning/done/plan-0.12.0.md` tracebar gemacht (Patch
+  `1.1.15` als §4a.18 in
+  [`docs/planning/done/plan-0.1.0.md`](../done/plan-0.1.0.md) für
+  Konsistenz mit `1.1.10`..`1.1.14` geführt; Closeout-Tranche pflegt
+  Roadmap und `CHANGELOG.md`).
 - [ ] Architekturentscheidung dokumentiert: Auth bleibt in `apps/api`
   oder explizit begründete Abweichung.
 - [ ] Persistenzentscheidung dokumentiert: SQLite + InMemory-Testpfad

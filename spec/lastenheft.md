@@ -2,12 +2,36 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.14<br>
+**Version:** 1.1.15<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.15` (Auth / Token Lifecycle für `0.12.0`)**: Hebt
+> `F-111`..`F-113` (serverseitig signierte Session Tokens, rotierbare
+> Project Tokens, tenant-spezifische Ingest Policies; bisher Kann-
+> Erweiterungen) für den begrenzten `0.12.0`-Auth-/Security-Scope auf
+> Release-Muss und führt die neue RAK-Gruppe `RAK-71`..`RAK-76` in
+> §13.14 ein. Architekturentscheidung **Variante B** — Auth-Modul in
+> `apps/api`, **kein** eigener Auth-Service in `0.12.0`. Persistenz:
+> SQLite über bestehende API-Persistenz plus InMemory-Testadapter;
+> Klartext-Tokens werden nicht persistiert. Bestehende
+> `X-MTrace-Token`-Project-Token-Flows bleiben im
+> `0.12.0`-Compatibility-Fenster gültig; SDK-/Demo-/Analyze-/
+> Session-Link-/Ingest-Control-Pfade haben dokumentierte
+> Kompatibilitätsnachweise. **Out of Scope** und damit nicht durch
+> diesen Patch erfüllt: User-/Org-Verwaltung, OAuth/OIDC, SSO,
+> Admin-UI, mandantenfähige SaaS-Control-Plane, KMS-/Vault-/Cloud-
+> Secret-Manager, produktive MediaMTX-/SRS-Auth-Hook-Kopplung,
+> globale Stream-Key-Rotation über mehrere Deployments,
+> Production-Ops-Backends aus `0.13.0`, Cookies für Player-
+> Telemetrie. Wire-Vertrag für `POST /api/auth/session-tokens` und
+> die zusätzlichen Auth-Header für `POST /api/playback-events` lebt in
+> `spec/backend-api-contract.md`. Patch-Log siehe
+> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
+> Tranche 0c §4a.18.
+>
 > **Patch `1.1.14` (Ingest-Control-Scope für `0.11.0`)**: Hebt
 > `F-46`..`F-51` (Ingest-Gateway / Stream Control, bisher Kann-
 > Historie) für den begrenzten `0.11.0`-Lab-Control-Scope auf
@@ -1069,13 +1093,15 @@ MVP-Anforderungen:
 | F-109 | Muss | Tokens dürfen keine Secrets mit hoher Kritikalität sein, da Browser-Code öffentlich ist. |
 | F-110 | Muss | Rate Limits gelten pro Project, Origin und IP-Bereich. |
 
-Spätere Erweiterungen:
+Erweiterungen, die mit Patch `1.1.15` für den `0.12.0`-Auth-/
+Security-Scope auf Release-Muss gehoben sind (historische Kann-
+Stufung bleibt bis Patch `1.1.14` auditierbar):
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-111 | Kann | serverseitig signierte Session Tokens |
-| F-112 | Kann | rotierbare Project Tokens |
-| F-113 | Kann | tenant-spezifische Ingest Policies |
+| F-111 | Muss (`0.12.0`-Scope, Patch `1.1.15`) | serverseitig signierte Session Tokens — kurzlebig, an Project, Audience, Ablauf und optional Session/Origin gebunden; Signaturschlüssel werden nie im Browser-Bundle, in Fixtures, Logs, Traces oder Beispiel-Configs ausgeliefert. Klartext-Token erscheint ausschließlich in der Issuance-Antwort. Siehe RAK-72 in §13.14. |
+| F-112 | Muss (`0.12.0`-Scope, Patch `1.1.15`) | rotierbare Project Tokens — Generationen mit Hash/Fingerprint, `not_before`, `grace_until?`, `expires_at?`, `revoked_at?`; Persistenz speichert nie Klartext, Grace-Phase ist persistiert und restart-stabil. Siehe RAK-73 in §13.14. |
+| F-113 | Muss (`0.12.0`-Scope, Patch `1.1.15`) | tenant-spezifische Ingest Policies im Project-Scope — erlaubte Origins, Methoden, Header, Audiences, maximale Session-Token-TTL und Rate-Limit-Buckets pro Project (Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope). Bestehende CORS-Regeln aus `NF-30`..`NF-37` werden in den Policy-Vertrag überführt. Siehe RAK-74 in §13.14. |
 
 #### Schema-Versionierung
 
@@ -1859,6 +1885,34 @@ Akzeptanzkriterien:
 | RAK-68 | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für SRT und RTMP im Lab-Scope können generiert oder validiert werden (`GET /api/ingest/media-server-config`). Bestehende Multi-Protocol-Lab-Beispiele (`examples/srt/`, `examples/mediamtx/`, `examples/srs/`) und Smokes bleiben unverändert grün; SRS bleibt Kompatibilitäts-/Dokuhintergrund, ist aber kein Pflicht-Target. |
 | RAK-69 | Muss | Stream-Lifecycle-Events: `stream_started` und `stream_ended` haben ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder über `POST /api/ingest/hooks/stream-{started,ended}` exemplarisch ausgelöst. Events tragen **keine** Klartext-Keys (höchstens `key_fingerprint`). Produktive ausgehende Webhook-Zustellung an externe Systeme ist nicht Teil des `0.11.0`-Nachweises und darf nicht als erfüllt behauptet werden. |
 | RAK-70 | Muss | Doku, API-/Contract-Tests und Release-Smokes (`make smoke-ingest-control`) beschreiben den lokalen Stream-Control-Workflow, die Sicherheitsgrenzen (Klartext-Key nur einmal, kein produktiver Auth-Pfad) und den Unterschied zu Auth-/Tenant-Folge-Scope `0.12.0`. README-Abgrenzungsabschnitt „Was m-trace nicht ist" ist konsistent mit dem Lab-Control-Scope. |
+
+### 13.14 Version 0.12.0: Auth / Token Lifecycle (F-111..F-113)
+
+Ziel: Die historisch als Kann geführten Erweiterungen
+`F-111`..`F-113` werden für einen begrenzten Auth-/Security-Scope auf
+Release-Muss gehoben — kurzlebige serverseitig signierte Session Tokens
+für Browser-Telemetrie, rotierbare Project-Token-Generationen mit
+Grace-Pfad und Project-gebundene Ingest Policies für Origins, CORS und
+Rate-Limit-Grenzen. Architektur: **Variante B** — Auth als Modul in
+`apps/api`, **kein** eigener Auth-Service in `0.12.0`. Persistenz:
+SQLite über bestehende API-Persistenz plus InMemory-Testadapter;
+Klartext-Tokens werden nicht persistiert. Out of Scope sind
+User-/Org-Verwaltung, OAuth/OIDC, SSO, Admin-UI, mandantenfähige SaaS-
+Control-Plane, KMS-/Vault-/Cloud-Secret-Manager, produktive MediaMTX-/
+SRS-Auth-Hook-Kopplung, globale Stream-Key-Rotation über mehrere
+Deployments und Production-Ops-Backends — diese Themen wandern in
+`0.13.0` oder spätere Releases.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-71 | Muss | Auth-Scope ist normativ begrenzt: kurzlebige Session Tokens, Project-Token-Generationen und Project-Policies; keine User-/Org-Verwaltung, kein OAuth/OIDC, keine Admin-UI, keine KMS-/Vault-Pflicht, keine produktive Media-Server-Auth-Kopplung als Muss-Scope. README-Abgrenzungsabschnitt „Was m-trace nicht ist" ist konsistent mit diesem Auth-Scope. |
+| RAK-72 | Muss | Signierte Session Tokens (`F-111`): API kann kurzlebige Tokens über `POST /api/auth/session-tokens` ausstellen und über `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` validieren. Tokens sind an `project_id`, `audience` (Muss-Pfad `playback-events`), Ablaufzeit und optional `session_id`/`origin` gebunden. `ttl_seconds` hat eine harte globale Obergrenze von 900 Sekunden, fehlendes `project_max_ttl_seconds` defaultet auf exakt 900, Werte `<= 0` oder oberhalb der wirksamen Project-Grenze liefern `422 auth_token_ttl_too_large` ohne stillen Clamp. `kid` erlaubt restart-stabile Signatur-Key-Rotation; alte Verify-Keys bleiben geladen, bis alle damit signierten Tokens abgelaufen sind. Klartext-Token erscheint nur in der Issuance-Antwort; Logs/Traces/Metriken/Fixtures enthalten höchstens `token_id` oder Fingerprint. Issuance-Endpoint hat eigene globale und Project-Quoten; Überschreitung liefert `429 auth_issuance_rate_limited`. Ungültige, abgelaufene oder falsch gebundene Tokens liefern stabile `401`/`403`-Fehler nach gepinnter Präzedenz (missing → invalid → revoked → expired → not-yet-valid → project-mismatch → scope-denied → policy-denied → rate-limited) ohne Secret-Leak. |
+| RAK-73 | Muss | Project-Token-Rotation (`F-112`): mehrere Generationen pro Project sind modelliert (`token_id`, `project_id`, Hash/Fingerprint, Status, `not_before`, `grace_until?`, `expires_at?`, `revoked_at?`, `created_at`, `rotated_from?`); aktive, Grace-, abgelaufene und widerrufene Tokens werden deterministisch validiert. `grace_until` ist das persistierte Feld der alten Generation und die Restart-stabile Quelle der Grace-Validierung; `revoked_at` beendet Grace sofort. Persistenz speichert nur Hash/Fingerprint und Metadaten — nie Klartext. Migrations-/Rollback-Kriterien sind dokumentiert: Rollback auf eine vorherige Config darf keine bereits widerrufene oder abgelaufene Generation reaktivieren. |
+| RAK-74 | Muss | Ingest Policies (`F-113`): erlaubte Origins, Methoden, Header, Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-Parameter (Muss-Pfad: globale und Project-Buckets; Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope) sind Project-gebunden konfigurierbar und werden in Request-Pfaden (`POST /api/playback-events`, `/api/ingest/*`, `POST /api/auth/session-tokens`) erzwungen. CORS-Preflight nutzt eine dokumentierte globale, konservative Allowlist (Methoden maximal `POST, OPTIONS`; Header maximal `Content-Type`, `Authorization`, `X-MTrace-Token`, `X-MTrace-Session-Token`, `traceparent`); `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige Browser-Telemetrie. Bekannte Origins liefern `204` mit gespiegeltem Origin, erlaubten Methoden/Headern, `Access-Control-Max-Age: 600`, `Vary: Origin` und `Cache-Control: no-store`; unbekannte Origins liefern `204` mit leerem Body ohne Allow-Origin/Methods/Headers, mit `Vary: Origin` und `Cache-Control: no-store` — keine Project- oder Origin-Enumeration. Project-spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST`. |
+| RAK-75 | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Project-Token-Flows (Demo, SDK, Analyze-/Session-Link-Auth, `0.11.0` Ingest-Control) bleiben im `0.12.0`-Compatibility-Fenster gültig oder haben dokumentierte Migrationstests. Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header vorhanden ist; ohne gültigen m-trace Header liefern sie `401 auth_token_missing`. Es gibt keinen stillen Fallback von einem ungültigen höher priorisierten Token auf einen gültigen niedriger priorisierten Token. |
+| RAK-76 | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP-/CORS-Beispiele, GDPR-/Datenschutzgrenzen (Auth-Metadaten erweitern IP-/User-Agent-Speicherung nicht) und den Unterschied zu Production-Secret-Backends aus Folge-Scope. SDK-Doku zeigt sicheres Session-Token-Caching bis kurz vor `expires_at`, ohne Speicherung in `localStorage`/persistenten Browser-Stores. `make sync-contract-fixtures` und `make generated-drift-check` decken neue Auth-Fixtures ab. |
 
 ---
 
