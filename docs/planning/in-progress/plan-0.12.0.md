@@ -379,7 +379,7 @@ Mindestinhalte für Tranche 0 und Doku:
 
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
-| 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Gruppe, Architektur-/Persistenzentscheidung und Threat Model | ⬜ |
+| 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Gruppe, Architektur-/Persistenzentscheidung und Threat Model | ✅ |
 | 1 | Auth-Domainmodell, Token-Generationen und Project Policies | ⬜ |
 | 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ⬜ |
 | 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ⬜ |
@@ -415,22 +415,42 @@ DoD:
   [`docs/planning/done/plan-0.1.0.md`](../done/plan-0.1.0.md) für
   Konsistenz mit `1.1.10`..`1.1.14` geführt; Closeout-Tranche pflegt
   Roadmap und `CHANGELOG.md`).
-- [ ] Architekturentscheidung dokumentiert: Auth bleibt in `apps/api`
-  oder explizit begründete Abweichung.
-- [ ] Persistenzentscheidung dokumentiert: SQLite + InMemory-Testpfad
-  oder explizit begründete Config-only-Variante.
-- [ ] Threat-Model-Notiz mit Public Browser Token, Replay, Leakage,
+- [x] Architekturentscheidung dokumentiert: Auth bleibt in `apps/api`
+  oder explizit begründete Abweichung — **Variante B** in §0.3 dieses
+  Plans und in Lastenheft-Patch `1.1.15` (Header-Block + §13.14
+  Vorspann); ein eigener Auth-Service bleibt Folge-Scope.
+- [x] Persistenzentscheidung dokumentiert: SQLite + InMemory-Testpfad
+  oder explizit begründete Config-only-Variante — SQLite über
+  bestehende API-Persistenz plus InMemory-Testadapter, Klartext-
+  Tokens werden nicht persistiert (§0.3 dieses Plans und
+  Lastenheft-Patch `1.1.15`).
+- [x] Threat-Model-Notiz mit Public Browser Token, Replay, Leakage,
   Privacy, Origin-Bindung, Signatur-Key-Rotation und Logging-Grenzen
-  ergänzt.
+  ergänzt — §0.6 dieses Plans (Public Browser Token, Replay,
+  Issuance-Abuse, Issuance-Leakage/Caching, Leakage, Privacy,
+  Origin-Bindung, Rotation, Signatur-Key-Rotation, Rate Limits,
+  Abgrenzung); Wire-/Header-/Fehler-Vertrag in
+  `spec/backend-api-contract.md` §3.9.
 - [x] `spec/backend-api-contract.md` bekommt einen `0.12.0`-
   Abschnitt mit Auth-Matrix, Token-Issuance-Wire, Fehlercodes und
   Validierungsreihenfolge (§3.9 neu; §2 Endpunktmatrix um
   `POST /api/auth/session-tokens` erweitert; §4 mit
   `0.12.0`-Erweiterungs-Hinweis).
-- [ ] Roadmap-Status und Release-Übersicht auf `0.12.0` als aktive
-  Folgephase umgestellt.
-- [ ] Risiken R-14..R-16 im `risks-backlog.md` gegen den finalen
-  `0.12.0`-Scope überprüft und bei Bedarf aktualisiert.
+- [x] Roadmap-Status und Release-Übersicht auf `0.12.0` als aktive
+  Folgephase umgestellt (Commit `530c240`: Header, §1.2, §2 Schritt 47
+  und §3 Release-Übersicht jeweils auf 🟡 mit Tranche-0-Aktivierungs-
+  datum 2026-05-10).
+- [x] Risiken R-14..R-16 im `risks-backlog.md` gegen den finalen
+  `0.12.0`-Scope überprüft und bei Bedarf aktualisiert: R-14 wird
+  durch `0.12.0` strukturell **nicht** aufgelöst (Plan-0.12.0 §0.1
+  bekräftigt: keine produktive Media-Server-Auth-Kopplung als Muss-
+  Scope; `validate-key` bleibt Diagnose-/Smoke-Funktion;
+  Auflösungspfad ist eine separate Auth-Bridge nach `0.12.0`).
+  R-15 (externe Media-Server-Provisionierung) und R-16 (ausgehende
+  Webhook-Zustellung) bleiben strukturell unverändert offen — beide
+  sind nicht Teil des `0.12.0`-Auth-/Security-Scopes; Stand-Datum,
+  Verweise und Mitigationspfad in `risks-backlog.md` entsprechend
+  ergänzt.
 
 ## 3. Tranche 1 — Auth-Domainmodell und Policy-Grundlage
 
