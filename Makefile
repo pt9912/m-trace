@@ -370,6 +370,9 @@ api-race:
 # bevor Tests/Lint/Coverage laufen koennen. Die TS-Stages im Root-
 # Dockerfile kapseln install/build/test/lint vollstaendig in Docker,
 # damit der Host-Workspace keinen `node_modules`-Baum braucht.
+# Pre-Setup für `pnpm install --frozen-lockfile --ignore-scripts`
+# läuft über `make install` (Root-Target); Lockfile-Updates für
+# neue Dependencies über `make lock-refresh`.
 ts-test:
 	$(TS_DOCKER_BUILD) --target test -t $(TS_IMAGE):test .
 
