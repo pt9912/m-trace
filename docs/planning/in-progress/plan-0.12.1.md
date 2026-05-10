@@ -148,7 +148,7 @@ Bedarf").
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Roadmap-Insert, Trigger-Re-Eval-Matrix vorbereiten | ✅ |
-| 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | 🟡 |
+| 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | ✅ |
 | 2 | Operator-Runbook für R-18 + Doku-Schärfungen | ⬜ |
 | 3 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag | ⬜ |
 
@@ -179,28 +179,35 @@ Ziel: Risiken-Backlog ist nach `0.12.0`-Release konsistent.
 
 DoD:
 
-- [ ] Pro R-N (R-5, R-7, R-9, R-10, R-11, R-12, R-13, R-14, R-15,
-  R-16, R-17, R-18, R-20, R-21): „Trigger ausgelöst? ja/nein, Beleg"
-  als ein-Zeilen-Notiz in der Mitigation-Spalte ergänzt; Stand-Datum
-  in der jeweiligen Zeile aktualisiert. Falls ausgelöst: Folge-Item
-  in `plan-0.12.5.md` oder `plan-0.13.0.md` referenziert.
-- [ ] R-13 spezifisch: `expires`-Datum 2026-08-04 vs. aktuelles
-  Datum prüfen; Trixie-Point-Release-Status checken; Re-Review
-  oder Verlängerung mit Begründung dokumentieren.
-- [ ] R-12 spezifisch: letzten `webrtc-drift.yml`-Nightly-Run
-  zitieren als Beleg (Status grün → kein Trigger).
-- [ ] OS-1..OS-6 ausschließlich im `risks-backlog.md` aufgelöst
-  (jedes Item entweder zu R-N umgewidmet — z. B. `OS-6` → neuer
-  R-22 mit Trigger und Auflösungs-Plan-Verweis — oder als
-  Duplikat/strukturell-nicht-trackbar mit Streichungs-Begründung
-  dokumentiert). **Done-Plan `done/plan-0.12.0.md` bleibt
-  unverändert** — Release-Historie ist immutabel; OS-1..OS-6
-  bleiben dort als ursprünglicher Folge-Scope-Stand sichtbar,
-  ihre Schärfung/Streichung wird im aktuellen Backlog
-  nachgezogen.
-- [ ] R-19-Lücke (im T5-Cleanup gestrichen) als historische Notiz
-  im Risks-Backlog erhalten („n/a, war auf README-Aussage gegründet,
-  die in `5798473` entfernt wurde").
+- [x] Pro R-N (R-5, R-7, R-9, R-10, R-11, R-12, R-13, R-14, R-15,
+  R-16, R-17, R-18, R-20, R-21): Trigger-Stand-Eintrag in der
+  Mitigation-Spalte ergänzt mit Format
+  `**Trigger-Stand 2026-05-10 (\`0.12.1\` T1)**: nicht ausgelöst — <Beleg>`.
+  Alle 14 Items aktuell „nicht ausgelöst"; keine Eskalation in
+  `plan-0.12.5.md` oder `plan-0.13.0.md` nötig.
+- [x] R-13: `expires` 2026-08-04 ist 86 Tage entfernt; kein Trixie-
+  Point-Release mit Fix; Re-Review-Datum bleibt 2026-08-04. Stand
+  in R-13-Mitigation festgehalten.
+- [x] R-12: letzter `webrtc-drift.yml`-Nightly grün; vor `0.12.1`-
+  Tag erneuter Check als Teil der Wave-2-Verdict-Pflicht aus
+  `releasing.md` §3.1. Stand in R-12-Mitigation festgehalten.
+- [x] OS-1..OS-6 ausschließlich im `risks-backlog.md` aufgelöst:
+  - **OS-1** OAuth/OIDC/SSO + User-Verwaltung → ⬛ in §1.2
+    (strukturell nicht trackbar ohne konkreten Bedarf;
+    RAK-71-Out-of-Scope bleibt normativ).
+  - **OS-2** Admin-/Operator-UI → ⬛ in §1.2 (mit OS-1 verzahnt).
+  - **OS-3** MediaMTX-/SRS-Auth-Hook-Brücke → ⬛ in §1.2 (Duplikat
+    zu R-14).
+  - **OS-4** KMS/Vault → ⬛ in §1.2 (Duplikat zu R-20).
+  - **OS-5** Multi-Deployment-Issuance/Rate-Limit → ⬛ in §1.2
+    (Duplikat zu R-17 + R-18).
+  - **OS-6** Origin-/IP-Rate-Limiting → **R-22** in §1.1 mit
+    operator-observablem Trigger und Folge-Plan-Verweis auf
+    `plan-0.13.x`.
+  Done-Plan `done/plan-0.12.0.md` bleibt unverändert.
+- [x] R-19 als ⬛ historischer Marker in §1.2 erhalten („War auf
+  README-Aussage gegründet, die in `5798473` entfernt wurde").
+  Lücke in der R-N-Nummerierung bewusst beibehalten.
 
 ## 6. Tranche 2 — Operator-Runbook + Doku-Schärfungen
 
