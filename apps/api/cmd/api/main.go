@@ -247,7 +247,7 @@ func buildHandler(
 			},
 		},
 	}
-	resolver := auth.NewStaticProjectResolver(projectConfigs)
+	staticResolver := auth.NewStaticProjectResolver(projectConfigs)
 	baseProjects := make(map[string]domain.Project, len(projectConfigs))
 	for projectID, cfg := range projectConfigs {
 		baseProjects[projectID] = domain.Project{
@@ -255,6 +255,19 @@ func buildHandler(
 			Token:          domain.ProjectToken(cfg.Token),
 			AllowedOrigins: append([]string(nil), cfg.AllowedOrigins...),
 		}
+	}
+	// plan-0.12.0 Tranche 3 (RAK-73): Wenn die Persistenz SQLite hält,
+	// wickeln wir den Static-Resolver in einen RotatingProjectResolver
+	// ein, der `mtr_pt_*`-Tokens über `project_token_generations`
+	// auflöst und sonst auf den Static-Pfad fällt. InMemory-Modus
+	// behält den reinen Static-Resolver.
+	var (
+		resolver           driven.ProjectResolver = staticResolver
+		projectTokenRepo   driven.ProjectTokenRepository
+	)
+	if persist.db != nil {
+		projectTokenRepo = persistencesqlite.NewProjectTokenRepository(persist.db)
+		resolver = auth.NewRotatingProjectResolver(projectTokenRepo, staticResolver, staticResolver)
 	}
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(activeSessionsGauge(persist.sessions, logger)))
@@ -314,12 +327,12 @@ func buildHandler(
 		playbackAuthHeaders = &apihttp.AuthHeaderParser{
 			Resolver: resolver,
 			Verifier: authBundle.Signer,
-			Projects: resolver,
+			Projects: staticResolver,
 			Audience: domain.SessionTokenAudiencePlaybackEvents,
 		}
 	}
 
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 

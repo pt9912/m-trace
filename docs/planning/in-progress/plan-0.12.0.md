@@ -382,7 +382,7 @@ Mindestinhalte für Tranche 0 und Doku:
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Gruppe, Architektur-/Persistenzentscheidung und Threat Model | ✅ |
 | 1 | Auth-Domainmodell, Token-Generationen und Project Policies | ✅ |
 | 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ✅ |
-| 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ⬜ |
+| 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ✅ |
 | 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ⬜ |
 | 5 | SDK/API-Kompatibilität, Doku, Contract-Fixtures und Smokes | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
@@ -633,34 +633,62 @@ Map.
 
 DoD:
 
-- [ ] Driven-Port für Project-Token-Generationen ergänzt oder
-  bestehender `ProjectResolver` so erweitert, dass mehrere aktive/
-  grace/deaktivierte Generationen pro Project möglich sind.
-- [ ] InMemory- und SQLite-Implementierungen speichern Hash,
-  Fingerprint, `token_id`, `project_id`, Status, `not_before`,
-  `grace_until?`, `expires_at?`, `revoked_at?`, `created_at`,
-  `rotated_from?`.
-- [ ] Migration ist versioniert und Restart-Test weist nach, dass
-  Token-Generationen inklusive `grace_until` persistent bleiben.
-- [ ] Static-Resolver aus der bisherigen hardcodierten Map bleibt als
-  Dev-/Test-Fallback oder wird über einen klaren Kompatibilitäts-
-  Adapter abgelöst.
-- [ ] Rotation erzeugt eine neue Generation, lässt alte Generationen
-  optional bis zum persistierten `grace_until` gültig und lehnt
-  widerrufene/abgelaufene Generationen deterministisch ab. `grace_until`
-  darf nicht aus volatilem Prozesszustand oder aus `rotated_from`
-  rekonstruiert werden.
-- [ ] Migrations-/Rollback-Kriterien für Rotation sind dokumentiert und
-  getestet: alte Generationen bleiben bis `grace_until` gültig, solange
-  `revoked_at` nicht gesetzt ist; `revoked_at` beendet Grace sofort;
-  Rollback auf eine vorherige Config darf keine bereits widerrufene
-  oder abgelaufene Generation reaktivieren.
-- [ ] Keine Persistenz, Fixtures oder Logs enthalten Klartext-Project-
-  Tokens.
-- [ ] Tests decken aktive, neue, grace, abgelaufene, widerrufene,
-  unbekannte und kollidierende Token-Generationen ab.
-- [ ] Doku beschreibt den Operator-Migrationspfad für `demo-token` und
-  lokale `.env`-Beispielwerte.
+- [x] Driven-Port für Project-Token-Generationen ergänzt
+  (`hexagon/port/driven/project_token_repository.go`:
+  `ProjectTokenRepository` mit `Create`/`ListByProject`/`FindByHash`/
+  `SetGraceUntil`/`Revoke` plus `ErrProjectTokenNotFound`-Sentinel).
+  `ProjectResolver` bleibt unverändert; der `RotatingProjectResolver`
+  wickelt beide Pfade ein.
+- [x] InMemory- und SQLite-Implementierungen speichern Hash,
+  Fingerprint, `token_id`, `project_id`, `not_before`, `grace_until?`,
+  `expires_at?`, `revoked_at?`, `created_at`, `rotated_from?` (Status
+  wird bewusst on-the-fly aus den Lifecycle-Feldern berechnet, damit
+  kein Drift zwischen gespeichertem Status-String und Zeitvergleich
+  entstehen kann; vgl. Plan §0.6 Threat Model →
+  `domain.EvaluateProjectTokenStatus`).
+- [x] Migration ist versioniert (`V4__project_tokens.sql`) und
+  Restart-Test pinnt, dass Token-Generationen inkl. `grace_until` über
+  einen Close-Reopen-Zyklus persistent bleiben
+  (`TestSQLiteProjectTokenRepo_Restart_GraceUntilPersisted`).
+  `TestOpen_FreshStart` auf 4 Migrationen aktualisiert.
+- [x] Static-Resolver bleibt als Dev-/Test-Fallback erhalten und wird
+  über `RotatingProjectResolver` mit Repo-Pfad kombiniert
+  (`adapters/driven/auth/rotating_project_resolver.go`). Tokens mit
+  `mtr_pt_*`-Prefix laufen über das Repo, alle anderen über den
+  Static-Resolver.
+- [x] Rotation erzeugt eine neue Generation
+  (`domain.GenerateProjectToken`), lässt alte Generationen bis zum
+  persistierten `GraceUntil` gültig
+  (`TestRotatingResolver_RotationGraceStillAuthenticates`) und lehnt
+  widerrufene/abgelaufene Generationen deterministisch ab
+  (`TestRotatingResolver_RevokedReturnsRevokedError`,
+  `TestRotatingResolver_ExpiredReturnsExpiredError`,
+  `TestRotatingResolver_NotYetValid`). `GraceUntil` ist persistiert
+  (V4-Spalte) und wird in `EvaluateProjectTokenStatus` ohne Rückgriff
+  auf Prozesszustand oder `RotatedFrom` evaluiert.
+- [x] Migrations-/Rollback-Kriterien für Rotation sind dokumentiert
+  (V4-Header-Kommentar, `docs/user/local-development.md` §2.7.3) und
+  getestet: alte Generationen bleiben bis `GraceUntil` gültig, solange
+  `RevokedAt` nicht gesetzt ist; `RevokedAt` beendet Grace sofort
+  (`TestEvaluateProjectTokenStatus_TimeMatrix` Case
+  „revoked overrides grace"). Rollback ist nicht reaktivierend —
+  V4-Header und Doku-Notiz pinnen den Operator-Workflow.
+- [x] Keine Persistenz, Fixtures oder Logs enthalten Klartext-
+  Project-Tokens — `Create`/`Find`/`List` reichen ausschließlich
+  `domain.ProjectTokenGeneration` ohne `Value`-Feld; Klartext lebt
+  nur transient in `domain.ProjectTokenMaterial.Value` zwischen
+  `GenerateProjectToken` und Caller.
+- [x] Tests decken aktive, neue (`Active`), grace, abgelaufene,
+  widerrufene, unbekannte und kollidierende Token-Generationen ab
+  (`TestEvaluateProjectTokenStatus_TimeMatrix`,
+  `TestRotatingResolver_*`-Suite, `TestInMemoryProjectTokenRepo_*`,
+  `TestSQLiteProjectTokenRepo_*`).
+- [x] Doku beschreibt den Operator-Migrationspfad für `demo-token`
+  und lokale `.env`-Beispielwerte
+  (`docs/user/local-development.md` §2.7.3 — Voraussetzung SQLite,
+  Signing-Key per Env, Rotation/Grace/Revoke-Workflow,
+  `MTRACE_AUTH_SIGNING_KID`/`_KEY` als `.env`-Beispiel mit
+  Production-Warnung).
 
 ## 6. Tranche 4 — Ingest Policies, CORS und Rate Limits
 

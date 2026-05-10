@@ -48,9 +48,12 @@ func TestOpen_FreshStart(t *testing.T) {
 	// für den Ingest-Control-Pfad an, Tranche 4 dann V3 für die
 	// Lifecycle-Hook-Felder (`event_id` opak, `connection_id`,
 	// `reason`, Source-Allowlist `local-smoke`/`mediamtx-hook`).
-	// Fresh-Start läuft damit drei Migrationen.
-	if len(rows) != 3 {
-		t.Fatalf("schema_migrations rows = %d, want 3", len(rows))
+	// plan-0.12.0 Tranche 3 ergänzt V4__project_tokens.sql mit der
+	// `project_token_generations`-Tabelle für rotierbare Project-
+	// Token-Generationen (RAK-73). Fresh-Start läuft damit vier
+	// Migrationen.
+	if len(rows) != 4 {
+		t.Fatalf("schema_migrations rows = %d, want 4", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
@@ -60,6 +63,9 @@ func TestOpen_FreshStart(t *testing.T) {
 	}
 	if rows[2].version != 3 || rows[2].dirty != 0 {
 		t.Errorf("row[2] = %+v, want version=3 dirty=0", rows[2])
+	}
+	if rows[3].version != 4 || rows[3].dirty != 0 {
+		t.Errorf("row[3] = %+v, want version=4 dirty=0", rows[3])
 	}
 }
 

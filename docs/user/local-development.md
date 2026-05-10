@@ -315,6 +315,72 @@ Vollständige Operator-Doku (Endpunktmatrix, Redaktionsregeln,
 Security-Grenze, Deferred-Liste):
 [`ingest-control.md`](./ingest-control.md).
 
+### 2.7.3 Auth / Token Lifecycle (`0.12.0`)
+
+`0.12.0` führt drei zusammenhängende Auth-Härtungen ein
+(Lastenheft `1.1.15`, RAK-71..RAK-76; vollständig in
+[`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
+§3.9):
+
+- **Session Tokens** über `POST /api/auth/session-tokens` (Body:
+  `audience` Pflicht, `ttl_seconds` ≤ 900 ohne stillen Clamp,
+  optional `session_id`/`origin`/`project_id`-Konsistenzcheck;
+  Response trägt `session_token.value` genau einmal). Konsumiert
+  über `Authorization: Bearer mtr_st_*` oder
+  `X-MTrace-Session-Token` an `POST /api/playback-events`.
+- **Project-Token-Generationen** mit `mtr_pt_*`-Prefix in
+  `project_token_generations` (Migration V4) — mehrere Generationen
+  pro Project, persistiertes `grace_until` als Restart-stabile Quelle
+  der Grace-Validierung, `revoked_at` beendet Grace sofort. Der
+  `RotatingProjectResolver` löst `mtr_pt_*`-Tokens über die DB auf
+  und fällt für den Legacy-`demo-token` weiter auf den Static-
+  Resolver. Kein Klartext landet in Logs, Persistenz oder Fixtures.
+- **Project Policies + CORS** mit konservativer globaler Preflight-
+  Allowlist (`POST, OPTIONS`; Header
+  `Content-Type/Authorization/X-MTrace-Token/X-MTrace-Session-Token/
+  traceparent`); `Access-Control-Allow-Origin` wird nie `*` für
+  tokenpflichtige Browser-Telemetrie.
+
+**Operator-Migration `demo-token` → rotierbare Generation:**
+
+1. SQLite-Modus (Default ab `0.4.0`) ist Voraussetzung — InMemory-
+   Modus hat keine Generations-Persistenz.
+2. Signing-Key über Env: `MTRACE_AUTH_SIGNING_KID=<kid>` und
+   `MTRACE_AUTH_SIGNING_KEY=<base64url-encoded random ≥32 bytes>`
+   (Fallback ist ein markierter Lab-Default; der API-Logger warnt
+   einmal). Empfehlung für Lab/Demo:
+   ```bash
+   export MTRACE_AUTH_SIGNING_KID=lab-2026-05
+   export MTRACE_AUTH_SIGNING_KEY="$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=')"
+   ```
+3. Frische `mtr_pt_*`-Generation anlegen (heute über das
+   `ProjectTokenRepository` direkt; ein dediziertes CRUD-API ist
+   Folge-Scope). Solange der Eintrag fehlt, akzeptiert der API-Pfad
+   weiterhin `demo-token` über den Static-Resolver.
+4. Rotation: neue Generation anlegen, alte über
+   `SetGraceUntil(now+grace)` markieren, später `Revoke(now)`.
+   `grace_until` lebt persistent — ein API-Restart ändert die
+   Grace-Entscheidung nicht.
+5. Rollback ist nie reaktivierend — eine widerrufene oder abgelaufene
+   Generation bleibt aus dem Audit-Pfad sichtbar; eine neue
+   Generation muss frisch angelegt werden.
+
+**`.env`-Beispielwerte (Lab-only):**
+
+```env
+MTRACE_PERSISTENCE=sqlite
+MTRACE_SQLITE_PATH=/var/lib/mtrace/m-trace.db
+MTRACE_AUTH_SIGNING_KID=lab-2026-05
+MTRACE_AUTH_SIGNING_KEY=replace-me-with-openssl-rand-base64-48-trimmed
+```
+
+**Wichtig:** `MTRACE_AUTH_SIGNING_KEY` ist ein Secret und gehört
+**nicht** in das Repository, in Container-Images oder ins
+Browser-Bundle. Operator-/Lab-Setups speichern den Wert in
+`.env`/Compose-Secret-Mounts; Production-Pfade sollen den Lab-Default
+**nicht** verwenden — bei Fehlen eines explizit gesetzten Keys warnt
+`apps/api` einmal.
+
 ---
 
 ## 3. Compose-Stack-Topologie

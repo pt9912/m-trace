@@ -264,8 +264,17 @@ func (h *PlaybackEventsHandler) writeUseCaseError(w http.ResponseWriter, err err
 	switch {
 	case errors.Is(err, domain.ErrSchemaVersionMismatch):
 		writeStatus(w, http.StatusBadRequest)
-	case errors.Is(err, domain.ErrUnauthorized):
+	case errors.Is(err, domain.ErrUnauthorized),
+		errors.Is(err, domain.ErrAuthTokenMissing),
+		errors.Is(err, domain.ErrAuthTokenInvalid),
+		errors.Is(err, domain.ErrAuthTokenRevoked),
+		errors.Is(err, domain.ErrAuthTokenExpired),
+		errors.Is(err, domain.ErrAuthTokenNotYetValid),
+		errors.Is(err, domain.ErrAuthProjectMismatch):
 		writeStatus(w, http.StatusUnauthorized)
+	case errors.Is(err, domain.ErrAuthSessionScopeDenied),
+		errors.Is(err, domain.ErrAuthPolicyDenied):
+		writeStatus(w, http.StatusForbidden)
 	case errors.Is(err, domain.ErrOriginNotAllowed):
 		writeStatus(w, http.StatusForbidden)
 	case errors.Is(err, domain.ErrBatchEmpty),
