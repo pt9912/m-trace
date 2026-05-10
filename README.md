@@ -239,7 +239,7 @@ SDK- und Demo-Dokumentation:
 Lokaler SDK-/Demo-Pfad:
 
 ```bash
-pnpm --filter @npm9912/player-sdk run pack:smoke
+make sdk-pack-smoke
 make dev
 # dann http://localhost:5173/demo?session_id=readme-demo&autostart=1 öffnen
 ```

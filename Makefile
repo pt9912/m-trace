@@ -1,13 +1,15 @@
 COMPOSE ?= docker compose
 PNPM ?= pnpm
 API_MAKE ?= $(MAKE) -C apps/api
+TS_IMAGE ?= m-trace-ts
+TS_DOCKER_BUILD ?= docker build -f Dockerfile
 
 COVERAGE_THRESHOLD ?= 90
 THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -60,11 +62,12 @@ help:
 		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift (plan-0.8.5 Tranche 2)' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
-		'  make install                pnpm install --frozen-lockfile' \
+		'  make install                Build the TS dependency image without host node_modules' \
+		'  make lock-refresh           Update pnpm-lock.yaml in Docker without host node_modules' \
 		'  make fullbuild              Install + ts/api build + gates (CI-äquivalent von clean)' \
 		'' \
 		'Variables:' \
-		'  COMPOSE="docker compose" PNPM=pnpm API_MAKE="$(MAKE) -C apps/api"' \
+		'  COMPOSE="docker compose" PNPM=pnpm API_MAKE="$(MAKE) -C apps/api" TS_IMAGE=m-trace-ts' \
 		'  COVERAGE_THRESHOLD=90 THRESHOLD=$(THRESHOLD)'
 
 dev:
@@ -259,8 +262,7 @@ api-fuzz-check:
 # über `make ts-test` ohnehin laufen, hier als expliziter Aufruf
 # für den Tranche-3-Pfad). Plan-DoD §4-3: opt-in (NICHT in
 # `make gates`); Nightly-CI hat eigene Längere-Budget-Stage.
-fuzz-check: api-fuzz-check
-	$(PNPM) -r --if-present run test
+fuzz-check: api-fuzz-check ts-test
 
 # `make api-mutation-report` ist der Go-Mutation-Test (plan-0.9.5
 # §5 Tranche 4, RAK-Wave-2 / extra-gates.md §3.6). Pilot-Modul:
@@ -293,14 +295,11 @@ ts-mutation-report:
 mutation-report: api-mutation-report ts-mutation-report
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
-# (plan-0.3.0 §8 Tranche 7). Hängt am ts-build, damit das CLI-
-# Bundle (packages/stream-analyzer/dist/cli/main.cjs) vorliegt; ein
-# zweiter `pnpm install` materialisiert die Bin-Symlinks (workspace-
-# Pakete können das beim ersten Install nicht, wenn `dist/` noch
-# fehlt — gleiches Verhalten in CI und auf frischen Clones).
-smoke-cli: ts-build
-	$(PNPM) install --frozen-lockfile
-	bash scripts/smoke-cli.sh
+# (plan-0.3.0 §8 Tranche 7). Der Lauf passiert im Root-Dockerfile,
+# damit weder `node_modules` noch `.pnpm-store` im Host-Workspace
+# entstehen.
+smoke-cli:
+	$(TS_DOCKER_BUILD) --target cli-smoke -t $(TS_IMAGE):cli-smoke .
 
 # Spec ist die Quelle der Wahrheit; Go-Tests konsumieren Kopien aus
 # apps/api/.../testdata/, weil der api-Docker-Build-Context nur
@@ -366,21 +365,21 @@ api-test:
 api-race:
 	$(API_MAKE) race
 
-# Workspace-Pakete mit pnpm-Workspace-Deps (analyzer-service →
+# Workspace-Pakete mit pnpm-Workspace-Deps (analyzer-service ->
 # stream-analyzer) brauchen die `dist/`-Artefakte ihrer Dependencies,
-# bevor Tests/Lint/Coverage laufen können. `pnpm -r run build`
-# respektiert den Topo-Sort und baut Dependencies vor Consumern; wir
-# binden den Build deshalb als harte Vorbedingung ein.
-ts-test: ts-build
-	$(PNPM) run test
+# bevor Tests/Lint/Coverage laufen koennen. Die TS-Stages im Root-
+# Dockerfile kapseln install/build/test/lint vollstaendig in Docker,
+# damit der Host-Workspace keinen `node_modules`-Baum braucht.
+ts-test:
+	$(TS_DOCKER_BUILD) --target test -t $(TS_IMAGE):test .
 
 lint: api-lint ts-lint
 
 api-lint:
 	$(API_MAKE) lint
 
-ts-lint: ts-build
-	$(PNPM) run lint
+ts-lint:
+	$(TS_DOCKER_BUILD) --target lint -t $(TS_IMAGE):lint .
 
 build: api-build ts-build
 
@@ -388,18 +387,15 @@ api-build:
 	$(API_MAKE) build
 
 ts-build:
-	$(PNPM) run build
+	$(TS_DOCKER_BUILD) --target build -t $(TS_IMAGE):build .
 
 coverage-gate: api-coverage-gate ts-coverage-gate
 
 api-coverage-gate:
 	$(API_MAKE) coverage-gate THRESHOLD="$(THRESHOLD)"
 
-ts-coverage-gate: ts-build
-	$(PNPM) --filter @npm9912/player-sdk run test:coverage
-	$(PNPM) --filter @npm9912/m-trace-dashboard run test:coverage
-	$(PNPM) --filter @npm9912/stream-analyzer run test:coverage
-	$(PNPM) --filter @npm9912/analyzer-service run test:coverage
+ts-coverage-gate:
+	$(TS_DOCKER_BUILD) --target coverage -t $(TS_IMAGE):coverage .
 
 coverage-report:
 	$(API_MAKE) coverage-report THRESHOLD="$(THRESHOLD)"
@@ -414,10 +410,10 @@ schema-generate:
 	$(API_MAKE) schema-generate
 
 sdk-performance-smoke:
-	$(PNPM) --filter @npm9912/player-sdk run performance:smoke
+	$(TS_DOCKER_BUILD) --target sdk-performance-smoke -t $(TS_IMAGE):sdk-performance-smoke .
 
 sdk-pack-smoke:
-	$(PNPM) --filter @npm9912/player-sdk run pack:smoke
+	$(TS_DOCKER_BUILD) --target sdk-pack-smoke -t $(TS_IMAGE):sdk-pack-smoke .
 
 gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke docs-check
 
@@ -450,21 +446,18 @@ vuln-check:
 # die TypeScript-Seite; ohne diesen Gate wuerde eine bekannte CVE in
 # einer Frontend-/SDK-Dependency die Security-Wave bestehen.
 audit-ts:
-	$(PNPM) audit --audit-level high
+	$(TS_DOCKER_BUILD) --target audit -t $(TS_IMAGE):audit .
 
 # `make image-scan` baut die drei Runtime-Images und scannt sie mit
 # Trivy. Policy: CRITICAL und HIGH brechen den Lauf; MEDIUM wird
 # berichtet. Cache-Verzeichnis liegt unter .security/.trivy-cache,
 # damit lokale Wiederholungen nicht jedes Mal die Vuln-DB neu laden.
 #
-# Dashboard- und Analyzer-Service-Images brauchen TS-Build-Artefakte
-# (`pnpm run build` in den jeweiligen Workspaces). Wir bauen sie hier
-# explizit, weil `make build` bislang nur api-build + ts-build
-# ausfuehrt, nicht die Multi-Stage-Container fuer dashboard/analyzer-
-# service.
+# Dashboard- und Analyzer-Service-Images bauen ihre TS-Artefakte in den
+# eigenen Multi-Stage-Dockerfiles. Host-seitige pnpm-Artefakte sind fuer
+# den Image-Scan nicht erforderlich.
 image-scan:
 	docker build --target runtime -t mtrace-api:scan apps/api
-	$(PNPM) run build
 	# Dashboard- und Analyzer-Service-Images referenzieren in
 	# `COPY packages/...` und `COPY apps/.../package.json` Pfade
 	# außerhalb von `apps/<svc>/`. Build-Context muss daher der
@@ -536,7 +529,7 @@ generated-drift-check:
 	@echo "[drift-check] Re-syncing contract fixtures..."
 	@$(MAKE) --no-print-directory sync-contract-fixtures >/dev/null
 	@echo "[drift-check] Verifying public API snapshot..."
-	@$(PNPM) --filter @npm9912/player-sdk exec node scripts/check-public-api.mjs
+	@$(TS_DOCKER_BUILD) --target public-api-check -t $(TS_IMAGE):public-api-check . >/dev/null
 	@echo "[drift-check] Verifying working tree is clean for generated paths..."
 	@# `git diff --exit-code HEAD -- ...` vergleicht Working-Tree gegen
 	@# HEAD (nicht gegen den Index), damit ein vorzeitiges `git add`
@@ -582,7 +575,17 @@ generated-drift-check:
 ci: gates build
 
 install:
-	$(PNPM) install --frozen-lockfile
+	$(TS_DOCKER_BUILD) --target deps -t $(TS_IMAGE):deps .
+
+lock-refresh:
+	$(TS_DOCKER_BUILD) --target lock-refresh-tool -t $(TS_IMAGE):lock-refresh-tool .
+	docker run --rm \
+		--user "$$(id -u):$$(id -g)" \
+		-e XDG_CACHE_HOME=/tmp/.cache \
+		-v "$(CURDIR):/workspace" \
+		-w /workspace \
+		$(TS_IMAGE):lock-refresh-tool \
+		pnpm install --lockfile-only --ignore-scripts
 
 # fullbuild ist der kanonische End-zu-End-Lauf vom frischen Clone:
 # Dependencies installieren, alles bauen (workspace + api Docker)
