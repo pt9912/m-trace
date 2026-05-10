@@ -328,9 +328,24 @@ m-trace ist nicht:
   Production-Grade-Storage-Backends wie Mimir oder ClickHouse
 - eine produktive Stream-Control-Plane: der ab `0.11.0` ausgelieferte
   Ingest-Control-Pfad (`/api/ingest/...`) ist ein **lokaler
-  Lab-Workflow** ohne Multi-Tenant-Token-Lifecycle, ohne signierte
-  Sessions und ohne Secret-Management; siehe
+  Lab-Workflow** ohne Multi-Tenant-Token-Lifecycle und ohne
+  Secret-Management; siehe
   [`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5
+- eine **Identity- oder SaaS-Control-Plane**: die ab `0.12.0`
+  ausgelieferte Auth-Härtung (kurzlebige signierte Session Tokens,
+  rotierbare Project-Token-Generationen, tenant-spezifische Ingest
+  Policies; siehe [`docs/user/auth.md`](docs/user/auth.md) und
+  [`spec/backend-api-contract.md`](spec/backend-api-contract.md) §3.9)
+  ist eine begrenzte Härtung des bestehenden lokalen/API-nahen
+  Pfades. Sie liefert **kein** OAuth/OIDC, **kein** SSO, **keine**
+  User-/Org-Verwaltung, **keine** Admin-UI, **keine** mandantenfähige
+  SaaS-Control-Plane und **keine** KMS-/Vault-/Cloud-Secret-Manager-
+  Integration. Diese Folge-Items sind als **R-19** (OAuth/OIDC,
+  User-/Org-Verwaltung, Admin-UI) und **R-20** (KMS/Vault/Cloud-
+  Secret-Manager) im
+  [`risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  mit konkreten Triggerschwellen geführt — sie sind kein
+  Lieferversprechen, sondern Bedarfs-getriebene Folge-Scope-Items.
 
 m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
 
@@ -366,7 +381,7 @@ in den dafür vorgesehenen Single-Source-Dokumenten:
 
 Leitende Dokumente:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.12)
+- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.15)
 - [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess

@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Auth / Token Lifecycle (`0.12.0` — Tranchen 0–5 ausgeliefert, Closeout offen)
+
+- **Lastenheft-Patch `1.1.15`** (`F-111`..`F-113` von Kann auf
+  Release-Muss; neue RAK-Gruppe `RAK-71`..`RAK-76` in §13.14).
+- **Session Tokens** (`F-111`, RAK-72): kurzlebige HMAC-SHA-256-
+  signierte Tokens über `POST /api/auth/session-tokens`. Konsumiert
+  via `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token`
+  an `POST /api/playback-events`. TTL 900 s ohne stillen Clamp;
+  Issuance-Rate-Limit (`auth_issuance_rate_limited`) global +
+  per-Project; Restart-stabiler Signing-Key-Ring mit `kid`-Lookup.
+- **Project-Token-Rotation** (`F-112`, RAK-73): rotierbare
+  `mtr_pt_*`-Generationen in SQLite (`V4__project_tokens.sql`) mit
+  persistiertem `grace_until`. `RotatingProjectResolver` kombiniert
+  den Repo-Pfad mit dem Legacy-`X-MTrace-Token`-Static-Resolver für
+  RAK-75-Backward-Compat.
+- **Ingest Policies + CORS** (`F-113`, RAK-74): Project-gebundene
+  Origin-/Methoden-/Header-/Audience-Allowlists; CORS-Preflight
+  liefert §3.9-konformes `204` mit minimaler Signalisierung für
+  unbekannte Origins (kein `403` mehr); neue Header-Allowlist
+  (`Authorization`, `X-MTrace-Session-Token`, `traceparent`);
+  `Cache-Control: no-store` auf jedem Preflight.
+- **Wire-Vertrag** in
+  [`spec/backend-api-contract.md`](spec/backend-api-contract.md) §3.9
+  (Auth-Matrix, Header-Priorität, neunstufige Fehlerpräzedenz,
+  CORS-Preflight-Modell, Wire-Skizze für Issuance, zehn
+  `auth_*`-Fehler-Codes).
+- **Operator-Doku** in [`docs/user/auth.md`](docs/user/auth.md) (neu)
+  und [`docs/user/local-development.md`](docs/user/local-development.md)
+  §2.7.3 (Migrationspfad `demo-token` → rotierbare Generation,
+  `MTRACE_AUTH_SIGNING_KEY`-Env-Vars). README-Abgrenzung
+  „Was m-trace nicht ist" um Auth-Härtung-vs-Identity-Plattform
+  erweitert.
+- **Sicherheit / Härtung**:
+  - Lab-Default-Signing-Key hard-failt ohne explizites
+    `MTRACE_AUTH_LAB_DEFAULT=1`-Opt-in.
+  - Klartext-Session-Tokens erscheinen ausschließlich in der
+    Issuance-Antwort; keine Logs/Traces/Metriken/Fixtures.
+  - `Bearer`-Schema-Match jetzt case-insensitive (RFC 7235).
+  - `mtrace_cors_preflight_refused_total{path}`-Counter für
+    Observability über minimal-denied Preflights.
+- **Folge-Risiken**: R-17 (Multi-Replica-Issuance-Limiter),
+  R-18 (Multi-Key-Rotation-Workflow), R-14 (validate-key bleibt
+  Diagnose) im
+  [`risks-backlog.md`](docs/planning/in-progress/risks-backlog.md).
+
 ## [0.11.0] - 2026-05-09
 
 > **Minor-Release** mit Lastenheft-Patch `1.1.14` (F-49 +

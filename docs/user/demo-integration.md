@@ -66,6 +66,49 @@ const tracker = createTracker({
 | Batch-Größe | `5` |
 | Flush-Intervall | `2000 ms` |
 
+### Optional: Session-Token-Pfad (`0.12.0`)
+
+Statt das Project Token direkt mit jedem POST zu schicken, kann die
+Demo (oder eine produktiver gedachte Variante) einen kurzlebigen
+**Session Token** über `POST /api/auth/session-tokens` ausstellen
+und im Browser bis kurz vor `expires_at` wiederverwenden:
+
+```ts
+// Project Token bleibt aus dem öffentlichen Bundle erlaubt
+// (`F-109` Lastenheft); Session Token härtet den dauerhaft-offenen
+// Ingest-Pfad ab.
+const issued = await fetch("/api/auth/session-tokens", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-MTrace-Token": "demo-token",  // public Project Token
+  },
+  body: JSON.stringify({
+    audience: "playback-events",
+    ttl_seconds: 900,
+    session_id: currentSessionId,
+    origin: window.location.origin,
+  }),
+  credentials: "omit",
+});
+const { session_token } = await issued.json();
+
+// Konsumieren über Authorization: Bearer (Browser-Pfad) oder
+// X-MTrace-Session-Token (für Reverse-Proxy-Setups).
+const tracker = createTracker({
+  endpoint: collectorEndpoint,
+  authHeader: { name: "Authorization", value: `Bearer ${session_token.value}` },
+  projectId: "demo",
+  sessionId: currentSessionId,
+});
+```
+
+Vollständiger Auth-Vertrag, Caching-Pattern, Rotation und CSP-/CORS-
+Empfehlungen stehen in [`auth.md`](./auth.md). Die Demo selbst bleibt
+auf dem Legacy-Project-Token-Pfad — der Session-Token-Wechsel ist
+opt-in und wird in einem späteren `0.13.0`+-Update zur Default-
+Variante.
+
 ## hls.js-Anbindung
 
 Wenn hls.js im Browser unterstützt wird, nutzt die Demo diesen Pfad:
