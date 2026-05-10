@@ -10,6 +10,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -44,6 +45,20 @@ const (
 	envSrtPollInterval       = "MTRACE_SRT_POLL_INTERVAL_SECONDS"
 	envSrtProjectID          = "MTRACE_SRT_PROJECT_ID"
 	envSrtRequiredBandwidth  = "MTRACE_SRT_REQUIRED_BANDWIDTH_BPS"
+	envAuthSigningKID        = "MTRACE_AUTH_SIGNING_KID"
+	envAuthSigningKey        = "MTRACE_AUTH_SIGNING_KEY"
+)
+
+// Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
+// produktives Setup soll diese Werte über künftige Env-Vars
+// überschreiben können — der Spike pinnt sichere Lab-Defaults.
+const (
+	authIssuanceGlobalCapacity      = 100
+	authIssuanceGlobalRefillPerSec  = 10.0
+	authIssuanceProjectCapacity     = 30
+	authIssuanceProjectRefillPerSec = 5.0
+	authDefaultLabSigningKeySecret  = "mtrace-lab-only-do-not-use-in-production-replace-via-env"
+	authDefaultLabSigningKID        = "lab-default"
 )
 
 const (
@@ -222,7 +237,7 @@ func buildHandler(
 		return nil, nil, nil, nil, fmt.Errorf("otel telemetry adapter init: %w", err)
 	}
 
-	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+	projectConfigs := map[string]auth.ProjectConfig{
 		"demo": {
 			Token: "demo-token",
 			AllowedOrigins: []string{
@@ -231,7 +246,16 @@ func buildHandler(
 				"http://dashboard-e2e:5173",
 			},
 		},
-	})
+	}
+	resolver := auth.NewStaticProjectResolver(projectConfigs)
+	baseProjects := make(map[string]domain.Project, len(projectConfigs))
+	for projectID, cfg := range projectConfigs {
+		baseProjects[projectID] = domain.Project{
+			ID:             projectID,
+			Token:          domain.ProjectToken(cfg.Token),
+			AllowedOrigins: append([]string(nil), cfg.AllowedOrigins...),
+		}
+	}
 	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(activeSessionsGauge(persist.sessions, logger)))
 	analyzer := newAnalyzer(logger)
@@ -271,7 +295,18 @@ func buildHandler(
 	if ingestControlService != nil {
 		ingestControlInbound = ingestControlService
 	}
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, tracer, logger)
+
+	// plan-0.12.0 Tranche 2: Session-Token-Issuance verdrahten. Der
+	// Spike nutzt einen Default-Signing-Key aus
+	// `MTRACE_AUTH_SIGNING_KEY` (Base64-URL); ohne Env-Var wird ein
+	// deterministischer Lab-Key benutzt und der Logger warnt einmal,
+	// damit Production-Setups nicht mit dem Lab-Key in Betrieb gehen.
+	authSessionInbound, authErr := buildAuthSessionService(baseProjects, logger)
+	if authErr != nil {
+		logger.Warn("auth session service disabled", "error", authErr.Error())
+	}
+
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 
@@ -442,4 +477,62 @@ func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundl
 	default:
 		return nil, fmt.Errorf("unknown MTRACE_PERSISTENCE=%q (expected 'sqlite' or 'inmemory')", mode)
 	}
+}
+
+// buildAuthSessionService verdrahtet den `0.12.0`-Issuance-Pfad
+// (RAK-72): Signing-Key-Ring (`MTRACE_AUTH_SIGNING_KID` /
+// `MTRACE_AUTH_SIGNING_KEY` als Base64-URL-encoded Bytes — fehlend
+// fällt auf einen markierten Lab-Default zurück), In-Memory-Issuance-
+// Limiter (global + Project) und In-Memory-Project-Policy-Resolver
+// (Fallback aus den Static-Project-Origins). Klartext-Token-Material
+// wird im Resolver defensiv kopiert; der zurückgegebene Service
+// implementiert `driving.AuthSessionInbound`.
+func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slog.Logger) (driving.AuthSessionInbound, error) {
+	kid := domain.SigningKeyID(strings.TrimSpace(os.Getenv(envAuthSigningKID)))
+	if kid == "" {
+		kid = authDefaultLabSigningKID
+	}
+	rawSecret := strings.TrimSpace(os.Getenv(envAuthSigningKey))
+	var secret []byte
+	if rawSecret == "" {
+		secret = []byte(authDefaultLabSigningKeySecret)
+		logger.Warn("auth signing key falls back to lab default — set MTRACE_AUTH_SIGNING_KEY for production",
+			"kid", string(kid))
+	} else {
+		decoded, err := base64DecodeURLSafe(rawSecret)
+		if err != nil {
+			return nil, fmt.Errorf("MTRACE_AUTH_SIGNING_KEY base64 decode: %w", err)
+		}
+		secret = decoded
+	}
+	now := time.Now().UTC()
+	signingKey := domain.SessionSigningKey{
+		KID:       kid,
+		Algorithm: domain.SigningKeyAlgorithmHS256,
+		Secret:    secret,
+		NotBefore: now.Add(-time.Hour),
+		RetiresAt: now.Add(365 * 24 * time.Hour),
+	}
+	keyResolver, err := auth.NewStaticSigningKeyResolver(kid, signingKey)
+	if err != nil {
+		return nil, fmt.Errorf("static signing key resolver: %w", err)
+	}
+	signer := auth.NewHMACSessionTokenSigner(keyResolver)
+	limiter := auth.NewInMemoryIssuanceRateLimiter(
+		authIssuanceGlobalCapacity, authIssuanceGlobalRefillPerSec,
+		authIssuanceProjectCapacity, authIssuanceProjectRefillPerSec,
+	)
+	policies := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
+	ids := auth.NewRandomTokenIDGenerator()
+	return application.NewIssueSessionTokenService(policies, limiter, signer, ids), nil
+}
+
+// base64DecodeURLSafe akzeptiert sowohl `RawURLEncoding` als auch
+// `URLEncoding` mit Padding — robust gegenüber den beiden in der
+// Praxis vorkommenden Varianten.
+func base64DecodeURLSafe(s string) ([]byte, error) {
+	if decoded, err := base64.RawURLEncoding.DecodeString(s); err == nil {
+		return decoded, nil
+	}
+	return base64.URLEncoding.DecodeString(s)
 }

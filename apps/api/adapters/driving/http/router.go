@@ -56,6 +56,7 @@ func NewRouter(
 	sseConfig *SseStreamConfig,
 	srtHealth SrtHealthInbound,
 	ingestControl driving.IngestControlInbound,
+	authSession driving.AuthSessionInbound,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -119,6 +120,7 @@ func NewRouter(
 
 	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, tracer, logger)
 	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, logger)
+	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, logger)
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
 	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
@@ -206,6 +208,29 @@ func registerIngestControlRoutes(
 	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-started", dashboardPreflightHandler(allowlist))
 	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-ended", dashboardPreflightHandler(allowlist))
+}
+
+// registerAuthSessionRoutes verdrahtet den Session-Token-Issuance-
+// Pfad (`0.12.0`, RAK-72). `nil`-Use-Case deaktiviert den Pfad —
+// `POST /api/auth/session-tokens` antwortet dann mit `404` und alte
+// Compose-Stände bzw. Tests ohne Auth-Setup bleiben unverändert.
+func registerAuthSessionRoutes(
+	mux *http.ServeMux,
+	authSession driving.AuthSessionInbound,
+	resolver driven.ProjectResolver,
+	allowlist OriginAllowlist,
+	logger *slog.Logger,
+) {
+	if authSession == nil {
+		return
+	}
+	handler := &AuthSessionTokensHandler{
+		UseCase:  authSession,
+		Resolver: resolver,
+		Logger:   logger,
+	}
+	mux.Handle("POST /api/auth/session-tokens", handler)
+	mux.HandleFunc("OPTIONS /api/auth/session-tokens", playerSDKPreflightHandler(allowlist))
 }
 
 // RequestMetricsMiddleware counts every HTTP request that enters the
