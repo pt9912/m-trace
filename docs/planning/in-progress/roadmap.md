@@ -13,6 +13,7 @@
 > nach `0.12.5`.
 >
 > **Letzte Releases:**
+> - `v0.12.1` Trigger-Re-Eval + Operator-Doku (Patch nach `0.12.0`, kein Lastenheft-Patch); Trigger-Stand pro aktivem R-N-Item, Multi-Key-Signing-Rotation-Operator-Runbook in `auth.md` §5.3.1, OS-1..OS-5 als ⬛ Duplikate in §1.2 abgelegt, OS-6 zu R-22 konvertiert; Plan in [`done/plan-0.12.1.md`](../done/plan-0.12.1.md).
 > - `v0.12.0` Auth / Token Lifecycle (F-111..F-113, RAK-71..RAK-76 in §13.14, Lastenheft `1.1.15`); kurzlebige Session Tokens, rotierbare Project-Token-Generationen, tenant-spezifische Ingest Policies; Plan in [`done/plan-0.12.0.md`](../done/plan-0.12.0.md).
 > - `v0.11.0` Ingest-Gateway / Stream Control (F-46..F-51, MVP-38, RAK-65..RAK-70 in §13.13, Lastenheft `1.1.14`); lokaler/lab-naher Stream-Control-Pfad, CSPRNG-Stream-Keys, MediaMTX-Konfig-Generator, Lifecycle-Hooks; Plan in [`done/plan-0.11.0.md`](../done/plan-0.11.0.md).
 > - `v0.10.0` CMAF-Analyse (Lastenheft `1.1.13`); Plan in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md).
@@ -34,13 +35,13 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-01)
+## 1. Aktueller Stand (2026-05-10)
 
 ### 1.1 Was abgeschlossen ist
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.9`.                                                                    | `spec/lastenheft.md`                                                   |
+| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.15` (RAK-1..RAK-76, §13.14 Auth/Token-Lifecycle).                       | `spec/lastenheft.md`                                                   |
 | ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store (Migration in `0.4.0`).     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
@@ -55,6 +56,11 @@ aktualisieren.
 | ✅      | Quality-Gates Wave 1 (`0.8.5`)      | Erstmaliger Patch-Release im Repo: Security-Gates (`vuln-check`/`audit-ts`/`image-scan`/`security-gates`) als zweiter PR-blockierender CI-Job parallel zu `build`; Generated-Artifact-Drift-Gate (`make generated-drift-check`) als Bestandteil von `make gates`; Migrations-Konsolidierung als rolling V1; Image-Hardening auf `node:22-trixie-slim` mit `pnpm deploy --prod`-Snip; OpenTelemetry-Stack-Bump als `GO-2026-4394`-Fix; Patch-Release-Konvention in `docs/user/releasing.md` §3.1 verankert. Keine User-Surface-Änderung. | [`plan-0.8.5.md`](../done/plan-0.8.5.md)                            |
 | ✅      | Drift-Smoke + SRS + DASH (`0.9.0`)  | Browser-`getStats()`-Drift-Smoke mit Nightly-Workflow `webrtc-drift.yml` (R-12 von release-blockierend auf automatisiert detektiert); SRS-Lab `examples/srs/` als fünftes Multi-Protocol-Beispiel (MVP-36 eingelöst); DASH-Manifest-Analyse im `@npm9912/stream-analyzer` mit `analyzerKind:"dash"`/`playlistType:"dash"`, Detector + regex-basierter MPD-Parser, `manifest_not_supported` als additiver Public-Code, CLI-Dispatch (NF-12 erfüllt; MVP-37 hochgestuft auf Muss). Lastenheft-Patch `1.1.11` aktiv. RAK-56..RAK-59 erfüllt. | [`plan-0.9.0.md`](../done/plan-0.9.0.md)                            |
 | ✅      | Quality-Gates Wave 2 (`0.9.5`)      | Patch-Release ohne User-Surface. Benchmark-Smoke (Go + TS) mit Single-Source-Budgets in `docs/perf/budgets.md` und Beobachtungs-Nightly `benchmark-observation.yml` (Cron 02:30); Nightly-`benchstat`-Regressionen `benchmark.yml` (Cron 04:00) gegen orphan-Branch `benchmark-baseline`, Schwelle +15 % auf p<0.05, Auto-Issue plus Quarantäne-Tag-Mechanik (max. 30 Tage); selektives Fuzzing mit sechs Go-Fuzz-Targets und drei TS-Property-Test-Suites via `fast-check@4.4.0` plus Nightly `fuzz.yml` (Cron 05:00) — Erstfund über `FuzzMapMediaMtxItem` (`mbpsLinkCapacity=-1` leakte als negativer `AvailableBandwidthBPS`, Fix in `apps/api/.../mediamtxclient/mapping.go`); Mutation-Testing mit gremlins (Go) + StrykerJS (TS) als nicht-blockierender Nightly-Report `mutation.yml` (Cron 06:00). Operator-Doku in `docs/dev/fuzzing.md` und `docs/dev/mutation-testing.md`. Kein Lastenheft-Patch (Quality-Gates, keine User-Surface). | [`plan-0.9.5.md`](../done/plan-0.9.5.md)                            |
+| ✅      | Lastenheft-Konvergenz (`0.9.6`)     | Patch-Release; fehlende Muss-Repo-Artefakte (`CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, `deploy/`-Struktur), Lastenheft-Patch `1.1.12` (F-7-Status, neue Pflichtdokumente-Kennung `F-131`, NF-13/NF-18 harmonisieren, MVP-19..MVP-26 redaktionell entzerren), Go-Stdlib-Bump `golang:1.26.3` (GO-2026-4982/4980/4971/4918). Keine User-Surface-Änderung. | [`plan-0.9.6.md`](../done/plan-0.9.6.md) |
+| ✅      | CMAF-Analyse (`0.10.0`)             | Minor-Release. NF-13-Vollumsetzung im Stream-Analyzer-Scope: manifestbasierte HLS-/DASH-CMAF-Signale (additives `details.cmaf` ohne neuen `analyzerKind`) plus begrenzte binäre CMAF-Konformitätsprüfung (ISO-BMFF-Box-Parser, bounded Segment-Loader; Brand-Allowlist `cmfc`/`cmf2`/`cmfs`/`cmff`; Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6`). Lastenheft-Patch `1.1.13` mit RAK-60..RAK-64 in §13.12. | [`plan-0.10.0.md`](../done/plan-0.10.0.md) |
+| ✅      | Ingest-Gateway / Stream Control (`0.11.0`) | Minor-Release. F-46..F-51 + MVP-38 als lokaler/lab-naher Stream-Control-Pfad: CSPRNG-Stream-Keys (nur `key_hash` persistiert), `srt`/`rtmp`-Endpunkte, 1:1-Routing, deterministischer MediaMTX-Konfig-Generator, Lifecycle-Hooks `POST /api/ingest/hooks/stream-{started,ended}` mit Source-Allowlist, `make smoke-ingest-control`. Variante B (Modul in `apps/api`). Lastenheft-Patch `1.1.14` mit RAK-65..RAK-70 in §13.13. | [`plan-0.11.0.md`](../done/plan-0.11.0.md) |
+| ✅      | Auth / Token Lifecycle (`0.12.0`)   | Minor-Release. F-111..F-113 als zusammenhängender Auth-/Security-Scope: kurzlebige HMAC-SHA-256-signierte Session Tokens (`POST /api/auth/session-tokens`, Konsum via `Authorization: Bearer mtr_st_*` / `X-MTrace-Session-Token`), rotierbare `mtr_pt_*`-Project-Token-Generationen (V4-SQLite-Migration, `grace_until`), Project-gebundene Ingest Policies + §3.9-konformer CORS-Preflight (`204` minimal). Lastenheft-Patch `1.1.15` mit RAK-71..RAK-76 in §13.14 + neunstufige Auth-Fehlerpräzedenz und zehn `auth_*`-Codes. RAK-74-Scope-Cut: `/api/ingest/*` bleibt `0.11.0`-Token-only. | [`plan-0.12.0.md`](../done/plan-0.12.0.md) |
+| ✅      | Trigger-Re-Eval + Operator-Doku (`0.12.1`) | Patch-Release nach `0.12.0`, kein Lastenheft-Patch. Trigger-Stand-Notizen pro aktivem R-N (R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21, alle „nicht ausgelöst" zum 2026-05-10), Multi-Key-Signing-Rotation-Operator-Runbook in `docs/user/auth.md` §5.3.1 (Soll-Workflow; Code-Pfad in `0.12.5`), OS-1..OS-5 als ⬛ Duplikate zu R-14/R-17/R-18/R-20 in `risks-backlog.md` §1.2 abgelegt, OS-6 zu **R-22** in §1.1 konvertiert (Origin-/IP-naher Rate-Limiter, Auflösungspfad `plan-0.13.x`); R-19 als ⬛ historischer Marker. „Teilweise gelöst"-Konvention im Backlog §2 Wartung gepinnt. | [`plan-0.12.1.md`](../done/plan-0.12.1.md) |
 
 ### 1.2 Nächste Phase
 
@@ -92,13 +98,6 @@ Release-Muss; Variante B als Modul in `apps/api`, eigener
 für `/api/ingest/*` in
 [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
 §2 + §3.8).
-
-Out of Scope für `0.11.0` (wandern nach `0.12.0` oder später):
-mandantenfähige Control-Plane, KMS-/Vault-Secrets, globale
-Stream-Key-Rotation, produktive Media-Server-Auth-Hooks,
-automatische externe Provisionierung, K8s-Operator,
-Auth-/Token-Lifecycle (`F-111`..`F-113`, NF-16), produktive
-ausgehende Webhook-Zustellung an externe Systeme.
 
 Vorgänger `0.10.0` released (CMAF-Analyse im Stream-Analyzer-
 Scope, NF-13 / RAK-60..RAK-64; Plan in
