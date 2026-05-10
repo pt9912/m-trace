@@ -1,7 +1,6 @@
 # Implementation Plan — `0.12.0` (Auth / Token Lifecycle)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst nach
-> explizitem Move nach `docs/planning/in-progress/` umgesetzt werden.
+> **Status**: 🟡 in Arbeit — Tranche 0 aktiviert (`2026-05-10`).
 > Vorgänger ist `0.11.0` (`v0.11.0`, Ingest-Gateway / Stream Control;
 > Plan in [`done/plan-0.11.0.md`](../done/plan-0.11.0.md)).
 >
@@ -397,9 +396,11 @@ geändert wird.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.12.0.md` nach
-  `docs/planning/in-progress/plan-0.12.0.md` verschoben.
-- [ ] `git status --short` vor erster Änderung dokumentiert.
+- [x] Plan von `docs/planning/open/plan-0.12.0.md` nach
+  `docs/planning/in-progress/plan-0.12.0.md` verschoben (2026-05-10).
+- [x] `git status --short` vor erster Änderung dokumentiert: clean
+  (Repo-Status auf Tag `v0.11.0` (`200cd1b`); seither nur Plan-Patches
+  unter `docs/planning/open/plan-0.12.0.md`).
 - [ ] Lastenheft-Header auf `1.1.15` erhöht.
 - [ ] `F-111`..`F-113` im Lastenheft für den begrenzten `0.12.0`-
   Scope nachvollziehbar von Kann-Historie auf Release-Muss
