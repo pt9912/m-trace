@@ -381,7 +381,7 @@ Mindestinhalte für Tranche 0 und Doku:
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Gruppe, Architektur-/Persistenzentscheidung und Threat Model | ✅ |
 | 1 | Auth-Domainmodell, Token-Generationen und Project Policies | ✅ |
-| 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ⬜ |
+| 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ✅ |
 | 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ⬜ |
 | 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ⬜ |
 | 5 | SDK/API-Kompatibilität, Doku, Contract-Fixtures und Smokes | ⬜ |
@@ -506,77 +506,124 @@ Project Token dauerhaft pro Event zu senden.
 
 DoD:
 
-- [ ] Application-Service stellt Session Tokens aus, wenn ein gültiges
+- [x] Application-Service stellt Session Tokens aus, wenn ein gültiges
   Project Token präsentiert wird und die Project Policy den Request
-  erlaubt.
-- [ ] Session-Token-Audience wird serverseitig gegen die Project-
+  erlaubt (`hexagon/application/issue_session_token.go`).
+- [x] Session-Token-Audience wird serverseitig gegen die Project-
   Policy-Allowlist geprüft; `0.12.0` erlaubt als Muss-Pfad nur
   `playback-events`. Nicht erlaubte oder unbekannte Audiences liefern
-  `403 auth_session_scope_denied`.
-- [ ] Token-Issuance-Endpoint
-  `POST /api/auth/session-tokens` implementiert; `project_id` im Body
-  ist optionaler Konsistenzcheck zum Project Token. Fehlt
-  `project_id`, wird das Project aus dem Token abgeleitet und in der
-  Response zurückgegeben; ein gesetzter Mismatch liefert
-  `401 auth_project_mismatch`.
-- [ ] `ttl_seconds` ist deterministisch: maximale Pflichtgrenze 900
-  Sekunden, Project Policies dürfen nur niedriger begrenzen, fehlendes
-  `project_max_ttl_seconds` defaultet pro Project auf exakt 900,
-  fehlende Request-Werte nutzen die wirksame Project-Grenze, und Werte
-  `<= 0` oder oberhalb der wirksamen Grenze liefern `422
-  auth_token_ttl_too_large` ohne stilles Clamping.
-- [ ] Issuance-Endpoint hat eigene Abuse-Grenzen: mindestens globale
-  und Project-Quote. Überschreitungen liefern
+  `403 auth_session_scope_denied` (Service ruft
+  `domain.ValidateAudience`; Tests
+  `TestIssueSessionToken_AudienceDeniedByPolicy` und
+  `TestAuthSessionTokens_AudienceDenied`).
+- [x] Token-Issuance-Endpoint `POST /api/auth/session-tokens`
+  implementiert (`adapters/driving/http/auth_session_tokens.go`);
+  `project_id` im Body ist optionaler Konsistenzcheck. Mismatch
+  liefert `401 auth_project_mismatch` (Test
+  `TestAuthSessionTokens_ProjectMismatch`).
+- [x] `ttl_seconds` ist deterministisch: harte 900-s-Pflichtgrenze;
+  Project-Policies dürfen niedriger begrenzen; fehlendes
+  `project_max_ttl_seconds` defaultet pro Project auf exakt 900;
+  fehlende Request-Werte nutzen die wirksame Project-Grenze; Werte
+  `<= 0` oder oberhalb der Grenze liefern
+  `422 auth_token_ttl_too_large` ohne stilles Clamping
+  (`domain.ResolveTTLSeconds`; Tests
+  `TestResolveTTLSeconds`,
+  `TestIssueSessionToken_TTLTooLargeNoSilentClamp`,
+  `TestAuthSessionTokens_TTLTooLarge`,
+  `TestAuthSessionTokens_TTLDefaultsTo900OnZero`).
+- [x] Issuance-Endpoint hat eigene Abuse-Grenzen: globaler + Project-
+  Bucket im `InMemoryIssuanceRateLimiter`; Überschreitung liefert
   `429 auth_issuance_rate_limited`; Policy-Ablehnungen liefern
-  `403 auth_policy_denied`. Origin-/IP-nahe Quoten sind optionaler
-  Zusatz und bei Nicht-Umsetzung als Folge-Scope zu dokumentieren.
-- [ ] `auth_issuance_rate_limited` ist ausschließlich der
-  Rate-Limit-Code von `POST /api/auth/session-tokens`; generische Auth-
-  Präzedenz beschreibt nur die Position von `429` nach Auth/Scope/
-  Policy. Andere Endpoints definieren eigene Rate-Limit-Codes im API-
-  Vertrag.
-- [ ] `POST /api/playback-events` akzeptiert zusätzlich zu
-  `X-MTrace-Token` ein Session Token über `Authorization: Bearer` oder
-  `X-MTrace-Session-Token`.
-- [ ] Auth-Priorität ist für alle Kombinationen dokumentiert und
+  `403 auth_policy_denied`. Origin-/IP-nahe Quoten sind als optionaler
+  Zusatz im Plan §0.6 und im RAK-74 dokumentiert
+  (Folge-Scope, blockiert nicht).
+- [x] `auth_issuance_rate_limited` ist ausschließlich der
+  Rate-Limit-Code von `POST /api/auth/session-tokens` — der HTTP-
+  Adapter mappt nur diesen Endpoint auf den Code; andere Endpoints
+  bleiben bei ihren bestehenden Rate-Limit-Codes (Test
+  `TestAuthSessionTokens_RateLimited`).
+- [x] `POST /api/playback-events` akzeptiert zusätzlich zu
+  `X-MTrace-Token` ein Session Token über `Authorization: Bearer
+  mtr_st_*` oder `X-MTrace-Session-Token`
+  (`PlaybackEventsHandler.AuthHeaders` plus
+  `BatchInput.PreResolvedProject`; Tests
+  `TestAuthHeaderParser_BearerHappyPath`,
+  `TestAuthHeaderParser_XMTraceSessionTokenHappyPath`).
+- [x] Auth-Priorität ist für alle Kombinationen dokumentiert und
   getestet: `Authorization: Bearer`, `X-MTrace-Session-Token` und
   `X-MTrace-Token`; widersprüchliche Project-Bindungen liefern
   `401 auth_project_mismatch`, ungültige zusätzlich präsentierte
-  Tokens liefern `401 auth_token_invalid`, und es gibt keinen stillen
-  Fallback auf niedriger priorisierte gültige Tokens.
-- [ ] Contract-Tests decken Mischfälle explizit ab: malformed
+  Tokens liefern `401 auth_token_invalid`, kein stiller Fallback
+  (Tests `TestAuthHeaderParser_BearerPlusLegacyDifferentProject`,
+  `TestAuthHeaderParser_BearerPlusInvalidLegacy`,
+  `TestAuthHeaderParser_ConflictingBearerAndXMTraceSessionToken`).
+- [x] Contract-Tests decken Mischfälle explizit ab: malformed
   `Authorization: Bearer mtr_st_*` plus gültiger Legacy-Header liefert
-  `401 auth_token_invalid`; gültiger höher priorisierter Session Token
-  plus gültiger Legacy-Header mit anderem Project liefert
-  `401 auth_project_mismatch`; fremder `Authorization`-Header plus
-  gültiger Legacy-Header bleibt erlaubt.
-- [ ] Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als
+  `401 auth_token_invalid` (`TestAuthHeaderParser_MalformedBearerBlocksLegacyFallback`);
+  gültiger Bearer plus Legacy mit anderem Project liefert
+  `401 auth_project_mismatch`
+  (`TestAuthHeaderParser_BearerPlusLegacyDifferentProject`);
+  fremder `Authorization`-Header plus gültiger Legacy bleibt erlaubt
+  (`TestAuthHeaderParser_ForeignAuthorizationIgnoredWithLegacy`).
+- [x] Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als
   nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header
   vorhanden ist; ohne gültigen m-trace Header liefern sie
   `401 auth_token_missing`. Malformed `Bearer mtr_st_*` bleibt
-  `401 auth_token_invalid` und blockiert Fallback.
-- [ ] Auth-Fehlerpräzedenz ist als Entscheidungstabelle im API-
-  Kontrakt gepinnt und getestet: malformed/invalid vor revoked vor
-  expired vor not-yet-valid vor Project-Mismatch vor Scope-/Policy-
-  Denial vor endpoint-spezifischem Rate-Limit.
-- [ ] Session Token validiert Signatur, `kid`, `exp`, `nbf`,
-  `audience`, `project_id`, optional `session_id` und `origin`.
-- [ ] Signing-Key-Ring ist restart-stabil: aktive Signing-Keys und
-  alte Verify-Keys sind über ENV/File-Konfiguration reproduzierbar.
-  Tests pinnen, dass ein vor Key-Switch ausgestellter, noch nicht
-  abgelaufener Session Token nach Wechsel des aktiven `kid` und nach
-  Reinitialisierung weiterhin validiert wird.
-- [ ] Abgelaufene, manipulierte, falsch gebundene und mit unbekanntem
+  `401 auth_token_invalid` und blockiert Fallback
+  (Tests `TestAuthHeaderParser_ForeignAuthorizationOnlyIsMissing`,
+  `TestAuthHeaderParser_ForeignAuthorizationIgnoredWithLegacy`,
+  `TestAuthHeaderParser_MalformedBearerBlocksLegacyFallback`).
+- [x] Auth-Fehlerpräzedenz ist als Entscheidungstabelle im API-
+  Kontrakt gepinnt (`spec/backend-api-contract.md` §3.9, neunstufige
+  Tabelle) und getestet: missing → invalid → revoked → expired →
+  not-yet-valid → project_mismatch → scope_denied → policy_denied →
+  rate_limited (Tests
+  `TestAuthHeaderParser_ExpiredSessionToken`,
+  `TestAuthHeaderParser_OriginMismatchOnSessionToken`,
+  `TestValidateClaimsTime_Boundaries`).
+- [x] Session Token validiert Signatur, `kid`, `exp`, `nbf`,
+  `audience`, `project_id`, optional `session_id` und `origin`
+  (`HMACSessionTokenSigner.Verify` plus Domain-`ValidateClaims*`-
+  Funktionen; Tests `TestHMACSigner_RoundTrip`,
+  `TestHMACSigner_VerifyRejectsTamperedSignature`,
+  `TestHMACSigner_VerifyRejectsUnknownKID`,
+  `TestValidateClaimsAudience`,
+  `TestValidateClaimsProject`,
+  `TestValidateClaimsSession`,
+  `TestValidateClaimsOrigin`).
+- [x] Signing-Key-Ring ist restart-stabil: aktive Signing-Keys und
+  alte Verify-Keys sind über ENV/File-Konfiguration reproduzierbar
+  (`StaticSigningKeyResolver` mit `MTRACE_AUTH_SIGNING_KID`/
+  `MTRACE_AUTH_SIGNING_KEY` in `cmd/api/main.go`). Test
+  `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`
+  pinnt, dass ein vor Key-Switch ausgestellter Token nach Rollover
+  weiterhin validiert.
+- [x] Abgelaufene, manipulierte, falsch gebundene und mit unbekanntem
   `kid` signierte Tokens liefern stabile Fehlercodes ohne
-  Identifier-Leak.
-- [ ] Issuance-Response gibt den Klartext-Session-Token genau einmal
+  Identifier-Leak (Tests
+  `TestHMACSigner_VerifyRejectsTamperedSignature`,
+  `TestHMACSigner_VerifyRejectsUnknownKID`,
+  `TestHMACSigner_VerifyRejectsMissingPrefix`,
+  `TestHMACSigner_VerifyRejectsMalformedStructure`,
+  `TestAuthHeaderParser_ExpiredSessionToken`).
+- [x] Issuance-Response gibt den Klartext-Session-Token genau einmal
   zurück; Logs/Traces/Metriken enthalten höchstens `token_id` oder
-  Fingerprint.
-- [ ] Contract-Tests pinnen Issuance-Happy-Path, Expired,
+  Fingerprint (`AuthSessionTokensHandler.ServeHTTP` schreibt
+  `session_token.value` nur in der `201`-Antwort; Tests
+  `TestAuthSessionTokens_HappyPath`,
+  `TestAuthSessionTokens_RoundTripVerify`).
+- [x] Contract-Tests pinnen Issuance-Happy-Path, Expired,
   Signature-Mismatch, Project-Mismatch, Audience-Mismatch, Origin-
-  Mismatch, fehlenden Auth-Header und
-  `auth_issuance_rate_limited`.
-- [ ] Bestehende Project-Token-Tests für Playback Events bleiben grün.
+  Mismatch, fehlenden Auth-Header und `auth_issuance_rate_limited`
+  (`adapters/driving/http/auth_session_tokens_test.go` für die
+  Happy-Path-/TTL-/Audience-/Project-Mismatch-/Rate-Limit-/Body-
+  Limit-Cases; `auth_headers_test.go` für Expiry/Origin-Mismatch im
+  Verify-Pfad).
+- [x] Bestehende Project-Token-Tests für Playback Events bleiben grün
+  (`make gates` 90.2 % Coverage; Pre-`0.12.0`-Pflichttests laufen
+  unverändert über den Legacy-Header-Pfad, weil `BatchInput.AuthToken`
+  identisch befüllt wird, wenn nur `X-MTrace-Token` gesetzt ist).
 
 ## 5. Tranche 3 — Project-Token-Rotation
 
