@@ -10,7 +10,7 @@
 >
 > **Ziel**: Production-/Ops-nahe Folgepunkte werden in einen
 > entscheidbaren Scope überführt: `MVP-40` Postgres, `MVP-41`
-> ClickHouse/VictoriaMetrics, `MVP-42` Kubernetes-Manifeste,
+> ClickHouse/VictoriaMetrics/Mimir, `MVP-42` Kubernetes-Manifeste,
 > `MVP-43` Devcontainer und `MVP-44` Release-Automatisierung. `NF-18`
 > wird dabei mit `MVP-42` harmonisiert.
 >
@@ -41,8 +41,8 @@ In Scope:
 
 - `MVP-40`: Postgres als produktionsnaher Store bewerten und ggf.
   minimalen Adapter-/Migrations-Slice planen.
-- `MVP-41`: ClickHouse oder VictoriaMetrics als hochvolumiges Event-
-  Backend bewerten, inklusive Kosten-/Operativvergleich.
+- `MVP-41`: ClickHouse, VictoriaMetrics oder Mimir als hochvolumiges
+  Event-Backend bewerten, inklusive Kosten-/Operativvergleich.
 - `MVP-42` / `NF-18`: Kubernetes-Manifeste als optionalen Folgepfad
   konkretisieren, optional als Beispieldateien liefern.
 - `MVP-43`: Devcontainer für reproduzierbare Entwicklung liefern oder
@@ -56,7 +56,7 @@ Out of scope:
 - Kein vollständiger Production-Kubernetes-Betrieb.
 - Kein Managed-Cloud-Betrieb.
 - Kein Multi-Tenant-SaaS-Produkt.
-- Keine verpflichtende ClickHouse-/VictoriaMetrics-Pflicht für den
+- Keine verpflichtende ClickHouse-/VictoriaMetrics-/Mimir-Pflicht für den
   Standardbetrieb.
 - Keine automatische Veröffentlichung ohne explizite human approval.
 
@@ -87,7 +87,7 @@ Der Plan ergänzt eine neue RAK-Serie für `MVP-40`..`MVP-44` und
 | RAK | Priorität | Inhalt |
 | --- | --- | --- |
 | RAK-77 | Muss | Operativer Scope für `MVP-40`..`MVP-42`, inkl. klarer Seed-/Defer-Boundaries und Nachweise. |
-| RAK-78 | Muss | Operativer Scope für `MVP-41`: Vergleichs- und Entscheidungspfad gegen ClickHouse/VictoriaMetrics. |
+| RAK-78 | Muss | Operativer Scope für `MVP-41`: Vergleichs- und Entscheidungspfad gegen ClickHouse/VictoriaMetrics/Mimir (oder gleichwertige Option). |
 | RAK-79 | Muss | `MVP-42`/`NF-18` als optionaler K8s-Optionpfad wird normativ begrenzt, keine Vollbereitschaftszusage. |
 | RAK-80 | Muss | Operativer Scope für `MVP-43`: Devcontainer als Seed oder explizites Defer mit Begründung/Trigger. |
 | RAK-81 | Muss | Release-Prozess enthält mindestens manuelle Freigabe in allen automationsrelevanten Stufen, inklusive sicherer Rollback-Regeln und Closeout-Nachweis. |
@@ -105,16 +105,31 @@ Der Plan ergänzt eine neue RAK-Serie für `MVP-40`..`MVP-44` und
 - Reproduzierbarkeit von Build, Test und Release vor Funktionsumfang.
 - Jede Tranche endet mit Verifikationsnachweisen (Datei + Test + Doku).
 
+### 0.6 Tranche-Output-Verpflichtungen
+
+Für jede abgeschlossene Tranche müssen mindestens diese drei Dokumenttypen
+vorliegen:
+
+- **Entscheidungsnachweis**: ADR, Entscheidungsnotiz oder Plan-Update.
+- **Auswirkungsnachweis**: Metriken, Vergleichstabelle oder Risikoanalyse.
+- **Closeout-Nachweis**: Statusänderungen in Roadmap/risks-backlog und DoD-Update.
+
+Zusatzregel:
+
+- Jede neue Entscheidung muss mit einem „What ändert sich / What bleibt
+  unverändert“-Abschnitt abgeschlossen werden, damit kein Scope-Drift
+  entsteht.
+
 ## 1. Tranchen-Übersicht
 
-| Tranche | Inhalt | Erwartetes Ergebnis | Status |
-| --- | --- | --- | --- |
-| 0 | Aktivierung, Lastenheft-Patch, ADR-Schnitt und Scope-Gates | Freigabevoraussetzungen geklärt | ⬜ |
-| 1 | Postgres-Entscheidung und Adapter-Scope (`MVP-40`) | Entscheidung inkl. Seed-Umfang oder strukturierte Defer-Liste | ⬜ |
-| 2 | Analytics-Backend-Entscheidung (`MVP-41`) | Vergleichts- und Kostenmatrix | ⬜ |
-| 3 | Kubernetes-/Devcontainer-/NF-18-Risiko (`MVP-42`, `MVP-43`, `R-9`, `NF-18`) | Konkreter Scope-Hebel für Folgephase | ⬜ |
-| 4 | Release-Automatisierung (`MVP-44`) | Sichere Automations- und Freigaberegeln | ⬜ |
-| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Abschluss nachweisbar und wiederholbar | ⬜ |
+| Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
+| --- | --- | --- | --- | --- | --- |
+| 0 | Aktivierung, Lastenheft-Patch, ADR-Schnitt und Scope-Gates | Freigabevoraussetzungen geklärt, Scope fixiert | Tranche-Ready | Freigabe- und Blockerliste | ⬜ |
+| 1 | Postgres-Entscheidung und Adapter-Scope (`MVP-40`) | Entscheidung inkl. Seed-Umfang oder strukturierte Defer-Liste | Geklärter Scope | Migrations-/Defer-Entscheidung + Trigger | ⬜ |
+| 2 | Analytics-Backend-Entscheidung (`MVP-41`) | Vergleichsmatrix + klare Pfadentscheidung | Persistenz-/Query-Anforderungen | Entscheidungsprotokoll | ⬜ |
+| 3 | Kubernetes-/Devcontainer-/NF-18-Risiko (`MVP-42`, `MVP-43`, `R-9`, `NF-18`) | Konkreter Scope-Hebel für Folgephase | Tranche-1/2 Ergebnisse | Operativer Optionspfad + Defer-Regeln | ⬜ |
+| 4 | Release-Automatisierung (`MVP-44`) | Sichere Automations- und Freigaberegeln | Zielbild Release-Prozess | Runbook + Gateschema | ⬜ |
+| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Abschluss nachweisbar und wiederholbar | Tranche-4 Ergebnis | RAK-Status Grün + Release-Nachweise | ⬜ |
 
 ## 2. Tranche 0 — Aktivierung, Scope-Gates und Plan-Härtung
 
@@ -126,17 +141,28 @@ DoD:
 
 - [ ] Plan von `docs/planning/open/plan-0.13.0.md` nach
   `docs/planning/in-progress/plan-0.13.0.md` verschoben.
-- [ ] Ausgangszustand von `git status --short` dokumentiert.
+- [ ] Ausgangszustand von `git status --short` dokumentiert und im
+  Tranche-0-Notizblock gespeichert.
 - [ ] Lastenheft-Patch mit neuer RAK-Gruppe für `MVP-40`..`MVP-44`
   und `NF-18` ergänzt.
 - [ ] ADR-Schnitt definiert: Architektur-/Persistenz-/Release-
   Entscheidungen (wir liefern ADR oder Plan-DoD).
+  - [ ] `decision-record` enthält mindestens zwei Alternativen je Kernfrage.
 - [ ] `docs/planning/in-progress/roadmap.md` auf `0.13.0` als aktive
   Folgephase umgestellt.
+  - [ ] Alle offenen Gegenargumente dokumentiert und nicht stillschweigend verworfen.
 - [ ] Risiko-R-9 gegen Observability-/Smoke-Impact geprüft und im
   `risks-backlog.md` abgelegt.
 - [ ] Tranche-0-Notiz (kurz) mit Status, offenen Entscheidungen,
   offenen Triggern und Ausnahmen angelegt.
+  - [ ] Notiz enthält erwartete Entscheidungstermine und Verantwortliche.
+
+Go/No-Go-Kriterien nach Tranche 0:
+
+- **Go:** Scope-Sätze sind vollständig und keine neue Pflichtabhängigkeit
+  (Dependency) wird eingeschoben.
+- **No-Go:** Unklare ADR-Zuordnung, ungeklärte R-9-Interaktion oder
+  unbewertete Pflicht-Trigger.
 
 ## 3. Tranche 1 — Postgres (MVP-40)
 
@@ -147,17 +173,21 @@ DoD:
 
 - [ ] Entscheidung dokumentiert: vollständige Implementierung,
   minimaler Seed-Slice oder Defer.
+  - [ ] Entscheidung enthält „Entscheidung“, „Begründung“, „Nicht entschieden“. 
 - [ ] Wenn Seed implementiert: mindestens eine deterministische
   Migrationsspur definiert (Schema/Repo/Adapter) inklusive Daten-
   Rückwärtskompatibilitätsprüfung mit SQLite.
+  - [ ] Migrationspfad enthält `migrate up`, `rollback`, `replay`.
 - [ ] Wenn Seed nicht implementiert: Triggerschwellen (z. B.
   Last, SLA, Betriebszeit, Recovery-Szenarien) festgelegt.
+  - [ ] Jeder Trigger hat einen messbaren Schwellwert + Besitzer.
 - [ ] Contract-/Integrationstests pinnen SQLite-Verhalten, damit Postgres
   nicht unfreiwillig als versteckte Pflichtwirkung eingeführt wird.
 - [ ] Betriebsrisiken dokumentiert: Datenkonsistenz bei Migration,
   Ausfall- und Recoveryverhalten, Backup/Restore-Bezug.
 - [ ] Ergebnis entscheidet, welche Pfade in Tranche 5 in RAK/Changelog
   aufgenommen werden.
+  - [ ] Entscheidung wird vor Tranche-2-Start freigegeben.
 
 ## 4. Tranche 2 — Analytics-Backend (MVP-41)
 
@@ -172,9 +202,12 @@ DoD:
   Abfragefähigkeit, Integrationsaufwand, Relevanz der Query-Workloads,
   Migrationsrisiko.
 - [ ] Entscheidung dokumentiert als `proceed` / `defer` / `POC`.
+  - [ ] Matrix enthält einen „Wenn-Pilot→Go“-Abschnitt mit zeitlicher Grenze.
 - [ ] Keine neue lokale Pflichtabhängigkeit.
 - [ ] Falls POC: Zielbild, Erfolgskriterien, Erfolgspunkte,
   Abbruchkriterien im Plan verankert.
+  - [ ] POC-Report enthält Kostenannahmen, Datenmodell-Deckung und
+    Rechenlastabschätzung.
 
 ## 5. Tranche 3 — Kubernetes- und Devcontainer-Scope (MVP-42, MVP-43, NF-18, R-9)
 
@@ -188,12 +221,14 @@ DoD:
 - [ ] R-9-Auswirkungen auf Observability-Label-Allowlists und
   Smoke-Stage vollständig geprüft; Ergebnis im Risks-Backlog und/oder
   ADR.
+  - [ ] Risiko-Matrix enthält mindestens zwei konkrete Gegenmaßnahmen.
 - [ ] Devcontainer (`MVP-43`) entschieden: liefern Beispielkonfiguration
   oder deferred mit konkreten Gründen.
 - [ ] README-/User-Doku-Abgrenzung bleibt konsistent: keine
   Produktions-Ready-K8s-Zusage.
 - [ ] Scope-Transitie auf nachfolgende Tranche (`0.14.0` o. ä.)
   klar beschrieben.
+  - [ ] Jede Option hat einen klaren Auslöser für die Folgephase.
 
 ## 6. Tranche 4 — Release-Automatisierung (MVP-44)
 
@@ -204,6 +239,7 @@ DoD:
 
 - [ ] Entscheidbare Automation ausgewählt: was wird automatisiert,
   was bleibt manuell.
+- [ ] Automationsumfang in einem RACI-/Owner-Mapping hinterlegt.
 - [ ] Sichere Freigabe-Guards definiert:
   - Branch- und Tag-Muster,
   - Freigabekanal (Reviewer/Freigabe-
@@ -214,6 +250,7 @@ DoD:
 - [ ] Automations- oder Dry-Run-Tests sind definiert (ohne reale
   Veröffentlichung).
 - [ ] CI-/Local-Runbook beschreibt minimalen sicheren Ausführungsweg.
+  - [ ] Runbook enthält Notfallplan bei fehlgeschlagenem Guard-Check.
 
 ## 7. Tranche 5 — Release-Closeout und Abschluss
 
@@ -236,6 +273,11 @@ DoD:
   Status auf `✅ released`.
 - [ ] Annotierter Tag `v0.13.0` erstellt.
 
+Abschlusskriterien Tranche 5:
+
+- [ ] Alle `[ ]`-Einträge mit Dateinachweis aktualisiert.
+- [ ] Kein kritischer Fehler im Blocker-Log offen.
+
 ## 8. RAK-Verifikationsmatrix (Vorschau)
 
 Wird während der Umsetzung gefüllt. Jede RAK-Zeile enthält
@@ -253,6 +295,12 @@ Wird während der Umsetzung gefüllt. Jede RAK-Zeile enthält
   oder Defer-Justification | [ ] |
 | RAK-81 | Muss | Freigabe-Guard, Automationsumfang,
   Release-Runbook und Dry-Run-Test | [ ] |
+
+Optionaler Zusatznachweis je RAK:
+
+- `Datei`: exakter Pfad zur Quelle (z. B. `docs/plan/..`, `spec/...`).
+- `Datum`: Entscheidungs- oder Prüftermin.
+- `Owner`: Verantwortlicher Bereich (z. B. Platform/CI/QA).
 
 ## 9. Folge-Scope nach `0.13.0`
 
