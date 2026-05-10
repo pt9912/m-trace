@@ -25,7 +25,7 @@
 > **Bezug**:
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope,
 > §13.14 Lastenheft-RAK-71..RAK-76;
-> [`open/plan-0.12.1.md`](./plan-0.12.1.md) §1 Trigger-Re-Eval-Stand;
+> [`in-progress/plan-0.12.1.md`](../in-progress/plan-0.12.1.md) §1 Trigger-Re-Eval-Stand;
 > [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1 R-14,
 > R-16, R-17, R-18, R-20, R-21;
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) §13.14 (vor

@@ -1,9 +1,7 @@
 # Implementation Plan — `0.12.1` (Auth-/Risk-Folge: Trigger-Re-Eval + Operator-Doku)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst
-> nach explizitem Move nach `docs/planning/in-progress/` umgesetzt
-> werden.
-> Vorgänger ist `0.12.0` (`v0.12.0`, Auth / Token Lifecycle; Plan in
+> **Status**: 🟡 Tranche 0 aktiv (aktiviert 2026-05-10). Vorgänger
+> ist `0.12.0` (`v0.12.0`, Auth / Token Lifecycle; Plan in
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md)).
 >
 > **Release-Typ**: **Patch-Release** (`0.12.1`) gemäß
@@ -18,11 +16,11 @@
 > Triggerschwellen mit operator-observablem Signal. Adapter-/Wire-
 > Implementierungen (Multi-Replica-Limiter, Multi-Key-Rotation-
 > Code, KMS/Vault-Backend, Webhook-Outbound, Ingest-Browser-Policy)
-> wandern in [`plan-0.12.5.md`](./plan-0.12.5.md) als Minor-Release.
+> wandern in [`plan-0.12.5.md`](../open/plan-0.12.5.md) als Minor-Release.
 >
 > **Bezug**:
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope;
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
+> [`risks-backlog.md`](./risks-backlog.md) §1.1
 > R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21;
 > [`docs/user/releasing.md`](../../user/releasing.md) §3.1
 > Patch-Release-Konvention.
@@ -143,14 +141,14 @@ Bedarf").
 | OS-3 | Produktive MediaMTX-/SRS-Auth-Hook-Brücke | implizit über R-14 | R-14 ist die getrackte Form; OS-3 als Duplikat streichen |
 | OS-4 | KMS/Vault/Cloud-Secret-Manager | implizit über R-20 | R-20 ist die getrackte Form; OS-4 als Duplikat streichen |
 | OS-5 | Multi-Replica Secret-/Issuance-Mechanik | implizit über R-17 + R-18 | Streichung als Duplikat |
-| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | `0.12.5` deckt Project-Token-basiertes Rate-Limiting ab (R-17/RAK-77), aber **kein** Origin-/IP-Rate-Limiting — die OS-6-Bedingung „Folge-Item nötig" greift. Tranche 1 legt **R-22** in `risks-backlog.md` §1.1 an mit operator-observablem Trigger („IP-basiertes Last-/Replay-Pattern im Operator-Report" oder „Issuance-Abuse trotz aktivem R-17-Limiter") und Auflösungspfad „[`plan-0.13.0.md`](./plan-0.13.0.md) bzw. `plan-0.13.x`, sobald Trigger ausgelöst". Alternative: Streichung mit Begründung „Project-Token-Rotation + R-17 decken Missbrauch ausreichend ab" — Tranche-1-Entscheidung. |
+| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | `0.12.5` deckt Project-Token-basiertes Rate-Limiting ab (R-17/RAK-77), aber **kein** Origin-/IP-Rate-Limiting — die OS-6-Bedingung „Folge-Item nötig" greift. Tranche 1 legt **R-22** in `risks-backlog.md` §1.1 an mit operator-observablem Trigger („IP-basiertes Last-/Replay-Pattern im Operator-Report" oder „Issuance-Abuse trotz aktivem R-17-Limiter") und Auflösungspfad „[`plan-0.13.0.md`](../open/plan-0.13.0.md) bzw. `plan-0.13.x`, sobald Trigger ausgelöst". Alternative: Streichung mit Begründung „Project-Token-Rotation + R-17 decken Missbrauch ausreichend ab" — Tranche-1-Entscheidung. |
 
 ## 3. Tranchen-Übersicht
 
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
-| 0 | Plan-Aktivierung, Roadmap-Insert, Trigger-Re-Eval-Matrix vorbereiten | ⬜ |
-| 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | ⬜ |
+| 0 | Plan-Aktivierung, Roadmap-Insert, Trigger-Re-Eval-Matrix vorbereiten | ✅ |
+| 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | 🟡 |
 | 2 | Operator-Runbook für R-18 + Doku-Schärfungen | ⬜ |
 | 3 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag | ⬜ |
 
@@ -162,14 +160,18 @@ Ziel: Patch-Scope ist sauber, bevor R-N-Re-Evals laufen.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.12.1.md` nach
-  `docs/planning/in-progress/plan-0.12.1.md` verschoben.
-- [ ] `git status --short` vor erster Änderung dokumentiert.
-- [ ] Roadmap-Insert vorbereitet: §1 Phase auf `0.12.1` in Arbeit;
-  §2 neuer Schritt 47.5 zwischen 47 und 48; §3 Release-Übersicht
-  Zeile `0.12.1`.
-- [ ] Patch-Release-Konvention bestätigt: kein Lastenheft-Patch,
-  keine RAK-Matrix, keine §6.1.
+- [x] Plan von `docs/planning/open/plan-0.12.1.md` nach
+  `docs/planning/in-progress/plan-0.12.1.md` verschoben (Commit
+  folgt am Ende von Tranche 0).
+- [x] `git status --short` vor erster Änderung dokumentiert: clean
+  nach `63a7fa0` (drei Review-Fixes); Aktivierung beginnt auf
+  einem aufgeräumten Tree.
+- [x] Roadmap-Insert: §1 Phase-Header auf 🟡 `0.12.1` in Arbeit;
+  §1.2 „aktivierbar" → „aktiviert 2026-05-10"; §2 Schritt 47.5
+  Status auf 🟡; §3 Release-Übersicht-Zeile `0.12.1` auf 🟡.
+- [x] Patch-Release-Konvention bestätigt: kein Lastenheft-Patch,
+  keine RAK-Matrix, keine neue Wire-Surface — siehe §0.1 Scope-
+  Definition oben.
 
 ## 5. Tranche 1 — Trigger-Re-Eval und OS-Schärfung
 
@@ -260,12 +262,12 @@ DoD:
 
 ## 8. Folge-Scope nach `0.12.1`
 
-- [`plan-0.12.5.md`](./plan-0.12.5.md): Auth-/Ingest-Adapter-Minor
+- [`plan-0.12.5.md`](../open/plan-0.12.5.md): Auth-/Ingest-Adapter-Minor
   (Multi-Replica-Limiter R-17, Multi-Key-Rotation-Code R-18,
   KMS/Vault R-20, Browser-Ingest-Policy R-21, ggf. Auth-Bridge
   R-14, Webhook-Outbound R-16). Eigener Lastenheft-Patch `1.1.16`,
   neue RAK-Gruppe.
-- [`plan-0.13.0.md`](./plan-0.13.0.md): Production / Ops Backends
+- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops Backends
   (`MVP-40`..`MVP-44`).
 - Später: `plan-0.14.x` o. ä. für OAuth/OIDC/SSO/User-Verwaltung,
   falls konkreter Bedarf entsteht (RAK-71-Out-of-Scope-Stand bleibt
