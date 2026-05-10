@@ -57,6 +57,7 @@ func NewRouter(
 	srtHealth SrtHealthInbound,
 	ingestControl driving.IngestControlInbound,
 	authSession driving.AuthSessionInbound,
+	playbackAuthHeaders *AuthHeaderParser,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -70,9 +71,10 @@ func NewRouter(
 	mux := http.NewServeMux()
 
 	playback := &PlaybackEventsHandler{
-		UseCase: useCase,
-		Tracer:  tracer,
-		Logger:  logger,
+		UseCase:     useCase,
+		AuthHeaders: playbackAuthHeaders,
+		Tracer:      tracer,
+		Logger:      logger,
 	}
 	sessionsList := &SessionsListHandler{
 		UseCase:  sessions,

@@ -22,9 +22,12 @@ type ProjectConfig struct {
 // StaticProjectResolver resolves a presented X-MTrace-Token to a
 // project using a hardcoded reverse map (token -> project_id) und
 // hält die globale Union der Allowed-Origins über alle Projects für
-// den CORS-Preflight-Pfad bereit.
+// den CORS-Preflight-Pfad bereit. Zusätzlich hält der Resolver die
+// Project-by-ID-Map, damit der `0.12.0`-Session-Token-Pfad das
+// Project nach Verify-Sub-Claim auflösen kann (RAK-72 + RAK-75).
 type StaticProjectResolver struct {
 	byToken      map[string]domain.Project
+	byProjectID  map[string]domain.Project
 	originsUnion map[string]struct{}
 }
 
@@ -34,6 +37,7 @@ type StaticProjectResolver struct {
 // überschreiben.
 func NewStaticProjectResolver(byProjectID map[string]ProjectConfig) *StaticProjectResolver {
 	byToken := make(map[string]domain.Project, len(byProjectID))
+	projectsByID := make(map[string]domain.Project, len(byProjectID))
 	originsUnion := make(map[string]struct{})
 	for projectID, cfg := range byProjectID {
 		project := domain.Project{
@@ -42,12 +46,14 @@ func NewStaticProjectResolver(byProjectID map[string]ProjectConfig) *StaticProje
 			AllowedOrigins: append([]string(nil), cfg.AllowedOrigins...),
 		}
 		byToken[cfg.Token] = project
+		projectsByID[projectID] = project
 		for _, o := range cfg.AllowedOrigins {
 			originsUnion[o] = struct{}{}
 		}
 	}
 	return &StaticProjectResolver{
 		byToken:      byToken,
+		byProjectID:  projectsByID,
 		originsUnion: originsUnion,
 	}
 }
@@ -73,6 +79,20 @@ func (r *StaticProjectResolver) IsOriginInGlobalUnion(origin string) bool {
 	}
 	_, ok := r.originsUnion[origin]
 	return ok
+}
+
+// ResolveByID liefert das Project zur ID — `0.12.0`-Pfad, der den
+// resolvierten `sub`-Claim eines Session Tokens auf einen
+// `domain.Project` mappt (RAK-72/RAK-75). Liefert
+// `domain.ErrUnauthorized` für unbekannte IDs, damit der HTTP-
+// Adapter dieselbe Mapping-Stufe wie für `ResolveByToken` verwenden
+// kann.
+func (r *StaticProjectResolver) ResolveByID(projectID string) (domain.Project, error) {
+	project, ok := r.byProjectID[projectID]
+	if !ok {
+		return domain.Project{}, domain.ErrUnauthorized
+	}
+	return project, nil
 }
 
 var _ driven.ProjectResolver = (*StaticProjectResolver)(nil)

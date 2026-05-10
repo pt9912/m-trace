@@ -65,7 +65,7 @@ func newAuthSessionTestServer(t *testing.T, opts ...authServerOption) *httptest.
 	svc := application.NewIssueSessionTokenService(policies, limiter, signer, ids)
 	publisher := metrics.NewPrometheusPublisher()
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	router := apihttp.NewRouter(nil, nil, nil, resolver, resolver, publisher.Handler(), nil, nil, nil, nil, svc, nil, logger)
+	router := apihttp.NewRouter(nil, nil, nil, resolver, resolver, publisher.Handler(), nil, nil, nil, nil, svc, nil, nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

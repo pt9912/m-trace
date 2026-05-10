@@ -212,9 +212,19 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
 	ctx context.Context, in driving.BatchInput,
 ) (domain.Project, error) {
-	project, err := u.projects.ResolveByToken(ctx, in.AuthToken)
-	if err != nil {
-		return domain.Project{}, err
+	var project domain.Project
+	if in.PreResolvedProject != nil {
+		// `0.12.0`-Pfad: HTTP-Adapter hat den Auth-Header bereits über
+		// den Session-Token-Pfad aufgelöst. Use-Case überspringt
+		// ResolveByToken; alle nachfolgenden Stufen (Origin-Allowlist,
+		// Rate-Limit, Schema, Batch-Größe) gelten unverändert.
+		project = *in.PreResolvedProject
+	} else {
+		var err error
+		project, err = u.projects.ResolveByToken(ctx, in.AuthToken)
+		if err != nil {
+			return domain.Project{}, err
+		}
 	}
 	if !project.IsOriginAllowed(in.Origin) {
 		return domain.Project{}, domain.ErrOriginNotAllowed

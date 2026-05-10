@@ -8,7 +8,11 @@
 // for parsing JSON into BatchInput.
 package driving
 
-import "context"
+import (
+	"context"
+
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+)
 
 // PlaybackEventInbound is the single use-case entry point for the
 // spike: accept a batch of player events.
@@ -24,12 +28,21 @@ type PlaybackEventInbound interface {
 // responsible for the full validation order from step 2 onwards.
 // Origin="" → CLI/curl-Pfad: keine Project-Bindung. ClientIP="" →
 // keine IP-basierte Rate-Limit-Dimension (Tests/headless flows).
+//
+// PreResolvedProject ist der `0.12.0`-Pfad (RAK-72/RAK-75): Wenn der
+// HTTP-Adapter den Auth-Header bereits aufgelöst hat (Session Token
+// über `Authorization: Bearer mtr_st_*` oder
+// `X-MTrace-Session-Token`), reicht er das resolvierte Project hier
+// durch — der Use-Case überspringt dann die `ResolveByToken`-Stufe und
+// benutzt den vorliegenden Project-State direkt. `nil` schaltet auf
+// den Legacy-Pfad (`AuthToken`-Resolve über `ProjectResolver`).
 type BatchInput struct {
-	SchemaVersion string
-	AuthToken     string
-	Origin        string
-	ClientIP      string
-	Events        []EventInput
+	SchemaVersion      string
+	AuthToken          string
+	PreResolvedProject *domain.Project
+	Origin             string
+	ClientIP           string
+	Events             []EventInput
 	// Boundaries ist der optionale `session_boundaries[]`-Wrapper aus
 	// API-Kontrakt §3.4 (plan-0.4.0 §4.4). Maximal 20 pro Batch, jede
 	// Boundary muss eine `(project_id, session_id)`-Partition

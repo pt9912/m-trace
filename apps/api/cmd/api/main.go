@@ -301,12 +301,25 @@ func buildHandler(
 	// `MTRACE_AUTH_SIGNING_KEY` (Base64-URL); ohne Env-Var wird ein
 	// deterministischer Lab-Key benutzt und der Logger warnt einmal,
 	// damit Production-Setups nicht mit dem Lab-Key in Betrieb gehen.
-	authSessionInbound, authErr := buildAuthSessionService(baseProjects, logger)
+	authBundle, authErr := buildAuthSessionService(baseProjects, logger)
 	if authErr != nil {
 		logger.Warn("auth session service disabled", "error", authErr.Error())
 	}
+	var (
+		authSessionInbound  driving.AuthSessionInbound
+		playbackAuthHeaders *apihttp.AuthHeaderParser
+	)
+	if authBundle != nil {
+		authSessionInbound = authBundle.Inbound
+		playbackAuthHeaders = &apihttp.AuthHeaderParser{
+			Resolver: resolver,
+			Verifier: authBundle.Signer,
+			Projects: resolver,
+			Audience: domain.SessionTokenAudiencePlaybackEvents,
+		}
+	}
 
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, resolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 
@@ -479,15 +492,25 @@ func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundl
 	}
 }
 
-// buildAuthSessionService verdrahtet den `0.12.0`-Issuance-Pfad
-// (RAK-72): Signing-Key-Ring (`MTRACE_AUTH_SIGNING_KID` /
+// authBundle bündelt das, was main.go für `0.12.0` Tranche 2 baut:
+// Issuance-Service (Driving-Port) plus den Signer für den
+// Konsum-Pfad (PlaybackEventsHandler verifiziert damit Bearer-/
+// X-MTrace-Session-Token-Header).
+type authBundle struct {
+	Inbound driving.AuthSessionInbound
+	Signer  *auth.HMACSessionTokenSigner
+}
+
+// buildAuthSessionService verdrahtet den `0.12.0`-Auth-Pfad
+// (RAK-72/RAK-75): Signing-Key-Ring (`MTRACE_AUTH_SIGNING_KID` /
 // `MTRACE_AUTH_SIGNING_KEY` als Base64-URL-encoded Bytes — fehlend
 // fällt auf einen markierten Lab-Default zurück), In-Memory-Issuance-
 // Limiter (global + Project) und In-Memory-Project-Policy-Resolver
 // (Fallback aus den Static-Project-Origins). Klartext-Token-Material
-// wird im Resolver defensiv kopiert; der zurückgegebene Service
-// implementiert `driving.AuthSessionInbound`.
-func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slog.Logger) (driving.AuthSessionInbound, error) {
+// wird im Resolver defensiv kopiert. Der zurückgegebene Bundle
+// enthält den Issuance-Service und den Signer (für den
+// PlaybackEventsHandler-Verify-Pfad).
+func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slog.Logger) (*authBundle, error) {
 	kid := domain.SigningKeyID(strings.TrimSpace(os.Getenv(envAuthSigningKID)))
 	if kid == "" {
 		kid = authDefaultLabSigningKID
@@ -524,7 +547,10 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slo
 	)
 	policies := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
 	ids := auth.NewRandomTokenIDGenerator()
-	return application.NewIssueSessionTokenService(policies, limiter, signer, ids), nil
+	return &authBundle{
+		Inbound: application.NewIssueSessionTokenService(policies, limiter, signer, ids),
+		Signer:  signer,
+	}, nil
 }
 
 // base64DecodeURLSafe akzeptiert sowohl `RawURLEncoding` als auch

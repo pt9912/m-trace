@@ -30,10 +30,17 @@ const spanName = "http.handler POST /api/playback-events"
 // Tracer wraps each request in a span; ServeHTTP records the
 // http.method/route, http.status_code, batch.size and batch.outcome
 // attributes documented in spec/telemetry-model.md §2.1.
+//
+// Auth ist ab `0.12.0` (RAK-72/RAK-75) drei-pfadig: Bearer-Session-
+// Token, X-MTrace-Session-Token und Legacy-X-MTrace-Token. Wenn
+// `AuthHeaders` gesetzt ist, läuft die §3.9-Header-Priorität samt
+// Multi-Token-Konsistenzcheck; ohne `AuthHeaders` bleibt der Handler
+// im Pre-`0.12.0`-Verhalten (nur `X-MTrace-Token`).
 type PlaybackEventsHandler struct {
-	UseCase driving.PlaybackEventInbound
-	Tracer  trace.Tracer
-	Logger  *slog.Logger
+	UseCase     driving.PlaybackEventInbound
+	AuthHeaders *AuthHeaderParser
+	Tracer      trace.Tracer
+	Logger      *slog.Logger
 }
 
 // ServeHTTP follows the validation order from
@@ -148,10 +155,34 @@ func (h *PlaybackEventsHandler) serve(
 	// Step 1 — Auth-Header presence. Origin-loser Fast-Reject vor dem
 	// Body-Read; siehe API-Kontrakt §5 (Auth-vor-Body-Reihenfolge,
 	// Patch 40d79d9).
-	token := r.Header.Get("X-MTrace-Token")
-	if token == "" {
-		writeStatus(w, http.StatusUnauthorized)
-		return -1, nil
+	//
+	// Ab `0.12.0` (RAK-72/RAK-75) prüft der `AuthHeaderParser` die
+	// drei-pfadige Auth-Matrix (Bearer → X-MTrace-Session-Token →
+	// X-MTrace-Token) plus Multi-Token-Konsistenz. `decision` enthält
+	// entweder ein bereits aufgelöstes Project (Session-Token-Pfad)
+	// oder einen Legacy-Token, den der Use-Case selbst auflöst.
+	var (
+		legacyToken     string
+		preResolved     *domain.Project
+	)
+	if h.AuthHeaders != nil {
+		decision, err := h.AuthHeaders.Parse(ctx, r.Header.Get, r.Header.Get("Origin"))
+		if err != nil {
+			h.writeAuthHeaderError(w, err)
+			return -1, nil
+		}
+		legacyToken = decision.LegacyToken
+		preResolved = decision.ResolvedProject
+		if legacyToken == "" && preResolved == nil {
+			writeStatus(w, http.StatusUnauthorized)
+			return -1, nil
+		}
+	} else {
+		legacyToken = r.Header.Get("X-MTrace-Token")
+		if legacyToken == "" {
+			writeStatus(w, http.StatusUnauthorized)
+			return -1, nil
+		}
 	}
 
 	// Step 2 — Body size limit. MaxBytesReader wraps r.Body so reads
@@ -179,12 +210,13 @@ func (h *PlaybackEventsHandler) serve(
 	// Use-Case kennt nur die finalen Trace/Span-IDs.
 	spanCtx := span.SpanContext()
 	in := driving.BatchInput{
-		SchemaVersion: payload.SchemaVersion,
-		AuthToken:     token,
-		Origin:        r.Header.Get("Origin"),
-		ClientIP:      clientIPFromRequest(r),
-		Events:        toEventInputs(payload.Events),
-		Boundaries:    toBoundaryInputs(payload.SessionBoundaries),
+		SchemaVersion:      payload.SchemaVersion,
+		AuthToken:          legacyToken,
+		PreResolvedProject: preResolved,
+		Origin:             r.Header.Get("Origin"),
+		ClientIP:           clientIPFromRequest(r),
+		Events:             toEventInputs(payload.Events),
+		Boundaries:         toBoundaryInputs(payload.SessionBoundaries),
 		Trace: driving.BatchTraceContext{
 			TraceID: spanCtx.TraceID().String(),
 			SpanID:  spanCtx.SpanID().String(),
@@ -202,6 +234,30 @@ func (h *PlaybackEventsHandler) serve(
 	w.WriteHeader(http.StatusAccepted)
 	_ = json.NewEncoder(w).Encode(map[string]int{"accepted": res.Accepted})
 	return batchSize, &res
+}
+
+// writeAuthHeaderError mappt die Auth-Header-Parser-Fehler aus
+// `0.12.0` auf §3.9-Codes. Body-Form bleibt minimal (Status + Code),
+// damit die Pre-`0.12.0`-Pflichttests (die nur den Status-Code
+// prüfen) unverändert grün bleiben.
+func (h *PlaybackEventsHandler) writeAuthHeaderError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, domain.ErrAuthTokenMissing):
+		writeStatus(w, http.StatusUnauthorized)
+	case errors.Is(err, domain.ErrAuthTokenInvalid),
+		errors.Is(err, domain.ErrAuthTokenRevoked),
+		errors.Is(err, domain.ErrAuthTokenExpired),
+		errors.Is(err, domain.ErrAuthTokenNotYetValid),
+		errors.Is(err, domain.ErrAuthProjectMismatch):
+		writeStatus(w, http.StatusUnauthorized)
+	case errors.Is(err, domain.ErrAuthSessionScopeDenied),
+		errors.Is(err, domain.ErrAuthPolicyDenied):
+		writeStatus(w, http.StatusForbidden)
+	default:
+		// Unbekannter Auth-Fehler: konservativ als 401 mappen, damit
+		// kein Internal-Error sichtbar wird.
+		writeStatus(w, http.StatusUnauthorized)
+	}
 }
 
 func (h *PlaybackEventsHandler) writeUseCaseError(w http.ResponseWriter, err error) {
