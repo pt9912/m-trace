@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-05-10
+
+> **Patch-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — kein Lastenheft-Patch, keine RAK-Verifikationsmatrix, keine
+> neue User-Surface oder Wire-Verträge. Plan in
+> [`docs/planning/done/plan-0.12.1.md`](docs/planning/done/plan-0.12.1.md).
+
+### Added
+
+- **Operator-Runbook für Multi-Key-Signing-Rotation** in
+  [`docs/user/auth.md`](docs/user/auth.md) §5.3.1: Vier-Schritt-Soll-
+  Workflow (neuen Key generieren → Verify-Set erweitern → aktiven
+  `kid` umschalten → alten Key nach max-TTL + Reservezeit entfernen)
+  plus expliziter Anti-Pattern-Block. Der zugehörige
+  `MultiKeySigningResolver`-Code-Pfad mit ENV-Schema
+  `MTRACE_AUTH_SIGNING_KEYS=kid_a:base64,kid_b:base64` plus
+  `MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_a` liefert das Folge-Release
+  `0.12.5` (Tranche 1, RAK-78); R-18 im Risiko-Backlog.
+
+### Changed
+
+- **Risiken-Backlog konsistent nach `0.12.0`-Release**:
+  Trigger-Stand-Eintrag pro aktivem `R-N`-Item (R-5/R-7/R-9/R-10/
+  R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21) — alle 14
+  Items aktuell „nicht ausgelöst", Stand-Datum 2026-05-10.
+- **OS-Folge-Items aus `0.12.0` §10 geschärft**: OS-1..OS-5 als ⬛
+  Duplikate/strukturell-nicht-trackbar in §1.2 abgelegt; OS-6
+  (Origin-/IP-naher Rate-Limiter) zu **R-22** in §1.1 konvertiert
+  mit operator-observablem Trigger und Auflösungspfad
+  `plan-0.13.x`. Done-Plan `done/plan-0.12.0.md` bleibt
+  unverändert (Release-Historie-Konvention).
+- **R-19** als ⬛ historischer Marker dokumentiert: README-Risiko-
+  Grundlage in `5798473` entfernt; R-N-Nummerierungslücke bleibt
+  bewusst beibehalten.
+- **Konvention „teilweise gelöst"** im Risks-Backlog §2 Wartung
+  pinnt: Status bleibt `⬜ offen`, Mitigationspräfix
+  `**teilweise gelöst** —` mit Resttrigger-Notiz; nur bei
+  vollständiger Resttrigger-Auflösung wandert das Item nach §1.2.
+
+### Removed
+
+- **OS-1..OS-6 aus `risks-backlog.md` §1.1**: ersetzt durch ⬛
+  Einträge in §1.2 oder R-22 (siehe oben).
+
 ## [0.12.0] - 2026-05-10
 
 > **Minor-Release** mit Lastenheft-Patch `1.1.15` (F-111..F-113 von

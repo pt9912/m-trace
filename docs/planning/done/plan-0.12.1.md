@@ -1,7 +1,7 @@
 # Implementation Plan — `0.12.1` (Auth-/Risk-Folge: Trigger-Re-Eval + Operator-Doku)
 
-> **Status**: 🟡 Tranche 0 aktiv (aktiviert 2026-05-10). Vorgänger
-> ist `0.12.0` (`v0.12.0`, Auth / Token Lifecycle; Plan in
+> **Status**: ✅ released 2026-05-10 (`v0.12.1`). Vorgänger ist
+> `0.12.0` (`v0.12.0`, Auth / Token Lifecycle; Plan in
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md)).
 >
 > **Release-Typ**: **Patch-Release** (`0.12.1`) gemäß
@@ -20,7 +20,7 @@
 >
 > **Bezug**:
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope;
-> [`risks-backlog.md`](./risks-backlog.md) §1.1
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
 > R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21;
 > [`docs/user/releasing.md`](../../user/releasing.md) §3.1
 > Patch-Release-Konvention.
@@ -150,7 +150,7 @@ Bedarf").
 | 0 | Plan-Aktivierung, Roadmap-Insert, Trigger-Re-Eval-Matrix vorbereiten | ✅ |
 | 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | ✅ |
 | 2 | Operator-Runbook für R-18 + Doku-Schärfungen | ✅ |
-| 3 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag | ⬜ |
+| 3 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag | ✅ |
 
 ---
 
@@ -239,33 +239,41 @@ DoD:
 
 DoD:
 
-- [ ] `make docs-check` grün.
-- [ ] `make gates` grün (zur Vollständigkeit, auch wenn der Patch
-  doku-only ist — Test-Drift-Schutz).
-- [ ] `make generated-drift-check` grün.
-- [ ] Wave-2-Quality-Gates dokumentiert per `releasing.md` §3.1:
-  `gh run list --workflow benchmark.yml --limit 1`,
-  `gh run list --workflow fuzz.yml --limit 1`,
-  `gh issue list --label fuzz --state open`,
-  `gh run list --workflow mutation.yml --limit 3`. Verdict im
-  Closeout-Log oder Tag-Annotation festgehalten.
-- [ ] Versions-Bump auf `0.12.1` an allen Stellen aus
-  `releasing.md` §3.1 (5× `package.json` + `main.go`
-  `serviceVersion` + `version.ts` + `contracts/sdk-compat.json`
-  + 20+20 Analyzer-Fixtures + Test-Fixtures mit hartkodiertem
-  Versions-String; Pattern-Sweep mit den drei `grep`-Patterns
-  aus §3.1).
-- [ ] `CHANGELOG.md` mit `[0.12.1] - YYYY-MM-DD`-Block aktualisiert
-  (Keep-a-Changelog: `### Changed` für Trigger-Re-Evals und Doku;
-  ggf. `### Removed` für gestrichene OS-Items).
-- [ ] Roadmap-Status aktualisiert: §1 Phase auf released, §2
-  Schritt 47.5 ✅, §3-Zeile `0.12.1` ✅.
-- [ ] Plan nach `docs/planning/done/plan-0.12.1.md` verschoben;
+- [x] `make docs-check` grün (final, nach Plan-Move).
+- [x] `make gates` grün — alle Stages (test/lint/coverage/arch/
+  smoke) durch; nur `generated-drift-check` flaggte vor dem
+  Closeout-Commit dirty working tree (erwartet).
+- [x] `make generated-drift-check` grün (final, nach Closeout-
+  Commit).
+- [x] Wave-2-Quality-Gates dokumentiert: `benchmark.yml` run
+  25621864114 ✅ (2026-05-10 06:30, success), `fuzz.yml` run
+  25622902284 ✅ (2026-05-10 07:27, success), keine offenen
+  fuzz-Issues, `mutation.yml` letzte 3 Runs (25623561573 /
+  25595781337 / 25542848176) alle success / Score-Trend stabil,
+  `webrtc-drift.yml` run 25621730111 ✅ (R-12-Trigger nicht
+  ausgelöst).
+- [x] Versions-Bump auf `0.12.1` an allen Stellen aus
+  `releasing.md` §3.1: 5× `package.json` (Root + 2 apps + 2
+  packages), `main.go` `serviceVersion`, `version.ts`
+  `PLAYER_SDK_VERSION`, `contracts/sdk-compat.json`
+  `sdk_version`, 20 Analyzer-Spec-Fixtures + 20 testdata-Kopien
+  (synct via `make sync-contract-fixtures`), Go- und TS-Test-
+  Files mit hartkodierten Versions-Strings (correlation_e2e,
+  handler, wire_fuzz, analyze, analyze_link, analyze_manifest,
+  analyze_manifest_link, http_test (streamanalyzer), race_test
+  (sqlite-persistence), tracker, version, cli (TS-packages)).
+- [x] `CHANGELOG.md` `[0.12.1] - 2026-05-10`-Block (Keep-a-
+  Changelog: Added für Operator-Runbook §5.3.1; Changed für
+  Trigger-Re-Eval, OS-Schärfung, „teilweise gelöst"-Konvention;
+  Removed für OS-1..OS-6 aus §1.1).
+- [x] Roadmap aktualisiert: §1 Phase ✅ released, §1.2 erwähnt
+  released-Stand und benennt `0.12.5` als nächste aktivierbare
+  Phase, §2 Schritt 47.5 ✅, §3-Zeile `0.12.1` ✅.
+- [x] Plan nach `docs/planning/done/plan-0.12.1.md` verschoben;
   Status-Header auf ✅ released; Tranchen-Übersicht §3 alle ✅.
-- [ ] Annotierter Tag `v0.12.1` erstellt mit Lieferzusammenfassung
-  (Trigger-Re-Eval-Stand, Operator-Runbook, Doku-Schärfungen) plus
-  Verweis auf `plan-0.12.5.md` als Folge-Minor.
-- [ ] GitHub-Release `m-trace 0.12.1` mit Notes-File aus dem
+- [x] Annotierter Tag `v0.12.1` erstellt mit Lieferzusammenfassung
+  und Verweis auf `plan-0.12.5.md`.
+- [x] GitHub-Release `m-trace 0.12.1` mit Notes-File aus dem
   CHANGELOG-Block.
 
 ## 8. Folge-Scope nach `0.12.1`
