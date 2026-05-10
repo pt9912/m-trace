@@ -33,109 +33,192 @@ DoD-Checkboxen tracken den Lieferstand:
 
 ### 0.1 Scope-Definition
 
-Dieser Plan ist ein Decision-and-Seed-Release für Production-/Ops-
-Backends. Er darf einzelne Artefakte liefern, muss aber nicht alle
-Backends produktionsreif implementieren.
+`0.13.0` ist ein Decision-and-Seed-Release für Production-/Ops-
+Backends. Es kann Artefakte liefern, aber liefert nicht alle
+Produktionspfade vollständig.
 
 In Scope:
 
 - `MVP-40`: Postgres als produktionsnaher Store bewerten und ggf.
-  ersten Adapter-/Migration-Slice planen.
+  minimalen Adapter-/Migrations-Slice planen.
 - `MVP-41`: ClickHouse oder VictoriaMetrics als hochvolumiges Event-
-  Backend bewerten.
+  Backend bewerten, inklusive Kosten-/Operativvergleich.
 - `MVP-42` / `NF-18`: Kubernetes-Manifeste als optionalen Folgepfad
-  konkretisieren oder weiterhin begründet deferred lassen.
-- `MVP-43`: Devcontainer für reproduzierbare Entwicklung bewerten.
-- `MVP-44`: Release-Automatisierung bewerten und erste sichere
-  Automationsschritte definieren.
-- R-9 prüfen: K8s-Smoke-Stage würde Observability-Label-Allowlists
-  beeinflussen.
+  konkretisieren, optional als Beispieldateien liefern.
+- `MVP-43`: Devcontainer für reproduzierbare Entwicklung liefern oder
+  als Folge-Scope begründet deferieren.
+- `MVP-44`: Release-Automatisierung mit klaren Gates und manuellem
+  Freigabepfad definieren.
+- R-9 prüfen: K8s-Smoke-Stage und Observability-Labelling beeinflussen.
 
 Out of scope:
 
 - Kein vollständiger Production-Kubernetes-Betrieb.
 - Kein Managed-Cloud-Betrieb.
 - Kein Multi-Tenant-SaaS-Produkt.
-- Keine ClickHouse-/VictoriaMetrics-Pflicht, solange kein konkreter
-  Analysebedarf besteht.
-- Keine automatische Releases ohne manuelle Freigabe.
+- Keine verpflichtende ClickHouse-/VictoriaMetrics-Pflicht für den
+  Standardbetrieb.
+- Keine automatische Veröffentlichung ohne explizite human approval.
 
-### 0.2 Offene Vorentscheidungen
+### 0.2 Vorgänger-Gate
 
-- Ob `0.13.0` ein reiner ADR-/Seed-Release bleibt oder einen ersten
-  Postgres-Adapter-Slice liefert.
-- Ob K8s-Manifeste als Beispielartefakte oder nur als Folgeplan
-  behandelt werden.
-- Ob Devcontainer und Release-Automatisierung zusammen in diesem Plan
-  bleiben oder vor Aktivierung getrennt werden.
+- `0.12.0` ist released; Roadmap muss auf `0.13.0` als aktive
+  Folgephase zeigen.
+- Bestehende Operativgrundsätze aus `0.12.0` bleiben aktiv: kein
+  Vollausbau von Production-Identity oder Secret-Management im Scope.
+- Keine Änderung am bereits ausgelieferten Auth-/Token- und Ingest-
+  Kernpfad ohne separate ADR oder Sicherheitsbezug.
+
+### 0.3 Architektur-/Scope-Entscheidungen (Planpflicht)
+
+Die Tranche-0-Entscheidung klärt mindestens folgende Dimensionen:
+
+- Welche Komponenten in `0.13.0` als Seed implementiert werden
+  (minimaler Codepfad) und welche in 0.14+ verschoben werden.
+- Welche Backend-Optionen als „defer“ markiert werden, inklusive
+  Auslösern für Reaktivierung.
+- Welche Dokumente (ADR/Plan/Spec) die Verbindlichkeit haben.
+
+### 0.4 Lastenheft-Patch `1.1.16` (Vorschlag)
+
+Der Plan ergänzt eine neue RAK-Serie für `MVP-40`..`MVP-44` und
+`NF-18` als Mindestverpflichtung für 0.13.
+
+| RAK | Priorität | Inhalt |
+| --- | --- | --- |
+| RAK-77 | Muss | Operativer Scope für `MVP-40`..`MVP-42`, inkl. klarer Seed-/Defer-Boundaries und Nachweise. |
+| RAK-78 | Muss | Operativer Scope für `MVP-41`: Vergleichs- und Entscheidungspfad gegen ClickHouse/VictoriaMetrics. |
+| RAK-79 | Muss | `MVP-42`/`NF-18` als optionaler K8s-Optionpfad wird normativ begrenzt, keine Vollbereitschaftszusage. |
+| RAK-80 | Muss | Operativer Scope für `MVP-43`: Devcontainer als Seed oder explizites Defer mit Begründung/Trigger. |
+| RAK-81 | Muss | Release-Prozess enthält mindestens manuelle Freigabe in allen automationsrelevanten Stufen, inklusive sicherer Rollback-Regeln und Closeout-Nachweis. |
+
+> Die finale Verifizierung der IDs erfolgt gegen `spec/lastenheft.md`.
+> Hier ist die Folge-Lücke `RAK-77`..`RAK-81` als operative ID-Zahl
+> vorbesetzt.
+
+### 0.5 Qualitätsregeln für 0.13.0
+
+- Keine neuen Pflichtabhängigkeiten in der lokalen Standardumgebung.
+- Keine Architekturentscheidung ohne nachvollziehbaren ADR-
+  Entscheidungsweg.
+- Keine Entscheidung ohne dokumentierten Migrations-/Rollbackpfad.
+- Reproduzierbarkeit von Build, Test und Release vor Funktionsumfang.
+- Jede Tranche endet mit Verifikationsnachweisen (Datei + Test + Doku).
 
 ## 1. Tranchen-Übersicht
 
-| Tranche | Inhalt | Status |
-| ------- | ------ | ------ |
-| 0 | Plan-Aktivierung, Lastenheft-Patch, ADR-Schnitt und Scope-Gates | ⬜ |
-| 1 | Postgres-Entscheidung und ggf. Adapter-Seed (`MVP-40`) | ⬜ |
-| 2 | Analytics-Backend-Entscheidung (`MVP-41`) | ⬜ |
-| 3 | Kubernetes-/Devcontainer-Scope (`MVP-42`, `MVP-43`, `NF-18`, R-9) | ⬜ |
-| 4 | Release-Automatisierung (`MVP-44`) | ⬜ |
-| 5 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
+| Tranche | Inhalt | Erwartetes Ergebnis | Status |
+| --- | --- | --- | --- |
+| 0 | Aktivierung, Lastenheft-Patch, ADR-Schnitt und Scope-Gates | Freigabevoraussetzungen geklärt | ⬜ |
+| 1 | Postgres-Entscheidung und Adapter-Scope (`MVP-40`) | Entscheidung inkl. Seed-Umfang oder strukturierte Defer-Liste | ⬜ |
+| 2 | Analytics-Backend-Entscheidung (`MVP-41`) | Vergleichts- und Kostenmatrix | ⬜ |
+| 3 | Kubernetes-/Devcontainer-/NF-18-Risiko (`MVP-42`, `MVP-43`, `R-9`, `NF-18`) | Konkreter Scope-Hebel für Folgephase | ⬜ |
+| 4 | Release-Automatisierung (`MVP-44`) | Sichere Automations- und Freigaberegeln | ⬜ |
+| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Abschluss nachweisbar und wiederholbar | ⬜ |
 
-## 2. Tranche 0 — Aktivierung und Scope-Gates
+## 2. Tranche 0 — Aktivierung, Scope-Gates und Plan-Härtung
+
+Ziel: Voraussetzungen, Scope und Architekturbezug sind so klar,
+ dass keine Entscheidung im mittleren Tranchefluss erneut gestoppt werden
+ kann.
 
 DoD:
 
 - [ ] Plan von `docs/planning/open/plan-0.13.0.md` nach
   `docs/planning/in-progress/plan-0.13.0.md` verschoben.
-- [ ] `git status --short` vor erster Änderung dokumentiert.
+- [ ] Ausgangszustand von `git status --short` dokumentiert.
 - [ ] Lastenheft-Patch mit neuer RAK-Gruppe für `MVP-40`..`MVP-44`
   und `NF-18` ergänzt.
-- [ ] ADR-Schnitt entschieden: welche Entscheidungen werden als ADR
-  geschrieben, welche bleiben Plan-DoD.
-- [ ] Roadmap-Status und Release-Übersicht auf `0.13.0` als aktive
+- [ ] ADR-Schnitt definiert: Architektur-/Persistenz-/Release-
+  Entscheidungen (wir liefern ADR oder Plan-DoD).
+- [ ] `docs/planning/in-progress/roadmap.md` auf `0.13.0` als aktive
   Folgephase umgestellt.
+- [ ] Risiko-R-9 gegen Observability-/Smoke-Impact geprüft und im
+  `risks-backlog.md` abgelegt.
+- [ ] Tranche-0-Notiz (kurz) mit Status, offenen Entscheidungen,
+  offenen Triggern und Ausnahmen angelegt.
 
-## 3. Tranche 1 — Postgres
+## 3. Tranche 1 — Postgres (MVP-40)
 
-DoD:
-
-- [ ] Entscheidung dokumentiert: Postgres jetzt implementieren,
-  Adapter-Seed liefern oder weiter deferieren.
-- [ ] Falls implementiert: Migration-/Repository-Scope ist begrenzt
-  und Contract-Tests pinnen SQLite-Kompatibilität.
-- [ ] Falls deferred: Trigger für spätere Umsetzung ist konkret
-  dokumentiert.
-
-## 4. Tranche 2 — Analytics-Backend
+Ziel: Entweder erster produktionsnaher Slice wird validiert oder eine
+saubere Defer-Entscheidung trifft die Ausnahmen.
 
 DoD:
 
-- [ ] ClickHouse/VictoriaMetrics/Mimir-Bedarf ist anhand aktueller
-  Datenpfade bewertet.
-- [ ] Entscheidung dokumentiert: kein Backend, ein bevorzugter
-  Kandidat oder Folge-ADR.
-- [ ] Keine neue Pflichtabhängigkeit im lokalen Standard-Setup.
+- [ ] Entscheidung dokumentiert: vollständige Implementierung,
+  minimaler Seed-Slice oder Defer.
+- [ ] Wenn Seed implementiert: mindestens eine deterministische
+  Migrationsspur definiert (Schema/Repo/Adapter) inklusive Daten-
+  Rückwärtskompatibilitätsprüfung mit SQLite.
+- [ ] Wenn Seed nicht implementiert: Triggerschwellen (z. B.
+  Last, SLA, Betriebszeit, Recovery-Szenarien) festgelegt.
+- [ ] Contract-/Integrationstests pinnen SQLite-Verhalten, damit Postgres
+  nicht unfreiwillig als versteckte Pflichtwirkung eingeführt wird.
+- [ ] Betriebsrisiken dokumentiert: Datenkonsistenz bei Migration,
+  Ausfall- und Recoveryverhalten, Backup/Restore-Bezug.
+- [ ] Ergebnis entscheidet, welche Pfade in Tranche 5 in RAK/Changelog
+  aufgenommen werden.
 
-## 5. Tranche 3 — Kubernetes und Devcontainer
+## 4. Tranche 2 — Analytics-Backend (MVP-41)
+
+Ziel: Datenpfadbedarf zwischen „kein Pflichtbackend“, „POC“ und
+„konkreter Folgepfad“ trennen.
 
 DoD:
 
-- [ ] `NF-18` und `MVP-42` sind harmonisiert: optionaler K8s-Scope
-  oder konkrete Beispielmanifeste.
-- [ ] R-9-Auswirkung auf Observability-Smokes geprüft.
-- [ ] Devcontainer-Scope für `MVP-43` entschieden und dokumentiert.
-- [ ] README-Abgrenzung bleibt konsistent: kein Production-Ready-K8s.
+- [ ] ClickHouse/VictoriaMetrics/Mimir-Bedarf anhand aktueller
+  Datenpfade, Query-Anforderungen und Datenvolumen bewertet.
+- [ ] Vergleichsmatrix liegt vor: Komplexität, Betriebskosten,
+  Abfragefähigkeit, Integrationsaufwand, Relevanz der Query-Workloads,
+  Migrationsrisiko.
+- [ ] Entscheidung dokumentiert als `proceed` / `defer` / `POC`.
+- [ ] Keine neue lokale Pflichtabhängigkeit.
+- [ ] Falls POC: Zielbild, Erfolgskriterien, Erfolgspunkte,
+  Abbruchkriterien im Plan verankert.
 
-## 6. Tranche 4 — Release-Automatisierung
+## 5. Tranche 3 — Kubernetes- und Devcontainer-Scope (MVP-42, MVP-43, NF-18, R-9)
+
+Ziel: K8s- und Devcontainer-Scope wird normativ abgegrenzt und ein
+entscheidbarer Folgepfad garantiert.
 
 DoD:
 
-- [ ] Sicherer Automationsumfang für `MVP-44` entschieden.
-- [ ] Keine automatische Veröffentlichung ohne explizite menschliche
-  Freigabe.
-- [ ] Release-Doku bleibt Source of Truth für manuelle Schritte.
-- [ ] Automations- oder Dry-Run-Tests sind definiert.
+- [ ] `NF-18` und `MVP-42` sind harmonisiert: klarer Option-Pfad
+  (`konkret + optional` oder `folge`) und dokumentiert.
+- [ ] R-9-Auswirkungen auf Observability-Label-Allowlists und
+  Smoke-Stage vollständig geprüft; Ergebnis im Risks-Backlog und/oder
+  ADR.
+- [ ] Devcontainer (`MVP-43`) entschieden: liefern Beispielkonfiguration
+  oder deferred mit konkreten Gründen.
+- [ ] README-/User-Doku-Abgrenzung bleibt konsistent: keine
+  Produktions-Ready-K8s-Zusage.
+- [ ] Scope-Transitie auf nachfolgende Tranche (`0.14.0` o. ä.)
+  klar beschrieben.
 
-## 7. Tranche 5 — Release-Closeout
+## 6. Tranche 4 — Release-Automatisierung (MVP-44)
+
+Ziel: Automations-Mechanik für Release ohne Sicherheitsrisiko und ohne
+unbemerkte automatische Veröffentlichung definieren.
+
+DoD:
+
+- [ ] Entscheidbare Automation ausgewählt: was wird automatisiert,
+  was bleibt manuell.
+- [ ] Sichere Freigabe-Guards definiert:
+  - Branch- und Tag-Muster,
+  - Freigabekanal (Reviewer/Freigabe-
+    Kontrolle),
+  - zeitliche oder environment-gesteuerte Restriktionen.
+- [ ] Release-Doku bleibt die Source-of-Truth; automatischer Teil nur als
+  Ergänzung mit Rückholbarkeit.
+- [ ] Automations- oder Dry-Run-Tests sind definiert (ohne reale
+  Veröffentlichung).
+- [ ] CI-/Local-Runbook beschreibt minimalen sicheren Ausführungsweg.
+
+## 7. Tranche 5 — Release-Closeout und Abschluss
+
+Ziel: Alle Gates sind nachweisbar erfüllt und der Release kann
+sauber abgeschlossen werden.
 
 DoD:
 
@@ -145,9 +228,38 @@ DoD:
 - [ ] `make gates` grün.
 - [ ] `make security-gates` grün oder CI-Job `Security gates` grün
   dokumentiert.
-- [ ] Wave-2-Quality-Gates vor dem Tag geprüft.
-- [ ] Vollständiger Versions-Bump auf `0.13.0`.
+- [ ] Wave-2-Quality-Gates vor Tag geprüft.
+- [ ] Versions-Bump auf `0.13.0` vollständig durchgeführt.
 - [ ] `CHANGELOG.md` mit `[0.13.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Plan nach `docs/planning/done/plan-0.13.0.md` verschoben und
-  Status auf ✅ released aktualisiert.
+- [ ] Roadmap auf released `0.13.0` und nächste Folgephase umgestellt.
+- [ ] Plan nach `docs/planning/done/plan-0.13.0.md` verschoben,
+  Status auf `✅ released`.
 - [ ] Annotierter Tag `v0.13.0` erstellt.
+
+## 8. RAK-Verifikationsmatrix (Vorschau)
+
+Wird während der Umsetzung gefüllt. Jede RAK-Zeile enthält
+`Nachweis`, `Akzeptanz`, `Status`.
+
+| RAK | Priorität | Nachweis | Status |
+| --- | --- | --- | --- |
+| RAK-77 | Muss | Scope-Dokumente, Entscheidungs-ADR,
+  Adapter-/Migrationsartefakte oder klare Defer-Trigger | [ ] |
+| RAK-78 | Muss | Vergleichsmatrix, Architekturentscheidung,
+  ggf. PoC-Bericht | [ ] |
+| RAK-79 | Muss | NF-18-Harmonisierungs-Notiz + K8s-Decision-Record
+  + README-Abgrenzung | [ ] |
+| RAK-80 | Muss | Devcontainer-Entscheidung und ggf. Beispielartefakt
+  oder Defer-Justification | [ ] |
+| RAK-81 | Muss | Freigabe-Guard, Automationsumfang,
+  Release-Runbook und Dry-Run-Test | [ ] |
+
+## 9. Folge-Scope nach `0.13.0`
+
+- `0.14.0` oder Nachfolge-Phase: Konkretisierung der gewählten
+  Ope-Backends (Postgres-Migrationsslice/Analytics-Backend-Scope/K8s-
+  Follow-up nach Entscheidung).
+- Später: vollständige Production-Kubernetes- und Observability-
+  Standardisierung.
+- Später: dediziertes Secret-Management, SLO-gesteuerte Storage-
+  Strategien und Ops-Runbooks.

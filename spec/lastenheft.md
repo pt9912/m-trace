@@ -2,7 +2,7 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.15<br>
+**Version:** 1.1.16<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
@@ -31,6 +31,20 @@
 > `spec/backend-api-contract.md`. Patch-Log siehe
 > [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
 > Tranche 0c §4a.18.
+>
+> **Patch `1.1.16` (Production / Ops Backends für `0.13.0`)**: Stellt
+> `MVP-40`..`MVP-44` als Folge- und Seed-Scope für Production/Ops fest,
+> harmonisiert `NF-18` mit `MVP-42` und definiert die Release-Automatisierung
+> mit zwingender manueller Freigabe. Das Patch führt die neue RAK-Gruppe
+> `RAK-77`..`RAK-81` in §13.15 ein. Architekturentscheidungen bleiben als
+> Decision-and-Seed-Rahmen festgelegt (kein Vollversprechen auf
+> Production-Kubernetes in diesem Schritt).
+> Out-of-Scope und damit nicht direkt erfüllt durch diesen Patch: Produktive,
+> mandatory Operability-Backends als Vollumfang, ungebremste
+> Daten-Pflichtmigrationen ohne vorherige Entscheidung und
+> automatische, unbeaufsichtigte Veröffentlichung. Patch-Log siehe
+> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
+> Tranche 0c §4a.19.
 >
 > **Patch `1.1.14` (Ingest-Control-Scope für `0.11.0`)**: Hebt
 > `F-46`..`F-51` (Ingest-Gateway / Stream Control, bisher Kann-
@@ -1913,6 +1927,25 @@ Akzeptanzkriterien:
 | RAK-74 | Muss | Ingest Policies (`F-113`): erlaubte Origins, Methoden, Header, Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-Parameter (Muss-Pfad: globale und Project-Buckets; Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope) sind Project-gebunden konfigurierbar und werden in den Browser-/Telemetrie-Pfaden `POST /api/playback-events` und `POST /api/auth/session-tokens` erzwungen. **`/api/ingest/*` bleibt im `0.11.0`-Token-Validierungs-Pfad** (RAK-65: lokale/lab-nahe Stream-Verwaltung) und konsumiert keine Project-Policy — der Pfad ist `curl`-/Operator-driven, kein Browser-Konsument; Project-Policy-Enforcement für Ingest-Control wäre Defense-in-Depth ohne `0.12.0`-Anwendungsfall und bleibt Folge-Scope. CORS-Preflight nutzt eine dokumentierte globale, konservative Allowlist (Methoden maximal `POST, OPTIONS`; Header maximal `Content-Type`, `Authorization`, `X-MTrace-Token`, `X-MTrace-Session-Token`, `traceparent`); `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige Browser-Telemetrie. Bekannte Origins liefern `204` mit gespiegeltem Origin, erlaubten Methoden/Headern, `Access-Control-Max-Age: 600`, `Vary: Origin` und `Cache-Control: no-store`; unbekannte Origins liefern `204` mit leerem Body ohne Allow-Origin/Methods/Headers, mit `Vary: Origin` und `Cache-Control: no-store` — keine Project- oder Origin-Enumeration. Project-spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST` der gelisteten Browser-Pfade. |
 | RAK-75 | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Project-Token-Flows (Demo, SDK, Analyze-/Session-Link-Auth, `0.11.0` Ingest-Control) bleiben im `0.12.0`-Compatibility-Fenster gültig oder haben dokumentierte Migrationstests. Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header vorhanden ist; ohne gültigen m-trace Header liefern sie `401 auth_token_missing`. Es gibt keinen stillen Fallback von einem ungültigen höher priorisierten Token auf einen gültigen niedriger priorisierten Token. |
 | RAK-76 | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP-/CORS-Beispiele, GDPR-/Datenschutzgrenzen (Auth-Metadaten erweitern IP-/User-Agent-Speicherung nicht) und den Unterschied zu Production-Secret-Backends aus Folge-Scope. SDK-Doku zeigt sicheres Session-Token-Caching bis kurz vor `expires_at`, ohne Speicherung in `localStorage`/persistenten Browser-Stores. `make sync-contract-fixtures` und `make generated-drift-check` decken neue Auth-Fixtures ab. |
+
+### 13.15 Version 0.13.0: Production / Ops Backends (MVP-40..MVP-44)
+
+Ziel: `MVP-40`..`MVP-44` werden als Decision-and-Seed-Release
+operativ zugeschnitten, `NF-18` mit `MVP-42` harmonisiert und
+Release-Gate- und Automationsentscheidungen im Rahmen eines manuellen
+Freigabepfads getreu dokumentiert. Architektur: Produktionsnahe
+Backends werden vorerst entschieden und dokumentiert; kein vollständiger
+Produktions-Betriebsumfang wird in dieser Phase als Muss-Scope gesetzt.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-77 | Muss | `MVP-40`: Postgres ist als operativer Produktionskandidaten-Scope klar als Seed- oder Defer-Schnitt entschieden; mindestens ein Migrations- und Reproduzierbarkeitspfad ist dokumentiert. |
+| RAK-78 | Muss | `MVP-41`: ClickHouse/VictoriaMetrics (oder Mimir analog) werden anhand aktueller Daten-/Metrik-Nutzung und Query-Vorgaben bewertet; es gibt eine nachvollziehbare Vergleichsmatrix inkl. Ausstiegskriterien. |
+| RAK-79 | Muss | `MVP-42` / `NF-18`: Kubernetes-Manifeste bleiben als optionsgesteuerter Folge-/Seed-Optionpfad mit klarer Abgrenzung zu produktivem Kubernetes; bestehender Scope (`deploy/`, Labeling, Smoke-Pfade) ist dokumentiert. |
+| RAK-80 | Muss | `MVP-43`: Devcontainer ist als reproduzierbarer Entwicklungs-Seed oder explizit als Defer mit klaren Re-Activation-Triggern entschieden. |
+| RAK-81 | Muss | `MVP-44`: Release-Automatisierung enthält harte manuelle Freigabepunkte, sichere Rücksetz-/Rollback-Regeln und einen dokumentierten Closeout-Pfad zum `v0.13.0`-Tag. |
 
 ---
 
