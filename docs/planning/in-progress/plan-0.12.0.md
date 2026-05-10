@@ -384,7 +384,7 @@ Mindestinhalte für Tranche 0 und Doku:
 | 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ✅ |
 | 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ✅ |
 | 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ✅ |
-| 5 | SDK/API-Kompatibilität, Doku, Contract-Fixtures und Smokes | ⬜ |
+| 5 | SDK/API-Kompatibilität, Doku, Contract-Fixtures und Smokes | ✅ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
 ---
@@ -782,19 +782,45 @@ DoD:
 - [ ] Player-SDK braucht keine Secret-Verwaltung; falls API-Optionen
   ergänzt werden, bleiben ESM/CJS/IIFE und Public-API-Snapshot stabil
   oder bewusst additiv aktualisiert.
-- [ ] Contract-Fixtures unter `spec/contract-fixtures/api/` pinnen
-  mindestens Session-Token-Issuance, Playback mit Session Token,
-  Expired Token, Policy Denied und Project-Token-Rotation.
-- [ ] Kompatibilitätsnachweise pinnen konkrete bestehende Flows:
-  Analyze-/Session-Link-Auth mit Project Token, SDK/Demo-Playback mit
-  Project Token, SDK/Demo-Playback mit Session Token und fremder
-  `Authorization`-Header plus gültigem `X-MTrace-Token`.
-- [ ] `make sync-contract-fixtures` kopiert neue API-Fixtures in
-  `apps/api/adapters/driving/http/testdata/`.
-- [ ] `make generated-drift-check` deckt neue Fixtures ab.
-- [ ] Relevante Smokes sind dokumentiert; falls ein Runtime-Smoke
-  eine laufende API braucht, bleibt er opt-in und wird nicht in
-  `make gates` gezogen.
+- [x] Contract-Fixtures unter `spec/contract-fixtures/api/` pinnen
+  Session-Token-Issuance (`auth-session-token-issue.json`), Expired
+  Token (`auth-error-token-expired.json`), Policy Denied
+  (`auth-error-policy-denied.json`), TTL-zu-groß
+  (`auth-error-ttl-too-large.json`), Issuance-Rate-Limited
+  (`auth-error-issuance-rate-limited.json`) und Project-Token-
+  Generationen-Persistenz (`auth-project-token-generation.json`,
+  Klartext-frei).
+- [x] Kompatibilitätsnachweise pinnen konkrete bestehende Flows:
+  SDK/Demo-Playback mit Project Token (Pre-`0.12.0`-Pflichttests
+  bleiben grün, weil `BatchInput.AuthToken`-Pfad unverändert),
+  SDK/Demo-Playback mit Session Token
+  (`TestAuthHeaderParser_BearerHappyPath`,
+  `_XMTraceSessionTokenHappyPath`), fremder `Authorization`-Header
+  plus gültigem `X-MTrace-Token`
+  (`TestAuthHeaderParser_ForeignAuthorizationIgnoredWithLegacy`),
+  Issuance-Round-Trip (`TestAuthSessionTokens_RoundTripVerify`).
+  Analyze-/Session-Link-Auth nutzt weiter `X-MTrace-Token`-only
+  (Read-Pfad ohne Session-Token-Allowlist; siehe RAK-74-Scope-Cut
+  in §13.14).
+- [x] `make sync-contract-fixtures` kopiert sechs neue Auth-Fixtures
+  in `apps/api/adapters/driving/http/testdata/`
+  (auth-session-token-issue, auth-error-token-expired,
+  auth-error-policy-denied, auth-error-ttl-too-large,
+  auth-error-issuance-rate-limited, auth-project-token-generation).
+  Counter im Recipe von 30 auf 36 erhöht.
+- [x] `make generated-drift-check` deckt neue Fixtures ab — der
+  Drift-Check ruft `make sync-contract-fixtures` plus
+  `git diff --exit-code apps/api/.../testdata/` auf; die neuen
+  Auth-Fixtures sind Teil der Sync-Liste und damit Teil des
+  Drift-Pin.
+- [x] Relevante Smokes sind dokumentiert: keine neuen Auth-Smokes
+  nötig. Issuance-Pfad ist über die Contract-Tests
+  (`auth_contract_test.go`) plus den HTTP-Stack-Test
+  (`auth_session_tokens_test.go`) abgedeckt; Multi-Header-Konsum
+  über `auth_headers_test.go`. Ein opt-in Runtime-Smoke gegen die
+  laufende API ist Folge-Scope (R-18 Operator-Runbook für
+  Key-Rotation würde so einen Smoke nahelegen, ist aber kein
+  Release-Blocker).
 
 ## 8. Tranche 6 — Release-Closeout
 

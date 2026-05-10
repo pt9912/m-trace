@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/auth/session-tokens — error response",
+    "spec": "spec/backend-api-contract.md §3.9 (Fehlerpräzedenz Stufe 4)",
+    "plan": "plan-0.12.0 §0.5 / RAK-72 (auth_token_expired)",
+    "captured": "Synthetisches Beispiel — pinnt die §3.9-Wire-Form für `401 auth_token_expired`. Antwort gilt analog für jeden tokenpflichtigen Konsum-Endpoint mit abgelaufenem Project- oder Session-Token.",
+    "status_code": 401
+  },
+  "status": "error",
+  "code": "auth_token_expired",
+  "message": "Auth-Token abgelaufen."
+}

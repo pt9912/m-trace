@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/playback-events oder POST /api/auth/session-tokens — error response",
+    "spec": "spec/backend-api-contract.md §3.9 (Fehlerpräzedenz Stufe 8)",
+    "plan": "plan-0.12.0 §0.5 / RAK-74 (auth_policy_denied)",
+    "captured": "Synthetisches Beispiel — pinnt die §3.9-Wire-Form für `403 auth_policy_denied`. Wird ausgelöst, wenn die Project-Policy einen Origin/Methode/Header ablehnt (z. B. ein Browser-Pfad mit nicht in der Project-Allowlist enthaltenem Origin).",
+    "status_code": 403
+  },
+  "status": "error",
+  "code": "auth_policy_denied",
+  "message": "Project-Policy lehnt den Request ab."
+}

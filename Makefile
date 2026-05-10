@@ -339,7 +339,13 @@ sync-contract-fixtures:
 	cp spec/contract-fixtures/api/ingest-error-stream-not-found.json apps/api/adapters/driving/http/testdata/ingest-error-stream-not-found.json
 	cp spec/contract-fixtures/api/ingest-lifecycle-hook-success.json apps/api/adapters/driving/http/testdata/ingest-lifecycle-hook-success.json
 	cp spec/contract-fixtures/api/ingest-lifecycle-hook-error-disabled.json apps/api/adapters/driving/http/testdata/ingest-lifecycle-hook-error-disabled.json
-	@echo "[sync-contract-fixtures] copied 30 fixture(s) into apps/api/.../testdata/"
+	cp spec/contract-fixtures/api/auth-session-token-issue.json apps/api/adapters/driving/http/testdata/auth-session-token-issue.json
+	cp spec/contract-fixtures/api/auth-error-token-expired.json apps/api/adapters/driving/http/testdata/auth-error-token-expired.json
+	cp spec/contract-fixtures/api/auth-error-policy-denied.json apps/api/adapters/driving/http/testdata/auth-error-policy-denied.json
+	cp spec/contract-fixtures/api/auth-error-ttl-too-large.json apps/api/adapters/driving/http/testdata/auth-error-ttl-too-large.json
+	cp spec/contract-fixtures/api/auth-error-issuance-rate-limited.json apps/api/adapters/driving/http/testdata/auth-error-issuance-rate-limited.json
+	cp spec/contract-fixtures/api/auth-project-token-generation.json apps/api/adapters/driving/http/testdata/auth-project-token-generation.json
+	@echo "[sync-contract-fixtures] copied 36 fixture(s) into apps/api/.../testdata/"
 
 seed-rak9:
 	bash scripts/seed-rak9.sh

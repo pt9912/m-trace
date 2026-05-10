@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/auth/session-tokens — error response",
+    "spec": "spec/backend-api-contract.md §3.9 (Fehlercode `auth_token_ttl_too_large`)",
+    "plan": "plan-0.12.0 §0.5 / RAK-72 (TTL ohne stillen Clamp)",
+    "captured": "Synthetisches Beispiel — pinnt die `422`-Antwort, wenn `ttl_seconds <= 0` oder über der wirksamen Project-Grenze (max. 900 s) liegt. Spec verlangt expliziten `422` ohne stilles Clamping.",
+    "status_code": 422
+  },
+  "status": "error",
+  "code": "auth_token_ttl_too_large",
+  "message": "`ttl_seconds` ist <= 0 oder überschreitet die wirksame Project-Grenze (max. 900 s)."
+}

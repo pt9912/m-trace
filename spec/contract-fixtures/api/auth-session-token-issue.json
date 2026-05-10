@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/auth/session-tokens",
+    "spec": "spec/backend-api-contract.md §3.9",
+    "plan": "plan-0.12.0 §0.5 (RAK-72)",
+    "captured": "Synthetisches Beispiel — pinnt das Wire-Format der erfolgreichen Issuance (`201 Created`) gegen die §3.9-Antwort-Skizze.",
+    "anonymisierung": "session_token.value ist ein Fixture-Stub; ein realer Wert hat das HMAC-SHA-256-Format `mtr_st_<base64url(header)>.<base64url(claims)>.<base64url(sig)>` und erscheint nur in dieser Antwort. token_id == jti."
+  },
+  "session_token": {
+    "value": "mtr_st_FIXTURE_ONLY_DO_NOT_REUSE_AS_TOKEN.fixture.signature",
+    "token_id": "st_01hzxj7a5k9v7w1e7btkj8v7n9",
+    "project_id": "demo",
+    "audience": "playback-events",
+    "session_id": "sess_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "expires_at": "2026-05-09T10:15:00Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/auth/session-tokens — error response",
+    "spec": "spec/backend-api-contract.md §3.9 (Fehlerpräzedenz Stufe 9, Issuance-spezifischer Rate-Limit-Code)",
+    "plan": "plan-0.12.0 §0.5 / RAK-72 (`auth_issuance_rate_limited` ist exklusiv für Issuance)",
+    "captured": "Synthetisches Beispiel — pinnt die `429`-Antwort, wenn die Issuance-Quote (global oder Project-Bucket) überschritten ist. Andere tokenpflichtige Endpoints liefern ihre eigenen Rate-Limit-Codes; `auth_issuance_rate_limited` darf nirgends sonst auftauchen.",
+    "status_code": 429
+  },
+  "status": "error",
+  "code": "auth_issuance_rate_limited",
+  "message": "Issuance-Quote überschritten."
+}
