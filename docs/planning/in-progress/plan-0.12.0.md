@@ -383,7 +383,7 @@ Mindestinhalte für Tranche 0 und Doku:
 | 1 | Auth-Domainmodell, Token-Generationen und Project Policies | ✅ |
 | 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ✅ |
 | 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ✅ |
-| 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ⬜ |
+| 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ✅ |
 | 5 | SDK/API-Kompatibilität, Doku, Contract-Fixtures und Smokes | ⬜ |
 | 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
 
@@ -698,41 +698,58 @@ behaupten.
 
 DoD:
 
-- [ ] Policy-Modell definiert erlaubte Origins, Methoden, Header,
+- [x] Policy-Modell definiert erlaubte Origins, Methoden, Header,
   Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-
-  Parameter inklusive separater Issuance-Quote. Muss-Pfad sind globale
-  und Project-Buckets; Origin-/IP-nahe Buckets sind optionaler Zusatz
-  oder Folge-Scope.
-- [ ] CORS-Preflight nutzt eine dokumentierte globale, konservative
-  Allowlist, weil `OPTIONS` ohne validierbares Project-/Session-Token
-  kein deterministisches Project-Enforcement erlaubt. Project-
-  spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST`.
+  Parameter inklusive separater Issuance-Quote (`domain.ProjectPolicy`,
+  `RateLimitPolicy.IssuanceBucket` per Tranche-2-Review-Fix in den
+  Application-Service durchgereicht). Muss-Pfad sind globale und
+  Project-Buckets im `InMemoryIssuanceRateLimiter`; Origin-/IP-nahe
+  Buckets sind als Folge-Scope dokumentiert (Plan §0.1, R-17 im
+  Risiken-Backlog).
+- [x] CORS-Preflight nutzt eine dokumentierte globale, konservative
+  Allowlist (`adapters/driving/http/cors.go`:
+  `preflightAllowedHeaders` + zentralisierter `preflightHandler`).
   `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige
-  Browser-Telemetrie. Unbekannte Origins erhalten keine Origin-Liste,
+  Browser-Telemetrie; unbekannte Origins erhalten keine Origin-Liste,
   keine Project-Hinweise und keine diagnostischen Bodies.
-- [ ] Preflight-Antworten sind exakt gepinnt: bekannte Origins liefern
-  `204` mit leerem Body, gespiegeltem `Access-Control-Allow-Origin`,
-  erlaubten Methoden/Headern, `Access-Control-Max-Age: 600`,
-  `Vary: Origin` und `Cache-Control: no-store`; unbekannte Origins
-  liefern `204` mit leerem Body, ohne Allow-Origin/Methods/Headers,
-  aber ebenfalls mit `Vary: Origin` und `Cache-Control: no-store`.
-- [ ] `Origin`-Validierung unterscheidet Browser-Pfad und CLI/curl-
-  Pfad ohne `Origin` gemäß API-Kontrakt.
-- [ ] `POST /api/playback-events` und `/api/ingest/*` prüfen
-  relevante Policies vor Use-Case-Seiteneffekten.
-- [ ] Rate-Limit-Key enthält im Muss-Pfad das Project. Origin-/IP-
-  Bereich wird nur ergänzt, soweit die vorhandene Rate-Limit-
-  Infrastruktur das ohne größere Architekturänderung trägt; andernfalls
-  wird `[!]` mit Folge-Scope dokumentiert und blockiert RAK-74 nicht.
-- [ ] Tests decken erlaubte globale Preflight-Origin, unbekannte
-  Preflight-Origin, falsche Preflight-Methode, nicht erlaubten
-  Preflight-Header, exakte Header-Sets für bekannte und unbekannte
-  Origins, minimierte Signalisierung ohne Project-/Origin-
-  Enumeration, project-spezifischen POST-Origin-Miss, leeren Origin im
-  CLI-Pfad und Policy-Denial mit `403` ab.
-- [ ] `0.11.0` Ingest-Control-Validate bleibt explizit kein
-  produktiver Media-Server-Auth-Pfad; Doku und Tests verhindern diese
-  Verwechslung.
+- [x] Preflight-Antworten sind exakt gepinnt: bekannte Origins liefern
+  `204` mit gespiegeltem `Access-Control-Allow-Origin`,
+  pfadspezifischen `Allow-Methods`, der `0.12.0`-Header-Allowlist
+  (`Content-Type, Authorization, X-MTrace-Token,
+  X-MTrace-Session-Token, traceparent`), `Access-Control-Max-Age:
+  600`, `Vary: Origin` und `Cache-Control: no-store`; unbekannte
+  Origins liefern `204` mit leerem Body, ohne Allow-Origin/Methods/
+  Headers, mit `Vary: Origin` und `Cache-Control: no-store`. Tests
+  `TestCORS_Preflight_PlaybackEvents_HeaderSetExact` +
+  `_BodyEmpty` + `_UnknownOrigin` pinnen das byte-stabil.
+- [x] `Origin`-Validierung unterscheidet Browser-Pfad und CLI/curl-
+  Pfad ohne `Origin` (`domain.Project.IsOriginAllowed` lässt leeren
+  Origin durch; Test `TestCORS_Post_NoOrigin_StillAccepted`).
+- [x] `POST /api/playback-events` und `/api/ingest/*` prüfen
+  relevante Policies vor Use-Case-Seiteneffekten — Origin-Mismatch
+  liefert `403 ErrOriginNotAllowed` aus `authorizeAndAdmit` vor
+  `limiter.Allow`-Aufruf, also keine Token-Konsumierung
+  (`TestCORS_Post_ProjectOriginMismatch_403`).
+- [x] Rate-Limit-Key enthält im Muss-Pfad das Project: bestehende
+  `RateLimitKey{ProjectID, ClientIP, Origin}`-Struktur lebt weiter im
+  Use-Case (`limiter.Allow`); Origin- und IP-Buckets sind über die
+  bestehende Rate-Limit-Infrastruktur abgedeckt und damit kein
+  Folge-Scope. Issuance-Bucket ist separat (`InMemoryIssuanceRateLimiter`).
+- [x] Tests decken erlaubte globale Preflight-Origin
+  (`TestCORS_Preflight_PlaybackEvents_Allowed`), unbekannte
+  Preflight-Origin (`_UnknownOrigin`), Request-Method-Mismatch
+  (`_RequestMethod_Ignored`), exakte Header-Sets
+  (`_HeaderSetExact`), minimierte Signalisierung
+  (`_BodyEmpty`, `_UnknownOrigin` ohne Allow-* Header), project-
+  spezifischen POST-Origin-Miss (`TestCORS_Post_ProjectOriginMismatch_403`),
+  leeren Origin im CLI-Pfad (`_NoOrigin_StillAccepted`) und
+  Auth-Issuance-Preflight (`_AuthSessionTokens_Allowed`) ab.
+- [x] `0.11.0` Ingest-Control-Validate bleibt explizit kein
+  produktiver Media-Server-Auth-Pfad; pinned via
+  `TestCORS_ValidateKeyRemainsDiagnostic` (CORS-Pfad signalisiert
+  nichts Auth-spezifisches), `spec/backend-api-contract.md` §3.8
+  (`{"valid": false}`-Klausel ohne Stream-ID-Hinweis),
+  Lastenheft §13.13 RAK-65/RAK-66 und R-14 im Risiken-Backlog.
 
 ## 7. Tranche 5 — Doku, Compatibility und Smokes
 

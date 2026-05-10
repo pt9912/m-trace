@@ -12,22 +12,54 @@ type OriginAllowlist interface {
 	IsOriginInGlobalUnion(origin string) bool
 }
 
-// corsHeaders sind die statischen CORS-Antwort-Header pro Pfad-Klasse
-// (plan-0.1.0.md §5.1, CORS Variante B). Beide Klassen lassen
-// `Access-Control-Allow-Credentials` bewusst weg — das SDK nutzt
-// `credentials: "omit"` (NF-31/NF-32).
+// CORS-Preflight-Vertrag (`0.12.0`, RAK-74; siehe
+// `spec/backend-api-contract.md` §3.9):
+//
+//   - `OPTIONS` ohne Project-/Session-Token kann kein
+//     deterministisches Project-Enforcement; deshalb läuft Preflight
+//     gegen eine globale, konservative Origin-Allowlist plus
+//     pfadspezifische Methods-Allowlist.
+//   - Bekannte Origins: `204` mit gespiegeltem Allow-Origin (niemals
+//     `*`), Allow-Methods, Allow-Headers, `Access-Control-Max-Age:
+//     600`, `Vary: Origin` und `Cache-Control: no-store`.
+//   - Unbekannte Origins: `204` mit leerem Body, **ohne**
+//     Allow-Origin/Methods/Headers, aber mit `Vary: Origin` und
+//     `Cache-Control: no-store`. Keine Project- oder Origin-
+//     Enumeration.
+//   - Project-spezifisches Origin-Enforcement passiert beim
+//     tatsächlichen `POST` über `domain.Project.IsOriginAllowed`.
+//
+// `Access-Control-Allow-Credentials` bleibt grundsätzlich aus — das
+// SDK nutzt `credentials: "omit"` (NF-31/NF-32; Plan §0.1 schließt
+// Cookies für Player-Telemetrie aus).
 const (
 	playerSDKAllowedMethods = "POST, OPTIONS"
 	dashboardAllowedMethods = "GET, OPTIONS"
 	analyzeAllowedMethods   = "POST, OPTIONS"
-	allowedHeaders          = "Content-Type, X-MTrace-Project, X-MTrace-Token"
 	preflightMaxAge         = "600"
+	preflightCacheControl   = "no-store"
 	varyHeader              = "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
 )
 
-// corsMiddleware setzt den `Vary`-Header auf jede ausgehende Antwort.
-// Das verhindert, dass CDNs/Proxies eine Origin-spezifische Antwort
-// für eine andere Origin ausliefern (plan-0.1.0.md §5.1).
+// preflightAllowedHeaders ist die §3.9-globale Header-Allowlist für
+// tokenpflichtige Telemetrie-Endpoints. Reihenfolge ist Wire-stabil
+// für Contract-Fixtures.
+const preflightAllowedHeaders = "Content-Type, Authorization, X-MTrace-Token, X-MTrace-Session-Token, traceparent"
+
+// dashboardAllowedHeaders bedient die Lese-Pfade (Dashboard,
+// SRT-Health). Diese Endpoints unterstützen `0.12.0`-Session Tokens
+// nicht — der Auth-Pfad bleibt `X-MTrace-Token`-only — und brauchen
+// daher Authorization/X-MTrace-Session-Token nicht in der Allowlist.
+const dashboardAllowedHeaders = "Content-Type, X-MTrace-Project, X-MTrace-Token"
+
+// sseAllowedHeaders ergänzt `Last-Event-ID` für den SSE-Reconnect-
+// Backfill (Spec §10a). SSE läuft ebenfalls token-/session-frei.
+const sseAllowedHeaders = "Content-Type, X-MTrace-Project, X-MTrace-Token, Last-Event-ID"
+
+// corsMiddleware setzt `Vary` plus — sofern Origin in der Union steht
+// — den gespiegelten Allow-Origin auf jede ausgehende Antwort.
+// Verhindert, dass CDNs/Proxies eine Origin-spezifische Antwort für
+// eine andere Origin ausliefern (plan-0.1.0.md §5.1).
 func corsMiddleware(next http.Handler, allowlist OriginAllowlist) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		appendVary(w)
@@ -39,43 +71,19 @@ func corsMiddleware(next http.Handler, allowlist OriginAllowlist) http.Handler {
 	})
 }
 
-// playerSDKPreflightHandler bedient `OPTIONS /api/playback-events`.
-// Origin in der globalen Union → `204 No Content` mit konkretem
-// `Access-Control-Allow-Origin` (niemals `*`); sonst `403 Forbidden`.
+// playerSDKPreflightHandler bedient `OPTIONS /api/playback-events`
+// und `OPTIONS /api/auth/session-tokens` — der Player-SDK-Pfad hat
+// in `0.12.0` Bearer-/Session-Token-Support, deshalb die
+// erweiterte `preflightAllowedHeaders`-Allowlist.
 func playerSDKPreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		appendVary(w)
-		origin := r.Header.Get("Origin")
-		if !allowlist.IsOriginInGlobalUnion(origin) {
-			writeStatus(w, http.StatusForbidden)
-			return
-		}
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", playerSDKAllowedMethods)
-		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
-		w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
-		w.WriteHeader(http.StatusNoContent)
-	}
+	return preflightHandler(allowlist, playerSDKAllowedMethods, preflightAllowedHeaders)
 }
 
-// dashboardPreflightHandler bedient `OPTIONS` für die Lese-Pfade
-// (`/api/stream-sessions`, `/api/stream-sessions/{id}`, `/api/health`).
-// Methods-Header verbeißt sich auf `GET, OPTIONS` (NF-35 gilt nur
-// für den SDK-Telemetrie-Pfad, plan-0.1.0.md §5.1).
+// dashboardPreflightHandler bedient die Read-Endpoints (Dashboard,
+// SRT-Health). `GET, OPTIONS`-Methods und Legacy-Header-Allowlist —
+// diese Endpoints konsumieren keine Session Tokens.
 func dashboardPreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		appendVary(w)
-		origin := r.Header.Get("Origin")
-		if !allowlist.IsOriginInGlobalUnion(origin) {
-			writeStatus(w, http.StatusForbidden)
-			return
-		}
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", dashboardAllowedMethods)
-		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
-		w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
-		w.WriteHeader(http.StatusNoContent)
-	}
+	return preflightHandler(allowlist, dashboardAllowedMethods, dashboardAllowedHeaders)
 }
 
 // ssePreflightHandler bedient `OPTIONS /api/stream-sessions/stream`
@@ -83,37 +91,35 @@ func dashboardPreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
 // ergänzen `Last-Event-ID` für den fetch-basierten SSE-Reconnect-
 // Backfill (Spec §10a).
 func ssePreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		appendVary(w)
-		origin := r.Header.Get("Origin")
-		if !allowlist.IsOriginInGlobalUnion(origin) {
-			writeStatus(w, http.StatusForbidden)
-			return
-		}
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-MTrace-Project, X-MTrace-Token, Last-Event-ID")
-		w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
-		w.WriteHeader(http.StatusNoContent)
-	}
+	return preflightHandler(allowlist, dashboardAllowedMethods, sseAllowedHeaders)
 }
 
-// analyzePreflightHandler bedient `OPTIONS /api/analyze` (plan-0.4.0
-// §4.5 DoD-Item 4). Methods sind `POST, OPTIONS` — analog zum
-// Player-SDK-Pfad, aber semantisch eigener Handler, weil der Body
-// und die Auth-Regeln des Analyze-Endpoints von `/api/playback-events`
-// abweichen (Token endpoint-spezifisch nach API-Kontrakt §4).
+// analyzePreflightHandler bedient `OPTIONS /api/analyze`. Das
+// Analyze-Endpoint nutzt Session Tokens analog `playback-events`
+// (Plan §3.9 Auth-Matrix), deshalb die erweiterte Header-Allowlist.
 func analyzePreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
+	return preflightHandler(allowlist, analyzeAllowedMethods, preflightAllowedHeaders)
+}
+
+// preflightHandler ist der zentrale §3.9-konforme Preflight-
+// Generator. Bekannte Origin → `204` mit Allow-Origin/Methods/
+// Headers/Max-Age/Vary/Cache-Control; unbekannte Origin → `204` mit
+// **nur** Vary und Cache-Control. Beide Antworten haben einen leeren
+// Body und sind wire-byte-stabil.
+func preflightHandler(allowlist OriginAllowlist, methods, headers string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		appendVary(w)
+		w.Header().Set("Cache-Control", preflightCacheControl)
 		origin := r.Header.Get("Origin")
 		if !allowlist.IsOriginInGlobalUnion(origin) {
-			writeStatus(w, http.StatusForbidden)
+			// §3.9 minimale Ablehnung: `204` ohne Allow-* Header,
+			// damit kein Origin-/Project-Enumeration-Signal leakt.
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", analyzeAllowedMethods)
-		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+		w.Header().Set("Access-Control-Allow-Methods", methods)
+		w.Header().Set("Access-Control-Allow-Headers", headers)
 		w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
 		w.WriteHeader(http.StatusNoContent)
 	}

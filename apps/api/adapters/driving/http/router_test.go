@@ -20,9 +20,10 @@ import (
 
 // TestNewRouter_NilAllowlistRejectsAllPreflights deckt den Fallback-
 // Pfad in NewRouter ab: allowlist=nil → noopAllowlist; Preflights
-// werden für jeden Origin abgelehnt (`403`). Das verifiziert die
-// dokumentierte „kein CORS"-Semantik (router.go), ohne zusätzliche
-// Test-Server-Konfiguration zu brauchen.
+// werden für jeden Origin abgelehnt — ab `0.12.0` §3.9 mit `204`
+// und ohne Allow-Origin (statt Pre-`0.12.0`-`403`-Verhalten). Das
+// verifiziert die dokumentierte „kein CORS"-Semantik (router.go),
+// ohne zusätzliche Test-Server-Konfiguration zu brauchen.
 func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {
 	t.Parallel()
 	repo := inmemory.NewEventRepository()
@@ -57,8 +58,14 @@ func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = resp.Body.Close() })
 
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("noopAllowlist must reject every preflight; got %d want 403", resp.StatusCode)
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("noopAllowlist preflight: want 204, got %d", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("Allow-Origin must not leak when allowlist=nil, got %q", got)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Methods"); got != "" {
+		t.Errorf("Allow-Methods must not leak when allowlist=nil, got %q", got)
 	}
 }
 

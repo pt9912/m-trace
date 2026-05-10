@@ -219,10 +219,13 @@ func TestAnalyze_AuthMatrix_OnlySessionIDTriggersAuth(t *testing.T) {
 	}
 }
 
-// TestAnalyze_OptionsPreflight pinnt §4.5 DoD-Item 4: OPTIONS
-// /api/analyze liefert `Access-Control-Allow-Methods: POST, OPTIONS`
-// und `Access-Control-Allow-Headers: Content-Type, X-MTrace-Token,
-// X-MTrace-Project` für einen erlaubten Origin.
+// TestAnalyze_OptionsPreflight pinnt `0.12.0` §3.9 für den Analyze-
+// Pfad: bekannter Origin → `204` mit `Access-Control-Allow-Methods:
+// POST, OPTIONS` und der `0.12.0`-Header-Allowlist (Content-Type,
+// Authorization, X-MTrace-Token, X-MTrace-Session-Token, traceparent
+// — `X-MTrace-Project` ist mit Tranche 4 entfallen, war Pre-`0.12.0`-
+// Wire-Stand und wird in den `0.12.0`-Konsum-Endpoints nicht
+// genutzt).
 func TestAnalyze_OptionsPreflight(t *testing.T) {
 	t.Parallel()
 	// Voller Router, damit der OPTIONS-Pfad inkl. CORS gewired ist.
@@ -247,13 +250,16 @@ func TestAnalyze_OptionsPreflight(t *testing.T) {
 		t.Errorf("Allow-Methods = %q want POST + OPTIONS", methods)
 	}
 	headers := resp.Header.Get("Access-Control-Allow-Headers")
-	for _, want := range []string{"Content-Type", "X-MTrace-Token", "X-MTrace-Project"} {
+	for _, want := range []string{"Content-Type", "Authorization", "X-MTrace-Token", "X-MTrace-Session-Token", "traceparent"} {
 		if !strings.Contains(headers, want) {
 			t.Errorf("Allow-Headers missing %q (got %q)", want, headers)
 		}
 	}
 	if resp.Header.Get("Access-Control-Allow-Origin") != "http://localhost:5173" {
 		t.Errorf("Allow-Origin echo missing: %q", resp.Header.Get("Access-Control-Allow-Origin"))
+	}
+	if resp.Header.Get("Cache-Control") != "no-store" {
+		t.Errorf("Cache-Control: want no-store (§3.9), got %q", resp.Header.Get("Cache-Control"))
 	}
 }
 
@@ -277,6 +283,10 @@ func newRouterTestServer(t *testing.T) *httptest.Server {
 	return srv
 }
 
+// TestAnalyze_OptionsPreflight_RejectsForeignOrigin pinnt §3.9
+// minimale Ablehnung: unbekannter Origin → `204` mit leerem Body und
+// ohne Allow-Origin/Methods/Headers (keine Origin- oder
+// Project-Enumeration; vorher `403`-Verhalten).
 func TestAnalyze_OptionsPreflight_RejectsForeignOrigin(t *testing.T) {
 	t.Parallel()
 	srv := newRouterTestServer(t)
@@ -292,7 +302,13 @@ func TestAnalyze_OptionsPreflight_RejectsForeignOrigin(t *testing.T) {
 		t.Fatalf("do: %v", err)
 	}
 	t.Cleanup(func() { _ = resp.Body.Close() })
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("status = %d want 403 (origin not allowed)", resp.StatusCode)
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("status = %d want 204 (§3.9 minimal denial)", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("Allow-Origin must not leak on unknown origin, got %q", got)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Methods"); got != "" {
+		t.Errorf("Allow-Methods must not leak on unknown origin, got %q", got)
 	}
 }
