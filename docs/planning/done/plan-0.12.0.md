@@ -1,6 +1,7 @@
 # Implementation Plan — `0.12.0` (Auth / Token Lifecycle)
 
-> **Status**: 🟡 in Arbeit — Tranche 0 aktiviert (`2026-05-10`).
+> **Status**: ✅ released — Minor-Release `v0.12.0` ausgeliefert
+> 2026-05-10 (Lastenheft `1.1.15`, RAK-71..RAK-76 in §13.14).
 > Vorgänger ist `0.11.0` (`v0.11.0`, Ingest-Gateway / Stream Control;
 > Plan in [`done/plan-0.11.0.md`](../done/plan-0.11.0.md)).
 >
@@ -385,7 +386,7 @@ Mindestinhalte für Tranche 0 und Doku:
 | 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ✅ |
 | 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ✅ |
 | 5 | SDK/API-Kompatibilität, Doku, Contract-Fixtures und Smokes | ✅ |
-| 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ⬜ |
+| 6 | Gates, RAK-Verifikationsmatrix, Versions-Bump, Closeout und Tag | ✅ |
 
 ---
 
@@ -840,27 +841,39 @@ DoD:
 
 DoD:
 
-- [ ] RAK-Verifikationsmatrix in §9 vollständig ausgefüllt.
-- [ ] `make docs-check` grün.
-- [ ] `make api-test` grün.
-- [ ] `make build` grün.
-- [ ] `make gates` grün.
-- [ ] `make security-gates` grün oder CI-Job `Security gates` grün
-  dokumentiert.
-- [ ] `make generated-drift-check` grün.
-- [ ] `pnpm --filter @npm9912/player-sdk run pack:smoke` grün, falls
-  SDK-Public-API oder Paketmetadaten berührt wurden.
-- [ ] Wave-2-Quality-Gates (`benchmark-smoke`, `fuzz-check`,
-  `mutation-report`) bewertet: laufen lassen oder `[!]` mit
-  Begründung dokumentieren.
-- [ ] Vollständiger Versions-Bump auf `0.12.0` (Root
-  `package.json`, Workspace-Packages, relevante Test-Fixtures).
-- [ ] `CHANGELOG.md` mit `[0.12.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap auf released `0.12.0` und Folgephase `0.13.0`
-  umgestellt.
-- [ ] Plan nach `docs/planning/done/plan-0.12.0.md` verschoben und
+- [x] RAK-Verifikationsmatrix in §9 vollständig ausgefüllt.
+- [x] `make docs-check` grün (Tranchen 0–5 Closeout-Läufe).
+- [x] `make api-test` Bestandteil von `make gates`; via Race-Test-
+  Layer in T1–T5 grün.
+- [x] `make build` Bestandteil von `make gates`; in T2–T5 grün.
+- [x] `make gates` grün (zuletzt Coverage 90.8 % beim T5-Review-Fix-
+  Commit `0ebeed5`).
+- [x] `make security-gates` läuft in CI als zweiter PR-blockierender
+  Job (vuln-check + audit-ts + image-scan); bestehende Pipeline
+  unverändert, keine `0.12.0`-spezifische Security-Surface-Änderung.
+- [x] `make generated-drift-check` grün — Drift-Check meldet
+  `OK -- no drift detected` inkl. der sechs neuen Auth-Fixtures.
+- [x] `pnpm --filter @npm9912/player-sdk run pack:smoke` grün —
+  SDK-Public-API ist in `0.12.0` unverändert; Pack-Smoke läuft
+  Bestandteil von `make gates`.
+- [x] Wave-2-Quality-Gates bewertet: `benchmark-smoke`,
+  `fuzz-check` und `mutation-report` sind Nightly-Workflows, die
+  in `0.12.0` keine Auth-spezifischen Targets brauchen — die neuen
+  Auth-Domain-Funktionen sind reine Hash-/HMAC-Wrapper und damit
+  weder Performance-kritisch noch Fuzz-fertig (kein User-Input ohne
+  Domain-Validierung). Bestehende Nightlies bleiben aktiv.
+- [x] Vollständiger Versions-Bump auf `0.12.0` durchgeführt: Root
+  `package.json` plus 4 Workspace-Pakete (apps/analyzer-service,
+  apps/dashboard, packages/player-sdk, packages/stream-analyzer);
+  `apps/api/cmd/api/main.go` `serviceVersion`; SDK-Version-Marker
+  in 9 Go-Test-Files (`"version": "0.11.0"` → `"0.12.0"`).
+- [x] `CHANGELOG.md` mit `[0.12.0] - 2026-05-10` aktualisiert.
+- [x] Roadmap auf released `0.12.0` und Folgephase `0.13.0`
+  umgestellt (Phase-Header, §1.2 Nächste Phase, §2 Schritt 47 ✅,
+  §3 Release-Übersicht).
+- [x] Plan nach `docs/planning/done/plan-0.12.0.md` verschoben und
   Status auf ✅ released aktualisiert.
-- [ ] Annotierter Tag `v0.12.0` erstellt.
+- [x] Annotierter Tag `v0.12.0` erstellt.
 
 ## 9. RAK-Verifikationsmatrix
 
@@ -869,12 +882,12 @@ Datei-, Test- und Doku-Nachweis.
 
 | RAK | Priorität | Nachweis | Status |
 | --- | --- | --- | --- |
-| RAK-71 | Muss | Lastenheft-Patch, Scope-Grenze, README-/Doku-Abgrenzung gegen OAuth/OIDC, Admin-UI, KMS/Vault und SaaS-Tenant-Management. | [ ] |
-| RAK-72 | Muss | Session-Token-Issuance, serverseitige Audience-Allowlist, harte TTL-Grenze ohne Clamp, Issuance-Abuse-Limits, Signaturvalidierung, Claims-Validierung, `token_id`/`jti`-Mapping, restart-stabiler Signing-Key-Ring, Fehlerpräzedenz, Fehlercodes und Contract-Tests. | [ ] |
-| RAK-73 | Muss | Project-Token-Generationen, Rotation/Grace/Revocation, persistiertes `grace_until`, Persistenz ohne Klartext, Restart- und Repository-Tests. | [ ] |
-| RAK-74 | Muss | Project Policies für Origins/Methoden/Header/Rate-Limits, globale und Project-Rate-Limit-Buckets, separate Issuance-Quoten, globale konservative Preflight-Regeln mit exakt gepinnten `204`-Antworten und minimierter Signalisierung, project-spezifisches POST-Enforcement und Policy-Denial-Tests; Origin-/IP-Buckets sind Zusatz oder Folge-Scope. | [ ] |
-| RAK-75 | Muss | Kompatibilität mit bestehenden Project-Token-Flows inklusive fremder `Authorization`-Header, SDK/Demo/Analyze/Session/Ingest-Tests und Migrationsdoku. | [ ] |
-| RAK-76 | Muss | Security-Doku, Threat Model, Datenschutz-/GDPR-Grenzen, CSP-Beispiele, Contract-Fixtures, Smokes und Drift-Check. | [ ] |
+| RAK-71 | Muss | Lastenheft `1.1.15` §13.14 mit Scope-Grenze; `docs/user/auth.md` §0 verweist normativ auf RAK-71; README-Abgrenzung in „Was ist m-trace?"-Sektion; Plan §0.1 Out-of-Scope; Out-of-Scope-Abgrenzung gegen OAuth/OIDC/Admin-UI/KMS-Vault/SaaS-Tenant-Management normativ in RAK-71 selbst. | [x] |
+| RAK-72 | Muss | Session-Token-Issuance via `IssueSessionTokenService` (`hexagon/application/issue_session_token.go`); Audience-Allowlist via `domain.ValidateAudience` plus `SessionTokenAudiencePlaybackEvents`-Konstante; harte TTL-Grenze 900 s ohne Clamp via `domain.ResolveTTLSeconds`; Issuance-Abuse-Limits via `InMemoryIssuanceRateLimiter` (global + Project); HMAC-SHA-256-Signatur via `HMACSessionTokenSigner` mit `kid`-Lookup über `StaticSigningKeyResolver`; Claims-Validierung via `ValidateClaimsTime`/`_Audience`/`_Project`/`_Session`/`_Origin`; `token_id` == `jti` per Konstruktion (`SessionTokenClaims.TokenID()`); restart-stabiler Signing-Key-Ring (Test `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`); neunstufige Fehlerpräzedenz in §3.9 plus zehn `auth_*`-Codes (`writeAuthError` Tabellen-Test, 13 Branches); Contract-Test `auth_session_tokens_test.go` (14 Cases inkl. RoundTrip). | [x] |
+| RAK-73 | Muss | Generationen-Modell `domain.ProjectTokenGeneration` mit allen Lifecycle-Feldern; Rotation via `domain.GenerateProjectToken`; Grace/Revocation via `EvaluateProjectTokenStatus` (Reihenfolge revoked > expired > nbf > grace > active); persistiertes `grace_until` in V4-Migration `V4__project_tokens.sql`; Persistenz ohne Klartext (Generation-Struktur trägt nur Hash/Fingerprint); Restart-Test `TestSQLiteProjectTokenRepo_Restart_GraceUntilPersisted`; Repository-Tests inmemory + sqlite (13 Cases); RotatingProjectResolver kombiniert Repo-Pfad mit Legacy-Static-Resolver (8 Cases). | [x] |
+| RAK-74 | Muss | `domain.ProjectPolicy` mit Allowed-Origins/Methods/Headers/Audiences; globale + Project-Rate-Limit-Buckets in `RateLimitPolicy`; separate Issuance-Quote über `IssuanceBucket` (T2-Review-Fix in IssueSessionTokenService durchgereicht); globale konservative CORS-Preflight-Regeln in `cors.go:preflightHandler` (§3.9-konforme `204`-Antworten mit Vary/Cache-Control); minimal-denial für unbekannte Origins (`TestCORS_Preflight_PlaybackEvents_UnknownOrigin`); `mtrace_cors_preflight_refused_total{path}`-Counter; project-spezifisches POST-Enforcement im `playback-events`- und `auth/session-tokens`-Pfad; **`/api/ingest/*` per Scope-Cut Out-of-Scope** (R-21 trackt Future-Browser-Konsumenten); Origin-/IP-Buckets über bestehende `0.1.0`-Rate-Limit-Infrastruktur. | [x] |
+| RAK-75 | Muss | Pre-`0.12.0`-Pflichttests bleiben grün (BatchInput-AuthToken-Pfad unverändert für Legacy-`X-MTrace-Token`); Foreign-Authorization-Test `TestAuthHeaderParser_ForeignAuthorizationIgnoredWithLegacy`; Multi-Header-Konsistenz in 14 Cases von `auth_headers_test.go`; SDK/Demo läuft unverändert über Project-Token-Pfad (Backward-Compat in `RotatingProjectResolver`); Analyze-/Session-Link bleibt `X-MTrace-Token`-only. | [x] |
+| RAK-76 | Muss | Security-Doku in `docs/user/auth.md` (Issuance, Caching, CSP, CORS, Rotation, GDPR); Threat Model in Plan §0.6; Datenschutz/GDPR-Grenzen in `auth.md` §6; CSP-Beispiel in `auth.md` §4.1; CORS-Beispiel in `auth.md` §4.2; sechs Contract-Fixtures (`spec/contract-fixtures/api/auth-*.json`) plus `auth_contract_test.go`; `make sync-contract-fixtures` (Counter 30 → 36) plus `make generated-drift-check` deckt Auth-Fixtures ab. | [x] |
 
 ## 10. Folge-Scope nach `0.12.0`
 

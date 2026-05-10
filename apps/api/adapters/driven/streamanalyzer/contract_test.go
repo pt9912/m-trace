@@ -54,8 +54,8 @@ func TestHTTPStreamAnalyzer_ContractSuccessFixture(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	if result.AnalyzerVersion != "0.11.0" {
-		t.Errorf("AnalyzerVersion: want 0.11.0, got %q", result.AnalyzerVersion)
+	if result.AnalyzerVersion != "0.12.0" {
+		t.Errorf("AnalyzerVersion: want 0.12.0, got %q", result.AnalyzerVersion)
 	}
 	if result.AnalyzerKind != domain.AnalyzerKindHLS {
 		t.Errorf("AnalyzerKind: want hls, got %q", result.AnalyzerKind)

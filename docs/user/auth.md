@@ -4,7 +4,7 @@
 > Siehe normativen Wire-Vertrag in
 > [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
 > §3.9 und Plan-Scope in
-> [`docs/planning/in-progress/plan-0.12.0.md`](../planning/in-progress/plan-0.12.0.md)
+> [`docs/planning/done/plan-0.12.0.md`](../planning/done/plan-0.12.0.md)
 > §0.
 
 ## 0. Scope
@@ -15,7 +15,7 @@ Generationen (`F-112`/RAK-73), Project-gebundene Ingest Policies
 (`F-113`/RAK-74). `X-MTrace-Token`-Legacy-Flows bleiben gültig
 (RAK-75). Normativer Scope und Out-of-Scope-Liste in
 [`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 (RAK-71) und
-[`plan-0.12.0.md`](../planning/in-progress/plan-0.12.0.md) §0.1.
+[`plan-0.12.0.md`](../planning/done/plan-0.12.0.md) §0.1.
 
 ---
 
@@ -304,7 +304,7 @@ Aufgabe des Operators und liegt außerhalb dieses Repos.
   9-stufige Fehlerpräzedenz, CORS-Preflight, Project-Policies).
 - [`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 — RAK-71..
   RAK-76.
-- [`docs/planning/in-progress/plan-0.12.0.md`](../planning/in-progress/plan-0.12.0.md)
+- [`docs/planning/done/plan-0.12.0.md`](../planning/done/plan-0.12.0.md)
   §0 — Plan-Scope, Architektur, Threat Model.
 - [`docs/user/local-development.md`](./local-development.md) §2.7.3 —
   Operator-Migrationspfad `demo-token` → rotierbare Generation.

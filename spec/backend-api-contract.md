@@ -561,7 +561,7 @@ OAuth-Pfad und **kein** mandantenfähiger Control-Plane-Pfad. Bestehende
 `X-MTrace-Token`-Project-Token-Flows bleiben im
 `0.12.0`-Compatibility-Fenster gültig (RAK-75); siehe Out-of-Scope-
 Liste in
-[`docs/planning/in-progress/plan-0.12.0.md`](../docs/planning/in-progress/plan-0.12.0.md)
+[`docs/planning/done/plan-0.12.0.md`](../docs/planning/done/plan-0.12.0.md)
 §0 für Scope, Architektur und Threat Model.
 
 **Auth-Matrix (zusätzlich zu §4).**

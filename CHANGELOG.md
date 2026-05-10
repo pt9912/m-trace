@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Auth / Token Lifecycle (`0.12.0` — Tranchen 0–5 ausgeliefert, Closeout offen)
+## [0.12.0] - 2026-05-10
+
+> **Minor-Release** mit Lastenheft-Patch `1.1.15` (F-111..F-113 von
+> Kann auf Release-Muss; neue RAK-Gruppe `RAK-71`..`RAK-76` in §13.14).
+> Plan in [`docs/planning/done/plan-0.12.0.md`](docs/planning/done/plan-0.12.0.md).
+
+### Auth / Token Lifecycle (`0.12.0`)
 
 - **Lastenheft-Patch `1.1.15`** (`F-111`..`F-113` von Kann auf
   Release-Muss; neue RAK-Gruppe `RAK-71`..`RAK-76` in §13.14).
