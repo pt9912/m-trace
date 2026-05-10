@@ -7,8 +7,8 @@ name: Benchmark observation
 # und PR-blockierend.
 #
 # Trigger:
-#   - schedule: nightlich um 02:30 UTC (entspannte Stunde, kein
-#     Konflikt mit dem WebRTC-Drift-Workflow um 03:30 UTC).
+#   - schedule: nightlich um 01:07 UTC (gestaffelt mit den anderen
+#     Nightlies innerhalb der 01:xx-UTC-Stunde).
 #   - workflow_dispatch: manueller Trigger für ad-hoc-Beobachtung
 #     (z. B. nach Performance-relevanten Changes).
 #
@@ -20,7 +20,7 @@ name: Benchmark observation
 
 on:
   schedule:
-    - cron: '30 2 * * *'
+    - cron: '7 1 * * *'
   workflow_dispatch:
 
 permissions:

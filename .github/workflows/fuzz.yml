@@ -7,9 +7,8 @@ name: Fuzz nightly
 # erstellt.
 #
 # Trigger:
-#   - schedule: nightlich um 05:00 UTC (kein Konflikt mit den
-#     anderen Nightlies: benchmark-observation 02:30, webrtc-drift
-#     03:30, benchmark.yml 04:00).
+#   - schedule: nightlich um 01:37 UTC (gestaffelt mit den anderen
+#     Nightlies innerhalb der 01:xx-UTC-Stunde).
 #   - workflow_dispatch: manueller Trigger für ad-hoc-Läufe nach
 #     Touch von Validation-/Cursor-/Mapping-Code.
 #
@@ -19,7 +18,7 @@ name: Fuzz nightly
 
 on:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '37 1 * * *'
   workflow_dispatch:
     inputs:
       fuzztime:

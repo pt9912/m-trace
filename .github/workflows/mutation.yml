@@ -14,15 +14,14 @@ name: Mutation nightly
 # erreicht — Übergangs-Trigger in `docs/dev/mutation-testing.md` §3.
 #
 # Trigger:
-#   - schedule: nightlich um 06:00 UTC (kein Konflikt mit den
-#     anderen Nightlies: benchmark-observation 02:30, webrtc-drift
-#     03:30, benchmark.yml 04:00, fuzz.yml 05:00).
+#   - schedule: nightlich um 01:47 UTC (gestaffelt mit den anderen
+#     Nightlies innerhalb der 01:xx-UTC-Stunde).
 #   - workflow_dispatch: manueller Trigger nach Touch der Pilot-
 #     Module oder ihrer Test-Suites.
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '47 1 * * *'
   workflow_dispatch: {}
 
 permissions:
