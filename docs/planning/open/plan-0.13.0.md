@@ -99,6 +99,10 @@ Der Plan ergänzt eine neue RAK-Serie für `MVP-40`..`MVP-44` und
 ### 0.5 Qualitätsregeln für 0.13.0
 
 - Keine neuen Pflichtabhängigkeiten in der lokalen Standardumgebung.
+- Evaluierungen von MVP-40/MVP-41 dürfen in isolierten Probe-/POC-Setups
+  erfolgen (z. B. Container oder expliziter optionaler Dev/Test-Pfad), solange
+  diese nicht als Standard- oder Pflichtabhängigkeiten in der lokalen
+  Standardumgebung hinterlegt werden.
 - Keine Architekturentscheidung ohne nachvollziehbaren ADR-
   Entscheidungsweg.
 - Keine Entscheidung ohne dokumentierten Migrations-/Rollbackpfad.
@@ -151,6 +155,8 @@ DoD:
 - [ ] `docs/planning/in-progress/roadmap.md` auf `0.13.0` als aktive
   Folgephase umgestellt.
   - [ ] Alle offenen Gegenargumente dokumentiert und nicht stillschweigend verworfen.
+- [ ] Neue RAK-Range `RAK-77`..`RAK-81` in `spec/lastenheft.md` persistiert und
+  gegen bestehende IDs geprüft.
 - [ ] Risiko-R-9 gegen Observability-/Smoke-Impact geprüft und im
   `risks-backlog.md` abgelegt.
 - [ ] Tranche-0-Notiz (kurz) mit Status, offenen Entscheidungen,
@@ -260,11 +266,15 @@ sauber abgeschlossen werden.
 DoD:
 
 - [ ] RAK-Verifikationsmatrix vollständig ausgefüllt.
-- [ ] `make docs-check` grün.
-- [ ] `make build` grün.
-- [ ] `make gates` grün.
-- [ ] `make security-gates` grün oder CI-Job `Security gates` grün
-  dokumentiert.
+- [ ] `make docs-check` grün (oder dokumentarischer Äquivalent-Gate bei reiner
+  Plan-/ADR-/Spec-Arbeit).
+- [ ] Bei codebezogenen Änderungen: `make build` grün.
+- [ ] Bei codebezogenen Änderungen: `make gates` grün.
+- [ ] Bei codebezogenen/Release-Änderungen: `make security-gates` grün oder CI-Job
+  `Security gates` grün dokumentiert.
+- [ ] Scope-konformer Ausnahmepfad dokumentiert: Bei plan-/decision-lastigem Scope
+  reichen Tranche-Notiz, Entscheidungsnachweis und Risks-/Roadmap-Aktualisierung als
+  Gate-Nachweis, solange keine code-seitigen Änderungen vorliegen.
 - [ ] Wave-2-Quality-Gates vor Tag geprüft.
 - [ ] Versions-Bump auf `0.13.0` vollständig durchgeführt.
 - [ ] `CHANGELOG.md` mit `[0.13.0] - YYYY-MM-DD` aktualisiert.
@@ -281,26 +291,36 @@ Abschlusskriterien Tranche 5:
 ## 8. RAK-Verifikationsmatrix (Vorschau)
 
 Wird während der Umsetzung gefüllt. Jede RAK-Zeile enthält
-`Nachweis`, `Akzeptanz`, `Status`.
+`Nachweis`, `Akzeptanz` und `Status`.
 
-| RAK | Priorität | Nachweis | Status |
-| --- | --- | --- | --- |
+| RAK | Priorität | Nachweis | Akzeptanz | Status |
+| --- | --- | --- | --- | --- |
 | RAK-77 | Muss | Scope-Dokumente, Entscheidungs-ADR,
-  Adapter-/Migrationsartefakte oder klare Defer-Trigger | [ ] |
+  Adapter-/Migrationsartefakte oder klare Defer-Trigger | Tranche-0/1 liefern eine verbindliche Seed- oder Defer-Entscheidung mit Triggern | [ ] |
 | RAK-78 | Muss | Vergleichsmatrix, Architekturentscheidung,
-  ggf. PoC-Bericht | [ ] |
+  ggf. PoC-Bericht | Daten-Pfad-/Kosten-/Migrationsentscheidung ist nachvollziehbar und freigegeben (`proceed`/`defer`/`POC`) | [ ] |
 | RAK-79 | Muss | NF-18-Harmonisierungs-Notiz + K8s-Decision-Record
-  + README-Abgrenzung | [ ] |
+  + README-Abgrenzung | K8s ist klar als optionaler/nachgelagerter Option-Pfad mit „not production-ready“ Zusage dokumentiert | [ ] |
 | RAK-80 | Muss | Devcontainer-Entscheidung und ggf. Beispielartefakt
-  oder Defer-Justification | [ ] |
+  oder Defer-Justification | MVP-43-Entscheidung liegt mit Begründung inkl. Folge-/Defer-Regeln vor | [ ] |
 | RAK-81 | Muss | Freigabe-Guard, Automationsumfang,
-  Release-Runbook und Dry-Run-Test | [ ] |
+  Release-Runbook und Dry-Run-Test | Manuelle Freigabe-Gates sind verbindlich und automatisierte Schritte sind rückholbar | [ ] |
 
 Optionaler Zusatznachweis je RAK:
 
-- `Datei`: exakter Pfad zur Quelle (z. B. `docs/plan/..`, `spec/...`).
+- `Datei`: exakter Pfad zur Quelle (z. B. `docs/planning/...`, `spec/...`).
 - `Datum`: Entscheidungs- oder Prüftermin.
 - `Owner`: Verantwortlicher Bereich (z. B. Platform/CI/QA).
+
+Sofort nutzbares Verifikationsmapping (auszufüllen):
+
+| RAK | Primäre Datei(en) | Datum | Owner | Status |
+| --- | --- | --- | --- | --- |
+| RAK-77 | `spec/lastenheft.md`, `docs/planning/in-progress/plan-0.13.0.md`, `docs/planning/in-progress/roadmap.md` | | Platform/PM | [ ] |
+| RAK-78 | `docs/planning/in-progress/plan-0.13.0.md`, `docs/planning/in-progress/risks-backlog.md` | | Platform/QA | [ ] |
+| RAK-79 | `spec/lastenheft.md`, `docs/planning/in-progress/roadmap.md`, `docs/planning/in-progress/risks-backlog.md` | | Platform/Ops | [ ] |
+| RAK-80 | `docs/planning/in-progress/plan-0.13.0.md` | | Platform/DevEx | [ ] |
+| RAK-81 | `docs/planning/in-progress/plan-0.13.0.md`, `CHANGELOG.md` | | Platform/CI | [ ] |
 
 ## 9. Folge-Scope nach `0.13.0`
 
