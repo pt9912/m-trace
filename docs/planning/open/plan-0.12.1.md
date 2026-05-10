@@ -66,6 +66,10 @@ In Scope:
   operator-observables Signal (analog R-13 `expires`-Datum,
   R-17 „zweite API-Replica"). Vage Trigger („Multi-Tenant-/
   Regulated-Requirement") werden geschärft oder fallen weg.
+  Die Schärfung erfolgt **ausschließlich im aktuellen
+  `risks-backlog.md`** (Konvertierung zu R-N oder Streichung mit
+  Begründung); der Done-Plan `done/plan-0.12.0.md` bleibt
+  unverändert (Release-Historie).
 - **Doku-Schärfungen** aus `0.12.0`-Audit-Findings: `auth.md` §6
   Wire-Code-vs-Metric-Klärung war im T5-Review-Fix bereits drin;
   `releasing.md` §3.1 Bump-Pattern-Sweep + Wave-2-`gh run list`-
@@ -139,7 +143,7 @@ Bedarf").
 | OS-3 | Produktive MediaMTX-/SRS-Auth-Hook-Brücke | implizit über R-14 | R-14 ist die getrackte Form; OS-3 als Duplikat streichen |
 | OS-4 | KMS/Vault/Cloud-Secret-Manager | implizit über R-20 | R-20 ist die getrackte Form; OS-4 als Duplikat streichen |
 | OS-5 | Multi-Replica Secret-/Issuance-Mechanik | implizit über R-17 + R-18 | Streichung als Duplikat |
-| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | Wenn nicht in `0.12.5`-Scope: neu als R-22 mit operator-observablem Trigger („IP-basiertes DDoS-Pattern in Operator-Report"); sonst streichen |
+| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | `0.12.5` deckt Project-Token-basiertes Rate-Limiting ab (R-17/RAK-77), aber **kein** Origin-/IP-Rate-Limiting — die OS-6-Bedingung „Folge-Item nötig" greift. Tranche 1 legt **R-22** in `risks-backlog.md` §1.1 an mit operator-observablem Trigger („IP-basiertes Last-/Replay-Pattern im Operator-Report" oder „Issuance-Abuse trotz aktivem R-17-Limiter") und Auflösungspfad „[`plan-0.13.0.md`](./plan-0.13.0.md) bzw. `plan-0.13.x`, sobald Trigger ausgelöst". Alternative: Streichung mit Begründung „Project-Token-Rotation + R-17 decken Missbrauch ausreichend ab" — Tranche-1-Entscheidung. |
 
 ## 3. Tranchen-Übersicht
 
@@ -183,9 +187,15 @@ DoD:
   oder Verlängerung mit Begründung dokumentieren.
 - [ ] R-12 spezifisch: letzten `webrtc-drift.yml`-Nightly-Run
   zitieren als Beleg (Status grün → kein Trigger).
-- [ ] OS-1..OS-6 in `done/plan-0.12.0.md` §10 als bearbeitet
-  markiert: jedes Item entweder zu R-N umgewidmet oder als
-  Duplikat/strukturell-nicht-trackbar dokumentiert.
+- [ ] OS-1..OS-6 ausschließlich im `risks-backlog.md` aufgelöst
+  (jedes Item entweder zu R-N umgewidmet — z. B. `OS-6` → neuer
+  R-22 mit Trigger und Auflösungs-Plan-Verweis — oder als
+  Duplikat/strukturell-nicht-trackbar mit Streichungs-Begründung
+  dokumentiert). **Done-Plan `done/plan-0.12.0.md` bleibt
+  unverändert** — Release-Historie ist immutabel; OS-1..OS-6
+  bleiben dort als ursprünglicher Folge-Scope-Stand sichtbar,
+  ihre Schärfung/Streichung wird im aktuellen Backlog
+  nachgezogen.
 - [ ] R-19-Lücke (im T5-Cleanup gestrichen) als historische Notiz
   im Risks-Backlog erhalten („n/a, war auf README-Aussage gegründet,
   die in `5798473` entfernt wurde").

@@ -351,6 +351,21 @@ DoD:
 
 - [`plan-0.13.0.md`](./plan-0.13.0.md): Production / Ops Backends
   (`MVP-40`..`MVP-44`) — Postgres, ClickHouse, K8s, Devcontainer.
+- **Multi-Host-Issuance-Limiter** (Network-Backend wie Redis/
+  Memcached): bleibt nach `0.12.5` offen — der SQLite-Adapter
+  deckt nur Single-Host-Shared-Volume. Resttrigger steht in
+  `risks-backlog.md` R-17 („Multi-Host-Topologie oder
+  Network-Backend-Bedarf"); Auflösung als Folge-Adapter in
+  `plan-0.13.x` oder späterem Minor.
+- **Origin-/IP-nahes Rate-Limiting (R-22, falls in `0.12.1`
+  angelegt)**: Project-Token-basiertes Limit aus `0.12.5` löst
+  R-22 nicht — IP-Layer-Limits sind eigener Code-Pfad.
+  `plan-0.13.x` oder späterer Minor liefert den Adapter, sobald
+  der R-22-Trigger ausgelöst ist.
+- **Produktive KMS/Vault-Anbindung (R-20-Resttrigger)**: das
+  Skelett aus `0.12.5` Tranche 3 deckt den Driven-Port ab; eine
+  echte Operator-Anbindung an produktives KMS/Vault plus
+  Compliance-Audit-Pfad bleibt offen.
 - Optional `plan-0.13.x` für Externe Provisionierung (R-15), falls
   Trigger nach Operator-Bedarf in `0.12.5`-Closeout greift.
 - Später `plan-0.14.x` o. ä. für OAuth/OIDC/SSO + User-Verwaltung,

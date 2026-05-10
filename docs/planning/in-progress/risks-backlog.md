@@ -82,5 +82,21 @@ Sichtbar als Historie. Spalten kompakt (Risiko, Auflösung, Verweis).
 - Status-Änderungen folgen demselben Statusset wie `docs/planning/in-progress/roadmap.md`
   §2/§3, ergänzt um ⬛ für Risiken, die sich nicht materialisiert
   haben (landen ebenfalls in §1.2).
+- **Teilweise Lösungen**: Liefert ein Release einen Code-Pfad,
+  ohne den Triggerkern vollständig aufzulösen (z. B. Skelett-
+  Adapter, Single-Host-Variante eines Multi-Host-Risikos), bleibt
+  der Eintrag in §1.1 mit **Status `⬜ offen`**. Die Mitigations-
+  Spalte beginnt dann mit dem Präfix `**teilweise gelöst** —`
+  und nennt explizit (a) was geliefert wurde, (b) den
+  **Resttrigger**, der das Item endgültig in §1.2 verschieben
+  würde, und (c) den Folge-Plan-Verweis. Erst wenn der Resttrigger
+  ausgelöst und vollständig adressiert ist, wandert der Eintrag
+  mit 🟢 in §1.2.
+- Done-Pläne (`docs/planning/done/plan-X.Y.Z.md`) sind nach Tag
+  Release-Historie und werden **nicht** im Nachhinein editiert,
+  um OS-Items oder Trigger-Schärfungen widerzuspiegeln. Solche
+  Folge-Aktionen passieren ausschließlich in diesem Backlog
+  und/oder in einem Folge-Plan; der Done-Plan bleibt als
+  Snapshot des damaligen Folge-Scope-Stands sichtbar.
 - Stand-Datum im Header wird beim nächsten substanziellen Update
   einer §1.1-Zeile mitgepflegt.
