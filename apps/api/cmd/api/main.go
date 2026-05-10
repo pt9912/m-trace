@@ -333,7 +333,7 @@ func buildHandler(
 		}
 	}
 
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, tracer, logger)
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 

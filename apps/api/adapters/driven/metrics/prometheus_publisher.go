@@ -49,6 +49,13 @@ type PrometheusPublisher struct {
 	startupTimeMS     prometheus.Gauge
 	analyzeRequests   *prometheus.CounterVec
 
+	// CORS-Preflight-Refusal-Counter (`0.12.0` Tranche 4 / Review-
+	// Finding Y3). Inkrementiert pro `OPTIONS`-Request, dessen Origin
+	// nicht in der globalen Allowlist steht. Label `path` ist auf die
+	// registrierten Preflight-Routen beschränkt — Cardinality bleibt
+	// klein (≤ 10 paths in `0.12.0`).
+	corsPreflightRefused *prometheus.CounterVec
+
 	// SRT-Health-Aggregate (plan-0.6.0 §4 Sub-3.6,
 	// spec/telemetry-model.md §7.7). Bounded Labels; Wertebereiche
 	// kommen aus den Domain-Enums.
@@ -123,6 +130,13 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 			},
 			[]string{"outcome", "code"},
 		),
+		corsPreflightRefused: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "mtrace_cors_preflight_refused_total",
+				Help: "Total number of OPTIONS preflights refused because the Origin is not in the global allowlist (`0.12.0` §3.9 minimal denial). Path is the registered preflight route.",
+			},
+			[]string{"path"},
+		),
 	}
 	srtSamples, srtRuns, srtErrors := newSrtHealthCounters()
 	p.srtHealthSamples = srtSamples
@@ -140,6 +154,7 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		p.activeSessions,
 		p.startupTimeMS,
 		p.analyzeRequests,
+		p.corsPreflightRefused,
 		p.srtHealthSamples,
 		p.srtCollectorRuns,
 		p.srtCollectorErrors,
@@ -211,6 +226,19 @@ func (p *PrometheusPublisher) APIRequests(n int) {
 	if n > 0 {
 		p.apiRequests.Add(float64(n))
 	}
+}
+
+// CORSPreflightRefused erhöht den Counter für einen `OPTIONS`-
+// Preflight, dessen Origin nicht in der globalen Allowlist steht
+// (`0.12.0` §3.9 minimal denial). `path` ist die registrierte
+// Preflight-Route. Cardinality ist klein und beschränkt — der HTTP-
+// Adapter ruft die Methode nur aus dem `preflightHandler`-Generator
+// mit den dort verdrahteten Pfaden.
+func (p *PrometheusPublisher) CORSPreflightRefused(path string) {
+	if p == nil {
+		return
+	}
+	p.corsPreflightRefused.WithLabelValues(path).Inc()
 }
 
 // AnalyzeRequest erhöht den Counter um 1 für eine abgeschlossene

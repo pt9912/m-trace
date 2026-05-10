@@ -53,6 +53,7 @@ func NewRouter(
 	allowlist OriginAllowlist,
 	metricsHandler http.Handler,
 	analyzeMetrics AnalyzeMetrics,
+	preflightMetrics PreflightMetrics,
 	sseConfig *SseStreamConfig,
 	srtHealth SrtHealthInbound,
 	ingestControl driving.IngestControlInbound,
@@ -105,7 +106,7 @@ func NewRouter(
 			Logger:   logger,
 		}
 		mux.Handle("GET /api/stream-sessions/stream", sseHandler)
-		mux.HandleFunc("OPTIONS /api/stream-sessions/stream", ssePreflightHandler(allowlist))
+		mux.HandleFunc("OPTIONS /api/stream-sessions/stream", ssePreflightHandler(allowlist, preflightMetrics))
 	}
 	mux.Handle("GET /api/stream-sessions/{id}", sessionsGet)
 
@@ -117,19 +118,19 @@ func NewRouter(
 			Metrics:  analyzeMetrics,
 		}
 		mux.Handle("POST /api/analyze", analyzeHandler)
-		mux.HandleFunc("OPTIONS /api/analyze", analyzePreflightHandler(allowlist))
+		mux.HandleFunc("OPTIONS /api/analyze", analyzePreflightHandler(allowlist, preflightMetrics))
 	}
 
-	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, tracer, logger)
-	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, logger)
-	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, logger)
+	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, preflightMetrics, tracer, logger)
+	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, preflightMetrics, logger)
+	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, preflightMetrics, logger)
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
 	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
-	mux.HandleFunc("OPTIONS /api/playback-events", playerSDKPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/stream-sessions", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/stream-sessions/{id}", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/health", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/playback-events", playerSDKPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/stream-sessions", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/stream-sessions/{id}", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/health", dashboardPreflightHandler(allowlist, preflightMetrics))
 
 	return corsMiddleware(mux, allowlist)
 }
@@ -143,6 +144,7 @@ func registerSrtHealthRoutes(
 	srtHealth SrtHealthInbound,
 	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
+	preflightMetrics PreflightMetrics,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) {
@@ -163,8 +165,8 @@ func registerSrtHealthRoutes(
 	}
 	mux.Handle("GET /api/srt/health", listHandler)
 	mux.Handle("GET /api/srt/health/{stream_id}", getHandler)
-	mux.HandleFunc("OPTIONS /api/srt/health", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/srt/health/{stream_id}", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/srt/health", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/srt/health/{stream_id}", dashboardPreflightHandler(allowlist, preflightMetrics))
 }
 
 // registerIngestControlRoutes verdrahtet die Ingest-Control-Pfade
@@ -177,6 +179,7 @@ func registerIngestControlRoutes(
 	ingest driving.IngestControlInbound,
 	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
+	preflightMetrics PreflightMetrics,
 	logger *slog.Logger,
 ) {
 	if ingest == nil {
@@ -203,13 +206,13 @@ func registerIngestControlRoutes(
 	mux.Handle("GET /api/ingest/media-server-config", mediaConfig)
 	mux.Handle("POST /api/ingest/hooks/stream-started", hookStarted)
 	mux.Handle("POST /api/ingest/hooks/stream-ended", hookEnded)
-	mux.HandleFunc("OPTIONS /api/ingest/streams", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-started", dashboardPreflightHandler(allowlist))
-	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-ended", dashboardPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/ingest/streams", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-started", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-ended", dashboardPreflightHandler(allowlist, preflightMetrics))
 }
 
 // registerAuthSessionRoutes verdrahtet den Session-Token-Issuance-
@@ -221,6 +224,7 @@ func registerAuthSessionRoutes(
 	authSession driving.AuthSessionInbound,
 	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
+	preflightMetrics PreflightMetrics,
 	logger *slog.Logger,
 ) {
 	if authSession == nil {
@@ -232,7 +236,7 @@ func registerAuthSessionRoutes(
 		Logger:   logger,
 	}
 	mux.Handle("POST /api/auth/session-tokens", handler)
-	mux.HandleFunc("OPTIONS /api/auth/session-tokens", playerSDKPreflightHandler(allowlist))
+	mux.HandleFunc("OPTIONS /api/auth/session-tokens", playerSDKPreflightHandler(allowlist, preflightMetrics))
 }
 
 // RequestMetricsMiddleware counts every HTTP request that enters the

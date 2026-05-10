@@ -12,6 +12,15 @@ type OriginAllowlist interface {
 	IsOriginInGlobalUnion(origin string) bool
 }
 
+// PreflightMetrics bekommt einen Hook für jede `OPTIONS`-Antwort,
+// die wegen unbekannter Origin minimal abgewiesen wurde (`0.12.0`
+// Tranche 4 / Review-Finding Y3). `path` ist die registrierte
+// Preflight-Route (z. B. `/api/playback-events`). `nil` deaktiviert
+// das Metrik-Reporting.
+type PreflightMetrics interface {
+	CORSPreflightRefused(path string)
+}
+
 // CORS-Preflight-Vertrag (`0.12.0`, RAK-74; siehe
 // `spec/backend-api-contract.md` §3.9):
 //
@@ -37,9 +46,29 @@ const (
 	dashboardAllowedMethods = "GET, OPTIONS"
 	analyzeAllowedMethods   = "POST, OPTIONS"
 	preflightMaxAge         = "600"
-	preflightCacheControl   = "no-store"
-	varyHeader              = "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+	// preflightCacheControl: §3.9 fordert `no-store` für jede
+	// Preflight-Antwort. Trade-off: shared Caches (CDNs/Proxies)
+	// sehen `no-store` und cachen den Preflight nicht — das pinnt
+	// sicheres Verhalten nach Operator-Token-/Origin-Rotation.
+	// Browser-Per-Origin-Caches behandeln `Cache-Control` und
+	// `Access-Control-Max-Age` per Fetch-Spec unabhängig, deshalb
+	// bleibt `Max-Age: 600` für Browser-Preflight-Caching wirksam.
+	preflightCacheControl = "no-store"
 )
+
+// pflichtVaryTokens listet die `Vary`-Tokens für jede ausgehende
+// Antwort. `Origin` ist §3.9-Vorgabe; `Access-Control-Request-*`
+// sind eine additive Härtung, damit Proxies Preflight-Antworten nicht
+// nach Methoden-/Header-Mix mischen — die spec erlaubt zusätzliche
+// `Vary`-Tokens. Funktion statt Global, damit der `gochecknoglobals`-
+// Linter keinen veränderlichen Package-State sieht.
+func pflichtVaryTokens() []string {
+	return []string{
+		"Origin",
+		"Access-Control-Request-Method",
+		"Access-Control-Request-Headers",
+	}
+}
 
 // preflightAllowedHeaders ist die §3.9-globale Header-Allowlist für
 // tokenpflichtige Telemetrie-Endpoints. Reihenfolge ist Wire-stabil
@@ -50,6 +79,13 @@ const preflightAllowedHeaders = "Content-Type, Authorization, X-MTrace-Token, X-
 // SRT-Health). Diese Endpoints unterstützen `0.12.0`-Session Tokens
 // nicht — der Auth-Pfad bleibt `X-MTrace-Token`-only — und brauchen
 // daher Authorization/X-MTrace-Session-Token nicht in der Allowlist.
+//
+// TODO(`0.13.0` o. später, F-111..F-113): Wenn Dashboard auf Session
+// Tokens migriert wird, muss diese Allowlist auf
+// `preflightAllowedHeaders` umgestellt werden. Eine stille Beibehaltung
+// der Legacy-Liste produziert Browser-seitige Preflight-Failures, die
+// schwer zu diagnostizieren sind. Review-Finding G3 / R-N-Eintrag im
+// `risks-backlog.md`.
 const dashboardAllowedHeaders = "Content-Type, X-MTrace-Project, X-MTrace-Token"
 
 // sseAllowedHeaders ergänzt `Last-Event-ID` für den SSE-Reconnect-
@@ -60,9 +96,18 @@ const sseAllowedHeaders = "Content-Type, X-MTrace-Project, X-MTrace-Token, Last-
 // — den gespiegelten Allow-Origin auf jede ausgehende Antwort.
 // Verhindert, dass CDNs/Proxies eine Origin-spezifische Antwort für
 // eine andere Origin ausliefern (plan-0.1.0.md §5.1).
+//
+// `OPTIONS`-Preflights laufen über den dedizierten `preflightHandler`
+// und setzen ihren Allow-Origin selbst — die Middleware skipt den
+// Allow-Origin-Set in dem Fall, damit kein doppelter Header
+// geschrieben wird (Code-Reading-Cost; Review G4).
 func corsMiddleware(next http.Handler, allowlist OriginAllowlist) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		appendVary(w)
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
 		origin := r.Header.Get("Origin")
 		if allowlist.IsOriginInGlobalUnion(origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -75,30 +120,30 @@ func corsMiddleware(next http.Handler, allowlist OriginAllowlist) http.Handler {
 // und `OPTIONS /api/auth/session-tokens` — der Player-SDK-Pfad hat
 // in `0.12.0` Bearer-/Session-Token-Support, deshalb die
 // erweiterte `preflightAllowedHeaders`-Allowlist.
-func playerSDKPreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return preflightHandler(allowlist, playerSDKAllowedMethods, preflightAllowedHeaders)
+func playerSDKPreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {
+	return preflightHandler(allowlist, metrics, playerSDKAllowedMethods, preflightAllowedHeaders)
 }
 
 // dashboardPreflightHandler bedient die Read-Endpoints (Dashboard,
 // SRT-Health). `GET, OPTIONS`-Methods und Legacy-Header-Allowlist —
 // diese Endpoints konsumieren keine Session Tokens.
-func dashboardPreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return preflightHandler(allowlist, dashboardAllowedMethods, dashboardAllowedHeaders)
+func dashboardPreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {
+	return preflightHandler(allowlist, metrics, dashboardAllowedMethods, dashboardAllowedHeaders)
 }
 
 // ssePreflightHandler bedient `OPTIONS /api/stream-sessions/stream`
 // (plan-0.4.0 §5 H4). Methods sind `GET, OPTIONS`; Allow-Headers
 // ergänzen `Last-Event-ID` für den fetch-basierten SSE-Reconnect-
 // Backfill (Spec §10a).
-func ssePreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return preflightHandler(allowlist, dashboardAllowedMethods, sseAllowedHeaders)
+func ssePreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {
+	return preflightHandler(allowlist, metrics, dashboardAllowedMethods, sseAllowedHeaders)
 }
 
 // analyzePreflightHandler bedient `OPTIONS /api/analyze`. Das
 // Analyze-Endpoint nutzt Session Tokens analog `playback-events`
 // (Plan §3.9 Auth-Matrix), deshalb die erweiterte Header-Allowlist.
-func analyzePreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
-	return preflightHandler(allowlist, analyzeAllowedMethods, preflightAllowedHeaders)
+func analyzePreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {
+	return preflightHandler(allowlist, metrics, analyzeAllowedMethods, preflightAllowedHeaders)
 }
 
 // preflightHandler ist der zentrale §3.9-konforme Preflight-
@@ -106,7 +151,13 @@ func analyzePreflightHandler(allowlist OriginAllowlist) http.HandlerFunc {
 // Headers/Max-Age/Vary/Cache-Control; unbekannte Origin → `204` mit
 // **nur** Vary und Cache-Control. Beide Antworten haben einen leeren
 // Body und sind wire-byte-stabil.
-func preflightHandler(allowlist OriginAllowlist, methods, headers string) http.HandlerFunc {
+//
+// `metrics` ist optional — wenn nicht-`nil`, wird jede minimale
+// Ablehnung als `mtrace_cors_preflight_refused_total{path=…}`
+// inkrementiert (Review-Finding Y3). `path` ist `r.URL.Path` und
+// damit auf die registrierten Preflight-Routen begrenzt — die
+// Cardinality bleibt klein.
+func preflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics, methods, headers string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		appendVary(w)
 		w.Header().Set("Cache-Control", preflightCacheControl)
@@ -114,6 +165,9 @@ func preflightHandler(allowlist OriginAllowlist, methods, headers string) http.H
 		if !allowlist.IsOriginInGlobalUnion(origin) {
 			// §3.9 minimale Ablehnung: `204` ohne Allow-* Header,
 			// damit kein Origin-/Project-Enumeration-Signal leakt.
+			if metrics != nil {
+				metrics.CORSPreflightRefused(r.URL.Path)
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -125,15 +179,34 @@ func preflightHandler(allowlist OriginAllowlist, methods, headers string) http.H
 	}
 }
 
-// appendVary fügt die Pflicht-`Vary`-Tokens zum Header an, ohne
-// existierende Werte zu überschreiben.
+// appendVary unioniert die Pflicht-`Vary`-Tokens (siehe `varyTokens`)
+// mit etwaigen vorhandenen Vary-Werten. Tokens werden einzeln
+// geprüft, damit ein vorgelagerter Middleware-Setter (z. B. `Vary:
+// Origin` allein) nicht die Request-Method-/Header-Tokens
+// verschluckt — Review-Finding Y2.
 func appendVary(w http.ResponseWriter) {
-	existing := w.Header().Get("Vary")
-	if existing == "" {
-		w.Header().Set("Vary", varyHeader)
-		return
+	existing := strings.TrimSpace(w.Header().Get("Vary"))
+	for _, token := range pflichtVaryTokens() {
+		if existing == "" {
+			existing = token
+			continue
+		}
+		if !varyContainsToken(existing, token) {
+			existing = existing + ", " + token
+		}
 	}
-	if !strings.Contains(existing, "Origin") {
-		w.Header().Set("Vary", existing+", "+varyHeader)
+	w.Header().Set("Vary", existing)
+}
+
+// varyContainsToken prüft, ob `token` als ganzes Komma-getrenntes
+// Element in `header` steht (case-insensitive). Verhindert
+// Substring-False-Positives (z. B. `Origin` matched nicht
+// fälschlich `OriginCustom`).
+func varyContainsToken(header, token string) bool {
+	for _, part := range strings.Split(header, ",") {
+		if strings.EqualFold(strings.TrimSpace(part), token) {
+			return true
+		}
 	}
+	return false
 }

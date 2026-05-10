@@ -333,30 +333,20 @@ func TestCORS_Preflight_RequestMethod_Ignored(t *testing.T) {
 	}
 }
 
-// TestCORS_ValidateKeyRemainsDiagnostic pinnt §0.1 Out-of-Scope:
-// `/api/ingest/streams/{id}/validate-key` ist **kein** produktiver
-// Media-Server-Auth-Pfad. Der Test verifiziert, dass der Endpoint
-// nur Diagnose-Antworten liefert (kein implizites
-// auth_token_*-Mapping, kein Hinweis auf fremde Project-Existenz)
-// — wir senden den falschen Token gegen demo-Project und erwarten
-// einen non-Auth-Status.
-func TestCORS_ValidateKeyRemainsDiagnostic(t *testing.T) {
+// TestCORS_ValidateKeyNotRegisteredWithoutIngest pinnt §0.1
+// Out-of-Scope deterministisch: `/api/ingest/streams/{id}/validate-key`
+// ist **kein** produktiver Media-Server-Auth-Pfad und wird nur
+// registriert, wenn die Ingest-Use-Case (SQLite-Persistenz) gewired
+// ist. Der Standard-Test-Server hat kein Ingest → `404`. Falls sich
+// das je ändert (z. B. routenfehlbedingte Registrierung), schlägt
+// der Test sofort an (Review-Finding G2: deterministisch statt
+// `204 OR 404`).
+func TestCORS_ValidateKeyNotRegisteredWithoutIngest(t *testing.T) {
 	t.Parallel()
-	// Validate-Endpoint braucht ein lebendes Ingest-Setup; das ist im
-	// Standard-Test-Server (newTestServer ohne SQLite) nicht
-	// verfügbar. Wir verifizieren stattdessen, dass das CORS-Modell
-	// für `/api/ingest/streams/{id}/validate-key` dieselbe minimale
-	// Signalisierung liefert wie andere Endpoints — kein Sonderpfad,
-	// der Auth-Information leakt. Der eigentliche Validate-Vertrag
-	// ist in `ingest_test.go` und `ingest_contract_test.go` gepinnt
-	// (`{ "valid": false }` ohne Stream-ID-Hinweis).
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/ingest/streams/abc/validate-key", "http://attacker.example", http.MethodPost)
-	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
-		// Ohne Ingest-Setup registriert der Router den Endpoint
-		// nicht — `404` ist akzeptabel; `204` (mit minimaler Allow-
-		// Origin-freier Antwort) wäre ebenfalls korrekt.
-		t.Errorf("validate-key preflight: want 204 or 404, got %d", resp.StatusCode)
+	resp := optionsRequest(t, srv.URL, "/api/ingest/streams/abc/validate-key", "http://localhost:5173", http.MethodPost)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("validate-key preflight without ingest setup: want 404, got %d", resp.StatusCode)
 	}
 }
 

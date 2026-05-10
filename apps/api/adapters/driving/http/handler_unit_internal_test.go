@@ -77,42 +77,73 @@ func TestStatusRecorder_DefaultsAndExplicitWrite(t *testing.T) {
 	})
 }
 
-// TestAppendVary deckt alle drei Pfade in appendVary ab: leerer
-// Vary-Header, vorhandener Vary ohne Origin, vorhandener Vary mit
-// Origin (no-op).
+// TestAppendVary pinnt das `0.12.0`-Verhalten von `appendVary`
+// (Review-Finding Y2 — Token-für-Token-Union statt
+// `contains "Origin"`-Heuristik). Alle drei Pflicht-Tokens
+// (`Origin`, `Access-Control-Request-Method`,
+// `Access-Control-Request-Headers`) werden idempotent unioniert.
 func TestAppendVary(t *testing.T) {
 	t.Parallel()
+
+	wantFull := "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
 
 	t.Run("empty header sets full Vary", func(t *testing.T) {
 		t.Parallel()
 		w := httptest.NewRecorder()
 		appendVary(w)
-		got := w.Header().Get("Vary")
-		if got != varyHeader {
-			t.Errorf("Vary=%q want %q", got, varyHeader)
+		if got := w.Header().Get("Vary"); got != wantFull {
+			t.Errorf("Vary=%q want %q", got, wantFull)
 		}
 	})
 
-	t.Run("non-empty without Origin appends", func(t *testing.T) {
+	t.Run("non-empty without any vary token appends all three", func(t *testing.T) {
 		t.Parallel()
 		w := httptest.NewRecorder()
 		w.Header().Set("Vary", "Accept")
 		appendVary(w)
 		got := w.Header().Get("Vary")
-		if got == "Accept" {
-			t.Errorf("Vary unchanged (want appended): %q", got)
+		want := "Accept, " + wantFull
+		if got != want {
+			t.Errorf("Vary=%q want %q", got, want)
 		}
 	})
 
-	t.Run("existing Vary with Origin is no-op", func(t *testing.T) {
+	t.Run("existing Vary with Origin alone still appends request-* tokens", func(t *testing.T) {
+		t.Parallel()
+		// Y2-Fix: vorher hat `appendVary` bei `Origin` allein die
+		// request-* Tokens still verschluckt. Jetzt werden sie
+		// einzeln unioniert.
+		w := httptest.NewRecorder()
+		w.Header().Set("Vary", "Origin")
+		appendVary(w)
+		got := w.Header().Get("Vary")
+		want := "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+		if got != want {
+			t.Errorf("Vary=%q want %q", got, want)
+		}
+	})
+
+	t.Run("existing Vary with all three tokens is no-op", func(t *testing.T) {
 		t.Parallel()
 		w := httptest.NewRecorder()
-		w.Header().Set("Vary", "Origin, Accept")
+		w.Header().Set("Vary", wantFull)
 		before := w.Header().Get("Vary")
 		appendVary(w)
-		after := w.Header().Get("Vary")
-		if before != after {
-			t.Errorf("Vary mutated although already contained Origin: %q → %q", before, after)
+		if after := w.Header().Get("Vary"); before != after {
+			t.Errorf("Vary mutated although fully present: %q → %q", before, after)
+		}
+	})
+
+	t.Run("token comparison is case-insensitive and respects boundaries", func(t *testing.T) {
+		t.Parallel()
+		w := httptest.NewRecorder()
+		w.Header().Set("Vary", "origin, OriginCustom") // OriginCustom must NOT match Origin
+		appendVary(w)
+		got := w.Header().Get("Vary")
+		// Origin is already present (case-insensitive); the two
+		// request-* tokens are appended.
+		if got != "origin, OriginCustom, Access-Control-Request-Method, Access-Control-Request-Headers" {
+			t.Errorf("Vary=%q (case-insensitive Origin must dedup; OriginCustom must not match)", got)
 		}
 	})
 }
