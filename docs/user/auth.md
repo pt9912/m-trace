@@ -259,12 +259,65 @@ active`.
 
 `kid` im Token-Header erlaubt parallele Signing-Keys. Alte Verify-
 Keys bleiben über Deployments und Restarts geladen, bis alle damit
-signierten Tokens abgelaufen sind. Im aktuellen Spike-Setup hält der
-`StaticSigningKeyResolver` einen einzelnen aktiven Key. Multi-Key-
-Konfiguration über Env (z. B.
-`MTRACE_AUTH_SIGNING_KEYS=kid_a:base64,kid_b:base64`) und Operator-
-Runbook für die Rotation sind als R-18 im Risiken-Backlog geführt
-(Triggerschwelle: erstes Rotation-Event in Lab/Staging).
+signierten Tokens abgelaufen sind. Im aktuellen Code-Stand hält der
+`StaticSigningKeyResolver` einen einzelnen aktiven Key (`MTRACE_
+AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`); die im
+folgenden Runbook beschriebene Multi-Key-ENV-Konfiguration ist als
+**Soll-Workflow** spezifiziert, der zugehörige Resolver-Code-Pfad
+(`MultiKeySigningResolver` mit ENV `MTRACE_AUTH_SIGNING_KEYS=kid_a:
+base64,kid_b:base64` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_a`)
+liefert das Folge-Release `0.12.5` (siehe `plan-0.12.5.md` Tranche 1
+und R-18 im Risiken-Backlog, Triggerschwelle: erstes Rotation-Event
+in Lab/Staging).
+
+#### 5.3.1 Soll-Workflow Rotation (für `0.12.5`-Code-Pfad)
+
+Reihenfolge, ohne ablaufende Tokens zu invalidieren:
+
+1. **Neuen Key generieren** — z. B.
+   `openssl rand -base64 32`. Notieren als `<NEW_SECRET>` und
+   neuen `kid` festlegen (z. B. `kid_2026_05`).
+2. **Verify-Set erweitern** — den neuen Key zusätzlich zum alten
+   in `MTRACE_AUTH_SIGNING_KEYS` aufnehmen, **ohne** den aktiven
+   `kid` umzuschalten:
+   ```
+   MTRACE_AUTH_SIGNING_KEYS=kid_2026_03:<OLD_SECRET>,kid_2026_05:<NEW_SECRET>
+   MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_2026_03
+   ```
+   Restart der API-Instanzen. Ergebnis: alter Key signiert weiter,
+   alter und neuer Key verifizieren.
+3. **Aktiven `kid` umschalten** — Active-KID auf den neuen Wert
+   setzen:
+   ```
+   MTRACE_AUTH_SIGNING_KEYS=kid_2026_03:<OLD_SECRET>,kid_2026_05:<NEW_SECRET>
+   MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_2026_05
+   ```
+   Restart. Ergebnis: neue Tokens werden mit `kid_2026_05`
+   signiert; bereits ausgegebene Tokens unter `kid_2026_03`
+   verifizieren weiterhin gegen den alten Key, bis sie ablaufen.
+4. **Alten Key abbauen** — nach **max-Token-TTL plus Reservezeit**
+   den alten Key aus `MTRACE_AUTH_SIGNING_KEYS` entfernen. Bei
+   Default-TTL aus `MTRACE_AUTH_SESSION_TOKEN_TTL` (typisch
+   ≤ 5 min) plus konservativer Reserve (z. B. 30 min) reicht
+   nach Schritt 3 ein Wartefenster von etwa einer Stunde, bevor
+   der alte Key entfernt wird:
+   ```
+   MTRACE_AUTH_SIGNING_KEYS=kid_2026_05:<NEW_SECRET>
+   MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_2026_05
+   ```
+   Restart. Ergebnis: ältere Tokens, die noch unter `kid_2026_03`
+   ausgegeben wurden, werden **nicht** mehr verifizieren — daher
+   das Wartefenster.
+
+**Anti-Pattern**: `MTRACE_AUTH_SIGNING_KEY`/`_KID` einfach
+überschreiben (Schritt 3 ohne Schritt 2 vorab), ohne den alten
+Key im Verify-Set zu behalten. Resultat: alle ausgegebenen Tokens
+werden sofort `auth_signature_invalid`. **Genau das verhindert
+das Multi-Key-Schema.**
+
+**Restart-Stabilität** ist im Code unabhängig vom ENV-Schema seit
+`0.12.0` getestet (`TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`)
+— ein Restart ohne Key-Wechsel invalidiert keine Tokens.
 
 ---
 

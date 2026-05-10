@@ -149,7 +149,7 @@ Bedarf").
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Roadmap-Insert, Trigger-Re-Eval-Matrix vorbereiten | ✅ |
 | 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | ✅ |
-| 2 | Operator-Runbook für R-18 + Doku-Schärfungen | ⬜ |
+| 2 | Operator-Runbook für R-18 + Doku-Schärfungen | ✅ |
 | 3 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag | ⬜ |
 
 ---
@@ -217,22 +217,23 @@ sind konsolidiert.
 
 DoD:
 
-- [ ] **Operator-Runbook für Signing-Key-Rotation** in
-  `docs/user/auth.md` §5.3 erweitert: konkrete Rotation-Reihenfolge
-  (neuen Key generieren → in ENV-Liste aufnehmen → aktiven KID
-  umschalten → alten Key nach max-TTL-Fenster + Reservezeit aus
-  ENV entfernen). Multi-Key-ENV-Schema bleibt heute nicht
-  implementiert — der Runbook beschreibt den **Soll-Workflow**;
-  ENV-Parser-Code-Pfad wandert in `plan-0.12.5.md`. Verweis auf
-  R-18 setzen.
-- [ ] `auth.md` §6 Wire-Code-vs-Metric-Wording wurde im T5-Review-
-  Fix (`0ebeed5`) bereits korrigiert — als bestehender Stand im
-  `0.12.1`-DoD nachweisen, kein neuer Edit.
-- [ ] `releasing.md` §3.1 Bump-Pattern-Sweep + Wave-2-`gh run list`-
-  Pflicht wurde im Post-Audit (`e958737`) bereits committed —
-  als bestehender Stand nachweisen, kein neuer Edit.
-- [ ] CHANGELOG-Format-Hygiene aus dem Audit-Finding (`e958737`)
-  ist drin; im `0.12.1`-Block bleibt das Format Keep-a-Changelog.
+- [x] **Operator-Runbook für Signing-Key-Rotation** in
+  `docs/user/auth.md` §5.3 + neu §5.3.1 erweitert: konkrete
+  Rotation-Reihenfolge (Verify-Set zuerst erweitern → aktiven
+  `kid` umschalten → alten Key nach max-TTL + Reservezeit
+  entfernen). Multi-Key-ENV-Schema bleibt heute nicht
+  implementiert — Runbook beschreibt den **Soll-Workflow**, der
+  zugehörige Resolver-Code (`MultiKeySigningResolver`) wandert in
+  `plan-0.12.5.md` Tranche 1. R-18-Verweis und Anti-Pattern-Block
+  sind drin.
+- [x] `auth.md` §6 Wire-Code-vs-Metric-Wording — bestehender Stand
+  seit `0ebeed5` (T5-Review-Fix), kein neuer Edit nötig.
+- [x] `releasing.md` §3.1 Bump-Pattern-Sweep + Wave-2-`gh run list`-
+  Pflicht — bestehender Stand seit `e958737` (Post-Audit), kein
+  neuer Edit nötig.
+- [x] CHANGELOG-Format-Hygiene (Keep-a-Changelog) — bestehender
+  Stand seit `e958737`; im `0.12.1`-Block in Tranche 3 wird das
+  Format weitergeführt.
 
 ## 7. Tranche 3 — Release-Closeout
 
