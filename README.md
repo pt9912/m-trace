@@ -11,7 +11,33 @@ Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase 
 
 ## Was ist m-trace?
 
-m-trace richtet sich an Entwickler, Selbsthoster, kleine Streaming-Plattformen, Broadcaster und technische Teams, die verstehen wollen, was in ihrer Streaming-Pipeline passiert — ohne sich von einem proprietären SaaS-Analytics-Silo abhängig zu machen.
+m-trace ist ein **selbstgehosteter Observability- und Diagnose-Stack
+für Media-Streaming-Pipelines**. Player-Telemetrie, Manifest-Analysen
+und SRT-Health-Daten landen in einem konsistenten Session-Modell
+(API + Dashboard) und einem OpenTelemetry-Aggregat (Prometheus +
+optional Traces über den OTel-Collector). Persistenz läuft per
+Default in SQLite, der gesamte Stack läuft als Compose-Lab auf einem
+Entwickler-Laptop.
+
+Der Fokus liegt auf der **Korrelation über die Streaming-Schichten**
+hinweg — von Ingest (RTMP/SRT/WebRTC) über Media Server (MediaMTX,
+SRS) und Distribution (HLS/DASH/WebRTC) bis zum Player (hls.js,
+dash.js, native WHEP-Adapter). Player-Events, Manifest-Proben und
+optionale SRT-Connection-Stats lassen sich dadurch in einer
+Session-Sicht gegenüberstellen, ohne dass ein zentraler proprietärer
+Anbieter dazwischen sitzt.
+
+Architektur ist **hexagonal** (`apps/api` als Go-Backend mit
+typisierten Driving-/Driven-Ports, SvelteKit-Dashboard,
+publizierbares Player-SDK in TypeScript, Stream-Analyzer-Library
+und CLI). Operative Anforderungen (Build, Test, Coverage, Lint,
+Drift-Checks, SDK-Pack-Smokes) laufen über `make gates` reproduzierbar
+im Container.
+
+Zielgruppe sind Entwickler, Selbsthoster, kleine Streaming-Plattformen,
+Broadcaster und technische Teams, die verstehen wollen, was in ihrer
+Pipeline passiert — ohne sich von einem proprietären SaaS-Analytics-
+Silo abhängig zu machen.
 
 ### Das erste Ziel
 ist einfach — ein lokales Lab, in dem ein Live-HLS-Stream in einem Demo-Player läuft und seine Telemetrie sauber in API, Dashboard und OpenTelemetry-Modell landet:
@@ -101,8 +127,6 @@ m-trace sammelt und normalisiert Signale aus Player und Backend, sodass Stream-S
 - **Aktueller Lieferstand pro Release**: [`CHANGELOG.md`](CHANGELOG.md).
 - **Aktive Phase und nächste Schritte**: Sektion „Roadmap" weiter
   unten plus [`docs/planning/in-progress/`](docs/planning/in-progress/).
-- **Was m-trace bewusst nicht ist**: Sektion „Was m-trace nicht ist"
-  weiter unten.
 
 ---
 
@@ -311,18 +335,6 @@ MVP-Prinzipien:
 - IP-Adressen sollen nicht unnötig gespeichert werden
 - User-Agent-Daten sollen reduzierbar oder anonymisierbar sein
 - GDPR-konformer Betrieb muss möglich sein
-
----
-
-## Was m-trace nicht ist
-
-m-trace ist ein technisches Observability- und Diagnose-Projekt für
-Media-Streaming-Workflows — kein kommerzielles QoE-/Werbe-/DRM-
-Analytics, keine Multi-Tenant-SaaS-Plattform, kein Production-K8s-
-Deployment und kein Ersatz für MediaMTX, FFmpeg, Grafana, Prometheus
-oder Production-Storage-Backends. Der `/api/ingest/...`-Pfad ist ein
-lokaler Lab-Workflow (siehe
-[`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5).
 
 ---
 

@@ -1,10 +1,10 @@
 # Security Policy
 
 m-trace ist ein Observability-/Tracing-Werkzeug für lokale
-Streaming-Labs (siehe [`README.md`](README.md) Abschnitt
-„Was m-trace nicht ist"). Es ist nicht für Multi-Tenant-Produktion
-oder öffentlich exponierte Deployments ausgelegt. Diese Policy
-beschreibt trotzdem das Vorgehen für Sicherheitsmeldungen.
+Streaming-Labs (Scope und Ziele in [`README.md`](README.md)).
+Es ist nicht für Multi-Tenant-Produktion oder öffentlich exponierte
+Deployments ausgelegt. Diese Policy beschreibt trotzdem das Vorgehen
+für Sicherheitsmeldungen.
 
 ## 1. Unterstützte Versionen
 

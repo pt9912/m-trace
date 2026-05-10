@@ -36,9 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operator-Doku** in [`docs/user/auth.md`](docs/user/auth.md) (neu)
   und [`docs/user/local-development.md`](docs/user/local-development.md)
   §2.7.3 (Migrationspfad `demo-token` → rotierbare Generation,
-  `MTRACE_AUTH_SIGNING_KEY`-Env-Vars). README-Abgrenzung
-  „Was m-trace nicht ist" um Auth-Härtung-vs-Identity-Plattform
-  erweitert.
+  `MTRACE_AUTH_SIGNING_KEY`-Env-Vars).
 - **Sicherheit / Härtung**:
   - Lab-Default-Signing-Key hard-failt ohne explizites
     `MTRACE_AUTH_LAB_DEFAULT=1`-Opt-in.

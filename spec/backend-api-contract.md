@@ -355,8 +355,10 @@ Der `/api/ingest/*`-Pfad implementiert lokales Stream Control für
 Lab-/Demo-Flows (`apps/api`-Modul, Variante B aus
 [`docs/planning/done/plan-0.11.0.md`](../docs/planning/done/plan-0.11.0.md)
 §0.3). Der Pfad ist **kein** produktiver Auth-Replacement und
-**kein** mandantenfähiger Control-Plane-Pfad — siehe README-
-Abgrenzung „Was m-trace nicht ist".
+**kein** mandantenfähiger Control-Plane-Pfad — Out-of-Scope-Liste
+in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md)
+§5 und [`docs/planning/done/plan-0.11.0.md`](../docs/planning/done/plan-0.11.0.md)
+§0.1.
 
 **Auth-Matrix.** Alle `/api/ingest/*`-Endpunkte sind tokenpflichtig
 und folgen der bestehenden `X-MTrace-Token`-/Project-Resolver-
@@ -557,8 +559,8 @@ bestehenden lokalen/API-nahen Auth-Modells aus §4 (Variante B,
 Auth-Modul in `apps/api`) — **kein** vollständiger Identity-/SSO-/
 OAuth-Pfad und **kein** mandantenfähiger Control-Plane-Pfad. Bestehende
 `X-MTrace-Token`-Project-Token-Flows bleiben im
-`0.12.0`-Compatibility-Fenster gültig (RAK-75); siehe README-Abgrenzung
-„Was m-trace nicht ist" sowie
+`0.12.0`-Compatibility-Fenster gültig (RAK-75); siehe Out-of-Scope-
+Liste in
 [`docs/planning/in-progress/plan-0.12.0.md`](../docs/planning/in-progress/plan-0.12.0.md)
 §0 für Scope, Architektur und Threat Model.
 
