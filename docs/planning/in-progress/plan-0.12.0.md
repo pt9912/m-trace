@@ -380,7 +380,7 @@ Mindestinhalte für Tranche 0 und Doku:
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Gruppe, Architektur-/Persistenzentscheidung und Threat Model | ✅ |
-| 1 | Auth-Domainmodell, Token-Generationen und Project Policies | ⬜ |
+| 1 | Auth-Domainmodell, Token-Generationen und Project Policies | ✅ |
 | 2 | Signierte Session Tokens (`F-111`) und Auth-Wire-Vertrag | ⬜ |
 | 3 | Project-Token-Rotation (`F-112`) mit SQLite-/InMemory-Persistenz | ⬜ |
 | 4 | Ingest Policies (`F-113`), CORS/Preflight und Rate-Limit-Integration | ⬜ |
@@ -459,31 +459,45 @@ oder Persistenz angebunden werden.
 
 DoD:
 
-- [ ] Domainobjekte für `ProjectTokenGeneration`,
+- [x] Domainobjekte für `ProjectTokenGeneration`,
   `SessionTokenClaims`, `SessionSigningKey`, `ProjectPolicy`,
-  `OriginPolicy`, `RateLimitPolicy` und Auth-Fehler definiert.
-- [ ] Project-Token-Material trennt Klartext, Hash und Fingerprint;
-  Persistenzsicht enthält nie den Klartext.
-- [ ] Session-Token-Claims enthalten mindestens `iss`, `sub`
+  `OriginPolicy`, `RateLimitPolicy` und Auth-Fehler definiert
+  (`apps/api/hexagon/domain/auth_session_token.go`,
+  `auth_project_token.go`, `auth_project_policy.go`, `errors.go`).
+- [x] Project-Token-Material trennt Klartext, Hash und Fingerprint;
+  Persistenzsicht enthält nie den Klartext (`ProjectTokenMaterial`
+  trägt `Value`; `ProjectTokenGeneration` hat per Konstruktion kein
+  Klartext-Feld; Tests pinnen die Trennung).
+- [x] Session-Token-Claims enthalten mindestens `iss`, `sub`
   (`project_id`), `aud`, `iat`, `nbf`, `exp`, `jti`, optional
-  `session_id` und `origin`.
-- [ ] `token_id` ist der öffentliche Wire-/Log-Name des `jti`-Claims;
-  beide Werte sind identisch. Tests pinnen, dass `jti` nur in
-  signierten Claims und `token_id` in Response, Logs und Contract-
-  Fixtures verwendet wird.
-- [ ] Token-Zeitvalidierung nutzt injizierbare Clock für Tests.
-- [ ] Signatur-/Hash-Vergleiche laufen konstantzeitnah, soweit die
-  verwendete Primitive das erlaubt.
-- [ ] Fehlerkonstanten sind stabil, z. B.
-  `ErrAuthTokenMissing`, `ErrAuthTokenInvalid`,
-  `ErrAuthTokenExpired`, `ErrAuthTokenNotYetValid`,
-  `ErrAuthTokenRevoked`, `ErrAuthProjectMismatch`,
-  `ErrAuthPolicyDenied`, `ErrAuthSessionScopeDenied`.
-- [ ] Domain-Tests decken Expiry, `nbf`, unbekanntes `kid`,
+  `session_id` und `origin` (`SessionTokenClaims` plus
+  `BuildSessionTokenClaims`).
+- [x] `token_id` ist der öffentliche Wire-/Log-Name des `jti`-Claims;
+  beide Werte sind identisch (`SessionTokenClaims.TokenID()`-Helper;
+  `TestBuildSessionTokenClaims_TokenIDEqualsJTI` pinnt die Identität).
+- [x] Token-Zeitvalidierung nutzt injizierbare Clock für Tests
+  (`ValidateClaimsTime`, `EvaluateProjectTokenStatus`,
+  `BuildSessionTokenClaims` nehmen `now time.Time`; Tests benutzen
+  einen festen `fixedNow()`).
+- [x] Signatur-/Hash-Vergleiche laufen konstantzeitnah
+  (`ConstantTimeEqualSignature` über `crypto/subtle`;
+  `ValidateProjectTokenString` vergleicht Hash konstantzeitnah).
+- [x] Fehlerkonstanten sind stabil
+  (`apps/api/hexagon/domain/errors.go`: `ErrAuthTokenMissing`,
+  `ErrAuthTokenInvalid`, `ErrAuthTokenExpired`,
+  `ErrAuthTokenNotYetValid`, `ErrAuthTokenRevoked`,
+  `ErrAuthProjectMismatch`, `ErrAuthPolicyDenied`,
+  `ErrAuthSessionScopeDenied`, `ErrAuthTokenTTLTooLarge`,
+  `ErrAuthIssuanceRateLimited`).
+- [x] Domain-Tests decken Expiry, `nbf`, unbekanntes `kid`,
   Audience-Mismatch, Project-Mismatch, Origin-Policy-Miss,
-  Token-Hash-Fingerprint-Trennung und Redaktionsregeln ab.
-- [ ] Domain-Schicht importiert keine HTTP-, JSON-, SQLite-,
-  Prometheus-, OTel- oder Framework-Pakete.
+  Token-Hash-Fingerprint-Trennung und Redaktionsregeln ab
+  (`auth_session_token_test.go`, `auth_project_token_test.go`,
+  `auth_project_policy_test.go`).
+- [x] Domain-Schicht importiert keine HTTP-, JSON-, SQLite-,
+  Prometheus-, OTel- oder Framework-Pakete (nur stdlib `crypto/*`,
+  `encoding/*`, `errors`, `strings`, `time`); `make arch-check`
+  Bestandteil von `make gates` (grün).
 
 ## 4. Tranche 2 — Signierte Session Tokens
 
