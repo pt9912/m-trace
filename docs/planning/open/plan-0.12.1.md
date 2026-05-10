@@ -1,26 +1,38 @@
-# Implementation Plan — `0.12.1` (Folgearbeiten nach `0.12.0`)
+# Implementation Plan — `0.12.1` (Auth-/Risk-Folge: Trigger-Re-Eval + Operator-Doku)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst nach
-> expliziter Aktivierung umgesetzt werden.
+> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst
+> nach explizitem Move nach `docs/planning/in-progress/` umgesetzt
+> werden.
+> Vorgänger ist `0.12.0` (`v0.12.0`, Auth / Token Lifecycle; Plan in
+> [`done/plan-0.12.0.md`](../done/plan-0.12.0.md)).
 >
-> **Release-Typ**: Patch-Release mit Fokus auf Folgeaufgaben aus
-> `docs/planning/in-progress/risks-backlog.md` (`0.12.0`-Nachlauf).
+> **Release-Typ**: **Patch-Release** (`0.12.1`) gemäß
+> [`docs/user/releasing.md`](../../user/releasing.md) §3.1 — kein
+> Lastenheft-Patch, keine RAK-Verifikationsmatrix, keine neue
+> User-Surface oder Wire-Verträge. Inhaltlich: Trigger-Re-Eval für
+> alle aktiven `R-N`-Items, Operator-Runbooks und Doku-Schärfungen.
 >
-> **Ziel**: Alle noch offenen Folgepunkte aus dem Risiko-Backlog auf
-> einen klaren Entscheidungs-/Umsetzungsweg bringen, entweder:
->
-> - in `0.12.1` vollständig bearbeiten oder
-> - mit Trigger-/Entscheidungsprotokoll sauber in `0.13.0` / spätere
->   Pläne verschieben.
+> **Ziel**: Den Risiken-Backlog nach `0.12.0`-Release konsistent
+> halten — getriggerte Items bekommen einen sauberen Stand-Eintrag,
+> Out-of-Scope-Items aus `done/plan-0.12.0.md` §10 bekommen klare
+> Triggerschwellen mit operator-observablem Signal. Adapter-/Wire-
+> Implementierungen (Multi-Replica-Limiter, Multi-Key-Rotation-
+> Code, KMS/Vault-Backend, Webhook-Outbound, Ingest-Browser-Policy)
+> wandern in [`plan-0.12.5.md`](./plan-0.12.5.md) als Minor-Release.
 >
 > **Bezug**:
-> [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md),
-> [`docs/planning/done/plan-0.12.0.md`](../done/plan-0.12.0.md),
-> [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md).
+> [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope;
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
+> R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21;
+> [`docs/user/releasing.md`](../../user/releasing.md) §3.1
+> Patch-Release-Konvention.
 >
-> **Nachfolger**: offen.
+> **Nachfolger**: `plan-0.12.5.md` (Adapter-Minor) und `plan-0.13.0.md`
+> (Production / Ops Backends).
 
 ## 0. Konvention
+
+DoD-Checkboxen tracken den Lieferstand:
 
 - `[x]` ausgeliefert mit Commit-Hash.
 - `[ ]` offen.
@@ -29,163 +41,233 @@
 
 ### 0.1 Scope-Definition
 
-`0.12.1` ist ein gebündelter Follow-up-Patch. Primärziele:
+`0.12.1` ist ein **Patch-Release** im Sinne von `releasing.md` §3.1
+— CI-/Tooling-/Doku-Lieferungen ohne neue User-Surface, ohne neue
+Wire-Verträge, ohne neuen Lab-/Adapter-Pfad.
 
-- Auth-/Secret- und Ingest-Folgepunkte aus `R-14`, `R-15`, `R-16`,
-  `R-17`, `R-18`, `R-20`, `R-21`.
-- Operative/Produktionsnähe-Optimierungen aus noch offenen Risks:
-  `R-5`, `R-7`, `R-9`, `R-10`, `R-11`, `R-12`, `R-13`.
-- Abschlussarbeit im Risiko-Backlog: Risiken entweder aufgelöst, verschoben
-  oder als kontrollierte Defer-Entscheidung dokumentiert.
+In Scope:
 
-Zusätzlich explicit Folgerungen aus `docs/planning/done/plan-0.12.0.md`:
+- **Trigger-Re-Eval** für alle aktiven R-N-Items im Backlog
+  (R-5, R-7, R-9, R-10, R-11, R-12, R-13, R-14, R-15, R-16, R-17,
+  R-18, R-20, R-21). Pro Item: ist der Trigger ausgelöst? Beleg
+  (Operator-Report, Smoke-Failure, Lab-Beobachtung). Falls
+  ausgelöst → Auflösungs-Item in `0.12.5` oder `0.13.0` planen.
+  Falls nicht ausgelöst → Eintrag bleibt unverändert, Stand-Datum
+  und Beobachtungs-Notiz aktualisieren.
+- **Operator-Runbook für R-18** (Multi-Key-Signing-Rotation): die
+  Code-Pfade existieren bereits restart-stabil (
+  `StaticSigningKeyResolver` mit aktivem `kid` plus Verify-Keys,
+  Test `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`).
+  Was fehlt ist die operator-side Doku: Multi-Key-ENV-Schema,
+  Rotation-Order, Smoke-Befehl. Reines Doku-Item — der
+  ENV-Schema-Code wandert nach `0.12.5`.
+- **Trigger-Schärfung für OS-1..OS-6** aus
+  `done/plan-0.12.0.md` §10: jedes OS-Item bekommt ein konkretes
+  operator-observables Signal (analog R-13 `expires`-Datum,
+  R-17 „zweite API-Replica"). Vage Trigger („Multi-Tenant-/
+  Regulated-Requirement") werden geschärft oder fallen weg.
+- **Doku-Schärfungen** aus `0.12.0`-Audit-Findings: `auth.md` §6
+  Wire-Code-vs-Metric-Klärung war im T5-Review-Fix bereits drin;
+  `releasing.md` §3.1 Bump-Pattern-Sweep + Wave-2-`gh run list`-
+  Pflicht ist im Post-Release-Audit (`e958737`) gelandet — beide
+  rückwirkend in den `0.12.1`-DoD aufnehmen.
+- **CHANGELOG- und Roadmap-Pflege** nach Patch-Konvention:
+  `[0.12.1] - YYYY-MM-DD`-Block, Roadmap §2 Schritt 47.5 + §3-Zeile
+  ergänzt.
 
-- OAuth/OIDC/SSO, Rollenmodell, User-/Org-/Admin-Verwaltung als spätere
-  Ausbaustufen.
-- Produktive MediaMTX-/SRS-Auth-Hook-Brücke.
-- Signaturs-/Projekt-Secret-Management über `KMS`/`Vault`/`Cloud-Secret-Manager`
-  als strukturierte Folgeentscheidung.
-- Produktive Token-/Issuance-Hardwarepfade (Multi-Deployment-Rate-Limit/Rotation)
-  als gesonderter Entscheidungsstrang.
+Out of Scope (wandert in `plan-0.12.5.md` oder später):
 
-Nicht im Umfang:
-
-- Neuaufnahme von `0.13.0`-MVP-41/42-/MVP-44-Decision-Work (`Postgres`/`ClickHouse`/`K8s`/`Devcontainer`)
-  über das hinaus, was klar als Folgearbeit aus den unten gelisteten Risiken
-  nötig ist.
-- Neue produktive Tenant-/User-/Admin-Featurefläche.
+- Adapter-Implementierungen jeder Art: Shared-State-Limiter
+  (`R-17`), Multi-Key-Rotation-Code (`R-18`), KMS/Vault-Backend
+  (`R-20`), Browser-Ingest-Policy-Lift (`R-21`),
+  Auth-Hook-Bridge (`R-14`), Outbound-Webhook (`R-16`), externe
+  Provisionierung (`R-15`).
+- Lastenheft-Patch oder neue RAK-Gruppe.
+- Neue Wire-Verträge oder Endpoint-Surface.
+- Versions-Bump im Sinne von Public-API-Änderung; bumpt werden nur
+  die Standard-Stellen aus `releasing.md` §3.1.
 
 ### 0.2 Vorgänger-Gate
 
-- `0.12.0` ist in `docs/planning/done/plan-0.12.0.md` abgeschlossen.
-- `docs/planning/in-progress/roadmap.md` muss bei Aktivierung auf `0.12.1`
-  als aktive Folgephase gesetzt werden.
-- Die bestehende Trennung Lab/Produktion in `0.12.0` bleibt bis zu
-  expliziten neuen ADR-/RAK-Entscheidungen in Kraft.
+- `0.12.0` ist released; Roadmap zeigt `0.12.0` als ✅ und
+  `0.13.0` als ⬜ aktivierbar.
+- Bestehende Auth-/Lab-Grenzen aus `0.12.0` bleiben verbindlich:
+  RAK-71 normativer Auth-Scope, RAK-74-Scope-Cut für `/api/ingest/*`,
+  R-14/R-17/R-18/R-20/R-21 als getrackte Folge-Items.
+- Wave-2-Quality-Gates-Voraussetzung (`releasing.md` §3.1) wird
+  vor dem Tag dokumentiert (Lehre aus `0.12.0`-Audit).
 
-### 0.3 Entscheidungsprinzip
+### 0.3 Architektur-/Persistenzentscheidung
 
-- Jedes Risiko bekommt pro Tranche ein explizites Ergebnis: `implementiert`,
-  `teilweise implementiert`, `defer` oder `entbehrlich`.
-- Jeder Punkt aus dem 0.12.0-Folge-Scope bekommt denselben Entscheidungs- und
-  Trigger-Mechanismus wie Risiken in dieser Matrix.
-- Bei `defer` muss ein scharf formulierter Trigger mit Verantwortlichem
-  hinterlegt werden (Datum + Auslösebedingung + erwartete Messgröße).
-- Nach jedem Risiko-Ergebnis muss `docs/planning/in-progress/risks-backlog.md`
-  konsistent nachgezogen werden (Status/Notiz/Absatz in §1.1 bzw.
-  §1.2).
+**Keine** in `0.12.1` — der Plan ist explizit doku-/runbook-only.
+Adapter-/Persistenz-Entscheidungen wandern in `plan-0.12.5.md` §0.3.
 
-## 1. Offene Risiken aus 0.12.0 und Vorgänger-Scopes
+## 1. Trigger-Re-Eval-Matrix
 
-| Risiko | Statusziel in `0.12.1` | Minimales Ergebnis |
-|---|---|---|
-| R-5 | Entscheiden | Cursor-/Anzeige-Path für Time-Skew-Metadaten finalisieren oder als Produktiv-Nichtbedarf begründen |
-| R-7 | Implementieren | `network_signal_absent[]`-Auflösung auf bulk-/batch-fähigen Pfad prüfen/implementieren |
-| R-9 | Definieren | K8s-Labelling-Regeln präzisieren; entweder implementieren oder im Plan als harte Defer-Trigger festlegen |
-| R-10 | Entscheiden | Sample-Lückenerkennung für `sampleRate < 1` in nicht-Player-Pfaden verifizieren oder Defer mit externer Metrikgrenze |
-| R-11 | Implementieren | Cursor-Pagination für `GET /api/srt/health/{stream_id}` inkl. Token-Shape, Tests und Migrationstoleranz |
-| R-12 | Fortführen | WebKit/Safari-Drift-Pfad via CI/Smoke aktivieren oder formell als opt-in Defer mit Trigger dokumentieren |
-| R-13 | Entscheiden | Trivy-Ignore-Strategie evaluieren: CVE-Expirationspunkt, Base-Image-Option (`distroless`) und Re-Review-Pfad |
-| R-14 | Implementieren | Verhindern, dass `validate-key` als produktive Auth-Kette interpretiert wird: harte Doku + Guardrails im Operator-Workflow |
-| R-15 | Implementieren | Klare Folgeentscheidung für externe Media-Server-Provisionierung inkl. minimaler opt-in-Adapter-Option |
-| R-16 | Entscheiden | Ausgehende Webhook-Zustellung als separaten optionalen Lieferstrang oder als neuer `0.13.x`-Auslieferungspfad schließen |
-| R-17 | Implementieren | Mehrinstanzfähige Rate-Limit-Variante (Redis/Memcached/SQLite) technisch freischalten oder harte Defer-Grenze definieren |
-| R-18 | Implementieren | Multi-Key-Signing-Rotation operativ nutzbar machen (Env-Parsing + Runbook + Test / Smoke) |
-| R-20 | Implementieren | KMS/Vault/Cloud-Secret-Manager Adapterpfad optionaler Standardfall oder als dokumentierte Defer-Bedingung |
-| R-21 | Implementieren | `/api/ingest/*` Scope-Cut nach klarer Trigger-Boundary aufheben oder Release-bedingt in 0.13.x überführen |
+Pro Risiko ein Eintrag „Trigger ausgelöst? ja/nein/Beleg" plus
+Folge-Aktion.
 
-## 1a. Direkte Folge-Items aus `plan-0.12.0.md` (jetzt in `0.12.1` führen)
+| R-N | Trigger laut Backlog | Ausgelöst? | Folge-Aktion in `0.12.1` |
+|---|---|---|---|
+| R-5 | ≥ 5 Spans `mtrace.time.skew_warning=true` außerhalb Synthetik in einer Lab-Woche, oder Operator-Report | t.b.d. (DoD-Eintrag mit Beleg) | Stand-Notiz aktualisieren oder Folge-Item für `0.13.0` |
+| R-7 | List-Latenz ≥ 200 ms p95 oder Operator-Report | t.b.d. | analog R-5 |
+| R-9 | K8s-Smoke-Stage wird eingeführt | t.b.d. (Plan-0.13.0 ist K8s-relevant) | Wenn ja: Folge-Item in `plan-0.13.0.md` koordinieren |
+| R-10 | Sampling-Lücke außerhalb Player-Pfad | t.b.d. | Stand-Notiz |
+| R-11 | ≥ 1000 persistierte SRT-Health-Samples pro Stream oder Operator-Report | t.b.d. | Stand-Notiz oder Folge-Item für `0.12.5`/`0.13.0` |
+| R-12 | Drift-Smoke-Failure | automatisch detektiert | Stand-Notiz: Smoke läuft, kein Befund |
+| R-13 | `expires` 2026-08-04 oder Trixie-Point-Release mit CVE-Fix | t.b.d. (Eval-Datum vor Tag prüfen) | Re-Review oder Verlängerung dokumentieren |
+| R-14 | Operator-Bug-Report über `validate-key`-Missverständnis | t.b.d. | Doku-Schärfung in `auth.md`/`ingest-control.md` |
+| R-15 | Lab-Operator-Bedarf nach automatischer Provisionierung | t.b.d. | Stand-Notiz |
+| R-16 | Externer Konsument für Stream-Lifecycle-Webhooks | t.b.d. | Stand-Notiz; Code-Pfad in `plan-0.12.5.md` |
+| R-17 | Zweite API-Replica im selben Compose-/K8s-Setup | t.b.d. | Stand-Notiz; Code-Pfad in `plan-0.12.5.md` |
+| R-18 | Erstes Key-Rotation-Event in Lab/Staging | t.b.d. | **Operator-Runbook in `0.12.1` liefern** (reine Doku); Code-Pfad in `plan-0.12.5.md` |
+| R-20 | Multi-Instance-Setup oder Compliance-Audit (PCI/SOC2) | t.b.d. | Stand-Notiz; Code-Pfad in `plan-0.12.5.md` |
+| R-21 | Erster Browser-Pfad gegen `/api/ingest/*` | t.b.d. | Stand-Notiz; Code-Pfad in `plan-0.12.5.md` |
 
-Diese Punkte wurden in `plan-0.12.0.md` als Folge-Scope festgehalten und
-werden in `0.12.1` nicht nur referenziert, sondern explizit mit
-Entscheidungs- oder Umsetzungsverpflichtung geführt.
+## 2. OS-1..OS-6 Trigger-Schärfung
 
-| ID | Folge-Item | Bereich | Statusziel in `0.12.1` | Minimales Ergebnis |
-|---|---|---|---|---|
-| OS-1 | OAuth/OIDC/SSO und Rollen-/User-/Org-/Admin-Verwaltung | Auth/Sicherheit | defer | Trigger-Entscheidung (Multi-Tenant-/Regulated-Requirement), konkrete Scope-Grenze und Release-Ziel für 0.14+ |
-| OS-2 | Admin-UI / Produktive Auth-Management-UI | Auth/Sicherheit | defer | Begründete Defer-Entscheidung plus Minimalvoraussetzung für Reaktivierung |
-| OS-3 | Produktive MediaMTX-/SRS-Auth-Hook-Brücke (signierte Publish-Tokens) | Ingest/Media-Server | defer | Entscheidung inkl. Adapter-Interface-Schnittstelle und Trigger-Metrik (Lab/Produktiv-Bedarf) |
-| OS-4 | KMS/Vault/Cloud-Secret-Management für Signing-/Project-Token-Secrets | Secret-Management | defer/implementieren | Entweder Seed-Adapter + Runbook oder harte Triggerschwelle + Fallback-Doku |
-| OS-5 | Multi-Deployment / Multi-Replica Secret- und Issuance-Mechanik als Standardfall | Skalierung/Operations | defer/implementieren | Konkreter Scope: nur Adapter-Pfad oder vollständige Standardfunktion |
-| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | Rate Limiting/OPS | defer | Entscheidung über Pflicht-/Opt-in-Implementierung inkl. Messgröße |
+`done/plan-0.12.0.md` §10 listet sechs Folge-Themen mit teils vagen
+Triggern. `0.12.1` schärft sie auf konkrete operator-observables
+Signale. Ergebnis ist eine `risks-backlog.md`-§1.1-Zeile pro Item
+oder eine begründete Streichung („nicht trackbar ohne konkreten
+Bedarf").
 
-## 2. Tranchen-Übersicht
+| OS | Folge-Item | Aktueller Trigger | Schärfung in `0.12.1` |
+|---|---|---|---|
+| OS-1 | OAuth/OIDC/SSO + User-/Org-Verwaltung | „Multi-Tenant-/Regulated-Requirement" | Bleibt RAK-71-Out-of-Scope ohne R-N (kein konkreter Bedarf trackbar); Streichung dokumentieren |
+| OS-2 | Admin-UI / Auth-Management-UI | implizit, mit OS-1 verzahnt | Streichung dokumentieren |
+| OS-3 | Produktive MediaMTX-/SRS-Auth-Hook-Brücke | implizit über R-14 | R-14 ist die getrackte Form; OS-3 als Duplikat streichen |
+| OS-4 | KMS/Vault/Cloud-Secret-Manager | implizit über R-20 | R-20 ist die getrackte Form; OS-4 als Duplikat streichen |
+| OS-5 | Multi-Replica Secret-/Issuance-Mechanik | implizit über R-17 + R-18 | Streichung als Duplikat |
+| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | Wenn nicht in `0.12.5`-Scope: neu als R-22 mit operator-observablem Trigger („IP-basiertes DDoS-Pattern in Operator-Report"); sonst streichen |
 
-## 2. Tranchen-Übersicht
+## 3. Tranchen-Übersicht
 
-| Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
-|---|---|---|---|---|---|
-| 0 | Aktivierung, Scope-Präzisierung, Risiko-Map | Geklärte Ein-/Ausschlussliste und Verantwortlichkeiten | Tranche-Ready | Freigabe, Notizblock, Roadmap-Anpassung | ⬜ |
-| 1 | Auth & Secret Follow-ups (`R-14`, `R-15`, `R-16`, `R-17`, `R-18`, `R-20`) | Konkrete Umsetzungen oder harte Defer-Trigger | Tranche 0 | Risikozustand aktualisiert + Nachweise | ⬜ |
-| 2 | Telemetry/Read-Pfad Follow-ups (`R-5`, `R-7`, `R-9`, `R-10`, `R-11`, `R-12`, `R-13`) | Entscheidungen mit minimalen Implementierungen oder strukturierten Defer-Entscheidungen | Tranche 1 | Risiko-Entscheidungen + Tests + API/Docs-Nachweis | ⬜ |
-| 3 | 0.12.0-Folge-Scope-Entscheidungen (`OS-1`..`OS-6`) | Defer-/Implementierungsentscheidungen in `plan-0.12.1` abschließen | Tranche 2 | 0.12.0-Ausnahmeumfang vollständig dokumentiert | ⬜ |
-| 4 | Closeout und Roadmap-Konsolidierung | Alle offenen Risiken inkl. `OS-*` konsistent in `risks-backlog.md` nachgeführt; Plan-Status in Roadmap gesetzt | Tranche 3 | Geprüfte Abschlussmatrix + Release-Candidate-Entscheidung | ⬜ |
+| Tranche | Inhalt | Status |
+| --- | --- | --- |
+| 0 | Plan-Aktivierung, Roadmap-Insert, Trigger-Re-Eval-Matrix vorbereiten | ⬜ |
+| 1 | Trigger-Re-Eval pro R-N + OS-Schärfung in `risks-backlog.md` umsetzen | ⬜ |
+| 2 | Operator-Runbook für R-18 + Doku-Schärfungen | ⬜ |
+| 3 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag | ⬜ |
 
-## 3. Tranche 0 — Aktivierung und Zielbild
+---
 
-DoD:
+## 4. Tranche 0 — Aktivierung
 
-- [ ] Plan-Status auf `open` aktivieren und `roadmap.md`-Follow-up auf
-  `0.12.1` setzen.
-- [ ] Risikobesitz klären (Owner je Risiko), inkl. Eskalationspfad bei Triggern.
-- [ ] Jede Risiken-Spalte auf "Implementieren/Defer/Entbehrlich" vorläufig
-  mappen.
-- [ ] Ausprägungs-Definition pro Tranche dokumentieren:
-  Architekturentwurf, Doku-Anpassung, Testumfang, Rollback.
-
-Go/No-Go nach Tranche 0:
-
-- **Go**: Entweder 100% eindeutige Risk-Zuweisung oder schriftlich begründete
-  Defer-Entscheidung für jedes Item.
-- **No-Go**: Unklare Verantwortlichkeit oder fehlender Trigger bei `defer`.
-
-## 3a. Tranche 1 — Auth- und Ingest-Folgearbeiten (`R-14`..`R-21`)
+Ziel: Patch-Scope ist sauber, bevor R-N-Re-Evals laufen.
 
 DoD:
 
-- [ ] `R-14`: Operator-sichere Warnpfade dokumentieren und implementieren
-  (klarer Schutzhinweis, Fail-Safety gegen Missbrauch im Ingest-Flow).
-- [ ] `R-15`: Entscheidung „opt-in Externer Provisionierungs-Adapter“ trifft
-  zwischen Seed-Implementierung oder klarer Triggerschwelle.
-- [ ] `R-16`: Outbound-Webhooks als Mini-MVP/Follow-up mit Retry-/Timeout-Schema oder explizit als 0.13+ Scope dokumentieren.
-- [ ] `R-17`: Shared-Rate-Limiter-Adapter (`redis`/`sqlite`/`memcached`) als
-  implementierbar markiert oder als harte Triggerschwelle inkl. Migrationspfad dokumentiert.
-- [ ] `R-18`: Multi-Key-Rotation für Signer in Doku + Smoke + Testablauf.
-- [ ] `R-20`: Secret-Backend-Adapter-Contract skizzieren (API, Rotation,
-  Fehler-Modell) und in 0.12.1 als implementierbar oder Defer fixieren.
+- [ ] Plan von `docs/planning/open/plan-0.12.1.md` nach
+  `docs/planning/in-progress/plan-0.12.1.md` verschoben.
+- [ ] `git status --short` vor erster Änderung dokumentiert.
+- [ ] Roadmap-Insert vorbereitet: §1 Phase auf `0.12.1` in Arbeit;
+  §2 neuer Schritt 47.5 zwischen 47 und 48; §3 Release-Übersicht
+  Zeile `0.12.1`.
+- [ ] Patch-Release-Konvention bestätigt: kein Lastenheft-Patch,
+  keine RAK-Matrix, keine §6.1.
 
-## 4. Tranche 2 — Telemetry-/Read-Pfad-Folgearbeiten (`R-5`,`R-7`,`R-9`,`R-10`,`R-11`,`R-12`,`R-13`)
+## 5. Tranche 1 — Trigger-Re-Eval und OS-Schärfung
 
-DoD:
-
-- [ ] `R-11`: Cursor-Pagination implementieren oder mit Entscheidungsprotokoll auf
-  `0.13.x` schieben.
-- [ ] `R-7`: Effektive Batch- oder Prefetch-Lösung gegen N+1-Latenz definieren
-  (Proof-of-concept + Grenzfälle).
-- [ ] `R-5`: Sichtbarkeit von Time-Skew im Read-Pfad entweder
-  implementiert oder Trigger-Entscheidung dokumentiert.
-- [ ] `R-9` / `R-12`: K8s-Drift-/Label-Pfade als Option mit konkretem Trigger.
-- [ ] `R-10`: Sampling-Gaps für relevante Pfade als messbare Entwurfsentscheidung
-  (Implementieren vs. Defer).
-- [ ] `R-13`: Nach Ablaufdatum und CVE-Entwicklung klare Re-Review-Regel aktiv.
-
-## 5. Tranche 3 — Closeout / Release-Closeout
+Ziel: Risiken-Backlog ist nach `0.12.0`-Release konsistent.
 
 DoD:
 
-- [ ] Alle betroffenen Risiken im `risks-backlog.md` auf den neuen
-  Abschlusszustand gebracht (resolved / defer / offen).
-- [ ] `docs/planning/in-progress/roadmap.md` und ggf. Lastenheft/ADR-Verweise
-  auf die neuen Scope-Entscheidungen angepasst.
-- [ ] `docs/planning/open/plan-0.12.1.md` enthält Commit-Hooks als Closeout-Liste
-  (Datei-/Test-/Doku-Nachweis je Risiko-Cluster).
-- [ ] Release-Entscheidung inkl. Tag-Strategie dokumentiert und Reviewer-Check
-  gegen Roadmap- und Risiko-Führung durchgeführt.
+- [ ] Pro R-N (R-5, R-7, R-9, R-10, R-11, R-12, R-13, R-14, R-15,
+  R-16, R-17, R-18, R-20, R-21): „Trigger ausgelöst? ja/nein, Beleg"
+  als ein-Zeilen-Notiz in der Mitigation-Spalte ergänzt; Stand-Datum
+  in der jeweiligen Zeile aktualisiert. Falls ausgelöst: Folge-Item
+  in `plan-0.12.5.md` oder `plan-0.13.0.md` referenziert.
+- [ ] R-13 spezifisch: `expires`-Datum 2026-08-04 vs. aktuelles
+  Datum prüfen; Trixie-Point-Release-Status checken; Re-Review
+  oder Verlängerung mit Begründung dokumentieren.
+- [ ] R-12 spezifisch: letzten `webrtc-drift.yml`-Nightly-Run
+  zitieren als Beleg (Status grün → kein Trigger).
+- [ ] OS-1..OS-6 in `done/plan-0.12.0.md` §10 als bearbeitet
+  markiert: jedes Item entweder zu R-N umgewidmet oder als
+  Duplikat/strukturell-nicht-trackbar dokumentiert.
+- [ ] R-19-Lücke (im T5-Cleanup gestrichen) als historische Notiz
+  im Risks-Backlog erhalten („n/a, war auf README-Aussage gegründet,
+  die in `5798473` entfernt wurde").
 
-## 6. Qualitätsregeln für 0.12.1
+## 6. Tranche 2 — Operator-Runbook + Doku-Schärfungen
 
-- Keine unkontrollierten Scope-Verdoppelungen mit `0.13.0`.
-- Jede Entscheidung enthält "Was ändert sich / Was bleibt unverändert".
-- Kein Risiko darf ohne dokumentierten Trigger in "defer" wandern.
-- Kein neues Pflicht-Tooling ohne Relevanzbegründung.
-- Jede abgeschlossene Maßnahme: mindestens 1 Testnachweis + 1 Doku-Nachweis.
+Ziel: Operator hat einen funktionierenden Multi-Key-Rotation-Pfad
+(Doku-Stand) und die Audit-Findings aus dem `0.12.0`-Post-Release
+sind konsolidiert.
+
+DoD:
+
+- [ ] **Operator-Runbook für Signing-Key-Rotation** in
+  `docs/user/auth.md` §5.3 erweitert: konkrete Rotation-Reihenfolge
+  (neuen Key generieren → in ENV-Liste aufnehmen → aktiven KID
+  umschalten → alten Key nach max-TTL-Fenster + Reservezeit aus
+  ENV entfernen). Multi-Key-ENV-Schema bleibt heute nicht
+  implementiert — der Runbook beschreibt den **Soll-Workflow**;
+  ENV-Parser-Code-Pfad wandert in `plan-0.12.5.md`. Verweis auf
+  R-18 setzen.
+- [ ] `auth.md` §6 Wire-Code-vs-Metric-Wording wurde im T5-Review-
+  Fix (`0ebeed5`) bereits korrigiert — als bestehender Stand im
+  `0.12.1`-DoD nachweisen, kein neuer Edit.
+- [ ] `releasing.md` §3.1 Bump-Pattern-Sweep + Wave-2-`gh run list`-
+  Pflicht wurde im Post-Audit (`e958737`) bereits committed —
+  als bestehender Stand nachweisen, kein neuer Edit.
+- [ ] CHANGELOG-Format-Hygiene aus dem Audit-Finding (`e958737`)
+  ist drin; im `0.12.1`-Block bleibt das Format Keep-a-Changelog.
+
+## 7. Tranche 3 — Release-Closeout
+
+DoD:
+
+- [ ] `make docs-check` grün.
+- [ ] `make gates` grün (zur Vollständigkeit, auch wenn der Patch
+  doku-only ist — Test-Drift-Schutz).
+- [ ] `make generated-drift-check` grün.
+- [ ] Wave-2-Quality-Gates dokumentiert per `releasing.md` §3.1:
+  `gh run list --workflow benchmark.yml --limit 1`,
+  `gh run list --workflow fuzz.yml --limit 1`,
+  `gh issue list --label fuzz --state open`,
+  `gh run list --workflow mutation.yml --limit 3`. Verdict im
+  Closeout-Log oder Tag-Annotation festgehalten.
+- [ ] Versions-Bump auf `0.12.1` an allen Stellen aus
+  `releasing.md` §3.1 (5× `package.json` + `main.go`
+  `serviceVersion` + `version.ts` + `contracts/sdk-compat.json`
+  + 20+20 Analyzer-Fixtures + Test-Fixtures mit hartkodiertem
+  Versions-String; Pattern-Sweep mit den drei `grep`-Patterns
+  aus §3.1).
+- [ ] `CHANGELOG.md` mit `[0.12.1] - YYYY-MM-DD`-Block aktualisiert
+  (Keep-a-Changelog: `### Changed` für Trigger-Re-Evals und Doku;
+  ggf. `### Removed` für gestrichene OS-Items).
+- [ ] Roadmap-Status aktualisiert: §1 Phase auf released, §2
+  Schritt 47.5 ✅, §3-Zeile `0.12.1` ✅.
+- [ ] Plan nach `docs/planning/done/plan-0.12.1.md` verschoben;
+  Status-Header auf ✅ released; Tranchen-Übersicht §3 alle ✅.
+- [ ] Annotierter Tag `v0.12.1` erstellt mit Lieferzusammenfassung
+  (Trigger-Re-Eval-Stand, Operator-Runbook, Doku-Schärfungen) plus
+  Verweis auf `plan-0.12.5.md` als Folge-Minor.
+- [ ] GitHub-Release `m-trace 0.12.1` mit Notes-File aus dem
+  CHANGELOG-Block.
+
+## 8. Folge-Scope nach `0.12.1`
+
+- [`plan-0.12.5.md`](./plan-0.12.5.md): Auth-/Ingest-Adapter-Minor
+  (Multi-Replica-Limiter R-17, Multi-Key-Rotation-Code R-18,
+  KMS/Vault R-20, Browser-Ingest-Policy R-21, ggf. Auth-Bridge
+  R-14, Webhook-Outbound R-16). Eigener Lastenheft-Patch `1.1.16`,
+  neue RAK-Gruppe.
+- [`plan-0.13.0.md`](./plan-0.13.0.md): Production / Ops Backends
+  (`MVP-40`..`MVP-44`).
+- Später: `plan-0.14.x` o. ä. für OAuth/OIDC/SSO/User-Verwaltung,
+  falls konkreter Bedarf entsteht (RAK-71-Out-of-Scope-Stand bleibt
+  bis dahin).
+
+## 9. Qualitätsregeln für `0.12.1`
+
+- Keine Code-Adapter-Lieferung. Wenn ein R-N-Trigger ausgelöst ist
+  und nur Code es löst, wandert das Item in `plan-0.12.5.md`.
+- Jede `defer`-Entscheidung enthält: konkretes operator-observables
+  Signal als Trigger, Auflösungspfad und Folge-Plan-Verweis.
+- Jede Doku-Änderung verweist auf das normative Lastenheft / API-
+  Kontrakt / Plan, nicht auf eine README-Sektion (Memory-Lehre
+  `feedback_lastenheft_normativ.md`).
+- Wave-2-Verdict vor Tag dokumentieren (Lehre aus `0.12.0`-Audit).
