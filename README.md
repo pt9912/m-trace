@@ -316,19 +316,13 @@ MVP-Prinzipien:
 
 ## Was m-trace nicht ist
 
-m-trace ist nicht:
-
-- ein Ersatz für kommerzielle QoE-/Werbe-/DRM-Analytics oder einen
-  CDN-Optimizer
-- eine Multi-Tenant-SaaS-Plattform oder ein Production-Ready-K8s-
-  Deployment
-- ein Ersatz für MediaMTX, FFmpeg, Grafana, Prometheus oder
-  Production-Storage-Backends wie Mimir/ClickHouse
-- eine produktive Stream-Control-Plane (der `/api/ingest/...`-Pfad
-  ist ein lokaler Lab-Workflow; siehe
-  [`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5)
-
-m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
+m-trace ist ein technisches Observability- und Diagnose-Projekt für
+Media-Streaming-Workflows — kein kommerzielles QoE-/Werbe-/DRM-
+Analytics, keine Multi-Tenant-SaaS-Plattform, kein Production-K8s-
+Deployment und kein Ersatz für MediaMTX, FFmpeg, Grafana, Prometheus
+oder Production-Storage-Backends. Der `/api/ingest/...`-Pfad ist ein
+lokaler Lab-Workflow (siehe
+[`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5).
 
 ---
 
