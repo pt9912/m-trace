@@ -324,6 +324,44 @@ func TestAuthHeaderParser_LegacyResolverGenericErrorMappedToInvalid(t *testing.T
 	}
 }
 
+func TestAuthHeaderParser_DefaultClockResolvesValidToken(t *testing.T) {
+	t.Parallel()
+	// Parser ohne `Now`-Override → fällt auf `time.Now().UTC()` zurück.
+	// Token ist frisch ausgestellt mit Exp = now+1h → muss validieren.
+	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
+		"demo": {Token: "demo-token"},
+	})
+	keyRing, err := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{
+		KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("secret"),
+	})
+	if err != nil {
+		t.Fatalf("ring: %v", err)
+	}
+	signer := auth.NewHMACSessionTokenSigner(keyRing)
+	parser := apihttp.AuthHeaderParser{
+		Resolver: resolver,
+		Verifier: signer,
+		Projects: resolver,
+		// Now bewusst nicht gesetzt → default-Clock-Pfad.
+	}
+	now := time.Now().UTC()
+	tok, err := signer.Sign(domain.SessionTokenClaims{
+		Iss: "m-trace", Sub: "demo",
+		Aud: domain.SessionTokenAudiencePlaybackEvents,
+		Iat: now, Nbf: now, Exp: now.Add(time.Hour), JTI: "st_x",
+	})
+	if err != nil {
+		t.Fatalf("sign: %v", err)
+	}
+	d, err := parser.Parse(context.Background(), headers(map[string]string{"Authorization": "Bearer " + tok}), "")
+	if err != nil {
+		t.Fatalf("default-clock parse: %v", err)
+	}
+	if d.ResolvedProject == nil || d.ResolvedProject.ID != "demo" {
+		t.Errorf("project: %+v", d.ResolvedProject)
+	}
+}
+
 func TestAuthHeaderParser_DisabledVerifierRejectsSessionToken(t *testing.T) {
 	t.Parallel()
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{

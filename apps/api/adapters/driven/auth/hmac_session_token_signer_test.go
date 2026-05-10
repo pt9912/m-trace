@@ -152,6 +152,57 @@ func TestHMACSigner_VerifyRejectsMalformedStructure(t *testing.T) {
 	}
 }
 
+// erroringKeyResolver liefert ActiveSigningKey- bzw.
+// AllVerifyKeys-Fehler — verifiziert die Error-Propagation in den
+// HMACSessionTokenSigner-Pfaden Sign/Verify.
+type erroringKeyResolver struct {
+	signErr   error
+	verifyErr error
+}
+
+func (e erroringKeyResolver) ActiveSigningKey() (domain.SessionSigningKey, error) {
+	return domain.SessionSigningKey{}, e.signErr
+}
+
+func (e erroringKeyResolver) AllVerifyKeys() ([]domain.SessionSigningKey, error) {
+	return nil, e.verifyErr
+}
+
+func TestHMACSigner_SignReturnsActiveKeyError(t *testing.T) {
+	t.Parallel()
+	want := errors.New("key store down")
+	s := auth.NewHMACSessionTokenSigner(erroringKeyResolver{signErr: want})
+	if _, err := s.Sign(domain.SessionTokenClaims{}); !errors.Is(err, want) {
+		t.Errorf("ActiveSigningKey err must propagate: got %v", err)
+	}
+}
+
+func TestHMACSigner_SignRejectsUnknownAlgorithm(t *testing.T) {
+	t.Parallel()
+	r, err := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{
+		KID: "kid_a", Algorithm: domain.SigningKeyAlgorithm("RS256"), Secret: []byte("s"),
+	})
+	if err != nil {
+		t.Fatalf("resolver: %v", err)
+	}
+	s := auth.NewHMACSessionTokenSigner(r)
+	if _, err := s.Sign(domain.SessionTokenClaims{}); !errors.Is(err, domain.ErrAuthTokenInvalid) {
+		t.Errorf("unknown alg on Sign: want ErrAuthTokenInvalid, got %v", err)
+	}
+}
+
+func TestHMACSigner_VerifyPropagatesAllVerifyKeysError(t *testing.T) {
+	t.Parallel()
+	want := errors.New("verify keys unavailable")
+	s := auth.NewHMACSessionTokenSigner(erroringKeyResolver{verifyErr: want})
+	// Token-String muss Header-Form überstehen, damit Verify zum
+	// Key-Ring-Lookup kommt.
+	tok := "mtr_st_eyJhbGciOiJIUzI1NiIsImtpZCI6ImtpZF9hIn0.eyJzdWIiOiJkZW1vIn0.AAAA"
+	if _, err := s.Verify(tok); !errors.Is(err, want) {
+		t.Errorf("AllVerifyKeys err must propagate: got %v", err)
+	}
+}
+
 func TestStaticSigningKeyResolver_EnforcesActiveKey(t *testing.T) {
 	t.Parallel()
 	if _, err := auth.NewStaticSigningKeyResolver("absent",

@@ -1,9 +1,13 @@
 package http
 
 import (
+	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
 // TestOutcomeFor_AllBuckets deckt jeden Status-Code-Bucket aus
@@ -132,5 +136,76 @@ func TestClientIPFromRequest_ParsesRemoteAddr(t *testing.T) {
 		if got := clientIPFromRequest(req); got != tc.want {
 			t.Errorf("clientIPFromRequest(%q)=%q want %q", tc.remote, got, tc.want)
 		}
+	}
+}
+
+// TestWriteAuthHeaderError pinnt das §3.9-Mapping vom AuthHeaderParser-
+// Fehler auf den HTTP-Status (Body bleibt minimal). Deckt jede der
+// neun Fehlerklassen plus den Default-Fallback ab.
+func TestWriteAuthHeaderError(t *testing.T) {
+	t.Parallel()
+	h := &PlaybackEventsHandler{Logger: slog.Default()}
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"missing", domain.ErrAuthTokenMissing, http.StatusUnauthorized},
+		{"invalid", domain.ErrAuthTokenInvalid, http.StatusUnauthorized},
+		{"revoked", domain.ErrAuthTokenRevoked, http.StatusUnauthorized},
+		{"expired", domain.ErrAuthTokenExpired, http.StatusUnauthorized},
+		{"not_yet_valid", domain.ErrAuthTokenNotYetValid, http.StatusUnauthorized},
+		{"project_mismatch", domain.ErrAuthProjectMismatch, http.StatusUnauthorized},
+		{"scope_denied", domain.ErrAuthSessionScopeDenied, http.StatusForbidden},
+		{"policy_denied", domain.ErrAuthPolicyDenied, http.StatusForbidden},
+		{"unknown_default", errors.New("totally unknown"), http.StatusUnauthorized},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			h.writeAuthHeaderError(rec, tc.err)
+			if rec.Code != tc.want {
+				t.Errorf("status: want %d, got %d", tc.want, rec.Code)
+			}
+		})
+	}
+}
+
+// TestWriteUseCaseError_AuthLifecycleErrors pinnt das §3.9-Mapping
+// für Lifecycle-Fehler aus dem RotatingProjectResolver-Pfad
+// (RAK-73). Vorher wurden diese auf 500 gemappt; ab Tranche 3 sind
+// sie 401/403.
+func TestWriteUseCaseError_AuthLifecycleErrors(t *testing.T) {
+	t.Parallel()
+	h := &PlaybackEventsHandler{Logger: slog.Default()}
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"schema_version", domain.ErrSchemaVersionMismatch, http.StatusBadRequest},
+		{"unauthorized", domain.ErrUnauthorized, http.StatusUnauthorized},
+		{"auth_token_missing", domain.ErrAuthTokenMissing, http.StatusUnauthorized},
+		{"auth_token_invalid", domain.ErrAuthTokenInvalid, http.StatusUnauthorized},
+		{"auth_token_revoked", domain.ErrAuthTokenRevoked, http.StatusUnauthorized},
+		{"auth_token_expired", domain.ErrAuthTokenExpired, http.StatusUnauthorized},
+		{"auth_token_not_yet_valid", domain.ErrAuthTokenNotYetValid, http.StatusUnauthorized},
+		{"auth_project_mismatch", domain.ErrAuthProjectMismatch, http.StatusUnauthorized},
+		{"auth_session_scope_denied", domain.ErrAuthSessionScopeDenied, http.StatusForbidden},
+		{"auth_policy_denied", domain.ErrAuthPolicyDenied, http.StatusForbidden},
+		{"origin_not_allowed", domain.ErrOriginNotAllowed, http.StatusForbidden},
+		{"batch_empty", domain.ErrBatchEmpty, http.StatusUnprocessableEntity},
+		{"batch_too_large", domain.ErrBatchTooLarge, http.StatusUnprocessableEntity},
+		{"invalid_event", domain.ErrInvalidEvent, http.StatusUnprocessableEntity},
+		{"rate_limited", domain.ErrRateLimited, http.StatusTooManyRequests},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			h.writeUseCaseError(rec, tc.err)
+			if rec.Code != tc.want {
+				t.Errorf("status: want %d, got %d", tc.want, rec.Code)
+			}
+		})
 	}
 }

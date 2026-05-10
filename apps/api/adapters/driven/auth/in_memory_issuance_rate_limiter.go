@@ -133,13 +133,14 @@ func globalDisabled(b *tokenBucket) bool {
 
 // consume aktualisiert das Bucket gegen `now`, prüft und verbraucht
 // einen Token. Liefert `true`, wenn ein Token zur Verfügung stand.
+//
+// Caller-Verantwortung: `b.lastAt` ist beim ersten Aufruf bereits
+// gesetzt (`NewInMemoryIssuanceRateLimiter` initialisiert das globale
+// Bucket; `Allow` initialisiert per-Project-Buckets vor dem ersten
+// `consume`).
 func consume(b *tokenBucket, now time.Time) bool {
 	if b.cfg.Capacity == 0 && b.cfg.RefillPerSecond == 0 {
 		return true // Bucket deaktiviert — kein Limit.
-	}
-	if b.lastAt.IsZero() {
-		b.lastAt = now
-		b.tokens = float64(b.cfg.Capacity)
 	}
 	elapsed := now.Sub(b.lastAt).Seconds()
 	if elapsed > 0 {

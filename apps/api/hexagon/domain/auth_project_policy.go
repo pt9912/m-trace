@@ -2,7 +2,6 @@ package domain
 
 import (
 	"strings"
-	"time"
 )
 
 // Project-Policy-Domäne (`0.12.0`, RAK-74).
@@ -372,10 +371,3 @@ func ProjectPolicyFromBaseProject(p Project) ProjectPolicy {
 	}
 }
 
-// SinceLast returns the duration between two times in seconds — small
-// helper kept here so that policy tests can assert deterministic
-// time-window semantics without pulling in `time.Since` (which reads
-// the wall clock and would defeat clock-injection in tests).
-func SinceLast(later, earlier time.Time) time.Duration {
-	return later.Sub(earlier)
-}

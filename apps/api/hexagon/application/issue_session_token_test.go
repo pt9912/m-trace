@@ -277,6 +277,31 @@ func TestIssueSessionToken_PolicyResolveErrorPropagates(t *testing.T) {
 	}
 }
 
+func TestIssueSessionToken_DefaultClock(t *testing.T) {
+	t.Parallel()
+	// Service-Konstruktor ohne `Now`-Override → fällt auf `time.Now().UTC()`.
+	// Wir prüfen nur, dass kein Panic auftritt und ExpiresAt ungefähr
+	// `now+ttl` ist (Toleranz ±2 s gegen Wallclock-Drift im Test).
+	svc := application.NewIssueSessionTokenService(
+		stubPolicies{policy: defaultPolicy()},
+		&issuanceStubLimiter{allow: true},
+		&stubSigner{out: "x"},
+		stubIDs{id: "st_default"},
+	)
+	out, err := svc.IssueSessionToken(context.Background(), driving.IssueSessionTokenRequest{
+		ResolvedProjectID:   "demo",
+		Audience:            "playback-events",
+		RequestedTTLSeconds: 60,
+	})
+	if err != nil {
+		t.Fatalf("default clock: %v", err)
+	}
+	delta := time.Until(out.ExpiresAt)
+	if delta < 58*time.Second || delta > 62*time.Second {
+		t.Errorf("ExpiresAt vs default clock: want ~60s, got %v", delta)
+	}
+}
+
 func TestIssueSessionToken_NoSessionIDClaimWhenEmpty(t *testing.T) {
 	t.Parallel()
 	signer := &stubSigner{out: "x"}
