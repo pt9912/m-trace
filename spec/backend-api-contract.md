@@ -70,6 +70,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `POST` | `/api/ingest/hooks/stream-started` | Lokales Start-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
 | `POST` | `/api/ingest/hooks/stream-ended` | Lokales Ende-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
 | `GET`  | `/api/ingest/media-server-config` | Generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern (RAK-68) | `200 OK` |
+| `POST` | `/api/auth/session-tokens` | Kurzlebiges Session Token aus gültigem Project Token ausstellen (plan-0.12.0 §0.5, RAK-72) | `201 Created` |
 
 ---
 
@@ -547,6 +548,265 @@ laufenden externen Media-Servern.
 
 ---
 
+### 3.9 Auth / Token Lifecycle (`0.12.0`, RAK-71..RAK-76)
+
+`0.12.0` führt kurzlebige serverseitig signierte Session Tokens für
+Browser-Telemetrie, rotierbare Project-Token-Generationen und
+Project-gebundene Ingest Policies ein. Der Pfad ist eine Härtung des
+bestehenden lokalen/API-nahen Auth-Modells aus §4 (Variante B,
+Auth-Modul in `apps/api`) — **kein** vollständiger Identity-/SSO-/
+OAuth-Pfad und **kein** mandantenfähiger Control-Plane-Pfad. Bestehende
+`X-MTrace-Token`-Project-Token-Flows bleiben im
+`0.12.0`-Compatibility-Fenster gültig (RAK-75); siehe README-Abgrenzung
+„Was m-trace nicht ist" sowie
+[`docs/planning/in-progress/plan-0.12.0.md`](../docs/planning/in-progress/plan-0.12.0.md)
+§0 für Scope, Architektur und Threat Model.
+
+**Auth-Matrix (zusätzlich zu §4).**
+
+| Endpoint | Token-Pfad |
+|---|---|
+| `POST /api/auth/session-tokens` | Pflicht-`X-MTrace-Token` (Project Token); stellt kurzlebiges Session Token aus. |
+| `POST /api/playback-events` | Pflicht — entweder `X-MTrace-Token` (Legacy/Project) **oder** `Authorization: Bearer mtr_st_*` **oder** `X-MTrace-Session-Token`. |
+| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8; Project-Policy-Grenzen (Origins, Methoden, Header, Rate-Limits) werden zusätzlich erzwungen. |
+| `POST /api/analyze` mit `correlation_id`/`session_id` und `GET /api/stream-sessions[/{id}]` | Pflicht — zusätzlich zur `X-MTrace-Token`-Variante aus §4 ist `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` erlaubt, sofern das Session Token den Project- und Session-Scope passend bindet. |
+
+**Header-Priorität für Mehrfach-Auth.** Werden mehrere Auth-Header
+gleichzeitig präsentiert, gilt:
+
+1. `Authorization: Bearer mtr_st_*` ist der bevorzugte Session-Token-
+   Pfad. Andere `Authorization`-Werte (z. B. fremde OAuth-/Reverse-
+   Proxy-Header) sind für m-trace Auth nicht auswertbar und werden
+   ignoriert, solange ein gültiger m-trace Header (`X-MTrace-Token`
+   oder `X-MTrace-Session-Token`) vorhanden ist. Ohne gültigen
+   m-trace Header liefern sie `401 auth_token_missing`.
+2. `X-MTrace-Session-Token` ist der alternative Session-Token-Pfad
+   für Umgebungen, in denen `Authorization` nicht verwendet werden
+   soll.
+3. `X-MTrace-Token` ist der Legacy-/Project-Token-Pfad und bleibt
+   im `0.12.0`-Compatibility-Fenster gültig.
+4. Wenn mehr als ein Auth-Mechanismus präsentiert wird, müssen alle
+   präsentierten Tokens zum selben `project_id` passen. Widersprüche
+   liefern `401 auth_project_mismatch`. Ein zusätzlich präsentiertes
+   ungültiges Token liefert `401 auth_token_invalid`. Es gibt keinen
+   stillen Fallback von einem ungültigen höher priorisierten Token
+   auf ein gültiges niedriger priorisiertes Token.
+5. Sind `Authorization: Bearer mtr_st_*` und `X-MTrace-Session-Token`
+   beide gesetzt und enthalten unterschiedliche Session Tokens,
+   liefert die API `401 auth_token_invalid`, auch wenn eines der
+   beiden Tokens für sich gültig wäre.
+
+**Fehlerpräzedenz für tokenpflichtige Requests.** Diese Reihenfolge
+gilt zusätzlich zur Validierungsreihenfolge aus §5; ein Verstoß auf
+früherer Stufe verhindert die Auswertung späterer Stufen.
+
+| Priorität | Bedingung | Status / `code` |
+| ---: | --- | --- |
+| 1 | Pflicht-Auth fehlt vollständig | `401 auth_token_missing` |
+| 2 | Präsentierter m-trace Token ist syntaktisch malformed oder Signatur/Hash ungültig | `401 auth_token_invalid` |
+| 3 | Präsentierter Token ist widerrufen | `401 auth_token_revoked` |
+| 4 | Präsentierter Token ist abgelaufen | `401 auth_token_expired` |
+| 5 | Präsentierter Token ist noch nicht gültig (`nbf`) | `401 auth_token_not_yet_valid` |
+| 6 | Alle Tokens sind für sich gültig, binden aber unterschiedliche Projects | `401 auth_project_mismatch` |
+| 7 | Session Token ist für falsche Audience/Session/Origin gebunden | `403 auth_session_scope_denied` |
+| 8 | Project Policy lehnt Origin/Methode/Header/Scope ab | `403 auth_policy_denied` |
+| 9 | Endpoint-spezifisches Rate-Limit nach erfolgreicher Auth/Policy-Prüfung überschritten | `429` mit dem im Endpoint-Vertrag definierten Rate-Limit-Code |
+
+`auth_issuance_rate_limited` ist ausschließlich der Rate-Limit-Code
+von `POST /api/auth/session-tokens`. Andere Endpoints definieren ihren
+eigenen Rate-Limit-Code (für `POST /api/playback-events` bleibt es
+`429 Too Many Requests` mit `Retry-After` aus §6).
+
+**CORS-Preflight-Modell.** Browser-Preflights (`OPTIONS`) enthalten in
+der Praxis kein Project- oder Session-Token, das der Server
+verlässlich validieren könnte. `0.12.0` nutzt deshalb für Preflights
+eine globale, konservative und informationsarme Allowlist:
+
+- erlaubte Methoden maximal `POST, OPTIONS`;
+- erlaubte Header maximal `Content-Type`, `Authorization`,
+  `X-MTrace-Token`, `X-MTrace-Session-Token`, `traceparent`;
+- bekannte Origins aus der globalen Union aller konfigurierten
+  Project-Origins werden mit dem konkreten Origin gespiegelt — nie
+  mit `*`. Erfolgreiche Preflights liefern exakt `204`, leeren Body,
+  `Access-Control-Allow-Origin: <Origin>`,
+  `Access-Control-Allow-Methods: POST, OPTIONS`,
+  `Access-Control-Allow-Headers` mit der erlaubten Header-Liste,
+  `Access-Control-Max-Age: 600`, `Vary: Origin` und
+  `Cache-Control: no-store`;
+- unbekannte Origins erhalten eine minimale Ablehnung: exakt `204`,
+  leerer Body, **kein** `Access-Control-Allow-Origin`, **kein**
+  `Access-Control-Allow-Methods`, **kein**
+  `Access-Control-Allow-Headers`, mit `Vary: Origin` und
+  `Cache-Control: no-store`. Es gibt weder Project- noch
+  Origin-Enumeration im Body oder in Headern;
+- project-spezifische Policy-Entscheidungen (Origin, Methode, Header,
+  Audience, Rate-Limit) werden erst beim tatsächlichen `POST`
+  ausgewertet, sobald Project-/Session-Token verfügbar sind.
+
+Akzeptiertes Informationsniveau: ein Client darf erkennen, ob sein
+eigener Origin in der globalen Union bekannt ist; er darf **nicht**
+erkennen, welche Projects existieren oder welche anderen Origins
+konfiguriert sind. RAK-74 gilt damit für Request-Enforcement;
+Preflight ist ein konservativer Browser-Kompatibilitätsfilter.
+
+**Wire-Skizze: `POST /api/auth/session-tokens`.**
+
+Request:
+
+```json
+{
+  "project_id": "demo",
+  "session_id": "sess_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+  "origin": "http://localhost:5173",
+  "audience": "playback-events",
+  "ttl_seconds": 900
+}
+```
+
+Der Request ist mit einem gültigen Project Token authentifiziert
+(`X-MTrace-Token`). `project_id` ist optional und dient als
+Konsistenzcheck zum Token: fehlt es, wird das Project ausschließlich
+aus dem Token abgeleitet und in der Response zurückgegeben; ist es
+gesetzt und passt nicht zum Token, liefert die API
+`401 auth_project_mismatch`. `audience` muss aus der Project-Policy-
+Allowlist stammen — im `0.12.0`-Pflichtpfad ist `playback-events` die
+einzige Muss-Audience. Unbekannte oder nicht erlaubte Audiences
+liefern `403 auth_session_scope_denied`. `session_id` und `origin`
+sind optional und binden den ausgestellten Token zusätzlich; sie
+müssen, wenn gesetzt, mit den Werten des späteren konsumierenden
+Requests übereinstimmen.
+
+`ttl_seconds` hat eine harte globale Obergrenze von 900 Sekunden.
+Project Policies dürfen eine niedrigere Grenze definieren, aber
+keine höhere. Fehlt `project_max_ttl_seconds` für ein Project,
+gilt exakt der Default `900`. Fehlt `ttl_seconds` im Request,
+verwendet der Server `min(project_max_ttl_seconds, 900)`. Werte
+`<= 0` oder oberhalb der wirksamen Grenze liefern
+`422 auth_token_ttl_too_large` ohne stillen Clamp.
+
+Response (`201 Created`):
+
+```json
+{
+  "session_token": {
+    "value": "mtr_st_eyJraWQiOiJrZXlfMjAyNi0wNSJ9...",
+    "token_id": "st_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "project_id": "demo",
+    "session_id": "sess_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
+    "audience": "playback-events",
+    "expires_at": "2026-05-09T10:15:00Z"
+  }
+}
+```
+
+`session_token.value` darf ausschließlich in der Issuance-Antwort
+erscheinen. Logs, Fehlerantworten, Metriken, Traces und Fixtures
+enthalten höchstens `token_id` oder Fingerprints. `token_id` ist der
+öffentliche Wire-Name des `jti`-Claims; beide Werte sind identisch.
+Implementierung und Tests verwenden `jti` nur innerhalb der signierten
+Claims und `token_id` in Responses, Logs und Doku.
+
+Session-Token-Claims enthalten mindestens `iss`, `sub` (`project_id`),
+`aud`, `iat`, `nbf`, `exp`, `jti`, optional `session_id` und `origin`.
+Signaturschlüssel werden über einen serverseitigen Key-Ring (ENV/File-
+Konfiguration) verwaltet; `kid` im Token-Header erlaubt parallele
+Signing-Keys und alte Verify-Keys bleiben über Deployments und
+Restarts geladen, bis alle damit signierten Tokens abgelaufen sind.
+Unbekannter `kid` liefert `401 auth_token_invalid`.
+
+**Konsumieren von Session Tokens.** `POST /api/playback-events`
+akzeptiert in `0.12.0` zusätzlich zu `X-MTrace-Token`:
+
+- `Authorization: Bearer mtr_st_*` — bevorzugter Browser-Pfad;
+- `X-MTrace-Session-Token: mtr_st_*` — alternativer Pfad ohne
+  `Authorization`-Header.
+
+Beide Pfade folgen der Header-Priorität und Fehlerpräzedenz oben.
+Cookies werden für Player-Telemetrie nicht eingeführt; SDK bleibt bei
+`credentials:"omit"`.
+
+**Project-Token-Rotation.** Project Tokens (`X-MTrace-Token`) werden
+serverseitig als Generationen modelliert: `token_id`, `project_id`,
+Hash/Fingerprint, Status, `not_before`, `grace_until?`, `expires_at?`,
+`revoked_at?`, `created_at`, `rotated_from?`. Persistenz speichert
+nie den Klartext-Token; Klartext erscheint nur bei Erzeugung/Rotation
+oder in markierten Operator-/Test-Fixtures. Während einer
+Rotations-Grace-Phase bleibt die alte Generation gültig, bis das
+persistierte `grace_until` erreicht ist; `revoked_at` beendet Grace
+sofort. `grace_until` darf nicht aus volatilem Prozesszustand oder
+aus `rotated_from` rekonstruiert werden — es ist Source of Truth und
+restart-stabil.
+
+**Project Policies.** Project-gebunden konfigurierbar:
+
+- erlaubte Origins (gegen den `Origin`-Header beim tatsächlichen
+  `POST` validiert; leerer `Origin` bleibt für CLI/curl nur dort
+  zulässig, wo der jeweilige Endpoint-Vertrag das ausdrücklich
+  vorsieht);
+- erlaubte Methoden und Header (Subset der globalen Preflight-
+  Allowlist);
+- erlaubte Session-Token-Audiences (Allowlist; im `0.12.0`-Pflichtpfad
+  mindestens `playback-events`);
+- maximale Session-Token-TTL (`project_max_ttl_seconds`, ≤ 900);
+- Rate-Limit-Buckets pro Project. Globale und Project-Buckets sind
+  Muss-Pfad. Origin- und IP-nahe Buckets sind nur dann Teil des
+  `0.12.0`-Muss-Scopes, wenn die bestehende Rate-Limit-Infrastruktur
+  sie ohne größere Architekturänderung tragen kann; andernfalls sind
+  sie als Folge-Scope zu dokumentieren.
+
+**Fehler-Codes (zusätzlich zu §4 und §3.8).**
+
+| HTTP | `code` | Bedeutung |
+| ---- | ------ | --------- |
+| 401 | `auth_token_missing` | Pflicht-Auth-Header fehlt vollständig. |
+| 401 | `auth_token_invalid` | Token syntaktisch malformed, Signatur/Hash ungültig oder unbekannter `kid`. |
+| 401 | `auth_token_revoked` | Token-Generation widerrufen (`revoked_at` gesetzt). |
+| 401 | `auth_token_expired` | Token-Generation oder Session-Token abgelaufen (`exp`/`expires_at` überschritten). |
+| 401 | `auth_token_not_yet_valid` | Token-Generation noch nicht gültig (`nbf`/`not_before` in der Zukunft). |
+| 401 | `auth_project_mismatch` | Mehrere präsentierte Tokens binden unterschiedliche Projects, oder Request-`project_id` widerspricht dem Token. |
+| 403 | `auth_session_scope_denied` | Session Token passt nicht zur Audience oder zur gebundenen `session_id`/`origin`; oder gewünschte Audience nicht in der Project-Policy-Allowlist. |
+| 403 | `auth_policy_denied` | Project Policy lehnt Origin/Methode/Header/Scope ab. |
+| 422 | `auth_token_ttl_too_large` | Gewünschte `ttl_seconds` ≤ 0 oder oberhalb der wirksamen Project-TTL-Grenze (max. 900). |
+| 429 | `auth_issuance_rate_limited` | Globale oder Project-spezifische Issuance-Quote von `POST /api/auth/session-tokens` überschritten. |
+
+**Validierungsreihenfolge für `POST /api/auth/session-tokens`.**
+
+1. Content-Type (`application/json`) → `415` bei Verstoß.
+2. Body-Größe ≤ `maxAuthRequestBytes` (4 KiB Default) → `413` bei
+   Überlauf.
+3. JSON-Parsing → `400 invalid_json`.
+4. Header-Auswahl und Auth-Validierung des Project Tokens
+   (`X-MTrace-Token`) gemäß Header-Priorität und Fehlerpräzedenz
+   oben.
+5. `project_id`-Konsistenzcheck (falls im Body gesetzt).
+6. Audience-Allowlist (Project Policy) → `403 auth_session_scope_denied`
+   bei Verstoß.
+7. `ttl_seconds`-Validierung gegen wirksame Project-TTL-Grenze →
+   `422 auth_token_ttl_too_large` bei Verstoß.
+8. Issuance-Rate-Limit → `429 auth_issuance_rate_limited` bei
+   Überschreitung.
+9. Session-Token-Erzeugung und `201`-Response.
+
+**Validierungsreihenfolge für tokenpflichtige Konsum-Endpunkte (`POST
+/api/playback-events`, `/api/ingest/*`, Read-Endpunkte mit Session-
+Token-Pfad).** Die Stufen aus §5 bleiben gültig; Auth-Stufe 1 wird
+durch die obige Header-Priorität und Fehlerpräzedenz konkretisiert.
+Project-Policy- und Audience-Prüfung erfolgen zwischen Stufe 4
+(Rate-Limit) und Stufe 5 (Schema-Version):
+
+- Project Policy lehnt Origin/Methode/Header ab →
+  `403 auth_policy_denied`;
+- Session Token bindet falsche Audience/Session/Origin →
+  `403 auth_session_scope_denied`.
+
+Logs, Metriken, Traces und Contract-Fixtures enthalten **keine**
+Klartext-Tokens (weder Project- noch Session-Tokens), sondern
+ausschließlich `token_id` oder Fingerprints. Fremde
+`Authorization`-Header ohne `Bearer mtr_st_*` werden nicht in
+m-trace Audit-Logs übernommen.
+
+---
+
 ### 3.7 Server-vergebene Read-Felder
 
 Die folgenden Felder werden ausschließlich vom Server vergeben und
@@ -607,6 +867,15 @@ Doppelte Tripel werden im Read-Shape dedupliziert.
 ---
 
 ## 4. Authentifizierung
+
+> **`0.12.0`-Erweiterung:** §3.9 ergänzt diese Basis um kurzlebige
+> serverseitig signierte Session Tokens (`Authorization: Bearer
+> mtr_st_*` und `X-MTrace-Session-Token`), rotierbare Project-Token-
+> Generationen, Project-gebundene Ingest Policies, eine globale
+> konservative CORS-Preflight-Allowlist und eine neunstufige
+> Auth-Fehlerpräzedenz. Der `X-MTrace-Token`-Pfad aus diesem
+> Abschnitt bleibt im `0.12.0`-Compatibility-Fenster gültig
+> (RAK-75).
 
 `X-MTrace-Token` ist endpoint-spezifisch:
 

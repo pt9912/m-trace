@@ -561,7 +561,7 @@ DoD:
   Origin-Enumeration; RAK-75 Backward Compatibility inklusive
   fremder `Authorization`-Header; RAK-76 Doku-/Threat-Model-/
   Datenschutz-/Contract-Fixture-/Smoke-Vertrag.
-- [ ] [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+- [x] [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
   bekommt einen `0.12.0`-Abschnitt mit Auth-Matrix, Token-Issuance-
   Wire (`POST /api/auth/session-tokens`), Header-Priorität für
   `Authorization: Bearer mtr_st_*` / `X-MTrace-Session-Token` /
@@ -569,7 +569,9 @@ DoD:
   (`auth_token_missing`/`_invalid`/`_revoked`/`_expired`/
   `_not_yet_valid`/`auth_project_mismatch`/
   `auth_session_scope_denied`/`auth_policy_denied`/
-  `auth_token_ttl_too_large`/`auth_issuance_rate_limited`).
+  `auth_token_ttl_too_large`/`auth_issuance_rate_limited`) — §3.9
+  neu; §2 Endpunktmatrix um `POST /api/auth/session-tokens`
+  erweitert; §4 mit `0.12.0`-Erweiterungs-Hinweis.
 - [x] [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
   §1.2 / §3 auf `0.12.0` als aktivierte Folge-Phase aktualisiert;
   §2 Schritt 47 für die `0.12.0`-Auslieferung von ⬜ auf 🟡

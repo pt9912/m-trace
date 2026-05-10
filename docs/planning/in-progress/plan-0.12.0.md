@@ -422,9 +422,11 @@ DoD:
 - [ ] Threat-Model-Notiz mit Public Browser Token, Replay, Leakage,
   Privacy, Origin-Bindung, Signatur-Key-Rotation und Logging-Grenzen
   ergänzt.
-- [ ] `spec/backend-api-contract.md` bekommt einen `0.12.0`-
+- [x] `spec/backend-api-contract.md` bekommt einen `0.12.0`-
   Abschnitt mit Auth-Matrix, Token-Issuance-Wire, Fehlercodes und
-  Validierungsreihenfolge.
+  Validierungsreihenfolge (§3.9 neu; §2 Endpunktmatrix um
+  `POST /api/auth/session-tokens` erweitert; §4 mit
+  `0.12.0`-Erweiterungs-Hinweis).
 - [ ] Roadmap-Status und Release-Übersicht auf `0.12.0` als aktive
   Folgephase umgestellt.
 - [ ] Risiken R-14..R-16 im `risks-backlog.md` gegen den finalen
