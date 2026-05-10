@@ -285,10 +285,11 @@ PII-Felder. Konkret:
   `fingerprint` und Lifecycle-Felder — niemals Klartext.
 - **Logs/Metriken/Traces** zeigen ausschließlich `token_id` oder
   Fingerprints. Klartext-Tokens leaken in keiner Code-Pfad.
-- **Issuance-Audit** ist auf den Counter
-  `mtrace_cors_preflight_refused_total{path}` und die
-  `auth_issuance_rate_limited`-Metrik beschränkt — keine Per-Token-
-  Issuance-Logs.
+- **Issuance-Audit**: `0.12.0` führt keinen dedizierten
+  Per-Token-Issuance-Log oder -Metric. Rate-Limit-Befunde landen als
+  `429 auth_issuance_rate_limited`-Wire-Antwort an den Aufrufer;
+  CORS-Preflight-Refusals sind über den Counter
+  `mtrace_cors_preflight_refused_total{path}` sichtbar.
 
 Folge-Doku zur GDPR-Klassifikation (Welche Auth-Daten sind unter
 welchem Rechtsgrund verarbeitet?) bleibt — falls erforderlich —

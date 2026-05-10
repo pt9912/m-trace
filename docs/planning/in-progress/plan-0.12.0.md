@@ -763,25 +763,39 @@ brechen.
 
 DoD:
 
-- [ ] `docs/user/demo-integration.md` und/oder neue Auth-Doku
+- [x] `docs/user/demo-integration.md` und/oder neue Auth-Doku
   beschreiben Session-Token-Issuance, Browser-Nutzung, TTL, CSP,
-  CORS und Token-Rotation.
-- [ ] `docs/user/local-development.md` enthält sichere lokale
-  Beispielwerte und erklärt, welche Tokens Demo-/Lab-Werte sind.
-- [ ] `README.md` grenzt Auth-Härtung weiterhin gegen Production-
-  Identity, OAuth/OIDC, KMS/Vault und SaaS-Tenant-Management ab.
-- [ ] Datenschutz-/GDPR-Doku beschreibt, welche Auth-Metadaten
+  CORS und Token-Rotation (`docs/user/auth.md` neu mit §1 Auth-Pfade,
+  §2 Issuance-Wire, §4 CSP/CORS, §5 Project-Token-Rotation;
+  `demo-integration.md` Optional-Sektion „Session-Token-Pfad" mit
+  fetch-Beispiel).
+- [x] `docs/user/local-development.md` enthält sichere lokale
+  Beispielwerte und erklärt, welche Tokens Demo-/Lab-Werte sind
+  (§2.7.3 Auth / Token Lifecycle mit `MTRACE_AUTH_SIGNING_KEY`-
+  Setup, `.env`-Beispielwerten und Production-Warnung).
+- [x] `README.md` grenzt Auth-Härtung weiterhin gegen Production-
+  Identity, OAuth/OIDC, KMS/Vault und SaaS-Tenant-Management ab —
+  normativ über Lastenheft §13.14 RAK-71 (Out-of-Scope-Liste);
+  README selbst zeigt prägnant auf den Stack-Scope ohne separate
+  Negativ-Sektion.
+- [x] Datenschutz-/GDPR-Doku beschreibt, welche Auth-Metadaten
   zusätzlich entstehen, welche Claims pseudonym sind und dass
-  IP-/User-Agent-Speicherung nicht ausgeweitet wird.
-- [ ] SDK-Doku beschreibt kompatible Token-Nutzung: Project Token
-  direkt bleibt erlaubt, Session Token wird bevorzugter Browser-Pfad.
-- [ ] Doku und SDK-Beispiele beschreiben Session-Token-Caching:
+  IP-/User-Agent-Speicherung nicht ausgeweitet wird
+  (`docs/user/auth.md` §6).
+- [x] SDK-Doku beschreibt kompatible Token-Nutzung: Project Token
+  direkt bleibt erlaubt, Session Token wird bevorzugter Browser-Pfad
+  (`auth.md` §1 Auth-Matrix; `demo-integration.md` Optional-Sektion).
+- [x] Doku und SDK-Beispiele beschreiben Session-Token-Caching:
   Token bis kurz vor `expires_at` wiederverwenden, Refresh-Fenster
   nutzen, keine Speicherung in `localStorage`/persistenten Browser-
-  Stores empfehlen.
-- [ ] Player-SDK braucht keine Secret-Verwaltung; falls API-Optionen
+  Stores empfehlen (`auth.md` §3 mit Pseudocode + Storage-Regeln).
+- [x] Player-SDK braucht keine Secret-Verwaltung; falls API-Optionen
   ergänzt werden, bleiben ESM/CJS/IIFE und Public-API-Snapshot stabil
-  oder bewusst additiv aktualisiert.
+  oder bewusst additiv aktualisiert — `0.12.0` erweitert das SDK
+  bewusst **nicht**: Session-Token-Issuance ist Browser-/Caller-
+  Verantwortung (siehe `auth.md` §3 Pseudocode), `attachWebRtc`/
+  `attachHlsJs`-Public-API bleibt unverändert; SDK-Pack-Smoke
+  läuft weiterhin grün in `make gates`.
 - [x] Contract-Fixtures unter `spec/contract-fixtures/api/` pinnen
   Session-Token-Issuance (`auth-session-token-issue.json`), Expired
   Token (`auth-error-token-expired.json`), Policy Denied

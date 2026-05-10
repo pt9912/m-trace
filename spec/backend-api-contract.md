@@ -570,7 +570,7 @@ Liste in
 |---|---|
 | `POST /api/auth/session-tokens` | Pflicht-`X-MTrace-Token` (Project Token); stellt kurzlebiges Session Token aus. |
 | `POST /api/playback-events` | Pflicht — entweder `X-MTrace-Token` (Legacy/Project) **oder** `Authorization: Bearer mtr_st_*` **oder** `X-MTrace-Session-Token`. |
-| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8. **Kein** `0.12.0`-Project-Policy-Enforcement — der Pfad bleibt im `0.11.0`-Token-Validierungs-Modell (RAK-65, lokale/lab-nahe Stream-Verwaltung; `curl`-/Operator-driven, kein Browser-Konsument). Project-Policy für Ingest ist Folge-Scope. |
+| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8. **Kein** `0.12.0`-Project-Policy-Enforcement — der Pfad bleibt im `0.11.0`-Token-Validierungs-Modell (RAK-65, lokale/lab-nahe Stream-Verwaltung; `curl`-/Operator-driven, kein Browser-Konsument). Project-Policy für Ingest ist Folge-Scope; vollständige Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) §5. |
 | `POST /api/analyze` mit `correlation_id`/`session_id` und `GET /api/stream-sessions[/{id}]` | Pflicht — zusätzlich zur `X-MTrace-Token`-Variante aus §4 ist `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` erlaubt, sofern das Session Token den Project- und Session-Scope passend bindet. |
 
 **Header-Priorität für Mehrfach-Auth.** Werden mehrere Auth-Header

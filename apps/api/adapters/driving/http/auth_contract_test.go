@@ -79,13 +79,15 @@ func TestAuthContract_IssuanceRateLimitedMatchesFixture(t *testing.T) {
 	assertErrorBodyShape(t, resp.Body, fixtureAuthErrorIssuanceRateLimited, "auth_issuance_rate_limited")
 }
 
-// TestAuthContract_PolicyDeniedFixtureShape verifiziert nur das
-// Wire-Format der `auth_policy_denied`-Antwort. Ein laufender
-// Trigger-Pfad (origin nicht in Project-Allowlist) wird im
-// PlaybackEvents-Pfad (`TestCORS_Post_ProjectOriginMismatch_403`)
-// abgedeckt; hier prüfen wir nur, dass die Fixture-Struktur dem
-// `assertErrorBodyShape`-Vertrag genügt.
-func TestAuthContract_PolicyDeniedFixtureShape(t *testing.T) {
+// TestAuthContract_PolicyDeniedFixtureSelfValidation prüft nur die
+// Fixture-Datei selbst — sie verifiziert nicht, dass eine echte
+// API-Antwort zur Fixture passt. Der Trigger-Pfad (origin nicht in
+// Project-Allowlist) wird im PlaybackEvents-Pfad
+// (`TestCORS_Post_ProjectOriginMismatch_403`) abgedeckt, ohne
+// die Fixture als Soll-Wert zu nutzen. Honest-Naming-Convention
+// (Code-Review 2026-05-10): `…FixtureSelfValidation` statt
+// `…MatchesFixture`, weil hier kein API↔Fixture-Pin passiert.
+func TestAuthContract_PolicyDeniedFixtureSelfValidation(t *testing.T) {
 	t.Parallel()
 	if !strings.Contains(string(fixtureAuthErrorPolicyDenied), `"auth_policy_denied"`) {
 		t.Errorf("policy-denied fixture missing expected code marker")
@@ -95,10 +97,13 @@ func TestAuthContract_PolicyDeniedFixtureShape(t *testing.T) {
 	}
 }
 
-// TestAuthContract_TokenExpiredFixtureShape: analog zu Policy-Denied;
-// der Trigger-Pfad (abgelaufener Session Token) ist über die Domain-
-// und HMAC-Signer-Tests abgedeckt. Hier nur Wire-Form-Pin.
-func TestAuthContract_TokenExpiredFixtureShape(t *testing.T) {
+// TestAuthContract_TokenExpiredFixtureSelfValidation: analog zu
+// Policy-Denied — Fixture-Inhalt-Pin, kein Trigger-Pfad. Der
+// Trigger (abgelaufener Session Token) ist in
+// `TestValidateClaimsTime_Boundaries` und
+// `TestAuthHeaderParser_ExpiredSessionToken` abgedeckt, ohne
+// gegen die Fixture zu vergleichen.
+func TestAuthContract_TokenExpiredFixtureSelfValidation(t *testing.T) {
 	t.Parallel()
 	if !strings.Contains(string(fixtureAuthErrorTokenExpired), `"auth_token_expired"`) {
 		t.Errorf("token-expired fixture missing expected code marker")
