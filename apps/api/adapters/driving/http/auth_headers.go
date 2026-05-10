@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -148,13 +149,20 @@ func (p AuthHeaderParser) resolveSessionPath(sessionToken, requestOrigin string)
 // Header. Wenn präsentiert, muss er — neben einem etwaigen Session-
 // Token — dasselbe Project binden. Ein ungültiger Legacy-Token blockt
 // den Fallback (§3.9 Punkt 4).
+//
+// Lifecycle-Fehler aus dem `RotatingProjectResolver` (`mtr_pt_*`-
+// Generationen: revoked/expired/not_yet_valid) werden 1:1 propagiert,
+// damit der HTTP-Adapter sie auf die distinkten §3.9-Codes mappen
+// kann. Andere Resolver-Fehler (Static-Resolver-Miss,
+// Unauthorized-Sentinel) werden konservativ auf
+// `ErrAuthTokenInvalid` gemappt — kein Hinweis auf Existenz.
 func (p AuthHeaderParser) applyLegacyHeader(ctx context.Context, legacy string, resolved *domain.Project) (AuthDecision, error) {
 	if legacy == "" {
 		return AuthDecision{ResolvedProject: resolved}, nil
 	}
 	legacyProject, err := p.Resolver.ResolveByToken(ctx, legacy)
 	if err != nil {
-		return AuthDecision{}, domain.ErrAuthTokenInvalid
+		return AuthDecision{}, mapLegacyResolverError(err)
 	}
 	if resolved != nil && resolved.ID != legacyProject.ID {
 		return AuthDecision{}, domain.ErrAuthProjectMismatch
@@ -165,14 +173,42 @@ func (p AuthHeaderParser) applyLegacyHeader(ctx context.Context, legacy string, 
 	}, nil
 }
 
+// mapLegacyResolverError leitet Auth-Lifecycle-Fehler aus dem
+// `RotatingProjectResolver` weiter und mapt alle anderen Resolver-
+// Fehler (insb. `domain.ErrUnauthorized` aus dem Static-Resolver) auf
+// `domain.ErrAuthTokenInvalid`. Damit bleibt die §3.9-Präzedenz
+// (revoked > expired > not_yet_valid > invalid) erhalten — aus dem
+// Pre-`0.12.0`-Static-Pfad gibt es nur invalid, was korrekt bleibt.
+func mapLegacyResolverError(err error) error {
+	switch {
+	case errors.Is(err, domain.ErrAuthTokenRevoked),
+		errors.Is(err, domain.ErrAuthTokenExpired),
+		errors.Is(err, domain.ErrAuthTokenNotYetValid),
+		errors.Is(err, domain.ErrAuthSessionScopeDenied),
+		errors.Is(err, domain.ErrAuthPolicyDenied):
+		return err
+	default:
+		return domain.ErrAuthTokenInvalid
+	}
+}
+
 // extractMTraceBearer extrahiert ein `Bearer mtr_st_*`-Token aus
-// dem Authorization-Header. Andere Schemas (OAuth/Basic/„Bearer abc")
-// werden als „kein m-trace Auth-Versuch" behandelt → leerer String.
+// dem Authorization-Header. Das `Bearer`-Schema wird gemäß RFC 7235
+// case-insensitive geprüft — `Bearer`, `bearer`, `BEARER` etc.
+// gelten alle, weil Reverse-Proxies und Client-Libraries (z. B.
+// OkHttp, requests) unterschiedliche Normalisierungen anwenden.
+//
+// Andere Schemas (OAuth/Basic/„Bearer abc") werden als „kein m-trace
+// Auth-Versuch" behandelt → leerer String.
 func extractMTraceBearer(authHeader string) string {
-	if !strings.HasPrefix(authHeader, "Bearer ") {
+	const scheme = "Bearer "
+	if len(authHeader) < len(scheme) {
 		return ""
 	}
-	candidate := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+	if !strings.EqualFold(authHeader[:len(scheme)], scheme) {
+		return ""
+	}
+	candidate := strings.TrimSpace(authHeader[len(scheme):])
 	if !strings.HasPrefix(candidate, domain.SessionTokenPrefix) {
 		// Bearer mit fremdem Token (z. B. OAuth-Token-Format) — wir
 		// ignorieren ihn als nicht-m-trace Auth.

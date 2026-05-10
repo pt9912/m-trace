@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
@@ -67,7 +68,12 @@ var _ driven.IssuanceRateLimiter = (*InMemoryIssuanceRateLimiter)(nil)
 // Verstoß auf einer Stufe verbraucht **keine** Tokens auf der anderen
 // (`all-or-nothing`-Commit, analog zum bestehenden `ratelimit`-
 // Adapter).
-func (l *InMemoryIssuanceRateLimiter) Allow(ctx context.Context, projectID string) (bool, error) {
+//
+// `projectBucket` aus der Project-Policy hat Vorrang vor der
+// Konstruktor-Default-Konfiguration. `IsZero()` heißt „nimm den
+// Default" — fehlt dort ebenfalls eine Konfiguration, wirkt das
+// Bucket als „kein Limit" (siehe `consume`).
+func (l *InMemoryIssuanceRateLimiter) Allow(ctx context.Context, projectID string, projectBucket domain.RateLimitBucket) (bool, error) {
 	if l == nil {
 		return true, nil
 	}
@@ -77,23 +83,52 @@ func (l *InMemoryIssuanceRateLimiter) Allow(ctx context.Context, projectID strin
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := l.now()
-	if !consume(&l.globalBucket, now) {
+	globalConsumed := consume(&l.globalBucket, now)
+	if !globalConsumed {
 		return false, nil
 	}
+	cfg := l.resolveProjectConfig(projectBucket)
 	pBucket, ok := l.projectBuckets[projectID]
-	if !ok {
-		pBucket = tokenBucket{cfg: l.projectCfg, tokens: float64(l.projectCfg.Capacity), lastAt: now}
+	if !ok || pBucket.cfg != cfg {
+		// Erstaufruf oder Konfigurations-Wechsel — bucket frisch
+		// initialisieren. Wechsel kann nur passieren, wenn die
+		// Project-Policy zwischen zwei Calls eine andere
+		// Issuance-Bucket-Konfiguration liefert (Lab-Operator-
+		// Override).
+		pBucket = tokenBucket{cfg: cfg, tokens: float64(cfg.Capacity), lastAt: now}
 	}
 	if !consume(&pBucket, now) {
-		// Refund das gerade verbrauchte globale Token, damit ein
-		// Project-Limit-Verstoß nicht das globale Bucket leerlaufen
-		// lässt.
-		l.globalBucket.tokens = clampMax(l.globalBucket.tokens+1.0, float64(l.globalBucket.cfg.Capacity))
+		// Refund das globale Token nur dann, wenn der globale Bucket
+		// im selben Aufruf tatsächlich dekrementiert wurde. Bei
+		// deaktiviertem globalen Bucket war `consume` ein No-Op und
+		// der Refund würde fälschlich Token erzeugen (asymmetrischer
+		// Pfad, Review-Finding #7).
+		if !globalDisabled(&l.globalBucket) {
+			l.globalBucket.tokens = clampMax(l.globalBucket.tokens+1.0, float64(l.globalBucket.cfg.Capacity))
+		}
 		l.projectBuckets[projectID] = pBucket
 		return false, nil
 	}
 	l.projectBuckets[projectID] = pBucket
 	return true, nil
+}
+
+// resolveProjectConfig zieht die wirksame Bucket-Konfiguration: ein
+// `IsZero()`-Override aus der Policy fällt auf die Adapter-Defaults
+// zurück; ein nicht-`IsZero()`-Wert wird 1:1 übernommen.
+func (l *InMemoryIssuanceRateLimiter) resolveProjectConfig(override domain.RateLimitBucket) bucketConfig {
+	if override.IsZero() {
+		return l.projectCfg
+	}
+	return bucketConfig{Capacity: override.Capacity, RefillPerSecond: override.RefillPerSecond}
+}
+
+// globalDisabled gibt true zurück, wenn der globale Bucket
+// deaktiviert ist (Capacity 0 und Refill 0). Wird vom Refund-Pfad
+// genutzt, damit kein Token auf einem deaktivierten Bucket „erzeugt"
+// wird (Review-Finding #7).
+func globalDisabled(b *tokenBucket) bool {
+	return b.cfg.Capacity == 0 && b.cfg.RefillPerSecond == 0
 }
 
 // consume aktualisiert das Bucket gegen `now`, prüft und verbraucht

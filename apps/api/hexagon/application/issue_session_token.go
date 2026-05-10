@@ -98,7 +98,9 @@ func (s *IssueSessionTokenService) IssueSessionToken(ctx context.Context, req dr
 		return driving.IssueSessionTokenResult{}, err
 	}
 
-	allow, err := s.Limiter.Allow(ctx, resolved)
+	// Issuance-Bucket: Project-Policy hat Vorrang vor dem Adapter-
+	// Default. `IsZero()` heißt „nimm den Default" (RAK-74).
+	allow, err := s.Limiter.Allow(ctx, resolved, policy.RateLimit.IssuanceBucket)
 	if err != nil {
 		return driving.IssueSessionTokenResult{}, err
 	}

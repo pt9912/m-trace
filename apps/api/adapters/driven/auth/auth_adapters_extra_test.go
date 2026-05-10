@@ -40,7 +40,7 @@ func TestInMemoryIssuanceRateLimiter_DisabledBucketsAlwaysAllow(t *testing.T) {
 	t.Parallel()
 	l := auth.NewInMemoryIssuanceRateLimiter(0, 0, 0, 0)
 	for i := 0; i < 5; i++ {
-		ok, err := l.Allow(context.Background(), "demo")
+		ok, err := l.Allow(context.Background(), "demo", domain.RateLimitBucket{})
 		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
@@ -53,7 +53,7 @@ func TestInMemoryIssuanceRateLimiter_DisabledBucketsAlwaysAllow(t *testing.T) {
 func TestInMemoryIssuanceRateLimiter_NilReceiver(t *testing.T) {
 	t.Parallel()
 	var l *auth.InMemoryIssuanceRateLimiter
-	ok, err := l.Allow(context.Background(), "demo")
+	ok, err := l.Allow(context.Background(), "demo", domain.RateLimitBucket{})
 	if err != nil {
 		t.Errorf("nil receiver must not error: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestInMemoryIssuanceRateLimiter_ContextCancelled(t *testing.T) {
 	l := auth.NewInMemoryIssuanceRateLimiter(10, 1, 5, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := l.Allow(ctx, "demo"); err == nil {
+	if _, err := l.Allow(ctx, "demo", domain.RateLimitBucket{}); err == nil {
 		t.Errorf("cancelled ctx must propagate err")
 	}
 }
@@ -78,26 +78,65 @@ func TestInMemoryIssuanceRateLimiter_ProjectBucketRefundsGlobalOnDeny(t *testing
 	// Zweiter Aufruf scheitert auf project; das globale Bucket muss
 	// trotzdem refunded werden, sonst stünde nur noch 1 Token.
 	l := auth.NewInMemoryIssuanceRateLimiter(2, 0, 1, 0)
-	ok, _ := l.Allow(context.Background(), "demo")
+	ok, _ := l.Allow(context.Background(), "demo", domain.RateLimitBucket{})
 	if !ok {
 		t.Fatalf("first allow")
 	}
-	ok, _ = l.Allow(context.Background(), "demo")
+	ok, _ = l.Allow(context.Background(), "demo", domain.RateLimitBucket{})
 	if ok {
 		t.Errorf("second allow on demo must be denied (project cap=1)")
 	}
 	// Anderes Project muss das globale Token noch bekommen — wir
 	// pinnen, dass das Refund den globalen Bucket bewahrt hat.
-	ok, _ = l.Allow(context.Background(), "other")
+	ok, _ = l.Allow(context.Background(), "other", domain.RateLimitBucket{})
 	if !ok {
 		t.Errorf("other project must still get a global token after refund")
+	}
+}
+
+func TestInMemoryIssuanceRateLimiter_NoRefundWhenGlobalDisabled(t *testing.T) {
+	t.Parallel()
+	// Global deaktiviert (cap=0/refill=0) → consume() ist No-Op und
+	// hat keinen Token verbraucht; der Refund-Pfad darf in dem Fall
+	// keinen virtuellen Token „erzeugen" (Review-Finding #7).
+	l := auth.NewInMemoryIssuanceRateLimiter(0, 0, 1, 0)
+	ok, _ := l.Allow(context.Background(), "demo", domain.RateLimitBucket{})
+	if !ok {
+		t.Fatalf("first allow on disabled global must pass")
+	}
+	// Project-Bucket erschöpft → zweiter Aufruf wird abgelehnt;
+	// globaler Refund-Pfad ist No-Op, kein Token wird „erzeugt".
+	ok, _ = l.Allow(context.Background(), "demo", domain.RateLimitBucket{})
+	if ok {
+		t.Errorf("second allow must be denied")
+	}
+}
+
+func TestInMemoryIssuanceRateLimiter_ProjectPolicyOverridesDefault(t *testing.T) {
+	t.Parallel()
+	// Default project cap = 1; Policy-Override schreibt cap = 3 vor.
+	// Drei Aufrufe sollen passen, der vierte scheitern.
+	l := auth.NewInMemoryIssuanceRateLimiter(100, 0, 1, 0)
+	override := domain.RateLimitBucket{Capacity: 3, RefillPerSecond: 0}
+	for i := 0; i < 3; i++ {
+		ok, _ := l.Allow(context.Background(), "demo", override)
+		if !ok {
+			t.Fatalf("iter %d: override must allow", i)
+		}
+	}
+	ok, _ := l.Allow(context.Background(), "demo", override)
+	if ok {
+		t.Errorf("override-cap+1 must be denied")
 	}
 }
 
 func TestInMemoryProjectPolicyResolver_FallbackToBaseProject(t *testing.T) {
 	t.Parallel()
 	base := domain.Project{ID: "demo", AllowedOrigins: []string{"http://localhost:5173"}}
-	r := auth.NewInMemoryProjectPolicyResolver(nil, map[string]domain.Project{"demo": base})
+	r, err := auth.NewInMemoryProjectPolicyResolver(nil, map[string]domain.Project{"demo": base})
+	if err != nil {
+		t.Fatalf("ctor: %v", err)
+	}
 	p, err := r.ResolvePolicy(context.Background(), "demo")
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -112,7 +151,10 @@ func TestInMemoryProjectPolicyResolver_FallbackToBaseProject(t *testing.T) {
 
 func TestInMemoryProjectPolicyResolver_UnknownProjectDeniesPolicy(t *testing.T) {
 	t.Parallel()
-	r := auth.NewInMemoryProjectPolicyResolver(nil, nil)
+	r, err := auth.NewInMemoryProjectPolicyResolver(nil, nil)
+	if err != nil {
+		t.Fatalf("ctor: %v", err)
+	}
 	if _, err := r.ResolvePolicy(context.Background(), "ghost"); !errors.Is(err, domain.ErrAuthPolicyDenied) {
 		t.Errorf("want ErrAuthPolicyDenied, got %v", err)
 	}
@@ -122,11 +164,22 @@ func TestInMemoryProjectPolicyResolver_UnknownProjectDeniesPolicy(t *testing.T) 
 	}
 }
 
+func TestInMemoryProjectPolicyResolver_RejectsTTLExceedingGlobal(t *testing.T) {
+	t.Parallel()
+	bad := domain.ProjectPolicy{ProjectID: "demo", ProjectMaxTTLSeconds: 1800}
+	if _, err := auth.NewInMemoryProjectPolicyResolver(map[string]domain.ProjectPolicy{"demo": bad}, nil); err == nil {
+		t.Errorf("ttl above global ceiling must error at ctor")
+	}
+}
+
 func TestInMemoryProjectPolicyResolver_ExplicitPolicyWins(t *testing.T) {
 	t.Parallel()
 	explicit := domain.ProjectPolicy{ProjectID: "demo", ProjectMaxTTLSeconds: 120}
 	base := domain.Project{ID: "demo", AllowedOrigins: []string{"http://x"}}
-	r := auth.NewInMemoryProjectPolicyResolver(map[string]domain.ProjectPolicy{"demo": explicit}, map[string]domain.Project{"demo": base})
+	r, err := auth.NewInMemoryProjectPolicyResolver(map[string]domain.ProjectPolicy{"demo": explicit}, map[string]domain.Project{"demo": base})
+	if err != nil {
+		t.Fatalf("ctor: %v", err)
+	}
 	p, err := r.ResolvePolicy(context.Background(), "demo")
 	if err != nil {
 		t.Fatalf("err: %v", err)

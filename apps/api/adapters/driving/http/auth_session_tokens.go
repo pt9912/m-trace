@@ -54,10 +54,11 @@ func (h *AuthSessionTokensHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		return
 	}
-	resolvedProjectID, ok := resolveProjectFromMTraceToken(w, r, h.Resolver)
-	if !ok {
-		return
-	}
+	// §3.9-Validierungsreihenfolge: Content-Type → Body-Size → JSON →
+	// Auth → Konsistenz → Audience → TTL → Rate-Limit. JSON-Parse
+	// muss VOR der Auth-Resolution laufen, damit ein Request ohne
+	// Token plus kaputtem JSON `400 invalid_json` liefert (nicht
+	// `401 auth_token_missing`).
 	var req struct {
 		ProjectID  string `json:"project_id,omitempty"`
 		SessionID  string `json:"session_id,omitempty"`
@@ -67,6 +68,10 @@ func (h *AuthSessionTokensHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		writeAuthProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.")
+		return
+	}
+	resolvedProjectID, ok := resolveProjectFromMTraceToken(w, r, h.Resolver)
+	if !ok {
 		return
 	}
 	result, err := h.UseCase.IssueSessionToken(r.Context(), driving.IssueSessionTokenRequest{

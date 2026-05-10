@@ -24,13 +24,15 @@ func (s stubPolicies) ResolvePolicy(_ context.Context, _ string) (domain.Project
 }
 
 type issuanceStubLimiter struct {
-	allow bool
-	err   error
-	calls int
+	allow      bool
+	err        error
+	calls      int
+	lastBucket domain.RateLimitBucket
 }
 
-func (s *issuanceStubLimiter) Allow(_ context.Context, _ string) (bool, error) {
+func (s *issuanceStubLimiter) Allow(_ context.Context, _ string, projectBucket domain.RateLimitBucket) (bool, error) {
 	s.calls++
+	s.lastBucket = projectBucket
 	return s.allow, s.err
 }
 
@@ -208,6 +210,43 @@ func TestIssueSessionToken_RateLimited(t *testing.T) {
 	})
 	if !errors.Is(err, domain.ErrAuthIssuanceRateLimited) {
 		t.Errorf("want ErrAuthIssuanceRateLimited, got %v", err)
+	}
+}
+
+func TestIssueSessionToken_PassesProjectIssuanceBucket(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	policy := defaultPolicy()
+	policy.RateLimit.IssuanceBucket = domain.RateLimitBucket{Capacity: 7, RefillPerSecond: 0.5}
+	limiter := &issuanceStubLimiter{allow: true}
+	svc := newService(stubPolicies{policy: policy}, limiter, &stubSigner{out: "x"}, stubIDs{id: "st"}, now)
+	if _, err := svc.IssueSessionToken(context.Background(), driving.IssueSessionTokenRequest{
+		ResolvedProjectID:   "demo",
+		Audience:            "playback-events",
+		RequestedTTLSeconds: 60,
+	}); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if limiter.lastBucket.Capacity != 7 || limiter.lastBucket.RefillPerSecond != 0.5 {
+		t.Errorf("limiter must receive policy IssuanceBucket: got %+v", limiter.lastBucket)
+	}
+}
+
+func TestIssueSessionToken_PassesEmptyBucketWhenPolicyHasNone(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	policy := defaultPolicy() // no IssuanceBucket set
+	limiter := &issuanceStubLimiter{allow: true}
+	svc := newService(stubPolicies{policy: policy}, limiter, &stubSigner{out: "x"}, stubIDs{id: "st"}, now)
+	if _, err := svc.IssueSessionToken(context.Background(), driving.IssueSessionTokenRequest{
+		ResolvedProjectID:   "demo",
+		Audience:            "playback-events",
+		RequestedTTLSeconds: 60,
+	}); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if !limiter.lastBucket.IsZero() {
+		t.Errorf("missing policy bucket → limiter must see zero, got %+v", limiter.lastBucket)
 	}
 }
 

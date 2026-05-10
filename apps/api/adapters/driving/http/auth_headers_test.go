@@ -265,6 +265,65 @@ func TestAuthHeaderParser_UnknownProjectInClaims(t *testing.T) {
 	}
 }
 
+func TestAuthHeaderParser_BearerSchemeIsCaseInsensitive(t *testing.T) {
+	t.Parallel()
+	parser, signer := newParserStack(t)
+	tok := mintSessionToken(t, signer, "demo", time.Minute, "", "")
+	cases := []string{"Bearer ", "bearer ", "BEARER ", "BeArEr "}
+	for _, scheme := range cases {
+		t.Run(scheme, func(t *testing.T) {
+			d, err := parser.Parse(context.Background(), headers(map[string]string{"Authorization": scheme + tok}), "")
+			if err != nil {
+				t.Fatalf("scheme %q: %v", scheme, err)
+			}
+			if d.ResolvedProject == nil || d.ResolvedProject.ID != "demo" {
+				t.Errorf("scheme %q: ResolvedProject %+v", scheme, d.ResolvedProject)
+			}
+		})
+	}
+}
+
+type lifecycleStubResolver struct {
+	err error
+}
+
+func (s lifecycleStubResolver) ResolveByToken(_ context.Context, _ string) (domain.Project, error) {
+	return domain.Project{}, s.err
+}
+
+func TestAuthHeaderParser_LegacyResolverPropagatesAuthLifecycleErrors(t *testing.T) {
+	t.Parallel()
+	cases := map[string]error{
+		"revoked":          domain.ErrAuthTokenRevoked,
+		"expired":          domain.ErrAuthTokenExpired,
+		"not_yet_valid":    domain.ErrAuthTokenNotYetValid,
+		"scope_denied":     domain.ErrAuthSessionScopeDenied,
+		"policy_denied":    domain.ErrAuthPolicyDenied,
+	}
+	for name, want := range cases {
+		t.Run(name, func(t *testing.T) {
+			parser := apihttp.AuthHeaderParser{
+				Resolver: lifecycleStubResolver{err: want},
+			}
+			_, err := parser.Parse(context.Background(), headers(map[string]string{"X-MTrace-Token": "anything"}), "")
+			if !errors.Is(err, want) {
+				t.Errorf("want %v, got %v", want, err)
+			}
+		})
+	}
+}
+
+func TestAuthHeaderParser_LegacyResolverGenericErrorMappedToInvalid(t *testing.T) {
+	t.Parallel()
+	parser := apihttp.AuthHeaderParser{
+		Resolver: lifecycleStubResolver{err: domain.ErrUnauthorized},
+	}
+	_, err := parser.Parse(context.Background(), headers(map[string]string{"X-MTrace-Token": "anything"}), "")
+	if !errors.Is(err, domain.ErrAuthTokenInvalid) {
+		t.Errorf("generic resolver error must map to ErrAuthTokenInvalid: got %v", err)
+	}
+}
+
 func TestAuthHeaderParser_DisabledVerifierRejectsSessionToken(t *testing.T) {
 	t.Parallel()
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{

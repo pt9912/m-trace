@@ -60,7 +60,10 @@ func newAuthSessionTestServer(t *testing.T, opts ...authServerOption) *httptest.
 	}
 	signer := auth.NewHMACSessionTokenSigner(keyResolver)
 	limiter := auth.NewInMemoryIssuanceRateLimiter(cfg.globalCapacity, cfg.globalRefill, cfg.projectCap, cfg.projectRefill)
-	policies := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
+	policies, err := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
+	if err != nil {
+		t.Fatalf("policies: %v", err)
+	}
 	ids := auth.NewRandomTokenIDGenerator()
 	svc := application.NewIssueSessionTokenService(policies, limiter, signer, ids)
 	publisher := metrics.NewPrometheusPublisher()
@@ -324,6 +327,21 @@ func TestAuthSessionTokens_HandlerRejectsGET(t *testing.T) {
 	// der GET-Pfad nicht versehentlich Issuance triggert.
 	if resp.StatusCode == http.StatusCreated {
 		t.Errorf("GET must not trigger issuance, got 201")
+	}
+}
+
+func TestAuthSessionTokens_InvalidJSONBeforeAuth(t *testing.T) {
+	t.Parallel()
+	// §3.9-Validierungsreihenfolge: JSON-Parse läuft VOR Auth-Resolve.
+	// Ohne Token + kaputtes JSON → 400 invalid_json (nicht 401).
+	srv := newAuthSessionTestServer(t)
+	resp := postAuthSessionToken(t, srv, `{not-json`, nil) // kein X-MTrace-Token
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status: want 400 (invalid_json before auth), got %d", resp.StatusCode)
+	}
+	out := decodeAuthBody(t, resp)
+	if code, _ := out["code"].(string); code != "invalid_json" {
+		t.Errorf("code: want invalid_json, got %q", code)
 	}
 }
 

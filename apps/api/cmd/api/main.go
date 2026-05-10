@@ -47,6 +47,7 @@ const (
 	envSrtRequiredBandwidth  = "MTRACE_SRT_REQUIRED_BANDWIDTH_BPS"
 	envAuthSigningKID        = "MTRACE_AUTH_SIGNING_KID"
 	envAuthSigningKey        = "MTRACE_AUTH_SIGNING_KEY"
+	envAuthLabDefault        = "MTRACE_AUTH_LAB_DEFAULT"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
@@ -531,6 +532,16 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slo
 	rawSecret := strings.TrimSpace(os.Getenv(envAuthSigningKey))
 	var secret []byte
 	if rawSecret == "" {
+		// `0.12.0`-Hardening: ohne explizit gesetzten Signing-Key
+		// muss der Operator den Lab-Default per
+		// `MTRACE_AUTH_LAB_DEFAULT=1` aktivieren. Sonst hard-fail —
+		// ein deterministischer, world-known HMAC-Key wäre eine
+		// Production-Falle (Plan-0.12.0 §0.6 Threat Model).
+		if !labDefaultOptIn() {
+			return nil, fmt.Errorf(
+				"%s is required (set %s=1 to opt into the lab default key, NOT for production)",
+				envAuthSigningKey, envAuthLabDefault)
+		}
 		secret = []byte(authDefaultLabSigningKeySecret)
 		logger.Warn("auth signing key falls back to lab default — set MTRACE_AUTH_SIGNING_KEY for production",
 			"kid", string(kid))
@@ -558,7 +569,10 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slo
 		authIssuanceGlobalCapacity, authIssuanceGlobalRefillPerSec,
 		authIssuanceProjectCapacity, authIssuanceProjectRefillPerSec,
 	)
-	policies := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
+	policies, err := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
+	if err != nil {
+		return nil, fmt.Errorf("project policy resolver: %w", err)
+	}
 	ids := auth.NewRandomTokenIDGenerator()
 	return &authBundle{
 		Inbound: application.NewIssueSessionTokenService(policies, limiter, signer, ids),
@@ -574,4 +588,16 @@ func base64DecodeURLSafe(s string) ([]byte, error) {
 		return decoded, nil
 	}
 	return base64.URLEncoding.DecodeString(s)
+}
+
+// labDefaultOptIn liest `MTRACE_AUTH_LAB_DEFAULT` und akzeptiert nur
+// die explizit truthy Werte `1`/`true`/`yes`. Alles andere (inklusive
+// fehlend) gilt als „nicht opt-in" — der Aufrufer hard-failt dann.
+func labDefaultOptIn() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(envAuthLabDefault))) {
+	case "1", "true", "yes":
+		return true
+	default:
+		return false
+	}
 }

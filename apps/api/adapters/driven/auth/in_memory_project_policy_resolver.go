@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
@@ -24,10 +25,23 @@ type InMemoryProjectPolicyResolver struct {
 
 // NewInMemoryProjectPolicyResolver baut den Resolver aus expliziten
 // Policies und optionalen Base-Projects (für den Fallback).
+//
+// Validiert die Policies beim Aufbau — `ProjectMaxTTLSeconds`
+// > `domain.MaxSessionTokenTTLSeconds` (900) wird **nicht** stillschweigend
+// geclampt, sondern als Operator-Konfigurationsfehler signalisiert.
+// `EffectiveMaxTTLSeconds` clampt zur Defense-in-Depth weiterhin am
+// Request-Pfad.
 func NewInMemoryProjectPolicyResolver(
 	policies map[string]domain.ProjectPolicy,
 	baseProjects map[string]domain.Project,
-) *InMemoryProjectPolicyResolver {
+) (*InMemoryProjectPolicyResolver, error) {
+	for projectID, p := range policies {
+		if p.ProjectMaxTTLSeconds > domain.MaxSessionTokenTTLSeconds {
+			return nil, fmt.Errorf(
+				"auth: project %q ProjectMaxTTLSeconds=%d exceeds global ceiling %d",
+				projectID, p.ProjectMaxTTLSeconds, domain.MaxSessionTokenTTLSeconds)
+		}
+	}
 	out := &InMemoryProjectPolicyResolver{
 		policies:     make(map[string]domain.ProjectPolicy, len(policies)),
 		baseProjects: make(map[string]domain.Project, len(baseProjects)),
@@ -38,7 +52,7 @@ func NewInMemoryProjectPolicyResolver(
 	for k, v := range baseProjects {
 		out.baseProjects[k] = v
 	}
-	return out
+	return out, nil
 }
 
 // Compile-time check.
