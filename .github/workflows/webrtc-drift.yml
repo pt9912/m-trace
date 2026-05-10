@@ -7,8 +7,8 @@ name: WebRTC drift smoke
 # loest die manuelle Drift-Review-Pflicht aus `releasing.md` ab.
 #
 # Trigger:
-#   - schedule: nightlich um 01:17 UTC (gestaffelt mit den anderen
-#     Nightlies innerhalb der 01:xx-UTC-Stunde).
+#   - schedule: nightlich um 01:17 Europe/Berlin (gestaffelt mit den
+#     anderen Nightlies innerhalb der 01:xx-Stunde).
 #   - workflow_dispatch: manueller Trigger fuer ad-hoc-Drift-Reviews
 #     (z. B. nach einem Browser-Major-Release).
 #
@@ -21,6 +21,7 @@ name: WebRTC drift smoke
 on:
   schedule:
     - cron: '17 1 * * *'
+      timezone: "Europe/Berlin"
   workflow_dispatch:
 
 permissions:

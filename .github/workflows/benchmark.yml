@@ -5,8 +5,8 @@ name: Benchmark regression (nightly)
 # **Nicht im PR-Pfad**; Nightly + Release-blockierend.
 #
 # Mechanik:
-#   1. Cron 01:27 UTC (gestaffelt mit den anderen Nightlies innerhalb
-#      der 01:xx-UTC-Stunde).
+#   1. Cron 01:27 Europe/Berlin (gestaffelt mit den anderen Nightlies
+#      innerhalb der 01:xx-Stunde).
 #   2. Bench-Lauf mit `-count=10 -benchtime=2s` für statistische
 #      Signifikanz; Output nach `.tmp/bench/current.txt`.
 #   3. Baseline aus orphan-Branch `benchmark-baseline` als File
@@ -33,6 +33,7 @@ name: Benchmark regression (nightly)
 on:
   schedule:
     - cron: '27 1 * * *'
+      timezone: "Europe/Berlin"
   workflow_dispatch:
 
 permissions:
