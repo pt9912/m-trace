@@ -1,7 +1,18 @@
 # Roadmap
 
 > **Stand**: 2026-05-10
-> **Phase**: `0.13.0` aktivierbar — Production / Ops Backends (`MVP-40`..`MVP-44`, Lastenheft-Patch erforderlich). Plan in [`open/plan-0.13.0.md`](../open/plan-0.13.0.md). Vorgänger `0.12.0` released — Auth / Token Lifecycle (F-111..F-113, RAK-71..RAK-76 / §13.14) als kurzlebige signierte Session Tokens, rotierbare Project-Token-Generationen und tenant-spezifische Ingest Policies. Plan archiviert in [`done/plan-0.12.0.md`](../done/plan-0.12.0.md); Lastenheft auf `1.1.15`. Vorgänger `0.11.0` released — Ingest-Gateway / Stream Control (F-46..F-51, MVP-38, RAK-65..RAK-70 / §13.13) als lokaler/lab-naher Stream-Control-Pfad mit CSPRNG-Stream-Keys, `/api/ingest/*`-Wire-Vertrag, MediaMTX-Konfigurations-Generator und Lifecycle-Hooks. Plan archiviert in [`done/plan-0.11.0.md`](../done/plan-0.11.0.md); Lastenheft auf `1.1.14`. Frühere Releases: `v0.10.0` (CMAF-Analyse, Plan in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md), Lastenheft `1.1.13`), `v0.9.6` (Lastenheft-Konvergenz; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md)), `v0.9.5` (Quality-Gates Wave 2), `v0.9.1` (Drift-Smoke-Robustheit), `v0.9.0` (Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse, Lastenheft-Patch `1.1.11` §13.11) archiviert in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md); `v0.8.5` (Tag `ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (Tag `8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
+>
+> **Phase**: `0.13.0` aktivierbar — Production / Ops Backends
+> (`MVP-40`..`MVP-44`, Lastenheft-Patch erforderlich; Plan in
+> [`open/plan-0.13.0.md`](../open/plan-0.13.0.md)).
+>
+> **Letzte Releases:**
+> - `v0.12.0` Auth / Token Lifecycle (F-111..F-113, RAK-71..RAK-76 in §13.14, Lastenheft `1.1.15`); kurzlebige Session Tokens, rotierbare Project-Token-Generationen, tenant-spezifische Ingest Policies; Plan in [`done/plan-0.12.0.md`](../done/plan-0.12.0.md).
+> - `v0.11.0` Ingest-Gateway / Stream Control (F-46..F-51, MVP-38, RAK-65..RAK-70 in §13.13, Lastenheft `1.1.14`); lokaler/lab-naher Stream-Control-Pfad, CSPRNG-Stream-Keys, MediaMTX-Konfig-Generator, Lifecycle-Hooks; Plan in [`done/plan-0.11.0.md`](../done/plan-0.11.0.md).
+> - `v0.10.0` CMAF-Analyse (Lastenheft `1.1.13`); Plan in [`done/plan-0.10.0.md`](../done/plan-0.10.0.md).
+> - `v0.9.6` Lastenheft-Konvergenz; Plan in [`done/plan-0.9.6.md`](../done/plan-0.9.6.md).
+> - `v0.9.5` Quality-Gates Wave 2 · `v0.9.1` Drift-Smoke-Robustheit · `v0.9.0` Drift-Smoke + SRS-Lab + DASH-Analyse (Lastenheft-Patch `1.1.11` §13.11); Plan in [`done/plan-0.9.0.md`](../done/plan-0.9.0.md).
+> - Frühere Tags: `v0.8.5` (`ce05e3b`, Quality-Gates Wave 1), `v0.8.0` (`8df263a`, Player-SDK-WebRTC-Adapter), `v0.7.0` (`11a3368`), `v0.6.0` (`d08a89f`), `v0.5.0` (`a56dc0b`).
 > **Bezug**: `spec/lastenheft.md` RAK-1..RAK-46 (Release-Plan, normativ),
 > `spec/architecture.md` (Zielbild),
 > Plan-Dokumente pro Release in `docs/planning/plan-X.Y.Z.md`,

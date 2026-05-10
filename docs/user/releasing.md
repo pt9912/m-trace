@@ -344,29 +344,71 @@ User-Surface:
 | **Major** | `1.0.0` | Pflicht plus Folge-ADR | Pflicht plus Public-API-Versprechen | erstmaliges öffentliches Public-API-Versprechen (aktuell Folge-ADR-Thema) |
 
 Versions-Bump bei Patch-Release umfasst alle Stellen, die ein
-Minor-Bump auch berührt (`package.json` × 5, `main.go`
-`serviceVersion`, `version.ts`, `pack-smoke.mjs` `expectedVersion`,
-`contracts/sdk-compat.json` `sdk_version`, Test-Fixtures mit
-hartkodierten Versions-Strings) — sonst entsteht Drift zwischen
-SDK-Bundle, API-Service-Version und CI-Smokes. Plan-DoD-Items
-ersetzen die RAK-Verifikationsmatrix; ein Patch-Release-Plan trägt
-keinen `§6.1`-Block.
+Minor-Bump auch berührt:
+
+- 5× `package.json` (Root + apps/analyzer-service + apps/dashboard +
+  packages/player-sdk + packages/stream-analyzer)
+- `apps/api/cmd/api/main.go` `serviceVersion`
+- `packages/player-sdk/src/version.ts` `PLAYER_SDK_VERSION`
+  (`pack-smoke.mjs` liest die erwartete Version dynamisch aus
+  `package.json` — kein eigener Bump nötig)
+- `contracts/sdk-compat.json` `sdk_version`
+- alle 20 Analyzer-Spec-Fixtures unter
+  `spec/contract-fixtures/analyzer/*.json` (`analyzerVersion`-Feld)
+- die 20 testdata-Kopien in
+  `apps/api/adapters/driven/streamanalyzer/testdata/` (über
+  `make sync-contract-fixtures`)
+- alle Go- und TS-Tests mit hartkodierten Versions-Strings
+
+Sonst entsteht Drift zwischen SDK-Bundle, API-Service-Version und
+CI-Smokes. **Bump-Pattern-Sweep vor Tag** (mindestens diese drei
+Patterns muss der grep abdecken; das 0.12.0-Release hat zunächst
+12 Stellen übersehen):
+
+```bash
+# In Source-Trees (apps/, packages/, spec/, contracts/):
+grep -rn '"version":\s*"X\.Y\.Z"' --include='*.go' --include='*.ts' --include='*.json' --include='*.mjs'
+grep -rn '"AnalyzerVersion":\s*"X\.Y\.Z"\|AnalyzerVersion:\s*"X\.Y\.Z"' --include='*.go' --include='*.ts' --include='*.json'
+grep -rn '"sdk_version":\s*"X\.Y\.Z"\|PLAYER_SDK_VERSION\s*=\s*"X\.Y\.Z"\|serviceVersion\s*=\s*"X\.Y\.Z"' --include='*.go' --include='*.ts' --include='*.json'
+```
+
+Plan-DoD-Items ersetzen die RAK-Verifikationsmatrix; ein
+Patch-Release-Plan trägt keinen `§6.1`-Block.
 
 **Wave-2-Quality-Gates-Voraussetzung** (ab `0.9.5`): vor jedem
-Release-Tag (Patch *und* Minor) zusätzlich prüfen:
+Release-Tag (Patch *und* Minor) zusätzlich prüfen *und im Release-
+Log dokumentieren* (Plan-Closeout-Sektion oder Tag-Annotation
+zitiert die geprüften Run-IDs):
 
 - §2.5 Benchmark-Regression-Gate — letzter
   `benchmark.yml`-Nightly grün (Pflicht für Minor; Patch nur
   über `make benchmark-smoke` PR-Pfad).
+  ```bash
+  gh run list --workflow benchmark.yml --limit 1
+  ```
 - §2.6 Fuzz-Beobachtungs-Gate — kein offenes Issue mit Label
   `fuzz` aus dem letzten `fuzz.yml`-Nightly. Offenes
   Crash-Issue blockt den Tag, bis das Crash-File als
   Regression-Seed im Repo gelandet ist.
+  ```bash
+  gh run list --workflow fuzz.yml --limit 1
+  gh issue list --label fuzz --state open
+  ```
 - §2.6 Mutation-Beobachtungs-Gate — Score-Trend in den letzten
   drei Nightly-Artefakten geprüft (kein hartes Gate; Score-
   Senkung ist begründungspflichtig, siehe
   [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)
   §3).
+  ```bash
+  gh run list --workflow mutation.yml --limit 3
+  ```
+
+**Im Release-Log (Plan §8 Closeout-DoD oder Tag-Annotation) das
+Verdict festhalten** — z. B. „Wave-2-Gates: benchmark.yml run
+12345678 ✅, fuzz.yml run 12345679 ✅, mutation.yml letzte 3 Runs
+Score-Trend stabil". Beim `0.12.0`-Release waren die Nightlies
+grün, aber das Verdict wurde nicht dokumentiert (Lehre für
+`0.13.0`).
 
 ```bash
 git commit -m "chore(release): vX.Y.Z"

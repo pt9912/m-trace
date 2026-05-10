@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Kann auf Release-Muss; neue RAK-Gruppe `RAK-71`..`RAK-76` in §13.14).
 > Plan in [`docs/planning/done/plan-0.12.0.md`](docs/planning/done/plan-0.12.0.md).
 
-### Auth / Token Lifecycle (`0.12.0`)
+### Added
 
 - **Lastenheft-Patch `1.1.15`** (`F-111`..`F-113` von Kann auf
   Release-Muss; neue RAK-Gruppe `RAK-71`..`RAK-76` in §13.14).
@@ -28,16 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   persistiertem `grace_until`. `RotatingProjectResolver` kombiniert
   den Repo-Pfad mit dem Legacy-`X-MTrace-Token`-Static-Resolver für
   RAK-75-Backward-Compat.
-- **Ingest Policies + CORS** (`F-113`, RAK-74): Project-gebundene
+- **Ingest Policies** (`F-113`, RAK-74): Project-gebundene
   Origin-/Methoden-/Header-/Audience-Allowlists werden in den
   Browser-Pfaden `POST /api/playback-events` und
-  `POST /api/auth/session-tokens` erzwungen. `/api/ingest/*` bleibt
-  per RAK-74-Scope-Cut im `0.11.0`-Token-Validierungs-Pfad
-  (Lab-Workflow, kein Browser-Konsument). CORS-Preflight liefert
-  §3.9-konformes `204` mit minimaler Signalisierung für unbekannte
-  Origins (kein `403` mehr); neue Header-Allowlist (`Authorization`,
-  `X-MTrace-Session-Token`, `traceparent`); `Cache-Control: no-store`
-  auf jedem Preflight.
+  `POST /api/auth/session-tokens` erzwungen.
 - **Wire-Vertrag** in
   [`spec/backend-api-contract.md`](spec/backend-api-contract.md) §3.9
   (Auth-Matrix, Header-Priorität, neunstufige Fehlerpräzedenz,
@@ -47,18 +41,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   und [`docs/user/local-development.md`](docs/user/local-development.md)
   §2.7.3 (Migrationspfad `demo-token` → rotierbare Generation,
   `MTRACE_AUTH_SIGNING_KEY`-Env-Vars).
-- **Sicherheit / Härtung**:
-  - Lab-Default-Signing-Key hard-failt ohne explizites
-    `MTRACE_AUTH_LAB_DEFAULT=1`-Opt-in.
-  - Klartext-Session-Tokens erscheinen ausschließlich in der
-    Issuance-Antwort; keine Logs/Traces/Metriken/Fixtures.
-  - `Bearer`-Schema-Match jetzt case-insensitive (RFC 7235).
-  - `mtrace_cors_preflight_refused_total{path}`-Counter für
-    Observability über minimal-denied Preflights.
-- **Folge-Risiken**: R-17 (Multi-Replica-Issuance-Limiter),
-  R-18 (Multi-Key-Rotation-Workflow), R-14 (validate-key bleibt
-  Diagnose) im
-  [`risks-backlog.md`](docs/planning/in-progress/risks-backlog.md).
+- **Observability**: `mtrace_cors_preflight_refused_total{path}`-
+  Counter für minimal-denied Preflights.
+
+### Changed
+
+- **CORS-Preflight** liefert §3.9-konformes `204` mit minimaler
+  Signalisierung für unbekannte Origins (vorher `403`); neue
+  Header-Allowlist (`Authorization`, `X-MTrace-Session-Token`,
+  `traceparent`); `Cache-Control: no-store` auf jedem Preflight.
+- **`/api/ingest/*`** bleibt per RAK-74-Scope-Cut im
+  `0.11.0`-Token-Validierungs-Pfad (Lab-Workflow, kein Browser-
+  Konsument). Future-Browser-Konsument-Risiko getrackt als R-21.
+- **`Bearer`-Schema-Match** jetzt case-insensitive (RFC 7235).
+
+### Security
+
+- **Lab-Default-Signing-Key hard-failt** ohne explizites
+  `MTRACE_AUTH_LAB_DEFAULT=1`-Opt-in.
+- **Klartext-Session-Tokens** erscheinen ausschließlich in der
+  Issuance-Antwort; keine Logs/Traces/Metriken/Fixtures.
+- **Klartext-Project-Tokens** werden nicht persistiert
+  (`mtr_pt_*`-Generationen tragen nur Hash + Fingerprint).
+
+### Folge-Risiken
+
+- R-14 (`validate-key` bleibt Diagnose-Pfad), R-17 (Multi-Replica-
+  Issuance-Limiter), R-18 (Multi-Key-Rotation-Workflow), R-20 (KMS/
+  Vault), R-21 (Future-Browser-Konsument auf `/api/ingest/*`) im
+  [`risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  mit Triggerschwellen.
 
 ## [0.11.0] - 2026-05-09
 
