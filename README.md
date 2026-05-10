@@ -331,21 +331,6 @@ m-trace ist nicht:
   Lab-Workflow** ohne Multi-Tenant-Token-Lifecycle und ohne
   Secret-Management; siehe
   [`docs/user/ingest-control.md`](docs/user/ingest-control.md) §5
-- eine **Identity- oder SaaS-Control-Plane**: die ab `0.12.0`
-  ausgelieferte Auth-Härtung (kurzlebige signierte Session Tokens,
-  rotierbare Project-Token-Generationen, tenant-spezifische Ingest
-  Policies; siehe [`docs/user/auth.md`](docs/user/auth.md) und
-  [`spec/backend-api-contract.md`](spec/backend-api-contract.md) §3.9)
-  ist eine begrenzte Härtung des bestehenden lokalen/API-nahen
-  Pfades. Sie liefert **kein** OAuth/OIDC, **kein** SSO, **keine**
-  User-/Org-Verwaltung, **keine** Admin-UI, **keine** mandantenfähige
-  SaaS-Control-Plane und **keine** KMS-/Vault-/Cloud-Secret-Manager-
-  Integration. Diese Folge-Items sind als **R-19** (OAuth/OIDC,
-  User-/Org-Verwaltung, Admin-UI) und **R-20** (KMS/Vault/Cloud-
-  Secret-Manager) im
-  [`risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
-  mit konkreten Triggerschwellen geführt — sie sind kein
-  Lieferversprechen, sondern Bedarfs-getriebene Folge-Scope-Items.
 
 m-trace ist ein technisches Observability- und Diagnose-Projekt für Media-Streaming-Workflows.
 
