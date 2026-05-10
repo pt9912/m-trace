@@ -7,40 +7,15 @@
 > [`docs/planning/in-progress/plan-0.12.0.md`](../planning/in-progress/plan-0.12.0.md)
 > §0.
 
-## 0. Was 0.12.0 liefert (und was nicht)
+## 0. Scope
 
-`0.12.0` ist eine **Härtung des bestehenden lokalen/API-nahen Auth-
-Pfades** — keine vollständige Identity- oder Tenant-Plattform.
-
-In Scope:
-
-- Kurzlebige serverseitig signierte **Session Tokens** für Browser-
-  Telemetrie und SDK-Nutzung (`F-111`, RAK-72).
-- Rotierbare **Project-Token-Generationen** mit persistierter
-  Grace-Phase und deterministischem Lifecycle (`F-112`, RAK-73).
-- Tenant-spezifische **Ingest Policies** für Origins, Methoden,
-  Header und Rate-Limit-Buckets (`F-113`, RAK-74).
-- Backward-Compat: bestehende `X-MTrace-Token`-Project-Token-Flows
-  bleiben im `0.12.0`-Compatibility-Fenster gültig (RAK-75).
-
-Out of Scope (jeweils mit R-N-Eintrag im
-[`risks-backlog.md`](../planning/in-progress/risks-backlog.md), wenn
-Bedarfs-getrieben):
-
-- **R-19**: OAuth/OIDC, SSO, User-/Org-Verwaltung, Admin-UI,
-  mandantenfähige SaaS-Control-Plane. Triggerschwelle: konkreter
-  Multi-User-/Multi-Org-Bedarf.
-- **R-20**: KMS/Vault/Cloud-Secret-Manager-Integration für die
-  Signing- und Project-Token-Secrets. Triggerschwelle:
-  Multi-Instance-Setup oder Compliance-Audit.
-- **R-14**: Produktive MediaMTX-/SRS-Auth-Hook-Bridge.
-  `/api/ingest/streams/{id}/validate-key` bleibt Diagnose-/Smoke-
-  Funktion, kein Media-Server-Auth-Ersatz.
-- **R-17 / R-18**: Multi-Replica-Issuance-Limiter und Multi-Key-
-  Signing-Rotation-Workflow.
-- Ausdrücklich **nicht** geplant: globale Stream-Key-Rotation über
-  mehrere Deployments; Cookies für Player-Telemetrie
-  (`credentials: "omit"` bleibt).
+`0.12.0` härtet den bestehenden lokalen/API-nahen Auth-Pfad: kurzlebige
+signierte Session Tokens (`F-111`/RAK-72), rotierbare Project-Token-
+Generationen (`F-112`/RAK-73), Project-gebundene Ingest Policies
+(`F-113`/RAK-74). `X-MTrace-Token`-Legacy-Flows bleiben gültig
+(RAK-75). Normativer Scope und Out-of-Scope-Liste in
+[`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 (RAK-71) und
+[`plan-0.12.0.md`](../planning/in-progress/plan-0.12.0.md) §0.1.
 
 ---
 
