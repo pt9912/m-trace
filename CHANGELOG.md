@@ -23,11 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   den Repo-Pfad mit dem Legacy-`X-MTrace-Token`-Static-Resolver für
   RAK-75-Backward-Compat.
 - **Ingest Policies + CORS** (`F-113`, RAK-74): Project-gebundene
-  Origin-/Methoden-/Header-/Audience-Allowlists; CORS-Preflight
-  liefert §3.9-konformes `204` mit minimaler Signalisierung für
-  unbekannte Origins (kein `403` mehr); neue Header-Allowlist
-  (`Authorization`, `X-MTrace-Session-Token`, `traceparent`);
-  `Cache-Control: no-store` auf jedem Preflight.
+  Origin-/Methoden-/Header-/Audience-Allowlists werden in den
+  Browser-Pfaden `POST /api/playback-events` und
+  `POST /api/auth/session-tokens` erzwungen. `/api/ingest/*` bleibt
+  per RAK-74-Scope-Cut im `0.11.0`-Token-Validierungs-Pfad
+  (Lab-Workflow, kein Browser-Konsument). CORS-Preflight liefert
+  §3.9-konformes `204` mit minimaler Signalisierung für unbekannte
+  Origins (kein `403` mehr); neue Header-Allowlist (`Authorization`,
+  `X-MTrace-Session-Token`, `traceparent`); `Cache-Control: no-store`
+  auf jedem Preflight.
 - **Wire-Vertrag** in
   [`spec/backend-api-contract.md`](spec/backend-api-contract.md) §3.9
   (Auth-Matrix, Header-Priorität, neunstufige Fehlerpräzedenz,

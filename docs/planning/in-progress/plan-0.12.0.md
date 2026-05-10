@@ -159,7 +159,7 @@ Neue oder geänderte Wire-Verträge werden in
 | --- | --- | --- |
 | `POST` | `/api/auth/session-tokens` | Kurzlebiges Session Token aus einem gültigen Project Token ausstellen |
 | `POST` | `/api/playback-events` | akzeptiert weiterhin `X-MTrace-Token`; zusätzlich `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` |
-| `POST` | `/api/ingest/*` | bleibt Project-tokenpflichtig; Policy-Grenzen werden zusätzlich geprüft |
+| `POST` | `/api/ingest/*` | bleibt im `0.11.0`-Token-Validierungs-Pfad (RAK-65, lokale/lab-nahe Stream-Verwaltung); konsumiert keine `0.12.0`-Project-Policy, weil der Pfad `curl`-/Operator-driven und nicht Browser-Konsumenten-Pfad ist. Project-Policy-Enforcement für Ingest-Control bleibt Folge-Scope. |
 
 **Auth-Header-Priorität und Fehlerpräzedenz für tokenpflichtige
 Requests.**
@@ -725,11 +725,15 @@ DoD:
 - [x] `Origin`-Validierung unterscheidet Browser-Pfad und CLI/curl-
   Pfad ohne `Origin` (`domain.Project.IsOriginAllowed` lässt leeren
   Origin durch; Test `TestCORS_Post_NoOrigin_StillAccepted`).
-- [x] `POST /api/playback-events` und `/api/ingest/*` prüfen
-  relevante Policies vor Use-Case-Seiteneffekten — Origin-Mismatch
-  liefert `403 ErrOriginNotAllowed` aus `authorizeAndAdmit` vor
-  `limiter.Allow`-Aufruf, also keine Token-Konsumierung
-  (`TestCORS_Post_ProjectOriginMismatch_403`).
+- [x] `POST /api/playback-events` und `POST /api/auth/session-tokens`
+  prüfen relevante Policies vor Use-Case-Seiteneffekten —
+  Origin-Mismatch liefert `403 ErrOriginNotAllowed` aus
+  `authorizeAndAdmit` vor `limiter.Allow`-Aufruf, also keine
+  Token-Konsumierung (`TestCORS_Post_ProjectOriginMismatch_403`).
+  `/api/ingest/*` bleibt per RAK-74-Scope-Cut im
+  `0.11.0`-Token-Validierungs-Pfad (Lab-Workflow,
+  `curl`-/Operator-driven, kein Browser-Konsument); Project-Policy-
+  Enforcement für Ingest ist Folge-Scope.
 - [x] Rate-Limit-Key enthält im Muss-Pfad das Project: bestehende
   `RateLimitKey{ProjectID, ClientIP, Origin}`-Struktur lebt weiter im
   Use-Case (`limiter.Allow`); Origin- und IP-Buckets sind über die
