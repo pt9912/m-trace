@@ -51,12 +51,20 @@ ggf. neue Endpoints), neuer Lastenheft-Patch, neue RAK-Gruppe.
 In Scope (verbindlich):
 
 - **R-17 Shared-Issuance-Limiter** (`apps/api/adapters/driven/issuance/`):
-  zweiter Adapter neben dem aktuellen In-Process-Limiter, mit
-  Shared-State-Backend (SQLite via WAL als erstes Default,
-  Redis/Memcached als spätere Adapter-Variante). Selektion über ENV
-  (`MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite|redis`). RAK-74-Scope-
-  Cut in `0.12.0` bleibt: Limiter darf nicht hinter `/api/ingest/*`
-  hängen.
+  zweiter Adapter neben dem aktuellen In-Process-Limiter. Erster und
+  einziger Shared-State-Adapter in `0.12.5` ist **SQLite via WAL**
+  (Migration `V5`, atomare Counter-Erhöhung). Selektion über ENV
+  `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`; **globaler Default
+  bleibt `memory`** (Backwards-Compat, Single-Instance-Lab),
+  `sqlite` ist opt-in für Topologien mit Shared-State-Bedarf.
+  **Topologie-Constraint** für `sqlite`: nur sinnvoll bei Single-
+  Host-Deployments mit gemeinsam gemountetem Persistent-Volume
+  (z. B. Compose mit `volumes:` auf demselben Host); echte Multi-
+  Host-Topologie braucht einen Network-Backend-Adapter und ist
+  Folge-Scope. Werte `redis`/`memcached` sind in `0.12.5` **nicht
+  verfügbar** — die ENV-Validierung lehnt unbekannte Werte mit
+  `fail-fast`-Startup ab. RAK-74-Scope-Cut in `0.12.0` bleibt:
+  Limiter darf nicht hinter `/api/ingest/*` hängen.
 - **R-18 Multi-Key-Rotation** (`apps/api/adapters/driven/auth/signing/`):
   ENV-Schema `MTRACE_AUTH_SIGNING_KEYS=<kid1>:<key1>[,<kid2>:<key2>,…]`
   plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=<kid>`. Resolver liest beim
@@ -158,7 +166,7 @@ Tranche 0 erstellt den Lastenheft-Patch; jeder Tranche schließt mit
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | ⬜ |
 | 1 | R-18 Multi-Key-Rotation (Code) | ⬜ |
-| 2 | R-17 Shared-Issuance-Limiter (SQLite-Default-Adapter) | ⬜ |
+| 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | ⬜ |
 | 3 | R-20 Secret-Backend-Port + KMS-/Vault-Adapter-Skelett | ⬜ |
 | 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ⬜ |
 | 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ⬜ |
@@ -220,14 +228,22 @@ DoD:
   Tabelle (Migration `V5`), atomare Counter-Erhöhung über UPSERT
   oder Lock, TTL-getriebenes Cleanup.
 - [ ] ENV-Selektion: `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`.
-  Default bleibt `memory` (Backwards-Compat); SQLite ist opt-in.
-- [ ] `make smoke-issuance-replica`: zwei API-Replicas teilen sich
-  eine SQLite-DB; Counter-Limit über beide Replicas hinweg
-  durchgesetzt.
+  **Globaler Default bleibt `memory`** (Backwards-Compat); `sqlite`
+  ist opt-in. Andere Werte (`redis`, `memcached`, …) lehnt der
+  Boot-Validator mit klarem Fehler ab — sie sind in `0.12.5` nicht
+  implementiert.
+- [ ] `make smoke-issuance-replica`: zwei API-Replicas auf
+  demselben Host mit gemounteter SQLite-DB (Compose-Volume oder
+  Bind-Mount) teilen den Counter; Limit über beide Replicas hinweg
+  durchgesetzt. Operator-Doku zur Topologie-Voraussetzung
+  (Single-Host + Shared-Volume) in `auth.md` §5.4 ergänzt.
 - [ ] RAK-74-Scope-Cut: Limiter bleibt **nicht** vor
   `/api/ingest/*` (Doku in `auth.md` und Lastenheft).
-- [ ] Risks-Backlog R-17: Trigger als „aufgelöst durch SQLite-
-  Adapter in 0.12.5" markieren.
+- [ ] Risks-Backlog R-17: Status auf „**teilweise gelöst** —
+  Code-Pfad für Single-Host-Shared-Volume verfügbar (SQLite-
+  Adapter in 0.12.5)" setzen; Resttrigger „Multi-Host-Topologie
+  oder Network-Backend-Bedarf" bleibt offen für späteren Adapter
+  (Redis/Memcached als Folge-Item).
 
 ## 7. Tranche 3 — R-20 Secret-Backend-Adapter
 
@@ -247,9 +263,13 @@ DoD:
   Default `env`.
 - [ ] Lifecycle-Verhalten dokumentiert: Caching, Refresh-TTL,
   Failure-Modus (fail-closed bei externem Backend-Outage).
-- [ ] Risks-Backlog R-20: Trigger als „Adapter-Skelett in 0.12.5"
-  markieren; bleibt offen mit Trigger „erste Operator-Anbindung
-  produktiver Backend".
+- [ ] Risks-Backlog R-20: Status auf „**teilweise gelöst** —
+  Driven-Port und Adapter-Skelett (KMS oder Vault) in 0.12.5
+  verfügbar, ENV-Adapter bleibt Default" setzen. **Resttrigger
+  bleibt offen**: produktive Backend-Anbindung (Operator
+  konfiguriert tatsächliches KMS/Vault), Compliance-Audit
+  (PCI/SOC2). Skelett-Lieferung allein erfüllt den Resttrigger
+  nicht.
 
 ## 8. Tranche 4 — R-21 Browser-Ingest-Policy
 
