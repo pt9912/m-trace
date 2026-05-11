@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence"
@@ -588,6 +589,78 @@ func (r *SessionRepository) ListBoundariesForSession(ctx context.Context, projec
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("sqlite: iterate boundaries: %w", err)
+	}
+	return out, nil
+}
+
+// ListBoundariesForSessions ist die Bulk-Variante: eine einzige
+// Query mit `IN (?, ?, ?)`-Clause ersetzt N+1-Roundtrips
+// (plan-0.12.6 Tranche 5 / R-7). Result-Map ist gekeyt nach
+// SessionID; SessionIDs ohne Boundaries fehlen in der Map.
+//
+// SQLite-Limit: `SQLITE_MAX_VARIABLE_NUMBER` ist per Build-Default
+// 32766 (modernc.org/sqlite); ein Hard-Cap auf
+// driving.MaxSessionListLimit (1000) hält uns weit unter dem Limit.
+// Wenn der Aufrufer trotzdem mehr SessionIDs schickt, fängt das
+// SQLite-Driver-Limit den Pfad mit klarem Fehler.
+func (r *SessionRepository) ListBoundariesForSessions(ctx context.Context, projectID string, sessionIDs []string) (map[string][]domain.SessionBoundary, error) {
+	if len(sessionIDs) == 0 {
+		return map[string][]domain.SessionBoundary{}, nil
+	}
+	// Placeholder-Liste `?, ?, ?` plus Args-Slice mit projectID + IDs.
+	placeholders := make([]string, len(sessionIDs))
+	args := make([]any, 0, len(sessionIDs)+1)
+	args = append(args, projectID)
+	for i, id := range sessionIDs {
+		placeholders[i] = "?"
+		args = append(args, id)
+	}
+	query := fmt.Sprintf(`
+SELECT session_id, kind, network_kind, adapter, reason, client_timestamp, server_received_at
+FROM stream_session_boundaries
+WHERE project_id = ? AND session_id IN (%s)
+ORDER BY session_id ASC, kind ASC, adapter ASC, reason ASC`,
+		strings.Join(placeholders, ", "))
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: bulk query boundaries: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make(map[string][]domain.SessionBoundary, len(sessionIDs))
+	for rows.Next() {
+		var (
+			sessionID   string
+			kind        string
+			networkKind string
+			adapter     string
+			reason      string
+			clientTS    string
+			serverTS    string
+		)
+		if err := rows.Scan(&sessionID, &kind, &networkKind, &adapter, &reason, &clientTS, &serverTS); err != nil {
+			return nil, fmt.Errorf("sqlite: scan bulk boundary: %w", err)
+		}
+		clientTime, err := parseTime(clientTS)
+		if err != nil {
+			return nil, err
+		}
+		serverTime, err := parseTime(serverTS)
+		if err != nil {
+			return nil, err
+		}
+		out[sessionID] = append(out[sessionID], domain.SessionBoundary{
+			Kind:             kind,
+			ProjectID:        projectID,
+			SessionID:        sessionID,
+			NetworkKind:      networkKind,
+			Adapter:          adapter,
+			Reason:           reason,
+			ClientTimestamp:  clientTime,
+			ServerReceivedAt: serverTime,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sqlite: iterate bulk boundaries: %w", err)
 	}
 	return out, nil
 }

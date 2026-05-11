@@ -55,3 +55,41 @@ func BenchmarkSessionsService_ListSessions_DefaultPage(b *testing.B) {
 		}
 	}
 }
+
+// BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries
+// (plan-0.12.6 Tranche 5 / R-7): Hard-Cap-Page (1000 Sessions) mit
+// dem Bulk-Boundary-Pfad. Vorher (N+1) liefen 1000
+// ListBoundariesForSession-Calls pro Page; mit dem Bulk-Port ist es
+// ein einzelner Call. Budget aus dem Plan-DoD: < 200 ms p95.
+func BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries(b *testing.B) {
+	repo := newFakeSessionRepo()
+	base := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < 1_000; i++ {
+		startedAt := base.Add(time.Duration(i) * time.Second)
+		repo.store[fmt.Sprintf("sess-%04d", i)] = domain.StreamSession{
+			ID:          fmt.Sprintf("sess-%04d", i),
+			ProjectID:   "demo",
+			State:       domain.SessionStateActive,
+			StartedAt:   startedAt,
+			LastEventAt: startedAt,
+			EventCount:  1,
+		}
+	}
+	svc := application.NewSessionsService(repo, &fakeEventRepo{})
+	ctx := context.Background()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		res, err := svc.ListSessions(ctx, driving.ListSessionsInput{
+			ProjectID: "demo",
+			Limit:     application.MaxSessionListLimit,
+		})
+		if err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
+		if len(res.Sessions) != application.MaxSessionListLimit {
+			b.Fatalf("expected full page, got %d", len(res.Sessions))
+		}
+	}
+}

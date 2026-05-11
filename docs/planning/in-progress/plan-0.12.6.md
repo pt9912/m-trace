@@ -185,7 +185,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | 🟡      |
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | 🟡      |
 | 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | 🟡      |
-| 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | ⬜      |
+| 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | 🟡      |
 | 6       | R-22 | Origin-/IP-Rate-Limiter (Driven-Port)           | Adapter     | ⬜      |
 | 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | ⬜      |
 | 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | ⬜      |
@@ -566,19 +566,36 @@ Bulk-Read-Port (`ListBoundariesForSessions(ctx, ids)`) eliminiert.
 
 DoD:
 
-- [ ] Neuer Port-Methode in
+- [x] Neue Port-Methode in
   `apps/api/hexagon/port/driven/session_repository.go`:
-  `ListBoundariesForSessions(ctx, sessionIDs []string)
-  (map[string][]Boundary, error)`.
-- [ ] SQLite-Adapter implementiert die Methode mit einer einzigen
-  Query (`IN`-Clause + sortiertes Result, gruppiert nach
-  `session_id`).
-- [ ] `SessionsService.ListSessions` nutzt die neue Methode statt
-  pro-Eintrag-Aufruf.
-- [ ] Performance-Benchmark in `apps/api/.../session*_bench_test.go`:
-  1000 Sessions in einer Page brauchen < 200 ms p95.
-- [ ] Race-Test (`make api-race`) bleibt grün.
-- [ ] Risks-Backlog R-7: Status 🟢.
+  `ListBoundariesForSessions(ctx, projectID string, sessionIDs []string) (map[string][]Boundary, error)`.
+  Project-skopiert; SessionIDs ohne Boundaries fehlen in der Map.
+- [x] SQLite-Adapter: dynamische `IN (?, ?, ?)`-Clause mit Project-
+  scope-WHERE; ein Query-Roundtrip ersetzt die N+1-Schleife.
+  Sortierung `session_id ASC, kind ASC, adapter ASC, reason ASC`
+  konsistent zur Singular-Methode. Result wird zu einer
+  `map[string][]Boundary` aggregiert.
+- [x] InMemory-Adapter: Map-Lookup pro SessionID; sortiert pro
+  Session-Bucket nach (kind, adapter, reason).
+- [x] `SessionsService.ListSessions` nutzt die neue Methode statt
+  pro-Eintrag-Aufruf; Default für eine Session ohne Boundaries ist
+  ein leerer Slice (Map-Miss).
+- [x] Performance-Benchmark
+  `BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries`
+  (1000 Sessions in einer Page) — Budget < 200 ms p95 in
+  `scripts/check-bench-budgets.mjs` (Plan-DoD-Schwelle pinned).
+  Existierender `BenchmarkSessionsService_ListSessions_DefaultPage`
+  (50 ms-Budget) bleibt aktiv.
+- [x] Race-Test (`make api-race`) grün — Bulk-Methode greift auf
+  `r.mu` (InMemory) bzw. das in `database/sql`-eigenständige
+  Connection-Pooling (SQLite); keine neuen Concurrency-Surfaces.
+- [x] Adapter-Tests `TestListBoundariesForSessions_BulkReadAndScopeIsolation`
+  und `_EmptyInput`: pinnen Bulk-Sortierung, Map-Miss-Verhalten,
+  Cross-Project-Scope-Isolation und Empty-Input-No-Op.
+- [x] Risks-Backlog R-7: Status 🟢 mit Auflösungspfad „Bulk-Read-
+  Port + bench-budget < 200 ms p95 in `0.12.6` Tranche 5";
+  Wieder-Eröffnungs-Trigger: List-Latenz ≥ 200 ms p95 unter
+  Production-Last (Folge-Item).
 
 ## 8. Tranche 6 — R-22 Origin-/IP-Rate-Limiter (Driven-Port)
 

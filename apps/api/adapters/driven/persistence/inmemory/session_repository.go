@@ -342,4 +342,41 @@ func (r *SessionRepository) ListBoundariesForSession(_ context.Context, projectI
 	return out, nil
 }
 
+// ListBoundariesForSessions ist die Bulk-Variante (plan-0.12.6
+// Tranche 5 / R-7). Liefert pro SessionID die Boundary-Liste in
+// gleicher Read-Shape-Sortierung. SessionIDs ohne Boundaries fehlen
+// in der Map.
+func (r *SessionRepository) ListBoundariesForSessions(_ context.Context, projectID string, sessionIDs []string) (map[string][]domain.SessionBoundary, error) {
+	out := make(map[string][]domain.SessionBoundary, len(sessionIDs))
+	if len(sessionIDs) == 0 {
+		return out, nil
+	}
+	r.mu.Lock()
+	for _, id := range sessionIDs {
+		bucket, ok := r.boundaries[sessionKey{ProjectID: projectID, SessionID: id}]
+		if !ok || len(bucket) == 0 {
+			continue
+		}
+		slice := make([]domain.SessionBoundary, 0, len(bucket))
+		for _, b := range bucket {
+			slice = append(slice, b)
+		}
+		out[id] = slice
+	}
+	r.mu.Unlock()
+	for id, slice := range out {
+		sort.Slice(slice, func(i, j int) bool {
+			if slice[i].Kind != slice[j].Kind {
+				return slice[i].Kind < slice[j].Kind
+			}
+			if slice[i].Adapter != slice[j].Adapter {
+				return slice[i].Adapter < slice[j].Adapter
+			}
+			return slice[i].Reason < slice[j].Reason
+		})
+		out[id] = slice
+	}
+	return out, nil
+}
+
 var _ driven.SessionRepository = (*SessionRepository)(nil)

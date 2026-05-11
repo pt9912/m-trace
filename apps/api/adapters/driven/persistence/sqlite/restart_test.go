@@ -368,3 +368,103 @@ func TestRestartPreservesTimeSkewWarning(t *testing.T) {
 		t.Errorf("event[1] TimeSkewWarning = false, want true (was persisted as true)")
 	}
 }
+
+// TestListBoundariesForSessions_BulkReadAndScopeIsolation
+// (plan-0.12.6 Tranche 5 / R-7): die neue Bulk-Methode liefert pro
+// SessionID die Boundaries in der gleichen Sortierung wie die
+// Singular-Methode; SessionIDs ohne Boundaries fehlen in der Map;
+// Cross-Project-Treffer werden ausgeschlossen.
+func TestListBoundariesForSessions_BulkReadAndScopeIsolation(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace-bulk.db")
+	t0 := time.Date(2026, 5, 4, 12, 0, 0, 0, time.UTC)
+
+	db, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	seq, err := sqlite.NewIngestSequencer(ctx, db)
+	if err != nil {
+		t.Fatalf("seq: %v", err)
+	}
+	repo := sqlite.NewSessionRepository(db)
+
+	// Drei Sessions in „demo", eine in „other" (Cross-Project-Probe).
+	if _, err := repo.UpsertFromEvents(ctx, []domain.PlaybackEvent{
+		mkRestartEvent(seq, "demo", "s1", t0),
+		mkRestartEvent(seq, "demo", "s2", t0),
+		mkRestartEvent(seq, "demo", "s3", t0),
+		mkRestartEvent(seq, "other", "s1", t0),
+	}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+	if err := repo.AppendBoundaries(ctx, []domain.SessionBoundary{
+		{Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+			NetworkKind: "manifest", Adapter: "hls.js", Reason: "cors_timing_blocked",
+			ClientTimestamp: t0, ServerReceivedAt: t0},
+		{Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s1",
+			NetworkKind: "segment", Adapter: "native_hls", Reason: "native_hls_unavailable",
+			ClientTimestamp: t0, ServerReceivedAt: t0},
+		{Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "demo", SessionID: "s3",
+			NetworkKind: "manifest", Adapter: "hls.js", Reason: "cors_timing_blocked",
+			ClientTimestamp: t0, ServerReceivedAt: t0},
+		// Cross-Project: identischer Tripel in „other"; muss in der
+		// „demo"-Bulk-Antwort NICHT auftauchen.
+		{Kind: domain.BoundaryKindNetworkSignalAbsent, ProjectID: "other", SessionID: "s1",
+			NetworkKind: "manifest", Adapter: "hls.js", Reason: "cors_timing_blocked",
+			ClientTimestamp: t0, ServerReceivedAt: t0},
+	}); err != nil {
+		t.Fatalf("AppendBoundaries: %v", err)
+	}
+
+	got, err := repo.ListBoundariesForSessions(ctx, "demo", []string{"s1", "s2", "s3"})
+	if err != nil {
+		t.Fatalf("bulk read: %v", err)
+	}
+	// s1 hat zwei Boundaries; Sort kind asc → adapter asc → reason asc.
+	if len(got["s1"]) != 2 {
+		t.Fatalf("s1 boundaries = %d, want 2", len(got["s1"]))
+	}
+	if got["s1"][0].Adapter != "hls.js" || got["s1"][1].Adapter != "native_hls" {
+		t.Errorf("s1 sort broken: got %+v", got["s1"])
+	}
+	// s2 hat keine Boundaries → fehlt in der Map.
+	if _, ok := got["s2"]; ok {
+		t.Errorf("s2 should be missing from map, got %+v", got["s2"])
+	}
+	// s3 hat eine Boundary.
+	if len(got["s3"]) != 1 {
+		t.Fatalf("s3 boundaries = %d, want 1", len(got["s3"]))
+	}
+	// Cross-Project-Isolation: keine Boundary aus „other" im „demo"-Result.
+	for sid, bs := range got {
+		for _, b := range bs {
+			if b.ProjectID != "demo" {
+				t.Errorf("session %q: cross-project boundary leaked: %+v", sid, b)
+			}
+		}
+	}
+}
+
+// TestListBoundariesForSessions_EmptyInput (plan-0.12.6 Tranche 5):
+// leere SessionID-Liste liefert leere Map ohne Query-Roundtrip.
+func TestListBoundariesForSessions_EmptyInput(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace-empty.db")
+	db, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	repo := sqlite.NewSessionRepository(db)
+	got, err := repo.ListBoundariesForSessions(ctx, "demo", nil)
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected empty map, got %+v", got)
+	}
+}

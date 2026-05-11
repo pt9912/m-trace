@@ -135,6 +135,10 @@ func (r *fakeSessionRepo) AppendBoundaries(_ context.Context, _ []domain.Session
 	return nil
 }
 
+func (r *fakeSessionRepo) ListBoundariesForSessions(_ context.Context, _ string, _ []string) (map[string][]domain.SessionBoundary, error) {
+	return nil, nil
+}
+
 func (r *fakeSessionRepo) ListBoundariesForSession(_ context.Context, _, _ string) ([]domain.SessionBoundary, error) {
 	return nil, nil
 }

@@ -54,6 +54,19 @@ type SessionRepository interface {
 	// Slice (`nil` oder `[]`); Cross-Project-Treffer liefern `nil`.
 	// Spec-Anker spec/backend-api-contract.md §3.7.1.
 	ListBoundariesForSession(ctx context.Context, projectID, sessionID string) ([]domain.SessionBoundary, error)
+	// ListBoundariesForSessions ist die Bulk-Variante von
+	// ListBoundariesForSession (plan-0.12.6 Tranche 5 / R-7). Liefert
+	// pro `sessionIDs[i]` die zugehörige `network_signal_absent[]`-
+	// Liste in der gleichen Read-Shape-Sortierung. Result-Map ist
+	// gekeyed nach SessionID; SessionIDs ohne Boundaries fehlen
+	// in der Map (Aufrufer-Default: leerer Slice). Cross-Project-
+	// Treffer werden über den Project-Scope-Filter ausgeschlossen.
+	// Leere SessionID-Liste → leere Map (no-op).
+	//
+	// Adapter müssen eine einzelne Query (`IN`-Clause) nutzen, um
+	// N+1-Roundtrips auf der `stream_session_boundaries`-Tabelle
+	// zu eliminieren.
+	ListBoundariesForSessions(ctx context.Context, projectID string, sessionIDs []string) (map[string][]domain.SessionBoundary, error)
 	// List gibt Sessions in stabiler Sortierung (started_at desc,
 	// session_id asc) zurück, gefiltert nach q.ProjectID. Der Adapter
 	// ist für die Sortierung verantwortlich; der Use Case clampt nur

@@ -68,19 +68,22 @@ func (s *SessionsService) ListSessions(ctx context.Context, in driving.ListSessi
 		return driving.ListSessionsResult{}, err
 	}
 
-	// plan-0.4.0 §4.4 D3: pro Session den persistierten
-	// `network_signal_absent[]`-Block laden (spec §3.7.1). Reihenfolge
-	// ist parallel zu page.Sessions; Default für eine Session ohne
-	// Boundaries ist ein leerer Slice. N+1 ist akzeptiert für 0.4.0
-	// (Hard-Max 1000 Sessions pro Page); eine Bulk-Read-Methode kann
-	// später ohne Vertragsbruch nachgereicht werden.
+	// plan-0.12.6 Tranche 5 / R-7: Bulk-Read der
+	// `network_signal_absent[]`-Blöcke pro Page in einer einzigen
+	// IN-Clause-Query — ersetzt den N+1-Pfad aus plan-0.4.0 §4.4 D3.
+	// Reihenfolge bleibt parallel zu page.Sessions; Default für eine
+	// Session ohne Boundaries ist ein leerer Slice (Map-Miss).
+	sessionIDs := make([]string, len(page.Sessions))
+	for i, sess := range page.Sessions {
+		sessionIDs[i] = sess.ID
+	}
+	boundaryMap, err := s.sessions.ListBoundariesForSessions(ctx, in.ProjectID, sessionIDs)
+	if err != nil {
+		return driving.ListSessionsResult{}, err
+	}
 	boundaries := make([][]domain.SessionBoundary, len(page.Sessions))
 	for i, sess := range page.Sessions {
-		bs, err := s.sessions.ListBoundariesForSession(ctx, in.ProjectID, sess.ID)
-		if err != nil {
-			return driving.ListSessionsResult{}, err
-		}
-		boundaries[i] = bs
+		boundaries[i] = boundaryMap[sess.ID]
 	}
 
 	out := driving.ListSessionsResult{

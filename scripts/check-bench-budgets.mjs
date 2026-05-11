@@ -59,6 +59,11 @@ const GO_BUDGETS_MS = {
   "BenchmarkRegisterPlaybackEventBatch_MaxBatch": 25,
   "BenchmarkEventRepository_AppendBatch_100": 100,
   "BenchmarkSessionsService_ListSessions_DefaultPage": 50,
+  // plan-0.12.6 Tranche 5 / R-7: Bulk-Boundary-Read auf der Hard-Cap-
+  // Page (1000 Sessions). Pre-T5 (N+1): ~1000 boundary-Roundtrips pro
+  // Page. Post-T5: ein einziger IN-Clause-Call. Budget aus dem Plan-
+  // DoD: < 200 ms p95.
+  "BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries": 200,
   "BenchmarkCursorEncodeDecode_Pair": 0.25
 };
 

@@ -147,6 +147,10 @@ func (s *stubSessionRepo) ListBoundariesForSession(_ context.Context, _, _ strin
 	return nil, nil
 }
 
+func (s *stubSessionRepo) ListBoundariesForSessions(_ context.Context, _ string, _ []string) (map[string][]domain.SessionBoundary, error) {
+	return nil, nil
+}
+
 func (s *stubSessionRepo) Sweep(_ context.Context, _ time.Time, _, _ time.Duration) error {
 	return nil
 }

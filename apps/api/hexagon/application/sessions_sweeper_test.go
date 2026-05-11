@@ -47,6 +47,10 @@ func (r *recordingRepo) SetSessionSampleRatePPMIfDefault(_ context.Context, _, _
 func (r *recordingRepo) AppendBoundaries(_ context.Context, _ []domain.SessionBoundary) error {
 	return nil
 }
+func (r *recordingRepo) ListBoundariesForSessions(_ context.Context, _ string, _ []string) (map[string][]domain.SessionBoundary, error) {
+	return nil, nil
+}
+
 func (r *recordingRepo) ListBoundariesForSession(_ context.Context, _, _ string) ([]domain.SessionBoundary, error) {
 	return nil, nil
 }
