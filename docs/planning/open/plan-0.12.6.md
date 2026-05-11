@@ -247,30 +247,65 @@ DoD:
 Ziel: `GET /api/srt/health/{stream_id}` liefert Cursor-Pagination
 über `samples_limit` hinaus.
 
+**Wire-Vertrags-Pin** (Review-Finding 1, 2026-05-11): die
+Pagination-Semantik ist in
+[`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+§7a.3 bereits präzise spezifiziert — **`samples_cursor`** als
+Query-Param, **nicht** `cursor`. Plan-DoD-Wording entsprechend
+gepinnt; jede Abweichung (z. B. zusätzlicher `cursor`-Alias mit
+Deprecation) wäre eine Spec-Änderung mit eigenem RAK und ist
+explizit **nicht** Teil dieser Tranche. Bestehende Clients/Tests
+gegen `samples_cursor`/`next_cursor` bleiben unverändert
+funktional.
+
+Fehlerverhalten ist ebenfalls schon in §7a.4 normiert:
+`400 cursor_invalid` bei `process_instance_id`-Mismatch (analog
+§10.3). Tranche 2 implementiert die Spec, sie ändert sie nicht.
+
 DoD:
 
 - [ ] Adapter-Implementation in
   `apps/api/adapters/driven/persistence/sqlite/srt_health_repository.go`:
   Cursor-Token analog `EventRepository`-Pattern
   (`process_instance_id + (ingested_at, id)`-Position als opaker
-  Token).
+  Token, §10.3-konform).
 - [ ] HTTP-Handler `GET /api/srt/health/{stream_id}` akzeptiert
-  Query-Param `cursor=<opake_token>` und liefert
-  `next_cursor`-Feld in der Antwort.
+  Query-Param **`samples_cursor`** (gemäß §7a.3) und liefert
+  **`next_cursor`**-Feld in der Antwort. `cursor`-Param wird
+  **nicht** akzeptiert — kein Alias, kein silent-Fallback.
+- [ ] Cursor-Validation: bei `process_instance_id`-Mismatch
+  zwischen dekodiertem Token und aktuellem API-Prozess →
+  HTTP `400` mit Body `{"error": "cursor_invalid"}` (§7a.4).
+  Andere Decode-Fehler (malformed Base64, falsches Schema) →
+  ebenfalls `400 cursor_invalid` (keine Information über die
+  konkrete Fehlerursache leaken).
 - [ ] Wire-Vertrag-Update in
   [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
-  §7a.3 (nur Anwendungs-Notiz, weil das Wire-Format dort bereits
-  spezifiziert ist).
-- [ ] Unit-Test + Adapter-Test: Pagination liefert konsistente,
-  überlappungsfreie Pages über 1500+ Samples.
+  §7a.3/§7a.4: keine inhaltliche Änderung; nur Implementierungs-
+  Hinweis „`0.12.6` aktiviert die spec'd Pagination" falls
+  überhaupt nötig.
+- [ ] Unit-Test + Adapter-Test:
+  - Pagination liefert konsistente, überlappungsfreie Pages
+    über 1500+ Samples.
+  - **`cursor_invalid`-Pfade**: Mismatch zwischen
+    `process_instance_id` (Token gegen Server-Restart),
+    malformed-Base64-Token und schema-Mismatch liefern alle
+    `400 cursor_invalid` mit stabilem Body-Shape.
+  - **Contract-Fixture** in `spec/contract-fixtures/srt/` für
+    den `400 cursor_invalid`-Pfad (Schema-Snapshot-Test analog
+    bestehenden SRT-Fixtures).
 - [ ] Smoke `make smoke-srt-health-pagination` **neu anlegen**
   (Script + Makefile-Target + Help-Eintrag; Konvention siehe
   §0.2.1) — entweder als eigenständiger Smoke oder als
   Erweiterung des existierenden `smoke-srt-health` mit
-  `MTRACE_SRT_HEALTH_PAGINATION=1`-Schalter.
+  `MTRACE_SRT_HEALTH_PAGINATION=1`-Schalter. Smoke deckt
+  mindestens den Cursor-Wandern-Pfad und einen
+  `cursor_invalid`-Mismatch ab.
 - [ ] Risks-Backlog R-11: Status 🟢 mit Auflösungspfad „Cursor-
-  Pagination in 0.12.6 Tranche 2"; Wieder-Eröffnung bei
-  Operator-Report über Inkonsistenz im Cursor-Wandern.
+  Pagination in 0.12.6 Tranche 2 (samples_cursor/next_cursor +
+  cursor_invalid-400 gemäß §7a.3/§7a.4)"; Wieder-Eröffnung bei
+  Operator-Report über Inkonsistenz im Cursor-Wandern oder
+  Schema-Drift gegenüber dem Wire-Vertrag.
 
 ## 5. Tranche 3 — R-5 Time-Skew-Persistenz + Dashboard-Marker
 
