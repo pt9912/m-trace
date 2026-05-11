@@ -24,6 +24,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/mediaserver"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
 	persistencesqlite "github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/sqlite"
@@ -56,6 +57,8 @@ const (
 	envAuthSecretBackend     = "MTRACE_AUTH_SECRET_BACKEND"
 	envOutboundWebhookURL    = "MTRACE_OUTBOUND_WEBHOOK_URL"
 	envOutboundWebhookSecret = "MTRACE_OUTBOUND_WEBHOOK_SECRET"
+	envMediaServerProvURL    = "MTRACE_MEDIASERVER_PROVISION_URL"
+	envMediaServerProvToken  = "MTRACE_MEDIASERVER_PROVISION_TOKEN"
 	envOriginRateLimiter     = "MTRACE_ORIGIN_RATE_LIMITER"
 	envTrustForwardedFor     = "MTRACE_TRUST_FORWARDED_FOR"
 	envRedisAddr             = "MTRACE_REDIS_ADDR"
@@ -324,10 +327,7 @@ func buildHandler(
 	var ingestControlService *application.IngestControlService
 	if persist.db != nil {
 		ingestRepo := persistencesqlite.NewIngestStreamRepository(persist.db)
-		ingestControlService = application.NewIngestControlService(ingestRepo, time.Now)
-		if wh := buildOutboundWebhookDispatcher(logger); wh != nil {
-			ingestControlService = ingestControlService.WithOutboundWebhookDispatcher(wh)
-		}
+		ingestControlService = wireIngestControlService(ingestRepo, logger)
 	}
 	var ingestControlInbound driving.IngestControlInbound
 	if ingestControlService != nil {
@@ -663,6 +663,49 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB,
 		Signer:         signer,
 		PolicyResolver: policies,
 	}, nil
+}
+
+// wireIngestControlService verdrahtet den IngestControlService mit
+// allen optionalen Adapter-Hooks (Outbound-Webhook,
+// Media-Server-Provisioner). Eigener Helper, damit `buildHandler`
+// unter dem funlen-Limit bleibt.
+func wireIngestControlService(repo driven.IngestStreamRepository, logger *slog.Logger) *application.IngestControlService {
+	svc := application.NewIngestControlService(repo, time.Now)
+	if wh := buildOutboundWebhookDispatcher(logger); wh != nil {
+		svc = svc.WithOutboundWebhookDispatcher(wh)
+	}
+	if prov := buildMediaServerProvisioner(logger); prov != nil {
+		svc = svc.WithMediaServerProvisioner(prov)
+	}
+	return svc
+}
+
+// buildMediaServerProvisioner (plan-0.12.6 Tranche 9 / R-15) liest
+// `MTRACE_MEDIASERVER_PROVISION_URL` und `_TOKEN`. Ohne URL ist der
+// Adapter deaktiviert — `provision=true` antwortet dann mit
+// `media_server_state="disabled"`. Sonst wird ein MediaMTX-
+// HTTP-Adapter konstruiert. Aktuell nur MediaMTX; SRS bleibt
+// Folge-Item nach `0.12.6`.
+func buildMediaServerProvisioner(logger *slog.Logger) driven.MediaServerProvisioner {
+	url := strings.TrimSpace(os.Getenv(envMediaServerProvURL))
+	if url == "" {
+		return nil
+	}
+	prov, err := mediaserver.New(mediaserver.Config{
+		Endpoint:  url,
+		AuthToken: os.Getenv(envMediaServerProvToken),
+	}, logger)
+	if err != nil {
+		logger.Error("media server provisioner build failed; disabling provision path",
+			"error", err)
+		return nil
+	}
+	logger.Info("media server provisioner active",
+		"backend", "mediamtx",
+		"endpoint", url,
+		"auth_token_present", os.Getenv(envMediaServerProvToken) != "",
+	)
+	return prov
 }
 
 // buildOutboundWebhookDispatcher liest die Outbound-Webhook-

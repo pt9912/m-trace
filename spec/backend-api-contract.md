@@ -442,6 +442,80 @@ liefert der Server `400 invalid_request` mit
 erscheinen. List-, Detail-, Event-, Fehler- und Artefakt-Antworten
 enthalten höchstens `key_fingerprint`.
 
+**Optionaler Media-Server-Provisioning-Pfad** (`0.12.6` Tranche 9,
+RAK-87 / R-15). `POST /api/ingest/streams` akzeptiert einen
+**additiven** Query-Param `provision`:
+
+- **Default `provision=false`** (oder Query-Param fehlt): das
+  Response-Body ist **byte-stabil** zum `0.11.0`-Format — kein
+  zusätzliches Feld, kein I/O gegen einen externen Media-Server.
+  `MTRACE_MEDIASERVER_PROVISION_URL` wird in diesem Pfad **nicht**
+  gelesen; ein konfigurierter Server bleibt ohne `provision=true`
+  unberührt. Alte Clients (auch mit `additionalProperties: false`)
+  bleiben funktional.
+- **`provision=true`**: Response-Body trägt zusätzlich
+  `media_server_state` als Objekt mit `state` (Pflicht) und
+  optional `hint` (Operator-String). Der `state`-Wert ist genau
+  einer der folgenden:
+
+  | `state` | Bedeutung |
+  |---|---|
+  | `applied` | Externer Server hat Endpoint + Routing-Rule erfolgreich angelegt. |
+  | `partial` | Endpoint angelegt, Routing-Rule oder Folge-Operation rejected; Operator-Sync nötig. |
+  | `failed` | Server unreachable, Auth-Failure oder Server-Reject. Lokaler API-State + Stream sind angelegt; externer Server ist nicht synchron. |
+  | `disabled` | `MTRACE_MEDIASERVER_PROVISION_URL` ist nicht konfiguriert. `hint` enthält dann den Operator-Aktivierungs-Pfad. |
+
+  HTTP-Status bleibt in allen Fällen `201 Created`. Es gibt **kein**
+  automatisches API-State-Rollback bei `failed`/`partial` — der
+  Operator entscheidet, ob er den lokal angelegten Stream löscht
+  oder den externen Server nachzieht.
+
+Wire-Beispiel `POST /api/ingest/streams?provision=true` mit
+erfolgreicher Provisionierung:
+
+```json
+{
+  "stream": { … wie oben … },
+  "stream_key": { … wie oben … },
+  "media_server_state": {
+    "state": "applied"
+  }
+}
+```
+
+Wire-Beispiel bei nicht konfiguriertem Server:
+
+```json
+{
+  "stream": { … },
+  "stream_key": { … },
+  "media_server_state": {
+    "state": "disabled",
+    "hint": "set MTRACE_MEDIASERVER_PROVISION_URL to enable external provisioning"
+  }
+}
+```
+
+Wire-Beispiel bei Server-Outage:
+
+```json
+{
+  "stream": { … },
+  "stream_key": { … },
+  "media_server_state": {
+    "state": "failed",
+    "hint": "unreachable: dial tcp 127.0.0.1:9997: connect: connection refused"
+  }
+}
+```
+
+Backwards-Compat-Vertrag: das `provision`-Feld ist **strikt
+additiv**. Clients aus `0.11.0`/`0.12.0..0.12.5` setzen den Param
+nie und sehen das `media_server_state`-Feld nie — es bricht keinen
+schema-strikten Client. Folge-Endpoint
+`POST /api/ingest/streams/{id}/provision` für nachträglichen
+Server-Sync bleibt Folge-Item nach `0.12.6`.
+
 `GET /api/ingest/streams` Response:
 
 ```json

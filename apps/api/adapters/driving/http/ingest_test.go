@@ -210,6 +210,176 @@ func TestIngestHandler_CreateStream_HappyPath(t *testing.T) {
 	}
 }
 
+// TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState
+// (plan-0.12.6 Tranche 9 / R-15): ohne `?provision=true` bleibt das
+// Body byte-stabil zum `0.11.0`-Format — kein `media_server_state`-
+// Feld in der Antwort.
+func TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState(t *testing.T) {
+	t.Parallel()
+	stream := domain.IngestStream{
+		ID: ingestStreamID, ProjectID: ingestProjectID, DisplayName: "Lab",
+		Protocol: domain.IngestProtocolSRT, EndpointID: "ep", TargetID: "tgt",
+		RoutingRuleID: "route_x", Status: domain.IngestStreamStatusReady,
+		CreatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+	}
+	stub := &stubIngestControl{
+		createResult: driving.CreateStreamResult{
+			Stream:   stream,
+			Material: domain.StreamKeyMaterial{Value: "mtr_ing_x", Hash: "h", Fingerprint: "fp", CreatedAt: stream.CreatedAt},
+			// Use-Case lässt MediaServerState leer, wenn Provision=false.
+		},
+	}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
+		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
+	}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", res.StatusCode)
+	}
+	var got map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if _, present := got["media_server_state"]; present {
+		t.Errorf("media_server_state must be ABSENT when provision is not requested (got %+v)", got["media_server_state"])
+	}
+}
+
+// TestIngestHandler_CreateStream_ProvisionApplied_IncludesMediaServerState
+// (plan-0.12.6 Tranche 9 / R-15): `?provision=true` + Use-Case liefert
+// `MediaServerState="applied"` → Body trägt
+// `media_server_state.state="applied"`.
+func TestIngestHandler_CreateStream_ProvisionApplied_IncludesMediaServerState(t *testing.T) {
+	t.Parallel()
+	stream := domain.IngestStream{
+		ID: ingestStreamID, ProjectID: ingestProjectID, DisplayName: "Lab",
+		Protocol: domain.IngestProtocolSRT, EndpointID: "ep", TargetID: "tgt",
+		RoutingRuleID: "route_x", Status: domain.IngestStreamStatusReady,
+		CreatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+	}
+	stub := &stubIngestControl{
+		createResult: driving.CreateStreamResult{
+			Stream:           stream,
+			Material:         domain.StreamKeyMaterial{Value: "mtr_ing_x", Hash: "h", Fingerprint: "fp", CreatedAt: stream.CreatedAt},
+			MediaServerState: "applied",
+		},
+	}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
+		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
+	}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", res.StatusCode)
+	}
+	var got map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	mss, _ := got["media_server_state"].(map[string]any)
+	if mss == nil || mss["state"] != "applied" {
+		t.Errorf("media_server_state = %+v, want state=applied", got["media_server_state"])
+	}
+}
+
+// TestIngestHandler_CreateStream_ProvisionDisabled_IncludesHint
+// (plan-0.12.6 Tranche 9 / R-15): `?provision=true` ohne konfigurierten
+// Provisioner → `media_server_state.state="disabled"` plus
+// `hint`-Feld mit Operator-Hinweis. HTTP-Status bleibt 201.
+func TestIngestHandler_CreateStream_ProvisionDisabled_IncludesHint(t *testing.T) {
+	t.Parallel()
+	stream := domain.IngestStream{
+		ID: ingestStreamID, ProjectID: ingestProjectID, DisplayName: "Lab",
+		Protocol: domain.IngestProtocolSRT, EndpointID: "ep", TargetID: "tgt",
+		RoutingRuleID: "route_x", Status: domain.IngestStreamStatusReady,
+		CreatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+	}
+	stub := &stubIngestControl{
+		createResult: driving.CreateStreamResult{
+			Stream:           stream,
+			Material:         domain.StreamKeyMaterial{Value: "mtr_ing_x", Hash: "h", Fingerprint: "fp", CreatedAt: stream.CreatedAt},
+			MediaServerState: "disabled",
+			MediaServerHint:  "set MTRACE_MEDIASERVER_PROVISION_URL to enable external provisioning",
+		},
+	}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
+		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
+	}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", res.StatusCode)
+	}
+	var got map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	mss, _ := got["media_server_state"].(map[string]any)
+	if mss == nil {
+		t.Fatalf("media_server_state missing: %+v", got)
+	}
+	if mss["state"] != "disabled" {
+		t.Errorf("state = %v, want disabled", mss["state"])
+	}
+	if hint, _ := mss["hint"].(string); hint == "" {
+		t.Errorf("hint must be present for disabled state, got %+v", mss)
+	}
+}
+
+// TestIngestHandler_CreateStream_ProvisionFailed_201Created
+// (plan-0.12.6 Tranche 9 / R-15): server-side fail → Body trägt
+// `failed`, aber HTTP-Status bleibt `201 Created` (kein API-Rollback).
+func TestIngestHandler_CreateStream_ProvisionFailed_201Created(t *testing.T) {
+	t.Parallel()
+	stream := domain.IngestStream{
+		ID: ingestStreamID, ProjectID: ingestProjectID, DisplayName: "Lab",
+		Protocol: domain.IngestProtocolSRT, EndpointID: "ep", TargetID: "tgt",
+		RoutingRuleID: "route_x", Status: domain.IngestStreamStatusReady,
+		CreatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+	}
+	stub := &stubIngestControl{
+		createResult: driving.CreateStreamResult{
+			Stream:           stream,
+			Material:         domain.StreamKeyMaterial{Value: "mtr_ing_x", Hash: "h", Fingerprint: "fp", CreatedAt: stream.CreatedAt},
+			MediaServerState: "failed",
+			MediaServerHint:  "unreachable: dial tcp 127.0.0.1:9997: connect: connection refused",
+		},
+	}
+	srv := newIngestRouter(t, stub)
+	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
+		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
+	}))
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201 (no rollback on failed provision)", res.StatusCode)
+	}
+	var got map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	mss, _ := got["media_server_state"].(map[string]any)
+	if mss == nil || mss["state"] != "failed" {
+		t.Errorf("media_server_state = %+v, want state=failed", got["media_server_state"])
+	}
+}
+
 func TestIngestHandler_CreateStream_MissingTokenReturns401(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{}

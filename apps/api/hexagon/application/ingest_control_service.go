@@ -33,9 +33,10 @@ import (
 //     wenn entweder Stream nicht im Project ist, der Key Format-
 //     verstoß hat oder der Hash nicht passt.
 type IngestControlService struct {
-	repo     driven.IngestStreamRepository
-	clock    Clock
-	webhooks driven.OutboundWebhookDispatcher
+	repo        driven.IngestStreamRepository
+	clock       Clock
+	webhooks    driven.OutboundWebhookDispatcher
+	provisioner driven.MediaServerProvisioner
 }
 
 // Clock erlaubt deterministische Tests. Default in Produktion:
@@ -65,6 +66,18 @@ func (s *IngestControlService) WithOutboundWebhookDispatcher(d driven.OutboundWe
 		return s
 	}
 	s.webhooks = d
+	return s
+}
+
+// WithMediaServerProvisioner verdrahtet den optionalen Provisioner
+// (`0.12.6` Tranche 9 / R-15). `nil` deaktiviert den Pfad — der
+// Use-Case behandelt `provision=true`-Aufrufe dann als
+// `media_server_state="disabled"` (kein Server-I/O versucht).
+func (s *IngestControlService) WithMediaServerProvisioner(p driven.MediaServerProvisioner) *IngestControlService {
+	if s == nil {
+		return s
+	}
+	s.provisioner = p
 	return s
 }
 
@@ -113,7 +126,41 @@ func (s *IngestControlService) CreateStream(ctx context.Context, req driving.Cre
 	if err != nil {
 		return driving.CreateStreamResult{}, err
 	}
-	return driving.CreateStreamResult{Stream: *stream, Material: material}, nil
+	result := driving.CreateStreamResult{Stream: *stream, Material: material}
+	if req.Provision {
+		state, hint := s.tryProvision(ctx, req.ResolvedProjectID, *stream, material.ToPersistable())
+		result.MediaServerState = string(state)
+		result.MediaServerHint = hint
+	}
+	return result, nil
+}
+
+// tryProvision ruft den optionalen `MediaServerProvisioner.Apply`-Hook
+// auf. nil-Provisioner (Disabled-Pfad) liefert
+// `MediaServerStateDisabled` plus Hinweis — der HTTP-Adapter trägt
+// das in das `media_server_state`-Wire-Feld. Server-Errors landen
+// als `failed` mit `ErrorCode` im Detail; der API-State bleibt
+// angelegt (kein Rollback in `0.12.6`).
+func (s *IngestControlService) tryProvision(ctx context.Context, projectID string, stream domain.IngestStream, key domain.StreamKey) (driven.MediaServerState, string) {
+	if s.provisioner == nil {
+		return driven.MediaServerStateDisabled,
+			"set MTRACE_MEDIASERVER_PROVISION_URL to enable external provisioning"
+	}
+	res, err := s.provisioner.Apply(ctx, driven.MediaServerApplyInput{
+		ProjectID:     projectID,
+		Stream:        stream,
+		StreamKeyHash: key.Hash,
+	})
+	if err != nil {
+		// Adapter-Errors landen als failed; Aufrufer macht kein
+		// API-State-Rollback.
+		return driven.MediaServerStateFailed, err.Error()
+	}
+	hint := res.Detail
+	if hint == "" && res.ErrorCode != "" {
+		hint = res.ErrorCode
+	}
+	return res.State, hint
 }
 
 // ListStreams liefert alle Streams im aufgelösten Project, sortiert

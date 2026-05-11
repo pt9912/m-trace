@@ -68,6 +68,50 @@ Antwort `201 Created` enthält Stream-Metadaten plus
 Aufruferseitig direkt in den Publisher (FFmpeg, OBS, …) übernehmen,
 serverseitig gibt es ihn nie wieder.
 
+**Optional: `?provision=true`** (`0.12.6` Tranche 9, R-15). Wenn der
+Operator zusätzlich einen MediaMTX-Server provisionieren möchte
+(Endpoint + Routing-Rule), kann er den `provision=true`-Query-Param
+setzen:
+
+```bash
+curl -sS -X POST 'http://localhost:8080/api/ingest/streams?provision=true' \
+  -H "X-MTrace-Token: demo-token" \
+  -H "Content-Type: application/json" \
+  -d '{ … wie oben … }'
+```
+
+Voraussetzung: `MTRACE_MEDIASERVER_PROVISION_URL` ist beim API-
+Start gesetzt (z. B. `http://mediamtx:9997`); optional
+`MTRACE_MEDIASERVER_PROVISION_TOKEN`.
+
+Das Response-Body trägt dann zusätzlich `media_server_state` mit
+einem `state`-Feld:
+
+| `state` | Bedeutung | Operator-Aktion |
+|---|---|---|
+| `applied` | Server hat Path angelegt. | nichts zu tun. |
+| `partial` | Endpoint angelegt, Routing-Rule rejected. | MediaMTX-Logs prüfen; ggf. Stream löschen und neu provisionieren. |
+| `failed` | Server unreachable oder Auth-Failure. | API-State + Stream sind angelegt; entweder Stream löschen oder MediaMTX manuell anlegen. |
+| `disabled` | `MTRACE_MEDIASERVER_PROVISION_URL` nicht gesetzt. | API-Start nochmal mit der ENV-Variable. |
+
+**Rollback-Pfad bei API-State-vs-Server-State-Diskrepanz**: T9 macht
+**keinen** automatischen Rollback. Wenn der externe Server `failed`/
+`partial` liefert, bleibt der Stream im API-State (und ist via
+`GET /api/ingest/streams/{id}` sichtbar). Operator-Optionen:
+
+1. **Stream löschen** und neu anlegen, sobald der Server wieder
+   erreichbar ist: `DELETE`-Endpoint ist Folge-Item nach `0.12.6` —
+   bis dahin lokal über die SQLite-Datei (`make wipe` oder manueller
+   `DELETE FROM ingest_streams WHERE …`).
+2. **MediaMTX manuell synchronisieren**: den Stream-Pfad direkt am
+   MediaMTX-Server anlegen (`PUT /v3/config/paths/add/<stream_id>`)
+   und im API-Log den `failed`-State akzeptieren.
+
+Ohne `provision=true` macht der Server **kein** I/O gegen externe
+Media-Server — das ist 1:1 das `0.11.0`-Verhalten und bleibt
+byte-stabil im Response-Body (kein `media_server_state`-Feld). Das
+ist die Default-Konfiguration; `provision=true` ist strikt opt-in.
+
 ### 2.3 Key lokal validieren
 
 ```bash

@@ -9,7 +9,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -35,6 +35,7 @@ help:
 		'  make smoke-key-rotation     Run the multi-key signing rotation smoke (plan-0.12.5 Tranche 1, RAK-78; opt-in)' \
 		'  make smoke-issuance-replica Run the shared-state issuance limiter smoke (plan-0.12.5 Tranche 2, RAK-77; opt-in)' \
 		'  make smoke-issuance-multi-host Run the Redis multi-host issuance + origin limiter smoke (plan-0.12.6 Tranche 7, RAK-88; opt-in)' \
+		'  make smoke-mediaserver-provision Run the MediaMTX provision smoke (plan-0.12.6 Tranche 9, RAK-87; opt-in)' \
 		'  make smoke-vault-approle    Run the Vault AppRole + Kubernetes auth smoke (plan-0.12.6 Tranche 8, RAK-89; opt-in)' \
 		'  make smoke-kms-skeleton     Run the KMS skeleton adapter smoke (plan-0.12.6 Tranche 8, RAK-89; opt-in)' \
 		'  make smoke-origin-rate-limit Run the origin-/IP-rate-limiter smoke (plan-0.12.6 Tranche 6, RAK-90; opt-in)' \
@@ -251,6 +252,13 @@ smoke-issuance-replica:
 # `make gates`).
 smoke-issuance-multi-host:
 	bash scripts/smoke-issuance-multi-host.sh
+
+# `make smoke-mediaserver-provision` — plan-0.12.6 Tranche 9 / RAK-87
+# (R-15). Verifiziert den MediaMTX-Adapter (happy/idempotent/auth/
+# server-error/unreachable) plus den Use-Case-Pfad (Provision=false/
+# true ohne Adapter → disabled). Opt-in (NICHT in `make gates`).
+smoke-mediaserver-provision:
+	bash scripts/smoke-mediaserver-provision.sh
 
 # `make smoke-vault-approle` — plan-0.12.6 Tranche 8 / RAK-89 (R-20).
 # Verifiziert den AppRole- und Kubernetes-Auth-Pfad des Vault-Adapters

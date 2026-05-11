@@ -306,6 +306,121 @@ func TestIngestControlService_CreateStream_HappyPath(t *testing.T) {
 	}
 }
 
+// TestIngestControlService_CreateStream_ProvisionFalseLeavesStateEmpty
+// (plan-0.12.6 Tranche 9 / R-15): Default-Pfad `Provision=false`
+// hinterlässt `MediaServerState=""` — der HTTP-Adapter mappt das
+// auf ein fehlendes Wire-Feld (byte-stabil zum 0.11.0-Format).
+func TestIngestControlService_CreateStream_ProvisionFalseLeavesStateEmpty(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	result, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab", Protocol: "srt",
+		EndpointID: testEndpoint, TargetID: testTarget,
+		// Provision: false (Default)
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if result.MediaServerState != "" {
+		t.Errorf("MediaServerState = %q, want empty (provision=false)", result.MediaServerState)
+	}
+}
+
+// TestIngestControlService_CreateStream_ProvisionTrueWithoutAdapterIsDisabled
+// (plan-0.12.6 Tranche 9 / R-15): `Provision=true` ohne konfigurierten
+// Provisioner liefert `MediaServerState="disabled"` + Operator-Hinweis.
+func TestIngestControlService_CreateStream_ProvisionTrueWithoutAdapterIsDisabled(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	result, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab", Protocol: "srt",
+		EndpointID: testEndpoint, TargetID: testTarget,
+		Provision:  true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if result.MediaServerState != "disabled" {
+		t.Errorf("MediaServerState = %q, want disabled", result.MediaServerState)
+	}
+	if result.MediaServerHint == "" {
+		t.Errorf("MediaServerHint must contain operator guidance when disabled")
+	}
+}
+
+// stubProvisioner ist ein In-Process-Provisioner-Mock für den
+// Use-Case-Test. Liefert ein vor-konfiguriertes Result oder einen
+// Fehler.
+type stubProvisioner struct {
+	result driven.MediaServerApplyResult
+	err    error
+}
+
+func (s *stubProvisioner) Apply(_ context.Context, _ driven.MediaServerApplyInput) (driven.MediaServerApplyResult, error) {
+	return s.result, s.err
+}
+
+func (s *stubProvisioner) Rollback(_ context.Context, _, _ string) error { return nil }
+
+// TestIngestControlService_CreateStream_ProvisionAppliedFlowsThrough
+// (plan-0.12.6 Tranche 9 / R-15): konfigurierter Provisioner liefert
+// `applied` → Use-Case reicht das durch.
+func TestIngestControlService_CreateStream_ProvisionAppliedFlowsThrough(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	prov := &stubProvisioner{result: driven.MediaServerApplyResult{
+		State: driven.MediaServerStateApplied,
+	}}
+	svc = svc.WithMediaServerProvisioner(prov)
+	result, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab", Protocol: "srt",
+		EndpointID: testEndpoint, TargetID: testTarget,
+		Provision:  true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if result.MediaServerState != "applied" {
+		t.Errorf("MediaServerState = %q, want applied", result.MediaServerState)
+	}
+}
+
+// TestIngestControlService_CreateStream_ProvisionAdapterErrorIsFailed
+// (plan-0.12.6 Tranche 9 / R-15): Adapter-Fehler wird auf
+// MediaServerState="failed" gemappt; API-State bleibt angelegt.
+func TestIngestControlService_CreateStream_ProvisionAdapterErrorIsFailed(t *testing.T) {
+	t.Parallel()
+	svc, repo := newSeededService(t)
+	prov := &stubProvisioner{err: errors.New("simulated network error")}
+	svc = svc.WithMediaServerProvisioner(prov)
+	result, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab", Protocol: "srt",
+		EndpointID: testEndpoint, TargetID: testTarget,
+		Provision:  true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if result.MediaServerState != "failed" {
+		t.Errorf("MediaServerState = %q, want failed", result.MediaServerState)
+	}
+	// Stream bleibt in der DB — kein automatischer Rollback.
+	streams, _ := repo.ListByProject(context.Background(), testProjectA)
+	found := false
+	for _, s := range streams {
+		if s.ID == result.Stream.ID {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("stream must remain in API state after failed provisioning (no auto-rollback)")
+	}
+}
+
 func TestIngestControlService_CreateStream_RejectsUnknownProtocol(t *testing.T) {
 	t.Parallel()
 	svc, _ := newSeededService(t)

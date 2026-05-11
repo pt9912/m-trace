@@ -77,6 +77,13 @@ type MediaServerConfigResult struct {
 // `POST /api/ingest/streams`. `RequestProjectID` ist der optionale
 // Wire-Vertrag-Wert (Konsistenzcheck zum Token); der Use-Case nutzt
 // `ResolvedProjectID` als kanonischen Wert.
+//
+// `Provision` schaltet ab `0.12.6` Tranche 9 (R-15) den optionalen
+// Media-Server-I/O-Pfad. Default `false`: byte-stabil zum
+// `0.11.0`-Format — kein Server-I/O, kein neues Response-Feld.
+// `true` triggert den `MediaServerProvisioner.Apply`-Aufruf nach
+// erfolgreicher API-State-Anlage; das Ergebnis fließt in
+// `CreateStreamResult.MediaServerState`.
 type CreateStreamRequest struct {
 	ResolvedProjectID string
 	RequestProjectID  string
@@ -84,15 +91,24 @@ type CreateStreamRequest struct {
 	Protocol          string
 	EndpointID        string
 	TargetID          string
+	Provision         bool
 }
 
 // CreateStreamResult bündelt den frisch angelegten Stream und das
 // **transiente** Klartext-Key-Material. Der HTTP-Adapter reicht
 // `Material.Value` genau einmal an den Aufrufer durch; alles andere
 // ist persistierbar.
+//
+// `MediaServerState` (`0.12.6` T9 / R-15) ist nur gesetzt, wenn der
+// Request `Provision=true` trug. Bei `Provision=false` bleibt der
+// Wert leer; der HTTP-Adapter mappt das auf ein **fehlendes**
+// `media_server_state`-Feld im Wire-Body (byte-stabil zum
+// `0.11.0`-Format).
 type CreateStreamResult struct {
-	Stream   domain.IngestStream
-	Material domain.StreamKeyMaterial
+	Stream           domain.IngestStream
+	Material         domain.StreamKeyMaterial
+	MediaServerState string // "" | "disabled" | "applied" | "partial" | "failed"
+	MediaServerHint  string // operator-sichtbarer Detail-String, leer wenn nicht nötig
 }
 
 // StreamDetail ergänzt den Stream um die referenzierten Endpoint-,

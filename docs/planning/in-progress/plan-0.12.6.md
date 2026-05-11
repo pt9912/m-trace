@@ -189,7 +189,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 6       | R-22 | Origin-/IP-Rate-Limiter (Memory + Redis-Bundle T7) | Adapter  | 🟡      |
 | 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | 🟡      |
 | 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | 🟡      |
-| 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | ⬜      |
+| 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | 🟡      |
 | 10      | —    | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | Closeout | ⬜ |
 
 ---
@@ -862,40 +862,71 @@ die einzige Schaltvariable für Seiteneffekte:
 
 DoD:
 
-- [ ] Neuer Driven-Port
+- [x] Neuer Driven-Port
   `apps/api/hexagon/port/driven/media_server_provisioner.go` mit
-  `Apply(ctx, config)` / `Rollback(ctx, ids)`-API.
-- [ ] Adapter-Implementation für MediaMTX (HTTP-API `/v3/config/`-
-  Pfade); SRS bleibt Folge-Item nach `0.12.6`.
-- [ ] ENV-Konfiguration `MTRACE_MEDIASERVER_PROVISION_URL`/`_TOKEN`;
-  fehlt + `provision=true` → `media_server_state="disabled"`
-  ohne I/O. ENV wird im `provision=false`-Pfad **nie** gelesen
-  (hard-not-read; Operator-Setup darf keinen Seiteneffekt durch
-  bloße ENV-Setzung erzeugen).
-- [ ] Wire-Update auf `POST /api/ingest/streams`: optionaler
-  `provision=true`-Query-Param (Default `false` → 1:1 `0.11.0`-
-  Verhalten, **kein** I/O, kein neues Feld). Response-Feld
-  `media_server_state` ist **strikt** an `provision=true`
-  gekoppelt: immer gesetzt bei `provision=true`, nie sonst
-  (siehe Backwards-Compat-Vertrag oben).
-- [ ] Wire-Vertrag-Erweiterung in
+  `Apply(ctx, MediaServerApplyInput)` / `Rollback(ctx, projectID,
+  streamID)`. Bounded State-Enum: `applied`, `partial`, `failed`,
+  `disabled`. `MediaServerApplyInput` reicht Stream-Metadaten plus
+  Stream-Key-Hash (kein Klartext) an den Adapter.
+- [x] MediaMTX-Adapter `adapters/driven/mediaserver/
+  mediamtx_provisioner.go`: HTTP-Client gegen
+  `/v3/config/paths/add/<stream_id>` (Apply) und
+  `/v3/config/paths/delete/<stream_id>` (Rollback). 409 Conflict
+  wird als `applied` behandelt (Idempotenz). Bounded ErrorCodes:
+  `unreachable`, `auth_failure`, `server_status_<N>`,
+  `build_request`. Optionaler `Authorization: Bearer <token>`-Header
+  über `Config.AuthToken`. SRS bleibt Folge-Item nach `0.12.6`.
+- [x] ENV-Konfiguration `MTRACE_MEDIASERVER_PROVISION_URL` /
+  `MTRACE_MEDIASERVER_PROVISION_TOKEN`. Ohne URL ist der Boot-
+  Wiring no-op (`buildMediaServerProvisioner` liefert nil); Use-
+  Case mappt das auf `media_server_state="disabled"` plus
+  Operator-Hint. ENV wird im `provision=false`-Pfad **nicht**
+  gelesen — der Use-Case ruft `tryProvision` nur bei
+  `req.Provision==true`.
+- [x] Wire-Update auf `POST /api/ingest/streams`: optionaler
+  `?provision=true`-Query-Param. Default `provision=false` (oder
+  fehlt) bleibt **byte-stabil** zum `0.11.0`-Format — kein neues
+  Feld im Response-Body. `provision=true` liefert immer
+  `media_server_state: {state, hint?}` als Objekt. HTTP-Status
+  bleibt `201 Created` in allen Fällen.
+- [x] Wire-Vertrag-Erweiterung in
   [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
-  §3.8 mit explizitem `0.12.6`-additive-Hinweis und einem
-  Beispiel-Body für jeden der drei Pfade (alter Default,
-  Provisionierung erfolgreich, Provisionierung fehlgeschlagen).
-- [ ] Contract-Test pinnt: Body byte-stabil zum `0.11.0`-Format
-  für `provision=false`-Pfad (alte Fixtures bleiben grün).
-- [ ] Operator-Doku in `docs/user/ingest-control.md` mit
-  Rollback-Pfad bei API-State-vs-Server-State-Diskrepanz und
-  expliziter Backwards-Compat-Notiz für alte Clients.
-- [ ] Tests gegen `httptest`-MediaMTX-Mock: happy path (200),
-  unreachable (`media_server_state: "failed"`), Auth-Failure,
-  partial-state (Stream angelegt, Routing-Rule rejected).
-- [ ] `make smoke-mediaserver-provision` **neu anlegen** (Script +
-  Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
-  Wrapt den Adapter-Test gegen `httptest`-MediaMTX-Mock.
-- [ ] Risks-Backlog R-15: Status 🟢 sobald Adapter geliefert; sonst
-  „teilweise gelöst" mit konkretem Operator-Trigger für SRS.
+  §3.8: additiv-Hinweis mit drei Wire-Beispielen (applied,
+  disabled, failed). Bounded `state`-Enum dokumentiert; Folge-
+  Endpoint `POST /api/ingest/streams/{id}/provision` explizit als
+  Folge-Item markiert.
+- [x] Contract-Test pinnt: Body byte-stabil zum `0.11.0`-Format
+  für `provision=false`-Pfad
+  (`TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState`).
+  Existierender Schema-Test gegen `srt-health-detail.json` und
+  andere Fixtures bleibt grün — die T9-Erweiterung ist additiv,
+  also kein Fixture-Update nötig.
+- [x] Operator-Doku in
+  [`docs/user/ingest-control.md`](../../user/ingest-control.md)
+  §2.2: `provision=true`-Pfad mit Wire-Beispiel; Rollback-Pfad-
+  Block (1. Stream löschen + neu anlegen, 2. MediaMTX manuell
+  synchronisieren) bei API-State-vs-Server-State-Diskrepanz. Default-
+  Pfad ohne Provision-Flag bleibt explizit byte-stabil dokumentiert.
+- [x] Tests:
+  * Use-Case (4): Provision-False-leaves-state-empty,
+    Provision-True-without-adapter-is-disabled,
+    Provision-Applied-flows-through, Provision-Adapter-Error-is-failed.
+  * HTTP-Handler (4): NoProvisionDefault-omits-media_server_state,
+    ProvisionApplied-includes-media_server_state,
+    ProvisionDisabled-includes-hint, ProvisionFailed-201Created.
+  * MediaMTX-Adapter (8): Apply-HappyPath, Idempotent-on-Conflict,
+    AuthFailure, ServerError, Unreachable, AuthToken-Header,
+    Rollback-HappyPath, Rollback-NotFound-is-OK, Rollback-ServerError;
+    plus Missing-Endpoint-Constructor-Reject.
+- [x] `make smoke-mediaserver-provision` neu angelegt: wrapt die
+  MediaMTX-Adapter-Tests und die Use-Case-Provision-Tests über das
+  `golang:1.26.3`-Docker-Image. Makefile-Target + .PHONY + Help-
+  Eintrag.
+- [x] Risks-Backlog R-15: Status **🟢** mit Auflösungspfad
+  „MediaMTX-Adapter + additiv-Wire-Vertrag in `0.12.6` Tranche 9";
+  Wieder-Eröffnungs-Trigger: (a) SRS-Adapter, (b) Folge-Endpoint
+  `POST /api/ingest/streams/{id}/provision` für nachträglichen Sync,
+  (c) DELETE-Endpoint + automatischer Rollback.
 
 ## 12. Tranche 10 — Release-Closeout
 

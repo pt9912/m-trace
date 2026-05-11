@@ -308,6 +308,13 @@ func (h *IngestStreamHandler) handleCreate(w http.ResponseWriter, r *http.Reques
 		writeIngestProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.")
 		return
 	}
+	// plan-0.12.6 Tranche 9 / R-15: optionaler `?provision=true`-
+	// Query-Param triggert den Media-Server-Provisioner. Default
+	// `false` bleibt **strikt byte-stabil** zum `0.11.0`-Format —
+	// kein neues Response-Feld, kein I/O gegen den externen Server,
+	// `MTRACE_MEDIASERVER_PROVISION_URL` wird in diesem Pfad NICHT
+	// gelesen.
+	provision := r.URL.Query().Get("provision") == "true"
 	result, err := h.UseCase.CreateStream(r.Context(), driving.CreateStreamRequest{
 		ResolvedProjectID: projectID,
 		RequestProjectID:  req.ProjectID,
@@ -315,12 +322,27 @@ func (h *IngestStreamHandler) handleCreate(w http.ResponseWriter, r *http.Reques
 		Protocol:          req.Protocol,
 		EndpointID:        req.EndpointID,
 		TargetID:          req.TargetID,
+		Provision:         provision,
 	})
 	if err != nil {
 		writeIngestError(w, h.Logger, "create", err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, buildStreamWithKeyPayload(result.Stream, &result.Material))
+	payload := buildStreamWithKeyPayload(result.Stream, &result.Material)
+	if provision {
+		// `media_server_state` ist bei `provision=true` immer im
+		// Body — auch im `disabled`-Pfad mit Operator-Hinweis.
+		state := result.MediaServerState
+		if state == "" {
+			state = "disabled"
+		}
+		entry := map[string]any{"state": state}
+		if result.MediaServerHint != "" {
+			entry["hint"] = result.MediaServerHint
+		}
+		payload["media_server_state"] = entry
+	}
+	writeJSON(w, http.StatusCreated, payload)
 }
 
 func (h *IngestStreamHandler) handleList(w http.ResponseWriter, r *http.Request) {
