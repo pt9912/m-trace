@@ -10,11 +10,16 @@ import (
 // EventAppendedFrame ist das Mindest-Wire-Format für SSE-Live-Updates
 // (plan-0.4.0 §5 H4; spec/backend-api-contract.md §10a). Konsumenten
 // laden den vollen Event-/Session-Read-Shape per REST nach.
+//
+// `TimeSkewWarning` (plan-0.12.6 Tranche 3 / R-5) wird mitgeschickt,
+// damit das Dashboard den Indikator schon im Live-Update setzen kann,
+// ohne den vollen Detail-Read nachzuziehen.
 type EventAppendedFrame struct {
-	ProjectID      string
-	SessionID      string
-	EventName      string
-	IngestSequence int64
+	ProjectID       string
+	SessionID       string
+	EventName       string
+	IngestSequence  int64
+	TimeSkewWarning bool
 }
 
 // EventBroker ist der in-process Pub/Sub-Hub für SSE-Live-Updates.
@@ -85,10 +90,11 @@ func (b *EventBroker) Publish(events []domain.PlaybackEvent) {
 	}
 	for _, e := range events {
 		frame := EventAppendedFrame{
-			ProjectID:      e.ProjectID,
-			SessionID:      e.SessionID,
-			EventName:      e.EventName,
-			IngestSequence: e.IngestSequence,
+			ProjectID:       e.ProjectID,
+			SessionID:       e.SessionID,
+			EventName:       e.EventName,
+			IngestSequence:  e.IngestSequence,
+			TimeSkewWarning: e.TimeSkewWarning,
 		}
 		for _, sub := range subs {
 			if sub.projectID != e.ProjectID {

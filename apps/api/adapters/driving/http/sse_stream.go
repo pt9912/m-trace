@@ -154,10 +154,11 @@ func (h *SseStreamHandler) streamBackfill(
 	}
 	for _, e := range events {
 		frame := application.EventAppendedFrame{
-			ProjectID:      e.ProjectID,
-			SessionID:      e.SessionID,
-			EventName:      e.EventName,
-			IngestSequence: e.IngestSequence,
+			ProjectID:       e.ProjectID,
+			SessionID:       e.SessionID,
+			EventName:       e.EventName,
+			IngestSequence:  e.IngestSequence,
+			TimeSkewWarning: e.TimeSkewWarning,
 		}
 		if err := writeAppendedFrame(w, flusher, frame); err != nil {
 			return err
@@ -179,10 +180,11 @@ func (h *SseStreamHandler) logError(msg string, args ...any) {
 // Event-Name-Daten.
 func writeAppendedFrame(w http.ResponseWriter, flusher http.Flusher, frame application.EventAppendedFrame) error {
 	body, err := json.Marshal(frameWire{
-		ProjectID:      frame.ProjectID,
-		SessionID:      frame.SessionID,
-		IngestSequence: frame.IngestSequence,
-		EventName:      frame.EventName,
+		ProjectID:       frame.ProjectID,
+		SessionID:       frame.SessionID,
+		IngestSequence:  frame.IngestSequence,
+		EventName:       frame.EventName,
+		TimeSkewWarning: frame.TimeSkewWarning,
 	})
 	if err != nil {
 		return err
@@ -211,8 +213,9 @@ func writeTruncatedFrame(w http.ResponseWriter, flusher http.Flusher, oldestSeq 
 }
 
 type frameWire struct {
-	ProjectID      string `json:"project_id"`
-	SessionID      string `json:"session_id"`
-	IngestSequence int64  `json:"ingest_sequence"`
-	EventName      string `json:"event_name"`
+	ProjectID       string `json:"project_id"`
+	SessionID       string `json:"session_id"`
+	IngestSequence  int64  `json:"ingest_sequence"`
+	EventName       string `json:"event_name"`
+	TimeSkewWarning bool   `json:"time_skew_warning,omitempty"`
 }

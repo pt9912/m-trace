@@ -308,3 +308,63 @@ func mkRestartEvent(seq driven.IngestSequencer, project, session string, recv ti
 		SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.12.0"},
 	}
 }
+
+// TestRestartPreservesTimeSkewWarning (plan-0.12.6 Tranche 3 / R-5):
+// `time_skew_warning` ist durable über Restart. Mixed-Batch (ein
+// Event mit Skew, eines ohne) muss nach Re-Open mit korrekten Flag-
+// Werten wieder gelesen werden.
+func TestRestartPreservesTimeSkewWarning(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "m-trace.db")
+	t0 := time.Date(2026, 5, 2, 10, 0, 0, 0, time.UTC)
+
+	db1, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open #1: %v", err)
+	}
+	seq1, err := sqlite.NewIngestSequencer(ctx, db1)
+	if err != nil {
+		t.Fatalf("seq #1: %v", err)
+	}
+	sess1 := sqlite.NewSessionRepository(db1)
+	evt1 := sqlite.NewEventRepository(db1)
+
+	noSkew := mkRestartEvent(seq1, "demo", "s1", t0)
+	skewed := mkRestartEvent(seq1, "demo", "s1", t0.Add(1*time.Second))
+	skewed.TimeSkewWarning = true
+
+	events := []domain.PlaybackEvent{noSkew, skewed}
+	if _, err := sess1.UpsertFromEvents(ctx, events); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+	if err := evt1.Append(ctx, events); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	if err := db1.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	db2, err := storage.Open(ctx, path)
+	if err != nil {
+		t.Fatalf("open #2: %v", err)
+	}
+	t.Cleanup(func() { _ = db2.Close() })
+	evt2 := sqlite.NewEventRepository(db2)
+	page, err := evt2.ListBySession(ctx, driven.EventListQuery{
+		ProjectID: "demo", SessionID: "s1", Limit: 10,
+	})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(page.Events) != 2 {
+		t.Fatalf("len(events) = %d, want 2", len(page.Events))
+	}
+	// Sort: ServerReceivedAt asc → noSkew zuerst.
+	if page.Events[0].TimeSkewWarning {
+		t.Errorf("event[0] TimeSkewWarning = true, want false (was persisted as false)")
+	}
+	if !page.Events[1].TimeSkewWarning {
+		t.Errorf("event[1] TimeSkewWarning = false, want true (was persisted as true)")
+	}
+}

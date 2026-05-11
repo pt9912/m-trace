@@ -171,6 +171,15 @@
             {event.delivery_status.replace("_", " ")}
           </span>
         {/if}
+        {#if event.time_skew_warning}
+          <span
+            class="skew-pill"
+            title="Server detected |client_timestamp - server_received_at| > 60s at ingest (mtrace.time.skew_warning)"
+            data-testid="time-skew-indicator"
+          >
+            ⏱ skew
+          </span>
+        {/if}
       </div>
     {:else}
       <div class="timeline-row">
@@ -217,5 +226,13 @@
   .delivery-pill.replayed {
     background: #ffe;
     color: #a73;
+  }
+  .skew-pill {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    background: #fdd;
+    color: #803;
+    font-weight: 600;
   }
 </style>

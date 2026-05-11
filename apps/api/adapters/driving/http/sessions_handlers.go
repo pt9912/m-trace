@@ -360,6 +360,12 @@ type eventWire struct {
 	Meta             map[string]any `json:"meta,omitempty"`
 	CorrelationID    string         `json:"correlation_id"`
 	TraceID          string         `json:"trace_id,omitempty"`
+	// TimeSkewWarning markiert Events, deren `|client_timestamp -
+	// server_received_at|` die 60-s-Schwelle (§5.3) zum Ingest-
+	// Zeitpunkt überschritten hat. `omitempty` hält das Feld auf der
+	// Default-`false`-Seite aus dem Body — alte Clients sehen das
+	// Feld nur, wenn es relevant ist (plan-0.12.6 Tranche 3 / R-5).
+	TimeSkewWarning bool `json:"time_skew_warning,omitempty"`
 }
 
 type sdkWire struct {
@@ -382,9 +388,10 @@ func toEventWireList(in []domain.PlaybackEvent) []eventWire {
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
-			Meta:          e.Meta,
-			CorrelationID: e.CorrelationID,
-			TraceID:       e.TraceID,
+			Meta:            e.Meta,
+			CorrelationID:   e.CorrelationID,
+			TraceID:         e.TraceID,
+			TimeSkewWarning: e.TimeSkewWarning,
 		}
 	}
 	return out

@@ -183,7 +183,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | 🟡      |
 | 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | 🟡      |
 | 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | 🟡      |
-| 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | ⬜      |
+| 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | 🟡      |
 | 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | ⬜      |
 | 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | ⬜      |
 | 6       | R-22 | Origin-/IP-Rate-Limiter (Driven-Port)           | Adapter     | ⬜      |
@@ -384,25 +384,60 @@ DoD:
 Ziel: `mtrace.time.skew_warning=true`-Events sind im Read-Pfad
 (Dashboard ohne Tempo) sichtbar markiert.
 
+**Implementierungs-Note** (während T3 erkannt, 2026-05-11): die
+Skew-Detection lief schon seit `0.4.0` pro Event in `parseEvents`
+(`now.Sub(ts).Abs() > TimeSkewThreshold`), das Ergebnis wurde aber
+nur zum Batch-Flag aggregiert und ans Server-Span-Attribut gehängt
+— nicht auf die Domain-Event geschrieben. T3 schreibt das gleiche
+Pro-Event-Ergebnis zusätzlich aufs `domain.PlaybackEvent.
+TimeSkewWarning` und persistiert es via V6-Spalte; das spec'd
+„`mtrace.time.skew_warning`-Attribut tragen" aus dem alten DoD-
+Wording bezog sich also auf die **Detection-Bedingung**, nicht auf
+ein Wire-Feld im Ingest-Body. Wire-In bleibt unverändert; nur das
+**Wire-Out** des Read-Pfads bekommt das neue Feld.
+
 DoD:
 
-- [ ] SQLite-Schema-Erweiterung (Migration `V6` o. ä.): Spalte
-  `time_skew_warning BOOLEAN NOT NULL DEFAULT 0` an
-  `playback_events`.
-- [ ] Ingest-Pfad (`POST /api/playback-events`-Handler oder
-  Application-Service) setzt das Bit, wenn das eingehende Event
-  ein `mtrace.time.skew_warning`-Attribut trägt.
-- [ ] Read-Pfad: `ListSessions` und `GetSessionDetail` liefern die
-  Spalte mit; SSE-Frames echo'en sie.
-- [ ] Dashboard-UI: Indikator-Pin (z. B. Skew-Symbol) auf dem
-  betroffenen Event in der Timeline.
-- [ ] Doku in [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
-  §2.5/§5.3 aktualisiert: Spalte ist persistent, Read-Pfad-
-  Verhalten beschrieben.
-- [ ] Tests: Ingest-Roundtrip, List-Read, SSE-Frame, Dashboard-
-  Render.
-- [ ] Risks-Backlog R-5: Status 🟢 oder Wieder-Eröffnungs-Trigger
-  (Operator-Report) dokumentiert.
+- [x] SQLite-Schema-Erweiterung Migration `V6` mit Spalte
+  `time_skew_warning INTEGER NOT NULL DEFAULT 0` an
+  `playback_events` (SQLite hat keinen nativen BOOLEAN-Typ;
+  Go `boolToInt`-Helper im SQLite-Adapter). Hand-gepflegt analog
+  V2..V5 (schema.yaml bleibt V1-Source-of-Truth).
+- [x] Ingest-Pfad: `parseEvents` setzt `TimeSkewWarning` pro
+  Event basierend auf der bestehenden 60-s-Schwelle
+  (`TimeSkewThreshold`); Batch-Flag (Span-Attribut) bleibt
+  aggregiert wie bisher. **Wire-In bleibt unverändert** —
+  Detection ist Server-seitig, kein neues Body-Feld.
+- [x] Read-Pfad: `GetSessionDetail` (`eventWire.time_skew_warning`)
+  und SSE-`event_appended`-Frame (`frameWire.time_skew_warning`)
+  echo'en das Flag; beide mit `omitempty` (default `false`).
+  `ListSessions` braucht das Feld nicht (Session-Aggregat, kein
+  Event-Detail) — bei Read von Event-Detail ist es sichtbar.
+- [x] Dashboard-UI: `⏱ skew`-Pin in der Session-Timeline pro Event
+  mit `time_skew_warning=true`; Tooltip nennt die 60-s-Schwelle und
+  das verwandte Span-Attribut. `data-testid="time-skew-indicator"`
+  als Stable-Hook für künftige E2E-Tests.
+- [x] Doku in [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
+  §5.3 erweitert um die Persistenz auf Event-Ebene (Migration V6,
+  Read-Pfad-Verhalten, Dashboard-Anzeige); §2.5-Tabellen-Eintrag
+  für `mtrace.time.skew_warning` ergänzt um den `0.12.6`-
+  Persistenz-Hinweis.
+- [x] Tests:
+  - Use-Case `TestRegisterPlaybackEventBatch_TimeSkew` erweitert
+    um Pro-Event-Snapshot-Assertion.
+  - `TestRegisterPlaybackEventBatch_TimeSkewPerEvent`: Mixed-Batch
+    mit einem Skew-Event und einem In-Range-Event, Pro-Event-
+    Flag-Mapping geprüft.
+  - Adapter `TestRestartPreservesTimeSkewWarning`: Roundtrip
+    durch SQLite inkl. DB-Close/Re-Open.
+  - E2E `TestE2E_TimeSkewPersistedPerEvent`: HTTP-Detail-Body
+    liefert `time_skew_warning=true` für skew-Event und
+    `omitempty` für in-range Event.
+- [x] Risks-Backlog R-5: Status 🟢 mit Auflösungspfad „Migration
+  V6 + Pro-Event-Persistenz + Read-Pfad-Echo + Dashboard-Pin in
+  0.12.6 Tranche 3"; Wieder-Eröffnungs-Trigger bei Operator-
+  Report über fehlende Skew-Sichtbarkeit oder strukturelle
+  Schwellen-Re-Eval (z. B. configurable per Project).
 
 ## 6. Tranche 4 — R-10 Sampling-Vollständigkeits-Marker
 

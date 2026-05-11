@@ -45,8 +45,8 @@ INSERT INTO playback_events(
     ingest_sequence, project_id, session_id, event_name,
     client_timestamp, server_received_at, sequence_number,
     sdk_name, sdk_version, schema_version, meta, delivery_status,
-    trace_id, span_id, correlation_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    trace_id, span_id, correlation_id, time_skew_warning
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	dedupLookupSQL = `
 SELECT 1 FROM playback_events
@@ -62,7 +62,7 @@ LIMIT 1`
 SELECT ingest_sequence, project_id, session_id, event_name,
        client_timestamp, server_received_at, sequence_number,
        sdk_name, sdk_version, meta,
-       trace_id, span_id, correlation_id
+       trace_id, span_id, correlation_id, time_skew_warning
 FROM playback_events
 WHERE project_id = ? AND session_id = ? %s
 ORDER BY server_received_at ASC,
@@ -118,6 +118,7 @@ func (r *EventRepository) Append(ctx context.Context, events []domain.PlaybackEv
 			nullableString(e.TraceID),
 			nullableString(e.SpanID),
 			nullableString(e.CorrelationID),
+			boolToInt(e.TimeSkewWarning),
 		); err != nil {
 			return fmt.Errorf("sqlite: insert event: %w", err)
 		}
@@ -221,10 +222,11 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 		traceID       sql.NullString
 		spanID        sql.NullString
 		correlationID sql.NullString
+		skewWarning   int64
 	)
 	if err := rows.Scan(&ingest, &project, &session, &eventName,
 		&clientTS, &serverTS, &seqNumber, &sdkName, &sdkVer, &metaRaw,
-		&traceID, &spanID, &correlationID); err != nil {
+		&traceID, &spanID, &correlationID, &skewWarning); err != nil {
 		return domain.PlaybackEvent{}, fmt.Errorf("sqlite: scan: %w", err)
 	}
 	clientAt, err := parseTime(clientTS)
@@ -257,6 +259,7 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 		TraceID:          stringFromNull(traceID),
 		SpanID:           stringFromNull(spanID),
 		CorrelationID:    stringFromNull(correlationID),
+		TimeSkewWarning:  skewWarning != 0,
 	}, nil
 }
 
@@ -268,7 +271,7 @@ const listAfterIngestSequenceSQL = `
 SELECT ingest_sequence, project_id, session_id, event_name,
        client_timestamp, server_received_at, sequence_number,
        sdk_name, sdk_version, meta,
-       trace_id, span_id, correlation_id
+       trace_id, span_id, correlation_id, time_skew_warning
 FROM playback_events
 WHERE project_id = ? AND ingest_sequence > ?
 ORDER BY ingest_sequence ASC

@@ -52,10 +52,12 @@ func TestOpen_FreshStart(t *testing.T) {
 	// `project_token_generations`-Tabelle für rotierbare Project-
 	// Token-Generationen (RAK-73). plan-0.12.5 Tranche 2 fügt
 	// V5__auth_issuance_counters.sql mit der Shared-State-Token-
-	// Bucket-Tabelle für R-17 (RAK-77). Fresh-Start läuft damit
-	// fünf Migrationen.
-	if len(rows) != 5 {
-		t.Fatalf("schema_migrations rows = %d, want 5", len(rows))
+	// Bucket-Tabelle für R-17 (RAK-77). plan-0.12.6 Tranche 3 ergänzt
+	// V6__playback_event_time_skew.sql mit der `time_skew_warning`-
+	// Spalte an `playback_events` für R-5 (RAK-83). Fresh-Start läuft
+	// damit sechs Migrationen.
+	if len(rows) != 6 {
+		t.Fatalf("schema_migrations rows = %d, want 6", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
@@ -71,6 +73,9 @@ func TestOpen_FreshStart(t *testing.T) {
 	}
 	if rows[4].version != 5 || rows[4].dirty != 0 {
 		t.Errorf("row[4] = %+v, want version=5 dirty=0", rows[4])
+	}
+	if rows[5].version != 6 || rows[5].dirty != 0 {
+		t.Errorf("row[5] = %+v, want version=6 dirty=0", rows[5])
 	}
 }
 

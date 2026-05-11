@@ -39,6 +39,13 @@ type PlaybackEvent struct {
 	// Event einer Session erzeugt (UUIDv4), für alle Folge-Events
 	// derselben Session konstant. Niemals leer in 0.4.0+-Read-Pfaden.
 	CorrelationID string
+	// TimeSkewWarning ist true, wenn `|ClientTimestamp - ServerReceivedAt|`
+	// die Schwelle `application.TimeSkewThreshold` (60 s) bei
+	// Ingest-Zeit überschritten hat. Persistiert durable in
+	// `playback_events.time_skew_warning` (Migration V6) und Read-Pfad-
+	// sichtbar (List/Detail/SSE) gemäß spec/telemetry-model.md §2.5/§5.3
+	// und plan-0.12.6 Tranche 3 (R-5).
+	TimeSkewWarning bool
 }
 
 // SDKInfo identifies the producing player SDK.

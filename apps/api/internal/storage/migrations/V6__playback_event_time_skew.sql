@@ -1,0 +1,39 @@
+-- V6: Time-Skew-Persistenz auf Event-Ebene für plan-0.12.6 Tranche 3
+-- (RAK-83 / R-5). Hand-gepflegt analog V2/V3/V4/V5; d-migrate
+-- `schema-generate` berührt ausschließlich V1__m_trace.sql.
+--
+-- Zweck:
+--   `0.4.0` bis `0.12.5` markierten Time-Skew (`|client_timestamp -
+--   server_received_at| > 60s` — Schwelle `TimeSkewThreshold` in
+--   apps/api/hexagon/application/register_playback_event_batch.go)
+--   nur am Server-Span (`mtrace.time.skew_warning=true` aus
+--   spec/telemetry-model.md §5.3). Im Read-Pfad (Dashboard ohne
+--   Tempo) waren skew-betroffene Events nicht sichtbar markiert —
+--   Operator musste in Tempo schauen.
+--
+--   `0.12.6` zieht die Markierung auf Event-Ebene nach: persistente
+--   Spalte plus Echo in `ListSessions` / `GetSessionDetail` / SSE-
+--   Frames plus Dashboard-Indikator. Span-Attribut auf Batch-Ebene
+--   bleibt unverändert — beide Pfade tragen jetzt denselben Beleg.
+--
+-- Spaltenform:
+--   - INTEGER NOT NULL DEFAULT 0 — SQLite hat keinen nativen
+--     BOOLEAN-Typ; Go schreibt `0`/`1` analog zum bestehenden
+--     `delivery_status`-Pattern (ON-CONFLICT-Default greift bei
+--     bestehenden Zeilen, die vor V6 angenommen wurden).
+--   - NOT NULL: Read-Pfad-Verträge brauchen einen deterministischen
+--     Boolean (kein Tri-State); `0` = kein Skew, `1` = Skew.
+--   - DEFAULT 0: Backfill für existierende Reihen ohne Skew-Info.
+--     Pre-V6-Events bleiben damit als „kein Skew" sichtbar — das ist
+--     konservativ (false-negative ist akzeptabel, false-positive wäre
+--     irreführend).
+--
+-- Rollback:
+--   SQLite unterstützt `ALTER TABLE … DROP COLUMN` ab 3.35 (2021-03);
+--   die modernc.org/sqlite-Version in `go.mod` ist deutlich jünger.
+--   Ein manueller Rollback auf V5 wäre `ALTER TABLE playback_events
+--   DROP COLUMN time_skew_warning;`. Index-Pflege ist nicht nötig —
+--   die Spalte ist nicht indiziert.
+
+ALTER TABLE "playback_events"
+    ADD COLUMN "time_skew_warning" INTEGER NOT NULL DEFAULT 0;

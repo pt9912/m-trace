@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 // plan-0.4.0 §4.7 — End-to-End-Tests für die gemischte Korrelation
@@ -94,6 +95,65 @@ func TestE2E_CrossBatch_SameCorrelationID(t *testing.T) {
 	if cid(0) == "" || cid(0) != cid(1) {
 		t.Errorf("correlation_id must be equal across batches (cid0=%q, cid1=%q)", cid(0), cid(1))
 	}
+}
+
+// TestE2E_TimeSkewPersistedPerEvent (plan-0.12.6 Tranche 3 / R-5):
+// Pro-Event-`time_skew_warning` ist im Detail-Read-Body sichtbar.
+// Setup nutzt fixe Server-Clock auf 2026-04-28T12:05:00Z; Event 1
+// hat client_timestamp = 12:05:00 (kein Skew), Event 2 hat
+// client_timestamp = 12:00:00 (5 min Skew → triggert > 60s).
+func TestE2E_TimeSkewPersistedPerEvent(t *testing.T) {
+	t.Parallel()
+	fixedNow := mustParseTime(t, "2026-04-28T12:05:00.000Z")
+	srv := newTestServerWithClock(t, func() time.Time { return fixedNow })
+
+	body := `{
+	  "schema_version": "1.0",
+	  "events": [
+	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-skew","client_timestamp":"2026-04-28T12:05:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}},
+	    {"event_name":"playback_paused","project_id":"demo","session_id":"sess-skew","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}
+	  ]
+	}`
+	if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {
+		t.Fatalf("post: %d", r.StatusCode)
+	}
+
+	resp, payload := getJSON(t, srv.URL, "/api/stream-sessions/sess-skew")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("detail: %d", resp.StatusCode)
+	}
+	events, _ := payload["events"].([]any)
+	if len(events) != 2 {
+		t.Fatalf("expected 2 events, got %d", len(events))
+	}
+	getSkew := func(i int) (bool, bool) {
+		ev, _ := events[i].(map[string]any)
+		raw, ok := ev["time_skew_warning"]
+		if !ok {
+			return false, false
+		}
+		v, _ := raw.(bool)
+		return v, true
+	}
+	// Event 1 (no skew): omitempty → fehlt im Body.
+	if _, present := getSkew(0); present {
+		t.Errorf("event[0] expected omit-empty time_skew_warning, got present")
+	}
+	// Event 2 (5min skew): true.
+	v, present := getSkew(1)
+	if !present || !v {
+		t.Errorf("event[1] expected time_skew_warning=true, got present=%v v=%v", present, v)
+	}
+}
+
+// mustParseTime ist ein Test-Helper für die Time-Skew-Tests.
+func mustParseTime(t *testing.T, raw string) time.Time {
+	t.Helper()
+	ts, err := time.Parse(time.RFC3339Nano, raw)
+	if err != nil {
+		t.Fatalf("parse %q: %v", raw, err)
+	}
+	return ts.UTC()
 }
 
 // TestE2E_Degradation_NetworkDetailUnavailable pinnt §4.7 DoD-Item 2:

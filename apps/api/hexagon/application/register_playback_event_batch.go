@@ -279,7 +279,8 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 			u.metrics.InvalidEvents(len(in.Events))
 			return nil, false, domain.ErrInvalidEvent
 		}
-		if now.Sub(ts).Abs() > TimeSkewThreshold {
+		eventSkew := now.Sub(ts).Abs() > TimeSkewThreshold
+		if eventSkew {
 			timeSkewWarning = true
 		}
 		// plan-0.4.0 §4.4 D1: reservierte Meta-Keys vor Persistenz
@@ -306,9 +307,10 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 				Name:    e.SDK.Name,
 				Version: e.SDK.Version,
 			},
-			Meta:    meta,
-			TraceID: in.Trace.TraceID,
-			SpanID:  in.Trace.SpanID,
+			Meta:            meta,
+			TraceID:         in.Trace.TraceID,
+			SpanID:          in.Trace.SpanID,
+			TimeSkewWarning: eventSkew,
 		})
 	}
 	return parsed, timeSkewWarning, nil

@@ -54,6 +54,10 @@ export interface PlaybackEvent {
    *  `"replayed"`. Vor §2.3-Closeout liefern Read-Antworten das
    *  Feld nicht; daher optional. */
   delivery_status?: "accepted" | "duplicate_suspected" | "replayed";
+  /** Server-Markierung für Time-Skew (`|client_timestamp -
+   *  server_received_at| > 60s`); Persistenz seit plan-0.12.6
+   *  Tranche 3 (R-5). `omitempty` → Feld fehlt bei false. */
+  time_skew_warning?: boolean;
 }
 
 export interface SessionsResponse {

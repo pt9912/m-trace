@@ -36,6 +36,16 @@ func parseTime(raw string) (time.Time, error) {
 	return t.UTC(), nil
 }
 
+// boolToInt mappt einen Go-`bool` auf den SQLite-INTEGER-Wert (0/1).
+// SQLite hat keinen nativen BOOLEAN-Typ; siehe Migration V6
+// (`time_skew_warning INTEGER NOT NULL DEFAULT 0`).
+func boolToInt(b bool) int64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 // nullableInt64 wandelt einen optionalen *int64 in einen für
 // database/sql passenden Wert: nil → SQL-NULL, sonst der Wert.
 func nullableInt64(p *int64) any {

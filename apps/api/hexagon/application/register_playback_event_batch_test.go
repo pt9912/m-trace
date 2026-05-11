@@ -662,7 +662,7 @@ func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			uc, _, _, _, _, _, _, _ := newUseCase()
+			uc, _, repo, _, _, _, _, _ := newUseCase()
 			in := validBatch()
 			in.Events[0].ClientTimestamp = c.clientStamp
 
@@ -671,10 +671,55 @@ func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 				t.Fatalf("unexpected: %v", err)
 			}
 			if res.TimeSkewWarning != c.wantWarning {
-				t.Errorf("TimeSkewWarning = %v, want %v (boundary case)",
+				t.Errorf("TimeSkewWarning (batch) = %v, want %v (boundary case)",
 					res.TimeSkewWarning, c.wantWarning)
 			}
+			// plan-0.12.6 Tranche 3 (R-5): Pro-Event-Flag muss
+			// exakt dem Batch-Flag entsprechen, weil hier nur ein
+			// Event im Batch ist.
+			snap := repo.appended
+			if len(snap) != 1 {
+				t.Fatalf("expected 1 event persisted, got %d", len(snap))
+			}
+			if snap[0].TimeSkewWarning != c.wantWarning {
+				t.Errorf("TimeSkewWarning (event) = %v, want %v",
+					snap[0].TimeSkewWarning, c.wantWarning)
+			}
 		})
+	}
+}
+
+// TestRegisterPlaybackEventBatch_TimeSkewPerEvent (plan-0.12.6
+// Tranche 3 / R-5): In einem Mixed-Batch mit zwei Events darf der
+// Pro-Event-Flag unterschiedlich sein, der Batch-Flag aggregiert auf
+// „mindestens eines hat Skew".
+func TestRegisterPlaybackEventBatch_TimeSkewPerEvent(t *testing.T) {
+	t.Parallel()
+	uc, _, repo, _, _, _, _, _ := newUseCase()
+	in := validBatch()
+	// Erstes Event: kein Skew (Default in validBatch).
+	// Zweites Event mit demselben session_id: Skew (2 min Schräglage).
+	skewed := in.Events[0]
+	skewed.SequenceNumber = nil
+	skewed.ClientTimestamp = "2026-04-28T11:58:00.000Z"
+	in.Events = append(in.Events, skewed)
+
+	res, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if !res.TimeSkewWarning {
+		t.Errorf("TimeSkewWarning (batch) = false, want true (one of two events has skew)")
+	}
+	snap := repo.appended
+	if len(snap) != 2 {
+		t.Fatalf("expected 2 events persisted, got %d", len(snap))
+	}
+	if snap[0].TimeSkewWarning {
+		t.Errorf("event[0] TimeSkewWarning = true, want false (in-range client_timestamp)")
+	}
+	if !snap[1].TimeSkewWarning {
+		t.Errorf("event[1] TimeSkewWarning = false, want true (2-min client_timestamp)")
 	}
 }
 

@@ -371,7 +371,7 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 | `mtrace.batch.session_count` | ja | int ≥ 0 | Anzahl distinkter `session_id` im Batch |
 | `mtrace.session.correlation_id` | bei Single-Session-Batch (`session_count == 1`); **nicht gesetzt** sonst (kein Empty-String, keine Komma-Liste) | UUIDv4 als String | erlaubt Tempo-Suche nach Sessions ohne `session_id` zu exposen |
 | `mtrace.trace.parse_error` | optional | Boolean | gesetzt, wenn `traceparent` ungültig war |
-| `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3) |
+| `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3). Seit `0.12.6` Tranche 3 (R-5) ergänzend pro-Event in `playback_events.time_skew_warning` persistiert und im Read-Pfad als JSON-Feld `time_skew_warning` exponiert. |
 
 **`session_id`-Span-Attribut-Verbot.** Ab `0.4.0` setzt der Server in **keinem** OTel-Span ein `session_id`-Attribut (weder unter dem rohen Schlüssel `session_id` noch in den Varianten `mtrace.session.id` / `mtrace.session_id`). Single-Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id`. Die historische Aussage aus §2.1, dass `session_id` als Span-Attribut zulässig sei, gilt **nur** für `0.1.x` und ist nicht Teil des Tranche-2-Vertrags. Test-Anker: `TestHTTP_Span_DoesNotSetSessionIDAttribute`.
 
@@ -665,7 +665,9 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 - Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden (F-129) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
 - Bevorzugt: Latenz = `server_received_at - client_time_origin` (skew-tolerant), nicht `server_received_at - client_timestamp`.
-- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (in `0.4.0` Konstante 60 s, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5). Persistenz des Skew-Flags auf Event-Ebene (Domain-Flag, dedizierte Schema-Spalte, Dashboard-Anzeige) ist in `0.4.0` explizit deferred — siehe `docs/planning/in-progress/risks-backlog.md` R-5 für das Folge-Item.
+- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (in `0.4.0` Konstante 60 s, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5).
+- **Persistenz auf Event-Ebene** (seit `0.12.6` Tranche 3 / R-5): zusätzlich zum Span-Attribut auf Batch-Ebene wird das Skew-Bit **pro Event** in `playback_events.time_skew_warning` (Migration V6, `INTEGER NOT NULL DEFAULT 0`) persistiert. Die Pro-Event-Prüfung nutzt dieselbe 60-s-Schwelle und wird im Ingest-Use-Case unmittelbar nach dem Parsen des `client_timestamp` durchgeführt. Read-Pfade (`ListSessions`, `GetSessionDetail`, SSE-Frames in `/api/stream-sessions/stream`) echo'en das Flag als JSON-Feld `time_skew_warning` (`omitempty`, default `false`); Pre-V6-Events ohne Migration-Backfill bleiben damit als `false` sichtbar (konservativ; kein Tri-State).
+- Dashboard-Anzeige: Time-Skew-Indikator (`⏱ skew`-Pin) in der Session-Timeline pro Event mit `time_skew_warning=true`; Tooltip nennt die Schwelle und das Span-Attribut (`mtrace.time.skew_warning`).
 
 ---
 
