@@ -59,6 +59,7 @@ func NewRouter(
 	ingestControl driving.IngestControlInbound,
 	authSession driving.AuthSessionInbound,
 	playbackAuthHeaders *AuthHeaderParser,
+	browserIngestPolicies BrowserIngestPolicies,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -122,7 +123,7 @@ func NewRouter(
 	}
 
 	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, preflightMetrics, tracer, logger)
-	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, preflightMetrics, logger)
+	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, browserIngestPolicies, preflightMetrics, logger)
 	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, preflightMetrics, logger)
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
@@ -179,11 +180,28 @@ func registerIngestControlRoutes(
 	ingest driving.IngestControlInbound,
 	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
+	browserPolicies BrowserIngestPolicies,
 	preflightMetrics PreflightMetrics,
 	logger *slog.Logger,
 ) {
 	if ingest == nil {
 		return
+	}
+	// `0.12.5`/RAK-80: wenn mindestens ein Project eine aktivierte
+	// `BrowserIngestPolicy` hat, läuft der Preflight gegen die
+	// Browser-Ingest-Allowlist (Project-Policy) und POST-Pfade
+	// werden durch `browserIngestEnforcement` Middleware-gefiltert.
+	// Ohne aktivierte Policy bleibt der RAK-74-Scope-Cut-Pfad
+	// (dashboardPreflight, globale konservative Allowlist).
+	preflight := dashboardPreflightHandler(allowlist, preflightMetrics)
+	wrap := func(h http.Handler) http.Handler { return h }
+	if browserPolicies != nil {
+		preflight = browserIngestPreflightHandler(browserPolicies, preflightMetrics)
+		wrap = browserIngestEnforcement(BrowserIngestEnforcementConfig{
+			Projects: resolver,
+			Policies: browserPolicies,
+			Logger:   logger,
+		})
 	}
 	collection := &IngestStreamHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
 	detail := &IngestStreamDetailHandler{UseCase: ingest, Resolver: resolver, Logger: logger}
@@ -198,21 +216,21 @@ func registerIngestControlRoutes(
 		UseCase: ingest, Resolver: resolver, Logger: logger,
 		Kind: domain.StreamLifecycleEventEnded,
 	}
-	mux.Handle("POST /api/ingest/streams", collection)
+	mux.Handle("POST /api/ingest/streams", wrap(collection))
 	mux.Handle("GET /api/ingest/streams", collection)
 	mux.Handle("GET /api/ingest/streams/{id}", detail)
-	mux.Handle("POST /api/ingest/streams/{id}/rotate-key", rotate)
-	mux.Handle("POST /api/ingest/streams/{id}/validate-key", validate)
+	mux.Handle("POST /api/ingest/streams/{id}/rotate-key", wrap(rotate))
+	mux.Handle("POST /api/ingest/streams/{id}/validate-key", wrap(validate))
 	mux.Handle("GET /api/ingest/media-server-config", mediaConfig)
-	mux.Handle("POST /api/ingest/hooks/stream-started", hookStarted)
-	mux.Handle("POST /api/ingest/hooks/stream-ended", hookEnded)
-	mux.HandleFunc("OPTIONS /api/ingest/streams", dashboardPreflightHandler(allowlist, preflightMetrics))
-	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", dashboardPreflightHandler(allowlist, preflightMetrics))
-	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", dashboardPreflightHandler(allowlist, preflightMetrics))
-	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", dashboardPreflightHandler(allowlist, preflightMetrics))
-	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", dashboardPreflightHandler(allowlist, preflightMetrics))
-	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-started", dashboardPreflightHandler(allowlist, preflightMetrics))
-	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-ended", dashboardPreflightHandler(allowlist, preflightMetrics))
+	mux.Handle("POST /api/ingest/hooks/stream-started", wrap(hookStarted))
+	mux.Handle("POST /api/ingest/hooks/stream-ended", wrap(hookEnded))
+	mux.HandleFunc("OPTIONS /api/ingest/streams", preflight)
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", preflight)
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", preflight)
+	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/validate-key", preflight)
+	mux.HandleFunc("OPTIONS /api/ingest/media-server-config", preflight)
+	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-started", preflight)
+	mux.HandleFunc("OPTIONS /api/ingest/hooks/stream-ended", preflight)
 }
 
 // registerAuthSessionRoutes verdrahtet den Session-Token-Issuance-

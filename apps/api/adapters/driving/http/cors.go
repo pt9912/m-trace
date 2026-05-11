@@ -12,6 +12,27 @@ type OriginAllowlist interface {
 	IsOriginInGlobalUnion(origin string) bool
 }
 
+// BrowserIngestOriginAllowlist abstrahiert die Union der Browser-
+// Origins, die in einer aktivierten
+// `domain.BrowserIngestPolicy.CORSAllowlist` stehen (`0.12.5`/RAK-80).
+// Wird vom `/api/ingest/*`-Preflight-Handler genutzt, um den
+// RAK-74-Scope-Cut kontrolliert aufzuheben. `nil`-Implementierung
+// (oder eine Implementierung, die für jede Origin `false` liefert)
+// hält den RAK-74-Scope-Cut strikt.
+type BrowserIngestOriginAllowlist interface {
+	IsBrowserIngestOriginAllowed(origin string) bool
+}
+
+// BrowserIngestPolicies bündelt Allowlist- und Policy-Lookup-API für
+// den Browser-Ingest-Pfad (`0.12.5`/RAK-80). Der
+// `auth.InMemoryProjectPolicyResolver` erfüllt das Interface — er
+// bedient beide Methoden in einer Implementierung. `nil` deaktiviert
+// den Browser-Ingest-Pfad komplett (RAK-74-Scope-Cut bleibt strikt).
+type BrowserIngestPolicies interface {
+	BrowserIngestOriginAllowlist
+	BrowserIngestPolicyLookup
+}
+
 // PreflightMetrics bekommt einen Hook für jede `OPTIONS`-Antwort,
 // die wegen unbekannter Origin minimal abgewiesen wurde (`0.12.0`
 // Tranche 4 / Review-Finding Y3). `path` ist die registrierte
@@ -45,6 +66,10 @@ const (
 	playerSDKAllowedMethods = "POST, OPTIONS"
 	dashboardAllowedMethods = "GET, OPTIONS"
 	analyzeAllowedMethods   = "POST, OPTIONS"
+	// browserIngestAllowedMethods sind die Methoden, die der Browser-
+	// Ingest-Pfad nach RAK-80 erlaubt: POST für Stream-Lifecycle-Hooks
+	// und Stream-Anlage; OPTIONS für den Preflight selbst.
+	browserIngestAllowedMethods = "POST, OPTIONS"
 	preflightMaxAge         = "600"
 	// preflightCacheControl: §3.9 fordert `no-store` für jede
 	// Preflight-Antwort. Trade-off: shared Caches (CDNs/Proxies)
@@ -92,6 +117,12 @@ const dashboardAllowedHeaders = "Content-Type, X-MTrace-Project, X-MTrace-Token"
 // Backfill (Spec §10a). SSE läuft ebenfalls token-/session-frei.
 const sseAllowedHeaders = "Content-Type, X-MTrace-Project, X-MTrace-Token, Last-Event-ID"
 
+// browserIngestAllowedHeaders deckt den Browser-Ingest-Pfad ab
+// (`0.12.5`/RAK-80). `X-MTrace-CSRF` ist der Defense-in-Depth-Header,
+// wenn `BrowserIngestPolicy.CSRFRequired` aktiv ist. `X-MTrace-Token`
+// ist die heutige Operator-/Browser-Auth.
+const browserIngestAllowedHeaders = "Content-Type, X-MTrace-Token, X-MTrace-CSRF"
+
 // corsMiddleware setzt `Vary` plus — sofern Origin in der Union steht
 // — den gespiegelten Allow-Origin auf jede ausgehende Antwort.
 // Verhindert, dass CDNs/Proxies eine Origin-spezifische Antwort für
@@ -129,6 +160,40 @@ func playerSDKPreflightHandler(allowlist OriginAllowlist, metrics PreflightMetri
 // diese Endpoints konsumieren keine Session Tokens.
 func dashboardPreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {
 	return preflightHandler(allowlist, metrics, dashboardAllowedMethods, dashboardAllowedHeaders)
+}
+
+// browserIngestPreflightHandler bedient `OPTIONS /api/ingest/*`,
+// wenn mindestens ein Project eine aktivierte
+// `domain.BrowserIngestPolicy` hat (`0.12.5`/RAK-80). Allowlist
+// kommt aus dem Project-Policy-Resolver, nicht aus der globalen
+// Project-Origin-Union — damit Origins, die nur in einer
+// BrowserIngest-Policy stehen, durchkommen.
+//
+// Antwort-Wire (analog `dashboardPreflightHandler`):
+//   - Match → `204` + Allow-Origin/Methods/Headers/Max-Age, plus
+//     Vary und `Cache-Control: no-store`.
+//   - kein Match → `204` ohne Allow-* (RAK-74-Scope-Cut-Verhalten);
+//     `preflightMetrics.CORSPreflightRefused(path)` wird inkrementiert.
+//
+// `allowlist == nil` wirft auf jeden Origin „kein Match" und ist
+// gleichwertig zum dashboard-Preflight ohne Browser-Ingest-Policy.
+func browserIngestPreflightHandler(allowlist BrowserIngestOriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {
+	wrapper := browserIngestAllowlistAdapter{inner: allowlist}
+	return preflightHandler(wrapper, metrics, browserIngestAllowedMethods, browserIngestAllowedHeaders)
+}
+
+// browserIngestAllowlistAdapter mappt eine
+// `BrowserIngestOriginAllowlist` auf die `OriginAllowlist`-Form, die
+// `preflightHandler` konsumiert.
+type browserIngestAllowlistAdapter struct {
+	inner BrowserIngestOriginAllowlist
+}
+
+func (a browserIngestAllowlistAdapter) IsOriginInGlobalUnion(origin string) bool {
+	if a.inner == nil {
+		return false
+	}
+	return a.inner.IsBrowserIngestOriginAllowed(origin)
 }
 
 // ssePreflightHandler bedient `OPTIONS /api/stream-sessions/stream`

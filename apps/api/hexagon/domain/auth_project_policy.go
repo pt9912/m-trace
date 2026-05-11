@@ -146,15 +146,79 @@ func (o OriginPolicy) AllowsAudience(aud SessionTokenAudience) bool {
 //
 // `ProjectMaxTTLSeconds` ≤ 0 bedeutet „nimm den globalen Default
 // 900"; das wird in `EffectiveMaxTTLSeconds` aufgelöst.
+//
+// `BrowserIngest` (`0.12.5`/RAK-80) hebt den RAK-74-Scope-Cut für
+// `/api/ingest/*` kontrolliert auf, sobald ein Project sie aktiv
+// schaltet. Default `IsZero` → RAK-74-Scope-Cut bleibt strikt:
+// `/api/ingest/*` ist operator-only, kein Browser-Zugriff.
 type ProjectPolicy struct {
-	ProjectID            string
-	AllowedOrigins       []string
-	AllowedMethods       []HTTPMethod
+	ProjectID             string
+	AllowedOrigins        []string
+	AllowedMethods        []HTTPMethod
 	AllowedRequestHeaders []AllowedRequestHeader
-	AllowedAudiences     []SessionTokenAudience
-	OriginOverrides      []OriginPolicy
-	ProjectMaxTTLSeconds int
-	RateLimit            RateLimitPolicy
+	AllowedAudiences      []SessionTokenAudience
+	OriginOverrides       []OriginPolicy
+	ProjectMaxTTLSeconds  int
+	RateLimit             RateLimitPolicy
+	BrowserIngest         BrowserIngestPolicy
+}
+
+// BrowserIngestPolicy ist die Project-spezifische Browser-Ingest-
+// Konfiguration aus `0.12.5` Tranche 4 (RAK-80). Hebt den
+// RAK-74-Scope-Cut auf `/api/ingest/*` kontrolliert auf:
+//
+//   - `Enabled=false` (Default): `/api/ingest/*` bleibt für dieses
+//     Project operator-/CLI-only. Browser-Preflights für Origins
+//     dieses Projects laufen über die globale, konservative
+//     Allowlist (RAK-74-Scope-Cut).
+//   - `Enabled=true`: Browser-Origins aus `CORSAllowlist` dürfen
+//     Preflight und POST-Pfade nutzen. CSRF und Origin-Pin sind
+//     optionale Defense-in-Depth-Felder; sobald gesetzt, gelten sie
+//     **strikt** und ein POST ohne entsprechende Header bzw. mit
+//     mismatchendem Origin wird mit `403 ingest_browser_*` abgelehnt.
+//
+// Sicherheitsprofil: ein leeres `CORSAllowlist` bei `Enabled=true`
+// ergibt einen aktivierten, aber leeren Allowlist-Pfad — kein Origin
+// passt, jeder Preflight läuft als RAK-74-fallback. Das ist erlaubt,
+// damit ein Operator die Policy stufenweise aktivieren kann
+// (Schema aktiv, Allowlist noch leer).
+type BrowserIngestPolicy struct {
+	Enabled       bool
+	CORSAllowlist []string
+	CSRFRequired  bool
+	OriginPin     string
+}
+
+// IsZero gibt true zurück, wenn keine Browser-Ingest-Konfiguration
+// gesetzt wurde — der Default-Pfad (RAK-74-Scope-Cut bleibt strikt).
+func (b BrowserIngestPolicy) IsZero() bool {
+	return !b.Enabled && len(b.CORSAllowlist) == 0 && !b.CSRFRequired && b.OriginPin == ""
+}
+
+// AllowsBrowserOrigin prüft, ob ein konkreter Browser-Origin für
+// `/api/ingest/*` zugelassen ist. Setzt `Enabled=true` voraus; ein
+// leerer Origin ist im Browser-Kontext nicht erlaubt (im Gegensatz
+// zu `ProjectPolicy.AllowsOrigin`, das den CLI-Pfad offen hält).
+func (b BrowserIngestPolicy) AllowsBrowserOrigin(origin string) bool {
+	if !b.Enabled || origin == "" {
+		return false
+	}
+	for _, o := range b.CORSAllowlist {
+		if o == origin {
+			return true
+		}
+	}
+	return false
+}
+
+// MatchesOriginPin prüft den `OriginPin`-Constraint (falls gesetzt):
+// `origin` muss exakt dem konfigurierten Pin entsprechen. Ein leerer
+// Pin deaktiviert den Check (Defense-in-Depth ist opt-in).
+func (b BrowserIngestPolicy) MatchesOriginPin(origin string) bool {
+	if b.OriginPin == "" {
+		return true
+	}
+	return origin == b.OriginPin
 }
 
 // EffectiveMaxTTLSeconds liefert die wirksame Project-TTL-Grenze,

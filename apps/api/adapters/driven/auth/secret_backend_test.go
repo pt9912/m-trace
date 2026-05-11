@@ -14,6 +14,25 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 )
 
+func TestNewEnvSecretBackend_DefaultsToOSGetenv(t *testing.T) {
+	t.Parallel()
+	b := auth.NewEnvSecretBackend()
+	if b == nil {
+		t.Fatal("NewEnvSecretBackend returned nil")
+	}
+	if b.LookupFn == nil {
+		t.Error("LookupFn must default to os.Getenv")
+	}
+	if b.Now == nil {
+		t.Error("Now must default to time.Now")
+	}
+	// Ohne ENV-Variablen → ErrNoSecretConfigured.
+	_, _, err := b.LoadSigningKeys(context.Background())
+	if !errors.Is(err, auth.ErrNoSecretConfigured) {
+		t.Errorf("default lookup with no env should return ErrNoSecretConfigured, got %v", err)
+	}
+}
+
 func TestEnvSecretBackend_MultiKeyHappyPath(t *testing.T) {
 	t.Parallel()
 	secretA := base64.RawURLEncoding.EncodeToString([]byte("secret-a-32-bytes-1234567890abcd"))

@@ -459,6 +459,77 @@ oder KMS, Compliance-Audit (PCI/SOC2). Die Skelett-Lieferung in
 `0.12.5` deckt nur den Driven-Port und einen Lab-Pfad — siehe
 R-20 im Risiken-Backlog.
 
+### 5.6 Browser-Ingest-Policy
+
+Bis `0.12.0` war `/api/ingest/*` strikt operator-/CLI-only:
+der RAK-74-Scope-Cut hielt jeden Browser-Konsumenten heraus.
+`0.12.5` Tranche 4 (RAK-80, R-21) hebt diesen Scope-Cut
+**kontrolliert** auf — pro Project per
+`domain.BrowserIngestPolicy`.
+
+**Schema-Erweiterung** im `domain.ProjectPolicy`:
+
+| Feld            | Typ        | Bedeutung                                                                                       |
+| --------------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| `Enabled`       | `bool`     | Master-Switch. `false` (Default) → RAK-74-Scope-Cut bleibt strikt. `true` → Browser-Pfad offen. |
+| `CORSAllowlist` | `[]string` | Browser-Origins, die durchgelassen werden (genauer String-Match).                               |
+| `CSRFRequired`  | `bool`     | Wenn `true`, müssen POSTs einen nicht-leeren `X-MTrace-CSRF`-Header tragen.                     |
+| `OriginPin`     | `string`   | Defense-in-Depth: wenn gesetzt, muss `Origin` exakt diesem Wert entsprechen (nicht nur in Allowlist). |
+
+**Preflight-Verhalten** für `OPTIONS /api/ingest/*`:
+
+- **Keine aktivierte Policy für irgendein Project**: Preflight läuft
+  über die globale konservative Allowlist (`dashboardPreflightHandler`)
+  — RAK-74-Scope-Cut bleibt strikt.
+- **Aktivierte Policy + Origin in CORSAllowlist eines Projects**:
+  `204` + `Access-Control-Allow-Origin: <origin>` plus
+  `Access-Control-Allow-Methods: POST, OPTIONS` und
+  `Access-Control-Allow-Headers: Content-Type, X-MTrace-Token, X-MTrace-CSRF`.
+- **Aktivierte Policy aber Origin nicht in Allowlist**: `204` ohne
+  Allow-Origin (kein Enumerations-Leak); `mtrace_cors_preflight_refused_total`
+  wird inkrementiert.
+
+**POST-Enforcement** auf `/api/ingest/*` (Middleware, hängt sich vor
+die bestehenden Handler):
+
+1. **Kein `X-MTrace-Token`-Header**: Middleware tut nichts; der
+   Handler liefert sein heutiges `auth_token_*`-Verhalten.
+2. **Token resolved + Policy.Enabled=false**: Pfad wie heute
+   (Backwards-Compat).
+3. **Token resolved + Enabled=true**:
+   - Origin **muss** in `CORSAllowlist` stehen — sonst
+     `403 ingest_browser_origin_not_allowed`.
+   - Wenn `OriginPin != ""`, muss Origin exakt dem Pin entsprechen
+     — sonst `403 ingest_browser_origin_pin_mismatch`. Ein
+     fehlender `Origin`-Header bei gesetztem Pin gilt ebenfalls als
+     Mismatch.
+   - Wenn `CSRFRequired=true`, muss `X-MTrace-CSRF` nicht-leer sein
+     — sonst `403 ingest_browser_csrf_missing`. **Hinweis**: das
+     Skelett prüft nur Header-Anwesenheit; eine produktive Anti-
+     CSRF-Token-Bibliothek mit signierten/zeitlich begrenzten
+     Tokens ist Folge-Item (siehe R-21-Mitigation im Backlog).
+
+**Beispiel-Konfiguration (Operator-Setup, in-memory Resolver):**
+
+```go
+policies := map[string]domain.ProjectPolicy{
+    "tenant-a": {
+        ProjectID:      "tenant-a",
+        AllowedOrigins: []string{"https://app.tenant-a.example.com"},
+        BrowserIngest: domain.BrowserIngestPolicy{
+            Enabled:       true,
+            CORSAllowlist: []string{"https://app.tenant-a.example.com"},
+            CSRFRequired:  true,
+            OriginPin:     "https://app.tenant-a.example.com",
+        },
+    },
+}
+```
+
+Reproduzierbarer Lab-Smoke: `make smoke-browser-ingest` (opt-in,
+nicht in `make gates`). Der Smoke fährt alle sechs Preflight-/POST-
+Pfade durch — inklusive Origin-Pin-Mismatch und CSRF-Missing-Fall.
+
 ---
 
 ## 6. Datenschutz / GDPR

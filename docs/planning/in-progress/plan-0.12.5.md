@@ -183,7 +183,7 @@ Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 | 1 | R-18 Multi-Key-Rotation (Code) | 🟡 |
 | 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | 🟡 |
 | 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | 🟡 |
-| 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ⬜ |
+| 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | 🟡 |
 | 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ⬜ |
 | 6 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | ⬜ |
 
@@ -371,20 +371,48 @@ Scope-Cut wird durch RAK-80 aufgehoben.
 
 DoD:
 
-- [ ] Project-Policy-Schema erweitert: `browser_ingest_policy.{enabled,
-  cors_allowlist[],csrf_required,origin_pin}` (oder ähnlich,
-  finalisiert beim Schema-Diff).
-- [ ] `/api/ingest/*`-CORS-Pfad: Mit aktivem Project-Policy-Eintrag
-  Origin gegen Allowlist prüfen; ohne Eintrag gilt RAK-74-Scope-Cut
-  weiter (heutiges 204-Verhalten).
-- [ ] CSRF-Schutz oder Origin-Pin als Default-Vorgabe für aktivierten
-  Browser-Pfad.
-- [ ] Tests: Browser-Origin mit Allowlist-Match → akzeptiert;
-  ohne Match → 204 (RAK-74-Scope-Cut bleibt); ohne aktivierte
-  Policy → 204.
-- [ ] `make smoke-browser-ingest` als Lab-Pfad.
-- [ ] Risks-Backlog R-21: Trigger als „aufgelöst durch RAK-80 in
-  0.12.5" markieren.
+- [x] Project-Policy-Schema erweitert: `domain.ProjectPolicy.BrowserIngest`
+  vom Typ `BrowserIngestPolicy` mit Feldern `Enabled` (bool),
+  `CORSAllowlist` ([]string), `CSRFRequired` (bool) und `OriginPin`
+  (string). Domain-Helpers `IsZero()`, `AllowsBrowserOrigin(origin)`,
+  `MatchesOriginPin(origin)` in
+  `apps/api/hexagon/domain/auth_project_policy.go`.
+- [x] `/api/ingest/*`-CORS-Pfad: `browserIngestPreflightHandler` in
+  `apps/api/adapters/driving/http/cors.go` konsultiert den
+  Project-Policy-Resolver (Methode `IsBrowserIngestOriginAllowed`
+  am `InMemoryProjectPolicyResolver`). Match → 204 + Allow-Origin
+  + `Access-Control-Allow-Methods: POST, OPTIONS` +
+  `Allow-Headers: Content-Type, X-MTrace-Token, X-MTrace-CSRF`.
+  Ohne Match → 204 ohne Allow-Origin (kein Enum-Leak). Ohne
+  aktivierte Policy für irgendein Project → der heutige
+  `dashboardPreflightHandler` bleibt aktiv
+  (RAK-74-Scope-Cut strikt; Backwards-Compat-Pfad).
+- [x] CSRF-Schutz + Origin-Pin als Default-Vorgaben über die neue
+  `browserIngestEnforcement`-Middleware
+  (`browser_ingest_enforcement.go`). Bei `Policy.Enabled=true`:
+  Origin gegen Allowlist + ggf. Pin-Match prüfen,
+  `X-MTrace-CSRF`-Header bei `CSRFRequired=true` einfordern.
+  Fehlerschlüssel: `ingest_browser_origin_not_allowed`,
+  `ingest_browser_origin_pin_mismatch`, `ingest_browser_csrf_missing`
+  (alle `403`). **Skelett-Hinweis**: CSRF prüft nur Header-
+  Anwesenheit; eine produktive Anti-CSRF-Token-Bibliothek
+  (signiert, zeitlich begrenzt) bleibt Folge-Item.
+- [x] Tests in `browser_ingest_test.go`: Browser-Origin mit
+  Allowlist-Match → 204 mit CORS-Headern; ohne Match → 204 leer
+  (RAK-74-Scope-Cut); ohne aktivierte Policy → 204 leer; POST
+  Pfade — Policy disabled passes-through, Origin-Pin-Mismatch 403,
+  CSRF-missing 403, All-Checks-Pass durchgereicht.
+- [x] `make smoke-browser-ingest` plus
+  `scripts/smoke-browser-ingest.sh` wrappen die Browser-Ingest-
+  Tests über `golang:1.26.3`-Docker als reproduzierbaren Operator-
+  Smoke. Help-Eintrag in `Makefile` ergänzt.
+- [x] Risks-Backlog R-21: Status ⬜ → 🟢 mit Auflösungspfad
+  „BrowserIngestPolicy + browserIngestPreflightHandler +
+  browserIngestEnforcement-Middleware in `0.12.5` Tranche 4 plus
+  `make smoke-browser-ingest`". CSRF-Hardening (produktive
+  Anti-CSRF-Token-Library) bleibt als potenzieller
+  Wieder-Eröffnungs-Trigger dokumentiert, ohne den
+  Auflösungs-Status zu schmälern.
 
 ## 9. Tranche 5 — Optionale R-14 / R-16
 

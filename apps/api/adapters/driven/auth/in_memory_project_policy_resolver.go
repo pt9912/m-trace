@@ -73,3 +73,53 @@ func (r *InMemoryProjectPolicyResolver) ResolvePolicy(_ context.Context, project
 	}
 	return domain.ProjectPolicy{}, domain.ErrAuthPolicyDenied
 }
+
+// IsBrowserIngestOriginAllowed liefert true, wenn `origin` in der
+// Union der `CORSAllowlist`-Werte aller aktivierten
+// `BrowserIngestPolicy`-Einträge steht (`0.12.5`/RAK-80). Wird vom
+// HTTP-Preflight-Handler für `/api/ingest/*` genutzt, um den
+// RAK-74-Scope-Cut kontrolliert aufzuheben. Ohne aktivierte Policy
+// in keinem Project liefert die Methode immer false — RAK-74-Scope-
+// Cut bleibt damit der Default.
+//
+// Komplexität: `O(P * O)` pro Aufruf (P = Anzahl Projects mit Policy,
+// O = Origins pro Allowlist). Lab-/Single-Tenant-Workloads sind im
+// einstelligen Bereich; für größere Multi-Tenant-Setups kann der
+// Caller die Liste über `EnabledBrowserIngestOrigins` einmalig
+// snapshoten.
+func (r *InMemoryProjectPolicyResolver) IsBrowserIngestOriginAllowed(origin string) bool {
+	if r == nil || origin == "" {
+		return false
+	}
+	for _, p := range r.policies {
+		if p.BrowserIngest.AllowsBrowserOrigin(origin) {
+			return true
+		}
+	}
+	return false
+}
+
+// EnabledBrowserIngestOrigins liefert die deduplizierte Union aller
+// Browser-Origins, die in einer aktivierten `BrowserIngestPolicy`
+// stehen. Wird vom Boot-Pfad für Operator-Logging und Smoke-Setup
+// genutzt; nicht für den Hot-Path-Preflight (`IsBrowserIngestOriginAllowed`).
+func (r *InMemoryProjectPolicyResolver) EnabledBrowserIngestOrigins() []string {
+	if r == nil {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	out := make([]string, 0)
+	for _, p := range r.policies {
+		if !p.BrowserIngest.Enabled {
+			continue
+		}
+		for _, o := range p.BrowserIngest.CORSAllowlist {
+			if _, ok := seen[o]; ok {
+				continue
+			}
+			seen[o] = struct{}{}
+			out = append(out, o)
+		}
+	}
+	return out
+}

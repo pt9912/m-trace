@@ -336,7 +336,11 @@ func buildHandler(
 		}
 	}
 
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, tracer, logger)
+	var browserIngestPolicies apihttp.BrowserIngestPolicies
+	if authBundle != nil && authBundle.PolicyResolver != nil {
+		browserIngestPolicies = authBundle.PolicyResolver
+	}
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, browserIngestPolicies, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
 }
 
@@ -514,8 +518,9 @@ func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundl
 // Konsum-Pfad (PlaybackEventsHandler verifiziert damit Bearer-/
 // X-MTrace-Session-Token-Header).
 type authBundle struct {
-	Inbound driving.AuthSessionInbound
-	Signer  *auth.HMACSessionTokenSigner
+	Inbound        driving.AuthSessionInbound
+	Signer         *auth.HMACSessionTokenSigner
+	PolicyResolver *auth.InMemoryProjectPolicyResolver
 }
 
 // buildAuthSessionService verdrahtet den Auth-Pfad
@@ -612,8 +617,9 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB,
 	}
 	ids := auth.NewRandomTokenIDGenerator()
 	return &authBundle{
-		Inbound: application.NewIssueSessionTokenService(policies, limiter, signer, ids),
-		Signer:  signer,
+		Inbound:        application.NewIssueSessionTokenService(policies, limiter, signer, ids),
+		Signer:         signer,
+		PolicyResolver: policies,
 	}, nil
 }
 
