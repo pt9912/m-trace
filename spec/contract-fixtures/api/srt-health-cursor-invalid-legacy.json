@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/srt/health/{stream_id}",
+    "spec": "spec/backend-api-contract.md §7a.4 / §10.3",
+    "plan": "plan-0.12.6 §4 Tranche 2 (R-11 SRT-Health-Cursor-Pagination)",
+    "captured": "Synthetisches Beispiel — pinnt den Body-Shape gegen den 400-Cursor-Reject-Pfad fuer Legacy-Cursor (v=1/2 oder fehlendes v-Feld).",
+    "status": 400,
+    "trigger": "samples_cursor enthaelt v=2 oder v=1 (Pre-§4.3-Format ohne Collection-Scope)."
+  },
+  "error": "cursor_invalid_legacy",
+  "reason": "samples_cursor uses a pre-v3 format without collection scope"
+}

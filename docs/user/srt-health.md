@@ -86,10 +86,24 @@ curl -H "X-MTrace-Token: demo-token" \
 # Detail mit Verlauf
 curl -H "X-MTrace-Token: demo-token" \
   "http://localhost:8080/api/srt/health/srt-test?samples_limit=50"
+
+# Folge-Page über next_cursor aus der vorherigen Antwort
+curl -H "X-MTrace-Token: demo-token" \
+  "http://localhost:8080/api/srt/health/srt-test?samples_limit=50&samples_cursor=$NEXT_CURSOR"
 ```
 
-Wire-Format-Beispiel:
-[`spec/contract-fixtures/api/srt-health-detail.json`](../../spec/contract-fixtures/api/srt-health-detail.json).
+Pagination folgt
+[`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
+§7a.3/§7a.4: opaker `samples_cursor`-Token, Folge-`next_cursor` im
+Antwort-Body, `400 cursor_invalid_legacy` für Pre-v3-Cursor und
+`400 cursor_invalid_malformed` für Schema- oder Scope-Mismatch
+(Cursor aus fremdem Project- oder Stream-Scope). Der Token ist
+servergetragen und vom Client als opak zu behandeln.
+
+Wire-Format-Beispiele:
+[`spec/contract-fixtures/api/srt-health-detail.json`](../../spec/contract-fixtures/api/srt-health-detail.json),
+[`srt-health-cursor-invalid-legacy.json`](../../spec/contract-fixtures/api/srt-health-cursor-invalid-legacy.json),
+[`srt-health-cursor-invalid-malformed.json`](../../spec/contract-fixtures/api/srt-health-cursor-invalid-malformed.json).
 
 ### 2.4 Dashboard
 

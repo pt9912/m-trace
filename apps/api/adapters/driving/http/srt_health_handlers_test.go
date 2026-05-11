@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	_ "embed"
 	"errors"
@@ -20,6 +21,7 @@ import (
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
 // fixtureSrtHealthDetail spiegelt das Wire-Format aus
@@ -48,17 +50,23 @@ type stubSrtHealthInbound struct {
 	latest        []application.SrtHealthSummary
 	latestErr     error
 	historyReturn []application.SrtHealthHistoryItem
+	historyNext   *driven.SrtHealthCursor
 	historyErr    error
 	gotLimit      int
+	gotAfter      *driven.SrtHealthCursor
 }
 
 func (s *stubSrtHealthInbound) LatestByStream(_ context.Context, _ string) ([]application.SrtHealthSummary, error) {
 	return s.latest, s.latestErr
 }
 
-func (s *stubSrtHealthInbound) HistoryByStream(_ context.Context, _, _ string, limit int) ([]application.SrtHealthHistoryItem, error) {
+func (s *stubSrtHealthInbound) HistoryByStream(_ context.Context, _, _ string, limit int, after *driven.SrtHealthCursor) (application.SrtHealthHistoryPage, error) {
 	s.gotLimit = limit
-	return s.historyReturn, s.historyErr
+	s.gotAfter = after
+	if s.historyErr != nil {
+		return application.SrtHealthHistoryPage{}, s.historyErr
+	}
+	return application.SrtHealthHistoryPage{Items: s.historyReturn, NextAfter: s.historyNext}, nil
 }
 
 func newSrtHealthRouter(t *testing.T, inbound apihttp.SrtHealthInbound) *httptest.Server {
@@ -369,6 +377,189 @@ func TestSrtHealthList_PostNotAllowed(t *testing.T) {
 	if res.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf("expected 405, got %d", res.StatusCode)
 	}
+}
+
+// TestSrtHealthDetail_CursorRoundTrip (plan-0.12.6 Tranche 2): erste
+// Page liefert `next_cursor` im Body; zweite Page wird mit diesem
+// Token als `samples_cursor` angefordert; der Stub sieht den
+// decodierten After-Cursor mit unveränderten Position-Werten.
+func TestSrtHealthDetail_CursorRoundTrip(t *testing.T) {
+	t1 := time.Date(2026, 5, 5, 8, 48, 1, 250_000_000, time.UTC)
+	inbound := &stubSrtHealthInbound{
+		historyReturn: []application.SrtHealthHistoryItem{newSummary("srt-test")},
+		historyNext: &driven.SrtHealthCursor{
+			IngestedAt: t1,
+			ID:         4711,
+		},
+	}
+	srv := newSrtHealthRouter(t, inbound)
+
+	// Page 1: kein Cursor.
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
+		srv.URL+"/api/srt/health/srt-test?samples_limit=1", nil)
+	req.Header.Set("X-MTrace-Token", srtTestToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do page 1: %v", err)
+	}
+	body1, _ := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("page 1 expected 200, got %d: %s", res.StatusCode, body1)
+	}
+	var page1 map[string]any
+	if err := json.Unmarshal(body1, &page1); err != nil {
+		t.Fatalf("decode page 1: %v", err)
+	}
+	nextCursor, ok := page1["next_cursor"].(string)
+	if !ok || nextCursor == "" {
+		t.Fatalf("expected non-empty next_cursor on page 1, got %+v", page1["next_cursor"])
+	}
+
+	// Page 2: gepacktes next_cursor als samples_cursor wiederverwenden.
+	inbound.historyNext = nil // letzte Page
+	req2, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
+		srv.URL+"/api/srt/health/srt-test?samples_limit=1&samples_cursor="+nextCursor, nil)
+	req2.Header.Set("X-MTrace-Token", srtTestToken)
+	res2, err := http.DefaultClient.Do(req2)
+	if err != nil {
+		t.Fatalf("do page 2: %v", err)
+	}
+	body2, _ := io.ReadAll(res2.Body)
+	_ = res2.Body.Close()
+	if res2.StatusCode != http.StatusOK {
+		t.Fatalf("page 2 expected 200, got %d: %s", res2.StatusCode, body2)
+	}
+	if inbound.gotAfter == nil {
+		t.Fatal("expected stub to receive decoded After-cursor on page 2")
+	}
+	if inbound.gotAfter.ID != 4711 {
+		t.Errorf("After.ID = %d, want 4711", inbound.gotAfter.ID)
+	}
+	if !inbound.gotAfter.IngestedAt.Equal(t1) {
+		t.Errorf("After.IngestedAt = %v, want %v", inbound.gotAfter.IngestedAt, t1)
+	}
+	var page2 map[string]any
+	if err := json.Unmarshal(body2, &page2); err != nil {
+		t.Fatalf("decode page 2: %v", err)
+	}
+	if _, has := page2["next_cursor"]; has {
+		t.Errorf("page 2 (last) should omit next_cursor, got %+v", page2["next_cursor"])
+	}
+}
+
+// TestSrtHealthDetail_CursorInvalidLegacy: v1- oder v2-Cursor (Pre-
+// §4.3-Format) → 400 cursor_invalid_legacy (spec §7a.4 / §10.3).
+func TestSrtHealthDetail_CursorInvalidLegacy(t *testing.T) {
+	t.Parallel()
+	inbound := &stubSrtHealthInbound{}
+	srv := newSrtHealthRouter(t, inbound)
+
+	// v=2 ohne Collection-Scope = Legacy.
+	cur := encodeRawCursor(t, map[string]any{
+		"v":   2,
+		"ing": "2026-05-05T08:48:01Z",
+		"id":  1,
+	})
+	body := getSrtJSON(t, srv, "/api/srt/health/srt-test?samples_cursor="+cur, http.StatusBadRequest)
+	if body["error"] != "cursor_invalid_legacy" {
+		t.Errorf("error = %v, want cursor_invalid_legacy", body["error"])
+	}
+}
+
+// TestSrtHealthDetail_CursorInvalidMalformed: malformed Base64, fremder
+// Project- oder Stream-Scope, fehlende Pflicht-Felder oder unbekannter
+// v-Wert → 400 cursor_invalid_malformed (spec §7a.4 / §10.3).
+func TestSrtHealthDetail_CursorInvalidMalformed(t *testing.T) {
+	t.Parallel()
+	inbound := &stubSrtHealthInbound{}
+	srv := newSrtHealthRouter(t, inbound)
+
+	cases := []struct {
+		name   string
+		cursor string
+	}{
+		{
+			name:   "base64 garbage",
+			cursor: "!!!notbase64!!!",
+		},
+		{
+			name: "unknown version",
+			cursor: encodeRawCursor(t, map[string]any{
+				"v": 99, "pid": "demo", "sid": "srt-test",
+				"ing": "2026-05-05T08:48:01Z", "id": 1,
+			}),
+		},
+		{
+			name: "foreign project",
+			cursor: encodeRawCursor(t, map[string]any{
+				"v": 3, "pid": "other-project", "sid": "srt-test",
+				"ing": "2026-05-05T08:48:01Z", "id": 1,
+			}),
+		},
+		{
+			name: "foreign stream",
+			cursor: encodeRawCursor(t, map[string]any{
+				"v": 3, "pid": "demo", "sid": "other-stream",
+				"ing": "2026-05-05T08:48:01Z", "id": 1,
+			}),
+		},
+		{
+			name: "missing fields",
+			cursor: encodeRawCursor(t, map[string]any{
+				"v": 3, "pid": "demo", "sid": "srt-test",
+				// "ing" + "id" fehlen
+			}),
+		},
+		{
+			name: "unknown field",
+			cursor: encodeRawCursor(t, map[string]any{
+				"v": 3, "pid": "demo", "sid": "srt-test",
+				"ing": "2026-05-05T08:48:01Z", "id": 1, "extra": "leak",
+			}),
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := getSrtJSON(t, srv, "/api/srt/health/srt-test?samples_cursor="+tc.cursor, http.StatusBadRequest)
+			if body["error"] != "cursor_invalid_malformed" {
+				t.Errorf("error = %v, want cursor_invalid_malformed", body["error"])
+			}
+		})
+	}
+}
+
+// encodeRawCursor baut einen base64url-Cursor aus einer beliebigen
+// map (für Test-Pfade, die invalide Cursor manuell konstruieren).
+func encodeRawCursor(t *testing.T, m map[string]any) string {
+	t.Helper()
+	raw, err := json.Marshal(m)
+	if err != nil {
+		t.Fatalf("marshal raw cursor: %v", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(raw)
+}
+
+// getSrtJSON führt einen GET mit Auth-Token aus und prüft den Status;
+// liefert den parsed JSON-Body als map[string]string.
+func getSrtJSON(t *testing.T, srv *httptest.Server, path string, wantStatus int) map[string]string {
+	t.Helper()
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+path, nil)
+	req.Header.Set("X-MTrace-Token", srtTestToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("do: %v", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != wantStatus {
+		body, _ := io.ReadAll(res.Body)
+		t.Fatalf("expected %d, got %d: %s", wantStatus, res.StatusCode, body)
+	}
+	var got map[string]string
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	return got
 }
 
 // List: leere Liste liefert envelope mit `items: []`.

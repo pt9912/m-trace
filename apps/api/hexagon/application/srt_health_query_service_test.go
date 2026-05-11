@@ -18,6 +18,7 @@ type queryRepo struct {
 
 	history    []domain.SrtHealthSample
 	historyErr error
+	nextAfter  *driven.SrtHealthCursor
 
 	gotHistoryQuery driven.SrtHealthHistoryQuery
 }
@@ -33,7 +34,7 @@ func (r *queryRepo) HistoryByStream(_ context.Context, q driven.SrtHealthHistory
 	if r.historyErr != nil {
 		return driven.SrtHealthHistoryPage{}, r.historyErr
 	}
-	return driven.SrtHealthHistoryPage{Items: r.history}, nil
+	return driven.SrtHealthHistoryPage{Items: r.history, NextAfter: r.nextAfter}, nil
 }
 
 var _ driven.SrtHealthRepository = (*queryRepo)(nil)
@@ -142,10 +143,11 @@ func TestQueryService_HistoryByStream(t *testing.T) {
 	}
 	svc := newQuerySvc(t, repo, now)
 
-	got, err := svc.HistoryByStream(context.Background(), "demo", "srt-test", 50)
+	page, err := svc.HistoryByStream(context.Background(), "demo", "srt-test", 50, nil)
 	if err != nil {
 		t.Fatalf("HistoryByStream: %v", err)
 	}
+	got := page.Items
 	if len(got) != 2 {
 		t.Fatalf("expected 2 items, got %d", len(got))
 	}
@@ -155,16 +157,57 @@ func TestQueryService_HistoryByStream(t *testing.T) {
 	if repo.gotHistoryQuery.Limit != 50 {
 		t.Errorf("limit pass-through: got %d, want 50", repo.gotHistoryQuery.Limit)
 	}
+	if page.NextAfter != nil {
+		t.Errorf("expected NextAfter nil for short page, got %+v", page.NextAfter)
+	}
 }
 
-// HistoryByStream: leere Liste → ErrSrtHealthStreamUnknown.
+// HistoryByStream: leere Liste auf erster Seite → ErrSrtHealthStreamUnknown.
 func TestQueryService_HistoryByStream_UnknownStream(t *testing.T) {
 	now := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
 	repo := &queryRepo{history: nil}
 	svc := newQuerySvc(t, repo, now)
-	_, err := svc.HistoryByStream(context.Background(), "demo", "missing", 0)
+	_, err := svc.HistoryByStream(context.Background(), "demo", "missing", 0, nil)
 	if !errors.Is(err, application.ErrSrtHealthStreamUnknown) {
 		t.Fatalf("expected ErrSrtHealthStreamUnknown, got %v", err)
+	}
+}
+
+// HistoryByStream: leere Folgeseite (after != nil, 0 Items) ist
+// kein Fehler — Stream existiert, keine weiteren Samples (plan-0.12.6
+// Tranche 2).
+func TestQueryService_HistoryByStream_EmptyTail(t *testing.T) {
+	now := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
+	repo := &queryRepo{history: nil}
+	svc := newQuerySvc(t, repo, now)
+	after := &driven.SrtHealthCursor{IngestedAt: now.Add(-time.Hour), ID: 42}
+	page, err := svc.HistoryByStream(context.Background(), "demo", "srt-test", 50, after)
+	if err != nil {
+		t.Fatalf("HistoryByStream tail: %v", err)
+	}
+	if len(page.Items) != 0 || page.NextAfter != nil {
+		t.Fatalf("expected empty tail page, got %+v", page)
+	}
+}
+
+// HistoryByStream: NextAfter aus dem Repo wird durchgereicht.
+func TestQueryService_HistoryByStream_NextAfterPassThrough(t *testing.T) {
+	now := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
+	tail := now.Add(-5 * time.Second)
+	repo := &queryRepo{
+		history: []domain.SrtHealthSample{sampleAt("srt-test", tail)},
+		nextAfter: &driven.SrtHealthCursor{
+			IngestedAt: tail,
+			ID:         99,
+		},
+	}
+	svc := newQuerySvc(t, repo, now)
+	page, err := svc.HistoryByStream(context.Background(), "demo", "srt-test", 1, nil)
+	if err != nil {
+		t.Fatalf("HistoryByStream: %v", err)
+	}
+	if page.NextAfter == nil || page.NextAfter.ID != 99 {
+		t.Fatalf("expected NextAfter id=99, got %+v", page.NextAfter)
 	}
 }
 
@@ -182,7 +225,7 @@ func TestQueryService_HistoryByStream_LimitClamping(t *testing.T) {
 	for _, tc := range cases {
 		repo := &queryRepo{history: []domain.SrtHealthSample{sampleAt("a", now)}}
 		svc := newQuerySvc(t, repo, now)
-		_, err := svc.HistoryByStream(context.Background(), "demo", "a", tc.in)
+		_, err := svc.HistoryByStream(context.Background(), "demo", "a", tc.in, nil)
 		if err != nil {
 			t.Fatalf("HistoryByStream(in=%d): %v", tc.in, err)
 		}

@@ -34,12 +34,20 @@ type srtHealthRow struct {
 }
 
 // scanSrtHealthRows liest eine Folge von srt_health_samples-Rows in
-// Domain-Samples, in der vom SQL bestimmten Reihenfolge. Die Spalten-
-// ordnung muss zu latestByStreamSQL / historyByStreamSQL passen —
-// beim Ändern eines Statements gehört hier die gleiche Reihenfolge
-// nachgezogen.
-func scanSrtHealthRows(rows *sql.Rows) ([]domain.SrtHealthSample, error) {
-	var out []domain.SrtHealthSample
+// Domain-Samples plus parallele ID-Liste. Die Spaltenordnung muss zu
+// latestByStreamSQL / historyByStreamSQL / historyByStreamAfterSQL
+// passen — beim Ändern eines Statements gehört hier die gleiche
+// Reihenfolge nachgezogen.
+//
+// Die ID-Liste trägt die SQLite-`rowid` jeder Row in derselben
+// Reihenfolge wie das Sample-Slice. Aufrufer, die nur Samples
+// brauchen (LatestByStream), ignorieren die ID-Liste; HistoryByStream
+// nutzt sie für den NextAfter-Cursor (spec §7a.3).
+func scanSrtHealthRows(rows *sql.Rows) ([]domain.SrtHealthSample, []int64, error) {
+	var (
+		out []domain.SrtHealthSample
+		ids []int64
+	)
 	for rows.Next() {
 		var r srtHealthRow
 		if err := rows.Scan(
@@ -53,18 +61,19 @@ func scanSrtHealthRows(rows *sql.Rows) ([]domain.SrtHealthSample, error) {
 			&r.sampleWindowMS,
 			&r.sourceStatus, &r.sourceErrorCode, &r.connectionState, &r.healthState,
 		); err != nil {
-			return nil, fmt.Errorf("srt-health-sqlite: scan row: %w", err)
+			return nil, nil, fmt.Errorf("srt-health-sqlite: scan row: %w", err)
 		}
 		sample, err := r.toDomain()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		out = append(out, sample)
+		ids = append(ids, r.id)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("srt-health-sqlite: rows iteration: %w", err)
+		return nil, nil, fmt.Errorf("srt-health-sqlite: rows iteration: %w", err)
 	}
-	return out, nil
+	return out, ids, nil
 }
 
 // toDomain konvertiert die Raw-Row in das Domain-Sample, inklusive

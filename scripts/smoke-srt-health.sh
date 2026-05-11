@@ -52,6 +52,14 @@ MTRACE_API_URL="${MTRACE_API_URL:-http://localhost:8080}"
 MTRACE_API_TOKEN="${MTRACE_API_TOKEN:-demo-token}"
 MTRACE_API_STREAM_ID="${MTRACE_API_STREAM_ID:-$EXPECTED_PATH}"
 
+# Opt-in Cursor-Pagination-Probe (RAK-86 / plan-0.12.6 Tranche 2).
+# 0=skip, 1=zusätzlich zur einfachen API-Probe drei Pagination-
+# Checks: (a) erste Page mit samples_limit=1 muss `next_cursor`
+# liefern (sofern mindestens zwei Samples in DB), (b) Folge-Page
+# mit dem zurückgegebenen `next_cursor` liefert 200, (c) malformed
+# `samples_cursor` liefert 400 `cursor_invalid_malformed`.
+MTRACE_SRT_HEALTH_PAGINATION="${MTRACE_SRT_HEALTH_PAGINATION:-0}"
+
 for dep in curl docker python3; do
   if ! command -v "$dep" >/dev/null 2>&1; then
     echo "[smoke-srt-health] missing dependency: $dep" >&2
@@ -244,6 +252,57 @@ print(
     f"rtt_ms={metrics['rtt_ms']} available_bandwidth_bps={metrics['available_bandwidth_bps']})"
 )
 PYEOF
+
+  # 7) Opt-in Cursor-Pagination-Probe (RAK-86 / plan-0.12.6 T2).
+  # Drei Sub-Checks: (a) Erste Page mit samples_limit=1 inkl.
+  # next_cursor; (b) Folge-Page mit gepacktem next_cursor liefert
+  # 200; (c) malformed samples_cursor liefert 400 mit
+  # `cursor_invalid_malformed`-Body.
+  if [ "$MTRACE_SRT_HEALTH_PAGINATION" = "1" ]; then
+    page_url="${mtrace_url}?samples_limit=1"
+    page_tmp="$(mktemp)"
+    trap 'rm -f "$api_tmp" "$mtrace_tmp" "$page_tmp"; cleanup' EXIT
+    page_status="$(curl -sS -o "$page_tmp" -w '%{http_code}' \
+      -H "X-MTrace-Token: $MTRACE_API_TOKEN" \
+      "$page_url" 2>/dev/null || true)"
+    if [ "$page_status" != "200" ]; then
+      echo "[smoke-srt-health] pagination probe (a) failed: status=$page_status @ $page_url" >&2
+      exit 1
+    fi
+    next_cursor="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("next_cursor",""))' "$page_tmp")"
+    if [ -z "$next_cursor" ]; then
+      echo "[smoke-srt-health] pagination probe (a): no next_cursor (likely < 2 samples in DB); skipping (b)."
+    else
+      echo "[smoke-srt-health] pagination probe (a) OK (next_cursor present, ${#next_cursor}b)"
+      follow_url="${mtrace_url}?samples_limit=1&samples_cursor=${next_cursor}"
+      follow_status="$(curl -sS -o "$page_tmp" -w '%{http_code}' \
+        -H "X-MTrace-Token: $MTRACE_API_TOKEN" \
+        "$follow_url" 2>/dev/null || true)"
+      if [ "$follow_status" != "200" ]; then
+        echo "[smoke-srt-health] pagination probe (b) failed: status=$follow_status @ $follow_url" >&2
+        cat "$page_tmp" >&2
+        exit 1
+      fi
+      echo "[smoke-srt-health] pagination probe (b) OK (Folge-Page 200)"
+    fi
+    bad_url="${mtrace_url}?samples_cursor=not-a-real-cursor"
+    bad_status="$(curl -sS -o "$page_tmp" -w '%{http_code}' \
+      -H "X-MTrace-Token: $MTRACE_API_TOKEN" \
+      "$bad_url" 2>/dev/null || true)"
+    if [ "$bad_status" != "400" ]; then
+      echo "[smoke-srt-health] pagination probe (c) failed: expected 400, got $bad_status @ $bad_url" >&2
+      cat "$page_tmp" >&2
+      exit 1
+    fi
+    bad_error="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("error",""))' "$page_tmp")"
+    if [ "$bad_error" != "cursor_invalid_malformed" ]; then
+      echo "[smoke-srt-health] pagination probe (c) failed: expected error=cursor_invalid_malformed, got error=$bad_error" >&2
+      exit 1
+    fi
+    echo "[smoke-srt-health] pagination probe (c) OK (400 cursor_invalid_malformed)"
+  else
+    echo "[smoke-srt-health] pagination skipped (set MTRACE_SRT_HEALTH_PAGINATION=1 to enable)"
+  fi
 else
   echo "[smoke-srt-health] mtrace-api skipped (set SMOKE_INCLUDE_MTRACE_API=1 to enable)"
 fi

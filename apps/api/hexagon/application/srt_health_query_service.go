@@ -45,6 +45,14 @@ type SrtHealthSummary struct {
 // dieselben derived-/freshness-Felder wie die Summary.
 type SrtHealthHistoryItem = SrtHealthSummary
 
+// SrtHealthHistoryPage bündelt die Detail-Items einer Page plus den
+// optionalen Folge-Cursor. Wire-Codec für `samples_cursor`/
+// `next_cursor` lebt im HTTP-Adapter (spec §7a.3).
+type SrtHealthHistoryPage struct {
+	Items     []SrtHealthHistoryItem
+	NextAfter *driven.SrtHealthCursor
+}
+
 // SrtHealthQueryService implementiert die zwei Read-Operationen.
 type SrtHealthQueryService struct {
 	repo       driven.SrtHealthRepository
@@ -86,31 +94,37 @@ func (s *SrtHealthQueryService) LatestByStream(ctx context.Context, projectID st
 	return out, nil
 }
 
-// HistoryByStream liefert die letzten N Samples einer
-// (projectID, streamID)-Kombination (spec §7a.1 —
-// `GET /api/srt/health/{stream_id}`). Wenn der Stream nie einen
-// Sample hatte, gibt der Service `ErrSrtHealthStreamUnknown` zurück.
-func (s *SrtHealthQueryService) HistoryByStream(ctx context.Context, projectID, streamID string, limit int) ([]SrtHealthHistoryItem, error) {
+// HistoryByStream liefert die nächsten N Samples einer
+// (projectID, streamID)-Kombination (spec §7a.1/§7a.3 —
+// `GET /api/srt/health/{stream_id}`). `after` ist nil für die erste
+// Seite; danach trägt der Aufrufer den NextAfter-Cursor zurück. Wenn
+// auf der ersten Seite (after == nil) keine Samples existieren,
+// liefert der Service `ErrSrtHealthStreamUnknown` (HTTP 404). Eine
+// leere Folgeseite (after != nil, len(Items) == 0) ist hingegen
+// kein Fehler — sie signalisiert „Stream existiert, keine weiteren
+// Samples".
+func (s *SrtHealthQueryService) HistoryByStream(ctx context.Context, projectID, streamID string, limit int, after *driven.SrtHealthCursor) (SrtHealthHistoryPage, error) {
 	if projectID == "" || streamID == "" {
-		return nil, errors.New("SrtHealthQueryService: projectID/streamID is empty")
+		return SrtHealthHistoryPage{}, errors.New("SrtHealthQueryService: projectID/streamID is empty")
 	}
 	page, err := s.repo.HistoryByStream(ctx, driven.SrtHealthHistoryQuery{
 		ProjectID: projectID,
 		StreamID:  streamID,
 		Limit:     clampHistoryLimit(limit),
+		After:     after,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("srt-health repo history: %w", err)
+		return SrtHealthHistoryPage{}, fmt.Errorf("srt-health repo history: %w", err)
 	}
-	if len(page.Items) == 0 {
-		return nil, ErrSrtHealthStreamUnknown
+	if after == nil && len(page.Items) == 0 {
+		return SrtHealthHistoryPage{}, ErrSrtHealthStreamUnknown
 	}
 	now := s.now()
 	out := make([]SrtHealthHistoryItem, 0, len(page.Items))
 	for _, sample := range page.Items {
 		out = append(out, s.summarize(sample, now))
 	}
-	return out, nil
+	return SrtHealthHistoryPage{Items: out, NextAfter: page.NextAfter}, nil
 }
 
 // summarize berechnet die abgeleiteten Felder für einen Sample

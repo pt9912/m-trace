@@ -25,9 +25,15 @@ const rfc3339Millis = "2006-01-02T15:04:05.000Z07:00"
 // Pfade (plan-0.6.0 §5 Tranche 4 — RAK-43, spec/backend-api-contract.md
 // §7a). Application-Layer implementiert das Interface über
 // SrtHealthQueryService.
+//
+// HistoryByStream akzeptiert ab plan-0.12.6 Tranche 2 einen
+// optionalen Cursor (`after`) und liefert eine Page mit
+// optionalem Folge-Cursor (spec §7a.3). Der Cursor ist die Repo-
+// Sicht (`driven.SrtHealthCursor`); der HTTP-Adapter codiert ihn in
+// das Wire-Format aus §10.3 v3.
 type SrtHealthInbound interface {
 	LatestByStream(ctx context.Context, projectID string) ([]application.SrtHealthSummary, error)
-	HistoryByStream(ctx context.Context, projectID, streamID string, limit int) ([]application.SrtHealthHistoryItem, error)
+	HistoryByStream(ctx context.Context, projectID, streamID string, limit int, after *driven.SrtHealthCursor) (application.SrtHealthHistoryPage, error)
 }
 
 const (
@@ -138,7 +144,25 @@ func (h *SrtHealthGetHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "samples_limit_invalid"})
 		return
 	}
-	items, err := h.UseCase.HistoryByStream(ctx, projectID, streamID, limit)
+	after, err := decodeSrtHealthCursor(r.URL.Query().Get("samples_cursor"), projectID, streamID)
+	if err != nil {
+		switch {
+		case errors.Is(err, errCursorInvalidLegacy):
+			writeJSON(w, http.StatusBadRequest, map[string]string{
+				"error":  "cursor_invalid_legacy",
+				"reason": "samples_cursor uses a pre-v3 format without collection scope",
+			})
+		case errors.Is(err, errCursorInvalidMalformed):
+			writeJSON(w, http.StatusBadRequest, map[string]string{
+				"error":  "cursor_invalid_malformed",
+				"reason": "samples_cursor failed schema or scope validation",
+			})
+		default:
+			writeStatus(w, http.StatusInternalServerError)
+		}
+		return
+	}
+	page, err := h.UseCase.HistoryByStream(ctx, projectID, streamID, limit, after)
 	if err != nil {
 		if errors.Is(err, application.ErrSrtHealthStreamUnknown) {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "stream_unknown", "stream_id": streamID})
@@ -148,11 +172,21 @@ func (h *SrtHealthGetHandler) serve(ctx context.Context, w http.ResponseWriter, 
 		writeStatus(w, http.StatusInternalServerError)
 		return
 	}
-	wire := make([]srtHealthWireItem, 0, len(items))
-	for _, s := range items {
+	wire := make([]srtHealthWireItem, 0, len(page.Items))
+	for _, s := range page.Items {
 		wire = append(wire, encodeSrtHealthSummary(s))
 	}
-	writeJSON(w, http.StatusOK, srtHealthDetailResponse{StreamID: streamID, Items: wire})
+	resp := srtHealthDetailResponse{StreamID: streamID, Items: wire}
+	if page.NextAfter != nil {
+		token, encErr := encodeSrtHealthCursor(page.NextAfter, projectID, streamID)
+		if encErr != nil {
+			h.Logger.Error("srt-health cursor encode failed", "error", encErr, "stream_id", streamID)
+			writeStatus(w, http.StatusInternalServerError)
+			return
+		}
+		resp.NextCursor = token
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // srtHealthListResponse / srtHealthDetailResponse sind die Wire-
@@ -164,8 +198,9 @@ type srtHealthListResponse struct {
 }
 
 type srtHealthDetailResponse struct {
-	StreamID string              `json:"stream_id"`
-	Items    []srtHealthWireItem `json:"items"`
+	StreamID   string              `json:"stream_id"`
+	Items      []srtHealthWireItem `json:"items"`
+	NextCursor string              `json:"next_cursor,omitempty"`
 }
 
 // srtHealthWireItem ist die JSON-Form aus spec §7a.2: trennt

@@ -9,7 +9,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -27,6 +27,7 @@ help:
 		'  make smoke-mediamtx         Run the MediaMTX example smoke check (needs make dev)' \
 		'  make smoke-srt              Run the SRT example smoke (starts/stops mtrace-srt project)' \
 		'  make smoke-srt-health       Run the SRT health smoke (HLS + MediaMTX-API; plan-0.6.0 Tranche 2)' \
+		'  make smoke-srt-health-pagination Run the SRT health smoke incl. cursor-pagination probes (plan-0.12.6 Tranche 2 / RAK-86; opt-in)' \
 		'  make smoke-dash             Run the DASH example smoke (starts/stops mtrace-dash project)' \
 		'  make smoke-webrtc-prep      Run the WebRTC lab prep smoke (starts/stops mtrace-webrtc project; endpoint-only)' \
 		'  make smoke-webrtc-stats-drift Run the WebRTC getStats() drift smoke against mtrace-webrtc (plan-0.9.0 Tranche 1, RAK-56; opt-in)' \
@@ -157,6 +158,15 @@ smoke-srt:
 # `make gates`); braucht python3 für JSON-Validierung.
 smoke-srt-health:
 	bash scripts/smoke-srt-health.sh
+
+# `make smoke-srt-health-pagination` (plan-0.12.6 Tranche 2 / RAK-86)
+# fährt den existierenden `smoke-srt-health`-Pfad mit den Cursor-
+# Probe-Sub-Checks (samples_cursor/next_cursor + cursor_invalid_-
+# malformed). Setzt SMOKE_INCLUDE_MTRACE_API=1 plus
+# MTRACE_SRT_HEALTH_PAGINATION=1 voraus, was der Wrapper hier
+# automatisch aktiviert. Opt-in (nicht in `make gates`).
+smoke-srt-health-pagination:
+	SMOKE_INCLUDE_MTRACE_API=1 MTRACE_SRT_HEALTH_PAGINATION=1 bash scripts/smoke-srt-health.sh
 
 # `make smoke-dash` startet das DASH-Beispiel (plan-0.5.0 §5 Tranche 4,
 # RAK-38) als Project `mtrace-dash`: FFmpeg generiert DASH in ein
@@ -384,6 +394,8 @@ sync-contract-fixtures:
 	cp spec/contract-fixtures/srt/mediamtx-srtconns-list.json apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json
 	mkdir -p apps/api/adapters/driving/http/testdata
 	cp spec/contract-fixtures/api/srt-health-detail.json apps/api/adapters/driving/http/testdata/srt-health-detail.json
+	cp spec/contract-fixtures/api/srt-health-cursor-invalid-legacy.json apps/api/adapters/driving/http/testdata/srt-health-cursor-invalid-legacy.json
+	cp spec/contract-fixtures/api/srt-health-cursor-invalid-malformed.json apps/api/adapters/driving/http/testdata/srt-health-cursor-invalid-malformed.json
 	cp spec/contract-fixtures/api/ingest-stream-create.json apps/api/adapters/driving/http/testdata/ingest-stream-create.json
 	cp spec/contract-fixtures/api/ingest-stream-list.json apps/api/adapters/driving/http/testdata/ingest-stream-list.json
 	cp spec/contract-fixtures/api/ingest-stream-rotate.json apps/api/adapters/driving/http/testdata/ingest-stream-rotate.json
@@ -398,7 +410,7 @@ sync-contract-fixtures:
 	cp spec/contract-fixtures/api/auth-error-ttl-too-large.json apps/api/adapters/driving/http/testdata/auth-error-ttl-too-large.json
 	cp spec/contract-fixtures/api/auth-error-issuance-rate-limited.json apps/api/adapters/driving/http/testdata/auth-error-issuance-rate-limited.json
 	cp spec/contract-fixtures/api/auth-project-token-generation.json apps/api/adapters/driving/http/testdata/auth-project-token-generation.json
-	@echo "[sync-contract-fixtures] copied 36 fixture(s) into apps/api/.../testdata/"
+	@echo "[sync-contract-fixtures] copied 38 fixture(s) into apps/api/.../testdata/"
 
 seed-rak9:
 	bash scripts/seed-rak9.sh
@@ -620,7 +632,9 @@ generated-drift-check:
 		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-binary-disabled.json \
 		apps/api/adapters/driven/streamanalyzer/testdata/contract-success-cmaf-skipped-not-planned.json \
 		apps/api/adapters/driven/srt/mediamtxclient/testdata/mediamtx-srtconns-list.json \
-		apps/api/adapters/driving/http/testdata/srt-health-detail.json; then \
+		apps/api/adapters/driving/http/testdata/srt-health-detail.json \
+		apps/api/adapters/driving/http/testdata/srt-health-cursor-invalid-legacy.json \
+		apps/api/adapters/driving/http/testdata/srt-health-cursor-invalid-malformed.json; then \
 		echo ""; \
 		echo "Generated artifacts are out of sync with their sources."; \
 		echo "  - schema DDL (V1__m_trace.sql)        --> run: make schema-generate"; \

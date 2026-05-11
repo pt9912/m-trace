@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -234,5 +235,96 @@ func decodeSessionEventsCursor(s, requestProjectID, requestSessionID string) (*d
 		ServerReceivedAt: receivedAt,
 		SequenceNumber:   probe.SEQ,
 		IngestSequence:   *probe.ING,
+	}, nil
+}
+
+// wireSrtHealthCursor ist die JSON-Form des SRT-Health-History-
+// Cursors (spec §7a.3, plan-0.12.6 Tranche 2). Token-Schema folgt
+// dem v3-Event-Cursor-Pattern aus §10.3: `pid` (project_id) +
+// `sid` (stream_id) tragen den Collection-Scope; `ing` (ingested_at
+// RFC3339Nano UTC) + `id` tragen die Storage-Position.
+type wireSrtHealthCursor struct {
+	V   int    `json:"v"`
+	PID string `json:"pid"`
+	SID string `json:"sid"` // stream_id (nicht session_id, Namens-Konvention §10.3)
+	ING string `json:"ing"` // ingested_at, RFC3339Nano UTC
+	ID  int64  `json:"id"`
+}
+
+type srtHealthRawCursor struct {
+	V   *int    `json:"v,omitempty"`
+	PID *string `json:"pid,omitempty"`
+	SID *string `json:"sid,omitempty"`
+	ING *string `json:"ing,omitempty"`
+	ID  *int64  `json:"id,omitempty"`
+}
+
+// encodeSrtHealthCursor liefert den base64-url-Cursor für die SRT-
+// Health-History-Page (v3 mit Collection-Scope `(projectID, streamID)`).
+func encodeSrtHealthCursor(c *driven.SrtHealthCursor, projectID, streamID string) (string, error) {
+	if c == nil {
+		return "", nil
+	}
+	wire := wireSrtHealthCursor{
+		V:   cursorVersion,
+		PID: projectID,
+		SID: streamID,
+		ING: c.IngestedAt.UTC().Format(time.RFC3339Nano),
+		ID:  c.ID,
+	}
+	raw, err := json.Marshal(wire)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+// decodeSrtHealthCursor ist das Pendant zu encodeSrtHealthCursor.
+// Reject-Klassen folgen §10.3:
+//   - v fehlt / v ∈ {1, 2}: errCursorInvalidLegacy (Pre-§4.3-Format).
+//   - v ∉ {1, 2, 3}, Base64/JSON-Decode-Fehler, fehlende Pflichtfelder,
+//     fremder Project- oder Stream-Scope: errCursorInvalidMalformed.
+func decodeSrtHealthCursor(s, projectID, streamID string) (*driven.SrtHealthCursor, error) {
+	if s == "" {
+		return nil, nil
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(s)
+	if err != nil {
+		return nil, errCursorInvalidMalformed
+	}
+	var probe srtHealthRawCursor
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&probe); err != nil {
+		return nil, errCursorInvalidMalformed
+	}
+
+	if probe.V == nil {
+		return nil, errCursorInvalidLegacy
+	}
+	switch *probe.V {
+	case 1, 2:
+		return nil, errCursorInvalidLegacy
+	case cursorVersion:
+	default:
+		return nil, errCursorInvalidMalformed
+	}
+
+	if probe.PID == nil || probe.SID == nil || probe.ING == nil || probe.ID == nil {
+		return nil, errCursorInvalidMalformed
+	}
+	if *probe.PID != projectID {
+		return nil, errCursorInvalidMalformed
+	}
+	if *probe.SID != streamID {
+		return nil, errCursorInvalidMalformed
+	}
+	ingestedAt, err := time.Parse(time.RFC3339Nano, *probe.ING)
+	if err != nil {
+		return nil, errCursorInvalidMalformed
+	}
+	return &driven.SrtHealthCursor{
+		IngestedAt: ingestedAt.UTC(),
+		ID:         *probe.ID,
 	}, nil
 }

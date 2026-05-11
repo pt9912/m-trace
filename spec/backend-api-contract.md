@@ -1118,9 +1118,17 @@ dann setzt der Server `source_status: stale`.
 - Default-Limit pro Stream-Verlauf: 100 Samples; hartes Maximum 1000
   (Query-Parameter `samples_limit`).
 - Kanonische Sortierung: `(ingested_at desc, id desc)` (analog §10.4).
-- Cursor-Pagination via Query-Parameter `samples_cursor` (opaker Token,
-  kapselt `(ingested_at, id)`-Position plus `process_instance_id`
-  analog §10.3).
+- Cursor-Pagination via Query-Parameter `samples_cursor` (opaker
+  base64-url-kodierter Token, kapselt die Storage-Position
+  `(ingested_at, id)` **plus den Collection-Scope `(project_id,
+  stream_id)`** analog dem v3-Event-Cursor aus §10.3). Token-Inhalt
+  ist servergetragen und vom Client als opak zu behandeln.
+- Antwort liefert `next_cursor` (String) im Response-Body, wenn eine
+  Folgeseite existiert. Auf der letzten Seite fehlt das Feld
+  (`omit-empty`).
+- Andere Query-Parameter-Namen oder Aliasse (z. B. `cursor`) sind
+  nicht Teil des Kontrakts; ein gesetzter Alias wird vom Server
+  ignoriert.
 
 ### 7a.4 Fehlerverhalten
 
@@ -1129,8 +1137,21 @@ dann setzt der Server `source_status: stale`.
   `metrics: {}` falls die Quelle aktuell nicht erreichbar ist (Stream
   war früher bekannt, aktuell kein Sample vorhanden). Operator-
   sichtbar als „Health unbekannt" plus stale-Hinweis.
-- `400 cursor_invalid` bei `process_instance_id`-Mismatch (analog
-  §10.3).
+- Cursor-Reject analog §10.3-Tabelle:
+  - `400 cursor_invalid_legacy` mit Body
+    `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`
+    für Cursor mit `v`-Feld 1/2 oder fehlendem `v`-Feld
+    (Pre-§4.3-Format ohne Collection-Scope).
+  - `400 cursor_invalid_malformed` mit Body
+    `{"error":"cursor_invalid_malformed","reason":"<kurze
+    Erklärung>"}` für Base64-/JSON-Decode-Fehler, unbekannten `v`-
+    Wert, fehlende oder ungültige Pflichtfelder, oder Scope-
+    Mismatch (Cursor aus Project A im Request-Kontext Project B,
+    bzw. Cursor aus Stream X im Request-Kontext Stream Y).
+  - `410 cursor_expired` mit Body
+    `{"error":"cursor_expired","reason":"<kurze Erklärung>"}` für
+    Cursor mit valider Position, die durch `make wipe` o. ä. nicht
+    mehr existiert (siehe §10.3-Tabelle).
 - `Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers`
   in jeder Antwort (analog §3.5).
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
@@ -197,4 +198,100 @@ func TestDecodeSessionEventsCursor_Legacy(t *testing.T) {
 // Padding über das stdlib base64-Paket.
 func encodeRaw(raw string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(raw))
+}
+
+// TestEncodeDecodeSrtHealthCursor_RoundTrip (plan-0.12.6 Tranche 2):
+// encode→decode-Roundtrip mit Collection-Scope (pid, sid). Cursor
+// muss IngestedAt UTC-normalisiert zurückliefern (RFC3339Nano-
+// Serialisierung schluckt Sub-Nano-Genauigkeit nicht).
+func TestEncodeDecodeSrtHealthCursor_RoundTrip(t *testing.T) {
+	t.Parallel()
+	const streamID = "srt-test"
+	original := &driven.SrtHealthCursor{
+		IngestedAt: time.Date(2026, 5, 5, 8, 48, 1, 250_000_000, time.UTC),
+		ID:         4711,
+	}
+	encoded, err := encodeSrtHealthCursor(original, testProjectID, streamID)
+	if err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	if encoded == "" {
+		t.Fatal("encode returned empty token for non-nil cursor")
+	}
+	decoded, err := decodeSrtHealthCursor(encoded, testProjectID, streamID)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if decoded == nil {
+		t.Fatal("decode returned nil")
+	}
+	if decoded.ID != original.ID {
+		t.Errorf("ID = %d, want %d", decoded.ID, original.ID)
+	}
+	if !decoded.IngestedAt.Equal(original.IngestedAt) {
+		t.Errorf("IngestedAt = %v, want %v", decoded.IngestedAt, original.IngestedAt)
+	}
+}
+
+// TestEncodeSrtHealthCursor_NilReturnsEmpty: encode mit nil-Cursor
+// liefert ("", nil) — der Handler nutzt das, um `next_cursor` auf
+// der letzten Page wegzulassen.
+func TestEncodeSrtHealthCursor_NilReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	got, err := encodeSrtHealthCursor(nil, testProjectID, "any-stream")
+	if got != "" || err != nil {
+		t.Fatalf("encode(nil) = (%q, %v), want (\"\", nil)", got, err)
+	}
+}
+
+// TestDecodeSrtHealthCursor_EmptyReturnsNil: decode mit leerem
+// Token liefert (nil, nil) — Pagination beginnt auf der ersten Page.
+func TestDecodeSrtHealthCursor_EmptyReturnsNil(t *testing.T) {
+	t.Parallel()
+	got, err := decodeSrtHealthCursor("", testProjectID, "any-stream")
+	if got != nil || err != nil {
+		t.Fatalf("decode(\"\") = (%+v, %v), want (nil, nil)", got, err)
+	}
+}
+
+// TestDecodeSrtHealthCursor_Legacy: v=1/v=2/v fehlt → Legacy-Reject.
+func TestDecodeSrtHealthCursor_Legacy(t *testing.T) {
+	t.Parallel()
+	const streamID = "srt-test"
+	cases := map[string]string{
+		"v missing":   encodeRaw(`{"pid":"demo","sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"v=1":         encodeRaw(`{"v":1,"pid":"demo","sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"v=2":         encodeRaw(`{"v":2,"pid":"demo","sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"pid only v1": encodeRaw(`{"v":1,"pid":"demo"}`),
+	}
+	for name, raw := range cases {
+		if _, err := decodeSrtHealthCursor(raw, testProjectID, streamID); !errors.Is(err, errCursorInvalidLegacy) {
+			t.Errorf("%s: want errCursorInvalidLegacy, got %v", name, err)
+		}
+	}
+}
+
+// TestDecodeSrtHealthCursor_Malformed: alle anderen Reject-Pfade →
+// errCursorInvalidMalformed.
+func TestDecodeSrtHealthCursor_Malformed(t *testing.T) {
+	t.Parallel()
+	const streamID = "srt-test"
+	cases := map[string]string{
+		"base64 garbage":  "!!!notbase64!!!",
+		"valid base64 nonjson": base64.RawURLEncoding.EncodeToString([]byte("not json")),
+		"v=99":            encodeRaw(`{"v":99,"pid":"demo","sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"missing pid":     encodeRaw(`{"v":3,"sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"missing sid":     encodeRaw(`{"v":3,"pid":"demo","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"missing ing":     encodeRaw(`{"v":3,"pid":"demo","sid":"srt-test","id":1}`),
+		"missing id":      encodeRaw(`{"v":3,"pid":"demo","sid":"srt-test","ing":"2026-05-05T08:48:01Z"}`),
+		"foreign project": encodeRaw(`{"v":3,"pid":"other","sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"foreign stream":  encodeRaw(`{"v":3,"pid":"demo","sid":"other","ing":"2026-05-05T08:48:01Z","id":1}`),
+		"ing not time":    encodeRaw(`{"v":3,"pid":"demo","sid":"srt-test","ing":"not-a-time","id":1}`),
+		"unknown field":   encodeRaw(`{"v":3,"pid":"demo","sid":"srt-test","ing":"2026-05-05T08:48:01Z","id":1,"x":"y"}`),
+	}
+	for name, raw := range cases {
+		if _, err := decodeSrtHealthCursor(raw, testProjectID, streamID); !errors.Is(err, errCursorInvalidMalformed) {
+			t.Errorf("%s: want errCursorInvalidMalformed, got %v", name, err)
+		}
+	}
 }

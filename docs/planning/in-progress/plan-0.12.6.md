@@ -182,7 +182,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | ------- | ---- | ----------------------------------------------- | ----------- | ------ |
 | 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | 🟡      |
 | 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | 🟡      |
-| 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | ⬜      |
+| 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | 🟡      |
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | ⬜      |
 | 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | ⬜      |
 | 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | ⬜      |
@@ -304,50 +304,80 @@ Fehlerverhalten ist ebenfalls schon in §7a.4 normiert:
 `400 cursor_invalid` bei `process_instance_id`-Mismatch (analog
 §10.3). Tranche 2 implementiert die Spec, sie ändert sie nicht.
 
+**Spec-Konsistenz-Fix** (während T2 erkannt, 2026-05-11): §7a.3 +
+§7a.4 trugen Pre-§4.3-Wording (`process_instance_id`-Cursor +
+monolithischer `cursor_invalid`-Body), das §10.3 mit seinem
+v3-Cursor und der Zwei-Klassen-Reject-Tabelle (`cursor_invalid_legacy`
+/ `cursor_invalid_malformed` / `cursor_expired`) widersprach. T2
+zieht §7a.3/§7a.4 auf §10.3-Konvention nach — die Pagination
+implementiert die Spec, sie ändert sie nicht: §10.3 ist die
+normative Quelle, §7a.3/§7a.4 verweisen jetzt explizit darauf.
+
 DoD:
 
-- [ ] Adapter-Implementation in
+- [x] Adapter-Implementation in
   `apps/api/adapters/driven/persistence/sqlite/srt_health_repository.go`:
-  Cursor-Token analog `EventRepository`-Pattern
-  (`process_instance_id + (ingested_at, id)`-Position als opaker
-  Token, §10.3-konform).
-- [ ] HTTP-Handler `GET /api/srt/health/{stream_id}` akzeptiert
+  Keyset-Pagination über `(ingested_at, id)` (TEXT-Spalte mit
+  RFC3339Nano UTC ist byte-lexikografisch zeit-sortiert; Index
+  `idx_srt_health_samples_stream_ingested` matched WHERE+ORDER
+  direkt). `limit+1`-Probe für NextAfter-Detection.
+- [x] HTTP-Handler `GET /api/srt/health/{stream_id}` akzeptiert
   Query-Param **`samples_cursor`** (gemäß §7a.3) und liefert
-  **`next_cursor`**-Feld in der Antwort. `cursor`-Param wird
-  **nicht** akzeptiert — kein Alias, kein silent-Fallback.
-- [ ] Cursor-Validation: bei `process_instance_id`-Mismatch
-  zwischen dekodiertem Token und aktuellem API-Prozess →
-  HTTP `400` mit Body `{"error": "cursor_invalid"}` (§7a.4).
-  Andere Decode-Fehler (malformed Base64, falsches Schema) →
-  ebenfalls `400 cursor_invalid` (keine Information über die
-  konkrete Fehlerursache leaken).
-- [ ] Wire-Vertrag-Update in
+  **`next_cursor`**-Feld in der Antwort (`omit-empty` auf der
+  letzten Seite). `cursor`-Param wird **nicht** akzeptiert — kein
+  Alias, kein silent-Fallback.
+- [x] Cursor-Wire-Codec v3 in
+  `apps/api/adapters/driving/http/cursor.go`: Token kapselt
+  Collection-Scope `(pid, sid)` plus Storage-Position `(ing, id)`
+  analog dem v3-Event-Cursor aus §10.3. Reject-Klassen-Mapping:
+  - `v` fehlt / `v ∈ {1, 2}` → `400 cursor_invalid_legacy`.
+  - Alles andere (Base64-/JSON-Decode-Fehler, unbekannter `v`,
+    fehlende Pflichtfelder, fremder Project- oder Stream-Scope,
+    unbekannte Zusatzfelder) → `400 cursor_invalid_malformed`.
+  - Beide Bodies tragen `{"error":"<klasse>","reason":"<kurze
+    Erklärung>"}` — keine Information über die konkrete
+    Fehlerursache leaken (Reason ist plan-stabil, nicht
+    user-input-abhängig).
+- [x] Wire-Vertrag-Update in
   [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
-  §7a.3/§7a.4: keine inhaltliche Änderung; nur Implementierungs-
-  Hinweis „`0.12.6` aktiviert die spec'd Pagination" falls
-  überhaupt nötig.
-- [ ] Unit-Test + Adapter-Test:
-  - Pagination liefert konsistente, überlappungsfreie Pages
-    über 1500+ Samples.
-  - **`cursor_invalid`-Pfade**: Mismatch zwischen
-    `process_instance_id` (Token gegen Server-Restart),
-    malformed-Base64-Token und schema-Mismatch liefern alle
-    `400 cursor_invalid` mit stabilem Body-Shape.
-  - **Contract-Fixture** in `spec/contract-fixtures/srt/` für
-    den `400 cursor_invalid`-Pfad (Schema-Snapshot-Test analog
-    bestehenden SRT-Fixtures).
-- [ ] Smoke `make smoke-srt-health-pagination` **neu anlegen**
-  (Script + Makefile-Target + Help-Eintrag; Konvention siehe
-  §0.2.1) — entweder als eigenständiger Smoke oder als
-  Erweiterung des existierenden `smoke-srt-health` mit
-  `MTRACE_SRT_HEALTH_PAGINATION=1`-Schalter. Smoke deckt
-  mindestens den Cursor-Wandern-Pfad und einen
-  `cursor_invalid`-Mismatch ab.
-- [ ] Risks-Backlog R-11: Status 🟢 mit Auflösungspfad „Cursor-
-  Pagination in 0.12.6 Tranche 2 (samples_cursor/next_cursor +
-  cursor_invalid-400 gemäß §7a.3/§7a.4)"; Wieder-Eröffnung bei
-  Operator-Report über Inkonsistenz im Cursor-Wandern oder
-  Schema-Drift gegenüber dem Wire-Vertrag.
+  §7a.3/§7a.4: Pre-§4.3-Wording durch §10.3-konformes v3-Wording
+  ersetzt (siehe **Spec-Konsistenz-Fix** oben). Body-Schema für
+  beide Reject-Klassen explizit; `cursor_expired` (410) für
+  Konsistenz mit §10.3 ergänzt, auch wenn ohne Retention nur via
+  `make wipe` erreichbar.
+- [x] Unit-Test + Adapter-Test:
+  - `TestSrtHealth_HistoryCursorWalksAllPages`: 1500 Samples, 4
+    Pages mit limit=400, kein Duplikat, keine Lücke,
+    Sort-Invariante stabil.
+  - `TestSrtHealth_HistoryCursorScopeIsolation`: Adapter liefert
+    nur Samples der WHERE-Stream — kein Cross-Stream-Bleed selbst
+    bei „falschem" Cursor (Defense-in-Depth; HTTP-Codec rejected
+    den Pfad schon vorher).
+  - HTTP-Tests: `TestSrtHealthDetail_CursorRoundTrip` (encode→
+    decode via API-Roundtrip), `TestSrtHealthDetail_CursorInvalidLegacy`
+    (v=2), `TestSrtHealthDetail_CursorInvalidMalformed` (sechs
+    Sub-Cases: malformed Base64, unknown version, foreign
+    project, foreign stream, missing fields, unknown field).
+  - **Contract-Fixtures** in `spec/contract-fixtures/api/` für
+    beide Reject-Klassen:
+    `srt-health-cursor-invalid-legacy.json` und
+    `srt-health-cursor-invalid-malformed.json` (testdata-Sync via
+    `make sync-contract-fixtures`, Drift-Check in
+    `make generated-drift-check`).
+- [x] Smoke `make smoke-srt-health-pagination` neu angelegt:
+  Wrapper-Target setzt `SMOKE_INCLUDE_MTRACE_API=1` und
+  `MTRACE_SRT_HEALTH_PAGINATION=1` und ruft das existierende
+  `scripts/smoke-srt-health.sh` (Konvention §0.2.1). Smoke deckt
+  (a) erste Page mit `samples_limit=1` und Existenz von
+  `next_cursor`, (b) Folge-Page mit gepacktem Cursor → 200, (c)
+  malformed Cursor → 400 `cursor_invalid_malformed`. (a)+(b) sind
+  konditional auf ≥ 2 Samples in DB (Lab-Skip ohne Fail);
+  (c) ist deterministisch.
+- [x] Risks-Backlog R-11: Status 🟢 mit Auflösungspfad „Cursor-
+  Pagination in 0.12.6 Tranche 2 (`samples_cursor`/`next_cursor` +
+  `cursor_invalid_legacy`/`cursor_invalid_malformed` gemäß
+  §7a.3/§7a.4/§10.3)"; Wieder-Eröffnung bei Operator-Report über
+  Inkonsistenz im Cursor-Wandern oder Schema-Drift.
 
 ## 5. Tranche 3 — R-5 Time-Skew-Persistenz + Dashboard-Marker
 

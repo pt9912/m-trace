@@ -3,6 +3,7 @@ package sqlite_test
 import (
 	"context"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -301,19 +302,139 @@ func TestSrtHealth_OptionalFieldsRoundTrip(t *testing.T) {
 	}
 }
 
-// TestSrtHealth_HistoryCursorNotImplemented: Cursor-Pagination ist
-// in 0.6.0 Sub-3.3 noch nicht implementiert; Adapter gibt einen
-// expliziten Fehler zurück, statt stillschweigend nur die erste
-// Seite zu liefern.
-func TestSrtHealth_HistoryCursorNotImplemented(t *testing.T) {
+// TestSrtHealth_HistoryCursorWalksAllPages (plan-0.12.6 Tranche 2):
+// Adapter paginiert eine größere Sample-Menge konsistent mit
+// (ingested_at desc, id desc); jede Page hat einen NextAfter-Cursor
+// außer der letzten; alle Samples kommen exakt einmal vor und der
+// Cursor wandert ohne Lücken.
+func TestSrtHealth_HistoryCursorWalksAllPages(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	repo := freshSrtHealthDB(t)
-	_, err := repo.HistoryByStream(ctx, driven.SrtHealthHistoryQuery{
-		ProjectID: "demo", StreamID: "srt-test",
-		After: &driven.SrtHealthCursor{IngestedAt: 1, ID: 1, ProcessInstanceID: "x"},
-	})
-	if err == nil {
-		t.Fatal("expected error for cursor pagination, got nil")
+
+	const total = 1500
+	t0 := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
+
+	// 1500 Samples mit unique source_sequence schreiben.
+	batch := make([]domain.SrtHealthSample, 0, total)
+	for i := range total {
+		batch = append(batch, mkSample(
+			"srt-test", "c1",
+			t0.Add(time.Duration(i)*time.Second),
+			"seq-"+strconv.Itoa(i),
+			nil, nil,
+		))
+	}
+	if err := repo.Append(ctx, batch); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	const pageLimit = 400
+	seen := make(map[string]bool, total)
+	var (
+		cursor *driven.SrtHealthCursor
+		pages  int
+	)
+	for {
+		pages++
+		if pages > 10 {
+			t.Fatalf("too many pages (>%d) — likely cursor loop", pages)
+		}
+		page, err := repo.HistoryByStream(ctx, driven.SrtHealthHistoryQuery{
+			ProjectID: "demo", StreamID: "srt-test",
+			Limit: pageLimit,
+			After: cursor,
+		})
+		if err != nil {
+			t.Fatalf("history page %d: %v", pages, err)
+		}
+		if len(page.Items) == 0 {
+			t.Fatalf("page %d unexpectedly empty", pages)
+		}
+		for i, s := range page.Items {
+			if seen[s.SourceSequence] {
+				t.Fatalf("page %d item %d: duplicate seq %s", pages, i, s.SourceSequence)
+			}
+			seen[s.SourceSequence] = true
+		}
+		// Sort-Invariante (desc): jede nachfolgende Page-Item darf nicht
+		// jünger sein als das vorhergehende.
+		for i := 1; i < len(page.Items); i++ {
+			if page.Items[i].IngestedAt.After(page.Items[i-1].IngestedAt) {
+				t.Fatalf("page %d: items[%d] (%v) is younger than items[%d] (%v) — sort broken",
+					pages, i, page.Items[i].IngestedAt, i-1, page.Items[i-1].IngestedAt)
+			}
+		}
+		if page.NextAfter == nil {
+			// Letzte Seite.
+			if len(page.Items) > pageLimit {
+				t.Fatalf("final page has %d items, expected ≤ %d", len(page.Items), pageLimit)
+			}
+			break
+		}
+		if len(page.Items) != pageLimit {
+			t.Fatalf("intermediate page %d has %d items, expected exactly %d (NextAfter set implies full page)",
+				pages, len(page.Items), pageLimit)
+		}
+		cursor = page.NextAfter
+	}
+	if len(seen) != total {
+		t.Fatalf("expected %d unique samples across pages, got %d (pages=%d)", total, len(seen), pages)
+	}
+	// 1500 / 400 = 3 volle Pages + 1 Rest-Page = 4 Pages.
+	if pages != 4 {
+		t.Errorf("expected 4 pages (limit=%d, total=%d), got %d", pageLimit, total, pages)
 	}
 }
+
+// TestSrtHealth_HistoryCursorScopeIsolation: ein Cursor in
+// (project=demo, stream=srt-test) darf weder Samples aus einer
+// anderen Stream noch aus einem anderen Project liefern. Die
+// Stream-Isolation wird im Adapter durch die WHERE-Klausel
+// `project_id = ? AND stream_id = ?` garantiert; der Cursor selbst
+// kennt diese Werte gar nicht (Wire-Codec-Verantwortung).
+func TestSrtHealth_HistoryCursorScopeIsolation(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	repo := freshSrtHealthDB(t)
+	t0 := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
+
+	if err := repo.Append(ctx, []domain.SrtHealthSample{
+		mkSample("stream-a", "c1", t0, "a-1", nil, nil),
+		mkSample("stream-a", "c1", t0.Add(2*time.Second), "a-2", nil, nil),
+		mkSample("stream-b", "c1", t0.Add(1*time.Second), "b-1", nil, nil),
+		mkSample("stream-b", "c1", t0.Add(3*time.Second), "b-2", nil, nil),
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	// Cursor an einer „mittleren" Position für stream-a:
+	first, err := repo.HistoryByStream(ctx, driven.SrtHealthHistoryQuery{
+		ProjectID: "demo", StreamID: "stream-a", Limit: 1,
+	})
+	if err != nil {
+		t.Fatalf("history a page 1: %v", err)
+	}
+	if first.NextAfter == nil {
+		t.Fatal("expected NextAfter after first page of stream-a")
+	}
+
+	// Cursor wird in einer stream-b-Query verwendet (was der HTTP-
+	// Codec vor §10.3-Scope-Check verhindert). Der Adapter selbst
+	// liefert dann nur stream-b-Samples, weil die WHERE-Klausel
+	// stream-b filtert — ein Indikator, dass der Adapter keine
+	// Cross-Stream-Bleed-Through erzeugt.
+	bPage, err := repo.HistoryByStream(ctx, driven.SrtHealthHistoryQuery{
+		ProjectID: "demo", StreamID: "stream-b", Limit: 100,
+		After: first.NextAfter,
+	})
+	if err != nil {
+		t.Fatalf("history b with stream-a cursor: %v", err)
+	}
+	for _, s := range bPage.Items {
+		if s.StreamID != "stream-b" {
+			t.Errorf("cross-stream bleed: stream-b query returned stream_id=%s", s.StreamID)
+		}
+	}
+}
+

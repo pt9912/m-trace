@@ -10,6 +10,11 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
+// historyClampLimit ist das obere Limit pro Page (spec §7a.3).
+// Default-Limit (100) liegt im Application-Service; der Adapter
+// schützt nur gegen unsinnig große Werte.
+const historyClampLimit = 1000
+
 // SrtHealthRepository ist die durable Variante des
 // driven.SrtHealthRepository-Ports gegen die SQLite-Datei aus
 // internal/storage. Application- und Domain-Layer bleiben SQLite-frei
@@ -89,6 +94,9 @@ INNER JOIN (
 WHERE s.project_id = ?
 ORDER BY s.stream_id ASC, s.id DESC`
 
+	// historyByStreamSQL: erste Seite ohne Cursor (spec §7a.3 / §10.4).
+	// Index idx_srt_health_samples_stream_ingested matched die WHERE-
+	// und ORDER-BY-Klausel direkt.
 	historyByStreamSQL = `
 SELECT id,
        project_id, stream_id, connection_id,
@@ -101,6 +109,26 @@ SELECT id,
        source_status, source_error_code, connection_state, health_state
 FROM srt_health_samples
 WHERE project_id = ? AND stream_id = ?
+ORDER BY ingested_at DESC, id DESC
+LIMIT ?`
+
+	// historyByStreamAfterSQL: Folgeseite nach einer (ingested_at, id)-
+	// Position. `ingested_at` ist TEXT (RFC3339-Nano UTC), byte-
+	// lexikografisch zeit-sortiert; der Operator `<` arbeitet damit
+	// korrekt.
+	historyByStreamAfterSQL = `
+SELECT id,
+       project_id, stream_id, connection_id,
+       source_observed_at, source_sequence,
+       collected_at, ingested_at,
+       rtt_ms, packet_loss_total, packet_loss_rate,
+       retransmissions_total,
+       available_bandwidth_bps, throughput_bps, required_bandwidth_bps,
+       sample_window_ms,
+       source_status, source_error_code, connection_state, health_state
+FROM srt_health_samples
+WHERE project_id = ? AND stream_id = ?
+  AND (ingested_at < ? OR (ingested_at = ? AND id < ?))
 ORDER BY ingested_at DESC, id DESC
 LIMIT ?`
 )
@@ -172,35 +200,65 @@ func (r *SrtHealthRepository) LatestByStream(ctx context.Context, projectID stri
 	}
 	defer func() { _ = rows.Close() }()
 
-	out, err := scanSrtHealthRows(rows)
+	out, _, err := scanSrtHealthRows(rows)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// HistoryByStream liefert die letzten `limit` Samples einer
-// (projectID, streamID)-Kombination. Cursor ist in 0.6.0 Sub-3.3
-// noch nicht implementiert (gibt sich bei After != nil mit einem
-// Fehler-Stub als Folge-Item für Sub-3.5/Tranche 4).
+// HistoryByStream liefert bis zu `Limit` Samples einer
+// (projectID, streamID)-Kombination, sortiert nach (ingested_at desc,
+// id desc) (spec §7a.3 / §10.4). Bei q.After != nil setzt die
+// WHERE-Klausel die Storage-Position fort (Keyset-Pagination); der
+// Scope-Check `(project_id, stream_id)` lebt im HTTP-Codec.
+//
+// Pagination-Strategie: der Adapter fetched `limit+1` Rows; wenn das
+// Result genau `limit+1` enthält, gibt es eine Folgeseite und
+// NextAfter wird auf die `limit`-te Row (also den letzten Eintrag
+// der zurückgegebenen Page) gesetzt; das überzählige Sample wird
+// verworfen.
 func (r *SrtHealthRepository) HistoryByStream(ctx context.Context, q driven.SrtHealthHistoryQuery) (driven.SrtHealthHistoryPage, error) {
-	if q.After != nil {
-		return driven.SrtHealthHistoryPage{}, errors.New("srt-health-sqlite: cursor pagination not yet implemented (plan-0.6.0 Sub-3.5)")
-	}
 	limit := q.Limit
-	if limit <= 0 || limit > 1000 {
+	if limit <= 0 || limit > historyClampLimit {
 		limit = 100
 	}
-	rows, err := r.db.QueryContext(ctx, historyByStreamSQL, q.ProjectID, q.StreamID, limit)
+	probe := limit + 1
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if q.After == nil {
+		rows, err = r.db.QueryContext(ctx, historyByStreamSQL, q.ProjectID, q.StreamID, probe)
+	} else {
+		afterTS := formatTime(q.After.IngestedAt)
+		rows, err = r.db.QueryContext(ctx, historyByStreamAfterSQL,
+			q.ProjectID, q.StreamID,
+			afterTS, afterTS, q.After.ID,
+			probe,
+		)
+	}
 	if err != nil {
 		return driven.SrtHealthHistoryPage{}, fmt.Errorf("srt-health-sqlite: history query: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
-	out, err := scanSrtHealthRows(rows)
+	samples, ids, err := scanSrtHealthRows(rows)
 	if err != nil {
 		return driven.SrtHealthHistoryPage{}, err
 	}
-	// Cursor kommt in Sub-3.5/Tranche 4 — bis dahin keine Folgeseite.
-	return driven.SrtHealthHistoryPage{Items: out}, nil
+
+	page := driven.SrtHealthHistoryPage{Items: samples}
+	if len(samples) > limit {
+		// Eine Folgeseite existiert. NextAfter zeigt auf die letzte
+		// Row der zurückgegebenen Page; der überzählige Probe-Sample
+		// wird verworfen.
+		page.Items = samples[:limit]
+		page.NextAfter = &driven.SrtHealthCursor{
+			IngestedAt: page.Items[limit-1].IngestedAt,
+			ID:         ids[limit-1],
+		}
+	}
+	return page, nil
 }

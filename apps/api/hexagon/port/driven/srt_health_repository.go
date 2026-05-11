@@ -2,6 +2,7 @@ package driven
 
 import (
 	"context"
+	"time"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
@@ -27,15 +28,17 @@ type SrtHealthRepository interface {
 	// `GET /api/srt/health` (spec §7a.1).
 	LatestByStream(ctx context.Context, projectID string) ([]domain.SrtHealthSample, error)
 
-	// HistoryByStream liefert die letzten `limit` Samples einer
+	// HistoryByStream liefert bis zu `Limit` Samples einer
 	// (projectID, streamID)-Kombination, sortiert nach IngestedAt
-	// desc. Cursor wird vom Adapter erzeugt; nil = erste Seite,
-	// nicht-nil = Folgeseite. Eingang für
-	// `GET /api/srt/health/{stream_id}` (spec §7a.1, §7a.3).
+	// desc, ID desc (spec §10.4). After ist nil für die erste Seite;
+	// danach trägt der Adapter den nächsten After-Cursor in
+	// HistoryPage.NextAfter (spec §7a.3). Eingang für
+	// `GET /api/srt/health/{stream_id}` (spec §7a.1).
 	//
-	// Bei Cursor-Mismatch (process_instance_id) gibt der Adapter
-	// ErrCursorInvalid analog zu EventRepository.ListBySession
-	// zurück (spec §10.3 / §7a.4).
+	// Die Scope-Validierung (Cursor aus Project A im Request für
+	// Project B, oder Stream X im Request für Stream Y) lebt im
+	// HTTP-Adapter (Wire-Codec gemäß §10.3 v3-Cursor); der Port
+	// kennt nur die Storage-Position.
 	HistoryByStream(ctx context.Context, q SrtHealthHistoryQuery) (SrtHealthHistoryPage, error)
 }
 
@@ -50,13 +53,13 @@ type SrtHealthHistoryQuery struct {
 	After     *SrtHealthCursor
 }
 
-// SrtHealthCursor kapselt die kanonische Sortier-Position
-// `(IngestedAt, ID)` aus spec §7a.3 plus die ProcessInstanceID des
-// erzeugenden Prozesses. Adapter serialisieren das als opaker Token.
+// SrtHealthCursor ist die Repository-Sicht auf den Cursor: roh die
+// kanonische Sortier-Position `(IngestedAt, ID)` aus spec §7a.3 /
+// §10.4. Der Wire-Codec lebt im HTTP-Adapter und ergänzt den
+// Collection-Scope `(project_id, stream_id)` gemäß §10.3 v3.
 type SrtHealthCursor struct {
-	IngestedAt        int64
-	ID                int64
-	ProcessInstanceID string
+	IngestedAt time.Time
+	ID         int64
 }
 
 // SrtHealthHistoryPage ist die Ausgabe von HistoryByStream.

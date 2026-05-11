@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/srt/health/{stream_id}",
+    "spec": "spec/backend-api-contract.md §7a.4 / §10.3",
+    "plan": "plan-0.12.6 §4 Tranche 2 (R-11 SRT-Health-Cursor-Pagination)",
+    "captured": "Synthetisches Beispiel — pinnt den Body-Shape gegen den 400-Cursor-Reject-Pfad fuer malformed Cursor.",
+    "status": 400,
+    "trigger": "samples_cursor schlaegt Decode/Schema/Scope-Validation fehl: Base64-/JSON-Decode-Fehler, unbekannter v-Wert, fehlende Pflicht-Felder, fremder Project-Scope oder fremder Stream-Scope."
+  },
+  "error": "cursor_invalid_malformed",
+  "reason": "samples_cursor failed schema or scope validation"
+}
