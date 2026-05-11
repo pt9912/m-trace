@@ -274,21 +274,63 @@ Ziel: Sampled Sessions (mit `sampleRate < 1`) sind im Read-Pfad
 serverseitig erkennbar markiert — der Operator muss die
 Inkompletheit nicht aus der Konfig ableiten.
 
+**Quelle des `sample_rate`-Werts** (Review-Finding 2 / OQ2,
+2026-05-11): **dediziertes Event-Feld + Immutability**, **nicht**
+„erstes Event"-Heuristik. Begründung: das erste Event kann ein
+beliebiger Pfad sein (Player-Start, später Buffer-Stall etc.) —
+fehlt das Feld dort, würde die Session fälschlich als
+voll-gesampelt markiert. Stattdessen:
+
+- **Wire-Anforderung** an das Player-SDK: Sessions, die mit
+  `sampleRate < 1` betrieben werden, müssen das in **jedem**
+  Event-Body als Pflicht-Feld `meta.session_sample_rate` (oder
+  analog) liefern. Voll-gesampelte Sessions dürfen das Feld
+  weglassen (Default `1.0`).
+- **Server-Verhalten**: erstmaliger Wert pro `session_id` wird in
+  der Session-Metadaten-Zeile persistiert (immutable nach erstem
+  gültigen Setzen). Spätere Events mit abweichendem Wert lösen
+  einen Warning-Log und einen `mtrace_sample_rate_drift_total`-
+  Counter aus — das Risiko wäre, dass das Operator-SDK mitten in
+  einer Session den `sampleRate` ändert, was die Lücken-Erkennung
+  inkorrekt machen würde.
+- **Fallback**: wenn keines der eingegangenen Events das Feld
+  setzt, bleibt der Wert auf `1.0` — Session gilt als voll
+  gesampelt (Backwards-Compat zum heutigen Verhalten).
+
 DoD:
 
 - [ ] Domain-Erweiterung: `Session` bekommt ein Feld
-  `sample_rate float`, ingestiert aus dem ersten Event jeder
-  Session.
-- [ ] SQLite-Schema-Migration ergänzt die Spalte (`V7` o. ä.).
+  `sample_rate float` (Default `1.0`); Persistenz immutable
+  nach erstem nicht-Default-Wert.
+- [ ] SDK-/Wire-Erweiterung: Player-SDK setzt
+  `meta.session_sample_rate` (Pflicht-Feld bei `sampleRate < 1`,
+  Default-weglass bei `sampleRate == 1`). Schema-Eintrag in
+  `contracts/event-schema.json` mit deutlichem Hinweis auf den
+  Session-Scope (kein per-Event-Wert).
+- [ ] SQLite-Schema-Migration ergänzt die Session-Spalte
+  (`V7` o. ä.).
+- [ ] Ingest-Pfad: erster Event mit `meta.session_sample_rate < 1`
+  schreibt den Wert in die Session-Zeile (`UPDATE … WHERE
+  sample_rate = 1.0` für Immutability); spätere Drift wird
+  geloggt und gezählt, aber **nicht** überschreibt.
+- [ ] Neuer Counter `mtrace_sample_rate_drift_total{project_id}`
+  in `apps/api/adapters/driven/metrics/` mit Cardinality-Limit
+  (project_id).
 - [ ] Read-Pfad markiert Sessions mit `sample_rate < 1` als
   „sampled" — explizit als API-Feld plus Dashboard-Banner.
 - [ ] Sampling-Lücken-Heuristik (optional, T0-Entscheidung):
   Server vergleicht erwartete vs. tatsächliche Event-Anzahl bei
-  bekanntem `sampleRate` und markiert auffällige Sessions als
-  „possible_loss".
-- [ ] Doku-Update in `spec/telemetry-model.md` §8.3.
-- [ ] Tests + ggf. Smoke.
-- [ ] Risks-Backlog R-10: Status 🟢 oder geschärfter Resttrigger.
+  bekanntem `sample_rate` und markiert auffällige Sessions als
+  `"possible_loss"`. Heuristik-Schwellen sind Folge-Tuning.
+- [ ] Doku-Update in `spec/telemetry-model.md` §8.3 plus
+  `spec/event-schema.md` (oder analog) für das neue Meta-Feld.
+- [ ] Tests: erster-Wert-immutable, Drift-Log, Default-`1.0`-
+  Pfad, Read-Pfad-Markierung. Plus contract-fixture für
+  `meta.session_sample_rate < 1`.
+- [ ] Risks-Backlog R-10: Status 🟢 mit Auflösungspfad
+  „dediziertes Meta-Feld + Immutability in `0.12.6` Tranche 4";
+  oder geschärfter Resttrigger, wenn Lücken-Heuristik deferred
+  wird.
 
 ## 7. Tranche 5 — R-7 `ListSessions` Bulk-Read-Port
 
@@ -317,25 +359,62 @@ Ziel: optionaler IP-/Origin-Bucket-Limiter als Driven-Port-Adapter
 (analog `IssuanceLimiterPort` aus RAK-77, aber pro `client_ip`
 oder `Origin`-Header-Hash).
 
+**Backend-Strategie** (Review-Finding 1 / OQ1, 2026-05-11):
+**kein** SQLite-Backend für diesen Limiter. SQLite via Shared-
+Volume hat dieselben Single-Host-Beschränkungen wie der
+`0.12.5`-Issuance-Limiter — Origin-/IP-Limits sind aber typisch
+Multi-Host-Konzern (Edge/Reverse-Proxy/LB vor mehreren API-
+Replicas). Ein SQLite-Pfad würde False-Negative-Limits erzeugen,
+sobald die Replicas auf verschiedenen Hosts laufen. Backend-
+Optionen:
+
+- `memory` — In-Process Token-Bucket. Misst pro Replica;
+  geeignet für Single-Replica-Lab und als Defense-in-Depth-
+  Ergänzung zum Edge-Layer-Limit (CDN/Reverse-Proxy).
+- `redis` (Network-Backend) — atomarer Token-Bucket via
+  `EVAL`-Script. Vorausgesetzte Topologie ist sowieso ein
+  geteilter Redis (z. B. mit `R-17` Tranche 7 gemeinsam genutzt).
+  **Empfohlen** für Multi-Host-Setups.
+- Kein `sqlite` — würde dem Operator suggerieren, dass IP-Limits
+  über Hosts hinweg robust sind, was falsch wäre.
+
 DoD:
 
 - [ ] Neuer Driven-Port
   `apps/api/hexagon/port/driven/origin_rate_limiter.go` mit
   `Allow(ctx, key)`-Methode (`key` = `client_ip` oder
   `Origin`-Hash).
-- [ ] Adapter-Implementationen analog
-  `InMemoryIssuanceRateLimiter` und `SqliteIssuanceRateLimiter`
-  (oder Wiederverwendung der Token-Bucket-Logik mit anderem
-  `bucket_key`-Prefix).
-- [ ] ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|sqlite`
-  (Default `disabled` — kein Limiter, Backwards-Compat).
+- [ ] `InMemoryOriginRateLimiter`-Adapter analog
+  `InMemoryIssuanceRateLimiter` (Token-Bucket-Logik
+  wiederverwenden; Bucket-Key-Prefix `origin:` bzw. `ip:`).
+  **Kein** SQLite-Adapter — bewusste Plan-Entscheidung (siehe
+  Backend-Strategie oben).
+- [ ] `RedisOriginRateLimiter`-Adapter (zusammen mit
+  `R-17`-Network-Backend in Tranche 7 entwickeln; gleicher
+  Redis-Server, anderer Bucket-Key-Prefix). Aktivierung erst
+  nach R-17 Tranche 7 (oder gemeinsam, wenn Tranche 6 + 7 als
+  Bundle aktiviert werden).
+- [ ] ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|redis`
+  (Default `disabled` — kein Limiter, Backwards-Compat). Andere
+  Werte (`sqlite`, `memcached`) lehnt der Boot-Validator mit
+  klarem Fehler ab — `sqlite` mit expliziter Begründung „nicht
+  Multi-Host-tauglich, siehe Plan-0.12.6 §8 Backend-Strategie".
 - [ ] Integration vor `POST /api/auth/session-tokens` und
   `POST /api/playback-events`-Handlern (Reihenfolge: erst Origin-
   Limit, dann Project-Limit).
-- [ ] Tests inkl. Cross-Instance-Sharing für SQLite-Variante.
+- [ ] `client_ip`-Quelle dokumentiert: standardmäßig
+  `r.RemoteAddr`; bei Reverse-Proxy-Setups muss der Operator den
+  `X-Forwarded-For`-Trust-Boundary explizit aktivieren (ENV
+  `MTRACE_TRUST_FORWARDED_FOR=1` o. ä.) — sonst trifft der
+  Limiter den Proxy, nicht den Client.
+- [ ] Tests: In-Memory-Adapter (Single-Process) + Redis-Adapter
+  (Cross-Instance-Sharing über `miniredis`-Mock oder echten
+  Redis-Container). **Kein** Cross-Instance-Test auf SQLite,
+  weil der Adapter es nicht gibt.
 - [ ] `make smoke-origin-rate-limit` als Operator-Smoke.
-- [ ] Risks-Backlog R-22: Status 🟢 oder „teilweise gelöst" je
-  nach Adapter-Subset.
+- [ ] Risks-Backlog R-22: Status 🟢 sobald Redis-Adapter steht;
+  bei nur In-Memory bleibt es „teilweise gelöst" mit
+  Resttrigger „Multi-Host-IP-Limits benötigt Network-Backend".
 
 ## 9. Tranche 7 — R-17 Multi-Host-Issuance-Limiter (Network-Backend)
 
@@ -392,6 +471,41 @@ Ziel: `POST /api/ingest/streams` (oder ein neuer dedizierter
 Endpoint) provisioniert optional gegen einen laufenden MediaMTX/
 SRS-Server, statt nur eine Konfig-Datei zu schreiben.
 
+**Backwards-Compat-Vertrag** (Review-Finding 3, 2026-05-11):
+Wire-Erweiterung **strikt additiv**:
+
+- Neuer Query-Param `provision`:
+  - Default `false` — alter Pfad bleibt 1:1: Endpoint schreibt die
+    Konfig-Datei lokal, **kein** I/O gegen externen Server. Alte
+    Clients ohne den Param sehen exakt das `0.11.0`-Verhalten.
+  - `provision=true` — opt-in: zusätzlich gegen den konfigurierten
+    Media-Server provisioniert.
+- Neues Response-Feld `media_server_state`:
+  - **Optional/additiv** — wird **nur** im Body gesetzt, wenn der
+    Request `provision=true` hatte ODER wenn der Server unter
+    `MTRACE_MEDIASERVER_PROVISION_URL` konfiguriert ist und ein
+    Provisionierungs-Versuch erfolgte. Standardpfad (alter Client,
+    `provision=false`, keine ENV-Konfig) liefert das Feld **nicht**
+    — der Body bleibt byte-stabil zum `0.11.0`-Format.
+  - JSON-Konvention: alte Clients mit strikter Deserialisierung
+    (z. B. `additionalProperties: false`) müssen nichts ändern,
+    weil der Server das Feld in dem Pfad gar nicht emittiert.
+    Neue Clients mit toleranter Deserialisierung sehen es bei
+    `provision=true`.
+- Provisionierungs-Fehler (`MTRACE_MEDIASERVER_PROVISION_URL`
+  unreachable o. ä.) löst **keinen** API-State-Rollback aus:
+  `POST /api/ingest/streams` gibt weiterhin `201 Created`
+  (lokale Konfig+Stream sind angelegt), `media_server_state`
+  enthält dann `"failed"` plus optionalen `error_code`. Operator
+  triggert den Server-Sync manuell nach (separater Endpoint
+  `POST /api/ingest/streams/{id}/provision`-Folge-Item, falls
+  Bedarf besteht).
+- Wire-Versions-Pin: Der Wire-Vertrag in
+  [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+  §3.8 bekommt einen `0.12.6`-Block mit dem additiv-Hinweis,
+  damit zukünftige Reviewer das Backwards-Compat-Versprechen
+  sehen.
+
 DoD:
 
 - [ ] Neuer Driven-Port
@@ -402,11 +516,23 @@ DoD:
 - [ ] ENV-Konfiguration `MTRACE_MEDIASERVER_PROVISION_URL`/`_TOKEN`;
   fehlt → Adapter no-op (heutiges Verhalten).
 - [ ] Wire-Update auf `POST /api/ingest/streams`: optionaler
-  `provision=true`-Query-Param; Response liefert
-  `media_server_state`-Feld.
+  `provision=true`-Query-Param (Default `false` → 1:1 `0.11.0`-
+  Verhalten). Response-Feld `media_server_state` ist **strikt
+  additiv**: nur gesetzt bei `provision=true` oder konfiguriertem
+  Provisionier-Server (siehe Backwards-Compat-Vertrag oben).
+- [ ] Wire-Vertrag-Erweiterung in
+  [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
+  §3.8 mit explizitem `0.12.6`-additive-Hinweis und einem
+  Beispiel-Body für jeden der drei Pfade (alter Default,
+  Provisionierung erfolgreich, Provisionierung fehlgeschlagen).
+- [ ] Contract-Test pinnt: Body byte-stabil zum `0.11.0`-Format
+  für `provision=false`-Pfad (alte Fixtures bleiben grün).
 - [ ] Operator-Doku in `docs/user/ingest-control.md` mit
-  Rollback-Pfad bei API-State-vs-Server-State-Diskrepanz.
-- [ ] Tests gegen `httptest`-MediaMTX-Mock.
+  Rollback-Pfad bei API-State-vs-Server-State-Diskrepanz und
+  expliziter Backwards-Compat-Notiz für alte Clients.
+- [ ] Tests gegen `httptest`-MediaMTX-Mock: happy path (200),
+  unreachable (`media_server_state: "failed"`), Auth-Failure,
+  partial-state (Stream angelegt, Routing-Rule rejected).
 - [ ] `make smoke-mediaserver-provision`.
 - [ ] Risks-Backlog R-15: Status 🟢 sobald Adapter geliefert; sonst
   „teilweise gelöst" mit konkretem Operator-Trigger für SRS.
