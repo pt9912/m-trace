@@ -31,8 +31,14 @@
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) §13.15
 > (Lastenheft-Patch `1.1.16` für `0.12.5`, RAK-77..RAK-82).
 >
-> **Nachfolger**: [`plan-0.13.0.md`](../open/plan-0.13.0.md)
-> (Production / Ops Backends, MVP-40..MVP-44).
+> **Nachfolger**:
+> [`plan-0.12.6.md`](../open/plan-0.12.6.md) (Folge-Items-Sammlung
+> für R-5/R-7/R-10/R-11/R-13/R-15/R-17/R-20/R-22 — adressiert die
+> nach diesem Release offen oder „teilweise gelöst" gebliebenen
+> R-N-Einträge; T0-Aktivierung entscheidet zwischen Patch und
+> Minor), danach
+> [`plan-0.13.0.md`](../open/plan-0.13.0.md) (Production / Ops
+> Backends, MVP-40..MVP-44).
 
 ## 0. Konvention
 
@@ -536,27 +542,46 @@ DoD:
 
 ## 11. Folge-Scope nach `0.12.5`
 
-- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops Backends
-  (`MVP-40`..`MVP-44`) — Postgres, ClickHouse, K8s, Devcontainer.
+Direkte Folge-Items aus `0.12.5` — adressiert im
+[`plan-0.12.6.md`](../open/plan-0.12.6.md) (Folge-Items-Sammlung
+nach `0.12.5`, T0-Aktivierung entscheidet zwischen Patch und
+Minor):
+
 - **Multi-Host-Issuance-Limiter** (Network-Backend wie Redis/
   Memcached): bleibt nach `0.12.5` offen — der SQLite-Adapter
   deckt nur Single-Host-Shared-Volume. Resttrigger steht in
   `risks-backlog.md` R-17 („Multi-Host-Topologie oder
-  Network-Backend-Bedarf"); Auflösung als Folge-Adapter in
-  `plan-0.13.x` oder späterem Minor.
-- **Origin-/IP-nahes Rate-Limiting (R-22, falls in `0.12.1`
-  angelegt)**: Project-Token-basiertes Limit aus `0.12.5` löst
-  R-22 nicht — IP-Layer-Limits sind eigener Code-Pfad.
-  `plan-0.13.x` oder späterer Minor liefert den Adapter, sobald
-  der R-22-Trigger ausgelöst ist.
+  Network-Backend-Bedarf"); Auflösung in
+  [`plan-0.12.6.md`](../open/plan-0.12.6.md) Tranche 7 (bei
+  Minor-Aktivierung), sonst späterer Minor.
+- **Origin-/IP-nahes Rate-Limiting (R-22, in `0.12.1` Tranche 1
+  als R-22 angelegt)**: Project-Token-basiertes Limit aus `0.12.5`
+  löst R-22 nicht — IP-Layer-Limits sind eigener Code-Pfad.
+  [`plan-0.12.6.md`](../open/plan-0.12.6.md) Tranche 6 liefert den
+  Driven-Port-Adapter (bei Minor-Aktivierung), sonst späterer
+  Minor sobald der R-22-Trigger ausgelöst ist.
 - **Produktive KMS/Vault-Anbindung (R-20-Resttrigger)**: das
   Skelett aus `0.12.5` Tranche 3 deckt den Driven-Port ab; eine
-  echte Operator-Anbindung an produktives KMS/Vault plus
-  Compliance-Audit-Pfad bleibt offen.
-- Optional `plan-0.13.x` für Externe Provisionierung (R-15), falls
-  Trigger nach Operator-Bedarf in `0.12.5`-Closeout greift.
+  echte Operator-Anbindung (AppRole/IAM/K8s-ServiceAccount-Auth)
+  plus KMS-Adapter und Compliance-Audit-Pfad sind
+  [`plan-0.12.6.md`](../open/plan-0.12.6.md) Tranche 8.
+- **Externe Media-Server-Provisionierung (R-15)**:
+  [`plan-0.12.6.md`](../open/plan-0.12.6.md) Tranche 9 falls
+  Trigger nach Operator-Bedarf greift.
+
+Production-Backends bleiben separater Folge-Plan:
+
+- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops
+  Backends (`MVP-40`..`MVP-44`) — Postgres, ClickHouse,
+  Kubernetes, Devcontainer, Release-Automatisierung. RAK-Range
+  hängt davon ab, ob `plan-0.12.6.md` als Minor mit `RAK-83+`
+  belegt wird.
+
+Themen-Defer (keine getrackten R-N-Items):
+
 - Später `plan-0.14.x` o. ä. für OAuth/OIDC/SSO + User-Verwaltung,
-  falls konkreter Bedarf entsteht.
+  falls konkreter Bedarf entsteht (RAK-71-Out-of-Scope bleibt
+  normativ).
 
 ## 12. Qualitätsregeln für `0.12.5`
 
