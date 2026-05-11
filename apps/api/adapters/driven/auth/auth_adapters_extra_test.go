@@ -244,6 +244,59 @@ func TestHMACSigner_NilReceiverPaths(t *testing.T) {
 	}
 }
 
+// TestInMemoryProjectPolicyResolver_EnabledBrowserIngestOrigins
+// (Coverage-Fill): pinnt die Dedup- und Skip-Logik — zwei Projects
+// mit überlappenden Allowlists liefern eine deduplizierte Union;
+// ein deaktiviertes Project wird übersprungen; nil-Receiver liefert
+// nil.
+func TestInMemoryProjectPolicyResolver_EnabledBrowserIngestOrigins(t *testing.T) {
+	t.Parallel()
+	policies := map[string]domain.ProjectPolicy{
+		"a": {
+			BrowserIngest: domain.BrowserIngestPolicy{
+				Enabled:       true,
+				CORSAllowlist: []string{"https://a.example", "https://shared.example"},
+			},
+		},
+		"b": {
+			BrowserIngest: domain.BrowserIngestPolicy{
+				Enabled:       true,
+				CORSAllowlist: []string{"https://shared.example", "https://b.example"},
+			},
+		},
+		"c-disabled": {
+			BrowserIngest: domain.BrowserIngestPolicy{
+				Enabled:       false,
+				CORSAllowlist: []string{"https://never.example"},
+			},
+		},
+	}
+	r, err := auth.NewInMemoryProjectPolicyResolver(policies, nil)
+	if err != nil {
+		t.Fatalf("resolver: %v", err)
+	}
+	got := r.EnabledBrowserIngestOrigins()
+	seen := make(map[string]bool, len(got))
+	for _, o := range got {
+		if seen[o] {
+			t.Errorf("origin %q duplicated in result", o)
+		}
+		seen[o] = true
+	}
+	if !seen["https://a.example"] || !seen["https://b.example"] || !seen["https://shared.example"] {
+		t.Errorf("expected union of a/b enabled origins, got %v", got)
+	}
+	if seen["https://never.example"] {
+		t.Errorf("disabled project origin leaked into union")
+	}
+
+	// Nil-Receiver liefert nil (defensiv).
+	var nilResolver *auth.InMemoryProjectPolicyResolver
+	if got := nilResolver.EnabledBrowserIngestOrigins(); got != nil {
+		t.Errorf("nil receiver: got %v, want nil", got)
+	}
+}
+
 func TestHMACSigner_VerifyRejectsAlgKidMismatch(t *testing.T) {
 	t.Parallel()
 	// Custom resolver: active kid_a (HS256) plus retired kid_b registered
