@@ -182,7 +182,7 @@ Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | 🟡 |
 | 1 | R-18 Multi-Key-Rotation (Code) | 🟡 |
 | 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | 🟡 |
-| 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | ⬜ |
+| 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | 🟡 |
 | 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ⬜ |
 | 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ⬜ |
 | 6 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | ⬜ |
@@ -322,26 +322,47 @@ heutige ENV-Lookup bleibt Default.
 
 DoD:
 
-- [ ] `SecretBackendPort` definiert; ENV-Adapter implementiert das
-  Interface 1:1 zum heutigen Verhalten.
-- [ ] **Vault-Adapter-Skelett** implementiert (T0-Entscheidung
-  2026-05-11, siehe §0.3): `hashicorp/vault/api`-Client als
-  Driven-Adapter, Lab-Test-Pfad mit `vault dev`-Server oder
-  Mock-Backend, kein Pflicht-Lab gegen produktives Vault.
-  KMS-Adapter (AWS-KMS) bleibt **additive Folge-Option** nach
-  `0.12.5` und ist nicht Teil dieses Skeletts.
-- [ ] ENV-Selektion: `MTRACE_AUTH_SECRET_BACKEND=env|vault`.
-  Default `env`. Wert `kms` lehnt der Boot-Validator mit klarem
-  Fehler ab, bis ein Folge-Adapter geliefert wird.
-- [ ] Lifecycle-Verhalten dokumentiert: Caching, Refresh-TTL,
-  Failure-Modus (fail-closed bei externem Backend-Outage).
-- [ ] Risks-Backlog R-20: Status auf „**teilweise gelöst** —
-  Driven-Port und Adapter-Skelett (KMS oder Vault) in 0.12.5
-  verfügbar, ENV-Adapter bleibt Default" setzen. **Resttrigger
-  bleibt offen**: produktive Backend-Anbindung (Operator
-  konfiguriert tatsächliches KMS/Vault), Compliance-Audit
-  (PCI/SOC2). Skelett-Lieferung allein erfüllt den Resttrigger
-  nicht.
+- [x] `AuthSecretBackend`-Port in
+  `apps/api/hexagon/port/driven/auth_secret_backend.go` definiert
+  (Plan-Notation `SecretBackendPort` gemappt auf den hexagon-
+  konformen Namen). `EnvSecretBackend` in
+  `apps/api/adapters/driven/auth/env_secret_backend.go`
+  implementiert das Interface 1:1 zum bisherigen
+  `ParseSigningKeysEnv`-Pfad und signalisiert „kein Material" über
+  den `ErrNoSecretConfigured`-Sentinel — der Caller (`main.go`)
+  steuert den Lab-Default-Fallback exklusiv beim ENV-Backend.
+- [x] **Vault-Adapter-Skelett** implementiert in
+  `apps/api/adapters/driven/auth/vault_secret_backend.go`
+  (T0-Entscheidung 2026-05-11, siehe §0.3): eigener minimaler
+  `net/http`-Client gegen Vault KV-v2
+  (`/v1/<mount>/data/<path>`) mit `X-Vault-Token`-Authentication.
+  Bewusst **ohne** `hashicorp/vault/api`-Dependency — go.mod
+  bleibt schlank, produktive Anbindung kann den Adapter
+  später 1:1 durch `hashicorp/vault/api` ersetzen, ohne den
+  Port zu ändern. Lab-Pfad: `vault dev`-Server (siehe
+  `docs/user/auth.md` §5.5 Lab-Setup). KMS-Adapter (AWS-KMS)
+  bleibt **additive Folge-Option** nach `0.12.5` und ist nicht
+  Teil dieses Skeletts.
+- [x] ENV-Selektion `MTRACE_AUTH_SECRET_BACKEND=env|vault` in
+  `main.go#buildAuthSecretBackend`. Default `env`. Wert `kms`
+  lehnt der Boot-Validator mit klarem „follow-up item"-Fehler ab.
+  Externe Backends (`vault`) bekommen **kein** Lab-Default —
+  ein nicht erreichbares Backend ist immer ein Boot-Fehler
+  (fail-closed). Pflicht-ENV-Vars für Vault:
+  `MTRACE_AUTH_VAULT_ADDR/_TOKEN/_PATH`. Optionale Feld-Aliase
+  über `MTRACE_AUTH_VAULT_KEYS_FIELD`/`_ACTIVE_KID_FIELD`.
+- [x] Lifecycle-Verhalten dokumentiert in `auth.md` §5.5: Boot-
+  Time-Load, kein periodischer Refresh, fail-closed bei
+  Backend-Outage. Schlüsselwechsel passiert über Operator-Restart
+  (analog ENV-Pfad §5.3.1).
+- [x] Risks-Backlog R-20: Status **teilweise gelöst** —
+  Driven-Port + ENV-Adapter + Vault-Adapter-Skelett geliefert,
+  ENV-Adapter bleibt Default. **Resttrigger** weiter offen:
+  produktive Vault/KMS-Anbindung (AppRole/IAM-Auth),
+  Compliance-Audit (PCI/SOC2), KMS-Adapter selbst. Tests:
+  4 ENV-Adapter-Tests + 7 Vault-Adapter-Tests (httptest-Mock).
+  Eintrag bleibt in §1.1 mit ⬜-Status nach Wartungsregel §2
+  „teilweise Lösungen".
 
 ## 8. Tranche 4 — R-21 Browser-Ingest-Policy
 

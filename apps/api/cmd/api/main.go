@@ -50,6 +50,7 @@ const (
 	envAuthSigningActiveKID  = "MTRACE_AUTH_SIGNING_ACTIVE_KID"
 	envAuthLabDefault        = "MTRACE_AUTH_LAB_DEFAULT"
 	envAuthIssuanceLimiter   = "MTRACE_AUTH_ISSUANCE_LIMITER"
+	envAuthSecretBackend     = "MTRACE_AUTH_SECRET_BACKEND"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
@@ -533,25 +534,34 @@ type authBundle struct {
 //     `MTRACE_AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`.
 //     Degenerierter `len(keys)==1`-Resolver.
 //
-// Ist keiner der beiden Pfade gesetzt, fällt das Setup auf den
-// markierten Lab-Default zurück (`MTRACE_AUTH_LAB_DEFAULT=1` als
-// Opt-in, sonst hard-fail). Klartext-Token-Material wird im
-// Resolver defensiv kopiert.
+// Backend-Auswahl per `MTRACE_AUTH_SECRET_BACKEND` (`0.12.5` RAK-79):
+//   - `env` (Default): liest aus den ENV-Variablen wie oben.
+//   - `vault`: Vault KV-v2-Pfad über `MTRACE_AUTH_VAULT_*`.
+//
+// Ist beim `env`-Backend keiner der ENV-Pfade gesetzt, fällt das
+// Setup auf den markierten Lab-Default zurück
+// (`MTRACE_AUTH_LAB_DEFAULT=1` als Opt-in, sonst hard-fail). Bei
+// `vault` (oder anderen externen Backends) gibt es **kein** Lab-
+// Default — ein nicht erreichbares Backend ist immer ein Fehler
+// (fail-closed). Klartext-Token-Material wird im Resolver defensiv
+// kopiert.
 func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB, logger *slog.Logger) (*authBundle, error) {
 	now := time.Now().UTC()
-	keys, activeKID, noKeysConfigured, err := auth.ParseSigningKeysEnv(
-		os.Getenv(envAuthSigningKeys),
-		os.Getenv(envAuthSigningActiveKID),
-		os.Getenv(envAuthSigningKey),
-		os.Getenv(envAuthSigningKID),
-		now,
-	)
+	backend, backendName, err := buildAuthSecretBackend(logger)
 	if err != nil {
-		return nil, fmt.Errorf("auth signing key env: %w", err)
+		return nil, err
 	}
-	if noKeysConfigured {
-		// Weder Multi-Key- noch Single-Key-ENV gesetzt — Lab-Default
-		// nur mit explizitem Opt-in (Plan-0.12.0 §0.6 Threat Model).
+	keys, activeKID, err := backend.LoadSigningKeys(context.Background())
+	switch {
+	case errors.Is(err, auth.ErrNoSecretConfigured):
+		// Lab-Default-Fallback ist ausschließlich für das ENV-Backend
+		// sinnvoll — externe Backends, die explizit ausgewählt wurden,
+		// dürfen nicht stillschweigend einen lokalen Lab-Key benutzen.
+		if backendName != "env" {
+			return nil, fmt.Errorf(
+				"auth secret backend %q reported no signing keys configured; check %s/%s/%s",
+				backendName, "MTRACE_AUTH_VAULT_ADDR", "MTRACE_AUTH_VAULT_TOKEN", "MTRACE_AUTH_VAULT_PATH")
+		}
 		if !labDefaultOptIn() {
 			return nil, fmt.Errorf(
 				"%s or %s is required (set %s=1 to opt into the lab default key, NOT for production)",
@@ -573,6 +583,8 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB,
 		activeKID = labKID
 		logger.Warn("auth signing key falls back to lab default — set MTRACE_AUTH_SIGNING_KEYS (or MTRACE_AUTH_SIGNING_KEY) for production",
 			"kid", string(activeKID))
+	case err != nil:
+		return nil, fmt.Errorf("auth secret backend %q load: %w", backendName, err)
 	}
 	keyResolver, err := auth.NewMultiKeySigningResolver(activeKID, keys...)
 	if err != nil {
@@ -603,6 +615,43 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB,
 		Inbound: application.NewIssueSessionTokenService(policies, limiter, signer, ids),
 		Signer:  signer,
 	}, nil
+}
+
+// buildAuthSecretBackend wählt das Signing-Key-Backend
+// (`0.12.5` RAK-79 / R-20). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND`:
+//   - leer / `env`: In-Process-Default — liest `MTRACE_AUTH_SIGNING_KEYS`/
+//     `_KEY` / `_ACTIVE_KID` / `_KID` aus dem Prozess-ENV
+//     (Backwards-Compat zum `0.12.0`-Pfad inkl. Lab-Default-Opt-in).
+//   - `vault`: opt-in externer Adapter über Vault KV-v2
+//     (`MTRACE_AUTH_VAULT_ADDR/_TOKEN/_PATH`). Fail-closed bei
+//     Outage; **kein** Lab-Default-Fallback.
+//   - andere Werte (insb. `kms`): explizit nicht unterstützt — der
+//     Boot-Validator failt mit klarer Fehlermeldung. KMS-Adapter
+//     bleibt additive Folge-Option nach `0.12.5`.
+//
+// Rückgabe `backendName` wird vom Caller fürs Fehler-Wording und
+// das Lab-Default-Fallback-Gate genutzt — externe Backends dürfen
+// nicht stillschweigend auf einen Lab-Key fallen.
+func buildAuthSecretBackend(logger *slog.Logger) (driven.AuthSecretBackend, string, error) {
+	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envAuthSecretBackend)))
+	switch backend {
+	case "", "env":
+		logger.Info("auth secret backend active", "backend", "env")
+		return auth.NewEnvSecretBackend(), "env", nil
+	case "vault":
+		vb, err := auth.NewVaultSecretBackend(os.Getenv)
+		if err != nil {
+			return nil, "", fmt.Errorf("%s=vault: %w", envAuthSecretBackend, err)
+		}
+		logger.Info("auth secret backend active", "backend", "vault",
+			"note", "boot-time load, no refresh; restart for key rotation; fail-closed on outage")
+		return vb, "vault", nil
+	default:
+		return nil, "", fmt.Errorf(
+			"%s=%q is not supported (valid: env|vault; kms is a follow-up item after 0.12.5)",
+			envAuthSecretBackend, backend,
+		)
+	}
 }
 
 // buildIssuanceRateLimiter wählt zwischen In-Process- und

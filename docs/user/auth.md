@@ -383,6 +383,82 @@ auf dieselbe SQLite-Datei, verbraucht das Project-Bucket auf
 Instance A und prüft, dass Instance B den nächsten Allow als
 „denied" sieht.
 
+### 5.5 Signing-Key-Backend (Secret-Source)
+
+Wo das Signing-Key-Material **herkommt**, ist seit `0.12.5`
+(Tranche 3, RAK-79) ein eigener Driven-Port
+(`hexagon/port/driven/auth_secret_backend.go`). Der Boot-Pfad
+wählt das Backend per ENV; alles andere ist Adapter-Detail.
+
+| `MTRACE_AUTH_SECRET_BACKEND` | Adapter                                                                 | Konfigurations-Quelle                                                                |
+| ---------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| leer / `env` (Default)       | `EnvSecretBackend` — Backwards-Compat zu `0.12.0`/`0.12.5` Tranche 1     | `MTRACE_AUTH_SIGNING_KEYS` + `MTRACE_AUTH_SIGNING_ACTIVE_KID` (oder Single-Key)      |
+| `vault`                      | `VaultSecretBackend` — Skelett gegen Vault KV-v2                        | `MTRACE_AUTH_VAULT_ADDR/_TOKEN/_PATH`                                                |
+| jeder andere Wert (`kms`, …) | Boot-Validator failt mit „not supported"                                | —                                                                                    |
+
+**Vault-Adapter-Skelett (Code-Pfad in `0.12.5`, RAK-79):**
+
+- Eigener minimaler HTTP-Client gegen `/v1/<mount>/data/<path>` —
+  ohne `hashicorp/vault/api`-Dependency. Eine produktive Anbindung
+  kann ihn 1:1 durch einen `hashicorp/vault/api`-Adapter ersetzen,
+  ohne den `AuthSecretBackend`-Port zu ändern.
+- Authentication: Token only (`X-Vault-Token`). AppRole, AWS-IAM-
+  Auth und Kubernetes-Service-Account-Auth bleiben Folge-Item für
+  die produktive Anbindung.
+- Pflicht-ENV:
+  - `MTRACE_AUTH_VAULT_ADDR` (z. B. `http://127.0.0.1:8200`)
+  - `MTRACE_AUTH_VAULT_TOKEN`
+  - `MTRACE_AUTH_VAULT_PATH` — KV-v2-Pfad inkl. `data/`-Marker
+    (z. B. `secret/data/m-trace/signing`).
+- Optionale ENV-Var-Aliase: `MTRACE_AUTH_VAULT_KEYS_FIELD`
+  (Default `keys`), `MTRACE_AUTH_VAULT_ACTIVE_KID_FIELD`
+  (Default `active_kid`).
+- Secret-Format im Vault-Pfad: dieselben zwei Felder, die der
+  ENV-Backend aus `MTRACE_AUTH_SIGNING_KEYS` / `_ACTIVE_KID` liest
+  — `kid_a:<base64>,kid_b:<base64>` für `keys`, plain string für
+  `active_kid`. Beide Backends teilen sich denselben Parser
+  (`ParseSigningKeysEnv`).
+
+**Lifecycle (`0.12.5`):**
+
+- **Boot-Time-Load**: das Backend wird beim API-Start einmal
+  aufgerufen; danach hält der `MultiKeySigningResolver` das
+  Material in-memory.
+- **Kein periodischer Refresh**, kein TTL-Caching im Adapter —
+  Schlüsselwechsel passieren per Operator-Restart (gleich wie
+  beim `env`-Pfad, siehe §5.3.1).
+- **Fail-closed**: ein nicht erreichbares Backend, ein
+  HTTP-Fehler-Status, ein leeres `keys`-Feld oder ungültiges
+  Material liefert beim Boot einen klaren Fehler — die API
+  startet nicht. Es gibt **kein** stillen Fallback auf einen
+  Lab-Default für externe Backends; nur der ENV-Pfad hat das
+  `MTRACE_AUTH_LAB_DEFAULT=1`-Opt-in.
+
+**Lab-Setup (Vault dev-Server):**
+
+```bash
+# Vault im Dev-Mode starten (Root-Token aus stdout merken).
+vault server -dev -dev-root-token-id=root-dev &
+export VAULT_ADDR=http://127.0.0.1:8200
+
+# Secret-Felder schreiben.
+vault kv put -mount=secret m-trace/signing \
+  keys="kid_a:$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
+  active_kid="kid_a"
+
+# API starten:
+export MTRACE_AUTH_SECRET_BACKEND=vault
+export MTRACE_AUTH_VAULT_ADDR=$VAULT_ADDR
+export MTRACE_AUTH_VAULT_TOKEN=root-dev
+export MTRACE_AUTH_VAULT_PATH=secret/data/m-trace/signing
+```
+
+**Resttrigger** für eine vollständig aufgelöste R-20-Auflösung
+bleiben offen: erste Operator-Anbindung an produktives Vault
+oder KMS, Compliance-Audit (PCI/SOC2). Die Skelett-Lieferung in
+`0.12.5` deckt nur den Driven-Port und einen Lab-Pfad — siehe
+R-20 im Risiken-Backlog.
+
 ---
 
 ## 6. Datenschutz / GDPR
