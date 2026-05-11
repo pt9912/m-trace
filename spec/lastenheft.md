@@ -2,12 +2,49 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.16<br>
+**Version:** 1.1.17<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.17` (Auth-/Ingest-Folge-Items für `0.12.6`)**: Liefert
+> die R-N-Folge-Items aus dem `0.12.5`-Closeout in einem
+> Minor-Release und führt die neue RAK-Gruppe `RAK-83`..`RAK-90`
+> in §13.16 ein. Inhalt: Time-Skew-Persistenz mit Dashboard-Marker
+> (`R-5`/RAK-83), `ListSessions`-Bulk-Read-Port als
+> N+1-Performance-Fix (`R-7`/RAK-84), Sampling-Vollständigkeits-
+> Marker mit Integer-ppm-Persistenz und Immutability nach erstem
+> gültigem Wert (`R-10`/RAK-85), SRT-Health-Detail-Cursor-
+> Pagination via `samples_cursor`/`next_cursor` plus `400
+> cursor_invalid` gemäß `spec/backend-api-contract.md`
+> §7a.3/§7a.4 (`R-11`/RAK-86), MediaMTX-Provisionierungs-Adapter
+> mit strikt-additivem `provision=true`-Query-Param
+> (`R-15`/RAK-87), Redis-basierter Multi-Host-Issuance-Limiter als
+> Network-Backend (`R-17`/RAK-88, gemeinsam mit `R-22`-Redis-
+> Backend), produktive Vault-AppRole-/IAM-Auth plus KMS-Adapter-
+> Skelett (`R-20`/RAK-89, hebt den `0.12.5`-Skelett-Stand auf
+> produktive Anbindung), Origin-/IP-Rate-Limiter als Driven-Port
+> mit Redis-Backend (`R-22`/RAK-90, gemeinsam mit R-17). Plus
+> Trivy-Ignore-Re-Review (`R-13`-Wartung ohne RAK, Tranche-Inhalt
+> ohne User-Surface). Architekturentscheidungen: hexagonale
+> Erweiterung um zwei neue Driven-Ports (`OriginRateLimiter`,
+> `MediaServerProvisioner`); bestehende `AuthSecretBackend`-,
+> `IssuanceRateLimiter`-Ports bekommen neue Adapter
+> (Vault-AppRole/KMS bzw. Redis-Network-Backend). Backwards-
+> Compat: heutige ENV-Werte bleiben Default-Pfade; neue Adapter
+> sind opt-in. **Out of Scope** und damit nicht durch diesen
+> Patch erfüllt: Memcached-Backend für R-17/R-22 (wird gemeinsam
+> als Folge-Item geliefert, sobald Operator-Bedarf entsteht),
+> persistente Dead-Letter-Queue für Outbound-Webhooks aus
+> `0.12.5`, Compliance-Audit-Zertifikate (PCI/SOC2 — `0.12.6`
+> liefert nur die Konfigurations-Pfade), externe Provisionierung
+> für SRS (`MediaServerProvisioner` ist auf MediaMTX-API
+> spezialisiert), Production-Backends aus `0.13.0` (Postgres,
+> ClickHouse, Kubernetes). Patch-Log siehe
+> [`docs/planning/in-progress/plan-0.12.6.md`](../docs/planning/in-progress/plan-0.12.6.md)
+> Tranche 0.
+>
 > **Patch `1.1.16` (Auth-/Ingest-Adapter für `0.12.5`)**: Liefert
 > die Adapter-/Wire-Pfade, die in `0.12.0` als Folge-Scope angelegt
 > und in `0.12.1` als „Code-Pfad in 0.12.5" markiert wurden, und
@@ -1979,6 +2016,43 @@ bleibt Folge-Item), Externe Media-Server-Provisionierung
 Production-Backends aus `0.13.0` (Postgres, ClickHouse,
 Kubernetes), OAuth/OIDC/SSO + User-/Org-/Admin-Verwaltung
 (RAK-71-Out-of-Scope-Stand bleibt normativ).
+
+### 13.16 Version 0.12.6: Auth-/Ingest-Folge-Items (RAK-83..RAK-90)
+
+Ziel: Die nach `0.12.5` offen oder „teilweise gelöst" gebliebenen
+R-N-Items aus `risks-backlog.md` §1.1 werden in einem
+Folge-Items-Minor adressiert — strukturell für die acht
+Items mit User-Surface (RAK-83..RAK-90); R-13 (Trivy-Re-Review)
+ist Wartung ohne neue Surface und wird ohne RAK in Plan-DoD
+abgehandelt. Architekturentscheidungen: zwei neue Driven-Ports
+(`OriginRateLimiter`, `MediaServerProvisioner`); bestehende
+Ports (`AuthSecretBackend`, `IssuanceRateLimiter`) bekommen
+zusätzliche Adapter (Vault-AppRole/IAM, KMS, Redis-Network-
+Backend). Backwards-Compat: heutige ENV-Werte bleiben Default;
+neue Adapter sind opt-in. Wire-Erweiterungen sind strikt
+additiv — der `0.11.0`/`0.12.5`-Body-Stand bleibt byte-stabil
+für alte Clients.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-83 | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku in `spec/telemetry-model.md` §2.5/§5.3 entsprechend aktualisiert. |
+| RAK-84 | Muss | **`ListSessions` Bulk-Read-Performance** (`R-7`): neuer Port-Methode `ListBoundariesForSessions(ctx, sessionIDs)` in `SessionRepository`; SQLite-Adapter implementiert mit einer `IN`-Clause statt N+1; Performance-Benchmark zeigt < 200 ms p95 für 1000 Sessions pro Page. Race-Test bleibt grün. |
+| RAK-85 | Muss | **Sampling-Vollständigkeits-Marker** (`R-10`): SDK-Pflicht-Feld `meta.session_sample_rate` (Wire-Float, Range `(0, 1]`) bei `sampleRate < 1`; Server normalisiert via `round(x * 1_000_000)` auf Integer-ppm (`SAMPLE_RATE_FULL = 1_000_000`); Session-Spalte `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000` (Migration `V7`); Immutability nach erstem nicht-Default-Wert via exaktem Integer-Vergleich; Drift-Counter `mtrace_sample_rate_drift_total{project_id}` mit konfigurablem Toleranz-Band (±100 ppm). Read-API liefert beide Werte (ppm + abgeleiteter Float-Display). Schema-Eintrag in `contracts/event-schema.json`. |
+| RAK-86 | Muss | **SRT-Health-Cursor-Pagination** (`R-11`): `GET /api/srt/health/{stream_id}` akzeptiert `samples_cursor`-Query-Param (gemäß §7a.3 — **nicht** `cursor`-Alias) und liefert `next_cursor`-Feld; Cursor-Token kapselt `process_instance_id + (ingested_at, id)`-Position analog §10.3; `400 cursor_invalid` bei `process_instance_id`-Mismatch oder malformed-Base64/Schema-Mismatch (§7a.4); Contract-Fixture für den `400`-Pfad. |
+| RAK-87 | Muss | **MediaMTX-Provisionierung** (`R-15`): neuer Driven-Port `MediaServerProvisioner` mit `Apply`/`Rollback`-API; MediaMTX-Adapter über `/v3/config/`-Pfade; ENV `MTRACE_MEDIASERVER_PROVISION_URL/_TOKEN`. Wire-Erweiterung `POST /api/ingest/streams` mit `provision`-Query-Param: **strikt additiv** — `provision=false` (Default) ist byte-stabil zum `0.11.0`-Format und liest ENV **nicht**; `provision=true` macht I/O und liefert immer `media_server_state` (vier Werte: `applied`/`partial`/`failed`/`disabled`). Provisionier-Fehler löst keinen API-State-Rollback aus. SRS bleibt Folge-Item. |
+| RAK-88 | Muss | **Multi-Host-Issuance-Limiter** (`R-17`-Resttrigger): neuer Redis-Backend-Adapter `RedisIssuanceRateLimiter` implementiert `driven.IssuanceRateLimiter` über atomare Token-Bucket-Operationen (`EVAL`-Lua mit Bucket-Key-Prefix `mtrace:issuance:`); ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite|redis` erweitert; Pflicht-ENV `MTRACE_REDIS_ADDR`/`_AUTH`. Fail-modus Default fail-closed (`429`); Opt-in fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`. Memcached bleibt Folge-Item (gemeinsam mit RAK-90). |
+| RAK-89 | Muss | **Produktive Vault/KMS-Anbindung** (`R-20`-Resttrigger): `VaultSecretBackend` aus `0.12.5` um produktive Auth-Mechanismen erweitert (AppRole via `role_id`/`secret_id`-Login, optional Kubernetes-ServiceAccount-Auth); neuer `KMSSecretBackend`-Adapter (AWS-KMS, Provider-API als Interface). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND=env|vault|kms` erweitert (heute wird `kms` abgelehnt). Optionaler Refresh-TTL via `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS` (Default 0 = Boot-Time-Load). Compliance-Audit-Doku zu PCI-/SOC2-relevanten Konfigurationspfaden in `auth.md` §5.5. |
+| RAK-90 | Muss | **Origin-/IP-Rate-Limiter** (`R-22`): neuer Driven-Port `OriginRateLimiter` mit `Allow(ctx, key)`-Methode (key = `client_ip` oder `Origin`-Header-Hash); Adapter `InMemoryOriginRateLimiter` und `RedisOriginRateLimiter` (gemeinsamer Redis-Server mit RAK-88, Bucket-Key-Prefix `mtrace:origin:`). **Kein SQLite-Adapter** — nicht Multi-Host-tauglich. ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|redis` (Default `disabled`, Backwards-Compat); `sqlite`/`memcached`-Werte werden vom Boot-Validator mit präzisen Begründungs-Fehlermeldungen abgelehnt. Integration vor `POST /api/auth/session-tokens` und `POST /api/playback-events`. `X-Forwarded-For`-Trust-Boundary via `MTRACE_TRUST_FORWARDED_FOR=1` opt-in. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.12.6` erfüllt):
+Memcached-Backend für RAK-88/RAK-90 (Folge-Item bei
+gemeinsamer Aktivierung), persistente Dead-Letter-Queue für
+Outbound-Webhooks aus `0.12.5`, Compliance-Audit-Zertifikate
+(PCI/SOC2, `0.12.6` liefert nur Konfigurations-Pfade), SRS-
+Provisionierungs-Adapter (MediaMTX-only), Production-Backends
+aus `0.13.0`.
 
 ---
 

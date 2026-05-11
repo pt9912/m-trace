@@ -1,28 +1,23 @@
 # Implementation Plan — `0.12.6` (Folge-Items-Sammlung nach `0.12.5`)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst
-> nach explizitem Move nach `docs/planning/in-progress/` umgesetzt
-> werden. Vorgänger ist `0.12.5` (released 2026-05-11; Plan in
-> [`done/plan-0.12.5.md`](../done/plan-0.12.5.md)).
+> **Status**: 🟡 Tranche 0 aktiv (aktiviert 2026-05-11). Vorgänger
+> ist `0.12.5` (released 2026-05-11, Tag `v0.12.5`; Plan in
+> [`plan-0.12.5.md`](../done/plan-0.12.5.md)).
 >
-> **Release-Typ**: **T0-Entscheidung** — Patch (`0.12.6`) vs. Minor
-> (`0.13.0` parallel oder vor diesem Plan). Default-Empfehlung: die
-> Tranchen ohne neue User-Surface bleiben Patch
-> (R-5/R-7/R-10/R-11/R-13); die Tranchen mit neuer Wire-/Adapter-
-> Surface (R-15/R-17/R-20/R-22) machen aus `0.12.6` einen Minor mit
-> Lastenheft-Patch und neuer RAK-Gruppe. Die Auswahl ist T0-Decision
-> — siehe §0.3.
+> **Release-Typ**: **Minor-Release** (`0.12.6`) gemäß
+> [`docs/user/releasing.md`](../../user/releasing.md) §3.1 —
+> T0-Entscheidung 2026-05-11: alle neun R-N-Items haben einen
+> Code-Pfad in diesem Release; Lastenheft-Patch `1.1.17` mit
+> RAK-83..RAK-90 in §13.16. Sequenziell vor `0.13.0` (Production /
+> Ops Backends). RAK-Range schiebt `0.13.0` auf `RAK-91+`.
 >
 > **Ziel**: Die nach `0.12.5` offen gebliebenen R-N-Items aus
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
-> systematisch adressieren — entweder mit Code-Pfad (🟢) oder mit
-> explizit dokumentierter Defer-Entscheidung und geschärftem
-> Trigger. Plan enthält **eine Tranche pro R-N**; T0 entscheidet,
-> welche Tranchen für `0.12.6` aktiviert werden, welche nach
-> `0.13.x` verschoben werden und welche im Backlog bleiben.
+> [`risks-backlog.md`](./risks-backlog.md) §1.1 systematisch
+> adressieren. Plan enthält **eine Tranche pro R-N**; T0 hat alle
+> neun aktiviert (Default-A aus §0.3 §2 Tranchen-Auswahl).
 >
 > **Bezug**:
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
+> [`risks-backlog.md`](./risks-backlog.md) §1.1
 > R-5/R-7/R-9/R-10/R-11/R-13/R-15/R-17/R-20/R-22 (R-9 wird im
 > `0.13.0`-Plan bearbeitet, weil K8s-bezogen);
 > [`done/plan-0.4.0.md`](../done/plan-0.4.0.md) §3.1/§4.4/§8.3
@@ -34,8 +29,10 @@
 > [`done/plan-0.12.5.md`](../done/plan-0.12.5.md) Tranche 2 + §11
 > Folge-Scope (R-17, R-20, R-22).
 >
-> **Nachfolger**: [`plan-0.13.0.md`](./plan-0.13.0.md) (Production /
-> Ops Backends, MVP-40..MVP-44).
+> **Nachfolger**: [`plan-0.13.0.md`](../open/plan-0.13.0.md)
+> (Production / Ops Backends, MVP-40..MVP-44). RAK-Range
+> verschiebt sich: `0.12.6` belegt `RAK-83..RAK-90` in §13.16,
+> `0.13.0` bekommt voraussichtlich `RAK-91..RAK-95` in §13.17.
 
 ## 0. Konvention
 
@@ -183,7 +180,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 
 | Tranche | R-N  | Inhalt                                          | Charakter   | Status |
 | ------- | ---- | ----------------------------------------------- | ----------- | ------ |
-| 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung, ggf. Lastenheft-Patch + RAK-Matrix-Skelett, Roadmap-Insert | T0          | ⬜      |
+| 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | 🟡      |
 | 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | ⬜      |
 | 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | ⬜      |
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | ⬜      |
@@ -204,19 +201,38 @@ Lastenheft-Patch + RAK-Matrix-Skelett vor erster Code-Lieferung.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.12.6.md` nach
-  `docs/planning/in-progress/plan-0.12.6.md` verschoben.
-- [ ] **Release-Typ fixiert** (Patch vs. Minor) — Begründung im
-  T0-Commit-Body.
-- [ ] **Tranchen-Auswahl** pro R-N (aktivieren / deferr /
-  Backlog-Schärfung) — im T0-Commit-Body und in §1 oben dokumentiert.
-- [ ] Falls Minor: Lastenheft-Patch (Version + §-Nummer aktuell
-  bestimmt) mit RAK-Range für die aktivierten R-N-Items ergänzt.
-- [ ] Falls Minor: RAK-Matrix-Skelett in §2 unten pro RAK.
-- [ ] Roadmap-Insert: §1 Phase auf `0.12.6` aktiv; §2 Schritt
-  (z. B. 47.7) ergänzt; §3 Release-Übersicht-Zeile `0.12.6`.
-- [ ] Vorgänger-Gate verifiziert: `git tag --list v0.12.5`.
-- [ ] `make docs-check` grün.
+- [x] Plan von `docs/planning/open/plan-0.12.6.md` nach
+  `docs/planning/in-progress/plan-0.12.6.md` verschoben
+  (T0-Commit).
+- [x] **Release-Typ fixiert**: **Minor `0.12.6`** (T0-Entscheidung
+  2026-05-11). Begründung: R-15/R-17/R-20/R-22 sind neue
+  User-Surface-Features (`provision=true`-Wire-Erweiterung,
+  Redis-Backend, AppRole/KMS-Auth, Origin-Limiter-Driven-Port);
+  damit greift der Regelrahmen aus `releasing.md` §3.1 für
+  Lastenheft-Patch zwingend.
+- [x] **Tranchen-Auswahl: Option A — alle 9 Tranchen** (T0-
+  Entscheidung 2026-05-11). Begründung: vergleichbarer Scope
+  zu `0.12.5` (5 Adapter-Tranchen + Closeout); Adapter sind
+  hexagonal unabhängig und können parallelisiert werden;
+  weniger Folge-Patches und technische Schulden, klare
+  Planbarkeit für `0.12.7`/`0.13.0`. Tranchen-Liste in §1
+  Übersicht spiegelt die Auswahl.
+- [x] **Sequenzierung sequenziell vor `0.13.0`** (T0-Entscheidung
+  2026-05-11). Begründung: vermeidet Integrationskonflikte;
+  Production-Backends in `0.13.0` brauchen die R-17-Multi-Host-
+  und R-20-Vault-Vorarbeit aus `0.12.6` als Voraussetzung.
+- [x] Lastenheft-Patch `1.1.17` mit §13.16 RAK-83..RAK-90
+  persistiert; Patch-Block-Wording in `spec/lastenheft.md`
+  Frontmatter oberhalb `1.1.16`. RAK-Matrix-Skelett pro
+  RAK in §13.16 ausgefüllt.
+- [x] Roadmap-Insert (Closeout-Commit): §1 Phase auf
+  🟡 `0.12.6` Tranche 0 aktiv; §1.1 Lastenheft-Eintrag auf
+  `1.1.17`; §1.2 Nächste Phase auf `0.12.6`; §2 Schritt 47.7
+  ergänzt; §3 Release-Übersicht 0.12.6-Zeile 🟡, 0.13.0-Zeile
+  RAK-91+ statt 83+.
+- [x] Vorgänger-Gate verifiziert: `git tag --list v0.12.5`
+  liefert den Tag.
+- [x] `make docs-check` grün.
 
 ## 3. Tranche 1 — R-13 Trivy-Ignore Re-Review (Wartungspflicht)
 
@@ -726,7 +742,7 @@ DoD (analog `0.12.5`-Closeout-Pattern):
 
 ## 13. Folge-Scope nach `0.12.6`
 
-- [`plan-0.13.0.md`](./plan-0.13.0.md): Production / Ops Backends
+- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops Backends
   (`MVP-40` Postgres, `MVP-41` ClickHouse/VictoriaMetrics,
   `MVP-42` K8s-Manifeste, `MVP-43` Devcontainer, `MVP-44`
   Release-Automatisierung). RAK-Range wird bei dessen T0

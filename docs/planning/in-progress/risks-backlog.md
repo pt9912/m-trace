@@ -1,32 +1,42 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-11 — `0.12.5` (Auth-/Ingest-Adapter-Minor)
+> **Stand**: 2026-05-11 — `0.12.6` (Auth-/Ingest-Folge-Items-Minor)
+> in **Tranche 0 aktiv** seit 2026-05-11; Lastenheft-Patch `1.1.17`
+> mit RAK-83..RAK-90 in §13.16 persistiert. Vorgänger `0.12.5`
 > released 2026-05-11 (Tag `v0.12.5`); `0.12.1` released
 > 2026-05-10 (Tag `v0.12.1`); `0.12.0` released 2026-05-10
 > (Tag `v0.12.0` auf `e3457fa`).
 >
 > ### Aktuelle Phase
 >
-> `0.12.5` ist **released**. Alle sechs RAK-77..RAK-82-Items
-> haben Code-Pfade in der Hauptbranche. Sechs R-N-Items aus dem
-> Backlog sind durch den Release adressiert:
+> `0.12.6` adressiert alle neun nach `0.12.5` offenen R-N-Items in
+> Tranchen 1–9 (Plan in
+> [`plan-0.12.6.md`](./plan-0.12.6.md)). T0-Entscheidung Option A
+> (alle neun aktiv) sequenziell vor `0.13.0`:
 >
-> - **R-14** 🟢 MediaMTX-Auth-Bridge (RAK-81, Tranche 5).
-> - **R-16** 🟢 Outbound-Webhook-Dispatcher (RAK-82, Tranche 5).
-> - **R-17** ⬜ Shared-Issuance-Limiter — **teilweise gelöst**
->   (Single-Host-Shared-Volume-Pfad geliefert; Multi-Host-
->   Network-Backend bleibt Resttrigger; Tranche 2, RAK-77).
-> - **R-18** 🟢 Multi-Key-Rotation-Code (RAK-78, Tranche 1).
-> - **R-20** ⬜ Secret-Backend-Driven-Port — **teilweise gelöst**
->   (ENV- + Vault-Skelett-Adapter; produktive Vault/KMS-Anbindung
->   + Compliance-Audit bleiben Resttrigger; Tranche 3, RAK-79).
-> - **R-21** 🟢 Browser-Ingest-Policy (RAK-80, Tranche 4).
+> - **R-5** Time-Skew-Persistenz + Dashboard-Marker (Tranche 3, RAK-83).
+> - **R-7** `ListSessions` Bulk-Read-Port (Tranche 5, RAK-84).
+> - **R-10** Sampling-Marker mit Integer-ppm (Tranche 4, RAK-85).
+> - **R-11** SRT-Cursor-Pagination via `samples_cursor`/`next_cursor`
+>   + `400 cursor_invalid` gemäß §7a.3/§7a.4 (Tranche 2, RAK-86).
+> - **R-13** Trivy-Re-Review 2026-08-04 (Tranche 1, Wartung ohne RAK).
+> - **R-15** MediaMTX-Provisionierung mit `provision=true` (Tranche 9, RAK-87).
+> - **R-17** Multi-Host-Issuance-Limiter via Redis-Backend
+>   (Tranche 7, RAK-88; Resttrigger aus `0.12.5` Tranche 2).
+> - **R-20** Produktive Vault-AppRole + KMS (Tranche 8, RAK-89;
+>   Resttrigger aus `0.12.5` Tranche 3).
+> - **R-22** Origin-/IP-Rate-Limiter via Redis (Tranche 6, RAK-90;
+>   gemeinsamer Redis-Server mit RAK-88).
 >
-> Lastenheft-Patch `1.1.16` mit RAK-77..RAK-82 in §13.15 ist
-> persistiert (Variante C: der ursprünglich für `0.13.0` vorab-
-> deklarierte `1.1.16`-Block wurde mit der `0.12.5`-T0-Aktivierung
-> zurückgezogen). `0.13.0` bekommt bei seiner T0-Aktivierung
-> voraussichtlich `1.1.17` und RAK-83..RAK-87 in §13.16.
+> **`0.12.5` Auslieferungen** (Plan archiviert in
+> [`done/plan-0.12.5.md`](../done/plan-0.12.5.md)): R-14/R-16/R-18/
+> R-21 🟢 aufgelöst; R-17/R-20 ⬜ teilweise gelöst (Resttrigger
+> werden in `0.12.6` Tranche 7/8 final geschlossen). RAK-77..RAK-82
+> in §13.15 persistiert.
+>
+> Lastenheft-Stand: `1.1.17` (`0.12.6`-Patch persistiert in T0).
+> `0.13.0` bekommt voraussichtlich `1.1.18` und RAK-91..RAK-95
+> in §13.17, da RAK-83..RAK-90 mit `0.12.6` belegt sind.
 >
 > ### Trigger-Re-Eval-Stand (2026-05-10, `0.12.1` Tranche 1)
 >
