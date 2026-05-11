@@ -314,7 +314,7 @@ voll-gesampelt markiert. Stattdessen:
   `sampleRate < 1` betrieben werden, müssen das in **jedem**
   Event-Body als Pflicht-Feld `meta.session_sample_rate` (oder
   analog) liefern. Voll-gesampelte Sessions dürfen das Feld
-  weglassen (Default `1.0`).
+  weglassen (Default-Konstante `SAMPLE_RATE_FULL`, siehe unten).
 - **Server-Verhalten**: erstmaliger Wert pro `session_id` wird in
   der Session-Metadaten-Zeile persistiert (immutable nach erstem
   gültigen Setzen). Spätere Events mit abweichendem Wert lösen
@@ -323,34 +323,72 @@ voll-gesampelt markiert. Stattdessen:
   einer Session den `sampleRate` ändert, was die Lücken-Erkennung
   inkorrekt machen würde.
 - **Fallback**: wenn keines der eingegangenen Events das Feld
-  setzt, bleibt der Wert auf `1.0` — Session gilt als voll
-  gesampelt (Backwards-Compat zum heutigen Verhalten).
+  setzt, bleibt der Wert auf `SAMPLE_RATE_FULL` — Session gilt
+  als voll gesampelt (Backwards-Compat zum heutigen Verhalten).
+
+**Präzision/Persistenz** (Review-Finding 3, 2026-05-11): keine
+Float-Spalte. Stattdessen **Integer-ppm** (parts per million)
+für deterministische Vergleiche:
+
+- Persistenz-Spalte: `sample_rate_ppm INTEGER NOT NULL DEFAULT
+  1000000`. Konstante `SAMPLE_RATE_FULL = 1_000_000` für „voll
+  gesampelt" (entspricht 1.0). Bereich `[1, 1_000_000]`.
+- Wire-Konvertierung: SDK schickt weiterhin Float `0.0 < x ≤ 1.0`
+  im JSON; der Ingest-Adapter normalisiert auf Integer-ppm via
+  `round(x * 1_000_000)`. Werte außerhalb `(0, 1]` werden mit
+  einem `mtrace_sample_rate_invalid_total`-Counter geloggt und
+  als `SAMPLE_RATE_FULL` behandelt (Fallback).
+- Immutability-Check: exakter Integer-Vergleich
+  `WHERE sample_rate_ppm = 1000000` (SQL-`=` auf Integer ist
+  deterministisch, kein Float-Drift).
+- Drift-Vergleich: `incoming_ppm != stored_ppm` mit konfig-
+  baren Toleranz-Bändern (z. B. ±100 ppm = ±0.01%) im
+  `mtrace_sample_rate_drift_total`-Counter; jenseits davon
+  zählt es als Drift, innerhalb davon als „SDK-Rundungsartefakt"
+  (silent).
+- Read-API liefert beides: `sample_rate_ppm` (raw) und
+  `sample_rate` (`= ppm / 1_000_000` als Float für Dashboard-
+  Display). Wire-API-Konsumenten dürfen den Float-Wert nicht
+  für `==`-Vergleiche nutzen — Doku-Hinweis im Wire-Block.
 
 DoD:
 
 - [ ] Domain-Erweiterung: `Session` bekommt ein Feld
-  `sample_rate float` (Default `1.0`); Persistenz immutable
-  nach erstem nicht-Default-Wert.
+  `SampleRatePPM int` (Default `1000000`, exported konstante
+  `domain.SampleRateFull`); Persistenz immutable nach erstem
+  nicht-Default-Wert. Helper `SampleRatePPMFromFloat(x float64)
+  (int, error)` mit Validierung `(0, 1]`-Range.
 - [ ] SDK-/Wire-Erweiterung: Player-SDK setzt
-  `meta.session_sample_rate` (Pflicht-Feld bei `sampleRate < 1`,
-  Default-weglass bei `sampleRate == 1`). Schema-Eintrag in
-  `contracts/event-schema.json` mit deutlichem Hinweis auf den
-  Session-Scope (kein per-Event-Wert).
+  `meta.session_sample_rate` als Float (Pflicht-Feld bei
+  `sampleRate < 1`, Default-weglass bei `sampleRate == 1`).
+  Schema-Eintrag in
+  [`contracts/event-schema.json`](../../../contracts/event-schema.json)
+  mit Session-Scope-Hinweis (kein per-Event-Wert) und Range-
+  Constraint `0 < x ≤ 1.0`. Server-Adapter konvertiert via
+  `SampleRatePPMFromFloat` auf Integer-ppm.
 - [ ] SQLite-Schema-Migration ergänzt die Session-Spalte
+  `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000`
   (`V7` o. ä.).
-- [ ] Ingest-Pfad: erster Event mit `meta.session_sample_rate < 1`
-  schreibt den Wert in die Session-Zeile (`UPDATE … WHERE
-  sample_rate = 1.0` für Immutability); spätere Drift wird
+- [ ] Ingest-Pfad: erster Event mit normalisiertem
+  `sample_rate_ppm < 1_000_000` schreibt den Wert in die
+  Session-Zeile (`UPDATE … WHERE sample_rate_ppm = 1000000`
+  für Immutability via Integer-Vergleich); spätere Drift wird
   geloggt und gezählt, aber **nicht** überschreibt.
 - [ ] Neuer Counter `mtrace_sample_rate_drift_total{project_id}`
   in `apps/api/adapters/driven/metrics/` mit Cardinality-Limit
   (project_id).
-- [ ] Read-Pfad markiert Sessions mit `sample_rate < 1` als
-  „sampled" — explizit als API-Feld plus Dashboard-Banner.
+- [ ] Read-Pfad markiert Sessions mit `sample_rate_ppm <
+  SAMPLE_RATE_FULL` (`< 1_000_000`) als „sampled" — explizit
+  als API-Feld plus Dashboard-Banner. Wire-Antwort liefert
+  beides: `sample_rate_ppm` (int) und abgeleiteter
+  `sample_rate` (float, nur Display).
 - [ ] Sampling-Lücken-Heuristik (optional, T0-Entscheidung):
   Server vergleicht erwartete vs. tatsächliche Event-Anzahl bei
-  bekanntem `sample_rate` und markiert auffällige Sessions als
-  `"possible_loss"`. Heuristik-Schwellen sind Folge-Tuning.
+  bekanntem `sample_rate_ppm` und markiert auffällige Sessions
+  als `"possible_loss"`. Heuristik-Schwellen sind Folge-Tuning.
+  Berechnung der Erwartungswerte in Integer-Arithmetik
+  (`expected = total_events * 1_000_000 / sample_rate_ppm`) —
+  kein Float in der Server-Side-Logik.
 - [ ] Doku-Update in
   [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
   §8.3 plus
@@ -429,9 +467,14 @@ DoD:
   Bundle aktiviert werden).
 - [ ] ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|redis`
   (Default `disabled` — kein Limiter, Backwards-Compat). Andere
-  Werte (`sqlite`, `memcached`) lehnt der Boot-Validator mit
-  klarem Fehler ab — `sqlite` mit expliziter Begründung „nicht
-  Multi-Host-tauglich, siehe Plan-0.12.6 §8 Backend-Strategie".
+  Werte lehnt der Boot-Validator mit klarem Fehler ab:
+  - `sqlite` → „nicht Multi-Host-tauglich, siehe
+    Plan-0.12.6 §8 Backend-Strategie".
+  - `memcached` → „follow-up item, wird gemeinsam mit R-17
+    Tranche 7 geliefert, falls Operator-Bedarf für gemeinsamen
+    Memcached-Cluster entsteht" (Backend-Konsistenz mit
+    Issuance-Limiter aus §9; einzelne Memcached-Adoption ohne
+    R-17-Pendant produziert Backend-Fragmentation).
 - [ ] Integration vor `POST /api/auth/session-tokens` und
   `POST /api/playback-events`-Handlern (Reihenfolge: erst Origin-
   Limit, dann Project-Limit).
@@ -456,29 +499,48 @@ DoD:
 
 Ziel: Resttrigger aus `0.12.5` Tranche 2 auflösen — echte
 Multi-Host-Topologie ohne Shared-Volume durch Network-Backend-
-Adapter (Redis/Memcached).
+Adapter.
+
+**Backend-Wahl** (Review-Finding 2 / OQ2, 2026-05-11): **Redis
+als Plan-Default für `0.12.6`**, gemeinsam mit R-22 Tranche 6.
+Begründung: ein einziger Network-Backend-Typ für beide
+Multi-Host-Limiter (Issuance + Origin/IP) hält das Operator-
+Setup einheitlich und vermeidet zwei getrennte Cluster.
+Memcached bleibt **gemeinsames Folge-Item für beide Tranchen** —
+sobald Operator-Bedarf entsteht (z. B. wegen existierender
+Memcached-Infrastruktur), wird ein Memcached-Adapter parallel
+für R-17 und R-22 nachgezogen, **nicht** für eine Tranche
+alleine (sonst entsteht Fragmentation zwischen Issuance-Limiter
+und Origin-Limiter).
 
 DoD:
 
-- [ ] Neuer Adapter `apps/api/adapters/driven/auth/redis_issuance_rate_limiter.go`
-  (oder Memcached, je nach T0-Entscheidung) — implementiert
-  `driven.IssuanceRateLimiter` über Network-Calls mit atomarem
-  Token-Bucket (Redis `EVAL`-Script oder Memcached-CAS).
-- [ ] ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER` um `redis` (bzw.
-  `memcached`) erweitert; Pflicht-ENV `MTRACE_REDIS_ADDR`/`_AUTH`
-  bzw. `MTRACE_MEMCACHED_ADDR`.
-- [ ] Fail-modus dokumentiert: Network-Outage → fail-closed (kein
-  Token issuen) oder fail-open (lokales `memory`-Fallback) —
-  T0-Entscheidung.
-- [ ] Test gegen `httptest`/`miniredis`-Mock.
+- [ ] Neuer Adapter
+  `apps/api/adapters/driven/auth/redis_issuance_rate_limiter.go` —
+  implementiert `driven.IssuanceRateLimiter` über atomare
+  Token-Bucket-Operationen (Redis `EVAL`-Lua-Script mit
+  `INCRBYFLOAT`/`SETEX`-Pattern). Bucket-Key-Prefix
+  `mtrace:issuance:`.
+- [ ] ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER` um `redis`
+  erweitert. Pflicht-ENV `MTRACE_REDIS_ADDR` (und optional
+  `MTRACE_REDIS_AUTH`/`MTRACE_REDIS_DB`). Wert `memcached` wird
+  vom Boot-Validator als „follow-up item, wird gemeinsam mit
+  R-22 Tranche 6 geliefert" abgelehnt.
+- [ ] Fail-modus: **fail-closed** als Default (Redis-Outage →
+  kein Token issuen, `429 auth_issuance_rate_limited`). ENV
+  `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` für expliziten Operator-
+  Opt-in auf fail-open (lokales `memory`-Fallback).
+- [ ] Test gegen `miniredis`-Mock + optional gegen echten Redis-
+  Container.
 - [ ] `make smoke-issuance-multi-host` **neu anlegen** (Script +
   Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
   Wrapt den Cross-Instance-Sharing-Test gegen `miniredis` (oder
   echten Redis-Container) — Pattern analog
-  `smoke-issuance-replica` aus `0.12.5` T2, aber mit Network-
-  Backend statt SQLite.
-- [ ] Risks-Backlog R-17: Status 🟢 mit dem entsprechenden
-  Backend-Hinweis.
+  `smoke-issuance-replica` aus `0.12.5` T2, aber mit Redis-
+  Network-Backend statt SQLite.
+- [ ] Risks-Backlog R-17: Status 🟢 mit „Redis-Backend in
+  `0.12.6` Tranche 7"; Memcached-Resttrigger explizit als
+  Folge-Item dokumentiert (gemeinsam mit R-22).
 
 ## 10. Tranche 8 — R-20 Produktive Vault/KMS-Adapter
 
@@ -518,40 +580,47 @@ Ziel: `POST /api/ingest/streams` (oder ein neuer dedizierter
 Endpoint) provisioniert optional gegen einen laufenden MediaMTX/
 SRS-Server, statt nur eine Konfig-Datei zu schreiben.
 
-**Backwards-Compat-Vertrag** (Review-Finding 3, 2026-05-11):
-Wire-Erweiterung **strikt additiv**:
+**Backwards-Compat-Vertrag** (Review-Findings 3 + 1 /
+OQ1 2026-05-11): Wire-Erweiterung **strikt additiv** mit
+deterministischem Verhalten — der `provision`-Query-Param ist
+die einzige Schaltvariable für Seiteneffekte:
 
 - Neuer Query-Param `provision`:
-  - Default `false` — alter Pfad bleibt 1:1: Endpoint schreibt die
-    Konfig-Datei lokal, **kein** I/O gegen externen Server. Alte
-    Clients ohne den Param sehen exakt das `0.11.0`-Verhalten.
-  - `provision=true` — opt-in: zusätzlich gegen den konfigurierten
-    Media-Server provisioniert.
-- Neues Response-Feld `media_server_state`:
-  - **Optional/additiv** — wird **nur** im Body gesetzt, wenn der
-    Request `provision=true` hatte ODER wenn der Server unter
-    `MTRACE_MEDIASERVER_PROVISION_URL` konfiguriert ist und ein
-    Provisionierungs-Versuch erfolgte. Standardpfad (alter Client,
-    `provision=false`, keine ENV-Konfig) liefert das Feld **nicht**
-    — der Body bleibt byte-stabil zum `0.11.0`-Format.
-  - JSON-Konvention: alte Clients mit strikter Deserialisierung
-    (z. B. `additionalProperties: false`) müssen nichts ändern,
-    weil der Server das Feld in dem Pfad gar nicht emittiert.
-    Neue Clients mit toleranter Deserialisierung sehen es bei
-    `provision=true`.
-- Provisionierungs-Fehler (`MTRACE_MEDIASERVER_PROVISION_URL`
-  unreachable o. ä.) löst **keinen** API-State-Rollback aus:
-  `POST /api/ingest/streams` gibt weiterhin `201 Created`
-  (lokale Konfig+Stream sind angelegt), `media_server_state`
-  enthält dann `"failed"` plus optionalen `error_code`. Operator
-  triggert den Server-Sync manuell nach (separater Endpoint
-  `POST /api/ingest/streams/{id}/provision`-Folge-Item, falls
-  Bedarf besteht).
+  - **Default `false`** — alter Pfad bleibt **byte-stabil** zum
+    `0.11.0`-Format. Der Server macht **kein** I/O gegen einen
+    externen Media-Server, **unabhängig** von der ENV-
+    Konfiguration. `MTRACE_MEDIASERVER_PROVISION_URL` wird in
+    diesem Pfad **nicht** gelesen; ein konfigurierter Server
+    bleibt ohne `provision=true` unberührt. Im Response-Body
+    wird `media_server_state` **nicht** emittiert.
+  - **`provision=true`** — opt-in: server-seitiges I/O findet
+    statt. `media_server_state` ist im Response-Body **immer**
+    gesetzt:
+    - ENV konfiguriert + Server erreichbar → `"applied"` oder
+      `"partial"` (je nach Adapter-Resultat).
+    - ENV konfiguriert + Server unreachable → `"failed"` plus
+      `error_code` (kein API-State-Rollback; lokale Konfig +
+      Stream sind angelegt, HTTP-Status bleibt `201 Created`).
+    - ENV **nicht** konfiguriert → `"disabled"` plus Hinweis-
+      Body „set `MTRACE_MEDIASERVER_PROVISION_URL` to enable".
+      Auch hier kein I/O-Versuch — der Server kann nicht
+      provisionieren, was er nicht kennt.
+
+  Damit ist der Body byte-stabil:
+  - `provision=false` ODER fehlt → kein neues Feld, alte
+    `0.11.0`-Clients (auch mit `additionalProperties: false`)
+    bleiben funktional.
+  - `provision=true` → neues Feld immer im Body. Neue Clients,
+    die den Param setzen, erwarten das Feld; alte Clients
+    setzen den Param nicht und sehen es nie.
+
 - Wire-Versions-Pin: Der Wire-Vertrag in
   [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
   §3.8 bekommt einen `0.12.6`-Block mit dem additiv-Hinweis,
   damit zukünftige Reviewer das Backwards-Compat-Versprechen
-  sehen.
+  sehen. Folge-Endpoint
+  `POST /api/ingest/streams/{id}/provision` für nachträglichen
+  Server-Sync bleibt Folge-Item nach `0.12.6`.
 
 DoD:
 
@@ -561,12 +630,16 @@ DoD:
 - [ ] Adapter-Implementation für MediaMTX (HTTP-API `/v3/config/`-
   Pfade); SRS bleibt Folge-Item nach `0.12.6`.
 - [ ] ENV-Konfiguration `MTRACE_MEDIASERVER_PROVISION_URL`/`_TOKEN`;
-  fehlt → Adapter no-op (heutiges Verhalten).
+  fehlt + `provision=true` → `media_server_state="disabled"`
+  ohne I/O. ENV wird im `provision=false`-Pfad **nie** gelesen
+  (hard-not-read; Operator-Setup darf keinen Seiteneffekt durch
+  bloße ENV-Setzung erzeugen).
 - [ ] Wire-Update auf `POST /api/ingest/streams`: optionaler
   `provision=true`-Query-Param (Default `false` → 1:1 `0.11.0`-
-  Verhalten). Response-Feld `media_server_state` ist **strikt
-  additiv**: nur gesetzt bei `provision=true` oder konfiguriertem
-  Provisionier-Server (siehe Backwards-Compat-Vertrag oben).
+  Verhalten, **kein** I/O, kein neues Feld). Response-Feld
+  `media_server_state` ist **strikt** an `provision=true`
+  gekoppelt: immer gesetzt bei `provision=true`, nie sonst
+  (siehe Backwards-Compat-Vertrag oben).
 - [ ] Wire-Vertrag-Erweiterung in
   [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
   §3.8 mit explizitem `0.12.6`-additive-Hinweis und einem
