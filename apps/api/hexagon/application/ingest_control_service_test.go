@@ -791,6 +791,86 @@ func TestIngestControlService_GetMediaServerConfig_ExplicitTargetSuppressesWarni
 	}
 }
 
+// stubOutboundDispatcher captures every Dispatch call so we can
+// assert that `RecordLifecycleEvent` routes the event through the
+// optional webhook adapter when one is wired up.
+type stubOutboundDispatcher struct {
+	calls []driven.OutboundWebhookEvent
+	err   error
+}
+
+func (s *stubOutboundDispatcher) Dispatch(_ context.Context, e driven.OutboundWebhookEvent) error {
+	s.calls = append(s.calls, e)
+	return s.err
+}
+
+func TestIngestControlService_RecordLifecycleEvent_DispatchesToWebhook(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	dispatcher := &stubOutboundDispatcher{}
+	svc = svc.WithOutboundWebhookDispatcher(dispatcher)
+	created, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          testTarget,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	_, err = svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          created.Stream.ID,
+		Kind:              domain.StreamLifecycleEventStarted,
+		ObservedAt:        time.Now().UTC(),
+		Source:            domain.StreamLifecycleSourceSmoke,
+	})
+	if err != nil {
+		t.Fatalf("record: %v", err)
+	}
+	if len(dispatcher.calls) != 1 {
+		t.Fatalf("want 1 dispatch call, got %d", len(dispatcher.calls))
+	}
+	if dispatcher.calls[0].Kind != domain.StreamLifecycleEventStarted {
+		t.Errorf("dispatched kind: want stream_started, got %s", dispatcher.calls[0].Kind)
+	}
+	if dispatcher.calls[0].StreamID != created.Stream.ID {
+		t.Errorf("dispatched stream_id mismatch")
+	}
+}
+
+func TestIngestControlService_RecordLifecycleEvent_WebhookErrorDoesNotFailLifecycle(t *testing.T) {
+	t.Parallel()
+	svc, _ := newSeededService(t)
+	svc = svc.WithOutboundWebhookDispatcher(&stubOutboundDispatcher{
+		err: errors.New("downstream unreachable"),
+	})
+	created, err := svc.CreateStream(context.Background(), driving.CreateStreamRequest{
+		ResolvedProjectID: testProjectA,
+		DisplayName:       "Lab",
+		Protocol:          "srt",
+		EndpointID:        testEndpoint,
+		TargetID:          testTarget,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	result, err := svc.RecordLifecycleEvent(context.Background(), driving.LifecycleHookRequest{
+		ResolvedProjectID: testProjectA,
+		StreamID:          created.Stream.ID,
+		Kind:              domain.StreamLifecycleEventEnded,
+		ObservedAt:        time.Now().UTC(),
+		Source:            domain.StreamLifecycleSourceSmoke,
+	})
+	if err != nil {
+		t.Fatalf("lifecycle must not fail when webhook dispatcher errors: %v", err)
+	}
+	if !strings.HasPrefix(result.EventID, "evt_") {
+		t.Errorf("event_id must be issued regardless of webhook error, got %q", result.EventID)
+	}
+}
+
 func TestIngestControlService_RecordLifecycleEvent_NoKlartextKey(t *testing.T) {
 	t.Parallel()
 	svc, repo := newSeededService(t)

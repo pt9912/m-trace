@@ -33,8 +33,9 @@ import (
 //     wenn entweder Stream nicht im Project ist, der Key Format-
 //     verstoß hat oder der Hash nicht passt.
 type IngestControlService struct {
-	repo  driven.IngestStreamRepository
-	clock Clock
+	repo     driven.IngestStreamRepository
+	clock    Clock
+	webhooks driven.OutboundWebhookDispatcher
 }
 
 // Clock erlaubt deterministische Tests. Default in Produktion:
@@ -49,6 +50,22 @@ func NewIngestControlService(repo driven.IngestStreamRepository, clock Clock) *I
 		clock = time.Now
 	}
 	return &IngestControlService{repo: repo, clock: clock}
+}
+
+// WithOutboundWebhookDispatcher verdrahtet den optionalen
+// Outbound-Webhook-Dispatcher (`0.12.5`/RAK-82, R-16). `nil`
+// deaktiviert den Pfad — das Service-Verhalten ist dann unverändert
+// zum `0.11.0`-Stand (Lifecycle-Events bleiben rein lokal).
+//
+// Verdrahtung als Option-Setter und nicht im Konstruktor, damit
+// existierende Bootstrap-Aufrufe (insb. die `0.11.0`-Tests)
+// unverändert weiterlaufen.
+func (s *IngestControlService) WithOutboundWebhookDispatcher(d driven.OutboundWebhookDispatcher) *IngestControlService {
+	if s == nil {
+		return s
+	}
+	s.webhooks = d
+	return s
 }
 
 // CreateStream legt einen neuen Stream samt initialem Klartext-Key
@@ -337,12 +354,43 @@ func (s *IngestControlService) RecordLifecycleEvent(ctx context.Context, req dri
 	}); err != nil {
 		return driving.LifecycleEventResult{}, err
 	}
+	// `0.12.5`/RAK-82: Outbound-Webhook-Dispatch (R-16). Best-Effort,
+	// im Hintergrund — der Lifecycle-Pfad failed nicht, wenn ein
+	// externer Konsument nicht erreichbar ist. Adapter handlet Retry
+	// und Dead-Letter selbst.
+	s.dispatchOutboundWebhook(ctx, driven.OutboundWebhookEvent{
+		EventID:      eventID,
+		Kind:         req.Kind,
+		ProjectID:    req.ResolvedProjectID,
+		StreamID:     req.StreamID,
+		ObservedAt:   observed.Format(time.RFC3339Nano),
+		Source:       req.Source,
+		ConnectionID: strings.TrimSpace(req.ConnectionID),
+		Reason:       strings.TrimSpace(req.Reason),
+	})
 	return driving.LifecycleEventResult{
 		EventID:    eventID,
 		StreamID:   req.StreamID,
 		Kind:       req.Kind,
 		ObservedAt: observed,
 	}, nil
+}
+
+// dispatchOutboundWebhook ist die zentrale Stelle, an der ein
+// Lifecycle-Event an einen optional konfigurierten Webhook-Adapter
+// gereicht wird. `nil`-Dispatcher → no-op; ein Adapter-Fehler
+// (z. B. Dead-Letter) bleibt im Adapter-Log und blockt den Caller
+// nicht.
+//
+// Aktuell synchron im selben `ctx`, damit der Test-Pfad
+// deterministisch bleibt. Eine asynchrone Variante (Goroutine plus
+// In-Memory-Queue) ist Folge-Item — sobald der Lifecycle-Pfad an
+// einen Hot-Path mit ms-Budget gekoppelt wird.
+func (s *IngestControlService) dispatchOutboundWebhook(ctx context.Context, event driven.OutboundWebhookEvent) {
+	if s == nil || s.webhooks == nil {
+		return
+	}
+	_ = s.webhooks.Dispatch(ctx, event)
 }
 
 // newLifecycleEventID erzeugt einen opaken Event-Identifier mit

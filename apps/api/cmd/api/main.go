@@ -29,6 +29,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/srt/mediamtxclient"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/streamanalyzer"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/telemetry"
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/webhooks"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
@@ -51,6 +52,8 @@ const (
 	envAuthLabDefault        = "MTRACE_AUTH_LAB_DEFAULT"
 	envAuthIssuanceLimiter   = "MTRACE_AUTH_ISSUANCE_LIMITER"
 	envAuthSecretBackend     = "MTRACE_AUTH_SECRET_BACKEND"
+	envOutboundWebhookURL    = "MTRACE_OUTBOUND_WEBHOOK_URL"
+	envOutboundWebhookSecret = "MTRACE_OUTBOUND_WEBHOOK_SECRET"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
@@ -307,6 +310,9 @@ func buildHandler(
 	if persist.db != nil {
 		ingestRepo := persistencesqlite.NewIngestStreamRepository(persist.db)
 		ingestControlService = application.NewIngestControlService(ingestRepo, time.Now)
+		if wh := buildOutboundWebhookDispatcher(logger); wh != nil {
+			ingestControlService = ingestControlService.WithOutboundWebhookDispatcher(wh)
+		}
 	}
 	var ingestControlInbound driving.IngestControlInbound
 	if ingestControlService != nil {
@@ -621,6 +627,25 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB,
 		Signer:         signer,
 		PolicyResolver: policies,
 	}, nil
+}
+
+// buildOutboundWebhookDispatcher liest die Outbound-Webhook-
+// Konfiguration aus den ENV-Variablen `MTRACE_OUTBOUND_WEBHOOK_URL`
+// und `MTRACE_OUTBOUND_WEBHOOK_SECRET` (`0.12.5`/RAK-82, R-16).
+// Ist keine URL gesetzt → `nil` (Adapter deaktiviert, identisch
+// zum `0.11.0`-Verhalten ohne Outbound-Webhook). Sonst:
+// `webhooks.NewHTTPDispatcher` mit Default-Retry/-Timeout-Werten.
+func buildOutboundWebhookDispatcher(logger *slog.Logger) driven.OutboundWebhookDispatcher {
+	url := strings.TrimSpace(os.Getenv(envOutboundWebhookURL))
+	if url == "" {
+		return nil
+	}
+	secret := []byte(os.Getenv(envOutboundWebhookSecret))
+	logger.Info("outbound webhook dispatcher active",
+		"endpoint", url,
+		"signed", len(secret) > 0,
+	)
+	return webhooks.NewHTTPDispatcher(url, secret, logger)
 }
 
 // buildAuthSecretBackend wählt das Signing-Key-Backend

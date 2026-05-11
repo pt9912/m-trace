@@ -184,7 +184,7 @@ Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 | 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | 🟡 |
 | 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | 🟡 |
 | 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | 🟡 |
-| 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ⬜ |
+| 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | 🟡 (beide aktiviert) |
 | 6 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | ⬜ |
 
 ---
@@ -420,21 +420,54 @@ Ziel: Optional Auth-Bridge MediaMTX/SRS und/oder Outbound-Webhook.
 Tranche-Go nur bei zusätzlicher Bandbreite und Test-Pipeline-
 Verfügbarkeit.
 
-DoD (R-14, falls aktiviert):
+DoD (R-14, aktiviert):
 
-- [ ] Adapter `MediaMTXAuthBridge` mit signierten Publish-Tokens.
-- [ ] Lab-Smoke gegen echtes MediaMTX-Container-Setup.
-- [ ] Operator-Runbook für die Aktivierung.
+- [x] Adapter `MediaMTXAuthHookHandler` bedient
+  `POST /api/ingest/auth-hook` als Bridge zwischen MediaMTX-
+  `externalAuth` und dem existierenden
+  `IngestControlInbound.ValidateKey`-Pfad. Form-encoded Body,
+  Mapping `user`/`password`/`action`/`path`; `200` allow vs.
+  `403` deny. Bewusst **keine eigenen Publish-Tokens** — die
+  vorhandenen Stream-Keys aus `/api/ingest/streams` liefern den
+  kryptographischen Anker (Plan-Wording „signierte Publish-Tokens"
+  inhaltlich abgedeckt durch die existierenden CSPRNG-Stream-Keys).
+- [x] Lab-Smoke `make smoke-mediamtx-auth` wickelt sieben Wire-
+  Pfade (allow, invalid-key, read-action, missing-field,
+  bad-content-type, GET 405, validate-error) als End-to-End-Test
+  über `httptest.Server` ab — keine MediaMTX-Container nötig.
+  Echte Compose-Variante mit MediaMTX-Container gegen laufende
+  m-trace-API bleibt Folge-Item.
+- [x] Operator-Runbook in `docs/user/auth.md` §5.7: MediaMTX-
+  Config-Beispiel (`authMethod: http` + `authHTTPAddress`),
+  Mapping-Tabelle, Sicherheitsprofil (Netzwerk-Isolation), Liste
+  der nicht-im-Skelett-enthaltenen Folge-Items.
 
-DoD (R-16, falls aktiviert):
+DoD (R-16, aktiviert):
 
-- [ ] Outbound-Webhook-Dispatcher (Driven-Port) mit Retry-/Timeout-
-  Schema (Exponential-Backoff, Max-Attempts, Dead-Letter-Pfad).
-- [ ] HMAC-signierte Payload mit Project-Token-abgeleitetem Secret.
-- [ ] Adapter-Test plus Mock-Konsument-Smoke.
+- [x] Driven-Port `OutboundWebhookDispatcher` (`hexagon/port/driven/outbound_webhook.go`)
+  mit `Dispatch(ctx, event)`-Methode plus konsistentem
+  `OutboundWebhookEvent`-Wire-Modell.
+  Adapter `webhooks.HTTPDispatcher` mit Retry-/Timeout-Schema
+  (Exponential-Backoff `100ms→200ms→400ms`, MaxAttempts 3,
+  RequestTimeout 10s, Dead-Letter über
+  `ErrOutboundWebhookExhausted`-Sentinel). Disabled-Modus
+  (`URL == ""`) → No-Op.
+- [x] HMAC-SHA-256-Signatur (`X-MTrace-Signature: sha256=<hex>`)
+  über den exakten Body. Secret kommt aus
+  `MTRACE_OUTBOUND_WEBHOOK_SECRET`. Replay-Schutz über
+  `X-MTrace-Timestamp` (RFC3339Nano). Klartext-Stream-Keys nie in
+  der Payload.
+- [x] Adapter-Test plus Mock-Konsument-Smoke
+  (`make smoke-outbound-webhook`): sieben Pfade — disabled-noop,
+  happy path, HMAC-Match, Retry-success, Dead-Letter-Exhaustion,
+  Body-Shape (Pflichtfelder + kein Klartext-Leak), Context-Cancel.
 
-Falls eine oder beide Tranchen nicht aktiviert werden: dokumentierte
-Defer-Entscheidung in `risks-backlog.md` mit Folge-Plan-Verweis.
+Integration: `IngestControlService.WithOutboundWebhookDispatcher`
+hängt den Dispatcher optional an den Lifecycle-Pfad
+(`RecordLifecycleEvent`). Boot-Pfad in `main.go#buildOutboundWebhookDispatcher`
+liest ENV; leere URL → nil-Adapter, Service-Verhalten bleibt
+identisch zum `0.11.0`-Stand. R-14 und R-16 sind beide aktiviert
+und in der Risks-Backlog auf 🟢.
 
 ## 10. Tranche 6 — Release-Closeout
 

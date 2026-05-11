@@ -216,6 +216,11 @@ func registerIngestControlRoutes(
 		UseCase: ingest, Resolver: resolver, Logger: logger,
 		Kind: domain.StreamLifecycleEventEnded,
 	}
+	// `0.12.5`/RAK-81 (R-14): MediaMTX-Auth-Bridge. Endpoint nutzt
+	// MediaMTX-`externalAuth`-Form-Format, **kein** Browser-Ingest-
+	// Pfad — kein wrap, kein OPTIONS-Preflight. Netzwerk-Isolation
+	// ist Operator-Verantwortung (siehe `auth.md` §5.7).
+	authHook := &MediaMTXAuthHookHandler{UseCase: ingest, Logger: logger}
 	mux.Handle("POST /api/ingest/streams", wrap(collection))
 	mux.Handle("GET /api/ingest/streams", collection)
 	mux.Handle("GET /api/ingest/streams/{id}", detail)
@@ -224,6 +229,7 @@ func registerIngestControlRoutes(
 	mux.Handle("GET /api/ingest/media-server-config", mediaConfig)
 	mux.Handle("POST /api/ingest/hooks/stream-started", wrap(hookStarted))
 	mux.Handle("POST /api/ingest/hooks/stream-ended", wrap(hookEnded))
+	mux.Handle("POST /api/ingest/auth-hook", authHook)
 	mux.HandleFunc("OPTIONS /api/ingest/streams", preflight)
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}", preflight)
 	mux.HandleFunc("OPTIONS /api/ingest/streams/{id}/rotate-key", preflight)

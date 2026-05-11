@@ -530,6 +530,151 @@ Reproduzierbarer Lab-Smoke: `make smoke-browser-ingest` (opt-in,
 nicht in `make gates`). Der Smoke fährt alle sechs Preflight-/POST-
 Pfade durch — inklusive Origin-Pin-Mismatch und CSRF-Missing-Fall.
 
+### 5.7 MediaMTX-Auth-Bridge
+
+Mit `0.12.5` Tranche 5 (RAK-81, R-14) gibt es einen optionalen
+HTTP-Endpoint, der MediaMTX' `externalAuth`-Hook bedient:
+`POST /api/ingest/auth-hook`. Skelett-Adapter — bewusst ohne
+eigene Token-Issuance, weil die existierenden Stream-Keys aus
+`/api/ingest/streams` schon den nötigen kryptographischen Anker
+liefern.
+
+**MediaMTX-Config** (Auszug `mediamtx.yml`):
+
+```yaml
+authMethod: http
+authHTTPAddress: http://m-trace-api:8080/api/ingest/auth-hook
+authHTTPExclude:
+  - action: api
+  - action: metrics
+```
+
+**Wire-Vertrag**:
+
+- Methode: `POST`, `Content-Type: application/x-www-form-urlencoded`.
+- Form-Body (MediaMTX-Standard): `user`, `password`, `action`,
+  `path`, optional `ip`, `protocol`, `id`, `query`.
+- Mapping (m-trace-Konvention):
+  - `user`     → Project-ID
+  - `password` → Stream-Key Klartext (einmaliger Wert aus
+    `POST /api/ingest/streams` bzw. `…/rotate-key`)
+  - `path`     → Stream-ID
+  - `action`   → nur `publish` ist erlaubt; `read`/`api`/`metrics`
+    liefern `403`.
+- Response: `200` = allow, `403` = deny, `400` = ungültiger
+  Content-Type, `405` = falsche HTTP-Methode. Bodies sind leer
+  bzw. enthalten nur den Plain-Text-Fehlergrund.
+
+**Sicherheitsprofil**:
+
+- Trust-Boundary zwischen MediaMTX und m-trace API. Der Endpoint
+  hat **selbst keine Project-Token-Auth** — Netzwerk-Isolation
+  ist Operator-Verantwortung (Compose-internal-Netz, K8s-
+  `ClusterIP`, Reverse-Proxy mit IP-Allowlist).
+- Audit-Log markiert jeden Deny-Pfad mit Project-/Stream-ID und
+  Reason-Code (`action_not_supported`/`missing_field`/`invalid_key`/
+  `validate_error`); Klartext-Material wird **niemals** geloggt.
+- Idempotent — die zugrundeliegende `ValidateKey`-Operation ist
+  side-effect-frei, ein replay-er MediaMTX-Hook führt zu keinem
+  doppelten Effekt.
+
+**Was nicht im Skelett enthalten ist** (Folge-Item nach `0.12.5`):
+
+- Read-Auth (Player-Authentifizierung über MediaMTX-`read`-Action).
+- Eigener Publish-Token-Lifecycle (`POST /api/ingest/publish-tokens`),
+  separat zu den Stream-Keys.
+- Mutual-TLS zwischen MediaMTX und m-trace (heute via
+  Compose-Netz-Isolation, in Production via Reverse-Proxy mit
+  mTLS-Terminierung lösbar).
+
+Reproduzierbarer Lab-Smoke: `make smoke-mediamtx-auth` (opt-in).
+Wickelt alle sieben Wire-Pfade (allow, deny-invalid-key,
+deny-read-action, deny-missing-field, bad-content-type, GET 405,
+validate-error) als End-to-End-Test über `httptest.Server` ab —
+keine MediaMTX-Container nötig. Echte Compose-Variante mit einem
+MediaMTX-Container, der gegen die laufende m-trace-API
+authentifiziert, bleibt Folge-Item.
+
+### 5.8 Outbound-Webhook für Stream-Lifecycle
+
+Mit `0.12.5` Tranche 5 (RAK-82, R-16) liefert m-trace eine
+optionale Webhook-Zustellung der `0.11.0`-Lifecycle-Events
+(`stream_started`/`stream_ended`) an externe Konsumenten — der
+heutige lokale Pfad
+(`POST /api/ingest/hooks/stream-{started,ended}`) bleibt
+unverändert, plus Outbound-POST.
+
+**Konfiguration** (Boot-ENV):
+
+| ENV                                 | Pflicht | Bedeutung                                                                  |
+| ----------------------------------- | ------- | -------------------------------------------------------------------------- |
+| `MTRACE_OUTBOUND_WEBHOOK_URL`       | nein    | Zustelladresse. Leer/unset → Adapter deaktiviert (No-Op, kein Outbound).   |
+| `MTRACE_OUTBOUND_WEBHOOK_SECRET`    | nein    | HMAC-Secret für die Payload-Signatur. Empfohlen ≥ 32 Byte Entropie.        |
+
+**Wire-Vertrag** (siehe `apps/api/adapters/driven/webhooks/http_dispatcher.go`):
+
+- Methode: `POST`, `Content-Type: application/json`.
+- Body (JSON):
+  ```json
+  {
+    "event_id":     "evt_…",
+    "type":         "stream_started" | "stream_ended",
+    "project_id":   "<id>",
+    "stream_id":    "<id>",
+    "observed_at":  "<RFC3339Nano>",
+    "source":       "local-smoke" | "mediamtx-hook",
+    "connection_id":"…",
+    "reason":       "…"
+  }
+  ```
+- Header `X-MTrace-Signature: sha256=<hex>` — HMAC-SHA-256 über
+  den exakten Body, signiert mit `MTRACE_OUTBOUND_WEBHOOK_SECRET`.
+  Der Konsument muss die Signatur prüfen.
+- Header `X-MTrace-Timestamp` (RFC3339Nano) für Replay-Schutz.
+- Erfolg: HTTP-Status `200 ≤ s < 300`; alles andere zählt als
+  fehlgeschlagen.
+
+**Retry-Schema**:
+
+- Bis zu **3 Versuche** (`MaxAttempts`).
+- Exponential-Backoff: `100ms`, `200ms`, `400ms` (`BaseBackoff`,
+  Multiplikator 2).
+- Per-Versuch-Timeout: `10s` (`RequestTimeout`).
+- Nach Erschöpfung: Dead-Letter — der Adapter loggt
+  `outbound webhook dead-letter` mit `event_id`/`endpoint`/
+  `last_error`. **Wichtig**: der Lifecycle-Pfad failed nicht;
+  `POST /api/ingest/hooks/stream-…` antwortet weiterhin `202`,
+  selbst wenn der Outbound-Konsument nicht erreichbar ist.
+
+**Sicherheitsprofil**:
+
+- Klartext-Stream-Keys werden **niemals** in der Payload
+  mitgeschickt — nur das `key_fingerprint`-Äquivalent ist im
+  Datenbank-Event sichtbar, taucht aber im Wire-Body bewusst
+  nicht auf (Lifecycle-Events haben kein Key-Material).
+- HMAC-Signatur über den exakten Body schützt vor Manipulation
+  im Transit; der Konsument lehnt Bodies ohne korrekte Signatur
+  ab.
+- Replay-Schutz: `event_id` ist opak und eindeutig — der
+  Konsument kann sie deduplizieren.
+
+**Was nicht im Skelett enthalten ist** (Folge-Item):
+
+- Project-spezifische Webhook-URLs (heute global eine URL pro
+  m-trace-Instanz). Multi-Tenant-Setups würden eine
+  Project-Policy-Erweiterung brauchen.
+- Persistente Dead-Letter-Queue. Heute landet ein erschöpftes
+  Event ausschließlich im Log; eine Wiederzustellung nach
+  Operator-Trigger wäre Folge-Item.
+- Konfigurierbare `MaxAttempts`/`BaseBackoff`/`RequestTimeout`
+  via ENV (heute hartcodiert, weil das Skelett eine konservative
+  Defaults-Topologie nutzt).
+
+Reproduzierbarer Lab-Smoke: `make smoke-outbound-webhook` (opt-in).
+Wickelt sieben Pfade (disabled-noop, happy path, HMAC-Match,
+Retry-success, Dead-Letter-Exhaustion, Body-Shape, Context-Cancel)
+gegen einen `httptest.Server`-Mock-Konsumenten.
+
 ---
 
 ## 6. Datenschutz / GDPR

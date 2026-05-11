@@ -150,6 +150,15 @@ func TestVaultSecretBackend_HappyPath(t *testing.T) {
 	}
 }
 
+func TestVaultSecretBackend_NilReceiver(t *testing.T) {
+	t.Parallel()
+	var b *auth.VaultSecretBackend
+	_, _, err := b.LoadSigningKeys(context.Background())
+	if err == nil {
+		t.Errorf("nil receiver must return error")
+	}
+}
+
 func TestVaultSecretBackend_MissingConfig(t *testing.T) {
 	t.Parallel()
 	cases := []map[string]string{
