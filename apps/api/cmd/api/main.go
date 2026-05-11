@@ -10,7 +10,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -47,6 +46,8 @@ const (
 	envSrtRequiredBandwidth  = "MTRACE_SRT_REQUIRED_BANDWIDTH_BPS"
 	envAuthSigningKID        = "MTRACE_AUTH_SIGNING_KID"
 	envAuthSigningKey        = "MTRACE_AUTH_SIGNING_KEY"
+	envAuthSigningKeys       = "MTRACE_AUTH_SIGNING_KEYS"
+	envAuthSigningActiveKID  = "MTRACE_AUTH_SIGNING_ACTIVE_KID"
 	envAuthLabDefault        = "MTRACE_AUTH_LAB_DEFAULT"
 )
 
@@ -515,54 +516,77 @@ type authBundle struct {
 	Signer  *auth.HMACSessionTokenSigner
 }
 
-// buildAuthSessionService verdrahtet den `0.12.0`-Auth-Pfad
-// (RAK-72/RAK-75): Signing-Key-Ring (`MTRACE_AUTH_SIGNING_KID` /
-// `MTRACE_AUTH_SIGNING_KEY` als Base64-URL-encoded Bytes — fehlend
-// fällt auf einen markierten Lab-Default zurück), In-Memory-Issuance-
-// Limiter (global + Project) und In-Memory-Project-Policy-Resolver
-// (Fallback aus den Static-Project-Origins). Klartext-Token-Material
-// wird im Resolver defensiv kopiert. Der zurückgegebene Bundle
-// enthält den Issuance-Service und den Signer (für den
-// PlaybackEventsHandler-Verify-Pfad).
+// buildAuthSessionService verdrahtet den Auth-Pfad
+// (`0.12.0` RAK-72/RAK-75 + `0.12.5` RAK-78): Signing-Key-Ring,
+// In-Memory-Issuance-Limiter (global + Project) und
+// In-Memory-Project-Policy-Resolver (Fallback aus Static-Project-
+// Origins).
+//
+// Signing-Key-Ring kommt aus zwei alternativen ENV-Pfaden — Parser-
+// Logik in `auth.ParseSigningKeysEnv`:
+//   - **Multi-Key (`0.12.5`)**: `MTRACE_AUTH_SIGNING_KEYS=
+//     kid_a:b64[,kid_b:b64,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID`.
+//     Mehrere Keys verifizieren parallel; nur der aktive `kid`
+//     signiert (RAK-78). Operator-Workflow siehe `auth.md` §5.3.1.
+//   - **Single-Key (Backwards-Compat zu `0.12.0`)**:
+//     `MTRACE_AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`.
+//     Degenerierter `len(keys)==1`-Resolver.
+//
+// Ist keiner der beiden Pfade gesetzt, fällt das Setup auf den
+// markierten Lab-Default zurück (`MTRACE_AUTH_LAB_DEFAULT=1` als
+// Opt-in, sonst hard-fail). Klartext-Token-Material wird im
+// Resolver defensiv kopiert.
 func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slog.Logger) (*authBundle, error) {
-	kid := domain.SigningKeyID(strings.TrimSpace(os.Getenv(envAuthSigningKID)))
-	if kid == "" {
-		kid = authDefaultLabSigningKID
+	now := time.Now().UTC()
+	keys, activeKID, noKeysConfigured, err := auth.ParseSigningKeysEnv(
+		os.Getenv(envAuthSigningKeys),
+		os.Getenv(envAuthSigningActiveKID),
+		os.Getenv(envAuthSigningKey),
+		os.Getenv(envAuthSigningKID),
+		now,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("auth signing key env: %w", err)
 	}
-	rawSecret := strings.TrimSpace(os.Getenv(envAuthSigningKey))
-	var secret []byte
-	if rawSecret == "" {
-		// `0.12.0`-Hardening: ohne explizit gesetzten Signing-Key
-		// muss der Operator den Lab-Default per
-		// `MTRACE_AUTH_LAB_DEFAULT=1` aktivieren. Sonst hard-fail —
-		// ein deterministischer, world-known HMAC-Key wäre eine
-		// Production-Falle (Plan-0.12.0 §0.6 Threat Model).
+	if noKeysConfigured {
+		// Weder Multi-Key- noch Single-Key-ENV gesetzt — Lab-Default
+		// nur mit explizitem Opt-in (Plan-0.12.0 §0.6 Threat Model).
 		if !labDefaultOptIn() {
 			return nil, fmt.Errorf(
-				"%s is required (set %s=1 to opt into the lab default key, NOT for production)",
-				envAuthSigningKey, envAuthLabDefault)
+				"%s or %s is required (set %s=1 to opt into the lab default key, NOT for production)",
+				envAuthSigningKeys, envAuthSigningKey, envAuthLabDefault)
 		}
-		secret = []byte(authDefaultLabSigningKeySecret)
-		logger.Warn("auth signing key falls back to lab default — set MTRACE_AUTH_SIGNING_KEY for production",
-			"kid", string(kid))
-	} else {
-		decoded, err := base64DecodeURLSafe(rawSecret)
-		if err != nil {
-			return nil, fmt.Errorf("MTRACE_AUTH_SIGNING_KEY base64 decode: %w", err)
+		labKID := activeKID
+		if labKID == "" {
+			labKID = authDefaultLabSigningKID
 		}
-		secret = decoded
+		keys = []domain.SessionSigningKey{
+			{
+				KID:       labKID,
+				Algorithm: domain.SigningKeyAlgorithmHS256,
+				Secret:    []byte(authDefaultLabSigningKeySecret),
+				NotBefore: now.Add(-time.Hour),
+				RetiresAt: now.Add(365 * 24 * time.Hour),
+			},
+		}
+		activeKID = labKID
+		logger.Warn("auth signing key falls back to lab default — set MTRACE_AUTH_SIGNING_KEYS (or MTRACE_AUTH_SIGNING_KEY) for production",
+			"kid", string(activeKID))
 	}
-	now := time.Now().UTC()
-	signingKey := domain.SessionSigningKey{
-		KID:       kid,
-		Algorithm: domain.SigningKeyAlgorithmHS256,
-		Secret:    secret,
-		NotBefore: now.Add(-time.Hour),
-		RetiresAt: now.Add(365 * 24 * time.Hour),
-	}
-	keyResolver, err := auth.NewStaticSigningKeyResolver(kid, signingKey)
+	keyResolver, err := auth.NewMultiKeySigningResolver(activeKID, keys...)
 	if err != nil {
-		return nil, fmt.Errorf("static signing key resolver: %w", err)
+		return nil, fmt.Errorf("multi-key signing resolver: %w", err)
+	}
+	if len(keys) > 1 {
+		// Operator-sichtbarer Log-Hinweis, dass der Multi-Key-Pfad
+		// aktiv ist — hilft beim Rotation-Smoke (RAK-78).
+		verifyKIDs := make([]string, 0, len(keys))
+		for _, k := range keys {
+			verifyKIDs = append(verifyKIDs, string(k.KID))
+		}
+		logger.Info("auth multi-key signing resolver active",
+			"active_kid", string(activeKID),
+			"verify_kids", verifyKIDs)
 	}
 	signer := auth.NewHMACSessionTokenSigner(keyResolver)
 	limiter := auth.NewInMemoryIssuanceRateLimiter(
@@ -578,16 +602,6 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slo
 		Inbound: application.NewIssueSessionTokenService(policies, limiter, signer, ids),
 		Signer:  signer,
 	}, nil
-}
-
-// base64DecodeURLSafe akzeptiert sowohl `RawURLEncoding` als auch
-// `URLEncoding` mit Padding — robust gegenüber den beiden in der
-// Praxis vorkommenden Varianten.
-func base64DecodeURLSafe(s string) ([]byte, error) {
-	if decoded, err := base64.RawURLEncoding.DecodeString(s); err == nil {
-		return decoded, nil
-	}
-	return base64.URLEncoding.DecodeString(s)
 }
 
 // labDefaultOptIn liest `MTRACE_AUTH_LAB_DEFAULT` und akzeptiert nur

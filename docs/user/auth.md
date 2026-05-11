@@ -234,13 +234,21 @@ active`.
 1. **SQLite-Persistenz** ist Voraussetzung — InMemory-Modus hat keine
    Generations-Persistenz. Default ab `0.4.0`:
    `MTRACE_PERSISTENCE=sqlite`.
-2. **Signing-Key** per Env: `MTRACE_AUTH_SIGNING_KID=<kid>` und
-   `MTRACE_AUTH_SIGNING_KEY=<base64url-encoded ≥32 bytes>`.
-   Ohne explizit gesetzten Key plus `MTRACE_AUTH_LAB_DEFAULT=1`-
-   Opt-in failt der API-Start. Lab-Beispiel:
+2. **Signing-Key** per Env. Seit `0.12.5` (RAK-78) ist der
+   Multi-Key-Pfad der Default:
+   `MTRACE_AUTH_SIGNING_KEYS=<kid_a>:<base64url-secret>[,<kid_b>:<base64url-secret>,…]`
+   plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=<kid_a>`. Der Multi-Key-
+   Pfad ist Voraussetzung für die in §5.3.1 dokumentierte
+   Rotation. Als Backwards-Compat bleibt der Single-Key-Pfad aus
+   `0.12.0` (`MTRACE_AUTH_SIGNING_KID` + `MTRACE_AUTH_SIGNING_KEY`)
+   verfügbar; er ergibt einen degenerierten `len(keys)==1`-Resolver.
+   Ohne jeden Key-ENV plus `MTRACE_AUTH_LAB_DEFAULT=1`-Opt-in failt
+   der API-Start. Lab-Beispiel (Multi-Key):
    ```bash
-   export MTRACE_AUTH_SIGNING_KID="lab-2026-05"
-   export MTRACE_AUTH_SIGNING_KEY="$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=')"
+   SECRET_A="$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=')"
+   SECRET_B="$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=')"
+   export MTRACE_AUTH_SIGNING_KEYS="lab-2026-03:${SECRET_A},lab-2026-05:${SECRET_B}"
+   export MTRACE_AUTH_SIGNING_ACTIVE_KID="lab-2026-05"
    ```
 3. **Frische `mtr_pt_*`-Generation anlegen** (heute über das
    `ProjectTokenRepository` direkt; ein dediziertes CRUD-API ist
@@ -259,18 +267,23 @@ active`.
 
 `kid` im Token-Header erlaubt parallele Signing-Keys. Alte Verify-
 Keys bleiben über Deployments und Restarts geladen, bis alle damit
-signierten Tokens abgelaufen sind. Im aktuellen Code-Stand hält der
-`StaticSigningKeyResolver` einen einzelnen aktiven Key (`MTRACE_
-AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`); die im
-folgenden Runbook beschriebene Multi-Key-ENV-Konfiguration ist als
-**Soll-Workflow** spezifiziert, der zugehörige Resolver-Code-Pfad
-(`MultiKeySigningResolver` mit ENV `MTRACE_AUTH_SIGNING_KEYS=kid_a:
-base64,kid_b:base64` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_a`)
-liefert das Folge-Release `0.12.5` (siehe `plan-0.12.5.md` Tranche 1
-und R-18 im Risiken-Backlog, Triggerschwelle: erstes Rotation-Event
-in Lab/Staging).
+signierten Tokens abgelaufen sind. Der Code-Pfad wird seit `0.12.5`
+(Tranche 1, RAK-78) vom `MultiKeySigningResolver` bedient — er
+ersetzt den `0.12.0`-`StaticSigningKeyResolver` als Default-Pfad
+und liest die Multi-Key-ENV-Konfiguration aus
+`MTRACE_AUTH_SIGNING_KEYS=kid_a:base64,kid_b:base64` plus
+`MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_a`. Backwards-Compat: die
+heutigen ENV-Variablen `MTRACE_AUTH_SIGNING_KEY` /
+`MTRACE_AUTH_SIGNING_KID` bleiben als degenerierter Single-Key-
+Pfad (`len(keys)==1`) unterstützt.
 
-#### 5.3.1 Soll-Workflow Rotation (für `0.12.5`-Code-Pfad)
+Validierung beim Boot (Plan-0.12.5 §5 DoD): leere KIDs, doppelte
+KIDs, ungültige Base64-Werte und ein `MTRACE_AUTH_SIGNING_ACTIVE_KID`,
+das nicht in der Liste vorkommt, brechen den Start mit klarer
+Fehlermeldung — kein stiller Fallback. Reproduzierbarer Lab-Smoke:
+`make smoke-key-rotation` (opt-in, nicht in `make gates`).
+
+#### 5.3.1 Workflow Rotation (Code-Pfad in `0.12.5`, RAK-78)
 
 Reihenfolge, ohne ablaufende Tokens zu invalidieren:
 
@@ -317,7 +330,11 @@ das Multi-Key-Schema.**
 
 **Restart-Stabilität** ist im Code unabhängig vom ENV-Schema seit
 `0.12.0` getestet (`TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`)
-— ein Restart ohne Key-Wechsel invalidiert keine Tokens.
+— ein Restart ohne Key-Wechsel invalidiert keine Tokens. Seit
+`0.12.5` deckt zusätzlich `TestParseSigningKeysEnv_RotationEndToEnd`
+den vollständigen ENV-Parser-→-Resolver-→-Signer-→-Rotation-Pfad ab;
+derselbe Test wird vom Lab-Smoke `make smoke-key-rotation` als
+reproduzierbarer Operator-Check angeboten.
 
 ---
 

@@ -16,7 +16,7 @@ import (
 
 func newSigner(t *testing.T, activeKID domain.SigningKeyID, keys ...domain.SessionSigningKey) *auth.HMACSessionTokenSigner {
 	t.Helper()
-	r, err := auth.NewStaticSigningKeyResolver(activeKID, keys...)
+	r, err := auth.NewMultiKeySigningResolver(activeKID, keys...)
 	if err != nil {
 		t.Fatalf("resolver: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestHMACSigner_SignReturnsActiveKeyError(t *testing.T) {
 
 func TestHMACSigner_SignRejectsUnknownAlgorithm(t *testing.T) {
 	t.Parallel()
-	r, err := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{
+	r, err := auth.NewMultiKeySigningResolver("kid_a", domain.SessionSigningKey{
 		KID: "kid_a", Algorithm: domain.SigningKeyAlgorithm("RS256"), Secret: []byte("s"),
 	})
 	if err != nil {
@@ -203,17 +203,17 @@ func TestHMACSigner_VerifyPropagatesAllVerifyKeysError(t *testing.T) {
 	}
 }
 
-func TestStaticSigningKeyResolver_EnforcesActiveKey(t *testing.T) {
+func TestMultiKeySigningResolver_EnforcesActiveKey(t *testing.T) {
 	t.Parallel()
-	if _, err := auth.NewStaticSigningKeyResolver("absent",
+	if _, err := auth.NewMultiKeySigningResolver("absent",
 		domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("s")},
 	); err == nil {
 		t.Errorf("missing active kid must error")
 	}
-	if _, err := auth.NewStaticSigningKeyResolver(""); err == nil {
+	if _, err := auth.NewMultiKeySigningResolver(""); err == nil {
 		t.Errorf("empty active kid must error")
 	}
-	if _, err := auth.NewStaticSigningKeyResolver("kid_a",
+	if _, err := auth.NewMultiKeySigningResolver("kid_a",
 		domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("a")},
 		domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("b")},
 	); err == nil {

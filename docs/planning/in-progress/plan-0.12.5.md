@@ -180,7 +180,7 @@ Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | 🟡 |
-| 1 | R-18 Multi-Key-Rotation (Code) | ⬜ |
+| 1 | R-18 Multi-Key-Rotation (Code) | 🟡 |
 | 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | ⬜ |
 | 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | ⬜ |
 | 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ⬜ |
@@ -225,24 +225,43 @@ Ziel: ENV-getriebener Multi-Key-Resolver ersetzt den heutigen
 
 DoD:
 
-- [ ] ENV-Schema `MTRACE_AUTH_SIGNING_KEYS` (Kommagetrennte
+- [x] ENV-Schema `MTRACE_AUTH_SIGNING_KEYS` (Kommagetrennte
   `kid:base64-secret`-Paare) plus `MTRACE_AUTH_SIGNING_ACTIVE_KID`
   parsen; Validierung gegen Duplikate, leere KIDs, ungültige
-  Base64.
-- [ ] `MultiKeySigningResolver` baut Verify-Set aus allen Keys,
+  Base64. Geliefert in `apps/api/adapters/driven/auth/signing_keys_env.go`
+  (`ParseSigningKeysEnv`); 12 Unit-Tests in
+  `signing_keys_env_test.go` decken Happy-Path, Whitespace-
+  Toleranz, Single-Key-Fallback und alle Fehlerfälle ab.
+- [x] `MultiKeySigningResolver` baut Verify-Set aus allen Keys,
   Sign-Key aus aktivem `kid`. Restart-stabil (analog vorhandener
   `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`).
-- [ ] Backwards-Compat: einzelner Key über alten ENV-Pfad bleibt
+  Rename des `0.12.0`-`StaticSigningKeyResolver` in
+  `apps/api/adapters/driven/auth/multi_key_signing_resolver.go`
+  (Public-API-Change: alle 11 Usage-Stellen in main.go +
+  Tests aktualisiert).
+- [x] Backwards-Compat: einzelner Key über alten ENV-Pfad bleibt
   unterstützt — alter Pfad ist degenerierter Multi-Key-Resolver
-  mit `len(keys)==1`.
-- [ ] `make smoke-key-rotation`: erstellt Tokens unter `kid=A`,
+  mit `len(keys)==1`. Fallback-Logik in `ParseSigningKeysEnv`
+  bei leerem `MTRACE_AUTH_SIGNING_KEYS`.
+- [x] `make smoke-key-rotation`: erstellt Tokens unter `kid=A`,
   rotiert auf `kid=B` (active-kid-Umschaltung), prüft dass alte
-  Tokens weiterhin verifizieren bis sie ablaufen.
-- [ ] Operator-Runbook in `auth.md` §5.3 (aus `0.12.1` Doku-Stand)
-  gegen die jetzt funktionsfähige Implementierung ergänzt: Beispiel-
-  ENV, exakter Rotation-Befehl.
-- [ ] Risks-Backlog R-18: Trigger als „aufgelöst durch Code in
-  0.12.5" markieren, mit Commit-Hash und Migrations-Notiz.
+  Tokens weiterhin verifizieren bis sie ablaufen. Geliefert als
+  `scripts/smoke-key-rotation.sh`, das den End-to-End-Test
+  `TestParseSigningKeysEnv_RotationEndToEnd` über
+  `golang:1.26.3`-Docker triggert. Echte API-Restart-Variante
+  ist Folge-Item, sobald Compose-Multi-Replica-Setup gebraucht
+  wird (Synergie mit R-17 Tranche 2).
+- [x] Operator-Runbook in `auth.md` §5.3 gegen die jetzt
+  funktionsfähige Implementierung ergänzt: Multi-Key-Default-Setup
+  in §5.2 Schritt 2, Code-Pfad-Verweis in §5.3 Header,
+  Smoke-Verweis in §5.3.1 Footer.
+- [x] Risks-Backlog R-18: Status auf 🟢 mit Auflösungspfad
+  „MultiKeySigningResolver + ParseSigningKeysEnv + make smoke-
+  key-rotation in `0.12.5` Tranche 1, Code in
+  multi_key_signing_resolver.go / signing_keys_env.go;
+  Wieder-Eröffnung nur bei Operator-Bug-Report im Multi-Replica-
+  Pfad (Synergie R-17)". Eintrag bleibt in §1.1 bis
+  Tranche-6-Closeout den finalen Move nach §1.2 macht.
 
 ## 6. Tranche 2 — R-17 Shared-Issuance-Limiter
 

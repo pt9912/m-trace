@@ -54,7 +54,7 @@ func newAuthSessionTestServer(t *testing.T, opts ...authServerOption) *httptest.
 		NotBefore: time.Now().Add(-time.Hour).UTC(),
 		RetiresAt: time.Now().Add(time.Hour).UTC(),
 	}
-	keyResolver, err := auth.NewStaticSigningKeyResolver("test-kid", signingKey)
+	keyResolver, err := auth.NewMultiKeySigningResolver("test-kid", signingKey)
 	if err != nil {
 		t.Fatalf("static signing key resolver: %v", err)
 	}
@@ -368,7 +368,7 @@ func TestAuthSessionTokens_RoundTripVerify(t *testing.T) {
 		NotBefore: time.Now().Add(-time.Hour).UTC(),
 		RetiresAt: time.Now().Add(time.Hour).UTC(),
 	}
-	resolver, err := auth.NewStaticSigningKeyResolver("test-kid", signingKey)
+	resolver, err := auth.NewMultiKeySigningResolver("test-kid", signingKey)
 	if err != nil {
 		t.Fatalf("resolver: %v", err)
 	}

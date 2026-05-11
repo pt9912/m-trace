@@ -23,7 +23,7 @@ func newParserStack(t *testing.T) (apihttp.AuthHeaderParser, *auth.HMACSessionTo
 		"demo":  {Token: "demo-token", AllowedOrigins: []string{"http://localhost:5173"}},
 		"other": {Token: "other-token", AllowedOrigins: []string{"http://other.example"}},
 	})
-	keyRing, err := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{
+	keyRing, err := auth.NewMultiKeySigningResolver("kid_a", domain.SessionSigningKey{
 		KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256,
 		Secret: []byte(parserSigningSecret),
 	})
@@ -331,7 +331,7 @@ func TestAuthHeaderParser_DefaultClockResolvesValidToken(t *testing.T) {
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo": {Token: "demo-token"},
 	})
-	keyRing, err := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{
+	keyRing, err := auth.NewMultiKeySigningResolver("kid_a", domain.SessionSigningKey{
 		KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("secret"),
 	})
 	if err != nil {

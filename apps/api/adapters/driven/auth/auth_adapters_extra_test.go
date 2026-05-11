@@ -189,9 +189,9 @@ func TestInMemoryProjectPolicyResolver_ExplicitPolicyWins(t *testing.T) {
 	}
 }
 
-func TestStaticSigningKeyResolver_NilReceiverAndErrors(t *testing.T) {
+func TestMultiKeySigningResolver_NilReceiverAndErrors(t *testing.T) {
 	t.Parallel()
-	var r *auth.StaticSigningKeyResolver
+	var r *auth.MultiKeySigningResolver
 	if _, err := r.ActiveSigningKey(); !errors.Is(err, domain.ErrAuthTokenInvalid) {
 		t.Errorf("nil receiver ActiveSigningKey: want ErrAuthTokenInvalid, got %v", err)
 	}
@@ -199,7 +199,7 @@ func TestStaticSigningKeyResolver_NilReceiverAndErrors(t *testing.T) {
 		t.Errorf("nil receiver AllVerifyKeys: want ErrAuthTokenInvalid, got %v", err)
 	}
 	// Empty kid in key registration.
-	if _, err := auth.NewStaticSigningKeyResolver("kid", domain.SessionSigningKey{KID: "", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("s")}); err == nil {
+	if _, err := auth.NewMultiKeySigningResolver("kid", domain.SessionSigningKey{KID: "", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("s")}); err == nil {
 		t.Errorf("empty kid registration must error")
 	}
 }
@@ -217,7 +217,7 @@ func TestHMACSigner_NilReceiverPaths(t *testing.T) {
 	// constructor with a placeholder, but ActiveSigningKey path is
 	// already covered by RoundTrip; here we just ensure Verify against
 	// a mismatched kid path stays correct.
-	r, _ := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("s")})
+	r, _ := auth.NewMultiKeySigningResolver("kid_a", domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("s")})
 	signer := auth.NewHMACSessionTokenSigner(r)
 	// Tokens with empty kid header → invalid.
 	bogus := "mtr_st_eyJhbGciOiJIUzI1NiIsImtpZCI6IiJ9.eyJzdWIiOiJkZW1vIn0.AA"
@@ -250,7 +250,7 @@ func TestHMACSigner_VerifyRejectsAlgKidMismatch(t *testing.T) {
 	// with a *different* algorithm marker so the alg/kid pairing
 	// validation kicks in. We only have HS256 so we have to mutate the
 	// header manually instead.
-	r, _ := auth.NewStaticSigningKeyResolver("kid_a", domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("a")})
+	r, _ := auth.NewMultiKeySigningResolver("kid_a", domain.SessionSigningKey{KID: "kid_a", Algorithm: domain.SigningKeyAlgorithmHS256, Secret: []byte("a")})
 	signer := auth.NewHMACSessionTokenSigner(r)
 	now := time.Now().UTC()
 	tok, err := signer.Sign(domain.SessionTokenClaims{

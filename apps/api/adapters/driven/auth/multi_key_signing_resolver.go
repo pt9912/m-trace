@@ -7,15 +7,16 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// StaticSigningKeyResolver implementiert `driven.SigningKeyResolver`
-// gegen eine vom Operator konfigurierte Key-Liste (`0.12.0`,
-// RAK-72). Restart-Stabilität wird durch den Operator-Workflow
+// MultiKeySigningResolver implementiert `driven.SigningKeyResolver`
+// gegen eine vom Operator konfigurierte Key-Liste (`0.12.0`/`0.12.5`,
+// RAK-72/RAK-78). Restart-Stabilität wird durch den Operator-Workflow
 // garantiert: dieselbe Konfiguration produziert deterministisch
 // dieselben Keys.
 //
 // `activeKID` markiert den aktuell aktiven Signing-Key; alle weiteren
 // Keys bleiben ausschließlich Verify-Keys, bis sie ebenfalls aktiviert
-// werden.
+// werden. Der degenerierte Fall `len(keys)==1` (Backwards-Compat zu
+// `0.12.0` Single-Key-Pfad) ist explizit unterstützt.
 //
 // Sicherheitsprofil:
 //   - `Secret`-Material wird beim Loader-Aufruf in den Resolver kopiert
@@ -23,22 +24,22 @@ import (
 //     `SessionSigningKey` wird zurückgegeben.
 //   - Tests dürfen mit kurzem Material arbeiten; produktive
 //     Konfiguration muss mindestens 256 Bit Entropie pro Key
-//     bereitstellen (Wartung in Operator-Doku).
-type StaticSigningKeyResolver struct {
+//     bereitstellen (Wartung in Operator-Doku `auth.md` §5.3).
+type MultiKeySigningResolver struct {
 	keys      map[domain.SigningKeyID]domain.SessionSigningKey
 	order     []domain.SigningKeyID
 	activeKID domain.SigningKeyID
 }
 
-// NewStaticSigningKeyResolver baut den Resolver. `keys` muss mindestens
+// NewMultiKeySigningResolver baut den Resolver. `keys` muss mindestens
 // einen Eintrag für `activeKID` haben; andere Keys bleiben Verify-Keys.
 // Doppelte `KID`-Werte führen zu einem deterministischen Fehler beim
 // Loader, damit Operator-Konfigurationsfehler früh sichtbar werden.
-func NewStaticSigningKeyResolver(activeKID domain.SigningKeyID, keys ...domain.SessionSigningKey) (*StaticSigningKeyResolver, error) {
+func NewMultiKeySigningResolver(activeKID domain.SigningKeyID, keys ...domain.SessionSigningKey) (*MultiKeySigningResolver, error) {
 	if activeKID == "" {
 		return nil, errors.New("auth: active signing key id must not be empty")
 	}
-	out := &StaticSigningKeyResolver{
+	out := &MultiKeySigningResolver{
 		keys:      make(map[domain.SigningKeyID]domain.SessionSigningKey, len(keys)),
 		order:     make([]domain.SigningKeyID, 0, len(keys)),
 		activeKID: activeKID,
@@ -65,10 +66,10 @@ func NewStaticSigningKeyResolver(activeKID domain.SigningKeyID, keys ...domain.S
 }
 
 // Compile-time check.
-var _ driven.SigningKeyResolver = (*StaticSigningKeyResolver)(nil)
+var _ driven.SigningKeyResolver = (*MultiKeySigningResolver)(nil)
 
 // ActiveSigningKey gibt den aktuell aktiven Signing-Key zurück.
-func (r *StaticSigningKeyResolver) ActiveSigningKey() (domain.SessionSigningKey, error) {
+func (r *MultiKeySigningResolver) ActiveSigningKey() (domain.SessionSigningKey, error) {
 	if r == nil {
 		return domain.SessionSigningKey{}, domain.ErrAuthTokenInvalid
 	}
@@ -82,7 +83,7 @@ func (r *StaticSigningKeyResolver) ActiveSigningKey() (domain.SessionSigningKey,
 // AllVerifyKeys gibt alle geladenen Keys in stabiler Reihenfolge
 // zurück. Verify nutzt das, um nach `kid` aufzulösen — Reihenfolge
 // matters nicht funktional, ist aber stabil für Tests.
-func (r *StaticSigningKeyResolver) AllVerifyKeys() ([]domain.SessionSigningKey, error) {
+func (r *MultiKeySigningResolver) AllVerifyKeys() ([]domain.SessionSigningKey, error) {
 	if r == nil {
 		return nil, domain.ErrAuthTokenInvalid
 	}
