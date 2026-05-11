@@ -181,7 +181,7 @@ Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 | --- | --- | --- |
 | 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | 🟡 |
 | 1 | R-18 Multi-Key-Rotation (Code) | 🟡 |
-| 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | ⬜ |
+| 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | 🟡 |
 | 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | ⬜ |
 | 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ⬜ |
 | 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ⬜ |
@@ -269,29 +269,51 @@ Ziel: Multi-Replica-API teilt sich einen Issuance-Counter.
 
 DoD:
 
-- [ ] `IssuanceLimiterPort` definiert (Interface in
-  `apps/api/core/ports/issuance.go` oder analog), heutiger
-  In-Process-Limiter implementiert das Interface.
-- [ ] SQLite-Backend-Adapter implementiert: `auth_issuance_counters`-
-  Tabelle (Migration `V5`), atomare Counter-Erhöhung über UPSERT
-  oder Lock, TTL-getriebenes Cleanup.
-- [ ] ENV-Selektion: `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`.
-  **Globaler Default bleibt `memory`** (Backwards-Compat); `sqlite`
-  ist opt-in. Andere Werte (`redis`, `memcached`, …) lehnt der
-  Boot-Validator mit klarem Fehler ab — sie sind in `0.12.5` nicht
-  implementiert.
-- [ ] `make smoke-issuance-replica`: zwei API-Replicas auf
-  demselben Host mit gemounteter SQLite-DB (Compose-Volume oder
-  Bind-Mount) teilen den Counter; Limit über beide Replicas hinweg
-  durchgesetzt. Operator-Doku zur Topologie-Voraussetzung
-  (Single-Host + Shared-Volume) in `auth.md` §5.4 ergänzt.
-- [ ] RAK-74-Scope-Cut: Limiter bleibt **nicht** vor
-  `/api/ingest/*` (Doku in `auth.md` und Lastenheft).
-- [ ] Risks-Backlog R-17: Status auf „**teilweise gelöst** —
-  Code-Pfad für Single-Host-Shared-Volume verfügbar (SQLite-
-  Adapter in 0.12.5)" setzen; Resttrigger „Multi-Host-Topologie
-  oder Network-Backend-Bedarf" bleibt offen für späteren Adapter
-  (Redis/Memcached als Folge-Item).
+- [x] Port-Interface bereits seit `0.12.0` definiert als
+  `driven.IssuanceRateLimiter` in
+  `apps/api/hexagon/port/driven/issuance_rate_limiter.go`. Plan-
+  Notation „IssuanceLimiterPort" gemappt auf den existierenden
+  Port-Namen; In-Process-Adapter
+  (`auth.InMemoryIssuanceRateLimiter`) bleibt Default und
+  implementiert das Interface unverändert.
+- [x] SQLite-Backend-Adapter `SqliteIssuanceRateLimiter`
+  implementiert in
+  `apps/api/adapters/driven/auth/sqlite_issuance_rate_limiter.go`:
+  Migration V5 `auth_issuance_counters` (bucket_key TEXT PK,
+  capacity, refill_per_second, tokens REAL, last_at, expires_at
+  + Cleanup-Index auf expires_at); atomare Refill+Consume in
+  `BeginTx` (DSN erzwingt `BEGIN IMMEDIATE`, ADR-0002 §8.3);
+  UPSERT-basierte Bucket-Init bei Erstaufruf oder Cfg-Wechsel;
+  asymmetrischer Refund auf globalen Bucket bei project-deny;
+  opportunistisches TTL-Cleanup (Default 24h, ~5 % Hot-Path-
+  Wahrscheinlichkeit).
+- [x] ENV-Selektion `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`
+  in `main.go#buildIssuanceRateLimiter`. Globaler Default
+  `memory` (Backwards-Compat); `sqlite` braucht `persist.db !=
+  nil` (also `MTRACE_PERSISTENCE=sqlite`) — sonst hard-fail mit
+  klarer Fehlermeldung. Unbekannte Werte (`redis`, `memcached`)
+  liefern explizit „not supported" mit Verweis auf den Folge-
+  Plan; kein stiller Fallback.
+- [x] `make smoke-issuance-replica` plus
+  `scripts/smoke-issuance-replica.sh` triggern den End-to-End-
+  Sharing-Test (`TestSqliteIssuanceRateLimiter_SharedAcrossInstances`)
+  über `golang:1.26.3`-Docker. Test öffnet zwei `*sql.DB` auf
+  dieselbe SQLite-Datei, verbraucht das Project-Bucket auf
+  Instance A und prüft, dass Instance B den nächsten Allow als
+  „denied" sieht — semantisch deckungsgleich zum Compose-Multi-
+  Replica-Pfad. Operator-Topologie-Hinweis (Single-Host +
+  Shared-Volume) in `docs/user/auth.md` §5.4 ergänzt; echte
+  Compose-Container-Variante bleibt Folge-Item.
+- [x] RAK-74-Scope-Cut explizit dokumentiert: Limiter hängt
+  **nicht** vor `/api/ingest/*` (in `auth.md` §5.4 und
+  Lastenheft §13.14 RAK-74).
+- [x] Risks-Backlog R-17 auf **teilweise gelöst** gesetzt:
+  Single-Host-Shared-Volume-Pfad geliefert (SQLite-Adapter +
+  Migration V5 + ENV-Selektor + Smoke); Resttrigger
+  „Multi-Host-Topologie oder Network-Backend-Bedarf" bleibt
+  offen für späteren Adapter (Redis/Memcached). Eintrag bleibt
+  in §1.1 mit ⬜-Status nach Wartungsregel §2 „teilweise
+  Lösungen".
 
 ## 7. Tranche 3 — R-20 Secret-Backend-Adapter
 

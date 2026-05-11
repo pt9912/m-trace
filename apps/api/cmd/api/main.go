@@ -49,6 +49,7 @@ const (
 	envAuthSigningKeys       = "MTRACE_AUTH_SIGNING_KEYS"
 	envAuthSigningActiveKID  = "MTRACE_AUTH_SIGNING_ACTIVE_KID"
 	envAuthLabDefault        = "MTRACE_AUTH_LAB_DEFAULT"
+	envAuthIssuanceLimiter   = "MTRACE_AUTH_ISSUANCE_LIMITER"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
@@ -316,7 +317,7 @@ func buildHandler(
 	// `MTRACE_AUTH_SIGNING_KEY` (Base64-URL); ohne Env-Var wird ein
 	// deterministischer Lab-Key benutzt und der Logger warnt einmal,
 	// damit Production-Setups nicht mit dem Lab-Key in Betrieb gehen.
-	authBundle, authErr := buildAuthSessionService(baseProjects, logger)
+	authBundle, authErr := buildAuthSessionService(baseProjects, persist.db, logger)
 	if authErr != nil {
 		logger.Warn("auth session service disabled", "error", authErr.Error())
 	}
@@ -536,7 +537,7 @@ type authBundle struct {
 // markierten Lab-Default zurück (`MTRACE_AUTH_LAB_DEFAULT=1` als
 // Opt-in, sonst hard-fail). Klartext-Token-Material wird im
 // Resolver defensiv kopiert.
-func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slog.Logger) (*authBundle, error) {
+func buildAuthSessionService(baseProjects map[string]domain.Project, db *sql.DB, logger *slog.Logger) (*authBundle, error) {
 	now := time.Now().UTC()
 	keys, activeKID, noKeysConfigured, err := auth.ParseSigningKeysEnv(
 		os.Getenv(envAuthSigningKeys),
@@ -589,10 +590,10 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slo
 			"verify_kids", verifyKIDs)
 	}
 	signer := auth.NewHMACSessionTokenSigner(keyResolver)
-	limiter := auth.NewInMemoryIssuanceRateLimiter(
-		authIssuanceGlobalCapacity, authIssuanceGlobalRefillPerSec,
-		authIssuanceProjectCapacity, authIssuanceProjectRefillPerSec,
-	)
+	limiter, err := buildIssuanceRateLimiter(db, logger)
+	if err != nil {
+		return nil, err
+	}
 	policies, err := auth.NewInMemoryProjectPolicyResolver(nil, baseProjects)
 	if err != nil {
 		return nil, fmt.Errorf("project policy resolver: %w", err)
@@ -602,6 +603,52 @@ func buildAuthSessionService(baseProjects map[string]domain.Project, logger *slo
 		Inbound: application.NewIssueSessionTokenService(policies, limiter, signer, ids),
 		Signer:  signer,
 	}, nil
+}
+
+// buildIssuanceRateLimiter wählt zwischen In-Process- und
+// SQLite-basiertem Token-Bucket-Limiter (`0.12.5` RAK-77 / R-17).
+// ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER`:
+//   - leer / `memory`: In-Process-Default (Backwards-Compat zu
+//     `0.12.0`). Misst pro Replica — passt nur für Single-Instance-
+//     Setups.
+//   - `sqlite`: opt-in Shared-State-Pfad. Braucht aktive SQLite-
+//     Persistenz (`MTRACE_PERSISTENCE=sqlite`); fehlt sie, hard-fail.
+//     Single-Host-Multi-Replica-Setups (Compose-`volumes:`,
+//     K8s-`hostPath`) teilen sich den Counter. Multi-Host bleibt
+//     Folge-Item.
+//   - andere Werte (`redis`, `memcached`, …): explizit nicht
+//     unterstützt — der Boot-Validator failt mit klarer
+//     Fehlermeldung, statt still auf `memory` zu fallen.
+func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceRateLimiter, error) {
+	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envAuthIssuanceLimiter)))
+	switch backend {
+	case "", "memory":
+		logger.Info("auth issuance limiter active", "backend", "memory")
+		return auth.NewInMemoryIssuanceRateLimiter(
+			authIssuanceGlobalCapacity, authIssuanceGlobalRefillPerSec,
+			authIssuanceProjectCapacity, authIssuanceProjectRefillPerSec,
+		), nil
+	case "sqlite":
+		if db == nil {
+			return nil, fmt.Errorf(
+				"%s=sqlite requires MTRACE_PERSISTENCE=sqlite (got nil DB handle — InMemory persistence is incompatible)",
+				envAuthIssuanceLimiter,
+			)
+		}
+		logger.Info("auth issuance limiter active", "backend", "sqlite",
+			"topology_constraint", "single-host with shared volume (Compose volumes / K8s hostPath)",
+		)
+		return auth.NewSqliteIssuanceRateLimiter(
+			db,
+			authIssuanceGlobalCapacity, authIssuanceGlobalRefillPerSec,
+			authIssuanceProjectCapacity, authIssuanceProjectRefillPerSec,
+		), nil
+	default:
+		return nil, fmt.Errorf(
+			"%s=%q is not supported (valid: memory|sqlite; redis/memcached are follow-up items, see plan-0.12.5 §6 / R-17 follow-ups)",
+			envAuthIssuanceLimiter, backend,
+		)
+	}
 }
 
 // labDefaultOptIn liest `MTRACE_AUTH_LAB_DEFAULT` und akzeptiert nur

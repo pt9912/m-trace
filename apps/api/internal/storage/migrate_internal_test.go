@@ -50,10 +50,12 @@ func TestOpen_FreshStart(t *testing.T) {
 	// `reason`, Source-Allowlist `local-smoke`/`mediamtx-hook`).
 	// plan-0.12.0 Tranche 3 ergänzt V4__project_tokens.sql mit der
 	// `project_token_generations`-Tabelle für rotierbare Project-
-	// Token-Generationen (RAK-73). Fresh-Start läuft damit vier
-	// Migrationen.
-	if len(rows) != 4 {
-		t.Fatalf("schema_migrations rows = %d, want 4", len(rows))
+	// Token-Generationen (RAK-73). plan-0.12.5 Tranche 2 fügt
+	// V5__auth_issuance_counters.sql mit der Shared-State-Token-
+	// Bucket-Tabelle für R-17 (RAK-77). Fresh-Start läuft damit
+	// fünf Migrationen.
+	if len(rows) != 5 {
+		t.Fatalf("schema_migrations rows = %d, want 5", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
@@ -66,6 +68,9 @@ func TestOpen_FreshStart(t *testing.T) {
 	}
 	if rows[3].version != 4 || rows[3].dirty != 0 {
 		t.Errorf("row[3] = %+v, want version=4 dirty=0", rows[3])
+	}
+	if rows[4].version != 5 || rows[4].dirty != 0 {
+		t.Errorf("row[4] = %+v, want version=5 dirty=0", rows[4])
 	}
 }
 

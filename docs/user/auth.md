@@ -336,6 +336,53 @@ den vollständigen ENV-Parser-→-Resolver-→-Signer-→-Rotation-Pfad ab;
 derselbe Test wird vom Lab-Smoke `make smoke-key-rotation` als
 reproduzierbarer Operator-Check angeboten.
 
+### 5.4 Issuance-Limiter-Backend
+
+`POST /api/auth/session-tokens` (und alle weiteren Issuance-Pfade,
+die `driven.IssuanceRateLimiter.Allow` aufrufen) lassen sich seit
+`0.12.5` (Tranche 2, RAK-77) gegen einen geteilten SQLite-State
+betreiben. Damit löst der Limiter R-17 für **Single-Host-Multi-
+Replica-Setups** auf: zwei API-Instances auf demselben Host, die
+sich denselben SQLite-Volume teilen (Compose-`volumes:`,
+K8s-`hostPath`), zählen das Token-Bucket gemeinsam — die effektive
+Issuance-Quote bleibt damit auf den konfigurierten Wert begrenzt,
+unabhängig von der Replica-Zahl.
+
+Auswahl per ENV:
+
+| Wert                            | Verhalten                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------- |
+| `MTRACE_AUTH_ISSUANCE_LIMITER` leer / `memory` | **Default** — In-Process-Token-Bucket (`0.12.0`-Pfad). Misst pro Replica. |
+| `MTRACE_AUTH_ISSUANCE_LIMITER=sqlite`          | Opt-in — Shared-State über die `auth_issuance_counters`-Tabelle (Migration V5). Braucht aktive `MTRACE_PERSISTENCE=sqlite`; ohne SQLite-Persistenz hard-failt der API-Start. |
+| jeder andere Wert (`redis`, …)                  | Bewusst nicht unterstützt — der Boot-Validator failt mit klarer Fehlermeldung. Network-Backends (Redis/Memcached) sind Folge-Item nach `0.12.5`. |
+
+**Topologie-Constraint**: der SQLite-Pfad wirkt nur über einen
+gemeinsam gemounteten Persistent-Volume. Auf zwei separaten Hosts
+mit jeweils eigener SQLite-Datei sieht jeder Host nur sein lokales
+Bucket — semantisch identisch zum `memory`-Default. Für echte
+Multi-Host-Topologie (Kubernetes über mehrere Nodes, Container-
+Plattformen ohne shared storage) braucht es einen Network-Backend-
+Adapter — siehe R-17-Resttrigger im Risiken-Backlog.
+
+**RAK-74-Scope-Cut** (Lastenheft §13.14) bleibt aktiv: der Limiter
+hängt **nicht** vor `/api/ingest/*` — der Ingest-Control-Pfad ist
+operator-/CLI-getrieben und nutzt das `0.11.0`-Token-Modell. Limiter-
+Wirkung gilt ausschließlich für die Browser-/Telemetrie-Pfade
+(`POST /api/auth/session-tokens`, `POST /api/playback-events`).
+
+Atomarität ist über `BEGIN IMMEDIATE` der SQLite-DSN garantiert
+(siehe `apps/api/internal/storage` und ADR-0002 §8.3): konkurrente
+Allow-Calls über alle Replicas werden serialisiert. Bucket-Einträge
+haben eine TTL (Default 24h); opportunistisches Cleanup räumt
+veraltete Project-Buckets während des Hot-Paths auf, ohne einen
+dedizierten Hintergrundjob.
+
+Reproduzierbarer Lab-Smoke: `make smoke-issuance-replica` (opt-in,
+nicht in `make gates`). Der Smoke nutzt zwei `*sql.DB`-Verbindungen
+auf dieselbe SQLite-Datei, verbraucht das Project-Bucket auf
+Instance A und prüft, dass Instance B den nächsten Allow als
+„denied" sieht.
+
 ---
 
 ## 6. Datenschutz / GDPR

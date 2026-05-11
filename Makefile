@@ -9,7 +9,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-srt smoke-srt-health smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -32,6 +32,7 @@ help:
 		'  make smoke-webrtc-stats-drift Run the WebRTC getStats() drift smoke against mtrace-webrtc (plan-0.9.0 Tranche 1, RAK-56; opt-in)' \
 		'  make smoke-srs              Run the SRS example smoke (starts/stops mtrace-srs project; endpoint-only; plan-0.9.0 Tranche 2, RAK-57)' \
 		'  make smoke-key-rotation     Run the multi-key signing rotation smoke (plan-0.12.5 Tranche 1, RAK-78; opt-in)' \
+		'  make smoke-issuance-replica Run the shared-state issuance limiter smoke (plan-0.12.5 Tranche 2, RAK-77; opt-in)' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
@@ -213,6 +214,17 @@ smoke-ingest-control:
 # Folge-Item nach Multi-Replica-Compose-Bedarf (R-17).
 smoke-key-rotation:
 	bash scripts/smoke-key-rotation.sh
+
+# `make smoke-issuance-replica` — plan-0.12.5 Tranche 2 / RAK-77
+# Shared-State-Issuance-Limiter (R-17). Wickelt den End-to-End-
+# Sharing-Test (`TestSqliteIssuanceRateLimiter_SharedAcrossInstances`)
+# in ein reproduzierbares Make-Target ein: zwei `*sql.DB`-Verbindungen
+# auf dieselbe SQLite-Datei (Single-Host + Shared-Volume-Pfad) — eine
+# Replica verbraucht das Project-Bucket, die andere muss den nächsten
+# Allow als „denied" sehen. Opt-in (NICHT in `make gates`); echte
+# Compose-Multi-Container-Variante bleibt Folge-Item.
+smoke-issuance-replica:
+	bash scripts/smoke-issuance-replica.sh
 
 # `make api-benchmark-smoke` ist die Go-Hot-Path-Bench-Suite aus
 # plan-0.9.5 §2 Tranche 1 (extra-gates.md §3.2). Druckt zuerst die
