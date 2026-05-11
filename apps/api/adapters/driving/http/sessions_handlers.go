@@ -273,6 +273,14 @@ type sessionWire struct {
 	EventCount          int64                        `json:"event_count"`
 	CorrelationID       string                       `json:"correlation_id"`
 	NetworkSignalAbsent []networkSignalAbsentWire    `json:"network_signal_absent"`
+	// SampleRatePPM ist der raw persistierte Wert (Integer-ppm).
+	// SampleRate ist der abgeleitete Float `ppm / 1_000_000` als
+	// Display-Hilfe für den Dashboard-Banner (plan-0.12.6 §6 / R-10).
+	// Beide Felder sind `omitempty` auf der Default-Marke
+	// (`SampleRateFull`): voll-gesampelte Sessions tragen sie nicht
+	// im Body, sampled-Sessions liefern sie immer.
+	SampleRatePPM int     `json:"sample_rate_ppm,omitempty"`
+	SampleRate    float64 `json:"sample_rate,omitempty"`
 }
 
 // networkSignalAbsentWire ist das Read-Shape eines
@@ -305,6 +313,10 @@ func toSessionWireWithBoundaries(s domain.StreamSession, boundaries []domain.Ses
 	if s.EndSource != "" {
 		v := string(s.EndSource)
 		out.EndSource = &v
+	}
+	if s.SampleRatePPM > 0 && s.SampleRatePPM < domain.SampleRateFull {
+		out.SampleRatePPM = s.SampleRatePPM
+		out.SampleRate = float64(s.SampleRatePPM) / float64(domain.SampleRateFull)
 	}
 	return out
 }

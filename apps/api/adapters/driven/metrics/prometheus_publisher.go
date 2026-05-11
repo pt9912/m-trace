@@ -66,6 +66,11 @@ type PrometheusPublisher struct {
 	// WebRTC-Aggregate (plan-0.8.0 §4 Tranche 3,
 	// spec/telemetry-model.md §3.5).
 	webrtc *webrtcMetrics
+
+	// Sample-Rate-Drift-Counter (plan-0.12.6 Tranche 4 / R-10,
+	// spec/telemetry-model.md §8.3). Project-skopiert, bounded
+	// Cardinality (Project-Allowlist).
+	sampleRateDrift *prometheus.CounterVec
 }
 
 // NewPrometheusPublisher creates and registers the aggregate metrics.
@@ -137,6 +142,13 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 			},
 			[]string{"path"},
 		),
+		sampleRateDrift: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "mtrace_sample_rate_drift_total",
+				Help: "Total number of session_sample_rate-drift events: ein eingehender Wert weicht vom persistierten Pro-Session-Wert um mehr als die Toleranz (100 ppm) ab. Project-skopiert; siehe plan-0.12.6 Tranche 4 / R-10.",
+			},
+			[]string{"project_id"},
+		),
 	}
 	srtSamples, srtRuns, srtErrors := newSrtHealthCounters()
 	p.srtHealthSamples = srtSamples
@@ -158,6 +170,7 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		p.srtHealthSamples,
 		p.srtCollectorRuns,
 		p.srtCollectorErrors,
+		p.sampleRateDrift,
 	)
 	registry.MustRegister(p.webrtc.collectors()...)
 	return p
@@ -169,6 +182,14 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 // Counter-Felder werden deltadiffenziert.
 func (p *PrometheusPublisher) WebRTCSample(s driven.WebRTCSampleSnapshot) {
 	p.webrtc.record(s)
+}
+
+// SampleRateDrift incrementiert
+// `mtrace_sample_rate_drift_total{project_id}` (plan-0.12.6
+// Tranche 4 / R-10). Aufruf nur bei Toleranz-Überschreitung — der
+// Use-Case filtert silent-Rundungsartefakte innerhalb ±100 ppm vor.
+func (p *PrometheusPublisher) SampleRateDrift(projectID string) {
+	p.sampleRateDrift.WithLabelValues(projectID).Inc()
 }
 
 // EventsAccepted increments the accepted counter by n.

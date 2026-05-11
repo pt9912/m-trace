@@ -114,6 +114,23 @@
   </div>
 </section>
 
+{#if session?.sample_rate_ppm && session.sample_rate_ppm < 1_000_000}
+  <section
+    class="sampled-banner"
+    data-testid="sampled-banner"
+    style="margin-top: 18px;"
+  >
+    <strong>Sampled session</strong>
+    <span class="muted">
+      Server received roughly
+      {((session.sample_rate_ppm / 1_000_000) * 100).toFixed(2)}%
+      of player events (sample_rate_ppm = {session.sample_rate_ppm}). Gap
+      detection is best-effort — totals may be lower than observed playback
+      activity. See spec/telemetry-model.md §8.
+    </span>
+  </section>
+{/if}
+
 {#if networkSignalAbsent.length > 0}
   <section class="panel" style="margin-top: 18px;">
     <div class="panel-head">
@@ -234,5 +251,18 @@
     background: #fdd;
     color: #803;
     font-weight: 600;
+  }
+  .sampled-banner {
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: #fff5e0;
+    border: 1px solid #f0c060;
+    color: #5a3d05;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sampled-banner strong {
+    font-size: 0.95em;
   }
 </style>

@@ -148,6 +148,14 @@
     "webrtc.error_detail": {
       "type": "string",
       "max_length": 256
+    },
+    "session_sample_rate": {
+      "type": "number",
+      "min_exclusive": 0,
+      "max": 1,
+      "scope": "session",
+      "anchor": "plan-0.12.6 Tranche 4 / R-10 / spec/telemetry-model.md §8.3",
+      "description": "Sampling-Rate der Session als Float `(0, 1]`. Pflichtfeld bei `sampleRate < 1`; voll-gesampelte Sessions duerfen das Feld weglassen. Server normalisiert auf Integer-ppm (`stream_sessions.sample_rate_ppm`) und persistiert den erstmaligen Sub-1-Wert immutable; spaetere Drift wird in `mtrace_sample_rate_drift_total{project_id}` gezaehlt, aber nicht ueberschrieben."
     }
   },
   "reserved_meta_namespace_webrtc": {

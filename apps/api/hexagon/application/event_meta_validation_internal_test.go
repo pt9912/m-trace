@@ -335,3 +335,32 @@ func stringOfLen(n int) string {
 	}
 	return string(b)
 }
+
+// TestValidateSessionSampleRate (plan-0.12.6 Tranche 4 / R-10): Wire-
+// Range-Check `(0, 1]`. Accepted: float64 + int64; rejected: andere
+// Typen, Out-of-Range-Werte.
+func TestValidateSessionSampleRate(t *testing.T) {
+	t.Parallel()
+	ok := []domain.EventMeta{
+		{"session_sample_rate": 1.0},
+		{"session_sample_rate": 0.5},
+		{"session_sample_rate": int64(1)},
+	}
+	for _, m := range ok {
+		if err := validateReservedEventMeta(m); err != nil {
+			t.Errorf("unexpected error for %v: %v", m, err)
+		}
+	}
+
+	bad := []domain.EventMeta{
+		{"session_sample_rate": "0.5"},      // string
+		{"session_sample_rate": 0.0},        // out of range
+		{"session_sample_rate": 1.5},        // out of range
+		{"session_sample_rate": []any{0.5}}, // unsupported type
+	}
+	for _, m := range bad {
+		if err := validateReservedEventMeta(m); !errors.Is(err, domain.ErrInvalidEvent) {
+			t.Errorf("expected ErrInvalidEvent for %v, got %v", m, err)
+		}
+	}
+}

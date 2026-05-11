@@ -30,6 +30,13 @@ export interface StreamSession {
    *  - `"sweeper"` bei zeitbasiertem Sweeper-Ende
    *  - `null` für aktive Sessions oder Legacy-Einträge */
   end_source: "client" | "sweeper" | null;
+  /** Raw Integer-ppm-Wert (`1..1_000_000`); fehlt bei voll-gesampelten
+   *  Sessions (Default = 1_000_000). Persistenz seit plan-0.12.6
+   *  Tranche 4 (R-10). */
+  sample_rate_ppm?: number;
+  /** Abgeleitet `sample_rate_ppm / 1_000_000` als Display-Float; fehlt
+   *  bei voll-gesampelten Sessions. */
+  sample_rate?: number;
 }
 
 export interface PlaybackEvent {

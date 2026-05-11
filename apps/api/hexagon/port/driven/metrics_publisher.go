@@ -45,6 +45,16 @@ type MetricsPublisher interface {
 	// (siehe §3.5.1). Aufruf nach erfolgreicher Validation des
 	// `metrics_sampled`-Events mit reservierten webrtc.*-Keys.
 	WebRTCSample(sample WebRTCSampleSnapshot)
+
+	// SampleRateDrift incrementiert
+	// `mtrace_sample_rate_drift_total{project_id}` (plan-0.12.6
+	// Tranche 4 / R-10, spec/telemetry-model.md §8.3). Aufruf nur,
+	// wenn ein `meta.session_sample_rate`-Wert eingegangen ist, der
+	// vom bereits persistierten Wert um mehr als die Toleranzschwelle
+	// (`SampleRateDriftToleranceP_PM` = 100 ppm) abweicht.
+	// Cardinality-Profil: `project_id` ist explizit als bounded-Label
+	// freigegeben (Operator-konfigurierte Allowlist; siehe §3 / §7.6).
+	SampleRateDrift(projectID string)
 }
 
 // WebRTCSampleSnapshot transportiert die §3.5.1-Sample-Daten zum

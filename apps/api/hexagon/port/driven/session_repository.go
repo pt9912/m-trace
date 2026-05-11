@@ -86,6 +86,23 @@ type SessionRepository interface {
 	// global, weil die Prometheus-Exposition kein Project-Label trägt
 	// (Cardinality-Regel telemetry-model §3).
 	CountByState(ctx context.Context, state domain.SessionState) (int64, error)
+	// SetSessionSampleRatePPMIfDefault setzt `sample_rate_ppm` für die
+	// (projectID, sessionID)-Session **immutable** auf `ppm`, aber nur
+	// wenn der bisherige Wert auf der Default-Marke `SampleRateFull`
+	// (1_000_000) steht. Liefert den nach dem Aufruf in der DB
+	// persistierten Wert plus ein `applied`-Flag:
+	//
+	//   - `applied=true`:  diese Methode hat den Wert gerade gesetzt.
+	//                      `existingPPM` ist gleich dem Eingabe-`ppm`.
+	//   - `applied=false`: der Wert war bereits != Default. `existingPPM`
+	//                      ist der schon persistierte Wert; der Aufrufer
+	//                      vergleicht ihn mit `ppm` und entscheidet, ob
+	//                      ein Drift-Event vorliegt (plan-0.12.6 §6).
+	//
+	// `ppm` muss im Bereich `[1, SampleRateFull]` liegen; ein Aufruf mit
+	// `ppm == SampleRateFull` ist ein Programmierfehler und ein No-Op
+	// (Default-Wert; nicht persistiert).
+	SetSessionSampleRatePPMIfDefault(ctx context.Context, projectID, sessionID string, ppm int) (existingPPM int, applied bool, err error)
 }
 
 // SessionListQuery ist die Eingabe für SessionRepository.List. ProjectID

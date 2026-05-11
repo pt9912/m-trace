@@ -64,6 +64,9 @@ func (r *linkSessionRepo) AppendBoundaries(_ context.Context, _ []domain.Session
 func (r *linkSessionRepo) ListBoundariesForSession(_ context.Context, _, _ string) ([]domain.SessionBoundary, error) {
 	return nil, nil
 }
+func (r *linkSessionRepo) SetSessionSampleRatePPMIfDefault(_ context.Context, _, _ string, _ int) (int, bool, error) {
+	return domain.SampleRateFull, false, nil
+}
 
 func newLinkRepo(sessions ...domain.StreamSession) *linkSessionRepo {
 	repo := &linkSessionRepo{

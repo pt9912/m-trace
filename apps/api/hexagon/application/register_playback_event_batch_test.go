@@ -89,6 +89,11 @@ type stubSessionRepo struct {
 	// boundariesFailNext lässt Tests einen Fehler-Pfad nach erfolgreichem
 	// UpsertFromEvents simulieren.
 	boundariesFailNext bool
+	// sampleRateExisting (pre-test fixture) und sampleRateSet (post-call
+	// recorder) tracken die Pro-Session-`sample_rate_ppm`-Logik aus
+	// plan-0.12.6 §6 / R-10.
+	sampleRateExisting map[string]int
+	sampleRateSet      map[string]int
 }
 
 func (s *stubSessionRepo) UpsertFromEvents(_ context.Context, events []domain.PlaybackEvent) (map[string]string, error) {
@@ -150,11 +155,35 @@ func (s *stubSessionRepo) CountByState(_ context.Context, _ domain.SessionState)
 	return 0, nil
 }
 
+// stub-Verhalten für SetSessionSampleRatePPMIfDefault:
+//   - sampleRateSet[sessionID] gespeichert (für Test-Asserts).
+//   - sampleRateExisting[sessionID]: vor-set-Wert (Default = SampleRateFull).
+//   - applied=false, wenn vor-set-Wert != Default; sonst applied=true.
+func (s *stubSessionRepo) SetSessionSampleRatePPMIfDefault(_ context.Context, _, sessionID string, ppm int) (int, bool, error) {
+	if s.sampleRateExisting == nil {
+		s.sampleRateExisting = make(map[string]int)
+	}
+	if s.sampleRateSet == nil {
+		s.sampleRateSet = make(map[string]int)
+	}
+	existing, ok := s.sampleRateExisting[sessionID]
+	if !ok {
+		existing = domain.SampleRateFull
+	}
+	if existing != domain.SampleRateFull {
+		return existing, false, nil
+	}
+	s.sampleRateExisting[sessionID] = ppm
+	s.sampleRateSet[sessionID] = ppm
+	return ppm, true, nil
+}
+
 type spyMetrics struct {
 	accepted, invalid, rateLimited, dropped int
 	playbackErrors, rebufferEvents          int
 	startupTimes                            []float64
 	webrtcSamples                           []driven.WebRTCSampleSnapshot
+	sampleRateDrift                         map[string]int
 }
 
 func (s *spyMetrics) EventsAccepted(n int)                       { s.accepted += n }
@@ -168,6 +197,12 @@ func (s *spyMetrics) SrtCollectorRun(_ domain.SourceStatus)      {}
 func (s *spyMetrics) SrtCollectorError(_ domain.SourceErrorCode) {}
 func (s *spyMetrics) WebRTCSample(snapshot driven.WebRTCSampleSnapshot) {
 	s.webrtcSamples = append(s.webrtcSamples, snapshot)
+}
+func (s *spyMetrics) SampleRateDrift(projectID string) {
+	if s.sampleRateDrift == nil {
+		s.sampleRateDrift = make(map[string]int)
+	}
+	s.sampleRateDrift[projectID]++
 }
 func (s *spyMetrics) StartupTimeMS(ms float64) {
 	s.startupTimes = append(s.startupTimes, ms)
@@ -720,6 +755,167 @@ func TestRegisterPlaybackEventBatch_TimeSkewPerEvent(t *testing.T) {
 	}
 	if !snap[1].TimeSkewWarning {
 		t.Errorf("event[1] TimeSkewWarning = false, want true (2-min client_timestamp)")
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateImmutableFirstSet
+// (plan-0.12.6 Tranche 4 / R-10): erstes Event mit
+// `meta.session_sample_rate < 1` setzt den Pro-Session-Wert via
+// Immutability-Set; kein Drift-Counter, weil noch nichts persistiert war.
+func TestRegisterPlaybackEventBatch_SampleRateImmutableFirstSet(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events[0].Meta = map[string]any{"session_sample_rate": 0.25}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	sessionID := in.Events[0].SessionID
+	got, ok := sessions.sampleRateSet[sessionID]
+	if !ok {
+		t.Fatalf("expected sample_rate_ppm to be set on session %q, got none", sessionID)
+	}
+	if got != 250_000 {
+		t.Errorf("sample_rate_ppm = %d, want 250000 (= 0.25 * 1_000_000)", got)
+	}
+	if metrics.sampleRateDrift["demo"] != 0 {
+		t.Errorf("drift counter = %d, want 0 (first set)", metrics.sampleRateDrift["demo"])
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateNoOpFull (plan-0.12.6
+// Tranche 4 / R-10): Wert == 1.0 ist Default — kein Set-Aufruf, kein
+// Drift-Counter.
+func TestRegisterPlaybackEventBatch_SampleRateNoOpFull(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events[0].Meta = map[string]any{"session_sample_rate": 1.0}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if len(sessions.sampleRateSet) != 0 {
+		t.Errorf("expected no sample_rate_ppm set (default 1.0), got %+v", sessions.sampleRateSet)
+	}
+	if metrics.sampleRateDrift["demo"] != 0 {
+		t.Errorf("drift counter = %d, want 0", metrics.sampleRateDrift["demo"])
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateDriftCounted (plan-0.12.6
+// Tranche 4 / R-10): wenn bereits ein abweichender Wert persistiert
+// ist (Drift > 100 ppm), zählt der Use-Case `mtrace_sample_rate_drift_total`
+// hoch und überschreibt nicht.
+func TestRegisterPlaybackEventBatch_SampleRateDriftCounted(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	sessionID := in.Events[0].SessionID
+	// Pre-Set: Session ist bereits auf 250_000 ppm fixiert.
+	sessions.sampleRateExisting = map[string]int{sessionID: 250_000}
+	// Eingehender Wert: 0.5 → 500_000 ppm. Drift = 250_000 → klar
+	// über Toleranz (100 ppm).
+	in.Events[0].Meta = map[string]any{"session_sample_rate": 0.5}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if got := sessions.sampleRateExisting[sessionID]; got != 250_000 {
+		t.Errorf("existing sample_rate_ppm = %d, want 250000 (immutable)", got)
+	}
+	if metrics.sampleRateDrift["demo"] != 1 {
+		t.Errorf("drift counter = %d, want 1 (drift > tolerance)", metrics.sampleRateDrift["demo"])
+	}
+	if _, set := sessions.sampleRateSet[sessionID]; set {
+		t.Errorf("sample_rate_ppm should not be re-set on drift; got %+v", sessions.sampleRateSet)
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateDriftPositiveDelta
+// (plan-0.12.6 Tranche 4 / R-10): Drift mit existing > incoming
+// (positiver Delta), um den absInt-positive-Pfad zu testen.
+func TestRegisterPlaybackEventBatch_SampleRateDriftPositiveDelta(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	sessionID := in.Events[0].SessionID
+	// Existing 750_000, incoming 250_000 → delta = +500_000.
+	sessions.sampleRateExisting = map[string]int{sessionID: 750_000}
+	in.Events[0].Meta = map[string]any{"session_sample_rate": 0.25}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if metrics.sampleRateDrift["demo"] != 1 {
+		t.Errorf("drift counter = %d, want 1 (positive delta drift)", metrics.sampleRateDrift["demo"])
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateUnsupportedMetaType
+// (plan-0.12.6 Tranche 4 / R-10): wenn `meta.session_sample_rate`
+// kein number-Typ ist, fängt die Use-Case-Validation den Pfad mit
+// 422 ab (validateSessionSampleRate); applySessionSampleRate sieht
+// den Event also nie. Dieser Test pinnt das Verhalten am Ingest-
+// Boundary.
+func TestRegisterPlaybackEventBatch_SampleRateUnsupportedMetaType(t *testing.T) {
+	t.Parallel()
+	uc, _, _, _, _, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events[0].Meta = map[string]any{"session_sample_rate": "0.5"}
+
+	_, err := uc.RegisterPlaybackEventBatch(context.Background(), in)
+	if !errors.Is(err, domain.ErrInvalidEvent) {
+		t.Fatalf("expected ErrInvalidEvent for string sample_rate, got %v", err)
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateDedupesSeenSession
+// (plan-0.12.6 Tranche 4 / R-10): zwei Events derselben Session im
+// Batch mit `session_sample_rate` lösen den `seen`-Dedupe-Pfad in
+// `applySessionSampleRate` aus — nur das erste Event triggert das
+// Set; das zweite wird übersprungen.
+func TestRegisterPlaybackEventBatch_SampleRateDedupesSeenSession(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	in.Events[0].Meta = map[string]any{"session_sample_rate": 0.25}
+	second := in.Events[0]
+	second.SequenceNumber = nil
+	in.Events = append(in.Events, second)
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	sessionID := in.Events[0].SessionID
+	if got := sessions.sampleRateSet[sessionID]; got != 250_000 {
+		t.Errorf("sample_rate_ppm = %d, want 250000", got)
+	}
+	if metrics.sampleRateDrift["demo"] != 0 {
+		t.Errorf("drift counter = %d, want 0 (second event in same session is deduped)", metrics.sampleRateDrift["demo"])
+	}
+}
+
+// TestRegisterPlaybackEventBatch_SampleRateWithinTolerance
+// (plan-0.12.6 Tranche 4 / R-10): Rundungsartefakte innerhalb der
+// ±100-ppm-Toleranz zählen NICHT als Drift.
+func TestRegisterPlaybackEventBatch_SampleRateWithinTolerance(t *testing.T) {
+	t.Parallel()
+	uc, _, _, sessions, metrics, _, _, _ := newUseCase()
+	in := validBatch()
+	sessionID := in.Events[0].SessionID
+	sessions.sampleRateExisting = map[string]int{sessionID: 500_000}
+	// Eingehend 0.5001 → 500_100 ppm; Differenz 100 → exakt auf der
+	// Schwelle (`> 100` ist drift). Mit `> tolerance`-Vergleich gilt
+	// 100 noch als „kein Drift".
+	in.Events[0].Meta = map[string]any{"session_sample_rate": 0.5001}
+
+	if _, err := uc.RegisterPlaybackEventBatch(context.Background(), in); err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	if metrics.sampleRateDrift["demo"] != 0 {
+		t.Errorf("drift counter = %d, want 0 (within tolerance)", metrics.sampleRateDrift["demo"])
 	}
 }
 

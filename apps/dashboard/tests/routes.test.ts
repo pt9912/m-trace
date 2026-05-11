@@ -18,6 +18,8 @@ const apiState = vi.hoisted(() => ({
     event_count: number;
     network_signal_absent: Array<{ kind: string; adapter: string; reason: string }>;
     end_source: "client" | "sweeper" | null;
+    sample_rate_ppm?: number;
+    sample_rate?: number;
   }>,
   events: [] as Array<{
     event_name: string;
@@ -498,6 +500,28 @@ describe("dashboard route components", () => {
     expect(await screen.findByText("playback_error")).toBeTruthy();
     expect(screen.getByText("rebuffer_started")).toBeTruthy();
     expect(screen.getByText("2 loaded")).toBeTruthy();
+  });
+
+  // plan-0.12.6 Tranche 4 (R-10): wenn `sample_rate_ppm < 1_000_000`
+  // im Read-Pfad, blendet die Session-Detail-View den Banner ein.
+  // Voll-gesampelte Sessions zeigen den Banner nicht.
+  it("renders the sampled-session banner when sample_rate_ppm < SampleRateFull", async () => {
+    routeState.params.id = "session-1";
+    apiState.sessions = [
+      {
+        ...sessions[0],
+        // 25 % sampled → Banner sichtbar.
+        sample_rate_ppm: 250_000,
+        sample_rate: 0.25
+      }
+    ];
+    const { default: SessionDetailPage } = await import("../src/routes/sessions/[id]/+page.svelte");
+
+    render(SessionDetailPage);
+
+    const banner = await screen.findByTestId("sampled-banner");
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toContain("25.00%");
   });
 
   it("renders session detail without a route id", async () => {

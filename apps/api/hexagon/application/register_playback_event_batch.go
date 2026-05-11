@@ -31,6 +31,14 @@ const MaxBatchSize = 100
 // Item in 0.4.0).
 const TimeSkewThreshold = 60 * time.Second
 
+// SampleRateDriftTolerancePPM ist das Toleranz-Band (±100 ppm = ±0.01 %)
+// fuer den Vergleich zwischen einem eingehenden `session_sample_rate`-
+// Wert und dem bereits persistierten Pro-Session-Wert. Innerhalb der
+// Toleranz gilt eine Abweichung als SDK-Rundungsartefakt (silent);
+// jenseits davon zählt es als Drift und der Use-Case incrementiert
+// `mtrace_sample_rate_drift_total{project_id}` (plan-0.12.6 §6).
+const SampleRateDriftTolerancePPM = 100
+
 // RegisterPlaybackEventBatchUseCase validates and persists a batch of
 // player events. It implements driving.PlaybackEventInbound.
 type RegisterPlaybackEventBatchUseCase struct {
@@ -170,6 +178,17 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 			parsed[i].CorrelationID = cid
 			correlations[parsed[i].SessionID] = cid
 		}
+	}
+	// plan-0.12.6 Tranche 4 / R-10: persistiere Pro-Session-
+	// `sample_rate_ppm` (immutable, erstmaliger Sub-1-Wert) und zähle
+	// Drift gegen den bereits persistierten Wert. Reihenfolge zwischen
+	// UpsertFromEvents und AppendBoundaries: Boundaries hängen am
+	// Session-State, aber nicht an `sample_rate_ppm` — die Reihenfolge
+	// ist innerhalb dieses Blocks frei wählbar. Sample-Rate-Update
+	// läuft jetzt vor Boundaries, damit ein Boundary-Append-Fehler den
+	// Drift-Counter nicht überspringt.
+	if err := u.applySessionSampleRate(ctx, parsed); err != nil {
+		return driving.BatchResult{}, err
 	}
 	// plan-0.4.0 §4.4 D2: Boundaries nach Sessions-Upsert persistieren,
 	// damit der Boundary-Record auf eine in `stream_sessions`-bestätigte
@@ -538,6 +557,68 @@ func copyEventMeta(in map[string]any) map[string]any {
 		out[k] = v
 	}
 	return out
+}
+
+// applySessionSampleRate verarbeitet `meta.session_sample_rate` pro
+// distinct (project_id, session_id)-Partition im Batch (plan-0.12.6
+// §6 / R-10). Per-Session-Logik:
+//
+//   - Wert fehlt oder == 1.0 → no-op (Session bleibt voll-gesampelt-
+//     Default in der DB).
+//   - Wert < 1.0 → normalisiere via `domain.SampleRatePPMFromFloat`.
+//     - Server-State == Default: persistiert via Immutability-Set.
+//     - Server-State != Default und Abweichung außerhalb
+//       `SampleRateDriftTolerancePPM`: incrementiert
+//       `mtrace_sample_rate_drift_total{project_id}`; existing-Wert
+//       wird NICHT überschrieben.
+//
+// Der erste session_sample_rate-Wert im Batch pro Session entscheidet —
+// spätere Events derselben Session im selben Batch werden ignoriert
+// (Set-Logik ist immutable; alle Events sollen ohnehin denselben Wert
+// tragen).
+func (u *RegisterPlaybackEventBatchUseCase) applySessionSampleRate(ctx context.Context, events []domain.PlaybackEvent) error {
+	seen := make(map[string]struct{}, len(events))
+	for _, e := range events {
+		key := e.ProjectID + "/" + e.SessionID
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		raw, ok := e.Meta[metaKeySessionSampleRate]
+		if !ok {
+			continue
+		}
+		var f float64
+		switch v := raw.(type) {
+		case float64:
+			f = v
+		case int64:
+			f = float64(v)
+		case int:
+			f = float64(v)
+		default:
+			continue
+		}
+		ppm, err := domain.SampleRatePPMFromFloat(f)
+		if err != nil || ppm == domain.SampleRateFull {
+			continue
+		}
+		existing, applied, err := u.sessions.SetSessionSampleRatePPMIfDefault(ctx, e.ProjectID, e.SessionID, ppm)
+		if err != nil {
+			return fmt.Errorf("apply sample_rate: %w", err)
+		}
+		if !applied && absInt(existing-ppm) > SampleRateDriftTolerancePPM {
+			u.metrics.SampleRateDrift(e.ProjectID)
+		}
+	}
+	return nil
+}
+
+func absInt(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // Compile-time check: the use case implements the inbound port.

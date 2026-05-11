@@ -54,10 +54,12 @@ func TestOpen_FreshStart(t *testing.T) {
 	// V5__auth_issuance_counters.sql mit der Shared-State-Token-
 	// Bucket-Tabelle für R-17 (RAK-77). plan-0.12.6 Tranche 3 ergänzt
 	// V6__playback_event_time_skew.sql mit der `time_skew_warning`-
-	// Spalte an `playback_events` für R-5 (RAK-83). Fresh-Start läuft
-	// damit sechs Migrationen.
-	if len(rows) != 6 {
-		t.Fatalf("schema_migrations rows = %d, want 6", len(rows))
+	// Spalte an `playback_events` für R-5 (RAK-83). plan-0.12.6
+	// Tranche 4 ergänzt V7__session_sample_rate.sql mit der
+	// `sample_rate_ppm`-Spalte an `stream_sessions` für R-10
+	// (RAK-85). Fresh-Start läuft damit sieben Migrationen.
+	if len(rows) != 7 {
+		t.Fatalf("schema_migrations rows = %d, want 7", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
@@ -76,6 +78,9 @@ func TestOpen_FreshStart(t *testing.T) {
 	}
 	if rows[5].version != 6 || rows[5].dirty != 0 {
 		t.Errorf("row[5] = %+v, want version=6 dirty=0", rows[5])
+	}
+	if rows[6].version != 7 || rows[6].dirty != 0 {
+		t.Errorf("row[6] = %+v, want version=7 dirty=0", rows[6])
 	}
 }
 

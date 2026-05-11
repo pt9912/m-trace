@@ -20,6 +20,11 @@ const (
 	metaKeyNetworkRedactedURL       = "network.redacted_url"
 	metaKeyTimingPrefix             = "timing."
 	metaKeyWebRTCPrefix             = "webrtc."
+	// metaKeySessionSampleRate ist der Wire-Key für die Pro-Session-
+	// Sampling-Rate (`(0, 1]`-Float). Pflichtfeld bei `sampleRate < 1`;
+	// voll-gesampelte Sessions dürfen ihn weglassen. Anker
+	// contracts/event-schema.json#reserved_meta_keys["session_sample_rate"].
+	metaKeySessionSampleRate = "session_sample_rate"
 
 	metaKeyWebRTCRunID           = "webrtc.peer_connection_run_id"
 	metaKeyWebRTCSampleID        = "webrtc.sample_id"
@@ -118,12 +123,35 @@ func validateReservedKeyValue(k string, v any) error {
 		return validateUnavailableReason(k, v)
 	case metaKeyNetworkRedactedURL:
 		return validateRedactedURLValue(k, v)
+	case metaKeySessionSampleRate:
+		return validateSessionSampleRate(k, v)
 	}
 	if strings.HasPrefix(k, metaKeyTimingPrefix) {
 		return validateTimingValue(k, v)
 	}
 	if strings.HasPrefix(k, metaKeyWebRTCPrefix) {
 		return validateWebRTCKeyValue(k, v)
+	}
+	return nil
+}
+
+// validateSessionSampleRate prüft den Wire-Wertebereich `(0, 1]`
+// gemäß contracts/event-schema.json#reserved_meta_keys[
+// "session_sample_rate"]. Server-seitige Normalisierung auf Integer-
+// ppm passiert anschließend im Ingest-Use-Case
+// (`domain.SampleRatePPMFromFloat`).
+func validateSessionSampleRate(key string, v any) error {
+	var f float64
+	switch typed := v.(type) {
+	case float64:
+		f = typed
+	case int64:
+		f = float64(typed)
+	default:
+		return fmt.Errorf("%w: meta[%q] must be number", domain.ErrInvalidEvent, key)
+	}
+	if _, err := domain.SampleRatePPMFromFloat(f); err != nil {
+		return fmt.Errorf("%w: meta[%q] %s", domain.ErrInvalidEvent, key, err.Error())
 	}
 	return nil
 }

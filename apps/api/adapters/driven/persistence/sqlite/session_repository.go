@@ -82,20 +82,20 @@ WHERE project_id = ? AND session_id = ? AND state != 'ended'`
 
 	selectSessionByCompositeKeySQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
-       event_count, correlation_id, end_source
+       event_count, correlation_id, end_source, sample_rate_ppm
 FROM stream_sessions
 WHERE project_id = ? AND session_id = ?`
 
 	selectSessionByCorrelationIDSQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
-       event_count, correlation_id, end_source
+       event_count, correlation_id, end_source, sample_rate_ppm
 FROM stream_sessions
 WHERE project_id = ? AND correlation_id = ?
 LIMIT 1`
 
 	listSessionsBaseSQL = `
 SELECT session_id, project_id, state, started_at, last_seen_at, ended_at,
-       event_count, correlation_id, end_source
+       event_count, correlation_id, end_source, sample_rate_ppm
 FROM stream_sessions
 WHERE project_id = ?`
 
@@ -350,6 +350,53 @@ func (r *SessionRepository) CountByState(ctx context.Context, state domain.Sessi
 	return n, nil
 }
 
+// setSampleRateIfDefaultSQL setzt sample_rate_ppm immutable, nur wenn
+// die Spalte aktuell auf SampleRateFull (Default) steht. Nach dem UPDATE
+// trägt RowsAffected die Anwendung; existingPPM kommt aus einem
+// einfachen Folge-SELECT (kein RETURNING in SQLite vor 3.35).
+const (
+	setSampleRateIfDefaultSQL = `
+UPDATE stream_sessions
+SET sample_rate_ppm = ?
+WHERE project_id = ? AND session_id = ? AND sample_rate_ppm = ?`
+
+	selectSampleRateSQL = `
+SELECT sample_rate_ppm FROM stream_sessions
+WHERE project_id = ? AND session_id = ?`
+)
+
+// SetSessionSampleRatePPMIfDefault implementiert den Immutability-Set
+// für die Pro-Session-Sampling-Rate (plan-0.12.6 §6 / R-10). Pattern:
+//   - UPDATE … WHERE sample_rate_ppm = SampleRateFull → nur Erstsetzung
+//     persistiert.
+//   - RowsAffected == 1 → `applied=true`, existingPPM = ppm.
+//   - RowsAffected == 0 → bereits gesetzt; existingPPM via Folge-SELECT.
+func (r *SessionRepository) SetSessionSampleRatePPMIfDefault(ctx context.Context, projectID, sessionID string, ppm int) (int, bool, error) {
+	if ppm == domain.SampleRateFull {
+		// No-Op: Default-Wert. Spec sagt: bei `sampleRate == 1` weglassen.
+		return domain.SampleRateFull, false, nil
+	}
+	res, err := r.db.ExecContext(ctx, setSampleRateIfDefaultSQL,
+		int64(ppm), projectID, sessionID, int64(domain.SampleRateFull))
+	if err != nil {
+		return 0, false, fmt.Errorf("sqlite: set sample_rate_ppm: %w", err)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return 0, false, fmt.Errorf("sqlite: set sample_rate_ppm rows-affected: %w", err)
+	}
+	if rows == 1 {
+		return ppm, true, nil
+	}
+	// rows == 0 → bereits != Default. Bestehenden Wert lesen für Drift-
+	// Vergleich.
+	var existing int64
+	if err := r.db.QueryRowContext(ctx, selectSampleRateSQL, projectID, sessionID).Scan(&existing); err != nil {
+		return 0, false, fmt.Errorf("sqlite: read existing sample_rate_ppm: %w", err)
+	}
+	return int(existing), false, nil
+}
+
 // List gibt Sessions in stabiler Sortierung (started_at desc,
 // session_id asc) mit Cursor-Pagination zurück, gefiltert nach
 // q.ProjectID.
@@ -421,9 +468,10 @@ func scanSessionRow(row *sql.Row) (domain.StreamSession, error) {
 		eventCount    int64
 		correlationID sql.NullString
 		endSource     sql.NullString
+		sampleRatePPM int64
 	)
 	err := row.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt,
-		&eventCount, &correlationID, &endSource)
+		&eventCount, &correlationID, &endSource, &sampleRatePPM)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.StreamSession{}, domain.ErrSessionNotFound
 	}
@@ -431,7 +479,7 @@ func scanSessionRow(row *sql.Row) (domain.StreamSession, error) {
 		return domain.StreamSession{}, fmt.Errorf("sqlite: scan session: %w", err)
 	}
 	return decodeSession(id, project, state, startedAt, lastSeen, endedAt,
-		eventCount, correlationID, endSource)
+		eventCount, correlationID, endSource, sampleRatePPM)
 }
 
 func scanSessionFromRows(rows *sql.Rows) (domain.StreamSession, error) {
@@ -445,18 +493,19 @@ func scanSessionFromRows(rows *sql.Rows) (domain.StreamSession, error) {
 		eventCount    int64
 		correlationID sql.NullString
 		endSource     sql.NullString
+		sampleRatePPM int64
 	)
 	if err := rows.Scan(&id, &project, &state, &startedAt, &lastSeen, &endedAt,
-		&eventCount, &correlationID, &endSource); err != nil {
+		&eventCount, &correlationID, &endSource, &sampleRatePPM); err != nil {
 		return domain.StreamSession{}, fmt.Errorf("sqlite: scan session: %w", err)
 	}
 	return decodeSession(id, project, state, startedAt, lastSeen, endedAt,
-		eventCount, correlationID, endSource)
+		eventCount, correlationID, endSource, sampleRatePPM)
 }
 
 func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
 	endedAtRaw sql.NullString, eventCount int64, correlationID sql.NullString,
-	endSource sql.NullString,
+	endSource sql.NullString, sampleRatePPM int64,
 ) (domain.StreamSession, error) {
 	startedAt, err := parseTime(startedAtRaw)
 	if err != nil {
@@ -484,6 +533,7 @@ func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
 		EventCount:    eventCount,
 		CorrelationID: stringFromNull(correlationID),
 		EndSource:     domain.SessionEndSource(stringFromNull(endSource)),
+		SampleRatePPM: int(sampleRatePPM),
 	}, nil
 }
 

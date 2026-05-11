@@ -184,7 +184,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | 🟡      |
 | 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | 🟡      |
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | 🟡      |
-| 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | ⬜      |
+| 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | 🟡      |
 | 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | ⬜      |
 | 6       | R-22 | Origin-/IP-Rate-Limiter (Driven-Port)           | Adapter     | ⬜      |
 | 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | ⬜      |
@@ -495,55 +495,69 @@ für deterministische Vergleiche:
 
 DoD:
 
-- [ ] Domain-Erweiterung: `Session` bekommt ein Feld
-  `SampleRatePPM int` (Default `1000000`, exported konstante
-  `domain.SampleRateFull`); Persistenz immutable nach erstem
-  nicht-Default-Wert. Helper `SampleRatePPMFromFloat(x float64)
-  (int, error)` mit Validierung `(0, 1]`-Range.
-- [ ] SDK-/Wire-Erweiterung: Player-SDK setzt
-  `meta.session_sample_rate` als Float (Pflicht-Feld bei
-  `sampleRate < 1`, Default-weglass bei `sampleRate == 1`).
-  Schema-Eintrag in
+- [x] Domain-Erweiterung: `domain.StreamSession.SampleRatePPM int`
+  + `domain.SampleRateFull` (1_000_000) + Helper
+  `SampleRatePPMFromFloat(x float64) (int, error)` mit Range-Check
+  `(0, 1]` und `math.Round`-Quantisierung.
+- [x] SDK-/Wire-Erweiterung: `contracts/event-schema.json`#
+  `reserved_meta_keys["session_sample_rate"]` mit
+  `type: "number"`, `min_exclusive: 0`, `max: 1`,
+  `scope: "session"`. Use-Case-Validierung
+  (`validateSessionSampleRate`) lehnt Out-of-Range-Werte mit 422
+  ab; Server-Adapter normalisiert via `SampleRatePPMFromFloat`.
+- [x] SQLite-Schema-Migration V7
+  (`V7__session_sample_rate.sql`): ergänzt
+  `stream_sessions.sample_rate_ppm INTEGER NOT NULL DEFAULT
+  1000000` (SQLite hat keinen nativen DECIMAL/REAL-Vergleichs-
+  Pfad; Integer-ppm hält Vergleiche deterministisch). Hand-
+  gepflegt analog V2..V6 (schema.yaml bleibt V1-Source-of-Truth).
+- [x] Ingest-Pfad
+  (`RegisterPlaybackEventBatchUseCase.applySessionSampleRate`):
+  pro distinct (project_id, session_id) im Batch wird der erste
+  Sub-1-Wert via `SetSessionSampleRatePPMIfDefault` (Adapter-
+  Methode mit `UPDATE … WHERE sample_rate_ppm = 1000000`)
+  persistiert. RowsAffected entscheidet zwischen Erst-Setzung
+  (`applied=true`) und bereits gesetzt (`applied=false`,
+  `existing`-Wert für Drift-Vergleich nachgelesen).
+- [x] Drift-Counter
+  `mtrace_sample_rate_drift_total{project_id}` (Adapter
+  `PrometheusPublisher.SampleRateDrift`) wird nur incremented,
+  wenn `abs(existing - incoming) > SampleRateDriftTolerancePPM`
+  (Konstante 100 ppm); innerhalb der Toleranz silent (SDK-
+  Rundungsartefakt).
+- [x] Read-Pfad: `sessionWire` ergänzt um `sample_rate_ppm` und
+  `sample_rate` (beide `omitempty` auf Default `SampleRateFull` →
+  voll-gesampelte Sessions tragen die Felder nicht im Body;
+  sampled-Sessions immer). Dashboard-Banner mit
+  `data-testid="sampled-banner"` und CSS-Klasse `.sampled-banner`
+  in der Session-Detail-View.
+- [!] Sampling-Lücken-Heuristik bewusst **deferred** auf
+  `0.13.0+`. T0-Entscheidung 2026-05-11: konkrete Schwellen-
+  Tuning ohne Operator-Bedarf produziert false-positive
+  `possible_loss`-Marker. Aufgenommen als Folge-Item in
+  `spec/telemetry-model.md` §8.5; Re-Eval bei Operator-Bedarf.
+- [x] Doku in
+  [`spec/telemetry-model.md`](../../../spec/telemetry-model.md):
+  §1.4 ergänzt um „Server-seitige Sampling-Markierung"-Block;
+  neuer §8 „Sampling-Modell und Read-Pfad-Markierung" mit Wire-
+  Vertrag, Persistenz/Immutability, Drift-Counter, Read-Pfad-
+  Verhalten, deferred Lücken-Heuristik.
   [`contracts/event-schema.json`](../../../contracts/event-schema.json)
-  mit Session-Scope-Hinweis (kein per-Event-Wert) und Range-
-  Constraint `0 < x ≤ 1.0`. Server-Adapter konvertiert via
-  `SampleRatePPMFromFloat` auf Integer-ppm.
-- [ ] SQLite-Schema-Migration ergänzt die Session-Spalte
-  `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000`
-  (`V7` o. ä.).
-- [ ] Ingest-Pfad: erster Event mit normalisiertem
-  `sample_rate_ppm < 1_000_000` schreibt den Wert in die
-  Session-Zeile (`UPDATE … WHERE sample_rate_ppm = 1000000`
-  für Immutability via Integer-Vergleich); spätere Drift wird
-  geloggt und gezählt, aber **nicht** überschreibt.
-- [ ] Neuer Counter `mtrace_sample_rate_drift_total{project_id}`
-  in `apps/api/adapters/driven/metrics/` mit Cardinality-Limit
-  (project_id).
-- [ ] Read-Pfad markiert Sessions mit `sample_rate_ppm <
-  SAMPLE_RATE_FULL` (`< 1_000_000`) als „sampled" — explizit
-  als API-Feld plus Dashboard-Banner. Wire-Antwort liefert
-  beides: `sample_rate_ppm` (int) und abgeleiteter
-  `sample_rate` (float, nur Display).
-- [ ] Sampling-Lücken-Heuristik (optional, T0-Entscheidung):
-  Server vergleicht erwartete vs. tatsächliche Event-Anzahl bei
-  bekanntem `sample_rate_ppm` und markiert auffällige Sessions
-  als `"possible_loss"`. Heuristik-Schwellen sind Folge-Tuning.
-  Berechnung der Erwartungswerte in Integer-Arithmetik
-  (`expected = total_events * 1_000_000 / sample_rate_ppm`) —
-  kein Float in der Server-Side-Logik.
-- [ ] Doku-Update in
-  [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
-  §8.3 plus
-  [`contracts/event-schema.json`](../../../contracts/event-schema.json)
-  (`meta`-Allowlist + `reserved_meta_keys`) für das neue
-  `session_sample_rate`-Feld.
-- [ ] Tests: erster-Wert-immutable, Drift-Log, Default-`1.0`-
-  Pfad, Read-Pfad-Markierung. Plus contract-fixture für
-  `meta.session_sample_rate < 1`.
-- [ ] Risks-Backlog R-10: Status 🟢 mit Auflösungspfad
-  „dediziertes Meta-Feld + Immutability in `0.12.6` Tranche 4";
-  oder geschärfter Resttrigger, wenn Lücken-Heuristik deferred
-  wird.
+  enthält den `session_sample_rate`-Eintrag im `reserved_meta_keys`-
+  Block.
+- [x] Tests:
+  - Domain-Helper (`TestSampleRatePPMFromFloat_HappyCases` +
+    `_OutOfRange`).
+  - Use-Case (`TestRegisterPlaybackEventBatch_SampleRate*`):
+    Immutable-First-Set, No-Op-Default, Drift-Counted, Within-
+    Tolerance.
+  - Migration-Count auf `7` aktualisiert
+    (`migrate_internal_test`).
+- [x] Risks-Backlog R-10: Status 🟢 mit Auflösungspfad
+  „dediziertes Meta-Feld + Immutability + Drift-Counter +
+  Read-Pfad/Dashboard in `0.12.6` Tranche 4"; Wieder-Eröffnungs-
+  Trigger: Operator-Bedarf nach konkreter Lücken-Heuristik
+  bleibt Folge-Item für `0.13.0+`.
 
 ## 7. Tranche 5 — R-7 `ListSessions` Bulk-Read-Port
 

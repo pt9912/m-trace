@@ -1,6 +1,47 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"math"
+	"time"
+)
+
+// SampleRateFull ist der Integer-ppm-Wert für „Session ist voll
+// gesampelt" (entspricht Float `1.0`). Wird als Default in der
+// SQLite-Migration V7 (`stream_sessions.sample_rate_ppm`) verwendet
+// und ist gleichzeitig der Sentinel-Wert für die
+// Immutability-Bedingung im Ingest-Pfad (siehe
+// plan-0.12.6 Tranche 3 §6 / R-10).
+const SampleRateFull = 1_000_000
+
+// SampleRatePPMFromFloat normalisiert einen vom Player-SDK gelieferten
+// `sampleRate`-Float auf den Integer-ppm-Wert für die Persistenz.
+// Bereich-Check: `(0, 1]` — Werte außerhalb (≤ 0 oder > 1) liefern
+// einen Fehler; Aufrufer mappt das auf einen Drift-Counter und nutzt
+// `SampleRateFull` als Fallback (siehe plan-0.12.6 §6).
+//
+// Rundung via `math.Round` (`round-half-away-from-zero`); der zurück-
+// gegebene Integer liegt im Bereich `[1, SampleRateFull]`. Float-
+// Rundungsartefakte des SDK (z. B. `0.499999…`) werden so deterministisch
+// auf den nächstgelegenen ppm-Wert gerundet.
+func SampleRatePPMFromFloat(x float64) (int, error) {
+	if math.IsNaN(x) || math.IsInf(x, 0) {
+		return 0, fmt.Errorf("sample_rate %v is not a finite number", x)
+	}
+	if x <= 0 || x > 1 {
+		return 0, fmt.Errorf("sample_rate %v is outside (0, 1]", x)
+	}
+	ppm := int(math.Round(x * float64(SampleRateFull)))
+	// Min-Clamp: sehr kleine Floats (z. B. 1e-7) passieren die
+	// `x > 0`-Range-Prüfung, runden aber auf 0; der DB-Range ist
+	// `[1, SampleRateFull]`, daher heben wir auf 1 an. Max-Clamp
+	// ist nicht nötig: `math.Round(x * 1_000_000)` für `x ≤ 1` ist
+	// per Definition `≤ 1_000_000`.
+	if ppm < 1 {
+		ppm = 1
+	}
+	return ppm, nil
+}
 
 // SessionState ist der grobe Lifecycle einer Player-Session
 // (plan-0.1.0.md §5.1).
@@ -53,6 +94,13 @@ type StreamSession struct {
 	// Read-Pfad mappt den Leerwert auf JSON `null` (siehe API-Kontrakt
 	// §3.7.1).
 	EndSource SessionEndSource
+	// SampleRatePPM ist die normalisierte Sampling-Rate der Session in
+	// Integer-ppm (parts per million). `SampleRateFull` = voll gesampelt
+	// (Default seit Migration V7). Immutable nach erstem Sub-`SampleRateFull`-
+	// Wert; spätere Drift wird in `mtrace_sample_rate_drift_total`
+	// gezählt, überschreibt aber nicht. Siehe plan-0.12.6 §6 / R-10
+	// und spec/telemetry-model.md §8.3.
+	SampleRatePPM int
 }
 
 // SessionEndSource klassifiziert den Auslöser des Endzustands einer

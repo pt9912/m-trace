@@ -231,6 +231,17 @@ Die folgenden Grenzen sind ab `0.4.0` bekannt und akzeptiert:
   alle Events gefiltert) erreichen den Server gar nicht erst und
   existieren in den Read-Antworten nicht — Operator-Konsequenz,
   kein Datenintegritätsproblem.
+- **Server-seitige Sampling-Markierung** (seit `0.12.6` Tranche 4,
+  R-10, siehe §8.3): Sessions mit `sampleRate < 1` müssen das SDK
+  in **jedem** Event-Body als `meta.session_sample_rate` (Float
+  `(0, 1]`) liefern. Voll-gesampelte Sessions dürfen das Feld
+  weglassen — Default ist `1.0`. Der Server normalisiert auf
+  Integer-ppm (`stream_sessions.sample_rate_ppm`, Migration V7) und
+  persistiert den erstmaligen Sub-1-Wert immutable; spätere Drift
+  loggt ein `mtrace_sample_rate_drift_total{project_id}`. Read-Pfad
+  liefert das Feld pro Session zurück; Dashboard zeigt einen Banner
+  „Sampled session (X.XX %)". Damit lassen sich Sampling-Lücken im
+  Read-Pfad strukturell von tatsächlichem Event-Verlust trennen.
 
 `POST /api/playback-events` akzeptiert `network.unavailable_reason`-Werte
 nur aus dem Reason-Enum (`network_unavailable_reasons`) plus
@@ -852,3 +863,71 @@ Erlaubte `mtrace_srt_*`-Aggregate (Tranche 6 finalisiert):
   Löschanfrage-Äquivalent für `SrtHealthRepository`).
 - MediaMTX-Auth-Credentials für die API (z. B. `authInternalUsers`-
   Pass) gehören in ENV / Geheimnis-Store, nicht in Code oder Logs.
+
+## 8. Sampling-Modell und Read-Pfad-Markierung (`0.12.6`, R-10)
+
+`0.4.0` markierte Sampled-Sessions (Player-SDK mit `sampleRate < 1`)
+nur durch das Fehlen von Events; der Server konnte „voll-gesampelt"
+nicht von „teilweise gesampelt mit Lücken" unterscheiden (`R-10`).
+`0.12.6` Tranche 4 zieht die Markierung auf Session-Ebene nach.
+
+### 8.1 Wire-Vertrag
+
+- **SDK-seitig** (Pflicht): Sessions mit `sampleRate < 1` setzen das
+  Pflicht-Feld `meta.session_sample_rate` in **jedem** Event-Body als
+  Float `(0, 1]`. Voll-gesampelte Sessions (`sampleRate = 1.0`)
+  dürfen das Feld weglassen — Server-Default ist `1.0`.
+- **Server-seitig**: Wert wird in jedem Event validiert
+  (`> 0 && <= 1`), bei Fehlschlag 422; danach via
+  `domain.SampleRatePPMFromFloat` auf Integer-ppm (`round(x *
+  1_000_000)`) normalisiert.
+
+### 8.2 Persistenz und Immutability
+
+- Persistenz-Spalte: `stream_sessions.sample_rate_ppm INTEGER NOT
+  NULL DEFAULT 1000000` (Migration V7). Bereich `[1, SampleRateFull]`
+  mit `SampleRateFull = 1_000_000`.
+- **Immutability**: nur das **erste** Event einer Session mit
+  `sample_rate_ppm < SampleRateFull` setzt den Wert in der Session-
+  Zeile via `UPDATE … WHERE sample_rate_ppm = SampleRateFull`
+  (Integer-Vergleich, kein Float-Drift). Spätere Drift wird gezählt
+  (siehe §8.3), aber nicht überschrieben — der erste Beleg gilt für
+  die Session-Lebensdauer.
+- **Tolerance**: `incoming_ppm != stored_ppm` innerhalb
+  `±100 ppm` (Konstante `SampleRateDriftTolerancePPM`) ist als
+  SDK-Rundungsartefakt klassifiziert und löst **keinen** Drift-Event
+  aus.
+
+### 8.3 Drift-Counter
+
+- `mtrace_sample_rate_drift_total{project_id}` zählt Events, deren
+  eingehender `session_sample_rate`-ppm-Wert vom bereits
+  persistierten Wert um mehr als die Toleranzschwelle abweicht.
+- `project_id` ist als bounded Aggregat-Label freigegeben (§3
+  Cardinality-Regel; Operator-Allowlist).
+- Operator-Interpretation: ein anwachsender Counter signalisiert,
+  dass das Player-SDK seine `sampleRate`-Konfiguration mitten in
+  einer Session ändert — typischerweise ein Konfig-Drift oder
+  A/B-Experiment-Bug.
+
+### 8.4 Read-Pfad
+
+- `GET /api/stream-sessions/{id}` liefert `sample_rate_ppm`
+  (Integer) und `sample_rate` (Float = `ppm / 1_000_000`, nur als
+  Display-Hilfe) im Session-Block. Beide Felder sind `omitempty` —
+  voll-gesampelte Sessions tragen sie nicht im Body.
+- Dashboard zeigt einen Banner „Sampled session (X.XX %)" in der
+  Session-Detail-View, sobald `sample_rate_ppm < SampleRateFull`.
+  Banner-Test-ID: `sampled-banner`.
+- Wire-API-Konsumenten dürfen den Float-Wert **nicht** für
+  `==`-Vergleiche nutzen; die normative Quelle ist `sample_rate_ppm`
+  (Integer).
+
+### 8.5 Optionale Lücken-Heuristik (`0.13.0+`)
+
+In `0.12.6` ist nur die Markierung geliefert, keine
+Lücken-Erkennung. Erwartungswerte (`expected = total_events *
+SampleRateFull / sample_rate_ppm`) werden in Integer-Arithmetik
+ausgewertet — kein Float in der Server-Side-Logik. Eine konkrete
+Heuristik-Schwelle (z. B. „Session unter 50 % der erwarteten Events
+→ `possible_loss`") bleibt Folge-Tuning auf Operator-Bedarf.

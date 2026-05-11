@@ -142,6 +142,9 @@ func (r *fakeSessionRepo) ListBoundariesForSession(_ context.Context, _, _ strin
 func (r *fakeSessionRepo) CountByState(_ context.Context, _ domain.SessionState) (int64, error) {
 	return 0, nil
 }
+func (r *fakeSessionRepo) SetSessionSampleRatePPMIfDefault(_ context.Context, _, _ string, _ int) (int, bool, error) {
+	return domain.SampleRateFull, false, nil
+}
 
 // fakeEventRepo implementiert driven.EventRepository für Tests.
 type fakeEventRepo struct {

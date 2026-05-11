@@ -90,6 +90,7 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 				LastEventAt:   e.ServerReceivedAt,
 				EventCount:    1,
 				CorrelationID: e.CorrelationID,
+				SampleRatePPM: domain.SampleRateFull,
 			}
 		} else {
 			s.LastEventAt = e.ServerReceivedAt
@@ -143,6 +144,33 @@ func (r *SessionRepository) Snapshot() []domain.StreamSession {
 		out = append(out, s)
 	}
 	return out
+}
+
+// SetSessionSampleRatePPMIfDefault implementiert den Immutability-Set
+// (siehe Port-Kommentar). Im In-Memory-Backend: bestehende Session
+// gefunden + SampleRatePPM == SampleRateFull → setzen; sonst no-op
+// und existing zurückgeben.
+func (r *SessionRepository) SetSessionSampleRatePPMIfDefault(_ context.Context, projectID, sessionID string, ppm int) (int, bool, error) {
+	if ppm == domain.SampleRateFull {
+		return domain.SampleRateFull, false, nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	k := sessionKey{ProjectID: projectID, SessionID: sessionID}
+	s, ok := r.sessions[k]
+	if !ok {
+		// Aufrufer ruft die Methode nach UpsertFromEvents — dass die
+		// Session hier fehlt, wäre ein Programmierfehler im Use-Case.
+		// Im InMemory legen wir sie aber nicht still an (Adapter-Sicht
+		// ist read-modify-write); SQLite würde 0-RowsAffected liefern.
+		return 0, false, nil
+	}
+	if s.SampleRatePPM != domain.SampleRateFull {
+		return s.SampleRatePPM, false, nil
+	}
+	s.SampleRatePPM = ppm
+	r.sessions[k] = s
+	return ppm, true, nil
 }
 
 // CountByState zählt Sessions im gegebenen Lifecycle-State über alle
