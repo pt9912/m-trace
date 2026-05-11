@@ -1,8 +1,11 @@
 # Implementation Plan — `0.12.6` (Folge-Items-Sammlung nach `0.12.5`)
 
-> **Status**: 🟡 Tranche 0 aktiv (aktiviert 2026-05-11). Vorgänger
-> ist `0.12.5` (released 2026-05-11, Tag `v0.12.5`; Plan in
-> [`plan-0.12.5.md`](../done/plan-0.12.5.md)).
+> **Status**: 🟡 T0..T9 ✅ (Code-Liefer-Stand 2026-05-11). Offen ist
+> nur noch **T10 Closeout** (Version-Bump, CHANGELOG, Plan-Move,
+> Tag `v0.12.6`). Sieben R-N strukturell aufgelöst (R-5, R-7, R-10,
+> R-11, R-15, R-17, R-20, R-22) plus R-13 als Wartungs-Tranche.
+> Vorgänger ist `0.12.5` (released 2026-05-11, Tag `v0.12.5`;
+> Plan in [`plan-0.12.5.md`](../done/plan-0.12.5.md)).
 >
 > **Release-Typ**: **Minor-Release** (`0.12.6`) gemäß
 > [`docs/user/releasing.md`](../../user/releasing.md) §3.1 —
@@ -180,16 +183,16 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 
 | Tranche | R-N  | Inhalt                                          | Charakter   | Status |
 | ------- | ---- | ----------------------------------------------- | ----------- | ------ |
-| 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | 🟡      |
-| 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | 🟡      |
-| 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | 🟡      |
-| 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | 🟡      |
-| 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | 🟡      |
-| 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | 🟡      |
-| 6       | R-22 | Origin-/IP-Rate-Limiter (Memory + Redis-Bundle T7) | Adapter  | 🟡      |
-| 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | 🟡      |
-| 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | 🟡      |
-| 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | 🟡      |
+| 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | ✅      |
+| 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | ✅      |
+| 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | ✅      |
+| 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | ✅      |
+| 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | ✅      |
+| 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | ✅      |
+| 6       | R-22 | Origin-/IP-Rate-Limiter (Memory + Redis-Bundle T7) | Adapter  | ✅      |
+| 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | ✅      |
+| 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | ✅      |
+| 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | ✅      |
 | 10      | —    | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | Closeout | ⬜ |
 
 ---
