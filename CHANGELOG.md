@@ -7,6 +7,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.5] - 2026-05-11
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — neue User-Surface (Auth-/Ingest-Adapter), Lastenheft-Patch
+> `1.1.16` mit RAK-77..RAK-82 in §13.15, neue
+> RAK-Verifikationsmatrix. Plan in
+> [`docs/planning/done/plan-0.12.5.md`](docs/planning/done/plan-0.12.5.md).
+
+### Added
+
+- **Multi-Key-Signing-Rotation-Code-Pfad** (RAK-78, R-18):
+  `MultiKeySigningResolver` (Rename des `0.12.0`-`StaticSigningKeyResolver`)
+  + `ParseSigningKeysEnv` mit ENV-Schema
+  `MTRACE_AUTH_SIGNING_KEYS=kid_a:base64,kid_b:base64` +
+  `MTRACE_AUTH_SIGNING_ACTIVE_KID=kid_a`. Single-Key-Backwards-Compat
+  (`MTRACE_AUTH_SIGNING_KEY`/`_KID`) bleibt als degenerierter
+  `len(keys)==1`-Pfad. Validierung gegen Duplikate, leere KIDs,
+  ungültige Base64 und ACTIVE_KID-not-in-list. Smoke
+  `make smoke-key-rotation`.
+
+- **Shared-State-Issuance-Limiter** (RAK-77, R-17 teilweise):
+  Migration `V5__auth_issuance_counters` plus
+  `SqliteIssuanceRateLimiter`-Adapter. Token-Bucket-Counter über
+  `BEGIN IMMEDIATE`-Tx atomar geteilt; asymmetrischer Refund bei
+  project-deny; opportunistisches TTL-Cleanup (Default 24h).
+  ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite` (Default
+  `memory` für Backwards-Compat). Topologie-Constraint:
+  Single-Host-Shared-Volume. Smoke `make smoke-issuance-replica`.
+
+- **Secret-Backend-Driven-Port** (RAK-79, R-20 teilweise): neuer
+  Hexagon-Port `AuthSecretBackend.LoadSigningKeys(ctx)`. Zwei
+  Adapter — `EnvSecretBackend` (Default, Wrapper um
+  `ParseSigningKeysEnv` + `ErrNoSecretConfigured`-Sentinel) und
+  `VaultSecretBackend` (Skelett gegen Vault KV-v2 mit eigenem
+  `net/http`-Client, ohne `hashicorp/vault/api`-Dependency).
+  ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND=env|vault` plus
+  Vault-Pflicht-ENV `MTRACE_AUTH_VAULT_ADDR/_TOKEN/_PATH` und
+  optionale Feld-Aliase `_KEYS_FIELD`/`_ACTIVE_KID_FIELD`. Lab-Pfad
+  mit `vault dev`-Server in [`docs/user/auth.md`](docs/user/auth.md)
+  §5.5.
+
+- **Browser-Ingest-Policy** (RAK-80, R-21): neue
+  `domain.BrowserIngestPolicy` (`Enabled`/`CORSAllowlist`/
+  `CSRFRequired`/`OriginPin`) als Feld in `ProjectPolicy`.
+  `browserIngestPreflightHandler` für `/api/ingest/*`-CORS
+  basierend auf Project-Policy; `browserIngestEnforcement`-
+  Middleware für POST-Pfade mit `403
+  ingest_browser_origin_not_allowed`/`_pin_mismatch`/`_csrf_missing`.
+  RAK-74-Scope-Cut bleibt strikt für Projects ohne aktivierte
+  Policy. Smoke `make smoke-browser-ingest`.
+
+- **MediaMTX-Auth-Bridge** (RAK-81, R-14): neuer
+  `POST /api/ingest/auth-hook`-Endpoint speaks MediaMTX-
+  `externalAuth`-Form-Format und delegiert an den existierenden
+  `ValidateKey`-Use-Case. Mapping `user`→Project, `password`→
+  Stream-Key Klartext, `path`→Stream-ID; `action=publish` allow,
+  alles andere deny. Trust-Boundary über Netzwerk-Isolation.
+  Smoke `make smoke-mediamtx-auth`.
+
+- **Outbound-Webhook-Dispatcher** (RAK-82, R-16): neuer Driven-Port
+  `OutboundWebhookDispatcher` + HTTP-Adapter `webhooks.HTTPDispatcher`
+  mit HMAC-SHA-256-Signatur (`X-MTrace-Signature: sha256=<hex>`),
+  `X-MTrace-Timestamp`-Replay-Schutz, Exponential-Backoff-Retry
+  (3 Versuche: 100/200/400 ms), 10s Per-Versuch-Timeout, Dead-
+  Letter via `ErrOutboundWebhookExhausted`-Sentinel. ENV
+  `MTRACE_OUTBOUND_WEBHOOK_URL`/`_SECRET`. Integration im
+  `IngestControlService.RecordLifecycleEvent` über optionalen
+  `WithOutboundWebhookDispatcher`-Setter; leere URL → No-Op.
+  Smoke `make smoke-outbound-webhook`.
+
+- **Vier neue opt-in Smoke-Targets** im Makefile:
+  `smoke-key-rotation`, `smoke-issuance-replica`,
+  `smoke-browser-ingest`, `smoke-mediamtx-auth`,
+  `smoke-outbound-webhook`. Alle wickeln End-to-End-Tests via
+  `golang:1.26.3`-Docker; nicht in `make gates`.
+
+### Changed
+
+- **RAK-74-Scope-Cut** wird durch RAK-80 unter aktivem
+  `BrowserIngestPolicy.Enabled` kontrolliert aufgehoben — Browser-
+  Origins aus der `CORSAllowlist` dürfen Preflight + POST. Ohne
+  aktivierte Policy bleibt der Cut strikt (`/api/ingest/*` operator-
+  only).
+- **`StaticSigningKeyResolver` → `MultiKeySigningResolver`-Rename**
+  (Adapter-Datei, Type, Konstruktor). Alle internen Aufrufstellen
+  in `apps/api/` migriert; öffentliche Wire-Verträge unverändert.
+- **`IngestControlService` API-Surface erweitert** um optionalen
+  `WithOutboundWebhookDispatcher(d)`-Setter. Bestehende
+  `NewIngestControlService`-Aufrufe bleiben kompatibel (Default
+  `webhooks=nil` → identisches Verhalten zu `0.11.0`).
+
+### Security
+
+- **Multi-Key-Rotation** verhindert Token-Invalidierung beim
+  Operator-Key-Wechsel (R-18 strukturell aufgelöst).
+- **Shared-State-Issuance-Limiter** verhindert Quota-Bypass bei
+  Multi-Replica-Setups auf demselben Host (R-17 teilweise; Multi-
+  Host bleibt Resttrigger).
+- **Vault-Adapter-Skelett** schafft den Driven-Port-Pfad für
+  zentrales Secret-Management; produktive Anbindung (AppRole/
+  IAM-Auth) und Compliance-Audit bleiben R-20-Resttrigger.
+- **Browser-Ingest-Policy** härtet `/api/ingest/*` für kontrollierte
+  Browser-Konsumenten: Origin-Allowlist, optionaler Origin-Pin,
+  CSRF-Header-Pflicht (Header-Anwesenheit; produktive Anti-CSRF-
+  Token-Library bleibt Wieder-Eröffnungs-Trigger).
+- **MediaMTX-Auth-Bridge** ermöglicht produktiven Media-Server-
+  Auth-Pfad ohne `validate-key`-Misuse (R-14 strukturell aufgelöst).
+  Audit-Log markiert jeden Deny mit Reason-Code; Klartext-Material
+  nie geloggt.
+- **Outbound-Webhooks** sind HMAC-SHA-256-signiert mit Replay-
+  Timestamp (R-16 strukturell aufgelöst). Klartext-Stream-Keys
+  werden nie in der Payload mitgeschickt.
+
+### Lastenheft
+
+- Patch `1.1.16` führt RAK-77..RAK-82 in §13.15 ein. Der zuvor
+  vorab-deklarierte `1.1.16`-Block für `0.13.0` wurde mit der
+  `0.12.5`-T0-Aktivierung zurückgezogen (Variante C: chronologische
+  §-/RAK-Reihenfolge bleibt). `0.13.0` bekommt bei seiner T0-
+  Aktivierung voraussichtlich `1.1.17` mit RAK-83..RAK-87 in §13.16.
+
 ## [0.12.1] - 2026-05-10
 
 > **Patch-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

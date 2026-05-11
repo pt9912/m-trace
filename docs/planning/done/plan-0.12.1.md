@@ -16,7 +16,7 @@
 > Triggerschwellen mit operator-observablem Signal. Adapter-/Wire-
 > Implementierungen (Multi-Replica-Limiter, Multi-Key-Rotation-
 > Code, KMS/Vault-Backend, Webhook-Outbound, Ingest-Browser-Policy)
-> wandern in [`plan-0.12.5.md`](../in-progress/plan-0.12.5.md) als Minor-Release.
+> wandern in [`plan-0.12.5.md`](../done/plan-0.12.5.md) als Minor-Release.
 >
 > **Bezug**:
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope;
@@ -278,7 +278,7 @@ DoD:
 
 ## 8. Folge-Scope nach `0.12.1`
 
-- [`plan-0.12.5.md`](../in-progress/plan-0.12.5.md): Auth-/Ingest-Adapter-Minor
+- [`plan-0.12.5.md`](../done/plan-0.12.5.md): Auth-/Ingest-Adapter-Minor
   (Multi-Replica-Limiter R-17, Multi-Key-Rotation-Code R-18,
   KMS/Vault R-20, Browser-Ingest-Policy R-21, ggf. Auth-Bridge
   R-14, Webhook-Outbound R-16). Eigener Lastenheft-Patch `1.1.16`,

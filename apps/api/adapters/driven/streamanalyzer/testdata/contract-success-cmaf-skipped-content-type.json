@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "analyzerVersion": "0.12.1",
+  "analyzerVersion": "0.12.5",
   "analyzerKind": "hls",
   "input": {
     "source": "text",

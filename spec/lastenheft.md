@@ -39,7 +39,7 @@
 > Rate-Limiting (`R-22` getrennter Folge-Plan),
 > Production-Backends aus `0.13.0` (Postgres, ClickHouse,
 > Kubernetes). Patch-Log siehe
-> [`docs/planning/in-progress/plan-0.12.5.md`](../docs/planning/in-progress/plan-0.12.5.md)
+> [`docs/planning/done/plan-0.12.5.md`](../docs/planning/done/plan-0.12.5.md)
 > Tranche 0.
 >
 > **Patch `1.1.15` (Auth / Token Lifecycle für `0.12.0`)**: Hebt

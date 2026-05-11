@@ -1,8 +1,8 @@
 # Implementation Plan — `0.12.5` (Auth-/Ingest-Adapter-Minor)
 
-> **Status**: 🟡 Tranche 0 aktiv (aktiviert 2026-05-11). Vorgänger
-> ist `0.12.1` (`v0.12.1`, Trigger-Re-Eval + Operator-Doku; Plan in
-> [`done/plan-0.12.1.md`](../done/plan-0.12.1.md)).
+> **Status**: ✅ released 2026-05-11 (Tag `v0.12.5`). Vorgänger ist
+> `0.12.1` (`v0.12.1`, Trigger-Re-Eval + Operator-Doku; Plan in
+> [`plan-0.12.1.md`](./plan-0.12.1.md)).
 >
 > **Release-Typ**: **Minor-Release** (`0.12.5`) gemäß
 > [`docs/user/releasing.md`](../../user/releasing.md) §3.1 — neue
@@ -23,14 +23,13 @@
 >   **R-16** Outbound-Webhook für Stream-Lifecycle.
 >
 > **Bezug**:
-> [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope,
+> [`plan-0.12.0.md`](./plan-0.12.0.md) §10 Folge-Scope,
 > §13.14 Lastenheft-RAK-71..RAK-76;
-> [`done/plan-0.12.1.md`](../done/plan-0.12.1.md) §1 Trigger-Re-Eval-Stand;
-> [`risks-backlog.md`](./risks-backlog.md) §1.1 R-14,
-> R-16, R-17, R-18, R-20, R-21;
+> [`plan-0.12.1.md`](./plan-0.12.1.md) §1 Trigger-Re-Eval-Stand;
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1+§1.2
+> R-14/R-16/R-17/R-18/R-20/R-21;
 > [`spec/lastenheft.md`](../../../spec/lastenheft.md) §13.15
-> (Lastenheft-Patch `1.1.16` für `0.12.5`, RAK-77..RAK-82,
-> persistiert in T0).
+> (Lastenheft-Patch `1.1.16` für `0.12.5`, RAK-77..RAK-82).
 >
 > **Nachfolger**: [`plan-0.13.0.md`](../open/plan-0.13.0.md)
 > (Production / Ops Backends, MVP-40..MVP-44).
@@ -179,12 +178,12 @@ Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
-| 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | 🟡 |
-| 1 | R-18 Multi-Key-Rotation (Code) | 🟡 |
-| 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | 🟡 |
-| 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | 🟡 |
-| 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | 🟡 |
-| 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | 🟡 (beide aktiviert) |
+| 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | ✅ |
+| 1 | R-18 Multi-Key-Rotation (Code) | ✅ |
+| 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | ✅ |
+| 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | ✅ |
+| 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ✅ |
+| 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ✅ (beide aktiviert) |
 | 6 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | ⬜ |
 
 ---
