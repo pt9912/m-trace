@@ -181,7 +181,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | Tranche | R-N  | Inhalt                                          | Charakter   | Status |
 | ------- | ---- | ----------------------------------------------- | ----------- | ------ |
 | 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | 🟡      |
-| 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | ⬜      |
+| 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | 🟡      |
 | 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | ⬜      |
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | ⬜      |
 | 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | ⬜      |
@@ -242,21 +242,47 @@ Release-Fix oder Base-Image-Wechsel (z. B. Distroless).
 
 DoD:
 
-- [ ] Trivy-Scan gegen `node:22-trixie-slim` (Dashboard + Analyzer-
-  Service) mit aktuellem Vulnerability-Stand; Output in
-  `.tmp/audit/`.
-- [ ] Pro CVE (`CVE-2025-69720` ncurses, `CVE-2026-29111` systemd,
-  `CVE-2026-4878` libcap): Status-Eintrag (Trixie-Point-Release
-  hat Fix? `expires`-Verlängerung um 90 Tage? Base-Image-Wechsel?).
-- [ ] `.security/vulnignore.yaml` aktualisiert (Verlängerung mit
-  neuem Datum bzw. Eintrag entfernt).
-- [ ] `scripts/render-trivyignore.sh` testet, dass `expires` nicht
-  überschritten ist.
-- [ ] Optional: ADR-Draft für Distroless-Base-Image-Wechsel vor
-  `1.0`, falls Re-Review die strukturelle Lösung empfiehlt.
-- [ ] Risks-Backlog R-13: Trigger-Stand-Eintrag aktualisiert mit
-  neuem `expires`-Datum oder strukturellem Wechsel; ggf. Status auf
-  🟢 wenn Trixie-Fix verfügbar.
+- [x] Trivy-Scan gegen `node:22-trixie-slim` (Dashboard +
+  Analyzer-Service) mit aktuellem Vulnerability-Stand
+  (Re-Review 2026-05-11): 6 HIGH-Findings, 0 CRITICAL — exakt
+  die drei bekannten CVEs aus `.security/vulnignore.yaml`,
+  verteilt auf 6 Packages (libtinfo6/ncurses-base/ncurses-bin
+  für CVE-2025-69720, libsystemd0/libudev1 für CVE-2026-29111,
+  libcap2 für CVE-2026-4878). `Fixed Version`-Spalte leer in
+  allen Treffern → **kein Upstream-Fix in Debian Trixie**
+  verfügbar.
+- [x] Pro CVE Status-Eintrag (Re-Review 2026-05-11):
+  - `CVE-2025-69720` (ncurses): kein Trixie-Point-Release-Fix;
+    Container weiterhin ohne TTY-Pfad → Vektor nicht
+    erreichbar; **`expires` um 90 Tage verlängert** auf
+    `2026-11-02`.
+  - `CVE-2026-29111` (systemd): kein Trixie-Point-Release-Fix;
+    Container weiterhin ohne systemd/IPC-Mounts → Vektor nicht
+    aktivierbar; **`expires` um 90 Tage verlängert** auf
+    `2026-11-02`.
+  - `CVE-2026-4878` (libcap): kein Trixie-Point-Release-Fix;
+    Container weiterhin als unprivileged `USER node` ohne
+    setcap-Pfad; **`expires` um 90 Tage verlängert** auf
+    `2026-11-02`.
+- [x] `.security/vulnignore.yaml` aktualisiert: drei
+  `expires`-Werte von `2026-08-04` auf `2026-11-02`; pro
+  CVE-Block neuer Re-Review-Kommentar-Block mit Datum
+  `2026-05-11`, Plan-Bezug `plan-0.12.6 Tranche 1`, Stand
+  „kein Upstream-Fix" und Verlängerungs-Begründung.
+- [x] `scripts/render-trivyignore.sh mtrace-dashboard` grün
+  (3 entries gerendert, kein `expires`-Überschreitungs-Fehler).
+- [!] Optional: ADR-Draft für Distroless-Base-Image-Wechsel vor
+  `1.0` — bewusst **deferred**. 90 Tage Reserve bis nächstem
+  Re-Review-Termin (`2026-11-02`) reichen, um den
+  Distroless-Switch ohne Zeitdruck strukturell zu evaluieren;
+  ein vorab-`gcr.io/distroless/nodejs22-debian12`-Wechsel
+  würde den `node:22-trixie-slim`-glibc-Pfad vor einem
+  konkreten Operator-Trigger durcheinander bringen.
+- [x] Risks-Backlog R-13: Trigger-Stand-Eintrag aktualisiert
+  mit neuem `expires`-Datum (`2026-11-02`) und Re-Review-Notiz
+  (Stand `0.12.6` Tranche 1); Status bleibt ⬜ („nicht
+  ausgelöst") — die Verlängerung verschiebt den nächsten
+  Re-Review, löst R-13 aber nicht strukturell auf.
 
 ## 4. Tranche 2 — R-11 SRT-Health-Detail-Cursor-Pagination
 

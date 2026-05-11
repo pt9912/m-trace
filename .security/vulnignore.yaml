@@ -46,9 +46,12 @@ trivy:
     # nicht erreichbar. Folge-Trigger R-N-13 (s. risks-backlog.md):
     # bei naechstem Trixie-Point-Release oder spaetestens vor 1.0
     # Distroless-/Hardening-Variante pruefen.
+    # Re-Review 2026-05-11 (plan-0.12.6 Tranche 1): Trivy-Scan
+    # zeigt CVE weiterhin in Trixie-Slim-Base ohne `Fixed Version`;
+    # `expires` verlaengert um 90 Tage auf 2026-11-02.
     - id: CVE-2025-69720
       reason: "ncurses Buffer Overflow in Debian-13-Trixie-Slim-Base; kein Upstream-Fix verfuegbar; Container hat keinen TTY-Pfad zur Ausnutzung. Re-Review bei Trixie-Point-Release."
-      expires: 2026-08-04
+      expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
     # CVE-2026-29111 (systemd): Arbitrary Code Execution / DoS via
@@ -57,9 +60,12 @@ trivy:
     # USER node, ohne systemd-PID-1 und ohne IPC-Socket-Mounts; der
     # Vektor ist im m-trace-Runtime nicht aktivierbar. Re-Review
     # gemeinsam mit R-N-13.
+    # Re-Review 2026-05-11 (plan-0.12.6 Tranche 1): Trivy-Scan
+    # zeigt CVE weiterhin in Trixie-Slim-Base ohne `Fixed Version`;
+    # `expires` verlaengert um 90 Tage auf 2026-11-02.
     - id: CVE-2026-29111
       reason: "systemd Arbitrary Code Exec via IPC; Trixie-Slim-Base ohne Upstream-Fix; Container ohne systemd/IPC-Mounts. Re-Review bei Trixie-Point-Release."
-      expires: 2026-08-04
+      expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
     # CVE-2026-4878 (libcap): Privilege Escalation via TOCTOU race
@@ -67,9 +73,12 @@ trivy:
     # Upstream-Fix in Debian 13. Container startet als unprivileged
     # USER node; die TOCTOU-Race greift den setcap-Pfad an, den wir
     # nicht auslosen. Re-Review gemeinsam mit R-N-13.
+    # Re-Review 2026-05-11 (plan-0.12.6 Tranche 1): Trivy-Scan
+    # zeigt CVE weiterhin in Trixie-Slim-Base ohne `Fixed Version`;
+    # `expires` verlaengert um 90 Tage auf 2026-11-02.
     - id: CVE-2026-4878
       reason: "libcap TOCTOU-Race in cap_set_file(); Trixie-Slim-Base ohne Upstream-Fix; Container laeuft als unprivilegierter user node. Re-Review bei Trixie-Point-Release."
-      expires: 2026-08-04
+      expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
 govulncheck:
