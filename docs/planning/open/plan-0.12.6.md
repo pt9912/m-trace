@@ -97,6 +97,32 @@ Out of Scope (auch bei voller Aktivierung):
   `make gates` (Drift-Gate-Reihenfolge); Lab-Smokes nicht in
   `make gates`, sondern als opt-in Make-Target pro Adapter.
 
+### 0.2.1 Smoke-Targets-Konvention
+
+Die Tranche-DoDs nennen mehrere neue `make smoke-*`-Targets
+(`smoke-srt-health-pagination`, `smoke-origin-rate-limit`,
+`smoke-issuance-multi-host`, `smoke-vault-approle`,
+`smoke-kms-skeleton`, `smoke-mediaserver-provision`). **Keines
+davon existiert heute** im [`Makefile`](../../../Makefile) — sie
+werden **zusammen mit dem Adapter-Code in der jeweiligen Tranche
+neu angelegt**, analog zum Pattern aus `0.12.5`:
+
+- `scripts/smoke-<name>.sh` als Bash-Wrapper, der den End-to-End-
+  Test (oder reduzierte Lab-Variante) via `golang:1.26.3`-Docker
+  triggert (Vorbilder: `scripts/smoke-key-rotation.sh`,
+  `scripts/smoke-issuance-replica.sh`,
+  `scripts/smoke-browser-ingest.sh` aus `0.12.5`).
+- `Makefile`-Target plus `.PHONY`-Liste plus Help-Eintrag.
+- Opt-in (NICHT in `make gates`).
+
+DoD-Klauseln in den Tranchen lesen sich deshalb als
+„`make smoke-<name>` als Operator-Smoke" und schließen
+implizit das Anlegen von Script + Target ein. Sollte eine
+Tranche nur ein **Test-Wrapper-Pattern** liefern (statt echtem
+Compose-/Container-Smoke), wird das im Tranche-DoD explizit
+markiert (vgl. `smoke-issuance-replica` aus `0.12.5` T2, das
+zwei `*sql.DB`-Verbindungen statt zwei API-Prozessen nutzt).
+
 ### 0.3 Architektur-/Scope-Entscheidungen (T0)
 
 Die T0-Aktivierung trifft mindestens diese Entscheidungen
@@ -237,8 +263,11 @@ DoD:
   spezifiziert ist).
 - [ ] Unit-Test + Adapter-Test: Pagination liefert konsistente,
   überlappungsfreie Pages über 1500+ Samples.
-- [ ] Smoke `make smoke-srt-health-pagination` (oder erweiterte
-  Variante des existierenden `smoke-srt-health`).
+- [ ] Smoke `make smoke-srt-health-pagination` **neu anlegen**
+  (Script + Makefile-Target + Help-Eintrag; Konvention siehe
+  §0.2.1) — entweder als eigenständiger Smoke oder als
+  Erweiterung des existierenden `smoke-srt-health` mit
+  `MTRACE_SRT_HEALTH_PAGINATION=1`-Schalter.
 - [ ] Risks-Backlog R-11: Status 🟢 mit Auflösungspfad „Cursor-
   Pagination in 0.12.6 Tranche 2"; Wieder-Eröffnung bei
   Operator-Report über Inkonsistenz im Cursor-Wandern.
@@ -322,8 +351,12 @@ DoD:
   Server vergleicht erwartete vs. tatsächliche Event-Anzahl bei
   bekanntem `sample_rate` und markiert auffällige Sessions als
   `"possible_loss"`. Heuristik-Schwellen sind Folge-Tuning.
-- [ ] Doku-Update in `spec/telemetry-model.md` §8.3 plus
-  `spec/event-schema.md` (oder analog) für das neue Meta-Feld.
+- [ ] Doku-Update in
+  [`spec/telemetry-model.md`](../../../spec/telemetry-model.md)
+  §8.3 plus
+  [`contracts/event-schema.json`](../../../contracts/event-schema.json)
+  (`meta`-Allowlist + `reserved_meta_keys`) für das neue
+  `session_sample_rate`-Feld.
 - [ ] Tests: erster-Wert-immutable, Drift-Log, Default-`1.0`-
   Pfad, Read-Pfad-Markierung. Plus contract-fixture für
   `meta.session_sample_rate < 1`.
@@ -411,7 +444,10 @@ DoD:
   (Cross-Instance-Sharing über `miniredis`-Mock oder echten
   Redis-Container). **Kein** Cross-Instance-Test auf SQLite,
   weil der Adapter es nicht gibt.
-- [ ] `make smoke-origin-rate-limit` als Operator-Smoke.
+- [ ] `make smoke-origin-rate-limit` **neu anlegen** (Script +
+  Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
+  Wrapt entweder den In-Memory-Adapter-Test oder den Redis-
+  Mock-Test (`miniredis`).
 - [ ] Risks-Backlog R-22: Status 🟢 sobald Redis-Adapter steht;
   bei nur In-Memory bleibt es „teilweise gelöst" mit
   Resttrigger „Multi-Host-IP-Limits benötigt Network-Backend".
@@ -435,7 +471,12 @@ DoD:
   Token issuen) oder fail-open (lokales `memory`-Fallback) —
   T0-Entscheidung.
 - [ ] Test gegen `httptest`/`miniredis`-Mock.
-- [ ] `make smoke-issuance-multi-host`.
+- [ ] `make smoke-issuance-multi-host` **neu anlegen** (Script +
+  Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
+  Wrapt den Cross-Instance-Sharing-Test gegen `miniredis` (oder
+  echten Redis-Container) — Pattern analog
+  `smoke-issuance-replica` aus `0.12.5` T2, aber mit Network-
+  Backend statt SQLite.
 - [ ] Risks-Backlog R-17: Status 🟢 mit dem entsprechenden
   Backend-Hinweis.
 
@@ -458,9 +499,15 @@ DoD:
   `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS` (Default 0 = keine
   Refresh, Boot-Time-Load wie heute).
 - [ ] Compliance-Audit-Vorbereitung: Doku zu PCI-/SOC2-relevanten
-  Konfigurationspfaden in `auth.md` §5.5.
+  Konfigurationspfaden in
+  [`docs/user/auth.md`](../../user/auth.md) §5.5.
 - [ ] Tests gegen `httptest`-Mock (AppRole) + Mock-KMS-Provider.
-- [ ] `make smoke-vault-approle` und `make smoke-kms-skeleton`.
+- [ ] `make smoke-vault-approle` und `make smoke-kms-skeleton`
+  **beide neu anlegen** (Script + Makefile-Target + Help-Eintrag;
+  Konvention siehe §0.2.1). Vault-Smoke wrapt entweder einen
+  `vault dev`-Server-Lab-Test oder einen `httptest`-Mock mit
+  AppRole-Login-Flow; KMS-Smoke wrapt einen Mock-KMS-Provider-
+  Test (kein echter AWS-Lab-Pfad).
 - [ ] Risks-Backlog R-20: Status 🟢 sobald produktiver Pfad +
   Compliance-Doku stehen; sonst „teilweise gelöst" mit konkretem
   Resttrigger.
@@ -533,7 +580,9 @@ DoD:
 - [ ] Tests gegen `httptest`-MediaMTX-Mock: happy path (200),
   unreachable (`media_server_state: "failed"`), Auth-Failure,
   partial-state (Stream angelegt, Routing-Rule rejected).
-- [ ] `make smoke-mediaserver-provision`.
+- [ ] `make smoke-mediaserver-provision` **neu anlegen** (Script +
+  Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
+  Wrapt den Adapter-Test gegen `httptest`-MediaMTX-Mock.
 - [ ] Risks-Backlog R-15: Status 🟢 sobald Adapter geliefert; sonst
   „teilweise gelöst" mit konkretem Operator-Trigger für SRS.
 
