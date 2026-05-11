@@ -79,22 +79,32 @@ Die Tranche-0-Entscheidung klärt mindestens folgende Dimensionen:
   Auslösern für Reaktivierung.
 - Welche Dokumente (ADR/Plan/Spec) die Verbindlichkeit haben.
 
-### 0.4 Lastenheft-Patch `1.1.16` (Vorschlag)
+### 0.4 Lastenheft-Patch (Vorschlag — Patch-Nr und RAK-IDs werden bei T0-Aktivierung neu vergeben)
 
 Der Plan ergänzt eine neue RAK-Serie für `MVP-40`..`MVP-44` und
 `NF-18` als Mindestverpflichtung für 0.13.
 
-| RAK | Priorität | Inhalt |
-| --- | --- | --- |
-| RAK-77 | Muss | Operativer Scope für `MVP-40`..`MVP-42`, inkl. klarer Seed-/Defer-Boundaries und Nachweise. |
-| RAK-78 | Muss | Operativer Scope für `MVP-41`: Vergleichs- und Entscheidungspfad gegen ClickHouse/VictoriaMetrics/Mimir (oder gleichwertige Option). |
-| RAK-79 | Muss | `MVP-42`/`NF-18` als optionaler K8s-Optionpfad wird normativ begrenzt, keine Vollbereitschaftszusage. |
-| RAK-80 | Muss | Operativer Scope für `MVP-43`: Devcontainer als Seed oder explizites Defer mit Begründung/Trigger. |
-| RAK-81 | Muss | Release-Prozess enthält mindestens manuelle Freigabe in allen automationsrelevanten Stufen, inklusive sicherer Rollback-Regeln und Closeout-Nachweis. |
+> **Hinweis zur ID-Vergabe (Stand 2026-05-11)**: Die ursprünglich
+> in diesem Plan platzhalterhaft vorgesehene Range `RAK-77`..`RAK-81`
+> wurde mit der Aktivierung von `0.12.5` (Auth-/Ingest-Adapter,
+> Lastenheft-Patch `1.1.16`, §13.15) belegt. Bei der `0.13.0`-T0-
+> Aktivierung werden Patch-Nummer und RAK-IDs entsprechend neu
+> vergeben — voraussichtlich Lastenheft-Patch `1.1.17` und neue
+> RAK-Gruppe `RAK-83`..`RAK-87` in §13.16. Die Inhalts-Tabellen
+> unten behalten die ursprünglichen RAK-77..RAK-81-Labels als
+> **Platzhalter**, bis T0 die finale Vergabe durchgeführt hat.
 
-> Die finale Verifizierung der IDs erfolgt gegen `spec/lastenheft.md`.
-> Hier ist die Folge-Lücke `RAK-77`..`RAK-81` als operative ID-Zahl
-> vorbesetzt.
+| RAK (Platzhalter) | Priorität | Inhalt |
+| --- | --- | --- |
+| RAK-77 → RAK-83 (vmtl.) | Muss | Operativer Scope für `MVP-40`..`MVP-42`, inkl. klarer Seed-/Defer-Boundaries und Nachweise. |
+| RAK-78 → RAK-84 (vmtl.) | Muss | Operativer Scope für `MVP-41`: Vergleichs- und Entscheidungspfad gegen ClickHouse/VictoriaMetrics/Mimir (oder gleichwertige Option). |
+| RAK-79 → RAK-85 (vmtl.) | Muss | `MVP-42`/`NF-18` als optionaler K8s-Optionpfad wird normativ begrenzt, keine Vollbereitschaftszusage. |
+| RAK-80 → RAK-86 (vmtl.) | Muss | Operativer Scope für `MVP-43`: Devcontainer als Seed oder explizites Defer mit Begründung/Trigger. |
+| RAK-81 → RAK-87 (vmtl.) | Muss | Release-Prozess enthält mindestens manuelle Freigabe in allen automationsrelevanten Stufen, inklusive sicherer Rollback-Regeln und Closeout-Nachweis. |
+
+> Die finale Verifizierung der IDs erfolgt gegen `spec/lastenheft.md`
+> beim `0.13.0`-T0-Closeout. Bis dahin gelten die obigen Mappings
+> als Vorbesetzung, nicht als verbindliche IDs.
 
 ### 0.5 Qualitätsregeln für 0.13.0
 
@@ -155,8 +165,10 @@ DoD:
 - [ ] `docs/planning/in-progress/roadmap.md` auf `0.13.0` als aktive
   Folgephase umgestellt.
   - [ ] Alle offenen Gegenargumente dokumentiert und nicht stillschweigend verworfen.
-- [ ] Neue RAK-Range `RAK-77`..`RAK-81` in `spec/lastenheft.md` persistiert und
-  gegen bestehende IDs geprüft.
+- [ ] Neue RAK-Range in `spec/lastenheft.md` persistiert und gegen
+  bestehende IDs geprüft (Platzhalter-Mapping in §0.4 oben:
+  voraussichtlich `RAK-83`..`RAK-87` in §13.16, da `RAK-77`..`RAK-82`
+  bereits mit `0.12.5` Lastenheft-Patch `1.1.16` §13.15 vergeben).
 - [ ] Risiko-R-9 gegen Observability-/Smoke-Impact geprüft und im
   `risks-backlog.md` abgelegt.
 - [ ] Tranche-0-Notiz (kurz) mit Status, offenen Entscheidungen,

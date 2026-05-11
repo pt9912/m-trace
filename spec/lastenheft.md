@@ -8,6 +8,40 @@
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.16` (Auth-/Ingest-Adapter für `0.12.5`)**: Liefert
+> die Adapter-/Wire-Pfade, die in `0.12.0` als Folge-Scope angelegt
+> und in `0.12.1` als „Code-Pfad in 0.12.5" markiert wurden, und
+> führt die neue RAK-Gruppe `RAK-77`..`RAK-82` in §13.15 ein. Inhalt:
+> Shared-State-Issuance-Limiter (`R-17`) als Driven-Port
+> (`IssuanceLimiterPort`) mit SQLite-Backend-Adapter als erstem
+> opt-in Shared-State-Pfad (globaler Default bleibt In-Process-
+> `memory`; Topologie-Constraint: Single-Host-Shared-Volume);
+> Multi-Key-Signing-Resolver (`R-18`) mit ENV-Schema
+> `MTRACE_AUTH_SIGNING_KEYS` und aktiver `kid`-Auswahl, restart-
+> stabil; Secret-Backend-Driven-Port (`R-20`,
+> `SecretBackendPort`) mit ENV-Default-Adapter plus
+> **Vault-Adapter-Skelett** (KMS bleibt additive Folge-Option,
+> nicht Teil dieses Patches); Browser-Ingest-Policy (`R-21`) als
+> Project-Policy-gesteuerte, kontrollierte Aufhebung des
+> RAK-74-Scope-Cuts auf `/api/ingest/*`. Optionale Adapter
+> `RAK-81`/`RAK-82` (Auth-Bridge MediaMTX/SRS, Outbound-Webhook)
+> bei verfügbarer Bandbreite. Architekturentscheidung:
+> hexagonale Erweiterung um zwei neue Driven-Ports; bestehender
+> `SigningKeyResolver` wird zum `MultiKeySigningResolver`.
+> Backwards-Compat: heutige ENV-Werte (Single-Key,
+> In-Process-Limiter, ENV-Secret-Lookup) bleiben Default-Pfad.
+> **Out of Scope** und damit nicht durch diesen Patch erfüllt:
+> KMS-Backend (nur Vault-Skelett wird geliefert), echte
+> Multi-Host-Topologie für den Issuance-Limiter (Network-Backend
+> wie Redis/Memcached bleibt Folge-Item), Externe Provisionierung
+> (`R-15`), OAuth/OIDC/SSO, User-/Org-/Admin-Verwaltung
+> (RAK-71-Out-of-Scope bleibt normativ), Origin-/IP-nahes
+> Rate-Limiting (`R-22` getrennter Folge-Plan),
+> Production-Backends aus `0.13.0` (Postgres, ClickHouse,
+> Kubernetes). Patch-Log siehe
+> [`docs/planning/in-progress/plan-0.12.5.md`](../docs/planning/in-progress/plan-0.12.5.md)
+> Tranche 0.
+>
 > **Patch `1.1.15` (Auth / Token Lifecycle für `0.12.0`)**: Hebt
 > `F-111`..`F-113` (serverseitig signierte Session Tokens, rotierbare
 > Project Tokens, tenant-spezifische Ingest Policies; bisher Kann-
@@ -31,20 +65,6 @@
 > `spec/backend-api-contract.md`. Patch-Log siehe
 > [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
 > Tranche 0c §4a.18.
->
-> **Patch `1.1.16` (Production / Ops Backends für `0.13.0`)**: Stellt
-> `MVP-40`..`MVP-44` als Folge- und Seed-Scope für Production/Ops fest,
-> harmonisiert `NF-18` mit `MVP-42` und definiert die Release-Automatisierung
-> mit zwingender manueller Freigabe. Das Patch führt die neue RAK-Gruppe
-> `RAK-77`..`RAK-81` in §13.15 ein. Architekturentscheidungen bleiben als
-> Decision-and-Seed-Rahmen festgelegt (kein Vollversprechen auf
-> Production-Kubernetes in diesem Schritt).
-> Out-of-Scope und damit nicht direkt erfüllt durch diesen Patch: Produktive,
-> mandatory Operability-Backends als Vollumfang, ungebremste
-> Daten-Pflichtmigrationen ohne vorherige Entscheidung und
-> automatische, unbeaufsichtigte Veröffentlichung. Patch-Log siehe
-> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
-> Tranche 0c §4a.19.
 >
 > **Patch `1.1.14` (Ingest-Control-Scope für `0.11.0`)**: Hebt
 > `F-46`..`F-51` (Ingest-Gateway / Stream Control, bisher Kann-
@@ -1928,24 +1948,37 @@ Akzeptanzkriterien:
 | RAK-75 | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Project-Token-Flows (Demo, SDK, Analyze-/Session-Link-Auth, `0.11.0` Ingest-Control) bleiben im `0.12.0`-Compatibility-Fenster gültig oder haben dokumentierte Migrationstests. Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header vorhanden ist; ohne gültigen m-trace Header liefern sie `401 auth_token_missing`. Es gibt keinen stillen Fallback von einem ungültigen höher priorisierten Token auf einen gültigen niedriger priorisierten Token. |
 | RAK-76 | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP-/CORS-Beispiele, GDPR-/Datenschutzgrenzen (Auth-Metadaten erweitern IP-/User-Agent-Speicherung nicht) und den Unterschied zu Production-Secret-Backends aus Folge-Scope. SDK-Doku zeigt sicheres Session-Token-Caching bis kurz vor `expires_at`, ohne Speicherung in `localStorage`/persistenten Browser-Stores. `make sync-contract-fixtures` und `make generated-drift-check` decken neue Auth-Fixtures ab. |
 
-### 13.15 Version 0.13.0: Production / Ops Backends (MVP-40..MVP-44)
+### 13.15 Version 0.12.5: Auth-/Ingest-Adapter (RAK-77..RAK-82)
 
-Ziel: `MVP-40`..`MVP-44` werden als Decision-and-Seed-Release
-operativ zugeschnitten, `NF-18` mit `MVP-42` harmonisiert und
-Release-Gate- und Automationsentscheidungen im Rahmen eines manuellen
-Freigabepfads getreu dokumentiert. Architektur: Produktionsnahe
-Backends werden vorerst entschieden und dokumentiert; kein vollständiger
-Produktions-Betriebsumfang wird in dieser Phase als Muss-Scope gesetzt.
+Ziel: Die Adapter-/Wire-Pfade, die `0.12.0` (Auth / Token Lifecycle)
+als Folge-Scope angelegt und `0.12.1` (Patch) als „Code-Pfad in
+0.12.5" markiert hat, werden in einen umsetzbaren Minor-Release
+geschnitten. Architektur: hexagonale Erweiterung um zwei neue
+Driven-Ports (`IssuanceLimiterPort`, `SecretBackendPort`) plus
+ENV-getriebener Ersatz des heutigen `StaticSigningKeyResolver`
+durch einen `MultiKeySigningResolver`. Backwards-Compat: heutige
+ENV-Werte (Single-Key, In-Process-Limiter, ENV-Secret-Lookup)
+bleiben Default-Pfad — opt-in via neuen ENV-Variablen.
 
 Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-77 | Muss | `MVP-40`: Postgres ist als operativer Produktionskandidaten-Scope klar als Seed- oder Defer-Schnitt entschieden; mindestens ein Migrations- und Reproduzierbarkeitspfad ist dokumentiert. |
-| RAK-78 | Muss | `MVP-41`: ClickHouse/VictoriaMetrics (oder Mimir analog) werden anhand aktueller Daten-/Metrik-Nutzung und Query-Vorgaben bewertet; es gibt eine nachvollziehbare Vergleichsmatrix inkl. Ausstiegskriterien. |
-| RAK-79 | Muss | `MVP-42` / `NF-18`: Kubernetes-Manifeste bleiben als optionsgesteuerter Folge-/Seed-Optionpfad mit klarer Abgrenzung zu produktivem Kubernetes; bestehender Scope (`deploy/`, Labeling, Smoke-Pfade) ist dokumentiert. |
-| RAK-80 | Muss | `MVP-43`: Devcontainer ist als reproduzierbarer Entwicklungs-Seed oder explizit als Defer mit klaren Re-Activation-Triggern entschieden. |
-| RAK-81 | Muss | `MVP-44`: Release-Automatisierung enthält harte manuelle Freigabepunkte, sichere Rücksetz-/Rollback-Regeln und einen dokumentierten Closeout-Pfad zum `v0.13.0`-Tag. |
+| RAK-77 | Muss | **Shared-State-Issuance-Limiter**: `IssuanceLimiterPort` mit Default-In-Process-Adapter (1:1 zum heutigen `InMemoryIssuanceRateLimiter`) plus SQLite-Backend-Adapter als erstem Shared-State-Pfad (Migration `V5`, atomare Counter-Erhöhung, TTL-Cleanup). ENV-Selektion `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`; **globaler Default bleibt `memory`** (Backwards-Compat). Andere Werte (`redis`, `memcached`, …) lehnt der Boot-Validator mit klarem Fehler ab. Topologie-Constraint des SQLite-Adapters: nur sinnvoll bei Single-Host-Deployments mit Shared-Persistent-Volume; echte Multi-Host-Topologie braucht einen Network-Backend-Adapter und bleibt Folge-Item. RAK-74-Scope-Cut bleibt aktiv: Limiter darf nicht vor `/api/ingest/*` hängen. |
+| RAK-78 | Muss | **Multi-Key-Signing-Rotation**: `MultiKeySigningResolver` ersetzt den heutigen `StaticSigningKeyResolver` als Default-Pfad mit ENV-Schema `MTRACE_AUTH_SIGNING_KEYS=<kid1>:<base64_secret1>[,<kid2>:<base64_secret2>,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=<kid>`. Verify-Set umfasst alle geladenen Keys, Sign-Key kommt aus dem aktiven `kid`; alte Tokens verifizieren weiter bis zum Ablauf der Token-TTL. Restart-stabil analog `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`. Backwards-Compat: einzelner Key über alten ENV-Pfad bleibt als degenerierter Multi-Key-Resolver mit `len(keys)==1` unterstützt. Erweitert RAK-72/RAK-73 um den ENV-getriebenen Rotation-Code-Pfad zur Doku-Stand-Lieferung aus `0.12.1` (`auth.md` §5.3.1). |
+| RAK-79 | Muss | **Secret-Backend-Driven-Port**: `SecretBackendPort` als neuer Driven-Port für Signing- und Project-Token-Secret-Bezug; ENV-Lookup-Adapter implementiert den Port 1:1 zum heutigen Verhalten und bleibt Default-Selektion. Mindestens ein externes Backend-Adapter-Skelett wird geliefert — **Auswahl: Vault-Adapter** (`hashicorp/vault/api`, Lab-Pfad mit `vault dev`-Server). KMS-Adapter bleibt additive Folge-Option. ENV-Selektion `MTRACE_AUTH_SECRET_BACKEND=env|vault` (KMS-Wert wird als unbekannter Wert vom Boot-Validator abgelehnt, bis ein Adapter geliefert wird). Caching, Refresh-TTL und Failure-Modus (fail-closed bei Backend-Outage) sind dokumentiert. Resttrigger „erste Operator-Anbindung an produktives Vault/KMS" und „Compliance-Audit (PCI/SOC2)" bleiben offen — Skelett-Lieferung allein erfüllt diese nicht. |
+| RAK-80 | Muss | **Browser-Ingest-Policy**: `/api/ingest/*` ist optional aus Browser-Origins nutzbar — Project-Policy-Schema wird um `browser_ingest_policy.{enabled, cors_allowlist[], csrf_required, origin_pin}` (oder finalisierte Schema-Variante) erweitert. Mit aktivem Project-Policy-Eintrag wird das Browser-Origin gegen die Allowlist geprüft, CSRF-Token oder Origin-Pin sind Default-Vorgabe für den aktivierten Pfad. Ohne aktivierte Policy gilt der RAK-74-Scope-Cut weiter (heutiges 204-Verhalten). Kontrollierte Aufhebung des RAK-74-Scope-Cuts — die Aussage „RAK-74-Scope-Cut bleibt strikt" aus §13.14 wird durch RAK-80 unter der Bedingung „aktive `browser_ingest_policy`" abgelöst. |
+| RAK-81 | optional (Kann) | **Auth-Bridge MediaMTX/SRS**: `MediaMTXAuthBridge`-Adapter konsumiert signierte Publish-Tokens (eigener Issuer auf Basis des bestehenden Signing-Key-Rings aus RAK-72/RAK-78). Lab-Smoke gegen echtes MediaMTX-Container-Setup; Lab-/Produktiv-Trennung bleibt. Aktivierung nur bei verfügbarer Test-Pipeline gegen echtes MediaMTX. Löst R-14 (`validate-key` ist kein Auth-Ersatz) strukturell, sofern aktiviert. |
+| RAK-82 | optional (Kann) | **Outbound-Webhook für Stream-Lifecycle**: Driven-Port `OutboundWebhookDispatcher` für `stream.started`/`stream.ended`-Events; HMAC-signierte Payload mit Project-Token-abgeleitetem Secret; definierter Retry-/Timeout-/Backoff-Pfad mit Dead-Letter-Schema. Adapter-Test plus Mock-Konsument-Smoke. Aktivierung nur bei zusätzlicher Bandbreite. Löst R-16 (lokales Lifecycle-Eventmodell ohne Outbound) strukturell, sofern aktiviert. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.12.5` erfüllt):
+KMS-Backend-Adapter (additive Folge-Option), echte Multi-Host-
+Topologie für den Issuance-Limiter (Network-Backend-Adapter
+bleibt Folge-Item), Externe Media-Server-Provisionierung
+(`R-15`), Origin-/IP-nahes Rate-Limiting (`R-22`),
+Production-Backends aus `0.13.0` (Postgres, ClickHouse,
+Kubernetes), OAuth/OIDC/SSO + User-/Org-/Admin-Verwaltung
+(RAK-71-Out-of-Scope-Stand bleibt normativ).
 
 ---
 

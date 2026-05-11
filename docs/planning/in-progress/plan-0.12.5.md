@@ -1,14 +1,13 @@
 # Implementation Plan — `0.12.5` (Auth-/Ingest-Adapter-Minor)
 
-> **Status**: ⬜ open — noch nicht aktiviert. Dieser Plan darf erst
-> nach explizitem Move nach `docs/planning/in-progress/` umgesetzt
-> werden, und erst nachdem `plan-0.12.1.md` (Trigger-Re-Eval +
-> Operator-Doku) released wurde.
+> **Status**: 🟡 Tranche 0 aktiv (aktiviert 2026-05-11). Vorgänger
+> ist `0.12.1` (`v0.12.1`, Trigger-Re-Eval + Operator-Doku; Plan in
+> [`done/plan-0.12.1.md`](../done/plan-0.12.1.md)).
 >
 > **Release-Typ**: **Minor-Release** (`0.12.5`) gemäß
 > [`docs/user/releasing.md`](../../user/releasing.md) §3.1 — neue
-> User-Surface (Auth-/Ingest-Adapter), neuer Lastenheft-Patch,
-> neue RAK-Verifikationsmatrix.
+> User-Surface (Auth-/Ingest-Adapter), Lastenheft-Patch `1.1.16`
+> §13.15 mit RAK-77..RAK-82, neue RAK-Verifikationsmatrix.
 >
 > **Ziel**: Die Adapter-/Wire-Pfade liefern, die in `0.12.0` als
 > Folge-Scope definiert und in `0.12.1` als „Code-Pfad in 0.12.5"
@@ -16,7 +15,8 @@
 > - **R-17** Multi-Replica-fähiger Issuance-Limiter (Shared-State).
 > - **R-18** Multi-Key-Rotation: ENV-Schema, dynamischer Resolver,
 >   Smoke.
-> - **R-20** KMS-/Vault-/Cloud-Secret-Manager-Adapter.
+> - **R-20** Secret-Backend-Driven-Port mit **Vault-Adapter-Skelett**
+>   (KMS bleibt additive Folge-Option, siehe §0.3/§7).
 > - **R-21** Browser-Ingest-Policy auf `/api/ingest/*`
 >   (RAK-74-Scope-Cut aufheben unter klarer Ergebnis-Bedingung).
 > - Optional: **R-14** Auth-Bridge MediaMTX/SRS,
@@ -26,12 +26,13 @@
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope,
 > §13.14 Lastenheft-RAK-71..RAK-76;
 > [`done/plan-0.12.1.md`](../done/plan-0.12.1.md) §1 Trigger-Re-Eval-Stand;
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1 R-14,
+> [`risks-backlog.md`](./risks-backlog.md) §1.1 R-14,
 > R-16, R-17, R-18, R-20, R-21;
-> [`spec/lastenheft.md`](../../../spec/lastenheft.md) §13.14 (vor
-> Aktivierung extendieren um RAK-77..).
+> [`spec/lastenheft.md`](../../../spec/lastenheft.md) §13.15
+> (Lastenheft-Patch `1.1.16` für `0.12.5`, RAK-77..RAK-82,
+> persistiert in T0).
 >
-> **Nachfolger**: [`plan-0.13.0.md`](./plan-0.13.0.md)
+> **Nachfolger**: [`plan-0.13.0.md`](../open/plan-0.13.0.md)
 > (Production / Ops Backends, MVP-40..MVP-44).
 
 ## 0. Konvention
@@ -74,9 +75,11 @@ In Scope (verbindlich):
   neue Tokens validieren weiterhin gegen den alten Key bis Ablauf).
 - **R-20 Secret-Backend-Adapter** (`apps/api/adapters/driven/secrets/`):
   `Driven-Port` für Signing- und Project-Token-Secret-Bezug. Erstes
-  Default: aktueller ENV-basierter In-Memory-Adapter. Erstes externes
-  Backend: KMS-Adapter-Skelett (AWS-KMS, Provider-API als Interface)
-  oder Vault-Adapter — Auswahl in §1.3 entscheiden.
+  Default: aktueller ENV-basierter In-Memory-Adapter (Backwards-Compat).
+  Erstes externes Backend: **Vault-Adapter-Skelett** (`hashicorp/vault/api`,
+  Lab-Pfad mit `vault dev`-Server) — Entscheidung in T0-Closeout
+  fixiert (siehe §0.3). KMS-Adapter (AWS-KMS) bleibt **additive
+  Folge-Option** und ist explizit nicht Teil von `0.12.5`.
 - **R-21 Browser-Ingest-Policy**: `/api/ingest/*` darf von Browser-
   Origins akzeptiert werden, mit klar definierten Project-Policy-
   Constraints (CORS-Allowlist je Project, optional CSRF-Token oder
@@ -117,7 +120,14 @@ Out of Scope:
    Limiter und mindestens einen Shared-Backend-Adapter unter einem
    Interface zusammen. Selektion zur Boot-Zeit per ENV.
 2. `SecretBackendPort` (R-20) — fasst die ENV-Lookup-Quelle und
-   externe KMS-/Vault-Adapter unter einem Interface zusammen.
+   einen externen Vault-Adapter unter einem Interface zusammen.
+   **T0-Entscheidung 2026-05-11**: für `0.12.5` wird ausschließlich
+   ein **Vault-Skelett** geliefert (`hashicorp/vault/api`,
+   `vault dev`-Lab-Pfad); KMS-Adapter bleibt additive Folge-Option
+   nach `0.12.5` und ist nicht Teil des Adapter-Skeletts hier.
+   Begründung: schlankere Go-Dependency-Surface, lokale
+   Reproduzierbarkeit mit `vault dev`, neutraler Driven-Port lässt
+   KMS später ohne Wire-Bruch nachziehen.
 
 **Bestehende Driven-Ports erweitert:**
 
@@ -133,21 +143,26 @@ Out of Scope:
 
 ## 1. Lastenheft-Patch
 
-`spec/lastenheft.md` bekommt einen Patch-Block — Versionsnummer
-`1.1.16` (oder höher, je nach aktuellem Patch-Stand). Neue
-RAK-Gruppe in §13.15 (Anschluss an §13.14 mit RAK-71..RAK-76):
+`spec/lastenheft.md` bekommt mit T0-Aktivierung Patch `1.1.16` und
+die neue RAK-Gruppe `RAK-77`..`RAK-82` in §13.15 (Anschluss an
+§13.14 mit RAK-71..RAK-76). Die Inhaltszusammenfassung pro RAK
+spiegelt den persistierten Lastenheft-Block:
 
 | RAK | Bereich | Anforderung |
 |---|---|---|
 | RAK-77 | Auth/Issuance | Shared-State-Issuance-Limiter ist als Adapter-Pfad verfügbar; Selektion per ENV; das bisherige In-Process-Verhalten bleibt Default-Pfad. |
 | RAK-78 | Auth/Signing | Multi-Key-Rotation: ENV-getriebener Resolver mit aktiver `kid`-Auswahl; alte Keys verifizieren weiter bis explizite Entfernung; Restart bleibt ohne Token-Invalidierung stabil (Erweiterung von RAK-72/RAK-73). |
-| RAK-79 | Auth/Secret-Backend | Driven-Port für Secret-Bezug; ENV-Adapter bleibt Default; mindestens ein externes Backend-Adapter-Skelett (KMS oder Vault) liegt vor. |
+| RAK-79 | Auth/Secret-Backend | Driven-Port für Secret-Bezug; ENV-Adapter bleibt Default; **Vault-Adapter-Skelett** liegt vor (T0-Entscheidung 2026-05-11, siehe §0.3). KMS bleibt additive Folge-Option. |
 | RAK-80 | Ingest/Browser-Policy | `/api/ingest/*` ist optional aus Browser-Origin nutzbar; Project-Policy steuert Allowlist; ohne Policy gilt RAK-74-Scope-Cut weiter. |
 | RAK-81 (optional) | Ingest/Auth-Bridge | MediaMTX-/SRS-Auth-Hook konsumiert signierte Publish-Tokens; Lab-/Produktiv-Trennung bleibt. |
 | RAK-82 (optional) | Lifecycle/Webhooks | Stream-Lifecycle-Events können an externen Konsumenten zugestellt werden; HMAC-signierte Payload, definierter Retry-/Timeout-Pfad. |
 
-Tranche 0 erstellt den Lastenheft-Patch; jeder Tranche schließt mit
-`make lastenheft-check` und `make rak-trace`.
+Tranche 0 hat den Lastenheft-Patch persistiert. Doku-Konsistenz
+wird via `make docs-check` (Doku-Link-Verifikation in
+`scripts/verify-doc-refs.sh`) geprüft. Dedizierte
+`make lastenheft-check`-/`make rak-trace`-Targets existieren im
+Makefile **nicht** und sind in `0.12.5` nicht im Scope; eine
+Aufnahme bleibt potenzielles Folge-Item (Quality-Gates Wave 3).
 
 ## 2. RAK-Verifikationsmatrix
 
@@ -155,7 +170,7 @@ Tranche 0 erstellt den Lastenheft-Patch; jeder Tranche schließt mit
 |---|---|---|
 | RAK-77 | `apps/api/adapters/driven/issuance/sqlite_limiter.go` (oder analog) | `apps/api/adapters/driven/issuance/*_test.go` + `make smoke-issuance-replica` |
 | RAK-78 | `apps/api/adapters/driven/auth/signing/multi_key_resolver.go` | `apps/api/adapters/driven/auth/signing/*_test.go` + `make smoke-key-rotation` |
-| RAK-79 | `apps/api/adapters/driven/secrets/{env,kms,vault}_backend.go` | `apps/api/adapters/driven/secrets/*_test.go` |
+| RAK-79 | `apps/api/adapters/driven/secrets/{env,vault}_backend.go` (KMS additiv nach `0.12.5`) | `apps/api/adapters/driven/secrets/*_test.go` |
 | RAK-80 | `apps/api/adapters/driving/http/ingest_browser.go` (oder Policy-Filter) | `apps/api/adapters/driving/http/ingest_browser_test.go` + Smoke |
 | RAK-81 (opt) | `apps/api/adapters/driven/ingest/mediamtx_authbridge.go` | Lab-Smoke gegen echtes MediaMTX |
 | RAK-82 (opt) | `apps/api/adapters/driven/webhooks/outbound_dispatcher.go` | Adapter-Test + Mock-Konsument |
@@ -164,10 +179,10 @@ Tranche 0 erstellt den Lastenheft-Patch; jeder Tranche schließt mit
 
 | Tranche | Inhalt | Status |
 | --- | --- | --- |
-| 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | ⬜ |
+| 0 | Plan-Aktivierung, Lastenheft-Patch, RAK-Matrix-Skelett, Roadmap-Insert | 🟡 |
 | 1 | R-18 Multi-Key-Rotation (Code) | ⬜ |
 | 2 | R-17 Shared-Issuance-Limiter (SQLite als erster Shared-State-Adapter, opt-in; globaler Default bleibt `memory`) | ⬜ |
-| 3 | R-20 Secret-Backend-Port + KMS-/Vault-Adapter-Skelett | ⬜ |
+| 3 | R-20 Secret-Backend-Port + Vault-Adapter-Skelett (KMS additive Folge-Option) | ⬜ |
 | 4 | R-21 Browser-Ingest-Policy + RAK-74-Scope-Cut-Aufhebung | ⬜ |
 | 5 (optional) | R-14 Auth-Bridge MediaMTX/SRS und/oder R-16 Outbound-Webhook | ⬜ |
 | 6 | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | ⬜ |
@@ -176,18 +191,32 @@ Tranche 0 erstellt den Lastenheft-Patch; jeder Tranche schließt mit
 
 ## 4. Tranche 0 — Aktivierung
 
-Ziel: Lastenheft-Patch + RAK-Matrix vor erster Code-Lieferung.
+Ziel: Lastenheft-Patch + RAK-Matrix + Sekundär-Architekturentscheidung
+(Vault-Adapter für R-20) vor erster Code-Lieferung.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.12.5.md` nach
-  `docs/planning/in-progress/plan-0.12.5.md` verschoben.
-- [ ] Lastenheft-Patch `spec/lastenheft.md` §13.15 mit RAK-77..
-  RAK-82 ergänzt (RAK-81/82 als optional gekennzeichnet).
-- [ ] `make lastenheft-check` und `make rak-trace` grün.
-- [ ] Roadmap-Insert: §1 Phase auf `0.12.5` aktiv; §2 Schritt 47.6
-  ergänzt; §3 Release-Übersicht-Zeile `0.12.5`.
-- [ ] Vorgänger-Gate verifiziert: `git tag --list v0.12.0 v0.12.1`.
+- [x] Plan von `docs/planning/open/plan-0.12.5.md` nach
+  `docs/planning/in-progress/plan-0.12.5.md` verschoben (T0-Commit).
+- [x] Lastenheft-Patch `spec/lastenheft.md` §13.15 mit RAK-77..
+  RAK-82 ergänzt (RAK-81/82 als optional gekennzeichnet);
+  Lastenheft-Header `Version: 1.1.16` mit neuem Patch-Block oben;
+  vorab-deklarierter `1.1.16`-Block für `0.13.0` (RAK-77..RAK-81
+  in §13.15) zurückgezogen (Variante C, siehe T0-Commit-Body).
+- [x] `make docs-check` grün (Doku-Link-Verifikation via
+  `scripts/verify-doc-refs.sh`; siehe §1 Klarstellung — `make
+  lastenheft-check`/`make rak-trace` existieren nicht und sind
+  nicht im `0.12.5`-Scope).
+- [x] Roadmap-Insert: §1 Phase auf `0.12.5` aktiv; §2 Schritt 47.6
+  auf 🟡; §3 Release-Übersicht-Zeile `0.12.5` auf 🟡.
+- [x] Vorgänger-Gate verifiziert: `git tag --list v0.12.0 v0.12.1`
+  liefert beide Tags.
+- [x] Sekundär-Entscheidung Tranche 3: **Vault-Skelett** für R-20
+  fixiert in §0.3 / §0.1 / §7 / §13.15 (KMS bleibt additive
+  Folge-Option, nicht Teil von `0.12.5`).
+- [x] `plan-0.13.0.md` §0.4 auf "RAK-IDs werden bei Aktivierung
+  neu vergeben" umgestellt (Platzhalter-Mapping RAK-77..RAK-81 →
+  vmtl. RAK-83..RAK-87 in §13.16).
 
 ## 5. Tranche 1 — R-18 Multi-Key-Rotation (Code)
 
@@ -254,13 +283,15 @@ DoD:
 
 - [ ] `SecretBackendPort` definiert; ENV-Adapter implementiert das
   Interface 1:1 zum heutigen Verhalten.
-- [ ] Mindestens ein externes Backend-Skelett implementiert (Auswahl
-  in T0): KMS-Adapter (AWS-KMS-Provider-API als Interface ohne
-  AWS-SDK-Pflicht-Dependency, falls zu groß) oder Vault-Adapter.
-  Lab-Test-Pfad mit Mock-Backend, kein Pflicht-Lab gegen echte
-  KMS/Vault-Instanz.
-- [ ] ENV-Selektion: `MTRACE_AUTH_SECRET_BACKEND=env|kms|vault`.
-  Default `env`.
+- [ ] **Vault-Adapter-Skelett** implementiert (T0-Entscheidung
+  2026-05-11, siehe §0.3): `hashicorp/vault/api`-Client als
+  Driven-Adapter, Lab-Test-Pfad mit `vault dev`-Server oder
+  Mock-Backend, kein Pflicht-Lab gegen produktives Vault.
+  KMS-Adapter (AWS-KMS) bleibt **additive Folge-Option** nach
+  `0.12.5` und ist nicht Teil dieses Skeletts.
+- [ ] ENV-Selektion: `MTRACE_AUTH_SECRET_BACKEND=env|vault`.
+  Default `env`. Wert `kms` lehnt der Boot-Validator mit klarem
+  Fehler ab, bis ein Folge-Adapter geliefert wird.
 - [ ] Lifecycle-Verhalten dokumentiert: Caching, Refresh-TTL,
   Failure-Modus (fail-closed bei externem Backend-Outage).
 - [ ] Risks-Backlog R-20: Status auf „**teilweise gelöst** —
@@ -349,7 +380,7 @@ DoD:
 
 ## 11. Folge-Scope nach `0.12.5`
 
-- [`plan-0.13.0.md`](./plan-0.13.0.md): Production / Ops Backends
+- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops Backends
   (`MVP-40`..`MVP-44`) — Postgres, ClickHouse, K8s, Devcontainer.
 - **Multi-Host-Issuance-Limiter** (Network-Backend wie Redis/
   Memcached): bleibt nach `0.12.5` offen — der SQLite-Adapter

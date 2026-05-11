@@ -1,16 +1,20 @@
 # Roadmap
 
-> **Stand**: 2026-05-10
+> **Stand**: 2026-05-11
 >
-> **Phase**: ✅ `0.12.1` released 2026-05-10 — Trigger-Re-Eval +
-> Operator-Doku als Patch nach `0.12.0`-Release;
-> Plan archiviert in
-> [`done/plan-0.12.1.md`](../done/plan-0.12.1.md).
-> Folge-Minor `0.12.5` für Auth-/Ingest-Adapter
-> (R-17/R-18/R-20/R-21) als nächste aktivierbare Phase in
-> [`open/plan-0.12.5.md`](../open/plan-0.12.5.md). `0.13.0`
+> **Phase**: 🟡 `0.12.5` Tranche 0 aktiv (seit 2026-05-11) —
+> Auth-/Ingest-Adapter-Minor (R-17/R-18/R-20/R-21), Lastenheft-
+> Patch `1.1.16` mit RAK-77..RAK-82 in §13.15 persistiert; Plan
+> in
+> [`in-progress/plan-0.12.5.md`](./plan-0.12.5.md). Vorgänger
+> `0.12.1` released 2026-05-10 (Plan archiviert in
+> [`done/plan-0.12.1.md`](../done/plan-0.12.1.md)). `0.13.0`
 > Production / Ops Backends (`MVP-40`..`MVP-44`) als Minor-Phase
-> nach `0.12.5`.
+> nach `0.12.5` — Plan in
+> [`open/plan-0.13.0.md`](../open/plan-0.13.0.md), RAK-IDs werden
+> bei dessen T0-Aktivierung neu vergeben (voraussichtlich
+> RAK-83..RAK-87 in §13.16, da RAK-77..RAK-82 mit `0.12.5`
+> belegt).
 >
 > **Letzte Releases:**
 > - `v0.12.1` Trigger-Re-Eval + Operator-Doku (Patch nach `0.12.0`, kein Lastenheft-Patch); Trigger-Stand pro aktivem R-N-Item, Multi-Key-Signing-Rotation-Operator-Runbook in `auth.md` §5.3.1, OS-1..OS-5 als ⬛ Duplikate in §1.2 abgelegt, OS-6 zu R-22 konvertiert; Plan in [`done/plan-0.12.1.md`](../done/plan-0.12.1.md).
@@ -35,13 +39,13 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-10)
+## 1. Aktueller Stand (2026-05-11)
 
 ### 1.1 Was abgeschlossen ist
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.15` (RAK-1..RAK-76, §13.14 Auth/Token-Lifecycle).                       | `spec/lastenheft.md`                                                   |
+| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.16` (RAK-1..RAK-82, §13.15 Auth-/Ingest-Adapter für `0.12.5`; Patch persistiert in T0-Aktivierung).                       | `spec/lastenheft.md`                                                   |
 | ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store (Migration in `0.4.0`).     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
@@ -64,29 +68,42 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.12.1` (Trigger-Re-Eval + Operator-Doku) ist als **Patch-Release**
-am 2026-05-10 ausgeliefert (Plan archiviert in
-[`done/plan-0.12.1.md`](../done/plan-0.12.1.md)). Nächste
-aktivierbare Phase ist **`0.12.5`** (Auth-/Ingest-Adapter-Minor) —
-Plan in [`open/plan-0.12.5.md`](../open/plan-0.12.5.md). Inhalt
-des released `0.12.1`: Trigger-
-Re-Eval pro aktivem `R-N`-Item im Backlog, Operator-Runbook für
-Multi-Key-Signing-Rotation (Doku-Stand; Code-Pfad folgt in `0.12.5`),
-Trigger-Schärfung der `OS-1`..`OS-6`-Folge-Items aus
-`done/plan-0.12.0.md` §10. Kein Lastenheft-Patch, keine RAK-Matrix.
+`0.12.5` (Auth-/Ingest-Adapter-Minor) ist seit 2026-05-11 in
+**Tranche 0 aktiv** — Plan in
+[`in-progress/plan-0.12.5.md`](./plan-0.12.5.md), Lastenheft-Patch
+`1.1.16` mit RAK-77..RAK-82 in §13.15 mit T0-Aktivierung
+persistiert. Inhalt: Multi-Replica-Issuance-Limiter (`R-17`,
+SQLite-Backend als erster Adapter über `IssuanceLimiterPort`),
+Multi-Key-Rotation-Code (`R-18`, ENV-getriebener
+`MultiKeySigningResolver` ersetzt Static-Resolver), Secret-
+Backend-Driven-Port (`R-20`, **Vault-Adapter-Skelett**; KMS
+bleibt additive Folge-Option), Browser-Ingest-Policy auf
+`/api/ingest/*` (`R-21`, RAK-74-Scope-Cut wird durch RAK-80
+unter Project-Policy kontrolliert aufgehoben); optional Auth-
+Bridge MediaMTX/SRS (`R-14`, RAK-81) und Outbound-Webhook
+(`R-16`, RAK-82). Vorgänger `0.12.1` (Trigger-Re-Eval + Operator-
+Doku) als Patch-Release am 2026-05-10 ausgeliefert (Plan
+archiviert in
+[`done/plan-0.12.1.md`](../done/plan-0.12.1.md)).
 
-Folge-Minor `0.12.5` (Auth-/Ingest-Adapter) — Plan in
-[`open/plan-0.12.5.md`](../open/plan-0.12.5.md): Multi-Replica-
-Issuance-Limiter (`R-17`), Multi-Key-Rotation-Code (`R-18`),
-Secret-Backend-Adapter inkl. KMS-/Vault-Skelett (`R-20`),
-Browser-Ingest-Policy auf `/api/ingest/*` (`R-21`); optional
-Auth-Bridge MediaMTX/SRS (`R-14`) und Outbound-Webhook (`R-16`).
-Eigener Lastenheft-Patch `1.1.16` mit RAK-77..RAK-82 in §13.15.
+Sekundär-Entscheidung der T0-Aktivierung (2026-05-11): für R-20
+wird in `0.12.5` ausschließlich ein **Vault-Skelett** geliefert
+(`hashicorp/vault/api`, `vault dev`-Lab-Pfad). KMS-Adapter bleibt
+additive Folge-Option nach `0.12.5` — schlankere
+Go-Dependency-Surface, lokale Reproduzierbarkeit mit
+`vault dev`, neutraler `SecretBackendPort` lässt KMS später ohne
+Wire-Bruch nachziehen.
 
 `0.13.0` (Production / Ops Backends, `MVP-40`..`MVP-44`) bleibt
 als nächste Minor-Phase nach `0.12.5` aktivierbar — Plan in
 [`open/plan-0.13.0.md`](../open/plan-0.13.0.md), Lastenheft-Patch
-noch offen. Vorgänger `0.12.0` ist released (Plan archiviert in
+noch offen. Das ursprünglich für `0.13.0` vorab-deklarierte
+Lastenheft-Patch `1.1.16` mit §13.15 RAK-77..RAK-81 wurde mit
+der `0.12.5`-T0-Aktivierung **zurückgezogen** (Variante C:
+0.12.5 ist chronologisch vor 0.13.0 und nimmt §13.15 + RAK-77..
+RAK-82); `0.13.0` bekommt bei seiner T0-Aktivierung
+voraussichtlich Patch `1.1.17` und RAK-83..RAK-87 in §13.16.
+Vorgänger `0.12.0` ist released (Plan archiviert in
 [`done/plan-0.12.0.md`](../done/plan-0.12.0.md), Lastenheft-Patch
 `1.1.15` mit RAK-71..RAK-76 (§13.14) und F-111..F-113 auf
 Release-Muss). Vorgänger `0.11.0` ist released
@@ -214,8 +231,8 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 46  | ✅      | `0.11.0` Ingest-Gateway / Stream Control ausgeliefert: F-46..F-51 aus dem Lastenheft (Patch `1.1.14` Hochstufung von Kann auf Release-Muss) in einen umsetzbaren Stream-Control-Pfad geschnitten — CSPRNG-Stream-Keys (nur `key_hash` persistiert), `srt`/`rtmp`-Endpunkte, 1:1-Routing-Regeln, deterministischer MediaMTX-Konfigurations-Generator und lokal reproduzierbares Lifecycle-Eventmodell mit `evt_`-IDs und Source-Allowlist `local-smoke`/`mediamtx-hook`. Architektur Variante B (Modul in `apps/api`, kein eigener `apps/ingest-gateway`-Service). Lastenheft-Patch `1.1.14` mit RAK-65..RAK-70 in §13.13. | Nach Schritt 45 | F-46..F-51, MVP-38, RAK-65..RAK-70; [`done/plan-0.11.0.md`](../done/plan-0.11.0.md) Tranchen 0–6; Tag `v0.11.0` |
 | 47  | ✅      | `0.12.0` Auth / Token Lifecycle ausgeliefert: F-111..F-113 als zusammenhängender Security-/Auth-Scope — kurzlebige HMAC-SHA-256-signierte Session Tokens (`POST /api/auth/session-tokens` + Konsum via `Authorization: Bearer mtr_st_*` / `X-MTrace-Session-Token`), rotierbare `mtr_pt_*`-Project-Token-Generationen mit persistiertem `grace_until` (V4-Migration), tenant-spezifische Ingest Policies + §3.9-konformer CORS-Preflight (204 mit minimaler Signalisierung). Lastenheft-Patch `1.1.15` mit RAK-71..RAK-76 in §13.14. Tranchen 0–6 ausgeliefert 2026-05-10. | Nach Schritt 46 | F-111..F-113, RAK-71..RAK-76; [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) |
 | 47.5 | ✅    | `0.12.1` Trigger-Re-Eval + Operator-Doku als Patch-Release ausgeliefert (2026-05-10): pro aktivem `R-N`-Item im Backlog (R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21) Trigger-Status-Notiz (alle „nicht ausgelöst"), Operator-Runbook für Multi-Key-Signing-Rotation in `auth.md` §5.3.1 (Soll-Workflow als Doku; Code-Pfad in 0.12.5), OS-1..OS-5 als ⬛ Duplikate in §1.2 abgelegt, OS-6 zu R-22 konvertiert. Kein Lastenheft-Patch, keine RAK-Matrix, keine neue User-Surface. | Nach Schritt 47 | R-5..R-21; [`done/plan-0.12.1.md`](../done/plan-0.12.1.md) |
-| 47.6 | ⬜    | `0.12.5` Auth-/Ingest-Adapter-Minor ausliefern: Multi-Replica-Issuance-Limiter (R-17, SQLite-Backend als erster Adapter), Multi-Key-Rotation-Code (R-18, ENV-getriebener `MultiKeySigningResolver` ersetzt Static-Resolver), Secret-Backend-Driven-Port (R-20, KMS-/Vault-Adapter-Skelett), Browser-Ingest-Policy auf `/api/ingest/*` (R-21, RAK-74-Scope-Cut wird durch RAK-80 unter Project-Policy aufgehoben); optional Auth-Bridge MediaMTX/SRS (R-14) und Outbound-Webhook (R-16). Lastenheft-Patch `1.1.16` mit RAK-77..RAK-82 in §13.15. | Nach Schritt 47.5 | R-14, R-16, R-17, R-18, R-20, R-21; RAK-77..RAK-82; [`open/plan-0.12.5.md`](../open/plan-0.12.5.md) |
-| 48  | ⬜      | `0.13.0` Production / Ops Backends ausliefern: MVP-40 (Postgres), MVP-41 (ClickHouse/VictoriaMetrics), MVP-42 (Kubernetes-Manifeste), MVP-43 (Devcontainer), MVP-44 (Release-Automatisierung). NF-18 wird mit MVP-42 harmonisiert. Minor-Release mit eigenem Lastenheft-Patch und neuer RAK-Gruppe. | Nach Schritt 47.6 | RAK-83.. in `spec/lastenheft.md` §13.16; NF-18, MVP-40..MVP-44; [`open/plan-0.13.0.md`](../open/plan-0.13.0.md) |
+| 47.6 | 🟡    | `0.12.5` Auth-/Ingest-Adapter-Minor ausliefern (Tranche 0 aktiv seit 2026-05-11): Multi-Replica-Issuance-Limiter (R-17, SQLite-Backend als erster Adapter), Multi-Key-Rotation-Code (R-18, ENV-getriebener `MultiKeySigningResolver` ersetzt Static-Resolver), Secret-Backend-Driven-Port (R-20, **Vault-Adapter-Skelett**; KMS bleibt additive Folge-Option), Browser-Ingest-Policy auf `/api/ingest/*` (R-21, RAK-74-Scope-Cut wird durch RAK-80 unter Project-Policy aufgehoben); optional Auth-Bridge MediaMTX/SRS (R-14) und Outbound-Webhook (R-16). Lastenheft-Patch `1.1.16` mit RAK-77..RAK-82 in §13.15 mit T0-Aktivierung persistiert. | Nach Schritt 47.5 | R-14, R-16, R-17, R-18, R-20, R-21; RAK-77..RAK-82; [`in-progress/plan-0.12.5.md`](./plan-0.12.5.md) |
+| 48  | ⬜      | `0.13.0` Production / Ops Backends ausliefern: MVP-40 (Postgres), MVP-41 (ClickHouse/VictoriaMetrics), MVP-42 (Kubernetes-Manifeste), MVP-43 (Devcontainer), MVP-44 (Release-Automatisierung). NF-18 wird mit MVP-42 harmonisiert. Minor-Release mit eigenem Lastenheft-Patch und neuer RAK-Gruppe (voraussichtlich `1.1.17` und RAK-83..RAK-87 in §13.16, da RAK-77..RAK-82 mit `0.12.5` belegt). | Nach Schritt 47.6 | RAK-83..RAK-87 (vmtl.) in `spec/lastenheft.md` §13.16 (vmtl.); NF-18, MVP-40..MVP-44; [`open/plan-0.13.0.md`](../open/plan-0.13.0.md) |
 
 ---
 
@@ -245,8 +262,8 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.11.0` | Ingest-Gateway / Stream Control | ✅ | Minor-Release am 2026-05-09. Plan archiviert in [`done/plan-0.11.0.md`](../done/plan-0.11.0.md). Variante B (Modul in `apps/api`). Lastenheft-Patch `1.1.14` mit RAK-65..RAK-70 in §13.13 hebt `F-46`..`F-51` und `MVP-38` für den lokalen/lab-nahen Ingest-Control-Pfad auf Release-Muss: CSPRNG-Stream-Keys (nur `key_hash` persistiert; Klartext nur in Create-/Rotate-Antworten), `srt`/`rtmp`-Endpunkte, 1:1-Routing, deterministischer MediaMTX-Konfigurations-Generator + Beispiel-Stack `examples/ingest-control/`, Lifecycle-Hook-Endpoints `POST /api/ingest/hooks/stream-{started,ended}` mit Source-Allowlist `local-smoke`/`mediamtx-hook`, `make smoke-ingest-control` als Lab-Verifikation. Wire-Vertrag in [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md) §2 + §3.8. **Out of scope:** Multi-Tenant-Control-Plane, KMS/Vault, produktive Auth-Hooks, externe Provisionierung, K8s-Operator, ausgehende produktive Webhook-Zustellung. |
 | `0.12.0` | Auth / Token Lifecycle | ✅ | Minor-Release am 2026-05-10. Plan archiviert in [`done/plan-0.12.0.md`](../done/plan-0.12.0.md). F-111..F-113 als zusammenhängender Auth-/Security-Scope: kurzlebige HMAC-SHA-256-signierte Session Tokens (Wire-Skizze in [`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md) §3.9), rotierbare `mtr_pt_*`-Project-Token-Generationen mit V4-SQLite-Migration und persistiertem `grace_until`, Project-gebundene Ingest Policies + §3.9-konformer CORS-Preflight (`204` mit minimaler Signalisierung statt Pre-`0.12.0`-`403`). Lastenheft-Patch `1.1.15` mit RAK-71..RAK-76 in §13.14 plus neunstufige Auth-Fehlerpräzedenz und zehn `auth_*`-Codes. RAK-74-Scope-Cut: `/api/ingest/*` bleibt `0.11.0`-Token-only (RAK-65, Lab-Workflow); R-21 trackt Future-Browser-Konsumenten. **Out of scope:** OAuth/OIDC/SSO, User-/Org-Verwaltung, Admin-UI, KMS/Vault, produktive MediaMTX-/SRS-Auth-Hooks (R-14), Multi-Replica-Issuance-Limiter (R-17), Multi-Key-Rotation-Workflow (R-18), Production-Secret-Backends (R-20). |
 | `0.12.1` | Trigger-Re-Eval + Operator-Doku (Patch) | ✅ | Patch-Release am 2026-05-10. Plan archiviert in [`done/plan-0.12.1.md`](../done/plan-0.12.1.md). Patch-Release im Sinne von `releasing.md` §3.1 — keine neue User-Surface, kein Lastenheft-Patch, keine RAK-Matrix. Inhalt: Trigger-Re-Eval pro aktivem R-N-Item (R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21, alle „nicht ausgelöst"), Operator-Runbook für Multi-Key-Signing-Rotation in `auth.md` §5.3.1 (Soll-Workflow; Code-Pfad in `0.12.5`), Trigger-Schärfung der `OS-1..OS-6` aus `done/plan-0.12.0.md` §10 (OS-1..OS-5 als ⬛ Duplikate in §1.2; OS-6 → **R-22** in §1.1; Done-Plan unverändert). **Out of scope:** alle Adapter-Implementierungen — die wandern in `0.12.5`. |
-| `0.12.5` | Auth-/Ingest-Adapter-Minor | ⬜ | Plan in [`open/plan-0.12.5.md`](../open/plan-0.12.5.md), aktivierbar nach `0.12.1`. Minor-Release mit eigenem Lastenheft-Patch `1.1.16` und neuer RAK-Gruppe RAK-77..RAK-82 in §13.15. Inhalt: Multi-Replica-Issuance-Limiter (R-17, SQLite-Backend als erster Adapter über `IssuanceLimiterPort`), Multi-Key-Rotation-Code (R-18, ENV-getriebener `MultiKeySigningResolver` ersetzt Static-Resolver), Secret-Backend-Driven-Port (R-20, KMS-/Vault-Adapter-Skelett), Browser-Ingest-Policy auf `/api/ingest/*` (R-21, RAK-74-Scope-Cut wird durch RAK-80 unter Project-Policy kontrolliert aufgehoben); optional Auth-Bridge MediaMTX/SRS (R-14) und Outbound-Webhook (R-16). |
-| `0.13.0` | Production / Ops Backends | ⬜ | Plan in [`open/plan-0.13.0.md`](../open/plan-0.13.0.md), aktivierbar nach `0.12.5`. Überführt die Production-/Ops-nahen Folgepunkte in einen entscheidbaren Scope: `MVP-40` Postgres, `MVP-41` ClickHouse/VictoriaMetrics, `MVP-42` Kubernetes-Manifeste, `MVP-43` Devcontainer, `MVP-44` Release-Automatisierung. `NF-18` wird mit `MVP-42` harmonisiert. Minor-Release mit eigenem Lastenheft-Patch + neuer RAK-Gruppe (RAK-83+ nach `0.12.5`) + Tag `v0.13.0`. |
+| `0.12.5` | Auth-/Ingest-Adapter-Minor | 🟡 | Tranche 0 aktiv seit 2026-05-11. Plan in [`in-progress/plan-0.12.5.md`](./plan-0.12.5.md). Lastenheft-Patch `1.1.16` mit RAK-77..RAK-82 in §13.15 mit T0-Aktivierung persistiert. Inhalt: Multi-Replica-Issuance-Limiter (R-17, SQLite-Backend als erster Adapter über `IssuanceLimiterPort`), Multi-Key-Rotation-Code (R-18, ENV-getriebener `MultiKeySigningResolver` ersetzt Static-Resolver), Secret-Backend-Driven-Port (R-20, **Vault-Adapter-Skelett**; KMS bleibt additive Folge-Option), Browser-Ingest-Policy auf `/api/ingest/*` (R-21, RAK-74-Scope-Cut wird durch RAK-80 unter Project-Policy kontrolliert aufgehoben); optional Auth-Bridge MediaMTX/SRS (R-14, RAK-81) und Outbound-Webhook (R-16, RAK-82). |
+| `0.13.0` | Production / Ops Backends | ⬜ | Plan in [`open/plan-0.13.0.md`](../open/plan-0.13.0.md), aktivierbar nach `0.12.5`. Überführt die Production-/Ops-nahen Folgepunkte in einen entscheidbaren Scope: `MVP-40` Postgres, `MVP-41` ClickHouse/VictoriaMetrics, `MVP-42` Kubernetes-Manifeste, `MVP-43` Devcontainer, `MVP-44` Release-Automatisierung. `NF-18` wird mit `MVP-42` harmonisiert. Minor-Release mit eigenem Lastenheft-Patch + neuer RAK-Gruppe (voraussichtlich `1.1.17` und RAK-83..RAK-87 in §13.16, da RAK-77..RAK-82 mit `0.12.5` belegt) + Tag `v0.13.0`. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
