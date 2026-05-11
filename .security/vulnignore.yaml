@@ -38,19 +38,29 @@
 
 trivy:
   ignore:
-    # CVE-2025-69720 (ncurses): Buffer Overflow. Trifft libtinfo6,
-    # ncurses-base und ncurses-bin im Debian-13-Trixie-Slim-Base des
-    # Dashboard-Images. Debian hat aktuell (Stand 2026-05-06) keinen
-    # Fix freigegeben. Ausnutzung erfordert lokal kontrollierte
-    # Terminal-Inputs — im Dashboard-Container ohne TTY-Anbindung
-    # nicht erreichbar. Folge-Trigger R-N-13 (s. risks-backlog.md):
-    # bei naechstem Trixie-Point-Release oder spaetestens vor 1.0
-    # Distroless-/Hardening-Variante pruefen.
+    # CVE-2025-69720 (ncurses): Stack-based Buffer Overflow in
+    # analyze_string (progs/infocmp.c) — betrifft das infocmp-CLI-
+    # Tool, NICHT die Library selbst. Affected Versions: ncurses
+    # bis einschliesslich 6.4 plus 6.5-Pre-Releases bis
+    # 6.5-20251212; gefixed in 6.5-20251213+. NVD-Publikation
+    # 2026-03-19, NIST HIGH 7.8 / MITRE HIGH 7.3 / CISA-ADP
+    # CRITICAL 9.8.
+    # Debian-Stand (Security Tracker, Stand 2026-05-11):
+    # "vulnerable (no DSA)" fuer bullseye/bookworm/trixie;
+    # fixed nur in forky+sid — kein Backport-Plan fuer Trixie.
+    # Trifft libtinfo6, ncurses-base und ncurses-bin in der
+    # Trixie-Slim-Base 6.5+20250216-2 (Dashboard + Analyzer-
+    # Service-Images). Vektor im m-trace-Runtime nicht
+    # erreichbar: Container hat kein interaktives Terminal,
+    # USER node ruft infocmp niemals auf, kein TTY-Mount, kein
+    # CLI-Surface fuer User-Inputs.
     # Re-Review 2026-05-11 (plan-0.12.6 Tranche 1): Trivy-Scan
-    # zeigt CVE weiterhin in Trixie-Slim-Base ohne `Fixed Version`;
-    # `expires` verlaengert um 90 Tage auf 2026-11-02.
+    # bestaetigt 3 betroffene Packages (libtinfo6, ncurses-base,
+    # ncurses-bin); `expires` um 90 Tage auf 2026-11-02
+    # verlaengert. Naechster Re-Review-Trigger: forky-Backport-
+    # Verfuegbarkeit ODER `expires`-Schwelle.
     - id: CVE-2025-69720
-      reason: "ncurses Buffer Overflow in Debian-13-Trixie-Slim-Base; kein Upstream-Fix verfuegbar; Container hat keinen TTY-Pfad zur Ausnutzung. Re-Review bei Trixie-Point-Release."
+      reason: "ncurses infocmp-CLI Buffer Overflow (analyze_string in progs/infocmp.c); Trixie-Slim-Base ohne Upstream-Fix (no DSA, fix in forky+sid); Container hat keinen TTY-Pfad und ruft infocmp nie auf. NVD-Publikation 2026-03-19."
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
