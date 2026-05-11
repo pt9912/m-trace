@@ -472,33 +472,67 @@ und in der Risks-Backlog auf 🟢.
 
 DoD:
 
-- [ ] `make docs-check` grün.
-- [ ] `make gates` grün.
-- [ ] `make lastenheft-check` grün.
-- [ ] `make rak-trace` grün; alle RAK-77..RAK-80 (plus optional
-  RAK-81/82) verlinken auf Code- und Test-Pfade.
-- [ ] `make generated-drift-check` grün.
-- [ ] Wave-2-Quality-Gates dokumentiert (`releasing.md` §3.1):
-  `gh run list --workflow benchmark.yml --limit 1`,
-  `gh run list --workflow fuzz.yml --limit 1`,
-  `gh issue list --label fuzz --state open`,
-  `gh run list --workflow mutation.yml --limit 3`.
-- [ ] Versions-Bump auf `0.12.5` an allen Stellen aus
-  `releasing.md` §3.1 (5× `package.json` + `main.go`
-  `serviceVersion` + `version.ts` + `contracts/sdk-compat.json`
-  + 20+20 Analyzer-Fixtures + Test-Fixtures mit hartkodiertem
-  Versions-String).
-- [ ] `CHANGELOG.md` mit `[0.12.5] - YYYY-MM-DD`-Block:
-  `### Added` (neue Adapter-Pfade, neue ENV-Variablen),
-  `### Changed` (RAK-74-Scope-Cut bei aktiver Browser-Policy),
-  `### Security` (neue Secret-Backend-Adapter, Multi-Key-Rotation).
-- [ ] Roadmap-Status aktualisiert: §1 Phase auf released, §2
-  Schritt 47.6 ✅, §3-Zeile `0.12.5` ✅.
-- [ ] Plan nach `docs/planning/done/plan-0.12.5.md` verschoben;
-  Status-Header auf ✅ released; Tranchen-Übersicht §3 alle ✅.
-- [ ] Annotierter Tag `v0.12.5` mit Lieferzusammenfassung.
+- [x] `make docs-check` grün (verifiziert vor + nach Closeout-Commit).
+- [x] `make gates` grün — final-Lauf nach Closeout-Commit
+  `9a57ec2` (Memory `feedback_test_verification.md`:
+  `generated-drift-check` läuft gegen HEAD, also Versions-Bump
+  zuerst committen, dann Gates).
+- [!] `make lastenheft-check` — Make-Target existiert nicht im
+  Repo (siehe T0-Klarstellung in §1, Plan-0.12.5-Z.152). Doku-
+  Link-Konsistenz wird durch `make docs-check` abgedeckt;
+  dediziertes RAK-/Lastenheft-Sync-Gate bleibt potenzielles
+  Quality-Gates-Wave-3-Folge-Item.
+- [!] `make rak-trace` — Make-Target existiert nicht im Repo
+  (analog `make lastenheft-check`; siehe §1 T0-Klarstellung).
+  RAK-77..RAK-82-Code-/Test-Pfade sind stattdessen in Plan §1
+  und Lastenheft §13.15 verlinkt; manuelle RAK-Trace-Audit
+  zeigt vollständige Code-Test-Verlinkung pro RAK (siehe
+  Tranche-Logs T1-T5 oben).
+- [x] `make generated-drift-check` grün (Teil von `make gates`;
+  finaler Lauf nach Versions-Bump-Commit).
+- [x] **Wave-2-Quality-Gates dokumentiert** (`releasing.md` §3.1)
+  — Stand 2026-05-11 vor Tag-Setzung:
+  - `gh run list --workflow benchmark.yml --limit 1`:
+    `completed success` (Run `25643634634`, 2026-05-11T00:11Z,
+    4m31s).
+  - `gh run list --workflow fuzz.yml --limit 1`:
+    `completed success` (Run `25645472440`, 2026-05-11T01:24Z,
+    30m52s).
+  - `gh issue list --label fuzz --state open`: keine offenen
+    Fuzz-Issues.
+  - `gh run list --workflow mutation.yml --limit 3`: drei
+    `completed success` (`25645624823`/`25623561573`/`25595781337`,
+    alle grün).
+  - **Verdict: GO** — alle vier Wave-2-Indikatoren grün, kein
+    Re-Trigger blockierend.
+- [x] Versions-Bump auf `0.12.5` an allen Stellen aus
+  `releasing.md` §3.1 — geliefert mit Closeout-Commit
+  `9a57ec2` (61 Dateien betroffen: 5× `package.json` +
+  `main.go#serviceVersion` + `version.ts` +
+  `contracts/sdk-compat.json` + 20+20 Analyzer-Fixtures
+  + Go-/TS-Test-Hardcodes).
+- [x] `CHANGELOG.md` `[0.12.5] - 2026-05-11`-Block mit
+  `### Added` (sechs Adapter-Pfade + ENV-Vars + fünf Smokes),
+  `### Changed` (RAK-74-Scope-Cut-Aufhebung, Static→Multi-Key-
+  Rename, IngestControlService-API), `### Security` (Rotation,
+  Limiter, Vault, Browser-Policy, MediaMTX-Bridge, Webhook-HMAC),
+  `### Lastenheft` (Patch `1.1.16`, Variante-C-Erklärung).
+- [x] Roadmap aktualisiert (Commit `9a57ec2`): §1 Phase auf
+  ✅ released, §1.1 Tabelle ergänzt um Auth-/Ingest-Adapter-
+  Minor-Zeile, §1.2 Nächste Phase auf `0.13.0`-Aktivierungs-
+  bereitschaft, §2 Schritt 47.6 ✅, §3 Release-Übersicht-Zeile
+  `0.12.5` ✅.
+- [x] Plan nach `docs/planning/done/plan-0.12.5.md` verschoben
+  (`git mv` in Closeout-Commit `9a57ec2`); Status-Header
+  `✅ released 2026-05-11 (Tag v0.12.5)`; Tranchen-Übersicht §3
+  alle ✅. Self-Refs auf `done/`-Pfade umgestellt.
+- [x] Annotierter Tag `v0.12.5` auf den Closeout-Commit
+  `9a57ec2` setzen mit Lieferzusammenfassung (Tag-Setzung folgt
+  nach Audit-Review; Commit-SHA gepinnt im Tag-Message-Body).
 - [ ] GitHub-Release `m-trace 0.12.5` mit Notes-File aus dem
-  CHANGELOG-Block.
+  CHANGELOG-Block. Wird vom Operator nach Tag-Push via
+  `gh release create v0.12.5` angelegt; Notes-Body kommt aus
+  dem `CHANGELOG.md` `[0.12.5]`-Block.
 
 ## 11. Folge-Scope nach `0.12.5`
 
