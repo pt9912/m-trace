@@ -424,21 +424,32 @@ wählt das Backend per ENV; alles andere ist Adapter-Detail.
 | `MTRACE_AUTH_SECRET_BACKEND` | Adapter                                                                 | Konfigurations-Quelle                                                                |
 | ---------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | leer / `env` (Default)       | `EnvSecretBackend` — Backwards-Compat zu `0.12.0`/`0.12.5` Tranche 1     | `MTRACE_AUTH_SIGNING_KEYS` + `MTRACE_AUTH_SIGNING_ACTIVE_KID` (oder Single-Key)      |
-| `vault`                      | `VaultSecretBackend` — Skelett gegen Vault KV-v2                        | `MTRACE_AUTH_VAULT_ADDR/_TOKEN/_PATH`                                                |
-| jeder andere Wert (`kms`, …) | Boot-Validator failt mit „not supported"                                | —                                                                                    |
+| `vault`                      | `VaultSecretBackend` — Vault KV-v2 mit drei Auth-Methoden (`0.12.6` T8) | `MTRACE_AUTH_VAULT_*` (siehe Vault-Block unten)                                      |
+| `kms` (`0.12.6` T8)          | `KMSSecretBackend` — Skelett mit `KMSDecrypter`-Interface               | `MTRACE_AUTH_KMS_*` (siehe KMS-Block unten); produktiver Decrypter ist Folge-Item    |
+| jeder andere Wert            | Boot-Validator failt mit „not supported"                                | —                                                                                    |
 
-**Vault-Adapter-Skelett (Code-Pfad in `0.12.5`, RAK-79):**
+**Vault-Adapter (`0.12.6` T8, R-20):**
 
 - Eigener minimaler HTTP-Client gegen `/v1/<mount>/data/<path>` —
   ohne `hashicorp/vault/api`-Dependency. Eine produktive Anbindung
   kann ihn 1:1 durch einen `hashicorp/vault/api`-Adapter ersetzen,
   ohne den `AuthSecretBackend`-Port zu ändern.
-- Authentication: Token only (`X-Vault-Token`). AppRole, AWS-IAM-
-  Auth und Kubernetes-Service-Account-Auth bleiben Folge-Item für
-  die produktive Anbindung.
-- Pflicht-ENV:
+- **Authentication-Methoden** (`MTRACE_AUTH_VAULT_AUTH_METHOD`):
+  - `token` (Default): direkter `X-Vault-Token`-Header aus
+    `MTRACE_AUTH_VAULT_TOKEN`.
+  - `approle` (`0.12.6` T8): zwei-Phasen-Login über
+    `/v1/auth/<approle-mount>/login` mit `role_id`+`secret_id`.
+    Pflicht-ENV: `MTRACE_AUTH_VAULT_APPROLE_ROLE_ID`,
+    `MTRACE_AUTH_VAULT_APPROLE_SECRET_ID`. Optional:
+    `MTRACE_AUTH_VAULT_APPROLE_MOUNT` (Default `approle`).
+  - `kubernetes` (`0.12.6` T8): Pod-ServiceAccount-Token aus
+    `/var/run/secrets/kubernetes.io/serviceaccount/token`
+    (überschreibbar via `MTRACE_AUTH_VAULT_K8S_JWT_PATH`) +
+    `/v1/auth/<k8s-mount>/login`-Roundtrip. Pflicht-ENV:
+    `MTRACE_AUTH_VAULT_K8S_ROLE`. Optional:
+    `MTRACE_AUTH_VAULT_K8S_MOUNT` (Default `kubernetes`).
+- Pflicht-ENV (gemeinsam für alle Auth-Methoden):
   - `MTRACE_AUTH_VAULT_ADDR` (z. B. `http://127.0.0.1:8200`)
-  - `MTRACE_AUTH_VAULT_TOKEN`
   - `MTRACE_AUTH_VAULT_PATH` — KV-v2-Pfad inkl. `data/`-Marker
     (z. B. `secret/data/m-trace/signing`).
 - Optionale ENV-Var-Aliase: `MTRACE_AUTH_VAULT_KEYS_FIELD`
@@ -449,6 +460,60 @@ wählt das Backend per ENV; alles andere ist Adapter-Detail.
   — `kid_a:<base64>,kid_b:<base64>` für `keys`, plain string für
   `active_kid`. Beide Backends teilen sich denselben Parser
   (`ParseSigningKeysEnv`).
+
+**KMS-Adapter-Skelett (`0.12.6` T8, R-20):**
+
+- `KMSSecretBackend` mit `KMSDecrypter`-Interface (Vendor-neutral
+  durch die Decrypter-Indirektion). Production-Wiring (AWS-SDK-v2
+  oder kompatibel) wird über Boot-Time-Wiring injiziert — ist
+  **nicht** Teil des `0.12.6`-Scopes. Operatoren mit KMS in
+  Production müssen einen eigenen `KMSDecrypter` an
+  `cmd/api/main.go#buildKMSDecrypter` injizieren.
+- Lab-Smoke-Pfad: `MTRACE_AUTH_KMS_LAB_MODE=1` aktiviert den
+  `LabPassThroughKMSDecrypter` (Ciphertext = Plaintext). **NICHT
+  für Production** — der Boot-Log markiert den Pfad explizit als
+  „lab-pass-through".
+- Pflicht-ENV:
+  - `MTRACE_AUTH_KMS_ACTIVE_KID` — die aktive KID nach Decrypt.
+  - **Entweder** `MTRACE_AUTH_KMS_ENCRYPTED_KEYS` (Base64-URL-
+    Ciphertext) **oder** `MTRACE_AUTH_KMS_ENCRYPTED_KEYS_PATH`
+    (File-Path mit Ciphertext-Bytes).
+
+**Refresh-TTL** (`MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS`):
+gelesen + im Boot-Log angekündigt. Default `0` = Boot-only-Load
+(heutiges Verhalten). Werte > 0 sind heute no-op — der Refresh-Loop
+ist Folge-Item nach `0.12.6` T8. Der Boot-Log warnt explizit, wenn
+ein Operator einen Wert > 0 setzt, damit kein „silent no-op"
+entsteht.
+
+**Compliance-Hinweise (PCI/SOC2-relevante Pfade)**:
+
+- **Key-Material verlässt nie Logs**: weder das Plaintext-`keys`-Feld
+  noch das Signing-Secret werden persistiert oder geloggt. Der
+  Boot-Log zeigt nur Backend-Name, Auth-Method, Decrypter-Label und
+  die KID-Liste — nie das Secret-Material.
+- **Fail-closed bei jedem externen Backend** (Vault, KMS): Outage,
+  HTTP-Fehler-Status, ungültige Auth-Credentials → API startet
+  nicht. Es gibt **kein** stilles Fallback auf den Lab-Default-Key
+  (`MTRACE_AUTH_LAB_DEFAULT=1` greift nur beim `env`-Backend).
+- **TLS-Anforderung**: Operator ist verantwortlich für HTTPS-Vault-
+  Adressen (`MTRACE_AUTH_VAULT_ADDR=https://…`) in Production. Der
+  Adapter macht keinen TLS-Downgrade-Check; ein Plain-`http://`-
+  Setup wird akzeptiert (Lab-Lab-Pfad), aber im Boot-Log als Hinweis
+  geloggt.
+- **Audit-Trail**: KID-Rotation per Operator-Restart (siehe §5.3.1)
+  ist in jeder Rotation in der `git`-History plus
+  `vault audit` / `aws kms list-grants` per Operator-Konvention
+  nachzuweisen — der API-Process selbst persistiert keine
+  Rotation-Logs.
+
+**Reproduzierbare Lab-Smokes**:
+
+- `make smoke-vault-approle` — testet AppRole- und Kubernetes-Auth-
+  Pfade gegen `httptest.Server`-Mocks (kein echter Vault-Server
+  nötig).
+- `make smoke-kms-skeleton` — testet den KMS-Adapter-Pfad mit
+  Stub-Decrypter + LabPassThrough-Decrypter.
 
 **Lifecycle (`0.12.5`):**
 

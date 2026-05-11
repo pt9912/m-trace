@@ -188,7 +188,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | 🟡      |
 | 6       | R-22 | Origin-/IP-Rate-Limiter (Memory + Redis-Bundle T7) | Adapter  | 🟡      |
 | 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | 🟡      |
-| 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | ⬜      |
+| 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | 🟡      |
 | 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | ⬜      |
 | 10      | —    | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | Closeout | ⬜ |
 
@@ -765,29 +765,52 @@ KMS-Adapter (AWS-KMS minimal).
 
 DoD:
 
-- [ ] Vault-Adapter um AppRole-Auth erweitert
-  (`role_id` + `secret_id`-Login-Flow); optional Kubernetes-
-  ServiceAccount-Auth-Flow (Token aus
-  `/var/run/secrets/kubernetes.io/serviceaccount/token`).
-- [ ] Neuer KMS-Adapter (AWS-KMS) als zweite externe Backend-
-  Option im `AuthSecretBackend`-Port. ENV-Selektor um `kms`
-  erweitert (wird heute vom Boot-Validator abgelehnt).
-- [ ] Caching/Refresh-TTL-Konfig: ENV
-  `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS` (Default 0 = keine
-  Refresh, Boot-Time-Load wie heute).
-- [ ] Compliance-Audit-Vorbereitung: Doku zu PCI-/SOC2-relevanten
-  Konfigurationspfaden in
-  [`docs/user/auth.md`](../../user/auth.md) §5.5.
-- [ ] Tests gegen `httptest`-Mock (AppRole) + Mock-KMS-Provider.
-- [ ] `make smoke-vault-approle` und `make smoke-kms-skeleton`
-  **beide neu anlegen** (Script + Makefile-Target + Help-Eintrag;
-  Konvention siehe §0.2.1). Vault-Smoke wrapt entweder einen
-  `vault dev`-Server-Lab-Test oder einen `httptest`-Mock mit
-  AppRole-Login-Flow; KMS-Smoke wrapt einen Mock-KMS-Provider-
-  Test (kein echter AWS-Lab-Pfad).
-- [ ] Risks-Backlog R-20: Status 🟢 sobald produktiver Pfad +
-  Compliance-Doku stehen; sonst „teilweise gelöst" mit konkretem
-  Resttrigger.
+- [x] Vault-Adapter um AppRole-Auth erweitert (zwei-Phasen-Login
+  über `/v1/auth/<mount>/login` mit `role_id`+`secret_id`; Default-
+  Mount `approle` per `MTRACE_AUTH_VAULT_APPROLE_MOUNT`-Override).
+  Plus Kubernetes-ServiceAccount-Auth-Flow: JWT aus konfigurierbarem
+  Pod-File-Pfad (Default `/var/run/secrets/kubernetes.io/
+  serviceaccount/token`), Login an `/v1/auth/<mount>/login` mit
+  `role`+`jwt`. ENV-Selektor `MTRACE_AUTH_VAULT_AUTH_METHOD=
+  token|approle|kubernetes`; Default `token` für Backwards-Compat.
+- [x] Neuer `KMSSecretBackend` mit `KMSDecrypter`-Interface
+  (vendor-neutral). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND=kms`
+  aktiviert den Pfad. Production-AWS-SDK-v2-Wiring ist Folge-Item
+  (operator-injected Decrypter im `buildKMSDecrypter`-Hook);
+  `MTRACE_AUTH_KMS_LAB_MODE=1`-Opt-in aktiviert den
+  `LabPassThroughKMSDecrypter` als Pass-Through für Lab-Smokes.
+  Pflicht-ENV: `MTRACE_AUTH_KMS_ACTIVE_KID` plus entweder
+  `_ENCRYPTED_KEYS` (Base64) oder `_ENCRYPTED_KEYS_PATH`.
+- [x] Refresh-TTL-Konfig: `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS`
+  wird im Boot gelesen und der Logger nennt den Status. Default 0
+  = Boot-time-only (heutiges Verhalten). Werte > 0 sind heute
+  no-op mit explizitem Operator-Warning im Boot-Log; **periodischer
+  Refresh-Loop ist als Folge-Item nach `0.12.6` Tranche 8
+  markiert** (würde mutable `MultiKeySigningResolver` + Background-
+  Goroutine erfordern; ohne konkreten Operator-Trigger overkill).
+- [x] Compliance-Audit-Vorbereitung in
+  [`docs/user/auth.md`](../../user/auth.md) §5.5:
+  neuer Compliance-Block mit PCI-/SOC2-relevanten Pfaden — Key-
+  Material in Logs (nie), Fail-closed-Vertrag, TLS-Anforderung
+  (Vault-Adresse mit `https://` in Production), Audit-Trail-
+  Konvention (git-History plus `vault audit`/`aws kms list-grants`).
+- [x] Tests (11 neue in `secret_backend_t8_test.go`):
+  AppRole-HappyPath, AppRole-MissingSecret, AppRole-WrongSecret-
+  Propagates-Error; K8s-HappyPath, K8s-JWTFileMissing, K8s-
+  EmptyJWT; Unsupported-Auth-Method; KMS-HappyPath, KMS-DecryptError,
+  KMS-LabPassThrough, KMS-MissingConfig (3 Sub-Cases),
+  KMS-NilDecrypter, KMS-EncryptedKeysFromPath.
+- [x] `make smoke-vault-approle` und `make smoke-kms-skeleton` neu
+  angelegt: beide Scripts wrappen die jeweiligen Adapter-Tests im
+  `golang:1.26.3`-Docker. Kein echter Vault/KMS-Server nötig
+  (`httptest.Server` + Stub-Decrypter). Makefile-Targets +
+  .PHONY + Help-Einträge ergänzt.
+- [x] Risks-Backlog R-20: Status **🟢** mit Auflösungspfad „Vault-
+  AppRole/K8s + KMS-Skelett in `0.12.6` Tranche 8";
+  Wieder-Eröffnungs-Trigger: (a) Operator-Bedarf nach produktiver
+  AWS-SDK-v2-Anbindung, (b) Refresh-Loop für automatische
+  Schlüsselrotation, (c) konkreter PCI/SOC2-Audit gegen ein
+  Operator-Setup (Lieferung allein erfüllt den Audit nicht).
 
 ## 11. Tranche 9 — R-15 Externe Media-Server-Provisionierung
 

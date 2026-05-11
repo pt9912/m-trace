@@ -685,22 +685,36 @@ func buildOutboundWebhookDispatcher(logger *slog.Logger) driven.OutboundWebhookD
 }
 
 // buildAuthSecretBackend wählt das Signing-Key-Backend
-// (`0.12.5` RAK-79 / R-20). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND`:
+// (`0.12.5` RAK-79 + `0.12.6` Tranche 8 / R-20). ENV-Selektor
+// `MTRACE_AUTH_SECRET_BACKEND`:
 //   - leer / `env`: In-Process-Default — liest `MTRACE_AUTH_SIGNING_KEYS`/
 //     `_KEY` / `_ACTIVE_KID` / `_KID` aus dem Prozess-ENV
 //     (Backwards-Compat zum `0.12.0`-Pfad inkl. Lab-Default-Opt-in).
-//   - `vault`: opt-in externer Adapter über Vault KV-v2
-//     (`MTRACE_AUTH_VAULT_ADDR/_TOKEN/_PATH`). Fail-closed bei
-//     Outage; **kein** Lab-Default-Fallback.
-//   - andere Werte (insb. `kms`): explizit nicht unterstützt — der
-//     Boot-Validator failt mit klarer Fehlermeldung. KMS-Adapter
-//     bleibt additive Folge-Option nach `0.12.5`.
+//   - `vault`: externer Adapter über Vault KV-v2; ab `0.12.6` T8
+//     mit drei Auth-Methoden (token, approle, kubernetes) über
+//     `MTRACE_AUTH_VAULT_AUTH_METHOD`. Fail-closed bei Outage; kein
+//     Lab-Default-Fallback.
+//   - `kms` (`0.12.6` T8): externer Adapter über
+//     `auth.KMSSecretBackend` mit einem injizierten
+//     `KMSDecrypter`. Production-Wiring (AWS-SDK-v2 Adapter)
+//     ist Folge-Item nach `0.12.6`. Für Lab-Smokes existiert ein
+//     `MTRACE_AUTH_KMS_LAB_MODE=1`-Opt-in, der einen
+//     Pass-Through-Decrypter aktiviert (Ciphertext = Plaintext).
+//     Ohne diesen Opt-in fails der Boot mit klarer Fehlermeldung,
+//     damit kein produktiver Boot still auf Lab-Decryption fällt.
+//
+// Refresh-TTL (`MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS`):
+// gelesen + im Boot-Log als Status-Hinweis ausgegeben. Default 0 =
+// keine Refresh (Boot-time-only, wie heute). Werte > 0 sind heute
+// no-op (`0.12.6` T8 markiert den Refresh-Loop als Folge-Item) —
+// der Boot-Log nennt das explizit, damit der Operator weiß, dass
+// ein konfigurierter Wert noch nicht greift.
 //
 // Rückgabe `backendName` wird vom Caller fürs Fehler-Wording und
-// das Lab-Default-Fallback-Gate genutzt — externe Backends dürfen
-// nicht stillschweigend auf einen Lab-Key fallen.
+// das Lab-Default-Fallback-Gate genutzt.
 func buildAuthSecretBackend(logger *slog.Logger) (driven.AuthSecretBackend, string, error) {
 	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envAuthSecretBackend)))
+	logRefreshTTL(logger)
 	switch backend {
 	case "", "env":
 		logger.Info("auth secret backend active", "backend", "env")
@@ -711,14 +725,73 @@ func buildAuthSecretBackend(logger *slog.Logger) (driven.AuthSecretBackend, stri
 			return nil, "", fmt.Errorf("%s=vault: %w", envAuthSecretBackend, err)
 		}
 		logger.Info("auth secret backend active", "backend", "vault",
-			"note", "boot-time load, no refresh; restart for key rotation; fail-closed on outage")
+			"auth_method", strings.ToLower(strings.TrimSpace(os.Getenv("MTRACE_AUTH_VAULT_AUTH_METHOD"))),
+			"note", "boot-time load; refresh-loop is follow-up item; fail-closed on outage")
 		return vb, "vault", nil
+	case "kms":
+		decrypter, err := buildKMSDecrypter()
+		if err != nil {
+			return nil, "", fmt.Errorf("%s=kms: %w", envAuthSecretBackend, err)
+		}
+		kb, err := auth.NewKMSSecretBackend(os.Getenv, decrypter)
+		if err != nil {
+			return nil, "", fmt.Errorf("%s=kms: %w", envAuthSecretBackend, err)
+		}
+		logger.Info("auth secret backend active", "backend", "kms",
+			"decrypter", kmsDecrypterLabel(),
+			"note", "boot-time decrypt; refresh-loop is follow-up item; fail-closed on outage")
+		return kb, "kms", nil
 	default:
 		return nil, "", fmt.Errorf(
-			"%s=%q is not supported (valid: env|vault; kms is a follow-up item after 0.12.5)",
+			"%s=%q is not supported (valid: env|vault|kms)",
 			envAuthSecretBackend, backend,
 		)
 	}
+}
+
+// logRefreshTTL berichtet den Operator-konfigurierten Refresh-TTL
+// im Boot-Log. Default `0` = boot-only. Werte > 0 sind heute no-op
+// (Refresh-Loop ist Folge-Item nach `0.12.6` T8).
+func logRefreshTTL(logger *slog.Logger) {
+	raw := strings.TrimSpace(os.Getenv("MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS"))
+	if raw == "" || raw == "0" {
+		return
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		logger.Warn("auth secret backend refresh TTL invalid; ignoring",
+			"value", raw, "fallback", "boot-only")
+		return
+	}
+	logger.Warn("auth secret backend refresh TTL is configured but not yet active",
+		"requested_seconds", n,
+		"current_behavior", "boot-only load",
+		"follow_up", "refresh-loop is a follow-up item after 0.12.6 Tranche 8")
+}
+
+// buildKMSDecrypter baut den `KMSDecrypter` für den `kms`-Pfad.
+// Heute unterstützt nur der Lab-Mode-Decrypter (Pass-Through, opt-in
+// via `MTRACE_AUTH_KMS_LAB_MODE=1`) — produktive AWS-SDK-Anbindung
+// ist Folge-Item. Ohne den Lab-Opt-in fails die Funktion, damit kein
+// produktiver Boot still auf Lab-Decryption fällt.
+//
+//nolint:ireturn // KMSDecrypter ist der vendor-neutrale Port; Boot-Wiring darf bewusst Interface zurückgeben (Operator-Injection in Folge-Item).
+func buildKMSDecrypter() (auth.KMSDecrypter, error) {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("MTRACE_AUTH_KMS_LAB_MODE")), "1") ||
+		strings.EqualFold(strings.TrimSpace(os.Getenv("MTRACE_AUTH_KMS_LAB_MODE")), "true") {
+		return auth.LabPassThroughKMSDecrypter{}, nil
+	}
+	return nil, fmt.Errorf(
+		"MTRACE_AUTH_KMS_LAB_MODE=1 is required (production AWS-SDK-v2 decrypter is a follow-up item after 0.12.6 Tranche 8; operators with KMS in production must inject their own KMSDecrypter)",
+	)
+}
+
+func kmsDecrypterLabel() string {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("MTRACE_AUTH_KMS_LAB_MODE")), "1") ||
+		strings.EqualFold(strings.TrimSpace(os.Getenv("MTRACE_AUTH_KMS_LAB_MODE")), "true") {
+		return "lab-pass-through (NOT FOR PRODUCTION)"
+	}
+	return "operator-injected"
 }
 
 // buildIssuanceRateLimiter wählt zwischen In-Process-, SQLite- und
