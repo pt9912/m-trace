@@ -353,16 +353,39 @@ Auswahl per ENV:
 | Wert                            | Verhalten                                                                             |
 | ------------------------------- | ------------------------------------------------------------------------------------- |
 | `MTRACE_AUTH_ISSUANCE_LIMITER` leer / `memory` | **Default** — In-Process-Token-Bucket (`0.12.0`-Pfad). Misst pro Replica. |
-| `MTRACE_AUTH_ISSUANCE_LIMITER=sqlite`          | Opt-in — Shared-State über die `auth_issuance_counters`-Tabelle (Migration V5). Braucht aktive `MTRACE_PERSISTENCE=sqlite`; ohne SQLite-Persistenz hard-failt der API-Start. |
-| jeder andere Wert (`redis`, …)                  | Bewusst nicht unterstützt — der Boot-Validator failt mit klarer Fehlermeldung. Network-Backends (Redis/Memcached) sind Folge-Item nach `0.12.5`. |
+| `MTRACE_AUTH_ISSUANCE_LIMITER=sqlite`          | Opt-in — Shared-State über die `auth_issuance_counters`-Tabelle (Migration V5). Braucht aktive `MTRACE_PERSISTENCE=sqlite`; ohne SQLite-Persistenz hard-failt der API-Start. Single-Host-only. |
+| `MTRACE_AUTH_ISSUANCE_LIMITER=redis` (`0.12.6` T7) | Multi-Host-Backend über Redis. Atomare Lua-`EVAL`-Token-Bucket-Operation; teilt sich den Redis-Server mit dem Origin-Limiter (eigener Key-Prefix `mtrace:issuance`). Pflicht-ENV `MTRACE_REDIS_ADDR`; optional `MTRACE_REDIS_AUTH` / `MTRACE_REDIS_DB`. Fail-Mode default fail-closed; opt-in fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`. |
+| `MTRACE_AUTH_ISSUANCE_LIMITER=memcached`       | Bewusst nicht unterstützt — bleibt gemeinsames Folge-Item mit `R-22` (siehe §5.9), falls Operator-Bedarf nach Memcached entsteht. |
 
 **Topologie-Constraint**: der SQLite-Pfad wirkt nur über einen
 gemeinsam gemounteten Persistent-Volume. Auf zwei separaten Hosts
 mit jeweils eigener SQLite-Datei sieht jeder Host nur sein lokales
 Bucket — semantisch identisch zum `memory`-Default. Für echte
 Multi-Host-Topologie (Kubernetes über mehrere Nodes, Container-
-Plattformen ohne shared storage) braucht es einen Network-Backend-
-Adapter — siehe R-17-Resttrigger im Risiken-Backlog.
+Plattformen ohne shared storage) liefert ab `0.12.6` Tranche 7
+der `redis`-Backend einen Network-State-Bucket.
+
+**Redis-Pfad (`0.12.6` T7 / R-17)**:
+
+- Atomicity: ein einziger `EVAL`-Lua-Script-Aufruf prüft beide
+  Buckets (global + project) inkl. Refund bei project-deny. Damit
+  ist die Two-Bucket-Logik race-frei auch unter Parallel-Calls aus
+  mehreren API-Replicas.
+- Bucket-Keys: `mtrace:issuance:global` und
+  `mtrace:issuance:project:<projectID>`. TTL Default 24 h
+  (halten idle Buckets aus dem Redis-Speicher).
+- **Fail-Mode**:
+  - Default **fail-closed**: Redis-Outage → Limiter liefert
+    `deny`; HTTP-Handler antwortet mit `429 auth_issuance_rate_limited`.
+    Damit wird ein Redis-Outage nie zu einer Mint-Welle.
+  - Opt-in **fail-open** via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`:
+    bei Outage fällt der Limiter auf den lokalen
+    In-Memory-Fallback-Bucket zurück. Misst pro Replica —
+    explizite Operator-Entscheidung gegen den Multi-Host-Bucket-
+    Konsens während des Outage-Fensters.
+  - Der `FailOpen`-Schalter gilt **gemeinsam** für Issuance- und
+    Origin-Limiter (`§5.9`), damit kein halb-fail-closed-Pfad
+    entsteht.
 
 **RAK-74-Scope-Cut** (Lastenheft §13.14) bleibt aktiv: der Limiter
 hängt **nicht** vor `/api/ingest/*` — der Ingest-Control-Pfad ist
@@ -382,6 +405,14 @@ nicht in `make gates`). Der Smoke nutzt zwei `*sql.DB`-Verbindungen
 auf dieselbe SQLite-Datei, verbraucht das Project-Bucket auf
 Instance A und prüft, dass Instance B den nächsten Allow als
 „denied" sieht.
+
+**Multi-Host-Smoke** (`0.12.6` T7): `make smoke-issuance-multi-host`
+(opt-in). Startet einen `miniredis`-Mock und zwei
+`RedisIssuanceRateLimiter`-Adapter-Instances (analog zwei API-
+Replicas auf verschiedenen Hosts) gegen denselben Mock-Server;
+verifiziert Cross-Instance-Sharing, den Refund-Pfad bei project-
+deny und beide Fail-Modi (fail-closed Default und fail-open
+opt-in).
 
 ### 5.5 Signing-Key-Backend (Secret-Source)
 
@@ -690,8 +721,9 @@ Limiter pro **Client-IP** (oder Origin-Hash).
 |---|---|
 | `disabled` (Default) / leer | Kein Limiter; Pfad ist 1:1 wie vor `0.12.6`. |
 | `memory` | In-Process-Token-Bucket pro Key (`r.RemoteAddr` oder XFF-letzter-Hop). Capacity 20, Refill 5 / s; misst pro Replica. |
+| `redis` (`0.12.6` T7) | Multi-Host-Backend über Redis. Atomare Lua-`EVAL`-Token-Bucket-Operation; gleicher Redis-Server wie der Issuance-Limiter, eigener Key-Prefix `mtrace:origin`. Pflicht-ENV `MTRACE_REDIS_ADDR`; Fail-Mode-Schalter `MTRACE_AUTH_ISSUANCE_FAIL_OPEN` (gilt gemeinsam für beide Limiter — siehe §5.4). TTL 10 Minuten (kürzlebiger als Issuance-Buckets, weil pro Key/IP). |
 | `sqlite` | **nicht unterstützt** — Origin-Limits über Hosts hinweg brauchen ein Network-Backend; SQLite-Volume produziert false-negative-Limits. |
-| `redis` / `memcached` | **Folge-Item** — wird in `plan-0.12.6` Tranche 7 zusammen mit R-17 als gemeinsamer Network-Backend geliefert (Backend-Konsistenz mit Issuance-Limiter). |
+| `memcached` | Folge-Item gemeinsam mit dem Issuance-Limiter, falls Operator-Bedarf nach Memcached entsteht. |
 
 **`X-Forwarded-For`-Trust** (`MTRACE_TRUST_FORWARDED_FOR`): Setzt der
 Operator `1`/`true`/`yes`, nutzt der Limiter das **letzte (rechteste)**

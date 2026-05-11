@@ -9,7 +9,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-origin-rate-limit smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -34,6 +34,7 @@ help:
 		'  make smoke-srs              Run the SRS example smoke (starts/stops mtrace-srs project; endpoint-only; plan-0.9.0 Tranche 2, RAK-57)' \
 		'  make smoke-key-rotation     Run the multi-key signing rotation smoke (plan-0.12.5 Tranche 1, RAK-78; opt-in)' \
 		'  make smoke-issuance-replica Run the shared-state issuance limiter smoke (plan-0.12.5 Tranche 2, RAK-77; opt-in)' \
+		'  make smoke-issuance-multi-host Run the Redis multi-host issuance + origin limiter smoke (plan-0.12.6 Tranche 7, RAK-88; opt-in)' \
 		'  make smoke-origin-rate-limit Run the origin-/IP-rate-limiter smoke (plan-0.12.6 Tranche 6, RAK-90; opt-in)' \
 		'  make smoke-browser-ingest   Run the browser-ingest policy smoke (plan-0.12.5 Tranche 4, RAK-80; opt-in)' \
 		'  make smoke-mediamtx-auth    Run the MediaMTX externalAuth bridge smoke (plan-0.12.5 Tranche 5, RAK-81; opt-in)' \
@@ -239,6 +240,15 @@ smoke-key-rotation:
 # Compose-Multi-Container-Variante bleibt Folge-Item.
 smoke-issuance-replica:
 	bash scripts/smoke-issuance-replica.sh
+
+# `make smoke-issuance-multi-host` — plan-0.12.6 Tranche 7 / RAK-88
+# (R-17). Multi-Host-Variante des Shared-State-Limiters: zwei
+# RedisIssuanceRateLimiter-Instances teilen sich Buckets ueber
+# miniredis-Mock; deckt auch den Refund-Pfad und beide Fail-Modi
+# (fail-closed Default + fail-open Opt-in). Opt-in (NICHT in
+# `make gates`).
+smoke-issuance-multi-host:
+	bash scripts/smoke-issuance-multi-host.sh
 
 # `make smoke-origin-rate-limit` — plan-0.12.6 Tranche 6 / RAK-90
 # (R-22). Bestaetigt den Origin-Limiter live: drei aufeinander-

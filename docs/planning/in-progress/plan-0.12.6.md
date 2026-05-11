@@ -186,8 +186,8 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | 🟡      |
 | 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | 🟡      |
 | 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | 🟡      |
-| 6       | R-22 | Origin-/IP-Rate-Limiter (Driven-Port)           | Adapter     | 🟡      |
-| 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | ⬜      |
+| 6       | R-22 | Origin-/IP-Rate-Limiter (Memory + Redis-Bundle T7) | Adapter  | 🟡      |
+| 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | 🟡      |
 | 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | ⬜      |
 | 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | ⬜      |
 | 10      | —    | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | Closeout | ⬜ |
@@ -703,34 +703,59 @@ für R-17 und R-22 nachgezogen, **nicht** für eine Tranche
 alleine (sonst entsteht Fragmentation zwischen Issuance-Limiter
 und Origin-Limiter).
 
+**T6-Resttrigger-Bundle** (`R-22`-Redis-Origin-Limiter): T7 schließt
+gleichzeitig den T6-Resttrigger ab und liefert
+`RedisOriginRateLimiter` als zweiten Network-Backend-Adapter auf
+demselben Redis-Server (`mtrace:origin`-Key-Prefix, eigener Lua-
+Script). ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=redis` wird
+aktiviert; der `FailOpen`-Schalter gilt gemeinsam mit dem
+Issuance-Limiter, damit kein halb-fail-closed-Pfad entsteht.
+
 DoD:
 
-- [ ] Neuer Adapter
+- [x] Neuer Adapter
   `apps/api/adapters/driven/auth/redis_issuance_rate_limiter.go` —
-  implementiert `driven.IssuanceRateLimiter` über atomare
-  Token-Bucket-Operationen (Redis `EVAL`-Lua-Script mit
-  `INCRBYFLOAT`/`SETEX`-Pattern). Bucket-Key-Prefix
-  `mtrace:issuance:`.
-- [ ] ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER` um `redis`
-  erweitert. Pflicht-ENV `MTRACE_REDIS_ADDR` (und optional
-  `MTRACE_REDIS_AUTH`/`MTRACE_REDIS_DB`). Wert `memcached` wird
-  vom Boot-Validator als „follow-up item, wird gemeinsam mit
-  R-22 Tranche 6 geliefert" abgelehnt.
-- [ ] Fail-modus: **fail-closed** als Default (Redis-Outage →
-  kein Token issuen, `429 auth_issuance_rate_limited`). ENV
-  `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` für expliziten Operator-
-  Opt-in auf fail-open (lokales `memory`-Fallback).
-- [ ] Test gegen `miniredis`-Mock + optional gegen echten Redis-
-  Container.
-- [ ] `make smoke-issuance-multi-host` **neu anlegen** (Script +
-  Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
-  Wrapt den Cross-Instance-Sharing-Test gegen `miniredis` (oder
-  echten Redis-Container) — Pattern analog
-  `smoke-issuance-replica` aus `0.12.5` T2, aber mit Redis-
-  Network-Backend statt SQLite.
-- [ ] Risks-Backlog R-17: Status 🟢 mit „Redis-Backend in
-  `0.12.6` Tranche 7"; Memcached-Resttrigger explizit als
-  Folge-Item dokumentiert (gemeinsam mit R-22).
+  implementiert `driven.IssuanceRateLimiter` über ein atomares
+  Lua-`EVAL`-Script (beide Buckets + Refund bei project-deny in
+  einem Roundtrip). Bucket-Key-Prefix `mtrace:issuance:`,
+  Default-TTL 24 h. `SCRIPT LOAD` beim Boot, `EVALSHA`-Hot-Path
+  mit `NOSCRIPT`-Fallback auf inline `EVAL`.
+- [x] **Bundle-Mitnahme R-22** (T6-Resttrigger): zweiter Adapter
+  `redis_origin_rate_limiter.go` als Single-Bucket-Variante
+  (`mtrace:origin:<key>`, Default-TTL 10 min). Gleicher Redis-
+  Client wie der Issuance-Limiter.
+- [x] ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER` um `redis`
+  erweitert; analog `MTRACE_ORIGIN_RATE_LIMITER=redis`. Pflicht-
+  ENV `MTRACE_REDIS_ADDR` (Host:Port); optional `_AUTH`/`_DB`.
+  `memcached` lehnt der Boot-Validator mit klarer Folge-Item-
+  Begründung ab; `sqlite` für Origin-Limiter weiterhin Reject.
+- [x] Fail-Mode: **fail-closed Default** (Redis-Outage → `(false,
+  nil)` → HTTP-Handler antwortet `429 auth_issuance_rate_limited`
+  bzw. `429 origin_rate_limited`). Opt-in fail-open via
+  `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` aktiviert lokalen In-Process-
+  Fallback. **Schalter gilt gemeinsam** für Issuance + Origin —
+  ein Operator kann nicht versehentlich einen halb-fail-closed-
+  Pfad konfigurieren.
+- [x] Tests:
+  - `RedisIssuanceRateLimiter` (sieben Tests gegen `miniredis`):
+    Happy-Path-Cross-Instance-Sharing über zwei Adapter-Instances,
+    Project-Isolation, globaler Refund bei project-deny,
+    Fail-Closed-on-Outage, Fail-Open-on-Outage, Nil-Client,
+    Context-Cancel.
+  - `RedisOriginRateLimiter` (sechs Tests): Cross-Instance-
+    Sharing, Empty-Key-No-Op, Fail-Closed/Fail-Open,
+    Nil-Client, Context-Cancel.
+- [x] `make smoke-issuance-multi-host` neu angelegt
+  (`scripts/smoke-issuance-multi-host.sh`): wrapt die Redis-
+  Adapter-Tests (`TestRedisIssuance*` + `TestRedisOrigin*`)
+  im `golang:1.26.3`-Docker, deckt R-17 + R-22-Resttrigger ab.
+  Makefile-Target + .PHONY + Help-Eintrag.
+- [x] Risks-Backlog R-17: Status **🟢** mit „Redis-Backend in
+  `0.12.6` Tranche 7"; Memcached-Folge-Item explizit
+  dokumentiert (gemeinsam mit R-22 reaktivieren, falls Bedarf).
+  R-22 ebenfalls **🟢** (Bundle-Mitnahme); Wieder-Eröffnungs-
+  Trigger sind Operator-Bedarf nach Memcached oder Token-Mint-
+  Welle trotz fail-closed-Default.
 
 ## 10. Tranche 8 — R-20 Produktive Vault/KMS-Adapter
 

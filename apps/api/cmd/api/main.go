@@ -21,6 +21,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
@@ -56,6 +58,10 @@ const (
 	envOutboundWebhookSecret = "MTRACE_OUTBOUND_WEBHOOK_SECRET"
 	envOriginRateLimiter     = "MTRACE_ORIGIN_RATE_LIMITER"
 	envTrustForwardedFor     = "MTRACE_TRUST_FORWARDED_FOR"
+	envRedisAddr             = "MTRACE_REDIS_ADDR"
+	envRedisAuth             = "MTRACE_REDIS_AUTH"
+	envRedisDB               = "MTRACE_REDIS_DB"
+	envAuthIssuanceFailOpen  = "MTRACE_AUTH_ISSUANCE_FAIL_OPEN"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
@@ -715,20 +721,25 @@ func buildAuthSecretBackend(logger *slog.Logger) (driven.AuthSecretBackend, stri
 	}
 }
 
-// buildIssuanceRateLimiter wählt zwischen In-Process- und
-// SQLite-basiertem Token-Bucket-Limiter (`0.12.5` RAK-77 / R-17).
-// ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER`:
+// buildIssuanceRateLimiter wählt zwischen In-Process-, SQLite- und
+// Redis-basiertem Token-Bucket-Limiter (`0.12.5` RAK-77 / R-17 +
+// `0.12.6` Tranche 7 / R-17-Resttrigger). ENV-Selektor
+// `MTRACE_AUTH_ISSUANCE_LIMITER`:
 //   - leer / `memory`: In-Process-Default (Backwards-Compat zu
 //     `0.12.0`). Misst pro Replica — passt nur für Single-Instance-
 //     Setups.
-//   - `sqlite`: opt-in Shared-State-Pfad. Braucht aktive SQLite-
-//     Persistenz (`MTRACE_PERSISTENCE=sqlite`); fehlt sie, hard-fail.
-//     Single-Host-Multi-Replica-Setups (Compose-`volumes:`,
-//     K8s-`hostPath`) teilen sich den Counter. Multi-Host bleibt
-//     Folge-Item.
-//   - andere Werte (`redis`, `memcached`, …): explizit nicht
-//     unterstützt — der Boot-Validator failt mit klarer
-//     Fehlermeldung, statt still auf `memory` zu fallen.
+//   - `sqlite`: opt-in Shared-State-Pfad für Single-Host-Multi-
+//     Replica-Setups. Multi-Host bleibt nicht-Multi-Host-safe.
+//   - `redis` (`0.12.6` T7): Network-Backend für echte Multi-Host-
+//     Setups. Atomare Lua-Token-Bucket-Operation; teilt sich den
+//     Redis-Server mit dem Origin-Limiter (`R-22`) für Backend-
+//     Konsistenz. Pflicht-ENV `MTRACE_REDIS_ADDR`; optional
+//     `MTRACE_REDIS_AUTH`/`MTRACE_REDIS_DB`. Fail-mode default
+//     fail-closed (Outage → 429); `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`
+//     aktiviert lokalen In-Memory-Fallback pro Replica.
+//   - `memcached` (Folge-Item nach `0.12.6`): explizit nicht
+//     unterstützt — bleibt gemeinsames Folge-Item mit R-22, falls
+//     ein Operator Memcached vorzieht.
 func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceRateLimiter, error) {
 	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envAuthIssuanceLimiter)))
 	switch backend {
@@ -753,12 +764,75 @@ func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceR
 			authIssuanceGlobalCapacity, authIssuanceGlobalRefillPerSec,
 			authIssuanceProjectCapacity, authIssuanceProjectRefillPerSec,
 		), nil
+	case "redis":
+		client, err := buildRedisClient()
+		if err != nil {
+			return nil, fmt.Errorf("%s=redis: %w", envAuthIssuanceLimiter, err)
+		}
+		failOpen := issuanceFailOpenOptIn()
+		logger.Info("auth issuance limiter active", "backend", "redis",
+			"fail_mode", failModeLabel(failOpen),
+		)
+		return auth.NewRedisIssuanceRateLimiter(client, auth.RedisIssuanceLimiterConfig{
+			GlobalCapacity:      authIssuanceGlobalCapacity,
+			GlobalRefillPerSec:  authIssuanceGlobalRefillPerSec,
+			ProjectCapacity:     authIssuanceProjectCapacity,
+			ProjectRefillPerSec: authIssuanceProjectRefillPerSec,
+			TTLSeconds:          24 * 3600,
+			FailOpen:            failOpen,
+		}, logger)
+	case "memcached":
+		return nil, fmt.Errorf(
+			"%s=memcached is a follow-up item — gets delivered jointly with R-22 in a future tranche to avoid backend fragmentation",
+			envAuthIssuanceLimiter,
+		)
 	default:
 		return nil, fmt.Errorf(
-			"%s=%q is not supported (valid: memory|sqlite; redis/memcached are follow-up items, see plan-0.12.5 §6 / R-17 follow-ups)",
+			"%s=%q is not supported (valid: memory|sqlite|redis; memcached is a follow-up item)",
 			envAuthIssuanceLimiter, backend,
 		)
 	}
+}
+
+// buildRedisClient liest `MTRACE_REDIS_ADDR`/`_AUTH`/`_DB` und
+// liefert einen go-redis-Client. `Addr` ist Pflicht; Auth und DB
+// sind optional.
+func buildRedisClient() (*redis.Client, error) {
+	addr := strings.TrimSpace(os.Getenv(envRedisAddr))
+	if addr == "" {
+		return nil, fmt.Errorf("%s is required for redis backend (host:port form)", envRedisAddr)
+	}
+	dbIndex := 0
+	if raw := strings.TrimSpace(os.Getenv(envRedisDB)); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 0 {
+			return nil, fmt.Errorf("%s=%q must be a non-negative integer", envRedisDB, raw)
+		}
+		dbIndex = n
+	}
+	return redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: os.Getenv(envRedisAuth),
+		DB:       dbIndex,
+	}), nil
+}
+
+// issuanceFailOpenOptIn liest `MTRACE_AUTH_ISSUANCE_FAIL_OPEN` und
+// akzeptiert nur explizit-truthy Werte. Default ist fail-closed.
+func issuanceFailOpenOptIn() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(envAuthIssuanceFailOpen))) {
+	case "1", "true", "yes":
+		return true
+	default:
+		return false
+	}
+}
+
+func failModeLabel(failOpen bool) string {
+	if failOpen {
+		return "fail-open (local memory fallback on outage)"
+	}
+	return "fail-closed (deny on outage)"
 }
 
 // buildOriginRateLimiter (plan-0.12.6 Tranche 6 / R-22) wählt den
@@ -774,11 +848,17 @@ func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceR
 //     brauchen ein Network-Backend; SQLite via Shared-Volume produziert
 //     false-negative-Limits, sobald Replicas auf verschiedenen Hosts
 //     laufen (siehe plan-0.12.6 §8 Backend-Strategie).
-//   - `redis`: NICHT in T6 — wird in plan-0.12.6 Tranche 7 zusammen
-//     mit R-17 als gemeinsamer Network-Backend nachgezogen.
-//   - `memcached`: ebenfalls Folge-Item, gemeinsam mit R-17 Tranche 7
-//     (Backend-Konsistenz; einzelne Memcached-Adoption ohne R-17-
-//     Pendant produziert Backend-Fragmentation).
+//   - `redis` (`0.12.6` T7): Network-Backend für Multi-Host-Setups.
+//     Atomare Lua-Token-Bucket-Operation; teilt sich den Redis-
+//     Server mit dem Issuance-Limiter (`R-17`) — derselbe
+//     `MTRACE_REDIS_*`-ENV-Block, aber eigener Key-Prefix
+//     `mtrace:origin`. Fail-mode default fail-closed; opt-in
+//     fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` (gemeinsam
+//     mit dem Issuance-Limiter — beide Limiter teilen denselben
+//     Fail-Mode-Schalter, damit ein Operator nicht versehentlich
+//     einen halb-fail-closed Pfad konstruiert).
+//   - `memcached`: Folge-Item gemeinsam mit dem Issuance-Limiter,
+//     falls Operator-Bedarf nach Memcached entsteht.
 //
 // Liefert `nil, nil` für den Disabled-Pfad — der HTTP-Adapter prüft
 // auf nil und überspringt den Middleware-Aufruf.
@@ -786,7 +866,7 @@ func buildOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, erro
 	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envOriginRateLimiter)))
 	switch backend {
 	case "", "disabled":
-		logger.Info("origin rate limiter disabled (set MTRACE_ORIGIN_RATE_LIMITER=memory to enable)")
+		logger.Info("origin rate limiter disabled (set MTRACE_ORIGIN_RATE_LIMITER=memory|redis to enable)")
 		return nil, nil
 	case "memory":
 		logger.Info("origin rate limiter active", "backend", "memory",
@@ -796,19 +876,36 @@ func buildOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, erro
 		return auth.NewInMemoryOriginRateLimiter(
 			originRateLimitCapacity, originRateLimitRefillPerSec,
 		), nil
+	case "redis":
+		client, err := buildRedisClient()
+		if err != nil {
+			return nil, fmt.Errorf("%s=redis: %w", envOriginRateLimiter, err)
+		}
+		failOpen := issuanceFailOpenOptIn()
+		logger.Info("origin rate limiter active", "backend", "redis",
+			"capacity", originRateLimitCapacity,
+			"refill_per_second", originRateLimitRefillPerSec,
+			"fail_mode", failModeLabel(failOpen),
+		)
+		return auth.NewRedisOriginRateLimiter(client, auth.RedisOriginLimiterConfig{
+			Capacity:        originRateLimitCapacity,
+			RefillPerSecond: originRateLimitRefillPerSec,
+			TTLSeconds:      600,
+			FailOpen:        failOpen,
+		}, logger)
 	case "sqlite":
 		return nil, fmt.Errorf(
 			"%s=sqlite is not supported (Origin-Limits are not Multi-Host-safe on shared SQLite volumes; see plan-0.12.6 §8 Backend-Strategie)",
 			envOriginRateLimiter,
 		)
-	case "redis", "memcached":
+	case "memcached":
 		return nil, fmt.Errorf(
-			"%s=%q is a follow-up item — gets delivered jointly with R-17 in plan-0.12.6 Tranche 7 to avoid backend fragmentation between issuance- and origin-limiter",
-			envOriginRateLimiter, backend,
+			"%s=memcached is a follow-up item — gets delivered jointly with R-17 in a future tranche to avoid backend fragmentation between issuance- and origin-limiter",
+			envOriginRateLimiter,
 		)
 	default:
 		return nil, fmt.Errorf(
-			"%s=%q is not supported (valid: disabled|memory; redis/memcached are follow-up items for plan-0.12.6 Tranche 7)",
+			"%s=%q is not supported (valid: disabled|memory|redis; memcached is a follow-up item)",
 			envOriginRateLimiter, backend,
 		)
 	}
