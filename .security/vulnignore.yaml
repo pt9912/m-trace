@@ -64,30 +64,66 @@ trivy:
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
-    # CVE-2026-29111 (systemd): Arbitrary Code Execution / DoS via
-    # spurious IPC. Trifft libsystemd0 und libudev1 im Trixie-Slim-
-    # Base. Ohne Upstream-Fix in Debian 13. Container startet als
-    # USER node, ohne systemd-PID-1 und ohne IPC-Socket-Mounts; der
-    # Vektor ist im m-trace-Runtime nicht aktivierbar. Re-Review
-    # gemeinsam mit R-N-13.
+    # CVE-2026-29111 (systemd): Improper Privilege Management in
+    # systemd-IPC-API. Unprivileged User schickt malformed Daten
+    # an einen IPC-Endpoint und triggert je nach Version
+    # unterschiedliche Effekte:
+    #   - v249 und aelter: Stack overwriting mit attacker-
+    #     controlled content (Pfad zu RCE moeglich).
+    #   - v250 und neuer: Assert-Failure → execution freezes (DoS,
+    #     keine RCE-Surface).
+    # Flaw eingefuehrt in v239. NVD-Publikation 2026-03-23
+    # (last-modified 2026-04-15). NVD/CNA-Severity nur MEDIUM 5.5
+    # (CVSS 3.1, AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H — local,
+    # availability-only). Trivy stuft als HIGH ein (Aqua-/
+    # Debian-Bewertung), darum bleibt der Eintrag noetig.
+    # Debian-Stand (Security Tracker, 2026-05-11): "vulnerable
+    # (no DSA)" fuer trixie; fix nur in forky+sid (260.1-1).
+    # Trifft libsystemd0 und libudev1 in Trixie-Slim-Base
+    # 257.9-1~deb13u1 (also v257.x → neuer Code-Pfad mit
+    # Assert-Failure-DoS, kein RCE-Pfad).
+    # Vektor im m-trace-Runtime nicht aktivierbar: Container
+    # startet als USER node, **kein systemd-PID-1**, keine
+    # IPC-Socket-Mounts auf den Host-systemd, keine
+    # Privilege-Domain für externen Angreifer im Container.
     # Re-Review 2026-05-11 (plan-0.12.6 Tranche 1): Trivy-Scan
-    # zeigt CVE weiterhin in Trixie-Slim-Base ohne `Fixed Version`;
-    # `expires` verlaengert um 90 Tage auf 2026-11-02.
+    # bestaetigt 2 betroffene Packages (libsystemd0, libudev1);
+    # `expires` um 90 Tage auf 2026-11-02 verlaengert. Naechster
+    # Re-Review-Trigger: forky-Backport-Verfuegbarkeit ODER
+    # `expires`-Schwelle.
     - id: CVE-2026-29111
-      reason: "systemd Arbitrary Code Exec via IPC; Trixie-Slim-Base ohne Upstream-Fix; Container ohne systemd/IPC-Mounts. Re-Review bei Trixie-Point-Release."
+      reason: "systemd IPC-API Assert-Failure (Trixie v257.x = post-v250 DoS-Pfad, kein RCE); Trixie ohne Upstream-Fix (no DSA, fix in forky 260.1-1); Container ohne systemd-PID-1 und ohne IPC-Mounts. NVD-Publikation 2026-03-23, NVD MEDIUM 5.5."
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
-    # CVE-2026-4878 (libcap): Privilege Escalation via TOCTOU race
-    # in cap_set_file(). Trifft libcap2 im Trixie-Slim-Base. Ohne
-    # Upstream-Fix in Debian 13. Container startet als unprivileged
-    # USER node; die TOCTOU-Race greift den setcap-Pfad an, den wir
-    # nicht auslosen. Re-Review gemeinsam mit R-N-13.
+    # CVE-2026-4878 (libcap): Time-of-check-to-time-of-use
+    # (TOCTOU) race condition in cap_set_file(). Ein local
+    # unprivileged user mit write-access auf das Parent-Directory
+    # eines Capability-getragenen Files kann den setcap-Update-
+    # Pfad auf ein attacker-controlled File umleiten — mit
+    # potentiellem Privilege-Escalation-Effekt.
+    # NVD-Publikation 2026-04-09 (last-modified 2026-05-07).
+    # NIST-Severity HIGH 7.0 (CVSS 3.1, AV:L/AC:H/PR:L/UI:N/
+    # S:U/C:H/I:H/A:H), Red Hat MEDIUM 6.7 (haben UI:R).
+    # Debian-Stand (Security Tracker, 2026-05-11): "vulnerable
+    # (no DSA)" fuer trixie; fix nur in forky+sid (1:2.78-1).
+    # Trifft libcap2 in Trixie-Slim-Base 1:2.75-10+b8.
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Container laeuft als unprivileged USER node, **kein**
+    #     setcap-Aufruf im Runtime, **keine** Capability-getragenen
+    #     Files mit privileged Effekt.
+    #   - USER node hat keinen write-access auf
+    #     `/etc/sudoers`, `/usr/bin/`-Pfade oder andere
+    #     priviligierte Mountpunkte.
+    #   - Keine setuid/setcap-Binaries im m-trace-Container-
+    #     Layout, die ein Angreifer redirecten koennte.
     # Re-Review 2026-05-11 (plan-0.12.6 Tranche 1): Trivy-Scan
-    # zeigt CVE weiterhin in Trixie-Slim-Base ohne `Fixed Version`;
-    # `expires` verlaengert um 90 Tage auf 2026-11-02.
+    # bestaetigt 1 betroffenes Package (libcap2); `expires` um
+    # 90 Tage auf 2026-11-02 verlaengert. Naechster Re-Review-
+    # Trigger: forky-Backport-Verfuegbarkeit (1:2.78-1) ODER
+    # `expires`-Schwelle.
     - id: CVE-2026-4878
-      reason: "libcap TOCTOU-Race in cap_set_file(); Trixie-Slim-Base ohne Upstream-Fix; Container laeuft als unprivilegierter user node. Re-Review bei Trixie-Point-Release."
+      reason: "libcap cap_set_file() TOCTOU-Race (Privilege Escalation via parent-dir write-access); Trixie ohne Upstream-Fix (no DSA, fix in forky 1:2.78-1); Container laeuft als unprivileged USER node ohne setcap-Pfad und ohne write-access auf privilegierte Mounts. NVD-Publikation 2026-04-09, NIST HIGH 7.0."
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
