@@ -54,6 +54,8 @@ const (
 	envAuthSecretBackend     = "MTRACE_AUTH_SECRET_BACKEND"
 	envOutboundWebhookURL    = "MTRACE_OUTBOUND_WEBHOOK_URL"
 	envOutboundWebhookSecret = "MTRACE_OUTBOUND_WEBHOOK_SECRET"
+	envOriginRateLimiter     = "MTRACE_ORIGIN_RATE_LIMITER"
+	envTrustForwardedFor     = "MTRACE_TRUST_FORWARDED_FOR"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
@@ -66,6 +68,13 @@ const (
 	authIssuanceProjectRefillPerSec = 5.0
 	authDefaultLabSigningKeySecret  = "mtrace-lab-only-do-not-use-in-production-replace-via-env"
 	authDefaultLabSigningKID        = "lab-default"
+
+	// Origin-Rate-Limiter Default-Bucket (plan-0.12.6 Tranche 6 /
+	// R-22). Lab-konservativ: 20 Requests Burst, 5 Refill/s ≈ 5 RPS
+	// steady state pro Client-IP. Wirksam nur wenn
+	// `MTRACE_ORIGIN_RATE_LIMITER=memory`.
+	originRateLimitCapacity     = 20
+	originRateLimitRefillPerSec = 5.0
 )
 
 const (
@@ -346,8 +355,29 @@ func buildHandler(
 	if authBundle != nil && authBundle.PolicyResolver != nil {
 		browserIngestPolicies = authBundle.PolicyResolver
 	}
-	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, browserIngestPolicies, tracer, logger)
+	originLimiter, trustXFF, err := setupOriginRateLimiter(logger)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	router := apihttp.NewRouter(useCase, sessionsService, analysisService, resolver, staticResolver, publisher.Handler(), publisher, publisher, sseConfig, srtHealthInbound, ingestControlInbound, authSessionInbound, playbackAuthHeaders, browserIngestPolicies, originLimiter, trustXFF, tracer, logger)
 	return apihttp.RequestMetricsMiddleware(router, publisher), sessionsSweeper, publisher, otelTelemetry, nil
+}
+
+// setupOriginRateLimiter konsolidiert Build + XFF-Trust-Setup in
+// einen Helper, damit `buildHandler` unter dem funlen-Limit bleibt.
+func setupOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, bool, error) {
+	limiter, err := buildOriginRateLimiter(logger)
+	if err != nil {
+		return nil, false, fmt.Errorf("origin rate limiter: %w", err)
+	}
+	trustXFF := trustForwardedForOptIn()
+	if trustXFF {
+		logger.Info("origin rate limiter trusts X-Forwarded-For",
+			"env", envTrustForwardedFor,
+			"reminder", "operator MUST ensure reverse proxy strips client-supplied XFF headers; otherwise the limiter buckets are spoofable",
+		)
+	}
+	return limiter, trustXFF, nil
 }
 
 // activeSessionsGauge liefert den Gauge-Provider für
@@ -728,6 +758,73 @@ func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceR
 			"%s=%q is not supported (valid: memory|sqlite; redis/memcached are follow-up items, see plan-0.12.5 §6 / R-17 follow-ups)",
 			envAuthIssuanceLimiter, backend,
 		)
+	}
+}
+
+// buildOriginRateLimiter (plan-0.12.6 Tranche 6 / R-22) wählt den
+// Origin-/IP-Rate-Limiter-Backend per ENV-Selektor
+// `MTRACE_ORIGIN_RATE_LIMITER`:
+//   - leer / `disabled`: kein Limiter (Backwards-Compat-Default für
+//     bestehende Operatoren). Memory-Backend bleibt opt-in.
+//   - `memory`: In-Process-Token-Bucket pro Key (`r.RemoteAddr` oder
+//     `X-Forwarded-For`-Client-IP). Single-Replica-Pfad oder
+//     Defense-in-Depth-Ergänzung zum Edge-Layer-Limit (Reverse-Proxy/
+//     CDN).
+//   - `sqlite`: NICHT unterstützt — Origin-Limits über Hosts hinweg
+//     brauchen ein Network-Backend; SQLite via Shared-Volume produziert
+//     false-negative-Limits, sobald Replicas auf verschiedenen Hosts
+//     laufen (siehe plan-0.12.6 §8 Backend-Strategie).
+//   - `redis`: NICHT in T6 — wird in plan-0.12.6 Tranche 7 zusammen
+//     mit R-17 als gemeinsamer Network-Backend nachgezogen.
+//   - `memcached`: ebenfalls Folge-Item, gemeinsam mit R-17 Tranche 7
+//     (Backend-Konsistenz; einzelne Memcached-Adoption ohne R-17-
+//     Pendant produziert Backend-Fragmentation).
+//
+// Liefert `nil, nil` für den Disabled-Pfad — der HTTP-Adapter prüft
+// auf nil und überspringt den Middleware-Aufruf.
+func buildOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, error) {
+	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envOriginRateLimiter)))
+	switch backend {
+	case "", "disabled":
+		logger.Info("origin rate limiter disabled (set MTRACE_ORIGIN_RATE_LIMITER=memory to enable)")
+		return nil, nil
+	case "memory":
+		logger.Info("origin rate limiter active", "backend", "memory",
+			"capacity", originRateLimitCapacity,
+			"refill_per_second", originRateLimitRefillPerSec,
+		)
+		return auth.NewInMemoryOriginRateLimiter(
+			originRateLimitCapacity, originRateLimitRefillPerSec,
+		), nil
+	case "sqlite":
+		return nil, fmt.Errorf(
+			"%s=sqlite is not supported (Origin-Limits are not Multi-Host-safe on shared SQLite volumes; see plan-0.12.6 §8 Backend-Strategie)",
+			envOriginRateLimiter,
+		)
+	case "redis", "memcached":
+		return nil, fmt.Errorf(
+			"%s=%q is a follow-up item — gets delivered jointly with R-17 in plan-0.12.6 Tranche 7 to avoid backend fragmentation between issuance- and origin-limiter",
+			envOriginRateLimiter, backend,
+		)
+	default:
+		return nil, fmt.Errorf(
+			"%s=%q is not supported (valid: disabled|memory; redis/memcached are follow-up items for plan-0.12.6 Tranche 7)",
+			envOriginRateLimiter, backend,
+		)
+	}
+}
+
+// trustForwardedForOptIn liest `MTRACE_TRUST_FORWARDED_FOR` und
+// akzeptiert nur `1`/`true`/`yes`. Alles andere (inkl. fehlend) →
+// HTTP-Adapter nutzt `r.RemoteAddr` als client_ip-Quelle (Default).
+// Operator muss XFF explizit aktivieren, sonst trifft der Origin-
+// Limiter den Reverse-Proxy statt den Client (plan-0.12.6 §8).
+func trustForwardedForOptIn() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(envTrustForwardedFor))) {
+	case "1", "true", "yes":
+		return true
+	default:
+		return false
 	}
 }
 

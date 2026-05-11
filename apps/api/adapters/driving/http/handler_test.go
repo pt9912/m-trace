@@ -93,7 +93,7 @@ func newTestServerWithClock(t *testing.T, clock func() time.Time, opts ...testSe
 			Events: repo,
 		}
 	}
-	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, resolver, publisher.Handler(), nil, nil, sseCfg, nil, nil, nil, nil, nil, nil, logger)
+	router := apihttp.NewRouter(uc, sessionsService, nil, resolver, resolver, publisher.Handler(), nil, nil, sseCfg, nil, nil, nil, nil, nil, nil, false, nil, logger)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

@@ -133,7 +133,7 @@ func newIngestRouter(t *testing.T, stub *stubIngestControl) *httptest.Server {
 	resolver := ingestTestResolver()
 	router := apihttp.NewRouter(
 		nil, nil, nil, resolver, resolver,
-		publisher.Handler(), nil, nil, nil, nil, stub, nil, nil, nil, nil, logger,
+		publisher.Handler(), nil, nil, nil, nil, stub, nil, nil, nil, nil, false, nil, logger,
 	)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)

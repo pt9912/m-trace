@@ -60,6 +60,8 @@ func NewRouter(
 	authSession driving.AuthSessionInbound,
 	playbackAuthHeaders *AuthHeaderParser,
 	browserIngestPolicies BrowserIngestPolicies,
+	originLimiter driven.OriginRateLimiter,
+	trustForwardedFor bool,
 	tracer trace.Tracer,
 	logger *slog.Logger,
 ) http.Handler {
@@ -91,7 +93,12 @@ func NewRouter(
 		Logger:   logger,
 	}
 
-	mux.Handle("POST /api/playback-events", playback)
+	// plan-0.12.6 Tranche 6 / R-22: Origin-/IP-Rate-Limiter sitzt vor
+	// `POST /api/playback-events` und `POST /api/auth/session-tokens`.
+	// `nil`-Limiter (Disabled-Pfad) → Middleware ist No-Op und kein
+	// Wrap.
+	mux.Handle("POST /api/playback-events",
+		originRateLimitMiddleware(playback, originLimiter, trustForwardedFor, logger))
 	mux.HandleFunc("GET /api/health", HealthHandler)
 	mux.Handle("GET /api/metrics", metricsHandler)
 	mux.Handle("GET /api/stream-sessions", sessionsList)
@@ -124,7 +131,7 @@ func NewRouter(
 
 	registerSrtHealthRoutes(mux, srtHealth, resolver, allowlist, preflightMetrics, tracer, logger)
 	registerIngestControlRoutes(mux, ingestControl, resolver, allowlist, browserIngestPolicies, preflightMetrics, logger)
-	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, preflightMetrics, logger)
+	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, preflightMetrics, originLimiter, trustForwardedFor, logger)
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
 	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
@@ -249,6 +256,8 @@ func registerAuthSessionRoutes(
 	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
 	preflightMetrics PreflightMetrics,
+	originLimiter driven.OriginRateLimiter,
+	trustForwardedFor bool,
 	logger *slog.Logger,
 ) {
 	if authSession == nil {
@@ -259,7 +268,10 @@ func registerAuthSessionRoutes(
 		Resolver: resolver,
 		Logger:   logger,
 	}
-	mux.Handle("POST /api/auth/session-tokens", handler)
+	// plan-0.12.6 Tranche 6 / R-22: Origin-Limiter vor dem
+	// Issuance-Pfad. `nil`-Limiter ist No-Op.
+	mux.Handle("POST /api/auth/session-tokens",
+		originRateLimitMiddleware(handler, originLimiter, trustForwardedFor, logger))
 	mux.HandleFunc("OPTIONS /api/auth/session-tokens", playerSDKPreflightHandler(allowlist, preflightMetrics))
 }
 

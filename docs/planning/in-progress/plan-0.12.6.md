@@ -186,7 +186,7 @@ Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
 | 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | 🟡      |
 | 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | 🟡      |
 | 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | 🟡      |
-| 6       | R-22 | Origin-/IP-Rate-Limiter (Driven-Port)           | Adapter     | ⬜      |
+| 6       | R-22 | Origin-/IP-Rate-Limiter (Driven-Port)           | Adapter     | 🟡      |
 | 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | ⬜      |
 | 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | ⬜      |
 | 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | ⬜      |
@@ -624,49 +624,66 @@ Optionen:
 
 DoD:
 
-- [ ] Neuer Driven-Port
+- [x] Neuer Driven-Port
   `apps/api/hexagon/port/driven/origin_rate_limiter.go` mit
-  `Allow(ctx, key)`-Methode (`key` = `client_ip` oder
-  `Origin`-Hash).
-- [ ] `InMemoryOriginRateLimiter`-Adapter analog
-  `InMemoryIssuanceRateLimiter` (Token-Bucket-Logik
-  wiederverwenden; Bucket-Key-Prefix `origin:` bzw. `ip:`).
+  `Allow(ctx, key string) (bool, error)`-Methode; `key=""` ist
+  No-Op `(true, nil)` (Defense gegen fehlende RemoteAddr/XFF-
+  Info).
+- [x] `InMemoryOriginRateLimiter`-Adapter: Single-Bucket pro Key,
+  wiederverwendet `tokenBucket`/`consume`/`clampMax` aus dem
+  Issuance-Limiter; Token-Bucket-Konfig via Konstruktor;
+  opportunistische Idle-Eviction (5-Min-Sweep / 10-Min-TTL).
+  `WithInMemoryOriginRateLimiterNow`-Option für Test-Determinismus.
   **Kein** SQLite-Adapter — bewusste Plan-Entscheidung (siehe
   Backend-Strategie oben).
-- [ ] `RedisOriginRateLimiter`-Adapter (zusammen mit
-  `R-17`-Network-Backend in Tranche 7 entwickeln; gleicher
-  Redis-Server, anderer Bucket-Key-Prefix). Aktivierung erst
-  nach R-17 Tranche 7 (oder gemeinsam, wenn Tranche 6 + 7 als
-  Bundle aktiviert werden).
-- [ ] ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|redis`
-  (Default `disabled` — kein Limiter, Backwards-Compat). Andere
-  Werte lehnt der Boot-Validator mit klarem Fehler ab:
-  - `sqlite` → „nicht Multi-Host-tauglich, siehe
-    Plan-0.12.6 §8 Backend-Strategie".
-  - `memcached` → „follow-up item, wird gemeinsam mit R-17
-    Tranche 7 geliefert, falls Operator-Bedarf für gemeinsamen
-    Memcached-Cluster entsteht" (Backend-Konsistenz mit
-    Issuance-Limiter aus §9; einzelne Memcached-Adoption ohne
-    R-17-Pendant produziert Backend-Fragmentation).
-- [ ] Integration vor `POST /api/auth/session-tokens` und
-  `POST /api/playback-events`-Handlern (Reihenfolge: erst Origin-
-  Limit, dann Project-Limit).
-- [ ] `client_ip`-Quelle dokumentiert: standardmäßig
-  `r.RemoteAddr`; bei Reverse-Proxy-Setups muss der Operator den
-  `X-Forwarded-For`-Trust-Boundary explizit aktivieren (ENV
-  `MTRACE_TRUST_FORWARDED_FOR=1` o. ä.) — sonst trifft der
-  Limiter den Proxy, nicht den Client.
-- [ ] Tests: In-Memory-Adapter (Single-Process) + Redis-Adapter
-  (Cross-Instance-Sharing über `miniredis`-Mock oder echten
-  Redis-Container). **Kein** Cross-Instance-Test auf SQLite,
-  weil der Adapter es nicht gibt.
-- [ ] `make smoke-origin-rate-limit` **neu anlegen** (Script +
-  Makefile-Target + Help-Eintrag; Konvention siehe §0.2.1).
-  Wrapt entweder den In-Memory-Adapter-Test oder den Redis-
-  Mock-Test (`miniredis`).
-- [ ] Risks-Backlog R-22: Status 🟢 sobald Redis-Adapter steht;
-  bei nur In-Memory bleibt es „teilweise gelöst" mit
-  Resttrigger „Multi-Host-IP-Limits benötigt Network-Backend".
+- [!] `RedisOriginRateLimiter`-Adapter: **deferred auf Tranche 7**
+  (R-17-Bundle). T7 implementiert Redis als gemeinsamer Network-
+  Backend für Issuance- und Origin-Limiter; T6 bleibt strikt
+  Memory-only. Resttrigger in Risks-Backlog R-22 dokumentiert
+  („teilweise gelöst").
+- [x] ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory`
+  (Default `disabled` — kein Limiter, Backwards-Compat).
+  Boot-Validator-Rejects:
+  - `sqlite` → „not supported (Multi-Host-unsafe on shared
+    SQLite volumes; see §8 Backend-Strategie)".
+  - `redis` / `memcached` → „follow-up item — gets delivered
+    jointly with R-17 in plan-0.12.6 Tranche 7 to avoid backend
+    fragmentation".
+- [x] Integration in
+  `apps/api/adapters/driving/http/origin_rate_limit.go` als
+  `originRateLimitMiddleware`; wrappt `POST /api/auth/session-
+  tokens` (in `registerAuthSessionRoutes`) und
+  `POST /api/playback-events` (in `NewRouter`). Reihenfolge:
+  Origin-Limit zuerst, danach Project-Limit (Issuance- bzw.
+  Event-Counter).
+- [x] `client_ip`-Quelle: Default `r.RemoteAddr` (`net.SplitHostPort`
+  entkoppelt den Port; Empty-RemoteAddr → No-Op). XFF-Trust
+  opt-in via `MTRACE_TRUST_FORWARDED_FOR=1` — Limiter nutzt
+  dann das letzte XFF-Element als Key. Operator-Doku in
+  `docs/user/auth.md` §5.9 mit Spoofing-Warning.
+- [x] Tests:
+  - Adapter
+    (`adapters/driven/auth/in_memory_origin_rate_limiter_test.go`):
+    Bucket-Depletion + Refill, Key-Isolation, Empty-Key-No-Op,
+    Disabled-Bucket, Nil-Receiver, Context-Cancel.
+  - HTTP-Integration
+    (`adapters/driving/http/origin_rate_limit_test.go`):
+    Burst → 429 mit Body `{"error":"origin_rate_limited"}`,
+    Disabled-Pfad lässt alle Aufrufe durch, XFF-Trust mit
+    unabhängigen Buckets pro XFF-Wert.
+  - **Kein** Cross-Instance-Test auf SQLite, weil der Adapter
+    es nicht gibt. Redis-Test kommt mit T7.
+- [x] `make smoke-origin-rate-limit` neu angelegt:
+  `scripts/smoke-origin-rate-limit.sh` feuert 3× `POST /api/auth/
+  session-tokens` und erwartet 201/201/429 mit
+  `origin_rate_limited`-Body. Makefile-Target + .PHONY +
+  Help-Eintrag (`make smoke-origin-rate-limit`). Opt-in,
+  voraussetzt laufende API mit `MTRACE_ORIGIN_RATE_LIMITER=memory`
+  und Capacity ≥ 2.
+- [x] Risks-Backlog R-22: Status ⬜ „teilweise gelöst" mit
+  Mitigation-Spalte „Memory-Layer geliefert in 0.12.6 Tranche 6";
+  Resttrigger „Multi-Host-IP-Limits benötigt Redis-Network-
+  Backend (Tranche 7 mit R-17)". Status wechselt nach T7 auf 🟢.
 
 ## 9. Tranche 7 — R-17 Multi-Host-Issuance-Limiter (Network-Backend)
 

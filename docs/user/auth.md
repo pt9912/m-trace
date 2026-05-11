@@ -675,6 +675,56 @@ Wickelt sieben Pfade (disabled-noop, happy path, HMAC-Match,
 Retry-success, Dead-Letter-Exhaustion, Body-Shape, Context-Cancel)
 gegen einen `httptest.Server`-Mock-Konsumenten.
 
+### 5.9 Origin-/IP-Rate-Limiter (`0.12.6` / R-22)
+
+`0.12.6` Tranche 6 ergänzt einen **Defense-in-Depth-Limiter** vor
+`POST /api/auth/session-tokens` und `POST /api/playback-events`, der
+Bursts aus einer einzelnen Client-Quelle bremst **bevor** der
+project-skopierte Issuance- oder Event-Counter überhaupt geprüft wird.
+Anders als der Issuance-Limiter (`§5.4`, project-skopiert) misst dieser
+Limiter pro **Client-IP** (oder Origin-Hash).
+
+**ENV-Selektor** `MTRACE_ORIGIN_RATE_LIMITER`:
+
+| Wert | Verhalten |
+|---|---|
+| `disabled` (Default) / leer | Kein Limiter; Pfad ist 1:1 wie vor `0.12.6`. |
+| `memory` | In-Process-Token-Bucket pro Key (`r.RemoteAddr` oder XFF-letzter-Hop). Capacity 20, Refill 5 / s; misst pro Replica. |
+| `sqlite` | **nicht unterstützt** — Origin-Limits über Hosts hinweg brauchen ein Network-Backend; SQLite-Volume produziert false-negative-Limits. |
+| `redis` / `memcached` | **Folge-Item** — wird in `plan-0.12.6` Tranche 7 zusammen mit R-17 als gemeinsamer Network-Backend geliefert (Backend-Konsistenz mit Issuance-Limiter). |
+
+**`X-Forwarded-For`-Trust** (`MTRACE_TRUST_FORWARDED_FOR`): Setzt der
+Operator `1`/`true`/`yes`, nutzt der Limiter das **letzte (rechteste)**
+Element der XFF-Header-Liste als Client-IP. Das ist nur dann korrekt,
+wenn der Reverse-Proxy:
+
+1. Den XFF-Header beim Eintritt **strippt** (sonst kann ein Client
+   beliebige XFF-Werte vorgeben und die Limit-Buckets stündlich
+   switchen — Spoofing-Surface).
+2. Genau **einen** Hop hinzufügt (sonst zeigt das rechte XFF-Element
+   auf einen internen Hop statt auf den Client).
+
+Ohne den Opt-in fällt der Limiter auf `r.RemoteAddr` zurück, was bei
+direktem Client→Server-Setup korrekt ist, aber bei Reverse-Proxy auf
+den Proxy zeigt (alle Clients teilen sich dann einen Bucket — der
+Limiter wirkt wie ein Single-Source-Throttle und ist effektiv nutzlos).
+
+**Reject-Body** bei Limit-Verletzung:
+
+```json
+{"error":"origin_rate_limited"}
+```
+
+HTTP-Status: `429 Too Many Requests`. Reihenfolge gegenüber dem
+Issuance-Limiter: **Origin-Limit zuerst**; wenn dieser durchgelassen
+hat, prüft der Issuance-Limiter (`§5.4`) seinen project-skopierten
+Bucket. Operator-Pfade, die nur den Issuance-Pfad messen wollten,
+müssen den Origin-Limiter deaktiviert lassen (Default).
+
+**Reproduzierbarer Lab-Smoke**: `make smoke-origin-rate-limit`
+(opt-in). Drei aufeinanderfolgende Token-Aufrufe → erwartete
+201/201/429 mit `origin_rate_limited`-Body.
+
 ---
 
 ## 6. Datenschutz / GDPR

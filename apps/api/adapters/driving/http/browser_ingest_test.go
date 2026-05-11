@@ -79,7 +79,7 @@ func newBrowserIngestRouter(t *testing.T, policies apihttp.BrowserIngestPolicies
 	resolver := browserIngestResolver(t)
 	router := apihttp.NewRouter(
 		nil, nil, nil, resolver, resolver,
-		publisher.Handler(), nil, nil, nil, nil, &stub, nil, nil, policies, nil, logger,
+		publisher.Handler(), nil, nil, nil, nil, &stub, nil, nil, policies, nil, false, nil, logger,
 	)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)

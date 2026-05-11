@@ -77,7 +77,7 @@ func newSrtHealthRouter(t *testing.T, inbound apihttp.SrtHealthInbound) *httptes
 	tracer := tracenoop.NewTracerProvider().Tracer("test")
 	router := apihttp.NewRouter(
 		nil, nil, nil, resolver, resolver,
-		publisher.Handler(), nil, nil, nil, inbound, nil, nil, nil, nil, tracer, logger,
+		publisher.Handler(), nil, nil, nil, inbound, nil, nil, nil, nil, nil, false, tracer, logger,
 	)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
