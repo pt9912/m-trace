@@ -1,7 +1,7 @@
 # Implementation Plan — `0.14.0` (Ops Backend Follow-up)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0, 3
-> und 4 geschlossen, Szenario C aktiv.
+> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0..4
+> geschlossen, Tranche 5 ist Closeout-/Tag-Gate.
 >
 > **Vorgänger**: `0.13.0` (Production / Ops Backends), released
 > 2026-05-12; Plan in
@@ -190,8 +190,8 @@ Kapazität und getrennte Gate-Nachweise.
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung, RAK-Zuschnitt und Vorgänger-Entscheidungen | Scope aus `0.13.0` verbindlich übernommen | `0.13.0` released | Finaler 0.14-Scope | ✅ |
-| 1 | Postgres-Migrations-/Adapter-Slice | Trigger-/DDL-/Replay-Grenzen gepflegt; kein Runtime-Adapter | RAK-91-Ergebnis | Migrations-/Rollback-/Trigger-Nachweis | ⬜ |
-| 2 | Analytics-Backend-Slice, POC oder Trigger-Pflege | Query-/Kosten-/POC-Trigger gepflegt; kein Pflichtbackend | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ⬜ |
+| 1 | Postgres-Migrations-/Adapter-Slice | Trigger-/DDL-/Replay-Grenzen gepflegt; kein Runtime-Adapter | RAK-91-Ergebnis | Migrations-/Rollback-/Trigger-Nachweis | ✅ |
+| 2 | Analytics-Backend-Slice, POC oder Trigger-Pflege | Query-/Kosten-/POC-Trigger gepflegt; kein Pflichtbackend | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ✅ |
 | 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad oder Seed-Hardening ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ✅ |
 | 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs oder Seed-Validation | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ✅ |
 | 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | letzte aktive Tranche | Tag `v0.14.0` | ⬜ |
@@ -284,18 +284,18 @@ umgesetzt, als zeitbegrenzter POC gefahren oder final deferred.
 DoD:
 
 - [x] `0.13.0`-Entscheidung zu `MVP-40` liegt vor.
-- [ ] Entscheiden, ob `0.14.0` einen POC, einen schmalen
+- [x] Entscheiden, ob `0.14.0` einen POC, einen schmalen
   produktionsnahen Adapter-Slice, eine reine DDL-/Replay-Vorbereitung
   oder nur Trigger-Pflege liefert.
-- [ ] Migrationsmodell definiert: `migrate up`, `rollback`, `replay`
+- [x] Migrationsmodell definiert: `migrate up`, `rollback`, `replay`
   und Kompatibilitätsgrenze zu SQLite.
-- [ ] Schema-Differenzen zwischen SQLite und Postgres dokumentiert
+- [x] Schema-Differenzen zwischen SQLite und Postgres dokumentiert
   (Zeittypen, IDs, Constraints, Transaktionen, Pagination-Sortierung).
-- [ ] Adapter-Scope auf minimale Ports und Queries begrenzt.
-- [ ] Contract- und Regressionstests belegen, dass SQLite der lokale
+- [x] Adapter-Scope auf minimale Ports und Queries begrenzt.
+- [x] Contract- und Regressionstests belegen, dass SQLite der lokale
   Default bleibt.
-- [ ] Backup-/Restore- und Ausfallverhalten dokumentiert.
-- [ ] Reaktivierungs- oder Defer-Trigger mit Owner und Messwerten
+- [x] Backup-/Restore- und Ausfallverhalten dokumentiert.
+- [x] Reaktivierungs- oder Defer-Trigger mit Owner und Messwerten
   aktualisiert.
 
 Go/No-Go:
@@ -312,6 +312,47 @@ Vorläufige Artefakte:
 - Migrations-/Rollback-Dokumentation.
 - Adapter-/Repository-Tests oder POC-Report.
 
+### 3.1 Triggerpflege — 2026-05-12
+
+**Entscheidung:** `0.14.0` liefert keinen Postgres-POC und keinen
+Runtime-Adapter. Der Pfad bleibt `defer-with-migration-seed`; die
+Lieferung ist ein Trigger-/DDL-/Replay-Nachweis.
+
+Artefakt:
+
+- `docs/ops/backend-followup.md` §1
+
+Status:
+
+- Multi-Replica-Trigger nicht ausgelöst: K8s-Beispiele bleiben
+  Single-Replica mit `strategy: Recreate`.
+- Recovery-SLO nicht ausgelöst: kein verbindliches `RPO <= 15 min`
+  oder `RTO <= 30 min`.
+- Retention-/Read-Last nicht ausgelöst: kein Bericht über > 10 Mio.
+  Events mit p95-Read-Anforderung < 2 s.
+
+Migrationsmodell:
+
+- `migrate up`: Postgres-DDL wird erst in einem Folge-Slice aus
+  `apps/api/internal/storage/schema.yaml` erzeugt und gegen SQLite-
+  Contract-Tests gespiegelt.
+- `rollback`: vor Runtime-Aktivierung ist Rollback das Entfernen des
+  Folge-Slices; nach Runtime-Aktivierung braucht es Snapshot-Export/
+  Import oder explizit dokumentiertes Zurückschalten.
+- `replay`: Folge-Slice muss API-kompatible Event-/Session-Fixtures
+  oder SQLite-Snapshots replayen können, ohne Reihenfolge oder
+  Project-Scope zu verändern.
+
+What ändert sich:
+
+- Postgres hat einen konkreten `0.14.0`-Trigger- und
+  Migration-Grenznachweis.
+
+What bleibt unverändert:
+
+- SQLite bleibt Default; kein DSN-Selector, kein Dual-Write und kein
+  Postgres-Adapter landen in diesem Schnitt.
+
 ## 4. Tranche 2 — Analytics-Backend-Folgepfad
 
 Ziel: Der in `0.13.0` gewählte Analytics-Pfad wird mit begrenztem
@@ -320,15 +361,15 @@ Datenmodell, klaren Abbruchkriterien und Query-Nachweisen konkret.
 DoD:
 
 - [x] `0.13.0`-Entscheidung zu `MVP-41` liegt vor.
-- [ ] Zielbackend oder POC-Variante final bestätigt.
-- [ ] Datenmodell und Retention-Grenzen definiert.
-- [ ] Query-Workloads mit erwarteter Last und Kostenannahmen
+- [x] Zielbackend oder POC-Variante final bestätigt.
+- [x] Datenmodell und Retention-Grenzen definiert.
+- [x] Query-Workloads mit erwarteter Last und Kostenannahmen
   dokumentiert.
-- [ ] Datenfluss klar geschnitten: Realtime-Ingest, Batch-Export,
+- [x] Datenfluss klar geschnitten: Realtime-Ingest, Batch-Export,
   Replikation oder synthetischer POC-Load.
-- [ ] Ingest-/Exportpfad bleibt optional und führt keine lokale
+- [x] Ingest-/Exportpfad bleibt optional und führt keine lokale
   Pflichtabhängigkeit ein.
-- [ ] POC-Report oder Implementierungsnachweis enthält
+- [x] POC-Report oder Implementierungsnachweis enthält
   Erfolgskriterien, Abbruchkriterien und Zeitgrenze.
 
 Go/No-Go:
@@ -343,6 +384,43 @@ Vorläufige Artefakte:
 - Vergleichsfortschreibung aus `0.13.0`.
 - POC-Report mit Kosten-/Lastannahmen.
 - Optionaler Smoke oder synthetischer Load-Nachweis.
+
+### 4.1 Triggerpflege — 2026-05-12
+
+**Entscheidung:** `0.14.0` startet keinen Analytics-POC. ClickHouse,
+VictoriaMetrics und Mimir bleiben deferred, bis ein messbarer Workload-
+oder Owner-Trigger ausgelöst ist.
+
+Artefakt:
+
+- `docs/ops/backend-followup.md` §2
+
+Status:
+
+- High-Volume-Trigger nicht ausgelöst: kein Bericht über > 50 Mio.
+  Events pro Tag.
+- API-/Prometheus-Gap nicht ausgelöst: kein benannter Query-Workload
+  ist blockiert.
+- POC-Readiness nicht ausgelöst: kein Owner, kein maximal 30 Tage
+  laufender POC und keine datierten Erfolg-/Abbruchkriterien.
+
+Datenfluss-Grenze:
+
+- Erlaubt für spätere POCs: Batch-Export aus SQLite-Snapshot,
+  synthetische Last aus Contract-Fixtures oder isolierter Replay.
+- Nicht erlaubt ohne neuen Planbeschluss: Pflicht-Dual-Write im API-
+  Hot-Path, Default-Compose-Abhängigkeit, unbounded Retention oder
+  mehrere Analytics-Backends im selben POC.
+
+What ändert sich:
+
+- Analytics hat einen konkreten `0.14.0`-Trigger-, Workload- und
+  Datenfluss-Nachweis.
+
+What bleibt unverändert:
+
+- Kein ClickHouse-, VictoriaMetrics- oder Mimir-Pflichtbackend wird
+  eingeführt.
 
 ## 5. Tranche 3 — Kubernetes, NF-18 und R-9
 
@@ -523,8 +601,8 @@ reserviert.
 
 | RAK | Priorität | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
-| RAK-96 | Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad bleibt als `defer-with-migration-seed` vorbereitet oder wird nur bei Trigger umgesetzt; SQLite bleibt Default | [ ] |
-| RAK-97 | Muss | Analytics-Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger; kein Pflichtbackend | [ ] |
+| RAK-96 | Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad bleibt als `defer-with-migration-seed` vorbereitet oder wird nur bei Trigger umgesetzt; SQLite bleibt Default | [x] |
+| RAK-97 | Muss | Analytics-Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger; kein Pflichtbackend | [x] |
 | RAK-98 | Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; vorhandene Seeds sind validiert oder Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [x] |
 | RAK-99 | Muss | Devcontainer-Artefakt oder Validation-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [x] |
 | RAK-100 | Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [x] |
@@ -533,8 +611,8 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
 
 | RAK | Primäre Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-96 | `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/Storage | ⬜ |
-| RAK-97 | `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/QA | ⬜ |
+| RAK-96 | `docs/adr/0005-production-ops-backends.md`, `docs/ops/backend-followup.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/Storage | ✅ |
+| RAK-97 | `docs/adr/0005-production-ops-backends.md`, `docs/ops/backend-followup.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/QA | ✅ |
 | RAK-98 | `scripts/validate-k8s-examples.sh`, `deploy/k8s/README.md`, `deploy/k8s/*.yaml`, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
 | RAK-99 | `.devcontainer/devcontainer.json`, `scripts/validate-devcontainer.sh`, `docs/user/local-development.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/DevEx | ✅ |
 | RAK-100 | `scripts/release-guard.sh`, `scripts/test-release-guard.sh`, `docs/user/releasing.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/CI | ✅ |

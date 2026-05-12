@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`make k8s-validate`), Devcontainer-Seed-Validation
   (`make devcontainer-validate`) und lokale Release-Guard-Fehlerpfad-
   Tests (`make release-guard-test`).
+- `0.14.0` Postgres-/Analytics-Triggerpflege:
+  `docs/ops/backend-followup.md` dokumentiert DDL-/Rollback-/Replay-
+  Grenzen, Schema-Differenzen, Postgres-Reaktivierungs-Trigger,
+  Analytics-Workloads, Retention-Grenzen und POC-Abbruchkriterien ohne
+  neue Runtime-Pflichtabhängigkeit.
 
 ## [0.13.0] - 2026-05-12
 
