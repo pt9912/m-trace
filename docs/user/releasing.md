@@ -350,11 +350,23 @@ Der Guard prüft:
 - `CHANGELOG.md`, API-`serviceVersion` und Root-`package.json` zeigen
   auf dieselbe Version.
 
-Für lokale Tests am Guard selbst existieren zwei bewusst benannte
+Für lokale Tests am Guard selbst existieren drei bewusst benannte
 Overrides: `MTRACE_RELEASE_ALLOW_NON_MAIN=1`,
 `MTRACE_RELEASE_ALLOW_DIRTY=1` und
 `MTRACE_RELEASE_ALLOW_OFFLINE=1`. Diese Overrides sind nicht für den
 Release-Pfad zulässig und dürfen im Release-Log nicht gesetzt sein.
+
+Ab `0.14.0` gibt es zusätzlich einen lokalen Guard-Self-Test:
+
+```bash
+make release-guard-test
+```
+
+Der Test legt temporäre Git-Repositories an und prüft die wichtigsten
+Fehlerfälle ohne Netzwerkzugriff: fehlende Freigabe, `v`-Prefix im
+Versionsargument, falscher Branch, Dirty Worktree, bereits vorhandener
+lokaler Tag und Versionsdrift in `package.json`. Er erzeugt keinen Tag
+und keinen Release.
 
 ### 3.1 Patch-Release-Konvention (`0.X.Y`, ab `0.8.5`)
 

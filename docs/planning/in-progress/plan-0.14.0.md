@@ -1,7 +1,7 @@
 # Implementation Plan — `0.14.0` (Ops Backend Follow-up)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranche 0
-> geschlossen, Szenario C aktiv.
+> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0, 3
+> und 4 geschlossen, Szenario C aktiv.
 >
 > **Vorgänger**: `0.13.0` (Production / Ops Backends), released
 > 2026-05-12; Plan in
@@ -192,8 +192,8 @@ Kapazität und getrennte Gate-Nachweise.
 | 0 | Aktivierung, RAK-Zuschnitt und Vorgänger-Entscheidungen | Scope aus `0.13.0` verbindlich übernommen | `0.13.0` released | Finaler 0.14-Scope | ✅ |
 | 1 | Postgres-Migrations-/Adapter-Slice | Trigger-/DDL-/Replay-Grenzen gepflegt; kein Runtime-Adapter | RAK-91-Ergebnis | Migrations-/Rollback-/Trigger-Nachweis | ⬜ |
 | 2 | Analytics-Backend-Slice, POC oder Trigger-Pflege | Query-/Kosten-/POC-Trigger gepflegt; kein Pflichtbackend | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ⬜ |
-| 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad oder Seed-Hardening ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | 🟡 |
-| 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs oder Seed-Validation | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | 🟡 |
+| 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad oder Seed-Hardening ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ✅ |
+| 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs oder Seed-Validation | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ✅ |
 | 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | letzte aktive Tranche | Tag `v0.14.0` | ⬜ |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
@@ -353,13 +353,13 @@ zu müssen.
 DoD:
 
 - [x] `0.13.0`-Entscheidung zu `MVP-42`, `NF-18` und R-9 liegt vor.
-- [ ] Beispielmanifeste, Seed-Hardening-Notiz oder Defer-Notiz liegen
+- [x] Beispielmanifeste, Seed-Hardening-Notiz oder Defer-Notiz liegen
   mit klarer Production-Ready-Abgrenzung vor.
-- [ ] Observability-Label-Allowlist ist gegen K8s-Smoke-Anforderungen
+- [x] Observability-Label-Allowlist ist gegen K8s-Smoke-Anforderungen
   geprüft.
-- [ ] Mindestens zwei R-9-Gegenmaßnahmen sind dokumentiert und einem
+- [x] Mindestens zwei R-9-Gegenmaßnahmen sind dokumentiert und einem
   Owner zugeordnet.
-- [ ] Smoke-Stage ist entweder optional implementiert oder mit
+- [x] Smoke-Stage ist entweder optional implementiert oder mit
   messbarem Trigger deferred.
 
 Go/No-Go:
@@ -375,6 +375,49 @@ Vorläufige Artefakte:
 - Risks-Backlog-Update zu R-9.
 - README-/User-Doku-Abgrenzung.
 
+### 5.1 Seed-Hardening — 2026-05-12
+
+**Entscheidung:** K8s bleibt optionaler Beispielpfad. `0.14.0`
+führt keinen Cluster-Smoke als Pflicht-Gate ein, sondern liefert einen
+clusterfreien Manifest-Validator.
+
+Artefakte:
+
+- `scripts/validate-k8s-examples.sh`
+- `Makefile` Target `k8s-validate`
+- `deploy/k8s/README.md` Abschnitt `Validate`
+- `docs/planning/in-progress/risks-backlog.md` R-9-Mitigation
+
+Validierte Grenzen:
+
+- erlaubte Ressourcen bleiben `Namespace`, `PersistentVolumeClaim`,
+  `Deployment` und `Service`;
+- alle Workloads bleiben Single-Replica;
+- Image-Tags müssen zur Root-`package.json`-Version passen;
+- die gemeinsamen Labels bleiben auf `app.kubernetes.io/name` und
+  `app.kubernetes.io/part-of=m-trace` begrenzt;
+- Beispielmanifeste dürfen keine Infrastruktur-Labelkeys `pod`,
+  `namespace` oder `container` einführen;
+- Production-orientierte Kinds wie `Ingress`, `HorizontalPodAutoscaler`,
+  `NetworkPolicy` und `PodDisruptionBudget` bleiben out of scope.
+
+R-9-Gegenmaßnahmen:
+
+| Gegenmaßnahme | Owner | Nachweis |
+| --- | --- | --- |
+| Separater K8s-Allowlist-Modus statt Erweiterung des Compose-Defaults | Platform/Ops | Validator blockiert Infrastruktur-Labelkeys in den Beispielen. |
+| Smoke-Scope-Trennung per explizitem Profil/ENV-Gate | Platform/Ops | K8s-Smoke bleibt deferred; `k8s-validate` ist clusterfrei. |
+| Nicht-Production-Ready-Abgrenzung im Deploy-Pfad | Platform/Ops | README-Check im Validator erzwingt die Formulierung. |
+
+What ändert sich:
+
+- `make k8s-validate` ist der reproduzierbare Seed-Hardening-Nachweis
+  für `deploy/k8s/`.
+
+What bleibt unverändert:
+
+- K8s ist kein Standard-Gate und ersetzt das Compose-Lab nicht.
+
 ## 6. Tranche 4 — Devcontainer und Release-Automation
 
 Ziel: Reproduzierbarkeit und Release-Sicherheit werden dort umgesetzt
@@ -384,17 +427,17 @@ offene Seed-Hardening-Aufgaben hinterlässt.
 DoD:
 
 - [x] `0.13.0`-Entscheidungen zu `MVP-43` und `MVP-44` liegen vor.
-- [ ] Devcontainer-Pfad ist implementiert, als vorhandener Seed validiert
+- [x] Devcontainer-Pfad ist implementiert, als vorhandener Seed validiert
   oder mit Triggern deferred.
-- [ ] Devcontainer enthält nur reproduzierbare Entwicklungs-
+- [x] Devcontainer enthält nur reproduzierbare Entwicklungs-
   Hilfsmittel und ersetzt nicht die dokumentierten Docker-/Make-Pfade.
-- [ ] Release-Automations-Guard ist als vorhandener Seed, Dry-Run oder
+- [x] Release-Automations-Guard ist als vorhandener Seed, Dry-Run oder
   CI-/Local-Runbook nachweisbar.
-- [ ] Human-Approval-Gate bleibt verpflichtend und technisch oder
+- [x] Human-Approval-Gate bleibt verpflichtend und technisch oder
   prozessual verankert.
-- [ ] Guard-Fehler liefern einen sicheren Abbruch ohne Tag-/Release-
+- [x] Guard-Fehler liefern einen sicheren Abbruch ohne Tag-/Release-
   Seiteneffekte.
-- [ ] Rollback- und Notfallpfad ist im Release-Runbook beschrieben.
+- [x] Rollback- und Notfallpfad ist im Release-Runbook beschrieben.
 
 Go/No-Go:
 
@@ -409,6 +452,47 @@ Vorläufige Artefakte:
   Scope.
 - Release-Runbook-Update.
 - Dry-Run- oder Guard-Test.
+
+### 6.1 Seed-Validation — 2026-05-12
+
+**Entscheidung:** Devcontainer und Release-Guard bleiben Zusatzpfade.
+`0.14.0` validiert beide Seeds, ohne lokale Standardentwicklung oder
+Release-Veröffentlichung zu automatisieren.
+
+Artefakte:
+
+- `scripts/validate-devcontainer.sh`
+- `scripts/test-release-guard.sh`
+- `Makefile` Targets `devcontainer-validate` und `release-guard-test`
+- `docs/user/local-development.md` §1.4
+- `docs/user/releasing.md` §3.0
+
+Devcontainer-Validation:
+
+- JSON muss parsebar sein;
+- Docker-outside-of-Docker bleibt explizites Feature;
+- Go ist auf `1.26.3`, Node auf `22`, pnpm auf `10.18.0` gepinnt;
+- `postCreateCommand` darf keine Workspace-Dependencies installieren;
+- `remoteUser` bleibt `vscode`.
+
+Release-Guard-Validation:
+
+- temporäre Git-Repositories prüfen Erfolgspfad und Fehlerfälle;
+- fehlende Freigabe, `v`-Prefix, Non-`main`, Dirty Worktree,
+  lokaler Tag und `package.json`-Versionsdrift werden abgefangen;
+- Tests nutzen `MTRACE_RELEASE_ALLOW_OFFLINE=1` nur im Testkontext und
+  erzeugen keinen Tag.
+
+What ändert sich:
+
+- Seed-Validierung ist per `make devcontainer-validate` und
+  `make release-guard-test` reproduzierbar.
+
+What bleibt unverändert:
+
+- Make/Docker bleiben Standardentwicklung.
+- Commit, Tag, Push und GitHub-Release bleiben manuelle Schritte mit
+  expliziter Human Approval.
 
 ## 7. Tranche 5 — Release-Closeout und Abschluss
 
@@ -441,9 +525,9 @@ reserviert.
 | --- | --- | --- | --- | --- |
 | RAK-96 | Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad bleibt als `defer-with-migration-seed` vorbereitet oder wird nur bei Trigger umgesetzt; SQLite bleibt Default | [ ] |
 | RAK-97 | Muss | Analytics-Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger; kein Pflichtbackend | [ ] |
-| RAK-98 | Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; vorhandene Seeds sind validiert oder Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [ ] |
-| RAK-99 | Muss | Devcontainer-Artefakt oder Validation-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [ ] |
-| RAK-100 | Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [ ] |
+| RAK-98 | Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; vorhandene Seeds sind validiert oder Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [x] |
+| RAK-99 | Muss | Devcontainer-Artefakt oder Validation-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [x] |
+| RAK-100 | Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [x] |
 
 Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
 
@@ -451,9 +535,9 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
 | --- | --- | --- | --- | --- |
 | RAK-96 | `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/Storage | ⬜ |
 | RAK-97 | `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/QA | ⬜ |
-| RAK-98 | `deploy/k8s/README.md`, `deploy/k8s/*.yaml`, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ⬜ |
-| RAK-99 | `.devcontainer/devcontainer.json`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/DevEx | ⬜ |
-| RAK-100 | `scripts/release-guard.sh`, `docs/user/releasing.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/CI | ⬜ |
+| RAK-98 | `scripts/validate-k8s-examples.sh`, `deploy/k8s/README.md`, `deploy/k8s/*.yaml`, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
+| RAK-99 | `.devcontainer/devcontainer.json`, `scripts/validate-devcontainer.sh`, `docs/user/local-development.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/DevEx | ✅ |
+| RAK-100 | `scripts/release-guard.sh`, `scripts/test-release-guard.sh`, `docs/user/releasing.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/CI | ✅ |
 
 ## 8.1 Blocker-Log (Startzustand)
 

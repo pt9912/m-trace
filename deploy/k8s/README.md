@@ -27,6 +27,22 @@ kubectl apply -f deploy/k8s/dashboard.yaml
 For local inspection with a private image registry, override image names
 before applying or use `kubectl set image` after apply.
 
+## Validate
+
+The example set has a cluster-free validation target:
+
+```bash
+make k8s-validate
+```
+
+The check parses every manifest, limits the allowed resource kinds to
+`Namespace`, `PersistentVolumeClaim`, `Deployment` and `Service`, keeps
+all workloads single-replica, verifies the shared `m-trace` labels and
+requires image tags to match the root `package.json` version. It also
+guards the R-9 boundary by rejecting example labels named `pod`,
+`namespace` or `container`; those labels belong to a future
+Kubernetes-specific smoke profile, not to the Compose default allowlist.
+
 ## R-9 observability note
 
 These examples do not add a Kubernetes observability smoke gate. A future

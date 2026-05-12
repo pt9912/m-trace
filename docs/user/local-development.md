@@ -47,6 +47,20 @@ Ab `0.1.1` zusätzlich (Player-SDK + Dashboard sind TypeScript-Pakete):
 | `httpie` (`http`) | bequemere HTTP-Aufrufe gegen die API als reines `curl`. |
 | `direnv` | automatisches Setzen der Compose-Profile-Env-Vars pro Repo-Wechsel. |
 
+### 1.4 Optionaler Devcontainer
+
+Seit `0.13.0` enthält das Repository einen Devcontainer-Seed in
+`.devcontainer/devcontainer.json`. Er pinnt Go `1.26.3`, Node `22`,
+Docker-outside-of-Docker und pnpm `10.18.0` via Corepack. Der
+Devcontainer ist ein reproduzierbarer Zusatzpfad; er ersetzt nicht den
+Make-/Docker-Workflow aus diesem Dokument.
+
+Der Seed kann ohne Container-Start validiert werden:
+
+```bash
+make devcontainer-validate
+```
+
 ---
 
 ## 2. Quickstart

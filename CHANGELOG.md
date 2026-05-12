@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `0.14.0` Ops-Backend-Hardening: clusterfreie K8s-Seed-Validation
+  (`make k8s-validate`), Devcontainer-Seed-Validation
+  (`make devcontainer-validate`) und lokale Release-Guard-Fehlerpfad-
+  Tests (`make release-guard-test`).
+
 ## [0.13.0] - 2026-05-12
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

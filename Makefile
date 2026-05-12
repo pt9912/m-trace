@@ -9,7 +9,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke release-guard gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke k8s-validate devcontainer-validate release-guard release-guard-test gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -58,7 +58,10 @@ help:
 		'  make schema-generate        Re-generate apps/api SQLite DDL from schema.yaml' \
 		'  make sdk-pack-smoke         Run the Player-SDK pack/public-entry smoke check' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
+		'  make k8s-validate           Validate optional deploy/k8s examples without a cluster' \
+		'  make devcontainer-validate  Validate the optional devcontainer seed' \
 		'  make release-guard VER=X.Y.Z Run the manual release approval guard in dry-run mode' \
+		'  make release-guard-test     Run local release-guard failure-path tests' \
 		'  make vuln-check             Run govulncheck on apps/api Go dependencies (plan-0.8.5 Tranche 1)' \
 		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace (plan-0.8.5 Tranche 1)' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
@@ -538,6 +541,15 @@ sdk-pack-smoke:
 release-guard:
 	@test -n "$(VER)" || (echo 'release-guard: set VER=X.Y.Z' >&2; exit 2)
 	MTRACE_RELEASE_DRY_RUN=1 bash scripts/release-guard.sh "$(VER)"
+
+k8s-validate:
+	bash scripts/validate-k8s-examples.sh
+
+devcontainer-validate:
+	bash scripts/validate-devcontainer.sh
+
+release-guard-test:
+	bash scripts/test-release-guard.sh
 
 gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke docs-check
 
