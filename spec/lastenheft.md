@@ -2,12 +2,30 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.19<br>
+**Version:** 1.1.20<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.20` (Product Scope / Analyzer Boundary für
+> `0.15.0`)**: Aktiviert die Folgephase nach `0.14.0` und führt die
+> neue RAK-Gruppe `RAK-101`..`RAK-105` in §13.19 ein. Inhalt:
+> Zielgruppenentscheidung (§16.1) als Produktgrenze, Analyzer-API-
+> Boundary gegen den bestehenden internen `apps/analyzer-service`
+> (`MVP-20`), Control-Plane-Scope als Decision-Record ohne
+> Implementierung (`F-132`), Analyzer-Folge-Slice-Zuschnitt für
+> `NF-13` und erneute Ops-Trigger-Prüfung für Postgres/Analytics
+> (`MVP-40`/`MVP-41`). Backwards-Compat: keine Code-, Wire-,
+> Runtime- oder Default-Änderung durch die Aktivierung; SQLite,
+> Compose und der interne Analyzer-Service bleiben Standardpfade.
+> Externe Analyzer-API, Control-Plane, Postgres-Default,
+> Analytics-Pflichtbackend, Production-K8s, OAuth/OIDC/SSO und
+> Multi-Tenant-SaaS bleiben ohne eigenen Folgeplan out of scope.
+> Patch-Log siehe
+> [`docs/planning/in-progress/plan-0.15.0.md`](../docs/planning/in-progress/plan-0.15.0.md)
+> Tranche 0.
+>
 > **Patch `1.1.19` (Ops Backend Follow-up für `0.14.0`)**:
 > Aktiviert die Folgephase nach `0.13.0` und führt die neue
 > RAK-Gruppe `RAK-96`..`RAK-100` in §13.18 ein. Inhalt:
@@ -2143,6 +2161,33 @@ Out-of-Scope-Bekräftigung (nicht durch `0.14.0` erfüllt):
 vollständiger Production-Kubernetes-Betrieb, Managed-Cloud-Betrieb,
 Multi-Tenant-SaaS-Produkt, verpflichtendes Hochvolumen-Analytics-
 Backend im Standardbetrieb, Postgres als lokaler Default-Store,
+automatische Veröffentlichung ohne Human Approval.
+
+### 13.19 Version 0.15.0: Product Scope / Analyzer Boundary (RAK-101..RAK-105)
+
+Ziel: Nach dem Ops-Hardening in `0.14.0` werden die nächsten
+Produkt- und Architekturgrenzen entschieden, bevor neue Backend-,
+Analyzer- oder Plattformpfade in Code überführt werden. `0.15.0`
+ist ein Decision-Release: Er darf Folgeslices vorbereiten, aber keine
+neue Pflichtplattform, keinen Postgres-Default und kein
+Hochvolumen-Analytics-Backend einführen.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-101 | Muss | **Zielgruppenentscheidung (§16.1)**: Die Primärzielgruppe für die nächsten Minor-Releases ist entschieden oder bewusst als Produkt-ADR deferred. Selbsthoster, kleine Teams und Broadcaster-Labs bleiben Default-Empfehlung, solange kein konkreter Plattform-Betreiber-Trigger mit Betriebsmodell, Owner und Folgeplan dokumentiert ist. |
+| RAK-102 | Muss | **Analyzer-API-Boundary (`MVP-20`)**: Die historische externe `apps/analyzer-api`-Anforderung wird gegen den bestehenden internen `apps/analyzer-service` bewertet. Ergebnis ist `proceed`, `POC`, `defer` oder `anders erfüllt`; ein Go braucht konkreten externen Konsumenten, API-Grenze, Auth-/Rate-Limit-/SSRF-Grenzen und Folgeplan. |
+| RAK-103 | Muss | **Control-Plane-Scope (`F-132`)**: `apps/control-plane` wird nur als Decision-Record zugeschnitten. Aufgaben, Nicht-Ziele, Trigger, Abhängigkeiten zu Zielgruppe/Auth/Multi-Tenant und späterer Planpfad sind dokumentiert; ohne eigene Folgerelease-Freigabe entsteht keine Control-Plane-Implementierung. |
+| RAK-104 | Muss | **Analyzer-Folge-Slice (`NF-13`)**: Low-Latency-CMAF, HTTP-Range-/Byte-Range-Loader, vollständigere Segmentabdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfad werden gegeneinander bewertet. Höchstens ein eng begrenzter Folge-Slice wird empfohlen; alles andere bleibt deferred. |
+| RAK-105 | Muss | **Ops-Trigger-Re-Eval (`MVP-40`/`MVP-41`)**: Postgres- und Analytics-Trigger aus ADR 0005 werden erneut geprüft. Ohne erreichte Trigger bleiben Postgres als `defer-with-migration-seed` und Analytics als `defer` geführt; bei erreichtem Trigger wird ein separater Folgeplan angelegt statt still umzusetzen. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.15.0` erfüllt):
+Control-Plane-Implementierung, externe Analyzer-API-Implementierung,
+Postgres-Runtime-Adapter oder Postgres-Default, automatische
+SQLite-zu-Postgres-Migration, ClickHouse-/VictoriaMetrics-/Mimir-
+Pflichtbackend, vollständiger Production-Kubernetes-Betrieb,
+OAuth/OIDC/SSO, User-/Org-Verwaltung, Multi-Tenant-SaaS-Produkt und
 automatische Veröffentlichung ohne Human Approval.
 
 ---

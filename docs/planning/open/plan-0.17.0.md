@@ -21,7 +21,7 @@
 > [`../in-progress/roadmap.md`](../in-progress/roadmap.md),
 > [`../../../spec/lastenheft.md`](../../../spec/lastenheft.md)
 > §16.1, `MVP-20`, `F-132`, `NF-13`, `MVP-40`, `MVP-41`,
-> [`plan-0.15.0.md`](./plan-0.15.0.md),
+> [`../in-progress/plan-0.15.0.md`](../in-progress/plan-0.15.0.md),
 > [`plan-0.16.0.md`](./plan-0.16.0.md).
 >
 > **Nachfolger**: offen.

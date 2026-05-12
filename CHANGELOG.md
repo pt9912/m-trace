@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `0.15.0` Planung aktiviert: Lastenheft-Patch `1.1.20` ergänzt
+  §13.19 mit RAK-101..RAK-105 für Product Scope / Analyzer Boundary;
+  der Plan läuft in
+  [`docs/planning/in-progress/plan-0.15.0.md`](docs/planning/in-progress/plan-0.15.0.md).
+
 ## [0.14.0] - 2026-05-12
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

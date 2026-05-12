@@ -2,12 +2,12 @@
 
 > **Stand**: 2026-05-12
 >
-> **Phase**: ✅ `0.14.0` released 2026-05-12 — Ops Backend
-> Follow-up (`MVP-40`..`MVP-44` als Hardening-/Trigger-Scope).
-> Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18 ist
-> persistiert; Plan archiviert in
-> [`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Nächster
-> vorbereiteter Plan: [`open/plan-0.15.0.md`](../open/plan-0.15.0.md).
+> **Phase**: 🟡 `0.15.0` aktiv seit 2026-05-12 — Product Scope /
+> Analyzer Boundary. Lastenheft-Patch `1.1.20` mit
+> RAK-101..RAK-105 in §13.19 ist persistiert; Plan aktiv in
+> [`in-progress/plan-0.15.0.md`](./plan-0.15.0.md). Vorgänger
+> `0.14.0` ist released und archiviert in
+> [`done/plan-0.14.0.md`](../done/plan-0.14.0.md).
 >
 > **Letzte Releases:**
 > - `v0.14.0` Ops-Backend-Follow-up-Minor (Lastenheft `1.1.19`,
@@ -45,13 +45,13 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-12 — `0.14.0` released)
+## 1. Aktueller Stand (2026-05-12 — `0.15.0` aktiv)
 
 ### 1.1 Was abgeschlossen ist
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.19` (RAK-1..RAK-100, §13.18 Ops Backend Follow-up für `0.14.0`; Patch persistiert).                       | `spec/lastenheft.md`                                                   |
+| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.20` (RAK-1..RAK-105, §13.19 Product Scope / Analyzer Boundary für `0.15.0`; Patch persistiert).                       | `spec/lastenheft.md`                                                   |
 | ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store; `0005` Production-/Ops-Backends Accepted: Postgres/Analytics deferred mit Triggern, K8s/Devcontainer/Release-Guard als Seeds.     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`, `docs/adr/0005-production-ops-backends.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
@@ -75,15 +75,18 @@ aktualisieren.
 | ✅      | Auth-/Ingest-Folge-Items-Minor (`0.12.6`) | Minor-Release am 2026-05-12. Lastenheft-Patch `1.1.17` mit RAK-83..RAK-90 in §13.16. Neun R-N-Items adressiert: Time-Skew-Persistenz (R-5 🟢, RAK-83, V6-Migration + `event.time_skew_warning`-Wire + Dashboard-Pin), `ListSessions`-Bulk-Read-Port (R-7 🟢, RAK-84, `BoundaryStore.ListBoundariesForSessions`), Sample-Rate-PPM (R-10 🟢 minus Heuristik, RAK-85, V7-Migration + `session.sample_rate_ppm` + Dashboard-Banner), SRT-Health-Cursor-Pagination v3 (R-11 🟢, RAK-86, `samples_cursor`/`next_samples_cursor`), Trivy-Re-Review (R-13 🟢-Wartung, Expiry 2026-11-02 für CVE-2025-69720/CVE-2026-29111/CVE-2026-4878), mediamtx-Provisioner (R-15 🟢, RAK-87, additives `?provision=mediamtx`), Redis-Multi-Host-Issuance-Limiter (R-17 🟢 final, RAK-88), Vault-AppRole + KMS-Skeleton (R-20 🟢 final, RAK-89), Origin-/IP-Rate-Limiter (R-22 🟢, RAK-90). Sechs neue opt-in Smokes. R-17/R-20-Resttrigger aus `0.12.5` geschlossen. | [`plan-0.12.6.md`](../done/plan-0.12.6.md) |
 | ✅      | Production / Ops Backends (`0.13.0`) | Minor-Release am 2026-05-12. Lastenheft-Patch `1.1.18` mit RAK-91..RAK-95 in §13.17. Decision-and-Seed-Scope: ADR 0005 deferred Postgres und Analytics-Backends mit messbaren Triggern; optionale Kubernetes-Beispiele unter `deploy/k8s/`; Devcontainer-Seed; Release-Guard mit manueller Freigabe. | [`plan-0.13.0.md`](../done/plan-0.13.0.md) |
 | ✅      | Ops Backend Follow-up (`0.14.0`) | Minor-Release am 2026-05-12. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. Szenario C: K8s-/Devcontainer-/Release-Guard-Hardening; Postgres und Analytics bleiben Trigger-/Defer-Pfade ohne neue Pflichtabhängigkeit. | [`plan-0.14.0.md`](../done/plan-0.14.0.md) |
+| 🟡      | Product Scope / Analyzer Boundary (`0.15.0`) | Aktiv seit 2026-05-12. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. Szenario A: Zielgruppe + Analyzer-Boundary; Control-Plane, Postgres, Analytics und Production-K8s bleiben ohne Trigger/Follow-up out of scope. | [`plan-0.15.0.md`](./plan-0.15.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.14.0` ist released und archiviert in
-[`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Der Plan importierte
-die `0.13.0`-Entscheidungen: Postgres als
-`defer-with-migration-seed`, Analytics als `defer`, K8s/Devcontainer/
-Release-Guard als validierte Seeds. Der nächste vorbereitete Plan liegt
-in [`open/plan-0.15.0.md`](../open/plan-0.15.0.md).
+`0.15.0` ist aktiv in
+[`in-progress/plan-0.15.0.md`](./plan-0.15.0.md). Tranche 0 wählte
+Szenario A: Zielgruppe + Analyzer-Boundary. Der Plan importiert aus
+`0.14.0`: Postgres bleibt `defer-with-migration-seed`, Analytics
+bleibt `defer`, K8s bleibt optional und clusterfrei validiert,
+Devcontainer bleibt Zusatzpfad und Release-Guard bleibt
+freigabepflichtig. Der nächste vorbereitete Folgeplan liegt in
+[`open/plan-0.16.0.md`](../open/plan-0.16.0.md).
 
 Vorgänger `0.12.6` (Auth-/Ingest-Folge-Items-Minor) released
 2026-05-12 (Tag `v0.12.6`, Plan archiviert in
@@ -224,6 +227,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 47.7 | ✅    | `0.12.6` Auth-/Ingest-Folge-Items-Minor ausgeliefert (2026-05-12): alle 9 R-N-Items adressiert — Time-Skew-Persistenz (R-5 🟢, RAK-83, V6 + `event.time_skew_warning`), `ListSessions`-Bulk-Read (R-7 🟢, RAK-84), Sampling-ppm-Marker (R-10 🟢 minus Heuristik, RAK-85, V7 + Banner), SRT-Cursor-Pagination via `samples_cursor`/`next_samples_cursor` (R-11 🟢, RAK-86, Wire-Codec v3), Trivy-Re-Review (R-13 🟢-Wartung, Expiry 2026-11-02), mediamtx-Provisioner mit additivem `?provision=mediamtx` (R-15 🟢, RAK-87), Multi-Host-Limiter via Redis (R-17 🟢 final, RAK-88), Vault-AppRole + KMS-Skeleton (R-20 🟢 final, RAK-89), Origin-/IP-Rate-Limiter (R-22 🟢, RAK-90). Lastenheft-Patch `1.1.17` mit RAK-83..RAK-90 in §13.16. Sechs neue opt-in Smokes. | Nach Schritt 47.6 | R-5/R-7/R-10/R-11/R-13/R-15/R-17/R-20/R-22; RAK-83..RAK-90; [`done/plan-0.12.6.md`](../done/plan-0.12.6.md) |
 | 48  | ✅      | `0.13.0` Production / Ops Backends ausgeliefert: Postgres und Analytics-Backends als deferred mit Triggern entschieden, optionale Kubernetes-Manifeste, Devcontainer und Release-Guard geliefert. NF-18 mit MVP-42 harmonisiert. Minor-Release mit Lastenheft-Patch `1.1.18` und RAK-91..RAK-95 in §13.17. | Nach Schritt 47.7 | RAK-91..RAK-95 in `spec/lastenheft.md` §13.17; NF-18, MVP-40..MVP-44; [`done/plan-0.13.0.md`](../done/plan-0.13.0.md) |
 | 49  | ✅      | `0.14.0` Ops Backend Follow-up ausgeliefert: Szenario C importiert K8s-/Devcontainer-/Release-Guard-Seeds aus `0.13.0` für Hardening/Validation. Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`; keine neue lokale Pflichtabhängigkeit. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. | Nach Schritt 48 | RAK-96..RAK-100 in `spec/lastenheft.md` §13.18; MVP-40..MVP-44; [`done/plan-0.14.0.md`](../done/plan-0.14.0.md) |
+| 50  | 🟡      | `0.15.0` Product Scope / Analyzer Boundary aktiviert: Szenario A fokussiert Zielgruppe + Analyzer-Boundary, bevor externe Analyzer-API, Control-Plane, Postgres/Analytics oder Production-K8s in Implementierung gehen. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. | Nach Schritt 49 | RAK-101..RAK-105 in `spec/lastenheft.md` §13.19; §16.1, MVP-20, F-132, NF-13, MVP-40/MVP-41; [`in-progress/plan-0.15.0.md`](./plan-0.15.0.md) |
 
 ---
 
@@ -257,6 +261,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.12.6` | Auth-/Ingest-Folge-Items-Minor | ✅ | Minor-Release am 2026-05-12. Plan archiviert in [`done/plan-0.12.6.md`](../done/plan-0.12.6.md). Lastenheft-Patch `1.1.17` mit RAK-83..RAK-90 in §13.16. Alle neun R-N-Items adressiert: Time-Skew-Persistenz (R-5 🟢, RAK-83, V6 + Dashboard-Pin), `ListSessions`-Bulk-Read-Port (R-7 🟢, RAK-84), Sample-Rate-PPM (R-10 🟢 minus Heuristik, RAK-85, V7 + Banner), SRT-Cursor-Pagination v3 (R-11 🟢, RAK-86), Trivy-Re-Review (R-13 🟢-Wartung, Expiry 2026-11-02), mediamtx-Provisioner mit additivem `?provision=mediamtx` (R-15 🟢, RAK-87), Multi-Host-Limiter via Redis (R-17 🟢 final, RAK-88), Vault-AppRole + KMS-Skeleton (R-20 🟢 final, RAK-89), Origin-/IP-Rate-Limiter (R-22 🟢, RAK-90). Sechs neue opt-in Smokes (`smoke-srt-health-pagination`/`smoke-origin-rate-limit`/`smoke-issuance-multi-host`/`smoke-vault-approle`/`smoke-kms-skeleton`/`smoke-mediamtx-provision`). |
 | `0.13.0` | Production / Ops Backends | ✅ | Released 2026-05-12. Plan in [`done/plan-0.13.0.md`](../done/plan-0.13.0.md). Decision-and-Seed-Scope: `MVP-40` Postgres und `MVP-41` Analytics deferred mit Triggern; `MVP-42` Kubernetes-Manifeste optional; `MVP-43` Devcontainer; `MVP-44` Release-Guard mit manueller Freigabe. Lastenheft-Patch `1.1.18` + RAK-91..RAK-95 in §13.17 + Tag `v0.13.0`. |
 | `0.14.0` | Ops Backend Follow-up | ✅ | Released 2026-05-12. Plan in [`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Szenario C: K8s-/Devcontainer-/Release-Guard-Hardening; Postgres/Analytics nur Triggerpflege. Lastenheft-Patch `1.1.19` + RAK-96..RAK-100 in §13.18 + Tag `v0.14.0`. |
+| `0.15.0` | Product Scope / Analyzer Boundary | 🟡 | Aktiv seit 2026-05-12. Plan in [`in-progress/plan-0.15.0.md`](./plan-0.15.0.md). Szenario A: Zielgruppe + Analyzer-Boundary; Control-Plane, externe Analyzer-API, Postgres/Analytics und Production-K8s bleiben bis zu expliziten Triggern/Folgeplänen out of scope. Lastenheft-Patch `1.1.20` + RAK-101..RAK-105 in §13.19. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

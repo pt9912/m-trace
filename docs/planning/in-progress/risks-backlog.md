@@ -1,9 +1,10 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-12 — `0.14.0` (Ops Backend Follow-up)
-> released 2026-05-12 (Tag `v0.14.0`); Lastenheft-Patch `1.1.19`
-> mit RAK-96..RAK-100 in §13.18 persistiert. Vorgänger `0.13.0`
-> released 2026-05-12 (Tag `v0.13.0`);
+> **Stand**: 2026-05-12 — `0.15.0` (Product Scope / Analyzer
+> Boundary) aktiv seit 2026-05-12; Lastenheft-Patch `1.1.20`
+> mit RAK-101..RAK-105 in §13.19 persistiert. Vorgänger `0.14.0`
+> released 2026-05-12 (Tag `v0.14.0`);
+> `0.13.0` released 2026-05-12 (Tag `v0.13.0`);
 > `0.12.6` released 2026-05-12 (Tag `v0.12.6`);
 > `0.12.5` released 2026-05-11 (Tag `v0.12.5`);
 > `0.12.1` released 2026-05-10 (Tag `v0.12.1`);
@@ -11,14 +12,18 @@
 >
 > ### Aktuelle Phase
 >
-> `0.14.0` lieferte den Ops-Backend-Follow-up in
-> [`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Aus `0.13.0`
+> `0.15.0` ist aktiv in
+> [`in-progress/plan-0.15.0.md`](./plan-0.15.0.md). Tranche 0
+> wählte Szenario A: Zielgruppe + Analyzer-Boundary. Aus `0.14.0`
 > importiert:
 > Postgres bleibt `defer-with-migration-seed`, Analytics bleibt
-> `defer`, und **R-9** bleibt im K8s-Hardening-Scope aktiv:
+> `defer`, und **R-9** bleibt ein K8s-Smoke-/Allowlist-Trigger:
 > optionale K8s-Beispiele liegen unter `deploy/k8s/`, aber keine
 > K8s-Smoke-Pflicht und keine Erweiterung der Compose-Lab-Label-
-> Allowlist ohne separaten K8s-Allowlist-Modus.
+> Allowlist ohne separaten K8s-Allowlist-Modus. Die Aktivierung von
+> `0.15.0` erzeugt kein neues R-N-Item; Zielgruppen-, Analyzer-,
+> Control-Plane- und Ops-Trigger werden über RAK-101..RAK-105
+> entschieden.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in
@@ -45,9 +50,9 @@
 > werden in `0.12.6` Tranche 7/8 final geschlossen). RAK-77..RAK-82
 > in §13.15 persistiert.
 >
-> Lastenheft-Stand: `1.1.19` (`0.14.0`-Patch persistiert in T0).
-> `0.14.0` belegt RAK-96..RAK-100 in §13.18, da RAK-91..RAK-95
-> mit `0.13.0` belegt sind.
+> Lastenheft-Stand: `1.1.20` (`0.15.0`-Patch persistiert in T0).
+> `0.15.0` belegt RAK-101..RAK-105 in §13.19, da RAK-96..RAK-100
+> mit `0.14.0` belegt sind.
 >
 > ### Trigger-Re-Eval-Stand (2026-05-10, `0.12.1` Tranche 1)
 >
@@ -69,8 +74,8 @@
 >
 > - OAuth/OIDC/User-Verwaltung bleibt normativ in §13.14 RAK-71
 >   Out-of-Scope — **kein eigenes R-N-Item**, weil ohne konkreten
->   Bedarf kein Tracking-Trigger sinnvoll ist; Reaktivierung als
->   `plan-0.14.x` o. ä. bei Stakeholder-Bedarf.
+>   Bedarf kein Tracking-Trigger sinnvoll ist; Reaktivierung in
+>   `0.15.0` oder einem Folgeplan bei Stakeholder-Bedarf.
 > - Konsequenz für **R-14/R-15/R-16** aus `0.12.0`: keines der drei
 >   Items wird strukturell aufgelöst — `validate-key` bleibt
 >   Diagnose-/Smoke-Funktion (kein Media-Server-Auth-Ersatz),
@@ -100,7 +105,8 @@
 >   (`0.12.0` Auth/Token); §13.15 RAK-77..RAK-82 (`0.12.5`
 >   Auth-/Ingest-Adapter); §13.17 RAK-91..RAK-95 (`0.13.0`
 >   Production / Ops Backends); §13.18 RAK-96..RAK-100 (`0.14.0`
->   Ops Backend Follow-up)
+>   Ops Backend Follow-up); §13.19 RAK-101..RAK-105 (`0.15.0`
+>   Product Scope / Analyzer Boundary)
 > - `docs/planning/in-progress/roadmap.md` §4
 > - `docs/planning/done/plan-0.12.0.md` (Folge-ADRs);
 >   `docs/planning/done/plan-0.12.1.md` (Patch: Trigger-Re-Eval +
@@ -110,7 +116,9 @@
 >   `docs/planning/done/plan-0.13.0.md` (Production / Ops
 >   Backends, R-9 Tranche-3-Scope);
 >   `docs/planning/done/plan-0.14.0.md` (Ops Backend Follow-up,
->   R-9 Hardening-Scope)
+>   R-9 Hardening-Scope);
+>   `docs/planning/in-progress/plan-0.15.0.md` (Product Scope /
+>   Analyzer Boundary, RAK-101..RAK-105)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst
@@ -153,7 +161,7 @@ Sichtbar als Historie. Spalten kompakt (Risiko, Auflösung, Verweis).
 
 | Kennung | Risiko (Kurzform) | Auflösung | Verweis |
 |---|---|---|---|
-| OS-1 ⬛ | OAuth/OIDC/SSO + Rollenmodell + User-/Org-/Admin-Verwaltung | `0.12.1` Tranche 1: strukturell nicht trackbar ohne konkreten Bedarf — RAK-71-Out-of-Scope-Stand bleibt normativ in Lastenheft §13.14; ein Tracking-Trigger („Multi-Tenant-/Regulated-Requirement") ist zu vage für ein R-N-Item. Reaktivierung als `plan-0.14.x` o. ä. wenn ein Operator/Stakeholder konkreten Bedarf signalisiert. | `done/plan-0.12.0.md` §10; `in-progress/plan-0.12.1.md` §2 OS-Schärfung |
+| OS-1 ⬛ | OAuth/OIDC/SSO + Rollenmodell + User-/Org-/Admin-Verwaltung | `0.12.1` Tranche 1: strukturell nicht trackbar ohne konkreten Bedarf — RAK-71-Out-of-Scope-Stand bleibt normativ in Lastenheft §13.14; ein Tracking-Trigger („Multi-Tenant-/Regulated-Requirement") ist zu vage für ein R-N-Item. Reaktivierung in `0.15.0` oder einem Folgeplan, wenn ein Operator/Stakeholder konkreten Bedarf signalisiert. | `done/plan-0.12.0.md` §10; `in-progress/plan-0.12.1.md` §2 OS-Schärfung |
 | OS-2 ⬛ | Produktive Admin-/Operator-UI für Auth/Policy-Management | `0.12.1` Tranche 1: implizit mit OS-1 verzahnt; ohne OS-1-Kontext kein eigenständiges Risiko. Mit OS-1 streichen. | `done/plan-0.12.0.md` §10; `in-progress/plan-0.12.1.md` §2 |
 | OS-3 ⬛ | Produktive MediaMTX-/SRS-Auth-Hook-Brücke (signierte Publish-Tokens) | `0.12.1` Tranche 1: Duplikat zu **R-14** (validate-key-vs-Auth-Bridge-Risiko). R-14 ist die getrackte Form mit operator-observablem Trigger; OS-3 als Folge-Scope-Notiz aus `done/plan-0.12.0.md` §10 abgelöst. | R-14 in §1.1; `done/plan-0.12.0.md` §10 |
 | OS-4 ⬛ | KMS/Vault/Cloud-Secret-Manager-Backend | `0.12.1` Tranche 1: Duplikat zu **R-20** (Production-Secret-Backend). R-20 ist die getrackte Form, `plan-0.12.5.md` Tranche 3 (RAK-79) liefert das Driven-Port-Skelett. OS-4 abgelöst. | R-20 in §1.1; `done/plan-0.12.0.md` §10; `done/plan-0.12.5.md` Tranche 3 |
