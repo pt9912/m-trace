@@ -42,7 +42,7 @@
 > für SRS (`MediaServerProvisioner` ist auf MediaMTX-API
 > spezialisiert), Production-Backends aus `0.13.0` (Postgres,
 > ClickHouse, Kubernetes). Patch-Log siehe
-> [`docs/planning/in-progress/plan-0.12.6.md`](../docs/planning/in-progress/plan-0.12.6.md)
+> [`docs/planning/done/plan-0.12.6.md`](../docs/planning/done/plan-0.12.6.md)
 > Tranche 0.
 >
 > **Patch `1.1.16` (Auth-/Ingest-Adapter für `0.12.5`)**: Liefert

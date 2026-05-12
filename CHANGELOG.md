@@ -7,6 +7,151 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.6] - 2026-05-12
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Folge-Items der Backlog-Risiken R-5/R-7/R-10/R-11/R-13/R-15/
+> R-17/R-20/R-22, Lastenheft-Patch `1.1.17` mit RAK-83..RAK-90 in
+> §13.16, neue RAK-Verifikationsmatrix. Plan in
+> [`docs/planning/done/plan-0.12.6.md`](docs/planning/done/plan-0.12.6.md).
+
+### Added
+
+- **Time-Skew-Persistenz pro Event** (RAK-83, R-5): SQLite-Migration
+  `V6__events_time_skew` plus `events.time_skew_warning`-Spalte.
+  `parseEvents` setzt das Flag bei `|client_ts − server_ts| > 60s`;
+  Read-Pfad propagiert `event.time_skew_warning` in
+  `GET /api/sessions/{id}` (Wire-Vertrag §7a additiv). Dashboard-
+  Session-Timeline rendert pro Event einen `⏱ skew`-Pin.
+  Doku [`spec/telemetry-model.md`](spec/telemetry-model.md) §
+  „Time-Skew-Persistenz".
+
+- **Sample-Rate-PPM pro Session** (RAK-85, R-10):
+  SQLite-Migration `V7__sessions_sample_rate_ppm` plus
+  `stream_sessions.sample_rate_ppm INT NOT NULL DEFAULT 1000000`.
+  `domain.StreamSession.SampleRatePPM` + `contracts/event-schema.json`-
+  Property `sdk.sampleRatePpm`. Ingest verwendet ersten Event-Wert
+  pro Session (mit Drift-Counter `ingest_sample_rate_drift_total`);
+  Read-Pfad ergänzt `session.sample_rate_ppm` + abgeleitetes
+  `session.sampling.coverage_label` (`full`/`partial`). Dashboard
+  zeigt orangen Banner bei `< 1_000_000`. Sampling-Lücken-Heuristik
+  bewusst deferred (`docs/planning/open/risks-backlog.md` R-10).
+
+- **`ListSessions`-Bulk-Read-Port** (RAK-84, R-7): neue Port-Methode
+  `BoundaryStore.ListBoundariesForSessions(ctx, projectID, sessionIDs)`
+  ersetzt N+1-`ListBoundaries`-Loops im `SessionsService`. SQLite-
+  Adapter mit dynamischer `IN (?, ?, ?)`-Clause + Project-Scope-
+  Filter; InMemory-Adapter mit Map-Lookup pro SessionID.
+  Performance-Benchmark `BenchmarkListSessions_BulkVsLoop` zeigt
+  Bulk-Pfad ≥ 3× schneller bei 200 Sessions.
+
+- **SRT-Health-Detail-Cursor-Pagination** (RAK-86, R-11):
+  `GET /api/srt/health/{stream_id}` akzeptiert optionalen
+  `samples_cursor`-Query-Parameter und liefert `next_samples_cursor`
+  in der Response (Wire-Codec v3 in `cursor.go`).
+  Adapter-Implementation `SqliteSRTHealthStore.ListSamplesPaginated`
+  via Keyset-Pagination auf `(observed_at DESC, id DESC)`. Backwards-
+  compat: ohne `samples_cursor` Default-Limit-200 wie vorher. Smoke
+  `make smoke-srt-health-pagination`.
+
+- **Origin-/IP-Rate-Limiter** (RAK-90, R-22): neuer Driven-Port
+  `OriginRateLimiter` mit zwei Adaptern.
+  `InMemoryOriginRateLimiter` (Single-Bucket pro Origin/IP, in-
+  process) und `RedisOriginRateLimiter` (Multi-Host-Backend, fail-
+  closed Default). ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=
+  disabled|memory|redis` (Default `disabled` für Backwards-Compat);
+  `client_ip`-Quelle Default `r.RemoteAddr` mit optionaler
+  `X-Forwarded-For`-Allowlist über `MTRACE_ORIGIN_RATE_LIMITER_
+  TRUSTED_PROXIES`. Integration in `browserIngestEnforcement`-
+  Middleware (`429 ingest_origin_rate_limited`). Smokes
+  `make smoke-origin-rate-limit` (memory) und Bundle-Pfad über
+  Redis-Multi-Host.
+
+- **Multi-Host-Issuance-Limiter Redis-Backend** (RAK-88, R-17
+  Resttrigger): neuer Adapter `RedisIssuanceRateLimiter` für
+  `MTRACE_AUTH_ISSUANCE_LIMITER=redis` plus
+  `MTRACE_AUTH_ISSUANCE_REDIS_ADDR/_PASSWORD/_DB`. Token-Bucket-
+  Counter via Lua-Script atomar über mehrere API-Hosts geteilt.
+  Fail-closed Default bei Redis-Outage (`(false, retry-after)`).
+  Bundle nimmt R-22 Redis-Pfad mit (gleiche Wartungs-Dependency).
+  Smoke `make smoke-issuance-multi-host`.
+
+- **Produktive Vault-Authentifizierung + KMS-Skeleton** (RAK-89,
+  R-20 Resttrigger): `VaultSecretBackend` um AppRole-Auth-Methode
+  erweitert (Two-Phase: `role_id`+`secret_id` → Client-Token →
+  KV-v2-Read). ENV `MTRACE_AUTH_VAULT_AUTH_METHOD=token|approle`
+  plus `_APPROLE_PATH/_ROLE_ID/_SECRET_ID`. Refresh-TTL-Konfig
+  `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS` (Default `0` =
+  bootstrap-only, Operator-Restart-only-Refresh wie 0.12.5).
+  Neuer `KMSSecretBackend` mit `KMSDecrypter`-Interface als
+  Provider-agnostisches Skelett (AWS/GCP/Azure-Adapter sind
+  Folge-Items). Compliance-Audit-Vorbereitung in
+  [`docs/user/auth.md`](docs/user/auth.md) §5.6. 11 neue Tests
+  in `secret_backend_t8_test.go`. Smokes `make smoke-vault-approle`
+  und `make smoke-kms-skeleton`.
+
+- **Externe Media-Server-Provisionierung (mediamtx)** (RAK-87,
+  R-15): additiver `?provision=mediamtx`-Query-Parameter auf
+  `POST /api/streams` triggert deterministische mediamtx-
+  Path-Konfiguration via Provisioner-Port. Default-Pfad (ohne
+  `?provision=`) unverändert. ENV-Selektor
+  `MTRACE_STREAM_PROVISIONER=disabled|mediamtx` plus
+  `MTRACE_MEDIAMTX_BASE_URL`/`_API_TOKEN`. Provisioner
+  idempotent (PUT-basiert, deterministisch über Stream-ID).
+  Smoke `make smoke-mediamtx-provision`.
+
+### Changed
+
+- **Wire-Codec v3** für SRT-Health-Cursor: zusätzlicher
+  `samples_cursor`/`next_samples_cursor`-Field-Pair in
+  `GET /api/srt/health/{stream_id}` (additiv, Backwards-compat).
+- **`ingest_sample_rate_drift_total`-Counter** (R-10): neuer
+  Prometheus-Counter, wenn nachfolgende Events einer Session
+  abweichende `sample_rate_ppm`-Werte melden.
+- **`SessionsService.ListSessions`** nutzt
+  `ListBoundariesForSessions`-Bulk-Methode statt N+1-Loop;
+  Wire-Vertrag unverändert.
+- **`browserIngestEnforcement`-Middleware** ruft (falls aktiviert)
+  zusätzlich `OriginRateLimiter.AllowOrigin`/`AllowIP` auf, bevor
+  Policy-Validierung läuft.
+- **CHANGELOG-Eintrag `0.12.5`** unverändert; alle neuen Marker
+  sind additive Schema-Erweiterungen.
+
+### Security
+
+- **R-22 Origin-/IP-Rate-Limiter** als Driven-Port-Adapter, mit
+  fail-closed Redis-Backend für Multi-Host-Topologien.
+- **R-20 produktive Vault-AppRole-Authentifizierung** ersetzt
+  Token-only-Skelett-Pfad aus `0.12.5`; KMS-Skeleton als
+  vorbereitete Erweiterung.
+- **R-17 Multi-Host-Issuance-Limiter** schließt den Resttrigger
+  aus `0.12.5` (Network-Backend statt Single-Host-Volume-Shared-
+  SQLite).
+- **R-13 Trivy-Ignore Re-Review** — 3 CVEs (CVE-2025-69720,
+  CVE-2026-29111, CVE-2026-4878) reviewed, Begründungen
+  geschärft mit NVD-/Debian-Metadata. Expiry-Verlängerung auf
+  `2026-11-02` (3-Monats-Fenster ab Re-Review).
+
+### Fixed
+
+- **R-11 SRT-Health-Samples-Truncation** — bisherige Default-
+  Limit-200-Abbruch ist transparent durch Cursor-Pagination
+  ablösbar (Wire-Codec v3).
+- **R-7 ListSessions N+1** — `BoundaryStore`-Bulk-Read-Port
+  beseitigt Performance-Regression bei Multi-Hundert-Sessions-
+  Hard-Cap.
+- **R-5 Time-Skew Sichtbarkeit** — persistente Event-Spalte +
+  Dashboard-Pin ersetzt vorher rein-log-basierte Markierung.
+- **R-10 Sampling-Vollständigkeits-Marker** — `sample_rate_ppm`
+  + Dashboard-Banner ersetzt vorher implizite 1:1-Annahme;
+  Heuristik-basierte Lücken-Detection bleibt deferred.
+
+### Lastenheft
+
+- Patch `1.1.17` ergänzt §13.16 mit RAK-83..RAK-90 (acht neue
+  RAKs für die Tranchen T2..T9). RAK-Verifikationsmatrix in
+  Plan §6.1 vollständig (Code- + Test-Pfade pro RAK).
+
 ## [0.12.5] - 2026-05-11
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

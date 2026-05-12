@@ -35,7 +35,7 @@ func newAnalyzeUseCase(stub *fakeAnalyzer) *application.AnalyzeManifestUseCase {
 func TestAnalyzeManifest_PassesRequestThrough(t *testing.T) {
 	t.Parallel()
 	stub := &fakeAnalyzer{result: domain.StreamAnalysisResult{
-		AnalyzerVersion: "0.12.5",
+		AnalyzerVersion: "0.12.6",
 		PlaylistType:    domain.PlaylistTypeMaster,
 	}}
 	uc := newAnalyzeUseCase(stub)

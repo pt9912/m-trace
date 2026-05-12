@@ -11,7 +11,7 @@
 >
 > `0.12.6` adressiert alle neun nach `0.12.5` offenen R-N-Items in
 > Tranchen 1–9 (Plan in
-> [`plan-0.12.6.md`](./plan-0.12.6.md)). T0-Entscheidung Option A
+> [`plan-0.12.6.md`](../done/plan-0.12.6.md)). T0-Entscheidung Option A
 > (alle neun aktiv) sequenziell vor `0.13.0`:
 >
 > - **R-5** Time-Skew-Persistenz + Dashboard-Marker (Tranche 3, RAK-83).

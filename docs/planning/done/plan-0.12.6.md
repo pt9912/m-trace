@@ -1,11 +1,17 @@
 # Implementation Plan — `0.12.6` (Folge-Items-Sammlung nach `0.12.5`)
 
-> **Status**: 🟡 T0..T9 ✅ (Code-Liefer-Stand 2026-05-11). Offen ist
-> nur noch **T10 Closeout** (Version-Bump, CHANGELOG, Plan-Move,
-> Tag `v0.12.6`). Sieben R-N strukturell aufgelöst (R-5, R-7, R-10,
-> R-11, R-15, R-17, R-20, R-22) plus R-13 als Wartungs-Tranche.
-> Vorgänger ist `0.12.5` (released 2026-05-11, Tag `v0.12.5`;
-> Plan in [`plan-0.12.5.md`](../done/plan-0.12.5.md)).
+> **Status**: ✅ released 2026-05-12 (Tag `v0.12.6`). Alle 10
+> Tranchen geschlossen (T0..T9 ✅ Code-Liefer-Stand 2026-05-11;
+> T10 Closeout 2026-05-12). Acht R-N strukturell aufgelöst (R-5,
+> R-7, R-10, R-11, R-15, R-17, R-20, R-22) plus R-13 als
+> Wartungs-Tranche. Vorgänger ist `0.12.5` (released 2026-05-11,
+> Tag `v0.12.5`; Plan in [`plan-0.12.5.md`](./plan-0.12.5.md)).
+>
+> **Wave-2-Quality-Gates (releasing.md §3.1)**: benchmark.yml run
+> `25705097012` ✅ (2026-05-12), fuzz.yml run `25707248676` ✅
+> (2026-05-12, keine offenen fuzz-Issues), mutation.yml letzte
+> drei Runs `25707444662`/`25645624823`/`25623561573` alle
+> success — Score-Trend stabil.
 >
 > **Release-Typ**: **Minor-Release** (`0.12.6`) gemäß
 > [`docs/user/releasing.md`](../../user/releasing.md) §3.1 —
@@ -15,21 +21,21 @@
 > Ops Backends). RAK-Range schiebt `0.13.0` auf `RAK-91+`.
 >
 > **Ziel**: Die nach `0.12.5` offen gebliebenen R-N-Items aus
-> [`risks-backlog.md`](./risks-backlog.md) §1.1 systematisch
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1 systematisch
 > adressieren. Plan enthält **eine Tranche pro R-N**; T0 hat alle
 > neun aktiviert (Default-A aus §0.3 §2 Tranchen-Auswahl).
 >
 > **Bezug**:
-> [`risks-backlog.md`](./risks-backlog.md) §1.1
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
 > R-5/R-7/R-9/R-10/R-11/R-13/R-15/R-17/R-20/R-22 (R-9 wird im
 > `0.13.0`-Plan bearbeitet, weil K8s-bezogen);
-> [`done/plan-0.4.0.md`](../done/plan-0.4.0.md) §3.1/§4.4/§8.3
+> [`done/plan-0.4.0.md`](./plan-0.4.0.md) §3.1/§4.4/§8.3
 > (R-5/R-7/R-10);
-> [`done/plan-0.6.0.md`](../done/plan-0.6.0.md) §4 Sub-3.3 (R-11);
-> [`done/plan-0.8.5.md`](../done/plan-0.8.5.md) §2 Tranche 1 (R-13);
-> [`done/plan-0.11.0.md`](../done/plan-0.11.0.md) §0.1 + §0.6
+> [`done/plan-0.6.0.md`](./plan-0.6.0.md) §4 Sub-3.3 (R-11);
+> [`done/plan-0.8.5.md`](./plan-0.8.5.md) §2 Tranche 1 (R-13);
+> [`done/plan-0.11.0.md`](./plan-0.11.0.md) §0.1 + §0.6
 > (R-15);
-> [`done/plan-0.12.5.md`](../done/plan-0.12.5.md) Tranche 2 + §11
+> [`done/plan-0.12.5.md`](./plan-0.12.5.md) Tranche 2 + §11
 > Folge-Scope (R-17, R-20, R-22).
 >
 > **Nachfolger**: [`plan-0.13.0.md`](../open/plan-0.13.0.md)

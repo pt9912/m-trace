@@ -88,7 +88,7 @@ const (
 
 const (
 	serviceName       = "m-trace-api"
-	serviceVersion    = "0.12.5"
+	serviceVersion    = "0.12.6"
 	defaultListenAddr = ":8080"
 
 	// Spike Spec §6.9: 100 events/sec/project.
@@ -566,14 +566,14 @@ type authBundle struct {
 }
 
 // buildAuthSessionService verdrahtet den Auth-Pfad
-// (`0.12.0` RAK-72/RAK-75 + `0.12.5` RAK-78): Signing-Key-Ring,
+// (`0.12.0` RAK-72/RAK-75 + `0.12.6` RAK-78): Signing-Key-Ring,
 // In-Memory-Issuance-Limiter (global + Project) und
 // In-Memory-Project-Policy-Resolver (Fallback aus Static-Project-
 // Origins).
 //
 // Signing-Key-Ring kommt aus zwei alternativen ENV-Pfaden — Parser-
 // Logik in `auth.ParseSigningKeysEnv`:
-//   - **Multi-Key (`0.12.5`)**: `MTRACE_AUTH_SIGNING_KEYS=
+//   - **Multi-Key (`0.12.6`)**: `MTRACE_AUTH_SIGNING_KEYS=
 //     kid_a:b64[,kid_b:b64,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID`.
 //     Mehrere Keys verifizieren parallel; nur der aktive `kid`
 //     signiert (RAK-78). Operator-Workflow siehe `auth.md` §5.3.1.
@@ -581,7 +581,7 @@ type authBundle struct {
 //     `MTRACE_AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`.
 //     Degenerierter `len(keys)==1`-Resolver.
 //
-// Backend-Auswahl per `MTRACE_AUTH_SECRET_BACKEND` (`0.12.5` RAK-79):
+// Backend-Auswahl per `MTRACE_AUTH_SECRET_BACKEND` (`0.12.6` RAK-79):
 //   - `env` (Default): liest aus den ENV-Variablen wie oben.
 //   - `vault`: Vault KV-v2-Pfad über `MTRACE_AUTH_VAULT_*`.
 //
@@ -710,7 +710,7 @@ func buildMediaServerProvisioner(logger *slog.Logger) driven.MediaServerProvisio
 
 // buildOutboundWebhookDispatcher liest die Outbound-Webhook-
 // Konfiguration aus den ENV-Variablen `MTRACE_OUTBOUND_WEBHOOK_URL`
-// und `MTRACE_OUTBOUND_WEBHOOK_SECRET` (`0.12.5`/RAK-82, R-16).
+// und `MTRACE_OUTBOUND_WEBHOOK_SECRET` (`0.12.6`/RAK-82, R-16).
 // Ist keine URL gesetzt → `nil` (Adapter deaktiviert, identisch
 // zum `0.11.0`-Verhalten ohne Outbound-Webhook). Sonst:
 // `webhooks.NewHTTPDispatcher` mit Default-Retry/-Timeout-Werten.
@@ -728,7 +728,7 @@ func buildOutboundWebhookDispatcher(logger *slog.Logger) driven.OutboundWebhookD
 }
 
 // buildAuthSecretBackend wählt das Signing-Key-Backend
-// (`0.12.5` RAK-79 + `0.12.6` Tranche 8 / R-20). ENV-Selektor
+// (`0.12.6` RAK-79 + `0.12.6` Tranche 8 / R-20). ENV-Selektor
 // `MTRACE_AUTH_SECRET_BACKEND`:
 //   - leer / `env`: In-Process-Default — liest `MTRACE_AUTH_SIGNING_KEYS`/
 //     `_KEY` / `_ACTIVE_KID` / `_KID` aus dem Prozess-ENV
@@ -838,7 +838,7 @@ func kmsDecrypterLabel() string {
 }
 
 // buildIssuanceRateLimiter wählt zwischen In-Process-, SQLite- und
-// Redis-basiertem Token-Bucket-Limiter (`0.12.5` RAK-77 / R-17 +
+// Redis-basiertem Token-Bucket-Limiter (`0.12.6` RAK-77 / R-17 +
 // `0.12.6` Tranche 7 / R-17-Resttrigger). ENV-Selektor
 // `MTRACE_AUTH_ISSUANCE_LIMITER`:
 //   - leer / `memory`: In-Process-Default (Backwards-Compat zu

@@ -21,11 +21,11 @@ func TestE2E_MixedEventTypes_ShareCorrelationID(t *testing.T) {
 	body := `{
 	  "schema_version": "1.0",
 	  "events": [
-	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}},
-	    {"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.100Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"},"meta":{"network.kind":"manifest","network.detail_status":"available"}},
-	    {"event_name":"segment_loaded","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.200Z","sequence_number":3,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"},"meta":{"network.kind":"segment","network.detail_status":"available"}},
-	    {"event_name":"rebuffer_started","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.300Z","sequence_number":4,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}},
-	    {"event_name":"playback_error","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.400Z","sequence_number":5,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}}
+	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}},
+	    {"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.100Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"},"meta":{"network.kind":"manifest","network.detail_status":"available"}},
+	    {"event_name":"segment_loaded","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.200Z","sequence_number":3,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"},"meta":{"network.kind":"segment","network.detail_status":"available"}},
+	    {"event_name":"rebuffer_started","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.300Z","sequence_number":4,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}},
+	    {"event_name":"playback_error","project_id":"demo","session_id":"sess-mix","client_timestamp":"2026-04-28T12:00:00.400Z","sequence_number":5,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}
 	  ]
 	}`
 	if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {
@@ -67,11 +67,11 @@ func TestE2E_CrossBatch_SameCorrelationID(t *testing.T) {
 
 	first := `{
 	  "schema_version": "1.0",
-	  "events": [{"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-2bat","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}}]
+	  "events": [{"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-2bat","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}]
 	}`
 	second := `{
 	  "schema_version": "1.0",
-	  "events": [{"event_name":"segment_loaded","project_id":"demo","session_id":"sess-2bat","client_timestamp":"2026-04-28T12:00:01.000Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}}]
+	  "events": [{"event_name":"segment_loaded","project_id":"demo","session_id":"sess-2bat","client_timestamp":"2026-04-28T12:00:01.000Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}]
 	}`
 	for _, body := range []string{first, second} {
 		if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {
@@ -166,7 +166,7 @@ func TestE2E_Degradation_NetworkDetailUnavailable(t *testing.T) {
 	body := `{
 	  "schema_version": "1.0",
 	  "events": [
-	    {"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-deg","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"},"meta":{"network.kind":"manifest","network.detail_status":"network_detail_unavailable","network.unavailable_reason":"cors_timing_blocked"}}
+	    {"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-deg","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"},"meta":{"network.kind":"manifest","network.detail_status":"network_detail_unavailable","network.unavailable_reason":"cors_timing_blocked"}}
 	  ]
 	}`
 	if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {
@@ -205,7 +205,7 @@ func TestE2E_Degradation_CapabilityOnlyBoundary(t *testing.T) {
 	body := `{
 	  "schema_version": "1.0",
 	  "events": [
-	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-cap","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}}
+	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-cap","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}
 	  ],
 	  "session_boundaries": [
 	    {"kind":"network_signal_absent","project_id":"demo","session_id":"sess-cap","network_kind":"segment","adapter":"native_hls","reason":"native_hls_unavailable","client_timestamp":"2026-04-28T12:00:00.000Z"}
@@ -246,7 +246,7 @@ func TestE2E_TraceparentPropagation_SameTraceID(t *testing.T) {
 	traceparent := "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 	body := `{
 	  "schema_version": "1.0",
-	  "events": [{"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-tp","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.5"}}]
+	  "events": [{"event_name":"manifest_loaded","project_id":"demo","session_id":"sess-tp","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}]
 	}`
 	for i := 0; i < 2; i++ {
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/api/playback-events", strings.NewReader(body))
