@@ -10,10 +10,12 @@
 > **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
 > neuer RAK-Gruppe und Tag `v0.14.0`. RAK-Range noch offen.
 >
-> **Ziel**: Die in `0.13.0` getroffenen Ops-Backend-Entscheidungen in
-> konkrete, lieferbare Umsetzungsslices überführen: Postgres-
-> Migrationsslice, Analytics-Backend-Folgepfad und/oder K8s-/DevEx-
-> Optionen. Der finale Scope hängt von den `0.13.0`-Entscheidungen ab.
+> **Ziel**: Die in `0.13.0` getroffenen Ops-Backend-Entscheidungen
+> in konkrete, lieferbare Umsetzungsslices überführen. `0.14.0`
+> ist kein erneuter Bewertungsplan, sondern der erste Umsetzungsplan
+> für die in `0.13.0` freigegebenen Pfade: Postgres-Migrationsslice,
+> Analytics-Backend-POC/-Slice, K8s-/NF-18-Option, Devcontainer-
+> Reproduzierbarkeit und Release-Automations-Guards.
 >
 > **Bezug**:
 > [`../in-progress/roadmap.md`](../in-progress/roadmap.md),
@@ -38,6 +40,16 @@ DoD-Checkboxen tracken den Lieferstand:
 gewählten Ops-Backend-Pfade. Dieser Plan darf erst aktiviert werden,
 wenn `0.13.0` mindestens die Entscheidungen aus `RAK-91`..`RAK-95`
 nachweisbar geschlossen hat.
+
+Scope-Regel:
+
+- `0.14.0` übernimmt nur Pfade, die im `0.13.0`-Closeout als
+  `proceed`, `seed` oder `POC` markiert sind.
+- Pfade mit `defer` bleiben dokumentiert, erhalten aber nur Trigger-
+  Pflege und keine Implementierungstranche.
+- Pfade mit `blocked` bleiben in der Tranche-Tabelle sichtbar und
+  müssen vor Aktivierung aufgelöst oder ausdrücklich aus dem Release
+  gestrichen werden.
 
 Vorläufig in Scope:
 
@@ -66,6 +78,24 @@ Vorläufig out of scope:
 - Kein Secret-Management-Vollausbau jenseits der bereits gelieferten
   `0.12.x`-Pfade, außer ein `0.13.0`-Closeout zieht ihn ausdrücklich
   als Folge-Scope.
+- Keine parallele Einführung mehrerer neuer Betriebsbackends ohne
+  explizite Ressourcen- und Risikoentscheidung in Tranche 0.
+
+### 0.1a Entscheidungsimport aus `0.13.0`
+
+Diese Matrix wird bei Aktivierung aus dem `0.13.0`-Closeout befüllt.
+Sie ist das Gate gegen Scope-Drift.
+
+| 0.13-Entscheidung | Import nach 0.14 | Default, falls unklar | Pflichtnachweis |
+| --- | --- | --- | --- |
+| Postgres `seed`/`POC` | Tranche 1 aktiv | `[!]` blockiert | Migrations-/Rollback-Entscheidung, SQLite-Kompatibilitätsgrenze |
+| Postgres `defer` | Tranche 1 nur Trigger-Pflege | nicht implementieren | Defer-Trigger mit Schwellwert und Owner |
+| Analytics `proceed`/`POC` | Tranche 2 aktiv | `[!]` blockiert | Backend-Wahl, Datenmodell, Erfolg-/Abbruchkriterien |
+| Analytics `defer` | Tranche 2 nur Trigger-Pflege | nicht implementieren | Vergleichsmatrix + Reaktivierungsbedingung |
+| K8s `option` | Tranche 3 aktiv | `[!]` blockiert | R-9-Entscheidung und mindestens zwei Gegenmaßnahmen |
+| K8s `defer` | Tranche 3 nur Dokumentationspflege | nicht implementieren | klare Nicht-Production-Ready-Abgrenzung |
+| Devcontainer `seed` | Tranche 4 DevEx aktiv | `[!]` blockiert | lokale Standardentwicklungs-Abgrenzung |
+| Release-Automation `guard` | Tranche 4 Release aktiv | `[!]` blockiert | Human-Approval-Gate und Dry-Run-Nachweis |
 
 ### 0.2 Vorgänger-Gate
 
@@ -96,13 +126,56 @@ Vorläufige RAK-Themen:
 | RAK-TBD-4 | Devcontainer-/DevEx-Reproduzierbarkeit | Nur falls `MVP-43` nicht vollständig in `0.13.0` geschlossen wird. |
 | RAK-TBD-5 | Release-Automations-Guards | Nur falls `0.13.0` Umsetzung statt Runbook-only empfiehlt. |
 
+### 0.4 Qualitätsregeln für `0.14.0`
+
+- Ein neuer Backend-Pfad darf nur opt-in aktiviert werden, bis
+  Contract-, Migration- und Rollback-Nachweise vorliegen.
+- SQLite bleibt in Tests und lokaler Standardentwicklung der
+  Compatibility-Anker.
+- Jeder POC hat eine harte Zeitgrenze und explizite Abbruchkriterien.
+- K8s-Manifeste dürfen nicht als Production-Ready-Dokumentation
+  formuliert werden, solange kein separater Production-Betriebsplan
+  existiert.
+- Release-Automation darf Artefakte bauen, prüfen und dry-runnen,
+  aber nicht ohne explizite Freigabe veröffentlichen.
+- Jede Tranche endet mit einem `What ändert sich` / `What bleibt
+  unverändert`-Block.
+
+### 0.5 Tranche-Output-Verpflichtungen
+
+Jede aktive Umsetzungstranche liefert mindestens:
+
+- **Entscheidungsnachweis**: übernommene `0.13.0`-Entscheidung plus
+  lokale `0.14.0`-Scope-Bestätigung.
+- **Artefaktnachweis**: Code, Manifest, Runbook, POC-Report oder
+  Defer-Notiz mit Dateipfad.
+- **Gatenachweis**: passender Test, Smoke, Dry-Run oder begründeter
+  Doku-only-Gate.
+- **Risikostatus**: Update im Risks-Backlog oder explizite Aussage,
+  dass kein neuer Risiko-Trigger ausgelöst wurde.
+
+### 0.6 Aktivierungsszenarien
+
+Tranche 0 wählt genau eines dieser Aktivierungsszenarien:
+
+| Szenario | Inhalt | Release-Charakter | Go-Bedingung |
+| --- | --- | --- | --- |
+| A | Postgres-Slice + Release-Guards | fokussierter Storage-/CI-Release | RAK-91 und RAK-95 geben Umsetzung frei |
+| B | Analytics-POC + optionale K8s-Doku | POC-/Decision-Release | RAK-92 gibt POC frei, RAK-93 ist nicht blockiert |
+| C | K8s/DevEx/Release-Guard-Slice | Ops-Enablement-Release | RAK-93..RAK-95 geben Optionpfade frei |
+| D | Trigger-/Defer-Release | rein dokumentarisch | 0.13 deferred alle Implementierungspfade |
+
+Mehr als zwei große Implementierungspfade in einem `0.14.0`-Release
+gelten als No-Go, außer Tranche 0 dokumentiert explizit zusätzliche
+Kapazität und getrennte Gate-Nachweise.
+
 ## 1. Tranchen-Übersicht
 
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung, RAK-Zuschnitt und Vorgänger-Entscheidungen | Scope aus `0.13.0` verbindlich übernommen | `0.13.0` released | Finaler 0.14-Scope | ⬜ |
-| 1 | Postgres-Migrations-/Adapter-Slice | Implementierter oder final deferred Postgres-Pfad | RAK-91-Ergebnis | Migrations-/Rollback-Nachweis | ⬜ |
-| 2 | Analytics-Backend-Slice oder POC | Datenmodell-, Query- und Kostenentscheidung umgesetzt | RAK-92-Ergebnis | POC-Report oder Implementierung | ⬜ |
+| 1 | Postgres-Migrations-/Adapter-Slice | Implementierter, POC-fähiger oder final deferred Postgres-Pfad | RAK-91-Ergebnis | Migrations-/Rollback-/Trigger-Nachweis | ⬜ |
+| 2 | Analytics-Backend-Slice oder POC | Datenmodell-, Query- und Kostenentscheidung umgesetzt | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ⬜ |
 | 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ⬜ |
 | 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ⬜ |
 | 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | Tranche 4 | Tag `v0.14.0` | ⬜ |
@@ -120,10 +193,32 @@ DoD:
 - [ ] Ausgangszustand von `git status --short` dokumentiert.
 - [ ] `0.13.0`-Closeout gelesen und alle übernommenen Pfade explizit
   auf `proceed`, `POC`, `defer` oder `blocked` gemappt.
+- [ ] Aktivierungsszenario A/B/C/D ausgewählt und begründet.
+- [ ] Nicht übernommene `0.13.0`-Pfade bleiben als Defer-Trigger
+  sichtbar, werden aber nicht stillschweigend implementiert.
 - [ ] Lastenheft-Patch mit finaler RAK-Range ergänzt.
 - [ ] Roadmap auf `0.14.0` als aktive Folgephase umgestellt.
 - [ ] Risiken-Backlog aktualisiert, insbesondere R-9 und alle durch
   Postgres/Analytics/K8s neu ausgelösten Betriebsrisiken.
+- [ ] No-Go-Liste geprüft:
+  - unklare Backend-Pflichtabhängigkeit,
+  - fehlender Rollbackpfad,
+  - fehlende Human Approval im Release-Pfad,
+  - K8s-Production-Ready-Sprache ohne Betriebsplan.
+
+### 2.1 Aktivierungsnotiz (Template)
+
+Bei Aktivierung ausfüllen:
+
+| Feld | Wert |
+| --- | --- |
+| Aktivierungsdatum | TBD |
+| Ausgangs-Commit | TBD |
+| Gewähltes Szenario | TBD |
+| Übernommene 0.13-Pfade | TBD |
+| Explizit deferred | TBD |
+| Blocker | TBD |
+| Required Gates | TBD |
 
 ## 3. Tranche 1 — Postgres-Folgepfad
 
@@ -133,14 +228,31 @@ umgesetzt, als zeitbegrenzter POC gefahren oder final deferred.
 DoD:
 
 - [!] `0.13.0`-Entscheidung zu `MVP-40` liegt vor.
+- [ ] Entscheiden, ob `0.14.0` einen POC, einen schmalen
+  produktionsnahen Adapter-Slice oder nur Trigger-Pflege liefert.
 - [ ] Migrationsmodell definiert: `migrate up`, `rollback`, `replay`
   und Kompatibilitätsgrenze zu SQLite.
+- [ ] Schema-Differenzen zwischen SQLite und Postgres dokumentiert
+  (Zeittypen, IDs, Constraints, Transaktionen, Pagination-Sortierung).
 - [ ] Adapter-Scope auf minimale Ports und Queries begrenzt.
 - [ ] Contract- und Regressionstests belegen, dass SQLite der lokale
   Default bleibt.
 - [ ] Backup-/Restore- und Ausfallverhalten dokumentiert.
 - [ ] Reaktivierungs- oder Defer-Trigger mit Owner und Messwerten
   aktualisiert.
+
+Go/No-Go:
+
+- **Go:** genau definierter Datenbereich, reproduzierbare Migration,
+  keine Änderung am Default-Store.
+- **No-Go:** vollständige Store-Ablösung, implizite Postgres-Pflicht
+  für lokale Tests, ungetestete Rollbackannahmen.
+
+Vorläufige Artefakte:
+
+- `docs/adr/` oder Plan-Entscheidungsnotiz für den Postgres-Slice.
+- Migrations-/Rollback-Dokumentation.
+- Adapter-/Repository-Tests oder POC-Report.
 
 ## 4. Tranche 2 — Analytics-Backend-Folgepfad
 
@@ -154,10 +266,25 @@ DoD:
 - [ ] Datenmodell und Retention-Grenzen definiert.
 - [ ] Query-Workloads mit erwarteter Last und Kostenannahmen
   dokumentiert.
+- [ ] Datenfluss klar geschnitten: Realtime-Ingest, Batch-Export,
+  Replikation oder synthetischer POC-Load.
 - [ ] Ingest-/Exportpfad bleibt optional und führt keine lokale
   Pflichtabhängigkeit ein.
 - [ ] POC-Report oder Implementierungsnachweis enthält
   Erfolgskriterien, Abbruchkriterien und Zeitgrenze.
+
+Go/No-Go:
+
+- **Go:** begrenzter Workload, messbare Query-Anforderung,
+  isolierter Betriebspfad.
+- **No-Go:** parallele Einführung mehrerer Analytics-Systeme,
+  unbounded Retention, Pflichtbetrieb im Standard-Compose-Lab.
+
+Vorläufige Artefakte:
+
+- Vergleichsfortschreibung aus `0.13.0`.
+- POC-Report mit Kosten-/Lastannahmen.
+- Optionaler Smoke oder synthetischer Load-Nachweis.
 
 ## 5. Tranche 3 — Kubernetes, NF-18 und R-9
 
@@ -177,6 +304,19 @@ DoD:
 - [ ] Smoke-Stage ist entweder optional implementiert oder mit
   messbarem Trigger deferred.
 
+Go/No-Go:
+
+- **Go:** optionale Manifeste, isolierter Smoke, dokumentierte
+  Observability-Label-Strategie.
+- **No-Go:** verpflichtender Cluster für Standardtests, Production-
+  Betriebsversprechen, unkontrollierte Label-Cardinality.
+
+Vorläufige Artefakte:
+
+- `deploy/`- oder `examples/`-Optionpfad, falls freigegeben.
+- Risks-Backlog-Update zu R-9.
+- README-/User-Doku-Abgrenzung.
+
 ## 6. Tranche 4 — Devcontainer und Release-Automation
 
 Ziel: Reproduzierbarkeit und Release-Sicherheit werden dort umgesetzt,
@@ -186,11 +326,28 @@ DoD:
 
 - [!] `0.13.0`-Entscheidungen zu `MVP-43` und `MVP-44` liegen vor.
 - [ ] Devcontainer-Pfad ist implementiert oder mit Triggern deferred.
+- [ ] Devcontainer enthält nur reproduzierbare Entwicklungs-
+  Hilfsmittel und ersetzt nicht die dokumentierten Docker-/Make-Pfade.
 - [ ] Release-Automations-Guard ist als Dry-Run oder CI-/Local-Runbook
   nachweisbar.
 - [ ] Human-Approval-Gate bleibt verpflichtend und technisch oder
   prozessual verankert.
+- [ ] Guard-Fehler liefern einen sicheren Abbruch ohne Tag-/Release-
+  Seiteneffekte.
 - [ ] Rollback- und Notfallpfad ist im Release-Runbook beschrieben.
+
+Go/No-Go:
+
+- **Go:** Dry-Run reproduzierbar, Owner/RACI klar, Human Approval
+  zwingend.
+- **No-Go:** automatisches Taggen/Publishen ohne Review, Devcontainer
+  als versteckte Pflichtumgebung.
+
+Vorläufige Artefakte:
+
+- `.devcontainer/` nur bei freigegebenem DevEx-Slice.
+- Release-Runbook-Update.
+- Dry-Run- oder Guard-Test.
 
 ## 7. Tranche 5 — Release-Closeout und Abschluss
 
@@ -215,11 +372,33 @@ DoD:
 ## 8. RAK-Verifikationsmatrix (Platzhalter)
 
 Wird bei Aktivierung nach dem `0.13.0`-Closeout mit finalen RAK-IDs
-gefüllt.
+gefüllt. Bis dahin dienen die folgenden Zeilen als Zuschnittsvorschlag.
 
 | RAK | Priorität | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
-| TBD | Muss | `0.13.0`-Closeout, Lastenheft-Patch, dieser Plan | Finaler Scope ist aus `0.13.0` übernommen und nicht vorweggenommen | [ ] |
+| RAK-TBD-1 | Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad ist umgesetzt, POC-fähig abgegrenzt oder final deferred; SQLite bleibt Default | [ ] |
+| RAK-TBD-2 | Muss | Analytics-POC-Report oder Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat ein Zielbackend, klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger | [ ] |
+| RAK-TBD-3 | Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [ ] |
+| RAK-TBD-4 | Muss/Kann | Devcontainer-Artefakt oder Defer-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [ ] |
+| RAK-TBD-5 | Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [ ] |
+
+Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
+
+| RAK | Primäre Datei(en) | Datum | Owner | Status |
+| --- | --- | --- | --- | --- |
+| RAK-TBD-1 | TBD | TBD | Platform/Storage | ⬜ |
+| RAK-TBD-2 | TBD | TBD | Platform/QA | ⬜ |
+| RAK-TBD-3 | TBD | TBD | Platform/Ops | ⬜ |
+| RAK-TBD-4 | TBD | TBD | Platform/DevEx | ⬜ |
+| RAK-TBD-5 | TBD | TBD | Platform/CI | ⬜ |
+
+## 8.1 Blocker-Log (Startzustand)
+
+| Blocker | Betroffene Tranche | Erwartete Auflösung |
+| --- | --- | --- |
+| `0.13.0` noch nicht released | alle | Vorgänger-Gate in §0.2 schließen |
+| RAK-Range noch offen | Tranche 0/5 | Lastenheft-Patch bei Aktivierung vergeben |
+| Backend-Entscheidungen noch offen | Tranche 1/2/3/4 | Entscheidungsimport aus §0.1a befüllen |
 
 ## 9. Folge-Scope nach `0.14.0`
 
