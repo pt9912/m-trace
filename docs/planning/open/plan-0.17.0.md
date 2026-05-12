@@ -245,6 +245,9 @@ Ziel: Der fortgesetzte Pfad wird belastbar genug fuer den Release.
 DoD:
 
 - [ ] `make docs-check` gruen.
+- [ ] Bei Szenario E, Hardening-only ohne Code oder dokumentations-only
+  Scope: Code-, Contract- und Security-Gates sind als `n/a` mit
+  Begruendung dokumentiert; `make docs-check` bleibt Pflicht.
 - [ ] Bei Go-/Backend-Code: `make api-test` oder `make gates` gruen.
 - [ ] Bei TypeScript-/Analyzer-Code: `make ts-test` oder passender
   Package-Test gruen.
@@ -270,6 +273,9 @@ DoD:
 - [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
 - [ ] Jede aktive Tranche enthaelt einen `What aendert sich` /
   `What bleibt unveraendert`-Block mit Dateinachweis.
+- [ ] Doku-only-/Defer-Release markiert nicht zutreffende Build-,
+  Code-, Contract- und Security-Gates explizit als `n/a` mit
+  Begruendung.
 - [ ] Versions-Bump auf `0.17.0` vollstaendig durchgefuehrt.
 - [ ] `CHANGELOG.md` mit `[0.17.0] - YYYY-MM-DD` aktualisiert.
 - [ ] Roadmap auf released `0.17.0` und naechste Folgephase

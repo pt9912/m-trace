@@ -239,6 +239,9 @@ Ziel: Der gewaehlte Pfad wird mit passenden Gates abgesichert.
 DoD:
 
 - [ ] `make docs-check` gruen.
+- [ ] Bei Szenario E oder dokumentations-only Scope: Code-,
+  Contract- und Security-Gates sind als `n/a` mit Begruendung
+  dokumentiert; `make docs-check` bleibt Pflicht.
 - [ ] Bei Go-/Backend-Code: `make api-test` oder `make gates` gruen.
 - [ ] Bei TypeScript-/Analyzer-Code: `make ts-test` oder passender
   Package-Test gruen.
@@ -261,6 +264,9 @@ DoD:
 - [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
 - [ ] Jede aktive Tranche enthaelt einen `What aendert sich` /
   `What bleibt unveraendert`-Block mit Dateinachweis.
+- [ ] Doku-only-/Defer-Release markiert nicht zutreffende Build-,
+  Code-, Contract- und Security-Gates explizit als `n/a` mit
+  Begruendung.
 - [ ] Versions-Bump auf `0.16.0` vollstaendig durchgefuehrt.
 - [ ] `CHANGELOG.md` mit `[0.16.0] - YYYY-MM-DD` aktualisiert.
 - [ ] Roadmap auf released `0.16.0` und naechste Folgephase

@@ -3,8 +3,8 @@
 > **Status**: ⬜ offen — vorbereiteter Folgeplan nach `0.14.0`.
 > Aktivierung erst nach Abschluss und Closeout von `0.14.0`.
 >
-> **Vorgänger**: `0.14.0` (Ops Backend Follow-up), aktuell in
-> Umsetzung seit 2026-05-12; Plan in
+> **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
+> 2026-05-12; Plan in
 > [`../in-progress/plan-0.14.0.md`](../in-progress/plan-0.14.0.md).
 >
 > **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
@@ -344,6 +344,9 @@ DoD:
   `What bleibt unveraendert` mit Dateinachweis.
 - [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
 - [ ] `make docs-check` gruen.
+- [ ] Bei dokumentarischem Szenario ohne Code-/Release-Skript-
+  Aenderungen: Code-, Build- und Security-Gates sind als `n/a` mit
+  Begruendung im Closeout markiert.
 - [ ] Bei codebezogenen Aenderungen: `make build` und `make gates`
   gruen.
 - [ ] Bei codebezogenen/Release-Aenderungen: `make security-gates`
