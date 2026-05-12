@@ -1,8 +1,8 @@
 # Implementation Plan — `0.16.0` (Selected Product Slice)
 
-> **Status**: 🟡 aktiv seit 2026-05-12 — Tranche 0 abgeschlossen,
-> Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice) gewaehlt.
-> Umsetzung erst nach Scope-/Contract-Haertung in Tranche 1.
+> **Status**: 🟡 aktiv seit 2026-05-12 — Tranchen 0 und 1
+> abgeschlossen, Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice)
+> gewaehlt. Umsetzung startet erst in Tranche 2.
 >
 > **Vorgänger**: `0.15.0` (Product Scope / Analyzer Boundary),
 > released 2026-05-12 in
@@ -130,7 +130,7 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung und Szenario-Import | Ein `0.15.0`-Folgepfad verbindlich gewaehlt | `0.15.0` released | Szenario B | ✅ |
-| 1 | Scope- und Contract-Haertung | Minimaler Lieferumfang, Nicht-Ziele und Gates stehen | gewaehltes Szenario | Slice-Spezifikation | ⬜ |
+| 1 | Scope- und Contract-Haertung | Minimaler Lieferumfang, Nicht-Ziele und Gates stehen | gewaehltes Szenario | Slice-Spezifikation | ✅ |
 | 2 | Implementierung oder POC | Code-/Doku-/POC-Artefakt fuer genau einen Pfad | Slice-Spezifikation | nachweisbarer Lieferstand | ⬜ |
 | 3 | Tests, Security und Operational Boundaries | Gates und Risikoabgrenzung abgeschlossen | Implementierung/POC | Verifikationsnachweis | ⬜ |
 | 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.16.0` | ⬜ |
@@ -202,15 +202,15 @@ testbaren Lieferumfang begrenzt.
 
 DoD:
 
-- [ ] Nutzer/Konsument des Slice benannt.
-- [ ] Wire-/Contract-Aenderungen entweder definiert oder ausgeschlossen.
-- [ ] Backwards-Compat-Grenzen dokumentiert.
-- [ ] Security-/Operational-Grenzen dokumentiert.
-- [ ] Erfolgskriterien und Abbruchkriterien festgelegt.
-- [ ] Nicht-Ziele in diesem Plan sichtbar.
-- [ ] Anti-Scope-Drift-Nachweis dokumentiert: alle nicht gewaehlten
+- [x] Nutzer/Konsument des Slice benannt.
+- [x] Wire-/Contract-Aenderungen entweder definiert oder ausgeschlossen.
+- [x] Backwards-Compat-Grenzen dokumentiert.
+- [x] Security-/Operational-Grenzen dokumentiert.
+- [x] Erfolgskriterien und Abbruchkriterien festgelegt.
+- [x] Nicht-Ziele in diesem Plan sichtbar.
+- [x] Anti-Scope-Drift-Nachweis dokumentiert: alle nicht gewaehlten
   Szenarien bleiben deferred oder blockiert.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Szenario-spezifische Pflichtfragen:
@@ -224,6 +224,103 @@ Szenario-spezifische Pflichtfragen:
   Production-Admin-Versprechen, keine User-/Org-Verwaltung ohne
   eigenen Plan.
 - Ops-Backend: Migration, Rollback, Replay, Kosten-/Lastgrenzen.
+
+### 3.1 Tranche-1-Entscheidung
+
+| Feld | Wert |
+| --- | --- |
+| Nutzer/Konsument | `@npm9912/stream-analyzer` Library/CLI und der bestehende interne `apps/analyzer-service`; kein neuer externer API-Konsument. |
+| Liefer-Slice | HLS-CMAF-Binary-Verifikation fuer bereits manifest-referenzierte Byte-Ranges: `EXT-X-MAP:BYTERANGE` fuer Init-Segmente und `#EXT-X-BYTERANGE` fuer das erste fMP4-Media-Segment. |
+| Ausgeschlossene Formate | DASH-Byte-Range-Support, `SegmentTimeline`/`$Time$`, LL-CMAF-Parts, chunked CMAF, vollstaendige Segmentsets, Codec-Decoding, Player-Laufzeitpfade. |
+| Code-Pfad | Nur bestehender Stream-Analyzer-CMAF-Binary-Pfad: `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`, `segment-loader.ts`, HLS-CMAF-Parser-Metadaten. |
+| API-/Wire-Entscheidung | Kein neues `analyzerKind`, kein neuer Top-Level-Endpoint, kein neuer `apps/analyzer-api`-Pfad. Bestehendes `details.cmaf.binary` bleibt der einzige Result-Surface. |
+| Compatibility-Entscheidung | Additiv/behavioral: valide HLS-Byte-Range-Manifeste, die bisher `hls_map_byterange_unsupported` oder `hls_media_byterange_unsupported` lieferten, duerfen nach Umsetzung `passed`/fachliche Box-Failures liefern. Failure-Code-Domain bleibt stabil; die Unsupported-Codes bleiben fuer nicht umgesetzte/ungueltige Faelle verfuegbar. |
+| Abbruchkriterien | Slice abbrechen oder in Doku-only-Defer drehen, wenn Range-Reads nicht ohne zusaetzliche SSRF-/Redirect-/Size-Grenzen testbar sind, wenn ein neues Public-Schema noetig wuerde oder wenn mehr als Init + erstes Media-Segment erforderlich wird. |
+
+### 3.2 Range-Fetch-Scope
+
+Der `0.16.0`-Slice erweitert nur den bereits vorhandenen bounded
+CMAF-Binary-Pfad aus `0.10.0`.
+
+Pflichtumfang:
+
+- `EXT-X-MAP:BYTERANGE="<length>[@<offset>]"` fuer das Init-Segment.
+- `#EXT-X-BYTERANGE:<length>[@<offset>]` direkt vor dem ersten
+  fMP4-Media-Segment.
+- Offset-loser Media-Range ist nur zulaessig, wenn aus dem HLS-
+  Kontext ein vorheriger Range-Offset eindeutig ableitbar ist; fuer
+  den ersten zu pruefenden Media-Range ohne ableitbaren Offset bleibt
+  der Pfad skipped.
+- Range-Ladepfad muss denselben URL-, DNS-, Redirect-, Timeout-,
+  Private-Network- und Content-Type-Schutz wie `segment-loader.ts`
+  nutzen.
+- Range-Bytes zaehlen gegen `cmaf.binary.maxSegmentBytes`; zusaetzlich
+  darf pro Segment nur genau ein Range-Request geplant werden.
+
+Nicht-Ziele:
+
+- Kein Multi-Range-Request und keine Wiederaufnahme ueber mehrere
+  Requests.
+- Keine heuristische Ermittlung weiterer Media-Segmente.
+- Kein DASH-Range-/SegmentBase-Ausbau in `0.16.0`.
+- Keine Aenderung der Analyzer-Service-Request-Whitelist; `fetch`
+  bleibt auf `timeoutMs`, `maxBytes`, `maxRedirects` begrenzt,
+  `allowPrivateNetworks` bleibt nur Service-Env.
+
+### 3.3 Security- und Operational-Grenzen
+
+Pflichtgrenzen fuer Tranche 2:
+
+- Header: genau `Range: bytes=<start>-<end>`; `end` ist inklusiv und
+  aus `offset + length - 1` berechnet.
+- Limit: `length > 0`, `offset >= 0`, `length <= maxSegmentBytes`,
+  `offset + length` darf nicht ueber `Number.MAX_SAFE_INTEGER` laufen.
+- Status: Erfolgreiche Range-Antworten muessen `206 Partial Content`
+  liefern. `200 OK` auf einen Range-Request ist kein stiller Erfolg,
+  sondern `segment_fetch_failed` oder ein explizit dokumentierter
+  skipped-Fall.
+- Redirects: jeder Redirect-Hop validiert die Ziel-URL erneut; der
+  `Range`-Header darf nur an den validierten Folge-Hop gehen.
+- Body: gelesene Bytes muessen exakt die geplante Range-Laenge
+  erreichen oder als Fetch-Failure gelten; Over-Read bricht mit
+  `segment_too_large` oder Fetch-Failure ab.
+- Logging/Doku: keine rohen Segment-URLs als neue Metriklabels oder
+  Persistenzfelder.
+
+### 3.4 Fixture- und Testplan
+
+Tranche 2/3 muss mindestens diese Nachweise liefern:
+
+- Unit-Test fuer `EXT-X-MAP:BYTERANGE` mit erfolgreichem Init-Range-
+  Fetch und bestehender Box-Validierung.
+- Unit-Test fuer `#EXT-X-BYTERANGE` auf dem ersten fMP4-Media-Segment
+  mit erfolgreichem Media-Range-Fetch.
+- Negativtests fuer `200 OK` statt `206`, Range-Laenge ueber Limit,
+  offset-losen ersten Media-Range ohne ableitbaren Offset,
+  Redirect-Revalidation und Private-Network-Block ohne Opt-in.
+- Contract-Fixtures fuer HLS-Map-ByteRange und HLS-Media-ByteRange
+  werden aktualisiert; keine neuen Top-Level-Result-Felder.
+- Drift-Nachweis: Go-Testdata-Kopien unter
+  `apps/api/adapters/driven/streamanalyzer/testdata/` bleiben
+  bytegleich zu den Spec-Fixtures.
+
+### 3.5 What aendert sich
+
+- `RAK-107` ist als HLS-Range-Fetch-Scope spezifiziert.
+- `RAK-108` bekommt eine explizite No-new-public-schema-
+  Compatibility-Entscheidung.
+- `RAK-109` bekommt konkrete Fetch-Security-Grenzen fuer Tranche 2.
+
+### 3.6 What bleibt unveraendert
+
+- Externe Analyzer-API, Control-Plane, Postgres, Analytics-Backend,
+  Production-K8s, LL-CMAF, vollstaendige Segmentsets, Codec-Decoding
+  und Player-Laufzeitpfade bleiben deferred.
+- `details.cmaf.binary` bleibt der einzige Public-Surface fuer den
+  Slice.
+- `make docs-check` bleibt das einzige Gate fuer Tranche 1; Code-,
+  TS-, Contract- und Security-Gates werden erst mit Tranche 2/3
+  verpflichtend.
 
 ## 4. Tranche 2 — Implementierung oder POC
 
@@ -305,9 +402,9 @@ vergeben.
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
 | RAK-106 | Muss | `0.15.0`-Closeout, Szenario-Import | Genau ein Folgepfad ist gewaehlt; Szenario B ist aktiv, alle anderen grossen Pfade bleiben deferred | [x] |
-| RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | [ ] |
-| RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | [ ] |
-| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | [ ] |
+| RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | 🟡 Scope definiert |
+| RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | 🟡 No-new-public-schema definiert |
+| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | 🟡 Gates definiert |
 | RAK-110 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [ ] |
 
 Sofort nutzbares Verifikationsmapping:
@@ -315,9 +412,9 @@ Sofort nutzbares Verifikationsmapping:
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
 | RAK-106 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/done/plan-0.15.0.md` §6.3/§9, `spec/lastenheft.md` §13.20 | 2026-05-12 | Product/PM | ✅ |
-| RAK-107 | `docs/planning/in-progress/plan-0.16.0.md`, spaeter Stream-Analyzer-Artefakte | TBD | Platform/Analyzer | ⬜ |
-| RAK-108 | `docs/planning/in-progress/plan-0.16.0.md`, spaeter Contract-/Fixture-Nachweise | TBD | Platform/QA | ⬜ |
-| RAK-109 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/in-progress/risks-backlog.md`, spaeter Security-Gates | TBD | Platform/Ops | ⬜ |
+| RAK-107 | `docs/planning/in-progress/plan-0.16.0.md` §3.1/§3.2, `docs/user/stream-analyzer.md` §3.1 | 2026-05-12 | Platform/Analyzer | 🟡 |
+| RAK-108 | `docs/planning/in-progress/plan-0.16.0.md` §3.1/§3.4, `docs/user/stream-analyzer.md` §3.1 | 2026-05-12 | Platform/QA | 🟡 |
+| RAK-109 | `docs/planning/in-progress/plan-0.16.0.md` §3.3/§3.4, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | 🟡 |
 | RAK-110 | `docs/planning/in-progress/plan-0.16.0.md`, `CHANGELOG.md`, Roadmap, Tag `v0.16.0` | TBD | Platform/CI | ⬜ |
 
 ## 7.1 Blocker-Log

@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Control-Plane, Postgres, Analytics, Production-K8s, LL-CMAF,
   vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade
   bleiben deferred.
+- `0.16.0` Tranche 1: Range-Fetch-Scope auf HLS-CMAF-Byte-Ranges
+  begrenzt (`EXT-X-MAP:BYTERANGE` und erstes
+  `#EXT-X-BYTERANGE`-fMP4-Media-Segment), No-new-public-schema-
+  Compatibility-Entscheidung dokumentiert und Security-Grenzen für
+  `206 Partial Content`, SSRF-/Redirect-Revalidation, Größenlimits und
+  Fixture-/Contract-Nachweise festgelegt.
 
 ## [0.15.0] - 2026-05-12
 

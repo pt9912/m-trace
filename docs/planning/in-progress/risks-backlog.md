@@ -18,12 +18,16 @@
 > [`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). Tranche 0
 > importiert aus `0.15.0` genau Szenario B: HTTP-Range-/Byte-Range-
 > Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente.
+> Tranche 1 begrenzt den Scope auf HLS-CMAF-Byte-Ranges
+> (`EXT-X-MAP:BYTERANGE` und erstes `#EXT-X-BYTERANGE`-fMP4-Media-
+> Segment) und schließt den Contract-Filter ohne neues Public-Schema.
 > RAK-109 trackt die Fetch-Security-/Operational-Grenzen (SSRF,
 > Redirects, Timeout, Groessen, Range-Anzahl, Status-/Content-Type-
-> Grenzen und Laufzeitbudget). Die Aktivierung erzeugt noch kein neues
-> R-N-Item, weil Tranche 0 docs-only ist; Tranche 1 muss ein eigenes
-> R-N-Item anlegen, falls die Fetch-Grenzen nicht testbar oder nicht
-> begrenzt geschlossen werden koennen.
+> Grenzen, `206 Partial Content` und Laufzeitbudget). Es entsteht
+> noch kein neues R-N-Item: Die Risiken sind im `0.16.0`-Plan als
+> Umsetzungsgates sichtbar und muessen in Tranche 2/3 getestet werden.
+> Ein eigenes R-N-Item wird erst faellig, falls diese Grenzen im Code-
+> Pfad nicht testbar oder nicht begrenzt geschlossen werden koennen.
 >
 > `0.15.0` ist released und archiviert in
 > [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0

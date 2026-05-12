@@ -2249,6 +2249,12 @@ Media-Segmente. Die Aktivierung ist noch docs-only; Umsetzung darf erst
 nach Scope-, Contract-, Security- und Operational-Grenzen in Tranche 1
 erfolgen.
 
+Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges:
+`EXT-X-MAP:BYTERANGE` fuer Init-Segmente und `#EXT-X-BYTERANGE` fuer
+das erste fMP4-Media-Segment. DASH-Range-/SegmentBase-Ausbau,
+Multi-Range-Requests, LL-CMAF, vollstaendige Segmentsets und
+Codec-Decoding bleiben ausgeschlossen.
+
 Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |

@@ -354,6 +354,29 @@ Reihenfolge entspricht der normativen Präzedenz aus Plan §3:
 | `cmaf_box_validation_failed`      | failed   | Bytes geladen, aber Brand-Allowlist verletzt oder Pflicht-Box fehlt (z. B. fehlendes `mdat`, generische Brands ohne `cmfs`/`cmff`/`cmfc`/`cmf2`). |
 | `invalid_box_structure`           | failed   | Bytes geladen, aber Boxgröße/Überlappung/Fortschritt strukturell ungültig. |
 
+#### `0.16.0` Range-Fetch-Scope
+
+`0.16.0` Tranche 1 spezifiziert den Folge-Slice für HLS-CMAF-
+Byte-Ranges. Bis zur Umsetzung bleibt das aktuelle Runtime-Verhalten
+unverändert; valide `EXT-X-MAP:BYTERANGE`- und erste
+`#EXT-X-BYTERANGE`-Media-Referenzen werden derzeit noch mit den oben
+genannten Unsupported-Codes skipped.
+
+Der geplante Slice bleibt innerhalb des bestehenden
+`details.cmaf.binary`-Surface:
+
+- Kein neuer `analyzerKind`, kein neuer `/api/analyze`-Endpoint und
+  keine neue externe Analyzer-API.
+- Nur HLS: `EXT-X-MAP:BYTERANGE` für Init-Segmente und
+  `#EXT-X-BYTERANGE` für das erste fMP4-Media-Segment.
+- Kein DASH-Range-/SegmentBase-Ausbau, kein LL-CMAF, keine
+  vollständige Segmentset-Abdeckung und kein Codec-Decoding.
+- Range-Requests müssen denselben SSRF-, DNS-, Redirect-, Timeout-,
+  Private-Network- und Content-Type-Schutz wie der bestehende Segment-
+  Loader verwenden.
+- Erfolgreiche Range-Fetches müssen als `206 Partial Content` geprüft
+  werden; `200 OK` auf einen Range-Request ist kein stiller Erfolg.
+
 #### Aufrufer-Steuerung über `cmaf.binary.*`
 
 Library-Aufrufer dürfen die Binary-Prüfung opt-in/opt-out steuern:
