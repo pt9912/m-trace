@@ -230,7 +230,7 @@ Szenario-spezifische Pflichtfragen:
 | Feld | Wert |
 | --- | --- |
 | Nutzer/Konsument | `@npm9912/stream-analyzer` Library/CLI und der bestehende interne `apps/analyzer-service`; kein neuer externer API-Konsument. |
-| Liefer-Slice | HLS-CMAF-Binary-Verifikation fuer bereits manifest-referenzierte Byte-Ranges: `EXT-X-MAP:BYTERANGE` fuer Init-Segmente und `#EXT-X-BYTERANGE` fuer das erste fMP4-Media-Segment. |
+| Liefer-Slice | HLS-CMAF-Binary-Verifikation fuer bereits manifest-referenzierte Byte-Ranges: `EXT-X-MAP` mit `BYTERANGE`-Attribut fuer Init-Segmente und `#EXT-X-BYTERANGE` fuer das erste fMP4-Media-Segment. |
 | Ausgeschlossene Formate | DASH-Byte-Range-Support, `SegmentTimeline`/`$Time$`, LL-CMAF-Parts, chunked CMAF, vollstaendige Segmentsets, Codec-Decoding, Player-Laufzeitpfade. |
 | Code-Pfad | Nur bestehender Stream-Analyzer-CMAF-Binary-Pfad: `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`, `segment-loader.ts`, HLS-CMAF-Parser-Metadaten. |
 | API-/Wire-Entscheidung | Kein neues `analyzerKind`, kein neuer Top-Level-Endpoint, kein neuer `apps/analyzer-api`-Pfad. Bestehendes `details.cmaf.binary` bleibt der einzige Result-Surface. |
@@ -244,7 +244,8 @@ CMAF-Binary-Pfad aus `0.10.0`.
 
 Pflichtumfang:
 
-- `EXT-X-MAP:BYTERANGE="<length>[@<offset>]"` fuer das Init-Segment.
+- `#EXT-X-MAP:URI="...",BYTERANGE="<length>[@<offset>]"` fuer das
+  Init-Segment.
 - `#EXT-X-BYTERANGE:<length>[@<offset>]` direkt vor dem ersten
   fMP4-Media-Segment.
 - Offset-loser Media-Range ist nur zulaessig, wenn aus dem HLS-
@@ -291,8 +292,8 @@ Pflichtgrenzen fuer Tranche 2:
 
 Tranche 2/3 muss mindestens diese Nachweise liefern:
 
-- Unit-Test fuer `EXT-X-MAP:BYTERANGE` mit erfolgreichem Init-Range-
-  Fetch und bestehender Box-Validierung.
+- Unit-Test fuer `#EXT-X-MAP` mit `BYTERANGE`-Attribut, erfolgreichem
+  Init-Range-Fetch und bestehender Box-Validierung.
 - Unit-Test fuer `#EXT-X-BYTERANGE` auf dem ersten fMP4-Media-Segment
   mit erfolgreichem Media-Range-Fetch.
 - Negativtests fuer `200 OK` statt `206`, Range-Laenge ueber Limit,

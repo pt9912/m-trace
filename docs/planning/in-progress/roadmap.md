@@ -5,8 +5,8 @@
 > **Phase**: 🟡 `0.16.0` aktiv seit 2026-05-12 — Selected Product
 > Slice / Analyzer Range Fetch. Szenario B aus `0.15.0` RAK-104 ist
 > importiert; Tranche 1 begrenzt den Slice auf HLS-CMAF-Byte-Ranges
-> (`EXT-X-MAP:BYTERANGE` und erstes `#EXT-X-BYTERANGE`-fMP4-Media-
-> Segment). Lastenheft-Patch `1.1.21`
+> (`#EXT-X-MAP` mit `BYTERANGE`-Attribut und erstes
+> `#EXT-X-BYTERANGE`-fMP4-Media-Segment). Lastenheft-Patch `1.1.21`
 > mit RAK-106..RAK-110 in §13.20 ist persistiert; Plan aktiv in
 > [`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). `0.15.0` ist
 > archiviert in [`done/plan-0.15.0.md`](../done/plan-0.15.0.md).
@@ -94,8 +94,8 @@ aus `0.15.0` genau Szenario B: HTTP-Range-/Byte-Range-Loader fuer
 manifest-referenzierte CMAF-Init-/Media-Segmente. Lastenheft-Patch
 `1.1.21` belegt RAK-106..RAK-110 in §13.20; RAK-106 ist mit der
 Aktivierung geschlossen. Tranche 1 schließt den Scope- und Contract-
-Filter: Umsetzung darf nur HLS-CMAF-Byte-Ranges für
-`EXT-X-MAP:BYTERANGE` und das erste `#EXT-X-BYTERANGE`-fMP4-Media-
+Filter: Umsetzung darf nur HLS-CMAF-Byte-Ranges für `#EXT-X-MAP` mit
+`BYTERANGE`-Attribut und das erste `#EXT-X-BYTERANGE`-fMP4-Media-
 Segment adressieren, ohne neues `analyzerKind`, ohne neuen Endpoint
 und ohne neue externe Analyzer-API. Tranche 2 startet mit den
 festgelegten `206 Partial Content`-, SSRF-/Redirect-/Timeout-,
@@ -256,7 +256,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 48  | ✅      | `0.13.0` Production / Ops Backends ausgeliefert: Postgres und Analytics-Backends als deferred mit Triggern entschieden, optionale Kubernetes-Manifeste, Devcontainer und Release-Guard geliefert. NF-18 mit MVP-42 harmonisiert. Minor-Release mit Lastenheft-Patch `1.1.18` und RAK-91..RAK-95 in §13.17. | Nach Schritt 47.7 | RAK-91..RAK-95 in `spec/lastenheft.md` §13.17; NF-18, MVP-40..MVP-44; [`done/plan-0.13.0.md`](../done/plan-0.13.0.md) |
 | 49  | ✅      | `0.14.0` Ops Backend Follow-up ausgeliefert: Szenario C importiert K8s-/Devcontainer-/Release-Guard-Seeds aus `0.13.0` für Hardening/Validation. Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`; keine neue lokale Pflichtabhängigkeit. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. | Nach Schritt 48 | RAK-96..RAK-100 in `spec/lastenheft.md` §13.18; MVP-40..MVP-44; [`done/plan-0.14.0.md`](../done/plan-0.14.0.md) |
 | 50  | ✅      | `0.15.0` Product Scope / Analyzer Boundary released: Szenario A fokussiert Zielgruppe + Analyzer-Boundary, bevor externe Analyzer-API, Control-Plane, Postgres/Analytics oder Production-K8s in Implementierung gehen. Tranche 1 schließt RAK-101 mit Selbsthoster-/kleine-Team-/Broadcaster-Lab-Fokus. Tranche 2 schließt RAK-102: externe Analyzer-API deferred, interner `apps/analyzer-service` plus Library/CLI bleibt Standard. Tranche 3 schließt RAK-103: Control-Plane deferred, kein POC ohne Betreiber-/Auth-/Tenant-Trigger. Tranche 4 schließt RAK-104: HTTP-Range-/Byte-Range-Loader als einziger kleiner `NF-13`-Folgeslice empfohlen. Tranche 5 schließt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. | Nach Schritt 49 | RAK-101..RAK-105 ✅; `spec/lastenheft.md` §7.5.5/§7.5.6/§8.3/§12.1/§13.19/§16.1; MVP-20, F-132, NF-13, MVP-40/MVP-41; [`done/plan-0.15.0.md`](../done/plan-0.15.0.md) |
-| 51  | 🟡      | `0.16.0` Selected Product Slice / Analyzer Range Fetch aktiviert und gehärtet: Szenario B importiert `RAK-104` als einzigen Go-Pfad. Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges (`EXT-X-MAP:BYTERANGE` und erstes `#EXT-X-BYTERANGE`-fMP4-Media-Segment), No-new-public-schema und Fetch-Security-Grenzen; externe Analyzer-API, Control-Plane, Postgres/Analytics, Production-K8s, LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. | Nach Schritt 50 | RAK-106 ✅; RAK-107..RAK-109 🟡 Scope/Gates definiert; `spec/lastenheft.md` §13.20; NF-13; [`plan-0.16.0.md`](./plan-0.16.0.md) |
+| 51  | 🟡      | `0.16.0` Selected Product Slice / Analyzer Range Fetch aktiviert und gehärtet: Szenario B importiert `RAK-104` als einzigen Go-Pfad. Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges (`#EXT-X-MAP` mit `BYTERANGE`-Attribut und erstes `#EXT-X-BYTERANGE`-fMP4-Media-Segment), No-new-public-schema und Fetch-Security-Grenzen; externe Analyzer-API, Control-Plane, Postgres/Analytics, Production-K8s, LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. | Nach Schritt 50 | RAK-106 ✅; RAK-107..RAK-109 🟡 Scope/Gates definiert; `spec/lastenheft.md` §13.20; NF-13; [`plan-0.16.0.md`](./plan-0.16.0.md) |
 
 ---
 

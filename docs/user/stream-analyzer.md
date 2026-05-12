@@ -358,17 +358,17 @@ Reihenfolge entspricht der normativen Präzedenz aus Plan §3:
 
 `0.16.0` Tranche 1 spezifiziert den Folge-Slice für HLS-CMAF-
 Byte-Ranges. Bis zur Umsetzung bleibt das aktuelle Runtime-Verhalten
-unverändert; valide `EXT-X-MAP:BYTERANGE`- und erste
-`#EXT-X-BYTERANGE`-Media-Referenzen werden derzeit noch mit den oben
-genannten Unsupported-Codes skipped.
+unverändert; valide `#EXT-X-MAP`-Tags mit `BYTERANGE`-Attribut und
+erste `#EXT-X-BYTERANGE`-Media-Referenzen werden derzeit noch mit den
+oben genannten Unsupported-Codes skipped.
 
 Der geplante Slice bleibt innerhalb des bestehenden
 `details.cmaf.binary`-Surface:
 
 - Kein neuer `analyzerKind`, kein neuer `/api/analyze`-Endpoint und
   keine neue externe Analyzer-API.
-- Nur HLS: `EXT-X-MAP:BYTERANGE` für Init-Segmente und
-  `#EXT-X-BYTERANGE` für das erste fMP4-Media-Segment.
+- Nur HLS: `#EXT-X-MAP` mit `BYTERANGE`-Attribut für Init-Segmente
+  und `#EXT-X-BYTERANGE` für das erste fMP4-Media-Segment.
 - Kein DASH-Range-/SegmentBase-Ausbau, kein LL-CMAF, keine
   vollständige Segmentset-Abdeckung und kein Codec-Decoding.
 - Range-Requests müssen denselben SSRF-, DNS-, Redirect-, Timeout-,
