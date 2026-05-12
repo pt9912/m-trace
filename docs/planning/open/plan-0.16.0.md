@@ -80,6 +80,14 @@ Vor Aktivierung von `0.16.0` muessen diese Bedingungen erfuellt sein:
 - [ ] Der freigegebene Pfad hat Owner, Gating, Abbruchkriterien und
   Backwards-Compat-Grenzen.
 
+Uebergangsausnahme bei Release-Freeze oder blockiertem Vorgaenger:
+Tranche 0 darf `0.16.0` nur als **draft/in-progress Planning** starten,
+wenn Roadmap und Blocker-Log den fehlenden `0.15.0`-Closeout
+begründen, alle aus `0.15.0` importierten Entscheidungen als `[!]`
+blockiert markiert sind und kein Tag/Release fuer `0.16.0` erstellt
+wird, bevor `0.15.0` archiviert oder ausdruecklich durch einen neuen
+Plan ersetzt ist.
+
 ### 0.3 Lastenheft-Patch (TBD)
 
 Die finale RAK-Gruppe wird erst bei Aktivierung vergeben. Erwartete
@@ -150,6 +158,8 @@ DoD:
   - Control-Plane,
   - Postgres,
   - Analytics-Backend.
+- [ ] Aktivierungsnotiz enthaelt `What aendert sich` /
+  `What bleibt unveraendert` und benennt nicht aktivierte Pfade.
 
 ### 2.1 Aktivierungsnotiz (Template)
 
@@ -178,6 +188,10 @@ DoD:
 - [ ] Security-/Operational-Grenzen dokumentiert.
 - [ ] Erfolgskriterien und Abbruchkriterien festgelegt.
 - [ ] Nicht-Ziele in diesem Plan sichtbar.
+- [ ] Anti-Scope-Drift-Nachweis dokumentiert: alle nicht gewaehlten
+  Szenarien bleiben deferred oder blockiert.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Szenario-spezifische Pflichtfragen:
 
@@ -201,6 +215,10 @@ DoD:
 - [ ] Artefakte haben klare Dateipfade.
 - [ ] Feature/POC bleibt opt-in, wenn neue Infrastruktur benoetigt wird.
 - [ ] Doku erklaert, was der Pfad nicht leistet.
+- [ ] Anti-Scope-Drift-Nachweis dokumentiert: keine deferred Pfade
+  wurden nebenbei implementiert.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Vorlaeufige Artefakte je Szenario:
 
@@ -229,6 +247,10 @@ DoD:
 - [ ] Contract-/Fixture-Drift geprueft, falls Wire- oder Analyzer-
   Result-Schema geaendert wurde.
 - [ ] Risks-Backlog aktualisiert oder explizit unveraendert markiert.
+- [ ] Anti-Scope-Drift-Nachweis dokumentiert: Gates beziehen sich nur
+  auf das gewaehlt Szenario.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 ## 6. Tranche 4 — Release-Closeout
 

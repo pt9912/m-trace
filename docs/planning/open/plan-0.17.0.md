@@ -89,6 +89,14 @@ Vor Aktivierung von `0.17.0` muessen diese Bedingungen erfuellt sein:
 - [ ] Falls `0.16.0` ein Defer-Release war: Tranche 0 begruendet,
   warum `0.17.0` trotzdem aktiviert wird.
 
+Uebergangsausnahme bei Release-Freeze oder blockiertem Vorgaenger:
+Tranche 0 darf `0.17.0` nur als **draft/in-progress Planning** starten,
+wenn Roadmap und Blocker-Log den fehlenden `0.16.0`-Closeout
+begründen, alle aus `0.16.0` importierten Entscheidungen als `[!]`
+blockiert markiert sind und kein Tag/Release fuer `0.17.0` erstellt
+wird, bevor `0.16.0` archiviert oder ausdruecklich durch einen neuen
+Plan ersetzt ist.
+
 ### 0.3 Lastenheft-Patch (TBD)
 
 Die finale RAK-Gruppe wird erst bei Aktivierung vergeben. Erwartete
@@ -154,6 +162,8 @@ DoD:
 - [ ] Risiken-Backlog aktualisiert, falls ein POC stabilisiert,
   abgebrochen oder deferred wird.
 - [ ] Defer-Matrix fuer nicht gewaehlt Pfade ausgefuellt.
+- [ ] Aktivierungsnotiz enthaelt `What aendert sich` /
+  `What bleibt unveraendert` und benennt nicht aktivierte Pfade.
 
 ### 2.1 Aktivierungsnotiz (Template)
 
@@ -183,6 +193,10 @@ DoD:
 - [ ] Productization-/Next-Slice-Entscheidung dokumentiert.
 - [ ] Compatibility- und Rollback-Grenzen festgelegt.
 - [ ] Nicht-Ziele und bewusst deferred Pfade dokumentiert.
+- [ ] Anti-Scope-Drift-Nachweis dokumentiert: nicht importierte Pfade
+  bleiben deferred oder blockiert.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Szenario-spezifische Fragen:
 
@@ -208,6 +222,10 @@ DoD:
   Pfad opt-in.
 - [ ] Doku nennt Nutzer, Grenzen und Nicht-Ziele.
 - [ ] Kein deferred Pfad wird nebenbei implementiert.
+- [ ] Anti-Scope-Drift-Nachweis dokumentiert: Umsetzung bleibt beim
+  gewaehlt Szenario.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Vorlaeufige Artefakte je Szenario:
 
@@ -237,6 +255,10 @@ DoD:
 - [ ] Rollback- oder Deaktivierungspfad dokumentiert, falls ein neuer
   opt-in Dienst, Adapter oder API-Pfad entsteht.
 - [ ] Risks-Backlog aktualisiert oder explizit unveraendert markiert.
+- [ ] Anti-Scope-Drift-Nachweis dokumentiert: Gates beziehen sich nur
+  auf den fortgesetzten Pfad.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 ## 6. Tranche 4 — Release-Closeout
 

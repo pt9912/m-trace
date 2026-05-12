@@ -89,6 +89,14 @@ Vor Aktivierung von `0.15.0` muessen diese Bedingungen erfuellt sein:
 - [ ] Keine Postgres-/Analytics-/K8s-Trigger wurden stillschweigend
   als Implementierungsfreigabe interpretiert.
 
+Uebergangsausnahme bei Release-Freeze oder blockiertem Vorgaenger:
+Tranche 0 darf `0.15.0` nur als **draft/in-progress Planning** starten,
+wenn Roadmap und Blocker-Log den fehlenden `0.14.0`-Closeout
+begründen, alle aus `0.14.0` importierten RAKs als `[!]` blockiert
+markiert sind und kein Tag/Release fuer `0.15.0` erstellt wird, bevor
+`0.14.0` archiviert oder ausdruecklich durch einen neuen Plan ersetzt
+ist.
+
 ### 0.3 Lastenheft-Patch (TBD)
 
 Die finale RAK-Gruppe wird erst bei Aktivierung vergeben. Erwartete
@@ -161,6 +169,8 @@ DoD:
 - [ ] Roadmap auf `0.15.0` als aktive Folgephase umgestellt.
 - [ ] Risiken-Backlog aktualisiert, falls neue Trigger oder Risiken
   entstehen.
+- [ ] Aktivierungsnotiz enthaelt `What aendert sich` /
+  `What bleibt unveraendert` und benennt nicht aktivierte Pfade.
 - [ ] No-Go-Liste geprueft:
   - Control-Plane-Implementierung ohne Zielgruppenentscheidung,
   - externe Analyzer-API ohne klaren Konsumenten,
@@ -197,6 +207,8 @@ DoD:
 - [ ] Lastenheft §16.1 aktualisiert oder durch ADR/Plan-Decision
   referenziert.
 - [ ] Out-of-Scope-Liste fuer `0.15.0` nachgezogen.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
 
@@ -229,6 +241,8 @@ DoD:
   erfuellt` getroffen.
 - [ ] Wenn `proceed` oder `POC`: minimaler Folgeslice ohne Control-
   Plane-Abhaengigkeit definiert.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
 
@@ -260,6 +274,8 @@ DoD:
   explizit beschrieben.
 - [ ] Entscheidung `defer`, `POC` oder `proceed in later plan`
   getroffen.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
 
@@ -294,6 +310,8 @@ DoD:
 - [ ] SSRF-/Fetch-Grenzen und Contract-Fixture-Auswirkungen benannt.
 - [ ] Kein Analyzer-Slice wird an eine externe Analyzer-API gekoppelt,
   solange Tranche 2 diese nicht freigibt.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
 
@@ -322,6 +340,8 @@ DoD:
   Owner aktualisiert.
 - [ ] Falls Trigger erreicht ist: Folgeplan statt stiller Umsetzung
   angelegt oder als Blocker fuer `0.15.0` markiert.
+- [ ] Tranche enthaelt `What aendert sich` /
+  `What bleibt unveraendert` mit Dateinachweis.
 - [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
 - [ ] `make docs-check` gruen.
 - [ ] Bei codebezogenen Aenderungen: `make build` und `make gates`
