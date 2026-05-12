@@ -19,6 +19,7 @@ interface ResponseSpec {
   headers?: Record<string, string>;
   bytes?: Uint8Array;
   delayMs?: number;
+  expectedRange?: string;
 }
 
 function asyncIterable(bytes: Uint8Array): AsyncIterable<Uint8Array> {
@@ -40,6 +41,9 @@ function makeRuntime(responses: Record<string, ResponseSpec>, opts: {
     async fetch(url, init) {
       const spec = responses[url];
       if (!spec) throw new Error(`unexpected fetch ${url}`);
+      if (spec.expectedRange !== undefined) {
+        expect(init.headers.range).toBe(spec.expectedRange);
+      }
       if (spec.delayMs !== undefined) {
         await new Promise<void>((resolve, reject) => {
           const t = setTimeout(resolve, spec.delayMs);
@@ -115,6 +119,56 @@ describe("loadSegment — happy paths", () => {
     const result = await loadSegment(url, { runtime, ...baseOpts });
     expect(result.ok).toBe(true);
   });
+
+  it("returns bytes for a single HTTP Range request on 206", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    const runtime = makeRuntime({
+      [url]: {
+        status: 206,
+        headers: { "content-type": "video/mp4" },
+        bytes: new Uint8Array([1, 2, 3, 4]),
+        expectedRange: "bytes=10-13"
+      }
+    });
+    const result = await loadSegment(url, {
+      runtime,
+      ...baseOpts,
+      range: { offset: 10, length: 4 }
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.bytes).toEqual(new Uint8Array([1, 2, 3, 4]));
+      expect(result.bytes.byteLength).toBe(4);
+    }
+  });
+
+  it("keeps the Range header while following a validated redirect", async () => {
+    const start = "https://cdn.example.test/init.mp4";
+    const target = "https://edge.example.test/init.mp4";
+    const runtime = makeRuntime({
+      [start]: {
+        status: 302,
+        headers: { location: target },
+        expectedRange: "bytes=4-7"
+      },
+      [target]: {
+        status: 206,
+        headers: { "content-type": "video/mp4" },
+        bytes: new Uint8Array([5, 6, 7, 8]),
+        expectedRange: "bytes=4-7"
+      }
+    });
+    const result = await loadSegment(start, {
+      runtime,
+      ...baseOpts,
+      range: { offset: 4, length: 4 }
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.finalUrl).toBe(target);
+      expect(result.bytes).toEqual(new Uint8Array([5, 6, 7, 8]));
+    }
+  });
 });
 
 describe("loadSegment — failure mappings", () => {
@@ -124,6 +178,76 @@ describe("loadSegment — failure mappings", () => {
     const result = await loadSegment(url, { runtime, ...baseOpts });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("segment_fetch_failed");
+  });
+
+  it("maps 200 OK on a Range request to segment_fetch_failed", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    const runtime = makeRuntime({
+      [url]: {
+        status: 200,
+        headers: { "content-type": "video/mp4" },
+        bytes: new Uint8Array([1, 2, 3, 4]),
+        expectedRange: "bytes=0-3"
+      }
+    });
+    const result = await loadSegment(url, {
+      runtime,
+      ...baseOpts,
+      range: { offset: 0, length: 4 }
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("segment_fetch_failed");
+  });
+
+  it("maps a short Range response body to segment_fetch_failed", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    const runtime = makeRuntime({
+      [url]: {
+        status: 206,
+        headers: { "content-type": "video/mp4" },
+        bytes: new Uint8Array([1, 2, 3]),
+        expectedRange: "bytes=0-3"
+      }
+    });
+    const result = await loadSegment(url, {
+      runtime,
+      ...baseOpts,
+      range: { offset: 0, length: 4 }
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("segment_fetch_failed");
+  });
+
+  it("maps an overlong Range response body to segment_too_large", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    const runtime = makeRuntime({
+      [url]: {
+        status: 206,
+        headers: { "content-type": "video/mp4" },
+        bytes: new Uint8Array([1, 2, 3, 4, 5]),
+        expectedRange: "bytes=0-3"
+      }
+    });
+    const result = await loadSegment(url, {
+      runtime,
+      ...baseOpts,
+      range: { offset: 0, length: 4 }
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("segment_too_large");
+  });
+
+  it("maps a Range length above maxSegmentBytes to segment_too_large", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    const runtime = makeRuntime({});
+    const result = await loadSegment(url, {
+      runtime,
+      ...baseOpts,
+      maxSegmentBytes: 4,
+      range: { offset: 0, length: 5 }
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("segment_too_large");
   });
 
   it("maps an unsupported content-type to segment_content_type_unsupported", async () => {

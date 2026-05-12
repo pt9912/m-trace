@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Compatibility-Entscheidung dokumentiert und Security-Grenzen für
   `206 Partial Content`, SSRF-/Redirect-Revalidation, Größenlimits und
   Fixture-/Contract-Nachweise festgelegt.
+- `0.16.0` Tranche 2: Der Stream-Analyzer lädt HLS-CMAF-Byte-Ranges
+  mit explizitem Offset über den bestehenden geschützten Segment-
+  Loader, verlangt `206 Partial Content`, prüft exakte Range-Längen
+  und aktualisiert die HLS-Byte-Range-Contract-Fixtures ohne neues
+  Result-Schema.
 
 ## [0.15.0] - 2026-05-12
 

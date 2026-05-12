@@ -330,14 +330,14 @@ nachweisbar gemacht.
 
 DoD:
 
-- [ ] Implementierung oder POC bleibt innerhalb der Tranche-1-Grenzen.
-- [ ] Keine nicht gewaehlt Pfade werden nebenbei gebaut.
-- [ ] Artefakte haben klare Dateipfade.
-- [ ] Feature/POC bleibt opt-in, wenn neue Infrastruktur benoetigt wird.
-- [ ] Doku erklaert, was der Pfad nicht leistet.
-- [ ] Anti-Scope-Drift-Nachweis dokumentiert: keine deferred Pfade
+- [x] Implementierung oder POC bleibt innerhalb der Tranche-1-Grenzen.
+- [x] Keine nicht gewaehlt Pfade werden nebenbei gebaut.
+- [x] Artefakte haben klare Dateipfade.
+- [x] Feature/POC bleibt opt-in, wenn neue Infrastruktur benoetigt wird.
+- [x] Doku erklaert, was der Pfad nicht leistet.
+- [x] Anti-Scope-Drift-Nachweis dokumentiert: keine deferred Pfade
   wurden nebenbei implementiert.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Vorlaeufige Artefakte je Szenario:
@@ -351,6 +351,44 @@ Vorlaeufige Artefakte je Szenario:
 - D: Postgres-/Analytics-POC-Report, Adapter-Slice oder synthetischer
   Load-/Migrationstest.
 - E: Defer-Notiz, Triggerpflege und Roadmap/Risks-Update.
+
+### 4.1 What aendert sich
+
+- `packages/stream-analyzer/src/internal/cmaf/segment-loader.ts`:
+  `loadSegment` akzeptiert optional einen einzelnen HTTP-Range-Scope
+  (`offset`, `length`), sendet `Range: bytes=<start>-<end>`, verlangt
+  fuer Range-Fetches `206 Partial Content` und validiert exakte
+  Body-Laenge gegen `maxSegmentBytes`.
+- `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`:
+  HLS-`EXT-X-MAP:BYTERANGE` und erstes `#EXT-X-BYTERANGE` werden bei
+  explizitem Offset in den bestehenden Binary-Check-Plan aufgenommen.
+  Offset-lose oder ungueltige Ranges bleiben mit den bestehenden
+  Unsupported-Codes skipped.
+- `packages/stream-analyzer/tests/segment-loader.test.ts` und
+  `packages/stream-analyzer/tests/binary-verify.test.ts`: Positive
+  HLS-Range-Fetches sowie `200 OK` statt `206`, Short-Read, Over-Read
+  und Limit-Ueberschreitung sind abgedeckt.
+- `spec/contract-fixtures/analyzer/success-hls-map-byterange.json`
+  und `spec/contract-fixtures/analyzer/success-hls-media-byterange.json`
+  sowie die Go-Testdata-Kopien unter
+  `apps/api/adapters/driven/streamanalyzer/testdata/` zeigen jetzt
+  `binary.status:"passed"` fuer explizite Byte-Ranges.
+- `docs/user/stream-analyzer.md`, `spec/lastenheft.md`,
+  `CHANGELOG.md` und `docs/planning/in-progress/roadmap.md`
+  dokumentieren den gelieferten Tranche-2-Stand.
+
+### 4.2 What bleibt unveraendert
+
+- Kein neuer `analyzerKind`, kein neues Result-Top-Level-Feld, kein
+  neuer API-Endpoint und keine externe Analyzer-API.
+- Kein DASH-Range-/SegmentBase-Ausbau, kein Multi-Range, kein
+  LL-CMAF, keine vollstaendige Segmentset-Abdeckung, kein
+  Codec-Decoding und kein Player-Laufzeitpfad.
+- Derselbe SSRF-, DNS-, Redirect-, Timeout-, Private-Network- und
+  Content-Type-Schutz wie beim bestehenden Segment-Loader bleibt
+  Pflicht.
+- Offset-lose HLS-Byte-Ranges werden nicht heuristisch aufgeloest;
+  sie bleiben bewusst skipped.
 
 ## 5. Tranche 3 — Tests, Security und Operational Boundaries
 
@@ -403,9 +441,9 @@ vergeben.
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
 | RAK-106 | Muss | `0.15.0`-Closeout, Szenario-Import | Genau ein Folgepfad ist gewaehlt; Szenario B ist aktiv, alle anderen grossen Pfade bleiben deferred | [x] |
-| RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | 🟡 Scope definiert |
-| RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | 🟡 No-new-public-schema definiert |
-| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | 🟡 Gates definiert |
+| RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | ✅ HLS-Slice geliefert |
+| RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | ✅ No-new-public-schema, Fixtures aktualisiert |
+| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | 🟡 Implementiert, Gates laufen in Tranche 3 |
 | RAK-110 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [ ] |
 
 Sofort nutzbares Verifikationsmapping:
@@ -413,9 +451,9 @@ Sofort nutzbares Verifikationsmapping:
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
 | RAK-106 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/done/plan-0.15.0.md` §6.3/§9, `spec/lastenheft.md` §13.20 | 2026-05-12 | Product/PM | ✅ |
-| RAK-107 | `docs/planning/in-progress/plan-0.16.0.md` §3.1/§3.2, `docs/user/stream-analyzer.md` §3.1 | 2026-05-12 | Platform/Analyzer | 🟡 |
-| RAK-108 | `docs/planning/in-progress/plan-0.16.0.md` §3.1/§3.4, `docs/user/stream-analyzer.md` §3.1 | 2026-05-12 | Platform/QA | 🟡 |
-| RAK-109 | `docs/planning/in-progress/plan-0.16.0.md` §3.3/§3.4, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | 🟡 |
+| RAK-107 | `packages/stream-analyzer/src/internal/cmaf/segment-loader.ts`, `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`, `docs/planning/in-progress/plan-0.16.0.md` §4.1 | 2026-05-12 | Platform/Analyzer | ✅ |
+| RAK-108 | `spec/contract-fixtures/analyzer/success-hls-map-byterange.json`, `spec/contract-fixtures/analyzer/success-hls-media-byterange.json`, `apps/api/adapters/driven/streamanalyzer/testdata/` | 2026-05-12 | Platform/QA | ✅ |
+| RAK-109 | `packages/stream-analyzer/tests/segment-loader.test.ts`, `packages/stream-analyzer/tests/binary-verify.test.ts`, `docs/planning/in-progress/plan-0.16.0.md` §3.3/§5 | 2026-05-12 | Platform/Ops | 🟡 |
 | RAK-110 | `docs/planning/in-progress/plan-0.16.0.md`, `CHANGELOG.md`, Roadmap, Tag `v0.16.0` | TBD | Platform/CI | ⬜ |
 
 ## 7.1 Blocker-Log

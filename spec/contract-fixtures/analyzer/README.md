@@ -63,8 +63,8 @@ werden; `make sync-contract-fixtures` kopiert jede Datei als
 | `success-hls-cmaf-vod.json` | 2 | HLS Media-Playlist mit `EXT-X-MAP` und `.m4s`-Segmenten; `details.cmaf` mit starkem manifestbasiertem Signal und `binary.status:"passed"`. |
 | `success-hls-ts-negative.json` | 2 | HLS Media-Playlist mit `.ts`-Segmenten ohne `EXT-X-MAP` als Negativ-/Regression-Pfad; kein `details.cmaf`. |
 | `success-hls-master-codecs-only.json` | 2 | HLS Master-Playlist mit `CODECS` und TS-basierten Variants; daraus darf **kein** `details.cmaf` entstehen. |
-| `success-hls-map-byterange.json` | 2 | `EXT-X-MAP` mit `BYTERANGE`; Manifest-Signal sichtbar, `binary.status:"skipped"` mit `hls_map_byterange_unsupported`. |
-| `success-hls-media-byterange.json` | 2 | `#EXT-X-BYTERANGE` vor erstem fMP4-Media-Segment; `binary.status:"skipped"` mit `hls_media_byterange_unsupported`. |
+| `success-hls-map-byterange.json` | 2 | `EXT-X-MAP` mit explizitem `BYTERANGE`-Offset; Init-Range und Media-Segment werden binär geprüft, `binary.status:"passed"`. |
+| `success-hls-media-byterange.json` | 2 | `#EXT-X-BYTERANGE` vor erstem fMP4-Media-Segment mit explizitem Offset; Init und Media-Range werden binär geprüft, `binary.status:"passed"`. |
 | `success-dash-mp4-mime-only.json` | 3 | DASH-MPD nur mit `video/mp4`-/`audio/mp4`-MIME ohne Initialization-/Media-Referenzen; `details.cmaf.confidence:"inferred"` und `binary.status:"skipped"` mit `segment_reference_missing`. |
 | `success-dash-cmaf-vod.json` | 3 | DASH-MPD mit `SegmentTemplate@initialization` plus fMP4-Segmentmuster als starker manifestbasierter Pfad; `binary.status:"passed"`. |
 | `success-dash-no-cmaf-signals.json` | 3 | DASH-MPD ohne MP4-MIME, ohne Initialization, ohne fMP4-URI-Muster (Negativ-/Regression-Pfad); kein `details.cmaf`. |

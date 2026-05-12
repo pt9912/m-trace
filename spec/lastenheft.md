@@ -2245,9 +2245,10 @@ automatische Veröffentlichung ohne Human Approval.
 `0.16.0` importiert genau einen freigegebenen Folgepfad aus
 `0.15.0`: Szenario B, den kleinen `NF-13`-Analyzer-Slice fuer
 HTTP-Range-/Byte-Range-Fetches manifest-referenzierter CMAF-Init- und
-Media-Segmente. Die Aktivierung ist noch docs-only; Umsetzung darf erst
-nach Scope-, Contract-, Security- und Operational-Grenzen in Tranche 1
-erfolgen.
+Media-Segmente. Tranche 2 setzt den HLS-Teil dieses Scope additiv um:
+explizite Byte-Ranges werden ueber den bestehenden geschuetzten
+Segment-Loader geladen und binär validiert; offset-lose oder
+ungueltige Byte-Ranges bleiben skipped.
 
 Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges:
 `#EXT-X-MAP` mit `BYTERANGE`-Attribut fuer Init-Segmente und

@@ -39,7 +39,7 @@
     },
     "cmaf": {
       "source": "hls",
-      "confidence": "manifest",
+      "confidence": "binary",
       "signals": [
         {
           "code": "hls_ext_x_map",
@@ -61,16 +61,33 @@
         }
       ],
       "binary": {
-        "status": "skipped",
+        "status": "passed",
         "segmentsChecked": [
           {
             "kind": "init",
             "source": "hls",
             "manifestAnchor": "media:line:5",
             "uri": "init.mp4",
-            "status": "skipped",
-            "failureCode": "hls_map_byterange_unsupported",
-            "message": "EXT-X-MAP mit BYTERANGE wird in 0.10.0 nicht per HTTP Range geladen."
+            "resolvedUrl": "https://cdn.example.test/hls/init.mp4",
+            "status": "passed",
+            "contentType": "video/mp4",
+            "bytesRead": 52,
+            "boxes": [
+              {
+                "segmentAnchor": "segment:init",
+                "path": "segment:init:ftyp",
+                "type": "ftyp",
+                "offset": 0,
+                "size": 16
+              },
+              {
+                "segmentAnchor": "segment:init",
+                "path": "segment:init:moov",
+                "type": "moov",
+                "offset": 16,
+                "size": 36
+              }
+            ]
           },
           {
             "kind": "media",
@@ -122,6 +139,20 @@
         ],
         "boxes": [
           {
+            "segmentAnchor": "segment:init",
+            "path": "segment:init:ftyp",
+            "type": "ftyp",
+            "offset": 0,
+            "size": 16
+          },
+          {
+            "segmentAnchor": "segment:init",
+            "path": "segment:init:moov",
+            "type": "moov",
+            "offset": 16,
+            "size": 36
+          },
+          {
             "segmentAnchor": "segment:media[0]",
             "path": "segment:media[0]:styp",
             "type": "styp",
@@ -157,21 +188,14 @@
             "size": 16
           }
         ],
-        "failures": [
-          {
-            "code": "hls_map_byterange_unsupported",
-            "level": "warning",
-            "message": "EXT-X-MAP mit BYTERANGE wird in 0.10.0 nicht per HTTP Range geladen.",
-            "manifestAnchor": "media:line:5"
-          }
-        ],
+        "failures": [],
         "limits": {
           "maxSegmentBytes": 2000000,
           "maxBinarySegments": 6,
           "timeoutMs": 10000,
           "maxRedirects": 5,
           "requiredSegmentChecks": 2,
-          "plannedSegmentFetches": 1
+          "plannedSegmentFetches": 2
         }
       }
     }

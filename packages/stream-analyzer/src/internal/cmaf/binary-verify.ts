@@ -14,7 +14,7 @@ import {
   type IsoBmffParseError
 } from "./iso-bmff.js";
 import type { LoaderRuntime } from "../loader/runtime.js";
-import { loadSegment, type SegmentLoadResult } from "./segment-loader.js";
+import { loadSegment, type SegmentByteRange, type SegmentLoadResult } from "./segment-loader.js";
 import type {
   DashCmafMetadata,
   DashCmafRepresentationEntry,
@@ -22,6 +22,7 @@ import type {
 } from "../parsers/dash.js";
 import type {
   HlsExtXMapMeta,
+  HlsByteRange,
   HlsFirstMediaSegmentMeta,
   HlsMediaCmafMetadata
 } from "../parsers/cmaf-hls.js";
@@ -114,6 +115,8 @@ interface PlannedCheck {
   readonly uri?: string;
   /** Aufgelöste sichere HTTP(S)-URL für den Loader, wenn vorhanden. */
   readonly resolvedUrl?: string;
+  /** Optionaler HTTP-Range-Scope für HLS-Byte-Range-Segmente. */
+  readonly range?: SegmentByteRange;
 }
 
 interface VerificationPlan {
@@ -152,13 +155,24 @@ function buildHlsInitCheck(init: HlsExtXMapMeta | undefined): PlannedCheck {
     };
   }
   if (init.byterange !== undefined) {
+    const range = toSegmentByteRange(init.byterange);
+    if (range !== null) {
+      return {
+        kind: "init",
+        source: "hls",
+        manifestAnchor: init.manifestAnchor,
+        uri: init.uri,
+        ...(init.resolvedUri !== undefined ? { resolvedUrl: init.resolvedUri } : {}),
+        range
+      };
+    }
     return {
       kind: "init",
       source: "hls",
       manifestAnchor: init.manifestAnchor,
       uri: init.uri,
       preFailureCode: "hls_map_byterange_unsupported",
-      preFailureMessage: "EXT-X-MAP mit BYTERANGE wird in 0.10.0 nicht per HTTP Range geladen."
+      preFailureMessage: "EXT-X-MAP mit BYTERANGE ohne eindeutigen gueltigen Offset wird nicht per HTTP Range geladen."
     };
   }
   return {
@@ -181,13 +195,24 @@ function buildHlsMediaCheck(media: HlsFirstMediaSegmentMeta | undefined): Planne
     };
   }
   if (media.byterange !== undefined) {
+    const range = toSegmentByteRange(media.byterange);
+    if (range !== null) {
+      return {
+        kind: "media",
+        source: "hls",
+        manifestAnchor: media.manifestAnchor,
+        uri: media.uri,
+        ...(media.resolvedUri !== undefined ? { resolvedUrl: media.resolvedUri } : {}),
+        range
+      };
+    }
     return {
       kind: "media",
       source: "hls",
       manifestAnchor: media.manifestAnchor,
       uri: media.uri,
       preFailureCode: "hls_media_byterange_unsupported",
-      preFailureMessage: "#EXT-X-BYTERANGE auf erstem fMP4-Media-Segment wird in 0.10.0 nicht per HTTP Range geladen."
+      preFailureMessage: "#EXT-X-BYTERANGE ohne eindeutigen gueltigen Offset wird nicht per HTTP Range geladen."
     };
   }
   return {
@@ -197,6 +222,14 @@ function buildHlsMediaCheck(media: HlsFirstMediaSegmentMeta | undefined): Planne
     uri: media.uri,
     ...(media.resolvedUri !== undefined ? { resolvedUrl: media.resolvedUri } : {})
   };
+}
+
+function toSegmentByteRange(range: HlsByteRange): SegmentByteRange | null {
+  if (range.offset === undefined) return null;
+  if (!Number.isSafeInteger(range.length) || !Number.isSafeInteger(range.offset)) return null;
+  if (range.length <= 0 || range.offset < 0) return null;
+  if (range.offset > Number.MAX_SAFE_INTEGER - range.length) return null;
+  return { offset: range.offset, length: range.length };
 }
 
 function buildDashPlan(meta: DashCmafMetadata | undefined): VerificationPlan {
@@ -381,7 +414,8 @@ async function runCheck(
     timeoutMs: options.timeoutMs,
     maxSegmentBytes: options.cmafBinary.maxSegmentBytes,
     maxRedirects: options.maxRedirects,
-    allowPrivateNetworks: options.allowPrivateNetworks
+    allowPrivateNetworks: options.allowPrivateNetworks,
+    ...(planned.range !== undefined ? { range: planned.range } : {})
   });
   if (!fetchResult.ok) {
     return {

@@ -49,6 +49,12 @@ export interface SegmentLoadOptions {
   readonly maxSegmentBytes: number;
   readonly maxRedirects: number;
   readonly allowPrivateNetworks: boolean;
+  readonly range?: SegmentByteRange;
+}
+
+export interface SegmentByteRange {
+  readonly offset: number;
+  readonly length: number;
 }
 
 export interface SegmentLoadOk {
@@ -82,6 +88,8 @@ export async function loadSegment(
   url: string,
   options: SegmentLoadOptions
 ): Promise<SegmentLoadResult> {
+  const rangeGuard = validateRangeOptions(options.range, options.maxSegmentBytes);
+  if (rangeGuard !== null) return rangeGuard;
   let currentUrl = url;
   for (let hop = 0; hop <= options.maxRedirects; hop++) {
     let next: HopResult;
@@ -108,6 +116,34 @@ export async function loadSegment(
     code: "segment_uri_blocked",
     message: `Redirect-Limit von ${options.maxRedirects} überschritten.`
   };
+}
+
+function validateRangeOptions(
+  range: SegmentByteRange | undefined,
+  maxSegmentBytes: number
+): SegmentLoadFailed | null {
+  if (range === undefined) return null;
+  if (
+    !Number.isSafeInteger(range.offset) ||
+    !Number.isSafeInteger(range.length) ||
+    range.offset < 0 ||
+    range.length <= 0 ||
+    range.offset > Number.MAX_SAFE_INTEGER - range.length
+  ) {
+    return {
+      ok: false,
+      code: "segment_fetch_failed",
+      message: "Ungueltiger HTTP-Range-Scope."
+    };
+  }
+  if (range.length > maxSegmentBytes) {
+    return {
+      ok: false,
+      code: "segment_too_large",
+      message: `Range-Laenge ${range.length} ueberschreitet maxSegmentBytes=${maxSegmentBytes}.`
+    };
+  }
+  return null;
 }
 
 class SegmentFetchError extends Error {
@@ -183,11 +219,16 @@ async function executeFetch(
   controller: AbortController,
   timedOutBox: { value: boolean }
 ): Promise<Awaited<ReturnType<LoaderRuntime["fetch"]>>> {
+  const headers: Record<string, string> = { accept: SEGMENT_ACCEPT_HEADER };
+  if (options.range !== undefined) {
+    const end = options.range.offset + options.range.length - 1;
+    headers.range = `bytes=${options.range.offset}-${end}`;
+  }
   try {
     return await options.runtime.fetch(rawUrl, {
       signal: controller.signal,
       redirect: "manual",
-      headers: { accept: SEGMENT_ACCEPT_HEADER }
+      headers
     });
   } catch (error) {
     if (timedOutBox.value) {
@@ -223,6 +264,12 @@ async function dispatchResponse(
     throw new SegmentFetchError(
       "segment_fetch_failed",
       `HTTP-Statuscode ${response.status} ist kein Erfolgsstatus.`
+    );
+  }
+  if (options.range !== undefined && response.status !== 206) {
+    throw new SegmentFetchError(
+      "segment_fetch_failed",
+      `Range-Request erwartete 206 Partial Content, erhielt aber ${response.status}.`
     );
   }
   const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
@@ -272,40 +319,91 @@ async function readBody(
   options: SegmentLoadOptions,
   timedOutRef: () => boolean
 ): Promise<Uint8Array> {
-  if (body === null) return new Uint8Array(0);
+  const expectedBytes = options.range?.length;
+  if (body === null) {
+    return emptyBodyResult(expectedBytes);
+  }
   let received = 0;
   const chunks: Uint8Array[] = [];
+  const maxAllowedBytes = expectedBytes ?? options.maxSegmentBytes;
   try {
     for await (const chunk of body) {
-      if (timedOutRef()) {
-        throw new SegmentFetchError(
-          "segment_fetch_failed",
-          `Segment-Body-Timeout nach ${options.timeoutMs} ms.`
-        );
-      }
-      received += chunk.byteLength;
-      if (received > options.maxSegmentBytes) {
-        throw new SegmentFetchError(
-          "segment_too_large",
-          `Segment überschreitet maxSegmentBytes=${options.maxSegmentBytes}.`
-        );
-      }
-      chunks.push(chunk);
+      assertBodyReadNotTimedOut(timedOutRef, options.timeoutMs);
+      received = appendBodyChunk(chunks, chunk, received, maxAllowedBytes, options);
     }
   } catch (error) {
-    if (error instanceof SegmentFetchError) throw error;
-    if (error instanceof AnalysisError) throw error;
-    if (timedOutRef()) {
-      throw new SegmentFetchError(
-        "segment_fetch_failed",
-        `Segment-Body-Timeout nach ${options.timeoutMs} ms.`
-      );
-    }
+    throw mapBodyReadError(error, timedOutRef, options.timeoutMs);
+  }
+  assertExpectedRangeBytes(received, expectedBytes);
+  return concatChunks(chunks, received);
+}
+
+function emptyBodyResult(expectedBytes: number | undefined): Uint8Array {
+  if (expectedBytes === undefined) return new Uint8Array(0);
+  throw new SegmentFetchError(
+    "segment_fetch_failed",
+    `Range-Response lieferte keinen Body, erwartet waren ${expectedBytes} Bytes.`
+  );
+}
+
+function assertBodyReadNotTimedOut(timedOutRef: () => boolean, timeoutMs: number): void {
+  if (timedOutRef()) {
     throw new SegmentFetchError(
       "segment_fetch_failed",
-      `Segment-Body-Lesefehler: ${describeError(error)}.`
+      `Segment-Body-Timeout nach ${timeoutMs} ms.`
     );
   }
+}
+
+function appendBodyChunk(
+  chunks: Uint8Array[],
+  chunk: Uint8Array,
+  received: number,
+  maxAllowedBytes: number,
+  options: SegmentLoadOptions
+): number {
+  const nextReceived = received + chunk.byteLength;
+  if (nextReceived > maxAllowedBytes) {
+    throw new SegmentFetchError(
+      "segment_too_large",
+      options.range !== undefined
+        ? `Range-Response überschreitet erwartete Laenge ${options.range.length}.`
+        : `Segment überschreitet maxSegmentBytes=${options.maxSegmentBytes}.`
+    );
+  }
+  chunks.push(chunk);
+  return nextReceived;
+}
+
+function mapBodyReadError(
+  error: unknown,
+  timedOutRef: () => boolean,
+  timeoutMs: number
+): SegmentFetchError | AnalysisError {
+  if (error instanceof SegmentFetchError) return error;
+  if (error instanceof AnalysisError) return error;
+  if (timedOutRef()) {
+    return new SegmentFetchError(
+      "segment_fetch_failed",
+      `Segment-Body-Timeout nach ${timeoutMs} ms.`
+    );
+  }
+  return new SegmentFetchError(
+    "segment_fetch_failed",
+    `Segment-Body-Lesefehler: ${describeError(error)}.`
+  );
+}
+
+function assertExpectedRangeBytes(received: number, expectedBytes: number | undefined): void {
+  if (expectedBytes !== undefined && received !== expectedBytes) {
+    throw new SegmentFetchError(
+      "segment_fetch_failed",
+      `Range-Response lieferte ${received} Bytes, erwartet waren ${expectedBytes}.`
+    );
+  }
+}
+
+function concatChunks(chunks: readonly Uint8Array[], received: number): Uint8Array {
   const total = new Uint8Array(received);
   let offset = 0;
   for (const chunk of chunks) {

@@ -68,6 +68,7 @@ interface BinaryResponseSpec {
   headers?: Record<string, string>;
   bytes?: Uint8Array;
   delayMs?: number;
+  expectedRange?: string;
 }
 
 function asyncIterableOf(bytes: Uint8Array): AsyncIterable<Uint8Array> {
@@ -85,6 +86,9 @@ function makeBinaryRuntime(map: Record<string, BinaryResponseSpec>): LoaderRunti
     async fetch(url, init) {
       const spec = map[url];
       if (!spec) throw new Error(`unexpected fetch ${url}`);
+      if (spec.expectedRange !== undefined) {
+        expect(init.headers.range).toBe(spec.expectedRange);
+      }
       if (spec.delayMs !== undefined) {
         await new Promise<void>((resolve, reject) => {
           const t = setTimeout(resolve, spec.delayMs);
@@ -214,49 +218,112 @@ describe("binary-verify — HLS edge cases", () => {
 });
 
 describe("binary-verify — HLS failure modes", () => {
-  it("skipped + hls_map_byterange_unsupported when EXT-X-MAP has BYTERANGE", async () => {
-    const runtime = makeBinaryRuntime({});
-    const text = HLS_MAP_TEMPLATE('URI="init.mp4",BYTERANGE="1024@0"', "seg-0.m4s");
+  it("passes when EXT-X-MAP has BYTERANGE with explicit offset", async () => {
+    const initBytes = validInitBytes();
+    const mediaBytes = validMediaBytes();
+    const runtime = makeBinaryRuntime({
+      "https://cdn.example.test/dash/init.mp4": {
+        status: 206,
+        headers: { "content-type": "video/mp4" },
+        bytes: initBytes,
+        expectedRange: `bytes=0-${initBytes.byteLength - 1}`
+      },
+      "https://cdn.example.test/dash/seg-0.m4s": {
+        headers: { "content-type": "video/mp4" },
+        bytes: mediaBytes
+      }
+    });
+    const text = HLS_MAP_TEMPLATE(
+      `URI="init.mp4",BYTERANGE="${initBytes.byteLength}@0"`,
+      "seg-0.m4s"
+    );
     const result = await analyzeWithRuntime(
       { kind: "text", text, baseUrl: "https://cdn.example.test/dash/" },
       {},
       runtime
     );
     if (result.status !== "ok" || result.playlistType !== "media") throw new Error("?");
-    expect(result.details.cmaf!.binary!.status).toBe("skipped");
-    expect(
-      result.details.cmaf!.binary!.segmentsChecked.find((c) => c.kind === "init")?.failureCode
-    ).toBe("hls_map_byterange_unsupported");
+    const initCheck = result.details.cmaf!.binary!.segmentsChecked.find((c) => c.kind === "init");
+    expect(initCheck?.status).toBe("passed");
+    expect(initCheck?.bytesRead).toBe(initBytes.byteLength);
   });
 
-  it("skipped + hls_media_byterange_unsupported when first segment has #EXT-X-BYTERANGE", async () => {
-    const runtime = makeBinaryRuntime({});
+  it("passes when first segment has #EXT-X-BYTERANGE with explicit offset", async () => {
+    const initBytes = validInitBytes();
+    const mediaBytes = validMediaBytes();
     const text = [
       "#EXTM3U",
       "#EXT-X-VERSION:7",
       "#EXT-X-TARGETDURATION:4",
       '#EXT-X-MAP:URI="init.mp4"',
       "#EXTINF:4.0,",
-      "#EXT-X-BYTERANGE:1024@0",
+      `#EXT-X-BYTERANGE:${mediaBytes.byteLength}@0`,
       "seg-0.m4s",
       "#EXT-X-ENDLIST"
     ].join("\n");
-    const runtime2 = makeBinaryRuntime({
+    const runtime = makeBinaryRuntime({
       "https://cdn.example.test/dash/init.mp4": {
         headers: { "content-type": "video/mp4" },
-        bytes: validInitBytes()
+        bytes: initBytes
+      },
+      "https://cdn.example.test/dash/seg-0.m4s": {
+        status: 206,
+        headers: { "content-type": "video/mp4" },
+        bytes: mediaBytes,
+        expectedRange: `bytes=0-${mediaBytes.byteLength - 1}`
       }
     });
     const result = await analyzeWithRuntime(
       { kind: "text", text, baseUrl: "https://cdn.example.test/dash/" },
       {},
-      runtime2
+      runtime
+    );
+    if (result.status !== "ok" || result.playlistType !== "media") throw new Error("?");
+    const mediaCheck = result.details.cmaf!.binary!.segmentsChecked.find((c) => c.kind === "media");
+    expect(mediaCheck?.status).toBe("passed");
+    expect(mediaCheck?.bytesRead).toBe(mediaBytes.byteLength);
+  });
+
+  it("skipped + hls_map_byterange_unsupported when EXT-X-MAP BYTERANGE has no offset", async () => {
+    const runtime = makeBinaryRuntime({});
+    const text = HLS_MAP_TEMPLATE('URI="init.mp4",BYTERANGE="1024"', "seg-0.m4s");
+    const result = await analyzeWithRuntime(
+      { kind: "text", text, baseUrl: "https://cdn.example.test/dash/" },
+      {},
+      runtime
+    );
+    if (result.status !== "ok" || result.playlistType !== "media") throw new Error("?");
+    expect(
+      result.details.cmaf!.binary!.segmentsChecked.find((c) => c.kind === "init")?.failureCode
+    ).toBe("hls_map_byterange_unsupported");
+  });
+
+  it("skipped + hls_media_byterange_unsupported when first #EXT-X-BYTERANGE has no offset", async () => {
+    const runtime = makeBinaryRuntime({
+      "https://cdn.example.test/dash/init.mp4": {
+        headers: { "content-type": "video/mp4" },
+        bytes: validInitBytes()
+      }
+    });
+    const text = [
+      "#EXTM3U",
+      "#EXT-X-VERSION:7",
+      "#EXT-X-TARGETDURATION:4",
+      '#EXT-X-MAP:URI="init.mp4"',
+      "#EXTINF:4.0,",
+      "#EXT-X-BYTERANGE:1024",
+      "seg-0.m4s",
+      "#EXT-X-ENDLIST"
+    ].join("\n");
+    const result = await analyzeWithRuntime(
+      { kind: "text", text, baseUrl: "https://cdn.example.test/dash/" },
+      {},
+      runtime
     );
     if (result.status !== "ok" || result.playlistType !== "media") throw new Error("?");
     expect(
       result.details.cmaf!.binary!.segmentsChecked.find((c) => c.kind === "media")?.failureCode
     ).toBe("hls_media_byterange_unsupported");
-    void runtime;
   });
 
   it("failed + cmaf_box_validation_failed when init has wrong brand", async () => {

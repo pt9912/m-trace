@@ -81,8 +81,8 @@ interface SegmentDraft {
   readonly uriLine: number;
   /**
    * Strukturierter `#EXT-X-BYTERANGE`-Wert, der unmittelbar vor der
-   * Segment-URI gesetzt wurde. Tranche 4 nutzt ihn für `skipped`-
-   * Mapping mit `hls_media_byterange_unsupported`.
+   * Segment-URI gesetzt wurde. Der Binary-Verifier kann explizite
+   * Offsets als HTTP Range laden; offset-lose Werte bleiben skipped.
    */
   readonly byterange?: HlsByteRange;
   /** Zeilennummer der `#EXT-X-BYTERANGE`-Zeile (1-basiert), falls vorhanden. */
@@ -270,8 +270,8 @@ function processFeatureTag(
 
 /**
  * Strukturierte Erfassung von `#EXT-X-MAP` (RFC 8216 §4.3.2.5).
- * Pflicht-Attribut ist `URI`; `BYTERANGE` ist optional. In `0.10.0`
- * werden nur die letzten beiden Werte für den Binary-Pfad verwendet;
+ * Pflicht-Attribut ist `URI`; `BYTERANGE` ist optional. URI und
+ * explizite Byte-Range-Werte werden für den Binary-Pfad verwendet;
  * eventuell vorhandene `KEYFORMAT`/`KEYFORMATVERSIONS` bleiben in
  * `rawAttributes` verfügbar.
  */

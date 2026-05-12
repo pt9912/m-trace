@@ -343,8 +343,8 @@ Reihenfolge entspricht der normativen Präzedenz aus Plan §3:
 | `binary_disabled`                 | skipped  | Caller hat `cmaf.binary.enabled:false` gesetzt; sichtbar bleiben Manifestsignale, kein Fetch. |
 | `segment_reference_missing`       | skipped  | Manifestseitig keine Init-/Media-Referenz ableitbar (z. B. DASH MP4-MIME-only, HLS ohne `EXT-X-MAP`). |
 | `dash_template_unresolved`        | skipped  | DASH-Template nutzt `$Time$` / `SegmentTimeline` / unbekannte Variablen — im `0.10.0`-Scope nicht ableitbar. |
-| `hls_map_byterange_unsupported`   | skipped  | `EXT-X-MAP` mit `BYTERANGE`; in `0.10.0` kein HTTP-Range-Loader. |
-| `hls_media_byterange_unsupported` | skipped  | `#EXT-X-BYTERANGE` vor erstem fMP4-Segment; analog. |
+| `hls_map_byterange_unsupported`   | skipped  | `EXT-X-MAP` mit `BYTERANGE` ohne eindeutigen gültigen Offset oder mit ungültigem Range-Scope. |
+| `hls_media_byterange_unsupported` | skipped  | `#EXT-X-BYTERANGE` vor erstem fMP4-Segment ohne eindeutigen gültigen Offset oder mit ungültigem Range-Scope. |
 | `not_planned_due_to_limit`        | skipped  | Pflichtprüfungsmenge übersteigt `maxBinarySegments`; überschüssige Checks werden auditierbar berichtet, verhindern aber `passed`. |
 | `segment_base_url_missing`        | skipped  | Text-Input ohne sichere HTTP(S)-`baseUrl` als Trust-Anker für relative/absolute Segment-URI. |
 | `segment_uri_blocked`             | skipped  | URI verstößt gegen Schema-/Credentials-/SSRF-/Redirect-Regeln; auch eine in höherer Ebene blockierte BaseURL-Chain. |
@@ -356,13 +356,14 @@ Reihenfolge entspricht der normativen Präzedenz aus Plan §3:
 
 #### `0.16.0` Range-Fetch-Scope
 
-`0.16.0` Tranche 1 spezifiziert den Folge-Slice für HLS-CMAF-
-Byte-Ranges. Bis zur Umsetzung bleibt das aktuelle Runtime-Verhalten
-unverändert; valide `#EXT-X-MAP`-Tags mit `BYTERANGE`-Attribut und
-erste `#EXT-X-BYTERANGE`-Media-Referenzen werden derzeit noch mit den
-oben genannten Unsupported-Codes skipped.
+`0.16.0` Tranche 2 liefert den Folge-Slice für HLS-CMAF-Byte-
+Ranges. Valide `#EXT-X-MAP`-Tags mit explizitem `BYTERANGE`-Offset
+und erste `#EXT-X-BYTERANGE`-Media-Referenzen mit explizitem Offset
+werden über den bestehenden Segment-Loader per HTTP Range geladen und
+binär validiert. Offset-lose oder ungültige HLS-Byte-Ranges bleiben
+mit den oben genannten Unsupported-Codes skipped.
 
-Der geplante Slice bleibt innerhalb des bestehenden
+Der Slice bleibt innerhalb des bestehenden
 `details.cmaf.binary`-Surface:
 
 - Kein neuer `analyzerKind`, kein neuer `/api/analyze`-Endpoint und
@@ -376,6 +377,9 @@ Der geplante Slice bleibt innerhalb des bestehenden
   Loader verwenden.
 - Erfolgreiche Range-Fetches müssen als `206 Partial Content` geprüft
   werden; `200 OK` auf einen Range-Request ist kein stiller Erfolg.
+- Range-Responses müssen exakt die geplante Byte-Länge liefern; zu
+  kurze Antworten werden `segment_fetch_failed`, Over-Reads werden
+  durch das Segmentlimit abgebrochen.
 
 #### Aufrufer-Steuerung über `cmaf.binary.*`
 
