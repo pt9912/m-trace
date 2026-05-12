@@ -5,7 +5,7 @@
 >
 > **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
 > 2026-05-12; Plan in
-> [`../in-progress/plan-0.14.0.md`](../in-progress/plan-0.14.0.md).
+> [`../done/plan-0.14.0.md`](../done/plan-0.14.0.md).
 >
 > **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
 > neuer RAK-Gruppe und Tag `v0.15.0`. Erwartete RAK-Range:

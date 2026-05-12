@@ -1,14 +1,14 @@
 # Implementation Plan — `0.14.0` (Ops Backend Follow-up)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0..4
-> geschlossen, Tranche 5 ist Closeout-/Tag-Gate.
+> **Status**: ✅ released 2026-05-12 — Tranchen 0..5 geschlossen,
+> Release-Tag `v0.14.0`.
 >
 > **Vorgänger**: `0.13.0` (Production / Ops Backends), released
 > 2026-05-12; Plan in
 > [`docs/planning/done/plan-0.13.0.md`](../done/plan-0.13.0.md).
 >
-> **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
-> neuer RAK-Gruppe und Tag `v0.14.0`. RAK-Range:
+> **Release-Typ**: Minor-Release mit Lastenheft-Patch, neuer
+> RAK-Gruppe und Tag `v0.14.0`. RAK-Range:
 > `RAK-96`..`RAK-100`.
 >
 > **Ziel**: Die in `0.13.0` getroffenen Ops-Backend-Entscheidungen
@@ -25,7 +25,8 @@
 > §9, [`../../../spec/lastenheft.md`](../../../spec/lastenheft.md)
 > §13.18 (`RAK-96`..`RAK-100`).
 >
-> **Nachfolger**: offen.
+> **Nachfolger**: `0.15.0` offen in
+> [`../open/plan-0.15.0.md`](../open/plan-0.15.0.md).
 
 ## 0. Konvention
 
@@ -205,7 +206,7 @@ Umsetzungsplan überführt, ohne die `0.13.0`-Entscheidungen zu
 DoD:
 
 - [x] Plan von `docs/planning/open/plan-0.14.0.md` nach
-  `docs/planning/in-progress/plan-0.14.0.md` verschoben.
+  `docs/planning/done/plan-0.14.0.md` verschoben.
 - [x] Ausgangszustand von `git status --short` dokumentiert.
 - [x] `0.13.0`-Closeout gelesen und alle übernommenen Pfade explizit
   auf `proceed`, `POC`, `defer` oder `blocked` gemappt.
@@ -579,20 +580,34 @@ deferred oder blockiert, und der Release kann sauber getaggt werden.
 
 DoD:
 
-- [ ] RAK-Verifikationsmatrix vollständig ausgefüllt.
-- [ ] Jede aktive Tranche enthält einen `What ändert sich` /
+- [x] RAK-Verifikationsmatrix vollständig ausgefüllt.
+- [x] Jede aktive Tranche enthält einen `What ändert sich` /
   `What bleibt unverändert`-Block mit Dateinachweis.
-- [ ] `make docs-check` grün.
-- [ ] Bei codebezogenen Änderungen: `make build` grün.
-- [ ] Bei codebezogenen Änderungen: `make gates` grün.
-- [ ] Bei codebezogenen/Release-Änderungen: `make security-gates`
+- [x] `make docs-check` grün.
+- [x] Bei codebezogenen Änderungen: `make build` grün.
+- [x] Bei codebezogenen Änderungen: `make gates` grün.
+- [x] Bei codebezogenen/Release-Änderungen: `make security-gates`
   grün oder CI-Job `Security gates` grün dokumentiert.
-- [ ] Versions-Bump auf `0.14.0` vollständig durchgeführt.
-- [ ] `CHANGELOG.md` mit `[0.14.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap auf released `0.14.0` und nächste Folgephase umgestellt.
-- [ ] Plan nach `docs/planning/done/plan-0.14.0.md` verschoben,
+- [x] Versions-Bump auf `0.14.0` vollständig durchgeführt.
+- [x] `CHANGELOG.md` mit `[0.14.0] - 2026-05-12` aktualisiert.
+- [x] Roadmap auf released `0.14.0` und nächste Folgephase umgestellt.
+- [x] Plan nach `docs/planning/done/plan-0.14.0.md` verschoben,
   Status auf `✅ released`.
-- [ ] Annotierter Tag `v0.14.0` erstellt.
+- [x] Annotierter Tag `v0.14.0` erstellt.
+
+Verifikation:
+
+| Gate | Ergebnis |
+| --- | --- |
+| `make api-race` | ✅ grün; validiert GitHub-CI-Flake-Fix für `adapters/driven/webhooks` |
+| `make docs-check` | ✅ grün |
+| `make k8s-validate` | ✅ grün |
+| `make devcontainer-validate` | ✅ grün |
+| `make release-guard-test` | ✅ grün |
+| `make build` | ✅ grün |
+| `make gates` | ✅ grün |
+| `make security-gates` | ✅ grün |
+| `MTRACE_RELEASE_APPROVED=1 make release-guard VER=0.14.0` | ✅ grün |
 
 ## 8. RAK-Verifikationsmatrix
 
@@ -611,11 +626,11 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
 
 | RAK | Primäre Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-96 | `docs/adr/0005-production-ops-backends.md`, `docs/ops/backend-followup.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/Storage | ✅ |
-| RAK-97 | `docs/adr/0005-production-ops-backends.md`, `docs/ops/backend-followup.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/QA | ✅ |
+| RAK-96 | `docs/adr/0005-production-ops-backends.md`, `docs/ops/backend-followup.md`, `docs/planning/done/plan-0.14.0.md` | 2026-05-12 | Platform/Storage | ✅ |
+| RAK-97 | `docs/adr/0005-production-ops-backends.md`, `docs/ops/backend-followup.md`, `docs/planning/done/plan-0.14.0.md` | 2026-05-12 | Platform/QA | ✅ |
 | RAK-98 | `scripts/validate-k8s-examples.sh`, `deploy/k8s/README.md`, `deploy/k8s/*.yaml`, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
-| RAK-99 | `.devcontainer/devcontainer.json`, `scripts/validate-devcontainer.sh`, `docs/user/local-development.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/DevEx | ✅ |
-| RAK-100 | `scripts/release-guard.sh`, `scripts/test-release-guard.sh`, `docs/user/releasing.md`, `docs/planning/in-progress/plan-0.14.0.md` | 2026-05-12 | Platform/CI | ✅ |
+| RAK-99 | `.devcontainer/devcontainer.json`, `scripts/validate-devcontainer.sh`, `docs/user/local-development.md`, `docs/planning/done/plan-0.14.0.md` | 2026-05-12 | Platform/DevEx | ✅ |
+| RAK-100 | `scripts/release-guard.sh`, `scripts/test-release-guard.sh`, `docs/user/releasing.md`, `docs/planning/done/plan-0.14.0.md` | 2026-05-12 | Platform/CI | ✅ |
 
 ## 8.1 Blocker-Log (Startzustand)
 

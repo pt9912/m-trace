@@ -20,7 +20,7 @@
 > Compat: SQLite und Compose bleiben Standardpfade; Postgres,
 > ClickHouse/VictoriaMetrics/Mimir, Kubernetes und Devcontainer
 > werden nicht zu lokalen Pflichtabhängigkeiten. Patch-Log siehe
-> [`docs/planning/in-progress/plan-0.14.0.md`](../docs/planning/in-progress/plan-0.14.0.md)
+> [`docs/planning/done/plan-0.14.0.md`](../docs/planning/done/plan-0.14.0.md)
 > Tranche 0.
 >
 > **Patch `1.1.18` (Production / Ops Backends für `0.13.0`)**:

@@ -1,9 +1,9 @@
 # Risiken-Backlog
 
 > **Stand**: 2026-05-12 — `0.14.0` (Ops Backend Follow-up)
-> in **Tranche 0 aktiv** seit 2026-05-12; Lastenheft-Patch
-> `1.1.19` mit RAK-96..RAK-100 in §13.18 persistiert. Vorgänger
-> `0.13.0` released 2026-05-12 (Tag `v0.13.0`);
+> released 2026-05-12 (Tag `v0.14.0`); Lastenheft-Patch `1.1.19`
+> mit RAK-96..RAK-100 in §13.18 persistiert. Vorgänger `0.13.0`
+> released 2026-05-12 (Tag `v0.13.0`);
 > `0.12.6` released 2026-05-12 (Tag `v0.12.6`);
 > `0.12.5` released 2026-05-11 (Tag `v0.12.5`);
 > `0.12.1` released 2026-05-10 (Tag `v0.12.1`);
@@ -11,8 +11,9 @@
 >
 > ### Aktuelle Phase
 >
-> `0.14.0` bearbeitet den Ops-Backend-Follow-up in
-> [`plan-0.14.0.md`](./plan-0.14.0.md). Aus `0.13.0` importiert:
+> `0.14.0` lieferte den Ops-Backend-Follow-up in
+> [`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Aus `0.13.0`
+> importiert:
 > Postgres bleibt `defer-with-migration-seed`, Analytics bleibt
 > `defer`, und **R-9** bleibt im K8s-Hardening-Scope aktiv:
 > optionale K8s-Beispiele liegen unter `deploy/k8s/`, aber keine
@@ -108,8 +109,8 @@
 >   Auth-/Ingest-Adapter R-14/R-17/R-18/R-20/R-21, optional R-16);
 >   `docs/planning/done/plan-0.13.0.md` (Production / Ops
 >   Backends, R-9 Tranche-3-Scope);
->   `docs/planning/in-progress/plan-0.14.0.md` (Ops Backend
->   Follow-up, R-9 Hardening-Scope)
+>   `docs/planning/done/plan-0.14.0.md` (Ops Backend Follow-up,
+>   R-9 Hardening-Scope)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst

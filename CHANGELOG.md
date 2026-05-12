@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-05-12
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Ops-Backend-Follow-up nach `0.13.0`, Lastenheft-Patch
+> `1.1.19` mit RAK-96..RAK-100 in §13.18. Plan in
+> [`docs/planning/done/plan-0.14.0.md`](docs/planning/done/plan-0.14.0.md).
+
 ### Added
 
 - `0.14.0` Ops-Backend-Hardening: clusterfreie K8s-Seed-Validation
@@ -18,6 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Grenzen, Schema-Differenzen, Postgres-Reaktivierungs-Trigger,
   Analytics-Workloads, Retention-Grenzen und POC-Abbruchkriterien ohne
   neue Runtime-Pflichtabhängigkeit.
+- GitHub-CI-Flake-Fix: der HTTP-Webhook-Dispatcher verwendet bei
+  Default-Clients einen eigenen Transport statt des globalen
+  `http.DefaultTransport`; `make api-race` ist damit lokal wieder grün.
+
+### Changed
+
+- Versionen auf `0.14.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompatibilitätsvertrag,
+  Analyzer-Fixtures und optionale K8s-Image-Tags.
+
+### Lastenheft
+
+- Patch `1.1.19` ergänzt §13.18 mit RAK-96..RAK-100 für den Ops
+  Backend Follow-up. Die RAK-Verifikationsmatrix im Plan verweist auf
+  Triggerpflege, K8s-/Devcontainer-Validation und Release-Guard-
+  Hardening.
 
 ## [0.13.0] - 2026-05-12
 

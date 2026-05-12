@@ -70,7 +70,7 @@ func NewHTTPDispatcher(endpoint string, secret []byte, logger *slog.Logger) *HTT
 	return &HTTPDispatcher{
 		Endpoint:       strings.TrimSpace(endpoint),
 		Secret:         secret,
-		HTTPClient:     &http.Client{Timeout: 10 * time.Second},
+		HTTPClient:     newDefaultHTTPClient(),
 		Logger:         logger,
 		Now:            time.Now,
 		MaxAttempts:    3,
@@ -183,7 +183,18 @@ func (d *HTTPDispatcher) client() *http.Client {
 	if d.HTTPClient != nil {
 		return d.HTTPClient
 	}
-	return &http.Client{Timeout: 10 * time.Second}
+	return newDefaultHTTPClient()
+}
+
+func newDefaultHTTPClient() *http.Client {
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return &http.Client{Timeout: 10 * time.Second}
+	}
+	return &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: transport.Clone(),
+	}
 }
 
 func (d *HTTPDispatcher) requestTimeout() time.Duration {
