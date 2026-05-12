@@ -130,9 +130,9 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung und Szenario-Import | Ein `0.15.0`-Folgepfad verbindlich gewaehlt | `0.15.0` released | Szenario B | ✅ |
 | 1 | Scope- und Contract-Haertung | Minimaler Lieferumfang, Nicht-Ziele und Gates stehen | gewaehltes Szenario | Slice-Spezifikation | ✅ |
-| 2 | Implementierung oder POC | Code-/Doku-/POC-Artefakt fuer genau einen Pfad | Slice-Spezifikation | nachweisbarer Lieferstand | ⬜ |
-| 3 | Tests, Security und Operational Boundaries | Gates und Risikoabgrenzung abgeschlossen | Implementierung/POC | Verifikationsnachweis | ⬜ |
-| 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.16.0` | ⬜ |
+| 2 | Implementierung oder POC | Code-/Doku-/POC-Artefakt fuer genau einen Pfad | Slice-Spezifikation | nachweisbarer Lieferstand | ✅ |
+| 3 | Tests, Security und Operational Boundaries | Gates und Risikoabgrenzung abgeschlossen | Implementierung/POC | Verifikationsnachweis | ✅ |
+| 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.16.0` | ✅ |
 
 ## 2. Tranche 0 — Aktivierung und Szenario-Import
 

@@ -312,7 +312,7 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
 
 | Blocker | Betroffene Tranche | Erwartete Aufloesung |
 | --- | --- | --- |
-| `0.16.0` noch nicht released | alle | Vorgaenger-Gate in §0.2 schliessen |
+| `0.16.0` ist released | alle | ✅ Vorgaenger-Gate in §0.2 geschlossen |
 | `0.16.0` liefert keinen Anschluss | Tranche 0 | Szenario E waehlen oder `0.17.0` durch anderen Plan ersetzen |
 | POC-Erfolg nicht belegt | Tranche 1/2 | Productization blockieren, Hardening oder Defer waehlen |
 | Mehrere konkurrierende Folgepfade | Tranche 0 | genau einen Pfad waehlen, Rest deferred |
