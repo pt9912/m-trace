@@ -38,10 +38,10 @@
 > [`done/plan-0.12.5.md`](./plan-0.12.5.md) Tranche 2 + §11
 > Folge-Scope (R-17, R-20, R-22).
 >
-> **Nachfolger**: [`plan-0.13.0.md`](../open/plan-0.13.0.md)
+> **Nachfolger**: [`plan-0.13.0.md`](../done/plan-0.13.0.md)
 > (Production / Ops Backends, MVP-40..MVP-44). RAK-Range
 > verschiebt sich: `0.12.6` belegt `RAK-83..RAK-90` in §13.16,
-> `0.13.0` bekommt voraussichtlich `RAK-91..RAK-95` in §13.17.
+> `0.13.0` belegt seit T0 `RAK-91..RAK-95` in §13.17.
 
 ## 0. Konvention
 
@@ -969,7 +969,7 @@ DoD (analog `0.12.5`-Closeout-Pattern):
 
 ## 13. Folge-Scope nach `0.12.6`
 
-- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops Backends
+- [`plan-0.13.0.md`](../done/plan-0.13.0.md): Production / Ops Backends
   (`MVP-40` Postgres, `MVP-41` ClickHouse/VictoriaMetrics,
   `MVP-42` K8s-Manifeste, `MVP-43` Devcontainer, `MVP-44`
   Release-Automatisierung). RAK-Range wird bei dessen T0

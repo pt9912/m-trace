@@ -141,7 +141,7 @@ Bedarf").
 | OS-3 | Produktive MediaMTX-/SRS-Auth-Hook-Brücke | implizit über R-14 | R-14 ist die getrackte Form; OS-3 als Duplikat streichen |
 | OS-4 | KMS/Vault/Cloud-Secret-Manager | implizit über R-20 | R-20 ist die getrackte Form; OS-4 als Duplikat streichen |
 | OS-5 | Multi-Replica Secret-/Issuance-Mechanik | implizit über R-17 + R-18 | Streichung als Duplikat |
-| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | `0.12.5` deckt Project-Token-basiertes Rate-Limiting ab (R-17/RAK-77), aber **kein** Origin-/IP-Rate-Limiting — die OS-6-Bedingung „Folge-Item nötig" greift. Tranche 1 legt **R-22** in `risks-backlog.md` §1.1 an mit operator-observablem Trigger („IP-basiertes Last-/Replay-Pattern im Operator-Report" oder „Issuance-Abuse trotz aktivem R-17-Limiter") und Auflösungspfad „[`plan-0.13.0.md`](../open/plan-0.13.0.md) bzw. `plan-0.13.x`, sobald Trigger ausgelöst". Alternative: Streichung mit Begründung „Project-Token-Rotation + R-17 decken Missbrauch ausreichend ab" — Tranche-1-Entscheidung. |
+| OS-6 | Origin-/IP-nahe Rate-Limit-Buckets | „Pflicht-/Opt-in-Implementierung inkl. Messgröße" | `0.12.5` deckt Project-Token-basiertes Rate-Limiting ab (R-17/RAK-77), aber **kein** Origin-/IP-Rate-Limiting — die OS-6-Bedingung „Folge-Item nötig" greift. Tranche 1 legt **R-22** in `risks-backlog.md` §1.1 an mit operator-observablem Trigger („IP-basiertes Last-/Replay-Pattern im Operator-Report" oder „Issuance-Abuse trotz aktivem R-17-Limiter") und Auflösungspfad „[`plan-0.13.0.md`](../done/plan-0.13.0.md) bzw. `plan-0.13.x`, sobald Trigger ausgelöst". Alternative: Streichung mit Begründung „Project-Token-Rotation + R-17 decken Missbrauch ausreichend ab" — Tranche-1-Entscheidung. |
 
 ## 3. Tranchen-Übersicht
 
@@ -283,7 +283,7 @@ DoD:
   KMS/Vault R-20, Browser-Ingest-Policy R-21, ggf. Auth-Bridge
   R-14, Webhook-Outbound R-16). Eigener Lastenheft-Patch `1.1.16`,
   neue RAK-Gruppe.
-- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops Backends
+- [`plan-0.13.0.md`](../done/plan-0.13.0.md): Production / Ops Backends
   (`MVP-40`..`MVP-44`).
 - Später: `plan-0.14.x` o. ä. für OAuth/OIDC/SSO/User-Verwaltung,
   falls konkreter Bedarf entsteht (RAK-71-Out-of-Scope-Stand bleibt

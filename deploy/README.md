@@ -8,13 +8,13 @@ das ist weiterhin
 [`docs/user/local-development.md`](../docs/user/local-development.md)
 gesteuert wird.
 
-## Status (Stand `0.9.6`)
+## Status (Stand `0.13.0`)
 
 | Pfad | Status | Anmerkung |
 | ---- | ------ | --------- |
 | `deploy/compose/` | Reserviert | Aktuell leer; künftige Compose-Snippets, die nicht zum Lab-Default gehören (z. B. CI- oder Stand-alone-Deployments), landen hier. Der Lab-Default bleibt `docker-compose.yml` im Repo-Root. |
 | `deploy/docker/` | Reserviert | Reserviert für Image-Build- bzw. Image-Veröffentlichungs-Artefakte, sobald Container-Images veröffentlicht werden (siehe [`docs/user/releasing.md`](../docs/user/releasing.md) — Container-Image-Veröffentlichung ist deferred). |
-| `deploy/k8s/` | Folge-Scope | Optionale Kubernetes-Manifeste sind `MVP-42` (Kann-Scope, Folge-Plan). m-trace ist **nicht** für Production-K8s ausgelegt; siehe [`README.md`](../README.md) Abschnitt „Was m-trace nicht ist". Wenn Manifeste landen, sind sie ausdrücklich **kein** Production-Ready-Stand. |
+| `deploy/k8s/` | Beispiel | Optionale Kubernetes-Manifeste als `0.13.0`-Seed für `MVP-42`/`NF-18`. m-trace ist **nicht** für Production-K8s ausgelegt; die Manifeste sind ausdrücklich **kein** Production-Ready-Stand. |
 
 ## Was hier nicht hingehört
 

@@ -1,0 +1,28 @@
+{
+  "name": "m-trace",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.26.3"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "svelte.svelte-vscode",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions"
+      ]
+    }
+  },
+  "containerEnv": {
+    "PNPM_HOME": "/usr/local/share/pnpm"
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@10.18.0 --activate && pnpm --version && go version",
+  "remoteUser": "vscode"
+}

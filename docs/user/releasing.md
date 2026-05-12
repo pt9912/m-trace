@@ -330,6 +330,31 @@ Release-Konvention für `0.1.x`:
 - Release-Commit direkt auf `main`.
 - annotierte SemVer-Tags im Format `vX.Y.Z`.
 - kein Pre-Release-Suffix für Hauptreleases.
+- keine automatische Veröffentlichung ohne explizite Freigabe.
+
+### 3.0 Release-Guard (`0.13.0`)
+
+Seit `0.13.0` gibt es einen lokalen Guard vor Tag/Publish. Er ersetzt
+keine Qualitäts-Gates, sondern prüft den manuellen Freigabepunkt und
+die wichtigsten Release-Anker:
+
+```bash
+MTRACE_RELEASE_APPROVED=1 make release-guard VER="$VER"
+```
+
+Der Guard prüft:
+
+- explizite Freigabe über `MTRACE_RELEASE_APPROVED=1`;
+- Branch `main` und saubere Arbeitskopie;
+- Tag `vX.Y.Z` existiert weder lokal noch auf `origin`;
+- `CHANGELOG.md`, API-`serviceVersion` und Root-`package.json` zeigen
+  auf dieselbe Version.
+
+Für lokale Tests am Guard selbst existieren zwei bewusst benannte
+Overrides: `MTRACE_RELEASE_ALLOW_NON_MAIN=1`,
+`MTRACE_RELEASE_ALLOW_DIRTY=1` und
+`MTRACE_RELEASE_ALLOW_OFFLINE=1`. Diese Overrides sind nicht für den
+Release-Pfad zulässig und dürfen im Release-Log nicht gesetzt sein.
 
 ### 3.1 Patch-Release-Konvention (`0.X.Y`, ab `0.8.5`)
 

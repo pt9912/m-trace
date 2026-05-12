@@ -1,16 +1,24 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-11 — `0.12.6` (Auth-/Ingest-Folge-Items-Minor)
-> in **Tranche 0 aktiv** seit 2026-05-11; Lastenheft-Patch `1.1.17`
-> mit RAK-83..RAK-90 in §13.16 persistiert. Vorgänger `0.12.5`
-> released 2026-05-11 (Tag `v0.12.5`); `0.12.1` released
-> 2026-05-10 (Tag `v0.12.1`); `0.12.0` released 2026-05-10
-> (Tag `v0.12.0` auf `e3457fa`).
+> **Stand**: 2026-05-12 — `0.13.0` (Production / Ops Backends)
+> in **Tranche 0 aktiv** seit 2026-05-12; Lastenheft-Patch
+> `1.1.18` mit RAK-91..RAK-95 in §13.17 persistiert. Vorgänger
+> `0.12.6` released 2026-05-12 (Tag `v0.12.6`);
+> `0.12.5` released 2026-05-11 (Tag `v0.12.5`);
+> `0.12.1` released 2026-05-10 (Tag `v0.12.1`);
+> `0.12.0` released 2026-05-10 (Tag `v0.12.0` auf `e3457fa`).
 >
 > ### Aktuelle Phase
 >
-> `0.12.6` adressiert alle neun nach `0.12.5` offenen R-N-Items in
-> Tranchen 1–9 (Plan in
+> `0.13.0` bearbeitet Production-/Ops-nahe Folgepunkte in
+> [`plan-0.13.0.md`](../done/plan-0.13.0.md). Aus diesem Backlog ist
+> **R-9** im Tranche-3-Scope entschieden: optionale K8s-Beispiele
+> landen unter `deploy/k8s/`, aber keine K8s-Smoke-Pflicht und keine
+> Erweiterung der Compose-Lab-Label-Allowlist ohne separaten K8s-
+> Allowlist-Modus.
+>
+> `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
+> R-N-Items in Tranchen 1–9 (Plan in
 > [`plan-0.12.6.md`](../done/plan-0.12.6.md)). T0-Entscheidung Option A
 > (alle neun aktiv) sequenziell vor `0.13.0`:
 >
@@ -34,9 +42,9 @@
 > werden in `0.12.6` Tranche 7/8 final geschlossen). RAK-77..RAK-82
 > in §13.15 persistiert.
 >
-> Lastenheft-Stand: `1.1.17` (`0.12.6`-Patch persistiert in T0).
-> `0.13.0` bekommt voraussichtlich `1.1.18` und RAK-91..RAK-95
-> in §13.17, da RAK-83..RAK-90 mit `0.12.6` belegt sind.
+> Lastenheft-Stand: `1.1.18` (`0.13.0`-Patch persistiert in T0).
+> `0.13.0` belegt RAK-91..RAK-95 in §13.17, da RAK-83..RAK-90
+> mit `0.12.6` belegt sind.
 >
 > ### Trigger-Re-Eval-Stand (2026-05-10, `0.12.1` Tranche 1)
 >
@@ -87,13 +95,16 @@
 >   `docs/adr/0003-live-updates.md` (löst R-3)
 > - `spec/lastenheft.md` §4.3, §10.1; §13.14 RAK-71..RAK-76
 >   (`0.12.0` Auth/Token); §13.15 RAK-77..RAK-82 (`0.12.5`
->   Auth-/Ingest-Adapter)
+>   Auth-/Ingest-Adapter); §13.17 RAK-91..RAK-95 (`0.13.0`
+>   Production / Ops Backends)
 > - `docs/planning/in-progress/roadmap.md` §4
 > - `docs/planning/done/plan-0.12.0.md` (Folge-ADRs);
 >   `docs/planning/done/plan-0.12.1.md` (Patch: Trigger-Re-Eval +
 >   Operator-Doku);
 >   `docs/planning/done/plan-0.12.5.md` (Minor:
->   Auth-/Ingest-Adapter R-14/R-17/R-18/R-20/R-21, optional R-16)
+>   Auth-/Ingest-Adapter R-14/R-17/R-18/R-20/R-21, optional R-16);
+>   `docs/planning/done/plan-0.13.0.md` (Production / Ops
+>   Backends, R-9 Tranche-3-Scope)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst
@@ -120,7 +131,7 @@ eingetreten.
 |---|---|---|---|---|---|
 | R-5 | Time-Skew-Persistenz auf Event-Ebene fehlte: `0.4.0` setzte `mtrace.time.skew_warning=true` als Span-Attribut (siehe `spec/telemetry-model.md` §2.5/§5.3), aber die Schema-Spalte und Dashboard-Anzeige waren explizit deferred. Folge: skew-betroffene Events waren im Read-Pfad (Dashboard ohne Tempo) nicht sichtbar markiert. | `plan-0.4.0.md` §3.1; Migration V6 (`time_skew_warning`); `spec/telemetry-model.md` §2.5/§5.3 | `0.12.6` Tranche 3 (Code) ✅ | 🟢 | **gelöst** — Pro-Event-Persistenz geliefert in `0.12.6` Tranche 3: Migration V6 fügt `playback_events.time_skew_warning INTEGER NOT NULL DEFAULT 0` an; Ingest-Use-Case setzt das Bit pro Event basierend auf der bestehenden 60-s-Schwelle (`TimeSkewThreshold`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-`event_appended`-Frame) echo't `time_skew_warning` als JSON-Feld (`omitempty`); Dashboard-Timeline zeigt `⏱ skew`-Pin pro betroffenes Event mit Tooltip auf die Schwelle. Span-Attribut auf Batch-Ebene bleibt unverändert — beide Pfade tragen jetzt denselben Beleg. Tests: Use-Case-Per-Event-Flag (`TestRegisterPlaybackEventBatch_TimeSkewPerEvent`), Adapter-Restart-Persistenz (`TestRestartPreservesTimeSkewWarning`), E2E-Wire (`TestE2E_TimeSkewPersistedPerEvent`). Doku-Update in `spec/telemetry-model.md` §2.5/§5.3. **Wieder-Eröffnungs-Trigger**: Operator-Report über fehlende Skew-Sichtbarkeit im Read-Pfad oder strukturelle Skew-Schwellen-Re-Eval (z. B. konfigurierbare Schwelle pro Project). |
 | R-7 | `SessionsService.ListSessions` lud `network_signal_absent[]` pro Session-Page-Eintrag einzeln (`ListBoundariesForSession` N+1). Bei Hard-Cap 1000 Sessions pro Page waren das im Worst Case 1000 SQL-Round-Trips ohne gemeinsamen Tx-Snapshot. | `plan-0.4.0.md` §4.4 D3 (Review-N-1); `apps/api/hexagon/application/sessions_service.go`; `apps/api/adapters/driven/persistence/sqlite/session_repository.go` | `0.12.6` Tranche 5 (Code) ✅ | 🟢 | **gelöst** — Bulk-Read-Port geliefert in `0.12.6` Tranche 5: neue Port-Methode `SessionRepository.ListBoundariesForSessions(ctx, projectID, sessionIDs []string) (map[string][]Boundary, error)` (Driven-Port, project-skopiert); SQLite-Adapter mit dynamischer `IN (?, ?, ?)`-Clause (eine Query pro Page statt N), InMemory-Adapter mit map-lookup. `SessionsService.ListSessions` ruft die neue Methode statt der N+1-Schleife auf; Reihenfolge bleibt parallel zu `page.Sessions`, Default für eine Session ohne Boundaries ist ein leerer Slice (Map-Miss). Bench `BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries` (1000 Sessions in einer Page) im Budget < 200 ms p95 (check-bench-budgets.mjs); Adapter-Tests `TestListBoundariesForSessions_BulkReadAndScopeIsolation` + `_EmptyInput` pinnen Bulk-Sortierung, Map-Miss-Verhalten und Cross-Project-Isolation. **Wieder-Eröffnungs-Trigger**: List-Latenz ≥ 200 ms p95 unter realistischer Last (Multi-Tenant-Produktion, hochfrequente `network_signal_absent`-Pfade) → Folge-Item für Detail-Read und Cursor-Stream-Pfad. |
-| R-9 | Die Observability-Smoke-Whitelist für Infrastruktur-Labels (`__name__`, `instance`, `job`) ist bewusst Compose-Lab-spezifisch. Eine spätere K8s-Smoke-Stage würde übliche Labels wie `pod`, `namespace` oder `container` wahrscheinlich als False Positive werten. | `plan-0.4.0.md` §7.4 (Review F-2) | K8s-Smoke-Einführung | ⬜ | **Stand `0.8.0` Closeout / `0.9.0`-Plan offen**: keine Änderung am Compose-Lab-Schema, aber die Aggregat-Allowlist ist seit `0.6.0`/`0.8.0` gewachsen — `mtrace_srt_health_*` (`health_state`, `source_status`, `source_error_code`) plus jetzt `mtrace_webrtc_*` (`connection_state`, `ice_state`, `dtls_state` plus drei label-freie Counter). Eine künftige K8s-Smoke-Stage muss diese drei Themenblöcke gemeinsam adaptieren; Folgeplan zur K8s-Anbindung ist Voraussetzung (z. B. MVP-42-Folge-Plan), Trigger und Mitigation strukturell unverändert. **Trigger-Stand 2026-05-10 (`0.12.1` T1)**: nicht ausgelöst — K8s-Smoke-Stage frühestens mit `plan-0.13.0.md` (MVP-42); R-9 wandert dann in dessen Tranche-Scope. |
+| R-9 | Die Observability-Smoke-Whitelist für Infrastruktur-Labels (`__name__`, `instance`, `job`) ist bewusst Compose-Lab-spezifisch. Eine spätere K8s-Smoke-Stage würde übliche Labels wie `pod`, `namespace` oder `container` wahrscheinlich als False Positive werten. | `plan-0.4.0.md` §7.4 (Review F-2); `plan-0.13.0.md` Tranche 3; `deploy/k8s/README.md`; ADR 0005 | Folge-Trigger bei K8s-Smoke-Gate | ⬜ | **Entscheidung 2026-05-12 (`0.13.0` Tranche 3)**: K8s bleibt optionaler Beispielpfad (`deploy/k8s/`) und ist nicht production-ready. Keine Änderung am Compose-Lab-Schema und keine K8s-Smoke-Pflicht in `0.13.0`. Gegenmaßnahmen für spätere Reaktivierung: (a) separater K8s-Allowlist-Modus für Infrastruktur-Labels (`pod`, `namespace`, `container`, ggf. `service`) statt Erweiterung des Compose-Defaults; (b) Smoke-Scope-Trennung Compose vs. K8s mit explizitem Profil/ENV-Gate; (c) README-/Deploy-Doku markiert Beispielmanifeste als nicht production-ready. **Wieder-Eröffnungs-Trigger**: Ein K8s-Smoke soll PR-/Release-Gate werden oder K8s-Observability-Manifeste landen mit Prometheus-Scrape/Label-Policy. |
 | R-10 | Sampling-Vollständigkeitsnachweis für `sampleRate < 1` fehlte: gesampelte Events trugen keine SDK-seitige Markierung, deshalb konnte der Server eine Sampling-Lücke nicht strukturell von einem echten Verlust unterscheiden. | `plan-0.4.0.md` §8.3; Migration V7 (`stream_sessions.sample_rate_ppm`); `spec/telemetry-model.md` §8; `contracts/event-schema.json#reserved_meta_keys["session_sample_rate"]` | `0.12.6` Tranche 4 (Code) ✅ | 🟢 | **gelöst** — Sampling-Markierung auf Session-Ebene geliefert in `0.12.6` Tranche 4: Migration V7 ergänzt `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000` an `stream_sessions`; SDK-Pflicht-Feld `meta.session_sample_rate` (Float `(0, 1]`) wird server-seitig auf Integer-ppm normalisiert (`domain.SampleRatePPMFromFloat`) und durch Immutability-Set (`UPDATE … WHERE sample_rate_ppm = SampleRateFull`) genau einmal pro Session persistiert; spätere Drift wird via `mtrace_sample_rate_drift_total{project_id}` mit ±100ppm-Toleranz gezählt, aber nicht überschrieben. Read-Pfad echo't `sample_rate_ppm` (Integer, raw) und `sample_rate` (Float, Display-Hilfe) `omitempty` auf der Default-Marke. Dashboard zeigt einen Banner „Sampled session (X.XX %)" mit `data-testid="sampled-banner"`. Doku: spec/telemetry-model.md §8 (neue Section: Wire-Vertrag, Persistenz/Immutability, Drift-Counter, Read-Pfad, Lücken-Heuristik als Folge-Item). Tests: Domain-Helper (Range-Check + Round-Half-Behavior); Use-Case Immutability-First-Set, No-Op-Default, Drift-Counted, Within-Tolerance. **Wieder-Eröffnungs-Trigger**: Operator-Bedarf nach konkreter Lücken-Heuristik (z. B. „erwartete vs. tatsächliche Events" als Read-Pfad-Marker `possible_loss`) — bleibt als Folge-Item für `0.13.0+`. |
 | R-11 | SRT-Health-Detail-Pagination war in `0.6.0` Sub-3.3 als ErrNotImplemented gestubbed. Der HTTP-Pfad `GET /api/srt/health/{stream_id}` lieferte nur `samples_limit` (default 100, max 1000) ohne Cursor; eine länger laufende Lab-/Production-Instanz mit > 1000 persistierten Samples pro Stream konnte das ältere Drittel nicht mehr abfragen. | `plan-0.6.0.md` §4 Sub-3.3 (alter Adapter-Stub); `spec/backend-api-contract.md` §7a.3/§7a.4 (Wire-Format) | `0.12.6` Tranche 2 (Code) ✅ | 🟢 | **gelöst** — Cursor-Pagination geliefert in `0.12.6` Tranche 2: SQLite-Adapter implementiert Keyset-Pagination über `(ingested_at, id)` (Index `idx_srt_health_samples_stream_ingested`), Application-Service reicht den Cursor durch (`HistoryByStream(ctx, projectID, streamID, limit, after)`), HTTP-Handler akzeptiert `samples_cursor` und liefert `next_cursor`. Wire-Codec v3 mit Collection-Scope `(project_id, stream_id)` analog §10.3-Event-Cursor — Cross-Project- und Cross-Stream-Cursor werden als `400 cursor_invalid_malformed` rejected. Reject-Klassen-Trennung folgt §10.3-Tabelle: `cursor_invalid_legacy` (v=1/2 oder fehlendes v-Feld) vs. `cursor_invalid_malformed` (alles andere). Spec-Konsistenz-Fix §7a.3/§7a.4 — Pre-§4.3-Wording (`process_instance_id` + monolithische `cursor_invalid`-Klasse) durch §10.3-konformes v3-Wording ersetzt. Tests: Adapter-Pagination-Walk über 1500 Samples + Cross-Stream-Scope-Isolation; HTTP-Roundtrip + sechs `cursor_invalid_*`-Pfade; Contract-Fixtures `srt-health-cursor-invalid-legacy.json` + `srt-health-cursor-invalid-malformed.json`. Operator-Smoke `make smoke-srt-health-pagination` deckt Cursor-Wandern + malformed-Reject. **Wieder-Eröffnungs-Trigger**: Operator-Report über Inkonsistenz im Cursor-Wandern oder neuer Schema-Drift gegen §7a.3/§10.3. |
 | R-13 | Drei OS-CVEs ohne Upstream-Fix in `node:22-trixie-slim`, geteilt zwischen Dashboard- und Analyzer-Service-Image: `CVE-2025-69720` (ncurses Buffer Overflow in `libtinfo6`/`ncurses-base`/`ncurses-bin`), `CVE-2026-29111` (systemd Arbitrary Code Exec via IPC in `libsystemd0`/`libudev1`) und `CVE-2026-4878` (libcap TOCTOU-Race in `libcap2`). Keine Ausnutzbarkeit im m-trace-Runtime sichtbar (Container ohne TTY/IPC-Mounts, USER node ohne setcap-Pfad), aber statisch HIGH. Hinweis: Analyzer-Service wechselte mit plan-0.8.5 Tranche 1 Closeout von `node:22-alpine` auf `node:22-trixie-slim`, weil musl-libc bei multi-threaded Workloads (libuv-Worker-Pool, V8-GC/JIT) gegenüber glibc spürbar pessimisiert ist; die einheitliche Trixie-Basis vermeidet das. | `plan-0.8.5.md` §2 Tranche 1 Closeout; `.security/vulnignore.yaml`; `apps/dashboard/Dockerfile`, `apps/analyzer-service/Dockerfile` | bei Triggerschwelle | ⬜ | **Mitigation aktuell**: dokumentierte Trivy-Ignores in `.security/vulnignore.yaml` mit 90-Tage-`expires` (**aktuell `2026-11-02`**, verlängert in `0.12.6` Tranche 1 von zuvor `2026-08-04`); Generator `scripts/render-trivyignore.sh` bricht ab, sobald ein `expires` überschritten ist (erzwungene Re-Review). **Folge-Trigger**: (a) Trixie-Point-Release liefert Fixes — Eintrag entfernen; (b) `expires`-Schwelle erreicht ohne Fix — Re-Review entscheidet zwischen Verlängerung und Base-Image-Wechsel; (c) Distroless-Variante wird vor 1.0 als Folge-Plan evaluiert (`gcr.io/distroless/nodejs22-debian12` bringt nur Node-Binär ohne npm/Debian-CLI-Surface, eliminiert die drei CVEs strukturell, behält glibc). Aktuell Lab-/Demo-Pfad — keine Production-Kontroll-Plane. **Trigger-Stand 2026-05-11 (`0.12.6` T1 Re-Review)**: nicht ausgelöst — Trivy-Scan zeigt 6 HIGH-Findings (genau die drei bekannten CVEs verteilt auf 6 Packages), `Fixed Version`-Spalte leer in allen Treffern → kein Upstream-Fix in Trixie; `expires` um 90 Tage auf `2026-11-02` verlängert mit Re-Review-Kommentar-Block pro CVE in `.security/vulnignore.yaml`. Distroless-ADR-Draft bewusst deferred (90 Tage Reserve geben strukturelle Evaluation ohne Zeitdruck). |

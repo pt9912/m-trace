@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: m-trace-dashboard
+  namespace: m-trace-example
+  labels:
+    app.kubernetes.io/name: m-trace-dashboard
+    app.kubernetes.io/part-of: m-trace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: m-trace-dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: m-trace-dashboard
+        app.kubernetes.io/part-of: m-trace
+    spec:
+      containers:
+        - name: dashboard
+          image: m-trace-dashboard:0.13.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5173
+          env:
+            - name: PUBLIC_API_BASE_URL
+              value: http://m-trace-api:8080
+            - name: PUBLIC_API_TOKEN
+              value: demo-token
+            - name: PUBLIC_PLAYER_COLLECTOR_ENDPOINT
+              value: http://m-trace-api:8080/api/playback-events
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: m-trace-dashboard
+  namespace: m-trace-example
+  labels:
+    app.kubernetes.io/name: m-trace-dashboard
+    app.kubernetes.io/part-of: m-trace
+spec:
+  selector:
+    app.kubernetes.io/name: m-trace-dashboard
+  ports:
+    - name: http
+      port: 5173
+      targetPort: http

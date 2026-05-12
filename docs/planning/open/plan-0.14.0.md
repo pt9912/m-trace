@@ -3,9 +3,9 @@
 > **Status**: ⬜ offen — vorbereiteter Folgeplan nach `0.13.0`.
 > Aktivierung erst nach Abschluss und Closeout von `0.13.0`.
 >
-> **Vorgänger**: `0.13.0` (Production / Ops Backends), aktuell in
-> Arbeit seit 2026-05-12; Plan in
-> `docs/planning/in-progress/plan-0.13.0.md`.
+> **Vorgänger**: `0.13.0` (Production / Ops Backends), released
+> 2026-05-12; Plan in
+> `docs/planning/done/plan-0.13.0.md`.
 >
 > **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
 > neuer RAK-Gruppe und Tag `v0.14.0`. RAK-Range noch offen.
@@ -20,7 +20,7 @@
 >
 > **Bezug**:
 > [`../in-progress/roadmap.md`](../in-progress/roadmap.md),
-> `docs/planning/in-progress/plan-0.13.0.md`
+> `docs/planning/done/plan-0.13.0.md`
 > §9, [`../../../spec/lastenheft.md`](../../../spec/lastenheft.md)
 > §13.17 (`RAK-91`..`RAK-95`).
 >

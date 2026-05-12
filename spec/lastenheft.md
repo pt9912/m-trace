@@ -2,12 +2,34 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.17<br>
+**Version:** 1.1.18<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.18` (Production / Ops Backends für `0.13.0`)**:
+> Aktiviert die Production-/Ops-nahe Minor-Phase nach `0.12.6`
+> und führt die neue RAK-Gruppe `RAK-91`..`RAK-95` in §13.17
+> ein. Inhalt: Postgres-Entscheidungspfad (`MVP-40`) mit
+> Seed-/Defer-Boundaries, Analytics-Backend-Vergleich
+> (`MVP-41`: ClickHouse/VictoriaMetrics/Mimir oder gleichwertig),
+> K8s-/NF-18-Harmonisierung (`MVP-42`) als optionaler
+> Option-Pfad ohne Production-Ready-Zusage, Devcontainer-
+> Entscheidung (`MVP-43`) und Release-Automatisierung
+> (`MVP-44`) mit verpflichtender manueller Freigabe. Backwards-
+> Compat: SQLite bleibt lokaler Standard-Store; Postgres,
+> Analytics-Backends, Kubernetes und Devcontainer werden nicht
+> zur lokalen Pflichtabhängigkeit. R-9 wird in den `0.13.0`-
+> Tranche-3-Scope gezogen, weil eine K8s-Smoke-Stage die
+> heutige Compose-Lab-Observability-Label-Allowlist verändern
+> kann. **Out of Scope**: vollständiger Production-Kubernetes-
+> Betrieb, Managed-Cloud-Betrieb, Multi-Tenant-SaaS-Produkt,
+> verpflichtendes Hochvolumen-Analytics-Backend und automatische
+> Veröffentlichung ohne explizite Human Approval. Patch-Log siehe
+> [`docs/planning/done/plan-0.13.0.md`](../docs/planning/done/plan-0.13.0.md)
+> Tranche 0.
+>
 > **Patch `1.1.17` (Auth-/Ingest-Folge-Items für `0.12.6`)**: Liefert
 > die R-N-Folge-Items aus dem `0.12.5`-Closeout in einem
 > Minor-Release und führt die neue RAK-Gruppe `RAK-83`..`RAK-90`
@@ -1328,7 +1350,7 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 | NF-15 | Muss | Datenbankpersistenz |
 | NF-16 | Muss | Authentifizierung |
 | NF-17 | Muss | Multi-Stream-Betrieb |
-| NF-18 | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase. Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 (`docs/planning/in-progress/risks-backlog.md`) bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. |
+| NF-18 | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase. Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 (`docs/planning/in-progress/risks-backlog.md`) bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. **Patch `1.1.18` (`0.13.0`):** NF-18 wird mit `MVP-42` als optionaler Optionspfad harmonisiert. `0.13.0` darf Beispielmanifeste oder Entscheidungsnotizen liefern, verpflichtet aber nicht zu Production-Ready-Kubernetes, Cluster-Betrieb, Cloud-Provider-Integration oder K8s-Smoke-Stage als Standard-Gate. Wird eine K8s-Smoke-Stage aktiviert, muss R-9 vorher mit eigener Observability-Label-Allowlist oder dokumentierter Gegenmaßnahme entschieden sein. |
 | NF-19 | Muss | CI-basierte Stream-Checks |
 
 ### 8.4 Performance
@@ -1701,11 +1723,11 @@ Nicht im `0.1.0`-MVP:
 | MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@npm9912/stream-analyzer`); kein offener Folge-Scope. |
 | MVP-38 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-Ingest-Beispiel — präzisiert auf lokalen SRT-/RTMP-Ingest-Control-Smoke (`make smoke-ingest-control`) für MediaMTX-nahe Lab-Artefakte (Generierung/Validierung). Historische Kann-Stufung bleibt als auditierbarer Stand bis `1.1.13` erhalten; verbindlich ist die Muss-Stufung im `0.11.0`-Lab-Control-Scope (siehe RAK-68 in §13.13). |
 | MVP-39 | Kann | SRT-Health-View |
-| MVP-40 | Kann | Persistenz mit PostgreSQL |
-| MVP-41 | Kann | ClickHouse- oder VictoriaMetrics-Anbindung |
-| MVP-42 | Kann | Kubernetes-Manifeste. **Patch `1.1.12` (Status-Vermerk):** bleibt `Kann` und Folge-Plan; Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer (kein Production-Ready-K8s, siehe `NF-18`-Patch und `deploy/README.md`). |
-| MVP-43 | Kann | Devcontainer |
-| MVP-44 | Kann | Release-Automatisierung |
+| MVP-40 | Kann | Persistenz mit PostgreSQL. **Patch `1.1.18` (`0.13.0`):** Entscheidungspfad als Seed- oder Defer-Scope; SQLite bleibt lokaler Standard-Store und darf nicht implizit durch Postgres als Pflichtabhängigkeit ersetzt werden. |
+| MVP-41 | Kann | ClickHouse- oder VictoriaMetrics-Anbindung. **Patch `1.1.18` (`0.13.0`):** Vergleichspfad umfasst ClickHouse, VictoriaMetrics und Mimir oder eine begründete gleichwertige Option; Ergebnis ist `proceed`, `defer` oder `POC` mit klaren Erfolgskriterien. |
+| MVP-42 | Kann | Kubernetes-Manifeste. **Patch `1.1.12` (Status-Vermerk):** bleibt `Kann` und Folge-Plan; Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer (kein Production-Ready-K8s, siehe `NF-18`-Patch und `deploy/README.md`). **Patch `1.1.18` (`0.13.0`):** optionale Beispielmanifeste oder ein K8s-Decision-Record sind zulässig; kein Production-Ready-K8s-Versprechen und keine K8s-Smoke-Pflicht ohne R-9-Entscheidung. |
+| MVP-43 | Kann | Devcontainer. **Patch `1.1.18` (`0.13.0`):** Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder mit Begründung und Reaktivierungs-Trigger deferred; er darf die lokale Standardentwicklung nicht ersetzen. |
+| MVP-44 | Kann | Release-Automatisierung. **Patch `1.1.18` (`0.13.0`):** Automatisierung muss sichere Gates, Dry-Run-/Rollback-Regeln und explizite manuelle Freigabe enthalten; automatische Veröffentlichung ohne Human Approval ist ausgeschlossen. |
 
 
 ---
@@ -2053,6 +2075,34 @@ Outbound-Webhooks aus `0.12.5`, Compliance-Audit-Zertifikate
 (PCI/SOC2, `0.12.6` liefert nur Konfigurations-Pfade), SRS-
 Provisionierungs-Adapter (MediaMTX-only), Production-Backends
 aus `0.13.0`.
+
+### 13.17 Version 0.13.0: Production / Ops Backends (RAK-91..RAK-95)
+
+Ziel: Production-/Ops-nahe Folgepunkte aus `MVP-40`..`MVP-44`
+und `NF-18` werden in einen entscheidbaren Scope überführt. Dieses
+Release ist ein Decision-and-Seed-Release: Es darf optionale
+Artefakte liefern, aber es verpflichtet den Standardbetrieb nicht
+auf Postgres, ClickHouse/VictoriaMetrics/Mimir, Kubernetes oder
+Devcontainer. SQLite und das lokale Compose-Lab bleiben die
+Standardpfade, solange keine spätere ADR oder ein Folge-Plan eine
+Migration verbindlich macht.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-91 | Muss | **Postgres-/Ops-Scope (`MVP-40`)**: `0.13.0` dokumentiert eine verbindliche Entscheidung für Postgres als Seed-Slice, POC oder Defer. Die Entscheidung enthält mindestens zwei Alternativen, Begründung, Migrations-/Rollbackpfad oder messbare Reaktivierungs-Trigger. SQLite bleibt lokaler Standard und wird durch Postgres nicht als versteckte Pflichtabhängigkeit ersetzt. |
+| RAK-92 | Muss | **Analytics-Backend-Entscheidung (`MVP-41`)**: ClickHouse, VictoriaMetrics und Mimir (oder eine begründete gleichwertige Option) werden anhand von Komplexität, Betriebskosten, Query-Fähigkeit, Integrationsaufwand, Relevanz der Workloads und Migrationsrisiko verglichen. Ergebnis ist `proceed`, `defer` oder `POC`; ein POC braucht Erfolgskriterien, Abbruchkriterien und Zeitgrenze. |
+| RAK-93 | Muss | **Kubernetes-/NF-18-Harmonisierung (`MVP-42`, `NF-18`, R-9)**: K8s bleibt ein optionaler Option-Pfad. Beispielmanifeste oder Entscheidungsnotizen dürfen geliefert werden, aber ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage darf erst verbindlich werden, wenn R-9 mit Observability-Label-Allowlist, Risiko-Matrix und mindestens zwei Gegenmaßnahmen entschieden ist. |
+| RAK-94 | Muss | **Devcontainer-Scope (`MVP-43`)**: Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder explizit deferred. In beiden Fällen sind Begründung, lokale Standardentwicklungs-Abgrenzung und Reaktivierungs-Trigger dokumentiert. |
+| RAK-95 | Muss | **Release-Automatisierung (`MVP-44`)**: Release-Automatisierung definiert automatisierte und manuelle Schritte, Owner/RACI, Branch-/Tag-/Environment-Guards, Dry-Run-Tests, Rollback-Regeln und Closeout-Nachweise. Jede Veröffentlichung braucht explizite Human Approval; automatische Veröffentlichung ohne Freigabe bleibt ausgeschlossen. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.13.0` erfüllt):
+vollständiger Production-Kubernetes-Betrieb, Managed-Cloud-Betrieb,
+Multi-Tenant-SaaS-Produkt, verpflichtendes Hochvolumen-Analytics-
+Backend im Standardbetrieb, automatische Veröffentlichung ohne
+Human Approval, Production-Identity-/Secret-Management-Vollausbau
+jenseits der bereits gelieferten `0.12.x`-Pfade.
 
 ---
 

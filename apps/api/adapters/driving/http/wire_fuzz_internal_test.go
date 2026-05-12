@@ -25,7 +25,7 @@ import (
 func FuzzWireBatchDecode(f *testing.F) {
 	// Seed-Korpus: gültige Batches plus Drift-Pfade.
 	f.Add([]byte(`{"schema_version":"1.0","events":[]}`))
-	f.Add([]byte(`{"schema_version":"1.0","events":[{"event_name":"playback_started","project_id":"demo","session_id":"01J","client_timestamp":"2026-04-28T12:00:00Z","sdk":{"name":"@npm9912/player-sdk","version":"0.12.6"}}]}`))
+	f.Add([]byte(`{"schema_version":"1.0","events":[{"event_name":"playback_started","project_id":"demo","session_id":"01J","client_timestamp":"2026-04-28T12:00:00Z","sdk":{"name":"@npm9912/player-sdk","version":"0.13.0"}}]}`))
 	f.Add([]byte(`{}`))
 	f.Add([]byte(`null`))
 	f.Add([]byte(`{"events":null}`))

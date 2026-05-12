@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-05-12
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Decision-and-Seed-Release für Production-/Ops-Backends,
+> Lastenheft-Patch `1.1.18` mit RAK-91..RAK-95 in §13.17. Plan in
+> [`docs/planning/done/plan-0.13.0.md`](docs/planning/done/plan-0.13.0.md).
+
+### Added
+
+- **Production-/Ops-Backend-ADR** (RAK-91/RAK-92): ADR 0005 hält
+  Postgres und Analytics-Backends als optionale Folgepfade fest.
+  SQLite bleibt lokaler Default; Postgres wird über messbare Multi-
+  Instance-, Recovery- und Retention-Trigger reaktiviert. ClickHouse,
+  VictoriaMetrics und Mimir bleiben POC-gesteuert statt Pflichtbackend.
+- **Optionale Kubernetes-Beispielmanifeste** (RAK-93): `deploy/k8s/`
+  enthält Namespace-, API-, Analyzer- und Dashboard-Beispiele mit
+  SQLite-PVC für eine einzelne API-Replica. Der Pfad ist ausdrücklich
+  nicht production-ready und setzt keine K8s-Smoke-Pflicht.
+- **Devcontainer-Seed** (RAK-94): `.devcontainer/devcontainer.json`
+  pinnt Go 1.26.3, Node 22, pnpm 10.18.0 und Docker-outside-of-Docker
+  für reproduzierbare Entwicklung.
+- **Release-Guard** (RAK-95): `scripts/release-guard.sh` plus
+  `make release-guard VER=X.Y.Z` prüfen manuelle Freigabe,
+  Versionsanker, Tag-Kollisionen, Branch und saubere Arbeitskopie vor
+  Tag/Publish.
+
+### Changed
+
+- Versionen auf `0.13.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompatibilitätsvertrag
+  und Analyzer-Fixtures.
+- `deploy/README.md` und `docs/user/releasing.md` beschreiben den neuen
+  K8s-Beispielstatus und den Release-Guard.
+
+### Lastenheft
+
+- Patch `1.1.18` ergänzt §13.17 mit RAK-91..RAK-95 für Production /
+  Ops Backends. Die RAK-Verifikationsmatrix im Plan verweist auf ADR,
+  K8s-/Devcontainer-Artefakte und Release-Guard.
+
 ## [0.12.6] - 2026-05-12
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

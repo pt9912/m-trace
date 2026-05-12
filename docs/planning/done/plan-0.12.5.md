@@ -37,7 +37,7 @@
 > nach diesem Release offen oder „teilweise gelöst" gebliebenen
 > R-N-Einträge; T0-Aktivierung entscheidet zwischen Patch und
 > Minor), danach
-> [`plan-0.13.0.md`](../open/plan-0.13.0.md) (Production / Ops
+> [`plan-0.13.0.md`](../done/plan-0.13.0.md) (Production / Ops
 > Backends, MVP-40..MVP-44).
 
 ## 0. Konvention
@@ -571,7 +571,7 @@ Minor):
 
 Production-Backends bleiben separater Folge-Plan:
 
-- [`plan-0.13.0.md`](../open/plan-0.13.0.md): Production / Ops
+- [`plan-0.13.0.md`](../done/plan-0.13.0.md): Production / Ops
   Backends (`MVP-40`..`MVP-44`) — Postgres, ClickHouse,
   Kubernetes, Devcontainer, Release-Automatisierung. RAK-Range
   hängt davon ab, ob `plan-0.12.6.md` als Minor mit `RAK-83+`
