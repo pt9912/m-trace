@@ -396,22 +396,62 @@ Ziel: Der gewaehlte Pfad wird mit passenden Gates abgesichert.
 
 DoD:
 
-- [ ] `make docs-check` gruen.
-- [ ] Bei Szenario E oder dokumentations-only Scope: Code-,
+- [x] `make docs-check` gruen.
+- [x] Bei Szenario E oder dokumentations-only Scope: Code-,
   Contract- und Security-Gates sind als `n/a` mit Begruendung
   dokumentiert; `make docs-check` bleibt Pflicht.
-- [ ] Bei Go-/Backend-Code: `make api-test` oder `make gates` gruen.
-- [ ] Bei TypeScript-/Analyzer-Code: `make ts-test` oder passender
+- [x] Bei Go-/Backend-Code: `make api-test` oder `make gates` gruen.
+- [x] Bei TypeScript-/Analyzer-Code: `make ts-test` oder passender
   Package-Test gruen.
-- [ ] Bei Security-relevantem Pfad: `make security-gates` gruen oder
+- [x] Bei Security-relevantem Pfad: `make security-gates` gruen oder
   CI-Job `Security gates` gruen dokumentiert.
-- [ ] Contract-/Fixture-Drift geprueft, falls Wire- oder Analyzer-
+- [x] Contract-/Fixture-Drift geprueft, falls Wire- oder Analyzer-
   Result-Schema geaendert wurde.
-- [ ] Risks-Backlog aktualisiert oder explizit unveraendert markiert.
-- [ ] Anti-Scope-Drift-Nachweis dokumentiert: Gates beziehen sich nur
+- [x] Risks-Backlog aktualisiert oder explizit unveraendert markiert.
+- [x] Anti-Scope-Drift-Nachweis dokumentiert: Gates beziehen sich nur
   auf das gewaehlt Szenario.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
+
+### 5.1 Gate-Nachweis
+
+Ausgefuehrt am 2026-05-12:
+
+| Gate | Ergebnis | Nachweis |
+| --- | --- | --- |
+| `make ts-test` | ✅ gruen | Workspace-TS-Tests inklusive `packages/stream-analyzer`: 19 Testdateien / 393 Tests gruen. |
+| `make ts-lint` | ✅ gruen | TypeScript-Lint, `tsc --noEmit`, Boundary- und Public-API-Checks gruen. |
+| `make docs-check` | ✅ gruen | `scripts/verify-doc-refs.sh`: alle Doku-Links OK. |
+| `make generated-drift-check` | ✅ gruen | Schema-/Contract-Fixture-/Public-API-Drift: OK, keine generierten Drift-Reste. |
+| `make security-gates` | ✅ gruen | `govulncheck`: keine Vulnerabilities; `pnpm audit --audit-level high`: gruen; Trivy: `mtrace-api`, `mtrace-dashboard`, `mtrace-analyzer-service` jeweils 0 HIGH/CRITICAL. |
+| `git diff --check` | ✅ gruen | Keine Whitespace-/Patch-Format-Fehler. |
+
+`make api-test`/vollstaendiges `make gates` ist fuer Tranche 3 als
+separates Muss nicht einschlaegig, weil Tranche 2 keinen Go-/Backend-
+Code geaendert hat. Die Go-seitige Contract-Kopplung ist ueber
+`make generated-drift-check` und die bytegleichen Testdata-Kopien
+abgedeckt; die Security-Gates bauen und scannen die API-Runtime
+trotzdem mit.
+
+### 5.2 What aendert sich
+
+- `docs/planning/in-progress/plan-0.16.0.md`: Tranche 3 dokumentiert
+  die ausgefuehrten Gates, die Security-Ergebnisse und die n/a-
+  Begruendung fuer Go-/Backend-Code.
+- `docs/planning/in-progress/risks-backlog.md`: RAK-109 ist als
+  kontrolliert markiert; kein neues R-N-Item entsteht aus dem Range-
+  Fetch-Slice.
+- `docs/planning/in-progress/roadmap.md` und `CHANGELOG.md`:
+  Tranche-3-Gate-Nachweis ist sichtbar.
+
+### 5.3 What bleibt unveraendert
+
+- Kein neuer API-/Backend-Pfad, kein Control-Plane-/Postgres-/
+  Analytics- oder Production-K8s-Scope.
+- Security-Gates beziehen sich auf den gewaehlten HLS-Range-Fetch-
+  Slice und die bestehenden Runtime-Images; sie erweitern keine
+  Produktzusagen.
+- RAK-110/Release-Closeout bleibt offen fuer Tranche 4.
 
 ## 6. Tranche 4 — Release-Closeout
 
@@ -443,7 +483,7 @@ vergeben.
 | RAK-106 | Muss | `0.15.0`-Closeout, Szenario-Import | Genau ein Folgepfad ist gewaehlt; Szenario B ist aktiv, alle anderen grossen Pfade bleiben deferred | [x] |
 | RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | ✅ HLS-Slice geliefert |
 | RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | ✅ No-new-public-schema, Fixtures aktualisiert |
-| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | 🟡 Implementiert, Gates laufen in Tranche 3 |
+| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | ✅ Gates gruen |
 | RAK-110 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [ ] |
 
 Sofort nutzbares Verifikationsmapping:
@@ -453,7 +493,7 @@ Sofort nutzbares Verifikationsmapping:
 | RAK-106 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/done/plan-0.15.0.md` §6.3/§9, `spec/lastenheft.md` §13.20 | 2026-05-12 | Product/PM | ✅ |
 | RAK-107 | `packages/stream-analyzer/src/internal/cmaf/segment-loader.ts`, `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`, `docs/planning/in-progress/plan-0.16.0.md` §4.1 | 2026-05-12 | Platform/Analyzer | ✅ |
 | RAK-108 | `spec/contract-fixtures/analyzer/success-hls-map-byterange.json`, `spec/contract-fixtures/analyzer/success-hls-media-byterange.json`, `apps/api/adapters/driven/streamanalyzer/testdata/` | 2026-05-12 | Platform/QA | ✅ |
-| RAK-109 | `packages/stream-analyzer/tests/segment-loader.test.ts`, `packages/stream-analyzer/tests/binary-verify.test.ts`, `docs/planning/in-progress/plan-0.16.0.md` §3.3/§5 | 2026-05-12 | Platform/Ops | 🟡 |
+| RAK-109 | `packages/stream-analyzer/tests/segment-loader.test.ts`, `packages/stream-analyzer/tests/binary-verify.test.ts`, `docs/planning/in-progress/plan-0.16.0.md` §3.3/§5, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
 | RAK-110 | `docs/planning/in-progress/plan-0.16.0.md`, `CHANGELOG.md`, Roadmap, Tag `v0.16.0` | TBD | Platform/CI | ⬜ |
 
 ## 7.1 Blocker-Log

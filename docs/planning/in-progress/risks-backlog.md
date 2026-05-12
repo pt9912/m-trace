@@ -23,11 +23,13 @@
 > Segment) und schließt den Contract-Filter ohne neues Public-Schema.
 > RAK-109 trackt die Fetch-Security-/Operational-Grenzen (SSRF,
 > Redirects, Timeout, Groessen, Range-Anzahl, Status-/Content-Type-
-> Grenzen, `206 Partial Content` und Laufzeitbudget). Es entsteht
-> noch kein neues R-N-Item: Die Risiken sind im `0.16.0`-Plan als
-> Umsetzungsgates sichtbar und muessen in Tranche 2/3 getestet werden.
-> Ein eigenes R-N-Item wird erst faellig, falls diese Grenzen im Code-
-> Pfad nicht testbar oder nicht begrenzt geschlossen werden koennen.
+> Grenzen, `206 Partial Content` und Laufzeitbudget). Tranche 2 hat
+> den HLS-Range-Fetch innerhalb dieser Grenzen geliefert; Tranche 3
+> hat die Gate-Kette mit `make ts-test`, `make ts-lint`,
+> `make docs-check`, `make generated-drift-check` und
+> `make security-gates` gruen abgeschlossen. Es entsteht kein neues
+> R-N-Item: Die Risiken sind ueber RAK-109 kontrolliert und im Plan
+> mit Artefakt- und Gate-Nachweis geschlossen.
 >
 > `0.15.0` ist released und archiviert in
 > [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0

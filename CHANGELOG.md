@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Loader, verlangt `206 Partial Content`, prüft exakte Range-Längen
   und aktualisiert die HLS-Byte-Range-Contract-Fixtures ohne neues
   Result-Schema.
+- `0.16.0` Tranche 3: Gate-Nachweis für den Range-Fetch-Slice
+  abgeschlossen. `make ts-test`, `make ts-lint`, `make docs-check`,
+  `make generated-drift-check` und `make security-gates` sind grün;
+  RAK-109 ist damit geschlossen, ohne neuen API-/Backend-Scope.
 
 ## [0.15.0] - 2026-05-12
 
