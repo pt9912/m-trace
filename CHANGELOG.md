@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `0.16.0` Planung aktiviert: Lastenheft-Patch `1.1.21` ergänzt
+  §13.20 mit RAK-106..RAK-110 für Selected Product Slice / Analyzer
+  Range Fetch; der Plan ist aktiv in
+  [`docs/planning/in-progress/plan-0.16.0.md`](docs/planning/in-progress/plan-0.16.0.md).
+- `0.16.0` Tranche 0: Szenario B aus `0.15.0` RAK-104 importiert.
+  HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-
+  Init-/Media-Segmente ist der einzige Go-Pfad; externe Analyzer-API,
+  Control-Plane, Postgres, Analytics, Production-K8s, LL-CMAF,
+  vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade
+  bleiben deferred.
+
 ## [0.15.0] - 2026-05-12
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

@@ -3,8 +3,8 @@
 > **Status**: ⬜ offen — vorbereiteter Folgeplan nach `0.16.0`.
 > Aktivierung erst nach Abschluss und Closeout von `0.16.0`.
 >
-> **Vorgänger**: `0.16.0` (Selected Product Slice), vorbereitet in
-> [`plan-0.16.0.md`](./plan-0.16.0.md).
+> **Vorgänger**: `0.16.0` (Selected Product Slice), aktiv in
+> [`../in-progress/plan-0.16.0.md`](../in-progress/plan-0.16.0.md).
 >
 > **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
 > neuer RAK-Gruppe und Tag `v0.17.0`. Erwartete RAK-Range:
@@ -22,7 +22,7 @@
 > [`../../../spec/lastenheft.md`](../../../spec/lastenheft.md)
 > §16.1, `MVP-20`, `F-132`, `NF-13`, `MVP-40`, `MVP-41`,
 > [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md),
-> [`plan-0.16.0.md`](./plan-0.16.0.md).
+> [`../in-progress/plan-0.16.0.md`](../in-progress/plan-0.16.0.md).
 >
 > **Nachfolger**: offen.
 

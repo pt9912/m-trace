@@ -2,14 +2,13 @@
 
 > **Stand**: 2026-05-12
 >
-> **Phase**: ✅ `0.15.0` released 2026-05-12 — Product Scope /
-> Analyzer Boundary. RAK-101..RAK-105 sind geschlossen; Zielgruppe,
-> Analyzer-API-Boundary, Control-Plane-Scope, Analyzer-Folge-Slice und
-> Ops-Backend-Trigger sind entschieden.
-> Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19 ist
-> persistiert; Plan archiviert in
-> [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Nachfolger ist
-> vorbereitet in [`open/plan-0.16.0.md`](../open/plan-0.16.0.md).
+> **Phase**: 🟡 `0.16.0` aktiv seit 2026-05-12 — Selected Product
+> Slice / Analyzer Range Fetch. Szenario B aus `0.15.0` RAK-104 ist
+> importiert: HTTP-Range-/Byte-Range-Loader fuer manifest-
+> referenzierte CMAF-Init-/Media-Segmente. Lastenheft-Patch `1.1.21`
+> mit RAK-106..RAK-110 in §13.20 ist persistiert; Plan aktiv in
+> [`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). `0.15.0` ist
+> archiviert in [`done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
 > **Letzte Releases:**
 > - `v0.15.0` Product-Scope-/Analyzer-Boundary-Minor (Lastenheft
@@ -53,13 +52,13 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-12 — `0.15.0` released)
+## 1. Aktueller Stand (2026-05-12 — `0.16.0` aktiv)
 
 ### 1.1 Was abgeschlossen ist
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.20` (RAK-1..RAK-105, §13.19 Product Scope / Analyzer Boundary für `0.15.0`; Patch persistiert).                       | `spec/lastenheft.md`                                                   |
+| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.21` (RAK-1..RAK-110, §13.20 Selected Product Slice / Analyzer Range Fetch für `0.16.0`; Patch persistiert).                       | `spec/lastenheft.md`                                                   |
 | ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store; `0005` Production-/Ops-Backends Accepted: Postgres/Analytics deferred mit Triggern, K8s/Devcontainer/Release-Guard als Seeds.     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`, `docs/adr/0005-production-ops-backends.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
@@ -84,32 +83,34 @@ aktualisieren.
 | ✅      | Production / Ops Backends (`0.13.0`) | Minor-Release am 2026-05-12. Lastenheft-Patch `1.1.18` mit RAK-91..RAK-95 in §13.17. Decision-and-Seed-Scope: ADR 0005 deferred Postgres und Analytics-Backends mit messbaren Triggern; optionale Kubernetes-Beispiele unter `deploy/k8s/`; Devcontainer-Seed; Release-Guard mit manueller Freigabe. | [`plan-0.13.0.md`](../done/plan-0.13.0.md) |
 | ✅      | Ops Backend Follow-up (`0.14.0`) | Minor-Release am 2026-05-12. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. Szenario C: K8s-/Devcontainer-/Release-Guard-Hardening; Postgres und Analytics bleiben Trigger-/Defer-Pfade ohne neue Pflichtabhängigkeit. | [`plan-0.14.0.md`](../done/plan-0.14.0.md) |
 | ✅      | Product Scope / Analyzer Boundary (`0.15.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 entscheidet Selbsthoster/kleine bis mittlere Teams/Broadcaster-Labs/technische Media-Teams als Primärziel. Tranche 2 deferred externe `apps/analyzer-api`; interner `apps/analyzer-service` plus Library/CLI bleiben Standard. Tranche 3 deferred `apps/control-plane` ohne POC. Tranche 4 empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 hält Postgres als `defer-with-migration-seed` und Analytics als `defer`. | [`plan-0.15.0.md`](../done/plan-0.15.0.md) |
+| 🟡      | Selected Product Slice / Analyzer Range Fetch (`0.16.0`) | Aktiv seit 2026-05-12. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 schließt RAK-106; Tranche 1 muss Scope, Fixtures, Compatibility und Fetch-Security-Grenzen setzen. | [`plan-0.16.0.md`](./plan-0.16.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.15.0` ist released und archiviert in
+`0.16.0` ist aktiv in
+[`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). Tranche 0 importiert
+aus `0.15.0` genau Szenario B: HTTP-Range-/Byte-Range-Loader fuer
+manifest-referenzierte CMAF-Init-/Media-Segmente. Lastenheft-Patch
+`1.1.21` belegt RAK-106..RAK-110 in §13.20; RAK-106 ist mit der
+Aktivierung geschlossen. Tranche 1 muss Byte-Range-Scope, Fixture-
+Plan, Compatibility-Nachweis, SSRF-/Redirect-/Timeout-/Groessen-/
+Range-Grenzen, Laufzeitbudget und Abbruchkriterien festlegen, bevor
+Code umgesetzt wird. Externe Analyzer-API, Control-Plane, Postgres,
+Analytics, Production-K8s, Low-Latency-CMAF, vollständige
+Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben deferred.
+
+Vorgänger `0.15.0` ist released und archiviert in
 [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0 wählte
 Szenario A: Zielgruppe + Analyzer-Boundary. Tranche 1 entschied
 Selbsthoster, kleine bis mittlere Streaming-Teams, Broadcaster-Labs
 und technische Media-/DevOps-Teams als Primärziel für die nächsten
-Minor-Releases; große Plattformbetreiber bleiben triggerbasierter
-Folge-Scope. Tranche 2 deferred eine externe `apps/analyzer-api`, weil
-kein externer Konsument oder Job-/Retention-Bedarf vorliegt; interner
-`apps/analyzer-service` und `@npm9912/stream-analyzer` Library/CLI
-bleiben Standard. Tranche 3 deferred `apps/control-plane` ohne POC:
-ein späterer Pfad braucht konkreten Betreiberbedarf, Auth-/Tenant-/
-Audit-Nachweis, Owner und Folgeplan. Tranche 4 empfiehlt als einzigen
-kleinen `NF-13`-Folgeslice einen HTTP-Range-/Byte-Range-Loader fuer
-manifest-referenzierte CMAF-Init-/Media-Segmente; LL-CMAF,
-vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade
-bleiben deferred. Der Plan importiert aus `0.14.0`:
-Postgres bleibt `defer-with-migration-seed`, Analytics bleibt
-`defer`, K8s bleibt optional und clusterfrei validiert, Devcontainer
-bleibt Zusatzpfad und Release-Guard bleibt freigabepflichtig. Tranche
-5 fand keine neuen Ops-Trigger: Postgres bleibt
-`defer-with-migration-seed`, Analytics bleibt `defer`. Der nächste
-vorbereitete Folgeplan liegt in
-[`open/plan-0.16.0.md`](../open/plan-0.16.0.md).
+Minor-Releases. Tranche 2 deferred eine externe `apps/analyzer-api`;
+interner `apps/analyzer-service` und `@npm9912/stream-analyzer`
+Library/CLI bleiben Standard. Tranche 3 deferred `apps/control-plane`
+ohne POC. Tranche 4 empfiehlt den HTTP-Range-/Byte-Range-Loader als
+einzigen kleinen `NF-13`-Folgeslice. Tranche 5 fand keine neuen
+Ops-Trigger: Postgres bleibt `defer-with-migration-seed`, Analytics
+bleibt `defer`.
 
 Vorgänger `0.12.6` (Auth-/Ingest-Folge-Items-Minor) released
 2026-05-12 (Tag `v0.12.6`, Plan archiviert in
@@ -250,6 +251,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 48  | ✅      | `0.13.0` Production / Ops Backends ausgeliefert: Postgres und Analytics-Backends als deferred mit Triggern entschieden, optionale Kubernetes-Manifeste, Devcontainer und Release-Guard geliefert. NF-18 mit MVP-42 harmonisiert. Minor-Release mit Lastenheft-Patch `1.1.18` und RAK-91..RAK-95 in §13.17. | Nach Schritt 47.7 | RAK-91..RAK-95 in `spec/lastenheft.md` §13.17; NF-18, MVP-40..MVP-44; [`done/plan-0.13.0.md`](../done/plan-0.13.0.md) |
 | 49  | ✅      | `0.14.0` Ops Backend Follow-up ausgeliefert: Szenario C importiert K8s-/Devcontainer-/Release-Guard-Seeds aus `0.13.0` für Hardening/Validation. Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`; keine neue lokale Pflichtabhängigkeit. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. | Nach Schritt 48 | RAK-96..RAK-100 in `spec/lastenheft.md` §13.18; MVP-40..MVP-44; [`done/plan-0.14.0.md`](../done/plan-0.14.0.md) |
 | 50  | ✅      | `0.15.0` Product Scope / Analyzer Boundary released: Szenario A fokussiert Zielgruppe + Analyzer-Boundary, bevor externe Analyzer-API, Control-Plane, Postgres/Analytics oder Production-K8s in Implementierung gehen. Tranche 1 schließt RAK-101 mit Selbsthoster-/kleine-Team-/Broadcaster-Lab-Fokus. Tranche 2 schließt RAK-102: externe Analyzer-API deferred, interner `apps/analyzer-service` plus Library/CLI bleibt Standard. Tranche 3 schließt RAK-103: Control-Plane deferred, kein POC ohne Betreiber-/Auth-/Tenant-Trigger. Tranche 4 schließt RAK-104: HTTP-Range-/Byte-Range-Loader als einziger kleiner `NF-13`-Folgeslice empfohlen. Tranche 5 schließt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. | Nach Schritt 49 | RAK-101..RAK-105 ✅; `spec/lastenheft.md` §7.5.5/§7.5.6/§8.3/§12.1/§13.19/§16.1; MVP-20, F-132, NF-13, MVP-40/MVP-41; [`done/plan-0.15.0.md`](../done/plan-0.15.0.md) |
+| 51  | 🟡      | `0.16.0` Selected Product Slice / Analyzer Range Fetch aktiviert: Szenario B importiert `RAK-104` als einzigen Go-Pfad. HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente wird vorbereitet; externe Analyzer-API, Control-Plane, Postgres/Analytics, Production-K8s, LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. | Nach Schritt 50 | RAK-106 ✅; `spec/lastenheft.md` §13.20; NF-13; [`plan-0.16.0.md`](./plan-0.16.0.md) |
 
 ---
 
@@ -284,6 +286,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.13.0` | Production / Ops Backends | ✅ | Released 2026-05-12. Plan in [`done/plan-0.13.0.md`](../done/plan-0.13.0.md). Decision-and-Seed-Scope: `MVP-40` Postgres und `MVP-41` Analytics deferred mit Triggern; `MVP-42` Kubernetes-Manifeste optional; `MVP-43` Devcontainer; `MVP-44` Release-Guard mit manueller Freigabe. Lastenheft-Patch `1.1.18` + RAK-91..RAK-95 in §13.17 + Tag `v0.13.0`. |
 | `0.14.0` | Ops Backend Follow-up | ✅ | Released 2026-05-12. Plan in [`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Szenario C: K8s-/Devcontainer-/Release-Guard-Hardening; Postgres/Analytics nur Triggerpflege. Lastenheft-Patch `1.1.19` + RAK-96..RAK-100 in §13.18 + Tag `v0.14.0`. |
 | `0.15.0` | Product Scope / Analyzer Boundary | ✅ | Released 2026-05-12. Plan in [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 erledigt RAK-101 und schärft die Primärzielgruppe. Tranche 2 erledigt RAK-102 und deferred eine externe Analyzer-API bis zu konkretem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und Folgeplan. Tranche 3 erledigt RAK-103 und deferred Control-Plane ohne POC bis zu Betreiber-/Auth-/Tenant-/Audit-Triggern. Tranche 4 erledigt RAK-104 und empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 erledigt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` + RAK-101..RAK-105 in §13.19 + Tag `v0.15.0`. |
+| `0.16.0` | Selected Product Slice / Analyzer Range Fetch | 🟡 | Aktiv seit 2026-05-12. Plan in [`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 erledigt RAK-106; RAK-107..RAK-110 bleiben offen fuer Scope, Umsetzung, Compatibility, Security/Ops und Closeout. Lastenheft-Patch `1.1.21` + RAK-106..RAK-110 in §13.20. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

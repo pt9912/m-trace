@@ -2,12 +2,27 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.20<br>
+**Version:** 1.1.21<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.21` (Selected Product Slice / Analyzer Range Fetch für
+> `0.16.0`)**: Aktiviert die Folgephase nach `0.15.0` und führt die
+> neue RAK-Gruppe `RAK-106`..`RAK-110` in §13.20 ein. Inhalt:
+> Szenario B aus `0.15.0` RAK-104 wird als einziger Go-Pfad
+> importiert; der HTTP-Range-/Byte-Range-Loader fuer
+> manifest-referenzierte CMAF-Init-/Media-Segmente wird zum
+> `0.16.0`-Slice. Externe Analyzer-API, Control-Plane, Postgres,
+> Analytics, Production-K8s, Low-Latency-CMAF, vollstaendige
+> Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben
+> deferred. Backwards-Compat: die Aktivierung aendert noch keinen
+> Code-, Wire-, Runtime- oder Default-Pfad; Tranche 1 muss SSRF-,
+> Redirect-, Timeout-, Groessen-, Range- und Compatibility-Grenzen
+> verbindlich setzen, bevor Fetch-Code umgesetzt wird. Patch-Log siehe
+> [`docs/planning/in-progress/plan-0.16.0.md`](../docs/planning/in-progress/plan-0.16.0.md).
+>
 > **Patch `1.1.20` (Product Scope / Analyzer Boundary für
 > `0.15.0`)**: Aktiviert die Folgephase nach `0.14.0` und führt die
 > neue RAK-Gruppe `RAK-101`..`RAK-105` in §13.19 ein. Inhalt:
@@ -2224,6 +2239,31 @@ SQLite-zu-Postgres-Migration, ClickHouse-/VictoriaMetrics-/Mimir-
 Pflichtbackend, vollständiger Production-Kubernetes-Betrieb,
 OAuth/OIDC/SSO, User-/Org-Verwaltung, Multi-Tenant-SaaS-Produkt und
 automatische Veröffentlichung ohne Human Approval.
+
+### 13.20 Version 0.16.0: Selected Product Slice / Analyzer Range Fetch (RAK-106..RAK-110)
+
+`0.16.0` importiert genau einen freigegebenen Folgepfad aus
+`0.15.0`: Szenario B, den kleinen `NF-13`-Analyzer-Slice fuer
+HTTP-Range-/Byte-Range-Fetches manifest-referenzierter CMAF-Init- und
+Media-Segmente. Die Aktivierung ist noch docs-only; Umsetzung darf erst
+nach Scope-, Contract-, Security- und Operational-Grenzen in Tranche 1
+erfolgen.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-106 | Muss | **Import der `0.15.0`-Entscheidung**: Genau ein Folgepfad ist aktiv. Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice) wird gewaehlt; externe Analyzer-API (`RAK-102`), Control-Plane (`RAK-103`), Postgres/Analytics (`RAK-105`) und Production-K8s bleiben deferred. |
+| RAK-107 | Muss | **HTTP-Range-/Byte-Range Analyzer-Slice (`NF-13`)**: Der Slice darf nur manifest-referenzierte CMAF-Init-/Media-Segmente adressieren. Low-Latency-CMAF, vollstaendige Segmentsets, Codec-Decoding, Player-SDK-CMAF-Laufzeitpfade und nicht manifest-referenzierte Fetches bleiben out of scope. |
+| RAK-108 | Konditional Muss | **Contract-/Compatibility-Nachweis**: Sobald Analyzer-Code, Result-Schema, CLI/API-Doku oder Fixtures geaendert werden, muss der Nachweis additiv und rueckwaertskompatibel sein. Ohne Wire-/Schema-Aenderung ist die Unveraendertheit explizit zu dokumentieren. |
+| RAK-109 | Muss | **Operational-/Security-Grenzen**: Vor Fetch-Code muessen SSRF-Schutz, Redirect-Regeln, Timeout, maximale Gesamtbytes, maximale Range-Anzahl, Status-/Content-Type-Grenzen und Laufzeitbudget festgelegt und getestet oder begruendet ausgeschlossen werden. Der Slice darf keine neue externe API, Control-Plane oder Backend-Pflicht erzeugen. |
+| RAK-110 | Muss | **Closeout und Folge-Trigger**: Der Release-Closeout muss Release-Nachweis, RAK-Matrix, Changelog, Roadmap, Tag `v0.16.0`, offene Defer-Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.16.0` erfüllt):
+externe Analyzer-API, Control-Plane, Postgres-Default, Analytics-
+Pflichtbackend, Production-Kubernetes, OAuth/OIDC/SSO,
+Multi-Tenant-SaaS, Low-Latency-CMAF, vollstaendige Segmentset-
+Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade.
 
 ---
 

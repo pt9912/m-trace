@@ -1,15 +1,16 @@
 # Implementation Plan — `0.16.0` (Selected Product Slice)
 
-> **Status**: ⬜ offen — vorbereiteter Folgeplan nach `0.15.0`.
-> Aktivierung erst nach Abschluss und Closeout von `0.15.0`.
+> **Status**: 🟡 aktiv seit 2026-05-12 — Tranche 0 abgeschlossen,
+> Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice) gewaehlt.
+> Umsetzung erst nach Scope-/Contract-Haertung in Tranche 1.
 >
 > **Vorgänger**: `0.15.0` (Product Scope / Analyzer Boundary),
 > released 2026-05-12 in
 > [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
-> **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
-> neuer RAK-Gruppe und Tag `v0.16.0`. Erwartete RAK-Range:
-> `RAK-106`..`RAK-110`, sofern keine Zwischenreleases RAKs belegen.
+> **Release-Typ**: Minor-Release mit Lastenheft-Patch `1.1.21`,
+> neuer RAK-Gruppe `RAK-106`..`RAK-110` und geplantem Tag
+> `v0.16.0`.
 >
 > **Ziel**: `0.16.0` setzt genau einen in `0.15.0` freigegebenen
 > Product-/Analyzer-/Platform-Slice um oder dokumentiert bewusst, dass
@@ -22,7 +23,8 @@
 > §16.1, `MVP-20`, `F-132`, `NF-13`, `MVP-40`, `MVP-41`,
 > [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
-> **Nachfolger**: offen.
+> **Nachfolger**:
+> [`../open/plan-0.17.0.md`](../open/plan-0.17.0.md) vorbereitet.
 
 ## 0. Konvention
 
@@ -38,29 +40,20 @@ DoD-Checkboxen tracken den Lieferstand:
 `0.16.0` ist kein zweiter Decision-Plan. Er importiert die `0.15.0`-
 Entscheidung und setzt hoechstens einen klar begrenzten Folgepfad um.
 
-Vorlaeufig in Scope, abhaengig vom `0.15.0`-Closeout:
+In Scope nach Aktivierung:
 
-- Externe Analyzer-API als schmaler POC oder erster Slice, falls
-  `MVP-20` in `0.15.0` auf `proceed` oder `POC` gesetzt wird.
-- Ein kleiner Analyzer-Folge-Slice aus `NF-13`, falls `0.15.0` ihn
-  priorisiert und der Slice ohne neue Plattformabhaengigkeit lieferbar
-  ist. Stand nach `0.15.0` Tranche 4: bevorzugter Kandidat ist ein
-  HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/
-  Media-Segmente.
-- Control-Plane-POC nur als minimales, nicht produktives Geruest,
-  falls `F-132` in `0.15.0` ausdruecklich `POC` freigibt und die
-  Zielgruppenentscheidung dies rechtfertigt. Stand nach `0.15.0`
-  Tranche 3: **nicht freigegeben**, solange kein neuer Control-Plane-
-  Trigger die RAK-103-Entscheidung wieder oeffnet.
-- Postgres- oder Analytics-POC nur, falls die in ADR 0005 und
-  `0.15.0` dokumentierten Trigger nachweisbar erreicht wurden.
-- Trigger-/Defer-Release, falls kein Implementierungspfad freigegeben
-  wurde.
+- Szenario B: ein kleiner Analyzer-Folge-Slice aus `NF-13`.
+- Konkret: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte
+  CMAF-Init-/Media-Segmente, abgeleitet aus `0.15.0` RAK-104.
+- Tranche 1 muss Byte-Range-Scope, Fixture-Plan, SSRF-/Redirect-/
+  Timeout-/Groessen-/Range-Grenzen, Laufzeitbudget und Compatibility-
+  Nachweis festlegen, bevor Code umgesetzt wird.
 
 Vorlaeufig out of scope:
 
 - Keine parallele Umsetzung von Analyzer-API, Control-Plane und
   Backend-Store in einem Release.
+- Keine externe Analyzer-API.
 - Kein Production-Control-Plane-Betrieb.
 - Kein Multi-Tenant-SaaS-Produkt ohne eigenen Folgeplan.
 - Kein Postgres-Default und keine automatische SQLite-Migration ohne
@@ -68,20 +61,22 @@ Vorlaeufig out of scope:
 - Kein Hochvolumen-Analytics-Pflichtbackend ohne Workload-Trigger,
   Owner, Zeitgrenze und Abbruchkriterien.
 - Kein Production-Kubernetes-Ausbau als Nebenprodukt dieses Plans.
+- Kein Low-Latency-CMAF, keine vollstaendige Segmentset-Abdeckung,
+  kein Codec-Decoding und kein Player-SDK-CMAF-Laufzeitpfad.
 
 ### 0.2 Vorgänger-Gate
 
 Vor Aktivierung von `0.16.0` muessen diese Bedingungen erfuellt sein:
 
-- [ ] `0.15.0` ist released und als
+- [x] `0.15.0` ist released und als
   `docs/planning/done/plan-0.15.0.md` archiviert.
-- [ ] Roadmap zeigt `0.16.0` als aktive Folgephase oder begruendet
+- [x] Roadmap zeigt `0.16.0` als aktive Folgephase oder begruendet
   einen anderen Nachfolger.
-- [ ] Die `0.15.0`-RAK-Matrix ist geschlossen oder enthaelt explizite
+- [x] Die `0.15.0`-RAK-Matrix ist geschlossen oder enthaelt explizite
   Defer-/Blockerstatus.
-- [ ] Genau ein Implementierungs- oder POC-Pfad wurde freigegeben,
+- [x] Genau ein Implementierungs- oder POC-Pfad wurde freigegeben,
   oder Tranche 0 waehlt bewusst ein Trigger-/Defer-Release.
-- [ ] Der freigegebene Pfad hat Owner, Gating, Abbruchkriterien und
+- [x] Der freigegebene Pfad hat Owner, Gating, Abbruchkriterien und
   Backwards-Compat-Grenzen.
 
 Uebergangsausnahme bei Release-Freeze oder blockiertem Vorgaenger:
@@ -92,18 +87,17 @@ blockiert markiert sind und kein Tag/Release fuer `0.16.0` erstellt
 wird, bevor `0.15.0` archiviert oder ausdruecklich durch einen neuen
 Plan ersetzt ist.
 
-### 0.3 Lastenheft-Patch (TBD)
+### 0.3 Lastenheft-Patch `1.1.21`
 
-Die finale RAK-Gruppe wird erst bei Aktivierung vergeben. Erwartete
-RAK-Themen, falls keine Zwischen-Ranges belegt werden:
+Die finale RAK-Gruppe fuer `0.16.0` ist `RAK-106`..`RAK-110`.
 
-| Vorlaeufige Kennung | Thema | Bedingung |
+| RAK | Thema | Bedingung |
 | --- | --- | --- |
-| RAK-TBD-1 / RAK-106 | Import der `0.15.0`-Entscheidung | Immer aktiv; genau ein Folgeszenario oder bewusstes Defer wird gewaehlt. |
-| RAK-TBD-2 / RAK-107 | Ausgewaehlter Product-/Analyzer-Slice | Nur fuer den in Tranche 0 freigegebenen Hauptpfad. |
-| RAK-TBD-3 / RAK-108 | Contract-/Compatibility-Nachweis | Pflicht, sobald Code, Wire-Format oder Doku-Surface geaendert wird. |
-| RAK-TBD-4 / RAK-109 | Operational-/Security-Grenzen | Pflicht fuer API-, Control-Plane-, Backend- oder Fetch-Pfade. |
-| RAK-TBD-5 / RAK-110 | Closeout und Folge-Trigger | Release-Nachweis, Defer-Trigger und naechster Planpfad. |
+| RAK-106 | Import der `0.15.0`-Entscheidung | Immer aktiv; Szenario B wird gewaehlt, alle anderen Pfade bleiben deferred. |
+| RAK-107 | HTTP-Range-/Byte-Range Analyzer-Slice (`NF-13`) | Nur fuer manifest-referenzierte CMAF-Init-/Media-Segmente. |
+| RAK-108 | Contract-/Compatibility-Nachweis | Pflicht, sobald Analyzer-Code, Result-Schema oder Doku-Surface geaendert wird. |
+| RAK-109 | Operational-/Security-Grenzen | Pflicht fuer Fetch-Pfade: SSRF, Redirects, Timeout, Groessen und Range-Anzahl. |
+| RAK-110 | Closeout und Folge-Trigger | Release-Nachweis, Defer-Trigger und naechster Planpfad. |
 
 ### 0.4 Qualitätsregeln für `0.16.0`
 
@@ -135,7 +129,7 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Aktivierung und Szenario-Import | Ein `0.15.0`-Folgepfad verbindlich gewaehlt | `0.15.0` released | Szenario A/B/C/D/E | ⬜ |
+| 0 | Aktivierung und Szenario-Import | Ein `0.15.0`-Folgepfad verbindlich gewaehlt | `0.15.0` released | Szenario B | ✅ |
 | 1 | Scope- und Contract-Haertung | Minimaler Lieferumfang, Nicht-Ziele und Gates stehen | gewaehltes Szenario | Slice-Spezifikation | ⬜ |
 | 2 | Implementierung oder POC | Code-/Doku-/POC-Artefakt fuer genau einen Pfad | Slice-Spezifikation | nachweisbarer Lieferstand | ⬜ |
 | 3 | Tests, Security und Operational Boundaries | Gates und Risikoabgrenzung abgeschlossen | Implementierung/POC | Verifikationsnachweis | ⬜ |
@@ -148,36 +142,58 @@ Ziel: `0.16.0` uebernimmt genau einen freigegebenen Pfad aus
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.16.0.md` nach
+- [x] Plan von `docs/planning/open/plan-0.16.0.md` nach
   `docs/planning/in-progress/plan-0.16.0.md` verschoben.
-- [ ] Ausgangszustand von `git status --short` dokumentiert.
-- [ ] `0.15.0`-Closeout gelesen und Szenario A/B/C/D/E ausgewaehlt.
-- [ ] Lastenheft-Patch mit finaler RAK-Range ergaenzt.
-- [ ] Roadmap auf `0.16.0` als aktive Folgephase umgestellt.
-- [ ] Risks-Backlog aktualisiert, falls ein neuer POC ein Risiko
+- [x] Ausgangszustand von `git status --short` dokumentiert.
+- [x] `0.15.0`-Closeout gelesen und Szenario A/B/C/D/E ausgewaehlt.
+- [x] Lastenheft-Patch mit finaler RAK-Range ergaenzt.
+- [x] Roadmap auf `0.16.0` als aktive Folgephase umgestellt.
+- [x] Risks-Backlog aktualisiert, falls ein neuer POC ein Risiko
   ausloest oder schliesst.
-- [ ] Nicht gewaehlt Pfade explizit deferred:
+- [x] Nicht gewaehlt Pfade explizit deferred:
   - Analyzer-API,
-  - Analyzer-Folge-Slice,
+  - alle Analyzer-Folge-Slices ausser HTTP-Range-/Byte-Range,
   - Control-Plane,
   - Postgres,
   - Analytics-Backend.
-- [ ] Aktivierungsnotiz enthaelt `What aendert sich` /
+- [x] Aktivierungsnotiz enthaelt `What aendert sich` /
   `What bleibt unveraendert` und benennt nicht aktivierte Pfade.
 
-### 2.1 Aktivierungsnotiz (Template)
-
-Bei Aktivierung ausfuellen:
+### 2.1 Aktivierungsnotiz
 
 | Feld | Wert |
 | --- | --- |
-| Aktivierungsdatum | TBD |
-| Ausgangs-Commit | TBD |
-| Gewaehltes Szenario | TBD |
-| Uebernommene 0.15-Entscheidung | TBD |
-| Explizit deferred | TBD |
-| Blocker | TBD |
-| Required Gates | TBD |
+| Aktivierungsdatum | 2026-05-12 |
+| Ausgangs-Commit | `cdf72ec` (`main`, `origin/main`, `v0.15.0`) |
+| Ausgangszustand | `git status --short --branch`: `## main...origin/main` vor dem Plan-Move |
+| Gewaehltes Szenario | B — Analyzer-Folge-Slice (`NF-13`) |
+| Uebernommene 0.15-Entscheidung | `RAK-104` empfiehlt HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente als einzigen kleinen Folge-Slice. `RAK-102` deferred externe Analyzer-API, `RAK-103` deferred Control-Plane, `RAK-105` deferred Postgres/Analytics ohne erreichte Trigger. |
+| Explizit deferred | Externe Analyzer-API, Control-Plane, Postgres, Analytics-Backend, Production-K8s, Low-Latency-CMAF, vollstaendige Segmentsets, Codec-Decoding, Player-SDK-CMAF-Laufzeitpfade. |
+| Blocker | Keine offenen Blocker fuer Tranche 0. Tranche 1 muss Byte-Range-Scope, Fixtures, SSRF-/Redirect-/Timeout-/Groessen-/Range-Limits und Compatibility-Gates festlegen. |
+| Required Gates | Tranche 0 docs-only: `make docs-check`. Ab Tranche 2 je nach Artefakt: passender Stream-Analyzer-/TS-Test, Contract-/Fixture-Drift-Check, `make security-gates` oder gruenes CI-Äquivalent fuer Fetch-Security. |
+
+### 2.2 Aktivierungsentscheid
+
+What aendert sich:
+
+- `0.16.0` ist aktiv und nicht mehr nur vorbereitet.
+- Szenario B ist der einzige Go-Pfad: HTTP-Range-/Byte-Range-Loader
+  fuer manifest-referenzierte CMAF-Init-/Media-Segmente.
+- Lastenheft-Patch `1.1.21` reserviert `RAK-106`..`RAK-110` fuer
+  Import, Slice, Compatibility, Security/Ops und Closeout.
+- Tranche 1 wird zum zwingenden Scope- und Gate-Filter vor Code.
+
+What bleibt unveraendert:
+
+- Interner `apps/analyzer-service` plus `@npm9912/stream-analyzer`
+  Library/CLI bleiben der aktuelle Analyzer-Standardpfad.
+- Keine externe Analyzer-API, keine Control-Plane, kein Postgres-
+  Default, kein Analytics-Pflichtbackend und kein Production-K8s.
+- Der CMAF-Scope bleibt klein: keine LL-CMAF-Unterstuetzung, keine
+  vollstaendige Segmentset-Abdeckung, kein Codec-Decoding, kein
+  Player-Laufzeitpfad.
+- Bestehende Wire-/Runtime-Defaults bleiben durch Tranche 0
+  unveraendert.
 
 ## 3. Tranche 1 — Scope- und Contract-Härtung
 
@@ -281,37 +297,37 @@ DoD:
   Status auf `✅ released`.
 - [ ] Annotierter Tag `v0.16.0` erstellt.
 
-## 7. RAK-Verifikationsmatrix (Platzhalter)
+## 7. RAK-Verifikationsmatrix
 
-Wird bei Aktivierung nach dem `0.15.0`-Closeout mit finalen RAK-IDs
-gefuellt.
+Die finalen RAK-IDs fuer `0.16.0` sind mit Lastenheft-Patch `1.1.21`
+vergeben.
 
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
-| RAK-TBD-1 | Muss | `0.15.0`-Closeout, Szenario-Import | Genau ein Folgepfad ist gewaehlt oder alle Pfade sind deferred | [ ] |
-| RAK-TBD-2 | Konditional Muss | Slice-Spezifikation und Artefaktnachweis | Der gewaehlt Product-/Analyzer-/Platform-Slice ist begrenzt geliefert oder als POC nachgewiesen | [ ] |
-| RAK-TBD-3 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Wire-/Schema-/API-Kompatibilitaet ist belegt oder unveraendert | [ ] |
-| RAK-TBD-4 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Neue Risiken sind kontrolliert; keine Production-Zusage ohne Folgeplan | [ ] |
-| RAK-TBD-5 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [ ] |
+| RAK-106 | Muss | `0.15.0`-Closeout, Szenario-Import | Genau ein Folgepfad ist gewaehlt; Szenario B ist aktiv, alle anderen grossen Pfade bleiben deferred | [x] |
+| RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | [ ] |
+| RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | [ ] |
+| RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | [ ] |
+| RAK-110 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [ ] |
 
-Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
+Sofort nutzbares Verifikationsmapping:
 
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-TBD-1 | TBD | TBD | Product/PM | ⬜ |
-| RAK-TBD-2 | TBD | TBD | Platform | ⬜ |
-| RAK-TBD-3 | TBD | TBD | Platform/QA | ⬜ |
-| RAK-TBD-4 | TBD | TBD | Platform/Ops | ⬜ |
-| RAK-TBD-5 | TBD | TBD | Platform/CI | ⬜ |
+| RAK-106 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/done/plan-0.15.0.md` §6.3/§9, `spec/lastenheft.md` §13.20 | 2026-05-12 | Product/PM | ✅ |
+| RAK-107 | `docs/planning/in-progress/plan-0.16.0.md`, spaeter Stream-Analyzer-Artefakte | TBD | Platform/Analyzer | ⬜ |
+| RAK-108 | `docs/planning/in-progress/plan-0.16.0.md`, spaeter Contract-/Fixture-Nachweise | TBD | Platform/QA | ⬜ |
+| RAK-109 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/in-progress/risks-backlog.md`, spaeter Security-Gates | TBD | Platform/Ops | ⬜ |
+| RAK-110 | `docs/planning/in-progress/plan-0.16.0.md`, `CHANGELOG.md`, Roadmap, Tag `v0.16.0` | TBD | Platform/CI | ⬜ |
 
-## 7.1 Blocker-Log (Startzustand)
+## 7.1 Blocker-Log
 
-| Blocker | Betroffene Tranche | Erwartete Aufloesung |
+| Blocker | Betroffene Tranche | Status |
 | --- | --- | --- |
-| `0.15.0` noch nicht released | alle | Vorgaenger-Gate in §0.2 schliessen |
-| Kein freigegebener Folgepfad aus `0.15.0` | Tranche 0/2 | Szenario E waehlen oder `0.16.0` durch anderen Plan ersetzen |
-| Mehrere konkurrierende Go-Pfade | Tranche 0 | genau einen Pfad waehlen, Rest deferred |
-| RAK-Range noch offen | Tranche 0/4 | Lastenheft-Patch bei Aktivierung vergeben |
+| `0.15.0` noch nicht released | alle | ✅ geschlossen: `v0.15.0` released und Plan archiviert |
+| Kein freigegebener Folgepfad aus `0.15.0` | Tranche 0/2 | ✅ geschlossen: Szenario B aus `RAK-104` importiert |
+| Mehrere konkurrierende Go-Pfade | Tranche 0 | ✅ geschlossen: nur Szenario B aktiv, Rest deferred |
+| RAK-Range noch offen | Tranche 0/4 | ✅ geschlossen: `RAK-106`..`RAK-110` in Lastenheft `1.1.21` |
 
 ## 8. Folge-Scope nach `0.16.0`
 

@@ -23,7 +23,7 @@
 > §16.1, `MVP-20`, `F-132`, `NF-13`, `MVP-40`, `MVP-41`.
 >
 > **Nachfolger**: vorbereiteter Folgeplan
-> [`../open/plan-0.16.0.md`](../open/plan-0.16.0.md).
+> [`../in-progress/plan-0.16.0.md`](../in-progress/plan-0.16.0.md).
 
 ## 0. Konvention
 
@@ -672,7 +672,7 @@ Sofort nutzbares Verifikationsmapping:
 | RAK-101 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
 | RAK-102 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.5/§12.1/§13.19, `apps/analyzer-service` Bestand, `spec/backend-api-contract.md` §3.6 | 2026-05-12 | Platform/Analyzer | ✅ |
 | RAK-103 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19, `spec/backend-api-contract.md` §3.8/§3.9, `docs/user/ingest-control.md` §5 | 2026-05-12 | Platform/Product | ✅ |
-| RAK-104 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §8.3/§13.19, `docs/planning/open/plan-0.16.0.md` Szenario B | 2026-05-12 | Platform/QA | ✅ |
+| RAK-104 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §8.3/§13.19, `docs/planning/in-progress/plan-0.16.0.md` Szenario B | 2026-05-12 | Platform/QA | ✅ |
 | RAK-105 | `docs/planning/done/plan-0.15.0.md`, `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
 
 ## 8.1 Blocker-Log

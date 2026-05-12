@@ -1,8 +1,10 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-12 — `0.15.0` (Product Scope / Analyzer
-> Boundary) released 2026-05-12; Lastenheft-Patch `1.1.20`
-> mit RAK-101..RAK-105 in §13.19 persistiert. Vorgänger `0.14.0`
+> **Stand**: 2026-05-12 — `0.16.0` (Selected Product Slice /
+> Analyzer Range Fetch) aktiv; Lastenheft-Patch `1.1.21` mit
+> RAK-106..RAK-110 in §13.20 persistiert. Vorgänger `0.15.0`
+> released 2026-05-12 (Tag `v0.15.0`);
+> `0.14.0`
 > released 2026-05-12 (Tag `v0.14.0`);
 > `0.13.0` released 2026-05-12 (Tag `v0.13.0`);
 > `0.12.6` released 2026-05-12 (Tag `v0.12.6`);
@@ -11,6 +13,17 @@
 > `0.12.0` released 2026-05-10 (Tag `v0.12.0` auf `e3457fa`).
 >
 > ### Aktuelle Phase
+>
+> `0.16.0` ist aktiv in
+> [`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). Tranche 0
+> importiert aus `0.15.0` genau Szenario B: HTTP-Range-/Byte-Range-
+> Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente.
+> RAK-109 trackt die Fetch-Security-/Operational-Grenzen (SSRF,
+> Redirects, Timeout, Groessen, Range-Anzahl, Status-/Content-Type-
+> Grenzen und Laufzeitbudget). Die Aktivierung erzeugt noch kein neues
+> R-N-Item, weil Tranche 0 docs-only ist; Tranche 1 muss ein eigenes
+> R-N-Item anlegen, falls die Fetch-Grenzen nicht testbar oder nicht
+> begrenzt geschlossen werden koennen.
 >
 > `0.15.0` ist released und archiviert in
 > [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0
@@ -65,9 +78,9 @@
 > werden in `0.12.6` Tranche 7/8 final geschlossen). RAK-77..RAK-82
 > in §13.15 persistiert.
 >
-> Lastenheft-Stand: `1.1.20` (`0.15.0`-Patch persistiert in T0).
-> `0.15.0` belegt RAK-101..RAK-105 in §13.19, da RAK-96..RAK-100
-> mit `0.14.0` belegt sind.
+> Lastenheft-Stand: `1.1.21` (`0.16.0`-Patch persistiert in T0).
+> `0.16.0` belegt RAK-106..RAK-110 in §13.20; `0.15.0` belegt
+> RAK-101..RAK-105 in §13.19.
 >
 > ### Trigger-Re-Eval-Stand (2026-05-10, `0.12.1` Tranche 1)
 >
@@ -121,7 +134,8 @@
 >   Auth-/Ingest-Adapter); §13.17 RAK-91..RAK-95 (`0.13.0`
 >   Production / Ops Backends); §13.18 RAK-96..RAK-100 (`0.14.0`
 >   Ops Backend Follow-up); §13.19 RAK-101..RAK-105 (`0.15.0`
->   Product Scope / Analyzer Boundary)
+>   Product Scope / Analyzer Boundary); §13.20 RAK-106..RAK-110
+>   (`0.16.0` Selected Product Slice / Analyzer Range Fetch)
 > - `docs/planning/in-progress/roadmap.md` §4
 > - `docs/planning/done/plan-0.12.0.md` (Folge-ADRs);
 >   `docs/planning/done/plan-0.12.1.md` (Patch: Trigger-Re-Eval +
@@ -133,7 +147,9 @@
 >   `docs/planning/done/plan-0.14.0.md` (Ops Backend Follow-up,
 >   R-9 Hardening-Scope);
 >   `docs/planning/done/plan-0.15.0.md` (Product Scope /
->   Analyzer Boundary, RAK-101..RAK-105)
+>   Analyzer Boundary, RAK-101..RAK-105);
+>   `docs/planning/in-progress/plan-0.16.0.md` (Selected Product
+>   Slice / Analyzer Range Fetch, RAK-106..RAK-110)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst
