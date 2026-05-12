@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `0.15.0` Tranche 3: Control-Plane-Scope entschieden. `F-132` bleibt
   deferred, kein `apps/control-plane`-POC ohne konkreten Betreiber-,
   Auth-/Tenant-/Audit-Trigger und eigenen Folgeplan.
+- `0.15.0` Tranche 4: Analyzer-Folge-Slice entschieden. HTTP-Range-/
+  Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-
+  Segmente ist der einzige empfohlene kleine `NF-13`-Folgeslice;
+  LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-
+  Laufzeitpfade bleiben deferred.
 
 ## [0.14.0] - 2026-05-12
 

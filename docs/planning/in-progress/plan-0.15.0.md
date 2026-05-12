@@ -1,7 +1,7 @@
 # Implementation Plan — `0.15.0` (Product Scope / Analyzer Boundary)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–3
-> abgeschlossen, Tranche 4 als nächster Schritt.
+> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–4
+> abgeschlossen, Tranche 5 als nächster Schritt.
 >
 > **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
 > 2026-05-12; Plan in
@@ -148,8 +148,8 @@ und getrennte Gates.
 | 1 | Zielgruppenentscheidung | Primaerziel und spaetere Plattformgrenze entschieden | Lastenheft §16.1 | Product-Decision-Notiz in Plan + Lastenheft | ✅ |
 | 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Defer-Decision + Trigger | ✅ |
 | 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Defer-Decision + Trigger | ✅ |
-| 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt oder Defer-Notiz | 🟡 |
-| 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | ⬜ |
+| 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt: HTTP-Range-/Byte-Range-Loader | ✅ |
+| 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | 🟡 |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
 
@@ -483,19 +483,19 @@ zu erweitern.
 
 DoD:
 
-- [ ] Optionen verglichen:
+- [x] Optionen verglichen:
   - Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF),
   - HTTP-Range-/Byte-Range-Loader,
   - vollstaendigere Segmentset-Abdeckung,
   - Codec-Decoding,
   - Player-SDK-CMAF-Laufzeitpfad.
-- [ ] Nutzen, Risiko, Testbarkeit, Datenvolumen und Security-Grenzen
+- [x] Nutzen, Risiko, Testbarkeit, Datenvolumen und Security-Grenzen
   pro Option dokumentiert.
-- [ ] Hoestens ein kleiner Folgeslice empfohlen oder alles deferred.
-- [ ] SSRF-/Fetch-Grenzen und Contract-Fixture-Auswirkungen benannt.
-- [ ] Kein Analyzer-Slice wird an eine externe Analyzer-API gekoppelt,
+- [x] Hoestens ein kleiner Folgeslice empfohlen oder alles deferred.
+- [x] SSRF-/Fetch-Grenzen und Contract-Fixture-Auswirkungen benannt.
+- [x] Kein Analyzer-Slice wird an eine externe Analyzer-API gekoppelt,
   solange Tranche 2 diese nicht freigibt.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
@@ -509,6 +509,71 @@ Vorlaeufige Artefakte:
 - Analyzer-Folge-Scope-Matrix.
 - POC-/Defer-Notiz.
 - Optionaler Planvorschlag fuer `0.16.0` oder spaeter.
+
+### 6.1 Baseline aus `0.10.0`
+
+`NF-13` ist seit `0.10.0` im Stream-Analyzer-Scope erfüllt:
+manifestbasierte HLS-/DASH-CMAF-Signale plus begrenzte binäre
+CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente. Explizit
+offen blieben Low-Latency-CMAF, vollständige Segmentset-Abdeckung,
+Codec-Decoding, Player-SDK-CMAF-Playback und Byte-Range-/Range-Fetches.
+Tranche 4 bewertet nur diese Rest-Slices und koppelt sie nicht an eine
+externe `apps/analyzer-api`.
+
+### 6.2 Analyzer-Folge-Scope-Matrix
+
+| Option | Nutzen | Risiko / Datenvolumen | Testbarkeit | Security-Grenze | Entscheidung |
+| --- | --- | --- | --- | --- | --- |
+| Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) | Erhöht Signalqualität für LL-HLS-/CMAF-Streams. | Viele Partial-Segmente, CDN-/Cache-Verhalten, chunked Transfer und Zeitfensterlogik würden Loader und Fixtures deutlich verbreitern. | Nur mit eigenem LL-HLS-Fixture-Stack oder aufgezeichneten Teilsegmenten belastbar. | Mehr Fetches, mehr Redirect-/Timeout-Flächen, potenziell lange Live-Fenster. | `defer` |
+| HTTP-Range-/Byte-Range-Loader | Schließt eine konkrete Lücke aus `0.10.0`: `EXT-X-MAP`/`#EXT-X-BYTERANGE` und DASH-Range-Initialisierungen können bounded geprüft werden. | Begrenztes Zusatzrisiko, wenn Range-Anfragen nur auf manifest-referenzierte URLs, kleine Bytebereiche und bestehende Segmentlimits beschränkt bleiben. | Gut mit lokalen Fixtures und Contract-Fixtures testbar; keine echte Live-Infrastruktur nötig. | Bestehende SSRF-/Scheme-/Redirect-/Size-/Timeout-Grenzen bleiben Pflicht; Range-Header muss strikt aus Manifestwerten kommen. | **Empfohlen als einziger Folgeslice** |
+| Vollständigere Segmentset-Abdeckung | Würde mehr Media-Segmente prüfen und Fehler später im Stream erkennen. | Schnell unbounded: viele Segmente, hohe Kosten, Retention-/Sampling-Fragen. | Nur mit großem Fixture-Set sinnvoll; hohe CI-Laufzeit. | Fetch-Budget, Sampling-Policy und Abbruchregeln müssten neu entschieden werden. | `defer` |
+| Codec-Decoding | Liefert tiefere Validierung von Audio-/Video-Bitstreams. | Bringt Native-/WASM-/FFmpeg-Abhängigkeiten, CPU-Kosten und Sicherheitsfläche. | Schwer deterministisch und plattformübergreifend in CI. | Decoder-Sandbox, Ressourcenlimits und CVE-Pflege nötig. | `defer` |
+| Player-SDK-CMAF-Laufzeitpfad | Würde Analyse und Playback näher verbinden. | Vermischt Analyzer- und Player-SDK-Scope; Browser-/hls.js-/MSE-Compat wird eigener Produktpfad. | Browser-E2E nötig, nicht nur Analyzer-Fixtures. | Kein Fetch-Analyzer-Scope mehr; betrifft Runtime, CORS und Playback-Telemetrie. | `defer` |
+
+### 6.3 RAK-104 Decision
+
+| Feld | Entscheidung |
+| --- | --- |
+| Datum | 2026-05-12 |
+| Entscheidung | `RAK-104` empfiehlt als einzigen kleinen Folge-Slice einen **HTTP-Range-/Byte-Range-Loader** für manifest-referenzierte CMAF-Init- und Media-Segmente. |
+| Begründung | Der Slice erweitert den bestehenden `0.10.0`-Analyzer gezielt, bleibt innerhalb von Library/CLI und internem Analyzer-Service, ist fixture-basiert testbar und benötigt weder externe Analyzer-API noch Control-Plane, Storage, Codec-Decoder oder Player-Laufzeitpfad. |
+| Nicht entschieden | Kein Low-Latency-CMAF, keine vollständige Segmentset-Abdeckung, kein Codec-Decoding, kein Player-SDK-CMAF-Playback, keine neue `apps/analyzer-api`, kein Job-/Retention-Modell. |
+| Reaktivierungs-Trigger fuer deferred Optionen | LL-CMAF: konkreter LL-HLS-Operator-Stream und Fixture-Plan. Vollständige Segmentsets: nachgewiesene False-Negatives durch erstes-Segment-Sampling. Codec-Decoding: benannter Decoder-Scope mit Sandbox-/CVE-Plan. Player-Laufzeit: eigener Player-SDK-Plan mit Browser-Matrix. |
+| Naechster Planpfad | `0.16.0` darf Szenario B wählen und den Range-/Byte-Range-Slice spezifizieren. Falls Tranche 5 keinen Ops-Trigger findet, ist dieser Slice der bevorzugte Implementierungskandidat fuer `0.16.0`. |
+
+### 6.4 Test-, Fixture- und Fetch-Grenzen
+
+- Der Slice darf nur URLs laden, die aus einem bereits akzeptierten
+  Manifest stammen; keine frei eingegebenen Zusatz-URLs.
+- Range-Werte muessen aus `EXT-X-MAP`-/`#EXT-X-BYTERANGE`-Attributen
+  oder DASH-Range-Feldern stammen und vor dem Request auf nichtnegative,
+  endliche Bytebereiche validiert werden.
+- Bestehende Loader-Grenzen bleiben Mindestniveau: erlaubte Schemes,
+  SSRF-/private-network-Blocklist, Redirect-Policy, Timeout,
+  Content-Type-Prüfung und `maxSegmentBytes`/`maxBinarySegments`.
+- Contract-Fixtures brauchen mindestens HLS-`EXT-X-MAP` mit
+  `BYTERANGE`, HLS-`#EXT-X-BYTERANGE`-Media-Segment, DASH-Range-
+  Initialization und Reject-Fixtures fuer malformed/oversized Ranges.
+- Kein neuer Top-Level-`analyzerKind`; Ergebnisse bleiben unter
+  `details.cmaf.binary` oder einem additiven Unterfeld im bestehenden
+  HLS-/DASH-Detailschema.
+
+### 6.5 What aendert sich
+
+- `RAK-104` ist entschieden: Ein kleiner Analyzer-Folge-Slice ist
+  priorisiert.
+- `0.16.0` bekommt mit Szenario B einen konkreten Kandidaten:
+  HTTP-Range-/Byte-Range-Loader fuer CMAF-Init-/Media-Segmente.
+- `spec/lastenheft.md` §13.19 vermerkt die Tranche-4-Entscheidung.
+
+### 6.6 What bleibt unveraendert
+
+- Externe `apps/analyzer-api` bleibt deferred; der Slice gehoert zu
+  `@npm9912/stream-analyzer`, CLI und internem `apps/analyzer-service`.
+- Low-Latency-CMAF, vollständige Segmentset-Abdeckung,
+  Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade bleiben deferred.
+- Keine Control-Plane-, Storage-, Job-Queue- oder Retention-
+  Abhaengigkeit entsteht durch Tranche 4.
 
 ## 7. Tranche 5 — Ops-Trigger-Re-Eval und Release-Closeout
 
@@ -555,7 +620,7 @@ Nachweis liefert.
 | RAK-101 | Muss | Zielgruppen-Decision, Lastenheft §16.1 oder ADR | Primaerzielgruppe ist entschieden; Plattform-Scope ist explizit deferred oder als spaeterer Planpfad beschrieben | [x] |
 | RAK-102 | Muss | Analyzer-Boundary-Decision zu `MVP-20` | Externe Analyzer-API ist `proceed`, `POC`, `defer` oder `anders erfuellt`; Trigger sind messbar | [x] |
 | RAK-103 | Muss | `F-132` Control-Plane-Decision | Control-Plane hat Scope, Nicht-Ziele und Trigger; keine Implementierung ohne Folgeplan | [x] |
-| RAK-104 | Muss | `NF-13` Folge-Scope-Matrix | Naechster Analyzer-Slice ist eng zugeschnitten oder bewusst deferred | [ ] |
+| RAK-104 | Muss | `NF-13` Folge-Scope-Matrix | Naechster Analyzer-Slice ist eng zugeschnitten oder bewusst deferred | [x] |
 | RAK-105 | Muss | Postgres-/Analytics-Trigger-Re-Eval | `MVP-40`/`MVP-41` bleiben deferred oder bekommen einen separaten Folgeplan bei erreichtem Trigger | [ ] |
 
 Sofort nutzbares Verifikationsmapping:
@@ -565,7 +630,7 @@ Sofort nutzbares Verifikationsmapping:
 | RAK-101 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
 | RAK-102 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.5/§12.1/§13.19, `apps/analyzer-service` Bestand, `spec/backend-api-contract.md` §3.6 | 2026-05-12 | Platform/Analyzer | ✅ |
 | RAK-103 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19, `spec/backend-api-contract.md` §3.8/§3.9, `docs/user/ingest-control.md` §5 | 2026-05-12 | Platform/Product | ✅ |
-| RAK-104 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19, `NF-13` | TBD | Platform/QA | ⬜ |
+| RAK-104 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §8.3/§13.19, `docs/planning/open/plan-0.16.0.md` Szenario B | 2026-05-12 | Platform/QA | ✅ |
 | RAK-105 | `docs/planning/in-progress/plan-0.15.0.md`, `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
 
 ## 8.1 Blocker-Log
@@ -584,7 +649,8 @@ Sofort nutzbares Verifikationsmapping:
   oder `POC` gesetzt wird.
 - Spaeter: Control-Plane-Plan, falls `F-132` konkrete Betreiber- oder
   Multi-Project-Anforderungen bekommt.
-- Spaeter: begrenzter Analyzer-Folge-Slice aus `NF-13`, falls Tranche 4
-  einen priorisierten Scope empfiehlt.
+- Spaeter: begrenzter Analyzer-Folge-Slice aus `NF-13`: Tranche 4
+  empfiehlt HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte
+  CMAF-Init-/Media-Segmente.
 - Spaeter: Postgres- oder Analytics-Backend-Plan, falls die in ADR 0005
   dokumentierten Trigger erreicht werden.

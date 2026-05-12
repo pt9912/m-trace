@@ -32,7 +32,11 @@
 > Auth-/Rate-Limit-/SSRF-/Contract-Nachweis vorliegen. Tranche 3
 > schließt RAK-103: `apps/control-plane` bleibt deferred und bekommt
 > keinen POC, solange kein konkreter Betreiberbedarf mit Auth-/Tenant-/
-> Audit-Nachweis, Owner, SLO und Folgeplan vorliegt.
+> Audit-Nachweis, Owner, SLO und Folgeplan vorliegt. Tranche 4
+> schließt RAK-104: HTTP-Range-/Byte-Range-Loader ist der einzige
+> empfohlene kleine `NF-13`-Folgeslice; LL-CMAF, vollständige
+> Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben
+> deferred.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in

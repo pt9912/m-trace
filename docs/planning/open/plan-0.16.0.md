@@ -44,7 +44,9 @@ Vorlaeufig in Scope, abhaengig vom `0.15.0`-Closeout:
   `MVP-20` in `0.15.0` auf `proceed` oder `POC` gesetzt wird.
 - Ein kleiner Analyzer-Folge-Slice aus `NF-13`, falls `0.15.0` ihn
   priorisiert und der Slice ohne neue Plattformabhaengigkeit lieferbar
-  ist.
+  ist. Stand nach `0.15.0` Tranche 4: bevorzugter Kandidat ist ein
+  HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/
+  Media-Segmente.
 - Control-Plane-POC nur als minimales, nicht produktives Geruest,
   falls `F-132` in `0.15.0` ausdruecklich `POC` freigibt und die
   Zielgruppenentscheidung dies rechtfertigt. Stand nach `0.15.0`
@@ -124,7 +126,7 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | Szenario | Inhalt | Release-Charakter | Go-Bedingung |
 | --- | --- | --- | --- |
 | A | Analyzer-API POC (`MVP-20`) | externer API-/Job-Slice | `0.15.0` liefert konkreten externen Konsumenten und API-Grenze |
-| B | Analyzer-Folge-Slice (`NF-13`) | Stream-Analyzer Feature-Slice | `0.15.0` priorisiert einen engen Analyzer-Scope mit Testplan |
+| B | Analyzer-Folge-Slice (`NF-13`) | Stream-Analyzer Feature-Slice | `0.15.0` priorisiert den HTTP-Range-/Byte-Range-Loader mit Test- und Fetch-Grenzen |
 | C | Control-Plane POC (`F-132`) | Platform-Prep ohne Production-Zusage | Der RAK-103-Defer aus `0.15.0` wurde durch konkreten Betreiber-/Auth-/Tenant-Trigger wieder geoeffnet |
 | D | Ops-Backend POC (`MVP-40`/`MVP-41`) | Storage-/Analytics-POC | Trigger wurden nachweisbar erreicht und eigener Rollback-/Abbruchpfad existiert |
 | E | Trigger-/Defer-Release | dokumentarisch | Kein Pfad erfuellt die Go-Bedingungen |
@@ -199,8 +201,8 @@ Szenario-spezifische Pflichtfragen:
 
 - Analyzer-API: sync vs. async Job, Auth, Rate Limit, Retention,
   Ergebnisabruf, SSRF-Schutz.
-- Analyzer-Folge-Slice: Fixture-Plan, Fetch-Grenzen, Segmentauswahl,
-  Laufzeitbudget.
+- Analyzer-Folge-Slice: HTTP-Range-/Byte-Range-Scope, Fixture-Plan,
+  Fetch-Grenzen, Segmentauswahl, Laufzeitbudget.
 - Control-Plane: nach `0.15.0` RAK-103 nicht freigegeben, solange
   kein konkreter Betreiber-/Auth-/Tenant-Trigger vorliegt; kein
   Production-Admin-Versprechen, keine User-/Org-Verwaltung ohne
@@ -228,8 +230,8 @@ Vorlaeufige Artefakte je Szenario:
 
 - A: `apps/analyzer-api`-POC oder API-Decision-Artefakt plus
   Contract-Fixtures.
-- B: Stream-Analyzer-Code, Fixtures und User-Doku fuer den
-  ausgewaehlten `NF-13`-Slice.
+- B: Stream-Analyzer-Code, Fixtures und User-Doku fuer den HTTP-
+  Range-/Byte-Range-Slice.
 - C: nur bei wieder geoeffnetem RAK-103-Trigger: Control-Plane-POC-
   Artefakt oder Plan-/ADR-Geruest ohne Production-Zusage.
 - D: Postgres-/Analytics-POC-Report, Adapter-Slice oder synthetischer
