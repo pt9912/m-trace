@@ -1,7 +1,7 @@
 # Risiken-Backlog
 
 > **Stand**: 2026-05-12 — `0.15.0` (Product Scope / Analyzer
-> Boundary) aktiv seit 2026-05-12; Lastenheft-Patch `1.1.20`
+> Boundary) released 2026-05-12; Lastenheft-Patch `1.1.20`
 > mit RAK-101..RAK-105 in §13.19 persistiert. Vorgänger `0.14.0`
 > released 2026-05-12 (Tag `v0.14.0`);
 > `0.13.0` released 2026-05-12 (Tag `v0.13.0`);
@@ -12,8 +12,8 @@
 >
 > ### Aktuelle Phase
 >
-> `0.15.0` ist aktiv in
-> [`in-progress/plan-0.15.0.md`](./plan-0.15.0.md). Tranche 0
+> `0.15.0` ist released und archiviert in
+> [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0
 > wählte Szenario A: Zielgruppe + Analyzer-Boundary. Aus `0.14.0`
 > importiert:
 > Postgres bleibt `defer-with-migration-seed`, Analytics bleibt
@@ -36,7 +36,9 @@
 > schließt RAK-104: HTTP-Range-/Byte-Range-Loader ist der einzige
 > empfohlene kleine `NF-13`-Folgeslice; LL-CMAF, vollständige
 > Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben
-> deferred.
+> deferred. Tranche 5 schließt RAK-105: Postgres bleibt
+> `defer-with-migration-seed`, Analytics bleibt `defer`; kein Backend-
+> Runtime-Scope in `0.15.0`.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in
@@ -130,7 +132,7 @@
 >   Backends, R-9 Tranche-3-Scope);
 >   `docs/planning/done/plan-0.14.0.md` (Ops Backend Follow-up,
 >   R-9 Hardening-Scope);
->   `docs/planning/in-progress/plan-0.15.0.md` (Product Scope /
+>   `docs/planning/done/plan-0.15.0.md` (Product Scope /
 >   Analyzer Boundary, RAK-101..RAK-105)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der

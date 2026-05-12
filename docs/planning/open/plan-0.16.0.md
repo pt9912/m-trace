@@ -4,8 +4,8 @@
 > Aktivierung erst nach Abschluss und Closeout von `0.15.0`.
 >
 > **Vorgänger**: `0.15.0` (Product Scope / Analyzer Boundary),
-> aktuell in Umsetzung in
-> [`../in-progress/plan-0.15.0.md`](../in-progress/plan-0.15.0.md).
+> released 2026-05-12 in
+> [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
 > **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
 > neuer RAK-Gruppe und Tag `v0.16.0`. Erwartete RAK-Range:
@@ -20,7 +20,7 @@
 > [`../in-progress/roadmap.md`](../in-progress/roadmap.md),
 > [`../../../spec/lastenheft.md`](../../../spec/lastenheft.md)
 > §16.1, `MVP-20`, `F-132`, `NF-13`, `MVP-40`, `MVP-41`,
-> [`../in-progress/plan-0.15.0.md`](../in-progress/plan-0.15.0.md).
+> [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
 > **Nachfolger**: offen.
 

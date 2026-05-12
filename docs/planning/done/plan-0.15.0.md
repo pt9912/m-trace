@@ -1,14 +1,14 @@
 # Implementation Plan — `0.15.0` (Product Scope / Analyzer Boundary)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–4
-> abgeschlossen, Tranche 5 als nächster Schritt.
+> **Status**: ✅ released 2026-05-12 — Tranchen 0–5
+> geschlossen; Release-Tag `v0.15.0`.
 >
 > **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
 > 2026-05-12; Plan in
 > [`../done/plan-0.14.0.md`](../done/plan-0.14.0.md).
 >
 > **Release-Typ**: Minor-Release mit Lastenheft-Patch `1.1.20`,
-> neuer RAK-Gruppe `RAK-101`..`RAK-105` und geplantem Tag `v0.15.0`.
+> neuer RAK-Gruppe `RAK-101`..`RAK-105` und Tag `v0.15.0`.
 >
 > **Ziel**: `0.15.0` trifft die naechsten Produkt- und
 > Architekturgrenzen, bevor neue grosse Backend- oder Plattformpfade
@@ -149,7 +149,7 @@ und getrennte Gates.
 | 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Defer-Decision + Trigger | ✅ |
 | 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Defer-Decision + Trigger | ✅ |
 | 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt: HTTP-Range-/Byte-Range-Loader | ✅ |
-| 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | 🟡 |
+| 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | ✅ |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
 
@@ -582,32 +582,74 @@ nur bei echten Triggern in Implementierung ueberfuehrt.
 
 DoD:
 
-- [ ] Postgres-Trigger aus ADR 0005 geprueft:
+- [x] Postgres-Trigger aus ADR 0005 geprueft:
   Multi-Replica-Store, Recovery-SLO, Retention-/Query-Last.
-- [ ] Analytics-Trigger geprueft:
+- [x] Analytics-Trigger geprueft:
   > 50 Mio. Events/Tag, Ad-hoc-Analysebedarf, Owner + Abbruchdatum.
-- [ ] Falls kein Trigger erreicht ist: Defer-Status mit Datum und
+- [x] Falls kein Trigger erreicht ist: Defer-Status mit Datum und
   Owner aktualisiert.
-- [ ] Falls Trigger erreicht ist: Folgeplan statt stiller Umsetzung
+- [x] Falls Trigger erreicht ist: Folgeplan statt stiller Umsetzung
   angelegt oder als Blocker fuer `0.15.0` markiert.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
-- [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
-- [ ] `make docs-check` gruen.
-- [ ] Bei dokumentarischem Szenario ohne Code-/Release-Skript-
+- [x] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
+- [x] `make docs-check` gruen.
+- [x] Bei dokumentarischem Szenario ohne Code-/Release-Skript-
   Aenderungen: Code-, Build- und Security-Gates sind als `n/a` mit
   Begruendung im Closeout markiert.
-- [ ] Bei codebezogenen Aenderungen: `make build` und `make gates`
+- [x] Bei codebezogenen Aenderungen: `make build` und `make gates`
   gruen.
-- [ ] Bei codebezogenen/Release-Aenderungen: `make security-gates`
+- [x] Bei codebezogenen/Release-Aenderungen: `make security-gates`
   gruen oder CI-Job `Security gates` gruen dokumentiert.
-- [ ] Versions-Bump auf `0.15.0` vollstaendig durchgefuehrt.
-- [ ] `CHANGELOG.md` mit `[0.15.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap auf released `0.15.0` und naechste Folgephase
+- [x] Versions-Bump auf `0.15.0` vollstaendig durchgefuehrt.
+- [x] `CHANGELOG.md` mit `[0.15.0] - 2026-05-12` aktualisiert.
+- [x] Roadmap auf released `0.15.0` und naechste Folgephase
   umgestellt.
-- [ ] Plan nach `docs/planning/done/plan-0.15.0.md` verschoben,
+- [x] Plan nach `docs/planning/done/plan-0.15.0.md` verschoben,
   Status auf `✅ released`.
-- [ ] Annotierter Tag `v0.15.0` erstellt.
+- [x] Annotierter Tag `v0.15.0` erstellt.
+
+### 7.1 Ops-Trigger-Re-Eval
+
+| Pfad | Trigger aus ADR 0005 / `0.14.0` | Stand 2026-05-12 | Entscheidung |
+| --- | --- | --- | --- |
+| Postgres (`MVP-40`) | Multi-Replica-Store, Recovery-SLO, Retention-/Query-Last, automatischer SQLite-Export oder DSN-Pflichtpfad | Kein neuer Betreiberbedarf, kein Multi-Replica-SLO, keine Recovery-/Retention-Anforderung und kein Migrations-/Rollback-Owner dokumentiert. | `defer-with-migration-seed` bleibt bestehen; kein Runtime-Adapter, kein Default und keine automatische Migration in `0.15.0`. |
+| Analytics (`MVP-41`) | > 50 Mio. Events/Tag, Ad-hoc-Analysebedarf, Owner, Kosten-/Abbruchdatum | Kein Hochvolumen-Workload, kein dedizierter Analytics-Owner und keine Abbruch-/Kostenannahme dokumentiert. | `defer` bleibt bestehen; kein ClickHouse-/VictoriaMetrics-/Mimir-POC in `0.15.0`. |
+
+Kein Trigger ist erreicht. Daher entsteht kein Folgeplan aus Tranche 5;
+der naechste bevorzugte Implementierungskandidat bleibt der in Tranche 4
+zugeschnittene HTTP-Range-/Byte-Range-Slice fuer `0.16.0` Szenario B.
+
+### 7.2 What aendert sich
+
+- `RAK-105` ist geschlossen: Postgres und Analytics bleiben sichtbar
+  deferred.
+- `0.15.0` ist ein Decision-/Scope-Release ohne neue Runtime-Pflicht,
+  ohne neuen Backend-Store und ohne neue externe Analyzer-/Control-
+  Plane-App.
+- Versionen, Changelog, Roadmap und Release-Plan sind auf `0.15.0`
+  umgestellt.
+
+### 7.3 What bleibt unveraendert
+
+- SQLite bleibt lokaler Default; Postgres bleibt Folge-Scope nach ADR
+  0005-Trigger.
+- Analytics-Backends bleiben optionaler spaeterer POC-Pfad ohne
+  Standardpflicht.
+- K8s, Devcontainer und Release-Guard bleiben die in `0.14.0`
+  validierten Zusatzpfade; `0.15.0` baut keinen Production-K8s-Pfad.
+
+### 7.4 Verifikation
+
+| Gate | Ergebnis |
+| --- | --- |
+| `make docs-check` | ✅ gruen |
+| `make build` | ✅ gruen |
+| `make gates` | ✅ gruen |
+| `make security-gates` | ✅ gruen |
+| `make release-guard-test` | ✅ gruen |
+| `MTRACE_RELEASE_APPROVED=1 make release-guard VER=0.15.0` | ✅ gruen |
+| Wave-2-Gates | n/a lokal nicht erneut via GitHub Actions geprüft; `0.15.0` ist ein Decision-/Scope-Release ohne Code-Slice. |
 
 ## 8. RAK-Verifikationsmatrix
 
@@ -621,17 +663,17 @@ Nachweis liefert.
 | RAK-102 | Muss | Analyzer-Boundary-Decision zu `MVP-20` | Externe Analyzer-API ist `proceed`, `POC`, `defer` oder `anders erfuellt`; Trigger sind messbar | [x] |
 | RAK-103 | Muss | `F-132` Control-Plane-Decision | Control-Plane hat Scope, Nicht-Ziele und Trigger; keine Implementierung ohne Folgeplan | [x] |
 | RAK-104 | Muss | `NF-13` Folge-Scope-Matrix | Naechster Analyzer-Slice ist eng zugeschnitten oder bewusst deferred | [x] |
-| RAK-105 | Muss | Postgres-/Analytics-Trigger-Re-Eval | `MVP-40`/`MVP-41` bleiben deferred oder bekommen einen separaten Folgeplan bei erreichtem Trigger | [ ] |
+| RAK-105 | Muss | Postgres-/Analytics-Trigger-Re-Eval | `MVP-40`/`MVP-41` bleiben deferred oder bekommen einen separaten Folgeplan bei erreichtem Trigger | [x] |
 
 Sofort nutzbares Verifikationsmapping:
 
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-101 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
-| RAK-102 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.5/§12.1/§13.19, `apps/analyzer-service` Bestand, `spec/backend-api-contract.md` §3.6 | 2026-05-12 | Platform/Analyzer | ✅ |
-| RAK-103 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19, `spec/backend-api-contract.md` §3.8/§3.9, `docs/user/ingest-control.md` §5 | 2026-05-12 | Platform/Product | ✅ |
-| RAK-104 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §8.3/§13.19, `docs/planning/open/plan-0.16.0.md` Szenario B | 2026-05-12 | Platform/QA | ✅ |
-| RAK-105 | `docs/planning/in-progress/plan-0.15.0.md`, `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
+| RAK-101 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
+| RAK-102 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.5/§12.1/§13.19, `apps/analyzer-service` Bestand, `spec/backend-api-contract.md` §3.6 | 2026-05-12 | Platform/Analyzer | ✅ |
+| RAK-103 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19, `spec/backend-api-contract.md` §3.8/§3.9, `docs/user/ingest-control.md` §5 | 2026-05-12 | Platform/Product | ✅ |
+| RAK-104 | `docs/planning/done/plan-0.15.0.md`, `spec/lastenheft.md` §8.3/§13.19, `docs/planning/open/plan-0.16.0.md` Szenario B | 2026-05-12 | Platform/QA | ✅ |
+| RAK-105 | `docs/planning/done/plan-0.15.0.md`, `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
 
 ## 8.1 Blocker-Log
 
@@ -641,7 +683,7 @@ Sofort nutzbares Verifikationsmapping:
 | RAK-Range noch offen | Tranche 0/5 | ✅ geschlossen: `RAK-101`..`RAK-105` in Lastenheft `1.1.20`. |
 | Zielgruppe nicht entschieden | Tranche 2/3 | ✅ geschlossen: Primärzielgruppe in Tranche 1 und Lastenheft §16.1 entschieden. |
 | Kein externer Analyzer-Konsument | Tranche 2 | ✅ geschlossen: externe Analyzer-API deferred; Reaktivierungs-Trigger in §4.4 definiert. |
-| Keine Ops-Trigger erreicht | Tranche 5 | ⬜ Postgres/Analytics weiter deferred, kein Runtime-Scope. |
+| Keine Ops-Trigger erreicht | Tranche 5 | ✅ geschlossen: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`; kein Runtime-Scope in `0.15.0`. |
 
 ## 9. Folge-Scope nach `0.15.0`
 

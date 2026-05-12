@@ -26,7 +26,7 @@
 > §13.18 (`RAK-96`..`RAK-100`).
 >
 > **Nachfolger**: `0.15.0` aktiv in
-> [`../in-progress/plan-0.15.0.md`](../in-progress/plan-0.15.0.md).
+> [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 
 ## 0. Konvention
 

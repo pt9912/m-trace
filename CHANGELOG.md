@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-05-12
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Product-Scope-/Analyzer-Boundary-Release nach `0.14.0`,
+> Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19.
+> Plan in
+> [`docs/planning/done/plan-0.15.0.md`](docs/planning/done/plan-0.15.0.md).
+
 ### Added
 
 - `0.15.0` Planung aktiviert: Lastenheft-Patch `1.1.20` ergänzt
   §13.19 mit RAK-101..RAK-105 für Product Scope / Analyzer Boundary;
-  der Plan läuft in
-  [`docs/planning/in-progress/plan-0.15.0.md`](docs/planning/in-progress/plan-0.15.0.md).
+  der Plan ist archiviert in
+  [`docs/planning/done/plan-0.15.0.md`](docs/planning/done/plan-0.15.0.md).
 - `0.15.0` Tranche 1: Zielgruppenentscheidung für die nächsten
   Minor-Releases auf Selbsthoster, kleine bis mittlere
   Streaming-Teams, Broadcaster-Labs und technische Media-/DevOps-Teams
@@ -30,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Segmente ist der einzige empfohlene kleine `NF-13`-Folgeslice;
   LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-
   Laufzeitpfade bleiben deferred.
+- `0.15.0` Tranche 5: Postgres-/Analytics-Trigger erneut geprüft.
+  Postgres bleibt `defer-with-migration-seed`, Analytics bleibt
+  `defer`; kein Backend-Runtime-Scope, kein externer Analyzer-API-
+  Scope und keine Control-Plane-Implementierung in `0.15.0`.
+- Versionen auf `0.15.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompat-Vertrag und
+  Analyzer-Contract-Fixtures.
 
 ## [0.14.0] - 2026-05-12
 

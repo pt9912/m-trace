@@ -23,8 +23,7 @@
 > Analytics-Pflichtbackend, Production-K8s, OAuth/OIDC/SSO und
 > Multi-Tenant-SaaS bleiben ohne eigenen Folgeplan out of scope.
 > Patch-Log siehe
-> [`docs/planning/in-progress/plan-0.15.0.md`](../docs/planning/in-progress/plan-0.15.0.md)
-> Tranche 0.
+> [`docs/planning/done/plan-0.15.0.md`](../docs/planning/done/plan-0.15.0.md).
 >
 > **Patch `1.1.19` (Ops Backend Follow-up für `0.14.0`)**:
 > Aktiviert die Folgephase nach `0.13.0` und führt die neue
