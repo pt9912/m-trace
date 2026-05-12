@@ -69,8 +69,10 @@ Vorläufig in Scope:
 
 Vorläufig out of scope:
 
-- Keine verpflichtende Ablösung von SQLite im lokalen Standardbetrieb,
-  solange keine `0.13.0`-Entscheidung dies ausdrücklich vorgibt.
+- Keine Ablösung von SQLite im lokalen Standardbetrieb in `0.14.0`.
+  Postgres darf nur opt-in oder produktionsnaher Zusatzpfad werden;
+  eine Änderung des lokalen Standard-Stores braucht einen separaten
+  ADR-/Planbeschluss außerhalb dieses vorbereiteten Folgeplans.
 - Kein vollständiger Production-Kubernetes-Betrieb.
 - Kein Managed-Cloud-Betrieb.
 - Kein Multi-Tenant-SaaS-Produkt.
@@ -178,7 +180,7 @@ Kapazität und getrennte Gate-Nachweise.
 | 2 | Analytics-Backend-Slice oder POC | Datenmodell-, Query- und Kostenentscheidung umgesetzt | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ⬜ |
 | 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ⬜ |
 | 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ⬜ |
-| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | Tranche 4 | Tag `v0.14.0` | ⬜ |
+| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | letzte aktive Tranche | Tag `v0.14.0` | ⬜ |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
 
@@ -194,6 +196,8 @@ DoD:
 - [ ] `0.13.0`-Closeout gelesen und alle übernommenen Pfade explizit
   auf `proceed`, `POC`, `defer` oder `blocked` gemappt.
 - [ ] Aktivierungsszenario A/B/C/D ausgewählt und begründet.
+- [ ] Aktive und deferred Tranchen für das gewählte Szenario in einer
+  Tranchenmatrix festgelegt.
 - [ ] Nicht übernommene `0.13.0`-Pfade bleiben als Defer-Trigger
   sichtbar, werden aber nicht stillschweigend implementiert.
 - [ ] Lastenheft-Patch mit finaler RAK-Range ergänzt.
@@ -357,6 +361,8 @@ deferred oder blockiert, und der Release kann sauber getaggt werden.
 DoD:
 
 - [ ] RAK-Verifikationsmatrix vollständig ausgefüllt.
+- [ ] Jede aktive Tranche enthält einen `What ändert sich` /
+  `What bleibt unverändert`-Block mit Dateinachweis.
 - [ ] `make docs-check` grün.
 - [ ] Bei codebezogenen Änderungen: `make build` grün.
 - [ ] Bei codebezogenen Änderungen: `make gates` grün.
@@ -379,7 +385,7 @@ gefüllt. Bis dahin dienen die folgenden Zeilen als Zuschnittsvorschlag.
 | RAK-TBD-1 | Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad ist umgesetzt, POC-fähig abgegrenzt oder final deferred; SQLite bleibt Default | [ ] |
 | RAK-TBD-2 | Muss | Analytics-POC-Report oder Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat ein Zielbackend, klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger | [ ] |
 | RAK-TBD-3 | Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [ ] |
-| RAK-TBD-4 | Muss/Kann | Devcontainer-Artefakt oder Defer-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [ ] |
+| RAK-TBD-4 | Konditional Muss | Devcontainer-Artefakt oder Defer-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [ ] |
 | RAK-TBD-5 | Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [ ] |
 
 Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
