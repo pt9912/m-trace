@@ -1,9 +1,10 @@
 # Risiken-Backlog
 
 > **Stand**: 2026-05-12 — `0.16.0` (Selected Product Slice /
-> Analyzer Range Fetch) aktiv; Lastenheft-Patch `1.1.21` mit
-> RAK-106..RAK-110 in §13.20 persistiert. Vorgänger `0.15.0`
-> released 2026-05-12 (Tag `v0.15.0`);
+> Analyzer Range Fetch) released; Lastenheft-Patch `1.1.21` mit
+> RAK-106..RAK-110 in §13.20 persistiert. `0.16.0` released
+> 2026-05-12 (Tag `v0.16.0`); Vorgänger `0.15.0` released
+> 2026-05-12 (Tag `v0.15.0`);
 > `0.14.0`
 > released 2026-05-12 (Tag `v0.14.0`);
 > `0.13.0` released 2026-05-12 (Tag `v0.13.0`);
@@ -14,22 +15,17 @@
 >
 > ### Aktuelle Phase
 >
-> `0.16.0` ist aktiv in
-> [`in-progress/plan-0.16.0.md`](./plan-0.16.0.md). Tranche 0
+> `0.16.0` ist released und archiviert in
+> [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release
 > importiert aus `0.15.0` genau Szenario B: HTTP-Range-/Byte-Range-
 > Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente.
-> Tranche 1 begrenzt den Scope auf HLS-CMAF-Byte-Ranges
-> (`EXT-X-MAP:BYTERANGE` und erstes `#EXT-X-BYTERANGE`-fMP4-Media-
-> Segment) und schließt den Contract-Filter ohne neues Public-Schema.
-> RAK-109 trackt die Fetch-Security-/Operational-Grenzen (SSRF,
-> Redirects, Timeout, Groessen, Range-Anzahl, Status-/Content-Type-
-> Grenzen, `206 Partial Content` und Laufzeitbudget). Tranche 2 hat
-> den HLS-Range-Fetch innerhalb dieser Grenzen geliefert; Tranche 3
-> hat die Gate-Kette mit `make ts-test`, `make ts-lint`,
-> `make docs-check`, `make generated-drift-check` und
-> `make security-gates` gruen abgeschlossen. Es entsteht kein neues
-> R-N-Item: Die Risiken sind ueber RAK-109 kontrolliert und im Plan
-> mit Artefakt- und Gate-Nachweis geschlossen.
+> Geliefert wurde ein begrenzter HLS-CMAF-Byte-Range-Fetch fuer
+> explizite `EXT-X-MAP:BYTERANGE`-/`#EXT-X-BYTERANGE`-Offsets ohne
+> neues Public-Schema. RAK-106..RAK-110 sind geschlossen; es entsteht
+> kein neues R-N-Item. Die Risiken sind ueber RAK-109 kontrolliert und
+> im Release-Closeout mit Artefakt- und Gate-Nachweis geschlossen.
+> `0.17.0` ist als Folgeplan in
+> [`open/plan-0.17.0.md`](../open/plan-0.17.0.md) vorbereitet.
 >
 > `0.15.0` ist released und archiviert in
 > [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0
@@ -154,7 +150,7 @@
 >   R-9 Hardening-Scope);
 >   `docs/planning/done/plan-0.15.0.md` (Product Scope /
 >   Analyzer Boundary, RAK-101..RAK-105);
->   `docs/planning/in-progress/plan-0.16.0.md` (Selected Product
+>   `docs/planning/done/plan-0.16.0.md` (Selected Product
 >   Slice / Analyzer Range Fetch, RAK-106..RAK-110)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der

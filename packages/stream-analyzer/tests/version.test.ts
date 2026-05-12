@@ -16,7 +16,7 @@ describe("stream-analyzer version metadata", () => {
     expect(STREAM_ANALYZER_NAME.startsWith("@npm9912/")).toBe(true);
   });
 
-  it("targets release 0.15.0", () => {
-    expect(STREAM_ANALYZER_VERSION).toBe("0.15.0");
+  it("targets release 0.16.0", () => {
+    expect(STREAM_ANALYZER_VERSION).toBe("0.16.0");
   });
 });

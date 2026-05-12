@@ -1,8 +1,7 @@
 # Implementation Plan — `0.16.0` (Selected Product Slice)
 
-> **Status**: 🟡 aktiv seit 2026-05-12 — Tranchen 0 und 1
-> abgeschlossen, Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice)
-> gewaehlt. Umsetzung startet erst in Tranche 2.
+> **Status**: ✅ released 2026-05-12 — Tranchen 0–4
+> geschlossen; Release-Tag `v0.16.0`.
 >
 > **Vorgänger**: `0.15.0` (Product Scope / Analyzer Boundary),
 > released 2026-05-12 in
@@ -142,8 +141,8 @@ Ziel: `0.16.0` uebernimmt genau einen freigegebenen Pfad aus
 
 DoD:
 
-- [x] Plan von `docs/planning/open/plan-0.16.0.md` nach
-  `docs/planning/in-progress/plan-0.16.0.md` verschoben.
+- [x] Plan aus `docs/planning/open/plan-0.16.0.md` aktiviert und
+  spaeter nach `docs/planning/done/plan-0.16.0.md` archiviert.
 - [x] Ausgangszustand von `git status --short` dokumentiert.
 - [x] `0.15.0`-Closeout gelesen und Szenario A/B/C/D/E ausgewaehlt.
 - [x] Lastenheft-Patch mit finaler RAK-Range ergaenzt.
@@ -435,7 +434,7 @@ trotzdem mit.
 
 ### 5.2 What aendert sich
 
-- `docs/planning/in-progress/plan-0.16.0.md`: Tranche 3 dokumentiert
+- `docs/planning/done/plan-0.16.0.md`: Tranche 3 dokumentiert
   die ausgefuehrten Gates, die Security-Ergebnisse und die n/a-
   Begruendung fuer Go-/Backend-Code.
 - `docs/planning/in-progress/risks-backlog.md`: RAK-109 ist als
@@ -459,19 +458,46 @@ Ziel: Der Release ist nachweisbar abgeschlossen oder bewusst deferred.
 
 DoD:
 
-- [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
-- [ ] Jede aktive Tranche enthaelt einen `What aendert sich` /
+- [x] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
+- [x] Jede aktive Tranche enthaelt einen `What aendert sich` /
   `What bleibt unveraendert`-Block mit Dateinachweis.
-- [ ] Doku-only-/Defer-Release markiert nicht zutreffende Build-,
+- [x] Doku-only-/Defer-Release markiert nicht zutreffende Build-,
   Code-, Contract- und Security-Gates explizit als `n/a` mit
   Begruendung.
-- [ ] Versions-Bump auf `0.16.0` vollstaendig durchgefuehrt.
-- [ ] `CHANGELOG.md` mit `[0.16.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap auf released `0.16.0` und naechste Folgephase
+- [x] Versions-Bump auf `0.16.0` vollstaendig durchgefuehrt.
+- [x] `CHANGELOG.md` mit `[0.16.0] - YYYY-MM-DD` aktualisiert.
+- [x] Roadmap auf released `0.16.0` und naechste Folgephase
   umgestellt.
-- [ ] Plan nach `docs/planning/done/plan-0.16.0.md` verschoben,
+- [x] Plan nach `docs/planning/done/plan-0.16.0.md` verschoben,
   Status auf `✅ released`.
-- [ ] Annotierter Tag `v0.16.0` erstellt.
+- [x] Annotierter Tag `v0.16.0` erstellt.
+
+### 6.1 Release-Nachweis
+
+| Artefakt | Nachweis |
+| --- | --- |
+| Versionen | `package.json`, `apps/*/package.json`, `packages/*/package.json`, `apps/api/cmd/api/main.go`, `packages/player-sdk/src/version.ts`, `contracts/sdk-compat.json`, Analyzer-Contract-Fixtures jeweils `0.16.0`. |
+| Changelog | `CHANGELOG.md` enthaelt `[0.16.0] - 2026-05-12`. |
+| Plan | Archiviert als `docs/planning/done/plan-0.16.0.md`. |
+| Roadmap | `docs/planning/in-progress/roadmap.md` markiert `0.16.0` released und `0.17.0` als vorbereitete Folgephase. |
+| Tag | Annotierter Tag `v0.16.0`. |
+| Gates | `make ts-test`, `make ts-lint`, `make docs-check`, `make generated-drift-check`, `make security-gates`, `make build`, `make sdk-performance-smoke` und `make smoke-cli` fuer den Release-Stand. |
+
+### 6.2 What aendert sich
+
+- `0.16.0` ist kein aktiver Plan mehr, sondern archivierter Release-
+  Nachweis.
+- RAK-110 ist geschlossen; `0.17.0` bleibt als vorbereiteter
+  Folgeplan unter `docs/planning/open/plan-0.17.0.md` sichtbar.
+- Versions- und Contract-Artefakte tragen `0.16.0`.
+
+### 6.3 What bleibt unveraendert
+
+- Keine Aktivierung einer externen Analyzer-API, Control-Plane,
+  Postgres-/Analytics-Pflicht, Production-K8s oder weiterer CMAF-
+  Slices im Release-Closeout.
+- Nicht gewaehlt Pfade bleiben deferred und muessen bei Bedarf in
+  `0.17.0` neu getriggert werden.
 
 ## 7. RAK-Verifikationsmatrix
 
@@ -484,17 +510,17 @@ vergeben.
 | RAK-107 | Muss | Slice-Spezifikation und Artefaktnachweis | HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente ist begrenzt geliefert oder bewusst deferred | ✅ HLS-Slice geliefert |
 | RAK-108 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | Analyzer-Result-Schema-/API-Kompatibilitaet ist belegt oder unveraendert | ✅ No-new-public-schema, Fixtures aktualisiert |
 | RAK-109 | Muss | Security-/Ops-Grenzen, Risks-Backlog | Fetch-Risiken sind kontrolliert; keine externe API-/Control-Plane-/Backend-Zusage entsteht nebenbei | ✅ Gates gruen |
-| RAK-110 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [ ] |
+| RAK-110 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; nicht gewaehlt Pfade bleiben sichtbar deferred | [x] |
 
 Sofort nutzbares Verifikationsmapping:
 
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-106 | `docs/planning/in-progress/plan-0.16.0.md`, `docs/planning/done/plan-0.15.0.md` §6.3/§9, `spec/lastenheft.md` §13.20 | 2026-05-12 | Product/PM | ✅ |
-| RAK-107 | `packages/stream-analyzer/src/internal/cmaf/segment-loader.ts`, `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`, `docs/planning/in-progress/plan-0.16.0.md` §4.1 | 2026-05-12 | Platform/Analyzer | ✅ |
+| RAK-106 | `docs/planning/done/plan-0.16.0.md`, `docs/planning/done/plan-0.15.0.md` §6.3/§9, `spec/lastenheft.md` §13.20 | 2026-05-12 | Product/PM | ✅ |
+| RAK-107 | `packages/stream-analyzer/src/internal/cmaf/segment-loader.ts`, `packages/stream-analyzer/src/internal/cmaf/binary-verify.ts`, `docs/planning/done/plan-0.16.0.md` §4.1 | 2026-05-12 | Platform/Analyzer | ✅ |
 | RAK-108 | `spec/contract-fixtures/analyzer/success-hls-map-byterange.json`, `spec/contract-fixtures/analyzer/success-hls-media-byterange.json`, `apps/api/adapters/driven/streamanalyzer/testdata/` | 2026-05-12 | Platform/QA | ✅ |
-| RAK-109 | `packages/stream-analyzer/tests/segment-loader.test.ts`, `packages/stream-analyzer/tests/binary-verify.test.ts`, `docs/planning/in-progress/plan-0.16.0.md` §3.3/§5, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
-| RAK-110 | `docs/planning/in-progress/plan-0.16.0.md`, `CHANGELOG.md`, Roadmap, Tag `v0.16.0` | TBD | Platform/CI | ⬜ |
+| RAK-109 | `packages/stream-analyzer/tests/segment-loader.test.ts`, `packages/stream-analyzer/tests/binary-verify.test.ts`, `docs/planning/done/plan-0.16.0.md` §3.3/§5, `docs/planning/in-progress/risks-backlog.md` | 2026-05-12 | Platform/Ops | ✅ |
+| RAK-110 | `docs/planning/done/plan-0.16.0.md`, `CHANGELOG.md`, `docs/planning/in-progress/roadmap.md`, Tag `v0.16.0` | 2026-05-12 | Platform/CI | ✅ |
 
 ## 7.1 Blocker-Log
 

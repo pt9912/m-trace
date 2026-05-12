@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-05-12
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Selected Product Slice / Analyzer Range Fetch nach `0.15.0`,
+> Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20.
+> Plan in
+> [`docs/planning/done/plan-0.16.0.md`](docs/planning/done/plan-0.16.0.md).
+
 ### Added
 
-- `0.16.0` Planung aktiviert: Lastenheft-Patch `1.1.21` ergänzt
+- `0.16.0` Planung aktiviert und released: Lastenheft-Patch `1.1.21` ergänzt
   §13.20 mit RAK-106..RAK-110 für Selected Product Slice / Analyzer
-  Range Fetch; der Plan ist aktiv in
-  [`docs/planning/in-progress/plan-0.16.0.md`](docs/planning/in-progress/plan-0.16.0.md).
+  Range Fetch; der Plan ist archiviert in
+  [`docs/planning/done/plan-0.16.0.md`](docs/planning/done/plan-0.16.0.md).
 - `0.16.0` Tranche 0: Szenario B aus `0.15.0` RAK-104 importiert.
   HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-
   Init-/Media-Segmente ist der einzige Go-Pfad; externe Analyzer-API,
@@ -34,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   abgeschlossen. `make ts-test`, `make ts-lint`, `make docs-check`,
   `make generated-drift-check` und `make security-gates` sind grün;
   RAK-109 ist damit geschlossen, ohne neuen API-/Backend-Scope.
+- `0.16.0` Tranche 4: Release-Closeout, RAK-110, Roadmap,
+  Changelog, Plan-Archivierung und Tag `v0.16.0` abgeschlossen.
+- Versionen auf `0.16.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompat-Vertrag und
+  Analyzer-Contract-Fixtures.
 
 ## [0.15.0] - 2026-05-12
 

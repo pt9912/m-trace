@@ -14,14 +14,13 @@
 > Szenario B aus `0.15.0` RAK-104 wird als einziger Go-Pfad
 > importiert; der HTTP-Range-/Byte-Range-Loader fuer
 > manifest-referenzierte CMAF-Init-/Media-Segmente wird zum
-> `0.16.0`-Slice. Externe Analyzer-API, Control-Plane, Postgres,
-> Analytics, Production-K8s, Low-Latency-CMAF, vollstaendige
-> Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben
-> deferred. Backwards-Compat: die Aktivierung aendert noch keinen
-> Code-, Wire-, Runtime- oder Default-Pfad; Tranche 1 muss SSRF-,
-> Redirect-, Timeout-, Groessen-, Range- und Compatibility-Grenzen
-> verbindlich setzen, bevor Fetch-Code umgesetzt wird. Patch-Log siehe
-> [`docs/planning/in-progress/plan-0.16.0.md`](../docs/planning/in-progress/plan-0.16.0.md).
+> `0.16.0`-Slice. Der Release liefert HLS-CMAF-Byte-Range-Fetches fuer
+> explizite Offsets additiv im bestehenden Analyzer-Binary-Pfad,
+> schliesst RAK-106..RAK-110 und bleibt ohne neues Public-Schema.
+> Externe Analyzer-API, Control-Plane, Postgres, Analytics,
+> Production-K8s, Low-Latency-CMAF, vollstaendige Segmentsets,
+> Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Patch-Log
+> siehe [`docs/planning/done/plan-0.16.0.md`](../docs/planning/done/plan-0.16.0.md).
 >
 > **Patch `1.1.20` (Product Scope / Analyzer Boundary für
 > `0.15.0`)**: Aktiviert die Folgephase nach `0.14.0` und führt die
@@ -2249,6 +2248,9 @@ Media-Segmente. Tranche 2 setzt den HLS-Teil dieses Scope additiv um:
 explizite Byte-Ranges werden ueber den bestehenden geschuetzten
 Segment-Loader geladen und binär validiert; offset-lose oder
 ungueltige Byte-Ranges bleiben skipped.
+Tranche 3 validiert den Pfad mit TS-, Doku-, Drift- und Security-
+Gates; Tranche 4 schliesst den Release mit Tag `v0.16.0`, Roadmap-
+Update und Folgeplan `0.17.0`.
 
 Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges:
 `#EXT-X-MAP` mit `BYTERANGE`-Attribut fuer Init-Segmente und
