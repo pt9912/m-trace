@@ -2249,11 +2249,15 @@ Das Projekt gilt in der ersten Phase als erfolgreich, wenn folgende Punkte erfü
 
 ---
 
-## 16. Offene Punkte
+## 16. Entscheidungen und offene Punkte
 
-Folgende Entscheidungen müssen noch früh getroffen werden, weil sie Architektur und Storage stark beeinflussen:
+Dieser Abschnitt sammelt produkt- und architekturrelevante
+Entscheidungen. Einträge können bereits entschieden sein (`resolved`)
+oder als offene Folgefrage weitergeführt werden.
 
 ### 16.1 Zielgruppenentscheidung
+
+Status: **resolved** seit Patch `1.1.20` (`0.15.0` Tranche 1).
 
 Die wichtigste Produktentscheidung war:
 
@@ -2295,7 +2299,7 @@ Stakeholder-/Operator-Bedarf mit Betreiberprofil, erwarteter Stream-/
 Event-Größenordnung, Multi-Tenant-/Auth-Anforderungen, Betriebs-SLO,
 Owner und Folgeplan vorliegt.
 
-### 16.2 Weitere offene Entscheidungen
+### 16.2 Weitere Entscheidungen
 
 | Kennung | Status | Entscheidung |
 |---|---|---|
