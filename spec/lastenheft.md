@@ -445,7 +445,7 @@ m-trace/
 │   ├── api/                    # Backend/API
 │   ├── dashboard/              # SvelteKit Web UI
 │   ├── ingest-gateway/         # optionaler Ingest-/Routing-Service
-│   ├── analyzer-api/           # optionaler Analyse-Service
+│   ├── analyzer-api/           # deferred Analyse-Service
 │   ├── control-plane/          # spätere Verwaltungs-/Admin-App
 │   └── demo-player/            # isolierte Player-Demo-App
 ├── packages/
@@ -796,9 +796,13 @@ Mögliche Domain-Objekte:
 
 #### 7.5.5 `apps/analyzer-api`
 
-`apps/analyzer-api` ist ein optionaler separater HTTP-Service für Stream-Analysen. Er kapselt `packages/stream-analyzer` und stellt Analysefunktionen über HTTP bereit.
+`apps/analyzer-api` ist ein historisch optionaler, seit Patch `1.1.20`
+deferred geführter HTTP-Service für Stream-Analysen. Er würde
+`packages/stream-analyzer` kapseln und Analysefunktionen über HTTP
+bereitstellen, wird aber nur bei konkretem externem Konsumenten und
+Folgeplan reaktiviert.
 
-Status im MVP: **Kann**
+Status im MVP: **Deferred / Folge-Scope nur bei Trigger**
 
 > **Patch `1.1.20` (`0.15.0` Tranche 2):** Eine eigenständige,
 > nach außen exponierte `apps/analyzer-api` bleibt deferred. Der
@@ -810,22 +814,27 @@ Status im MVP: **Kann**
 > Ergebnisabruf-/Retention-Entscheidung, Contract-Fixtures, Owner und
 > Folgeplan.
 
-Warum optional:
+Warum deferred:
 
-Im ersten MVP kann `apps/api` den Analyzer direkt als Library nutzen. Ein separater Analyse-Service lohnt sich erst, wenn Analysen schwerer werden, unabhängig skaliert werden sollen oder unsichere externe URLs isoliert verarbeitet werden müssen.
+Im ersten MVP kann `apps/api` den Analyzer direkt als Library bzw. über
+den internen `apps/analyzer-service` nutzen. Ein separater, nach außen
+exponierter Analyse-Service lohnt sich erst, wenn Analysen schwerer
+werden, unabhängig skaliert werden sollen, unsichere externe URLs
+isoliert verarbeitet werden müssen oder ein externer Konsument den
+API-/Job-Scope konkret macht.
 
-Hauptaufgaben:
+Hauptaufgaben bei späterer Reaktivierung:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-52 | Kann | HLS-URL entgegennehmen |
-| F-53 | Kann | Manifest analysieren |
-| F-54 | Kann | Analyseergebnis als JSON liefern |
-| F-55 | Kann | Fehler und Warnungen normalisieren |
-| F-56 | Kann | spätere DASH-/CMAF-Analyse anbieten |
-| F-57 | Kann | Sicherheitsgrenzen für externe URL-Abrufe schaffen |
+| F-52 | Deferred | HLS-URL entgegennehmen |
+| F-53 | Deferred | Manifest analysieren |
+| F-54 | Deferred | Analyseergebnis als JSON liefern |
+| F-55 | Deferred | Fehler und Warnungen normalisieren |
+| F-56 | Deferred | spätere DASH-/CMAF-Analyse anbieten |
+| F-57 | Deferred | Sicherheitsgrenzen für externe URL-Abrufe schaffen |
 
-Mögliche Endpunkte:
+Mögliche spätere Endpunkte:
 
 | Methode | Pfad | Zweck |
 |---|---|---|
@@ -923,7 +932,7 @@ Die finale Aufteilung ist erst sinnvoll, wenn echte Anforderungen für Mehrbenut
 | `apps/dashboard` | Web-Dashboard | Muss | SvelteKit |
 | `apps/demo-player` | SDK-Referenz und Testplayer | Nicht MVP, zunächst `/demo`-Route | SvelteKit oder Vite |
 | `apps/ingest-gateway` | Stream-Key, Ingest und Routing | Kann | Go (analog ADR-0001) |
-| `apps/analyzer-api` | separater Analyse-Service | Kann | Go oder Node.js |
+| `apps/analyzer-api` | separater Analyse-Service | Deferred / Folge-Scope bei RAK-102-Trigger | Technologie offen (Go oder Node.js erst im Folgeplan) |
 | `apps/control-plane` | spätere Verwaltungsplattform (`F-132`) | Später | offen |
 
 ---
