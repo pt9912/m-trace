@@ -2,12 +2,27 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.18<br>
+**Version:** 1.1.19<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.19` (Ops Backend Follow-up für `0.14.0`)**:
+> Aktiviert die Folgephase nach `0.13.0` und führt die neue
+> RAK-Gruppe `RAK-96`..`RAK-100` in §13.18 ein. Inhalt:
+> Postgres bleibt nach ADR 0005 als `defer-with-migration-seed`
+> geführt (`MVP-40`), Analytics-Backends bleiben triggerbasiert
+> deferred (`MVP-41`), K8s-/NF-18-Seed-Hardening bleibt optional
+> und nicht production-ready (`MVP-42`, R-9), Devcontainer wird als
+> Zusatzpfad validiert (`MVP-43`) und der Release-Guard wird ohne
+> automatische Veröffentlichung gehärtet (`MVP-44`). Backwards-
+> Compat: SQLite und Compose bleiben Standardpfade; Postgres,
+> ClickHouse/VictoriaMetrics/Mimir, Kubernetes und Devcontainer
+> werden nicht zu lokalen Pflichtabhängigkeiten. Patch-Log siehe
+> [`docs/planning/in-progress/plan-0.14.0.md`](../docs/planning/in-progress/plan-0.14.0.md)
+> Tranche 0.
+>
 > **Patch `1.1.18` (Production / Ops Backends für `0.13.0`)**:
 > Aktiviert die Production-/Ops-nahe Minor-Phase nach `0.12.6`
 > und führt die neue RAK-Gruppe `RAK-91`..`RAK-95` in §13.17
@@ -817,6 +832,8 @@ Mögliche Domain-Objekte:
 
 `apps/control-plane` ist eine spätere Verwaltungsanwendung für produktionsnahe m-trace-Installationen.
 
+Kennung: `F-132`
+
 Status im MVP: **Nicht Bestandteil**, nur vorbereitet
 
 Hauptaufgaben in späteren Versionen:
@@ -862,7 +879,7 @@ Die finale Aufteilung ist erst sinnvoll, wenn echte Anforderungen für Mehrbenut
 | `apps/demo-player` | SDK-Referenz und Testplayer | Nicht MVP, zunächst `/demo`-Route | SvelteKit oder Vite |
 | `apps/ingest-gateway` | Stream-Key, Ingest und Routing | Kann | Go (analog ADR-0001) |
 | `apps/analyzer-api` | separater Analyse-Service | Kann | Go oder Node.js |
-| `apps/control-plane` | spätere Verwaltungsplattform | Später | offen |
+| `apps/control-plane` | spätere Verwaltungsplattform (`F-132`) | Später | offen |
 
 ---
 
@@ -2103,6 +2120,30 @@ Multi-Tenant-SaaS-Produkt, verpflichtendes Hochvolumen-Analytics-
 Backend im Standardbetrieb, automatische Veröffentlichung ohne
 Human Approval, Production-Identity-/Secret-Management-Vollausbau
 jenseits der bereits gelieferten `0.12.x`-Pfade.
+
+### 13.18 Version 0.14.0: Ops Backend Follow-up (RAK-96..RAK-100)
+
+Ziel: Die in `0.13.0` getroffenen Ops-Backend-Entscheidungen werden
+als begrenzter Folge-Scope umgesetzt. `0.14.0` aktiviert Szenario C
+aus dem Plan: K8s-/DevEx-/Release-Guard-Hardening. Postgres und
+Analytics werden nicht als Runtime-Pflichtpfade eingeführt; ihre
+Trigger und Defer-Grenzen bleiben explizit sichtbar.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-96 | Muss | **Postgres-Triggerpflege (`MVP-40`)**: `0.14.0` importiert die `0.13.0`-Entscheidung `defer-with-migration-seed`. Ein Postgres-Runtime-Adapter, DSN-Pflichtpfad oder automatischer SQLite-Export darf nur bei dokumentiert ausgelöstem Trigger entstehen. Mindestens DDL-/Replay-/Rollback-Grenzen und Owner bleiben nachvollziehbar. |
+| RAK-97 | Muss | **Analytics-Triggerpflege (`MVP-41`)**: `0.14.0` hält ClickHouse/VictoriaMetrics/Mimir als deferred, solange kein konkreter Workload-Trigger ausgelöst ist. Query-Workloads, Erfolgskriterien, Abbruchkriterien und Kostenannahmen bleiben messbar; kein Analytics-System wird Standard- oder Pflichtabhängigkeit. |
+| RAK-98 | Muss | **K8s-/NF-18-Seed-Hardening (`MVP-42`, `NF-18`, R-9)**: Der optionale K8s-Pfad wird validiert oder gehärtet, ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage bleibt optional oder deferred, bis R-9 mit separatem K8s-Allowlist-Modus, Smoke-Scope-Trennung und Label-Cardinality-Gegenmaßnahmen geschlossen ist. |
+| RAK-99 | Muss | **Devcontainer-/DevEx-Validation (`MVP-43`)**: Der Devcontainer wird als reproduzierbarer Zusatzpfad validiert. Er darf Make-/Docker-Dokumentation und lokale Standardentwicklung nicht ersetzen und darf keine neue Pflichtumgebung einführen. |
+| RAK-100 | Muss | **Release-Guard-Hardening (`MVP-44`)**: Release-Automation bleibt freigabepflichtig. Guard-Dry-Runs, Fehlerfälle, Branch-/Tag-/Dirty-Worktree-Regeln und Runbook-Konsistenz werden nachgewiesen; Commit, Tag, Push und GitHub-Release bleiben manuelle Schritte. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.14.0` erfüllt):
+vollständiger Production-Kubernetes-Betrieb, Managed-Cloud-Betrieb,
+Multi-Tenant-SaaS-Produkt, verpflichtendes Hochvolumen-Analytics-
+Backend im Standardbetrieb, Postgres als lokaler Default-Store,
+automatische Veröffentlichung ohne Human Approval.
 
 ---
 

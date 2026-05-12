@@ -1,8 +1,9 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-12 — `0.13.0` (Production / Ops Backends)
+> **Stand**: 2026-05-12 — `0.14.0` (Ops Backend Follow-up)
 > in **Tranche 0 aktiv** seit 2026-05-12; Lastenheft-Patch
-> `1.1.18` mit RAK-91..RAK-95 in §13.17 persistiert. Vorgänger
+> `1.1.19` mit RAK-96..RAK-100 in §13.18 persistiert. Vorgänger
+> `0.13.0` released 2026-05-12 (Tag `v0.13.0`);
 > `0.12.6` released 2026-05-12 (Tag `v0.12.6`);
 > `0.12.5` released 2026-05-11 (Tag `v0.12.5`);
 > `0.12.1` released 2026-05-10 (Tag `v0.12.1`);
@@ -10,12 +11,13 @@
 >
 > ### Aktuelle Phase
 >
-> `0.13.0` bearbeitet Production-/Ops-nahe Folgepunkte in
-> [`plan-0.13.0.md`](../done/plan-0.13.0.md). Aus diesem Backlog ist
-> **R-9** im Tranche-3-Scope entschieden: optionale K8s-Beispiele
-> landen unter `deploy/k8s/`, aber keine K8s-Smoke-Pflicht und keine
-> Erweiterung der Compose-Lab-Label-Allowlist ohne separaten K8s-
-> Allowlist-Modus.
+> `0.14.0` bearbeitet den Ops-Backend-Follow-up in
+> [`plan-0.14.0.md`](./plan-0.14.0.md). Aus `0.13.0` importiert:
+> Postgres bleibt `defer-with-migration-seed`, Analytics bleibt
+> `defer`, und **R-9** bleibt im K8s-Hardening-Scope aktiv:
+> optionale K8s-Beispiele liegen unter `deploy/k8s/`, aber keine
+> K8s-Smoke-Pflicht und keine Erweiterung der Compose-Lab-Label-
+> Allowlist ohne separaten K8s-Allowlist-Modus.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in
@@ -42,9 +44,9 @@
 > werden in `0.12.6` Tranche 7/8 final geschlossen). RAK-77..RAK-82
 > in §13.15 persistiert.
 >
-> Lastenheft-Stand: `1.1.18` (`0.13.0`-Patch persistiert in T0).
-> `0.13.0` belegt RAK-91..RAK-95 in §13.17, da RAK-83..RAK-90
-> mit `0.12.6` belegt sind.
+> Lastenheft-Stand: `1.1.19` (`0.14.0`-Patch persistiert in T0).
+> `0.14.0` belegt RAK-96..RAK-100 in §13.18, da RAK-91..RAK-95
+> mit `0.13.0` belegt sind.
 >
 > ### Trigger-Re-Eval-Stand (2026-05-10, `0.12.1` Tranche 1)
 >
@@ -96,7 +98,8 @@
 > - `spec/lastenheft.md` §4.3, §10.1; §13.14 RAK-71..RAK-76
 >   (`0.12.0` Auth/Token); §13.15 RAK-77..RAK-82 (`0.12.5`
 >   Auth-/Ingest-Adapter); §13.17 RAK-91..RAK-95 (`0.13.0`
->   Production / Ops Backends)
+>   Production / Ops Backends); §13.18 RAK-96..RAK-100 (`0.14.0`
+>   Ops Backend Follow-up)
 > - `docs/planning/in-progress/roadmap.md` §4
 > - `docs/planning/done/plan-0.12.0.md` (Folge-ADRs);
 >   `docs/planning/done/plan-0.12.1.md` (Patch: Trigger-Re-Eval +
@@ -104,7 +107,9 @@
 >   `docs/planning/done/plan-0.12.5.md` (Minor:
 >   Auth-/Ingest-Adapter R-14/R-17/R-18/R-20/R-21, optional R-16);
 >   `docs/planning/done/plan-0.13.0.md` (Production / Ops
->   Backends, R-9 Tranche-3-Scope)
+>   Backends, R-9 Tranche-3-Scope);
+>   `docs/planning/in-progress/plan-0.14.0.md` (Ops Backend
+>   Follow-up, R-9 Hardening-Scope)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst
