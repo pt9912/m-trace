@@ -195,7 +195,7 @@ Kapazität und getrennte Gate-Nachweise.
 | 2 | Analytics-Backend-Slice, POC oder Trigger-Pflege | Query-/Kosten-/POC-Trigger gepflegt; kein Pflichtbackend | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ✅ |
 | 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad oder Seed-Hardening ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ✅ |
 | 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs oder Seed-Validation | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ✅ |
-| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | letzte aktive Tranche | Tag `v0.14.0` | ⬜ |
+| 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | letzte aktive Tranche | Tag `v0.14.0` | ✅ |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
 
@@ -608,6 +608,7 @@ Verifikation:
 | `make gates` | ✅ grün |
 | `make security-gates` | ✅ grün |
 | `MTRACE_RELEASE_APPROVED=1 make release-guard VER=0.14.0` | ✅ grün |
+| Wave-2-Gates | ✅ benchmark.yml run `25705097012`; fuzz.yml run `25707248676` und keine offenen `fuzz`-Issues; mutation.yml runs `25707444662`, `25645624823`, `25623561573` grün |
 
 ## 8. RAK-Verifikationsmatrix
 
