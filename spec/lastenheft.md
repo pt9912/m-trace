@@ -372,6 +372,13 @@ Der erste Fokus liegt auf technischer Diagnose und OpenTelemetry-Integration.
 - Entwickler von Playern, Streaming-Backends oder Video-Workflows
 - Open-Source-Contributors mit Interesse an Media-Infrastruktur
 
+> **Patch `1.1.20` (`0.15.0` Tranche 1):** Für die nächsten
+> Minor-Releases ist das Primärziel auf Selbsthoster, kleine bis
+> mittlere Streaming-Teams, Broadcaster-Labs und technische Media-/
+> DevOps-Teams geschärft. Große Plattformbetreiber mit hunderten
+> parallelen Streams bleiben späterer Scope und brauchen konkrete
+> Trigger, Owner und Folgeplan.
+
 ### 5.2 Sekundäre Zielgruppen
 
 - Vereine, Bildungseinrichtungen und Event-Teams mit Self-Hosted-Streaming
@@ -2248,21 +2255,34 @@ Folgende Entscheidungen müssen noch früh getroffen werden, weil sie Architektu
 
 ### 16.1 Zielgruppenentscheidung
 
-Die wichtigste Produktentscheidung lautet:
+Die wichtigste Produktentscheidung war:
 
 ```text
 Selbsthoster und kleine Teams oder Plattform-Betreiber mit hunderten parallelen Streams?
 ```
 
+**Entscheidung (Patch `1.1.20`, `0.15.0` Tranche 1):** Für die
+nächsten Minor-Releases fokussiert m-trace Selbsthoster, kleine bis
+mittlere Streaming-Teams, Broadcaster-Labs und technische
+Media-/DevOps-Teams. Große Plattformbetreiber mit hunderten parallelen
+Streams bleiben späterer Scope.
+
 Diese Entscheidung beeinflusst:
 
-- Storage
-- Sampling
-- Cardinality
-- Multi-Tenant-Fähigkeit
-- Betriebsmodell
-- Dashboard-Komplexität
-- notwendige Alerting-Funktionen
+- **Storage:** SQLite bleibt lokaler Standard; Postgres bleibt der
+  in ADR 0005 dokumentierte Trigger-/Folgepfad.
+- **Sampling:** Sampling bleibt Diagnose- und Cardinality-Schutz,
+  keine Billing- oder Audience-Analytics-Semantik.
+- **Cardinality:** Prometheus bleibt aggregiert und ohne Session-/
+  Viewer-Labels; hochkardinale Plattformmetriken sind out of scope.
+- **Multi-Tenant-Fähigkeit:** Project-/Token-Grenzen bleiben technische
+  Isolation; kein SaaS-Tenant-Modell mit User-/Org-Verwaltung.
+- **Betriebsmodell:** Compose und optionale Beispielpfade bleiben
+  Default; K8s bleibt Beispiel-/Triggerpfad.
+- **Dashboard-Komplexität:** Dashboard bleibt Diagnose- und
+  Lab-Oberfläche, keine Admin-/Billing-/Fleet-Control-Plane.
+- **Alerting:** Alerts bleiben technisch und operatornah, keine
+  mandantenbezogenen Alerting-Workflows.
 
 Empfehlung für den MVP:
 
@@ -2270,7 +2290,10 @@ Empfehlung für den MVP:
 Fokus auf Selbsthoster, kleine Plattformen, Broadcaster-Labs und technische Teams.
 ```
 
-Große Plattform-Betreiber sollen erst später adressiert werden.
+Große Plattform-Betreiber werden erst adressiert, wenn ein konkreter
+Stakeholder-/Operator-Bedarf mit Betreiberprofil, erwarteter Stream-/
+Event-Größenordnung, Multi-Tenant-/Auth-Anforderungen, Betriebs-SLO,
+Owner und Folgeplan vorliegt.
 
 ### 16.2 Weitere offene Entscheidungen
 

@@ -23,7 +23,10 @@
 > Allowlist ohne separaten K8s-Allowlist-Modus. Die Aktivierung von
 > `0.15.0` erzeugt kein neues R-N-Item; Zielgruppen-, Analyzer-,
 > Control-Plane- und Ops-Trigger werden über RAK-101..RAK-105
-> entschieden.
+> entschieden. Tranche 1 schließt RAK-101: Primärziel bleiben
+> Selbsthoster, kleine bis mittlere Streaming-Teams, Broadcaster-Labs
+> und technische Media-/DevOps-Teams; große Plattformbetreiber bleiben
+> triggerbasierter Folge-Scope.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in

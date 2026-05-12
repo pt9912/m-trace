@@ -1,7 +1,7 @@
 # Implementation Plan — `0.15.0` (Product Scope / Analyzer Boundary)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranche 0
-> abgeschlossen, Tranche 1 als nächster Schritt.
+> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–1
+> abgeschlossen, Tranche 2 als nächster Schritt.
 >
 > **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
 > 2026-05-12; Plan in
@@ -145,8 +145,8 @@ und getrennte Gates.
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung, RAK-Zuschnitt und `0.14.0`-Closeout-Import | Finaler `0.15.0`-Scope | `0.14.0` released | Szenario A | ✅ |
-| 1 | Zielgruppenentscheidung | Primaerziel und spaetere Plattformgrenze entschieden | Lastenheft §16.1 | Product-Decision-Notiz oder ADR | 🟡 |
-| 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Boundary-Decision + Trigger | ⬜ |
+| 1 | Zielgruppenentscheidung | Primaerziel und spaetere Plattformgrenze entschieden | Lastenheft §16.1 | Product-Decision-Notiz in Plan + Lastenheft | ✅ |
+| 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Boundary-Decision + Trigger | 🟡 |
 | 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Decision-Record, Nicht-Ziele, Trigger | ⬜ |
 | 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt oder Defer-Notiz | ⬜ |
 | 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | ⬜ |
@@ -215,21 +215,21 @@ DoD:
 
 ## 3. Tranche 1 — Zielgruppenentscheidung
 
-Ziel: Die offene Produktfrage aus Lastenheft §16.1 wird so weit
+Ziel: Die bisher offene Produktfrage aus Lastenheft §16.1 wird so weit
 entschieden, dass Folgeplaene nicht gleichzeitig Selbsthoster-Lab,
 kleine Teams und grosse Plattformbetreiber bedienen muessen.
 
 DoD:
 
-- [ ] Primaerziel fuer die naechsten Minor-Releases entschieden.
-- [ ] Plattform-Betreiber-Scope entweder deferred oder als eigener
+- [x] Primaerziel fuer die naechsten Minor-Releases entschieden.
+- [x] Plattform-Betreiber-Scope entweder deferred oder als eigener
   spaeterer Planpfad mit Triggern beschrieben.
-- [ ] Auswirkungen auf Storage, Sampling, Cardinality, Multi-Tenant,
+- [x] Auswirkungen auf Storage, Sampling, Cardinality, Multi-Tenant,
   Betriebsmodell, Dashboard-Komplexitaet und Alerting dokumentiert.
-- [ ] Lastenheft §16.1 aktualisiert oder durch ADR/Plan-Decision
+- [x] Lastenheft §16.1 aktualisiert oder durch ADR/Plan-Decision
   referenziert.
-- [ ] Out-of-Scope-Liste fuer `0.15.0` nachgezogen.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Out-of-Scope-Liste fuer `0.15.0` nachgezogen.
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
@@ -244,6 +244,48 @@ Vorlaeufige Artefakte:
 - Product-Scope-Decision in diesem Plan oder `docs/adr/`.
 - Roadmap-Update mit Zielgruppenstand.
 - Optionaler Lastenheft-Patch fuer §16.1.
+
+### 3.1 Product-Scope-Decision
+
+| Feld | Entscheidung |
+| --- | --- |
+| Datum | 2026-05-12 |
+| Entscheidung | Für die nächsten Minor-Releases bleibt m-trace auf Selbsthoster, kleine bis mittlere Streaming-Teams, Broadcaster-Labs und technische Media-/DevOps-Teams ausgerichtet. |
+| Begründung | Diese Zielgruppe passt zum bestehenden lokalen Compose-/SQLite-/OpenTelemetry-Scope, zum internen Analyzer-Service und zu den gelieferten Lab-Smokes. Große Plattformbetreiber mit hunderten parallelen Streams würden sofort andere Annahmen für Multi-Tenant, Storage, Analytics, Control-Plane und Betriebs-SLOs erzwingen. |
+| Nicht entschieden | Kein SaaS-Produkt, kein generisches Multi-Tenant-Control-Plane-Modell, keine Operator-UI für hunderte Projekte, kein verbindlicher Postgres-/Analytics-/K8s-Production-Pfad. |
+| Trigger für Plattform-Betreiber-Scope | Konkreter Stakeholder-/Operator-Bedarf mit mindestens einem benannten Betreiberprofil, erwarteter Stream-/Event-Größenordnung, Multi-Tenant-/Auth-Anforderungen, Betriebs-SLO, Owner und Folgeplan. |
+| Naechster Planpfad | Tranche 2 bewertet die Analyzer-API-Boundary unter dieser Zielgruppe; Tranche 3 darf Control-Plane nur als deferred oder späteren POC-Pfad beschreiben. |
+
+### 3.2 Auswirkungen
+
+| Bereich | Entscheidung / Auswirkung |
+| --- | --- |
+| Storage | SQLite bleibt lokaler Standard. Postgres bleibt Trigger-/Folgepfad aus ADR 0005 und wird nicht wegen hypothetischer Plattformbetreiber aktiviert. |
+| Sampling | Sampling bleibt auf technische Diagnose und kontrollierte Cardinality ausgelegt; keine Plattform-weite Billing-/Audience-Analytics-Semantik. |
+| Cardinality | Prometheus bleibt aggregiert und ohne Session-/Viewer-Labels; hochkardinale Plattformmetriken bleiben out of scope. |
+| Multi-Tenant | Project-/Token-Grenzen bleiben technische Isolation für Lab- und kleine Team-Setups, kein SaaS-Tenant-Modell mit User-/Org-Verwaltung. |
+| Betriebsmodell | Docker Compose und opt-in Beispielpfade bleiben Default. K8s bleibt Beispiel-/Triggerpfad, nicht Production-Betriebsversprechen. |
+| Dashboard-Komplexitaet | Dashboard bleibt Diagnose- und Lab-Oberfläche, keine Admin-/Billing-/Fleet-Management-Control-Plane. |
+| Alerting | Alerts bleiben technisch und operatornah; keine kunden-/mandantenbezogenen Alerting-Workflows. |
+
+### 3.3 What aendert sich
+
+- Lastenheft §16.1 ist nicht mehr offen: Die Primärzielgruppe ist
+  entschieden und als Patch-`1.1.20`-Decision dokumentiert.
+- Tranche 2/3 dürfen externe Analyzer-API oder Control-Plane nicht
+  aus großem Plattform-Scope ableiten, sondern brauchen konkrete
+  Konsumenten, Trigger und Folgepläne.
+- Roadmap und RAK-Matrix markieren `RAK-101` als erledigt.
+
+### 3.4 What bleibt unveraendert
+
+- Die bestehenden Zielgruppen in Lastenheft §5 bleiben kompatibel;
+  `0.15.0` schärft nur das Primärziel für die nächsten Minor-Releases.
+- SQLite, Compose, interne Analyzer-Service-Nutzung,
+  aggregierte Metriken und lokale Lab-Smokes bleiben Standard.
+- Große Plattformbetreiber bleiben späterer Scope und werden nicht
+  still über Storage-, Analytics-, K8s- oder Control-Plane-Pfade
+  in `0.15.0` hineingezogen.
 
 ## 4. Tranche 2 — Analyzer-API-Boundary (`MVP-20`)
 
@@ -389,7 +431,7 @@ Nachweis liefert.
 
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
-| RAK-101 | Muss | Zielgruppen-Decision, Lastenheft §16.1 oder ADR | Primaerzielgruppe ist entschieden; Plattform-Scope ist explizit deferred oder als spaeterer Planpfad beschrieben | [ ] |
+| RAK-101 | Muss | Zielgruppen-Decision, Lastenheft §16.1 oder ADR | Primaerzielgruppe ist entschieden; Plattform-Scope ist explizit deferred oder als spaeterer Planpfad beschrieben | [x] |
 | RAK-102 | Muss | Analyzer-Boundary-Decision zu `MVP-20` | Externe Analyzer-API ist `proceed`, `POC`, `defer` oder `anders erfuellt`; Trigger sind messbar | [ ] |
 | RAK-103 | Muss | `F-132` Control-Plane-Decision | Control-Plane hat Scope, Nicht-Ziele und Trigger; keine Implementierung ohne Folgeplan | [ ] |
 | RAK-104 | Muss | `NF-13` Folge-Scope-Matrix | Naechster Analyzer-Slice ist eng zugeschnitten oder bewusst deferred | [ ] |
@@ -399,7 +441,7 @@ Sofort nutzbares Verifikationsmapping:
 
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-101 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | TBD | Product/PM | 🟡 |
+| RAK-101 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
 | RAK-102 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19, `apps/analyzer-service` Bestand | TBD | Platform/Analyzer | ⬜ |
 | RAK-103 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19 | TBD | Platform/Product | ⬜ |
 | RAK-104 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19, `NF-13` | TBD | Platform/QA | ⬜ |
@@ -411,7 +453,7 @@ Sofort nutzbares Verifikationsmapping:
 | --- | --- | --- |
 | `0.14.0` noch nicht released | alle | ✅ geschlossen: `v0.14.0` released und Plan archiviert. |
 | RAK-Range noch offen | Tranche 0/5 | ✅ geschlossen: `RAK-101`..`RAK-105` in Lastenheft `1.1.20`. |
-| Zielgruppe nicht entschieden | Tranche 2/3 | 🟡 Tranche 1 vor API-/Control-Plane-Go schliessen. |
+| Zielgruppe nicht entschieden | Tranche 2/3 | ✅ geschlossen: Primärzielgruppe in Tranche 1 und Lastenheft §16.1 entschieden. |
 | Kein externer Analyzer-Konsument | Tranche 2 | ⬜ Analyzer-API deferred oder Trigger definieren. |
 | Keine Ops-Trigger erreicht | Tranche 5 | ⬜ Postgres/Analytics weiter deferred, kein Runtime-Scope. |
 

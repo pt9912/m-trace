@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   §13.19 mit RAK-101..RAK-105 für Product Scope / Analyzer Boundary;
   der Plan läuft in
   [`docs/planning/in-progress/plan-0.15.0.md`](docs/planning/in-progress/plan-0.15.0.md).
+- `0.15.0` Tranche 1: Zielgruppenentscheidung für die nächsten
+  Minor-Releases auf Selbsthoster, kleine bis mittlere
+  Streaming-Teams, Broadcaster-Labs und technische Media-/DevOps-Teams
+  geschärft; große Plattformbetreiber bleiben triggerbasierter
+  Folge-Scope.
 
 ## [0.14.0] - 2026-05-12
 
