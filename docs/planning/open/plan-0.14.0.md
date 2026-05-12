@@ -11,10 +11,11 @@
 > neuer RAK-Gruppe und Tag `v0.14.0`. RAK-Range noch offen.
 >
 > **Ziel**: Die in `0.13.0` getroffenen Ops-Backend-Entscheidungen
-> in konkrete, lieferbare Umsetzungsslices überführen. `0.14.0`
-> ist kein erneuter Bewertungsplan, sondern der erste Umsetzungsplan
-> für die in `0.13.0` freigegebenen Pfade: Postgres-Migrationsslice,
-> Analytics-Backend-POC/-Slice, K8s-/NF-18-Option, Devcontainer-
+> in konkrete, lieferbare Umsetzungs-, Hardening- oder Defer-Slices
+> überführen. `0.14.0` ist kein erneuter Bewertungsplan, sondern der
+> erste Folgeplan für die in `0.13.0` freigegebenen oder
+> reaktivierbaren Pfade: Postgres-Migrationsvorbereitung,
+> Analytics-Backend-POC/-Trigger, K8s-/NF-18-Option, Devcontainer-
 > Reproduzierbarkeit und Release-Automations-Guards.
 >
 > **Bezug**:
@@ -43,8 +44,12 @@ nachweisbar geschlossen hat.
 
 Scope-Regel:
 
-- `0.14.0` übernimmt nur Pfade, die im `0.13.0`-Closeout als
-  `proceed`, `seed` oder `POC` markiert sind.
+- `0.14.0` übernimmt Implementierungspfade nur, wenn sie im `0.13.0`-
+  Closeout als `proceed` oder `POC` markiert sind.
+- Bereits gelieferte `seed`-Artefakte werden nur als Hardening-,
+  Validierungs- oder Dokumentationsaufgabe übernommen.
+- Ein `defer-with-migration-seed` importiert nur Trigger-/DDL-/
+  Replay-Vorbereitung und keine Adapter-Implementierung.
 - Pfade mit `defer` bleiben dokumentiert, erhalten aber nur Trigger-
   Pflege und keine Implementierungstranche.
 - Pfade mit `blocked` bleiben in der Tranche-Tabelle sichtbar und
@@ -53,19 +58,24 @@ Scope-Regel:
 
 Vorläufig in Scope:
 
-- Umsetzung eines Postgres-Folgepfads, falls `0.13.0` für Seed oder
-  POC entscheidet: Migration, Adapter-Slice, Contract-/Regressionstests
-  und Rollback-Nachweis.
+- Umsetzung eines Postgres-Folgepfads, falls `0.13.0` `proceed` oder
+  `POC` entscheidet: Migration, Adapter-Slice, Contract-/
+  Regressionstests und Rollback-Nachweis. Bei
+  `defer-with-migration-seed` bleibt der Scope auf DDL-/Replay-
+  Vorbereitung und Trigger-Pflege begrenzt.
 - Umsetzung oder POC eines Analytics-Backend-Folgepfads, falls
   `0.13.0` `proceed` oder `POC` entscheidet: begrenztes Datenmodell,
-  Ingest-/Exportpfad, Query-Nachweise und Kosten-/Lastgrenzen.
-- Konkretisierung des K8s-Optionpfads, falls `0.13.0` ihn freigibt:
-  Beispielmanifeste, Smoke-Gate-Entscheidung und Observability-
-  Label-Harmonisierung.
-- DevEx-Folgepfad aus `MVP-43`, falls `0.13.0` einen Devcontainer-
-  Seed oder eine Reaktivierung empfiehlt.
-- Release-Automations-Umsetzung aus `MVP-44`, falls `0.13.0` konkrete
-  Dry-Run-/Guard-Schritte freigibt.
+  Ingest-/Exportpfad, Query-Nachweise und Kosten-/Lastgrenzen. Bei
+  `defer` bleibt nur Trigger-Pflege in Scope.
+- Konkretisierung oder Hardening des K8s-Optionpfads, falls `0.13.0`
+  ihn freigibt: fehlende Beispielmanifeste, Smoke-Gate-Entscheidung,
+  Seed-Validation und Observability-Label-Harmonisierung.
+- DevEx-Folgepfad aus `MVP-43`, falls `0.13.0` keinen vollständigen
+  Devcontainer-Seed liefert oder offene Hardening-/Validation-
+  Aufgaben empfiehlt.
+- Release-Automations-Folgepfad aus `MVP-44`, falls `0.13.0` konkrete
+  Dry-Run-/Guard-Schritte freigibt oder offene Guard-Hardening-
+  Aufgaben hinterlässt.
 
 Vorläufig out of scope:
 
@@ -90,14 +100,16 @@ Sie ist das Gate gegen Scope-Drift.
 
 | 0.13-Entscheidung | Import nach 0.14 | Default, falls unklar | Pflichtnachweis |
 | --- | --- | --- | --- |
-| Postgres `seed`/`POC` | Tranche 1 aktiv | `[!]` blockiert | Migrations-/Rollback-Entscheidung, SQLite-Kompatibilitätsgrenze |
+| Postgres `proceed`/`POC` | Tranche 1 aktiv | `[!]` blockiert | Migrations-/Rollback-Entscheidung, SQLite-Kompatibilitätsgrenze |
+| Postgres `defer-with-migration-seed` | Tranche 1 nur Trigger-/DDL-Vorbereitung | nicht implementieren | Defer-Trigger mit Schwellwert und Owner, bestehender Migrationsanker |
 | Postgres `defer` | Tranche 1 nur Trigger-Pflege | nicht implementieren | Defer-Trigger mit Schwellwert und Owner |
 | Analytics `proceed`/`POC` | Tranche 2 aktiv | `[!]` blockiert | Backend-Wahl, Datenmodell, Erfolg-/Abbruchkriterien |
 | Analytics `defer` | Tranche 2 nur Trigger-Pflege | nicht implementieren | Vergleichsmatrix + Reaktivierungsbedingung |
-| K8s `option` | Tranche 3 aktiv | `[!]` blockiert | R-9-Entscheidung und mindestens zwei Gegenmaßnahmen |
+| K8s `option` ohne Seed | Tranche 3 aktiv | `[!]` blockiert | R-9-Entscheidung und mindestens zwei Gegenmaßnahmen |
+| K8s `option` mit Seed | Tranche 3 nur Hardening/Validation | nicht neu implementieren | Seed-Artefakte, Nicht-Production-Ready-Abgrenzung, R-9-Trigger |
 | K8s `defer` | Tranche 3 nur Dokumentationspflege | nicht implementieren | klare Nicht-Production-Ready-Abgrenzung |
-| Devcontainer `seed` | Tranche 4 DevEx aktiv | `[!]` blockiert | lokale Standardentwicklungs-Abgrenzung |
-| Release-Automation `guard` | Tranche 4 Release aktiv | `[!]` blockiert | Human-Approval-Gate und Dry-Run-Nachweis |
+| Devcontainer `seed` | Tranche 4 nur Hardening/Validation | nicht neu implementieren | lokale Standardentwicklungs-Abgrenzung, Seed-Artefakt |
+| Release-Automation `guard` | Tranche 4 nur Hardening/Validation | nicht neu implementieren | Human-Approval-Gate und Dry-Run-Nachweis |
 
 ### 0.2 Vorgänger-Gate
 
@@ -122,11 +134,11 @@ Vorläufige RAK-Themen:
 
 | Vorläufige Kennung | Thema | Bedingung |
 | --- | --- | --- |
-| RAK-TBD-1 | Postgres-Folgepfad | Nur bei `0.13.0`-Entscheidung `seed`, `proceed` oder `POC`. |
+| RAK-TBD-1 | Postgres-Folgepfad | Nur bei `0.13.0`-Entscheidung `proceed`, `POC` oder `defer-with-migration-seed`. |
 | RAK-TBD-2 | Analytics-Folgepfad | Nur bei `0.13.0`-Entscheidung `proceed` oder `POC`. |
-| RAK-TBD-3 | K8s-/NF-18-Optionpfad | Nur nach R-9-Entscheidung mit Gegenmaßnahmen. |
-| RAK-TBD-4 | Devcontainer-/DevEx-Reproduzierbarkeit | Nur falls `MVP-43` nicht vollständig in `0.13.0` geschlossen wird. |
-| RAK-TBD-5 | Release-Automations-Guards | Nur falls `0.13.0` Umsetzung statt Runbook-only empfiehlt. |
+| RAK-TBD-3 | K8s-/NF-18-Optionpfad | Nur nach R-9-Entscheidung mit Gegenmaßnahmen und offenem Implementierungs- oder Hardening-Auftrag. |
+| RAK-TBD-4 | Devcontainer-/DevEx-Reproduzierbarkeit | Nur falls `MVP-43` nicht vollständig in `0.13.0` geschlossen wird oder Seed-Hardening offen bleibt. |
+| RAK-TBD-5 | Release-Automations-Guards | Nur falls `0.13.0` Umsetzung, Guard-Validation oder Hardening statt Runbook-only empfiehlt. |
 
 ### 0.4 Qualitätsregeln für `0.14.0`
 
@@ -145,7 +157,7 @@ Vorläufige RAK-Themen:
 
 ### 0.5 Tranche-Output-Verpflichtungen
 
-Jede aktive Umsetzungstranche liefert mindestens:
+Jede aktive Umsetzungs- oder Hardening-Tranche liefert mindestens:
 
 - **Entscheidungsnachweis**: übernommene `0.13.0`-Entscheidung plus
   lokale `0.14.0`-Scope-Bestätigung.
@@ -162,9 +174,9 @@ Tranche 0 wählt genau eines dieser Aktivierungsszenarien:
 
 | Szenario | Inhalt | Release-Charakter | Go-Bedingung |
 | --- | --- | --- | --- |
-| A | Postgres-Slice + Release-Guards | fokussierter Storage-/CI-Release | RAK-91 und RAK-95 geben Umsetzung frei |
+| A | Postgres-Slice + Release-Guard-Hardening | fokussierter Storage-/CI-Release | RAK-91 gibt Umsetzung oder `defer-with-migration-seed` frei; RAK-95 enthält offene Guard-Folgeaufgaben |
 | B | Analytics-POC + optionale K8s-Doku | POC-/Decision-Release | RAK-92 gibt POC frei, RAK-93 ist nicht blockiert |
-| C | K8s/DevEx/Release-Guard-Slice | Ops-Enablement-Release | RAK-93..RAK-95 geben Optionpfade frei |
+| C | K8s/DevEx/Release-Guard-Hardening | Ops-Enablement-Release ohne neue Pflichtpfade | RAK-93..RAK-95 enthalten offene Folgeaufgaben nach den `0.13.0`-Seeds |
 | D | Trigger-/Defer-Release | rein dokumentarisch | 0.13 deferred alle Implementierungspfade |
 
 Mehr als zwei große Implementierungspfade in einem `0.14.0`-Release
@@ -176,10 +188,10 @@ Kapazität und getrennte Gate-Nachweise.
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung, RAK-Zuschnitt und Vorgänger-Entscheidungen | Scope aus `0.13.0` verbindlich übernommen | `0.13.0` released | Finaler 0.14-Scope | ⬜ |
-| 1 | Postgres-Migrations-/Adapter-Slice | Implementierter, POC-fähiger oder final deferred Postgres-Pfad | RAK-91-Ergebnis | Migrations-/Rollback-/Trigger-Nachweis | ⬜ |
-| 2 | Analytics-Backend-Slice oder POC | Datenmodell-, Query- und Kostenentscheidung umgesetzt | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ⬜ |
-| 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ⬜ |
-| 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ⬜ |
+| 1 | Postgres-Migrations-/Adapter-Slice | Implementierter, POC-fähiger, DDL-vorbereiteter oder final deferred Postgres-Pfad | RAK-91-Ergebnis | Migrations-/Rollback-/Trigger-Nachweis | ⬜ |
+| 2 | Analytics-Backend-Slice, POC oder Trigger-Pflege | Datenmodell-, Query-, Kosten- oder Defer-Entscheidung umgesetzt | RAK-92-Ergebnis | POC-Report, Adapter-Slice oder Defer-Notiz | ⬜ |
+| 3 | K8s-/NF-18-Optionpfad und R-9 | Optionaler K8s-Pfad oder Seed-Hardening ohne Production-Ready-Zusage | RAK-93-Ergebnis | Manifest-/Smoke-/Risiko-Nachweis | ⬜ |
+| 4 | Devcontainer und Release-Automations-Guards | Reproduzierbare DevEx und sichere Release-Dry-Runs oder Seed-Validation | RAK-94/95-Ergebnis | Runbook-/Guard-Artefakte | ⬜ |
 | 5 | Gates, RAK-Matrix, Versions-Bump, Closeout und Tag | Release nachweisbar abgeschlossen | letzte aktive Tranche | Tag `v0.14.0` | ⬜ |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
@@ -233,7 +245,8 @@ DoD:
 
 - [!] `0.13.0`-Entscheidung zu `MVP-40` liegt vor.
 - [ ] Entscheiden, ob `0.14.0` einen POC, einen schmalen
-  produktionsnahen Adapter-Slice oder nur Trigger-Pflege liefert.
+  produktionsnahen Adapter-Slice, eine reine DDL-/Replay-Vorbereitung
+  oder nur Trigger-Pflege liefert.
 - [ ] Migrationsmodell definiert: `migrate up`, `rollback`, `replay`
   und Kompatibilitätsgrenze zu SQLite.
 - [ ] Schema-Differenzen zwischen SQLite und Postgres dokumentiert
@@ -254,7 +267,8 @@ Go/No-Go:
 
 Vorläufige Artefakte:
 
-- `docs/adr/` oder Plan-Entscheidungsnotiz für den Postgres-Slice.
+- `docs/adr/` oder Plan-Entscheidungsnotiz für den Postgres-Slice
+  oder den `defer-with-migration-seed`-Status.
 - Migrations-/Rollback-Dokumentation.
 - Adapter-/Repository-Tests oder POC-Report.
 
@@ -299,8 +313,8 @@ zu müssen.
 DoD:
 
 - [!] `0.13.0`-Entscheidung zu `MVP-42`, `NF-18` und R-9 liegt vor.
-- [ ] Beispielmanifeste oder Defer-Notiz liegen mit klarer
-  Production-Ready-Abgrenzung vor.
+- [ ] Beispielmanifeste, Seed-Hardening-Notiz oder Defer-Notiz liegen
+  mit klarer Production-Ready-Abgrenzung vor.
 - [ ] Observability-Label-Allowlist ist gegen K8s-Smoke-Anforderungen
   geprüft.
 - [ ] Mindestens zwei R-9-Gegenmaßnahmen sind dokumentiert und einem
@@ -323,17 +337,19 @@ Vorläufige Artefakte:
 
 ## 6. Tranche 4 — Devcontainer und Release-Automation
 
-Ziel: Reproduzierbarkeit und Release-Sicherheit werden dort umgesetzt,
-wo `0.13.0` mehr als Runbook-only freigibt.
+Ziel: Reproduzierbarkeit und Release-Sicherheit werden dort umgesetzt
+oder validiert, wo `0.13.0` mehr als Runbook-only freigibt oder
+offene Seed-Hardening-Aufgaben hinterlässt.
 
 DoD:
 
 - [!] `0.13.0`-Entscheidungen zu `MVP-43` und `MVP-44` liegen vor.
-- [ ] Devcontainer-Pfad ist implementiert oder mit Triggern deferred.
+- [ ] Devcontainer-Pfad ist implementiert, als vorhandener Seed validiert
+  oder mit Triggern deferred.
 - [ ] Devcontainer enthält nur reproduzierbare Entwicklungs-
   Hilfsmittel und ersetzt nicht die dokumentierten Docker-/Make-Pfade.
-- [ ] Release-Automations-Guard ist als Dry-Run oder CI-/Local-Runbook
-  nachweisbar.
+- [ ] Release-Automations-Guard ist als vorhandener Seed, Dry-Run oder
+  CI-/Local-Runbook nachweisbar.
 - [ ] Human-Approval-Gate bleibt verpflichtend und technisch oder
   prozessual verankert.
 - [ ] Guard-Fehler liefern einen sicheren Abbruch ohne Tag-/Release-
@@ -349,7 +365,8 @@ Go/No-Go:
 
 Vorläufige Artefakte:
 
-- `.devcontainer/` nur bei freigegebenem DevEx-Slice.
+- `.devcontainer/` nur bei freigegebenem oder zu validierendem DevEx-
+  Scope.
 - Release-Runbook-Update.
 - Dry-Run- oder Guard-Test.
 
@@ -382,11 +399,11 @@ gefüllt. Bis dahin dienen die folgenden Zeilen als Zuschnittsvorschlag.
 
 | RAK | Priorität | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
-| RAK-TBD-1 | Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad ist umgesetzt, POC-fähig abgegrenzt oder final deferred; SQLite bleibt Default | [ ] |
-| RAK-TBD-2 | Muss | Analytics-POC-Report oder Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat ein Zielbackend, klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger | [ ] |
-| RAK-TBD-3 | Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [ ] |
+| RAK-TBD-1 | Konditional Muss | `0.13.0`-Closeout, Postgres-Entscheidungsnotiz, Migration/POC/Defer-Trigger | Postgres-Folgepfad ist umgesetzt, POC-fähig abgegrenzt, als `defer-with-migration-seed` vorbereitet oder final deferred; SQLite bleibt Default | [ ] |
+| RAK-TBD-2 | Konditional Muss | Analytics-POC-Report oder Defer-Notiz, Query-/Kostenmatrix | Analytics-Pfad hat ein Zielbackend, klare Workloads und Erfolg-/Abbruchkriterien oder messbare Defer-Trigger | [ ] |
+| RAK-TBD-3 | Konditional Muss | K8s-/NF-18-Notiz, R-9-Risiko-Update, optionale Manifeste/Smoke | K8s bleibt optional; vorhandene Seeds sind validiert oder Observability-Label-Risiken sind kontrolliert oder Smoke ist deferred | [ ] |
 | RAK-TBD-4 | Konditional Muss | Devcontainer-Artefakt oder Defer-Notiz | DevEx-Reproduzierbarkeit ist verbessert, ohne den Standardpfad zu ersetzen | [ ] |
-| RAK-TBD-5 | Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [ ] |
+| RAK-TBD-5 | Konditional Muss | Release-Runbook, Guard-/Dry-Run-Test, RACI | Release-Automation bleibt freigabepflichtig und erzeugt keine unreviewten Publish-/Tag-Seiteneffekte | [ ] |
 
 Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufüllen):
 
