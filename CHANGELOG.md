@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Streaming-Teams, Broadcaster-Labs und technische Media-/DevOps-Teams
   geschärft; große Plattformbetreiber bleiben triggerbasierter
   Folge-Scope.
+- `0.15.0` Tranche 2: Analyzer-API-Boundary entschieden. Eine externe
+  `apps/analyzer-api` bleibt deferred; interner `apps/analyzer-service`
+  plus `@npm9912/stream-analyzer` Library/CLI decken den aktuellen
+  Zielgruppen-Scope ab.
 
 ## [0.14.0] - 2026-05-12
 

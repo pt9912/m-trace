@@ -26,7 +26,10 @@
 > entschieden. Tranche 1 schließt RAK-101: Primärziel bleiben
 > Selbsthoster, kleine bis mittlere Streaming-Teams, Broadcaster-Labs
 > und technische Media-/DevOps-Teams; große Plattformbetreiber bleiben
-> triggerbasierter Folge-Scope.
+> triggerbasierter Folge-Scope. Tranche 2 schließt RAK-102:
+> eine externe `apps/analyzer-api` bleibt deferred, solange kein
+> konkreter externer Konsument, kein Job-/Retention-Bedarf und kein
+> Auth-/Rate-Limit-/SSRF-/Contract-Nachweis vorliegen.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in

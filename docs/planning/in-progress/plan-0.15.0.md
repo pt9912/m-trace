@@ -1,7 +1,7 @@
 # Implementation Plan — `0.15.0` (Product Scope / Analyzer Boundary)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–1
-> abgeschlossen, Tranche 2 als nächster Schritt.
+> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–2
+> abgeschlossen, Tranche 3 als nächster Schritt.
 >
 > **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
 > 2026-05-12; Plan in
@@ -146,8 +146,8 @@ und getrennte Gates.
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung, RAK-Zuschnitt und `0.14.0`-Closeout-Import | Finaler `0.15.0`-Scope | `0.14.0` released | Szenario A | ✅ |
 | 1 | Zielgruppenentscheidung | Primaerziel und spaetere Plattformgrenze entschieden | Lastenheft §16.1 | Product-Decision-Notiz in Plan + Lastenheft | ✅ |
-| 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Boundary-Decision + Trigger | 🟡 |
-| 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Decision-Record, Nicht-Ziele, Trigger | ⬜ |
+| 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Defer-Decision + Trigger | ✅ |
+| 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Decision-Record, Nicht-Ziele, Trigger | 🟡 |
 | 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt oder Defer-Notiz | ⬜ |
 | 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | ⬜ |
 
@@ -294,18 +294,18 @@ gegen den realen internen `apps/analyzer-service` bewertet.
 
 DoD:
 
-- [ ] Bestehender interner Analyzer-Service-Pfad beschrieben:
+- [x] Bestehender interner Analyzer-Service-Pfad beschrieben:
   Verantwortlichkeiten, Grenzen, Verbraucher, Failure-Modes.
-- [ ] Externe Analyzer-API-Optionen bewertet:
+- [x] Externe Analyzer-API-Optionen bewertet:
   synchroner HTTP-Pfad, async Job API, nur Library/CLI, oder Defer.
-- [ ] Auth, Rate Limits, SSRF-Schutz, Ergebnisabruf, Retention und
+- [x] Auth, Rate Limits, SSRF-Schutz, Ergebnisabruf, Retention und
   Contract-Fixtures als Pflichtfragen fuer eine externe API
   dokumentiert.
-- [ ] Entscheidung `proceed`, `POC`, `defer` oder `drop/anders
+- [x] Entscheidung `proceed`, `POC`, `defer` oder `drop/anders
   erfuellt` getroffen.
-- [ ] Wenn `proceed` oder `POC`: minimaler Folgeslice ohne Control-
+- [x] Wenn `proceed` oder `POC`: minimaler Folgeslice ohne Control-
   Plane-Abhaengigkeit definiert.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
@@ -320,6 +320,74 @@ Vorlaeufige Artefakte:
 - Boundary-Decision-Notiz.
 - Optionaler ADR fuer externe Analyzer-API.
 - Triggerliste fuer spaeteren Implementierungsplan.
+
+### 4.1 Bestehender interner Analyzer-Pfad
+
+| Bereich | Stand |
+| --- | --- |
+| Verantwortlichkeit | `apps/api` exposes `POST /api/analyze` als m-trace API-Surface und delegiert über den Driven-Port `StreamAnalyzer` an den internen `apps/analyzer-service`. |
+| Analyzer-Service | `apps/analyzer-service` ist ein interner Node-HTTP-Wrapper um `@npm9912/stream-analyzer` mit `POST /analyze` und `GET /health`; Compose verbindet `apps/api` über `ANALYZER_BASE_URL=http://analyzer-service:7000`. |
+| Library/CLI | `packages/stream-analyzer` liefert Public API und CLI (`pnpm m-trace check`) für direkte technische Nutzung ohne m-trace API-Surface. |
+| Verbraucher | Heute: `apps/api` und Operator/Entwickler über Library/CLI. Kein dokumentierter externer API-Konsument außerhalb des m-trace Backend-Pfads. |
+| Grenzen | Der interne Service ist nicht als öffentliches Produkt-API gedacht; externe Exposure braucht eigene Auth-, Rate-Limit-, SSRF-, Retention- und Contract-Entscheidung. |
+| Failure-Modes | API-Validation liefert 400/413/415; Analyzer-Domain-Fehler liefern strukturierte Codes wie `invalid_input`, `fetch_blocked`, `manifest_not_hls`, `fetch_failed`, `manifest_too_large`; Transport-/Verfügbarkeitsfehler werden als `analyzer_unavailable` gemappt. |
+| Bestehende Schutzgrenzen | API-Body-Limit 1 MiB, Analyzer-Adapter-Timeout 30 s, Antwortlimit 4 MiB, Loader-SSRF-Schutz in `@npm9912/stream-analyzer`, Contract-Fixtures unter `spec/contract-fixtures/analyzer/`. |
+
+### 4.2 Optionen
+
+| Option | Bewertung | Entscheidung |
+| --- | --- | --- |
+| Synchroner externer HTTP-Pfad | Würde die heutige interne API duplizieren und sofort Public-Auth, Rate Limits, Abuse-Schutz, Versionierung und Betriebs-SLOs erzwingen. Kein externer Konsument belegt. | `defer` |
+| Async Job API | Sinnvoll erst bei langen Analysen, Queue/Retention, Ergebnisabruf, Cancellation, Quotas und eigener Persistenz. Diese Voraussetzungen liegen nicht vor und würden Control-Plane-/Storage-Scope vorziehen. | `defer` |
+| Nur Library/CLI plus interner Service | Passt zur entschiedenen Zielgruppe: technische Teams können die Library/CLI direkt nutzen, m-trace API bleibt der integrierte Produktpfad. | `keep` |
+| Externe API komplett streichen | Zu hart: spätere externe Konsumenten oder schwere Analysejobs können einen POC rechtfertigen. | `no` |
+
+### 4.3 Pflichtfragen fuer eine spaetere externe Analyzer-API
+
+| Thema | Mindestentscheidung vor `proceed` oder `POC` |
+| --- | --- |
+| Auth | Token-/Project-Scope, optional Session-Bindung, klare Fehlerpräzedenz und keine anonyme öffentliche URL-Fetch-API. |
+| Rate Limits | Origin-/Project-Quotas, URL-Fetch-Budget, Concurrency-Limit und Fail-Mode. |
+| SSRF-Schutz | Bestehende Loader-Sperren bleiben Mindestniveau; zusätzlich Egress-Policy, DNS-Rebinding-Grenzen, Redirect-Policy und private Netzwerkfreigabe nur explizit. |
+| Ergebnisabruf | Synchrones Resultat vs. Job-ID, Pagination/Download, Error-Retention und stabile Response-Shapes. |
+| Retention | Keine implizite Speicherung; falls Jobs persistiert werden, braucht es TTL, Löschpfad, Project-Scope und Datenschutzgrenzen. |
+| Contract-Fixtures | Public API braucht versionierte Request-/Response-Fixtures, Error-Fixtures, Backwards-Compat-Regeln und CI-Drift-Gate. |
+| Betriebsmodell | Owner, SLO, Observability, Abuse-Runbook, Ressourcenbudget und Abbruchkriterien. |
+
+### 4.4 Boundary-Decision
+
+| Feld | Entscheidung |
+| --- | --- |
+| Datum | 2026-05-12 |
+| Entscheidung | `MVP-20` bleibt für eine eigenständige externe `apps/analyzer-api` **deferred**. Der bestehende interne `apps/analyzer-service` plus Library/CLI erfüllt den aktuellen Zielgruppen-Scope anders. |
+| Begründung | Nach Tranche 1 ist der Primärscope technisch/labnah. Es gibt keinen externen Analyzer-Konsumenten, keine Job-Retention-Anforderung und keinen Betreiberbedarf, der eine öffentliche API rechtfertigt. Eine externe API würde heute mehr Plattform-, Auth- und Betriebs-Scope einführen als sie Produktnutzen liefert. |
+| Nicht entschieden | Kein Public Analyzer API Contract, keine async Job Queue, keine Ergebnis-Retention, keine dedizierte Analyzer-Auth-Schicht, keine Control-Plane-Abhängigkeit. |
+| Reaktivierungs-Trigger | Konkreter externer Konsument, Analysen mit Laufzeit/Größe jenseits synchroner API-Grenzen, Bedarf an isolierter Fetch-Sandbox, oder Operator-Wunsch nach Job-/Batch-Workflow mit Owner und SLO. |
+| Naechster Planpfad | Falls ein Trigger eintritt: eigener Folgeplan oder `0.16.0`-Szenario A mit POC-Scope. Ohne Trigger bleibt Tranche 4 auf internen Analyzer-Folge-Slices (`NF-13`) ohne externe API-Kopplung. |
+
+### 4.5 What aendert sich
+
+- `RAK-102` ist entschieden: externe `apps/analyzer-api` wird nicht
+  in `0.15.0` implementiert.
+- Lastenheft `MVP-20` wird auf den Stand geschärft:
+  interner `apps/analyzer-service` plus Library/CLI erfüllt den
+  aktuellen Scope anders; externe API bleibt triggerbasierter
+  Folge-Scope.
+- Tranche 4 darf Analyzer-Folge-Slices nur gegen Library, CLI oder
+  internen Service planen, solange kein externer API-Trigger eintritt.
+
+### 4.6 What bleibt unveraendert
+
+- `POST /api/analyze` bleibt die m-trace API-Surface und delegiert
+  intern an `apps/analyzer-service`, wenn `ANALYZER_BASE_URL` gesetzt
+  ist.
+- `@npm9912/stream-analyzer` bleibt die wiederverwendbare Library/CLI
+  für technische Nutzer.
+- Bestehende Contract-Fixtures und SSRF-/Timeout-/Größenlimits bleiben
+  Mindestschutz; sie werden nicht als Freigabe für eine öffentliche
+  Fetch-API interpretiert.
+- Keine neue App, Queue, Persistenz, Auth-Schicht oder Control-Plane
+  entsteht durch Tranche 2.
 
 ## 5. Tranche 3 — Control-Plane-Scope (`F-132`)
 
@@ -432,7 +500,7 @@ Nachweis liefert.
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
 | RAK-101 | Muss | Zielgruppen-Decision, Lastenheft §16.1 oder ADR | Primaerzielgruppe ist entschieden; Plattform-Scope ist explizit deferred oder als spaeterer Planpfad beschrieben | [x] |
-| RAK-102 | Muss | Analyzer-Boundary-Decision zu `MVP-20` | Externe Analyzer-API ist `proceed`, `POC`, `defer` oder `anders erfuellt`; Trigger sind messbar | [ ] |
+| RAK-102 | Muss | Analyzer-Boundary-Decision zu `MVP-20` | Externe Analyzer-API ist `proceed`, `POC`, `defer` oder `anders erfuellt`; Trigger sind messbar | [x] |
 | RAK-103 | Muss | `F-132` Control-Plane-Decision | Control-Plane hat Scope, Nicht-Ziele und Trigger; keine Implementierung ohne Folgeplan | [ ] |
 | RAK-104 | Muss | `NF-13` Folge-Scope-Matrix | Naechster Analyzer-Slice ist eng zugeschnitten oder bewusst deferred | [ ] |
 | RAK-105 | Muss | Postgres-/Analytics-Trigger-Re-Eval | `MVP-40`/`MVP-41` bleiben deferred oder bekommen einen separaten Folgeplan bei erreichtem Trigger | [ ] |
@@ -442,7 +510,7 @@ Sofort nutzbares Verifikationsmapping:
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
 | RAK-101 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
-| RAK-102 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19, `apps/analyzer-service` Bestand | TBD | Platform/Analyzer | ⬜ |
+| RAK-102 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.5/§12.1/§13.19, `apps/analyzer-service` Bestand, `spec/backend-api-contract.md` §3.6 | 2026-05-12 | Platform/Analyzer | ✅ |
 | RAK-103 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19 | TBD | Platform/Product | ⬜ |
 | RAK-104 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19, `NF-13` | TBD | Platform/QA | ⬜ |
 | RAK-105 | `docs/planning/in-progress/plan-0.15.0.md`, `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
@@ -454,7 +522,7 @@ Sofort nutzbares Verifikationsmapping:
 | `0.14.0` noch nicht released | alle | ✅ geschlossen: `v0.14.0` released und Plan archiviert. |
 | RAK-Range noch offen | Tranche 0/5 | ✅ geschlossen: `RAK-101`..`RAK-105` in Lastenheft `1.1.20`. |
 | Zielgruppe nicht entschieden | Tranche 2/3 | ✅ geschlossen: Primärzielgruppe in Tranche 1 und Lastenheft §16.1 entschieden. |
-| Kein externer Analyzer-Konsument | Tranche 2 | ⬜ Analyzer-API deferred oder Trigger definieren. |
+| Kein externer Analyzer-Konsument | Tranche 2 | ✅ geschlossen: externe Analyzer-API deferred; Reaktivierungs-Trigger in §4.4 definiert. |
 | Keine Ops-Trigger erreicht | Tranche 5 | ⬜ Postgres/Analytics weiter deferred, kein Runtime-Scope. |
 
 ## 9. Folge-Scope nach `0.15.0`

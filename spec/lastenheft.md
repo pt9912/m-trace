@@ -800,6 +800,16 @@ Mögliche Domain-Objekte:
 
 Status im MVP: **Kann**
 
+> **Patch `1.1.20` (`0.15.0` Tranche 2):** Eine eigenständige,
+> nach außen exponierte `apps/analyzer-api` bleibt deferred. Der
+> bestehende interne `apps/analyzer-service` ist der aktuelle
+> HTTP-Wrapper für `apps/api`; technische Nutzer können
+> `@npm9912/stream-analyzer` als Library oder CLI direkt verwenden.
+> Eine externe API braucht vor `proceed` oder `POC` einen konkreten
+> externen Konsumenten, Auth-/Rate-Limit-/SSRF-Grenzen,
+> Ergebnisabruf-/Retention-Entscheidung, Contract-Fixtures, Owner und
+> Folgeplan.
+
 Warum optional:
 
 Im ersten MVP kann `apps/api` den Analyzer direkt als Library nutzen. Ein separater Analyse-Service lohnt sich erst, wenn Analysen schwerer werden, unabhängig skaliert werden sollen oder unsichere externe URLs isoliert verarbeitet werden müssen.
@@ -1733,7 +1743,7 @@ Nicht im `0.1.0`-MVP:
 | Kennung | Prioritaet | Anforderung | Status (Patch `1.1.12`) |
 |---|---|---|---|
 | MVP-19 | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
-| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, Folge-Scope offen:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; eine eigenständige nach außen exponierte `apps/analyzer-api` ist Folge-Scope. |
+| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@npm9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (`0.15.0` Tranche 2):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
 | MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
 | MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil (ADR-0003); die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
 | MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap §4). |
@@ -2184,7 +2194,7 @@ Akzeptanzkriterien:
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
 | RAK-101 | Muss | **Zielgruppenentscheidung (§16.1)**: Die Primärzielgruppe für die nächsten Minor-Releases ist entschieden oder bewusst als Produkt-ADR deferred. Selbsthoster, kleine Teams und Broadcaster-Labs bleiben Default-Empfehlung, solange kein konkreter Plattform-Betreiber-Trigger mit Betriebsmodell, Owner und Folgeplan dokumentiert ist. |
-| RAK-102 | Muss | **Analyzer-API-Boundary (`MVP-20`)**: Die historische externe `apps/analyzer-api`-Anforderung wird gegen den bestehenden internen `apps/analyzer-service` bewertet. Ergebnis ist `proceed`, `POC`, `defer` oder `anders erfüllt`; ein Go braucht konkreten externen Konsumenten, API-Grenze, Auth-/Rate-Limit-/SSRF-Grenzen und Folgeplan. |
+| RAK-102 | Muss | **Analyzer-API-Boundary (`MVP-20`)**: Die historische externe `apps/analyzer-api`-Anforderung wird gegen den bestehenden internen `apps/analyzer-service` bewertet. Ergebnis ist `proceed`, `POC`, `defer` oder `anders erfüllt`; ein Go braucht konkreten externen Konsumenten, API-Grenze, Auth-/Rate-Limit-/SSRF-Grenzen und Folgeplan. **Tranche-2-Entscheidung:** externe API `defer`; interner Service plus Library/CLI erfüllen den aktuellen Zielgruppen-Scope anders. |
 | RAK-103 | Muss | **Control-Plane-Scope (`F-132`)**: `apps/control-plane` wird nur als Decision-Record zugeschnitten. Aufgaben, Nicht-Ziele, Trigger, Abhängigkeiten zu Zielgruppe/Auth/Multi-Tenant und späterer Planpfad sind dokumentiert; ohne eigene Folgerelease-Freigabe entsteht keine Control-Plane-Implementierung. |
 | RAK-104 | Muss | **Analyzer-Folge-Slice (`NF-13`)**: Low-Latency-CMAF, HTTP-Range-/Byte-Range-Loader, vollständigere Segmentabdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfad werden gegeneinander bewertet. Höchstens ein eng begrenzter Folge-Slice wird empfohlen; alles andere bleibt deferred. |
 | RAK-105 | Muss | **Ops-Trigger-Re-Eval (`MVP-40`/`MVP-41`)**: Postgres- und Analytics-Trigger aus ADR 0005 werden erneut geprüft. Ohne erreichte Trigger bleiben Postgres als `defer-with-migration-seed` und Analytics als `defer` geführt; bei erreichtem Trigger wird ein separater Folgeplan angelegt statt still umzusetzen. |
