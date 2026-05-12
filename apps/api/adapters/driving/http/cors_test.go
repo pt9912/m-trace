@@ -4,15 +4,16 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
 // optionsRequest sendet eine Preflight-OPTIONS-Anfrage mit dem
 // passenden Access-Control-Request-Method-Header.
-func optionsRequest(t *testing.T, srvURL, path, origin, method string) *http.Response {
+func optionsRequest(t *testing.T, srv *httptest.Server, path, origin, method string) *http.Response {
 	t.Helper()
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodOptions, srvURL+path, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodOptions, srv.URL+path, nil)
 	if err != nil {
 		t.Fatalf("new request: %v", err)
 	}
@@ -22,7 +23,7 @@ func optionsRequest(t *testing.T, srvURL, path, origin, method string) *http.Res
 	if method != "" {
 		req.Header.Set("Access-Control-Request-Method", method)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -32,9 +33,9 @@ func optionsRequest(t *testing.T, srvURL, path, origin, method string) *http.Res
 
 // postEventsWithOrigin ist eine Variante von postEvents mit
 // zusätzlichem Origin-Header.
-func postEventsWithOrigin(t *testing.T, srvURL, token, origin, body string) *http.Response {
+func postEventsWithOrigin(t *testing.T, srv *httptest.Server, token, origin, body string) *http.Response {
 	t.Helper()
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, srvURL+"/api/playback-events", strings.NewReader(body))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/api/playback-events", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("new request: %v", err)
 	}
@@ -45,7 +46,7 @@ func postEventsWithOrigin(t *testing.T, srvURL, token, origin, body string) *htt
 		req.Header.Set("Origin", origin)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -53,9 +54,9 @@ func postEventsWithOrigin(t *testing.T, srvURL, token, origin, body string) *htt
 	return resp
 }
 
-func getWithOrigin(t *testing.T, srvURL, path, origin string) *http.Response {
+func getWithOrigin(t *testing.T, srv *httptest.Server, path, origin string) *http.Response {
 	t.Helper()
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srvURL+path, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+path, nil)
 	if err != nil {
 		t.Fatalf("new request: %v", err)
 	}
@@ -66,7 +67,7 @@ func getWithOrigin(t *testing.T, srvURL, path, origin string) *http.Response {
 	// senden den Default-Test-Token, damit der Auth-Layer den Request
 	// nicht 401t bevor der CORS-Layer dazu kommt.
 	req.Header.Set("X-MTrace-Token", "demo-token")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -79,7 +80,7 @@ func getWithOrigin(t *testing.T, srvURL, path, origin string) *http.Response {
 func TestCORS_Preflight_PlaybackEvents_Allowed(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/playback-events", "http://localhost:5173", http.MethodPost)
+	resp := optionsRequest(t, srv, "/api/playback-events", "http://localhost:5173", http.MethodPost)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
@@ -103,7 +104,7 @@ func TestCORS_Preflight_PlaybackEvents_Allowed(t *testing.T) {
 func TestCORS_Preflight_PlaybackEvents_UnknownOrigin(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/playback-events", "http://attacker.example", http.MethodPost)
+	resp := optionsRequest(t, srv, "/api/playback-events", "http://attacker.example", http.MethodPost)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Errorf("expected 204, got %d", resp.StatusCode)
 	}
@@ -130,7 +131,7 @@ func TestCORS_Preflight_PlaybackEvents_UnknownOrigin(t *testing.T) {
 func TestCORS_Post_ProjectOriginMismatch_403(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := postEventsWithOrigin(t, srv.URL, "demo-token", "http://other.example", validBody)
+	resp := postEventsWithOrigin(t, srv, "demo-token", "http://other.example", validBody)
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("expected 403, got %d", resp.StatusCode)
 	}
@@ -151,7 +152,7 @@ func TestCORS_Post_ProjectOriginMismatch_403(t *testing.T) {
 func TestCORS_Post_NoOrigin_StillAccepted(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := postEventsWithOrigin(t, srv.URL, "demo-token", "", validBody)
+	resp := postEventsWithOrigin(t, srv, "demo-token", "", validBody)
 	if resp.StatusCode != http.StatusAccepted {
 		t.Errorf("expected 202 for CLI/curl path, got %d", resp.StatusCode)
 	}
@@ -163,12 +164,12 @@ func TestCORS_Vary_HeaderOnEveryResponse(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
 	// Preflight ✓.
-	preflight := optionsRequest(t, srv.URL, "/api/playback-events", "http://localhost:5173", http.MethodPost)
+	preflight := optionsRequest(t, srv, "/api/playback-events", "http://localhost:5173", http.MethodPost)
 	if got := preflight.Header.Get("Vary"); !strings.Contains(got, "Origin") {
 		t.Errorf("preflight Vary=%q missing Origin", got)
 	}
 	// Echter POST ✓.
-	post := postEventsWithOrigin(t, srv.URL, "demo-token", "http://localhost:5173", validBody)
+	post := postEventsWithOrigin(t, srv, "demo-token", "http://localhost:5173", validBody)
 	if got := post.Header.Get("Vary"); !strings.Contains(got, "Origin") {
 		t.Errorf("POST Vary=%q missing Origin", got)
 	}
@@ -180,7 +181,7 @@ func TestCORS_Vary_HeaderOnEveryResponse(t *testing.T) {
 func TestCORS_Preflight_Dashboard_UnknownOrigin(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/stream-sessions", "http://attacker.example", http.MethodGet)
+	resp := optionsRequest(t, srv, "/api/stream-sessions", "http://attacker.example", http.MethodGet)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Errorf("expected 204, got %d", resp.StatusCode)
 	}
@@ -197,7 +198,7 @@ func TestCORS_Preflight_Dashboard_UnknownOrigin(t *testing.T) {
 func TestCORS_Preflight_Dashboard_Allowed(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/stream-sessions", "http://localhost:5173", http.MethodGet)
+	resp := optionsRequest(t, srv, "/api/stream-sessions", "http://localhost:5173", http.MethodGet)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
@@ -216,7 +217,7 @@ func TestCORS_Preflight_Dashboard_Allowed(t *testing.T) {
 func TestCORS_Preflight_SseStream_Allowed(t *testing.T) {
 	t.Parallel()
 	srv := newTestServerWithSse(t)
-	resp := optionsRequest(t, srv.URL, "/api/stream-sessions/stream", "http://localhost:5173", http.MethodGet)
+	resp := optionsRequest(t, srv, "/api/stream-sessions/stream", "http://localhost:5173", http.MethodGet)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
@@ -237,7 +238,7 @@ func TestCORS_Preflight_SseStream_Allowed(t *testing.T) {
 func TestCORS_Preflight_SseStream_UnknownOrigin(t *testing.T) {
 	t.Parallel()
 	srv := newTestServerWithSse(t)
-	resp := optionsRequest(t, srv.URL, "/api/stream-sessions/stream", "http://attacker.example", http.MethodGet)
+	resp := optionsRequest(t, srv, "/api/stream-sessions/stream", "http://attacker.example", http.MethodGet)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Errorf("expected 204, got %d", resp.StatusCode)
 	}
@@ -253,7 +254,7 @@ func TestCORS_Preflight_SseStream_UnknownOrigin(t *testing.T) {
 func TestCORS_Preflight_PlaybackEvents_HeaderSetExact(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/playback-events", "http://localhost:5173", http.MethodPost)
+	resp := optionsRequest(t, srv, "/api/playback-events", "http://localhost:5173", http.MethodPost)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
@@ -283,7 +284,7 @@ func TestCORS_Preflight_PlaybackEvents_BodyEmpty(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			resp := optionsRequest(t, srv.URL, "/api/playback-events", tc.origin, http.MethodPost)
+			resp := optionsRequest(t, srv, "/api/playback-events", tc.origin, http.MethodPost)
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatalf("read: %v", err)
@@ -301,7 +302,7 @@ func TestCORS_Preflight_PlaybackEvents_BodyEmpty(t *testing.T) {
 func TestCORS_Preflight_AuthSessionTokens_Allowed(t *testing.T) {
 	t.Parallel()
 	srv := newAuthSessionTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/auth/session-tokens", "http://localhost:5173", http.MethodPost)
+	resp := optionsRequest(t, srv, "/api/auth/session-tokens", "http://localhost:5173", http.MethodPost)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
@@ -324,7 +325,7 @@ func TestCORS_Preflight_RequestMethod_Ignored(t *testing.T) {
 	// Wrong method (GET on a POST-only path) → still 204 with the
 	// configured POST, OPTIONS allowlist. Der Browser wird den
 	// Request-Method-Mismatch auf seiner Seite erkennen.
-	resp := optionsRequest(t, srv.URL, "/api/playback-events", "http://localhost:5173", http.MethodGet)
+	resp := optionsRequest(t, srv, "/api/playback-events", "http://localhost:5173", http.MethodGet)
 	if resp.StatusCode != http.StatusNoContent {
 		t.Errorf("status: want 204, got %d", resp.StatusCode)
 	}
@@ -344,7 +345,7 @@ func TestCORS_Preflight_RequestMethod_Ignored(t *testing.T) {
 func TestCORS_ValidateKeyNotRegisteredWithoutIngest(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
-	resp := optionsRequest(t, srv.URL, "/api/ingest/streams/abc/validate-key", "http://localhost:5173", http.MethodPost)
+	resp := optionsRequest(t, srv, "/api/ingest/streams/abc/validate-key", "http://localhost:5173", http.MethodPost)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("validate-key preflight without ingest setup: want 404, got %d", resp.StatusCode)
 	}
@@ -354,12 +355,12 @@ func TestCORS_DashboardGet_AllowedOriginHeader(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
 
-	post := postEventsWithOrigin(t, srv.URL, "demo-token", "http://localhost:5173", validBody)
+	post := postEventsWithOrigin(t, srv, "demo-token", "http://localhost:5173", validBody)
 	if post.StatusCode != http.StatusAccepted {
 		t.Fatalf("seed post: expected 202, got %d", post.StatusCode)
 	}
 
-	resp := getWithOrigin(t, srv.URL, "/api/stream-sessions", "http://localhost:5173")
+	resp := getWithOrigin(t, srv, "/api/stream-sessions", "http://localhost:5173")
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
