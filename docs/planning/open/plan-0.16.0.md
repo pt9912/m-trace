@@ -47,7 +47,9 @@ Vorlaeufig in Scope, abhaengig vom `0.15.0`-Closeout:
   ist.
 - Control-Plane-POC nur als minimales, nicht produktives Geruest,
   falls `F-132` in `0.15.0` ausdruecklich `POC` freigibt und die
-  Zielgruppenentscheidung dies rechtfertigt.
+  Zielgruppenentscheidung dies rechtfertigt. Stand nach `0.15.0`
+  Tranche 3: **nicht freigegeben**, solange kein neuer Control-Plane-
+  Trigger die RAK-103-Entscheidung wieder oeffnet.
 - Postgres- oder Analytics-POC nur, falls die in ADR 0005 und
   `0.15.0` dokumentierten Trigger nachweisbar erreicht wurden.
 - Trigger-/Defer-Release, falls kein Implementierungspfad freigegeben
@@ -123,7 +125,7 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | --- | --- | --- | --- |
 | A | Analyzer-API POC (`MVP-20`) | externer API-/Job-Slice | `0.15.0` liefert konkreten externen Konsumenten und API-Grenze |
 | B | Analyzer-Folge-Slice (`NF-13`) | Stream-Analyzer Feature-Slice | `0.15.0` priorisiert einen engen Analyzer-Scope mit Testplan |
-| C | Control-Plane POC (`F-132`) | Platform-Prep ohne Production-Zusage | Zielgruppe und `F-132` erlauben einen nicht produktiven POC |
+| C | Control-Plane POC (`F-132`) | Platform-Prep ohne Production-Zusage | Der RAK-103-Defer aus `0.15.0` wurde durch konkreten Betreiber-/Auth-/Tenant-Trigger wieder geoeffnet |
 | D | Ops-Backend POC (`MVP-40`/`MVP-41`) | Storage-/Analytics-POC | Trigger wurden nachweisbar erreicht und eigener Rollback-/Abbruchpfad existiert |
 | E | Trigger-/Defer-Release | dokumentarisch | Kein Pfad erfuellt die Go-Bedingungen |
 
@@ -199,8 +201,10 @@ Szenario-spezifische Pflichtfragen:
   Ergebnisabruf, SSRF-Schutz.
 - Analyzer-Folge-Slice: Fixture-Plan, Fetch-Grenzen, Segmentauswahl,
   Laufzeitbudget.
-- Control-Plane: kein Production-Admin-Versprechen, keine User-/Org-
-  Verwaltung ohne eigenen Plan.
+- Control-Plane: nach `0.15.0` RAK-103 nicht freigegeben, solange
+  kein konkreter Betreiber-/Auth-/Tenant-Trigger vorliegt; kein
+  Production-Admin-Versprechen, keine User-/Org-Verwaltung ohne
+  eigenen Plan.
 - Ops-Backend: Migration, Rollback, Replay, Kosten-/Lastgrenzen.
 
 ## 4. Tranche 2 — Implementierung oder POC
@@ -226,8 +230,8 @@ Vorlaeufige Artefakte je Szenario:
   Contract-Fixtures.
 - B: Stream-Analyzer-Code, Fixtures und User-Doku fuer den
   ausgewaehlten `NF-13`-Slice.
-- C: Control-Plane-POC-Artefakt oder Plan-/ADR-Geruest ohne
-  Production-Zusage.
+- C: nur bei wieder geoeffnetem RAK-103-Trigger: Control-Plane-POC-
+  Artefakt oder Plan-/ADR-Geruest ohne Production-Zusage.
 - D: Postgres-/Analytics-POC-Report, Adapter-Slice oder synthetischer
   Load-/Migrationstest.
 - E: Defer-Notiz, Triggerpflege und Roadmap/Risks-Update.

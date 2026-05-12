@@ -1,7 +1,7 @@
 # Implementation Plan — `0.15.0` (Product Scope / Analyzer Boundary)
 
-> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–2
-> abgeschlossen, Tranche 3 als nächster Schritt.
+> **Status**: 🟡 in Umsetzung seit 2026-05-12 — Tranchen 0–3
+> abgeschlossen, Tranche 4 als nächster Schritt.
 >
 > **Vorgänger**: `0.14.0` (Ops Backend Follow-up), released
 > 2026-05-12; Plan in
@@ -147,8 +147,8 @@ und getrennte Gates.
 | 0 | Aktivierung, RAK-Zuschnitt und `0.14.0`-Closeout-Import | Finaler `0.15.0`-Scope | `0.14.0` released | Szenario A | ✅ |
 | 1 | Zielgruppenentscheidung | Primaerziel und spaetere Plattformgrenze entschieden | Lastenheft §16.1 | Product-Decision-Notiz in Plan + Lastenheft | ✅ |
 | 2 | Analyzer-API-Boundary (`MVP-20`) | Externe Analyzer-API: Go, Defer oder Triggerpflege | `apps/analyzer-service` Bestand | Defer-Decision + Trigger | ✅ |
-| 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Decision-Record, Nicht-Ziele, Trigger | 🟡 |
-| 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt oder Defer-Notiz | ⬜ |
+| 3 | Control-Plane-Scope (`F-132`) | Control-Plane bleibt deferred oder erhaelt klaren spaeteren Planpfad | Zielgruppenentscheidung | Defer-Decision + Trigger | ✅ |
+| 4 | Analyzer-Folge-Slice (`NF-13`) | Naechster Analyzer-Slice gewaehlt oder bewusst deferred | CMAF-Folge-Scope | Slice-Zuschnitt oder Defer-Notiz | 🟡 |
 | 5 | Ops-Trigger-Re-Eval und Closeout | Postgres/Analytics-Triggerstatus, RAK-Matrix, Release | `MVP-40`/`MVP-41` Trigger | Tag `v0.15.0` | ⬜ |
 
 ## 2. Tranche 0 — Aktivierung und Scope-Härtung
@@ -254,7 +254,7 @@ Vorlaeufige Artefakte:
 | Begründung | Diese Zielgruppe passt zum bestehenden lokalen Compose-/SQLite-/OpenTelemetry-Scope, zum internen Analyzer-Service und zu den gelieferten Lab-Smokes. Große Plattformbetreiber mit hunderten parallelen Streams würden sofort andere Annahmen für Multi-Tenant, Storage, Analytics, Control-Plane und Betriebs-SLOs erzwingen. |
 | Nicht entschieden | Kein SaaS-Produkt, kein generisches Multi-Tenant-Control-Plane-Modell, keine Operator-UI für hunderte Projekte, kein verbindlicher Postgres-/Analytics-/K8s-Production-Pfad. |
 | Trigger für Plattform-Betreiber-Scope | Konkreter Stakeholder-/Operator-Bedarf mit mindestens einem benannten Betreiberprofil, erwarteter Stream-/Event-Größenordnung, Multi-Tenant-/Auth-Anforderungen, Betriebs-SLO, Owner und Folgeplan. |
-| Naechster Planpfad | Tranche 2 bewertet die Analyzer-API-Boundary unter dieser Zielgruppe; Tranche 3 darf Control-Plane nur als deferred oder späteren POC-Pfad beschreiben. |
+| Naechster Planpfad | Tranche 2 bewertet die Analyzer-API-Boundary unter dieser Zielgruppe; Tranche 3 beschreibt Control-Plane nur als deferred oder bei späterem Trigger als eigenen Folgepfad. |
 
 ### 3.2 Auswirkungen
 
@@ -397,16 +397,16 @@ unimplementiert.
 
 DoD:
 
-- [ ] `F-132`-Scope aus Lastenheft §7.5.6 importiert.
-- [ ] Aufgaben, Nicht-Ziele und Abhaengigkeiten dokumentiert:
+- [x] `F-132`-Scope aus Lastenheft §7.5.6 importiert.
+- [x] Aufgaben, Nicht-Ziele und Abhaengigkeiten dokumentiert:
   Multi-Project, Teams, API-Keys, Audit, Admin-UI, User-/Org-Modell,
   OAuth/OIDC, Betriebsprofile.
-- [ ] Trigger definiert, wann eine Control-Plane geplant werden darf.
-- [ ] Abhaengigkeit zur Zielgruppenentscheidung aus Tranche 1
+- [x] Trigger definiert, wann eine Control-Plane geplant werden darf.
+- [x] Abhaengigkeit zur Zielgruppenentscheidung aus Tranche 1
   explizit beschrieben.
-- [ ] Entscheidung `defer`, `POC` oder `proceed in later plan`
+- [x] Entscheidung `defer`, `POC` oder `proceed in later plan`
   getroffen.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Go/No-Go:
@@ -421,6 +421,59 @@ Vorlaeufige Artefakte:
 - `F-132` Decision-Record.
 - Roadmap- oder Risks-Backlog-Update.
 - Optionaler ADR-Draft fuer Plattform-/Admin-Scope.
+
+### 5.1 `F-132` Scope-Import
+
+| Bereich | Stand aus Lastenheft §7.5.6 |
+| --- | --- |
+| Charakter | `apps/control-plane` ist eine spätere Verwaltungsanwendung für produktionsnahe m-trace-Installationen. |
+| Status | Nicht Bestandteil des MVP; nur vorbereitet. |
+| Potenzielle Aufgaben | Konfiguration mehrerer m-trace-Instanzen, Media-Server-Verwaltung, Stream-Profile, Teams/Projects, Audit-Log, API-Keys, Integrationen, spätere Benutzerverwaltung. |
+| Architektur | `apps/control-plane/` oder getrennt `apps/control-plane-api` + `apps/control-plane-ui`; finale Aufteilung erst bei echten Mehrbenutzer-/Admin-Anforderungen. |
+| Bestehende Abgrenzung | `0.11.0` Ingest-Control und `0.12.0` Auth sind lokale/API-nahe Pfade und ausdrücklich keine mandantenfähige Control-Plane. |
+
+### 5.2 Aufgaben, Nicht-Ziele und Abhaengigkeiten
+
+| Thema | Entscheidung / Grenze |
+| --- | --- |
+| Multi-Project | Heute existieren Project-/Token-Grenzen als technische Isolation. Eine UI/API für viele Projects, Owner-Wechsel oder Fleet-Administration bleibt deferred. |
+| Teams | Kein Team-/Mitgliedschaftsmodell in `0.15.0`; spätere Teams brauchen User-/Org- und Rollenmodell. |
+| API-Keys | Project-Token-Generationen bleiben der vorhandene Pfad. Key-Management-UI, Delegation, Scopes und Audit-Trail sind Control-Plane-Folge-Scope. |
+| Audit | Kein produktiver Audit-Log-Scope. Ein späterer Scope braucht Ereignismodell, Retention, Export und Datenschutzbewertung. |
+| Admin-UI | Kein Admin-/Billing-/Fleet-Management-Frontend in `0.15.0`. Dashboard bleibt Diagnose- und Lab-Oberfläche. |
+| User-/Org-Modell | RAK-71-Out-of-Scope bleibt normativ: keine User-/Org-Verwaltung, keine Rollen, kein SaaS-Tenant-Modell. |
+| OAuth/OIDC/SSO | Bleibt out of scope; ein späterer Control-Plane-Pfad muss Identity-Provider, Token-Lifecycle, Rollen und Threat Model vorab entscheiden. |
+| Betriebsprofile | Kein Production-Control-Plane-Betrieb, kein K8s-Operator und kein Managed-Cloud-Versprechen. |
+
+### 5.3 Control-Plane-Decision
+
+| Feld | Entscheidung |
+| --- | --- |
+| Datum | 2026-05-12 |
+| Entscheidung | `F-132` bleibt **deferred**. `0.15.0` baut keine `apps/control-plane` und gibt auch keinen POC frei. |
+| Begründung | Tranche 1 entschied den labnahen/technischen Primärscope; Tranche 2 deferred externe Plattform-Surface. Ohne konkreten Betreiberbedarf würde eine Control-Plane User-/Org-/Auth-/Audit-/Multi-Tenant-Scope vorziehen und den aktuellen Diagnosefokus verwässern. |
+| Nicht entschieden | Kein User-/Org-/Team-Modell, keine Rollen/RBAC, kein OAuth/OIDC/SSO, keine Admin-UI, kein Audit-Log, keine Billing-/Fleet-Verwaltung, keine Control-Plane-API. |
+| Trigger für Reaktivierung | Konkreter Operator-/Stakeholder-Bedarf mit mindestens zwei administrierten m-trace-Instanzen oder Projects, benanntem Betreiberprofil, User-/Org-/Auth-Anforderungen, Audit-/Compliance-Bedarf, Owner, SLO und eigenem Folgeplan. |
+| Abhaengigkeiten | Zielgruppenentscheidung aus Tranche 1, RAK-71-Out-of-Scope, Project-/Token-Modell aus `0.12.x`, mögliche Postgres-/Analytics-Trigger aus ADR 0005 und Datenschutz-/Telemetry-Grenzen. |
+| Naechster Planpfad | Kein Control-Plane-Pfad in `0.16.0`, solange der Trigger nicht eintritt. Wenn er eintritt: separater Decision-/POC-Plan vor jeder Implementierung. |
+
+### 5.4 What aendert sich
+
+- `RAK-103` ist entschieden: Control-Plane bleibt deferred.
+- `F-132` ist nicht nur "später", sondern mit konkreten
+  Reaktivierungsbedingungen und Nicht-Zielen versehen.
+- `0.16.0` darf keinen Control-Plane-POC importieren, solange kein
+  Trigger mit Owner, Auth-/Tenant-Entscheidung und Folgeplan vorliegt.
+
+### 5.5 What bleibt unveraendert
+
+- `apps/dashboard` bleibt Diagnose- und Lab-Oberfläche.
+- `apps/api` bleibt der Ort für vorhandene Project-Token-, Session-
+  Token- und Ingest-Control-Pfade; diese werden nicht zu einer
+  mandantenfähigen Admin-Plattform erweitert.
+- OAuth/OIDC/SSO, User-/Org-Verwaltung, Rollenmodell, Audit-Log,
+  Admin-UI, Billing, Fleet-Management und Production-Control-Plane
+  bleiben out of scope.
 
 ## 6. Tranche 4 — Analyzer-Folge-Slice (`NF-13`)
 
@@ -501,7 +554,7 @@ Nachweis liefert.
 | --- | --- | --- | --- | --- |
 | RAK-101 | Muss | Zielgruppen-Decision, Lastenheft §16.1 oder ADR | Primaerzielgruppe ist entschieden; Plattform-Scope ist explizit deferred oder als spaeterer Planpfad beschrieben | [x] |
 | RAK-102 | Muss | Analyzer-Boundary-Decision zu `MVP-20` | Externe Analyzer-API ist `proceed`, `POC`, `defer` oder `anders erfuellt`; Trigger sind messbar | [x] |
-| RAK-103 | Muss | `F-132` Control-Plane-Decision | Control-Plane hat Scope, Nicht-Ziele und Trigger; keine Implementierung ohne Folgeplan | [ ] |
+| RAK-103 | Muss | `F-132` Control-Plane-Decision | Control-Plane hat Scope, Nicht-Ziele und Trigger; keine Implementierung ohne Folgeplan | [x] |
 | RAK-104 | Muss | `NF-13` Folge-Scope-Matrix | Naechster Analyzer-Slice ist eng zugeschnitten oder bewusst deferred | [ ] |
 | RAK-105 | Muss | Postgres-/Analytics-Trigger-Re-Eval | `MVP-40`/`MVP-41` bleiben deferred oder bekommen einen separaten Folgeplan bei erreichtem Trigger | [ ] |
 
@@ -511,7 +564,7 @@ Sofort nutzbares Verifikationsmapping:
 | --- | --- | --- | --- | --- |
 | RAK-101 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19/§16.1 | 2026-05-12 | Product/PM | ✅ |
 | RAK-102 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.5/§12.1/§13.19, `apps/analyzer-service` Bestand, `spec/backend-api-contract.md` §3.6 | 2026-05-12 | Platform/Analyzer | ✅ |
-| RAK-103 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19 | TBD | Platform/Product | ⬜ |
+| RAK-103 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §7.5.6/§13.19, `spec/backend-api-contract.md` §3.8/§3.9, `docs/user/ingest-control.md` §5 | 2026-05-12 | Platform/Product | ✅ |
 | RAK-104 | `docs/planning/in-progress/plan-0.15.0.md`, `spec/lastenheft.md` §13.19, `NF-13` | TBD | Platform/QA | ⬜ |
 | RAK-105 | `docs/planning/in-progress/plan-0.15.0.md`, `docs/adr/0005-production-ops-backends.md`, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
 

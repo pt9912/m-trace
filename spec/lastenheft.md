@@ -871,6 +871,16 @@ Kennung: `F-132`
 
 Status im MVP: **Nicht Bestandteil**, nur vorbereitet
 
+> **Patch `1.1.20` (`0.15.0` Tranche 3):** `F-132` bleibt
+> deferred. `0.15.0` baut keine `apps/control-plane` und gibt keinen
+> POC frei. Reaktivierung braucht einen konkreten Operator-/
+> Stakeholder-Bedarf mit mindestens zwei administrierten m-trace-
+> Instanzen oder Projects, Betreiberprofil, User-/Org-/Auth-
+> Anforderungen, Audit-/Compliance-Bedarf, Owner, SLO und eigenem
+> Folgeplan. RAK-71-Out-of-Scope bleibt normativ: keine User-/Org-
+> Verwaltung, kein OAuth/OIDC/SSO, keine Admin-UI und kein SaaS-
+> Tenant-Modell in `0.15.0`.
+
 Hauptaufgaben in späteren Versionen:
 
 - Konfiguration mehrerer m-trace-Instanzen
@@ -2195,7 +2205,7 @@ Akzeptanzkriterien:
 |---|---|---|
 | RAK-101 | Muss | **Zielgruppenentscheidung (§16.1)**: Die Primärzielgruppe für die nächsten Minor-Releases ist entschieden oder bewusst als Produkt-ADR deferred. Selbsthoster, kleine Teams und Broadcaster-Labs bleiben Default-Empfehlung, solange kein konkreter Plattform-Betreiber-Trigger mit Betriebsmodell, Owner und Folgeplan dokumentiert ist. |
 | RAK-102 | Muss | **Analyzer-API-Boundary (`MVP-20`)**: Die historische externe `apps/analyzer-api`-Anforderung wird gegen den bestehenden internen `apps/analyzer-service` bewertet. Ergebnis ist `proceed`, `POC`, `defer` oder `anders erfüllt`; ein Go braucht konkreten externen Konsumenten, API-Grenze, Auth-/Rate-Limit-/SSRF-Grenzen und Folgeplan. **Tranche-2-Entscheidung:** externe API `defer`; interner Service plus Library/CLI erfüllen den aktuellen Zielgruppen-Scope anders. |
-| RAK-103 | Muss | **Control-Plane-Scope (`F-132`)**: `apps/control-plane` wird nur als Decision-Record zugeschnitten. Aufgaben, Nicht-Ziele, Trigger, Abhängigkeiten zu Zielgruppe/Auth/Multi-Tenant und späterer Planpfad sind dokumentiert; ohne eigene Folgerelease-Freigabe entsteht keine Control-Plane-Implementierung. |
+| RAK-103 | Muss | **Control-Plane-Scope (`F-132`)**: `apps/control-plane` wird nur als Decision-Record zugeschnitten. Aufgaben, Nicht-Ziele, Trigger, Abhängigkeiten zu Zielgruppe/Auth/Multi-Tenant und späterer Planpfad sind dokumentiert; ohne eigene Folgerelease-Freigabe entsteht keine Control-Plane-Implementierung. **Tranche-3-Entscheidung:** `defer`, kein POC in `0.15.0`; Reaktivierung nur bei konkretem Betreiberbedarf mit Auth-/Tenant-/Audit-Nachweis und eigenem Folgeplan. |
 | RAK-104 | Muss | **Analyzer-Folge-Slice (`NF-13`)**: Low-Latency-CMAF, HTTP-Range-/Byte-Range-Loader, vollständigere Segmentabdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfad werden gegeneinander bewertet. Höchstens ein eng begrenzter Folge-Slice wird empfohlen; alles andere bleibt deferred. |
 | RAK-105 | Muss | **Ops-Trigger-Re-Eval (`MVP-40`/`MVP-41`)**: Postgres- und Analytics-Trigger aus ADR 0005 werden erneut geprüft. Ohne erreichte Trigger bleiben Postgres als `defer-with-migration-seed` und Analytics als `defer` geführt; bei erreichtem Trigger wird ein separater Folgeplan angelegt statt still umzusetzen. |
 

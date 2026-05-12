@@ -29,7 +29,10 @@
 > triggerbasierter Folge-Scope. Tranche 2 schließt RAK-102:
 > eine externe `apps/analyzer-api` bleibt deferred, solange kein
 > konkreter externer Konsument, kein Job-/Retention-Bedarf und kein
-> Auth-/Rate-Limit-/SSRF-/Contract-Nachweis vorliegen.
+> Auth-/Rate-Limit-/SSRF-/Contract-Nachweis vorliegen. Tranche 3
+> schließt RAK-103: `apps/control-plane` bleibt deferred und bekommt
+> keinen POC, solange kein konkreter Betreiberbedarf mit Auth-/Tenant-/
+> Audit-Nachweis, Owner, SLO und Folgeplan vorliegt.
 >
 > `0.12.6` adressierte zuvor alle neun nach `0.12.5` offenen
 > R-N-Items in Tranchen 1–9 (Plan in

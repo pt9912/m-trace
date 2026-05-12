@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `apps/analyzer-api` bleibt deferred; interner `apps/analyzer-service`
   plus `@npm9912/stream-analyzer` Library/CLI decken den aktuellen
   Zielgruppen-Scope ab.
+- `0.15.0` Tranche 3: Control-Plane-Scope entschieden. `F-132` bleibt
+  deferred, kein `apps/control-plane`-POC ohne konkreten Betreiber-,
+  Auth-/Tenant-/Audit-Trigger und eigenen Folgeplan.
 
 ## [0.14.0] - 2026-05-12
 
