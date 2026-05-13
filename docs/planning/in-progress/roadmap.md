@@ -8,8 +8,11 @@
 > Szenario D bleibt aktiv, kein Code- oder Runtime-Hardening ist
 > freigegeben, und Productization, Next Slice, Switch, Analyzer-API,
 > Control-Plane, Postgres/Analytics und Production-K8s bleiben mangels
-> Trigger deferred. Folgeplan offen. Plan archiviert in
-> [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
+> Trigger deferred. Offene Folgepläne sind:
+> [`open/plan-0.18.0.md`](../open/plan-0.18.0.md) (Risikonacharbeit)
+> und [`open/plan-0.19.0.md`](../open/plan-0.19.0.md)
+> (ADR-Trigger: `MVP-40`, `Strengere CORS-Preflight-Variante A`).
+> Plan archiviert in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
 >
 > **Letzte Releases:**
 > - `v0.17.0` Hardening-/Evidence-Review-Minor (Lastenheft `1.1.22`,
@@ -114,10 +117,12 @@ Contract-, Security-, Drift- und Rollback-Gates sind fuer Tranche 3
 `n/a`; Tranche 4 validiert den versionstragenden Test-/Fixture-Asset-
 Bump separat. RAK-111..RAK-114 sind geschlossen; Tranche 4 schliesst
 RAK-115 mit Changelog, Roadmap, Plan-Archiv, Versions-Bump und Tag
-`v0.17.0`. Productization,
-Next Slice oder Switch bleiben blockiert, weil kein konkreter Konsument,
-keine Testluecke und kein belastbarer Trigger vorliegt. Es gibt keinen
-aktiven Folgeplan; der naechste Plan startet erst bei neuem Trigger.
+`v0.17.0`. Productization, Next Slice oder Switch bleiben blockiert,
+weil kein konkreter Konsument, keine Testluecke und kein belastbarer
+Trigger vorliegt.
+Der nächste Folgeplan-Korridor ist:
+`open/plan-0.18.0.md` (`R-9`, `R-12`, `R-13`) sowie
+`open/plan-0.19.0.md` (`MVP-40`, `Strengere CORS-Preflight-Variante A`).
 
 `0.16.0` ist released und archiviert in
 [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release liefert
@@ -319,6 +324,8 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.15.0` | Product Scope / Analyzer Boundary | ✅ | Released 2026-05-12. Plan in [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 erledigt RAK-101 und schärft die Primärzielgruppe. Tranche 2 erledigt RAK-102 und deferred eine externe Analyzer-API bis zu konkretem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und Folgeplan. Tranche 3 erledigt RAK-103 und deferred Control-Plane ohne POC bis zu Betreiber-/Auth-/Tenant-/Audit-Triggern. Tranche 4 erledigt RAK-104 und empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 erledigt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` + RAK-101..RAK-105 in §13.19 + Tag `v0.15.0`. |
 | `0.16.0` | Selected Product Slice / Analyzer Range Fetch | ✅ | Released 2026-05-12. Plan in [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 erledigt RAK-106; Tranche 1 definiert RAK-107..RAK-109 als HLS-CMAF-Byte-Range-Scope mit No-new-public-schema und Fetch-Security-Grenzen; Tranche 2 erledigt RAK-107/RAK-108 mit HLS-Range-Fetch-Code und aktualisierten Contract-Fixtures; Tranche 3 erledigt RAK-109 mit TS-/Doku-/Drift-/Security-Gates; Tranche 4 erledigt RAK-110 mit Versions-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.16.0`. Lastenheft-Patch `1.1.21` + RAK-106..RAK-110 in §13.20. |
 | `0.17.0` | Hardening / Evidence Review | ✅ | Released 2026-05-13. Plan in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Szenario D: Hardening-only. Tranche 0 erledigt RAK-111 mit Import des `0.16.0`-Closeouts, Lastenheft-Patch `1.1.22` und Defer-Matrix. Tranche 1 erledigt RAK-112 mit Evidence Review, `make ts-test`, `make generated-drift-check` und der Entscheidung, Productization/Next Slice/Switch weiter deferred zu halten. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung. Tranche 3 erledigt RAK-113/RAK-114 mit No-change-Gate-Nachweis. Tranche 4 erledigt RAK-115 mit Versions-Bump, versionstragendem Test-/Fixture-Asset-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0`. |
+| `0.18.0` | Risikonacharbeit (`R-9`, `R-12`, `R-13`) | 🟡 | Offener Folgeplan für offene Risiko-Trigger. Entscheidung und Ergebnis in [`open/plan-0.18.0.md`](../open/plan-0.18.0.md). |
+| `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | 🟡 | Offener Folgeplan für `Postgres` als produktionsnaher Store und `CORS-Preflight-Project-Isolation`. Entscheidung und Ergebnis in [`open/plan-0.19.0.md`](../open/plan-0.19.0.md). |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
