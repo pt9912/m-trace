@@ -10,7 +10,7 @@ import {
   isWebRtcErrorCode,
   normalizeWebRtcErrorCode
 } from "../src/adapters/webrtc/error-codes";
-import { collectAggregate } from "../src/adapters/webrtc/sampling";
+import { collectAggregate, newPeerConnectionRunId } from "../src/adapters/webrtc/sampling";
 import type { PlayerTracker } from "../src/core/tracker";
 import type { EventDraft } from "../src/types/events";
 
@@ -144,6 +144,7 @@ beforeAll(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("attachWebRtc — Public-API-Vertrag (Tranche 1)", () => {
@@ -780,6 +781,25 @@ describe("attachWebRtc — getStats-Sampling-Loop (Tranche 3)", () => {
     const runId = started?.meta?.["webrtc.peer_connection_run_id"];
     expect(typeof runId).toBe("string");
     expect((runId as string).length).toBeGreaterThan(0);
+  });
+
+  it("nutzt crypto.randomUUID direkt, wenn verfügbar", () => {
+    vi.stubGlobal("crypto", {
+      randomUUID: vi.fn(() => "fixed-random-uuid")
+    });
+
+    expect(newPeerConnectionRunId()).toBe("fixed-random-uuid");
+  });
+
+  it("fällt ohne randomUUID auf getRandomValues zurück", () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: vi.fn((bytes: Uint8Array) => {
+        bytes.set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+        return bytes;
+      })
+    });
+
+    expect(newPeerConnectionRunId()).toBe("00010203-0405-4607-8809-0a0b0c0d0e0f");
   });
 
   it("playback_started enthält peer_connection_run_id", async () => {

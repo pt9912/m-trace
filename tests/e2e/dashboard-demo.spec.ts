@@ -39,7 +39,7 @@ test("demo player emits events and dashboard renders the session", async ({ brow
   // selbst deaktiviert bleibt — die Driving-Port-Verdrahtung läuft
   // trotzdem); 25s gibt dem Backfill-Polling-Fallback in Chromium
   // ausreichend Spielraum.
-  await expect(page.getByText(/manifest_loaded|segment_loaded|playback_started|startup_time_measured/).first()).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByText(eventName).first()).toBeVisible({ timeout: 25_000 });
 
   await page.goto("/events", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Session filter").selectOption(sessionId);
