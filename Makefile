@@ -4,12 +4,19 @@ API_MAKE ?= $(MAKE) -C apps/api
 TS_IMAGE ?= m-trace-ts
 TS_DOCKER_BUILD ?= docker build -f Dockerfile
 
+IMAGE_REGISTRY ?= ghcr.io
+IMAGE_OWNER ?= pt9912
+IMAGE_TAG ?= $(VER)
+IMAGE_API ?= $(IMAGE_REGISTRY)/$(IMAGE_OWNER)/m-trace-api
+IMAGE_DASHBOARD ?= $(IMAGE_REGISTRY)/$(IMAGE_OWNER)/m-trace-dashboard
+IMAGE_ANALYZER_SERVICE ?= $(IMAGE_REGISTRY)/$(IMAGE_OWNER)/m-trace-analyzer-service
+
 COVERAGE_THRESHOLD ?= 90
 THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -61,6 +68,9 @@ help:
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
 		'  make package-publish-dry-run Build and dry-run publish GitHub Packages npm artifacts' \
 		'  MTRACE_PACKAGE_PUBLISH_APPROVED=1 make package-publish Publish GitHub Packages npm artifacts' \
+		'  make image-build VER=X.Y.Z Build version-tagged GHCR runtime images locally' \
+		'  make image-publish-dry-run VER=X.Y.Z Build and inspect GHCR runtime images without push' \
+		'  MTRACE_IMAGE_PUBLISH_APPROVED=1 make image-publish VER=X.Y.Z Push GHCR runtime images' \
 		'  make k8s-validate           Validate optional deploy/k8s examples without a cluster' \
 		'  make devcontainer-validate  Validate the optional devcontainer seed' \
 		'  make release-guard VER=X.Y.Z Run the manual release approval guard in dry-run mode' \
@@ -86,6 +96,7 @@ help:
 		'' \
 		'Variables:' \
 		'  COMPOSE="docker compose" PNPM=pnpm API_MAKE="$(MAKE) -C apps/api" TS_IMAGE=m-trace-ts' \
+		'  IMAGE_REGISTRY=ghcr.io IMAGE_OWNER=pt9912 VER=X.Y.Z' \
 		'  COVERAGE_THRESHOLD=90 THRESHOLD=$(THRESHOLD)'
 
 dev:
@@ -659,6 +670,29 @@ image-scan:
 		--no-progress \
 		--ignorefile /work/.trivyignore \
 		mtrace-analyzer-service:scan
+
+image-build:
+	@test -n "$(IMAGE_TAG)" || (echo "VER or IMAGE_TAG is required, e.g. make image-build VER=0.21.0" >&2; exit 2)
+	docker build --target runtime -t $(IMAGE_API):$(IMAGE_TAG) apps/api
+	docker build -f apps/dashboard/Dockerfile -t $(IMAGE_DASHBOARD):$(IMAGE_TAG) .
+	docker build -f apps/analyzer-service/Dockerfile -t $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG) .
+
+image-publish-dry-run: image-build
+	docker image inspect $(IMAGE_API):$(IMAGE_TAG) >/dev/null
+	docker image inspect $(IMAGE_DASHBOARD):$(IMAGE_TAG) >/dev/null
+	docker image inspect $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG) >/dev/null
+	@echo "[image-publish-dry-run] would push:"
+	@echo "  $(IMAGE_API):$(IMAGE_TAG)"
+	@echo "  $(IMAGE_DASHBOARD):$(IMAGE_TAG)"
+	@echo "  $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG)"
+
+image-publish-guard:
+	@test "$(MTRACE_IMAGE_PUBLISH_APPROVED)" = "1" || (echo "Refusing to publish images without MTRACE_IMAGE_PUBLISH_APPROVED=1" >&2; exit 2)
+
+image-publish: image-publish-guard image-build
+	docker push $(IMAGE_API):$(IMAGE_TAG)
+	docker push $(IMAGE_DASHBOARD):$(IMAGE_TAG)
+	docker push $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG)
 
 security-gates: vuln-check audit-ts image-scan
 

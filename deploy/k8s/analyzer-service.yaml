@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: analyzer
-          image: m-trace-analyzer:0.18.0
+          image: ghcr.io/pt9912/m-trace-analyzer-service:0.21.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

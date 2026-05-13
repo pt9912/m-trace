@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-05-13
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — OCI Image Publishing nach `0.20.0`,
+> Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23.
+> Plan in
+> [`docs/planning/done/plan-0.21.0.md`](docs/planning/done/plan-0.21.0.md).
+
+### Added
+
+- OCI/GHCR-Publishing-Track für `0.21.0` vorbereitet:
+  `make image-build`, `make image-publish-dry-run` und
+  approval-gated `make image-publish` bauen bzw. veröffentlichen die
+  drei Runtime-Images `m-trace-api`, `m-trace-dashboard` und
+  `m-trace-analyzer-service` mit versionierten GHCR-Tags.
+- Workflow [`.github/workflows/publish-images.yml`](.github/workflows/publish-images.yml)
+  ergänzt. Er unterstützt manuellen Dry-Run/Publish gegen einen Git-Ref
+  und veröffentlicht bei `release.published` den Release-Tag.
+- Lastenheft-Patch `1.1.24` ergänzt §13.23 mit RAK-121..RAK-125 für
+  den ersten GHCR-Image-Publish.
+
+### Changed
+
+- `docs/user/releasing.md` ersetzt den unbestimmten Container-Image-
+  Platzhalter durch einen konkreten GHCR-Release-Pfad ab `0.21.0`
+  inklusive Dry-Run, Approval-Gate und Rollback-Grenzen.
+
 ## [0.20.0] - 2026-05-13
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

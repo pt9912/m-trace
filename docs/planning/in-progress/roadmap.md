@@ -2,12 +2,16 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: ✅ `0.20.0` Package Publishing released und archiviert in
-> [`done/plan-0.20.0.md`](../done/plan-0.20.0.md). GitHub-Packages-
-> Publish für `@pt9912/player-sdk` und `@pt9912/stream-analyzer`;
-> Dashboard und Analyzer-Service bleiben private Workspace-Pakete.
+> **Phase**: 🟡 `0.21.0` OCI Image Publishing aktiv in
+> [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Ziel:
+> versionierte GHCR-Images für API, Dashboard und Analyzer-Service
+> mit Make-Dry-Run, approval-gated Publish und Release-Hook.
 >
-> **Letzte Releases:**
+> **Letzte Releases / aktive Welle:**
+> - `0.21.0` OCI-Image-Publishing-Minor ist in Arbeit
+>   (Lastenheft `1.1.24`, RAK-121..RAK-125 in §13.23): GHCR-
+>   Namensschema, Make-Targets, Publish-Workflow und Release-Doku.
+>   Plan archiviert in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md).
 > - `v0.20.0` Package-Publishing-Minor (Lastenheft `1.1.23`,
 >   RAK-116..RAK-120 in §13.22): erster GitHub-Packages-Publish für
 >   `@pt9912/player-sdk` und `@pt9912/stream-analyzer`, Scope-
@@ -75,13 +79,13 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-13 — `0.20.0` released)
+## 1. Aktueller Stand (2026-05-13 — `0.21.0` in Arbeit)
 
 ### 1.1 Was abgeschlossen ist
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.23` (RAK-1..RAK-120, §13.22 Package Publishing für `0.20.0`; Patch persistiert).                       | `spec/lastenheft.md`                                                   |
+| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.24` (RAK-1..RAK-125, §13.23 OCI Image Publishing für `0.21.0`; Patch aktiv).                       | `spec/lastenheft.md`                                                   |
 | ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store; `0005` Production-/Ops-Backends Accepted: Postgres/Analytics deferred mit Triggern, K8s/Devcontainer/Release-Guard als Seeds.     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`, `docs/adr/0005-production-ops-backends.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
@@ -109,121 +113,30 @@ aktualisieren.
 | ✅      | Selected Product Slice / Analyzer Range Fetch (`0.16.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 schließt RAK-106; Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges, No-new-public-schema und Fetch-Security-Grenzen. Tranche 2 liefert den HLS-Range-Fetch fuer explizite `EXT-X-MAP:BYTERANGE`-/`#EXT-X-BYTERANGE`-Offsets samt Contract-Fixtures. Tranche 3 schließt RAK-109 mit TS-, Drift-, Doku- und Security-Gates. Tranche 4 schließt RAK-110 mit Versions-Bump, Changelog, Plan-Archiv und Tag `v0.16.0`. | [`done/plan-0.16.0.md`](../done/plan-0.16.0.md) |
 | ✅      | Hardening / Evidence Review (`0.17.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21. Szenario D: Hardening-only. Tranchen 0–4 erledigen Import, Evidence Review, Doku-/Defer-Entscheid, No-change-Gate-Nachweis und Release-Closeout: kein Productization-/Next-Slice-/Switch-Trigger, keine Runtime-/Public-API-/Schema-Aenderung ueber den versionstragenden Test-/Fixture-Asset-Bump hinaus. | [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) |
 | ✅      | Offene Risiken / Trigger-Re-Eval (`0.18.0`) | Released 2026-05-13. Decision-Closeout archiviert in `done/`: `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Keine Runtime-, Wire-, Persistenz-, Public-API-, Schema- oder Default-Aenderung ueber den Release-Bump hinaus; K8s-Seed-Images wurden auf `0.18.0` synchronisiert. | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) |
+| ✅      | Roadmap-Trigger-Nacharbeit (`0.19.0`) | Decision-only-Plan archiviert: Postgres, CORS-Variante A, externe Analyzer-API und Control-Plane bleiben bis zu konkreten Betreiber-/Multi-Tenant-/Audit-Triggern deferred. Kein Release-Tag, kein Versions-Bump. | [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) |
+| ✅      | Package Publishing (`0.20.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120: GitHub-Packages-Publish für `@pt9912/player-sdk` und `@pt9912/stream-analyzer`, Scope-Migration auf `@pt9912`, Release-Doku und Publish-Workflow. | [`done/plan-0.20.0.md`](../done/plan-0.20.0.md) |
+| 🟡      | OCI Image Publishing (`0.21.0`) | Aktiv. Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish und Release-Hook. | [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.18.0` ist als Release `v0.18.0` und Decision-Closeout in
-[`done/plan-0.18.0.md`](../done/plan-0.18.0.md) archiviert. Tranche 1
-entscheidet alle drei Risiken ohne Implementierungs-Trigger: `R-9`
-bleibt an K8s-Smoke-/Scrape-Policy gebunden, `R-13` bleibt mit
-reproduzierbarem Trivy-Re-Review-Artefakt `continued`, und `R-12`
-bleibt Nightly-detektiert ohne Safari-/WebKit-Pflicht. Tranche 3
-schliesst die Nachweise mit `make docs-check`, `make k8s-validate`,
-`make image-scan` und geprueftem WebRTC-Nightly-Run. Tranche 4 haelt
-die drei Risiken bewusst `⬜` offen und verankert die Resttrigger in
-Backlog und Roadmap. Die Risiken selbst bleiben im Backlog offen.
+`0.21.0` ist als OCI-Image-Publishing-Track aktiv in
+[`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Der Trigger ist
+jetzt explizit: Nach dem erfolgreichen GitHub-Packages-Publish in
+`0.20.0` sollen auch die drei Runtime-Artefakte ohne lokalen Docker-
+Build nutzbar sein.
 
-Der aktuelle Folgeplan-Korridor
-[`done/plan-0.19.0.md`](../done/plan-0.19.0.md) hat die offenen
-Decision-Tracks ohne Implementierungs-Trigger geschlossen: `MVP-40`
-Postgres, CORS-Preflight-Variante A, `apps/analyzer-api`
-(`RAK-102`) und `apps/control-plane` (`RAK-103`) bleiben deferred,
-bis konkrete Betreiber-/Multi-Tenant-/Audit-Trigger belegt sind.
+Der Scope bleibt bewusst eng: GHCR-Images für API, Dashboard und
+Analyzer-Service, versionierte Tags, Make-Dry-Run, approval-gated
+Publish-Target und `release.published`-Workflow. `latest`, Multi-Arch,
+Signierung/Attestations und Production-K8s bleiben Folge-Scope.
 
-`0.16.0` ist released und archiviert in
-[`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release liefert
-genau Szenario B aus `0.15.0`: einen begrenzten HLS-CMAF-Byte-Range-
-Fetch fuer manifest-referenzierte Init-/Media-Segmente mit expliziten
-Offsets, ohne neues Public-Schema und ohne neue externe Analyzer-API.
-RAK-106..RAK-110 sind geschlossen; externe Analyzer-API, Control-
-Plane, Postgres, Analytics, Production-K8s, Low-Latency-CMAF,
-vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade
-bleiben deferred.
+Offene Restpunkte bis zum Release-Closeout:
 
-Vorgänger `0.15.0` ist released und archiviert in
-[`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0 wählte
-Szenario A: Zielgruppe + Analyzer-Boundary. Tranche 1 entschied
-Selbsthoster, kleine bis mittlere Streaming-Teams, Broadcaster-Labs
-und technische Media-/DevOps-Teams als Primärziel für die nächsten
-Minor-Releases. Tranche 2 deferred eine externe `apps/analyzer-api`;
-interner `apps/analyzer-service` und `@pt9912/stream-analyzer`
-Library/CLI bleiben Standard. Tranche 3 deferred `apps/control-plane`
-ohne POC. Tranche 4 empfiehlt den HTTP-Range-/Byte-Range-Loader als
-einzigen kleinen `NF-13`-Folgeslice. Tranche 5 fand keine neuen
-Ops-Trigger: Postgres bleibt `defer-with-migration-seed`, Analytics
-bleibt `defer`.
-
-Vorgänger `0.12.6` (Auth-/Ingest-Folge-Items-Minor) released
-2026-05-12 (Tag `v0.12.6`, Plan archiviert in
-[`done/plan-0.12.6.md`](../done/plan-0.12.6.md)). Alle neun
-R-N-Items adressiert (R-5/R-7/R-10/R-11/R-13/R-15 🟢; R-17/R-20
-🟢 final-geschlossen — Resttrigger aus `0.12.5` aufgelöst;
-R-22 🟢). Sampling-Lücken-Heuristik (R-10) bleibt explizit
-deferred.
-
-Vorgänger `0.12.0` ist released (Plan archiviert in
-[`done/plan-0.12.0.md`](../done/plan-0.12.0.md), Lastenheft-Patch
-`1.1.15` mit RAK-71..RAK-76 (§13.14) und F-111..F-113 auf
-Release-Muss). Vorgänger `0.11.0` ist released
-(Plan archiviert in
-[`done/plan-0.11.0.md`](../done/plan-0.11.0.md), Lastenheft-Patch
-`1.1.14` mit RAK-65..RAK-70 (§13.13) und F-46..F-51 + MVP-38 auf
-Release-Muss; Variante B als Modul in `apps/api`, eigener
-`apps/ingest-gateway`-Service bleibt Folge-Scope; Wire-Vertrag
-für `/api/ingest/*` in
-[`spec/backend-api-contract.md`](../../../spec/backend-api-contract.md)
-§2 + §3.8).
-
-Vorgänger `0.10.0` released (CMAF-Analyse im Stream-Analyzer-
-Scope, NF-13 / RAK-60..RAK-64; Plan in
-[`done/plan-0.10.0.md`](../done/plan-0.10.0.md); Lastenheft vor
-diesem Patch: `1.1.13`). Tranche 4 von `0.15.0` priorisiert den
-HTTP-Range-/Byte-Range-Loader als einzigen kleinen Folge-Slice. Die
-übrigen bewusst ausgegrenzten CMAF-Erweiterungen bleiben Folge-Scope:
-
-- Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF, `cmfl`-Profil).
-- Vollständige Segmentset-Abdeckung jenseits Init + erstes
-  fMP4-Media-Segment pro Manifest-Scope.
-- Codec-Decoding und Player-SDK-CMAF-Playback-Support.
-- `cmf1` und neuere Structural-Brand-Profile.
-
-Weitere Folge-Pläne liegen in [`docs/planning/open/`](../open/).
-
-Pending-Folge-Punkte aus der Wave-2-Lieferung in `0.9.5`
-(Trigger-Schwellen werden im jeweiligen Folge-Plan aktiviert,
-sobald sie erreicht sind):
-
-- **Benchmark-Smoke PR-Blockierung** — N=3..5 grüne
-  Beobachtungsläufe von [`benchmark-observation.yml`](../../../.github/workflows/benchmark-observation.yml)
-  abwarten; Folge-Commit nimmt die drei `continue-on-error: true`-
-  Marker raus und nimmt `make benchmark-smoke` in `make gates`
-  auf.
-- **Mutation-PR-Blockierung** — Score > 70 % drei Nightly-Runs
-  in Folge auf einem Pilot-Modul (siehe
-  [`docs/dev/mutation-testing.md`](../../dev/mutation-testing.md)
-  §3); Folge-Commit setzt `--threshold-break=70` für das Modul.
-- **Erweiterung der Wave-2-Module** —
-  [`extra-gates.md`](../in-progress/extra-gates.md) §3.5 listet weitere
-  Fuzz-Kandidaten (HLS-Parser, SRT-Health-Mapping); §3.6 listet
-  weitere Mutation-Kandidaten (Cursor-Logik, HLS/DASH-Parser,
-  SSRF-Prüfung). Aufnahme in einem Folge-Plan nach Auswertung
-  der ersten Beobachtungsläufe.
-
-Master-Backlog für Quality-Gates ist
-[`extra-gates.md`](../in-progress/extra-gates.md); die zwei Wellen-Pläne
-zitieren ihn aber führen keine neuen Backlog-Items.
-Lieferübersicht der `0.5.0`-Tranchen (zur Historie, finaler Stand
-siehe [`done/plan-0.5.0.md`](../done/plan-0.5.0.md)):
-
-| Tranche | Status | Inhalt                                                  | Verweis                                                                              |
-| ------- | ------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| 0       | ✅     | Vorgänger-Gate und Scope-Festlegung                     | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §1a                                               |
-| 1       | ✅     | Example-Struktur und Lab-Konventionen                   | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §2                                                |
-| 2       | ✅     | MediaMTX-Beispiel erweitern (RAK-36)                    | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §3                                                |
-| 3       | ✅     | SRT-Beispiel als Lab-Szenario (RAK-37)                  | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §4                                                |
-| 4       | ✅     | DASH-Beispiel und Analyzer-Grenze (RAK-38)              | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §5                                                |
-| 5       | ✅     | WebRTC vorbereitet, nicht produktiv (RAK-39)            | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §6                                                |
-| 6       | ✅     | Dokumentation, Smokes und Release-Gates (RAK-40)        | [`plan-0.5.0.md`](../done/plan-0.5.0.md) §7 |
+- `make image-publish-dry-run VER=0.21.0`
+- `make image-scan`
+- Versionstragende Artefakte auf `0.21.0` synchronisieren.
+- Plan nach `done/` archivieren, Tag `v0.21.0` setzen und GHCR-Publish
+  über GitHub Release auslösen.
 
 ---
 
@@ -296,6 +209,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 52  | ✅      | `0.17.0` Hardening / Evidence Review released: `0.16.0`-Closeout importiert, Szenario D gewaehlt, Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 vergeben, Evidence geprueft, Tranche 2 als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung geschlossen, Tranche 3 als No-change-Gate-Nachweis abgeschlossen und Tranche 4 mit Version `0.17.0`, versionstragendem Test-/Fixture-Asset-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0` geschlossen. | Nach Schritt 51 | RAK-111..RAK-115 ✅; `spec/lastenheft.md` §13.21; [`done/plan-0.17.0.md`](../done/plan-0.17.0.md); Tag `v0.17.0` |
 | 53  | ✅      | `0.18.0` Offene Risiken / Trigger-Re-Eval released: `R-9`, `R-12` und `R-13` ohne Implementierungs-Trigger entschieden, Resttrigger in Backlog und Roadmap praezisiert, K8s-Seed-Images und Versionstraeger auf `0.18.0` synchronisiert. Kein Lastenheft-Patch; normativer Stand bleibt `1.1.22`. | Nach Schritt 52 | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md); Tag `v0.18.0` |
 | 54  | ✅      | `0.20.0` Package Publishing released: publishbare npm-Pakete auf `@pt9912/player-sdk` und `@pt9912/stream-analyzer` umgestellt, GitHub-Packages-Workflow ergänzt, Release-Doku erweitert und erster Package-Publish vorbereitet/ausgeführt. Dashboard und Analyzer-Service bleiben `private: true`. | Nach Schritt 53 und Decision-only `0.19.0` | RAK-116..RAK-120 ✅; `spec/lastenheft.md` §13.22; [`done/plan-0.20.0.md`](../done/plan-0.20.0.md); Tag `v0.20.0` |
+| 55  | 🟡      | `0.21.0` OCI Image Publishing aktivieren: GHCR-Namensschema, Make-Targets, Publish-Workflow und Release-Doku für drei Runtime-Images liefern; kein `latest`, kein Production-K8s-Go. | Nach Schritt 54 und ausgelöstem Container-Publishing-Trigger | RAK-121..RAK-125; `spec/lastenheft.md` §13.23; [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
 
 ---
 
@@ -335,6 +249,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.18.0` | Offene Risiken / Trigger-Re-Eval | ✅ | Released 2026-05-13. Decision-Closeout in [`done/plan-0.18.0.md`](../done/plan-0.18.0.md): `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Version `0.18.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.18.0`; kein Lastenheft-Patch. |
 | `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | ✅ | Decision-only-Plan archiviert in [`done/plan-0.19.0.md`](../done/plan-0.19.0.md). Postgres bleibt `deferred` mit ADR-0005-Schwellen, CORS-Preflight-Variante A bleibt deferred bis zu echtem Multi-Tenant-/Project-in-URL-Trigger; `apps/analyzer-api` und `apps/control-plane` sind als Decision-Records mit Proceed-/POC-/Defer-Kriterien dokumentiert. Kein Release-Tag, kein Versions-Bump. |
 | `0.20.0` | Package Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.20.0.md`](../done/plan-0.20.0.md). Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120 in §13.22. Inhalt: Scope-Migration auf `@pt9912`, GitHub-Packages-Workflow, Release-Doku und Publish von `@pt9912/player-sdk` plus `@pt9912/stream-analyzer`; Apps bleiben private Workspace-Pakete. |
+| `0.21.0` | OCI Image Publishing | 🟡 | Aktiv in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23. Inhalt: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish, Release-Hook und Rollback-Doku; kein `latest`, kein Production-K8s-Go. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

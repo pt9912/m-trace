@@ -2,12 +2,24 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.23<br>
+**Version:** 1.1.24<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.24` (OCI Image Publishing für `0.21.0`)**:
+> Aktiviert die erste GHCR-Veröffentlichung der drei Runtime-Images
+> und führt die neue RAK-Gruppe `RAK-121`..`RAK-125` in §13.23 ein.
+> Inhalt: versionierte Images `ghcr.io/pt9912/m-trace-api`,
+> `ghcr.io/pt9912/m-trace-dashboard` und
+> `ghcr.io/pt9912/m-trace-analyzer-service`, Make-Targets für
+> Build/Dry-Run/Publish, ein approval-gated GitHub-Actions-Workflow
+> und Release-Dokumentation mit Rollback-Grenzen. Kein `latest`-Tag,
+> keine Production-K8s-Pflicht und keine Runtime-/Wire-/Schema-
+> Änderung. Patch-Log siehe
+> [`docs/planning/done/plan-0.21.0.md`](../docs/planning/done/plan-0.21.0.md).
+>
 > **Patch `1.1.23` (Package Publishing für `0.20.0`)**:
 > Aktiviert die erste echte GitHub-Packages-Veröffentlichung und führt
 > die neue RAK-Gruppe `RAK-116`..`RAK-120` in §13.22 ein. Inhalt:
@@ -2358,6 +2370,30 @@ Akzeptanzkriterien:
 | RAK-118 | Muss | **GitHub-Packages-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
 | RAK-119 | Muss | **Release-Dokumentation**: `docs/user/releasing.md` beschreibt Dry-Run, produktiven Publish, automatischen Release-Hook und Package-Rollback-Grenzen. |
 | RAK-120 | Muss | **Closeout und Erstveröffentlichung**: `0.20.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.20.0` und der erste erfolgreiche GitHub-Packages-Publish sind dokumentiert. |
+
+### 13.23 Version 0.21.0: OCI Image Publishing (RAK-121..RAK-125)
+
+`0.21.0` schliesst die Lücke zwischen lokalen Runtime-Image-Builds und
+öffentlich pullbaren m-trace-Images. Die drei bestehenden Runtime-
+Artefakte werden versioniert über GHCR veröffentlicht:
+`ghcr.io/pt9912/m-trace-api`, `ghcr.io/pt9912/m-trace-dashboard` und
+`ghcr.io/pt9912/m-trace-analyzer-service`.
+
+Die Veröffentlichung ist bewusst ein Release-Artefakt, kein
+Production-K8s-Go. Kubernetes bleibt gemäß `NF-18`/`MVP-42` optional;
+`0.21.0` liefert nur pullbare Images und einen reproduzierbaren
+Publish-Pfad. `latest`-Tags, Multi-Arch-Builds, Signierung und
+Attestations bleiben Folge-Scope.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-121 | Muss | **GHCR-Namensschema**: Die drei Runtime-Images verwenden stabile, owner-konsistente Namen unter `ghcr.io/pt9912/` und werden nur mit expliziten Versions-Tags veröffentlicht; `latest` wird nicht gesetzt. |
+| RAK-122 | Muss | **Make-Publish-Pfad**: Root-Targets bauen, prüfen und veröffentlichen die drei Images reproduzierbar. Der produktive Push verlangt `MTRACE_IMAGE_PUBLISH_APPROVED=1`; ohne Freigabe muss der Publish abbrechen. |
+| RAK-123 | Muss | **GitHub-Actions-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
+| RAK-124 | Muss | **Release-Dokumentation**: `docs/user/releasing.md` beschreibt Image-Dry-Run, produktiven GHCR-Publish, automatische Release-Hook-Ausführung und Rollback-Grenzen für teilweise oder fehlerhafte Image-Veröffentlichungen. |
+| RAK-125 | Muss | **Closeout und Erstveröffentlichung**: `0.21.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.21.0` und der erste erfolgreiche GHCR-Publish der drei Runtime-Images sind dokumentiert. |
 
 ---
 

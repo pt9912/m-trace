@@ -1,8 +1,9 @@
 # Releasing — m-trace
 
 > **Status**: Verbindlich für alle Releases (zuletzt verifiziert mit
-> `0.4.0`). CI-Verifikation, Branching-Modell und Tag-Format sind
-> stabil; Container-Image-Veröffentlichung bleibt deferred.
+> `0.4.0`). CI-Verifikation, Branching-Modell, Tag-Format,
+> GitHub-Packages-Publish und GHCR-Image-Publish sind stabil
+> beschrieben.
 > Bezug: AK-11, DoD §18 (Lastenheft).
 
 ## 0. Zweck
@@ -53,6 +54,7 @@ make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Pro
 make smoke-webrtc-prep    # ab 0.7.0: WebRTC-Lab-Vorbereitungs-Smoke (RAK-48); startet/stoppt mtrace-webrtc; endpoint-only (kein Browser/Playback/getStats)
 make smoke-webrtc-stats-drift # ab 0.9.0: WebRTC-`getStats()`-Drift-Smoke (RAK-56); startet/stoppt mtrace-webrtc + ruft Playwright-Spec gegen Chromium/Firefox; opt-in lokal, produktiv im Nightly-Workflow `.github/workflows/webrtc-drift.yml`
 make package-publish-dry-run # ab 0.20.0: baut und prüft die zwei GitHub-Packages-npm-Artefakte ohne Veröffentlichung
+make image-publish-dry-run VER="$VER" # ab 0.21.0: baut und prüft die drei GHCR-Runtime-Images ohne Veröffentlichung
 ```
 
 Erfolgskriterien:
@@ -464,8 +466,8 @@ Mindestumfang:
 - Release-Titel: `m-trace X.Y.Z`.
 - Tag: `vX.Y.Z`.
 - Assets: GitHub-Source-Archive (`zip`/`tar.gz`) plus ab `0.20.0`
-  GitHub-Packages-Publish für die publishbaren npm-Pakete.
-  Container-Image-Veröffentlichung folgt in einem späteren Release.
+  GitHub-Packages-Publish für die publishbaren npm-Pakete und ab
+  `0.21.0` GHCR-Publish für die drei Runtime-Images.
 
 ```bash
 gh release create "$TAG" \
@@ -530,7 +532,55 @@ veröffentlicht wird. Produktive Veröffentlichungen laufen intern über:
 MTRACE_PACKAGE_PUBLISH_APPROVED=1 make package-publish
 ```
 
-## 6. Post-Release
+## 6. GHCR-Image-Publish (`0.21.0`)
+
+Ab `0.21.0` werden die drei Runtime-Images versioniert auf GHCR
+veröffentlicht:
+
+- `ghcr.io/pt9912/m-trace-api:$VER`
+- `ghcr.io/pt9912/m-trace-dashboard:$VER`
+- `ghcr.io/pt9912/m-trace-analyzer-service:$VER`
+
+`latest` wird bewusst nicht gesetzt. Der Release-Tag bleibt die
+einzige veröffentlichte Tag-Quelle; K8s- und Compose-Beispiele sollen
+weiterhin konkrete Versions-Tags referenzieren.
+
+Lokaler Image-Dry-Run vor Tag:
+
+```bash
+make image-publish-dry-run VER="$VER"
+```
+
+Manueller GitHub-Actions-Dry-Run nach Tag, aber vor GitHub-Release:
+
+```bash
+gh workflow run publish-images.yml \
+    --ref main \
+    -f ref="$TAG" \
+    -f image_tag="$VER" \
+    -f dry_run=true
+```
+
+Der normale Release-Pfad ist: erst lokaler oder manueller Dry-Run,
+dann `gh release create`. Der Workflow
+`.github/workflows/publish-images.yml` wird bei `release.published`
+automatisch ausgeführt und veröffentlicht den Release-Tag.
+
+Produktive Veröffentlichungen laufen intern über:
+
+```bash
+MTRACE_IMAGE_PUBLISH_APPROVED=1 make image-publish VER="$VER"
+```
+
+Voraussetzungen:
+
+- `make image-scan` ist vor dem Release grün.
+- Der GitHub-Actions-Workflow hat `packages: write`.
+- Die Veröffentlichung erfolgt nur für den Release-Tag und nur nach
+  Human Approval durch GitHub Release oder expliziten manuellen
+  Workflow-Aufruf.
+
+## 7. Post-Release
 
 - `CHANGELOG.md` öffnet einen neuen `## [Unreleased]`-Abschnitt.
 - `docs/planning/in-progress/roadmap.md` §3 (Release-Übersicht) aktualisiert den Status
@@ -538,7 +588,7 @@ MTRACE_PACKAGE_PUBLISH_APPROVED=1 make package-publish
 - Folge-ADRs, die mit dem Release entstehen oder fällig werden,
   in `docs/planning/in-progress/roadmap.md` §4 ergänzen.
 
-## 7. Rollback
+## 8. Rollback
 
 Tag noch nicht gepusht:
 
@@ -574,7 +624,18 @@ Package-Publish fehlgeschlagen:
   oder überschreiben; Folge-Patch-Release erstellen und beide Pakete
   erneut konsistent veröffentlichen.
 
-## 8. Referenzen
+Image-Publish fehlgeschlagen:
+
+- Solange kein Image gepusht wurde: Workflow-Fehler auf `main`
+  beheben und denselben Tag erneut über `publish-images.yml`
+  publishen.
+- Wenn nur ein Teil der Images veröffentlicht wurde: fehlende Images
+  mit demselben Git-Ref nachpublishen; bereits veröffentlichte Tags
+  nicht überschreiben.
+- Wenn ein veröffentlichtes Image fehlerhaft ist: Folge-Patch-Release
+  erstellen. Versionierte GHCR-Tags werden nicht mutiert.
+
+## 9. Referenzen
 
 - Lastenheft §14 — Akzeptanzkriterien (AK-11).
 - Lastenheft §18 — Definition of Done für den MVP.
