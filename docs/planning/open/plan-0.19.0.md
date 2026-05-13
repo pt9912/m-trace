@@ -1,4 +1,4 @@
-# Implementation Plan — `0.19.0` (Follow-up: offene Roadmap-ADR-Trigger)
+# Implementation Plan — `0.19.0` (Follow-up: offene Roadmap-ADR-Trigger + triggerfreie Folgefragen)
 
 > **Status**: 🟡 in der Vorbereitung — aktiv in `open/`, noch nicht archiviert.
 >
@@ -30,6 +30,8 @@ In Scope:
 - `MVP-40`: Produktionsnaher Store (`Postgres`) für `apps/api`.
 - `CORS-Preflight-Project-Isolation (Variante A)`: Projektscharfe Preflight-Muster,
   ausgelöst durch reale Multi-Tenant-Anforderungen.
+- `triggerfreie` Follow-ups (`RAK-102` / `RAK-103`): Entscheidungen für
+  `apps/analyzer-api` und `apps/control-plane` auf Entscheidungsniveau schärfen.
 
 Nicht in Scope:
 
@@ -42,6 +44,8 @@ Nicht in Scope:
 - [x] `0.17.0` abgeschlossen und archiviert.
 - [x] Offene Roadmap-Trigger sind klar identifiziert.
 - [ ] Auslöser-Matrix (`MVP-40`, Variante A) ist noch nicht in `0.19.0` entschieden.
+- [ ] Triggerfreie Punkte (`apps/analyzer-api`, `apps/control-plane`) sind im Plan als
+  Decision-Track aufgenommen und mit Owner/Abbruchkriterien versehen.
 
 ## 1. Tranchen-Übersicht
 
@@ -88,6 +92,17 @@ DoD:
   - `implemented`: Projektscharfen Preflight-Pfad als Option/Standard definieren,
   - `deferred`: Variante B beibehalten und klarer Triggertext hinterlegen.
 
+### 3.3 Tranche-1-C — Triggerfreie Decision-Track
+
+- [ ] `apps/analyzer-api` (`RAK-102`) als follow-up dokumentieren:
+  - Konkrete Bedingungen für `proceed` oder `POC` formalisieren (externer Konsument,
+    Auth-/Rate/SSRF-/Retention-Stand, Contract-Abnahme).
+  - Entscheidungsmatrix im Plan: `proceed`/`POC`/`defer`/`anders erfüllt`.
+- [ ] `apps/control-plane` (`F-132`, `RAK-103`) als follow-up dokumentieren:
+  - Konkrete Bedingungen für `proceed`/`POC`/`defer` (mehr als eine Instanz/Project,
+    Betreiberprofil, Audit-/Tenant-/Owner-Anforderung).
+  - Entscheidungstransfer: kein POC/Code in `0.19.0` ohne separaten Folgeplan.
+
 ## 4. Tranche 2 — Umsetzung / Follow-up-Artefakte
 
 ## 4.1 Wenn `MVP-40` implementiert wird
@@ -124,3 +139,26 @@ DoD:
 - [ ] `docs/planning/in-progress/roadmap.md` reflektiert den Folgeplan-Stand.
 - [ ] `docs/planning/open/plan-0.19.0.md` in `done/` verschieben, falls vollständig abgeschlossen.
 - [ ] Bei Restoffen den Nachfolgepfad benennen (z. B. `0.20.0`), ohne Scope-Drift.
+
+## 7. Triggerfreie Folgefragen ohne harte Roadmap-Konditionen
+
+Ziel: zwei Themen bleiben als operator- oder stakeholdergetriebener Follow-up auf
+Decisionschiene, ohne dass sie als Implementations-Work in `0.19.0` codeseitig umgesetzt
+werden müssen.
+
+### 7.1 Scope
+
+- `apps/analyzer-api` (`RAK-102`, `MVP-20`) bleibt ohne Trigger-ID in `defer`, solange kein
+  konkreter externer Konsument, Auth-/Rate-Limit-/SSRF-/Retention-Nachweis, Contract-Finalisierung
+  und Folgeplan vorliegt.
+- `apps/control-plane` (`F-132`, `RAK-103`) bleibt ohne Trigger-ID in `defer`, solange kein klarer
+  Betreiberbedarf mit Operator-/Tenant-/Audit-Nachweis, SLO und Produkt-Owner-Freigabe vorliegt.
+
+### 7.2 DoD
+
+- [ ] Für beide Themen existiert ein kurzer, verbindlicher Decision-Record-Abschnitt in
+  `docs/planning/open/plan-0.19.0.md` oder `docs/adr/`.
+- [ ] Die Aufnahmekriterien für den nächsten Folgeplan sind dokumentiert:
+  - `apps/analyzer-api`: externer Nutzenfall, Sicherheitsmodell, Retention, Owner.
+  - `apps/control-plane`: Zielgruppenfit (beyond MVP), Admin-/Operator-Scope, Audit-/Compliance-Ausblick.
+- [ ] Keine Runtime-/Schema-/API-Änderung in `0.19.0` für diese beiden Punkte.
