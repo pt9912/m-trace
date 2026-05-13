@@ -7,10 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-05-13
+
+> **Patch-/Tooling-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md) — kein
+> Lastenheft-Patch; normativer Stand bleibt `1.1.24`.
+> Plan in
+> [`docs/planning/done/plan-0.22.0.md`](docs/planning/done/plan-0.22.0.md).
+
 ### Added
 
 - `0.22.0` Quality-Gates-Follow-up aktiviert:
-  [`docs/planning/open/plan-0.22.0.md`](docs/planning/open/plan-0.22.0.md)
+  [`docs/planning/done/plan-0.22.0.md`](docs/planning/done/plan-0.22.0.md)
   promoted `make benchmark-smoke` nach fünf grünen Beobachtungsläufen
   in den PR-blockierenden `make gates`-Pfad.
 

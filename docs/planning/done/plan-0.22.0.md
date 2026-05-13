@@ -1,6 +1,6 @@
 # Implementation Plan — `0.22.0` (Quality-Gates Follow-up)
 
-> **Status**: 🟡 aktiv in `open/`.
+> **Status**: ✅ released und archiviert in `done/`.
 >
 > **Vorgänger**: `0.21.0` ist als OCI-Image-Publishing-Release
 > veröffentlicht und archiviert in
@@ -13,7 +13,8 @@
 >
 > **Release-Typ**: Patch-/Tooling-Release ohne Lastenheft-Patch, ohne
 > Runtime-, Wire-, Public-API-, Persistenz- oder Analyzer-Schema-
-> Änderung.
+> Änderung. Der Release ist trotzdem versionstragend (`0.22.0`),
+> weil `release.published` npm-Pakete und GHCR-Images veröffentlicht.
 
 ## 0. Scope
 
@@ -32,7 +33,9 @@ Nicht in Scope:
 
 - Mutation-Testing PR-blockierend machen.
 - Benchmark-Budgets schärfen oder neue Hot-Paths ergänzen.
-- Lastenheft-Patch oder Versions-Bump von Runtime-Artefakten.
+- Lastenheft-Patch.
+- neue Runtime-Artefakte jenseits des Release-Bumps für Package- und
+  Image-Publishing.
 - neue Runtime-, Wire-, API-, Persistenz- oder Analyzer-Schema-
   Funktionalität.
 
@@ -44,6 +47,7 @@ Nicht in Scope:
 | 1 | Benchmark-Promotion | `benchmark-smoke` in `make gates`, Nightly hart |
 | 2 | Mutation-Messbarkeit | TS-Package-Filter korrigiert, Blockierung deferred |
 | 3 | Doku/Gates | Planungsdoku aktualisiert, lokale Verifikation grün |
+| 4 | Release-Closeout | Versionsträger `0.22.0`, Plan archiviert, Tag/Release |
 
 ## 2. Tranche 0 — Evidence
 
@@ -115,6 +119,30 @@ DoD:
   zeigte farbigen Vitest-4-Bench-Output im neuen Gate-Pfad; der
   Budget-Parser entfernt ANSI-Sequenzen vor dem Tabellen-Match.
 - [x] `make analyzer-benchmark-smoke` nach Parser-Fix.
+- [x] Remote-CI: `Build` run
+  [`25807641979`](https://github.com/pt9912/m-trace/actions/runs/25807641979)
+  ist nach Rerun grün. Der erste Versuch scheiterte an einem
+  transienten GHCR-Timeout beim Pull von `d-migrate:0.9.5`; der
+  Rerun bestand `Quality gates`, Build und CLI-Smoke.
+
+## 6. Tranche 4 — Release-Closeout
+
+DoD:
+
+- [x] Versionsträger auf `0.22.0` synchronisiert:
+  npm-Workspaces, API-Service-Version, SDK-/Analyzer-Version,
+  Analyzer-Fixtures, Contract-Testdata, `sdk-compat.json` und
+  K8s-Image-Tags.
+- [x] `CHANGELOG.md` datiert `0.22.0` auf 2026-05-13.
+- [x] Roadmap verweist auf den archivierten Plan.
+- [x] `make docs-check`, `make ts-test`, `make api-test`.
+- [x] `make package-publish-dry-run`.
+- [x] `make image-publish-dry-run VER=0.22.0`.
+- [x] Tag `v0.22.0` und GitHub-Release aus diesem Closeout-Commit.
+
+Hinweis: Die Package-/Image-Publish-Workflows starten erst durch
+`release.published`; sie werden nach der GitHub-Release-Erstellung
+über Actions geprüft.
 
 Closeout-Verdict:
 

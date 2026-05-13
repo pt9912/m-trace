@@ -306,7 +306,7 @@ Wave 2 (`plan-0.9.5.md` Tranche 0):
   `benchmark-observation.yml`-Runs (`25592982776`, `25621106187`,
   `25643426077`, `25704811721`, `25769811661`) ist
   `make benchmark-smoke` in `make gates` aufgenommen
-  (`plan-0.22.0`). Der Nightly-Workflow läuft ohne
+  ([`plan-0.22.0`](../done/plan-0.22.0.md)). Der Nightly-Workflow läuft ohne
   `continue-on-error`.
 - 🟡 Mutation-PR-Blockierung: weiter deferred. Der TS-Workflow-Scope
   wurde in `0.22.0` von `@npm9912/player-sdk` auf

@@ -1,6 +1,6 @@
 {
   "package_name": "@pt9912/player-sdk",
-  "sdk_version": "0.21.0",
+  "sdk_version": "0.22.0",
   "wire_schema_version": "1.0",
   "api_supported_schema_version": "1.0",
   "reserved_meta_namespaces": [
