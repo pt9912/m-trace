@@ -141,7 +141,7 @@ function printUsage(out: Writable): void {
       "Argumente:",
       "  <url-or-file>   HTTP/HTTPS-URL eines HLS-Manifests oder Pfad zu einer",
       "                  lokalen Manifest-Datei (.m3u8). URL-Inputs nutzen den",
-      "                  SSRF-Schutz aus @npm9912/stream-analyzer §6.",
+      "                  SSRF-Schutz aus @pt9912/stream-analyzer §6.",
       "",
       "Optionen:",
       "  -h, --help      Zeigt diese Hilfe an.",

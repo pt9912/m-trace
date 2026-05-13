@@ -1,6 +1,6 @@
 # Stream Analyzer
 
-`@npm9912/stream-analyzer` ist die HLS- und DASH-Manifestanalyse der
+`@pt9912/stream-analyzer` ist die HLS- und DASH-Manifestanalyse der
 m-trace-Toolchain. Das Paket liefert eine Bibliotheks-API für
 Backend-Integration (`apps/api`), eine CLI und ein stabiles
 JSON-Ergebnisformat.
@@ -49,7 +49,7 @@ filtern bei Bedarf weiter über `analyzerKind` (heute `"hls"` oder
 ## 2. Public API
 
 ```ts
-import { analyzeManifest, STREAM_ANALYZER_VERSION } from "@npm9912/stream-analyzer";
+import { analyzeManifest, STREAM_ANALYZER_VERSION } from "@pt9912/stream-analyzer";
 
 const result = await analyzeManifest({ kind: "text", text: manifest });
 if (result.status === "ok") {
@@ -386,7 +386,7 @@ Der Slice bleibt innerhalb des bestehenden
 Library-Aufrufer dürfen die Binary-Prüfung opt-in/opt-out steuern:
 
 ```ts
-import { analyzeManifest } from "@npm9912/stream-analyzer";
+import { analyzeManifest } from "@pt9912/stream-analyzer";
 
 await analyzeManifest({ kind: "url", url }, {
   cmaf: {
@@ -705,16 +705,16 @@ die Live/VOD-Klassifikation ein (`endList` ist die maßgebliche Quelle).
 
 ```bash
 # Tests
-pnpm --filter @npm9912/stream-analyzer run test
+pnpm --filter @pt9912/stream-analyzer run test
 
 # Coverage (Schwelle 90 % auf src/**)
-pnpm --filter @npm9912/stream-analyzer run test:coverage
+pnpm --filter @pt9912/stream-analyzer run test:coverage
 
 # Lint (tsc + Boundary-Check + Public-API-Snapshot)
-pnpm --filter @npm9912/stream-analyzer run lint
+pnpm --filter @pt9912/stream-analyzer run lint
 
 # Build (ESM + CJS + d.ts inkl. CLI-Bundle)
-pnpm --filter @npm9912/stream-analyzer run build
+pnpm --filter @pt9912/stream-analyzer run build
 ```
 
 Root-Aggregat: `make test`, `make lint`, `make coverage-gate`, `make build`
@@ -726,7 +726,7 @@ Der Lastenheft-Aufruf `pnpm m-trace check <url-or-file>` analysiert
 ein HLS- **oder DASH-Manifest** und gibt das vollständige
 `AnalysisResult`-JSON auf stdout aus. Ab `0.9.0` Tranche 3 (RAK-59)
 dispatcht der CLI automatisch: der Detector im
-`@npm9912/stream-analyzer`-Paket sieht den Body-Anfang an und
+`@pt9912/stream-analyzer`-Paket sieht den Body-Anfang an und
 schickt ihn an den HLS- oder DASH-Parser; CLI-Aufrufer müssen das
 Format nicht angeben. URL-Inputs nutzen denselben Loader-Pfad wie
 die Bibliothek (siehe §6 für SSRF-Regeln); Datei-Inputs werden

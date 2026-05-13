@@ -318,7 +318,7 @@ func TestHTTP_StreamSessions_NetworkSignalAbsentRoundTrip(t *testing.T) {
 	      "project_id": "demo",
 	      "session_id": "sess-bnd",
 	      "client_timestamp": "2026-04-28T12:00:00.000Z",
-	      "sdk": { "name": "@npm9912/player-sdk", "version": "0.4.0" }
+	      "sdk": { "name": "@pt9912/player-sdk", "version": "0.4.0" }
 	    }
 	  ],
 	  "session_boundaries": [
@@ -380,7 +380,7 @@ func TestHTTP_StreamSessions_BoundaryRejectedDoesNotPersist(t *testing.T) {
 	      "project_id": "demo",
 	      "session_id": "sess-rej",
 	      "client_timestamp": "2026-04-28T12:00:00.000Z",
-	      "sdk": { "name": "@npm9912/player-sdk", "version": "0.4.0" }
+	      "sdk": { "name": "@pt9912/player-sdk", "version": "0.4.0" }
 	    }
 	  ],
 	  "session_boundaries": [
@@ -438,8 +438,8 @@ func TestHTTP_StreamSessions_EndSource_ClientForSessionEnded(t *testing.T) {
 	body := `{
 	  "schema_version": "1.0",
 	  "events": [
-	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-end","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@npm9912/player-sdk","version":"0.4.0"}},
-	    {"event_name":"session_ended","project_id":"demo","session_id":"sess-end","client_timestamp":"2026-04-28T12:00:01.000Z","sequence_number":2,"sdk":{"name":"@npm9912/player-sdk","version":"0.4.0"}}
+	    {"event_name":"playback_started","project_id":"demo","session_id":"sess-end","client_timestamp":"2026-04-28T12:00:00.000Z","sequence_number":1,"sdk":{"name":"@pt9912/player-sdk","version":"0.4.0"}},
+	    {"event_name":"session_ended","project_id":"demo","session_id":"sess-end","client_timestamp":"2026-04-28T12:00:01.000Z","sequence_number":2,"sdk":{"name":"@pt9912/player-sdk","version":"0.4.0"}}
 	  ]
 	}`
 	if r := postEvents(t, srv, "demo-token", body); r.StatusCode != http.StatusAccepted {

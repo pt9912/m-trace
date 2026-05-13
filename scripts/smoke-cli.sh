@@ -163,10 +163,10 @@ echo "[smoke-cli] URL → fetch_blocked OK (real loader-Pfad)"
 # 7. bin-Pfad: analyzer-service hängt als Workspace-Consumer am
 #    stream-analyzer und bekommt das m-trace-Bin in sein node_modules/
 #    .bin/ symlinked — exakt die Situation, die published-package-
-#    Konsumenten nach `npm install @npm9912/stream-analyzer` haben.
+#    Konsumenten nach `npm install @pt9912/stream-analyzer` haben.
 #    `pnpm --filter ... exec m-trace --help` exerciert das Symlink
 #    plus den Shebang plus den Executable-Bit in einem Aufruf.
-help_via_bin="$(pnpm --silent --filter @npm9912/analyzer-service exec m-trace --help)"
+help_via_bin="$(pnpm --silent --filter @pt9912/analyzer-service exec m-trace --help)"
 if ! grep -q "Usage: m-trace check" <<<"$help_via_bin"; then
   echo "[smoke-cli] m-trace via consumer node_modules/.bin did not produce usage:"
   echo "$help_via_bin"

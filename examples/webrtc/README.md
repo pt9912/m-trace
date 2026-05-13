@@ -175,7 +175,7 @@ Greift nur das `mtrace-webrtc`-Project. Core-Lab (`mtrace`),
   Allowlist; eine produktive Telemetrie-Anbindung braucht einen
   eigenen Folgeplan.
 - **Kein Player-SDK-WebRTC-Adapter.** RAK-51 ist deferred (siehe
-  `plan-0.7.0.md` §7); der `@npm9912/player-sdk` bleibt auf
+  `plan-0.7.0.md` §7); der `@pt9912/player-sdk` bleibt auf
   `hls.js`-only, ohne Codepfad-Vermischung.
 - **Kein TLS, kein Public-Internet, kein NAT-Traversal über LAN
   hinaus.** Der Compose-Stack zielt auf `localhost`-Tests; STUN/TURN

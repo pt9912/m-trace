@@ -161,7 +161,7 @@ type analyzeResponseEnvelope struct {
 	Details         json.RawMessage         `json:"details"`
 	// Fehler-Felder (nur bei status="error" relevant). Das
 	// analyzer-service-Wire-Format kapselt Domain-Fehler in 200 +
-	// status="error", siehe `@npm9912/stream-analyzer`-Doku §2.3 und
+	// status="error", siehe `@pt9912/stream-analyzer`-Doku §2.3 und
 	// `apps/analyzer-service/src/server.ts`.
 	Code         string          `json:"code"`
 	Message      string          `json:"message"`

@@ -26,9 +26,9 @@ Property-Test-Suites in zwei Packages.
 
 | Test-File | Package | Was wird property-getestet |
 |---|---|---|
-| `tests/hls-parser.property.test.ts` | `@npm9912/stream-analyzer` | jede Eingabe mit `#EXTM3U`-Header → `analyzerKind:"hls"` + definierter `playlistType`; non-HLS/non-DASH-Bodies → `manifest_not_supported`. |
-| `tests/dash-parser.property.test.ts` | `@npm9912/stream-analyzer` | jede `<?xml`/`<MPD`-Eingabe → Detector klassifiziert als `dash`; well-formed MPD → deterministisches Result mit `details.type`/`details.live`/`summary.itemCount`. |
-| `tests/redact.property.test.ts` | `@npm9912/player-sdk` | bounded ASCII/Sentinel-Inputs → `redactUrl` throwed nicht; JWT-Shape-Pfadsegmente → `:redacted`; lange Hex-Pfadsegmente → `:redacted`. |
+| `tests/hls-parser.property.test.ts` | `@pt9912/stream-analyzer` | jede Eingabe mit `#EXTM3U`-Header → `analyzerKind:"hls"` + definierter `playlistType`; non-HLS/non-DASH-Bodies → `manifest_not_supported`. |
+| `tests/dash-parser.property.test.ts` | `@pt9912/stream-analyzer` | jede `<?xml`/`<MPD`-Eingabe → Detector klassifiziert als `dash`; well-formed MPD → deterministisches Result mit `details.type`/`details.live`/`summary.itemCount`. |
+| `tests/redact.property.test.ts` | `@pt9912/player-sdk` | bounded ASCII/Sentinel-Inputs → `redactUrl` throwed nicht; JWT-Shape-Pfadsegmente → `:redacted`; lange Hex-Pfadsegmente → `:redacted`. |
 
 ## 2. Lokale Reproduktion
 

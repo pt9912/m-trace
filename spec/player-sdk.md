@@ -1,7 +1,7 @@
 # Player-SDK
 
 > **Status**: `0.2.0`-Arbeitsstand. Dieses Dokument beschreibt die
-> projektweite Nutzung des Pakets `@npm9912/player-sdk`.
+> projektweite Nutzung des Pakets `@pt9912/player-sdk`.
 
 Das Player-SDK erfasst Playback-Events im Browser und sendet sie im
 m-trace-Wire-Format an die API. Der aktuelle Einstiegspunkt ist
@@ -11,7 +11,7 @@ m-trace-Wire-Format an die API. Der aktuelle Einstiegspunkt ist
 ## Installation
 
 ```bash
-pnpm add @npm9912/player-sdk hls.js
+pnpm add @pt9912/player-sdk hls.js
 ```
 
 `hls.js` ist Peer Dependency. Anwendungen kontrollieren dadurch selbst, welche
@@ -21,7 +21,7 @@ Player-Version sie einsetzen.
 
 ```ts
 import Hls from "hls.js";
-import { attachHlsJs, createTracker } from "@npm9912/player-sdk";
+import { attachHlsJs, createTracker } from "@pt9912/player-sdk";
 
 const tracker = createTracker({
   endpoint: "http://localhost:8080/api/playback-events",
@@ -52,7 +52,7 @@ import {
   attachHlsJs,
   createSessionId,
   createTracker
-} from "@npm9912/player-sdk";
+} from "@pt9912/player-sdk";
 ```
 
 Öffentliche Typen:
@@ -139,7 +139,7 @@ Trennung, OWS-Verhalten am Wire-Layer — steht normativ in
 
 ```ts
 import { trace } from "@opentelemetry/api";
-import { createTracker, type TraceParentProvider } from "@npm9912/player-sdk";
+import { createTracker, type TraceParentProvider } from "@pt9912/player-sdk";
 
 const traceparent: TraceParentProvider = () => {
   const span = trace.getActiveSpan();
@@ -196,7 +196,7 @@ keine OTel-Abhängigkeit im Default-Bundle mit. Anwendungen können aber einen
 eigenen Transport über `PlayerSDKConfig.transport` injizieren:
 
 ```ts
-import { createTracker, type PlaybackEventBatch, type Transport } from "@npm9912/player-sdk";
+import { createTracker, type PlaybackEventBatch, type Transport } from "@pt9912/player-sdk";
 
 class OTelLikeTransport implements Transport {
   async send(batch: PlaybackEventBatch): Promise<void> {
@@ -233,7 +233,7 @@ Das SDK übernimmt die normativen MVP-Grenzen aus dem Lastenheft:
 Reproduzierbarer Smoke:
 
 ```bash
-pnpm --filter @npm9912/player-sdk run performance:smoke
+pnpm --filter @pt9912/player-sdk run performance:smoke
 ```
 
 Der Smoke baut das SDK, prüft die gzip-Größe des ESM-Bundles, misst

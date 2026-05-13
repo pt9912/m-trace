@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
     mode === "test"
       ? [
           {
-            find: "@npm9912/player-sdk",
+            find: "@pt9912/player-sdk",
             replacement: new URL("./tests/mocks/player-sdk.ts", import.meta.url).pathname
           }
         ]

@@ -53,10 +53,10 @@ RUN pnpm run lint
 
 FROM build AS coverage
 
-RUN pnpm --filter @npm9912/player-sdk run test:coverage \
- && pnpm --filter @npm9912/m-trace-dashboard run test:coverage \
- && pnpm --filter @npm9912/stream-analyzer run test:coverage \
- && pnpm --filter @npm9912/analyzer-service run test:coverage
+RUN pnpm --filter @pt9912/player-sdk run test:coverage \
+ && pnpm --filter @pt9912/m-trace-dashboard run test:coverage \
+ && pnpm --filter @pt9912/stream-analyzer run test:coverage \
+ && pnpm --filter @pt9912/analyzer-service run test:coverage
 
 FROM deps AS audit
 
@@ -64,16 +64,16 @@ RUN pnpm audit --audit-level high
 
 FROM build AS sdk-performance-smoke
 
-RUN pnpm --filter @npm9912/player-sdk run performance:smoke
+RUN pnpm --filter @pt9912/player-sdk run performance:smoke
 
 FROM build AS sdk-pack-smoke
 
 RUN mkdir -p .tmp/player-sdk-pack \
- && pnpm --filter @npm9912/player-sdk run pack:smoke
+ && pnpm --filter @pt9912/player-sdk run pack:smoke
 
 FROM build AS public-api-check
 
-RUN pnpm --filter @npm9912/player-sdk exec node scripts/check-public-api.mjs
+RUN pnpm --filter @pt9912/player-sdk exec node scripts/check-public-api.mjs
 
 FROM build AS cli-smoke
 

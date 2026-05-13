@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 
-import type { AnalyzeOptions, AnalyzeOutput, ManifestInput } from "@npm9912/stream-analyzer";
+import type { AnalyzeOptions, AnalyzeOutput, ManifestInput } from "@pt9912/stream-analyzer";
 
 import { createAnalyzerServer } from "../src/server.js";
 

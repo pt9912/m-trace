@@ -63,7 +63,7 @@ try {
   assert(typeof esmModule.attachWebRtc === "function", "ESM entry must export attachWebRtc (plan-0.8.0 RAK-52)");
 
   const require = createRequire(path.join(appDir, "package.json"));
-  const cjsModule = require("@npm9912/player-sdk");
+  const cjsModule = require("@pt9912/player-sdk");
   assert(typeof cjsModule.createTracker === "function", "CJS entry must export createTracker");
   assert(typeof cjsModule.HttpTransport === "function", "CJS entry must export HttpTransport");
   assert(typeof cjsModule.attachHlsJs === "function", "CJS entry must export attachHlsJs");

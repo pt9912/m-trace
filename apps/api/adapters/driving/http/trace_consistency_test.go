@@ -348,7 +348,7 @@ func singleEventBody(t *testing.T, sessionID, eventName, clientTimestamp string)
 		SessionID:       sessionID,
 		ClientTimestamp: clientTimestamp,
 	}
-	e.SDK.Name = "@npm9912/player-sdk"
+	e.SDK.Name = "@pt9912/player-sdk"
 	e.SDK.Version = "0.12.0"
 	b, err := json.Marshal(batch{SchemaVersion: "1.0", Events: []evt{e}})
 	if err != nil {

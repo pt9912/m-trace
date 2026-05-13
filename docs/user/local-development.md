@@ -104,7 +104,7 @@ curl -i -X POST http://localhost:8080/api/playback-events \
     "session_id": "smoke-test-1",
     "client_timestamp": "2026-04-29T10:00:00.000Z",
     "sequence_number": 1,
-    "sdk": {"name": "@npm9912/player-sdk", "version": "0.2.0"}
+    "sdk": {"name": "@pt9912/player-sdk", "version": "0.2.0"}
   }]
 }
 JSON
@@ -563,11 +563,11 @@ per Vitest.
 
 ```bash
 # vom Repo-Root, nicht aus packages/player-sdk
-pnpm --filter @npm9912/player-sdk run build
-pnpm --filter @npm9912/player-sdk run test
-pnpm --filter @npm9912/player-sdk run test:coverage
-pnpm --filter @npm9912/player-sdk run performance:smoke
-pnpm --filter @npm9912/player-sdk run lint
+pnpm --filter @pt9912/player-sdk run build
+pnpm --filter @pt9912/player-sdk run test
+pnpm --filter @pt9912/player-sdk run test:coverage
+pnpm --filter @pt9912/player-sdk run performance:smoke
+pnpm --filter @pt9912/player-sdk run lint
 ```
 
 Der Performance-Smoke baut das SDK und prüft das `0.2.0`-Budget
@@ -584,11 +584,11 @@ pnpm run lint
 ### 4.3 Dashboard (`apps/dashboard`, ab `0.1.1`)
 
 ```bash
-pnpm --filter @npm9912/m-trace-dashboard run dev      # Vite-Dev-Mode mit /api/*-Proxy auf localhost:8080
-pnpm --filter @npm9912/m-trace-dashboard run build    # Production-Build für Compose-Service
-pnpm --filter @npm9912/m-trace-dashboard run check    # SvelteKit-Type-Check
-pnpm --filter @npm9912/m-trace-dashboard run test
-pnpm --filter @npm9912/m-trace-dashboard run test:coverage
+pnpm --filter @pt9912/m-trace-dashboard run dev      # Vite-Dev-Mode mit /api/*-Proxy auf localhost:8080
+pnpm --filter @pt9912/m-trace-dashboard run build    # Production-Build für Compose-Service
+pnpm --filter @pt9912/m-trace-dashboard run check    # SvelteKit-Type-Check
+pnpm --filter @pt9912/m-trace-dashboard run test
+pnpm --filter @pt9912/m-trace-dashboard run test:coverage
 ```
 
 Im Vite-Dev-Mode greift der SvelteKit-Proxy `/api/*` → `http://localhost:8080`, damit Browser-CORS für GET-Routen entfällt (`plan-0.1.1.md` §3 API-Origin-Strategie). Im Compose-Production-Build laufen Dashboard und API über getrennte Origins; CORS-Headers aus `plan-0.1.0.md` §5.1 greifen.
@@ -599,7 +599,7 @@ Der lokale Veröffentlichungs-Sanity-Check trennt Paketierung und
 End-to-End-Integration:
 
 ```bash
-pnpm --filter @npm9912/player-sdk run pack:smoke
+pnpm --filter @pt9912/player-sdk run pack:smoke
 make dev
 ```
 

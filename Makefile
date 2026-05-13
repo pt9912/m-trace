@@ -9,7 +9,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke k8s-validate devcontainer-validate release-guard release-guard-test gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -59,6 +59,8 @@ help:
 		'  make schema-generate        Re-generate apps/api SQLite DDL from schema.yaml' \
 		'  make sdk-pack-smoke         Run the Player-SDK pack/public-entry smoke check' \
 		'  make sdk-performance-smoke  Run the Player-SDK performance smoke check' \
+		'  make package-publish-dry-run Build and dry-run publish GitHub Packages npm artifacts' \
+		'  MTRACE_PACKAGE_PUBLISH_APPROVED=1 make package-publish Publish GitHub Packages npm artifacts' \
 		'  make k8s-validate           Validate optional deploy/k8s examples without a cluster' \
 		'  make devcontainer-validate  Validate the optional devcontainer seed' \
 		'  make release-guard VER=X.Y.Z Run the manual release approval guard in dry-run mode' \
@@ -337,7 +339,7 @@ api-benchmark-smoke:
 	node scripts/check-bench-budgets.mjs --kind go < .tmp/bench/api-bench.txt
 
 # `make analyzer-benchmark-smoke` ist das TS-Pendant aus plan-0.9.5
-# §2 Tranche 1 für `@npm9912/stream-analyzer` (extra-gates.md §3.2
+# §2 Tranche 1 für `@pt9912/stream-analyzer` (extra-gates.md §3.2
 # Stream-Analyzer-Kandidaten). Nutzt die eingebaute Vitest-Bench-
 # API (`vitest bench --run --config vitest.bench.config.ts`); keine
 # zusätzliche Tinybench-Dependency. Initial-Budgets in
@@ -351,7 +353,7 @@ api-benchmark-smoke:
 analyzer-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
 	@mkdir -p .tmp/bench
-	@bash -o pipefail -c '$(PNPM) --filter @npm9912/stream-analyzer run bench 2>&1 | tee .tmp/bench/analyzer-bench.txt'
+	@bash -o pipefail -c '$(PNPM) --filter @pt9912/stream-analyzer run bench 2>&1 | tee .tmp/bench/analyzer-bench.txt'
 	node scripts/check-bench-budgets.mjs --kind ts < .tmp/bench/analyzer-bench.txt
 
 # `make benchmark-smoke` bündelt beide Bench-Smokes in einem
@@ -404,7 +406,7 @@ api-mutation-report:
 # Initial nicht-blockierend; opt-in. Lokaler Lauf braucht Node + pnpm
 # (host-side, kein Container — selbe Voraussetzung wie `make ts-test`).
 ts-mutation-report:
-	$(PNPM) --filter @npm9912/player-sdk run mutation
+	$(PNPM) --filter @pt9912/player-sdk run mutation
 
 # `make mutation-report` bündelt Go + TS in einem Aufruf
 # (Plan-DoD §5-2 Wrapper). Bleibt opt-in.
@@ -541,6 +543,19 @@ sdk-performance-smoke:
 
 sdk-pack-smoke:
 	$(TS_DOCKER_BUILD) --target sdk-pack-smoke -t $(TS_IMAGE):sdk-pack-smoke .
+
+package-publish-dry-run:
+	$(PNPM) --filter @pt9912/player-sdk run build
+	$(PNPM) --filter @pt9912/stream-analyzer run build
+	NPM_CONFIG_CACHE=$(CURDIR)/.tmp/npm-cache $(PNPM) --filter @pt9912/player-sdk publish --dry-run --no-git-checks --access public
+	NPM_CONFIG_CACHE=$(CURDIR)/.tmp/npm-cache $(PNPM) --filter @pt9912/stream-analyzer publish --dry-run --no-git-checks --access public
+
+package-publish:
+	@test "$(MTRACE_PACKAGE_PUBLISH_APPROVED)" = "1" || (echo 'package-publish: set MTRACE_PACKAGE_PUBLISH_APPROVED=1' >&2; exit 2)
+	$(PNPM) --filter @pt9912/player-sdk run build
+	$(PNPM) --filter @pt9912/stream-analyzer run build
+	NPM_CONFIG_CACHE=$(CURDIR)/.tmp/npm-cache $(PNPM) --filter @pt9912/player-sdk publish --no-git-checks --access public
+	NPM_CONFIG_CACHE=$(CURDIR)/.tmp/npm-cache $(PNPM) --filter @pt9912/stream-analyzer publish --no-git-checks --access public
 
 release-guard:
 	@test -n "$(VER)" || (echo 'release-guard: set VER=X.Y.Z' >&2; exit 2)

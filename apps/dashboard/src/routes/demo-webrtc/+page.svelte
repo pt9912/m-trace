@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { env } from "$env/dynamic/public";
-  import { attachWebRtc, createTracker, type PlayerTracker, type WebRtcAdapter } from "@npm9912/player-sdk";
+  import { attachWebRtc, createTracker, type PlayerTracker, type WebRtcAdapter } from "@pt9912/player-sdk";
 
   // plan-0.8.0 Tranche 2 — Demo-Route gegen das examples/webrtc/-
   // Lab-Compose. Bestehende /demo-Route (hls.js) bleibt unverändert;

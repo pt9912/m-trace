@@ -12,11 +12,11 @@ describe("stream-analyzer version metadata", () => {
     expect(STREAM_ANALYZER_VERSION).toBe(packageJson.version);
   });
 
-  it("uses the @npm9912 scope", () => {
-    expect(STREAM_ANALYZER_NAME.startsWith("@npm9912/")).toBe(true);
+  it("uses the @pt9912 scope", () => {
+    expect(STREAM_ANALYZER_NAME.startsWith("@pt9912/")).toBe(true);
   });
 
-  it("targets release 0.18.0", () => {
-    expect(STREAM_ANALYZER_VERSION).toBe("0.18.0");
+  it("targets release 0.20.0", () => {
+    expect(STREAM_ANALYZER_VERSION).toBe("0.20.0");
   });
 });

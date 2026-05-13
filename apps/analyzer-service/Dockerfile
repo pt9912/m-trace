@@ -13,14 +13,14 @@ COPY apps/analyzer-service/package.json apps/analyzer-service/
 COPY packages/stream-analyzer/package.json packages/stream-analyzer/
 
 RUN pnpm install --frozen-lockfile --ignore-scripts \
-    --filter @npm9912/stream-analyzer... \
-    --filter @npm9912/analyzer-service...
+    --filter @pt9912/stream-analyzer... \
+    --filter @pt9912/analyzer-service...
 
 COPY packages/stream-analyzer packages/stream-analyzer
 COPY apps/analyzer-service apps/analyzer-service
 
-RUN pnpm --filter @npm9912/stream-analyzer run build \
- && pnpm --filter @npm9912/analyzer-service run build
+RUN pnpm --filter @pt9912/stream-analyzer run build \
+ && pnpm --filter @pt9912/analyzer-service run build
 
 # `pnpm deploy --prod` flacht die Workspace-Symlinks in eine
 # selbst-tragende node_modules-Hierarchie ab und lässt die Dev-Deps
@@ -28,7 +28,7 @@ RUN pnpm --filter @npm9912/stream-analyzer run build \
 # packages erwartet — was wir nicht globalisiert aktiv haben (siehe
 # Plan §7.5/3 Begründung). Das Ergebnis-Verzeichnis kann von der
 # Runtime-Stage als read-only-Bundle übernommen werden.
-RUN pnpm --filter @npm9912/analyzer-service deploy --prod --legacy /deploy
+RUN pnpm --filter @pt9912/analyzer-service deploy --prod --legacy /deploy
 
 # Runtime stage — startet direkt aus dem deploy-Bundle, ohne pnpm
 # binär oder einen weiteren install-Schritt.

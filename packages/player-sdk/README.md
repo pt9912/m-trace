@@ -1,4 +1,4 @@
-# @npm9912/player-sdk
+# @pt9912/player-sdk
 
 Browser SDK for sending m-trace playback telemetry from an `HTMLVideoElement`
 or an hls.js player to `POST /api/playback-events`.
@@ -6,7 +6,7 @@ or an hls.js player to `POST /api/playback-events`.
 ## Install
 
 ```bash
-pnpm add @npm9912/player-sdk hls.js
+pnpm add @pt9912/player-sdk hls.js
 ```
 
 `hls.js` is a peer dependency because applications usually already own the
@@ -16,7 +16,7 @@ player version.
 
 ```ts
 import Hls from "hls.js";
-import { attachHlsJs, createTracker } from "@npm9912/player-sdk";
+import { attachHlsJs, createTracker } from "@pt9912/player-sdk";
 
 const video = document.querySelector("video");
 if (!video) {
@@ -61,7 +61,7 @@ Type exports cover the wire payload and configuration surface:
 `SessionMetricsSnapshot`, and `RebufferMeasurement`.
 
 Deep imports from `src/` or `dist/` are not public API. Import from
-`@npm9912/player-sdk`.
+`@pt9912/player-sdk`.
 
 ### Adapter selection (hls.js vs. WebRTC)
 
@@ -243,7 +243,7 @@ The package ships ESM, CJS and IIFE builds. The stable browser entry is the
 `browser` field in `package.json`:
 
 ```html
-<script src="/node_modules/@npm9912/player-sdk/dist/index.global.js"></script>
+<script src="/node_modules/@pt9912/player-sdk/dist/index.global.js"></script>
 <script>
   const tracker = MTracePlayerSDK.createTracker({
     endpoint: "http://localhost:8080/api/playback-events",
@@ -268,7 +268,7 @@ The default bundle has no OpenTelemetry dependency. Applications that already
 own an OTel pipeline can inject an opt-in transport through `transport`:
 
 ```ts
-import type { PlaybackEventBatch, Transport } from "@npm9912/player-sdk";
+import type { PlaybackEventBatch, Transport } from "@pt9912/player-sdk";
 
 class OTelLikeTransport implements Transport {
   async send(batch: PlaybackEventBatch): Promise<void> {
@@ -293,7 +293,7 @@ The performance budget — first set in `0.2.0`, unchanged through `0.8.0` — i
 Run the reproducible smoke with:
 
 ```bash
-pnpm --filter @npm9912/player-sdk run performance:smoke
+pnpm --filter @pt9912/player-sdk run performance:smoke
 ```
 
 The general browser matrix is maintained in

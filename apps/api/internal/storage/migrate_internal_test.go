@@ -128,7 +128,7 @@ func TestOpen_ReRunIsNoop(t *testing.T) {
 			"schema_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		"p1", "s1", "rebuffer_started",
 		"2026-05-02T10:00:00Z", "2026-05-02T10:00:01Z",
-		"@npm9912/player-sdk", "0.4.0", "1.0"); err != nil {
+		"@pt9912/player-sdk", "0.4.0", "1.0"); err != nil {
 		t.Fatalf("insert event: %v", err)
 	}
 
@@ -150,7 +150,7 @@ func TestOpen_ReRunIsNoop(t *testing.T) {
 			"schema_version, delivery_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		"p1", "s1", "x",
 		"2026-05-02T10:00:00Z", "2026-05-02T10:00:01Z",
-		"@npm9912/player-sdk", "0.4.0", "1.0", "bogus"); err == nil {
+		"@pt9912/player-sdk", "0.4.0", "1.0", "bogus"); err == nil {
 		t.Error("expected CHECK violation for delivery_status='bogus', got nil")
 	}
 

@@ -2,12 +2,23 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.22<br>
+**Version:** 1.1.23<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.23` (Package Publishing für `0.20.0`)**:
+> Aktiviert die erste echte GitHub-Packages-Veröffentlichung und führt
+> die neue RAK-Gruppe `RAK-116`..`RAK-120` in §13.22 ein. Inhalt:
+> publishbare npm-Pakete werden auf den GitHub-Owner-Scope
+> `@pt9912` umgestellt, `@pt9912/player-sdk` und
+> `@pt9912/stream-analyzer` werden über GitHub Packages
+> veröffentlicht, die Apps bleiben `private: true`, und der
+> Release-Pfad dokumentiert Dry-Run, produktiven Publish und Rollback-
+> Grenzen. Patch-Log siehe
+> [`docs/planning/done/plan-0.20.0.md`](../docs/planning/done/plan-0.20.0.md).
+>
 > **Patch `1.1.22` (Hardening / Evidence Review für `0.17.0`)**:
 > Aktiviert die Folgephase nach `0.16.0` und führt die neue
 > RAK-Gruppe `RAK-111`..`RAK-115` in §13.21 ein. Inhalt:
@@ -834,7 +845,7 @@ Status im MVP: **Deferred / Folge-Scope nur bei Trigger**
 > nach außen exponierte `apps/analyzer-api` bleibt deferred. Der
 > bestehende interne `apps/analyzer-service` ist der aktuelle
 > HTTP-Wrapper für `apps/api`; technische Nutzer können
-> `@npm9912/stream-analyzer` als Library oder CLI direkt verwenden.
+> `@pt9912/stream-analyzer` als Library oder CLI direkt verwenden.
 > Eine externe API braucht vor `proceed` oder `POC` einen konkreten
 > externen Konsumenten, Auth-/Rate-Limit-/SSRF-Grenzen,
 > Ergebnisabruf-/Retention-Entscheidung, Contract-Fixtures, Owner und
@@ -1307,7 +1318,7 @@ Pflichtfelder im Wire-Format:
   "session_id": "01J...",
   "client_timestamp": "2026-04-28T12:00:00.000Z",
   "sdk": {
-    "name": "@npm9912/player-sdk",
+    "name": "@pt9912/player-sdk",
     "version": "0.2.0"
   }
 }
@@ -1788,7 +1799,7 @@ Nicht im `0.1.0`-MVP:
 | Kennung | Prioritaet | Anforderung | Status (Patch `1.1.12`) |
 |---|---|---|---|
 | MVP-19 | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
-| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@npm9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (`0.15.0` Tranche 2):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
+| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (`0.15.0` Tranche 2):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
 | MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
 | MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil (ADR-0003); die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
 | MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap §4). |
@@ -1817,7 +1828,7 @@ Nicht im `0.1.0`-MVP:
 | MVP-34 | Kann | CLI für Stream Analyzer |
 | MVP-35 | Kann | Tempo-Integration |
 | MVP-36 | Kann | SRS-Beispiel |
-| MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@npm9912/stream-analyzer`); kein offener Folge-Scope. |
+| MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@pt9912/stream-analyzer`); kein offener Folge-Scope. |
 | MVP-38 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-Ingest-Beispiel — präzisiert auf lokalen SRT-/RTMP-Ingest-Control-Smoke (`make smoke-ingest-control`) für MediaMTX-nahe Lab-Artefakte (Generierung/Validierung). Historische Kann-Stufung bleibt als auditierbarer Stand bis `1.1.13` erhalten; verbindlich ist die Muss-Stufung im `0.11.0`-Lab-Control-Scope (siehe RAK-68 in §13.13). |
 | MVP-39 | Kann | SRT-Health-View |
 | MVP-40 | Kann | Persistenz mit PostgreSQL. **Patch `1.1.18` (`0.13.0`):** Entscheidungspfad als Seed- oder Defer-Scope; SQLite bleibt lokaler Standard-Store und darf nicht implizit durch Postgres als Pflichtabhängigkeit ersetzt werden. |
@@ -1994,7 +2005,7 @@ Akzeptanzkriterien:
 | RAK-48 | Muss | `make smoke-webrtc-prep` prüft die Vorbereitungsgrenze (Endpoints antworten, Compose-Stack hochgefahren, kein Playback-Qualitäts- oder `getStats()`-Anspruch) und ist als opt-in Target dokumentiert (analog `make smoke-srt`/`make smoke-dash`). |
 | RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist in `spec/telemetry-model.md` §3.2 dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
 | RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert; ergänzt den Smoke um eine Operator-sichtbare Stelle. |
-| RAK-51 | Kann | `@npm9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. **Hinweis (Patch `1.1.10`):** RAK-51 ist in §13.10 für `0.8.0` zu „Muss" hochgestuft; §13.9 bleibt als historische Aussage für `0.7.0` bestehen. |
+| RAK-51 | Kann | `@pt9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. **Hinweis (Patch `1.1.10`):** RAK-51 ist in §13.10 für `0.8.0` zu „Muss" hochgestuft; §13.9 bleibt als historische Aussage für `0.7.0` bestehen. |
 
 ### 13.10 Version 0.8.0: Player-SDK-WebRTC-Adapter
 
@@ -2009,7 +2020,7 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-51 | Muss | `@npm9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
+| RAK-51 | Muss | `@pt9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
 | RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
 | RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` §3.2 (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
 | RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus `spec/telemetry-model.md` §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 (`docs/planning/in-progress/risks-backlog.md`) wird ab diesem Punkt release-blockierend. |
@@ -2017,7 +2028,7 @@ Akzeptanzkriterien:
 
 ### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse
 
-Ziel: Drei thematisch getrennte, einzeln zu kleine Liefergegenstände in einem Minor-Release bündeln. Erstens den Browser-`getStats()`-Schema-Drift aus R-12 von einem manuellen Drift-Review-Gate auf einen automatisierten Smoke heben. Zweitens das SRS-Lab analog zu `examples/srt/`/`examples/dash/`/`examples/webrtc/` als opt-in Multi-Protocol-Lab-Pfad ausliefern. Drittens die offene NF-12-Pflicht (DASH-Analyse, Muss) durch eine produktive DASH-Manifest-Analyse im `@npm9912/stream-analyzer` einlösen. MVP-37 wird entsprechend NF-12 von „Kann" auf „Muss" hochgezogen (siehe §12.3-Patch-Note); §13.5 (`0.3.0`-HLS-Analyzer) bleibt unverändert.
+Ziel: Drei thematisch getrennte, einzeln zu kleine Liefergegenstände in einem Minor-Release bündeln. Erstens den Browser-`getStats()`-Schema-Drift aus R-12 von einem manuellen Drift-Review-Gate auf einen automatisierten Smoke heben. Zweitens das SRS-Lab analog zu `examples/srt/`/`examples/dash/`/`examples/webrtc/` als opt-in Multi-Protocol-Lab-Pfad ausliefern. Drittens die offene NF-12-Pflicht (DASH-Analyse, Muss) durch eine produktive DASH-Manifest-Analyse im `@pt9912/stream-analyzer` einlösen. MVP-37 wird entsprechend NF-12 von „Kann" auf „Muss" hochgezogen (siehe §12.3-Patch-Note); §13.5 (`0.3.0`-HLS-Analyzer) bleibt unverändert.
 
 Akzeptanzkriterien:
 
@@ -2025,7 +2036,7 @@ Akzeptanzkriterien:
 |---|---|---|
 | RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist aus `spec/telemetry-model.md` §1.4 / §3.5.2. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 im `risks-backlog.md` von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
 | RAK-57 | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; `docs/user/local-development.md` §2.7 Port-Quickref nachgezogen. |
-| RAK-58 | Muss | DASH-Manifest-Analyse im `@npm9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
+| RAK-58 | Muss | DASH-Manifest-Analyse im `@pt9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
 | RAK-59 | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
 
 ### 13.12 Version 0.10.0: CMAF-Analyse (NF-13)
@@ -2298,7 +2309,7 @@ Hardening-Artefakte braucht oder ob Productization, Next Slice und
 Switch weiter deferred bleiben.
 
 Der Scope bleibt auf den bestehenden Analyzer-Pfad beschraenkt:
-`@npm9912/stream-analyzer` Library/CLI und der interne
+`@pt9912/stream-analyzer` Library/CLI und der interne
 `apps/analyzer-service` bleiben Standard. Es entsteht durch Tranche 0
 kein neuer Endpoint, kein neues Result-Schema, kein neuer Runtime-
 Default und kein neuer Pflichtdienst.
@@ -2319,6 +2330,34 @@ Pflichtbackend, Production-Kubernetes, OAuth/OIDC/SSO,
 Multi-Tenant-SaaS, weiterer CMAF-/DASH-/LL-CMAF-Scope,
 vollstaendige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-
 CMAF-Laufzeitpfade.
+
+### 13.22 Version 0.20.0: Package Publishing (RAK-116..RAK-120)
+
+`0.20.0` schliesst die Lücke zwischen GitHub-Releases und tatsächlich
+veröffentlichten npm-Artefakten. Der Release macht die beiden
+Library-/CLI-Pakete erstmals über GitHub Packages installierbar:
+`@pt9912/player-sdk` und `@pt9912/stream-analyzer`.
+
+Der Scope-Wechsel von `@npm9912` auf `@pt9912` ist bewusst Teil dieses
+Releases, weil GitHub Packages den Owner-/Namespace-Bezug für scoped
+npm-Pakete erwartet. Der bisherige `@npm9912`-Stand wurde im Projekt
+verwendet, aber nicht öffentlich veröffentlicht; es gibt deshalb keinen
+externen Migrationsvertrag für bereits publizierte Pakete.
+
+Nicht veröffentlicht werden die Anwendungen
+`@pt9912/m-trace-dashboard` und `@pt9912/analyzer-service`; sie bleiben
+`private: true` und werden weiterhin über Build-/Container-/Lab-Pfade
+betrieben.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-116 | Muss | **Owner-Scope-Konsistenz**: Alle aktuellen Workspace-, SDK-, Analyzer-, Spec- und Test-Referenzen nutzen `@pt9912/...`; historische Done-Pläne dürfen ihren alten Kontext behalten. |
+| RAK-117 | Muss | **Publishbare Pakete begrenzen**: Nur `@pt9912/player-sdk` und `@pt9912/stream-analyzer` haben `publishConfig.registry=https://npm.pkg.github.com`; Dashboard und Analyzer-Service bleiben `private: true`. |
+| RAK-118 | Muss | **GitHub-Packages-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
+| RAK-119 | Muss | **Release-Dokumentation**: `docs/user/releasing.md` beschreibt Dry-Run, produktiven Publish, automatischen Release-Hook und Package-Rollback-Grenzen. |
+| RAK-120 | Muss | **Closeout und Erstveröffentlichung**: `0.20.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.20.0` und der erste erfolgreiche GitHub-Packages-Publish sind dokumentiert. |
 
 ---
 
@@ -2433,7 +2472,7 @@ Owner und Folgeplan vorliegt.
 | OE-5 | resolved | Live-Updates: **Server-Sent Events mit Polling-Fallback**; WebSocket nicht in `0.4.0` (siehe `docs/adr/0003-live-updates.md`) |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
 | OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`** |
-| OE-8 | resolved | npm-Paketname Player-SDK: **`@npm9912/player-sdk`** ab `0.2.0`; Lieferstand `0.1.x` wurde unter `@m-trace/player-sdk` ausgeliefert (Lastenheft `1.1.5`, `bae4a2a`), aber nie öffentlich publishet. |
+| OE-8 | resolved | npm-Paketname Player-SDK: **`@pt9912/player-sdk`** ab `0.20.0`; Lieferstände vor `0.20.0` wurden nicht öffentlich über GitHub Packages publiziert. Der historische interne Scope `@npm9912` hat daher keinen externen Migrationsvertrag. |
 | OE-9 | resolved | Go Module Name final: **`github.com/pt9912/m-trace/apps/api`** |
 
 ---

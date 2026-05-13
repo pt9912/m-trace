@@ -5,7 +5,7 @@ set -euo pipefail
 #  1. analyzer-service /health antwortet 200.
 #  2. POST /api/analyze mit Text-Input liefert ein AnalysisResult
 #     (status:ok, playlistType:master, analyzerKind:hls) — exercitiert
-#     den Pfad API → analyzer-service → @npm9912/stream-analyzer.
+#     den Pfad API → analyzer-service → @pt9912/stream-analyzer.
 #  3. POST /api/analyze mit URL gegen RFC1918-Adresse wird vom SSRF-
 #     Schutz im analyzer-service abgelehnt; die API mappt das auf 502.
 #

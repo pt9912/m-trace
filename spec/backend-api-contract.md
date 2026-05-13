@@ -89,7 +89,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
       "client_timestamp": "2026-04-28T12:00:00.000Z",
       "sequence_number": 42,
       "sdk": {
-        "name": "@npm9912/player-sdk",
+        "name": "@pt9912/player-sdk",
         "version": "0.2.0"
       }
     }
@@ -212,7 +212,7 @@ abwärtskompatibel verhalten.
 
 `POST /api/analyze` reicht eine HLS-Manifest-Analyse an den
 internen `analyzer-service` weiter (plan-0.3.0 §7 Tranche 6) und
-gibt das `AnalysisResult`-JSON aus `@npm9912/stream-analyzer`
+gibt das `AnalysisResult`-JSON aus `@pt9912/stream-analyzer`
 zurück. Der Endpunkt ist authentifizierungsfrei in 0.3.0 — der
 Service ist nur über das interne Netz erreichbar; ein öffentlich
 exponierter Deploy braucht eine Egress-Firewall oder einen
@@ -321,7 +321,7 @@ API-Eingabevalidierung (Request-Form):
 | 413  | `payload_too_large`     | Request-Body übersteigt 1 MiB.                                          |
 
 Analyzer-Domain-Fehler (analyzer-service hat den Aufruf bewusst
-abgelehnt; der `code` stammt aus `@npm9912/stream-analyzer` und
+abgelehnt; der `code` stammt aus `@pt9912/stream-analyzer` und
 wird durchgereicht; `details` enthält strukturierte Zusatzinfos
 aus dem Analyzer-Result, nicht die freie Adapter-Message):
 
@@ -1573,7 +1573,7 @@ curl -i -X POST http://localhost:8080/api/playback-events \
       "project_id": "demo",
       "session_id": "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
       "client_timestamp": "2026-04-28T12:00:00.000Z",
-      "sdk": { "name": "@npm9912/player-sdk", "version": "0.2.0" }
+      "sdk": { "name": "@pt9912/player-sdk", "version": "0.2.0" }
     }
   ]
 }

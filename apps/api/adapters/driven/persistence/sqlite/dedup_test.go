@@ -210,7 +210,7 @@ func mkSeqEvent(s interface{ Next() int64 }, project, session string, recv time.
 		ServerReceivedAt: recv,
 		IngestSequence:   s.Next(),
 		SequenceNumber:   sp,
-		SDK:              domain.SDKInfo{Name: "@npm9912/player-sdk", Version: "0.4.0"},
+		SDK:              domain.SDKInfo{Name: "@pt9912/player-sdk", Version: "0.4.0"},
 	}
 }
 

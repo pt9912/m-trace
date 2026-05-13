@@ -1,8 +1,8 @@
 {
-  "name": "@npm9912/analyzer-service",
-  "version": "0.18.0",
+  "name": "@pt9912/analyzer-service",
+  "version": "0.20.0",
   "private": true,
-  "description": "Internal HTTP wrapper around @npm9912/stream-analyzer for the m-trace API.",
+  "description": "Internal HTTP wrapper around @pt9912/stream-analyzer for the m-trace API.",
   "type": "module",
   "license": "MIT",
   "main": "./dist/main.cjs",
@@ -15,7 +15,7 @@
     "start": "node dist/main.cjs"
   },
   "dependencies": {
-    "@npm9912/stream-analyzer": "workspace:*"
+    "@pt9912/stream-analyzer": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.12.0",

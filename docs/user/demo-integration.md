@@ -2,7 +2,7 @@
 
 > **Status**: `0.2.0`-Arbeitsstand. Dieses Dokument beschreibt die
 > Dashboard-Route `/demo` als lokale Beispielintegration für
-> `@npm9912/player-sdk`, hls.js und die m-trace API.
+> `@pt9912/player-sdk`, hls.js und die m-trace API.
 
 ## Zweck
 
@@ -17,7 +17,7 @@ stream-generator
   -> mediamtx HLS
   -> apps/dashboard /demo
   -> hls.js
-  -> @npm9912/player-sdk
+  -> @pt9912/player-sdk
   -> apps/api /api/playback-events
   -> Dashboard Sessions/Events
 ```

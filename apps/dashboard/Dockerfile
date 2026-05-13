@@ -16,18 +16,18 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/dashboard/package.json apps/dashboard/package.json
 COPY packages/player-sdk/package.json packages/player-sdk/package.json
 
-RUN pnpm install --frozen-lockfile --filter @npm9912/m-trace-dashboard...
+RUN pnpm install --frozen-lockfile --filter @pt9912/m-trace-dashboard...
 
 COPY apps/dashboard apps/dashboard
 COPY packages/player-sdk packages/player-sdk
 
-RUN pnpm --filter @npm9912/player-sdk run build && pnpm --filter @npm9912/m-trace-dashboard run build
+RUN pnpm --filter @pt9912/player-sdk run build && pnpm --filter @pt9912/m-trace-dashboard run build
 
 # `pnpm deploy --prod --legacy` flacht die Workspace-Symlinks in eine
 # selbst-tragende node_modules-Hierarchie ab und lässt dev-Deps weg.
 # `--legacy` ist nötig, weil pnpm v10 sonst inject-workspace-packages
 # erwartet (siehe Analyzer-Service-Dockerfile).
-RUN pnpm --filter @npm9912/m-trace-dashboard deploy --prod --legacy /deploy
+RUN pnpm --filter @pt9912/m-trace-dashboard deploy --prod --legacy /deploy
 
 # Runtime stage — startet direkt aus dem deploy-Bundle, ohne pnpm-
 # Binär oder weiteren install-Schritt. SvelteKit-adapter-node legt

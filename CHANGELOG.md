@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-05-13
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Package Publishing nach `0.19.0`,
+> Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120 in §13.22.
+> Plan in
+> [`docs/planning/done/plan-0.20.0.md`](docs/planning/done/plan-0.20.0.md).
+
+### Added
+
+- GitHub-Packages-Publish-Workflow
+  [`.github/workflows/publish-packages.yml`](.github/workflows/publish-packages.yml)
+  ergänzt. Der Workflow kann manuell mit Dry-Run oder produktiv gegen
+  einen Git-Ref laufen und veröffentlicht bei `release.published` den
+  Release-Tag.
+- `docs/user/releasing.md` um Package-Publish-Schritt, Dry-Run,
+  produktiven Publish und Package-Rollback-Grenzen erweitert.
+- Lastenheft-Patch `1.1.23` ergänzt §13.22 mit RAK-116..RAK-120 für
+  den ersten GitHub-Packages-Publish.
+
+### Changed
+
+- Publishbare npm-Pakete auf den GitHub-Owner-Scope umgestellt:
+  `@pt9912/player-sdk` und `@pt9912/stream-analyzer`.
+- Workspace-interne App-Paketnamen ebenfalls auf `@pt9912/...`
+  synchronisiert; Dashboard und Analyzer-Service bleiben `private:
+  true` und werden nicht als npm-Pakete veröffentlicht.
+- `.npmrc` und `publishConfig.registry` auf
+  `https://npm.pkg.github.com` ausgerichtet.
+- Versionen auf `0.20.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompat-Vertrag,
+  Analyzer-Contract-Fixtures und versionstragende Test-/Fixture-
+  Assets.
+
 ## [0.18.0] - 2026-05-13
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
@@ -137,7 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Folge-Scope.
 - `0.15.0` Tranche 2: Analyzer-API-Boundary entschieden. Eine externe
   `apps/analyzer-api` bleibt deferred; interner `apps/analyzer-service`
-  plus `@npm9912/stream-analyzer` Library/CLI decken den aktuellen
+  plus `@pt9912/stream-analyzer` Library/CLI decken den aktuellen
   Zielgruppen-Scope ab.
 - `0.15.0` Tranche 3: Control-Plane-Scope entschieden. `F-132` bleibt
   deferred, kein `apps/control-plane`-POC ohne konkreten Betreiber-,
@@ -806,7 +840,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- Branch-Coverage `@npm9912/stream-analyzer` >= 90 %; alle
+- Branch-Coverage `@pt9912/stream-analyzer` >= 90 %; alle
   `make gates`-Stages grün vor Tag.
 - Out of scope (siehe Plan §9 / §10): Low-Latency-CMAF
   (`#EXT-X-PART`, chunked CMAF), vollständige
@@ -1192,7 +1226,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (Tranche 3 — DASH-Manifest-Analyse / RAK-58 / RAK-59 / NF-12)
 
-- `@npm9912/stream-analyzer` versteht DASH-MPD-Eingaben zusätzlich
+- `@pt9912/stream-analyzer` versteht DASH-MPD-Eingaben zusätzlich
   zu HLS-Manifesten:
   - `internal/parsers/detect.ts`: Detector klassifiziert den
     Body-Anfang als HLS (`#EXTM3U`-Header), DASH (`<?xml`/`<MPD`-
@@ -1765,9 +1799,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `apps/dashboard`-Demo-Pfad bleibt unverändert auf
   `hls.js`/Core-Lab-`teststream` — keine DASH-/WebRTC-Demo-Route.
-- `@npm9912/player-sdk` Public-API unverändert; kein dash.js- oder
+- `@pt9912/player-sdk` Public-API unverändert; kein dash.js- oder
   WebRTC-Adapter in `0.5.0`.
-- `@npm9912/stream-analyzer` und `POST /api/analyze` bleiben HLS-
+- `@pt9912/stream-analyzer` und `POST /api/analyze` bleiben HLS-
   only; DASH-/CMAF-Erweiterung ist Folge-Scope (MVP-37).
 
 ## [0.4.0] - 2026-05-05
@@ -1855,12 +1889,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Workspace-Paket `@npm9912/stream-analyzer` mit HLS-Klassifikator,
+- Workspace-Paket `@pt9912/stream-analyzer` mit HLS-Klassifikator,
   URL-Loader (Timeout/Größenlimit/SSRF-Sperrlisten),
   Master- und Media-Detail-Parser sowie diskriminierter Union-API
   `AnalysisResult` (`analyzerKind: "hls"`, `analyzerVersion`,
   Stabilitätsregel und Serialisierungsgarantien).
-- Internes HTTP-Service-Paket `@npm9912/analyzer-service`
+- Internes HTTP-Service-Paket `@pt9912/analyzer-service`
   (`apps/analyzer-service`) als Node-Wrapper um den Analyzer; läuft
   in der Compose-Topologie als `analyzer-service`-Container.
 - API-Endpunkt `POST /api/analyze` mit Pass-through-Schema und
@@ -1869,7 +1903,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   analyzer-service.
 - `make smoke-analyzer` als End-to-End-Smoke (Master-Text-Input und
   SSRF-Negativfall) im laufenden Compose-Stack.
-- CLI `m-trace check <url-or-file>` aus `@npm9912/stream-analyzer`:
+- CLI `m-trace check <url-or-file>` aus `@pt9912/stream-analyzer`:
   bin-Eintrag, Datei- und URL-Input (URL teilt den SSRF-geschützten
   Loader-Pfad), JSON auf stdout, Exit-Codes 0/1/2, `--help` und
   `--version`. Smoke `make smoke-cli` deckt `--help`, Master-Datei,
@@ -1912,7 +1946,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Publizierbares Player-SDK-Paket `@npm9912/player-sdk` mit ESM-, CJS-,
+- Publizierbares Player-SDK-Paket `@pt9912/player-sdk` mit ESM-, CJS-,
   Browser/IIFE- und Type-Definition-Builds.
 - Pack-, Publish-Dry-Run-, Install- und Browser-Load-Smokes für das SDK.
 - Projektweite SDK-Doku in `spec/player-sdk.md` sowie Paketdoku in
@@ -1932,7 +1966,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Lastenheft `1.1.7` entscheidet OE-8 neu: Player-SDK wird ab `0.2.0` als `@npm9912/player-sdk` veröffentlicht. Der `0.1.x`-Lieferstand wurde nie öffentlich publishet, daher ist kein Migrations-Pfad für externe Konsumenten erforderlich.
+- Lastenheft `1.1.7` entscheidet OE-8 neu: Player-SDK wird ab `0.2.0` als `@pt9912/player-sdk` veröffentlicht. Der `0.1.x`-Lieferstand wurde nie öffentlich publishet, daher ist kein Migrations-Pfad für externe Konsumenten erforderlich.
 - Player-SDK-Events senden die SDK-Version synchron aus
   `packages/player-sdk/package.json`.
 - Player-SDK-Batches bleiben innerhalb der API-Grenzen: maximal 100 Events

@@ -8,7 +8,7 @@ import {
 import { newPeerConnectionRunId, startSampling, type SamplingDeps } from "./sampling";
 
 /**
- * WebRTC-/WHEP-Adapter für `@npm9912/player-sdk`. Implementiert den
+ * WebRTC-/WHEP-Adapter für `@pt9912/player-sdk`. Implementiert den
  * additiven Adapter-Pfad zu {@link import("../hlsjs/adapter").attachHlsJs
  * attachHlsJs} und liefert Player-Events in den geteilten
  * `PlayerTracker`-Stream.

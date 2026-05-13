@@ -213,9 +213,9 @@ Das Player-SDK nutzt Vitest für Unit-Tests und `@vitest/coverage-v8`
 für das reproduzierbare Coverage-Gate:
 
 ```bash
-pnpm --filter @npm9912/player-sdk run test
-pnpm --filter @npm9912/player-sdk run test:coverage
-pnpm --filter @npm9912/player-sdk run performance:smoke
+pnpm --filter @pt9912/player-sdk run test
+pnpm --filter @pt9912/player-sdk run test:coverage
+pnpm --filter @pt9912/player-sdk run performance:smoke
 ```
 
 Der Coverage-Scope ist das produktive SDK unter
@@ -247,10 +247,10 @@ Das Dashboard ist eine SvelteKit-App. Der aktuelle Qualitätspfad ist
 Build, Svelte-Type-Check, Vitest-jsdom-Tests und Coverage:
 
 ```bash
-pnpm --filter @npm9912/m-trace-dashboard run build
-pnpm --filter @npm9912/m-trace-dashboard run check
-pnpm --filter @npm9912/m-trace-dashboard run test
-pnpm --filter @npm9912/m-trace-dashboard run test:coverage
+pnpm --filter @pt9912/m-trace-dashboard run build
+pnpm --filter @pt9912/m-trace-dashboard run check
+pnpm --filter @pt9912/m-trace-dashboard run test
+pnpm --filter @pt9912/m-trace-dashboard run test:coverage
 ```
 
 Die Konfiguration steht in `apps/dashboard/vite.config.ts`. Der

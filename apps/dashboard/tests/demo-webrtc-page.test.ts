@@ -8,7 +8,7 @@ const playerMocks = vi.hoisted(() => ({
   adapterDestroy: vi.fn()
 }));
 
-vi.mock("@npm9912/player-sdk", () => ({
+vi.mock("@pt9912/player-sdk", () => ({
   createTracker: playerMocks.createTracker,
   attachWebRtc: playerMocks.attachWebRtc
 }));

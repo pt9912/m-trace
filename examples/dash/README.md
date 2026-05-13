@@ -26,9 +26,9 @@ Internet-Zugriff.
 **Wichtig**: `0.5.0`-DASH liefert nur das Ausspielungsbeispiel. Es
 liefert **nicht**:
 
-- vollständige DASH-Manifestanalyse in `@npm9912/stream-analyzer`
+- vollständige DASH-Manifestanalyse in `@pt9912/stream-analyzer`
   (MVP-37, Kann-Folge-Scope; Plan §0.1 DASH-Zeile),
-- einen `dash.js`-Adapter im `@npm9912/player-sdk`,
+- einen `dash.js`-Adapter im `@pt9912/player-sdk`,
 - eine DASH-Erweiterung von `POST /api/analyze` (bleibt HLS-only;
   Lastenheft §7.6 F-58 Folge-Scope).
 
@@ -132,13 +132,13 @@ Beispiele bleiben unangetastet.
 
 ## Bekannte Grenzen
 
-- `@npm9912/stream-analyzer` analysiert DASH in `0.5.0` nicht
+- `@pt9912/stream-analyzer` analysiert DASH in `0.5.0` nicht
   produktiv: `analyzerKind: "hls"` ist die einzige produktive
   Variante; `dash`-/`cmaf`-Erweiterung ist Folge-Scope (MVP-37).
   Wer aus dem Beispiel heraus eine MPD an `POST /api/analyze`
   schickt, bekommt einen `not_hls`-Fehler — das ist **erwartetes**
   Verhalten in `0.5.0`.
-- Kein `dash.js`-Adapter im `@npm9912/player-sdk`. Der Demo-Player
+- Kein `dash.js`-Adapter im `@pt9912/player-sdk`. Der Demo-Player
   in `apps/dashboard/src/routes/demo/` nutzt weiterhin `hls.js` mit
   dem Core-Lab-`teststream`; eine DASH-Demo-Route ist nicht Teil
   von `0.5.0`.

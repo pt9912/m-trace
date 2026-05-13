@@ -1,4 +1,4 @@
-# @npm9912/stream-analyzer
+# @pt9912/stream-analyzer
 
 Stream-Manifest-Analyzer für die m-trace-Toolchain. Lädt HLS- und
 DASH-Manifeste, klassifiziert sie und liefert ein stabiles JSON-
@@ -12,7 +12,7 @@ und einfache Live-MPDs.
 ## Installation
 
 ```bash
-pnpm add @npm9912/stream-analyzer
+pnpm add @pt9912/stream-analyzer
 ```
 
 ## Schnellstart
@@ -23,7 +23,7 @@ müssen das Format nicht angeben:
 
 ```ts
 // Generischer Name (ab 0.9.0): analyzeManifest
-import { analyzeManifest } from "@npm9912/stream-analyzer";
+import { analyzeManifest } from "@pt9912/stream-analyzer";
 
 const result = await analyzeManifest({ kind: "text", text: manifest });
 if (result.status === "ok") {
@@ -36,7 +36,7 @@ if (result.status === "ok") {
 `analyzeHlsManifest` bleibt als Backward-Kompat-Alias erhalten:
 
 ```ts
-import { analyzeHlsManifest } from "@npm9912/stream-analyzer";
+import { analyzeHlsManifest } from "@pt9912/stream-analyzer";
 // funktional identisch zu analyzeManifest, dispatcht ebenfalls
 // HLS/DASH; der Name spiegelt nur die historische 0.3.0-Public-API.
 const result = await analyzeHlsManifest({ kind: "text", text: manifest });

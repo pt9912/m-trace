@@ -1,6 +1,6 @@
-# @npm9912/analyzer-service
+# @pt9912/analyzer-service
 
-Internal HTTP wrapper around `@npm9912/stream-analyzer` for the m-trace
+Internal HTTP wrapper around `@pt9912/stream-analyzer` for the m-trace
 API. Runs as a Node container next to `apps/api`, exposes
 `POST /analyze` and `GET /health`. The Go backend speaks to this
 service via HTTP so its distroless-static image stays free of any
@@ -31,7 +31,7 @@ Optional `fetch` block forwards loader limits:
 ```
 
 Response: 200 with the full `AnalyzeOutput` JSON from
-`@npm9912/stream-analyzer` (siehe `docs/user/stream-analyzer.md` §2).
+`@pt9912/stream-analyzer` (siehe `docs/user/stream-analyzer.md` §2).
 Failure modes (415/400/413/500) carry a small problem-shape
 `{ status: "error", code, message }`.
 
@@ -43,8 +43,8 @@ Failure modes (415/400/413/500) carry a small problem-shape
 
 ```bash
 pnpm install
-pnpm --filter @npm9912/analyzer-service run build
-pnpm --filter @npm9912/analyzer-service run start
+pnpm --filter @pt9912/analyzer-service run build
+pnpm --filter @pt9912/analyzer-service run start
 ```
 
 `ANALYZER_LISTEN_HOST` (default `0.0.0.0`) and

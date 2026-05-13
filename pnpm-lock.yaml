@@ -44,7 +44,7 @@ importers:
 
   apps/analyzer-service:
     dependencies:
-      '@npm9912/stream-analyzer':
+      '@pt9912/stream-analyzer':
         specifier: workspace:*
         version: link:../../packages/stream-analyzer
     devDependencies:
@@ -66,7 +66,7 @@ importers:
 
   apps/dashboard:
     dependencies:
-      '@npm9912/player-sdk':
+      '@pt9912/player-sdk':
         specifier: workspace:*
         version: link:../../packages/player-sdk
       hls.js:

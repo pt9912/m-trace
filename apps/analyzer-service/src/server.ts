@@ -1,11 +1,11 @@
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 
-import { analyzeHlsManifest } from "@npm9912/stream-analyzer";
+import { analyzeHlsManifest } from "@pt9912/stream-analyzer";
 import type {
   AnalyzeOptions,
   AnalyzeOutput,
   ManifestInput
-} from "@npm9912/stream-analyzer";
+} from "@pt9912/stream-analyzer";
 
 /**
  * Maximaler Request-Body in Bytes. Schützt den Service gegen einfache

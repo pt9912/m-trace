@@ -145,7 +145,7 @@ type StreamAnalysisFinding struct {
 
 // StreamAnalysisErrorCode klassifiziert von analyzer-Implementierungen
 // gemeldete Fehler (RFC-7807-ähnliche Code-Domäne aus
-// `@npm9912/stream-analyzer.AnalysisErrorResult.code`). Driving-
+// `@pt9912/stream-analyzer.AnalysisErrorResult.code`). Driving-
 // Adapter mappen die Codes auf HTTP-Statuscodes (plan-0.3.0 §7).
 type StreamAnalysisErrorCode string
 

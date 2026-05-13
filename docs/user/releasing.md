@@ -52,6 +52,7 @@ make smoke-srt-health     # ab 0.6.0: SRT-Health-Smoke (RAK-41/RAK-42); startet/
 make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
 make smoke-webrtc-prep    # ab 0.7.0: WebRTC-Lab-Vorbereitungs-Smoke (RAK-48); startet/stoppt mtrace-webrtc; endpoint-only (kein Browser/Playback/getStats)
 make smoke-webrtc-stats-drift # ab 0.9.0: WebRTC-`getStats()`-Drift-Smoke (RAK-56); startet/stoppt mtrace-webrtc + ruft Playwright-Spec gegen Chromium/Firefox; opt-in lokal, produktiv im Nightly-Workflow `.github/workflows/webrtc-drift.yml`
+make package-publish-dry-run # ab 0.20.0: baut und prüft die zwei GitHub-Packages-npm-Artefakte ohne Veröffentlichung
 ```
 
 Erfolgskriterien:
@@ -462,7 +463,8 @@ Mindestumfang:
 - Release-Notes aus dem `CHANGELOG.md`-Versionsabschnitt extrahieren.
 - Release-Titel: `m-trace X.Y.Z`.
 - Tag: `vX.Y.Z`.
-- Assets: GitHub-Source-Archive (`zip`/`tar.gz`) genügen für `0.1.0`.
+- Assets: GitHub-Source-Archive (`zip`/`tar.gz`) plus ab `0.20.0`
+  GitHub-Packages-Publish für die publishbaren npm-Pakete.
   Container-Image-Veröffentlichung folgt in einem späteren Release.
 
 ```bash
@@ -471,7 +473,64 @@ gh release create "$TAG" \
     --notes-file <changelog-extract>
 ```
 
-## 5. Post-Release
+## 5. GitHub-Packages-Publish (`0.20.0`)
+
+Ab `0.20.0` werden nur die zwei Library-/CLI-Pakete veröffentlicht:
+
+- `@pt9912/player-sdk`
+- `@pt9912/stream-analyzer`
+
+Die Apps `@pt9912/m-trace-dashboard` und
+`@pt9912/analyzer-service` bleiben `private: true` und werden nicht
+als npm-Pakete veröffentlicht.
+
+GitHub-Packages-Voraussetzungen:
+
+- Paketnamen sind auf den GitHub-Owner-Scope `@pt9912` gemappt.
+- `.npmrc` enthält `@pt9912:registry=https://npm.pkg.github.com`.
+- `publishConfig.registry` zeigt in beiden publishbaren Paketen auf
+  `https://npm.pkg.github.com`.
+- `.github/workflows/publish-packages.yml` nutzt `GITHUB_TOKEN` mit
+  `packages: write`; der Workflow kann manuell trocken oder produktiv
+  gegen einen Tag laufen.
+
+Lokaler Package-Dry-Run vor Tag:
+
+```bash
+make package-publish-dry-run
+```
+
+Manueller GitHub-Actions-Dry-Run nach Tag, aber vor GitHub-Release:
+
+```bash
+gh workflow run publish-packages.yml \
+    --ref main \
+    -f ref="$TAG" \
+    -f dry_run=true
+```
+
+Produktiver Publish ohne GitHub-Release-Automatik, z. B. für eine
+gezielte Reparatur, nachdem geprüft wurde, dass dieselbe Version noch
+nicht veröffentlicht wurde:
+
+```bash
+gh workflow run publish-packages.yml \
+    --ref main \
+    -f ref="$TAG" \
+    -f dry_run=false
+```
+
+Der normale Release-Pfad ist: erst Dry-Run, dann `gh release create`.
+Der Workflow wird bei `release.published` automatisch ausgeführt und
+veröffentlicht dann den Release-Tag. Der manuelle produktive Publish
+ist nur ein Ersatzpfad, damit dieselbe Version nicht doppelt
+veröffentlicht wird. Produktive Veröffentlichungen laufen intern über:
+
+```bash
+MTRACE_PACKAGE_PUBLISH_APPROVED=1 make package-publish
+```
+
+## 6. Post-Release
 
 - `CHANGELOG.md` öffnet einen neuen `## [Unreleased]`-Abschnitt.
 - `docs/planning/in-progress/roadmap.md` §3 (Release-Übersicht) aktualisiert den Status
@@ -479,7 +538,7 @@ gh release create "$TAG" \
 - Folge-ADRs, die mit dem Release entstehen oder fällig werden,
   in `docs/planning/in-progress/roadmap.md` §4 ergänzen.
 
-## 6. Rollback
+## 7. Rollback
 
 Tag noch nicht gepusht:
 
@@ -507,7 +566,15 @@ Pre-Release/Draft zurückstufen oder löschen, Fehler auf `main`
 beheben, neuen Release-Commit erstellen und Tag neu setzen. Kein
 Force-Push auf `main`.
 
-## 7. Referenzen
+Package-Publish fehlgeschlagen:
+
+- Solange kein Paket veröffentlicht wurde: Workflow-Fehler auf `main`
+  beheben, neuen Commit erstellen und denselben Tag erneut publishen.
+- Wenn ein Paket bereits veröffentlicht wurde: Version nicht löschen
+  oder überschreiben; Folge-Patch-Release erstellen und beide Pakete
+  erneut konsistent veröffentlichen.
+
+## 8. Referenzen
 
 - Lastenheft §14 — Akzeptanzkriterien (AK-11).
 - Lastenheft §18 — Definition of Done für den MVP.
