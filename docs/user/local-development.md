@@ -175,7 +175,11 @@ beim Pipen in `jq` stören würde.
 
 ### 2.3 Stack erweitern (`0.1.1` Dashboard, `0.1.2` Observability)
 
-Ab `0.1.1` kommt der `dashboard`-Service ins Core-Profil (vier Pflicht-Mindestdienste); `make dev` startet ihn automatisch. Erreichbar unter `http://localhost:5173` (oder Compose-equivalent).
+Ab `0.1.1` kommt der `dashboard`-Service ins Core-Profil (vier Pflicht-
+Mindestdienste); `make dev` startet ihn automatisch. Erreichbar unter
+`http://localhost:5173` (oder Compose-equivalent). Für Smoke- und
+Release-Läufe, die den Core-Stack im Hintergrund brauchen, startet
+`make dev-detached` denselben Stack per `docker compose up -d --build`.
 
 Ab `0.1.2` ist der Observability-Stack (Prometheus, Grafana, OTel-Collector) als optionales Profil verfügbar:
 

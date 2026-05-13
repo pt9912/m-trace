@@ -45,7 +45,8 @@ make smoke-cli            # ab 0.3.0: Lastenheft-Aufruf `pnpm m-trace check`
 make smoke-analyzer       # ab 0.3.0: manuelles Release-Gate, fährt Compose hoch
 make smoke-observability  # ab 0.4.0: Cardinality-Smoke; Observability-Stack muss laufen
 make browser-e2e          # ab 0.4.0: Dashboard-Timeline + hls.js-Demo-Flow
-make smoke-mediamtx       # ab 0.5.0: MediaMTX-Beispiel (RAK-36); braucht laufendes `make dev`
+make dev-detached         # Core-Lab für smoke-mediamtx starten; danach `make stop`
+make smoke-mediamtx       # ab 0.5.0: MediaMTX-Beispiel (RAK-36); braucht laufendes Core-Lab
 make smoke-srt            # ab 0.5.0: SRT-Beispiel (RAK-37); startet/stoppt Project mtrace-srt
 make smoke-srt-health     # ab 0.6.0: SRT-Health-Smoke (RAK-41/RAK-42); startet/stoppt mtrace-srt + probt MediaMTX-API
 make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
