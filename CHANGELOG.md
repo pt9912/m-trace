@@ -38,16 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `0.17.0` Tranche 3: Compatibility-/Security-/Ops-Gate als
   No-change-Nachweis geschlossen. `make docs-check` ist Pflichtcheck;
   Code-, Contract-, Security-, Drift- und Rollback-Gates sind wegen
-  fehlender Code-, Wire-, Persistenz-, Runtime- oder
+  fehlender Runtime-, Public-API-, Wire-, Persistenz- oder
   Infrastruktur-Aenderung als `n/a` begruendet. RAK-113/RAK-114 sind
   geschlossen; RAK-115 folgt im Release-Closeout.
 - `0.17.0` Tranche 4: Release-Closeout, RAK-115, Roadmap,
   Changelog, Plan-Archivierung und Tag `v0.17.0` abgeschlossen.
 - Versionen auf `0.17.0` angehoben: Root-/Workspace-`package.json`,
   API-`serviceVersion`, Player-SDK-Version, SDK-Kompat-Vertrag und
-  Analyzer-Contract-Fixtures. Keine Code-, Wire-, Persistenz-,
-  Runtime-, Infrastruktur- oder Default-Aenderung ueber den
-  Versions-Bump hinaus.
+  Analyzer-Contract-Fixtures sowie versionstragende Test-/Fixture-
+  Assets. Keine Runtime-, Wire-, Persistenz-, Public-API-,
+  Infrastruktur- oder Default-Aenderung ueber den Versions-Bump hinaus.
 
 ## [0.16.0] - 2026-05-12
 

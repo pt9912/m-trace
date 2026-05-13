@@ -455,8 +455,12 @@ DoD:
 Tranche 3 schliesst den Compatibility-/Security-/Ops-Nachweis fuer den
 Doku-/Defer-Scope. Der einzige ausgefuehrte Pflichtcheck ist
 `make docs-check`; Code-, Contract-, Security-, Drift- und Rollback-Gates
-sind nicht zutreffend, weil Tranche 2 kein Code-, Wire-, Persistenz-,
-Runtime-, Default- oder Infrastruktur-Artefakt erzeugt hat.
+sind fuer Tranche 3 nicht zutreffend, weil Tranche 2 kein Runtime-,
+Public-API-, Wire-, Persistenz-, Default- oder Infrastruktur-Artefakt
+erzeugt hat. Tranche 4 ist davon getrennt: Der Release-Closeout hebt
+versionstragende Test-/Fixture-Assets und Versionsdateien auf `0.17.0`,
+ohne Runtime-Semantik, Public API oder Analyzer-Result-Schema zu
+aendern.
 
 Gate-Matrix:
 
@@ -464,9 +468,9 @@ Gate-Matrix:
 | --- | --- | --- |
 | `make docs-check` | Pflicht, gruen | Doku-only-Release; prueft Plan-/Roadmap-/Changelog-/Risks-Konsistenz. |
 | Go-/Backend-Code (`make api-test` / `make gates`) | `n/a` | Kein Go-/Backend-Code, keine Ports, Adapter, Migrationen oder Runtime-Pfade geaendert. |
-| TypeScript-/Analyzer-Code (`make ts-test`) | `n/a` | Kein Analyzer-Code, keine Fixtures und kein Result-Schema geaendert; Tranche 1 belegte den bestehenden Stand bereits mit `make ts-test`. |
+| TypeScript-/Analyzer-Code (`make ts-test`) | `n/a` fuer Tranche 3; Release-Bump validiert | Kein Analyzer-Code und kein Result-Schema geaendert; Tranche 4 aktualisiert nur versionstragende Test-/Fixture-Assets und wird mit `make ts-test` validiert. |
 | Security-Gates (`make security-gates`) | `n/a` | Keine neue Fetch-, Redirect-, Timeout-, Groessen-, Auth-, Network- oder Runtime-Surface. |
-| Contract-/Fixture-/Drift-Gate | `n/a` | Keine Wire-, API-, Persistenz-, Contract- oder Analyzer-Result-Schema-Aenderung. |
+| Contract-/Fixture-/Drift-Gate | `n/a` fuer Tranche 3; Release-Bump validiert | Keine Wire-, API-, Persistenz-, Contract- oder Analyzer-Result-Schema-Aenderung; versionstragende Fixtures/Testdata sind auf `0.17.0` aktualisiert und mit `make generated-drift-check` validiert. |
 | Rollback-/Deaktivierungspfad | `n/a` | Kein neuer opt-in Dienst, Adapter, Endpoint, ENV-Schalter oder Default; bestehender Caller-Schalter `cmaf.binary.enabled:false` bleibt unveraendert. |
 
 ### 5.2 Compatibility- und Security-Entscheidung
@@ -479,7 +483,9 @@ No-change geschlossen:
   unveraendert; Tranche 3 fuegt keine neue Surface hinzu.
 - RAK-114: Wire-, API-, Persistenz-, Contract- und Analyzer-Result-
   Schema bleiben unveraendert. Dadurch ist kein Migrations- oder
-  Backward-Compatibility-Test zusaetzlich zu dokumentieren.
+  Backward-Compatibility-Test zusaetzlich zu dokumentieren. Der
+  spaetere Release-Bump aktualisiert versionstragende Fixture-/Testdata-
+  Kopien, aber keine Wire- oder Result-Schema-Semantik.
 
 ### 5.3 Risks-Backlog
 
@@ -514,8 +520,10 @@ Hardening-only-/Doku-/Defer-Pfad:
 
 ### 5.6 What bleibt unveraendert
 
-- Keine Code-, Wire-, Persistenz-, Runtime-, Infrastruktur- oder
-  Default-Aenderung.
+- Keine Runtime-, Wire-, Persistenz-, Public-API-, Infrastruktur- oder
+  Default-Aenderung durch Tranche 3.
+- Tranche 4 aktualisiert nur versionstragende Test-/Fixture-Assets und
+  Versionsdateien.
 - Kein Versions-Bump und kein Release-Tag durch Tranche 3; das bleibt
   Tranche 4.
 - `@npm9912/stream-analyzer` Library/CLI und der interne
@@ -546,12 +554,13 @@ DoD:
 
 | Artefakt | Nachweis |
 | --- | --- |
-| Versionen | `package.json`, `apps/*/package.json`, `packages/*/package.json`, `apps/api/cmd/api/main.go`, `packages/player-sdk/src/version.ts`, `contracts/sdk-compat.json`, Analyzer-Contract-Fixtures jeweils `0.17.0`. |
+| Versionen | `package.json`, `apps/*/package.json`, `packages/*/package.json`, `apps/api/cmd/api/main.go`, `packages/player-sdk/src/version.ts`, `contracts/sdk-compat.json`, Analyzer-Contract-Fixtures und versionstragende API-Testdata jeweils `0.17.0`. |
 | Changelog | `CHANGELOG.md` enthaelt `[0.17.0] - 2026-05-13`. |
 | Plan | Archiviert als `docs/planning/done/plan-0.17.0.md`. |
 | Roadmap | `docs/planning/in-progress/roadmap.md` markiert `0.17.0` released und den Folgepfad als offen. |
 | Tag | Annotierter Tag `v0.17.0`. |
-| Gates | `make docs-check`, `make generated-drift-check`, `make ts-test`, `git diff --check`; Code-, Contract-, Security-, Drift- und Rollback-Gates fuer Tranche 3 als `n/a` begruendet. |
+| Gates | Lokal am 2026-05-13 gruen: `make docs-check`, `make ts-test` (38 Testdateien / 656 Tests), `make api-test`, `make generated-drift-check` nach Release-Commit `a13cc8f`, `git diff --check`; Code-, Contract-, Security-, Drift- und Rollback-Gates fuer Tranche 3 als `n/a` begruendet. |
+| Audit-Artefakt | Kein externer CI-Run ist im Repository verlinkt. Fuer einen strikten Audit sollte nach Push/CI ein erfolgreicher Checklog oder CI-Run-Link nachgetragen werden. |
 
 ### 6.2 What aendert sich
 
@@ -559,7 +568,7 @@ DoD:
   Nachweis.
 - RAK-115 ist geschlossen; ein Folgeplan bleibt offen, weil kein
   Productization-, Next-Slice- oder Switch-Trigger vorliegt.
-- Versions- und Contract-Artefakte tragen `0.17.0`.
+- Versions-, Testdata- und Contract-Fixture-Artefakte tragen `0.17.0`.
 
 ### 6.3 What bleibt unveraendert
 
