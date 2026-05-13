@@ -74,6 +74,8 @@ DoD:
   `continue-on-error`.
 - [x] Build-Workflow-Timeout ist auf den längeren Gates-Pfad
   angepasst.
+- [x] Build-Workflow installiert Node/pnpm vor `make gates`, weil
+  `benchmark-smoke` den TS-Bench hostseitig ausführt.
 
 ## 4. Tranche 2 — Mutation-Messbarkeit
 
@@ -104,6 +106,10 @@ DoD:
 - [x] `pnpm --filter @pt9912/player-sdk exec pwd`
 - [x] `make docs-check`
 - [x] `make gates`
+- [x] Remote-CI-Fix: `Build` run
+  [`25806628250`](https://github.com/pt9912/m-trace/actions/runs/25806628250)
+  zeigte fehlendes hostseitiges `pnpm` im neuen Gate-Pfad; Workflow
+  korrigiert.
 
 Closeout-Verdict:
 
