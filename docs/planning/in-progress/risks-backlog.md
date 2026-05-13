@@ -16,13 +16,20 @@
 >
 > ### Aktuelle Phase
 >
+> `0.19.0` ist als Roadmap-Trigger-Nacharbeit abgeschlossen und in
+> [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) archiviert. Die
+> Decision-Welle erzeugt kein neues R-N-Item: Postgres (`MVP-40`) und
+> strengere CORS-Preflight-Project-Isolation (Variante A) bleiben ohne
+> belegten Betreiber-/Multi-Tenant-Trigger deferred; Analyzer-API und
+> Control-Plane sind als triggerfreie Decision-Tracks mit Proceed-/
+> POC-/Defer-Kriterien dokumentiert. Kein Release-Tag, kein Versions-
+> Bump.
+>
 > `0.18.0` ist released und archiviert in
 > [`done/plan-0.18.0.md`](../done/plan-0.18.0.md). Die Trigger-Re-Eval
 > fuer `R-9`, `R-12` und `R-13` hat keinen Implementierungs-Trigger
 > belegt; alle drei Risiken bleiben mit praezisierten Folge-Triggern
-> offen. Es entsteht weiterhin kein neues R-N-Item. Analyzer-API,
-> Control-Plane, Postgres,
-> Analytics und Production-K8s bleiben deferred.
+> offen. Es entsteht weiterhin kein neues R-N-Item.
 >
 > `0.17.0` ist released und archiviert in
 > [`done/plan-0.17.0.md`](../done/plan-0.17.0.md); Lastenheft-Patch

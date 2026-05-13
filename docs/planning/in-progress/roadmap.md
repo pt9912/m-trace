@@ -2,14 +2,11 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: ✅ `0.18.0` released am 2026-05-13 (Tag `v0.18.0`);
-> Decision-Closeout archiviert in
-> [`done/plan-0.18.0.md`](../done/plan-0.18.0.md). Kein
-> Implementierungs-Trigger wurde belegt: K8s-Observability bleibt an ein
-> kuenftiges K8s-Smoke-/Scrape-Policy-Gate gebunden, WebRTC-Drift bleibt
-> Nightly-detektierte Reaktion ohne Safari-/WebKit-Pflicht, und Trivy
-> bleibt `continued` bis Fix-Verfuegbarkeit, `expires` (`2026-11-02`)
-> oder expliziter Distroless-Entscheid greifen.
+> **Phase**: ✅ `0.19.0` Roadmap-Trigger-Nacharbeit abgeschlossen und
+> archiviert in [`done/plan-0.19.0.md`](../done/plan-0.19.0.md).
+> Decision-only, kein Release-Tag und keine Runtime-/Schema-/Public-
+> API-Änderung. `0.18.0` bleibt der letzte veröffentlichte Release
+> (Tag `v0.18.0`).
 >
 > **Letzte Releases:**
 > - `v0.18.0` Offene-Risiken-/Trigger-Re-Eval-Minor (kein
@@ -121,8 +118,12 @@ schliesst die Nachweise mit `make docs-check`, `make k8s-validate`,
 die drei Risiken bewusst `⬜` offen und verankert die Resttrigger in
 Backlog und Roadmap. Die Risiken selbst bleiben im Backlog offen.
 
-Der nächste Folgeplan-Korridor ist
-`open/plan-0.19.0.md` (`MVP-40`, `Strengere CORS-Preflight-Variante A`).
+Der aktuelle Folgeplan-Korridor
+[`done/plan-0.19.0.md`](../done/plan-0.19.0.md) hat die offenen
+Decision-Tracks ohne Implementierungs-Trigger geschlossen: `MVP-40`
+Postgres, CORS-Preflight-Variante A, `apps/analyzer-api`
+(`RAK-102`) und `apps/control-plane` (`RAK-103`) bleiben deferred,
+bis konkrete Betreiber-/Multi-Tenant-/Audit-Trigger belegt sind.
 
 `0.16.0` ist released und archiviert in
 [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release liefert
@@ -326,7 +327,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.16.0` | Selected Product Slice / Analyzer Range Fetch | ✅ | Released 2026-05-12. Plan in [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 erledigt RAK-106; Tranche 1 definiert RAK-107..RAK-109 als HLS-CMAF-Byte-Range-Scope mit No-new-public-schema und Fetch-Security-Grenzen; Tranche 2 erledigt RAK-107/RAK-108 mit HLS-Range-Fetch-Code und aktualisierten Contract-Fixtures; Tranche 3 erledigt RAK-109 mit TS-/Doku-/Drift-/Security-Gates; Tranche 4 erledigt RAK-110 mit Versions-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.16.0`. Lastenheft-Patch `1.1.21` + RAK-106..RAK-110 in §13.20. |
 | `0.17.0` | Hardening / Evidence Review | ✅ | Released 2026-05-13. Plan in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Szenario D: Hardening-only. Tranche 0 erledigt RAK-111 mit Import des `0.16.0`-Closeouts, Lastenheft-Patch `1.1.22` und Defer-Matrix. Tranche 1 erledigt RAK-112 mit Evidence Review, `make ts-test`, `make generated-drift-check` und der Entscheidung, Productization/Next Slice/Switch weiter deferred zu halten. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung. Tranche 3 erledigt RAK-113/RAK-114 mit No-change-Gate-Nachweis. Tranche 4 erledigt RAK-115 mit Versions-Bump, versionstragendem Test-/Fixture-Asset-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0`. |
 | `0.18.0` | Offene Risiken / Trigger-Re-Eval | ✅ | Released 2026-05-13. Decision-Closeout in [`done/plan-0.18.0.md`](../done/plan-0.18.0.md): `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Version `0.18.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.18.0`; kein Lastenheft-Patch. |
-| `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | 🟡 | Offener Folgeplan für `Postgres` als produktionsnaher Store und `CORS-Preflight-Project-Isolation`. Entscheidung und Ergebnis in [`open/plan-0.19.0.md`](../open/plan-0.19.0.md). |
+| `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | ✅ | Decision-only-Plan archiviert in [`done/plan-0.19.0.md`](../done/plan-0.19.0.md). Postgres bleibt `deferred` mit ADR-0005-Schwellen, CORS-Preflight-Variante A bleibt deferred bis zu echtem Multi-Tenant-/Project-in-URL-Trigger; `apps/analyzer-api` und `apps/control-plane` sind als Decision-Records mit Proceed-/POC-/Defer-Kriterien dokumentiert. Kein Release-Tag, kein Versions-Bump. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
@@ -347,9 +348,9 @@ erledigte oder obsolete Einträge sind nach §7-Wartungsregel entfernt
 
 | Erwartete ADR / Decision-Track                         | Trigger-Release                            | Begründung                                                                                                                                                                                                                                                                                                                                        |
 | ------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Postgres als produktionsnaher Store (**MVP-40**)        | offen, Trigger Multi-Instance/Multi-Tenant | ADR-0002 hat SQLite für `0.4.0` festgelegt; Postgres bleibt Folge-ADR, sobald Skalierungs- oder Multi-Tenant-Anforderungen konkret werden.                                                                                                                                                                                                        |
-| Strengere CORS-Preflight-Project-Isolation (Variante A) | offen, Trigger Multi-Tenant                | `0.1.0` setzt Variante B (globale Preflight-Allowlist + Project↔Origin-Validierung beim POST). Wenn echte Multi-Tenant-Projektion oder strengere Preflight-Isolation gebraucht wird, Migration auf Variante A — Project im Pfad (`/api/projects/{project_id}/...`) oder als URL-Parameter, damit der Preflight bereits projektscharf prüfen kann. |
-| Decision-Tracks ohne eigene R-N-ID `RAK-102` / `RAK-103` | offen (operator- / stakeholdergetrieben)    | Externe `apps/analyzer-api` (`RAK-102`) und `apps/control-plane` (`RAK-103`) bleiben in `open/plan-0.19.0.md` als triggerbasierte Decision-Tracks; Abschluss ist dort als Decision-Record mit klaren Proceed-/Defer-Triggern in `docs/planning/open/plan-0.19.0.md` verpflichtend. |
+| Postgres als produktionsnaher Store (**MVP-40**)        | offen, zuletzt geprüft in `0.19.0`          | ADR-0005 bleibt gueltig: Postgres wird nur bei Multi-Replica-Store, verbindlichem Recovery-SLO oder Retention-/Read-Last-Schwelle reaktiviert. Decision-Record: [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) §3.1. |
+| Strengere CORS-Preflight-Project-Isolation (Variante A) | offen, zuletzt geprüft in `0.19.0`          | Variante B bleibt Standard; Variante A braucht echten Multi-Tenant-Browser-Client, Project-in-URL-Kontrakt oder Security-/Audit-Befund, der Preflight-Isolation vor Request erzwingt. Decision-Record: [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) §3.2. |
+| Decision-Tracks ohne eigene R-N-ID `RAK-102` / `RAK-103` | offen, zuletzt geprüft in `0.19.0`          | Externe `apps/analyzer-api` (`RAK-102`) und `apps/control-plane` (`RAK-103`) bleiben triggerbasiert deferred; Proceed/POC braucht externen Konsumenten bzw. Betreiber-/Tenant-/Audit-Bedarf plus Owner und Folgeplan. Decision-Record: [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) §3.3. |
 
 Neue Folge-ADRs werden hier ergänzt, sobald der Bedarf entsteht oder
 ein Issue darauf hinweist.
