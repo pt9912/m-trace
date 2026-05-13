@@ -123,7 +123,7 @@ Implementiert:
 
 Defer:
 
-- [ ] `R-9` bleibt offen (`⬜`) mit explizitem Triggertext
+- [x] `R-9` bleibt offen (`⬜`) mit explizitem Triggertext
   (z. B. „bei K8s-Smoke-Gate“), ohne dass K8s-spezifische
   produktive Änderungen eingeführt wurden.
 
@@ -143,7 +143,7 @@ Implementiert:
 
 Defer:
 
-- [ ] `R-13` bleibt offen (`⬜`) mit exakt dokumentiertem Triggertext
+- [x] `R-13` bleibt offen (`⬜`) mit exakt dokumentiertem Triggertext
   (z. B. „kein Upstream-Fix bis `expires`“), inklusive dem letzten
   Re-Review-Datum in der Ignore-Historie.
 
@@ -159,7 +159,7 @@ Implementiert:
 
 Defer:
 
-- [ ] `R-12` bleibt offen (`⬜`) mit explizitem Triggertext
+- [x] `R-12` bleibt offen (`⬜`) mit explizitem Triggertext
   (z. B. Safari als verpflichtender Zielbrowser / Supportanforderung),
   inklusive grüner Drift-Nachtschicht-Historie.
 
@@ -167,29 +167,53 @@ Defer:
 
 ### 3.1 R-9: K8s-Observability-Trigger
 
-- [ ] Prüfen, ob K8s-Smoke in der Roadmap als Gate geplant ist.
-- [ ] Prüfen, ob Compose- und K8s-Layers sauber trennbar sind
+- [x] Prüfen, ob K8s-Smoke in der Roadmap als Gate geplant ist.
+- [x] Prüfen, ob Compose- und K8s-Layers sauber trennbar sind
   (`smoke scope`, Labels, README).
-- [ ] Entscheidung dokumentieren:
+- [x] Entscheidung dokumentieren:
   - `deferred`: kein weiteres Artefakt, Offene-Punkt bleibt im Backlog
   - `implemented`: separater K8s-Allowlist-Modus + Smoke-Profiltrennung
 
+Ergebnis 2026-05-13: `deferred`. In der Roadmap ist kein K8s-Smoke als
+PR-/Release-Gate geplant; `deploy/k8s/` bleibt ein optionaler,
+clusterfreier Seed-Pfad. `make k8s-validate` fand eine bestehende
+Version-Drift in den Beispiel-Images (`0.14.0` statt `0.17.0`), die als
+Seed-/Release-Drift korrigiert wurde. Das ist kein neuer
+K8s-Observability- oder Runtime-Smoke-Scope. Nach dem Fix ist
+`make k8s-validate` gruen.
+
 ### 3.2 R-13: CVE-Re-Review
 
-- [ ] Prüfen, ob Upstream-Fixes für die drei CVEs verfügbar sind.
-- [ ] Prüfen, ob die aktuelle `expires`-Schwelle erreicht ist.
-- [ ] Entscheidung dokumentieren:
+- [x] Prüfen, ob Upstream-Fixes für die drei CVEs verfügbar sind.
+- [x] Prüfen, ob die aktuelle `expires`-Schwelle erreicht ist.
+- [x] Entscheidung dokumentieren:
   - `continued`: Ignore erneuern + harte Re-Review-Logik dokumentieren
   - `migrated`: distroless als produktive Basis-Entscheidung vorbereiten
 
+Ergebnis 2026-05-13: `continued`. Das aktuelle `expires` ist
+`2026-11-02` und damit nicht erreicht. `make image-scan` ist gruen:
+`mtrace-api:scan` hat 0 HIGH/CRITICAL ohne Ignores; Dashboard und
+Analyzer-Service rendern jeweils die drei bekannten CVE-Ignores und
+haben keine unignorierten HIGH-/CRITICAL-Findings. Debian Security
+Tracker zeigt fuer `trixie` weiterhin `vulnerable`/`no-dsa` fuer alle
+drei CVEs; Fixes liegen nicht in der Trixie-Slim-Basis. Re-Review-Artefakt:
+[`../in-progress/r13-trivy-rereview-2026-05-13.md`](../in-progress/r13-trivy-rereview-2026-05-13.md).
+
 ### 3.3 R-12: WebRTC-Drift-Kontur
 
-- [ ] Prüfen, ob Nightly-Drift-Smoke stabil grün ist.
-- [ ] Prüfen, ob Safari/WebKit als verbindlicher Produktiv- oder
+- [x] Prüfen, ob Nightly-Drift-Smoke stabil grün ist.
+- [x] Prüfen, ob Safari/WebKit als verbindlicher Produktiv- oder
   Support-Trigger aufgenommen wurde.
-- [ ] Entscheidung dokumentieren:
+- [x] Entscheidung dokumentieren:
   - `deferred`: weiterhin „automatisch detektiert“
   - `migrated`: Browserumfang und Release-Kontrolle erweitern
+
+Ergebnis 2026-05-13: `deferred`. Die letzten drei `webrtc-drift.yml`-
+Runs sind gruen; der neueste gepruefte Lauf ist `25769902117`
+(`2026-05-13T00:13:10Z`, Head
+`2f75331bc5bd1cee37983972b919c98444770d1d`). Es wurde kein neuer
+Safari-/WebKit-Pflicht- oder Operator-Support-Trigger gefunden; der
+Nightly-Detector bleibt der Reaktionspfad.
 
 ## 4. Tranche 2 — Umsetzung / Follow-up-Artefakte
 
@@ -219,14 +243,14 @@ DoD je Risiko-Entscheid:
 
 ## 5. Tranche 3 — Gate-Phase
 
-- [ ] `make docs-check` grün.
-- [ ] Relevante Tranche-2-Artefakte grün:
-  - `make smoke-webrtc-stats-drift` (R-12-Pfad)
-  - `make k8s-validate` nur bei `R-9`-Implementierung (sonst als
-    dokumentierter Defer-Entscheid ausgeschlossen)
-  - R-13-Decision-Gate: Re-Review-Artefakt (`trivy`-Scan, ignore-lifecycle,
-    `expires`-Historie) vollständig vorliegt und reproduzierbar ist
-- [ ] `docs/planning/in-progress/risks-backlog.md` auf
+- [x] `make docs-check` grün.
+- [x] Relevante Tranche-2-Artefakte grün:
+  - R-12: letzter Nightly-Drift-Run geprueft, keine lokale
+    Gate-Migration ohne Safari-/Support-Trigger.
+  - R-9: `make k8s-validate` gruen nach K8s-Seed-Version-Fix.
+  - R-13: `make image-scan` gruen; Re-Review-Artefakt (`trivy`-Scan,
+    ignore-lifecycle, `expires`-Historie) liegt reproduzierbar vor.
+- [x] `docs/planning/in-progress/risks-backlog.md` auf
   `0.18.0`-Konsequenz aktualisieren.
 
 ## 6. Tranche 4 — Closeout
