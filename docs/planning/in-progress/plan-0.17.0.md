@@ -210,7 +210,7 @@ What bleibt unveraendert:
 | Pfad | Status in `0.17.0` | Begruendung |
 | --- | --- | --- |
 | Analyzer-API (`MVP-20`) | Deferred | Kein konkreter externer Konsument, kein Job-/Retention-/Auth-/Rate-Limit-/SSRF-Vertrag nach `0.16.0`. |
-| Analyzer Next Slice (`NF-13`) | Deferred bis Tranche 1 | HLS-Range-Fetch ist geliefert; weiterer DASH-/LL-CMAF-/Segmentset-Scope braucht eigenen Beleg. |
+| Analyzer Next Slice (`NF-13`) | Deferred bis neuer Trigger | Tranche 1 fand keinen Konsumenten-, Fixture- oder Scope-Trigger fuer weiteren DASH-/LL-CMAF-/Segmentset-Scope. |
 | Control-Plane (`F-132`) | Deferred | Weiterhin kein Betreiber-, Auth-/Tenant-/Audit-Trigger und keine Production-Admin-Zusage. |
 | Postgres (`MVP-40`) | Deferred mit Migration-Seed | ADR 0005 bleibt gueltig; keine neue Last-/Multi-Host-Schwelle erreicht. |
 | Analytics-Backend (`MVP-41`) | Deferred | Kein Hochvolumen-Analytics-Trigger und kein Owner-/Kosten-/Rollback-Nachweis. |
@@ -444,7 +444,7 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
 | --- | --- | --- |
 | `0.16.0` ist released | alle | ✅ geschlossen: `v0.16.0` released und Plan archiviert |
 | `0.16.0` liefert keinen Anschluss | Tranche 0 | ✅ geschlossen: Hardening-only importiert den gelieferten HLS-Range-Fetch-Slice als Evidence-Review-Pfad |
-| POC-Erfolg nicht belegt | Tranche 1/2 | ✅ fuer Tranche 0 geschlossen: `0.16.0` war kein offener POC; Productization bleibt bis Tranche 1 blockiert |
+| POC-Erfolg nicht belegt | Tranche 1/2 | ✅ geschlossen: `0.16.0` war kein offener POC; Productization bleibt nach Tranche 1 mangels Trigger weiterhin blockiert |
 | Mehrere konkurrierende Folgepfade | Tranche 0 | ✅ geschlossen: nur Szenario D aktiv, Rest deferred |
 | RAK-Range noch offen | Tranche 0/4 | ✅ geschlossen: `RAK-111`..`RAK-115` in Lastenheft `1.1.22` |
 
