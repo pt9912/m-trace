@@ -2,9 +2,7 @@
 
 > **Status**: 🟡 in der Vorbereitung — aktiv in `open/`, noch nicht archiviert.
 >
-> **Vorgänger**: `0.17.0` ist released und in
-> [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) archiviert.
-> `0.18.0` ist als Decision-Closeout in
+> **Vorgänger**: `0.18.0` ist released und als Decision-Closeout in
 > [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) archiviert; die drei
 > Folge-Risiken `R-9`, `R-12` und `R-13` bleiben im
 > [`in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
@@ -43,7 +41,7 @@ Nicht in Scope:
 
 ## 0.2 Vorgänger-Gate (informativ)
 
-- [x] `0.17.0` abgeschlossen und archiviert.
+- [x] `0.18.0` released und archiviert.
 - [x] Offene Roadmap-Trigger sind klar identifiziert.
 - [ ] Auslöser-Matrix (`MVP-40`, Variante A) ist noch nicht in `0.19.0` entschieden.
 - [ ] Triggerfreie Punkte (`apps/analyzer-api`, `apps/control-plane`) sind im Plan als

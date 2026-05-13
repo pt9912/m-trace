@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: m-trace-dashboard:0.17.0
+          image: m-trace-dashboard:0.18.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

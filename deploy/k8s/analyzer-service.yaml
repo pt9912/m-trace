@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: analyzer
-          image: m-trace-analyzer:0.17.0
+          image: m-trace-analyzer:0.18.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -1,7 +1,7 @@
 # Implementation Plan — `0.18.0` (Follow-up: offene Risiken)
 
-> **Status**: ✅ abgeschlossen — Restoffen-Closeout archiviert in
-> `done/`.
+> **Status**: ✅ released — Restoffen-Closeout archiviert in `done/`;
+> Release-Tag `v0.18.0`.
 >
 > **Vorgänger**: `0.17.0` (Hardening / Evidence Review), archiviert in
 > [`plan-0.17.0.md`](plan-0.17.0.md).
@@ -10,8 +10,8 @@
 > [`risks-backlog.md`](../in-progress/risks-backlog.md): `R-9`, `R-12`,
 > `R-13`.
 >
-> **Release-Typ**: Follow-up-Patch oder -Minor (abhängig von der finalen
-> Umsetzungstiefe).
+> **Release-Typ**: Minor-Release ohne Lastenheft-Patch; der normative
+> Stand bleibt `1.1.22`.
 >
 > **Zielbild**: Die drei offenen Risiken werden entweder vollständig
 > entschärft oder auf einen klaren Folge-Trigger reduziert, ohne neue
@@ -177,8 +177,9 @@ Defer:
 Ergebnis 2026-05-13: `deferred`. In der Roadmap ist kein K8s-Smoke als
 PR-/Release-Gate geplant; `deploy/k8s/` bleibt ein optionaler,
 clusterfreier Seed-Pfad. `make k8s-validate` fand eine bestehende
-Version-Drift in den Beispiel-Images (`0.14.0` statt `0.17.0`), die als
-Seed-/Release-Drift korrigiert wurde. Das ist kein neuer
+Version-Drift in den Beispiel-Images (`0.14.0` statt damaligem
+Release-Stand), die als Seed-/Release-Drift korrigiert wurde. Das ist
+kein neuer
 K8s-Observability- oder Runtime-Smoke-Scope. Nach dem Fix ist
 `make k8s-validate` gruen.
 
@@ -267,7 +268,8 @@ Implementierungs-Trigger belegt und schliesst deshalb als
 Doku-/Ops-Decision-Follow-up ohne Runtime-, Wire-, Persistenz-,
 Public-API-, Schema- oder Default-Aenderung. Der einzige
 nicht-dokumentarische Fix ist die K8s-Seed-Version-Drift in
-`deploy/k8s/*` (`0.14.0` -> `0.17.0`), damit der bestehende
+`deploy/k8s/*`: zunaechst `0.14.0` -> `0.17.0` fuer den damaligen
+Release-Stand, im Release-Closeout dann `0.18.0`, damit der bestehende
 clusterfreie Seed-Check wieder zum Release-Stand passt.
 
 Abschlussstatus:
@@ -280,5 +282,22 @@ Abschlussstatus:
 
 Der Plan ist als abgeschlossenes Decision-Artefakt in `done/`
 archiviert. Die Risiken selbst bleiben bewusst im Backlog offen; Roadmap
-und Backlog enthalten die Weiterfuehrung. Ein Release-/Versions-Closeout
-ist erst ein separater Schritt.
+und Backlog enthalten die Weiterfuehrung.
+
+## 7. Release-Closeout
+
+Ergebnis 2026-05-13: `0.18.0` ist als Release `v0.18.0`
+geschlossen. Der Release hebt die Versionstraeger und
+versionstragenden Test-/Fixture-Assets auf `0.18.0`, bleibt aber ohne
+Runtime-, Wire-, Persistenz-, Public-API-, Schema- oder
+Default-Aenderung. K8s-Seed-Images tragen nach dem Release-Bump
+ebenfalls `0.18.0`.
+
+Release-Artefakte:
+
+| Bereich | Stand |
+| --- | --- |
+| Versionen | `package.json`, `apps/*/package.json`, `packages/*/package.json`, `apps/api/cmd/api/main.go`, `packages/player-sdk/src/version.ts`, `contracts/sdk-compat.json`, Analyzer-Contract-Fixtures und versionstragende API-Testdata jeweils `0.18.0`. |
+| Changelog | `CHANGELOG.md` enthaelt `[0.18.0] - 2026-05-13`. |
+| Roadmap | `docs/planning/in-progress/roadmap.md` markiert `0.18.0` released und `0.19.0` als offene Folgephase. |
+| Tag | Annotierter Tag `v0.18.0`. |

@@ -2,17 +2,24 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: ✅ `0.18.0` Decision-Closeout archiviert in
-> [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) — Trigger-Re-Eval
-> fuer `R-9`, `R-12` und `R-13`. Kein Implementierungs-Trigger wurde
-> belegt: K8s-Observability bleibt an ein kuenftiges K8s-Smoke-/
-> Scrape-Policy-Gate gebunden, WebRTC-Drift bleibt Nightly-detektierte
-> Reaktion ohne Safari-/WebKit-Pflicht, und Trivy bleibt `continued`
-> bis Fix-Verfuegbarkeit, `expires` (`2026-11-02`) oder expliziter
-> Distroless-Entscheid greifen. Letzter Release bleibt `0.17.0`,
-> archiviert in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
+> **Phase**: ✅ `0.18.0` released am 2026-05-13 (Tag `v0.18.0`);
+> Decision-Closeout archiviert in
+> [`done/plan-0.18.0.md`](../done/plan-0.18.0.md). Kein
+> Implementierungs-Trigger wurde belegt: K8s-Observability bleibt an ein
+> kuenftiges K8s-Smoke-/Scrape-Policy-Gate gebunden, WebRTC-Drift bleibt
+> Nightly-detektierte Reaktion ohne Safari-/WebKit-Pflicht, und Trivy
+> bleibt `continued` bis Fix-Verfuegbarkeit, `expires` (`2026-11-02`)
+> oder expliziter Distroless-Entscheid greifen.
 >
 > **Letzte Releases:**
+> - `v0.18.0` Offene-Risiken-/Trigger-Re-Eval-Minor (kein
+>   Lastenheft-Patch; normativer Stand bleibt `1.1.22`): `R-9`,
+>   `R-12` und `R-13` bleiben offen, aber mit praezisierten
+>   Folge-Triggern in Plan, Roadmap und Risks-Backlog. Keine Runtime-,
+>   Wire-, Persistenz-, Public-API-, Schema- oder Default-Aenderung
+>   ueber den Release-Bump und versionstragende Test-/Fixture-Assets
+>   hinaus. Plan archiviert in
+>   [`done/plan-0.18.0.md`](../done/plan-0.18.0.md).
 > - `v0.17.0` Hardening-/Evidence-Review-Minor (Lastenheft `1.1.22`,
 >   RAK-111..RAK-115 in §13.21): Szenario D Hardening-only,
 >   Evidence Review, Doku-/Defer-Entscheid und No-change-Gate-Nachweis;
@@ -66,7 +73,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-13 — `0.17.0` released)
+## 1. Aktueller Stand (2026-05-13 — `0.18.0` released)
 
 ### 1.1 Was abgeschlossen ist
 
@@ -99,11 +106,11 @@ aktualisieren.
 | ✅      | Product Scope / Analyzer Boundary (`0.15.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 entscheidet Selbsthoster/kleine bis mittlere Teams/Broadcaster-Labs/technische Media-Teams als Primärziel. Tranche 2 deferred externe `apps/analyzer-api`; interner `apps/analyzer-service` plus Library/CLI bleiben Standard. Tranche 3 deferred `apps/control-plane` ohne POC. Tranche 4 empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 hält Postgres als `defer-with-migration-seed` und Analytics als `defer`. | [`plan-0.15.0.md`](../done/plan-0.15.0.md) |
 | ✅      | Selected Product Slice / Analyzer Range Fetch (`0.16.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 schließt RAK-106; Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges, No-new-public-schema und Fetch-Security-Grenzen. Tranche 2 liefert den HLS-Range-Fetch fuer explizite `EXT-X-MAP:BYTERANGE`-/`#EXT-X-BYTERANGE`-Offsets samt Contract-Fixtures. Tranche 3 schließt RAK-109 mit TS-, Drift-, Doku- und Security-Gates. Tranche 4 schließt RAK-110 mit Versions-Bump, Changelog, Plan-Archiv und Tag `v0.16.0`. | [`done/plan-0.16.0.md`](../done/plan-0.16.0.md) |
 | ✅      | Hardening / Evidence Review (`0.17.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21. Szenario D: Hardening-only. Tranchen 0–4 erledigen Import, Evidence Review, Doku-/Defer-Entscheid, No-change-Gate-Nachweis und Release-Closeout: kein Productization-/Next-Slice-/Switch-Trigger, keine Runtime-/Public-API-/Schema-Aenderung ueber den versionstragenden Test-/Fixture-Asset-Bump hinaus. | [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) |
-| ✅      | Offene Risiken / Trigger-Re-Eval (`0.18.0`) | Decision-Closeout am 2026-05-13 archiviert in `done/`: `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Keine Runtime-, Wire-, Persistenz-, Public-API-, Schema- oder Default-Aenderung; K8s-Seed-Images wurden auf `0.17.0` synchronisiert. | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) |
+| ✅      | Offene Risiken / Trigger-Re-Eval (`0.18.0`) | Released 2026-05-13. Decision-Closeout archiviert in `done/`: `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Keine Runtime-, Wire-, Persistenz-, Public-API-, Schema- oder Default-Aenderung ueber den Release-Bump hinaus; K8s-Seed-Images wurden auf `0.18.0` synchronisiert. | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.18.0` ist als Decision-Closeout in
+`0.18.0` ist als Release `v0.18.0` und Decision-Closeout in
 [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) archiviert. Tranche 1
 entscheidet alle drei Risiken ohne Implementierungs-Trigger: `R-9`
 bleibt an K8s-Smoke-/Scrape-Policy gebunden, `R-13` bleibt mit
@@ -112,8 +119,7 @@ bleibt Nightly-detektiert ohne Safari-/WebKit-Pflicht. Tranche 3
 schliesst die Nachweise mit `make docs-check`, `make k8s-validate`,
 `make image-scan` und geprueftem WebRTC-Nightly-Run. Tranche 4 haelt
 die drei Risiken bewusst `⬜` offen und verankert die Resttrigger in
-Backlog und Roadmap; ein Release-/Versions-Closeout bleibt ein separater
-Folgeschritt. Die Risiken selbst bleiben im Backlog offen.
+Backlog und Roadmap. Die Risiken selbst bleiben im Backlog offen.
 
 Der nächste Folgeplan-Korridor ist
 `open/plan-0.19.0.md` (`MVP-40`, `Strengere CORS-Preflight-Variante A`).
@@ -282,6 +288,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 50  | ✅      | `0.15.0` Product Scope / Analyzer Boundary released: Szenario A fokussiert Zielgruppe + Analyzer-Boundary, bevor externe Analyzer-API, Control-Plane, Postgres/Analytics oder Production-K8s in Implementierung gehen. Tranche 1 schließt RAK-101 mit Selbsthoster-/kleine-Team-/Broadcaster-Lab-Fokus. Tranche 2 schließt RAK-102: externe Analyzer-API deferred, interner `apps/analyzer-service` plus Library/CLI bleibt Standard. Tranche 3 schließt RAK-103: Control-Plane deferred, kein POC ohne Betreiber-/Auth-/Tenant-Trigger. Tranche 4 schließt RAK-104: HTTP-Range-/Byte-Range-Loader als einziger kleiner `NF-13`-Folgeslice empfohlen. Tranche 5 schließt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. | Nach Schritt 49 | RAK-101..RAK-105 ✅; `spec/lastenheft.md` §7.5.5/§7.5.6/§8.3/§12.1/§13.19/§16.1; MVP-20, F-132, NF-13, MVP-40/MVP-41; [`done/plan-0.15.0.md`](../done/plan-0.15.0.md) |
 | 51  | ✅      | `0.16.0` Selected Product Slice / Analyzer Range Fetch released: Szenario B importiert `RAK-104` als einzigen Go-Pfad. Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges (`#EXT-X-MAP` mit `BYTERANGE`-Attribut und erstes `#EXT-X-BYTERANGE`-fMP4-Media-Segment), No-new-public-schema und Fetch-Security-Grenzen. Tranche 2 liefert den HLS-Range-Fetch fuer explizite Offsets im bestehenden Binary-Check-Pfad. Tranche 3 schließt RAK-109 mit `make security-gates` plus TS-/Doku-/Drift-Gates. Tranche 4 schließt RAK-110 mit Version `0.16.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.16.0`; externe Analyzer-API, Control-Plane, Postgres/Analytics, Production-K8s, LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. | Nach Schritt 50 | RAK-106..RAK-110 ✅; `spec/lastenheft.md` §13.20; NF-13; [`done/plan-0.16.0.md`](../done/plan-0.16.0.md); Tag `v0.16.0` |
 | 52  | ✅      | `0.17.0` Hardening / Evidence Review released: `0.16.0`-Closeout importiert, Szenario D gewaehlt, Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 vergeben, Evidence geprueft, Tranche 2 als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung geschlossen, Tranche 3 als No-change-Gate-Nachweis abgeschlossen und Tranche 4 mit Version `0.17.0`, versionstragendem Test-/Fixture-Asset-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0` geschlossen. | Nach Schritt 51 | RAK-111..RAK-115 ✅; `spec/lastenheft.md` §13.21; [`done/plan-0.17.0.md`](../done/plan-0.17.0.md); Tag `v0.17.0` |
+| 53  | ✅      | `0.18.0` Offene Risiken / Trigger-Re-Eval released: `R-9`, `R-12` und `R-13` ohne Implementierungs-Trigger entschieden, Resttrigger in Backlog und Roadmap praezisiert, K8s-Seed-Images und Versionstraeger auf `0.18.0` synchronisiert. Kein Lastenheft-Patch; normativer Stand bleibt `1.1.22`. | Nach Schritt 52 | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md); Tag `v0.18.0` |
 
 ---
 
@@ -318,7 +325,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.15.0` | Product Scope / Analyzer Boundary | ✅ | Released 2026-05-12. Plan in [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 erledigt RAK-101 und schärft die Primärzielgruppe. Tranche 2 erledigt RAK-102 und deferred eine externe Analyzer-API bis zu konkretem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und Folgeplan. Tranche 3 erledigt RAK-103 und deferred Control-Plane ohne POC bis zu Betreiber-/Auth-/Tenant-/Audit-Triggern. Tranche 4 erledigt RAK-104 und empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 erledigt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` + RAK-101..RAK-105 in §13.19 + Tag `v0.15.0`. |
 | `0.16.0` | Selected Product Slice / Analyzer Range Fetch | ✅ | Released 2026-05-12. Plan in [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 erledigt RAK-106; Tranche 1 definiert RAK-107..RAK-109 als HLS-CMAF-Byte-Range-Scope mit No-new-public-schema und Fetch-Security-Grenzen; Tranche 2 erledigt RAK-107/RAK-108 mit HLS-Range-Fetch-Code und aktualisierten Contract-Fixtures; Tranche 3 erledigt RAK-109 mit TS-/Doku-/Drift-/Security-Gates; Tranche 4 erledigt RAK-110 mit Versions-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.16.0`. Lastenheft-Patch `1.1.21` + RAK-106..RAK-110 in §13.20. |
 | `0.17.0` | Hardening / Evidence Review | ✅ | Released 2026-05-13. Plan in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Szenario D: Hardening-only. Tranche 0 erledigt RAK-111 mit Import des `0.16.0`-Closeouts, Lastenheft-Patch `1.1.22` und Defer-Matrix. Tranche 1 erledigt RAK-112 mit Evidence Review, `make ts-test`, `make generated-drift-check` und der Entscheidung, Productization/Next Slice/Switch weiter deferred zu halten. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung. Tranche 3 erledigt RAK-113/RAK-114 mit No-change-Gate-Nachweis. Tranche 4 erledigt RAK-115 mit Versions-Bump, versionstragendem Test-/Fixture-Asset-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0`. |
-| `0.18.0` | Offene Risiken / Trigger-Re-Eval | ✅ | Decision-Closeout am 2026-05-13 in [`done/plan-0.18.0.md`](../done/plan-0.18.0.md): `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Kein Release-/Versions-Closeout; letzter Release bleibt `0.17.0`. |
+| `0.18.0` | Offene Risiken / Trigger-Re-Eval | ✅ | Released 2026-05-13. Decision-Closeout in [`done/plan-0.18.0.md`](../done/plan-0.18.0.md): `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Version `0.18.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.18.0`; kein Lastenheft-Patch. |
 | `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | 🟡 | Offener Folgeplan für `Postgres` als produktionsnaher Store und `CORS-Preflight-Project-Isolation`. Entscheidung und Ergebnis in [`open/plan-0.19.0.md`](../open/plan-0.19.0.md). |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases

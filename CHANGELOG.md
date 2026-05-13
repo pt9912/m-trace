@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-05-13
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Offene Risiken / Trigger-Re-Eval nach `0.17.0`.
+> Kein Lastenheft-Patch; der normative Stand bleibt `1.1.22`.
+> Plan in
+> [`docs/planning/done/plan-0.18.0.md`](docs/planning/done/plan-0.18.0.md).
+
 ### Changed
 
 - `0.18.0` Decision-Closeout archiviert unter
@@ -18,7 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [`docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md`](docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md).
 - K8s-Beispielmanifeste auf den aktuellen Release-Stand synchronisiert:
   `m-trace-api`, `m-trace-analyzer` und `m-trace-dashboard` verwenden
-  jetzt Image-Tags `0.17.0`; `make k8s-validate` prüft den Drift.
+  jetzt Image-Tags `0.18.0`; `make k8s-validate` prüft den Drift.
+- Versionen auf `0.18.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompat-Vertrag,
+  Analyzer-Contract-Fixtures und versionstragende Test-/Fixture-
+  Assets. Keine Runtime-, Wire-, Persistenz-, Public-API-, Schema-
+  oder Default-Aenderung ueber den Release-Bump hinaus.
 
 ## [0.17.0] - 2026-05-13
 
