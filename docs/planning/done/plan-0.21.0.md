@@ -1,8 +1,8 @@
 # Implementation Plan — `0.21.0` (OCI Image Publishing)
 
-> **Status**: ✅ releasebereit — Plan archiviert in `done/`.
-> Release-Tag `v0.21.0` und erster GHCR-Image-Publish sind Ziel des
-> Closeouts.
+> **Status**: ✅ released — Plan archiviert in `done/`.
+> Release-Tag `v0.21.0`, npm-Package-Publish und erster GHCR-Image-
+> Publish sind abgeschlossen.
 >
 > **Vorgänger**: `0.20.0` ist als Package-Publishing-Release
 > veröffentlicht und archiviert in
@@ -89,8 +89,7 @@ DoD:
   produktiven Publish und Rollback-Grenzen.
 - [x] `spec/lastenheft.md` ist für `1.1.24` / RAK-121..RAK-125
   vorbereitet.
-- [x] `CHANGELOG.md` enthält den geplanten `0.21.0`-Scope unter
-  `Unreleased`.
+- [x] `CHANGELOG.md` enthält den `0.21.0`-Versionsabschnitt.
 - [x] Roadmap beschreibt `0.21.0` als aktiven OCI-Publishing-Track.
 
 ## 6. Tranche 4 — Gates / Closeout
@@ -105,13 +104,28 @@ Vor Release:
 - [x] Versionstragende Artefakte auf `0.21.0` synchronisieren.
 - [x] `CHANGELOG.md` von `Unreleased` nach `0.21.0` datieren.
 - [x] Plan nach `docs/planning/done/` archivieren.
-- [ ] Tag `v0.21.0`, GitHub Release und GHCR-Publish abschließen.
+- [x] Tag `v0.21.0`, GitHub Release und GHCR-Publish abschließen.
 
 Closeout-Verdict:
 
 - RAK-121: ✅ GHCR-Namensschema final.
 - RAK-122: ✅ Make-Targets verifiziert.
-- RAK-123: ✅ Publish-Workflow angelegt; produktiver GitHub-Lauf folgt
-  erst mit Release.
+- RAK-123: ✅ Publish-Workflow erfolgreich:
+  [`publish-images.yml` run `25804508692`](https://github.com/pt9912/m-trace/actions/runs/25804508692).
 - RAK-124: ✅ Release-Dokumentation final.
-- RAK-125: ⬜ Tag, Release und erster Image-Publish abgeschlossen.
+- RAK-125: ✅ Tag, GitHub Release und erster Image-Publish
+  abgeschlossen.
+
+Post-Release-Nachweis:
+
+- GitHub Release:
+  <https://github.com/pt9912/m-trace/releases/tag/v0.21.0>
+- npm GitHub Packages:
+  [`publish-packages.yml` run `25804508709`](https://github.com/pt9912/m-trace/actions/runs/25804508709)
+  veröffentlichte `@pt9912/player-sdk@0.21.0` und
+  `@pt9912/stream-analyzer@0.21.0`.
+- GHCR Container Packages:
+  [`publish-images.yml` run `25804508692`](https://github.com/pt9912/m-trace/actions/runs/25804508692)
+  veröffentlichte `ghcr.io/pt9912/m-trace-api:0.21.0`,
+  `ghcr.io/pt9912/m-trace-dashboard:0.21.0` und
+  `ghcr.io/pt9912/m-trace-analyzer-service:0.21.0`.

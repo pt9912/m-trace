@@ -2,16 +2,17 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: 🟡 `0.21.0` OCI Image Publishing aktiv in
-> [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Ziel:
-> versionierte GHCR-Images für API, Dashboard und Analyzer-Service
-> mit Make-Dry-Run, approval-gated Publish und Release-Hook.
+> **Phase**: ✅ `0.21.0` OCI Image Publishing released und archiviert
+> in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). GHCR-Images
+> für API, Dashboard und Analyzer-Service sind versioniert als
+> `0.21.0` veröffentlicht.
 >
-> **Letzte Releases / aktive Welle:**
-> - `0.21.0` OCI-Image-Publishing-Minor ist in Arbeit
->   (Lastenheft `1.1.24`, RAK-121..RAK-125 in §13.23): GHCR-
->   Namensschema, Make-Targets, Publish-Workflow und Release-Doku.
->   Plan archiviert in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md).
+> **Letzte Releases:**
+> - `v0.21.0` OCI-Image-Publishing-Minor (Lastenheft `1.1.24`,
+>   RAK-121..RAK-125 in §13.23): GHCR-Namensschema, Make-Targets,
+>   Publish-Workflow, Release-Doku und erster GHCR-Publish für drei
+>   Runtime-Images. Plan archiviert in
+>   [`done/plan-0.21.0.md`](../done/plan-0.21.0.md).
 > - `v0.20.0` Package-Publishing-Minor (Lastenheft `1.1.23`,
 >   RAK-116..RAK-120 in §13.22): erster GitHub-Packages-Publish für
 >   `@pt9912/player-sdk` und `@pt9912/stream-analyzer`, Scope-
@@ -79,7 +80,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-13 — `0.21.0` in Arbeit)
+## 1. Aktueller Stand (2026-05-13 — `0.21.0` released)
 
 ### 1.1 Was abgeschlossen ist
 
@@ -115,28 +116,16 @@ aktualisieren.
 | ✅      | Offene Risiken / Trigger-Re-Eval (`0.18.0`) | Released 2026-05-13. Decision-Closeout archiviert in `done/`: `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Keine Runtime-, Wire-, Persistenz-, Public-API-, Schema- oder Default-Aenderung ueber den Release-Bump hinaus; K8s-Seed-Images wurden auf `0.18.0` synchronisiert. | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) |
 | ✅      | Roadmap-Trigger-Nacharbeit (`0.19.0`) | Decision-only-Plan archiviert: Postgres, CORS-Variante A, externe Analyzer-API und Control-Plane bleiben bis zu konkreten Betreiber-/Multi-Tenant-/Audit-Triggern deferred. Kein Release-Tag, kein Versions-Bump. | [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) |
 | ✅      | Package Publishing (`0.20.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120: GitHub-Packages-Publish für `@pt9912/player-sdk` und `@pt9912/stream-analyzer`, Scope-Migration auf `@pt9912`, Release-Doku und Publish-Workflow. | [`done/plan-0.20.0.md`](../done/plan-0.20.0.md) |
-| 🟡      | OCI Image Publishing (`0.21.0`) | Aktiv. Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish und Release-Hook. | [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
+| ✅      | OCI Image Publishing (`0.21.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish und Release-Hook. | [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.21.0` ist als OCI-Image-Publishing-Track aktiv in
-[`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Der Trigger ist
-jetzt explizit: Nach dem erfolgreichen GitHub-Packages-Publish in
-`0.20.0` sollen auch die drei Runtime-Artefakte ohne lokalen Docker-
-Build nutzbar sein.
-
-Der Scope bleibt bewusst eng: GHCR-Images für API, Dashboard und
-Analyzer-Service, versionierte Tags, Make-Dry-Run, approval-gated
-Publish-Target und `release.published`-Workflow. `latest`, Multi-Arch,
-Signierung/Attestations und Production-K8s bleiben Folge-Scope.
-
-Offene Restpunkte bis zum Release-Closeout:
-
-- `make image-publish-dry-run VER=0.21.0`
-- `make image-scan`
-- Versionstragende Artefakte auf `0.21.0` synchronisieren.
-- Plan nach `done/` archivieren, Tag `v0.21.0` setzen und GHCR-Publish
-  über GitHub Release auslösen.
+`0.21.0` ist als Release `v0.21.0` und OCI-Image-Publishing-Closeout
+in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) archiviert. Der
+Release veröffentlicht erstmals die drei Runtime-Images auf GHCR:
+`m-trace-api`, `m-trace-dashboard` und `m-trace-analyzer-service`,
+jeweils mit Tag `0.21.0`. `latest`, Multi-Arch, Signierung/
+Attestations und Production-K8s bleiben Folge-Scope.
 
 ---
 
@@ -209,7 +198,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 52  | ✅      | `0.17.0` Hardening / Evidence Review released: `0.16.0`-Closeout importiert, Szenario D gewaehlt, Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 vergeben, Evidence geprueft, Tranche 2 als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung geschlossen, Tranche 3 als No-change-Gate-Nachweis abgeschlossen und Tranche 4 mit Version `0.17.0`, versionstragendem Test-/Fixture-Asset-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0` geschlossen. | Nach Schritt 51 | RAK-111..RAK-115 ✅; `spec/lastenheft.md` §13.21; [`done/plan-0.17.0.md`](../done/plan-0.17.0.md); Tag `v0.17.0` |
 | 53  | ✅      | `0.18.0` Offene Risiken / Trigger-Re-Eval released: `R-9`, `R-12` und `R-13` ohne Implementierungs-Trigger entschieden, Resttrigger in Backlog und Roadmap praezisiert, K8s-Seed-Images und Versionstraeger auf `0.18.0` synchronisiert. Kein Lastenheft-Patch; normativer Stand bleibt `1.1.22`. | Nach Schritt 52 | [`done/plan-0.18.0.md`](../done/plan-0.18.0.md); Tag `v0.18.0` |
 | 54  | ✅      | `0.20.0` Package Publishing released: publishbare npm-Pakete auf `@pt9912/player-sdk` und `@pt9912/stream-analyzer` umgestellt, GitHub-Packages-Workflow ergänzt, Release-Doku erweitert und erster Package-Publish vorbereitet/ausgeführt. Dashboard und Analyzer-Service bleiben `private: true`. | Nach Schritt 53 und Decision-only `0.19.0` | RAK-116..RAK-120 ✅; `spec/lastenheft.md` §13.22; [`done/plan-0.20.0.md`](../done/plan-0.20.0.md); Tag `v0.20.0` |
-| 55  | 🟡      | `0.21.0` OCI Image Publishing aktivieren: GHCR-Namensschema, Make-Targets, Publish-Workflow und Release-Doku für drei Runtime-Images liefern; kein `latest`, kein Production-K8s-Go. | Nach Schritt 54 und ausgelöstem Container-Publishing-Trigger | RAK-121..RAK-125; `spec/lastenheft.md` §13.23; [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
+| 55  | ✅      | `0.21.0` OCI Image Publishing released: GHCR-Namensschema, Make-Targets, Publish-Workflow und Release-Doku für drei Runtime-Images geliefert; kein `latest`, kein Production-K8s-Go. | Nach Schritt 54 und ausgelöstem Container-Publishing-Trigger | RAK-121..RAK-125 ✅; `spec/lastenheft.md` §13.23; [`done/plan-0.21.0.md`](../done/plan-0.21.0.md); Tag `v0.21.0` |
 
 ---
 
@@ -249,7 +238,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.18.0` | Offene Risiken / Trigger-Re-Eval | ✅ | Released 2026-05-13. Decision-Closeout in [`done/plan-0.18.0.md`](../done/plan-0.18.0.md): `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Version `0.18.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.18.0`; kein Lastenheft-Patch. |
 | `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | ✅ | Decision-only-Plan archiviert in [`done/plan-0.19.0.md`](../done/plan-0.19.0.md). Postgres bleibt `deferred` mit ADR-0005-Schwellen, CORS-Preflight-Variante A bleibt deferred bis zu echtem Multi-Tenant-/Project-in-URL-Trigger; `apps/analyzer-api` und `apps/control-plane` sind als Decision-Records mit Proceed-/POC-/Defer-Kriterien dokumentiert. Kein Release-Tag, kein Versions-Bump. |
 | `0.20.0` | Package Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.20.0.md`](../done/plan-0.20.0.md). Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120 in §13.22. Inhalt: Scope-Migration auf `@pt9912`, GitHub-Packages-Workflow, Release-Doku und Publish von `@pt9912/player-sdk` plus `@pt9912/stream-analyzer`; Apps bleiben private Workspace-Pakete. |
-| `0.21.0` | OCI Image Publishing | 🟡 | Aktiv in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23. Inhalt: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish, Release-Hook und Rollback-Doku; kein `latest`, kein Production-K8s-Go. |
+| `0.21.0` | OCI Image Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23. Inhalt: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish, Release-Hook und Rollback-Doku; kein `latest`, kein Production-K8s-Go. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
