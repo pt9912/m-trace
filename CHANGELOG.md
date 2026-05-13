@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `0.18.0` Restoffen-Closeout vorbereitet: `R-9`, `R-12` und `R-13`
+  bleiben offen, aber mit präzisierten Folge-Triggern in Plan,
+  Roadmap und Risks-Backlog. `R-13` hat ein neues reproduzierbares
+  Trivy-Re-Review-Artefakt unter
+  [`docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md`](docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md).
+- K8s-Beispielmanifeste auf den aktuellen Release-Stand synchronisiert:
+  `m-trace-api`, `m-trace-analyzer` und `m-trace-dashboard` verwenden
+  jetzt Image-Tags `0.17.0`; `make k8s-validate` prüft den Drift.
+
 ## [0.17.0] - 2026-05-13
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

@@ -1,7 +1,7 @@
 # Implementation Plan — `0.18.0` (Follow-up: offene Risiken)
 
-> **Status**: 🟡 in der Vorbereitung — aktiv in `open/`, noch nicht
-> archiviert.
+> **Status**: 🟡 Restoffen-Closeout abgeschlossen — aktiv in `open/`,
+> noch nicht archiviert.
 >
 > **Vorgänger**: `0.17.0` (Hardening / Evidence Review), archiviert in
 > [`../done/plan-0.17.0.md`](../done/plan-0.17.0.md).
@@ -255,9 +255,29 @@ DoD je Risiko-Entscheid:
 
 ## 6. Tranche 4 — Closeout
 
-- [ ] Für `R-9`, `R-12`, `R-13` einen Abschlussstatus setzen
+- [x] Für `R-9`, `R-12`, `R-13` einen Abschlussstatus setzen
   (`🟢`/`⬜`/`⬛`) und Begründung dokumentieren.
-- [ ] Bei vollständiger Umsetzung: Plan nach
+- [!] Bei vollständiger Umsetzung: Plan nach
   `docs/planning/done/plan-0.18.0.md` verschieben.
-- [ ] Bei Restoffen: Auslöser/Resttrigger präzisieren und Weiterführung
+- [x] Bei Restoffen: Auslöser/Resttrigger präzisieren und Weiterführung
   explizit in Backlog + Roadmap verankern.
+
+Ergebnis 2026-05-13: Restoffen-Closeout. `0.18.0` hat keinen
+Implementierungs-Trigger belegt und schliesst deshalb als
+Doku-/Ops-Decision-Follow-up ohne Runtime-, Wire-, Persistenz-,
+Public-API-, Schema- oder Default-Aenderung. Der einzige
+nicht-dokumentarische Fix ist die K8s-Seed-Version-Drift in
+`deploy/k8s/*` (`0.14.0` -> `0.17.0`), damit der bestehende
+clusterfreie Seed-Check wieder zum Release-Stand passt.
+
+Abschlussstatus:
+
+| Risiko | Status | Begruendung |
+| --- | --- | --- |
+| `R-9` | `⬜` offen | Kein K8s-Smoke-/Scrape-Policy-Trigger. Wiederaufnahme nur, wenn K8s-Smoke PR-/Release-Gate wird oder K8s-Observability-Manifeste konkrete Prometheus-Scrape-/Label-Policy einfuehren. |
+| `R-13` | `⬜` offen / `continued` | `make image-scan` gruen, `expires` nicht erreicht (`2026-11-02`), Debian-`trixie` weiterhin ohne eingespielten Fix fuer die drei CVEs. Wiederaufnahme bei Fix-Verfuegbarkeit, `expires`-Schwelle oder explizitem Distroless-Basisentscheid. |
+| `R-12` | `⬜` offen | Nightly-Drift-Runs gruen, kein Safari-/WebKit-Pflichttrigger. Wiederaufnahme bei Drift-Befund, verpflichtendem Safari/WebKit-Support oder Operator-Anforderung. |
+
+Der Plan bleibt bewusst in `open/`, weil die drei Risiken nicht
+geschlossen sind. Roadmap und Backlog enthalten die Weiterfuehrung;
+ein Release-/Versions-Closeout ist erst ein separater Schritt.

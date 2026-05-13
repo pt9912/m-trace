@@ -2,17 +2,15 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: ✅ `0.17.0` released 2026-05-13 — Hardening /
-> Evidence Review. Tranchen 0–4 schliessen Import, Evidence Review,
-> Doku-/Defer-Entscheid, No-change-Gate-Nachweis und Release-Closeout:
-> Szenario D bleibt aktiv, kein Code- oder Runtime-Hardening ist
-> freigegeben, und Productization, Next Slice, Switch, Analyzer-API,
-> Control-Plane, Postgres/Analytics und Production-K8s bleiben mangels
-> Trigger deferred. Offene Folgepläne sind:
-> [`open/plan-0.18.0.md`](../open/plan-0.18.0.md) (Risikonacharbeit)
-> und [`open/plan-0.19.0.md`](../open/plan-0.19.0.md)
-> (ADR-Trigger: `MVP-40`, `Strengere CORS-Preflight-Variante A`).
-> Plan archiviert in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
+> **Phase**: 🟡 `0.18.0` Restoffen-Closeout in
+> [`open/plan-0.18.0.md`](../open/plan-0.18.0.md) — Trigger-Re-Eval
+> fuer `R-9`, `R-12` und `R-13`. Kein Implementierungs-Trigger wurde
+> belegt: K8s-Observability bleibt an ein kuenftiges K8s-Smoke-/
+> Scrape-Policy-Gate gebunden, WebRTC-Drift bleibt Nightly-detektierte
+> Reaktion ohne Safari-/WebKit-Pflicht, und Trivy bleibt `continued`
+> bis Fix-Verfuegbarkeit, `expires` (`2026-11-02`) oder expliziter
+> Distroless-Entscheid greifen. Letzter Release bleibt `0.17.0`,
+> archiviert in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
 >
 > **Letzte Releases:**
 > - `v0.17.0` Hardening-/Evidence-Review-Minor (Lastenheft `1.1.22`,
@@ -101,27 +99,23 @@ aktualisieren.
 | ✅      | Product Scope / Analyzer Boundary (`0.15.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 entscheidet Selbsthoster/kleine bis mittlere Teams/Broadcaster-Labs/technische Media-Teams als Primärziel. Tranche 2 deferred externe `apps/analyzer-api`; interner `apps/analyzer-service` plus Library/CLI bleiben Standard. Tranche 3 deferred `apps/control-plane` ohne POC. Tranche 4 empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 hält Postgres als `defer-with-migration-seed` und Analytics als `defer`. | [`plan-0.15.0.md`](../done/plan-0.15.0.md) |
 | ✅      | Selected Product Slice / Analyzer Range Fetch (`0.16.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 schließt RAK-106; Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges, No-new-public-schema und Fetch-Security-Grenzen. Tranche 2 liefert den HLS-Range-Fetch fuer explizite `EXT-X-MAP:BYTERANGE`-/`#EXT-X-BYTERANGE`-Offsets samt Contract-Fixtures. Tranche 3 schließt RAK-109 mit TS-, Drift-, Doku- und Security-Gates. Tranche 4 schließt RAK-110 mit Versions-Bump, Changelog, Plan-Archiv und Tag `v0.16.0`. | [`done/plan-0.16.0.md`](../done/plan-0.16.0.md) |
 | ✅      | Hardening / Evidence Review (`0.17.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21. Szenario D: Hardening-only. Tranchen 0–4 erledigen Import, Evidence Review, Doku-/Defer-Entscheid, No-change-Gate-Nachweis und Release-Closeout: kein Productization-/Next-Slice-/Switch-Trigger, keine Runtime-/Public-API-/Schema-Aenderung ueber den versionstragenden Test-/Fixture-Asset-Bump hinaus. | [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) |
+| 🟡      | Offene Risiken / Trigger-Re-Eval (`0.18.0`) | Restoffen-Closeout am 2026-05-13 in `open/`: `R-9` bleibt K8s-Smoke-/Scrape-Policy-Trigger, `R-12` bleibt Nightly-detektierter WebRTC-Drift-Pfad ohne Safari-/WebKit-Pflicht, `R-13` bleibt Trivy-`continued` mit Re-Review-Artefakt und `expires` `2026-11-02`. Keine Runtime-, Wire-, Persistenz-, Public-API-, Schema- oder Default-Aenderung; K8s-Seed-Images wurden auf `0.17.0` synchronisiert. | [`open/plan-0.18.0.md`](../open/plan-0.18.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.17.0` ist released und archiviert in
-[`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Tranche 0 importiert das
-`0.16.0`-Closeout und waehlt Szenario D: Hardening-only. Tranche 1
-prueft Evidence und Gates: `make ts-test` ist gruen (38 Testdateien /
-656 Tests, davon `packages/stream-analyzer` 19 / 393) und
-`make generated-drift-check` meldet keine Drift. Tranche 2 schliesst
-als Doku-/Defer-Artefakt ohne Code-, Wire-, Persistenz-, Runtime- oder
-Default-Aenderung. Tranche 3 schliesst Compatibility-/Security-/Ops-
-Gates als No-change-Nachweis: `make docs-check` bleibt Pflicht, Code-,
-Contract-, Security-, Drift- und Rollback-Gates sind fuer Tranche 3
-`n/a`; Tranche 4 validiert den versionstragenden Test-/Fixture-Asset-
-Bump separat. RAK-111..RAK-114 sind geschlossen; Tranche 4 schliesst
-RAK-115 mit Changelog, Roadmap, Plan-Archiv, Versions-Bump und Tag
-`v0.17.0`. Productization, Next Slice oder Switch bleiben blockiert,
-weil kein konkreter Konsument, keine Testluecke und kein belastbarer
-Trigger vorliegt.
-Der nächste Folgeplan-Korridor ist:
-`open/plan-0.18.0.md` (`R-9`, `R-12`, `R-13`) sowie
+`0.18.0` ist als Restoffen-Closeout in
+[`open/plan-0.18.0.md`](../open/plan-0.18.0.md) dokumentiert. Tranche 1
+entscheidet alle drei Risiken ohne Implementierungs-Trigger: `R-9`
+bleibt an K8s-Smoke-/Scrape-Policy gebunden, `R-13` bleibt mit
+reproduzierbarem Trivy-Re-Review-Artefakt `continued`, und `R-12`
+bleibt Nightly-detektiert ohne Safari-/WebKit-Pflicht. Tranche 3
+schliesst die Nachweise mit `make docs-check`, `make k8s-validate`,
+`make image-scan` und geprueftem WebRTC-Nightly-Run. Tranche 4 haelt
+die drei Risiken bewusst `⬜` offen und verankert die Resttrigger in
+Backlog und Roadmap; ein Release-/Versions-Closeout ist ein separater
+Folgeschritt.
+
+Der nächste Folgeplan-Korridor ist
 `open/plan-0.19.0.md` (`MVP-40`, `Strengere CORS-Preflight-Variante A`).
 
 `0.16.0` ist released und archiviert in
