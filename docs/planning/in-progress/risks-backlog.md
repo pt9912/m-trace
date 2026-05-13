@@ -18,9 +18,11 @@
 > `0.17.0` ist aktiv in
 > [`plan-0.17.0.md`](plan-0.17.0.md). Tranche 0 importiert das
 > `0.16.0`-Closeout und waehlt Szenario D: Hardening-only. Es
-> entsteht kein neues R-N-Item; Productization, Next Slice, Switch,
-> Analyzer-API, Control-Plane, Postgres, Analytics und Production-K8s
-> bleiben bis zum Evidence Review deferred.
+> entsteht kein neues R-N-Item. Tranche 1 prueft Evidence und Gates:
+> `make ts-test` und `make generated-drift-check` sind gruen; keine
+> neue Testluecke oder Productization-/Next-Slice-/Switch-Trigger
+> entstehen. Analyzer-API, Control-Plane, Postgres, Analytics und
+> Production-K8s bleiben deferred.
 >
 > `0.16.0` ist released und archiviert in
 > [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release

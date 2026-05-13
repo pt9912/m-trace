@@ -1,8 +1,8 @@
 # Implementation Plan — `0.17.0` (Hardening / Evidence Review)
 
-> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranche 0 geschlossen,
-> Tranche 1 startet als Evidence Review / Hardening-Scope nach
-> `0.16.0`.
+> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranchen 0–1
+> geschlossen, Tranche 2 startet als Hardening-/Defer-Scope nach
+> Evidence Review.
 >
 > **Vorgänger**: `0.16.0` (Selected Product Slice), released und
 > archiviert in
@@ -142,8 +142,8 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung und `0.16.0`-Import | Szenario D gewaehlt | `0.16.0` released | Hardening-only Scope | ✅ |
-| 1 | Evidence Review und Scope-Haertung | Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Scope-Decision | 🟡 |
-| 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Artefakt-/POC-Nachweis | ⬜ |
+| 1 | Evidence Review und Scope-Haertung | Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Hardening-/Defer-Decision | ✅ |
+| 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Artefakt-/POC-Nachweis | 🟡 |
 | 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | ⬜ |
 | 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | ⬜ |
 
@@ -223,15 +223,15 @@ nachweisbaren Ergebnissen von `0.16.0`.
 
 DoD:
 
-- [ ] `0.16.0`-Erfolgskriterien gegen tatsaechliche Nachweise
+- [x] `0.16.0`-Erfolgskriterien gegen tatsaechliche Nachweise
   geprueft.
-- [ ] Offene Risiken und Testluecken aus `0.16.0` gelistet.
-- [ ] Productization-/Next-Slice-Entscheidung dokumentiert.
-- [ ] Compatibility- und Rollback-Grenzen festgelegt.
-- [ ] Nicht-Ziele und bewusst deferred Pfade dokumentiert.
-- [ ] Anti-Scope-Drift-Nachweis dokumentiert: nicht importierte Pfade
+- [x] Offene Risiken und Testluecken aus `0.16.0` gelistet.
+- [x] Productization-/Next-Slice-Entscheidung dokumentiert.
+- [x] Compatibility- und Rollback-Grenzen festgelegt.
+- [x] Nicht-Ziele und bewusst deferred Pfade dokumentiert.
+- [x] Anti-Scope-Drift-Nachweis dokumentiert: nicht importierte Pfade
   bleiben deferred oder blockiert.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Szenario-spezifische Fragen:
@@ -243,6 +243,101 @@ Szenario-spezifische Fragen:
 - Control-Plane: Ist der POC noch nicht-produktiv abgegrenzt?
 - Ops-Backend: Sind Trigger weiter gueltig und Migration/Rollback
   belegbar?
+
+### 3.1 Evidence Review
+
+Ausgefuehrt und geprueft am 2026-05-13:
+
+| Evidence | Ergebnis | Nachweis |
+| --- | --- | --- |
+| `0.16.0`-RAK-Matrix | ✅ geschlossen | `docs/planning/done/plan-0.16.0.md` §7: RAK-106..RAK-110 alle ✅/[x]. |
+| Range-Fetch-Unit-Tests | ✅ tragfaehig | `packages/stream-analyzer/tests/segment-loader.test.ts`: `206 Partial Content`, `200 OK` auf Range, Short-Read, Over-Read, `maxSegmentBytes`, Redirect-Revalidation und Private-Network-Block sind abgedeckt. |
+| Binary-Verifier-Tests | ✅ tragfaehig | `packages/stream-analyzer/tests/binary-verify.test.ts`: `EXT-X-MAP:BYTERANGE` und erstes `#EXT-X-BYTERANGE` mit explizitem Offset passen; offset-lose Ranges bleiben mit `hls_map_byterange_unsupported` / `hls_media_byterange_unsupported` skipped. |
+| Contract-Fixtures | ✅ tragfaehig | `spec/contract-fixtures/analyzer/success-hls-map-byterange.json`, `success-hls-media-byterange.json` und Go-Testdata-Kopien unter `apps/api/adapters/driven/streamanalyzer/testdata/`. |
+| User-Doku | ✅ tragfaehig | `docs/user/stream-analyzer.md` §`0.16.0` Range-Fetch-Scope nennt Scope, Nicht-Ziele, Security-Grenzen und Unsupported-Codes. |
+| Gate-Refresh | ✅ gruen | `make ts-test`: 38 Testdateien / 656 Tests gruen; inklusive `packages/stream-analyzer` 19 Testdateien / 393 Tests. |
+| Drift-Refresh | ✅ gruen | `make generated-drift-check`: Schema-/Contract-/Public-API-Drift OK, keine generierten Drift-Reste. |
+
+### 3.2 Scope-Decision
+
+Tranche 1 findet keinen belastbaren Trigger fuer Productization,
+Next Slice oder Switch.
+
+Entscheidung:
+
+- Productization einer externen Analyzer-API bleibt blockiert: kein
+  konkreter externer Konsument, kein Job-/Retention-Bedarf und kein
+  Auth-/Rate-Limit-/SSRF-/Contract-Nachweis.
+- Next Slice im Analyzer bleibt blockiert: der naechste naheliegende
+  Scope waere DASH-Range-/SegmentBase, LL-CMAF oder weitere
+  Segmentset-Abdeckung; dafuer gibt es keinen neuen Konsumenten- oder
+  Fixture-Trigger.
+- Control-Plane bleibt blockiert: kein Betreiber-/Tenant-/Audit-
+  Trigger und kein eigener Plattformplan.
+- Ops-Backends bleiben triggerbasiert deferred: ADR 0005 gilt weiter;
+  keine neue Last-, Multi-Host-, Analytics- oder Migration-Schwelle.
+- Tranche 2 bleibt Hardening-only. Wenn keine neue Luecke beim
+  Tranche-2-Start gefunden wird, darf Tranche 2 als Doku-/Defer-
+  Artefakt abgeschlossen werden.
+
+### 3.3 Offene Risiken und Testlücken
+
+Keine neue R-N-Risiko-ID entsteht aus Tranche 1.
+
+Bewusst verbleibende Luecken:
+
+- Offset-lose HLS-Byte-Ranges werden nicht heuristisch aufgeloest;
+  sie bleiben skipped. Das ist Scope-Grenze, kein Bug.
+- DASH-Range-/SegmentBase und LL-CMAF bleiben ohne eigenen
+  Folge-Trigger out of scope.
+- Es gibt keinen externen Analyzer-API-Vertrag, keine Auth-/Rate-
+  Limit-Grenze und keinen Retention-/Job-Lifecycle fuer API-Nutzung.
+- Go-/Backend-Code wurde durch `0.16.0` nicht geaendert; die Kopplung
+  bleibt ueber Contract-Fixtures und `make generated-drift-check`
+  abgesichert.
+
+### 3.4 Compatibility- und Rollback-Grenzen
+
+- Keine Wire-, API-, Persistenz-, Contract- oder Runtime-Aenderung in
+  Tranche 1.
+- `details.cmaf.binary` bleibt die einzige Analyzer-Surface fuer den
+  Range-Fetch-Slice.
+- Rollback bleibt trivial: ohne Code-/Runtime-Aenderung ist kein
+  Deaktivierungspfad noetig; fuer spaetere Analyzer-Aenderungen bleibt
+  `cmaf.binary.enabled:false` der bestehende Caller-Schalter.
+- Falls Tranche 2 Code aendert, werden `make ts-test`,
+  `make generated-drift-check` und bei Fetch-/Runtime-Relevanz
+  `make security-gates` verpflichtend.
+
+### 3.5 Anti-Scope-Drift-Nachweis
+
+Tranche 1 importiert keinen deferred Pfad:
+
+- keine neue `apps/analyzer-api`,
+- kein neuer `apps/control-plane`-Pfad,
+- kein Postgres-/Analytics-Backend,
+- kein K8s-Production-Scope,
+- kein DASH-/LL-CMAF-/Codec-/Player-Laufzeit-Scope.
+
+### 3.6 What aendert sich
+
+- `docs/planning/in-progress/plan-0.17.0.md`: RAK-112 ist als
+  Evidence Review geschlossen; Tranche 2 startet als Hardening-/
+  Defer-Scope ohne neue Product-Surface.
+- `docs/planning/in-progress/roadmap.md`, `CHANGELOG.md` und
+  `docs/planning/in-progress/risks-backlog.md`: Tranche-1-Stand und
+  die No-new-R-N-Entscheidung sind sichtbar.
+
+### 3.7 What bleibt unveraendert
+
+- Keine neue externe Analyzer-API, keine Control-Plane, kein
+  Postgres-Default, kein Analytics-Pflichtbackend und kein
+  Production-K8s.
+- Kein neues Analyzer-Result-Schema, kein neuer Endpoint, keine neue
+  Runtime-Abhaengigkeit und kein Versions-Bump durch Tranche 1.
+- `0.16.0`-Range-Fetch bleibt auf explizite HLS-Byte-Ranges
+  begrenzt; weitere CMAF-/DASH-Ausbaustufen brauchen einen neuen
+  Trigger.
 
 ## 4. Tranche 2 — Productization, Next Slice oder Hardening
 
@@ -328,7 +423,7 @@ vergeben.
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
 | RAK-111 | Muss | `0.16.0`-Closeout, Szenario-Import | Hardening-only ist eindeutig gewaehlt; nicht importierte Product-/Platform-/Ops-Pfade bleiben deferred | [x] |
-| RAK-112 | Muss | Evidence-Review, Scope-Decision | Belege und Testluecken des `0.16.0`-Slice sind geprueft; Tranche 2 hat genau einen Hardening-Scope oder expliziten Defer | [ ] |
+| RAK-112 | Muss | Evidence-Review, Scope-Decision | Belege und Testluecken des `0.16.0`-Slice sind geprueft; Tranche 2 hat genau einen Hardening-Scope oder expliziten Defer | [x] |
 | RAK-113 | Konditional Muss | Security-/Ops-Notiz, Tests | Neue oder stabilisierte Fetch-/Analyzer-Surface hat Betriebs- und Security-Grenzen; ohne Code-Surface ist `n/a` begruendet | [ ] |
 | RAK-114 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | API-/Wire-/Persistenz-Kompatibilitaet ist belegt oder unveraendert | [ ] |
 | RAK-115 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; naechster Pfad und Defer-Status sind sichtbar | [ ] |
@@ -338,7 +433,7 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
 | RAK-111 | `docs/planning/in-progress/plan-0.17.0.md`, `docs/planning/done/plan-0.16.0.md`, `spec/lastenheft.md` §13.21 | 2026-05-13 | Product/PM | ✅ |
-| RAK-112 | `docs/planning/in-progress/plan-0.17.0.md` §3 | TBD | Platform/Analyzer | ⬜ |
+| RAK-112 | `docs/planning/in-progress/plan-0.17.0.md` §3, `make ts-test`, `make generated-drift-check` | 2026-05-13 | Platform/Analyzer | ✅ |
 | RAK-113 | `docs/planning/in-progress/plan-0.17.0.md` §5, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
 | RAK-114 | Contract-/fixture-/compat Nachweis oder No-change-Notiz | TBD | Platform/QA | ⬜ |
 | RAK-115 | `docs/planning/done/plan-0.17.0.md`, `CHANGELOG.md`, `docs/planning/in-progress/roadmap.md`, Tag `v0.17.0` | TBD | Platform/CI | ⬜ |
