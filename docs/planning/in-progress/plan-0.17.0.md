@@ -1,8 +1,7 @@
 # Implementation Plan — `0.17.0` (Hardening / Evidence Review)
 
-> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranchen 0–2
-> geschlossen, Tranche 3 startet als Compatibility-/Security-/
-> Ops-Gate fuer den Doku-/Defer-Scope.
+> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranchen 0–3
+> geschlossen, Tranche 4 startet als Release-Closeout.
 >
 > **Vorgänger**: `0.16.0` (Selected Product Slice), released und
 > archiviert in
@@ -144,8 +143,8 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | 0 | Aktivierung und `0.16.0`-Import | Szenario D gewaehlt | `0.16.0` released | Hardening-only Scope | ✅ |
 | 1 | Evidence Review und Scope-Haertung | Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Hardening-/Defer-Decision | ✅ |
 | 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Doku-/Defer-Artefakt | ✅ |
-| 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | 🟡 |
-| 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | ⬜ |
+| 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | ✅ |
+| 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | 🟡 |
 
 ## 2. Tranche 0 — Aktivierung und `0.16.0`-Import
 
@@ -431,24 +430,96 @@ Ziel: Der fortgesetzte Pfad wird belastbar genug fuer den Release.
 
 DoD:
 
-- [ ] `make docs-check` gruen.
-- [ ] Bei Szenario E, Hardening-only ohne Code oder dokumentations-only
+- [x] `make docs-check` gruen.
+- [x] Bei Szenario E, Hardening-only ohne Code oder dokumentations-only
   Scope: Code-, Contract- und Security-Gates sind als `n/a` mit
   Begruendung dokumentiert; `make docs-check` bleibt Pflicht.
-- [ ] Bei Go-/Backend-Code: `make api-test` oder `make gates` gruen.
-- [ ] Bei TypeScript-/Analyzer-Code: `make ts-test` oder passender
-  Package-Test gruen.
-- [ ] Bei Security-relevantem Pfad: `make security-gates` gruen oder
-  CI-Job `Security gates` gruen dokumentiert.
-- [ ] Contract-/Fixture-Drift geprueft, falls Wire- oder Analyzer-
+- [x] Bei Go-/Backend-Code: `make api-test` oder `make gates` gruen
+  oder als `n/a` begruendet.
+- [x] Bei TypeScript-/Analyzer-Code: `make ts-test` oder passender
+  Package-Test gruen oder als `n/a` begruendet.
+- [x] Bei Security-relevantem Pfad: `make security-gates` gruen oder
+  CI-Job `Security gates` gruen dokumentiert oder als `n/a` begruendet.
+- [x] Contract-/Fixture-Drift geprueft, falls Wire- oder Analyzer-
   Result-Schema geaendert wurde.
-- [ ] Rollback- oder Deaktivierungspfad dokumentiert, falls ein neuer
+- [x] Rollback- oder Deaktivierungspfad dokumentiert, falls ein neuer
   opt-in Dienst, Adapter oder API-Pfad entsteht.
-- [ ] Risks-Backlog aktualisiert oder explizit unveraendert markiert.
-- [ ] Anti-Scope-Drift-Nachweis dokumentiert: Gates beziehen sich nur
+- [x] Risks-Backlog aktualisiert oder explizit unveraendert markiert.
+- [x] Anti-Scope-Drift-Nachweis dokumentiert: Gates beziehen sich nur
   auf den fortgesetzten Pfad.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
+
+### 5.1 Gate-Nachweis
+
+Tranche 3 schliesst den Compatibility-/Security-/Ops-Nachweis fuer den
+Doku-/Defer-Scope. Der einzige ausgefuehrte Pflichtcheck ist
+`make docs-check`; Code-, Contract-, Security-, Drift- und Rollback-Gates
+sind nicht zutreffend, weil Tranche 2 kein Code-, Wire-, Persistenz-,
+Runtime-, Default- oder Infrastruktur-Artefakt erzeugt hat.
+
+Gate-Matrix:
+
+| Gate | Status | Begruendung |
+| --- | --- | --- |
+| `make docs-check` | Pflicht, gruen | Doku-only-Release; prueft Plan-/Roadmap-/Changelog-/Risks-Konsistenz. |
+| Go-/Backend-Code (`make api-test` / `make gates`) | `n/a` | Kein Go-/Backend-Code, keine Ports, Adapter, Migrationen oder Runtime-Pfade geaendert. |
+| TypeScript-/Analyzer-Code (`make ts-test`) | `n/a` | Kein Analyzer-Code, keine Fixtures und kein Result-Schema geaendert; Tranche 1 belegte den bestehenden Stand bereits mit `make ts-test`. |
+| Security-Gates (`make security-gates`) | `n/a` | Keine neue Fetch-, Redirect-, Timeout-, Groessen-, Auth-, Network- oder Runtime-Surface. |
+| Contract-/Fixture-/Drift-Gate | `n/a` | Keine Wire-, API-, Persistenz-, Contract- oder Analyzer-Result-Schema-Aenderung. |
+| Rollback-/Deaktivierungspfad | `n/a` | Kein neuer opt-in Dienst, Adapter, Endpoint, ENV-Schalter oder Default; bestehender Caller-Schalter `cmaf.binary.enabled:false` bleibt unveraendert. |
+
+### 5.2 Compatibility- und Security-Entscheidung
+
+RAK-113 und RAK-114 werden als konditionale Muss-Nachweise ueber
+No-change geschlossen:
+
+- RAK-113: Ohne Code-/Runtime-Aenderung entstehen keine neuen Betriebs-
+  oder Security-Grenzen. Die in `0.16.0` belegten Fetch-Grenzen bleiben
+  unveraendert; Tranche 3 fuegt keine neue Surface hinzu.
+- RAK-114: Wire-, API-, Persistenz-, Contract- und Analyzer-Result-
+  Schema bleiben unveraendert. Dadurch ist kein Migrations- oder
+  Backward-Compatibility-Test zusaetzlich zu dokumentieren.
+
+### 5.3 Risks-Backlog
+
+Das Risks-Backlog bleibt ohne neues R-N-Item. Begruendung:
+
+- Tranche 3 bestaetigt nur den No-change-Stand aus Tranche 2.
+- Productization, Next Slice und Switch bleiben deferred bis zu einem
+  neuen belegbaren Trigger.
+- Kein offener Security-/Ops-Befund wird in `0.17.0` eingefuehrt.
+
+### 5.4 Anti-Scope-Drift-Nachweis
+
+Die Gates beziehen sich ausschliesslich auf den fortgesetzten
+Hardening-only-/Doku-/Defer-Pfad:
+
+- keine neue externe Analyzer-API oder Job-Surface,
+- kein DASH-/LL-CMAF-/weiterer Segmentset-Code,
+- kein Control-Plane-POC,
+- kein Postgres-/Analytics-Backend,
+- kein K8s-Production-Scope,
+- keine neuen Defaults, ENV-Schalter, Runtime-Abhaengigkeiten,
+  Migrationen, Endpoints oder Public-Schemas.
+
+### 5.5 What aendert sich
+
+- `docs/planning/in-progress/plan-0.17.0.md`: Tranche 3 dokumentiert
+  den Gate-Nachweis, markiert nicht zutreffende Code-/Contract-/
+  Security-/Rollback-Gates als `n/a` und schliesst RAK-113/RAK-114.
+- `docs/planning/in-progress/roadmap.md`, `CHANGELOG.md` und
+  `docs/planning/in-progress/risks-backlog.md`: Der Tranche-3-Stand ist
+  sichtbar; es entsteht kein neues R-N-Item.
+
+### 5.6 What bleibt unveraendert
+
+- Keine Code-, Wire-, Persistenz-, Runtime-, Infrastruktur- oder
+  Default-Aenderung.
+- Kein Versions-Bump und kein Release-Tag durch Tranche 3; das bleibt
+  Tranche 4.
+- `@npm9912/stream-analyzer` Library/CLI und der interne
+  `apps/analyzer-service` bleiben Standardpfade.
 
 ## 6. Tranche 4 — Release-Closeout
 
@@ -480,8 +551,8 @@ vergeben.
 | --- | --- | --- | --- | --- |
 | RAK-111 | Muss | `0.16.0`-Closeout, Szenario-Import | Hardening-only ist eindeutig gewaehlt; nicht importierte Product-/Platform-/Ops-Pfade bleiben deferred | [x] |
 | RAK-112 | Muss | Evidence-Review, Scope-Decision | Belege und Testluecken des `0.16.0`-Slice sind geprueft; Tranche 2 hat genau einen Hardening-Scope oder expliziten Defer | [x] |
-| RAK-113 | Konditional Muss | Security-/Ops-Notiz, Tests | Neue oder stabilisierte Fetch-/Analyzer-Surface hat Betriebs- und Security-Grenzen; ohne Code-Surface ist `n/a` begruendet | [ ] |
-| RAK-114 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | API-/Wire-/Persistenz-Kompatibilitaet ist belegt oder unveraendert | [ ] |
+| RAK-113 | Konditional Muss | Security-/Ops-Notiz, Tests | Neue oder stabilisierte Fetch-/Analyzer-Surface hat Betriebs- und Security-Grenzen; ohne Code-Surface ist `n/a` begruendet | [x] |
+| RAK-114 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | API-/Wire-/Persistenz-Kompatibilitaet ist belegt oder unveraendert | [x] |
 | RAK-115 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; naechster Pfad und Defer-Status sind sichtbar | [ ] |
 
 Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
@@ -490,8 +561,8 @@ Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
 | --- | --- | --- | --- | --- |
 | RAK-111 | `docs/planning/in-progress/plan-0.17.0.md`, `docs/planning/done/plan-0.16.0.md`, `spec/lastenheft.md` §13.21 | 2026-05-13 | Product/PM | ✅ |
 | RAK-112 | `docs/planning/in-progress/plan-0.17.0.md` §3, `make ts-test`, `make generated-drift-check` | 2026-05-13 | Platform/Analyzer | ✅ |
-| RAK-113 | `docs/planning/in-progress/plan-0.17.0.md` §5, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
-| RAK-114 | Contract-/fixture-/compat Nachweis oder No-change-Notiz | TBD | Platform/QA | ⬜ |
+| RAK-113 | `docs/planning/in-progress/plan-0.17.0.md` §5, `docs/planning/in-progress/risks-backlog.md` | 2026-05-13 | Platform/Ops | ✅ |
+| RAK-114 | `docs/planning/in-progress/plan-0.17.0.md` §5 No-change-Notiz | 2026-05-13 | Platform/QA | ✅ |
 | RAK-115 | `docs/planning/done/plan-0.17.0.md`, `CHANGELOG.md`, `docs/planning/in-progress/roadmap.md`, Tag `v0.17.0` | TBD | Platform/CI | ⬜ |
 
 ## 7.1 Blocker-Log

@@ -22,9 +22,12 @@
 > `make ts-test` und `make generated-drift-check` sind gruen; keine
 > neue Testluecke oder Productization-/Next-Slice-/Switch-Trigger
 > entstehen. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-,
-> Wire-, Persistenz-, Runtime- oder Default-Aenderung. Analyzer-API,
-> Control-Plane, Postgres, Analytics und Production-K8s bleiben
-> deferred.
+> Wire-, Persistenz-, Runtime- oder Default-Aenderung. Tranche 3
+> schliesst Compatibility-/Security-/Ops-Gates als No-change-Nachweis:
+> `make docs-check` bleibt Pflicht, Code-, Contract-, Security-, Drift-
+> und Rollback-Gates sind `n/a`; es entsteht weiterhin kein neues
+> R-N-Item. Analyzer-API, Control-Plane, Postgres, Analytics und
+> Production-K8s bleiben deferred.
 >
 > `0.16.0` ist released und archiviert in
 > [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release

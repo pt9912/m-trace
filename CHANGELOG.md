@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   abgeschlossen. Keine Code-, Wire-, Persistenz-, Runtime- oder
   Default-Änderung; Productization, Next Slice und Switch bleiben bis
   zu einem neuen belegbaren Trigger deferred.
+- `0.17.0` Tranche 3: Compatibility-/Security-/Ops-Gate als
+  No-change-Nachweis geschlossen. `make docs-check` ist Pflichtcheck;
+  Code-, Contract-, Security-, Drift- und Rollback-Gates sind wegen
+  fehlender Code-, Wire-, Persistenz-, Runtime- oder
+  Infrastruktur-Aenderung als `n/a` begruendet. RAK-113/RAK-114 sind
+  geschlossen, RAK-115 bleibt fuer den Release-Closeout offen.
 
 ## [0.16.0] - 2026-05-12
 
