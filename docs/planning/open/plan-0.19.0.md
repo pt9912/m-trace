@@ -137,6 +137,9 @@ DoD:
 
 - [ ] Beide Punkte mit Abschlussstatus in der Roadmap (§4) aktualisiert.
 - [ ] `docs/planning/in-progress/roadmap.md` reflektiert den Folgeplan-Stand.
+- [ ] `RAK-102` (`apps/analyzer-api`) und `RAK-103` (`apps/control-plane`)
+  sind als `Decision-Record` mit klarem Proceed/Defer-Trigger, Owner und
+  nächstem Auslöser abgeschlossen.
 - [ ] `docs/planning/open/plan-0.19.0.md` in `done/` verschieben, falls vollständig abgeschlossen.
 - [ ] Bei Restoffen den Nachfolgepfad benennen (z. B. `0.20.0`), ohne Scope-Drift.
 

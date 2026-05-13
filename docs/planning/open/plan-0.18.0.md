@@ -102,6 +102,9 @@ Implementiert:
 - [ ] Nachweis, dass mindestens eine Maßnahme entschieden und ausgeführt
   wurde: neuer Trivy-Durchlauf, Ignored-Update mit nachvollziehbaren Gründen
   **oder** Distroless-Basis-Entscheid inkl. Build-/Runtime-Nachweis.
+- [ ] Ein reproduzierbares Re-Review-Artefakt für `R-13` ist abgelegt
+  (Scan-Output, `expires`-Werte, Trivy-Version, Commit/PR-Referenz) und
+  im Plan verlinkt.
 - [ ] `R-13` ist in
   `docs/planning/in-progress/risks-backlog.md` mit `🟢` oder explizitem
   `⬛` und Abschlussreferenz dokumentiert.
@@ -189,7 +192,8 @@ DoD je Risiko-Entscheid:
   - `make smoke-webrtc-stats-drift` (R-12-Pfad)
   - `make k8s-validate` nur bei `R-9`-Implementierung (sonst als
     dokumentierter Defer-Entscheid ausgeschlossen)
-  - Trivy- und Security-Nachweise für den CVE-Pfad (R-13)
+  - R-13-Decision-Gate: Re-Review-Artefakt (`trivy`-Scan, ignore-lifecycle,
+    `expires`-Historie) vollständig vorliegt und reproduzierbar ist
 - [ ] `docs/planning/in-progress/risks-backlog.md` auf
   `0.18.0`-Konsequenz aktualisieren.
 
