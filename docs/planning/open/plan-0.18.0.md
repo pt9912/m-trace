@@ -45,7 +45,10 @@ Nicht in Scope:
 
 - [x] `0.17.0` ist abgeschlossen und in `docs/planning/done/` archiviert.
 - [x] Die offenen Risiken im Backlog sind eindeutig identifiziert.
-- [ ] Release-Entscheidungs-Kriterien für `0.18.0` sind final festgelegt.
+- [x] Release-Entscheidungs-Kriterien für `0.18.0` sind final festgelegt:
+  `0.18.0` aktiviert nur dann Code, wenn Tranche 1 einen echten Trigger
+  belegt; sonst bleibt der Release ein Doku-/Ops-Decision-Follow-up mit
+  reproduzierbaren Nachweisen.
 
 ## 1. Tranchen-Übersicht
 
@@ -63,15 +66,44 @@ DoD:
 
 - [x] Plan im `open/`-Pfad angelegt.
 - [x] `R-9`, `R-12`, `R-13` als einziges Folge-Agenda gesetzt.
-- [ ] Umfang zwischen kleinem Doku-/Ops-Artefakt und Code-Umsetzung auf einen klaren Satz reduziert.
+- [x] Umfang zwischen kleinem Doku-/Ops-Artefakt und Code-Umsetzung auf
+  einen klaren Satz reduziert: Tranche 1 ist ein Trigger-Re-Eval; Tranche
+  2 liefert nur dann Code, wenn Tranche 1 einen der Implementierungs-
+  Trigger belegt. Ohne Trigger endet `0.18.0` als Doku-/Ops-Decision-
+  Patch mit Backlog-/Roadmap-Fortschreibung.
+
+### 2.0 Scope-Fixierung
+
+`0.18.0` schneidet die drei aktiven Risiken nicht als pauschales
+Hardening-Bundle, sondern als Entscheidungswelle:
+
+- `R-9`: Kein K8s-Allowlist-Modus ohne neue K8s-Smoke-Stage oder
+  Prometheus-Scrape-/Label-Policy im K8s-Pfad. `make k8s-validate`
+  bleibt ein clusterfreier Manifest-Seed-Check, kein Runtime-Smoke.
+- `R-13`: Kein Distroless-Umstieg allein aufgrund der bestehenden
+  Ignore-Liste. Der naechste harte Schritt ist ein reproduzierbares
+  Re-Review-Artefakt mit Trivy-Version, Scan-Kontext, bekannten CVEs,
+  `expires`-Stand und Entscheidung `continued` vs. `migrated`.
+- `R-12`: Kein Release-Gate-Ausbau ohne neue Browser-Pflicht. Der
+  bestehende Nightly-Drift-Smoke bleibt der Default; Safari/WebKit wird
+  erst verpflichtend, wenn ein Support- oder Operator-Trigger vorliegt.
+
+Damit ist Tranche 2 standardmaessig dokumentarisch. Code-Scope entsteht
+nur bei folgenden Nachweisen:
+
+| Risiko | Code-Trigger |
+| --- | --- |
+| `R-9` | K8s-Smoke soll PR-/Release-Gate werden oder K8s-Observability-Manifeste fuehren konkrete Scrape-/Label-Policy ein. |
+| `R-13` | Trivy-Re-Review zeigt verfuegbare Fixes, `expires` ist erreicht, oder Distroless wird als expliziter Pre-1.0-Basisentscheid freigegeben. |
+| `R-12` | Safari/WebKit wird verbindlicher Zielbrowser oder ein Nightly-Drift-Befund verlangt Allowlist-/Gate-Aenderungen. |
 
 ### 2.1 Entscheidungsvorlage (zu finalisieren)
 
 | Risiko | Baseline-Status | Kandidat A | Kandidat B | Vorauswahl |
 | --- | --- | --- | --- | --- |
-| R-9 | offen (`⬜`) | K8s-Observability bleibt deferred, keine neuen K8s-Smokes | eigener K8s-Label-Allowlist-Modus + Smoke-Profiltrennung | `TBD` |
-| R-13 | offen (`⬜`) | Trivy-Ignores mit strikter Re-Review-Fortführung | Distroless-Umstieg evaluieren und ggf. einführen | `TBD` |
-| R-12 | offen (`⬜`) | Status-quo fortführen (Nightly + optional Safari) | `make smoke-webrtc-stats-drift` in Release-Gates integrieren | `TBD` |
+| R-9 | offen (`⬜`) | K8s-Observability bleibt deferred, keine neuen K8s-Smokes | eigener K8s-Label-Allowlist-Modus + Smoke-Profiltrennung | A: `deferred`, solange kein K8s-Smoke-/Scrape-Trigger belegt ist |
+| R-13 | offen (`⬜`) | Trivy-Ignores mit strikter Re-Review-Fortführung | Distroless-Umstieg evaluieren und ggf. einführen | A: `continued`, aber nur mit reproduzierbarem Re-Review-Artefakt |
+| R-12 | offen (`⬜`) | Status-quo fortführen (Nightly + optional Safari) | `make smoke-webrtc-stats-drift` in Release-Gates integrieren | A: `deferred`, solange Safari/WebKit nicht verpflichtend ist und Nightly gruen bleibt |
 
 ### 2.2 Harte Exit-Kriterien je Risiko
 
