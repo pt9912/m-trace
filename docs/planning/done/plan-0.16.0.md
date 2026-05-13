@@ -23,7 +23,8 @@
 > [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
 > **Nachfolger**:
-> [`../open/plan-0.17.0.md`](../open/plan-0.17.0.md) vorbereitet.
+> [`../in-progress/plan-0.17.0.md`](../in-progress/plan-0.17.0.md)
+> aktiviert.
 
 ## 0. Konvention
 
@@ -479,7 +480,7 @@ DoD:
 | Versionen | `package.json`, `apps/*/package.json`, `packages/*/package.json`, `apps/api/cmd/api/main.go`, `packages/player-sdk/src/version.ts`, `contracts/sdk-compat.json`, Analyzer-Contract-Fixtures jeweils `0.16.0`. |
 | Changelog | `CHANGELOG.md` enthaelt `[0.16.0] - 2026-05-12`. |
 | Plan | Archiviert als `docs/planning/done/plan-0.16.0.md`. |
-| Roadmap | `docs/planning/in-progress/roadmap.md` markiert `0.16.0` released und `0.17.0` als vorbereitete Folgephase. |
+| Roadmap | `docs/planning/in-progress/roadmap.md` markiert `0.16.0` released und `0.17.0` als aktive Folgephase. |
 | Tag | Annotierter Tag `v0.16.0`. |
 | Gates | `make ts-test`, `make ts-lint`, `make docs-check`, `make generated-drift-check`, `make security-gates`, `make build`, `make sdk-performance-smoke` und `make smoke-cli` fuer den Release-Stand. |
 
@@ -487,8 +488,8 @@ DoD:
 
 - `0.16.0` ist kein aktiver Plan mehr, sondern archivierter Release-
   Nachweis.
-- RAK-110 ist geschlossen; `0.17.0` bleibt als vorbereiteter
-  Folgeplan unter `docs/planning/open/plan-0.17.0.md` sichtbar.
+- RAK-110 ist geschlossen; `0.17.0` ist als Folgeplan unter
+  `docs/planning/in-progress/plan-0.17.0.md` sichtbar.
 - Versions- und Contract-Artefakte tragen `0.16.0`.
 
 ### 6.3 What bleibt unveraendert

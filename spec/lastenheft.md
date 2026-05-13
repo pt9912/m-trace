@@ -2,12 +2,25 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.21<br>
+**Version:** 1.1.22<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in `docs/adr/0001-backend-stack.md`.
 
+> **Patch `1.1.22` (Hardening / Evidence Review für `0.17.0`)**:
+> Aktiviert die Folgephase nach `0.16.0` und führt die neue
+> RAK-Gruppe `RAK-111`..`RAK-115` in §13.21 ein. Inhalt:
+> Szenario D wird als einziger Go-Pfad gewaehlt. `0.17.0` startet als
+> Hardening-only-/Evidence-Review des gelieferten HLS-CMAF-Byte-
+> Range-Fetch-Slice aus `0.16.0`; Productization, Next Slice oder
+> Switch bleiben blockiert, bis Tranche 1 konkrete Belege,
+> Testluecken oder Trigger nachweist. Externe Analyzer-API,
+> Control-Plane, Postgres-Default, Analytics-Pflichtbackend,
+> Production-K8s, weiterer CMAF-/DASH-/LL-CMAF-Scope,
+> Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Patch-Log
+> siehe [`docs/planning/in-progress/plan-0.17.0.md`](../docs/planning/in-progress/plan-0.17.0.md).
+>
 > **Patch `1.1.21` (Selected Product Slice / Analyzer Range Fetch für
 > `0.16.0`)**: Aktiviert die Folgephase nach `0.15.0` und führt die
 > neue RAK-Gruppe `RAK-106`..`RAK-110` in §13.20 ein. Inhalt:
@@ -2273,6 +2286,39 @@ externe Analyzer-API, Control-Plane, Postgres-Default, Analytics-
 Pflichtbackend, Production-Kubernetes, OAuth/OIDC/SSO,
 Multi-Tenant-SaaS, Low-Latency-CMAF, vollstaendige Segmentset-
 Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade.
+
+### 13.21 Version 0.17.0: Hardening / Evidence Review (RAK-111..RAK-115)
+
+`0.17.0` importiert den released Stand von `0.16.0` und waehlt
+Szenario D: Hardening-only. Der Release startet nicht mit einer neuen
+Product-Surface, sondern prueft den gelieferten HLS-CMAF-Byte-Range-
+Fetch-Slice gegen Evidence, Testluecken, Compatibility und
+Security-/Ops-Grenzen. Tranche 1 muss belegen, ob Tranche 2 konkrete
+Hardening-Artefakte braucht oder ob Productization, Next Slice und
+Switch weiter deferred bleiben.
+
+Der Scope bleibt auf den bestehenden Analyzer-Pfad beschraenkt:
+`@npm9912/stream-analyzer` Library/CLI und der interne
+`apps/analyzer-service` bleiben Standard. Es entsteht durch Tranche 0
+kein neuer Endpoint, kein neues Result-Schema, kein neuer Runtime-
+Default und kein neuer Pflichtdienst.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-111 | Muss | **Import des `0.16.0`-Ergebnisses**: `0.16.0` ist released und archiviert; Szenario D wird gewaehlt. Productization, Next Slice, Switch und Defer-Pfade werden sichtbar abgegrenzt. |
+| RAK-112 | Muss | **Evidence Review und Hardening-Scope**: Tranche 1 prueft die `0.16.0`-Belege, Fixtures, Gate-Ergebnisse und Restgrenzen. Tranche 2 darf genau einen Hardening-Scope liefern oder den Folgepfad explizit deferred halten. |
+| RAK-113 | Konditional Muss | **Betriebs-/Security-Haertung**: Falls Fetch-, Analyzer-, Fixture- oder Runtime-Artefakte geaendert werden, muessen SSRF-/Redirect-/Timeout-/Groessen-/Drift-/Security-Grenzen passend nachgewiesen werden. Ohne Code-/Runtime-Aenderung ist `n/a` zu begruenden. |
+| RAK-114 | Konditional Muss | **Compatibility- und Migration-Gates**: Wire-, API-, Persistenz-, Contract- oder Runtime-Aenderungen brauchen Kompatibilitaets- und Drift-Nachweis. Ohne Aenderung muss die Unveraendertheit dokumentiert werden. |
+| RAK-115 | Muss | **Closeout und Folgepfad**: Der Release-Closeout muss RAK-Matrix, Changelog, Roadmap, Tag `v0.17.0`, offene Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
+
+Out-of-Scope-Bekräftigung (nicht durch `0.17.0` Tranche 0 erfüllt):
+externe Analyzer-API, Control-Plane, Postgres-Default, Analytics-
+Pflichtbackend, Production-Kubernetes, OAuth/OIDC/SSO,
+Multi-Tenant-SaaS, weiterer CMAF-/DASH-/LL-CMAF-Scope,
+vollstaendige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-
+CMAF-Laufzeitpfade.
 
 ---
 

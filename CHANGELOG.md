@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `0.17.0` Planung aktiviert: Lastenheft-Patch `1.1.22` ergänzt
+  §13.21 mit RAK-111..RAK-115 für Hardening / Evidence Review; der
+  Plan liegt aktiv unter
+  [`docs/planning/in-progress/plan-0.17.0.md`](docs/planning/in-progress/plan-0.17.0.md).
+- `0.17.0` Tranche 0: Szenario D aus dem `0.16.0`-Closeout gewählt.
+  Hardening-only ist der einzige Go-Pfad; Productization, Next Slice,
+  Switch, externe Analyzer-API, Control-Plane, Postgres, Analytics,
+  Production-K8s, weiterer CMAF-/DASH-/LL-CMAF-Scope,
+  Codec-Decoding und Player-Laufzeitpfade bleiben bis zum Evidence
+  Review deferred.
+
 ## [0.16.0] - 2026-05-12
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

@@ -1,8 +1,8 @@
 # Risiken-Backlog
 
-> **Stand**: 2026-05-12 — `0.16.0` (Selected Product Slice /
-> Analyzer Range Fetch) released; Lastenheft-Patch `1.1.21` mit
-> RAK-106..RAK-110 in §13.20 persistiert. `0.16.0` released
+> **Stand**: 2026-05-13 — `0.17.0` (Hardening / Evidence Review)
+> aktiv; Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21
+> persistiert. `0.16.0` released
 > 2026-05-12 (Tag `v0.16.0`); Vorgänger `0.15.0` released
 > 2026-05-12 (Tag `v0.15.0`);
 > `0.14.0`
@@ -15,6 +15,13 @@
 >
 > ### Aktuelle Phase
 >
+> `0.17.0` ist aktiv in
+> [`plan-0.17.0.md`](plan-0.17.0.md). Tranche 0 importiert das
+> `0.16.0`-Closeout und waehlt Szenario D: Hardening-only. Es
+> entsteht kein neues R-N-Item; Productization, Next Slice, Switch,
+> Analyzer-API, Control-Plane, Postgres, Analytics und Production-K8s
+> bleiben bis zum Evidence Review deferred.
+>
 > `0.16.0` ist released und archiviert in
 > [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release
 > importiert aus `0.15.0` genau Szenario B: HTTP-Range-/Byte-Range-
@@ -24,8 +31,6 @@
 > neues Public-Schema. RAK-106..RAK-110 sind geschlossen; es entsteht
 > kein neues R-N-Item. Die Risiken sind ueber RAK-109 kontrolliert und
 > im Release-Closeout mit Artefakt- und Gate-Nachweis geschlossen.
-> `0.17.0` ist als Folgeplan in
-> [`open/plan-0.17.0.md`](../open/plan-0.17.0.md) vorbereitet.
 >
 > `0.15.0` ist released und archiviert in
 > [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Tranche 0
@@ -80,8 +85,9 @@
 > werden in `0.12.6` Tranche 7/8 final geschlossen). RAK-77..RAK-82
 > in §13.15 persistiert.
 >
-> Lastenheft-Stand: `1.1.21` (`0.16.0`-Patch persistiert in T0).
-> `0.16.0` belegt RAK-106..RAK-110 in §13.20; `0.15.0` belegt
+> Lastenheft-Stand: `1.1.22` (`0.17.0`-Patch persistiert in T0).
+> `0.17.0` belegt RAK-111..RAK-115 in §13.21; `0.16.0` belegt
+> RAK-106..RAK-110 in §13.20; `0.15.0` belegt
 > RAK-101..RAK-105 in §13.19.
 >
 > ### Trigger-Re-Eval-Stand (2026-05-10, `0.12.1` Tranche 1)
@@ -137,7 +143,8 @@
 >   Production / Ops Backends); §13.18 RAK-96..RAK-100 (`0.14.0`
 >   Ops Backend Follow-up); §13.19 RAK-101..RAK-105 (`0.15.0`
 >   Product Scope / Analyzer Boundary); §13.20 RAK-106..RAK-110
->   (`0.16.0` Selected Product Slice / Analyzer Range Fetch)
+>   (`0.16.0` Selected Product Slice / Analyzer Range Fetch);
+>   §13.21 RAK-111..RAK-115 (`0.17.0` Hardening / Evidence Review)
 > - `docs/planning/in-progress/roadmap.md` §4
 > - `docs/planning/done/plan-0.12.0.md` (Folge-ADRs);
 >   `docs/planning/done/plan-0.12.1.md` (Patch: Trigger-Re-Eval +
@@ -151,7 +158,9 @@
 >   `docs/planning/done/plan-0.15.0.md` (Product Scope /
 >   Analyzer Boundary, RAK-101..RAK-105);
 >   `docs/planning/done/plan-0.16.0.md` (Selected Product
->   Slice / Analyzer Range Fetch, RAK-106..RAK-110)
+>   Slice / Analyzer Range Fetch, RAK-106..RAK-110);
+>   `docs/planning/in-progress/plan-0.17.0.md` (Hardening /
+>   Evidence Review, RAK-111..RAK-115)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der
 Backend-Stack-Entscheidung (Go) eingegangen oder nicht aufgelöst

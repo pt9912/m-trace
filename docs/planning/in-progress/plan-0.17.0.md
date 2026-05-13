@@ -1,22 +1,23 @@
-# Implementation Plan — `0.17.0` (Productization / Next Slice)
+# Implementation Plan — `0.17.0` (Hardening / Evidence Review)
 
-> **Status**: ⬜ offen — vorbereiteter Folgeplan nach `0.16.0`.
-> Aktivierung erst nach Abschluss und Closeout von `0.16.0`.
+> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranche 0 geschlossen,
+> Tranche 1 startet als Evidence Review / Hardening-Scope nach
+> `0.16.0`.
 >
 > **Vorgänger**: `0.16.0` (Selected Product Slice), released und
 > archiviert in
 > [`../done/plan-0.16.0.md`](../done/plan-0.16.0.md).
 >
-> **Release-Typ**: voraussichtlich Minor-Release mit Lastenheft-Patch,
-> neuer RAK-Gruppe und Tag `v0.17.0`. Erwartete RAK-Range:
-> `RAK-111`..`RAK-115`, sofern keine Zwischenreleases RAKs belegen.
+> **Release-Typ**: Minor-Release mit Lastenheft-Patch `1.1.22`,
+> neuer RAK-Gruppe `RAK-111`..`RAK-115` und geplantem Tag
+> `v0.17.0`.
 >
 > **Ziel**: `0.17.0` ist der kontrollierte Anschluss an den in
-> `0.16.0` gelieferten Slice. Der Release produktisiert einen
-> erfolgreichen POC, liefert den naechsten kleinen Slice desselben
-> Pfads oder wechselt auf den naechsten in `0.15.0`/`0.16.0`
-> deferred gebliebenen Pfad. Ohne belastbaren Trigger bleibt der
-> Release dokumentarisch.
+> `0.16.0` gelieferten HLS-Range-Fetch-Slice. Tranche 0 waehlt
+> Szenario D: Hardening-only. Der Release prueft Belege, Gates und
+> Restgrenzen des gelieferten Analyzer-Pfads, ohne sofort eine externe
+> Analyzer-API, Control-Plane, Ops-Backends oder weitere CMAF-Surface
+> zu aktivieren.
 >
 > **Bezug**:
 > [`../in-progress/roadmap.md`](../in-progress/roadmap.md),
@@ -38,20 +39,20 @@ DoD-Checkboxen tracken den Lieferstand:
 
 ### 0.1 Scope-Definition
 
-`0.17.0` darf nur aktiv werden, wenn `0.16.0` einen klaren
-Anschluss liefert. Der Plan ist absichtlich nicht auf einen
-bestimmten Produktpfad festgelegt.
+`0.17.0` ist aktiviert, weil `0.16.0` released ist und einen kleinen,
+abgeschlossenen Analyzer-Slice geliefert hat. Der Anschluss bleibt
+bewusst Hardening-only, bis Tranche 1 einen belastbaren Beleg fuer
+einen neuen Productization-, Next-Slice- oder Switch-Pfad findet.
 
-Vorlaeufig in Scope, abhaengig vom `0.16.0`-Closeout:
+Aktiv in Scope:
 
-- Productization eines erfolgreichen `0.16.0`-POC, falls
-  Erfolgskriterien erfuellt und Abbruchkriterien nicht verletzt sind.
-- Naechster kleiner Slice desselben Pfads, falls `0.16.0` bewusst nur
-  einen begrenzten ersten Teil geliefert hat.
-- Wechsel auf einen deferred gebliebenen Pfad aus `0.15.0`/`0.16.0`,
-  falls dieser jetzt einen besseren Trigger oder klareren Nutzen hat.
-- Reines Trigger-/Defer-Release, falls kein Pfad die Go-Bedingungen
-  erfuellt.
+- Evidence Review des `0.16.0`-HLS-Range-Fetch-Slice gegen
+  tatsaechliche Tests, Fixtures, Security-Gates und Doku.
+- Hardening des bestehenden Analyzer-Pfads, falls Tranche 1 konkrete
+  Luecken findet.
+- Dokumentierte Go-/No-Go-Entscheidung fuer Productization, Next Slice
+  oder Switch als Folgepfad, nicht als Nebenprodukt von Tranche 0.
+- Triggerpflege fuer weiter deferred Product-/Platform-/Ops-Pfade.
 
 Moegliche Importpfade:
 
@@ -79,16 +80,16 @@ Vorlaeufig out of scope:
 
 Vor Aktivierung von `0.17.0` muessen diese Bedingungen erfuellt sein:
 
-- [ ] `0.16.0` ist released und als
+- [x] `0.16.0` ist released und als
   `docs/planning/done/plan-0.16.0.md` archiviert.
-- [ ] Roadmap zeigt `0.17.0` als aktive Folgephase oder begruendet
+- [x] Roadmap zeigt `0.17.0` als aktive Folgephase oder begruendet
   einen anderen Nachfolger.
-- [ ] Die `0.16.0`-RAK-Matrix ist geschlossen oder enthaelt explizite
+- [x] Die `0.16.0`-RAK-Matrix ist geschlossen oder enthaelt explizite
   Defer-/Blockerstatus.
-- [ ] Falls `0.16.0` einen POC lieferte: Erfolgskriterien,
-  Abbruchkriterien, Rest-Risiken und offene Gates sind dokumentiert.
-- [ ] Falls `0.16.0` ein Defer-Release war: Tranche 0 begruendet,
-  warum `0.17.0` trotzdem aktiviert wird.
+- [x] `0.16.0` war kein offener POC; Erfolgskriterien,
+  Rest-Risiken und Gates sind im Release-Closeout dokumentiert.
+- [x] `0.16.0` war kein Defer-Release; Tranche 0 begruendet,
+  warum `0.17.0` als Hardening-only trotzdem aktiviert wird.
 
 Uebergangsausnahme bei Release-Freeze oder blockiertem Vorgaenger:
 Tranche 0 darf `0.17.0` nur als **draft/in-progress Planning** starten,
@@ -98,18 +99,17 @@ blockiert markiert sind und kein Tag/Release fuer `0.17.0` erstellt
 wird, bevor `0.16.0` archiviert oder ausdruecklich durch einen neuen
 Plan ersetzt ist.
 
-### 0.3 Lastenheft-Patch (TBD)
+### 0.3 Lastenheft-Patch `1.1.22`
 
-Die finale RAK-Gruppe wird erst bei Aktivierung vergeben. Erwartete
-RAK-Themen, falls keine Zwischen-Ranges belegt werden:
+Die finale RAK-Gruppe fuer `0.17.0` ist `RAK-111`..`RAK-115`.
 
-| Vorlaeufige Kennung | Thema | Bedingung |
+| RAK | Thema | Bedingung |
 | --- | --- | --- |
-| RAK-TBD-1 / RAK-111 | Import des `0.16.0`-Ergebnisses | Immer aktiv; Productize, Next Slice, Switch oder Defer wird gewaehlt. |
-| RAK-TBD-2 / RAK-112 | Productization-/Next-Slice-Scope | Nur fuer den gewaehlt Hauptpfad. |
-| RAK-TBD-3 / RAK-113 | Betriebs-/Security-Haertung | Pflicht, sobald POC-Artefakte stabiler nutzbar werden. |
-| RAK-TBD-4 / RAK-114 | Compatibility- und Migration-Gates | Pflicht bei Wire-, API-, Persistenz- oder Runtime-Aenderungen. |
-| RAK-TBD-5 / RAK-115 | Closeout und Folgepfad | Release-Nachweis, offene Trigger und naechste Entscheidung. |
+| RAK-111 | Import des `0.16.0`-Ergebnisses | Immer aktiv; Szenario D wird gewaehlt, alle anderen Pfade bleiben deferred. |
+| RAK-112 | Evidence Review und Hardening-Scope | Pflicht fuer den bestehenden HLS-Range-Fetch-/Analyzer-Pfad. |
+| RAK-113 | Betriebs-/Security-Haertung | Pflicht, falls Tranche 1 neue Luecken in Fetch-, Fixture-, Drift- oder Security-Gates findet. |
+| RAK-114 | Compatibility- und Migration-Gates | Pflicht bei Wire-, API-, Persistenz- oder Runtime-Aenderungen; sonst No-change-Nachweis. |
+| RAK-115 | Closeout und Folgepfad | Release-Nachweis, offene Trigger und naechste Entscheidung. |
 
 ### 0.4 Qualitätsregeln für `0.17.0`
 
@@ -141,8 +141,8 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 
 | Tranche | Inhalt | Erwartetes Ergebnis | Eingang | Ausgang | Status |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Aktivierung und `0.16.0`-Import | Szenario A/B/C/D/E gewaehlt | `0.16.0` released | finaler `0.17.0`-Scope | ⬜ |
-| 1 | Evidence Review und Scope-Haertung | POC-/Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Scope-Decision | ⬜ |
+| 0 | Aktivierung und `0.16.0`-Import | Szenario D gewaehlt | `0.16.0` released | Hardening-only Scope | ✅ |
+| 1 | Evidence Review und Scope-Haertung | Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Scope-Decision | 🟡 |
 | 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Artefakt-/POC-Nachweis | ⬜ |
 | 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | ⬜ |
 | 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | ⬜ |
@@ -154,32 +154,67 @@ Folgepfad liefert oder ein bewusst dokumentarischer Release noetig ist.
 
 DoD:
 
-- [ ] Plan von `docs/planning/open/plan-0.17.0.md` nach
+- [x] Plan von `docs/planning/open/plan-0.17.0.md` nach
   `docs/planning/in-progress/plan-0.17.0.md` verschoben.
-- [ ] Ausgangszustand von `git status --short` dokumentiert.
-- [ ] `0.16.0`-Closeout gelesen und Szenario A/B/C/D/E ausgewaehlt.
-- [ ] Lastenheft-Patch mit finaler RAK-Range ergaenzt.
-- [ ] Roadmap auf `0.17.0` als aktive Folgephase umgestellt.
-- [ ] Risiken-Backlog aktualisiert, falls ein POC stabilisiert,
+- [x] Ausgangszustand von `git status --short` dokumentiert.
+- [x] `0.16.0`-Closeout gelesen und Szenario A/B/C/D/E ausgewaehlt.
+- [x] Lastenheft-Patch mit finaler RAK-Range ergaenzt.
+- [x] Roadmap auf `0.17.0` als aktive Folgephase umgestellt.
+- [x] Risiken-Backlog aktualisiert, falls ein POC stabilisiert,
   abgebrochen oder deferred wird.
-- [ ] Defer-Matrix fuer nicht gewaehlt Pfade ausgefuellt.
-- [ ] Aktivierungsnotiz enthaelt `What aendert sich` /
+- [x] Defer-Matrix fuer nicht gewaehlt Pfade ausgefuellt.
+- [x] Aktivierungsnotiz enthaelt `What aendert sich` /
   `What bleibt unveraendert` und benennt nicht aktivierte Pfade.
 
-### 2.1 Aktivierungsnotiz (Template)
+### 2.1 Aktivierungsnotiz
 
-Bei Aktivierung ausfuellen:
+`0.17.0` startet als kontrollierter Hardening-/Evidence-Review.
 
 | Feld | Wert |
 | --- | --- |
-| Aktivierungsdatum | TBD |
-| Ausgangs-Commit | TBD |
-| Gewaehltes Szenario | TBD |
-| Import aus 0.16.0 | TBD |
-| Productize / Next Slice / Switch / Defer | TBD |
-| Explizit deferred | TBD |
-| Blocker | TBD |
-| Required Gates | TBD |
+| Aktivierungsdatum | 2026-05-13 |
+| Ausgangs-Commit | `2f75331` (`main`, `origin/main`, nach `0.16.0`-Closeout) |
+| Ausgangszustand | `git status --short --branch`: `## main...origin/main` vor dem Plan-Move |
+| Gewaehltes Szenario | D — Hardening-only |
+| Import aus 0.16.0 | `0.16.0` lieferte HLS-CMAF-Byte-Range-Fetches fuer explizite `EXT-X-MAP:BYTERANGE`-/`#EXT-X-BYTERANGE`-Offsets, ohne neues Public-Schema, ohne externe Analyzer-API und mit gruenen TS-/Doku-/Drift-/Security-Gates. |
+| Productize / Next Slice / Switch / Defer | Hardening-only: Tranche 1 prueft Belege, Testluecken, Compatibility und Trigger; Tranche 2 darf nur konkrete Hardening-Artefakte liefern oder den Folgepfad deferred halten. |
+| Explizit deferred | Productization einer externen Analyzer-API, weiterer CMAF-/DASH-/LL-CMAF-Scope, Control-Plane, Postgres-Default, Analytics-Pflichtbackend, Production-K8s, Codec-Decoding und Player-Laufzeitpfade. |
+| Blocker | Keine Blocker fuer Tranche 0. Productization, Next Slice oder Switch bleiben blockiert, bis Tranche 1 einen konkreten Konsumenten, eine Testluecke oder einen belastbaren Trigger nachweist. |
+| Required Gates | Tranche 0 docs-only: `make docs-check`. Ab Tranche 2 je nach Artefakt: `make ts-test`, `make generated-drift-check`, `make security-gates` oder begruendete `n/a`-Entscheidung ohne Code-/Wire-Aenderung. |
+
+### 2.2 Aktivierungsentscheid
+
+What aendert sich:
+
+- `0.17.0` ist aktiv und nicht mehr nur vorbereitet.
+- Lastenheft-Patch `1.1.22` reserviert `RAK-111`..`RAK-115` fuer
+  Import, Evidence Review, Hardening, Compatibility und Closeout.
+- Szenario D ist der einzige Go-Pfad: Hardening-only auf Basis des
+  bestehenden `0.16.0`-Analyzer-Slice.
+- Tranche 1 wird zum zwingenden Gate, bevor ein Productization-,
+  Next-Slice- oder Switch-Pfad wieder geoeffnet wird.
+
+What bleibt unveraendert:
+
+- `@npm9912/stream-analyzer` Library/CLI und der interne
+  `apps/analyzer-service` bleiben Standardpfade.
+- Keine externe Analyzer-API, keine Control-Plane, kein Postgres-
+  Default, kein Analytics-Pflichtbackend und kein Production-K8s.
+- Kein neues Analyzer-Result-Schema, kein neuer Endpoint und kein
+  neuer Runtime-Default durch Tranche 0.
+- HLS-Range-Fetch bleibt auf explizite manifest-referenzierte
+  Byte-Ranges begrenzt.
+
+### 2.3 Defer-Matrix
+
+| Pfad | Status in `0.17.0` | Begruendung |
+| --- | --- | --- |
+| Analyzer-API (`MVP-20`) | Deferred | Kein konkreter externer Konsument, kein Job-/Retention-/Auth-/Rate-Limit-/SSRF-Vertrag nach `0.16.0`. |
+| Analyzer Next Slice (`NF-13`) | Deferred bis Tranche 1 | HLS-Range-Fetch ist geliefert; weiterer DASH-/LL-CMAF-/Segmentset-Scope braucht eigenen Beleg. |
+| Control-Plane (`F-132`) | Deferred | Weiterhin kein Betreiber-, Auth-/Tenant-/Audit-Trigger und keine Production-Admin-Zusage. |
+| Postgres (`MVP-40`) | Deferred mit Migration-Seed | ADR 0005 bleibt gueltig; keine neue Last-/Multi-Host-Schwelle erreicht. |
+| Analytics-Backend (`MVP-41`) | Deferred | Kein Hochvolumen-Analytics-Trigger und kein Owner-/Kosten-/Rollback-Nachweis. |
+| Production-K8s | Deferred | Beispielpfade bleiben optional; kein K8s-Smoke- oder Production-Ready-Gate in Tranche 0. |
 
 ## 3. Tranche 1 — Evidence Review und Scope-Härtung
 
@@ -285,38 +320,38 @@ DoD:
   Status auf `✅ released`.
 - [ ] Annotierter Tag `v0.17.0` erstellt.
 
-## 7. RAK-Verifikationsmatrix (Platzhalter)
+## 7. RAK-Verifikationsmatrix
 
-Wird bei Aktivierung nach dem `0.16.0`-Closeout mit finalen RAK-IDs
-gefuellt.
+Die finalen RAK-IDs fuer `0.17.0` sind mit Lastenheft-Patch `1.1.22`
+vergeben.
 
 | RAK | Prioritaet | Nachweis | Akzeptanz | Status |
 | --- | --- | --- | --- | --- |
-| RAK-TBD-1 | Muss | `0.16.0`-Closeout, Szenario-Import | Productize, Next Slice, Switch, Hardening oder Defer ist eindeutig gewaehlt | [ ] |
-| RAK-TBD-2 | Konditional Muss | Scope-Decision, Artefaktnachweis | Der gewaehlt Pfad ist stabilisiert, erweitert oder bewusst abgebrochen | [ ] |
-| RAK-TBD-3 | Konditional Muss | Security-/Ops-Notiz, Tests | Neue oder stabilisierte Surface hat Betriebs- und Security-Grenzen | [ ] |
-| RAK-TBD-4 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | API-/Wire-/Persistenz-Kompatibilitaet ist belegt oder unveraendert | [ ] |
-| RAK-TBD-5 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; naechster Pfad und Defer-Status sind sichtbar | [ ] |
+| RAK-111 | Muss | `0.16.0`-Closeout, Szenario-Import | Hardening-only ist eindeutig gewaehlt; nicht importierte Product-/Platform-/Ops-Pfade bleiben deferred | [x] |
+| RAK-112 | Muss | Evidence-Review, Scope-Decision | Belege und Testluecken des `0.16.0`-Slice sind geprueft; Tranche 2 hat genau einen Hardening-Scope oder expliziten Defer | [ ] |
+| RAK-113 | Konditional Muss | Security-/Ops-Notiz, Tests | Neue oder stabilisierte Fetch-/Analyzer-Surface hat Betriebs- und Security-Grenzen; ohne Code-Surface ist `n/a` begruendet | [ ] |
+| RAK-114 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | API-/Wire-/Persistenz-Kompatibilitaet ist belegt oder unveraendert | [ ] |
+| RAK-115 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; naechster Pfad und Defer-Status sind sichtbar | [ ] |
 
 Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
 
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-TBD-1 | TBD | TBD | Product/PM | ⬜ |
-| RAK-TBD-2 | TBD | TBD | Platform | ⬜ |
-| RAK-TBD-3 | TBD | TBD | Platform/Ops | ⬜ |
-| RAK-TBD-4 | TBD | TBD | Platform/QA | ⬜ |
-| RAK-TBD-5 | TBD | TBD | Platform/CI | ⬜ |
+| RAK-111 | `docs/planning/in-progress/plan-0.17.0.md`, `docs/planning/done/plan-0.16.0.md`, `spec/lastenheft.md` §13.21 | 2026-05-13 | Product/PM | ✅ |
+| RAK-112 | `docs/planning/in-progress/plan-0.17.0.md` §3 | TBD | Platform/Analyzer | ⬜ |
+| RAK-113 | `docs/planning/in-progress/plan-0.17.0.md` §5, `docs/planning/in-progress/risks-backlog.md` | TBD | Platform/Ops | ⬜ |
+| RAK-114 | Contract-/fixture-/compat Nachweis oder No-change-Notiz | TBD | Platform/QA | ⬜ |
+| RAK-115 | `docs/planning/done/plan-0.17.0.md`, `CHANGELOG.md`, `docs/planning/in-progress/roadmap.md`, Tag `v0.17.0` | TBD | Platform/CI | ⬜ |
 
-## 7.1 Blocker-Log (Startzustand)
+## 7.1 Blocker-Log
 
-| Blocker | Betroffene Tranche | Erwartete Aufloesung |
+| Blocker | Betroffene Tranche | Status |
 | --- | --- | --- |
-| `0.16.0` ist released | alle | ✅ Vorgaenger-Gate in §0.2 geschlossen |
-| `0.16.0` liefert keinen Anschluss | Tranche 0 | Szenario E waehlen oder `0.17.0` durch anderen Plan ersetzen |
-| POC-Erfolg nicht belegt | Tranche 1/2 | Productization blockieren, Hardening oder Defer waehlen |
-| Mehrere konkurrierende Folgepfade | Tranche 0 | genau einen Pfad waehlen, Rest deferred |
-| RAK-Range noch offen | Tranche 0/4 | Lastenheft-Patch bei Aktivierung vergeben |
+| `0.16.0` ist released | alle | ✅ geschlossen: `v0.16.0` released und Plan archiviert |
+| `0.16.0` liefert keinen Anschluss | Tranche 0 | ✅ geschlossen: Hardening-only importiert den gelieferten HLS-Range-Fetch-Slice als Evidence-Review-Pfad |
+| POC-Erfolg nicht belegt | Tranche 1/2 | ✅ fuer Tranche 0 geschlossen: `0.16.0` war kein offener POC; Productization bleibt bis Tranche 1 blockiert |
+| Mehrere konkurrierende Folgepfade | Tranche 0 | ✅ geschlossen: nur Szenario D aktiv, Rest deferred |
+| RAK-Range noch offen | Tranche 0/4 | ✅ geschlossen: `RAK-111`..`RAK-115` in Lastenheft `1.1.22` |
 
 ## 8. Folge-Scope nach `0.17.0`
 
