@@ -19,7 +19,7 @@
 > Control-Plane, Postgres-Default, Analytics-Pflichtbackend,
 > Production-K8s, weiterer CMAF-/DASH-/LL-CMAF-Scope,
 > Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Patch-Log
-> siehe [`docs/planning/in-progress/plan-0.17.0.md`](../docs/planning/in-progress/plan-0.17.0.md).
+> siehe [`docs/planning/done/plan-0.17.0.md`](../docs/planning/done/plan-0.17.0.md).
 >
 > **Patch `1.1.21` (Selected Product Slice / Analyzer Range Fetch für
 > `0.16.0`)**: Aktiviert die Folgephase nach `0.15.0` und führt die

@@ -2,16 +2,22 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: 🟡 `0.17.0` aktiv seit 2026-05-13 — Hardening /
-> Evidence Review. Tranchen 0–3 schliessen Import, Evidence Review,
-> Doku-/Defer-Entscheid und No-change-Gate-Nachweis: Szenario D bleibt
-> aktiv, kein Code- oder Runtime-Hardening ist freigegeben, und
-> Productization, Next Slice, Switch, Analyzer-API, Control-Plane,
-> Postgres/Analytics und Production-K8s bleiben mangels Trigger
-> deferred. Tranche 4 startet den Release-Closeout. Plan in
-> [`plan-0.17.0.md`](plan-0.17.0.md).
+> **Phase**: ✅ `0.17.0` released 2026-05-13 — Hardening /
+> Evidence Review. Tranchen 0–4 schliessen Import, Evidence Review,
+> Doku-/Defer-Entscheid, No-change-Gate-Nachweis und Release-Closeout:
+> Szenario D bleibt aktiv, kein Code- oder Runtime-Hardening ist
+> freigegeben, und Productization, Next Slice, Switch, Analyzer-API,
+> Control-Plane, Postgres/Analytics und Production-K8s bleiben mangels
+> Trigger deferred. Folgeplan offen. Plan archiviert in
+> [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
 >
 > **Letzte Releases:**
+> - `v0.17.0` Hardening-/Evidence-Review-Minor (Lastenheft `1.1.22`,
+>   RAK-111..RAK-115 in §13.21): Szenario D Hardening-only,
+>   Evidence Review, Doku-/Defer-Entscheid und No-change-Gate-Nachweis;
+>   keine Productization, kein Next Slice, kein Switch und keine Code-/
+>   Runtime-Aenderung ueber den Versions-Bump hinaus. Plan archiviert in
+>   [`done/plan-0.17.0.md`](../done/plan-0.17.0.md).
 > - `v0.16.0` Selected-Product-Slice-/Analyzer-Range-Fetch-Minor
 >   (Lastenheft `1.1.21`, RAK-106..RAK-110 in §13.20):
 >   HLS-Range-Fetch fuer explizite Byte-Range-Offsets, Gate-Closeout
@@ -58,7 +64,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-13 — `0.17.0` aktiv)
+## 1. Aktueller Stand (2026-05-13 — `0.17.0` released)
 
 ### 1.1 Was abgeschlossen ist
 
@@ -90,12 +96,12 @@ aktualisieren.
 | ✅      | Ops Backend Follow-up (`0.14.0`) | Minor-Release am 2026-05-12. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. Szenario C: K8s-/Devcontainer-/Release-Guard-Hardening; Postgres und Analytics bleiben Trigger-/Defer-Pfade ohne neue Pflichtabhängigkeit. | [`plan-0.14.0.md`](../done/plan-0.14.0.md) |
 | ✅      | Product Scope / Analyzer Boundary (`0.15.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 entscheidet Selbsthoster/kleine bis mittlere Teams/Broadcaster-Labs/technische Media-Teams als Primärziel. Tranche 2 deferred externe `apps/analyzer-api`; interner `apps/analyzer-service` plus Library/CLI bleiben Standard. Tranche 3 deferred `apps/control-plane` ohne POC. Tranche 4 empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 hält Postgres als `defer-with-migration-seed` und Analytics als `defer`. | [`plan-0.15.0.md`](../done/plan-0.15.0.md) |
 | ✅      | Selected Product Slice / Analyzer Range Fetch (`0.16.0`) | Released 2026-05-12. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 schließt RAK-106; Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges, No-new-public-schema und Fetch-Security-Grenzen. Tranche 2 liefert den HLS-Range-Fetch fuer explizite `EXT-X-MAP:BYTERANGE`-/`#EXT-X-BYTERANGE`-Offsets samt Contract-Fixtures. Tranche 3 schließt RAK-109 mit TS-, Drift-, Doku- und Security-Gates. Tranche 4 schließt RAK-110 mit Versions-Bump, Changelog, Plan-Archiv und Tag `v0.16.0`. | [`done/plan-0.16.0.md`](../done/plan-0.16.0.md) |
-| 🟡      | Hardening / Evidence Review (`0.17.0`) | Aktiv seit 2026-05-13. Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21. Szenario D: Hardening-only. Tranchen 0–3 erledigen Import, Evidence Review, Doku-/Defer-Entscheid und No-change-Gate-Nachweis: kein Productization-/Next-Slice-/Switch-Trigger, keine Code-/Runtime-Änderung. Tranche 4 startet den Release-Closeout. | [`plan-0.17.0.md`](plan-0.17.0.md) |
+| ✅      | Hardening / Evidence Review (`0.17.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21. Szenario D: Hardening-only. Tranchen 0–4 erledigen Import, Evidence Review, Doku-/Defer-Entscheid, No-change-Gate-Nachweis und Release-Closeout: kein Productization-/Next-Slice-/Switch-Trigger, keine Code-/Runtime-Änderung ueber den Versions-Bump hinaus. | [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.17.0` ist aktiv in
-[`plan-0.17.0.md`](plan-0.17.0.md). Tranche 0 importiert das
+`0.17.0` ist released und archiviert in
+[`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Tranche 0 importiert das
 `0.16.0`-Closeout und waehlt Szenario D: Hardening-only. Tranche 1
 prueft Evidence und Gates: `make ts-test` ist gruen (38 Testdateien /
 656 Tests, davon `packages/stream-analyzer` 19 / 393) und
@@ -104,10 +110,11 @@ als Doku-/Defer-Artefakt ohne Code-, Wire-, Persistenz-, Runtime- oder
 Default-Aenderung. Tranche 3 schliesst Compatibility-/Security-/Ops-
 Gates als No-change-Nachweis: `make docs-check` bleibt Pflicht, Code-,
 Contract-, Security-, Drift- und Rollback-Gates sind `n/a`. RAK-111..
-RAK-114 sind geschlossen; RAK-115 bleibt fuer den Release-Closeout
-offen. Productization, Next Slice oder Switch bleiben blockiert, weil
-kein konkreter Konsument, keine Testluecke und kein belastbarer Trigger
-vorliegt.
+RAK-114 sind geschlossen; Tranche 4 schliesst RAK-115 mit Changelog,
+Roadmap, Plan-Archiv, Versions-Bump und Tag `v0.17.0`. Productization,
+Next Slice oder Switch bleiben blockiert, weil kein konkreter Konsument,
+keine Testluecke und kein belastbarer Trigger vorliegt. Es gibt keinen
+aktiven Folgeplan; der naechste Plan startet erst bei neuem Trigger.
 
 `0.16.0` ist released und archiviert in
 [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release liefert
@@ -272,7 +279,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 49  | ✅      | `0.14.0` Ops Backend Follow-up ausgeliefert: Szenario C importiert K8s-/Devcontainer-/Release-Guard-Seeds aus `0.13.0` für Hardening/Validation. Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`; keine neue lokale Pflichtabhängigkeit. Lastenheft-Patch `1.1.19` mit RAK-96..RAK-100 in §13.18. | Nach Schritt 48 | RAK-96..RAK-100 in `spec/lastenheft.md` §13.18; MVP-40..MVP-44; [`done/plan-0.14.0.md`](../done/plan-0.14.0.md) |
 | 50  | ✅      | `0.15.0` Product Scope / Analyzer Boundary released: Szenario A fokussiert Zielgruppe + Analyzer-Boundary, bevor externe Analyzer-API, Control-Plane, Postgres/Analytics oder Production-K8s in Implementierung gehen. Tranche 1 schließt RAK-101 mit Selbsthoster-/kleine-Team-/Broadcaster-Lab-Fokus. Tranche 2 schließt RAK-102: externe Analyzer-API deferred, interner `apps/analyzer-service` plus Library/CLI bleibt Standard. Tranche 3 schließt RAK-103: Control-Plane deferred, kein POC ohne Betreiber-/Auth-/Tenant-Trigger. Tranche 4 schließt RAK-104: HTTP-Range-/Byte-Range-Loader als einziger kleiner `NF-13`-Folgeslice empfohlen. Tranche 5 schließt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19. | Nach Schritt 49 | RAK-101..RAK-105 ✅; `spec/lastenheft.md` §7.5.5/§7.5.6/§8.3/§12.1/§13.19/§16.1; MVP-20, F-132, NF-13, MVP-40/MVP-41; [`done/plan-0.15.0.md`](../done/plan-0.15.0.md) |
 | 51  | ✅      | `0.16.0` Selected Product Slice / Analyzer Range Fetch released: Szenario B importiert `RAK-104` als einzigen Go-Pfad. Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges (`#EXT-X-MAP` mit `BYTERANGE`-Attribut und erstes `#EXT-X-BYTERANGE`-fMP4-Media-Segment), No-new-public-schema und Fetch-Security-Grenzen. Tranche 2 liefert den HLS-Range-Fetch fuer explizite Offsets im bestehenden Binary-Check-Pfad. Tranche 3 schließt RAK-109 mit `make security-gates` plus TS-/Doku-/Drift-Gates. Tranche 4 schließt RAK-110 mit Version `0.16.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.16.0`; externe Analyzer-API, Control-Plane, Postgres/Analytics, Production-K8s, LL-CMAF, vollständige Segmentsets, Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20. | Nach Schritt 50 | RAK-106..RAK-110 ✅; `spec/lastenheft.md` §13.20; NF-13; [`done/plan-0.16.0.md`](../done/plan-0.16.0.md); Tag `v0.16.0` |
-| 52  | 🟡      | `0.17.0` Hardening / Evidence Review aktivieren und Scope haerten: `0.16.0`-Closeout importieren, Szenario D waehlen, Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 vergeben, Evidence pruefen, Tranche 2 als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung schliessen und Tranche 3 als No-change-Gate-Nachweis abschliessen. | Nach Schritt 51 | RAK-111..RAK-114 ✅; `spec/lastenheft.md` §13.21; [`plan-0.17.0.md`](plan-0.17.0.md) |
+| 52  | ✅      | `0.17.0` Hardening / Evidence Review released: `0.16.0`-Closeout importiert, Szenario D gewaehlt, Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 vergeben, Evidence geprueft, Tranche 2 als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung geschlossen, Tranche 3 als No-change-Gate-Nachweis abgeschlossen und Tranche 4 mit Version `0.17.0`, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0` geschlossen. | Nach Schritt 51 | RAK-111..RAK-115 ✅; `spec/lastenheft.md` §13.21; [`done/plan-0.17.0.md`](../done/plan-0.17.0.md); Tag `v0.17.0` |
 
 ---
 
@@ -308,7 +315,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.14.0` | Ops Backend Follow-up | ✅ | Released 2026-05-12. Plan in [`done/plan-0.14.0.md`](../done/plan-0.14.0.md). Szenario C: K8s-/Devcontainer-/Release-Guard-Hardening; Postgres/Analytics nur Triggerpflege. Lastenheft-Patch `1.1.19` + RAK-96..RAK-100 in §13.18 + Tag `v0.14.0`. |
 | `0.15.0` | Product Scope / Analyzer Boundary | ✅ | Released 2026-05-12. Plan in [`done/plan-0.15.0.md`](../done/plan-0.15.0.md). Szenario A: Zielgruppe + Analyzer-Boundary; Tranche 1 erledigt RAK-101 und schärft die Primärzielgruppe. Tranche 2 erledigt RAK-102 und deferred eine externe Analyzer-API bis zu konkretem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und Folgeplan. Tranche 3 erledigt RAK-103 und deferred Control-Plane ohne POC bis zu Betreiber-/Auth-/Tenant-/Audit-Triggern. Tranche 4 erledigt RAK-104 und empfiehlt HTTP-Range-/Byte-Range-Loader als einzigen kleinen `NF-13`-Folgeslice. Tranche 5 erledigt RAK-105: Postgres bleibt `defer-with-migration-seed`, Analytics bleibt `defer`. Lastenheft-Patch `1.1.20` + RAK-101..RAK-105 in §13.19 + Tag `v0.15.0`. |
 | `0.16.0` | Selected Product Slice / Analyzer Range Fetch | ✅ | Released 2026-05-12. Plan in [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Szenario B: HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-Init-/Media-Segmente. Tranche 0 erledigt RAK-106; Tranche 1 definiert RAK-107..RAK-109 als HLS-CMAF-Byte-Range-Scope mit No-new-public-schema und Fetch-Security-Grenzen; Tranche 2 erledigt RAK-107/RAK-108 mit HLS-Range-Fetch-Code und aktualisierten Contract-Fixtures; Tranche 3 erledigt RAK-109 mit TS-/Doku-/Drift-/Security-Gates; Tranche 4 erledigt RAK-110 mit Versions-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.16.0`. Lastenheft-Patch `1.1.21` + RAK-106..RAK-110 in §13.20. |
-| `0.17.0` | Hardening / Evidence Review | 🟡 | Aktiv seit 2026-05-13 in [`plan-0.17.0.md`](plan-0.17.0.md). Szenario D: Hardening-only. Tranche 0 erledigt RAK-111 mit Import des `0.16.0`-Closeouts, Lastenheft-Patch `1.1.22` und Defer-Matrix. Tranche 1 erledigt RAK-112 mit Evidence Review, `make ts-test`, `make generated-drift-check` und der Entscheidung, Productization/Next Slice/Switch weiter deferred zu halten. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung. Tranche 3 erledigt RAK-113/RAK-114 mit No-change-Gate-Nachweis; RAK-115 bleibt fuer den Release-Closeout offen. |
+| `0.17.0` | Hardening / Evidence Review | ✅ | Released 2026-05-13. Plan in [`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Szenario D: Hardening-only. Tranche 0 erledigt RAK-111 mit Import des `0.16.0`-Closeouts, Lastenheft-Patch `1.1.22` und Defer-Matrix. Tranche 1 erledigt RAK-112 mit Evidence Review, `make ts-test`, `make generated-drift-check` und der Entscheidung, Productization/Next Slice/Switch weiter deferred zu halten. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-/Runtime-Aenderung. Tranche 3 erledigt RAK-113/RAK-114 mit No-change-Gate-Nachweis. Tranche 4 erledigt RAK-115 mit Versions-Bump, Changelog, Roadmap, Plan-Archiv und Tag `v0.17.0`. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

@@ -1,14 +1,14 @@
 # Implementation Plan — `0.17.0` (Hardening / Evidence Review)
 
-> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranchen 0–3
-> geschlossen, Tranche 4 startet als Release-Closeout.
+> **Status**: ✅ released 2026-05-13 — Tranchen 0–4
+> geschlossen; Release-Tag `v0.17.0`.
 >
 > **Vorgänger**: `0.16.0` (Selected Product Slice), released und
 > archiviert in
 > [`../done/plan-0.16.0.md`](../done/plan-0.16.0.md).
 >
 > **Release-Typ**: Minor-Release mit Lastenheft-Patch `1.1.22`,
-> neuer RAK-Gruppe `RAK-111`..`RAK-115` und geplantem Tag
+> neuer RAK-Gruppe `RAK-111`..`RAK-115` und Tag
 > `v0.17.0`.
 >
 > **Ziel**: `0.17.0` ist der kontrollierte Anschluss an den in
@@ -25,7 +25,7 @@
 > [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md),
 > [`../done/plan-0.16.0.md`](../done/plan-0.16.0.md).
 >
-> **Nachfolger**: offen.
+> **Nachfolger**: offen; kein aktiver Folgeplan zum Release-Closeout.
 
 ## 0. Konvention
 
@@ -144,7 +144,7 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | 1 | Evidence Review und Scope-Haertung | Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Hardening-/Defer-Decision | ✅ |
 | 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Doku-/Defer-Artefakt | ✅ |
 | 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | ✅ |
-| 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | 🟡 |
+| 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | ✅ |
 
 ## 2. Tranche 0 — Aktivierung und `0.16.0`-Import
 
@@ -320,7 +320,7 @@ Tranche 1 importiert keinen deferred Pfad:
 
 ### 3.6 What aendert sich
 
-- `docs/planning/in-progress/plan-0.17.0.md`: RAK-112 ist als
+- `docs/planning/done/plan-0.17.0.md`: RAK-112 ist als
   Evidence Review geschlossen; Tranche 2 startet als Hardening-/
   Defer-Scope ohne neue Product-Surface.
 - `docs/planning/in-progress/roadmap.md`, `CHANGELOG.md` und
@@ -407,7 +407,7 @@ Tranche 2 bleibt beim gewaehlten Szenario D:
 
 ### 4.3 What aendert sich
 
-- `docs/planning/in-progress/plan-0.17.0.md`: Tranche 2 dokumentiert
+- `docs/planning/done/plan-0.17.0.md`: Tranche 2 dokumentiert
   den Hardening-/Defer-Entscheid und begrenzt Tranche 3 auf
   Doku-/Gate-Nachweis.
 - `docs/planning/in-progress/roadmap.md`, `CHANGELOG.md` und
@@ -505,7 +505,7 @@ Hardening-only-/Doku-/Defer-Pfad:
 
 ### 5.5 What aendert sich
 
-- `docs/planning/in-progress/plan-0.17.0.md`: Tranche 3 dokumentiert
+- `docs/planning/done/plan-0.17.0.md`: Tranche 3 dokumentiert
   den Gate-Nachweis, markiert nicht zutreffende Code-/Contract-/
   Security-/Rollback-Gates als `n/a` und schliesst RAK-113/RAK-114.
 - `docs/planning/in-progress/roadmap.md`, `CHANGELOG.md` und
@@ -528,19 +528,46 @@ naechsten Pfad klar sichtbar.
 
 DoD:
 
-- [ ] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
-- [ ] Jede aktive Tranche enthaelt einen `What aendert sich` /
+- [x] RAK-Verifikationsmatrix vollstaendig ausgefuellt.
+- [x] Jede aktive Tranche enthaelt einen `What aendert sich` /
   `What bleibt unveraendert`-Block mit Dateinachweis.
-- [ ] Doku-only-/Defer-Release markiert nicht zutreffende Build-,
+- [x] Doku-only-/Defer-Release markiert nicht zutreffende Build-,
   Code-, Contract- und Security-Gates explizit als `n/a` mit
   Begruendung.
-- [ ] Versions-Bump auf `0.17.0` vollstaendig durchgefuehrt.
-- [ ] `CHANGELOG.md` mit `[0.17.0] - YYYY-MM-DD` aktualisiert.
-- [ ] Roadmap auf released `0.17.0` und naechste Folgephase
+- [x] Versions-Bump auf `0.17.0` vollstaendig durchgefuehrt.
+- [x] `CHANGELOG.md` mit `[0.17.0] - YYYY-MM-DD` aktualisiert.
+- [x] Roadmap auf released `0.17.0` und naechste Folgephase
   umgestellt.
-- [ ] Plan nach `docs/planning/done/plan-0.17.0.md` verschoben,
+- [x] Plan nach `docs/planning/done/plan-0.17.0.md` verschoben,
   Status auf `✅ released`.
-- [ ] Annotierter Tag `v0.17.0` erstellt.
+- [x] Annotierter Tag `v0.17.0` erstellt.
+
+### 6.1 Release-Nachweis
+
+| Artefakt | Nachweis |
+| --- | --- |
+| Versionen | `package.json`, `apps/*/package.json`, `packages/*/package.json`, `apps/api/cmd/api/main.go`, `packages/player-sdk/src/version.ts`, `contracts/sdk-compat.json`, Analyzer-Contract-Fixtures jeweils `0.17.0`. |
+| Changelog | `CHANGELOG.md` enthaelt `[0.17.0] - 2026-05-13`. |
+| Plan | Archiviert als `docs/planning/done/plan-0.17.0.md`. |
+| Roadmap | `docs/planning/in-progress/roadmap.md` markiert `0.17.0` released und den Folgepfad als offen. |
+| Tag | Annotierter Tag `v0.17.0`. |
+| Gates | `make docs-check`, `make generated-drift-check`, `make ts-test`, `git diff --check`; Code-, Contract-, Security-, Drift- und Rollback-Gates fuer Tranche 3 als `n/a` begruendet. |
+
+### 6.2 What aendert sich
+
+- `0.17.0` ist kein aktiver Plan mehr, sondern archivierter Release-
+  Nachweis.
+- RAK-115 ist geschlossen; ein Folgeplan bleibt offen, weil kein
+  Productization-, Next-Slice- oder Switch-Trigger vorliegt.
+- Versions- und Contract-Artefakte tragen `0.17.0`.
+
+### 6.3 What bleibt unveraendert
+
+- Keine Aktivierung einer externen Analyzer-API, Control-Plane,
+  Postgres-/Analytics-Pflicht, Production-K8s oder weiterer CMAF-
+  Slices im Release-Closeout.
+- Nicht gewaehlt Pfade bleiben deferred und brauchen einen neuen
+  belegbaren Trigger plus eigenen Folgeplan.
 
 ## 7. RAK-Verifikationsmatrix
 
@@ -553,17 +580,17 @@ vergeben.
 | RAK-112 | Muss | Evidence-Review, Scope-Decision | Belege und Testluecken des `0.16.0`-Slice sind geprueft; Tranche 2 hat genau einen Hardening-Scope oder expliziten Defer | [x] |
 | RAK-113 | Konditional Muss | Security-/Ops-Notiz, Tests | Neue oder stabilisierte Fetch-/Analyzer-Surface hat Betriebs- und Security-Grenzen; ohne Code-Surface ist `n/a` begruendet | [x] |
 | RAK-114 | Konditional Muss | Contract-/Compat-Tests oder Doku-Gate | API-/Wire-/Persistenz-Kompatibilitaet ist belegt oder unveraendert | [x] |
-| RAK-115 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; naechster Pfad und Defer-Status sind sichtbar | [ ] |
+| RAK-115 | Muss | Closeout, Roadmap, Changelog, Tag | Release ist abgeschlossen; naechster Pfad und Defer-Status sind sichtbar | [x] |
 
 Sofort nutzbares Verifikationsmapping (bei Aktivierung auszufuellen):
 
 | RAK | Primaere Datei(en) | Datum | Owner | Status |
 | --- | --- | --- | --- | --- |
-| RAK-111 | `docs/planning/in-progress/plan-0.17.0.md`, `docs/planning/done/plan-0.16.0.md`, `spec/lastenheft.md` §13.21 | 2026-05-13 | Product/PM | ✅ |
-| RAK-112 | `docs/planning/in-progress/plan-0.17.0.md` §3, `make ts-test`, `make generated-drift-check` | 2026-05-13 | Platform/Analyzer | ✅ |
-| RAK-113 | `docs/planning/in-progress/plan-0.17.0.md` §5, `docs/planning/in-progress/risks-backlog.md` | 2026-05-13 | Platform/Ops | ✅ |
-| RAK-114 | `docs/planning/in-progress/plan-0.17.0.md` §5 No-change-Notiz | 2026-05-13 | Platform/QA | ✅ |
-| RAK-115 | `docs/planning/done/plan-0.17.0.md`, `CHANGELOG.md`, `docs/planning/in-progress/roadmap.md`, Tag `v0.17.0` | TBD | Platform/CI | ⬜ |
+| RAK-111 | `docs/planning/done/plan-0.17.0.md`, `docs/planning/done/plan-0.16.0.md`, `spec/lastenheft.md` §13.21 | 2026-05-13 | Product/PM | ✅ |
+| RAK-112 | `docs/planning/done/plan-0.17.0.md` §3, `make ts-test`, `make generated-drift-check` | 2026-05-13 | Platform/Analyzer | ✅ |
+| RAK-113 | `docs/planning/done/plan-0.17.0.md` §5, `docs/planning/in-progress/risks-backlog.md` | 2026-05-13 | Platform/Ops | ✅ |
+| RAK-114 | `docs/planning/done/plan-0.17.0.md` §5 No-change-Notiz | 2026-05-13 | Platform/QA | ✅ |
+| RAK-115 | `docs/planning/done/plan-0.17.0.md`, `CHANGELOG.md`, `docs/planning/in-progress/roadmap.md`, Tag `v0.17.0` | 2026-05-13 | Platform/CI | ✅ |
 
 ## 7.1 Blocker-Log
 

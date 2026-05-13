@@ -23,8 +23,8 @@
 > [`../done/plan-0.15.0.md`](../done/plan-0.15.0.md).
 >
 > **Nachfolger**:
-> [`../in-progress/plan-0.17.0.md`](../in-progress/plan-0.17.0.md)
-> aktiviert.
+> [`../done/plan-0.17.0.md`](../done/plan-0.17.0.md)
+> released.
 
 ## 0. Konvention
 
@@ -489,7 +489,7 @@ DoD:
 - `0.16.0` ist kein aktiver Plan mehr, sondern archivierter Release-
   Nachweis.
 - RAK-110 ist geschlossen; `0.17.0` ist als Folgeplan unter
-  `docs/planning/in-progress/plan-0.17.0.md` sichtbar.
+  `docs/planning/done/plan-0.17.0.md` released.
 - Versions- und Contract-Artefakte tragen `0.16.0`.
 
 ### 6.3 What bleibt unveraendert

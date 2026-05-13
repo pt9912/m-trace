@@ -1,8 +1,8 @@
 # Risiken-Backlog
 
 > **Stand**: 2026-05-13 — `0.17.0` (Hardening / Evidence Review)
-> aktiv; Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21
-> persistiert. `0.16.0` released
+> released 2026-05-13 (Tag `v0.17.0`); Lastenheft-Patch `1.1.22`
+> mit RAK-111..RAK-115 in §13.21 persistiert. `0.16.0` released
 > 2026-05-12 (Tag `v0.16.0`); Vorgänger `0.15.0` released
 > 2026-05-12 (Tag `v0.15.0`);
 > `0.14.0`
@@ -15,8 +15,8 @@
 >
 > ### Aktuelle Phase
 >
-> `0.17.0` ist aktiv in
-> [`plan-0.17.0.md`](plan-0.17.0.md). Tranche 0 importiert das
+> `0.17.0` ist released und archiviert in
+> [`done/plan-0.17.0.md`](../done/plan-0.17.0.md). Tranche 0 importiert das
 > `0.16.0`-Closeout und waehlt Szenario D: Hardening-only. Es
 > entsteht kein neues R-N-Item. Tranche 1 prueft Evidence und Gates:
 > `make ts-test` und `make generated-drift-check` sind gruen; keine
@@ -25,9 +25,10 @@
 > Wire-, Persistenz-, Runtime- oder Default-Aenderung. Tranche 3
 > schliesst Compatibility-/Security-/Ops-Gates als No-change-Nachweis:
 > `make docs-check` bleibt Pflicht, Code-, Contract-, Security-, Drift-
-> und Rollback-Gates sind `n/a`; es entsteht weiterhin kein neues
-> R-N-Item. Analyzer-API, Control-Plane, Postgres, Analytics und
-> Production-K8s bleiben deferred.
+> und Rollback-Gates sind `n/a`; Tranche 4 schliesst RAK-115 mit
+> Changelog, Roadmap, Plan-Archiv, Versions-Bump und Tag. Es entsteht
+> weiterhin kein neues R-N-Item. Analyzer-API, Control-Plane, Postgres,
+> Analytics und Production-K8s bleiben deferred.
 >
 > `0.16.0` ist released und archiviert in
 > [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release
@@ -166,7 +167,7 @@
 >   Analyzer Boundary, RAK-101..RAK-105);
 >   `docs/planning/done/plan-0.16.0.md` (Selected Product
 >   Slice / Analyzer Range Fetch, RAK-106..RAK-110);
->   `docs/planning/in-progress/plan-0.17.0.md` (Hardening /
+>   `docs/planning/done/plan-0.17.0.md` (Hardening /
 >   Evidence Review, RAK-111..RAK-115)
 
 Dieses Dokument verfolgt absehbare technische Risiken, die mit der

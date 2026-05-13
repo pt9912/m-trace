@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-05-13
+
+> **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
+> §3.1 — Hardening / Evidence Review nach `0.16.0`,
+> Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21.
+> Plan in
+> [`docs/planning/done/plan-0.17.0.md`](docs/planning/done/plan-0.17.0.md).
+
 ### Added
 
 - `0.17.0` Planung aktiviert: Lastenheft-Patch `1.1.22` ergänzt
   §13.21 mit RAK-111..RAK-115 für Hardening / Evidence Review; der
-  Plan liegt aktiv unter
-  [`docs/planning/in-progress/plan-0.17.0.md`](docs/planning/in-progress/plan-0.17.0.md).
+  Plan liegt archiviert unter
+  [`docs/planning/done/plan-0.17.0.md`](docs/planning/done/plan-0.17.0.md).
 - `0.17.0` Tranche 0: Szenario D aus dem `0.16.0`-Closeout gewählt.
   Hardening-only ist der einzige Go-Pfad; Productization, Next Slice,
   Switch, externe Analyzer-API, Control-Plane, Postgres, Analytics,
@@ -32,7 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Code-, Contract-, Security-, Drift- und Rollback-Gates sind wegen
   fehlender Code-, Wire-, Persistenz-, Runtime- oder
   Infrastruktur-Aenderung als `n/a` begruendet. RAK-113/RAK-114 sind
-  geschlossen, RAK-115 bleibt fuer den Release-Closeout offen.
+  geschlossen; RAK-115 folgt im Release-Closeout.
+- `0.17.0` Tranche 4: Release-Closeout, RAK-115, Roadmap,
+  Changelog, Plan-Archivierung und Tag `v0.17.0` abgeschlossen.
+- Versionen auf `0.17.0` angehoben: Root-/Workspace-`package.json`,
+  API-`serviceVersion`, Player-SDK-Version, SDK-Kompat-Vertrag und
+  Analyzer-Contract-Fixtures. Keine Code-, Wire-, Persistenz-,
+  Runtime-, Infrastruktur- oder Default-Aenderung ueber den
+  Versions-Bump hinaus.
 
 ## [0.16.0] - 2026-05-12
 
