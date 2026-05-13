@@ -1,8 +1,8 @@
 # Implementation Plan — `0.17.0` (Hardening / Evidence Review)
 
-> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranchen 0–1
-> geschlossen, Tranche 2 startet als Hardening-/Defer-Scope nach
-> Evidence Review.
+> **Status**: 🟡 in Arbeit seit 2026-05-13 — Tranchen 0–2
+> geschlossen, Tranche 3 startet als Compatibility-/Security-/
+> Ops-Gate fuer den Doku-/Defer-Scope.
 >
 > **Vorgänger**: `0.16.0` (Selected Product Slice), released und
 > archiviert in
@@ -143,8 +143,8 @@ Tranche 0 waehlt genau eines dieser Szenarien:
 | --- | --- | --- | --- | --- | --- |
 | 0 | Aktivierung und `0.16.0`-Import | Szenario D gewaehlt | `0.16.0` released | Hardening-only Scope | ✅ |
 | 1 | Evidence Review und Scope-Haertung | Slice-Belege ausgewertet, Nicht-Ziele gesetzt | `0.16.0`-Closeout | Hardening-/Defer-Decision | ✅ |
-| 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Artefakt-/POC-Nachweis | 🟡 |
-| 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | ⬜ |
+| 2 | Productization, Next Slice oder Hardening | Genau ein Pfad geliefert oder deferred | Scope-Decision | Doku-/Defer-Artefakt | ✅ |
+| 3 | Compatibility, Security und Ops Gates | Surface und Betriebsgrenzen nachgewiesen | Tranche 2 | Gate-Nachweis | 🟡 |
 | 4 | Release-Closeout | RAK-Matrix, Version, Changelog, Roadmap, Tag | alle aktiven Tranchen | Tag `v0.17.0` | ⬜ |
 
 ## 2. Tranche 0 — Aktivierung und `0.16.0`-Import
@@ -346,16 +346,16 @@ abgebrochen.
 
 DoD:
 
-- [ ] Umsetzung bleibt innerhalb der Tranche-1-Grenzen.
-- [ ] POC-/Experimental-Status ist sichtbar, falls der Pfad nicht
+- [x] Umsetzung bleibt innerhalb der Tranche-1-Grenzen.
+- [x] POC-/Experimental-Status ist sichtbar, falls der Pfad nicht
   produktiv ist.
-- [ ] Neue Defaults sind explizit begruendet; ansonsten bleibt der
+- [x] Neue Defaults sind explizit begruendet; ansonsten bleibt der
   Pfad opt-in.
-- [ ] Doku nennt Nutzer, Grenzen und Nicht-Ziele.
-- [ ] Kein deferred Pfad wird nebenbei implementiert.
-- [ ] Anti-Scope-Drift-Nachweis dokumentiert: Umsetzung bleibt beim
+- [x] Doku nennt Nutzer, Grenzen und Nicht-Ziele.
+- [x] Kein deferred Pfad wird nebenbei implementiert.
+- [x] Anti-Scope-Drift-Nachweis dokumentiert: Umsetzung bleibt beim
   gewaehlt Szenario.
-- [ ] Tranche enthaelt `What aendert sich` /
+- [x] Tranche enthaelt `What aendert sich` /
   `What bleibt unveraendert` mit Dateinachweis.
 
 Vorlaeufige Artefakte je Szenario:
@@ -368,6 +368,62 @@ Vorlaeufige Artefakte je Szenario:
 - Hardening-only: Tests, Runbooks, Security-/Ops-Grenzen, keine neue
   Surface.
 - Defer: Defer-Notiz, Triggerpflege, Roadmap/Risks-Update.
+
+### 4.1 Tranche-2-Entscheidung
+
+Tranche 2 schliesst als Doku-/Defer-Artefakt ab.
+
+Begruendung:
+
+- Tranche 1 fand keine konkrete Test-, Fixture-, Security- oder
+  Runtime-Luecke im `0.16.0`-HLS-Range-Fetch-Slice.
+- Die vorhandenen Belege (`make ts-test`, `make generated-drift-check`,
+  Contract-Fixtures und User-Doku) tragen den gelieferten Slice.
+- Ohne neue Luecke waere Code-Hardening Scope-Drift; ein weiterer
+  Analyzer-Slice waere Productization/Next-Slice und bleibt blockiert.
+
+Entscheidung:
+
+| Feld | Wert |
+| --- | --- |
+| Gewaehltes Artefakt | Doku-/Defer-Artefakt |
+| Nutzer/Konsument | Maintainer/Reviewer des `0.17.0`-Plans; keine neue Runtime-Zielgruppe. |
+| Productization | Deferred bis konkreter externer Konsument plus Job-/Retention-/Auth-/Rate-Limit-/SSRF-/Contract-Nachweis vorliegt. |
+| Next Slice | Deferred bis konkreter Konsument, Fixture-Set und enger Scope fuer DASH-Range-/SegmentBase, LL-CMAF oder weitere Segmentset-Abdeckung vorliegt. |
+| Switch | Deferred; Control-Plane, Postgres, Analytics und Production-K8s bleiben ohne neue Trigger aus Tranche 1. |
+| Code-/Runtime-Artefakt | Nicht erstellt; keine Code-, Wire-, Persistenz-, Runtime- oder Default-Aenderung. |
+| Tranche-3-Gates | Doku-only/Hardening-only ohne Code: `make docs-check` Pflicht; Code-, Contract- und Security-Gates als `n/a` mit Begruendung, soweit Tranche 3 keine neue Aenderung einfuehrt. |
+
+### 4.2 Anti-Scope-Drift-Nachweis
+
+Tranche 2 bleibt beim gewaehlten Szenario D:
+
+- Keine neue externe Analyzer-API oder Job-Surface.
+- Kein DASH-/LL-CMAF-/weiterer Segmentset-Code.
+- Kein Control-Plane-POC.
+- Kein Postgres-/Analytics-Backend.
+- Kein K8s-Production-Scope.
+- Keine neuen Defaults, ENV-Schalter, Runtime-Abhaengigkeiten oder
+  Migrationspfade.
+
+### 4.3 What aendert sich
+
+- `docs/planning/in-progress/plan-0.17.0.md`: Tranche 2 dokumentiert
+  den Hardening-/Defer-Entscheid und begrenzt Tranche 3 auf
+  Doku-/Gate-Nachweis.
+- `docs/planning/in-progress/roadmap.md`, `CHANGELOG.md` und
+  `docs/planning/in-progress/risks-backlog.md`: Der Tranche-2-
+  Doku-/Defer-Stand ist sichtbar; es entsteht kein neues R-N-Item.
+
+### 4.4 What bleibt unveraendert
+
+- Keine neue Product-Surface, kein neuer Endpoint, kein neues
+  Analyzer-Result-Schema, keine neue Infrastruktur und kein
+  Versions-Bump durch Tranche 2.
+- `@npm9912/stream-analyzer` Library/CLI und der interne
+  `apps/analyzer-service` bleiben Standardpfade.
+- Alle nicht importierten Product-/Analyzer-/Platform-/Ops-Pfade
+  bleiben deferred bis zu einem neuen, belegbaren Trigger.
 
 ## 5. Tranche 3 — Compatibility, Security und Ops Gates
 

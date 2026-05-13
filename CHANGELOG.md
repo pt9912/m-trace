@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   und `make generated-drift-check` sind grün; RAK-112 schließt ohne
   neues R-N-Item und ohne Productization-/Next-Slice-/Switch-Trigger.
   Tranche 2 bleibt auf Hardening-/Defer-Scope begrenzt.
+- `0.17.0` Tranche 2: Hardening-/Defer-Entscheid als Doku-Artefakt
+  abgeschlossen. Keine Code-, Wire-, Persistenz-, Runtime- oder
+  Default-Änderung; Productization, Next Slice und Switch bleiben bis
+  zu einem neuen belegbaren Trigger deferred.
 
 ## [0.16.0] - 2026-05-12
 

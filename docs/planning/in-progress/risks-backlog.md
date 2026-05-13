@@ -21,8 +21,10 @@
 > entsteht kein neues R-N-Item. Tranche 1 prueft Evidence und Gates:
 > `make ts-test` und `make generated-drift-check` sind gruen; keine
 > neue Testluecke oder Productization-/Next-Slice-/Switch-Trigger
-> entstehen. Analyzer-API, Control-Plane, Postgres, Analytics und
-> Production-K8s bleiben deferred.
+> entstehen. Tranche 2 schliesst als Doku-/Defer-Artefakt ohne Code-,
+> Wire-, Persistenz-, Runtime- oder Default-Aenderung. Analyzer-API,
+> Control-Plane, Postgres, Analytics und Production-K8s bleiben
+> deferred.
 >
 > `0.16.0` ist released und archiviert in
 > [`done/plan-0.16.0.md`](../done/plan-0.16.0.md). Der Release
