@@ -302,3 +302,14 @@ Wave 2 (`plan-0.9.5.md` Tranche 0):
   bestätigt = Release-Block** (Tranche 2 implementiert das in
   `.github/workflows/benchmark.yml`; `extra-gates.md` §3.3 ist
   normativer Anker).
+- ✅ Benchmark-Smoke-PR-Blockierung: nach fünf grünen
+  `benchmark-observation.yml`-Runs (`25592982776`, `25621106187`,
+  `25643426077`, `25704811721`, `25769811661`) ist
+  `make benchmark-smoke` in `make gates` aufgenommen
+  (`plan-0.22.0`). Der Nightly-Workflow läuft ohne
+  `continue-on-error`.
+- 🟡 Mutation-PR-Blockierung: weiter deferred. Der TS-Workflow-Scope
+  wurde in `0.22.0` von `@npm9912/player-sdk` auf
+  `@pt9912/player-sdk` korrigiert; erst drei reale Reports mit
+  >70 % Mutation-Score pro Modul lösen die Blockierungsentscheidung
+  aus.

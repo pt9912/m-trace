@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `0.22.0` Quality-Gates-Follow-up aktiviert:
+  [`docs/planning/open/plan-0.22.0.md`](docs/planning/open/plan-0.22.0.md)
+  promoted `make benchmark-smoke` nach fünf grünen Beobachtungsläufen
+  in den PR-blockierenden `make gates`-Pfad.
+
+### Changed
+
+- `.github/workflows/benchmark-observation.yml` läuft nicht mehr
+  warning-only: `continue-on-error` ist entfernt, der Nightly-Smoke
+  liefert weiterhin Benchmark-Artefakte.
+- `.github/workflows/mutation.yml` nutzt für den TS-Piloten den
+  aktuellen Package-Scope `@pt9912/player-sdk`; Mutation bleibt bis zu
+  drei realen >70%-Score-Runs pro Modul nicht-blockierend.
+
 ## [0.21.0] - 2026-05-13
 
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)

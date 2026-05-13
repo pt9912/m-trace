@@ -2,12 +2,16 @@
 
 > **Stand**: 2026-05-13
 >
-> **Phase**: ✅ `0.21.0` OCI Image Publishing released und archiviert
-> in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). GHCR-Images
-> für API, Dashboard und Analyzer-Service sind versioniert als
-> `0.21.0` veröffentlicht.
+> **Phase**: 🟡 `0.22.0` Quality-Gates Follow-up aktiv in
+> [`open/plan-0.22.0.md`](../open/plan-0.22.0.md). Benchmark-Smoke
+> wird nach fünf grünen Beobachtungsläufen PR-blockierend; Mutation
+> bleibt bis zu realen >70%-Score-Reihen nicht-blockierend.
 >
-> **Letzte Releases:**
+> **Aktuell / letzte Releases:**
+> - `0.22.0` Quality-Gates Follow-up (aktiv, kein Lastenheft-Patch):
+>   Benchmark-Smoke in `make gates`, harter Benchmark-Nightly,
+>   Mutation-TS-Scope auf `@pt9912/player-sdk` korrigiert.
+>   Plan aktiv in [`open/plan-0.22.0.md`](../open/plan-0.22.0.md).
 > - `v0.21.0` OCI-Image-Publishing-Minor (Lastenheft `1.1.24`,
 >   RAK-121..RAK-125 in §13.23): GHCR-Namensschema, Make-Targets,
 >   Publish-Workflow, Release-Doku und erster GHCR-Publish für drei
@@ -80,9 +84,9 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-13 — `0.21.0` released)
+## 1. Aktueller Stand (2026-05-13 — `0.22.0` aktiv)
 
-### 1.1 Was abgeschlossen ist
+### 1.1 Lieferstand
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -117,15 +121,15 @@ aktualisieren.
 | ✅      | Roadmap-Trigger-Nacharbeit (`0.19.0`) | Decision-only-Plan archiviert: Postgres, CORS-Variante A, externe Analyzer-API und Control-Plane bleiben bis zu konkreten Betreiber-/Multi-Tenant-/Audit-Triggern deferred. Kein Release-Tag, kein Versions-Bump. | [`done/plan-0.19.0.md`](../done/plan-0.19.0.md) |
 | ✅      | Package Publishing (`0.20.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120: GitHub-Packages-Publish für `@pt9912/player-sdk` und `@pt9912/stream-analyzer`, Scope-Migration auf `@pt9912`, Release-Doku und Publish-Workflow. | [`done/plan-0.20.0.md`](../done/plan-0.20.0.md) |
 | ✅      | OCI Image Publishing (`0.21.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish und Release-Hook. | [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
+| 🟡      | Quality-Gates Follow-up (`0.22.0`) | Aktiv 2026-05-13. Kein Lastenheft-Patch: `make benchmark-smoke` wird nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; `benchmark-observation.yml` läuft hart; `mutation.yml` korrigiert den TS-Scope auf `@pt9912/player-sdk`, bleibt aber nicht-blockierend. | [`open/plan-0.22.0.md`](../open/plan-0.22.0.md) |
 
 ### 1.2 Nächste Phase
 
-`0.21.0` ist als Release `v0.21.0` und OCI-Image-Publishing-Closeout
-in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) archiviert. Der
-Release veröffentlicht erstmals die drei Runtime-Images auf GHCR:
-`m-trace-api`, `m-trace-dashboard` und `m-trace-analyzer-service`,
-jeweils mit Tag `0.21.0`. `latest`, Multi-Arch, Signierung/
-Attestations und Production-K8s bleiben Folge-Scope.
+`0.22.0` ist als Quality-Gates-Follow-up aktiv. Der konkrete
+Lieferpfad ist Tooling-only: Benchmark-Smoke wird Teil von
+`make gates`, der Benchmark-Nightly läuft ohne `continue-on-error`,
+und Mutation erhält den korrigierten TS-Scope. Mutation-Blockierung
+bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
 
 ---
 
@@ -239,6 +243,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.19.0` | Roadmap-Trigger-Nacharbeit (`MVP-40`, Variante A) | ✅ | Decision-only-Plan archiviert in [`done/plan-0.19.0.md`](../done/plan-0.19.0.md). Postgres bleibt `deferred` mit ADR-0005-Schwellen, CORS-Preflight-Variante A bleibt deferred bis zu echtem Multi-Tenant-/Project-in-URL-Trigger; `apps/analyzer-api` und `apps/control-plane` sind als Decision-Records mit Proceed-/POC-/Defer-Kriterien dokumentiert. Kein Release-Tag, kein Versions-Bump. |
 | `0.20.0` | Package Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.20.0.md`](../done/plan-0.20.0.md). Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120 in §13.22. Inhalt: Scope-Migration auf `@pt9912`, GitHub-Packages-Workflow, Release-Doku und Publish von `@pt9912/player-sdk` plus `@pt9912/stream-analyzer`; Apps bleiben private Workspace-Pakete. |
 | `0.21.0` | OCI Image Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23. Inhalt: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish, Release-Hook und Rollback-Doku; kein `latest`, kein Production-K8s-Go. |
+| `0.22.0` | Quality-Gates Follow-up | 🟡 | Aktiv in [`open/plan-0.22.0.md`](../open/plan-0.22.0.md). Kein Lastenheft-Patch: Benchmark-Smoke wird nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; Benchmark-Nightly läuft hart; Mutation-TS-Filter nutzt `@pt9912/player-sdk`, bleibt aber bis zu echten >70%-Score-Reihen nicht-blockierend. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

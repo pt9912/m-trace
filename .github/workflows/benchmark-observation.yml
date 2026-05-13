@@ -1,10 +1,10 @@
-name: Benchmark observation
+name: Benchmark smoke
 
-# plan-0.9.5 §2 Tranche 1 (DoD-Item §2-6) — Beobachtungs-Workflow
-# für die Bench-Suite. Initial **nicht-blockierend** (`continue-on-
-# error: true`), bis N=3-5 grüne CI-Läufe vorliegen; danach wird
-# `make benchmark-smoke` per Folge-Commit in `make gates` aufgenommen
-# und PR-blockierend.
+# plan-0.9.5 §2 Tranche 1 (DoD-Item §2-6) plus plan-0.22.0:
+# Benchmark-Smoke für die Bench-Suite. Nach fünf grünen
+# Beobachtungsläufen (2026-05-09..2026-05-13) ist `make
+# benchmark-smoke` PR-blockierend über `make gates`; dieser Nightly
+# läuft zusätzlich hart und liefert Artefakte.
 #
 # Trigger:
 #   - schedule: nightlich um 01:07 Europe/Berlin (gestaffelt mit den
@@ -14,9 +14,7 @@ name: Benchmark observation
 #
 # Output:
 #   - .tmp/bench/api-bench.txt + .tmp/bench/analyzer-bench.txt
-#     werden als Workflow-Artefakt mit 14 Tagen Retention hochgeladen,
-#     damit die Beobachtungs-Reihe historisierbar bleibt (Vorbereitung
-#     für Tranche 2, Nightly-`benchstat`-Regressionen).
+#     werden als Workflow-Artefakt mit 14 Tagen Retention hochgeladen.
 
 on:
   schedule:
@@ -29,15 +27,9 @@ permissions:
 
 jobs:
   benchmark-smoke:
-    name: Benchmark smoke (observation)
+    name: Benchmark smoke
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-
-    # Beobachtungsphase: Failures sollen nicht den Workflow rot
-    # markieren. Sobald die Beobachtungsphase abgeschlossen ist,
-    # entfernt der Tranche-1-Closeout-Commit `continue-on-error`
-    # und das Job-Result wird PR-blockierend.
-    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -60,12 +52,10 @@ jobs:
 
       - name: Stream-analyzer benchmark smoke
         id: ts-bench
-        continue-on-error: true
         run: make analyzer-benchmark-smoke
 
       - name: API benchmark smoke
         id: api-bench
-        continue-on-error: true
         run: make api-benchmark-smoke
 
       - name: Upload benchmark output
@@ -77,11 +67,9 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-      - name: Beobachtungs-Status
+      - name: Benchmark status
         if: always()
         run: |
-          echo "[observation] ts-bench: ${{ steps.ts-bench.outcome }}"
-          echo "[observation] api-bench: ${{ steps.api-bench.outcome }}"
-          echo "[observation] Diese Stage ist Beobachtungsphase (continue-on-error: true)."
-          echo "[observation] Nach N=3-5 grünen Läufen entfernt der Tranche-1-Closeout-Commit"
-          echo "[observation] continue-on-error und der Smoke landet PR-blockierend in make gates."
+          echo "[benchmark-smoke] ts-bench: ${{ steps.ts-bench.outcome }}"
+          echo "[benchmark-smoke] api-bench: ${{ steps.api-bench.outcome }}"
+          echo "[benchmark-smoke] PR-blocking path: make gates -> benchmark-smoke."

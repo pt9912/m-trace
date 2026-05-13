@@ -111,7 +111,8 @@ jobs:
         # für Tool-Pannen während der Beobachtungsphase).
         run: |
           set -eu
-          pnpm --filter @npm9912/player-sdk run mutation || true
+          pnpm --filter @pt9912/player-sdk exec pwd
+          pnpm --filter @pt9912/player-sdk run mutation || true
 
       - name: Upload TS mutation artifact
         if: always()

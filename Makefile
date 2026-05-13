@@ -79,9 +79,9 @@ help:
 		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace (plan-0.8.5 Tranche 1)' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
 		'  make security-gates         Run vuln-check + audit-ts + image-scan together (plan-0.8.5 Tranche 1)' \
-		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (plan-0.9.5 Tranche 1, opt-in/observation; not in gates)' \
-		'  make analyzer-benchmark-smoke Run TypeScript stream-analyzer hot-path benchmarks (plan-0.9.5 Tranche 1, opt-in/observation)' \
-		'  make benchmark-smoke        Run both api- and analyzer-benchmark-smokes (plan-0.9.5 Tranche 1)' \
+		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (plan-0.9.5/0.22.0, PR-blocking via gates)' \
+		'  make analyzer-benchmark-smoke Run TypeScript stream-analyzer hot-path benchmarks (plan-0.9.5/0.22.0, PR-blocking via gates)' \
+		'  make benchmark-smoke        Run both api- and analyzer-benchmark-smokes (part of gates)' \
 		'  make api-fuzz-check         Run Go fuzz targets (-fuzztime, default 30s; plan-0.9.5 Tranche 3, opt-in)' \
 		'  make fuzz-check             Run all fuzz targets (Go + TS property tests; opt-in)' \
 		'  make api-mutation-report    Run Go mutation report for the API pilot module (plan-0.9.5 Tranche 4, opt-in)' \
@@ -336,8 +336,8 @@ smoke-outbound-webhook:
 # einordenbar bleiben (Plan-DoD §2-7), dann läuft die Bench-Suite
 # in einem golang:1.26-Container über alle `Benchmark*`-Funktionen
 # in apps/api/.../**/*_bench_test.go. Initial-Budgets sind in
-# `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung erst
-# nach Beobachtungsphase (DoD §2-6).
+# `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung ist seit
+# plan-0.22.0 nach fünf grünen Beobachtungsläufen aktiv.
 #
 # Workflow: apps/api/Makefile::benchmark-smoke schreibt den Go-
 # Bench-Output nach .tmp/bench/api-bench.txt (im Container an
@@ -354,7 +354,8 @@ api-benchmark-smoke:
 # Stream-Analyzer-Kandidaten). Nutzt die eingebaute Vitest-Bench-
 # API (`vitest bench --run --config vitest.bench.config.ts`); keine
 # zusätzliche Tinybench-Dependency. Initial-Budgets in
-# `docs/perf/budgets.md` §4. Opt-in (NICHT in `make gates`).
+# `docs/perf/budgets.md` §4; PR-Blockierung ist seit plan-0.22.0
+# via `make gates` aktiv.
 #
 # Workflow: vitest-bench-stdout wird nach
 # `.tmp/bench/analyzer-bench.txt` gespiegelt; `scripts/check-bench-
@@ -368,9 +369,8 @@ analyzer-benchmark-smoke:
 	node scripts/check-bench-budgets.mjs --kind ts < .tmp/bench/analyzer-bench.txt
 
 # `make benchmark-smoke` bündelt beide Bench-Smokes in einem
-# Aufruf. Plan-DoD §2-3: Wrapper-Target. Bleibt opt-in, bis die
-# Beobachtungsphase abgeschlossen und PR-Blockierung in Tranche 1c
-# eingeschaltet ist.
+# Aufruf. Plan-DoD §2-3: Wrapper-Target. Seit plan-0.22.0 ist der
+# Smoke nach fünf grünen Beobachtungsläufen PR-blockierend.
 benchmark-smoke: api-benchmark-smoke analyzer-benchmark-smoke
 
 # `make api-fuzz-check` ist die Go-Fuzz-Suite aus plan-0.9.5 §4
@@ -581,7 +581,7 @@ devcontainer-validate:
 release-guard-test:
 	bash scripts/test-release-guard.sh
 
-gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke docs-check
+gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check
 
 # plan-0.8.5 Tranche 1 — Quality-Gates Wave 1. Security-Gates laufen
 # parallel zu `make gates` (separater CI-Job in build.yml), nicht in

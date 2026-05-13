@@ -65,6 +65,12 @@ Beobachtungsläufe in Folge erreicht.
 **Übergangs-Mechanik** (analog zur Benchmark-Beobachtungsphase
 aus `plan-0.9.5` §2 Tranche 1c):
 
+Status `0.22.0`: Die TS-Nightly-Filterung wurde auf den aktuellen
+GitHub-Packages-Scope `@pt9912/player-sdk` korrigiert. Frühere
+grüne Workflow-Ergebnisse belegen deshalb nur, dass der nicht-
+blockierende Workflow lief; sie belegen noch keine stabile
+Mutation-Score-Reihe für den TS-Piloten.
+
 1. Drei aufeinanderfolgende Nightly-`mutation.yml`-Runs zeigen
    > 70 % für ein Modul.
 2. Folge-Commit nimmt das Modul aus `continue-on-error: true`

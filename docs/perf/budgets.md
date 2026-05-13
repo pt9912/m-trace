@@ -1,12 +1,11 @@
 # Performance-Budgets
 
-> **Status**: Initial-Tabelle — **Tranche-0-Stand** aus
+> **Status**: PR-blockierende Budget-Smokes — initiale Tabelle aus
 > [`docs/planning/done/plan-0.9.5.md`](../planning/done/plan-0.9.5.md)
-> §1a. Werte sind bewusst großzügig (Architektur-basiert, **noch
-> nicht** mess-basiert). Tranche 1 ersetzt die Initial-Werte nach
-> N=3-5 grünen Beobachtungsläufen durch realistische Schwellen
-> (Plan-DoD: „bewusst großzügig (Faktor 2-3 über aktueller Messung)";
-> diese Tabelle hält die obere Grenze, nicht die aktuelle Messung).
+> §1a, in `0.22.0` nach fünf grünen Beobachtungsläufen
+> (`benchmark-observation.yml` Runs `25592982776`..`25769811661`)
+> PR-blockierend über `make gates` geschaltet. Werte bleiben bewusst
+> großzügige Obergrenzen, nicht die aktuelle Messung.
 
 ## 1. Zweck
 
@@ -25,10 +24,10 @@ Obergrenzen**, kein Vergleich gegen den letzten Commit (das ist
 - **Messprotokoll**: jeder Smoke-Run druckt Runner-OS, CPU-Modell
   und relevante Runtime-Versionen (Go, Node, pnpm) — damit ein
   Budget-Failure einordenbar bleibt.
-- **Beobachtungsphase**: neue oder geänderte Budgets laufen erst
-  N=3-5 grüne CI-Beobachtungsläufe nicht-blockierend mit, bevor sie
-  PRs blockieren. Die Beobachtungsphase wird im Plan-DoD pro
-  Budget-Zeile vermerkt.
+- **Beobachtungsphase**: neue oder geänderte Budgets laufen weiterhin
+  erst N=3-5 grüne CI-Beobachtungsläufe nicht-blockierend mit, bevor
+  sie PRs blockieren. Die aktuelle Budget-Tabelle ist seit `0.22.0`
+  blockierend.
 - **Aktualisierung**: jede Schärfung eines Budgets ist eine
   Plan-DoD-Item-Änderung; reine Lockerung (Budget hochsetzen) braucht
   einen risks-backlog- oder Folge-Item-Eintrag.
