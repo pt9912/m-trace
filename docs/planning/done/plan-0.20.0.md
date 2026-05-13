@@ -96,9 +96,12 @@ Vor Release:
 - [x] `make generated-drift-check`
 - [x] `MTRACE_RELEASE_APPROVED=1 make release-guard VER=0.20.0`
 - [x] Git commit `release: prepare 0.20.0`
-- [ ] Tag `v0.20.0`
-- [ ] GitHub Release `m-trace 0.20.0`
-- [ ] GitHub-Packages-Publish erfolgreich
+- [x] Tag `v0.20.0`
+- [x] GitHub Release `m-trace 0.20.0`
+- [x] GitHub-Packages-Publish erfolgreich:
+  [`publish-packages.yml` run `25802649951`](https://github.com/pt9912/m-trace/actions/runs/25802649951)
+  veröffentlichte `@pt9912/player-sdk@0.20.0` und
+  `@pt9912/stream-analyzer@0.20.0`.
 
 Closeout-Verdict:
 
@@ -106,5 +109,5 @@ Closeout-Verdict:
 - RAK-117: ✅ Publishbare Pakete auf zwei Artefakte begrenzt.
 - RAK-118: ✅ GitHub-Packages-Workflow vorhanden.
 - RAK-119: ✅ Release-Dokumentation aktualisiert.
-- RAK-120: 🟡 Lokale Gates, Package-Dry-Run, Release-Guard und Commit
-  sind erledigt; Abschluss erfolgt mit Tag/Release/erstem Publish.
+- RAK-120: ✅ Tag, GitHub Release und erster GitHub-Packages-Publish
+  abgeschlossen.
