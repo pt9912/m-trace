@@ -110,6 +110,11 @@ DoD:
   [`25806628250`](https://github.com/pt9912/m-trace/actions/runs/25806628250)
   zeigte fehlendes hostseitiges `pnpm` im neuen Gate-Pfad; Workflow
   korrigiert.
+- [x] Remote-CI-Fix: `Build` run
+  [`25807084194`](https://github.com/pt9912/m-trace/actions/runs/25807084194)
+  zeigte farbigen Vitest-4-Bench-Output im neuen Gate-Pfad; der
+  Budget-Parser entfernt ANSI-Sequenzen vor dem Tabellen-Match.
+- [x] `make analyzer-benchmark-smoke` nach Parser-Fix.
 
 Closeout-Verdict:
 

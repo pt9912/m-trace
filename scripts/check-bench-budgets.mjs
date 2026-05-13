@@ -80,7 +80,7 @@ if (args.kind === "ts") {
 
 async function checkVitestText() {
   const text = await readStdin();
-  const lines = text.split(/\r?\n/);
+  const lines = stripAnsi(text).split(/\r?\n/);
   const violations = [];
   const checks = [];
   // Vitest-Bench-Tabellenzeilen beginnen mit `   · <name>` und
@@ -199,4 +199,10 @@ async function readStdin() {
   const chunks = [];
   for await (const chunk of stdin) chunks.push(chunk);
   return Buffer.concat(chunks).toString("utf8");
+}
+
+function stripAnsi(text) {
+  // GitHub Actions preserves Vitest color codes when stdout is piped
+  // through tee; strip them before matching table rows.
+  return text.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
 }
