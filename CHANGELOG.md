@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `0.18.0` Restoffen-Closeout vorbereitet: `R-9`, `R-12` und `R-13`
+- `0.18.0` Decision-Closeout archiviert unter
+  [`docs/planning/done/plan-0.18.0.md`](docs/planning/done/plan-0.18.0.md):
+  `R-9`, `R-12` und `R-13`
   bleiben offen, aber mit präzisierten Folge-Triggern in Plan,
   Roadmap und Risks-Backlog. `R-13` hat ein neues reproduzierbares
   Trivy-Re-Review-Artefakt unter

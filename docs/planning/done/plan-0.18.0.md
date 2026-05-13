@@ -1,10 +1,10 @@
 # Implementation Plan — `0.18.0` (Follow-up: offene Risiken)
 
-> **Status**: 🟡 Restoffen-Closeout abgeschlossen — aktiv in `open/`,
-> noch nicht archiviert.
+> **Status**: ✅ abgeschlossen — Restoffen-Closeout archiviert in
+> `done/`.
 >
 > **Vorgänger**: `0.17.0` (Hardening / Evidence Review), archiviert in
-> [`../done/plan-0.17.0.md`](../done/plan-0.17.0.md).
+> [`plan-0.17.0.md`](plan-0.17.0.md).
 >
 > **Auslöser**: Drei aktive Punkte in
 > [`risks-backlog.md`](../in-progress/risks-backlog.md): `R-9`, `R-12`,
@@ -97,13 +97,13 @@ nur bei folgenden Nachweisen:
 | `R-13` | Trivy-Re-Review zeigt verfuegbare Fixes, `expires` ist erreicht, oder Distroless wird als expliziter Pre-1.0-Basisentscheid freigegeben. |
 | `R-12` | Safari/WebKit wird verbindlicher Zielbrowser oder ein Nightly-Drift-Befund verlangt Allowlist-/Gate-Aenderungen. |
 
-### 2.1 Entscheidungsvorlage (zu finalisieren)
+### 2.1 Finaler Entscheidungsstand
 
-| Risiko | Baseline-Status | Kandidat A | Kandidat B | Vorauswahl |
+| Risiko | Baseline-Status | Kandidat A | Kandidat B | Finaler Entscheid |
 | --- | --- | --- | --- | --- |
-| R-9 | offen (`⬜`) | K8s-Observability bleibt deferred, keine neuen K8s-Smokes | eigener K8s-Label-Allowlist-Modus + Smoke-Profiltrennung | A: `deferred`, solange kein K8s-Smoke-/Scrape-Trigger belegt ist |
-| R-13 | offen (`⬜`) | Trivy-Ignores mit strikter Re-Review-Fortführung | Distroless-Umstieg evaluieren und ggf. einführen | A: `continued`, aber nur mit reproduzierbarem Re-Review-Artefakt |
-| R-12 | offen (`⬜`) | Status-quo fortführen (Nightly + optional Safari) | `make smoke-webrtc-stats-drift` in Release-Gates integrieren | A: `deferred`, solange Safari/WebKit nicht verpflichtend ist und Nightly gruen bleibt |
+| R-9 | offen (`⬜`) | K8s-Observability bleibt deferred, keine neuen K8s-Smokes | eigener K8s-Label-Allowlist-Modus + Smoke-Profiltrennung | A: `deferred`; kein K8s-Smoke-/Scrape-Trigger belegt |
+| R-13 | offen (`⬜`) | Trivy-Ignores mit strikter Re-Review-Fortführung | Distroless-Umstieg evaluieren und ggf. einführen | A: `continued`; Re-Review-Artefakt liegt vor, `expires` nicht erreicht |
+| R-12 | offen (`⬜`) | Status-quo fortführen (Nightly + optional Safari) | `make smoke-webrtc-stats-drift` in Release-Gates integrieren | A: `deferred`; kein Safari-/WebKit-Pflichttrigger und Nightly gruen |
 
 ### 2.2 Harte Exit-Kriterien je Risiko
 
@@ -257,7 +257,7 @@ DoD je Risiko-Entscheid:
 
 - [x] Für `R-9`, `R-12`, `R-13` einen Abschlussstatus setzen
   (`🟢`/`⬜`/`⬛`) und Begründung dokumentieren.
-- [!] Bei vollständiger Umsetzung: Plan nach
+- [x] Plan nach
   `docs/planning/done/plan-0.18.0.md` verschieben.
 - [x] Bei Restoffen: Auslöser/Resttrigger präzisieren und Weiterführung
   explizit in Backlog + Roadmap verankern.
@@ -278,6 +278,7 @@ Abschlussstatus:
 | `R-13` | `⬜` offen / `continued` | `make image-scan` gruen, `expires` nicht erreicht (`2026-11-02`), Debian-`trixie` weiterhin ohne eingespielten Fix fuer die drei CVEs. Wiederaufnahme bei Fix-Verfuegbarkeit, `expires`-Schwelle oder explizitem Distroless-Basisentscheid. |
 | `R-12` | `⬜` offen | Nightly-Drift-Runs gruen, kein Safari-/WebKit-Pflichttrigger. Wiederaufnahme bei Drift-Befund, verpflichtendem Safari/WebKit-Support oder Operator-Anforderung. |
 
-Der Plan bleibt bewusst in `open/`, weil die drei Risiken nicht
-geschlossen sind. Roadmap und Backlog enthalten die Weiterfuehrung;
-ein Release-/Versions-Closeout ist erst ein separater Schritt.
+Der Plan ist als abgeschlossenes Decision-Artefakt in `done/`
+archiviert. Die Risiken selbst bleiben bewusst im Backlog offen; Roadmap
+und Backlog enthalten die Weiterfuehrung. Ein Release-/Versions-Closeout
+ist erst ein separater Schritt.

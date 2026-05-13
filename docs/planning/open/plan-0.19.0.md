@@ -3,10 +3,12 @@
 > **Status**: 🟡 in der Vorbereitung — aktiv in `open/`, noch nicht archiviert.
 >
 > **Vorgänger**: `0.17.0` ist released und in
-> [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) archiviert. 
-> `0.18.0` bleibt offen für die drei Folge-Risiken aus
-> [`in-progress/risks-backlog.md`](../in-progress/risks-backlog.md) (`R-9`,
-> `R-12`, `R-13`).
+> [`done/plan-0.17.0.md`](../done/plan-0.17.0.md) archiviert.
+> `0.18.0` ist als Decision-Closeout in
+> [`done/plan-0.18.0.md`](../done/plan-0.18.0.md) archiviert; die drei
+> Folge-Risiken `R-9`, `R-12` und `R-13` bleiben im
+> [`in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
+> offen.
 >
 > **Auslöser**: Offene Trigger in der Roadmap (§4 „Erwartete ADRs"):
 > - Postgres als produktionsnaher Store (**MVP-40**)
