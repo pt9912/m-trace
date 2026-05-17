@@ -88,10 +88,20 @@ jobs:
       - name: Run Go benchmarks (current HEAD, count=10)
         working-directory: apps/api
         run: |
-          mkdir -p ../.tmp/bench
+          # `..` von apps/api ist apps/, NICHT das Repo-Root. Damit
+          # `current.txt` neben `quarantine.json` im Artefakt landet
+          # und der spaetere `benchstat .tmp/bench/...`-Vergleich
+          # die Datei findet, muss der Pfad auf `../../.tmp/bench`.
+          mkdir -p ../../.tmp/bench
+          # `tee` statt `>` haelt den Bench-Output im Workflow-Log
+          # sichtbar — Test-Failures (`b.Fatalf`, `--- FAIL`) landen
+          # ueber STDOUT und waren bisher unsichtbar im File. `set -o
+          # pipefail` ist Pflicht, sonst maskiert `tee` den
+          # `go test`-Exit-Code.
+          set -o pipefail
           go test -bench=. -benchmem -count=10 -benchtime=2s \
             ./hexagon/... ./adapters/... \
-            > ../.tmp/bench/current.txt
+            2>&1 | tee ../../.tmp/bench/current.txt
           echo "[benchmark] head bench written to .tmp/bench/current.txt"
 
       - name: Fetch baseline from orphan branch
