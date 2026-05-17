@@ -247,6 +247,46 @@ DoD:
 - Ergebnis wird als Trend verfolgt, nicht nur als Einzelwert.
 - Threshold-Senkungen oder Scope-Aenderungen sind begruendungspflichtig.
 
+### 3.7 Nightly-Security-Audit-Mirror
+
+**Entscheidung:** Pendant zu §3.1, aber zeitbasiert. Die Push-/PR-
+Gates aus §3.1 (`govulncheck`, `pnpm audit`, `trivy image scan`)
+fangen nur Advisories, die zum Zeitpunkt eines Pushes bereits
+veroeffentlicht waren. Neu publizierte Advisories zwischen zwei
+Pushes bleiben unerkannt, bis jemand pusht. Ausloeser fuer die
+Aufnahme: GHSA-77vg-94rm-hx3p (`devalue` DoS) wurde vier Tage nach
+Release 0.22.0 publiziert und hat den naechsten Push gebrochen,
+ohne dass die Vulnerability vorher sichtbar war.
+
+Scope:
+
+- Identischer Stack wie §3.1: `make vuln-check`, `make audit-ts`,
+  `make image-scan`.
+- Tagesgenaue Cadence (Cron 01:57 Europe/Berlin, gestaffelt mit
+  den anderen Nightlies in der 01:xx-Stunde).
+- Bei einem Finding wird automatisch ein GitHub-Issue eroeffnet
+  (`security,audit,plan-0.8.5`) mit den letzten 40 Zeilen jedes
+  Checks plus Verweis aufs Artefakt.
+
+Policy:
+
+- Drei Steps mit `continue-on-error: true`; das Issue bekommt alle
+  Outcomes auf einmal, statt drei separate Issues bei
+  Kombinations-Findings.
+- Run faellt am Ende explizit, damit die Workflow-Liste in der
+  GitHub-UI rot leuchtet, solange das Issue offen ist.
+- Manueller `workflow_dispatch`-Trigger fuer ad-hoc-Reruns nach
+  einem grossen Advisory-Push.
+
+DoD:
+
+- Cron-Slot kollidiert nicht mit den existierenden Nightlies.
+- Issue-Body enthaelt einen Reaction-Block, der die drei Fix-
+  Pfade (Go-Bump / `pnpm.overrides` / Base-Image-Bump) jeweils mit
+  einem konkreten Re-Verifikations-Target benennt.
+- Artefakt-Retention deckt mindestens 30 Tage, damit auch nicht
+  sofort bearbeitete Findings noch reproduzierbar sind.
+
 ## 4. Benchmarking-Policy
 
 Benchmarking bleibt zweigeteilt:

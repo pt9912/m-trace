@@ -1,0 +1,98 @@
+name: Security audit nightly
+
+# plan-0.8.5 Tranche 1 (RAK-Wave-2 / extra-gates.md §3.7) —
+# Nightly-Mirror der `build.yml::Security gates`-Job. Pro Pushes
+# laeuft der gleiche Stack bereits im Push-Workflow; neue GitHub-
+# Advisories, die zwischen zwei Pushes veroeffentlicht werden,
+# bleiben dort aber unerkannt (Beispiel: GHSA-77vg-94rm-hx3p
+# `devalue`, 2026-05-17 — vier Tage nach dem Release 0.22.0).
+# Dieser Workflow schliesst die Luecke: einmal pro Tag werden
+# `govulncheck`, `pnpm audit` und `trivy image scan` gegen den
+# aktuellen `main` ausgefuehrt; bei einem Treffer wird automatisch
+# ein Issue eroeffnet (siehe `scripts/open-security-audit-issue.sh`).
+#
+# Trigger:
+#   - schedule: nightlich um 01:57 Europe/Berlin (gestaffelt mit
+#     den anderen Nightlies innerhalb der 01:xx-Stunde:
+#     07 observation / 17 webrtc-drift / 27 benchmark / 37 fuzz /
+#     47 mutation / 57 security-audit).
+#   - workflow_dispatch: manueller Trigger nach Advisory-Push.
+#
+# Budget: rund 10-15 min (govulncheck ~1 min, pnpm audit ~30 s,
+# image-scan dominiert mit ~5-8 min fuer drei Image-Builds + Trivy).
+# `timeout-minutes: 30` deckt Doppel-Laufzeit ab.
+
+on:
+  schedule:
+    - cron: '57 1 * * *'
+      timezone: "Europe/Berlin"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    name: Security audit nightly
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Prepare output dir
+        run: mkdir -p .tmp/security
+
+      - name: govulncheck (apps/api)
+        id: vuln_check
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          make vuln-check 2>&1 | tee .tmp/security/vuln-check.log
+
+      - name: pnpm audit (TS workspace, --audit-level high)
+        id: audit_ts
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          make audit-ts 2>&1 | tee .tmp/security/audit-ts.log
+
+      - name: Trivy image scan (api + dashboard + analyzer-service)
+        id: image_scan
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          make image-scan 2>&1 | tee .tmp/security/image-scan.log
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-${{ github.run_id }}
+          path: .tmp/security/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Open security audit issue (on any finding)
+        if: |
+          steps.vuln_check.outcome == 'failure' ||
+          steps.audit_ts.outcome == 'failure' ||
+          steps.image_scan.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VULN_CHECK_OUTCOME: ${{ steps.vuln_check.outcome }}
+          AUDIT_TS_OUTCOME: ${{ steps.audit_ts.outcome }}
+          IMAGE_SCAN_OUTCOME: ${{ steps.image_scan.outcome }}
+        run: bash scripts/open-security-audit-issue.sh
+
+      - name: Fail the run if any check found a vulnerability
+        if: |
+          steps.vuln_check.outcome == 'failure' ||
+          steps.audit_ts.outcome == 'failure' ||
+          steps.image_scan.outcome == 'failure'
+        run: |
+          echo "::error title=Security audit::At least one security gate found a new vulnerability; see the auto-issue and the workflow artifact."
+          exit 1
