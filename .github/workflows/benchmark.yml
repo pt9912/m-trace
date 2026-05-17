@@ -131,45 +131,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          set -eu
-          title="Benchmark regression detected ($(date -u +%Y-%m-%d))"
-          comparison="$(cat .tmp/bench/comparison.txt 2>/dev/null || echo '<comparison missing>')"
-          body=$(cat <<EOF
-          The nightly benchmark workflow (\`make api-benchmark-smoke\`
-          equivalent with \`-count=10\`) detected one or more statistically
-          significant regressions over the +15% threshold.
-
-          - Workflow run: ${RUN_URL}
-          - Threshold: +15% at p<0.05
-          - Baseline source: orphan-branch benchmark-baseline / benchmarks/api-bench.txt
-
-          ## benchstat comparison
-
-          \`\`\`
-          ${comparison}
-          \`\`\`
-
-          ## Reaction
-
-          1. Open the run logs and read the regression detail
-             (\`scripts/check-benchstat-regression.mjs\` output names every
-             regressed Benchmark plus its delta and p-value).
-          2. Reproduce locally:
-             \`\`\`
-             cd apps/api
-             go test -bench=. -benchmem -count=10 -benchtime=2s ./hexagon/... ./adapters/...
-             \`\`\`
-          3. Either fix the regression and re-run the workflow, or
-             accept the new performance characteristic and push the
-             current bench output to the \`benchmark-baseline\` orphan
-             branch (drift-acceptance path).
-          EOF
-          )
-          gh issue create \
-            --title "$title" \
-            --body "$body" \
-            --label "performance,benchmark,plan-0.9.5"
+        run: bash scripts/open-bench-regression-issue.sh
 
       - name: Upload bench artifact
         if: always()
