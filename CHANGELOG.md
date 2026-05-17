@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-05-17
+
+> **Patch-/Tooling-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md) — kein
+> Lastenheft-Patch; normativer Stand bleibt `1.1.24`.
+> Plan in
+> [`docs/planning/done/plan-0.22.1.md`](docs/planning/done/plan-0.22.1.md).
+>
+> **Security-Auslöser**: GHSA-77vg-94rm-hx3p (`devalue` DoS via
+> sparse-array deserialization, Patched-Range `>=5.8.1`) wurde am
+> 2026-05-17 publiziert, vier Tage nach dem `0.22.0`-Tag. Das
+> `mtrace-dashboard:0.22.0`-Image enthält die verwundbare
+> `devalue@5.7.1` weiterhin; Konsumenten sollten auf
+> `mtrace-dashboard:0.22.1` wechseln.
+
+### Security
+
+- Workspace-`pnpm.overrides` hebt `devalue` auf `^5.8.1`; Lockfile
+  resolved beide transitiven Pfade (`@sveltejs/kit > devalue`,
+  `svelte > devalue`) auf `5.8.1`. Keine Code-Änderung, nur
+  Dependency-Closure. `make audit-ts` zeigt jetzt 0 high
+  (5 vulns total: 1 low, 4 moderate).
+
+### Added
+
+- Neuer Nightly-Workflow
+  [`.github/workflows/security-audit.yml`](.github/workflows/security-audit.yml)
+  spiegelt die drei Push-Security-Gates
+  (`make vuln-check`, `make audit-ts`, `make image-scan`) auf
+  tagesgenauer Cadence (Cron `57 1 * * *` Europe/Berlin). Bei einem
+  Finding eröffnet `scripts/open-security-audit-issue.sh`
+  automatisch ein GitHub-Issue mit den letzten 40 Zeilen jedes
+  Checks plus drei konkreten Reaction-Pfaden (Go-Bump /
+  `pnpm.overrides` / Base-Image-Bump). Vier-Tage-Gap zwischen
+  Push-Audit-Runs ist damit geschlossen. Dokumentiert in
+  `docs/planning/in-progress/extra-gates.md §3.7`.
+
+### Changed
+
+- `.github/workflows/benchmark.yml::Run Go benchmarks` schreibt das
+  Bench-Output über `tee` und `set -o pipefail` nach
+  `../../.tmp/bench/current.txt`; vorher landete die Datei wegen
+  relativer Pfadauflösung (`..` von `apps/api` ist `apps/`, nicht
+  Repo-Root) in `apps/.tmp/bench/` und blieb damit aus
+  `actions/upload-artifact` ausgeklammert. Bench-Failures
+  (`b.Fatalf` / `--- FAIL`) sind jetzt im Workflow-Log sichtbar,
+  statt fünf Minuten Stille gefolgt von Exit 1.
+- `.github/workflows/benchmark.yml::Open regression issue` ruft
+  `scripts/open-bench-regression-issue.sh` auf, statt einen
+  35-zeiligen HEREDOC-Block inline zu pflegen. YAML-Indentation
+  leakt nicht mehr ins Markdown des Auto-Issues; Body lässt sich
+  lokal testen.
+
 ## [0.22.0] - 2026-05-13
 
 > **Patch-/Tooling-Release** gemäß

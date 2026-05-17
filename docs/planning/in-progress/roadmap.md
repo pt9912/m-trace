@@ -1,13 +1,20 @@
 # Roadmap
 
-> **Stand**: 2026-05-13
+> **Stand**: 2026-05-17
 >
-> **Phase**: ✅ `0.22.0` Quality-Gates Follow-up released und
-> archiviert in [`done/plan-0.22.0.md`](../done/plan-0.22.0.md).
-> Benchmark-Smoke ist PR-blockierend in `make gates`; Mutation bleibt
-> bis zu realen >70%-Score-Reihen nicht-blockierend.
+> **Phase**: ✅ `0.22.1` devalue-Security-Patch + Nightly-Security-
+> Audit released und archiviert in
+> [`done/plan-0.22.1.md`](../done/plan-0.22.1.md). Push-Audit + neuer
+> Nightly-Audit-Mirror schließen den vorher offenen Vier-Tage-Gap
+> zwischen Pushes (GHSA-77vg-94rm-hx3p devalue als Auslöser).
 >
 > **Aktuell / letzte Releases:**
+> - `v0.22.1` devalue-Security-Patch + Nightly-Audit-Mirror
+>   (Patch-Release, kein Lastenheft-Patch): `pnpm.overrides` hebt
+>   `devalue` auf `^5.8.1`; neuer `security-audit.yml`-Nightly mit
+>   konsolidiertem Auto-Issue; Benchmark-Workflow-Pfadfix +
+>   Issue-Body-Auslagerung in `scripts/`. Plan archiviert in
+>   [`done/plan-0.22.1.md`](../done/plan-0.22.1.md).
 > - `v0.22.0` Quality-Gates Follow-up (released, kein Lastenheft-Patch):
 >   Benchmark-Smoke in `make gates`, harter Benchmark-Nightly,
 >   Mutation-TS-Scope auf `@pt9912/player-sdk` korrigiert.
@@ -84,7 +91,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-13 — `0.22.0` released)
+## 1. Aktueller Stand (2026-05-17 — `0.22.1` released)
 
 ### 1.1 Lieferstand
 
@@ -122,14 +129,17 @@ aktualisieren.
 | ✅      | Package Publishing (`0.20.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120: GitHub-Packages-Publish für `@pt9912/player-sdk` und `@pt9912/stream-analyzer`, Scope-Migration auf `@pt9912`, Release-Doku und Publish-Workflow. | [`done/plan-0.20.0.md`](../done/plan-0.20.0.md) |
 | ✅      | OCI Image Publishing (`0.21.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish und Release-Hook. | [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
 | ✅      | Quality-Gates Follow-up (`0.22.0`) | Released 2026-05-13. Kein Lastenheft-Patch: `make benchmark-smoke` ist nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; `benchmark-observation.yml` läuft hart; `mutation.yml` korrigiert den TS-Scope auf `@pt9912/player-sdk`, bleibt aber nicht-blockierend. | [`done/plan-0.22.0.md`](../done/plan-0.22.0.md) |
+| ✅      | devalue-Security-Patch + Nightly-Audit (`0.22.1`) | Released 2026-05-17. Kein Lastenheft-Patch. `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly spiegelt `vuln-check`/`audit-ts`/`image-scan` täglich mit konsolidiertem Auto-Issue; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; Issue-Body als `scripts/open-bench-regression-issue.sh`/`open-security-audit-issue.sh` ausgelagert. | [`done/plan-0.22.1.md`](../done/plan-0.22.1.md) |
 
 ### 1.2 Nächste Phase
 
-`0.22.0` ist als Quality-Gates-Follow-up released. Der konkrete
-Lieferpfad ist Tooling-only: Benchmark-Smoke ist Teil von
-`make gates`, der Benchmark-Nightly läuft ohne `continue-on-error`,
-und Mutation hat den korrigierten TS-Scope. Mutation-Blockierung
-bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
+`0.22.1` ist als devalue-Security-Patch plus Nightly-Audit-Mirror
+released. Der konkrete Lieferpfad ist Security-/Tooling-only: ein
+`pnpm.overrides`-Eintrag schließt die Vier-Tage-Lücke zwischen
+Release `0.22.0` und Advisory-Publish, und der neue
+`security-audit.yml`-Nightly fängt zukünftige Advisories auf
+24-h-Cadence. Mutation-Blockierung bleibt weiterhin deferred, bis
+echte >70%-Score-Reihen vorliegen.
 
 ---
 
@@ -244,6 +254,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.20.0` | Package Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.20.0.md`](../done/plan-0.20.0.md). Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120 in §13.22. Inhalt: Scope-Migration auf `@pt9912`, GitHub-Packages-Workflow, Release-Doku und Publish von `@pt9912/player-sdk` plus `@pt9912/stream-analyzer`; Apps bleiben private Workspace-Pakete. |
 | `0.21.0` | OCI Image Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23. Inhalt: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish, Release-Hook und Rollback-Doku; kein `latest`, kein Production-K8s-Go. |
 | `0.22.0` | Quality-Gates Follow-up | ✅ | Released 2026-05-13. Plan in [`done/plan-0.22.0.md`](../done/plan-0.22.0.md). Kein Lastenheft-Patch: Benchmark-Smoke ist nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; Benchmark-Nightly läuft hart; Mutation-TS-Filter nutzt `@pt9912/player-sdk`, bleibt aber bis zu echten >70%-Score-Reihen nicht-blockierend. |
+| `0.22.1` | devalue-Security-Patch + Nightly-Audit | ✅ | Released 2026-05-17. Plan in [`done/plan-0.22.1.md`](../done/plan-0.22.1.md). Kein Lastenheft-Patch. Inhalt: `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly mit konsolidiertem Auto-Issue (`scripts/open-security-audit-issue.sh`) spiegelt die drei Push-Security-Gates auf 24-h-Cadence; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; `Open regression issue`-HEREDOC in `scripts/open-bench-regression-issue.sh` ausgelagert. `extra-gates.md §3.7` dokumentiert den Nightly-Mirror. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.
