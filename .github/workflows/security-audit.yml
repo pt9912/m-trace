@@ -21,6 +21,15 @@ name: Security audit nightly
 # Budget: rund 10-15 min (govulncheck ~1 min, pnpm audit ~30 s,
 # image-scan dominiert mit ~5-8 min fuer drei Image-Builds + Trivy).
 # `timeout-minutes: 30` deckt Doppel-Laufzeit ab.
+#
+# Repo-Setup-Voraussetzung:
+#   `scripts/open-security-audit-issue.sh` setzt die Labels
+#   `security,audit,plan-0.8.5` auf das neue Issue. Fehlen diese
+#   im Repo, bricht `gh issue create` mit "could not add label:
+#   '<name>' not found" ab — und zwar *bevor* das Issue angelegt
+#   ist, womit die Nightly-Luecke offen bleibt. Labels werden
+#   einmalig per `gh label create` angelegt (siehe Run
+#   26548974361 vom 2026-05-28 als Praezedenz-Fall).
 
 on:
   schedule:
