@@ -127,5 +127,52 @@ trivy:
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
+    # CVE-2026-42496 / CVE-2026-8376 / CVE-2026-9538 (perl-base):
+    # Drei Perl-Vulnerabilities, die mit dem Trivy-DB-Update vom
+    # 2026-05-28 erstmals im Nightly-Scan auf dem Trixie-Slim-Base
+    # 5.40.1-6 (perl-base) angeschlagen sind:
+    #   - CVE-2026-42496 (CRITICAL) — Archive::Tar vor 3.08 extrahiert
+    #     Symlinks mit attacker-kontrolliertem Ziel; benoetigt einen
+    #     Perl-Prozess, der ein praepariertes tar-Archiv auspackt.
+    #   - CVE-2026-8376  (CRITICAL) — Perl bis 5.43.10 hat einen
+    #     heap buffer overflow beim Kompilieren bestimmter Regex-
+    #     Konstrukte; benoetigt einen Perl-Prozess, der attacker-
+    #     kontrollierten Regex-Quellcode evaluiert.
+    #   - CVE-2026-9538  (HIGH)     — Archive::Tar vor 3.10 erlaubt
+    #     Memory-Exhaustion (DoS) ueber praeparierte tar-Files;
+    #     selber Vektor wie 42496.
+    # Debian-Stand (Security Tracker, 2026-05-28): "vulnerable
+    # (no DSA)" fuer trixie; kein Fixed-Version-Eintrag im Trivy-
+    # Report ("Fixed Version" leer) — Upstream-Patch noch nicht
+    # in Trixie zurueckportiert.
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Dashboard- und Analyzer-Service-Images starten als
+    #     USER node mit `CMD ["node", "build"]`. Es gibt **keinen**
+    #     perl-Aufruf im Runtime-Pfad, keine tar-Extraktion durch
+    #     perl, keine Regex-Evaluation in perl. perl-base ist
+    #     nur ein transitiver Bestandteil des trixie-slim-Sets
+    #     (Maintainer-Scripts, dpkg-Hilfen) und wird nach dem
+    #     `docker run` nicht mehr aktiv ausgefuehrt.
+    #   - Keine Persistence-Mounts mit User-Inputs, die jemand
+    #     in einem perl-Aufruf landen lassen koennte — der
+    #     einzige eingehende Pfad ist HTTP/SvelteKit-adapter-node
+    #     bzw. der Analyzer-WS, beides node-only.
+    # Re-Review 2026-05-28 (Hotfix Nightly-Audit): `expires` 90
+    # Tage auf 2026-08-26 gesetzt. Naechster Re-Review-Trigger:
+    # Trixie-Backport von Archive::Tar 3.10 + Perl 5.43.11+ ODER
+    # `expires`-Schwelle.
+    - id: CVE-2026-42496
+      reason: "perl-base Archive::Tar <3.08 Symlink-Extraction (CRITICAL); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine tar-Extraktion durch perl. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
+      expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-8376
+      reason: "perl-base bis 5.43.10 Heap Buffer Overflow beim Regex-Compile (CRITICAL); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine attacker-kontrollierte Regex-Evaluation. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
+      expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-9538
+      reason: "perl-base Archive::Tar <3.10 Memory-Exhaustion via crafted tar (HIGH); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine tar-Extraktion durch perl. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
+      expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
 govulncheck:
   ignore: []
