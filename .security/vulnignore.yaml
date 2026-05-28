@@ -127,13 +127,17 @@ trivy:
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
-    # CVE-2026-42496 / CVE-2026-8376 / CVE-2026-9538 (perl-base):
-    # Drei Perl-Vulnerabilities, die mit dem Trivy-DB-Update vom
+    # CVE-2026-42496 / CVE-2026-42497 / CVE-2026-8376 / CVE-2026-9538
+    # (perl-base):
+    # Vier Perl-Vulnerabilities, die mit dem Trivy-DB-Update vom
     # 2026-05-28 erstmals im Nightly-Scan auf dem Trixie-Slim-Base
     # 5.40.1-6 (perl-base) angeschlagen sind:
     #   - CVE-2026-42496 (CRITICAL) — Archive::Tar vor 3.08 extrahiert
     #     Symlinks mit attacker-kontrolliertem Ziel; benoetigt einen
     #     Perl-Prozess, der ein praepariertes tar-Archiv auspackt.
+    #   - CVE-2026-42497 (HIGH)     — Archive::Tar vor 3.08 extrahiert
+    #     Hardlinks mit attacker-kontrolliertem Ziel; selber Vektor
+    #     wie 42496, anderer Link-Typ.
     #   - CVE-2026-8376  (CRITICAL) — Perl bis 5.43.10 hat einen
     #     heap buffer overflow beim Kompilieren bestimmter Regex-
     #     Konstrukte; benoetigt einen Perl-Prozess, der attacker-
@@ -163,6 +167,10 @@ trivy:
     # `expires`-Schwelle.
     - id: CVE-2026-42496
       reason: "perl-base Archive::Tar <3.08 Symlink-Extraction (CRITICAL); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine tar-Extraktion durch perl. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
+      expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-42497
+      reason: "perl-base Archive::Tar <3.08 Hardlink-Extraction (HIGH); Hardlink-Variante zu CVE-2026-42496, Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine tar-Extraktion durch perl. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
       expires: 2026-08-26
       scope: "mtrace-dashboard, mtrace-analyzer-service"
     - id: CVE-2026-8376
