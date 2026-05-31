@@ -127,11 +127,12 @@ trivy:
       expires: 2026-11-02
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
-    # CVE-2026-42496 / CVE-2026-42497 / CVE-2026-8376 / CVE-2026-9538
-    # (perl-base):
-    # Vier Perl-Vulnerabilities, die mit dem Trivy-DB-Update vom
-    # 2026-05-28 erstmals im Nightly-Scan auf dem Trixie-Slim-Base
-    # 5.40.1-6 (perl-base) angeschlagen sind:
+    # CVE-2026-42496 / CVE-2026-42497 / CVE-2026-8376 / CVE-2026-9538 /
+    # CVE-2026-48962 (perl-base):
+    # Fuenf Perl-Vulnerabilities, die mit den Trivy-DB-Updates vom
+    # 2026-05-28 (vier davon) und 2026-05-31 (CVE-2026-48962) erstmals
+    # im Nightly-Scan auf dem Trixie-Slim-Base 5.40.1-6 (perl-base)
+    # angeschlagen sind:
     #   - CVE-2026-42496 (CRITICAL) — Archive::Tar vor 3.08 extrahiert
     #     Symlinks mit attacker-kontrolliertem Ziel; benoetigt einen
     #     Perl-Prozess, der ein praepariertes tar-Archiv auspackt.
@@ -145,7 +146,12 @@ trivy:
     #   - CVE-2026-9538  (HIGH)     — Archive::Tar vor 3.10 erlaubt
     #     Memory-Exhaustion (DoS) ueber praeparierte tar-Files;
     #     selber Vektor wie 42496.
-    # Debian-Stand (Security Tracker, 2026-05-28): "vulnerable
+    #   - CVE-2026-48962 (HIGH)     — IO::Compress (in perl-base
+    #     enthalten) erlaubt Arbitrary Code Execution ueber ein
+    #     attacker-kontrolliertes Output-Glob-Pattern; benoetigt
+    #     einen Perl-Prozess, der IO::Compress mit untrusted Glob-
+    #     Argumenten aufruft.
+    # Debian-Stand (Security Tracker, 2026-05-31): "vulnerable
     # (no DSA)" fuer trixie; kein Fixed-Version-Eintrag im Trivy-
     # Report ("Fixed Version" leer) — Upstream-Patch noch nicht
     # in Trixie zurueckportiert.
@@ -179,6 +185,10 @@ trivy:
       scope: "mtrace-dashboard, mtrace-analyzer-service"
     - id: CVE-2026-9538
       reason: "perl-base Archive::Tar <3.10 Memory-Exhaustion via crafted tar (HIGH); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine tar-Extraktion durch perl. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
+      expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-48962
+      reason: "perl-base IO::Compress Arbitrary Code Execution via attacker-controlled output glob (HIGH); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine IO::Compress-Glob-Evaluation. NVD-Publikation neu im Trivy-DB-Update 2026-05-31."
       expires: 2026-08-26
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
