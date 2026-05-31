@@ -1,104 +1,107 @@
 # m-trace
 
-**OpenTelemetry-native Observability für Live-Media-Streaming.**
+**English** · [Deutsch](README.de.md)
 
-m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
-Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
+**OpenTelemetry-native observability for live media streaming.**
 
-Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase und nächste Schritte: [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
+m-trace is a self-hosted observability and diagnostics stack for live-media workflows.
+It helps trace media streams from ingest all the way to the player by correlating
+player telemetry, stream sessions, infrastructure signals, Prometheus metrics, and an
+OpenTelemetry-compatible event model.
+
+Per-release delivery state: [`CHANGELOG.md`](CHANGELOG.md). Current phase and next
+steps: [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
 
 ---
 
-## Was ist m-trace?
+## What is m-trace?
 
-m-trace ist ein **selbstgehosteter Observability- und Diagnose-Stack
-für Media-Streaming-Pipelines**. Player-Telemetrie, Manifest-Analysen
-und SRT-Health-Daten landen in einem konsistenten Session-Modell
-(API + Dashboard) und einem OpenTelemetry-Aggregat (Prometheus +
-optional Traces über den OTel-Collector). Persistenz läuft per
-Default in SQLite, der gesamte Stack läuft als Compose-Lab auf einem
-Entwickler-Laptop.
+m-trace is a **self-hosted observability and diagnostics stack for media-streaming
+pipelines**. Player telemetry, manifest analyses, and SRT health data land in a
+consistent session model (API + dashboard) and an OpenTelemetry aggregate
+(Prometheus, optionally traces via the OTel Collector). Persistence defaults to
+SQLite; the entire stack runs as a Compose lab on a developer laptop.
 
-Der Fokus liegt auf der **Korrelation über die Streaming-Schichten**
-hinweg — von Ingest (RTMP/SRT/WebRTC) über Media Server (MediaMTX,
-SRS) und Distribution (HLS/DASH/WebRTC) bis zum Player (hls.js,
-dash.js, native WHEP-Adapter). Player-Events, Manifest-Proben und
-optionale SRT-Connection-Stats lassen sich dadurch in einer
-Session-Sicht gegenüberstellen, ohne dass ein zentraler proprietärer
-Anbieter dazwischen sitzt.
+The focus is **cross-layer streaming correlation** — from ingest (RTMP/SRT/WebRTC)
+through media servers (MediaMTX, SRS) and distribution (HLS/DASH/WebRTC) to the
+player (hls.js, dash.js, native WHEP adapter). Player events, manifest probes,
+and optional SRT connection stats can be compared side by side within a single
+session view, without a central proprietary vendor in the middle.
 
-Architektur ist **hexagonal** (`apps/api` als Go-Backend mit
-typisierten Driving-/Driven-Ports, SvelteKit-Dashboard,
-publizierbares Player-SDK in TypeScript, Stream-Analyzer-Library
-und CLI). Operative Anforderungen (Build, Test, Coverage, Lint,
-Drift-Checks, SDK-Pack-Smokes) laufen über `make gates` reproduzierbar
-im Container.
+The architecture is **hexagonal** (`apps/api` as a Go backend with typed
+driving/driven ports, SvelteKit dashboard, publishable TypeScript player SDK,
+stream-analyzer library and CLI). Operational requirements (build, test,
+coverage, lint, drift checks, SDK pack smokes) run reproducibly in a container
+via `make gates`.
 
-Zielgruppe sind Entwickler, Selbsthoster, kleine Streaming-Plattformen,
-Broadcaster und technische Teams, die verstehen wollen, was in ihrer
-Pipeline passiert — ohne sich von einem proprietären SaaS-Analytics-
-Silo abhängig zu machen.
+The target audience is developers, self-hosters, small streaming platforms,
+broadcasters, and technical teams who want to understand what is happening in
+their pipeline — without locking themselves into a proprietary SaaS analytics
+silo.
 
-### Das erste Ziel
-ist einfach — ein lokales Lab, in dem ein Live-HLS-Stream in einem Demo-Player läuft und seine Telemetrie sauber in API, Dashboard und OpenTelemetry-Modell landet:
+### The first goal
+is simple — a local lab in which a live HLS stream plays in a demo player and its
+telemetry lands cleanly in API, dashboard, and OpenTelemetry model:
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 flowchart LR
-  M[MediaMTX] --> P[hls.js Demo-Player]
-  P -->|Playback-Events| A[m-trace API]
+  M[MediaMTX] --> P[hls.js demo player]
+  P -->|playback events| A[m-trace API]
   A --> D[Dashboard]
-  A --> O[OpenTelemetry-Modell]
+  A --> O[OpenTelemetry model]
 ```
 
-- **MediaMTX** — liefert ein lokales HLS-Manifest (FFmpeg-Teststream als Quelle).
-- **hls.js Demo-Player** — `/demo`-Route im Dashboard, spielt das Manifest und sendet Player-Events.
-- **m-trace API** — nimmt Playback-Events an, persistiert Sessions (SQLite per Default).
-- **Dashboard** — zeigt Sessions, Events und Session-Timeline.
-- **OpenTelemetry-Modell** — Aggregat-Metriken in Prometheus, optional Traces über den OTel-Collector.
+- **MediaMTX** — serves a local HLS manifest (FFmpeg test stream as the source).
+- **hls.js demo player** — the dashboard's `/demo` route plays the manifest and emits player events.
+- **m-trace API** — ingests playback events and persists sessions (SQLite by default).
+- **Dashboard** — displays sessions, events, and a session timeline.
+- **OpenTelemetry model** — aggregate metrics in Prometheus, optionally traces via the OTel Collector.
 
-### Das langfristige Ziel 
-ist breiter — Media-Streams Schicht für Schicht von Ingest bis Player nachverfolgen:
+### The long-term goal
+is broader — track media streams layer by layer from ingest to player:
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
 
 flowchart LR
-  I[Ingest<br/>RTMP · SRT · WebRTC] --> S[Media Server<br/>MediaMTX · SRS]
+  I[Ingest<br/>RTMP · SRT · WebRTC] --> S[Media server<br/>MediaMTX · SRS]
   S --> D[Distribution<br/>HLS · DASH · WebRTC]
   D --> P[Player<br/>hls.js · dash.js · WHEP]
-  P -->|Player-Telemetrie| T[m-trace<br/>API · Stream-Analyzer · Dashboard · OTel]
-  D -.->|Manifest-Probe| T
+  P -->|player telemetry| T[m-trace<br/>API · Stream Analyzer · Dashboard · OTel]
+  D -.->|manifest probe| T
 ```
 
 - **Ingest** — RTMP, SRT, WebRTC (WHIP).
-- **Media Server** — MediaMTX, SRS.
+- **Media server** — MediaMTX, SRS.
 - **Distribution** — HLS, DASH, WebRTC (WHEP).
-- **Player** — hls.js, dash.js, native WHEP-Adapter.
-- **m-trace** — API + Stream-Analyzer + Dashboard, OpenTelemetry-kompatibel; korreliert Player-Telemetrie und Manifest-Proben in einer Session-Sicht.
+- **Player** — hls.js, dash.js, native WHEP adapter.
+- **m-trace** — API + Stream Analyzer + Dashboard, OpenTelemetry-compatible; correlates player telemetry and manifest probes in a single session view.
 
 ---
 
-## Warum m-trace?
+## Why m-trace?
 
-Kommerzielle Plattformen wie Mux Data, Bitmovin Analytics, NPAW/YOUBORA und Conviva lösen viele klassische QoE- und Analytics-Probleme.  
-m-trace fokussiert eine andere Lücke:
+Commercial platforms such as Mux Data, Bitmovin Analytics, NPAW/YOUBORA, and
+Conviva solve many of the classic QoE and analytics problems.
+m-trace targets a different gap:
 
-- selbstgehostete Streaming-Observability
-- OpenTelemetry-natives Modellieren
-- Korrelation von Ingest bis Player
-- entwicklerfreundliche lokale Demos
-- Streaming-Diagnose statt Business-Analytics
-- praktisches Tooling für kleine Teams und Labs
+- self-hosted streaming observability
+- OpenTelemetry-native modelling
+- correlation from ingest to player
+- developer-friendly local demos
+- streaming diagnostics rather than business analytics
+- pragmatic tooling for small teams and labs
 
-Das Projekt versucht nicht, eine vollständige kommerzielle Video-Analytics-Plattform zu ersetzen.  
-Es soll ein praxistauglicher Open-Source-Stack für technische Streaming-Diagnose werden.
+The project is **not** trying to replace a full commercial video-analytics
+platform. It aims to become a practical open-source stack for technical
+streaming diagnostics.
 
 ---
 
-## Kerngedanke
+## Core idea
 
-Ein typischer Live-Streaming-Flow sieht so aus:
+A typical live-streaming flow looks like this:
 
 ```text
 Encoder / FFmpeg / OBS
@@ -109,38 +112,41 @@ MediaMTX
         ↓
 HLS
         ↓
-hls.js Player
+hls.js player
         ↓
-m-trace Player SDK
+m-trace player SDK
         ↓
 m-trace API
         ↓
 Dashboard / Metrics / OpenTelemetry
 ```
 
-m-trace sammelt und normalisiert Signale aus Player und Backend, sodass Stream-Sessions inspiziert, debugged und langfristig mit Infrastruktur-Telemetrie korreliert werden können.
+m-trace collects and normalises signals from the player and the backend so that
+stream sessions can be inspected, debugged, and — long-term — correlated with
+infrastructure telemetry.
 
 ---
 
-## Lieferstand und Roadmap
+## Delivery state and roadmap
 
-- **Aktueller Lieferstand pro Release**: [`CHANGELOG.md`](CHANGELOG.md).
-- **Aktive Phase und nächste Schritte**: Sektion „Roadmap" weiter
-  unten plus [`docs/planning/in-progress/`](docs/planning/in-progress/).
-
----
-
-## Architekturprinzipien
-
-Die aktuelle Architektur ist in [spec/architecture.md](spec/architecture.md) beschrieben.
+- **Per-release delivery state**: [`CHANGELOG.md`](CHANGELOG.md).
+- **Current phase and next steps**: the "Roadmap" section below plus
+  [`docs/planning/in-progress/`](docs/planning/in-progress/).
 
 ---
 
-## Eventmodell
+## Architecture principles
 
-Player-Events nutzen ein versioniertes Wire-Format.
+The current architecture is described in
+[spec/architecture.md](spec/architecture.md).
 
-Beispiel:
+---
+
+## Event model
+
+Player events use a versioned wire format.
+
+Example:
 
 ```json
 {
@@ -161,7 +167,7 @@ Beispiel:
 }
 ```
 
-Wichtige Konzepte:
+Key concepts:
 
 - `schema_version`
 - `project_id`
@@ -169,25 +175,26 @@ Wichtige Konzepte:
 - `client_timestamp`
 - `server_received_at`
 - `sequence_number`
-- SDK-Name und -Version
+- SDK name and version
 
-Das Backend muss Schema-Evolution, Time Skew, Rate Limits und ungültige Event-Batches explizit behandeln.
+The backend must explicitly handle schema evolution, time skew, rate limits,
+and invalid event batches.
 
 ---
 
-## Metriken
+## Metrics
 
-Prometheus wird ausschließlich für Aggregat-Metriken genutzt. Die
-drei Backends teilen die Verantwortung wie folgt (kanonische 3-Spalten-
-Tabelle: [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.3):
+Prometheus is used exclusively for aggregate metrics. The three backends share
+the responsibility as follows (canonical 3-column table:
+[`spec/telemetry-model.md`](spec/telemetry-model.md) §3.3):
 
-| Backend               | Rolle                                                                                | Cardinality                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| **Prometheus**        | Aggregat-Metriken (Counter, Rates)                                                   | bounded — Forbidden-Liste aus [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1 release-blockierend |
-| **SQLite** (ADR-0002) | Per-Session-Historie inkl. `session_id`, `correlation_id`, `trace_id`, redacted URLs | unbeschränkt                                                                                                |
-| **OTel/Tempo**        | Per-Request-Trace-Spans (sample-basiert)                                             | nicht im Cardinality-Vertrag                                                                                |
+| Backend               | Role                                                                                | Cardinality                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Prometheus**        | Aggregate metrics (counters, rates)                                                 | bounded — forbidden list in [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1 is release-blocking    |
+| **SQLite** (ADR-0002) | Per-session history incl. `session_id`, `correlation_id`, `trace_id`, redacted URLs | unbounded                                                                                                    |
+| **OTel/Tempo**        | Per-request trace spans (sample-based)                                              | not part of the cardinality contract                                                                         |
 
-Beispiele für Prometheus-Counter (alle label-frei):
+Examples of Prometheus counters (all label-free):
 
 ```text
 mtrace_playback_events_total
@@ -198,35 +205,34 @@ mtrace_active_sessions
 mtrace_api_batches_received
 ```
 
-Hochkardinale Werte wie `session_id`, `correlation_id`, `trace_id`,
-`user_agent`, `segment_url`, `client_ip` oder Token-/Credential-Felder
-dürfen **nicht** als Prometheus-Labels verwendet werden — die
-vollständige Forbidden-Liste plus Suffix-Regeln (`*_url`, `*_uri`,
-`*_token`, `*_secret`) steht in
+High-cardinality values such as `session_id`, `correlation_id`, `trace_id`,
+`user_agent`, `segment_url`, `client_ip`, or token/credential fields **must
+not** be used as Prometheus labels — the full forbidden list plus suffix rules
+(`*_url`, `*_uri`, `*_token`, `*_secret`) lives in
 [`spec/telemetry-model.md`](spec/telemetry-model.md) §3.1.
 
-Per-Session-Debugging läuft über die durable SQLite-Persistenz und
-optional über Tempo-Spans (`make dev-tempo`) — niemals über Prometheus.
+Per-session debugging runs over the durable SQLite persistence and optionally
+over Tempo spans (`make dev-tempo`) — never via Prometheus.
 
 ---
 
-## OpenTelemetry-Strategie
+## OpenTelemetry strategy
 
-m-trace ist von Beginn an OpenTelemetry-nativ.
+m-trace is OpenTelemetry-native from day one.
 
-Das bedeutet:
+That means:
 
-- bestehende OTel-Semantic-Conventions nutzen, wo möglich
-- media-spezifische Attribute nur dort definieren, wo nötig
-- vendor-spezifische Telemetrieformate vermeiden
-- Session-Daten trace-kompatibel halten
-- Prometheus auf Aggregate beschränken
-- spätere Korrelation über Ingest, Origin und Player vorbereiten
+- reuse existing OTel semantic conventions wherever possible
+- define media-specific attributes only where needed
+- avoid vendor-specific telemetry formats
+- keep session data trace-compatible
+- restrict Prometheus to aggregates
+- prepare for later correlation across ingest, origin, and player
 
-Ein zukünftiger Player-Session-Trace könnte so aussehen:
+A future player-session trace might look like:
 
 ```text
-Player Session Trace
+Player session trace
 ├── manifest_request
 ├── segment_request
 ├── startup_time
@@ -237,45 +243,46 @@ Player Session Trace
 
 ---
 
-## Lokale Entwicklung
+## Local development
 
-Das lokale Core-Lab startet Backend-API, Dashboard, MediaMTX und einen FFmpeg-Teststream:
+The local core lab starts backend API, dashboard, MediaMTX, and an FFmpeg test
+stream:
 
 ```bash
 git clone https://github.com/pt9912/m-trace.git
 cd m-trace
-cp .env.example .env   # optional, Default-Lab-Werte sind bereits in docker-compose.yml gesetzt
+cp .env.example .env   # optional, default lab values are already set in docker-compose.yml
 make dev
 ```
 
-Smoke-Test:
+Smoke test:
 
 ```bash
 make smoke
 ```
 
-SDK- und Demo-Dokumentation:
+SDK and demo documentation:
 
-- [spec/player-sdk.md](spec/player-sdk.md) beschreibt Installation, Public API, Transport, Performance-Budget und Browser-Build.
-- [docs/user/demo-integration.md](docs/user/demo-integration.md) beschreibt die Dashboard-Route `/demo` als lokale hls.js-/Player-SDK-Integration.
-- [spec/browser-support.md](spec/browser-support.md) dokumentiert die Browser-Support-Matrix.
+- [spec/player-sdk.md](spec/player-sdk.md) describes installation, public API, transport, performance budget, and browser build.
+- [docs/user/demo-integration.md](docs/user/demo-integration.md) describes the dashboard `/demo` route as a local hls.js / player-SDK integration.
+- [spec/browser-support.md](spec/browser-support.md) documents the browser support matrix.
 
-Lokaler SDK-/Demo-Pfad:
+Local SDK / demo path:
 
 ```bash
 make sdk-pack-smoke
 make dev
-# dann http://localhost:5173/demo?session_id=readme-demo&autostart=1 öffnen
+# then open http://localhost:5173/demo?session_id=readme-demo&autostart=1
 ```
 
-Optionaler Observability-Stack mit Prometheus, Grafana und OTel-Collector:
+Optional observability stack with Prometheus, Grafana, and OTel Collector:
 
 ```bash
 make dev-observability
 make smoke-observability
 ```
 
-Browser-End-to-End-Test im Playwright-Container:
+Browser end-to-end test in the Playwright container:
 
 ```bash
 make browser-e2e
@@ -283,102 +290,104 @@ make browser-e2e
 
 - Dashboard: <http://localhost:5173>
 - API: <http://localhost:8080/api/health>
-- HLS-Teststream: <http://localhost:8888/teststream/index.m3u8>
+- HLS test stream: <http://localhost:8888/teststream/index.m3u8>
 - Prometheus: <http://localhost:9090> (`make dev-observability`)
 - Grafana: <http://localhost:3000> (`admin`/`admin`, `make dev-observability`)
-- OTel Collector: OTLP `localhost:4317`/`4318`, Health <http://localhost:13133>
+- OTel Collector: OTLP `localhost:4317`/`4318`, health <http://localhost:13133>
 
-Details stehen in [docs/user/local-development.md](docs/user/local-development.md).
+Details live in [docs/user/local-development.md](docs/user/local-development.md).
 
 ## Roadmap
 
-Status pro Release, aktive Phase, nächste Schritte und Folge-ADRs
-stehen kanonisch in
+Per-release status, current phase, next steps, and follow-up ADRs live
+canonically in
 [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
-Pro-Release-Lieferstand mit Bullet-Listen siehe
+Per-release delivery state with bullet lists lives in
 [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
-## Browser-Support
+## Browser support
 
-Der MVP-Browser-Support ist bewusst eng gefasst.
+MVP browser support is intentionally narrow.
 
-| Umgebung                         | MVP-Status                |
-| -------------------------------- | ------------------------- |
-| Chrome Desktop, aktuelle Stable  | unterstützt               |
-| Firefox Desktop, aktuelle Stable | unterstützt               |
-| Safari Desktop, aktuelle Stable  | eingeschränkt             |
-| Chromium-basierte Browser        | best effort               |
-| iOS Safari                       | im MVP nicht erforderlich |
-| Android Chrome                   | im MVP nicht erforderlich |
-| Smart-TV-Browser                 | nicht im Scope            |
-| Embedded WebViews                | nicht im Scope            |
+| Environment                       | MVP status               |
+| --------------------------------- | ------------------------ |
+| Chrome desktop, current stable    | supported                |
+| Firefox desktop, current stable   | supported                |
+| Safari desktop, current stable    | limited                  |
+| Chromium-based browsers           | best effort              |
+| iOS Safari                        | not required for the MVP |
+| Android Chrome                    | not required for the MVP |
+| Smart-TV browsers                 | out of scope             |
+| Embedded WebViews                 | out of scope             |
 
-Der MVP-Integrationspfad ist hls.js.  
-Native Safari-HLS-Introspektion ist kein Ziel von v0.1.0.
-
----
-
-## Sicherheit und Datenschutz
-
-m-trace soll für selbstgehostete Umgebungen standardmäßig sicher sein.
-
-MVP-Prinzipien:
-
-- keine Secrets im Repository
-- keine cookie-basierte Telemetrie-Annahme
-- SDK-Requests nutzen standardmäßig `credentials: "omit"`
-- erlaubte Origins werden pro Projekt konfiguriert
-- Project-Tokens gelten als niedrig-kritische Browser-Tokens
-- Rate Limits sind verpflichtend
-- IP-Adressen sollen nicht unnötig gespeichert werden
-- User-Agent-Daten sollen reduzierbar oder anonymisierbar sein
-- GDPR-konformer Betrieb muss möglich sein
+The MVP integration path is hls.js.
+Native Safari HLS introspection is not a goal of v0.1.0.
 
 ---
 
-## Mitarbeit und Sicherheitsmeldungen
+## Security and privacy
 
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — lokales Setup, Build/Test
-  über `make`, Commit- und Release-Konventionen, Erwartung an
-  Issues/PRs.
-- [`SECURITY.md`](SECURITY.md) — unterstützte Versionen,
-  vertraulicher Meldeweg für Sicherheitslücken, Disclosure-
-  Verfahren.
-- [`.env.example`](.env.example) — dokumentierte, nicht geheime
-  Beispielwerte für API, Analyzer, Dashboard und Observability.
-- [`deploy/README.md`](deploy/README.md) — Status der
-  Deployment-Artefakte (Compose-Lab bleibt der unterstützte
-  lokale Pfad; Kubernetes ist Folge-Scope).
+m-trace aims to be safe by default in self-hosted environments.
+
+MVP principles:
+
+- no secrets in the repository
+- no cookie-based telemetry acceptance
+- SDK requests default to `credentials: "omit"`
+- allowed origins are configured per project
+- project tokens are treated as low-trust browser tokens
+- rate limits are mandatory
+- IP addresses must not be stored unnecessarily
+- user-agent data must be reducible or anonymisable
+- GDPR-compliant operation must be possible
 
 ---
 
-## Aktueller Stand
+## Contributing and security reports
 
-Aktuelle Version, Lieferstand pro Release und Folge-Punkte stehen
-in den dafür vorgesehenen Single-Source-Dokumenten:
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — local setup, build/test via `make`,
+  commit and release conventions, expectations for issues and PRs.
+- [`SECURITY.md`](SECURITY.md) — supported versions, confidential reporting
+  channel for security issues, disclosure process.
+- [`.env.example`](.env.example) — documented, non-secret example values for
+  API, analyzer, dashboard, and observability.
+- [`deploy/README.md`](deploy/README.md) — status of the deployment artifacts
+  (the Compose lab stays the supported local path; Kubernetes is follow-up
+  scope).
 
-- [`CHANGELOG.md`](CHANGELOG.md) — Keep-a-Changelog-Lieferstand
-  pro Release-Tag (Added/Changed/Security/Removed).
+---
+
+## Current state
+
+Current version, per-release delivery state, and follow-up items live in the
+designated single-source documents:
+
+- [`CHANGELOG.md`](CHANGELOG.md) — Keep-a-Changelog delivery state per release
+  tag (Added/Changed/Security/Removed).
 - [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
-  — aktive Phase, nächste Schritte und Folge-ADRs.
+  — current phase, next steps, and follow-up ADRs.
 - [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
-  — aktive Risiken inklusive Triggerschwellen.
+  — active risks with trigger thresholds.
 
-Leitende Dokumente:
+Guiding documents:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.15)
-- [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
-- [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
-- [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess
-- [docs/user/quality.md](docs/user/quality.md) — Qualitätsrichtlinien
+- [spec/lastenheft.md](spec/lastenheft.md) — requirements (normative, 1.1.15; German)
+- [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — status, follow-up ADRs, open decisions
+- [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — backend decision (Accepted: Go)
+- [docs/user/releasing.md](docs/user/releasing.md) — release process
+- [docs/user/quality.md](docs/user/quality.md) — quality guidelines
 
-Nächste Schritte stehen in [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) §2.
+Next steps live in [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) §2.
+
+> Project documentation under `spec/` and `docs/` is primarily German; this
+> README is the canonical English entry point. The German overview lives in
+> [`README.de.md`](README.de.md).
 
 ---
 
-## Lizenz
+## License
 
 [MIT License](LICENSE).
 
@@ -386,14 +395,14 @@ Nächste Schritte stehen in [docs/planning/in-progress/roadmap.md](docs/planning
 
 ## Name
 
-`m-trace` steht für:
+`m-trace` stands for:
 
 ```text
 Media Trace
 ```
 
-Das Projektziel ist simpel:
+The project goal is simple:
 
 ```text
-Media-Streams von Ingest bis Player nachverfolgen.
+Trace media streams from ingest to player.
 ```
