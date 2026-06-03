@@ -604,6 +604,15 @@ Voraussetzungen:
   RAK-Aufnahmen die Section-`Bezug:`-Refs auf die korrekte
   versionsversiegelte Lastenheft-Patch-Version setzen
   (Geburtsort der RAK-Familie, nicht aktueller Stand).
+- **Spec referenziert keine Plan-Dokumente.** Pläne
+  (`docs/planning/done/plan-X.Y.Z.md`) sind dem Lastenheft
+  nachrangig — sie beschreiben *wie* eine Lieferung umgesetzt
+  wurde, nicht *was* normativ wahr ist. Der Spec-Inhalt steht
+  als eigenständige Wahrheit, gestützt nur durch Lastenheft-
+  Kennungen, ADRs und stabile Code-Anchor (Modul-/Dateipfade
+  unter `apps/api`, `packages/*`). Plan-Verweise im Spec-Text
+  sind Doku-Drift und gehören in CHANGELOG-/Commit-Texte, nicht
+  in die Spec.
 
 ## 8. Rollback
 
