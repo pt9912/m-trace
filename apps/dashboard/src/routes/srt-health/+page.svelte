@@ -8,7 +8,7 @@
     type SrtHealthItem
   } from "$lib/api";
 
-  // SRT-Health-Übersicht (plan-0.6.0 §6 Tranche 5, RAK-43/RAK-44).
+  // SRT-Health-Übersicht (RAK-43/RAK-44).
   // Zeigt pro Stream den jüngsten persistierten Health-Sample mit
   // Health-Badge, vier Pflichtmetriken und Freshness-Hinweis.
   // Live-Updates via Polling (alle 5 s); Cursor-Pagination ist als

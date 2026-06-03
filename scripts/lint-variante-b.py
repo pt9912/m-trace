@@ -46,12 +46,22 @@ from pathlib import Path
 
 
 def file_kind(path):
-    """Return 'go' | 'mjs' | 'sh' | 'make' | None."""
+    """Return 'go' | 'mjs' | 'ts' | 'svelte' | 'sh' | 'make' | None."""
     s = path.suffix
     if s == ".go":
         return "go"
     if s == ".mjs":
         return "mjs"
+    if s == ".ts":
+        return "ts"
+    if s == ".tsx":
+        return "ts"
+    if s == ".js":
+        return "mjs"
+    if s == ".jsx":
+        return "mjs"
+    if s == ".svelte":
+        return "svelte"
     if s == ".sh":
         return "sh"
     if path.name == "Makefile" or path.name.endswith(".mk"):
@@ -83,6 +93,7 @@ def clean_comment_text(t):
     )
     t = re.sub(
         r"plan-0\.\d+\.\d+(?:\.md)?\s+§[0-9.]+[a-z]?(?:/§[0-9.]+[a-z]?)?"
+        r"(?:\s+H\d+)?"  # plan-0.4.0 §5 H3 style
         r"(?:\s+Tranche\s+\d+(?:\s+Sub-[0-9.]+)?)?",
         "",
         t,
@@ -129,6 +140,19 @@ def clean_comment_text(t):
     t = re.sub(r"reales 0\.\d+\.[xy]\b", "reales Verhalten", t)
     t = re.sub(r" 0\.\d+\.[xy]([ .,;:])", r"\1", t)
     t = re.sub(r"^0\.\d+\.[xy]([ .,;:])", r"\1", t)
+
+    # 4e. "ab 0.X.Y §A.B-Closeout" / "seit 0.X.Y §A.B-Closeout" patterns
+    t = re.sub(r"Server-vergeben ab 0\.\d+\.\d+ §[0-9.]+[a-z]?-Closeout", "Server-vergeben", t)
+    t = re.sub(r" ab 0\.\d+\.\d+ §[0-9.]+[a-z]?-Closeout", "", t)
+    t = re.sub(r" seit 0\.\d+\.\d+ §[0-9.]+[a-z]?-Closeout", "", t)
+    # Bare §X.Y-Closeout artifacts
+    t = re.sub(r" §[0-9.]+[a-z]?-Closeout", "", t)
+    t = re.sub(r"vor dem Closeout", "historisch", t)
+    # "ab plan-X §A.B/§C.D" already covered, but explicit "ab plan-X" form
+    t = re.sub(r" ab plan-0\.\d+\.\d+(?:\.md)?\s+§[0-9.]+[a-z]?(?:/§[0-9.]+[a-z]?)?\s+", " ", t)
+    t = re.sub(r" ab plan-0\.\d+\.\d+(?:\.md)?", "", t)
+    # "ist Folge-Scope/in Tranche N"
+    t = re.sub(r" Plan-DoD §[0-9-]+\s+verschiebt das auf Tranche \d+", " ist Folge-Scope", t)
 
     # 4c. Orphan "#N-" prefix (from §X.Yz-#N- pattern strip)
     t = re.sub(r"^#\d+-(Vertrag|Snapshot|Item)\b", r"\1", t)
@@ -197,6 +221,18 @@ def clean_comment_text(t):
     t = re.sub(r"\(\s*—\s*", "(", t)
     t = re.sub(r"\(\s*/\s*", "(", t)
     t = re.sub(r"\(\s*,\s*", "(", t)
+    # Trailing "," or ", " inside parens before closing
+    t = re.sub(r",\s*\)", ")", t)
+    # Stand-alone "(H1)" or "(Hn)" — orphan from plan-X §Y Hn strip
+    t = re.sub(r"\(\s*H\d+\)", "", t)
+    t = re.sub(r"\(\s*H\d+\s*[:.]", "(", t)
+    # "§5 H5" / "Tranche 4 §5 H5" leftovers — orphan H-numbers
+    t = re.sub(r" §\d+\s+H\d+(?=[\W])", "", t)
+    t = re.sub(r" H\d+:\s*", " ", t)
+    # Trailing artifacts like "Default `[]`; siehe API-Kontrakt, "
+    # Drop trailing ", " before line-end or " */"
+    t = re.sub(r",\s*\*\/", " */", t)
+    t = re.sub(r",\s*$", "", t)
     t = re.sub(r"  +", " ", t)
     t = re.sub(r" ([.,;:])", r"\1", t)
 
@@ -430,7 +466,11 @@ def process_file(path, fix=False):
         return False, None, None
 
     text = path.read_text()
-    if kind == "go" or kind == "mjs":
+    if kind in ("go", "mjs", "ts", "svelte"):
+        # TS/JS/Go/mjs/Svelte-script-blocks all use // and /* */
+        # Svelte has additional HTML <!-- --> comments in templates,
+        # but those are rare audit-trail vectors — script blocks are
+        # the high-signal area.
         new_text, changed = process_line_based(text, ["//"], block_starts=("/*", "*/"))
     elif kind == "sh":
         new_text, changed = process_line_based(text, ["#"])

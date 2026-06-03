@@ -3,19 +3,19 @@ import { env } from "$env/dynamic/public";
 
 /**
  * Mini-Statusquellen für den Dashboard-Status-Pfad
- * (plan-0.4.0 §5 H3, F-39).
+ * (F-39).
  *
  * Drei dokumentierte Quellen:
  *  - API-Erreichbarkeit über `GET /api/health` (siehe `getHealth` in
- *    `lib/api.ts`)
+ *  `lib/api.ts`)
  *  - SSE-Verbindungszustand des Dashboard-Clients (Placeholder bis
- *    Tranche-4 §5 H5; aktuell `not_yet_connected` bzw. `disabled`,
- *    sobald der SSE-Client eingewired ist)
+ * ; aktuell `not_yet_connected` bzw. `disabled`
+ *  sobald der SSE-Client eingewired ist)
  *  - Letzter Session-Read-Fehler aus realen `getSession`/
- *    `listSessions`-Aufrufen
+ *  `listSessions`-Aufrufen
  *
  * Aggregierte Invalid-/Dropped-/Rate-Limit-Zähler werden bewusst
- * NICHT konsumiert — Plan-DoD §5 verschiebt das auf Tranche 6.
+ * NICHT konsumiert — ist Folge-Scope.
  */
 
 export type SseConnectionState =
@@ -45,8 +45,8 @@ export interface ReadErrorRecord {
 
 /**
  * SSE-Verbindungszustand des Dashboard-SSE-Clients. In Tranche 4
- * §5 H3 gibt es noch keinen SSE-Client; der Store steht auf
- * `not_yet_connected`. §5 H5 verdrahtet den fetch-basierten
+ * H3 gibt es noch keinen SSE-Client; der Store steht auf
+ * `not_yet_connected`. verdrahtet den fetch-basierten
  * SSE-Client und schreibt in diesen Store.
  */
 export const sseConnection: Writable<SseConnectionStatus> = writable({
@@ -79,16 +79,16 @@ export function clearLastReadError(): void {
 }
 
 /**
- * Konfigurierbare Service-Links (plan-0.4.0 §5 F-40, Variante
+ * Konfigurierbare Service-Links ( F-40, Variante
  * "konfigurationsgetriebene Link-Section"). Caller liefern den
  * Schlüssel; Rückgabe ist die URL oder `undefined`, wenn die
  * Env-Variable nicht gesetzt ist. Konsumenten zeigen "configured but
  * unreachable" oder verstecken den Link, wenn URL fehlt.
  *
  * Dokumentierte Keys:
- *  - PUBLIC_GRAFANA_URL    → Grafana-Dashboard-Origin
+ *  - PUBLIC_GRAFANA_URL → Grafana-Dashboard-Origin
  *  - PUBLIC_PROMETHEUS_URL → Prometheus-Web-UI-Origin
- *  - PUBLIC_MEDIAMTX_URL   → MediaMTX-Web-/HLS-Origin
+ *  - PUBLIC_MEDIAMTX_URL → MediaMTX-Web-/HLS-Origin
  *  - PUBLIC_OTEL_HEALTH_URL → OTel-Collector-Health-Endpoint
  */
 export type ServiceLinkKey =
@@ -109,7 +109,7 @@ export function configuredServiceUrl(
 }
 
 /**
- * Service-Link-Eintrag für die Status-Page. Vereint Konfig-Lookup,
+ * Service-Link-Eintrag für die Status-Page. Vereint Konfig-Lookup
  * Probe-URL-Ableitung und initialen Status — die Page rendert nur
  * noch und ruft `probeServices` für die Reachability-Updates.
  */
@@ -207,8 +207,8 @@ export async function probeServices(links: ServiceLink[]): Promise<ServiceLink[]
 
 /**
  * Reactive Service-Link-Liste für die Status-Page. Defaults auf
- * `buildServiceLinks()` (Env-getrieben). Tests können den Store
- * direkt überschreiben (z. B. mit `set([{...openUrl: "..."}])`),
+ * `buildServiceLinks` (Env-getrieben). Tests können den Store
+ * direkt überschreiben (z. B. mit `set([{...openUrl: "..."}])`)
  * um UI-Branches zu pinnen, die ohne Env-Mocking nicht erreichbar
  * sind.
  */

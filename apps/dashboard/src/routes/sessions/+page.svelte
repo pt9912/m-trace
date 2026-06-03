@@ -26,7 +26,7 @@
 
   onMount(() => {
     void refresh();
-    // §5 H5: Live-Updates via SSE; bei Frame triggert ein listSessions-
+    // Live-Updates via SSE; bei Frame triggert ein listSessions-
     // Refresh, weil SSE-Frames nur Mindest-Payload liefern (REST-Read
     // ist die Source-of-Truth, Spec §10a). Der Client fällt automatisch
     // auf Polling zurück, wenn SSE persistent fehlschlägt (z. B. wenn
@@ -39,7 +39,7 @@
       onAppended: () => {
         void refresh();
       },
-      // backend-api-contract.md §10a: bei Reconnect-Lücke > 1000 Events
+      // backend-api-contract.md: bei Reconnect-Lücke > 1000 Events
       // sendet der Server `backfill_truncated`; der Konsument muss dann
       // den Snapshot neu laden, weil keine Live-`event_appended`-Frames
       // die Lücke schließen.

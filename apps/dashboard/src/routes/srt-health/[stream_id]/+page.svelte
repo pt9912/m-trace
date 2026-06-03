@@ -10,7 +10,7 @@
     type SrtHealthItem
   } from "$lib/api";
 
-  // SRT-Health-Detail-Ansicht (plan-0.6.0 §6 Tranche 5, RAK-44).
+  // SRT-Health-Detail-Ansicht (RAK-44).
   // Zeigt den aktuellen Sample plus eine Mini-Timeline der letzten N
   // Samples. Polling alle 5 s, samples_limit=50 als Default.
 

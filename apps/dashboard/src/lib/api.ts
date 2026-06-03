@@ -1,7 +1,7 @@
 /** Tripel aus dem Read-Shape `network_signal_absent[]` (Backend-API
- *  §3.7.1, plan-0.4.0 §4.4). Markiert Stellen, an denen das SDK kein
+ *  §3.7.1). Markiert Stellen, an denen das SDK kein
  *  Manifest-/Segment-Signal beobachten konnte (Native HLS, CORS-
- *  Block, Resource-Timing-Lücke). `kind` ist der Netzwerksignal-Typ,
+ *  Block, Resource-Timing-Lücke). `kind` ist der Netzwerksignal-Typ
  *  nicht der Boundary-`kind`-Wert. */
 export interface NetworkSignalAbsentEntry {
   kind: "manifest" | "segment";
@@ -20,19 +20,19 @@ export interface StreamSession {
   last_event_at: string;
   ended_at?: string;
   event_count: number;
-  /** Server-vergeben ab 0.4.0 §3.2-Closeout; Empty-String bei
-   *  Legacy-Sessions vor dem Closeout (siehe API-Kontrakt §3.7.1). */
+  /** Server-vergeben; Empty-String bei
+   *  Legacy-Sessions historisch (siehe API-Kontrakt). */
   correlation_id?: string;
-  /** Default `[]`; siehe API-Kontrakt §3.7.1, plan-0.4.0 §4.4. */
+  /** Default `[]`; siehe API-Kontrakt */
   network_signal_absent: NetworkSignalAbsentEntry[];
-  /** Auslöser des Endzustands (plan-0.4.0 §5 H1):
-   *  - `"client"`  bei explizitem `session_ended`-Event
+  /** Auslöser des Endzustands:
+   *  - `"client"` bei explizitem `session_ended`-Event
    *  - `"sweeper"` bei zeitbasiertem Sweeper-Ende
    *  - `null` für aktive Sessions oder Legacy-Einträge */
   end_source: "client" | "sweeper" | null;
   /** Raw Integer-ppm-Wert (`1..1_000_000`); fehlt bei voll-gesampelten
-   *  Sessions (Default = 1_000_000). Persistenz seit plan-0.12.6
-   *  Tranche 4 (R-10). */
+   *  Sessions (Default = 1_000_000). Persistenz seit
+   *  (R-10). */
   sample_rate_ppm?: number;
   /** Abgeleitet `sample_rate_ppm / 1_000_000` als Display-Float; fehlt
    *  bei voll-gesampelten Sessions. */
@@ -52,18 +52,18 @@ export interface PlaybackEvent {
     version: string;
   };
   meta?: Record<string, unknown>;
-  /** Server-vergeben ab 0.4.0 §3.2-Closeout (API-Kontrakt §3.7.1). */
+  /** Server-vergeben (API-Kontrakt). */
   correlation_id?: string;
   /** W3C-Trace-ID des Batches (32 Hex), optional. */
   trace_id?: string;
-  /** Klassifikation des Events nach API-Kontrakt §10.2:
+  /** Klassifikation des Events nach API-Kontrakt:
    *  `"accepted"` (Default), `"duplicate_suspected"` oder
-   *  `"replayed"`. Vor §2.3-Closeout liefern Read-Antworten das
+   *  `"replayed"`. Vor liefern Read-Antworten das
    *  Feld nicht; daher optional. */
   delivery_status?: "accepted" | "duplicate_suspected" | "replayed";
   /** Server-Markierung für Time-Skew (`|client_timestamp -
-   *  server_received_at| > 60s`); Persistenz seit plan-0.12.6
-   *  Tranche 3 (R-5). `omitempty` → Feld fehlt bei false. */
+   *  server_received_at| > 60s`); Persistenz seit
+   *  (R-5). `omitempty` → Feld fehlt bei false. */
   time_skew_warning?: boolean;
 }
 
@@ -76,7 +76,7 @@ export interface SessionDetailResponse {
   session: StreamSession;
   events: PlaybackEvent[];
   /** Cursor für die nächste Event-Seite; fehlt bei letzter Seite
-   *  (API-Kontrakt §10.3 Cursor v3). */
+   *  (API-Kontrakt Cursor v3). */
   next_cursor?: string;
 }
 
@@ -105,9 +105,9 @@ export async function getSession(
   );
 }
 
-// SRT-Health-Wire-Format aus spec/backend-api-contract.md §7a.2
-// (plan-0.6.0 §5 Tranche 4). Felder kommen direkt aus dem
-// Go-Adapter `srtHealthWireItem` und sind hier 1:1 typisiert,
+// SRT-Health-Wire-Format aus spec/backend-api-contract.md
+// . Felder kommen direkt aus dem
+// Go-Adapter `srtHealthWireItem` und sind hier 1:1 typisiert
 // inklusive der drei Sub-Blöcke `metrics`/`derived`/`freshness`.
 
 export type SrtHealthState = "healthy" | "degraded" | "critical" | "unknown";
@@ -219,7 +219,7 @@ export async function getHealth(): Promise<HealthStatus> {
 
 async function getJSON<T>(url: string): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  // X-MTrace-Token ist ab plan-0.4.0 §4.2/§4.3 für alle Read-Endpunkte
+  // X-MTrace-Token ist ab für alle Read-Endpunkte
   // Pflicht. Der Token stammt aus PUBLIC_API_TOKEN; ohne Token wird
   // der Header weggelassen — die API antwortet dann mit 401 und der
   // Caller-Wrapper wirft den Fehler-Pfad unten.

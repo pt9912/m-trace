@@ -3,7 +3,7 @@ import { sseConnection, type SseConnectionState } from "./status";
 /**
  * Fetch-basierter SSE-Client für `GET /api/stream-sessions/stream`.
  *
- * Warum fetch statt nativem `EventSource`: ab plan-0.4.0 §5 ist der
+ * Warum fetch statt nativem `EventSource`: ab ist der
  * Stream tokenpflichtig (`X-MTrace-Token`-Header). Das native
  * `EventSource`-API erlaubt keine Custom-Header — wir lesen das
  * Response-Body manuell als `text/event-stream` und parsen die
@@ -11,9 +11,9 @@ import { sseConnection, type SseConnectionState } from "./status";
  *
  * Frame-Format (Server-seitig):
  *
- *   id: <ingest_sequence>
- *   event: event_appended | backfill_truncated
- *   data: <JSON>
+ *  id: <ingest_sequence>
+ *  event: event_appended | backfill_truncated
+ *  data: <JSON>
  *
  * Plus optionale `: heartbeat`-Comment-Frames (Idle-Keepalive). Wir
  * folgen dem WHATWG-Server-Sent-Events-Parsing-Algorithmus minimal:
@@ -76,7 +76,7 @@ const POLLING_FALLBACK_THRESHOLD = 3;
  * Startet einen SSE-Client. Konsumenten erhalten einen Disconnect-
  * Handle. Der Store `sseConnection` wird vom Client gepflegt:
  * `connecting` beim Verbindungsaufbau, `connected` nach dem ersten
- * Byte, `polling_fallback` bei persistenten SSE-Fehlern,
+ * Byte, `polling_fallback` bei persistenten SSE-Fehlern
  * `disabled` bei expliziter Disconnect-Anforderung.
  */
 export function startSseClient(opts: SseClientOptions): SseClient {
@@ -241,7 +241,7 @@ class SseMachine {
       this.setState("connecting", detail);
     }
     // Cancel-Handle des bisherigen Reconnect-Timers (falls im Anflug)
-    // wird hier neu gesetzt; `disconnect()` storniert ihn dann sauber.
+    // wird hier neu gesetzt; `disconnect` storniert ihn dann sauber.
     this.reconnectHandle?.();
     this.reconnectHandle = this.schedule(() => {
       this.reconnectHandle = undefined;

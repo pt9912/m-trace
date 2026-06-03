@@ -3,7 +3,7 @@
   import { env } from "$env/dynamic/public";
   import { attachWebRtc, createTracker, type PlayerTracker, type WebRtcAdapter } from "@pt9912/player-sdk";
 
-  // plan-0.8.0 Tranche 2 — Demo-Route gegen das examples/webrtc/-
+  //  — Demo-Route gegen das examples/webrtc/-
   // Lab-Compose. Bestehende /demo-Route (hls.js) bleibt unverändert;
   // diese Route ist additiv und nutzt denselben Tracker-Pfad in den
   // API-Ingress.
