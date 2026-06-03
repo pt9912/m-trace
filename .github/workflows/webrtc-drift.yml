@@ -1,6 +1,6 @@
 name: WebRTC drift smoke
 
-# plan-0.9.0 §2 Tranche 1 (RAK-56) — Browser-Drift-Smoke fuer den
+#  (RAK-56) — Browser-Drift-Smoke fuer den
 # `getStats()`-Schema-Drift zwischen Browser-Major-Versionen
 # (Chromium, Firefox; WebKit/Safari opt-in im Smoke-Skript). Schliesst
 # R-12 als „automatisiert detektiert, Drift bricht den Drift-Smoke";

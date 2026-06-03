@@ -46,7 +46,7 @@ from pathlib import Path
 
 
 def file_kind(path):
-    """Return 'go' | 'mjs' | 'ts' | 'svelte' | 'sh' | 'make' | None."""
+    """Return 'go' | 'mjs' | 'ts' | 'svelte' | 'sh' | 'make' | 'yaml' | None."""
     s = path.suffix
     if s == ".go":
         return "go"
@@ -64,6 +64,8 @@ def file_kind(path):
         return "svelte"
     if s == ".sh":
         return "sh"
+    if s in (".yml", ".yaml"):
+        return "yaml"
     if path.name == "Makefile" or path.name.endswith(".mk"):
         return "make"
     return None
@@ -81,7 +83,9 @@ def clean_comment_text(t):
     because we need to preserve the ADR-NNNN number.
     """
     # 1. ADR-NNNN §X.Y[a-z]? — PRESERVE the NNNN!
-    t = re.sub(r"(ADR-\d+)\s+§[0-9.]+[a-z]?", r"\1", t)
+    # Use `\d+(?:\.\d+)*[a-z]?` so a sentence-final dot stays with the prose:
+    # `(ADR-0002 §8.1).` and `Siehe ADR-0002 §8.1.` should keep the trailing dot.
+    t = re.sub(r"(ADR-\d+)\s+§\d+(?:\.\d+)*[a-z]?", r"\1", t)
 
     # 1b. Backtick-wrapped plan-Refs `plan-X.Y.Z` → unwrap so the
     #     subsequent plan- patterns can strip cleanly (otherwise we
@@ -222,8 +226,10 @@ def clean_comment_text(t):
     t = re.sub(r"\s+\(DoD-Item §[0-9-]+\)", "", t)
     t = re.sub(r"DoD-Item §[0-9-]+", "DoD-Item", t)
 
-    # 10. Cleanup artifacts in COMMENT TEXT (safe because we never touch code)
-    t = re.sub(r"\(\s*\)", "", t)
+    # 10. Cleanup artifacts in COMMENT TEXT (safe because we never touch code).
+    # Empty `()` is only an artefact when it stands alone — never after a word
+    # character, where it is a function-name reference like `json_valid()`.
+    t = re.sub(r"(?<!\w)\(\s*\)", "", t)
     t = re.sub(r"\(\s*—\s*", "(", t)
     t = re.sub(r"\(\s*/\s*", "(", t)
     t = re.sub(r"\(\s*,\s*", "(", t)
@@ -493,6 +499,8 @@ def process_file(path, fix=False):
     elif kind == "sh":
         new_text, changed = process_line_based(text, ["#"])
     elif kind == "make":
+        new_text, changed = process_line_based(text, ["#"])
+    elif kind == "yaml":
         new_text, changed = process_line_based(text, ["#"])
     else:
         return False, None, None

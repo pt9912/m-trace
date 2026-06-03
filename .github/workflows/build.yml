@@ -44,7 +44,7 @@ jobs:
         run: make smoke-cli
 
   security:
-    # plan-0.8.5 Tranche 1 — Quality-Gates Wave 1.
+    #  — Quality-Gates Wave 1.
     # Parallel zum `build`-Job, damit Vulnerability-DB-Download und
     # Trivy-Image-Pull den schnellen Inner-Loop nicht serialisieren.
     name: Security gates

@@ -1,16 +1,16 @@
 # MediaMTX-Konfiguration für das SRT-Beispiel.
-# plan-0.5.0 §4 Tranche 3 (RAK-37). Eigenständige Lab-Konfig — nicht
+#  (RAK-37). Eigenständige Lab-Konfig — nicht
 # mit dem Core-Lab geteilt; dort liefert services/media-server/mediamtx.yml
 # RTSP-Ingest und HLS-Auslieferung des FFmpeg-Generators.
 
-# Control-API (Operator-Diagnose plus SRT-Health-Smoke ab plan-0.6.0
-# Tranche 2). MediaMTX 1.14+ ist standardmäßig auth-pflichtig — der
+# Control-API (Operator-Diagnose plus SRT-Health-Smoke ab
+# ). MediaMTX 1.14+ ist standardmäßig auth-pflichtig — der
 # `authInternalUsers`-Block weiter unten schaltet api/metrics zusammen
 # mit publish/read frei.
 api: yes
 apiAddress: :9997
 
-# Auth-Override für das Lab (plan-0.6.0 Tranche 2): single-user `any`
+# Auth-Override für das Lab: single-user `any`
 # mit leerem Passwort und allen Lab-Aktionen erlaubt. Das hält
 # `make smoke-srt` unverändert grün (Pfad benötigt `read`) und gibt
 # `make smoke-srt-health` zugleich Zugriff auf `/v3/srtconns/list`
@@ -27,7 +27,7 @@ authInternalUsers:
       - action: api
       - action: metrics
 
-# SRT-Listener für eingehenden Publisher (Lastenheft §7.8 SRT).
+# SRT-Listener für eingehenden Publisher ( SRT).
 srt: yes
 srtAddress: :8890
 

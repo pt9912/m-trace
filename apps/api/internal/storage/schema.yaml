@@ -114,8 +114,8 @@ tables:
         expression: "adapter IN ('hls.js', 'native_hls', 'unknown')"
       # Composite-FK auf stream_sessions(project_id, session_id) mit
       # ON DELETE CASCADE: beim späteren Löschen einer Session sollen
-      # keine verwaisten Boundaries zurückbleiben (ADR-0002 §8.4
-      # Reset-Pfad). Vor plan-0.8.5 Tranche 2 lebte dieser FK nur in
+      # keine verwaisten Boundaries zurückbleiben (ADR-0002
+      # Reset-Pfad). Vor lebte dieser FK nur in
       # der inkrementellen V3-Migration; mit der Migrations-Konsoli-
       # dierung ist `schema.yaml` jetzt Single-Source-of-Truth.
       - name: fk_stream_session_boundaries_session
@@ -185,10 +185,10 @@ tables:
       # JSON-Validierung von `meta` erfolgt im Adapter (encoding/json),
       # nicht via DB-CHECK — `json_valid()` ist nicht portabel
       # (SQLite/MySQL builtin, PostgreSQL hat kein direktes Pendant).
-      # Siehe ADR-0002 §8.1.
+      # Siehe ADR-0002.
 
-  # SRT-Health-Samples (plan-0.6.0 §4 Sub-3.3, RAK-42/RAK-46).
-  # Spec: spec/backend-api-contract.md §10.6, spec/telemetry-model.md §7.
+  # SRT-Health-Samples ( Sub-3.3, RAK-42/RAK-46).
+  # Spec: spec/backend-api-contract.md, spec/telemetry-model.md
   # Dedupe-Regel: Eindeutigkeit über
   #   (project_id, stream_id, connection_id,
   #    COALESCE(source_observed_at, source_sequence)).

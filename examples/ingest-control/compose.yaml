@@ -1,4 +1,4 @@
-# Ingest-Control-Beispiel — plan-0.11.0 Tranche 3 (RAK-68).
+# Ingest-Control-Beispiel — (RAK-68).
 #
 # Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
 # Name `mtrace-ingest-control` ist Pflicht im Startbefehl (siehe

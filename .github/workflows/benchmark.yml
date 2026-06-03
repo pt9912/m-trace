@@ -1,6 +1,6 @@
 name: Benchmark regression (nightly)
 
-# plan-0.9.5 §3 Tranche 2 (RAK-Wave-2 / extra-gates.md §3.3) —
+#  (extra-gates.md) —
 # Statistisch belastbare Trend-Erkennung mit Baseline-Vergleich.
 # **Nicht im PR-Pfad**; Nightly + Release-blockierend.
 #

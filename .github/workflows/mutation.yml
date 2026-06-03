@@ -1,6 +1,6 @@
 name: Mutation nightly
 
-# plan-0.9.5 §5 Tranche 4 (RAK-Wave-2 / extra-gates.md §3.6) —
+#  (extra-gates.md) —
 # Nightly-Mutation-Testing für die zwei Pilot-Module:
 #   - Go: `apps/api/hexagon/application/event_meta_validation.go`
 #         via gremlins (Container-Lauf in golang:1.26).

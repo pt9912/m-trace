@@ -1,8 +1,8 @@
 # golangci-lint configuration for apps/api (v2 schema, since 0.7.0
-# Tranche 0 Go-Bump auf 1.26).
+# Go-Bump auf 1.26).
 #
 # Bezug:
-#   - spec/lastenheft.md §10.1 (Backend, Linting): Default-Linter +
+#   - spec/lastenheft.md (Backend, Linting): Default-Linter +
 #     SOLID-nahes Zusatzprofil (24 Pflicht-Linter, alle "Ja").
 #   - docs/user/quality.md §1.2 (Go: SOLID-nahe Linter).
 #

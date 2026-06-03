@@ -1,6 +1,6 @@
 name: Benchmark smoke
 
-# plan-0.9.5 §2 Tranche 1 (DoD-Item §2-6) plus plan-0.22.0:
+#  plus:
 # Benchmark-Smoke für die Bench-Suite. Nach fünf grünen
 # Beobachtungsläufen (2026-05-09..2026-05-13) ist `make
 # benchmark-smoke` PR-blockierend über `make gates`; dieser Nightly
@@ -13,7 +13,7 @@ name: Benchmark smoke
 #     (z. B. nach Performance-relevanten Changes).
 #
 # Output:
-#   - .tmp/bench/api-bench.txt + .tmp/bench/analyzer-bench.txt
+#   -.tmp/bench/api-bench.txt +.tmp/bench/analyzer-bench.txt
 #     werden als Workflow-Artefakt mit 14 Tagen Retention hochgeladen.
 
 on:

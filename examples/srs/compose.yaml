@@ -1,4 +1,4 @@
-# SRS-Beispiel — plan-0.9.0 §3 Tranche 2 (RAK-57 / MVP-36).
+# SRS-Beispiel — (RAK-57 / MVP-36).
 #
 # Eigenständiges Compose; nicht mit dem Core-Lab gemischt. Project-
 # Name `mtrace-srs` ist Pflicht im Startbefehl (siehe

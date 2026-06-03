@@ -1,6 +1,6 @@
 name: Fuzz nightly
 
-# plan-0.9.5 §4 Tranche 3 (RAK-Wave-2 / extra-gates.md §3.5) —
+#  (extra-gates.md) —
 # Nightly-Fuzz-Workflow mit längerem Budget pro Target. **Nicht im
 # PR-Pfad** (das ist `make fuzz-check` mit kurzem -fuzztime opt-in).
 # Crash-Funde werden als GitHub-Issue mit Repro-Path automatisch

@@ -1,5 +1,5 @@
 # MediaMTX-Konfiguration für das WebRTC-Beispiel.
-# plan-0.7.0 §2 Tranche 1 (RAK-47). Eigenständige Lab-Konfig — nicht
+#  (RAK-47). Eigenständige Lab-Konfig — nicht
 # mit dem Core-Lab oder dem SRT-Beispiel geteilt.
 
 # Control-API (Operator-Diagnose; nicht Smoke-relevant in 0.7.0).
@@ -24,8 +24,8 @@ authInternalUsers:
       - action: api
       - action: metrics
 
-# WebRTC-WHIP/-WHEP-HTTP-Listener (Lastenheft §7.8 WebRTC, plan-0.7.0
-# Tranche 1). 8889 ist der MediaMTX-Default; im Compose auf Host-Port
+# WebRTC-WHIP/-WHEP-HTTP-Listener ( WebRTC,
+# ). 8889 ist der MediaMTX-Default; im Compose auf Host-Port
 # 8892 gemappt, um Konflikte mit dem SRT-Beispiel (Host 8889) zu
 # vermeiden.
 webrtc: yes

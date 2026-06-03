@@ -1,6 +1,6 @@
 name: Security audit nightly
 
-# plan-0.8.5 Tranche 1 (RAK-Wave-2 / extra-gates.md §3.7) —
+#  (extra-gates.md) —
 # Nightly-Mirror der `build.yml::Security gates`-Job. Pro Pushes
 # laeuft der gleiche Stack bereits im Push-Workflow; neue GitHub-
 # Advisories, die zwischen zwei Pushes veroeffentlicht werden,
@@ -24,7 +24,7 @@ name: Security audit nightly
 #
 # Repo-Setup-Voraussetzung:
 #   `scripts/open-security-audit-issue.sh` setzt die Labels
-#   `security,audit,plan-0.8.5` auf das neue Issue. Fehlen diese
+#   `security,audit,` auf das neue Issue. Fehlen diese
 #   im Repo, bricht `gh issue create` mit "could not add label:
 #   '<name>' not found" ab — und zwar *bevor* das Issue angelegt
 #   ist, womit die Nightly-Luecke offen bleibt. Labels werden
