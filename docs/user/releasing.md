@@ -587,6 +587,18 @@ Voraussetzungen:
   des veröffentlichten Releases (`⬜ → ✅`).
 - Folge-ADRs, die mit dem Release entstehen oder fällig werden,
   in `docs/planning/in-progress/roadmap.md` §4 ergänzen.
+- **Spec-Header aktualisieren**, falls die Lieferung normative
+  Spec-Sections berührt: Header in den betroffenen
+  `spec/*.md`-Dokumenten (Stand-Marker und Lastenheft-Patch-Ref)
+  auf den neuen Release-/Lastenheft-Stand setzen.
+  Spec-Inline-Versionsmarker (`ab 0.X.Y`, `seit 0.X.Y`,
+  `in 0.X.Y`) sind bewusst **nicht** Teil der Spec — das Lieferzeit-
+  Audit-Trail steht im `CHANGELOG.md` und in den
+  `docs/planning/done/plan-X.Y.Z.md`-Dokumenten (Variante-B-
+  Konvention; siehe Spec-Kopf von `spec/telemetry-model.md`).
+  Bei neuen RAK-Aufnahmen die Section-`Bezug:`-Refs auf die
+  korrekte versionsversiegelte Lastenheft-Patch-Version setzen
+  (Geburtsort der RAK-Familie, nicht aktueller Stand).
 
 ## 8. Rollback
 

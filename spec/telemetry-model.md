@@ -1,7 +1,12 @@
 # Telemetry-Model — m-trace
 
-> **Status**: Verbindlich für `0.1.x`. Wire-Format und Backpressure-Limits sind harte Voraussetzung für `0.1.1` (Player-SDK); OTel-Modell und Cardinality-Regeln sind harte Voraussetzung für `0.1.2` (Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.6`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](../docs/planning/in-progress/roadmap.md) §2 Schritt 6; [Plan `0.1.0`](../docs/planning/done/plan-0.1.0.md) §3.5; [API-Kontrakt](./backend-api-contract.md); [Architektur](./architecture.md) §5.
+> **Status**: Verbindlich für `main` (Release-Stand `0.22.x`). Spec
+> beschreibt das **Zielbild der aktuellen Wire-/OTel-/Cardinality-
+> Verträge** — kein historischer Audit-Trail. Lieferzeitpunkte und
+> Versions-Evolution stehen im
+> [`CHANGELOG.md`](../CHANGELOG.md) und in den
+> Plan-Dokumenten unter `docs/planning/done/`.  
+> **Bezug**: [Lastenheft `1.1.24`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](../docs/planning/in-progress/roadmap.md); [API-Kontrakt](./backend-api-contract.md); [Architektur](./architecture.md) §5. Section-spezifische `Bezug:`-Blöcke zitieren weiter die Lastenheft-Patch-Version, in der die jeweilige RAK-Familie *aufgenommen* wurde — diese Refs sind versionsversiegelt und drift-frei.
 
 ## 0. Zweck
 
@@ -51,25 +56,25 @@ Pflicht-Header (siehe API-Kontrakt §1):
 | `project_id` | string, nicht-leer | identifiziert das Projekt; muss zum gelieferten Token passen, sonst `401` (Token-Bindung). | F-106; API-Kontrakt §5 Step 9 |
 | `session_id` | string, nicht-leer | identifiziert die Player-Session; pseudonym (NF-40). | API-Kontrakt §3.2 |
 | `client_timestamp` | string, RFC3339 mit ms | Erzeugungszeitpunkt am Client. | F-124; siehe §5 |
-| `sdk.name` | string, nicht-leer | identifiziert das SDK (z. B. `@pt9912/player-sdk` ab `0.2.0`). | API-Kontrakt §3.2 |
+| `sdk.name` | string, nicht-leer | identifiziert das SDK (z. B. `@pt9912/player-sdk`). | API-Kontrakt §3.2 |
 | `sdk.version` | string, SemVer | identifiziert die SDK-Version. | API-Kontrakt §3.2 |
 
 ### 1.3 Erfasste Event-Typen im MVP
 
-Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; weitere können additiv ergänzt werden, ohne Schema-Bump (F-114):
+Mindestens die folgenden `event_name`-Werte sind Pflicht; weitere können additiv ergänzt werden, ohne Schema-Bump (F-114):
 
-| event_name | Trigger im SDK | Pflicht ab |
-|---|---|---|
-| `manifest_loaded` | hls.js `MANIFEST_LOADED` | `0.1.1` |
-| `segment_loaded` | hls.js `FRAG_LOADED` | `0.1.1` |
-| `playback_started` | erstes `playing` nach `loadedmetadata` | `0.1.1` |
-| `bitrate_switch` | hls.js `LEVEL_SWITCHED` | `0.1.1` |
-| `rebuffer_started` | `waiting` während Wiedergabe | `0.1.1` |
-| `rebuffer_ended` | erstes `playing` nach `waiting` | `0.1.1` |
-| `playback_error` | hls.js Error oder `error`-Event auf `<video>` | `0.1.1` |
-| `startup_time_measured` | erster Startup-Abschluss, `meta.duration_ms` enthält Startup-Dauer | `0.1.1` |
-| `metrics_sampled` | SDK-seitiger Metrik-Snapshot, optional für spätere Erweiterungen | `0.1.1` |
-| `session_ended` | Tab-Close oder explizites SDK-`stop()` | `0.1.1` |
+| event_name | Trigger im SDK |
+|---|---|
+| `manifest_loaded` | hls.js `MANIFEST_LOADED` |
+| `segment_loaded` | hls.js `FRAG_LOADED` |
+| `playback_started` | erstes `playing` nach `loadedmetadata` |
+| `bitrate_switch` | hls.js `LEVEL_SWITCHED` |
+| `rebuffer_started` | `waiting` während Wiedergabe |
+| `rebuffer_ended` | erstes `playing` nach `waiting` |
+| `playback_error` | hls.js Error oder `error`-Event auf `<video>` |
+| `startup_time_measured` | erster Startup-Abschluss, `meta.duration_ms` enthält Startup-Dauer |
+| `metrics_sampled` | SDK-seitiger Metrik-Snapshot, optional für spätere Erweiterungen |
+| `session_ended` | Tab-Close oder explizites SDK-`stop()` |
 
 ### 1.4 Optionale Felder
 
@@ -79,12 +84,11 @@ Für `0.1.x` werden mindestens die folgenden `event_name`-Werte unterstützt; we
 | `client_time_origin` | string, RFC3339 | Setup-Zeitpunkt des SDK; erlaubt skew-tolerantere Latenz-Auswertung. | F-126 |
 | `meta` | object | beliebige event-spezifische Felder, z. B. `bitrate`, `duration_ms`, `error_code`. Schema-Erweiterung über §6. | F-114 |
 
-Ab `plan-0.4.0.md` Tranche 3 nutzen Manifest-/Segment-nahe
-Netzwerkereignisse additive, flache `meta`-Keys nach dem Muster
-`network.*`. Der Punkt ist Teil des Key-Namens, kein verschachteltes
-Objekt; das bleibt kompatibel mit der aktuellen SDK-Typisierung
-`EventMeta = Record<string, string | number | boolean | null>`.
-Der Degradationsmarker ist normativ:
+Manifest-/Segment-nahe Netzwerkereignisse nutzen additive, flache
+`meta`-Keys nach dem Muster `network.*`. Der Punkt ist Teil des
+Key-Namens, kein verschachteltes Objekt; das bleibt kompatibel mit
+der SDK-Typisierung `EventMeta = Record<string, string | number |
+boolean | null>`. Der Degradationsmarker ist normativ:
 
 | Feld | Typ | Bedeutung |
 |---|---|---|
@@ -105,9 +109,9 @@ Domänen/Redaction-Regeln, `timing.*`-Werte sind Zahlen oder explizit
 dokumentierte RFC3339-Strings. Verstöße liefern `422` und werden nicht
 persistiert.
 
-Ab `plan-0.8.0.md` Tranche 3 ist `webrtc.*` ein zusätzlicher
-**reservierter Meta-Namespace** für den produktiven WebRTC-Telemetrie-
-Pfad (siehe §3.5). Die folgende Tabelle ist die normative Allowlist;
+`webrtc.*` ist ein **reservierter Meta-Namespace** für den
+produktiven WebRTC-Telemetrie-Pfad (siehe §3.5). Die folgende
+Tabelle ist die normative Allowlist;
 jeder andere `webrtc.*`-Key liefert `422`. Nicht-reservierte Meta-Keys
 außerhalb von `network.*`/`timing.*`/`webrtc.*` bleiben gemäß
 Vorwärtskompatibilitäts-Regel des API-Kontrakts unangetastet.
@@ -141,7 +145,7 @@ Wenn der Browser-/Native-HLS-Pfad gar kein Manifest-/Segment-Signal
 liefert, erzeugt das SDK kein synthetisches Netzwerkereignis. SDK oder
 Adapter muss stattdessen bei Session-Start bzw. Capability-Erkennung
 einen optionalen Batch-Wrapper-Block `session_boundaries[]` an
-`POST /api/playback-events` senden. Für Tranche 3 ist darin nur
+`POST /api/playback-events` senden. Aktuell ist darin nur
 `kind="network_signal_absent"` definiert; der Block enthält außerdem
 `project_id`, `session_id`, `network_kind` (`manifest` oder `segment`),
 `adapter` (`hls.js`, `native_hls` oder `unknown`), `reason` und
@@ -159,13 +163,13 @@ Liste von Objekten mit `kind`, `adapter` und maschinenlesbarem `reason`.
 Persistenzvehikel ist eine durable Session-Metadaten-Spalte oder ein
 äquivalenter session-skopierter Capability-/Boundary-Record; der Wert
 darf nicht nur aus flüchtigem Prozesszustand abgeleitet werden und muss
-über API-Restart stabil bleiben. Dashboard-Sichtbarkeit wird im
-`plan-0.4.0.md` Tranche-4-Scope umgesetzt.
+über API-Restart stabil bleiben. Dashboard-Sichtbarkeit ist
+umgesetzt (siehe `plan-0.4.0.md` Tranche 4).
 
-Tranche 3 führt keine neuen `event_name`-Werte ein. Manifest- und
-Segment-Netzwerkdetails werden über die bestehenden `manifest_loaded`
-und `segment_loaded`-Events plus additive flache `network.*`-Meta-Keys
-modelliert.
+Manifest- und Segment-Netzwerkdetails werden über die bestehenden
+`manifest_loaded`- und `segment_loaded`-Events plus additive flache
+`network.*`-Meta-Keys modelliert; es gibt keine separaten
+Event-Typen dafür.
 
 URL-Redaction für `network.*`-URL-Repräsentanten in `meta` und für alle
 URL-verdächtigen generischen Meta-Keys (`url`, `uri`, `manifest_url`,
@@ -193,7 +197,7 @@ ist eine optionale Debug-Vertiefung für Tempo-Cross-Trace-Suche, ist
 batch-bezogen und darf eine Timeline-Zuordnung nicht alleine tragen
 (siehe §2.5).
 
-Die folgenden Grenzen sind ab `0.4.0` bekannt und akzeptiert:
+Die folgenden Grenzen sind bekannt und akzeptiert:
 
 - **Browser-APIs / Resource Timing**: nicht alle Browser exposen
   Resource-Timing-Daten für Cross-Origin-Fetches; gemessene
@@ -231,8 +235,8 @@ Die folgenden Grenzen sind ab `0.4.0` bekannt und akzeptiert:
   alle Events gefiltert) erreichen den Server gar nicht erst und
   existieren in den Read-Antworten nicht — Operator-Konsequenz,
   kein Datenintegritätsproblem.
-- **Server-seitige Sampling-Markierung** (seit `0.12.6` Tranche 4,
-  R-10, siehe §8.3): Sessions mit `sampleRate < 1` müssen das SDK
+- **Server-seitige Sampling-Markierung** (R-10, siehe §8.3):
+  Sessions mit `sampleRate < 1` müssen das SDK
   in **jedem** Event-Body als `meta.session_sample_rate` (Float
   `(0, 1]`) liefern. Voll-gesampelte Sessions dürfen das Feld
   weglassen — Default ist `1.0`. Der Server normalisiert auf
@@ -276,7 +280,7 @@ Backend defensiv enforcen kann.
       "sequence_number": 42,
       "sdk": {
         "name": "@pt9912/player-sdk",
-        "version": "0.2.0"
+        "version": "0.22.2"
       },
       "meta": {
         "buffered_seconds": 1.8,
@@ -308,7 +312,7 @@ Backend defensiv enforcen kann.
 
 Span-Attribute folgen [OTel HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/) wo anwendbar; m-trace-spezifische Erweiterungen nutzen den Namespace `mtrace.*` oder `batch.*`.
 
-Vor `0.4.0` durften `session_id`, `user_agent` und `segment_url` als **Span-Attribute** verwendet werden (Cardinality-Regel gilt nur für Prometheus-Labels, nicht für Trace-Attribute). Ab `0.4.0` setzt der Server in **keinem** OTel-Span ein `session_id`-Attribut; Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id` (verbindlicher Vertrag in §2.5; Test-Anker `TestHTTP_Span_DoesNotSetSessionIDAttribute`). Diese Verschärfung gilt nicht nur für den `POST /api/playback-events`-Span, sondern für alle vom Server erzeugten Spans im `apps/api`-Pfad.
+Der Server setzt in **keinem** OTel-Span ein `session_id`-Attribut; Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id` (verbindlicher Vertrag in §2.5; Test-Anker `TestHTTP_Span_DoesNotSetSessionIDAttribute`). Das Verbot gilt nicht nur für den `POST /api/playback-events`-Span, sondern für alle vom Server erzeugten Spans im `apps/api`-Pfad. Die Cardinality-Regel gilt grundsätzlich nur für Prometheus-Labels, nicht für Trace-Attribute — `user_agent` und `segment_url` dürfen als Span-Attribute verwendet werden.
 
 ### 2.2 Counter
 
@@ -329,7 +333,7 @@ Der Use Case ruft am Eintritt jedes `RegisterPlaybackEventBatch`-Aufrufs einen f
 | Attribut | Wert | Quelle |
 |---|---|---|
 | `service.name` | `m-trace-api` | Konstante in `cmd/api/main.go` |
-| `service.version` | `<release-tag>` (z. B. `0.1.0`) | Build-Info / ENV |
+| `service.version` | `<release-tag>` aus `apps/api/cmd/api/main.go::serviceVersion` | Build-Info / ENV |
 | `mtrace.component` | `api` | Konstante in `Setup` |
 
 Die Default-Resource wird mit `resource.Default()` zusammengeführt, damit `process.*`-Attribute (PID, executable.name) automatisch ergänzt werden.
@@ -343,13 +347,13 @@ Die Default-Resource wird mit `resource.Default()` zusammengeführt, damit `proc
 | `mtrace_rate_limited_events_total` | `…RateLimitedEvents(n)` | Step 4 — bei Rate-Limit-Treffer |
 | `mtrace_dropped_events_total` | `…DroppedEvents(n)` | nur Backpressure-Drops, **nicht** synchrone Persistenz-Fehler (siehe API-Kontrakt §7) |
 
-Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken aus Lastenheft §7.9 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ab `0.4.0` Tranche 7 ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
+Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus Lastenheft §7.9 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
 
-### 2.5 Trace-Korrelation in `0.4.0`
+### 2.5 Trace-Korrelation
 
 > Bezug: RAK-29; RAK-32; ADR-0002 §8.1 (Schema-Spalten); `plan-0.4.0.md` §3.1.
 
-`0.4.0` führt zwei getrennte Korrelations-Konzepte ein, damit Tempo-Sichtbarkeit (RAK-31, optional) und Tempo-unabhängige Dashboard-Timeline (RAK-32, Pflicht) sauber entkoppelt sind.
+Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkeit (RAK-31, optional) und Tempo-unabhängige Dashboard-Timeline (RAK-32, Pflicht) sauber entkoppelt sind.
 
 **Hybrid-Trace-ID-Strategie.** Player-SDK propagiert optional einen W3C-`traceparent`-Header gemäß [W3C Trace Context](https://www.w3.org/TR/trace-context/). Server-Verhalten:
 
@@ -370,7 +374,7 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 
 `correlation_id` ist die **durable Source-of-Truth** für die Korrelation einer Session über mehrere Batches hinweg. Drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber dieselbe `correlation_id`.
 
-**Legacy-Grenze:** Tranche 2 führt kein historisches Backfill für vor §3.2 persistierte `playback_events.correlation_id` aus. Bestehende Sessions ohne `stream_sessions.correlation_id` werden beim nächsten Event per Self-Healing nachgezogen; ältere Events derselben Session können im Read-Pfad weiter eine leere `correlation_id` tragen und sind ein degradierter Legacy-Fall, nicht die Norm für neu verarbeitete Events.
+**Legacy-Grenze:** Es findet kein historisches Backfill für vor §3.2 persistierte `playback_events.correlation_id` statt. Bestehende Sessions ohne `stream_sessions.correlation_id` werden beim nächsten Event per Self-Healing nachgezogen; ältere Events derselben Session können im Read-Pfad weiter eine leere `correlation_id` tragen und sind ein degradierter Legacy-Fall, nicht die Norm für neu verarbeitete Events.
 
 **Span-Modell: ein HTTP-Request-Span pro Batch.** Keine Child-Spans pro Event (Cardinality-Schutz). Pflicht- und optionale Attribute am Server-Span für `POST /api/playback-events`:
 
@@ -382,9 +386,9 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 | `mtrace.batch.session_count` | ja | int ≥ 0 | Anzahl distinkter `session_id` im Batch |
 | `mtrace.session.correlation_id` | bei Single-Session-Batch (`session_count == 1`); **nicht gesetzt** sonst (kein Empty-String, keine Komma-Liste) | UUIDv4 als String | erlaubt Tempo-Suche nach Sessions ohne `session_id` zu exposen |
 | `mtrace.trace.parse_error` | optional | Boolean | gesetzt, wenn `traceparent` ungültig war |
-| `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3). Seit `0.12.6` Tranche 3 (R-5) ergänzend pro-Event in `playback_events.time_skew_warning` persistiert und im Read-Pfad als JSON-Feld `time_skew_warning` exponiert. |
+| `mtrace.time.skew_warning` | optional | Boolean | gesetzt, wenn mindestens ein Event im Batch `\|client_timestamp - server_received_at\| > 60s` (siehe §5.3). Ergänzend pro-Event in `playback_events.time_skew_warning` persistiert und im Read-Pfad als JSON-Feld `time_skew_warning` exponiert (R-5). |
 
-**`session_id`-Span-Attribut-Verbot.** Ab `0.4.0` setzt der Server in **keinem** OTel-Span ein `session_id`-Attribut (weder unter dem rohen Schlüssel `session_id` noch in den Varianten `mtrace.session.id` / `mtrace.session_id`). Single-Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id`. Die historische Aussage aus §2.1, dass `session_id` als Span-Attribut zulässig sei, gilt **nur** für `0.1.x` und ist nicht Teil des Tranche-2-Vertrags. Test-Anker: `TestHTTP_Span_DoesNotSetSessionIDAttribute`.
+**`session_id`-Span-Attribut-Verbot.** Der Server setzt in **keinem** OTel-Span ein `session_id`-Attribut (weder unter dem rohen Schlüssel `session_id` noch in den Varianten `mtrace.session.id` / `mtrace.session_id`). Single-Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id`. Test-Anker: `TestHTTP_Span_DoesNotSetSessionIDAttribute`.
 
 **Outcome → HTTP-Status-Mapping** (Validierungs-Reihenfolge aus API-Kontrakt §5):
 
@@ -401,7 +405,7 @@ Zusätzlich zu den vier Pflicht-Countern werden in `0.1.2` die Mindestmetriken a
 
 **Sampling-Auswirkung.** Server-Span pro Batch ist niedrige Cardinality (eine Span pro HTTP-Request). Auch ohne Sampling bleibt Tempo-Storage in 0.4.0 unauffällig. Spans werden via OTLP exportiert, wenn das Tempo-Profil aktiv ist (siehe `plan-0.4.0.md` §6). Ohne Profil und mit unset `OTEL_*` nutzt der autoexport-Fallback einen No-Op-Pfad ohne Exportversuch und ohne Log-Ausgabe; Logs entstehen nur, wenn bewusst ein Debug-/Console-Exporter oder der Collector-Debug-Exporter konfiguriert ist.
 
-### 2.6 Trace-Suche in Tempo (`0.4.0`, optional unter `tempo`-Profil)
+### 2.6 Trace-Suche in Tempo (optional unter `tempo`-Profil)
 
 Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`, `plan-0.4.0.md` §6), exportiert der OTel-Collector Spans nach Tempo. Für die Trace-Suche im Lab gilt verbindlich:
 
@@ -439,9 +443,9 @@ Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardina
 | `viewer_id`, `request_id` | hochkardinale Per-Request-Identifier. | API-Kontrakt §7 |
 | `trace_id`, `span_id`, `correlation_id` | Trace-/Session-Korrelations-Identifier; Cross-System-Suche läuft über Tempo/Read-Pfad, nicht Prometheus. | API-Kontrakt §7; §2.5 |
 | `token`, `authorization`, beliebige `*_token` / `*_secret` | Credentials gehören niemals in eine Metrik-Serie. | API-Kontrakt §7 |
-| `batch_size` | unbegrenzte Integer-Domäne, weil der OTel-Counter `mtrace.api.batches.received` vor der `MaxBatchSize=100`-Validierung läuft (siehe §2.2). Ab `0.4.0` Tranche 7 entfernt; `batch.size` bleibt nur als Span-Attribut. | §2.2; `plan-0.4.0.md` §8.2 |
+| `batch_size` | unbegrenzte Integer-Domäne, weil der OTel-Counter `mtrace.api.batches.received` vor der `MaxBatchSize=100`-Validierung läuft (siehe §2.2). `batch.size` bleibt nur als Span-Attribut. | §2.2; `plan-0.4.0.md` §8.2 |
 | SRT-Source-Labels (`id`, `path`, `remoteAddr`, `state`, `connection_id`, `stream_id` als Per-Stream-Identifier) sowie URL-/IP-/Token-Varianten aus MediaMTX `/v3/srtconns/list` | hochkardinale Per-Verbindung-Identifier; werden in SQLite/OTel-Spans persistiert, **nie** als Prometheus-Label. | §7; `plan-0.6.0.md` §4 |
-| WebRTC-/`getStats()`-Identifier (`peer_connection_id`, Report-`id`, `track_id`, `transport_id`, `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`, `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-Fingerprints, beliebige IP-Adressen, URLs, Codec-Strings, Browser-`user_agent`) sowie ein generisches `source_id`-Label aus einem WebRTC-Adapter-Pfad | hochkardinale Per-Verbindung-Identifier oder potenziell PII; gehören in einen späteren Read-Pfad (Event/Debug), niemals in Prometheus-Labels. Verbot ist **release-blockierend, sobald** der erste produktive `mtrace_webrtc_*`-Counter eingeführt wird; bis dahin ist die Spiegelung in `scripts/smoke-observability.sh` **Folge-DoD** (kein WebRTC-Counter im `0.7.0`-Scope, siehe §3.5). | §3.5; `plan-0.7.0.md` §5 (RAK-49) |
+| WebRTC-/`getStats()`-Identifier (`peer_connection_id`, Report-`id`, `track_id`, `transport_id`, `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`, `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-Fingerprints, beliebige IP-Adressen, URLs, Codec-Strings, Browser-`user_agent`) sowie ein generisches `source_id`-Label aus einem WebRTC-Adapter-Pfad | hochkardinale Per-Verbindung-Identifier oder potenziell PII; gehören in den Read-Pfad (Event/Debug), niemals in Prometheus-Labels. Verbot ist release-blockierend; gespiegelt in `scripts/smoke-observability.sh`. | §3.5; `plan-0.7.0.md` §5 (RAK-49) |
 
 Erlaubt sind ausschließlich die bounded Aggregat-Labels aus §3.2. Die Forbidden-Liste in `scripts/smoke-observability.sh` deckt die Tabelle plus generische Suffixe (`_url`, `_uri`, `_token`, `_secret`) defensiv ab; jeder Treffer ist release-blockierend.
 
@@ -452,12 +456,12 @@ Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich. Jede neue `mtrace_
 | Label | Wertebereich | Beispiel | Erlaubt auf |
 |---|---|---|---|
 | `event_type` | feste Enum aus §1.3 | `rebuffer_started`, `playback_error` | per-event-type-Aggregate (zukünftige Metriken) |
-| `outcome` | feste Enum | `accepted`, `invalid`, `rate_limited`, `dropped`, `analyzer_unavailable`, `analyzer_error`, … | `mtrace_analyze_requests_total{outcome,code}` (Tranche 6 §3) |
+| `outcome` | feste Enum | `accepted`, `invalid`, `rate_limited`, `dropped`, `analyzer_unavailable`, `analyzer_error`, … | `mtrace_analyze_requests_total{outcome,code}` |
 | `code` | feste Fehler-/Ergebnis-Code-Domäne pro Metrik | `invalid_request`, `analyzer_unavailable`, `fetch_blocked` | `mtrace_analyze_requests_total{outcome,code}` |
 | `health_state` | feste Enum aus §7.4: `healthy`, `degraded`, `critical`, `unknown` | `degraded` | `mtrace_srt_health_samples_total{health_state}` (`plan-0.6.0.md` §4) |
 | `source_status` | feste Enum aus §7.5: `ok`, `unavailable`, `partial`, `stale`, `no_active_connection` | `stale` | `mtrace_srt_health_collector_runs_total{source_status}` (`plan-0.6.0.md` §4) |
 | `instance` / `job` | OTel/Prometheus-Standard | `api:8080` | alle Metriken (Target-Metadaten) |
-| `connection_state` | feste Enum aus W3C `RTCPeerConnectionState`: `new`, `connecting`, `connected`, `disconnected`, `failed`, `closed` | `connected` | zukünftige WebRTC-Aggregate (siehe §3.5; **kein** produktiver Counter in `0.7.0`) |
+| `connection_state` | feste Enum aus W3C `RTCPeerConnectionState`: `new`, `connecting`, `connected`, `disconnected`, `failed`, `closed` | `connected` | WebRTC-Aggregate `mtrace_webrtc_connection_state_total` (siehe §3.5) |
 | `ice_state` | feste Enum aus W3C `RTCIceConnectionState`: `new`, `checking`, `connected`, `completed`, `failed`, `disconnected`, `closed` | `checking` | zukünftige WebRTC-Aggregate (siehe §3.5) |
 | `dtls_state` | feste Enum aus W3C `RTCDtlsTransportState`: `new`, `connecting`, `connected`, `closed`, `failed` | `connected` | zukünftige WebRTC-Aggregate (siehe §3.5) |
 
@@ -492,18 +496,15 @@ Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet (F-100):
 - User-Agent-Felder dürfen reduzierbar sein (z. B. nur Major-Version).
 - GDPR-konformer Betrieb: Event-Store muss eine Löschanfrage pro `session_id` bedienen können — Implementierung über das `EventRepository` in der jeweiligen Persistenz-Variante.
 
-### 3.5 WebRTC-Telemetrie (produktiv ab `0.8.0`)
+### 3.5 WebRTC-Telemetrie
 
 > Bezug: Lastenheft `1.1.10` §13.10 RAK-51..RAK-55, `plan-0.8.0.md`
-> §4 Tranche 3, [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose
-> ab `0.7.0` Tranche 1).
+> §4 Tranche 3, [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose).
 >
-> **Statusbruch zu `0.7.0`-Stand**: Diese Sektion war bis Lastenheft
-> `1.1.9` eine Future-Telemetry-Notiz. `0.8.0` Tranche 3 zieht den
-> Pfad produktiv: das SDK sammelt `getStats()`-Reports im
-> WebRTC-Adapter, der API-Ingress validiert die `webrtc.*`-Allowlist
-> und exportiert `mtrace_webrtc_*`-Counter. R-12 (Browser-`getStats()`-
-> Schema-Drift) wird damit release-blockierend.
+> Das SDK sammelt `getStats()`-Reports im WebRTC-Adapter, der
+> API-Ingress validiert die `webrtc.*`-Allowlist und exportiert
+> `mtrace_webrtc_*`-Counter. R-12 (Browser-`getStats()`-Schema-
+> Drift) ist release-blockierend.
 
 #### 3.5.1 Counter-Semantik und Sample-Modell
 
@@ -525,8 +526,8 @@ serverseitig:
    plus `webrtc.sample_id` (monoton aufsteigend).
 2. **Erster Sample**: setzt nur die Baseline und inkrementiert keinen
    Counter. Dasselbe Verhalten gilt nach API-Restart: in-memory-State
-   ist nicht durable persistiert in `0.8.0`, der erste Sample nach
-   Restart einer Session läuft als Baseline.
+   ist nicht durable persistiert, der erste Sample nach Restart einer
+   Session läuft als Baseline.
 3. **Folge-Samples**: Counter wird um `max(0, current - last)`
    inkrementiert. Negative Deltas (Counter-Reset, ungewöhnliche
    getStats()-Werte) inkrementieren keinen Counter und aktualisieren
@@ -581,10 +582,10 @@ dieser Drift-Strategie:
    Feld nicht findet, lässt das zugehörige Histogram/Gauge weg und
    emittiert die übrigen Metriken normal weiter. Eine Browser-Version
    ohne einzelnes Soll-Feld blockiert keinen Telemetriepfad.
-3. **Schema-Drift ist ab `0.8.0` release-blockierend**. Der
+3. **Schema-Drift ist release-blockierend**. Der
    Risiko-Eintrag steht im
    [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md) als
-   **R-12** (Stand `0.8.0` Tranche 3): bei Browser-Major-Version mit
+   **R-12**: bei Browser-Major-Version mit
    `getStats()`-Schema-Änderung muss die `webrtc.*`-Allowlist
    gegen die neuen Browser-Felder reviewed und ggf. die
    `WEBRTC_ERROR_CODES`-Liste erweitert werden, bevor das nächste
@@ -618,7 +619,7 @@ Token-Bucket pro drei Dimensionen (F-110, post-`1.0.2`-Mindestdienste-Klärung):
 |---|---|---|
 | `project_id` | 100 Events/s | Spike-Pattern |
 | `client_ip` | 100 Events/s | Schutz gegen einzelne Misuse-Browser |
-| `origin` | 100 Events/s | Pflicht für Browser-Traffic ab `0.1.1` (siehe `plan-0.1.0.md` §5.1) |
+| `origin` | 100 Events/s | Pflicht für Browser-Traffic (siehe `plan-0.1.0.md` §5.1) |
 
 Konfigurationsweise: Konstanten in `cmd/api/main.go` oder ENV-Variablen analog Spike. Verteilt-konsistente Rate-Limiter sind Bonus (F-110-Erweiterung in späteren Phasen).
 
@@ -626,7 +627,7 @@ Konfigurationsweise: Konstanten in `cmd/api/main.go` oder ENV-Variablen analog S
 
 `mtrace_dropped_events_total` ist laut API-Kontrakt §7 ausschließlich für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Channel-Puffer). Synchron fehlgeschlagenes `Append` ist **kein** Drop und inkrementiert den Counter nicht (F-122).
 
-In `0.1.0` mit synchron-blockierendem `EventRepository.Append` gibt es keinen Backpressure-Pfad — der Counter darf konstant `0` bleiben (Lastenheft §7.9-Hinweis: „Metrik muss aber existieren"). Mit Wechsel auf einen Async-Persistenz-Pfad in einer Folge-Phase würde der Counter relevant.
+Mit synchron-blockierendem `EventRepository.Append` gibt es keinen Backpressure-Pfad — der Counter darf konstant `0` bleiben (Lastenheft §7.9-Hinweis: „Metrik muss aber existieren"). Mit Wechsel auf einen Async-Persistenz-Pfad würde der Counter relevant.
 
 ### 4.4 SDK-Konfigurierbarkeit
 
@@ -676,8 +677,8 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 - Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden (F-129) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
 - Bevorzugt: Latenz = `server_received_at - client_time_origin` (skew-tolerant), nicht `server_received_at - client_timestamp`.
-- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über einem Schwellwert (in `0.4.0` Konstante 60 s, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5).
-- **Persistenz auf Event-Ebene** (seit `0.12.6` Tranche 3 / R-5): zusätzlich zum Span-Attribut auf Batch-Ebene wird das Skew-Bit **pro Event** in `playback_events.time_skew_warning` (Migration V6, `INTEGER NOT NULL DEFAULT 0`) persistiert. Die Pro-Event-Prüfung nutzt dieselbe 60-s-Schwelle und wird im Ingest-Use-Case unmittelbar nach dem Parsen des `client_timestamp` durchgeführt. Read-Pfade (`ListSessions`, `GetSessionDetail`, SSE-Frames in `/api/stream-sessions/stream`) echo'en das Flag als JSON-Feld `time_skew_warning` (`omitempty`, default `false`); Pre-V6-Events ohne Migration-Backfill bleiben damit als `false` sichtbar (konservativ; kein Tri-State).
+- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über der Schwelle von 60 s (Konstante, kein Configuration-Item — siehe `plan-0.4.0.md` §3.2), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5).
+- **Persistenz auf Event-Ebene** (R-5): zusätzlich zum Span-Attribut auf Batch-Ebene wird das Skew-Bit **pro Event** in `playback_events.time_skew_warning` (Migration V6, `INTEGER NOT NULL DEFAULT 0`) persistiert. Die Pro-Event-Prüfung nutzt dieselbe 60-s-Schwelle und wird im Ingest-Use-Case unmittelbar nach dem Parsen des `client_timestamp` durchgeführt. Read-Pfade (`ListSessions`, `GetSessionDetail`, SSE-Frames in `/api/stream-sessions/stream`) echo'en das Flag als JSON-Feld `time_skew_warning` (`omitempty`, default `false`); Pre-V6-Events ohne Migration-Backfill bleiben damit als `false` sichtbar (konservativ; kein Tri-State).
 - Dashboard-Anzeige: Time-Skew-Indikator (`⏱ skew`-Pin) in der Session-Timeline pro Event mit `time_skew_warning=true`; Tooltip nennt die Schwelle und das Span-Attribut (`mtrace.time.skew_warning`).
 
 ---
@@ -690,7 +691,7 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MINOR` (Patch wird im Wire nicht ausgewertet).
 
-| Wert in `0.1.x` | Bedeutung |
+| Wert | Bedeutung |
 |---|---|
 | `1.0` | aktuelle Wire-Format-Version laut diesem Dokument. |
 
@@ -703,12 +704,12 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 
 ### 6.3 Backend-Verhalten bei Schema-Versions-Mismatch
 
-- `schema_version` ≠ `1.0` → API-Kontrakt §5 Step 5 → `400 Bad Request`. Strikte Major.Minor-Prüfung, kein Range-Match in `0.1.x`.
+- `schema_version` ≠ `1.0` → API-Kontrakt §5 Step 5 → `400 Bad Request`. Strikte Major.Minor-Prüfung, kein Range-Match.
 - Mit künftiger Multi-Version-Unterstützung wird das Step 5-Wording erweitert; Folge-ADR dokumentiert die Übergangsstrategie.
 
 ---
 
-## 7. SRT-Health-Modell (`0.6.0`)
+## 7. SRT-Health-Modell
 
 > Bezug: Lastenheft §4.3, §13.8 RAK-41..RAK-46;
 > [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md)
@@ -716,9 +717,9 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 > [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](contract-fixtures/srt/mediamtx-srtconns-list.json).
 
 SRT-Health-Metriken sind **getrenntes Verbindungs-/Ingest-Signal** und nicht
-mit Player-Playback-Events vermischt (plan-0.6.0 §0.1). Die Quelle ist in
-`0.6.0` MediaMTX-Control-API über HTTP (`/v3/srtconns/list`); `apps/api`
-bleibt CGO-frei (R-2 in `risks-backlog.md` §1.2 aufgelöst).
+mit Player-Playback-Events vermischt (plan-0.6.0 §0.1). Die Quelle ist die
+MediaMTX-Control-API über HTTP (`/v3/srtconns/list`); `apps/api` bleibt
+CGO-frei (R-2 in `risks-backlog.md` §1.2 aufgelöst).
 
 ### 7.1 Datenmodell
 
@@ -731,7 +732,7 @@ Optional-Felder im Domain-Modell:
 | `project_id` | Muss | string (bounded Project-Resolver) | Tenant-Anker; nicht als Prometheus-Label exposed (siehe §3.1). |
 | `stream_id` | Muss | string | Lab-Stream-Name (z. B. `srt-test`); Per-Stream-Identifier, nur SQLite/OTel. |
 | `connection_id` | Muss | string | Quellseitige Verbindungs-ID (in MediaMTX `items[].id`); Per-Verbindung-Identifier, nur SQLite/OTel. |
-| `source_observed_at` | Soll | timestamp (RFC3339, ms) | Wann die Quelle den SRT-Zustand gemessen hat. **Optional**, weil MediaMTX-API in `0.6.0` keinen expliziten Timestamp liefert. |
+| `source_observed_at` | Soll | timestamp (RFC3339, ms) | Wann die Quelle den SRT-Zustand gemessen hat. **Optional**, weil die MediaMTX-API keinen expliziten Timestamp liefert. |
 | `source_sequence` | Pflicht ohne `source_observed_at` | string oder integer | Monotones Surrogat — z. B. `bytesReceived`-Counter aus dem Sample, Generation-ID, Sample-Window-Endzeit. Wird von der Stale-Bewertung als Source-Sequence gewertet. |
 | `collected_at` | Muss | timestamp (RFC3339, ms) | Zeitpunkt des Polls durch den Collector (m-trace-eigene Uhr). Allein **nicht** ausreichend für Freshness-Bewertung. |
 | `ingested_at` | Muss | timestamp (RFC3339, ms) | Zeitpunkt der SQLite-Persistenz. |
@@ -748,7 +749,7 @@ Optional-Felder im Domain-Modell:
 | `connection_state` | Muss | enum | `connected`, `no_active_connection`, `unknown`. Getrennt vom Quellenstatus, weil eine erreichbare Quelle ohne aktive Verbindung ein anderer Fall ist als eine nicht erreichbare Quelle. |
 | `health_state` | Muss | enum (§7.4) | `healthy`, `degraded`, `critical`, `unknown`. Server-seitig berechnet aus den Pflicht-Werten plus Schwellen. |
 
-### 7.2 Erweiterte SRT-Signale (deferred in `0.6.0`, sofern nicht ohne Zusatzrisiko aus der Quelle mitfallen)
+### 7.2 Erweiterte SRT-Signale (deferred, sofern nicht ohne Zusatzrisiko aus der Quelle mitfallen)
 
 Lastenheft §4.3 listet weitere SRT-Signale; plan-0.6.0 §0.1 priorisiert
 explizit RAK-43-Pflichtwerte. Folgende Signale sind aus MediaMTX-API
@@ -783,10 +784,9 @@ deferred.
 ### 7.4 Health-Bewertung
 
 `health_state` ist server-seitig aus den Pflicht-Werten berechnet.
-Schwellen sind dokumentiert und über Tests fixiert (Tranche 4 setzt
-die finalen Schwellen):
+Schwellen sind dokumentiert und über Tests fixiert:
 
-| Zustand | Bedingung (Vorschlag, Tranche 4 final) |
+| Zustand | Bedingung |
 |---|---|
 | `healthy` | Alle Pflicht-Werte verfügbar; `rtt_ms < 100`; `packet_loss_total`-Δ pro Sample-Window unter 1 % der `bytesReceived`-Δ-äquivalenten Paketanzahl; `available_bandwidth_bps >= required_bandwidth_bps × 1.5` (oder kein `required_bandwidth_bps` bekannt → keine Bandbreiten-Bewertung). |
 | `degraded` | `rtt_ms` zwischen 100 und 250 ms ODER Paketverlust 1–5 % ODER Retransmissions-Anteil > 0,5 %. |
@@ -814,14 +814,14 @@ Stabile Codes (analog Probe-Befund aus
 ### 7.6 Freshness-Strategie
 
 - `source_observed_at` ist die Source-of-Truth, falls die Quelle ihn
-  liefert. MediaMTX-API liefert ihn in `0.6.0` **nicht** — Adapter
+  liefert. Die MediaMTX-API liefert ihn **nicht** — Adapter
   nutzt stattdessen `collected_at` plus ein **Source-Sequence-
   Surrogat**: monoton steigender `bytesReceived` zwischen Polls.
 - **Stale-Erkennung**: identischer `bytesReceived` (oder gewähltes
   Surrogat) zwischen `N` aufeinanderfolgenden Polls trotz
   `connection_state = connected` → `source_status: stale` mit
   `source_error_code: stale_sample`. `N` ist konfigurierbar
-  (Vorschlag Tranche 4: `N = 3`, ≈ 15 s bei 5-s-Polling).
+  (Default `N = 3`, ≈ 15 s bei 5-s-Polling).
 - **Importzeit allein** (`collected_at` oder `ingested_at`) darf
   Freshness niemals beweisen. Wiederholt importierte Altwerte mit
   identischem Surrogat sind stale, auch wenn `collected_at` neu ist.
@@ -836,7 +836,7 @@ Stabile Codes (analog Probe-Befund aus
   gescraped (plan-0.6.0 §0.1). MediaMTX-eigene Prometheus-Targets
   bleiben außerhalb des m-trace-Stacks.
 
-Erlaubte `mtrace_srt_*`-Aggregate (Tranche 6 finalisiert):
+Erlaubte `mtrace_srt_*`-Aggregate:
 
 | Metrik | Typ | Labels |
 |---|---|---|
@@ -864,12 +864,14 @@ Erlaubte `mtrace_srt_*`-Aggregate (Tranche 6 finalisiert):
 - MediaMTX-Auth-Credentials für die API (z. B. `authInternalUsers`-
   Pass) gehören in ENV / Geheimnis-Store, nicht in Code oder Logs.
 
-## 8. Sampling-Modell und Read-Pfad-Markierung (`0.12.6`, R-10)
+## 8. Sampling-Modell und Read-Pfad-Markierung (R-10)
 
-`0.4.0` markierte Sampled-Sessions (Player-SDK mit `sampleRate < 1`)
-nur durch das Fehlen von Events; der Server konnte „voll-gesampelt"
-nicht von „teilweise gesampelt mit Lücken" unterscheiden (`R-10`).
-`0.12.6` Tranche 4 zieht die Markierung auf Session-Ebene nach.
+Sampled-Sessions (Player-SDK mit `sampleRate < 1`) sind serverseitig auf
+Session-Ebene markiert: das SDK liefert das Sampling-Ratio in **jedem**
+Event-Body, der Server normalisiert auf Integer-ppm und persistiert es
+auf der Session-Zeile. Ohne diese Markierung könnte der Server
+„voll-gesampelt" nicht von „teilweise gesampelt mit Lücken" unterscheiden
+(`R-10`).
 
 ### 8.1 Wire-Vertrag
 
@@ -923,11 +925,11 @@ nicht von „teilweise gesampelt mit Lücken" unterscheiden (`R-10`).
   `==`-Vergleiche nutzen; die normative Quelle ist `sample_rate_ppm`
   (Integer).
 
-### 8.5 Optionale Lücken-Heuristik (`0.13.0+`)
+### 8.5 Optionale Lücken-Heuristik
 
-In `0.12.6` ist nur die Markierung geliefert, keine
-Lücken-Erkennung. Erwartungswerte (`expected = total_events *
-SampleRateFull / sample_rate_ppm`) werden in Integer-Arithmetik
-ausgewertet — kein Float in der Server-Side-Logik. Eine konkrete
-Heuristik-Schwelle (z. B. „Session unter 50 % der erwarteten Events
-→ `possible_loss`") bleibt Folge-Tuning auf Operator-Bedarf.
+Bisher ist nur die Markierung geliefert, keine Lücken-Erkennung.
+Erwartungswerte (`expected = total_events * SampleRateFull /
+sample_rate_ppm`) werden in Integer-Arithmetik ausgewertet — kein
+Float in der Server-Side-Logik. Eine konkrete Heuristik-Schwelle
+(z. B. „Session unter 50 % der erwarteten Events → `possible_loss`")
+bleibt Folge-Tuning auf Operator-Bedarf.
