@@ -1,8 +1,6 @@
 # Browser-Support-Matrix
 
-> **Status**: `0.2.0`-Arbeitsstand. Diese Matrix konkretisiert die
-> MVP-Browser-Einstufung aus [`lastenheft.md`](./lastenheft.md)
-> §7.5 für das Player-SDK und die Demo-Integration.
+> **Bezug**: F-58..F-67.
 
 ## Einstufung
 
@@ -26,7 +24,7 @@
 - `out of scope` bedeutet: Kein Release-Gate und keine implizite
   Support-Zusage.
 
-Safari Desktop bleibt in `0.2.0` eingeschränkt, weil native HLS deutlich
+Safari Desktop bleibt eingeschränkt (F-61), weil native HLS deutlich
 weniger Playback-Introspektion liefert als hls.js. Die Demo-Route hat
 einen nativen HLS-Fallback; der Player-SDK-hls.js-Adapter ist dort aber
 nicht vollständig aktiv.
