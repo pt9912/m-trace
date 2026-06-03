@@ -109,9 +109,9 @@ dev-detached:
 dev-observability:
 	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability up --build
 
-# `make dev-tempo` startet observability + tempo gemeinsam
-# ). Der Collector-Service ist nicht doppelt definiert; derselbe
-# Container fährt in §6.3 mit der Tempo-Pipeline-Konfig hoch (env-
+# `make dev-tempo` startet observability + tempo gemeinsam.
+# Der Collector-Service ist nicht doppelt definiert; derselbe
+# Container fährt mit der Tempo-Pipeline-Konfig hoch (env-
 # gesteuerter Config-Pfad). RAK-31 ist Kann-Scope — ohne Profil
 # bleibt die Dashboard-Timeline (RAK-32) vollständig funktional.
 dev-tempo:
@@ -343,7 +343,7 @@ smoke-outbound-webhook:
 # Workflow: apps/api/Makefile::benchmark-smoke schreibt den Go-
 # Bench-Output nach .tmp/bench/api-bench.txt (im Container an
 # /src/.tmp gemountet); `scripts/check-bench-budgets.mjs --kind go`
-# parst per stdin und prüft Budgets aus §3.
+# parst per stdin und prüft Budgets aus `docs/perf/budgets.md`.
 api-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
 	@mkdir -p .tmp/bench
@@ -361,8 +361,8 @@ api-benchmark-smoke:
 # Workflow: vitest-bench-stdout wird nach
 # `.tmp/bench/analyzer-bench.txt` gespiegelt; `scripts/check-bench-
 # budgets.mjs --kind ts` parst die Texttabelle und prüft jeden Bench
-# gegen das Budget aus §4 (Plan-DoD „Budget-Verletzung erzeugt
-# eindeutige Fehlermeldung mit Ist/Soll").
+# gegen das Budget aus `docs/perf/budgets.md` (Plan-DoD „Budget-
+# Verletzung erzeugt eindeutige Fehlermeldung mit Ist/Soll").
 analyzer-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
 	@mkdir -p .tmp/bench
@@ -399,7 +399,7 @@ fuzz-check: api-fuzz-check ts-test
 # `apps/api/hexagon/application/event_meta_validation.go` (gemutiert
 # als Teil des `hexagon/application`-Packages). Tool: gremlins
 # (Substitution für unmaintainted go-mutesting; Begründung in
-# `docs/dev/mutation-testing.md` §1). Output:
+# `docs/dev/mutation-testing.md`). Output:
 #   - `apps/api/.tmp/mutation/api-mutation-report.txt` (stdout-Spiegel)
 #   - `apps/api/.tmp/mutation/api-mutation-report.json` (Maschinen-Form)
 # Initial nicht-blockierend; opt-in (NICHT in `make gates`). Lokaler
@@ -499,7 +499,7 @@ api-test:
 # `go test -race ./...`). Bewusst nicht Teil von `make test` /
 # `make gates` — 5–10× langsamer und nur sinnvoll, wenn
 # Concurrency-Code geändert wurde. Lauf vor Tag-Push, siehe
-# `docs/user/releasing.md` §2 Smoke-Block.
+# `docs/user/releasing.md`.
 api-race:
 	$(API_MAKE) race
 
