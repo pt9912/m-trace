@@ -1,18 +1,13 @@
 # Releasing — m-trace
 
-> **Status**: Verbindlich für alle Releases (zuletzt verifiziert mit
-> `0.4.0`). CI-Verifikation, Branching-Modell, Tag-Format,
-> GitHub-Packages-Publish und GHCR-Image-Publish sind stabil
-> beschrieben.
-> Bezug: AK-11, DoD §18 (Lastenheft).
+> **Bezug**: AK-11, F-131.
 
 ## 0. Zweck
 
 Dieses Dokument beschreibt den minimalen, reproduzierbaren
 Release-Ablauf für m-trace. Der Ablauf ist versionsunabhängig
 formuliert und verwendet Platzhalter der Form `X.Y.Z`. Er gilt für
-alle Releases aus dem Release-Plan (Lastenheft §13, Roadmap §3 —
-RAK-1..RAK-46).
+alle Releases aus dem Release-Plan (RAK-1..RAK-46).
 
 ## 1. Vorbereitung
 
@@ -24,13 +19,13 @@ TAG="v$VER"
 Vor jedem Release:
 
 - noch nicht veröffentlichte Änderungen stehen unter `## [Unreleased]`
-  in `CHANGELOG.md`; ein datierter Versionsabschnitt entsteht erst mit
+  in [`CHANGELOG.md`](../../CHANGELOG.md); ein datierter Versionsabschnitt entsteht erst mit
   dem Release-Commit.
-- `CHANGELOG.md` auf den Zielstand bringen.
+- [`CHANGELOG.md`](../../CHANGELOG.md) auf den Zielstand bringen.
 - betroffene Plan-, Status- und Nutzungsdokumente aktualisieren
-  (`docs/planning/in-progress/roadmap.md`, `spec/architecture.md`, `apps/api/README.md`).
+  ([`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md), [`spec/architecture.md`](../../spec/architecture.md), [`apps/api/README.md`](../../apps/api/README.md)).
 - Roadmap §1.1 und §1.2 nach dem Release-Bump neu schreiben (siehe
-  `docs/planning/in-progress/roadmap.md` §7 Wartungsregel).
+  [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) Wartungsregel).
 - offene `OE-X` und `R-X` durchsehen — Einträge, die mit dem Release
   aufgelöst werden, aus den Tabellen entfernen.
 
@@ -42,36 +37,36 @@ Vor Tag und GitHub-Release müssen die Root-Targets grün sein:
 make gates                # CI-äquivalenter Komplettcheck (api-race+ts-test+lint+coverage+arch+schema+docs)
 make build
 make sdk-performance-smoke
-make smoke-cli            # ab 0.3.0: Lastenheft-Aufruf `pnpm m-trace check`
-make smoke-analyzer       # ab 0.3.0: manuelles Release-Gate, fährt Compose hoch
-make smoke-observability  # ab 0.4.0: Cardinality-Smoke; Observability-Stack muss laufen
-make browser-e2e          # ab 0.4.0: Dashboard-Timeline + hls.js-Demo-Flow
+make smoke-cli            # Lastenheft-Aufruf `pnpm m-trace check`
+make smoke-analyzer       # manuelles Release-Gate, fährt Compose hoch
+make smoke-observability  # Cardinality-Smoke; Observability-Stack muss laufen
+make browser-e2e          # Dashboard-Timeline + hls.js-Demo-Flow
 make dev-detached         # Core-Lab für smoke-mediamtx starten; danach `make stop`
-make smoke-mediamtx       # ab 0.5.0: MediaMTX-Beispiel (RAK-36); braucht laufendes Core-Lab
-make smoke-srt            # ab 0.5.0: SRT-Beispiel (RAK-37); startet/stoppt Project mtrace-srt
-make smoke-srt-health     # ab 0.6.0: SRT-Health-Smoke (RAK-41/RAK-42); startet/stoppt mtrace-srt + probt MediaMTX-API
-make smoke-dash           # ab 0.5.0: DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
-make smoke-webrtc-prep    # ab 0.7.0: WebRTC-Lab-Vorbereitungs-Smoke (RAK-48); startet/stoppt mtrace-webrtc; endpoint-only (kein Browser/Playback/getStats)
-make smoke-webrtc-stats-drift # ab 0.9.0: WebRTC-`getStats()`-Drift-Smoke (RAK-56); startet/stoppt mtrace-webrtc + ruft Playwright-Spec gegen Chromium/Firefox; opt-in lokal, produktiv im Nightly-Workflow `.github/workflows/webrtc-drift.yml`
-make package-publish-dry-run # ab 0.20.0: baut und prüft die zwei GitHub-Packages-npm-Artefakte ohne Veröffentlichung
-make image-publish-dry-run VER="$VER" # ab 0.21.0: baut und prüft die drei GHCR-Runtime-Images ohne Veröffentlichung
+make smoke-mediamtx       # MediaMTX-Beispiel (RAK-36); braucht laufendes Core-Lab
+make smoke-srt            # SRT-Beispiel (RAK-37); startet/stoppt Project mtrace-srt
+make smoke-srt-health     # SRT-Health-Smoke (RAK-41/RAK-42); startet/stoppt mtrace-srt + probt MediaMTX-API
+make smoke-dash           # DASH-Beispiel (RAK-38); startet/stoppt Project mtrace-dash
+make smoke-webrtc-prep    # WebRTC-Lab-Vorbereitungs-Smoke (RAK-48); startet/stoppt mtrace-webrtc; endpoint-only (kein Browser/Playback/getStats)
+make smoke-webrtc-stats-drift # WebRTC-`getStats()`-Drift-Smoke (RAK-56); startet/stoppt mtrace-webrtc + ruft Playwright-Spec gegen Chromium/Firefox; opt-in lokal, produktiv im Nightly-Workflow `.github/workflows/webrtc-drift.yml`
+make package-publish-dry-run # baut und prüft die zwei GitHub-Packages-npm-Artefakte ohne Veröffentlichung
+make image-publish-dry-run VER="$VER" # baut und prüft die drei GHCR-Runtime-Images ohne Veröffentlichung
 ```
 
 Erfolgskriterien:
 
 - alle Targets exit code 0.
 - `make gates` umfasst `make api-race` (Go-Tests mit Race-Detector,
-  CGO=1; ab `0.7.0` Tranche 0 in gates statt `api-test`, weil
+  CGO=1; in gates statt `api-test`, weil
   Race-Detection ein Superset ist), `make ts-test`, `make lint`,
   `make coverage-gate`, `make arch-check`, `make schema-validate`
   und `make docs-check` — einzelne Aufrufe sind möglich, aber
   `make gates` ist die CI-äquivalente Eingangsstufe.
 - `make coverage-gate` (Teil von `make gates`) umfasst API-,
-  Player-SDK-, Dashboard-, stream-analyzer- und (ab `0.3.0`)
+  Player-SDK-, Dashboard-, stream-analyzer- und
   analyzer-service-Coverage.
 - `golangci-lint`-Stage liefert keine Findings.
 - `go test ./...` deckt mindestens die Pflichttests aus
-  `spec/backend-api-contract.md` §11 ab.
+  [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md) ab.
 - Coverage-Gate liegt bei mindestens 90 %.
 - Architektur-Grenzen bleiben laut `make arch-check` intakt.
 - `make smoke-observability` setzt einen laufenden Observability-Stack
@@ -84,15 +79,15 @@ Erfolgskriterien:
 
 CI deckt `make gates`, `make build`, `make sdk-performance-smoke` und
 `make smoke-cli` ab; `smoke-analyzer`, `smoke-observability`,
-`browser-e2e` und ab `0.5.0` `smoke-mediamtx`/`smoke-srt`/
-`smoke-dash` (plus ab `0.6.0` `smoke-srt-health`, ab `0.7.0`
+`browser-e2e` und `smoke-mediamtx`/`smoke-srt`/
+`smoke-dash` (plus `smoke-srt-health`,
 `smoke-webrtc-prep`) laufen lokal vor dem Tag (Compose-Stack-Up bzw.
 Browser-Stack ist zu schwergewichtig für jeden PR-Run). CI-Zielplattform
 ist GitHub Actions auf `ubuntu-24.04`, Workflow-Name: `build`.
 
-### 2.1 Manuelle `0.6.0`-Prüfungen (SRT-Health-View)
+### 2.1 Manuelle SRT-Health-Prüfungen
 
-Zusätzlich zu den oben gelisteten Smokes braucht der `0.6.0`-Release
+Zusätzlich zu den oben gelisteten Smokes braucht der Release
 eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
 
 1. `make dev` plus `examples/srt/`-Stack (`docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build`).
@@ -104,7 +99,7 @@ eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
    `SMOKE_INCLUDE_MTRACE_API=1 make smoke-srt-health` —
    probt zusätzlich zum MediaMTX-Pfad gegen
    `GET /api/srt/health/{stream_id}` und verifiziert die vier
-   RAK-43-Pflichtwerte im Wire-Format aus spec §7a.2.
+   RAK-43-Pflichtwerte im Wire-Format aus [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md).
 3. Dashboard-Route <http://localhost:5173/srt-health> öffnen — die
    Tabelle muss `srt-test` mit Health-Pill `healthy`, RTT < 5 ms und
    Bandbreite im Mbit/s-Bereich zeigen.
@@ -118,10 +113,10 @@ eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
 Vollständige Operator-Doku:
 [`srt-health.md`](./srt-health.md).
 
-### 2.2 Manuelle `0.7.0`-Prüfungen (WebRTC-Lab-Erweiterung)
+### 2.2 Manuelle WebRTC-Lab-Prüfungen
 
 Zusätzlich zu `make smoke-webrtc-prep` (auto-up/down, endpoint-only)
-braucht der `0.7.0`-Release einen kurzen manuellen Browser-Handcheck
+braucht der Release einen kurzen manuellen Browser-Handcheck
 gegen ein laufendes Lab (RAK-50, „Kann"; nicht release-blockierend,
 aber Bestandteil der dokumentierten Verifikationspfade):
 
@@ -136,7 +131,7 @@ aber Bestandteil der dokumentierten Verifikationspfade):
    (Firefox) zeigt eine aktive `RTCPeerConnection` mit
    `connection_state=connected`, `ice_state=connected`,
    `dtls_state=connected`. Diese Werte sind in
-   `spec/telemetry-model.md` §3.5.2 als Muss-Felder dokumentiert.
+   [`spec/telemetry-model.md`](../../spec/telemetry-model.md) als Muss-Felder dokumentiert.
 5. `docker compose -p mtrace-webrtc … down` räumt nur den
    `mtrace-webrtc`-Stack ab; Core-Lab und andere Beispiele bleiben
    unangetastet.
@@ -144,10 +139,10 @@ aber Bestandteil der dokumentierten Verifikationspfade):
 Vollständige Operator-Doku:
 [`examples/webrtc/README.md`](../../examples/webrtc/README.md).
 
-### 2.3 Manuelle `0.8.0`-Prüfungen (Player-SDK-WebRTC-Adapter)
+### 2.3 Manuelle Player-SDK-WebRTC-Prüfungen
 
-Zusätzlich zu `make smoke-webrtc-prep` und dem `0.7.0`-Browser-
-Handcheck braucht der `0.8.0`-Release einen produktiven End-to-End-
+Zusätzlich zu `make smoke-webrtc-prep` und dem WebRTC-Browser-
+Handcheck braucht der Release einen produktiven End-to-End-
 Lauf des Player-SDK-WebRTC-Adapters gegen das laufende Lab. Pflicht-
 Schritte (RAK-51..RAK-54):
 
@@ -171,7 +166,7 @@ Schritte (RAK-51..RAK-54):
    `mtrace_webrtc_bytes_received_total`,
    `mtrace_webrtc_bytes_sent_total`. Keine `peer_connection_run_id`-,
    `ssrc`-, `track_id`-Labels (Cardinality-Vertrag aus
-   `spec/telemetry-model.md` §3.1).
+   [`spec/telemetry-model.md`](../../spec/telemetry-model.md)).
 4. Optional automatisierter Browser-E2E:
    `MTRACE_WEBRTC_LAB=1 make browser-e2e` flippt
    `tests/e2e/dashboard-demo-webrtc.spec.ts` auf den Happy-Path
@@ -183,16 +178,16 @@ Vollständige Operator-Doku:
 [`packages/player-sdk/README.md`](../../packages/player-sdk/README.md)
 §Performance and Browser Support.
 
-### 2.4 Manuelle `0.9.0`-Prüfungen (Drift-Smoke + DASH + SRS)
+### 2.4 Manuelle Drift-Smoke- / DASH- / SRS-Prüfungen
 
-`0.9.0` bündelt drei thematisch getrennte Liefergegenstände
-(plan-0.9.0 Tranchen 1–3); vor dem Release-Tag laufen drei
+Drei thematisch getrennte Liefergegenstände
+; vor dem Release-Tag laufen drei
 operative Verifikationspfade an, die alle als opt-in Smokes lokal
 reproduzierbar sind und nicht in `make gates` enthalten:
 
-#### 2.4.1 WebRTC-Drift-Smoke (Tranche 1, RAK-56)
+#### 2.4.1 WebRTC-Drift-Smoke (RAK-56)
 
-Seit `0.9.0` Tranche 1 ist der Drift-Review aus R-12 automatisiert.
+Der Drift-Review aus R-12 ist automatisiert.
 Vor jedem Release-Tag (auch Patch) genügt ein Blick auf den letzten
 Nightly-Lauf des Workflows
 [`.github/workflows/webrtc-drift.yml`](../../.github/workflows/webrtc-drift.yml):
@@ -211,7 +206,7 @@ Nightly-Lauf des Workflows
   `packages/player-sdk/src/adapters/webrtc/sampling.ts` synchron
   aktualisieren; lokal `make smoke-webrtc-stats-drift` grün ziehen.
 
-#### 2.4.2 SRS-Lab-Boot (Tranche 2, RAK-57)
+#### 2.4.2 SRS-Lab-Boot (RAK-57)
 
 `make smoke-srs` fährt das `mtrace-srs`-Compose hoch, prüft drei
 Probes (HTTP-API erreichbar, Stream `live/srs-test` registriert,
@@ -227,9 +222,9 @@ make smoke-srs
 Ports `1935/1985/8088` müssen frei sein; Operator-Doku siehe
 [`examples/srs/README.md`](../../examples/srs/README.md).
 
-#### 2.4.3 DASH-CLI-Probe (Tranche 3, RAK-58/RAK-59)
+#### 2.4.3 DASH-CLI-Probe (RAK-58, RAK-59)
 
-`make smoke-cli` ist seit `0.9.0` Tranche 3 um einen DASH-Pfad
+`make smoke-cli` ist um einen DASH-Pfad
 erweitert: zusätzlich zum HLS-Master-Test prüft der Smoke, dass
 `pnpm m-trace check <vod.mpd>` ein Result mit
 `analyzerKind:"dash"` / `playlistType:"dash"` und mindestens einer
@@ -251,9 +246,9 @@ gh run watch --workflow build.yml
 gh run list --workflow webrtc-drift.yml --limit 5
 ```
 
-### 2.5 Benchmark-Regression-Gate (`0.9.5` Tranche 2, RAK-Wave-2)
+### 2.5 Benchmark-Regression-Gate (RAK-Wave-2)
 
-Seit `plan-0.9.5` Tranche 2 ist
+ist
 [`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml)
 Nightly aktiv und failed bei statistisch signifikanten
 Performance-Regressionen über +15 % (p < 0.05) gegenüber der
@@ -296,20 +291,20 @@ und das Tag entfernen, oder das Tag mit einer Plan-DoD-Item-
 node scripts/check-bench-quarantines.mjs apps/api packages/stream-analyzer
 ```
 
-### 2.6 Fuzz- und Mutation-Beobachtungs-Gates (`0.9.5` Tranche 3+4, RAK-Wave-2)
+### 2.6 Fuzz- und Mutation-Beobachtungs-Gates (RAK-Wave-2)
 
-Seit `plan-0.9.5` Tranchen 3 und 4 laufen zwei weitere Nightly-
+Laufen aktuell zwei weitere Nightly-
 Workflows als **nicht-blockierende Beobachtungs-Gates**:
 
 - [`.github/workflows/fuzz.yml`](../../.github/workflows/fuzz.yml)
   (Cron `0 5 * * *` UTC, sechs Go-Fuzz-Targets, 5 min/Target).
   Crash-Funde landen als Issue mit Repo-Pfad
   `apps/api/<package>/testdata/fuzz/<Target>/<id>` (Labels
-  `fuzz,quality,plan-0.9.5`); offenes Crash-Issue **blockiert
+  `fuzz,quality`); offenes Crash-Issue **blockiert
   den nächsten Release-Tag** (Patch *und* Minor), bis das
   Crash-File als Regression-Seed im Repo gelandet und der Bug
   gefixt ist.
-  Operator-Doku: [`docs/dev/fuzzing.md`](../dev/fuzzing.md).
+  Operator-Doku: [[`docs/dev/fuzzing.md`](../dev/fuzzing.md)](../dev/fuzzing.md).
 - [`.github/workflows/mutation.yml`](../../.github/workflows/mutation.yml)
   (Cron `0 6 * * *` UTC, gremlins für Go + StrykerJS für TS;
   beide Jobs `continue-on-error: true`). **Initial nicht-
@@ -317,7 +312,7 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   über die HTML/JSON-Artefakte verfolgt; PR-Blockierung erst,
   wenn ein Modul drei Beobachtungsläufe in Folge > 70 % Score
   zeigt — Übergangs-Pfad in
-  [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md) §3.
+  [[`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)](../dev/mutation-testing.md) §3.
 
 PR-Pfad-Wrapper (opt-in, NICHT in `make gates`):
 
@@ -336,9 +331,9 @@ Release-Konvention für `0.1.x`:
 - kein Pre-Release-Suffix für Hauptreleases.
 - keine automatische Veröffentlichung ohne explizite Freigabe.
 
-### 3.0 Release-Guard (`0.13.0`)
+### 3.0 Release-Guard
 
-Seit `0.13.0` gibt es einen lokalen Guard vor Tag/Publish. Er ersetzt
+gibt es einen lokalen Guard vor Tag/Publish. Er ersetzt
 keine Qualitäts-Gates, sondern prüft den manuellen Freigabepunkt und
 die wichtigsten Release-Anker:
 
@@ -351,7 +346,7 @@ Der Guard prüft:
 - explizite Freigabe über `MTRACE_RELEASE_APPROVED=1`;
 - Branch `main` und saubere Arbeitskopie;
 - Tag `vX.Y.Z` existiert weder lokal noch auf `origin`;
-- `CHANGELOG.md`, API-`serviceVersion` und Root-`package.json` zeigen
+- [`CHANGELOG.md`](../../CHANGELOG.md), API-`serviceVersion` und Root-`package.json` zeigen
   auf dieselbe Version.
 
 Für lokale Tests am Guard selbst existieren drei bewusst benannte
@@ -360,7 +355,7 @@ Overrides: `MTRACE_RELEASE_ALLOW_NON_MAIN=1`,
 `MTRACE_RELEASE_ALLOW_OFFLINE=1`. Diese Overrides sind nicht für den
 Release-Pfad zulässig und dürfen im Release-Log nicht gesetzt sein.
 
-Ab `0.14.0` gibt es zusätzlich einen lokalen Guard-Self-Test:
+Zusätzlich gibt es einen lokalen Guard-Self-Test:
 
 ```bash
 make release-guard-test
@@ -372,9 +367,9 @@ Versionsargument, falscher Branch, Dirty Worktree, bereits vorhandener
 lokaler Tag und Versionsdrift in `package.json`. Er erzeugt keinen Tag
 und keinen Release.
 
-### 3.1 Patch-Release-Konvention (`0.X.Y`, ab `0.8.5`)
+### 3.1 Patch-Release-Konvention (`0.X.Y`)
 
-Erstmals eingeführt mit `0.8.5` (Quality-Gates Wave 1). Patch-
+Patch-
 Releases gelten für CI-/Tooling-/Doku-Lieferungen ohne neue
 User-Surface:
 
@@ -395,7 +390,7 @@ Minor-Bump auch berührt:
   `package.json` — kein eigener Bump nötig)
 - `contracts/sdk-compat.json` `sdk_version`
 - alle 20 Analyzer-Spec-Fixtures unter
-  `spec/contract-fixtures/analyzer/*.json` (`analyzerVersion`-Feld)
+  [`spec/contract-fixtures/analyzer/*.json`](../../spec/contract-fixtures/analyzer) (`analyzerVersion`-Feld)
 - die 20 testdata-Kopien in
   `apps/api/adapters/driven/streamanalyzer/testdata/` (über
   `make sync-contract-fixtures`)
@@ -403,7 +398,7 @@ Minor-Bump auch berührt:
 
 Sonst entsteht Drift zwischen SDK-Bundle, API-Service-Version und
 CI-Smokes. **Bump-Pattern-Sweep vor Tag** (mindestens diese drei
-Patterns muss der grep abdecken; das 0.12.0-Release hat zunächst
+Patterns muss der grep abdecken; ein älterer Release hat zunächst
 12 Stellen übersehen):
 
 ```bash
@@ -416,7 +411,7 @@ grep -rn '"sdk_version":\s*"X\.Y\.Z"\|PLAYER_SDK_VERSION\s*=\s*"X\.Y\.Z"\|servic
 Plan-DoD-Items ersetzen die RAK-Verifikationsmatrix; ein
 Patch-Release-Plan trägt keinen `§6.1`-Block.
 
-**Wave-2-Quality-Gates-Voraussetzung** (ab `0.9.5`): vor jedem
+**Wave-2-Quality-Gates-Voraussetzung**: vor jedem
 Release-Tag (Patch *und* Minor) zusätzlich prüfen *und im Release-
 Log dokumentieren* (Plan-Closeout-Sektion oder Tag-Annotation
 zitiert die geprüften Run-IDs):
@@ -438,7 +433,7 @@ zitiert die geprüften Run-IDs):
 - §2.6 Mutation-Beobachtungs-Gate — Score-Trend in den letzten
   drei Nightly-Artefakten geprüft (kein hartes Gate; Score-
   Senkung ist begründungspflichtig, siehe
-  [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)
+  [[`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)](../dev/mutation-testing.md)
   §3).
   ```bash
   gh run list --workflow mutation.yml --limit 3
@@ -447,9 +442,9 @@ zitiert die geprüften Run-IDs):
 **Im Release-Log (Plan §8 Closeout-DoD oder Tag-Annotation) das
 Verdict festhalten** — z. B. „Wave-2-Gates: benchmark.yml run
 12345678 ✅, fuzz.yml run 12345679 ✅, mutation.yml letzte 3 Runs
-Score-Trend stabil". Beim `0.12.0`-Release waren die Nightlies
+Score-Trend stabil". Beim Release waren die Nightlies
 grün, aber das Verdict wurde nicht dokumentiert (Lehre für
-`0.13.0`).
+.
 
 ```bash
 git commit -m "chore(release): vX.Y.Z"
@@ -462,12 +457,12 @@ git push origin "$TAG"
 
 Mindestumfang:
 
-- Release-Notes aus dem `CHANGELOG.md`-Versionsabschnitt extrahieren.
+- Release-Notes aus dem [`CHANGELOG.md`](../../CHANGELOG.md)-Versionsabschnitt extrahieren.
 - Release-Titel: `m-trace X.Y.Z`.
 - Tag: `vX.Y.Z`.
-- Assets: GitHub-Source-Archive (`zip`/`tar.gz`) plus ab `0.20.0`
+- Assets: GitHub-Source-Archive (`zip`/`tar.gz`) plus
   GitHub-Packages-Publish für die publishbaren npm-Pakete und ab
-  `0.21.0` GHCR-Publish für die drei Runtime-Images.
+  GHCR-Publish für die drei Runtime-Images.
 
 ```bash
 gh release create "$TAG" \
@@ -475,9 +470,9 @@ gh release create "$TAG" \
     --notes-file <changelog-extract>
 ```
 
-## 5. GitHub-Packages-Publish (`0.20.0`)
+## 5. GitHub-Packages-Publish
 
-Ab `0.20.0` werden nur die zwei Library-/CLI-Pakete veröffentlicht:
+  werden nur die zwei Library-/CLI-Pakete veröffentlicht:
 
 - `@pt9912/player-sdk`
 - `@pt9912/stream-analyzer`
@@ -532,9 +527,9 @@ veröffentlicht wird. Produktive Veröffentlichungen laufen intern über:
 MTRACE_PACKAGE_PUBLISH_APPROVED=1 make package-publish
 ```
 
-## 6. GHCR-Image-Publish (`0.21.0`)
+## 6. GHCR-Image-Publish
 
-Ab `0.21.0` werden die drei Runtime-Images versioniert auf GHCR
+  werden die drei Runtime-Images versioniert auf GHCR
 veröffentlicht:
 
 - `ghcr.io/pt9912/m-trace-api:$VER`
@@ -582,20 +577,20 @@ Voraussetzungen:
 
 ## 7. Post-Release
 
-- `CHANGELOG.md` öffnet einen neuen `## [Unreleased]`-Abschnitt.
-- `docs/planning/in-progress/roadmap.md` §3 (Release-Übersicht) aktualisiert den Status
+- [`CHANGELOG.md`](../../CHANGELOG.md) öffnet einen neuen `## [Unreleased]`-Abschnitt.
+- [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) (Release-Übersicht) aktualisiert den Status
   des veröffentlichten Releases (`⬜ → ✅`).
 - Folge-ADRs, die mit dem Release entstehen oder fällig werden,
-  in `docs/planning/in-progress/roadmap.md` §4 ergänzen.
+  in [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) ergänzen.
 - **Spec-Header aktualisieren**, falls die Lieferung normative
   Spec-Sections berührt: Header in den betroffenen
   `spec/*.md`-Dokumenten (Stand-Marker und Lastenheft-Patch-Ref)
   auf den neuen Release-/Lastenheft-Stand setzen.
   Spec-Inline-Versionsmarker (`ab 0.X.Y`, `seit 0.X.Y`,
   `in 0.X.Y`) sind bewusst **nicht** Teil der Spec — das Lieferzeit-
-  Audit-Trail steht im `CHANGELOG.md` und in den
+  Audit-Trail steht im [`CHANGELOG.md`](../../CHANGELOG.md) und in den
   `docs/planning/done/plan-X.Y.Z.md`-Dokumenten (Variante-B-
-  Konvention; siehe Spec-Kopf von `spec/telemetry-model.md`).
+  Konvention; siehe Spec-Kopf von [`spec/telemetry-model.md`](../../spec/telemetry-model.md)).
 - **Spec referenziert das Lastenheft nur über Kennungen**
   (`F-XXX`, `NF-XXX`, `MVP-XXX`, `AK-XXX`, `RAK-XXX`), nicht über
   Paragraph-Nummern (`§7.10`, `§4.3` etc.). Die Lastenheft-
@@ -663,8 +658,8 @@ Image-Publish fehlgeschlagen:
 
 ## 9. Referenzen
 
-- Lastenheft §14 — Akzeptanzkriterien (AK-11).
-- Lastenheft §18 — Definition of Done für den MVP.
-- `docs/planning/in-progress/roadmap.md` §3 — Release-Übersicht und RAK-Akzeptanzkriterien.
-- `docs/planning/in-progress/roadmap.md` §5 — Offene Entscheidungen.
+- Akzeptanzkriterien (AK-11).
+- Definition of Done.
+- [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) — Release-Übersicht und RAK-Akzeptanzkriterien.
+- [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) — Offene Entscheidungen.
 - `CHANGELOG.md` — Versionsverlauf.
