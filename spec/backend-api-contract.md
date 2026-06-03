@@ -20,7 +20,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
     `parent_span_id` aus dem Header. Bei ungültigem Header gibt es
     **kein** 4xx — der Server fällt auf eine eigene `trace_id` zurück
     und setzt das Span-Attribut `mtrace.trace.parse_error=true`
-    (siehe `spec/telemetry-model.md`). Der Header-Name ist
+   . Der Header-Name ist
     HTTP-konform case-insensitiv (`Traceparent`, `traceparent`,
     `TRACEPARENT` sind derselbe Header); SDKs schreiben den Namen
     lowercased. Der Header-Wert ist genau ein einzelner W3C-`traceparent`-
@@ -148,9 +148,10 @@ ist der Batch `422 Unprocessable Entity`.
 Aktuell ist nur `kind="network_signal_absent"` definiert.
 `network_kind` ist `"manifest"` oder `"segment"`, `adapter` ist
 `"hls.js"`, `"native_hls"` oder `"unknown"`. Die zulässige Domäne und
-das Längen-/Charset-Pattern für `reason` sind normativ in
-`spec/telemetry-model.md` definiert (gemeinsamer Reason-Enum mit
-`meta["network.unavailable_reason"]`); `contracts/event-schema.json`
+das Längen-/Charset-Pattern für `reason` sind normativ als
+gemeinsamer Reason-Enum mit `meta["network.unavailable_reason"]`
+in [`spec/telemetry-model.md`](./telemetry-model.md) definiert;
+[`contracts/event-schema.json`](../contracts/event-schema.json)
 spiegelt sie für maschinenlesbare Validierung über
 `session_boundaries.reasons_ref` und `session_boundaries.reason_pattern_ref`,
 die auf `network_unavailable_reasons` bzw.
@@ -167,8 +168,9 @@ persistiert weder Events noch Boundaries und erhöht `accepted` nicht.
 
 ist `webrtc.*` ein reservierter Meta-
 Namespace; der vollständige Schlüsselsatz, die Wertedomänen und die
-Counter-Semantik sind normativ in `spec/telemetry-model.md`
-und §3.5 verankert. `contracts/event-schema.json` (`reserved_meta_keys`
+Counter-Semantik sind normativ in
+[`spec/telemetry-model.md`](./telemetry-model.md) und in §3.5
+dieses Vertrags verankert. [`contracts/event-schema.json`](../contracts/event-schema.json) (`reserved_meta_keys`
 und `reserved_meta_namespace_webrtc`) spiegelt die Allowlist für
 maschinenlesbare Validierung. Pflichtverhalten des API-Ingress:
 
@@ -177,7 +179,7 @@ maschinenlesbare Validierung. Pflichtverhalten des API-Ingress:
   Enum-/Pattern-Domäne. Verstöße liefern `422 Unprocessable Entity`
   und werden nicht persistiert; eine `mtrace_webrtc_*`-Metrik wird
   nicht erzeugt.
-- Per-Identifier-Felder aus `spec/telemetry-model.md`
+- Per-Identifier-Felder aus §3.5.1 dieses Vertrags
   (`webrtc.track_id`, `webrtc.candidate_pair_id`, `webrtc.ssrc`,
   `webrtc.user_agent`, weitere) sind explizit verboten und liefern
   `422`.
@@ -286,7 +288,7 @@ Bindungsfelder ändern das Analyzer-`AnalysisResult` nicht; sie steuern
 nur die optionale Dashboard-/Timeline-Verknüpfung.
 
 **Erfolgsantwort** (`200 OK`): bis einschließlich `0.3.x`
-vollständiges `AnalysisResult` aus `docs/user/stream-analyzer.md` §2.2.
+vollständiges `AnalysisResult` aus [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md).
 wird dieses Resultat bei jedem
 erfolgreichen Request unverändert unter `analysis` in der oben
 beschriebenen Hülle transportiert.
@@ -885,13 +887,13 @@ erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
 |---|---|---|
 | `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR-0002](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
 | `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. |
-| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in neu verarbeiteten Events**; bei historisch persistierten Events kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle neu verarbeiteten Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). Siehe `spec/telemetry-model.md`. |
+| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in neu verarbeiteten Events**; bei historisch persistierten Events kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle neu verarbeiteten Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). |
 | `trace_id` | `string`, 32 Hex-Zeichen, optional (`null` zulässig wenn weder `traceparent` noch Server-Trace gesetzt — Edge-Case) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
 
 Diese vier Felder sind im POST-Wire-Format (§3.2/§3.3) **nicht** zulässig;
 Clients dürfen sie nur aus Read-Antworten interpretieren. Die genaue
 Vertragssemantik (Sortierung, Idempotenz, Cursor) steht in §10;
-Trace-Korrelations-Vertrag in `spec/telemetry-model.md`.
+Trace-Korrelations-Vertrag in [`spec/telemetry-model.md`](./telemetry-model.md).
 
 **Migration**: Sessions und Events, die vor dem aktuellen Vertrag
 angelegt wurden, haben kein `correlation_id`. Es findet **kein
@@ -1023,7 +1025,7 @@ Folge der Auth-vor-Body-Reihenfolge: ein tokenpflichtiger Request
 Der `traceparent`-Header (siehe §1) ist **nicht** Teil dieser
 Validierungs-Reihenfolge: ein ungültiger Wert führt nie zu `4xx`,
 sondern wird über das Span-Attribut `mtrace.trace.parse_error=true`
-markiert (Vertrag in `spec/telemetry-model.md`).
+markiert.
 
 Antwort-Body bei Fehlerfällen ist **nicht** Teil des Pflicht-Kontrakts —
 Implementierungen dürfen einen JSON-Body mit Fehlerbeschreibung senden,
@@ -1278,7 +1280,7 @@ Implementierung.
   lokalen SQLite-Datei persistiert; ein API-Restart verliert keine
   bereits angenommenen Sessions oder Events.
 - Reset des lokalen Storage geschieht ausschließlich über das
-  dedizierte `make wipe`-Target (siehe `docs/user/local-development.md`);
+  dedizierte `make wipe`-Target (siehe [[`docs/user/local-development.md`](../docs/user/local-development.md)](../docs/user/local-development.md));
   `make stop` räumt nicht auf. Andere Reset-Pfade (manuelles Löschen
   des Volumes, etc.) sind nicht Teil des Kontrakts.
 - Postgres und andere Stores sind nicht im Scope (Folge-ADR

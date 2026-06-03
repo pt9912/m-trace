@@ -88,7 +88,7 @@ boolean | null>`. Der Degradationsmarker ist normativ:
 |---|---|---|
 | `meta["network.kind"]` | string aus `{"manifest", "segment"}` | Netzwerkbezug des Events. |
 | `meta["network.detail_status"]` | string aus `{"available", "network_detail_unavailable"}` | `available`, wenn Timing-/URL-Details nach Redaction nutzbar sind; `network_detail_unavailable`, wenn Browser, CORS, Resource Timing, Service Worker, Redirects oder native HLS die Detaildaten blockieren. |
-| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund aus dem normativen Reason-Enum: `native_hls_unavailable`, `hlsjs_signal_unavailable`, `browser_api_unavailable`, `resource_timing_unavailable`, `cors_timing_blocked`, `service_worker_opaque`; zusätzlich `^[a-z0-9_]{1,64}$`. **Diese Tabelle ist der einzige normative Anker des Reason-Enums** — `session_boundaries[].reason` (siehe unten), `spec/backend-api-contract.md` und `contracts/event-schema.json` (`network_unavailable_reasons`, `network_unavailable_reason_pattern`) verweisen ausschließlich auf diese Werte. |
+| `meta["network.unavailable_reason"]` | string, optional | Maschinenlesbarer Grund aus dem normativen Reason-Enum: `native_hls_unavailable`, `hlsjs_signal_unavailable`, `browser_api_unavailable`, `resource_timing_unavailable`, `cors_timing_blocked`, `service_worker_opaque`; zusätzlich `^[a-z0-9_]{1,64}$`. **Diese Tabelle ist der einzige normative Anker des Reason-Enums** — `session_boundaries[].reason` (siehe unten) und [`contracts/event-schema.json`](../contracts/event-schema.json) (`network_unavailable_reasons`, `network_unavailable_reason_pattern`) verweisen ausschließlich auf diese Werte. |
 | `meta["network.redacted_url"]` | string, optional | Bereits redigierter URL-Repräsentant gemäß Redaction-Matrix; rohe URLs mit Query, Fragment, `userinfo` oder tokenartigen Pfadsegmenten sind unzulässig. |
 
 `meta["network.unavailable_reason"]` ist nur zulässig, wenn
@@ -357,7 +357,7 @@ Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkei
 | ungültiger Header (Parse-Fehler) | generiert eigene `trace_id`; Header wird **nicht** auf 4xx geführt | Root-Span; Span-Attribut `mtrace.trace.parse_error=true` |
 | kein Header | generiert eigene `trace_id` | Root-Span ohne Parse-Error-Attribut |
 
-`trace_id` und `parent_span_id` aus dem `traceparent`-Header werden serverseitig defensiv geprüft (Hex-Form, Längen 32/16, Version `00`); jeder Verstoß landet im Server-Fallback-Pfad. Der Header-Name ist HTTP-konform case-insensitiv. Führende und nachfolgende OWS (Spaces, Tabs) im Header-Wert werden bereits vom HTTP-Wire-Layer der Go-`net/http`-Standardbibliothek entfernt, bevor der Wert das Backend erreicht; ein OWS-umschlossener, sonst valider W3C-Wert wird daher als gültig akzeptiert und führt zur normalen Child-Span-Übernahme. Das Backend führt selbst kein zusätzliches Trim durch und verlässt sich für die OWS-Normalisierung ausschließlich auf den Wire-Layer; ein durchgereichter OWS-Wert (z. B. von einem Reverse-Proxy mit abweichender Header-Verarbeitung) fällt am defensiven `len == 55`-Check des Parsers auf den parse_error-Pfad zurück und wird wie jeder andere Format-Verstoß behandelt. Verbindlicher Vertragstext und Test-Anker stehen in `spec/backend-api-contract.md`.
+`trace_id` und `parent_span_id` aus dem `traceparent`-Header werden serverseitig defensiv geprüft (Hex-Form, Längen 32/16, Version `00`); jeder Verstoß landet im Server-Fallback-Pfad. Der Header-Name ist HTTP-konform case-insensitiv. Führende und nachfolgende OWS (Spaces, Tabs) im Header-Wert werden bereits vom HTTP-Wire-Layer der Go-`net/http`-Standardbibliothek entfernt, bevor der Wert das Backend erreicht; ein OWS-umschlossener, sonst valider W3C-Wert wird daher als gültig akzeptiert und führt zur normalen Child-Span-Übernahme. Das Backend führt selbst kein zusätzliches Trim durch und verlässt sich für die OWS-Normalisierung ausschließlich auf den Wire-Layer; ein durchgereichter OWS-Wert (z. B. von einem Reverse-Proxy mit abweichender Header-Verarbeitung) fällt am defensiven `len == 55`-Check des Parsers auf den parse_error-Pfad zurück und wird wie jeder andere Format-Verstoß behandelt. 
 
 **`trace_id` ≠ `correlation_id`.** Beide sind getrennte Konzepte mit klarer Verantwortung:
 
@@ -465,7 +465,7 @@ Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9
 
 ### 3.3 Trennung Aggregat vs Per-Session
 
-Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nicht** in Prometheus. Die drei Backends teilen die Verantwortung wie folgt — diese Tabelle ist die normative Quelle für `README.md`, `docs/user/local-development.md` und jede neue Telemetrie-Diskussion:
+Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nicht** in Prometheus. Die drei Backends teilen die Verantwortung wie folgt — diese Tabelle ist die normative Quelle für `README.md`, [`docs/user/local-development.md`](../docs/user/local-development.md) und jede neue Telemetrie-Diskussion:
 
 | Backend | Daten | Cardinality-Verträglichkeit | Konsumenten |
 |---|---|---|---|
