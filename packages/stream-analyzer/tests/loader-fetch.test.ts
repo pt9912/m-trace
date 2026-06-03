@@ -561,3 +561,76 @@ describe("DNS-Rebinding-Entscheidung (Dokumentationspunkt)", () => {
     expect(calls).toEqual(["resolve:example.test"]);
   });
 });
+
+/**
+ * Coverage-Härtung für `readBody`-Fehlerpfade in fetch.ts
+ * (Lines 284 und 309). Der Happy-Path testet nur den glatten
+ * Body-Read; die zwei Throw-Branches innerhalb der `for await`-
+ * Schleife (Timeout während Iteration, Non-AnalysisError während
+ * Iteration) brauchen explizit gemockte Iteratoren.
+ */
+describe("loadManifest — readBody Fehlerpfade", () => {
+  it("mappt einen Non-AnalysisError während Body-Iteration auf fetch_failed", async () => {
+    const failingBody: AsyncIterable<Uint8Array> = (async function* () {
+      yield new TextEncoder().encode("#EXTM3U\n");
+      throw new Error("ECONNRESET-during-body");
+    })();
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        return [{ address: "93.184.216.34", family: 4 }];
+      },
+      async fetch() {
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "application/vnd.apple.mpegurl" : null) },
+          body: failingBody
+        };
+      }
+    };
+    await expect(
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime))
+    ).rejects.toMatchObject({ code: "fetch_failed", details: { url: "https://example.test/m.m3u8" } });
+  });
+
+  it("mappt einen Body-Loop-Timeout auf fetch_failed mit Timeout-Message", async () => {
+    let abortSignal: AbortSignal | undefined;
+    const slowBody: AsyncIterable<Uint8Array> = {
+      [Symbol.asyncIterator]() {
+        let first = true;
+        return {
+          async next(): Promise<IteratorResult<Uint8Array>> {
+            if (first) {
+              first = false;
+              return { value: new TextEncoder().encode("#EXTM3U\n"), done: false };
+            }
+            // Warte länger als timeoutMs — Abort-Signal sollte feuern.
+            await new Promise<void>((resolve, reject) => {
+              const t = setTimeout(resolve, 5000);
+              abortSignal?.addEventListener("abort", () => {
+                clearTimeout(t);
+                reject(new DOMException("aborted", "AbortError"));
+              });
+            });
+            return { value: new Uint8Array(), done: true };
+          }
+        };
+      }
+    };
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        return [{ address: "93.184.216.34", family: 4 }];
+      },
+      async fetch(_url, init) {
+        abortSignal = init.signal;
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "application/vnd.apple.mpegurl" : null) },
+          body: slowBody
+        };
+      }
+    };
+    await expect(
+      loadManifest("https://example.test/m.m3u8", loadOpts(runtime, { timeoutMs: 30 }))
+    ).rejects.toMatchObject({ code: "fetch_failed" });
+  });
+});

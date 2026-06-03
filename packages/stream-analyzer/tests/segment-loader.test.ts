@@ -396,3 +396,89 @@ describe("loadSegment — failure mappings", () => {
     if (!result.ok) expect(result.code).toBe("segment_uri_blocked");
   });
 });
+
+/**
+ * Body-Read-Error-Mapping in `mapBodyReadError` / `describeError`.
+ * Diese Pfade triggern Branches 384–391 und 426 in
+ * `segment-loader.ts`, die sonst keine Test-Abdeckung haben.
+ * Hintergrund: Coverage-Härtung im Folge-Patch zu plan-0.22.3
+ * (stream-analyzer branches-Coverage stabilisiert >=91%).
+ */
+describe("loadSegment — body-read error mapping", () => {
+  it("maps a non-Error thrown during body iteration to segment_fetch_failed", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    const failingBody: AsyncIterable<Uint8Array> = (async function* () {
+      yield new Uint8Array([0xff]);
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw "raw-string-thrown-during-read";
+    })();
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        return [{ address: "93.184.216.34", family: 4 }];
+      },
+      async fetch() {
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "video/mp4" : null) },
+          body: failingBody
+        };
+      }
+    };
+    const result = await loadSegment(url, { runtime, ...baseOpts });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("segment_fetch_failed");
+      expect(result.message).toContain("raw-string-thrown-during-read");
+    }
+  });
+
+  it("maps a body-read timeout to segment_fetch_failed with timeout message", async () => {
+    const url = "https://cdn.example.test/init.mp4";
+    let abortSignal: AbortSignal | undefined;
+    const slowBody: AsyncIterable<Uint8Array> = {
+      [Symbol.asyncIterator]() {
+        let first = true;
+        return {
+          async next(): Promise<IteratorResult<Uint8Array>> {
+            if (first) {
+              first = false;
+              return { value: new Uint8Array([0x00]), done: false };
+            }
+            await new Promise<void>((resolve, reject) => {
+              const t = setTimeout(resolve, 5000);
+              abortSignal?.addEventListener("abort", () => {
+                clearTimeout(t);
+                reject(new DOMException("aborted", "AbortError"));
+              });
+            });
+            return { value: new Uint8Array(), done: true };
+          }
+        };
+      }
+    };
+    const runtime: LoaderRuntime = {
+      async resolveHost() {
+        return [{ address: "93.184.216.34", family: 4 }];
+      },
+      async fetch(_url, init) {
+        abortSignal = init.signal;
+        return {
+          status: 200,
+          headers: { get: (n) => (n.toLowerCase() === "content-type" ? "video/mp4" : null) },
+          body: slowBody
+        };
+      }
+    };
+    const result = await loadSegment(url, {
+      runtime,
+      ...baseOpts,
+      timeoutMs: 30
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("segment_fetch_failed");
+      // Body-Timeout-Pfad in mapBodyReadError (Lines 385–389).
+      expect(result.message).toMatch(/Segment-Body-Timeout/);
+    }
+  });
+});

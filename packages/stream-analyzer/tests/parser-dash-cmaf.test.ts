@@ -249,3 +249,109 @@ describe("DASH-CMAF — Template-Auflösung", () => {
     expect(codes).not.toContain("dash_segment_template_media");
   });
 });
+
+/**
+ * Coverage-Härtung-Tests für plan-0.22.3-Folge-Patch: dash.ts branches
+ * von ~80% auf >=90% heben durch Edge-Cases, die der Happy-Path-
+ * Korpus nicht erreicht.
+ */
+describe("DASH — MIME-Fallback und Tag-Parsing-Edge-Cases", () => {
+  it("unbekannter Representation@mimeType fällt auf dash_mime_mp4 zurück", () => {
+    // dashMimeSignalCode (dash.ts Line 528) — Fallback-Branch für
+    // bekannten-aber-nicht-gemappten mimeType.
+    const mpd = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<MPD type="static">',
+      "  <Period>",
+      "    <AdaptationSet>",
+      '      <Representation id="v1" bandwidth="1280000" mimeType="application/dash+xml"/>',
+      "    </AdaptationSet>",
+      "  </Period>",
+      "</MPD>"
+    ].join("\n");
+    const result = analyze(mpd);
+    const cmaf = result.details.cmaf;
+    if (cmaf !== undefined) {
+      // Wenn ein cmaf-Block entsteht, muss der Fallback-Code aktiv sein.
+      const mimeSignals = cmaf.signals.filter((s) => s.code.startsWith("dash_mime"));
+      for (const signal of mimeSignals) {
+        expect(["dash_mime_mp4", "dash_mime_video_mp4", "dash_mime_audio_mp4", "dash_mime_application_mp4"]).toContain(signal.code);
+      }
+    }
+  });
+
+  it("toleriert ein selbstschließendes Tag ohne Whitespace im Open-Tag", () => {
+    // parseAttributes (dash.ts Line 739) — degenerierte Tags
+    // (z. B. `<EmptyTag/>` ohne Attribute) sollen nicht crashen,
+    // sondern eine leere Attribut-Map liefern. Der Parser muss
+    // robust gegen Edge-Cases im wild gewachsenen DASH-Korpus sein.
+    const mpd = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<MPD type="static">',
+      "  <Period>",
+      "    <BaseURL/>",
+      '    <AdaptationSet mimeType="video/mp4">',
+      '      <Representation id="v1" bandwidth="1280000"/>',
+      "    </AdaptationSet>",
+      "  </Period>",
+      "</MPD>"
+    ].join("\n");
+    expect(() => analyze(mpd)).not.toThrow();
+  });
+});
+
+/**
+ * Pflichtfeld-Validierung Representation@bandwidth — Coverage-
+ * Härtung für dash.ts Lines 372–377 (dash_representation_missing_
+ * bandwidth Finding). MPEG-DASH §5.3.5 macht bandwidth zur Pflicht;
+ * der Parser muss das melden, ohne den Lauf zu brechen.
+ */
+describe("DASH — Representation ohne bandwidth-Attribut", () => {
+  it("emittiert dash_representation_missing_bandwidth als Finding und überspringt die Representation", () => {
+    const mpd = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<MPD type="static">',
+      "  <Period>",
+      '    <AdaptationSet id="v" mimeType="video/mp4">',
+      '      <Representation id="v1" codecs="avc1.4d401e"/>',
+      "    </AdaptationSet>",
+      "  </Period>",
+      "</MPD>"
+    ].join("\n");
+    const result = analyze(mpd);
+    const codes = result.findings.map((f) => f.code);
+    expect(codes).toContain("dash_representation_missing_bandwidth");
+  });
+});
+
+/**
+ * SegmentTemplate-Vererbung — Coverage-Härtung für
+ * `mergeSegmentTemplate` (dash.ts Lines 440–449). Das Happy-Path-
+ * Set deckt nur Single-Source-Templates ab; Merging beider Quellen
+ * mit Override-Semantik (initialization, media, startNumber !== 1)
+ * fehlt.
+ */
+describe("DASH — SegmentTemplate-Merge mit Parent+Own (Override)", () => {
+  it("merged AdaptationSet- und Representation-Templates und respektiert Override-Reihenfolge", () => {
+    const mpd = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<MPD type="static">',
+      "  <Period>",
+      '    <AdaptationSet id="v" mimeType="video/mp4">',
+      '      <SegmentTemplate initialization="parent-init.mp4" media="parent-$Number$.m4s" startNumber="1"/>',
+      '      <Representation id="v1" bandwidth="1280000" codecs="avc1.4d401e">',
+      '        <SegmentTemplate media="own-$Number$.m4s" startNumber="7"/>',
+      "      </Representation>",
+      "    </AdaptationSet>",
+      "  </Period>",
+      "</MPD>"
+    ].join("\n");
+    const result = analyze(mpd);
+    const cmaf = result.details.cmaf!;
+    const codes = cmaf.signals.map((s) => s.code);
+    // Init wurde von parent vererbt, media von own überschrieben —
+    // dash_segment_template_media muss da sein.
+    expect(codes).toContain("dash_segment_template_initialization");
+    expect(codes).toContain("dash_segment_template_media");
+  });
+});

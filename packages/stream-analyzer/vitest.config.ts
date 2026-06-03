@@ -16,7 +16,18 @@ export default defineConfig({
       // Coverage-Scopes.
       exclude: ["src/**/*.d.ts", "src/internal/loader/runtime.ts"],
       thresholds: {
-        branches: 90,
+        // Branches strikt auf 91. Die Edge-Case-Tests aus dem
+        // 0.22.3-Coverage-Härtungs-Patch heben den Median-Wert von
+        // ~90.0% auf ~91.1% (3 lokale Läufe: 90.82/91.09/91.26%
+        // — Vitest v8-Coverage hat eine Run-to-Run-Variance von
+        // ~0.4pp). Bei diesem strikten Threshold können sporadische
+        // CI-Runs unter den Grenzwert rutschen; bis weitere
+        // Härtungs-Tests die Marge auf ~92%+ schieben, ist
+        // `gh run rerun <run-id>` der dokumentierte Re-Run-Pfad
+        // (analog zum webrtc-drift.yml-Flake-Handling).
+        // Folge-Item: Coverage-Stabilisierung auf 92.5% Median oder
+        // Wechsel auf deterministischen istanbul-Provider.
+        branches: 91,
         functions: 90,
         lines: 90,
         statements: 90
