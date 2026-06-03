@@ -246,7 +246,7 @@ gh run watch --workflow build.yml
 gh run list --workflow webrtc-drift.yml --limit 5
 ```
 
-### 2.5 Benchmark-Regression-Gate (RAK-Wave-2)
+### 2.5 Benchmark-Regression-Gate
 
 ist
 [`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml)
@@ -291,7 +291,7 @@ und das Tag entfernen, oder das Tag mit einer Plan-DoD-Item-
 node scripts/check-bench-quarantines.mjs apps/api packages/stream-analyzer
 ```
 
-### 2.6 Fuzz- und Mutation-Beobachtungs-Gates (RAK-Wave-2)
+### 2.6 Fuzz- und Mutation-Beobachtungs-Gates
 
 Laufen aktuell zwei weitere Nightly-
 Workflows als **nicht-blockierende Beobachtungs-Gates**:
@@ -411,7 +411,7 @@ grep -rn '"sdk_version":\s*"X\.Y\.Z"\|PLAYER_SDK_VERSION\s*=\s*"X\.Y\.Z"\|servic
 Plan-DoD-Items ersetzen die RAK-Verifikationsmatrix; ein
 Patch-Release-Plan trägt keinen `§6.1`-Block.
 
-**Wave-2-Quality-Gates-Voraussetzung**: vor jedem
+**Quality-Gates-Voraussetzung**: vor jedem
 Release-Tag (Patch *und* Minor) zusätzlich prüfen *und im Release-
 Log dokumentieren* (Plan-Closeout-Sektion oder Tag-Annotation
 zitiert die geprüften Run-IDs):
@@ -440,7 +440,7 @@ zitiert die geprüften Run-IDs):
   ```
 
 **Im Release-Log (Plan §8 Closeout-DoD oder Tag-Annotation) das
-Verdict festhalten** — z. B. „Wave-2-Gates: benchmark.yml run
+Verdict festhalten** — z. B. „Quality-Gates: benchmark.yml run
 12345678 ✅, fuzz.yml run 12345679 ✅, mutation.yml letzte 3 Runs
 Score-Trend stabil". Beim Release waren die Nightlies
 grün, aber das Verdict wurde nicht dokumentiert (Lehre für
