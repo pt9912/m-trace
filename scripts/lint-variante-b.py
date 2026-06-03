@@ -83,6 +83,11 @@ def clean_comment_text(t):
     # 1. ADR-NNNN §X.Y[a-z]? — PRESERVE the NNNN!
     t = re.sub(r"(ADR-\d+)\s+§[0-9.]+[a-z]?", r"\1", t)
 
+    # 1b. Backtick-wrapped plan-Refs `plan-X.Y.Z` → unwrap so the
+    #     subsequent plan- patterns can strip cleanly (otherwise we
+    #     leave empty `` behind).
+    t = re.sub(r"`plan-(0\.\d+\.\d+(?:\.md)?)`", r"plan-\1", t)
+
     # 2. plan-X.Y.Z §A.B[a-z]?(.C)?(/§D.E[a-z]?)?(?: Tranche N)?(?:[,/] RAK-NN)?
     #    preserve RAK-NN as standalone Kennung
     t = re.sub(
@@ -145,7 +150,8 @@ def clean_comment_text(t):
     t = re.sub(r"Server-vergeben ab 0\.\d+\.\d+ §[0-9.]+[a-z]?-Closeout", "Server-vergeben", t)
     t = re.sub(r" ab 0\.\d+\.\d+ §[0-9.]+[a-z]?-Closeout", "", t)
     t = re.sub(r" seit 0\.\d+\.\d+ §[0-9.]+[a-z]?-Closeout", "", t)
-    # Bare §X.Y-Closeout artifacts
+    # Bare §X.Y-Closeout artifacts (incl. dangling prepositions)
+    t = re.sub(r" (?:vor|nach|bis|seit|ab) §[0-9.]+[a-z]?-Closeout", " historisch", t)
     t = re.sub(r" §[0-9.]+[a-z]?-Closeout", "", t)
     t = re.sub(r"vor dem Closeout", "historisch", t)
     # "ab plan-X §A.B/§C.D" already covered, but explicit "ab plan-X" form
@@ -224,17 +230,24 @@ def clean_comment_text(t):
     # Trailing "," or ", " inside parens before closing
     t = re.sub(r",\s*\)", ")", t)
     # Stand-alone "(H1)" or "(Hn)" — orphan from plan-X §Y Hn strip
+    # Including "( H4). " patterns mid-sentence (drop the orphan + dot)
+    t = re.sub(r"\s*\(\s*H\d+\s*\)\s*\.\s*", " ", t)
     t = re.sub(r"\(\s*H\d+\)", "", t)
     t = re.sub(r"\(\s*H\d+\s*[:.]", "(", t)
     # "§5 H5" / "Tranche 4 §5 H5" leftovers — orphan H-numbers
     t = re.sub(r" §\d+\s+H\d+(?=[\W])", "", t)
     t = re.sub(r" H\d+:\s*", " ", t)
     # Trailing artifacts like "Default `[]`; siehe API-Kontrakt, "
-    # Drop trailing ", " before line-end or " */"
+    # Drop trailing ", " before " */" only — never on bare comment lines
+    # (those are legitimate prose continuations).
     t = re.sub(r",\s*\*\/", " */", t)
-    t = re.sub(r",\s*$", "", t)
-    t = re.sub(r"  +", " ", t)
-    t = re.sub(r" ([.,;:])", r"\1", t)
+    # Collapse multiple spaces — but only in the MIDDLE of content, never at
+    # the very start. Markdown-style list indents (`  - foo`) inside block
+    # comments are meaningful structure and must survive cleanup.
+    t = re.sub(r"(?<=\S)  +(?=\S)", " ", t)
+    t = re.sub(r" ([.;:])", r"\1", t)
+    # ", " followed by "(" can collapse but only safely inside parens
+    # Already handled in `\(\s*,\s*` pattern earlier.
 
     return t
 

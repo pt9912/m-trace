@@ -11,7 +11,7 @@ export interface Transport {
  * `00-<trace_id 32 lower-hex>-<parent_id 16 lower-hex>-<flags 2 hex>`.
  *
  * **Synchron**: Der Provider muss synchron antworten — er wird im
- * Hot Path direkt vor `fetch()` aufgerufen. Eine `Promise`-Rückgabe
+ * Hot Path direkt vor `fetch` aufgerufen. Eine `Promise`-Rückgabe
  * wird nicht awaited und landet als ungültiger Header beim Server.
  *
  * **Geworfene Fehler werden geschluckt**: Provider-Throws fängt das
@@ -24,7 +24,7 @@ export interface Transport {
  * Der SDK-HTTP-Transport sendet den Header nur, wenn die Funktion
  * einen nicht-leeren String zurückgibt — `undefined` oder `""`
  * → kein Header (Server-Fallback erzeugt eigene Trace, siehe
- * spec/telemetry-model.md §2.5). Das SDK validiert das Format
+ * spec/telemetry-model.md). Das SDK validiert das Format
  * **nicht**: ein vom Provider gelieferter Müllstring landet beim
  * Server, der ihn als Parse-Error markiert (`mtrace.trace.parse_error=true`)
  * und zur eigenen Trace-ID zurückfällt.
@@ -47,7 +47,7 @@ export interface PlayerSDKConfig {
    * Wert pro Batch-Send. Konsumenten, die OpenTelemetry-JS oder
    * eine eigene Tracing-Schicht nutzen, können hier den aktuell
    * aktiven Span-Context bereitstellen — z. B.
-   * `() => activeSpan?.spanContext() && formatTraceparent(activeSpan)`.
+   * ` => activeSpan?.spanContext && formatTraceparent(activeSpan)`.
    *
    * Ohne Provider sendet das SDK keinen Header, der Server
    * generiert einen Root-Span. Abwärtskompatibel mit Backends < 0.4.0

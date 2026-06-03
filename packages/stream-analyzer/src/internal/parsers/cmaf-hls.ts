@@ -1,7 +1,7 @@
 import type { CmafSignal, CmafSignalSummary } from "../../types/result.js";
 
 /**
- * HLS-spezifische CMAF-Detection (`0.10.0` Tranche 2, NF-13 / RAK-61).
+ * HLS-spezifische CMAF-Detection (NF-13 / RAK-61).
  * Entscheidet aus den Manifest-Signalen, ob ein `details.cmaf`-Summary
  * emittiert wird, und liefert eine interne, schon strukturierte
  * Sicht auf `EXT-X-MAP` und `#EXT-X-BYTERANGE` für die Tranche-4-
@@ -11,7 +11,7 @@ import type { CmafSignal, CmafSignalSummary } from "../../types/result.js";
  */
 
 /**
- * `EXT-X-MAP`-Attribute (RFC 8216 §4.3.2.5) strukturiert für den
+ * `EXT-X-MAP`-Attribute (RFC 8216) strukturiert für den
  * Binary-Pfad. Roh-Attribute bleiben mit dabei, damit Tranche 4
  * keine Re-Tokenisierung der Manifestzeile braucht.
  */
@@ -25,7 +25,7 @@ export interface HlsExtXMapMeta {
 }
 
 /**
- * Strukturierte Sicht auf `#EXT-X-BYTERANGE` (RFC 8216 §4.3.2.2):
+ * Strukturierte Sicht auf `#EXT-X-BYTERANGE` (RFC 8216):
  * `length` ist Pflicht; `offset` optional. Der Roh-String bleibt
  * für Audit-Diagnostik verfügbar.
  */
@@ -51,7 +51,7 @@ export interface HlsFirstMediaSegmentMeta {
 
 /**
  * Interne Metadaten, die der Media-Playlist-Parser zusätzlich zu
- * `MediaPlaylistDetails` zurückliefert. Tranche 4 konsumiert sie als
+ * `MediaPlaylistDetails` zurückliefert. konsumiert sie als
  * Eingabe für den Binary-Loader.
  */
 export interface HlsMediaCmafMetadata {
@@ -85,7 +85,7 @@ function stripUriSuffix(uri: string): string {
 
 /**
  * Parst eine `#EXT-X-BYTERANGE`-Payload (`<length>[@<offset>]`)
- * laut RFC 8216 §4.3.2.2. Liefert `null` bei syntaktisch ungültigen
+ * laut RFC 8216 Liefert `null` bei syntaktisch ungültigen
  * Werten.
  */
 export function parseByteRangePayload(payload: string): HlsByteRange | null {
@@ -126,8 +126,8 @@ export function masterAnchor(lineIdx0: number): string {
 
 /**
  * Aggregiert die stärkste Confidence über mehrere Signal-Einträge.
- * Ordnung `binary > manifest > inferred`. Tranche 2 erzeugt nie
- * `binary`-Confidence — die entsteht erst, wenn Tranche 4 das
+ * Ordnung `binary > manifest > inferred`. erzeugt nie
+ * `binary`-Confidence — die entsteht erst, wenn das
  * `binary`-Objekt mit `status:"passed"` setzt.
  */
 export function aggregateConfidence(

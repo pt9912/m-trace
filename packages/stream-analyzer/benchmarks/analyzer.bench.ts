@@ -7,7 +7,7 @@ import { analyzeManifest } from "../src/index.js";
 import { detectManifestKind } from "../src/internal/parsers/detect.js";
 import { validateUrl } from "../src/internal/loader/ssrf.js";
 
-// plan-0.9.5 §2 Tranche 1 (RAK-Wave-2 / extra-gates.md §3.2) —
+//  (extra-gates.md) —
 // Stream-Analyzer-Hot-Path-Benchmarks für
 // `make analyzer-benchmark-smoke`.
 //
@@ -16,11 +16,11 @@ import { validateUrl } from "../src/internal/loader/ssrf.js";
 //
 //   - HLS Master klein (5 Variants + 1 Rendition): ≤ 5 ms
 //   - HLS Master groß (50 Variants + 20 Renditions): ≤ 25 ms
-//   - HLS Media (1.000 Segmente):                    ≤ 50 ms
-//   - DASH-MPD VOD (1 Period, 2 AdaptationSets):     ≤ 5 ms
-//   - DASH-MPD Live (3 AdaptationSets):              ≤ 10 ms
-//   - Detector über 256-KiB-Body:                    ≤ 500 µs
-//   - SSRF-URL-Klassifizierung (100 Calls):          ≤ 5 ms / 100
+//   - HLS Media (1.000 Segmente): ≤ 50 ms
+//   - DASH-MPD VOD (1 Period, 2 AdaptationSets): ≤ 5 ms
+//   - DASH-MPD Live (3 AdaptationSets): ≤ 10 ms
+//   - Detector über 256-KiB-Body: ≤ 500 µs
+//   - SSRF-URL-Klassifizierung (100 Calls): ≤ 5 ms / 100
 //
 // Ausführung: `vitest bench --run packages/stream-analyzer/benchmarks/`
 // (eingebaute Vitest-Bench-API, keine externe Tinybench-Dependency).
@@ -100,7 +100,7 @@ describe("stream-analyzer / Detector + SSRF", () => {
 // --- Fixture generators -----------------------------------------------------
 //
 // Synthetische Inputs sind deterministisch und versionsstabil — Plan
-// §2 DoD-Item 5 verlangt repo-lokale, netzwerkfreie Fixtures. Die
+// DoD-Item 5 verlangt repo-lokale, netzwerkfreie Fixtures. Die
 // kleinen Variants/Reps sind in der echten Lab-Welt repräsentativ;
 // echte Production-MPDs oder CDN-Manifeste wären Operator-spezifisch
 // und damit für Budget-Smokes ungeeignet.

@@ -250,7 +250,7 @@ func parseLimitWithName(s string) (int, error) {
 
 // sessionWire ist die JSON-Antwortform für domain.StreamSession.
 // `correlation_id` ist (§3.7.1 im API-Kontrakt) Teil der
-// Read-Antwort — bei Sessions, die vor §3.2-Closeout angelegt
+// Read-Antwort — bei Sessions, die historisch angelegt
 // wurden, kann es leer sein und wird dann als JSON-`""` ausgeliefert
 // (kein `omitempty`, damit Clients das Feld klar als „nicht gesetzt"
 // erkennen).
@@ -357,7 +357,7 @@ func toNetworkSignalAbsentWires(in []domain.SessionBoundary) []networkSignalAbse
 // `correlation_id` und `trace_id` (§3.7 im API-Kontrakt):
 //  - `correlation_id` ist Pflichtfeld in 0.4.0+-Read-Antworten (kein
 //  `omitempty`); Empty-String nur bei Legacy-Events, die vor
-//  §3.2-Closeout persistiert wurden.
+//  persistiert wurden.
 //  - `trace_id` ist optional (`omitempty`); fehlt bei Events ohne
 //  gültigen Trace-Kontext (Edge-Case: Server-Span ohne Trace-ID).
 type eventWire struct {

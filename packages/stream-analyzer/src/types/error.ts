@@ -3,7 +3,7 @@ import type { AnalyzerKind } from "./result.js";
 /**
  * Fehler-Codes der Public API. Konsumenten erkennen Fehler an
  * `status === "error"`; das ist die strukturelle Trennung gegenüber
- * dem Erfolgsergebnis (plan-0.3.0 §6 Tranche 5).
+ * dem Erfolgsergebnis.
  *
  * **`manifest_not_hls`** ist HLS-spezifisch: der HLS-Parser hat das
  * Manifest abgelehnt, weil es nicht mit `#EXTM3U` beginnt oder
@@ -13,7 +13,7 @@ import type { AnalyzerKind } from "./result.js";
  *
  * **`manifest_not_supported`** ist die Sammelantwort des Detectors
  * für Eingaben, die weder als HLS noch als DASH erkannt werden
- * (`0.9.0` Tranche 3). Beispiele: HTML-Bodies, JSON-Bodies, leere
+ * . Beispiele: HTML-Bodies, JSON-Bodies, leere
  * Texte, beliebige Binärdaten.
  */
 export type AnalysisErrorCode =

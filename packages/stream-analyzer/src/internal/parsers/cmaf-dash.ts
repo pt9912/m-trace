@@ -1,5 +1,5 @@
 /**
- * DASH-spezifische CMAF-Detection (`0.10.0` Tranche 3, NF-13 / RAK-62
+ * DASH-spezifische CMAF-Detection (NF-13 / RAK-62
  * / RAK-64). Stellt drei Hilfsfamilien bereit:
  *
  *  1. **Manifestanker** — stabiler XPath-artiger Pfad pro
@@ -92,7 +92,7 @@ function stripUriSuffix(uri: string): string {
  * Base für die nächste Ebene (kann gleich der geerbten sein, wenn
  * die aktuelle Ebene keinen Eintrag hat). `blocked === true`, wenn
  * mindestens ein Kandidat existierte, aber alle gegen die Sicherheits-
- * regeln verstoßen — Tranche 4 nutzt das, um zwischen
+ * regeln verstoßen — nutzt das, um zwischen
  * `segment_uri_blocked` und `segment_base_url_missing` zu trennen.
  */
 export interface ResolvedBaseUrl {
@@ -108,7 +108,7 @@ export function resolveBaseUrlChain(
   if (candidates.length === 0) {
     // Keine eigenen Kandidaten → Vererbung von Parent (inklusive
     // Block-Zustand: ein in höherer Ebene gesetzter Block bleibt
-    // sichtbar, damit Tranche 4 bei der Pflichtprüfung
+    // sichtbar, damit bei der Pflichtprüfung
     // segment_uri_blocked statt segment_base_url_missing meldet).
     return { baseUrl: parent, blocked: parentBlocked };
   }
@@ -122,7 +122,7 @@ export function resolveBaseUrlChain(
   }
   // Alle Kandidaten unsicher / nicht auflösbar — geerbte Base wird
   // **nicht** durchgereicht, weil das Manifest auf dieser Ebene
-  // explizit eine andere Base wollte. Tranche 4 mappt das Ergebnis
+  // explizit eine andere Base wollte. mappt das Ergebnis
   // auf segment_uri_blocked.
   return { baseUrl: undefined, blocked: true };
 }
@@ -179,7 +179,7 @@ export function resolveSegmentUri(uri: string, baseUrl: string | undefined): str
 
 /**
  * Resolver für `SegmentTemplate@initialization` und `@media` mit
- * dem `0.10.0`-Scope: `$RepresentationID$`, `$Bandwidth$`,
+ * dem Scope: `$RepresentationID$`, `$Bandwidth$`,
  * `$Number$` und `$Number%0Nd$`. `$Time$` oder unbekannte
  * Variablen führen zu `null` (Tranche 4 mappt das auf
  * `dash_template_unresolved`).

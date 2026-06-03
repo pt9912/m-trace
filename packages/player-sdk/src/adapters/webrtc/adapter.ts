@@ -13,15 +13,15 @@ import { newPeerConnectionRunId, startSampling, type SamplingDeps } from "./samp
  * attachHlsJs} und liefert Player-Events in den geteilten
  * `PlayerTracker`-Stream.
  *
- * Bezug: `docs/planning/done/plan-0.8.0.md` §0.5
+ * Bezug: `docs/planning/done/` §0.5
  * (Implementierungsleitplanken — WHEP als einziger Signalisierungsweg)
- * und §3 Tranche 2 DoD.
+ * und §3 DoD.
  *
- * Contract-Entscheidung Tranche 1 (rein SDK-intern) bleibt für Tranche 2
+ * Contract-Entscheidung (rein SDK-intern) bleibt für Tranche 2
  * gültig: Wire-Format und API-Ingress sind unverändert, der Adapter
  * sendet `playback_started`/`playback_error`-Events analog zum hls.js-
  * Pfad. Die Fehlercode-Taxonomie aus {@link "./error-codes"} ist
- * SDK-intern; Tranche 3 zieht sie zusammen mit dem `webrtc.*`-Meta-
+ * SDK-intern; zieht sie zusammen mit dem `webrtc.*`-Meta-
  * Namespace in den Wire-Vertrag.
  */
 
@@ -38,8 +38,8 @@ export interface WebRtcAdapterOptions {
   /** Optionales `AbortSignal` zum Abbruch der WHEP-Signalisierung. */
   signal?: AbortSignal;
   /**
-   * `getStats()`-Sampling-Intervall in Millisekunden für
-   * `metrics_sampled`-Events (`plan-0.8.0` Tranche 3). Default 1000 ms;
+   * `getStats`-Sampling-Intervall in Millisekunden für
+   * `metrics_sampled`-Events. Default 1000 ms;
    * `0` deaktiviert das Sampling vollständig.
    */
   samplingIntervalMs?: number;
@@ -66,12 +66,12 @@ interface AdapterState {
 /**
  * Aktiviert einen WebRTC-/WHEP-Read-Pfad auf dem übergebenen
  * `<video>`-Element. Der Aufrufer ist für DOM-Mounting und -Cleanup
- * verantwortlich; `destroy()` schließt WebRTC- und WHEP-Ressourcen.
+ * verantwortlich; `destroy` schließt WebRTC- und WHEP-Ressourcen.
  *
  * **Fehlerbehandlung**: jeder Fehler erzeugt genau ein
  * `playback_error`-Event mit dem reservierten Meta-Key
  * `webrtc.error_code` aus der Allowlist in
- * `./error-codes.ts`. Eine durch `destroy()` abgebrochene
+ * `./error-codes.ts`. Eine durch `destroy` abgebrochene
  * Verbindung emittiert `webrtc_destroyed_before_connected` nur dann,
  * wenn der Handshake noch nicht fertig war.
  */
@@ -172,7 +172,7 @@ function attachTrack(
     }
   } catch {
     // jsdom / Test-Stub liefert ggf. kein srcObject. Tracks bleiben
-    // im internen Array für destroy().
+    // im internen Array für destroy.
   }
 }
 
@@ -217,7 +217,7 @@ function destroyAdapter(
     return;
   }
   state.destroyed = true;
-  // destroy() vor Handshake-Abschluss: Adapter emittiert den
+  // destroy vor Handshake-Abschluss: Adapter emittiert den
   // dokumentierten Code synchron.
   if (!state.connected && !state.errored) {
     state.errored = true;

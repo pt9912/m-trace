@@ -8,7 +8,7 @@ import type {
 } from "../src/internal/loader/runtime.js";
 
 /**
- * Direkte Unit-Tests für `loadSegment` (`0.10.0` Tranche 4 / RAK-64).
+ * Direkte Unit-Tests für `loadSegment` (RAK-64).
  * Decken die Pfade ab, die der Verifier-Pfad mit echten Bytes nicht
  * trivial trifft: SSRF-Block, Redirect-Limit, DNS-Fehler, IPv4-/
  * IPv6-Literal-Hosts.
@@ -401,7 +401,7 @@ describe("loadSegment — failure mappings", () => {
  * Body-Read-Error-Mapping in `mapBodyReadError` / `describeError`.
  * Diese Pfade triggern Branches 384–391 und 426 in
  * `segment-loader.ts`, die sonst keine Test-Abdeckung haben.
- * Hintergrund: Coverage-Härtung im Folge-Patch zu plan-0.22.3
+ * Hintergrund: Coverage-Härtung im Folge-Patch zu
  * (stream-analyzer branches-Coverage stabilisiert >=91%).
  */
 describe("loadSegment — body-read error mapping", () => {

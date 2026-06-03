@@ -22,7 +22,7 @@ type RequestMetrics interface {
 // SseStreamConfig bündelt die Driven-Ports, die der SSE-Handler aus
 // dem Hexagon braucht. `nil` deaktiviert die SSE-Route — der Router
 // registriert dann weder `GET /api/stream-sessions/stream` noch den
-// CORS-Preflight ( H4).
+// CORS-Preflight
 type SseStreamConfig struct {
 	Broker *application.EventBroker
 	Events driven.EventRepository
@@ -43,7 +43,7 @@ type SseStreamConfig struct {
 // deaktiviert den CORS-Pfad — alle Preflights werden dann mit `403`
 // abgelehnt; der `Vary`-Header bleibt trotzdem auf jeder Antwort.
 //
-// sseConfig aktiviert die SSE-Route ( H4); `nil`
+// sseConfig aktiviert die SSE-Route; `nil`
 // deaktiviert sie für Tests, die den Stream nicht brauchen.
 func NewRouter(
 	useCase driving.PlaybackEventInbound,

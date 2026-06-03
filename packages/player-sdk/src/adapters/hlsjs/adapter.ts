@@ -216,7 +216,7 @@ function firstObjectArg(args: unknown[]): Record<string, unknown> | undefined {
 }
 
 // extractFragment liest das `frag`-Property aus dem
-// `FRAG_LOADED`-Payload (hls.js: `{ frag: Fragment, ... }`).
+// `FRAG_LOADED`-Payload (hls.js: `{ frag: Fragment,... }`).
 function extractFragment(args: unknown[]): HlsFragmentLike | undefined {
   const data = firstObjectArg(args);
   const candidate = data?.frag;
@@ -238,7 +238,7 @@ function extractManifestLoadedPayload(args: unknown[]): { url?: string } | undef
 
 // extractLevelLoadedPayload liest `level` und `details.url` aus dem
 // `LEVEL_LOADED`-Payload. hls.js liefert das in modernen Versionen
-// als `{ level: number, details: { url: string, ... } }`.
+// als `{ level: number, details: { url: string,... } }`.
 function extractLevelLoadedPayload(args: unknown[]): HlsLevelLoadedPayload | undefined {
   return firstObjectArg(args);
 }

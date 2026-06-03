@@ -3,7 +3,7 @@ import * as fc from "fast-check";
 
 import { analyzeManifest } from "../src/index.js";
 
-// plan-0.9.5 §4 Tranche 3 (extra-gates.md §3.5) — Property-Tests
+//  (extra-gates.md) — Property-Tests
 // für den HLS-Manifest-Parser. Pinnt:
 //
 //   - jeder Eingabe-String, der mit `#EXTM3U` beginnt, kommt mit

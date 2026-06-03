@@ -5,7 +5,7 @@ import type { LoaderRuntime, ResolvedAddress } from "../loader/runtime.js";
 
 /**
  * Bounded binary segment loader für die binäre CMAF-
- * Konformitätsprüfung (`0.10.0` Tranche 4, NF-13 / RAK-64).
+ * Konformitätsprüfung (NF-13 / RAK-64).
  *
  * Bewusst getrennt vom Manifest-Loader (`internal/loader/fetch.ts`):
  *

@@ -3,7 +3,7 @@ import * as fc from "fast-check";
 
 import { redactUrl } from "../src/adapters/hlsjs/redact.js";
 
-// plan-0.9.5 §4 Tranche 3 (extra-gates.md §3.5) — Property-Tests
+//  (extra-gates.md) — Property-Tests
 // für die SDK-URL-Redaction. Pinnt:
 //
 //   - jede Eingabe (string | undefined | null) liefert einen

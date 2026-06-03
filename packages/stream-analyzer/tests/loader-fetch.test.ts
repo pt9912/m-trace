@@ -534,13 +534,13 @@ describe("analyzeWithRuntime — URL pipeline", () => {
 
 describe("DNS-Rebinding-Entscheidung (Dokumentationspunkt)", () => {
   it("dokumentiert: Loader prüft alle Adressen einmal beim Lookup", async () => {
-    // Diese DoD-Position aus plan-0.3.0 §3 verlangt eine dokumentierte
+    // Diese DoD-Position aus verlangt eine dokumentierte
     // DNS-Rebinding-Entscheidung. Der Loader nimmt die Lookup-Antwort als
     // Set, prüft jeden Eintrag gegen die Sperrliste und delegiert die
     // eigentliche Verbindung an die globale `fetch`-Implementierung — ein
     // perfekter Schutz gegen Rebinding zwischen Lookup und TCP-Connect ist
     // in 0.3.0 nicht garantiert. Die Doku in `docs/user/stream-analyzer.md`
-    // §6 hält die Entscheidung fest.
+    // hält die Entscheidung fest.
     const calls: string[] = [];
     const runtime: LoaderRuntime = {
       async resolveHost(host) {

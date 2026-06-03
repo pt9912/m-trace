@@ -25,7 +25,7 @@ set -euo pipefail
 # Decodern und Playback-Qualität — dafür ist der manuelle
 # Browser-Handcheck (RAK-50, examples/webrtc/README.md).
 #
-# Konvention (examples/README.md, ):
+# Konvention (examples/README.md):
 # - opt-in (NICHT in `make gates`); eigener Make-Target
 # `make smoke-webrtc-stats-drift`.
 # - Default-Browser = chromium,firefox; WebKit nur wenn explizit

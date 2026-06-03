@@ -16,7 +16,7 @@ export interface PlayerTracker {
   /**
    * Reichts einen `session_boundaries[]`-Eintrag in den nächsten
    * Batch ein, der mindestens ein Event derselben Session enthält
-   * (plan-0.4.0 §4.4 / §4.6). Maximal 20 Boundaries pro Batch:
+   * (§4.6). Maximal 20 Boundaries pro Batch:
    * Boundaries jenseits des Caps werden mit drop-oldest verworfen.
    * Der Tracker setzt `kind="network_signal_absent"`, `project_id`,
    * `session_id` und `client_timestamp` automatisch; Caller liefern
@@ -135,7 +135,7 @@ export class MTracePlayerTracker implements PlayerTracker {
       return;
     }
 
-    // plan-0.4.0 §4.4: Boundaries dürfen nur mit einem Batch
+    // : Boundaries dürfen nur mit einem Batch
     // gehen, der mindestens ein Event für dieselbe Session
     // enthält. Da der Tracker single-session ist, reicht es,
     // das `events.length > 0`-Predicate zu prüfen — Backend

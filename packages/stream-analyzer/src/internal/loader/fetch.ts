@@ -24,7 +24,7 @@ export interface LoadResult {
 // Content-Type-Allowlist für den HTTP-Loader. HLS-Manifeste werden
 // üblicherweise als `application/vnd.apple.mpegurl` /
 // `application/x-mpegurl` / `audio/mpegurl` / `text/plain` ausgeliefert;
-// DASH-MPDs (ab `0.9.0` Tranche 3, RAK-58) als `application/dash+xml`
+// DASH-MPDs (ab , RAK-58) als `application/dash+xml`
 // oder generisch `application/xml`/`text/xml`. Der Loader sortiert
 // nicht zwischen den Manifest-Formaten — der Detector in
 // `detect.ts` macht das nach erfolgreichem Body-Read anhand des
@@ -50,7 +50,7 @@ const ACCEPT_HEADER =
 
 /**
  * Lädt ein Streaming-Manifest (HLS oder DASH) unter den
- * Tranche-2-Schutzregeln. Ab `0.9.0` Tranche 3 trägt die
+ * Tranche-2-Schutzregeln. Ab trägt die
  * Content-Type-Allowlist `application/dash+xml`; der Detector
  * hinter dem Loader entscheidet am Body-Anfang, welcher Parser
  * den Text bekommt.

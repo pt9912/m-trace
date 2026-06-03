@@ -1,5 +1,5 @@
 /**
- * Mini-Parser für HLS-Attribut-Listen (RFC 8216 §4.2). Format:
+ * Mini-Parser für HLS-Attribut-Listen (RFC 8216). Format:
  * `KEY=VALUE,KEY2="quoted, with commas",KEY3=0xHEX`. Wird sowohl
  * vom Master- als auch vom Media-Detail-Parser genutzt.
  *

@@ -127,7 +127,7 @@ export class HttpTransport implements Transport {
    * Provider-Throws — Tracing darf den Event-Pfad nicht sabotieren.
    * Throws sind unwahrscheinlich, aber denkbar (z. B. wenn der
    * Provider auf einen nicht-initialisierten Tracer zugreift). Der
-   * Header-Schreiber in `trySend()` prüft den Rückgabetyp defensiv
+   * Header-Schreiber in `trySend` prüft den Rückgabetyp defensiv
    * (`typeof tp === "string"`), damit ein versehentlich Non-String-
    * liefernder Provider nicht in den Header sickert. Beide Fehler-
    * pfade lösen einmal pro Transport-Instanz `warnTraceParentOnce`

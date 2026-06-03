@@ -197,7 +197,7 @@ func (a browserIngestAllowlistAdapter) IsOriginInGlobalUnion(origin string) bool
 }
 
 // ssePreflightHandler bedient `OPTIONS /api/stream-sessions/stream`
-// ( H4). Methods sind `GET, OPTIONS`; Allow-Headers
+//  Methods sind `GET, OPTIONS`; Allow-Headers
 // ergänzen `Last-Event-ID` für den fetch-basierten SSE-Reconnect-
 // Backfill (Spec §10a).
 func ssePreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {

@@ -103,7 +103,7 @@ type StreamSession struct {
 }
 
 // SessionEndSource klassifiziert den Auslöser des Endzustands einer
-// Session ( H1).
+// Session
 type SessionEndSource string
 
 // Session-EndSource-Werte; siehe spec/backend-api-contract.md

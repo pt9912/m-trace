@@ -407,7 +407,7 @@ func TestHTTP_StreamSessions_BoundaryRejectedDoesNotPersist(t *testing.T) {
 }
 
 // TestHTTP_StreamSessions_EndSource_NullForActiveSession pinnt
-//  H1: aktive Sessions liefern `end_source: null`
+//  aktive Sessions liefern `end_source: null`
 // (Pflichtfeld, kein omitempty).
 func TestHTTP_StreamSessions_EndSource_NullForActiveSession(t *testing.T) {
 	t.Parallel()

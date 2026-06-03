@@ -22,9 +22,9 @@ export interface HlsAnalyzeOutput {
 }
 
 /**
- * Setzt die Tranche-Resultate zusammen: Tranche 2 hat klassifiziert,
- * Tranche 3 wertet Master-Playlists detailliert aus, Tranche 4 ergänzt
- * Media-Playlists, Tranche 5 zieht alles in einen diskriminierten
+ * Setzt die Tranche-Resultate zusammen: hat klassifiziert,
+ * wertet Master-Playlists detailliert aus, ergänzt
+ * Media-Playlists, zieht alles in einen diskriminierten
  * Union-Typ. `details_pending` bleibt als Info-Marker für
  * `playlistType === "unknown"` erhalten — dort hat der Analyzer
  * bewusst keinen Detail-Pfad.

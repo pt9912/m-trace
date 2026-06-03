@@ -325,7 +325,7 @@ func (r *SessionRepository) Get(ctx context.Context, projectID, sessionID string
 
 // GetByCorrelationID liefert die Session mit der gegebenen
 // CorrelationID innerhalb des Projects. Leerwerte (Legacy-Sessions
-// vor §3.2-Closeout) zählen nicht als Treffer; Cross-Project-Treffer
+// vor) zählen nicht als Treffer; Cross-Project-Treffer
 // liefern ErrSessionNotFound (project-skopierte WHERE-Clause + LIMIT 1).
 func (r *SessionRepository) GetByCorrelationID(ctx context.Context, projectID, correlationID string) (domain.StreamSession, error) {
 	if correlationID == "" {

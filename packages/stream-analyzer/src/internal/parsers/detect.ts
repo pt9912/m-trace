@@ -2,7 +2,7 @@ import type { AnalyzerKind } from "../../types/result.js";
 
 /**
  * Klassifiziert einen Manifest-Text-Body als HLS, DASH oder
- * unsupported (`plan-0.9.0` §4 Tranche 3, RAK-58). Der Detector
+ * unsupported (RAK-58). Der Detector
  * entscheidet, welcher Parser den Text bekommt; eine eindeutige
  * Klassifikation hier ist Voraussetzung dafür, dass `manifest_not_hls`
  * (HLS-spezifisch) und `manifest_not_supported` (Detector-Sammelfehler)

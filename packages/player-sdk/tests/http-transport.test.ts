@@ -405,7 +405,7 @@ describe("HttpTransport", () => {
     });
 
     describe("cross-version against pre-§3.2 server (plan-0.4.0 §3.4b #1 — SDK side)", () => {
-      // Vertrag: ein 0.3.x-Backend liest den `traceparent`-Header
+      // Vertrag: ein Server liest den `traceparent`-Header
       // nicht (siehe legacyPlaybackHandler in
       // apps/api/adapters/driving/http/cross_version_test.go::
       // TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent —

@@ -94,7 +94,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 }
 
 // WithBroker setzt den optionalen EventBroker für SSE-Live-Updates
-// ( H4). Production-Wiring (`cmd/api`) ruft das, Tests
+//  Production-Wiring (`cmd/api`) ruft das, Tests
 // können den Broker injizieren oder weglassen.
 func (u *RegisterPlaybackEventBatchUseCase) WithBroker(broker *EventBroker) *RegisterPlaybackEventBatchUseCase {
 	u.broker = broker
@@ -202,7 +202,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, err
 	}
 
-	//  H4: SSE-Subscriber bekommen einen Mindestframe pro
+	//  SSE-Subscriber bekommen einen Mindestframe pro
 	// erfolgreich persistiertem Event. Publish ist non-blocking; slow
 	// Subscriber droppen den Frame und schließen die Lücke per
 	// `Last-Event-ID`-Reconnect.
@@ -227,7 +227,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 // Größenbedingungen. Counter-Semantik (API-Kontrakt): Auth-Fehler
 // zählen nicht in invalid_events; Schema-/Größen-Rejects zählen die
 // volle Batch-Größe. Origin="" überspringt Project-Bindung
-// (CLI/curl/Lab-Flow, ).
+// (CLI/curl/Lab-Flow).
 func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
 	ctx context.Context, in driving.BatchInput,
 ) (domain.Project, error) {
@@ -340,7 +340,7 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 // Session oder neu generiert. Verhalten:
 //  - Bekannte Session mit nicht-leerer CorrelationID → übernimm.
 //  - Bekannte Session ohne CorrelationID (Legacy / Test) → generiere
-//  eine neue (Self-Healing für Daten von vor §3.2-Closeout).
+//  eine neue (Self-Healing für Daten von historisch).
 //  - Unbekannte Session → generiere eine neue. UpsertFromEvents
 //  übernimmt sie aus dem Event-Wert beim Insert.
 func (u *RegisterPlaybackEventBatchUseCase) resolveCorrelationIDs(

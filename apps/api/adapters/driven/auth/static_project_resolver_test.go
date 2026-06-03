@@ -39,7 +39,7 @@ func TestStaticProjectResolver_ResolveByToken_KnownAndUnknown(t *testing.T) {
 
 // TestStaticProjectResolver_IsOriginInGlobalUnion verifiziert die
 // Aggregation der Allowed-Origins über alle Projects (Pflicht für
-// CORS-Preflight, ).
+// CORS-Preflight).
 func TestStaticProjectResolver_IsOriginInGlobalUnion(t *testing.T) {
 	t.Parallel()
 	r := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{

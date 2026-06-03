@@ -3,14 +3,14 @@ import { AnalysisError } from "../../types/error.js";
 
 /**
  * Klassifiziert den Manifesttext, ohne ihn vollständig zu parsen.
- * Tranche 2 liefert die Master-/Media-Erkennung; Tranche 3/4
+ * Aktuell sind die Master-/Media-Erkennung;/4
  * extrahieren danach die typspezifischen Inhalte.
  */
 export interface ClassifyResult {
   readonly playlistType: PlaylistType;
   /**
    * `true`, wenn sowohl Master- als auch Media-Tags gefunden wurden.
-   * Der Aufrufer dokumentiert dies als Finding (plan-0.3.0 §3 DoD
+   * Der Aufrufer dokumentiert dies als Finding ( DoD
    * "Ambige oder gemischte Playlists").
    */
   readonly ambiguous: boolean;

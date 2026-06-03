@@ -47,12 +47,12 @@ const CMAF_BINARY_DEFAULTS: Required<CmafBinaryOptions> = {
  * Public Entry Point. Liefert je nach Eingabe entweder ein
  * `AnalysisResult` (Erfolg) oder ein `AnalysisErrorResult` (Fehler).
  *
- * Ab `0.9.0` Tranche 3 (RAK-58 / NF-12) dispatcht der Analyzer auf
+ * Ab (RAK-58 / NF-12) dispatcht der Analyzer auf
  * dem Manifest-Body intern: HLS-Eingaben (erste Zeile `#EXTM3U`)
  * laufen durch den HLS-Parser, DASH-Eingaben (`<?xml`/`<MPD`-Header)
  * durch den MPD-Parser. Der Funktionsname `analyzeHlsManifest` bleibt
  * aus Backward-Kompat-Gründen erhalten; der generischere Alias
- * `analyzeManifest` ist seit `0.9.0` Public-API.
+ * `analyzeManifest` ist Public-API.
  */
 export async function analyzeHlsManifest(
   input: ManifestInput,
@@ -62,7 +62,7 @@ export async function analyzeHlsManifest(
 }
 
 /**
- * Public Entry Point ab `0.9.0` Tranche 3. Funktionsidentisch zu
+ * Public Entry Point ab. Funktionsidentisch zu
  * `analyzeHlsManifest`; der generischere Name spiegelt, dass der
  * Dispatcher seit dieser Phase HLS und DASH unterstützt.
  */

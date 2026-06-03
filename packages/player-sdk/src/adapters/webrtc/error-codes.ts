@@ -1,7 +1,7 @@
 /**
- * WebRTC-Adapter-Fehlercode-Taxonomie für `0.8.0` Tranche 2.
+ * WebRTC-Adapter-Fehlercode-Taxonomie für.
  *
- * Bezug: `docs/planning/done/plan-0.8.0.md` §3 Tranche 2 DoD —
+ * Bezug: `docs/planning/done/` §3 DoD —
  * "WebRTC-Fehlercode-Taxonomie ist im Contract dokumentiert und wird
  * vom Adapter genutzt".
  *
@@ -14,7 +14,7 @@
  *
  * **Tranche-2-Scope**: Liste und Normalisierung sind SDK-intern. Der
  * Wire-Vertrag (formal in `contracts/event-schema.json` /
- * `spec/backend-api-contract.md`) wird in Tranche 3 zusammen mit dem
+ * `spec/backend-api-contract.md`) wird in zusammen mit dem
  * `webrtc.*`-Meta-Namespace produktiv gepinnt.
  */
 

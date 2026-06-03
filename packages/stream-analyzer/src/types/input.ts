@@ -1,6 +1,6 @@
 /**
- * Eingabeformen für die Manifestanalyse. Tranche 1 legt die
- * Diskriminierung fest; Tranche 2 hat das URL-Laden mit Timeout,
+ * Eingabeformen für die Manifestanalyse. legt die
+ * Diskriminierung fest; hat das URL-Laden mit Timeout,
  * Größenlimit und SSRF-Schutz angeschlossen.
  */
 export type ManifestInput = ManifestTextInput | ManifestUrlInput;
@@ -98,7 +98,7 @@ export interface CmafBinaryOptions {
 }
 
 /**
- * Optionssektion für die CMAF-Analyse (`0.10.0`). Aktuell nur
+ * Optionssektion für die CMAF-Analyse. Aktuell nur
  * `binary` — manifestbasierte Signal-Erkennung ist immer aktiv,
  * weil sie keinen zusätzlichen Netzwerkverkehr erzeugt.
  */
@@ -113,7 +113,7 @@ export interface CmafAnalyzeOptions {
 export interface AnalyzeOptions {
   /**
    * Optionen für den URL-Loader. Greift bei `kind === "url"` und
-   * — ab `0.10.0` (NF-13 / RAK-64) — auch für binäre Segment-Fetches
+   * — (NF-13 / RAK-64) — auch für binäre Segment-Fetches
    * aus Text-Inputs mit sicherer HTTP(S)-`baseUrl`. `fetch.maxBytes`
    * bleibt ausschließlich das Manifest-Body-Limit; Segment-Größen
    * werden über `cmaf.binary.maxSegmentBytes` konfiguriert.

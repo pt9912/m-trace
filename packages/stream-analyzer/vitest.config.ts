@@ -10,7 +10,7 @@ export default defineConfig({
       // runtime.ts ist der reine Node-Stdlib-Adapter (dns.lookup +
       // globales fetch). Tests injizieren stattdessen einen Stub-
       // Runtime; die Default-Implementierung würde echte Netzwerk-
-      // bzw. DNS-Calls erzwingen, was plan-0.3.0 §3 ausschließt
+      // bzw. DNS-Calls erzwingen, was ausschließt
       // ("Der Parser arbeitet deterministisch ohne echte
       // Netzwerkabhängigkeit"). Sie bleibt außerhalb des
       // Coverage-Scopes.

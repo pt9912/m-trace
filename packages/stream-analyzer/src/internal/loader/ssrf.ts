@@ -6,7 +6,7 @@
  * sie ohne Netzwerk testbar sind.
  *
  * DNS-Rebinding-Entscheidung (siehe `docs/user/stream-analyzer.md`
- * §6): der Loader klassifiziert den Hostnamen einmal — IP-Literale
+ * : der Loader klassifiziert den Hostnamen einmal — IP-Literale
  * werden direkt gegen die Sperrlisten geprüft, Domain-Hostnamen über
  * `LoaderRuntime.resolveHost` aufgelöst — und delegiert die eigent-
  * liche Verbindung anschließend an die globale `fetch`-Implemen-

@@ -33,10 +33,10 @@ interface MasterParseResult {
 }
 
 /**
- * Parst eine HLS Master Playlist (RFC 8216 §4.3.4) in eine
+ * Parst eine HLS Master Playlist (RFC 8216) in eine
  * strukturierte Variant-/Rendition-Liste plus Findings.
  *
- * Tranche-3-Scope laut plan-0.3.0 §4:
+ * Tranche-3-Scope laut:
  *  - `#EXT-X-STREAM-INF` Variants: BANDWIDTH (Pflicht), AVERAGE-
  *    BANDWIDTH, RESOLUTION, CODECS, FRAME-RATE, AUDIO, VIDEO,
  *    SUBTITLES, CLOSED-CAPTIONS.
@@ -52,7 +52,7 @@ interface MasterParserState {
   variants: MasterVariant[];
   /**
    * Parallel zur `variants`-Liste: 0-basierte Zeilennummer der
-   * Variant-URI für CMAF-Manifestanker (`0.10.0` Tranche 2). Bleibt
+   * Variant-URI für CMAF-Manifestanker. Bleibt
    * intern, weil der Public-`MasterVariant` keine Zeilenangaben
    * trägt und auch nicht tragen soll (Wire-Vertrag stabil).
    */
@@ -250,7 +250,7 @@ function buildRendition(
     });
   }
   const uri = attrs.get("URI");
-  // RFC 8216 §4.3.4.2.1: URI ist Pflicht für SUBTITLES; bei AUDIO/VIDEO
+  // RFC 8216: URI ist Pflicht für SUBTITLES; bei AUDIO/VIDEO
   // bedeutet das Fehlen, dass die Rendition in der Variant-Playlist
   // liegt — kein Fehler. Nur SUBTITLES ohne URI ist ein Spec-Verstoß.
   if (type === "SUBTITLES" && uri === undefined) {
@@ -298,7 +298,7 @@ function crossReferenceGroups(
     findings.push(...checkGroup(i, "audio", v.audio, audioGroups));
     findings.push(...checkGroup(i, "video", v.video, videoGroups));
     findings.push(...checkGroup(i, "subtitles", v.subtitles, subtitlesGroups));
-    // RFC 8216 §4.3.4.2.1 erlaubt CLOSED-CAPTIONS=NONE als explizite
+    // RFC 8216 erlaubt CLOSED-CAPTIONS=NONE als explizite
     // „keine CC-Gruppe"-Markierung. Das ist kein Group-Reference,
     // sondern ein Sentinel und darf keinen variant_group_undefined-
     // Finding auslösen.
@@ -327,7 +327,7 @@ function checkGroup(
 }
 
 function detectDuplicateRenditions(renditions: readonly MasterRendition[]): AnalysisFinding[] {
-  // RFC 8216 §4.3.4.1.1: Renditions mit gleichem TYPE+GROUP-ID müssen
+  // RFC 8216: Renditions mit gleichem TYPE+GROUP-ID müssen
   // unterschiedliche NAME-Werte tragen. Bei Wiederholung melden wir
   // den zweiten (und folgende) Eintrag als Duplikat.
   const seen = new Set<string>();
@@ -378,12 +378,12 @@ function resolveUri(rawUri: string, baseUrl: string | undefined): string | null 
 
 /**
  * Konservatives `details.cmaf` für Master-Playlists (`0.10.0`
- * Tranche 2, NF-13 / RAK-61). Master-Pfad lädt referenzierte Media-
+ * , NF-13 / RAK-61). Master-Pfad lädt referenzierte Media-
  * Playlists nicht nach; CMAF-Vermutung darf deshalb nur
  * `confidence:"inferred"` ergeben. `CODECS` allein erzeugt **kein**
  * Signal, weil klassische TS-HLS-Master ebenfalls Codecs tragen.
  *
- * Master-Summaries tragen in `0.10.0` kein `binary`-Objekt, weil der
+ * Master-Summaries tragen kein `binary`-Objekt, weil der
  * Binary-Scope keine Media-Playlists nachlädt — eine binäre
  * `passed`-/`failed`-/`skipped`-Aussage entsteht erst beim separaten
  * Analyzer-Aufruf einer Media-Playlist.

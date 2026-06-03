@@ -29,7 +29,7 @@ import type {
 
 /**
  * Orchestrator für die binäre CMAF-Konformitätsprüfung
- * (`0.10.0` Tranche 4, NF-13 / RAK-64).
+ * (NF-13 / RAK-64).
  *
  * Nimmt das interne CMAF-Manifest-Metadaten-Objekt vom HLS-Media-
  * oder DASH-Parser entgegen, wendet `cmaf.binary`-Optionen an,
@@ -45,7 +45,7 @@ import type {
  *  - `limits` — `requiredSegmentChecks`, `plannedSegmentFetches`
  *    plus die durchgereichten Loader-Grenzen.
  *
- * Failure-Code-Präzedenz aus Plan §3 Tranche 1:
+ * Failure-Code-Präzedenz aus Plan §3:
  *   1. `binary_disabled`
  *   2. `segment_reference_missing` / `dash_template_unresolved` /
  *      `hls_map_byterange_unsupported` / `hls_media_byterange_unsupported`
@@ -72,7 +72,7 @@ export interface BinaryVerifyOptions {
 }
 
 /**
- * Eingabe für die HLS-Media-Pfad-Verifikation. Tranche 4 prüft pro
+ * Eingabe für die HLS-Media-Pfad-Verifikation. prüft pro
  * Media-Playlist genau Init-Segment + erstes fMP4-Media-Segment;
  * fehlende Referenzen werden mit
  * `segment_reference_missing` gemeldet.

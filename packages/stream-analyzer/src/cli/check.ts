@@ -24,8 +24,7 @@ export interface RunCliOptions {
   readonly readFile?: ReadFileFn;
   /**
    * Test-Hook: Default ist `process.env`. Ermöglicht Tests des
-   * `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`-Opt-in (`0.10.0` Tranche 5
-   * / RAK-63), ohne den Prozess-Env-State zu mutieren.
+   * `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`-Opt-in RAK-63), ohne den Prozess-Env-State zu mutieren.
    */
   readonly env?: Readonly<Record<string, string | undefined>>;
 }
@@ -165,7 +164,7 @@ function printUsage(out: Writable): void {
 }
 
 function isHttpUrl(value: string): boolean {
-  // RFC 3986 §3.1: scheme ist case-insensitive. Tolerieren wir, damit
+  // RFC 3986: scheme ist case-insensitive. Tolerieren wir, damit
   // copy-paste aus auto-korrigierten Quellen ("HTTP://...") nicht
   // versehentlich als Datei-Pfad behandelt wird.
   return /^https?:\/\//i.test(value);
@@ -185,7 +184,7 @@ function defaultReadFile(path: string): Promise<string> {
 
 /**
  * Liest den `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`-Opt-in-Schalter aus
- * der Env (`0.10.0` Tranche 5, NF-13 / RAK-63). Akzeptiert
+ * der Env (NF-13 / RAK-63). Akzeptiert
  * `1`, `true`, `TRUE`, `yes`, `on` als „aktiviert"; alle anderen
  * Werte (inklusive Abwesenheit) lassen den SSRF-Default unverändert.
  *

@@ -4,7 +4,7 @@ package domain
 //
 // AllowedOrigins listet die exakten Origin-Werte (Schema+Host+Port),
 // gegen die der HTTP-Adapter den `Origin`-Header eines POST-Requests
-// validiert (CORS Variante B, ). Die Liste enthält
+// validiert (CORS Variante B). Die Liste enthält
 // **konkrete** Origins; Wildcards `*` sind nicht zulässig.
 type Project struct {
 	ID             string

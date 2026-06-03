@@ -62,7 +62,7 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
   });
 
   it("rejects non-HLS, non-DASH content with manifest_not_supported", async () => {
-    // plan-0.9.0 §4 Tranche 3: HTML/JSON/Plain-Text-Bodies werden
+    // : HTML/JSON/Plain-Text-Bodies werden
     // vom Detector nicht als HLS oder DASH erkannt und bekommen
     // den additiven Public-Code `manifest_not_supported`.
     // `manifest_not_hls` bleibt nur erhalten, wenn der Detector
@@ -108,7 +108,7 @@ describe("analyzeHlsManifest — Tranche 2 contract", () => {
 
     expect(result.status).toBe("ok");
     expect(result.playlistType).toBe("media");
-    // Tranche 4: malformed.m3u8 hat ungültige EXTINF-Dauer und keinen
+    // : malformed.m3u8 hat ungültige EXTINF-Dauer und keinen
     // EXT-X-ENDLIST → erwartet mindestens segment_malformed_extinf
     // und media_missing_targetduration.
     expect(result.findings.some((f) => f.code === "segment_malformed_extinf" && f.level === "warning")).toBe(true);

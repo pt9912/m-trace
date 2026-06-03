@@ -2,9 +2,9 @@ import type { PlayerTracker } from "../../core/tracker";
 import type { EventMeta } from "../../types/events";
 
 /**
- * `getStats()`-Sampling für den WebRTC-Adapter (`plan-0.8.0` Tranche 3).
+ * `getStats`-Sampling für den WebRTC-Adapter.
  *
- * Pollt `pc.getStats()` in einem festen Intervall, extrahiert die
+ * Pollt `pc.getStats` in einem festen Intervall, extrahiert die
  * Muss-Felder aus `spec/telemetry-model.md` §3.5.2 und sendet sie als
  * `metrics_sampled`-Event mit reserviertem `webrtc.*`-Meta-Namespace
  * (siehe §1.4 / §3.5).
@@ -13,7 +13,7 @@ import type { EventMeta } from "../../types/events";
  * (`connectionState`, `dtlsState`, `iceState`, `packetsLost`,
  * `bytesReceived`, `bytesSent`), wird das Sample **gar nicht**
  * emittiert — kein `unknown`-Surrogat. Ein Sample-Tick ohne
- * `RTCPeerConnection.getStats()` wird ebenfalls leise verworfen.
+ * `RTCPeerConnection.getStats` wird ebenfalls leise verworfen.
  */
 
 export interface SamplingDeps {
@@ -233,7 +233,7 @@ export function startSampling(
         tracker.track({ eventName: "metrics_sampled", meta });
       })
       .catch(() => {
-        // getStats() kann in degradierten Browser-Zuständen werfen —
+        // getStats kann in degradierten Browser-Zuständen werfen —
         // schlucken statt einen Schema-Drift-Surrogat-Wert zu emittieren.
       });
   };

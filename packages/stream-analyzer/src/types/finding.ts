@@ -1,5 +1,5 @@
 /**
- * Drei-Stufen-Skala aus plan-0.3.0 §5 (Tranche 4). Konsumenten dürfen
+ * Drei-Stufen-Skala aus. Konsumenten dürfen
  * weitere Stufen behandeln, ohne dass das Schema bricht — additive
  * Erweiterungen bleiben erlaubt.
  */

@@ -105,7 +105,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 
 // newTestServerWithSse wires the same router as newTestServer plus a
 // non-nil SseStreamConfig, so the SSE GET- und OPTIONS-Routen aktiv
-// sind ( H4). Tests, die den SSE-Preflight oder den
+// sind Tests, die den SSE-Preflight oder den
 // Live-Stream-Pfad anfassen, müssen diesen Server nutzen.
 func newTestServerWithSse(t *testing.T) *httptest.Server {
 	return newTestServerWithClock(t, time.Now, withSse())

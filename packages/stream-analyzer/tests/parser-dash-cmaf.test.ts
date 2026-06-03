@@ -251,7 +251,7 @@ describe("DASH-CMAF — Template-Auflösung", () => {
 });
 
 /**
- * Coverage-Härtung-Tests für plan-0.22.3-Folge-Patch: dash.ts branches
+ * Coverage-Härtung-Tests für -Folge-Patch: dash.ts branches
  * von ~80% auf >=90% heben durch Edge-Cases, die der Happy-Path-
  * Korpus nicht erreicht.
  */

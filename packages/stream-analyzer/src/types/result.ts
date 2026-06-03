@@ -6,7 +6,7 @@ import type { AnalysisFinding } from "./finding.js";
  *
  * - HLS-Pfad: `master` / `media` / `unknown` (Fallback für HLS-
  *   Manifeste ohne klare Master-/Media-Tag-Distinktion).
- * - DASH-Pfad (ab `0.9.0` Tranche 3): `dash` als zweiter Wert,
+ * - DASH-Pfad (ab ): `dash` als zweiter Wert,
  *   parallel zu HLS. DASH liefert kein Master/Media-Subtyping aus
  *   `analyzerKind`-Sicht — `playlistType: "dash"` ist die DASH-
  *   spezifische Klassifikation.
@@ -29,8 +29,8 @@ export interface AnalysisInputMetadata {
 
 export interface AnalysisSummary {
   /**
-   * Anzahl der erkannten Manifest-Kindelemente. Tranche 3 füllt das
-   * für Master Playlists (Variants/Renditions); Tranche 4 für Media
+   * Anzahl der erkannten Manifest-Kindelemente. füllt das
+   * für Master Playlists (Variants/Renditions); für Media
    * Playlists (Segmente). Bis dahin bleibt der Wert 0.
    */
   readonly itemCount: number;
@@ -38,7 +38,7 @@ export interface AnalysisSummary {
 
 /**
  * Kennzeichnet, welcher Analyzer das Ergebnis erzeugt hat. Aktuelle
- * Werte: `"hls"` (seit `0.3.0`) und `"dash"` (ab `0.9.0` Tranche 3,
+ * Werte: `"hls"` (seit `0.3.0`) und `"dash"` (ab ,
  * NF-12 / RAK-58).
  *
  * Konsumenten unterscheiden HLS-Variants über `playlistType`
@@ -98,7 +98,7 @@ export interface UnknownAnalysisResult extends BaseAnalysisResult {
 }
 
 /**
- * Erfolgreiches DASH-MPD-Result (`0.9.0` Tranche 3, RAK-58 / NF-12).
+ * Erfolgreiches DASH-MPD-Result (RAK-58 / NF-12).
  * Diskriminator-Paar `analyzerKind: "dash"` + `playlistType: "dash"`;
  * `details` trägt die geparsten Period/AdaptationSet/Representation-
  * Strukturen (siehe `DashManifestDetails`).
@@ -120,12 +120,12 @@ export interface DashAnalysisResult extends BaseAnalysisResult {
  * `playlistType`: TypeScript narrowed `details` automatisch auf den
  * passenden Typ (kein Cast notwendig).
  *
- * Stabilitätsregel (plan-0.3.0 §6): additive Änderungen sind erlaubt
+ * Stabilitätsregel: additive Änderungen sind erlaubt
  * (neue Felder, neue PlaylistType-Werte, neue analyzerKind-Werte,
  * neue Finding-Codes). Breaking Changes (Felder löschen/umbenennen/
  * umtypisieren, finite Wertedomänen einschränken) erfordern eine
  * Major-Version, einen Eintrag in `CHANGELOG.md` und ein Update von
- * `docs/user/stream-analyzer.md` und `docs/planning/done/plan-0.3.0.md`.
+ * `docs/user/stream-analyzer.md` und `docs/planning/done/`.
  */
 export type AnalysisResult =
   | MasterAnalysisResult
@@ -188,7 +188,7 @@ export interface MasterPlaylistDetails {
    * Optionales CMAF-Signal-Summary (`0.10.0`, NF-13 / RAK-61). Wird
    * nur ausgegeben, wenn manifestbasierte CMAF-Indizien erkannt
    * wurden; HLS-Master-Pfad lädt referenzierte Media-Playlists nicht
-   * nach und trägt deshalb in `0.10.0` kein `binary`-Objekt — siehe
+   * nach und trägt deshalb kein `binary`-Objekt — siehe
    * `CmafSignalSummary` und Plan-Tranche 2.
    */
   readonly cmaf?: CmafSignalSummary;
@@ -228,7 +228,7 @@ export interface MediaSegmentSummary {
 }
 
 /**
- * Detail-Sektion einer HLS Media Playlist (RFC 8216 §4.3.3).
+ * Detail-Sektion einer HLS Media Playlist (RFC 8216).
  *
  * `live === !endList`. `liveLatencyEstimateSeconds` ist die einfache
  * 3×-Target-Duration-Schätzung nach Apples HLS-Authoring-Empfehlung
@@ -289,7 +289,7 @@ export interface DashAdaptationSet {
 }
 
 /**
- * Detail-Sektion eines DASH-MPD (`0.9.0` Tranche 3, RAK-58). Mindest-
+ * Detail-Sektion eines DASH-MPD (RAK-58). Mindest-
  * Felder pro `details.adaptationSets[]`-Eintrag sind `mimeType`,
  * `codecs`, `bandwidth`, `width`/`height` (letztere zwei optional —
  * Audio-only-Streams haben keine Auflösung); `summary.itemCount`
@@ -300,7 +300,7 @@ export interface DashAdaptationSet {
  * `MPD@type` — `dynamic` → live, `static` → VOD; Default `static`).
  * `availabilityStartTime`-/Segment-Template-Edge-Cases (z. B.
  * `$Time$`-Variablen) sind aus dem Plan-Scope explizit ausgenommen
- * (siehe `plan-0.9.0.md` §0.3).
+ * (siehe ).
  */
 export interface DashManifestDetails {
   readonly profiles?: string;
@@ -343,7 +343,7 @@ export interface DashManifestDetails {
  */
 export interface CmafSignalSummary {
   /**
-   * Quelle des Summary-Objekts. Ein `mixed`-Wert wird in `0.10.0`
+   * Quelle des Summary-Objekts. Ein `mixed`-Wert wird
    * nicht eingeführt, weil jedes Summary unter genau einem HLS- oder
    * DASH-Detail-Objekt lebt.
    */
@@ -363,7 +363,7 @@ export interface CmafSignalSummary {
    * Optionale binäre Verifikation. In binär prüfbaren Detail-Scopes
    * (HLS Media-Playlist, DASH-MPD) wird das Feld immer gesetzt — auch
    * bei `cmaf.binary.enabled:false` (`status:"skipped"` mit
-   * `binary_disabled`). HLS-Master-Summaries tragen in `0.10.0` kein
+   * `binary_disabled`). HLS-Master-Summaries tragen kein
    * `binary`-Objekt, weil referenzierte Media-Playlists nicht
    * nachgeladen werden.
    */
@@ -397,7 +397,7 @@ export interface CmafSignal {
 
 /**
  * Bounded Binary-Verifikation der manifestreferenzierten Init-/Media-
- * Segmente (`0.10.0`, RAK-64).
+ * Segmente (RAK-64).
  *
  * `status:"passed"` ist die einzige Stelle, aus der Doku und
  * Konsumenten eine binäre CMAF-Konformitätsaussage für den geprüften
@@ -475,7 +475,7 @@ export interface CmafFailure {
 
 /**
  * Reproduzierbarkeits-Block für überzählige Pflichtprüfungen
- * (`0.10.0`, RAK-64). `requiredSegmentChecks` ist die manifestseitig
+ * (RAK-64). `requiredSegmentChecks` ist die manifestseitig
  * verpflichtende Anzahl, `plannedSegmentFetches` die nach Anwendung
  * von `maxBinarySegments` tatsächlich geplante Fetch-Menge.
  */
@@ -490,7 +490,7 @@ export interface CmafLimits {
 
 /**
  * Stabile Failure-Code-Domäne für `CmafBinaryVerification`,
- * `CmafSegmentCheck` und `CmafFailure` (`0.10.0` Tranche 1).
+ * `CmafSegmentCheck` und `CmafFailure`.
  *
  * Präzedenz bei mehreren möglichen Skip-Ursachen (deterministisch):
  *   1. Caller-/Options-Entscheidung: `binary_disabled`.

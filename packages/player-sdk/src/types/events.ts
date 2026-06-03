@@ -50,20 +50,20 @@ export interface EventDraft {
 }
 
 /**
- * Network-Signal-Typ einer Session-Boundary. In Tranche 3 sind nur
+ * Network-Signal-Typ einer Session-Boundary. In sind nur
  * `manifest` und `segment` definiert.
  */
 export type BoundaryNetworkKind = "manifest" | "segment";
 
 /**
- * Adapter-Klasse, die eine Boundary gemeldet hat. Tranche 3 erlaubt
+ * Adapter-Klasse, die eine Boundary gemeldet hat. erlaubt
  * `hls.js`, `native_hls` oder `unknown`.
  */
 export type BoundaryAdapter = "hls.js" | "native_hls" | "unknown";
 
 /**
  * `SessionBoundary` ist ein Wire-Eintrag im
- * `session_boundaries[]`-Block. `kind` ist in Tranche 3 immer
+ * `session_boundaries[]`-Block. `kind` ist in immer
  * `network_signal_absent`; `reason` muss aus dem Reason-Enum von
  * `contracts/event-schema.json#network_unavailable_reasons` kommen
  * und dem Pattern `^[a-z0-9_]{1,64}$` entsprechen — andernfalls

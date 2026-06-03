@@ -9,7 +9,7 @@ import {
 } from "../src/internal/cmaf/iso-bmff.js";
 
 /**
- * ISO-BMFF-Box-Parser-Tests für `0.10.0` Tranche 4 (NF-13 / RAK-64).
+ * ISO-BMFF-Box-Parser-Tests für (NF-13 / RAK-64).
  * Bauen Bytes-Fixtures programmatisch — keine externe Datei-
  * Dependency, keine Netzwerk-Abhängigkeit. Brand-Allowlist-Cases
  * decken die Plan-DoD-Pflichtfälle ab.

@@ -86,7 +86,7 @@ describe("session_boundaries[] send path", () => {
   it("only sends boundaries on the first batch within a flush cycle", async () => {
     // Eigene Tracker-Instanz mit großem batchSize und ohne
     // Auto-Flush-Timer, damit der Test deterministisch alle Events
-    // in einem flush()-Aufruf draint und die Body-Size-Grenze
+    // in einem flush-Aufruf draint und die Body-Size-Grenze
     // mehrere Batches erzwingt.
     const transport = new MemoryTransport();
     const tracker = createTracker({
@@ -125,7 +125,7 @@ describe("session_boundaries[] send path", () => {
   it("does not send boundaries when the queue is event-less", async () => {
     // Boundary-only flushes are not allowed by the backend; the
     // tracker holds boundaries in its queue until the next flush
-    // that drains an event. flush() with empty event queue is a
+    // that drains an event. flush with empty event queue is a
     // no-op for boundaries too.
     const transport = new MemoryTransport();
     const tracker = newTracker(transport);
@@ -206,7 +206,7 @@ describe("session_boundaries[] send path", () => {
     });
     // 99 Events bleiben unter dem Auto-Flush-Threshold (batchSize=100),
     // damit der einzige flush-Cycle der explizite `await tracker.
-    // flush()` ist. So lässt sich das Race-Szenario deterministisch
+    // flush` ist. So lässt sich das Race-Szenario deterministisch
     // reproduzieren.
     const largeMeta = { padding: "x".repeat(3000) };
     for (let i = 0; i < 99; i += 1) {
@@ -247,7 +247,7 @@ describe("session_boundaries[] send path", () => {
       reason: "native_hls_unavailable"
     });
 
-    // destroy() flushes session_ended once; no boundary should ride
+    // destroy flushes session_ended once; no boundary should ride
     // along.
     expect(transport.batches[0]?.session_boundaries).toBeUndefined();
   });

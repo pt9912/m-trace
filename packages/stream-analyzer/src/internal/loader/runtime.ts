@@ -13,7 +13,7 @@ export interface ResolvedAddress {
  * (Node `dns.lookup` und globales `fetch`) wird in
  * `defaultLoaderRuntime` angeboten; Tests injizieren eigene
  * Implementierungen, damit SSRF-/Timeout-/Redirect-Verhalten ohne
- * echtes Netzwerk getestet werden kann (plan-0.3.0 §3 DoD: "Der
+ * echtes Netzwerk getestet werden kann ( DoD: "Der
  * Parser arbeitet deterministisch ohne echte Netzwerkabhängigkeit").
  */
 export interface LoaderRuntime {
@@ -58,7 +58,7 @@ export const defaultLoaderRuntime: LoaderRuntime = {
       headers: { get: (name) => response.headers.get(name) },
       body: response.body
         ? (async function* () {
-            // Cast: response.body!.getReader() liefert in der DOM/Node-
+            // Cast: response.body!.getReader liefert in der DOM/Node-
             // Lib-Mischung formal ReadableStreamDefaultReader<any>;
             // der konkrete Stream liefert Uint8Array-Chunks, was die
             // LoaderResponse-Body-Typsignatur verlangt.

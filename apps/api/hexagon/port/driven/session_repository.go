@@ -76,7 +76,7 @@ type SessionRepository interface {
 	// gefunden (kein Cross-Project-Read).
 	Get(ctx context.Context, projectID, sessionID string) (domain.StreamSession, error)
 	// GetByCorrelationID liefert die Session, deren CorrelationID im
-	// gegebenen Project gesetzt ist (Analyzer-Linking, ).
+	// gegebenen Project gesetzt ist (Analyzer-Linking).
 	// Legacy-Sessions ohne CorrelationID liefern keinen Treffer; der
 	// Lookup ist project-skopiert und liefert nie eine Session aus einem
 	// fremden Project. ErrSessionNotFound, wenn nichts passt.

@@ -37,7 +37,7 @@ describe("parseMediaPlaylist — CMAF detection", () => {
     expect(cmaf.signals[0].manifestAnchor).toBe("media:line:5");
     // .m4s segment auf Zeile 7 (1-basiert).
     expect(cmaf.signals[1].manifestAnchor).toBe("media:line:7");
-    // Tranche 2 emittiert kein binary-Objekt — das kommt mit T4.
+    // emittiert kein binary-Objekt — das kommt mit T4.
     expect(cmaf.binary).toBeUndefined();
   });
 

@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 
-// plan-0.9.5 §2 Tranche 1b — separater Vitest-Config-Pfad für die
+// b — separater Vitest-Config-Pfad für die
 // Bench-Suite, damit `pnpm test` (Unit-Tests) und `pnpm bench`
 // (Benchmark-Smoke) sich nicht gegenseitig in die Quere kommen.
 //

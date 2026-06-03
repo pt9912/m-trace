@@ -22,10 +22,10 @@ import {
 } from "./cmaf-dash.js";
 
 /**
- * MPD-Parser für DASH-Manifests (`plan-0.9.0` §4 Tranche 3, RAK-58 /
+ * MPD-Parser für DASH-Manifests (RAK-58 /
  * NF-12). Der Parser extrahiert die Mindest-Felder aus
  * `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie
- * pro `docs/planning/done/plan-0.9.0.md` §0.5:
+ * pro `docs/planning/done/` §0.5:
  *
  *   - `details.profiles` (aus `MPD@profiles`)
  *   - `details.type` (`MPD@type` ∈ `static` / `dynamic`, Default `static`)
@@ -49,7 +49,7 @@ export interface DashParseOutput {
   readonly findings: readonly AnalysisFinding[];
   /**
    * Interne CMAF-Metadaten für den Tranche-4-Binary-Pfad. Liegt
-   * bewusst neben dem Public-Result, damit Tranche 4 keine
+   * bewusst neben dem Public-Result, damit keine
    * MPD-Tags erneut tokenisieren muss. Konsumenten bekommen das
    * Public-Summary über `details.cmaf`.
    */
@@ -58,7 +58,7 @@ export interface DashParseOutput {
 
 /**
  * Pflichtprüfungs-Eintrag pro AdaptationSet mit CMAF-Signal. Liefert
- * Tranche 4 alles, was sie zum Init- und Media-Segment-Fetch braucht.
+ * alles, was sie zum Init- und Media-Segment-Fetch braucht.
  */
 export interface DashCmafRepresentationEntry {
   readonly manifestAnchor: string;
@@ -72,7 +72,7 @@ export interface DashCmafRepresentationEntry {
   readonly init?: DashCmafSegmentRef;
   readonly media?: DashCmafSegmentRef;
   /**
-   * Interne Marker, welche Pflichtreferenz fehlt — Tranche 4 mappt
+   * Interne Marker, welche Pflichtreferenz fehlt — mappt
    * sie auf `segment_reference_missing` bzw.
    * `dash_template_unresolved`.
    */
@@ -160,7 +160,7 @@ function parseDashManifest(text: string, manifestBaseUrl: string | undefined): D
 
   // BaseURL-Chain: MPD-Ebene gewinnt über `manifestBaseUrl` aus dem
   // URL-Loader, sobald sie sicher ist. Unsichere/blocked Werte auf
-  // MPD-Ebene werden in `cmafMeta` für Tranche 4 sichtbar.
+  // MPD-Ebene werden in `cmafMeta` für sichtbar.
   const mpdBase = resolveBaseUrlChain(extractBaseURLs(mpdMatch.body), manifestBaseUrl);
 
   const adaptationSets: DashAdaptationSet[] = [];
@@ -591,7 +591,7 @@ function resolveInitRef(
     );
   }
   // Anchor wird derzeit nicht für die fehlende Referenz benötigt;
-  // Tranche 4 baut den Skip-Eintrag aus dem `representationCmafEntry`-
+  // baut den Skip-Eintrag aus dem `representationCmafEntry`-
   // Anker direkt.
   void anchor;
   return undefined;
@@ -669,8 +669,8 @@ function resolveLiteralRef(
 /**
  * Aggregiert die pro Representation gesammelten Signale plus
  * eventuelle MP4-MIME-only-Indikationen zu einem
- * `CmafSignalSummary`. Tranche 3 emittiert kein `binary`-Objekt —
- * das setzt Tranche 4 mit dem bounded Loader.
+ * `CmafSignalSummary`. emittiert kein `binary`-Objekt —
+ * das setzt mit dem bounded Loader.
  */
 function buildDashCmafSummary(
   signals: readonly CmafSignal[]
@@ -704,7 +704,7 @@ function matchTag(text: string, name: string): TagMatch | null {
 function collectAll(text: string, name: string): TagMatch[] {
   const results: TagMatch[] = [];
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // Match either self-closing (<Name ... />) or paired (<Name ...>...</Name>).
+  // Match either self-closing (<Name... />) or paired (<Name...>...</Name>).
   // Non-greedy body match; XML allows nested same-name elements only
   // for AdaptationSet/Representation if the schema explicitly nests
   // them — DASH spec doesn't, so non-greedy is safe.

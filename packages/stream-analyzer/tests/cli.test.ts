@@ -237,8 +237,8 @@ describe("m-trace CLI — URL input", () => {
   });
 });
 
-// plan-0.9.0 §4 Tranche 3 (RAK-59) — DASH-Pfad: der CLI-Dispatcher
-// liefert ein DASH-Result, sobald analyze() ein analyzerKind="dash"-
+//  (RAK-59) — DASH-Pfad: der CLI-Dispatcher
+// liefert ein DASH-Result, sobald analyze ein analyzerKind="dash"-
 // Result zurückgibt. Der CLI-Code selbst entscheidet nichts — das
 // macht der Detector in analyze.ts.
 describe("m-trace CLI — DASH dispatch (RAK-59)", () => {
@@ -324,7 +324,7 @@ describe("m-trace CLI — DASH dispatch (RAK-59)", () => {
 });
 
 /**
- * Plan `0.10.0` Tranche 5 (NF-13 / RAK-63): Opt-in-Env-Schalter
+ * Plan (NF-13 / RAK-63): Opt-in-Env-Schalter
  * `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS` reicht ausschließlich
  * `fetch.allowPrivateNetworks=true` an die Analyzer-Library durch.
  * Default bleibt unverändert; der vorhandene URL-SSRF-Smoke muss

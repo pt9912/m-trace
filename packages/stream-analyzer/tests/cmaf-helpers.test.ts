@@ -19,7 +19,7 @@ import {
 /**
  * Branch-coverage-Targeted-Tests für die CMAF-Helper-Module.
  * Decken Edge-Cases ab, die der Public-Pfad (Manifest-Tests) nicht
- * isoliert auslöst — Plan `0.10.0` Tranche 3 / RAK-62 / RAK-64.
+ * isoliert auslöst — Plan RAK-62 / RAK-64.
  */
 
 describe("cmaf-hls — aggregateConfidence", () => {

@@ -22,7 +22,7 @@ type PlaybackEventInbound interface {
 
 // BatchInput is the wire-format-neutral representation of a request to
 // the API. It carries the raw header value (AuthToken), den optionalen
-// Origin-Header (CORS Variante B, ), die ermittelte
+// Origin-Header (CORS Variante B), die ermittelte
 // ClientIP (für die Rate-Limit-Dimension F-110) und die parsed
 // payload. Per spec/backend-api-contract.md the use case is
 // responsible for the full validation order from step 2 onwards.

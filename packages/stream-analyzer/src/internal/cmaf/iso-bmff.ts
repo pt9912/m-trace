@@ -1,11 +1,11 @@
 /**
  * Bounded ISO-BMFF-Box-Parser für die binäre CMAF-Konformitätsprüfung
- * (`0.10.0` Tranche 4, NF-13 / RAK-64).
+ * (NF-13 / RAK-64).
  *
  * Scope:
  *  - 32-bit-Boxgrößen und `largesize` (Header-Größe `size = 1`,
  *    gefolgt von 64-bit). `size = 0` (Box erstreckt sich bis Datei-
- *    ende) bleibt **out of scope** in `0.10.0`, weil die geprüften
+ *    ende) bleibt **out of scope**, weil die geprüften
  *    Init-/Media-Segmente bewusst klein sind und ein `size = 0`-
  *    Konstrukt eine sehr seltene Top-Level-Form ist; entsprechende
  *    Boxen werden mit `invalid_box_structure` gemeldet.
@@ -46,7 +46,7 @@ export interface IsoBmffBox {
   /** Header-Länge: 8 (32-bit) oder 16 (largesize). */
   readonly headerSize: number;
   /**
-   * View auf den Payload-Anteil (ohne Header). Tranche 4 nutzt das
+   * View auf den Payload-Anteil (ohne Header). nutzt das
    * View, um Children und Brands zu lesen — keine Kopie, kein neuer
    * Buffer.
    */

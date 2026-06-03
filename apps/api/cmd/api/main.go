@@ -94,7 +94,7 @@ const (
 	rateLimitCapacity = 100
 	rateLimitRefill   = 100.0
 
-	// Persistenz-Konfiguration (ADR-0002, ):
+	// Persistenz-Konfiguration (ADR-0002):
 	// Default ist SQLite; In-Memory bleibt opt-in für Tests
 	// oder expliziten Dev-Fallback.
 	persistenceModeSQLite   = "sqlite"

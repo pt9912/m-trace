@@ -239,7 +239,7 @@ func decodeSessionEventsCursor(s, requestProjectID, requestSessionID string) (*d
 }
 
 // wireSrtHealthCursor ist die JSON-Form des SRT-Health-History-
-// Cursors (spec §7a.3, ). Token-Schema folgt
+// Cursors (spec §7a.3). Token-Schema folgt
 // dem v3-Event-Cursor-Pattern aus §10.3: `pid` (project_id) +
 // `sid` (stream_id) tragen den Collection-Scope; `ing` (ingested_at
 // RFC3339Nano UTC) + `id` tragen die Storage-Position.

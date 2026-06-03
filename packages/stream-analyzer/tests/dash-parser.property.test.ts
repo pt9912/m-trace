@@ -4,8 +4,8 @@ import * as fc from "fast-check";
 import { analyzeManifest } from "../src/index.js";
 import { detectManifestKind } from "../src/internal/parsers/detect.js";
 
-// plan-0.9.5 §4 Tranche 3 (extra-gates.md §3.5) — Property-Tests
-// für den DASH-Manifest-Parser (`0.9.0` Tranche 3, RAK-58 / NF-12).
+//  (extra-gates.md) — Property-Tests
+// für den DASH-Manifest-Parser (RAK-58 / NF-12).
 // Pinnt:
 //
 //   - Detector klassifiziert jeden Body, der mit `<?xml` oder `<MPD`
@@ -45,7 +45,7 @@ describe("DASH parser property tests (RAK-Wave-2)", () => {
   });
 
   it("any well-formed MPD with Period/AdaptationSet/Representation produces a deterministic dash result", async () => {
-    // Lehre aus Tranche 3b (siehe docs/dev/fuzzing.md §3): kein
+    // Lehre aus Tranche 3b (siehe docs/dev/fuzzing.md): kein
     // `.filter(...)` auf `fc.string`, weil fast-check 4.4 bei vielen
     // Discards in eine CPU-Schleife läuft. Stattdessen deterministische
     // Generators mit fixer Alphabet-Quelle.

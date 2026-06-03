@@ -63,7 +63,7 @@ const (
 )
 
 // SessionLink ist die strukturierte Link-Hülle der Analyze-Antwort
-// (API-Kontrakt, ). `Status` ist Pflicht; alle
+// (API-Kontrakt). `Status` ist Pflicht; alle
 // anderen Felder sind optional und tragen die aufgelöste Verknüpfung
 // nur bei `Status == linked`.
 type SessionLink struct {

@@ -14,8 +14,8 @@ import { collectAggregate, newPeerConnectionRunId } from "../src/adapters/webrtc
 import type { PlayerTracker } from "../src/core/tracker";
 import type { EventDraft } from "../src/types/events";
 
-// plan-0.8.0 Tranchen 1+2 — Public-API-Vertrag (Tranche 1) und
-// Verhaltens-Tests (Tranche 2). Tests laufen ohne echte Browser-
+//  Tranchen 1+2 — Public-API-Vertrag und
+// Verhaltens-Tests. Tests laufen ohne echte Browser-
 // Signalisierung; `RTCPeerConnection` und `fetch` werden via
 // `deps`-Override gemockt.
 
@@ -263,7 +263,7 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
   it("destroy() vor connected → webrtc_destroyed_before_connected", async () => {
     const tracker = new StubTracker();
     const fakePc = makeFakePeerConnection({});
-    // Fetch hängt, damit der Handshake erst nach destroy() abbricht.
+    // Fetch hängt, damit der Handshake erst nach destroy abbricht.
     const hangingFetch = vi.fn(
       async () =>
         new Promise<Response>(() => {
@@ -377,7 +377,7 @@ describe("attachWebRtc — Fehler-Pfade (Tranche 2)", () => {
     });
     await new Promise((r) => setTimeout(r, 5));
     // emit zwei zusätzliche Tracks, damit der destroy-Loop mehr als
-    // einen track.stop() aufruft.
+    // einen track.stop aufruft.
     const t1Stop = vi.fn();
     const t2Stop = vi.fn();
     const t1 = { stop: t1Stop } as unknown as MediaStreamTrack;

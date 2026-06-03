@@ -35,7 +35,7 @@ const PROGRAM_DATE_TIME_PREFIX = "#EXT-X-PROGRAM-DATE-TIME:";
  * unter `OUTLIER_LOWER_FRACTION × Mittel` fallen, gelten als Ausreißer
  * — ausgenommen das letzte Segment einer VOD-Playlist (laut Apple-
  * HLS-Authoring-Spec ist es üblich kürzer). Der Grenzwert ist im Doc
- * §7 fixiert.
+ * fixiert.
  */
 const OUTLIER_LOWER_FRACTION = 0.5;
 
@@ -50,7 +50,7 @@ interface MediaParseResult {
   readonly findings: readonly AnalysisFinding[];
   /**
    * Interne CMAF-Metadaten für den Tranche-4-Binary-Pfad. Liegt nur
-   * bewusst neben dem Public-Result, damit Tranche 4 keine Manifest-
+   * bewusst neben dem Public-Result, damit keine Manifest-
    * zeilen erneut tokenisieren muss. Konsumenten bekommen das
    * Public-Summary über `details.cmaf`.
    */
@@ -228,7 +228,7 @@ function processGlobalTag(
  * Info-Findings. EXT-X-MAP, EXT-X-INDEPENDENT-SEGMENTS und
  * #EXT-X-BYTERANGE werden zusätzlich strukturiert erfasst, damit der
  * Tranche-4-Binary-Pfad keine Manifestzeilen erneut tokenisieren muss
- * (`0.10.0` Tranche 2, NF-13 / RAK-61). */
+ * (NF-13 / RAK-61). */
 function processFeatureTag(
   line: string,
   lineIdx: number,
@@ -269,7 +269,7 @@ function processFeatureTag(
 }
 
 /**
- * Strukturierte Erfassung von `#EXT-X-MAP` (RFC 8216 §4.3.2.5).
+ * Strukturierte Erfassung von `#EXT-X-MAP` (RFC 8216).
  * Pflicht-Attribut ist `URI`; `BYTERANGE` ist optional. URI und
  * explizite Byte-Range-Werte werden für den Binary-Pfad verwendet;
  * eventuell vorhandene `KEYFORMAT`/`KEYFORMATVERSIONS` bleiben in
@@ -295,7 +295,7 @@ function handleExtXMapTag(
 }
 
 /**
- * Bindet `#EXT-X-BYTERANGE` (RFC 8216 §4.3.2.2) an die nächste
+ * Bindet `#EXT-X-BYTERANGE` (RFC 8216) an die nächste
  * Segment-URI. Mehrere BYTERANGE-Tags vor derselben URI sind ein
  * Spec-Verstoß und werden als Warning gemeldet — der zweite Wert
  * gewinnt, weil er der Manifestzeile am nächsten ist.
@@ -436,13 +436,13 @@ interface CmafBuildResult {
 
 /**
  * Baut `details.cmaf`-Summary plus interne Tranche-4-Metadaten aus
- * dem Parser-State (`0.10.0` Tranche 2, NF-13 / RAK-61). Ohne ein
+ * dem Parser-State (NF-13 / RAK-61). Ohne ein
  * starkes (`EXT-X-MAP`) oder schwaches (`.m4s`/`.cmfv`/`.cmfa`-URI)
  * CMAF-Signal wird kein `cmaf` emittiert — Negativ-Fixtures bleiben
  * byte-kompatibel zum `0.9.x`-Stand.
  *
- * Tranche 2 erzeugt **kein** `binary`-Objekt. Status `passed`/
- * `failed`/`skipped` entstehen erst in Tranche 4 mit dem bounded
+ * erzeugt **kein** `binary`-Objekt. Status `passed`/
+ * `failed`/`skipped` entstehen erst in mit dem bounded
  * Segment-Loader; bis dahin ist `binary` schlicht abwesend (das
  * Schema lässt das ausdrücklich zu, weil `binary?:` optional ist).
  */
@@ -497,7 +497,7 @@ function buildCmaf(
 }
 
 /**
- * Strukturierte Sicht auf `EXT-X-MAP` für Tranche 4: URI,
+ * Strukturierte Sicht auf `EXT-X-MAP` für: URI,
  * optionale BYTERANGE, gegen `baseUrl` aufgelöste URI und
  * Roh-Attribute. Liefert `undefined`, wenn der Parser den Tag
  * nicht erfolgreich tokenisiert hat (URI leer / fehlend).
@@ -619,7 +619,7 @@ function checkTargetViolations(
   const findings: AnalysisFinding[] = [];
   for (const d of drafts) {
     if (!d.durationParseable) continue;
-    // RFC 8216 §4.3.3.1: round(duration) MUSS ≤ targetDuration sein.
+    // RFC 8216: round(duration) MUSS ≤ targetDuration sein.
     const rounded = Math.round(d.duration);
     if (rounded > targetDuration) {
       findings.push({
