@@ -123,7 +123,7 @@ func TestAnalyzeHandler_Success_TextWithBaseURL(t *testing.T) {
 
 // dashCMAFFixtureDetails ist die EncodedDetails-Form der DASH-CMAF-
 // Binary-Wire-Vertrag-Fixture für TestAnalyzeHandler_PassesCmaf...
-// (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64).
+// (NF-13 / RAK-63 / RAK-64).
 const dashCMAFFixtureDetails = `{
 		"profiles": "urn:mpeg:dash:profile:isoff-on-demand:2011",
 		"type": "static",
@@ -190,7 +190,7 @@ type analyzeWrapperEnvelope struct {
 }
 
 // TestAnalyzeHandler_PassesCmafBinaryThroughEncodedDetails pinnt
-// (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64) den HTTP-Wire-
+// (NF-13 / RAK-63 / RAK-64) den HTTP-Wire-
 // Vertrag für CMAF-Binary-Daten: /api/analyze leitet
 // `details.cmaf.binary` als Bestandteil von EncodedDetails über die
 // `{analysis, session_link}`-Wrapper-Antwort an den Aufrufer durch.
@@ -341,8 +341,8 @@ func TestAnalyzeHandler_RejectsInvalidRequestShapes(t *testing.T) {
 }
 
 // TestAnalyzeHandler_RejectsCmafOptionsBlock pinnt den
-// plan-0.10.0-Tranche-1-Vertrag: das öffentliche `/api/analyze`
-// akzeptiert in `0.10.0` keinen `cmaf`-/`cmaf.binary`-Block im
+// -Tranche-1-Vertrag: das öffentliche `/api/analyze`
+// akzeptiert keinen `cmaf`-/`cmaf.binary`-Block im
 // Request-Body. Stilles Ignorieren wäre ein Sicherheits-/
 // Konformitätsrisiko, weil ein vom Aufrufer gesetztes
 // `cmaf.binary.enabled:false` sonst nicht durchgereicht wird, der

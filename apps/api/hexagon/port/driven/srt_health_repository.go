@@ -8,12 +8,12 @@ import (
 )
 
 // SrtHealthRepository persistiert SRT-Health-Samples (spec/architecture.md
-// §3.3, spec/backend-api-contract.md §10.6). Implementierungen müssen
+// §3.3, spec/backend-api-contract.md). Implementierungen müssen
 // safe für Concurrent-Use sein und die Dedupe-Regel aus §10.6
 // einhalten:
 //
-//   Eindeutigkeit über (project_id, stream_id, connection_id,
-//   COALESCE(source_observed_at, source_sequence)).
+//  Eindeutigkeit über (project_id, stream_id, connection_id,
+//  COALESCE(source_observed_at, source_sequence)).
 //
 // CollectedAt allein ist kein stabiler Dedupe-Schlüssel.
 type SrtHealthRepository interface {

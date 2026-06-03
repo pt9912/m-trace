@@ -16,7 +16,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// plan-0.4.0 §4.5 E2 — End-to-End-Tests für die `{analysis,
+//  E2 — End-to-End-Tests für die `{analysis,
 // session_link}`-Hülle, die endpoint-spezifische Auth (drei Klassen)
 // und den OPTIONS-Preflight für /api/analyze.
 
@@ -209,7 +209,7 @@ func TestAnalyze_AuthMatrix_LinkFieldsWithInvalidToken_401(t *testing.T) {
 func TestAnalyze_AuthMatrix_OnlySessionIDTriggersAuth(t *testing.T) {
 	t.Parallel()
 	// Pin: `session_id` allein reicht, um die Auth-Pflicht zu
-	// triggern (API-Kontrakt §4: `correlation_id` ODER `session_id`).
+	// triggern (API-Kontrakt: `correlation_id` ODER `session_id`).
 	stub := &linkAwareAnalysisInbound{}
 	srv := newAnalyzeServer(t, stub)
 	body := `{"kind":"text","text":"#EXTM3U\n","session_id":"sess-1"}`
@@ -221,10 +221,10 @@ func TestAnalyze_AuthMatrix_OnlySessionIDTriggersAuth(t *testing.T) {
 
 // TestAnalyze_OptionsPreflight pinnt `0.12.0` §3.9 für den Analyze-
 // Pfad: bekannter Origin → `204` mit `Access-Control-Allow-Methods:
-// POST, OPTIONS` und der `0.12.0`-Header-Allowlist (Content-Type,
+// POST, OPTIONS` und der Header-Allowlist (Content-Type,
 // Authorization, X-MTrace-Token, X-MTrace-Session-Token, traceparent
-// — `X-MTrace-Project` ist mit Tranche 4 entfallen, war Pre-`0.12.0`-
-// Wire-Stand und wird in den `0.12.0`-Konsum-Endpoints nicht
+// — `X-MTrace-Project` ist mit entfallen, war Pre-
+// Wire-Stand und wird in den Konsum-Endpoints nicht
 // genutzt).
 func TestAnalyze_OptionsPreflight(t *testing.T) {
 	t.Parallel()

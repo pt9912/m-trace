@@ -11,29 +11,29 @@ import (
 	"time"
 )
 
-// Stream-Key-Domäne (`0.11.0`, RAK-66).
+// Stream-Key-Domäne (RAK-66).
 //
 // Sicherheitsprofil:
-//   - CSPRNG: `crypto/rand.Read` mit 32 Byte (256 Bit Entropie).
-//     Liefert genug Entropie für eine globale Eindeutigkeit pro
-//     Project-Scope; eine geringe Kollisionswahrscheinlichkeit auf
-//     Datenbankebene wird zusätzlich durch den Unique-Constraint auf
-//     `key_hash` abgefangen (T2).
-//   - Output-Format: URL-sicheres Base64 (`base64.RawURLEncoding`,
-//     keine Padding-Zeichen) mit dem Prefix `mtr_ing_`. So sind
-//     Keys in URLs, JSON-Bodies und CLI-Aufrufen kopierbar.
-//   - Hash: SHA-256 über den Klartext, hex-kodiert. SHA-256 reicht
-//     hier, weil der Klartext bereits 256 Bit Entropie trägt — ein
-//     teurer Password-Hash (`scrypt`/`argon2`) wäre Overkill und
-//     würde nur den Validate-Endpoint langsam machen, ohne
-//     Sicherheitsgewinn (kein Wörterbuch-/Brute-Force-Risiko).
-//   - Fingerprint: erste 8 + letzte 4 Klartext-Zeichen mit `...`
-//     dazwischen, plus Prefix. Reicht zum Wiedererkennen, lässt
-//     aber nicht den ganzen Key reconstruieren.
-//   - Validate: konstantzeitvergleich auf den vollständigen Hash.
-//     Der Fingerprint ist **nicht** verifier-tauglich.
-//   - Klartext-Keys leben nur in `StreamKeyMaterial` und werden vom
-//     Caller transient an die Create-/Rotate-Antwort weitergereicht.
+//  - CSPRNG: `crypto/rand.Read` mit 32 Byte (256 Bit Entropie).
+//  Liefert genug Entropie für eine globale Eindeutigkeit pro
+//  Project-Scope; eine geringe Kollisionswahrscheinlichkeit auf
+//  Datenbankebene wird zusätzlich durch den Unique-Constraint auf
+//  `key_hash` abgefangen (T2).
+//  - Output-Format: URL-sicheres Base64 (`base64.RawURLEncoding`,
+//  keine Padding-Zeichen) mit dem Prefix `mtr_ing_`. So sind
+//  Keys in URLs, JSON-Bodies und CLI-Aufrufen kopierbar.
+//  - Hash: SHA-256 über den Klartext, hex-kodiert. SHA-256 reicht
+//  hier, weil der Klartext bereits 256 Bit Entropie trägt — ein
+//  teurer Password-Hash (`scrypt`/`argon2`) wäre Overkill und
+//  würde nur den Validate-Endpoint langsam machen, ohne
+//  Sicherheitsgewinn (kein Wörterbuch-/Brute-Force-Risiko).
+//  - Fingerprint: erste 8 + letzte 4 Klartext-Zeichen mit `...`
+//  dazwischen, plus Prefix. Reicht zum Wiedererkennen, lässt
+//  aber nicht den ganzen Key reconstruieren.
+//  - Validate: konstantzeitvergleich auf den vollständigen Hash.
+//  Der Fingerprint ist **nicht** verifier-tauglich.
+//  - Klartext-Keys leben nur in `StreamKeyMaterial` und werden vom
+//  Caller transient an die Create-/Rotate-Antwort weitergereicht.
 
 // streamKeyPrefix ist der projektweite Marker für Ingest-Stream-
 // Keys. Der Prefix ist Teil des Klartexts und damit auch im Hash;
@@ -88,8 +88,8 @@ var ErrStreamKeyMalformed = errors.New("stream key has invalid format")
 // Persistenz-, Log- und Eventpfade bekommen nur die persistente
 // Sicht über `ToPersistable`.
 //
-// `now` macht die Funktion testbar, ohne `time.Now()` zu mocken; in
-// Produktion setzt der Aufrufer `time.Now().UTC()` ein.
+// `now` macht die Funktion testbar, ohne `time.Now` zu mocken; in
+// Produktion setzt der Aufrufer `time.Now.UTC` ein.
 func GenerateStreamKey(now time.Time) (StreamKeyMaterial, error) {
 	raw := make([]byte, streamKeyEntropyBytes)
 	if _, err := rand.Read(raw); err != nil {

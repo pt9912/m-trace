@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// RotatingProjectResolver kombiniert den `0.12.0`-Project-Token-
+// RotatingProjectResolver kombiniert den Project-Token-
 // Generationen-Pfad (RAK-73) mit dem Legacy-Static-Resolver. Tokens
 // mit dem `mtr_pt_*`-Prefix laufen über das `ProjectTokenRepository`
 // und werden gegen Lifecycle-Status (active/grace/expired/revoked/
@@ -21,8 +21,8 @@ import (
 //
 // Die Reihenfolge ist deterministisch:
 //
-//   1. Wenn `token` mit `mtr_pt_` startet → Repo-Lookup.
-//   2. Sonst → Fallback auf den Static-Resolver.
+//  1. Wenn `token` mit `mtr_pt_` startet → Repo-Lookup.
+//  2. Sonst → Fallback auf den Static-Resolver.
 //
 // `domain.ErrAuthTokenInvalid` für unbekannte/malformed Tokens auf
 // dem Repo-Pfad; auf dem Static-Pfad bleibt das bisherige
@@ -34,7 +34,7 @@ type RotatingProjectResolver struct {
 	Now             func() time.Time
 }
 
-// ProjectByIDLookup bridge auf den `0.12.0`-Bedarf, das aufgelöste
+// ProjectByIDLookup bridge auf den Bedarf, das aufgelöste
 // Project anhand der ID aus dem Static-Resolver zu materialisieren.
 // `StaticProjectResolver` implementiert das über `ResolveByID`.
 type ProjectByIDLookup interface {

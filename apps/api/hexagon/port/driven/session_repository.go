@@ -7,13 +7,13 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// SessionRepository hält den aggregierten Sessions-Zustand (plan-0.1.0
+// SessionRepository hält den aggregierten Sessions-Zustand (
 // §5.1). Der Use Case ruft UpsertFromEvents nach jedem akzeptierten
-// Batch auf; List und Get bedienen die Read-Endpoints (plan-0.1.0 §5.1
+// Batch auf; List und Get bedienen die Read-Endpoints (
 // Sub-Item 4); Sweep wird vom Lifecycle-Sweeper aufgerufen
-// (plan-0.1.0 §5.1 Sub-Item 8).
+// ( Sub-Item 8).
 //
-// Ab plan-0.4.0 §4.2 sind alle Methoden, die einzelne Sessions
+// Ab sind alle Methoden, die einzelne Sessions
 // adressieren oder filtern, projekt-skopiert: dieselbe session_id in
 // zwei Projekten ist als zwei getrennte Sessions zu führen, und ein
 // Treffer in Project A darf nicht über einen Lookup in Project B
@@ -28,7 +28,7 @@ type SessionRepository interface {
 	// State=Ended gesetzt und EndedAt=event.ServerReceivedAt. Events
 	// werden anhand ihres ProjectID/SessionID-Paares zugeordnet.
 	//
-	// Rückgabe ab plan-0.4.0 §4.2 C2 (R-6-Fix): die DB-finale
+	// Rückgabe ab C2 (R-6-Fix): die DB-finale
 	// `correlation_id` jeder Session, gekeyed nach SessionID. Der Use-
 	// Case enricht damit die Events vor `EventRepository.Append`, sodass
 	// auch bei einem Race auf einer noch unbekannten (project, session)-
@@ -38,7 +38,7 @@ type SessionRepository interface {
 	UpsertFromEvents(ctx context.Context, events []domain.PlaybackEvent) (map[string]string, error)
 	// AppendBoundaries persistiert die im Batch übergebenen
 	// `session_boundaries[]`-Einträge in einen durable Session-Metadaten-
-	// Store (plan-0.4.0 §4.4 D2; spec/telemetry-model.md §1.4). Aufruf
+	// Store ( D2; spec/telemetry-model.md). Aufruf
 	// erfolgt im Use-Case nach erfolgreichem UpsertFromEvents und vor
 	// EventRepository.Append. Mehrfach-Sends derselben Tripel
 	// `(kind, network_kind, adapter, reason)` für eine Session sind
@@ -52,10 +52,10 @@ type SessionRepository interface {
 	// reason asc) mit Tripel-Dedup über
 	// (kind, network_kind, adapter, reason). Keine Boundaries → leere
 	// Slice (`nil` oder `[]`); Cross-Project-Treffer liefern `nil`.
-	// Spec-Anker spec/backend-api-contract.md §3.7.1.
+	// Spec-Anker spec/backend-api-contract.md
 	ListBoundariesForSession(ctx context.Context, projectID, sessionID string) ([]domain.SessionBoundary, error)
 	// ListBoundariesForSessions ist die Bulk-Variante von
-	// ListBoundariesForSession (plan-0.12.6 Tranche 5 / R-7). Liefert
+	// ListBoundariesForSession (R-7). Liefert
 	// pro `sessionIDs[i]` die zugehörige `network_signal_absent[]`-
 	// Liste in der gleichen Read-Shape-Sortierung. Result-Map ist
 	// gekeyed nach SessionID; SessionIDs ohne Boundaries fehlen
@@ -78,14 +78,14 @@ type SessionRepository interface {
 	// gefunden (kein Cross-Project-Read).
 	Get(ctx context.Context, projectID, sessionID string) (domain.StreamSession, error)
 	// GetByCorrelationID liefert die Session, deren CorrelationID im
-	// gegebenen Project gesetzt ist (Analyzer-Linking, plan-0.4.0 §4.5).
+	// gegebenen Project gesetzt ist (Analyzer-Linking, ).
 	// Legacy-Sessions ohne CorrelationID liefern keinen Treffer; der
 	// Lookup ist project-skopiert und liefert nie eine Session aus einem
 	// fremden Project. ErrSessionNotFound, wenn nichts passt.
 	GetByCorrelationID(ctx context.Context, projectID, correlationID string) (domain.StreamSession, error)
 	// Sweep wertet die zeitbasierten Lifecycle-Übergänge aus:
-	//   Active  + (now - LastEventAt > stalledAfter) → Stalled
-	//   Stalled + (now - LastEventAt > endedAfter)   → Ended (EndedAt=now)
+	//  Active + (now - LastEventAt > stalledAfter) → Stalled
+	//  Stalled + (now - LastEventAt > endedAfter) → Ended (EndedAt=now)
 	// Bereits beendete Sessions werden nicht erneut angefasst. Idempotent.
 	// Sweep ist global — Lifecycle-Übergänge dürfen Sessions aller
 	// Projekte ohne Filter erfassen, weil der Sweeper kein Project-
@@ -93,7 +93,7 @@ type SessionRepository interface {
 	Sweep(ctx context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error
 	// CountByState liefert die Anzahl der Sessions im gegebenen
 	// Lifecycle-State. Wird vom Active-Sessions-Gauge in Prometheus
-	// (informational, kein Pflicht-Counter aus API-Kontrakt §7)
+	// (informational, kein Pflicht-Counter aus API-Kontrakt)
 	// adapter-agnostisch verwendet, sodass das Wiring zwischen In-Memory
 	// und SQLite ohne Anpassung wechselt. Wie Sweep ist der Counter
 	// global, weil die Prometheus-Exposition kein Project-Label trägt
@@ -105,12 +105,12 @@ type SessionRepository interface {
 	// (1_000_000) steht. Liefert den nach dem Aufruf in der DB
 	// persistierten Wert plus ein `applied`-Flag:
 	//
-	//   - `applied=true`:  diese Methode hat den Wert gerade gesetzt.
-	//                      `existingPPM` ist gleich dem Eingabe-`ppm`.
-	//   - `applied=false`: der Wert war bereits != Default. `existingPPM`
-	//                      ist der schon persistierte Wert; der Aufrufer
-	//                      vergleicht ihn mit `ppm` und entscheidet, ob
-	//                      ein Drift-Event vorliegt (plan-0.12.6 §6).
+	//  - `applied=true`: diese Methode hat den Wert gerade gesetzt.
+	//  `existingPPM` ist gleich dem Eingabe-`ppm`.
+	//  - `applied=false`: der Wert war bereits != Default. `existingPPM`
+	//  ist der schon persistierte Wert; der Aufrufer
+	//  vergleicht ihn mit `ppm` und entscheidet, ob
+	//  ein Drift-Event vorliegt.
 	//
 	// `ppm` muss im Bereich `[1, SampleRateFull]` liegen; ein Aufruf mit
 	// `ppm == SampleRateFull` ist ein Programmierfehler und ein No-Op

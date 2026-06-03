@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-// plan-0.9.5 §4 Tranche 3 (extra-gates.md §3.5) — Fuzz-Target für
+//  (extra-gates.md) — Fuzz-Target für
 // das SRT-Health-Mapping. Pinnt:
 //
-//   - Random-JSON-Bytes (MediaMTX-`/v3/srtconns/list`-Wire-Format)
-//     dürfen weder Panic noch unrealistische Domain-Werte erzeugen.
-//   - Negative oder NaN-Floats (mbps* / msRTT) müssen auf 0 oder
-//     gleichem Sentinel gemappt werden, nicht in
-//     domain.SrtConnectionSample-Felder mit unspezifizierten
-//     Werten leaken.
+//  - Random-JSON-Bytes (MediaMTX-`/v3/srtconns/list`-Wire-Format)
+//  dürfen weder Panic noch unrealistische Domain-Werte erzeugen.
+//  - Negative oder NaN-Floats (mbps* / msRTT) müssen auf 0 oder
+//  gleichem Sentinel gemappt werden, nicht in
+//  domain.SrtConnectionSample-Felder mit unspezifizierten
+//  Werten leaken.
 //
 // Pflicht-Bereich aus Plan §4 DoD-Item 1: „SRT-Health-Mapping".
 
@@ -23,7 +23,7 @@ import (
 // Bytes; wir erlauben JSON-Decode-Failures (kein Mapping wird
 // versucht), aber jedes erfolgreiche Decode-Result muss ein
 // Domain-Sample produzieren, das die Sentinel-Regeln aus
-// spec/telemetry-model.md §7.4 nicht verletzt.
+// spec/telemetry-model.md nicht verletzt.
 func FuzzMapMediaMtxItem(f *testing.F) {
 	// Seed-Korpus mit produktiven Variants.
 	f.Add([]byte(`{"id":"a","state":"publish","path":"srt-test","bytesReceived":1024,"msRTT":3.5,"mbpsLinkCapacity":1500.0}`))

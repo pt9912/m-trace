@@ -105,7 +105,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 
 // newTestServerWithSse wires the same router as newTestServer plus a
 // non-nil SseStreamConfig, so the SSE GET- und OPTIONS-Routen aktiv
-// sind (plan-0.4.0 §5 H4). Tests, die den SSE-Preflight oder den
+// sind ( H4). Tests, die den SSE-Preflight oder den
 // Live-Stream-Pfad anfassen, müssen diesen Server nutzen.
 func newTestServerWithSse(t *testing.T) *httptest.Server {
 	return newTestServerWithClock(t, time.Now, withSse())
@@ -225,7 +225,7 @@ func TestHTTP_413_BodyTooLarge(t *testing.T) {
 // Verifies §5 Auth-vor-Body-Reihenfolge: ein Body > 256 KB ohne
 // X-MTrace-Token muss 401 liefern (Header-Check feuert zuerst), nicht
 // 413. Der Pflichttest stand früher nicht in §11 — siehe
-// spec/backend-api-contract.md §5/§11.
+// spec/backend-api-contract.md
 func TestHTTP_401_BodyTooLarge_NoToken(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)

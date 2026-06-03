@@ -3,20 +3,20 @@ package domain
 import "time"
 
 // HealthState ist der bewertete SRT-Verbindungs-Zustand
-// (spec/telemetry-model.md §7.4).
+// (spec/telemetry-model.md).
 //
-//   - Healthy:  alle Pflichtwerte verfügbar, Schwellen unterschritten.
-//   - Degraded: einer der Werte zwischen Soll und kritischer Schwelle.
-//   - Critical: einer der Werte über kritischer Schwelle, oder
-//     verfügbare Bandbreite < required.
-//   - Unknown:  source_status != ok, oder Pflichtwerte teilweise
-//     fehlen, oder Stale-Erkennung schlägt an.
+//  - Healthy: alle Pflichtwerte verfügbar, Schwellen unterschritten.
+//  - Degraded: einer der Werte zwischen Soll und kritischer Schwelle.
+//  - Critical: einer der Werte über kritischer Schwelle, oder
+//  verfügbare Bandbreite < required.
+//  - Unknown: source_status != ok, oder Pflichtwerte teilweise
+//  fehlen, oder Stale-Erkennung schlägt an.
 //
-// Die Schwellen sind in plan-0.6.0 §4 Sub-3.2 als Konstanten
+// Die Schwellen sind in Sub-3.2 als Konstanten
 // festgelegt (siehe SrtHealthThresholds).
 type HealthState string
 
-// Health-Zustände aus spec/telemetry-model.md §7.4. Werte sind als
+// Health-Zustände aus spec/telemetry-model.md Werte sind als
 // bounded Prometheus-Label `health_state` freigegeben (§3.2).
 const (
 	HealthStateHealthy  HealthState = "healthy"
@@ -26,10 +26,10 @@ const (
 )
 
 // SourceStatus klassifiziert den Zustand der Metrikquelle pro Sample
-// (spec/telemetry-model.md §7.5).
+// (spec/telemetry-model.md).
 type SourceStatus string
 
-// Source-Status-Werte aus spec/telemetry-model.md §7.5.
+// Source-Status-Werte aus spec/telemetry-model.md
 const (
 	SourceStatusOK                 SourceStatus = "ok"
 	SourceStatusUnavailable        SourceStatus = "unavailable"
@@ -39,11 +39,11 @@ const (
 )
 
 // SourceErrorCode ist die stabile Fehlerklasse zur Source-Status-
-// Klassifikation (spec/telemetry-model.md §7.5). `none` bei
+// Klassifikation (spec/telemetry-model.md). `none` bei
 // SourceStatusOK; sonst eine der vorgegebenen Codes.
 type SourceErrorCode string
 
-// Stabile Fehlerklassen aus spec/telemetry-model.md §7.5.
+// Stabile Fehlerklassen aus spec/telemetry-model.md
 const (
 	SourceErrorCodeNone               SourceErrorCode = "none"
 	SourceErrorCodeSourceUnavailable  SourceErrorCode = "source_unavailable"
@@ -58,7 +58,7 @@ const (
 // ist ein anderer Fall als eine nicht erreichbare Quelle.
 type ConnectionState string
 
-// SRT-Verbindungszustände (spec/telemetry-model.md §7.1) — getrennt
+// SRT-Verbindungszustände (spec/telemetry-model.md) — getrennt
 // vom SourceStatus, weil eine erreichbare Quelle ohne aktive
 // Verbindung ein anderer Fall ist als eine nicht erreichbare Quelle.
 const (
@@ -68,7 +68,7 @@ const (
 )
 
 // SrtConnectionSample ist die normalisierte Rohdaten-Sicht aus der
-// Metrikquelle (spec/telemetry-model.md §7.1). Adapter wandelt
+// Metrikquelle (spec/telemetry-model.md). Adapter wandelt
 // MediaMTX-spezifische Felder in dieses Domain-Modell um, bevor der
 // Use Case Health-Bewertung vornimmt. Counter-Felder sind kumulativ
 // ab Verbindungsstart (Reset bei ConnectionID-Wechsel).
@@ -98,7 +98,7 @@ type SrtConnectionSample struct {
 }
 
 // SrtHealthSample ist der durable persistierte Sample (Tabelle
-// srt_health_samples laut spec/backend-api-contract.md §10.6). Alle
+// srt_health_samples laut spec/backend-api-contract.md). Alle
 // Felder aus SrtConnectionSample plus Bewertungsergebnis und
 // IngestedAt-Timestamp.
 type SrtHealthSample struct {

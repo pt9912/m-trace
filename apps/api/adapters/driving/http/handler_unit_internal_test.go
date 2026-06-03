@@ -11,7 +11,7 @@ import (
 )
 
 // TestOutcomeFor_AllBuckets deckt jeden Status-Code-Bucket aus
-// spec/telemetry-model.md §2.1 ab. Reine Pure-Function-Tests sind
+// spec/telemetry-model.md ab. Reine Pure-Function-Tests sind
 // günstiger als HTTP-Roundtrips, decken aber dieselbe Logik.
 func TestOutcomeFor_AllBuckets(t *testing.T) {
 	t.Parallel()
@@ -77,7 +77,7 @@ func TestStatusRecorder_DefaultsAndExplicitWrite(t *testing.T) {
 	})
 }
 
-// TestAppendVary pinnt das `0.12.0`-Verhalten von `appendVary`
+// TestAppendVary pinnt das Verhalten von `appendVary`
 // (Review-Finding Y2 — Token-für-Token-Union statt
 // `contains "Origin"`-Heuristik). Alle drei Pflicht-Tokens
 // (`Origin`, `Access-Control-Request-Method`,
@@ -204,7 +204,7 @@ func TestWriteAuthHeaderError(t *testing.T) {
 
 // TestWriteUseCaseError_AuthLifecycleErrors pinnt das §3.9-Mapping
 // für Lifecycle-Fehler aus dem RotatingProjectResolver-Pfad
-// (RAK-73). Vorher wurden diese auf 500 gemappt; ab Tranche 3 sind
+// (RAK-73). Vorher wurden diese auf 500 gemappt; ab sind
 // sie 401/403.
 func TestWriteUseCaseError_AuthLifecycleErrors(t *testing.T) {
 	t.Parallel()

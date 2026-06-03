@@ -1,6 +1,6 @@
 // Package streamanalyzer enthält den Slot-Füller-Adapter für den
 // driven.StreamAnalyzer-Port. Bis ein produktiver Analyzer-Adapter
-// (plan-0.3.0 §7 Tranche 6) angeschlossen ist, hält NoopStreamAnalyzer
+//  angeschlossen ist, hält NoopStreamAnalyzer
 // die Compile-Time-Garantie für die Use-Case-Verdrahtung aufrecht.
 package streamanalyzer
 
@@ -13,7 +13,7 @@ import (
 
 // noopAnalyzerVersion markiert Ergebnisse aus dem Slot-Füller, damit
 // API-Konsumenten und Tests klar erkennen, dass kein produktiver
-// Analyzer angeschlossen ist (plan-0.3.0 §7 Tranche 6).
+// Analyzer angeschlossen ist.
 const noopAnalyzerVersion = "noop"
 
 // NoopStreamAnalyzer erfüllt den Port driven.StreamAnalyzer ohne
@@ -33,7 +33,7 @@ func (*NoopStreamAnalyzer) AnalyzeBatch(_ context.Context, _ []domain.PlaybackEv
 }
 
 // AnalyzeManifest gibt ein leeres Ergebnis mit Version "noop" zurück.
-// Damit bleibt der API-Pfad aufrufbar, bis Tranche 6 den produktiven
+// Damit bleibt der API-Pfad aufrufbar, bis den produktiven
 // Adapter anschließt; der Aufrufer kann an AnalyzerVersion erkennen,
 // dass keine Analyse stattgefunden hat.
 func (*NoopStreamAnalyzer) AnalyzeManifest(_ context.Context, _ domain.StreamAnalysisRequest) (domain.StreamAnalysisResult, error) {

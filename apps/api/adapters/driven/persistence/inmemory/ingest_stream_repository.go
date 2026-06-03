@@ -13,16 +13,16 @@ import (
 )
 
 // IngestStreamRepository liefert die In-Memory-Variante der
-// Ingest-Control-Persistenz (`0.11.0` Tranche 2, RAK-66/RAK-67).
+// Ingest-Control-Persistenz (RAK-66/RAK-67).
 // Geteilt mit dem SQLite-Adapter über einen gemeinsamen
 // Contract-Test-Body; Daten überleben keinen Restart.
 //
 // Sicherheitsprofil:
-//   - `keysByStream` speichert ausschließlich `domain.StreamKey`
-//     (Hash + Fingerprint + Lifecycle-Felder). Klartext-Werte
-//     gehen nie in dieses Repository.
-//   - Cross-Project-Lookups liefern `domain.ErrIngestStreamNotFound`
-//     ohne Hinweis auf Existenz.
+//  - `keysByStream` speichert ausschließlich `domain.StreamKey`
+//  (Hash + Fingerprint + Lifecycle-Felder). Klartext-Werte
+//  gehen nie in dieses Repository.
+//  - Cross-Project-Lookups liefern `domain.ErrIngestStreamNotFound`
+//  ohne Hinweis auf Existenz.
 type IngestStreamRepository struct {
 	mu sync.Mutex
 

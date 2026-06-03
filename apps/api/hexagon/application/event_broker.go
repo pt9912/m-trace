@@ -8,10 +8,10 @@ import (
 )
 
 // EventAppendedFrame ist das Mindest-Wire-Format für SSE-Live-Updates
-// (plan-0.4.0 §5 H4; spec/backend-api-contract.md §10a). Konsumenten
+// ( H4; spec/backend-api-contract.md). Konsumenten
 // laden den vollen Event-/Session-Read-Shape per REST nach.
 //
-// `TimeSkewWarning` (plan-0.12.6 Tranche 3 / R-5) wird mitgeschickt,
+// `TimeSkewWarning` (R-5) wird mitgeschickt,
 // damit das Dashboard den Indikator schon im Live-Update setzen kann,
 // ohne den vollen Detail-Read nachzuziehen.
 type EventAppendedFrame struct {
@@ -47,7 +47,7 @@ func NewEventBroker() *EventBroker {
 
 // Subscribe öffnet einen project-skopierten Channel. Der Caller liest
 // daraus, bis `ctx` abgebrochen wird. `Subscribe` registriert einen
-// Cleanup über den Context, sobald `<-ctx.Done()` feuert. Der Cleanup
+// Cleanup über den Context, sobald `<-ctx.Done` feuert. Der Cleanup
 // entfernt den Subscriber aus dem Broker, schließt aber nicht den
 // Channel: `Publish` sendet nach einem lockless Snapshot, daher könnte
 // ein paralleles `close(ch)` sonst einen Send auf einen geschlossenen

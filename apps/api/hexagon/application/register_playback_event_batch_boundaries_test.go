@@ -11,10 +11,10 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// plan-0.4.0 §4.4 D2 — End-to-End-Tests für den
+//  D2 — End-to-End-Tests für den
 // `session_boundaries[]`-Wrapper. Use-Case validiert den Block atomar
 // vor jedem Persist; ein invalider Block persistiert weder Events noch
-// Boundaries (API-Kontrakt §3.4).
+// Boundaries (API-Kontrakt).
 
 func validBoundary() driving.BoundaryInput {
 	return driving.BoundaryInput{
@@ -131,7 +131,7 @@ func TestRegisterBatch_BoundarySessionScopedToBatchEvents(t *testing.T) {
 func TestRegisterBatch_RejectsBoundaryForUnknownSession(t *testing.T) {
 	t.Parallel()
 	// Boundary referenziert eine session_id, für die im selben Batch
-	// kein Event vorhanden ist — API-Kontrakt §3.4 verlangt 422.
+	// kein Event vorhanden ist — API-Kontrakt verlangt 422.
 	uc, _, repo, sessions, _, _, _, _ := newUseCase()
 	in := validBatch()
 	b := validBoundary()
@@ -169,7 +169,7 @@ func TestRegisterBatch_RejectsTooManyBoundaries(t *testing.T) {
 func TestRegisterBatch_BoundaryOnlyEmptyEventsStillFails(t *testing.T) {
 	t.Parallel()
 	// Boundary-only-Batches ohne Events bleiben außerhalb des Vertrags
-	// (API-Kontrakt §3.4 — `events` muss min. 1 Eintrag haben).
+	// (API-Kontrakt — `events` muss min. 1 Eintrag haben).
 	uc, _, repo, sessions, _, _, _, _ := newUseCase()
 	in := validBatch()
 	in.Events = nil

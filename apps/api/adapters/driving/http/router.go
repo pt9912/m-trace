@@ -22,7 +22,7 @@ type RequestMetrics interface {
 // SseStreamConfig bündelt die Driven-Ports, die der SSE-Handler aus
 // dem Hexagon braucht. `nil` deaktiviert die SSE-Route — der Router
 // registriert dann weder `GET /api/stream-sessions/stream` noch den
-// CORS-Preflight (plan-0.4.0 §5 H4).
+// CORS-Preflight ( H4).
 type SseStreamConfig struct {
 	Broker *application.EventBroker
 	Events driven.EventRepository
@@ -33,17 +33,17 @@ type SseStreamConfig struct {
 // non-matching methods fall through to a 404 from the mux.
 //
 // Tracer wraps POST /api/playback-events in a request-span
-// (spec/architecture.md §5.3 — der HTTP-Adapter ist neben
+// (spec/architecture.md — der HTTP-Adapter ist neben
 // adapters/driven/telemetry der einzige Ort mit OTel-Imports). A nil
 // tracer falls back to a no-op tracer so tests can wire the router
 // without an OTel SDK setup.
 //
 // allowlist liefert die globale Union der Allowed-Origins für die
-// CORS-Preflight-Handler (plan-0.1.0.md §5.1, Variante B). nil
+// CORS-Preflight-Handler (Variante B). nil
 // deaktiviert den CORS-Pfad — alle Preflights werden dann mit `403`
 // abgelehnt; der `Vary`-Header bleibt trotzdem auf jeder Antwort.
 //
-// sseConfig aktiviert die SSE-Route (plan-0.4.0 §5 H4); `nil`
+// sseConfig aktiviert die SSE-Route ( H4); `nil`
 // deaktiviert sie für Tests, die den Stream nicht brauchen.
 func NewRouter(
 	useCase driving.PlaybackEventInbound,
@@ -93,7 +93,7 @@ func NewRouter(
 		Logger:   logger,
 	}
 
-	// plan-0.12.6 Tranche 6 / R-22: Origin-/IP-Rate-Limiter sitzt vor
+	//  / R-22: Origin-/IP-Rate-Limiter sitzt vor
 	// `POST /api/playback-events` und `POST /api/auth/session-tokens`.
 	// `nil`-Limiter (Disabled-Pfad) → Middleware ist No-Op und kein
 	// Wrap.
@@ -134,7 +134,7 @@ func NewRouter(
 	registerAuthSessionRoutes(mux, authSession, resolver, allowlist, preflightMetrics, originLimiter, trustForwardedFor, logger)
 
 	// CORS-Preflight-Handler — Player-SDK-Pfad (POST + OPTIONS) und
-	// Dashboard-Lese-Pfad (GET + OPTIONS). plan-0.1.0.md §5.1.
+	// Dashboard-Lese-Pfad (GET + OPTIONS).
 	mux.HandleFunc("OPTIONS /api/playback-events", playerSDKPreflightHandler(allowlist, preflightMetrics))
 	mux.HandleFunc("OPTIONS /api/stream-sessions", dashboardPreflightHandler(allowlist, preflightMetrics))
 	mux.HandleFunc("OPTIONS /api/stream-sessions/{id}", dashboardPreflightHandler(allowlist, preflightMetrics))
@@ -144,7 +144,7 @@ func NewRouter(
 }
 
 // registerSrtHealthRoutes verdrahtet die SRT-Health-Read-Pfade
-// (plan-0.6.0 §5 Tranche 4 — RAK-43, spec/backend-api-contract.md
+// (RAK-43, spec/backend-api-contract.md
 // §7a). Wenn `srtHealth` nil ist (Sub-3.5 verdrahtet das opt-in über
 // `MTRACE_SRT_SOURCE_URL`), bleibt die Funktion no-op.
 func registerSrtHealthRoutes(
@@ -178,7 +178,7 @@ func registerSrtHealthRoutes(
 }
 
 // registerIngestControlRoutes verdrahtet die Ingest-Control-Pfade
-// (`0.11.0` Tranche 2, NF-13 / RAK-65..RAK-70). `nil`-Use-Case
+// (NF-13 / RAK-65..RAK-70). `nil`-Use-Case
 // deaktiviert den Pfad — der Router registriert dann keine
 // `/api/ingest/*`-Routen, was Tests (z. B. ohne SQLite-Volume) und
 // alte Compose-Stände abdeckt.
@@ -247,7 +247,7 @@ func registerIngestControlRoutes(
 }
 
 // registerAuthSessionRoutes verdrahtet den Session-Token-Issuance-
-// Pfad (`0.12.0`, RAK-72). `nil`-Use-Case deaktiviert den Pfad —
+// Pfad (RAK-72). `nil`-Use-Case deaktiviert den Pfad —
 // `POST /api/auth/session-tokens` antwortet dann mit `404` und alte
 // Compose-Stände bzw. Tests ohne Auth-Setup bleiben unverändert.
 func registerAuthSessionRoutes(
@@ -268,7 +268,7 @@ func registerAuthSessionRoutes(
 		Resolver: resolver,
 		Logger:   logger,
 	}
-	// plan-0.12.6 Tranche 6 / R-22: Origin-Limiter vor dem
+	//  / R-22: Origin-Limiter vor dem
 	// Issuance-Pfad. `nil`-Limiter ist No-Op.
 	mux.Handle("POST /api/auth/session-tokens",
 		originRateLimitMiddleware(handler, originLimiter, trustForwardedFor, logger))

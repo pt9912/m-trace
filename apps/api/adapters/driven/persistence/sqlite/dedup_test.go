@@ -12,7 +12,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
 )
 
-// TestDedupClassification verifiziert ADR-0002 §8.3: Events mit
+// TestDedupClassification verifiziert ADR-0002: Events mit
 // gesetzter `sequence_number` werden anhand
 // `(project_id, session_id, sequence_number)` gegen bereits
 // `delivery_status='accepted'`-Einträge geprüft; Duplikate landen mit
@@ -54,7 +54,7 @@ func TestDedupClassification(t *testing.T) {
 
 	// Direkter DB-Query, weil delivery_status nicht über das
 	// driven.EventRepository-Interface exposed wird (Read-Vertrag in
-	// API-Kontrakt §3.7 steht erst ab Tranche 4 / 0.4.0-Release).
+	// API-Kontrakt steht erst ab / 0.4.0-Release).
 	rows, err := db.QueryContext(ctx,
 		"SELECT ingest_sequence, delivery_status FROM playback_events "+
 			"ORDER BY ingest_sequence ASC")
@@ -112,7 +112,7 @@ func TestDedupClassification(t *testing.T) {
 // TestDedupRaceUnderConcurrentWriters startet zwei Goroutinen, die
 // parallel je ein Event mit identischem Dedup-Tupel
 // `(project_id, session_id, sequence_number)` appenden. Mit dem
-// `BEGIN IMMEDIATE`-Race-Schutz aus ADR-0002 §8.3 muss genau eine
+// `BEGIN IMMEDIATE`-Race-Schutz aus ADR-0002 muss genau eine
 // Zeile als `accepted` und eine als `duplicate_suspected` landen —
 // niemals zwei `accepted` und auch keinen Constraint-Konflikt
 // (es gibt keine UNIQUE-Constraint, der Schutz lebt allein in der

@@ -11,14 +11,14 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// plan-0.9.5 §2 Tranche 1 — SessionsService.ListSessions-Hot-Path-
+//  — SessionsService.ListSessions-Hot-Path-
 // Bench für `make api-benchmark-smoke`.
 //
 // Budget aus `docs/perf/budgets.md` §3 (initial, Tranche-0-Stand):
-//   - ListStreamSessions (Default-Limit 100, gefüllte 1k-Session-
-//     DB): ≤ 50 ms / Page (Cursor-Decode + Lookup + Domain-
-//     Hydratation; gemessen gegen den fakeSessionRepo aus
-//     sessions_service_test.go für deterministische Latenz).
+//  - ListStreamSessions (Default-Limit 100, gefüllte 1k-Session-
+//  DB): ≤ 50 ms / Page (Cursor-Decode + Lookup + Domain-
+//  Hydratation; gemessen gegen den fakeSessionRepo aus
+//  sessions_service_test.go für deterministische Latenz).
 
 // BenchmarkSessionsService_ListSessions_DefaultPage misst eine
 // einzelne Page-Anfrage (Default-Limit 100) gegen einen Repo mit
@@ -57,7 +57,7 @@ func BenchmarkSessionsService_ListSessions_DefaultPage(b *testing.B) {
 }
 
 // BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries
-// (plan-0.12.6 Tranche 5 / R-7): Hard-Cap-Page (1000 Sessions) mit
+// (R-7): Hard-Cap-Page (1000 Sessions) mit
 // dem Bulk-Boundary-Pfad. Vorher (N+1) liefen 1000
 // ListBoundariesForSession-Calls pro Page; mit dem Bulk-Port ist es
 // ein einzelner Call. Budget aus dem Plan-DoD: < 200 ms p95.

@@ -13,11 +13,11 @@ import (
 // in COALESCE-basierten Vergleichen behandelt wird. Wert ist
 // math.MinInt64; damit sortieren NULL-Events strikt VOR allen
 // gesetzten sequence_number-Werten — passend zur kanonischen
-// Sortier-Order (ADR-0002 §8.1, API-Kontrakt §10.4).
+// Sortier-Order (ADR-0002, API-Kontrakt).
 const nullSeqSentinel int64 = -1 << 63
 
 // persistedSchemaVersion ist die einzige Wire-Format-Version, die
-// dieses Release annimmt (siehe spec/backend-api-contract.md §3.4).
+// dieses Release annimmt (siehe spec/backend-api-contract.md).
 const persistedSchemaVersion = "1.0"
 
 // formatTime serialisiert einen Zeitpunkt für die TEXT-Spalten der
@@ -103,7 +103,7 @@ func nullableFloat64(p *float64) any {
 }
 
 // encodeMeta serialisiert die Domain-Meta-Map als JSON-String. nil →
-// SQL-NULL, sonst kompaktes JSON. ADR-0002 §8.1 fordert App-Layer-
+// SQL-NULL, sonst kompaktes JSON. ADR-0002 fordert App-Layer-
 // Validierung statt DB-CHECK für Postgres-Portabilität.
 func encodeMeta(m domain.EventMeta) (any, error) {
 	if m == nil {

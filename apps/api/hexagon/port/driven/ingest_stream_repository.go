@@ -8,19 +8,19 @@ import (
 )
 
 // IngestStreamRepository persistiert die Ingest-Control-Domain
-// (`0.11.0` Tranche 2, NF-13 / RAK-65..RAK-67). Implementierungen:
-//   - `apps/api/adapters/driven/persistence/inmemory` für Tests und
-//     Spike/Lab-Modus,
-//   - `apps/api/adapters/driven/persistence/sqlite` für den
-//     produktiv-bestätigten Persistenz-Pfad (Plan §0.4 SQLite-
-//     Entscheidung).
+// (NF-13 / RAK-65..RAK-67). Implementierungen:
+//  - `apps/api/adapters/driven/persistence/inmemory` für Tests und
+//  Spike/Lab-Modus,
+//  - `apps/api/adapters/driven/persistence/sqlite` für den
+//  produktiv-bestätigten Persistenz-Pfad (Plan §0.4 SQLite-
+//  Entscheidung).
 //
 // Sicherheitsprofil:
-//   - Klartext-Stream-Keys werden **nicht** persistiert; der
-//     Use-Case übergibt nur `domain.StreamKey` (Hash + Fingerprint).
-//   - Cross-Project-Leak-Schutz ist Aufgabe des Repositorys: alle
-//     Lookups MÜSSEN `projectID` filtern; `GetStreamByID` ohne
-//     Treffer im Project liefert `domain.ErrIngestStreamNotFound`.
+//  - Klartext-Stream-Keys werden **nicht** persistiert; der
+//  Use-Case übergibt nur `domain.StreamKey` (Hash + Fingerprint).
+//  - Cross-Project-Leak-Schutz ist Aufgabe des Repositorys: alle
+//  Lookups MÜSSEN `projectID` filtern; `GetStreamByID` ohne
+//  Treffer im Project liefert `domain.ErrIngestStreamNotFound`.
 type IngestStreamRepository interface {
 	// CreateStream legt einen Stream + Routing-Regel + initialen
 	// Stream-Key in einer atomaren Transaktion an. Der Adapter
@@ -28,10 +28,10 @@ type IngestStreamRepository interface {
 	// (`chk_ingest_streams_protocol`, `idx_ingest_streams_active_display_name`,
 	// `idx_stream_keys_active_unique`) und gibt die folgenden
 	// Domain-Fehler zurück:
-	//   - `domain.ErrIngestEndpointNotFound` / `ErrIngestTargetNotFound`
-	//     wenn der Endpoint/Target nicht existiert,
-	//   - `domain.ErrIngestStreamNameConflict` bei doppeltem aktiven
-	//     `display_name` im Project.
+	//  - `domain.ErrIngestEndpointNotFound` / `ErrIngestTargetNotFound`
+	//  wenn der Endpoint/Target nicht existiert,
+	//  - `domain.ErrIngestStreamNameConflict` bei doppeltem aktiven
+	//  `display_name` im Project.
 	CreateStream(ctx context.Context, input CreateStreamInput) (*domain.IngestStream, error)
 	// GetStreamByID lädt einen Stream **inkl.** des aktiven
 	// Stream-Keys (`stream.Key`). `projectID` ist Pflicht; ein

@@ -21,7 +21,7 @@ func sampleStream(id string) domain.IngestStream {
 	}
 }
 
-// TestMediaMTX_Apply_HappyPath (plan-0.12.6 Tranche 9 / R-15):
+// TestMediaMTX_Apply_HappyPath (R-15):
 // MediaMTX antwortet 200 OK → State `applied`.
 func TestMediaMTX_Apply_HappyPath(t *testing.T) {
 	t.Parallel()

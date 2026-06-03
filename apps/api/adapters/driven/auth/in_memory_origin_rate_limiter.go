@@ -10,20 +10,20 @@ import (
 
 // InMemoryOriginRateLimiter implementiert
 // `driven.OriginRateLimiter` für den Defense-in-Depth-Pfad vor den
-// Auth- und Ingest-Hot-Path-Handlern (plan-0.12.6 Tranche 6 / R-22).
+// Auth- und Ingest-Hot-Path-Handlern (R-22).
 // Token-Bucket pro Key mit `Capacity` (max Burst) und
 // `RefillPerSecond` (steady state); wiederverwendet die `tokenBucket`-
 // und `consume`-Helper aus `in_memory_issuance_rate_limiter.go`.
 //
 // Sicherheitsprofil:
-//   - Single-Process State; ein Multi-Host-Setup misst pro Replica
-//     (gleicher Trade-off wie der `0.12.5`-Issuance-Limiter; Multi-
-//     Host-Lösung ist Folge-Item für die Redis-Variante in
-//     plan-0.12.6 Tranche 7).
-//   - Bucket-Map wächst pro neuem Key. Opportunistisches Eviction
-//     räumt idle Buckets (siehe `sweepInterval`).
-//   - `key == ""` ist No-Op `true` — fehlende RemoteAddr-/XFF-Info
-//     darf den Hot-Path nicht blockieren.
+//  - Single-Process State; ein Multi-Host-Setup misst pro Replica
+//  (gleicher Trade-off wie der Issuance-Limiter; Multi-
+//  Host-Lösung ist Folge-Item für die Redis-Variante in
+//  ).
+//  - Bucket-Map wächst pro neuem Key. Opportunistisches Eviction
+//  räumt idle Buckets (siehe `sweepInterval`).
+//  - `key == ""` ist No-Op `true` — fehlende RemoteAddr-/XFF-Info
+//  darf den Hot-Path nicht blockieren.
 type InMemoryOriginRateLimiter struct {
 	now           func() time.Time
 	mu            sync.Mutex

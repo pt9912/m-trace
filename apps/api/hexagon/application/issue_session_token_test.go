@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// `0.12.0` Tranche 2: Issuance-Service ohne HTTP/Storage/Crypto-
+// : Issuance-Service ohne HTTP/Storage/Crypto-
 // Library. Stubs implementieren die Driven-Ports.
 
 type stubPolicies struct {
@@ -279,7 +279,7 @@ func TestIssueSessionToken_PolicyResolveErrorPropagates(t *testing.T) {
 
 func TestIssueSessionToken_DefaultClock(t *testing.T) {
 	t.Parallel()
-	// Service-Konstruktor ohne `Now`-Override → fällt auf `time.Now().UTC()`.
+	// Service-Konstruktor ohne `Now`-Override → fällt auf `time.Now.UTC`.
 	// Wir prüfen nur, dass kein Panic auftritt und ExpiresAt ungefähr
 	// `now+ttl` ist (Toleranz ±2 s gegen Wallclock-Drift im Test).
 	svc := application.NewIssueSessionTokenService(

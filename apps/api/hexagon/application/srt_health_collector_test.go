@@ -436,7 +436,7 @@ func TestCollect_StaleViaPreviousLookup(t *testing.T) {
 }
 
 // Run: zwei aufeinanderfolgende Samples mit fortschreitendem
-// SourceSequence werden persistiert (DoD aus plan-0.6.0 §4 für
+// SourceSequence werden persistiert (DoD aus für
 // Sub-3.5 — „mindestens zwei Samples mit steigender Source-
 // Sequence").
 func TestRun_AppendsTwoConsecutiveSamples(t *testing.T) {

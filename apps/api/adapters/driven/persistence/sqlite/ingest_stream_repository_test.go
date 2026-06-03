@@ -13,7 +13,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
 )
 
-// `0.11.0` Tranche 2 — SQLite-Adapter-Tests gegen die V2__ingest.sql-
+//  — SQLite-Adapter-Tests gegen die V2__ingest.sql-
 // Migration. Pinnt produktive Persistenz, Cross-Project-Leak-Schutz,
 // Key-Rotation mit Deaktivierungs-Audit-Trail und Lifecycle-Append.
 

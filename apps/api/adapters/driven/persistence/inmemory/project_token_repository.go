@@ -11,7 +11,7 @@ import (
 )
 
 // ProjectTokenRepository ist die in-memory-Variante des
-// `driven.ProjectTokenRepository`-Ports (`0.12.0`, RAK-73). Lebt für
+// `driven.ProjectTokenRepository`-Ports (RAK-73). Lebt für
 // Tests und den Lab-Inmemory-Modus; produktiver Pfad ist die SQLite-
 // Variante.
 type ProjectTokenRepository struct {

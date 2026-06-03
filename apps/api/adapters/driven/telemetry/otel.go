@@ -1,5 +1,5 @@
 // Package telemetry implements the driven.Telemetry port via the
-// OpenTelemetry SDK. Per spec/architecture.md §3.4 this is one of two
+// OpenTelemetry SDK. Per spec/architecture.md this is one of two
 // places (alongside adapters/driving/http) where OTel imports are
 // allowed; hexagon/ stays OTel-frei (boundary-test in
 // scripts/check-architecture.sh).
@@ -7,7 +7,7 @@
 // The Setup function returns Providers with a graceful Shutdown(ctx)
 // that combines the meter- and tracer-provider shutdown errors. Reader
 // und Span-Exporter werden via autoexport mit explizitem No-Op-Fallback
-// aufgelöst — siehe spec/architecture.md §5.3.
+// aufgelöst — siehe spec/architecture.md
 package telemetry
 
 import (
@@ -31,7 +31,7 @@ import (
 )
 
 // spanNameSrtHealthCollect ist der Span-Name aus
-// spec/telemetry-model.md §7.8 für SRT-Health-Samples (plan-0.6.0
+// spec/telemetry-model.md für SRT-Health-Samples (
 // §4 Sub-3.6).
 const spanNameSrtHealthCollect = "mtrace.srt.health.collect"
 
@@ -43,7 +43,7 @@ const MeterName = "github.com/pt9912/m-trace/apps/api"
 const TracerName = "github.com/pt9912/m-trace/apps/api"
 
 // counterBatchesReceived is the OTel counter name for BatchReceived
-// calls. Per spec/telemetry-model.md §2.2 it appears in Prometheus as
+// calls. Per spec/telemetry-model.md it appears in Prometheus as
 // mtrace_api_batches_received after the OTel→Prom translation
 // (`.` → `_`).
 const counterBatchesReceived = "mtrace.api.batches.received"
@@ -213,7 +213,7 @@ func (t *OTelTelemetry) WithTracer(tr trace.Tracer) *OTelTelemetry {
 // `batch_size="250"` to Prometheus. The per-request batch size lives on
 // the `http.handler POST /api/playback-events` span instead (see
 // adapters/driving/http/handler.go:73). See spec/telemetry-model.md
-// §2.2 / §3.1 and docs/planning/done/plan-0.4.0.md §8.2 for the
+// §2.2 / §3.1 and docs/planning/done/ for the
 // full cardinality contract.
 func (t *OTelTelemetry) BatchReceived(ctx context.Context, _ int) {
 	t.counter.Add(ctx, 1)
@@ -221,7 +221,7 @@ func (t *OTelTelemetry) BatchReceived(ctx context.Context, _ int) {
 
 // SrtSampleRecorded erzeugt einen kurzlebigen Span pro persistiertem
 // SRT-Health-Sample. Span-Name und Attribute folgen
-// spec/telemetry-model.md §7.8. Per-Verbindung-Identifier wandern
+// spec/telemetry-model.md Per-Verbindung-Identifier wandern
 // als Span-Attribut, nicht als Prometheus-Label (Cardinality-
 // Vertrag §7.7).
 func (t *OTelTelemetry) SrtSampleRecorded(ctx context.Context, attrs driven.SrtSampleAttrs) {

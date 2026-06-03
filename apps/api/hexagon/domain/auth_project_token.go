@@ -10,21 +10,21 @@ import (
 	"time"
 )
 
-// Project-Token-Generationen-Domäne (`0.12.0`, RAK-73).
+// Project-Token-Generationen-Domäne (RAK-73).
 //
 // Das Modell pinnt:
-//   - Klartext-Token werden nicht persistiert; nur Hash + Fingerprint
-//     plus Lifecycle-Felder (`not_before`, `grace_until`, `expires_at`,
-//     `revoked_at`) leben in `ProjectTokenGeneration`.
-//   - `grace_until` ist die Restart-stabile Source of Truth für die
-//     Grace-Validierung; wird nicht aus Prozesszustand oder
-//     `RotatedFrom` rekonstruiert.
-//   - `revoked_at` beendet Grace sofort.
-//   - Status wird pro Validierungsaufruf aus den Lifecycle-Feldern
-//     plus aktueller Clock evaluiert; es gibt kein gespeichertes
-//     Status-Feld, das mit den Zeit-Feldern in Konflikt geraten
-//     könnte.
-//   - Hash-Vergleich läuft in konstanter Zeit über `crypto/subtle`.
+//  - Klartext-Token werden nicht persistiert; nur Hash + Fingerprint
+//  plus Lifecycle-Felder (`not_before`, `grace_until`, `expires_at`,
+//  `revoked_at`) leben in `ProjectTokenGeneration`.
+//  - `grace_until` ist die Restart-stabile Source of Truth für die
+//  Grace-Validierung; wird nicht aus Prozesszustand oder
+//  `RotatedFrom` rekonstruiert.
+//  - `revoked_at` beendet Grace sofort.
+//  - Status wird pro Validierungsaufruf aus den Lifecycle-Feldern
+//  plus aktueller Clock evaluiert; es gibt kein gespeichertes
+//  Status-Feld, das mit den Zeit-Feldern in Konflikt geraten
+//  könnte.
+//  - Hash-Vergleich läuft in konstanter Zeit über `crypto/subtle`.
 //
 // Wire-Prefix `mtr_pt_` (Project Token) ist bewusst unterschiedlich
 // zu `mtr_st_` (Session Token, §3.9) und `mtr_ing_` (Stream Key,
@@ -46,7 +46,7 @@ const projectTokenEntropyBytes = 32 // 256 Bit
 // entstehen kann.
 type ProjectTokenGenerationStatus string
 
-// ProjectTokenGenerationStatus-Werte aus dem `0.12.0`-Muss-Scope.
+// ProjectTokenGenerationStatus-Werte aus dem Muss-Scope.
 const (
 	ProjectTokenStatusActive     ProjectTokenGenerationStatus = "active"
 	ProjectTokenStatusGrace      ProjectTokenGenerationStatus = "grace"
@@ -56,7 +56,7 @@ const (
 )
 
 // CanAuthenticate gibt true zurück, wenn eine Generation in diesem
-// Status einen Request authentifizieren darf. Tranche 2 nutzt das im
+// Status einen Request authentifizieren darf. nutzt das im
 // Multi-Generation-Lookup, um Active- und Grace-Tokens als gültig
 // und alle anderen als ungültig zu klassifizieren.
 func (s ProjectTokenGenerationStatus) CanAuthenticate() bool {
@@ -144,17 +144,17 @@ func GenerateProjectToken(
 // (höchste Priorität zuerst):
 //
 //  1. `RevokedAt` gesetzt und `now >= RevokedAt` → revoked. `RevokedAt`
-//     beendet Grace sofort, auch wenn `GraceUntil` noch in der
-//     Zukunft läge.
+//  beendet Grace sofort, auch wenn `GraceUntil` noch in der
+//  Zukunft läge.
 //  2. `ExpiresAt` gesetzt und `now >= ExpiresAt` → expired.
 //  3. `now < NotBefore` → not_yet_valid.
 //  4. `GraceUntil` gesetzt und `now >= GraceUntil`-Beginn-Indikator:
-//     Grace ist semantisch das Fenster zwischen `now < GraceUntil`
-//     einer alten Generation, in dem sie noch authentifizieren darf.
-//     Wir behandeln eine Generation mit gesetztem `GraceUntil` als
-//     `grace`, solange `now < GraceUntil` und keine der oberen
-//     Bedingungen greift; nach Ablauf von `GraceUntil` ohne
-//     `ExpiresAt` läuft sie auf `expired`.
+//  Grace ist semantisch das Fenster zwischen `now < GraceUntil`
+//  einer alten Generation, in dem sie noch authentifizieren darf.
+//  Wir behandeln eine Generation mit gesetztem `GraceUntil` als
+//  `grace`, solange `now < GraceUntil` und keine der oberen
+//  Bedingungen greift; nach Ablauf von `GraceUntil` ohne
+//  `ExpiresAt` läuft sie auf `expired`.
 //  5. Sonst → active.
 //
 // Diese Reihenfolge spiegelt §3.9 (Fehlerpräzedenz revoked → expired
@@ -212,9 +212,9 @@ func StatusToAuthError(status ProjectTokenGenerationStatus) error {
 // Reihenfolge:
 //  1. Format/Prefix → `ErrAuthTokenInvalid`.
 //  2. Hash-Vergleich in konstanter Zeit gegen alle Generationen des
-//     Aufrufer-Scopes. Bei Treffer wird die Generation übernommen.
+//  Aufrufer-Scopes. Bei Treffer wird die Generation übernommen.
 //  3. `EvaluateProjectTokenStatus` plus `StatusToAuthError` mappen
-//     den Status auf einen Fehler oder `nil`.
+//  den Status auf einen Fehler oder `nil`.
 //
 // Es gibt **keinen** Cross-Project-Lookup: der Aufrufer übergibt
 // ausschließlich Generationen des relevanten Scopes (typischerweise

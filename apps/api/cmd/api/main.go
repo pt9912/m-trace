@@ -67,7 +67,7 @@ const (
 	envAuthIssuanceFailOpen  = "MTRACE_AUTH_ISSUANCE_FAIL_OPEN"
 )
 
-// Auth-/Token-Lifecycle Default-Limits (`0.12.0`, RAK-72). Ein
+// Auth-/Token-Lifecycle Default-Limits (RAK-72). Ein
 // produktives Setup soll diese Werte über künftige Env-Vars
 // überschreiben können — der Spike pinnt sichere Lab-Defaults.
 const (
@@ -78,7 +78,7 @@ const (
 	authDefaultLabSigningKeySecret  = "mtrace-lab-only-do-not-use-in-production-replace-via-env"
 	authDefaultLabSigningKID        = "lab-default"
 
-	// Origin-Rate-Limiter Default-Bucket (plan-0.12.6 Tranche 6 /
+	// Origin-Rate-Limiter Default-Bucket (
 	// R-22). Lab-konservativ: 20 Requests Burst, 5 Refill/s ≈ 5 RPS
 	// steady state pro Client-IP. Wirksam nur wenn
 	// `MTRACE_ORIGIN_RATE_LIMITER=memory`.
@@ -91,12 +91,12 @@ const (
 	serviceVersion    = "0.22.2"
 	defaultListenAddr = ":8080"
 
-	// Spike Spec §6.9: 100 events/sec/project.
+	// Spike Spec: 100 events/sec/project.
 	rateLimitCapacity = 100
 	rateLimitRefill   = 100.0
 
-	// Persistenz-Konfiguration (ADR-0002 §8.1, plan-0.4.0 §2.4):
-	// Default ab 0.4.0 ist SQLite; In-Memory bleibt opt-in für Tests
+	// Persistenz-Konfiguration (ADR-0002, ):
+	// Default ist SQLite; In-Memory bleibt opt-in für Tests
 	// oder expliziten Dev-Fallback.
 	persistenceModeSQLite   = "sqlite"
 	persistenceModeInMemory = "inmemory"
@@ -144,7 +144,7 @@ func run(logger *slog.Logger) error {
 }
 
 // buildSrtHealthCollector verdrahtet den SRT-Health-Pfad
-// (plan-0.6.0 §4 Sub-3.5/3.6). Wenn `MTRACE_SRT_SOURCE_URL` leer
+// ( Sub-3.5/3.6). Wenn `MTRACE_SRT_SOURCE_URL` leer
 // ist, bleibt der Collector deaktiviert (nil) — der Default-Lab-Pfad
 // wird damit nicht durch fehlende ENV-Variablen blockiert.
 //
@@ -281,7 +281,7 @@ func buildHandler(
 			AllowedOrigins: append([]string(nil), cfg.AllowedOrigins...),
 		}
 	}
-	// plan-0.12.0 Tranche 3 (RAK-73): Wenn die Persistenz SQLite hält,
+	//  (RAK-73): Wenn die Persistenz SQLite hält,
 	// wickeln wir den Static-Resolver in einen RotatingProjectResolver
 	// ein, der `mtr_pt_*`-Tokens über `project_token_generations`
 	// auflöst und sonst auf den Static-Pfad fällt. InMemory-Modus
@@ -320,7 +320,7 @@ func buildHandler(
 		srtHealthInbound = srtHealthService
 	}
 
-	// plan-0.11.0 Tranche 2: Ingest-Control-Pfad nur dann verdrahten,
+	// : Ingest-Control-Pfad nur dann verdrahten,
 	// wenn die Persistenz SQLite hält (durable SQLite-Repo). InMemory-
 	// Lab-Modus liefert `nil` → der Router lässt `/api/ingest/*`
 	// deaktiviert (404), was für Spike-/CLI-Smoke-Aufrufe okay ist.
@@ -334,7 +334,7 @@ func buildHandler(
 		ingestControlInbound = ingestControlService
 	}
 
-	// plan-0.12.0 Tranche 2: Session-Token-Issuance verdrahten. Der
+	// : Session-Token-Issuance verdrahten. Der
 	// Spike nutzt einen Default-Signing-Key aus
 	// `MTRACE_AUTH_SIGNING_KEY` (Base64-URL); ohne Env-Var wird ein
 	// deterministischer Lab-Key benutzt und der Logger warnt einmal,
@@ -479,7 +479,7 @@ func listenAddr() string {
 }
 
 // newAnalyzer wählt zwischen dem Noop-Slot und dem HTTP-Adapter
-// gegen den analyzer-service (plan-0.3.0 §7 Tranche 6). Setzt der
+// gegen den analyzer-service. Setzt der
 // Operator `ANALYZER_BASE_URL`, wird der HTTP-Adapter aktiv; sonst
 // bleibt es beim Noop, damit lokale Smokes ohne Begleitservice
 // laufen können.
@@ -555,7 +555,7 @@ func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundl
 	}
 }
 
-// authBundle bündelt das, was main.go für `0.12.0` Tranche 2 baut:
+// authBundle bündelt das, was main.go für baut:
 // Issuance-Service (Driving-Port) plus den Signer für den
 // Konsum-Pfad (PlaybackEventsHandler verifiziert damit Bearer-/
 // X-MTrace-Session-Token-Header).
@@ -573,17 +573,17 @@ type authBundle struct {
 //
 // Signing-Key-Ring kommt aus zwei alternativen ENV-Pfaden — Parser-
 // Logik in `auth.ParseSigningKeysEnv`:
-//   - **Multi-Key (`0.12.6`)**: `MTRACE_AUTH_SIGNING_KEYS=
-//     kid_a:b64[,kid_b:b64,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID`.
-//     Mehrere Keys verifizieren parallel; nur der aktive `kid`
-//     signiert (RAK-78). Operator-Workflow siehe `auth.md` §5.3.1.
-//   - **Single-Key (Backwards-Compat zu `0.12.0`)**:
-//     `MTRACE_AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`.
-//     Degenerierter `len(keys)==1`-Resolver.
+//  - **Multi-Key **: `MTRACE_AUTH_SIGNING_KEYS=
+//  kid_a:b64[,kid_b:b64,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID`.
+//  Mehrere Keys verifizieren parallel; nur der aktive `kid`
+//  signiert (RAK-78). Operator-Workflow siehe `auth.md` §5.3.1.
+//  - **Single-Key (Backwards-Compat zu `0.12.0`)**:
+//  `MTRACE_AUTH_SIGNING_KEY` plus optional `MTRACE_AUTH_SIGNING_KID`.
+//  Degenerierter `len(keys)==1`-Resolver.
 //
 // Backend-Auswahl per `MTRACE_AUTH_SECRET_BACKEND` (`0.12.6` RAK-79):
-//   - `env` (Default): liest aus den ENV-Variablen wie oben.
-//   - `vault`: Vault KV-v2-Pfad über `MTRACE_AUTH_VAULT_*`.
+//  - `env` (Default): liest aus den ENV-Variablen wie oben.
+//  - `vault`: Vault KV-v2-Pfad über `MTRACE_AUTH_VAULT_*`.
 //
 // Ist beim `env`-Backend keiner der ENV-Pfade gesetzt, fällt das
 // Setup auf den markierten Lab-Default zurück
@@ -680,7 +680,7 @@ func wireIngestControlService(repo driven.IngestStreamRepository, logger *slog.L
 	return svc
 }
 
-// buildMediaServerProvisioner (plan-0.12.6 Tranche 9 / R-15) liest
+// buildMediaServerProvisioner (R-15) liest
 // `MTRACE_MEDIASERVER_PROVISION_URL` und `_TOKEN`. Ohne URL ist der
 // Adapter deaktiviert — `provision=true` antwortet dann mit
 // `media_server_state="disabled"`. Sonst wird ein MediaMTX-
@@ -712,7 +712,7 @@ func buildMediaServerProvisioner(logger *slog.Logger) driven.MediaServerProvisio
 // Konfiguration aus den ENV-Variablen `MTRACE_OUTBOUND_WEBHOOK_URL`
 // und `MTRACE_OUTBOUND_WEBHOOK_SECRET` (`0.12.6`/RAK-82, R-16).
 // Ist keine URL gesetzt → `nil` (Adapter deaktiviert, identisch
-// zum `0.11.0`-Verhalten ohne Outbound-Webhook). Sonst:
+// zum Verhalten ohne Outbound-Webhook). Sonst:
 // `webhooks.NewHTTPDispatcher` mit Default-Retry/-Timeout-Werten.
 func buildOutboundWebhookDispatcher(logger *slog.Logger) driven.OutboundWebhookDispatcher {
 	url := strings.TrimSpace(os.Getenv(envOutboundWebhookURL))
@@ -728,23 +728,23 @@ func buildOutboundWebhookDispatcher(logger *slog.Logger) driven.OutboundWebhookD
 }
 
 // buildAuthSecretBackend wählt das Signing-Key-Backend
-// (`0.12.6` RAK-79 + `0.12.6` Tranche 8 / R-20). ENV-Selektor
+// (`0.12.6` RAK-79 + R-20). ENV-Selektor
 // `MTRACE_AUTH_SECRET_BACKEND`:
-//   - leer / `env`: In-Process-Default — liest `MTRACE_AUTH_SIGNING_KEYS`/
-//     `_KEY` / `_ACTIVE_KID` / `_KID` aus dem Prozess-ENV
-//     (Backwards-Compat zum `0.12.0`-Pfad inkl. Lab-Default-Opt-in).
-//   - `vault`: externer Adapter über Vault KV-v2; ab `0.12.6` T8
-//     mit drei Auth-Methoden (token, approle, kubernetes) über
-//     `MTRACE_AUTH_VAULT_AUTH_METHOD`. Fail-closed bei Outage; kein
-//     Lab-Default-Fallback.
-//   - `kms` (`0.12.6` T8): externer Adapter über
-//     `auth.KMSSecretBackend` mit einem injizierten
-//     `KMSDecrypter`. Production-Wiring (AWS-SDK-v2 Adapter)
-//     ist Folge-Item nach `0.12.6`. Für Lab-Smokes existiert ein
-//     `MTRACE_AUTH_KMS_LAB_MODE=1`-Opt-in, der einen
-//     Pass-Through-Decrypter aktiviert (Ciphertext = Plaintext).
-//     Ohne diesen Opt-in fails der Boot mit klarer Fehlermeldung,
-//     damit kein produktiver Boot still auf Lab-Decryption fällt.
+//  - leer / `env`: In-Process-Default — liest `MTRACE_AUTH_SIGNING_KEYS`/
+//  `_KEY` / `_ACTIVE_KID` / `_KID` aus dem Prozess-ENV
+//  (Backwards-Compat zum Pfad inkl. Lab-Default-Opt-in).
+//  - `vault`: externer Adapter über Vault KV-v2; T8
+//  mit drei Auth-Methoden (token, approle, kubernetes) über
+//  `MTRACE_AUTH_VAULT_AUTH_METHOD`. Fail-closed bei Outage; kein
+//  Lab-Default-Fallback.
+//  - `kms` (`0.12.6` T8): externer Adapter über
+//  `auth.KMSSecretBackend` mit einem injizierten
+//  `KMSDecrypter`. Production-Wiring (AWS-SDK-v2 Adapter)
+//  ist Folge-Item nach `0.12.6`. Für Lab-Smokes existiert ein
+//  `MTRACE_AUTH_KMS_LAB_MODE=1`-Opt-in, der einen
+//  Pass-Through-Decrypter aktiviert (Ciphertext = Plaintext).
+//  Ohne diesen Opt-in fails der Boot mit klarer Fehlermeldung,
+//  damit kein produktiver Boot still auf Lab-Decryption fällt.
 //
 // Refresh-TTL (`MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS`):
 // gelesen + im Boot-Log als Status-Hinweis ausgegeben. Default 0 =
@@ -839,23 +839,23 @@ func kmsDecrypterLabel() string {
 
 // buildIssuanceRateLimiter wählt zwischen In-Process-, SQLite- und
 // Redis-basiertem Token-Bucket-Limiter (`0.12.6` RAK-77 / R-17 +
-// `0.12.6` Tranche 7 / R-17-Resttrigger). ENV-Selektor
+// R-17-Resttrigger). ENV-Selektor
 // `MTRACE_AUTH_ISSUANCE_LIMITER`:
-//   - leer / `memory`: In-Process-Default (Backwards-Compat zu
-//     `0.12.0`). Misst pro Replica — passt nur für Single-Instance-
-//     Setups.
-//   - `sqlite`: opt-in Shared-State-Pfad für Single-Host-Multi-
-//     Replica-Setups. Multi-Host bleibt nicht-Multi-Host-safe.
-//   - `redis` (`0.12.6` T7): Network-Backend für echte Multi-Host-
-//     Setups. Atomare Lua-Token-Bucket-Operation; teilt sich den
-//     Redis-Server mit dem Origin-Limiter (`R-22`) für Backend-
-//     Konsistenz. Pflicht-ENV `MTRACE_REDIS_ADDR`; optional
-//     `MTRACE_REDIS_AUTH`/`MTRACE_REDIS_DB`. Fail-mode default
-//     fail-closed (Outage → 429); `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`
-//     aktiviert lokalen In-Memory-Fallback pro Replica.
-//   - `memcached` (Folge-Item nach `0.12.6`): explizit nicht
-//     unterstützt — bleibt gemeinsames Folge-Item mit R-22, falls
-//     ein Operator Memcached vorzieht.
+//  - leer / `memory`: In-Process-Default (Backwards-Compat zu
+//  `0.12.0`). Misst pro Replica — passt nur für Single-Instance-
+//  Setups.
+//  - `sqlite`: opt-in Shared-State-Pfad für Single-Host-Multi-
+//  Replica-Setups. Multi-Host bleibt nicht-Multi-Host-safe.
+//  - `redis` (`0.12.6` T7): Network-Backend für echte Multi-Host-
+//  Setups. Atomare Lua-Token-Bucket-Operation; teilt sich den
+//  Redis-Server mit dem Origin-Limiter (`R-22`) für Backend-
+//  Konsistenz. Pflicht-ENV `MTRACE_REDIS_ADDR`; optional
+//  `MTRACE_REDIS_AUTH`/`MTRACE_REDIS_DB`. Fail-mode default
+//  fail-closed (Outage → 429); `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`
+//  aktiviert lokalen In-Memory-Fallback pro Replica.
+//  - `memcached` (Folge-Item nach `0.12.6`): explizit nicht
+//  unterstützt — bleibt gemeinsames Folge-Item mit R-22, falls
+//  ein Operator Memcached vorzieht.
 func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceRateLimiter, error) {
 	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envAuthIssuanceLimiter)))
 	switch backend {
@@ -951,30 +951,30 @@ func failModeLabel(failOpen bool) string {
 	return "fail-closed (deny on outage)"
 }
 
-// buildOriginRateLimiter (plan-0.12.6 Tranche 6 / R-22) wählt den
+// buildOriginRateLimiter (R-22) wählt den
 // Origin-/IP-Rate-Limiter-Backend per ENV-Selektor
 // `MTRACE_ORIGIN_RATE_LIMITER`:
-//   - leer / `disabled`: kein Limiter (Backwards-Compat-Default für
-//     bestehende Operatoren). Memory-Backend bleibt opt-in.
-//   - `memory`: In-Process-Token-Bucket pro Key (`r.RemoteAddr` oder
-//     `X-Forwarded-For`-Client-IP). Single-Replica-Pfad oder
-//     Defense-in-Depth-Ergänzung zum Edge-Layer-Limit (Reverse-Proxy/
-//     CDN).
-//   - `sqlite`: NICHT unterstützt — Origin-Limits über Hosts hinweg
-//     brauchen ein Network-Backend; SQLite via Shared-Volume produziert
-//     false-negative-Limits, sobald Replicas auf verschiedenen Hosts
-//     laufen (siehe plan-0.12.6 §8 Backend-Strategie).
-//   - `redis` (`0.12.6` T7): Network-Backend für Multi-Host-Setups.
-//     Atomare Lua-Token-Bucket-Operation; teilt sich den Redis-
-//     Server mit dem Issuance-Limiter (`R-17`) — derselbe
-//     `MTRACE_REDIS_*`-ENV-Block, aber eigener Key-Prefix
-//     `mtrace:origin`. Fail-mode default fail-closed; opt-in
-//     fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` (gemeinsam
-//     mit dem Issuance-Limiter — beide Limiter teilen denselben
-//     Fail-Mode-Schalter, damit ein Operator nicht versehentlich
-//     einen halb-fail-closed Pfad konstruiert).
-//   - `memcached`: Folge-Item gemeinsam mit dem Issuance-Limiter,
-//     falls Operator-Bedarf nach Memcached entsteht.
+//  - leer / `disabled`: kein Limiter (Backwards-Compat-Default für
+//  bestehende Operatoren). Memory-Backend bleibt opt-in.
+//  - `memory`: In-Process-Token-Bucket pro Key (`r.RemoteAddr` oder
+//  `X-Forwarded-For`-Client-IP). Single-Replica-Pfad oder
+//  Defense-in-Depth-Ergänzung zum Edge-Layer-Limit (Reverse-Proxy/
+//  CDN).
+//  - `sqlite`: NICHT unterstützt — Origin-Limits über Hosts hinweg
+//  brauchen ein Network-Backend; SQLite via Shared-Volume produziert
+//  false-negative-Limits, sobald Replicas auf verschiedenen Hosts
+//  laufen (siehe Backend-Strategie).
+//  - `redis` (`0.12.6` T7): Network-Backend für Multi-Host-Setups.
+//  Atomare Lua-Token-Bucket-Operation; teilt sich den Redis-
+//  Server mit dem Issuance-Limiter (`R-17`) — derselbe
+//  `MTRACE_REDIS_*`-ENV-Block, aber eigener Key-Prefix
+//  `mtrace:origin`. Fail-mode default fail-closed; opt-in
+//  fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` (gemeinsam
+//  mit dem Issuance-Limiter — beide Limiter teilen denselben
+//  Fail-Mode-Schalter, damit ein Operator nicht versehentlich
+//  einen halb-fail-closed Pfad konstruiert).
+//  - `memcached`: Folge-Item gemeinsam mit dem Issuance-Limiter,
+//  falls Operator-Bedarf nach Memcached entsteht.
 //
 // Liefert `nil, nil` für den Disabled-Pfad — der HTTP-Adapter prüft
 // auf nil und überspringt den Middleware-Aufruf.
@@ -1011,7 +1011,7 @@ func buildOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, erro
 		}, logger)
 	case "sqlite":
 		return nil, fmt.Errorf(
-			"%s=sqlite is not supported (Origin-Limits are not Multi-Host-safe on shared SQLite volumes; see plan-0.12.6 §8 Backend-Strategie)",
+			"%s=sqlite is not supported (Origin-Limits are not Multi-Host-safe on shared SQLite volumes)",
 			envOriginRateLimiter,
 		)
 	case "memcached":
@@ -1031,7 +1031,7 @@ func buildOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, erro
 // akzeptiert nur `1`/`true`/`yes`. Alles andere (inkl. fehlend) →
 // HTTP-Adapter nutzt `r.RemoteAddr` als client_ip-Quelle (Default).
 // Operator muss XFF explizit aktivieren, sonst trifft der Origin-
-// Limiter den Reverse-Proxy statt den Client (plan-0.12.6 §8).
+// Limiter den Reverse-Proxy statt den Client.
 func trustForwardedForOptIn() bool {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv(envTrustForwardedFor))) {
 	case "1", "true", "yes":

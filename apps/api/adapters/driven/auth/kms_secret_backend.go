@@ -33,16 +33,16 @@ func (LabPassThroughKMSDecrypter) Decrypt(_ context.Context, ciphertext []byte) 
 // In-Process-Stub, der den Mock-Plaintext liefert.
 //
 // Sicherheitsprofil:
-//   - Plaintext (= das `keys`-Feldformat aus `ParseSigningKeysEnv`)
-//     fließt nur durch den Decrypter zurück; nichts wird persistiert.
-//   - Ciphertext kommt aus dem ENV `MTRACE_AUTH_KMS_ENCRYPTED_KEYS`
-//     (Base64-URL-encoded KMS-Ciphertext-Blob). Bei Build-Hardening
-//     kann er auch aus einem File-Path geliefert werden — siehe
-//     `MTRACE_AUTH_KMS_ENCRYPTED_KEYS_PATH`.
-//   - Der Adapter macht **kein** Re-Decrypt pro Request — der Plaintext
-//     wird beim Boot in `LoadSigningKeys` eingelesen und an den
-//     `MultiKeySigningResolver` übergeben. Keys leben dann nur im
-//     Prozess-RAM des API-Containers.
+//  - Plaintext (= das `keys`-Feldformat aus `ParseSigningKeysEnv`)
+//  fließt nur durch den Decrypter zurück; nichts wird persistiert.
+//  - Ciphertext kommt aus dem ENV `MTRACE_AUTH_KMS_ENCRYPTED_KEYS`
+//  (Base64-URL-encoded KMS-Ciphertext-Blob). Bei Build-Hardening
+//  kann er auch aus einem File-Path geliefert werden — siehe
+//  `MTRACE_AUTH_KMS_ENCRYPTED_KEYS_PATH`.
+//  - Der Adapter macht **kein** Re-Decrypt pro Request — der Plaintext
+//  wird beim Boot in `LoadSigningKeys` eingelesen und an den
+//  `MultiKeySigningResolver` übergeben. Keys leben dann nur im
+//  Prozess-RAM des API-Containers.
 type KMSDecrypter interface {
 	Decrypt(ctx context.Context, ciphertext []byte) (plaintext []byte, err error)
 }
@@ -52,7 +52,7 @@ type KMSDecrypter interface {
 // vendor-neutral durch die `KMSDecrypter`-Indirektion).
 //
 // **Adapter-Charakter** (`0.12.6` T8): produktive AWS-SDK-Anbindung
-// ist NICHT Teil des `0.12.6`-Scopes. Operatoren, die KMS bereits
+// ist NICHT Teil des Scopes. Operatoren, die KMS bereits
 // einsetzen, können den Adapter durch einen eigenen Decrypter
 // hinter dem `KMSDecrypter`-Interface aktivieren. Skelett-Adapter
 // im Repo nutzt die `KMSDecrypter`-Abstraktion + Mock-Decrypter
@@ -76,11 +76,11 @@ type KMSBackendConfig struct {
 // ENV-Variablen plus einem injizierten `Decrypter`. Heute liest der
 // Konstruktor:
 //
-//   - `MTRACE_AUTH_KMS_ENCRYPTED_KEYS` (Base64-URL-Ciphertext) ODER
-//     `MTRACE_AUTH_KMS_ENCRYPTED_KEYS_PATH` (File mit Ciphertext).
-//   - `MTRACE_AUTH_KMS_ACTIVE_KID` — die aktive KID, die nach Decrypt
-//     in der gleichen Form wie bei `MTRACE_AUTH_SIGNING_ACTIVE_KID`
-//     ausgewertet wird.
+//  - `MTRACE_AUTH_KMS_ENCRYPTED_KEYS` (Base64-URL-Ciphertext) ODER
+//  `MTRACE_AUTH_KMS_ENCRYPTED_KEYS_PATH` (File mit Ciphertext).
+//  - `MTRACE_AUTH_KMS_ACTIVE_KID` — die aktive KID, die nach Decrypt
+//  in der gleichen Form wie bei `MTRACE_AUTH_SIGNING_ACTIVE_KID`
+//  ausgewertet wird.
 //
 // Der Constructor failt fail-closed, wenn weder Ciphertext-ENV noch
 // Path-ENV gesetzt sind, oder wenn `ActiveKID` fehlt.

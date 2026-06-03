@@ -20,8 +20,8 @@ import (
 
 // TestNewRouter_NilAllowlistRejectsAllPreflights deckt den Fallback-
 // Pfad in NewRouter ab: allowlist=nil → noopAllowlist; Preflights
-// werden für jeden Origin abgelehnt — ab `0.12.0` §3.9 mit `204`
-// und ohne Allow-Origin (statt Pre-`0.12.0`-`403`-Verhalten). Das
+// werden für jeden Origin abgelehnt — §3.9 mit `204`
+// und ohne Allow-Origin (statt Pre-`403`-Verhalten). Das
 // verifiziert die dokumentierte „kein CORS"-Semantik (router.go),
 // ohne zusätzliche Test-Server-Konfiguration zu brauchen.
 func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {

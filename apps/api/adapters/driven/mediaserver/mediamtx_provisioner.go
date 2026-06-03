@@ -1,5 +1,5 @@
 // Package mediaserver enthält die externen Media-Server-Adapter
-// (plan-0.12.6 Tranche 9 / R-15). Aktuell nur MediaMTX (HTTP-
+// (R-15). Aktuell nur MediaMTX (HTTP-
 // `/v3/config/`-API); SRS bleibt Folge-Item nach `0.12.6`.
 package mediaserver
 
@@ -24,15 +24,15 @@ import (
 // JSON-Body; ein 200/201 signalisiert Erfolg.
 //
 // Sicherheitsprofil:
-//   - Optionaler Bearer-Token für die MediaMTX-`authInternalUsers`-
-//     `api`-Action (siehe `examples/srt/mediamtx.yml`); ohne Token
-//     ist der Adapter nur in einem Lab-Compose mit IP-Allowlist
-//     sicher.
-//   - Kein Klartext-Stream-Key im Server-Request — der MediaMTX-
-//     Path bekommt nur den SHA-256-Hash als `source`-Marker oder
-//     leeren Body, je nach Protocol. Konkrete Wire-Form bleibt
-//     bewusst minimal; eine Production-Anbindung verfeinert das
-//     pro Operator-Setup.
+//  - Optionaler Bearer-Token für die MediaMTX-`authInternalUsers`-
+//  `api`-Action (siehe `examples/srt/mediamtx.yml`); ohne Token
+//  ist der Adapter nur in einem Lab-Compose mit IP-Allowlist
+//  sicher.
+//  - Kein Klartext-Stream-Key im Server-Request — der MediaMTX-
+//  Path bekommt nur den SHA-256-Hash als `source`-Marker oder
+//  leeren Body, je nach Protocol. Konkrete Wire-Form bleibt
+//  bewusst minimal; eine Production-Anbindung verfeinert das
+//  pro Operator-Setup.
 //
 // **Skelett-Charakter**: T9 liefert den Adapter-Pfad und die
 // Wire-Form (`provision=true` → `media_server_state`); die
@@ -84,8 +84,8 @@ var _ driven.MediaServerProvisioner = (*MediaMTXProvisioner)(nil)
 //
 //	PUT /v3/config/paths/add/<path>
 //	{
-//	  "source": "publisher",
-//	  "sourceProtocol": "<srt|rtmp>"
+//	 "source": "publisher",
+//	 "sourceProtocol": "<srt|rtmp>"
 //	}
 //
 // MediaMTX antwortet 200/201 auf Erfolg. `409 Conflict` (Path

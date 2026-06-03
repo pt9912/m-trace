@@ -12,7 +12,7 @@ import (
 
 // TestPrometheusPublisher_HandlerExposesAllCounters scrapt den
 // /api/metrics-Endpoint und prüft, dass die aggregierten Pflicht-
-// Metriken aus Lastenheft §7.9 exposiert sind, jeweils mit ihren
+// Metriken aus exposiert sind, jeweils mit ihren
 // initialen Werten sowie nach gezielten Increments.
 func TestPrometheusPublisher_HandlerExposesAllCounters(t *testing.T) {
 	t.Parallel()

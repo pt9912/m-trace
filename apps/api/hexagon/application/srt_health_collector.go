@@ -1,9 +1,9 @@
 package application
 
-// SRT-Health-Collector (plan-0.6.0 §4 Sub-3.2).
+// SRT-Health-Collector ( Sub-3.2).
 //
 // Der Collector orchestriert den Datenfluss aus
-// spec/architecture.md §5.4: Quelle abfragen → Sample bewerten →
+// spec/architecture.md: Quelle abfragen → Sample bewerten →
 // persistieren. Polling-Loop, Backoff und Shutdown sind Sub-3.5;
 // hier liegt die framework-freie Bewertungslogik plus die Single-
 // Shot-`Collect`-Methode.
@@ -19,7 +19,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// Default-Werte für den Polling-Loop (plan-0.6.0 §4 Sub-3.5).
+// Default-Werte für den Polling-Loop ( Sub-3.5).
 // `DefaultSrtHealthPollInterval` ist das Intervall für erfolgreiche
 // Polls; `DefaultSrtHealthMaxBackoff` deckelt das exponentielle
 // Backoff auf Source-Fehlern.
@@ -29,7 +29,7 @@ const (
 )
 
 // SrtHealthThresholds bündelt die Schwellen aus
-// spec/telemetry-model.md §7.4. Werte sind in 0.6.0 Sub-3.2 als
+// spec/telemetry-model.md Werte sind in 0.6.0 Sub-3.2 als
 // Konstanten festgelegt; eine spätere Phase kann das per Project-
 // Konfiguration aufweichen, ohne das Domain-Modell zu ändern.
 //
@@ -50,7 +50,7 @@ type SrtHealthThresholds struct {
 }
 
 // DefaultThresholds liefert die Vorschlagswerte aus
-// spec/telemetry-model.md §7.4. Tranche 4 finalisiert sie auf
+// spec/telemetry-model.md finalisiert sie auf
 // Basis von Lab-/Operator-Erfahrungen. Funktion statt Var, damit
 // gochecknoglobals nicht ausschlägt und Aufrufer eine eigene
 // mutable Kopie erhalten.
@@ -246,7 +246,7 @@ type SrtHealthCollector struct {
 // Pflicht — der Collector schreibt alle Samples gegen dieses Project,
 // weil MediaMTX-API in 0.6.0 keinen Project-Kontext mitliefert.
 // Multi-Project-Support kommt mit einer Folgephase (siehe
-// risks-backlog R-9 und plan-0.6.0 §0.1 „Multi-Tenant").
+// risks-backlog R-9 und „Multi-Tenant").
 func NewSrtHealthCollector(
 	source driven.SrtSource,
 	repo driven.SrtHealthRepository,
@@ -279,7 +279,7 @@ func NewSrtHealthCollector(
 }
 
 // WithMetrics injiziert den Driven-Port für die SRT-Health-Aggregat-
-// Counter (spec/telemetry-model.md §7.7). nil bleibt no-op (für
+// Counter (spec/telemetry-model.md). nil bleibt no-op (für
 // Tests und Lab-Setups ohne Prometheus).
 func (c *SrtHealthCollector) WithMetrics(m driven.MetricsPublisher) *SrtHealthCollector {
 	c.metrics = m
@@ -287,7 +287,7 @@ func (c *SrtHealthCollector) WithMetrics(m driven.MetricsPublisher) *SrtHealthCo
 }
 
 // WithTelemetry injiziert den Driven-Port für SRT-Sample-Spans
-// (spec/telemetry-model.md §7.8). nil bleibt no-op.
+// (spec/telemetry-model.md). nil bleibt no-op.
 func (c *SrtHealthCollector) WithTelemetry(t driven.Telemetry) *SrtHealthCollector {
 	c.telemetry = t
 	return c
@@ -408,7 +408,7 @@ func (c *SrtHealthCollector) Collect(ctx context.Context) error {
 // Counter (Prometheus) plus einen kurzlebigen OTel-Span. Der Aufruf
 // ist best-effort: wenn die Ports nicht verdrahtet sind oder
 // Telemetry-Adapter Fehler werfen, blockiert das die Persistenz
-// nicht (spec/architecture.md §5.4 Transaktions-Klausel).
+// nicht (spec/architecture.md Transaktions-Klausel).
 func (c *SrtHealthCollector) recordSamples(ctx context.Context, samples []domain.SrtHealthSample) {
 	for _, s := range samples {
 		if c.metrics != nil {
@@ -432,10 +432,10 @@ func (c *SrtHealthCollector) recordSamples(ctx context.Context, samples []domain
 
 // recordRunOutcomeFromSamples wählt einen Run-Level-SourceStatus aus
 // der Sample-Liste. Reihenfolge:
-//   1. unavailable überschreibt alles (Persistenz-Fehler kommt nicht
-//      bis hierher; aber Source-Status-Fehler in einzelnen Samples
-//      sind möglich, falls Adapter `partial`/`unknown` zurückgibt).
-//   2. stale > partial > no_active_connection > ok.
+//  1. unavailable überschreibt alles (Persistenz-Fehler kommt nicht
+//  bis hierher; aber Source-Status-Fehler in einzelnen Samples
+//  sind möglich, falls Adapter `partial`/`unknown` zurückgibt).
+//  2. stale > partial > no_active_connection > ok.
 // Damit zeigt der Run-Counter den schlimmsten Sample-Status,
 // während der Sample-Counter pro Sample granular ist.
 func (c *SrtHealthCollector) recordRunOutcomeFromSamples(samples []domain.SrtHealthSample) {
@@ -501,7 +501,7 @@ func worseSourceStatus(a, b domain.SourceStatus) domain.SourceStatus {
 }
 
 // Run startet den Polling-Loop des Collectors und gibt erst nach
-// `ctx.Done()` zurück. Das Intervall zwischen erfolgreichen Polls ist
+// `ctx.Done` zurück. Das Intervall zwischen erfolgreichen Polls ist
 // `pollInterval`; bei Source-Fehlern verdoppelt sich das Wait-Intervall
 // bis `maxBackoff`. Erfolgreiche Polls setzen das Backoff auf
 // `pollInterval` zurück.

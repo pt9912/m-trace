@@ -9,7 +9,7 @@ import (
 )
 
 // TestInMemoryOriginRateLimiter_BucketDepletesAndRefills
-// (plan-0.12.6 Tranche 6 / R-22): bei Capacity=3 + Refill=1/s sind
+// (R-22): bei Capacity=3 + Refill=1/s sind
 // drei Aufrufe in Folge erlaubt; der vierte wird abgewiesen;
 // nach 1.5s Wartezeit ist wieder ein Token verfügbar.
 func TestInMemoryOriginRateLimiter_BucketDepletesAndRefills(t *testing.T) {
@@ -42,7 +42,7 @@ func TestInMemoryOriginRateLimiter_BucketDepletesAndRefills(t *testing.T) {
 	}
 }
 
-// TestInMemoryOriginRateLimiter_KeyIsolation (plan-0.12.6 Tranche 6):
+// TestInMemoryOriginRateLimiter_KeyIsolation:
 // zwei verschiedene Keys (Client-IPs) haben unabhängige Buckets;
 // das Auffüllen oder Leeren des einen beeinflusst den anderen nicht.
 func TestInMemoryOriginRateLimiter_KeyIsolation(t *testing.T) {
@@ -62,7 +62,7 @@ func TestInMemoryOriginRateLimiter_KeyIsolation(t *testing.T) {
 	}
 }
 
-// TestInMemoryOriginRateLimiter_EmptyKeyIsNoOp (plan-0.12.6 T6):
+// TestInMemoryOriginRateLimiter_EmptyKeyIsNoOp ( T6):
 // fehlende RemoteAddr/XFF → key="" → Allow=true (No-Op-Pfad). Sonst
 // würde der Lab-Test-Pfad ohne RemoteAddr-Setup blockiert.
 func TestInMemoryOriginRateLimiter_EmptyKeyIsNoOp(t *testing.T) {
@@ -77,7 +77,7 @@ func TestInMemoryOriginRateLimiter_EmptyKeyIsNoOp(t *testing.T) {
 	}
 }
 
-// TestInMemoryOriginRateLimiter_DisabledBucket (plan-0.12.6 T6):
+// TestInMemoryOriginRateLimiter_DisabledBucket ( T6):
 // Capacity=0 und Refill=0 → kein Limit (Disabled-Bucket-Pfad).
 func TestInMemoryOriginRateLimiter_DisabledBucket(t *testing.T) {
 	t.Parallel()
@@ -91,7 +91,7 @@ func TestInMemoryOriginRateLimiter_DisabledBucket(t *testing.T) {
 	}
 }
 
-// TestInMemoryOriginRateLimiter_NilReceiver (plan-0.12.6 T6):
+// TestInMemoryOriginRateLimiter_NilReceiver ( T6):
 // `nil`-Limiter (Disabled-Pfad aus dem Boot-Validator) ist Allow-No-Op.
 func TestInMemoryOriginRateLimiter_NilReceiver(t *testing.T) {
 	t.Parallel()
@@ -102,8 +102,8 @@ func TestInMemoryOriginRateLimiter_NilReceiver(t *testing.T) {
 	}
 }
 
-// TestInMemoryOriginRateLimiter_EvictsIdleBuckets (plan-0.12.6
-// Tranche 6 / R-22): nach `idleTTL` (10 min Default) räumt der
+// TestInMemoryOriginRateLimiter_EvictsIdleBuckets (
+// / R-22): nach `idleTTL` (10 min Default) räumt der
 // nächste Allow-Call die ungenutzten Buckets per opportunistic
 // sweep. Test treibt den Clock manuell weit über die Schwelle.
 func TestInMemoryOriginRateLimiter_EvictsIdleBuckets(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 )
 
-// `0.12.6` Tranche 8 (R-20) — Tests für die neuen Vault-Auth-Methoden
+//  (R-20) — Tests für die neuen Vault-Auth-Methoden
 // (AppRole, Kubernetes) und den KMS-Skelett-Adapter.
 
 // multiPathVaultMock bedient zwei Pfade auf demselben httptest-Server:

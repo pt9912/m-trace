@@ -91,7 +91,7 @@ type stubSessionRepo struct {
 	boundariesFailNext bool
 	// sampleRateExisting (pre-test fixture) und sampleRateSet (post-call
 	// recorder) tracken die Pro-Session-`sample_rate_ppm`-Logik aus
-	// plan-0.12.6 §6 / R-10.
+	//  / R-10.
 	sampleRateExisting map[string]int
 	sampleRateSet      map[string]int
 }
@@ -160,9 +160,9 @@ func (s *stubSessionRepo) CountByState(_ context.Context, _ domain.SessionState)
 }
 
 // stub-Verhalten für SetSessionSampleRatePPMIfDefault:
-//   - sampleRateSet[sessionID] gespeichert (für Test-Asserts).
-//   - sampleRateExisting[sessionID]: vor-set-Wert (Default = SampleRateFull).
-//   - applied=false, wenn vor-set-Wert != Default; sonst applied=true.
+//  - sampleRateSet[sessionID] gespeichert (für Test-Asserts).
+//  - sampleRateExisting[sessionID]: vor-set-Wert (Default = SampleRateFull).
+//  - applied=false, wenn vor-set-Wert != Default; sonst applied=true.
 func (s *stubSessionRepo) SetSessionSampleRatePPMIfDefault(_ context.Context, _, sessionID string, ppm int) (int, bool, error) {
 	if s.sampleRateExisting == nil {
 		s.sampleRateExisting = make(map[string]int)
@@ -230,10 +230,10 @@ func (s *stubTelemetry) SrtSampleRecorded(_ context.Context, _ driven.SrtSampleA
 
 // stubAnalyzer zählt AnalyzeBatch-Aufrufe. Im 0.1.0-Use-Case ruft
 // das System ihn nicht produktiv auf — der Slot existiert ausschließlich
-// als F-22-Architektur-Vorbereitung (siehe plan-0.1.0.md §5.1 F-22).
+// als F-22-Architektur-Vorbereitung (siehe F-22).
 // calls bleibt damit in allen Tests 0; das ist die DoD-Bedingung.
 //
-// AnalyzeManifest ist ab 0.3.0 Teil des Ports (plan-0.3.0 §2 Tranche 1)
+// AnalyzeManifest ist Teil des Ports
 // und vom Batch-Use-Case ebenfalls nicht aufgerufen; der Stub
 // implementiert die Methode no-op, um den Port-Vertrag zu erfüllen.
 type stubAnalyzer struct {
@@ -282,7 +282,7 @@ func newUseCase() (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter,
 
 // newUseCaseWithOrigins erlaubt die Origin-Allowlist des Stub-Project-
 // Resolvers zu konfigurieren — Voraussetzung für die CORS-Variante-B-
-// Tests aus plan-0.1.0.md §5.1 Sub-Item 6.
+// Tests aus Sub-Item 6.
 func newUseCaseWithOrigins(origins []string) (*application.RegisterPlaybackEventBatchUseCase, *stubLimiter, *stubRepo, *stubSessionRepo, *spyMetrics, *stubTelemetry, *stubAnalyzer, *stubSequencer) {
 	limiter := &stubLimiter{}
 	repo := &stubRepo{}
@@ -340,7 +340,7 @@ func TestHappyPath(t *testing.T) {
 
 // TestIngestSequenceMonotonic verifiziert, dass mehrere Events einer
 // Batch jeweils einen monoton steigenden ingest_sequence-Wert tragen.
-// plan-0.1.0.md §5.1: "monoton steigender Counter pro apps/api-Prozess".
+// : "monoton steigender Counter pro apps/api-Prozess".
 func TestIngestSequenceMonotonic(t *testing.T) {
 	t.Parallel()
 	uc, _, repo, _, _, _, _, _ := newUseCase()
@@ -499,13 +499,13 @@ func TestProjectIDTokenMismatch(t *testing.T) {
 	if !errors.Is(err, domain.ErrUnauthorized) {
 		t.Errorf("expected ErrUnauthorized, got %v", err)
 	}
-	// Auth-Fehler (401) zählen nicht in invalid_events (API-Kontrakt §7).
+	// Auth-Fehler (401) zählen nicht in invalid_events (API-Kontrakt).
 	if metrics.invalid != 0 {
 		t.Errorf("expected InvalidEvents=0 (auth-Fehler zählen nicht), got %d", metrics.invalid)
 	}
 }
 
-// TestOriginNotAllowed_NoSideEffects verifiziert plan-0.1.0.md §5.1
+// TestOriginNotAllowed_NoSideEffects verifiziert
 // CORS Variante B: ein Origin, der nicht in der Allowlist des Project
 // steht, gibt ErrOriginNotAllowed zurück, ohne den Rate-Limiter zu
 // belasten oder Events anzulegen — die Origin-Validierung läuft vor
@@ -537,7 +537,7 @@ func TestOriginNotAllowed_NoSideEffects(t *testing.T) {
 }
 
 // TestOriginEmpty_BypassesProjectBinding verifiziert den CLI/curl-Pfad
-// (plan-0.1.0.md §5.1): kein Origin-Header → keine Project-Bindung,
+// : kein Origin-Header → keine Project-Bindung,
 // kein 403.
 func TestOriginEmpty_BypassesProjectBinding(t *testing.T) {
 	t.Parallel()
@@ -573,7 +573,7 @@ func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error")
 	}
-	// Reihenfolge ab plan-0.4.0 §4.2 C2: Session-Upsert läuft VOR dem
+	// Reihenfolge ab C2: Session-Upsert läuft VOR dem
 	// Event-Append, damit der Use-Case die DB-finale CorrelationID
 	// kennt, bevor Events persistiert werden (R-6-Fix). Bei einem
 	// Append-Fehler ist die Session-Zeile damit bereits angelegt; das
@@ -584,7 +584,7 @@ func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 		t.Errorf("expected 1 SessionRepository.UpsertFromEvents call (sessions persisted before append, see C2 reorder), got %d", got)
 	}
 	// Synchron fehlgeschlagenes Append ist kein Backpressure-Drop;
-	// dropped_events bleibt unverändert (API-Kontrakt §7,
+	// dropped_events bleibt unverändert (API-Kontrakt,
 	// Lastenheft 1.1.2 §7.9 nach Plan §4.2).
 	if metrics.dropped != 0 {
 		t.Errorf("expected DroppedEvents=0 (synchron fehlgeschlagenes Append ist kein Backpressure-Drop), got %d", metrics.dropped)
@@ -594,7 +594,7 @@ func TestRepoFailureDoesNotCountAsDropped(t *testing.T) {
 	}
 }
 
-// --- Trace-Korrelation und Time-Skew (plan-0.4.0 §3.2) ---------------
+// --- Trace-Korrelation und Time-Skew ---------------
 
 const uuidPattern = `^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`
 
@@ -685,7 +685,7 @@ func TestRegisterPlaybackEventBatch_MultiSession(t *testing.T) {
 // TestRegisterPlaybackEventBatch_TimeSkew verifiziert die drei
 // Schwellwert-Fälle aus telemetry-model §5.3 / §3.1: Skew exakt 60 s
 // → kein Warning (strict greater); 60 s + 1 ns → Warning; 120 s →
-// Warning. Server now() im Stub ist 2026-04-28T12:00:00.000Z.
+// Warning. Server now im Stub ist 2026-04-28T12:00:00.000Z.
 func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -713,7 +713,7 @@ func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 				t.Errorf("TimeSkewWarning (batch) = %v, want %v (boundary case)",
 					res.TimeSkewWarning, c.wantWarning)
 			}
-			// plan-0.12.6 Tranche 3 (R-5): Pro-Event-Flag muss
+			//  (R-5): Pro-Event-Flag muss
 			// exakt dem Batch-Flag entsprechen, weil hier nur ein
 			// Event im Batch ist.
 			snap := repo.appended
@@ -728,8 +728,8 @@ func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_TimeSkewPerEvent (plan-0.12.6
-// Tranche 3 / R-5): In einem Mixed-Batch mit zwei Events darf der
+// TestRegisterPlaybackEventBatch_TimeSkewPerEvent (
+// / R-5): In einem Mixed-Batch mit zwei Events darf der
 // Pro-Event-Flag unterschiedlich sein, der Batch-Flag aggregiert auf
 // „mindestens eines hat Skew".
 func TestRegisterPlaybackEventBatch_TimeSkewPerEvent(t *testing.T) {
@@ -763,7 +763,7 @@ func TestRegisterPlaybackEventBatch_TimeSkewPerEvent(t *testing.T) {
 }
 
 // TestRegisterPlaybackEventBatch_SampleRateImmutableFirstSet
-// (plan-0.12.6 Tranche 4 / R-10): erstes Event mit
+// (R-10): erstes Event mit
 // `meta.session_sample_rate < 1` setzt den Pro-Session-Wert via
 // Immutability-Set; kein Drift-Counter, weil noch nichts persistiert war.
 func TestRegisterPlaybackEventBatch_SampleRateImmutableFirstSet(t *testing.T) {
@@ -788,8 +788,8 @@ func TestRegisterPlaybackEventBatch_SampleRateImmutableFirstSet(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_SampleRateNoOpFull (plan-0.12.6
-// Tranche 4 / R-10): Wert == 1.0 ist Default — kein Set-Aufruf, kein
+// TestRegisterPlaybackEventBatch_SampleRateNoOpFull (
+// / R-10): Wert == 1.0 ist Default — kein Set-Aufruf, kein
 // Drift-Counter.
 func TestRegisterPlaybackEventBatch_SampleRateNoOpFull(t *testing.T) {
 	t.Parallel()
@@ -808,8 +808,8 @@ func TestRegisterPlaybackEventBatch_SampleRateNoOpFull(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_SampleRateDriftCounted (plan-0.12.6
-// Tranche 4 / R-10): wenn bereits ein abweichender Wert persistiert
+// TestRegisterPlaybackEventBatch_SampleRateDriftCounted (
+// / R-10): wenn bereits ein abweichender Wert persistiert
 // ist (Drift > 100 ppm), zählt der Use-Case `mtrace_sample_rate_drift_total`
 // hoch und überschreibt nicht.
 func TestRegisterPlaybackEventBatch_SampleRateDriftCounted(t *testing.T) {
@@ -838,7 +838,7 @@ func TestRegisterPlaybackEventBatch_SampleRateDriftCounted(t *testing.T) {
 }
 
 // TestRegisterPlaybackEventBatch_SampleRateDriftPositiveDelta
-// (plan-0.12.6 Tranche 4 / R-10): Drift mit existing > incoming
+// (R-10): Drift mit existing > incoming
 // (positiver Delta), um den absInt-positive-Pfad zu testen.
 func TestRegisterPlaybackEventBatch_SampleRateDriftPositiveDelta(t *testing.T) {
 	t.Parallel()
@@ -858,7 +858,7 @@ func TestRegisterPlaybackEventBatch_SampleRateDriftPositiveDelta(t *testing.T) {
 }
 
 // TestRegisterPlaybackEventBatch_SampleRateUnsupportedMetaType
-// (plan-0.12.6 Tranche 4 / R-10): wenn `meta.session_sample_rate`
+// (R-10): wenn `meta.session_sample_rate`
 // kein number-Typ ist, fängt die Use-Case-Validation den Pfad mit
 // 422 ab (validateSessionSampleRate); applySessionSampleRate sieht
 // den Event also nie. Dieser Test pinnt das Verhalten am Ingest-
@@ -876,7 +876,7 @@ func TestRegisterPlaybackEventBatch_SampleRateUnsupportedMetaType(t *testing.T) 
 }
 
 // TestRegisterPlaybackEventBatch_SampleRateDedupesSeenSession
-// (plan-0.12.6 Tranche 4 / R-10): zwei Events derselben Session im
+// (R-10): zwei Events derselben Session im
 // Batch mit `session_sample_rate` lösen den `seen`-Dedupe-Pfad in
 // `applySessionSampleRate` aus — nur das erste Event triggert das
 // Set; das zweite wird übersprungen.
@@ -902,7 +902,7 @@ func TestRegisterPlaybackEventBatch_SampleRateDedupesSeenSession(t *testing.T) {
 }
 
 // TestRegisterPlaybackEventBatch_SampleRateWithinTolerance
-// (plan-0.12.6 Tranche 4 / R-10): Rundungsartefakte innerhalb der
+// (R-10): Rundungsartefakte innerhalb der
 // ±100-ppm-Toleranz zählen NICHT als Drift.
 func TestRegisterPlaybackEventBatch_SampleRateWithinTolerance(t *testing.T) {
 	t.Parallel()
@@ -973,9 +973,9 @@ func TestRegisterPlaybackEventBatch_SessionRepoGetError(t *testing.T) {
 }
 
 // TestRegisterPlaybackEventBatch_TraceContextPropagated verifiziert,
-// dass BatchInput.Trace.TraceID und .SpanID auf jedem persistierten
+// dass BatchInput.Trace.TraceID und.SpanID auf jedem persistierten
 // Event landen — Voraussetzung für Tempo-Korrelation und für die
-// Read-Antwort aus API-Kontrakt §3.7.
+// Read-Antwort aus API-Kontrakt
 func TestRegisterPlaybackEventBatch_TraceContextPropagated(t *testing.T) {
 	t.Parallel()
 	uc, _, repo, _, _, _, _, _ := newUseCase()
@@ -997,7 +997,7 @@ func TestRegisterPlaybackEventBatch_TraceContextPropagated(t *testing.T) {
 	}
 }
 
-// plan-0.8.0 Tranche 3 — metrics_sampled-Events mit reservierten
+//  — metrics_sampled-Events mit reservierten
 // webrtc.*-Keys werden nach erfolgreicher Validation an
 // MetricsPublisher.WebRTCSample weitergegeben.
 func TestRegister_WebRTCSamplePropagatedToMetrics(t *testing.T) {

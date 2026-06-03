@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// TestOpen_FreshStart prüft, dass Open() gegen eine leere Datei das
+// TestOpen_FreshStart prüft, dass Open gegen eine leere Datei das
 // volle Schema anlegt und schema_migrations einen Eintrag mit dirty=0
 // für die einzige Migration enthält.
 func TestOpen_FreshStart(t *testing.T) {
@@ -41,21 +41,21 @@ func TestOpen_FreshStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read schema_migrations: %v", err)
 	}
-	// Ab plan-0.8.5 Tranche 2 (Migrations-Konsolidierung) ist V1 die
+	// Ab (Migrations-Konsolidierung) ist V1 die
 	// rolling Baseline und enthält den vollen Zielzustand aus
 	// schema.yaml; die historischen V2..V5 wurden gelöscht (kein
-	// Production-State). plan-0.11.0 Tranche 2 fügt V2__ingest.sql
-	// für den Ingest-Control-Pfad an, Tranche 4 dann V3 für die
+	// Production-State). fügt V2__ingest.sql
+	// für den Ingest-Control-Pfad an, dann V3 für die
 	// Lifecycle-Hook-Felder (`event_id` opak, `connection_id`,
 	// `reason`, Source-Allowlist `local-smoke`/`mediamtx-hook`).
-	// plan-0.12.0 Tranche 3 ergänzt V4__project_tokens.sql mit der
+	//  ergänzt V4__project_tokens.sql mit der
 	// `project_token_generations`-Tabelle für rotierbare Project-
-	// Token-Generationen (RAK-73). plan-0.12.5 Tranche 2 fügt
+	// Token-Generationen (RAK-73). fügt
 	// V5__auth_issuance_counters.sql mit der Shared-State-Token-
-	// Bucket-Tabelle für R-17 (RAK-77). plan-0.12.6 Tranche 3 ergänzt
+	// Bucket-Tabelle für R-17 (RAK-77). ergänzt
 	// V6__playback_event_time_skew.sql mit der `time_skew_warning`-
-	// Spalte an `playback_events` für R-5 (RAK-83). plan-0.12.6
-	// Tranche 4 ergänzt V7__session_sample_rate.sql mit der
+	// Spalte an `playback_events` für R-5 (RAK-83).
+	// ergänzt V7__session_sample_rate.sql mit der
 	// `sample_rate_ppm`-Spalte an `stream_sessions` für R-10
 	// (RAK-85). Fresh-Start läuft damit sieben Migrationen.
 	if len(rows) != 7 {
@@ -84,7 +84,7 @@ func TestOpen_FreshStart(t *testing.T) {
 	}
 }
 
-// TestOpen_ReRunIsNoop prüft, dass ein zweites Open() gegen dieselbe
+// TestOpen_ReRunIsNoop prüft, dass ein zweites Open gegen dieselbe
 // Datei keinen Fehler wirft, schema_migrations unverändert bleibt
 // **und** das Schema nach Re-Run weiter benutzbar ist (FK,
 // CHECK-Constraint, AUTOINCREMENT).
@@ -199,7 +199,7 @@ func TestApply_FailureMarksDirty(t *testing.T) {
 	}
 }
 
-// TestApply_DirtyStateRefuses prüft, dass ein nachfolgender Apply()
+// TestApply_DirtyStateRefuses prüft, dass ein nachfolgender Apply
 // gegen eine dirty=1-DB ErrSchemaDirty zurückgibt.
 func TestApply_DirtyStateRefuses(t *testing.T) {
 	ctx := context.Background()
@@ -239,7 +239,7 @@ func TestApply_DirtyStateRefuses(t *testing.T) {
 // TestApply_MultiStatementRollback prüft, dass ein Failure mitten in
 // einer Multi-Statement-Migration die ganze Migration rolled-back —
 // das erste CREATE TABLE darf NICHT übrig bleiben, wenn das zweite
-// scheitert. Andernfalls wäre `tx.Rollback()` in `applyOne` wirkungslos.
+// scheitert. Andernfalls wäre `tx.Rollback` in `applyOne` wirkungslos.
 func TestApply_MultiStatementRollback(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "m-trace.db")
@@ -343,7 +343,7 @@ func TestApply_ConcurrentWritersDoNotDeadlock(t *testing.T) {
 	}
 }
 
-// openBareDB öffnet die SQLite-Datei mit der gleichen DSN wie Open(),
+// openBareDB öffnet die SQLite-Datei mit der gleichen DSN wie Open,
 // wendet aber keine Migrationen an. Nur für Test-Setup.
 func openBareDB(ctx context.Context, path string) (*sql.DB, error) {
 	db, err := sql.Open(driverName, buildDSN(path))

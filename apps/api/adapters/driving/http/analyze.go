@@ -26,17 +26,17 @@ const maxAnalyzeRequestBytes = 1 * 1024 * 1024
 // AnalyzeHandler braucht. Implementierungen erhöhen einen Counter
 // `outcome` ∈ {ok, error} × `code` ∈ {ok, invalid_request,
 // analyzer_unavailable, …}. Cardinality bleibt damit beschränkt
-// (plan-0.3.0 §9 Tranche 7.5).
+// (.5).
 type AnalyzeMetrics interface {
 	AnalyzeRequest(outcome, code string)
 }
 
 // AnalyzeHandler bedient POST /api/analyze: Manifest-Input → Analyzer-
 // Result mit optionaler Session-Verknüpfung. Erfolg liefert die
-// `{analysis, session_link}`-Hülle aus API-Kontrakt §3.6 als JSON;
+// `{analysis, session_link}`-Hülle aus API-Kontrakt als JSON;
 // Fehler werden in eine Problem-Shape (RFC 7807-nah) gemappt.
 //
-// Auth ist endpoint-spezifisch (API-Kontrakt §4): Requests ohne
+// Auth ist endpoint-spezifisch (API-Kontrakt): Requests ohne
 // `correlation_id` und ohne `session_id` brauchen kein Token; mit
 // einem der beiden Felder ist `X-MTrace-Token` Pflicht und muss auf
 // ein bekanntes Project resolvieren — sonst 401, ohne Use-Case-Aufruf.
@@ -59,9 +59,9 @@ type analyzeRequestPayload struct {
 }
 
 // analyzeAnalysisPayload spiegelt das `analysis`-Feld der Tranche-3-
-// Wrapper-Antwort (API-Kontrakt §3.6). Inhaltlich identisch zum pre-
-// §4.5 flachen Wire-Format — aber jetzt unterhalb von `{analysis: ...,
-// session_link: ...}`.
+// Wrapper-Antwort (API-Kontrakt). Inhaltlich identisch zum pre-
+// §4.5 flachen Wire-Format — aber jetzt unterhalb von `{analysis:...,
+// session_link:...}`.
 type analyzeAnalysisPayload struct {
 	AnalyzerVersion string                  `json:"analyzerVersion"`
 	AnalyzerKind    string                  `json:"analyzerKind"`
@@ -73,7 +73,7 @@ type analyzeAnalysisPayload struct {
 }
 
 // analyzeSessionLinkPayload ist die Wire-Hülle für `session_link`
-// (API-Kontrakt §3.6). Optional-Felder werden bei `status != linked`
+// (API-Kontrakt). Optional-Felder werden bei `status != linked`
 // nicht ausgegeben (`omitempty`).
 type analyzeSessionLinkPayload struct {
 	Status        string `json:"status"`
@@ -137,7 +137,7 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// plan-0.10.0 Tranche 1: `cmaf`-/`cmaf.binary`-Block im
+	// : `cmaf`-/`cmaf.binary`-Block im
 	// öffentlichen `/api/analyze`-Request bleibt unsupported — stilles
 	// Ignorieren wäre ein Sicherheits- und Konformitätsrisiko, weil
 	// caller-seitig gesetztes `cmaf.binary.enabled:false` nicht
@@ -170,13 +170,13 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// plan-0.4.0 §4.5 — endpoint-spezifische Auth (API-Kontrakt §4):
+	//  — endpoint-spezifische Auth (API-Kontrakt):
 	// nur Requests mit `correlation_id` oder `session_id` brauchen
 	// einen gültigen `X-MTrace-Token`. Ungebundene Requests bleiben
 	// auch ohne Token erfolgreich und liefern `session_link.status=
 	// detached`.
 	//
-	// Reihenfolge weicht bewusst von API-Kontrakt §5 (Playback-Pfad
+	// Reihenfolge weicht bewusst von API-Kontrakt (Playback-Pfad
 	// `Auth-Header → Body-Read`) ab: hier hängt die Token-Pflicht
 	// vom Body-Inhalt ab, also läuft Body-Read und JSON-Parse vor
 	// dem Auth-Check. Defense-in-Depth gegen unauthentifizierte
@@ -212,7 +212,7 @@ func (h *AnalyzeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // resolveProjectForLinkedRequest erzwingt für Analyze-Requests mit
 // gesetzten Link-Feldern den Token-Pflicht-Pfad: fehlender Token,
 // unbekannter Token oder fehlender Resolver liefert 401 ohne
-// Use-Case-Aufruf (API-Kontrakt §4-Regel "kein Session-Lookup ohne
+// Use-Case-Aufruf (API-Kontrakt-Regel "kein Session-Lookup ohne
 // Project").
 func (h *AnalyzeHandler) resolveProjectForLinkedRequest(
 	ctx context.Context, w http.ResponseWriter, r *http.Request,
@@ -235,13 +235,13 @@ func (h *AnalyzeHandler) resolveProjectForLinkedRequest(
 }
 
 // buildAnalyzeResponse mappt das Use-Case-Result auf die
-// `{analysis, session_link}`-Wrapper-Antwort aus API-Kontrakt §3.6.
+// `{analysis, session_link}`-Wrapper-Antwort aus API-Kontrakt
 // Für alle erfolgreichen Requests, auch detached.
 func buildAnalyzeResponse(envelope domain.AnalyzeManifestResult) analyzeResponseEnvelope {
 	result := envelope.Analysis
 	analysis := analyzeAnalysisPayload{
 		AnalyzerVersion: result.AnalyzerVersion,
-		// AnalyzerKind kommt seit plan-0.9.0 Tranche 3 (RAK-58 /
+		// AnalyzerKind kommt seit (RAK-58 /
 		// NF-12) aus dem Domain-Modell, weil der Analyzer-Pfad
 		// jetzt `hls` oder `dash` liefern kann. Fallback `"hls"`
 		// hält den Wire-Vertrag stabil, falls ein älterer
@@ -337,19 +337,19 @@ func findingsToPayload(in []domain.StreamAnalysisFinding) []analyzeFindingPayloa
 }
 
 // mapAndWriteUseCaseError übersetzt Use-Case- und Adapter-Fehler in
-// eine Problem-Shape mit dem passenden HTTP-Statuscode (plan-0.3.0 §7
-// Tranche 6). Drei Fehlerklassen werden unterschieden:
+// eine Problem-Shape mit dem passenden HTTP-Statuscode (
+// ). Drei Fehlerklassen werden unterschieden:
 //
 //  1. Eingabevalidierung gegen den Use Case (ErrAnalyzeManifestEmpty)
-//     → 400 invalid_request.
+//  → 400 invalid_request.
 //  2. Domain-Fehler vom Analyzer (StreamAnalysisDomainError) — der
-//     Analyzer hat den Aufruf bewusst und mit Code abgelehnt. Mapping
-//     je Code: invalid_input/fetch_blocked → 400, manifest_not_hls →
-//     422, fetch_failed/manifest_too_large/internal_error → 502.
+//  Analyzer hat den Aufruf bewusst und mit Code abgelehnt. Mapping
+//  je Code: invalid_input/fetch_blocked → 400, manifest_not_hls →
+//  422, fetch_failed/manifest_too_large/internal_error → 502.
 //  3. Transportfehler (HTTP-Status, Timeout, JSON-Decode) → 502
-//     analyzer_unavailable. Die Adapter-Fehler-Message bleibt
-//     bewusst aus dem Antwort-Body (Info-Leak); sie wird strukturiert
-//     im Log abgelegt.
+//  analyzer_unavailable. Die Adapter-Fehler-Message bleibt
+//  bewusst aus dem Antwort-Body (Info-Leak); sie wird strukturiert
+//  im Log abgelegt.
 func (h *AnalyzeHandler) mapAndWriteUseCaseError(w http.ResponseWriter, err error) {
 	if errors.Is(err, application.ErrAnalyzeManifestEmpty) {
 		logWarn(h.Logger, "analyze rejected: empty input", "code", "invalid_request")

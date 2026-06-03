@@ -1,5 +1,5 @@
 // Package ratelimit holds in-memory rate limiters for the spike. Per
-// Spec §6.9 plus plan-0.1.0.md §5.1 (F-110): drei Dimensionen
+// Spec §6.9 plus (F-110): drei Dimensionen
 // (project_id, client_ip, origin) als unabhängige Token-Buckets;
 // distributed rate limiting bleibt out of scope.
 package ratelimit
@@ -37,7 +37,7 @@ type bucket struct {
 // (project_id / client_ip / origin). Jede Dimension teilt sich
 // Capacity und Refill-Rate; eine fail-fast „all-or-nothing"-Semantik
 // stellt sicher, dass ein 429 in einer Dimension keine Tokens in den
-// anderen Dimensionen verbraucht (plan-0.1.0.md §5.1).
+// anderen Dimensionen verbraucht.
 type TokenBucketRateLimiter struct {
 	capacity   int
 	refillRate float64

@@ -12,7 +12,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 2 / RAK-72: Tabellen-Test für `writeAuthError`.
+// RAK-72: Tabellen-Test für `writeAuthError`.
 // Pinnt das §3.9-Mapping für jede der zehn Fehlerklassen plus den
 // Default-Fallback und `context.Canceled`/`DeadlineExceeded`. Lebt
 // im internal-Test, weil die Funktion package-private ist.

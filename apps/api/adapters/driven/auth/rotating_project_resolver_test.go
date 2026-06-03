@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 3 / RAK-73: RotatingProjectResolver — Lifecycle
+// RAK-73: RotatingProjectResolver — Lifecycle
 // (active → grace → revoked) plus Legacy-Fallback auf den Static-
 // Resolver für `demo-token`.
 
@@ -160,7 +160,7 @@ func TestNewRotatingProjectResolver_DefaultClock(t *testing.T) {
 	if r == nil {
 		t.Fatal("ctor returned nil")
 	}
-	// Default-Clock zieht time.Now() — Resolver muss ohne Now-Override
+	// Default-Clock zieht time.Now — Resolver muss ohne Now-Override
 	// funktionieren. Legacy-Pfad hat keine Zeit-Abhängigkeit, deshalb
 	// pinnen wir den default über einen Demo-Token-Lookup.
 	project, err := r.ResolveByToken(context.Background(), "demo-token")
@@ -180,7 +180,7 @@ func TestNewRotatingProjectResolver_DefaultClockOnRotatingPath(t *testing.T) {
 	repo := inmemory.NewProjectTokenRepository()
 	r := auth.NewRotatingProjectResolver(repo, staticResolver, staticResolver)
 	// Frische Generation — NotBefore deutlich in der Vergangenheit,
-	// damit der default-Clock-Pfad in `r.now()` eine Active-Status-
+	// damit der default-Clock-Pfad in `r.now` eine Active-Status-
 	// Entscheidung trifft.
 	mat, err := domain.GenerateProjectToken("pt_default", "demo", time.Now().UTC().Add(-time.Hour), nil, nil, nil, time.Now().UTC().Add(-time.Hour))
 	if err != nil {

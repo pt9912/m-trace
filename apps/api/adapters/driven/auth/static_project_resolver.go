@@ -12,7 +12,7 @@ import (
 
 // ProjectConfig beschreibt die statische Konfiguration eines Projects:
 // Token plus optional konkrete Allowed-Origins für die CORS-Variante-B-
-// Origin-Validierung (plan-0.1.0.md §5.1). Wildcards (`*`) werden
+// Origin-Validierung. Wildcards (`*`) werden
 // abgelehnt — der Pflicht-Pfad fordert konkrete Origins.
 type ProjectConfig struct {
 	Token          string
@@ -23,7 +23,7 @@ type ProjectConfig struct {
 // project using a hardcoded reverse map (token -> project_id) und
 // hält die globale Union der Allowed-Origins über alle Projects für
 // den CORS-Preflight-Pfad bereit. Zusätzlich hält der Resolver die
-// Project-by-ID-Map, damit der `0.12.0`-Session-Token-Pfad das
+// Project-by-ID-Map, damit der Session-Token-Pfad das
 // Project nach Verify-Sub-Claim auflösen kann (RAK-72 + RAK-75).
 type StaticProjectResolver struct {
 	byToken      map[string]domain.Project
@@ -70,7 +70,7 @@ func (r *StaticProjectResolver) ResolveByToken(_ context.Context, token string) 
 
 // IsOriginInGlobalUnion gibt true zurück, wenn `origin` exakt in der
 // globalen Union aller Allowed-Origins über alle bekannten Projects
-// steht. Wird vom CORS-Preflight-Handler verwendet (plan-0.1.0.md
+// steht. Wird vom CORS-Preflight-Handler verwendet (
 // §5.1, CORS Variante B). Leerer Origin → false (Preflight ohne
 // Origin-Header existiert nicht im Browser-Pfad).
 func (r *StaticProjectResolver) IsOriginInGlobalUnion(origin string) bool {
@@ -81,7 +81,7 @@ func (r *StaticProjectResolver) IsOriginInGlobalUnion(origin string) bool {
 	return ok
 }
 
-// ResolveByID liefert das Project zur ID — `0.12.0`-Pfad, der den
+// ResolveByID liefert das Project zur ID — Pfad, der den
 // resolvierten `sub`-Claim eines Session Tokens auf einen
 // `domain.Project` mappt (RAK-72/RAK-75). Liefert
 // `domain.ErrUnauthorized` für unbekannte IDs, damit der HTTP-

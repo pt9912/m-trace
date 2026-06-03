@@ -5,10 +5,10 @@
 //
 // Aufruf:
 //
-//	go run ./scripts/coverage-overview \
-//	    -profile /out/coverage.out \
-//	    -threshold 90 \
-//	    -out /out/index.html
+//	go run./scripts/coverage-overview \
+//	 -profile /out/coverage.out \
+//	 -threshold 90 \
+//	 -out /out/index.html
 //
 // Ohne externe Abhängigkeiten — der Profil-Parser ist hand-rolled.
 // Format einer Zeile (nach `mode:`-Header):
@@ -140,7 +140,7 @@ type blockState struct {
 // parseProfile liest ein Go-Coverage-Profil und liefert Per-Datei-
 // Statement- und Covered-Counts plus die Total-Werte.
 //
-// Wichtig: `go test ./... -coverprofile=…` mergt mehrere
+// Wichtig: `go test./... -coverprofile=…` mergt mehrere
 // Test-Pakete in eine Datei und schreibt für denselben Block
 // teilweise mehrfach Einträge (einmal pro Test-Paket, das ihn
 // instrumentiert hat). Der Parser dedupliziert über

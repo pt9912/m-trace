@@ -11,9 +11,9 @@ import (
 )
 
 // ParseSigningKeysEnv baut den Signing-Key-Ring aus den
-// `0.12.5`-ENV-Variablen `MTRACE_AUTH_SIGNING_KEYS` und
+// ENV-Variablen `MTRACE_AUTH_SIGNING_KEYS` und
 // `MTRACE_AUTH_SIGNING_ACTIVE_KID` (RAK-78). Wenn beide leer sind,
-// fällt die Funktion auf den `0.12.0`-Single-Key-Pfad zurück
+// fällt die Funktion auf den Single-Key-Pfad zurück
 // (`fallbackKey`/`fallbackKID`); ein leerer Fallback-Key bedeutet
 // `noKeysConfigured == true` und der Caller muss entscheiden, ob
 // er den Lab-Default-Pfad aktiviert oder hart fehlschlägt.
@@ -126,7 +126,7 @@ func parseSigningKeysList(raw string, now time.Time) ([]domain.SessionSigningKey
 
 // newDomainSigningKey baut den Domain-`SessionSigningKey` für einen
 // frisch geladenen ENV-Key. NotBefore/RetiresAt folgen dem
-// `0.12.0`-Pattern aus `main.go` (NotBefore = -1h, RetiresAt = +365d);
+// Pattern aus `main.go` (NotBefore = -1h, RetiresAt = +365d);
 // die konkreten Werte sind nicht teil von RAK-78 und können später
 // per ENV überschrieben werden.
 func newDomainSigningKey(kid domain.SigningKeyID, secret []byte, now time.Time) domain.SessionSigningKey {

@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// `0.12.0` Tranche 3 / RAK-73: Project-Token-Generationen-Repo
+// RAK-73: Project-Token-Generationen-Repo
 // (InMemory-Variante). Spiegelnde Suite läuft in `sqlite_test`.
 
 func mintGeneration(t *testing.T, projectID, tokenID string, createdAt time.Time) domain.ProjectTokenGeneration {

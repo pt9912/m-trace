@@ -240,7 +240,7 @@ func (f *fakeIngestRepo) lifecycleSnapshot() []domain.StreamLifecycleEvent {
 	return out
 }
 
-// `0.11.0` Tranche 2 / RAK-65..RAK-67 / RAK-69 — Use-Case-Tests
+// RAK-65..RAK-67 / RAK-69 — Use-Case-Tests
 // gegen den InMemory-Repo. Cross-Project-Isolation, Duplicate-Name,
 // Missing-Endpoint, Disabled-Routing, Validate-Pfad ohne
 // Cross-Project-Leak.
@@ -307,7 +307,7 @@ func TestIngestControlService_CreateStream_HappyPath(t *testing.T) {
 }
 
 // TestIngestControlService_CreateStream_ProvisionFalseLeavesStateEmpty
-// (plan-0.12.6 Tranche 9 / R-15): Default-Pfad `Provision=false`
+// (R-15): Default-Pfad `Provision=false`
 // hinterlässt `MediaServerState=""` — der HTTP-Adapter mappt das
 // auf ein fehlendes Wire-Feld (byte-stabil zum 0.11.0-Format).
 func TestIngestControlService_CreateStream_ProvisionFalseLeavesStateEmpty(t *testing.T) {
@@ -328,7 +328,7 @@ func TestIngestControlService_CreateStream_ProvisionFalseLeavesStateEmpty(t *tes
 }
 
 // TestIngestControlService_CreateStream_ProvisionTrueWithoutAdapterIsDisabled
-// (plan-0.12.6 Tranche 9 / R-15): `Provision=true` ohne konfigurierten
+// (R-15): `Provision=true` ohne konfigurierten
 // Provisioner liefert `MediaServerState="disabled"` + Operator-Hinweis.
 func TestIngestControlService_CreateStream_ProvisionTrueWithoutAdapterIsDisabled(t *testing.T) {
 	t.Parallel()
@@ -365,7 +365,7 @@ func (s *stubProvisioner) Apply(_ context.Context, _ driven.MediaServerApplyInpu
 func (s *stubProvisioner) Rollback(_ context.Context, _, _ string) error { return nil }
 
 // TestIngestControlService_CreateStream_ProvisionAppliedFlowsThrough
-// (plan-0.12.6 Tranche 9 / R-15): konfigurierter Provisioner liefert
+// (R-15): konfigurierter Provisioner liefert
 // `applied` → Use-Case reicht das durch.
 func TestIngestControlService_CreateStream_ProvisionAppliedFlowsThrough(t *testing.T) {
 	t.Parallel()
@@ -389,7 +389,7 @@ func TestIngestControlService_CreateStream_ProvisionAppliedFlowsThrough(t *testi
 }
 
 // TestIngestControlService_CreateStream_ProvisionAdapterErrorIsFailed
-// (plan-0.12.6 Tranche 9 / R-15): Adapter-Fehler wird auf
+// (R-15): Adapter-Fehler wird auf
 // MediaServerState="failed" gemappt; API-State bleibt angelegt.
 func TestIngestControlService_CreateStream_ProvisionAdapterErrorIsFailed(t *testing.T) {
 	t.Parallel()

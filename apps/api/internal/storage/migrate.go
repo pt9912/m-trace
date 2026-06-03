@@ -3,13 +3,13 @@
 // Der Apply-Runner ist absichtlich klein: er liest SQL-Files aus dem
 // embed.FS, vergleicht mit der schema_migrations-Tabelle, und wendet
 // offene Versionen in einer einzelnen Transaktion pro Migration an.
-// Die schema_migrations-Tabelle wird hier verwaltet (ADR-0002 §8.1)
+// Die schema_migrations-Tabelle wird hier verwaltet (ADR-0002)
 // und erscheint nicht in der schema.yaml.
 //
 // Race-Schutz für konkurrierende Writer ergibt sich aus
 // `_txlock=immediate` in der DSN: SQLite akquiriert beim Transaktions-
 // start sofort den Write-Lock, alle anderen Writer blockieren bis zum
-// Commit (ADR-0002 §8.3).
+// Commit (ADR-0002).
 package storage
 
 import (
@@ -25,9 +25,9 @@ import (
 	"strings"
 	"time"
 
-	// modernc.org/sqlite registriert per init() den "sqlite"-
+	// modernc.org/sqlite registriert per init den "sqlite"-
 	// database/sql-Treiber. Der Blank-Import ist die idiomatische Form
-	// (kein direktes Paket-Symbol nötig), siehe ADR-0002 §8.1.
+	// (kein direktes Paket-Symbol nötig), siehe ADR-0002
 	_ "modernc.org/sqlite"
 )
 

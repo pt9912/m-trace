@@ -6,14 +6,14 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// plan-0.9.5 §4 Tranche 3 (extra-gates.md §3.5) — Fuzz-Target für
+//  (extra-gates.md) — Fuzz-Target für
 // die Reserved-Meta-Validation. Pinnt:
 //
-//   - Keine Panics auf jeder Kombination aus Key+Value (Strings,
-//     Zahlen, Booleans, nested Maps, Arrays).
-//   - Reserved-Namespace-Keys (`network.*`, `timing.*`, `webrtc.*`)
-//     liefern entweder nil oder ein typisiertes Validation-Error.
-//   - Nicht-reservierte Keys bleiben durch (Vorwärtskompatibilität).
+//  - Keine Panics auf jeder Kombination aus Key+Value (Strings,
+//  Zahlen, Booleans, nested Maps, Arrays).
+//  - Reserved-Namespace-Keys (`network.*`, `timing.*`, `webrtc.*`)
+//  liefern entweder nil oder ein typisiertes Validation-Error.
+//  - Nicht-reservierte Keys bleiben durch (Vorwärtskompatibilität).
 //
 // Pflicht-Bereich aus Plan §4 DoD-Item 1: „Event-Meta-Validation
 // (`webrtc.*`-Allowlist aus `0.8.0`)".
@@ -61,7 +61,7 @@ func FuzzValidateReservedEventMeta(f *testing.F) {
 
 // FuzzValidateUnavailableReason testet die Reason-Enum-Schicht (eine
 // der ältesten Reserved-Domain-Validierungen) gegen Random-Strings —
-// Pflicht-Pfad aus spec/telemetry-model.md §1.4 + Reserved-Reason-
+// Pflicht-Pfad aus spec/telemetry-model.md + Reserved-Reason-
 // Liste in `validateUnavailableReason`.
 func FuzzValidateUnavailableReason(f *testing.F) {
 	f.Add("native_hls_unavailable")

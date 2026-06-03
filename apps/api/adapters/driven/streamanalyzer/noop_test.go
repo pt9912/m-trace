@@ -12,7 +12,7 @@ import (
 // noop adapter satisfies the F-22 port without doing anything. The
 // happy-path (zero-event slice) and the populated-batch case are both
 // no-ops; both must return nil so that a use case wiring the slot
-// stays unaffected (plan-0.1.0 §5.1 F-22).
+// stays unaffected ( F-22).
 func TestNoopStreamAnalyzer_AnalyzeBatchReturnsNil(t *testing.T) {
 	t.Parallel()
 

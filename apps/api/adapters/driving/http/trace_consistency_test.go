@@ -23,15 +23,15 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 )
 
-// Tests in this file cover plan-0.4.0 §3.4a "Backend-Tests Trace-
+// Tests in this file cover "Backend-Tests Trace-
 // Konsistenz". The DoD items map as follows:
 //
-//   §3.4a #1 Multi-Batch trace consistency           -> below: TestHTTP_Trace_MultiBatchSameSessionConsistency
-//   §3.4a #2 Missing client context (no traceparent) -> below: TestHTTP_Trace_MissingTraceparent_ServerGeneratesTrace
-//   §3.4a #3 Invalid client context (parse_error)    -> already covered: traceparent_span_test.go::TestHTTP_Span_TraceParent_InvalidSetsParseError
-//   §3.4a #4 session_ended preserves correlation_id  -> below: TestHTTP_Trace_SessionEnded_PreservesCorrelationID
-//   §3.4a #5 Time-skew span attribute                -> already covered: traceparent_span_test.go::TestHTTP_Span_TimeSkew_SetsWarning
-//   §3.4a #6 NoOp-Tracer correlation_id persistence  -> below: TestHTTP_Trace_NoopTracer_CorrelationStillPersisted
+//  §3.4a #1 Multi-Batch trace consistency -> below: TestHTTP_Trace_MultiBatchSameSessionConsistency
+//  §3.4a #2 Missing client context (no traceparent) -> below: TestHTTP_Trace_MissingTraceparent_ServerGeneratesTrace
+//  §3.4a #3 Invalid client context (parse_error) -> already covered: traceparent_span_test.go::TestHTTP_Span_TraceParent_InvalidSetsParseError
+//  §3.4a #4 session_ended preserves correlation_id -> below: TestHTTP_Trace_SessionEnded_PreservesCorrelationID
+//  §3.4a #5 Time-skew span attribute -> already covered: traceparent_span_test.go::TestHTTP_Span_TimeSkew_SetsWarning
+//  §3.4a #6 NoOp-Tracer correlation_id persistence -> below: TestHTTP_Trace_NoopTracer_CorrelationStillPersisted
 //
 // The bodies below intentionally avoid the shared validBody constant
 // from handler_test.go so each test owns its session_id and event
@@ -133,7 +133,7 @@ func TestHTTP_Trace_MultiBatchSameSessionConsistency(t *testing.T) {
 // eine eigene trace_id (Span-Root), mtrace.trace.parse_error ist nicht
 // gesetzt, und die server-generierte trace_id landet im persistierten
 // Event (Voraussetzung für die Tempo-Korrelation aus
-// telemetry-model.md §2.5).
+// telemetry-model.md).
 func TestHTTP_Trace_MissingTraceparent_ServerGeneratesTrace(t *testing.T) {
 	t.Parallel()
 
@@ -253,7 +253,7 @@ func TestHTTP_Trace_SessionEnded_PreservesCorrelationID(t *testing.T) {
 
 // TestHTTP_Trace_NoopTracer_CorrelationStillPersisted deckt §3.4a #6:
 // mit einem NoOp-Tracer (hier via `nil` an `NewRouter`, der den
-// `tracenoop.NewTracerProvider().Tracer("noop")`-Fallback in
+// `tracenoop.NewTracerProvider.Tracer("noop")`-Fallback in
 // router.go aktiviert) bleiben correlation_id-Resolver und -Persistenz
 // funktionsfähig. Der Test belegt: das Dashboard kann eine Timeline
 // rein aus der lokalen Persistenz aufbauen, auch wenn kein

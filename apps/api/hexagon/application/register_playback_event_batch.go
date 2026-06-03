@@ -25,7 +25,7 @@ const SupportedSchemaVersion = "1.0"
 // MaxBatchSize is the upper bound on events per request (Spec §6.1).
 const MaxBatchSize = 100
 
-// TimeSkewThreshold ist die Konstante aus spec/telemetry-model.md §5.3:
+// TimeSkewThreshold ist die Konstante aus spec/telemetry-model.md:
 // liegt `|client_timestamp - server_received_at|` über diesem Wert,
 // markiert der Use-Case den Batch als skew-warned (kein Configuration-
 // Item in 0.4.0).
@@ -36,7 +36,7 @@ const TimeSkewThreshold = 60 * time.Second
 // Wert und dem bereits persistierten Pro-Session-Wert. Innerhalb der
 // Toleranz gilt eine Abweichung als SDK-Rundungsartefakt (silent);
 // jenseits davon zählt es als Drift und der Use-Case incrementiert
-// `mtrace_sample_rate_drift_total{project_id}` (plan-0.12.6 §6).
+// `mtrace_sample_rate_drift_total{project_id}`.
 const SampleRateDriftTolerancePPM = 100
 
 // RegisterPlaybackEventBatchUseCase validates and persists a batch of
@@ -59,11 +59,11 @@ type RegisterPlaybackEventBatchUseCase struct {
 
 // NewRegisterPlaybackEventBatchUseCase wires the use case with its
 // driven ports. If now is nil, time.Now is used. analyzer ist die
-// F-22-Architektur-Vorbereitung (siehe plan-0.1.0.md §5.1, F-22-Item):
-// der Slot wird gesetzt, AnalyzeBatch jedoch erst ab 0.3.0 produktiv
+// F-22-Architektur-Vorbereitung (siehe, F-22-Item):
+// der Slot wird gesetzt, AnalyzeBatch jedoch erst produktiv
 // aufgerufen; bis dahin trägt main.go einen NoopStreamAnalyzer ein.
 // sequencer liefert die serverseitige ingest_sequence pro Event vor
-// dem Append (plan-0.1.0.md §5.1). sessions hält den aggregierten
+// dem Append. sessions hält den aggregierten
 // Session-State, der nach jedem akzeptierten Batch via
 // UpsertFromEvents fortgeschrieben wird.
 func NewRegisterPlaybackEventBatchUseCase(
@@ -94,7 +94,7 @@ func NewRegisterPlaybackEventBatchUseCase(
 }
 
 // WithBroker setzt den optionalen EventBroker für SSE-Live-Updates
-// (plan-0.4.0 §5 H4). Production-Wiring (`cmd/api`) ruft das, Tests
+// ( H4). Production-Wiring (`cmd/api`) ruft das, Tests
 // können den Broker injizieren oder weglassen.
 func (u *RegisterPlaybackEventBatchUseCase) WithBroker(broker *EventBroker) *RegisterPlaybackEventBatchUseCase {
 	u.broker = broker
@@ -102,11 +102,11 @@ func (u *RegisterPlaybackEventBatchUseCase) WithBroker(broker *EventBroker) *Reg
 }
 
 // RegisterPlaybackEventBatch implements the validation order of
-// spec/backend-api-contract.md §5 from step 3 onwards. Steps 1
+// spec/backend-api-contract.md from step 3 onwards. Steps 1
 // (X-MTrace-Token header presence) and 2 (body size) are the HTTP
 // adapter's responsibility.
 //
-// Counter semantics (API-Kontrakt §7, harmonisiert mit Lastenheft 1.1.2
+// Counter semantics (API-Kontrakt, harmonisiert mit Lastenheft 1.1.2
 // §7.9): mtrace_invalid_events_total zählt nur Validierungs-Rejects
 // mit Status 400/422 (Schema, Batch-Form, Event-Felder). Auth-Fehler
 // (401) — sowohl ResolveByToken als auch Token/Project-Bindung —
@@ -130,9 +130,9 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, err
 	}
 
-	// plan-0.4.0 §4.4 D2: `session_boundaries[]` atomar mit den Events
+	//  D2: `session_boundaries[]` atomar mit den Events
 	// validieren — invalider Block persistiert weder Events noch
-	// Boundaries und erhöht `accepted` nicht (API-Kontrakt §3.4). Die
+	// Boundaries und erhöht `accepted` nicht (API-Kontrakt). Die
 	// Validation läuft nach den Event-Pflichtchecks, damit der
 	// Partition-Match (Boundary referenziert eine Session, die im
 	// selben Batch ein Event trägt) auf den geparsten Events arbeitet.
@@ -153,7 +153,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		parsed[i].CorrelationID = correlations[parsed[i].SessionID]
 	}
 
-	// Step 10 — persist + accept. Reihenfolge ab plan-0.4.0 §4.2 C2
+	// Step 10 — persist + accept. Reihenfolge ab C2
 	// (R-6-Fix): zuerst Sessions upserten, damit DB-finale
 	// `correlation_id` (Sieger des Race auf einer noch unbekannten
 	// `(project_id, session_id)`) feststeht; danach Events mit dieser
@@ -179,7 +179,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 			correlations[parsed[i].SessionID] = cid
 		}
 	}
-	// plan-0.12.6 Tranche 4 / R-10: persistiere Pro-Session-
+	//  / R-10: persistiere Pro-Session-
 	// `sample_rate_ppm` (immutable, erstmaliger Sub-1-Wert) und zähle
 	// Drift gegen den bereits persistierten Wert. Reihenfolge zwischen
 	// UpsertFromEvents und AppendBoundaries: Boundaries hängen am
@@ -190,7 +190,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	if err := u.applySessionSampleRate(ctx, parsed); err != nil {
 		return driving.BatchResult{}, err
 	}
-	// plan-0.4.0 §4.4 D2: Boundaries nach Sessions-Upsert persistieren,
+	//  D2: Boundaries nach Sessions-Upsert persistieren,
 	// damit der Boundary-Record auf eine in `stream_sessions`-bestätigte
 	// Partition verweist. Reihenfolge bleibt: Sessions → Boundaries →
 	// Events; ein Boundary-Append-Fehler bricht den Batch ab, ohne
@@ -202,7 +202,7 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 		return driving.BatchResult{}, err
 	}
 
-	// plan-0.4.0 §5 H4: SSE-Subscriber bekommen einen Mindestframe pro
+	//  H4: SSE-Subscriber bekommen einen Mindestframe pro
 	// erfolgreich persistiertem Event. Publish ist non-blocking; slow
 	// Subscriber droppen den Frame und schließen die Lücke per
 	// `Last-Event-ID`-Reconnect.
@@ -222,18 +222,18 @@ func (u *RegisterPlaybackEventBatchUseCase) RegisterPlaybackEventBatch(
 	}, nil
 }
 
-// authorizeAndAdmit deckt API-Kontrakt §5 Steps 3–7 ab: Token →
+// authorizeAndAdmit deckt API-Kontrakt Steps 3–7 ab: Token →
 // Project, Origin-Allowlist, Rate-Limit, Schema-Version und Batch-
-// Größenbedingungen. Counter-Semantik (API-Kontrakt §7): Auth-Fehler
+// Größenbedingungen. Counter-Semantik (API-Kontrakt): Auth-Fehler
 // zählen nicht in invalid_events; Schema-/Größen-Rejects zählen die
 // volle Batch-Größe. Origin="" überspringt Project-Bindung
-// (CLI/curl/Lab-Flow, plan-0.1.0.md §5.1).
+// (CLI/curl/Lab-Flow, ).
 func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
 	ctx context.Context, in driving.BatchInput,
 ) (domain.Project, error) {
 	var project domain.Project
 	if in.PreResolvedProject != nil {
-		// `0.12.0`-Pfad: HTTP-Adapter hat den Auth-Header bereits über
+		// Pfad: HTTP-Adapter hat den Auth-Header bereits über
 		// den Session-Token-Pfad aufgelöst. Use-Case überspringt
 		// ResolveByToken; alle nachfolgenden Stufen (Origin-Allowlist,
 		// Rate-Limit, Schema, Batch-Größe) gelten unverändert.
@@ -261,7 +261,7 @@ func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
 		u.metrics.InvalidEvents(len(in.Events))
 		return domain.Project{}, domain.ErrSchemaVersionMismatch
 	}
-	// Empty batch: 422 ohne Counter-Increment (Lastenheft §7.9 — der
+	// Empty batch: 422 ohne Counter-Increment (der
 	// Counter zählt Events, nicht Batches; n=0 also kein Increment).
 	if len(in.Events) == 0 {
 		return domain.Project{}, domain.ErrBatchEmpty
@@ -273,7 +273,7 @@ func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
 	return project, nil
 }
 
-// parseEvents deckt API-Kontrakt §5 Steps 8–9 ab: per-Event-Feldcheck,
+// parseEvents deckt API-Kontrakt Steps 8–9 ab: per-Event-Feldcheck,
 // Token/Project-Bindung und Time-Skew-Detection (telemetry-model.md
 // §5.3, Schwelle 60 s). Liefert die domain-PlaybackEvent-Liste plus
 // das Skew-Warning-Flag, das einmal aktiv für den ganzen Batch gilt.
@@ -302,7 +302,7 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 		if eventSkew {
 			timeSkewWarning = true
 		}
-		// plan-0.4.0 §4.4 D1: reservierte Meta-Keys vor Persistenz
+		//  D1: reservierte Meta-Keys vor Persistenz
 		// typvalidieren (422 bei Domänen-/Typ-/Requires-Verstoß), dann
 		// URL-Redaction für alle URL-verdächtigen Meta-Keys ausführen.
 		// Reihenfolge ist verbindlich: Validation prüft den strikten
@@ -338,11 +338,11 @@ func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 // resolveCorrelationIDs liefert für jede distinct session_id im Batch
 // die zugehörige CorrelationID — entweder aus der bereits bekannten
 // Session oder neu generiert. Verhalten:
-//   - Bekannte Session mit nicht-leerer CorrelationID → übernimm.
-//   - Bekannte Session ohne CorrelationID (Legacy / Test) → generiere
-//     eine neue (Self-Healing für Daten von vor §3.2-Closeout).
-//   - Unbekannte Session → generiere eine neue. UpsertFromEvents
-//     übernimmt sie aus dem Event-Wert beim Insert.
+//  - Bekannte Session mit nicht-leerer CorrelationID → übernimm.
+//  - Bekannte Session ohne CorrelationID (Legacy / Test) → generiere
+//  eine neue (Self-Healing für Daten von vor §3.2-Closeout).
+//  - Unbekannte Session → generiere eine neue. UpsertFromEvents
+//  übernimmt sie aus dem Event-Wert beim Insert.
 func (u *RegisterPlaybackEventBatchUseCase) resolveCorrelationIDs(
 	ctx context.Context, events []domain.PlaybackEvent,
 ) (map[string]string, error) {
@@ -379,7 +379,7 @@ func (u *RegisterPlaybackEventBatchUseCase) resolveCorrelationIDs(
 // collectEventSessions sammelt die Set der `session_id`-Werte, die im
 // geparsten Event-Array vorkommen. Boundary-Validation prüft gegen
 // dieses Set, dass jede Boundary einer Partition mit mindestens einem
-// Event im selben Batch zugeordnet ist (API-Kontrakt §3.4).
+// Event im selben Batch zugeordnet ist (API-Kontrakt).
 func collectEventSessions(events []domain.PlaybackEvent) map[string]struct{} {
 	out := make(map[string]struct{}, len(events))
 	for _, e := range events {
@@ -451,7 +451,7 @@ func (u *RegisterPlaybackEventBatchUseCase) publishPlaybackMetrics(events []doma
 
 // publishWebRTCSamples ruft `MetricsPublisher.WebRTCSample` für jedes
 // `metrics_sampled`-Event mit reservierten webrtc.*-Keys auf
-// (plan-0.8.0 §4 Tranche 3, spec/telemetry-model.md §3.5.1). Die
+// (spec/telemetry-model.md). Die
 // Wire-Validierung in `validateReservedEventMeta` hat zu diesem
 // Zeitpunkt schon sichergestellt, dass alle Pflichtfelder typkorrekt
 // und in der Allowlist sind; fehlende optionale Felder lassen die
@@ -560,17 +560,17 @@ func copyEventMeta(in map[string]any) map[string]any {
 }
 
 // applySessionSampleRate verarbeitet `meta.session_sample_rate` pro
-// distinct (project_id, session_id)-Partition im Batch (plan-0.12.6
+// distinct (project_id, session_id)-Partition im Batch (
 // §6 / R-10). Per-Session-Logik:
 //
-//   - Wert fehlt oder == 1.0 → no-op (Session bleibt voll-gesampelt-
-//     Default in der DB).
-//   - Wert < 1.0 → normalisiere via `domain.SampleRatePPMFromFloat`.
-//     - Server-State == Default: persistiert via Immutability-Set.
-//     - Server-State != Default und Abweichung außerhalb
-//       `SampleRateDriftTolerancePPM`: incrementiert
-//       `mtrace_sample_rate_drift_total{project_id}`; existing-Wert
-//       wird NICHT überschrieben.
+//  - Wert fehlt oder == 1.0 → no-op (Session bleibt voll-gesampelt-
+//  Default in der DB).
+//  - Wert < 1.0 → normalisiere via `domain.SampleRatePPMFromFloat`.
+//  - Server-State == Default: persistiert via Immutability-Set.
+//  - Server-State != Default und Abweichung außerhalb
+//  `SampleRateDriftTolerancePPM`: incrementiert
+//  `mtrace_sample_rate_drift_total{project_id}`; existing-Wert
+//  wird NICHT überschrieben.
 //
 // Der erste session_sample_rate-Wert im Batch pro Session entscheidet —
 // spätere Events derselben Session im selben Batch werden ignoriert

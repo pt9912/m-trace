@@ -10,7 +10,7 @@ import (
 
 // MaxSessionBoundaries ist die obere Grenze für `session_boundaries[]`
 // pro Batch aus contracts/event-schema.json#batch.max_session_boundaries
-// und API-Kontrakt §3.4.
+// und API-Kontrakt
 const MaxSessionBoundaries = 20
 
 // isReservedBoundaryKind erlaubt aktuell nur "network_signal_absent"

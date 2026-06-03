@@ -3,11 +3,11 @@
 #
 # Stellt sicher, dass die Hexagon-Pakete keine direkten Imports auf
 # Adapter, Infrastruktur-Bibliotheken oder über die Hexagon-Schichten-
-# grenzen hinweg haben. Bezug: spec/architecture.md §3.2, §3.4.
+# grenzen hinweg haben. Bezug: spec/architecture.md, §3.4.
 #
 # Nutzung:
-#   cd apps/api
-#   bash scripts/check-architecture.sh
+#  cd apps/api
+#  bash scripts/check-architecture.sh
 #
 # Exit 0 = ok, Exit 1 = mindestens ein Verstoß gefunden.
 set -euo pipefail

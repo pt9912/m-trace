@@ -9,7 +9,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// Reservierte Meta-Keys aus spec/telemetry-model.md §1.4 und
+// Reservierte Meta-Keys aus spec/telemetry-model.md und
 // contracts/event-schema.json. Werden inbound vor Persistenz
 // typvalidiert; Verstöße liefern 422 (domain.ErrInvalidEvent) und
 // werden nicht persistiert.
@@ -78,7 +78,7 @@ func isReservedNetworkDetailStatus(s string) bool {
 // isNetworkUnavailableReason spiegelt
 // contracts/event-schema.json#network_unavailable_reasons (gemeinsamer
 // Reason-Enum mit session_boundaries[].reason; einziger normativer
-// Anker in spec/telemetry-model.md §1.4).
+// Anker in spec/telemetry-model.md).
 func isNetworkUnavailableReason(s string) bool {
 	switch s {
 	case "native_hls_unavailable",
@@ -95,9 +95,9 @@ func isNetworkUnavailableReason(s string) bool {
 
 // validateReservedEventMeta prüft typ- und domänenspezifisch die
 // reservierten `network.*`- und `timing.*`-Keys aus
-// spec/telemetry-model.md §1.4. Verstöße werden vor Persistenz mit
+// spec/telemetry-model.md Verstöße werden vor Persistenz mit
 // 422 abgewiesen. Nicht-reservierte Keys bleiben unangetastet
-// (Vorwärtskompatibilität nach API-Kontrakt §3.4 — alte Backends
+// (Vorwärtskompatibilität nach API-Kontrakt — alte Backends
 // ignorieren unbekannte additive Keys).
 func validateReservedEventMeta(meta domain.EventMeta) error {
 	if len(meta) == 0 {
@@ -159,7 +159,7 @@ func validateSessionSampleRate(key string, v any) error {
 // validateWebRTCKeyValue prüft den reservierten webrtc.*-Namespace
 // gegen contracts/event-schema.json#reserved_meta_keys (`webrtc.*`-
 // Allowlist) und das Forbidden-Verbot aus
-// spec/telemetry-model.md §3.1 (Per-Identifier-Felder wie track_id,
+// spec/telemetry-model.md (Per-Identifier-Felder wie track_id,
 // candidate_pair_id, ssrc, user_agent). Unbekannte webrtc.*-Keys
 // werden mit 422 abgewiesen — der Adapter darf nur in der Allowlist
 // dokumentierte Keys senden.
@@ -312,7 +312,7 @@ func requireEnumString(key string, v any, allowed func(string) bool) error {
 }
 
 // validateUnavailableReason prüft den Reason gegen Enum + Pattern aus
-// spec/telemetry-model.md §1.4.
+// spec/telemetry-model.md
 func validateUnavailableReason(key string, v any) error {
 	s, ok := v.(string)
 	if !ok {

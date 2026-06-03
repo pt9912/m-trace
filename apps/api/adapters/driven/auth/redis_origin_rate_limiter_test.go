@@ -9,8 +9,8 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 )
 
-// TestRedisOrigin_HappyPath_CrossInstanceSharing (plan-0.12.6
-// Tranche 7 / R-22-Resttrigger): zwei Limiter-Instanzen teilen das
+// TestRedisOrigin_HappyPath_CrossInstanceSharing (
+// / R-22-Resttrigger): zwei Limiter-Instanzen teilen das
 // Bucket über Redis.
 func TestRedisOrigin_HappyPath_CrossInstanceSharing(t *testing.T) {
 	t.Parallel()
@@ -118,7 +118,7 @@ func TestRedisOrigin_NilClient(t *testing.T) {
 	}
 }
 
-// TestRedisOrigin_ConstructorDefaults (plan-0.12.6 Tranche 7): leere
+// TestRedisOrigin_ConstructorDefaults: leere
 // `KeyPrefix`/`TTLSeconds`/`Now`-Felder fallen auf Defaults zurück.
 func TestRedisOrigin_ConstructorDefaults(t *testing.T) {
 	t.Parallel()
@@ -134,7 +134,7 @@ func TestRedisOrigin_ConstructorDefaults(t *testing.T) {
 	}
 }
 
-// TestRedisOrigin_FailOpenLogger (plan-0.12.6 Tranche 7): fail-open
+// TestRedisOrigin_FailOpenLogger: fail-open
 // mit Logger deckt den `failModeName(failOpen=true)`-Pfad ab.
 func TestRedisOrigin_FailOpenLogger(t *testing.T) {
 	t.Parallel()
@@ -153,7 +153,7 @@ func TestRedisOrigin_FailOpenLogger(t *testing.T) {
 	}
 }
 
-// TestRedisOrigin_FailClosedLogger (plan-0.12.6 Tranche 7): non-nil
+// TestRedisOrigin_FailClosedLogger: non-nil
 // Logger deckt den `handleRedisError`-Log-Pfad ab.
 func TestRedisOrigin_FailClosedLogger(t *testing.T) {
 	t.Parallel()

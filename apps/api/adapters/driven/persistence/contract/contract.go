@@ -1,5 +1,5 @@
 // Package contract bündelt die kanonische Test-Suite für alle
-// driven-Persistence-Adapter (siehe `plan-0.4.0.md` §2.3 DoD).
+// driven-Persistence-Adapter (siehe `` §2.3 DoD).
 // Factories aus `inmemory_test` und `sqlite_test` rufen `RunAll` auf
 // und garantieren damit identisches Verhalten beider Implementierungen
 // gegen denselben Test-Korpus. Das Paket importiert `testing` analog
@@ -245,7 +245,7 @@ func testSessionEndedIdempotent(t *testing.T, factory Factory) {
 	if got.EventCount != 3 {
 		t.Errorf("event_count = %d, want 3 (verspätete Events zählen weiter)", got.EventCount)
 	}
-	// plan-0.4.0 §5 H1: end_source = "client" bei explizitem
+	//  H1: end_source = "client" bei explizitem
 	// session_ended.
 	if got.EndSource != domain.SessionEndSourceClient {
 		t.Errorf("end_source = %q, want %q", got.EndSource, domain.SessionEndSourceClient)
@@ -300,7 +300,7 @@ func testSweepTransitions(t *testing.T, factory Factory) {
 	if got.EndedAt == nil || !got.EndedAt.Equal(t0.Add(20*time.Minute)) {
 		t.Errorf("ended_at = %v, want %v", got.EndedAt, t0.Add(20*time.Minute))
 	}
-	// plan-0.4.0 §5 H1: Sweep-Ende setzt end_source = "sweeper".
+	//  H1: Sweep-Ende setzt end_source = "sweeper".
 	if got.EndSource != domain.SessionEndSourceSweeper {
 		t.Errorf("end_source after sweep = %q, want %q", got.EndSource, domain.SessionEndSourceSweeper)
 	}
@@ -561,7 +561,7 @@ func testEventMetaRoundTrip(t *testing.T, factory Factory) {
 // (TraceID, SpanID, CorrelationID an Events; CorrelationID an
 // Sessions) durch Append+ListBySession und UpsertFromEvents+Get
 // byte-identisch wiederkommen — die Pflicht aus
-// `plan-0.4.0.md` §3.2 und `spec/telemetry-model.md` §2.5.
+// `` §3.2 und `spec/telemetry-model.md` §2.5.
 func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 	ctx := context.Background()
 	r := factory(t)
@@ -648,7 +648,7 @@ func testTraceFieldsRoundTrip(t *testing.T, factory Factory) {
 	}
 }
 
-// testCrossProjectSessionIsolation deckt plan-0.4.0 §4.2 C3 ab:
+// testCrossProjectSessionIsolation deckt C3 ab:
 // dieselbe `session_id` in zwei Projekten muss als zwei voneinander
 // unabhängige Sessions geführt werden. List/Cursor, Get/Detail,
 // ListBySession und GetByCorrelationID dürfen nie projektübergreifend

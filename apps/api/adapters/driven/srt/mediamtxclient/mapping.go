@@ -9,7 +9,7 @@ import (
 
 // srtConnsListResponse spiegelt die MediaMTX-Antwort von
 // `GET /v3/srtconns/list` so weit wie nötig. Felder sind exakt nach
-// Probe-Befund (plan-0.6.0 §2.4) plus Fixture
+// Probe-Befund plus Fixture
 // `spec/contract-fixtures/srt/mediamtx-srtconns-list.json` benannt.
 type srtConnsListResponse struct {
 	ItemCount int           `json:"itemCount"`
@@ -44,11 +44,11 @@ type srtConnItem struct {
 }
 
 // mapItem konvertiert einen MediaMTX-Eintrag in einen Domain-Sample.
-// Konventionen aus spec/telemetry-model.md §7.1:
-//   - mbpsLinkCapacity × 1_000_000 → AvailableBandwidthBPS (bps)
-//   - mbpsReceiveRate × 1_000_000 → ThroughputBPS (optional)
-//   - bytesReceived (string) → SourceSequence (Surrogat-Sequence)
-//   - state ∈ {"publish","read"} → ConnectionStateConnected
+// Konventionen aus spec/telemetry-model.md:
+//  - mbpsLinkCapacity × 1_000_000 → AvailableBandwidthBPS (bps)
+//  - mbpsReceiveRate × 1_000_000 → ThroughputBPS (optional)
+//  - bytesReceived (string) → SourceSequence (Surrogat-Sequence)
+//  - state ∈ {"publish","read"} → ConnectionStateConnected
 //
 // `requiredBandwidth` ist optional — nil deaktiviert die
 // Bandbreiten-Bewertung (Evaluate behandelt das gemäß spec §7.4 als
@@ -66,7 +66,7 @@ func mapItem(it srtConnItem, collectedAt time.Time, requiredBandwidth *int64) do
 	// `mbpsLinkCapacity` <= 0 markiert die Quelle als partial; das
 	// abgeleitete `AvailableBandwidthBPS`-Domain-Feld bleibt dann
 	// 0, statt einen negativen oder Float-Truncation-Sentinel ins
-	// Domain leaken zu lassen (Fuzz-Befund plan-0.9.5 §4 Tranche 3:
+	// Domain leaken zu lassen (Fuzz-Befund:
 	// `mbpsLinkCapacity=-1` produzierte zuvor
 	// `AvailableBandwidthBPS=-1_000_000`).
 	var available int64

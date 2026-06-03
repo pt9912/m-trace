@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-// plan-0.4.0 §4.7 — End-to-End-Tests für die gemischte Korrelation
+//  — End-to-End-Tests für die gemischte Korrelation
 // und die Degradationsmatrix. Spec-Anker:
 // `spec/telemetry-model.md` §2.5 (correlation_id vs trace_id),
-// §1.4 (network.*-Meta + session_boundaries[]); API-Kontrakt §3.6.
+// §1.4 (network.*-Meta + session_boundaries[]); API-Kontrakt
 
 // TestE2E_MixedEventTypes_ShareCorrelationID pinnt §4.7 DoD-Item 1:
 // Innerhalb einer Session tragen alle Event-Typen — Player-,
@@ -97,7 +97,7 @@ func TestE2E_CrossBatch_SameCorrelationID(t *testing.T) {
 	}
 }
 
-// TestE2E_TimeSkewPersistedPerEvent (plan-0.12.6 Tranche 3 / R-5):
+// TestE2E_TimeSkewPersistedPerEvent (R-5):
 // Pro-Event-`time_skew_warning` ist im Detail-Read-Body sichtbar.
 // Setup nutzt fixe Server-Clock auf 2026-04-28T12:05:00Z; Event 1
 // hat client_timestamp = 12:05:00 (kein Skew), Event 2 hat

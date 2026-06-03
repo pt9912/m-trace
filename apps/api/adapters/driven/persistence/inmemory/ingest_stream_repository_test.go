@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// `0.11.0` Tranche 2 — InMemory-Adapter-Tests für den
+//  — InMemory-Adapter-Tests für den
 // IngestStreamRepository-Driven-Port. Spiegelt die Verhaltensregeln
 // aus `apps/api/hexagon/application/ingest_control_service_test.go`,
 // damit der Adapter eigenständig coverable ist und der gemeinsame

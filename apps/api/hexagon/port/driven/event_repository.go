@@ -15,7 +15,7 @@ import (
 // in-memory implementation; production will likely move to an event
 // store. Implementations must be safe for concurrent use.
 //
-// Ab plan-0.4.0 §4.2 sind die Read-Pfade projekt-skopiert: ein Event-
+// Ab sind die Read-Pfade projekt-skopiert: ein Event-
 // Cursor aus Project A darf weder Treffer in Project B liefern noch
 // Cross-Project-Vermischung produzieren.
 type EventRepository interface {
@@ -25,12 +25,12 @@ type EventRepository interface {
 	// asc, ingest_sequence asc). Limit und optionaler After-Cursor
 	// steuern die Pagination — siehe driving.GetSessionInput. Der
 	// Adapter ist für die Sortierung verantwortlich; der Use Case
-	// clampt nur Limit und prüft Cursor-Validität (plan-0.1.0.md §5.1).
+	// clampt nur Limit und prüft Cursor-Validität.
 	ListBySession(ctx context.Context, q EventListQuery) (EventPage, error)
 	// ListAfterIngestSequence liefert Events eines Projects mit
 	// `ingest_sequence > afterSeq`, sortiert aufsteigend nach
 	// `ingest_sequence`. Maximal `limit` Treffer. Nutzung: SSE-
-	// `Last-Event-ID`-Backfill (plan-0.4.0 §5 H4; spec §10a). Der
+	// `Last-Event-ID`-Backfill ( H4; spec §10a). Der
 	// Aufrufer entscheidet, ob ein Truncation-Marker an den
 	// Konsumenten geht, wenn `len(out) == limit` ist.
 	ListAfterIngestSequence(ctx context.Context, projectID string, afterSeq int64, limit int) ([]domain.PlaybackEvent, error)

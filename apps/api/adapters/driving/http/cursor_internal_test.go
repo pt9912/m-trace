@@ -18,7 +18,7 @@ import (
 // neutralisieren — keine Verluste in StartedAt (auf nano-Genauigkeit
 // im UTC-Frame) und SessionID. Cursor-v3 trägt zusätzlich einen
 // Project-Scope (`pid`), der beim Decode gegen den Request-Project-
-// Kontext geprüft wird (plan-0.4.0 §4.3 / API-Kontrakt §10.3).
+// Kontext geprüft wird (API-Kontrakt).
 func TestEncodeDecodeListSessionsCursor_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := &driving.ListSessionsCursor{
@@ -98,8 +98,8 @@ func TestDecodeListSessionsCursor_Malformed(t *testing.T) {
 
 // TestDecodeListSessionsCursor_Legacy verifiziert die dauerhafte
 // Reject-Klasse: Cursor ohne `v`-Feld oder mit `v=1`/`v=2` aus dem
-// `0.1.x`-/`0.2.0`-/`0.3.x`-Format → `errCursorInvalidLegacy`. v=2
-// gilt ab plan-0.4.0 §4.3 als Legacy, weil ihm der Project-Scope
+// `0.1.x`-//`0.3.x`-Format → `errCursorInvalidLegacy`. v=2
+// gilt ab als Legacy, weil ihm der Project-Scope
 // fehlt.
 func TestDecodeListSessionsCursor_Legacy(t *testing.T) {
 	t.Parallel()
@@ -200,7 +200,7 @@ func encodeRaw(raw string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(raw))
 }
 
-// TestEncodeDecodeSrtHealthCursor_RoundTrip (plan-0.12.6 Tranche 2):
+// TestEncodeDecodeSrtHealthCursor_RoundTrip:
 // encode→decode-Roundtrip mit Collection-Scope (pid, sid). Cursor
 // muss IngestedAt UTC-normalisiert zurückliefern (RFC3339Nano-
 // Serialisierung schluckt Sub-Nano-Genauigkeit nicht).

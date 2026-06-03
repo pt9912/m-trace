@@ -22,11 +22,11 @@ import (
 const rfc3339Millis = "2006-01-02T15:04:05.000Z07:00"
 
 // SrtHealthInbound ist der Driving-Port für die SRT-Health-Read-
-// Pfade (plan-0.6.0 §5 Tranche 4 — RAK-43, spec/backend-api-contract.md
+// Pfade (RAK-43, spec/backend-api-contract.md
 // §7a). Application-Layer implementiert das Interface über
 // SrtHealthQueryService.
 //
-// HistoryByStream akzeptiert ab plan-0.12.6 Tranche 2 einen
+// HistoryByStream akzeptiert ab einen
 // optionalen Cursor (`after`) und liefert eine Page mit
 // optionalem Folge-Cursor (spec §7a.3). Der Cursor ist die Repo-
 // Sicht (`driven.SrtHealthCursor`); der HTTP-Adapter codiert ihn in

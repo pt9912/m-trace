@@ -9,7 +9,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 1 / RAK-73: Project-Token-Generationen, Status-
+// RAK-73: Project-Token-Generationen, Status-
 // Evaluation, Hash-Vergleich in konstanter Zeit, Klartext-/Hash-/
 // Fingerprint-Trennung. Tests laufen ohne HTTP, Storage oder Crypto-
 // Library.

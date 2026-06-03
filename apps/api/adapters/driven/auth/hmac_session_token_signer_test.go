@@ -10,7 +10,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 2 / RAK-72: Sign-/Verify-Round-Trip,
+// RAK-72: Sign-/Verify-Round-Trip,
 // `kid`-Lookup, restart-stabile Verifikation und Tampering-
 // Detection.
 

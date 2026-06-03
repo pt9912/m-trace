@@ -7,16 +7,16 @@ import (
 	"testing"
 )
 
-// `0.12.0` Tranche 5 — Schema-Snapshot-Tests gegen die Auth-
+//  — Schema-Snapshot-Tests gegen die Auth-
 // Fixtures aus spec/contract-fixtures/api/. Die Werte
 // (`token_id`, `expires_at`, JWT-`value`) ändern sich pro Lab-Run;
 // geprüft wird die Schlüssel-Struktur der Wire-Antwort plus harte
 // Asserts auf sicherheitsrelevante Invarianten:
-//   - Klartext `session_token.value` darf nur in der Issuance-
-//     Antwort erscheinen, nirgends sonst.
-//   - Fehler-Bodies tragen nur `status`, `code`, `message` —
-//     keine Identifier, die der Aufrufer als Existenz- oder
-//     Project-Hinweis interpretieren könnte.
+//  - Klartext `session_token.value` darf nur in der Issuance-
+//  Antwort erscheinen, nirgends sonst.
+//  - Fehler-Bodies tragen nur `status`, `code`, `message` —
+//  keine Identifier, die der Aufrufer als Existenz- oder
+//  Project-Hinweis interpretieren könnte.
 //
 // `make sync-contract-fixtures` kopiert die Quell-JSONs aus
 // spec/contract-fixtures/api/ in dieses testdata/-Verzeichnis,

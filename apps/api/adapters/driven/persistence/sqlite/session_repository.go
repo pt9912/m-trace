@@ -16,14 +16,14 @@ import (
 // SessionRepository ist die durable Variante des
 // driven.SessionRepository-Ports gegen die SQLite-Datei aus
 // internal/storage. Application- und Domain-Layer bleiben SQLite-frei
-// (ADR-0002 §8.2).
+// (ADR-0002).
 //
 // Idempotenz aus §8.3:
-//   - UpsertFromEvents legt unbekannte Sessions an, aktualisiert
-//     bekannte LastEventAt/EventCount, und schaltet auf Ended bei
-//     `event_name == "session_ended"`. Ein zweiter Upsert mit demselben
-//     session_ended-Event lässt EndedAt unverändert.
-//   - Sweep ist idempotent: bereits Ended-Sessions bleiben unangetastet.
+//  - UpsertFromEvents legt unbekannte Sessions an, aktualisiert
+//  bekannte LastEventAt/EventCount, und schaltet auf Ended bei
+//  `event_name == "session_ended"`. Ein zweiter Upsert mit demselben
+//  session_ended-Event lässt EndedAt unverändert.
+//  - Sweep ist idempotent: bereits Ended-Sessions bleiben unangetastet.
 //
 // Einzelne Operationen laufen in einer Transaktion (BEGIN IMMEDIATE
 // via DSN), damit Concurrent-Reader/Writer eindeutige Snapshots sehen.
@@ -31,7 +31,7 @@ import (
 // UpsertFromEvents stellt sicher, dass das Project vor der Session-
 // Insert existiert.
 //
-// Ab plan-0.4.0 §4.2 nutzt das Repository den projekt-skopierten
+// Ab nutzt das Repository den projekt-skopierten
 // Composite-Key `(project_id, session_id)`; alle Reads filtern in
 // WHERE-Clauses nach `project_id`, der `ON CONFLICT`-Pfad zielt auf
 // den Composite-PK.
@@ -55,7 +55,7 @@ ON CONFLICT(project_id) DO NOTHING`
 	// (project_id, session_id) beide nach Get → ErrSessionNotFound
 	// springen und jeweils eine eigene UUIDv4 für `correlation_id`
 	// zuweisen. Mit ON CONFLICT bleibt der Sieger durchgehen; der
-	// Verlust-Race-Aufruf signalisiert das via `RowsAffected() == 0`,
+	// Verlust-Race-Aufruf signalisiert das via `RowsAffected == 0`,
 	// woraufhin upsertSessionFromEventTx die DB-finale `correlation_id`
 	// nachliest und an UpsertFromEvents zurückreicht. Damit landen die
 	// Events des Verlust-Race-Aufrufs nach dem Use-Case-Enrichment auch
@@ -117,7 +117,7 @@ UPDATE stream_sessions
 SET state = 'ended', ended_at = ?, end_source = 'sweeper'
 WHERE state = 'stalled' AND last_seen_at < ?`
 
-	// Tranche 3 §4.4 D2: Insert-or-Refresh für `session_boundaries[]`.
+	// §4.4 D2: Insert-or-Refresh für `session_boundaries[]`.
 	// Read-Shape (§3.7.1) dedupliziert per Tripel
 	// `(kind, network_kind, adapter, reason)`; ON CONFLICT auf dem PK
 	// hält die Persistenz idempotent — Mehrfach-Sends derselben Tripel
@@ -133,7 +133,7 @@ DO UPDATE SET
     client_timestamp   = excluded.client_timestamp,
     server_received_at = excluded.server_received_at`
 
-	// Read-Shape-Sortierung gemäß spec/backend-api-contract.md §3.7.1:
+	// Read-Shape-Sortierung gemäß spec/backend-api-contract.md:
 	// stabile Sortierung nach (kind, adapter, reason). Doppelte Tripel
 	// gibt es per Composite-PK nicht; eine zusätzliche DISTINCT-Klausel
 	// ist nicht nötig.
@@ -151,10 +151,10 @@ ORDER BY kind ASC, adapter ASC, reason ASC`
 // auch nachdem die Session beendet wurde — verspätete Events bleiben
 // gezählt. Spiegelt das InMemory-Verhalten 1:1.
 //
-// Rückgabe (R-6-Fix, plan-0.4.0 §4.2 C2): map[sessionID]canonicalCID
+// Rückgabe (R-6-Fix, C2): map[sessionID]canonicalCID
 // — die DB-finale CorrelationID jeder Session. Bei einem Race auf
 // einer noch unbekannten (project_id, session_id) liefert
-// `RowsAffected() == 0` aus dem ON-CONFLICT-Insert das Signal, die
+// `RowsAffected == 0` aus dem ON-CONFLICT-Insert das Signal, die
 // Sieger-CorrelationID nachzulesen und zurückzugeben, sodass der Use-
 // Case Events des Verlust-Race-Aufrufs vor dem Append damit enrichen
 // kann. Damit ist
@@ -235,10 +235,10 @@ func tickExistingSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEve
 // unmittelbar danach der State-Switch ausgeführt.
 //
 // R-6-Fix: Bei einem Race greift `ON CONFLICT(project_id, session_id)
-// DO NOTHING`. `RowsAffected() == 0` heißt: ein konkurrenter Aufruf
+// DO NOTHING`. `RowsAffected == 0` heißt: ein konkurrenter Aufruf
 // hat die Session bereits angelegt; wir müssen dessen CorrelationID
 // einlesen und zurückgeben, damit der Use-Case unsere Events damit
-// enricht. `RowsAffected() == 1` heißt: wir haben die Session
+// enricht. `RowsAffected == 1` heißt: wir haben die Session
 // angelegt; unsere Kandidat-CorrelationID ist die Sieger-CID, und der
 // optionale `markSessionEndedSQL` wird auf der von uns angelegten Zeile
 // ausgeführt. Im Verlust-Fall überspringen wir `markSessionEndedSQL`,
@@ -284,8 +284,8 @@ func insertNewSessionTx(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent)
 }
 
 // Sweep schaltet zeitbasierte Lifecycle-Übergänge:
-//   - active  + (now - last_seen_at) > stalledAfter → stalled
-//   - stalled + (now - last_seen_at) > endedAfter   → ended (ended_at=now)
+//  - active + (now - last_seen_at) > stalledAfter → stalled
+//  - stalled + (now - last_seen_at) > endedAfter → ended (ended_at=now)
 //
 // Idempotent (bereits Ended-Sessions werden nicht angefasst). Project-
 // agnostisch, weil der Sweeper alle Sessions bedient.
@@ -367,11 +367,11 @@ WHERE project_id = ? AND session_id = ?`
 )
 
 // SetSessionSampleRatePPMIfDefault implementiert den Immutability-Set
-// für die Pro-Session-Sampling-Rate (plan-0.12.6 §6 / R-10). Pattern:
-//   - UPDATE … WHERE sample_rate_ppm = SampleRateFull → nur Erstsetzung
-//     persistiert.
-//   - RowsAffected == 1 → `applied=true`, existingPPM = ppm.
-//   - RowsAffected == 0 → bereits gesetzt; existingPPM via Folge-SELECT.
+// für die Pro-Session-Sampling-Rate (R-10). Pattern:
+//  - UPDATE … WHERE sample_rate_ppm = SampleRateFull → nur Erstsetzung
+//  persistiert.
+//  - RowsAffected == 1 → `applied=true`, existingPPM = ppm.
+//  - RowsAffected == 0 → bereits gesetzt; existingPPM via Folge-SELECT.
 func (r *SessionRepository) SetSessionSampleRatePPMIfDefault(ctx context.Context, projectID, sessionID string, ppm int) (int, bool, error) {
 	if ppm == domain.SampleRateFull {
 		// No-Op: Default-Wert. Spec sagt: bei `sampleRate == 1` weglassen.
@@ -539,7 +539,7 @@ func decodeSession(id, project, state, startedAtRaw, lastSeenRaw string,
 }
 
 // AppendBoundaries persistiert `session_boundaries[]`-Einträge in die
-// durable `stream_session_boundaries`-Tabelle (plan-0.4.0 §4.4 D2;
+// durable `stream_session_boundaries`-Tabelle ( D2;
 // V3-Migration). Mehrfach-Sends derselben Tripel
 // `(kind, network_kind, adapter, reason)` für eine Session sind
 // idempotent — die Insert-Or-Refresh-Klausel hält die Tripel-Eindeutig-
@@ -570,7 +570,7 @@ func (r *SessionRepository) AppendBoundaries(ctx context.Context, boundaries []d
 
 // ListBoundariesForSession liefert die persistierten Boundaries einer
 // `(projectID, sessionID)`-Partition in stabiler Read-Shape-Sortierung
-// (kind, adapter, reason) — spec/backend-api-contract.md §3.7.1.
+// (kind, adapter, reason) — spec/backend-api-contract.md
 // Cross-Project-Treffer sind ausgeschlossen (project-skopiertes WHERE).
 // Eine Session ohne Boundaries liefert eine leere Slice (`nil`).
 func (r *SessionRepository) ListBoundariesForSession(ctx context.Context, projectID, sessionID string) ([]domain.SessionBoundary, error) {
@@ -595,7 +595,7 @@ func (r *SessionRepository) ListBoundariesForSession(ctx context.Context, projec
 
 // ListBoundariesForSessions ist die Bulk-Variante: eine einzige
 // Query mit `IN (?, ?, ?)`-Clause ersetzt N+1-Roundtrips
-// (plan-0.12.6 Tranche 5 / R-7). Result-Map ist gekeyt nach
+// (R-7). Result-Map ist gekeyt nach
 // SessionID; SessionIDs ohne Boundaries fehlen in der Map.
 //
 // SQLite-Limit: `SQLITE_MAX_VARIABLE_NUMBER` ist per Build-Default

@@ -15,32 +15,32 @@ import (
 // die existierende `IngestControlInbound.ValidateKey`-Use-Case.
 //
 // MediaMTX-Vertrag (https://github.com/bluenviron/mediamtx → `externalAuth`):
-//   - Methode: `POST`, `application/x-www-form-urlencoded`
-//   - Felder: `user`, `password`, `action`, `path`, optional `ip`,
-//     `protocol`, `id`, `query`
-//   - Response: HTTP `200` = allow, alles andere = deny. Body wird
-//     ignoriert.
+//  - Methode: `POST`, `application/x-www-form-urlencoded`
+//  - Felder: `user`, `password`, `action`, `path`, optional `ip`,
+//  `protocol`, `id`, `query`
+//  - Response: HTTP `200` = allow, alles andere = deny. Body wird
+//  ignoriert.
 //
 // Mapping (Operator-Konvention, dokumentiert in `auth.md` §5.7):
-//   - `user`     = Project-ID (m-trace).
-//   - `password` = Stream-Key (Klartext, einmaliger Wert aus
-//     Stream-Anlage; danach nur als `key_hash` persistiert).
-//   - `path`     = Stream-ID (m-trace).
-//   - `action`   = `publish` (erlaubt). `read`/`api`/`metrics`
-//     liefert `403`; ein produktiver Read-/API-Auth-Pfad ist
-//     Folge-Item nach `0.12.5`.
+//  - `user` = Project-ID (m-trace).
+//  - `password` = Stream-Key (Klartext, einmaliger Wert aus
+//  Stream-Anlage; danach nur als `key_hash` persistiert).
+//  - `path` = Stream-ID (m-trace).
+//  - `action` = `publish` (erlaubt). `read`/`api`/`metrics`
+//  liefert `403`; ein produktiver Read-/API-Auth-Pfad ist
+//  Folge-Item nach `0.12.5`.
 //
 // Sicherheitsprofil:
-//   - Der Endpoint ist eine Trust-Boundary MediaMTX→m-trace und
-//     **hat selbst keine Project-Token-Auth**. Operator-Setup
-//     muss ihn netzwerkseitig isolieren (Compose-internal-Netz,
-//     K8s-`ClusterIP`, Reverse-Proxy mit IP-Allowlist). Doku
-//     weist darauf hin.
-//   - Kein Klartext-Material wird geloggt — nur Stream-ID und
-//     Wire-Outcome (`allow`/`deny`).
-//   - Idempotent gegenüber Replays: MediaMTX selbst sendet pro
-//     Publish-Versuch einen Hook; die ValidateKey-Operation ist
-//     side-effect-frei.
+//  - Der Endpoint ist eine Trust-Boundary MediaMTX→m-trace und
+//  **hat selbst keine Project-Token-Auth**. Operator-Setup
+//  muss ihn netzwerkseitig isolieren (Compose-internal-Netz,
+//  K8s-`ClusterIP`, Reverse-Proxy mit IP-Allowlist). Doku
+//  weist darauf hin.
+//  - Kein Klartext-Material wird geloggt — nur Stream-ID und
+//  Wire-Outcome (`allow`/`deny`).
+//  - Idempotent gegenüber Replays: MediaMTX selbst sendet pro
+//  Publish-Versuch einen Hook; die ValidateKey-Operation ist
+//  side-effect-frei.
 type MediaMTXAuthHookHandler struct {
 	UseCase driving.IngestControlInbound
 	Logger  *slog.Logger

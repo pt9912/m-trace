@@ -5,7 +5,7 @@ package driven
 // `token_id` in der Wire-Antwort sowie in Logs und Audit-Records.
 //
 // Die Eindeutigkeit ist Aufrufer-Verantwortung: doppelte IDs würden
-// die `jti`-Semantik (`one-time identifier`) verletzen. Der `0.12.0`-
+// die `jti`-Semantik (`one-time identifier`) verletzen. Der
 // Adapter nutzt dafür `crypto/rand` plus `st_`-Prefix.
 type TokenIDGenerator interface {
 	NewTokenID() (string, error)

@@ -4,7 +4,7 @@ import "context"
 
 // OriginRateLimiter begrenzt Aufrufe pro Client-Origin (Default:
 // `r.RemoteAddr`) oder, bei aktivem Reverse-Proxy-Trust, pro
-// `X-Forwarded-For`-Client-IP. Spec-Anker: plan-0.12.6 Tranche 6 /
+// `X-Forwarded-For`-Client-IP. Spec-Anker: /
 // R-22 (Backend-Strategie §8).
 //
 // Im Gegensatz zum `IssuanceRateLimiter` (Project-skopiert,

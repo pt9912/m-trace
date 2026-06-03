@@ -18,7 +18,7 @@ import (
 // once per call. Uses a ManualReader to introspect collected metrics
 // without an exporter.
 //
-// plan-0.4.0.md §8.2 / spec/telemetry-model.md §2.2: the counter is
+//  / spec/telemetry-model.md: the counter is
 // label-free — `batch.size` is no longer attached as a counter
 // attribute, so all calls collapse into a single data point regardless
 // of the size argument. The per-request batch size lives on the HTTP
@@ -94,7 +94,7 @@ func findCounter(t *testing.T, rm *metricdata.ResourceMetrics, name string) metr
 }
 
 // TestSetup_NoEnvVarsReturnsProvidersAndShutsDown verifiziert den
-// No-Op-Fallback-Pfad aus plan-0.1.0.md §4.3: ohne `OTEL_*`-Env-Vars
+// No-Op-Fallback-Pfad aus: ohne `OTEL_*`-Env-Vars
 // liefert Setup einsatzbereite Provider. Erzeugt einen Span (über den
 // TracerProvider) und beendet beide Provider sauber via Shutdown —
 // damit decken wir noopSpanExporter.{ExportSpans,Shutdown} ab.
@@ -120,7 +120,7 @@ func TestSetup_NoEnvVarsReturnsProvidersAndShutsDown(t *testing.T) {
 		t.Errorf("ForceFlush: %v", err)
 	}
 
-	// Meter()-Helper: deckt den Default-Pfad über den globalen Provider.
+	// Meter-Helper: deckt den Default-Pfad über den globalen Provider.
 	if telemetry.Meter() == nil {
 		t.Errorf("Meter() returned nil")
 	}
@@ -134,7 +134,7 @@ func TestSetup_NoEnvVarsReturnsProvidersAndShutsDown(t *testing.T) {
 
 // TestSetup_BlankOTelEnv_FallsBackToNoopExporter zurrt den
 // `cmd/api`-Produktivstart mit deaktiviertem Tempo-Profil fest
-// (plan-0.4.0.md §3.4c, Item #7). docker-compose.yml schreibt
+// (Item #7). docker-compose.yml schreibt
 // `OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-}"` etc. — wenn das
 // Tempo-Profil nicht aktiv ist, kommen die Variablen also als
 // **blank-string** im Container an, nicht als unset. Der Setup-Pfad
@@ -175,7 +175,7 @@ func TestSetup_BlankOTelEnv_FallsBackToNoopExporter(t *testing.T) {
 	// Snapshot der globalen OTel-Provider, weil Setup sie via
 	// otel.SetMeterProvider/SetTracerProvider neu registriert.
 	// Ohne Restore wäre die Test-Reihenfolge load-bearing: ein
-	// nachgelagerter Test, der otel.GetTracerProvider() liest, würde
+	// nachgelagerter Test, der otel.GetTracerProvider liest, würde
 	// den Tempo-disabled-Provider sehen.
 	prevTracer := otel.GetTracerProvider()
 	prevMeter := otel.GetMeterProvider()

@@ -139,7 +139,7 @@ func TestSessionRepository_List_SortAndCursor(t *testing.T) {
 }
 
 // TestSessionRepository_Get_NotFound deckt den Pflicht-Pfad
-// für 404-Mapping in plan-0.1.0.md §5.1 ab.
+// für 404-Mapping in ab.
 func TestSessionRepository_Get_NotFound(t *testing.T) {
 	t.Parallel()
 	repo := inmemory.NewSessionRepository()
@@ -150,7 +150,7 @@ func TestSessionRepository_Get_NotFound(t *testing.T) {
 }
 
 // TestSessionRepository_Sweep_ActiveToStalled verifiziert den
-// ersten Lifecycle-Übergang (plan-0.1.0.md §5.1 Sub-Item 8): eine
+// ersten Lifecycle-Übergang ( Sub-Item 8): eine
 // Active-Session ohne Folge-Events kippt nach Ablauf des Stalled-
 // Schwellwerts auf Stalled.
 func TestSessionRepository_Sweep_ActiveToStalled(t *testing.T) {

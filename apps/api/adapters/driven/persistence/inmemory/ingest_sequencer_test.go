@@ -8,7 +8,7 @@ import (
 )
 
 // TestIngestSequencer_StartsAtOne verifies that the first
-// Next() call returns 1 (plan-0.1.0.md §5.1: erste ingest_sequence ist 1).
+// Next call returns 1 (: erste ingest_sequence ist 1).
 func TestIngestSequencer_StartsAtOne(t *testing.T) {
 	t.Parallel()
 	s := inmemory.NewIngestSequencer()
@@ -21,9 +21,9 @@ func TestIngestSequencer_StartsAtOne(t *testing.T) {
 }
 
 // TestIngestSequencer_ConcurrentMonotonic verifies that under
-// concurrent calls Next() returns 1..N exactly once each (no
+// concurrent calls Next returns 1..N exactly once each (no
 // duplicates, no gaps). Required because cursor pagination relies on
-// global uniqueness within a process (plan-0.1.0.md §5.1).
+// global uniqueness within a process.
 func TestIngestSequencer_ConcurrentMonotonic(t *testing.T) {
 	t.Parallel()
 	s := inmemory.NewIngestSequencer()

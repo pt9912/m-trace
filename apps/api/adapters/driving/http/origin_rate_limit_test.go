@@ -20,7 +20,7 @@ import (
 )
 
 // newOriginLimitedAuthServer baut den Auth-Issuance-Endpoint mit
-// einem Origin-Limiter davor (plan-0.12.6 Tranche 6 / R-22). Tests
+// einem Origin-Limiter davor (R-22). Tests
 // kontrollieren die Limiter-Bucket-Größe und können den XFF-Trust
 // per Flag aktivieren.
 func newOriginLimitedAuthServer(t *testing.T, originLimiter driven.OriginRateLimiter, trustXFF bool) *httptest.Server {
@@ -74,7 +74,7 @@ func postSessionToken(t *testing.T, srv *httptest.Server) *http.Response {
 	return resp
 }
 
-// TestOriginRateLimit_Burst (plan-0.12.6 Tranche 6 / R-22): bei
+// TestOriginRateLimit_Burst (R-22): bei
 // capacity=2 + refill=0 sind zwei Aufrufe in Folge erlaubt; der
 // dritte aus derselben Quelle bekommt `429 origin_rate_limited`.
 func TestOriginRateLimit_Burst(t *testing.T) {
@@ -105,7 +105,7 @@ func TestOriginRateLimit_Burst(t *testing.T) {
 	}
 }
 
-// TestOriginRateLimit_NoOpWhenDisabled (plan-0.12.6 Tranche 6 / R-22):
+// TestOriginRateLimit_NoOpWhenDisabled (R-22):
 // `nil`-Limiter (Disabled-Pfad) lässt alle Aufrufe durch.
 func TestOriginRateLimit_NoOpWhenDisabled(t *testing.T) {
 	t.Parallel()
@@ -119,7 +119,7 @@ func TestOriginRateLimit_NoOpWhenDisabled(t *testing.T) {
 	}
 }
 
-// TestOriginRateLimit_XFFTrust (plan-0.12.6 Tranche 6 / R-22): mit
+// TestOriginRateLimit_XFFTrust (R-22): mit
 // `trustXFF=true` nutzt der Limiter das letzte XFF-Element als Key;
 // zwei verschiedene XFF-Header haben getrennte Buckets.
 func TestOriginRateLimit_XFFTrust(t *testing.T) {

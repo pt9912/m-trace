@@ -6,7 +6,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// TestStreamAnalysisDomainError_Error stellt das error()-Format der
+// TestStreamAnalysisDomainError_Error stellt das error-Format der
 // Domain-Fehlerklasse fest. Konsumenten sehen den Code als Prefix
 // im Log.
 func TestStreamAnalysisDomainError_Error(t *testing.T) {

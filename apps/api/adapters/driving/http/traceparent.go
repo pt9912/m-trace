@@ -8,12 +8,12 @@ import (
 // W3C Trace Context traceparent header
 // (https://www.w3.org/TR/trace-context/#traceparent-header-field-values).
 // Format: `version-trace_id-parent_id-flags`
-//   - version  : 2 hex; in 0.4.0 wird nur Version "00" akzeptiert.
-//   - trace_id : 32 hex (16 Bytes), nicht all-zero.
-//   - parent_id: 16 hex (8 Bytes), nicht all-zero.
-//   - flags    : 2 hex (sampled-flag etc.); aktuell nicht ausgewertet.
+//  - version: 2 hex; in 0.4.0 wird nur Version "00" akzeptiert.
+//  - trace_id: 32 hex (16 Bytes), nicht all-zero.
+//  - parent_id: 16 hex (8 Bytes), nicht all-zero.
+//  - flags: 2 hex (sampled-flag etc.); aktuell nicht ausgewertet.
 //
-// Defensive parser laut spec/telemetry-model.md §2.5: jeder Formatfehler
+// Defensive parser laut spec/telemetry-model.md: jeder Formatfehler
 // → ok=false; Caller setzt das Span-Attribut mtrace.trace.parse_error
 // und fällt auf einen Server-Root-Span zurück.
 

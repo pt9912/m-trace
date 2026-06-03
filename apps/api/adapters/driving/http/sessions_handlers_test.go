@@ -16,7 +16,7 @@ func getJSON(t *testing.T, srv string, path string) (*http.Response, map[string]
 	if err != nil {
 		t.Fatalf("new request %s: %v", path, err)
 	}
-	// Read-Endpunkte sind ab plan-0.4.0 §4.2 tokenpflichtig; Tests
+	// Read-Endpunkte sind ab tokenpflichtig; Tests
 	// verwenden den im Test-Setup wired Static-Resolver (Token
 	// "demo-token", Project "demo").
 	req.Header.Set("X-MTrace-Token", "demo-token")
@@ -86,7 +86,7 @@ func TestHTTP_StreamSessions_InvalidLimit(t *testing.T) {
 
 // TestHTTP_StreamSessions_MalformedCursor verifiziert den 400-Pfad
 // bei syntaktisch defektem Cursor — Wire-Format-Klasse aus
-// API-Kontrakt §10.3 / ADR-0004 §6.
+// API-Kontrakt / ADR-0004
 func TestHTTP_StreamSessions_MalformedCursor(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
@@ -101,7 +101,7 @@ func TestHTTP_StreamSessions_MalformedCursor(t *testing.T) {
 
 // TestHTTP_StreamSessions_LegacyCursor verifiziert die dauerhafte
 // Reject-Klasse: ein 0.1.x/0.2.x/0.3.x-Cursor mit `pid`-Feld liefert
-// 400 cursor_invalid_legacy (ADR-0004 §6).
+// 400 cursor_invalid_legacy (ADR-0004).
 func TestHTTP_StreamSessions_LegacyCursor(t *testing.T) {
 	t.Parallel()
 	srv := newTestServer(t)
@@ -407,7 +407,7 @@ func TestHTTP_StreamSessions_BoundaryRejectedDoesNotPersist(t *testing.T) {
 }
 
 // TestHTTP_StreamSessions_EndSource_NullForActiveSession pinnt
-// plan-0.4.0 §5 H1: aktive Sessions liefern `end_source: null`
+//  H1: aktive Sessions liefern `end_source: null`
 // (Pflichtfeld, kein omitempty).
 func TestHTTP_StreamSessions_EndSource_NullForActiveSession(t *testing.T) {
 	t.Parallel()

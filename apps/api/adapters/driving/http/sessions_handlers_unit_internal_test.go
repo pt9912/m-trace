@@ -17,7 +17,7 @@ import (
 
 // erroringSessions liefert für jeden Aufruf einen synthetischen
 // non-domain-Fehler — deckt damit den default-Pfad
-// (Logger.Error + 500) in den GET-Handlern (plan-0.1.0.md §5.1).
+// (Logger.Error + 500) in den GET-Handlern.
 type erroringSessions struct{}
 
 func (erroringSessions) ListSessions(_ context.Context, _ driving.ListSessionsInput) (driving.ListSessionsResult, error) {
@@ -29,7 +29,7 @@ func (erroringSessions) GetSession(_ context.Context, _ driving.GetSessionInput)
 }
 
 // staticResolver löst einen festen Token auf ein festes Project auf,
-// damit die Tests ab plan-0.4.0 §4.2 die Token-Resolution-Stufe der
+// damit die Tests ab die Token-Resolution-Stufe der
 // Read-Handler erfüllen, ohne ein echtes Auth-Backend zu wiren.
 type staticResolver struct {
 	token string

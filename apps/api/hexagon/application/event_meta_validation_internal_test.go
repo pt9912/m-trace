@@ -162,7 +162,7 @@ func TestValidateReservedEventMeta_ForwardCompatibility(t *testing.T) {
 	t.Parallel()
 	// Unbekannte additive Keys außerhalb der reservierten Domänen
 	// dürfen nicht abgelehnt werden — Vorwärtskompatibilität nach
-	// API-Kontrakt §3.4.
+	// API-Kontrakt
 	meta := domain.EventMeta{
 		"network.foo":    "bar",
 		"network.kind":   "manifest",
@@ -175,7 +175,7 @@ func TestValidateReservedEventMeta_ForwardCompatibility(t *testing.T) {
 	}
 }
 
-// plan-0.8.0 Tranche 3 — alle Codes der WebRTC-Fehlercode-Allowlist.
+//  — alle Codes der WebRTC-Fehlercode-Allowlist.
 func TestValidateReservedEventMeta_WebRTCErrorCodesAccepted(t *testing.T) {
 	t.Parallel()
 	codes := []string{
@@ -196,7 +196,7 @@ func TestValidateReservedEventMeta_WebRTCErrorCodesAccepted(t *testing.T) {
 	}
 }
 
-// plan-0.8.0 Tranche 3 — webrtc.*-Allowlist-Tests.
+//  — webrtc.*-Allowlist-Tests.
 func TestValidateReservedEventMeta_WebRTCHappyPath(t *testing.T) {
 	t.Parallel()
 	meta := domain.EventMeta{
@@ -336,7 +336,7 @@ func stringOfLen(n int) string {
 	return string(b)
 }
 
-// TestValidateSessionSampleRate (plan-0.12.6 Tranche 4 / R-10): Wire-
+// TestValidateSessionSampleRate (R-10): Wire-
 // Range-Check `(0, 1]`. Accepted: float64 + int64; rejected: andere
 // Typen, Out-of-Range-Werte.
 func TestValidateSessionSampleRate(t *testing.T) {

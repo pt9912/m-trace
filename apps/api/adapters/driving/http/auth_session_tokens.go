@@ -16,7 +16,7 @@ import (
 )
 
 // maxAuthRequestBytes ist die Defense-in-Depth-Grenze für den
-// Body von `POST /api/auth/session-tokens` (`0.12.0`, RAK-72).
+// Body von `POST /api/auth/session-tokens` (RAK-72).
 // 4 KiB reichen weit für die spec-definierten Issuance-Felder; alles
 // darüber wird mit `413` abgewiesen, bevor der JSON-Parser läuft.
 const maxAuthRequestBytes = 4 * 1024
@@ -100,7 +100,7 @@ func (h *AuthSessionTokensHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 }
 
 // resolveProjectFromMTraceToken liest `X-MTrace-Token` und löst den
-// Project-Token gegen den Static-Resolver auf. `0.12.0` Tranche 2
+// Project-Token gegen den Static-Resolver auf.
 // nutzt für die Issuance ausschließlich den Legacy-Header — Bearer-/
 // Session-Token-Pfade sind nur für Konsum-Endpoints relevant
 // (RAK-72: ein Session Token darf keinen weiteren Session Token
@@ -153,7 +153,7 @@ func readAuthBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 	return raw, nil
 }
 
-// writeAuthError mappt Auth-Domainfehler auf die `0.12.0`-Codes aus
+// writeAuthError mappt Auth-Domainfehler auf die Codes aus
 // §3.9. Reihenfolge ist die neunstufige Fehlerpräzedenz aus dem
 // Wire-Vertrag — der Application-Service liefert genau einen Fehler
 // pro Aufruf, hier wird er auf das HTTP-Schema gemappt.

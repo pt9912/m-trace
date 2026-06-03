@@ -7,10 +7,10 @@ import "time"
 // gar kein Manifest-/Segment-Signal liefert (Native HLS, CORS-Block,
 // Resource-Timing-Lücke). Boundaries sind keine Events: sie haben
 // kein `event_name`, zählen nicht in `accepted` und ändern die
-// Batch-`schema_version` nicht. Source spec/telemetry-model.md §1.4
-// und plan-0.4.0 §4.4.
+// Batch-`schema_version` nicht. Source spec/telemetry-model.md
+// und
 //
-// In Tranche 3 ist nur Kind="network_signal_absent" definiert; weitere
+// In ist nur Kind="network_signal_absent" definiert; weitere
 // Boundary-Kinds erweitern die Domäne additiv.
 type SessionBoundary struct {
 	// Kind ist der Boundary-Typ — in 0.4.0 ausschließlich
@@ -20,7 +20,7 @@ type SessionBoundary struct {
 	Kind string
 	// ProjectID und SessionID müssen eine `(project_id, session_id)`-
 	// Partition referenzieren, für die im selben Batch mindestens ein
-	// Event vorhanden ist (siehe API-Kontrakt §3.4). ProjectID muss
+	// Event vorhanden ist (siehe API-Kontrakt). ProjectID muss
 	// zum aufgelösten Token passen.
 	ProjectID string
 	SessionID string
@@ -41,6 +41,6 @@ type SessionBoundary struct {
 }
 
 // BoundaryKindNetworkSignalAbsent ist der einzige Boundary-Kind in
-// Tranche 3. Wert ist normativ aus
+// . Wert ist normativ aus
 // contracts/event-schema.json#session_boundaries.kinds.
 const BoundaryKindNetworkSignalAbsent = "network_signal_absent"

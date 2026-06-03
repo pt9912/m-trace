@@ -8,7 +8,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 1 / RAK-72: Session-Token-Claims, Audience-,
+// RAK-72: Session-Token-Claims, Audience-,
 // Project-, Session- und Origin-Bindung, Signing-Key-Lookup und
 // Konstantzeit-Vergleich. Tests laufen ohne HTTP, JSON, Storage oder
 // Crypto-Library.

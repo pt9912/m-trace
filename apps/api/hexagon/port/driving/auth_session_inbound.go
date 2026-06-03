@@ -8,20 +8,20 @@ import (
 )
 
 // AuthSessionInbound ist der Driving-Port für den Session-Token-
-// Issuance-Pfad (`0.12.0`, RAK-72). Der HTTP-Adapter dekodiert
+// Issuance-Pfad (RAK-72). Der HTTP-Adapter dekodiert
 // `POST /api/auth/session-tokens`, leitet die Eingabe an den
 // Application-Service weiter und mappt das Ergebnis auf das
 // JSON-Schema aus `spec/backend-api-contract.md` §3.9.
 //
 // Sicherheitsprofil:
-//   - `IssueSessionTokenResult.Value` ist der Klartext-Session-Token
-//     und darf nur in der Issuance-Antwort erscheinen. Jeder andere
-//     Pfad (Logs, Metriken, Traces, Persistenz, Fixtures) bekommt
-//     ausschließlich `TokenID` oder Fingerprints.
-//   - Der Application-Service akzeptiert ausschließlich vorher
-//     resolvierte `ResolvedProjectID`-Werte aus dem Project-Token-
-//     Pfad; ein Session Token darf keinen weiteren Session Token
-//     minten.
+//  - `IssueSessionTokenResult.Value` ist der Klartext-Session-Token
+//  und darf nur in der Issuance-Antwort erscheinen. Jeder andere
+//  Pfad (Logs, Metriken, Traces, Persistenz, Fixtures) bekommt
+//  ausschließlich `TokenID` oder Fingerprints.
+//  - Der Application-Service akzeptiert ausschließlich vorher
+//  resolvierte `ResolvedProjectID`-Werte aus dem Project-Token-
+//  Pfad; ein Session Token darf keinen weiteren Session Token
+//  minten.
 type AuthSessionInbound interface {
 	IssueSessionToken(ctx context.Context, req IssueSessionTokenRequest) (IssueSessionTokenResult, error)
 }

@@ -10,14 +10,14 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// plan-0.9.5 §2 Tranche 1 (RAK-Wave-2 / extra-gates.md §3.2) —
+//  ( extra-gates.md) —
 // API-Hot-Path-Benchmarks für `make api-benchmark-smoke`.
 //
 // Budgets aus `docs/perf/budgets.md` §3 (initial, Tranche-0-Stand;
 // noch nicht mess-basiert, sondern Architektur-basierte Obergrenzen):
 //
-//   - typische 100-Event-Batch (In-Memory-Repo): ≤ 10 ms / Batch
-//   - maximale 100-Event-Batch (volle Validation):  ≤ 25 ms / Batch
+//  - typische 100-Event-Batch (In-Memory-Repo): ≤ 10 ms / Batch
+//  - maximale 100-Event-Batch (volle Validation): ≤ 25 ms / Batch
 //
 // Beobachtungsphase laut Plan §2 DoD: erste N=3-5 grüne CI-Läufe
 // bleiben non-blocking; danach landen die Smokes via
@@ -45,7 +45,7 @@ func BenchmarkRegisterPlaybackEventBatch_Typical(b *testing.B) {
 }
 
 // BenchmarkRegisterPlaybackEventBatch_MaxBatch pinnt den maximalen
-// Batch-Pfad (spec/telemetry-model.md §4.1: 100 Events / 256 KiB
+// Batch-Pfad (spec/telemetry-model.md: 100 Events / 256 KiB
 // Body) inklusive Per-Event-Meta-Validation für
 // `network.*`-/`webrtc.*`-Reserve-Namespace-Keys.
 func BenchmarkRegisterPlaybackEventBatch_MaxBatch(b *testing.B) {

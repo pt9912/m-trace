@@ -10,7 +10,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// plan-0.4.0 §4.4 D1 — End-to-End-Tests für reservierte Meta-Validation
+//  D1 — End-to-End-Tests für reservierte Meta-Validation
 // und URL-Redaction. Use-Case ruft Validation/Redaction in `parseEvents`
 // auf; ungültige Meta-Werte führen zu domain.ErrInvalidEvent (422), und
 // URL-verdächtige Meta-Keys werden vor dem Persistenz-Append redigiert.

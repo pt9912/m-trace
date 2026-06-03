@@ -7,7 +7,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// TestSampleRatePPMFromFloat_HappyCases (plan-0.12.6 Tranche 4 / R-10):
+// TestSampleRatePPMFromFloat_HappyCases (R-10):
 // Float-in-`(0, 1]`-Range wird auf den deterministisch gerundeten ppm
 // abgebildet; SampleRateFull (1.0) bleibt SampleRateFull.
 func TestSampleRatePPMFromFloat_HappyCases(t *testing.T) {
@@ -40,7 +40,7 @@ func TestSampleRatePPMFromFloat_HappyCases(t *testing.T) {
 	}
 }
 
-// TestSampleRatePPMFromFloat_OutOfRange (plan-0.12.6 Tranche 4): Werte
+// TestSampleRatePPMFromFloat_OutOfRange: Werte
 // außerhalb `(0, 1]` und nicht-finite Floats liefern einen Fehler.
 func TestSampleRatePPMFromFloat_OutOfRange(t *testing.T) {
 	t.Parallel()

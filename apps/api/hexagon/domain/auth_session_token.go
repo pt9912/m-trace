@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-// Auth-Session-Token-Domäne (`0.12.0`, RAK-72).
+// Auth-Session-Token-Domäne (RAK-72).
 //
 // Sicherheitsprofil und Wire-Vertrag in
 // `spec/backend-api-contract.md` §3.9 und
-// `docs/planning/in-progress/plan-0.12.0.md` §0.5/§0.6.
+// `docs/planning/in-progress/` §0.5/§0.6.
 //
-// Tranche 1 liefert die Domain-Typen (Claims, Signing-Key-Identifier,
+// Domain-Typen (Claims, Signing-Key-Identifier,
 // zeitbasierte Validierung, Audience-/Origin-/Session-Bindung) ohne
 // HTTP-, JSON-, SQLite- oder Crypto-Library-Abhängigkeit. Die
-// tatsächliche Signatur-Erzeugung und -Prüfung sitzt in Tranche 2 im
+// tatsächliche Signatur-Erzeugung und -Prüfung sitzt in im
 // Application-Service-/Adapter-Pfad.
 
 // SessionTokenPrefix ist der projektweite Wire-Prefix für signierte
@@ -38,17 +38,17 @@ const MaxSessionTokenTTLSeconds = 900
 const DefaultSessionTokenIssuer = "m-trace"
 
 // SessionTokenAudience ist die Allowlist-Form der `aud`-Claims. Im
-// `0.12.0`-Pflichtpfad ist `playback-events` die einzige Muss-
+// Pflichtpfad ist `playback-events` die einzige Muss-
 // Audience (RAK-72). Folge-Releases erweitern additiv; bestehende
 // Werte bleiben stabil.
 type SessionTokenAudience string
 
-// SessionTokenAudience-Werte aus dem `0.12.0`-Muss-Scope.
+// SessionTokenAudience-Werte aus dem Muss-Scope.
 const (
 	SessionTokenAudiencePlaybackEvents SessionTokenAudience = "playback-events"
 )
 
-// IsKnown prüft, ob ein Audience-Wert in der `0.12.0`-Allowlist steht.
+// IsKnown prüft, ob ein Audience-Wert in der Allowlist steht.
 // Tests und Adapter mappen unbekannte Werte auf
 // `403 auth_session_scope_denied`.
 func (a SessionTokenAudience) IsKnown() bool {
@@ -72,12 +72,12 @@ type SigningKeyID string
 // damit Folge-Releases additiv erweitern können.
 type SigningKeyAlgorithm string
 
-// SigningKeyAlgorithm-Werte aus dem `0.12.0`-Muss-Scope.
+// SigningKeyAlgorithm-Werte aus dem Muss-Scope.
 const (
 	SigningKeyAlgorithmHS256 SigningKeyAlgorithm = "HS256"
 )
 
-// IsKnown prüft, ob das Signaturverfahren in der `0.12.0`-Allowlist
+// IsKnown prüft, ob das Signaturverfahren in der Allowlist
 // steht. Tokens mit unbekanntem `alg` liefern stabil
 // `401 auth_token_invalid`.
 func (a SigningKeyAlgorithm) IsKnown() bool {
@@ -94,7 +94,7 @@ func (a SigningKeyAlgorithm) IsKnown() bool {
 // trägt das Schlüsselmaterial — dieser Wert darf weder geloggt noch
 // in Persistenz, Fixtures oder Lifecycle-Events erscheinen. Der
 // Domain-Layer benutzt ihn ausschließlich für die Signatur-Primitive
-// in Tranche 2; das Tranche-1-Modell pinnt nur die Felder, die für
+// in; das Modell pinnt nur die Felder, die für
 // Verify-Lookup, Rotation und Restart-Stabilität nötig sind.
 //
 // `NotBefore` und `RetiresAt` umrahmen das Signing-Fenster: ein Key
@@ -207,7 +207,7 @@ func ValidateClaimsTime(claims SessionTokenClaims, now time.Time) error {
 }
 
 // ValidateClaimsAudience prüft die `aud`-Bindung und gleichzeitig,
-// dass die Audience in der globalen `0.12.0`-Allowlist steht. Eine
+// dass die Audience in der globalen Allowlist steht. Eine
 // nicht in der Allowlist enthaltene Audience liefert immer
 // `ErrAuthSessionScopeDenied`, auch wenn das Token die richtige
 // Audience trägt — so kann ein Audience-Allowlist-Eintrag im
@@ -281,7 +281,7 @@ func ValidateClaimsOrigin(claims SessionTokenClaims, requestOrigin string) error
 // Die Liste enthält **alle** geladenen Keys (aktive Signing-Keys plus
 // alte Verify-Keys, die noch nicht aus allen aktiven Tokens
 // herausgealtert sind). Aktive vs. retired wird hier nicht
-// unterschieden; Tranche 2 entscheidet beim Sign-Pfad, welcher Key
+// unterschieden; entscheidet beim Sign-Pfad, welcher Key
 // für neue Tokens benutzt wird.
 func LookupSigningKey(keys []SessionSigningKey, kid SigningKeyID) (SessionSigningKey, error) {
 	if kid == "" {
@@ -298,7 +298,7 @@ func LookupSigningKey(keys []SessionSigningKey, kid SigningKeyID) (SessionSignin
 // ConstantTimeEqualSignature vergleicht zwei Signature-Bytes-Slices
 // in konstanter Zeit. Wrapper über `crypto/subtle.ConstantTimeCompare`
 // mit klarer Domain-Semantik: `false` bei jeder Form von Mismatch
-// (auch unterschiedliche Längen). Tranche 2 nutzt diese Funktion in
+// (auch unterschiedliche Längen). nutzt diese Funktion in
 // allen Verify-Pfaden, damit ein Side-Channel über Vergleichszeit
 // strukturell ausgeschlossen ist.
 func ConstantTimeEqualSignature(a, b []byte) bool {

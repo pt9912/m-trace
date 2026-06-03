@@ -20,11 +20,11 @@ import (
 )
 
 // SessionsListHandler implementiert GET /api/stream-sessions
-// (plan-0.1.0.md §5.1). Span-Konvention siehe telemetry-model.md §2.1
+// . Span-Konvention siehe telemetry-model.md
 // — Span-Name "http.handler GET /api/stream-sessions" mit
 // http.method/http.route/http.status_code-Attributen.
 //
-// Ab plan-0.4.0 §4.2 (mit dem §4.3-vorgezogenen Auth-Anteil) ist der
+// Ab (mit dem §4.3-vorgezogenen Auth-Anteil) ist der
 // Endpoint tokenpflichtig: ohne `X-MTrace-Token` oder bei unbekanntem
 // Token wird `401 Unauthorized` zurückgegeben; der aufgelöste
 // `project_id` filtert die Sessions-Liste.
@@ -113,7 +113,7 @@ func (h *SessionsListHandler) serve(ctx context.Context, w http.ResponseWriter, 
 }
 
 // SessionsGetHandler implementiert GET /api/stream-sessions/{id}.
-// Tokenpflichtig ab plan-0.4.0 §4.2 (siehe SessionsListHandler-Doc).
+// Tokenpflichtig ab (siehe SessionsListHandler-Doc).
 type SessionsGetHandler struct {
 	UseCase  driving.SessionsInbound
 	Resolver driven.ProjectResolver
@@ -214,7 +214,7 @@ func (h *SessionsGetHandler) serve(ctx context.Context, w http.ResponseWriter, r
 // resolveProjectFromToken liest `X-MTrace-Token`, löst ihn über den
 // Project-Resolver auf und schreibt im Fehlerfall direkt eine 401-
 // Antwort. Rückgabe: (projectID, true) bei Erfolg, ("", false) wenn
-// der Caller den Request abbrechen soll. Ab plan-0.4.0 §4.2 sind
+// der Caller den Request abbrechen soll. Ab sind
 // Session-/Event-Read-Endpunkte tokenpflichtig (siehe
 // SessionsListHandler/SessionsGetHandler-Doc-Strings).
 func resolveProjectFromToken(ctx context.Context, w http.ResponseWriter, r *http.Request, resolver driven.ProjectResolver) (string, bool) {
@@ -249,13 +249,13 @@ func parseLimitWithName(s string) (int, error) {
 }
 
 // sessionWire ist die JSON-Antwortform für domain.StreamSession.
-// `correlation_id` ist ab `0.4.0` (§3.7.1 im API-Kontrakt) Teil der
+// `correlation_id` ist (§3.7.1 im API-Kontrakt) Teil der
 // Read-Antwort — bei Sessions, die vor §3.2-Closeout angelegt
 // wurden, kann es leer sein und wird dann als JSON-`""` ausgeliefert
 // (kein `omitempty`, damit Clients das Feld klar als „nicht gesetzt"
 // erkennen).
 //
-// `network_signal_absent` ist ab `0.4.0` (§4.4 D3) im Read-Shape,
+// `network_signal_absent` ist (§4.4 D3) im Read-Shape,
 // Default `[]`. Reihenfolge: kind asc, adapter asc, reason asc;
 // Tripel-Dedup erfolgt im Repository.
 type sessionWire struct {
@@ -266,7 +266,7 @@ type sessionWire struct {
 	LastEventAt         string                       `json:"last_event_at"`
 	EndedAt             *string                      `json:"ended_at,omitempty"`
 	// EndSource ist `"client"`, `"sweeper"` oder JSON `null` für aktive
-	// Sessions/Legacy-Einträge (Spec §3.7.1, plan-0.4.0 §5 H1). Pointer
+	// Sessions/Legacy-Einträge (Spec §3.7.1, H1). Pointer
 	// + omitempty würde den Null-Fall unterdrücken — Read-Konsumenten
 	// erwarten das Feld immer; daher *string ohne omitempty.
 	EndSource           *string                      `json:"end_source"`
@@ -275,7 +275,7 @@ type sessionWire struct {
 	NetworkSignalAbsent []networkSignalAbsentWire    `json:"network_signal_absent"`
 	// SampleRatePPM ist der raw persistierte Wert (Integer-ppm).
 	// SampleRate ist der abgeleitete Float `ppm / 1_000_000` als
-	// Display-Hilfe für den Dashboard-Banner (plan-0.12.6 §6 / R-10).
+	// Display-Hilfe für den Dashboard-Banner (R-10).
 	// Beide Felder sind `omitempty` auf der Default-Marke
 	// (`SampleRateFull`): voll-gesampelte Sessions tragen sie nicht
 	// im Body, sampled-Sessions liefern sie immer.
@@ -354,12 +354,12 @@ func toNetworkSignalAbsentWires(in []domain.SessionBoundary) []networkSignalAbse
 }
 
 // eventWire ist die JSON-Antwortform für ein Event im Detail-Response.
-// `correlation_id` und `trace_id` ab `0.4.0` (§3.7 im API-Kontrakt):
-//   - `correlation_id` ist Pflichtfeld in 0.4.0+-Read-Antworten (kein
-//     `omitempty`); Empty-String nur bei Legacy-Events, die vor
-//     §3.2-Closeout persistiert wurden.
-//   - `trace_id` ist optional (`omitempty`); fehlt bei Events ohne
-//     gültigen Trace-Kontext (Edge-Case: Server-Span ohne Trace-ID).
+// `correlation_id` und `trace_id` (§3.7 im API-Kontrakt):
+//  - `correlation_id` ist Pflichtfeld in 0.4.0+-Read-Antworten (kein
+//  `omitempty`); Empty-String nur bei Legacy-Events, die vor
+//  §3.2-Closeout persistiert wurden.
+//  - `trace_id` ist optional (`omitempty`); fehlt bei Events ohne
+//  gültigen Trace-Kontext (Edge-Case: Server-Span ohne Trace-ID).
 type eventWire struct {
 	EventName        string         `json:"event_name"`
 	ProjectID        string         `json:"project_id"`
@@ -376,7 +376,7 @@ type eventWire struct {
 	// server_received_at|` die 60-s-Schwelle (§5.3) zum Ingest-
 	// Zeitpunkt überschritten hat. `omitempty` hält das Feld auf der
 	// Default-`false`-Seite aus dem Body — alte Clients sehen das
-	// Feld nur, wenn es relevant ist (plan-0.12.6 Tranche 3 / R-5).
+	// Feld nur, wenn es relevant ist (R-5).
 	TimeSkewWarning bool `json:"time_skew_warning,omitempty"`
 }
 
@@ -417,7 +417,7 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 }
 
 // writeCursorError mappt die Cursor-Fehlerklassen aus cursor.go auf
-// HTTP-Status und Body gemäß API-Kontrakt §10.3 / ADR-0004 §6.
+// HTTP-Status und Body gemäß API-Kontrakt / ADR-0004
 // Unbekannte Errors fallen auf 500 zurück (sollte nicht erreichbar
 // sein, weil decode nur die drei Klassen liefert).
 func writeCursorError(w http.ResponseWriter, err error) {

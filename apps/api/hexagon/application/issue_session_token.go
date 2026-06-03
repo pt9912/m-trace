@@ -12,7 +12,7 @@ import (
 )
 
 // IssueSessionTokenService implementiert
-// `driving.AuthSessionInbound` (`0.12.0`, RAK-72). Der Service
+// `driving.AuthSessionInbound` (RAK-72). Der Service
 // orchestriert Project-Policy-Resolve, Audience-/TTL-Validierung,
 // Issuance-Rate-Limit, Token-ID-Generierung, Claim-Build und
 // Signatur — ohne selbst HTTP, JSON, Storage oder Crypto-Library zu
@@ -25,7 +25,7 @@ import (
 //  2. Project-Policy laden.
 //  3. Audience normalisieren + gegen Allowlist prüfen.
 //  4. TTL gegen wirksame Project-Grenze auflösen (kein stiller
-//     Clamp).
+//  Clamp).
 //  5. Issuance-Rate-Limit (global + Project) prüfen.
 //  6. Token-ID generieren.
 //  7. Claims bauen + signieren.
@@ -40,7 +40,7 @@ type IssueSessionTokenService struct {
 }
 
 // NewIssueSessionTokenService konstruiert den Service mit Default-
-// Clock (`time.Now().UTC`) und Default-Issuer
+// Clock (`time.Now.UTC`) und Default-Issuer
 // (`domain.DefaultSessionTokenIssuer`). Tests können beide Werte
 // überschreiben.
 func NewIssueSessionTokenService(
@@ -70,7 +70,7 @@ func (s *IssueSessionTokenService) IssueSessionToken(ctx context.Context, req dr
 	}
 	if err := domain.ValidateProjectIDConsistency(req.RequestProjectID, resolved); err != nil {
 		// Der HTTP-Adapter mappt `ErrIngestProjectIDMismatch` heute auf
-		// `400 project_id_mismatch`. Im `0.12.0`-Auth-Pfad wird daraus
+		// `400 project_id_mismatch`. Im Auth-Pfad wird daraus
 		// `401 auth_project_mismatch` — wir liefern den Auth-Fehler
 		// direkt, ohne den ingest-spezifischen Marker zu re-mappen.
 		if errors.Is(err, domain.ErrIngestProjectIDMismatch) {
@@ -99,7 +99,7 @@ func (s *IssueSessionTokenService) IssueSessionToken(ctx context.Context, req dr
 	}
 
 	// Issuance-Bucket: Project-Policy hat Vorrang vor dem Adapter-
-	// Default. `IsZero()` heißt „nimm den Default" (RAK-74).
+	// Default. `IsZero` heißt „nimm den Default" (RAK-74).
 	allow, err := s.Limiter.Allow(ctx, resolved, policy.RateLimit.IssuanceBucket)
 	if err != nil {
 		return driving.IssueSessionTokenResult{}, err
@@ -141,7 +141,7 @@ func (s *IssueSessionTokenService) IssueSessionToken(ctx context.Context, req dr
 }
 
 // now liefert die aktuelle Clock — Tests injizieren eine deterministische
-// Funktion, Produktion verwendet `time.Now().UTC()`. Eine `nil`-Clock
+// Funktion, Produktion verwendet `time.Now.UTC`. Eine `nil`-Clock
 // fällt auf den Default zurück, damit ein direkt instanziiertes
 // Service-Objekt nicht panict.
 func (s *IssueSessionTokenService) now() time.Time {

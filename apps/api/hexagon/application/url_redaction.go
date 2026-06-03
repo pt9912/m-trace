@@ -8,7 +8,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// URL-Redaction-Matrix aus spec/telemetry-model.md §1.4 und plan-0.4.0
+// URL-Redaction-Matrix aus spec/telemetry-model.md und
 // §4.4 DoD-Item 5. Vor Persistenz und Dashboard-Anzeige werden alle
 // URL-verdächtigen Meta-Keys redigiert; nichts roh persistiert.
 //
@@ -24,7 +24,7 @@ import (
 const redactedTokenSegment = ":redacted"
 
 // hexSegmentPattern erfasst Hex-Strings mit gerader Länge ≥ 32
-// (Token-Heuristik aus spec/telemetry-model.md §1.4).
+// (Token-Heuristik aus spec/telemetry-model.md).
 // `regexp.MustCompile`-Globals werden vom gochecknoglobals-Default
 // ignoriert (kompilierte Regex ohne Mutationsfläche).
 var hexSegmentPattern = regexp.MustCompile(`^(?:[0-9A-Fa-f]{2}){16,}$`)
@@ -34,7 +34,7 @@ var hexSegmentPattern = regexp.MustCompile(`^(?:[0-9A-Fa-f]{2}){16,}$`)
 var jwtSegmentPattern = regexp.MustCompile(`^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$`)
 
 // isKnownURLMetaKey deckt die explizit benannte Liste der URL-
-// verdächtigen Meta-Keys aus spec/telemetry-model.md §1.4 case-
+// verdächtigen Meta-Keys aus spec/telemetry-model.md case-
 // insensitiv ab. Die switch-Form ersetzt eine globale Map, damit
 // gochecknoglobals nicht ausschlägt.
 func isKnownURLMetaKey(key string) bool {
@@ -55,7 +55,7 @@ func isKnownURLMetaKey(key string) bool {
 
 // redactEventMetaURLs mutiert die übergebene Meta-Map und ersetzt alle
 // URL-verdächtigen String-Werte durch redigierte Repräsentanten gemäß
-// spec/telemetry-model.md §1.4. `network.redacted_url` wird nicht
+// spec/telemetry-model.md `network.redacted_url` wird nicht
 // erneut redigiert — der Key ist bereits durch validateReservedEventMeta
 // strikt geprüft. Reserved-Key-Validation passiert immer **vor** der
 // Redaction; Aufrufer müssen die Reihenfolge einhalten, damit ein
@@ -106,7 +106,7 @@ func shouldRedactMetaValue(key, value string) bool {
 }
 
 // redactURLString redigiert einen einzelnen URL-Wert gemäß
-// spec/telemetry-model.md §1.4: Scheme/Host bleiben erhalten,
+// spec/telemetry-model.md: Scheme/Host bleiben erhalten,
 // userinfo/Query/Fragment werden entfernt, tokenartige Pfadsegmente
 // werden durch ":redacted" ersetzt. Unparsebare Werte werden komplett
 // als ":redacted" persistiert (kein roher Fallback).
@@ -164,12 +164,12 @@ func redactPathSegments(escapedPath string) string {
 }
 
 // isTokenLikePathSegment implementiert die Token-Heuristik aus
-// spec/telemetry-model.md §1.4:
+// spec/telemetry-model.md:
 //
-//   - mindestens 24 Zeichen UND mindestens 80 % aus [A-Za-z0-9_-];
-//   - ODER Hex-String mit gerader Länge mindestens 32;
-//   - ODER bekanntes JWT-/SAS-/Signed-URL-Muster (drei Base64URL-Blöcke
-//     getrennt durch Punkte).
+//  - mindestens 24 Zeichen UND mindestens 80 % aus [A-Za-z0-9_-];
+//  - ODER Hex-String mit gerader Länge mindestens 32;
+//  - ODER bekanntes JWT-/SAS-/Signed-URL-Muster (drei Base64URL-Blöcke
+//  getrennt durch Punkte).
 func isTokenLikePathSegment(seg string) bool {
 	if len(seg) == 0 {
 		return false

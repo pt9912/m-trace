@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-// TestOriginRateLimitMiddleware_NilLimiterPassesThrough (plan-0.12.6
-// Tranche 6 / R-22): wenn `limiter=nil`, ist die Middleware ein
+// TestOriginRateLimitMiddleware_NilLimiterPassesThrough (
+// / R-22): wenn `limiter=nil`, ist die Middleware ein
 // 1:1-Pass-Through (kein Wrap; Disabled-Pfad aus dem Boot-Validator).
 func TestOriginRateLimitMiddleware_NilLimiterPassesThrough(t *testing.T) {
 	t.Parallel()
@@ -22,7 +22,7 @@ func TestOriginRateLimitMiddleware_NilLimiterPassesThrough(t *testing.T) {
 	}
 }
 
-// TestClientIPFromRemoteAddr_EdgeCases (plan-0.12.6 Tranche 6 / R-22):
+// TestClientIPFromRemoteAddr_EdgeCases (R-22):
 // leere RemoteAddr → Empty-String (No-Op-Key); host-only RemoteAddr
 // → `ip:<host>`-Key; host:port-Form → entkoppelter Host als Key.
 func TestClientIPFromRemoteAddr_EdgeCases(t *testing.T) {

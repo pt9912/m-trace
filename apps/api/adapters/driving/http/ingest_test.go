@@ -20,10 +20,10 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// `0.11.0` Tranche 2 — HTTP-Wire-Tests für `/api/ingest/*`. Stub-
+//  — HTTP-Wire-Tests für `/api/ingest/*`. Stub-
 // UseCase erlaubt Token/Status-/Wire-Vertrag-Pfade ohne Persistenz.
 //
-// Wire-Vertrag aus spec/backend-api-contract.md §3.8 (Endpunktmatrix
+// Wire-Vertrag aus spec/backend-api-contract.md (Endpunktmatrix
 // + Auth-Matrix + sieben-stufige Fehlerreihenfolge + Wire-Skizzen).
 
 const (
@@ -211,8 +211,8 @@ func TestIngestHandler_CreateStream_HappyPath(t *testing.T) {
 }
 
 // TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState
-// (plan-0.12.6 Tranche 9 / R-15): ohne `?provision=true` bleibt das
-// Body byte-stabil zum `0.11.0`-Format — kein `media_server_state`-
+// (R-15): ohne `?provision=true` bleibt das
+// Body byte-stabil zum Format — kein `media_server_state`-
 // Feld in der Antwort.
 func TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState(t *testing.T) {
 	t.Parallel()
@@ -251,7 +251,7 @@ func TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState(t *
 }
 
 // TestIngestHandler_CreateStream_ProvisionApplied_IncludesMediaServerState
-// (plan-0.12.6 Tranche 9 / R-15): `?provision=true` + Use-Case liefert
+// (R-15): `?provision=true` + Use-Case liefert
 // `MediaServerState="applied"` → Body trägt
 // `media_server_state.state="applied"`.
 func TestIngestHandler_CreateStream_ProvisionApplied_IncludesMediaServerState(t *testing.T) {
@@ -292,7 +292,7 @@ func TestIngestHandler_CreateStream_ProvisionApplied_IncludesMediaServerState(t 
 }
 
 // TestIngestHandler_CreateStream_ProvisionDisabled_IncludesHint
-// (plan-0.12.6 Tranche 9 / R-15): `?provision=true` ohne konfigurierten
+// (R-15): `?provision=true` ohne konfigurierten
 // Provisioner → `media_server_state.state="disabled"` plus
 // `hint`-Feld mit Operator-Hinweis. HTTP-Status bleibt 201.
 func TestIngestHandler_CreateStream_ProvisionDisabled_IncludesHint(t *testing.T) {
@@ -340,7 +340,7 @@ func TestIngestHandler_CreateStream_ProvisionDisabled_IncludesHint(t *testing.T)
 }
 
 // TestIngestHandler_CreateStream_ProvisionFailed_201Created
-// (plan-0.12.6 Tranche 9 / R-15): server-side fail → Body trägt
+// (R-15): server-side fail → Body trägt
 // `failed`, aber HTTP-Status bleibt `201 Created` (kein API-Rollback).
 func TestIngestHandler_CreateStream_ProvisionFailed_201Created(t *testing.T) {
 	t.Parallel()
@@ -1083,7 +1083,7 @@ func TestIngestHandler_EmptyDisplayNameMapsTo400(t *testing.T) {
 	}
 }
 
-// `0.11.0` Tranche 4 — Lifecycle-Hook-Handler.
+//  — Lifecycle-Hook-Handler.
 
 func TestIngestLifecycleHook_StartedHappyPath(t *testing.T) {
 	t.Parallel()

@@ -7,7 +7,7 @@ import "github.com/pt9912/m-trace/apps/api/hexagon/domain"
 // for concurrent use and must not add high-cardinality labels such as
 // session_id, user_agent, segment_url, or client_ip.
 //
-//nolint:interfacebloat // Aggregat-Metrik-Vertrag aus spec/lastenheft.md §7.9: vier Pflichtcounter + drei SRT-Health- + ein WebRTC-Sample-Aufruf bündeln den gesamten driven-Port.
+//nolint:interfacebloat // Aggregat-Metrik-Vertrag aus spec/lastenheft.md: vier Pflichtcounter + drei SRT-Health- + ein WebRTC-Sample-Aufruf bündeln den gesamten driven-Port.
 type MetricsPublisher interface {
 	EventsAccepted(n int)
 	InvalidEvents(n int)
@@ -17,8 +17,8 @@ type MetricsPublisher interface {
 	RebufferEvents(n int)
 	StartupTimeMS(ms float64)
 
-	// SRT-Health-Aggregate (plan-0.6.0 §4 Sub-3.6,
-	// spec/telemetry-model.md §7.7). Wertebereiche der Labels
+	// SRT-Health-Aggregate ( Sub-3.6,
+	// spec/telemetry-model.md). Wertebereiche der Labels
 	// kommen aus den Domain-Enums und sind in §3.2 als bounded
 	// Aggregat-Labels freigegeben.
 
@@ -36,8 +36,8 @@ type MetricsPublisher interface {
 	// Aufruf nur bei nicht-`none` Fehlerklassen.
 	SrtCollectorError(code domain.SourceErrorCode)
 
-	// WebRTC-Aggregate (plan-0.8.0 §4 Tranche 3,
-	// spec/telemetry-model.md §3.5). Wertebereiche der Labels kommen
+	// WebRTC-Aggregate (
+	// spec/telemetry-model.md). Wertebereiche der Labels kommen
 	// aus den W3C-Enums und sind in §3.2 als bounded Aggregat-Labels
 	// freigegeben. State-Counter zählen Samples (nicht Gauges);
 	// Counter-Felder werden serverseitig deltadiffenziert über den
@@ -47,8 +47,8 @@ type MetricsPublisher interface {
 	WebRTCSample(sample WebRTCSampleSnapshot)
 
 	// SampleRateDrift incrementiert
-	// `mtrace_sample_rate_drift_total{project_id}` (plan-0.12.6
-	// Tranche 4 / R-10, spec/telemetry-model.md §8.3). Aufruf nur,
+	// `mtrace_sample_rate_drift_total{project_id}` (
+	// / R-10, spec/telemetry-model.md). Aufruf nur,
 	// wenn ein `meta.session_sample_rate`-Wert eingegangen ist, der
 	// vom bereits persistierten Wert um mehr als die Toleranzschwelle
 	// (`SampleRateDriftToleranceP_PM` = 100 ppm) abweicht.

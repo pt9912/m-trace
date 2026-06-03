@@ -22,14 +22,14 @@ type PlaybackEventInbound interface {
 
 // BatchInput is the wire-format-neutral representation of a request to
 // the API. It carries the raw header value (AuthToken), den optionalen
-// Origin-Header (CORS Variante B, plan-0.1.0.md §5.1), die ermittelte
+// Origin-Header (CORS Variante B, ), die ermittelte
 // ClientIP (für die Rate-Limit-Dimension F-110) und die parsed
-// payload. Per spec/backend-api-contract.md §5 the use case is
+// payload. Per spec/backend-api-contract.md the use case is
 // responsible for the full validation order from step 2 onwards.
 // Origin="" → CLI/curl-Pfad: keine Project-Bindung. ClientIP="" →
 // keine IP-basierte Rate-Limit-Dimension (Tests/headless flows).
 //
-// PreResolvedProject ist der `0.12.0`-Pfad (RAK-72/RAK-75): Wenn der
+// PreResolvedProject ist der Pfad (RAK-72/RAK-75): Wenn der
 // HTTP-Adapter den Auth-Header bereits aufgelöst hat (Session Token
 // über `Authorization: Bearer mtr_st_*` oder
 // `X-MTrace-Session-Token`), reicht er das resolvierte Project hier
@@ -44,14 +44,14 @@ type BatchInput struct {
 	ClientIP           string
 	Events             []EventInput
 	// Boundaries ist der optionale `session_boundaries[]`-Wrapper aus
-	// API-Kontrakt §3.4 (plan-0.4.0 §4.4). Maximal 20 pro Batch, jede
+	// API-Kontrakt. Maximal 20 pro Batch, jede
 	// Boundary muss eine `(project_id, session_id)`-Partition
 	// referenzieren, für die mindestens ein Event im selben Batch
 	// existiert. Use-Case validiert atomar; Verstöße liefern 422 und
 	// persistieren weder Events noch Boundaries.
 	Boundaries []BoundaryInput
 	// Trace ist der vom HTTP-Adapter aufgelöste Trace-Kontext für
-	// diesen Batch (siehe spec/telemetry-model.md §2.5). Adapter füllt
+	// diesen Batch (siehe spec/telemetry-model.md). Adapter füllt
 	// `TraceID` und `SpanID` mit den IDs des Server-Spans (entweder als
 	// Child eines validen `traceparent`-Headers oder als neuer Root).
 	// Use Case kennt OTel nicht und liest nur die zwei Hex-Strings.
@@ -88,7 +88,7 @@ type SDKInput struct {
 }
 
 // BoundaryInput is the wire-format-neutral representation eines
-// `session_boundaries[]`-Eintrags (API-Kontrakt §3.4). Use-Case
+// `session_boundaries[]`-Eintrags (API-Kontrakt). Use-Case
 // validiert Pflichtfelder, Reason-Enum/Pattern und Partition-Match
 // gegen die Events des Batches.
 type BoundaryInput struct {
@@ -103,7 +103,7 @@ type BoundaryInput struct {
 
 // BatchResult is what the use case returns on success. Trace-relevante
 // Output-Felder reicht der HTTP-Adapter als Span-Attribute weiter
-// (siehe spec/telemetry-model.md §2.5).
+// (siehe spec/telemetry-model.md).
 type BatchResult struct {
 	Accepted int
 	// ProjectID ist das aufgelöste Project (Allowlist). Setzt das

@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// plan-0.4.0 §7.2 — Backend-Tests für die vier Pflichtcounter aus
-// API-Kontrakt §7. Jeder Test pinnt explizit den Counter-Wert nach
+//  — Backend-Tests für die vier Pflichtcounter aus
+// API-Kontrakt Jeder Test pinnt explizit den Counter-Wert nach
 // einem konkreten Request, damit Inkrement- und Null-Inkrement-Pfade
 // getrennt nachweisbar sind.
 //
@@ -277,9 +277,9 @@ func TestMetrics_RateLimitedCounter_Increments(t *testing.T) {
 	assertLabelFreeCounter(t, scrape, "mtrace_playback_events_total", 100)
 }
 
-// TestMetrics_DroppedCounter_StaysZero pinnt: API-Kontrakt §7
+// TestMetrics_DroppedCounter_StaysZero pinnt: API-Kontrakt
 // erlaubt `mtrace_dropped_events_total = 0` solange kein produktiver
-// Drop-Pfad existiert. Plan-0.4.0 §7 (Tranche 6) implementiert keinen
+// Drop-Pfad existiert. Plan-0.4.0 §7 implementiert keinen
 // solchen Pfad — die Metrik muss aber sichtbar sein.
 func TestMetrics_DroppedCounter_StaysZero(t *testing.T) {
 	t.Parallel()

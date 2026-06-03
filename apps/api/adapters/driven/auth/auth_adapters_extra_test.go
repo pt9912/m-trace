@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 2: Rand-Pfade der Auth-Adapter — Nil-Receiver,
+// : Rand-Pfade der Auth-Adapter — Nil-Receiver,
 // deaktivierte Buckets, Fallback auf BaseProject und ID-Format.
 
 func TestRandomTokenIDGenerator_Format(t *testing.T) {
@@ -96,7 +96,7 @@ func TestInMemoryIssuanceRateLimiter_ProjectBucketRefundsGlobalOnDeny(t *testing
 
 func TestInMemoryIssuanceRateLimiter_NoRefundWhenGlobalDisabled(t *testing.T) {
 	t.Parallel()
-	// Global deaktiviert (cap=0/refill=0) → consume() ist No-Op und
+	// Global deaktiviert (cap=0/refill=0) → consume ist No-Op und
 	// hat keinen Token verbraucht; der Refund-Pfad darf in dem Fall
 	// keinen virtuellen Token „erzeugen" (Review-Finding #7).
 	l := auth.NewInMemoryIssuanceRateLimiter(0, 0, 1, 0)

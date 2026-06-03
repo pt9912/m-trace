@@ -69,7 +69,7 @@ func (r *recordingRepo) Sweep(_ context.Context, now time.Time, stalled, ended t
 }
 
 // TestSessionsSweeper_SweepOnce_PassesDefaults verifiziert, dass
-// SweepOnce die Default-Schwellwerte und das now() weitergibt.
+// SweepOnce die Default-Schwellwerte und das now weitergibt.
 func TestSessionsSweeper_SweepOnce_PassesDefaults(t *testing.T) {
 	t.Parallel()
 	repo := &recordingRepo{}
@@ -98,7 +98,7 @@ func TestSessionsSweeper_SweepOnce_PassesDefaults(t *testing.T) {
 
 // TestSessionsSweeper_SweepOnce_PropagatesError prüft, dass ein
 // Adapter-Fehler aus SweepOnce zurück an den Caller fließt — wichtig,
-// damit Run() ihn loggen kann, ohne den Loop einzufrieren.
+// damit Run ihn loggen kann, ohne den Loop einzufrieren.
 func TestSessionsSweeper_SweepOnce_PropagatesError(t *testing.T) {
 	t.Parallel()
 	repo := &recordingRepo{failNext: true}

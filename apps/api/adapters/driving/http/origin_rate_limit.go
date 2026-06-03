@@ -9,7 +9,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// originRateLimitMiddleware (plan-0.12.6 Tranche 6 / R-22) sitzt vor
+// originRateLimitMiddleware (R-22) sitzt vor
 // `POST /api/auth/session-tokens` und `POST /api/playback-events` und
 // rejected Anfragen über `429 origin_rate_limited`, wenn der per-Key-
 // Token-Bucket leer ist. Reihenfolge gemäß §6 §0.1 (Plan-DoD):
@@ -17,14 +17,14 @@ import (
 // erst danach.
 //
 // Key-Wahl:
-//   - `trustXFF=false` (Default): `clientIPFromRemoteAddr(r)` —
-//     entkoppelt den Port aus `host:port` und nutzt den Host als Key.
-//   - `trustXFF=true`: nutzt **das letzte** (rechteste) Element der
-//     `X-Forwarded-For`-Liste als Client-IP. Das ist nur korrekt,
-//     wenn der Operator dem Reverse-Proxy traut, der XFF setzt
-//     (sonst kann ein Client den Header beliebig vorgeben und so
-//     die Limit-Buckets stündlich switchen). Operator-Doku in
-//     `docs/user/auth.md` §5.8.
+//  - `trustXFF=false` (Default): `clientIPFromRemoteAddr(r)` —
+//  entkoppelt den Port aus `host:port` und nutzt den Host als Key.
+//  - `trustXFF=true`: nutzt **das letzte** (rechteste) Element der
+//  `X-Forwarded-For`-Liste als Client-IP. Das ist nur korrekt,
+//  wenn der Operator dem Reverse-Proxy traut, der XFF setzt
+//  (sonst kann ein Client den Header beliebig vorgeben und so
+//  die Limit-Buckets stündlich switchen). Operator-Doku in
+//  `docs/user/auth.md` §5.8.
 //
 // `limiter=nil` → Middleware ist No-Op (Disabled-Pfad aus dem
 // Boot-Validator).

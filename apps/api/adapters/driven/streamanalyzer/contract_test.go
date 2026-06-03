@@ -18,8 +18,8 @@ import (
 // `spec/contract-fixtures/analyzer/`. Quelle bleibt spec/; ein TS-Test
 // in `packages/stream-analyzer/tests/contract.test.ts` pinnt, dass
 // die Kopien byte-gleich mit der Spec-Quelle sind. Damit sind beide
-// Sprachen gegen *dieselbe* Wahrheit getestet (plan-0.3.0 §9
-// Tranche 7.5/4).
+// Sprachen gegen *dieselbe* Wahrheit getestet (
+// .5/4).
 
 //go:embed testdata/contract-success-master.json
 var contractSuccessMaster []byte
@@ -75,7 +75,7 @@ func TestHTTPStreamAnalyzer_ContractSuccessFixture(t *testing.T) {
 }
 
 // TestHTTPStreamAnalyzer_ContractDashVodFixture verifiziert, dass die
-// VOD-MPD-Fixture (plan-0.9.0 Tranche 3, RAK-58) byte-gleich vom
+// VOD-MPD-Fixture (RAK-58) byte-gleich vom
 // Adapter geparsed wird: AnalyzerKind = dash, PlaylistType = dash,
 // itemCount = 3 (2 video + 1 audio Representation).
 func TestHTTPStreamAnalyzer_ContractDashVodFixture(t *testing.T) {
@@ -142,7 +142,7 @@ func TestHTTPStreamAnalyzer_ContractDashLiveFixture(t *testing.T) {
 }
 
 // TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped verifiziert
-// (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64), dass das additive
+// (NF-13 / RAK-63 / RAK-64), dass das additive
 // `details.cmaf.binary`-Schema aus T4 unverändert über den Driven-
 // Adapter durchgereicht wird. Der Test JSON-decodiert das
 // EncodedDetails-Feld des Domain-Results und pinnt den Skipped-Status
@@ -215,7 +215,7 @@ func TestHTTPStreamAnalyzer_ContractDashVodCMAFBinarySkipped(t *testing.T) {
 }
 
 // TestHTTPStreamAnalyzer_CMAFContractFixturesDecode stellt sicher,
-// dass alle additiven CMAF-Contract-Fixtures aus plan-0.10.0 über den
+// dass alle additiven CMAF-Contract-Fixtures aus über den
 // Go-Adapter decodierbar bleiben. Die fachlichen Einzelpfade sind im
 // TypeScript-Analyzer gepinnt; hier geht es um den Wire-Vertrag und
 // die unveränderte Durchleitung von `details.cmaf` in EncodedDetails.

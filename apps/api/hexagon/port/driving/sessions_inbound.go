@@ -8,11 +8,11 @@ import (
 )
 
 // ListSessionsCursor und SessionEventsCursor enthalten **keine**
-// `ProcessInstanceID` mehr — Cursor-v2 (siehe ADR-0004 §5) trägt nur
+// `ProcessInstanceID` mehr — Cursor-v2 (siehe ADR-0004) trägt nur
 // noch durable Storage-Werte; Restart-Stabilität liegt jetzt am
 // `ingest_sequence`-Tie-Breaker statt an einer Prozess-ID.
 
-// SessionsInbound ist der Read-Pfad zu Stream-Sessions (plan-0.1.0.md
+// SessionsInbound ist der Read-Pfad zu Stream-Sessions (
 // §5.1, Sub-Item 4): zwei Operationen für Liste und Detail. Der HTTP-
 // Adapter encoded und decoded den opaken Wire-Cursor; hier fließen
 // nur typisierte Cursor.
@@ -22,9 +22,9 @@ type SessionsInbound interface {
 }
 
 // ListSessionsInput trägt ProjectID, Limit und optionalen After-Cursor.
-// ProjectID ist ab plan-0.4.0 §4.2 Pflicht und stammt aus der
+// ProjectID ist ab Pflicht und stammt aus der
 // Token-Resolution im HTTP-Adapter; Limit wird im Use Case auf das
-// Default- bzw. Hard-Maximum-Fenster geclampt (plan-0.1.0.md §5.1:
+// Default- bzw. Hard-Maximum-Fenster geclampt (:
 // Default 100, Hard-Max 1000).
 type ListSessionsInput struct {
 	ProjectID string
@@ -44,7 +44,7 @@ type ListSessionsCursor struct {
 //
 // Boundaries[i] gehört zur Session Sessions[i] und enthält die persistierten
 // `session_boundaries[]`-Read-Tripel (kind/adapter/reason) gemäß
-// spec/backend-api-contract.md §3.7.1. Reihenfolge ist parallel zur
+// spec/backend-api-contract.md Reihenfolge ist parallel zur
 // `Sessions`-Slice; eine Session ohne Boundaries hat einen leeren
 // inneren Slice (Default `[]` im Read-Shape).
 type ListSessionsResult struct {
@@ -55,7 +55,7 @@ type ListSessionsResult struct {
 
 // GetSessionInput identifiziert eine Session über (ProjectID, SessionID)
 // und steuert die Event-Pagination innerhalb der Detail-Antwort.
-// ProjectID ist ab plan-0.4.0 §4.2 Pflicht und stammt aus der
+// ProjectID ist ab Pflicht und stammt aus der
 // Token-Resolution im HTTP-Adapter.
 type GetSessionInput struct {
 	ProjectID   string
@@ -67,7 +67,7 @@ type GetSessionInput struct {
 // SessionEventsCursor kapselt die Sortier-Position der Event-Liste
 // einer Session: (server_received_at asc, sequence_number asc,
 // ingest_sequence asc). ingest_sequence ist serverseitig gesetzt und
-// global eindeutig (ADR-0002 §8.1) — damit der finale, restart-stabile
+// global eindeutig (ADR-0002) — damit der finale, restart-stabile
 // Tie-Breaker.
 type SessionEventsCursor struct {
 	ServerReceivedAt time.Time
@@ -80,7 +80,7 @@ type SessionEventsCursor struct {
 //
 // Boundaries enthält die persistierten `session_boundaries[]`-Read-
 // Tripel (kind/adapter/reason) für die abgefragte Session — Default
-// leerer Slice. Spec-Anker spec/backend-api-contract.md §3.7.1.
+// leerer Slice. Spec-Anker spec/backend-api-contract.md
 type GetSessionResult struct {
 	Session    domain.StreamSession
 	Events     []domain.PlaybackEvent

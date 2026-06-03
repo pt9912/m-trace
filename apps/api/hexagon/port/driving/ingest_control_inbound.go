@@ -8,19 +8,19 @@ import (
 )
 
 // IngestControlInbound ist der Driving-Port für den Ingest-Control-
-// Pfad (`0.11.0` Tranche 2, NF-13 / RAK-65..RAK-67). Der HTTP-Adapter
+// Pfad (NF-13 / RAK-65..RAK-67). Der HTTP-Adapter
 // dekodiert die Anfrage, leitet sie als `Create*Input`-Struktur an
 // den Application-Layer weiter und mappt das Ergebnis auf das
 // JSON-Schema aus `spec/backend-api-contract.md` §3.8. Domain- und
 // Application-Layer bleiben frei von HTTP- und SQLite-Annahmen.
 //
 // Sicherheitsprofil:
-//   - `CreateStreamResult` und `RotateKeyResult` enthalten den
-//     **Klartext-Stream-Key** ausschließlich auf dem direkten
-//     Use-Case-Output; die API-Antwort liefert ihn genau einmal an
-//     den Aufrufer und persistiert ihn nirgends weiter.
-//   - List-, Detail-, Validate- und Lifecycle-Pfade liefern
-//     keinerlei Klartext-Werte.
+//  - `CreateStreamResult` und `RotateKeyResult` enthalten den
+//  **Klartext-Stream-Key** ausschließlich auf dem direkten
+//  Use-Case-Output; die API-Antwort liefert ihn genau einmal an
+//  den Aufrufer und persistiert ihn nirgends weiter.
+//  - List-, Detail-, Validate- und Lifecycle-Pfade liefern
+//  keinerlei Klartext-Werte.
 type IngestControlInbound interface {
 	CreateStream(ctx context.Context, req CreateStreamRequest) (CreateStreamResult, error)
 	ListStreams(ctx context.Context, projectID string) ([]domain.IngestStream, error)
@@ -59,7 +59,7 @@ type LifecycleEventResult struct {
 }
 
 // MediaServerConfigResult ist die Antwort auf
-// `GET /api/ingest/media-server-config` (`0.11.0` Tranche 3,
+// `GET /api/ingest/media-server-config` (
 // RAK-68). `ConfigYAML` enthält das deterministisch generierte
 // MediaMTX-Artefakt; Klartext-Stream-Keys erscheinen niemals im
 // Output (siehe Plan §0.7 + RAK-66). `Warnings` listet
@@ -78,9 +78,9 @@ type MediaServerConfigResult struct {
 // Wire-Vertrag-Wert (Konsistenzcheck zum Token); der Use-Case nutzt
 // `ResolvedProjectID` als kanonischen Wert.
 //
-// `Provision` schaltet ab `0.12.6` Tranche 9 (R-15) den optionalen
+// `Provision` schaltet ab (R-15) den optionalen
 // Media-Server-I/O-Pfad. Default `false`: byte-stabil zum
-// `0.11.0`-Format — kein Server-I/O, kein neues Response-Feld.
+// Format — kein Server-I/O, kein neues Response-Feld.
 // `true` triggert den `MediaServerProvisioner.Apply`-Aufruf nach
 // erfolgreicher API-State-Anlage; das Ergebnis fließt in
 // `CreateStreamResult.MediaServerState`.
@@ -103,7 +103,7 @@ type CreateStreamRequest struct {
 // Request `Provision=true` trug. Bei `Provision=false` bleibt der
 // Wert leer; der HTTP-Adapter mappt das auf ein **fehlendes**
 // `media_server_state`-Feld im Wire-Body (byte-stabil zum
-// `0.11.0`-Format).
+// Format).
 type CreateStreamResult struct {
 	Stream           domain.IngestStream
 	Material         domain.StreamKeyMaterial

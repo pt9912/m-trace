@@ -1,7 +1,7 @@
 // Package mediamtxclient ist der HTTP-Adapter, der den
 // driven.SrtSource-Port gegen die MediaMTX-Control-API
-// (`GET /v3/srtconns/list`) realisiert (plan-0.6.0 §4 Sub-3.4,
-// spec/architecture.md §3.4 / §5.4).
+// (`GET /v3/srtconns/list`) realisiert ( Sub-3.4,
+// spec/architecture.md / §5.4).
 //
 // `apps/api` bleibt CGO-frei: der Adapter spricht ausschließlich
 // HTTP+JSON, keine libsrt-Bindings (R-2 ist mit Sub-1.3 als
@@ -34,7 +34,7 @@ const (
 	defaultMaxResponseBytes int64 = 1 * 1024 * 1024
 
 	// path für `GET /v3/srtconns/list` (MediaMTX 1.x; siehe
-	// plan-0.6.0 Sub-1.2 Probe-Befund §2.4 / Fixture).
+	//  Sub-1.2 Probe-Befund §2.4 / Fixture).
 	srtConnsListPath = "/v3/srtconns/list"
 )
 

@@ -11,7 +11,7 @@ import (
 )
 
 // TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent deckt
-// plan-0.4.0 §3.4b #1 (aus §3.3-Review, Should-fix #1).
+//  #1 (aus §3.3-Review, Should-fix #1).
 //
 // Vertrag: ein SDK auf 0.4.0 sendet `traceparent`-Header an einen
 // Server, der wie 0.3.x das Header-Feld gar nicht liest und keine

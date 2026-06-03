@@ -17,7 +17,7 @@ import (
 )
 
 // VaultAuthMethod selektiert die Login-Methode für den Vault-Adapter
-// (`0.12.5` Tranche 3 + `0.12.6` Tranche 8 / R-20). Drei Werte:
+// ( + R-20). Drei Werte:
 // `token` (statischer X-Vault-Token), `approle` (zwei-Phasen-Login
 // mit role_id+secret_id) und `kubernetes` (Pod-ServiceAccount-Token
 // + Vault-K8s-Login). Wire-Vertrag und Konfigurations-ENV siehe
@@ -71,22 +71,22 @@ type VaultSecretBackend struct {
 // beim ersten Aufruf.
 //
 // Gemeinsame Pflichtfelder:
-//   - `MTRACE_AUTH_VAULT_ADDR` (z. B. `http://127.0.0.1:8200`)
-//   - `MTRACE_AUTH_VAULT_PATH` (KV-v2-Pfad, z. B. `secret/data/m-trace/signing`)
+//  - `MTRACE_AUTH_VAULT_ADDR` (z. B. `http://127.0.0.1:8200`)
+//  - `MTRACE_AUTH_VAULT_PATH` (KV-v2-Pfad, z. B. `secret/data/m-trace/signing`)
 //
 // Auth-Method-Selektor `MTRACE_AUTH_VAULT_AUTH_METHOD`:
-//   - `token` (Default): Pflicht-ENV `MTRACE_AUTH_VAULT_TOKEN`.
-//   - `approle`: Pflicht-ENV `MTRACE_AUTH_VAULT_APPROLE_ROLE_ID`
-//     und `MTRACE_AUTH_VAULT_APPROLE_SECRET_ID`; optional
-//     `MTRACE_AUTH_VAULT_APPROLE_MOUNT` (Default `approle`).
-//   - `kubernetes`: Pflicht-ENV `MTRACE_AUTH_VAULT_K8S_ROLE`;
-//     optional `MTRACE_AUTH_VAULT_K8S_JWT_PATH` (Default
-//     `/var/run/secrets/kubernetes.io/serviceaccount/token`),
-//     `MTRACE_AUTH_VAULT_K8S_MOUNT` (Default `kubernetes`).
+//  - `token` (Default): Pflicht-ENV `MTRACE_AUTH_VAULT_TOKEN`.
+//  - `approle`: Pflicht-ENV `MTRACE_AUTH_VAULT_APPROLE_ROLE_ID`
+//  und `MTRACE_AUTH_VAULT_APPROLE_SECRET_ID`; optional
+//  `MTRACE_AUTH_VAULT_APPROLE_MOUNT` (Default `approle`).
+//  - `kubernetes`: Pflicht-ENV `MTRACE_AUTH_VAULT_K8S_ROLE`;
+//  optional `MTRACE_AUTH_VAULT_K8S_JWT_PATH` (Default
+//  `/var/run/secrets/kubernetes.io/serviceaccount/token`),
+//  `MTRACE_AUTH_VAULT_K8S_MOUNT` (Default `kubernetes`).
 //
 // Optionale gemeinsame Felder:
-//   - `MTRACE_AUTH_VAULT_KEYS_FIELD` (Default `keys`)
-//   - `MTRACE_AUTH_VAULT_ACTIVE_KID_FIELD` (Default `active_kid`)
+//  - `MTRACE_AUTH_VAULT_KEYS_FIELD` (Default `keys`)
+//  - `MTRACE_AUTH_VAULT_ACTIVE_KID_FIELD` (Default `active_kid`)
 func NewVaultSecretBackend(lookup func(key string) string) (*VaultSecretBackend, error) {
 	if lookup == nil {
 		lookup = os.Getenv
@@ -266,10 +266,10 @@ func (b *VaultSecretBackend) LoadSigningKeys(ctx context.Context) ([]domain.Sess
 
 // resolveClientToken liefert den `X-Vault-Token`-Wert für den KV-Read,
 // abhängig von der konfigurierten Auth-Method:
-//   - token: direkter Wert aus `MTRACE_AUTH_VAULT_TOKEN`.
-//   - approle: Login-Roundtrip an `/v1/auth/<mount>/login`.
-//   - kubernetes: JWT aus Pod-File lesen, dann Login an
-//     `/v1/auth/<mount>/login`.
+//  - token: direkter Wert aus `MTRACE_AUTH_VAULT_TOKEN`.
+//  - approle: Login-Roundtrip an `/v1/auth/<mount>/login`.
+//  - kubernetes: JWT aus Pod-File lesen, dann Login an
+//  `/v1/auth/<mount>/login`.
 func (b *VaultSecretBackend) resolveClientToken(ctx context.Context) (string, error) {
 	// Constructor garantiert eine der drei Methoden — keine Default-
 	// Branch nötig.

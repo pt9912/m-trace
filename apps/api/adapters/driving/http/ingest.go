@@ -16,7 +16,7 @@ import (
 )
 
 // maxIngestRequestBytes ist die Defense-in-Depth-Grenze für den
-// Request-Body im Ingest-Control-Pfad (`0.11.0` Tranche 2,
+// Request-Body im Ingest-Control-Pfad (
 // NF-13 / RAK-65..RAK-70). Spec §3.8 §6 Schema-Validierung
 // erwartet, dass größere Bodies vor dem JSON-Parser abgeschnitten
 // werden.
@@ -108,7 +108,7 @@ func (h *IngestStreamRotateHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 }
 
 // IngestMediaServerConfigHandler bedient
-// `GET /api/ingest/media-server-config` (`0.11.0` Tranche 3,
+// `GET /api/ingest/media-server-config` (
 // RAK-68). Antwort enthält das deterministisch generierte
 // MediaMTX-YAML-Artefakt; Klartext-Stream-Keys erscheinen niemals.
 type IngestMediaServerConfigHandler struct {
@@ -155,7 +155,7 @@ func writeMediaServerConfigError(w http.ResponseWriter, logger *slog.Logger, err
 
 // IngestLifecycleHookHandler bedient
 // `POST /api/ingest/hooks/stream-started` und
-// `POST /api/ingest/hooks/stream-ended` (`0.11.0` Tranche 4 /
+// `POST /api/ingest/hooks/stream-ended` (
 // RAK-69). Das Event-`type` wird ausschließlich aus `Kind`
 // abgeleitet — Body-Felder mit gegenteiligem `type` haben keinen
 // Effekt, damit ein POST auf den Stop-Endpoint nicht heimlich ein
@@ -308,9 +308,9 @@ func (h *IngestStreamHandler) handleCreate(w http.ResponseWriter, r *http.Reques
 		writeIngestProblem(w, http.StatusBadRequest, "invalid_json", "Body ist kein gültiges JSON.")
 		return
 	}
-	// plan-0.12.6 Tranche 9 / R-15: optionaler `?provision=true`-
+	//  / R-15: optionaler `?provision=true`-
 	// Query-Param triggert den Media-Server-Provisioner. Default
-	// `false` bleibt **strikt byte-stabil** zum `0.11.0`-Format —
+	// `false` bleibt **strikt byte-stabil** zum Format —
 	// kein neues Response-Feld, kein I/O gegen den externen Server,
 	// `MTRACE_MEDIASERVER_PROVISION_URL` wird in diesem Pfad NICHT
 	// gelesen.
@@ -438,7 +438,7 @@ func readIngestBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 // writeIngestError mappt Domain-/Validation-Fehler auf HTTP-Status
 // + JSON-Body. Wichtig: ausschließlich `errors.Is`-Branches —
 // String-Heuristiken sind verboten, weil gewrappte Repo-Fehler
-// (z. B. `fmt.Errorf("ingest: insert ...: %w", err)` aus dem
+// (z. B. `fmt.Errorf("ingest: insert...: %w", err)` aus dem
 // SQLite-Adapter) sonst fälschlich als `400 invalid_request`
 // rauskämen statt als `500 internal_error`.
 func writeIngestError(w http.ResponseWriter, logger *slog.Logger, op string, err error) {

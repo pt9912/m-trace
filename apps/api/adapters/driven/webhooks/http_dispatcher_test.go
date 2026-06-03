@@ -55,7 +55,7 @@ func TestOutboundWebhook_NilDispatcherIsNoop(t *testing.T) {
 func TestOutboundWebhook_DefaultHelpersAreSafe(t *testing.T) {
 	t.Parallel()
 	// Construct via zero value to exercise the default-helper branches
-	// (`client()`/`requestTimeout()`/`now()` falling back to defaults
+	// (`client`/`requestTimeout`/`now` falling back to defaults
 	// when the optional fields are not set explicitly).
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

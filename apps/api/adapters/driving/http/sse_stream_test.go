@@ -19,7 +19,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// plan-0.4.0 §5 H4 — SSE-Backend-Endpunkt-Tests. Spec-Anker:
+//  H4 — SSE-Backend-Endpunkt-Tests. Spec-Anker:
 // `spec/backend-api-contract.md` §10a.
 
 func newSseHandler(broker *application.EventBroker, events *inmemory.EventRepository, hb time.Duration) *apihttp.SseStreamHandler {
@@ -170,7 +170,7 @@ func TestSse_Heartbeat(t *testing.T) {
 // WriteTimeout, deckt dieses Risiko also nicht ab — dieser Test nutzt
 // einen echten `http.Server` mit aggressivem WriteTimeout, der ohne
 // den SetWriteDeadline-Fix garantiert vor dem ersten Heartbeat
-// zuschlägt. Spec §10a + plan-0.4.0 §9.4 (Findings post-§9.4-Closeout).
+// zuschlägt. Spec §10a + (Findings post-§9.4-Closeout).
 func TestSse_StreamSurvivesShortWriteTimeout(t *testing.T) {
 	t.Parallel()
 	broker := application.NewEventBroker()

@@ -10,7 +10,7 @@ import (
 )
 
 // TestSessionRepository_SetSessionSampleRatePPMIfDefault_FirstSet
-// (plan-0.12.6 Tranche 4 / R-10): erstes Setzen auf einer Session
+// (R-10): erstes Setzen auf einer Session
 // mit Default-Wert (SampleRateFull) erfolgreich; applied=true.
 func TestSessionRepository_SetSessionSampleRatePPMIfDefault_FirstSet(t *testing.T) {
 	t.Parallel()
@@ -36,7 +36,7 @@ func TestSessionRepository_SetSessionSampleRatePPMIfDefault_FirstSet(t *testing.
 }
 
 // TestSessionRepository_SetSessionSampleRatePPMIfDefault_AlreadySet
-// (plan-0.12.6 Tranche 4): zweites Setzen lässt den ersten Wert
+// : zweites Setzen lässt den ersten Wert
 // unverändert; applied=false; got = existing.
 func TestSessionRepository_SetSessionSampleRatePPMIfDefault_AlreadySet(t *testing.T) {
 	t.Parallel()
@@ -64,7 +64,7 @@ func TestSessionRepository_SetSessionSampleRatePPMIfDefault_AlreadySet(t *testin
 }
 
 // TestSessionRepository_SetSessionSampleRatePPMIfDefault_NoOpFull
-// (plan-0.12.6 Tranche 4): ppm == SampleRateFull ist No-Op und
+// : ppm == SampleRateFull ist No-Op und
 // returnt (SampleRateFull, false, nil).
 func TestSessionRepository_SetSessionSampleRatePPMIfDefault_NoOpFull(t *testing.T) {
 	t.Parallel()
@@ -83,7 +83,7 @@ func TestSessionRepository_SetSessionSampleRatePPMIfDefault_NoOpFull(t *testing.
 }
 
 // TestSessionRepository_SetSessionSampleRatePPMIfDefault_UnknownSession
-// (plan-0.12.6 Tranche 4): Aufruf auf nicht-existenter Session liefert
+// : Aufruf auf nicht-existenter Session liefert
 // (0, false, nil) — defensiv; Aufrufer ruft die Methode nach
 // UpsertFromEvents, also sollte das nicht vorkommen.
 func TestSessionRepository_SetSessionSampleRatePPMIfDefault_UnknownSession(t *testing.T) {
@@ -102,8 +102,8 @@ func TestSessionRepository_SetSessionSampleRatePPMIfDefault_UnknownSession(t *te
 	}
 }
 
-// TestSessionRepository_ListBoundariesForSessions (plan-0.12.6
-// Tranche 5 / R-7): Bulk-Variante liefert pro SessionID die
+// TestSessionRepository_ListBoundariesForSessions (
+// / R-7): Bulk-Variante liefert pro SessionID die
 // sortierten Boundaries; SessionIDs ohne Boundaries fehlen in der
 // Map; Cross-Project-Scope wird respektiert; leere Input-Liste ist
 // ein No-Op.

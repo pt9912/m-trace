@@ -2,7 +2,7 @@ package driven
 
 import "errors"
 
-// Sentinel-Fehler für SrtSource-Adapter (plan-0.6.0 §4 Sub-3.6).
+// Sentinel-Fehler für SrtSource-Adapter ( Sub-3.6).
 // Adapter (z. B. `adapters/driven/srt/mediamtxclient`) wrappen
 // HTTP-/Parse-Fehler mit diesen Sentinels, damit der Use Case
 // (`SrtHealthCollector`) sie via `errors.Is` auf

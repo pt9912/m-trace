@@ -12,16 +12,16 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// RedisOriginRateLimiter (plan-0.12.6 Tranche 7 / R-22-Resttrigger)
+// RedisOriginRateLimiter (R-22-Resttrigger)
 // implementiert `driven.OriginRateLimiter` über atomare Token-Bucket-
 // Operationen auf Redis — Single-Bucket pro Key, gemeinsam mit dem
 // Issuance-Limiter auf demselben Redis-Server, aber mit eigenem
 // Key-Prefix (`mtrace:origin`), damit kein Bucket-Konflikt entsteht.
 //
 // Fail-Mode-Vertrag analog `RedisIssuanceRateLimiter`:
-//   - fail-closed (Default): Redis-Outage → `(false, nil)` (HTTP 429).
-//   - fail-open (opt-in): `FailOpen=true` aktiviert lokalen
-//     In-Process-Fallback-Bucket pro Replica.
+//  - fail-closed (Default): Redis-Outage → `(false, nil)` (HTTP 429).
+//  - fail-open (opt-in): `FailOpen=true` aktiviert lokalen
+//  In-Process-Fallback-Bucket pro Replica.
 type RedisOriginRateLimiter struct {
 	client    redis.UniversalClient
 	now       func() time.Time

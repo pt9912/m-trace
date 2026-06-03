@@ -7,7 +7,7 @@ import (
 )
 
 // SrtSource ist der Driven-Port für die SRT-Metrikquelle
-// (spec/architecture.md §3.3, plan-0.6.0 §4 Sub-3.2). Adapter
+// (spec/architecture.md, Sub-3.2). Adapter
 // implementieren das Interface gegen eine konkrete Quelle (MediaMTX-
 // Control-API in 0.6.0; Sidecar-Exporter oder libsrt-Binding als
 // Folge-Optionen, falls je nötig).
@@ -17,7 +17,7 @@ import (
 // die Quellen-spezifische Feld-Übersetzung verantwortlich (z. B.
 // MediaMTX `mbpsLinkCapacity` × 1_000_000 → AvailableBandwidthBPS).
 //
-// Fehler-Konventionen (spec/telemetry-model.md §7.5): der Adapter
+// Fehler-Konventionen (spec/telemetry-model.md): der Adapter
 // klassifiziert Quellen-Fehler nicht selbst — er gibt entweder die
 // erfolgreich gelesenen Samples plus nil zurück oder einen Fehler.
 // Der Use Case (SrtHealthCollector) mappt Fehler auf SourceStatus/

@@ -2,7 +2,7 @@
 //
 // SessionsService implementiert driving.SessionsInbound und liefert
 // die zwei Read-Operationen ListSessions / GetSession aus
-// plan-0.1.0.md §5.1 Sub-Item 4. Wire-Cursor-Codec und HTTP-Mapping
+//  Sub-Item 4. Wire-Cursor-Codec und HTTP-Mapping
 // liegen im HTTP-Adapter; die typisierten Cursor in driving.* sind
 // die Schnittstelle.
 package application
@@ -16,7 +16,7 @@ import (
 )
 
 // DefaultSessionListLimit / MaxSessionListLimit sind die Limits aus
-// plan-0.1.0.md §5.1: Default 100 Sessions, hartes Maximum 1000. Der
+// : Default 100 Sessions, hartes Maximum 1000. Der
 // Use Case clampt eingehende Limit-Werte gegen [1, MaxSessionListLimit];
 // fehlt oder ist <=0, wird das Default angewandt.
 const (
@@ -34,8 +34,8 @@ type SessionsService struct {
 }
 
 // NewSessionsService konstruiert den Service mit den Driven Ports.
-// Cursor-Versionierung und Legacy-Detection liegen ab 0.4.0 im
-// HTTP-Adapter (ADR-0004 §7); der Application-Layer arbeitet nur
+// Cursor-Versionierung und Legacy-Detection liegen im
+// HTTP-Adapter (ADR-0004); der Application-Layer arbeitet nur
 // noch mit durable Sortier-Werten.
 func NewSessionsService(
 	sessions driven.SessionRepository,
@@ -68,9 +68,9 @@ func (s *SessionsService) ListSessions(ctx context.Context, in driving.ListSessi
 		return driving.ListSessionsResult{}, err
 	}
 
-	// plan-0.12.6 Tranche 5 / R-7: Bulk-Read der
+	//  / R-7: Bulk-Read der
 	// `network_signal_absent[]`-Blöcke pro Page in einer einzigen
-	// IN-Clause-Query — ersetzt den N+1-Pfad aus plan-0.4.0 §4.4 D3.
+	// IN-Clause-Query — ersetzt den N+1-Pfad aus D3.
 	// Reihenfolge bleibt parallel zu page.Sessions; Default für eine
 	// Session ohne Boundaries ist ein leerer Slice (Map-Miss).
 	sessionIDs := make([]string, len(page.Sessions))
@@ -129,7 +129,7 @@ func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionI
 		return driving.GetSessionResult{}, err
 	}
 
-	// plan-0.4.0 §4.4 D3: persistierten `network_signal_absent[]`-Block
+	//  D3: persistierten `network_signal_absent[]`-Block
 	// laden (spec §3.7.1). Default leerer Slice — der HTTP-Adapter
 	// rendert das als JSON-Array `[]`, kein `null`.
 	boundaries, err := s.sessions.ListBoundariesForSession(ctx, in.ProjectID, in.SessionID)

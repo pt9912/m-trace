@@ -16,10 +16,10 @@ var ErrAnalyzeManifestEmpty = errors.New("analyze manifest: weder ManifestText n
 
 // AnalyzeManifestUseCase orchestriert den Analyzer-Aufruf gegen den
 // driven Port und löst optionale Session-Link-Felder gegen das
-// SessionRepository auf (plan-0.4.0 §4.5). Die Implementierung selbst
+// SessionRepository auf. Die Implementierung selbst
 // ist dünn — der eigentliche Lade- und Parse-Aufwand liegt im
-// analyzer-service hinter dem HTTPStreamAnalyzer-Adapter (plan-0.3.0
-// §7 Tranche 6); die Link-Auflösung läuft project-skopiert über
+// analyzer-service hinter dem HTTPStreamAnalyzer-Adapter (
+// §7); die Link-Auflösung läuft project-skopiert über
 // `(ProjectID, CorrelationID)` bzw. `(ProjectID, SessionID)`.
 type AnalyzeManifestUseCase struct {
 	analyzer driven.StreamAnalyzer
@@ -41,7 +41,7 @@ var _ driving.StreamAnalysisInbound = (*AnalyzeManifestUseCase)(nil)
 // AnalyzeManifest validiert die Eingabe, delegiert die Manifest-
 // Analyse an den Adapter und löst — falls Link-Felder gesetzt sind —
 // die Session-Verknüpfung über `(ProjectID, CorrelationID)` /
-// `(ProjectID, SessionID)` auf (Statusmatrix aus API-Kontrakt §3.6).
+// `(ProjectID, SessionID)` auf (Statusmatrix aus API-Kontrakt).
 //
 // Ein Aufruf ohne Link-Felder bleibt session-los (`detached`); ohne
 // `ProjectID` (= ungebundener Request) gilt das auch dann, wenn
@@ -67,17 +67,17 @@ func (u *AnalyzeManifestUseCase) AnalyzeManifest(ctx context.Context, req domain
 // resolveSessionLink implementiert die Statusmatrix aus API-Kontrakt
 // §3.6:
 //
-//   - keine Link-Felder → detached
-//   - correlation_id allein, im Project bekannt → linked
-//   - correlation_id allein, unbekannt/project-fremd → not_found_detached
-//   - session_id allein, im Project bekannt → linked
-//   - session_id allein, unbekannt → not_found_detached
-//   - beide gesetzt, correlation_id unbekannt/project-fremd → not_found_detached
-//     (auch wenn session_id im Project bekannt wäre — correlation_id
-//     gewinnt; eine unbekannte cid darf nicht durch einen sid-Fallback
-//     "gerettet" werden)
-//   - beide gesetzt, correlation_id bekannt, session_id matched → linked
-//   - beide gesetzt, correlation_id bekannt, session_id mismatch → conflict_detached
+//  - keine Link-Felder → detached
+//  - correlation_id allein, im Project bekannt → linked
+//  - correlation_id allein, unbekannt/project-fremd → not_found_detached
+//  - session_id allein, im Project bekannt → linked
+//  - session_id allein, unbekannt → not_found_detached
+//  - beide gesetzt, correlation_id unbekannt/project-fremd → not_found_detached
+//  (auch wenn session_id im Project bekannt wäre — correlation_id
+//  gewinnt; eine unbekannte cid darf nicht durch einen sid-Fallback
+//  "gerettet" werden)
+//  - beide gesetzt, correlation_id bekannt, session_id matched → linked
+//  - beide gesetzt, correlation_id bekannt, session_id mismatch → conflict_detached
 func (u *AnalyzeManifestUseCase) resolveSessionLink(ctx context.Context, req domain.StreamAnalysisRequest) domain.SessionLink {
 	if req.CorrelationID == "" && req.SessionID == "" {
 		return domain.SessionLink{Status: domain.SessionLinkStatusDetached}

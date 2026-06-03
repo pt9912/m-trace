@@ -302,7 +302,7 @@ func TestSrtHealth_OptionalFieldsRoundTrip(t *testing.T) {
 	}
 }
 
-// TestSrtHealth_HistoryCursorWalksAllPages (plan-0.12.6 Tranche 2):
+// TestSrtHealth_HistoryCursorWalksAllPages:
 // Adapter paginiert eine größere Sample-Menge konsistent mit
 // (ingested_at desc, id desc); jede Page hat einen NextAfter-Cursor
 // außer der letzten; alle Samples kommen exakt einmal vor und der

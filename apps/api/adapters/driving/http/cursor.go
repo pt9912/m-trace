@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// Cursor-Fehlerklassen aus ADR-0004 §6 / API-Kontrakt §10.3. Der
+// Cursor-Fehlerklassen aus ADR-0004 / API-Kontrakt Der
 // HTTP-Adapter mappt sie auf die in §10.3 definierten Bodies und
 // HTTP-Status. Domain- und Application-Layer kennen diese Klassen
 // nicht — sie sind Wire-Format-Detail.
@@ -24,7 +24,7 @@ var (
 	// errCursorInvalidMalformed: Base64-/JSON-Decode schlägt fehl;
 	// `v`-Feld unbekannt; Pflichtfeld fehlt oder hat ungültiges
 	// Format; v3-Cursor mit fremdem Project- oder Session-Scope
-	// (siehe ADR-0004 §6 / API-Kontrakt §10.3); oder unbekannte
+	// (siehe ADR-0004 / API-Kontrakt); oder unbekannte
 	// Zusatzfelder vorhanden.
 	errCursorInvalidMalformed = errors.New("cursor_invalid_malformed")
 	// errCursorExpired: Token decodiert valide, aber Storage-Position
@@ -35,7 +35,7 @@ var (
 )
 
 // cursorVersion ist die einzige unterstützte Cursor-Version ab
-// plan-0.4.0 §4.3. Tokens mit `v=1` oder `v=2` werden als Legacy
+//  Tokens mit `v=1` oder `v=2` werden als Legacy
 // abgewiesen; v3 trägt zusätzlich `pid` (Project-Scope) und für
 // Event-Cursor `sid` (Collection-Scope), damit ein Cursor aus
 // Project A nicht im Request-Kontext von Project B (oder ein Event-
@@ -111,11 +111,11 @@ func encodeListSessionsCursor(c *driving.ListSessionsCursor, projectID string) (
 // decodeListSessionsCursor parst einen URL-Cursor zurück in den
 // typisierten Cursor. Leerer String → nil. Defekter Wert →
 // errCursorInvalidLegacy / errCursorInvalidMalformed je nach
-// Erkennungsregel aus ADR-0004 §6 / API-Kontrakt §10.3:
-//   - v fehlt oder v ∈ {1, 2}: legacy (Pre-§4.3-Format).
-//   - v = 3 ohne `pid`/`sid` oder mit anderem `pid` als
-//     `requestProjectID`: malformed.
-//   - v ∉ {1, 2, 3}: malformed.
+// Erkennungsregel aus ADR-0004 / API-Kontrakt:
+//  - v fehlt oder v ∈ {1, 2}: legacy (Pre-§4.3-Format).
+//  - v = 3 ohne `pid`/`sid` oder mit anderem `pid` als
+//  `requestProjectID`: malformed.
+//  - v ∉ {1, 2, 3}: malformed.
 func decodeListSessionsCursor(s, requestProjectID string) (*driving.ListSessionsCursor, error) {
 	if s == "" {
 		return nil, nil
@@ -191,7 +191,7 @@ func encodeSessionEventsCursor(c *driving.SessionEventsCursor, projectID, sessio
 // Ein v3-Cursor mit nicht-passendem Project- oder Session-Scope liefert
 // `cursor_invalid_malformed` — damit kann ein Event-Cursor aus Session
 // A nicht für Session B im selben Project nutzbar sein
-// (API-Kontrakt §10.3 / ADR-0004 §6).
+// (API-Kontrakt / ADR-0004).
 func decodeSessionEventsCursor(s, requestProjectID, requestSessionID string) (*driving.SessionEventsCursor, error) {
 	if s == "" {
 		return nil, nil
@@ -239,7 +239,7 @@ func decodeSessionEventsCursor(s, requestProjectID, requestSessionID string) (*d
 }
 
 // wireSrtHealthCursor ist die JSON-Form des SRT-Health-History-
-// Cursors (spec §7a.3, plan-0.12.6 Tranche 2). Token-Schema folgt
+// Cursors (spec §7a.3, ). Token-Schema folgt
 // dem v3-Event-Cursor-Pattern aus §10.3: `pid` (project_id) +
 // `sid` (stream_id) tragen den Collection-Scope; `ing` (ingested_at
 // RFC3339Nano UTC) + `id` tragen die Storage-Position.
@@ -281,9 +281,9 @@ func encodeSrtHealthCursor(c *driven.SrtHealthCursor, projectID, streamID string
 
 // decodeSrtHealthCursor ist das Pendant zu encodeSrtHealthCursor.
 // Reject-Klassen folgen §10.3:
-//   - v fehlt / v ∈ {1, 2}: errCursorInvalidLegacy (Pre-§4.3-Format).
-//   - v ∉ {1, 2, 3}, Base64/JSON-Decode-Fehler, fehlende Pflichtfelder,
-//     fremder Project- oder Stream-Scope: errCursorInvalidMalformed.
+//  - v fehlt / v ∈ {1, 2}: errCursorInvalidLegacy (Pre-§4.3-Format).
+//  - v ∉ {1, 2, 3}, Base64/JSON-Decode-Fehler, fehlende Pflichtfelder,
+//  fremder Project- oder Stream-Scope: errCursorInvalidMalformed.
 func decodeSrtHealthCursor(s, projectID, streamID string) (*driven.SrtHealthCursor, error) {
 	if s == "" {
 		return nil, nil

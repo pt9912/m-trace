@@ -18,7 +18,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 2 / RAK-72: HTTP-Vertrag von
+// RAK-72: HTTP-Vertrag von
 // `POST /api/auth/session-tokens`. Tests fahren den vollen Stack:
 // HMAC-Signer + In-Memory-Limiter + In-Memory-Policy-Resolver +
 // Random-ID-Generator (alles `apps/api/adapters/driven/auth`), gegen

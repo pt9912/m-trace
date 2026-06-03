@@ -12,16 +12,16 @@ import (
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
 )
 
-// plan-0.9.5 §2 Tranche 1 — SQLite-Persistence-Hot-Path-Bench für
+//  — SQLite-Persistence-Hot-Path-Bench für
 // `make api-benchmark-smoke`.
 //
 // Budgets aus `docs/perf/budgets.md` §3 (initial, Tranche-0-Stand):
-//   - Event-Append + Sequence-Allocation (typische 100-Event-Batch):
-//     ≤ 100 ms / Batch (CI-Runner ohne tmpfs-Boost).
+//  - Event-Append + Sequence-Allocation (typische 100-Event-Batch):
+//  ≤ 100 ms / Batch (CI-Runner ohne tmpfs-Boost).
 
 // BenchmarkEventRepository_AppendBatch_100 misst den Durable-
 // Schreibpfad: NewEventRepository.Append plus IngestSequencer.Allocate
-// für jeden Event. Die DB-Datei lebt im b.TempDir() und wird pro
+// für jeden Event. Die DB-Datei lebt im b.TempDir und wird pro
 // Iteration neu vorbereitet, damit WAL-Wachstum den Bench nicht
 // dominiert.
 func BenchmarkEventRepository_AppendBatch_100(b *testing.B) {

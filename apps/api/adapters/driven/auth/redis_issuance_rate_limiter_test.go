@@ -26,7 +26,7 @@ func startMiniredis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 }
 
 // TestRedisIssuance_HappyPath_CrossInstanceSharing
-// (plan-0.12.6 Tranche 7 / R-17): zwei Limiter-Instanzen (analog zwei
+// (R-17): zwei Limiter-Instanzen (analog zwei
 // API-Replicas) teilen sich den Bucket-Counter über den geteilten
 // Redis-Mock. Replica A verbraucht 2 Tokens; Replica B sieht nur noch
 // 1 Token verfügbar.
@@ -128,13 +128,13 @@ func TestRedisIssuance_GlobalRefundOnProjectDeny(t *testing.T) {
 		t.Fatalf("call 1 should be allowed")
 	}
 	// 2. Aufruf: global consume → 0 left; project consume → -1 → deny;
-	//     global refund → 1 left.
+	//  global refund → 1 left.
 	if ok, _ := l.Allow(ctx, "demo", domain.RateLimitBucket{}); ok {
 		t.Fatalf("call 2 should be denied (project bucket empty)")
 	}
 	// 3. Aufruf auf einer ANDEREN Project-ID (frisches project bucket).
-	//     Wenn das globale Bucket korrekt refunded wurde, ist noch 1
-	//     Token global vorhanden und der Aufruf erlaubt.
+	//  Wenn das globale Bucket korrekt refunded wurde, ist noch 1
+	//  Token global vorhanden und der Aufruf erlaubt.
 	if ok, _ := l.Allow(ctx, "other", domain.RateLimitBucket{}); !ok {
 		t.Errorf("call 3 on 'other' should be allowed (global token refunded after project deny)")
 	}
@@ -225,7 +225,7 @@ func TestRedisIssuance_ContextCanceled(t *testing.T) {
 	}
 }
 
-// TestRedisIssuance_ProjectBucketOverride (plan-0.12.6 Tranche 7):
+// TestRedisIssuance_ProjectBucketOverride:
 // ein nicht-leeres `RateLimitBucket`-Override überschreibt die
 // Konstruktor-Default-Konfig und wird im Lua-Script benutzt.
 func TestRedisIssuance_ProjectBucketOverride(t *testing.T) {
@@ -249,7 +249,7 @@ func TestRedisIssuance_ProjectBucketOverride(t *testing.T) {
 	}
 }
 
-// TestRedisIssuance_ConstructorDefaults (plan-0.12.6 Tranche 7):
+// TestRedisIssuance_ConstructorDefaults:
 // leere `KeyPrefix`/`TTLSeconds`/`Now`-Felder fallen auf Defaults
 // zurück (Constructor-Branch-Coverage).
 func TestRedisIssuance_ConstructorDefaults(t *testing.T) {
@@ -267,7 +267,7 @@ func TestRedisIssuance_ConstructorDefaults(t *testing.T) {
 	}
 }
 
-// TestRedisIssuance_FailOpenLogger (plan-0.12.6 Tranche 7):
+// TestRedisIssuance_FailOpenLogger:
 // fail-open mit Logger deckt den `failModeName(failOpen=true)`-Pfad
 // im Outage-Log ab.
 func TestRedisIssuance_FailOpenLogger(t *testing.T) {
@@ -287,7 +287,7 @@ func TestRedisIssuance_FailOpenLogger(t *testing.T) {
 	}
 }
 
-// TestRedisIssuance_FailClosedLogger (plan-0.12.6 Tranche 7):
+// TestRedisIssuance_FailClosedLogger:
 // non-nil Logger fängt die Outage-Warnung; deckt `handleRedisError`-
 // Logger-Pfad ab.
 func TestRedisIssuance_FailClosedLogger(t *testing.T) {

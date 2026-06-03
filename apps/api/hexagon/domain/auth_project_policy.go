@@ -4,31 +4,31 @@ import (
 	"strings"
 )
 
-// Project-Policy-Domäne (`0.12.0`, RAK-74).
+// Project-Policy-Domäne (RAK-74).
 //
-// Tranche 1 liefert das Modell und die deterministischen Validierungs-
+// liefert das Modell und die deterministischen Validierungs-
 // /Effective-TTL-Funktionen ohne HTTP-, Storage- oder Rate-Limit-
 // Adapterabhängigkeit. Die HTTP-Enforcement-Schicht wird in Tranche 4
 // gegen diese Typen verdrahtet.
 //
 // Wire-Vertrag in `spec/backend-api-contract.md` §3.9 (Auth-Matrix,
 // CORS-Preflight, Project-Policies-Block); Out-of-Scope-Klammern in
-// `docs/planning/in-progress/plan-0.12.0.md` §0.1 (Origin-/IP-Buckets
+// `docs/planning/in-progress/` §0.1 (Origin-/IP-Buckets
 // optionaler Zusatz).
 
-// HTTPMethod modelliert die im `0.12.0`-Pflichtpfad zulässigen
+// HTTPMethod modelliert die im Pflichtpfad zulässigen
 // Methoden für tokenpflichtige Konsum-Endpoints. Plan §0.1 begrenzt
 // die Allowlist auf `POST`/`OPTIONS`; die Konstanten sind Wire-
 // stabil.
 type HTTPMethod string
 
-// HTTPMethod-Werte aus dem `0.12.0`-Muss-Scope.
+// HTTPMethod-Werte aus dem Muss-Scope.
 const (
 	HTTPMethodPOST    HTTPMethod = "POST"
 	HTTPMethodOPTIONS HTTPMethod = "OPTIONS"
 )
 
-// IsKnown prüft, ob eine Methode in der `0.12.0`-Allowlist steht.
+// IsKnown prüft, ob eine Methode in der Allowlist steht.
 // Andere Methoden liefern `auth_policy_denied`.
 func (m HTTPMethod) IsKnown() bool {
 	switch m {
@@ -39,13 +39,13 @@ func (m HTTPMethod) IsKnown() bool {
 	}
 }
 
-// AllowedRequestHeader modelliert die im `0.12.0`-Pflichtpfad
+// AllowedRequestHeader modelliert die im Pflichtpfad
 // zulässigen Request-Header (CORS-Preflight-Allowlist plus den
 // `traceparent`-Header für Trace-Korrelation). Plan §0.5/§0.6 und
 // §3.9 pinnen die Liste; weitere Header bleiben Folge-Scope.
 type AllowedRequestHeader string
 
-// AllowedRequestHeader-Werte aus dem `0.12.0`-Muss-Scope. Strings
+// AllowedRequestHeader-Werte aus dem Muss-Scope. Strings
 // folgen RFC-7230 case-insensitive Konvention; Vergleich passiert
 // case-insensitive in `IsHeaderAllowed`.
 const (
@@ -98,7 +98,7 @@ func (b RateLimitBucket) IsZero() bool {
 // RateLimitPolicy bündelt die Project-gebundenen Rate-Limit-Buckets
 // aus RAK-74. `ProjectBucket` und `IssuanceBucket` sind Muss-Pfad;
 // `OriginBucket` und `IPBucket` sind optionaler Zusatz oder Folge-
-// Scope und dürfen `IsZero()` sein.
+// Scope und dürfen `IsZero` sein.
 //
 // `IssuanceBucket` ist exklusiv für `POST /api/auth/session-tokens`;
 // Überschreitung liefert `429 auth_issuance_rate_limited`. Andere
@@ -113,7 +113,7 @@ type RateLimitPolicy struct {
 }
 
 // OriginPolicy bündelt origin-spezifische Overrides innerhalb einer
-// Project Policy. Im `0.12.0`-Muss-Scope ist nur die einfache
+// Project Policy. Im Muss-Scope ist nur die einfache
 // Origin-Allowlist Pflicht; `RestrictedAudiences` ist ein optionales
 // Feld, mit dem ein einzelner Origin nur für ein eingeschränktes
 // Audience-Set Session Tokens minten darf. Leeres Set bedeutet „alle
@@ -164,18 +164,18 @@ type ProjectPolicy struct {
 }
 
 // BrowserIngestPolicy ist die Project-spezifische Browser-Ingest-
-// Konfiguration aus `0.12.5` Tranche 4 (RAK-80). Hebt den
+// Konfiguration aus (RAK-80). Hebt den
 // RAK-74-Scope-Cut auf `/api/ingest/*` kontrolliert auf:
 //
-//   - `Enabled=false` (Default): `/api/ingest/*` bleibt für dieses
-//     Project operator-/CLI-only. Browser-Preflights für Origins
-//     dieses Projects laufen über die globale, konservative
-//     Allowlist (RAK-74-Scope-Cut).
-//   - `Enabled=true`: Browser-Origins aus `CORSAllowlist` dürfen
-//     Preflight und POST-Pfade nutzen. CSRF und Origin-Pin sind
-//     optionale Defense-in-Depth-Felder; sobald gesetzt, gelten sie
-//     **strikt** und ein POST ohne entsprechende Header bzw. mit
-//     mismatchendem Origin wird mit `403 ingest_browser_*` abgelehnt.
+//  - `Enabled=false` (Default): `/api/ingest/*` bleibt für dieses
+//  Project operator-/CLI-only. Browser-Preflights für Origins
+//  dieses Projects laufen über die globale, konservative
+//  Allowlist (RAK-74-Scope-Cut).
+//  - `Enabled=true`: Browser-Origins aus `CORSAllowlist` dürfen
+//  Preflight und POST-Pfade nutzen. CSRF und Origin-Pin sind
+//  optionale Defense-in-Depth-Felder; sobald gesetzt, gelten sie
+//  **strikt** und ein POST ohne entsprechende Header bzw. mit
+//  mismatchendem Origin wird mit `403 ingest_browser_*` abgelehnt.
 //
 // Sicherheitsprofil: ein leeres `CORSAllowlist` bei `Enabled=true`
 // ergibt einen aktivierten, aber leeren Allowlist-Pfad — kein Origin
@@ -241,7 +241,7 @@ func (p ProjectPolicy) EffectiveMaxTTLSeconds() int {
 // Leerer Origin gilt als erlaubt, damit der CLI/curl-Pfad (z. B. für
 // Issuance vom Server-Skript aus) offen bleibt. Browser-Pfade haben
 // im Adapter immer einen `Origin`-Header — fehlende Origins im
-// Browser-Kontext werden vor dieser Funktion in Tranche 4 abgefangen.
+// Browser-Kontext werden vor dieser Funktion in abgefangen.
 func (p ProjectPolicy) AllowsOrigin(origin string) bool {
 	if origin == "" {
 		return true
@@ -296,7 +296,7 @@ func (p ProjectPolicy) AllowsHeader(header string) bool {
 // AllowsAudience prüft, ob eine Session-Token-Audience in der Project-
 // Allowlist steht. Wenn die Project-Policy keine Audiences gesetzt
 // hat, gilt der globale Default (`playback-events` als einzige Muss-
-// Audience im `0.12.0`-Pflichtpfad). Eine in der globalen Allowlist
+// Audience im Pflichtpfad). Eine in der globalen Allowlist
 // nicht bekannte Audience wird hier auch dann abgelehnt, wenn sie in
 // der Project-Allowlist steht — globale Allowlist und Audience-Wert-
 // Allowlist müssen synchron sein.
@@ -379,10 +379,10 @@ func ValidateHeaderAgainstPolicy(p ProjectPolicy, header string) error {
 // ResolveTTLSeconds berechnet die effektiv anzuwendenden
 // `ttl_seconds` aus der Issuance-Anfrage. §3.9-Vertrag:
 //
-//   - `requested == 0`: nutzt `min(project_max_ttl_seconds, 900)`.
-//   - `requested > 0`: muss `<= EffectiveMaxTTLSeconds(p)` sein,
-//     sonst `ErrAuthTokenTTLTooLarge` ohne stillen Clamp.
-//   - `requested < 0`: ebenfalls `ErrAuthTokenTTLTooLarge`.
+//  - `requested == 0`: nutzt `min(project_max_ttl_seconds, 900)`.
+//  - `requested > 0`: muss `<= EffectiveMaxTTLSeconds(p)` sein,
+//  sonst `ErrAuthTokenTTLTooLarge` ohne stillen Clamp.
+//  - `requested < 0`: ebenfalls `ErrAuthTokenTTLTooLarge`.
 //
 // Es gibt keinen stillen Clamp, weil Plan §0.5 das explizit verbietet:
 // die API muss `422 auth_token_ttl_too_large` melden, damit Clients
@@ -408,7 +408,7 @@ type IssuanceQuota struct {
 }
 
 // EffectiveIssuanceQuota gibt das wirksame Issuance-Bucket zurück. Ein
-// nicht konfiguriertes Bucket (`IsZero`) ist im `0.12.0`-Pflichtpfad
+// nicht konfiguriertes Bucket (`IsZero`) ist im Pflichtpfad
 // kein erlaubter Zustand — der Adapter-Setup muss sicherstellen, dass
 // jede Project-Policy ein Issuance-Bucket trägt; diese Funktion
 // liefert das Bucket unverändert weiter, der Adapter prüft `IsZero`

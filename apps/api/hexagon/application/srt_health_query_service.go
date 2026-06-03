@@ -1,6 +1,6 @@
 package application
 
-// SRT-Health-Query-Service (plan-0.6.0 §5 Tranche 4 — RAK-43).
+// SRT-Health-Query-Service (RAK-43).
 //
 // Liefert die Read-Use-Cases für `GET /api/srt/health` und
 // `GET /api/srt/health/{stream_id}` (spec/backend-api-contract.md

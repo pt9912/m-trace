@@ -11,18 +11,18 @@ import (
 
 // InMemoryIssuanceRateLimiter implementiert
 // `driven.IssuanceRateLimiter` für `POST /api/auth/session-tokens`
-// (`0.12.0`, RAK-72). Token-Bucket pro `(global, projectID)` mit
+// (RAK-72). Token-Bucket pro `(global, projectID)` mit
 // `Capacity` (max Burst) und `RefillPerSecond` (steady state). Beide
 // Buckets werden bei jedem `Allow` in Reihenfolge `global → project`
 // geprüft; ein `false` auf einer Stufe verbraucht **keine** Tokens
 // auf der anderen.
 //
 // Sicherheitsprofil:
-//   - keine Daten leaken in Logs/Metriken; der Application-Service
-//     mappt `Allow=false` auf `domain.ErrAuthIssuanceRateLimited`,
-//     den der HTTP-Adapter zu `429 auth_issuance_rate_limited` macht.
-//   - in-process state; ein Multi-Instance-Setup braucht einen
-//     gemeinsamen Backend-Limiter (Folge-Scope).
+//  - keine Daten leaken in Logs/Metriken; der Application-Service
+//  mappt `Allow=false` auf `domain.ErrAuthIssuanceRateLimited`,
+//  den der HTTP-Adapter zu `429 auth_issuance_rate_limited` macht.
+//  - in-process state; ein Multi-Instance-Setup braucht einen
+//  gemeinsamen Backend-Limiter (Folge-Scope).
 type InMemoryIssuanceRateLimiter struct {
 	now            func() time.Time
 	mu             sync.Mutex
@@ -47,7 +47,7 @@ type tokenBucket struct {
 
 // NewInMemoryIssuanceRateLimiter konstruiert den Limiter mit globalen
 // und Project-Default-Buckets. Tests können `now` injecten, Produktion
-// nutzt `time.Now()`. Ein nicht konfiguriertes Bucket
+// nutzt `time.Now`. Ein nicht konfiguriertes Bucket
 // (`Capacity == 0` und `RefillPerSecond == 0`) wird als „kein Limit"
 // behandelt — das ist ausschließlich für Tests und einen späteren
 // Soft-Mode sinnvoll.
@@ -70,7 +70,7 @@ var _ driven.IssuanceRateLimiter = (*InMemoryIssuanceRateLimiter)(nil)
 // Adapter).
 //
 // `projectBucket` aus der Project-Policy hat Vorrang vor der
-// Konstruktor-Default-Konfiguration. `IsZero()` heißt „nimm den
+// Konstruktor-Default-Konfiguration. `IsZero` heißt „nimm den
 // Default" — fehlt dort ebenfalls eine Konfiguration, wirkt das
 // Bucket als „kein Limit" (siehe `consume`).
 func (l *InMemoryIssuanceRateLimiter) Allow(ctx context.Context, projectID string, projectBucket domain.RateLimitBucket) (bool, error) {
@@ -114,8 +114,8 @@ func (l *InMemoryIssuanceRateLimiter) Allow(ctx context.Context, projectID strin
 }
 
 // resolveProjectConfig zieht die wirksame Bucket-Konfiguration: ein
-// `IsZero()`-Override aus der Policy fällt auf die Adapter-Defaults
-// zurück; ein nicht-`IsZero()`-Wert wird 1:1 übernommen.
+// `IsZero`-Override aus der Policy fällt auf die Adapter-Defaults
+// zurück; ein nicht-`IsZero`-Wert wird 1:1 übernommen.
 func (l *InMemoryIssuanceRateLimiter) resolveProjectConfig(override domain.RateLimitBucket) bucketConfig {
 	if override.IsZero() {
 		return l.projectCfg

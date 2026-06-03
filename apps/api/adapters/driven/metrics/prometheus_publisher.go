@@ -1,6 +1,6 @@
 // Package metrics holds the Prometheus exposition adapter for the
-// aggregate mtrace_* metrics from spec/lastenheft.md §7.9 and
-// spec/backend-api-contract.md §7.
+// aggregate mtrace_* metrics from spec/lastenheft.md and
+// spec/backend-api-contract.md
 package metrics
 
 import (
@@ -49,26 +49,26 @@ type PrometheusPublisher struct {
 	startupTimeMS     prometheus.Gauge
 	analyzeRequests   *prometheus.CounterVec
 
-	// CORS-Preflight-Refusal-Counter (`0.12.0` Tranche 4 / Review-
+	// CORS-Preflight-Refusal-Counter (Review-
 	// Finding Y3). Inkrementiert pro `OPTIONS`-Request, dessen Origin
 	// nicht in der globalen Allowlist steht. Label `path` ist auf die
 	// registrierten Preflight-Routen beschränkt — Cardinality bleibt
-	// klein (≤ 10 paths in `0.12.0`).
+	// klein (≤ 10 paths).
 	corsPreflightRefused *prometheus.CounterVec
 
-	// SRT-Health-Aggregate (plan-0.6.0 §4 Sub-3.6,
-	// spec/telemetry-model.md §7.7). Bounded Labels; Wertebereiche
+	// SRT-Health-Aggregate ( Sub-3.6,
+	// spec/telemetry-model.md). Bounded Labels; Wertebereiche
 	// kommen aus den Domain-Enums.
 	srtHealthSamples         *prometheus.CounterVec
 	srtCollectorRuns         *prometheus.CounterVec
 	srtCollectorErrors       *prometheus.CounterVec
 
-	// WebRTC-Aggregate (plan-0.8.0 §4 Tranche 3,
-	// spec/telemetry-model.md §3.5).
+	// WebRTC-Aggregate (
+	// spec/telemetry-model.md).
 	webrtc *webrtcMetrics
 
-	// Sample-Rate-Drift-Counter (plan-0.12.6 Tranche 4 / R-10,
-	// spec/telemetry-model.md §8.3). Project-skopiert, bounded
+	// Sample-Rate-Drift-Counter (R-10,
+	// spec/telemetry-model.md). Project-skopiert, bounded
 	// Cardinality (Project-Allowlist).
 	sampleRateDrift *prometheus.CounterVec
 }
@@ -126,7 +126,7 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		// `outcome` ist {ok, error}, `code` aus der abgeschlossenen
 		// Domäne (`invalid_request`, `analyzer_unavailable`, plus die
 		// AnalysisErrorCode-Werte aus dem stream-analyzer-Vertrag).
-		// Cardinality bleibt damit beschränkt (plan-0.3.0 §9 Tranche
+		// Cardinality bleibt damit beschränkt ( Tranche
 		// 7.5; Spec §7 — keine Cardinality-Explosion).
 		analyzeRequests: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -145,7 +145,7 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 		sampleRateDrift: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "mtrace_sample_rate_drift_total",
-				Help: "Total number of session_sample_rate-drift events: ein eingehender Wert weicht vom persistierten Pro-Session-Wert um mehr als die Toleranz (100 ppm) ab. Project-skopiert; siehe plan-0.12.6 Tranche 4 / R-10.",
+				Help: "Total number of session_sample_rate-drift events: ein eingehender Wert weicht vom persistierten Pro-Session-Wert um mehr als die Toleranz (100 ppm) ab. Project-skopiert; siehe R-10.",
 			},
 			[]string{"project_id"},
 		),
@@ -177,16 +177,16 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 }
 
 // WebRTCSample inkrementiert die `mtrace_webrtc_*`-Counter und
-// pflegt den Sample-State (plan-0.8.0 §4 Tranche 3,
-// spec/telemetry-model.md §3.5.1). State-Counter zählen Samples;
+// pflegt den Sample-State (
+// spec/telemetry-model.md). State-Counter zählen Samples;
 // Counter-Felder werden deltadiffenziert.
 func (p *PrometheusPublisher) WebRTCSample(s driven.WebRTCSampleSnapshot) {
 	p.webrtc.record(s)
 }
 
 // SampleRateDrift incrementiert
-// `mtrace_sample_rate_drift_total{project_id}` (plan-0.12.6
-// Tranche 4 / R-10). Aufruf nur bei Toleranz-Überschreitung — der
+// `mtrace_sample_rate_drift_total{project_id}` (
+// / R-10). Aufruf nur bei Toleranz-Überschreitung — der
 // Use-Case filtert silent-Rundungsartefakte innerhalb ±100 ppm vor.
 func (p *PrometheusPublisher) SampleRateDrift(projectID string) {
 	p.sampleRateDrift.WithLabelValues(projectID).Inc()
@@ -268,7 +268,7 @@ func (p *PrometheusPublisher) CORSPreflightRefused(path string) {
 // fachliche Fehler-Code aus der Domäne (siehe knownAnalyzeCodes).
 // Unbekannte Werte werden auf "_unknown" gemappt — Cardinality-
 // Defense-in-Depth, falls je ein Aufrufer einen unklassifizierten
-// Code übergibt (plan-0.3.0 §9 Tranche 7.5/1; Spec §7).
+// Code übergibt (.5/1; Spec §7).
 func (p *PrometheusPublisher) AnalyzeRequest(outcome, code string) {
 	p.analyzeRequests.WithLabelValues(normalizeOutcome(outcome), normalizeAnalyzeCode(code)).Inc()
 }
@@ -312,7 +312,7 @@ func normalizeAnalyzeCode(value string) string {
 }
 
 // newSrtHealthCounters konstruiert die drei SRT-Health-Aggregate
-// (plan-0.6.0 §4 Sub-3.6 — spec/telemetry-model.md §7.7). Werte-
+// ( Sub-3.6 — spec/telemetry-model.md). Werte-
 // bereiche je Label kommen aus den Domain-Enums; §3.2 hat sie als
 // bounded Aggregat-Labels freigegeben.
 func newSrtHealthCounters() (samples, runs, errs *prometheus.CounterVec) {

@@ -18,12 +18,12 @@ const historyClampLimit = 1000
 // SrtHealthRepository ist die durable Variante des
 // driven.SrtHealthRepository-Ports gegen die SQLite-Datei aus
 // internal/storage. Application- und Domain-Layer bleiben SQLite-frei
-// (ADR-0002 §8.2).
+// (ADR-0002).
 //
-// Dedupe-Regel (spec/backend-api-contract.md §10.6 / plan-0.6.0 §4
+// Dedupe-Regel (spec/backend-api-contract.md /
 // Sub-3.3): ein Sample ist eindeutig über
-//   (project_id, stream_id, connection_id,
-//    COALESCE(source_observed_at, source_sequence)).
+//  (project_id, stream_id, connection_id,
+//  COALESCE(source_observed_at, source_sequence)).
 // Append macht einen Vorab-Lookup auf den Dedupe-Index und
 // überspringt vorhandene Einträge — collected_at allein ist kein
 // stabiler Schlüssel.

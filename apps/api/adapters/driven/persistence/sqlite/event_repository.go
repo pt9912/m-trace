@@ -17,11 +17,11 @@ import (
 // EventRepository ist die durable Variante des
 // driven.EventRepository-Ports gegen die SQLite-Datei aus
 // internal/storage. Application- und Domain-Layer bleiben SQLite-frei
-// (ADR-0002 §8.2).
+// (ADR-0002).
 //
 // Race-Schutz beim Append: jede Append-Operation läuft in einer
 // einzigen Transaktion. Die DSN aus internal/storage erzwingt
-// `BEGIN IMMEDIATE` für jede `db.BeginTx`-Tx (ADR-0002 §8.3),
+// `BEGIN IMMEDIATE` für jede `db.BeginTx`-Tx (ADR-0002),
 // womit zwei konkurrente Append-Calls per DB-Lock serialisiert
 // werden — Dedup-Klassifikation bleibt deterministisch.
 //
@@ -133,7 +133,7 @@ func (r *EventRepository) Append(ctx context.Context, events []domain.PlaybackEv
 // classifyDelivery entscheidet pro Event, ob es als `accepted` oder
 // `duplicate_suspected` persistiert wird. Events ohne sequence_number
 // sind immer `accepted` — kein automatischer Dedup ohne expliziten
-// Schlüssel (ADR-0002 §8.3).
+// Schlüssel (ADR-0002).
 func classifyDelivery(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) (string, error) {
 	if e.SequenceNumber == nil {
 		return "accepted", nil
@@ -153,7 +153,7 @@ func classifyDelivery(ctx context.Context, tx *sql.Tx, e domain.PlaybackEvent) (
 
 // ListBySession liefert Events einer Session in kanonischer
 // Sortierung mit Limit-/Cursor-basierter Pagination
-// (ADR-0002 §8.1, API-Kontrakt §10.4).
+// (ADR-0002, API-Kontrakt).
 func (r *EventRepository) ListBySession(ctx context.Context, q driven.EventListQuery) (driven.EventPage, error) {
 	if q.Limit <= 0 {
 		return driven.EventPage{Events: []domain.PlaybackEvent{}}, nil
@@ -265,8 +265,8 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 
 // listAfterIngestSequenceSQL liefert Events eines Projects mit
 // `ingest_sequence > ?`, sortiert aufsteigend, max LIMIT Treffer.
-// Backfill-Quelle für SSE-`Last-Event-ID`-Reconnect (plan-0.4.0
-// §5 H4; spec/backend-api-contract.md §10a).
+// Backfill-Quelle für SSE-`Last-Event-ID`-Reconnect (
+// §5 H4; spec/backend-api-contract.md).
 const listAfterIngestSequenceSQL = `
 SELECT ingest_sequence, project_id, session_id, event_name,
        client_timestamp, server_received_at, sequence_number,

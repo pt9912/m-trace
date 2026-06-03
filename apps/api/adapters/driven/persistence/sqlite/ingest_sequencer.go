@@ -12,11 +12,11 @@ import (
 // IngestSequencer hält den ingest_sequence-Counter im RAM, lädt aber
 // beim Konstruktor den höchsten persistierten Wert aus der
 // playback_events-Tabelle. Damit wird der Sequencer nach API-Restart
-// konsistent fortgesetzt — Cursor-Stabilität (ADR-0004 §5) verlässt
+// konsistent fortgesetzt — Cursor-Stabilität (ADR-0004) verlässt
 // sich auf diese Eigenschaft.
 //
 // Adapter-Inserts persistieren den vom Use Case zugewiesenen Wert
-// explizit (`INSERT INTO playback_events(ingest_sequence, ...)`); das
+// explizit (`INSERT INTO playback_events(ingest_sequence,...)`); das
 // AUTOINCREMENT auf der PK-Spalte wirkt zusätzlich als Defense-in-Depth
 // gegen Reuse nach Rollback.
 //
@@ -27,7 +27,7 @@ type IngestSequencer struct {
 
 // NewIngestSequencer initialisiert den Counter aus
 // `SELECT MAX(ingest_sequence) FROM playback_events`. Ist die Tabelle
-// leer, beginnt Next() bei 1.
+// leer, beginnt Next bei 1.
 func NewIngestSequencer(ctx context.Context, db *sql.DB) (*IngestSequencer, error) {
 	var maxSeq sql.NullInt64
 	if err := db.QueryRowContext(ctx,

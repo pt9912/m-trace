@@ -5,22 +5,22 @@ import (
 	"testing"
 )
 
-// plan-0.9.5 §4 Tranche 3 (extra-gates.md §3.5) — Fuzz-Target für
+//  (extra-gates.md) — Fuzz-Target für
 // die HTTP-Body-Validation-Schicht des Playback-Events-Pfads.
 // Pinnt:
 //
-//   - Random-JSON-Bytes durch `wireBatch`-Decode dürfen weder
-//     Panic noch Goroutine-Leak produzieren.
-//   - `toEventInputs` und `toBoundaryInputs` (die Wire-Domain-
-//     Mapper) müssen jede dekodierte Eingabe deterministisch in
-//     ein gültiges `driving.BatchInput`-Tripel überführen, ohne
-//     unbounded Allokationen oder negative Längenwerte.
+//  - Random-JSON-Bytes durch `wireBatch`-Decode dürfen weder
+//  Panic noch Goroutine-Leak produzieren.
+//  - `toEventInputs` und `toBoundaryInputs` (die Wire-Domain-
+//  Mapper) müssen jede dekodierte Eingabe deterministisch in
+//  ein gültiges `driving.BatchInput`-Tripel überführen, ohne
+//  unbounded Allokationen oder negative Längenwerte.
 //
 // Pflicht-Bereich aus Plan §4 DoD-Item 1: „HTTP-Validation für
 // Playback-Event-Batches".
 
 // FuzzWireBatchDecode wirft random JSON-Bytes durch den
-// Decode-Pfad in `serve()` (`json.Unmarshal(body, &payload)` plus
+// Decode-Pfad in `serve` (`json.Unmarshal(body, &payload)` plus
 // die zwei `to*Inputs`-Mapper).
 func FuzzWireBatchDecode(f *testing.F) {
 	// Seed-Korpus: gültige Batches plus Drift-Pfade.

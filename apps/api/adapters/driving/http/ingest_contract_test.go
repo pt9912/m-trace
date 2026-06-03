@@ -15,7 +15,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// `0.11.0` Tranche 5 — Schema-Snapshot-Tests gegen die Spec-
+//  — Schema-Snapshot-Tests gegen die Spec-
 // Fixtures aus spec/contract-fixtures/api/. Die Werte ändern sich
 // pro Lab-Run; geprüft wird **die Schlüssel-Struktur** der
 // Wire-Antwort plus harte Unit-Asserts auf sicherheitsrelevante

@@ -21,30 +21,30 @@ type BrowserIngestPolicyLookup interface {
 }
 
 // BrowserIngestEnforcementConfig bündelt die Dependencies für die
-// Browser-Ingest-POST-Middleware aus `0.12.5` Tranche 4 (RAK-80).
+// Browser-Ingest-POST-Middleware aus (RAK-80).
 //
 // Verhalten pro Request:
-//   - `Origin`-Header fehlt → Operator-/CLI-Pfad. Bei aktivierter
-//     `BrowserIngestPolicy` und gesetztem `OriginPin` wird der
-//     Request mit `403 ingest_browser_origin_pin_mismatch` abgelehnt,
-//     weil ein Pin nur Sinn macht, wenn der Origin auch gemeldet
-//     wird. Sonst (kein Pin) gilt der heutige `0.11.0`-Operator-Pfad
-//     unverändert.
-//   - `X-MTrace-Token` fehlt → keine Project-Identifikation möglich
-//     → Middleware tut nichts; der bestehende Handler liefert sein
-//     `auth_token_missing`/-`invalid`-Verhalten.
-//   - Token resolved + `BrowserIngestPolicy.Enabled=false` → Pfad
-//     wie heute (RAK-74-Scope-Cut bleibt strikt).
-//   - Token resolved + `Enabled=true`:
-//     1. Origin **muss** in `CORSAllowlist` stehen — sonst `403
-//        ingest_browser_origin_not_allowed`.
-//     2. Falls `OriginPin != ""` → Origin muss exakt dem Pin
-//        entsprechen — sonst `403 ingest_browser_origin_pin_mismatch`.
-//     3. Falls `CSRFRequired` → `X-MTrace-CSRF`-Header muss
-//        nicht-leer sein. Der konkrete Token-Vergleich ist Folge-
-//        Item (Production-Anti-CSRF-Bibliothek); das Skelett
-//        verhindert mindestens fehlende CSRF-Header — `403
-//        ingest_browser_csrf_missing`.
+//  - `Origin`-Header fehlt → Operator-/CLI-Pfad. Bei aktivierter
+//  `BrowserIngestPolicy` und gesetztem `OriginPin` wird der
+//  Request mit `403 ingest_browser_origin_pin_mismatch` abgelehnt,
+//  weil ein Pin nur Sinn macht, wenn der Origin auch gemeldet
+//  wird. Sonst (kein Pin) gilt der heutige Operator-Pfad
+//  unverändert.
+//  - `X-MTrace-Token` fehlt → keine Project-Identifikation möglich
+//  → Middleware tut nichts; der bestehende Handler liefert sein
+//  `auth_token_missing`/-`invalid`-Verhalten.
+//  - Token resolved + `BrowserIngestPolicy.Enabled=false` → Pfad
+//  wie heute (RAK-74-Scope-Cut bleibt strikt).
+//  - Token resolved + `Enabled=true`:
+//  1. Origin **muss** in `CORSAllowlist` stehen — sonst `403
+//  ingest_browser_origin_not_allowed`.
+//  2. Falls `OriginPin != ""` → Origin muss exakt dem Pin
+//  entsprechen — sonst `403 ingest_browser_origin_pin_mismatch`.
+//  3. Falls `CSRFRequired` → `X-MTrace-CSRF`-Header muss
+//  nicht-leer sein. Der konkrete Token-Vergleich ist Folge-
+//  Item (Production-Anti-CSRF-Bibliothek); das Skelett
+//  verhindert mindestens fehlende CSRF-Header — `403
+//  ingest_browser_csrf_missing`.
 type BrowserIngestEnforcementConfig struct {
 	Projects driven.ProjectResolver
 	Policies BrowserIngestPolicyLookup

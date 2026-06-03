@@ -1,7 +1,7 @@
 // Package http is the inbound HTTP adapter for the spike. It parses
 // the JSON wire format into driving.BatchInput, calls the use case,
 // and maps domain errors to HTTP status codes per
-// spec/backend-api-contract.md §5.
+// spec/backend-api-contract.md
 package http
 
 import "github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
@@ -25,7 +25,7 @@ type wireSDK struct {
 }
 
 // wireBoundary spiegelt einen Eintrag aus dem optionalen
-// `session_boundaries[]`-Block (API-Kontrakt §3.4). Use-Case validiert
+// `session_boundaries[]`-Block (API-Kontrakt). Use-Case validiert
 // alle Felder; HTTP-Adapter dekodiert nur das Wire-Format.
 type wireBoundary struct {
 	Kind            string `json:"kind"`

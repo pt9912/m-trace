@@ -10,26 +10,26 @@ import (
 //
 // Modul lebt in `apps/api/hexagon/domain/` analog zur restlichen
 // Domain-Schicht (Variante B aus `docs/planning/in-progress/
-// plan-0.11.0.md` §0.3). Persistenz, HTTP, Konfigurations-Generierung
+// ` §0.3). Persistenz, HTTP, Konfigurations-Generierung
 // und Lifecycle-Events liegen in den Adapter-Schichten und
 // konsumieren nur diese Typen plus `stream_key.go`.
 //
 // Sicherheitsgrenzen aus Plan §0.7:
-//   - Klartext-Keys leben nur in Memory zwischen `GenerateStreamKey`
-//     und Adapter-Output; sie werden in `IngestStream` nicht
-//     gespeichert. Der Hash und der redigierte Fingerprint sitzen in
-//     `StreamKey` und sind die einzigen persistenz- und
-//     log-tauglichen Werte.
-//   - Lifecycle-Events tragen höchstens den Fingerprint, niemals den
-//     Klartext.
+//  - Klartext-Keys leben nur in Memory zwischen `GenerateStreamKey`
+//  und Adapter-Output; sie werden in `IngestStream` nicht
+//  gespeichert. Der Hash und der redigierte Fingerprint sitzen in
+//  `StreamKey` und sind die einzigen persistenz- und
+//  log-tauglichen Werte.
+//  - Lifecycle-Events tragen höchstens den Fingerprint, niemals den
+//  Klartext.
 
-// IngestProtocol ist die in `0.11.0` zulässige Allowlist für
+// IngestProtocol ist die zulässige Allowlist für
 // Ingest-Endpunkt-Protokolle (RAK-67). Weitere Protokolle (z. B.
 // WebRTC-Ingest, SRT-Listener mit Auth-Token) bleiben Folge-Scope
 // und werden additiv ergänzt — bestehende Werte bleiben stabil.
 type IngestProtocol string
 
-// IngestProtocol-Werte aus der `0.11.0`-Allowlist (RAK-67).
+// IngestProtocol-Werte aus der Allowlist (RAK-67).
 const (
 	IngestProtocolSRT  IngestProtocol = "srt"
 	IngestProtocolRTMP IngestProtocol = "rtmp"
@@ -43,7 +43,7 @@ const (
 // in der Größenordnung „beliebiger Free-Text").
 const MaxLifecycleStringField = 256
 
-// IsKnown prüft, ob ein Protocol-Wert in der `0.11.0`-Allowlist
+// IsKnown prüft, ob ein Protocol-Wert in der Allowlist
 // vertreten ist. Der HTTP-Adapter mappt unbekannte Werte auf
 // `400 invalid_request`; der Generator-Pfad lehnt sie strukturell
 // ab. Die Funktion ist absichtlich case-sensitive, damit
@@ -137,7 +137,7 @@ type MediaServerTarget struct {
 // Enum modelliert, damit Folge-Releases additiv erweitern können.
 type RoutingRuleMode string
 
-// RoutingRuleMode-Werte aus dem `0.11.0`-Scope. Fan-out/Failover/
+// RoutingRuleMode-Werte aus dem Scope. Fan-out/Failover/
 // Load-Balancing sind Folge-Scope.
 const (
 	RoutingRuleModeSingle RoutingRuleMode = "single"
@@ -155,7 +155,7 @@ type RoutingRule struct {
 	Enabled  bool
 }
 
-// StreamLifecycleEventKind benennt die in `0.11.0` ausgelieferten
+// StreamLifecycleEventKind benennt die ausgelieferten
 // Lifecycle-Events (RAK-69). Produktive ausgehende Webhook-
 // Zustellung an externe Systeme bleibt Folge-Scope (siehe R-16 im
 // `risks-backlog.md`).
@@ -176,14 +176,14 @@ const (
 type StreamLifecycleEventSource string
 
 // StreamLifecycleEventSource-Werte: `local-smoke` für lokal
-// eingespeiste Events (Plan §0.11.0 Tranche 4 / RAK-69),
+// eingespeiste Events (Plan §0.11.0 / RAK-69),
 // `mediamtx-hook` reserviert den späteren Adapter-Pfad.
 const (
 	StreamLifecycleSourceSmoke        StreamLifecycleEventSource = "local-smoke"
 	StreamLifecycleSourceMediaMTXHook StreamLifecycleEventSource = "mediamtx-hook"
 )
 
-// IsKnown prüft, ob ein Source-Wert in der `0.11.0`-Allowlist steht.
+// IsKnown prüft, ob ein Source-Wert in der Allowlist steht.
 // Der Hook-Handler mappt unbekannte Werte auf `400 invalid_request`.
 func (s StreamLifecycleEventSource) IsKnown() bool {
 	switch s {
@@ -245,7 +245,7 @@ var (
 	// 400 invalid_request.
 	ErrIngestLifecycleObservedAtRequired = errors.New("observed_at must be RFC3339")
 	// ErrIngestLifecycleSourceUnknown meldet einen Source-Wert, der
-	// nicht in der `0.11.0`-Allowlist steht. HTTP-Mapping: 400
+	// nicht in der Allowlist steht. HTTP-Mapping: 400
 	// invalid_request.
 	ErrIngestLifecycleSourceUnknown = errors.New("lifecycle source must be one of: local-smoke, mediamtx-hook")
 	// ErrIngestLifecycleFieldTooLong meldet, dass `connection_id`

@@ -63,7 +63,7 @@ func getWithOrigin(t *testing.T, srv *httptest.Server, path, origin string) *htt
 	if origin != "" {
 		req.Header.Set("Origin", origin)
 	}
-	// Read-Endpunkte sind ab plan-0.4.0 §4.2 tokenpflichtig; CORS-Tests
+	// Read-Endpunkte sind ab tokenpflichtig; CORS-Tests
 	// senden den Default-Test-Token, damit der Auth-Layer den Request
 	// nicht 401t bevor der CORS-Layer dazu kommt.
 	req.Header.Set("X-MTrace-Token", "demo-token")
@@ -175,7 +175,7 @@ func TestCORS_Vary_HeaderOnEveryResponse(t *testing.T) {
 	}
 }
 
-// TestCORS_Preflight_Dashboard_UnknownOrigin deckt den `0.12.0`-§3.9-
+// TestCORS_Preflight_Dashboard_UnknownOrigin deckt den §3.9-
 // Pfad des Dashboard-Preflights ab — `204` ohne Allow-Header für
 // unbekannte Origin (analog zum SDK-Pfad).
 func TestCORS_Preflight_Dashboard_UnknownOrigin(t *testing.T) {
@@ -213,7 +213,7 @@ func TestCORS_Preflight_Dashboard_Allowed(t *testing.T) {
 // TestCORS_Preflight_SseStream_Allowed pinnt Spec §10a: SSE-Preflight
 // liefert `Allow-Methods: GET, OPTIONS` und exakte
 // `Allow-Headers`-Liste inklusive `Last-Event-ID` für den
-// fetch-basierten Reconnect-Backfill (plan-0.4.0 §5 H4 F2).
+// fetch-basierten Reconnect-Backfill ( H4 F2).
 func TestCORS_Preflight_SseStream_Allowed(t *testing.T) {
 	t.Parallel()
 	srv := newTestServerWithSse(t)
@@ -248,7 +248,7 @@ func TestCORS_Preflight_SseStream_UnknownOrigin(t *testing.T) {
 }
 
 // TestCORS_Preflight_PlaybackEvents_HeaderSetExact pinnt die exakte
-// `0.12.0`-Header-Allowlist (§3.9): Content-Type, Authorization,
+// Header-Allowlist (§3.9): Content-Type, Authorization,
 // X-MTrace-Token, X-MTrace-Session-Token, traceparent — in dieser
 // Reihenfolge, damit Contract-Fixtures byte-stabil bleiben.
 func TestCORS_Preflight_PlaybackEvents_HeaderSetExact(t *testing.T) {

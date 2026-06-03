@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bricht ab, wenn die Total-Line-Coverage unter dem Threshold liegt.
 # Verwendung:
-#   bash scripts/coverage-gate.sh <go-tool-cover-func-file> [<threshold-percent>]
+#  bash scripts/coverage-gate.sh <go-tool-cover-func-file> [<threshold-percent>]
 #
 # Erwartet eine Datei mit der Output-Form von `go tool cover -func`,
 # deren letzte Zeile mit `total:` beginnt und im dritten Whitespace-
@@ -9,9 +9,9 @@
 # ist 90 (siehe docs/user/quality.md §3).
 #
 # Exit-Codes:
-#   0 — Coverage >= Threshold
-#   1 — Coverage < Threshold (Build-Gate schlägt fehl)
-#   2 — Eingabe-Fehler (Datei fehlt, Format unbekannt)
+#  0 — Coverage >= Threshold
+#  1 — Coverage < Threshold (Build-Gate schlägt fehl)
+#  2 — Eingabe-Fehler (Datei fehlt, Format unbekannt)
 
 set -euo pipefail
 
@@ -33,7 +33,7 @@ if [[ ! -f "$func_file" ]]; then
     exit 2
 fi
 
-# Letzte Zeile: `total:    (statements)    89.8%`. Wir lesen das letzte
+# Letzte Zeile: `total: (statements) 89.8%`. Wir lesen das letzte
 # Token und entfernen das `%`.
 total_line="$(tail -n1 "$func_file")"
 total_pct="$(awk '{print $NF}' <<<"$total_line" | tr -d '%')"

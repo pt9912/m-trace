@@ -17,7 +17,7 @@ import (
 
 // integrationSrtSource liefert pro Aufruf einen Sample mit
 // fortschreitender SourceSequence, damit der Collector zwei
-// aufeinanderfolgende Persistierungen sieht (DoD plan-0.6.0 §4.3
+// aufeinanderfolgende Persistierungen sieht (DoD
 // für Sub-3.7: „Smoke- oder Integrationstest weist nach, dass der
 // Collector im Lab mindestens zwei aufeinanderfolgende Samples
 // importiert und persistiert").

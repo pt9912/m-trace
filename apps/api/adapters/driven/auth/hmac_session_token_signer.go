@@ -20,16 +20,16 @@ import (
 // `mtr_st_<base64url(headerJSON)>.<base64url(claimsJSON)>.<base64url(sig)>`.
 //
 // Sicherheitsprofil:
-//   - Signing benutzt ausschließlich den `Active`-Key.
-//   - Verify schlägt jedem Key im Ring nach (aktiv + retired), damit
-//     ein vor Key-Switch ausgestellter Token nach einem Rollover
-//     weiterhin verifiziert.
-//   - Unbekannter `kid` → `domain.ErrAuthTokenInvalid`.
-//   - Unbekannter `alg` → `domain.ErrAuthTokenInvalid`. Wir
-//     validieren `alg` strikt gegen die Domain-Allowlist
-//     (`SigningKeyAlgorithmHS256`); ein „none"-Header ist damit
-//     ausgeschlossen.
-//   - Signature-Vergleich ist konstantzeitnah.
+//  - Signing benutzt ausschließlich den `Active`-Key.
+//  - Verify schlägt jedem Key im Ring nach (aktiv + retired), damit
+//  ein vor Key-Switch ausgestellter Token nach einem Rollover
+//  weiterhin verifiziert.
+//  - Unbekannter `kid` → `domain.ErrAuthTokenInvalid`.
+//  - Unbekannter `alg` → `domain.ErrAuthTokenInvalid`. Wir
+//  validieren `alg` strikt gegen die Domain-Allowlist
+//  (`SigningKeyAlgorithmHS256`); ein „none"-Header ist damit
+//  ausgeschlossen.
+//  - Signature-Vergleich ist konstantzeitnah.
 //
 // Algorithmus-/`alg`-Wert ist Wire-konstant `HS256`; spätere
 // Algorithmen werden additiv ergänzt. Header-/Claims-Encoding ist

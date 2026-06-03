@@ -18,24 +18,24 @@ import (
 )
 
 // MaxBodyBytes caps the request body at 256 KB
-// (spec/backend-api-contract.md §5 step 2).
+// (spec/backend-api-contract.md step 2).
 const MaxBodyBytes = 256 * 1024
 
 // spanName is the OTel span name for the playback-events handler.
-// Mirrors the verbindliche Tabelle in spec/telemetry-model.md §2.1
+// Mirrors the verbindliche Tabelle in spec/telemetry-model.md
 // (single span per request, scope = HTTP-Adapter).
 const spanName = "http.handler POST /api/playback-events"
 
 // PlaybackEventsHandler implements POST /api/playback-events. The
 // Tracer wraps each request in a span; ServeHTTP records the
 // http.method/route, http.status_code, batch.size and batch.outcome
-// attributes documented in spec/telemetry-model.md §2.1.
+// attributes documented in spec/telemetry-model.md
 //
-// Auth ist ab `0.12.0` (RAK-72/RAK-75) drei-pfadig: Bearer-Session-
+// Auth ist (RAK-72/RAK-75) drei-pfadig: Bearer-Session-
 // Token, X-MTrace-Session-Token und Legacy-X-MTrace-Token. Wenn
 // `AuthHeaders` gesetzt ist, läuft die §3.9-Header-Priorität samt
 // Multi-Token-Konsistenzcheck; ohne `AuthHeaders` bleibt der Handler
-// im Pre-`0.12.0`-Verhalten (nur `X-MTrace-Token`).
+// im Pre-Verhalten (nur `X-MTrace-Token`).
 type PlaybackEventsHandler struct {
 	UseCase     driving.PlaybackEventInbound
 	AuthHeaders *AuthHeaderParser
@@ -44,18 +44,18 @@ type PlaybackEventsHandler struct {
 }
 
 // ServeHTTP follows the validation order from
-// spec/backend-api-contract.md §5:
+// spec/backend-api-contract.md:
 //
 //	step 1: X-MTrace-Token header presence -> 401
-//	step 2: body size                      -> 413
+//	step 2: body size -> 413
 //	(steps 3-10 are inside the use case, mapped from domain errors)
 //
 // The whole request is wrapped in a single OTel server-span; per
-// spec/architecture.md §3.4 the HTTP adapter is one of two places
+// spec/architecture.md the HTTP adapter is one of two places
 // allowed to import OTel directly. Trace-Korrelation: ein gültiger
 // `traceparent`-Header erzeugt einen Child-Span (W3C Trace Context),
 // ein ungültiger Header → Root-Span + mtrace.trace.parse_error=true
-// (spec/telemetry-model.md §2.5).
+// (spec/telemetry-model.md).
 func (h *PlaybackEventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	parentCtx, parseError := withTraceParent(r.Context(), r.Header.Get("traceparent"))
 
@@ -153,7 +153,7 @@ func (h *PlaybackEventsHandler) serve(
 	}
 
 	// Step 1 — Auth-Header presence. Origin-loser Fast-Reject vor dem
-	// Body-Read; siehe API-Kontrakt §5 (Auth-vor-Body-Reihenfolge,
+	// Body-Read; siehe API-Kontrakt (Auth-vor-Body-Reihenfolge,
 	// Patch 40d79d9).
 	//
 	// Ab `0.12.0` (RAK-72/RAK-75) prüft der `AuthHeaderParser` die
@@ -238,7 +238,7 @@ func (h *PlaybackEventsHandler) serve(
 
 // writeAuthHeaderError mappt die Auth-Header-Parser-Fehler aus
 // `0.12.0` auf §3.9-Codes. Body-Form bleibt minimal (Status + Code),
-// damit die Pre-`0.12.0`-Pflichttests (die nur den Status-Code
+// damit die Pre-Pflichttests (die nur den Status-Code
 // prüfen) unverändert grün bleiben.
 func (h *PlaybackEventsHandler) writeAuthHeaderError(w http.ResponseWriter, err error) {
 	switch {
@@ -331,7 +331,7 @@ func (r *statusRecorder) statusCode() int {
 }
 
 // clientIPFromRequest extrahiert die Client-Adresse aus r.RemoteAddr
-// für die Rate-Limit-Dimension client_ip (plan-0.1.0.md §5.1, F-110).
+// für die Rate-Limit-Dimension client_ip (F-110).
 // In 0.1.0 wird `X-Forwarded-For` bewusst nicht ausgewertet — ein
 // vertrauenswürdiger Proxy-Chain-Header ist nicht eingerichtet.
 // httptest und CLI liefern z. B. "127.0.0.1:54321"; der Port wird
@@ -348,7 +348,7 @@ func clientIPFromRequest(r *http.Request) string {
 }
 
 // outcomeFor maps HTTP status codes to the small set of batch.outcome
-// values used in spec/telemetry-model.md §2.1. Buckets are bounded to
+// values used in spec/telemetry-model.md Buckets are bounded to
 // avoid attribute-cardinality blow-up.
 func outcomeFor(code int) string {
 	switch {

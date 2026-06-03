@@ -9,7 +9,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.11.0` Tranche 1 / RAK-66: Stream-Key-Erzeugung mit CSPRNG,
+// RAK-66: Stream-Key-Erzeugung mit CSPRNG,
 // SHA-256-Hash, redigiertem Fingerprint und Konstantzeit-Vergleich.
 // Tests laufen ohne HTTP, Storage oder Docker.
 
@@ -76,7 +76,7 @@ func TestGenerateStreamKey_Uniqueness(t *testing.T) {
 func TestGenerateStreamKey_HashIsStableForSameValue(t *testing.T) {
 	t.Parallel()
 	// Wir können den Klartext nicht direkt steuern, aber ein
-	// Round-Trip Validate(value, ToPersistable()) muss true liefern.
+	// Round-Trip Validate(value, ToPersistable) muss true liefern.
 	m := mustGenerate(t)
 	persisted := m.ToPersistable()
 	ok, err := domain.ValidateStreamKey(m.Value, persisted)

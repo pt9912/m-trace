@@ -13,7 +13,7 @@ import (
 // TestContract verifiziert, dass die SQLite-Adapter den gemeinsamen
 // Persistence-Vertrag aus `persistence/contract` erfüllen — identisch
 // zum InMemory-Test in `inmemory_test`. Jeder Sub-Test bekommt eine
-// frische SQLite-Datei in einem t.TempDir().
+// frische SQLite-Datei in einem t.TempDir.
 func TestContract(t *testing.T) {
 	t.Parallel()
 	contract.RunAll(t, func(t *testing.T) contract.Repos {

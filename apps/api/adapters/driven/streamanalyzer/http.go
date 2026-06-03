@@ -20,12 +20,12 @@ const (
 	// defaultMaxResponseBytes schützt den API-Prozess gegen
 	// pathologische Antworten des analyzer-service. Größenlimit auf
 	// Manifestebene setzt der Service selbst (FetchOptions.maxBytes,
-	// plan-0.3.0 §3); dieses Limit ist zusätzlich Defense-in-Depth.
+	// ); dieses Limit ist zusätzlich Defense-in-Depth.
 	defaultMaxResponseBytes = 4 * 1024 * 1024
 )
 
 // HTTPStreamAnalyzer ruft den internen analyzer-service über HTTP auf
-// (plan-0.3.0 §7 Tranche 6). Der Service akzeptiert das ManifestInput-
+// . Der Service akzeptiert das ManifestInput-
 // Schema des stream-analyzer-Pakets und liefert das AnalyzeOutput-
 // JSON, das der Adapter auf domain.StreamAnalysisResult mappt.
 //
@@ -76,7 +76,7 @@ func NewHTTPStreamAnalyzer(baseURL string, opts ...HTTPStreamAnalyzerOption) *HT
 	return h
 }
 
-// AnalyzeBatch hält den Slot für F-22 (plan-0.1.0). Die HTTP-Variante
+// AnalyzeBatch hält den Slot für F-22. Die HTTP-Variante
 // nutzt ihn nicht produktiv und reicht den Aufruf no-op weiter.
 func (*HTTPStreamAnalyzer) AnalyzeBatch(_ context.Context, _ []domain.PlaybackEvent) error {
 	return nil
@@ -85,7 +85,7 @@ func (*HTTPStreamAnalyzer) AnalyzeBatch(_ context.Context, _ []domain.PlaybackEv
 // AnalyzeManifest delegiert an den analyzer-service. Fehler werden als
 // strukturierte Fehler des Domain-Layers zurückgegeben — das Mapping
 // auf HTTP-Statuscodes übernimmt das Driving-HTTP-Adapter (siehe
-// plan-0.3.0 §7 Tranche 6, „Fehlerabbildung von Analyzer-Fehlern auf
+// , „Fehlerabbildung von Analyzer-Fehlern auf
 // HTTP-Status/Problem-Shape").
 func (h *HTTPStreamAnalyzer) AnalyzeManifest(ctx context.Context, req domain.StreamAnalysisRequest) (domain.StreamAnalysisResult, error) {
 	body, err := buildRequestBody(req)

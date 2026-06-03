@@ -11,7 +11,7 @@ import "time"
 // hexagon/port/driving (BatchInput / EventInput).
 //
 // IngestSequence ist ein serverseitig gesetzter Pflicht-Counter
-// (plan-0.1.0.md §5.1): monoton steigend pro apps/api-Prozess, vor
+// : monoton steigend pro apps/api-Prozess, vor
 // Append im Use Case gesetzt. Begründet die Eindeutigkeit der
 // Pagination-Sortierung auch bei identischen Client-Feldern und
 // gleichen ServerReceivedAt-Werten.
@@ -29,7 +29,7 @@ type PlaybackEvent struct {
 	// dem das Event registriert wurde — entweder vom SDK propagiert
 	// (`traceparent`-Header) oder server-generiert. Empty-String =
 	// nicht gesetzt (Edge-Case in Tests/Fallbacks); Read-Pfad mappt
-	// das auf JSON `null`. Siehe spec/telemetry-model.md §2.5.
+	// das auf JSON `null`. Siehe spec/telemetry-model.md
 	TraceID string
 	// SpanID ist die ID des Server-Spans, der diesen Event verarbeitet
 	// hat (16 Hex-Zeichen). Empty-String = nicht gesetzt.
@@ -43,8 +43,8 @@ type PlaybackEvent struct {
 	// die Schwelle `application.TimeSkewThreshold` (60 s) bei
 	// Ingest-Zeit überschritten hat. Persistiert durable in
 	// `playback_events.time_skew_warning` (Migration V6) und Read-Pfad-
-	// sichtbar (List/Detail/SSE) gemäß spec/telemetry-model.md §2.5/§5.3
-	// und plan-0.12.6 Tranche 3 (R-5).
+	// sichtbar (List/Detail/SSE) gemäß spec/telemetry-model.md
+	// und (R-5).
 	TimeSkewWarning bool
 }
 

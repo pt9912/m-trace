@@ -14,33 +14,33 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// RedisIssuanceRateLimiter (plan-0.12.6 Tranche 7 / R-17) implementiert
+// RedisIssuanceRateLimiter (R-17) implementiert
 // `driven.IssuanceRateLimiter` über atomare Token-Bucket-Operationen
 // auf einem Redis-Server. Mehrere API-Replicas — auch über Hosts
-// hinweg — teilen sich denselben Bucket-Counter; der `0.12.5`-SQLite-
+// hinweg — teilen sich denselben Bucket-Counter; der SQLite-
 // Pfad ist auf Single-Host-Shared-Volume beschränkt.
 //
 // Atomicity-Vertrag:
-//   - Ein einziger `EVAL`-Lua-Script-Aufruf für beide Buckets
-//     (global → project, mit Refund bei project-deny) garantiert,
-//     dass kein anderer Caller die Buckets zwischen den zwei
-//     Refill/Consume-Schritten verändert (Race-frei).
-//   - Bucket-Keys: `mtrace:issuance:global` und
-//     `mtrace:issuance:project:<projectID>`. TTL hält idle Buckets
-//     aus dem Redis-Speicher; Default 24 h analog `0.12.5` SQLite-
-//     Limiter.
+//  - Ein einziger `EVAL`-Lua-Script-Aufruf für beide Buckets
+//  (global → project, mit Refund bei project-deny) garantiert,
+//  dass kein anderer Caller die Buckets zwischen den zwei
+//  Refill/Consume-Schritten verändert (Race-frei).
+//  - Bucket-Keys: `mtrace:issuance:global` und
+//  `mtrace:issuance:project:<projectID>`. TTL hält idle Buckets
+//  aus dem Redis-Speicher; Default 24 h analog `0.12.5` SQLite-
+//  Limiter.
 //
 // Fail-Mode-Vertrag:
-//   - **fail-closed (Default)**: jede Redis-Connection-/EVAL-Error-
-//     Klasse wird als „deny" gemeldet (`(false, nil)`); der HTTP-
-//     Handler liefert dann `429 auth_issuance_rate_limited`. Damit
-//     wird ein Redis-Outage nie zur Mint-Welle.
-//   - **fail-open (opt-in)**: wenn der Operator `FailOpen=true`
-//     setzt (ENV `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`), fällt der
-//     Limiter bei Redis-Outage auf einen lokalen In-Process-
-//     Token-Bucket-Fallback zurück (`fallback` Field). Der
-//     Fallback misst pro Replica — explizite Operator-Entscheidung
-//     gegen den Single-Host-Bucket-Konsens.
+//  - **fail-closed (Default)**: jede Redis-Connection-/EVAL-Error-
+//  Klasse wird als „deny" gemeldet (`(false, nil)`); der HTTP-
+//  Handler liefert dann `429 auth_issuance_rate_limited`. Damit
+//  wird ein Redis-Outage nie zur Mint-Welle.
+//  - **fail-open (opt-in)**: wenn der Operator `FailOpen=true`
+//  setzt (ENV `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`), fällt der
+//  Limiter bei Redis-Outage auf einen lokalen In-Process-
+//  Token-Bucket-Fallback zurück (`fallback` Field). Der
+//  Fallback misst pro Replica — explizite Operator-Entscheidung
+//  gegen den Single-Host-Bucket-Konsens.
 type RedisIssuanceRateLimiter struct {
 	client       redis.UniversalClient
 	now          func() time.Time

@@ -10,7 +10,7 @@ import (
 
 // InMemoryProjectPolicyResolver implementiert
 // `driven.ProjectPolicyResolver` gegen eine vom Operator
-// konfigurierte Map (`0.12.0`, RAK-74). Restart-Stabilität wird
+// konfigurierte Map (RAK-74). Restart-Stabilität wird
 // durch die Operator-Konfiguration garantiert.
 //
 // Falls für ein Project keine Policy konfiguriert ist, fällt der

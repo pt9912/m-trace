@@ -27,26 +27,26 @@ import (
 // Adressiert R-16 (lokales Lifecycle-Eventmodell ohne Outbound).
 //
 // Wire-Vertrag (Doku in `docs/user/auth.md` §5.8):
-//   - `POST` an `Endpoint` mit `Content-Type: application/json`.
-//   - Body: `OutboundWebhookEvent` serialisiert als JSON (siehe
-//     `driven.OutboundWebhookEvent`-Doc).
-//   - Signatur: `X-MTrace-Signature: sha256=<hex>` über den
-//     gesamten Body, HMAC-SHA-256 mit `Secret`. Der Konsument
-//     muss exakt den Body-Hash prüfen; Whitespace-Veränderungen
-//     ändern die Signatur.
-//   - Timestamp im Header `X-MTrace-Timestamp` (RFC3339Nano),
-//     damit der Konsument Replay-Schutz machen kann.
+//  - `POST` an `Endpoint` mit `Content-Type: application/json`.
+//  - Body: `OutboundWebhookEvent` serialisiert als JSON (siehe
+//  `driven.OutboundWebhookEvent`-Doc).
+//  - Signatur: `X-MTrace-Signature: sha256=<hex>` über den
+//  gesamten Body, HMAC-SHA-256 mit `Secret`. Der Konsument
+//  muss exakt den Body-Hash prüfen; Whitespace-Veränderungen
+//  ändern die Signatur.
+//  - Timestamp im Header `X-MTrace-Timestamp` (RFC3339Nano),
+//  damit der Konsument Replay-Schutz machen kann.
 //
 // Retry-Schema (statisch, Folge-Item: ENV-konfigurierbar):
-//   - bis zu `MaxAttempts` Versuche (Default 3).
-//   - Exponential-Backoff mit Basis `BaseBackoff` (Default 100ms),
-//     verdoppelt nach jedem Versuch: 100ms, 200ms, 400ms.
-//   - Per-Versuch-Timeout `RequestTimeout` (Default 10s).
-//   - Erfolg ist `200 ≤ status < 300`; alles andere zählt als
-//     fehlgeschlagen und wird nach Backoff erneut versucht.
-//   - Nach Erschöpfung der Versuche: `Dispatch` liefert einen
-//     `Dead-Letter`-Fehler. Der Caller loggt das, lässt aber den
-//     Lifecycle-Pfad nicht failen.
+//  - bis zu `MaxAttempts` Versuche (Default 3).
+//  - Exponential-Backoff mit Basis `BaseBackoff` (Default 100ms),
+//  verdoppelt nach jedem Versuch: 100ms, 200ms, 400ms.
+//  - Per-Versuch-Timeout `RequestTimeout` (Default 10s).
+//  - Erfolg ist `200 ≤ status < 300`; alles andere zählt als
+//  fehlgeschlagen und wird nach Backoff erneut versucht.
+//  - Nach Erschöpfung der Versuche: `Dispatch` liefert einen
+//  `Dead-Letter`-Fehler. Der Caller loggt das, lässt aber den
+//  Lifecycle-Pfad nicht failen.
 //
 // Disabled-Modus: wenn `Endpoint == ""`, ist der Dispatcher ein
 // No-Op — `Dispatch` liefert ohne Roundtrip `nil`. Bootstrap kann

@@ -8,7 +8,7 @@ import (
 )
 
 // webrtcMetrics bündelt die `mtrace_webrtc_*`-Counter aus
-// spec/telemetry-model.md §3.5 plus den Sample-State für die
+// spec/telemetry-model.md plus den Sample-State für die
 // serverseitige Delta-Berechnung.
 //
 // State-Counter (`connection_state`, `ice_state`, `dtls_state`)
@@ -47,7 +47,7 @@ func newWebRTCMetrics() *webrtcMetrics {
 		connectionStateTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "mtrace_webrtc_connection_state_total",
-				Help: "Total accepted WebRTC samples grouped by RTCPeerConnectionState (plan-0.8.0 §4 Tranche 3).",
+				Help: "Total accepted WebRTC samples grouped by RTCPeerConnectionState.",
 			},
 			[]string{"connection_state"},
 		),

@@ -9,29 +9,29 @@ import (
 // MediaServerProvisioner ist der optionale Adapter, der einen
 // laufenden Media-Server (MediaMTX/SRS) konfiguriert, wenn der
 // `POST /api/ingest/streams?provision=true`-Pfad aktiviert ist
-// (plan-0.12.6 Tranche 9 / R-15, spec/backend-api-contract.md §3.8).
+// (R-15, spec/backend-api-contract.md).
 //
 // Adapter-Vertrag:
 //
-//   - `Apply(ctx, config)`: server-seitiges I/O — Endpoint und
-//     Routing-Rule auf dem externen Server anlegen. Idempotenz ist
-//     Adapter-Detail (MediaMTX-`/v3/config/`-Endpunkte sind
-//     idempotent über PUT; SRS bleibt Folge-Item nach `0.12.6`).
-//     Liefert `MediaServerStateApplied` bei vollem Erfolg,
-//     `MediaServerStatePartial` bei teilweise erfolgter
-//     Konfiguration (z. B. Endpoint angelegt, Routing-Rule
-//     rejected), `MediaServerStateFailed` bei vollständigem
-//     Fehlschlag plus `ErrorCode` für den Operator. Der Aufrufer
-//     (Use-Case) macht **keinen** API-State-Rollback bei `failed`/
-//     `partial` — der HTTP-Adapter signalisiert das im Response
-//     mit `201 Created` plus `media_server_state="failed"`.
+//  - `Apply(ctx, config)`: server-seitiges I/O — Endpoint und
+//  Routing-Rule auf dem externen Server anlegen. Idempotenz ist
+//  Adapter-Detail (MediaMTX-`/v3/config/`-Endpunkte sind
+//  idempotent über PUT; SRS bleibt Folge-Item nach `0.12.6`).
+//  Liefert `MediaServerStateApplied` bei vollem Erfolg,
+//  `MediaServerStatePartial` bei teilweise erfolgter
+//  Konfiguration (z. B. Endpoint angelegt, Routing-Rule
+//  rejected), `MediaServerStateFailed` bei vollständigem
+//  Fehlschlag plus `ErrorCode` für den Operator. Der Aufrufer
+//  (Use-Case) macht **keinen** API-State-Rollback bei `failed`/
+//  `partial` — der HTTP-Adapter signalisiert das im Response
+//  mit `201 Created` plus `media_server_state="failed"`.
 //
-//   - `Rollback(ctx, ids)`: Best-Effort-Cleanup, wenn der Operator
-//     einen Stream löscht oder das API-State-vs-Server-State-
-//     Diff manuell synchronisieren möchte. Wird vom Use-Case in
-//     `0.12.6` NICHT automatisch aufgerufen — `provision=true` ist
-//     opt-in und Rollback ist Operator-Verantwortung über einen
-//     Folge-Endpoint (post-`0.12.6`).
+//  - `Rollback(ctx, ids)`: Best-Effort-Cleanup, wenn der Operator
+//  einen Stream löscht oder das API-State-vs-Server-State-
+//  Diff manuell synchronisieren möchte. Wird vom Use-Case in
+//  `0.12.6` NICHT automatisch aufgerufen — `provision=true` ist
+//  opt-in und Rollback ist Operator-Verantwortung über einen
+//  Folge-Endpoint (post-`0.12.6`).
 //
 // **Disabled-Pfad**: ein nil-Provisioner (Boot-Wiring ohne
 // `MTRACE_MEDIASERVER_PROVISION_URL`) signalisiert dem Use-Case,
@@ -63,7 +63,7 @@ type MediaServerApplyResult struct {
 // MediaServerState ist der bounded Wire-Enum für die Response.
 type MediaServerState string
 
-// Wire-Enum-Werte gemäß spec/backend-api-contract.md §3.8
+// Wire-Enum-Werte gemäß spec/backend-api-contract.md
 // (`0.12.6` T9).
 const (
 	// MediaServerStateDisabled: ENV nicht konfiguriert; Adapter nil

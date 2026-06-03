@@ -13,18 +13,18 @@ import (
 )
 
 // ProjectTokenRepository ist die durable SQLite-Variante des
-// `driven.ProjectTokenRepository`-Ports (`0.12.0`, RAK-73). Tabellen
+// `driven.ProjectTokenRepository`-Ports (RAK-73). Tabellen
 // aus `V4__project_tokens.sql`.
 //
 // Sicherheitsprofil:
-//   - Klartext-Tokens werden nicht persistiert. Persistente Sicht
-//     enthält ausschließlich `key_hash`, `fingerprint` und Lifecycle-
-//     Metadaten.
-//   - `key_hash` ist repository-weit unique (UNIQUE-Constraint),
-//     damit Cross-Project-Hash-Kollisionen früh sichtbar sind.
-//   - `Find` liefert eine defensive Kopie inklusive Time-Pointer-
-//     Klone, damit nachträgliche Mutationen am Caller den DB-State
-//     nicht beeinflussen.
+//  - Klartext-Tokens werden nicht persistiert. Persistente Sicht
+//  enthält ausschließlich `key_hash`, `fingerprint` und Lifecycle-
+//  Metadaten.
+//  - `key_hash` ist repository-weit unique (UNIQUE-Constraint),
+//  damit Cross-Project-Hash-Kollisionen früh sichtbar sind.
+//  - `Find` liefert eine defensive Kopie inklusive Time-Pointer-
+//  Klone, damit nachträgliche Mutationen am Caller den DB-State
+//  nicht beeinflussen.
 type ProjectTokenRepository struct {
 	db *sql.DB
 }

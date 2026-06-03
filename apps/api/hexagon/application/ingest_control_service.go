@@ -16,22 +16,22 @@ import (
 )
 
 // IngestControlService implementiert den `driving.IngestControlInbound`-
-// Port (`0.11.0` Tranche 2, NF-13 / RAK-65..RAK-67). Ohne HTTP- und
+// Port (NF-13 / RAK-65..RAK-67). Ohne HTTP- und
 // SQLite-Annahmen — der Use-Case bekommt das Repository über den
 // Driven-Port und einen `Clock`-Hook für deterministische Tests.
 //
 // Sicherheitsprofil:
-//   - Klartext-Stream-Keys leben nur transient zwischen
-//     `domain.GenerateStreamKey` und der Service-Antwort. Das
-//     Repository bekommt ausschließlich `domain.StreamKey` (Hash +
-//     Fingerprint).
-//   - Cross-Project-Leak-Schutz: jeder Lookup nutzt die im Aufruf
-//     übergebene `projectID` (vom HTTP-Adapter aus dem Token
-//     resolved); ein Stream eines fremden Projects wird wie
-//     nicht-existent behandelt (`domain.ErrIngestStreamNotFound`).
-//   - `ValidateKey` liefert `Valid:false` ohne Stream-ID-Hinweis,
-//     wenn entweder Stream nicht im Project ist, der Key Format-
-//     verstoß hat oder der Hash nicht passt.
+//  - Klartext-Stream-Keys leben nur transient zwischen
+//  `domain.GenerateStreamKey` und der Service-Antwort. Das
+//  Repository bekommt ausschließlich `domain.StreamKey` (Hash +
+//  Fingerprint).
+//  - Cross-Project-Leak-Schutz: jeder Lookup nutzt die im Aufruf
+//  übergebene `projectID` (vom HTTP-Adapter aus dem Token
+//  resolved); ein Stream eines fremden Projects wird wie
+//  nicht-existent behandelt (`domain.ErrIngestStreamNotFound`).
+//  - `ValidateKey` liefert `Valid:false` ohne Stream-ID-Hinweis,
+//  wenn entweder Stream nicht im Project ist, der Key Format-
+//  verstoß hat oder der Hash nicht passt.
 type IngestControlService struct {
 	repo        driven.IngestStreamRepository
 	clock       Clock
@@ -56,10 +56,10 @@ func NewIngestControlService(repo driven.IngestStreamRepository, clock Clock) *I
 // WithOutboundWebhookDispatcher verdrahtet den optionalen
 // Outbound-Webhook-Dispatcher (`0.12.5`/RAK-82, R-16). `nil`
 // deaktiviert den Pfad — das Service-Verhalten ist dann unverändert
-// zum `0.11.0`-Stand (Lifecycle-Events bleiben rein lokal).
+// zum Stand (Lifecycle-Events bleiben rein lokal).
 //
 // Verdrahtung als Option-Setter und nicht im Konstruktor, damit
-// existierende Bootstrap-Aufrufe (insb. die `0.11.0`-Tests)
+// existierende Bootstrap-Aufrufe (insb. die Tests)
 // unverändert weiterlaufen.
 func (s *IngestControlService) WithOutboundWebhookDispatcher(d driven.OutboundWebhookDispatcher) *IngestControlService {
 	if s == nil {
@@ -70,7 +70,7 @@ func (s *IngestControlService) WithOutboundWebhookDispatcher(d driven.OutboundWe
 }
 
 // WithMediaServerProvisioner verdrahtet den optionalen Provisioner
-// (`0.12.6` Tranche 9 / R-15). `nil` deaktiviert den Pfad — der
+// (R-15). `nil` deaktiviert den Pfad — der
 // Use-Case behandelt `provision=true`-Aufrufe dann als
 // `media_server_state="disabled"` (kein Server-I/O versucht).
 func (s *IngestControlService) WithMediaServerProvisioner(p driven.MediaServerProvisioner) *IngestControlService {
@@ -83,12 +83,12 @@ func (s *IngestControlService) WithMediaServerProvisioner(p driven.MediaServerPr
 
 // CreateStream legt einen neuen Stream samt initialem Klartext-Key
 // an. Validierungspipeline:
-//   1. Project-ID-Konsistenz (Request vs. Token).
-//   2. Display-Name nicht leer.
-//   3. Protocol in Allowlist (`srt`/`rtmp`).
-//   4. Endpoint und Target existieren.
-//   5. Repo-Insert (atomar) — bei Constraint-Verstoß
-//      `ErrIngestStreamNameConflict`.
+//  1. Project-ID-Konsistenz (Request vs. Token).
+//  2. Display-Name nicht leer.
+//  3. Protocol in Allowlist (`srt`/`rtmp`).
+//  4. Endpoint und Target existieren.
+//  5. Repo-Insert (atomar) — bei Constraint-Verstoß
+//  `ErrIngestStreamNameConflict`.
 func (s *IngestControlService) CreateStream(ctx context.Context, req driving.CreateStreamRequest) (driving.CreateStreamResult, error) {
 	if err := domain.ValidateProjectIDConsistency(req.RequestProjectID, req.ResolvedProjectID); err != nil {
 		return driving.CreateStreamResult{}, err
@@ -140,7 +140,7 @@ func (s *IngestControlService) CreateStream(ctx context.Context, req driving.Cre
 // `MediaServerStateDisabled` plus Hinweis — der HTTP-Adapter trägt
 // das in das `media_server_state`-Wire-Feld. Server-Errors landen
 // als `failed` mit `ErrorCode` im Detail; der API-State bleibt
-// angelegt (kein Rollback in `0.12.6`).
+// angelegt (kein Rollback).
 func (s *IngestControlService) tryProvision(ctx context.Context, projectID string, stream domain.IngestStream, key domain.StreamKey) (driven.MediaServerState, string) {
 	if s.provisioner == nil {
 		return driven.MediaServerStateDisabled,
@@ -352,7 +352,7 @@ func distinctOtherTargetIDs(streams []domain.IngestStream, selected string) []st
 }
 
 // RecordLifecycleEvent persistiert ein Lifecycle-Event (Plan §0.11.0
-// Tranche 4 / RAK-69). Der `event_id`-Wert wird hier serverseitig
+// / RAK-69). Der `event_id`-Wert wird hier serverseitig
 // erzeugt und mit dem Event in den Adapter zurückgereicht — der
 // HTTP-Hook-Handler echo't ihn als Acknowledgement. `KeyFingerprint`
 // wird aus dem aktiven Key abgeleitet; Klartext-Werte landen niemals

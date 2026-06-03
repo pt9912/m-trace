@@ -20,16 +20,16 @@ import (
 //
 // Atomarität: jede `Allow`-Operation läuft in einer `BeginTx`-
 // Transaktion, deren `BEGIN IMMEDIATE`-Semantik durch die DSN aus
-// `internal/storage` erzwungen wird (siehe ADR-0002 §8.3). Damit
+// `internal/storage` erzwungen wird (siehe ADR-0002). Damit
 // serialisiert SQLite die konkurrenten Allow-Calls über alle
 // Replicas hinweg — der globale und der pro-Project-Bucket bleiben
 // konsistent.
 //
 // Topologie-Constraint (Operator-Doku `auth.md` §5.4):
-//   - Nur Single-Host (Compose-`volumes:` oder K8s-`hostPath` auf
-//     demselben Host). Echte Multi-Host-Topologie braucht einen
-//     Network-Backend-Adapter (Redis/Memcached) — Folge-Item nach
-//     `0.12.5`.
+//  - Nur Single-Host (Compose-`volumes:` oder K8s-`hostPath` auf
+//  demselben Host). Echte Multi-Host-Topologie braucht einen
+//  Network-Backend-Adapter (Redis/Memcached) — Folge-Item nach
+//  `0.12.5`.
 //
 // RAK-74-Scope-Cut bleibt aktiv: dieser Limiter darf nicht vor
 // `/api/ingest/*` hängen. Der Application-Service ruft `Allow` nur

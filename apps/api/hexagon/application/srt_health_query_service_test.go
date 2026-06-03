@@ -174,8 +174,8 @@ func TestQueryService_HistoryByStream_UnknownStream(t *testing.T) {
 }
 
 // HistoryByStream: leere Folgeseite (after != nil, 0 Items) ist
-// kein Fehler — Stream existiert, keine weiteren Samples (plan-0.12.6
-// Tranche 2).
+// kein Fehler — Stream existiert, keine weiteren Samples (
+// ).
 func TestQueryService_HistoryByStream_EmptyTail(t *testing.T) {
 	now := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
 	repo := &queryRepo{history: nil}

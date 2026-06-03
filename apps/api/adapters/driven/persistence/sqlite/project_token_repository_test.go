@@ -13,7 +13,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
 )
 
-// `0.12.0` Tranche 3 / RAK-73: Project-Token-Generationen-Repo
+// RAK-73: Project-Token-Generationen-Repo
 // (SQLite-Variante). Spiegelnde Suite zu inmemory; zusätzlich ein
 // Restart-Test, der die Persistenz von `grace_until` über einen
 // Schließe-Öffne-Zyklus pinnt.

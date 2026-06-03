@@ -11,7 +11,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.12.0` Tranche 2 / RAK-72/RAK-75: Auth-Header-Parser. Tests
+// RAK-72/RAK-75: Auth-Header-Parser. Tests
 // fahren den HMAC-Signer (Sign-Pfad ausschließlich für Testdaten,
 // damit Verify einen echten Token bekommt).
 
@@ -326,7 +326,7 @@ func TestAuthHeaderParser_LegacyResolverGenericErrorMappedToInvalid(t *testing.T
 
 func TestAuthHeaderParser_DefaultClockResolvesValidToken(t *testing.T) {
 	t.Parallel()
-	// Parser ohne `Now`-Override → fällt auf `time.Now().UTC()` zurück.
+	// Parser ohne `Now`-Override → fällt auf `time.Now.UTC` zurück.
 	// Token ist frisch ausgestellt mit Exp = now+1h → muss validieren.
 	resolver := auth.NewStaticProjectResolver(map[string]auth.ProjectConfig{
 		"demo": {Token: "demo-token"},

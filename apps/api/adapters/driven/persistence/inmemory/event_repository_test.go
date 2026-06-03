@@ -111,7 +111,7 @@ func TestEventRepository_Snapshot(t *testing.T) {
 // deckt nullableSeqValue's nil-Pfad ab und verifiziert die
 // Sort-Order: bei gleichem ServerReceivedAt sortiert ein Event mit
 // nil SequenceNumber vor einem Event mit gesetzter Nummer
-// (plan-0.1.0.md §5.1).
+// .
 func TestEventRepository_ListBySession_NilSequenceNumberSortsFirst(t *testing.T) {
 	t.Parallel()
 	repo := inmemory.NewEventRepository()

@@ -7,7 +7,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.11.0` Tranche 1 / RAK-65..RAK-67: Domain-Validierungen ohne
+// RAK-65..RAK-67: Domain-Validierungen ohne
 // HTTP, Storage oder MediaMTX.
 
 func TestIngestProtocol_IsKnown(t *testing.T) {
@@ -128,7 +128,7 @@ func TestRoutingRuleMode_DefaultIsSingle(t *testing.T) {
 
 func TestStreamLifecycleEventKind_Constants(t *testing.T) {
 	t.Parallel()
-	// Wire-Vertrag aus spec/backend-api-contract.md §3.8.
+	// Wire-Vertrag aus spec/backend-api-contract.md
 	if domain.StreamLifecycleEventStarted != "stream_started" {
 		t.Errorf("started: want stream_started, got %q", domain.StreamLifecycleEventStarted)
 	}

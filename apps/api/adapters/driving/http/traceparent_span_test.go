@@ -60,7 +60,7 @@ func TestHTTP_Span_TraceParent_ValidPropagates(t *testing.T) {
 // TestHTTP_Span_TraceParent_InvalidSetsParseError verifiziert: ein
 // kaputter `traceparent`-Header → Span hat
 // `mtrace.trace.parse_error=true`, Server-Root-Span (kein Parent), und
-// die Antwort bleibt 202 (kein 4xx, telemetry-model.md §2.5).
+// die Antwort bleibt 202 (kein 4xx, telemetry-model.md).
 func TestHTTP_Span_TraceParent_InvalidSetsParseError(t *testing.T) {
 	t.Parallel()
 
@@ -91,7 +91,7 @@ func TestHTTP_Span_TraceParent_InvalidSetsParseError(t *testing.T) {
 }
 
 // TestHTTP_Span_TraceParent_LeadingTrailingWhitespace zurrt das
-// beobachtete OWS-Verhalten am Wire fest (plan-0.4.0.md §3.4c, Item #1).
+// beobachtete OWS-Verhalten am Wire fest (Item #1).
 // Ein `traceparent`-Header-Wert mit führender und nachfolgender OWS
 // erreicht den Backend-Code nicht mehr OWS-behaftet: Go's
 // `net/textproto.Reader` (genutzt von `net/http`) entfernt OWS auf
@@ -144,8 +144,8 @@ func TestHTTP_Span_TraceParent_LeadingTrailingWhitespace(t *testing.T) {
 }
 
 // TestHTTP_Span_DoesNotSetSessionIDAttribute zurrt das
-// `session_id`-Span-Attribut-Verbot fest (plan-0.4.0.md §3.4c, Item
-// #4 / spec/telemetry-model.md §2.5). Ab `0.4.0` setzt der Server in
+// `session_id`-Span-Attribut-Verbot fest (Item
+// #4 / spec/telemetry-model.md). Ab `0.4.0` setzt der Server in
 // keinem Span das `session_id`-Attribut (weder in `mtrace.session.id`
 // noch unter dem rohen Schlüssel `session_id`); Single-Session-Suche
 // in Traces läuft ausschließlich über `mtrace.session.correlation_id`,

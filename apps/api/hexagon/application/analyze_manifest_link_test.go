@@ -11,9 +11,9 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// plan-0.4.0 §4.5 E1 — Statusmatrix-Tests für den Session-Link-
+//  E1 — Statusmatrix-Tests für den Session-Link-
 // Resolver im AnalyzeManifestUseCase. Spec-Anker:
-// `spec/backend-api-contract.md` §3.6 + plan-0.4.0 §4.5.
+// `spec/backend-api-contract.md` §3.6 +
 
 // linkSessionRepo ist ein minimaler driven.SessionRepository-Stub für
 // die Statusmatrix. Get/GetByCorrelationID werden gegen vor-konfigurierte

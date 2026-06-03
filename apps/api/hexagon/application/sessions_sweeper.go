@@ -8,7 +8,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// Default-Schwellwerte für den Sessions-Lifecycle (plan-0.1.0.md §5.1
+// Default-Schwellwerte für den Sessions-Lifecycle (
 // Sub-Item 8). Im 0.1.0-Spike als Konstante; ENV-/Konfig-Tunable folgt,
 // sobald ein Lab-Szenario es braucht.
 const (

@@ -25,12 +25,12 @@ import (
 // Test-Strategie: N Goroutines schreiben parallel ein Single-Event-
 // Batch für dieselbe Session, jeweils mit einer eigenen Kandidat-CID.
 // Erwartet:
-//   - Alle Goroutines kommen ohne Fehler zurück (kein UNIQUE-Verstoß
-//     auf dem Composite-PK).
-//   - Alle zurückgegebenen `canonical[sessionID]`-Werte sind identisch
-//     (genau eine Sieger-CID).
-//   - In `stream_sessions` existiert genau eine Zeile mit
-//     `correlation_id = <Sieger-CID>`.
+//  - Alle Goroutines kommen ohne Fehler zurück (kein UNIQUE-Verstoß
+//  auf dem Composite-PK).
+//  - Alle zurückgegebenen `canonical[sessionID]`-Werte sind identisch
+//  (genau eine Sieger-CID).
+//  - In `stream_sessions` existiert genau eine Zeile mit
+//  `correlation_id = <Sieger-CID>`.
 //
 // Der Test läuft gegen das echte SQLite-Backend, weil InMemory keinen
 // `ON CONFLICT`-Pfad hat — die R-6-Garantie ist SQLite-spezifisch.
@@ -54,7 +54,7 @@ func TestUpsertFromEvents_RaceCanonicalCorrelationID(t *testing.T) {
 	assertWinnerMatchesPersisted(ctx, t, repo, projectID, sessionID, winner)
 }
 
-// openRaceDB öffnet eine frische SQLite-Datei in t.TempDir().
+// openRaceDB öffnet eine frische SQLite-Datei in t.TempDir.
 func openRaceDB(ctx context.Context, t *testing.T) *sql.DB {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "race.db")

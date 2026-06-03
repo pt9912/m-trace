@@ -19,12 +19,12 @@ import (
 // `0.12.0` Single-Key-Pfad) ist explizit unterstützt.
 //
 // Sicherheitsprofil:
-//   - `Secret`-Material wird beim Loader-Aufruf in den Resolver kopiert
-//     und nie aus diesem Adapter heraus geleakt — nur die Domain-Form
-//     `SessionSigningKey` wird zurückgegeben.
-//   - Tests dürfen mit kurzem Material arbeiten; produktive
-//     Konfiguration muss mindestens 256 Bit Entropie pro Key
-//     bereitstellen (Wartung in Operator-Doku `auth.md` §5.3).
+//  - `Secret`-Material wird beim Loader-Aufruf in den Resolver kopiert
+//  und nie aus diesem Adapter heraus geleakt — nur die Domain-Form
+//  `SessionSigningKey` wird zurückgegeben.
+//  - Tests dürfen mit kurzem Material arbeiten; produktive
+//  Konfiguration muss mindestens 256 Bit Entropie pro Key
+//  bereitstellen (Wartung in Operator-Doku `auth.md` §5.3).
 type MultiKeySigningResolver struct {
 	keys      map[domain.SigningKeyID]domain.SessionSigningKey
 	order     []domain.SigningKeyID

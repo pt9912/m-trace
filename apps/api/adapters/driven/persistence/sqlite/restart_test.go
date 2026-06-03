@@ -13,7 +13,7 @@ import (
 )
 
 // TestRestartPreservesData verifiziert die Restart-Stabilität (DoD
-// `plan-0.4.0.md` §2.3): nach Close + Re-Open derselben SQLite-Datei
+// `` §2.3): nach Close + Re-Open derselben SQLite-Datei
 // sind Sessions und Events erhalten, und der Sequencer resumiert beim
 // höchsten persistierten ingest_sequence + 1.
 func TestRestartPreservesData(t *testing.T) {
@@ -86,7 +86,7 @@ func TestRestartPreservesData(t *testing.T) {
 
 // TestRestartCursorStability verifiziert, dass ein Cursor, der vor
 // dem Restart erzeugt wurde, nach dem Restart weiter funktioniert
-// (kanonische Sortierung restart-stabil — ADR-0002 §8.1, ADR-0004 §5).
+// (kanonische Sortierung restart-stabil — ADR-0002, ADR-0004).
 func TestRestartCursorStability(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -158,7 +158,7 @@ func TestRestartCursorStability(t *testing.T) {
 	}
 }
 
-// TestRestartPreservesEndSource verifiziert plan-0.4.0 §5 H1
+// TestRestartPreservesEndSource verifiziert H1
 // (Restart-Stabilität für `end_source`): nach Close + Re-Open ist
 // das Feld identisch lesbar — sowohl `client` (explizites
 // session_ended) als auch `sweeper` (zeitbasiertes Ende).
@@ -225,7 +225,7 @@ func TestRestartPreservesEndSource(t *testing.T) {
 	}
 }
 
-// TestRestartPreservesSessionBoundaries verifiziert plan-0.4.0 §4.4
+// TestRestartPreservesSessionBoundaries verifiziert
 // DoD-Item 3 (Restart-Stabilität): persistierte
 // `session_boundaries[]`-Records sind nach Close + Re-Open derselben
 // SQLite-Datei identisch lesbar — kein In-Memory-only-Pfad.
@@ -309,7 +309,7 @@ func mkRestartEvent(seq driven.IngestSequencer, project, session string, recv ti
 	}
 }
 
-// TestRestartPreservesTimeSkewWarning (plan-0.12.6 Tranche 3 / R-5):
+// TestRestartPreservesTimeSkewWarning (R-5):
 // `time_skew_warning` ist durable über Restart. Mixed-Batch (ein
 // Event mit Skew, eines ohne) muss nach Re-Open mit korrekten Flag-
 // Werten wieder gelesen werden.
@@ -370,7 +370,7 @@ func TestRestartPreservesTimeSkewWarning(t *testing.T) {
 }
 
 // TestListBoundariesForSessions_BulkReadAndScopeIsolation
-// (plan-0.12.6 Tranche 5 / R-7): die neue Bulk-Methode liefert pro
+// (R-7): die neue Bulk-Methode liefert pro
 // SessionID die Boundaries in der gleichen Sortierung wie die
 // Singular-Methode; SessionIDs ohne Boundaries fehlen in der Map;
 // Cross-Project-Treffer werden ausgeschlossen.
@@ -448,7 +448,7 @@ func TestListBoundariesForSessions_BulkReadAndScopeIsolation(t *testing.T) {
 	}
 }
 
-// TestListBoundariesForSessions_EmptyInput (plan-0.12.6 Tranche 5):
+// TestListBoundariesForSessions_EmptyInput:
 // leere SessionID-Liste liefert leere Map ohne Query-Roundtrip.
 func TestListBoundariesForSessions_EmptyInput(t *testing.T) {
 	t.Parallel()

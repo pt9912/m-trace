@@ -6,7 +6,7 @@ import "context"
 // in RateLimitKey. Returns domain.ErrRateLimited wenn auch nur eine
 // Dimension das Budget überschritten hat; nil otherwise.
 //
-// Per plan-0.1.0.md §5.1 (F-110-Item) prüft die 0.1.0-Implementierung
+// Per (F-110-Item) prüft die 0.1.0-Implementierung
 // mindestens (project_id, client_ip); origin ist optional. Die
 // Implementierung ist für nebenläufige Aufrufe sicher, prüft alle
 // Dimensionen unter einer Sperre („all-or-nothing"-Commit) und

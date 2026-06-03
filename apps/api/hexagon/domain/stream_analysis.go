@@ -2,20 +2,20 @@ package domain
 
 // StreamAnalysisRequest beschreibt einen Manifestanalyse-Auftrag,
 // unabhängig vom konkreten Manifestformat. 0.3.0 deckt HLS ab; DASH-
-// MPD ist seit 0.9.0 (RAK-58 / NF-12) zweiter `AnalyzerKind`-Wert.
+// MPD ist (RAK-58 / NF-12) zweiter `AnalyzerKind`-Wert.
 // CMAF (NF-13 / RAK-60..RAK-64, ab 0.10.0) ist **kein** neuer
 // AnalyzerKind, sondern ein additives `details.cmaf`-Signalmodell
 // unter den bestehenden HLS-/DASH-Detail-Objekten — der Adapter
 // reicht es als Bestandteil von `EncodedDetails` unverändert durch.
 // Weitere Formate werden additiv ergänzt, ohne den Vertrag zu
-// brechen (plan-0.3.0 §2 Tranche 1).
+// brechen.
 //
 // Genau eines von ManifestText oder ManifestURL muss gesetzt sein. Die
 // konkrete Eingabevalidierung erfolgt im Adapter, weil Lade-Politik
-// (Timeout, Größe, SSRF) dort implementiert wird (plan-0.3.0 §3
-// Tranche 2).
+// (Timeout, Größe, SSRF) dort implementiert wird (
+// ).
 //
-// Ab plan-0.4.0 §4.5 trägt der Request optional Session-Link-Felder
+// Ab trägt der Request optional Session-Link-Felder
 // (`CorrelationID`, `SessionID`) plus den vom HTTP-Adapter aufgelösten
 // `ProjectID` (aus `X-MTrace-Token`). Link-Lookups laufen über
 // `(ProjectID, CorrelationID)` bzw. `(ProjectID, SessionID)`; ein
@@ -31,31 +31,31 @@ type StreamAnalysisRequest struct {
 	// aufgelöste Project-Kontext. Leer für ungebundene Analyze-
 	// Requests (ohne Token, ohne Link-Felder); Pflicht, sobald
 	// `CorrelationID` oder `SessionID` gesetzt ist (Vertrag aus
-	// API-Kontrakt §3.6/§4).
+	// API-Kontrakt/§4).
 	ProjectID string
 	// CorrelationID ist die optionale Server-Korrelations-ID einer
 	// bestehenden Session. Hat innerhalb des `ProjectID`-Kontexts
 	// Vorrang vor `SessionID`.
 	CorrelationID string
 	// SessionID ist der optionale Fallback-Link auf eine bestehende
-	// Session (siehe API-Kontrakt §3.6).
+	// Session (siehe API-Kontrakt).
 	SessionID string
 }
 
 // SessionLinkStatus ist die Statusdomäne der Analyzer-Session-Link-
-// Hülle (`{analysis, session_link}`) aus API-Kontrakt §3.6 und
-// plan-0.4.0 §4.5. Use-Case entscheidet den Wert pro Request:
+// Hülle (`{analysis, session_link}`) aus API-Kontrakt und
+//  Use-Case entscheidet den Wert pro Request:
 //
-//   - linked: Session ist bekannt und konsistent.
-//   - detached: Request hat keine Link-Felder — bewusst session-los.
-//   - not_found_detached: Link-Felder gesetzt, aber Session nicht im
-//     Project gefunden.
-//   - conflict_detached: beide Link-Felder gesetzt, beide bekannt, aber
-//     widersprüchlich (`session_id` zeigt nicht auf die Session der
-//     `correlation_id`).
+//  - linked: Session ist bekannt und konsistent.
+//  - detached: Request hat keine Link-Felder — bewusst session-los.
+//  - not_found_detached: Link-Felder gesetzt, aber Session nicht im
+//  Project gefunden.
+//  - conflict_detached: beide Link-Felder gesetzt, beide bekannt, aber
+//  widersprüchlich (`session_id` zeigt nicht auf die Session der
+//  `correlation_id`).
 type SessionLinkStatus string
 
-// SessionLink-Statuswerte aus API-Kontrakt §3.6.
+// SessionLink-Statuswerte aus API-Kontrakt
 const (
 	SessionLinkStatusLinked            SessionLinkStatus = "linked"
 	SessionLinkStatusDetached          SessionLinkStatus = "detached"
@@ -64,7 +64,7 @@ const (
 )
 
 // SessionLink ist die strukturierte Link-Hülle der Analyze-Antwort
-// (API-Kontrakt §3.6, plan-0.4.0 §4.5). `Status` ist Pflicht; alle
+// (API-Kontrakt, ). `Status` ist Pflicht; alle
 // anderen Felder sind optional und tragen die aufgelöste Verknüpfung
 // nur bei `Status == linked`.
 type SessionLink struct {
@@ -75,8 +75,8 @@ type SessionLink struct {
 }
 
 // AnalyzeManifestResult bündelt Analyzer-Ergebnis und Session-Link für
-// die Antwort `{analysis, session_link}` aus API-Kontrakt §3.6.
-// Driving-Port liefert dieses Resultat ab plan-0.4.0 §4.5; der
+// die Antwort `{analysis, session_link}` aus API-Kontrakt
+// Driving-Port liefert dieses Resultat ab; der
 // HTTP-Adapter mappt auf die JSON-Hülle.
 type AnalyzeManifestResult struct {
 	Analysis    StreamAnalysisResult
@@ -95,8 +95,8 @@ const (
 	PlaylistTypeMaster PlaylistType = "master"
 	// PlaylistTypeMedia steht für eine HLS Media Playlist.
 	PlaylistTypeMedia PlaylistType = "media"
-	// PlaylistTypeDash steht für ein DASH-MPD (ab plan-0.9.0
-	// Tranche 3, RAK-58 / NF-12). DASH hat keine analoge Master/
+	// PlaylistTypeDash steht für ein DASH-MPD (ab
+	// , RAK-58 / NF-12). DASH hat keine analoge Master/
 	// Media-Trennung in der Manifest-Form selbst — die Period/
 	// AdaptationSet/Representation-Hierarchie wird immer in einem
 	// MPD geliefert; der Live-/VOD-Status lebt in
@@ -105,9 +105,9 @@ const (
 )
 
 // AnalyzerKind identifiziert den ausführenden Analyzer-Pfad.
-// Aktuelle Werte: `hls` (seit plan-0.3.0) und `dash` (seit
-// plan-0.9.0 Tranche 3, RAK-58 / NF-12). CMAF (NF-13 / RAK-60..RAK-64,
-// ab plan-0.10.0) bekommt **keinen** eigenen AnalyzerKind — die
+// Aktuelle Werte: `hls` (seit ) und `dash` (seit
+// RAK-58 / NF-12). CMAF (NF-13 / RAK-60..RAK-64,
+// ab ) bekommt **keinen** eigenen AnalyzerKind — die
 // CMAF-Erkennung lebt als additives `details.cmaf`-Signalmodell
 // unter den HLS-/DASH-Detail-Objekten (siehe `StreamAnalysisResult.
 // EncodedDetails`). Weitere Manifestformate werden weiterhin additiv
@@ -121,7 +121,7 @@ const (
 	AnalyzerKindDASH AnalyzerKind = "dash"
 )
 
-// FindingLevel folgt der Drei-Stufen-Skala aus plan-0.3.0 Tranche 4.
+// FindingLevel folgt der Drei-Stufen-Skala aus.
 type FindingLevel string
 
 const (
@@ -146,7 +146,7 @@ type StreamAnalysisFinding struct {
 // StreamAnalysisErrorCode klassifiziert von analyzer-Implementierungen
 // gemeldete Fehler (RFC-7807-ähnliche Code-Domäne aus
 // `@pt9912/stream-analyzer.AnalysisErrorResult.code`). Driving-
-// Adapter mappen die Codes auf HTTP-Statuscodes (plan-0.3.0 §7).
+// Adapter mappen die Codes auf HTTP-Statuscodes.
 type StreamAnalysisErrorCode string
 
 const (
@@ -164,7 +164,7 @@ const (
 	// (`<?xml`/`<MPD`-Header) klassifizieren konnte. Beispiele:
 	// HTML-Bodies, JSON-Bodies, Plain-Text ohne Manifest-Marker,
 	// leere Bodies. HTTP 422 (analog `manifest_not_hls`). Ab
-	// plan-0.9.0 Tranche 3 / RAK-58.
+	// RAK-58.
 	StreamAnalysisManifestNotSupported StreamAnalysisErrorCode = "manifest_not_supported"
 	// StreamAnalysisFetchBlocked meldet, dass die übergebene URL vom
 	// SSRF-Schutz abgelehnt wurde (privat/loopback/credentials/scheme).
@@ -208,7 +208,7 @@ func (e *StreamAnalysisDomainError) Error() string {
 // StreamAnalysisSummary aggregiert die Manifestauswertung in eine
 // kleine Top-Level-Struktur (RAK-26-konformes Wire-Format). `ItemCount`
 // zählt bei Master-Playlists Variants+Renditions, bei Media-Playlists
-// Segmente und ist 0 für `unknown`. Tranche 5 in der TS-Library hat
+// Segmente und ist 0 für `unknown`. in der TS-Library hat
 // `AnalysisSummary` als gleichnamigen, additiv erweiterbaren Typ
 // dokumentiert (`docs/user/stream-analyzer.md` §2.2); diese Domain-
 // Spiegelung erlaubt dem API-Adapter, das Feld vom analyzer-service
@@ -219,7 +219,7 @@ type StreamAnalysisSummary struct {
 }
 
 // StreamAnalysisInputMetadata spiegelt das `input`-Feld aus dem
-// AnalysisResult-Wire-Format (Tranche 5). `Source` ist `"text"` oder
+// AnalysisResult-Wire-Format. `Source` ist `"text"` oder
 // `"url"`; `URL` ist nur bei `Source == "url"` gesetzt; `BaseURL`
 // trägt die finale URL nach Redirects (URL-Input) bzw. die optionale
 // Base-URL aus dem Text-Input.
@@ -230,16 +230,16 @@ type StreamAnalysisInputMetadata struct {
 }
 
 // StreamAnalysisResult ist das Domain-Modell der Analyseausgabe. Das
-// stabile JSON-Schema entsteht in plan-0.3.0 Tranche 5; bis dahin
+// stabile JSON-Schema entsteht in; bis dahin
 // reicht die Domain die analyzer-spezifischen Detail-Strukturen als
 // vorcodiertes JSON weiter, ohne sich auf eine HLS-spezifische
 // Struktur festzulegen.
 type StreamAnalysisResult struct {
 	// AnalyzerVersion stammt aus packages/stream-analyzer/package.json
-	// (plan-0.3.0 §2 Tranche 1: Versionssynchronizität).
+	// (: Versionssynchronizität).
 	AnalyzerVersion string
 	// AnalyzerKind identifiziert den Analyzer-Pfad (`hls` oder
-	// `dash`). Ab plan-0.9.0 Tranche 3 / RAK-58 wird er aus dem
+	// `dash`). Ab RAK-58 wird er aus dem
 	// analyzer-service-Wire-Format durchgereicht; ältere Releases
 	// hatten ihn als HLS-Konstante in der API.
 	AnalyzerKind AnalyzerKind
@@ -251,7 +251,7 @@ type StreamAnalysisResult struct {
 	PlaylistType PlaylistType
 	// Summary ist das Aggregat (RAK-26-Pflichtfeld im Wire-Format).
 	Summary StreamAnalysisSummary
-	// Findings sind die Drei-Stufen-Befunde aus Tranche 4.
+	// Findings sind die Drei-Stufen-Befunde aus.
 	Findings []StreamAnalysisFinding
 	// EncodedDetails ist die typspezifische Detail-Sektion, vorcodiert
 	// als UTF-8-JSON-Objekt (Tranche 5 fixiert das Schema). Leere

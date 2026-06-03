@@ -15,21 +15,21 @@ import (
 // `spec/backend-api-contract.md`:
 //
 //  1. `Authorization: Bearer mtr_st_*` ist der bevorzugte Session-
-//     Token-Pfad. Andere `Authorization`-Werte sind kein m-trace
-//     Auth-Versuch und werden ignoriert, solange ein gültiger
-//     m-trace Header (`X-MTrace-Token` oder `X-MTrace-Session-Token`)
-//     vorhanden ist.
+//  Token-Pfad. Andere `Authorization`-Werte sind kein m-trace
+//  Auth-Versuch und werden ignoriert, solange ein gültiger
+//  m-trace Header (`X-MTrace-Token` oder `X-MTrace-Session-Token`)
+//  vorhanden ist.
 //  2. `X-MTrace-Session-Token: mtr_st_*` ist der alternative
-//     Session-Token-Pfad.
+//  Session-Token-Pfad.
 //  3. `X-MTrace-Token` ist der Legacy-/Project-Token-Pfad.
 //  4. Werden mehrere Tokens präsentiert, müssen alle dasselbe Project
-//     binden. Widersprüche → `auth_project_mismatch`. Ein zusätzlich
-//     präsentiertes ungültiges Token → `auth_token_invalid`. Kein
-//     stiller Fallback von einem ungültigen höher priorisierten Token
-//     auf ein gültiges niedriger priorisiertes Token.
+//  binden. Widersprüche → `auth_project_mismatch`. Ein zusätzlich
+//  präsentiertes ungültiges Token → `auth_token_invalid`. Kein
+//  stiller Fallback von einem ungültigen höher priorisierten Token
+//  auf ein gültiges niedriger priorisiertes Token.
 //  5. Wenn `Authorization: Bearer mtr_st_*` und
-//     `X-MTrace-Session-Token` beide gesetzt sind und unterschiedliche
-//     Tokens enthalten → `auth_token_invalid`.
+//  `X-MTrace-Session-Token` beide gesetzt sind und unterschiedliche
+//  Tokens enthalten → `auth_token_invalid`.
 //
 // Der Parser kennt keine HTTP-Antwort und kein Logging — er liefert
 // ein `AuthDecision` mit dem aufgelösten Project (oder `nil` für den
@@ -38,10 +38,10 @@ import (
 
 // AuthDecision ist das Ergebnis der Auth-Header-Auswertung.
 //
-//   - LegacyToken ist der `X-MTrace-Token`-Wert, falls präsentiert.
-//   - ResolvedProject ist das aus einem Session Token aufgelöste
-//     Project (Bearer- oder X-MTrace-Session-Token-Pfad). `nil` für
-//     den reinen Legacy-Pfad.
+//  - LegacyToken ist der `X-MTrace-Token`-Wert, falls präsentiert.
+//  - ResolvedProject ist das aus einem Session Token aufgelöste
+//  Project (Bearer- oder X-MTrace-Session-Token-Pfad). `nil` für
+//  den reinen Legacy-Pfad.
 //
 // Wenn beide Werte gesetzt sind, hat der Parser bereits geprüft, dass
 // sie zum selben Project gehören.
@@ -178,7 +178,7 @@ func (p AuthHeaderParser) applyLegacyHeader(ctx context.Context, legacy string, 
 // Fehler (insb. `domain.ErrUnauthorized` aus dem Static-Resolver) auf
 // `domain.ErrAuthTokenInvalid`. Damit bleibt die §3.9-Präzedenz
 // (revoked > expired > not_yet_valid > invalid) erhalten — aus dem
-// Pre-`0.12.0`-Static-Pfad gibt es nur invalid, was korrekt bleibt.
+// Pre-Static-Pfad gibt es nur invalid, was korrekt bleibt.
 func mapLegacyResolverError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrAuthTokenRevoked),

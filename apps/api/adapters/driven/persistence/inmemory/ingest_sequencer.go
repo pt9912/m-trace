@@ -7,14 +7,14 @@ import (
 )
 
 // IngestSequencer hält einen atomaren Counter pro Prozess und
-// erfüllt damit den driven.IngestSequencer-Vertrag aus plan-0.1.0.md
-// §5.1. Erste Next()-Rückgabe ist 1.
+// erfüllt damit den driven.IngestSequencer-Vertrag aus
+// §5.1. Erste Next-Rückgabe ist 1.
 type IngestSequencer struct {
 	counter atomic.Int64
 }
 
 // NewIngestSequencer gibt einen einsatzbereiten Sequencer
-// zurück, dessen erster Next()-Rückgabewert 1 ist.
+// zurück, dessen erster Next-Rückgabewert 1 ist.
 func NewIngestSequencer() *IngestSequencer {
 	return &IngestSequencer{}
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
-// SSE-Backfill-Limit aus spec/backend-api-contract.md §10a. Bei
+// SSE-Backfill-Limit aus spec/backend-api-contract.md Bei
 // größerer Lücke öffnet der Server den Stream mit einem
 // `backfill_truncated`-Frame und liefert nur die jüngsten 1000
 // Events.

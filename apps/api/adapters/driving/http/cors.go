@@ -35,7 +35,7 @@ type BrowserIngestPolicies interface {
 
 // PreflightMetrics bekommt einen Hook für jede `OPTIONS`-Antwort,
 // die wegen unbekannter Origin minimal abgewiesen wurde (`0.12.0`
-// Tranche 4 / Review-Finding Y3). `path` ist die registrierte
+// / Review-Finding Y3). `path` ist die registrierte
 // Preflight-Route (z. B. `/api/playback-events`). `nil` deaktiviert
 // das Metrik-Reporting.
 type PreflightMetrics interface {
@@ -45,19 +45,19 @@ type PreflightMetrics interface {
 // CORS-Preflight-Vertrag (`0.12.0`, RAK-74; siehe
 // `spec/backend-api-contract.md` §3.9):
 //
-//   - `OPTIONS` ohne Project-/Session-Token kann kein
-//     deterministisches Project-Enforcement; deshalb läuft Preflight
-//     gegen eine globale, konservative Origin-Allowlist plus
-//     pfadspezifische Methods-Allowlist.
-//   - Bekannte Origins: `204` mit gespiegeltem Allow-Origin (niemals
-//     `*`), Allow-Methods, Allow-Headers, `Access-Control-Max-Age:
-//     600`, `Vary: Origin` und `Cache-Control: no-store`.
-//   - Unbekannte Origins: `204` mit leerem Body, **ohne**
-//     Allow-Origin/Methods/Headers, aber mit `Vary: Origin` und
-//     `Cache-Control: no-store`. Keine Project- oder Origin-
-//     Enumeration.
-//   - Project-spezifisches Origin-Enforcement passiert beim
-//     tatsächlichen `POST` über `domain.Project.IsOriginAllowed`.
+//  - `OPTIONS` ohne Project-/Session-Token kann kein
+//  deterministisches Project-Enforcement; deshalb läuft Preflight
+//  gegen eine globale, konservative Origin-Allowlist plus
+//  pfadspezifische Methods-Allowlist.
+//  - Bekannte Origins: `204` mit gespiegeltem Allow-Origin (niemals
+//  `*`), Allow-Methods, Allow-Headers, `Access-Control-Max-Age:
+//  600`, `Vary: Origin` und `Cache-Control: no-store`.
+//  - Unbekannte Origins: `204` mit leerem Body, **ohne**
+//  Allow-Origin/Methods/Headers, aber mit `Vary: Origin` und
+//  `Cache-Control: no-store`. Keine Project- oder Origin-
+//  Enumeration.
+//  - Project-spezifisches Origin-Enforcement passiert beim
+//  tatsächlichen `POST` über `domain.Project.IsOriginAllowed`.
 //
 // `Access-Control-Allow-Credentials` bleibt grundsätzlich aus — das
 // SDK nutzt `credentials: "omit"` (NF-31/NF-32; Plan §0.1 schließt
@@ -101,7 +101,7 @@ func pflichtVaryTokens() []string {
 const preflightAllowedHeaders = "Content-Type, Authorization, X-MTrace-Token, X-MTrace-Session-Token, traceparent"
 
 // dashboardAllowedHeaders bedient die Lese-Pfade (Dashboard,
-// SRT-Health). Diese Endpoints unterstützen `0.12.0`-Session Tokens
+// SRT-Health). Diese Endpoints unterstützen Session Tokens
 // nicht — der Auth-Pfad bleibt `X-MTrace-Token`-only — und brauchen
 // daher Authorization/X-MTrace-Session-Token nicht in der Allowlist.
 //
@@ -126,7 +126,7 @@ const browserIngestAllowedHeaders = "Content-Type, X-MTrace-Token, X-MTrace-CSRF
 // corsMiddleware setzt `Vary` plus — sofern Origin in der Union steht
 // — den gespiegelten Allow-Origin auf jede ausgehende Antwort.
 // Verhindert, dass CDNs/Proxies eine Origin-spezifische Antwort für
-// eine andere Origin ausliefern (plan-0.1.0.md §5.1).
+// eine andere Origin ausliefern.
 //
 // `OPTIONS`-Preflights laufen über den dedizierten `preflightHandler`
 // und setzen ihren Allow-Origin selbst — die Middleware skipt den
@@ -170,10 +170,10 @@ func dashboardPreflightHandler(allowlist OriginAllowlist, metrics PreflightMetri
 // BrowserIngest-Policy stehen, durchkommen.
 //
 // Antwort-Wire (analog `dashboardPreflightHandler`):
-//   - Match → `204` + Allow-Origin/Methods/Headers/Max-Age, plus
-//     Vary und `Cache-Control: no-store`.
-//   - kein Match → `204` ohne Allow-* (RAK-74-Scope-Cut-Verhalten);
-//     `preflightMetrics.CORSPreflightRefused(path)` wird inkrementiert.
+//  - Match → `204` + Allow-Origin/Methods/Headers/Max-Age, plus
+//  Vary und `Cache-Control: no-store`.
+//  - kein Match → `204` ohne Allow-* (RAK-74-Scope-Cut-Verhalten);
+//  `preflightMetrics.CORSPreflightRefused(path)` wird inkrementiert.
 //
 // `allowlist == nil` wirft auf jeden Origin „kein Match" und ist
 // gleichwertig zum dashboard-Preflight ohne Browser-Ingest-Policy.
@@ -197,7 +197,7 @@ func (a browserIngestAllowlistAdapter) IsOriginInGlobalUnion(origin string) bool
 }
 
 // ssePreflightHandler bedient `OPTIONS /api/stream-sessions/stream`
-// (plan-0.4.0 §5 H4). Methods sind `GET, OPTIONS`; Allow-Headers
+// ( H4). Methods sind `GET, OPTIONS`; Allow-Headers
 // ergänzen `Last-Event-ID` für den fetch-basierten SSE-Reconnect-
 // Backfill (Spec §10a).
 func ssePreflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics) http.HandlerFunc {

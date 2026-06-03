@@ -158,7 +158,7 @@ func TestSrtHealthList_HappyPath(t *testing.T) {
 	}
 }
 
-// Detail: 200 mit envelope `{ "stream_id": ..., "items": [...] }`.
+// Detail: 200 mit envelope `{ "stream_id":..., "items": [...] }`.
 func TestSrtHealthDetail_HappyPath(t *testing.T) {
 	inbound := &stubSrtHealthInbound{
 		historyReturn: []application.SrtHealthHistoryItem{newSummary("srt-test")},
@@ -379,7 +379,7 @@ func TestSrtHealthList_PostNotAllowed(t *testing.T) {
 	}
 }
 
-// TestSrtHealthDetail_CursorRoundTrip (plan-0.12.6 Tranche 2): erste
+// TestSrtHealthDetail_CursorRoundTrip: erste
 // Page liefert `next_cursor` im Body; zweite Page wird mit diesem
 // Token als `samples_cursor` angefordert; der Stub sieht den
 // decodierten After-Cursor mit unveränderten Position-Werten.

@@ -12,7 +12,7 @@ import (
 )
 
 // sessionKey ist das projekt-skopierte Composite-Key-Tupel der
-// Session-Map ab plan-0.4.0 §4.2. Dieselbe session_id in zwei
+// Session-Map ab Dieselbe session_id in zwei
 // Projekten landet als zwei separate Einträge mit unterschiedlichen
 // Korrelations-IDs.
 type sessionKey struct {
@@ -39,7 +39,7 @@ type SessionRepository struct {
 }
 
 // boundaryTripleKey ist der Read-Shape-Dedup-Schlüssel
-// (spec/backend-api-contract.md §3.7.1: stabile Sortierung nach
+// (spec/backend-api-contract.md: stabile Sortierung nach
 // kind/adapter/reason; doppelte Tripel werden im Read-Shape
 // dedupliziert). `network_kind` ist Bestandteil von `kind` aus dem
 // Event-Block-Sicht (manifest|segment), bleibt im Boundary-Datensatz
@@ -63,9 +63,9 @@ func NewSessionRepository() *SessionRepository {
 // neue StreamSession an und aktualisiert für bekannte LastEventAt und
 // EventCount. Reihenfolge folgt der Slice-Reihenfolge. Ein Event mit
 // event_name=session_ended schaltet die Session sofort auf Ended
-// (plan-0.1.0.md §5.1 Sub-Item 8).
+// ( Sub-Item 8).
 //
-// Rückgabe (R-6-Fix, plan-0.4.0 §4.2 C2): map[sessionID]canonicalCID
+// Rückgabe (R-6-Fix, C2): map[sessionID]canonicalCID
 // — die nach Upsert in der Map sichtbare CorrelationID. Im InMemory-
 // Backend ist das immer der Wert aus dem ersten Insert (alle weiteren
 // Events derselben Session lesen ihn aus der Map). Der Use-Case nutzt
@@ -108,7 +108,7 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 	return canonical, nil
 }
 
-// Sweep wertet zeitbasierte Lifecycle-Übergänge aus (plan-0.1.0.md
+// Sweep wertet zeitbasierte Lifecycle-Übergänge aus (
 // §5.1 Sub-Item 8). Idempotent: bereits Ended-Sessions werden nicht
 // erneut angefasst. Sweep ist global — kein Project-Filter, weil der
 // Lifecycle-Sweeper kein Project-Fan-out macht.
@@ -283,7 +283,7 @@ func sessionPageCursorPasses(s domain.StreamSession, after driven.SessionCursorP
 }
 
 // AppendBoundaries persistiert die übergebenen Boundaries in den
-// session-skopierten Boundary-Store (plan-0.4.0 §4.4 D2). Mehrfach-
+// session-skopierten Boundary-Store ( D2). Mehrfach-
 // Sends derselben Tripel `(kind, network_kind, adapter, reason)` für
 // eine Session sind idempotent — der spätere Datensatz überschreibt
 // den vorherigen (auf Timestamp-Ebene), ohne neue Read-Shape-Einträge
@@ -314,7 +314,7 @@ func (r *SessionRepository) AppendBoundaries(_ context.Context, boundaries []dom
 
 // ListBoundariesForSession liefert die persistierten Boundaries einer
 // Session in stabiler Read-Shape-Sortierung (kind asc, adapter asc,
-// reason asc) — siehe spec/backend-api-contract.md §3.7.1.
+// reason asc) — siehe spec/backend-api-contract.md
 // Tripel-Duplikate sind durch die Insert-Logik bereits eliminiert.
 // Cross-Project-Treffer sind ausgeschlossen (Composite-Key beinhaltet
 // project_id).
@@ -342,8 +342,8 @@ func (r *SessionRepository) ListBoundariesForSession(_ context.Context, projectI
 	return out, nil
 }
 
-// ListBoundariesForSessions ist die Bulk-Variante (plan-0.12.6
-// Tranche 5 / R-7). Liefert pro SessionID die Boundary-Liste in
+// ListBoundariesForSessions ist die Bulk-Variante (
+// / R-7). Liefert pro SessionID die Boundary-Liste in
 // gleicher Read-Shape-Sortierung. SessionIDs ohne Boundaries fehlen
 // in der Map.
 func (r *SessionRepository) ListBoundariesForSessions(_ context.Context, projectID string, sessionIDs []string) (map[string][]domain.SessionBoundary, error) {

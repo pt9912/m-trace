@@ -6,7 +6,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// ProjectPolicyResolver liefert die `0.12.0`-Project-Policy zu einer
+// ProjectPolicyResolver liefert die Project-Policy zu einer
 // `project_id` (RAK-74). Die Implementierung lebt im Adapter-Layer
 // und wird vom Application-Service über diesen Port konsumiert.
 //

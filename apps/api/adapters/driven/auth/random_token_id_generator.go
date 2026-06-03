@@ -9,7 +9,7 @@ import (
 )
 
 // RandomTokenIDGenerator implementiert `driven.TokenIDGenerator`
-// (`0.12.0`, RAK-72) mit `crypto/rand`-Entropie und `st_`-Prefix
+// (RAK-72) mit `crypto/rand`-Entropie und `st_`-Prefix
 // analog zur Wire-Skizze in `spec/backend-api-contract.md` §3.9.
 //
 // Format: `st_<base32(random16Bytes, ohne Padding, lowercase)>`. 16

@@ -7,7 +7,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// plan-0.9.5 §4 Tranche 3 (RAK-Wave-2 / extra-gates.md §3.5) —
+//  ( extra-gates.md) —
 // Fuzz-Target für den Cursor-Parser. Schließt eine ADR-0004-bekannte
 // Edge-Case-Klasse ab: malformierte Base64-/JSON-/Versions-Strings
 // dürfen weder Panic noch unerwartete Domain-Werte produzieren.
@@ -19,12 +19,12 @@ import (
 
 // FuzzDecodeListSessionsCursor wirft random Strings als
 // Cursor-Eingabe in `decodeListSessionsCursor`. Erlaubte Outcomes:
-//   - nil-Cursor (leerer String)
-//   - errCursorInvalidLegacy / errCursorInvalidMalformed /
-//     errCursorExpired (definierte Domain-Fehler aus
-//     ADR-0004 §6 / API-Kontrakt §10.3)
-//   - gültiger ListSessionsCursor (selten bei Random-Input, aber
-//     legitim bei zufällig sinnvollen Bytes)
+//  - nil-Cursor (leerer String)
+//  - errCursorInvalidLegacy / errCursorInvalidMalformed /
+//  errCursorExpired (definierte Domain-Fehler aus
+//  ADR-0004 / API-Kontrakt)
+//  - gültiger ListSessionsCursor (selten bei Random-Input, aber
+//  legitim bei zufällig sinnvollen Bytes)
 //
 // Verboten: Panic, Goroutine-Leak, unklassifizierter Error. Genau
 // das prüft der Fuzz-Loop.

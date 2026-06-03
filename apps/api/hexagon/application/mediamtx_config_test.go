@@ -10,7 +10,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// `0.11.0` Tranche 3 / RAK-68: MediaMTX-Config-Generator. Pinnt
+// RAK-68: MediaMTX-Config-Generator. Pinnt
 // deterministischen Output, Brand-/Protocol-Toggles und
 // Klartext-Key-Schutz.
 

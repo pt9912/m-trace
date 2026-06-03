@@ -15,17 +15,17 @@ import (
 )
 
 // IngestStreamRepository ist die durable SQLite-Variante des
-// `driven.IngestStreamRepository`-Ports (`0.11.0` Tranche 2).
+// `driven.IngestStreamRepository`-Ports.
 // Tabellen aus V2__ingest.sql.
 //
 // Sicherheitsprofil:
-//   - Klartext-Stream-Keys werden nicht persistiert. `stream_keys`
-//     speichert ausschließlich `key_hash` und `fingerprint`.
-//   - `idx_stream_keys_active_unique` erzwingt einen einzigen aktiven
-//     Key pro `(project_id, key_hash)`; rotierte Keys bleiben für
-//     Audit liegen.
-//   - Cross-Project-Lookups liefern `domain.ErrIngestStreamNotFound`
-//     ohne Hinweis auf Existenz.
+//  - Klartext-Stream-Keys werden nicht persistiert. `stream_keys`
+//  speichert ausschließlich `key_hash` und `fingerprint`.
+//  - `idx_stream_keys_active_unique` erzwingt einen einzigen aktiven
+//  Key pro `(project_id, key_hash)`; rotierte Keys bleiben für
+//  Audit liegen.
+//  - Cross-Project-Lookups liefern `domain.ErrIngestStreamNotFound`
+//  ohne Hinweis auf Existenz.
 type IngestStreamRepository struct {
 	db *sql.DB
 }
@@ -293,7 +293,7 @@ FROM ingest_routing_rules WHERE project_id = ? AND stream_id = ?`, projectID, st
 // AppendLifecycleEvent persistiert ein Lifecycle-Event in
 // `stream_lifecycle_events` (append-only). Der Aufrufer muss
 // `EventID` setzen — der Service generiert ihn beim Empfang des
-// Hooks (Plan §0.11.0 Tranche 4 / RAK-69).
+// Hooks (Plan §0.11.0 / RAK-69).
 func (r *IngestStreamRepository) AppendLifecycleEvent(ctx context.Context, event domain.StreamLifecycleEvent) error {
 	if _, err := r.scanStream(ctx, r.db, event.ProjectID, event.StreamID); err != nil {
 		return err
@@ -315,7 +315,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 }
 
 // SeedEndpoint / SeedTarget sind Boot-/Test-Helfer (Endpoint- und
-// Target-Tabellen sind im `0.11.0`-Scope statisch konfiguriert; ein
+// Target-Tabellen sind im Scope statisch konfiguriert; ein
 // produktives Verwaltungs-API ist Folge-Scope).
 func (r *IngestStreamRepository) SeedEndpoint(ctx context.Context, endpoint domain.IngestEndpoint) error {
 	_, err := r.db.ExecContext(ctx, `

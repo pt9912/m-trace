@@ -4,7 +4,7 @@ import "errors"
 
 // Validation and authorization errors returned by the application
 // layer. The HTTP adapter maps these to status codes per
-// spec/backend-api-contract.md §5.
+// spec/backend-api-contract.md
 var (
 	ErrSchemaVersionMismatch = errors.New("schema_version not supported")
 	ErrUnauthorized          = errors.New("authentication failed")
@@ -18,7 +18,7 @@ var (
 	// ErrOriginNotAllowed wird vom Use Case zurückgegeben, wenn der
 	// `Origin`-Header eines POST-Requests gegen die Allowed-Origins-
 	// Liste des aufgelösten Projects mismatcht (CORS Variante B,
-	// plan-0.1.0.md §5.1). HTTP-Mapping: 403 Forbidden — vor Step 4
+	// ). HTTP-Mapping: 403 Forbidden — vor Step 4
 	// (Rate-Limit), damit weder Tokens noch Counter inkrementiert
 	// werden.
 	ErrOriginNotAllowed = errors.New("origin not allowed for project")
@@ -29,16 +29,16 @@ var (
 // auf die in `spec/backend-api-contract.md` §3.9 gepinnten Codes
 // gemappt:
 //
-//   ErrAuthTokenMissing         → 401 auth_token_missing
-//   ErrAuthTokenInvalid         → 401 auth_token_invalid
-//   ErrAuthTokenRevoked         → 401 auth_token_revoked
-//   ErrAuthTokenExpired         → 401 auth_token_expired
-//   ErrAuthTokenNotYetValid     → 401 auth_token_not_yet_valid
-//   ErrAuthProjectMismatch      → 401 auth_project_mismatch
-//   ErrAuthSessionScopeDenied   → 403 auth_session_scope_denied
-//   ErrAuthPolicyDenied         → 403 auth_policy_denied
-//   ErrAuthTokenTTLTooLarge     → 422 auth_token_ttl_too_large
-//   ErrAuthIssuanceRateLimited  → 429 auth_issuance_rate_limited
+//  ErrAuthTokenMissing → 401 auth_token_missing
+//  ErrAuthTokenInvalid → 401 auth_token_invalid
+//  ErrAuthTokenRevoked → 401 auth_token_revoked
+//  ErrAuthTokenExpired → 401 auth_token_expired
+//  ErrAuthTokenNotYetValid → 401 auth_token_not_yet_valid
+//  ErrAuthProjectMismatch → 401 auth_project_mismatch
+//  ErrAuthSessionScopeDenied → 403 auth_session_scope_denied
+//  ErrAuthPolicyDenied → 403 auth_policy_denied
+//  ErrAuthTokenTTLTooLarge → 422 auth_token_ttl_too_large
+//  ErrAuthIssuanceRateLimited → 429 auth_issuance_rate_limited
 //
 // Die Reihenfolge spiegelt die neunstufige Fehlerpräzedenz aus
 // §3.9 wider; Domain-Code liefert die Fehler einzeln zurück, der HTTP-

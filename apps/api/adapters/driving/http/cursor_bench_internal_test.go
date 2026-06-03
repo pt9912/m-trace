@@ -7,16 +7,16 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
-// plan-0.9.5 §2 Tranche 1 — Cursor-Hot-Path-Bench für
+//  — Cursor-Hot-Path-Bench für
 // `make api-benchmark-smoke`.
 //
 // Budget aus `docs/perf/budgets.md` §3 (initial, Tranche-0-Stand):
-//   - cursor.Encode/Decode (Cursor-v3 inkl. Process-Instance-Stamp):
-//     ≤ 250 µs / Pair (typische Pagination-Latenz, kein HMAC-Sign).
+//  - cursor.Encode/Decode (Cursor-v3 inkl. Process-Instance-Stamp):
+//  ≤ 250 µs / Pair (typische Pagination-Latenz, kein HMAC-Sign).
 
 // BenchmarkCursorEncodeDecode_Pair pinnt einen kompletten Encode→
 // Decode-Roundtrip eines `ListSessionsCursor`. Cursor-v3 ist seit
-// plan-0.4.0 produktiv; Drift im Encode/Decode-Pfad wirkt direkt
+//  produktiv; Drift im Encode/Decode-Pfad wirkt direkt
 // auf jede Sessions-Listing-Antwort.
 func BenchmarkCursorEncodeDecode_Pair(b *testing.B) {
 	cursor := &driving.ListSessionsCursor{

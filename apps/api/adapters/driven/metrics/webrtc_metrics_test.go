@@ -23,8 +23,8 @@ func counterValue(t *testing.T, c prometheus.Metric) float64 {
 	return m.GetCounter().GetValue()
 }
 
-// plan-0.8.0 §4 Tranche 3 — Delta-Counter-Semantik aus
-// spec/telemetry-model.md §3.5.1.
+//  — Delta-Counter-Semantik aus
+// spec/telemetry-model.md
 
 func sample(runID string, sampleID, packetsLost, bytesReceived, bytesSent int64) driven.WebRTCSampleSnapshot {
 	return driven.WebRTCSampleSnapshot{
