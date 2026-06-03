@@ -1,7 +1,7 @@
 # Player-SDK
 
-> **Status**: `0.2.0`-Arbeitsstand. Dieses Dokument beschreibt die
-> projektweite Nutzung des Pakets `@pt9912/player-sdk`.
+> Dieses Dokument beschreibt die projektweite Nutzung des Pakets
+> `@pt9912/player-sdk`.
 
 Das Player-SDK erfasst Playback-Events im Browser und sendet sie im
 m-trace-Wire-Format an die API. Der aktuelle Einstiegspunkt ist
@@ -100,7 +100,7 @@ Payload gesendet.
 verbrauchen keine `sequence_number`. `session_ended` umgeht Sampling, damit
 `destroy()` die Session verlässlich schließen kann.
 
-**Timeline-Nachweisgrenze für `sampleRate < 1`** (Beschluss `plan-0.4.0.md` §8.3, Variante (b)): Vollständige Timeline-Abnahme und alle E2E-Smokes laufen mit `sampleRate = 1`. Für `sampleRate < 1` ist Vollständigkeit ohne neues session-/batch-skopiertes Sampling-Metadaten-Signal **nicht beweisbar**, weil gesampelte Events keine `sequence_number` verbrauchen — der Server kann eine fehlende `sequence_number`-Lücke nicht automatisch von einem echten Verlust unterscheiden. Konsequenz für `0.4.0`: Sampled-Sessions werden ausschließlich über dokumentierte Konfiguration und Benutzerhinweis als „sampled" markiert, nicht durch serverseitige Lückenerkennung. Eine zukünftige Tranche kann ein durables Sampling-Metadaten-Signal in der Read-Antwort einführen (Schemamigration, Read-Endpoint-Erweiterung, Dashboard-Markierung); diese Erweiterung wird release-blocking, sobald die erste Produktions- oder Lab-Session mit `sampleRate < 1` Vollständigkeitsnachweise erfordert.
+**Timeline-Nachweisgrenze für `sampleRate < 1`**: Vollständige Timeline-Abnahme und alle E2E-Smokes laufen mit `sampleRate = 1`. Für `sampleRate < 1` ist Vollständigkeit ohne session-/batch-skopiertes Sampling-Metadaten-Signal **nicht beweisbar**, weil gesampelte Events keine `sequence_number` verbrauchen — der Server kann eine fehlende `sequence_number`-Lücke nicht automatisch von einem echten Verlust unterscheiden. Sampled-Sessions werden ausschließlich über dokumentierte Konfiguration und Benutzerhinweis als „sampled" markiert, nicht durch serverseitige Lückenerkennung.
 
 `destroy()` beendet die Session, erzeugt genau ein `session_ended` Event,
 stoppt Timer und flushed die Queue.
@@ -119,7 +119,7 @@ auf drei Versuche. `429` mit `Retry-After` wird als Cooldown respektiert; ohne
 Header gilt der normale Backoff. Nicht-transiente `4xx` und `413 Payload Too
 Large` werden nicht erneut gesendet.
 
-## Trace-Korrelation (optional, ab `0.4.0`)
+## Trace-Korrelation (optional)
 
 Das SDK kann pro Batch-Send einen W3C-`traceparent`-Header propagieren —
 opt-in über `PlayerSDKConfig.traceparent`. Der Wert kommt aus einem
@@ -186,12 +186,12 @@ die Warnung über `HttpTransportOptions.silent` unterdrücken. In allen
 Fällen geht der Batch-Send unverändert weiter — Tracing darf den
 Event-Pfad nicht sabotieren.
 
-Abwärtskompatibel mit Backends < `0.4.0`: ältere Server ignorieren
-unbekannte Header (HTTP-Standard).
+Backends, die `traceparent` nicht unterstützen, ignorieren den
+Header (HTTP-Standard).
 
 ## OpenTelemetry-Vorbereitung
 
-RAK-16 ist in `0.2.0` als vorbereiteter Opt-in-Pfad umgesetzt. Das SDK bringt
+RAK-16 ist als vorbereiteter Opt-in-Pfad umgesetzt. Das SDK bringt
 keine OTel-Abhängigkeit im Default-Bundle mit. Anwendungen können aber einen
 eigenen Transport über `PlayerSDKConfig.transport` injizieren:
 
@@ -243,8 +243,8 @@ echtes Netzwerk.
 ## Browser-Support
 
 Die Browser-Matrix steht in [`browser-support.md`](./browser-support.md).
-Für `0.2.0` sind Chrome Desktop und Firefox Desktop `supported`; Safari
-Desktop ist als `documented limitation` klassifiziert.
+Chrome Desktop und Firefox Desktop sind `supported`; Safari Desktop
+ist als `documented limitation` klassifiziert.
 
 ## Wire-Format
 
