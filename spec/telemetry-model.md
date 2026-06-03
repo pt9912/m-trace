@@ -1,12 +1,6 @@
 # Telemetry-Model — m-trace
 
-> **Status**: Verbindlich für `main` (Release-Stand `0.22.x`). Spec
-> beschreibt das **Zielbild der aktuellen Wire-/OTel-/Cardinality-
-> Verträge** — kein historischer Audit-Trail. Lieferzeitpunkte und
-> Versions-Evolution stehen im
-> [`CHANGELOG.md`](../CHANGELOG.md) und in den
-> Plan-Dokumenten unter `docs/planning/done/`.  
-> **Bezug**: [Lastenheft `1.1.24`](./lastenheft.md) F-95..F-105 (Cardinality), F-106..F-115 + F-120..F-129 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](../docs/planning/in-progress/roadmap.md); [API-Kontrakt](./backend-api-contract.md); [Architektur](./architecture.md). Section-spezifische `Bezug:`-Blöcke zitieren weiter die Lastenheft-Patch-Version, in der die jeweilige RAK-Familie *aufgenommen* wurde — diese Refs sind versionsversiegelt und drift-frei.
+> **Bezug**: F-95..F-105, F-106..F-115, F-120..F-129.
 
 ## 0. Zweck
 
@@ -22,7 +16,7 @@ Drei Wirkungsebenen pro Telemetrie-Datum:
 
 ## 1. Wire-Format Player-Events
 
-> Bezug: F-106..F-115; API-Kontrakt.
+> Bezug: F-106..F-115.
 
 Maschinenlesbare Source of Truth für die Wire-Schema-Version ist
 [`contracts/event-schema.json`](../contracts/event-schema.json). Die
@@ -295,7 +289,7 @@ Backend defensiv enforcen kann.
 
 ## 2. OTel-Modell
 
-> Bezug: F-91, F-92; API-Kontrakt; Architektur.
+> Bezug: F-91, F-92.
 
 ### 2.1 Spans
 
@@ -351,7 +345,7 @@ Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus F-93 ins
 
 ### 2.5 Trace-Korrelation
 
-> Bezug: RAK-29; RAK-32; ADR-0002 (Schema-Spalten).
+> Bezug: RAK-29; RAK-32; ADR-0002.
 
 Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkeit (RAK-31, optional) und Tempo-unabhängige Dashboard-Timeline (RAK-32, Pflicht) sauber entkoppelt sind.
 
@@ -427,7 +421,7 @@ Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`), exportiert der OTe
 
 ## 3. Cardinality-Regeln
 
-> Bezug: F-95..F-100, F-101..F-105 (MVP-Variante).
+> Bezug: F-95..F-105.
 
 ### 3.1 Verbotene Prometheus-Labels
 
@@ -498,8 +492,7 @@ Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet (F-100):
 
 ### 3.5 WebRTC-Telemetrie
 
-> Bezug: RAK-51..RAK-55 (Lastenheft-Patch `1.1.10`)
-> §4 Tranche 3, [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose).
+> Bezug: RAK-51..RAK-55.
 >
 > Das SDK sammelt `getStats()`-Reports im WebRTC-Adapter, der
 > API-Ingress validiert die `webrtc.*`-Allowlist und exportiert
@@ -599,7 +592,7 @@ dieser Drift-Strategie:
 
 ## 4. Backpressure und Limits
 
-> Bezug: F-118..F-123; API-Kontrakt.
+> Bezug: F-118..F-123.
 
 ### 4.1 Batch-Größe
 
@@ -613,7 +606,7 @@ Das SDK muss Batches selbst aufteilen, wenn lokal mehr Events vorliegen.
 
 ### 4.2 Rate-Limit-Modell
 
-Token-Bucket pro drei Dimensionen (F-110, post-`1.0.2`-Mindestdienste-Klärung):
+Token-Bucket pro drei Dimensionen (F-110):
 
 | Dimension | Default-Quote | Bemerkung |
 |---|---|---|
@@ -711,8 +704,7 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 
 ## 7. SRT-Health-Modell
 
-> Bezug: RAK-41..RAK-46;
-> [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](contract-fixtures/srt/mediamtx-srtconns-list.json).
+> Bezug: RAK-41..RAK-46.
 
 SRT-Health-Metriken sind **getrenntes Verbindungs-/Ingest-Signal** und nicht
 mit Player-Playback-Events vermischt. Die Quelle ist die
