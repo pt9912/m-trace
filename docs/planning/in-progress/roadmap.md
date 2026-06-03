@@ -1,14 +1,23 @@
 # Roadmap
 
-> **Stand**: 2026-05-17
+> **Stand**: 2026-06-03
 >
-> **Phase**: ✅ `0.22.1` devalue-Security-Patch + Nightly-Security-
-> Audit released und archiviert in
-> [`done/plan-0.22.1.md`](../done/plan-0.22.1.md). Push-Audit + neuer
-> Nightly-Audit-Mirror schließen den vorher offenen Vier-Tage-Gap
-> zwischen Pushes (GHSA-77vg-94rm-hx3p devalue als Auslöser).
+> **Phase**: ✅ `0.22.2` Go-Stdlib-Security-Patch released und archiviert
+> in [`done/plan-0.22.2.md`](../done/plan-0.22.2.md). Erster echter
+> Treffer des in `0.22.1` eingeführten Nightly-`security-audit.yml`-
+> Workflows (Issue #3, 2026-06-03): `golang:1.26.3 → 1.26.4` schließt
+> die zwei Stdlib-Findings GO-2026-5037 (`crypto/x509`) und
+> GO-2026-5039 (`net/textproto`) plus fünf bereits dokumentierte
+> `perl-base`-Trivy-Ignores aus den Trivy-DB-Updates 2026-05-28/31.
 >
 > **Aktuell / letzte Releases:**
+> - `v0.22.2` Go-Stdlib-Security-Patch + perl-base-Trivy-Ignores
+>   (Patch-Release, kein Lastenheft-Patch): Build-Image
+>   `golang:1.26.3 → 1.26.4` (sechs Stellen) schließt GO-2026-5037
+>   + GO-2026-5039; `.security/vulnignore.yaml` mit fünf neuen
+>   `perl-base`-Einträgen für dashboard/analyzer-service (kein
+>   exploitable Pfad); bilingualer README-Split. Plan archiviert in
+>   [`done/plan-0.22.2.md`](../done/plan-0.22.2.md).
 > - `v0.22.1` devalue-Security-Patch + Nightly-Audit-Mirror
 >   (Patch-Release, kein Lastenheft-Patch): `pnpm.overrides` hebt
 >   `devalue` auf `^5.8.1`; neuer `security-audit.yml`-Nightly mit
@@ -91,7 +100,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-05-17 — `0.22.1` released)
+## 1. Aktueller Stand (2026-06-03 — `0.22.2` released)
 
 ### 1.1 Lieferstand
 
@@ -130,16 +139,19 @@ aktualisieren.
 | ✅      | OCI Image Publishing (`0.21.0`) | Released 2026-05-13. Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish und Release-Hook. | [`done/plan-0.21.0.md`](../done/plan-0.21.0.md) |
 | ✅      | Quality-Gates Follow-up (`0.22.0`) | Released 2026-05-13. Kein Lastenheft-Patch: `make benchmark-smoke` ist nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; `benchmark-observation.yml` läuft hart; `mutation.yml` korrigiert den TS-Scope auf `@pt9912/player-sdk`, bleibt aber nicht-blockierend. | [`done/plan-0.22.0.md`](../done/plan-0.22.0.md) |
 | ✅      | devalue-Security-Patch + Nightly-Audit (`0.22.1`) | Released 2026-05-17. Kein Lastenheft-Patch. `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly spiegelt `vuln-check`/`audit-ts`/`image-scan` täglich mit konsolidiertem Auto-Issue; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; Issue-Body als `scripts/open-bench-regression-issue.sh`/`open-security-audit-issue.sh` ausgelagert. | [`done/plan-0.22.1.md`](../done/plan-0.22.1.md) |
+| ✅      | Go-Stdlib-Security-Patch (`0.22.2`) | Released 2026-06-03. Kein Lastenheft-Patch. Erster echter Nightly-`security-audit.yml`-Treffer (Issue #3): `golang:1.26.3 → 1.26.4` an sechs Build-/Test-Image-Stellen (`apps/api/Dockerfile`, `Makefile::vuln-check`, `apps/api/Makefile::{arch-check,benchmark-smoke,fuzz-check,mutation-report}`) schließt GO-2026-5039 (`net/textproto`-Error-Echo via `auth.VaultSecretBackend.LoadSigningKeys`) und GO-2026-5037 (`crypto/x509`-Hostname-Parsing via `auth.NewRedisIssuanceRateLimiter`). Plus fünf bereits dokumentierte `perl-base`-Trivy-Ignores aus den Trivy-DB-Updates 2026-05-28/31 (CVE-2026-42496/42497/8376/9538/48962) für dashboard/analyzer-service und bilingualer README-Split. `make vuln-check` zeigt „No vulnerabilities found.". | [`done/plan-0.22.2.md`](../done/plan-0.22.2.md) |
 
 ### 1.2 Nächste Phase
 
-`0.22.1` ist als devalue-Security-Patch plus Nightly-Audit-Mirror
-released. Der konkrete Lieferpfad ist Security-/Tooling-only: ein
-`pnpm.overrides`-Eintrag schließt die Vier-Tage-Lücke zwischen
-Release `0.22.0` und Advisory-Publish, und der neue
-`security-audit.yml`-Nightly fängt zukünftige Advisories auf
-24-h-Cadence. Mutation-Blockierung bleibt weiterhin deferred, bis
-echte >70%-Score-Reihen vorliegen.
+`0.22.2` ist als Go-Stdlib-Security-Patch released. Der Nightly-
+`security-audit.yml`-Mirror aus `0.22.1` hat seinen ersten echten
+Treffer geliefert (GO-2026-5037/5039 in `golang:1.26.3`); der
+Mechanismus funktioniert wie geplant. Offenes Folge-Item ohne
+Patch-Release-Blocker-Status: der `webrtc-drift.yml`-Nightly vom
+2026-06-03 ist auf Firefox failed (Browser-Drift in
+`getStats()`-Sollfeldern); separater Folge-Plan für Drift-Review
+und Spec-Allowlist-Update. Mutation-Blockierung bleibt weiterhin
+deferred, bis echte >70%-Score-Reihen vorliegen.
 
 ---
 
@@ -255,6 +267,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.21.0` | OCI Image Publishing | ✅ | Released 2026-05-13. Plan in [`done/plan-0.21.0.md`](../done/plan-0.21.0.md). Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23. Inhalt: versionierte GHCR-Images für API, Dashboard und Analyzer-Service, Make-Dry-Run, approval-gated Publish, Release-Hook und Rollback-Doku; kein `latest`, kein Production-K8s-Go. |
 | `0.22.0` | Quality-Gates Follow-up | ✅ | Released 2026-05-13. Plan in [`done/plan-0.22.0.md`](../done/plan-0.22.0.md). Kein Lastenheft-Patch: Benchmark-Smoke ist nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; Benchmark-Nightly läuft hart; Mutation-TS-Filter nutzt `@pt9912/player-sdk`, bleibt aber bis zu echten >70%-Score-Reihen nicht-blockierend. |
 | `0.22.1` | devalue-Security-Patch + Nightly-Audit | ✅ | Released 2026-05-17. Plan in [`done/plan-0.22.1.md`](../done/plan-0.22.1.md). Kein Lastenheft-Patch. Inhalt: `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly mit konsolidiertem Auto-Issue (`scripts/open-security-audit-issue.sh`) spiegelt die drei Push-Security-Gates auf 24-h-Cadence; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; `Open regression issue`-HEREDOC in `scripts/open-bench-regression-issue.sh` ausgelagert. `extra-gates.md §3.7` dokumentiert den Nightly-Mirror. |
+| `0.22.2` | Go-Stdlib-Security-Patch | ✅ | Released 2026-06-03. Plan in [`done/plan-0.22.2.md`](../done/plan-0.22.2.md). Kein Lastenheft-Patch. Inhalt: erster echter Treffer des `security-audit.yml`-Nightly (Issue #3); `golang:1.26.3 → 1.26.4` an sechs Build-/Test-Image-Stellen schließt GO-2026-5039 (`net/textproto`-Error-Echo via `auth.VaultSecretBackend.LoadSigningKeys`) und GO-2026-5037 (`crypto/x509`-Hostname-Parsing via `auth.NewRedisIssuanceRateLimiter`). Plus fünf neue `perl-base`-Trivy-Ignores (CVE-2026-42496/42497/8376/9538/48962) für dashboard/analyzer-service mit dokumentierten `expires`-Terminen und bilingualer README-Split. `make vuln-check` lokal grün. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.2] - 2026-06-03
+
+> **Patch-/Tooling-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md) — kein
+> Lastenheft-Patch; normativer Stand bleibt `1.1.24`.
+> Plan in
+> [`docs/planning/done/plan-0.22.2.md`](docs/planning/done/plan-0.22.2.md).
+>
+> **Security-Auslöser**: GO-2026-5037 (`crypto/x509` ineffiziente
+> Hostname-Kandidaten-Parsing) und GO-2026-5039 (`net/textproto`
+> ungescaptes Input-Echo in Errors), beide fixed in `go1.26.4`.
+> Treffer aus dem Nightly-Security-Audit-Lauf vom 2026-06-03
+> (Issue #3) — der mit `0.22.1` eingeführte Mirror hat die zwei
+> Stdlib-Findings im erwarteten Fenster gemeldet. Verwundbare
+> Aufrufketten in `0.22.1`: `auth.VaultSecretBackend.LoadSigningKeys`
+> (textproto) und `auth.NewRedisIssuanceRateLimiter` (x509);
+> Konsumenten sollten auf `mtrace-api:0.22.2` wechseln.
+
+### Security
+
+- Go-Build-Container `golang:1.26.3` → `golang:1.26.4` in
+  `apps/api/Dockerfile` (Multistage-`deps`-Stage), `Makefile`
+  (`vuln-check`) und `apps/api/Makefile` (`arch-check`,
+  `benchmark-smoke`, `fuzz-check`, `mutation-report`). Damit zieht
+  jeder Build die gepatchte Stdlib; `make vuln-check` zeigt
+  „No vulnerabilities found." (vorher: 2 Stdlib-Findings via
+  `crypto/x509` + `net/textproto`).
+- Trivy-Ignore-Liste um fünf `perl-base`-CVEs aus dem
+  `debian:13.5`-Base-Image der `mtrace-dashboard`- und
+  `mtrace-analyzer-service`-Images erweitert (CVE-2026-42496,
+  CVE-2026-42497, CVE-2026-8376, CVE-2026-9538, CVE-2026-48962).
+  Findings tauchten im Trivy-DB-Update vom 2026-05-28/2026-05-31
+  auf, sind in den Runtime-Images nicht exploitable (kein
+  Perl-Pfad zur Laufzeit, kein User-controlled Tar/Regex/Glob);
+  Begründung und `expires`-Termin pro Eintrag in
+  [`.security/vulnignore.yaml`](.security/vulnignore.yaml).
+
+### Changed
+
+- Bilinguale README: `README.md` ist jetzt die englische
+  Übersicht für GitHub-Top-Level; die ausführliche deutsche
+  Variante steht weiter unter
+  [`README.de.md`](README.de.md). Inhaltlich keine
+  Doku-Drift, nur Sprach-Split für externe Sichtbarkeit.
+
 ## [0.22.1] - 2026-05-17
 
 > **Patch-/Tooling-Release** gemäß

@@ -88,7 +88,7 @@ const (
 
 const (
 	serviceName       = "m-trace-api"
-	serviceVersion    = "0.22.1"
+	serviceVersion    = "0.22.2"
 	defaultListenAddr = ":8080"
 
 	// Spike Spec §6.9: 100 events/sec/project.

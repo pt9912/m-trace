@@ -65,7 +65,7 @@ run: build
 # OTel, Prometheus, database/sql oder net/http enthält und die
 # Schichtengrenzen domain → application → port respektiert sind.
 arch-check:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.3 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.4 \
 		bash scripts/check-architecture.sh
 
 # Coverage-Pflicht-Gate (docs/user/quality.md §3): misst Coverage über
@@ -136,7 +136,7 @@ schema-generate:
 # Charakter (~5-10s pro Bench); längere Runs sind Tranche 2
 # Nightly-Workflow.
 benchmark-smoke:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.3 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.4 \
 		go test -run='^$$' -bench=. -benchmem -benchtime 1s ./hexagon/... ./adapters/...
 
 # Go-Fuzz-Suite (plan-0.9.5 §4 Tranche 3, RAK-Wave-2). Findet alle
@@ -153,7 +153,7 @@ benchmark-smoke:
 # verlangt opt-in (kein PR-Pfad).
 FUZZTIME ?= 30s
 fuzz-check:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.3 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.4 \
 		bash -c 'set -eu; \
 			grep -rEho "^func (Fuzz[A-Za-z0-9_]+)" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
 				./hexagon ./adapters | sort -u | while read -r line; do \
@@ -187,7 +187,7 @@ fuzz-check:
 GREMLINS_VERSION ?= v0.5.0
 mutation-report:
 	mkdir -p .tmp/mutation
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.3 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.4 \
 		bash -c 'set -eu; \
 			go install github.com/go-gremlins/gremlins/cmd/gremlins@$(GREMLINS_VERSION); \
 			gpath=$$(go env GOPATH)/bin/gremlins; \
