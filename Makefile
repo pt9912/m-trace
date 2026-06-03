@@ -16,7 +16,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -91,6 +91,7 @@ help:
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                Build the TS dependency image without host node_modules' \
+		'  make host-deps              Install workspace deps into host node_modules (for analyzer-bench/ts-mutation)' \
 		'  make lock-refresh           Update pnpm-lock.yaml in Docker without host node_modules' \
 		'  make fullbuild              Install + ts/api build + gates (CI-äquivalent von clean)' \
 		'' \
@@ -767,6 +768,18 @@ ci: gates build
 
 install:
 	$(TS_DOCKER_BUILD) --target deps -t $(TS_IMAGE):deps .
+
+# `make host-deps` installiert die Workspace-Dependencies auf dem
+# Host (`node_modules/`). Notwendig fuer Targets, die hardware-stabiles
+# Timing brauchen und daher bewusst nicht in Docker laufen:
+# `make analyzer-benchmark-smoke` (vitest bench, Bench-Runner-Info
+# aus `scripts/print-bench-runner-info.sh`) und
+# `make ts-mutation-report` (StrykerJS via pnpm dlx). Komplementaer
+# zu `make install` (Docker-`:deps`-Image fuer ts-test/ts-build/lint
+# ohne Host-`node_modules`). Frozen-Lockfile, damit der Host-
+# Resolver nicht vom Lockfile abdriftet.
+host-deps:
+	$(PNPM) install --frozen-lockfile
 
 lock-refresh:
 	$(TS_DOCKER_BUILD) --target lock-refresh-tool -t $(TS_IMAGE):lock-refresh-tool .
