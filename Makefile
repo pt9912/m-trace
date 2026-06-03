@@ -27,29 +27,29 @@ help:
 		'  make dev-tempo              Start observability + Tempo profiles (RAK-31)' \
 		'  make stop                   Stop all Compose services, including observability + tempo' \
 		'  make wipe                   Stop services AND delete SQLite + Tempo volumes (destructive)' \
-		'  make smoke                  Run the local 0.1.1 smoke checks' \
+		'  make smoke                  Run the local smoke checks' \
 		'  make smoke-observability    Run the Prometheus/cardinality smoke checks' \
 		'  make smoke-tempo            Run the Tempo three-state smoke check' \
 		'  make smoke-rak10-console    Run the console-trace smoke check' \
 		'  make smoke-analyzer         Run the analyzer-service smoke check' \
 		'  make smoke-mediamtx         Run the MediaMTX example smoke check (needs core lab)' \
 		'  make smoke-srt              Run the SRT example smoke (starts/stops mtrace-srt project)' \
-		'  make smoke-srt-health       Run the SRT health smoke (HLS + MediaMTX-API; plan-0.6.0 Tranche 2)' \
-		'  make smoke-srt-health-pagination Run the SRT health smoke incl. cursor-pagination probes (plan-0.12.6 Tranche 2 / RAK-86; opt-in)' \
+		'  make smoke-srt-health       Run the SRT health smoke (HLS + MediaMTX-API)' \
+		'  make smoke-srt-health-pagination Run the SRT health smoke incl. cursor-pagination probes (RAK-86)' \
 		'  make smoke-dash             Run the DASH example smoke (starts/stops mtrace-dash project)' \
 		'  make smoke-webrtc-prep      Run the WebRTC lab prep smoke (starts/stops mtrace-webrtc project; endpoint-only)' \
-		'  make smoke-webrtc-stats-drift Run the WebRTC getStats() drift smoke against mtrace-webrtc (plan-0.9.0 Tranche 1, RAK-56; opt-in)' \
-		'  make smoke-srs              Run the SRS example smoke (starts/stops mtrace-srs project; endpoint-only; plan-0.9.0 Tranche 2, RAK-57)' \
-		'  make smoke-key-rotation     Run the multi-key signing rotation smoke (plan-0.12.5 Tranche 1, RAK-78; opt-in)' \
-		'  make smoke-issuance-replica Run the shared-state issuance limiter smoke (plan-0.12.5 Tranche 2, RAK-77; opt-in)' \
-		'  make smoke-issuance-multi-host Run the Redis multi-host issuance + origin limiter smoke (plan-0.12.6 Tranche 7, RAK-88; opt-in)' \
-		'  make smoke-mediaserver-provision Run the MediaMTX provision smoke (plan-0.12.6 Tranche 9, RAK-87; opt-in)' \
-		'  make smoke-vault-approle    Run the Vault AppRole + Kubernetes auth smoke (plan-0.12.6 Tranche 8, RAK-89; opt-in)' \
-		'  make smoke-kms-skeleton     Run the KMS skeleton adapter smoke (plan-0.12.6 Tranche 8, RAK-89; opt-in)' \
-		'  make smoke-origin-rate-limit Run the origin-/IP-rate-limiter smoke (plan-0.12.6 Tranche 6, RAK-90; opt-in)' \
-		'  make smoke-browser-ingest   Run the browser-ingest policy smoke (plan-0.12.5 Tranche 4, RAK-80; opt-in)' \
-		'  make smoke-mediamtx-auth    Run the MediaMTX externalAuth bridge smoke (plan-0.12.5 Tranche 5, RAK-81; opt-in)' \
-		'  make smoke-outbound-webhook Run the outbound webhook dispatcher smoke (plan-0.12.5 Tranche 5, RAK-82; opt-in)' \
+		'  make smoke-webrtc-stats-drift Run the WebRTC getStats() drift smoke against mtrace-webrtc (RAK-56)' \
+		'  make smoke-srs              Run the SRS example smoke (starts/stops mtrace-srs project; endpoint-only, RAK-57)' \
+		'  make smoke-key-rotation     Run the multi-key signing rotation smoke (RAK-78)' \
+		'  make smoke-issuance-replica Run the shared-state issuance limiter smoke (RAK-77)' \
+		'  make smoke-issuance-multi-host Run the Redis multi-host issuance + origin limiter smoke (RAK-88)' \
+		'  make smoke-mediaserver-provision Run the MediaMTX provision smoke (RAK-87)' \
+		'  make smoke-vault-approle    Run the Vault AppRole + Kubernetes auth smoke (RAK-89)' \
+		'  make smoke-kms-skeleton     Run the KMS skeleton adapter smoke (RAK-89)' \
+		'  make smoke-origin-rate-limit Run the origin-/IP-rate-limiter smoke (RAK-90)' \
+		'  make smoke-browser-ingest   Run the browser-ingest policy smoke (RAK-80)' \
+		'  make smoke-mediamtx-auth    Run the MediaMTX externalAuth bridge smoke (RAK-81)' \
+		'  make smoke-outbound-webhook Run the outbound webhook dispatcher smoke (RAK-82)' \
 		'  make smoke-cli              Run the m-trace CLI smoke check' \
 		'  make sync-contract-fixtures Copy spec/contract-fixtures/analyzer/* to apps/api testdata' \
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
@@ -75,19 +75,19 @@ help:
 		'  make devcontainer-validate  Validate the optional devcontainer seed' \
 		'  make release-guard VER=X.Y.Z Run the manual release approval guard in dry-run mode' \
 		'  make release-guard-test     Run local release-guard failure-path tests' \
-		'  make vuln-check             Run govulncheck on apps/api Go dependencies (plan-0.8.5 Tranche 1)' \
-		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace (plan-0.8.5 Tranche 1)' \
+		'  make vuln-check             Run govulncheck on apps/api Go dependencies' \
+		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
-		'  make security-gates         Run vuln-check + audit-ts + image-scan together (plan-0.8.5 Tranche 1)' \
-		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (plan-0.9.5/0.22.0, PR-blocking via gates)' \
-		'  make analyzer-benchmark-smoke Run TypeScript stream-analyzer hot-path benchmarks (plan-0.9.5/0.22.0, PR-blocking via gates)' \
+		'  make security-gates         Run vuln-check + audit-ts + image-scan together' \
+		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (PR-blocking via gates)' \
+		'  make analyzer-benchmark-smoke Run TypeScript stream-analyzer hot-path benchmarks (PR-blocking via gates)' \
 		'  make benchmark-smoke        Run both api- and analyzer-benchmark-smokes (part of gates)' \
-		'  make api-fuzz-check         Run Go fuzz targets (-fuzztime, default 30s; plan-0.9.5 Tranche 3, opt-in)' \
+		'  make api-fuzz-check         Run Go fuzz targets (-fuzztime, default 30s, opt-in)' \
 		'  make fuzz-check             Run all fuzz targets (Go + TS property tests; opt-in)' \
-		'  make api-mutation-report    Run Go mutation report for the API pilot module (plan-0.9.5 Tranche 4, opt-in)' \
-		'  make ts-mutation-report     Run TS mutation report for the player-sdk pilot module (plan-0.9.5 Tranche 4, opt-in)' \
-		'  make mutation-report        Run Go + TS mutation reports (plan-0.9.5 Tranche 4, opt-in/nightly)' \
-		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift (plan-0.8.5 Tranche 2)' \
+		'  make api-mutation-report    Run Go mutation report for the API pilot module (opt-in)' \
+		'  make ts-mutation-report     Run TS mutation report for the player-sdk pilot module (opt-in)' \
+		'  make mutation-report        Run Go + TS mutation reports (opt-in/nightly)' \
+		'  make generated-drift-check  Re-run schema/contract/SDK generators and fail on drift' \
 		'  make gates                  Run api-race + TS/API quality, SDK smokes, schema and docs gates' \
 		'  make ci                     Run gates plus build' \
 		'  make install                Build the TS dependency image without host node_modules' \
@@ -109,8 +109,8 @@ dev-detached:
 dev-observability:
 	OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability up --build
 
-# `make dev-tempo` startet observability + tempo gemeinsam (plan-0.4.0
-# §6). Der Collector-Service ist nicht doppelt definiert; derselbe
+# `make dev-tempo` startet observability + tempo gemeinsam
+# ). Der Collector-Service ist nicht doppelt definiert; derselbe
 # Container fährt in §6.3 mit der Tempo-Pipeline-Konfig hoch (env-
 # gesteuerter Config-Pfad). RAK-31 ist Kann-Scope — ohne Profil
 # bleibt die Dashboard-Timeline (RAK-32) vollständig funktional.
@@ -121,7 +121,7 @@ stop:
 	$(COMPOSE) --profile observability --profile tempo down
 
 # `make wipe` ist der einzige unterstützte Reset-Pfad für die SQLite-
-# Datei (ADR-0002 §8.4, API-Kontrakt §10.1). Stoppt zuerst alle
+# Datei (ADR-0002, API-Kontrakt). Stoppt zuerst alle
 # Services (sonst bleibt das Volume vom api-Container in Benutzung)
 # und entfernt anschließend gezielt das `mtrace-data`-Volume.
 #
@@ -147,7 +147,7 @@ smoke:
 smoke-observability:
 	bash scripts/smoke-observability.sh
 
-# `make smoke-tempo` deckt die drei Startzustände aus plan-0.4.0 §6.4
+# `make smoke-tempo` deckt die drei Startzustände aus der Spec
 # ab. Default-State ist `tempo` (RAK-31-Roundtrip via Tempo-Search-API);
 # `core` und `observability` lassen sich über `SMOKE_STATE=...` testen
 # (Stack vorher mit `make dev` bzw. `make dev-observability` starten).
@@ -163,7 +163,7 @@ smoke-analyzer:
 	bash scripts/smoke-analyzer.sh
 
 # `make smoke-mediamtx` verifiziert den bestehenden Core-Lab-MediaMTX-
-# Pfad (plan-0.5.0 §3 Tranche 2, RAK-36): MediaMTX-API erreichbar,
+# Pfad (RAK-36): MediaMTX-API erreichbar,
 # teststream ready, HLS-Manifest auflösbar. Erwartet ein laufendes
 # Core-Lab (`make dev`) — der Smoke startet nichts selbst, damit der
 # Operator entscheidet, welche Stack-Variante er prüfen will.
@@ -171,22 +171,22 @@ smoke-analyzer:
 smoke-mediamtx:
 	bash scripts/smoke-mediamtx.sh
 
-# `make smoke-srt` startet das eigene SRT-Beispiel (plan-0.5.0 §4
-# Tranche 3, RAK-37) als Project `mtrace-srt`, prüft den HLS-Pfad
+# `make smoke-srt` startet das eigene SRT-Beispiel (
+# , RAK-37) als Project `mtrace-srt`, prüft den HLS-Pfad
 # auf 8889 (FFmpeg→SRT→MediaMTX→HLS) und beendet den Stack wieder.
 # Opt-in (nicht in `make gates`).
 smoke-srt:
 	bash scripts/smoke-srt.sh
 
 # `make smoke-srt-health` erweitert smoke-srt um eine API-Probe gegen
-# MediaMTX `/v3/srtconns/list` (plan-0.6.0 §3 Tranche 2). Verifiziert
+# MediaMTX `/v3/srtconns/list` . Verifiziert
 # zusätzlich vier RAK-43-Pflichtwerte (msRTT, packetsReceivedLoss,
 # packetsReceivedRetrans, mbpsLinkCapacity > 0). Opt-in (nicht in
 # `make gates`); braucht python3 für JSON-Validierung.
 smoke-srt-health:
 	bash scripts/smoke-srt-health.sh
 
-# `make smoke-srt-health-pagination` (plan-0.12.6 Tranche 2 / RAK-86)
+# `make smoke-srt-health-pagination` (RAK-86)
 # fährt den existierenden `smoke-srt-health`-Pfad mit den Cursor-
 # Probe-Sub-Checks (samples_cursor/next_cursor + cursor_invalid_-
 # malformed). Setzt SMOKE_INCLUDE_MTRACE_API=1 plus
@@ -195,15 +195,15 @@ smoke-srt-health:
 smoke-srt-health-pagination:
 	SMOKE_INCLUDE_MTRACE_API=1 MTRACE_SRT_HEALTH_PAGINATION=1 bash scripts/smoke-srt-health.sh
 
-# `make smoke-dash` startet das DASH-Beispiel (plan-0.5.0 §5 Tranche 4,
+# `make smoke-dash` startet das DASH-Beispiel ( ,
 # RAK-38) als Project `mtrace-dash`: FFmpeg generiert DASH in ein
 # Volume, nginx serviert es auf 8891. Smoke prüft MPD + Init-Segment
 # und beendet den Stack wieder. Opt-in (nicht in `make gates`).
 smoke-dash:
 	bash scripts/smoke-dash.sh
 
-# `make smoke-webrtc-prep` startet das WebRTC-Lab-Beispiel (plan-0.7.0
-# §4 Tranche 3, RAK-48) als Project `mtrace-webrtc`: FFmpeg pushed via
+# `make smoke-webrtc-prep` startet das WebRTC-Lab-Beispiel
+# (RAK-48)) als Project `mtrace-webrtc`: FFmpeg pushed via
 # RTSP in MediaMTX, MediaMTX exposed WHIP/WHEP. Smoke ist endpoint-/
 # compose-only — prüft API-Erreichbarkeit, Stream-Pfad-Registrierung
 # und WHIP/WHEP-OPTIONS-Statuscodes (kein Browser, kein Playback,
@@ -212,18 +212,18 @@ smoke-webrtc-prep:
 	bash scripts/smoke-webrtc-prep.sh
 
 # `make smoke-webrtc-stats-drift` ist der Browser-Drift-Smoke aus
-# plan-0.9.0 §2 Tranche 1 (RAK-56). Schließt R-12 als „automatisiert
+# (RAK-56). Schließt R-12 als „automatisiert
 # detektiert" — fährt das mtrace-webrtc-Lab hoch, läuft die
 # Playwright-Spec tests/e2e/webrtc-stats-drift.spec.ts gegen die
 # Default-Browser (chromium,firefox; WebKit opt-in via
 # MTRACE_WEBRTC_DRIFT_BROWSERS) und vergleicht das `getStats()`-
-# Schema gegen spec/telemetry-model.md §3.5.2 + §1.4. Opt-in
+# Schema gegen spec/telemetry-model.md Opt-in
 # (NICHT in `make gates`); produktiv über den Nightly-CI-Workflow
 # `.github/workflows/webrtc-drift.yml`.
 smoke-webrtc-stats-drift:
 	bash scripts/smoke-webrtc-stats-drift.sh
 
-# `make smoke-srs` ist der SRS-Lab-Smoke aus plan-0.9.0 §3 Tranche 2
+# `make smoke-srs` ist der SRS-Lab-Smoke 
 # (RAK-57, MVP-36 als eingelöst). Fährt examples/srs/compose.yaml
 # als Project mtrace-srs hoch (RTMP-Listener + HTTP-API +
 # HTTP-FLV-Egress), prüft endpoint-/compose-only, dass die SRS-
@@ -233,8 +233,8 @@ smoke-webrtc-stats-drift:
 smoke-srs:
 	bash scripts/smoke-srs.sh
 
-# `make smoke-ingest-control` ist der Lab-Smoke aus plan-0.11.0
-# Tranche 4 (RAK-69). Erstellt einen Stream über die HTTP-API und
+# `make smoke-ingest-control` ist der Lab-Smoke
+#  (RAK-69). Erstellt einen Stream über die HTTP-API und
 # spielt einen Start-/Ende-Lifecycle-Hook ein; verifiziert
 # `accepted:true` und unterschiedliche `event_id`-Werte. Erwartet
 # eine erreichbare apps/api (Default `MTRACE_API_URL=http://localhost:8080`)
@@ -243,11 +243,11 @@ smoke-srs:
 smoke-ingest-control:
 	bash examples/ingest-control/smoke-lifecycle.sh
 
-# `make smoke-key-rotation` — plan-0.12.5 Tranche 1 / RAK-78
+# `make smoke-key-rotation` — RAK-78
 # Multi-Key-Signing-Rotation. Wickelt den End-to-End-
 # Rotation-Unit-Test (`TestParseSigningKeysEnv_RotationEndToEnd`)
 # in ein reproduzierbares Make-Target ein und prüft das in
-# `docs/user/auth.md` §5.3.1 dokumentierte Operator-Workflow-
+# `docs/user/auth.md` dokumentierte Operator-Workflow-
 # Verhalten: Token unter `kid_a` signieren, ACTIVE auf `kid_b`
 # umschalten, altes Token muss weiterhin verifizieren. Opt-in
 # (NICHT in `make gates`); echte API-Restart-Variante ist
@@ -255,7 +255,7 @@ smoke-ingest-control:
 smoke-key-rotation:
 	bash scripts/smoke-key-rotation.sh
 
-# `make smoke-issuance-replica` — plan-0.12.5 Tranche 2 / RAK-77
+# `make smoke-issuance-replica` — RAK-77
 # Shared-State-Issuance-Limiter (R-17). Wickelt den End-to-End-
 # Sharing-Test (`TestSqliteIssuanceRateLimiter_SharedAcrossInstances`)
 # in ein reproduzierbares Make-Target ein: zwei `*sql.DB`-Verbindungen
@@ -266,7 +266,7 @@ smoke-key-rotation:
 smoke-issuance-replica:
 	bash scripts/smoke-issuance-replica.sh
 
-# `make smoke-issuance-multi-host` — plan-0.12.6 Tranche 7 / RAK-88
+# `make smoke-issuance-multi-host` — RAK-88
 # (R-17). Multi-Host-Variante des Shared-State-Limiters: zwei
 # RedisIssuanceRateLimiter-Instances teilen sich Buckets ueber
 # miniredis-Mock; deckt auch den Refund-Pfad und beide Fail-Modi
@@ -275,28 +275,28 @@ smoke-issuance-replica:
 smoke-issuance-multi-host:
 	bash scripts/smoke-issuance-multi-host.sh
 
-# `make smoke-mediaserver-provision` — plan-0.12.6 Tranche 9 / RAK-87
+# `make smoke-mediaserver-provision` — RAK-87
 # (R-15). Verifiziert den MediaMTX-Adapter (happy/idempotent/auth/
 # server-error/unreachable) plus den Use-Case-Pfad (Provision=false/
 # true ohne Adapter → disabled). Opt-in (NICHT in `make gates`).
 smoke-mediaserver-provision:
 	bash scripts/smoke-mediaserver-provision.sh
 
-# `make smoke-vault-approle` — plan-0.12.6 Tranche 8 / RAK-89 (R-20).
+# `make smoke-vault-approle` — RAK-89 (R-20).
 # Verifiziert den AppRole- und Kubernetes-Auth-Pfad des Vault-Adapters
 # gegen einen `httptest.Server`-Mock (kein echter Vault-Server noetig).
 # Opt-in (NICHT in `make gates`).
 smoke-vault-approle:
 	bash scripts/smoke-vault-approle.sh
 
-# `make smoke-kms-skeleton` — plan-0.12.6 Tranche 8 / RAK-89 (R-20).
+# `make smoke-kms-skeleton` — RAK-89 (R-20).
 # Verifiziert den KMS-Skelett-Adapter mit Stub-Decrypter +
 # LabPassThrough-Decrypter. Production-AWS-SDK-Wiring ist Folge-Item.
 # Opt-in (NICHT in `make gates`).
 smoke-kms-skeleton:
 	bash scripts/smoke-kms-skeleton.sh
 
-# `make smoke-origin-rate-limit` — plan-0.12.6 Tranche 6 / RAK-90
+# `make smoke-origin-rate-limit` — RAK-90
 # (R-22). Bestaetigt den Origin-Limiter live: drei aufeinander-
 # folgende `POST /api/auth/session-tokens` aus derselben Quelle,
 # erwartet 201/201/429 mit Body `{"error":"origin_rate_limited"}`.
@@ -306,24 +306,24 @@ smoke-kms-skeleton:
 smoke-origin-rate-limit:
 	bash scripts/smoke-origin-rate-limit.sh
 
-# `make smoke-browser-ingest` — plan-0.12.5 Tranche 4 / RAK-80
+# `make smoke-browser-ingest` — RAK-80
 # Browser-Ingest-Policy (R-21). Wickelt die End-to-End-Browser-
 # Ingest-Tests (`TestBrowserIngest*`) in ein reproduzierbares
 # Make-Target ein: Preflight-Verhalten mit und ohne aktivierter
 # Policy, POST-Enforcement (Origin-Pin, CSRF). Opt-in (NICHT in
-# `make gates`); deckt den Wire-Vertrag aus `auth.md` §5.6.
+# `make gates`); deckt den Wire-Vertrag aus `auth.md`
 smoke-browser-ingest:
 	bash scripts/smoke-browser-ingest.sh
 
-# `make smoke-mediamtx-auth` — plan-0.12.5 Tranche 5 / RAK-81
+# `make smoke-mediamtx-auth` — RAK-81
 # MediaMTX-Auth-Bridge (R-14). Wickelt die Auth-Hook-Tests
 # (`TestMediaMTXAuthHook_*`) in ein reproduzierbares Make-Target
-# ein — Wire-Vertrag aus `auth.md` §5.7. Echte Compose-Variante
+# ein — Wire-Vertrag aus `auth.md` Echte Compose-Variante
 # mit MediaMTX-Container bleibt Folge-Item.
 smoke-mediamtx-auth:
 	bash scripts/smoke-mediamtx-auth.sh
 
-# `make smoke-outbound-webhook` — plan-0.12.5 Tranche 5 / RAK-82
+# `make smoke-outbound-webhook` — RAK-82
 # Outbound-Webhook-Dispatcher (R-16). Wickelt die Dispatcher-Tests
 # (`TestOutboundWebhook_*`) in ein reproduzierbares Make-Target ein:
 # HMAC-Signatur, Retry mit Exponential-Backoff, Dead-Letter-Pfad.
@@ -332,13 +332,13 @@ smoke-outbound-webhook:
 	bash scripts/smoke-outbound-webhook.sh
 
 # `make api-benchmark-smoke` ist die Go-Hot-Path-Bench-Suite aus
-# plan-0.9.5 §2 Tranche 1 (extra-gates.md §3.2). Druckt zuerst die
+# (extra-gates.md). Druckt zuerst die
 # Runner-Identifikation (OS, CPU, Go-Stand) damit Budget-Failures
-# einordenbar bleiben (Plan-DoD §2-7), dann läuft die Bench-Suite
+# einordenbar bleiben (Plan-DoD), dann läuft die Bench-Suite
 # in einem golang:1.26-Container über alle `Benchmark*`-Funktionen
 # in apps/api/.../**/*_bench_test.go. Initial-Budgets sind in
-# `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung ist seit
-# plan-0.22.0 nach fünf grünen Beobachtungsläufen aktiv.
+# `docs/perf/budgets.md` dokumentiert; PR-Blockierung ist seit
+# nach fünf grünen Beobachtungsläufen aktiv.
 #
 # Workflow: apps/api/Makefile::benchmark-smoke schreibt den Go-
 # Bench-Output nach .tmp/bench/api-bench.txt (im Container an
@@ -350,18 +350,18 @@ api-benchmark-smoke:
 	$(API_MAKE) benchmark-smoke | tee .tmp/bench/api-bench.txt
 	node scripts/check-bench-budgets.mjs --kind go < .tmp/bench/api-bench.txt
 
-# `make analyzer-benchmark-smoke` ist das TS-Pendant aus plan-0.9.5
-# §2 Tranche 1 für `@pt9912/stream-analyzer` (extra-gates.md §3.2
+# `make analyzer-benchmark-smoke` ist das TS-Pendant
+#  für `@pt9912/stream-analyzer` (extra-gates.md
 # Stream-Analyzer-Kandidaten). Nutzt die eingebaute Vitest-Bench-
 # API (`vitest bench --run --config vitest.bench.config.ts`); keine
 # zusätzliche Tinybench-Dependency. Initial-Budgets in
-# `docs/perf/budgets.md` §4; PR-Blockierung ist seit plan-0.22.0
+# `docs/perf/budgets.md`; PR-Blockierung ist
 # via `make gates` aktiv.
 #
 # Workflow: vitest-bench-stdout wird nach
 # `.tmp/bench/analyzer-bench.txt` gespiegelt; `scripts/check-bench-
 # budgets.mjs --kind ts` parst die Texttabelle und prüft jeden Bench
-# gegen das Budget aus §4 (Plan-DoD §2-4 „Budget-Verletzung erzeugt
+# gegen das Budget aus §4 (Plan-DoD „Budget-Verletzung erzeugt
 # eindeutige Fehlermeldung mit Ist/Soll").
 analyzer-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
@@ -370,12 +370,12 @@ analyzer-benchmark-smoke:
 	node scripts/check-bench-budgets.mjs --kind ts < .tmp/bench/analyzer-bench.txt
 
 # `make benchmark-smoke` bündelt beide Bench-Smokes in einem
-# Aufruf. Plan-DoD §2-3: Wrapper-Target. Seit plan-0.22.0 ist der
+# Aufruf. Plan-DoD: Wrapper-Target. Der
 # Smoke nach fünf grünen Beobachtungsläufen PR-blockierend.
 benchmark-smoke: api-benchmark-smoke analyzer-benchmark-smoke
 
-# `make api-fuzz-check` ist die Go-Fuzz-Suite aus plan-0.9.5 §4
-# Tranche 3 (extra-gates.md §3.5). Läuft alle `Fuzz*`-Targets aus
+# `make api-fuzz-check` ist die Go-Fuzz-Suite aus der Spec
+#  (extra-gates.md). Läuft alle `Fuzz*`-Targets aus
 # `apps/api/.../**/*_fuzz_test.go` sequenziell mit kurzem
 # `-fuzztime` (Default 30s; override via `FUZZTIME=120s make
 # api-fuzz-check`). Crash-Funde werden von go test fuzz automatisch
@@ -390,12 +390,12 @@ api-fuzz-check:
 
 # `make fuzz-check` bündelt Go-Fuzz und die TS-Property-Tests (die
 # über `make ts-test` ohnehin laufen, hier als expliziter Aufruf
-# für den Tranche-3-Pfad). Plan-DoD §4-3: opt-in (NICHT in
+# für den Tranche-3-Pfad). Plan-DoD: opt-in (NICHT in
 # `make gates`); Nightly-CI hat eigene Längere-Budget-Stage.
 fuzz-check: api-fuzz-check ts-test
 
-# `make api-mutation-report` ist der Go-Mutation-Test (plan-0.9.5
-# §5 Tranche 4, RAK-Wave-2 / extra-gates.md §3.6). Pilot-Modul:
+# `make api-mutation-report` ist der Go-Mutation-Test (extra-gates.md). Pilot-Modul:
+
 # `apps/api/hexagon/application/event_meta_validation.go` (gemutiert
 # als Teil des `hexagon/application`-Packages). Tool: gremlins
 # (Substitution für unmaintainted go-mutesting; Begründung in
@@ -421,11 +421,11 @@ ts-mutation-report:
 	$(PNPM) --filter @pt9912/player-sdk run mutation
 
 # `make mutation-report` bündelt Go + TS in einem Aufruf
-# (Plan-DoD §5-2 Wrapper). Bleibt opt-in.
+# (Plan-DoD Wrapper). Bleibt opt-in.
 mutation-report: api-mutation-report ts-mutation-report
 
 # smoke-cli verifiziert den Lastenheft-Aufruf `pnpm m-trace check <url>`
-# (plan-0.3.0 §8 Tranche 7). Der Lauf passiert im Root-Dockerfile,
+# . Der Lauf passiert im Root-Dockerfile,
 # damit weder `node_modules` noch `.pnpm-store` im Host-Workspace
 # entstehen.
 smoke-cli:
@@ -584,7 +584,7 @@ release-guard-test:
 
 gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check
 
-# plan-0.8.5 Tranche 1 — Quality-Gates Wave 1. Security-Gates laufen
+#  — Quality-Gates Wave 1. Security-Gates laufen
 # parallel zu `make gates` (separater CI-Job in build.yml), nicht in
 # `make gates`-Pipeline integriert: Vulnerability-Datenbank-Download
 # kann lokal 30-60 s dauern, sollte den schnellen Inner-Loop nicht
@@ -636,7 +636,7 @@ image-scan:
 	# `.security/vulnignore.yaml` generiert (single-source-of-truth +
 	# audit trail). Der Generator bricht ab, falls ein Eintrag das
 	# `expires`-Datum ueberschritten hat — Wartungsregel laut
-	# plan-0.8.5 §2. Scope-Filterung verhindert, dass ein CVE-Ignore
+	#  Scope-Filterung verhindert, dass ein CVE-Ignore
 	# fuer ein Runtime-Image global alle Image-Scans maskiert.
 	bash scripts/render-trivyignore.sh mtrace-api
 	docker run --rm \
