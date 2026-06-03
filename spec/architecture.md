@@ -536,7 +536,7 @@ gescraped ().
 
 ### 7.2 Geplant
 
-Folge-ADRs aus [Roadmap §4](../docs/planning/in-progress/roadmap.md):
+Folge-ADRs aus [Roadmap](../docs/planning/in-progress/roadmap.md):
 
 | Erwartete ADR                                 | Kennungen              |
 | --------------------------------------------- | ---------------------- |
@@ -621,8 +621,8 @@ flowchart TB
 
 Verweise auf die normativen Listen statt Duplikat:
 
-- Offene Lastenheft-Entscheidungen: [Roadmap §5](../docs/planning/in-progress/roadmap.md).
+- Offene Lastenheft-Entscheidungen: [Roadmap](../docs/planning/in-progress/roadmap.md).
 - Bekannte Phase-2-Risiken: [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md) (R-1..R-3).
-- Erwartete Folge-ADRs: [Roadmap §4](../docs/planning/in-progress/roadmap.md).
+- Erwartete Folge-ADRs: [Roadmap](../docs/planning/in-progress/roadmap.md).
 
 Architekturfragen, die hier *neu* aufgerufen werden, kommen über einen Folge-ADR oder einen `risks-backlog.md`-Eintrag in den Bestand.

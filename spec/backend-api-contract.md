@@ -1,13 +1,6 @@
 # Backend-API-Kontrakt
 
-> **Status**: Verbindlich; Änderungen werden synchron mit dem Code in
-> `apps/api/` gepflegt, im Commit-Body begründet und aus den
-> Pflichttests in §11 ableitbar gemacht.
->
-> **Bezug**: `docs/spike/0001-backend-stack.md` §6, `docs/planning/done/plan-spike.md` §7.1, §12.3.
-> **Historie**: Dieses Dokument entstand im Backend-Spike für zwei
-> Prototypen. Seit ADR-0001 (Accepted) ist es der laufende API-Kontrakt
-> des Sieger-Codes (`apps/api`).
+> **Bezug**: F-106..F-115, F-118..F-122, ADR-0001.
 
 Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 
@@ -21,13 +14,13 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
     strengere Project-Bindung; `project_id` kommt im aktuellen
     Wire-Format aus dem Payload.
   - `Content-Type: application/json` — Pflicht für `POST`.
-  - `traceparent` — **optional** ab `0.4.0` auf `POST /api/playback-events`
+  - `traceparent` — **optional** auf `POST /api/playback-events`
     (W3C Trace Context, [Spec](https://www.w3.org/TR/trace-context/)).
     Wenn vorhanden und valide, übernimmt der Server `trace_id` und
     `parent_span_id` aus dem Header. Bei ungültigem Header gibt es
     **kein** 4xx — der Server fällt auf eine eigene `trace_id` zurück
     und setzt das Span-Attribut `mtrace.trace.parse_error=true`
-    (siehe `spec/telemetry-model.md` §2.5). Der Header-Name ist
+    (siehe `spec/telemetry-model.md`). Der Header-Name ist
     HTTP-konform case-insensitiv (`Traceparent`, `traceparent`,
     `TRACEPARENT` sind derselbe Header); SDKs schreiben den Namen
     lowercased. Der Header-Wert ist genau ein einzelner W3C-`traceparent`-
@@ -60,9 +53,9 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `GET`  | `/api/metrics`          | Prometheus-Exposition           | `200 OK`        |
 | `GET`  | `/api/stream-sessions`  | Stream-Sessions listen          | `200 OK`        |
 | `GET`  | `/api/stream-sessions/{id}` | Stream-Session mit Events lesen | `200 OK` oder `404 Not Found` |
-| `GET`  | `/api/stream-sessions/stream` | SSE-Live-Stream der Event-Append-Frames (plan-0.4.0 §5 H4) | `200 OK` (text/event-stream) oder `401` |
-| `POST` | `/api/analyze`          | HLS-Manifest analysieren (plan-0.3.0 §7) | `200 OK` |
-| `POST` | `/api/ingest/streams`   | Ingest-Stream anlegen; gibt Stream-Metadaten plus Klartext-Key genau einmal zurück (plan-0.11.0 §0.6, RAK-66) | `201 Created` |
+| `GET`  | `/api/stream-sessions/stream` | SSE-Live-Stream der Event-Append-Frames | `200 OK` (text/event-stream) oder `401` |
+| `POST` | `/api/analyze`          | HLS-Manifest analysieren | `200 OK` |
+| `POST` | `/api/ingest/streams`   | Ingest-Stream anlegen; gibt Stream-Metadaten plus Klartext-Key genau einmal zurück (RAK-66) | `201 Created` |
 | `GET`  | `/api/ingest/streams`   | Streams im aufgelösten Project listen, ohne Klartext-Key (RAK-66/RAK-70) | `200 OK` |
 | `GET`  | `/api/ingest/streams/{id}` | Stream-Details inkl. Endpunkt und Routing-Regel lesen, ohne Klartext-Key (RAK-67) | `200 OK` oder `404 Not Found` |
 | `POST` | `/api/ingest/streams/{id}/rotate-key` | Stream-Key rotieren; gibt neuen Klartext-Key genau einmal zurück (RAK-66) | `200 OK` |
@@ -70,7 +63,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `POST` | `/api/ingest/hooks/stream-started` | Lokales Start-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
 | `POST` | `/api/ingest/hooks/stream-ended` | Lokales Ende-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
 | `GET`  | `/api/ingest/media-server-config` | Generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern (RAK-68) | `200 OK` |
-| `POST` | `/api/auth/session-tokens` | Kurzlebiges Session Token aus gültigem Project Token ausstellen (plan-0.12.0 §0.5, RAK-72) | `201 Created` |
+| `POST` | `/api/auth/session-tokens` | Kurzlebiges Session Token aus gültigem Project Token ausstellen (RAK-72) | `201 Created` |
 
 ---
 
@@ -90,7 +83,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
       "sequence_number": 42,
       "sdk": {
         "name": "@pt9912/player-sdk",
-        "version": "0.2.0"
+        "version": "0.22.2"
       }
     }
   ]
@@ -124,7 +117,7 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 
 Unbekannte Felder dürfen nicht zum Fehler führen (Vorwärtskompatibilität).
 
-Ab `plan-0.4.0.md` Tranche 3 darf der Batch optional
+darf der Batch optional
 `session_boundaries` enthalten. Dieser Block ist kein Event-Stream,
 zählt nicht in `accepted`, besitzt kein `event_name` und ändert
 `schema_version: "1.0"` nicht. Boundary-only-Batches ohne `events`
@@ -152,11 +145,11 @@ ist der Batch `422 Unprocessable Entity`.
 }
 ```
 
-Für Tranche 3 ist nur `kind="network_signal_absent"` definiert.
+Aktuell ist nur `kind="network_signal_absent"` definiert.
 `network_kind` ist `"manifest"` oder `"segment"`, `adapter` ist
 `"hls.js"`, `"native_hls"` oder `"unknown"`. Die zulässige Domäne und
 das Längen-/Charset-Pattern für `reason` sind normativ in
-`spec/telemetry-model.md` §1.4 definiert (gemeinsamer Reason-Enum mit
+`spec/telemetry-model.md` definiert (gemeinsamer Reason-Enum mit
 `meta["network.unavailable_reason"]`); `contracts/event-schema.json`
 spiegelt sie für maschinenlesbare Validierung über
 `session_boundaries.reasons_ref` und `session_boundaries.reason_pattern_ref`,
@@ -170,11 +163,11 @@ Der komplette Batch-Wrapper wird vor jedem Write validiert oder
 gemeinsam transaktional persistiert. Ein invalider Boundary-Block
 persistiert weder Events noch Boundaries und erhöht `accepted` nicht.
 
-#### 3.4a Reservierter `webrtc.*`-Meta-Namespace (`0.8.0`)
+#### 3.4a Reservierter `webrtc.*`-Meta-Namespace
 
-Ab `plan-0.8.0.md` Tranche 3 ist `webrtc.*` ein reservierter Meta-
+ist `webrtc.*` ein reservierter Meta-
 Namespace; der vollständige Schlüsselsatz, die Wertedomänen und die
-Counter-Semantik sind normativ in `spec/telemetry-model.md` §1.4
+Counter-Semantik sind normativ in `spec/telemetry-model.md`
 und §3.5 verankert. `contracts/event-schema.json` (`reserved_meta_keys`
 und `reserved_meta_namespace_webrtc`) spiegelt die Allowlist für
 maschinenlesbare Validierung. Pflichtverhalten des API-Ingress:
@@ -184,7 +177,7 @@ maschinenlesbare Validierung. Pflichtverhalten des API-Ingress:
   Enum-/Pattern-Domäne. Verstöße liefern `422 Unprocessable Entity`
   und werden nicht persistiert; eine `mtrace_webrtc_*`-Metrik wird
   nicht erzeugt.
-- Per-Identifier-Felder aus `spec/telemetry-model.md` §3.1
+- Per-Identifier-Felder aus `spec/telemetry-model.md`
   (`webrtc.track_id`, `webrtc.candidate_pair_id`, `webrtc.ssrc`,
   `webrtc.user_agent`, weitere) sind explizit verboten und liefern
   `422`.
@@ -211,9 +204,9 @@ abwärtskompatibel verhalten.
 ### 3.6 Analyzer-Endpunkt `POST /api/analyze`
 
 `POST /api/analyze` reicht eine HLS-Manifest-Analyse an den
-internen `analyzer-service` weiter (plan-0.3.0 §7 Tranche 6) und
+internen `analyzer-service` weiter und
 gibt das `AnalysisResult`-JSON aus `@pt9912/stream-analyzer`
-zurück. Der Endpunkt ist authentifizierungsfrei in 0.3.0 — der
+zurück. Der Endpunkt ist authentifizierungsfrei — der
 Service ist nur über das interne Netz erreichbar; ein öffentlich
 exponierter Deploy braucht eine Egress-Firewall oder einen
 Folge-ADR mit Token-Schicht.
@@ -235,7 +228,7 @@ Pflicht; bei `kind="text"` ist `text` Pflicht und `baseUrl`
 optional. Body-Limit auf API-Ebene: 1 MiB (Defense-in-Depth; der
 analyzer-service hat sein eigenes Limit beim Manifest-Loading).
 
-Ab `plan-0.4.0.md` Tranche 3 darf der Request optional eine
+darf der Request optional eine
 Session-Bindung tragen:
 
 ```json
@@ -266,7 +259,7 @@ nicht retten. Existiert die `correlation_id`, muss `session_id` im
 gleichen Project zur Session mit dieser `correlation_id` auflösen; bei
 Mismatch bleibt das Analyzer-Ergebnis eine unabhängige Manifestanalyse
 und wird nicht in die Player-Timeline gemischt. Die API bleibt `200 OK`,
-wechselt ab Tranche 3 aber auf eine Hülle:
+wechselt   aber auf eine Hülle:
 
 ```json
 {
@@ -275,7 +268,7 @@ wechselt ab Tranche 3 aber auf eine Hülle:
 }
 ```
 
-Kompatibilitätsentscheidung: Ab Tranche 3 gibt `POST /api/analyze`
+Kompatibilitätsentscheidung: Aktuell gibt `POST /api/analyze`
 für alle erfolgreichen Requests diese Hülle zurück, auch wenn der
 Request keine Link-Felder enthält. Ungebundene Requests erhalten
 `session_link.status="detached"`; es gibt kein bedingtes
@@ -294,17 +287,17 @@ nur die optionale Dashboard-/Timeline-Verknüpfung.
 
 **Erfolgsantwort** (`200 OK`): bis einschließlich `0.3.x`
 vollständiges `AnalysisResult` aus `docs/user/stream-analyzer.md` §2.2.
-Ab `plan-0.4.0.md` Tranche 3 wird dieses Resultat bei jedem
+wird dieses Resultat bei jedem
 erfolgreichen Request unverändert unter `analysis` in der oben
 beschriebenen Hülle transportiert.
 
-Session-Read-Pfade sind ab Tranche 3 projekt-skopiert und
+Session-Read-Pfade sind   projekt-skopiert und
 authentifiziert: Session-Liste, Session-Detail, Event-Reads und
 Cursor-Reuse müssen `X-MTrace-Token` erfolgreich auf ein `project_id`
 auflösen. Fehlender oder ungültiger Token liefert `401 Unauthorized`.
 Der aufgelöste `project_id` ist Filter für alle Read-Pfade; Cursor aus
 einem Project dürfen nicht für ein anderes Project akzeptiert werden.
-SSE-Read-Pfade aus Tranche 4 folgen derselben Auth-Regel; ihre
+SSE-Read-Pfade aus dem aktuellen Stand folgen derselben Auth-Regel; ihre
 Preflight-Routen müssen `GET, OPTIONS` und die Header `X-MTrace-Token`
 `X-MTrace-Project` und `Last-Event-ID` erlauben. Fetch-basierte
 SSE-Reconnects übertragen die Backfill-Position über `Last-Event-ID`.
@@ -349,15 +342,15 @@ Service; die Limits sind nicht öffentlich konfigurierbar.
 
 ---
 
-### 3.8 Ingest-Control-Endpunkte (`0.11.0`, RAK-65..RAK-70)
+### 3.8 Ingest-Control-Endpunkte (RAK-65..RAK-70)
 
 Der `/api/ingest/*`-Pfad implementiert lokales Stream Control für
 Lab-/Demo-Flows (`apps/api`-Modul, Variante B aus
-[`docs/planning/done/plan-0.11.0.md`](../docs/planning/done/plan-0.11.0.md)
+
 §0.3). Der Pfad ist **kein** produktiver Auth-Replacement und
 **kein** mandantenfähiger Control-Plane-Pfad — Out-of-Scope-Liste
 in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md)
-§5 und [`docs/planning/done/plan-0.11.0.md`](../docs/planning/done/plan-0.11.0.md)
+§5 und 
 §0.1.
 
 **Auth-Matrix.** Alle `/api/ingest/*`-Endpunkte sind tokenpflichtig
@@ -375,7 +368,7 @@ Existenz).
 `/api/ingest/*` werden im Preflight wie der Dashboard-Lese-Pfad
 behandelt (siehe Spec §10a für SSE; analog OPTIONS/Allow-Origin
 gegen die globale Origin-Allowlist), weil Ingest-Control im
-`0.11.0`-Scope kein produktiver Browser-Schreibpfad ist. Die
+aktueller Scope kein produktiver Browser-Schreibpfad ist. Die
 konkrete Origin-Politik wird mit dem Plan-Closeout beschrieben.
 
 **Fehlerreihenfolge.** Der Handler prüft in dieser Reihenfolge,
@@ -442,12 +435,12 @@ liefert der Server `400 invalid_request` mit
 erscheinen. List-, Detail-, Event-, Fehler- und Artefakt-Antworten
 enthalten höchstens `key_fingerprint`.
 
-**Optionaler Media-Server-Provisioning-Pfad** (`0.12.6` Tranche 9,
+**Optionaler Media-Server-Provisioning-Pfad** (,
 RAK-87 / R-15). `POST /api/ingest/streams` akzeptiert einen
 **additiven** Query-Param `provision`:
 
 - **Default `provision=false`** (oder Query-Param fehlt): das
-  Response-Body ist **byte-stabil** zum `0.11.0`-Format — kein
+  Response-Body ist **byte-stabil** zum Format — kein
   zusätzliches Feld, kein I/O gegen einen externen Media-Server.
   `MTRACE_MEDIASERVER_PROVISION_URL` wird in diesem Pfad **nicht**
   gelesen; ein konfigurierter Server bleibt ohne `provision=true`
@@ -510,11 +503,11 @@ Wire-Beispiel bei Server-Outage:
 ```
 
 Backwards-Compat-Vertrag: das `provision`-Feld ist **strikt
-additiv**. Clients aus `0.11.0`/`0.12.0..0.12.5` setzen den Param
+additiv**. Clients aus dem Compatibility-Fenster setzen den Param
 nie und sehen das `media_server_state`-Feld nie — es bricht keinen
 schema-strikten Client. Folge-Endpoint
 `POST /api/ingest/streams/{id}/provision` für nachträglichen
-Server-Sync bleibt Folge-Item nach `0.12.6`.
+Server-Sync bleibt Folge-Item.
 
 `GET /api/ingest/streams` Response:
 
@@ -589,7 +582,7 @@ höchstens den `key_fingerprint`. `source` muss aus der Allowlist
 auf `400 invalid_request` gemappt. `connection_id` und `reason` sind
 optional und längenbegrenzt (≤ 256 Zeichen). Produktive ausgehende
 Webhook-Zustellung an externe Systeme ist nicht Teil des
-`0.11.0`-Vertrags.
+aktuellen Vertrags.
 
 `GET /api/ingest/media-server-config` Response:
 
@@ -624,18 +617,18 @@ laufenden externen Media-Servern.
 
 ---
 
-### 3.9 Auth / Token Lifecycle (`0.12.0`, RAK-71..RAK-76)
+### 3.9 Auth / Token Lifecycle (RAK-71..RAK-76)
 
-`0.12.0` führt kurzlebige serverseitig signierte Session Tokens für
+Der Vertrag führt kurzlebige serverseitig signierte Session Tokens für
 Browser-Telemetrie, rotierbare Project-Token-Generationen und
 Project-gebundene Ingest Policies ein. Der Pfad ist eine Härtung des
 bestehenden lokalen/API-nahen Auth-Modells aus §4 (Variante B,
 Auth-Modul in `apps/api`) — **kein** vollständiger Identity-/SSO-/
 OAuth-Pfad und **kein** mandantenfähiger Control-Plane-Pfad. Bestehende
 `X-MTrace-Token`-Project-Token-Flows bleiben im
-`0.12.0`-Compatibility-Fenster gültig (RAK-75); siehe Out-of-Scope-
+Compatibility-Fenster gültig (RAK-75); siehe Out-of-Scope-
 Liste in
-[`docs/planning/done/plan-0.12.0.md`](../docs/planning/done/plan-0.12.0.md)
+
 §0 für Scope, Architektur und Threat Model.
 
 **Auth-Matrix (zusätzlich zu §4).**
@@ -644,7 +637,7 @@ Liste in
 |---|---|
 | `POST /api/auth/session-tokens` | Pflicht-`X-MTrace-Token` (Project Token); stellt kurzlebiges Session Token aus. |
 | `POST /api/playback-events` | Pflicht — entweder `X-MTrace-Token` (Legacy/Project) **oder** `Authorization: Bearer mtr_st_*` **oder** `X-MTrace-Session-Token`. |
-| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8. **Kein** `0.12.0`-Project-Policy-Enforcement — der Pfad bleibt im `0.11.0`-Token-Validierungs-Modell (RAK-65, lokale/lab-nahe Stream-Verwaltung; `curl`-/Operator-driven, kein Browser-Konsument). Project-Policy für Ingest ist Folge-Scope; vollständige Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) §5. |
+| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8. **Kein** Project-Policy-Enforcement — der Pfad bleibt im Token-Validierungs-Modell (RAK-65, lokale/lab-nahe Stream-Verwaltung; `curl`-/Operator-driven, kein Browser-Konsument). Project-Policy für Ingest ist Folge-Scope; vollständige Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) §5. |
 | `POST /api/analyze` mit `correlation_id`/`session_id` und `GET /api/stream-sessions[/{id}]` | Pflicht — zusätzlich zur `X-MTrace-Token`-Variante aus §4 ist `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` erlaubt, sofern das Session Token den Project- und Session-Scope passend bindet. |
 
 **Header-Priorität für Mehrfach-Auth.** Werden mehrere Auth-Header
@@ -660,7 +653,7 @@ gleichzeitig präsentiert, gilt:
    für Umgebungen, in denen `Authorization` nicht verwendet werden
    soll.
 3. `X-MTrace-Token` ist der Legacy-/Project-Token-Pfad und bleibt
-   im `0.12.0`-Compatibility-Fenster gültig.
+   im Compatibility-Fenster gültig.
 4. Wenn mehr als ein Auth-Mechanismus präsentiert wird, müssen alle
    präsentierten Tokens zum selben `project_id` passen. Widersprüche
    liefern `401 auth_project_mismatch`. Ein zusätzlich präsentiertes
@@ -695,7 +688,7 @@ eigenen Rate-Limit-Code (für `POST /api/playback-events` bleibt es
 
 **CORS-Preflight-Modell.** Browser-Preflights (`OPTIONS`) enthalten in
 der Praxis kein Project- oder Session-Token, das der Server
-verlässlich validieren könnte. `0.12.0` nutzt deshalb für Preflights
+verlässlich validieren könnte. Der Vertrag nutzt deshalb für Preflights
 eine globale, konservative und informationsarme Allowlist:
 
 - erlaubte Methoden maximal `POST, OPTIONS`;
@@ -745,7 +738,7 @@ Konsistenzcheck zum Token: fehlt es, wird das Project ausschließlich
 aus dem Token abgeleitet und in der Response zurückgegeben; ist es
 gesetzt und passt nicht zum Token, liefert die API
 `401 auth_project_mismatch`. `audience` muss aus der Project-Policy-
-Allowlist stammen — im `0.12.0`-Pflichtpfad ist `playback-events` die
+Allowlist stammen — aktuell-Pflichtpfad ist `playback-events` die
 einzige Muss-Audience. Unbekannte oder nicht erlaubte Audiences
 liefern `403 auth_session_scope_denied`. `session_id` und `origin`
 sind optional und binden den ausgestellten Token zusätzlich; sie
@@ -791,7 +784,7 @@ Restarts geladen, bis alle damit signierten Tokens abgelaufen sind.
 Unbekannter `kid` liefert `401 auth_token_invalid`.
 
 **Konsumieren von Session Tokens.** `POST /api/playback-events`
-akzeptiert in `0.12.0` zusätzlich zu `X-MTrace-Token`:
+akzeptiert zusätzlich zu `X-MTrace-Token`:
 
 - `Authorization: Bearer mtr_st_*` — bevorzugter Browser-Pfad;
 - `X-MTrace-Session-Token: mtr_st_*` — alternativer Pfad ohne
@@ -821,12 +814,12 @@ restart-stabil.
   vorsieht);
 - erlaubte Methoden und Header (Subset der globalen Preflight-
   Allowlist);
-- erlaubte Session-Token-Audiences (Allowlist; im `0.12.0`-Pflichtpfad
+- erlaubte Session-Token-Audiences (Allowlist; aktuell-Pflichtpfad
   mindestens `playback-events`);
 - maximale Session-Token-TTL (`project_max_ttl_seconds`, ≤ 900);
 - Rate-Limit-Buckets pro Project. Globale und Project-Buckets sind
   Muss-Pfad. Origin- und IP-nahe Buckets sind nur dann Teil des
-  `0.12.0`-Muss-Scopes, wenn die bestehende Rate-Limit-Infrastruktur
+  aktueller Muss-Scopes, wenn die bestehende Rate-Limit-Infrastruktur
   sie ohne größere Architekturänderung tragen kann; andernfalls sind
   sie als Folge-Scope zu dokumentieren.
 
@@ -888,21 +881,21 @@ m-trace Audit-Logs übernommen.
 Die folgenden Felder werden ausschließlich vom Server vergeben und
 erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
 
-| Feld | Typ | Verfügbar ab | Beschreibung |
-|---|---|---|---|
-| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | `0.1.x` | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR 0002 §8.1](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
-| `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | `0.4.0` (ab `plan-0.4.0.md` §2.3-Closeout) | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. Vor §2.3-Closeout liefern Read-Antworten dieses Feld nicht. |
-| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in ab §3.2 verarbeiteten Events**; bei vor §3.2-Closeout persistierten Events kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle ab §3.2 verarbeiteten Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). Siehe `spec/telemetry-model.md` §2.5. |
-| `trace_id` | `string`, 32 Hex-Zeichen, optional (`null` zulässig wenn weder `traceparent` noch Server-Trace gesetzt — Edge-Case) | `0.4.0` (ab `plan-0.4.0.md` §3.2-Closeout) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR-0002](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
+| `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. |
+| `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in neu verarbeiteten Events**; bei historisch persistierten Events kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle neu verarbeiteten Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). Siehe `spec/telemetry-model.md`. |
+| `trace_id` | `string`, 32 Hex-Zeichen, optional (`null` zulässig wenn weder `traceparent` noch Server-Trace gesetzt — Edge-Case) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
 
 Diese vier Felder sind im POST-Wire-Format (§3.2/§3.3) **nicht** zulässig;
 Clients dürfen sie nur aus Read-Antworten interpretieren. Die genaue
 Vertragssemantik (Sortierung, Idempotenz, Cursor) steht in §10;
-Trace-Korrelations-Vertrag in `spec/telemetry-model.md` §2.5.
+Trace-Korrelations-Vertrag in `spec/telemetry-model.md`.
 
-**Migration von Pre-§3.2-Persistenz**: Sessions und Events, die vor
-`0.4.0`-§3.2 angelegt wurden, haben kein `correlation_id`. Tranche 2
-führt **kein historisches Event-Backfill** aus: ältere
+**Migration**: Sessions und Events, die vor dem aktuellen Vertrag
+angelegt wurden, haben kein `correlation_id`. Es findet **kein
+historisches Event-Backfill** statt: ältere
 `playback_events.correlation_id`-Leerwerte bleiben im Read-Pfad als
 JSON-`""` sichtbar und sind ein degradierter Legacy-Fall. Der Use-Case
 führt beim nächsten Event einer solchen Session ein Self-Healing durch
@@ -916,7 +909,7 @@ sollten leere `correlation_id`-Felder bei historischen Events als
 
 Die Session-Header-Antwort von `GET /api/stream-sessions` und
 `GET /api/stream-sessions/{id}` (Session-Block, nicht Event-Block)
-trägt ab `0.4.0` (§3.2-Closeout) zusätzlich:
+trägt  (§3.2-Closeout) zusätzlich:
 
 | Feld | Typ | Beschreibung |
 |---|---|---|
@@ -944,13 +937,13 @@ Doppelte Tripel werden im Read-Shape dedupliziert.
 
 ## 4. Authentifizierung
 
-> **`0.12.0`-Erweiterung:** §3.9 ergänzt diese Basis um kurzlebige
+> **aktueller Erweiterung:** §3.9 ergänzt diese Basis um kurzlebige
 > serverseitig signierte Session Tokens (`Authorization: Bearer
 > mtr_st_*` und `X-MTrace-Session-Token`), rotierbare Project-Token-
 > Generationen, Project-gebundene Ingest Policies, eine globale
 > konservative CORS-Preflight-Allowlist und eine neunstufige
 > Auth-Fehlerpräzedenz. Der `X-MTrace-Token`-Pfad aus diesem
-> Abschnitt bleibt im `0.12.0`-Compatibility-Fenster gültig
+> Abschnitt bleibt im Compatibility-Fenster gültig
 > (RAK-75).
 
 `X-MTrace-Token` ist endpoint-spezifisch:
@@ -958,7 +951,7 @@ Doppelte Tripel werden im Read-Shape dedupliziert.
 | Endpoint | Token-Pflicht |
 |---|---|
 | `POST /api/playback-events` | Pflicht. |
-| `GET /api/stream-sessions` und `GET /api/stream-sessions/{id}` | Pflicht ab `plan-0.4.0.md` Tranche 3. |
+| `GET /api/stream-sessions` und `GET /api/stream-sessions/{id}` | Pflicht. |
 | `POST /api/analyze` ohne `correlation_id` und ohne `session_id` | Nicht erforderlich; die Analyse bleibt `session_link.status="detached"`. |
 | `POST /api/analyze` mit `correlation_id` oder `session_id` | Pflicht; fehlt der Token oder ist er ungültig, liefert die API `401 Unauthorized` und führt keinen Session-Lookup aus. |
 
@@ -1030,7 +1023,7 @@ Folge der Auth-vor-Body-Reihenfolge: ein tokenpflichtiger Request
 Der `traceparent`-Header (siehe §1) ist **nicht** Teil dieser
 Validierungs-Reihenfolge: ein ungültiger Wert führt nie zu `4xx`,
 sondern wird über das Span-Attribut `mtrace.trace.parse_error=true`
-markiert (Vertrag in `spec/telemetry-model.md` §2.5).
+markiert (Vertrag in `spec/telemetry-model.md`).
 
 Antwort-Body bei Fehlerfällen ist **nicht** Teil des Pflicht-Kontrakts —
 Implementierungen dürfen einen JSON-Body mit Fehlerbeschreibung senden,
@@ -1044,7 +1037,7 @@ folgen einer eigenen Validierungs- und Fehlerklassen-Matrix; siehe §10.3.
 ## 6. Rate Limiting
 
 - **Quote**: 100 Events/Sekunde **pro Dimension**. Drei unabhängige
-  Dimensionen werden geprüft (plan-0.1.0.md §5.1, F-110): `project_id`,
+  Dimensionen werden geprüft (F-110): `project_id`,
   `client_ip`, `origin`. Mismatch in einer Dimension reicht für `429`;
   ein 429 in einer Dimension verbraucht keine Tokens in den anderen
   („all-or-nothing"-Commit).
@@ -1092,7 +1085,7 @@ Verbindliche Regeln:
   bounded Allowlist und einen passenden Cardinality-Smoke. Die normative,
   vollständige Forbidden-Liste über alle `mtrace_*`-Metriken hinweg
   (inklusive Suffix-Regeln `_url`/`_uri`/`_token`/`_secret`) steht in
-  [`telemetry-model.md`](./telemetry-model.md) §3.1; `scripts/smoke-observability.sh`
+  [`telemetry-model.md`](./telemetry-model.md); `scripts/smoke-observability.sh`
   spiegelt diese Liste und ist release-blockierend.
 - `mtrace_dropped_events_total` darf konstant `0` sein, wenn die API
   keinen expliziten Drop-Pfad hat — die Metrik **muss** aber existiert sein.
@@ -1104,16 +1097,16 @@ Verbindliche Regeln:
   (z. B. `mtrace_active_sessions`, der OTel-translated `mtrace_api_batches_received`
   oder `mtrace_analyze_requests_total{outcome,code}`), sofern Cardinality
   kontrolliert ist: entweder label-frei oder ausschließlich bounded
-  Aggregat-Labels aus [`telemetry-model.md`](./telemetry-model.md) §3.2.
-  `mtrace_api_batches_received` ist ab `0.4.0` Tranche 7 explizit label-frei
+  Aggregat-Labels aus [`telemetry-model.md`](./telemetry-model.md).
+  `mtrace_api_batches_received` ist explizit label-frei
   — `batch.size` lebt nur als Span-Attribut, nicht als Counter-Attribut
-  (siehe `telemetry-model.md` §2.2 und `plan-0.4.0.md` §8.2).
-- **SRT-Health-Aggregate** (`0.6.0`, plan-0.6.0 §4): Tranche 6
+  (siehe `telemetry-model.md`).
+- **SRT-Health-Aggregate**
   liefert `mtrace_srt_health_samples_total{health_state}`,
   `mtrace_srt_health_collector_runs_total{source_status}` und
   `mtrace_srt_health_collector_errors_total{source_error_code}`.
   Erlaubte Labelwerte sind die Enums aus
-  [`telemetry-model.md`](./telemetry-model.md) §7.4/§7.5; die
+  [`telemetry-model.md`](./telemetry-model.md); die
   Allowlist ist in §3.2 dort entsprechend ergänzt. Per-Verbindung-
   Felder (`stream_id`, `connection_id`, MediaMTX-`id`/`path`/
   `remoteAddr`/`state`) bleiben in §3.1 verboten und gehen
@@ -1122,14 +1115,11 @@ Verbindliche Regeln:
 
 ---
 
-## 7a. SRT-Health-Read-Vertrag (`0.6.0`)
+## 7a. SRT-Health-Read-Vertrag
 
-> Bezug: Lastenheft §13.8 RAK-43;
-> [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md) §5
-> (Tranche 4); [`telemetry-model.md`](./telemetry-model.md) §7.
+> Bezug: RAK-43.
 
-`0.6.0` Tranche 4 liefert die Read-Endpoints. Vorgesehene Form
-(Tranche 4 finalisiert):
+Der Vertrag liefert die Read-Endpoints. Vorgesehene Form:
 
 ### 7a.1 Endpoints
 
@@ -1232,8 +1222,8 @@ dann setzt der Server `source_status: stale`.
 ### 7a.5 Pflichttest-Anker
 
 - Snapshot-Test pinnt das oben gezeigte Response-Schema gegen
-  ein OpenAPI-/Contract-Fixture (Tranche 4 finalisiert den Pfad).
-- Health-State-Schwellen-Tests (Tranche 4) decken Normalfall,
+  ein OpenAPI-/Contract-Fixture (finalisiert).
+- Health-State-Schwellen-Tests decken Normalfall,
   `degraded`, `critical`, `unknown`/`stale` ab.
 
 ---
@@ -1276,7 +1266,7 @@ dann setzt der Server `source_status: stale`.
 ## 10. Persistenz
 
 `0.1.x`–`0.3.x` nutzten In-Memory-Repositories (Datenverlust bei
-Neustart, beabsichtigt). Ab `0.4.0` ist der lokale Durable-Store
+Neustart, beabsichtigt). ist der lokale Durable-Store
 SQLite (siehe [ADR 0002](../docs/adr/0002-persistence-store.md)). Die
 nachfolgenden Sub-Sections sind Vertrag gegenüber API-Konsumenten —
 sie beschreiben das beobachtbare Verhalten, nicht die interne
@@ -1291,8 +1281,8 @@ Implementierung.
   dedizierte `make wipe`-Target (siehe `docs/user/local-development.md`);
   `make stop` räumt nicht auf. Andere Reset-Pfade (manuelles Löschen
   des Volumes, etc.) sind nicht Teil des Kontrakts.
-- Postgres und andere Stores sind in `0.4.0` nicht im Scope (Folge-ADR
-  aus Roadmap §4).
+- Postgres und andere Stores sind nicht im Scope (Folge-ADR
+  aus der Roadmap).
 
 ### 10.2 Idempotenz und Event-Deduplikation
 
@@ -1315,7 +1305,7 @@ Implementierung.
     durch.
 - Möglicher `delivery_status`-Wertebereich im Read-Pfad:
   `accepted`, `duplicate_suspected`, `replayed`. `replayed` ist in
-  `0.4.0` reserviert und wird nur durch explizite Use-Case-Pfade
+Reserviert und wird nur durch explizite Use-Case-Pfade
   gesetzt.
 - POST-Antworten (`202 Accepted`) ändern sich durch die
   Dedup-Klassifikation **nicht**: jeder im Batch enthaltene Event
@@ -1332,9 +1322,9 @@ Andere Query-Parameter-Namen oder Aliasse sind nicht Teil des
 Kontrakts.
 
 - **Wire-Format**: Cursor-Tokens sind base64url-kodiertes JSON ohne
-  Padding und enthalten ab `0.4.0` ein verbindliches `v`-Feld
-  (Cursor-Version). Aktuelle Version ist bis Tranche 2 `2`; mit
-  `plan-0.4.0.md` Tranche 3 wechseln Session-List- und
+  Padding und enthalten  ein verbindliches `v`-Feld
+  (Cursor-Version). Aktuelle Version ist bis aktuell `2`; mit
+  wechseln Session-List- und
   Session-Event-Cursor wegen projekt-skopierter Read-Pfade auf `3`.
   v3-List-Cursor enthalten den Project-Scope (`project_id` oder einen
   daraus abgeleiteten Scope-Hash) zusätzlich zur Storage-Position.
@@ -1354,10 +1344,10 @@ Kontrakts.
 
 | Klasse | Erkennung | HTTP-Status | Body | Client-Recovery |
 |---|---|---|---|---|
-| `accepted` | Token decodiert; `v == 2` vor Tranche 3 oder `v == 3` ab Tranche 3; alle Pflichtfelder vorhanden und valide; bei v3 passt der Project-Scope zum Request-Kontext und bei Event-Cursorn zusätzlich der Session-Scope zum Pfad `{id}`. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
+| `accepted` | Token decodiert; `v == 2` oder `v == 3`  ; alle Pflichtfelder vorhanden und valide; bei v3 passt der Project-Scope zum Request-Kontext und bei Event-Cursorn zusätzlich der Session-Scope zum Pfad `{id}`. | `200 OK`. | regulärer Listen-Response inkl. `next_cursor`. | weiter paginieren mit `next_cursor`. |
 | `cursor_invalid_legacy` | Token decodiert; `v`-Feld fehlt oder enthält `1`; oder `pid`-Feld vorhanden; nach Aktivierung projekt-skopierter Read-Pfade auch `v == 2` für Session-Cursor ohne Project-Scope. | `400 Bad Request`. | `{"error":"cursor_invalid_legacy","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 | `cursor_invalid_malformed` | Base64- oder JSON-Decode schlägt fehl; oder `v`-Feld enthält unbekannten Wert; oder Pflichtfeld fehlt/Format ungültig; oder unbekannte Zusatzfelder vorhanden; oder v3-Project-Scope passt nicht zum Request-Kontext; oder v3-Event-Cursor-Scope passt nicht zur Session im Pfad. | `400 Bad Request`. | `{"error":"cursor_invalid_malformed","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
-| `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert aber eine Storage-Position, die durch Reset/Retention nicht mehr existiert. In `0.4.0` ohne TTL praktisch nur nach `make wipe` erreichbar. | `410 Gone` (Token syntaktisch valide, Ziel weg). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
+| `cursor_expired` | Cursor decodiert valide; Token-Inhalt referenziert aber eine Storage-Position, die durch Reset/Retention nicht mehr existiert. Ohne TTL praktisch nur nach `make wipe` erreichbar. | `410 Gone` (Token syntaktisch valide, Ziel weg). | `{"error":"cursor_expired","reason":"<kurze Erklärung>"}`. | Cursor verwerfen, Snapshot ohne `cursor` neu laden. |
 
 **Recovery-Verhalten**:
 
@@ -1385,26 +1375,22 @@ Events angenommen wurden).
 
 ### 10.5 Retention
 
-- `0.4.0` führt keine automatische Retention ein. Daten bleiben
+- Der Vertrag führt keine automatische Retention ein. Daten bleiben
   erhalten, bis ein expliziter Reset (siehe §10.1) erfolgt.
 - Konkrete TTL- oder Pro-Projekt-Limits werden Folge-Arbeit, sobald
   Multi-Tenant-Last entsteht; bis dahin gibt der Server keinen
   Retention-Header aus.
-- `cursor_expired` (§10.3) ist in `0.4.0` ohne TTL effektiv nur durch
+- `cursor_expired` (§10.3) ist ohne TTL effektiv nur durch
   `make wipe` erreichbar — Server-Implementierung muss den Pfad aber
   vorsehen, damit Clients Retention-Folge-Arbeit ohne Wire-Format-
   Bruch unterstützen können.
 
-### 10.6 SRT-Health-Persistenz (`0.6.0`)
+### 10.6 SRT-Health-Persistenz
 
-> Bezug: Lastenheft §13.8 RAK-42/RAK-46;
-> [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md) §4
-> (Tranche 3 Sub-3.3); [`telemetry-model.md`](./telemetry-model.md)
-> §7.
+> Bezug: RAK-42, RAK-46.
 
 SRT-Health-Samples sind durable in SQLite persistiert (ADR-0002).
-Tabelle (Vorschlag, Tranche 3 Sub-3.3 finalisiert über
-`apps/api/internal/storage/schema.yaml`):
+Tabelle (finalisiert über `apps/api/internal/storage/schema.yaml`):
 
 | Spalte | Typ | Bemerkung |
 |---|---|---|
@@ -1412,7 +1398,7 @@ Tabelle (Vorschlag, Tranche 3 Sub-3.3 finalisiert über
 | `project_id` | TEXT NOT NULL | Aus `application/Project`-Resolver. |
 | `stream_id` | TEXT NOT NULL | Lab-Stream-Name; nicht Prometheus-Label. |
 | `connection_id` | TEXT NOT NULL | Quellseitige Verbindungs-ID. |
-| `source_observed_at` | TEXT NULL | RFC3339-Timestamp; bei MediaMTX-Quelle in `0.6.0` `NULL`. |
+| `source_observed_at` | TEXT NULL | RFC3339-Timestamp; bei MediaMTX-Quelle `NULL`. |
 | `source_sequence` | TEXT NULL | Source-Sequence-Surrogat; Pflicht bei `NULL`-`source_observed_at`. |
 | `collected_at` | TEXT NOT NULL | Polling-Zeitpunkt des Collectors. |
 | `ingested_at` | TEXT NOT NULL | SQLite-Persistenz-Zeitpunkt. |
@@ -1424,7 +1410,7 @@ Tabelle (Vorschlag, Tranche 3 Sub-3.3 finalisiert über
 | `throughput_bps` | INTEGER NULL | Optional. |
 | `required_bandwidth_bps` | INTEGER NULL | Aus Lab-Konfig oder Stream-Konfiguration. |
 | `sample_window_ms` | INTEGER NULL | Optional. |
-| `source_status` | TEXT NOT NULL | Enum aus `telemetry-model.md` §7.5. |
+| `source_status` | TEXT NOT NULL | Enum aus `telemetry-model.md`. |
 | `source_error_code` | TEXT NOT NULL | Enum aus §7.5. |
 | `connection_state` | TEXT NOT NULL | Enum aus §7.1. |
 | `health_state` | TEXT NOT NULL | Enum aus §7.4. |
@@ -1436,21 +1422,21 @@ Tabelle (Vorschlag, Tranche 3 Sub-3.3 finalisiert über
 erzeugen). Index auf `(project_id, stream_id, connection_id, ingested_at)`
 für Latest-First-Reads.
 
-**Retention**: in `0.6.0` analog zur SQLite-Demo-Daten-Politik
+**Retention**: analog zur SQLite-Demo-Daten-Politik
 (unbegrenzt; `make wipe`-äquivalent reicht). Bounded Snapshot-
 Historie mit dokumentiertem Reset-/Prune-Pfad ist Folge-Scope
-(plan-0.6.0 §4 DoD).
+().
 
 **Schema-Migration** ist idempotent und mit Restart-Tests
-abgesichert (analog `plan-0.4.0.md` §2.5 / `apps/api/internal/storage/`-
-Migrationspfad). Tranche 7 verifiziert die Migration über
+abgesichert (analog  / 
+Migrationspfad). Die Verifikation läuft die Migration über
 `make schema-validate`.
 
 ---
 
 ## 10a. SSE-Live-Stream (`GET /api/stream-sessions/stream`)
 
-Ab `0.4.0` (`plan-0.4.0.md` §5 H4) bietet die API einen Server-Sent-
+( H4) bietet die API einen Server-Sent-
 Events-Stream, der pro neu persistiertem Playback-Event einen
 Mindestframe pushed. Vertragstext und Test-Anker:
 
@@ -1537,7 +1523,7 @@ CORS-Preflight, `backfill_truncated` ab > 1000 Events.
 
 ## 11. Pflichttests für die API
 
-Ursprünglich aus `docs/planning/done/plan-spike.md` §7.1 abgeleitet; weiterhin
+Ursprünglich aus ADR-0001 abgeleitet; weiterhin
 Pflichtabdeckung für den Ingest-Pfad:
 
 - Unit-Test `RegisterPlaybackEventBatch`: Happy Path
@@ -1573,7 +1559,7 @@ curl -i -X POST http://localhost:8080/api/playback-events \
       "project_id": "demo",
       "session_id": "01J7K9X4Z2QHB6V3WS5R8Y4D1F",
       "client_timestamp": "2026-04-28T12:00:00.000Z",
-      "sdk": { "name": "@pt9912/player-sdk", "version": "0.2.0" }
+      "sdk": { "name": "@pt9912/player-sdk", "version": "0.22.2" }
     }
   ]
 }

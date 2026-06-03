@@ -1814,10 +1814,10 @@ Nicht im `0.1.0`-MVP:
 | MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (`0.15.0` Tranche 2):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
 | MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
 | MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil (ADR-0003); die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
-| MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap §4). |
+| MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap). |
 | MVP-24 | Muss (historisch) | WebRTC | **Erfüllt:** WebRTC-Lab ab `0.7.0` (RAK-47..RAK-50), produktiver Player-SDK-Adapter ab `0.8.0` (RAK-51..RAK-55), Drift-Smoke ab `0.9.0` (RAK-56). |
 | MVP-25 | Muss (historisch) | SRT-Health-View | **Erfüllt:** SRT-Health-View ab `0.6.0` (RAK-41..RAK-46). |
-| MVP-26 | Muss (historisch) | Multi-Tenant-Betrieb | **Out of scope:** Multi-Tenant-SaaS-Betrieb ist nicht Bestandteil der ersten Projektphase. Bleibt Folge-ADR-Trigger; siehe Roadmap §4. |
+| MVP-26 | Muss (historisch) | Multi-Tenant-Betrieb | **Out of scope:** Multi-Tenant-SaaS-Betrieb ist nicht Bestandteil der ersten Projektphase. Bleibt Folge-ADR-Trigger; siehe Roadmap. |
 
 
 ### 12.2 Soll-Anforderungen
