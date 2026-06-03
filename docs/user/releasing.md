@@ -596,8 +596,13 @@ Voraussetzungen:
   Audit-Trail steht im `CHANGELOG.md` und in den
   `docs/planning/done/plan-X.Y.Z.md`-Dokumenten (Variante-B-
   Konvention; siehe Spec-Kopf von `spec/telemetry-model.md`).
-  Bei neuen RAK-Aufnahmen die Section-`Bezug:`-Refs auf die
-  korrekte versionsversiegelte Lastenheft-Patch-Version setzen
+- **Spec referenziert das Lastenheft nur über Kennungen**
+  (`F-XXX`, `NF-XXX`, `MVP-XXX`, `AK-XXX`, `RAK-XXX`), nicht über
+  Paragraph-Nummern (`§7.10`, `§4.3` etc.). Die Lastenheft-
+  Paragraph-Struktur wandert über die Patch-Versionen mit;
+  Kennungen sind stabil und versionsversiegelt. Bei neuen
+  RAK-Aufnahmen die Section-`Bezug:`-Refs auf die korrekte
+  versionsversiegelte Lastenheft-Patch-Version setzen
   (Geburtsort der RAK-Familie, nicht aktueller Stand).
 
 ## 8. Rollback

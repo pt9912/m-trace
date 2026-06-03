@@ -6,7 +6,7 @@
 > Versions-Evolution stehen im
 > [`CHANGELOG.md`](../CHANGELOG.md) und in den
 > Plan-Dokumenten unter `docs/planning/done/`.  
-> **Bezug**: [Lastenheft `1.1.24`](./lastenheft.md) §7.10 (Cardinality), §7.11 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](../docs/planning/in-progress/roadmap.md); [API-Kontrakt](./backend-api-contract.md); [Architektur](./architecture.md) §5. Section-spezifische `Bezug:`-Blöcke zitieren weiter die Lastenheft-Patch-Version, in der die jeweilige RAK-Familie *aufgenommen* wurde — diese Refs sind versionsversiegelt und drift-frei.
+> **Bezug**: [Lastenheft `1.1.24`](./lastenheft.md) F-95..F-105 (Cardinality), F-106..F-115 + F-120..F-129 (Telemetry Ingest, Event-Schema, SDK-Budget); [Roadmap](../docs/planning/in-progress/roadmap.md); [API-Kontrakt](./backend-api-contract.md); [Architektur](./architecture.md). Section-spezifische `Bezug:`-Blöcke zitieren weiter die Lastenheft-Patch-Version, in der die jeweilige RAK-Familie *aufgenommen* wurde — diese Refs sind versionsversiegelt und drift-frei.
 
 ## 0. Zweck
 
@@ -22,7 +22,7 @@ Drei Wirkungsebenen pro Telemetrie-Datum:
 
 ## 1. Wire-Format Player-Events
 
-> Bezug: F-106..F-115; API-Kontrakt §3; Lastenheft §7.11.1–§7.11.3.
+> Bezug: F-106..F-115; API-Kontrakt §3.
 
 Maschinenlesbare Source of Truth für die Wire-Schema-Version ist
 [`contracts/event-schema.json`](../contracts/event-schema.json). Die
@@ -343,11 +343,11 @@ Die Default-Resource wird mit `resource.Default()` zusammengeführt, damit `proc
 | Prometheus-Counter (Pflicht laut API-Kontrakt §7) | Quelle im Code | Erfassung |
 |---|---|---|
 | `mtrace_playback_events_total` | `adapters/driven/metrics.PrometheusPublisher.EventsAccepted(n)` | Step 10 — pro Batch-Event mit Status `202` |
-| `mtrace_invalid_events_total` | `…InvalidEvents(n)` | Step 5/6/7/8 — pro Event mit Status `400`/`422` (siehe Lastenheft §7.9 Mindestmetriken-Hinweis nach Patch `1.1.2`) |
+| `mtrace_invalid_events_total` | `…InvalidEvents(n)` | Step 5/6/7/8 — pro Event mit Status `400`/`422` (siehe F-93 Mindestmetriken-Tabelle) |
 | `mtrace_rate_limited_events_total` | `…RateLimitedEvents(n)` | Step 4 — bei Rate-Limit-Treffer |
 | `mtrace_dropped_events_total` | `…DroppedEvents(n)` | nur Backpressure-Drops, **nicht** synchrone Persistenz-Fehler (siehe API-Kontrakt §7) |
 
-Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus Lastenheft §7.9 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
+Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus F-93 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
 
 ### 2.5 Trace-Korrelation
 
@@ -427,7 +427,7 @@ Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`, `plan-0.4.0.md` §6
 
 ## 3. Cardinality-Regeln
 
-> Bezug: F-95..F-100 (Lastenheft §7.10), F-101..F-105 (MVP-Variante).
+> Bezug: F-95..F-100, F-101..F-105 (MVP-Variante).
 
 ### 3.1 Verbotene Prometheus-Labels
 
@@ -479,7 +479,7 @@ Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nich
 | **SQLite** (ADR-0002) | Session-/Event-Historie mit allen Per-Session-Identifiern (`session_id`, `correlation_id`, `trace_id`, `span_id`, redacted URLs, `network_signal_absent`-Boundary-Records) | unbeschränkt — durable Event-Store, kein Cardinality-Vertrag | Dashboard-Session-Timeline (RAK-32); Read-Pfad `GET /api/stream-sessions/...`; SDK-Cursor-Pagination |
 | **OTel/Tempo** | Per-Request-Trace-Spans mit allen Span-Attributen (`mtrace.session.correlation_id`, `batch.size`, `mtrace.batch.outcome`, …); ein Server-Span pro Batch | sample-basiert; Span-Cardinality ist im Cardinality-Vertrag aus §3.1 nicht bindend | Tempo-Trace-Suche (`make dev-tempo`, RAK-31, optional); Span-Ebene-Debugging beim Header-Verarbeitung-/Outcome-Pfad |
 
-Diese Trennung ist die zentrale Architektur-Aussage von F-97 und Lastenheft §7.10. Praktische Konsequenzen:
+Diese Trennung ist die zentrale Architektur-Aussage von F-97. Praktische Konsequenzen:
 
 - **Aggregate-Anfrage** („wie viele 4xx-Antworten in den letzten 5 Minuten?") → Prometheus; nie SQLite, nie Tempo.
 - **Konkrete-Session-Anfrage** („zeig mir die Timeline von `session_id = abc-123`") → Read-Pfad/Dashboard auf SQLite; nie Prometheus, nie zwingend Tempo.
@@ -491,14 +491,14 @@ Tempo ist daher Debug-Tiefe, **nicht** Read-Pfad. Die Dashboard-Session-Timeline
 
 Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet (F-100):
 
-- `session_id` ist pseudonym (NF-40 Lastenheft §8.6).
+- `session_id` ist pseudonym (NF-40).
 - IP-Adressen werden nicht unnötig persistiert; falls erfasst, dann nur in OTel-Spans, nicht in Prometheus-Labels.
 - User-Agent-Felder dürfen reduzierbar sein (z. B. nur Major-Version).
 - GDPR-konformer Betrieb: Event-Store muss eine Löschanfrage pro `session_id` bedienen können — Implementierung über das `EventRepository` in der jeweiligen Persistenz-Variante.
 
 ### 3.5 WebRTC-Telemetrie
 
-> Bezug: Lastenheft `1.1.10` §13.10 RAK-51..RAK-55, `plan-0.8.0.md`
+> Bezug: RAK-51..RAK-55 (Lastenheft-Patch `1.1.10`), `plan-0.8.0.md`
 > §4 Tranche 3, [`examples/webrtc/`](../examples/webrtc/) (Lab-Compose).
 >
 > Das SDK sammelt `getStats()`-Reports im WebRTC-Adapter, der
@@ -627,7 +627,7 @@ Konfigurationsweise: Konstanten in `cmd/api/main.go` oder ENV-Variablen analog S
 
 `mtrace_dropped_events_total` ist laut API-Kontrakt §7 ausschließlich für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Channel-Puffer). Synchron fehlgeschlagenes `Append` ist **kein** Drop und inkrementiert den Counter nicht (F-122).
 
-Mit synchron-blockierendem `EventRepository.Append` gibt es keinen Backpressure-Pfad — der Counter darf konstant `0` bleiben (Lastenheft §7.9-Hinweis: „Metrik muss aber existieren"). Mit Wechsel auf einen Async-Persistenz-Pfad würde der Counter relevant.
+Mit synchron-blockierendem `EventRepository.Append` gibt es keinen Backpressure-Pfad — der Counter darf konstant `0` bleiben (F-93 Mindestmetriken: „Metrik muss aber existieren"). Mit Wechsel auf einen Async-Persistenz-Pfad würde der Counter relevant.
 
 ### 4.4 SDK-Konfigurierbarkeit
 
@@ -711,7 +711,7 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 
 ## 7. SRT-Health-Modell
 
-> Bezug: Lastenheft §4.3, §13.8 RAK-41..RAK-46;
+> Bezug: RAK-41..RAK-46;
 > [`plan-0.6.0.md`](../docs/planning/done/plan-0.6.0.md)
 > §2 (Quellen-Entscheidung), §4 (Datenmodell + Storage + OTel-Vertrag);
 > [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](contract-fixtures/srt/mediamtx-srtconns-list.json).
@@ -751,8 +751,9 @@ Optional-Felder im Domain-Modell:
 
 ### 7.2 Erweiterte SRT-Signale (deferred, sofern nicht ohne Zusatzrisiko aus der Quelle mitfallen)
 
-Lastenheft §4.3 listet weitere SRT-Signale; plan-0.6.0 §0.1 priorisiert
-explizit RAK-43-Pflichtwerte. Folgende Signale sind aus MediaMTX-API
+RAK-41..RAK-46 priorisieren die Pflichtwerte aus RAK-43; weitere
+SRT-Signale aus dem Lastenheft sind hier nicht release-blockierend.
+Folgende Signale sind aus MediaMTX-API
 verfügbar und können **als Zusatzfelder** im Datenmodell mitfallen,
 sind aber nicht release-blockierend:
 
@@ -765,7 +766,7 @@ sind aber nicht release-blockierend:
 | `packetsReorderTolerance` | Reorder-Toleranz | `reorder_tolerance_packets` |
 
 Send-/Receive-Buffer-Detail, Verbindungsstabilität, separater Link-
-Health-Score und Failover-Zustände aus Lastenheft §4.3 bleiben
+Health-Score und Failover-Zustände aus dem SRT-Soll-Korpus bleiben
 deferred.
 
 ### 7.3 Counter-vs-Rate und Sample-Window
