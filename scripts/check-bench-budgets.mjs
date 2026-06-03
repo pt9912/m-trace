@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// plan-0.9.5 §2 Tranche 1 (DoD-Item §2-4) — Budget-Validator für die
-// Bench-Suite. Liest text-Output (über stdin) und prüft gegen die
-// Budgets aus `docs/perf/budgets.md` §3 / §4. Verletzungen werden
-// als `[bench-budget] FAIL <name>: ist=<X> soll=<Y>` auf stderr
-// gemeldet; Exit-Code 1 bei mind. einer Verletzung.
+// Budget-Validator für die Bench-Suite. Liest text-Output (über
+// stdin) und prüft gegen die Budgets aus `docs/perf/budgets.md`.
+// Verletzungen werden als `[bench-budget] FAIL <name>: ist=<X>
+// soll=<Y>` auf stderr gemeldet; Exit-Code 1 bei mind. einer
+// Verletzung.
 //
 // Zwei Eingabeformate:
 //
@@ -25,19 +25,16 @@
 //   node scripts/check-bench-budgets.mjs --kind ts < analyzer-bench.txt
 //   node scripts/check-bench-budgets.mjs --kind go < api-bench.txt
 //
-// Beobachtungsphase (Plan-DoD §2-6): das Skript wird zunächst
-// nicht-blockierend im Nightly-Workflow `benchmark-observation.yml`
-// aufgerufen (`continue-on-error: true`). Nach N=3-5 grünen
-// CI-Läufen wird das `continue-on-error` entfernt und der Smoke
-// landet PR-blockierend in `make gates`.
+// Das Skript ist PR-blockierend in `make gates` (über
+// `make benchmark-smoke`); Nightly-Vergleich gegen
+// `benchmark-baseline` läuft separat in `benchmark.yml`.
 
 import { argv, exit, stderr, stdin, stdout } from "node:process";
 
 // Budget-Tabelle (Single-Source-of-Truth: docs/perf/budgets.md;
 // hier als maschinenlesbares Mapping, weil Markdown-Tabellen nicht
 // stabil zu parsen sind). Beim Schärfen eines Budgets müssen beide
-// Stellen synchron gehalten werden — Plan-DoD §2-4 + docs/perf/
-// budgets.md §5 Wartung.
+// Stellen synchron gehalten werden.
 //
 // Zeitwerte sind alle in **Millisekunden** (vitest-bench-Native-
 // Einheit für `mean`/`p75`/`p99`). Go-Bench-`ns/op` wird in
@@ -59,10 +56,9 @@ const GO_BUDGETS_MS = {
   "BenchmarkRegisterPlaybackEventBatch_MaxBatch": 25,
   "BenchmarkEventRepository_AppendBatch_100": 100,
   "BenchmarkSessionsService_ListSessions_DefaultPage": 50,
-  // plan-0.12.6 Tranche 5 / R-7: Bulk-Boundary-Read auf der Hard-Cap-
-  // Page (1000 Sessions). Pre-T5 (N+1): ~1000 boundary-Roundtrips pro
-  // Page. Post-T5: ein einziger IN-Clause-Call. Budget aus dem Plan-
-  // DoD: < 200 ms p95.
+  // R-7: Bulk-Boundary-Read auf der Hard-Cap-Page (1000 Sessions).
+  // Pre-Bulk-Read (N+1): ~1000 boundary-Roundtrips pro Page. Nach
+  // dem Bulk-Read: ein einziger IN-Clause-Call. Budget: < 200 ms p95.
   "BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries": 200,
   "BenchmarkCursorEncodeDecode_Pair": 0.25
 };
