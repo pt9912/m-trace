@@ -1418,8 +1418,8 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 
 | Datei | Zweck |
 |---|---|
-| `README.md` | Einstieg und Schnellstart |
-| `CHANGELOG.md` | Änderungsverlauf |
+| [`README.md`](../README.md) | Einstieg und Schnellstart |
+| [`CHANGELOG.md`](../CHANGELOG.md) | Änderungsverlauf |
 | `CONTRIBUTING.md` | Beitragsregeln |
 | `LICENSE` | Lizenz |
 | `SECURITY.md` | Sicherheitsmeldungen |
@@ -2504,7 +2504,7 @@ Owner und Folgeplan vorliegt.
 | OE-4 | resolved | Frontend-Styling im MVP: **eigenes CSS ohne Tailwind/UI-Library** |
 | OE-5 | resolved | Live-Updates: **Server-Sent Events mit Polling-Fallback**; WebSocket nicht in `0.4.0` (siehe [`docs/adr/0003-live-updates.md`](../docs/adr/0003-live-updates.md)) |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
-| OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus `CHANGELOG.md`** |
+| OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus [`CHANGELOG.md`](../CHANGELOG.md)** |
 | OE-8 | resolved | npm-Paketname Player-SDK: **`@pt9912/player-sdk`** ab `0.20.0`; Lieferstände vor `0.20.0` wurden nicht öffentlich über GitHub Packages publiziert. Der historische interne Scope `@npm9912` hat daher keinen externen Migrationsvertrag. |
 | OE-9 | resolved | Go Module Name final: **`github.com/pt9912/m-trace/apps/api`** |
 

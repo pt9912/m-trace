@@ -8,7 +8,7 @@
 
 Dieses Dokument beschreibt das **Zielbild (Soll)** der Architektur — *wie* die Anforderungen aus dem Lastenheft strukturell umgesetzt werden sollen. Es führt das Lastenheft nicht erneut, sondern erklärt Hexagon-Aufteilung, Verzeichnisstruktur, Abhängigkeitsregeln, Datenflüsse und die Querverweise zu den Architektur-Entscheidungen (ADRs).
 
-**Soll/Ist-Trennung**: Dieses Dokument enthält **kein** Status-Tracking. Der Lieferstand wird ausschließlich im Code, in `CHANGELOG.md` und in den Plan-Dokumenten unter `docs/planning/` geführt.
+**Soll/Ist-Trennung**: Dieses Dokument enthält **kein** Status-Tracking. Der Lieferstand wird ausschließlich im Code, in [`CHANGELOG.md`](../CHANGELOG.md) und in den Plan-Dokumenten unter `docs/planning/` geführt.
 
 Differenzen Code↔Soll werden **nicht** durch weichere Architektur-Formulierungen kaschiert, sondern als Aufgabe in den Plan-Dokumenten getrackt — der Code zieht das Soll ein, oder das Soll wird begründet via ADR angepasst.
 

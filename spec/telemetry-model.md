@@ -465,7 +465,7 @@ Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9
 
 ### 3.3 Trennung Aggregat vs Per-Session
 
-Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nicht** in Prometheus. Die drei Backends teilen die Verantwortung wie folgt — diese Tabelle ist die normative Quelle für `README.md`, [`docs/user/local-development.md`](../docs/user/local-development.md) und jede neue Telemetrie-Diskussion:
+Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nicht** in Prometheus. Die drei Backends teilen die Verantwortung wie folgt — diese Tabelle ist die normative Quelle für [`README.md`](../README.md), [`docs/user/local-development.md`](../docs/user/local-development.md) und jede neue Telemetrie-Diskussion:
 
 | Backend | Daten | Cardinality-Verträglichkeit | Konsumenten |
 |---|---|---|---|
