@@ -81,7 +81,7 @@ echo "[smoke-dash] mpd-body OK (<MPD present)"
 # 3) Mindestens ein referenziertes Segment HEAD-erreichbar.
 # Wir nutzen den `media`-Attribut-Pfad aus SegmentTemplate. FFmpeg
 # erzeugt typische Pfade wie `chunk-stream0-NNNNN.m4s` und
-# `init-stream0.m4s`. Wir suchen nach einem .m4s/.mp4-Eintrag im MPD.
+# `init-stream0.m4s`. Wir suchen nach einem.m4s/.mp4-Eintrag im MPD.
 segment_ref="$(printf '%s' "$body" | grep -oE '(initialization|media)="[^"]+"' | head -1 || true)"
 if [ -z "$segment_ref" ]; then
   echo "[smoke-dash] MPD has no SegmentTemplate initialization/media reference" >&2

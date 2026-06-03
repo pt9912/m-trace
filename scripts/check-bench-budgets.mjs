@@ -7,23 +7,23 @@
 //
 // Zwei Eingabeformate:
 //
-//   - `--kind ts`: Vitest-Bench-Tabelle aus stdout. Format pro Zeile
-//     (vitest 4.1):
-//         `   · <name>  <hz>  <min>  <max>  <mean>  <p75>  <p99>  ...`
+//  - `--kind ts`: Vitest-Bench-Tabelle aus stdout. Format pro Zeile
+//  (vitest 4.1):
+//  ` · <name> <hz> <min> <max> <mean> <p75> <p99>...`
 // Werte sind in Millisekunden (vitest-bench-Native-Einheit). Wir
-//     prüfen `mean` und `p99` gegen das Budget.
-//   - `--kind go`: Go-Bench-Output (`go test -bench=. -benchmem`).
+//  prüfen `mean` und `p99` gegen das Budget.
+//  - `--kind go`: Go-Bench-Output (`go test -bench=. -benchmem`).
 // Format pro Zeile:
-//         `BenchmarkX-12   123456 ns/op   456 B/op   7 allocs/op`
-//     `ns/op` wird in Millisekunden konvertiert (`ns / 1_000_000`).
+//  `BenchmarkX-12 123456 ns/op 456 B/op 7 allocs/op`
+//  `ns/op` wird in Millisekunden konvertiert (`ns / 1_000_000`).
 //
 // Vitest-JSON-Reporter wird **nicht** verwendet — vitest 4.1 wirft
 // bei `--reporter=json --outputFile=...` einen internen Server-
 // Setup-Fehler. Text-Parsing ist resilient und versionsstabil.
 //
 // Usage:
-//   node scripts/check-bench-budgets.mjs --kind ts < analyzer-bench.txt
-//   node scripts/check-bench-budgets.mjs --kind go < api-bench.txt
+//  node scripts/check-bench-budgets.mjs --kind ts < analyzer-bench.txt
+//  node scripts/check-bench-budgets.mjs --kind go < api-bench.txt
 //
 // Das Skript ist PR-blockierend in `make gates` (über
 // `make benchmark-smoke`); Nightly-Vergleich gegen
@@ -79,10 +79,10 @@ async function checkVitestText() {
   const lines = stripAnsi(text).split(/\r?\n/);
   const violations = [];
   const checks = [];
-  // Vitest-Bench-Tabellenzeilen beginnen mit `   · <name>` und
-  // enden mit `±<rme>%   <samples>`. Werte zwischen sind hz, min,
+  // Vitest-Bench-Tabellenzeilen beginnen mit ` · <name>` und
+  // enden mit `±<rme>% <samples>`. Werte zwischen sind hz, min,
   // max, mean, p75, p99, p995, p999. Komma-Tausender-Trenner in hz
-  // werden mit removeCommas() entfernt.
+  // werden mit removeCommas entfernt.
   const benchLine = /^\s*·\s+(.+?)\s+([\d,.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+±[\d.]+%\s+\d+\s*$/;
   for (const line of lines) {
     const m = line.match(benchLine);
@@ -122,7 +122,7 @@ async function checkGoBench() {
   const checks = [];
   for (const line of lines) {
     // Go-Bench output format:
-    //   BenchmarkX-12   123456 ns/op   456 B/op   7 allocs/op
+    //  BenchmarkX-12 123456 ns/op 456 B/op 7 allocs/op
     // We accept any whitespace and ignore the trailing CPU-count
     // suffix (`-12`).
     const m = line.match(

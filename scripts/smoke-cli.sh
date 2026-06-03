@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke für  (HLS) plus 
+# Smoke für (HLS) plus
 # Erweiterung um den DASH-Pfad (RAK-58/RAK-59 / NF-12):
 # 1. `pnpm --silent m-trace --help` zeigt die Usage und exit 0.
 # 2. `pnpm --silent m-trace check <file.m3u8>` analysiert eine
@@ -9,18 +9,18 @@ set -euo pipefail
 # (`analyzerKind:"hls"`, `playlistType:"master"`).
 # 3. `pnpm --silent m-trace check <file.mpd>` analysiert eine VOD-
 # DASH-MPD-Fixture, gibt JSON auf stdout aus, exit 0
-# (`analyzerKind:"dash"`, `playlistType:"dash"`). Ab 
+# (`analyzerKind:"dash"`, `playlistType:"dash"`). Ab
 # .
 
 # 4. `pnpm --silent m-trace check <not-supported>` (HTML-Body)
 # bricht ab mit exit 1 und JSON, das `status:"error"` mit
 # `code:"manifest_not_supported"` trägt — neuer Detector-Pfad
-# ab .
+# ab.
 # 5. `pnpm --silent m-trace check /nonexistent.m3u8` läuft auf IO-Fehler,
 # exit 1, Fehler-Message auf stderr.
 # 6. Aufruf ohne Argumente → Usage-Fehler, exit 2.
 # 7. URL-Loader-Pfad (SSRF-Block) → exit 1 + fetch_blocked.
-# 8. bin-Pfad via consumer .bin → Usage.
+# 8. bin-Pfad via consumer.bin → Usage.
 #
 # Erwartet `make ts-build` als Vorbedingung (das Makefile-Target
 # `smoke-cli` hängt schon dran).
@@ -51,7 +51,7 @@ M3U
 nothls="$tmpdir/not-hls.txt"
 echo "<html><body>not a manifest</body></html>" > "$nothls"
 
-# DASH-VOD-Fixture ()
+# DASH-VOD-Fixture
 dash_vod="$tmpdir/vod.mpd"
 cat > "$dash_vod" <<'MPD'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -165,7 +165,7 @@ echo "[smoke-cli] URL → fetch_blocked OK (real loader-Pfad)"
 # stream-analyzer und bekommt das m-trace-Bin in sein node_modules/
 # .bin/ symlinked — exakt die Situation, die published-package-
 # Konsumenten nach `npm install @pt9912/stream-analyzer` haben.
-# `pnpm --filter ... exec m-trace --help` exerciert das Symlink
+# `pnpm --filter... exec m-trace --help` exerciert das Symlink
 # plus den Shebang plus den Executable-Bit in einem Aufruf.
 help_via_bin="$(pnpm --silent --filter @pt9912/analyzer-service exec m-trace --help)"
 if ! grep -q "Usage: m-trace check" <<<"$help_via_bin"; then
@@ -176,7 +176,7 @@ fi
 echo "[smoke-cli] bin via consumer .bin OK"
 
 # 8. CMAF-HLS- und CMAF-DASH-Probe mit lokalem HTTP-Server
-# (, NF-13 / RAK-63 / RAK-64). Erzeugt
+# (NF-13 / RAK-63 / RAK-64). Erzeugt
 # deterministische CMAF-Init-/Media-Bytes via
 # scripts/cmaf-fixture-builder.mjs, serviert sie über
 # `python3 -m http.server` und ruft die CLI mit

@@ -5,14 +5,14 @@ set -euo pipefail
 #
 # Verifiziert die Vorbereitungsgrenze des WebRTC-Lab-Stacks
 # (examples/webrtc/compose.yaml) endpoint-/compose-only — ohne
-# Browser, ohne Playback, ohne getStats(). Bewiesen wird:
+# Browser, ohne Playback, ohne getStats. Bewiesen wird:
 # 1. Compose-Stack läuft (MediaMTX-Control-API antwortet).
 # 2. FFmpeg-Publisher hat den Stream registriert (Pfad ready=true).
 # 3. WHEP-Endpoint OPTIONS → 204 für aktiven Pfad.
 # 4. WHIP-Endpoint OPTIONS → 204 für aktiven Pfad.
 # 5. Pfad-Differenzierung greift (unbekannter Pfad → OPTIONS 500).
 #
-# Nicht bewiesen: Playback-Qualität, ICE-Erfolgsquote, getStats()-
+# Nicht bewiesen: Playback-Qualität, ICE-Erfolgsquote, getStats-
 # Stabilität, Codec-Verhandlung mit echten Browsern. Dafür ist der
 # manuelle Browser-Handcheck (RAK-50, examples/webrtc/README.md).
 #

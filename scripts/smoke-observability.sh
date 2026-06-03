@@ -82,7 +82,7 @@ done
 # Assertion. Der Counter darf KEINE fachlichen Labels tragen — erlaubt
 # sind nur Prometheus-Target-Metadaten (`__name__`, `instance`, `job`).
 # Jeder zusätzliche Label-Key ist ein Cardinality-Verstoß und
-# release-blockierend (API-Kontrakt §7).
+# release-blockierend (API-Kontrakt).
 mandatory_counters=(
   mtrace_playback_events_total
   mtrace_invalid_events_total
@@ -189,7 +189,7 @@ echo "prometheus-cardinality: ${cardinality}"
 # Sub-3.7: SRT-Health-Allowlist prüfen.
 #
 # Wenn `mtrace_srt_health_*`-Serien existieren (Collector ist aktiv),
-# müssen sie sich auf die in spec/telemetry-model.md §3.2 / §7.7
+# müssen sie sich auf die in spec/telemetry-model.md / §7.7
 # freigegebenen bounded Labels (`health_state`, `source_status`,
 # `source_error_code`) plus Target-Metadaten (`__name__`, `instance`,
 # `job`) beschränken. Andere Labels — insbesondere Per-Verbindung-
@@ -236,7 +236,7 @@ fi
 #
 # Wenn `mtrace_webrtc_*`-Serien existieren (Adapter sendet
 # metrics_sampled-Events), müssen sie sich auf die in
-# spec/telemetry-model.md §3.2 / §3.5 freigegebenen bounded Labels
+# spec/telemetry-model.md / §3.5 freigegebenen bounded Labels
 # (`connection_state`, `ice_state`, `dtls_state`) plus Target-
 # Metadaten beschränken. Byte-/Loss-Counter sind label-frei (außer
 # Target-Metadaten). Wenn keine Serien existieren (Default-Lab ohne
@@ -277,7 +277,7 @@ else
   echo "prometheus-webrtc-allowlist: skipped (no WebRTC samples observed)"
 fi
 
-# + spec/telemetry-model.md §7.7:
+# + spec/telemetry-model.md:
 # Source-Rohmetriken aus MediaMTX/SRT werden nicht vom Projekt-
 # Prometheus gescraped. Wir prüfen das, indem wir die Active-Targets-
 # Liste durchgehen und nach mediamtx-/srt-typischen Job- oder

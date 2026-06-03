@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # (RAK-56) — Browser-Drift-Smoke für
-# WebRTC-`getStats()`-Schema-Drift. Schließt R-12 als „automatisiert
+# WebRTC-`getStats`-Schema-Drift. Schließt R-12 als „automatisiert
 # detektiert"; löst die manuelle Drift-Review-Pflicht aus
 # `releasing.md` ab.
 #

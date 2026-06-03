@@ -13,9 +13,9 @@ set -euo pipefail
 # siehe `spec/telemetry-model.md` §2.6).
 #
 # Aufruf:
-# SMOKE_STATE=core         scripts/smoke-tempo.sh    # Stack: `make dev`
-# SMOKE_STATE=observability scripts/smoke-tempo.sh   # Stack: `make dev-observability`
-# SMOKE_STATE=tempo        scripts/smoke-tempo.sh    # Stack: `make dev-tempo` (Default)
+# SMOKE_STATE=core scripts/smoke-tempo.sh # Stack: `make dev`
+# SMOKE_STATE=observability scripts/smoke-tempo.sh # Stack: `make dev-observability`
+# SMOKE_STATE=tempo scripts/smoke-tempo.sh # Stack: `make dev-tempo` (Default)
 
 API_URL="${API_URL:-http://localhost:8080}"
 TEMPO_URL="${TEMPO_URL:-http://localhost:3200}"

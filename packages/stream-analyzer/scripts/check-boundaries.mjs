@@ -7,7 +7,7 @@ const internalDir = join(srcDir, "internal");
 
 // Public files (alles direkt unter src/, ohne internal/) dürfen nicht
 // implementierungsspezifische Internas re-exportieren. Konsumenten
-// müssen über den Package-Entry-Point gehen (plan-0.3.0 §2 Tranche 1:
+// müssen über den Package-Entry-Point gehen (:
 // "dokumentierte Konsumenten importieren nur über den Package-
 // Entry-Point").
 const internalImportPattern = /from\s+["'](\.{1,2}\/)*internal\//;

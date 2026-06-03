@@ -6,11 +6,11 @@
 # `.github/workflows/benchmark.yml::Open regression issue`.
 #
 # Erwartete Inputs:
-# - .tmp/bench/comparison.txt mit der benchstat-Ausgabe
+# -.tmp/bench/comparison.txt mit der benchstat-Ausgabe
 # (wird vom vorhergehenden `Compare with benchstat`-Step
 # erzeugt; fehlt sie, landet `<comparison missing>` im Body)
-# - $GH_TOKEN  GitHub-Token mit `issues:write`
-# - $RUN_URL   Link auf den fehlgeschlagenen Workflow-Run
+# - $GH_TOKEN GitHub-Token mit `issues:write`
+# - $RUN_URL Link auf den fehlgeschlagenen Workflow-Run
 set -eu
 
 title="Benchmark regression detected ($(date -u +%Y-%m-%d))"

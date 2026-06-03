@@ -1,6 +1,6 @@
 // ESLint-Konfig für packages/stream-analyzer.
 //
-// Bezug: spec/lastenheft.md §10.4 (Stream Analyzer); siehe
+// Bezug: spec/lastenheft.md (Stream Analyzer); siehe
 // eslint.config.shared.mjs am Repo-Root für die geteilte Base.
 //
 // Boundary-Check (Public ⇸ internal/) und Public-API-Snapshot

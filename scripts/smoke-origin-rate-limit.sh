@@ -8,7 +8,7 @@ set -euo pipefail
 # Konstanten via niedrigerer ENV ueberschrieben), feuert drei
 # `POST /api/auth/session-tokens`-Aufrufe in Folge:
 # 1. + 2. → erwartete 201.
-# 3.      → erwartete 429 mit Body `{"error":"origin_rate_limited"}`.
+# 3. → erwartete 429 mit Body `{"error":"origin_rate_limited"}`.
 #
 # Voraussetzungen:
 # - m-trace-API laeuft auf $MTRACE_API_URL (Default

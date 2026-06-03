@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # smoke-mediaserver-provision.sh — Reproduzierbarer Lab-Smoke fuer
-# den externen Media-Server-Provisioner aus 
+# den externen Media-Server-Provisioner aus
 # (RAK-87 / R-15).
 #
 # Verifiziert den `MediaMTXProvisioner`-Adapter und den Use-Case-

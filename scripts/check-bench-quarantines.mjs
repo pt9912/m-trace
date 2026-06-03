@@ -2,25 +2,25 @@
 // Quarantäne-Tag-Check
 // für Bench-Suites. Scant Bench-Files nach
 // `// bench:quarantine YYYY-MM-DD reason: <text>` direkt über
-// `func BenchmarkX(...)` (Go) oder `bench("...", ...)` (TS).
+// `func BenchmarkX(...)` (Go) oder `bench("...",...)` (TS).
 //
 // Verhalten:
 //
-//   - exit 1 wenn ein Tag älter als die maximale Quarantäne-Dauer
-//     ist (Default 30 Tage; Plan-DoD-Wartungsregel). Operator muss
-//     das Tag entweder verlängern (Plan-DoD-Item-Änderung im
+//  - exit 1 wenn ein Tag älter als die maximale Quarantäne-Dauer
+//  ist (Default 30 Tage; Plan-DoD-Wartungsregel). Operator muss
+//  das Tag entweder verlängern (Plan-DoD-Item-Änderung im
 // Folge-Plan, kein stiller Re-Skip) oder den Bench fixen.
-//   - exit 0 sonst; gibt die Liste der aktiven Quarantänen entweder
-//     auf stdout oder als JSON-File aus (`--output <path>`).
+//  - exit 0 sonst; gibt die Liste der aktiven Quarantänen entweder
+//  auf stdout oder als JSON-File aus (`--output <path>`).
 //
 // Usage:
-//   node scripts/check-bench-quarantines.mjs apps/api packages/stream-analyzer
-//   node scripts/check-bench-quarantines.mjs --output .tmp/bench/quarantine.json apps/api packages/stream-analyzer
-//   node scripts/check-bench-quarantines.mjs --max-age-days 30 apps/api
+//  node scripts/check-bench-quarantines.mjs apps/api packages/stream-analyzer
+//  node scripts/check-bench-quarantines.mjs --output.tmp/bench/quarantine.json apps/api packages/stream-analyzer
+//  node scripts/check-bench-quarantines.mjs --max-age-days 30 apps/api
 //
 // Ausgabe-Format (JSON):
-//   [{ name: "BenchmarkX", file: "apps/api/.../foo_bench_test.go",
-//      expires: "2026-06-06", reason: "flaky on CI" }, ...]
+//  [{ name: "BenchmarkX", file: "apps/api/.../foo_bench_test.go",
+//  expires: "2026-06-06", reason: "flaky on CI" },...]
 
 import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from "node:fs";
 import { argv, exit, stderr, stdout } from "node:process";

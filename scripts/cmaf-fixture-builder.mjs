@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * Erzeugt deterministische Minimal-CMAF-Bytes-Fixtures für den
- * CMAF-Smoke aus `make smoke-cli` (`0.10.0`  NF-13 / RAK-63).
+ * CMAF-Smoke aus `make smoke-cli` (`0.10.0` NF-13 / RAK-63).
  *
  * Output (relativ zum übergebenen Verzeichnis):
- *   init.mp4   — minimaler CMAF-Init mit ftyp(cmfc)+moov
- *   seg-0.m4s  — minimaler CMAF-Media-Fragment mit styp(cmfs)+moof/traf/tfdt+mdat
+ *  init.mp4 — minimaler CMAF-Init mit ftyp(cmfc)+moov
+ *  seg-0.m4s — minimaler CMAF-Media-Fragment mit styp(cmfs)+moof/traf/tfdt+mdat
  *
  * Box-Layout exakt analog `tests/iso-bmff.test.ts`-Helper, damit die
  * Brand-Allowlist und Pflicht-Boxen aus T4 (cmfc/cmf2 Init,

@@ -16,13 +16,13 @@
 // werden ignoriert.
 //
 // Usage:
-//   node scripts/check-benchstat-regression.mjs <comparison-file>
-//   node scripts/check-benchstat-regression.mjs --threshold-percent 20 file
+//  node scripts/check-benchstat-regression.mjs <comparison-file>
+//  node scripts/check-benchstat-regression.mjs --threshold-percent 20 file
 //
 // Exit-Codes:
-//   0 — keine signifikante Regression
-//   1 — eine oder mehrere Regressionen (mit Detail-Output auf stderr)
-//   2 — Aufruf-/IO-Fehler
+//  0 — keine signifikante Regression
+//  1 — eine oder mehrere Regressionen (mit Detail-Output auf stderr)
+//  2 — Aufruf-/IO-Fehler
 
 import { readFileSync } from "node:fs";
 import { argv, exit, stderr, stdout } from "node:process";
@@ -50,7 +50,7 @@ const regressions = [];
 const checks = [];
 
 // benchstat 0.0.0 (golang.org/x/perf) Tabellenzeile (sec/op-Sektion):
-//   `BenchmarkX-12   1.234m ± 1%   1.456m ± 2%   +18.00% (p=0.001 n=10)`
+//  `BenchmarkX-12 1.234m ± 1% 1.456m ± 2% +18.00% (p=0.001 n=10)`
 // Der p-Wert liegt in `(p=<num> n=<num>)`. Bei `~` (kein
 // signifikantes Ergebnis) druckt benchstat z. B. `~ (p=0.123 n=10)`.
 //

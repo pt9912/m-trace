@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke für :
+# Smoke für:
 # 1. analyzer-service /health antwortet 200.
 # 2. POST /api/analyze mit Text-Input liefert ein AnalysisResult
 # (status:ok, playlistType:master, analyzerKind:hls) — exercitiert

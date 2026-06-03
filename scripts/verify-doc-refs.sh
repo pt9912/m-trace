@@ -6,9 +6,9 @@
 # scripts/verify-doc-refs.sh [root-dir]
 #
 # Exit codes:
-# 0  passed
-# 1  broken local link target detected
-# 2  environment error
+# 0 passed
+# 1 broken local link target detected
+# 2 environment error
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"

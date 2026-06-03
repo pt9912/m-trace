@@ -16,7 +16,7 @@ set -euo pipefail
 #
 # Optionaler m-trace-API-Pfad (`SMOKE_INCLUDE_MTRACE_API=1`):
 # 5. `GET /api/srt/health/{stream_id}` antwortet `200`.
-# 6. Wire-Format aus spec/backend-api-contract.md §7a.2 enthält
+# 6. Wire-Format aus spec/backend-api-contract.md enthält
 # die vier RAK-43-Pflichtwerte unter `metrics.{rtt_ms,
 # packet_loss_total, retransmissions_total,
 # available_bandwidth_bps}`.
@@ -24,7 +24,7 @@ set -euo pipefail
 # http://localhost:8080) mit aktivem Collector
 # (MTRACE_SRT_SOURCE_URL gesetzt). Der Pfad ist opt-in, weil
 # examples/srt/compose.yaml apps/api nicht startet — der
-# Operator fährt das im Release-Closeout aus releasing.md §2.1
+# Operator fährt das im Release-Closeout aus releasing.md
 # gegen ein laufendes `make dev`.
 #
 # Konvention (examples/README.md):
@@ -218,7 +218,7 @@ if [ "$SMOKE_INCLUDE_MTRACE_API" = "1" ]; then
   fi
   echo "[smoke-srt-health] mtrace-api-status OK ($mtrace_status @ $mtrace_url, body=${#mtrace_body}b)"
 
-  # Wire-Format-Pflichtwerte aus spec/backend-api-contract.md §7a.2.
+  # Wire-Format-Pflichtwerte aus spec/backend-api-contract.md
   python3 - "$mtrace_tmp" <<'PYEOF'
 import json, sys
 
@@ -253,7 +253,7 @@ print(
 )
 PYEOF
 
-  # 7) Opt-in Cursor-Pagination-Probe (RAK-86 /  T2).
+  # 7) Opt-in Cursor-Pagination-Probe (RAK-86 / T2).
   # Drei Sub-Checks: (a) Erste Page mit samples_limit=1 inkl.
   # next_cursor; (b) Folge-Page mit gepacktem next_cursor liefert
   # 200; (c) malformed samples_cursor liefert 400 mit

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Rendert .security/vulnignore.yaml -> .security/.trivyignore (Plain-Text).
+# Rendert.security/vulnignore.yaml ->.security/.trivyignore (Plain-Text).
 #
 # vulnignore.yaml ist Audit-Source-of-Truth (mit reason/expires/scope-
-# Feldern, die Trivy nicht direkt konsumieren kann); .trivyignore ist
+# Feldern, die Trivy nicht direkt konsumieren kann);.trivyignore ist
 # das maschinenlesbare Tool-Format (eine CVE-ID pro Zeile, Kommentare
 # mit "# ").
 #

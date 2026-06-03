@@ -123,7 +123,7 @@ schema-generate:
 			--version 1 --output /work/migrations
 	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/V1__m_trace.sql"
 
-# Go-Benchmark-Suite (). Läuft
+# Go-Benchmark-Suite. Läuft
 # alle `Benchmark*`-Funktionen aus apps/api/.../**/*_bench_test.go
 # mit `-benchmem` in einem golang:1.26-Container. Initial-Budgets
 # (Architektur-basiert großzügig, noch nicht mess-basiert) sind in
@@ -139,7 +139,7 @@ benchmark-smoke:
 	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.4 \
 		go test -run='^$$' -bench=. -benchmem -benchtime 1s ./hexagon/... ./adapters/...
 
-# Go-Fuzz-Suite (). Findet alle
+# Go-Fuzz-Suite. Findet alle
 # `Fuzz*`-Targets in `**/*_fuzz_test.go` und ruft pro Target
 # `go test -run='^$$' -fuzz=^Fuzz...$$ -fuzztime=$(FUZZTIME) <pkg>`
 # in einem golang:1.26-Container. Default $(FUZZTIME) = 30s pro

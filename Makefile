@@ -16,7 +16,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -55,6 +55,9 @@ help:
 		'  make seed-rak9              Seed sessions/events for RAK-9 checks' \
 		'  make browser-e2e            Run browser E2E checks' \
 		'  make docs-check             Run documentation checks' \
+		'  make lint-variante-b        Check Go/mjs/sh/Makefile comments for plan-/Tranche-/§-Audit-Trail (CI-fail)' \
+		'  make lint-variante-b-fix    Apply Variante-B cleanup to comments in-place' \
+		'  make lint-variante-b-diff   Show what lint-variante-b-fix would change (dry-run)' \
 		'  make test                   Run API Docker tests and TS workspace tests' \
 		'  make api-race               Run API Go race-detector tests (CGO=1, -race; opt-in, in gates)' \
 		'  make lint                   Run API Docker lint and TS workspace lint' \
@@ -179,7 +182,7 @@ smoke-srt:
 	bash scripts/smoke-srt.sh
 
 # `make smoke-srt-health` erweitert smoke-srt um eine API-Probe gegen
-# MediaMTX `/v3/srtconns/list` . Verifiziert
+# MediaMTX `/v3/srtconns/list`. Verifiziert
 # zusätzlich vier RAK-43-Pflichtwerte (msRTT, packetsReceivedLoss,
 # packetsReceivedRetrans, mbpsLinkCapacity > 0). Opt-in (nicht in
 # `make gates`); braucht python3 für JSON-Validierung.
@@ -195,7 +198,7 @@ smoke-srt-health:
 smoke-srt-health-pagination:
 	SMOKE_INCLUDE_MTRACE_API=1 MTRACE_SRT_HEALTH_PAGINATION=1 bash scripts/smoke-srt-health.sh
 
-# `make smoke-dash` startet das DASH-Beispiel ( ,
+# `make smoke-dash` startet das DASH-Beispiel (
 # RAK-38) als Project `mtrace-dash`: FFmpeg generiert DASH in ein
 # Volume, nginx serviert es auf 8891. Smoke prüft MPD + Init-Segment
 # und beendet den Stack wieder. Opt-in (nicht in `make gates`).
@@ -216,14 +219,14 @@ smoke-webrtc-prep:
 # detektiert" — fährt das mtrace-webrtc-Lab hoch, läuft die
 # Playwright-Spec tests/e2e/webrtc-stats-drift.spec.ts gegen die
 # Default-Browser (chromium,firefox; WebKit opt-in via
-# MTRACE_WEBRTC_DRIFT_BROWSERS) und vergleicht das `getStats()`-
+# MTRACE_WEBRTC_DRIFT_BROWSERS) und vergleicht das `getStats`-
 # Schema gegen spec/telemetry-model.md Opt-in
 # (NICHT in `make gates`); produktiv über den Nightly-CI-Workflow
 # `.github/workflows/webrtc-drift.yml`.
 smoke-webrtc-stats-drift:
 	bash scripts/smoke-webrtc-stats-drift.sh
 
-# `make smoke-srs` ist der SRS-Lab-Smoke 
+# `make smoke-srs` ist der SRS-Lab-Smoke
 # (RAK-57, MVP-36 als eingelöst). Fährt examples/srs/compose.yaml
 # als Project mtrace-srs hoch (RTMP-Listener + HTTP-API +
 # HTTP-FLV-Egress), prüft endpoint-/compose-only, dass die SRS-
@@ -341,7 +344,7 @@ smoke-outbound-webhook:
 # nach fünf grünen Beobachtungsläufen aktiv.
 #
 # Workflow: apps/api/Makefile::benchmark-smoke schreibt den Go-
-# Bench-Output nach .tmp/bench/api-bench.txt (im Container an
+# Bench-Output nach.tmp/bench/api-bench.txt (im Container an
 # /src/.tmp gemountet); `scripts/check-bench-budgets.mjs --kind go`
 # parst per stdin und prüft Budgets aus `docs/perf/budgets.md`.
 api-benchmark-smoke:
@@ -400,8 +403,8 @@ fuzz-check: api-fuzz-check ts-test
 # als Teil des `hexagon/application`-Packages). Tool: gremlins
 # (Substitution für unmaintainted go-mutesting; Begründung in
 # `docs/dev/mutation-testing.md`). Output:
-#   - `apps/api/.tmp/mutation/api-mutation-report.txt` (stdout-Spiegel)
-#   - `apps/api/.tmp/mutation/api-mutation-report.json` (Maschinen-Form)
+#  - `apps/api/.tmp/mutation/api-mutation-report.txt` (stdout-Spiegel)
+#  - `apps/api/.tmp/mutation/api-mutation-report.json` (Maschinen-Form)
 # Initial nicht-blockierend; opt-in (NICHT in `make gates`). Lokaler
 # Lauf zieht das gremlins-CLI per `go install` zur Laufzeit, daher
 # Netz erforderlich (selbe Mechanik wie `benchmark-smoke`).
@@ -413,8 +416,8 @@ api-mutation-report:
 # StrykerJS via `pnpm dlx` (kein devDep im player-sdk-Manifest, damit
 # der Stryker-Versions-Bump nicht im Lockfile pinned). Vitest-Runner
 # (selbe Vitest-Version wie `make ts-test`). Output:
-#   - `packages/player-sdk/reports/mutation/mutation.html` (visuell)
-#   - `packages/player-sdk/reports/mutation/mutation.json` (Trend-Tracking)
+#  - `packages/player-sdk/reports/mutation/mutation.html` (visuell)
+#  - `packages/player-sdk/reports/mutation/mutation.json` (Trend-Tracking)
 # Initial nicht-blockierend; opt-in. Lokaler Lauf braucht Node + pnpm
 # (host-side, kein Container — selbe Voraussetzung wie `make ts-test`).
 ts-mutation-report:
@@ -490,13 +493,34 @@ docs-check:
 
 docs-refs: docs-check
 
+# `make lint-variante-b` prüft Go-/mjs-/sh-/Makefile-Kommentare gegen
+# die Variante-B-Konvention: keine plan-X.Y.Z-Refs, keine Tranche-N-
+# Marker, keine Lastenheft-/API-Kontrakt-/Architektur-§-Suffixe, keine
+# `RAK-Wave-X`-Pseudo-Kennungen. Echte Kennungen (ADR-NNNN, RAK-NN,
+# R-NN, F-NN, NF-NN, MVP-NN, AK-NN) bleiben erhalten. Wirkt nur auf
+# Kommentar-Zeilen — Code wird nie angetastet. Default-Targets: alle
+# Verzeichnisse mit Variante-B-Konvention.
+VARIANTE_B_TARGETS ?= apps/api packages scripts spec docs/user docs/dev Makefile
+
+lint-variante-b:
+	python3 scripts/lint-variante-b.py check $(VARIANTE_B_TARGETS)
+
+# `make lint-variante-b-fix` wendet die Cleanup-Patterns in-place an.
+# Vor Commit lokal laufen, NICHT in CI.
+lint-variante-b-fix:
+	python3 scripts/lint-variante-b.py fix $(VARIANTE_B_TARGETS)
+
+# `make lint-variante-b-diff` zeigt Dry-Run-Diff ohne Schreibzugriff.
+lint-variante-b-diff:
+	python3 scripts/lint-variante-b.py diff $(VARIANTE_B_TARGETS)
+
 test: api-test ts-test
 
 api-test:
 	$(API_MAKE) test
 
 # Opt-in Race-Detector-Lauf für apps/api (Go Race Detector,
-# `go test -race ./...`). Bewusst nicht Teil von `make test` /
+# `go test -race./...`). Bewusst nicht Teil von `make test` /
 # `make gates` — 5–10× langsamer und nur sinnvoll, wenn
 # Concurrency-Code geändert wurde. Lauf vor Tag-Push, siehe
 # `docs/user/releasing.md`.
@@ -582,7 +606,7 @@ devcontainer-validate:
 release-guard-test:
 	bash scripts/test-release-guard.sh
 
-gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check
+gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check lint-variante-b
 
 #  — Quality-Gates Wave 1. Security-Gates laufen
 # parallel zu `make gates` (separater CI-Job in build.yml), nicht in
@@ -617,7 +641,7 @@ audit-ts:
 
 # `make image-scan` baut die drei Runtime-Images und scannt sie mit
 # Trivy. Policy: CRITICAL und HIGH brechen den Lauf; MEDIUM wird
-# berichtet. Cache-Verzeichnis liegt unter .security/.trivy-cache,
+# berichtet. Cache-Verzeichnis liegt unter.security/.trivy-cache,
 # damit lokale Wiederholungen nicht jedes Mal die Vuln-DB neu laden.
 #
 # Dashboard- und Analyzer-Service-Images bauen ihre TS-Artefakte in den
@@ -706,13 +730,13 @@ security-gates: vuln-check audit-ts image-scan
 # sind (CI-Cache trägt das mit).
 #
 # Geprüfte Artefakte (Single-Source-of-Truth links, Generated rechts):
-#   - schema.yaml             → migrations/V1__m_trace.sql
-#   - spec/contract-fixtures/ → apps/api/.../testdata/contract-*.json
-#                               apps/api/.../testdata/mediamtx-*.json
-#                               apps/api/.../testdata/srt-health-*.json
-#   - packages/player-sdk/src/index.ts → public-api.snapshot.txt
-#     (check-public-api.mjs ist read-only und exited bei Drift mit 1;
-#     deshalb separater Aufruf, kein git-diff danach.)
+#  - schema.yaml → migrations/V1__m_trace.sql
+#  - spec/contract-fixtures/ → apps/api/.../testdata/contract-*.json
+#  apps/api/.../testdata/mediamtx-*.json
+#  apps/api/.../testdata/srt-health-*.json
+#  - packages/player-sdk/src/index.ts → public-api.snapshot.txt
+#  (check-public-api.mjs ist read-only und exited bei Drift mit 1;
+#  deshalb separater Aufruf, kein git-diff danach.)
 generated-drift-check:
 	@echo "[drift-check] Re-generating schema DDL (V1__m_trace.sql)..."
 	@$(MAKE) --no-print-directory schema-generate >/dev/null

@@ -1,6 +1,6 @@
 // ESLint-Konfig für packages/player-sdk.
 //
-// Bezug: spec/lastenheft.md §10.3 (Player-SDK); siehe
+// Bezug: spec/lastenheft.md (Player-SDK); siehe
 // eslint.config.shared.mjs am Repo-Root für die geteilte Base.
 //
 // Browser-SDK: globals enthalten Window/DOM-APIs zusätzlich zu den

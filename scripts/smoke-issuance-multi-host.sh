@@ -17,7 +17,7 @@
 #
 # Im Gegensatz zu `smoke-issuance-replica` (SQLite Single-Host) deckt
 # dieser Smoke das **Multi-Host**-Setup ab — Redis ist der einzige
-# Network-Backend-Pfad in `0.12.6`. Eine echte
+# Network-Backend-Pfad. Eine echte
 # Compose-/K8s-Variante mit Redis-Server bleibt Folge-Item.
 #
 # Implementation: ruft die End-to-End-Unit-Tests
