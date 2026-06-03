@@ -228,7 +228,7 @@ func preflightHandler(allowlist OriginAllowlist, metrics PreflightMetrics, metho
 		w.Header().Set("Cache-Control", preflightCacheControl)
 		origin := r.Header.Get("Origin")
 		if !allowlist.IsOriginInGlobalUnion(origin) {
-			// §3.9 minimale Ablehnung: `204` ohne Allow-* Header,
+			// 9 minimale Ablehnung: `204` ohne Allow-* Header,
 			// damit kein Origin-/Project-Enumeration-Signal leakt.
 			if metrics != nil {
 				metrics.CORSPreflightRefused(r.URL.Path)

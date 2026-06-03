@@ -11,7 +11,7 @@ import (
 )
 
 // TestHealthHandler_ReturnsOK verifiziert den Pflicht-Smoke-Test (Spec
-// §6.1, AK-1/AK-2): GET /api/health → 200 mit JSON-Body
+// AK-1/AK-2): GET /api/health → 200 mit JSON-Body
 // {"status":"ok"}.
 func TestHealthHandler_ReturnsOK(t *testing.T) {
 	t.Parallel()

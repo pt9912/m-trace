@@ -60,7 +60,7 @@ type analyzeRequestPayload struct {
 
 // analyzeAnalysisPayload spiegelt das `analysis`-Feld der Tranche-3-
 // Wrapper-Antwort (API-Kontrakt). Inhaltlich identisch zum pre-
-// §4.5 flachen Wire-Format — aber jetzt unterhalb von `{analysis:...,
+// 5 flachen Wire-Format — aber jetzt unterhalb von `{analysis:...,
 // session_link:...}`.
 type analyzeAnalysisPayload struct {
 	AnalyzerVersion string                  `json:"analyzerVersion"`
@@ -337,8 +337,7 @@ func findingsToPayload(in []domain.StreamAnalysisFinding) []analyzeFindingPayloa
 }
 
 // mapAndWriteUseCaseError übersetzt Use-Case- und Adapter-Fehler in
-// eine Problem-Shape mit dem passenden HTTP-Statuscode (
-// ). Drei Fehlerklassen werden unterschieden:
+// eine Problem-Shape mit dem passenden HTTP-Statuscode ). Drei Fehlerklassen werden unterschieden:
 //
 //  1. Eingabevalidierung gegen den Use Case (ErrAnalyzeManifestEmpty)
 //  → 400 invalid_request.

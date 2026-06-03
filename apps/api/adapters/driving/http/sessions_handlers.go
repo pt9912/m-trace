@@ -285,7 +285,7 @@ type sessionWire struct {
 
 // networkSignalAbsentWire ist das Read-Shape eines
 // `session_boundaries[]`-Tripels gemäß spec/backend-api-contract.md
-// §3.7.1: `kind` ist der Netzwerksignal-Typ
+// `kind` ist der Netzwerksignal-Typ
 // (`manifest`/`segment`) — nicht der Boundary-`kind`-Wert
 // (`network_signal_absent`), der für alle Einträge in dieser Liste
 // implizit gilt.

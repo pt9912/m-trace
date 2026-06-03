@@ -78,8 +78,7 @@ const (
 	authDefaultLabSigningKeySecret  = "mtrace-lab-only-do-not-use-in-production-replace-via-env"
 	authDefaultLabSigningKID        = "lab-default"
 
-	// Origin-Rate-Limiter Default-Bucket (
-	// R-22). Lab-konservativ: 20 Requests Burst, 5 Refill/s ≈ 5 RPS
+	// Origin-Rate-Limiter Default-Bucket R-22). Lab-konservativ: 20 Requests Burst, 5 Refill/s ≈ 5 RPS
 	// steady state pro Client-IP. Wirksam nur wenn
 	// `MTRACE_ORIGIN_RATE_LIMITER=memory`.
 	originRateLimitCapacity     = 20

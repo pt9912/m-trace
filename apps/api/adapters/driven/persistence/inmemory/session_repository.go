@@ -108,8 +108,7 @@ func (r *SessionRepository) UpsertFromEvents(_ context.Context, events []domain.
 	return canonical, nil
 }
 
-// Sweep wertet zeitbasierte Lifecycle-Übergänge aus (
-// §5.1 Sub-Item 8). Idempotent: bereits Ended-Sessions werden nicht
+// Sweep wertet zeitbasierte Lifecycle-Übergänge aus
 // erneut angefasst. Sweep ist global — kein Project-Filter, weil der
 // Lifecycle-Sweeper kein Project-Fan-out macht.
 func (r *SessionRepository) Sweep(_ context.Context, now time.Time, stalledAfter, endedAfter time.Duration) error {
@@ -342,8 +341,7 @@ func (r *SessionRepository) ListBoundariesForSession(_ context.Context, projectI
 	return out, nil
 }
 
-// ListBoundariesForSessions ist die Bulk-Variante (
-// / R-7). Liefert pro SessionID die Boundary-Liste in
+// ListBoundariesForSessions ist die Bulk-Variante R-7). Liefert pro SessionID die Boundary-Liste in
 // gleicher Read-Shape-Sortierung. SessionIDs ohne Boundaries fehlen
 // in der Map.
 func (r *SessionRepository) ListBoundariesForSessions(_ context.Context, projectID string, sessionIDs []string) (map[string][]domain.SessionBoundary, error) {

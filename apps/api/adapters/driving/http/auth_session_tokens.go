@@ -23,7 +23,7 @@ const maxAuthRequestBytes = 4 * 1024
 
 // AuthSessionTokensHandler implementiert
 // `POST /api/auth/session-tokens` aus `spec/backend-api-contract.md`
-// §3.9. Validierungsreihenfolge:
+// Validierungsreihenfolge:
 //
 //  1. Content-Type → `415`
 //  2. Body-Größe → `413`
@@ -54,7 +54,7 @@ func (h *AuthSessionTokensHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		return
 	}
-	// §3.9-Validierungsreihenfolge: Content-Type → Body-Size → JSON →
+	// Validierungsreihenfolge: Content-Type → Body-Size → JSON →
 	// Auth → Konsistenz → Audience → TTL → Rate-Limit. JSON-Parse
 	// muss VOR der Auth-Resolution laufen, damit ein Request ohne
 	// Token plus kaputtem JSON `400 invalid_json` liefert (nicht
@@ -154,7 +154,7 @@ func readAuthBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 }
 
 // writeAuthError mappt Auth-Domainfehler auf die Codes aus
-// §3.9. Reihenfolge ist die neunstufige Fehlerpräzedenz aus dem
+// Reihenfolge ist die neunstufige Fehlerpräzedenz aus dem
 // Wire-Vertrag — der Application-Service liefert genau einen Fehler
 // pro Aufruf, hier wird er auf das HTTP-Schema gemappt.
 func writeAuthError(w http.ResponseWriter, logger *slog.Logger, err error) {

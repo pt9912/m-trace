@@ -118,11 +118,24 @@ def clean_comment_text(t):
     t = re.sub(r" in `0\.\d+\.\d+`", "", t)
     t = re.sub(r" seit `0\.\d+\.\d+`", "", t)
 
-    # 4. Bare "ab/seit/in 0.X.Y"
+    # 4. Bare "ab/seit/in 0.X.Y" (numeric)
     t = re.sub(r" ab 0\.\d+\.\d+\s+Tranche \d+", "", t)
     t = re.sub(r" ab 0\.\d+\.\d+([ .,])", r"\1", t)
     t = re.sub(r" seit 0\.\d+\.\d+([ .,])", r"\1", t)
     t = re.sub(r"Default ab 0\.\d+\.\d+ ist", "Default ist", t)
+
+    # 4b. "0.X.y" or "0.X.x" pattern with letter suffix (e.g. 0.3.x)
+    t = re.sub(r"0\.\d+\.[xy]-(?:Backends?|Pflichten|Verhalten[a-z]*|Scope)", "Server", t)
+    t = re.sub(r"reales 0\.\d+\.[xy]\b", "reales Verhalten", t)
+    t = re.sub(r" 0\.\d+\.[xy]([ .,;:])", r"\1", t)
+    t = re.sub(r"^0\.\d+\.[xy]([ .,;:])", r"\1", t)
+
+    # 4c. Orphan "#N-" prefix (from §X.Yz-#N- pattern strip)
+    t = re.sub(r"^#\d+-(Vertrag|Snapshot|Item)\b", r"\1", t)
+    t = re.sub(r" #\d+-(Vertrag|Snapshot|Item)\b", r" \1", t)
+
+    # 4d. RFC NNNN §X.Y — external standard reference, drop § suffix
+    t = re.sub(r"(RFC \d+)\s+§[0-9.]+", r"\1", t)
 
     # 5. Stand-alone Tranche-Marker
     t = re.sub(r" \(Tranche \d+\)", "", t)
@@ -286,6 +299,127 @@ def process_line_based(text, comment_starts, block_starts=None):
         else:
             new_lines.append(line)
 
+    # Multi-line orphan cleanup (PHASE 2): handle artifacts left by
+    # single-line cleanup that span multiple comment lines.
+    #
+    # CRITICAL safety: every operation here verifies that BOTH the
+    # prev-line AND the next-line are comment lines (never touches code).
+
+    def is_cmt(s):
+        """True if line is a comment per current syntax."""
+        st = s.lstrip()
+        if any(st.startswith(cs) for cs in comment_starts):
+            return True
+        if block_starts and (st.startswith(block_starts[0]) or st.startswith("*")):
+            return True
+        return False
+
+    def cmt_prefix(line):
+        """Return (prefix, content) tuple, or (None, None) if not a comment."""
+        if block_starts:
+            m = re.match(
+                rf"^(\s*(?:{re.escape(block_starts[0])}|{re.escape(block_starts[1])}|\*)\s?)(.*)$",
+                line,
+            )
+            if m:
+                return m.group(1), m.group(2)
+        for cs in comment_starts:
+            m = re.match(rf"^(\s*{re.escape(cs)}\s?)(.*)$", line)
+            if m:
+                return m.group(1), m.group(2)
+        return None, None
+
+    # Phase 2a: orphan §-line starts (e.g. `// §5.1). Der Use Case ruft...`)
+    out = list(new_lines)
+    skip = set()
+    for i, line in enumerate(out):
+        if i in skip:
+            continue
+        if not is_cmt(line):
+            continue
+        prefix, content = cmt_prefix(line)
+        if content is None:
+            continue
+        # Pattern: line starts with `§X.Y...` then `).` or `).` followed by text
+        m = re.match(
+            r"^§[0-9a-z.]+(?:\s*/\s*§[0-9a-z.]+)?\s*[).,;:-]\s*(.*)$",
+            content,
+        )
+        if m:
+            rest = m.group(1)
+            if rest.strip():
+                out[i] = prefix + rest
+            else:
+                skip.add(i)
+            changed = True
+            continue
+        m2 = re.match(
+            r"^§[0-9a-z.]+(?:\s*/\s*§[0-9a-z.]+)?\s+(.*)$",
+            content,
+        )
+        if m2:
+            rest = m2.group(1)
+            if rest.strip():
+                out[i] = prefix + rest
+            else:
+                skip.add(i)
+            changed = True
+
+    # Phase 2b: orphan opening parens (line ends with ` (`, next line is closing)
+    for i in range(len(out) - 1):
+        if i in skip or (i + 1) in skip:
+            continue
+        cur = out[i]
+        nxt = out[i + 1]
+        if not (is_cmt(cur) and is_cmt(nxt)):
+            continue
+        cur_rstripped = cur.rstrip()
+        if not cur_rstripped.endswith("("):
+            continue
+        _, nxt_content = cmt_prefix(nxt)
+        if nxt_content is None:
+            continue
+        new_prev = re.sub(r"\s*\(\s*$", "", cur).rstrip()
+        # Case A: just `).` → drop next
+        if re.match(r"^\)\s*\.?\s*$", nxt_content):
+            out[i] = new_prev
+            skip.add(i + 1)
+            changed = True
+            continue
+        # Case B: continuation with Kennung — drop next
+        if re.match(
+            r"^[/]?\s*(R-\d+|RAK-\d+|F-\d+|NF-\d+|MVP-\d+|AK-\d+|Sub-[0-9.]+)",
+            nxt_content,
+        ):
+            if nxt_content.rstrip().endswith((")", ").", ");", "),", "):", ")")):
+                out[i] = new_prev
+                skip.add(i + 1)
+                changed = True
+                continue
+        # Case C: sister-doc ref — drop next
+        if re.match(r"^[`]?(spec/|docs/)[a-z/0-9-]+\.md", nxt_content):
+            if nxt_content.rstrip().endswith((")", ").", ");", "),", "):", ")")):
+                out[i] = new_prev
+                skip.add(i + 1)
+                changed = True
+                continue
+        # Case D: any other content with closing paren → merge
+        if ")" in nxt_content:
+            merged = re.sub(r"^[/]?\s*", "", nxt_content)
+            if merged.count("(") < merged.count(")"):
+                merged = re.sub(r"\)\s*([.,;:]?)\s*$", r"\1", merged)
+            if merged.strip():
+                out[i] = new_prev + " " + merged.strip()
+            else:
+                out[i] = new_prev
+            skip.add(i + 1)
+            changed = True
+            continue
+        # Otherwise: just drop the trailing ` (`
+        out[i] = new_prev
+        changed = True
+
+    new_lines = [l for j, l in enumerate(out) if j not in skip]
     return "\n".join(new_lines), changed
 
 

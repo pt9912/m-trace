@@ -164,8 +164,7 @@ fuzz-check:
 				go test -run="^$$" -fuzz="^$$name$$" -fuzztime=$(FUZZTIME) "./$$pkg"; \
 			done'
 
-# Mutation-Testing-Suite (
-# extra-gates.md). Pilot-Modul:
+# Mutation-Testing-Suite extra-gates.md). Pilot-Modul:
 # `apps/api/hexagon/application/event_meta_validation.go` (das Package
 # `hexagon/application` wird komplett mutiert; das Pilot-File ist der
 # dominante Beitrag im Score).

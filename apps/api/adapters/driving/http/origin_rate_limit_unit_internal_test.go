@@ -6,8 +6,7 @@ import (
 	"testing"
 )
 
-// TestOriginRateLimitMiddleware_NilLimiterPassesThrough (
-// / R-22): wenn `limiter=nil`, ist die Middleware ein
+// TestOriginRateLimitMiddleware_NilLimiterPassesThrough R-22): wenn `limiter=nil`, ist die Middleware ein
 // 1:1-Pass-Through (kein Wrap; Disabled-Pfad aus dem Boot-Validator).
 func TestOriginRateLimitMiddleware_NilLimiterPassesThrough(t *testing.T) {
 	t.Parallel()

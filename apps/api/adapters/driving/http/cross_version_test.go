@@ -14,10 +14,10 @@ import (
 //  #1 (aus §3.3-Review, Should-fix #1).
 //
 // Vertrag: ein SDK auf 0.4.0 sendet `traceparent`-Header an einen
-// Server, der wie 0.3.x das Header-Feld gar nicht liest und keine
+// Server, der wie das Header-Feld gar nicht liest und keine
 // `correlation_id` persistiert. Das HTTP-Layer-Verhalten muss
 // unverändert bleiben — Status 202, kein 4xx wegen unbekannten
-// Headern (RFC 9110 §5.1: "Unrecognized header fields SHOULD be
+// Headern (RFC 9110: "Unrecognized header fields SHOULD be
 // ignored").
 //
 // Realisierung als reiner Adapter-Test mit einem minimalen Stub-
@@ -67,20 +67,20 @@ func TestHTTP_Trace_CrossVersion_LegacyHandlerAcceptsTraceParent(t *testing.T) {
 }
 
 // legacyPlaybackHandler ist der minimale Server-Stub für den
-// §3.4b-#1-Vertrag. Er snapshotted **eine einzige** Eigenschaft des
-// 0.3.x-Backends: dass `traceparent` im HTTP-Layer nicht gelesen wird.
-// Alle anderen 0.3.x-Pflichten (Body-Größe, Detail-Validierung,
+// Vertrag. Er snapshotted **eine einzige** Eigenschaft des
+// Server: dass `traceparent` im HTTP-Layer nicht gelesen wird.
+// Alle anderen Server (Body-Größe, Detail-Validierung,
 // schema_version-Check, Domain-Pipeline, Origin-Bindung, Rate-Limit)
 // werden **nicht** gespiegelt — andernfalls würde der Stub zur
 // halb-treuen Kopie und ein zukünftiger Reviewer könnte aus einem
-// Stub-Verhalten falsche Schlüsse über reales 0.3.x ziehen. Was hier
+// Stub-Verhalten falsche Schlüsse über reales Verhalten ziehen. Was hier
 // fehlt, ist absichtlich nicht da; was hier ist, ist Vertrag.
 //
 // Der Stub akzeptiert daher jede POST-Anfrage mit Token-Header und
 // JSON-parsefähigem Body als 202 — egal welche Header sonst gesetzt
 // sind. Damit ist der „unbekannter Header bricht den Server nicht"-
-// Vertrag (RFC 9110 §5.1) maschinenlesbar, ohne sich auf weitere
-// 0.3.x-Verhaltensdetails zu committen.
+// Vertrag (RFC 9110) maschinenlesbar, ohne sich auf weitere
+// Server zu committen.
 func legacyPlaybackHandler(t *testing.T) http.Handler {
 	t.Helper()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func legacyPlaybackHandler(t *testing.T) http.Handler {
 			return
 		}
 		// Bewusst kein r.Header.Get("traceparent") — exakt das ist der
-		// §3.4b-#1-Snapshot des 0.3.x-Verhaltens.
+		// Snapshot des Server.
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

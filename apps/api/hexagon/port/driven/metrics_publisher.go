@@ -36,8 +36,7 @@ type MetricsPublisher interface {
 	// Aufruf nur bei nicht-`none` Fehlerklassen.
 	SrtCollectorError(code domain.SourceErrorCode)
 
-	// WebRTC-Aggregate (
-	// spec/telemetry-model.md). Wertebereiche der Labels kommen
+	// WebRTC-Aggregate spec/telemetry-model.md). Wertebereiche der Labels kommen
 	// aus den W3C-Enums und sind in §3.2 als bounded Aggregat-Labels
 	// freigegeben. State-Counter zählen Samples (nicht Gauges);
 	// Counter-Felder werden serverseitig deltadiffenziert über den
@@ -47,8 +46,7 @@ type MetricsPublisher interface {
 	WebRTCSample(sample WebRTCSampleSnapshot)
 
 	// SampleRateDrift incrementiert
-	// `mtrace_sample_rate_drift_total{project_id}` (
-	// / R-10, spec/telemetry-model.md). Aufruf nur,
+	// `mtrace_sample_rate_drift_total{project_id}` R-10, spec/telemetry-model.md). Aufruf nur,
 	// wenn ein `meta.session_sample_rate`-Wert eingegangen ist, der
 	// vom bereits persistierten Wert um mehr als die Toleranzschwelle
 	// (`SampleRateDriftToleranceP_PM` = 100 ppm) abweicht.

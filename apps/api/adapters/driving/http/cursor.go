@@ -18,7 +18,7 @@ import (
 var (
 	// errCursorInvalidLegacy: Token decodiert; `v`-Feld fehlt, ist
 	// 1 oder 2 (Pre-§4.3-Format ohne Project-/Session-Scope) — oder
-	// das gemeinsame Erkennungsmerkmal aus 0.1.x ist da. Dauerhaft
+	// das gemeinsame Erkennungsmerkmal aus ist da. Dauerhaft
 	// abgewiesen — kein One-Shot-Grace-Pfad.
 	errCursorInvalidLegacy = errors.New("cursor_invalid_legacy")
 	// errCursorInvalidMalformed: Base64-/JSON-Decode schlägt fehl;
@@ -66,7 +66,7 @@ type wireSessionEventsCursor struct {
 }
 
 // listSessionsRawCursor ist eine Decode-Zwischenform mit allen
-// jemals belegten Feldnamen. `pid` hat in 0.1.x die Bedeutung
+// jemals belegten Feldnamen. `pid` hat in die Bedeutung
 // `process_instance_id` (Legacy) und ab v3 die Bedeutung `project_id`
 // (Project-Scope) — daher ist die Versions-Erkennung über `v` Pflicht
 // vor jeder Interpretation von `pid`.
@@ -137,7 +137,7 @@ func decodeListSessionsCursor(s, requestProjectID string) (*driving.ListSessions
 	}
 	switch *probe.V {
 	case 1, 2:
-		// v=1: 0.1.x mit process_instance_id (kein Project-Scope).
+		// v=1: mit process_instance_id (kein Project-Scope).
 		// v=2: 0.2.0–0.3.x mit durable Sortierung, aber ohne Project-
 		// Scope. Beide ab §4.3 dauerhaft abgewiesen.
 		return nil, errCursorInvalidLegacy

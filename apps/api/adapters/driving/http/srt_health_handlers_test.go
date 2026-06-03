@@ -449,7 +449,7 @@ func TestSrtHealthDetail_CursorRoundTrip(t *testing.T) {
 }
 
 // TestSrtHealthDetail_CursorInvalidLegacy: v1- oder v2-Cursor (Pre-
-// §4.3-Format) → 400 cursor_invalid_legacy (spec §7a.4 / §10.3).
+// Format) → 400 cursor_invalid_legacy (spec §7a.4 / §10.3).
 func TestSrtHealthDetail_CursorInvalidLegacy(t *testing.T) {
 	t.Parallel()
 	inbound := &stubSrtHealthInbound{}

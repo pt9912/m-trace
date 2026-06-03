@@ -41,7 +41,7 @@ var (
 //  ErrAuthIssuanceRateLimited → 429 auth_issuance_rate_limited
 //
 // Die Reihenfolge spiegelt die neunstufige Fehlerpräzedenz aus
-// §3.9 wider; Domain-Code liefert die Fehler einzeln zurück, der HTTP-
+// 9 wider; Domain-Code liefert die Fehler einzeln zurück, der HTTP-
 // Adapter ist für die Reihenfolge zuständig.
 var (
 	ErrAuthTokenMissing        = errors.New("auth token missing")

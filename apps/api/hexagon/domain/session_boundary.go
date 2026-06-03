@@ -30,7 +30,7 @@ type SessionBoundary struct {
 	Adapter string
 	// Reason verwendet denselben normativen Reason-Enum wie
 	// `meta["network.unavailable_reason"]` (spec/telemetry-model.md
-	// §1.4) plus Pattern `^[a-z0-9_]{1,64}$`.
+	// plus Pattern `^[a-z0-9_]{1,64}$`.
 	Reason string
 	// ClientTimestamp ist die SDK-Uhr beim Capability-Erkennen; nicht
 	// autoritativ, dient der Timeline-Anzeige.

@@ -192,7 +192,7 @@ func evaluateLossHealth(rate *float64, t SrtHealthThresholds) domain.HealthState
 
 // evaluateBandwidthHealth bewertet verfügbare gegen erwartete
 // Bandbreite. Ohne required-Wert gibt sie Healthy zurück (spec
-// §7.4: keine Bandbreiten-Bewertung ohne Schwelle).
+// keine Bandbreiten-Bewertung ohne Schwelle).
 func evaluateBandwidthHealth(available int64, required *int64, t SrtHealthThresholds) domain.HealthState {
 	if required == nil || *required <= 0 {
 		return domain.HealthStateHealthy

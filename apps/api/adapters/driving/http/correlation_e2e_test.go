@@ -10,7 +10,7 @@ import (
 //  — End-to-End-Tests für die gemischte Korrelation
 // und die Degradationsmatrix. Spec-Anker:
 // `spec/telemetry-model.md` §2.5 (correlation_id vs trace_id),
-// §1.4 (network.*-Meta + session_boundaries[]); API-Kontrakt
+// 4 (network.*-Meta + session_boundaries[]); API-Kontrakt
 
 // TestE2E_MixedEventTypes_ShareCorrelationID pinnt §4.7 DoD-Item 1:
 // Innerhalb einer Session tragen alle Event-Typen — Player-,

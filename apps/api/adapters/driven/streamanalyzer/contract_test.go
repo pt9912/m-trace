@@ -18,8 +18,7 @@ import (
 // `spec/contract-fixtures/analyzer/`. Quelle bleibt spec/; ein TS-Test
 // in `packages/stream-analyzer/tests/contract.test.ts` pinnt, dass
 // die Kopien byte-gleich mit der Spec-Quelle sind. Damit sind beide
-// Sprachen gegen *dieselbe* Wahrheit getestet (
-// .5/4).
+// Sprachen gegen *dieselbe* Wahrheit getestet.5/4.
 
 //go:embed testdata/contract-success-master.json
 var contractSuccessMaster []byte

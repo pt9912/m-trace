@@ -91,7 +91,7 @@ func WithMaxResponseBytes(n int64) Option {
 // bit/s), die der Adapter pro Sample als `RequiredBandwidthBPS`
 // emittiert. Ohne diese Schwelle bleibt das Feld nil und Health-
 // Bewertung wertet die Bandbreite nicht (spec/telemetry-model.md
-// §7.4: „Ohne Schwelle darf available_bandwidth_bps angezeigt, aber
+// „Ohne Schwelle darf available_bandwidth_bps angezeigt, aber
 // nicht als Engpass bewertet werden"). Werte ≤ 0 bleiben no-op.
 func WithRequiredBandwidthBPS(bps int64) Option {
 	return func(s *HTTPSrtSource) {

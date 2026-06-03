@@ -63,8 +63,7 @@ type PrometheusPublisher struct {
 	srtCollectorRuns         *prometheus.CounterVec
 	srtCollectorErrors       *prometheus.CounterVec
 
-	// WebRTC-Aggregate (
-	// spec/telemetry-model.md).
+	// WebRTC-Aggregate
 	webrtc *webrtcMetrics
 
 	// Sample-Rate-Drift-Counter (R-10,
@@ -177,16 +176,14 @@ func NewPrometheusPublisher(opts ...PublisherOption) *PrometheusPublisher {
 }
 
 // WebRTCSample inkrementiert die `mtrace_webrtc_*`-Counter und
-// pflegt den Sample-State (
-// spec/telemetry-model.md). State-Counter zählen Samples;
+// pflegt den Sample-State spec/telemetry-model.md). State-Counter zählen Samples;
 // Counter-Felder werden deltadiffenziert.
 func (p *PrometheusPublisher) WebRTCSample(s driven.WebRTCSampleSnapshot) {
 	p.webrtc.record(s)
 }
 
 // SampleRateDrift incrementiert
-// `mtrace_sample_rate_drift_total{project_id}` (
-// / R-10). Aufruf nur bei Toleranz-Überschreitung — der
+// `mtrace_sample_rate_drift_total{project_id}` R-10). Aufruf nur bei Toleranz-Überschreitung — der
 // Use-Case filtert silent-Rundungsartefakte innerhalb ±100 ppm vor.
 func (p *PrometheusPublisher) SampleRateDrift(projectID string) {
 	p.sampleRateDrift.WithLabelValues(projectID).Inc()

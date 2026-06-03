@@ -31,8 +31,7 @@ import (
 )
 
 // spanNameSrtHealthCollect ist der Span-Name aus
-// spec/telemetry-model.md für SRT-Health-Samples (
-// §4 Sub-3.6).
+// spec/telemetry-model.md für SRT-Health-Samples
 const spanNameSrtHealthCollect = "mtrace.srt.health.collect"
 
 // MeterName is the OTel scope used for instrumentation.
@@ -213,7 +212,7 @@ func (t *OTelTelemetry) WithTracer(tr trace.Tracer) *OTelTelemetry {
 // `batch_size="250"` to Prometheus. The per-request batch size lives on
 // the `http.handler POST /api/playback-events` span instead (see
 // adapters/driving/http/handler.go:73). See spec/telemetry-model.md
-// §2.2 / §3.1 and docs/planning/done/ for the
+// 1 and docs/planning/done/ for the
 // full cardinality contract.
 func (t *OTelTelemetry) BatchReceived(ctx context.Context, _ int) {
 	t.counter.Add(ctx, 1)

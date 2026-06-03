@@ -9,8 +9,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 )
 
-// TestRedisOrigin_HappyPath_CrossInstanceSharing (
-// / R-22-Resttrigger): zwei Limiter-Instanzen teilen das
+// TestRedisOrigin_HappyPath_CrossInstanceSharing R-22-Resttrigger): zwei Limiter-Instanzen teilen das
 // Bucket über Redis.
 func TestRedisOrigin_HappyPath_CrossInstanceSharing(t *testing.T) {
 	t.Parallel()

@@ -145,7 +145,7 @@ func NewRouter(
 
 // registerSrtHealthRoutes verdrahtet die SRT-Health-Read-Pfade
 // (RAK-43, spec/backend-api-contract.md
-// §7a). Wenn `srtHealth` nil ist (Sub-3.5 verdrahtet das opt-in über
+// . Wenn `srtHealth` nil ist (Sub-3.5 verdrahtet das opt-in über
 // `MTRACE_SRT_SOURCE_URL`), bleibt die Funktion no-op.
 func registerSrtHealthRoutes(
 	mux *http.ServeMux,

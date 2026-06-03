@@ -18,8 +18,7 @@ var ErrAnalyzeManifestEmpty = errors.New("analyze manifest: weder ManifestText n
 // driven Port und löst optionale Session-Link-Felder gegen das
 // SessionRepository auf. Die Implementierung selbst
 // ist dünn — der eigentliche Lade- und Parse-Aufwand liegt im
-// analyzer-service hinter dem HTTPStreamAnalyzer-Adapter (
-// §7); die Link-Auflösung läuft project-skopiert über
+// analyzer-service hinter dem HTTPStreamAnalyzer-Adapter
 // `(ProjectID, CorrelationID)` bzw. `(ProjectID, SessionID)`.
 type AnalyzeManifestUseCase struct {
 	analyzer driven.StreamAnalyzer
@@ -65,7 +64,6 @@ func (u *AnalyzeManifestUseCase) AnalyzeManifest(ctx context.Context, req domain
 }
 
 // resolveSessionLink implementiert die Statusmatrix aus API-Kontrakt
-// §3.6:
 //
 //  - keine Link-Felder → detached
 //  - correlation_id allein, im Project bekannt → linked

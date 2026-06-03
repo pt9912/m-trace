@@ -9,7 +9,7 @@ import (
 )
 
 // URL-Redaction-Matrix aus spec/telemetry-model.md und
-// §4.4 DoD-Item 5. Vor Persistenz und Dashboard-Anzeige werden alle
+// 4 DoD-Item 5. Vor Persistenz und Dashboard-Anzeige werden alle
 // URL-verdächtigen Meta-Keys redigiert; nichts roh persistiert.
 //
 // Bekannte URL-Keys aus der Matrix (case-insensitiv): `url`, `uri`,

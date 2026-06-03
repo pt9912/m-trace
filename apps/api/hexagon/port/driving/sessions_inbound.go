@@ -12,8 +12,7 @@ import (
 // noch durable Storage-Werte; Restart-Stabilität liegt jetzt am
 // `ingest_sequence`-Tie-Breaker statt an einer Prozess-ID.
 
-// SessionsInbound ist der Read-Pfad zu Stream-Sessions (
-// §5.1, Sub-Item 4): zwei Operationen für Liste und Detail. Der HTTP-
+// SessionsInbound ist der Read-Pfad zu Stream-Sessions
 // Adapter encoded und decoded den opaken Wire-Cursor; hier fließen
 // nur typisierte Cursor.
 type SessionsInbound interface {

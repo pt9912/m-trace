@@ -7,10 +7,8 @@ import (
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
-// SessionRepository hält den aggregierten Sessions-Zustand (
-// §5.1). Der Use Case ruft UpsertFromEvents nach jedem akzeptierten
-// Batch auf; List und Get bedienen die Read-Endpoints (
-// Sub-Item 4); Sweep wird vom Lifecycle-Sweeper aufgerufen
+// SessionRepository hält den aggregierten Sessions-Zustand
+// Batch auf; List und Get bedienen die Read-Endpoints Sub-Item 4); Sweep wird vom Lifecycle-Sweeper aufgerufen
 // ( Sub-Item 8).
 //
 // Ab sind alle Methoden, die einzelne Sessions

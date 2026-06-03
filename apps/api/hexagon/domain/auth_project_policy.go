@@ -42,7 +42,7 @@ func (m HTTPMethod) IsKnown() bool {
 // AllowedRequestHeader modelliert die im Pflichtpfad
 // zulässigen Request-Header (CORS-Preflight-Allowlist plus den
 // `traceparent`-Header für Trace-Korrelation). Plan §0.5/§0.6 und
-// §3.9 pinnen die Liste; weitere Header bleiben Folge-Scope.
+// 9 pinnen die Liste; weitere Header bleiben Folge-Scope.
 type AllowedRequestHeader string
 
 // AllowedRequestHeader-Werte aus dem Muss-Scope. Strings

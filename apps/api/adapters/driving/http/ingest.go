@@ -16,8 +16,7 @@ import (
 )
 
 // maxIngestRequestBytes ist die Defense-in-Depth-Grenze für den
-// Request-Body im Ingest-Control-Pfad (
-// NF-13 / RAK-65..RAK-70). Spec §3.8 §6 Schema-Validierung
+// Request-Body im Ingest-Control-Pfad NF-13 / RAK-65..RAK-70). Spec §3.8 §6 Schema-Validierung
 // erwartet, dass größere Bodies vor dem JSON-Parser abgeschnitten
 // werden.
 const maxIngestRequestBytes = 1 * 1024 * 1024
@@ -108,8 +107,7 @@ func (h *IngestStreamRotateHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 }
 
 // IngestMediaServerConfigHandler bedient
-// `GET /api/ingest/media-server-config` (
-// RAK-68). Antwort enthält das deterministisch generierte
+// `GET /api/ingest/media-server-config` RAK-68). Antwort enthält das deterministisch generierte
 // MediaMTX-YAML-Artefakt; Klartext-Stream-Keys erscheinen niemals.
 type IngestMediaServerConfigHandler struct {
 	UseCase  driving.IngestControlInbound
@@ -155,8 +153,7 @@ func writeMediaServerConfigError(w http.ResponseWriter, logger *slog.Logger, err
 
 // IngestLifecycleHookHandler bedient
 // `POST /api/ingest/hooks/stream-started` und
-// `POST /api/ingest/hooks/stream-ended` (
-// RAK-69). Das Event-`type` wird ausschließlich aus `Kind`
+// `POST /api/ingest/hooks/stream-ended` RAK-69). Das Event-`type` wird ausschließlich aus `Kind`
 // abgeleitet — Body-Felder mit gegenteiligem `type` haben keinen
 // Effekt, damit ein POST auf den Stop-Endpoint nicht heimlich ein
 // Start-Event einspeisen kann.

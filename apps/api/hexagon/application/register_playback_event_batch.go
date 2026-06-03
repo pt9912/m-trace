@@ -107,7 +107,7 @@ func (u *RegisterPlaybackEventBatchUseCase) WithBroker(broker *EventBroker) *Reg
 // adapter's responsibility.
 //
 // Counter semantics (API-Kontrakt, harmonisiert mit Lastenheft 1.1.2
-// §7.9): mtrace_invalid_events_total zählt nur Validierungs-Rejects
+// : mtrace_invalid_events_total zählt nur Validierungs-Rejects
 // mit Status 400/422 (Schema, Batch-Form, Event-Felder). Auth-Fehler
 // (401) — sowohl ResolveByToken als auch Token/Project-Bindung —
 // inkrementieren keinen Counter. mtrace_dropped_events_total ist auf
@@ -275,7 +275,7 @@ func (u *RegisterPlaybackEventBatchUseCase) authorizeAndAdmit(
 
 // parseEvents deckt API-Kontrakt Steps 8–9 ab: per-Event-Feldcheck,
 // Token/Project-Bindung und Time-Skew-Detection (telemetry-model.md
-// §5.3, Schwelle 60 s). Liefert die domain-PlaybackEvent-Liste plus
+// Schwelle 60 s). Liefert die domain-PlaybackEvent-Liste plus
 // das Skew-Warning-Flag, das einmal aktiv für den ganzen Batch gilt.
 func (u *RegisterPlaybackEventBatchUseCase) parseEvents(
 	in driving.BatchInput, projectID string,
@@ -411,9 +411,9 @@ func newCorrelationID() (string, error) {
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", fmt.Errorf("application: correlation_id rand: %w", err)
 	}
-	// RFC 4122 §4.4: version 4 in highest 4 bits of byte 6.
+	// RFC 4122: version 4 in highest 4 bits of byte 6.
 	b[6] = (b[6] & 0x0f) | 0x40
-	// RFC 4122 §4.4: variant 10 in highest 2 bits of byte 8.
+	// RFC 4122: variant 10 in highest 2 bits of byte 8.
 	b[8] = (b[8] & 0x3f) | 0x80
 	hexed := hex.EncodeToString(b[:])
 	return fmt.Sprintf("%s-%s-%s-%s-%s",
@@ -560,8 +560,7 @@ func copyEventMeta(in map[string]any) map[string]any {
 }
 
 // applySessionSampleRate verarbeitet `meta.session_sample_rate` pro
-// distinct (project_id, session_id)-Partition im Batch (
-// §6 / R-10). Per-Session-Logik:
+// distinct (project_id, session_id)-Partition im Batch
 //
 //  - Wert fehlt oder == 1.0 → no-op (Session bleibt voll-gesampelt-
 //  Default in der DB).

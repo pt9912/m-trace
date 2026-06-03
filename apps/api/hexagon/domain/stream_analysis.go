@@ -12,8 +12,7 @@ package domain
 //
 // Genau eines von ManifestText oder ManifestURL muss gesetzt sein. Die
 // konkrete Eingabevalidierung erfolgt im Adapter, weil Lade-Politik
-// (Timeout, Größe, SSRF) dort implementiert wird (
-// ).
+// (Timeout, Größe, SSRF) dort implementiert wird
 //
 // Ab trägt der Request optional Session-Link-Felder
 // (`CorrelationID`, `SessionID`) plus den vom HTTP-Adapter aufgelösten

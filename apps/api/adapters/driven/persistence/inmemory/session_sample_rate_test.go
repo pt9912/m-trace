@@ -102,8 +102,7 @@ func TestSessionRepository_SetSessionSampleRatePPMIfDefault_UnknownSession(t *te
 	}
 }
 
-// TestSessionRepository_ListBoundariesForSessions (
-// / R-7): Bulk-Variante liefert pro SessionID die
+// TestSessionRepository_ListBoundariesForSessions R-7): Bulk-Variante liefert pro SessionID die
 // sortierten Boundaries; SessionIDs ohne Boundaries fehlen in der
 // Map; Cross-Project-Scope wird respektiert; leere Input-Liste ist
 // ein No-Op.

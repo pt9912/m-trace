@@ -70,8 +70,7 @@ func (r *StaticProjectResolver) ResolveByToken(_ context.Context, token string) 
 
 // IsOriginInGlobalUnion gibt true zurück, wenn `origin` exakt in der
 // globalen Union aller Allowed-Origins über alle bekannten Projects
-// steht. Wird vom CORS-Preflight-Handler verwendet (
-// §5.1, CORS Variante B). Leerer Origin → false (Preflight ohne
+// steht. Wird vom CORS-Preflight-Handler verwendet
 // Origin-Header existiert nicht im Browser-Pfad).
 func (r *StaticProjectResolver) IsOriginInGlobalUnion(origin string) bool {
 	if origin == "" {

@@ -8,7 +8,7 @@ import (
 )
 
 // SrtHealthRepository persistiert SRT-Health-Samples (spec/architecture.md
-// §3.3, spec/backend-api-contract.md). Implementierungen müssen
+// spec/backend-api-contract.md). Implementierungen müssen
 // safe für Concurrent-Use sein und die Dedupe-Regel aus §10.6
 // einhalten:
 //
@@ -55,7 +55,7 @@ type SrtHealthHistoryQuery struct {
 
 // SrtHealthCursor ist die Repository-Sicht auf den Cursor: roh die
 // kanonische Sortier-Position `(IngestedAt, ID)` aus spec §7a.3 /
-// §10.4. Der Wire-Codec lebt im HTTP-Adapter und ergänzt den
+// Der Wire-Codec lebt im HTTP-Adapter und ergänzt den
 // Collection-Scope `(project_id, stream_id)` gemäß §10.3 v3.
 type SrtHealthCursor struct {
 	IngestedAt time.Time

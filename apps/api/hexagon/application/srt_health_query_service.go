@@ -4,7 +4,7 @@ package application
 //
 // Liefert die Read-Use-Cases für `GET /api/srt/health` und
 // `GET /api/srt/health/{stream_id}` (spec/backend-api-contract.md
-// §7a). Der Service ist pure Application-Schicht: er liest aus
+// . Der Service ist pure Application-Schicht: er liest aus
 // `SrtHealthRepository`, leitet derived/freshness-Felder ab und
 // reicht das Ergebnis an den HTTP-Handler weiter, der das Wire-
 // Format kodiert.
@@ -33,7 +33,6 @@ var ErrSrtHealthStreamUnknown = errors.New("srt health: stream unknown")
 // SrtHealthSummary ist die abgeleitete Sicht auf einen
 // SrtHealthSample plus berechnete Felder (`derived`, `freshness`).
 // Der HTTP-Adapter serialisiert das Schema in JSON gemäß spec
-// §7a.2.
 type SrtHealthSummary struct {
 	Sample            domain.SrtHealthSample
 	BandwidthHeadroom *float64 // available / required, falls required vorhanden

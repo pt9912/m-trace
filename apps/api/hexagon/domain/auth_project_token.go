@@ -28,7 +28,7 @@ import (
 //
 // Wire-Prefix `mtr_pt_` (Project Token) ist bewusst unterschiedlich
 // zu `mtr_st_` (Session Token, §3.9) und `mtr_ing_` (Stream Key,
-// §3.8) — Prefix-Verwechslungen schlagen direkt im Adapter durch.
+// — Prefix-Verwechslungen schlagen direkt im Adapter durch.
 
 // projectTokenPrefix ist der projektweite Marker für rotierbare
 // Project Tokens. Der Prefix ist Teil des Klartexts und damit auch im
@@ -40,7 +40,7 @@ const projectTokenEntropyBytes = 32 // 256 Bit
 
 // ProjectTokenGenerationStatus klassifiziert den Lifecycle-Zustand
 // einer einzelnen Generation (RAK-73, `spec/backend-api-contract.md`
-// §3.9). Der Wert wird **nicht** persistiert — er wird pro
+// . Der Wert wird **nicht** persistiert — er wird pro
 // Validierungsaufruf aus den Lifecycle-Feldern plus aktueller Clock
 // berechnet, damit kein Drift zwischen Persistenz und Zeitvergleich
 // entstehen kann.

@@ -259,7 +259,7 @@ func TestHTTP_StreamSessionsByID_HappyPath(t *testing.T) {
 }
 
 // TestHTTP_StreamSessions_NetworkSignalAbsentDefaultEmpty pinnt den
-// §4.4-D3-Default: jede Session-Read-Antwort trägt
+// D3-Default: jede Session-Read-Antwort trägt
 // `network_signal_absent` als JSON-Array, auch wenn keine Boundaries
 // persistiert sind (Spec §3.7.1: Default `[]`, kein `null`).
 func TestHTTP_StreamSessions_NetworkSignalAbsentDefaultEmpty(t *testing.T) {

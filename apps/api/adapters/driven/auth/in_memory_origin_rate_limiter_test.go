@@ -102,8 +102,7 @@ func TestInMemoryOriginRateLimiter_NilReceiver(t *testing.T) {
 	}
 }
 
-// TestInMemoryOriginRateLimiter_EvictsIdleBuckets (
-// / R-22): nach `idleTTL` (10 min Default) räumt der
+// TestInMemoryOriginRateLimiter_EvictsIdleBuckets R-22): nach `idleTTL` (10 min Default) räumt der
 // nächste Allow-Call die ungenutzten Buckets per opportunistic
 // sweep. Test treibt den Clock manuell weit über die Schwelle.
 func TestInMemoryOriginRateLimiter_EvictsIdleBuckets(t *testing.T) {

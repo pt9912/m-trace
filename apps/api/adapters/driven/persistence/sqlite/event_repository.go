@@ -265,8 +265,7 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 
 // listAfterIngestSequenceSQL liefert Events eines Projects mit
 // `ingest_sequence > ?`, sortiert aufsteigend, max LIMIT Treffer.
-// Backfill-Quelle für SSE-`Last-Event-ID`-Reconnect (
-// §5 H4; spec/backend-api-contract.md).
+// Backfill-Quelle für SSE-`Last-Event-ID`-Reconnect
 const listAfterIngestSequenceSQL = `
 SELECT ingest_sequence, project_id, session_id, event_name,
        client_timestamp, server_received_at, sequence_number,

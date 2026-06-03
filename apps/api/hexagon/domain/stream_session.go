@@ -67,8 +67,7 @@ const (
 	SessionStateEnded   SessionState = "ended"
 )
 
-// StreamSession aggregiert Events mit gleicher session_id (
-// §5.1). Felder werden beim ersten Event auf Default-State Active
+// StreamSession aggregiert Events mit gleicher session_id
 // gesetzt; LastEventAt und EventCount tracken folgende Events derselben
 // Session und sind die Grundlage für Lifecycle-Übergänge (Sub-Item 8).
 //
@@ -92,7 +91,7 @@ type StreamSession struct {
 	//  - "" (Leerwert) wenn State != ended, oder bei Legacy-Sessions
 	//  vor dem V4-Migration-Closeout
 	// Read-Pfad mappt den Leerwert auf JSON `null` (siehe API-Kontrakt
-	// §3.7.1).
+	// .
 	EndSource SessionEndSource
 	// SampleRatePPM ist die normalisierte Sampling-Rate der Session in
 	// Integer-ppm (parts per million). `SampleRateFull` = voll gesampelt

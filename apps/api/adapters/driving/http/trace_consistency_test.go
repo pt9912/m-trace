@@ -129,7 +129,7 @@ func TestHTTP_Trace_MultiBatchSameSessionConsistency(t *testing.T) {
 }
 
 // TestHTTP_Trace_MissingTraceparent_ServerGeneratesTrace deckt
-// §3.4a #2: ein Batch ohne traceparent-Header → der Server erzeugt
+// 4a #2: ein Batch ohne traceparent-Header → der Server erzeugt
 // eine eigene trace_id (Span-Root), mtrace.trace.parse_error ist nicht
 // gesetzt, und die server-generierte trace_id landet im persistierten
 // Event (Voraussetzung für die Tempo-Korrelation aus

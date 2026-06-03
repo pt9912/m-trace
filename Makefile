@@ -174,8 +174,7 @@ smoke-analyzer:
 smoke-mediamtx:
 	bash scripts/smoke-mediamtx.sh
 
-# `make smoke-srt` startet das eigene SRT-Beispiel (
-# , RAK-37) als Project `mtrace-srt`, prüft den HLS-Pfad
+# `make smoke-srt` startet das eigene SRT-Beispiel, RAK-37) als Project `mtrace-srt`, prüft den HLS-Pfad
 # auf 8889 (FFmpeg→SRT→MediaMTX→HLS) und beendet den Stack wieder.
 # Opt-in (nicht in `make gates`).
 smoke-srt:
@@ -198,8 +197,7 @@ smoke-srt-health:
 smoke-srt-health-pagination:
 	SMOKE_INCLUDE_MTRACE_API=1 MTRACE_SRT_HEALTH_PAGINATION=1 bash scripts/smoke-srt-health.sh
 
-# `make smoke-dash` startet das DASH-Beispiel (
-# RAK-38) als Project `mtrace-dash`: FFmpeg generiert DASH in ein
+# `make smoke-dash` startet das DASH-Beispiel RAK-38) als Project `mtrace-dash`: FFmpeg generiert DASH in ein
 # Volume, nginx serviert es auf 8891. Smoke prüft MPD + Init-Segment
 # und beendet den Stack wieder. Opt-in (nicht in `make gates`).
 smoke-dash:

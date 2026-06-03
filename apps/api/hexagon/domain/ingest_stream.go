@@ -132,7 +132,7 @@ type MediaServerTarget struct {
 }
 
 // RoutingRuleMode unterscheidet die zulässigen Routing-Modi. Plan
-// §0.1 schließt Fan-out, Failover und Load-Balancing für `0.11.0`
+// 1 schließt Fan-out, Failover und Load-Balancing für `0.11.0`
 // aus; `single` ist deshalb der einzige Wert, ist aber als String-
 // Enum modelliert, damit Folge-Releases additiv erweitern können.
 type RoutingRuleMode string

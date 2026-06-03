@@ -117,7 +117,7 @@ UPDATE stream_sessions
 SET state = 'ended', ended_at = ?, end_source = 'sweeper'
 WHERE state = 'stalled' AND last_seen_at < ?`
 
-	// §4.4 D2: Insert-or-Refresh für `session_boundaries[]`.
+	// 4 D2: Insert-or-Refresh für `session_boundaries[]`.
 	// Read-Shape (§3.7.1) dedupliziert per Tripel
 	// `(kind, network_kind, adapter, reason)`; ON CONFLICT auf dem PK
 	// hält die Persistenz idempotent — Mehrfach-Sends derselben Tripel

@@ -59,8 +59,7 @@ type LifecycleEventResult struct {
 }
 
 // MediaServerConfigResult ist die Antwort auf
-// `GET /api/ingest/media-server-config` (
-// RAK-68). `ConfigYAML` enthält das deterministisch generierte
+// `GET /api/ingest/media-server-config` RAK-68). `ConfigYAML` enthält das deterministisch generierte
 // MediaMTX-Artefakt; Klartext-Stream-Keys erscheinen niemals im
 // Output (siehe Plan §0.7 + RAK-66). `Warnings` listet
 // non-fatal Hinweise (z. B. übersprungene Streams mit
@@ -113,7 +112,6 @@ type CreateStreamResult struct {
 
 // StreamDetail ergänzt den Stream um die referenzierten Endpoint-,
 // Target- und Routing-Rule-Daten für die Detail-Antwort aus
-// §3.8.
 type StreamDetail struct {
 	Stream      domain.IngestStream
 	Endpoint    domain.IngestEndpoint

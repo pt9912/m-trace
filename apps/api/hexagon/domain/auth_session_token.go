@@ -26,7 +26,7 @@ const SessionTokenPrefix = "mtr_st_"
 
 // MaxSessionTokenTTLSeconds ist die harte globale Obergrenze für
 // `ttl_seconds` aus `POST /api/auth/session-tokens` (Wire-Vertrag
-// §3.9, RAK-72). Project Policies dürfen niedriger begrenzen, aber
+// RAK-72). Project Policies dürfen niedriger begrenzen, aber
 // nicht höher; das wird im Issuance-Pfad und in `ValidateTTLSeconds`
 // erzwungen.
 const MaxSessionTokenTTLSeconds = 900

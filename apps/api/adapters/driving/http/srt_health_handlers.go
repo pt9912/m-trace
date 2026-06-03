@@ -23,7 +23,7 @@ const rfc3339Millis = "2006-01-02T15:04:05.000Z07:00"
 
 // SrtHealthInbound ist der Driving-Port für die SRT-Health-Read-
 // Pfade (RAK-43, spec/backend-api-contract.md
-// §7a). Application-Layer implementiert das Interface über
+// . Application-Layer implementiert das Interface über
 // SrtHealthQueryService.
 //
 // HistoryByStream akzeptiert ab einen

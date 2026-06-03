@@ -84,7 +84,7 @@ type stubSessionRepo struct {
 	// returnt einen anderen Fehler als domain.ErrSessionNotFound).
 	getError error
 	// boundaries zeichnet die Aufrufe von AppendBoundaries auf, damit
-	// §4.4 D2-Tests die persistierten Wrapper-Records prüfen können.
+	// 4 D2-Tests die persistierten Wrapper-Records prüfen können.
 	boundaries [][]domain.SessionBoundary
 	// boundariesFailNext lässt Tests einen Fehler-Pfad nach erfolgreichem
 	// UpsertFromEvents simulieren.
@@ -728,8 +728,7 @@ func TestRegisterPlaybackEventBatch_TimeSkew(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_TimeSkewPerEvent (
-// / R-5): In einem Mixed-Batch mit zwei Events darf der
+// TestRegisterPlaybackEventBatch_TimeSkewPerEvent R-5): In einem Mixed-Batch mit zwei Events darf der
 // Pro-Event-Flag unterschiedlich sein, der Batch-Flag aggregiert auf
 // „mindestens eines hat Skew".
 func TestRegisterPlaybackEventBatch_TimeSkewPerEvent(t *testing.T) {
@@ -788,8 +787,7 @@ func TestRegisterPlaybackEventBatch_SampleRateImmutableFirstSet(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_SampleRateNoOpFull (
-// / R-10): Wert == 1.0 ist Default — kein Set-Aufruf, kein
+// TestRegisterPlaybackEventBatch_SampleRateNoOpFull R-10): Wert == 1.0 ist Default — kein Set-Aufruf, kein
 // Drift-Counter.
 func TestRegisterPlaybackEventBatch_SampleRateNoOpFull(t *testing.T) {
 	t.Parallel()
@@ -808,8 +806,7 @@ func TestRegisterPlaybackEventBatch_SampleRateNoOpFull(t *testing.T) {
 	}
 }
 
-// TestRegisterPlaybackEventBatch_SampleRateDriftCounted (
-// / R-10): wenn bereits ein abweichender Wert persistiert
+// TestRegisterPlaybackEventBatch_SampleRateDriftCounted R-10): wenn bereits ein abweichender Wert persistiert
 // ist (Drift > 100 ppm), zählt der Use-Case `mtrace_sample_rate_drift_total`
 // hoch und überschreibt nicht.
 func TestRegisterPlaybackEventBatch_SampleRateDriftCounted(t *testing.T) {
