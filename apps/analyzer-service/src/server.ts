@@ -162,7 +162,7 @@ function parseManifestInput(value: unknown): ManifestInput | null {
 
 /**
  * Parst und filtert den optionalen `cmaf.binary`-Block aus dem
- * Request-Body (plan-0.10.0 Tranche 1, NF-13 / RAK-64). Akzeptiert
+ * Request-Body (NF-13 / RAK-64). Akzeptiert
  * `enabled` (Boolean), `maxSegmentBytes` (positive Zahl) und
  * `maxBinarySegments` (Zahl ≥ 0); ungültige oder fremde Felder
  * werden verworfen — dieselbe Filter-Strategie wie für

@@ -498,7 +498,7 @@ docs-refs: docs-check
 # R-NN, F-NN, NF-NN, MVP-NN, AK-NN) bleiben erhalten. Wirkt nur auf
 # Kommentar-Zeilen — Code wird nie angetastet. Default-Targets: alle
 # Verzeichnisse mit Variante-B-Konvention.
-VARIANTE_B_TARGETS ?= apps/api packages scripts spec docs/user docs/dev Makefile
+VARIANTE_B_TARGETS ?= apps/api apps/dashboard apps/analyzer-service packages examples scripts spec docs/user docs/dev Makefile
 
 lint-variante-b:
 	python3 scripts/lint-variante-b.py check $(VARIANTE_B_TARGETS)

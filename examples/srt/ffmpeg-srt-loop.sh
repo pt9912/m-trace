@@ -1,5 +1,5 @@
 #!/bin/sh
-# plan-0.5.0 §4 Tranche 3 — FFmpeg-Loop-Publisher für das SRT-Beispiel.
+#  — FFmpeg-Loop-Publisher für das SRT-Beispiel.
 #
 # Erzeugt einen synthetischen Test-Stream (Test-Pattern + Sine-Audio)
 # und publishet ihn per SRT in den lokalen MediaMTX-Container. Das ist

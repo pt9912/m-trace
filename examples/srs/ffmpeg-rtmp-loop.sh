@@ -1,5 +1,5 @@
 #!/bin/sh
-# plan-0.9.0 §3 Tranche 2 — FFmpeg-Loop-Publisher für das SRS-Beispiel.
+#  — FFmpeg-Loop-Publisher für das SRS-Beispiel.
 #
 # Erzeugt einen synthetischen Test-Stream (Test-Pattern + Sine-Audio)
 # und publishet ihn per RTMP in den lokalen SRS-Container. Das ist

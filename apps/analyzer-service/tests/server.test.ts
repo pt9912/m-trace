@@ -238,7 +238,7 @@ describe("analyzer-service — POST /analyze", () => {
     expect(res.status).toBe(200);
   });
 
-  // plan-0.10.0 Tranche 1 (NF-13 / RAK-64): direkte analyzer-service-
+  //  (NF-13 / RAK-64): direkte analyzer-service-
   // Aufrufer dürfen `cmaf.binary.{enabled,maxSegmentBytes,
   // maxBinarySegments}` setzen; ungültige oder fremde Felder werden
   // analog zur fetch-Filter-Strategie verworfen. `allowPrivateNetworks`

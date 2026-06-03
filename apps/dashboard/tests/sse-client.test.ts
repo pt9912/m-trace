@@ -310,7 +310,7 @@ describe("startSseClient", () => {
 
   it("disconnect cancels a pending reconnect timer (F1)", async () => {
     // Server liefert 500 → Reconnect wird mit Backoff scheduled.
-    // schedule speichert den Timer-Callback; disconnect() muss den
+    // schedule speichert den Timer-Callback; disconnect muss den
     // noch nicht gefeuerten Timer kassieren und auch ein spaeteres
     // Callback-Feuern darf keinen zweiten Fetch starten.
     const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(
@@ -338,7 +338,7 @@ describe("startSseClient", () => {
     expect(scheduleId).toBeGreaterThanOrEqual(1);
     expect(cancelCalls).toEqual([]);
     client.disconnect();
-    // disconnect() muss die zuletzt gespeicherte Cancel-Handle gerufen
+    // disconnect muss die zuletzt gespeicherte Cancel-Handle gerufen
     // haben (mindestens eine cancel-call landet im Array).
     expect(cancelCalls.length).toBeGreaterThanOrEqual(1);
     callbacks[0]?.();
@@ -392,7 +392,7 @@ describe("startSseClient", () => {
     const abortHandlers: AbortSignal[] = [];
     // Stream, der sich "infinite" verhält — pull liefert nichts
     // zurück und wartet auf manuellen Abort. Damit ist der
-    // AbortController noch live, wenn `disconnect()` greift.
+    // AbortController noch live, wenn `disconnect` greift.
     const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
       if (init?.signal) abortHandlers.push(init.signal);
       return new Response(

@@ -243,9 +243,14 @@ def clean_comment_text(t):
     t = re.sub(r",\s*\*\/", " */", t)
     # Collapse multiple spaces — but only in the MIDDLE of content, never at
     # the very start. Markdown-style list indents (`  - foo`) inside block
-    # comments are meaningful structure and must survive cleanup.
-    t = re.sub(r"(?<=\S)  +(?=\S)", " ", t)
-    t = re.sub(r" ([.;:])", r"\1", t)
+    # comments are meaningful structure and must survive cleanup. And only
+    # OUTSIDE inline-code spans (`code`), so that `eslint .` or similar
+    # shell snippets keep their argument spacing.
+    parts = t.split("`")
+    for i in range(0, len(parts), 2):  # even = outside backticks
+        parts[i] = re.sub(r"(?<=\S)  +(?=\S)", " ", parts[i])
+        parts[i] = re.sub(r" ([.;:])", r"\1", parts[i])
+    t = "`".join(parts)
     # ", " followed by "(" can collapse but only safely inside parens
     # Already handled in `\(\s*,\s*` pattern earlier.
 

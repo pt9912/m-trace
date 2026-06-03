@@ -1,5 +1,5 @@
 #!/bin/sh
-# plan-0.7.0 §2 Tranche 1 — FFmpeg-Loop-Publisher für das WebRTC-Beispiel.
+#  — FFmpeg-Loop-Publisher für das WebRTC-Beispiel.
 #
 # Erzeugt einen synthetischen Test-Stream (Test-Pattern + Sine-Audio)
 # und publishet ihn per RTSP in den lokalen MediaMTX-Container. MediaMTX

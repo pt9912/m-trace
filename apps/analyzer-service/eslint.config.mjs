@@ -1,6 +1,6 @@
 // ESLint-Konfig für apps/analyzer-service.
 //
-// Bezug: spec/lastenheft.md §10.4 (Stream Analyzer); siehe
+// Bezug: spec/lastenheft.md (Stream Analyzer); siehe
 // eslint.config.shared.mjs am Repo-Root für die geteilte Base und
 // die Begründungen der SOLID-nahen Schwellen + Carveouts.
 

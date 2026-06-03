@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # smoke-lifecycle.sh — Reproduzierbarer Lab-Smoke für die
-# Lifecycle-Hooks aus `0.11.0` Tranche 4 (RAK-69).
+# Lifecycle-Hooks aus (RAK-69).
 #
 # Verifiziert gegen eine **lokal** laufende `apps/api`:
-#   1. POST /api/ingest/streams         (Stream anlegen)
-#   2. POST /api/ingest/hooks/stream-started   (202 + accepted:true)
-#   3. POST /api/ingest/hooks/stream-ended     (202 + accepted:true)
+#   1. POST /api/ingest/streams (Stream anlegen)
+#   2. POST /api/ingest/hooks/stream-started (202 + accepted:true)
+#   3. POST /api/ingest/hooks/stream-ended (202 + accepted:true)
 #
 # Voraussetzungen:
 #   - apps/api ist erreichbar (Default: http://localhost:8080).

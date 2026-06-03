@@ -1,5 +1,5 @@
 #!/bin/sh
-# plan-0.5.0 §5 Tranche 4 — FFmpeg-Loop für das DASH-Beispiel.
+#  — FFmpeg-Loop für das DASH-Beispiel.
 #
 # Erzeugt einen synthetischen Test-Stream und schreibt einen
 # DASH-Live-Output (manifest.mpd + Init-/Media-Segmente) in das
@@ -13,11 +13,11 @@ DASH_OUT="${DASH_OUT:-/dash/output}"
 mkdir -p "$DASH_OUT"
 
 # DASH-Live-Muxer-Optionen:
-#   -seg_duration 4         — 4s pro Segment
-#   -window_size 5          — 5 aktive Segmente (Live-Window 20s)
-#   -extra_window_size 2    — 2 zusätzliche Segmente außerhalb des
+#   -seg_duration 4 — 4s pro Segment
+#   -window_size 5 — 5 aktive Segmente (Live-Window 20s)
+#   -extra_window_size 2 — 2 zusätzliche Segmente außerhalb des
 #                              aktiven Window für Late-Joiner
-#   -remove_at_exit 0       — Segmente beim FFmpeg-Stop nicht löschen
+#   -remove_at_exit 0 — Segmente beim FFmpeg-Stop nicht löschen
 #                              (Smoke kann nach Process-Stop weiter lesen)
 #   -use_template 1, -use_timeline 1 — modernes Template-/Timeline-Modell
 while :; do

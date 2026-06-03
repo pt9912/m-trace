@@ -94,7 +94,7 @@ const events = [
 
 vi.mock("$lib/sse-client", () => ({
   // Tests rendern Sessions-Page in JSDOM ohne echten SSE-Server;
-  // wir stuben den Client als `vi.fn()`-Spy, damit Tests an die
+  // wir stuben den Client als `vi.fn`-Spy, damit Tests an die
   // übergebenen Optionen (z. B. `onTruncated`) kommen, ohne einen
   // Reconnect-Loop oder den shared `sseConnection`-Store anzufassen.
   startSseClient: vi.fn(() => ({ disconnect: () => undefined }))
@@ -114,7 +114,7 @@ vi.mock("$lib/api", () => ({
       // jede sessionId, was die events/errors-Pages mit künstlichen
       // Cross-Session-Duplikaten konfrontierte.
       events: apiState.events.filter((event) => event.session_id === sessionId),
-      // §5 H2: Pagination-Roundtrip — der Test setzt apiState.nextCursor
+      // Pagination-Roundtrip — der Test setzt apiState.nextCursor
       // beim ersten Call und erwartet beim zweiten Call mit cursor !== ""
       // einen leeren Slice (drained).
       next_cursor: eventsCursor ? undefined : apiState.nextCursor
@@ -137,7 +137,7 @@ beforeEach(async () => {
   apiState.listSessionsError = undefined;
   apiState.getSessionError = undefined;
   apiState.health = { ok: true, status: 200, text: "ok" };
-  // §5 H5: Tests können den Store mutieren; Default für den nächsten
+  // Tests können den Store mutieren; Default für den nächsten
   // Test wieder zurücksetzen.
   const { sseConnection } = await import("../src/lib/status");
   sseConnection.set({ state: "not_yet_connected", changedAt: null, detail: null });
@@ -181,7 +181,7 @@ describe("dashboard route components", () => {
     expect(screen.queryByText("session-1")).toBeNull();
   });
 
-  // Spec backend-api-contract.md §10a verlangt, dass der Konsument
+  // Spec backend-api-contract.md verlangt, dass der Konsument
   // bei `backfill_truncated` den Snapshot neu lädt — sonst bleiben
   // Sessions stale, wenn die Reconnect-Lücke > sseBackfillLimit ist.
   // Vor diesem Fix übergab `+page.svelte` keinen `onTruncated`-Handler,
@@ -397,7 +397,7 @@ describe("dashboard route components", () => {
     expect(await screen.findByText("OTel Collector")).toBeTruthy();
     expect(screen.getByText("Prometheus")).toBeTruthy();
     expect(screen.getByText("Grafana")).toBeTruthy();
-    // §5 H3 F-40: ohne PUBLIC_*_URL-Env-Variablen sind die Service-
+    // H3 F-40: ohne PUBLIC_*_URL-Env-Variablen sind die Service-
     // Einträge `not configured`, nicht `inactive`.
     expect(screen.getAllByText("not configured").length).toBeGreaterThan(0);
   });
@@ -502,7 +502,7 @@ describe("dashboard route components", () => {
     expect(screen.getByText("2 loaded")).toBeTruthy();
   });
 
-  // plan-0.12.6 Tranche 4 (R-10): wenn `sample_rate_ppm < 1_000_000`
+  //  (R-10): wenn `sample_rate_ppm < 1_000_000`
   // im Read-Pfad, blendet die Session-Detail-View den Banner ein.
   // Voll-gesampelte Sessions zeigen den Banner nicht.
   it("renders the sampled-session banner when sample_rate_ppm < SampleRateFull", async () => {
@@ -553,7 +553,7 @@ describe("dashboard route components", () => {
     expect(await screen.findByText("Could not load session")).toBeTruthy();
   });
 
-  // §5 H2 — neue Read-Shape-Felder
+  // H2 — neue Read-Shape-Felder
 
   it("shows end_source pill in session list when set", async () => {
     apiState.sessions = [

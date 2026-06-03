@@ -1,6 +1,6 @@
 // ESLint-Konfig für apps/dashboard.
 //
-// Bezug: spec/lastenheft.md §10.2 (Frontend SvelteKit); siehe
+// Bezug: spec/lastenheft.md (Frontend SvelteKit); siehe
 // eslint.config.shared.mjs am Repo-Root für die geteilte Base.
 //
 // SvelteKit-Setup:
@@ -36,7 +36,7 @@ export default [
       globals: globals.browser,
     },
   },
-  // Browser-globals für TS-Files (z. B. src/lib/api.ts nutzt fetch()).
+  // Browser-globals für TS-Files (z. B. src/lib/api.ts nutzt fetch).
   // Überschreibt nicht den Test-Carveout aus shared, der für
   // `**/*.test.ts`/`tests/**` Vitest- und Node-globals einsetzt.
   {
