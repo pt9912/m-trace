@@ -18,7 +18,7 @@
 > und Release-Dokumentation mit Rollback-Grenzen. Kein `latest`-Tag,
 > keine Production-K8s-Pflicht und keine Runtime-/Wire-/Schema-
 > Änderung. Patch-Log siehe
-> [`docs/planning/done/plan-0.21.0.md`](../docs/planning/done/plan-0.21.0.md).
+
 >
 > **Patch `1.1.23` (Package Publishing für `0.20.0`)**:
 > Aktiviert die erste echte GitHub-Packages-Veröffentlichung und führt
@@ -29,7 +29,7 @@
 > veröffentlicht, die Apps bleiben `private: true`, und der
 > Release-Pfad dokumentiert Dry-Run, produktiven Publish und Rollback-
 > Grenzen. Patch-Log siehe
-> [`docs/planning/done/plan-0.20.0.md`](../docs/planning/done/plan-0.20.0.md).
+
 >
 > **Patch `1.1.22` (Hardening / Evidence Review für `0.17.0`)**:
 > Aktiviert die Folgephase nach `0.16.0` und führt die neue
@@ -37,12 +37,12 @@
 > Szenario D wird als einziger Go-Pfad gewaehlt. `0.17.0` startet als
 > Hardening-only-/Evidence-Review des gelieferten HLS-CMAF-Byte-
 > Range-Fetch-Slice aus `0.16.0`; Productization, Next Slice oder
-> Switch bleiben blockiert, bis Tranche 1 konkrete Belege,
+> Switch bleiben blockiert, bis  konkrete Belege,
 > Testluecken oder Trigger nachweist. Externe Analyzer-API,
 > Control-Plane, Postgres-Default, Analytics-Pflichtbackend,
 > Production-K8s, weiterer CMAF-/DASH-/LL-CMAF-Scope,
 > Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Patch-Log
-> siehe [`docs/planning/done/plan-0.17.0.md`](../docs/planning/done/plan-0.17.0.md).
+> 
 >
 > **Patch `1.1.21` (Selected Product Slice / Analyzer Range Fetch für
 > `0.16.0`)**: Aktiviert die Folgephase nach `0.15.0` und führt die
@@ -56,7 +56,7 @@
 > Externe Analyzer-API, Control-Plane, Postgres, Analytics,
 > Production-K8s, Low-Latency-CMAF, vollstaendige Segmentsets,
 > Codec-Decoding und Player-Laufzeitpfade bleiben deferred. Patch-Log
-> siehe [`docs/planning/done/plan-0.16.0.md`](../docs/planning/done/plan-0.16.0.md).
+> 
 >
 > **Patch `1.1.20` (Product Scope / Analyzer Boundary für
 > `0.15.0`)**: Aktiviert die Folgephase nach `0.14.0` und führt die
@@ -73,7 +73,7 @@
 > Analytics-Pflichtbackend, Production-K8s, OAuth/OIDC/SSO und
 > Multi-Tenant-SaaS bleiben ohne eigenen Folgeplan out of scope.
 > Patch-Log siehe
-> [`docs/planning/done/plan-0.15.0.md`](../docs/planning/done/plan-0.15.0.md).
+
 >
 > **Patch `1.1.19` (Ops Backend Follow-up für `0.14.0`)**:
 > Aktiviert die Folgephase nach `0.13.0` und führt die neue
@@ -87,8 +87,8 @@
 > Compat: SQLite und Compose bleiben Standardpfade; Postgres,
 > ClickHouse/VictoriaMetrics/Mimir, Kubernetes und Devcontainer
 > werden nicht zu lokalen Pflichtabhängigkeiten. Patch-Log siehe
-> [`docs/planning/done/plan-0.14.0.md`](../docs/planning/done/plan-0.14.0.md)
-> Tranche 0.
+
+>
 >
 > **Patch `1.1.18` (Production / Ops Backends für `0.13.0`)**:
 > Aktiviert die Production-/Ops-nahe Minor-Phase nach `0.12.6`
@@ -109,8 +109,8 @@
 > Betrieb, Managed-Cloud-Betrieb, Multi-Tenant-SaaS-Produkt,
 > verpflichtendes Hochvolumen-Analytics-Backend und automatische
 > Veröffentlichung ohne explizite Human Approval. Patch-Log siehe
-> [`docs/planning/done/plan-0.13.0.md`](../docs/planning/done/plan-0.13.0.md)
-> Tranche 0.
+
+>
 >
 > **Patch `1.1.17` (Auth-/Ingest-Folge-Items für `0.12.6`)**: Liefert
 > die R-N-Folge-Items aus dem `0.12.5`-Closeout in einem
@@ -146,8 +146,8 @@
 > für SRS (`MediaServerProvisioner` ist auf MediaMTX-API
 > spezialisiert), Production-Backends aus `0.13.0` (Postgres,
 > ClickHouse, Kubernetes). Patch-Log siehe
-> [`docs/planning/done/plan-0.12.6.md`](../docs/planning/done/plan-0.12.6.md)
-> Tranche 0.
+
+>
 >
 > **Patch `1.1.16` (Auth-/Ingest-Adapter für `0.12.5`)**: Liefert
 > die Adapter-/Wire-Pfade, die in `0.12.0` als Folge-Scope angelegt
@@ -180,8 +180,8 @@
 > Rate-Limiting (`R-22` getrennter Folge-Plan),
 > Production-Backends aus `0.13.0` (Postgres, ClickHouse,
 > Kubernetes). Patch-Log siehe
-> [`docs/planning/done/plan-0.12.5.md`](../docs/planning/done/plan-0.12.5.md)
-> Tranche 0.
+
+>
 >
 > **Patch `1.1.15` (Auth / Token Lifecycle für `0.12.0`)**: Hebt
 > `F-111`..`F-113` (serverseitig signierte Session Tokens, rotierbare
@@ -204,8 +204,8 @@
 > Telemetrie. Wire-Vertrag für `POST /api/auth/session-tokens` und
 > die zusätzlichen Auth-Header für `POST /api/playback-events` lebt in
 > `spec/backend-api-contract.md`. Patch-Log siehe
-> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
-> Tranche 0c §4a.18.
+
+>
 >
 > **Patch `1.1.14` (Ingest-Control-Scope für `0.11.0`)**: Hebt
 > `F-46`..`F-51` (Ingest-Gateway / Stream Control, bisher Kann-
@@ -225,8 +225,8 @@
 > bleibt möglich, ist aber Folge-Scope. Wire-Erweiterung in
 > `spec/backend-api-contract.md` für `/api/ingest/*`. Patch-Log
 > siehe
-> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
-> Tranche 0c §4a.17.
+
+>
 >
 > **Patch `1.1.13` (CMAF-Analyse-Scope für `0.10.0`)**: Verankert den
 > normativ begrenzten Analyzer-Scope für `NF-13` und führt die neue
@@ -238,10 +238,7 @@
 > Low-Latency-CMAF und Player-Laufzeitpfade bleiben explizit
 > Folge-Scope. Der Patch ändert keine Wire-Verträge — die
 > Result-Schema-Erweiterungen (`details.cmaf`, `cmaf.binary.*`-
-> Optionen) leben in [`docs/planning/done/plan-0.10.0.md`](../docs/planning/done/plan-0.10.0.md)
-> Tranche 1. Patch-Log siehe
-> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
-> Tranche 0c §4a.16.
+> Optionen) sind im Plan dokumentiert.
 >
 > **Patch `1.1.12` (Lastenheft-Konvergenz nach `0.9.5`)**: Keine
 > neue Produktfunktion, keine User-Surface- oder Wire-Vertrags-
@@ -255,8 +252,8 @@
 > redaktionell so geschärft, dass die historische
 > „Nicht im `0.1.0`-MVP"-Liste nicht als heutige offene Muss-
 > Lücke missverstanden wird. Patch-Log siehe
-> [`docs/planning/done/plan-0.1.0.md`](../docs/planning/done/plan-0.1.0.md)
-> Tranche 0c §4a.15.
+
+>
 
 ---
 
@@ -421,7 +418,7 @@ Der erste Fokus liegt auf technischer Diagnose und OpenTelemetry-Integration.
 - Entwickler von Playern, Streaming-Backends oder Video-Workflows
 - Open-Source-Contributors mit Interesse an Media-Infrastruktur
 
-> **Patch `1.1.20` (`0.15.0` Tranche 1):** Für die nächsten
+> **Patch `1.1.20` (Tranche-Notiz):** Für die nächsten
 > Minor-Releases ist das Primärziel auf Selbsthoster, kleine bis
 > mittlere Streaming-Teams, Broadcaster-Labs und technische Media-/
 > DevOps-Teams geschärft. Große Plattformbetreiber mit hunderten
@@ -853,7 +850,7 @@ Folgeplan reaktiviert.
 
 Status im MVP: **Deferred / Folge-Scope nur bei Trigger**
 
-> **Patch `1.1.20` (`0.15.0` Tranche 2):** Eine eigenständige,
+> **Patch `1.1.20` (Tranche-Notiz):** Eine eigenständige,
 > nach außen exponierte `apps/analyzer-api` bleibt deferred. Der
 > bestehende interne `apps/analyzer-service` ist der aktuelle
 > HTTP-Wrapper für `apps/api`; technische Nutzer können
@@ -929,7 +926,7 @@ Kennung: `F-132`
 
 Status im MVP: **Nicht Bestandteil**, nur vorbereitet
 
-> **Patch `1.1.20` (`0.15.0` Tranche 3):** `F-132` bleibt
+> **Patch `1.1.20` (Tranche-Notiz):** `F-132` bleibt
 > deferred. `0.15.0` baut keine `apps/control-plane` und gibt keinen
 > POC frei. Reaktivierung braucht einen konkreten Operator-/
 > Stakeholder-Bedarf mit mindestens zwei administrierten m-trace-
@@ -1189,7 +1186,7 @@ und MVP-28/MVP-29 in Patch `1.0.2`):
 > `stream-generator`; `0.1.1` ergänzt `dashboard`; `0.1.2` aktiviert
 > die Soll-Tabelle über das `observability`-Compose-Profil. Der
 > jeweilige Sub-Release-Pflicht-Subset steht im zugehörigen
-> Plan-Dokument (`docs/planning/done/plan-0.1.x.md`).
+> Plan-Dokument .
 
 #### Erwarteter Startbefehl
 
@@ -1465,7 +1462,7 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 | NF-10 | Muss | MediaMTX-Adapter |
 | NF-11 | Muss | SRT-Ingest-Metriken |
 | NF-12 | Muss | DASH-Analyse |
-| NF-13 | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.20` (`0.15.0` Tranche 4):** Aus den offenen Folgeoptionen wird nur der HTTP-Range-/Byte-Range-Loader für manifest-referenzierte CMAF-Init-/Media-Segmente als kleiner Folge-Slice empfohlen; Low-Latency-CMAF, vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade bleiben deferred. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung im Plan [`docs/planning/done/plan-0.10.0.md`](../docs/planning/done/plan-0.10.0.md) mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
+| NF-13 | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.20` (Tranche-Notiz):** Aus den offenen Folgeoptionen wird nur der HTTP-Range-/Byte-Range-Loader für manifest-referenzierte CMAF-Init-/Media-Segmente als kleiner Folge-Slice empfohlen; Low-Latency-CMAF, vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade bleiben deferred. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
 | NF-14 | Muss | WebRTC-Metriken |
 | NF-15 | Muss | Datenbankpersistenz |
 | NF-16 | Muss | Authentifizierung |
@@ -1811,7 +1808,7 @@ Nicht im `0.1.0`-MVP:
 | Kennung | Prioritaet | Anforderung | Status (Patch `1.1.12`) |
 |---|---|---|---|
 | MVP-19 | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
-| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (`0.15.0` Tranche 2):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
+| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (Tranche-Notiz):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
 | MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
 | MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil (ADR-0003); die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
 | MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap). |
@@ -2015,7 +2012,7 @@ Akzeptanzkriterien:
 |---|---|---|
 | RAK-47 | Muss | WebRTC-Lab-Setup mit lokalem WHIP-/WHEP-Endpoint und Compose-Stack `mtrace-webrtc` (analog `examples/srt/`/`examples/dash/`); Project-Name-Konvention aus `examples/README.md` ist eingehalten. |
 | RAK-48 | Muss | `make smoke-webrtc-prep` prüft die Vorbereitungsgrenze (Endpoints antworten, Compose-Stack hochgefahren, kein Playback-Qualitäts- oder `getStats()`-Anspruch) und ist als opt-in Target dokumentiert (analog `make smoke-srt`/`make smoke-dash`). |
-| RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist in `spec/telemetry-model.md` §3.2 dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
+| RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist in `spec/telemetry-model.md` dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
 | RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert; ergänzt den Smoke um eine Operator-sichtbare Stelle. |
 | RAK-51 | Kann | `@pt9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. **Hinweis (Patch `1.1.10`):** RAK-51 ist in §13.10 für `0.8.0` zu „Muss" hochgestuft; §13.9 bleibt als historische Aussage für `0.7.0` bestehen. |
 
@@ -2034,8 +2031,8 @@ Akzeptanzkriterien:
 |---|---|---|
 | RAK-51 | Muss | `@pt9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
 | RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
-| RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` §3.2 (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus `spec/telemetry-model.md` §3.5.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 (`docs/planning/in-progress/risks-backlog.md`) wird ab diesem Punkt release-blockierend. |
+| RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus `spec/telemetry-model.md` (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
+| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus `spec/telemetry-model.md`.2 werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie aus §3.5.3 ist im Adapter-Code umgesetzt. R-12 (`docs/planning/in-progress/risks-backlog.md`) wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
 
 ### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse
@@ -2046,7 +2043,7 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist aus `spec/telemetry-model.md` §1.4 / §3.5.2. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 im `risks-backlog.md` von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
+| RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist aus `spec/telemetry-model.md`.2. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 im `risks-backlog.md` von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
 | RAK-57 | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; `docs/user/local-development.md` §2.7 Port-Quickref nachgezogen. |
 | RAK-58 | Muss | DASH-Manifest-Analyse im `@pt9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
 | RAK-59 | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
@@ -2179,7 +2176,7 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-83 | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku in `spec/telemetry-model.md` §2.5/§5.3 entsprechend aktualisiert. |
+| RAK-83 | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku in `spec/telemetry-model.md`/§5.3 entsprechend aktualisiert. |
 | RAK-84 | Muss | **`ListSessions` Bulk-Read-Performance** (`R-7`): neuer Port-Methode `ListBoundariesForSessions(ctx, sessionIDs)` in `SessionRepository`; SQLite-Adapter implementiert mit einer `IN`-Clause statt N+1; Performance-Benchmark zeigt < 200 ms p95 für 1000 Sessions pro Page. Race-Test bleibt grün. |
 | RAK-85 | Muss | **Sampling-Vollständigkeits-Marker** (`R-10`): SDK-Pflicht-Feld `meta.session_sample_rate` (Wire-Float, Range `(0, 1]`) bei `sampleRate < 1`; Server normalisiert via `round(x * 1_000_000)` auf Integer-ppm (`SAMPLE_RATE_FULL = 1_000_000`); Session-Spalte `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000` (Migration `V7`); Immutability nach erstem nicht-Default-Wert via exaktem Integer-Vergleich; Drift-Counter `mtrace_sample_rate_drift_total{project_id}` mit konfigurablem Toleranz-Band (±100 ppm). Read-API liefert beide Werte (ppm + abgeleiteter Float-Display). Schema-Eintrag in `contracts/event-schema.json`. |
 | RAK-86 | Muss | **SRT-Health-Cursor-Pagination** (`R-11`): `GET /api/srt/health/{stream_id}` akzeptiert `samples_cursor`-Query-Param (gemäß §7a.3 — **nicht** `cursor`-Alias) und liefert `next_cursor`-Feld; Cursor-Token kapselt `process_instance_id + (ingested_at, id)`-Position analog §10.3; `400 cursor_invalid` bei `process_instance_id`-Mismatch oder malformed-Base64/Schema-Mismatch (§7a.4); Contract-Fixture für den `400`-Pfad. |
@@ -2280,15 +2277,15 @@ automatische Veröffentlichung ohne Human Approval.
 `0.16.0` importiert genau einen freigegebenen Folgepfad aus
 `0.15.0`: Szenario B, den kleinen `NF-13`-Analyzer-Slice fuer
 HTTP-Range-/Byte-Range-Fetches manifest-referenzierter CMAF-Init- und
-Media-Segmente. Tranche 2 setzt den HLS-Teil dieses Scope additiv um:
+Media-Segmente.  setzt den HLS-Teil dieses Scope additiv um:
 explizite Byte-Ranges werden ueber den bestehenden geschuetzten
 Segment-Loader geladen und binär validiert; offset-lose oder
 ungueltige Byte-Ranges bleiben skipped.
-Tranche 3 validiert den Pfad mit TS-, Doku-, Drift- und Security-
-Gates; Tranche 4 schliesst den Release mit Tag `v0.16.0`, Roadmap-
+Aktuell validiert den Pfad mit TS-, Doku-, Drift- und Security-
+Gates;  schliesst den Release mit Tag `v0.16.0`, Roadmap-
 Update und Folgeplan `0.17.0`.
 
-Tranche 1 begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges:
+Aktuell begrenzt den Lieferumfang auf HLS-CMAF-Byte-Ranges:
 `#EXT-X-MAP` mit `BYTERANGE`-Attribut fuer Init-Segmente und
 `#EXT-X-BYTERANGE` fuer das erste fMP4-Media-Segment. DASH-Range-/
 SegmentBase-Ausbau, Multi-Range-Requests, LL-CMAF, vollstaendige
@@ -2316,13 +2313,13 @@ Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade.
 Szenario D: Hardening-only. Der Release startet nicht mit einer neuen
 Product-Surface, sondern prueft den gelieferten HLS-CMAF-Byte-Range-
 Fetch-Slice gegen Evidence, Testluecken, Compatibility und
-Security-/Ops-Grenzen. Tranche 1 muss belegen, ob Tranche 2 konkrete
+Security-/Ops-Grenzen.  muss belegen, ob  konkrete
 Hardening-Artefakte braucht oder ob Productization, Next Slice und
 Switch weiter deferred bleiben.
 
 Der Scope bleibt auf den bestehenden Analyzer-Pfad beschraenkt:
 `@pt9912/stream-analyzer` Library/CLI und der interne
-`apps/analyzer-service` bleiben Standard. Es entsteht durch Tranche 0
+`apps/analyzer-service` bleiben Standard. Es entsteht durch den aktuellen Stand
 kein neuer Endpoint, kein neues Result-Schema, kein neuer Runtime-
 Default und kein neuer Pflichtdienst.
 
@@ -2331,12 +2328,12 @@ Akzeptanzkriterien:
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
 | RAK-111 | Muss | **Import des `0.16.0`-Ergebnisses**: `0.16.0` ist released und archiviert; Szenario D wird gewaehlt. Productization, Next Slice, Switch und Defer-Pfade werden sichtbar abgegrenzt. |
-| RAK-112 | Muss | **Evidence Review und Hardening-Scope**: Tranche 1 prueft die `0.16.0`-Belege, Fixtures, Gate-Ergebnisse und Restgrenzen. Tranche 2 darf genau einen Hardening-Scope liefern oder den Folgepfad explizit deferred halten. |
+| RAK-112 | Muss | **Evidence Review und Hardening-Scope**:  prueft die `0.16.0`-Belege, Fixtures, Gate-Ergebnisse und Restgrenzen.  darf genau einen Hardening-Scope liefern oder den Folgepfad explizit deferred halten. |
 | RAK-113 | Konditional Muss | **Betriebs-/Security-Haertung**: Falls Fetch-, Analyzer-, Fixture- oder Runtime-Artefakte geaendert werden, muessen SSRF-/Redirect-/Timeout-/Groessen-/Drift-/Security-Grenzen passend nachgewiesen werden. Ohne Code-/Runtime-Aenderung ist `n/a` zu begruenden. |
 | RAK-114 | Konditional Muss | **Compatibility- und Migration-Gates**: Wire-, API-, Persistenz-, Contract- oder Runtime-Aenderungen brauchen Kompatibilitaets- und Drift-Nachweis. Ohne Aenderung muss die Unveraendertheit dokumentiert werden. |
 | RAK-115 | Muss | **Closeout und Folgepfad**: Der Release-Closeout muss RAK-Matrix, Changelog, Roadmap, Tag `v0.17.0`, offene Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
 
-Out-of-Scope-Bekräftigung (nicht durch `0.17.0` Tranche 0 erfüllt):
+Out-of-Scope-Bekräftigung (nicht durch `0.17.0`  erfüllt):
 externe Analyzer-API, Control-Plane, Postgres-Default, Analytics-
 Pflichtbackend, Production-Kubernetes, OAuth/OIDC/SSO,
 Multi-Tenant-SaaS, weiterer CMAF-/DASH-/LL-CMAF-Scope,
@@ -2455,7 +2452,7 @@ oder als offene Folgefrage weitergeführt werden.
 
 ### 16.1 Zielgruppenentscheidung
 
-Status: **resolved** seit Patch `1.1.20` (`0.15.0` Tranche 1).
+Status: **resolved** seit Patch `1.1.20`.
 
 Die wichtigste Produktentscheidung war:
 
@@ -2463,7 +2460,7 @@ Die wichtigste Produktentscheidung war:
 Selbsthoster und kleine Teams oder Plattform-Betreiber mit hunderten parallelen Streams?
 ```
 
-**Entscheidung (Patch `1.1.20`, `0.15.0` Tranche 1):** Für die
+**Entscheidung (Patch `1.1.20`):** Für die
 nächsten Minor-Releases fokussiert m-trace Selbsthoster, kleine bis
 mittlere Streaming-Teams, Broadcaster-Labs und technische
 Media-/DevOps-Teams. Große Plattformbetreiber mit hunderten parallelen
