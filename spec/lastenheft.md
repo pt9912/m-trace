@@ -2596,7 +2596,7 @@ Der MVP ist fertig, wenn:
 - Das Eventmodell in [`spec/telemetry-model.md`](telemetry-model.md) beschrieben ist.
 - Tests für zentrale Use Cases vorhanden sind.
 - CI mindestens Build und Tests ausführt.
-- CHANGELOG.md einen Eintrag für `0.1.0` enthält.
+- [`CHANGELOG.md`](../CHANGELOG.md) einen Eintrag pro Release enthält.
 
 ---
 
