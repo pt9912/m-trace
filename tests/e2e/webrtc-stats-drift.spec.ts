@@ -267,6 +267,17 @@ test.describe("WebRTC getStats() drift smoke (RAK-56)", () => {
       reportsByType.set(report.type, list);
     }
 
+    // Wenn der Snapshot-Endzustand ≠ `connected` ist (legitimer
+    // Pfad-Wechsel während der `sampleCollectMs`-Sample-Phase),
+    // sind unvollständige Stat-Reports erwartet — eine `disconnected`
+    // PeerConnection liefert keine aktiven `inbound-rtp`-Counter.
+    // In dem Fall werden die Required-Type-Drift-Checks zu
+    // `[drift-soll]`-Logs herabgestuft; echte Schema-Drifts im
+    // `connected`-Snapshot bleiben weiterhin release-blockierend.
+    // Hintergrund: Folge-Symptom desselben CI-Flakes wie der
+    // connectionState-Snapshot (Nightly-Run 26858728018, dispatch
+    // Re-Run 26865980921).
+    const snapshotConnected = payload.connectionState === "connected";
     const drift: string[] = [];
     for (const [type, requiredFields] of Object.entries(REQUIRED_FIELDS_BY_TYPE)) {
       const reports = reportsByType.get(type) ?? [];
@@ -275,17 +286,27 @@ test.describe("WebRTC getStats() drift smoke (RAK-56)", () => {
           // recvonly handshake → no outbound-rtp; legitimate skip.
           continue;
         }
-        drift.push(
-          `Browser ${browserName} dropped RTCStatsType.${type} entirely`
-        );
+        const note = `Browser ${browserName} dropped RTCStatsType.${type} entirely`;
+        if (!snapshotConnected) {
+          console.log(
+            `[drift-soll] ${note} (snapshot connectionState=${payload.connectionState}; required-type-check herabgestuft)`
+          );
+        } else {
+          drift.push(note);
+        }
         continue;
       }
       for (const report of reports) {
         for (const field of requiredFields) {
           if (!(field in report.fields)) {
-            drift.push(
-              `Browser ${browserName} dropped field ${field} from RTCStatsType.${type} (id=${report.id})`
-            );
+            const note = `Browser ${browserName} dropped field ${field} from RTCStatsType.${type} (id=${report.id})`;
+            if (!snapshotConnected) {
+              console.log(
+                `[drift-soll] ${note} (snapshot connectionState=${payload.connectionState}; required-field-check herabgestuft)`
+              );
+            } else {
+              drift.push(note);
+            }
           }
         }
       }
@@ -300,10 +321,18 @@ test.describe("WebRTC getStats() drift smoke (RAK-56)", () => {
     for (const transport of transportReports) {
       const dtls = transport.fields["dtlsState"];
       if (typeof dtls !== "string") {
-        drift.push(
-          `Browser ${browserName} dropped field dtlsState from RTCStatsType.transport (id=${transport.id})`
-        );
+        const note = `Browser ${browserName} dropped field dtlsState from RTCStatsType.transport (id=${transport.id})`;
+        if (!snapshotConnected) {
+          console.log(
+            `[drift-soll] ${note} (snapshot connectionState=${payload.connectionState}; dtls-check herabgestuft)`
+          );
+        } else {
+          drift.push(note);
+        }
       } else if (!ALLOWED_DTLS_STATES.has(dtls)) {
+        // Allowlist-Verletzung ist auch bei nicht-`connected` ein
+        // echtes Schema-Drift-Signal (unbekannter Enum-Wert) — bleibt
+        // hart.
         drift.push(
           `Browser ${browserName} reports unknown dtlsState=${dtls} (§1.4 dtls_state allowlist; transport id=${transport.id})`
         );
