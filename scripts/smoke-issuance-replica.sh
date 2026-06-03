@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # smoke-issuance-replica.sh — Reproduzierbarer Lab-Smoke für den
-# Shared-State-Issuance-Limiter aus `0.12.5` Tranche 2 (RAK-77, R-17).
+# Shared-State-Issuance-Limiter aus `0.12.5` (RAK-77, R-17).
 #
 # Verifiziert das semantische Multi-Replica-Verhalten aus
 # `docs/user/auth.md` §5.4:
-#   1. Zwei `*sql.DB`-Verbindungen auf dieselbe SQLite-Datei
-#      (Single-Host + Shared-Volume-Pfad) öffnen.
-#   2. Replica A verbraucht das Project-Bucket bis zur Kapazität.
-#   3. Replica B muss den nächsten Allow als „denied" sehen —
-#      Shared-State greift über den `auth_issuance_counters`-Tisch
-#      (Migration V5, BEGIN IMMEDIATE-serialisiert).
-#   4. Andere Projects bleiben unabhängig (Bucket-Key-Isolation).
+# 1. Zwei `*sql.DB`-Verbindungen auf dieselbe SQLite-Datei
+# (Single-Host + Shared-Volume-Pfad) öffnen.
+# 2. Replica A verbraucht das Project-Bucket bis zur Kapazität.
+# 3. Replica B muss den nächsten Allow als „denied" sehen —
+# Shared-State greift über den `auth_issuance_counters`-Tisch
+# (Migration V5, BEGIN IMMEDIATE-serialisiert).
+# 4. Andere Projects bleiben unabhängig (Bucket-Key-Isolation).
 #
 # Implementation: ruft den End-to-End-Unit-Test
 # `TestSqliteIssuanceRateLimiter_SharedAcrossInstances` über das
@@ -22,9 +22,9 @@
 # vollständig abgedeckt.
 #
 # Konvention:
-#   - eigener Docker-Run, keine globalen Volumes
-#   - opt-in (nicht in `make gates`)
-#   - exit 0 bei grünem Test, exit 1 sonst
+# - eigener Docker-Run, keine globalen Volumes
+# - opt-in (nicht in `make gates`)
+# - exit 0 bei grünem Test, exit 1 sonst
 
 set -euo pipefail
 

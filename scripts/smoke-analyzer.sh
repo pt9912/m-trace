@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke für plan-0.3.0 Tranche 6:
-#  1. analyzer-service /health antwortet 200.
-#  2. POST /api/analyze mit Text-Input liefert ein AnalysisResult
-#     (status:ok, playlistType:master, analyzerKind:hls) — exercitiert
-#     den Pfad API → analyzer-service → @pt9912/stream-analyzer.
-#  3. POST /api/analyze mit URL gegen RFC1918-Adresse wird vom SSRF-
-#     Schutz im analyzer-service abgelehnt; die API mappt das auf 502.
+# Smoke für :
+# 1. analyzer-service /health antwortet 200.
+# 2. POST /api/analyze mit Text-Input liefert ein AnalysisResult
+# (status:ok, playlistType:master, analyzerKind:hls) — exercitiert
+# den Pfad API → analyzer-service → @pt9912/stream-analyzer.
+# 3. POST /api/analyze mit URL gegen RFC1918-Adresse wird vom SSRF-
+# Schutz im analyzer-service abgelehnt; die API mappt das auf 502.
 #
 # Anmerkung zu URL-Inputs: docker-bridge-IPs liegen typischerweise in
 # 172.16/12 — also exakt im SSRF-Sperrbereich. Für intra-Compose-
@@ -16,8 +16,8 @@ set -euo pipefail
 #
 # Erwartet: docker-compose-Stack ist hochgefahren ("make dev" oder
 # "make smoke-analyzer" via Makefile). Manueller Aufruf möglich:
-#   API_URL=http://localhost:8080 ANALYZER_URL=http://localhost:7000 \
-#     scripts/smoke-analyzer.sh
+# API_URL=http://localhost:8080 ANALYZER_URL=http://localhost:7000 \
+# scripts/smoke-analyzer.sh
 
 API_URL="${API_URL:-http://localhost:8080}"
 ANALYZER_URL="${ANALYZER_URL:-http://localhost:7000}"
@@ -53,7 +53,7 @@ wait_for_status "$ANALYZER_URL/health" "200" "analyzer-health"
 wait_for_status "$API_URL/api/health" "200" "api-health"
 
 # 3. POST /api/analyze mit Text-Input — Master Playlist, exerciert den
-#    vollen Pfad API → analyzer-service → stream-analyzer.
+# vollen Pfad API → analyzer-service → stream-analyzer.
 master_manifest='#EXTM3U
 #EXT-X-VERSION:6
 #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud-en",NAME="English",DEFAULT=YES,URI="audio/en.m3u8"
@@ -86,7 +86,7 @@ if ! grep -qE '"analyzerKind":"hls"' "$tmpdir/master.body"; then
   cat "$tmpdir/master.body"
   exit 1
 fi
-# plan-0.4.0 §4.5: Tranche-3-Wrapper {analysis, session_link} ist
+# : Tranche-3-Wrapper {analysis, session_link} ist
 # scharf. Ungebundene Requests ohne Link-Felder liefern detached.
 if ! grep -qE '"analysis":\{' "$tmpdir/master.body"; then
   echo "[smoke-analyzer] /api/analyze (master) missing wrapper field analysis (§4.5)"
@@ -101,11 +101,11 @@ fi
 echo "[smoke-analyzer] master case OK (wrapper present, session_link=detached)"
 
 # 4. SSRF-Negativfall: Credentials in URL werden unabhängig vom
-#    ALLOW_PRIVATE_NETWORKS-Flag geblockt. Im Compose-Lab steht das
-#    Flag auf true (intern erreichbares mediamtx), deshalb ist
-#    Credentials der robustere Negativtest — der greift in Lab und
-#    Produktion. Der API-Adapter mappt den Domain-Code fetch_blocked
-#    auf 400.
+# ALLOW_PRIVATE_NETWORKS-Flag geblockt. Im Compose-Lab steht das
+# Flag auf true (intern erreichbares mediamtx), deshalb ist
+# Credentials der robustere Negativtest — der greift in Lab und
+# Produktion. Der API-Adapter mappt den Domain-Code fetch_blocked
+# auf 400.
 status="$(curl -sSL -o "$tmpdir/ssrf.body" -w '%{http_code}' \
   -X POST "$API_URL/api/analyze" \
   -H 'Content-Type: application/json' \

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// plan-0.9.5 §3 Tranche 2 (DoD-Item §3-2) — Regression-Detector
+// Regression-Detector
 // für `benchstat`-Output. Parst die Tabelle aus
 // `benchstat baseline.txt current.txt` und meldet jede Zeile, die
 // **statistisch signifikant** mehr als die konfigurierte Schwelle

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# plan-0.9.5 §3 Tranche 2 (RAK-Wave-2 / extra-gates.md §3.3) —
+# ( extra-gates.md) —
 # Eröffnet ein GitHub-Issue, wenn der Nightly-Benchstat-Vergleich
 # eine statistisch signifikante Regression (+15% bei p<0.05)
 # meldet. Aufgerufen aus
 # `.github/workflows/benchmark.yml::Open regression issue`.
 #
 # Erwartete Inputs:
-#   - .tmp/bench/comparison.txt mit der benchstat-Ausgabe
-#     (wird vom vorhergehenden `Compare with benchstat`-Step
-#      erzeugt; fehlt sie, landet `<comparison missing>` im Body)
-#   - $GH_TOKEN  GitHub-Token mit `issues:write`
-#   - $RUN_URL   Link auf den fehlgeschlagenen Workflow-Run
+# - .tmp/bench/comparison.txt mit der benchstat-Ausgabe
+# (wird vom vorhergehenden `Compare with benchstat`-Step
+# erzeugt; fehlt sie, landet `<comparison missing>` im Body)
+# - $GH_TOKEN  GitHub-Token mit `issues:write`
+# - $RUN_URL   Link auf den fehlgeschlagenen Workflow-Run
 set -eu
 
 title="Benchmark regression detected ($(date -u +%Y-%m-%d))"
@@ -51,4 +51,4 @@ EOF
 gh issue create \
   --title "$title" \
   --body "$body" \
-  --label "performance,benchmark,plan-0.9.5"
+  --label "performance,benchmark,"

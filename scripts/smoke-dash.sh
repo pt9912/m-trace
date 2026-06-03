@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.5.0 §5 Tranche 4 — DASH-Beispiel-Smoke (RAK-38).
+# — DASH-Beispiel-Smoke (RAK-38).
 #
 # Verifiziert den DASH-Pfad funktional: examples/dash/compose.yaml
 # startet einen FFmpeg-Generator, der einen synthetischen Stream
@@ -12,14 +12,14 @@ set -euo pipefail
 # läuft komplett offline ohne CDN.
 #
 # Konvention (examples/README.md):
-#   - eigene Compose-Datei → eigener Project-Name `mtrace-dash`.
-#   - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
-#     fremden Volumes/Container auf.
-#   - opt-in (nicht in `make gates`).
+# - eigene Compose-Datei → eigener Project-Name `mtrace-dash`.
+# - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
+# fremden Volumes/Container auf.
+# - opt-in (nicht in `make gates`).
 #
 # Manueller Aufruf möglich (Compose-Stack vorher gestartet):
-#   docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build
-#   SMOKE_DASH_AUTOSTART=0 scripts/smoke-dash.sh
+# docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build
+# SMOKE_DASH_AUTOSTART=0 scripts/smoke-dash.sh
 
 PROJECT="${PROJECT:-mtrace-dash}"
 COMPOSE_FILE="${COMPOSE_FILE:-examples/dash/compose.yaml}"

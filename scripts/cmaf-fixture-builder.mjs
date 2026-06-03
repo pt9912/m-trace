@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Erzeugt deterministische Minimal-CMAF-Bytes-Fixtures für den
- * CMAF-Smoke aus `make smoke-cli` (`0.10.0` Tranche 5, NF-13 / RAK-63).
+ * CMAF-Smoke aus `make smoke-cli` (`0.10.0`  NF-13 / RAK-63).
  *
  * Output (relativ zum übergebenen Verzeichnis):
  *   init.mp4   — minimaler CMAF-Init mit ftyp(cmfc)+moov

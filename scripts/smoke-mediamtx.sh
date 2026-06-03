@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.5.0 §3 Tranche 2 — MediaMTX-Beispiel-Smoke (RAK-36).
+# — MediaMTX-Beispiel-Smoke (RAK-36).
 #
 # Verifiziert den bestehenden Core-Lab-MediaMTX-Pfad funktional über
 # die HLS-Auslieferung:
-#   1. HLS-Manifest erreichbar unter der dokumentierten URL
-#      (HTTP 200 mit bounded Wait — der FFmpeg-Publisher braucht
-#      einige Sekunden bis zum ersten Segment).
-#   2. Manifest-Body enthält `#EXTM3U` (gültiges M3U8) und mindestens
-#      einen Segment-Eintrag (`.ts`, `.m4s` oder `.aac` — also keine
-#      leere/initiale Playlist).
+# 1. HLS-Manifest erreichbar unter der dokumentierten URL
+# (HTTP 200 mit bounded Wait — der FFmpeg-Publisher braucht
+# einige Sekunden bis zum ersten Segment).
+# 2. Manifest-Body enthält `#EXTM3U` (gültiges M3U8) und mindestens
+# einen Segment-Eintrag (`.ts`, `.m4s` oder `.aac` — also keine
+# leere/initiale Playlist).
 #
 # Erwartet: Core-Lab läuft (`make dev`). Manueller Aufruf möglich:
-#   HLS_URL=http://localhost:8888/teststream/index.m3u8 \
-#     scripts/smoke-mediamtx.sh
+# HLS_URL=http://localhost:8888/teststream/index.m3u8 \
+# scripts/smoke-mediamtx.sh
 #
 # Hinweis: MediaMTX 1.14+ schaltet die Control-API standardmäßig
 # Auth-pflichtig. Dieser Smoke prüft daher absichtlich nicht den

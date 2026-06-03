@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # smoke-mediaserver-provision.sh — Reproduzierbarer Lab-Smoke fuer
-# den externen Media-Server-Provisioner aus plan-0.12.6 Tranche 9
+# den externen Media-Server-Provisioner aus 
 # (RAK-87 / R-15).
 #
 # Verifiziert den `MediaMTXProvisioner`-Adapter und den Use-Case-
 # Pfad:
-#   1. Apply 200 OK → State `applied` (happy path).
-#   2. Apply 409 Conflict → State `applied` (idempotent).
-#   3. Apply 401 Unauthorized → State `failed` mit ErrorCode
-#      `auth_failure`.
-#   4. Apply 500 Internal → State `failed` mit ErrorCode
-#      `server_status_500`.
-#   5. Apply unreachable → State `failed` mit ErrorCode `unreachable`.
-#   6. Use-Case `Provision=false` laesst MediaServerState leer
-#      (byte-stabil zum 0.11.0-Format).
-#   7. Use-Case `Provision=true` ohne Adapter → State `disabled` +
-#      Operator-Hint.
+# 1. Apply 200 OK → State `applied` (happy path).
+# 2. Apply 409 Conflict → State `applied` (idempotent).
+# 3. Apply 401 Unauthorized → State `failed` mit ErrorCode
+# `auth_failure`.
+# 4. Apply 500 Internal → State `failed` mit ErrorCode
+# `server_status_500`.
+# 5. Apply unreachable → State `failed` mit ErrorCode `unreachable`.
+# 6. Use-Case `Provision=false` laesst MediaServerState leer
+# (byte-stabil zum 0.11.0-Format).
+# 7. Use-Case `Provision=true` ohne Adapter → State `disabled` +
+# Operator-Hint.
 #
 # Implementation: wrapt `TestMediaMTX_*` und
 # `TestIngestControlService_CreateStream_Provision*` ueber das

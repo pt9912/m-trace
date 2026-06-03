@@ -1,30 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.7.0 §4 Tranche 3 — WebRTC-Lab-Vorbereitungs-Smoke (RAK-48).
+# — WebRTC-Lab-Vorbereitungs-Smoke (RAK-48).
 #
 # Verifiziert die Vorbereitungsgrenze des WebRTC-Lab-Stacks
 # (examples/webrtc/compose.yaml) endpoint-/compose-only — ohne
 # Browser, ohne Playback, ohne getStats(). Bewiesen wird:
-#   1. Compose-Stack läuft (MediaMTX-Control-API antwortet).
-#   2. FFmpeg-Publisher hat den Stream registriert (Pfad ready=true).
-#   3. WHEP-Endpoint OPTIONS → 204 für aktiven Pfad.
-#   4. WHIP-Endpoint OPTIONS → 204 für aktiven Pfad.
-#   5. Pfad-Differenzierung greift (unbekannter Pfad → OPTIONS 500).
+# 1. Compose-Stack läuft (MediaMTX-Control-API antwortet).
+# 2. FFmpeg-Publisher hat den Stream registriert (Pfad ready=true).
+# 3. WHEP-Endpoint OPTIONS → 204 für aktiven Pfad.
+# 4. WHIP-Endpoint OPTIONS → 204 für aktiven Pfad.
+# 5. Pfad-Differenzierung greift (unbekannter Pfad → OPTIONS 500).
 #
 # Nicht bewiesen: Playback-Qualität, ICE-Erfolgsquote, getStats()-
 # Stabilität, Codec-Verhandlung mit echten Browsern. Dafür ist der
 # manuelle Browser-Handcheck (RAK-50, examples/webrtc/README.md).
 #
 # Konvention (examples/README.md):
-#   - eigene Compose-Datei → eigener Project-Name `mtrace-webrtc`.
-#   - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
-#     fremden Volumes/Container auf.
-#   - opt-in (nicht in `make gates`).
+# - eigene Compose-Datei → eigener Project-Name `mtrace-webrtc`.
+# - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
+# fremden Volumes/Container auf.
+# - opt-in (nicht in `make gates`).
 #
 # Manueller Aufruf möglich (Compose-Stack vorher gestartet):
-#   docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build
-#   SMOKE_WEBRTC_AUTOSTART=0 scripts/smoke-webrtc-prep.sh
+# docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build
+# SMOKE_WEBRTC_AUTOSTART=0 scripts/smoke-webrtc-prep.sh
 
 PROJECT="${PROJECT:-mtrace-webrtc}"
 COMPOSE_FILE="${COMPOSE_FILE:-examples/webrtc/compose.yaml}"
@@ -126,9 +126,9 @@ fi
 echo "[smoke-webrtc-prep] whip-options OK ($whip_status @ ${WHIP_WHEP_BASE}/${STREAM}/whip)"
 
 # 5) Negativ-Probe: unbekannter Pfad muss differenzierbar antworten
-#    (500 für unkonfigurierten Pfad bei MediaMTX 1.x). Zeigt, dass der
-#    obige 204 wirklich an unseren Stream gebunden ist und nicht ein
-#    pauschales Listener-OK ist.
+# (500 für unkonfigurierten Pfad bei MediaMTX 1.x). Zeigt, dass der
+# obige 204 wirklich an unseren Stream gebunden ist und nicht ein
+# pauschales Listener-OK ist.
 unknown_path="${STREAM}-does-not-exist-$(date +%s)"
 neg_status="$(curl -sS -o /dev/null -w '%{http_code}' -X OPTIONS "${WHIP_WHEP_BASE}/${unknown_path}/whep" 2>/dev/null || true)"
 if [ "$neg_status" = "204" ]; then

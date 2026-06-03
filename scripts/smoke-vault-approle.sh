@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # smoke-vault-approle.sh — Reproduzierbarer Lab-Smoke für den
-# Vault-AppRole-Auth-Pfad aus `0.12.6` Tranche 8 (RAK-89 / R-20).
+# Vault-AppRole-Auth-Pfad aus `0.12.6` (RAK-89 / R-20).
 #
 # Verifiziert das Adapter-Verhalten:
-#   1. AppRole-Login an `/v1/auth/approle/login` mit role_id+secret_id
-#      liefert einen Vault `client_token` zurück.
-#   2. Adapter nutzt den Token für `GET /v1/<mount>/data/<path>` und
-#      parsed `keys`+`active_kid` per gemeinsamem
-#      `ParseSigningKeysEnv`-Pfad.
-#   3. Fail-Modi (wrong secret → login 401; missing approle env →
-#      constructor reject) sind explizit getestet.
+# 1. AppRole-Login an `/v1/auth/approle/login` mit role_id+secret_id
+# liefert einen Vault `client_token` zurück.
+# 2. Adapter nutzt den Token für `GET /v1/<mount>/data/<path>` und
+# parsed `keys`+`active_kid` per gemeinsamem
+# `ParseSigningKeysEnv`-Pfad.
+# 3. Fail-Modi (wrong secret → login 401; missing approle env →
+# constructor reject) sind explizit getestet.
 #
 # Implementation: wrapt `TestVault_AppRoleLogin_*` über das
 # `golang:1.26.3`-Docker-Image. Kein echter Vault-Server nötig —

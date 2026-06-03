@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # smoke-key-rotation.sh — Reproduzierbarer Lab-Smoke für die
-# Multi-Key-Signing-Rotation aus `0.12.5` Tranche 1 (RAK-78).
+# Multi-Key-Signing-Rotation aus `0.12.5` (RAK-78).
 #
 # Verifiziert das Operator-Workflow-Verhalten aus `auth.md` §5.3.1:
-#   1. Token unter `kid=A` signieren (ACTIVE=kid_a, Key-Ring kid_a+kid_b).
-#   2. ACTIVE auf `kid=B` umschalten (zweiter Resolver-Bau, gleiches
-#      ENV-Schema).
-#   3. Altes Token muss weiterhin verifizieren (kid_a bleibt im
-#      Verify-Set).
-#   4. Neue Tokens werden mit kid_b signiert.
+# 1. Token unter `kid=A` signieren (ACTIVE=kid_a, Key-Ring kid_a+kid_b).
+# 2. ACTIVE auf `kid=B` umschalten (zweiter Resolver-Bau, gleiches
+# ENV-Schema).
+# 3. Altes Token muss weiterhin verifizieren (kid_a bleibt im
+# Verify-Set).
+# 4. Neue Tokens werden mit kid_b signiert.
 #
 # Implementation: ruft den End-to-End-Unit-Test
 # `TestParseSigningKeysEnv_RotationEndToEnd` in
@@ -19,9 +19,9 @@
 # Replica-Compose-Smoke gebraucht wird (siehe `R-17` Folge-Scope).
 #
 # Konvention (siehe Geschwister-Smokes):
-#   - eigener Docker-Run, keine globalen Volumes
-#   - opt-in (nicht in `make gates`)
-#   - exit 0 bei grünem Test, exit 1 sonst
+# - eigener Docker-Run, keine globalen Volumes
+# - opt-in (nicht in `make gates`)
+# - exit 0 bei grünem Test, exit 1 sonst
 
 set -euo pipefail
 

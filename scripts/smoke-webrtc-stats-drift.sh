@@ -1,37 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.9.0 §2 Tranche 1 (RAK-56) — Browser-Drift-Smoke für
+# (RAK-56) — Browser-Drift-Smoke für
 # WebRTC-`getStats()`-Schema-Drift. Schließt R-12 als „automatisiert
 # detektiert"; löst die manuelle Drift-Review-Pflicht aus
 # `releasing.md` ab.
 #
 # Was bewiesen wird:
-#   1. `mtrace-webrtc`-Lab-Stack läuft (analog smoke-webrtc-prep,
-#      delegiert).
-#   2. Echte Browser-Versionen (Chromium und Firefox per Default,
-#      WebKit/Safari opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`)
-#      schließen einen WHEP-Handshake gegen
-#      `http://localhost:8892/webrtc-test/whep` und liefern alle
-#      Muss-Felder pro `RTCStatsType`-Gruppe aus
-#      `spec/telemetry-model.md` §3.5.2.
-#   3. Alle gemeldeten `connectionState`/`iceConnectionState`/
-#      `dtlsState`-Werte liegen in der §1.4-Allowlist.
+# 1. `mtrace-webrtc`-Lab-Stack läuft (analog smoke-webrtc-prep,
+# delegiert).
+# 2. Echte Browser-Versionen (Chromium und Firefox per Default,
+# WebKit/Safari opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`)
+# schließen einen WHEP-Handshake gegen
+# `http://localhost:8892/webrtc-test/whep` und liefern alle
+# Muss-Felder pro `RTCStatsType`-Gruppe aus
+# `spec/telemetry-model.md` §3.5.2.
+# 3. Alle gemeldeten `connectionState`/`iceConnectionState`/
+# `dtlsState`-Werte liegen in der §1.4-Allowlist.
 #
 # Was NICHT bewiesen wird:
-#   - Soll-Felder sind opt-in pro Engine (§3.5.3); fehlende Soll-
-#     Felder werden geloggt, brechen den Smoke aber nicht.
-#   - Track-Mounting auf <video>, Codec-Verhandlung mit echten
-#     Decodern und Playback-Qualität — dafür ist der manuelle
-#     Browser-Handcheck (RAK-50, examples/webrtc/README.md).
+# - Soll-Felder sind opt-in pro Engine (§3.5.3); fehlende Soll-
+# Felder werden geloggt, brechen den Smoke aber nicht.
+# - Track-Mounting auf <video>, Codec-Verhandlung mit echten
+# Decodern und Playback-Qualität — dafür ist der manuelle
+# Browser-Handcheck (RAK-50, examples/webrtc/README.md).
 #
-# Konvention (examples/README.md, plan-0.9.0 §0.5):
-#   - opt-in (NICHT in `make gates`); eigener Make-Target
-#     `make smoke-webrtc-stats-drift`.
-#   - Default-Browser = chromium,firefox; WebKit nur wenn explizit
-#     gesetzt: `MTRACE_WEBRTC_DRIFT_BROWSERS=chromium,firefox,webkit`.
-#   - Stack-Lifecycle ist auto-up/auto-down auf Project `mtrace-
-#     webrtc`; SMOKE_WEBRTC_AUTOSTART=0 hält den Stack offen.
+# Konvention (examples/README.md, ):
+# - opt-in (NICHT in `make gates`); eigener Make-Target
+# `make smoke-webrtc-stats-drift`.
+# - Default-Browser = chromium,firefox; WebKit nur wenn explizit
+# gesetzt: `MTRACE_WEBRTC_DRIFT_BROWSERS=chromium,firefox,webkit`.
+# - Stack-Lifecycle ist auto-up/auto-down auf Project `mtrace-
+# webrtc`; SMOKE_WEBRTC_AUTOSTART=0 hält den Stack offen.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"

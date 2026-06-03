@@ -1,40 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.6.0 §3 Tranche 2 + §8 Tranche 7 — SRT-Health-Smoke
+# SRT-Health-Smoke
 # (RAK-41/42, plus opt-in m-trace-API-Probe für RAK-43).
 #
 # Pflichtpfad (immer aktiv):
-#   1. HLS-Manifest erreichbar (Publish-Baseline aus smoke-srt).
-#   2. MediaMTX Control-API antwortet `200`.
-#   3. `items[]` enthält mindestens eine Verbindung mit
-#      `path=srt-test` und `state=publish`.
-#   4. Vier RAK-43-Pflichtwerte sind numerisch gesetzt:
-#      `msRTT`, `packetsReceivedLoss`, `packetsReceivedRetrans`,
-#      `mbpsLinkCapacity` — letzteres muss `> 0` sein, der Rest
-#      darf 0 sein (gesundes Lab).
+# 1. HLS-Manifest erreichbar (Publish-Baseline aus smoke-srt).
+# 2. MediaMTX Control-API antwortet `200`.
+# 3. `items[]` enthält mindestens eine Verbindung mit
+# `path=srt-test` und `state=publish`.
+# 4. Vier RAK-43-Pflichtwerte sind numerisch gesetzt:
+# `msRTT`, `packetsReceivedLoss`, `packetsReceivedRetrans`,
+# `mbpsLinkCapacity` — letzteres muss `> 0` sein, der Rest
+# darf 0 sein (gesundes Lab).
 #
 # Optionaler m-trace-API-Pfad (`SMOKE_INCLUDE_MTRACE_API=1`):
-#   5. `GET /api/srt/health/{stream_id}` antwortet `200`.
-#   6. Wire-Format aus spec/backend-api-contract.md §7a.2 enthält
-#      die vier RAK-43-Pflichtwerte unter `metrics.{rtt_ms,
-#      packet_loss_total, retransmissions_total,
-#      available_bandwidth_bps}`.
-#   Voraussetzung: m-trace-API läuft auf $MTRACE_API_URL (Default
-#   http://localhost:8080) mit aktivem Collector
-#   (MTRACE_SRT_SOURCE_URL gesetzt). Der Pfad ist opt-in, weil
-#   examples/srt/compose.yaml apps/api nicht startet — der
-#   Operator fährt das im Release-Closeout aus releasing.md §2.1
-#   gegen ein laufendes `make dev`.
+# 5. `GET /api/srt/health/{stream_id}` antwortet `200`.
+# 6. Wire-Format aus spec/backend-api-contract.md §7a.2 enthält
+# die vier RAK-43-Pflichtwerte unter `metrics.{rtt_ms,
+# packet_loss_total, retransmissions_total,
+# available_bandwidth_bps}`.
+# Voraussetzung: m-trace-API läuft auf $MTRACE_API_URL (Default
+# http://localhost:8080) mit aktivem Collector
+# (MTRACE_SRT_SOURCE_URL gesetzt). Der Pfad ist opt-in, weil
+# examples/srt/compose.yaml apps/api nicht startet — der
+# Operator fährt das im Release-Closeout aus releasing.md §2.1
+# gegen ein laufendes `make dev`.
 #
 # Konvention (examples/README.md):
-#   - Project-Name `mtrace-srt`; Smoke räumt nur dieses Compose-
-#     Projekt auf.
-#   - opt-in (nicht in `make gates`).
+# - Project-Name `mtrace-srt`; Smoke räumt nur dieses Compose-
+# Projekt auf.
+# - opt-in (nicht in `make gates`).
 #
 # Manueller Aufruf (Stack vorher gestartet):
-#   docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build
-#   SMOKE_SRT_AUTOSTART=0 scripts/smoke-srt-health.sh
+# docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build
+# SMOKE_SRT_AUTOSTART=0 scripts/smoke-srt-health.sh
 
 PROJECT="${PROJECT:-mtrace-srt}"
 COMPOSE_FILE="${COMPOSE_FILE:-examples/srt/compose.yaml}"
@@ -52,7 +52,7 @@ MTRACE_API_URL="${MTRACE_API_URL:-http://localhost:8080}"
 MTRACE_API_TOKEN="${MTRACE_API_TOKEN:-demo-token}"
 MTRACE_API_STREAM_ID="${MTRACE_API_STREAM_ID:-$EXPECTED_PATH}"
 
-# Opt-in Cursor-Pagination-Probe (RAK-86 / plan-0.12.6 Tranche 2).
+# Opt-in Cursor-Pagination-Probe (RAK-86 / ).
 # 0=skip, 1=zusätzlich zur einfachen API-Probe drei Pagination-
 # Checks: (a) erste Page mit samples_limit=1 muss `next_cursor`
 # liefern (sofern mindestens zwei Samples in DB), (b) Folge-Page
@@ -99,7 +99,7 @@ fi
 echo "[smoke-srt-health] hls-status OK ($status @ $HLS_URL)"
 
 # 2) MediaMTX-API erreichbar — Status und Body in einem curl-Call
-#    erfassen, damit kein Race zwischen zwei Requests entsteht.
+# erfassen, damit kein Race zwischen zwei Requests entsteht.
 api_status=""
 api_body=""
 api_tmp="$(mktemp)"
@@ -253,7 +253,7 @@ print(
 )
 PYEOF
 
-  # 7) Opt-in Cursor-Pagination-Probe (RAK-86 / plan-0.12.6 T2).
+  # 7) Opt-in Cursor-Pagination-Probe (RAK-86 /  T2).
   # Drei Sub-Checks: (a) Erste Page mit samples_limit=1 inkl.
   # next_cursor; (b) Folge-Page mit gepacktem next_cursor liefert
   # 200; (c) malformed samples_cursor liefert 400 mit

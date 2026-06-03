@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.12.6 Tranche 6 (R-22) — Origin-/IP-Rate-Limiter Smoke.
+# (R-22) — Origin-/IP-Rate-Limiter Smoke.
 #
 # Pflichtpfad:
-#   Setzt einen lokalen Capacity=2-Bucket pro Client-IP (Default-
-#   Konstanten via niedrigerer ENV ueberschrieben), feuert drei
-#   `POST /api/auth/session-tokens`-Aufrufe in Folge:
-#     1. + 2. → erwartete 201.
-#     3.      → erwartete 429 mit Body `{"error":"origin_rate_limited"}`.
+# Setzt einen lokalen Capacity=2-Bucket pro Client-IP (Default-
+# Konstanten via niedrigerer ENV ueberschrieben), feuert drei
+# `POST /api/auth/session-tokens`-Aufrufe in Folge:
+# 1. + 2. → erwartete 201.
+# 3.      → erwartete 429 mit Body `{"error":"origin_rate_limited"}`.
 #
 # Voraussetzungen:
-#   - m-trace-API laeuft auf $MTRACE_API_URL (Default
-#     http://localhost:8080) mit `MTRACE_ORIGIN_RATE_LIMITER=memory`.
-#   - Project-Token `demo-token` ist konfiguriert (Compose-Default
-#     aus examples/local-dev).
+# - m-trace-API laeuft auf $MTRACE_API_URL (Default
+# http://localhost:8080) mit `MTRACE_ORIGIN_RATE_LIMITER=memory`.
+# - Project-Token `demo-token` ist konfiguriert (Compose-Default
+# aus examples/local-dev).
 #
 # Opt-in (NICHT in `make gates`); braucht `curl`, `python3`.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.5.0 §4 Tranche 3 — SRT-Beispiel-Smoke (RAK-37).
+# — SRT-Beispiel-Smoke (RAK-37).
 #
 # Verifiziert den SRT-Pfad funktional: examples/srt/compose.yaml
 # startet einen MediaMTX-Container mit SRT-Listener plus einen
@@ -10,15 +10,15 @@ set -euo pipefail
 # 8889 ausspielt — d. h. SRT-Ingress + HLS-Egress beide ok.
 #
 # Konvention (examples/README.md):
-#   - eigene Compose-Datei → eigener Project-Name `mtrace-srt`.
-#   - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
-#     fremden Volumes/Container auf.
-#   - opt-in (nicht in `make gates`).
+# - eigene Compose-Datei → eigener Project-Name `mtrace-srt`.
+# - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
+# fremden Volumes/Container auf.
+# - opt-in (nicht in `make gates`).
 #
 # Manueller Aufruf möglich (Compose-Stack vorher gestartet):
-#   docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build
-#   HLS_URL=http://localhost:8889/srt-test/index.m3u8 \
-#     SMOKE_SRT_AUTOSTART=0 scripts/smoke-srt.sh
+# docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build
+# HLS_URL=http://localhost:8889/srt-test/index.m3u8 \
+# SMOKE_SRT_AUTOSTART=0 scripts/smoke-srt.sh
 
 PROJECT="${PROJECT:-mtrace-srt}"
 COMPOSE_FILE="${COMPOSE_FILE:-examples/srt/compose.yaml}"

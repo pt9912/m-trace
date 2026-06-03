@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # smoke-issuance-multi-host.sh — Reproduzierbarer Lab-Smoke für den
-# Redis-Network-Backend-Limiter aus `0.12.6` Tranche 7 (RAK-88 / R-17).
+# Redis-Network-Backend-Limiter aus `0.12.6` (RAK-88 / R-17).
 #
 # Verifiziert das semantische Multi-Host-Verhalten aus
 # `docs/user/auth.md` §5.4:
-#   1. miniredis startet einen In-Process-Redis-Mock; zwei
-#      `RedisIssuanceRateLimiter`-Instanzen (analog zwei API-
-#      Replicas auf verschiedenen Hosts) verbinden sich dagegen.
-#   2. Replica A verbraucht das Project-Bucket bis zur Kapazität.
-#   3. Replica B muss den nächsten Allow als „denied" sehen —
-#      Shared-State greift über das Redis-`HSET`/`EXPIRE`-Tupel,
-#      atomar via Lua-EVAL.
-#   4. Refund-Pfad bei Project-Deny verbraucht keinen globalen
-#      Token (Lua-Script-internes Refund).
-#   5. Fail-Mode (closed/open) bei simuliertem Redis-Outage.
+# 1. miniredis startet einen In-Process-Redis-Mock; zwei
+# `RedisIssuanceRateLimiter`-Instanzen (analog zwei API-
+# Replicas auf verschiedenen Hosts) verbinden sich dagegen.
+# 2. Replica A verbraucht das Project-Bucket bis zur Kapazität.
+# 3. Replica B muss den nächsten Allow als „denied" sehen —
+# Shared-State greift über das Redis-`HSET`/`EXPIRE`-Tupel,
+# atomar via Lua-EVAL.
+# 4. Refund-Pfad bei Project-Deny verbraucht keinen globalen
+# Token (Lua-Script-internes Refund).
+# 5. Fail-Mode (closed/open) bei simuliertem Redis-Outage.
 #
 # Im Gegensatz zu `smoke-issuance-replica` (SQLite Single-Host) deckt
 # dieser Smoke das **Multi-Host**-Setup ab — Redis ist der einzige

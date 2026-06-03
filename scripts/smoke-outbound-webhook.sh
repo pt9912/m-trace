@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # smoke-outbound-webhook.sh — Reproduzierbarer Lab-Smoke für den
-# Outbound-Webhook-Dispatcher aus `0.12.5` Tranche 5 (RAK-82, R-16).
+# Outbound-Webhook-Dispatcher aus `0.12.5` (RAK-82, R-16).
 #
 # Verifiziert den HTTP-Dispatcher gegen einen `httptest.Server`-
 # Mock-Konsumenten:
-#   1. Endpoint leer → Dispatch no-op.
-#   2. 200 first try → happy path (1 Call).
-#   3. HMAC-Signatur stimmt mit `X-MTrace-Signature: sha256=<hex>`.
-#   4. 503 → 200 transient → Retry succeeds (2 Calls).
-#   5. 3×500 → ErrOutboundWebhookExhausted (Dead-Letter, 3 Calls).
-#   6. Body enthält die Pflichtfelder und keinen Klartext-Stream-Key.
-#   7. ctx-Cancel stoppt den Retry-Loop.
+# 1. Endpoint leer → Dispatch no-op.
+# 2. 200 first try → happy path (1 Call).
+# 3. HMAC-Signatur stimmt mit `X-MTrace-Signature: sha256=<hex>`.
+# 4. 503 → 200 transient → Retry succeeds (2 Calls).
+# 5. 3×500 → ErrOutboundWebhookExhausted (Dead-Letter, 3 Calls).
+# 6. Body enthält die Pflichtfelder und keinen Klartext-Stream-Key.
+# 7. ctx-Cancel stoppt den Retry-Loop.
 #
 # Implementation: ruft die End-to-End-Tests `TestOutboundWebhook_*`
 # aus `apps/api/adapters/driven/webhooks/http_dispatcher_test.go`
 # über das `golang:1.26.3`-Docker-Image auf.
 #
 # Konvention:
-#   - eigener Docker-Run, keine globalen Volumes
-#   - opt-in (nicht in `make gates`)
-#   - exit 0 bei grünem Test, exit 1 sonst
+# - eigener Docker-Run, keine globalen Volumes
+# - opt-in (nicht in `make gates`)
+# - exit 0 bei grünem Test, exit 1 sonst
 
 set -euo pipefail
 

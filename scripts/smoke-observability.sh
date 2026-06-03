@@ -78,7 +78,7 @@ for metric in "${required_metrics[@]}"; do
   echo "prometheus-required-metric-cardinality: ${metric}=${metric_cardinality}"
 done
 
-# plan-0.4.0 §7.3: pro §7-Pflichtcounter eine strikte Labelset-
+# : pro §7-Pflichtcounter eine strikte Labelset-
 # Assertion. Der Counter darf KEINE fachlichen Labels tragen — erlaubt
 # sind nur Prometheus-Target-Metadaten (`__name__`, `instance`, `job`).
 # Jeder zusätzliche Label-Key ist ein Cardinality-Verstoß und
@@ -121,7 +121,7 @@ if [ "$series_count" -le 0 ]; then
   printf '%s\n' "$series_json" >&2
   exit 1
 fi
-# plan-0.4.0 §7.3: Forbidden-Labels über alle `mtrace_*`-Serien hinweg.
+# : Forbidden-Labels über alle `mtrace_*`-Serien hinweg.
 # Liste deckt §7-Vertrag (project_id/session_id/Token/etc.) plus
 # Telemetry-Model §3.1 ab. Andere `mtrace_*`-Metriken dürfen bounded
 # Aggregat-Labels (`outcome`, `code`, `event_type`) tragen — das
@@ -133,12 +133,12 @@ const forbidden=[
   "project_id","trace_id","span_id","correlation_id",
   "viewer_id","request_id","token","authorization",
   "url","uri","secret",
-  // plan-0.4.0 §8.2 / spec/telemetry-model.md §3.1: batch_size is
+  //  / spec/telemetry-model.md §3.1: batch_size is
   // forbidden because mtrace.api.batches.received runs in use case
   // Step 0 (vor MaxBatchSize-Validierung) — a rejected batch with
   // events.length=250 would otherwise emit batch_size="250".
   "batch_size",
-  // plan-0.8.0 §4 Tranche 3 / spec/telemetry-model.md §3.1: Per-
+  //  / spec/telemetry-model.md §3.1: Per-
   // Identifier-Felder aus `getStats()` sind verboten als Labels.
   // mtrace_webrtc_*-Counter dürfen ausschließlich {connection_state,
   // ice_state, dtls_state} tragen; Byte-/Loss-Counter bleiben
@@ -160,7 +160,7 @@ const policyProbe=[
   {__name__:"mtrace_test_total",uri:"x"},
   {__name__:"mtrace_test_total",secret:"x"},
   {__name__:"mtrace_test_total",batch_size:"7"},
-  // plan-0.8.0 §4 Tranche 3: WebRTC-Forbidden-Self-Tests.
+  // : WebRTC-Forbidden-Self-Tests.
   {__name__:"mtrace_webrtc_test_total",peer_connection_run_id:"x"},
   {__name__:"mtrace_webrtc_test_total",ssrc:"x"},
   {__name__:"mtrace_webrtc_test_total",track_id:"x"},
@@ -186,7 +186,7 @@ if [ "${cardinality%.*}" -ge 50 ]; then
 fi
 echo "prometheus-cardinality: ${cardinality}"
 
-# plan-0.6.0 §4 Sub-3.7: SRT-Health-Allowlist prüfen.
+# Sub-3.7: SRT-Health-Allowlist prüfen.
 #
 # Wenn `mtrace_srt_health_*`-Serien existieren (Collector ist aktiv),
 # müssen sie sich auf die in spec/telemetry-model.md §3.2 / §7.7
@@ -232,7 +232,7 @@ else
   echo "prometheus-srt-health-allowlist: skipped (collector not active)"
 fi
 
-# plan-0.8.0 §4 Tranche 3: WebRTC-Allowlist prüfen.
+# : WebRTC-Allowlist prüfen.
 #
 # Wenn `mtrace_webrtc_*`-Serien existieren (Adapter sendet
 # metrics_sampled-Events), müssen sie sich auf die in
@@ -277,7 +277,7 @@ else
   echo "prometheus-webrtc-allowlist: skipped (no WebRTC samples observed)"
 fi
 
-# plan-0.6.0 §0.1 + spec/telemetry-model.md §7.7:
+# + spec/telemetry-model.md §7.7:
 # Source-Rohmetriken aus MediaMTX/SRT werden nicht vom Projekt-
 # Prometheus gescraped. Wir prüfen das, indem wir die Active-Targets-
 # Liste durchgehen und nach mediamtx-/srt-typischen Job- oder

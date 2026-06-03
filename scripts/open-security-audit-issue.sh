@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# plan-0.8.5 Tranche 1 (RAK-Wave-2 / extra-gates.md §3.7) —
+# ( extra-gates.md) —
 # Eröffnet ein GitHub-Issue, wenn der Nightly-Security-Audit
 # (govulncheck / pnpm audit / Trivy image scan) eine neue
 # CRITICAL/HIGH-Vulnerability meldet. Aufgerufen aus
@@ -12,15 +12,15 @@
 # Lücke täglich.
 #
 # Erwartete Inputs:
-#   .tmp/security/vuln-check.log   stdout/stderr von `make vuln-check`
-#   .tmp/security/audit-ts.log     stdout/stderr von `make audit-ts`
-#   .tmp/security/image-scan.log   stdout/stderr von `make image-scan`
+# .tmp/security/vuln-check.log   stdout/stderr von `make vuln-check`
+# .tmp/security/audit-ts.log     stdout/stderr von `make audit-ts`
+# .tmp/security/image-scan.log   stdout/stderr von `make image-scan`
 # Env vars (gesetzt vom Workflow):
-#   VULN_CHECK_OUTCOME   success|failure  (steps.<id>.outcome)
-#   AUDIT_TS_OUTCOME     success|failure
-#   IMAGE_SCAN_OUTCOME   success|failure
-#   GH_TOKEN             GitHub-Token mit `issues:write`
-#   RUN_URL              Link auf den fehlgeschlagenen Workflow-Run
+# VULN_CHECK_OUTCOME   success|failure  (steps.<id>.outcome)
+# AUDIT_TS_OUTCOME     success|failure
+# IMAGE_SCAN_OUTCOME   success|failure
+# GH_TOKEN             GitHub-Token mit `issues:write`
+# RUN_URL              Link auf den fehlgeschlagenen Workflow-Run
 set -eu
 
 title="Security audit findings ($(date -u +%Y-%m-%d))"
@@ -101,4 +101,4 @@ EOF
 gh issue create \
   --title "$title" \
   --body "$body" \
-  --label "security,audit,plan-0.8.5"
+  --label "security,audit"

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.9.0 §3 Tranche 2 — SRS-Beispiel-Smoke (RAK-57, Kann).
+# — SRS-Beispiel-Smoke (RAK-57, Kann).
 #
 # Verifiziert den SRS-Pfad funktional: examples/srs/compose.yaml
 # startet einen SRS-Container mit RTMP-Listener + HTTP-API + HTTP-FLV-
 # Egress plus einen FFmpeg-Publisher, der per RTMP einen synthetischen
 # Stream einliefert. Der Smoke prüft endpoint-/compose-only:
 #
-#   1. HTTP-API antwortet 200 auf `/api/v1/streams/`.
-#   2. Stream `live/srs-test` ist registriert mit `publish.active=true`.
-#   3. HTTP-FLV-Egress liefert 200 plus FLV-Magic-Header (`FLV`) für
-#      `/live/srs-test.flv` — d. h. RTMP-Ingress + FLV-Egress fließen.
+# 1. HTTP-API antwortet 200 auf `/api/v1/streams/`.
+# 2. Stream `live/srs-test` ist registriert mit `publish.active=true`.
+# 3. HTTP-FLV-Egress liefert 200 plus FLV-Magic-Header (`FLV`) für
+# `/live/srs-test.flv` — d. h. RTMP-Ingress + FLV-Egress fließen.
 #
 # Nicht bewiesen: Playback-Qualität (Codec-Verhandlung, Latenz),
 # HLS-Output (SRS unterstützt das, aber dafür gibt's andere
@@ -19,14 +19,14 @@ set -euo pipefail
 # zu `make smoke-srt` — endpoint-only, keine Telemetrie.
 #
 # Konvention (examples/README.md):
-#   - eigene Compose-Datei → eigener Project-Name `mtrace-srs`.
-#   - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
-#     fremden Volumes/Container auf.
-#   - opt-in (nicht in `make gates`).
+# - eigene Compose-Datei → eigener Project-Name `mtrace-srs`.
+# - Smoke startet/stoppt nur diesen Project-Namen, räumt keine
+# fremden Volumes/Container auf.
+# - opt-in (nicht in `make gates`).
 #
 # Manueller Aufruf möglich (Compose-Stack vorher gestartet):
-#   docker compose -p mtrace-srs -f examples/srs/compose.yaml up -d --build
-#   SMOKE_SRS_AUTOSTART=0 scripts/smoke-srs.sh
+# docker compose -p mtrace-srs -f examples/srs/compose.yaml up -d --build
+# SMOKE_SRS_AUTOSTART=0 scripts/smoke-srs.sh
 
 PROJECT="${PROJECT:-mtrace-srs}"
 COMPOSE_FILE="${COMPOSE_FILE:-examples/srs/compose.yaml}"
@@ -88,7 +88,7 @@ fi
 echo "[smoke-srs] api-status OK ($api_status @ ${API_BASE}/api/v1/streams/)"
 
 # 2) Stream `live/srs-test` ist registriert mit publish.active=true
-#    SRS antwortet im Format {"code":0,"streams":[{"app":"live","name":"srs-test","publish":{"active":true,...},...}]}
+# SRS antwortet im Format {"code":0,"streams":[{"app":"live","name":"srs-test","publish":{"active":true,...},...}]}
 stream_ready=""
 for _ in $(seq 1 "$WAIT_SECONDS"); do
   body="$(curl -sS "${API_BASE}/api/v1/streams/" 2>/dev/null || true)"
@@ -111,8 +111,8 @@ fi
 echo "[smoke-srs] stream-ready OK (${STREAM_APP}/${STREAM_NAME} publish.active=true)"
 
 # 3) HTTP-FLV-Egress liefert 200 + FLV-Magic-Header `FLV`
-#    `--max-time 3` schneidet das Streaming nach 3 s ab; wir lesen
-#    nur ein paar Bytes vom Anfang, um den Magic-Header zu prüfen.
+# `--max-time 3` schneidet das Streaming nach 3 s ab; wir lesen
+# nur ein paar Bytes vom Anfang, um den Magic-Header zu prüfen.
 flv_dump="$(mktemp)"
 trap 'rm -f "$flv_dump"' RETURN 2>/dev/null || true
 flv_status="$(curl -sS -o "$flv_dump" -w '%{http_code}' --max-time 3 "$FLV_URL" 2>/dev/null || true)"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.9.5 §2 Tranche 1 DoD-Item 7 — Bench-Runs drucken Runner-OS,
+# DoD-Item 7 — Bench-Runs drucken Runner-OS,
 # CPU-Modell und Runtime-Versionen, damit Budget-Failures
 # einordenbar bleiben.
 

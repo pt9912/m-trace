@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// plan-0.9.5 §3 Tranche 2 (DoD-Item §3-6) — Quarantäne-Tag-Check
+// Quarantäne-Tag-Check
 // für Bench-Suites. Scant Bench-Files nach
 // `// bench:quarantine YYYY-MM-DD reason: <text>` direkt über
 // `func BenchmarkX(...)` (Go) oder `bench("...", ...)` (TS).
@@ -9,7 +9,7 @@
 //   - exit 1 wenn ein Tag älter als die maximale Quarantäne-Dauer
 //     ist (Default 30 Tage; Plan-DoD-Wartungsregel). Operator muss
 //     das Tag entweder verlängern (Plan-DoD-Item-Änderung im
-//     Folge-Plan, kein stiller Re-Skip) oder den Bench fixen.
+// Folge-Plan, kein stiller Re-Skip) oder den Bench fixen.
 //   - exit 0 sonst; gibt die Liste der aktiven Quarantänen entweder
 //     auf stdout oder als JSON-File aus (`--output <path>`).
 //

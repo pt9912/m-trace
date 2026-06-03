@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # smoke-mediamtx-auth.sh — Reproduzierbarer Lab-Smoke für die
-# MediaMTX-Auth-Bridge aus `0.12.5` Tranche 5 (RAK-81, R-14).
+# MediaMTX-Auth-Bridge aus `0.12.5` (RAK-81, R-14).
 #
 # Verifiziert das Wire-Verhalten der `POST /api/ingest/auth-hook`-
 # Route aus `docs/user/auth.md` §5.7:
-#   1. Gültiger Stream-Key + `action=publish` → 200 allow.
-#   2. Falscher Stream-Key → 403 deny.
-#   3. `action=read` → 403 deny (Read-Auth bleibt Folge-Item).
-#   4. Fehlendes `user`/`path`/`password` → 403 deny.
-#   5. Falsches Content-Type (z. B. JSON) → 400 bad request.
-#   6. GET-Request → 405 method not allowed.
-#   7. Backend-Fehler (Repo-Outage) → 403 fail-closed.
+# 1. Gültiger Stream-Key + `action=publish` → 200 allow.
+# 2. Falscher Stream-Key → 403 deny.
+# 3. `action=read` → 403 deny (Read-Auth bleibt Folge-Item).
+# 4. Fehlendes `user`/`path`/`password` → 403 deny.
+# 5. Falsches Content-Type (z. B. JSON) → 400 bad request.
+# 6. GET-Request → 405 method not allowed.
+# 7. Backend-Fehler (Repo-Outage) → 403 fail-closed.
 #
 # Implementation: ruft die End-to-End-Tests
 # `TestMediaMTXAuthHook_*` aus
@@ -21,9 +21,9 @@
 # vollständig abgedeckt.
 #
 # Konvention:
-#   - eigener Docker-Run, keine globalen Volumes
-#   - opt-in (nicht in `make gates`)
-#   - exit 0 bei grünem Test, exit 1 sonst
+# - eigener Docker-Run, keine globalen Volumes
+# - opt-in (nicht in `make gates`)
+# - exit 0 bei grünem Test, exit 1 sonst
 
 set -euo pipefail
 

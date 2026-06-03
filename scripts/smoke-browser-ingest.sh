@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # smoke-browser-ingest.sh — Reproduzierbarer Lab-Smoke für die
-# Browser-Ingest-Policy aus `0.12.5` Tranche 4 (RAK-80, R-21).
+# Browser-Ingest-Policy aus `0.12.5` (RAK-80, R-21).
 #
 # Verifiziert das Wire-Verhalten aus `docs/user/auth.md` §5.6:
-#   1. Preflight ohne aktivierte Policy → 204 ohne Allow-Origin
-#      (RAK-74-Scope-Cut bleibt strikt).
-#   2. Preflight mit aktivierter Policy + Origin in Allowlist
-#      → 204 + Allow-Origin/Methods/Headers.
-#   3. Preflight mit aktivierter Policy + Origin NICHT in Allowlist
-#      → 204 ohne Allow-Origin (kein Enumerations-Leak).
-#   4. POST mit Origin-Pin-Mismatch → 403 `ingest_browser_origin_pin_mismatch`.
-#   5. POST mit fehlendem CSRF-Header → 403 `ingest_browser_csrf_missing`.
-#   6. POST mit allen Checks bestanden → 201 (Stream-Create-Pfad).
+# 1. Preflight ohne aktivierte Policy → 204 ohne Allow-Origin
+# (RAK-74-Scope-Cut bleibt strikt).
+# 2. Preflight mit aktivierter Policy + Origin in Allowlist
+# → 204 + Allow-Origin/Methods/Headers.
+# 3. Preflight mit aktivierter Policy + Origin NICHT in Allowlist
+# → 204 ohne Allow-Origin (kein Enumerations-Leak).
+# 4. POST mit Origin-Pin-Mismatch → 403 `ingest_browser_origin_pin_mismatch`.
+# 5. POST mit fehlendem CSRF-Header → 403 `ingest_browser_csrf_missing`.
+# 6. POST mit allen Checks bestanden → 201 (Stream-Create-Pfad).
 #
 # Implementation: ruft die End-to-End-Browser-Ingest-Tests aus
 # `apps/api/adapters/driving/http/browser_ingest_test.go` über das
@@ -21,9 +21,9 @@
 # zusätzliche Compose-Voraussetzungen.
 #
 # Konvention:
-#   - eigener Docker-Run, keine globalen Volumes
-#   - opt-in (nicht in `make gates`)
-#   - exit 0 bei grünem Test, exit 1 sonst
+# - eigener Docker-Run, keine globalen Volumes
+# - opt-in (nicht in `make gates`)
+# - exit 0 bei grünem Test, exit 1 sonst
 
 set -euo pipefail
 

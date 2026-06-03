@@ -8,14 +8,14 @@
 #
 # Ausserdem prueft das Script, dass kein Eintrag das `expires`-Datum
 # ueberschritten hat — abgelaufene Eintraege brechen den Lauf, damit
-# Wartung erzwungen wird (plan-0.8.5 Tranche 1 vulnignore.yaml-
-# Wartungsregel; volle automatische Erinnerung kommt mit plan-0.9.5).
+# Wartung erzwungen wird ( vulnignore.yaml-
+# Wartungsregel; volle automatische Erinnerung kommt mit ).
 #
 # Usage:
-#   bash scripts/render-trivyignore.sh [scope]
-#   bash scripts/render-trivyignore.sh mtrace-dashboard
+# bash scripts/render-trivyignore.sh [scope]
+# bash scripts/render-trivyignore.sh mtrace-dashboard
 # Output:
-#   .security/.trivyignore (overwrites)
+# .security/.trivyignore (overwrites)
 
 set -euo pipefail
 
@@ -35,12 +35,12 @@ fi
 today_epoch="$(date -u +%s)"
 
 # Wir lesen einen einfachen YAML-Subgraph aus:
-#   trivy:
-#     ignore:
-#       - id: CVE-...
-#         reason: "..."
-#         expires: YYYY-MM-DD
-#         scope: "..."
+# trivy:
+# ignore:
+# - id: CVE-...
+# reason: "..."
+# expires: YYYY-MM-DD
+# scope: "..."
 #
 # yq waere bequemer, ist aber nicht ueberall installiert. Awk reicht
 # fuer das Schema, weil wir die Struktur strikt halten.

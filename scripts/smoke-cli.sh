@@ -1,25 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke für plan-0.3.0 Tranche 7 (HLS) plus plan-0.9.0 Tranche 3
+# Smoke für  (HLS) plus 
 # Erweiterung um den DASH-Pfad (RAK-58/RAK-59 / NF-12):
-#  1. `pnpm --silent m-trace --help` zeigt die Usage und exit 0.
-#  2. `pnpm --silent m-trace check <file.m3u8>` analysiert eine
-#     Master-HLS-Manifest-Fixture, gibt JSON auf stdout aus, exit 0
-#     (`analyzerKind:"hls"`, `playlistType:"master"`).
-#  3. `pnpm --silent m-trace check <file.mpd>` analysiert eine VOD-
-#     DASH-MPD-Fixture, gibt JSON auf stdout aus, exit 0
-#     (`analyzerKind:"dash"`, `playlistType:"dash"`). Ab plan-0.9.0
-#     Tranche 3.
-#  4. `pnpm --silent m-trace check <not-supported>` (HTML-Body)
-#     bricht ab mit exit 1 und JSON, das `status:"error"` mit
-#     `code:"manifest_not_supported"` trägt — neuer Detector-Pfad
-#     ab plan-0.9.0 Tranche 3.
-#  5. `pnpm --silent m-trace check /nonexistent.m3u8` läuft auf IO-Fehler,
-#     exit 1, Fehler-Message auf stderr.
-#  6. Aufruf ohne Argumente → Usage-Fehler, exit 2.
-#  7. URL-Loader-Pfad (SSRF-Block) → exit 1 + fetch_blocked.
-#  8. bin-Pfad via consumer .bin → Usage.
+# 1. `pnpm --silent m-trace --help` zeigt die Usage und exit 0.
+# 2. `pnpm --silent m-trace check <file.m3u8>` analysiert eine
+# Master-HLS-Manifest-Fixture, gibt JSON auf stdout aus, exit 0
+# (`analyzerKind:"hls"`, `playlistType:"master"`).
+# 3. `pnpm --silent m-trace check <file.mpd>` analysiert eine VOD-
+# DASH-MPD-Fixture, gibt JSON auf stdout aus, exit 0
+# (`analyzerKind:"dash"`, `playlistType:"dash"`). Ab 
+# .
+
+# 4. `pnpm --silent m-trace check <not-supported>` (HTML-Body)
+# bricht ab mit exit 1 und JSON, das `status:"error"` mit
+# `code:"manifest_not_supported"` trägt — neuer Detector-Pfad
+# ab .
+# 5. `pnpm --silent m-trace check /nonexistent.m3u8` läuft auf IO-Fehler,
+# exit 1, Fehler-Message auf stderr.
+# 6. Aufruf ohne Argumente → Usage-Fehler, exit 2.
+# 7. URL-Loader-Pfad (SSRF-Block) → exit 1 + fetch_blocked.
+# 8. bin-Pfad via consumer .bin → Usage.
 #
 # Erwartet `make ts-build` als Vorbedingung (das Makefile-Target
 # `smoke-cli` hängt schon dran).
@@ -46,11 +47,11 @@ video/720p.m3u8
 M3U
 
 # Non-HLS-/Non-DASH-Fixture (HTML-Body) — wird vom Detector in
-# plan-0.9.0 Tranche 3 als `manifest_not_supported` zurückgewiesen.
+# als `manifest_not_supported` zurückgewiesen.
 nothls="$tmpdir/not-hls.txt"
 echo "<html><body>not a manifest</body></html>" > "$nothls"
 
-# DASH-VOD-Fixture (plan-0.9.0 Tranche 3)
+# DASH-VOD-Fixture ()
 dash_vod="$tmpdir/vod.mpd"
 cat > "$dash_vod" <<'MPD'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -128,7 +129,7 @@ fi
 echo "[smoke-cli] missing file OK (exit 1, stderr message)"
 
 # 5. no args → usage error → strikt exit 2 (pnpm 10 propagiert
-#    Script-Exit-Codes verbatim).
+# Script-Exit-Codes verbatim).
 set +e
 pnpm --silent m-trace >/dev/null 2>&1
 noargs_exit=$?
@@ -140,10 +141,10 @@ fi
 echo "[smoke-cli] no-args usage error OK (exit 2)"
 
 # 6. URL-Loader-Pfad end-to-end: SSRF-Block gegen RFC1918 → exit 1
-#    + JSON mit code:fetch_blocked. Bestätigt, dass URL-Inputs durch
-#    den echten analyzeHlsManifest-Loader laufen (nicht nur durch den
-#    runCli-Dispatcher). Kein localhost-Server nötig — der SSRF-Block
-#    selbst ist der positiv-bestätigte Pfad.
+# + JSON mit code:fetch_blocked. Bestätigt, dass URL-Inputs durch
+# den echten analyzeHlsManifest-Loader laufen (nicht nur durch den
+# runCli-Dispatcher). Kein localhost-Server nötig — der SSRF-Block
+# selbst ist der positiv-bestätigte Pfad.
 set +e
 ssrf_out="$(pnpm --silent m-trace check http://10.0.0.1/m.m3u8)"
 ssrf_exit=$?
@@ -161,11 +162,11 @@ fi
 echo "[smoke-cli] URL → fetch_blocked OK (real loader-Pfad)"
 
 # 7. bin-Pfad: analyzer-service hängt als Workspace-Consumer am
-#    stream-analyzer und bekommt das m-trace-Bin in sein node_modules/
-#    .bin/ symlinked — exakt die Situation, die published-package-
-#    Konsumenten nach `npm install @pt9912/stream-analyzer` haben.
-#    `pnpm --filter ... exec m-trace --help` exerciert das Symlink
-#    plus den Shebang plus den Executable-Bit in einem Aufruf.
+# stream-analyzer und bekommt das m-trace-Bin in sein node_modules/
+# .bin/ symlinked — exakt die Situation, die published-package-
+# Konsumenten nach `npm install @pt9912/stream-analyzer` haben.
+# `pnpm --filter ... exec m-trace --help` exerciert das Symlink
+# plus den Shebang plus den Executable-Bit in einem Aufruf.
 help_via_bin="$(pnpm --silent --filter @pt9912/analyzer-service exec m-trace --help)"
 if ! grep -q "Usage: m-trace check" <<<"$help_via_bin"; then
   echo "[smoke-cli] m-trace via consumer node_modules/.bin did not produce usage:"
@@ -175,15 +176,15 @@ fi
 echo "[smoke-cli] bin via consumer .bin OK"
 
 # 8. CMAF-HLS- und CMAF-DASH-Probe mit lokalem HTTP-Server
-#    (plan-0.10.0 Tranche 5, NF-13 / RAK-63 / RAK-64). Erzeugt
-#    deterministische CMAF-Init-/Media-Bytes via
-#    scripts/cmaf-fixture-builder.mjs, serviert sie über
-#    `python3 -m http.server` und ruft die CLI mit
-#    `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true` auf. Erwartet
-#    `analysis.details.cmaf.binary.status="passed"` für beide
-#    Manifest-Formate. Datei-Input mit `file://`-baseUrl gilt laut
-#    Plan T5-DoD nicht als Ersatz, weil der Segment-Loader strikt
-#    HTTP(S)-SSRF-Regeln nutzt.
+# (, NF-13 / RAK-63 / RAK-64). Erzeugt
+# deterministische CMAF-Init-/Media-Bytes via
+# scripts/cmaf-fixture-builder.mjs, serviert sie über
+# `python3 -m http.server` und ruft die CLI mit
+# `MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS=true` auf. Erwartet
+# `analysis.details.cmaf.binary.status="passed"` für beide
+# Manifest-Formate. Datei-Input mit `file://`-baseUrl gilt laut
+# Plan T5-DoD nicht als Ersatz, weil der Segment-Loader strikt
+# HTTP(S)-SSRF-Regeln nutzt.
 if ! command -v python3 >/dev/null 2>&1; then
   echo "[smoke-cli] CMAF probes skipped — python3 not available" >&2
   echo "[smoke-cli] all checks passed (CMAF probes skipped)"

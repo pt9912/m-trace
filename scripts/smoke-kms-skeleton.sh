@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # smoke-kms-skeleton.sh — Reproduzierbarer Lab-Smoke für den
-# KMS-Skelett-Adapter aus `0.12.6` Tranche 8 (RAK-89 / R-20).
+# KMS-Skelett-Adapter aus `0.12.6` (RAK-89 / R-20).
 #
 # Verifiziert das Adapter-Verhalten:
-#   1. Stub-Decrypter liefert einen `keys`-String → Adapter parsed
-#      ihn über die gemeinsame `ParseSigningKeysEnv`-Validation.
-#   2. Decrypter-Fehler propagiert fail-closed.
-#   3. Constructor lehnt fehlende Pflicht-ENV ab (Active-KID,
-#      Ciphertext).
-#   4. Ciphertext-Quelle: ENV-Base64 ODER File-Path.
-#   5. `LabPassThroughKMSDecrypter` (Lab-Mock) reicht Ciphertext als
-#      Plaintext durch — der `make smoke-kms-skeleton`-Smoke nutzt
-#      diesen Pfad, um den End-to-End-Flow ohne AWS-KMS-Konto zu
-#      testen.
+# 1. Stub-Decrypter liefert einen `keys`-String → Adapter parsed
+# ihn über die gemeinsame `ParseSigningKeysEnv`-Validation.
+# 2. Decrypter-Fehler propagiert fail-closed.
+# 3. Constructor lehnt fehlende Pflicht-ENV ab (Active-KID,
+# Ciphertext).
+# 4. Ciphertext-Quelle: ENV-Base64 ODER File-Path.
+# 5. `LabPassThroughKMSDecrypter` (Lab-Mock) reicht Ciphertext als
+# Plaintext durch — der `make smoke-kms-skeleton`-Smoke nutzt
+# diesen Pfad, um den End-to-End-Flow ohne AWS-KMS-Konto zu
+# testen.
 #
 # Produktive AWS-SDK-v2-Anbindung ist Folge-Item — der Adapter ist
 # heute über das `KMSDecrypter`-Interface vorbereitet. Operatoren

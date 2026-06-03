@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# plan-0.4.0 §6.4 — Tempo-Smoke für drei Startzustände.
+# — Tempo-Smoke für drei Startzustände.
 #
 # Pflichten aus §6 DoD:
-#   1. Core (Default-Compose ohne `OTEL_*`-Werte) löst KEINEN
-#      OTLP-Verbindungsversuch aus.
-#   2. observability-Profil (ohne Tempo) liefert OTLP an den Collector
-#      und produziert keine Tempo-Exportfehler.
-#   3. tempo-Profil aktiv: `correlation_id`-Roundtrip ist in Tempo
-#      auffindbar (über das Span-Attribut `mtrace.session.correlation_id`,
-#      siehe `spec/telemetry-model.md` §2.6).
+# 1. Core (Default-Compose ohne `OTEL_*`-Werte) löst KEINEN
+# OTLP-Verbindungsversuch aus.
+# 2. observability-Profil (ohne Tempo) liefert OTLP an den Collector
+# und produziert keine Tempo-Exportfehler.
+# 3. tempo-Profil aktiv: `correlation_id`-Roundtrip ist in Tempo
+# auffindbar (über das Span-Attribut `mtrace.session.correlation_id`,
+# siehe `spec/telemetry-model.md` §2.6).
 #
 # Aufruf:
-#   SMOKE_STATE=core         scripts/smoke-tempo.sh    # Stack: `make dev`
-#   SMOKE_STATE=observability scripts/smoke-tempo.sh   # Stack: `make dev-observability`
-#   SMOKE_STATE=tempo        scripts/smoke-tempo.sh    # Stack: `make dev-tempo` (Default)
+# SMOKE_STATE=core         scripts/smoke-tempo.sh    # Stack: `make dev`
+# SMOKE_STATE=observability scripts/smoke-tempo.sh   # Stack: `make dev-observability`
+# SMOKE_STATE=tempo        scripts/smoke-tempo.sh    # Stack: `make dev-tempo` (Default)
 
 API_URL="${API_URL:-http://localhost:8080}"
 TEMPO_URL="${TEMPO_URL:-http://localhost:3200}"

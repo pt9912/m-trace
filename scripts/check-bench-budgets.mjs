@@ -10,10 +10,10 @@
 //   - `--kind ts`: Vitest-Bench-Tabelle aus stdout. Format pro Zeile
 //     (vitest 4.1):
 //         `   · <name>  <hz>  <min>  <max>  <mean>  <p75>  <p99>  ...`
-//     Werte sind in Millisekunden (vitest-bench-Native-Einheit). Wir
+// Werte sind in Millisekunden (vitest-bench-Native-Einheit). Wir
 //     prüfen `mean` und `p99` gegen das Budget.
 //   - `--kind go`: Go-Bench-Output (`go test -bench=. -benchmem`).
-//     Format pro Zeile:
+// Format pro Zeile:
 //         `BenchmarkX-12   123456 ns/op   456 B/op   7 allocs/op`
 //     `ns/op` wird in Millisekunden konvertiert (`ns / 1_000_000`).
 //
