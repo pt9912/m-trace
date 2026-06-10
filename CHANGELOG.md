@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub-Actions auf Node.js-24-Runtime gehoben (GitHub erzwingt den
+  Node-20→24-Wechsel ab 2026-06-16). Betroffen über alle Workflows:
+  `actions/upload-artifact@v4 → @v6.0.0` (erster node24-Major, keine
+  funktionale API-Änderung), `actions/setup-go@v5 → @v6.4.0`,
+  `pnpm/action-setup@v4 → @v5.0.0` (Angleichung an die übrigen
+  Aufrufe), `docker/login-action@v3.3.0 → @v4.2.0`. `actions/checkout`,
+  `actions/setup-node` und die übrigen `pnpm/action-setup`-Aufrufe
+  liefen bereits auf node24.
+
 ### Security
 
 - Trivy-Scanner-Image `aquasec/trivy:0.59.1` → `aquasec/trivy:0.71.0`
