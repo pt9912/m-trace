@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Trivy-Scanner-Image `aquasec/trivy:0.59.1` → `aquasec/trivy:0.71.0`
+  in `Makefile` (`TRIVY_IMAGE`). Der alte Pin verschluckte am
+  2026-06-09 publizierte Advisories; der Nightly-Security-Audit
+  (Issue #4, Lauf `27247875291`) brach am 2026-06-10. Der frische
+  Scanner zieht dieselbe Vuln-DB, deckt aber zusätzliche Detections
+  auf — u.a. `CVE-2026-45447` (siehe unten), das `0.59.1` nicht
+  meldete.
+- Trivy-Ignore-Liste um zwei `perl-base`-/`openssl`-CVEs aus dem
+  `debian:13.5`-Base der `mtrace-dashboard`- und
+  `mtrace-analyzer-service`-Images erweitert:
+  - `CVE-2026-48959` (`perl-base`, IO::Uncompress::Unzip
+    CPU-Exhaustion-DoS, HIGH) — kein Trixie-Fix, `expires`
+    `2026-08-26` im perl-base-Cohort; Runtime ruft perl nie auf.
+  - `CVE-2026-45447` (`openssl`/`libssl3t64`, `PKCS7_verify()`
+    Heap-Use-after-free, CISA 9.8 / Trivy HIGH) — **mit**
+    Upstream-Fix (`openssl 3.5.6-1~deb13u2`, DSA-6335-1); kurze
+    Suppression (`expires` `2026-07-10`) nur für das
+    Trivy-DB-Lag-/floating-Base-Fenster, Vektor nicht über TLS
+    erreichbar (Node-Runtime verarbeitet kein PKCS#7/S-MIME).
+    Folge-Item `R-23` in `docs/planning/in-progress/risks-backlog.md`
+    mit Rebuild-`--pull`-Trigger.
+
 ## [0.22.2] - 2026-06-03
 
 > **Patch-/Tooling-Release** gemäß

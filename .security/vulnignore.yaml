@@ -128,11 +128,11 @@ trivy:
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
     # CVE-2026-42496 / CVE-2026-42497 / CVE-2026-8376 / CVE-2026-9538 /
-    # CVE-2026-48962 (perl-base):
-    # Fuenf Perl-Vulnerabilities, die mit den Trivy-DB-Updates vom
-    # 2026-05-28 (vier davon) und 2026-05-31 (CVE-2026-48962) erstmals
-    # im Nightly-Scan auf dem Trixie-Slim-Base 5.40.1-6 (perl-base)
-    # angeschlagen sind:
+    # CVE-2026-48962 / CVE-2026-48959 (perl-base):
+    # Sechs Perl-Vulnerabilities, die mit den Trivy-DB-Updates vom
+    # 2026-05-28 (vier davon), 2026-05-31 (CVE-2026-48962) und
+    # 2026-06-10 (CVE-2026-48959) erstmals im Nightly-Scan auf dem
+    # Trixie-Slim-Base 5.40.1-6 (perl-base) angeschlagen sind:
     #   - CVE-2026-42496 (CRITICAL) — Archive::Tar vor 3.08 extrahiert
     #     Symlinks mit attacker-kontrolliertem Ziel; benoetigt einen
     #     Perl-Prozess, der ein praepariertes tar-Archiv auspackt.
@@ -151,6 +151,14 @@ trivy:
     #     attacker-kontrolliertes Output-Glob-Pattern; benoetigt
     #     einen Perl-Prozess, der IO::Compress mit untrusted Glob-
     #     Argumenten aufruft.
+    #   - CVE-2026-48959 (HIGH)     — IO::Uncompress::Unzip (in
+    #     perl-base enthalten) vor 2.220 hat in fastForward() einen
+    #     Per-Byte-Read-Loop (CWE-407): beim Extrahieren benannter
+    #     Eintraege aus einem attacker-kontrollierten ZIP wird die
+    #     Offset-Ziffernzahl statt des Offsets gegen die Chunk-Groesse
+    #     geprueft → CPU-Exhaustion (DoS, availability-only). Benoetigt
+    #     einen Perl-Prozess, der ein praepariertes ZIP auspackt.
+    #     Fix in IO::Compress 2.220+.
     # Debian-Stand (Security Tracker, 2026-05-31): "vulnerable
     # (no DSA)" fuer trixie; kein Fixed-Version-Eintrag im Trivy-
     # Report ("Fixed Version" leer) — Upstream-Patch noch nicht
@@ -171,6 +179,12 @@ trivy:
     # Tage auf 2026-08-26 gesetzt. Naechster Re-Review-Trigger:
     # Trixie-Backport von Archive::Tar 3.10 + Perl 5.43.11+ ODER
     # `expires`-Schwelle.
+    # Nachtrag 2026-06-10 (Hotfix Nightly-Audit): CVE-2026-48959
+    # (IO::Uncompress::Unzip, NVD-Publikation 2026-05-27) ist neu
+    # angeschlagen; mit demselben `expires` 2026-08-26 in das
+    # perl-base-Cohort aufgenommen, damit alle sechs gemeinsam
+    # re-reviewt werden. Zusatz-Trigger: IO::Compress 2.220+ in
+    # Trixie verfuegbar.
     - id: CVE-2026-42496
       reason: "perl-base Archive::Tar <3.08 Symlink-Extraction (CRITICAL); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine tar-Extraktion durch perl. NVD-Publikation neu im Trivy-DB-Update 2026-05-28."
       expires: 2026-08-26
@@ -190,6 +204,49 @@ trivy:
     - id: CVE-2026-48962
       reason: "perl-base IO::Compress Arbitrary Code Execution via attacker-controlled output glob (HIGH); Trixie ohne Upstream-Fix; Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine IO::Compress-Glob-Evaluation. NVD-Publikation neu im Trivy-DB-Update 2026-05-31."
       expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-48959
+      reason: "perl-base IO::Uncompress::Unzip <2.220 fastForward() Per-Byte-Read-Loop (HIGH, CWE-407, CVSS 7.5) → CPU-Exhaustion-DoS via crafted ZIP (availability-only); Trixie ohne Upstream-Fix (Fix in IO::Compress 2.220+); Dashboard/Analyzer-Images rufen perl im Runtime nie auf, keine ZIP-Extraktion durch perl. NVD-Publikation 2026-05-27, neu im Nightly-Scan 2026-06-10."
+      expires: 2026-08-26
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
+    # CVE-2026-45447 (openssl / libssl3t64): Heap Use-after-free in
+    # PKCS7_verify(). Ein praepariertes PKCS#7-/S-MIME-Signed-Message
+    # mit leerem ASN.1-SET im SignedData-digestAlgorithms-Feld laesst
+    # OpenSSL eine caller-owned BIO waehrend PKCS7_verify() falsch
+    # freigeben; ein nachfolgender BIO_free()-Aufruf der Anwendung
+    # triggert das Use-after-free. CISA-ADP CVSS 9.8 CRITICAL, NVD-
+    # Eigenbewertung noch pending; Trivy stuft (Aqua/Debian) HIGH.
+    # NVD-Publikation 2026-06-09 (OpenSSL-Advisory + DSA-6335-1).
+    # ABGRENZUNG zu R-13 / perl-base-Cohort: hier existiert ein
+    # Upstream-Fix in Trixie — `openssl 3.5.6-1~deb13u2` (DSA-6335-1).
+    # Die Images tragen die verwundbare Base-Version `3.5.6-1~deb13u1`,
+    # weil das floating `node:22-trixie-slim` zum Build-Zeitpunkt noch
+    # `deb13u1` liefert und die Dockerfiles bewusst kein
+    # `apt-get upgrade` fahren. Trivys DB kennt die Fixed-Version noch
+    # nicht ("Fixed Version"-Spalte leer), d.h. selbst ein sofortiges
+    # apt-Upgrade auf `deb13u2` wuerde den Gate erst gruen machen, wenn
+    # Trivys Debian-Feed den Fix kennt. Diese Suppression ueberbrueckt
+    # genau dieses DB-Lag-Fenster.
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Laut OpenSSL-Advisory NICHT ueber Standard-TLS erreichbar;
+    #     die Anwendung muss aktiv PKCS#7-/S-MIME-Signed-Messages mit
+    #     den PKCS7-APIs verarbeiten (CMS-APIs sind nicht betroffen,
+    #     FIPS-Module nicht betroffen).
+    #   - Dashboard- und Analyzer-Service-Runtime (node, SvelteKit-
+    #     adapter-node bzw. Analyzer-WS) verarbeiten **kein** PKCS#7/
+    #     S-MIME. Codebase-grep bestaetigt: kein pkcs7/PKCS7_verify/
+    #     smime-Aufruf im Node-Pfad (einziger Treffer ist MP4-
+    #     MIME-Typ-Matching in stream-analyzer, semantisch unverwandt).
+    # Re-Review 2026-06-10 (Hotfix Nightly-Audit): KURZES `expires`
+    # 2026-07-10, weil ein Fix bereits existiert. Folge-Trigger
+    # (R-23): sobald `node:22-trixie-slim` `deb13u2` liefert →
+    # `docker build --pull` zieht die gepatchte Lib und dieser Eintrag
+    # wird ersatzlos entfernt; alternativ Trivy-DB kennt die Fixed-
+    # Version → Befund verschwindet ohnehin.
+    - id: CVE-2026-45447
+      reason: "openssl/libssl3t64 PKCS7_verify() Heap Use-after-free via crafted PKCS#7/S-MIME (CISA 9.8, Trivy HIGH); Vektor nicht ueber TLS erreichbar, Node-Runtime verarbeitet kein PKCS#7/S-MIME (grep-bestaetigt). Fix existiert (openssl 3.5.6-1~deb13u2, DSA-6335-1) — kurze Suppression nur fuer das Trivy-DB-Lag-/floating-base-Fenster. NVD-Publikation 2026-06-09, neu durch Trivy-Bump 0.59.1→0.71.0 sichtbar. Trigger R-23."
+      expires: 2026-07-10
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
 govulncheck:
