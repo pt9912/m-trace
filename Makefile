@@ -486,8 +486,13 @@ seed-rak9:
 browser-e2e:
 	bash scripts/test-browser-e2e.sh
 
+# Doku-Referenz-Checks via d-check (Digest-Pin auf v0.2.0, siehe
+# https://github.com/pt9912/d-check/releases/tag/v0.2.0); Konfiguration
+# in .d-check.yml. Ersetzt scripts/verify-doc-refs.sh (gelöscht).
+D_CHECK_IMAGE ?= ghcr.io/pt9912/d-check@sha256:f2e0ac7bd9650fe560058e530c8890a629e2df43b8b2e696e78488794d311846
+
 docs-check:
-	bash scripts/verify-doc-refs.sh
+	docker run --rm -v "$(CURDIR)":/repo:ro $(D_CHECK_IMAGE)
 
 docs-refs: docs-check
 
