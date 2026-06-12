@@ -304,7 +304,7 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   den nächsten Release-Tag** (Patch *und* Minor), bis das
   Crash-File als Regression-Seed im Repo gelandet und der Bug
   gefixt ist.
-  Operator-Doku: [[`docs/dev/fuzzing.md`](../dev/fuzzing.md)](../dev/fuzzing.md).
+  Operator-Doku: [`docs/dev/fuzzing.md`](../dev/fuzzing.md).
 - [`.github/workflows/mutation.yml`](../../.github/workflows/mutation.yml)
   (Cron `0 6 * * *` UTC, gremlins für Go + StrykerJS für TS;
   beide Jobs `continue-on-error: true`). **Initial nicht-
@@ -312,7 +312,7 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   über die HTML/JSON-Artefakte verfolgt; PR-Blockierung erst,
   wenn ein Modul drei Beobachtungsläufe in Folge > 70 % Score
   zeigt — Übergangs-Pfad in
-  [[`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)](../dev/mutation-testing.md) §3.
+  [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md) §3.
 
 PR-Pfad-Wrapper (opt-in, NICHT in `make gates`):
 
@@ -433,7 +433,7 @@ zitiert die geprüften Run-IDs):
 - §2.6 Mutation-Beobachtungs-Gate — Score-Trend in den letzten
   drei Nightly-Artefakten geprüft (kein hartes Gate; Score-
   Senkung ist begründungspflichtig, siehe
-  [[`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)](../dev/mutation-testing.md)
+  [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md)
   §3).
   ```bash
   gh run list --workflow mutation.yml --limit 3

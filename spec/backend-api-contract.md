@@ -1280,7 +1280,7 @@ Implementierung.
   lokalen SQLite-Datei persistiert; ein API-Restart verliert keine
   bereits angenommenen Sessions oder Events.
 - Reset des lokalen Storage geschieht ausschließlich über das
-  dedizierte `make wipe`-Target (siehe [[`docs/user/local-development.md`](../docs/user/local-development.md)](../docs/user/local-development.md));
+  dedizierte `make wipe`-Target (siehe [`docs/user/local-development.md`](../docs/user/local-development.md));
   `make stop` räumt nicht auf. Andere Reset-Pfade (manuelles Löschen
   des Volumes, etc.) sind nicht Teil des Kontrakts.
 - Postgres und andere Stores sind nicht im Scope (Folge-ADR

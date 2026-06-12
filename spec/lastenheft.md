@@ -1424,7 +1424,7 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `LICENSE` | Lizenz |
 | `SECURITY.md` | Sicherheitsmeldungen |
 | [`spec/architecture.md`](architecture.md) | Architekturüberblick |
-| [[`docs/user/local-development.md`](../docs/user/local-development.md)](../docs/user/local-development.md) | lokale Entwicklung |
+| [`docs/user/local-development.md`](../docs/user/local-development.md) | lokale Entwicklung |
 | [`spec/telemetry-model.md`](telemetry-model.md) | Telemetrie- und Eventmodell |
 | [`spec/player-sdk.md`](player-sdk.md) | Player-SDK-Nutzung |
 | [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) | Stream Analyzer |
@@ -1556,7 +1556,7 @@ Streaming-Observability-relevante Komponenten und Communities sind stark durch G
 
 ### 9.1 Backend-Entscheidung
 
-**Entschieden: Go.** Die Wahl ist in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md) (Status: Accepted) festgehalten und beruht auf zwei Mini-Prototypen mit identischem Muss-Scope ([`spec/backend-api-contract.md`](backend-api-contract.md)); das Spike-Protokoll liegt in [[`docs/spike/backend-stack-results.md`](../docs/spike/backend-stack-results.md)](../docs/spike/backend-stack-results.md).
+**Entschieden: Go.** Die Wahl ist in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md) (Status: Accepted) festgehalten und beruht auf zwei Mini-Prototypen mit identischem Muss-Scope ([`spec/backend-api-contract.md`](backend-api-contract.md)); das Spike-Protokoll liegt in [`docs/spike/backend-stack-results.md`](../docs/spike/backend-stack-results.md).
 
 Historischer Tradeoff (Stand vor dem Spike):
 
@@ -2032,7 +2032,7 @@ Akzeptanzkriterien:
 | RAK-51 | Muss | `@pt9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
 | RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
 | RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus [`spec/telemetry-model.md`](telemetry-model.md) (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus [`spec/telemetry-model.md`](telemetry-model.md) werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie ist im Adapter-Code umgesetzt. R-12 ([[`docs/planning/in-progress/risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md)](../docs/planning/in-progress/risks-backlog.md)) wird ab diesem Punkt release-blockierend. |
+| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus [`spec/telemetry-model.md`](telemetry-model.md) werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie ist im Adapter-Code umgesetzt. R-12 ([`docs/planning/in-progress/risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md)) wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
 
 ### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse
