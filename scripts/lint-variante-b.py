@@ -255,7 +255,9 @@ def clean_comment_text(t):
     parts = t.split("`")
     for i in range(0, len(parts), 2):  # even = outside backticks
         parts[i] = re.sub(r"(?<=\S)  +(?=\S)", " ", parts[i])
-        parts[i] = re.sub(r" ([.;:])", r"\1", parts[i])
+        # Nur echte Satzzeichen einsammeln (gefolgt von Whitespace/Zeilenende),
+        # niemals Dotfile-/Pfadnamen wie ` .d-check.yml` anfassen.
+        parts[i] = re.sub(r" ([.;:])(?=\s|$)", r"\1", parts[i])
     t = "`".join(parts)
     # ", " followed by "(" can collapse but only safely inside parens
     # Already handled in `\(\s*,\s*` pattern earlier.
