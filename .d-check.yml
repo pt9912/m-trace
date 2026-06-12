@@ -1,0 +1,6 @@
+# Doku-Referenz-Checks via d-check (ghcr.io/pt9912/d-check) — ersetzt
+# scripts/verify-doc-refs.sh (Rollout 2026-06-12, Shell-Familie).
+# Default-Scan-Wurzeln (docs/, spec/, Root-*.md) decken den
+# Alt-Tool-Umfang ab; `anchors` ist Mehr-Abdeckung (Anker und
+# Bildreferenzen prüfte das Alt-Tool nicht).
+modules: [links, anchors]
