@@ -249,5 +249,54 @@ trivy:
       expires: 2026-07-10
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
+    # CVE-2026-11822 / CVE-2026-11824 (sqlite3 / libsqlite3-0):
+    # Zwei Schwachstellen in der SQLite-FTS5-Full-Text-Search-Extension,
+    # beide "SQLite before 3.53.2":
+    #   - CVE-2026-11822 (Trivy HIGH) — Memory-Corruption (out-of-bounds
+    #     reads + heap buffer overflow) beim Verarbeiten malformed
+    #     Database-Pages durch FTS5; je nach Pfad Crash, Memory-
+    #     Exhaustion oder Code-Execution.
+    #   - CVE-2026-11824 (Trivy HIGH) — heap-based buffer overflow in
+    #     FTS5 beim Verarbeiten speziell praeparierter Databases →
+    #     Crash oder arbitrary code execution.
+    # Beide setzen einen Prozess voraus, der eine attacker-
+    # kontrollierte SQLite-Datenbank MIT FTS5-Nutzung oeffnet/abfragt.
+    # Debian-Stand (Security Tracker, 2026-06-14): "vulnerable" fuer
+    # ALLE Suites (bullseye/bookworm/trixie/sid), Status `no-dsa`
+    # ("Minor issue"); KEIN Fixed-Version-Eintrag — Upstream-Commits
+    # existieren, sind aber noch in kein Debian-Paket (auch nicht sid)
+    # zurueckportiert. Trivy-Report-"Fixed Version" leer. Ein
+    # `apt-get upgrade` / Base-Image-Pull wuerde den Gate also NICHT
+    # gruen machen — Suppression ist der einzige Weg bis zum Backport.
+    # Trifft libsqlite3-0 3.46.1-7+deb13u1 in der Trixie-Slim-Base
+    # (Dashboard + Analyzer-Service-Images; mtrace-api ist debian-12.14/
+    # bookworm-Go-Image und meldet 0 Vulns, daher nicht im Scope).
+    # Anmerkung Trivy-vs-Debian-Severity: Debian stuft `no-dsa`/Minor,
+    # Trivy (Aqua/NVD) HIGH — der HIGH-Wert blockiert den Gate, darum
+    # der Eintrag.
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - libsqlite3-0 ist nur ein transitives OS-Paket der trixie-
+    #     slim-Base; die Node-Runtime (USER node, `CMD ["node", "build"]`
+    #     SvelteKit-adapter-node bzw. Analyzer-WS) linkt/laedt es nie.
+    #   - Codebase-grep (sqlite|better-sqlite|node:sqlite|libsql ueber
+    #     apps/dashboard, apps/analyzer-service, packages) liefert NULL
+    #     Treffer — kein SQLite-Zugriff im Produktcode, erst recht keine
+    #     FTS5-Nutzung. (Selbst Nodes eingebautes `node:sqlite` wuerde
+    #     eine gebundelte SQLite-Kopie nutzen, nicht system-libsqlite3-0.)
+    #   - Kein Pfad, ueber den ein Angreifer eine praeparierte
+    #     SQLite-Datei in einen FTS5-Query-Pfad einschleusen koennte.
+    # Re-Review 2026-06-14 (Hotfix Nightly-Audit, Issue .github#6):
+    # `expires` 90 Tage auf 2026-09-12. Naechster Re-Review-Trigger:
+    # Trixie-Backport von sqlite3 >= 3.53.2 (bzw. ein deb13u-Backport)
+    # ODER `expires`-Schwelle.
+    - id: CVE-2026-11822
+      reason: "sqlite3/libsqlite3-0 FTS5 Memory-Corruption (out-of-bounds read + heap overflow) via crafted DB, SQLite <3.53.2 (Trivy HIGH, Debian no-dsa/Minor); alle Debian-Suites vulnerable, KEIN Upstream-Fix (auch nicht sid), Base-Bump hilft nicht. libsqlite3-0 nur transitives OS-Paket der trixie-slim-Base; Node-Runtime nutzt kein SQLite (grep-bestaetigt, keine FTS5-Nutzung). NVD-Publikation neu im Nightly-Scan 2026-06-14."
+      expires: 2026-09-12
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-11824
+      reason: "sqlite3/libsqlite3-0 FTS5 Heap-based Buffer Overflow via crafted DB, SQLite <3.53.2 (Trivy HIGH, Debian no-dsa/Minor); alle Debian-Suites vulnerable, KEIN Upstream-Fix (auch nicht sid), Base-Bump hilft nicht. libsqlite3-0 nur transitives OS-Paket der trixie-slim-Base; Node-Runtime nutzt kein SQLite (grep-bestaetigt, keine FTS5-Nutzung). NVD-Publikation neu im Nightly-Scan 2026-06-14."
+      expires: 2026-09-12
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
 govulncheck:
   ignore: []
