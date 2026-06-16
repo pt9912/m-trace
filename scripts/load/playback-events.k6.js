@@ -38,6 +38,38 @@ const ORIGIN = __ENV.ORIGIN || "http://localhost:5173";
 const BATCH_SIZE = parseInt(__ENV.BATCH_SIZE || "20", 10);
 const SESSION_PREFIX = __ENV.SESSION_PREFIX || "load-vu";
 
+// LOAD_PROFILE=open: open-loop SLO-Szenario (constant-arrival-rate). Die
+// Last (TARGET_EVENT_RATE Events/s) wird vorgegeben; gemessen wird, ob
+// das System mitkommt (p95-Budget + dropped_iterations). Das entkoppelt
+// die Last von der Maschinen-Geschwindigkeit -> stabile Nightly-Schwelle
+// über Runner hinweg (Review-Empfehlung). Ohne LOAD_PROFILE=open bleibt
+// das Skript closed-loop (--vus/--duration), wie für die
+// Korrektheits-Gates.
+export const options = (function () {
+  const o = { thresholds: {} };
+  if ((__ENV.LOAD_PROFILE || "closed") === "open") {
+    const eventRate = parseInt(__ENV.TARGET_EVENT_RATE || "400", 10);
+    const batchRate = Math.max(1, Math.ceil(eventRate / BATCH_SIZE));
+    o.scenarios = {
+      slo: {
+        executor: "constant-arrival-rate",
+        rate: batchRate,
+        timeUnit: "1s",
+        duration: __ENV.DURATION || "30s",
+        preAllocatedVUs: parseInt(__ENV.OPEN_PREALLOC_VUS || "50", 10),
+        maxVUs: parseInt(__ENV.OPEN_MAX_VUS || "100", 10),
+      },
+    };
+    o.thresholds["http_req_duration"] = [
+      `p(95)<${parseInt(__ENV.P95_BUDGET_MS || "1000", 10)}`,
+    ];
+    // dropped_iterations: k6 konnte die vorgegebene Rate nicht halten
+    // (System zu langsam / zu wenige VUs) -> SLO verfehlt.
+    o.thresholds["dropped_iterations"] = ["rate<0.01"];
+  }
+  return o;
+})();
+
 // Custom-Counter fuer die Reconciliation-Bilanz (Batch-granular).
 export const eventsSent = new Counter("mtrace_events_sent");
 export const eventsAccepted = new Counter("mtrace_events_accepted");

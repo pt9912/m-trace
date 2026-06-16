@@ -24,9 +24,15 @@ set -euo pipefail
 # Destruktiv: setzt das Core-Lab-SQLite-Volume zurück (frische DB pro
 # Lauf, damit die Reconciliation nur diesen Lauf zählt).
 #
-# ENV: MODE, VUS, DURATION, BATCH_SIZE, CAP_CAPACITY, CAP_REFILL,
-#      BASE_URL, PROJECT_TOKEN, SESSION_PREFIX, SMOKE_LOAD_AUTOSTART,
-#      K6_IMAGE.
+# Last-Profil (orthogonal zu MODE):
+#   LOAD_PROFILE=closed --vus N (Korrektheits-Gates + Decke finden).
+#   LOAD_PROFILE=open constant-arrival-rate (stabile Nightly-SLO);
+#                         erfordert MODE=capacity.
+#
+# ENV: MODE, LOAD_PROFILE, VUS, DURATION, BATCH_SIZE, CAP_CAPACITY,
+#      CAP_REFILL, MAX_ERROR_PCT, TARGET_EVENT_RATE, P95_BUDGET_MS,
+#      OPEN_MAX_VUS, OPEN_PREALLOC_VUS, BASE_URL, PROJECT_TOKEN,
+#      SESSION_PREFIX, SMOKE_LOAD_AUTOSTART, K6_IMAGE.
 #
 # Manuell gegen ein bereits laufendes Lab: SMOKE_LOAD_AUTOSTART=0.
 
@@ -48,6 +54,15 @@ K6_IMAGE="${K6_IMAGE:-grafana/k6}"
 # katastrophale Quote bricht den Smoke. Der harte Gate bleibt die
 # Reconciliation (kein stiller Verlust).
 MAX_ERROR_PCT="${MAX_ERROR_PCT:-5}"
+# Last-Profil: closed (--vus, Korrektheits-Gates + Decke finden) oder
+# open (constant-arrival-rate, stabile Nightly-SLO). open gibt
+# TARGET_EVENT_RATE Events/s vor und prüft p95 < P95_BUDGET_MS +
+# dropped_iterations < 1 %.
+LOAD_PROFILE="${LOAD_PROFILE:-closed}"
+TARGET_EVENT_RATE="${TARGET_EVENT_RATE:-400}"
+P95_BUDGET_MS="${P95_BUDGET_MS:-1000}"
+OPEN_MAX_VUS="${OPEN_MAX_VUS:-100}"
+OPEN_PREALLOC_VUS="${OPEN_PREALLOC_VUS:-50}"
 
 for dep in docker curl python3; do
   command -v "$dep" >/dev/null 2>&1 || {
@@ -74,6 +89,21 @@ esac
 # (misleading green). Daher harter Abbruch statt falschem Grün.
 if [ "$MODE" = "capacity" ] && [ "$SMOKE_LOAD_AUTOSTART" != "1" ]; then
   echo "[load-smoke] MODE=capacity erfordert SMOKE_LOAD_AUTOSTART=1 (Override braucht frischen Container)" >&2
+  exit 2
+fi
+
+case "$LOAD_PROFILE" in
+  closed | open) ;;
+  *)
+    echo "[load-smoke] LOAD_PROFILE='$LOAD_PROFILE' ungültig — erlaubt: closed | open" >&2
+    exit 2
+    ;;
+esac
+# open offeriert TARGET_EVENT_RATE über der Default-Decke -> braucht das
+# angehobene Limit, sonst hängt die Last am 100/s-Limiter (429) und die
+# SLO-Messung wäre sinnlos.
+if [ "$LOAD_PROFILE" = "open" ] && [ "$MODE" != "capacity" ]; then
+  echo "[load-smoke] LOAD_PROFILE=open erfordert MODE=capacity (sonst hängt die offered rate am Limiter)" >&2
   exit 2
 fi
 
@@ -119,16 +149,37 @@ done
   exit 1
 }
 
-echo "[load-smoke] k6: ${VUS} VUs / ${DURATION}, batch=${BATCH_SIZE}"
+k6_run_args=(run)
+k6_env_args=(
+  -e BASE_URL="$BASE_URL" -e PROJECT_TOKEN="$PROJECT_TOKEN"
+  -e BATCH_SIZE="$BATCH_SIZE" -e SESSION_PREFIX="$SESSION_PREFIX"
+)
+if [ "$LOAD_PROFILE" = "open" ]; then
+  echo "[load-smoke] profile=open (SLO): ~${TARGET_EVENT_RATE} ev/s offered, p95<${P95_BUDGET_MS}ms, ${DURATION}"
+  k6_env_args+=(
+    -e LOAD_PROFILE=open -e TARGET_EVENT_RATE="$TARGET_EVENT_RATE"
+    -e P95_BUDGET_MS="$P95_BUDGET_MS" -e OPEN_MAX_VUS="$OPEN_MAX_VUS"
+    -e OPEN_PREALLOC_VUS="$OPEN_PREALLOC_VUS" -e DURATION="$DURATION"
+  )
+  recon_sessions="$OPEN_MAX_VUS"
+else
+  echo "[load-smoke] profile=closed: ${VUS} VUs / ${DURATION}, batch=${BATCH_SIZE}"
+  k6_run_args+=(--vus "$VUS" --duration "$DURATION")
+  recon_sessions="$VUS"
+fi
+
+# k6-Exit getrennt erfassen: im open-Profil bedeutet ein Threshold-Bruch
+# (p95 / dropped_iterations) Exit != 0 = SLO verfehlt; trotzdem sollen
+# Reconciliation + Report noch laufen, statt vorzeitig (set -e) abzubrechen.
+set +e
 docker run --rm --network host \
   --user "$(id -u):$(id -g)" \
   -v "$ROOT_DIR/scripts/load:/scripts:ro" \
   -v "$tmpdir:/work" \
-  "$K6_IMAGE" run \
-  --vus "$VUS" --duration "$DURATION" \
-  -e BASE_URL="$BASE_URL" -e PROJECT_TOKEN="$PROJECT_TOKEN" \
-  -e BATCH_SIZE="$BATCH_SIZE" -e SESSION_PREFIX="$SESSION_PREFIX" \
+  "$K6_IMAGE" "${k6_run_args[@]}" "${k6_env_args[@]}" \
   /scripts/playback-events.k6.js 2>&1 | tee "$tmpdir/k6.log"
+k6_rc=${PIPESTATUS[0]}
+set -e
 
 [ -f "$tmpdir/summary.json" ] || {
   echo "[load-smoke] keine k6-summary.json erzeugt" >&2
@@ -148,7 +199,7 @@ docker run --rm --network host \
 # (-> 0). Jeder andere Fehler (Timeout/5xx auf Seite 2+, 401/500) bricht
 # ab, damit ein Readback-Fehler NIE als Datenverlust maskiert.
 if ! persisted="$(
-  VUS="$VUS" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
+  VUS="$recon_sessions" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
     SESSION_PREFIX="$SESSION_PREFIX" python3 - <<'PY'
 import os, sys, json, urllib.request, urllib.parse, urllib.error
 base = os.environ["BASE_URL"].rstrip("/")
@@ -186,11 +237,13 @@ PY
   exit 3
 fi
 
-python3 - "$tmpdir/summary.json" "$persisted" "$MODE" "$SESSION_PREFIX" "$MAX_ERROR_PCT" <<'PY'
+python3 - "$tmpdir/summary.json" "$persisted" "$MODE" "$SESSION_PREFIX" "$MAX_ERROR_PCT" "$LOAD_PROFILE" "$k6_rc" "$P95_BUDGET_MS" <<'PY'
 import sys, json
-summ_path, persisted_s, mode, prefix, max_err_s = sys.argv[1:6]
+summ_path, persisted_s, mode, prefix, max_err_s, profile, k6_rc_s, p95_budget_s = sys.argv[1:9]
 persisted = int(persisted_s)
 max_err_pct = float(max_err_s)
+k6_rc = int(k6_rc_s)
+p95_budget = float(p95_budget_s)
 with open(summ_path) as f:
     m = json.load(f)["metrics"]
 
@@ -204,6 +257,7 @@ accepted = cnt("mtrace_events_accepted")
 rate_limited = cnt("mtrace_events_rate_limited")
 rejected = cnt("mtrace_events_rejected")
 sent = cnt("mtrace_events_sent")
+dropped = cnt("dropped_iterations")
 # Fehlerquote über die NICHT-gedrosselten Versuche (202 + echte Fehler).
 # 429 bleibt draußen, sonst verdünnen Millionen 429 im contract-Modus die
 # Quote bis zur Bedeutungslosigkeit.
@@ -227,6 +281,9 @@ print(f"[load-smoke] accepted(202)={accepted} ({rate('mtrace_events_accepted'):.
 ambiguous = persisted - accepted
 print(f"[load-smoke] persisted (readback, {prefix}-* sessions)={persisted}  "
       f"(at-least-once-Überschuss: {ambiguous})")
+if profile == "open":
+    print(f"[load-smoke] SLO (open): p95={dur.get('p(95)', 0):.1f}ms (budget {p95_budget:.0f}ms)  "
+          f"dropped_iterations={dropped}  k6_thresholds={'PASS' if k6_rc == 0 else 'FAIL'}")
 
 # Harter Gate: KEIN stiller Verlust -> jedes client-bestätigte (202)
 # Event MUSS persistiert sein, also persisted >= accepted. Ein
@@ -245,6 +302,9 @@ if mode == "contract" and rate_limited == 0:
     fail.append("contract-Modus: kein 429 -> Limiter hat nicht gegriffen")
 if mode == "capacity" and accepted == 0:
     fail.append("capacity-Modus: 0 akzeptiert -> Limit-Override nicht aktiv?")
+if profile == "open" and k6_rc != 0:
+    fail.append(f"SLO verfehlt (k6-Threshold gebrochen): p95 {dur.get('p(95)', 0):.1f}ms vs "
+                f"budget {p95_budget:.0f}ms, dropped_iterations={dropped}")
 
 if fail:
     print("[load-smoke] FAIL: " + "; ".join(fail), file=sys.stderr)
