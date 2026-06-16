@@ -42,6 +42,7 @@ Pruefungen sind bewusst Nightly- oder Release-Kandidaten.
 | 5 | Selektives Fuzzing / Property Tests | PR kurz, Nightly lang | ja fuer Seed-Corpus | Parser-/Validation-Robustheit erhoehen |
 | 6 | Mutation Testing auf kritischen Modulen | Nightly / manuell | nein initial | Teststaerke sichtbar machen |
 | 7 | WebRTC-Ton-Smoke (1-kHz-FFT/Goertzel) | Nightly + lokal opt-in | nein | manuellen 1-kHz-Hoercheck (releasing.md §2.3) automatisieren |
+| 8 | Last-/Soak-Smoke (k6 + Readback-Reconciliation) | Nightly (SLO) + on-demand (Soak) + lokal opt-in | nein | Lab-Lastfaehigkeit (NF-20/22/23), kein stiller Verlust, ADR-0005-Trigger-Evidenz |
 
 ## 3. Priorisierung
 
@@ -328,6 +329,49 @@ DoD:
 - Smoke live gegen `mtrace-webrtc` verifiziert (Energie-Anteil ~0.5
   durch die reale Opus-Pipeline).
 - Nightly-Schritt laeuft `continue-on-error` neben dem Drift-Schritt.
+
+### 3.9 Last-/Soak-Smoke
+
+**Entscheidung:** Die Hot-Path-Mikrobenchmarks (§3.2) messen Funktionen
+isoliert gegen Budgets — nicht die Ingest→Persistenz→Read-Kette unter
+echter Parallelität (NF-20/NF-22/NF-23). Der Last-Smoke schließt diese
+Lücke als separater opt-in-Pfad (vgl.
+[`docs/perf/budgets.md`](../../perf/budgets.md) §7). Plan:
+[`plan-0.22.5-load-smoke`](../open/plan-0.22.5-load-smoke.md).
+
+Scope:
+
+- `make smoke-load` (`scripts/smoke-load.sh` + `scripts/load/playback-events.k6.js`):
+  k6 gegen `/api/playback-events`, dann **Readback-Reconciliation** gegen
+  die echte `playback_events`-Tabelle (`events[]`-Array, nicht
+  `event_count`) — `persisted >= accepted` = kein stiller Verlust.
+- `MODE=capacity` (Limit angehoben, echte Kapazität) / `MODE=contract`
+  (100/s, Limiter-Check); `LOAD_PROFILE=closed` (`--vus`, Decke finden)
+  / `LOAD_PROFILE=open` (`make smoke-load-slo`, constant-arrival-rate,
+  runner-stabile SLO: p95 < Budget + dropped_iterations).
+- `make smoke-soak` (`RETENTION_PROBE=1`): Read-Retention-p95 gegen 2 s
+  ([ADR-0005](../../adr/0005-production-ops-backends.md) Trigger #3) —
+  belastbar erst ab ≥ 10 Mio Events (Nightly-Soak ~Stunden).
+- Nightly: [`load-smoke.yml`](../../../.github/workflows/load-smoke.yml)
+  fährt die SLO (open-loop) nightlich; der Soak läuft on-demand
+  (`workflow_dispatch`, lange DURATION).
+
+Policy:
+
+- **Nicht-blockierend**, NICHT in `make gates` (lastabhängig flaky). Das
+  Verdikt liest sich aus Job-Summary + Artefakt (Step-Outcome,
+  k6-Summary, Reconciliation), nicht aus der Job-Farbe.
+- Harte Smoke-Gates: kein stiller Verlust (Readback), Fehlerquote
+  (Status ≠ 202/429, 429-frei gerechnet) ≤ `MAX_ERROR_PCT`, im
+  open-Profil zusätzlich der k6-p95-/dropped-Threshold. Ein Lesefehler im
+  Readback bricht INCONCLUSIVE (Exit 3), nie als Verlust.
+
+DoD:
+
+- Beide Modi + beide Profile lokal grün; Readback gegen die echte
+  Tabelle, nicht `event_count`.
+- Nightly-SLO-Schritt `continue-on-error`, Report als Artefakt + Summary.
+- Soak liefert die ADR-0005-Trigger-#3-Evidenz (erst ≥ 10 Mio belastbar).
 
 ## 4. Benchmarking-Policy
 

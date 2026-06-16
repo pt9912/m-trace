@@ -323,12 +323,25 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   wenn ein Modul drei Beobachtungsläufe in Folge > 70 % Score
   zeigt — Übergangs-Pfad in
   [`docs/dev/mutation-testing.md`](../dev/mutation-testing.md) §3.
+- [`.github/workflows/load-smoke.yml`](../../.github/workflows/load-smoke.yml)
+  (Cron `52 1 * * *` Europe/Berlin) — open-loop SLO (constant-arrival-
+  rate, p95-Budget + `dropped_iterations`) gegen das Core-Lab,
+  `continue-on-error`; Verdikt aus Job-Summary + Artefakt, nicht aus der
+  Job-Farbe. Belegt die Lab-Lastfähigkeit (NF-20/NF-22/NF-23) und „kein
+  stiller Verlust" per Readback gegen `playback_events`. Der Soak
+  (Read-Retention-p95 gegen 2 s = `ADR-0005` Trigger #3, ≥ 10 Mio Events
+  ~Stunden) läuft on-demand via `workflow_dispatch` (`mode=soak`).
+  Details: [`extra-gates.md`](../planning/in-progress/extra-gates.md)
+  §3.9.
 
 PR-Pfad-Wrapper (opt-in, NICHT in `make gates`):
 
 ```bash
 make fuzz-check        # FUZZTIME=30s pro Target (Default)
 make mutation-report   # gremlins (Go) + StrykerJS (TS) auf den Pilot-Modulen
+make smoke-load        # Last-Smoke (closed-loop, Reconciliation) gegen das Core-Lab
+make smoke-load-slo    # open-loop SLO (constant-arrival-rate, p95-Budget)
+make smoke-soak        # + Retention-Probe (ADR-0005 Trigger #3; lange DURATION fuer >=10M)
 ```
 
 ## 3. Release-Commit und Tag
