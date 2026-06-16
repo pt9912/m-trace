@@ -169,7 +169,24 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 | 1 | Machbarkeit: k6 gegen Core-Lab, Ingest-Szenario mit echten Tokens; Baseline. | ✅ `e35f5c9` |
 | 2 | Limiter-ENV (`14f3e64`) + `smoke-load.sh` + `make smoke-load`, beide Auth-Szenarien, Readback gegen echte `playback_events`; budgets.md §7. | ✅ `a7b8b6a` + Review `fa7794a`/`5c59d2c` |
 | 3 | Open-loop-SLO (`e7f3336`), Soak-Retention-Probe (`1ac6673`), Nightly `load-smoke.yml` + Doku (`f580726`); Review `d9edc03`. | ✅ |
-| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | ⬜ **pending Nightly-/Dispatch-Soak (≥ 10 Mio, ~Stunden)** |
+| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | 🏃 **läuft** — Dispatch-Soak ausgelöst (Run `27628293077`), Verdikt-Zahlen ausstehend |
+
+> **Soak-Dispatch-Log (Tranche 4)** — ausgelöst 2026-06-16 via
+> `gh workflow run load-smoke.yml -f mode=soak -f duration=4h`.
+> Run `27628293077` (`https://github.com/pt9912/m-trace/actions/runs/27628293077`),
+> Start `2026-06-16T15:21:16Z`, Schätz-Ende ~`20:00Z` (Job-Timeout 6 h als Deckel).
+>
+> **Sobald durch zu prüfen** (`gh run view 27628293077`; Artefakt
+> `load-smoke-27628293077` → `load-smoke.log`; Job-Summary):
+> Verdict-Step-Exit (`0` ok / `3` INCONCLUSIVE, z. B. Runner < ~800 ev/s ⇒
+> < 10 Mio / `1` Hard-FAIL = stiller Verlust/SLO-Bruch/Fehlerquote),
+> k6-`p95`/`p99` + `http_req_failed`, Reconciliation `persisted` vs `accepted`,
+> Retention-Probe-`p95` (Proxy, indizierte Hot-Reads).
+>
+> **Dann nachtragen:** Messwerte hier in §5/§6 (Tranche-4-Zeile + die zwei
+> offenen DoD-Items abhaken), `CHANGELOG.md`, sowie ADR-0005-Trigger #3
+> als ausgelöst / nicht ausgelöst **mit Messwert** bewerten. Bei
+> INCONCLUSIVE: `duration` erhöhen / erneut dispatchen, Tranche 4 bleibt offen.
 
 ## 6. DoD
 
