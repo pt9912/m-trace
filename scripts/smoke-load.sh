@@ -32,7 +32,8 @@ set -euo pipefail
 # ENV: MODE, LOAD_PROFILE, VUS, DURATION, BATCH_SIZE, CAP_CAPACITY,
 #      CAP_REFILL, MAX_ERROR_PCT, TARGET_EVENT_RATE, P95_BUDGET_MS,
 #      OPEN_MAX_VUS, OPEN_PREALLOC_VUS, BASE_URL, PROJECT_TOKEN,
-#      SESSION_PREFIX, SMOKE_LOAD_AUTOSTART, K6_IMAGE.
+#      SESSION_PREFIX, SMOKE_LOAD_AUTOSTART, K6_IMAGE, RETENTION_PROBE,
+#      N_PROBES, RETENTION_P95_BUDGET_MS, SOAK_MIN_EVENTS.
 #
 # Manuell gegen ein bereits laufendes Lab: SMOKE_LOAD_AUTOSTART=0.
 
@@ -63,6 +64,15 @@ TARGET_EVENT_RATE="${TARGET_EVENT_RATE:-400}"
 P95_BUDGET_MS="${P95_BUDGET_MS:-1000}"
 OPEN_MAX_VUS="${OPEN_MAX_VUS:-100}"
 OPEN_PREALLOC_VUS="${OPEN_PREALLOC_VUS:-50}"
+# Soak/Retention-Probe (ADR-0005-Trigger #3): nach dem Load die Read-
+# Retention-Latenz (Liste + Detail-mit-Events) messen und gegen 2 s
+# bewerten. Belastbar erst ab SOAK_MIN_EVENTS (10 Mio) persistierten
+# Events — darunter validiert die Probe nur den Mechanismus (Nightly-Job
+# fährt die lange DURATION für >=10 Mio).
+RETENTION_PROBE="${RETENTION_PROBE:-0}"
+N_PROBES="${N_PROBES:-50}"
+RETENTION_P95_BUDGET_MS="${RETENTION_P95_BUDGET_MS:-2000}"
+SOAK_MIN_EVENTS="${SOAK_MIN_EVENTS:-10000000}"
 
 for dep in docker curl python3; do
   command -v "$dep" >/dev/null 2>&1 || {
@@ -313,5 +323,58 @@ note = "" if ambiguous == 0 else f" (+{ambiguous} at-least-once unter Last)"
 print(f"[load-smoke] OK -- kein stiller Verlust (persisted {persisted} >= accepted {accepted}{note}); "
       f"Fehlerquote {err_pct:.2f}% <= {max_err_pct}% (graceful).")
 PY
+
+if [ "$RETENTION_PROBE" = "1" ]; then
+  echo "[load-smoke] retention probe (ADR-0005 Trigger #3): ${N_PROBES} Reads, Budget ${RETENTION_P95_BUDGET_MS}ms"
+  PERSISTED="$persisted" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
+    SESSION_PREFIX="$SESSION_PREFIX" N_PROBES="$N_PROBES" \
+    RETENTION_P95_BUDGET_MS="$RETENTION_P95_BUDGET_MS" SOAK_MIN_EVENTS="$SOAK_MIN_EVENTS" \
+    python3 - <<'PY'
+import os, sys, time, urllib.request, urllib.parse
+base = os.environ["BASE_URL"].rstrip("/")
+hdr = {"X-MTrace-Token": os.environ["PROJECT_TOKEN"]}
+prefix = os.environ["SESSION_PREFIX"]
+persisted = int(os.environ["PERSISTED"])
+n = int(os.environ["N_PROBES"])
+budget = float(os.environ["RETENTION_P95_BUDGET_MS"])
+soak_min = int(os.environ["SOAK_MIN_EVENTS"])
+
+def p95_ms(url):
+    samples = []
+    for _ in range(n):
+        t0 = time.monotonic()
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=30) as r:
+                r.read()
+        except Exception as e:
+            print(f"[load-smoke] retention probe error: {e}", file=sys.stderr)
+            return None
+        samples.append((time.monotonic() - t0) * 1000.0)
+    samples.sort()
+    return samples[min(len(samples) - 1, round(0.95 * (len(samples) - 1)))]
+
+list_p95 = p95_ms(f"{base}/api/stream-sessions?limit=200")
+detail_p95 = p95_ms(
+    f"{base}/api/stream-sessions/{urllib.parse.quote(prefix + '-1')}?events_limit=1000"
+)
+lp = f"{list_p95:.1f}ms" if list_p95 is not None else "n/a"
+dp = f"{detail_p95:.1f}ms" if detail_p95 is not None else "n/a"
+print(f"[load-smoke] retention p95: list={lp} detail-events={dp} (budget {budget:.0f}ms)")
+vals = [v for v in (list_p95, detail_p95) if v is not None]
+worst = max(vals) if vals else None
+# Informativ (kein Smoke-Gate): liefert die Trigger-#3-Evidenz für ADR-0005.
+if persisted < soak_min:
+    print(f"[load-smoke] ADR-0005 Trigger #3: INCONCLUSIVE — nur {persisted} Events (< {soak_min}); "
+          f"Mechanismus validiert, belastbares Urteil erst im Nightly-Soak.")
+elif worst is None:
+    print("[load-smoke] ADR-0005 Trigger #3: INCONCLUSIVE — Retention-Probe fehlgeschlagen (kein p95).")
+elif worst < budget:
+    print(f"[load-smoke] ADR-0005 Trigger #3: NICHT ausgelöst — Read-Retention-p95 {worst:.0f}ms < "
+          f"{budget:.0f}ms bei {persisted} Events (SQLite genügt für Reads dieser Größe).")
+else:
+    print(f"[load-smoke] ADR-0005 Trigger #3: AUSGELÖST — Read-Retention-p95 {worst:.0f}ms >= "
+          f"{budget:.0f}ms bei {persisted} Events -> Postgres-Pfad evaluieren.")
+PY
+fi
 
 echo "[load-smoke] done."
