@@ -143,10 +143,14 @@ docker run --rm --network host \
 # getickt -> kein Persistenz-Beleg, macht den Verlust-Gate tot) und NICHT
 # die Cursor-paginierte Listen-API (truncatet -> Falschalarm). Per-Session
 # ist zudem immun gegen fremde/Alt-Sessions.
-persisted="$(
+# Exit 3 = INCONCLUSIVE (Lesefehler), klar getrennt vom Verlust-FAIL
+# (Exit 1): nur ein echtes 404 zählt als „Session leer/nicht angelegt"
+# (-> 0). Jeder andere Fehler (Timeout/5xx auf Seite 2+, 401/500) bricht
+# ab, damit ein Readback-Fehler NIE als Datenverlust maskiert.
+if ! persisted="$(
   VUS="$VUS" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
     SESSION_PREFIX="$SESSION_PREFIX" python3 - <<'PY'
-import os, json, urllib.request, urllib.parse
+import os, sys, json, urllib.request, urllib.parse, urllib.error
 base = os.environ["BASE_URL"].rstrip("/")
 hdr = {"X-MTrace-Token": os.environ["PROJECT_TOKEN"]}
 prefix = os.environ["SESSION_PREFIX"]
@@ -163,15 +167,24 @@ for n in range(1, vus + 1):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=15) as r:
                 d = json.load(r)
-        except Exception:
-            break  # 404 / Session nicht angelegt -> 0 fuer diese Session
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                break  # Session nie angelegt -> 0, naechste Session
+            print(f"readback HTTPError {e.code} fuer {sid}", file=sys.stderr)
+            sys.exit(3)  # inconclusive, NICHT als Verlust werten
+        except Exception as e:  # Timeout/Reset/JSON -> inconclusive
+            print(f"readback error fuer {sid}: {e}", file=sys.stderr)
+            sys.exit(3)
         total += len(d.get("events", []))
         cursor = d.get("next_cursor")
         if not cursor:
             break
 print(total)
 PY
-)"
+)"; then
+  echo "[load-smoke] INCONCLUSIVE: Readback-Lesefehler — kein Verlust-Urteil möglich (Lesefehler != Datenverlust)" >&2
+  exit 3
+fi
 
 python3 - "$tmpdir/summary.json" "$persisted" "$MODE" "$SESSION_PREFIX" "$MAX_ERROR_PCT" <<'PY'
 import sys, json

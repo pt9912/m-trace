@@ -138,6 +138,25 @@ Warmup wird aus der Latenz-Auswertung ausgeschlossen; DB-Reset-/Reuse-
 Politik ist pro Szenario oben fix, damit Baseline-Zahlen vergleichbar
 bleiben.
 
+### 4.1 Closed-Loop vs. Open-Loop (Review-Entscheidung für die Nightly)
+
+Tranche 1/2 nutzt **closed-loop** (`--vus N`, jeder VU blockiert auf der
+Antwort). Das ist für die **Korrektheits-Gates** (kein Verlust,
+Fehlerquote, Limiter-Sanity) richtig — die hängen nicht an einer
+Zielrate. Die gemessene ~800/s-Decke ist bewusst **Baseline/ADR-0005-
+Evidenz, kein Gate**.
+
+Für eine **Nightly-Durchsatz-/Latenz-SLO** (Tranche 3) ist closed-loop
+der falsche Aufhänger: die Decke ist N-/hardware-abhängig und unter
+Sättigung explodiert p95 (jeder VU blockiert) → flaky. Dann **k6
+`constant-arrival-rate`-Executor** (open-loop): die offered load wird
+vorgegeben, gemessen wird, ob das System mitkommt (`dropped_iterations`,
+p95) → entkoppelt Last von Maschinen-Speed, stabile Schwelle über Runner
+hinweg. Zielrate **deutlich unter der Decke** (aus ~800/s z. B.
+400–500/s mit p95-Budget) — direkt an der Sättigung ist auch open-loop
+instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
+(exploratory) + open-loop „SLO behaupten" (Nightly-Gate).
+
 ## 5. Tranchen (Skizze)
 
 | Tranche | Inhalt |
