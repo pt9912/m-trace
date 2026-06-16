@@ -47,6 +47,16 @@ jobs:
           MTRACE_WEBRTC_DRIFT_BROWSERS: chromium,firefox
         run: make smoke-webrtc-stats-drift
 
+      # Ton-Smoke: automatisiert die manuelle „1-kHz-Sinuston
+      # hörbar"-Abnahme aus docs/user/releasing.md (FFT/Goertzel auf
+      # dem RTSP-Egress). continue-on-error: nicht-blockierend (Lab
+      # unter Last flaky), ein Ton-Failure soll den Drift-Befund nicht
+      # maskieren.
+      - name: Run tone smoke (non-blocking)
+        id: tone-smoke
+        continue-on-error: true
+        run: make smoke-webrtc-tone
+
       - name: Capture browser versions
         if: always()
         id: browser-versions

@@ -174,6 +174,16 @@ Schritte (RAK-51..RAK-54):
 5. Stop: `docker compose -p mtrace-webrtc … down`. Greift weder
    Core-Lab noch andere Beispiele an.
 
+> **Automatisierte Teilabnahme**: Der „1 kHz Sinuston"-Anteil von
+> Schritt 2 ist über `make smoke-webrtc-tone`
+> ([`plan-0.22.4-webrtc-tone-smoke`](../planning/done/plan-0.22.4-webrtc-tone-smoke.md))
+> und den `webrtc-drift.yml`-Nightly automatisiert: ein
+> FFT/Goertzel-Check auf dem RTSP-Egress belegt „ein sauberer
+> 1-kHz-Ton liegt an und dominiert". Die *perzeptuelle* Abnahme
+> (latenzarm, subjektiv sauber, Gesamt-Demo-Verhalten im echten
+> Browser) bleibt manuell — der Smoke ist nicht-blockierend
+> (`extra-gates.md` §3.8).
+
 Vollständige Operator-Doku:
 [`packages/player-sdk/README.md`](../../packages/player-sdk/README.md)
 §Performance and Browser Support.

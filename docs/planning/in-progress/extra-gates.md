@@ -41,6 +41,7 @@ Pruefungen sind bewusst Nightly- oder Release-Kandidaten.
 | 4 | Generated-Artifact-Drift-Gate | PR | ja | Quellen und generierte Dateien synchron halten |
 | 5 | Selektives Fuzzing / Property Tests | PR kurz, Nightly lang | ja fuer Seed-Corpus | Parser-/Validation-Robustheit erhoehen |
 | 6 | Mutation Testing auf kritischen Modulen | Nightly / manuell | nein initial | Teststaerke sichtbar machen |
+| 7 | WebRTC-Ton-Smoke (1-kHz-FFT/Goertzel) | Nightly + lokal opt-in | nein | manuellen 1-kHz-Hoercheck (releasing.md §2.3) automatisieren |
 
 ## 3. Priorisierung
 
@@ -286,6 +287,47 @@ DoD:
   einem konkreten Re-Verifikations-Target benennt.
 - Artefakt-Retention deckt mindestens 30 Tage, damit auch nicht
   sofort bearbeitete Findings noch reproduzierbar sind.
+
+### 3.8 WebRTC-Ton-Smoke (1-kHz-FFT)
+
+**Entscheidung:** Automatisiert die *eng definierte* manuelle
+Release-Abnahme „bestätigen, dass ein 1-kHz-Sinuston hörbar abspielt"
+aus [`releasing.md`](../../user/releasing.md) §2.3. Komplementaer zum
+WebRTC-`getStats()`-Drift-Smoke (RAK-56, releasing.md §2.4.1), der nur
+`bytesReceived>0` (Medien fliessen), nicht die Tonqualitaet prueft.
+Plan: [`plan-0.22.4-webrtc-tone-smoke.md`](../done/plan-0.22.4-webrtc-tone-smoke.md).
+
+Scope:
+
+- `scripts/check-tone.mjs`: dependency-freier Goertzel-Einzel-Bin-DFT;
+  Verdict ueber den Energie-Anteil (Parseval) des Ziel-Bands an der
+  Gesamtenergie — Reinton ~0.5, abwesende Frequenz/Rauschen ~0.
+- `make smoke-webrtc-tone` (`scripts/smoke-webrtc-tone.sh`): faehrt das
+  `mtrace-webrtc`-Lab hoch, zieht den RTSP-Egress per ffmpeg im
+  Lab-Netz (host-seitig ist nur WHEP erreichbar) und pipet das PCM an
+  den Detektor.
+- Nightly-Schritt in
+  [`webrtc-drift.yml`](../../../.github/workflows/webrtc-drift.yml)
+  neben dem Drift-Smoke.
+
+Policy:
+
+- **Nicht-blockierend**: opt-in lokal, im Nightly `continue-on-error`
+  — das WebRTC-Lab ist unter Last flaky (siehe
+  [`plan-0.22.3-webrtc-drift`](../done/plan-0.22.3-webrtc-drift.md)
+  §2), ein Ton-Failure soll weder PRs blocken noch den Drift-Befund
+  maskieren. Nicht in `make gates`.
+- Ersetzt **nicht** die perzeptuelle Operator-Abnahme („klingt/sieht
+  das Demo im echten Browser richtig"); deckt nur den maschinell
+  praezise pruefbaren „1-kHz-Ton vorhanden und dominant"-Teil ab.
+
+DoD:
+
+- Detektor deterministisch ohne Lab testbar (synthetische
+  ffmpeg-Signale: Reinton PASS, falsche Frequenz/Stille/Rauschen FAIL).
+- Smoke live gegen `mtrace-webrtc` verifiziert (Energie-Anteil ~0.5
+  durch die reale Opus-Pipeline).
+- Nightly-Schritt laeuft `continue-on-error` neben dem Drift-Schritt.
 
 ## 4. Benchmarking-Policy
 
