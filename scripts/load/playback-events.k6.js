@@ -20,12 +20,12 @@
 //   docker run --rm --network host -v "$PWD/scripts/load:/scripts:ro" \
 //     grafana/k6 run --vus 20 --duration 30s \
 //     -e BASE_URL=http://localhost:8080 /scripts/playback-events.k6.js
-// Readback-Reconciliation danach: GET /api/stream-sessions?limit=50
-//   (Header X-MTrace-Token) und Summe der event_count der load-vu-*-
-//   Sessions gegen mtrace_events_accepted abgleichen (muss deckungs-
-//   gleich sein; Counts sind Vielfache von BATCH_SIZE -> Ganz-Batch-
-//   Persist, kein stiller Verlust). Automatisierung folgt als nächster
-//   Schritt.
+// Die Readback-Reconciliation ist in scripts/smoke-load.sh automatisiert:
+//   sie zählt die TATSÄCHLICH persistierten Events (Länge des
+//   `events[]`-Arrays von GET /api/stream-sessions/{id}, paginiert; kommt
+//   aus playback_events) je load-vu-*-Session und prüft persisted >=
+//   accepted (kein stiller Verlust). Bewusst NICHT der Session-event_count
+//   (wird vor dem Append getickt) und NICHT die paginierte Listen-API.
 
 import http from "k6/http";
 import { check } from "k6";

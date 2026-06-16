@@ -8,9 +8,11 @@ set -euo pipefail
 # (scripts/load/playback-events.k6.js) Playback-Event-Batches gegen
 # /api/playback-events und prüft anschließend per Readback-
 # Reconciliation, dass jedes akzeptierte Event auch persistiert wurde
-# (kein stiller Verlust). Der Verlust-Nachweis läuft bewusst über den
-# Read-Pfad, nicht über Prometheus-Counter (ein synchroner Append-Fehler
-# inkrementiert keinen mtrace_*-Counter).
+# (kein stiller Verlust). Gezählt werden die TATSÄCHLICH in
+# playback_events liegenden Events — das `events[]`-Array des
+# Detail-Endpoints (paginiert), NICHT der Session-`event_count` (der
+# wird im Upsert VOR dem Event-Append getickt, eigene Tx, taugt nicht
+# als Persistenz-Beleg) und NICHT der Prometheus-Counter.
 #
 # Zwei Modi:
 #   MODE=capacity Rate-Limit pro Project hochgesetzt
@@ -53,6 +55,27 @@ for dep in docker curl python3; do
     exit 2
   }
 done
+docker compose version >/dev/null 2>&1 || {
+  echo "[load-smoke] 'docker compose' (v2) nicht verfügbar (v1 'docker-compose' wird nicht unterstützt)" >&2
+  exit 2
+}
+
+case "$MODE" in
+  capacity | contract) ;;
+  *)
+    echo "[load-smoke] MODE='$MODE' ungültig — erlaubt: capacity | contract" >&2
+    exit 2
+    ;;
+esac
+
+# Der Limit-Override greift nur über einen frisch erzeugten Container.
+# Bei AUTOSTART=0 (gegen ein laufendes Lab) sieht der bestehende
+# Container das Export nie -> capacity liefe still als contract durch
+# (misleading green). Daher harter Abbruch statt falschem Grün.
+if [ "$MODE" = "capacity" ] && [ "$SMOKE_LOAD_AUTOSTART" != "1" ]; then
+  echo "[load-smoke] MODE=capacity erfordert SMOKE_LOAD_AUTOSTART=1 (Override braucht frischen Container)" >&2
+  exit 2
+fi
 
 tmpdir="$(mktemp -d)"
 cleanup() {
@@ -112,31 +135,40 @@ docker run --rm --network host \
   exit 1
 }
 
-# Readback: persistierte Events je Lauf-Session über den Detail-Endpoint
-# summieren (genau VUS gezielte Lookups, session_id = PREFIX-1..PREFIX-VUS).
-# Bewusst NICHT die Listen-API mit ?limit — die ist Cursor-paginiert und
-# würde bei vielen Sessions truncaten (falscher Verlust-Alarm); der
-# Per-Session-Lookup ist zudem immun gegen fremde/Alt-Sessions.
+# Readback: die TATSÄCHLICH persistierten Events je Lauf-Session zählen
+# — die Länge des `events[]`-Arrays des Detail-Endpoints (kommt aus
+# playback_events), Cursor-paginiert mit events_limit=1000, summiert über
+# genau VUS gezielte Sessions (PREFIX-1..PREFIX-VUS).
+# Bewusst NICHT der Session-`event_count` (wird im Upsert VOR dem Append
+# getickt -> kein Persistenz-Beleg, macht den Verlust-Gate tot) und NICHT
+# die Cursor-paginierte Listen-API (truncatet -> Falschalarm). Per-Session
+# ist zudem immun gegen fremde/Alt-Sessions.
 persisted="$(
   VUS="$VUS" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
     SESSION_PREFIX="$SESSION_PREFIX" python3 - <<'PY'
-import os, json, urllib.request
+import os, json, urllib.request, urllib.parse
 base = os.environ["BASE_URL"].rstrip("/")
-tok = os.environ["PROJECT_TOKEN"]
+hdr = {"X-MTrace-Token": os.environ["PROJECT_TOKEN"]}
 prefix = os.environ["SESSION_PREFIX"]
 vus = int(os.environ["VUS"])
 total = 0
 for n in range(1, vus + 1):
-    req = urllib.request.Request(
-        f"{base}/api/stream-sessions/{prefix}-{n}",
-        headers={"X-MTrace-Token": tok},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as r:
-            d = json.load(r)
-        total += int(d.get("session", {}).get("event_count", 0))
-    except Exception:
-        pass  # 404 / Session nicht angelegt -> zaehlt 0
+    sid = f"{prefix}-{n}"
+    cursor = None
+    while True:
+        q = {"events_limit": "1000"}
+        if cursor:
+            q["events_cursor"] = cursor
+        url = f"{base}/api/stream-sessions/{urllib.parse.quote(sid)}?{urllib.parse.urlencode(q)}"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=15) as r:
+                d = json.load(r)
+        except Exception:
+            break  # 404 / Session nicht angelegt -> 0 fuer diese Session
+        total += len(d.get("events", []))
+        cursor = d.get("next_cursor")
+        if not cursor:
+            break
 print(total)
 PY
 )"
@@ -158,16 +190,27 @@ def rate(name):
 accepted = cnt("mtrace_events_accepted")
 rate_limited = cnt("mtrace_events_rate_limited")
 rejected = cnt("mtrace_events_rejected")
-total = accepted + rate_limited + rejected
-err_pct = (100.0 * rejected / total) if total else 0.0
+sent = cnt("mtrace_events_sent")
+# Fehlerquote über die NICHT-gedrosselten Versuche (202 + echte Fehler).
+# 429 bleibt draußen, sonst verdünnen Millionen 429 im contract-Modus die
+# Quote bis zur Bedeutungslosigkeit.
+attempts = accepted + rejected
+err_pct = (100.0 * rejected / attempts) if attempts else 0.0
 reqs = m.get("http_reqs", {}).get("values", {})
 dur = m.get("http_req_duration", {}).get("values", {})
+
+# Cross-Check: k6-Sendezähler muss der Summe der Status-Zähler
+# entsprechen; sonst ist die Summary-Auswertung verrutscht.
+if sent and sent != accepted + rate_limited + rejected:
+    print(f"[load-smoke] WARN: k6 sent {sent} != "
+          f"accepted+rate_limited+rejected {accepted + rate_limited + rejected} "
+          f"(Summary-Parse-Drift?)")
 
 print(f"[load-smoke] req/s={reqs.get('rate', 0):.0f}  "
       f"p95={dur.get('p(95)', 0):.2f}ms  p90={dur.get('p(90)', 0):.2f}ms  "
       f"max={dur.get('max', 0):.1f}ms")
 print(f"[load-smoke] accepted(202)={accepted} ({rate('mtrace_events_accepted'):.0f}/s)  "
-      f"rate_limited(429)={rate_limited}  errors(!=202/429)={rejected} ({err_pct:.2f}%)")
+      f"rate_limited(429)={rate_limited}  errors(!=202/429)={rejected} ({err_pct:.2f}% der 202+Fehler)")
 ambiguous = persisted - accepted
 print(f"[load-smoke] persisted (readback, {prefix}-* sessions)={persisted}  "
       f"(at-least-once-Überschuss: {ambiguous})")

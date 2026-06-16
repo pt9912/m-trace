@@ -105,7 +105,7 @@ isolierten Hot-Path-Budgets oben. **Opt-in + Nightly, NICHT in
 
 | Kriterium | Schwelle | Begründung |
 |---|---|---|
-| Kein stiller Verlust | `persisted >= accepted` (Readback-Reconciliation) | Jedes client-bestätigte (`202`) Event muss persistiert sein. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Server persistiert, bevor der Client ein Timeout/`5xx` sieht), kein Verlust. |
+| Kein stiller Verlust | `persisted >= accepted` (Readback gegen die echte `playback_events`-Tabelle via `events[]`-Array des Detail-Endpoints, **nicht** `event_count`) | `persisted` = tatsächlich in `playback_events` liegende Events der Lauf-Sessions. Jedes client-bestätigte (`202`) Event muss dort liegen. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Append erfolgreich, Client sah aber ein Timeout/`5xx`), kein Verlust. `event_count` (Session-Zähler, im Upsert vor dem Append getickt) taugt dafür ausdrücklich nicht. |
 | Fehlerquote | `<= MAX_ERROR_PCT` (Default 5 %) | Anteil Events mit Status ≠ `202`/`429`. An der SQLite-Sättigung sind einzelne **explizite** Fehler erwartbar (graceful degradation); nur eine katastrophale Quote bricht. |
 | Limiter (contract) / Override (capacity) | `429 > 0` bzw. `accepted > 0` | Sanity, dass der jeweilige Modus tatsächlich greift. |
 
