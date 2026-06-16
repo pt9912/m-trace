@@ -100,7 +100,7 @@ func postAuthSessionToken(t *testing.T, srv *httptest.Server, body string, heade
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestAuthSessionTokens_InvalidContentType(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/auth/session-tokens", strings.NewReader(`x`))
 	req.Header.Set("X-MTrace-Token", "demo-token")
 	req.Header.Set("Content-Type", "text/plain")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}

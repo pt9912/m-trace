@@ -52,7 +52,7 @@ func TestNewRouter_NilAllowlistRejectsAllPreflights(t *testing.T) {
 	}
 	req.Header.Set("Origin", "http://localhost:5173")
 	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}

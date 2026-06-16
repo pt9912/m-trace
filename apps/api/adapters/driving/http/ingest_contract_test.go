@@ -75,7 +75,7 @@ func TestIngestContract_CreateMatchesFixture(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams", map[string]any{
 			"display_name": "Lab",
 			"protocol":     "srt",
@@ -107,7 +107,7 @@ func TestIngestContract_ListMatchesFixture(t *testing.T) {
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/streams", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestIngestContract_RotateMatchesFixture(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/ing_test/rotate-key", map[string]any{}))
 	if err != nil {
 		t.Fatalf("do: %v", err)
@@ -161,7 +161,7 @@ func TestIngestContract_ValidateBlindMatchesFixture(t *testing.T) {
 	// **keinerlei** weitere Felder enthalten.
 	stub := &stubIngestControl{validateResult: driving.ValidateKeyResult{Valid: false}}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/ing_test/validate-key", map[string]any{
 			"stream_key": "mtr_ing_does_not_match",
 		}))
@@ -201,7 +201,7 @@ func TestIngestContract_UnauthorizedMatchesFixture(t *testing.T) {
 	stub := &stubIngestControl{}
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/streams", nil)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -221,7 +221,7 @@ func TestIngestContract_StreamNotFoundMatchesFixture(t *testing.T) {
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
 		srv.URL+"/api/ingest/streams/ing_other", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -243,7 +243,7 @@ func TestIngestContract_LifecycleSuccessMatchesFixture(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
 			"stream_id":   "ing_01HZXJ7A5K9V7W1E7BTKJ8V7N9",
 			"observed_at": "2026-05-09T10:01:00Z",
@@ -263,7 +263,7 @@ func TestIngestContract_LifecycleDisabledRoutingMatchesFixture(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestRoutingRuleDisabled}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-ended", map[string]any{
 			"stream_id":   "ing_test",
 			"observed_at": "2026-05-09T10:05:00Z",

@@ -256,7 +256,7 @@ func TestE2E_TraceparentPropagation_SameTraceID(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-MTrace-Token", "demo-token")
 		req.Header.Set("traceparent", traceparent)
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := srv.Client().Do(req)
 		if err != nil {
 			t.Fatalf("post: %v", err)
 		}

@@ -68,7 +68,7 @@ func postAnalyze(t *testing.T, srv *httptest.Server, token, body string) (*http.
 	if token != "" {
 		req.Header.Set("X-MTrace-Token", token)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("post: %v", err)
 	}
@@ -237,7 +237,7 @@ func TestAnalyze_OptionsPreflight(t *testing.T) {
 	}
 	req.Header.Set("Origin", "http://localhost:5173")
 	req.Header.Set("Access-Control-Request-Method", "POST")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -297,7 +297,7 @@ func TestAnalyze_OptionsPreflight_RejectsForeignOrigin(t *testing.T) {
 	}
 	req.Header.Set("Origin", "http://attacker.example")
 	req.Header.Set("Access-Control-Request-Method", "POST")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}

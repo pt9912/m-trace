@@ -182,7 +182,7 @@ func TestIngestHandler_CreateStream_HappyPath(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
 		"display_name": "Lab",
 		"protocol":     "srt",
 		"endpoint_id":  "ep",
@@ -231,7 +231,7 @@ func TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState(t *
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
 		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
 	}))
 	if err != nil {
@@ -271,7 +271,7 @@ func TestIngestHandler_CreateStream_ProvisionApplied_IncludesMediaServerState(t 
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
 		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
 	}))
 	if err != nil {
@@ -313,7 +313,7 @@ func TestIngestHandler_CreateStream_ProvisionDisabled_IncludesHint(t *testing.T)
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
 		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
 	}))
 	if err != nil {
@@ -360,7 +360,7 @@ func TestIngestHandler_CreateStream_ProvisionFailed_201Created(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams?provision=true", map[string]any{
 		"display_name": "Lab", "protocol": "srt", "endpoint_id": "ep", "target_id": "tgt",
 	}))
 	if err != nil {
@@ -387,7 +387,7 @@ func TestIngestHandler_CreateStream_MissingTokenReturns401(t *testing.T) {
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/api/ingest/streams",
 		bytes.NewReader([]byte(`{"display_name":"Lab","protocol":"srt","endpoint_id":"ep","target_id":"tgt"}`)))
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -408,7 +408,7 @@ func TestIngestHandler_CreateStream_RejectsNonJSONContentType(t *testing.T) {
 		bytes.NewReader([]byte(`payload`)))
 	req.Header.Set("X-MTrace-Token", ingestToken)
 	req.Header.Set("Content-Type", "text/plain")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -436,7 +436,7 @@ func TestIngestHandler_CreateStream_MapsDomainErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			stub := &stubIngestControl{createErr: tc.err}
 			srv := newIngestRouter(t, stub)
-			res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
+			res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
 				"display_name": "Lab",
 				"protocol":     "srt",
 				"endpoint_id":  "ep",
@@ -464,7 +464,7 @@ func TestIngestHandler_ValidateKey_FalseHidesStreamID(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{validateResult: driving.ValidateKeyResult{Valid: false}}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/validate-key",
 		map[string]any{"stream_key": "mtr_ing_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}))
 	if err != nil {
@@ -495,7 +495,7 @@ func TestIngestHandler_ValidateKey_TrueExposesFingerprintNotKlartext(t *testing.
 		Valid: true, StreamID: ingestStreamID, KeyFingerprint: "mtr_ing_AAAA...ZZZZ",
 	}}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/validate-key",
 		map[string]any{"stream_key": "mtr_ing_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}))
 	if err != nil {
@@ -531,7 +531,7 @@ func TestIngestHandler_RotateKey_HappyPath(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", map[string]any{}))
 	if err != nil {
 		t.Fatalf("do: %v", err)
@@ -551,7 +551,7 @@ func TestIngestHandler_RotateKey_NotFoundReturns404(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{rotateErr: domain.ErrIngestStreamNotFound}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", map[string]any{}))
 	if err != nil {
 		t.Fatalf("do: %v", err)
@@ -600,7 +600,7 @@ func TestIngestHandler_GetStreamDetail_HappyPath(t *testing.T) {
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID, nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -628,7 +628,7 @@ func TestIngestHandler_GetStreamDetail_NotFound(t *testing.T) {
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID, nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -644,7 +644,7 @@ func TestIngestHandler_GetStreamDetail_MissingTokenReturns401(t *testing.T) {
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID, nil)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -672,7 +672,7 @@ func TestIngestHandler_ListStreams_FiltersFingerprintOnly(t *testing.T) {
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/streams", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -703,7 +703,7 @@ func TestIngestHandler_RejectsLargeBody(t *testing.T) {
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/api/ingest/streams", bytes.NewReader(body))
 	req.Header.Set("X-MTrace-Token", ingestToken)
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -730,7 +730,7 @@ func TestIngestHandler_UnsupportedMethodsReturn404(t *testing.T) {
 	// wird.
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPut, srv.URL+"/api/ingest/streams", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -841,7 +841,7 @@ func TestIngestHandler_RotateHandler_RejectsNonJSONContentType(t *testing.T) {
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", bytes.NewReader([]byte(`x`)))
 	req.Header.Set("X-MTrace-Token", ingestToken)
 	req.Header.Set("Content-Type", "text/plain")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -860,7 +860,7 @@ func TestIngestHandler_ValidateHandler_MalformedJSONReturns400(t *testing.T) {
 		bytes.NewReader([]byte(`{not json`)))
 	req.Header.Set("X-MTrace-Token", ingestToken)
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -878,7 +878,7 @@ func TestIngestHandler_ValidateHandler_MissingTokenReturns401(t *testing.T) {
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/validate-key",
 		bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -896,7 +896,7 @@ func TestIngestHandler_RotateHandler_MissingTokenReturns401(t *testing.T) {
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key",
 		bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -911,7 +911,7 @@ func TestIngestHandler_ListStreams_MissingTokenReturns401(t *testing.T) {
 	stub := &stubIngestControl{}
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/streams", nil)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -938,7 +938,7 @@ func TestIngestHandler_MediaServerConfig_HappyPath(t *testing.T) {
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -961,7 +961,7 @@ func TestIngestHandler_MediaServerConfig_NotAvailable(t *testing.T) {
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -981,7 +981,7 @@ func TestIngestHandler_MediaServerConfig_TargetNotFound(t *testing.T) {
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config?target_id=missing", nil)
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -996,7 +996,7 @@ func TestIngestHandler_MediaServerConfig_MissingTokenReturns401(t *testing.T) {
 	stub := &stubIngestControl{}
 	srv := newIngestRouter(t, stub)
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/ingest/media-server-config", nil)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -1014,7 +1014,7 @@ func TestIngestHandler_DisabledRouting_ConflictMapsTo409(t *testing.T) {
 	// typisierten Fehler getestet, **nicht** auf eine String-Heuristik.
 	stub := &stubIngestControl{rotateErr: domain.ErrIngestRoutingRuleDisabled}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", map[string]any{}))
 	if err != nil {
 		t.Fatalf("do: %v", err)
@@ -1041,7 +1041,7 @@ func TestIngestHandler_UnclassifiedRepoErrorMapsTo500(t *testing.T) {
 	// Methoden produzieren.
 	stub := &stubIngestControl{rotateErr: errors.New("ingest: insert rotated key: disk full")}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/streams/"+ingestStreamID+"/rotate-key", map[string]any{}))
 	if err != nil {
 		t.Fatalf("do: %v", err)
@@ -1064,7 +1064,7 @@ func TestIngestHandler_EmptyDisplayNameMapsTo400(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{createErr: domain.ErrIngestDisplayNameRequired}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost, srv.URL+"/api/ingest/streams", map[string]any{
 		"display_name": "",
 		"protocol":     "srt",
 		"endpoint_id":  "ep",
@@ -1096,7 +1096,7 @@ func TestIngestLifecycleHook_StartedHappyPath(t *testing.T) {
 		},
 	}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
 			"stream_id":     ingestStreamID,
 			"observed_at":   "2026-05-09T10:01:00Z",
@@ -1135,7 +1135,7 @@ func TestIngestLifecycleHook_EndedKindFromURLNotBody(t *testing.T) {
 	// `stream_ended` interpretieren.
 	stub := &stubIngestControl{}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-ended", map[string]any{
 			"stream_id":   ingestStreamID,
 			"observed_at": "2026-05-09T10:05:00Z",
@@ -1158,7 +1158,7 @@ func TestIngestLifecycleHook_MissingObservedAt400(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
 			"stream_id": ingestStreamID,
 		}))
@@ -1175,7 +1175,7 @@ func TestIngestLifecycleHook_StreamNotFound404(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestStreamNotFound}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
 			"stream_id":   "ing_unknown",
 			"observed_at": "2026-05-09T10:01:00Z",
@@ -1194,7 +1194,7 @@ func TestIngestLifecycleHook_DisabledRouting409(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestRoutingRuleDisabled}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-ended", map[string]any{
 			"stream_id":   ingestStreamID,
 			"observed_at": "2026-05-09T10:05:00Z",
@@ -1217,7 +1217,7 @@ func TestIngestLifecycleHook_UnauthorizedWithoutToken(t *testing.T) {
 		srv.URL+"/api/ingest/hooks/stream-started",
 		bytes.NewReader([]byte(`{"stream_id":"x","observed_at":"2026-05-09T10:00:00Z","source":"local-smoke"}`)))
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -1239,7 +1239,7 @@ func TestIngestLifecycleHook_MalformedJSON400(t *testing.T) {
 		bytes.NewReader([]byte(`{not json`)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-MTrace-Token", ingestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -1253,7 +1253,7 @@ func TestIngestLifecycleHook_UnknownSource400(t *testing.T) {
 	t.Parallel()
 	stub := &stubIngestControl{lifecycleErr: domain.ErrIngestLifecycleSourceUnknown}
 	srv := newIngestRouter(t, stub)
-	res, err := http.DefaultClient.Do(authenticatedRequest(t, http.MethodPost,
+	res, err := srv.Client().Do(authenticatedRequest(t, http.MethodPost,
 		srv.URL+"/api/ingest/hooks/stream-started", map[string]any{
 			"stream_id":   ingestStreamID,
 			"observed_at": "2026-05-09T10:00:00Z",

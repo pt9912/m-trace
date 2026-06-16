@@ -67,7 +67,7 @@ func postSessionToken(t *testing.T, srv *httptest.Server) *http.Response {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-MTrace-Token", "demo-token")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestOriginRateLimit_XFFTrust(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-MTrace-Token", "demo-token")
 		req.Header.Set("X-Forwarded-For", xff)
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := srv.Client().Do(req)
 		if err != nil {
 			t.Fatalf("do: %v", err)
 		}

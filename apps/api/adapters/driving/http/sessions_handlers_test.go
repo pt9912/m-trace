@@ -20,7 +20,12 @@ func getJSON(t *testing.T, srv string, path string) (*http.Response, map[string]
 	// verwenden den im Test-Setup wired Static-Resolver (Token
 	// "demo-token", Project "demo").
 	req.Header.Set("X-MTrace-Token", "demo-token")
-	resp, err := http.DefaultClient.Do(req)
+	// Dedizierter Transport statt des geteilten http.DefaultClient:
+	// isoliert den Idle-Connection-Pool, damit parallele Tests sich
+	// beim Schließen ihrer httptest.Server nicht gegenseitig in-flight
+	// Verbindungen abreißen (Flake "http: CloseIdleConnections called").
+	client := &http.Client{Transport: &http.Transport{}}
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Fatalf("get %s: %v", path, err)
 	}
@@ -220,7 +225,7 @@ func TestHTTP_StreamSessionsByID_EmptyID(t *testing.T) {
 		t.Fatalf("new request: %v", err)
 	}
 	req.Header.Set("X-MTrace-Token", "demo-token")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}

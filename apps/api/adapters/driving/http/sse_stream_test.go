@@ -65,7 +65,7 @@ func TestSse_Auth_RejectsInvalidToken(t *testing.T) {
 
 	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/stream-sessions/stream", nil)
 	req.Header.Set("X-MTrace-Token", "totally-bogus")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestSse_StreamHeaders(t *testing.T) {
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/api/stream-sessions/stream", nil)
 	req.Header.Set("X-MTrace-Token", "demo-token")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -361,7 +361,7 @@ func TestSse_Backfill_IgnoresInvalidLastEventID(t *testing.T) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/api/stream-sessions/stream", nil)
 	req.Header.Set("X-MTrace-Token", "demo-token")
 	req.Header.Set("Last-Event-ID", "not-a-number")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
@@ -385,7 +385,7 @@ func TestSse_DisconnectCleanup(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/api/stream-sessions/stream", nil)
 	req.Header.Set("X-MTrace-Token", "demo-token")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		cancel()
 		t.Fatalf("get: %v", err)
@@ -468,7 +468,13 @@ func streamBytesUntilTimeout(t *testing.T, baseURL string, headers http.Header, 
 			req.Header.Add(k, v)
 		}
 	}
-	resp, err := http.DefaultClient.Do(req)
+	// Dedizierter Transport statt des geteilten http.DefaultClient:
+	// isoliert den Idle-Connection-Pool gegen parallele Tests. Der
+	// Caller übergibt nur eine URL (teils ein roher http.Server ohne
+	// httptest.Server), daher kein srv.Client() möglich.
+	client := &http.Client{Transport: &http.Transport{}}
+	defer client.CloseIdleConnections()
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}

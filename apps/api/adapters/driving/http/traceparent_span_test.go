@@ -268,7 +268,7 @@ func postWithHeaders(t *testing.T, srv *httptest.Server, token, body string, ext
 	for k, v := range extraHeaders {
 		req.Header.Set(k, v)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

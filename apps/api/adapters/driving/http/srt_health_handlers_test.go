@@ -123,7 +123,7 @@ func TestSrtHealthList_HappyPath(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -167,7 +167,7 @@ func TestSrtHealthDetail_HappyPath(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health/srt-test?samples_limit=50", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestSrtHealthDetail_NotFound(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health/missing", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -222,7 +222,7 @@ func TestSrtHealthDetail_InvalidLimit(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health/srt-test?samples_limit=foo", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -239,7 +239,7 @@ func TestSrtHealthList_RequiresToken(t *testing.T) {
 	srv := newSrtHealthRouter(t, inbound)
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health", nil)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -257,7 +257,7 @@ func TestSrtHealthList_RepoError(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -279,7 +279,7 @@ func TestSrtHealthDetail_SchemaMatchesFixture(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health/srt-test", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -346,7 +346,7 @@ func TestSrtHealthDetail_EmptyStreamID(t *testing.T) {
 	// PathValue("stream_id") ist leer.
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health/", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -369,7 +369,7 @@ func TestSrtHealthList_PostNotAllowed(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/api/srt/health", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -398,7 +398,7 @@ func TestSrtHealthDetail_CursorRoundTrip(t *testing.T) {
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
 		srv.URL+"/api/srt/health/srt-test?samples_limit=1", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do page 1: %v", err)
 	}
@@ -421,7 +421,7 @@ func TestSrtHealthDetail_CursorRoundTrip(t *testing.T) {
 	req2, _ := http.NewRequestWithContext(context.Background(), http.MethodGet,
 		srv.URL+"/api/srt/health/srt-test?samples_limit=1&samples_cursor="+nextCursor, nil)
 	req2.Header.Set("X-MTrace-Token", srtTestToken)
-	res2, err := http.DefaultClient.Do(req2)
+	res2, err := srv.Client().Do(req2)
 	if err != nil {
 		t.Fatalf("do page 2: %v", err)
 	}
@@ -546,7 +546,7 @@ func getSrtJSON(t *testing.T, srv *httptest.Server, path string, wantStatus int)
 	t.Helper()
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+path, nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}
@@ -569,7 +569,7 @@ func TestSrtHealthList_EmptyEnvelope(t *testing.T) {
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health", nil)
 	req.Header.Set("X-MTrace-Token", srtTestToken)
-	res, err := http.DefaultClient.Do(req)
+	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("do: %v", err)
 	}

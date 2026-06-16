@@ -142,7 +142,7 @@ func postEvents(t *testing.T, srv *httptest.Server, token, body string) *http.Re
 		req.Header.Set("X-MTrace-Token", token)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
