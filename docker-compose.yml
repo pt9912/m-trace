@@ -18,6 +18,12 @@ services:
       OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-}"
       OTEL_METRICS_EXPORTER: "${OTEL_METRICS_EXPORTER:-}"
       ANALYZER_BASE_URL: "http://analyzer-service:7000"
+      # Ingest-Rate-Limit-Override (Code-Default 100/100). Leer = Default;
+      # vom Last-Smoke-Kapazitaetsmodus gesetzt (scripts/smoke-load.sh),
+      # damit der Test die echte Ingest-Kapazitaet statt der Limiter-Decke
+      # misst.
+      MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
+      MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
     volumes:
       # SQLite-Volume überlebt `make stop`/`docker compose down` ohne
       # `--volumes`. Reset ausschließlich über `make wipe` (siehe

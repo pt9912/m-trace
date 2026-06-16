@@ -87,3 +87,25 @@ export default function () {
       r.status === 202 || r.status === 429,
   });
 }
+
+// handleSummary schreibt die volle Metrik-Struktur als JSON fuer die
+// Auswertung im Smoke (zuverlaessiger als das deprecatete
+// --summary-export) plus eine knappe stdout-Zusammenfassung ohne externe
+// jslib-Abhaengigkeit.
+export function handleSummary(data) {
+  const m = data.metrics || {};
+  const val = (name, key) =>
+    (m[name] && m[name].values && m[name].values[key]) || 0;
+  const text =
+    `\n  http_reqs: ${val("http_reqs", "count")} (${val("http_reqs", "rate").toFixed(1)}/s)\n` +
+    `  events accepted: ${val("mtrace_events_accepted", "count")} (${val("mtrace_events_accepted", "rate").toFixed(1)}/s)\n` +
+    `  events rate_limited: ${val("mtrace_events_rate_limited", "count")}\n` +
+    `  events rejected: ${val("mtrace_events_rejected", "count")}\n` +
+    `  http_req_duration: p90=${val("http_req_duration", "p(90)").toFixed(1)}ms ` +
+    `p95=${val("http_req_duration", "p(95)").toFixed(1)}ms ` +
+    `max=${val("http_req_duration", "max").toFixed(1)}ms\n`;
+  return {
+    stdout: text,
+    "/work/summary.json": JSON.stringify(data),
+  };
+}

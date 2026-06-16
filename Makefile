@@ -16,7 +16,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -40,6 +40,7 @@ help:
 		'  make smoke-webrtc-prep      Run the WebRTC lab prep smoke (starts/stops mtrace-webrtc project; endpoint-only)' \
 		'  make smoke-webrtc-stats-drift Run the WebRTC getStats() drift smoke against mtrace-webrtc (RAK-56)' \
 		'  make smoke-webrtc-tone      Run the WebRTC 1 kHz tone smoke against mtrace-webrtc (FFT/Goertzel)' \
+		'  make smoke-load            Run the load/soak smoke against the core lab (k6 + readback reconciliation)' \
 		'  make smoke-srs              Run the SRS example smoke (starts/stops mtrace-srs project; endpoint-only, RAK-57)' \
 		'  make smoke-key-rotation     Run the multi-key signing rotation smoke (RAK-78)' \
 		'  make smoke-issuance-replica Run the shared-state issuance limiter smoke (RAK-77)' \
@@ -234,6 +235,16 @@ smoke-webrtc-stats-drift:
 # `.github/workflows/webrtc-drift.yml`.
 smoke-webrtc-tone:
 	bash scripts/smoke-webrtc-tone.sh
+
+# `make smoke-load` ist der Last-/Soak-Smoke gegen das Core-Lab (NF-20/
+# NF-22/NF-23). Treibt per k6 Event-Batches gegen /api/playback-events
+# und prüft per Readback-Reconciliation, dass jedes akzeptierte Event
+# persistiert wurde (kein stiller Verlust). MODE=capacity hebt das
+# Rate-Limit an (echte Ingest-Kapazität), MODE=contract prüft den
+# Limiter (429). Destruktiv (setzt das SQLite-Volume zurück), opt-in
+# (NICHT in `make gates`).
+smoke-load:
+	bash scripts/smoke-load.sh
 
 # `make smoke-srs` ist der SRS-Lab-Smoke
 # (RAK-57, MVP-36 als eingelöst). Fährt examples/srs/compose.yaml

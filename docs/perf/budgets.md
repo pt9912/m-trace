@@ -86,5 +86,45 @@ und wird ab Tranche 1 mit gemessen.
   läuft im Browser; Performance ist über das `0.8.0`-Bundle-
   Budget aus `packages/player-sdk/scripts/performance-smoke.mjs`
   abgedeckt.
-- Keine End-to-End-/Lab-Performance-Smokes — Compose-Stacks bleiben
-  außerhalb des Budget-Smokes.
+- Keine End-to-End-/Lab-Performance-Smokes im **Budget-Smoke**
+  (`make benchmark-smoke`, PR-blockierend) — Compose-Stacks bleiben dort
+  außen vor. Lab-Lastfähigkeit deckt der separate, opt-in Load-/Soak-Smoke
+  ab (§7), nicht-blockierend.
+
+## 7. Load-/Soak-Smoke (`make smoke-load`, opt-in)
+
+`make smoke-load` (`scripts/smoke-load.sh` + `scripts/load/playback-events.k6.js`)
+belegt die Lab-Lastfähigkeit der Ingest→Persistenz→Read-Kette
+(NF-20/NF-22/NF-23) unter echter Parallelität — komplementär zu den
+isolierten Hot-Path-Budgets oben. **Opt-in + Nightly, NICHT in
+`make gates`** (lastabhängig hardware-/runner-flaky). Zwei Modi:
+`MODE=capacity` (Rate-Limit angehoben → echte Ingest-Kapazität),
+`MODE=contract` (Default-100/s → Limiter-Verhalten).
+
+**Gates (Pass/Fail), keine reinen Latenz-Budgets:**
+
+| Kriterium | Schwelle | Begründung |
+|---|---|---|
+| Kein stiller Verlust | `persisted >= accepted` (Readback-Reconciliation) | Jedes client-bestätigte (`202`) Event muss persistiert sein. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Server persistiert, bevor der Client ein Timeout/`5xx` sieht), kein Verlust. |
+| Fehlerquote | `<= MAX_ERROR_PCT` (Default 5 %) | Anteil Events mit Status ≠ `202`/`429`. An der SQLite-Sättigung sind einzelne **explizite** Fehler erwartbar (graceful degradation); nur eine katastrophale Quote bricht. |
+| Limiter (contract) / Override (capacity) | `429 > 0` bzw. `accepted > 0` | Sanity, dass der jeweilige Modus tatsächlich greift. |
+
+Eine Latenz-Obergrenze ist **bewusst kein** harter Gate: unter
+unbeschränkter VU-Last an der Kapazitätsgrenze ist hohe p95 inhärent
+(siehe Referenz). Hot-Path-Latenz deckt §3/§4 ab.
+
+**Referenz-Baseline (runner-abhängig, nicht PR-blockierend),
+20 VUs / 30 s / Batch 20 auf Entwickler-Laptop:**
+
+- **Kapazitäts-Modus** (Limit angehoben): ~**800 Events/s** akzeptiert
+  (≈ 40 Batch-Requests/s, synchroner SQLite-Append), p95 ~**2,3 s** /
+  max ~**5 s** an der Sättigung, Fehlerquote ~**0,1 %**, kleiner
+  at-least-once-Überschuss unter Last.
+- **Contract-Modus** (Default 100/s): ~**103 Events/s** akzeptiert,
+  Rest `429`, p95 ~**2,6 ms**, 0 Fehler, Reconciliation exakt.
+
+**Kern-Befund: der SQLite-Single-Writer ist der Ingest-Engpass** —
+empirische Grundlage für die Evaluierung des
+[ADR-0005](../adr/0005-production-ops-backends.md)-Postgres-Triggers
+(Retention-/Durchsatz-Schwellen). Soak-Variante (≥ 10 Mio Events,
+Retention-p95 < 2 s) folgt als nächster Schritt.
