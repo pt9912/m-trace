@@ -1,16 +1,26 @@
 # Roadmap
 
-> **Stand**: 2026-06-03
+> **Stand**: 2026-06-16
 >
-> **Phase**: ✅ `0.22.2` Go-Stdlib-Security-Patch released und archiviert
-> in [`done/plan-0.22.2.md`](../done/plan-0.22.2.md). Erster echter
-> Treffer des in `0.22.1` eingeführten Nightly-`security-audit.yml`-
-> Workflows (Issue #3, 2026-06-03): `golang:1.26.3 → 1.26.4` schließt
-> die zwei Stdlib-Findings GO-2026-5037 (`crypto/x509`) und
-> GO-2026-5039 (`net/textproto`) plus fünf bereits dokumentierte
-> `perl-base`-Trivy-Ignores aus den Trivy-DB-Updates 2026-05-28/31.
+> **Phase**: ✅ `0.22.3` Security-/CI-Sammel-Patch released und
+> archiviert in
+> [`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md).
+> Bündelt vier aufeinanderfolgende `security-audit.yml`-Nightly-Treffer
+> (Trivy-DB-Lag `CVE-2026-45447` Issue #4, esbuild GHSA-gv7w-rqvm-qjhr
+> Issue #5, libsqlite3-FTS5 `CVE-2026-11822`/`-11824` Issue #6, vite
+> GHSA-fx2h-pf6j-xcff Issue #7), die Node.js-24-Runtime-Anhebung und
+> den WebRTC-Drift-Test-Fix (kein eigener Tag, rollt hier ein).
 >
 > **Aktuell / letzte Releases:**
+> - `v0.22.3` Security-/CI-Sammel-Patch (kein Lastenheft-Patch):
+>   vier Nightly-Security-Treffer behoben — Trivy `0.59.1 → 0.71.0`
+>   + `CVE-2026-45447`/`-48959`-Ignores, esbuild `^0.28.1`-Override,
+>   libsqlite3-FTS5-Ignores (`CVE-2026-11822`/`-11824`, kein
+>   Upstream-Fix), vite `^8.0.16` (GHSA-fx2h-pf6j-xcff). Plus
+>   GitHub-Actions-Node-24-Runtime, WebRTC-Drift-Test-Fix und ein
+>   Flaky-CORS-Preflight-Test (geteilter `http.DefaultClient`). Plan
+>   archiviert in
+>   [`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md).
 > - `v0.22.2` Go-Stdlib-Security-Patch + perl-base-Trivy-Ignores
 >   (Patch-Release, kein Lastenheft-Patch): Build-Image
 >   `golang:1.26.3 → 1.26.4` (sechs Stellen) schließt GO-2026-5037
@@ -100,7 +110,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-06-03 — `0.22.2` released)
+## 1. Aktueller Stand (2026-06-16 — `0.22.3` released)
 
 ### 1.1 Lieferstand
 
@@ -140,18 +150,20 @@ aktualisieren.
 | ✅      | Quality-Gates Follow-up (`0.22.0`) | Released 2026-05-13. Kein Lastenheft-Patch: `make benchmark-smoke` ist nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; `benchmark-observation.yml` läuft hart; `mutation.yml` korrigiert den TS-Scope auf `@pt9912/player-sdk`, bleibt aber nicht-blockierend. | [`done/plan-0.22.0.md`](../done/plan-0.22.0.md) |
 | ✅      | devalue-Security-Patch + Nightly-Audit (`0.22.1`) | Released 2026-05-17. Kein Lastenheft-Patch. `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly spiegelt `vuln-check`/`audit-ts`/`image-scan` täglich mit konsolidiertem Auto-Issue; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; Issue-Body als `scripts/open-bench-regression-issue.sh`/`open-security-audit-issue.sh` ausgelagert. | [`done/plan-0.22.1.md`](../done/plan-0.22.1.md) |
 | ✅      | Go-Stdlib-Security-Patch (`0.22.2`) | Released 2026-06-03. Kein Lastenheft-Patch. Erster echter Nightly-`security-audit.yml`-Treffer (Issue #3): `golang:1.26.3 → 1.26.4` an sechs Build-/Test-Image-Stellen (`apps/api/Dockerfile`, `Makefile::vuln-check`, `apps/api/Makefile::{arch-check,benchmark-smoke,fuzz-check,mutation-report}`) schließt GO-2026-5039 (`net/textproto`-Error-Echo via `auth.VaultSecretBackend.LoadSigningKeys`) und GO-2026-5037 (`crypto/x509`-Hostname-Parsing via `auth.NewRedisIssuanceRateLimiter`). Plus fünf bereits dokumentierte `perl-base`-Trivy-Ignores aus den Trivy-DB-Updates 2026-05-28/31 (CVE-2026-42496/42497/8376/9538/48962) für dashboard/analyzer-service und bilingualer README-Split. `make vuln-check` zeigt „No vulnerabilities found.". | [`done/plan-0.22.2.md`](../done/plan-0.22.2.md) |
+| ✅      | Security-/CI-Sammel-Patch (`0.22.3`) | Released 2026-06-16. Kein Lastenheft-Patch. Bündelt vier aufeinanderfolgende `security-audit.yml`-Nightly-Treffer: Trivy `0.59.1 → 0.71.0` + `CVE-2026-45447`/`-48959`-Ignores (Issue #4), esbuild `^0.28.1`-Override (GHSA-gv7w-rqvm-qjhr, Issue #5), libsqlite3-FTS5-Ignores `CVE-2026-11822`/`-11824` (kein Upstream-Fix, `expires` 2026-09-12, Issue #6), vite `^8.0.16` (GHSA-fx2h-pf6j-xcff, Issue #7). Plus GitHub-Actions-Node-24-Runtime, WebRTC-Drift-Test-Fix (rollt aus `plan-0.22.3-webrtc-drift` ein, dort ohne eigenen Tag) und Flaky-CORS-Preflight-Test-Fix (geteilter `http.DefaultClient` → `srv.Client()`). `make audit-ts` + `make image-scan` lokal grün. | [`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md) |
 
 ### 1.2 Nächste Phase
 
-`0.22.2` ist als Go-Stdlib-Security-Patch released. Der Nightly-
-`security-audit.yml`-Mirror aus `0.22.1` hat seinen ersten echten
-Treffer geliefert (GO-2026-5037/5039 in `golang:1.26.3`); der
-Mechanismus funktioniert wie geplant. Offenes Folge-Item ohne
-Patch-Release-Blocker-Status: der `webrtc-drift.yml`-Nightly vom
-2026-06-03 ist auf Firefox failed (Browser-Drift in
-`getStats()`-Sollfeldern); separater Folge-Plan für Drift-Review
-und Spec-Allowlist-Update. Mutation-Blockierung bleibt weiterhin
-deferred, bis echte >70%-Score-Reihen vorliegen.
+`0.22.3` ist als Security-/CI-Sammel-Patch released. Vier
+aufeinanderfolgende `security-audit.yml`-Nightly-Treffer
+(Trivy-DB-Lag, esbuild, libsqlite3-FTS5, vite) sind behoben und
+lokal grün (`make audit-ts`, `make image-scan`); der
+WebRTC-Drift-Test-Fix aus `plan-0.22.3-webrtc-drift` (kein eigener
+Tag) und ein Flaky-CORS-Preflight-Test-Fix sind mit eingerollt. Der
+Nightly-`security-audit.yml`-Mirror aus `0.22.1` erfüllt weiter
+seinen Zweck (vier echte Treffer in Folge gemeldet und geschlossen).
+Mutation-Blockierung bleibt deferred, bis echte >70%-Score-Reihen
+vorliegen.
 
 ---
 
@@ -268,6 +280,7 @@ Statusspalte: ✅ abgeschlossen · 🟡 in Arbeit · ⬜ geplant.
 | `0.22.0` | Quality-Gates Follow-up | ✅ | Released 2026-05-13. Plan in [`done/plan-0.22.0.md`](../done/plan-0.22.0.md). Kein Lastenheft-Patch: Benchmark-Smoke ist nach fünf grünen Beobachtungsläufen PR-blockierend über `make gates`; Benchmark-Nightly läuft hart; Mutation-TS-Filter nutzt `@pt9912/player-sdk`, bleibt aber bis zu echten >70%-Score-Reihen nicht-blockierend. |
 | `0.22.1` | devalue-Security-Patch + Nightly-Audit | ✅ | Released 2026-05-17. Plan in [`done/plan-0.22.1.md`](../done/plan-0.22.1.md). Kein Lastenheft-Patch. Inhalt: `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly mit konsolidiertem Auto-Issue (`scripts/open-security-audit-issue.sh`) spiegelt die drei Push-Security-Gates auf 24-h-Cadence; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; `Open regression issue`-HEREDOC in `scripts/open-bench-regression-issue.sh` ausgelagert. `extra-gates.md §3.7` dokumentiert den Nightly-Mirror. |
 | `0.22.2` | Go-Stdlib-Security-Patch | ✅ | Released 2026-06-03. Plan in [`done/plan-0.22.2.md`](../done/plan-0.22.2.md). Kein Lastenheft-Patch. Inhalt: erster echter Treffer des `security-audit.yml`-Nightly (Issue #3); `golang:1.26.3 → 1.26.4` an sechs Build-/Test-Image-Stellen schließt GO-2026-5039 (`net/textproto`-Error-Echo via `auth.VaultSecretBackend.LoadSigningKeys`) und GO-2026-5037 (`crypto/x509`-Hostname-Parsing via `auth.NewRedisIssuanceRateLimiter`). Plus fünf neue `perl-base`-Trivy-Ignores (CVE-2026-42496/42497/8376/9538/48962) für dashboard/analyzer-service mit dokumentierten `expires`-Terminen und bilingualer README-Split. `make vuln-check` lokal grün. |
+| `0.22.3` | Security-/CI-Sammel-Patch | ✅ | Released 2026-06-16. Plan in [`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md). Kein Lastenheft-Patch. Inhalt: vier aufeinanderfolgende `security-audit.yml`-Nightly-Treffer behoben — Trivy `0.59.1 → 0.71.0` + `CVE-2026-45447`/`-48959`-Ignores (Issue #4), esbuild `^0.28.1`-`pnpm.overrides` (GHSA-gv7w-rqvm-qjhr, Issue #5), libsqlite3-FTS5-Ignores `CVE-2026-11822`/`-11824` (kein Upstream-Fix, Debian `no-dsa`, `expires` 2026-09-12, Issue #6), vite `^8.0.10 → ^8.0.16` (GHSA-fx2h-pf6j-xcff, Issue #7). Plus GitHub-Actions-Node-24-Runtime-Bump, WebRTC-`getStats()`-Drift-Test-Fix (aus `plan-0.22.3-webrtc-drift`, dort kein eigener Tag) und ein Flaky-CORS-Preflight-Test-Fix (paralleler `http.DefaultClient`-Pool → `srv.Client()`, verifiziert via `make api-race`). `make audit-ts` + `make image-scan` lokal grün. |
 
 `0.1.x` ist seit Lastenheft-Patch `1.1.0` in drei Sub-Releases
 geschnitten (Variante 2-A); RAK-1..RAK-10 sind dort verteilt.

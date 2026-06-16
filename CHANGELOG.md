@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.3] - 2026-06-16
+
+> **Patch-/Security-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md) — kein
+> Lastenheft-Patch; normativer Stand bleibt `1.1.24`. Sammelt die
+> seit `0.22.2` auf `main` aufgelaufenen Security-/CI-/Doku-Fixes und
+> rollt den WebRTC-Drift-Test-Fix aus
+> [`docs/planning/done/plan-0.22.3-webrtc-drift.md`](docs/planning/done/plan-0.22.3-webrtc-drift.md)
+> ein (dort als „kein eigener Tag" geführt — die Versionsnummer war
+> reserviert, aber nie getaggt).
+>
+> **Security-Auslöser**: vier aufeinanderfolgende
+> `security-audit.yml`-Nightly-Treffer — Trivy-DB-Lag
+> (`CVE-2026-45447`, Issue #4), esbuild (GHSA-gv7w-rqvm-qjhr,
+> Issue #5), libsqlite3-FTS5 (`CVE-2026-11822`/`-11824`, Issue #6)
+> und vite (GHSA-fx2h-pf6j-xcff, Issue #7). Alle vier Gates lokal
+> grün (`make audit-ts`, `make image-scan`).
+
 ### Changed
 
 - GitHub-Actions auf Node.js-24-Runtime gehoben (GitHub erzwingt den
@@ -41,6 +59,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     erreichbar (Node-Runtime verarbeitet kein PKCS#7/S-MIME).
     Folge-Item `R-23` in `docs/planning/in-progress/risks-backlog.md`
     mit Rebuild-`--pull`-Trigger.
+- `esbuild` auf `^0.28.1` gepinnt via `pnpm.overrides` im
+  Root-`package.json` (GHSA-gv7w-rqvm-qjhr, HIGH — verwundbar
+  `>=0.17.0 <0.28.1`, transitiv über `tsup`/`vite`). `vite@8`
+  akzeptiert `^0.28.0` offiziell, `tsup@8.5.1` baut API-stabil
+  weiter. `make audit-ts` danach `1 low | 6 moderate`, kein High.
+  Nightly-Treffer (Issue #5, 2026-06-13).
+- `libsqlite3-0` (`3.46.1-7+deb13u1` aus der
+  `node:22-trixie-slim`-Base): zwei FTS5-HIGH-CVEs
+  (`CVE-2026-11822`/`-11824`, Memory-Corruption/Heap-Overflow,
+  „SQLite before 3.53.2") in die Trivy-Ignore-Liste aufgenommen
+  (Dashboard + Analyzer-Service, `expires` `2026-09-12`). Kein
+  Upstream-Fix (Debian-Tracker 2026-06-14: alle Suites inkl. sid
+  vulnerable, `no-dsa`); Runtime lädt SQLite nie (`grep` = 0
+  Treffer, libsqlite3-0 nur transitives OS-Paket der Base).
+  Re-Review-Trigger: Trixie-Backport `sqlite3 >= 3.53.2` ODER
+  `expires`. Nightly-Treffer (Issue #6).
+- `vite` `^8.0.10 → ^8.0.16` in `apps/dashboard/package.json`
+  (GHSA-fx2h-pf6j-xcff, HIGH — `server.fs.deny`-Bypass auf
+  Windows-Alternate-Paths, verwundbar `>=8.0.0 <=8.0.15`). Lockfile
+  via `make lock-refresh` aufgefrischt (vite einheitlich `8.0.16`,
+  esbuild-Override `0.28.1` unverändert); `make audit-ts` danach
+  `1 low | 6 moderate`, kein High. Nightly-Treffer (Issue #7, Lauf
+  `27589453606`).
+
+### Fixed
+
+- WebRTC-`getStats()`-Drift-Smoke
+  (`tests/e2e/webrtc-stats-drift.spec.ts`) toleriert Firefox-
+  Snapshots mit `connectionState` ≠ `connected`, solange nicht
+  `failed`/`closed` — `disconnected` ist `connection_state`-
+  Allowlist-konform (`spec/telemetry-model.md` §1.4). Behebt den
+  CI-Flake aus
+  [`plan-0.22.3-webrtc-drift`](docs/planning/done/plan-0.22.3-webrtc-drift.md);
+  reiner Test-Fix, kein SDK-/Wire-/Spec-Touch.
+- Flaky CORS-Preflight-Test
+  (`TestNewRouter_NilAllowlistRejectsAllPreflights`) im Paket
+  `apps/api/adapters/driving/http`: die parallelen Tests teilten
+  sich den globalen `http.DefaultClient`/`DefaultTransport`; das
+  Schließen eines `httptest.Server` riss in-flight Requests anderer
+  Tests ab (`http: CloseIdleConnections called`). Alle Tests nutzen
+  jetzt das server-eigene `srv.Client()` (bzw. einen dedizierten
+  `*http.Transport` für die zwei URL-only-Helper). Verifiziert via
+  `make api-race` (`driving/http` ok, kein DATA RACE).
 
 ## [0.22.2] - 2026-06-03
 

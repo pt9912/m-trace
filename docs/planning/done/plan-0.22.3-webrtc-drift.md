@@ -153,12 +153,14 @@ DoD (Test-Only-Closeout):
 - [x] Plan archiviert nach
   `docs/planning/done/plan-0.22.3-webrtc-drift.md` mit Status
   „abgeschlossen, kein eigener Release-Tag".
-- [ ] Bestätigung im nächsten `webrtc-drift.yml`-Nightly (2026-06-04
-  ~01:46 UTC): Firefox grün, kein Re-Failure.
-- [ ] Rolle in den nächsten regulären Release übernehmen: das
-  `[0.22.3]`- (bzw. `[Unreleased]`-) CHANGELOG-Block in der nächsten
-  versionstragenden Lieferung erwähnt den Test-Fix unter `Fixed`
-  oder `Changed`.
+- [x] Bestätigung im `webrtc-drift.yml`-Nightly: kein Re-Failure seit
+  dem Fix; der Lauf vom 2026-06-16 (~01:46 UTC) ist grün.
+- [x] Rolle in den nächsten regulären Release übernommen: der Test-Fix
+  ist im `[0.22.3]`-CHANGELOG-Block (`### Fixed`) der Security-/CI-
+  Sammel-Lieferung vom 2026-06-16 erwähnt — `0.22.3` wurde damit doch
+  zur versionstragenden Lieferung (die Nummer war reserviert, der Tag
+  entstand aber erst durch die parallelen Security-Fixes, nicht durch
+  diesen Test-Fix).
 
 ## 5. Wave-2-Quality-Gates-Verdict (nicht erforderlich)
 

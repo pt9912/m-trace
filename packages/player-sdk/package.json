@@ -1,6 +1,6 @@
 {
   "name": "@pt9912/player-sdk",
-  "version": "0.22.2",
+  "version": "0.22.3",
   "description": "Browser Player SDK for sending m-trace playback telemetry.",
   "type": "module",
   "license": "MIT",

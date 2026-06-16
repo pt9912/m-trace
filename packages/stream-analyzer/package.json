@@ -1,6 +1,6 @@
 {
   "name": "@pt9912/stream-analyzer",
-  "version": "0.22.2",
+  "version": "0.22.3",
   "description": "HLS stream analyzer for the m-trace toolchain (manifest loading, playlist classification, segment-duration findings).",
   "type": "module",
   "license": "MIT",
