@@ -1,9 +1,14 @@
-# Implementation Plan (Entwurf) — `0.22.5` Load-/Soak-Smoke
+# Implementation Plan — `0.22.5` Load-/Soak-Smoke
 
-> **Status**: 📝 **Entwurf / nicht gestartet**. Skizze als Antwort auf
-> ein externes Tool-Review (2026-06-16), das die **Lastfähigkeit als
-> einzigen nicht-belegten Bereich** markierte (🔴). Aktivierung: per
-> `git mv` nach [`../in-progress/`](../in-progress/), sobald eingeplant.
+> **Status**: 🚧 **Tranche 1–3 implementiert + zweifach gereviewt
+> (2026-06-16); Tranche 4 (Load-Readiness-Verdict) pending Nightly-Soak.**
+> Antwort auf ein externes Tool-Review, das die **Lastfähigkeit als
+> einzigen nicht-belegten Bereich** markierte (🔴).
+> Commits: Limiter-ENV `14f3e64`, k6-Feasibility `e35f5c9`, smoke-load +
+> Reconciliation `a7b8b6a`, Review F1–F7 `fa7794a` / F1-b `5c59d2c`,
+> open-loop-SLO `e7f3336`, Soak-Probe `1ac6673`, Nightly + Doku `f580726`,
+> Tranche-3-Review `d9edc03`. Tranche 4 = ein Nightly-/Dispatch-Soak
+> (≥ 10 Mio Events, ~Stunden) entfernt — interaktiv nicht fahrbar.
 >
 > **Bezug**: NF-20, NF-22, NF-23 (Performance; **NF-21 bewusst nicht** —
 > siehe §1), [ADR-0005](../../adr/0005-production-ops-backends.md)
@@ -70,7 +75,7 @@ In Scope:
   akkumulieren, dann Retention-/`ListSessions`-Queries messen und p95
   gegen die **2-Sekunden**-Grenze (ADR-0005:69) bewerten.
 - Nicht-blockierender Nightly-Schritt; Gate-Eintrag in
-  [`extra-gates.md`](../in-progress/extra-gates.md), Verweis aus
+  [`extra-gates.md`](extra-gates.md), Verweis aus
   [`releasing.md`](../../user/releasing.md) §2.
 
 Nicht in Scope:
@@ -157,37 +162,37 @@ hinweg. Zielrate **deutlich unter der Decke** (aus ~800/s z. B.
 instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 (exploratory) + open-loop „SLO behaupten" (Nightly-Gate).
 
-## 5. Tranchen (Skizze)
+## 5. Tranchen
 
-| Tranche | Inhalt |
-| --- | --- |
-| 1 | Machbarkeit: k6-Container gegen laufendes Core-Lab, ein Ingest-Szenario mit echten Tokens, Workload-Matrix §4 als Startpunkt; Baseline-Zahlen (noch ohne Schwellen). |
-| 2 | Limiter-ENV-Konfig (Code-Change §1) + `scripts/smoke-load.sh` + `make smoke-load` (auto-up/down Core-Lab, beide Auth-Szenarien §3, Readback-Reconciliation); Schwellen in `docs/perf/budgets.md`. |
-| 3 | Soak-Variante: **≥ 10 Mio Events**, Retention-/`ListSessions`-p95 gegen **2 s** (ADR-0005 Trigger #3); Nightly-Integration; Doku in `extra-gates.md` + `releasing.md`. |
-| 4 | **Load-Readiness-Verdict**: konkrete Zahlen (max. stabile Rate, p99, SQLite-Durchsatz, Drift, Reconciliation-Ergebnis); ADR-0005-Trigger-#3-Stand mit Messwert. |
+| Tranche | Inhalt | Stand |
+| --- | --- | --- |
+| 1 | Machbarkeit: k6 gegen Core-Lab, Ingest-Szenario mit echten Tokens; Baseline. | ✅ `e35f5c9` |
+| 2 | Limiter-ENV (`14f3e64`) + `smoke-load.sh` + `make smoke-load`, beide Auth-Szenarien, Readback gegen echte `playback_events`; budgets.md §7. | ✅ `a7b8b6a` + Review `fa7794a`/`5c59d2c` |
+| 3 | Open-loop-SLO (`e7f3336`), Soak-Retention-Probe (`1ac6673`), Nightly `load-smoke.yml` + Doku (`f580726`); Review `d9edc03`. | ✅ |
+| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | ⬜ **pending Nightly-/Dispatch-Soak (≥ 10 Mio, ~Stunden)** |
 
-## 6. DoD (Skizze)
+## 6. DoD
 
-- [ ] Limiter `rateLimitCapacity`/`rateLimitRefill` per ENV
-  konfigurierbar (Default 100/s unverändert), mit Test.
-- [ ] `make smoke-load` reproduzierbar, opt-in, nicht-blockierend; beide
-  Auth-Szenarien (§3) + Workload-Matrix (§4) gepinnt.
-- [ ] Schwellwerte als Obergrenzen in `docs/perf/budgets.md`,
+- [x] Limiter `rateLimitCapacity`/`rateLimitRefill` per ENV konfigurierbar
+  (Default 100/s unverändert), mit Test (`14f3e64`).
+- [x] `make smoke-load` reproduzierbar, opt-in, nicht-blockierend; beide
+  Auth-Szenarien (§3) + Profile (closed/open) gepinnt.
+- [x] Schwellwerte als Obergrenzen in `docs/perf/budgets.md` §7,
   referenziert von NF-20/NF-22/NF-23.
-- [ ] „Kein stiller Verlust" über **Readback/Reconciliation** belegt
-  (persistiert vs. gesendet, `sequence_number`-Kontinuität +
-  HTTP-5xx-Rate) — nicht über Counter-Deltas.
-- [ ] Soak hat **≥ 10 Mio Events** erreicht; Retention-p95 gegen **2 s**
-  gemessen; ADR-0005-Trigger #3 als ausgelöst / nicht ausgelöst bewertet,
-  mit Messwert.
-- [ ] **Nightly-Step ist non-blocking (`continue-on-error`), aber der
-  Nachweis steckt im Artefakt/Job-Summary**: Step-Outcome, k6-Summary
-  (p95/p99, `http_req_failed`) und Reconciliation-Report werden als
-  Workflow-Artefakt + Job-Summary persistiert. Ein grüner Job trotz
-  fehlgeschlagenem Step zählt **nicht** als Nachweis — das Verdict liest
-  sich aus dem Report, nicht aus der Job-Farbe.
-- [ ] Load-Readiness-Verdict im Plan-Closeout + CHANGELOG.
-- [ ] `extra-gates.md`-Gate-Eintrag + `releasing.md`-Verweis.
+- [x] „Kein stiller Verlust" über **Readback gegen die echte
+  `playback_events`-Tabelle** (`events[]`-Array, `persisted >= accepted`;
+  Lesefehler → INCONCLUSIVE, nie Verlust) — nicht `event_count`, nicht
+  Counter-Deltas.
+- [ ] **Soak hat ≥ 10 Mio Events erreicht**; Retention-p95 gegen 2 s
+  gemessen; ADR-0005-Trigger #3 als ausgelöst / nicht ausgelöst bewertet
+  (Proxy-gescopt) — **pending Nightly/Dispatch-Soak**. Mechanismus
+  validiert (`1ac6673`), Verdikt-Daten fehlen noch.
+- [x] **Nightly non-blocking, Verdikt aus Artefakt/Job-Summary, nicht aus
+  der Job-Farbe**: `load-smoke.yml` + Verdict-Step (Job rot nur bei
+  Hard-FAIL, grün bei INCONCLUSIVE; Debounce als R-24 offen).
+- [ ] Load-Readiness-Verdict im Plan-Closeout + CHANGELOG — **pending**
+  (braucht die Nightly-Soak-Zahlen).
+- [x] `extra-gates.md` §3.9 + `releasing.md` §2.6.
 
 ## 7. Abgrenzung
 
