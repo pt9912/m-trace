@@ -24,7 +24,7 @@ SQLite; the entire stack runs as a Compose lab on a developer laptop.
 
 The focus is **cross-layer streaming correlation** — from ingest (RTMP/SRT/WebRTC)
 through media servers (MediaMTX, SRS) and distribution (HLS/DASH/WebRTC) to the
-player (hls.js, dash.js, native WHEP adapter). Player events, manifest probes,
+player (hls.js, native WHEP adapter). Player events, manifest probes,
 and optional SRT connection stats can be compared side by side within a single
 session view, without a central proprietary vendor in the middle.
 
@@ -39,9 +39,10 @@ broadcasters, and technical teams who want to understand what is happening in
 their pipeline — without locking themselves into a proprietary SaaS analytics
 silo.
 
-### The first goal
-is simple — a local lab in which a live HLS stream plays in a demo player and its
-telemetry lands cleanly in API, dashboard, and OpenTelemetry model:
+### The local lab
+`make dev` brings up the baseline end-to-end loop: a live HLS stream plays in a
+demo player and its telemetry lands cleanly in API, dashboard, and the
+OpenTelemetry model:
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
@@ -58,8 +59,8 @@ flowchart LR
 - **Dashboard** — displays sessions, events, and a session timeline.
 - **OpenTelemetry model** — aggregate metrics in Prometheus, optionally traces via the OTel Collector.
 
-### The long-term goal
-is broader — track media streams layer by layer from ingest to player:
+### Cross-layer scope
+m-trace tracks media streams layer by layer, from ingest to player:
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#f8fafc','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1e40af','lineColor':'#8f872a','secondaryColor':'#fef3c7','tertiaryColor':'#dcfce7','noteBkgColor':'#fef3c7','noteTextColor':'#0f172a','noteBorderColor':'#a16207','actorBkg':'#dbeafe','actorBorder':'#1e40af','actorTextColor':'#0f172a','actorLineColor':'#475569','signalColor':'#0f172a','signalTextColor':'#0f172a','sequenceNumberColor':'#ffffff','labelTextColor':'#0f172a','loopTextColor':'#0f172a','edgeLabelBackground':'#f8fafc'}}}%%
@@ -67,7 +68,7 @@ is broader — track media streams layer by layer from ingest to player:
 flowchart LR
   I[Ingest<br/>RTMP · SRT · WebRTC] --> S[Media server<br/>MediaMTX · SRS]
   S --> D[Distribution<br/>HLS · DASH · WebRTC]
-  D --> P[Player<br/>hls.js · dash.js · WHEP]
+  D --> P[Player<br/>hls.js · WHEP]
   P -->|player telemetry| T[m-trace<br/>API · Stream Analyzer · Dashboard · OTel]
   D -.->|manifest probe| T
 ```
@@ -75,7 +76,7 @@ flowchart LR
 - **Ingest** — RTMP, SRT, WebRTC (WHIP).
 - **Media server** — MediaMTX, SRS.
 - **Distribution** — HLS, DASH, WebRTC (WHEP).
-- **Player** — hls.js, dash.js, native WHEP adapter.
+- **Player** — hls.js and a native WHEP adapter. Further player adapters (dash.js, Shaka Player, Video.js) are optional future extensions (Lastenheft F-58..F-60, "Kann"; no dash.js adapter is shipped today).
 - **m-trace** — API + Stream Analyzer + Dashboard, OpenTelemetry-compatible; correlates player telemetry and manifest probes in a single session view.
 
 ---
@@ -160,7 +161,7 @@ Example:
       "sequence_number": 42,
       "sdk": {
         "name": "@pt9912/player-sdk",
-        "version": "0.2.0"
+        "version": "0.22.3"
       }
     }
   ]
@@ -309,21 +310,22 @@ Per-release delivery state with bullet lists lives in
 
 ## Browser support
 
-MVP browser support is intentionally narrow.
+Browser support is intentionally narrow (canonical matrix:
+[`spec/browser-support.md`](spec/browser-support.md), F-58..F-67).
 
-| Environment                       | MVP status               |
-| --------------------------------- | ------------------------ |
-| Chrome desktop, current stable    | supported                |
-| Firefox desktop, current stable   | supported                |
-| Safari desktop, current stable    | limited                  |
-| Chromium-based browsers           | best effort              |
-| iOS Safari                        | not required for the MVP |
-| Android Chrome                    | not required for the MVP |
-| Smart-TV browsers                 | out of scope             |
-| Embedded WebViews                 | out of scope             |
+| Environment                       | Status                |
+| --------------------------------- | --------------------- |
+| Chrome desktop, current stable    | supported             |
+| Firefox desktop, current stable   | supported             |
+| Safari desktop, current stable    | documented limitation |
+| Chromium-based browsers           | best effort           |
+| iOS Safari                        | out of scope          |
+| Android Chrome                    | out of scope          |
+| Smart-TV browsers                 | out of scope          |
+| Embedded WebViews                 | out of scope          |
 
-The MVP integration path is hls.js.
-Native Safari HLS introspection is not a goal of v0.1.0.
+The primary integration path is hls.js.
+Native Safari HLS introspection is not a goal of m-trace.
 
 ---
 
@@ -331,7 +333,7 @@ Native Safari HLS introspection is not a goal of v0.1.0.
 
 m-trace aims to be safe by default in self-hosted environments.
 
-MVP principles:
+Core principles:
 
 - no secrets in the repository
 - no cookie-based telemetry acceptance
@@ -373,7 +375,7 @@ designated single-source documents:
 
 Guiding documents:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — requirements (normative, 1.1.15; German)
+- [spec/lastenheft.md](spec/lastenheft.md) — requirements (normative, 1.1.24; German)
 - [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — status, follow-up ADRs, open decisions
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — backend decision (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — release process
