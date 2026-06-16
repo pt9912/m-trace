@@ -65,6 +65,8 @@ const (
 	envRedisAuth             = "MTRACE_REDIS_AUTH"
 	envRedisDB               = "MTRACE_REDIS_DB"
 	envAuthIssuanceFailOpen  = "MTRACE_AUTH_ISSUANCE_FAIL_OPEN"
+	envRateLimitCapacity     = "MTRACE_RATE_LIMIT_CAPACITY"
+	envRateLimitRefill       = "MTRACE_RATE_LIMIT_REFILL"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (RAK-72). Ein
@@ -90,9 +92,13 @@ const (
 	serviceVersion    = "0.22.3"
 	defaultListenAddr = ":8080"
 
-	// Spike Spec: 100 events/sec/project.
-	rateLimitCapacity = 100
-	rateLimitRefill   = 100.0
+	// Ingest-Rate-Limit pro Project. Default „Spike Spec: 100 events/
+	// sec/project"; per MTRACE_RATE_LIMIT_CAPACITY / -REFILL
+	// überschreibbar (z. B. Kapazitäts-Modus eines Last-Smoke, damit
+	// der Lasttest die echte Ingest-Kapazität statt der Limiter-Decke
+	// misst).
+	defaultRateLimitCapacity = 100
+	defaultRateLimitRefill   = 100.0
 
 	// Persistenz-Konfiguration (ADR-0002):
 	// Default ist SQLite; In-Memory bleibt opt-in für Tests
@@ -246,6 +252,53 @@ func parseSrtPollInterval(logger *slog.Logger) time.Duration {
 	return secs
 }
 
+// parseIngestRateLimit liest die Ingest-Rate-Limit-Konfiguration aus
+// MTRACE_RATE_LIMIT_CAPACITY (Token-Bucket-Kapazität, int) und
+// MTRACE_RATE_LIMIT_REFILL (Refill-Rate in Token/s, float). Ohne ENV
+// oder bei ungültigem/non-positivem Wert bleibt der Default
+// (defaultRateLimitCapacity / defaultRateLimitRefill = 100/100) gültig.
+// Der Override existiert für den Kapazitäts-Modus eines Last-Smoke,
+// damit der Lasttest die echte Ingest-/Persistenz-Kapazität misst statt
+// nur der Limiter-Decke.
+func parseIngestRateLimit(logger *slog.Logger) (int, float64) {
+	capacity := defaultRateLimitCapacity
+	refill := defaultRateLimitRefill
+	if raw := strings.TrimSpace(os.Getenv(envRateLimitCapacity)); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 {
+			logger.Warn(
+				"ingest rate limit capacity ignored (invalid)",
+				"raw", raw,
+				"default", defaultRateLimitCapacity,
+				"hint", "set "+envRateLimitCapacity+" to a positive integer",
+			)
+		} else {
+			capacity = n
+		}
+	}
+	if raw := strings.TrimSpace(os.Getenv(envRateLimitRefill)); raw != "" {
+		f, err := strconv.ParseFloat(raw, 64)
+		if err != nil || f <= 0 {
+			logger.Warn(
+				"ingest rate limit refill ignored (invalid)",
+				"raw", raw,
+				"default", defaultRateLimitRefill,
+				"hint", "set "+envRateLimitRefill+" to a positive number (tokens/s)",
+			)
+		} else {
+			refill = f
+		}
+	}
+	if capacity != defaultRateLimitCapacity || refill != defaultRateLimitRefill {
+		logger.Info(
+			"ingest rate limit overridden via env",
+			"capacity", capacity,
+			"refill_per_sec", refill,
+		)
+	}
+	return capacity, refill
+}
+
 // buildHandler wirt die driven Adapter (Auth, Rate-Limit, Metrics,
 // Telemetry, Analyzer) mit den persistierten Repos zusammen, baut
 // die drei Use Cases und liefert den fertig konfigurierten HTTP-
@@ -293,7 +346,8 @@ func buildHandler(
 		projectTokenRepo = persistencesqlite.NewProjectTokenRepository(persist.db)
 		resolver = auth.NewRotatingProjectResolver(projectTokenRepo, staticResolver, staticResolver)
 	}
-	limiter := ratelimit.NewTokenBucketRateLimiter(rateLimitCapacity, rateLimitRefill, time.Now)
+	rlCapacity, rlRefill := parseIngestRateLimit(logger)
+	limiter := ratelimit.NewTokenBucketRateLimiter(rlCapacity, rlRefill, time.Now)
 	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(activeSessionsGauge(persist.sessions, logger)))
 	analyzer := newAnalyzer(logger)
 
