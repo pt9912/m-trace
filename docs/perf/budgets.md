@@ -126,5 +126,10 @@ unbeschränkter VU-Last an der Kapazitätsgrenze ist hohe p95 inhärent
 **Kern-Befund: der SQLite-Single-Writer ist der Ingest-Engpass** —
 empirische Grundlage für die Evaluierung des
 [ADR-0005](../adr/0005-production-ops-backends.md)-Postgres-Triggers
-(Retention-/Durchsatz-Schwellen). Soak-Variante (≥ 10 Mio Events,
-Retention-p95 < 2 s) folgt als nächster Schritt.
+(Retention-/Durchsatz-Schwellen). Soak-Variante (`make smoke-soak`,
+≥ 10 Mio Events) misst die Read-Retention-p95 gegen 2 s als Trigger-#3-
+Evidenz — **als Proxy**: die Read-API serviert nur keyset-indizierte
+(größenunabhängige) Reads, keinen Full-Scan-/Aggregat-Retention-Query.
+Trigger #3 ist für die aktuelle API daher weitgehend hypothetisch; käme
+je eine Korpus-Scan-Query dazu, muss die Probe um genau diese erweitert
+werden. Der ≥-10-Mio-Lauf bleibt dem Nightly/Dispatch-Soak vorbehalten.

@@ -313,8 +313,8 @@ if mode == "contract" and rate_limited == 0:
 if mode == "capacity" and accepted == 0:
     fail.append("capacity-Modus: 0 akzeptiert -> Limit-Override nicht aktiv?")
 if profile == "open" and k6_rc != 0:
-    fail.append(f"SLO verfehlt (k6-Threshold gebrochen): p95 {dur.get('p(95)', 0):.1f}ms vs "
-                f"budget {p95_budget:.0f}ms, dropped_iterations={dropped}")
+    fail.append(f"SLO verfehlt (k6 exit={k6_rc}; Threshold p95<{p95_budget:.0f}ms / dropped<1%): "
+                f"gemessen p95 {dur.get('p(95)', 0):.1f}ms, dropped_iterations={dropped}")
 
 if fail:
     print("[load-smoke] FAIL: " + "; ".join(fail), file=sys.stderr)
@@ -360,20 +360,26 @@ detail_p95 = p95_ms(
 lp = f"{list_p95:.1f}ms" if list_p95 is not None else "n/a"
 dp = f"{detail_p95:.1f}ms" if detail_p95 is not None else "n/a"
 print(f"[load-smoke] retention p95: list={lp} detail-events={dp} (budget {budget:.0f}ms)")
+# WICHTIG (Scope/Ehrlichkeit): beide Probes sind keyset-indizierte Reads
+# -> Latenz größenunabhängig. Sie sind ein PROXY für ADR-0005 Trigger #3
+# ("Queries über >10 Mio Events"), KEIN Korpus-Scan. Die aktuelle
+# Read-API serviert keine Full-Scan-/Aggregat-/Time-Range-Query; kommt je
+# eine dazu, MUSS die Probe um genau diese ergänzt werden, sonst
+# over-claim. Verdikt daher als "(Proxy)" + "indizierte Hot-Read-p95".
 vals = [v for v in (list_p95, detail_p95) if v is not None]
 worst = max(vals) if vals else None
-# Informativ (kein Smoke-Gate): liefert die Trigger-#3-Evidenz für ADR-0005.
 if persisted < soak_min:
     print(f"[load-smoke] ADR-0005 Trigger #3: INCONCLUSIVE — nur {persisted} Events (< {soak_min}); "
           f"Mechanismus validiert, belastbares Urteil erst im Nightly-Soak.")
 elif worst is None:
     print("[load-smoke] ADR-0005 Trigger #3: INCONCLUSIVE — Retention-Probe fehlgeschlagen (kein p95).")
 elif worst < budget:
-    print(f"[load-smoke] ADR-0005 Trigger #3: NICHT ausgelöst — Read-Retention-p95 {worst:.0f}ms < "
-          f"{budget:.0f}ms bei {persisted} Events (SQLite genügt für Reads dieser Größe).")
+    print(f"[load-smoke] ADR-0005 Trigger #3: NICHT ausgelöst (Proxy) — indizierte Hot-Read-p95 "
+          f"{worst:.0f}ms < {budget:.0f}ms bei {persisted} Events. Keyset-indiziert = "
+          f"größenunabhängig; kein Korpus-Scan-Query in der API -> Proxy-/Zukunfts-Messung.")
 else:
-    print(f"[load-smoke] ADR-0005 Trigger #3: AUSGELÖST — Read-Retention-p95 {worst:.0f}ms >= "
-          f"{budget:.0f}ms bei {persisted} Events -> Postgres-Pfad evaluieren.")
+    print(f"[load-smoke] ADR-0005 Trigger #3: AUSGELÖST (Proxy) — indizierte Hot-Read-p95 "
+          f"{worst:.0f}ms >= {budget:.0f}ms bei {persisted} Events -> Postgres-Pfad evaluieren.")
 PY
 fi
 

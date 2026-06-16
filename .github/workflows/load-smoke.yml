@@ -23,17 +23,17 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "slo (open-loop SLO, Minuten) | soak (Retention, lange DURATION)"
+        description: "slo (open-loop, ~Min) | soak (closed-loop ~SQLite-Kapazitaet + Retention-Probe, lange DURATION)"
         type: choice
         options:
           - slo
           - soak
         default: slo
       duration:
-        description: "k6 DURATION (z. B. 60s; Soak z. B. 4h fuer >= 10 Mio Events)"
+        description: "k6 DURATION. SLO ~60s. Soak: closed-loop ~800 ev/s -> fuer >=10 Mio Events ~4h+ (Tabellenwachstum kann den Write-Durchsatz senken; zu kurz -> ehrlich INCONCLUSIVE, kein Falsch-Pass)."
         default: "60s"
       target_event_rate:
-        description: "SLO offered events/s (open-loop)"
+        description: "Offered events/s — NUR slo/open-loop; im Soak ignoriert (der laeuft closed-loop, Throughput ist SQLite-gebunden)."
         default: "400"
 
 permissions:
@@ -50,24 +50,44 @@ jobs:
 
       - name: Run load smoke
         id: load
-        continue-on-error: true
         env:
           DURATION: ${{ inputs.duration || '60s' }}
           TARGET_EVENT_RATE: ${{ inputs.target_event_rate || '400' }}
         run: |
-          set -o pipefail
+          set +e
           mode="${{ inputs.mode || 'slo' }}"
           if [ "$mode" = "soak" ]; then
             make smoke-soak 2>&1 | tee load-smoke.log
           else
             make smoke-load-slo 2>&1 | tee load-smoke.log
           fi
+          rc=${PIPESTATUS[0]}
+          echo "smoke_rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "[load-smoke.yml] smoke exit=$rc (0=ok, 1=hard FAIL, 2=config, 3=inconclusive)"
+
+      # Verdikt-Step: trennt echten Gate-Bruch (exit 1 = stiller Verlust /
+      # SLO-Bruch / Fehlerquote; exit 2 = Config) von lastabhängigem
+      # INCONCLUSIVE (exit 3). Nur ein Hard-FAIL faerbt den Job rot; ein
+      # Flake/INCONCLUSIVE bleibt gruen. Schliesst die Sichtbarkeitsluecke
+      # des reinen continue-on-error (echte Regression sonst nur im selten
+      # gelesenen Summary). Debounce (rot erst nach N Hard-FAILs in Folge)
+      # bleibt Folge-Item — siehe risks-backlog R-24.
+      - name: Verdict
+        run: |
+          rc="${{ steps.load.outputs.smoke_rc }}"
+          case "$rc" in
+            0) echo "::notice::Load smoke OK (exit 0)." ;;
+            3) echo "::notice::Load smoke INCONCLUSIVE (exit 3: Readback-Lesefehler oder Soak < 10M) — kein Verlust-Urteil, Job bleibt gruen." ;;
+            1) echo "::error::Load smoke HARD FAIL (exit 1: stiller Verlust / SLO-Bruch / Fehlerquote) — siehe Summary/Artefakt."; exit 1 ;;
+            2) echo "::error::Load smoke Config-/Nutzungsfehler (exit 2)."; exit 1 ;;
+            *) echo "::error::Load smoke unerwarteter Exit ($rc)."; exit 1 ;;
+          esac
 
       - name: Job summary
         if: always()
         run: |
           {
-            echo "### Load smoke — mode=${{ inputs.mode || 'slo' }}, step outcome: ${{ steps.load.outcome }}"
+            echo "### Load smoke — mode=${{ inputs.mode || 'slo' }}, smoke exit: ${{ steps.load.outputs.smoke_rc }} (0=ok, 1=FAIL, 3=inconclusive)"
             echo ""
             echo '```'
             grep '\[load-smoke\]' load-smoke.log 2>/dev/null || tail -40 load-smoke.log 2>/dev/null || echo "(kein Log)"
