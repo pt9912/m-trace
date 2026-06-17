@@ -128,8 +128,14 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   connection-übergreifend non-monoton). Der Fix braucht **neue Mechanik** —
   Kandidaten: `track_commit_timestamp` + `pg_xact_commit_timestamp(xmin)`,
   eine „nicht über `pg_snapshot_xmin` hinaus paginieren"-Regel, oder eine
-  zur **Commit-Zeit** defaultete Spalte. **Tranche 3 muss sich auf einen
-  Mechanismus festlegen (Design-Schritt), bevor getestet wird** — und der
+  zur **Commit-Zeit** defaultete Spalte. **Folgekosten unterscheiden sich**
+  (Teil der Tranche-3-Abwägung): `track_commit_timestamp` braucht `= on` in
+  der `postgresql.conf` + Server-Restart (→ Tranche-5-Harness); die
+  `pg_snapshot_xmin`-Regel ist config-frei, erkauft das aber mit
+  **Read-Freshness** (verbirgt den frisch-committeten Tail, bis offene
+  Write-Txns durch sind — Latenz ∝ längster in-flight-Write). **Tranche 3
+  muss sich auf einen Mechanismus festlegen (Design-Schritt), bevor getestet
+  wird** — und der
   Test muss out-of-order-Commits **adversarial injizieren** (sonst läuft er
   trivial grün, falls die Writer sich zufällig serialisieren). Verhältnis
   zu R-28: **keine kausale Reihenfolge-Abhängigkeit, aber R-28s Block-
@@ -191,8 +197,8 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
 | 2 | **Postgres-Adapter (6 Ports) + Sequencer-Redesign (R-28).** `persistence/postgres` für fünf Ports als Dialekt-Kapselung; der **`ingest_sequencer` ist ein Redesign, kein Spiegel**: DB-autoritativ via **`SELECT nextval`** — **port-erhaltend** (`Next() int64` unverändert → SQLite-/InMemory-Impl **und** Call-Site `register_playback_event_batch.go` bleiben). `IDENTITY`+`RETURNING` **vermeiden** (bricht den Pre-Assign-Flow). Gegen den per-Event-Roundtrip: Block-Allokation pro Batch **hinter dem Port**. | Sequencer DB-autoritativ via `nextval`, Port-Vertrag unverändert; SQLite-/InMemory-Sequencer grün; Batch-Block-Allokation gegen Roundtrip-Konfundierung. |
 | 3 | **Port-Korrektheit gegen Postgres.** Contract-Suite (3 Ports: `Sessions`/`Events`/`Sequencer`) gegen Postgres grün — Postgres-Test-Factory mit **Per-Test-Isolation** (`TRUNCATE` + `ALTER SEQUENCE … RESTART` bzw. frisches Schema), sonst scheitert „sequencer monotone from one" im zweiten Lauf; **plus** portierte Tests für die drei Nicht-Contract-Ports (`project_token`/`srt_health`/`ingest_stream` — `ON CONFLICT`, Boolean, Rotation); **plus** R-28-Test (kein Dup / keine PK-Kollision über N parallele Writer) und **R-27**: **erst Wasserzeichen-Mechanismus festlegen** (Design — `pg_xact_commit_timestamp`/`pg_snapshot_xmin`/Commit-Zeit-Spalte), dann ein **adversarialer** Test, der out-of-order-Commits *injiziert* (Tx mit frühem `server_received_at` offen halten, daran vorbeipaginieren, dann committen → darf **nicht** übersprungen werden). | Alle sechs Ports getestet (3 Contract + 3 portiert, je isoliert); R-28-Test grün; **R-27-Wasserzeichen entworfen + adversarialer Out-of-order-Test grün** (nicht nur ein zufällig-serialisierter Lauf); SQLite-Pfad unverändert. |
 | 4 | **Wiring + CI-Matrix.** `MTRACE_PERSISTENCE=postgres` + DSN in `main.go` (Default `sqlite` byte-stabil); CI fährt die Persistenz-Tests gegen beide Stores. | `MTRACE_PERSISTENCE=sqlite` unverändert; `=postgres` boot't + gleicher Smoke grün. |
-| 5 | **Multi-Replica-Harness.** Compose-Profil: ≥ 2 api-Replicas + 1 Postgres + LB (z. B. nginx). **Limiter-Backends benennen**: Ingest-/Issuance-Limiter bleiben in-process/SQLite (R-26 b orthogonal; der Lasttest übt ein Token, kein Issuance) — kein Redis-Zwang für den R-26-c-Durchsatznachweis. **Connection-Budget**: `N × pool_size` **+ Startup/Migration + Readback-`psql`** ≤ `max_connections` (Default 100, Headroom einplanen); ggf. `pgbouncer`. | Stack startet; beide Replicas teilen den Store; Health grün; Connection-Budget inkl. Nebenverbraucher ≤ `max_connections`; eingesetzte Limiter-Backends dokumentiert. |
-| 6 | **Scale-out-Lasttest (die R-26-c-Evidenz).** `smoke-load.sh` gegen den LB. **Readback braucht einen Postgres-Zweig**: kein GLOB, kein geteiltes File-Volume → `psql`-`count(*)` mit `LIKE 'prefix-%'` (`_` escapen) als **eine** Query gegen den geteilten Store (sauberer als der SQLite-`--volumes-from`-GLOB-Hack aus R-25). Messung: Durchsatz 1 vs. 2 vs. N Replicas, kein Verlust/Dup, `ingest_sequence`-Integrität. Multi-Tenant-Teil (R-26 b) erst **nach** dem shared Ingest-Limiter sinnvoll — bis dahin ist `N × Capacity` (kein Fairness-Nachweis) das **vorhergesagte** Verhalten, kein Befund. | Verdict: horizontale Durchsatz-Skalierung belegt, `persisted == accepted` global, 0 Duplikate über Replicas. |
+| 5 | **Multi-Replica-Harness.** Compose-Profil: ≥ 2 api-Replicas + 1 Postgres + LB (z. B. nginx). **Limiter-Backends benennen**: Ingest-/Issuance-Limiter bleiben in-process/SQLite (R-26 b orthogonal; der Lasttest übt ein Token, kein Issuance) — kein Redis-Zwang für den R-26-c-Durchsatznachweis. **Connection-Budget**: `N × pool_size` **+ Startup/Migration + Readback-`psql`** ≤ `max_connections` (Default 100, Headroom einplanen); ggf. `pgbouncer`. Falls Tranche 3 den `track_commit_timestamp`-Kandidaten (R-27) wählt: `track_commit_timestamp = on` in der PG-Config (+ Restart) hier setzen. | Stack startet; beide Replicas teilen den Store; Health grün; Connection-Budget inkl. Nebenverbraucher ≤ `max_connections`; eingesetzte Limiter-Backends dokumentiert. |
+| 6 | **Scale-out-Lasttest (die R-26-c-Evidenz).** `smoke-load.sh` gegen den LB. **Readback braucht einen Postgres-Zweig**: kein GLOB, kein geteiltes File-Volume → `psql`-`count(*)` mit `LIKE 'prefix-%'` (`_` escapen) als **eine** Query gegen den geteilten Store (sauberer als der SQLite-`--volumes-from`-GLOB-Hack aus R-25). Messung: Durchsatz 1 vs. 2 vs. N Replicas, kein Verlust/Dup, `ingest_sequence`-Integrität. Multi-Tenant-Teil (R-26 b) erst **nach** dem shared Ingest-Limiter sinnvoll — bis dahin ist `N × Capacity` (kein Fairness-Nachweis) das **vorhergesagte** Verhalten, kein Befund. | Verdict: horizontale Durchsatz-Skalierung belegt, `persisted == accepted` global; **0 Duplikate wasserdicht** via `COUNT(DISTINCT ingest_sequence) == COUNT(*)` (nicht nur anzahl-inferentiell — gleichzeitiger Verlust+Dup hebt sich sonst auf; der `ingest_sequence`-PK schließt store-seitige Dups strukturell ohnehin aus, der Distinct-Check belegt es explizit). |
 | 7 | **Doku/Closeout.** ADR-0006 von „Accepted" auf „belegt" referenzieren; **`roadmap.md` auf RAK-91-Reaktivierung umstellen** (heute „deferred mit Triggern") + 0.23.0-Eintrag; `budgets.md` §7 um Scale-out-Datenpunkte; **R-26 c → gelöst** (b/Multi-Tenant bleibt offen, s. R-26 b); Lastenheft RAK-91-Patch (**Variante B**); CHANGELOG. | `make docs-check`; R-26 c aufgelöst mit Messwert; Roadmap konsistent zu ADR-0006. |
 
 ## 5. DoD
@@ -221,7 +227,8 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
 - [ ] Multi-Replica-Compose-Profil (≥ 2 api + Postgres + LB) startbar.
 - [ ] **Scale-out-Lasttest mit Verdict**: horizontale Durchsatz-
   Skalierung gemessen (1/2/N Replicas), `persisted == accepted` global,
-  0 Duplikate über Replicas, `ingest_sequence` intakt — **R-26 c gelöst**.
+  0 Duplikate über Replicas (`COUNT(DISTINCT ingest_sequence) == COUNT(*)`,
+  nicht nur anzahl-inferentiell), `ingest_sequence` intakt — **R-26 c gelöst**.
   (Multi-Tenant-Fairness, R-26 b, bleibt offen bis shared Ingest-Limiter.)
 - [ ] Lastenheft-Patch RAK-91 „defer" → „proceed, optional" (**Variante B
   beim Spec-Edit: nur Kennungen, kein Plan-/§-Ref im Lastenheft**);
