@@ -40,12 +40,14 @@ optional"):
   lokale Standard-Store. Postgres ist opt-in über
   `MTRACE_PERSISTENCE=postgres` + DSN. Keine versteckte
   Pflichtabhängigkeit in der lokalen Standardumgebung.
-- Das Postgres-Schema entsteht durch **Portage der Migrationshistorie
-  V1–V7** nach Postgres-Dialekt (bzw. `schema.yaml`-Vollausbau +
-  Generierung) — `schema.yaml` deckt nur die V1-Baseline (5 Tabellen) und
-  ist **kein** fertiger One-Shot-Anker; `d-migrate --target postgres` ist
-  vorab nachzuweisen (heute nur `--target sqlite` belegt). Der hartkodierte
-  `driverName = "sqlite"` wird parametrisiert.
+- Das Postgres-Schema entsteht über **d-migrate `v0.9.9`** (noch zu bauen;
+  aktueller Pin `0.9.5`): `schema reverse` der live, V1–V7-migrierten
+  SQLite → vollständiges neutrales Schema (13 Tabellen), `export flyway
+  --target postgresql` → DDL. `--target postgresql` ist verifiziert
+  (`driver-postgresql`, e2e), der eingecheckte `schema.yaml` ist nur die
+  V1-Baseline (5 Tabellen) und **kein** One-Shot-Anker; Hand-Portage V1–V7
+  nur als Fallback. Der hartkodierte `driverName = "sqlite"` wird
+  parametrisiert.
 - Der Adapter implementiert die sechs Driven-Ports des SQLite-Adapters.
   Korrektheit: die adapter-agnostische Contract-Suite
   (`apps/api/adapters/driven/persistence/contract`) deckt **drei** Ports
@@ -53,8 +55,10 @@ optional"):
   Postgres-Tests. **Ausnahme von „kein Rewrite": der `ingest_sequencer`** —
   heute ein In-Process-RAM-Counter (`SELECT MAX(...)`-Seed + `atomic.Add`),
   der über N Replicas identische Werte vergibt (PK-Kollisionen); er muss
-  DB-autoritativ werden (`nextval`/`IDENTITY` + `RETURNING`) — ein
-  Port-Redesign, getrackt als **R-28**.
+  DB-autoritativ werden — **`nextval` (port-erhaltend: `Next() int64`
+  bleibt, SQLite-/InMemory-Impl + Call-Site unangetastet) bevorzugt**,
+  `IDENTITY`+`RETURNING` vermeiden (bricht den Pre-Assign-Flow).
+  Implementierungs-Redesign, getrackt als **R-28**.
 - Eine **Multi-Replica-Harness** (≥ 2 API-Instanzen hinter einem
   Load-Balancer, ein Postgres) plus ein **Scale-out-Lasttest** liefern
   die fehlende R-26-Evidenz: horizontale Durchsatz-Skalierung, kein
