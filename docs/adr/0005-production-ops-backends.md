@@ -69,6 +69,19 @@ erreicht wird:
 - Retention-Queries über mehr als 10 Millionen Events brauchen stabile
   p95-Latenz unter 2 Sekunden.
 
+> **Trigger-Stand 2026-06-17 (Trigger #3): NICHT ausgelöst.** Der Load-/
+> Soak-Smoke (`scripts/smoke-load.sh`, `make smoke-soak`) fuhr einen
+> 4h-Dispatch-Soak gegen das Core-Lab auf **55.327.560 persistierte
+> Events**; die Read-Retention-p95 lag bei **list 2,1 ms / detail-mit-Events
+> 11,8 ms** (Budget 2 s) — also drei Größenordnungen unter der Schwelle, und
+> die ≥-10-Mio-Bedingung ist belastbar erfüllt. Die Reads sind keyset-
+> indiziert und damit größenunabhängig; die Messung ist ein **Proxy** für
+> den Trigger (Hot-Read-Latenz), KEIN Korpus-Scan: die aktuelle Read-API
+> serviert keine Full-Scan-/Aggregat-/Time-Range-Query. Kommt eine solche
+> Query hinzu, MUSS die Probe um genau diese ergänzt werden (sonst
+> over-claim). Wieder-Eröffnungs-Trigger bleibt damit eine echte
+> Korpus-Scan-Query mit p95 ≥ 2 s über > 10 Mio Events.
+
 Analytics-POC wird reaktiviert, wenn mindestens einer dieser Trigger
 erreicht wird:
 

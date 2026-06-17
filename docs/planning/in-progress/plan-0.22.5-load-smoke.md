@@ -1,7 +1,12 @@
 # Implementation Plan — `0.22.5` Load-/Soak-Smoke
 
-> **Status**: 🚧 **Tranche 1–3 implementiert + zweifach gereviewt
-> (2026-06-16); Tranche 4 (Load-Readiness-Verdict) pending Nightly-Soak.**
+> **Status**: ✅ **Abgeschlossen (2026-06-17)** — Tranche 1–3 implementiert
+> + dreifach gereviewt; Tranche 4 (Load-Readiness-Verdict) geliefert: der
+> 4h-Dispatch-Soak `27665523746` ergab kein stiller Verlust
+> (persisted 55.327.560 == accepted, 3842 ev/s über 4h, 0,01 % Fehler) und
+> Read-Retention-p95 12 ms bei 55,3 Mio Events → ADR-0005-Trigger #3 nicht
+> ausgelöst. (R-25 hatte den ersten Soak `27628293077` in den 6h-Job-Cap
+> laufen lassen — Readback-O(N) — und ist gefixt.)
 > Antwort auf ein externes Tool-Review, das die **Lastfähigkeit als
 > einzigen nicht-belegten Bereich** markierte (🔴).
 > Commits: Limiter-ENV `14f3e64`, k6-Feasibility `e35f5c9`, smoke-load +
@@ -169,7 +174,7 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 | 1 | Machbarkeit: k6 gegen Core-Lab, Ingest-Szenario mit echten Tokens; Baseline. | ✅ `e35f5c9` |
 | 2 | Limiter-ENV (`14f3e64`) + `smoke-load.sh` + `make smoke-load`, beide Auth-Szenarien, Readback gegen echte `playback_events`; budgets.md §7. | ✅ `a7b8b6a` + Review `fa7794a`/`5c59d2c` |
 | 3 | Open-loop-SLO (`e7f3336`), Soak-Retention-Probe (`1ac6673`), Nightly `load-smoke.yml` + Doku (`f580726`); Review `d9edc03`. | ✅ |
-| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | 🏃 **läuft** — erster Dispatch-Soak `27628293077` lief in den 6h-Job-Cap (Readback O(N)); Ursache **R-25 gefixt** (direkter SQLite-`COUNT`, lokal verifiziert). Einziger Restschritt: 4h-Soak erneut dispatchen, dann Verdikt-Zahlen in §5/§6 + CHANGELOG + ADR-0005-Trigger #3 nachtragen (s. Soak-Dispatch-Log) |
+| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | ✅ Dispatch-Soak `27665523746` (4h02m, grün): closed-loop 20 VUs / 4h, `accepted=55.327.560` (**3842 ev/s**), `rate_limited=0`, errors `4080` (**0,01 %**), `http_req_duration` p90=214,8ms · **p95=636,0ms** · max=7380,4ms. Reconciliation: **`persisted 55.327.560 == accepted`** (kein stiller Verlust, 0 Überschuss). Retention-p95 (Proxy, indizierte Hot-Reads) list=2,1ms / detail-events=11,8ms bei 55,3 Mio Events → **ADR-0005-Trigger #3 NICHT ausgelöst** (< 2 s, ≥ 10 Mio). (Erster Soak `27628293077` lief in den 6h-Cap → R-25 🟢 gefixt.) |
 
 > **Soak-Dispatch-Log (Tranche 4)** — ausgelöst 2026-06-16 via
 > `gh workflow run load-smoke.yml -f mode=soak -f duration=4h`.
@@ -201,12 +206,20 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 > accepted 9900`, Retention-Probe erstmals erreicht). Damit passt Last +
 > Readback wieder klar in die 6h.
 >
-> **Nächster Schritt:** 4h-Soak erneut dispatchen
-> (`gh workflow run load-smoke.yml -f mode=soak -f duration=4h`) — erst
-> dann Messwerte hier in §5/§6 (Tranche-4-Zeile + die zwei offenen
-> DoD-Items abhaken), `CHANGELOG.md` und ADR-0005-Trigger #3 (ausgelöst /
-> nicht ausgelöst **mit Messwert**) nachtragen. Bei erneutem INCONCLUSIVE
-> (< 10 Mio): `duration` erhöhen. Tranche 4 bleibt bis dahin offen.
+> **Re-Dispatch mit Fix — Verdict erreicht (2026-06-17):** Run
+> `27665523746` (`https://github.com/pt9912/m-trace/actions/runs/27665523746`,
+> headSha `dd37c3d` == Fix), Start `04:20:05Z`, **grün in 4h02m** (vs. 6h-Cancel
+> davor). closed-loop 20 VUs / 4h: http_reqs 2.766.582 (192,1/s) → **events
+> accepted 55.327.560 (3842,1 ev/s)**, rate_limited 0, rejected 4.080
+> (≈ 0,01 %). http_req_duration **p90=214,8ms · p95=636,0ms · max=7380,4ms**.
+> Readback-`COUNT(*)` instant: **`persisted 55.327.560 == accepted`** →
+> kein stiller Verlust (0 at-least-once-Überschuss). Retention-Probe (Proxy,
+> indizierte Hot-Reads) **list-p95 2,1ms / detail-events-p95 11,8ms** bei
+> 55,3 Mio Events (Budget 2000ms). **ADR-0005-Trigger #3: NICHT ausgelöst**
+> — ≥ 10 Mio erreicht (belastbar, kein INCONCLUSIVE), indizierte Hot-Read-p95
+> 12ms ≪ 2 s; größenunabhängig, kein Korpus-Scan-Query in der API
+> (Proxy-/Zukunfts-Messung). Messwerte in §5/§6, `CHANGELOG.md` und
+> `docs/adr/0005-production-ops-backends.md` nachgetragen.
 
 ## 6. DoD
 
@@ -217,18 +230,20 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 - [x] Schwellwerte als Obergrenzen in `docs/perf/budgets.md` §7,
   referenziert von NF-20/NF-22/NF-23.
 - [x] „Kein stiller Verlust" über **Readback gegen die echte
-  `playback_events`-Tabelle** (`events[]`-Array, `persisted >= accepted`;
-  Lesefehler → INCONCLUSIVE, nie Verlust) — nicht `event_count`, nicht
-  Counter-Deltas.
-- [ ] **Soak hat ≥ 10 Mio Events erreicht**; Retention-p95 gegen 2 s
-  gemessen; ADR-0005-Trigger #3 als ausgelöst / nicht ausgelöst bewertet
-  (Proxy-gescopt) — **pending Nightly/Dispatch-Soak**. Mechanismus
-  validiert (`1ac6673`), Verdikt-Daten fehlen noch.
+  `playback_events`-Tabelle** (`persisted >= accepted`; Lesefehler →
+  INCONCLUSIVE, nie Verlust) — nicht `event_count`, nicht Counter-Deltas.
+  Autostart-/CI-Pfad zählt seit R-25-Fix per direktem `COUNT(*)` gegen das
+  Volume (O(1)); `events[]`-Array-Pagination bleibt Fallback für
+  `SMOKE_LOAD_AUTOSTART=0`.
+- [x] **Soak hat ≥ 10 Mio Events erreicht** (55,3 Mio im Dispatch-Soak
+  `27665523746`); Retention-p95 gegen 2 s gemessen (12ms); ADR-0005-Trigger
+  #3 als **nicht ausgelöst** bewertet (Proxy-gescopt). Mechanismus validiert
+  (`1ac6673`), Verdikt-Daten geliefert (s. §5 Soak-Dispatch-Log).
 - [x] **Nightly non-blocking, Verdikt aus Artefakt/Job-Summary, nicht aus
   der Job-Farbe**: `load-smoke.yml` + Verdict-Step (Job rot nur bei
   Hard-FAIL, grün bei INCONCLUSIVE; Debounce als R-24 offen).
-- [ ] Load-Readiness-Verdict im Plan-Closeout + CHANGELOG — **pending**
-  (braucht die Nightly-Soak-Zahlen).
+- [x] Load-Readiness-Verdict im Plan-Closeout (§5/Header) + `CHANGELOG.md`
+  nachgetragen (Dispatch-Soak `27665523746`).
 - [x] `extra-gates.md` §3.9 + `releasing.md` §2.6.
 
 ## 7. Abgrenzung

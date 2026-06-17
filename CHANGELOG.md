@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Load-/Soak-Smoke (`scripts/smoke-load.sh`): Die Readback-Reconciliation
+  (Beleg „kein stiller Verlust", `persisted >= accepted`) zählt im
+  Autostart-/CI-Pfad die persistierten Events per direktem
+  SQLite-`COUNT(*)` gegen das api-Volume statt per HTTP-Pagination über
+  alle Events. Der frühere O(N)-Pfad ließ den 4h-Soak in den GitHub-6h-
+  Job-Cap laufen (Verdict-Step übersprungen); der `COUNT` ist O(1) und
+  liest dieselbe `playback_events`-Tabelle, aus der auch der Detail-
+  Endpoint serviert. HTTP-Pagination bleibt Fallback für
+  `SMOKE_LOAD_AUTOSTART=0`. Test/CI-only (kein Versions-Bump).
+
+> **Load-Readiness-Verdict** (Tranche 4 aus `plan-0.22.5-load-smoke`):
+> 4h-Dispatch-Soak gegen das Core-Lab — **55.327.560 Events akzeptiert**
+> (3842 ev/s, `rate_limited=0`, 0,01 % Fehler über 4h), Readback
+> **`persisted == accepted`** (kein stiller Verlust). Read-Retention-p95
+> **12 ms bei 55,3 Mio Events** → **ADR-0005-Trigger #3 nicht ausgelöst**
+> (indizierte Hot-Reads, größenunabhängig; < 2 s).
+
 ## [0.22.3] - 2026-06-16
 
 > **Patch-/Security-Release** gemäß
