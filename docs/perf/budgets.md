@@ -105,7 +105,7 @@ isolierten Hot-Path-Budgets oben. **Opt-in + Nightly, NICHT in
 
 | Kriterium | Schwelle | Begründung |
 |---|---|---|
-| Kein stiller Verlust | `persisted >= accepted` (Readback gegen die echte `playback_events`-Tabelle via `events[]`-Array des Detail-Endpoints, **nicht** `event_count`) | `persisted` = tatsächlich in `playback_events` liegende Events der Lauf-Sessions. Jedes client-bestätigte (`202`) Event muss dort liegen. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Append erfolgreich, Client sah aber ein Timeout/`5xx`), kein Verlust. `event_count` (Session-Zähler, im Upsert vor dem Append getickt) taugt dafür ausdrücklich nicht. |
+| Kein stiller Verlust | `persisted >= accepted` (Readback gegen die echte `playback_events`-Tabelle, **nicht** `event_count`) | `persisted` = tatsächlich in `playback_events` liegende Events der Lauf-Sessions, im Autostart-/CI-Pfad per direktem `SELECT count(*)` gegen das api-Volume gezählt (O(1)); der `events[]`-Array-Readback des Detail-Endpoints bleibt portabler Fallback für `SMOKE_LOAD_AUTOSTART=0` (s. risks-backlog R-25). Jedes client-bestätigte (`202`) Event muss dort liegen. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Append erfolgreich, Client sah aber ein Timeout/`5xx`), kein Verlust. `event_count` (Session-Zähler, im Upsert vor dem Append getickt) taugt dafür ausdrücklich nicht. |
 | Fehlerquote | `<= MAX_ERROR_PCT` (Default 5 %) | Anteil Events mit Status ≠ `202`/`429`. An der SQLite-Sättigung sind einzelne **explizite** Fehler erwartbar (graceful degradation); nur eine katastrophale Quote bricht. |
 | Limiter (contract) / Override (capacity) | `429 > 0` bzw. `accepted > 0` | Sanity, dass der jeweilige Modus tatsächlich greift. |
 
@@ -113,23 +113,42 @@ Eine Latenz-Obergrenze ist **bewusst kein** harter Gate: unter
 unbeschränkter VU-Last an der Kapazitätsgrenze ist hohe p95 inhärent
 (siehe Referenz). Hot-Path-Latenz deckt §3/§4 ab.
 
-**Referenz-Baseline (runner-abhängig, nicht PR-blockierend),
-20 VUs / 30 s / Batch 20 auf Entwickler-Laptop:**
+**Referenz-Messungen (runner-abhängig, nicht PR-blockierend):**
 
-- **Kapazitäts-Modus** (Limit angehoben): ~**800 Events/s** akzeptiert
-  (≈ 40 Batch-Requests/s, synchroner SQLite-Append), p95 ~**2,3 s** /
-  max ~**5 s** an der Sättigung, Fehlerquote ~**0,1 %**, kleiner
-  at-least-once-Überschuss unter Last.
+CI (`ubuntu-24.04`, `MODE=capacity`, Batch 20):
+
+- **Open-loop SLO**, 2000 ev/s offered / 10 min (Run `27696206008`):
+  2000 ev/s akzeptiert, **p95 7,6 ms** (Budget 1000 ms), 0 `429`, 0
+  Fehler, 0 dropped, `persisted == accepted`. Großer Headroom — hier weit
+  von der Sättigung.
+- **Closed-loop Soak**, 20 VUs / 4 h (Run `27665523746`): **3842 ev/s**
+  akzeptiert, **p95 636 ms** / max 7,4 s, 0 `429`, 0,01 % Fehler,
+  55.327.560 Events, `persisted == accepted`.
+
+Dev-Laptop (historisch, 20 VUs / 30 s / Batch 20):
+
+- **Kapazitäts-Modus**: ~**800 Events/s** akzeptiert, p95 ~**2,3 s** an
+  der Sättigung — dieser Wert war laptop-/disk-gebunden; der CI-Runner
+  hält bei höherem Durchsatz deutlich niedrigere p95, die ~800 sind also
+  **nicht** die SQLite-Decke.
 - **Contract-Modus** (Default 100/s): ~**103 Events/s** akzeptiert,
   Rest `429`, p95 ~**2,6 ms**, 0 Fehler, Reconciliation exakt.
 
-**Kern-Befund: der SQLite-Single-Writer ist der Ingest-Engpass** —
-empirische Grundlage für die Evaluierung des
-[ADR-0005](../adr/0005-production-ops-backends.md)-Postgres-Triggers
-(Retention-/Durchsatz-Schwellen). Soak-Variante (`make smoke-soak`,
-≥ 10 Mio Events) misst die Read-Retention-p95 gegen 2 s als Trigger-#3-
-Evidenz — **als Proxy**: die Read-API serviert nur keyset-indizierte
-(größenunabhängige) Reads, keinen Full-Scan-/Aggregat-Retention-Query.
-Trigger #3 ist für die aktuelle API daher weitgehend hypothetisch; käme
-je eine Korpus-Scan-Query dazu, muss die Probe um genau diese erweitert
-werden. Der ≥-10-Mio-Lauf bleibt dem Nightly/Dispatch-Soak vorbehalten.
+**Kern-Befund: der SQLite-Single-Writer bleibt der Ingest-Engpass** (ein
+serialisierter Writer), aber die belastbare Decke liegt hardware-abhängig
+**oberhalb von ~3842 ev/s** (CI, dort noch graceful) — die frühere
+~800-ev/s-Zahl war ein Dev-Laptop-Artefakt. Empirische Grundlage für die
+Evaluierung des [ADR-0005](../adr/0005-production-ops-backends.md)-Postgres-
+Triggers. Die Soak-Variante (`make smoke-soak`) misst zusätzlich die
+Read-Retention-p95 gegen 2 s als **Trigger-#3-Evidenz (Proxy)**: die
+Read-API serviert nur keyset-indizierte (größenunabhängige) Reads, keinen
+Full-Scan-/Aggregat-Retention-Query. **Stand 2026-06-17**: der ≥-10-Mio-
+Lauf ist gefahren — bei 55,3 Mio Events Read-Retention-p95 **12 ms**
+(list 2,1 ms / detail 11,8 ms) ≪ 2 s → **ADR-0005-Trigger #3 nicht
+ausgelöst**. Käme je eine Korpus-Scan-Query in die API, muss die Probe um
+genau diese erweitert werden.
+
+Abgrenzung: Single-Instance, **ein** Projekt/Token. Produktive
+Multi-Tenant-Isolation und Multi-Replica-Skalierung sind hier **nicht**
+belegt — getrackt als risks-backlog **R-26** (Machbarkeit) bzw.
+ADR-0005-Trigger #1 (Multi-Replica → Postgres).
