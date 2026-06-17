@@ -73,11 +73,22 @@ aus drei Gründen:
 2. **De-Risking des künftigen Triggers.** Wenn Trigger #1 real wird (ein
    Betreiber braucht ≥ 2 Replicas), ist der Pfad dann erprobt und nicht
    ein Notfall-Umbau unter Druck.
-3. **Die Architektur ist vorbereitet** (kein Rewrite): neutraler
-   `schema.yaml`-Anker, hexagonale Driven-Ports, adapter-agnostische
-   Contract-Suite, und die Rate-Limiter haben für Multi-Host bereits
-   Redis-Backends (R-17/R-22 gelöst). Der Store ist der einzige
-   verbleibende Single-Instance-Block.
+3. **Die Architektur ist großteils vorbereitet** (kein Rewrite):
+   neutraler `schema.yaml`-Anker, hexagonale Driven-Ports, eine — für
+   drei der sechs Ports — adapter-agnostische Contract-Suite.
+
+   **Korrektur (Review 2026-06-17): es sind zwei Single-Instance-Blöcke,
+   nicht einer.** (i) Der Persistenz-Store (dieses ADR). (ii) Der
+   **Per-Projekt-Ingest-Limiter** ist in-process
+   (`ratelimit.NewTokenBucketRateLimiter`, `main.go`) und hat **keine**
+   Redis-Variante — Multi-Host-Redis-Backends existieren nur für den
+   Origin- (R-22) und den Issuance-Limiter (R-17), **nicht** für den
+   Ingest-Limiter aus R-26. Hinter N Replicas wäre die effektive
+   Per-Projekt-Decke `N × Capacity` und die Fairness nicht repliken-
+   übergreifend. Für den **Durchsatz-/Verlust-Scale-out-Nachweis (R-26 c,
+   dieses ADR)** genügt der Store-Wechsel; ein echter **Multi-Tenant-
+   Fairness-Nachweis (R-26 b)** braucht zusätzlich einen shared (Redis)
+   Ingest-Limiter und wird in der Multi-Tenant-Arbeit gescopt, nicht hier.
 
 **Ehrliche Kosten.** Ein zweiter Persistenz-Adapter heißt: doppelte
 CI-Matrix (Contract-Suite gegen SQLite *und* Postgres), Postgres als
