@@ -337,7 +337,7 @@ isoliert gegen Budgets — nicht die Ingest→Persistenz→Read-Kette unter
 echter Parallelität (NF-20/NF-22/NF-23). Der Last-Smoke schließt diese
 Lücke als separater opt-in-Pfad (vgl.
 [`docs/perf/budgets.md`](../../perf/budgets.md) §7). Plan:
-[`plan-0.22.5-load-smoke`](plan-0.22.5-load-smoke.md).
+[`plan-0.22.5-load-smoke`](../done/plan-0.22.5-load-smoke.md).
 
 Scope:
 

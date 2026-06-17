@@ -80,7 +80,7 @@ In Scope:
   akkumulieren, dann Retention-/`ListSessions`-Queries messen und p95
   gegen die **2-Sekunden**-Grenze (ADR-0005:69) bewerten.
 - Nicht-blockierender Nightly-Schritt; Gate-Eintrag in
-  [`extra-gates.md`](extra-gates.md), Verweis aus
+  [`extra-gates.md`](../in-progress/extra-gates.md), Verweis aus
   [`releasing.md`](../../user/releasing.md) §2.
 
 Nicht in Scope:
@@ -96,7 +96,7 @@ Nicht in Scope:
 - **Kein** Multi-Replica-/K8s-/Postgres-/Redis-Lasttest (ADR-0005:
   deferred; der Smoke *liefert* nur die Trigger-Daten).
 - **Kein** PR-blockierender Gate (lastabhängig flaky, vgl.
-  [`plan-0.22.3-webrtc-drift`](../done/plan-0.22.3-webrtc-drift.md) §2).
+  [`plan-0.22.3-webrtc-drift`](plan-0.22.3-webrtc-drift.md) §2).
   Opt-in + Nightly. Nicht in `make gates`.
 - **Keine** Duplizierung der Hot-Path-Mikrobenchmarks
   (`benchmark-smoke`).
