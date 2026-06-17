@@ -169,7 +169,7 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 | 1 | Machbarkeit: k6 gegen Core-Lab, Ingest-Szenario mit echten Tokens; Baseline. | ✅ `e35f5c9` |
 | 2 | Limiter-ENV (`14f3e64`) + `smoke-load.sh` + `make smoke-load`, beide Auth-Szenarien, Readback gegen echte `playback_events`; budgets.md §7. | ✅ `a7b8b6a` + Review `fa7794a`/`5c59d2c` |
 | 3 | Open-loop-SLO (`e7f3336`), Soak-Retention-Probe (`1ac6673`), Nightly `load-smoke.yml` + Doku (`f580726`); Review `d9edc03`. | ✅ |
-| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | 🏃 **blockiert** — Dispatch-Soak `27628293077` bei 6h-Job-Cap gecancelt (Verdict-Step skipped); Readback skaliert nicht auf Soak-Volumen → **R-25**. k6-Ingest-Leg erfasst (s. Soak-Dispatch-Log), Reconciliation/Retention-Verdict offen; erneuter Soak nach R-25-Fix |
+| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | 🏃 **läuft** — erster Dispatch-Soak `27628293077` lief in den 6h-Job-Cap (Readback O(N)); Ursache **R-25 gefixt** (direkter SQLite-`COUNT`, lokal verifiziert). Einziger Restschritt: 4h-Soak erneut dispatchen, dann Verdikt-Zahlen in §5/§6 + CHANGELOG + ADR-0005-Trigger #3 nachtragen (s. Soak-Dispatch-Log) |
 
 > **Soak-Dispatch-Log (Tranche 4)** — ausgelöst 2026-06-16 via
 > `gh workflow run load-smoke.yml -f mode=soak -f duration=4h`.
@@ -194,10 +194,19 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 > kontrollierter Parallelität — **Reconciliation (`persisted` vs
 > `accepted`) und Retention-Probe-p95 (ADR-0005-Trigger #3) liefen nie**.
 >
-> **Nächster Schritt:** R-25 fixen (Readback per direktem SQLite-`COUNT`
-> im Autostart-Pfad), dann Soak erneut dispatchen — erst dann §5/§6 +
-> `CHANGELOG.md` + ADR-0005-Trigger-#3-Bewertung mit Messwert nachtragen.
-> Tranche 4 bleibt offen.
+> **R-25 gefixt (2026-06-17):** Readback im Autostart-Pfad zählt jetzt per
+> direktem SQLite-`COUNT(*)` (GLOB auf die Lauf-Sessions) gegen das
+> api-Volume statt per HTTP-Pagination — O(1) statt O(N). Lokal verifiziert
+> (`make smoke-soak`, DURATION=10s/8 VUs: COUNT instant, `persisted 9900 ==
+> accepted 9900`, Retention-Probe erstmals erreicht). Damit passt Last +
+> Readback wieder klar in die 6h.
+>
+> **Nächster Schritt:** 4h-Soak erneut dispatchen
+> (`gh workflow run load-smoke.yml -f mode=soak -f duration=4h`) — erst
+> dann Messwerte hier in §5/§6 (Tranche-4-Zeile + die zwei offenen
+> DoD-Items abhaken), `CHANGELOG.md` und ADR-0005-Trigger #3 (ausgelöst /
+> nicht ausgelöst **mit Messwert**) nachtragen. Bei erneutem INCONCLUSIVE
+> (< 10 Mio): `duration` erhöhen. Tranche 4 bleibt bis dahin offen.
 
 ## 6. DoD
 

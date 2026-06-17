@@ -32,8 +32,9 @@ set -euo pipefail
 # ENV: MODE, LOAD_PROFILE, VUS, DURATION, BATCH_SIZE, CAP_CAPACITY,
 #      CAP_REFILL, MAX_ERROR_PCT, TARGET_EVENT_RATE, P95_BUDGET_MS,
 #      OPEN_MAX_VUS, OPEN_PREALLOC_VUS, BASE_URL, PROJECT_TOKEN,
-#      SESSION_PREFIX, SMOKE_LOAD_AUTOSTART, K6_IMAGE, RETENTION_PROBE,
-#      N_PROBES, RETENTION_P95_BUDGET_MS, SOAK_MIN_EVENTS.
+#      SESSION_PREFIX, SMOKE_LOAD_AUTOSTART, K6_IMAGE, SQLITE_IMAGE,
+#      SQLITE_DB_PATH, RETENTION_PROBE, N_PROBES, RETENTION_P95_BUDGET_MS,
+#      SOAK_MIN_EVENTS.
 #
 # Manuell gegen ein bereits laufendes Lab: SMOKE_LOAD_AUTOSTART=0.
 
@@ -50,6 +51,12 @@ CAP_CAPACITY="${CAP_CAPACITY:-1000000}"
 CAP_REFILL="${CAP_REFILL:-1000000}"
 SMOKE_LOAD_AUTOSTART="${SMOKE_LOAD_AUTOSTART:-1}"
 K6_IMAGE="${K6_IMAGE:-grafana/k6}"
+# Readback-COUNT (Autostart-Pfad, R-25): eine eigene sqlite3-Instanz zählt
+# die persistierten Events direkt im api-Volume (O(1)-Read statt
+# O(N)-HTTP-Pagination, die bei Soak-Volumen den CI-Job-Cap sprengte).
+# `SQLITE_DB_PATH` muss `MTRACE_SQLITE_PATH` aus docker-compose.yml folgen.
+SQLITE_IMAGE="${SQLITE_IMAGE:-keinos/sqlite3}"
+SQLITE_DB_PATH="${SQLITE_DB_PATH:-/var/lib/mtrace/m-trace.db}"
 # Fehler-Obergrenze (Status != 202/429) als Anteil aller Events. An der
 # SQLite-Sättigung sind einzelne explizite Fehler erwartbar; nur eine
 # katastrophale Quote bricht den Smoke. Der harte Gate bleibt die
@@ -196,21 +203,63 @@ set -e
   exit 1
 }
 
-# Readback: die TATSÄCHLICH persistierten Events je Lauf-Session zählen
-# — die Länge des `events[]`-Arrays des Detail-Endpoints (kommt aus
-# playback_events), Cursor-paginiert mit events_limit=1000, summiert über
-# genau VUS gezielte Sessions (PREFIX-1..PREFIX-VUS).
-# Bewusst NICHT der Session-`event_count` (wird im Upsert VOR dem Append
-# getickt -> kein Persistenz-Beleg, macht den Verlust-Gate tot) und NICHT
-# die Cursor-paginierte Listen-API (truncatet -> Falschalarm). Per-Session
-# ist zudem immun gegen fremde/Alt-Sessions.
-# Exit 3 = INCONCLUSIVE (Lesefehler), klar getrennt vom Verlust-FAIL
-# (Exit 1): nur ein echtes 404 zählt als „Session leer/nicht angelegt"
-# (-> 0). Jeder andere Fehler (Timeout/5xx auf Seite 2+, 401/500) bricht
-# ab, damit ein Readback-Fehler NIE als Datenverlust maskiert.
-if ! persisted="$(
-  VUS="$recon_sessions" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
-    SESSION_PREFIX="$SESSION_PREFIX" python3 - <<'PY'
+# Readback: die TATSÄCHLICH in `playback_events` persistierten Events
+# dieses Laufs zählen — der harte „kein stiller Verlust"-Beleg
+# (persisted >= accepted). Bewusst NICHT der Session-`event_count` (wird
+# im Upsert VOR dem Event-Append getickt, eigene Tx -> overcountet, würde
+# echten Verlust maskieren) und NICHT die Cursor-paginierte Listen-API
+# (truncatet -> Falschalarm).
+#
+# Zwei Pfade, derselbe Beleg (beide zählen Zeilen in `playback_events`):
+#   AUTOSTART=1 (frische, von uns kontrollierte Lab-DB): direkter
+#     SQLite-`COUNT(*)` gegen das api-Volume — O(1)-Read. Der frühere
+#     HTTP-Readback paginierte den Detail-Endpoint zu je 1000 Events über
+#     ALLE Sessions; bei Soak-Volumen (~45 Mio Events) sind das ~45k
+#     sequentielle Reads ~2 h -> sprengte den 6h-CI-Job-Cap (R-25). Der
+#     COUNT liest dieselbe Tabelle, aus der auch der Detail-Endpoint
+#     serviert, nur direkt.
+#   AUTOSTART=0 (fremdes, laufendes Lab ohne garantierten Volume-/
+#     Container-Zugriff): portabler HTTP-Readback (events[]-Array,
+#     Cursor-paginiert, summiert über PREFIX-1..PREFIX-VUS). Für ad-hoc-
+#     Läufe gedacht, nicht für Soak-Volumina.
+# Lesefehler -> Exit 3 (INCONCLUSIVE), klar getrennt vom Verlust-FAIL
+# (Exit 1): ein Readback-Fehler wird NIE als Datenverlust maskiert.
+if [ "$SMOKE_LOAD_AUTOSTART" = "1" ]; then
+  api_cid="$(cd "$ROOT_DIR" && docker compose ps -q api 2>/dev/null || true)"
+  if [ -z "$api_cid" ]; then
+    echo "[load-smoke] INCONCLUSIVE: api-Container für Readback-COUNT nicht gefunden (Lesefehler != Datenverlust)" >&2
+    exit 3
+  fi
+  # GLOB statt LIKE: behandelt '_' literal + ist case-sensitiv, matcht also
+  # exakt die Lauf-Sessions `${SESSION_PREFIX}-<n>` (frische DB -> keine
+  # Fremdsessions). --volumes-from teilt das api-Volume inkl. -wal/-shm;
+  # committete WAL-Frames sind für den (jetzt idle) Reader sichtbar.
+  # --user 0:0: die Volume-Files gehören dem nonroot-api-User (UID 65532),
+  # root liest -wal/-shm permission-frei.
+  # --entrypoint sqlite3: keinos/sqlite3 (Default) hat ENTRYPOINT=tini +
+  # CMD=sqlite3 — ohne Override ersetzen die Args (DB+SQL) das CMD und tini
+  # exec't den DB-Pfad als Programm. Override erzwingt sqlite3 (muss im
+  # SQLITE_IMAGE in PATH liegen). stderr getrennt halten, damit eine
+  # etwaige WAL-Checkpoint-Warnung die Zahl auf stdout nicht verunreinigt;
+  # bei Fehler wird sie in die Diagnose gehoben.
+  readback_err="$tmpdir/readback-count.err"
+  persisted="$(
+    docker run --rm --user 0:0 --entrypoint sqlite3 \
+      --volumes-from "$api_cid" "$SQLITE_IMAGE" \
+      "$SQLITE_DB_PATH" \
+      "SELECT count(*) FROM playback_events WHERE session_id GLOB '${SESSION_PREFIX}-*';" \
+      2>"$readback_err" || true
+  )"
+  persisted="$(printf '%s' "$persisted" | tr -d '[:space:]')"
+  if ! printf '%s' "$persisted" | grep -Eq '^[0-9]+$'; then
+    echo "[load-smoke] INCONCLUSIVE: Readback-COUNT fehlgeschlagen (sqlite '${SQLITE_IMAGE}' gegen ${SQLITE_DB_PATH}): $(tr '\n' ' ' < "$readback_err" 2>/dev/null) — kein Verlust-Urteil (Lesefehler != Datenverlust)" >&2
+    exit 3
+  fi
+  echo "[load-smoke] readback: SQLite COUNT(*) WHERE session_id GLOB '${SESSION_PREFIX}-*' = ${persisted}"
+else
+  if ! persisted="$(
+    VUS="$recon_sessions" BASE_URL="$BASE_URL" PROJECT_TOKEN="$PROJECT_TOKEN" \
+      SESSION_PREFIX="$SESSION_PREFIX" python3 - <<'PY'
 import os, sys, json, urllib.request, urllib.parse, urllib.error
 base = os.environ["BASE_URL"].rstrip("/")
 hdr = {"X-MTrace-Token": os.environ["PROJECT_TOKEN"]}
@@ -242,9 +291,10 @@ for n in range(1, vus + 1):
             break
 print(total)
 PY
-)"; then
-  echo "[load-smoke] INCONCLUSIVE: Readback-Lesefehler — kein Verlust-Urteil möglich (Lesefehler != Datenverlust)" >&2
-  exit 3
+  )"; then
+    echo "[load-smoke] INCONCLUSIVE: Readback-Lesefehler — kein Verlust-Urteil möglich (Lesefehler != Datenverlust)" >&2
+    exit 3
+  fi
 fi
 
 python3 - "$tmpdir/summary.json" "$persisted" "$MODE" "$SESSION_PREFIX" "$MAX_ERROR_PCT" "$LOAD_PROFILE" "$k6_rc" "$P95_BUDGET_MS" <<'PY'
