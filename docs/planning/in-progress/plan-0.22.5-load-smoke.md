@@ -169,24 +169,35 @@ instabil. Also zwei Szenarien, ein Skript: closed-loop „Decke finden"
 | 1 | Machbarkeit: k6 gegen Core-Lab, Ingest-Szenario mit echten Tokens; Baseline. | ✅ `e35f5c9` |
 | 2 | Limiter-ENV (`14f3e64`) + `smoke-load.sh` + `make smoke-load`, beide Auth-Szenarien, Readback gegen echte `playback_events`; budgets.md §7. | ✅ `a7b8b6a` + Review `fa7794a`/`5c59d2c` |
 | 3 | Open-loop-SLO (`e7f3336`), Soak-Retention-Probe (`1ac6673`), Nightly `load-smoke.yml` + Doku (`f580726`); Review `d9edc03`. | ✅ |
-| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | 🏃 **läuft** — Dispatch-Soak ausgelöst (Run `27628293077`), Verdikt-Zahlen ausstehend |
+| 4 | **Load-Readiness-Verdict**: Zahlen (max. stabile Rate, p99, Durchsatz, Reconciliation) + ADR-0005-Trigger-#3-Stand mit Messwert. | 🏃 **blockiert** — Dispatch-Soak `27628293077` bei 6h-Job-Cap gecancelt (Verdict-Step skipped); Readback skaliert nicht auf Soak-Volumen → **R-25**. k6-Ingest-Leg erfasst (s. Soak-Dispatch-Log), Reconciliation/Retention-Verdict offen; erneuter Soak nach R-25-Fix |
 
 > **Soak-Dispatch-Log (Tranche 4)** — ausgelöst 2026-06-16 via
 > `gh workflow run load-smoke.yml -f mode=soak -f duration=4h`.
 > Run `27628293077` (`https://github.com/pt9912/m-trace/actions/runs/27628293077`),
-> Start `2026-06-16T15:21:16Z`, Schätz-Ende ~`20:00Z` (Job-Timeout 6 h als Deckel).
+> Start `2026-06-16T15:21:16Z`.
 >
-> **Sobald durch zu prüfen** (`gh run view 27628293077`; Artefakt
-> `load-smoke-27628293077` → `load-smoke.log`; Job-Summary):
-> Verdict-Step-Exit (`0` ok / `3` INCONCLUSIVE, z. B. Runner < ~800 ev/s ⇒
-> < 10 Mio / `1` Hard-FAIL = stiller Verlust/SLO-Bruch/Fehlerquote),
-> k6-`p95`/`p99` + `http_req_failed`, Reconciliation `persisted` vs `accepted`,
-> Retention-Probe-`p95` (Proxy, indizierte Hot-Reads).
+> **Ergebnis (geprüft 2026-06-17): FEHLGESCHLAGEN — kein Verdict.** Der
+> „Run load smoke"-Step lief 6h (15:21:29→21:21:39Z) und wurde vom
+> **GitHub-6h-Job-Cap gecancelt**; der **Verdict-Step wurde dadurch
+> skipped**. Ursache ist **kein** SLO-/System-Versagen, sondern ein
+> Tooling-Skalierungs-Bug im Readback → **R-25**: Die k6-Lastphase war
+> nach **4h00m sauber durch**, danach paginierte die Readback-
+> Reconciliation ~45,7k Event-Seiten (1000/Seite) **~2h still** über HTTP,
+> bis das 6h-Limit den Step killte (Artefakt-Log endet exakt an der
+> k6-Summary; die Retention-Probe-Zeile erscheint nie).
 >
-> **Dann nachtragen:** Messwerte hier in §5/§6 (Tranche-4-Zeile + die zwei
-> offenen DoD-Items abhaken), `CHANGELOG.md`, sowie ADR-0005-Trigger #3
-> als ausgelöst / nicht ausgelöst **mit Messwert** bewerten. Bei
-> INCONCLUSIVE: `duration` erhöhen / erneut dispatchen, Tranche 4 bleibt offen.
+> **k6-Ingest-Leg (erfasst, aber KEIN Load-Readiness-Verdict):** closed-
+> loop 20 VUs / 4h, `BATCH_SIZE=20`. http_reqs 2.284.278 (158,6/s) →
+> **events accepted 45.676.480 (3171,9 ev/s)**, rate_limited 0, rejected
+> 9.080 (≈ 0,02 % der 202+Fehler). http_req_duration **p90=239,7ms ·
+> p95=836,0ms · max=8276,6ms**. Das ist nur die Ingest-Leg unter
+> kontrollierter Parallelität — **Reconciliation (`persisted` vs
+> `accepted`) und Retention-Probe-p95 (ADR-0005-Trigger #3) liefen nie**.
+>
+> **Nächster Schritt:** R-25 fixen (Readback per direktem SQLite-`COUNT`
+> im Autostart-Pfad), dann Soak erneut dispatchen — erst dann §5/§6 +
+> `CHANGELOG.md` + ADR-0005-Trigger-#3-Bewertung mit Messwert nachtragen.
+> Tranche 4 bleibt offen.
 
 ## 6. DoD
 
