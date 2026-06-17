@@ -40,14 +40,21 @@ optional"):
   lokale Standard-Store. Postgres ist opt-in über
   `MTRACE_PERSISTENCE=postgres` + DSN. Keine versteckte
   Pflichtabhängigkeit in der lokalen Standardumgebung.
-- Der neutrale `apps/api/internal/storage/schema.yaml` bleibt der
-  Migrationsanker; das Postgres-DDL wird aus genau diesem Schema
-  generiert (d-migrate, Target `postgres`). Der hartkodierte
+- Das Postgres-Schema entsteht durch **Portage der Migrationshistorie
+  V1–V7** nach Postgres-Dialekt (bzw. `schema.yaml`-Vollausbau +
+  Generierung) — `schema.yaml` deckt nur die V1-Baseline (5 Tabellen) und
+  ist **kein** fertiger One-Shot-Anker; `d-migrate --target postgres` ist
+  vorab nachzuweisen (heute nur `--target sqlite` belegt). Der hartkodierte
   `driverName = "sqlite"` wird parametrisiert.
-- Der Adapter implementiert dieselben Driven-Ports wie der SQLite-Adapter
-  und läuft die **adapter-agnostische Contract-Suite**
-  (`apps/api/adapters/driven/persistence/contract`) — Korrektheit wird
-  gegen denselben Vertrag belegt, nicht neu erfunden.
+- Der Adapter implementiert die sechs Driven-Ports des SQLite-Adapters.
+  Korrektheit: die adapter-agnostische Contract-Suite
+  (`apps/api/adapters/driven/persistence/contract`) deckt **drei** Ports
+  (Sessions/Events/Sequencer), die anderen drei brauchen portierte
+  Postgres-Tests. **Ausnahme von „kein Rewrite": der `ingest_sequencer`** —
+  heute ein In-Process-RAM-Counter (`SELECT MAX(...)`-Seed + `atomic.Add`),
+  der über N Replicas identische Werte vergibt (PK-Kollisionen); er muss
+  DB-autoritativ werden (`nextval`/`IDENTITY` + `RETURNING`) — ein
+  Port-Redesign, getrackt als **R-28**.
 - Eine **Multi-Replica-Harness** (≥ 2 API-Instanzen hinter einem
   Load-Balancer, ein Postgres) plus ein **Scale-out-Lasttest** liefern
   die fehlende R-26-Evidenz: horizontale Durchsatz-Skalierung, kein
@@ -73,12 +80,18 @@ aus drei Gründen:
 2. **De-Risking des künftigen Triggers.** Wenn Trigger #1 real wird (ein
    Betreiber braucht ≥ 2 Replicas), ist der Pfad dann erprobt und nicht
    ein Notfall-Umbau unter Druck.
-3. **Die Architektur ist großteils vorbereitet** (kein Rewrite):
-   neutraler `schema.yaml`-Anker, hexagonale Driven-Ports, eine — für
-   drei der sechs Ports — adapter-agnostische Contract-Suite.
+3. **Die Architektur ist teilweise vorbereitet** — der Review
+   (2026-06-17) hat hier zwei zu optimistische Annahmen korrigiert:
+   hexagonale Driven-Ports und eine (für drei der sechs Ports) adapter-
+   agnostische Contract-Suite sind echt da. **Aber**: `schema.yaml` ist
+   **kein** fertiger Anker (nur V1-Baseline; das volle Schema V1–V7 ist
+   Tranche-1-Portage), und der **`ingest_sequencer` ist doch ein Rewrite**
+   — heute ein In-Process-RAM-Counter, der über Replicas PK-Kollisionen
+   erzeugt und DB-autoritativ werden muss (**R-28**). „Kein Rewrite" gilt
+   für fünf Ports, nicht für den Sequencer.
 
-   **Korrektur (Review 2026-06-17): es sind zwei Single-Instance-Blöcke,
-   nicht einer.** (i) Der Persistenz-Store (dieses ADR). (ii) Der
+   **Zudem zwei Single-Instance-Blöcke, nicht einer.** (i) Der
+   Persistenz-Store (dieses ADR). (ii) Der
    **Per-Projekt-Ingest-Limiter** ist in-process
    (`ratelimit.NewTokenBucketRateLimiter`, `main.go`) und hat **keine**
    Redis-Variante — Multi-Host-Redis-Backends existieren nur für den

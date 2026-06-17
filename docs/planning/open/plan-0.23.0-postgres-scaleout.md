@@ -33,8 +33,17 @@ linearer Skalierung, kein Verlust/Dup über Replicas" (Nachweis).
 
 **In Scope:**
 
-- Postgres-DDL aus dem neutralen `apps/api/internal/storage/schema.yaml`
-  (Target `postgres`), `driverName`/DSN parametrisiert.
+- Postgres-Schema herstellen — **nicht** als One-Shot aus `schema.yaml`:
+  der neutrale `schema.yaml` deckt nur die **V1-Baseline** (5 Tabellen),
+  `make schema-generate` regeneriert auch nur `V1__m_trace.sql` (`--target
+  sqlite`). Das Live-Schema ist **V1 + handgepflegte V2–V7** (~8 weitere
+  Tabellen wie `ingest_streams`/`project_token_generations`/
+  `auth_issuance_counters` + V6/V7-Spalten-ALTERs auf `playback_events`/
+  `stream_sessions`). Tranche 1 entscheidet zwischen **V1–V7-Portage** nach
+  Postgres-Dialekt **oder** `schema.yaml`-Vollausbau + Generierung (dann
+  den V1-only-`generated-drift-check` reconcilen); vorab ist `d-migrate
+  --target postgres` **nachzuweisen** (heute nur `--target sqlite` belegt).
+  `driverName`/DSN parametrisiert.
 - Postgres-Persistenz-Adapter für die sechs Driven-Ports, die der
   SQLite-Adapter heute hält: `event_repository`, `session_repository`,
   `srt_health_repository`, `ingest_stream_repository`,
@@ -67,21 +76,38 @@ linearer Skalierung, kein Verlust/Dup über Replicas" (Nachweis).
 
 ## 3. Architektur-Berührung & Crux-Risiken
 
-Die Architektur ist vorbereitet (hexagonal, neutraler Schema-Anker,
-Contract-Suite, Redis-Rate-Limiter für Multi-Host bereits gelöst). Die
-nicht-trivialen Punkte:
+Die Architektur ist hexagonal sauber, aber **nicht** „fertig zum
+Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
+(erste zwei Bullets, je eine Risiko-Zeile). Die nicht-trivialen Punkte:
 
-- **`ingest_sequence`-Monotonie unter Concurrent-Writern (Crux).** SQLite
-  serialisiert per Single-Writer + `_txlock=immediate`; die
-  `ingest_sequence` (AUTOINCREMENT) ist dort trivial monoton. Postgres-
-  MVCC erlaubt echte Parallel-Writer (das ist der Sinn) — eine
-  IDENTITY/Sequence ist eindeutig, aber **Commit-Reihenfolge ≠
-  Sequence-Reihenfolge** (Lücken, out-of-order sichtbar-werden). Die
-  Cursor-Pagination ([ADR-0004](../../adr/0004-cursor-strategy.md)) ordnet
-  über `(server_received_at, sequence_number, ingest_sequence)` — es ist
-  zu belegen, dass Keyset-Pagination unter Concurrent-Insert keine Events
-  überspringt (z. B. via geeigneter Snapshot-/Isolation-Semantik oder
-  einer commit-order-stabilen Sequenzquelle). **Eigene Risiko-Zeile.**
+- **Write-Side: der `ingest_sequencer` ist heute ein In-Process-RAM-
+  Counter — Multi-Replica-Blocker (R-28).** `NewIngestSequencer` seedet
+  einen `atomic.Int64` einmalig aus `SELECT MAX(ingest_sequence)`,
+  `Next()` = `counter.Add(1)`, der Adapter inserted den **app-zugewiesenen**
+  Wert explizit (`AUTOINCREMENT` nur Defense-in-Depth). Zwei Replicas
+  seeden aus demselben MAX und vergeben **dieselben** Werte →
+  PK-Kollisionen / doppelte `ingest_sequence` genau im Multi-Replica-
+  Betrieb (= wofür der Plan existiert). Der Postgres-Sequencer muss
+  **DB-autoritativ** werden (`nextval` einer Postgres-Sequence bzw.
+  `IDENTITY` + `RETURNING`) — ein **Port-/Implementierungs-Redesign**,
+  nicht „dieselbe Implementierung mit Dialekt-Kapselung", und berührt ggf.
+  den `driven.IngestSequencer`-Vertrag (SQLite-/InMemory-Impl müssen grün
+  bleiben). **R-28**, Voraussetzung für überhaupt funktionierendes
+  Multi-Replica.
+- **Read-Side: Cursor-Ordering unter Concurrent-Writern (R-27).** *Sobald*
+  der Sequencer DB-autoritativ ist, wird der Wert zur Insert-/Commit-Zeit
+  vergeben → **Commit-Reihenfolge ≠ Sequence-Reihenfolge** (Lücken,
+  out-of-order-Sichtbarkeit). Die Keyset-Cursor-Pagination
+  ([ADR-0004](../../adr/0004-cursor-strategy.md)) ordnet über
+  `(server_received_at, sequence_number, ingest_sequence)`; es ist zu
+  belegen, dass sie unter Concurrent-Insert kein Event überspringt oder
+  dupliziert (Snapshot-/`REPEATABLE READ`-Isolation oder commit-order-
+  stabile Quelle). **R-27 setzt das R-28-Redesign voraus** — erst danach
+  ist der Read-Side-Test echt.
+- **Schema-Herkunft (kein fertiger Anker).** `schema.yaml` = V1-Baseline
+  (5 Tabellen); Live = V1 + handgepflegte V2–V7. Das Postgres-Schema
+  entsteht durch Portage der Migrationshistorie, nicht aus einem Anker —
+  und `d-migrate --target postgres` ist erst nachzuweisen (s. §2, Tranche 1).
 - **Transaktions-Isolation.** SQLite-`BEGIN IMMEDIATE` → Postgres-Default
   `READ COMMITTED` vs. `REPEATABLE READ`; der Batch-Append + Lifecycle-
   Tick muss dasselbe Verhalten wie der SQLite-Pfad zeigen (Contract-Suite
@@ -104,16 +130,18 @@ nicht-trivialen Punkte:
   **Voraussetzung** — der Limiter-Umbau ist R-26-b-Scope, hier nur als
   Vorbehalt festgehalten (Fairness-Bruch wird **vorhergesagt**, nicht
   „entdeckt").
-- **Crux-Risiko ist getrackt als R-27** (Sequenz-/Cursor-Ordering unter
-  Concurrent-Writern, s. erster Bullet) — DoD-blockierend für Tranche 3.
+- **Getrackt: R-28** (Write-Side-Sequencer-Redesign, Tranche 2,
+  Voraussetzung für Multi-Replica) **→ R-27** (Read-Side-Cursor-Ordering,
+  wird erst nach R-28 echt) — beide DoD-blockierend vor dem Scale-out-Test
+  (Tranche 6).
 
 ## 4. Tranchen
 
 | Tranche | Inhalt | Gate |
 | --- | --- | --- |
-| 1 | **Schema + Migrations-Target.** d-migrate Postgres-DDL aus `schema.yaml`; `driverName`/DSN parametrisieren (heute `migrate.go` hartkodiert `sqlite`); Postgres-Container im Lab. | `make`-Target migriert eine frische Postgres-DB fehlerfrei; Schema-Parität zu SQLite (gleiche Tabellen/Indizes aus einem Anker). |
-| 2 | **Postgres-Adapter (6 Ports).** `persistence/postgres` mit denselben Driven-Port-Implementierungen; Dialekt-Kapselung. | Adapter kompiliert, alle sechs Ports implementiert. |
-| 3 | **Port-Korrektheit gegen Postgres.** Contract-Suite (3 Ports: `Sessions`/`Events`/`Sequencer`) gegen Postgres grün; **plus** portierte Postgres-Tests für die drei Nicht-Contract-Ports (`project_token`/`srt_health`/`ingest_stream` — Dialekt: `ON CONFLICT`, Boolean, Rotation); **plus** der Concurrent-Writer-Sequenz-/Cursor-Walk-Test aus **R-27**. | Alle **sechs** Ports gegen Postgres getestet (3 via Contract-Suite + 3 portiert); R-27-Test grün; SQLite-Pfad unverändert. |
+| 1 | **Schema + Migrations-Target (mehr als „Anker andocken").** (0) **Spike**: `d-migrate --target postgres` nachweisen — falls unsupported, Fallback (handgeschriebenes PG-DDL). (1) Vollständiges PG-Schema herstellen: V1–V7 nach Postgres-Dialekt portieren **oder** `schema.yaml` auf den V1–V7-Vollstand heben + generieren und den V1-only-`generated-drift-check` reconcilen. (2) `driverName`/DSN parametrisieren (heute `migrate.go:37` hartkodiert `sqlite`); Postgres-Container im Lab. | `--target postgres` nachgewiesen (oder Fallback dokumentiert); frische PG-DB trägt **alle** Live-Tabellen/Spalten (V1–V7, inkl. V2/V4-Tabellen + V6/V7-Spalten), nicht nur die V1-Baseline; SQLite-Migrationspfad + drift-check unverändert grün. |
+| 2 | **Postgres-Adapter (6 Ports) + Sequencer-Redesign.** `persistence/postgres` für fünf Ports als Dialekt-Kapselung; der **`ingest_sequencer` ist ein Redesign, kein Spiegel** (R-28): DB-autoritativ (`nextval`/`IDENTITY`+`RETURNING`) statt In-Process-`MAX`+`atomic.Add`. `driven.IngestSequencer`-Vertrag ggf. anpassen — SQLite-/InMemory-Impl müssen grün bleiben. | Adapter kompiliert; fünf Ports als Dialekt-Kapselung; Sequencer DB-autoritativ; SQLite-/InMemory-Sequencer unverändert grün. |
+| 3 | **Port-Korrektheit gegen Postgres.** Contract-Suite (3 Ports: `Sessions`/`Events`/`Sequencer`) gegen Postgres grün; **plus** portierte Postgres-Tests für die drei Nicht-Contract-Ports (`project_token`/`srt_health`/`ingest_stream` — Dialekt: `ON CONFLICT`, Boolean, Rotation); **plus** ein Concurrent-Writer-Test, der **R-28** (kein Dup / keine PK-Kollision über N parallele Writer) **und** **R-27** (Cursor-Walk sieht jedes Event genau einmal) belegt. | Alle **sechs** Ports gegen Postgres getestet (3 via Contract-Suite + 3 portiert); R-28- + R-27-Test grün; SQLite-Pfad unverändert. |
 | 4 | **Wiring + CI-Matrix.** `MTRACE_PERSISTENCE=postgres` + DSN in `main.go` (Default `sqlite` byte-stabil); CI fährt die Persistenz-Tests gegen beide Stores. | `MTRACE_PERSISTENCE=sqlite` unverändert; `=postgres` boot't + gleicher Smoke grün. |
 | 5 | **Multi-Replica-Harness.** Compose-Profil: ≥ 2 api-Replicas + 1 Postgres + LB (z. B. nginx). | Stack startet; beide Replicas teilen den Store; Health grün. |
 | 6 | **Scale-out-Lasttest (die R-26-c-Evidenz).** `smoke-load.sh` gegen den LB. **Readback braucht einen Postgres-Zweig**: kein GLOB, kein geteiltes File-Volume → `psql`-`count(*)` mit `LIKE 'prefix-%'` (`_` escapen) als **eine** Query gegen den geteilten Store (sauberer als der SQLite-`--volumes-from`-GLOB-Hack aus R-25). Messung: Durchsatz 1 vs. 2 vs. N Replicas, kein Verlust/Dup, `ingest_sequence`-Integrität. Multi-Tenant-Teil (R-26 b) erst **nach** dem shared Ingest-Limiter sinnvoll — bis dahin ist `N × Capacity` (kein Fairness-Nachweis) das **vorhergesagte** Verhalten, kein Befund. | Verdict: horizontale Durchsatz-Skalierung belegt, `persisted == accepted` global, 0 Duplikate über Replicas. |
@@ -121,14 +149,20 @@ nicht-trivialen Punkte:
 
 ## 5. DoD
 
-- [ ] Postgres-DDL aus `schema.yaml` generiert; `driverName`/DSN
-  parametrisiert; SQLite-Pfad byte-stabil.
-- [ ] `persistence/postgres`-Adapter implementiert die sechs Driven-Ports.
+- [ ] **Vollständiges PG-Schema (V1–V7)** hergestellt (V1–V7-Portage oder
+  `schema.yaml`-Vollausbau); `d-migrate --target postgres` nachgewiesen
+  oder Fallback dokumentiert; `driverName`/DSN parametrisiert; SQLite-Pfad
+  + `generated-drift-check` unverändert grün.
+- [ ] `persistence/postgres`-Adapter implementiert die sechs Driven-Ports;
+  der **`ingest_sequencer` ist DB-autoritativ** (R-28, `nextval`/`IDENTITY`
+  statt In-Process-`MAX`+`atomic.Add`), SQLite-/InMemory-Sequencer
+  unverändert grün.
 - [ ] **Alle sechs Ports** gegen Postgres getestet: Contract-Suite (3
   Ports) **plus** portierte Postgres-Tests für `project_token`/
   `srt_health`/`ingest_stream`; grün gegen SQLite **und** Postgres in CI.
-- [ ] `ingest_sequence`-Monotonie / Cursor-Walk unter Concurrent-Writern
-  per Test belegt — **R-27 geschlossen** (DoD-blockierend für Tranche 3).
+- [ ] Concurrent-Writer-Test belegt **R-28** (kein Dup / keine
+  PK-Kollision über parallele Writer) **und** **R-27** (Cursor-Walk sieht
+  jedes Event genau einmal) — beide DoD-blockierend vor Tranche 6.
 - [ ] `MTRACE_PERSISTENCE=postgres` opt-in, Default unverändert `sqlite`.
 - [ ] Multi-Replica-Compose-Profil (≥ 2 api + Postgres + LB) startbar.
 - [ ] **Scale-out-Lasttest mit Verdict**: horizontale Durchsatz-
@@ -142,11 +176,25 @@ nicht-trivialen Punkte:
 
 ## 6. Risiken
 
-- **R-27 — Sequenz-/Cursor-Ordering unter Concurrent-Writern** (das
-  zentrale technische Risiko, siehe §3 Crux + DoD): in
-  [`risks-backlog.md`](../in-progress/risks-backlog.md) angelegt,
-  DoD-blockierend für Tranche 3, vor Tranche 6 mit einem dedizierten
-  Concurrent-Insert-Test zu schließen.
+- **R-28 — Write-Side-Sequencer-Redesign** (Voraussetzung für überhaupt
+  funktionierendes Multi-Replica): der `ingest_sequencer` ist heute
+  In-Process (`MAX`-Seed + `atomic.Add`) → PK-Kollisionen über Replicas;
+  muss DB-autoritativ werden (`nextval`/`IDENTITY`). Port-Redesign, nicht
+  Dialekt-Kapselung. In
+  [`risks-backlog.md`](../in-progress/risks-backlog.md), Tranche 2,
+  DoD-blockierend.
+- **R-27 — Read-Side-Cursor-Ordering unter Concurrent-Writern**: wird
+  *nach* R-28 echt (DB-autoritativer Wert erst zur Insert-/Commit-Zeit,
+  Commit-Reihenfolge ≠ Sequence-Reihenfolge). DoD-blockierend, vor
+  Tranche 6 mit einem Concurrent-Insert-/Cursor-Walk-Test zu schließen.
+- **`d-migrate --target postgres` unverifiziert**: jeder bestehende
+  Aufruf ist `--target sqlite`. Kann 0.9.5 kein Postgres-Target, braucht
+  die Generierung einen Fallback (handgeschriebenes PG-DDL) — Tranche 1
+  beginnt mit diesem Nachweis, bevor das Gate sich festlegt.
+- **Schema-Portage-Aufwand**: `schema.yaml` ist V1-only; das volle Schema
+  (V1–V7, ~8 zusätzliche Tabellen + Spalten-ALTERs) ist die eigentliche
+  Tranche-1-Arbeit, nicht „einen zweiten Dialekt an einen fertigen Anker
+  andocken".
 - **In-Process-Ingest-Limiter** (siehe §3): Multi-Tenant-Fairness über
   Replicas (R-26 b) braucht einen shared (Redis) Ingest-Limiter; ohne ihn
   ist die effektive Per-Projekt-Decke `N × Capacity`. Gescopt in die
