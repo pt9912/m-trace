@@ -31,7 +31,8 @@
     "overrides": {
       "picomatch": "^4.0.4",
       "devalue": "^5.8.1",
-      "esbuild": "^0.28.1"
+      "esbuild": "^0.28.1",
+      "undici": "^7.28.0"
     }
   }
 }
