@@ -2,9 +2,8 @@
 
 > **Stand**: 2026-06-23
 >
-> **Phase**: 🟡 `0.22.4` Security-/Tooling-Patch **vorbereitet**
-> (`chore(release): v0.22.4`-Commit auf `main`; Tag, GHCR- und
-> npm-Publish nach manueller Freigabe). Behebt den
+> **Phase**: ✅ `0.22.4` Security-/Tooling-Patch **released**
+> (Tag `v0.22.4`, GHCR- + npm-Publish grün, 2026-06-23). Behebt den
 > Trivy-Image-Scan-Treffer `golang.org/x/net 0.53.0 → 0.56.0` (sechs
 > HIGH-CVEs im api-gobinary, Issue #9), bündelt den `undici`-Override
 > (GHSA-vmh5-mc38-953g) sowie den Trivy-Pin `0.71.0 → 0.71.2` und liefert
@@ -14,8 +13,8 @@
 > ([`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md)).
 >
 > **Aktuell / letzte Releases:**
-> - `v0.22.4` Security-/Tooling-Patch (vorbereitet, Tag/Publish nach
->   Freigabe; kein Lastenheft-Patch): `golang.org/x/net 0.53.0 → 0.56.0`
+> - `v0.22.4` Security-/Tooling-Patch (released 2026-06-23, kein
+>   Lastenheft-Patch): `golang.org/x/net 0.53.0 → 0.56.0`
 >   (sechs HIGH-CVEs im api-gobinary, Trivy-Image-Scan, Issue #9),
 >   `undici`-`pnpm.overrides` `^7.28.0` (GHSA-vmh5-mc38-953g), Trivy-Pin
 >   `0.71.0 → 0.71.2` und der ENV-konfigurierbare Ingest-Rate-Limiter
@@ -119,7 +118,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-06-23 — `0.22.4` vorbereitet, `0.22.3` released)
+## 1. Aktueller Stand (2026-06-23 — `0.22.4` released)
 
 ### 1.1 Lieferstand
 
@@ -160,15 +159,13 @@ aktualisieren.
 | ✅      | devalue-Security-Patch + Nightly-Audit (`0.22.1`) | Released 2026-05-17. Kein Lastenheft-Patch. `pnpm.overrides` hebt `devalue` auf `^5.8.1` (GHSA-77vg-94rm-hx3p, vier Tage nach `0.22.0`-Tag publiziert); neuer `security-audit.yml`-Nightly spiegelt `vuln-check`/`audit-ts`/`image-scan` täglich mit konsolidiertem Auto-Issue; Benchmark-Workflow-Pfadfix (`apps/.tmp/bench/` → `.tmp/bench/`) plus `tee`/`pipefail`-Logging; Issue-Body als `scripts/open-bench-regression-issue.sh`/`open-security-audit-issue.sh` ausgelagert. | [`done/plan-0.22.1.md`](../done/plan-0.22.1.md) |
 | ✅      | Go-Stdlib-Security-Patch (`0.22.2`) | Released 2026-06-03. Kein Lastenheft-Patch. Erster echter Nightly-`security-audit.yml`-Treffer (Issue #3): `golang:1.26.3 → 1.26.4` an sechs Build-/Test-Image-Stellen (`apps/api/Dockerfile`, `Makefile::vuln-check`, `apps/api/Makefile::{arch-check,benchmark-smoke,fuzz-check,mutation-report}`) schließt GO-2026-5039 (`net/textproto`-Error-Echo via `auth.VaultSecretBackend.LoadSigningKeys`) und GO-2026-5037 (`crypto/x509`-Hostname-Parsing via `auth.NewRedisIssuanceRateLimiter`). Plus fünf bereits dokumentierte `perl-base`-Trivy-Ignores aus den Trivy-DB-Updates 2026-05-28/31 (CVE-2026-42496/42497/8376/9538/48962) für dashboard/analyzer-service und bilingualer README-Split. `make vuln-check` zeigt „No vulnerabilities found.". | [`done/plan-0.22.2.md`](../done/plan-0.22.2.md) |
 | ✅      | Security-/CI-Sammel-Patch (`0.22.3`) | Released 2026-06-16. Kein Lastenheft-Patch. Bündelt vier aufeinanderfolgende `security-audit.yml`-Nightly-Treffer: Trivy `0.59.1 → 0.71.0` + `CVE-2026-45447`/`-48959`-Ignores (Issue #4), esbuild `^0.28.1`-Override (GHSA-gv7w-rqvm-qjhr, Issue #5), libsqlite3-FTS5-Ignores `CVE-2026-11822`/`-11824` (kein Upstream-Fix, `expires` 2026-09-12, Issue #6), vite `^8.0.16` (GHSA-fx2h-pf6j-xcff, Issue #7). Plus GitHub-Actions-Node-24-Runtime, WebRTC-Drift-Test-Fix (rollt aus `plan-0.22.3-webrtc-drift` ein, dort ohne eigenen Tag) und Flaky-CORS-Preflight-Test-Fix (geteilter `http.DefaultClient` → `srv.Client()`). `make audit-ts` + `make image-scan` lokal grün. | [`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md) |
-| 🟡      | Security-/Tooling-Patch (`0.22.4`) | **Vorbereitet 2026-06-23** (Release-Commit auf `main`; Tag, GHCR- und npm-Publish nach manueller Freigabe). Kein Lastenheft-Patch. `golang.org/x/net 0.53.0 → 0.56.0` (transitiv `x/sys 0.46.0`, `x/text 0.38.0`) behebt sechs vom Trivy-Image-Scan im `usr/local/bin/api`-gobinary gemeldete HIGH-CVEs (`CVE-2026-25680`/`-25681`/`-27136`/`-39821`/`-42502`/`-42506`; `govulncheck` grün — Call-Graph erreicht die Pfade nicht, Trivy scannt den Modulgraphen unabhängig; Issue #9, Nightly-Lauf `27996614696`); `undici`-`pnpm.overrides` `^7.28.0` (GHSA-vmh5-mc38-953g); Trivy-Pin `0.71.0 → 0.71.2`. Plus ENV-konfigurierbarer Ingest-Rate-Limiter (`MTRACE_RATE_LIMIT_CAPACITY`/`-REFILL`, Default 100/100 unverändert) und die Load-Smoke-Readback-`COUNT(*)`-Reconciliation. `make vuln-check` + `make image-scan` + `make gates` lokal grün. | [`done/plan-0.22.4.md`](../done/plan-0.22.4.md), Issue #9 |
+| ✅      | Security-/Tooling-Patch (`0.22.4`) | **Released 2026-06-23** (Tag `v0.22.4`, GHCR- + npm-Publish grün — publish-images `28007976324`, publish-packages `28007976457`). Kein Lastenheft-Patch. `golang.org/x/net 0.53.0 → 0.56.0` (transitiv `x/sys 0.46.0`, `x/text 0.38.0`) behebt sechs vom Trivy-Image-Scan im `usr/local/bin/api`-gobinary gemeldete HIGH-CVEs (`CVE-2026-25680`/`-25681`/`-27136`/`-39821`/`-42502`/`-42506`; `govulncheck` grün — Call-Graph erreicht die Pfade nicht, Trivy scannt den Modulgraphen unabhängig; Issue #9, Nightly-Lauf `27996614696`); `undici`-`pnpm.overrides` `^7.28.0` (GHSA-vmh5-mc38-953g); Trivy-Pin `0.71.0 → 0.71.2`. Plus ENV-konfigurierbarer Ingest-Rate-Limiter (`MTRACE_RATE_LIMIT_CAPACITY`/`-REFILL`, Default 100/100 unverändert) und die Load-Smoke-Readback-`COUNT(*)`-Reconciliation. `make vuln-check` + `make image-scan` + `make gates` lokal grün. | [`done/plan-0.22.4.md`](../done/plan-0.22.4.md), Issue #9 |
 
 ### 1.2 Nächste Phase
 
-`0.22.4` ist als Security-/Tooling-Patch **vorbereitet**: der
-Release-Commit (Versions-Bump, CHANGELOG, Roadmap) liegt auf `main`;
-**Tag, GHCR- und npm-Publish stehen noch unter manueller Freigabe**
-(`MTRACE_RELEASE_APPROVED=1 make release-guard`, dann Tag/Publish).
-Der Patch schließt den Trivy-Image-Scan-Treffer
+`0.22.4` ist als Security-/Tooling-Patch **released** (Tag `v0.22.4`,
+GHCR- + npm-Publish grün, 2026-06-23). Der Patch schließt den
+Trivy-Image-Scan-Treffer
 `golang.org/x/net 0.53.0 → 0.56.0` (Issue #9), rollt den bereits auf
 `main` liegenden `undici`-Override (GHSA-vmh5-mc38-953g) und den
 Trivy-Pin `0.71.0 → 0.71.2` mit ein und liefert den

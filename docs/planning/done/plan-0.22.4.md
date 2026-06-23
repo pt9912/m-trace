@@ -1,8 +1,11 @@
 # Implementation Plan — `0.22.4` (x/net-Security-Patch + Trivy-Pin + Ingest-Rate-Limit-ENV)
 
-> **Status**: 🟡 vorbereitet — Release-Commit auf `main`; Tag, GHCR- und
-> npm-Publish stehen unter manueller Freigabe
-> (`MTRACE_RELEASE_APPROVED=1 make release-guard VER=0.22.4`).
+> **Status**: ✅ released 2026-06-23 — Tag `v0.22.4`, GHCR- + npm-Publish
+> grün (publish-images
+> [`28007976324`](https://github.com/pt9912/m-trace/actions/runs/28007976324),
+> publish-packages
+> [`28007976457`](https://github.com/pt9912/m-trace/actions/runs/28007976457)).
+> Archiviert in `done/`.
 >
 > **Vorgänger**: `0.22.3` ist als Security-/CI-Sammel-Patch veröffentlicht
 > und archiviert in
@@ -55,7 +58,7 @@ Inhalt:
 | 2 | Versions-Bump 0.22.3 → 0.22.4 (alle §3.1-Stellen) + Fixtures-Sync | ✅ |
 | 3 | CHANGELOG + Roadmap + Plan-Closeout | ✅ |
 | 4 | `make gates` grün + Release-Commit | ✅ |
-| 5 | Tag + GitHub-Release + GHCR-/npm-Publish | ⬜ (Freigabe) |
+| 5 | Tag + GitHub-Release + GHCR-/npm-Publish | ✅ |
 
 ## 2. Verifikation
 
@@ -85,17 +88,23 @@ Letzte Nightly-Beobachtungs-Gates vor dem Tag (alle auf `main`,
   [`27890458779`](https://github.com/pt9912/m-trace/actions/runs/27890458779))
   ✅, Score-Trend stabil (nicht-blockierend).
 
-## 4. Release-Closeout (offen bis Freigabe)
+## 4. Release-Closeout (ausgeführt 2026-06-23)
 
-```bash
-VER=0.22.4; TAG=v0.22.4
-MTRACE_RELEASE_APPROVED=1 make release-guard VER="$VER"
-make package-publish-dry-run
-make image-publish-dry-run VER="$VER"
-git tag -a "$TAG" -m "Release 0.22.4 — x/net HIGH-CVEs (Issue #9), undici, Trivy 0.71.2, Ingest-Rate-Limit-ENV"
-git push origin main && git push origin "$TAG"
-gh release create "$TAG" --title "m-trace $VER" --notes-file <changelog-extract>
-```
+Ausgeführte Schritte (alle grün):
 
-Nach Publish: Roadmap-Status `🟡 → ✅`, Issue #9 ist bereits geschlossen
-(Fix verifiziert), `## [Unreleased]` bleibt für die nächste Tranche offen.
+1. `MTRACE_RELEASE_APPROVED=1 make release-guard VER=0.22.4` → „dry-run ok".
+2. `make package-publish-dry-run` + `make image-publish-dry-run VER=0.22.4`.
+3. Pre-Tag-Smokes: `make build`, `make smoke-cli` (11 Probes),
+   `make smoke-analyzer`. Compose-/Browser-Smokes
+   (`smoke-observability`/`browser-e2e`/`smoke-mediamtx`/`-srt`/`-dash`/
+   `-webrtc-prep`) nicht gefahren — von einem Dep-Bump unberührte Pfade.
+4. `git tag -a v0.22.4` (Verdict in Annotation) + `git push origin main`
+   + `git push origin v0.22.4` (Commit `2a4f67e`).
+5. `gh release create v0.22.4` → `release.published` triggert
+   `publish-images.yml` (`28007976324`) + `publish-packages.yml`
+   (`28007976457`), beide ✅.
+
+Veröffentlicht: `ghcr.io/pt9912/m-trace-{api,dashboard,analyzer-service}:0.22.4`,
+`@pt9912/{player-sdk,stream-analyzer}@0.22.4`. Issue #9 war bereits
+geschlossen (Fix verifiziert); `## [Unreleased]` bleibt für die nächste
+Tranche offen.
