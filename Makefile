@@ -16,7 +16,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -82,6 +82,7 @@ help:
 		'  make devcontainer-validate  Validate the optional devcontainer seed' \
 		'  make release-guard VER=X.Y.Z Run the manual release approval guard in dry-run mode' \
 		'  make release-guard-test     Run local release-guard failure-path tests' \
+		'  make release-gate VER=X.Y.Z Full pre-tag gate: gates + security-gates + release-smokes + dry-runs + release-guard (needs MTRACE_RELEASE_APPROVED=1)' \
 		'  make vuln-check             Run govulncheck on apps/api Go dependencies' \
 		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
@@ -647,6 +648,50 @@ devcontainer-validate:
 
 release-guard-test:
 	bash scripts/test-release-guard.sh
+
+# `make release-gate VER=X.Y.Z` ist das Ein-Befehl-Pre-Tag-Gate: es
+# fasst den Pre-Tag-Verifikationsblock aus docs/user/releasing.md
+# zusammen (gates + security-gates inkl. Trivy-image-scan + build +
+# Release-Smokes + Publish-Dry-Runs) und schliesst mit dem release-guard
+# (Freigabe + Versions-Konsistenz). Reihenfolge wie in releasing.md:
+# Verifikation zuerst, Guard zuletzt — so laeuft die volle Verifikation
+# auch ohne Freigabe durch, nur der finale Guard-Stempel fehlt dann
+# (release-guard braucht MTRACE_RELEASE_APPROVED=1). Stack-abhaengige
+# Smokes (smoke-mediamtx braucht das Core-Lab, smoke-observability den
+# Observability-Stack) werden detached hochgefahren und IMMER wieder
+# abgeraeumt, auch bei rotem Smoke. Bewusst nicht gebuendelt (eigene
+# Nightly-Pfade laut releasing.md): smoke-webrtc-stats-drift, smoke-srs.
+release-gate:
+	@test -n "$(VER)" || (echo 'release-gate: set VER=X.Y.Z (finaler Guard braucht MTRACE_RELEASE_APPROVED=1)' >&2; exit 2)
+	@echo "[release-gate] 1/7 gates (CI-aequivalent)..."
+	$(MAKE) gates
+	@echo "[release-gate] 2/7 security-gates (vuln-check + audit-ts + image-scan)..."
+	$(MAKE) security-gates
+	@echo "[release-gate] 3/7 build..."
+	$(MAKE) build
+	@echo "[release-gate] 4/7 self-managing Smokes (cli/analyzer/browser-e2e/webrtc-prep/dash/srt/srt-health)..."
+	$(MAKE) smoke-cli
+	$(MAKE) smoke-analyzer
+	$(MAKE) browser-e2e
+	$(MAKE) smoke-webrtc-prep
+	$(MAKE) smoke-dash
+	$(MAKE) smoke-srt
+	$(MAKE) smoke-srt-health
+	@echo "[release-gate] 5/7 Core-Lab-Smoke (mediamtx, detached + Teardown)..."
+	@$(MAKE) dev-detached; up=$$?; \
+		if [ $$up -eq 0 ]; then $(MAKE) smoke-mediamtx; rc=$$?; else rc=$$up; fi; \
+		$(MAKE) stop; \
+		exit $$rc
+	@echo "[release-gate] 6/7 Observability-Smoke (detached + Teardown)..."
+	@OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp $(COMPOSE) --profile observability up --build -d; up=$$?; \
+		if [ $$up -eq 0 ]; then sleep 15; $(MAKE) smoke-observability; rc=$$?; else rc=$$up; fi; \
+		$(COMPOSE) --profile observability --profile tempo down >/dev/null 2>&1; \
+		exit $$rc
+	@echo "[release-gate] 7/7 Publish-Dry-Runs + release-guard (Freigabe)..."
+	$(MAKE) package-publish-dry-run
+	$(MAKE) image-publish-dry-run VER=$(VER)
+	$(MAKE) release-guard VER=$(VER)
+	@echo "[release-gate] OK -- alle Pre-Tag-Checks gruen + release-guard ok; sicher, v$(VER) zu taggen."
 
 gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check lint-variante-b
 

@@ -31,7 +31,17 @@ Vor jedem Release:
 
 ## 2. Verifikation
 
-Vor Tag und GitHub-Release müssen die Root-Targets grün sein:
+Vor Tag und GitHub-Release müssen die Root-Targets grün sein.
+
+> **Ein-Befehl-Gate**: `MTRACE_RELEASE_APPROVED=1 make release-gate
+> VER="$VER"` bündelt den kompletten Block unten (`gates` +
+> `security-gates` inkl. Trivy-`image-scan` + `build` + Release-Smokes +
+> Publish-Dry-Runs) und schließt mit dem Release-Guard. Stack-abhängige
+> Smokes (`smoke-mediamtx` braucht das Core-Lab, `smoke-observability`
+> den Observability-Stack) werden detached hoch- und wieder abgefahren.
+> Die Verifikation läuft auch ohne Freigabe vollständig durch; nur der
+> finale Guard-Stempel braucht `MTRACE_RELEASE_APPROVED=1`. Die
+> Einzelaufrufe bleiben für gezielte Wiederholung gültig:
 
 ```bash
 make gates                # CI-äquivalenter Komplettcheck (api-race+ts-test+lint+coverage+arch+schema+docs)
@@ -475,6 +485,14 @@ git tag -a "$TAG" -m "Release X.Y.Z"
 git push origin main
 git push origin "$TAG"
 ```
+
+> Der Push des `vX.Y.Z`-Tags löst `build.yml` (CI-Gates + Security-Gates
+> inkl. `image-scan`) auf dem getaggten Commit aus — ein sichtbarer
+> roter/grüner Lauf auf dem Release-Tag. Das ist kein harter Block (der
+> Tag existiert bereits); die harte Vorab-Absicherung ist `make
+> release-gate` weiter oben. Ein roter Tag-Lauf ist das Signal, vor dem
+> GitHub-Release zu stoppen und ggf. per Rollback (siehe unten) den Tag
+> zurückzuziehen.
 
 ## 4. GitHub-Release
 

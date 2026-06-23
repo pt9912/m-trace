@@ -5,6 +5,13 @@ on:
   push:
     branches:
       - main
+    # Tag-Pushes verifizieren den getaggten Commit mit denselben CI- +
+    # Security-Gates (inkl. Trivy-image-scan) — sichtbarer roter/gruener
+    # Lauf auf dem Release-Tag. Kein harter Block (das leisten
+    # `make release-gate` lokal bzw. die publish-Workflows); macht aber
+    # ein Tag auf rotem Stand sofort sichtbar.
+    tags:
+      - "v*"
 
 permissions:
   contents: read
