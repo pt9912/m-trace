@@ -511,6 +511,17 @@ gh release create "$TAG" \
     --notes-file <changelog-extract>
 ```
 
+> **Harte Publish-Blockade**: `release.published` startet
+> `publish-packages.yml` und `publish-images.yml`. Beide führen als
+> vorgeschalteten `needs: verify`-Job das reusable
+> [`verify-release.yml`](../../.github/workflows/verify-release.yml) aus
+> (CI-Gates + Security-Gates inkl. `image-scan`) gegen den getaggten
+> Commit. Fällt die Verifikation, wird **nicht veröffentlicht** — auch
+> wenn der GitHub-Release bereits existiert (dann per Rollback unten den
+> Tag/Release zurücknehmen, fixen, neu taggen). Dry-Run-Dispatches
+> (`workflow_dispatch`, `dry_run=true`) überspringen verify, damit sich
+> der Publish-Mechanismus auch auf WIP-Stand testen lässt.
+
 ## 5. GitHub-Packages-Publish
 
   werden nur die zwei Library-/CLI-Pakete veröffentlicht:

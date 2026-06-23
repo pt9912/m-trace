@@ -21,8 +21,23 @@ permissions:
   packages: write
 
 jobs:
+  verify:
+    # Pre-Publish-Gate: nur echte Veroeffentlichungen gaten (release-Event
+    # oder dispatch mit dry_run=false). Ein Dry-Run-Dispatch soll den
+    # Publish-Mechanismus auch auf rotem/WIP-Stand testen koennen, daher
+    # wird verify dann uebersprungen.
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false) }}
+    uses: ./.github/workflows/verify-release.yml
+    with:
+      ref: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.ref }}
+
   publish:
     name: Publish npm packages to GitHub Packages
+    needs: verify
+    # verify ist nur fuer echte Publishes scharf; bei uebersprungenem
+    # verify (Dry-Run) muss 'skipped' den Job durchlassen, 'failure'
+    # blockiert ihn hart.
+    if: ${{ always() && (needs.verify.result == 'success' || needs.verify.result == 'skipped') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
