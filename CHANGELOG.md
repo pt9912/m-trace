@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.4] - 2026-06-23
+
+> **Patch-/Security-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md) — kein
+> Lastenheft-Patch; normativer Stand bleibt `1.1.24`. Sammelt die
+> seit `0.22.3` auf `main` aufgelaufenen Security- und Tooling-Fixes
+> plus den ENV-konfigurierbaren Ingest-Rate-Limiter (Default
+> unverändert, kein Verhaltensbruch).
+>
+> **Security-Auslöser**: `golang.org/x/net 0.53.0 → 0.56.0` (sechs
+> HIGH-CVEs im api-gobinary, Trivy-Image-Scan, Issue #9, Nightly-Lauf
+> `27996614696`) und `undici`-`pnpm.overrides` auf `^7.28.0`
+> (GHSA-vmh5-mc38-953g). Beide Gates lokal grün (`make vuln-check`,
+> `make image-scan`, `make gates`).
+
+### Added
+
+- Ingest-Rate-Limiter pro Project per ENV konfigurierbar:
+  `MTRACE_RATE_LIMIT_CAPACITY` (Token-Bucket-Kapazität, int) und
+  `MTRACE_RATE_LIMIT_REFILL` (Refill-Rate in Token/s, float)
+  überschreiben den zuvor hart auf `100/100` codierten Default
+  („Spike Spec: 100 events/s/project"). Default unverändert `100/100`
+  — kein Verhaltensbruch. Voraussetzung für den Kapazitäts-Modus des
+  Load-Smoke (`scripts/smoke-load.sh`).
+
 ### Changed
 
 - Load-/Soak-Smoke (`scripts/smoke-load.sh`): Die Readback-Reconciliation
@@ -17,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Job-Cap laufen (Verdict-Step übersprungen); der `COUNT` ist O(1) und
   liest dieselbe `playback_events`-Tabelle, aus der auch der Detail-
   Endpoint serviert. HTTP-Pagination bleibt Fallback für
-  `SMOKE_LOAD_AUTOSTART=0`. Test/CI-only (kein Versions-Bump).
+  `SMOKE_LOAD_AUTOSTART=0`. Test/CI-only.
 
 > **Load-Readiness-Verdict** (Tranche 4 aus `plan-0.22.5-load-smoke`):
 > 4h-Dispatch-Soak gegen das Core-Lab — **55.327.560 Events akzeptiert**
@@ -25,6 +50,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **`persisted == accepted`** (kein stiller Verlust). Read-Retention-p95
 > **12 ms bei 55,3 Mio Events** → **ADR-0005-Trigger #3 nicht ausgelöst**
 > (indizierte Hot-Reads, größenunabhängig; < 2 s).
+
+### Security
+
+- `golang.org/x/net` `0.53.0 → 0.56.0` in `apps/api/go.mod` (transitiv
+  `golang.org/x/sys 0.43.0 → 0.46.0`, `golang.org/x/text 0.36.0 → 0.38.0`).
+  Behebt sechs vom Trivy-Image-Scan im `usr/local/bin/api`-gobinary
+  gemeldete HIGH-CVEs (`CVE-2026-25680`/`-25681`/`-27136`/`-39821`/
+  `-42502`/`-42506`; HTML-Parsing bzw. `idna`-Punycode; upstream gefixt
+  in `0.55.0`). `govulncheck` war grün (der Call-Graph erreicht die
+  Pfade nicht), Trivy scannt den eingebetteten Modulgraphen im Binary
+  unabhängig davon — daher der Gate-Fail (Issue #9).
+- `undici`-`pnpm.overrides` auf `^7.28.0` im Root-`package.json`
+  (GHSA-vmh5-mc38-953g).
+- Trivy-Scanner-Image `aquasec/trivy:0.71.0 → 0.71.2` in `Makefile`
+  (`TRIVY_IMAGE`); übernimmt den vom Nightly gemeldeten Versions-Notice.
 
 ## [0.22.3] - 2026-06-16
 

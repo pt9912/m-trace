@@ -156,7 +156,7 @@ Beispiel:
       "sequence_number": 42,
       "sdk": {
         "name": "@pt9912/player-sdk",
-        "version": "0.22.3"
+        "version": "0.22.4"
       }
     }
   ]

@@ -1,3 +1,3 @@
 export const PLAYER_SDK_NAME = "@pt9912/player-sdk";
-export const PLAYER_SDK_VERSION = "0.22.3";
+export const PLAYER_SDK_VERSION = "0.22.4";
 export const EVENT_SCHEMA_VERSION = "1.0";

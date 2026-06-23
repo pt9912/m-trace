@@ -1,6 +1,6 @@
 {
   "name": "@pt9912/m-trace-dashboard",
-  "version": "0.22.3",
+  "version": "0.22.4",
   "private": true,
   "type": "module",
   "scripts": {

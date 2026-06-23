@@ -89,7 +89,7 @@ const (
 
 const (
 	serviceName       = "m-trace-api"
-	serviceVersion    = "0.22.3"
+	serviceVersion    = "0.22.4"
 	defaultListenAddr = ":8080"
 
 	// Ingest-Rate-Limit pro Project. Default „Spike Spec: 100 events/
