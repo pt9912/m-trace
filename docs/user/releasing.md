@@ -368,7 +368,8 @@ Release-Konvention für `0.1.x`:
 
 gibt es einen lokalen Guard vor Tag/Publish. Er ersetzt
 keine Qualitäts-Gates, sondern prüft den manuellen Freigabepunkt und
-die wichtigsten Release-Anker:
+die wichtigsten Release-Anker. Er ist zugleich der Abschlussschritt
+von `make release-gate` (Ein-Befehl-Gate, oben bei der Verifikation):
 
 ```bash
 MTRACE_RELEASE_APPROVED=1 make release-guard VER="$VER"
@@ -570,9 +571,12 @@ gh workflow run publish-packages.yml \
 ```
 
 Der normale Release-Pfad ist: erst Dry-Run, dann `gh release create`.
-Der Workflow wird bei `release.published` automatisch ausgeführt und
-veröffentlicht dann den Release-Tag. Der manuelle produktive Publish
-ist nur ein Ersatzpfad, damit dieselbe Version nicht doppelt
+Der Workflow wird bei `release.published` automatisch ausgeführt;
+sein vorgeschalteter `verify`-Job (`verify-release.yml`) muss grün
+sein, sonst veröffentlicht er den Release-Tag nicht (harte
+Publish-Blockade, siehe Hinweis bei `gh release create`). Der manuelle
+produktive Publish ist nur ein Ersatzpfad, damit dieselbe Version nicht
+doppelt
 veröffentlicht wird. Produktive Veröffentlichungen laufen intern über:
 
 ```bash
@@ -611,7 +615,10 @@ gh workflow run publish-images.yml \
 Der normale Release-Pfad ist: erst lokaler oder manueller Dry-Run,
 dann `gh release create`. Der Workflow
 `.github/workflows/publish-images.yml` wird bei `release.published`
-automatisch ausgeführt und veröffentlicht den Release-Tag.
+automatisch ausgeführt; sein vorgeschalteter `verify`-Job
+(`verify-release.yml`) muss grün sein, sonst veröffentlicht er den
+Release-Tag nicht (harte Publish-Blockade, siehe Hinweis bei
+`gh release create`).
 
 Produktive Veröffentlichungen laufen intern über:
 
