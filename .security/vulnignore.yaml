@@ -298,5 +298,61 @@ trivy:
       expires: 2026-09-12
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
+    # CVE-2026-54369 (acl / libacl1) / CVE-2026-54371 (attr / libattr1):
+    # Zwei Symlink-Traversal-Privilege-Escalations (CWE-59, beide Trivy
+    # HIGH, CVSS 3.1 7.1) in den ACL-/xattr-Basispaketen der Trixie-
+    # Slim-Base:
+    #   - CVE-2026-54369 (acl <2.4.0) — TOCTOU-Symlink-Traversal in den
+    #     pfadbasierten libacl-Funktionen acl_get_file(), acl_set_file(),
+    #     acl_extended_file() und acl_delete_def_file(). Ein lokaler
+    #     Angreifer, der eine Pfadkomponente kontrolliert, kann die
+    #     ACL-Operation eines *privilegierten* Callers (getfacl/setfacl/
+    #     chacl) per Symlink auf ein beliebiges Ziel umlenken →
+    #     Privilege Escalation.
+    #   - CVE-2026-54371 (attr <2.6.0) — dieselbe Symlink-Traversal-
+    #     Klasse in den getfattr/setfattr-Utilities: ein privilegierter
+    #     Prozess, der getfattr/setfattr ueber einen angreifer-
+    #     kontrollierten Pfad aufruft, wird per Symlink umgelenkt.
+    #     NVD-Publikation 2026-06-29.
+    # Debian-Stand (Security Tracker): "vulnerable" fuer Debian 13
+    # (trixie); KEIN Fixed-Version-Eintrag (Trivy-Report "Fixed Version"
+    # leer) — Upstream-Fix (acl 2.4.0 / attr 2.6.0) noch nicht nach
+    # Trixie zurueckportiert. Ein `apt-get upgrade` / Base-Image-Pull
+    # macht den Gate also NICHT gruen; Suppression ist bis zum Backport
+    # der einzige Weg. Trifft libacl1 (2.3.2-2+b1) und libattr1
+    # (1:2.5.2-3) in der Trixie-Slim-Base (Dashboard + Analyzer-Service;
+    # mtrace-api ist distroless-debian12 und meldet 0 Vulns, out of
+    # scope).
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Beide Exploits verlangen einen *privilegierten* (root-)Prozess,
+    #     der die ACL-/xattr-Funktionen ueber einen angreifer-
+    #     kontrollierten Pfad aufruft. Die Runtime-Images starten als
+    #     unprivileged USER node mit `CMD ["node", "build"]` bzw.
+    #     `CMD ["node", "dist/main.cjs"]` — kein root-Caller, keine
+    #     Privilege-Domain oberhalb von node.
+    #   - libacl1/libattr1 sind nur transitive OS-Pakete der trixie-
+    #     slim-Base (coreutils-Abhaengigkeit); die Node-Runtime linkt/
+    #     laedt sie nie und ruft weder getfacl/setfacl/chacl noch
+    #     getfattr/setfattr auf.
+    #   - Codebase-grep (setfacl|getfacl|getfattr|setfattr|xattr|acl
+    #     ueber apps/dashboard/src, apps/analyzer-service/src, packages)
+    #     liefert NULL Treffer — kein ACL-/xattr-Aufruf im Produktcode.
+    #   - Einziger Ingress ist HTTP (SvelteKit-adapter-node) bzw. der
+    #     Analyzer-WS, beides node-only; kein Pfad, ueber den ein
+    #     Angreifer einen Symlink in einen privilegierten ACL-/xattr-
+    #     Traversal einschleusen koennte.
+    # Re-Review 2026-07-01 (Hotfix Nightly-Audit, Issue #10): `expires`
+    # 90 Tage auf 2026-09-29. Naechster Re-Review-Trigger: Trixie-
+    # Backport von acl >= 2.4.0 bzw. attr >= 2.6.0 (deb13u-Update)
+    # ODER `expires`-Schwelle.
+    - id: CVE-2026-54369
+      reason: "acl/libacl1 TOCTOU-Symlink-Traversal in den pfadbasierten libacl-Funktionen (acl_get_file/acl_set_file/acl_extended_file/acl_delete_def_file), acl <2.4.0 (Trivy HIGH, CVSS 7.1, CWE-59) → lokale Privilege Escalation via privilegiertem getfacl/setfacl/chacl-Caller; Trixie ohne Upstream-Fix (kein Fixed-Version-Eintrag, Base-Bump hilft nicht). libacl1 nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft keine ACL-Funktion auf (grep-bestaetigt), USER node ohne privilegierten Caller. Neu im Nightly-Scan 2026-07-01."
+      expires: 2026-09-29
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-54371
+      reason: "attr/libattr1 Symlink-Traversal in getfattr/setfattr, attr <2.6.0 (Trivy HIGH, CVSS 7.1, CWE-59) → lokale Privilege Escalation via privilegiertem getfattr/setfattr-Caller ueber angreifer-kontrollierten Pfad; Trixie ohne Upstream-Fix (kein Fixed-Version-Eintrag, Base-Bump hilft nicht). libattr1 nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft kein xattr-Utility auf (grep-bestaetigt), USER node ohne privilegierten Caller. NVD-Publikation 2026-06-29, neu im Nightly-Scan 2026-07-01."
+      expires: 2026-09-29
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
 govulncheck:
   ignore: []
