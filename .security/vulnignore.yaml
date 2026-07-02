@@ -354,5 +354,56 @@ trivy:
       expires: 2026-09-29
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
+    # CVE-2026-41992 (gzip): Global Buffer Over-read (CWE-126) im
+    # LZH-Decoder von GNU gzip bis einschliesslich 1.14. Der Bug
+    # entsteht durch falsch wiederverwendeten shared Global-State
+    # zwischen den Dekompressions-Formaten: erst "vergiftet" eine
+    # praeparierte LZW-Datei das shared Array, dann liest der
+    # LZH-Decoder beim Verarbeiten einer zweiten, praeparierten
+    # LZH-Datei out-of-bounds — Voraussetzung ist ein einziger
+    # `gzip -d`-Aufruf ueber BEIDE attacker-kontrollierten Dateien
+    # nacheinander. Effekt: Information Disclosure (read-only,
+    # kein Write-Primitive).
+    # Severity: NIST CVSS 3.1 7.5 HIGH (AV:N/AC:L/PR:N/UI:N/S:U/
+    # C:H/I:N/A:N); CNA CERT.PL CVSS 4.0 nur 6.9 MEDIUM (AV:L —
+    # realistischer, da ein lokaler gzip-Aufruf noetig ist).
+    # Trivy stuft HIGH, darum blockiert der Gate.
+    # NVD-Publikation 2026-06-29.
+    # Debian-Stand (Security Tracker, 2026-07-02): "vulnerable"
+    # fuer ALLE Suites (bullseye/bookworm/trixie/sid), Status
+    # `no-dsa` ("Minor issue"); KEIN Fixed-Version-Eintrag —
+    # Upstream-Fix (Commit 63dbf6b3) existiert, ist aber in kein
+    # Debian-Paket (auch nicht sid) eingeflossen. Ein
+    # `apt-get upgrade` / Base-Image-Pull macht den Gate also
+    # NICHT gruen; Suppression ist bis zum Backport der einzige
+    # Weg. Trifft gzip 1.13-1 in der Trixie-Slim-Base (Dashboard
+    # + Analyzer-Service; mtrace-api ist distroless-debian12 und
+    # meldet 0 Vulns, out of scope).
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Der Exploit verlangt einen gzip-CLI-Aufruf (`gzip -d`)
+    #     ueber attacker-kontrollierte LZW-+LZH-Dateien. Die
+    #     Runtime-Images starten als USER node mit
+    #     `CMD ["node", "build"]` bzw. `CMD ["node", "dist/main.cjs"]`
+    #     — kein gzip-Aufruf im Runtime-Pfad; Nodes eigene
+    #     gzip-/deflate-Verarbeitung laeuft ueber die gebundelte
+    #     zlib, nicht ueber das gzip-Binary (und zlib hat keinen
+    #     LZH-Codepfad).
+    #   - Codebase-grep (gzip|.lzh|zcat|gunzip ueber
+    #     apps/dashboard/src, apps/analyzer-service/src, packages)
+    #     liefert NULL Treffer — kein gzip-CLI-Aufruf im
+    #     Produktcode.
+    #   - Einziger Ingress ist HTTP (SvelteKit-adapter-node) bzw.
+    #     der Analyzer-WS, beides node-only; kein Pfad, ueber den
+    #     ein Angreifer praeparierte Dateien in einen
+    #     gzip-CLI-Aufruf einschleusen koennte.
+    # Re-Review 2026-07-02 (Hotfix Nightly-Audit, Issue #11):
+    # `expires` 90 Tage auf 2026-09-30. Naechster Re-Review-
+    # Trigger: Debian-Paketierung des Upstream-Fixes (gzip >1.14
+    # bzw. deb13u-Backport) ODER `expires`-Schwelle.
+    - id: CVE-2026-41992
+      reason: "gzip <=1.14 Global Buffer Over-read im LZH-Decoder (CWE-126, NIST 7.5 HIGH / CNA 6.9 MEDIUM) → Info-Disclosure, benoetigt `gzip -d` ueber praeparierte LZW-+LZH-Dateien in einem Aufruf; alle Debian-Suites vulnerable, KEIN Fix-Paket (no-dsa/Minor, Upstream-Commit nicht paketiert), Base-Bump hilft nicht. gzip nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft das gzip-CLI nie auf (grep-bestaetigt), Node nutzt gebundelte zlib ohne LZH-Pfad. NVD-Publikation 2026-06-29, neu im Nightly-Scan 2026-07-02."
+      expires: 2026-09-30
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
 govulncheck:
   ignore: []
