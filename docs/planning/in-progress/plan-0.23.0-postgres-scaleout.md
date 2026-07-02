@@ -1,15 +1,27 @@
 # Implementation Plan — `0.23.0` Postgres-Runtime-Adapter + Scale-out-Evidenz
 
-> **Status**: 🚧 **Geplant** — Antwort auf die einzige verbleibende,
+> **Status**: 🚧 **In Arbeit (Tranche 1)** — Antwort auf die einzige verbleibende,
 > unbelegte Architektur-Achse: **horizontale Production-Scale-out-Evidenz**
 > (R-26 Teil c). Reaktiviert RAK-91 („defer" → „proceed, optional") über
 > [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md), das die
 > Postgres-Vertagung aus [ADR-0005](../../adr/0005-production-ops-backends.md)
-> amendet. Noch nicht gebaut — tranchenweise Umsetzung mit Gate je Tranche.
+> amendet. Tranchenweise Umsetzung mit Gate je Tranche.
+>
+> **Amendment 2026-07-02 (Tranche-1-Start)**: Die externe
+> d-migrate-Voraussetzung ist **erfüllt**. Der Plan entstand, als
+> `schema reverse` + `--target postgresql` nur im d-migrate-Dev-Tree
+> lagen und als „`v0.9.9`, noch zu bauen" antizipiert waren. Inzwischen
+> ist **`v0.9.8` released** (GHCR-Image publiziert) und enthält alles
+> Benötigte (`schema reverse`, `driver-postgresql`, `export flyway
+> --target postgresql`); unreleased blieb nur FTS5-Arbeit ohne
+> m-trace-Bezug. Alle `v0.9.9`-Nennungen unten lesen sich daher als
+> `v0.9.8`; der Sequenzierungs-Schritt (0) der Tranche 1 kollabiert zum
+> Pin-Bump `DMIGRATE_IMAGE` `0.9.5`→`0.9.8`, die Unblock-Alternative
+> (Hand-Portage) entfällt.
 >
 > **Bezug**: RAK-91 (Lastenheft, Postgres-Entscheidung); NF-20/NF-22/NF-23
 > (Lastfähigkeit); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md);
-> R-26 in [`risks-backlog.md`](../in-progress/risks-backlog.md);
+> R-26 in [`risks-backlog.md`](risks-backlog.md);
 > Vorläufer [`plan-0.22.5-load-smoke`](../done/plan-0.22.5-load-smoke.md)
 > (Single-Instance-Lastfähigkeit belegt).
 
@@ -243,7 +255,7 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   muss DB-autoritativ werden — **`nextval` (port-erhaltend) bevorzugt**,
   `IDENTITY`+`RETURNING` vermeiden (bricht den Pre-Assign-Flow); Block-
   Allokation gegen den per-Event-Roundtrip. In
-  [`risks-backlog.md`](../in-progress/risks-backlog.md), Tranche 2,
+  [`risks-backlog.md`](risks-backlog.md), Tranche 2,
   DoD-blockierend.
 - **R-27 — Read-Side-Keyset-Skip/Dup unter Concurrent-Writern**: primär
   über `server_received_at` (App-gesetzt), ab dem ersten nebenläufigen

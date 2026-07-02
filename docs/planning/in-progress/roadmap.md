@@ -125,7 +125,7 @@ aktualisieren.
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.24` (RAK-1..RAK-125, §13.23 OCI Image Publishing für `0.21.0`; Patch aktiv).                       | `spec/lastenheft.md`                                                   |
-| ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store; `0005` Production-/Ops-Backends Accepted: Postgres/Analytics deferred mit Triggern, K8s/Devcontainer/Release-Guard als Seeds; `0006` Accepted: reaktiviert den Postgres-Teil von `0005` (RAK-91 → proceed/optional, SQLite bleibt Default), Scale-out-Evidenz via `plan-0.23.0-postgres-scaleout` (`open/`, noch nicht gebaut).     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`, `docs/adr/0005-production-ops-backends.md`, `docs/adr/0006-postgres-scaleout-adapter.md` |
+| ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store; `0005` Production-/Ops-Backends Accepted: Postgres/Analytics deferred mit Triggern, K8s/Devcontainer/Release-Guard als Seeds; `0006` Accepted: reaktiviert den Postgres-Teil von `0005` (RAK-91 → proceed/optional, SQLite bleibt Default), Scale-out-Evidenz via `plan-0.23.0-postgres-scaleout` (`in-progress/`, Tranche 1 seit 2026-07-02).     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`, `docs/adr/0005-production-ops-backends.md`, `docs/adr/0006-postgres-scaleout-adapter.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
 | ✅      | Observability (`0.1.2`)             | Prometheus + Grafana + OTel-Collector als Profil; RAK-9, RAK-10.                                                             | [`plan-0.1.2.md`](../done/plan-0.1.2.md)                               |
@@ -173,7 +173,7 @@ ENV-konfigurierbaren Ingest-Rate-Limiter (Default unverändert). Der
 Nightly-`security-audit.yml`-Mirror aus `0.22.1` erfüllt weiter
 seinen Zweck (fünfter echter Treffer gemeldet und mit diesem Patch
 geschlossen). Danach bleibt `plan-0.23.0-postgres-scaleout`
-(`open/`, ungebaut) die nächste größere Tranche. Mutation-Blockierung
+(`in-progress/`, Tranche 1 seit 2026-07-02) die nächste größere Tranche. Mutation-Blockierung
 bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
 
 ---

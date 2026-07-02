@@ -6,7 +6,7 @@
 > **Bezug**: `spec/lastenheft.md` RAK-91 (Reaktivierung von „defer" auf
 > „proceed, optional"), NF-20/NF-22/NF-23; [ADR-0005](0005-production-ops-backends.md)
 > (amendet die Postgres-Vertagung); `docs/planning/in-progress/risks-backlog.md`
-> R-26; Ausführung in `docs/planning/open/plan-0.23.0-postgres-scaleout.md`.
+> R-26; Ausführung in `docs/planning/in-progress/plan-0.23.0-postgres-scaleout.md`.
 
 ## Kontext
 
