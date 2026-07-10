@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+// rowScanner abstrahiert `*sql.Row` und `*sql.Rows` über ihre
+// gemeinsame Scan-Signatur, damit scan-Helper beide Quellen bedienen.
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
 // rebind wandelt die dialekt-neutralen `?`-Platzhalter der aus dem
 // SQLite-Adapter gespiegelten Query-Konstanten in Postgres' `$1,$2,…`.
 // Die gespiegelten Statements tragen `?` ausschließlich als
