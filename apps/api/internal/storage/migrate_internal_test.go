@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -215,7 +216,7 @@ func TestApply_DirtyStateRefuses(t *testing.T) {
 	if err := ensureSchemaMigrationsTable(ctx, db); err != nil {
 		t.Fatalf("ensureSchemaMigrationsTable: %v", err)
 	}
-	if err := markDirty(ctx, db, 7); err != nil {
+	if err := markDirty(ctx, db, 7, sqliteDialect()); err != nil {
 		t.Fatalf("markDirty: %v", err)
 	}
 
@@ -343,10 +344,81 @@ func TestApply_ConcurrentWritersDoNotDeadlock(t *testing.T) {
 	}
 }
 
+// TestDialects prüft die dialekt-spezifische Parametrisierung (ADR-0006):
+// Bind-Platzhalter (`?` vs `$n`) und der gewählte Migrations-Unterordner.
+// Der Postgres-Verbindungspfad (OpenPostgres) braucht eine echte PG-DB
+// und wird im PG-Lab-Integrationstest abgedeckt, nicht hier.
+func TestDialects(t *testing.T) {
+	sqlite, postgres := sqliteDialect(), postgresDialect()
+	if got := sqlite.placeholder(1); got != "?" {
+		t.Errorf("sqlite placeholder(1) = %q, want %q", got, "?")
+	}
+	if got := sqlite.placeholder(2); got != "?" {
+		t.Errorf("sqlite placeholder(2) = %q, want %q", got, "?")
+	}
+	if got := postgres.placeholder(1); got != "$1" {
+		t.Errorf("postgres placeholder(1) = %q, want %q", got, "$1")
+	}
+	if got := postgres.placeholder(2); got != "$2" {
+		t.Errorf("postgres placeholder(2) = %q, want %q", got, "$2")
+	}
+	if sqlite.migrationsDir != "migrations" {
+		t.Errorf("sqlite migrationsDir = %q, want %q", sqlite.migrationsDir, "migrations")
+	}
+	if postgres.migrationsDir != "migrations/postgres" {
+		t.Errorf("postgres migrationsDir = %q, want %q", postgres.migrationsDir, "migrations/postgres")
+	}
+
+	// Beide Migrations-Unterordner müssen im embed.FS auflösbar und
+	// nicht-leer sein (Fresh-Start-Regression-Schutz für den Embed-Glob).
+	for _, d := range []dialect{sqlite, postgres} {
+		sub, err := fs.Sub(embeddedMigrations, d.migrationsDir)
+		if err != nil {
+			t.Fatalf("fs.Sub(%q): %v", d.migrationsDir, err)
+		}
+		entries, err := fs.ReadDir(sub, ".")
+		if err != nil {
+			t.Fatalf("read %q: %v", d.migrationsDir, err)
+		}
+		var sqlFiles int
+		for _, e := range entries {
+			if !e.IsDir() && migrationNamePattern.MatchString(e.Name()) {
+				sqlFiles++
+			}
+		}
+		if sqlFiles == 0 {
+			t.Errorf("migrationsDir %q hat keine V*.sql-Migrationen", d.migrationsDir)
+		}
+	}
+}
+
+// TestOpenPostgres_Errors deckt die Fehlerpfade von OpenPostgres ohne
+// echte Postgres-DB ab: ein malformed DSN scheitert an pgx.ParseConfig,
+// ein nicht erreichbarer Host am PingContext. Der Erfolgspfad (Apply
+// gegen eine laufende PG-DB) gehört in den PG-Lab-Integrationstest.
+func TestOpenPostgres_Errors(t *testing.T) {
+	ctx := context.Background()
+
+	// Malformed DSN → ParseConfig-Fehler.
+	if _, err := OpenPostgres(ctx, "://not a dsn"); err == nil {
+		t.Error("OpenPostgres(malformed dsn): expected error, got nil")
+	}
+
+	// Gültiges DSN-Format, nicht erreichbarer Host (Port 1 → refused) →
+	// Ping-Fehler. Kurzer connect_timeout + Kontext-Timeout begrenzen
+	// den Retry, damit der Test nicht hängt.
+	tctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	if _, err := OpenPostgres(tctx,
+		"postgres://u:p@127.0.0.1:1/db?connect_timeout=1"); err == nil {
+		t.Error("OpenPostgres(unreachable host): expected error, got nil")
+	}
+}
+
 // openBareDB öffnet die SQLite-Datei mit der gleichen DSN wie Open,
 // wendet aber keine Migrationen an. Nur für Test-Setup.
 func openBareDB(ctx context.Context, path string) (*sql.DB, error) {
-	db, err := sql.Open(driverName, buildDSN(path))
+	db, err := sql.Open(driverName, buildSQLiteDSN(path))
 	if err != nil {
 		return nil, err
 	}

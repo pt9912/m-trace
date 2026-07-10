@@ -1,4 +1,4 @@
-// Package storage embeds und applied SQLite-Migrationen für m-trace.
+// Package storage embeds und applied Schema-Migrationen für m-trace.
 //
 // Der Apply-Runner ist absichtlich klein: er liest SQL-Files aus dem
 // embed.FS, vergleicht mit der schema_migrations-Tabelle, und wendet
@@ -6,10 +6,17 @@
 // Die schema_migrations-Tabelle wird hier verwaltet (ADR-0002)
 // und erscheint nicht in der schema.yaml.
 //
-// Race-Schutz für konkurrierende Writer ergibt sich aus
+// Der Runner ist dialekt-parametrisiert (ADR-0006): derselbe
+// Apply-Pfad läuft gegen SQLite (Default, `Open`) und Postgres
+// (`OpenPostgres`). Die dialekt-spezifischen Teile bündelt `dialect`
+// (Placeholder-Stil, Migrations-Unterordner); die Verbindungs-Specs
+// (Treiber, DSN, PRAGMA-Bedarf) hängen an der jeweiligen Open-Funktion.
+//
+// Race-Schutz für konkurrierende Writer ergibt sich auf SQLite aus
 // `_txlock=immediate` in der DSN: SQLite akquiriert beim Transaktions-
 // start sofort den Write-Lock, alle anderen Writer blockieren bis zum
-// Commit (ADR-0002).
+// Commit (ADR-0002). Auf Postgres übernimmt das der MVCC-Row-Lock der
+// jeweiligen Migrations-Transaktion.
 package storage
 
 import (
@@ -29,12 +36,48 @@ import (
 	// database/sql-Treiber. Der Blank-Import ist die idiomatische Form
 	// (kein direktes Paket-Symbol nötig), siehe ADR-0002
 	_ "modernc.org/sqlite"
+
+	// pgx/v5 stellt den Postgres-Treiber für den optionalen
+	// Postgres-Runtime-Adapter (ADR-0006). `stdlib.OpenDB` öffnet eine
+	// database/sql-DB, `pgx.ParseConfig` erlaubt das Setzen des
+	// Query-Exec-Modes (siehe OpenPostgres).
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
-//go:embed migrations/*.sql
+//go:embed migrations/*.sql migrations/postgres/*.sql
 var embeddedMigrations embed.FS
 
+// driverName ist der database/sql-Treiber des SQLite-Default-Pfads.
+// Postgres öffnet nicht über einen Treiber-Namen, sondern direkt via
+// stdlib.OpenDB (siehe OpenPostgres).
 const driverName = "sqlite"
+
+// dialect bündelt die dialekt-spezifischen Teile des Apply-Runners.
+// placeholder rendert den n-ten Bind-Parameter (`?` für SQLite,
+// `$n` für Postgres); migrationsDir wählt den Unterordner im embed.FS.
+type dialect struct {
+	placeholder   func(n int) string
+	migrationsDir string
+}
+
+// sqliteDialect und postgresDialect liefern den jeweiligen Dialekt.
+// Als Funktionen statt package-Globals gehalten (der Linter erlaubt
+// keine nicht-exempten Globals), ohne Laufzeit-Kosten: die Dialekte
+// werden nur beim Migrations-Apply (einmal beim Start) gebraucht.
+func sqliteDialect() dialect {
+	return dialect{
+		placeholder:   func(int) string { return "?" },
+		migrationsDir: "migrations",
+	}
+}
+
+func postgresDialect() dialect {
+	return dialect{
+		placeholder:   func(n int) string { return "$" + strconv.Itoa(n) },
+		migrationsDir: "migrations/postgres",
+	}
+}
 
 // migrationNamePattern matcht das Flyway-File-Format
 // `V<integer>__<description>.sql` (z. B. `V1__m_trace.sql`,
@@ -53,7 +96,7 @@ var ErrSchemaDirty = errors.New("storage: schema is in dirty state")
 // eingebetteten migrations/-Verzeichnis an und gibt die fertige
 // *sql.DB zurück.
 func Open(ctx context.Context, path string) (*sql.DB, error) {
-	dsn := buildDSN(path)
+	dsn := buildSQLiteDSN(path)
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("storage: open %q: %w", path, err)
@@ -62,12 +105,35 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 		_ = db.Close()
 		return nil, err
 	}
-	sub, err := fs.Sub(embeddedMigrations, "migrations")
-	if err != nil {
+	if err := applyDialect(ctx, db, sqliteDialect()); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("storage: embed sub: %w", err)
+		return nil, err
 	}
-	if err := apply(ctx, db, sub); err != nil {
+	return db, nil
+}
+
+// OpenPostgres öffnet eine Postgres-Verbindung über dsn, wendet die
+// eingebetteten Postgres-Migrationen (migrations/postgres/) an und gibt
+// die fertige *sql.DB zurück (ADR-0006, optionaler Scale-out-Adapter).
+//
+// Der Query-Exec-Mode wird auf das Simple-Query-Protokoll gesetzt: die
+// Migrationsbodies sind Multi-Statement (V1 = 13 CREATE TABLE + Indizes
+// in einem Exec), was das pgx-Default-Extended-Protokoll (ein Statement
+// pro Exec) ablehnen würde. Das Simple-Protokoll interpoliert Bind-
+// Parameter client-seitig und trägt daher auch die `$n`-Platzhalter der
+// schema_migrations-Statements.
+func OpenPostgres(ctx context.Context, dsn string) (*sql.DB, error) {
+	connConfig, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("storage: parse postgres dsn: %w", err)
+	}
+	connConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	db := stdlib.OpenDB(*connConfig)
+	if err := db.PingContext(ctx); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("storage: ping postgres: %w", err)
+	}
+	if err := applyDialect(ctx, db, postgresDialect()); err != nil {
 		_ = db.Close()
 		return nil, err
 	}
@@ -75,16 +141,26 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 }
 
 // Apply wendet offene Migrationen aus files (fs.FS, gewurzelt am
-// Verzeichnis mit den SQL-Files) auf die übergebene *sql.DB an.
-// Test-freundlich: fstest.MapFS einsetzbar.
+// Verzeichnis mit den SQL-Files) auf die übergebene *sql.DB an, im
+// SQLite-Dialekt. Test-freundlich: fstest.MapFS einsetzbar.
 func Apply(ctx context.Context, db *sql.DB, files fs.FS) error {
-	return apply(ctx, db, files)
+	return apply(ctx, db, files, sqliteDialect())
 }
 
-// buildDSN setzt _txlock=immediate (BEGIN IMMEDIATE für Race-Schutz),
-// _pragma=foreign_keys(ON) und WAL-Journal. Der Pfad bleibt clean
-// (file:-URI nur bei Bedarf, hier Plain-Path).
-func buildDSN(path string) string {
+// applyDialect wurzelt den embed.FS am dialekt-spezifischen
+// Migrations-Unterordner und wendet die offenen Migrationen an.
+func applyDialect(ctx context.Context, db *sql.DB, d dialect) error {
+	sub, err := fs.Sub(embeddedMigrations, d.migrationsDir)
+	if err != nil {
+		return fmt.Errorf("storage: embed sub %q: %w", d.migrationsDir, err)
+	}
+	return apply(ctx, db, sub, d)
+}
+
+// buildSQLiteDSN setzt _txlock=immediate (BEGIN IMMEDIATE für Race-
+// Schutz), _pragma=foreign_keys(ON) und WAL-Journal. Der Pfad bleibt
+// clean (file:-URI nur bei Bedarf, hier Plain-Path).
+func buildSQLiteDSN(path string) string {
 	return path + "?_txlock=immediate" +
 		"&_pragma=foreign_keys(ON)" +
 		"&_pragma=journal_mode(WAL)" +
@@ -94,6 +170,7 @@ func buildDSN(path string) string {
 // setPragmas verifiziert, dass die DSN-PRAGMAs gegriffen haben. Wir
 // verlassen uns nicht blind auf den Driver — bei einer Driver-
 // Konfigurationsabweichung würde die Test-Suite das sonst nicht sehen.
+// Nur für den SQLite-Pfad relevant (Postgres kennt keine PRAGMAs).
 func setPragmas(ctx context.Context, db *sql.DB) error {
 	checks := []struct{ pragma, want string }{
 		{"foreign_keys", "1"},
@@ -111,7 +188,7 @@ func setPragmas(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func apply(ctx context.Context, db *sql.DB, files fs.FS) error {
+func apply(ctx context.Context, db *sql.DB, files fs.FS, d dialect) error {
 	if err := ensureSchemaMigrationsTable(ctx, db); err != nil {
 		return err
 	}
@@ -126,11 +203,11 @@ func apply(ctx context.Context, db *sql.DB, files fs.FS) error {
 		return err
 	}
 	for _, m := range pending {
-		if err := applyOne(ctx, db, m); err != nil {
+		if err := applyOne(ctx, db, m, d); err != nil {
 			// dirty=1 separat persistieren (eigene Transaktion); ein
 			// Fehler dabei darf den ursprünglichen Fehler nicht
 			// verschlucken.
-			if markErr := markDirty(ctx, db, m.version); markErr != nil {
+			if markErr := markDirty(ctx, db, m.version, d); markErr != nil {
 				return fmt.Errorf("storage: apply %s: %w (failed to record dirty state: %v)",
 					m.name, err, markErr)
 			}
@@ -140,6 +217,10 @@ func apply(ctx context.Context, db *sql.DB, files fs.FS) error {
 	return nil
 }
 
+// schemaMigrationsDDL ist bewusst dialekt-portabel: `INTEGER PRIMARY
+// KEY` (app-vergebene version), `TEXT`, `INTEGER NOT NULL DEFAULT 0`
+// und `CREATE TABLE IF NOT EXISTS` sind auf SQLite wie auf Postgres
+// gültig — daher braucht diese DDL keinen Dialekt-Zweig.
 const schemaMigrationsDDL = `
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version    INTEGER PRIMARY KEY,
@@ -217,7 +298,7 @@ func appliedVersions(ctx context.Context, db *sql.DB) (map[int64]bool, error) {
 	return out, nil
 }
 
-func applyOne(ctx context.Context, db *sql.DB, m migration) error {
+func applyOne(ctx context.Context, db *sql.DB, m migration, d dialect) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -227,7 +308,8 @@ func applyOne(ctx context.Context, db *sql.DB, m migration) error {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx,
-		"INSERT INTO schema_migrations(version, applied_at, dirty) VALUES (?, ?, 0)",
+		fmt.Sprintf("INSERT INTO schema_migrations(version, applied_at, dirty) VALUES (%s, %s, 0)",
+			d.placeholder(1), d.placeholder(2)),
 		m.version, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("record migration: %w", err)
@@ -238,10 +320,13 @@ func applyOne(ctx context.Context, db *sql.DB, m migration) error {
 	return nil
 }
 
-func markDirty(ctx context.Context, db *sql.DB, version int64) error {
+func markDirty(ctx context.Context, db *sql.DB, version int64, d dialect) error {
+	// ON CONFLICT ... DO UPDATE + excluded ist auf SQLite wie auf
+	// Postgres gültig; nur die Bind-Platzhalter sind dialekt-spezifisch.
 	_, err := db.ExecContext(ctx,
-		"INSERT INTO schema_migrations(version, applied_at, dirty) VALUES (?, ?, 1) "+
+		fmt.Sprintf("INSERT INTO schema_migrations(version, applied_at, dirty) VALUES (%s, %s, 1) "+
 			"ON CONFLICT(version) DO UPDATE SET dirty = 1, applied_at = excluded.applied_at",
+			d.placeholder(1), d.placeholder(2)),
 		version, time.Now().UTC().Format(time.RFC3339Nano))
 	if err != nil {
 		return fmt.Errorf("storage: mark dirty: %w", err)
