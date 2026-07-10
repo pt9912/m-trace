@@ -17,7 +17,7 @@ NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate benchmark-smoke fuzz-check mutation-report
+.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate schema-generate-postgres schema-generate-postgres-check benchmark-smoke fuzz-check mutation-report
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002). Build-/Dev-time-Werkzeug; das API-Image bleibt
@@ -122,6 +122,26 @@ schema-generate:
 			--source /work/schema.yaml --target sqlite \
 			--version 1 --output /work/migrations
 	@echo "[schema-generate] DDL: apps/api/$(SCHEMA_DIR)/migrations/V1__m_trace.sql"
+
+# PostgreSQL-Baseline-DDL für den optionalen Postgres-Runtime-Adapter
+# (ADR-0006). Anders als `schema-generate` (V1-only aus
+# schema.yaml) reversed dieses Target den *vollständigen* live-Store
+# (V1–V7, 13 Tabellen) via d-migrate `schema reverse` → `export flyway
+# --target postgresql`. Rein tooling-nativ (kein YAML-Patch); die
+# 64-bit-AUTOINCREMENT-PKs werden über `--sqlite-autoincrement-width 64`
+# getreu als bigint gerendert. Byte-deterministisch — Re-Run
+# ohne Migrations-Änderung erzeugt keinen git-Diff. Verifikation
+# (13 Tabellen / 18 CHECKs klammer-balanciert / 64-bit-PKs / Spalten-
+# Parität) ist im Skript fail-loud eingebaut. DMIGRATE_IMAGE wird als
+# Single-Source-Pin durchgereicht.
+schema-generate-postgres:
+	DMIGRATE_IMAGE=$(DMIGRATE_IMAGE) bash scripts/generate-postgres-schema.sh
+
+# Drift-Gate: regeneriert das PG-DDL nach temp und difft gegen die
+# eingecheckte Datei; schlägt fehl, wenn beide divergieren (Migration
+# geändert, aber PG-DDL nicht regeneriert). Analog `generated-drift-check`.
+schema-generate-postgres-check:
+	DMIGRATE_IMAGE=$(DMIGRATE_IMAGE) bash scripts/generate-postgres-schema.sh --check
 
 # Go-Benchmark-Suite. Läuft
 # alle `Benchmark*`-Funktionen aus apps/api/.../**/*_bench_test.go
