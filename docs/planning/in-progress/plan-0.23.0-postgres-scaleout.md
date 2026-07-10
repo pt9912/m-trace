@@ -114,6 +114,54 @@
 >   noch offen sind die Gate-Verdrahtung (in `make gates`) und die
 >   Verifikation gegen eine frische PG-DB (PG-Lab, Task #6).
 >
+> **Amendment 2026-07-10 (b) — Feierabend-Status Tranche 2, 4/6 Ports.**
+> Tranche 1 komplett (#3–#6, ADR-0006-Schema/Runner/Lab). Tranche 2
+> (PG-Adapter für 6 Driven-Ports + Sequencer-Redesign) ist **4/6 fertig**
+> und gegen echte PG verifiziert (`make smoke-pg-lab`):
+>
+> - **Sequencer/R-28** (`78d75fc`): DB-autoritativ via `nextval` +
+>   Block-Allokation, port-erhaltend `Next() int64`.
+> - **srt_health** (`362d2d1`): etabliert das Dialekt-Spiegel-**Muster**.
+> - **project_token** (`34f60c6`): PG-Fehler-Code (SQLSTATE 23505) →
+>   `domain.ErrAuthTokenInvalid`.
+> - **event** (`5e0e324`): Keyset-Cursor mit `sequence_number::bigint`-
+>   Casts (PG-Spalte ist strikt int32).
+> - **Protokoll-Fix** (`47c7d7a`): `OpenPostgres` nutzt jetzt das
+>   **Extended**-Protokoll (typisierte Params); nur der Multi-Statement-
+>   Migrations-Body trägt Simple (via `dialect.bodyExecArgs`).
+>
+> **Das Muster** (`apps/api/adapters/driven/persistence/postgres/`):
+> `helpers.go` trägt `rebind()` (`?`→`$n`, wie sqlx.Rebind) + portable
+> Value-Mapper (das reversierte PG-Schema hat SQLite-Typen: datetime-als-
+> TEXT/RFC3339Nano, boolean-als-INTEGER, meta-als-TEXT-JSON) + `rowScanner`
+> + `nullSeqSentinel`/`persistedSchemaVersion`. Pro Port ein Spiegel der
+> SQLite-Query-Strings via `rebind()` + ein `*_pglab_test.go` (gated über
+> `MTRACE_PG_LAB_DSN`, im `-run`-Filter von `scripts/smoke-pg-lab.sh`).
+> Dialekt-Unterschiede nur bei: Placeholder (rebind), Fehler-Erkennung
+> (PG-SQLSTATE statt SQLite-Fehlerstring), Typ-Casts (int32-Spalten +
+> parameterlose `COALESCE($a,$b)` brauchen `::bigint`).
+>
+> **RESUME MORGEN — offen 2/6 Ports** (dem Muster folgen):
+> 1. **ingest_stream** (Port 5/6; SQLite-Vorlage
+>    `sqlite/ingest_stream_repository.go`, 402 Z.): 10 Methoden,
+>    **FK-Fehler-Mapping** (`mapIngestStreamCreateError` unterscheidet
+>    Name-Konflikt / Endpoint-NotFound / Target-NotFound — in PG über
+>    SQLSTATE 23505/23503 + `pgErr.ConstraintName`), **RNG-`panic`**-
+>    Muster für ID-Gen (crypto/rand), `SeedEndpoint/Target` mit
+>    `ON CONFLICT DO UPDATE`, `queryRower`-Interface. `rowScanner` liegt
+>    schon in `helpers.go` — nicht neu definieren.
+> 2. **session** (Port 6/6; `sqlite/session_repository.go`, 700 Z., der
+>    komplexeste): `UpsertFromEvents` mit **R-6-`correlation_id`-Race**
+>    (Sieger-CID via `RowsAffected`/Readback), Keyset-Pagination.
+> Nach jedem Port: `smoke-pg-lab` (`-run`-Filter erweitern) + golangci +
+> arch-check + lint-variante-b + commit „Port N/6".
+> **Danach**: Tranche 3 (Contract-Suite gegen PG + R-27-Wasserzeichen),
+> T4 Wiring, **T5 Multi-Replica — dort den in §3 notierten Startup-
+> Migrations-Race fixen** (`pg_advisory_lock`/Deploy-Job), T6 Lasttest, T7.
+> **Push-Stand EOD**: `origin/main` == `34f60c6`; **unpushed: `47c7d7a`,
+> `5e0e324`** (opt-in; vor Push voller `make gates`). Offene Entscheidung:
+> Security-Patch (`208525d` DoS-Fix + Go 1.26.5) als getaggter Release?
+>
 > **Bezug**: RAK-91 (Lastenheft, Postgres-Entscheidung); NF-20/NF-22/NF-23
 > (Lastfähigkeit); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md);
 > R-26 in [`risks-backlog.md`](risks-backlog.md);
