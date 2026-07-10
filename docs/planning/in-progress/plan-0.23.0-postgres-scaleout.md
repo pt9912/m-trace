@@ -273,6 +273,20 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   `INSERT ... ON CONFLICT`, Boolean (`INTEGER 0/1` → `boolean`), JSON-
   Spalten (`meta TEXT` → `text`/`jsonb`). Wird über das d-migrate-Target
   + adapter-lokale Query-Konstanten gekapselt.
+- **Startup-Migration ist nicht multi-replica-safe (empirisch in Tranche 2
+  belegt).** `OpenPostgres` wendet beim Start die Migrationen an
+  (`ensureSchemaMigrationsTable` + Apply). Postgres' `CREATE TABLE IF NOT
+  EXISTS`/DDL ist **nicht** race-safe: zwei gleichzeitige Läufe kollidieren
+  auf `pg_type_typname_nsp_index` (SQLSTATE 23505). Beim Start von N
+  Replicas (Tranche 5) migrieren also N Prozesse gleichzeitig → Startup-
+  Race. **Fix (vor Tranche 5):** Migrations-Apply mit einem
+  `pg_advisory_lock` serialisieren (nur ein Replica migriert, die anderen
+  warten/no-op) **oder** Migrationen als separater Deploy-Schritt/Init-Job
+  (ein Runner), Replicas nur verbinden — knüpft an die
+  [ADR-0007](../../adr/0007-sqlite-postgres-data-cutover.md)-nahe Frage
+  „d-migrate/Migration als Ops-Schritt" an. Der Tranche-2-Sequencer selbst
+  ist davon unberührt (der PG-Lab-R-28-Test migriert einmalig, Replicas
+  teilen die migrierte DB).
 - **Connection-Pooling + `max_connections` als Scale-out-Decke.** SQLite =
   ein File-Handle; Postgres braucht `pgxpool`-Pool-Sizing. **Reale
   Harness-Decke**: `N Replicas × pool_size ≤ max_connections` (Default 100)

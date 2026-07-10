@@ -82,14 +82,15 @@ fi
 
 DSN="postgres://${PG_USER}:${PG_PASS}@${DB}:5432/${PG_DB}?sslmode=disable"
 
-echo "  TestOpenPostgres_LiveSchema gegen die frische DB ..."
+echo "  PG-Lab-Integrationstests gegen die frische DB ..."
 if ! docker run --rm --network "${NET}" \
   -v "${API_DIR}:/src" -w /src \
   -e MTRACE_PG_LAB_DSN="${DSN}" \
   "${GO_IMAGE}" \
-  go test ./internal/storage/... -run TestOpenPostgres_LiveSchema -v -count=1; then
+  go test -p 1 ./internal/storage/... ./adapters/driven/persistence/postgres/... \
+    -run 'TestOpenPostgres_LiveSchema|TestIngestSequencer_PgLab' -v -count=1; then
   echo "[smoke-pg-lab] Integrationstest FEHLGESCHLAGEN." >&2
   exit 1
 fi
 
-echo "✔ smoke-pg-lab: frische PG-DB trägt das volle Live-Inventar (13 Tabellen, bigint-PKs, 18 CHECKs)."
+echo "✔ smoke-pg-lab: frische PG-DB trägt das volle Live-Inventar (13 Tabellen, bigint-PKs, 18 CHECKs); DB-autoritativer Sequencer ohne Dups über Replicas (R-28)."

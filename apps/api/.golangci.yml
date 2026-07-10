@@ -126,6 +126,7 @@ linters:
     generated: lax
     rules:
       - linters:
+          - contextcheck
           - noctx
         path: _test\.go$
       - linters:
