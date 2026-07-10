@@ -210,45 +210,6 @@ trivy:
       expires: 2026-08-26
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
-    # CVE-2026-45447 (openssl / libssl3t64): Heap Use-after-free in
-    # PKCS7_verify(). Ein praepariertes PKCS#7-/S-MIME-Signed-Message
-    # mit leerem ASN.1-SET im SignedData-digestAlgorithms-Feld laesst
-    # OpenSSL eine caller-owned BIO waehrend PKCS7_verify() falsch
-    # freigeben; ein nachfolgender BIO_free()-Aufruf der Anwendung
-    # triggert das Use-after-free. CISA-ADP CVSS 9.8 CRITICAL, NVD-
-    # Eigenbewertung noch pending; Trivy stuft (Aqua/Debian) HIGH.
-    # NVD-Publikation 2026-06-09 (OpenSSL-Advisory + DSA-6335-1).
-    # ABGRENZUNG zu R-13 / perl-base-Cohort: hier existiert ein
-    # Upstream-Fix in Trixie — `openssl 3.5.6-1~deb13u2` (DSA-6335-1).
-    # Die Images tragen die verwundbare Base-Version `3.5.6-1~deb13u1`,
-    # weil das floating `node:22-trixie-slim` zum Build-Zeitpunkt noch
-    # `deb13u1` liefert und die Dockerfiles bewusst kein
-    # `apt-get upgrade` fahren. Trivys DB kennt die Fixed-Version noch
-    # nicht ("Fixed Version"-Spalte leer), d.h. selbst ein sofortiges
-    # apt-Upgrade auf `deb13u2` wuerde den Gate erst gruen machen, wenn
-    # Trivys Debian-Feed den Fix kennt. Diese Suppression ueberbrueckt
-    # genau dieses DB-Lag-Fenster.
-    # Vektor im m-trace-Runtime nicht erreichbar:
-    #   - Laut OpenSSL-Advisory NICHT ueber Standard-TLS erreichbar;
-    #     die Anwendung muss aktiv PKCS#7-/S-MIME-Signed-Messages mit
-    #     den PKCS7-APIs verarbeiten (CMS-APIs sind nicht betroffen,
-    #     FIPS-Module nicht betroffen).
-    #   - Dashboard- und Analyzer-Service-Runtime (node, SvelteKit-
-    #     adapter-node bzw. Analyzer-WS) verarbeiten **kein** PKCS#7/
-    #     S-MIME. Codebase-grep bestaetigt: kein pkcs7/PKCS7_verify/
-    #     smime-Aufruf im Node-Pfad (einziger Treffer ist MP4-
-    #     MIME-Typ-Matching in stream-analyzer, semantisch unverwandt).
-    # Re-Review 2026-06-10 (Hotfix Nightly-Audit): KURZES `expires`
-    # 2026-07-10, weil ein Fix bereits existiert. Folge-Trigger
-    # (R-23): sobald `node:22-trixie-slim` `deb13u2` liefert →
-    # `docker build --pull` zieht die gepatchte Lib und dieser Eintrag
-    # wird ersatzlos entfernt; alternativ Trivy-DB kennt die Fixed-
-    # Version → Befund verschwindet ohnehin.
-    - id: CVE-2026-45447
-      reason: "openssl/libssl3t64 PKCS7_verify() Heap Use-after-free via crafted PKCS#7/S-MIME (CISA 9.8, Trivy HIGH); Vektor nicht ueber TLS erreichbar, Node-Runtime verarbeitet kein PKCS#7/S-MIME (grep-bestaetigt). Fix existiert (openssl 3.5.6-1~deb13u2, DSA-6335-1) — kurze Suppression nur fuer das Trivy-DB-Lag-/floating-base-Fenster. NVD-Publikation 2026-06-09, neu durch Trivy-Bump 0.59.1→0.71.0 sichtbar. Trigger R-23."
-      expires: 2026-07-10
-      scope: "mtrace-dashboard, mtrace-analyzer-service"
-
     # CVE-2026-11822 / CVE-2026-11824 (sqlite3 / libsqlite3-0):
     # Zwei Schwachstellen in der SQLite-FTS5-Full-Text-Search-Extension,
     # beide "SQLite before 3.53.2":
@@ -403,6 +364,42 @@ trivy:
     - id: CVE-2026-41992
       reason: "gzip <=1.14 Global Buffer Over-read im LZH-Decoder (CWE-126, NIST 7.5 HIGH / CNA 6.9 MEDIUM) → Info-Disclosure, benoetigt `gzip -d` ueber praeparierte LZW-+LZH-Dateien in einem Aufruf; alle Debian-Suites vulnerable, KEIN Fix-Paket (no-dsa/Minor, Upstream-Commit nicht paketiert), Base-Bump hilft nicht. gzip nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft das gzip-CLI nie auf (grep-bestaetigt), Node nutzt gebundelte zlib ohne LZH-Pfad. NVD-Publikation 2026-06-29, neu im Nightly-Scan 2026-07-02."
       expires: 2026-09-30
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
+    # CVE-2026-53615 (util-linux / libblkid): Integer Overflow
+    # (uint32_t) in parse_dos_extended() — dem EBR-Parser (Extended
+    # Boot Record) in libblkid/src/partitions/dos.c. Ein praepariertes
+    # Block-Device-Image mit manipuliertem EBR laesst libblkid eine
+    # Partition bei Sektor 0 (MBR) registrieren; der Bug existiert seit
+    # 2009 (util-linux-ng 2.17). NVD-Publikation ~2026-06-18, Trivy
+    # stuft (Aqua/Debian) HIGH. Betrifft die gesamte util-linux-
+    # Paketkohorte der Trixie-Slim-Base 2.41-5 (bsdutils, libblkid1,
+    # liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount,
+    # util-linux — 9 Packages).
+    # Debian-Stand: KEIN Fix-Paket ("Fixed Version"-Spalte leer);
+    # Upstream-Fix (Karel Zak) noch nicht nach Trixie paketiert, ein
+    # Base-Bump/`apt-get upgrade` hilft daher nicht.
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Der Angriffspfad braucht ein praepariertes Block-Device, das
+    #     libblkid probet — laut Advisory typischerweise via
+    #     udev/udisks als root beim Hot-Plug (USB-Insertion,
+    #     loop-gemountetes Image).
+    #   - Dashboard- und Analyzer-Service-Runtime sind Node-Container
+    #     (SvelteKit-adapter-node bzw. Analyzer-WS), USER node: **kein**
+    #     udev/udisks, **keine** Block-Device-Hot-Plug-Events, keine
+    #     USB-/loop-mount-Surface, kein privilegierter Device-Zugriff.
+    #   - Codebase-grep bestaetigt: kein blkid/libblkid/partition-
+    #     Aufruf im Node-Pfad (einzige "partition"-Treffer sind
+    #     `(project_id, session_id)`-Event-Partitionen, semantisch
+    #     unverwandt). libblkid liegt nur als util-linux-Transitivpaket
+    #     der Base, wird im Runtime nie invoked.
+    # Re-Review 2026-07-10 (Nightly-Audit, Issue #12/#13): `expires`
+    # 90 Tage auf 2026-10-08. Naechster Re-Review-Trigger: Debian-
+    # Paketierung des Upstream-Fixes (Trixie-DSA/deb13u-Backport) ODER
+    # `expires`-Schwelle.
+    - id: CVE-2026-53615
+      reason: "util-linux/libblkid parse_dos_extended() Integer Overflow (EBR-Parser, dos.c; HIGH) → crafted Block-Device registriert Partition bei Sektor 0; Trixie-Base 2.41-5, KEIN Fix-Paket (Fixed Version leer, Upstream-Fix nicht nach Trixie paketiert, Base-Bump hilft nicht). Vektor braucht libblkid-Probing eines praeparierten Block-Devices (udev/udisks-Hot-Plug); Node-Container ohne udev/udisks, ohne Block-Device-/USB-/loop-Surface, USER node, ruft libblkid nie auf (grep-bestaetigt). NVD-Publikation ~2026-06-18, neu im Nightly-Scan. Trifft 9 util-linux-Packages."
+      expires: 2026-10-08
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
 govulncheck:
