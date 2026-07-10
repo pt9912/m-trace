@@ -59,6 +59,13 @@ const driverName = "sqlite"
 type dialect struct {
 	placeholder   func(n int) string
 	migrationsDir string
+	// bodyExecArgs werden dem Exec des (Multi-Statement-)Migrations-
+	// Bodys vorangestellt. Für Postgres trägt es
+	// pgx.QueryExecModeSimpleProtocol: nur der Migrations-Body braucht
+	// das Simple-Protokoll (Extended erlaubt kein Multi-Statement), die
+	// Verbindung selbst bleibt auf Extended → typisierte Parameter und
+	// korrekte Typinferenz in den Runtime-Adaptern.
+	bodyExecArgs []any
 }
 
 // sqliteDialect und postgresDialect liefern den jeweiligen Dialekt.
@@ -76,6 +83,7 @@ func postgresDialect() dialect {
 	return dialect{
 		placeholder:   func(n int) string { return "$" + strconv.Itoa(n) },
 		migrationsDir: "migrations/postgres",
+		bodyExecArgs:  []any{pgx.QueryExecModeSimpleProtocol},
 	}
 }
 
@@ -116,18 +124,20 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 // eingebetteten Postgres-Migrationen (migrations/postgres/) an und gibt
 // die fertige *sql.DB zurück (ADR-0006, optionaler Scale-out-Adapter).
 //
-// Der Query-Exec-Mode wird auf das Simple-Query-Protokoll gesetzt: die
-// Migrationsbodies sind Multi-Statement (V1 = 13 CREATE TABLE + Indizes
-// in einem Exec), was das pgx-Default-Extended-Protokoll (ein Statement
-// pro Exec) ablehnen würde. Das Simple-Protokoll interpoliert Bind-
-// Parameter client-seitig und trägt daher auch die `$n`-Platzhalter der
-// schema_migrations-Statements.
+// Die Verbindung nutzt das pgx-Default-**Extended**-Protokoll:
+// typisierte Bind-Parameter → korrekte Typinferenz in den
+// Runtime-Adaptern (das Simple-Protokoll interpolierte Parameter als
+// Text-Literale und ließe PG bei mehrdeutigen `COALESCE($1,$2)`-Cursorn
+// fälschlich `text` inferieren). Nur der Multi-Statement-Migrations-Body
+// (V1 = 13 CREATE TABLE + Indizes in einem Exec) braucht das
+// Simple-Protokoll — das trägt der postgresDialect() per bodyExecArgs
+// gezielt an genau diesem Exec (applyOne), nicht an der ganzen
+// Verbindung.
 func OpenPostgres(ctx context.Context, dsn string) (*sql.DB, error) {
 	connConfig, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("storage: parse postgres dsn: %w", err)
 	}
-	connConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	db := stdlib.OpenDB(*connConfig)
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
@@ -303,7 +313,7 @@ func applyOne(ctx context.Context, db *sql.DB, m migration, d dialect) error {
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, m.body); err != nil {
+	if _, err := tx.ExecContext(ctx, m.body, d.bodyExecArgs...); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
