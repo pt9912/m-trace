@@ -16,7 +16,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -306,6 +306,16 @@ smoke-key-rotation:
 # Compose-Multi-Container-Variante bleibt Folge-Item.
 smoke-issuance-replica:
 	bash scripts/smoke-issuance-replica.sh
+
+# `make smoke-pg-lab` — ADR-0006
+# PG-Lab-Integrationssmoke: startet eine ephemere Postgres-DB, wendet
+# die eingecheckten Postgres-Migrationen via storage.OpenPostgres an
+# (TestOpenPostgres_LiveSchema) und verifiziert das Tabellen-/Spalten-
+# Inventar, die zwei bigint-PKs und die 18 CHECK-Constraints gegen die
+# frische DB. Ergänzt das schema-generate-postgres-check-Drift-Gate um
+# die Materialisierungs-Verifikation. Opt-in (NICHT in `make gates`).
+smoke-pg-lab:
+	bash scripts/smoke-pg-lab.sh
 
 # `make smoke-issuance-multi-host` — RAK-88
 # (R-17). Multi-Host-Variante des Shared-State-Limiters: zwei
