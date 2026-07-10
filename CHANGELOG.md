@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **stream-analyzer**: Endlosschleife (DoS, CWE-835) im HLS-Attribut-Parser
+  `parseAttributeList` bei einer Attributliste mit führendem `=` (leerer
+  Key direkt gefolgt von `=`, z. B. `#EXT-X-STREAM-INF:=x`): `readKey`
+  stoppt am `=` ohne den Index vorzurücken und `consumeComma` rückt nur
+  bei `,` vor → die äußere while-Schleife dreht unbounded. Aus untrusted
+  Manifest-Input erreichbar. Der Empty-Key-Zweig konsumiert jetzt ein
+  wertloses `=value` mit, sodass der Index garantiert vorrückt. Regressions-
+  und Edge-Case-Tests in
+  `packages/stream-analyzer/tests/parser-edge-cases.test.ts` (härten
+  zugleich die stream-analyzer-Branch-Coverage über die zuvor flaky
+  91%-Schwelle, 90,91 % → 91,81 %).
+
 ## [0.22.4] - 2026-06-23
 
 > **Patch-/Security-Release** gemäß

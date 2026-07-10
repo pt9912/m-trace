@@ -29,6 +29,14 @@ export function parseAttributeList(input: string): Map<string, string> {
     const keyRead = readKey(input, i, n);
     i = keyRead.next;
     if (keyRead.key.length === 0) {
+      // Kein Attributname (führendes ',' oder '='). Bei führendem '='
+      // das wertlose '=value' mitkonsumieren — sonst rücken WEDER readKey
+      // (stoppt am '=') NOCH consumeComma (nur bei ',') `i` vor, und die
+      // äußere while-Schleife dreht endlos (CWE-835, DoS aus untrusted
+      // Manifest-Input). Ein führendes ',' rückt via consumeComma vor.
+      if (i < n && input[i] === "=") {
+        i = readValue(input, i + 1, n).next;
+      }
       i = consumeComma(input, i, n);
       continue;
     }
