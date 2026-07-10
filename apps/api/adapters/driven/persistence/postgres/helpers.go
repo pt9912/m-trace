@@ -2,11 +2,24 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
+
+// nullSeqSentinel ist der int64-Wert, mit dem `sequence_number IS NULL`
+// in COALESCE-basierten Cursor-Vergleichen behandelt wird
+// (math.MinInt64) — NULL-Events sortieren strikt VOR gesetzten
+// sequence_number-Werten (ADR-0002, API-Kontrakt).
+const nullSeqSentinel int64 = -1 << 63
+
+// persistedSchemaVersion ist die einzige Wire-Format-Version, die dieses
+// Release annimmt (spec/backend-api-contract.md).
+const persistedSchemaVersion = "1.0"
 
 // rowScanner abstrahiert `*sql.Row` und `*sql.Rows` über ihre
 // gemeinsame Scan-Signatur, damit scan-Helper beide Quellen bedienen.
@@ -101,4 +114,40 @@ func nullableFloat64(p *float64) any {
 		return nil
 	}
 	return *p
+}
+
+// boolToInt mappt einen Go-bool auf den INTEGER-Wert (0/1). Das
+// reversierte PG-Schema behielt SQLites boolean-als-INTEGER (z. B.
+// time_skew_warning INTEGER), daher dieselbe Kodierung.
+func boolToInt(b bool) int64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// encodeMeta serialisiert die Domain-Meta-Map als JSON-String. nil →
+// SQL-NULL. Die meta-Spalte ist TEXT (reversiertes Schema), kein jsonb.
+func encodeMeta(m domain.EventMeta) (any, error) {
+	if m == nil {
+		return nil, nil
+	}
+	raw, err := json.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("postgres: encode meta: %w", err)
+	}
+	return string(raw), nil
+}
+
+// decodeMeta deserialisiert einen TEXT-meta-Wert zurück in die
+// Domain-Map. SQL-NULL und Leerstring → nil-Map.
+func decodeMeta(raw sql.NullString) (domain.EventMeta, error) {
+	if !raw.Valid || raw.String == "" {
+		return nil, nil
+	}
+	var m domain.EventMeta
+	if err := json.Unmarshal([]byte(raw.String), &m); err != nil {
+		return nil, fmt.Errorf("postgres: decode meta: %w", err)
+	}
+	return m, nil
 }
