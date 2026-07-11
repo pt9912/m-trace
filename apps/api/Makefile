@@ -25,7 +25,7 @@ NO_CACHE_FILTER_RACE     := --no-cache-filter race
 # in V1__m_trace.sql stabil bleibt — `:latest` würde bei jedem
 # d-migrate-Release einen schleichenden DDL-Diff erzeugen.
 SCHEMA_DIR     := internal/storage
-DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:0.9.9
+DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:0.9.10
 
 # Run unit + integration tests inside Docker.
 test:

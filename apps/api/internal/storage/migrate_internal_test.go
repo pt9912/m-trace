@@ -42,46 +42,19 @@ func TestOpen_FreshStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read schema_migrations: %v", err)
 	}
-	// Ab (Migrations-Konsolidierung) ist V1 die
-	// rolling Baseline und enthält den vollen Zielzustand aus
-	// schema.yaml; die historischen V2..V5 wurden gelöscht (kein
-	// Production-State). fügt V2__ingest.sql
-	// für den Ingest-Control-Pfad an, dann V3 für die
-	// Lifecycle-Hook-Felder (`event_id` opak, `connection_id`,
-	// `reason`, Source-Allowlist `local-smoke`/`mediamtx-hook`).
-	//  ergänzt V4__project_tokens.sql mit der
-	// `project_token_generations`-Tabelle für rotierbare Project-
-	// Token-Generationen (RAK-73). fügt
-	// V5__auth_issuance_counters.sql mit der Shared-State-Token-
-	// Bucket-Tabelle für R-17 (RAK-77). ergänzt
-	// V6__playback_event_time_skew.sql mit der `time_skew_warning`-
-	// Spalte an `playback_events` für R-5 (RAK-83).
-	// ergänzt V7__session_sample_rate.sql mit der
-	// `sample_rate_ppm`-Spalte an `stream_sessions` für R-10
-	// (RAK-85). Fresh-Start läuft damit sieben Migrationen.
-	if len(rows) != 7 {
-		t.Fatalf("schema_migrations rows = %d, want 7", len(rows))
+	// Nach dem schema.yaml-Refold (rolling-V1-Rekonsolidierung) ist V1 die
+	// einzige Migration und enthält den vollen 13-Tabellen-Zielzustand aus
+	// schema.yaml; die historischen V2..V7 (Ingest-Control, Lifecycle-Hooks,
+	// project_token_generations, auth_issuance_counters, time_skew_warning,
+	// sample_rate_ppm) wurden in die V1-Baseline zurückgefaltet und gelöscht
+	// (kein durable Production-State; Apply-Runner ignoriert applied-Versionen
+	// ohne File, siehe ADR-0002 §8.2). Fresh-Start läuft damit genau eine
+	// Migration.
+	if len(rows) != 1 {
+		t.Fatalf("schema_migrations rows = %d, want 1", len(rows))
 	}
 	if rows[0].version != 1 || rows[0].dirty != 0 {
 		t.Errorf("row[0] = %+v, want version=1 dirty=0", rows[0])
-	}
-	if rows[1].version != 2 || rows[1].dirty != 0 {
-		t.Errorf("row[1] = %+v, want version=2 dirty=0", rows[1])
-	}
-	if rows[2].version != 3 || rows[2].dirty != 0 {
-		t.Errorf("row[2] = %+v, want version=3 dirty=0", rows[2])
-	}
-	if rows[3].version != 4 || rows[3].dirty != 0 {
-		t.Errorf("row[3] = %+v, want version=4 dirty=0", rows[3])
-	}
-	if rows[4].version != 5 || rows[4].dirty != 0 {
-		t.Errorf("row[4] = %+v, want version=5 dirty=0", rows[4])
-	}
-	if rows[5].version != 6 || rows[5].dirty != 0 {
-		t.Errorf("row[5] = %+v, want version=6 dirty=0", rows[5])
-	}
-	if rows[6].version != 7 || rows[6].dirty != 0 {
-		t.Errorf("row[6] = %+v, want version=7 dirty=0", rows[6])
 	}
 }
 

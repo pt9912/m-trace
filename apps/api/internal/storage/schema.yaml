@@ -1,279 +1,744 @@
-schema_format: "1.0"
-name: "m-trace"
-version: "1.0.0"
-
-# Quelle: docs/adr/0002-persistence-store.md §8.1.
-# Apply-Runner verwaltet die schema_migrations-Tabelle selbst und
-# erscheint daher nicht in dieser YAML.
-#
-# Generiert das Initial-DDL via:
-#   make schema-generate
-# Validiert die YAML via:
-#   make schema-validate
-
+schema_format: 1.0
+name: m-trace
+version: 1.0.0
 tables:
+  auth_issuance_counters:
+    columns:
+      bucket_key:
+        type: text
+        ordinal: 1
+      capacity:
+        type: integer
+        ordinal: 2
+        required: true
+      refill_per_second:
+        type: float
+        ordinal: 3
+        required: true
+      tokens:
+        type: float
+        ordinal: 4
+        required: true
+      last_at:
+        type: text
+        ordinal: 5
+        required: true
+      expires_at:
+        type: text
+        ordinal: 6
+        required: true
+    primary_key:
+    - bucket_key
+    indices:
+    - name: idx_auth_issuance_counters_expires
+      columns:
+      - expires_at
+  ingest_endpoints:
+    columns:
+      endpoint_id:
+        type: text
+        ordinal: 1
+      protocol:
+        type: text
+        ordinal: 2
+        required: true
+      listen_host:
+        type: text
+        ordinal: 3
+        required: true
+      listen_port:
+        type: integer
+        ordinal: 4
+        required: true
+      path_template:
+        type: text
+        ordinal: 5
+        required: true
+      lab_stack:
+        type: text
+        ordinal: 6
+        required: true
+      public_url_hint:
+        type: text
+        ordinal: 7
+        required: true
+    primary_key:
+    - endpoint_id
+    constraints:
+    - name: chk_ingest_endpoints_protocol
+      type: check
+      expression: "protocol IN ('srt', 'rtmp')"
+  ingest_routing_rules:
+    columns:
+      rule_id:
+        type: text
+        ordinal: 1
+      project_id:
+        type: text
+        ordinal: 2
+        required: true
+      stream_id:
+        type: text
+        ordinal: 3
+        required: true
+      target_id:
+        type: text
+        ordinal: 4
+        required: true
+      mode:
+        type: text
+        ordinal: 5
+        required: true
+        default: single
+      enabled:
+        type: integer
+        ordinal: 6
+        required: true
+        default: 1
+    primary_key:
+    - rule_id
+    indices:
+    - name: idx_ingest_routing_rules_stream
+      columns:
+      - project_id
+      - stream_id
+    constraints:
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      - stream_id
+      references:
+        table: ingest_streams
+        columns:
+        - project_id
+        - stream_id
+        on_delete: cascade
+    - name: fk_1
+      type: foreign_key
+      columns:
+      - target_id
+      references:
+        table: media_server_targets
+        columns:
+        - target_id
+        on_delete: restrict
+    - name: chk_ingest_routing_rules_mode
+      type: check
+      expression: mode IN ('single')
+    - name: chk_ingest_routing_rules_enabled
+      type: check
+      expression: "enabled IN (0, 1)"
+  ingest_streams:
+    columns:
+      stream_id:
+        type: text
+        ordinal: 1
+      project_id:
+        type: text
+        ordinal: 2
+      display_name:
+        type: text
+        ordinal: 3
+        required: true
+      protocol:
+        type: text
+        ordinal: 4
+        required: true
+      endpoint_id:
+        type: text
+        ordinal: 5
+        required: true
+      target_id:
+        type: text
+        ordinal: 6
+        required: true
+      routing_rule_id:
+        type: text
+        ordinal: 7
+        required: true
+      status:
+        type: text
+        ordinal: 8
+        required: true
+        default: ready
+      created_at:
+        type: text
+        ordinal: 9
+        required: true
+      updated_at:
+        type: text
+        ordinal: 10
+        required: true
+    primary_key:
+    - project_id
+    - stream_id
+    indices:
+    - name: idx_ingest_streams_active_display_name
+      columns:
+      - project_id
+      - display_name
+      unique: true
+      where: '"status" != ''ended'''
+    constraints:
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      references:
+        table: projects
+        columns:
+        - project_id
+        on_delete: restrict
+    - name: chk_ingest_streams_protocol
+      type: check
+      expression: "protocol IN ('srt', 'rtmp')"
+    - name: chk_ingest_streams_status
+      type: check
+      expression: "status IN ('ready', 'live', 'ended', 'disabled')"
+  media_server_targets:
+    columns:
+      target_id:
+        type: text
+        ordinal: 1
+      kind:
+        type: text
+        ordinal: 2
+        required: true
+      config_path:
+        type: text
+        ordinal: 3
+        required: true
+      hls_url_template:
+        type: text
+        ordinal: 4
+        required: true
+      control_api_url:
+        type: text
+        ordinal: 5
+        required: true
+        default: ""
+    primary_key:
+    - target_id
+    constraints:
+    - name: chk_media_server_targets_kind
+      type: check
+      expression: "kind IN ('mediamtx', 'srs')"
+  playback_events:
+    columns:
+      ingest_sequence:
+        type: biginteger
+        ordinal: 1
+        generation:
+          type: identity
+          mode: by_default
+          legacy_serial_syntax: true
+      project_id:
+        type: text
+        ordinal: 2
+        required: true
+      session_id:
+        type: text
+        ordinal: 3
+        required: true
+      event_name:
+        type: text
+        ordinal: 4
+        required: true
+      client_timestamp:
+        type: text
+        ordinal: 5
+        required: true
+      server_received_at:
+        type: text
+        ordinal: 6
+        required: true
+      sequence_number:
+        type: integer
+        ordinal: 7
+      sdk_name:
+        type: text
+        ordinal: 8
+        required: true
+      sdk_version:
+        type: text
+        ordinal: 9
+        required: true
+      schema_version:
+        type: text
+        ordinal: 10
+        required: true
+      meta:
+        type: text
+        ordinal: 11
+      delivery_status:
+        type: text
+        ordinal: 12
+        required: true
+        default: accepted
+      trace_id:
+        type: text
+        ordinal: 13
+      span_id:
+        type: text
+        ordinal: 14
+      correlation_id:
+        type: text
+        ordinal: 15
+      time_skew_warning:
+        type: integer
+        ordinal: 16
+        required: true
+        default: 0
+    primary_key:
+    - ingest_sequence
+    indices:
+    - name: idx_playback_events_dedup
+      columns:
+      - project_id
+      - session_id
+      - sequence_number
+    - name: idx_playback_events_session_canonical
+      columns:
+      - project_id
+      - session_id
+      - server_received_at
+      - sequence_number
+      - ingest_sequence
+    constraints:
+    - name: chk_playback_events_delivery_status
+      type: check
+      expression: "delivery_status IN ('accepted', 'duplicate_suspected', 'replayed')"
+  project_token_generations:
+    columns:
+      token_id:
+        type: text
+        ordinal: 1
+      project_id:
+        type: text
+        ordinal: 2
+        required: true
+      key_hash:
+        type: text
+        ordinal: 3
+        required: true
+        unique: true
+      fingerprint:
+        type: text
+        ordinal: 4
+        required: true
+      not_before:
+        type: text
+        ordinal: 5
+        required: true
+      grace_until:
+        type: text
+        ordinal: 6
+      expires_at:
+        type: text
+        ordinal: 7
+      revoked_at:
+        type: text
+        ordinal: 8
+      created_at:
+        type: text
+        ordinal: 9
+        required: true
+      rotated_from:
+        type: text
+        ordinal: 10
+    primary_key:
+    - token_id
+    indices:
+    - name: idx_project_token_generations_project
+      columns:
+      - project_id
+      - created_at
+    constraints:
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      references:
+        table: projects
+        columns:
+        - project_id
+        on_delete: cascade
   projects:
     columns:
       project_id:
         type: text
-        required: true
-    primary_key: [project_id]
-
-  stream_sessions:
+        ordinal: 1
+    primary_key:
+    - project_id
+  srt_health_samples:
     columns:
-      session_id:
-        type: text
-        required: true
+      id:
+        type: biginteger
+        ordinal: 1
+        generation:
+          type: identity
+          mode: by_default
+          legacy_serial_syntax: true
       project_id:
         type: text
+        ordinal: 2
         required: true
-        references:
-          table: projects
-          column: project_id
-          on_delete: restrict
-      state:
+      stream_id:
         type: text
+        ordinal: 3
         required: true
-        default: "active"
-      started_at:
-        type: datetime
-        required: true
-      last_seen_at:
-        type: datetime
-        required: true
-      ended_at:
-        type: datetime
-      event_count:
-        type: biginteger
-        required: true
-        default: 0
-      correlation_id:
+      connection_id:
         type: text
-      end_source:
+        ordinal: 4
+        required: true
+      source_observed_at:
         type: text
-    primary_key: [project_id, session_id]
+        ordinal: 5
+      source_sequence:
+        type: text
+        ordinal: 6
+      collected_at:
+        type: text
+        ordinal: 7
+        required: true
+      ingested_at:
+        type: text
+        ordinal: 8
+        required: true
+      rtt_ms:
+        type: float
+        ordinal: 9
+        required: true
+      packet_loss_total:
+        type: integer
+        ordinal: 10
+        required: true
+      packet_loss_rate:
+        type: float
+        ordinal: 11
+      retransmissions_total:
+        type: integer
+        ordinal: 12
+        required: true
+      available_bandwidth_bps:
+        type: integer
+        ordinal: 13
+        required: true
+      throughput_bps:
+        type: integer
+        ordinal: 14
+      required_bandwidth_bps:
+        type: integer
+        ordinal: 15
+      sample_window_ms:
+        type: integer
+        ordinal: 16
+      source_status:
+        type: text
+        ordinal: 17
+        required: true
+      source_error_code:
+        type: text
+        ordinal: 18
+        required: true
+      connection_state:
+        type: text
+        ordinal: 19
+        required: true
+      health_state:
+        type: text
+        ordinal: 20
+        required: true
+    primary_key:
+    - id
     indices:
-      - name: idx_stream_sessions_project_started
-        columns: [project_id, started_at, session_id]
-        type: btree
-      # Sweep (`UPDATE … WHERE state = 'active'`) und der active-
-      # sessions-Gauge (`SELECT COUNT(*) WHERE state = ?`) scant sonst
-      # die ganze Tabelle; dieser Index hält beide Pfade konstant in
-      # der Größenordnung des Result-Sets.
-      - name: idx_stream_sessions_state
-        columns: [state]
-        type: btree
+    - name: idx_srt_health_samples_dedupe
+      columns:
+      - project_id
+      - stream_id
+      - connection_id
+      - source_observed_at
+      - source_sequence
+    - name: idx_srt_health_samples_stream_ingested
+      columns:
+      - project_id
+      - stream_id
+      - ingested_at
+      - id
     constraints:
-      - name: chk_stream_sessions_state
-        type: check
-        expression: "state IN ('active', 'stalled', 'ended')"
-      - name: chk_stream_sessions_end_source
-        type: check
-        expression: "end_source IS NULL OR end_source IN ('client', 'sweeper')"
-
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      references:
+        table: projects
+        columns:
+        - project_id
+        on_delete: restrict
+    - name: chk_srt_health_samples_source_status
+      type: check
+      expression: "source_status IN ('ok', 'unavailable', 'partial', 'stale', 'no_active_connection')"
+    - name: chk_srt_health_samples_source_error_code
+      type: check
+      expression: "source_error_code IN ('none', 'source_unavailable', 'no_active_connection',\
+        \ 'partial_sample', 'stale_sample', 'parse_error')"
+    - name: chk_srt_health_samples_connection_state
+      type: check
+      expression: "connection_state IN ('connected', 'no_active_connection', 'unknown')"
+    - name: chk_srt_health_samples_health_state
+      type: check
+      expression: "health_state IN ('healthy', 'degraded', 'critical', 'unknown')"
+  stream_keys:
+    columns:
+      key_id:
+        type: text
+        ordinal: 1
+      project_id:
+        type: text
+        ordinal: 2
+        required: true
+      stream_id:
+        type: text
+        ordinal: 3
+        required: true
+      key_hash:
+        type: text
+        ordinal: 4
+        required: true
+      fingerprint:
+        type: text
+        ordinal: 5
+        required: true
+      created_at:
+        type: text
+        ordinal: 6
+        required: true
+      deactivated_at:
+        type: text
+        ordinal: 7
+    primary_key:
+    - key_id
+    indices:
+    - name: idx_stream_keys_stream
+      columns:
+      - project_id
+      - stream_id
+      - deactivated_at
+    - name: idx_stream_keys_active_unique
+      columns:
+      - project_id
+      - key_hash
+      unique: true
+      where: '"deactivated_at" IS NULL'
+    constraints:
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      - stream_id
+      references:
+        table: ingest_streams
+        columns:
+        - project_id
+        - stream_id
+        on_delete: cascade
+  stream_lifecycle_events:
+    columns:
+      event_id:
+        type: text
+        ordinal: 1
+      project_id:
+        type: text
+        ordinal: 2
+        required: true
+      stream_id:
+        type: text
+        ordinal: 3
+        required: true
+      kind:
+        type: text
+        ordinal: 4
+        required: true
+      occurred_at:
+        type: text
+        ordinal: 5
+        required: true
+      received_at:
+        type: text
+        ordinal: 6
+        required: true
+      source:
+        type: text
+        ordinal: 7
+        required: true
+      key_fingerprint:
+        type: text
+        ordinal: 8
+        required: true
+        default: ""
+      connection_id:
+        type: text
+        ordinal: 9
+        required: true
+        default: ""
+      reason:
+        type: text
+        ordinal: 10
+        required: true
+        default: ""
+    primary_key:
+    - event_id
+    indices:
+    - name: idx_stream_lifecycle_events_stream
+      columns:
+      - project_id
+      - stream_id
+      - occurred_at
+    constraints:
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      - stream_id
+      references:
+        table: ingest_streams
+        columns:
+        - project_id
+        - stream_id
+        on_delete: cascade
+    - name: chk_stream_lifecycle_events_kind
+      type: check
+      expression: "kind IN ('stream_started', 'stream_ended')"
+    - name: chk_stream_lifecycle_events_source
+      type: check
+      expression: "source IN ('local-smoke', 'mediamtx-hook')"
   stream_session_boundaries:
     columns:
       project_id:
         type: text
-        required: true
+        ordinal: 1
       session_id:
         type: text
-        required: true
+        ordinal: 2
       kind:
         type: text
-        required: true
+        ordinal: 3
       network_kind:
         type: text
-        required: true
+        ordinal: 4
       adapter:
         type: text
-        required: true
+        ordinal: 5
       reason:
         type: text
-        required: true
+        ordinal: 6
       client_timestamp:
-        type: datetime
+        type: text
+        ordinal: 7
         required: true
       server_received_at:
-        type: datetime
-        required: true
-    primary_key: [project_id, session_id, kind, network_kind, adapter, reason]
-    indices:
-      - name: idx_stream_session_boundaries_session
-        columns: [project_id, session_id]
-        type: btree
-    constraints:
-      - name: chk_stream_session_boundaries_kind
-        type: check
-        expression: "kind IN ('network_signal_absent')"
-      - name: chk_stream_session_boundaries_network_kind
-        type: check
-        expression: "network_kind IN ('manifest', 'segment')"
-      - name: chk_stream_session_boundaries_adapter
-        type: check
-        expression: "adapter IN ('hls.js', 'native_hls', 'unknown')"
-      # Composite-FK auf stream_sessions(project_id, session_id) mit
-      # ON DELETE CASCADE: beim späteren Löschen einer Session sollen
-      # keine verwaisten Boundaries zurückbleiben (ADR-0002
-      # Reset-Pfad). Vor lebte dieser FK nur in
-      # der inkrementellen V3-Migration; mit der Migrations-Konsoli-
-      # dierung ist `schema.yaml` jetzt Single-Source-of-Truth.
-      - name: fk_stream_session_boundaries_session
-        type: foreign_key
-        columns: [project_id, session_id]
-        references:
-          table: stream_sessions
-          columns: [project_id, session_id]
-          on_delete: cascade
-
-  playback_events:
-    columns:
-      ingest_sequence:
-        type: identifier
-        auto_increment: true
-      project_id:
         type: text
+        ordinal: 8
         required: true
+    primary_key:
+    - project_id
+    - session_id
+    - kind
+    - network_kind
+    - adapter
+    - reason
+    indices:
+    - name: idx_stream_session_boundaries_session
+      columns:
+      - project_id
+      - session_id
+    constraints:
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      - session_id
+      references:
+        table: stream_sessions
+        columns:
+        - project_id
+        - session_id
+        on_delete: cascade
+    - name: chk_stream_session_boundaries_kind
+      type: check
+      expression: kind IN ('network_signal_absent')
+    - name: chk_stream_session_boundaries_network_kind
+      type: check
+      expression: "network_kind IN ('manifest', 'segment')"
+    - name: chk_stream_session_boundaries_adapter
+      type: check
+      expression: "adapter IN ('hls.js', 'native_hls', 'unknown')"
+  stream_sessions:
+    columns:
       session_id:
         type: text
-        required: true
-      event_name:
-        type: text
-        required: true
-      client_timestamp:
-        type: datetime
-        required: true
-      server_received_at:
-        type: datetime
-        required: true
-      sequence_number:
-        type: biginteger
-      sdk_name:
-        type: text
-        required: true
-      sdk_version:
-        type: text
-        required: true
-      schema_version:
-        type: text
-        required: true
-      meta:
-        type: json
-      delivery_status:
-        type: text
-        required: true
-        default: "accepted"
-      trace_id:
-        type: text
-      span_id:
-        type: text
-      correlation_id:
-        type: text
-    primary_key: [ingest_sequence]
-    indices:
-      - name: idx_playback_events_session_canonical
-        columns:
-          [project_id, session_id, server_received_at, sequence_number, ingest_sequence]
-        type: btree
-      - name: idx_playback_events_dedup
-        columns: [project_id, session_id, sequence_number]
-        type: btree
-    constraints:
-      - name: chk_playback_events_delivery_status
-        type: check
-        expression: "delivery_status IN ('accepted', 'duplicate_suspected', 'replayed')"
-      # JSON-Validierung von `meta` erfolgt im Adapter (encoding/json),
-      # nicht via DB-CHECK — `json_valid()` ist nicht portabel
-      # (SQLite/MySQL builtin, PostgreSQL hat kein direktes Pendant).
-      # Siehe ADR-0002.
-
-  # SRT-Health-Samples ( Sub-3.3, RAK-42/RAK-46).
-  # Spec: spec/backend-api-contract.md, spec/telemetry-model.md
-  # Dedupe-Regel: Eindeutigkeit über
-  #   (project_id, stream_id, connection_id,
-  #    COALESCE(source_observed_at, source_sequence)).
-  # Adapter setzt das mit ON CONFLICT DO NOTHING um — collected_at
-  # allein ist kein stabiler Schlüssel.
-  srt_health_samples:
-    columns:
-      id:
-        type: identifier
-        auto_increment: true
+        ordinal: 1
       project_id:
         type: text
-        required: true
-        references:
-          table: projects
-          column: project_id
-          on_delete: restrict
-      stream_id:
+        ordinal: 2
+      state:
         type: text
+        ordinal: 3
         required: true
-      connection_id:
+        default: active
+      started_at:
         type: text
+        ordinal: 4
         required: true
-      source_observed_at:
-        type: datetime
-      source_sequence:
+      last_seen_at:
         type: text
-      collected_at:
-        type: datetime
+        ordinal: 5
         required: true
-      ingested_at:
-        type: datetime
-        required: true
-      rtt_ms:
-        type: float
-        required: true
-      packet_loss_total:
-        type: biginteger
-        required: true
-      packet_loss_rate:
-        type: float
-      retransmissions_total:
-        type: biginteger
-        required: true
-      available_bandwidth_bps:
-        type: biginteger
-        required: true
-      throughput_bps:
-        type: biginteger
-      required_bandwidth_bps:
-        type: biginteger
-      sample_window_ms:
-        type: biginteger
-      source_status:
+      ended_at:
         type: text
+        ordinal: 6
+      event_count:
+        type: integer
+        ordinal: 7
         required: true
-      source_error_code:
+        default: 0
+      correlation_id:
         type: text
-        required: true
-      connection_state:
+        ordinal: 8
+      end_source:
         type: text
+        ordinal: 9
+      sample_rate_ppm:
+        type: integer
+        ordinal: 10
         required: true
-      health_state:
-        type: text
-        required: true
-    primary_key: [id]
+        default: 1000000
+    primary_key:
+    - project_id
+    - session_id
     indices:
-      # Latest-First-Reads für GET /api/srt/health[/{stream_id}].
-      - name: idx_srt_health_samples_stream_ingested
-        columns: [project_id, stream_id, ingested_at, id]
-        type: btree
-      # Dedupe-Lookup vor INSERT (Adapter prüft Vorhandensein).
-      - name: idx_srt_health_samples_dedupe
-        columns: [project_id, stream_id, connection_id, source_observed_at, source_sequence]
-        type: btree
+    - name: idx_stream_sessions_state
+      columns:
+      - state
+    - name: idx_stream_sessions_project_started
+      columns:
+      - project_id
+      - started_at
+      - session_id
     constraints:
-      - name: chk_srt_health_samples_source_status
-        type: check
-        expression: "source_status IN ('ok', 'unavailable', 'partial', 'stale', 'no_active_connection')"
-      - name: chk_srt_health_samples_source_error_code
-        type: check
-        expression: "source_error_code IN ('none', 'source_unavailable', 'no_active_connection', 'partial_sample', 'stale_sample', 'parse_error')"
-      - name: chk_srt_health_samples_connection_state
-        type: check
-        expression: "connection_state IN ('connected', 'no_active_connection', 'unknown')"
-      - name: chk_srt_health_samples_health_state
-        type: check
-        expression: "health_state IN ('healthy', 'degraded', 'critical', 'unknown')"
+    - name: fk_0
+      type: foreign_key
+      columns:
+      - project_id
+      references:
+        table: projects
+        columns:
+        - project_id
+        on_delete: restrict
+    - name: chk_stream_sessions_state
+      type: check
+      expression: "state IN ('active', 'stalled', 'ended')"
+    - name: chk_stream_sessions_end_source
+      type: check
+      expression: "end_source IS NULL OR end_source IN ('client', 'sweeper')"

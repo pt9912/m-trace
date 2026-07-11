@@ -250,6 +250,30 @@ entweder ist das Feature anders lösbar (z. B. Race-Schutz über
 `BEGIN IMMEDIATE` statt Partial-Index in §8.3), oder d-migrate selbst
 wird erweitert.
 
+**Amendment 2026-07 (`schema.yaml`-Refold — Privileg reaktiviert).** Nach
+der ersten Konsolidierung (plan-0.8.5) wurden 0.11.0–0.12.6 die Migrationen
+V2–V7 (Ingest-Control, Lifecycle-Hooks, Project-Tokens, Issuance-Counter,
+`time_skew_warning`, `sample_rate_ppm`) hand-gepflegt hinzugefügt, **ohne**
+`schema.yaml` mitzupflegen — das dafür vorgesehene diff-basierte
+`d-migrate schema migrate` blieb „geplant". Damit driftete `schema.yaml`
+auf den V1-Stand (5 Tabellen), während der Live-Store auf 13 wuchs; der
+`generated-drift-check` bewachte nur V1↔`schema.yaml`, die V2–V7 waren
+ungewacht. Der `schema.yaml`-Refold (rolling-V1-Rekonsolidierung, wie
+plan-0.8.5) faltet V2–V7 in eine regenerierte 13-Tabellen-V1 zurück und
+stellt `schema.yaml` als Single-Source-of-Truth des vollen Stands wieder
+her — SQLite **und** Postgres werden per `export flyway --target …
+--source schema.yaml` daraus abgeleitet. Das **Pre-Production-Privileg
+wird bewusst reaktiviert**, obwohl v0.22.x getaggt/publiziert ist: sein
+tragender Grund — **kein durable managed-Production-Store** — gilt fort.
+Der Apply-Runner ist **checksumfrei** (`schema_migrations` = `version`,
+`applied_at`, `dirty`; keyt nur auf die Versionsnummer), sodass ein
+V1-Inhaltswechsel bei gleicher Versionsnummer bestehende Deployments nicht
+bricht (applied-Versionen werden übersprungen, kein Mismatch), und Postgres
+startet ohnehin frisch (ADR-0006). Nebenbefund: der Refold deckte einen
+d-migrate-SQLite-Bug auf (`export flyway --target sqlite` verlor `NOT NULL`
+auf PRIMARY-KEY-Spalten, da SQLites `PRIMARY KEY` ≠ NOT NULL); gefixt in
+d-migrate `0.9.10`, `DMIGRATE_IMAGE` entsprechend gebumpt.
+
 > Historisch existierten in 0.4.0–0.6.0 inkrementelle Migrationen
 > `V2__project_session_pk.sql` … `V5__srt_health_samples.sql`. Mit
 > plan-0.8.5 Tranche 2 (Migrations-Konsolidierung) wurden sie in die
@@ -259,6 +283,11 @@ wird erweitert.
 > `schema.yaml` ergänzt werden musste. Bestehende Dev-DBs mit V2–V5
 > als applied bleiben funktional, weil der Apply-Runner nur fehlende
 > Versionen anwendet und applied-Versionen ohne File ignoriert.
+>
+> Analog wurden 2026-07 die inkrementellen Migrationen
+> `V2__ingest.sql` … `V7__session_sample_rate.sql` in die rolling V1
+> zurückgeführt und gelöscht (siehe Amendment oben); dieselbe
+> Applied-ohne-File-Semantik hält bestehende Dev-DBs funktional.
 
 ### 8.3 Idempotenz und Event-Deduplikation
 

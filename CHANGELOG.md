@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **persistence/schema**: `schema.yaml`-Refold — `schema.yaml` ist wieder
+  Single-Source-of-Truth des vollen Schema-Stands (13 Tabellen). Die
+  hand-gepflegten Migrationen `V2__ingest.sql` … `V7__session_sample_rate.sql`
+  wurden per rolling-V1-Rekonsolidierung (wie plan-0.8.5) in eine
+  regenerierte 13-Tabellen-`V1__m_trace.sql` zurückgefaltet und gelöscht;
+  das SQLite- **und** das Postgres-Baseline-DDL werden nun beide via
+  `export flyway --target … --source schema.yaml` daraus abgeleitet
+  (`generate-postgres-schema.sh` nutzt statt Reverse-der-Live-SQLite jetzt
+  direkt `schema.yaml`). Bestehende Deployments bleiben funktional (Apply-
+  Runner checksumfrei, keyt auf Versionsnummer → V1-Inhaltswechsel wird
+  übersprungen). Details in `docs/adr/0002-persistence-store.md` §8.2
+  (Amendment 2026-07) und `docs/planning/…/plan-schema-yaml-refold.md`.
+- **tooling**: `DMIGRATE_IMAGE` `0.9.9` → `0.9.10` — fixt einen
+  d-migrate-SQLite-Bug (`export flyway --target sqlite` verlor `NOT NULL`
+  auf PRIMARY-KEY-Spalten, da SQLites `PRIMARY KEY` ≠ NOT NULL), den der
+  Refold aufdeckte.
+
 ### Fixed
 
 - **stream-analyzer**: Endlosschleife (DoS, CWE-835) im HLS-Attribut-Parser
