@@ -2,12 +2,28 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.24<br>
+**Version:** 1.1.25<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md).
 
+> **Patch `1.1.25` (Postgres Scale-out für `0.23.0`)**:
+> Reaktiviert `RAK-91` von „defer" auf „proceed, optional" (Entscheidung in
+> [`docs/adr/0006-postgres-scaleout-adapter.md`](../docs/adr/0006-postgres-scaleout-adapter.md))
+> und führt die neue RAK-Gruppe `RAK-126`..`RAK-130` in §13.24 ein. Inhalt:
+> ein optionaler Postgres-Runtime-Adapter (`MTRACE_PERSISTENCE=postgres` +
+> DSN) als nicht-Default-Persistenz, ein DB-autoritativer Ingest-Sequencer
+> (kollisionsfreie Ingest-Sequence über Replicas, `R-28`), eine
+> Multi-Replica-Scale-out-Harness mit über einen Datenbank-Lock serialisierter
+> Startup-Migration, und der Scale-out-Lasttest, der `R-26 c` (kein stiller
+> Verlust, keine Duplikate über Replicas) mit Messwerten belegt. `SQLite`
+> bleibt unveränderter lokaler Default (keine versteckte Pflichtabhängigkeit);
+> keine Wire-, Public-API- oder Analyzer-Schema-Änderung. `R-26 b`
+> (repliken-übergreifende Multi-Tenant-Fairness) bleibt bewusst offen.
+> Patch-Log siehe §13.24.
+
+>
 > **Patch `1.1.24` (OCI Image Publishing für `0.21.0`)**:
 > Aktiviert die erste GHCR-Veröffentlichung der drei Runtime-Images
 > und führt die neue RAK-Gruppe `RAK-121`..`RAK-125` in §13.23 ein.
@@ -2391,6 +2407,35 @@ Akzeptanzkriterien:
 | RAK-123 | Muss | **GitHub-Actions-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
 | RAK-124 | Muss | **Release-Dokumentation**: [`docs/user/releasing.md`](../docs/user/releasing.md) beschreibt Image-Dry-Run, produktiven GHCR-Publish, automatische Release-Hook-Ausführung und Rollback-Grenzen für teilweise oder fehlerhafte Image-Veröffentlichungen. |
 | RAK-125 | Muss | **Closeout und Erstveröffentlichung**: `0.21.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.21.0` und der erste erfolgreiche GHCR-Publish der drei Runtime-Images sind dokumentiert. |
+
+---
+
+### 13.24 Version 0.23.0: Postgres Scale-out (RAK-126..RAK-130)
+
+`0.23.0` schließt die letzte unbelegte Architektur-Achse aus `R-26`: die
+**horizontale Scale-out-Fähigkeit**. `RAK-91` (Postgres-Entscheidung aus
+`0.13.0`) wird von „defer" auf „proceed, optional" reaktiviert (Begründung in
+[`docs/adr/0006-postgres-scaleout-adapter.md`](../docs/adr/0006-postgres-scaleout-adapter.md)).
+Geliefert wird ein **optionaler, nicht-Default** Postgres-Runtime-Adapter, der
+den mit SQLite strukturell nicht erbringbaren Multi-Replica-Betrieb (≥ 2
+API-Instanzen auf einem geteilten Store) ermöglicht und mit einem
+Scale-out-Lasttest belegt.
+
+`SQLite` bleibt der lokale Standard-Store; Postgres ist opt-in und wird nicht
+als versteckte Pflichtabhängigkeit eingeführt. `0.23.0` ändert keine Wire-,
+Public-API- oder Analyzer-Schema-Verträge. Der repliken-übergreifend faire
+Multi-Tenant-Ingest-Limiter (`R-26 b`) und eine Datenmigration bestehender
+SQLite-Läufe bleiben Folge-Scope.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-126 | Muss | **Optionaler Postgres-Adapter (`RAK-91`-Reaktivierung, `NF-20`/`NF-22`/`NF-23`)**: Ein Postgres-Runtime-Adapter ist über `MTRACE_PERSISTENCE=postgres` + DSN als nicht-Default-Persistenz wählbar und implementiert dieselben Driven-Ports wie der SQLite-Adapter. `SQLite` bleibt Default; ohne explizite Wahl ändert sich das lokale Standardverhalten nicht. |
+| RAK-127 | Muss | **DB-autoritativer Ingest-Sequencer (`R-28`)**: Die Ingest-Sequence wird datenbank-autoritativ vergeben, sodass ≥ 2 Replicas auf einem geteilten Store kollisionsfreie, lückenlos eindeutige Sequenzwerte erhalten (kein In-Process-Zähler, der über Replicas identische Werte vergibt). Der bestehende Port-Vertrag bleibt unverändert. |
+| RAK-128 | Muss | **Multi-Replica-Betrieb auf geteiltem Store**: Eine Harness startet ≥ 2 API-Instanzen hinter einem Load-Balancer auf einem geteilten Postgres. Die Startup-Migration ist gegen konkurrierende Instanzen serialisiert (kein Race, genau eine Baseline-Migration), und das Verbindungs-Budget ist dokumentiert. |
+| RAK-129 | Muss | **Scale-out-Nachweis (`R-26 c`)**: Ein Scale-out-Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store: keinen stillen Verlust (jedes bestätigte Event ist persistiert) und keine Duplikate (Anzahl eindeutiger Ingest-Sequenzen gleich Gesamtzahl). Die Durchsatz-Charakteristik ist ehrlich dokumentiert (flaschenhals-abhängig); `R-26 b` (repliken-übergreifende Fairness) bleibt als offen benannt. |
+| RAK-130 | Muss | **Closeout und SQLite-Invarianz**: `0.23.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Beleg sind dokumentiert. Die adapter-agnostische Korrektheits-Suite läuft gegen `SQLite` **und** Postgres; der `SQLite`-Pfad bleibt über die gesamte Umsetzung unverändert grün. |
 
 ---
 

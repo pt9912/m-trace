@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-07-11
+
+> **Minor-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md). Lastenheft-Patch
+> `1.1.25` (neue RAK-Gruppe `RAK-126`..`RAK-130` in §13.24; normativer
+> Stand `1.1.24` → `1.1.25`). Reaktiviert `RAK-91` (Postgres „defer" →
+> „proceed, optional", [ADR-0006](docs/adr/0006-postgres-scaleout-adapter.md))
+> und liefert den **optionalen** Postgres-Scale-out-Adapter samt
+> R-26-c-Nachweis. `SQLite` bleibt Default; keine Wire-, Public-API- oder
+> Analyzer-Schema-Änderung. Verifikationsmatrix in
+> `docs/planning/…/plan-0.23.0-postgres-scaleout.md` §6.1.
+
 ### Added
 
 - **persistence/postgres**: optionaler Postgres-Runtime-Adapter

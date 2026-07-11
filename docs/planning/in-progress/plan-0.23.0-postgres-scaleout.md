@@ -597,3 +597,17 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
 - **Scope-Disziplin**: Postgres bleibt optionaler Adapter, kein Default-
   Wechsel; jede Versuchung zu „Postgres als neuer Standard" widerspricht
   [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md) §Grenzen.
+
+## 6.1 RAK-Verifikationsmatrix (Minor-Release `0.23.0`, Lastenheft-Patch `1.1.25`)
+
+Pflicht-Matrix für Minor-Releases (`releasing.md` §3.1): jede neue RAK aus
+`spec/lastenheft.md` §13.24 auf ihren Nachweis (Artefakt / Test / Gate)
+abgebildet. Alle erbracht.
+
+| RAK | Akzeptanz (Kurz) | Nachweis (Artefakt / Test / Gate) | Status |
+|---|---|---|---|
+| **RAK-126** | Optionaler Postgres-Adapter, SQLite bleibt Default | `apps/api/adapters/driven/persistence/postgres/*` (6 Port-Spiegel, T2); `main.go`-Wiring `MTRACE_PERSISTENCE=postgres` (`e30d96c`, T4); Boot-Smoke aller drei Modi grün; adapter-agnostische Contract-Suite gegen PG (`make smoke-pg-lab`) | ✅ |
+| **RAK-127** | DB-autoritativer Sequencer, kollisionsfrei über Replicas | `postgres`-Sequencer via `nextval`+Block-Allokation (`78d75fc`, port-erhaltend `Next() int64`); R-28-pglab-Test „keine Dups über N Replicas"; Distinct-Nachweis im Lasttest (s. RAK-129) | ✅ |
+| **RAK-128** | Multi-Replica-Betrieb, serialisierte Startup-Migration | `docker-compose.scaleout.yml` + `make smoke-scaleout` (`db9e657`); Startup-Race via `pg_advisory_lock` (`51675e9`) + Concurrent-Migrations-Race-Test (8 parallele `OpenPostgres`, genau Baseline-V1); Connection-Budget im Smoke geprüft (`conns ≤ max_connections`) | ✅ |
+| **RAK-129** | Scale-out-Nachweis R-26 c (kein Verlust/keine Dups), Durchsatz ehrlich | `make smoke-scaleout-load` (`91bae8b`): über 2 Replicas `persisted == accepted` + `COUNT(DISTINCT ingest_sequence) == COUNT(*)` über ~1,4 Mio Events; Durchsatz flaschenhals-abhängig dokumentiert (`docs/perf/budgets.md` §8, `docker stats`-Attribution); `R-26 b` offen benannt | ✅ |
+| **RAK-130** | Closeout + SQLite-Invarianz | `0.23.0`-Bump (52 Träger), CHANGELOG, Roadmap, ADR-0006-Beleg-Amendment; Contract-Suite gegen SQLite **und** PG (CI-`postgres`-Job in `build.yml`); `make gates` (SQLite-Pfad durchgehend grün) | ✅ |

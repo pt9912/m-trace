@@ -1,14 +1,21 @@
 # Roadmap
 
-> **Stand**: 2026-06-23
+> **Stand**: 2026-07-11
 >
-> **Phase**: ✅ `0.22.4` Security-/Tooling-Patch **released**
-> (Tag `v0.22.4`, GHCR- + npm-Publish grün, 2026-06-23). Behebt den
-> Trivy-Image-Scan-Treffer `golang.org/x/net 0.53.0 → 0.56.0` (sechs
-> HIGH-CVEs im api-gobinary, Issue #9), bündelt den `undici`-Override
-> (GHSA-vmh5-mc38-953g) sowie den Trivy-Pin `0.71.0 → 0.71.2` und liefert
-> den ENV-konfigurierbaren Ingest-Rate-Limiter
-> (`MTRACE_RATE_LIMIT_CAPACITY`/`-REFILL`, Default 100/100 unverändert).
+> **Phase**: 🚧 `0.23.0` Postgres Scale-out (Minor) — **Inhalt fertig,
+> Release vorbereitet**, Lastenheft-Patch `1.1.25` (RAK-126..RAK-130,
+> §13.24). Liefert den **optionalen** Postgres-Runtime-Adapter
+> (`MTRACE_PERSISTENCE=postgres`), den DB-autoritativen Ingest-Sequencer
+> (R-28), die Multi-Replica-Harness mit über `pg_advisory_lock`
+> serialisierter Startup-Migration und den Scale-out-Lasttest, der `R-26 c`
+> belegt (0 Verlust / 0 Duplikate über 2 Replicas @ ~1,4 Mio Events;
+> Durchsatz store-gebunden = Single-Postgres-Decke, ehrlich attribuiert).
+> `SQLite` bleibt Default. **Tag `v0.23.0` + GHCR/npm-Publish stehen unter
+> Human-Freigabe aus.** `R-26 b` (repliken-übergreifende Multi-Tenant-
+> Fairness) bleibt offen.
+> Vorher: ✅ `0.22.4` Security-/Tooling-Patch released (Tag `v0.22.4`,
+> GHCR- + npm-Publish grün, 2026-06-23; `golang.org/x/net`-CVEs Issue #9,
+> ENV-Ingest-Rate-Limiter Default 100/100 unverändert).
 > Vorheriger Stand: ✅ `0.22.3` Security-/CI-Sammel-Patch released
 > ([`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md)).
 >
@@ -118,13 +125,13 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-06-23 — `0.22.4` released)
+## 1. Aktueller Stand (2026-07-11 — `0.23.0` Minor vorbereitet, Tag ausstehend; `0.22.4` released)
 
 ### 1.1 Lieferstand
 
 | Status | Bereich                             | Ergebnis                                                                                                                     | Verweise                                                               |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.24` (RAK-1..RAK-125, §13.23 OCI Image Publishing für `0.21.0`; Patch aktiv).                       | `spec/lastenheft.md`                                                   |
+| ✅      | Lastenheft                          | `v0.7.0` mit verbindlichem Release-Plan; aktuell `1.1.25` (RAK-1..RAK-130, §13.24 Postgres Scale-out für `0.23.0`; Patch aktiv).                       | `spec/lastenheft.md`                                                   |
 | ✅      | Architektur + ADRs                  | `0001` Backend-Stack (Go) Accepted; `0002` Persistenz Accepted: SQLite als lokaler Durable-Store; `0005` Production-/Ops-Backends Accepted: Postgres/Analytics deferred mit Triggern, K8s/Devcontainer/Release-Guard als Seeds; `0006` Accepted, **R-26 c belegt (2026-07-11)**: reaktiviert den Postgres-Teil von `0005` (RAK-91 → proceed/optional, SQLite bleibt Default); `plan-0.23.0-postgres-scaleout` komplett (6 PG-Ports, DB-autoritativer Sequencer R-28, R-27-Read-Wasserzeichen, Multi-Replica-Harness mit `pg_advisory_lock`-Migration, Scale-out-Lasttest). Nachweis: 0 Verlust/0 Duplikate über 2 Replicas @ ~1,4 Mio Events; Durchsatz-Skalierung flaschenhals-abhängig (app-gebunden linear, store-gebunden = Single-PG-Decke) — s. `budgets.md` §8. Offen: R-26 b (repliken-übergreifende Multi-Tenant-Fairness, shared Redis-Ingest-Limiter).     | `docs/adr/0001-backend-stack.md`, `docs/adr/0002-persistence-store.md`, `docs/adr/0005-production-ops-backends.md`, `docs/adr/0006-postgres-scaleout-adapter.md` |
 | ✅      | Backend Core (`0.1.0`)              | API-Skelett, Compose-Lab, RAK-1/3/4/6/8.                                                                                     | [`plan-0.1.0.md`](../done/plan-0.1.0.md)                               |
 | ✅      | Player-SDK + Dashboard (`0.1.1`)    | Dashboard, Demo-Player, hls.js-Adapter, Session-Ansicht.                                                                     | [`plan-0.1.1.md`](../done/plan-0.1.1.md)                               |
@@ -163,18 +170,20 @@ aktualisieren.
 
 ### 1.2 Nächste Phase
 
-`0.22.4` ist als Security-/Tooling-Patch **released** (Tag `v0.22.4`,
-GHCR- + npm-Publish grün, 2026-06-23). Der Patch schließt den
-Trivy-Image-Scan-Treffer
-`golang.org/x/net 0.53.0 → 0.56.0` (Issue #9), rollt den bereits auf
-`main` liegenden `undici`-Override (GHSA-vmh5-mc38-953g) und den
-Trivy-Pin `0.71.0 → 0.71.2` mit ein und liefert den
-ENV-konfigurierbaren Ingest-Rate-Limiter (Default unverändert). Der
-Nightly-`security-audit.yml`-Mirror aus `0.22.1` erfüllt weiter
-seinen Zweck (fünfter echter Treffer gemeldet und mit diesem Patch
-geschlossen). Danach bleibt `plan-0.23.0-postgres-scaleout`
-(`in-progress/`, Tranche 1 seit 2026-07-02) die nächste größere Tranche. Mutation-Blockierung
-bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
+`plan-0.23.0-postgres-scaleout` ist **inhaltlich komplett** (T1–T7): sechs
+Postgres-Driven-Ports, DB-autoritativer Ingest-Sequencer (R-28),
+R-27-Read-Wasserzeichen, Multi-Replica-Harness mit `pg_advisory_lock`
+serialisierter Startup-Migration und der Scale-out-Lasttest, der `R-26 c`
+mit Messwerten schließt (0 Verlust / 0 Duplikate über 2 Replicas; Durchsatz
+flaschenhals-abhängig, store-gebunden = Single-Postgres-Decke — s.
+`budgets.md` §8). Der Minor-Release ist vorbereitet: Version `0.23.0` gebumpt,
+Lastenheft-Patch `1.1.25` (RAK-126..RAK-130), CHANGELOG datiert, ADR-0006 als
+belegt referenziert, RAK-Verifikationsmatrix in Plan §6.1. **Ausstehend: die
+Human-Freigabe für Tag `v0.23.0` + GHCR/npm-Publish** (`releasing.md`). Danach
+ist `R-26 b` (repliken-übergreifend fairer Ingest-Limiter, shared Redis) die
+nächste größere Tranche; die Postgres-Datenmigration bestehender SQLite-Läufe
+bleibt Folge-Scope. Mutation-Blockierung bleibt deferred, bis echte
+>70%-Score-Reihen vorliegen.
 
 ---
 
