@@ -116,6 +116,7 @@ func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionI
 			ServerReceivedAt: in.EventsAfter.ServerReceivedAt,
 			SequenceNumber:   in.EventsAfter.SequenceNumber,
 			IngestSequence:   in.EventsAfter.IngestSequence,
+			Watermark:        in.EventsAfter.Watermark,
 		}
 	}
 
@@ -143,6 +144,7 @@ func (s *SessionsService) GetSession(ctx context.Context, in driving.GetSessionI
 			ServerReceivedAt: page.NextAfter.ServerReceivedAt,
 			SequenceNumber:   page.NextAfter.SequenceNumber,
 			IngestSequence:   page.NextAfter.IngestSequence,
+			Watermark:        page.NextAfter.Watermark,
 		}
 	}
 	return out, nil

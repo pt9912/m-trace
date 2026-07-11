@@ -72,6 +72,12 @@ type SessionEventsCursor struct {
 	ServerReceivedAt time.Time
 	SequenceNumber   *int64
 	IngestSequence   int64
+	// Watermark ist das optionale R-27-Commit-Zeit-Wasserzeichen: es wird
+	// vom Persistenz-Adapter (Postgres) bei Session-Start gesetzt und über
+	// den Wire-Cursor durch die Pages getragen, damit die Keyset-Pagination
+	// unter nebenläufigen Writern keine spät-committenden Früh-Rows
+	// überspringt. Für Adapter ohne Commit-Order-Tracking nil.
+	Watermark *time.Time
 }
 
 // GetSessionResult bündelt Sessions-Header und die geblätterte

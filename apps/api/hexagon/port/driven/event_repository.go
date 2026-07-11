@@ -53,6 +53,14 @@ type EventCursorPosition struct {
 	ServerReceivedAt time.Time
 	SequenceNumber   *int64
 	IngestSequence   int64
+	// Watermark ist das R-27-Commit-Zeit-Wasserzeichen (ADR-0006): der
+	// Postgres-Adapter erfasst es bei Paginierungs-Session-Start und
+	// trägt es über die Pages, damit spät-committende Früh-Rows nicht
+	// übersprungen werden (Filter über pg_xact_commit_timestamp(xmin)).
+	// Für Adapter ohne Commit-Order-Tracking (SQLite/InMemory) nil —
+	// dort ist der Store single-writer bzw. snapshot-konsistent, das
+	// Skip-Risiko existiert nicht.
+	Watermark *time.Time
 }
 
 // EventPage bündelt eine Page Events plus optional die nächste

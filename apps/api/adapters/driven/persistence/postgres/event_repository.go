@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
@@ -50,13 +51,25 @@ LIMIT 1`
 
 	// listEventsSQL trägt ein %s für die optionale Cursor-Klausel;
 	// COALESCE bringt NULL-sequence_number auf nullSeqSentinel.
+	//
+	// R-27-Wasserzeichen (ADR-0006): das Prädikat
+	// `pg_xact_commit_timestamp(xmin) IS NULL OR … <= W` klemmt die
+	// paginierte Menge auf Rows, die zum Session-Wasserzeitpunkt W bereits
+	// committed waren. Weil `server_received_at <= commit_ts` (empfangen
+	// vor committed) ist die Menge stabil → ein Writer, der ein Event mit
+	// frühem `server_received_at` erst nach W committet, wird nicht
+	// übersprungen, sondern erscheint in einer neuen W'-Session an
+	// korrekter Sortierposition. NULL = eingefrorene/aged-out xid (lange
+	// committed) → als stabil einschließen (sonst verschwänden alte Rows).
+	// Braucht `track_commit_timestamp = on` (Harness/Deployment).
 	listEventsSQL = `
 SELECT ingest_sequence, project_id, session_id, event_name,
        client_timestamp, server_received_at, sequence_number,
        sdk_name, sdk_version, meta,
        trace_id, span_id, correlation_id, time_skew_warning
 FROM playback_events
-WHERE project_id = ? AND session_id = ? %s
+WHERE project_id = ? AND session_id = ?
+  AND (pg_xact_commit_timestamp(xmin) IS NULL OR pg_xact_commit_timestamp(xmin) <= ?) %s
 ORDER BY server_received_at ASC,
          COALESCE(sequence_number::bigint, ?) ASC,
          ingest_sequence ASC
@@ -162,7 +175,12 @@ func (r *EventRepository) ListBySession(ctx context.Context, q driven.EventListQ
 		return driven.EventPage{Events: []domain.PlaybackEvent{}}, nil
 	}
 
-	args := []any{q.ProjectID, q.SessionID}
+	watermark, err := r.resolveWatermark(ctx, q.After)
+	if err != nil {
+		return driven.EventPage{}, err
+	}
+
+	args := []any{q.ProjectID, q.SessionID, watermark}
 	cursorClause := ""
 	if q.After != nil {
 		cursorClause = cursorFilterSQL
@@ -201,13 +219,31 @@ func (r *EventRepository) ListBySession(ctx context.Context, q driven.EventListQ
 	if len(out) > q.Limit {
 		page.Events = out[:q.Limit]
 		last := page.Events[q.Limit-1]
+		wm := watermark
 		page.NextAfter = &driven.EventCursorPosition{
 			ServerReceivedAt: last.ServerReceivedAt,
 			SequenceNumber:   last.SequenceNumber,
 			IngestSequence:   last.IngestSequence,
+			Watermark:        &wm,
 		}
 	}
 	return page, nil
+}
+
+// resolveWatermark liefert das R-27-Commit-Zeit-Wasserzeichen W: bei einer
+// Folge-Page übernimmt es das im Cursor getragene W (stabile Session),
+// sonst erfasst es zum Session-Start `now()` von der PG-Serveruhr (nicht
+// der Go-Prozessuhr — sonst würde Clock-Skew zwischen App und DB die
+// commit_ts-Vergleiche verfälschen).
+func (r *EventRepository) resolveWatermark(ctx context.Context, after *driven.EventCursorPosition) (time.Time, error) {
+	if after != nil && after.Watermark != nil {
+		return *after.Watermark, nil
+	}
+	var w time.Time
+	if err := r.db.QueryRowContext(ctx, `SELECT now()`).Scan(&w); err != nil {
+		return time.Time{}, fmt.Errorf("event-postgres: capture watermark: %w", err)
+	}
+	return w, nil
 }
 
 func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {

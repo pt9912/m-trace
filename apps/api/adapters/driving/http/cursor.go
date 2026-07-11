@@ -63,6 +63,10 @@ type wireSessionEventsCursor struct {
 	RCV string `json:"rcv"` // server_received_at, RFC3339Nano
 	SEQ *int64 `json:"seq,omitempty"`
 	ING int64  `json:"ing"` // ingest_sequence
+	// WM ist das optionale R-27-Commit-Zeit-Wasserzeichen (RFC3339Nano
+	// UTC), nur vom Postgres-Adapter gesetzt; für andere Stores fehlt es
+	// (omitempty) und der Cursor bleibt formatgleich zum bisherigen v3.
+	WM *string `json:"wm,omitempty"`
 }
 
 // listSessionsRawCursor ist eine Decode-Zwischenform mit allen
@@ -84,6 +88,7 @@ type sessionEventsRawCursor struct {
 	RCV *string `json:"rcv,omitempty"`
 	SEQ *int64  `json:"seq,omitempty"`
 	ING *int64  `json:"ing,omitempty"`
+	WM  *string `json:"wm,omitempty"` // R-27-Wasserzeichen (Postgres), optional
 }
 
 // encodeListSessionsCursor liefert den base64-url-encodierten Cursor
@@ -180,6 +185,10 @@ func encodeSessionEventsCursor(c *driving.SessionEventsCursor, projectID, sessio
 		SEQ: c.SequenceNumber,
 		ING: c.IngestSequence,
 	}
+	if c.Watermark != nil {
+		wm := c.Watermark.UTC().Format(time.RFC3339Nano)
+		wire.WM = &wm
+	}
 	raw, err := json.Marshal(wire)
 	if err != nil {
 		return "", err
@@ -207,17 +216,9 @@ func decodeSessionEventsCursor(s, requestProjectID, requestSessionID string) (*d
 		return nil, errCursorInvalidMalformed
 	}
 
-	if probe.V == nil {
-		return nil, errCursorInvalidLegacy
+	if err := classifyCursorVersion(probe.V); err != nil {
+		return nil, err
 	}
-	switch *probe.V {
-	case 1, 2:
-		return nil, errCursorInvalidLegacy
-	case cursorVersion:
-	default:
-		return nil, errCursorInvalidMalformed
-	}
-
 	if probe.PID == nil || probe.SID == nil || probe.RCV == nil || probe.ING == nil {
 		return nil, errCursorInvalidMalformed
 	}
@@ -231,11 +232,49 @@ func decodeSessionEventsCursor(s, requestProjectID, requestSessionID string) (*d
 	if err != nil {
 		return nil, errCursorInvalidMalformed
 	}
+	watermark, err := parseCursorWatermark(probe.WM)
+	if err != nil {
+		return nil, errCursorInvalidMalformed
+	}
 	return &driving.SessionEventsCursor{
 		ServerReceivedAt: receivedAt,
 		SequenceNumber:   probe.SEQ,
 		IngestSequence:   *probe.ING,
+		Watermark:        watermark,
 	}, nil
+}
+
+// classifyCursorVersion klassifiziert das `v`-Feld eines v3-Cursors:
+// fehlend oder v ∈ {1,2} → Legacy (Pre-§4.3-Format, dauerhaft abgewiesen);
+// v = cursorVersion → nil (gültig); sonst → malformed. Gemeinsam für die
+// Event-/Sessions-/SRT-Cursor-Decoder (ADR-0004 / API-Kontrakt).
+func classifyCursorVersion(v *int) error {
+	if v == nil {
+		return errCursorInvalidLegacy
+	}
+	switch *v {
+	case 1, 2:
+		return errCursorInvalidLegacy
+	case cursorVersion:
+		return nil
+	default:
+		return errCursorInvalidMalformed
+	}
+}
+
+// parseCursorWatermark parst das optionale R-27-Wasserzeichen (RFC3339Nano
+// UTC) eines Event-Cursors. nil → kein Wasserzeichen (kein Fehler);
+// ungültiges Format → Fehler (Aufrufer mappt auf cursor_invalid_malformed).
+func parseCursorWatermark(wm *string) (*time.Time, error) {
+	if wm == nil {
+		return nil, nil
+	}
+	t, err := time.Parse(time.RFC3339Nano, *wm)
+	if err != nil {
+		return nil, err
+	}
+	u := t.UTC()
+	return &u, nil
 }
 
 // wireSrtHealthCursor ist die JSON-Form des SRT-Health-History-
