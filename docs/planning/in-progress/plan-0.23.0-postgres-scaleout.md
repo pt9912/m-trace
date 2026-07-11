@@ -204,9 +204,24 @@
 > Replicas + LB + PG laufen (beide booten gegen den geteilten Store → Race-Fix wirkt bei 2
 > gleichzeitig migrierenden Replicas), genau eine Baseline-V1 (kein Duplikat), LB-Health grün,
 > Connections 5/100 (Budget-Headroom), Issuance-Limiter=memory (PG-kompatibel; shared/Redis =
-> R-26-b-Scope). **Danach**: T6 Scale-out-Lasttest (`smoke-load.sh` gegen den LB; R-26-c-Evidenz:
-> `persisted==accepted`, `COUNT(DISTINCT ingest_sequence)==COUNT(*)`, Durchsatz 1/2/N Replicas),
-> T7 Closeout.
+> R-26-b-Scope).
+>
+> **Amendment 2026-07-11 (e) — TRANCHE 6 KOMPLETT: R-26 c BELEGT (`91bae8b`).**
+> `scripts/smoke-scaleout-load.sh` (`make smoke-scaleout-load`) treibt k6-Last gegen den
+> Multi-Replica-Stack: Phase A (1 Replica direkt an api-1:8089) als Baseline, Phase B (2
+> Replicas über den nginx-LB) als Skalierung; Readback via **psql gegen den geteilten
+> Postgres** (kein SQLite-GLOB/Volume-Hack) — `persisted = COUNT(*)`, `distinct =
+> COUNT(DISTINCT ingest_sequence)` je Prefix. **Real gemessen**: Phase A accepted=persisted=
+> distinct=1580 @ 105,3 ev/s; Phase B 3160 @ 210,7 ev/s — **`persisted==accepted` (kein
+> stiller Verlust über Replicas)** und **`COUNT(DISTINCT ingest_sequence)==COUNT(*)` (0
+> Duplikate wasserdicht** — der DB-autoritative Sequencer R-28 schließt kollidierende
+> `ingest_sequence` über parallele Writer aus). **Durchsatz 1→2 Replicas = 2,0×** (nahezu
+> lineare horizontale Skalierung; der geteilte PG ist bei dieser Last kein Bottleneck).
+> **Damit ist R-26 c mit Messwerten geschlossen.** Opt-in (nicht in gates/CI). **Vorbehalt
+> für höhere Skalierung** (Memory/N1): `database/sql`-Pool ist per Default unbounded →
+> `N × pool ≤ max_connections` beim Hochskalieren beachten. **Offen: nur noch T7 Closeout**
+> (ADR-0006 „Accepted"→„belegt", roadmap RAK-91-Reaktivierung, budgets.md §7 Scale-out-
+> Datenpunkte, R-26 c → gelöst im risks-backlog, Lastenheft RAK-91-Patch Variante B, CHANGELOG).
 >
 > **Review-Nachlese (2026-07-11)** zu 3b: **F1 (gefixt)** — `pg_xact_commit_timestamp(xmin)`
 > wirft bei `track_commit_timestamp=off` einen **harten Fehler** (nicht NULL), also hätte der
@@ -506,10 +521,11 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   (`db9e657`, `docker-compose.scaleout.yml` + `make smoke-scaleout`):
   beide Replicas teilen den Store (Startup-Race via `pg_advisory_lock`
   gefixt, `51675e9`), LB-Health grün, Connections ≤ max_connections.
-- [ ] **Scale-out-Lasttest mit Verdict**: horizontale Durchsatz-
-  Skalierung gemessen (1/2/N Replicas), `persisted == accepted` global,
-  0 Duplikate über Replicas (`COUNT(DISTINCT ingest_sequence) == COUNT(*)`,
-  nicht nur anzahl-inferentiell), `ingest_sequence` intakt — **R-26 c gelöst**.
+- [x] **Scale-out-Lasttest mit Verdict** (`91bae8b`, `make smoke-scaleout-load`):
+  horizontale Durchsatz-Skalierung gemessen (1→2 Replicas: 105,3→210,7 ev/s =
+  **2,0×**), `persisted == accepted` global (kein Verlust), 0 Duplikate über
+  Replicas (`COUNT(DISTINCT ingest_sequence) == COUNT(*)`, explizit gezählt),
+  Readback via psql gegen den geteilten PG — **R-26 c gelöst**.
   (Multi-Tenant-Fairness, R-26 b, bleibt offen bis shared Ingest-Limiter.)
 - [ ] Lastenheft-Patch RAK-91 „defer" → „proceed, optional" (**Variante B
   beim Spec-Edit: nur Kennungen, kein Plan-/§-Ref im Lastenheft**);
