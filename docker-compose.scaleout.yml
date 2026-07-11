@@ -46,6 +46,10 @@ services:
       ANALYZER_BASE_URL: ""
       MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
       MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
+    ports:
+      # api-1 direkt erreichbar für die 1-Replica-Durchsatz-Baseline des
+      # Scale-out-Lasttests (Phase A); Phase B lastet über den LB beide.
+      - "${SCALEOUT_API1_PORT:-8089}:8080"
 
   api-2:
     build:
