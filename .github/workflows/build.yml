@@ -82,3 +82,25 @@ jobs:
           path: .security/.trivy-cache
           retention-days: 7
           if-no-files-found: ignore
+
+  postgres:
+    # ADR-0006: die Persistenz-Adapter gegen einen echten Postgres
+    # verifizieren. Die pglab-Tests sind über MTRACE_PG_LAB_DSN gated und
+    # laufen NICHT im `build`-Job (make gates skippt sie ohne DSN) — dieser
+    # Job schließt die zweite Hälfte der Persistenz-Matrix (SQLite via
+    # make gates, Postgres hier). Parallel zu build/security.
+    # scripts/smoke-pg-lab.sh ist self-contained (startet eigene
+    # Postgres-Container inkl. track_commit_timestamp=on via Docker).
+    name: Postgres persistence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Postgres pglab smoke (Contract-Suite + 6 Ports + R-27/R-28 + boot-guard)
+        run: make smoke-pg-lab

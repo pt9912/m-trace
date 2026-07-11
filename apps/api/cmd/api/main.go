@@ -27,6 +27,7 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/mediaserver"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/inmemory"
+	persistencepostgres "github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/postgres"
 	persistencesqlite "github.com/pt9912/m-trace/apps/api/adapters/driven/persistence/sqlite"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/ratelimit"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/srt/mediamtxclient"
@@ -105,8 +106,10 @@ const (
 	// oder expliziten Dev-Fallback.
 	persistenceModeSQLite   = "sqlite"
 	persistenceModeInMemory = "inmemory"
+	persistenceModePostgres = "postgres"
 	defaultPersistenceMode  = persistenceModeSQLite
 	defaultSQLitePath       = "/var/lib/mtrace/m-trace.db"
+	envPostgresDSN          = "MTRACE_POSTGRES_DSN"
 )
 
 func main() {
@@ -168,7 +171,7 @@ func buildSrtHealthCollector(
 		return nil
 	}
 	if persist.db == nil {
-		logger.Warn("srt-health collector disabled (persistence is in-memory; SQLite required)")
+		logger.Warn("srt-health collector disabled (persistence is in-memory; a durable store — sqlite or postgres — is required)")
 		return nil
 	}
 	projectID := strings.TrimSpace(os.Getenv(envSrtProjectID))
@@ -186,7 +189,7 @@ func buildSrtHealthCollector(
 		sourceOpts = append(sourceOpts, mediamtxclient.WithRequiredBandwidthBPS(requiredBandwidth))
 	}
 	source := mediamtxclient.New(baseURL, sourceOpts...)
-	repo := persistencesqlite.NewSrtHealthRepository(persist.db)
+	repo := persist.srtHealth
 
 	collector, err := application.NewSrtHealthCollector(
 		source, repo, projectID, time.Now, application.DefaultThresholds(),
@@ -343,7 +346,7 @@ func buildHandler(
 		projectTokenRepo   driven.ProjectTokenRepository
 	)
 	if persist.db != nil {
-		projectTokenRepo = persistencesqlite.NewProjectTokenRepository(persist.db)
+		projectTokenRepo = persist.projectToken
 		resolver = auth.NewRotatingProjectResolver(projectTokenRepo, staticResolver, staticResolver)
 	}
 	rlCapacity, rlRefill := parseIngestRateLimit(logger)
@@ -361,7 +364,7 @@ func buildHandler(
 
 	tracer := otelProviders.Tracer.Tracer(telemetry.TracerName)
 	sseConfig := &apihttp.SseStreamConfig{Broker: broker, Events: persist.events}
-	srtHealthService, err := application.NewSrtHealthQueryService(persistencesqlite.NewSrtHealthRepository(persist.db), time.Now, application.DefaultThresholds())
+	srtHealthService, err := application.NewSrtHealthQueryService(persist.srtHealth, time.Now, application.DefaultThresholds())
 	if err != nil {
 		// Persist ist InMemory → kein durable SRT-Health-Storage; Read-
 		// Pfad bleibt deaktiviert. Logger-Notice in Sub-3.5 hat das schon
@@ -379,7 +382,7 @@ func buildHandler(
 	// deaktiviert (404), was für Spike-/CLI-Smoke-Aufrufe okay ist.
 	var ingestControlService *application.IngestControlService
 	if persist.db != nil {
-		ingestRepo := persistencesqlite.NewIngestStreamRepository(persist.db)
+		ingestRepo := persist.ingestStream
 		ingestControlService = wireIngestControlService(ingestRepo, logger)
 	}
 	var ingestControlInbound driving.IngestControlInbound
@@ -392,7 +395,14 @@ func buildHandler(
 	// `MTRACE_AUTH_SIGNING_KEY` (Base64-URL); ohne Env-Var wird ein
 	// deterministischer Lab-Key benutzt und der Logger warnt einmal,
 	// damit Production-Setups nicht mit dem Lab-Key in Betrieb gehen.
-	authBundle, authErr := buildAuthSessionService(baseProjects, persist.db, logger)
+	// Nur die SQLite-DB an die Auth-Verdrahtung reichen: der einzige
+	// db-Konsument dort ist der optionale SQLite-Issuance-Limiter, der
+	// zwingend eine SQLite-DB braucht. In Postgres-/InMemory-Modus ist das
+	// nil → der Limiter-Guard lehnt `MTRACE_AUTH_ISSUANCE_LIMITER=sqlite`
+	// mit klarer Meldung ab; wie jeder Auth-Fehler wird Auth dann mit
+	// Warnung deaktiviert (nicht fatal — bestehendes lab-freundliches
+	// Verhalten). Postgres hat keinen Issuance-Adapter — redis/memory nutzen.
+	authBundle, authErr := buildAuthSessionService(baseProjects, persist.sqliteDB(), logger)
 	if authErr != nil {
 		logger.Warn("auth session service disabled", "error", authErr.Error())
 	}
@@ -553,7 +563,18 @@ type persistenceBundle struct {
 	events    driven.EventRepository
 	sessions  driven.SessionRepository
 	sequencer driven.IngestSequencer
-	db        *sql.DB // nil im InMemory-Modus
+	// Die folgenden drei sind nur in den DB-gestützten Modi (sqlite/
+	// postgres) gesetzt, im InMemory-Modus nil (die zugehörigen Features
+	// sind dann deaktiviert). Adapter-selektiv, damit der Postgres-Modus
+	// nicht die SQLite-Query-Strings gegen PG laufen lässt.
+	srtHealth    driven.SrtHealthRepository
+	projectToken driven.ProjectTokenRepository
+	ingestStream driven.IngestStreamRepository
+	// mode trägt den gewählten Persistenz-Modus (sqlite/postgres/inmemory)
+	// für Kompatibilitäts-Guards (z. B. SQLite-Issuance-Limiter braucht
+	// MTRACE_PERSISTENCE=sqlite).
+	mode string
+	db   *sql.DB // nil im InMemory-Modus
 }
 
 // Close schließt die zugrundeliegende DB, falls vorhanden. No-op für
@@ -562,6 +583,18 @@ func (p *persistenceBundle) Close() {
 	if p.db != nil {
 		_ = p.db.Close()
 	}
+}
+
+// sqliteDB liefert die DB nur im SQLite-Modus zurück, sonst nil. Der
+// SQLite-Issuance-Limiter (`auth_issuance_counters`) braucht zwingend eine
+// SQLite-DB; in Postgres-/InMemory-Modus verhindert das nil, dass
+// SQLite-Query-Strings gegen einen fremden Store laufen (der Limiter-Guard
+// lehnt den Modus dann mit klarer Meldung ab → Auth deaktiviert).
+func (p *persistenceBundle) sqliteDB() *sql.DB {
+	if p.mode == persistenceModeSQLite {
+		return p.db
+	}
+	return nil
 }
 
 // newPersistence wählt den Persistenz-Adapter über die env vars
@@ -578,6 +611,7 @@ func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundl
 	case persistenceModeInMemory:
 		logger.Info("persistence: in-memory (data does not survive restart)")
 		return &persistenceBundle{
+			mode:      persistenceModeInMemory,
 			events:    inmemory.NewEventRepository(),
 			sessions:  inmemory.NewSessionRepository(),
 			sequencer: inmemory.NewIngestSequencer(),
@@ -598,13 +632,44 @@ func newPersistence(ctx context.Context, logger *slog.Logger) (*persistenceBundl
 			return nil, fmt.Errorf("ingest sequencer: %w", err)
 		}
 		return &persistenceBundle{
-			events:    persistencesqlite.NewEventRepository(db),
-			sessions:  persistencesqlite.NewSessionRepository(db),
-			sequencer: seq,
-			db:        db,
+			mode:         persistenceModeSQLite,
+			events:       persistencesqlite.NewEventRepository(db),
+			sessions:     persistencesqlite.NewSessionRepository(db),
+			sequencer:    seq,
+			srtHealth:    persistencesqlite.NewSrtHealthRepository(db),
+			projectToken: persistencesqlite.NewProjectTokenRepository(db),
+			ingestStream: persistencesqlite.NewIngestStreamRepository(db),
+			db:           db,
+		}, nil
+	case persistenceModePostgres:
+		dsn := strings.TrimSpace(os.Getenv(envPostgresDSN))
+		if dsn == "" {
+			return nil, fmt.Errorf("MTRACE_PERSISTENCE=postgres requires %s (postgres:// DSN)", envPostgresDSN)
+		}
+		logger.Info("persistence: postgres")
+		db, err := storage.OpenPostgres(ctx, dsn)
+		if err != nil {
+			return nil, fmt.Errorf("storage.OpenPostgres: %w", err)
+		}
+		// blockSize 0 → defaultBlockSize (512): DB-autoritativer Sequencer
+		// via nextval + Block-Allokation (R-28).
+		seq, err := persistencepostgres.NewIngestSequencer(ctx, db, 0)
+		if err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("ingest sequencer: %w", err)
+		}
+		return &persistenceBundle{
+			mode:         persistenceModePostgres,
+			events:       persistencepostgres.NewEventRepository(db),
+			sessions:     persistencepostgres.NewSessionRepository(db),
+			sequencer:    seq,
+			srtHealth:    persistencepostgres.NewSrtHealthRepository(db),
+			projectToken: persistencepostgres.NewProjectTokenRepository(db),
+			ingestStream: persistencepostgres.NewIngestStreamRepository(db),
+			db:           db,
 		}, nil
 	default:
-		return nil, fmt.Errorf("unknown MTRACE_PERSISTENCE=%q (expected 'sqlite' or 'inmemory')", mode)
+		return nil, fmt.Errorf("unknown MTRACE_PERSISTENCE=%q (expected 'sqlite', 'postgres', or 'inmemory')", mode)
 	}
 }
 
@@ -921,7 +986,7 @@ func buildIssuanceRateLimiter(db *sql.DB, logger *slog.Logger) (driven.IssuanceR
 	case "sqlite":
 		if db == nil {
 			return nil, fmt.Errorf(
-				"%s=sqlite requires MTRACE_PERSISTENCE=sqlite (got nil DB handle — InMemory persistence is incompatible)",
+				"%s=sqlite requires MTRACE_PERSISTENCE=sqlite (got nil SQLite handle — postgres/inmemory have no SQLite issuance store; use redis or memory)",
 				envAuthIssuanceLimiter,
 			)
 		}
