@@ -2,7 +2,7 @@
 
 > **Status**: 📝 **Skizze / Draft** — noch nicht gestartet, noch nicht
 > committed als Scope. Folge-Kandidat zu
-> [`plan-0.23.0-postgres-scaleout`](../in-progress/plan-0.23.0-postgres-scaleout.md)
+> [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
 > (Runtime-Adapter + Scale-out-Evidenz). Die Versionsnummer `0.24.0` ist
 > provisorisch.
 >

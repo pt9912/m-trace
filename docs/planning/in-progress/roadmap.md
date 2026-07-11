@@ -2,20 +2,18 @@
 
 > **Stand**: 2026-07-11
 >
-> **Phase**: 🚧 `0.23.0` Postgres Scale-out (Minor) — **Inhalt fertig,
-> Release vorbereitet**, Lastenheft-Patch `1.1.25` (RAK-126..RAK-130,
-> §13.24). Liefert den **optionalen** Postgres-Runtime-Adapter
-> (`MTRACE_PERSISTENCE=postgres`), den DB-autoritativen Ingest-Sequencer
-> (R-28), die Multi-Replica-Harness mit über `pg_advisory_lock`
-> serialisierter Startup-Migration und den Scale-out-Lasttest, der `R-26 c`
-> belegt (0 Verlust / 0 Duplikate über 2 Replicas @ ~1,4 Mio Events;
-> Durchsatz store-gebunden = Single-Postgres-Decke, ehrlich attribuiert).
-> `SQLite` bleibt Default. **Tag `v0.23.0` + GHCR/npm-Publish stehen unter
-> Human-Freigabe aus.** `R-26 b` (repliken-übergreifende Multi-Tenant-
-> Fairness) bleibt offen.
+> **Phase**: ✅ `0.23.0` Postgres Scale-out (Minor) **released** (Tag
+> `v0.23.0`, GHCR- + npm-Publish grün, 2026-07-11), Lastenheft-Patch
+> `1.1.25` (RAK-126..RAK-130, §13.24). Liefert den **optionalen**
+> Postgres-Runtime-Adapter (`MTRACE_PERSISTENCE=postgres`), den
+> DB-autoritativen Ingest-Sequencer (R-28), die Multi-Replica-Harness mit
+> über `pg_advisory_lock` serialisierter Startup-Migration und den
+> Scale-out-Lasttest, der `R-26 c` belegt (0 Verlust / 0 Duplikate über 2
+> Replicas @ ~1,4 Mio Events; Durchsatz store-gebunden = Single-Postgres-
+> Decke, ehrlich attribuiert). `SQLite` bleibt Default. `R-26 b`
+> (repliken-übergreifende Multi-Tenant-Fairness) bleibt offen.
 > Vorher: ✅ `0.22.4` Security-/Tooling-Patch released (Tag `v0.22.4`,
-> GHCR- + npm-Publish grün, 2026-06-23; `golang.org/x/net`-CVEs Issue #9,
-> ENV-Ingest-Rate-Limiter Default 100/100 unverändert).
+> GHCR- + npm-Publish grün, 2026-06-23).
 > Vorheriger Stand: ✅ `0.22.3` Security-/CI-Sammel-Patch released
 > ([`done/plan-0.22.3-webrtc-drift.md`](../done/plan-0.22.3-webrtc-drift.md)).
 >
@@ -125,7 +123,7 @@ aktualisieren.
 
 ---
 
-## 1. Aktueller Stand (2026-07-11 — `0.23.0` Minor vorbereitet, Tag ausstehend; `0.22.4` released)
+## 1. Aktueller Stand (2026-07-11 — `0.23.0` Minor released)
 
 ### 1.1 Lieferstand
 
@@ -176,14 +174,15 @@ R-27-Read-Wasserzeichen, Multi-Replica-Harness mit `pg_advisory_lock`
 serialisierter Startup-Migration und der Scale-out-Lasttest, der `R-26 c`
 mit Messwerten schließt (0 Verlust / 0 Duplikate über 2 Replicas; Durchsatz
 flaschenhals-abhängig, store-gebunden = Single-Postgres-Decke — s.
-`budgets.md` §8). Der Minor-Release ist vorbereitet: Version `0.23.0` gebumpt,
-Lastenheft-Patch `1.1.25` (RAK-126..RAK-130), CHANGELOG datiert, ADR-0006 als
-belegt referenziert, RAK-Verifikationsmatrix in Plan §6.1. **Ausstehend: die
-Human-Freigabe für Tag `v0.23.0` + GHCR/npm-Publish** (`releasing.md`). Danach
-ist `R-26 b` (repliken-übergreifend fairer Ingest-Limiter, shared Redis) die
-nächste größere Tranche; die Postgres-Datenmigration bestehender SQLite-Läufe
-bleibt Folge-Scope. Mutation-Blockierung bleibt deferred, bis echte
->70%-Score-Reihen vorliegen.
+`budgets.md` §8). Der Minor-Release `0.23.0` ist **veröffentlicht** (Tag `v0.23.0`, GHCR-
+`m-trace-api`/`-dashboard`/`-analyzer-service:0.23.0` + npm
+`@pt9912/player-sdk`/`stream-analyzer@0.23.0`, GitHub-Release publiziert,
+2026-07-11): Version gebumpt, Lastenheft-Patch `1.1.25` (RAK-126..RAK-130),
+CHANGELOG datiert, ADR-0006 als belegt referenziert, RAK-Verifikationsmatrix
+in Plan §6.1. Nächste größere Tranchen: `R-26 b` (repliken-übergreifend fairer
+Ingest-Limiter, shared Redis) und die Postgres-Datenmigration bestehender
+SQLite-Läufe (`plan-0.24.0-sqlite-postgres-cutover`, ADR-0007). Mutation-
+Blockierung bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
 
 ---
 
