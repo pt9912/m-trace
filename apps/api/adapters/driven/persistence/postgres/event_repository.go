@@ -304,6 +304,14 @@ func scanEventRow(rows *sql.Rows) (domain.PlaybackEvent, error) {
 
 // ListAfterIngestSequence implementiert den SSE-Backfill-Hook. Reine
 // Read-Operation ohne Tx.
+//
+// R-30 (Backlog): dieser Pfad ordnet über `ingest_sequence` und trägt —
+// anders als ListBySession — KEIN R-27-Commit-Zeit-Wasserzeichen. Unter
+// nebenläufigen PG-Writern + R-28-Block-Allokation ist `ingest_sequence`
+// verbindungsübergreifend non-monoton → ein SSE-Consumer kann out-of-order
+// committete Früh-Events überspringen. Bounded impact (der durable
+// List-Pfad ist R-27-safe und Source-of-Truth); Mechanismus offen, als
+// T6-Prüfpunkt getrackt (risks-backlog R-30).
 func (r *EventRepository) ListAfterIngestSequence(ctx context.Context, projectID string, afterSeq int64, limit int) ([]domain.PlaybackEvent, error) {
 	if limit <= 0 {
 		return nil, nil

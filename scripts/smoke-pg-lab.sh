@@ -44,12 +44,16 @@ fi
 RUN_ID="$$"
 NET="mtrace-pglab-net-${RUN_ID}"
 DB="mtrace-pglab-db-${RUN_ID}"
+# Zweites PG OHNE track_commit_timestamp — für den Fail-Loud-Guard-Test
+# (TestOpenPostgres_RequiresCommitTimestamp).
+DB_NOCT="mtrace-pglab-noct-${RUN_ID}"
 PG_USER="mtrace"
 PG_PASS="labpass"
 PG_DB="mtrace"
 
 cleanup() {
   docker rm -f "${DB}" >/dev/null 2>&1 || true
+  docker rm -f "${DB_NOCT}" >/dev/null 2>&1 || true
   docker network rm "${NET}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -87,13 +91,34 @@ fi
 
 DSN="postgres://${PG_USER}:${PG_PASS}@${DB}:5432/${PG_DB}?sslmode=disable"
 
+# Zweites PG OHNE track_commit_timestamp (Default off) für den Guard-Test.
+docker run -d --name "${DB_NOCT}" --network "${NET}" \
+  -e POSTGRES_USER="${PG_USER}" \
+  -e POSTGRES_PASSWORD="${PG_PASS}" \
+  -e POSTGRES_DB="${PG_DB}" \
+  "${PG_IMAGE}" >/dev/null
+noct_ready=0
+for _ in $(seq 1 60); do
+  if docker exec "${DB_NOCT}" pg_isready -U "${PG_USER}" -d "${PG_DB}" >/dev/null 2>&1; then
+    noct_ready=1
+    break
+  fi
+  sleep 1
+done
+if [[ "${noct_ready}" -ne 1 ]]; then
+  echo "[smoke-pg-lab] no-CT-Postgres wurde nicht bereit (60s Timeout)." >&2
+  exit 1
+fi
+DSN_NOCT="postgres://${PG_USER}:${PG_PASS}@${DB_NOCT}:5432/${PG_DB}?sslmode=disable"
+
 echo "  PG-Lab-Integrationstests gegen die frische DB ..."
 if ! docker run --rm --network "${NET}" \
   -v "${API_DIR}:/src" -w /src \
   -e MTRACE_PG_LAB_DSN="${DSN}" \
+  -e MTRACE_PG_NO_CT_DSN="${DSN_NOCT}" \
   "${GO_IMAGE}" \
   go test -p 1 ./internal/storage/... ./adapters/driven/persistence/postgres/... \
-    -run 'TestOpenPostgres_LiveSchema|TestIngestSequencer_PgLab|TestSrtHealthRepository_PgLab|TestProjectTokenRepository_PgLab|TestEventRepository_PgLab|TestIngestStreamRepository_PgLab|TestSessionRepository_PgLab|TestContract_PgLab|TestEventRepository_R27Watermark_PgLab' \
+    -run 'TestOpenPostgres_LiveSchema|TestOpenPostgres_RequiresCommitTimestamp|TestIngestSequencer_PgLab|TestSrtHealthRepository_PgLab|TestProjectTokenRepository_PgLab|TestEventRepository_PgLab|TestIngestStreamRepository_PgLab|TestSessionRepository_PgLab|TestContract_PgLab|TestEventRepository_R27Watermark_PgLab' \
     -v -count=1; then
   echo "[smoke-pg-lab] Integrationstest FEHLGESCHLAGEN." >&2
   exit 1

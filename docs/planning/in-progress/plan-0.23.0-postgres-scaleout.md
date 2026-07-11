@@ -178,6 +178,17 @@
 > in main.go), T5 (Migrations-Race-Fix + `track_commit_timestamp` in Compose-PG),
 > T6 Scale-out-Lasttest, T7 Closeout.
 >
+> **Review-Nachlese (2026-07-11)** zu 3b: **F1 (gefixt)** — `pg_xact_commit_timestamp(xmin)`
+> wirft bei `track_commit_timestamp=off` einen **harten Fehler** (nicht NULL), also hätte der
+> Event-List-Pfad ohne das Setting pro Request einen 500 geworfen; **Fail-loud-Guard in
+> `OpenPostgres`** erzwingt jetzt `=on` beim Boot (Negativ-Test `TestOpenPostgres_RequiresCommitTimestamp`
+> gegen ein zweites PG ohne Setting im smoke-pg-lab). **F2 (getrackt als R-30)** — der SSE-Backfill
+> `ListAfterIngestSequence` hat dieselbe Skip-Exposition (ordnet über `ingest_sequence`,
+> non-monoton unter R-28); bounded impact (durable List-Pfad ist Source-of-Truth), Mechanismus
+> als T6-Prüfpunkt offen. **N1 (T6-Perf-Beobachtung)** — `pg_xact_commit_timestamp(xmin)` ist ein
+> Funktionsaufruf pro gescannter Row (kein Index) → p95 im Scale-out-Lasttest beobachten.
+> **N2 (minor)** — ein extra `SELECT now()`-Roundtrip pro Page-1-List.
+>
 > **Amendment 2026-07-10 (b) — Feierabend-Status Tranche 2, 4/6 Ports.**
 > Tranche 1 komplett (#3–#6, ADR-0006-Schema/Runner/Lab). Tranche 2
 > (PG-Adapter für 6 Driven-Ports + Sequencer-Redesign) ist **4/6 fertig**

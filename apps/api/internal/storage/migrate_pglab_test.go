@@ -40,6 +40,27 @@ func TestOpenPostgres_LiveSchema(t *testing.T) {
 	t.Run("usable schema", func(t *testing.T) { assertUsable(ctx, t, db) })
 }
 
+// TestOpenPostgres_RequiresCommitTimestamp verifiziert den Fail-Loud-Guard:
+// gegen ein Postgres OHNE track_commit_timestamp=on muss OpenPostgres beim
+// Boot mit klarer Meldung abbrechen — sonst würfe pg_xact_commit_timestamp
+// im R-27-Event-List-Pfad pro Request einen Fehler (ADR-0006). Gated über
+// MTRACE_PG_NO_CT_DSN; scripts/smoke-pg-lab.sh startet dafür ein zweites PG
+// ohne das Setting.
+func TestOpenPostgres_RequiresCommitTimestamp(t *testing.T) {
+	dsn := os.Getenv("MTRACE_PG_NO_CT_DSN")
+	if dsn == "" {
+		t.Skip("MTRACE_PG_NO_CT_DSN nicht gesetzt — Negativ-Test übersprungen")
+	}
+	db, err := storage.OpenPostgres(context.Background(), dsn)
+	if err == nil {
+		_ = db.Close()
+		t.Fatalf("OpenPostgres gegen PG ohne track_commit_timestamp=on: erwartet Fehler, bekam nil")
+	}
+	if !strings.Contains(err.Error(), "track_commit_timestamp") {
+		t.Errorf("Fehler = %v, want Hinweis auf track_commit_timestamp", err)
+	}
+}
+
 // assertBaseline: schema_migrations trägt genau die PG-Baseline V1, dirty=0.
 func assertBaseline(ctx context.Context, t *testing.T, db *sql.DB) {
 	t.Helper()

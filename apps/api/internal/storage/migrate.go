@@ -143,11 +143,36 @@ func OpenPostgres(ctx context.Context, dsn string) (*sql.DB, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("storage: ping postgres: %w", err)
 	}
+	if err := requireCommitTimestampTracking(ctx, db); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
 	if err := applyDialect(ctx, db, postgresDialect()); err != nil {
 		_ = db.Close()
 		return nil, err
 	}
 	return db, nil
+}
+
+// requireCommitTimestampTracking erzwingt track_commit_timestamp=on beim
+// Boot. Der Postgres-Adapter braucht pg_xact_commit_timestamp(xmin) für
+// das R-27-Commit-Zeit-Wasserzeichen (ADR-0006) im Event-List-Pfad; ist
+// das Setting aus, wirft die Funktion pro Request einen harten Fehler
+// ("could not get commit timestamp data") statt NULL. Darum hier
+// fail-loud beim Start (nicht als 500 im Read-Pfad) — dasselbe
+// refuse-to-start-Prinzip wie bei dirty schema_migrations.
+func requireCommitTimestampTracking(ctx context.Context, db *sql.DB) error {
+	var setting string
+	if err := db.QueryRowContext(ctx, "SHOW track_commit_timestamp").Scan(&setting); err != nil {
+		return fmt.Errorf("storage: read track_commit_timestamp: %w", err)
+	}
+	if setting != "on" {
+		return fmt.Errorf("storage: postgres requires track_commit_timestamp=on "+
+			"(R-27 commit-time watermark for event pagination), got %q; set it in "+
+			"postgresql.conf or start postgres with '-c track_commit_timestamp=on' and restart",
+			setting)
+	}
+	return nil
 }
 
 // Apply wendet offene Migrationen aus files (fs.FS, gewurzelt am
