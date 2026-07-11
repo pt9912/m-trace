@@ -66,7 +66,21 @@ type dialect struct {
 	// Verbindung selbst bleibt auf Extended → typisierte Parameter und
 	// korrekte Typinferenz in den Runtime-Adaptern.
 	bodyExecArgs []any
+	// acquireMigrationLock serialisiert konkurrierende Migrations-Läufe
+	// beim Multi-Replica-Boot (ADR-0006): booten N Replicas
+	// gleichzeitig, laufen N Prozesse durch apply() und kollidieren sonst
+	// auf Postgres' Katalog (`CREATE TABLE` ist nicht race-safe →
+	// pg_type_typname_nsp_index-Dup, SQLSTATE 23505). Für Postgres ein
+	// pg_advisory_lock (nur einer migriert, die anderen warten und sehen
+	// dann pending=∅); für SQLite nil (single-writer, kein Cross-Prozess-
+	// Race). Liefert eine release-Closure.
+	acquireMigrationLock func(ctx context.Context, db *sql.DB) (func(), error)
 }
+
+// migrationLockKey ist der feste pg_advisory_lock-Schlüssel für den
+// Migrations-Apply (bigint). Beliebig, aber projektstabil, damit alle
+// Replicas denselben Lock nehmen.
+const migrationLockKey int64 = 0x6D74726163650001
 
 // sqliteDialect und postgresDialect liefern den jeweiligen Dialekt.
 // Als Funktionen statt package-Globals gehalten (der Linter erlaubt
@@ -81,10 +95,32 @@ func sqliteDialect() dialect {
 
 func postgresDialect() dialect {
 	return dialect{
-		placeholder:   func(n int) string { return "$" + strconv.Itoa(n) },
-		migrationsDir: "migrations/postgres",
-		bodyExecArgs:  []any{pgx.QueryExecModeSimpleProtocol},
+		placeholder:          func(n int) string { return "$" + strconv.Itoa(n) },
+		migrationsDir:        "migrations/postgres",
+		bodyExecArgs:         []any{pgx.QueryExecModeSimpleProtocol},
+		acquireMigrationLock: acquirePostgresMigrationLock,
 	}
+}
+
+// acquirePostgresMigrationLock nimmt einen Session-weiten pg_advisory_lock
+// auf einer dedizierten Verbindung (die anderen Replicas blockieren hier,
+// bis der Migrierende fertig ist). Der Lock MUSS auf derselben Connection
+// gehalten und wieder freigegeben werden — daher ein gepinnter `*sql.Conn`
+// statt des Pools. Die Migrations-Statements selbst laufen weiter über den
+// Pool; der Lock ist reiner Mutex.
+func acquirePostgresMigrationLock(ctx context.Context, db *sql.DB) (func(), error) {
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("storage: migration-lock conn: %w", err)
+	}
+	if _, err := conn.ExecContext(ctx, "SELECT pg_advisory_lock($1)", migrationLockKey); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("storage: pg_advisory_lock: %w", err)
+	}
+	return func() {
+		_, _ = conn.ExecContext(ctx, "SELECT pg_advisory_unlock($1)", migrationLockKey)
+		_ = conn.Close()
+	}, nil
 }
 
 // migrationNamePattern matcht das Flyway-File-Format
@@ -224,6 +260,18 @@ func setPragmas(ctx context.Context, db *sql.DB) error {
 }
 
 func apply(ctx context.Context, db *sql.DB, files fs.FS, d dialect) error {
+	// Multi-Replica-Boot: konkurrierende Migrations-Läufe serialisieren
+	// (Postgres pg_advisory_lock; SQLite no-op). Der Lock umfasst
+	// ensureSchemaMigrationsTable + alle applyOne, damit nur ein Replica
+	// die CREATE-TABLE-DDL fährt; die anderen warten und sehen danach
+	// pending=∅.
+	if d.acquireMigrationLock != nil {
+		release, err := d.acquireMigrationLock(ctx, db)
+		if err != nil {
+			return err
+		}
+		defer release()
+	}
 	if err := ensureSchemaMigrationsTable(ctx, db); err != nil {
 		return err
 	}

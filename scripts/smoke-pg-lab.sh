@@ -118,7 +118,7 @@ if ! docker run --rm --network "${NET}" \
   -e MTRACE_PG_NO_CT_DSN="${DSN_NOCT}" \
   "${GO_IMAGE}" \
   go test -p 1 ./internal/storage/... ./adapters/driven/persistence/postgres/... \
-    -run 'TestOpenPostgres_LiveSchema|TestOpenPostgres_RequiresCommitTimestamp|TestIngestSequencer_PgLab|TestSrtHealthRepository_PgLab|TestProjectTokenRepository_PgLab|TestEventRepository_PgLab|TestIngestStreamRepository_PgLab|TestSessionRepository_PgLab|TestContract_PgLab|TestEventRepository_R27Watermark_PgLab' \
+    -run 'TestOpenPostgres_LiveSchema|TestOpenPostgres_RequiresCommitTimestamp|TestOpenPostgres_ConcurrentMigrationsNoRace_PgLab|TestIngestSequencer_PgLab|TestSrtHealthRepository_PgLab|TestProjectTokenRepository_PgLab|TestEventRepository_PgLab|TestIngestStreamRepository_PgLab|TestSessionRepository_PgLab|TestContract_PgLab|TestEventRepository_R27Watermark_PgLab' \
     -v -count=1; then
   echo "[smoke-pg-lab] Integrationstest FEHLGESCHLAGEN." >&2
   exit 1

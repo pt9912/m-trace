@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/pt9912/m-trace/apps/api/internal/storage"
@@ -58,6 +59,67 @@ func TestOpenPostgres_RequiresCommitTimestamp(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "track_commit_timestamp") {
 		t.Errorf("Fehler = %v, want Hinweis auf track_commit_timestamp", err)
+	}
+}
+
+// TestOpenPostgres_ConcurrentMigrationsNoRace_PgLab verifiziert den
+// Multi-Replica-Boot-Fix (ADR-0006): N Prozesse laufen gleichzeitig durch
+// OpenPostgres→Migrationen; ohne den pg_advisory_lock kollidieren sie auf
+// dem PG-Katalog (CREATE TABLE, SQLSTATE 23505). Mit dem Lock migriert nur
+// einer, die anderen warten und sehen pending=∅ → alle erfolgreich. Gated
+// über MTRACE_PG_LAB_DSN.
+func TestOpenPostgres_ConcurrentMigrationsNoRace_PgLab(t *testing.T) {
+	dsn := os.Getenv("MTRACE_PG_LAB_DSN")
+	if dsn == "" {
+		t.Skip("MTRACE_PG_LAB_DSN nicht gesetzt — PG-Lab-Integrationstest übersprungen")
+	}
+	ctx := context.Background()
+	// Auf frisch-unmigriert zurücksetzen (DROP SCHEMA droppt auch
+	// schema_migrations); die parallelen Opens müssen dann von Null migrieren.
+	seed, err := storage.OpenPostgres(ctx, dsn)
+	if err != nil {
+		t.Fatalf("seed OpenPostgres: %v", err)
+	}
+	if _, err := seed.ExecContext(ctx, "DROP SCHEMA public CASCADE"); err != nil {
+		t.Fatalf("drop schema: %v", err)
+	}
+	if _, err := seed.ExecContext(ctx, "CREATE SCHEMA public"); err != nil {
+		t.Fatalf("create schema: %v", err)
+	}
+	_ = seed.Close()
+
+	const n = 8
+	var wg sync.WaitGroup
+	errs := make([]error, n)
+	dbs := make([]*sql.DB, n)
+	wg.Add(n)
+	for i := 0; i < n; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			dbs[idx], errs[idx] = storage.OpenPostgres(ctx, dsn)
+		}(i)
+	}
+	wg.Wait()
+	for i, e := range errs {
+		if e != nil {
+			t.Errorf("paralleler OpenPostgres #%d: %v", i, e)
+		}
+		if dbs[i] != nil {
+			_ = dbs[i].Close()
+		}
+	}
+	// Danach ist genau die Baseline-V1 migriert.
+	check, err := storage.OpenPostgres(ctx, dsn)
+	if err != nil {
+		t.Fatalf("check OpenPostgres: %v", err)
+	}
+	t.Cleanup(func() { _ = check.Close() })
+	var version, dirty int64
+	if err := check.QueryRowContext(ctx, "SELECT version, dirty FROM schema_migrations").Scan(&version, &dirty); err != nil {
+		t.Fatalf("read schema_migrations: %v", err)
+	}
+	if version != 1 || dirty != 0 {
+		t.Errorf("schema_migrations = {version:%d dirty:%d}, want {1 0}", version, dirty)
 	}
 }
 
