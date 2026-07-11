@@ -174,9 +174,23 @@
 > (iii) **adversarialer Test** `TestEventRepository_R27Watermark_PgLab` grün + distinktiv:
 > Page 2 der W-Session liefert E3 statt des spät-committenden B (W hält B aktiv zurück,
 > obwohl sichtbar+sortier-nächst), frische W'-Session liefert [E1,B,E3,E5] → nie
-> übersprungen. **DAMIT TRANCHE 3 KOMPLETT.** Danach T4 Wiring (`MTRACE_PERSISTENCE=postgres`
-> in main.go), T5 (Migrations-Race-Fix + `track_commit_timestamp` in Compose-PG),
-> T6 Scale-out-Lasttest, T7 Closeout.
+> übersprungen. **DAMIT TRANCHE 3 KOMPLETT.**
+>
+> **Amendment 2026-07-11 (c) — TRANCHE 4 KOMPLETT (`e30d96c`, CI grün).** Wiring:
+> `MTRACE_PERSISTENCE=postgres`-Zweig in `newPersistence` (DSN via `MTRACE_POSTGRES_DSN`);
+> **Bundle-Refactor** hebt die drei Nicht-Contract-Ports (srt_health/project_token/
+> ingest_stream) adapter-selektiv in den Bundle — vorher ad-hoc als SQLite aus `persist.db`
+> gebaut, was gegen PG SQLite-Queries laufen ließe. Alle 6 Ports + Sequencer store-korrekt.
+> **Issuance-Guard**: der SQLite-Issuance-Limiter (`auth_issuance_counters`, R-17) hat keinen
+> PG-Adapter → `sqliteDB()` reicht die DB nur im SQLite-Modus durch, `MTRACE_AUTH_ISSUANCE_LIMITER=sqlite`
+> auf PG/InMemory wird mit klarer Meldung abgelehnt (Auth deaktiviert, wie jeder Auth-Fehler;
+> redis/memory nutzen). **CI-Matrix**: neuer `postgres`-Job in `build.yml` fährt `make smoke-pg-lab`
+> → PG-Adapter (Contract-Suite + 6 Ports + R-27/R-28 + F1-Boot-Guard) laufen jetzt **in CI**
+> (schließt die Review-Lücke „CI verifiziert PG nicht"; SQLite via `make gates`). **Verifiziert**:
+> Boot-Smoke postgres/sqlite/inmemory → `GET /api/health` 200; PG+sqlite-Issuance → klare Warnung;
+> `make gates` grün; CI-`postgres`-Job grün (55s). Default byte-stabil `sqlite`. **Danach**: T5
+> Multi-Replica-Harness (Compose ≥2 api + PG + LB; Startup-Migrations-Race via `pg_advisory_lock`/
+> Deploy-Job fixen + `track_commit_timestamp` in Compose-PG), T6 Scale-out-Lasttest, T7 Closeout.
 >
 > **Review-Nachlese (2026-07-11)** zu 3b: **F1 (gefixt)** — `pg_xact_commit_timestamp(xmin)`
 > wirft bei `track_commit_timestamp=off` einen **harten Fehler** (nicht NULL), also hätte der
@@ -469,7 +483,9 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   Out-of-order-Test (`TestEventRepository_R27Watermark_PgLab`) grün —
   spät-committender Früh-Row wird aktiv zurückgehalten (nicht übersprungen)
   und erscheint in neuer W'-Session; kein zufällig-serialisierter Lauf.
-- [ ] `MTRACE_PERSISTENCE=postgres` opt-in, Default unverändert `sqlite`.
+- [x] `MTRACE_PERSISTENCE=postgres` opt-in, Default unverändert `sqlite`
+  (`e30d96c`, Tranche 4): Boot-Smoke aller drei Modi grün; CI-`postgres`-Job
+  fährt die PG-Persistenz-Tests (SQLite via `make gates`).
 - [ ] Multi-Replica-Compose-Profil (≥ 2 api + Postgres + LB) startbar.
 - [ ] **Scale-out-Lasttest mit Verdict**: horizontale Durchsatz-
   Skalierung gemessen (1/2/N Replicas), `persisted == accepted` global,
