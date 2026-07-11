@@ -147,6 +147,38 @@ func TestEncodeDecodeSessionEventsCursor_RoundTrip(t *testing.T) {
 	if !decoded.ServerReceivedAt.Equal(original.ServerReceivedAt) {
 		t.Errorf("ServerReceivedAt round-trip failed")
 	}
+	if decoded.Watermark != nil {
+		t.Errorf("Watermark ohne Setzen sollte nil round-trippen, got %v", decoded.Watermark)
+	}
+}
+
+// TestEncodeDecodeSessionEventsCursor_WatermarkRoundTrip deckt das
+// optionale R-27-Wasserzeichen ab: ein Cursor mit gesetztem Watermark
+// muss es (nano-genau, UTC) über encode→decode erhalten.
+func TestEncodeDecodeSessionEventsCursor_WatermarkRoundTrip(t *testing.T) {
+	t.Parallel()
+	wm := time.Date(2026, 7, 11, 15, 30, 0, 123456789, time.UTC)
+	original := &driving.SessionEventsCursor{
+		ServerReceivedAt: time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC),
+		IngestSequence:   7,
+		Watermark:        &wm,
+	}
+	const sessionID = "sess-xyz"
+	encoded, err := encodeSessionEventsCursor(original, testProjectID, sessionID)
+	if err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	decoded, err := decodeSessionEventsCursor(encoded, testProjectID, sessionID)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if decoded.Watermark == nil {
+		t.Fatalf("Watermark round-trip: got nil, want %v", wm)
+	}
+	if !decoded.Watermark.Equal(wm) || decoded.Watermark.Nanosecond() != wm.Nanosecond() {
+		t.Errorf("Watermark round-trip: got %v (ns=%d), want %v (ns=%d)",
+			decoded.Watermark, decoded.Watermark.Nanosecond(), wm, wm.Nanosecond())
+	}
 }
 
 // TestDecodeSessionEventsCursor_Malformed deckt Decode-Fehler analog
@@ -166,6 +198,7 @@ func TestDecodeSessionEventsCursor_Malformed(t *testing.T) {
 		"v3 unknown field":    encodeRaw(`{"v":3,"pid":"demo","sid":"sess-xyz","rcv":"2026-04-28T12:00:00Z","ing":1,"x":"y"}`),
 		"v3 foreign project":  encodeRaw(`{"v":3,"pid":"other","sid":"sess-xyz","rcv":"2026-04-28T12:00:00Z","ing":1}`),
 		"v3 foreign session":  encodeRaw(`{"v":3,"pid":"demo","sid":"other-session","rcv":"2026-04-28T12:00:00Z","ing":1}`),
+		"v3 wm not time":      encodeRaw(`{"v":3,"pid":"demo","sid":"sess-xyz","rcv":"2026-04-28T12:00:00Z","ing":1,"wm":"not-a-time"}`),
 	}
 	for name, raw := range cases {
 		if _, err := decodeSessionEventsCursor(raw, testProjectID, sessionID); !errors.Is(err, errCursorInvalidMalformed) {
