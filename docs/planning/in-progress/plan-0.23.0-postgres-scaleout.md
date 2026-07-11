@@ -164,13 +164,19 @@
 > Pflicht**: eingefrorene/aged-out xids liefern `pg_xact_commit_timestamp = NULL` →
 > als „stabil, einschließen" behandeln (sonst verschwinden alte Rows). **Kosten**:
 > `track_commit_timestamp = on` in der PG-Config (Harness/Deployment); commit_ts altert
-> mit Freeze (daher NULL-Handling). **Offen 3b**: (i) `track_commit_timestamp=on` im
-> smoke-pg-lab-PG-Container; (ii) Wasserzeichen in die PG-`event_repository`-Pagination
-> (W im Cursor — adapter-spezifische Cursor-Erweiterung, SQLite unberührt); (iii)
-> **adversarialer Out-of-order-Test**: Tx mit frühem `server_received_at` offen halten,
-> unter W daran vorbeipaginieren, committen → Row taucht in neuer W'-Session an korrekter
-> Stelle auf (nicht übersprungen). Danach T4 Wiring, T5 (Migrations-Race-Fix + config),
-> T6 Lasttest, T7.
+> mit Freeze (daher NULL-Handling). **3b FERTIG** (`5ff5e1a`, CI grün): (i)
+> `track_commit_timestamp=on` im smoke-pg-lab-PG-Container; (ii) Wasserzeichen im
+> PG-`event_repository.ListBySession` — `resolveWatermark` erfasst W via `SELECT now()`
+> (PG-Serveruhr), Prädikat `pg_xact_commit_timestamp(xmin) IS NULL OR <= W`, W über die
+> Pages im Cursor getragen; `Watermark *time.Time` in `driven.EventCursorPosition` +
+> `driving.SessionEventsCursor` (nil für SQLite/InMemory) + Use-Case-Mapping + Wire-Codec
+> (optionales `wm`-Feld, omitempty; alte v3-Cursor formatgleich). SSE-Backfill unberührt.
+> (iii) **adversarialer Test** `TestEventRepository_R27Watermark_PgLab` grün + distinktiv:
+> Page 2 der W-Session liefert E3 statt des spät-committenden B (W hält B aktiv zurück,
+> obwohl sichtbar+sortier-nächst), frische W'-Session liefert [E1,B,E3,E5] → nie
+> übersprungen. **DAMIT TRANCHE 3 KOMPLETT.** Danach T4 Wiring (`MTRACE_PERSISTENCE=postgres`
+> in main.go), T5 (Migrations-Race-Fix + `track_commit_timestamp` in Compose-PG),
+> T6 Scale-out-Lasttest, T7 Closeout.
 >
 > **Amendment 2026-07-10 (b) — Feierabend-Status Tranche 2, 4/6 Ports.**
 > Tranche 1 komplett (#3–#6, ADR-0006-Schema/Runner/Lab). Tranche 2
@@ -442,15 +448,16 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   **port-erhaltend**: `Next() int64` + Call-Site unverändert; **nicht**
   `IDENTITY`+`RETURNING`), mit Batch-Block-Allokation gegen den per-Event-
   Roundtrip; SQLite-/InMemory-Sequencer unverändert grün.
-- [ ] **Alle sechs Ports** gegen Postgres getestet: Contract-Suite (3
-  Ports) **plus** portierte Postgres-Tests für `project_token`/
-  `srt_health`/`ingest_stream`; grün gegen SQLite **und** Postgres in CI.
-- [ ] **R-28-Test**: kein Dup / keine PK-Kollision über N parallele Writer.
-  **R-27**: Wasserzeichen-Mechanismus **entworfen** + **adversarialer**
-  Out-of-order-Test (injizierter spät-Commit mit frühem `server_received_at`
-  wird *nicht* übersprungen — explizit kein zufällig-serialisierter Lauf).
-  Beide DoD-blockierend vor Tranche 6; keine kausale Ordnung, aber R-28s
-  Block-Allokation entfernt `ingest_sequence` als R-27-Signal.
+- [x] **Alle sechs Ports** gegen Postgres getestet: Contract-Suite (3
+  Ports, `contract_pglab_test.go`) **plus** portierte Postgres-Tests
+  (`*_pglab_test.go`) für `project_token`/`srt_health`/`ingest_stream`;
+  grün gegen SQLite **und** Postgres (`smoke-pg-lab`).
+- [x] **R-28-Test**: kein Dup / keine PK-Kollision über N parallele Writer
+  (`TestIngestSequencer_PgLab`). **R-27**: Wasserzeichen-Mechanismus
+  entworfen (Option A `track_commit_timestamp`) + **adversarialer**
+  Out-of-order-Test (`TestEventRepository_R27Watermark_PgLab`) grün —
+  spät-committender Früh-Row wird aktiv zurückgehalten (nicht übersprungen)
+  und erscheint in neuer W'-Session; kein zufällig-serialisierter Lauf.
 - [ ] `MTRACE_PERSISTENCE=postgres` opt-in, Default unverändert `sqlite`.
 - [ ] Multi-Replica-Compose-Profil (≥ 2 api + Postgres + LB) startbar.
 - [ ] **Scale-out-Lasttest mit Verdict**: horizontale Durchsatz-
