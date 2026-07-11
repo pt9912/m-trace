@@ -188,9 +188,25 @@
 > → PG-Adapter (Contract-Suite + 6 Ports + R-27/R-28 + F1-Boot-Guard) laufen jetzt **in CI**
 > (schließt die Review-Lücke „CI verifiziert PG nicht"; SQLite via `make gates`). **Verifiziert**:
 > Boot-Smoke postgres/sqlite/inmemory → `GET /api/health` 200; PG+sqlite-Issuance → klare Warnung;
-> `make gates` grün; CI-`postgres`-Job grün (55s). Default byte-stabil `sqlite`. **Danach**: T5
-> Multi-Replica-Harness (Compose ≥2 api + PG + LB; Startup-Migrations-Race via `pg_advisory_lock`/
-> Deploy-Job fixen + `track_commit_timestamp` in Compose-PG), T6 Scale-out-Lasttest, T7 Closeout.
+> `make gates` grün; CI-`postgres`-Job grün (55s). Default byte-stabil `sqlite`.
+>
+> **Amendment 2026-07-11 (d) — TRANCHE 5 KOMPLETT (`51675e9`+`db9e657`).** Zwei Teile:
+> **(1) Startup-Migrations-Race-Fix** (`51675e9`, DoD-blockierend): der `postgresDialect` nimmt
+> vor dem Migrations-Apply einen Session-`pg_advisory_lock` auf einer gepinnten Connection
+> (`acquireMigrationLock`-Hook im Dialekt, nil für SQLite) — booten N Replicas gleichzeitig,
+> migriert nur einer, die anderen warten und sehen pending=∅ (kein `pg_type_typname_nsp_index`-
+> Race/23505). Verifiziert: `TestOpenPostgres_ConcurrentMigrationsNoRace_PgLab` (8 parallele
+> OpenPostgres gegen frisch-unmigrierte DB → alle grün, genau Baseline-V1) im smoke-pg-lab (auch
+> im CI-`postgres`-Job). SQLite-Pfad unberührt (Hook no-op). **(2) Multi-Replica-Harness**
+> (`db9e657`): `docker-compose.scaleout.yml` (2 api-Replicas `MTRACE_PERSISTENCE=postgres` + PG
+> `track_commit_timestamp=on` + nginx-LB `scripts/scaleout-nginx.conf`), separat vom Root-Compose
+> (das bleibt SQLite-Single-Instance); `make smoke-scaleout`. **Verifiziert (real)**: beide
+> Replicas + LB + PG laufen (beide booten gegen den geteilten Store → Race-Fix wirkt bei 2
+> gleichzeitig migrierenden Replicas), genau eine Baseline-V1 (kein Duplikat), LB-Health grün,
+> Connections 5/100 (Budget-Headroom), Issuance-Limiter=memory (PG-kompatibel; shared/Redis =
+> R-26-b-Scope). **Danach**: T6 Scale-out-Lasttest (`smoke-load.sh` gegen den LB; R-26-c-Evidenz:
+> `persisted==accepted`, `COUNT(DISTINCT ingest_sequence)==COUNT(*)`, Durchsatz 1/2/N Replicas),
+> T7 Closeout.
 >
 > **Review-Nachlese (2026-07-11)** zu 3b: **F1 (gefixt)** — `pg_xact_commit_timestamp(xmin)`
 > wirft bei `track_commit_timestamp=off` einen **harten Fehler** (nicht NULL), also hätte der
@@ -486,7 +502,10 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
 - [x] `MTRACE_PERSISTENCE=postgres` opt-in, Default unverändert `sqlite`
   (`e30d96c`, Tranche 4): Boot-Smoke aller drei Modi grün; CI-`postgres`-Job
   fährt die PG-Persistenz-Tests (SQLite via `make gates`).
-- [ ] Multi-Replica-Compose-Profil (≥ 2 api + Postgres + LB) startbar.
+- [x] Multi-Replica-Compose (≥ 2 api + Postgres + LB) startbar
+  (`db9e657`, `docker-compose.scaleout.yml` + `make smoke-scaleout`):
+  beide Replicas teilen den Store (Startup-Race via `pg_advisory_lock`
+  gefixt, `51675e9`), LB-Health grün, Connections ≤ max_connections.
 - [ ] **Scale-out-Lasttest mit Verdict**: horizontale Durchsatz-
   Skalierung gemessen (1/2/N Replicas), `persisted == accepted` global,
   0 Duplikate über Replicas (`COUNT(DISTINCT ingest_sequence) == COUNT(*)`,
