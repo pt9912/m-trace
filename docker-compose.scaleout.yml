@@ -1,0 +1,75 @@
+# Multi-Replica-Scale-out-Harness (ADR-0006): 2 API-Replicas + 1 Postgres
+# + nginx-Load-Balancer. Bewusst SEPARAT vom Root-docker-compose.yml — das
+# bleibt der SQLite-Single-Instance-Dev-Stack (`make dev`). Dieser Stack
+# belegt den optionalen Postgres-Store und dient dem Scale-out-Lasttest
+# (R-26 c) sowie dem Multi-Replica-Boot-Smoke (`make smoke-scaleout`).
+# Teilt das api-Image-Build mit dem Root-Compose (build: ./apps/api).
+#
+# Connection-Budget (Vorbehalt für den Lasttest): N Replicas × database/sql-
+# Pool + Startup/Migration + Readback-psql müssen unter Postgres'
+# max_connections (Default 100) bleiben — bei 2 Replicas mit reichlich
+# Headroom, beim Hochskalieren ggf. pool_size begrenzen oder pgbouncer.
+name: mtrace-scaleout
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: mtrace
+      POSTGRES_PASSWORD: mtrace-scaleout
+      POSTGRES_DB: mtrace
+    # track_commit_timestamp=on ist die R-27-Wasserzeichen-Voraussetzung
+    # (ADR-0006): OpenPostgres bricht beim Boot fail-loud ab, wenn es aus ist.
+    command: ["postgres", "-c", "track_commit_timestamp=on"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mtrace -d mtrace"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  api-1:
+    build:
+      context: ./apps/api
+      target: runtime
+    image: m-trace-api:0.1.2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MTRACE_API_LISTEN_ADDR: ":8080"
+      MTRACE_PERSISTENCE: "postgres"
+      MTRACE_POSTGRES_DSN: "postgres://mtrace:mtrace-scaleout@postgres:5432/mtrace?sslmode=disable"
+      # Issuance-Limiter: memory (Default). SQLite-Issuance ist auf Postgres
+      # inkompatibel; ein repliken-übergreifend fairer Limiter (Redis) ist
+      # R-26-b-Scope, nicht Teil des R-26-c-Durchsatznachweises.
+      MTRACE_AUTH_LAB_DEFAULT: "1"
+      ANALYZER_BASE_URL: ""
+      MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
+      MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
+
+  api-2:
+    build:
+      context: ./apps/api
+      target: runtime
+    image: m-trace-api:0.1.2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MTRACE_API_LISTEN_ADDR: ":8080"
+      MTRACE_PERSISTENCE: "postgres"
+      MTRACE_POSTGRES_DSN: "postgres://mtrace:mtrace-scaleout@postgres:5432/mtrace?sslmode=disable"
+      MTRACE_AUTH_LAB_DEFAULT: "1"
+      ANALYZER_BASE_URL: ""
+      MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
+      MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
+
+  lb:
+    image: nginx:1.27-alpine
+    depends_on:
+      - api-1
+      - api-2
+    volumes:
+      - ./scripts/scaleout-nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${SCALEOUT_LB_PORT:-8088}:8080"
