@@ -48,7 +48,7 @@ func TestOpen_FreshStart(t *testing.T) {
 	// project_token_generations, auth_issuance_counters, time_skew_warning,
 	// sample_rate_ppm) wurden in die V1-Baseline zurückgefaltet und gelöscht
 	// (kein durable Production-State; Apply-Runner ignoriert applied-Versionen
-	// ohne File, siehe ADR-0002 §8.2). Fresh-Start läuft damit genau eine
+	// ohne File, siehe ADR-0002). Fresh-Start läuft damit genau eine
 	// Migration.
 	if len(rows) != 1 {
 		t.Fatalf("schema_migrations rows = %d, want 1", len(rows))
