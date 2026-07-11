@@ -1,6 +1,7 @@
 # 0006 — Postgres-Runtime-Adapter für Production-Scale-out
 
-> **Status**: Accepted
+> **Status**: Accepted — **R-26 c mit Messwerten belegt** (2026-07-11, s.
+> Amendment am Dateiende); R-26 b (repliken-übergreifende Fairness) bleibt offen.
 > **Datum**: 2026-06-17
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: `spec/lastenheft.md` RAK-91 (Reaktivierung von „defer" auf
@@ -149,3 +150,52 @@ Nachweis-Wert die laufende Last rechtfertigt.
   Postgres-Teil aus „nicht entschieden" und dokumentiert die proaktive
   Reaktivierung.
 - Tags/Releases bleiben human-approval-pflichtig.
+
+## Amendment 2026-07-11 — R-26 c belegt (Evidenz)
+
+Die in `plan-0.23.0-postgres-scaleout.md` tranchenweise umgesetzte Arbeit ist
+abgeschlossen; die Entscheidung dieses ADR ist damit **von Behauptung zu
+Nachweis** geworden. Kernartefakte: sechs Postgres-Driven-Ports (Spiegel der
+SQLite-Adapter), DB-autoritativer Sequencer via `nextval`+Block-Allokation
+(R-28), R-27-Read-Wasserzeichen (`track_commit_timestamp` +
+`pg_xact_commit_timestamp(xmin)`), Multi-Replica-Harness
+(`docker-compose.scaleout.yml`: 2 API-Replicas + geteilter Postgres +
+nginx-LB) mit `pg_advisory_lock`-serialisierter Startup-Migration, und der
+Scale-out-Lasttest `make smoke-scaleout-load`.
+
+**1. Korrektheit unter Multi-Replica-Concurrency — wasserdicht.** Über
+**~1,4 Mio Events** bei bis zu **~11–12k ev/s** gegen zwei konkurrierende
+Replicas auf einem geteilten Postgres: `persisted == accepted` (kein stiller
+Verlust) und `COUNT(DISTINCT ingest_sequence) == COUNT(*)` (0 Duplikate). Der
+DB-autoritative Sequencer (R-28) hat über parallele Writer nie eine
+`ingest_sequence` kollidiert oder ein Event verloren. **Das ist der Kern von
+R-26 c** — belegt.
+
+**2. Durchsatz-Skalierung ist flaschenhals-abhängig — ehrlich dokumentiert.**
+Ein naives „N Replicas = N× Durchsatz" gilt *nicht* pauschal (Details +
+Zahlen in `docs/perf/budgets.md` §8):
+
+- **App-gebunden** (Default-Rate-Limiter greift, 100 ev/s/Projekt): 1→2
+  Replicas skaliert linear (**2,01×**). Ursache: der In-Memory-Ingest-Limiter
+  sitzt **pro Replica** → N Replicas geben dem Projekt N× effektives
+  Ratebudget. Das ist genau die in „Begründung" Punkt 3 (ii) vorhergesagte
+  **R-26-b-Lücke, jetzt gemessen**: die Per-Projekt-Decke ist ohne shared
+  (Redis) Ingest-Limiter nicht repliken-übergreifend fair.
+- **Store-gebunden** (Limiter aus): der **einzelne geteilte Postgres ist die
+  Decke** (~12.000 ev/s auf dem Harness); eine 2. App-Replica hebt den
+  Durchsatz *nicht* (0,9×, minimal schlechter durch Contention auf einem
+  Writer). `docker stats`-Attribution (20-Kern-Host): Postgres ~9,5 Kerne vs
+  gesamte API-Schicht ~4 Kerne, Host nur ~14/20 Kerne genutzt → es ist die
+  **Per-Instanz-Grenze des einen Postgres** (WAL/Commit-Serialisierung,
+  `nextval`-/Lock-Contention), **nicht** Host-CPU-Mangel. Der Skalierungs-
+  Hebel für rohen Ingest-Durchsatz ist damit der **Store** (größerer/
+  partitionierter Postgres, `COPY`-Batching, pgbouncer) — nicht mehr
+  App-Repliken.
+
+**Fazit.** Scale-out über den Postgres-Adapter ist als *Korrektheits*-Pfad
+belegt (kein Verlust/Duplikat über Replicas, Sequencer-Integrität) und als
+*Betriebs*-Pfad erprobt (Multi-Replica-Boot, serialisierte Migration,
+Connection-Budget). Die Durchsatz-Grenze eines Single-Postgres und die
+per-Replica-Limiter-Fairness sind ehrlich als **R-26 b** (offen, shared
+Redis-Ingest-Limiter) bzw. als Store-Scaling-Folge-Scope benannt. **R-26 c
+ist geschlossen.**

@@ -219,9 +219,25 @@
 > lineare horizontale Skalierung; der geteilte PG ist bei dieser Last kein Bottleneck).
 > **Damit ist R-26 c mit Messwerten geschlossen.** Opt-in (nicht in gates/CI). **Vorbehalt
 > für höhere Skalierung** (Memory/N1): `database/sql`-Pool ist per Default unbounded →
-> `N × pool ≤ max_connections` beim Hochskalieren beachten. **Offen: nur noch T7 Closeout**
-> (ADR-0006 „Accepted"→„belegt", roadmap RAK-91-Reaktivierung, budgets.md §7 Scale-out-
-> Datenpunkte, R-26 c → gelöst im risks-backlog, Lastenheft RAK-91-Patch Variante B, CHANGELOG).
+> `N × pool ≤ max_connections` beim Hochskalieren beachten.
+>
+> **Amendment 2026-07-11 (f) — TRANCHE 7 CLOSEOUT KOMPLETT → plan-0.23.0 FERTIG.**
+> Alle DoD-Boxen [x]. Doku nachgezogen: ADR-0006 „Accepted → R-26 c belegt"
+> (Amendment am Dateiende), `roadmap.md`-Zeile auf belegt/R-26 c, `budgets.md`
+> **§8** (Scale-out-Lasttest, ehrliche Datenpunkte), risks-backlog R-26 → 🟡
+> (c gelöst, b offen), Lastenheft RAK-91 „proceed, optional" (Variante B),
+> CHANGELOG-`Added`. **Wichtige Korrektur ggü. (e)**: der Erst-Verdict „2,0×
+> lineare Skalierung" war ein **Rate-Limiter-Artefakt** (Default 100 ev/s/
+> Projekt, In-Memory pro Replica). Schwerere + unthrottled-Läufe (50 VUs/60s,
+> ~1,4 Mio Events) zeigen die ehrliche Wahrheit: **Korrektheit wasserdicht**
+> (0 Verlust/0 Dup throttled *und* unthrottled), **Durchsatz-Skalierung
+> flaschenhals-abhängig** — app-gebunden linear 2,01× (= R-26-b-Lücke, Limiter
+> pro Replica), store-gebunden ist der Single-Postgres die Decke (~12k ev/s,
+> `docker stats`-attribuiert: PG ~9,5 vs API ~4 Kerne, Host ~14/20 → Per-
+> Instanz-Grenze, kein Host-CPU-Mangel), 2. Replica hebt nichts (0,9×). `make
+> docs-check` + `lint-variante-b` grün. **plan-0.23.0 ist abgeschlossen; nach
+> Push nach `docs/planning/done/` verschiebbar.** Offen bleibt nur R-26 b
+> (shared Redis-Ingest-Limiter, eigener Scope).
 >
 > **Review-Nachlese (2026-07-11)** zu 3b: **F1 (gefixt)** — `pg_xact_commit_timestamp(xmin)`
 > wirft bei `track_commit_timestamp=off` einen **harten Fehler** (nicht NULL), also hätte der
@@ -489,7 +505,7 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
 | 4 | **Wiring + CI-Matrix.** `MTRACE_PERSISTENCE=postgres` + DSN in `main.go` (Default `sqlite` byte-stabil); CI fährt die Persistenz-Tests gegen beide Stores. | `MTRACE_PERSISTENCE=sqlite` unverändert; `=postgres` boot't + gleicher Smoke grün. |
 | 5 | **Multi-Replica-Harness.** Compose-Profil: ≥ 2 api-Replicas + 1 Postgres + LB (z. B. nginx). **Limiter-Backends benennen**: Ingest-/Issuance-Limiter bleiben in-process/SQLite (R-26 b orthogonal; der Lasttest übt ein Token, kein Issuance) — kein Redis-Zwang für den R-26-c-Durchsatznachweis. **Connection-Budget**: `N × pool_size` **+ Startup/Migration + Readback-`psql`** ≤ `max_connections` (Default 100, Headroom einplanen); ggf. `pgbouncer`. Falls Tranche 3 den `track_commit_timestamp`-Kandidaten (R-27) wählt: `track_commit_timestamp = on` in der PG-Config (+ Restart) hier setzen. | Stack startet; beide Replicas teilen den Store; Health grün; Connection-Budget inkl. Nebenverbraucher ≤ `max_connections`; eingesetzte Limiter-Backends dokumentiert. |
 | 6 | **Scale-out-Lasttest (die R-26-c-Evidenz).** `smoke-load.sh` gegen den LB. **Readback braucht einen Postgres-Zweig**: kein GLOB, kein geteiltes File-Volume → `psql`-`count(*)` mit `LIKE 'prefix-%'` (`_` escapen) als **eine** Query gegen den geteilten Store (sauberer als der SQLite-`--volumes-from`-GLOB-Hack aus R-25). Messung: Durchsatz 1 vs. 2 vs. N Replicas, kein Verlust/Dup, `ingest_sequence`-Integrität. Multi-Tenant-Teil (R-26 b) erst **nach** dem shared Ingest-Limiter sinnvoll — bis dahin ist `N × Capacity` (kein Fairness-Nachweis) das **vorhergesagte** Verhalten, kein Befund. | Verdict: horizontale Durchsatz-Skalierung belegt, `persisted == accepted` global; **0 Duplikate wasserdicht** via `COUNT(DISTINCT ingest_sequence) == COUNT(*)` (nicht nur anzahl-inferentiell — gleichzeitiger Verlust+Dup hebt sich sonst auf; der `ingest_sequence`-PK schließt store-seitige Dups strukturell ohnehin aus, der Distinct-Check belegt es explizit). |
-| 7 | **Doku/Closeout.** ADR-0006 von „Accepted" auf „belegt" referenzieren; **`roadmap.md` auf RAK-91-Reaktivierung umstellen** (heute „deferred mit Triggern") + 0.23.0-Eintrag; `budgets.md` §7 um Scale-out-Datenpunkte; **R-26 c → gelöst** (b/Multi-Tenant bleibt offen, s. R-26 b); Lastenheft RAK-91-Patch (**Variante B**); CHANGELOG. | `make docs-check`; R-26 c aufgelöst mit Messwert; Roadmap konsistent zu ADR-0006. |
+| 7 | **Doku/Closeout.** ADR-0006 von „Accepted" auf „belegt" referenzieren; **`roadmap.md` auf RAK-91-Reaktivierung umstellen** (heute „deferred mit Triggern") + 0.23.0-Eintrag; `budgets.md` §8 (neu) um Scale-out-Datenpunkte; **R-26 c → gelöst** (b/Multi-Tenant bleibt offen, s. R-26 b); Lastenheft RAK-91-Patch (**Variante B**); CHANGELOG. | `make docs-check`; R-26 c aufgelöst mit Messwert; Roadmap konsistent zu ADR-0006. |
 
 ## 5. DoD
 
@@ -521,16 +537,21 @@ Andocken eines zweiten Dialekts" — zwei tragende Annahmen tragen so nicht
   (`db9e657`, `docker-compose.scaleout.yml` + `make smoke-scaleout`):
   beide Replicas teilen den Store (Startup-Race via `pg_advisory_lock`
   gefixt, `51675e9`), LB-Health grün, Connections ≤ max_connections.
-- [x] **Scale-out-Lasttest mit Verdict** (`91bae8b`, `make smoke-scaleout-load`):
-  horizontale Durchsatz-Skalierung gemessen (1→2 Replicas: 105,3→210,7 ev/s =
-  **2,0×**), `persisted == accepted` global (kein Verlust), 0 Duplikate über
-  Replicas (`COUNT(DISTINCT ingest_sequence) == COUNT(*)`, explizit gezählt),
-  Readback via psql gegen den geteilten PG — **R-26 c gelöst**.
-  (Multi-Tenant-Fairness, R-26 b, bleibt offen bis shared Ingest-Limiter.)
-- [ ] Lastenheft-Patch RAK-91 „defer" → „proceed, optional" (**Variante B
-  beim Spec-Edit: nur Kennungen, kein Plan-/§-Ref im Lastenheft**);
-  [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md) als belegt
-  referenziert; `budgets.md` §7 + CHANGELOG nachgetragen.
+- [x] **Scale-out-Lasttest mit Verdict** (`91bae8b`, `make smoke-scaleout-load`;
+  ehrliche Attribution nachgezogen 2026-07-11): **Korrektheit wasserdicht** —
+  über 2 Replicas auf geteiltem PG `persisted == accepted` (kein Verlust) und
+  `COUNT(DISTINCT ingest_sequence) == COUNT(*)` (0 Dups) über **~1,4 Mio
+  Events**, throttled *und* unthrottled. **Durchsatz-Skalierung flaschenhals-
+  abhängig** (kein naives „2×"): app-gebunden (Limiter greift) linear 2,01×
+  — belegt zugleich die R-26-b-Lücke (Limiter pro Replica); store-gebunden
+  (unthrottled) ist der **Single-Postgres** die Decke (~12k ev/s, `docker
+  stats`: PG ~9,5 vs API ~4 Kerne bei ~14/20 Host-Kernen → Per-Instanz-
+  Grenze, kein Host-CPU-Mangel), 2. Replica hebt nichts (0,9×). **R-26 c
+  gelöst**; R-26 b offen. Zahlen in `budgets.md` §8.
+- [x] Lastenheft-Patch RAK-91 „defer" → „proceed, optional" (Variante B: nur
+  Kennungen); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md) als
+  belegt referenziert (Amendment 2026-07-11); `roadmap.md`-Zeile, `budgets.md`
+  §8, risks-backlog R-26 (c gelöst / b offen) + CHANGELOG nachgetragen.
 
 ## 6. Risiken
 

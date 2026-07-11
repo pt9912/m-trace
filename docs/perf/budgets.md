@@ -151,4 +151,61 @@ genau diese erweitert werden.
 Abgrenzung: Single-Instance, **ein** Projekt/Token. Produktive
 Multi-Tenant-Isolation und Multi-Replica-Skalierung sind hier **nicht**
 belegt — getrackt als risks-backlog **R-26** (Machbarkeit) bzw.
-ADR-0005-Trigger #1 (Multi-Replica → Postgres).
+ADR-0005-Trigger #1 (Multi-Replica → Postgres). Die Multi-Replica-Achse
+(R-26 c) belegt §8.
+
+## 8. Scale-out-Lasttest (`make smoke-scaleout-load`, opt-in)
+
+`make smoke-scaleout-load` (`scripts/smoke-scaleout-load.sh`) treibt
+k6-Playback-Event-Last gegen den Multi-Replica-Stack
+(`docker-compose.scaleout.yml`: 2 API-Replicas + **geteilter** Postgres +
+nginx-LB) und liefert die horizontale Scale-out-Evidenz aus
+[ADR-0006](../adr/0006-postgres-scaleout-adapter.md) (**R-26 c**). Readback
+via `psql` gegen den geteilten Postgres (kein SQLite-GLOB/Volume-Hack):
+`persisted = COUNT(*)`, `distinct = COUNT(DISTINCT ingest_sequence)` je
+Session-Prefix. Opt-in, **nicht** in `make gates`.
+
+**Gate (Pass/Fail): Korrektheit über Replicas.**
+
+| Kriterium | Schwelle | Begründung |
+|---|---|---|
+| Kein stiller Verlust über Replicas | `persisted == accepted` | Jedes client-bestätigte (`202`) Event muss im geteilten Store liegen. |
+| Keine Duplikate über Replicas | `COUNT(DISTINCT ingest_sequence) == COUNT(*)` | Der DB-autoritative Sequencer (**R-28**, `nextval`+Block-Allokation) muss über parallele Writer kollisionsfreie `ingest_sequence` vergeben — explizit gezählt, nicht anzahl-inferentiell. |
+
+**Referenz-Messungen (2026-07-11, 20-Kern-Host, 50 VUs / 60 s / Batch 20):**
+
+Beide Läufe (throttled *und* unthrottled) über **~1,4 Mio Events**:
+`persisted == accepted` und `distinct == COUNT(*)` — **0 Verlust, 0
+Duplikate** über 2 konkurrierende Replicas.
+
+| Modus | 1 Replica | 2 Replicas | Skalierung | Flaschenhals |
+|---|---|---|---|---|
+| **Throttled** (Default 100 ev/s/Projekt) | 101 ev/s | 203 ev/s | **2,01×** (linear) | Per-Replica-In-Memory-Limiter (App) |
+| **Unthrottled** (Limiter aus) | **12.405 ev/s** | 11.221 ev/s | **0,9×** (flach) | Geteilter Single-Postgres |
+
+**Kern-Befund: die Durchsatz-Skalierung ist flaschenhals-abhängig — und die
+Korrektheit ist unabhängig davon wasserdicht.**
+
+- **App-gebunden** (Limiter greift): 1→2 Replicas ist **linear (2,01×)**, weil
+  der Ingest-Limiter **pro Replica** in-process liegt → N Replicas geben dem
+  Projekt N× effektives Ratebudget. Das ist zugleich die **R-26-b-Lücke,
+  jetzt gemessen**: ohne shared (Redis) Ingest-Limiter ist die Per-Projekt-
+  Decke nicht repliken-übergreifend fair.
+- **Store-gebunden** (Limiter aus): der **einzelne geteilte Postgres ist die
+  Decke** (~12k ev/s); eine 2. App-Replica hebt den Durchsatz **nicht**
+  (0,9×, minimal schlechter durch Contention auf einem Writer).
+  `docker stats`-Attribution: Postgres **~9,5 Kerne** vs gesamte API-Schicht
+  **~4 Kerne**, Host nur **~14/20 Kerne** genutzt → **Per-Instanz-Grenze des
+  einen Postgres** (WAL/Commit-Serialisierung, `nextval`-/Lock-Contention),
+  **kein** Host-CPU-Mangel. Ein einzelner Postgres-Replica hält **12.405
+  ev/s** — 3× über dem SQLite-Single-Soak (§7, 3842 ev/s).
+
+**Konsequenz.** Horizontale App-Repliken heben den Durchsatz nur bei
+**app-gebundener** Last; bei **store-gebundener** Bulk-Ingest-Last ist der
+Hebel der **Store** (größerer/partitionierter Postgres, `COPY`-Batching,
+pgbouncer), nicht die Replica-Zahl. Der Scale-out-Adapter bleibt damit ein
+belegter Korrektheits- und Betriebspfad; ein Durchsatz-Scaling *jenseits*
+eines Single-Postgres ist ein eigener Folge-Scope. Connection-Budget-
+Vorbehalt: `N × database/sql-Pool + Startup/Migration` muss unter Postgres'
+`max_connections` bleiben (Default-Pool unbounded → beim Hochskalieren
+begrenzen oder pgbouncer).

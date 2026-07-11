@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **persistence/postgres**: optionaler Postgres-Runtime-Adapter
+  (`MTRACE_PERSISTENCE=postgres` + `MTRACE_POSTGRES_DSN`) als Spiegel der
+  sechs SQLite-Driven-Ports — SQLite bleibt unveränderter Default
+  (ADR-0006, RAK-91 „proceed, optional"). Der Ingest-Sequencer wird
+  **DB-autoritativ** (`nextval` + Block-Allokation, R-28): über N Replicas
+  kollisionsfreie `ingest_sequence` statt In-Process-RAM-Counter. Der
+  Read-Pfad trägt ein **R-27-Commit-Wasserzeichen** (`track_commit_timestamp`
+  + `pg_xact_commit_timestamp(xmin)` im Cursor) gegen Keyset-Skip unter
+  Concurrent-Writern; `OpenPostgres` bricht fail-loud ab, wenn
+  `track_commit_timestamp=off`. Die adapter-agnostische Contract-Suite läuft
+  jetzt gegen SQLite **und** Postgres (CI-Matrix, `make smoke-pg-lab`).
+- **harness**: Multi-Replica-Scale-out-Harness `docker-compose.scaleout.yml`
+  (2 API-Replicas + **geteilter** Postgres + nginx-LB), bewusst separat vom
+  SQLite-Single-Instance-`docker-compose.yml`. Die Startup-Migration ist über
+  `pg_advisory_lock` serialisiert (multi-replica-race-safe statt
+  `CREATE TABLE IF NOT EXISTS`-Race). Boot-Smoke `make smoke-scaleout` +
+  Scale-out-Lasttest `make smoke-scaleout-load` (beide opt-in). **Belegt
+  R-26 c**: über 2 Replicas auf geteiltem Postgres 0 stiller Verlust
+  (`persisted == accepted`) und 0 Duplikate (`COUNT(DISTINCT ingest_sequence)
+  == COUNT(*)`) über ~1,4 Mio Events; Durchsatz-Skalierung flaschenhals-
+  abhängig (app-gebunden linear 2,01×, store-gebunden = Single-Postgres-Decke
+  ~12k ev/s), ehrlich attribuiert in `docs/perf/budgets.md` §8. R-26 b
+  (repliken-übergreifende Multi-Tenant-Fairness, shared Redis-Ingest-Limiter)
+  bleibt offen.
+
 ### Changed
 
 - **persistence/schema**: `schema.yaml`-Refold — `schema.yaml` ist wieder
