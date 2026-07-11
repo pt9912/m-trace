@@ -114,6 +114,64 @@
 >   noch offen sind die Gate-Verdrahtung (in `make gates`) und die
 >   Verifikation gegen eine frische PG-DB (PG-Lab, Task #6).
 >
+> **Amendment 2026-07-11 — Tranche 2 KOMPLETT (6/6 Ports), Tranche 3 startet.**
+> Die zwei offenen Ports sind fertig, gegen echte PG verifiziert und (nach
+> einem CI-Rotfix) grün: **ingest_stream** (`8b7d867`, Port 5/6 — SQLSTATE
+> 23505 auf `idx_ingest_streams_active_display_name` → `ErrIngestStreamNameConflict`;
+> Endpoint/Target-NotFound laufen wie in SQLite über die Vorab-Checks, da
+> `ingest_streams` keine endpoint/target-FK trägt) und **session** (`e4e2011`,
+> Port 6/6 — R-6-CID-Race via `ON CONFLICT(project_id,session_id) DO NOTHING`
+> + `RowsAffected`-Readback; unter PG READ COMMITTED wartet die spekulative
+> Insertion des Verlust-Aufrufs auf den Sieger-Commit, kein SQLSTATE-Mapping).
+> **Damit sind alle 6 Driven-Ports + der DB-autoritative Sequencer als
+> PG-Adapter fertig.** CI-Nachlese (`807d2b8`, `d6efab9`): die zwei neuen
+> pglab-Tests rissen `funlen` (>100 Z. → in `assert*`-Helper ausgelagert) und
+> ein Kommentar `§8.2` riss `lint-variante-b` (→ nur `ADR-XXXX`-Kennung);
+> beide behoben, `make gates`/CI grün. **Nebenlinie erledigt**: der
+> `schema.yaml`-Refold (eigener Plan `done/plan-schema-yaml-refold.md`) stellt
+> `schema.yaml` als SSOT des vollen 13-Tabellen-Stands wieder her (SQLite+PG
+> aus einer Quelle; `DMIGRATE_IMAGE` `0.9.10`) — berührt die PG-Adapter nicht.
+> **JETZT: Tranche 3** (Port-Korrektheit gegen PG). R-28-Test liegt schon
+> (im Sequencer-pglab-Test „keine Dups über N Replicas"). Offen: (a)
+> Contract-Suite (Sessions/Events/Sequencer) gegen PG mit Per-Test-Isolation;
+> (b) die 3 Nicht-Contract-Ports als portierte PG-Tests (pglab-Tests decken sie
+> schon funktional ab — ggf. in die Test-Factory heben); (c) **R-27-Wasserzeichen
+> festlegen (Design) + adversarialer Out-of-order-Test** (der harte Teil, s. §3).
+> **Push-Stand**: `origin/main` == `d6efab9` (alles gepusht, CI grün).
+>
+> **Amendment 2026-07-11 (b) — Tranche 3 läuft: 3a fertig, R-27 entschieden.**
+> **3a — Contract-Suite gegen PG** (`893b330`, CI grün): die adapter-agnostische
+> Suite (16 Sub-Tests: Sessions/Events/Sequencer) läuft gegen echte PG
+> (`contract_pglab_test.go`), Per-Test-Isolation via `TRUNCATE … RESTART IDENTITY
+> CASCADE` (setzt App-Tabellen **und** BIGSERIAL-`ingest_sequence` zurück →
+> „sequencer starts at one" frisch je Sub-Test; RunAll-Sub-Tests seriell → rennfrei).
+> Die 3 Nicht-Contract-Ports (project_token/srt_health/ingest_stream) sind durch ihre
+> `*_pglab_test.go` funktional gegen PG abgedeckt; R-28-Test liegt im Sequencer-pglab.
+> **R-27-Wasserzeichen — ENTSCHEIDUNG: Option A `track_commit_timestamp`** (gegen
+> B=pg_snapshot_xmin-Clamp und C=Bounded-Staleness — beide config-frei, aber
+> Freshness-Lücke + Heuristik; die im Plan §3 genannte „Commit-Zeit-defaultete Spalte"
+> ist in Vanilla-PG NICHT baubar: `now()`=Tx-Beginn, `clock_timestamp()`=Statement-Zeit,
+> keine commit-geordnet). **Durchdachter Mechanismus** (Ordering bleibt
+> `server_received_at`): ein **fixes Wasserzeichen W** wird bei Paginierungs-Session-
+> Start erfasst (`now()`) und **im Cursor getragen** — nur so ist die Menge stabil (ein
+> per-Page neu erfasstes W hilft NICHT gegen den Skip, weil der Cursor über
+> `server_received_at` nicht zurückläuft). Page-Prädikat: `WHERE
+> (pg_xact_commit_timestamp(xmin) IS NULL OR pg_xact_commit_timestamp(xmin) <= W) AND
+> (server_received_at,…) > cursor`. Da `server_received_at <= commit_ts` (empfangen vor
+> committed) sind alle Rows mit `commit_ts <= W` bei W-Erfassung committed+sichtbar →
+> stabile Menge, kein Skip; spät-committende Früh-Rows (`commit_ts > W`) erscheinen in
+> einer neuen Session (W'>commit_ts) an korrekter Position. **`NULL`-Handling ist
+> Pflicht**: eingefrorene/aged-out xids liefern `pg_xact_commit_timestamp = NULL` →
+> als „stabil, einschließen" behandeln (sonst verschwinden alte Rows). **Kosten**:
+> `track_commit_timestamp = on` in der PG-Config (Harness/Deployment); commit_ts altert
+> mit Freeze (daher NULL-Handling). **Offen 3b**: (i) `track_commit_timestamp=on` im
+> smoke-pg-lab-PG-Container; (ii) Wasserzeichen in die PG-`event_repository`-Pagination
+> (W im Cursor — adapter-spezifische Cursor-Erweiterung, SQLite unberührt); (iii)
+> **adversarialer Out-of-order-Test**: Tx mit frühem `server_received_at` offen halten,
+> unter W daran vorbeipaginieren, committen → Row taucht in neuer W'-Session an korrekter
+> Stelle auf (nicht übersprungen). Danach T4 Wiring, T5 (Migrations-Race-Fix + config),
+> T6 Lasttest, T7.
+>
 > **Amendment 2026-07-10 (b) — Feierabend-Status Tranche 2, 4/6 Ports.**
 > Tranche 1 komplett (#3–#6, ADR-0006-Schema/Runner/Lab). Tranche 2
 > (PG-Adapter für 6 Driven-Ports + Sequencer-Redesign) ist **4/6 fertig**

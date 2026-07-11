@@ -59,11 +59,16 @@ echo "  PG_IMAGE=${PG_IMAGE}  GO_IMAGE=${GO_IMAGE}"
 
 docker network create "${NET}" >/dev/null
 
+# track_commit_timestamp=on ist die R-27-Wasserzeichen-Voraussetzung
+# (ADR-0006): der Read-Pfad filtert die Pagination über
+# pg_xact_commit_timestamp(xmin) <= W, damit spät-committende Früh-Rows
+# nicht übersprungen werden. Ohne =on liefert die Funktion einen Fehler
+# statt eines Zeitstempels.
 docker run -d --name "${DB}" --network "${NET}" \
   -e POSTGRES_USER="${PG_USER}" \
   -e POSTGRES_PASSWORD="${PG_PASS}" \
   -e POSTGRES_DB="${PG_DB}" \
-  "${PG_IMAGE}" >/dev/null
+  "${PG_IMAGE}" -c track_commit_timestamp=on >/dev/null
 
 echo "  warte auf pg_isready ..."
 ready=0
