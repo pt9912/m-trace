@@ -122,31 +122,51 @@ app_tables() {
   sqlite_src "SELECT group_concat(name) FROM (SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations' ORDER BY name);"
 }
 
-# Row-Count-Parität je Tabelle (Quelle == Ziel). 0 = alle gleich, 1 = Abweichung.
+# Row-Count-Parität je Tabelle (Quelle == Ziel). Baut je eine UNION-ALL-Query
+# für Quelle und Ziel -> 2 Container-Aufrufe statt 2 je Tabelle.
 verify_parity() { # tables(csv)
-  local t src_c tgt_c tarr fail=0
+  local t tarr fail=0 union='' k v
+  declare -A src tgt
   IFS=',' read -ra tarr <<< "$1"
   for t in "${tarr[@]}"; do
-    src_c="$(sqlite_src "SELECT count(*) FROM \"$t\";" 2>/dev/null || echo ERR)"
-    tgt_c="$(pg_psql "SELECT count(*) FROM \"$t\";" 2>/dev/null || echo ERR)"
-    if [ "$src_c" != ERR ] && [ "$src_c" = "$tgt_c" ]; then
-      log "  ✔ ${t}: ${tgt_c} Zeilen (Parität)"
+    union+="${union:+ UNION ALL }SELECT '${t}', count(*) FROM \"${t}\""
+  done
+  while IFS='|' read -r k v; do [ -n "$k" ] && src["$k"]="$v"; done < <(sqlite_src "${union};" 2>/dev/null || true)
+  while IFS='|' read -r k v; do [ -n "$k" ] && tgt["$k"]="$v"; done < <(pg_psql "${union};" 2>/dev/null || true)
+  for t in "${tarr[@]}"; do
+    if [[ "${src[$t]:-}" =~ ^[0-9]+$ ]] && [ "${src[$t]:-}" = "${tgt[$t]:-}" ]; then
+      log "  ✔ ${t}: ${tgt[$t]} Zeilen (Parität)"
     else
-      warn "  ✘ ${t}: Quelle=${src_c} != Ziel=${tgt_c}"; fail=1
+      warn "  ✘ ${t}: Quelle=${src[$t]:-?} != Ziel=${tgt[$t]:-?}"; fail=1
     fi
   done
   return "$fail"
 }
 
-# Duplikatfreiheit im Ziel: COUNT(DISTINCT col) == COUNT(*). 0 = ok.
+# Duplikatfreiheit im Ziel: COUNT(DISTINCT col) == COUNT(*) (ein Query).
+# verify_no_dup/verify_sequence werden für die zwei bekannten 64-bit-PK-Tabellen
+# aufgerufen (playback_events.ingest_sequence, srt_health_samples.id) — Source of
+# Truth = IDENTITY_COLUMNS in generate-postgres-schema.sh; bei neuer 64-bit-PK-
+# Tabelle hier ergänzen.
 verify_no_dup() { # table column
-  local tbl="$1" col="$2" c d
-  c="$(pg_psql "SELECT count(*) FROM \"$tbl\";" 2>/dev/null || echo ERR)"
-  d="$(pg_psql "SELECT count(DISTINCT $col) FROM \"$tbl\";" 2>/dev/null || echo ERR)"
-  if [ "$c" != ERR ] && [ "$c" = "$d" ]; then
+  local tbl="$1" col="$2" cd c d
+  cd="$(pg_psql "SELECT count(*)||'|'||count(DISTINCT $col) FROM \"$tbl\";" 2>/dev/null || echo '|')"
+  c="${cd%%|*}"; d="${cd##*|}"
+  if [[ "$c" =~ ^[0-9]+$ ]] && [ "$c" = "$d" ]; then
     log "  ✔ ${tbl}: COUNT(DISTINCT ${col})=${d} == COUNT(*)=${c} (keine Duplikate)"; return 0
   fi
   warn "  ✘ ${tbl}: COUNT(DISTINCT ${col})=${d} != COUNT(*)=${c} — Duplikate!"; return 1
+}
+
+# `data transfer` im Container ausführen; Fehlerausgabe (ohne Hikari-Rauschen)
+# auf stderr surfen. $@ = Argumente nach "data transfer". 0 ok / 1 Fehler.
+run_transfer() {
+  local out; out="$(mktemp)"
+  if run_dmigrate data transfer "$@" >"$out" 2>&1; then
+    rm -f "$out"; return 0
+  fi
+  grep -viE 'HikariConfig|idleTimeout' "$out" >&2 || true
+  rm -f "$out"; return 1
 }
 
 require_source() {
@@ -303,20 +323,15 @@ PY
 # transferiert (auf beiden Seiten vom Migrations-Runner verwaltet).
 cmd_bulk() {
   require_source; require_target
-  local base tables wm out fail=0
+  local base tables wm fail=0
   base="$(basename "$SQLITE_DB")"
   tables="$(app_tables 2>/dev/null || echo '')"
   [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
   log "Phase 1 (bulk): data transfer (--on-conflict abort) — Tabellen: ${tables}"
-  out="$(mktemp)"
-  if ! run_dmigrate data transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
-       --tables "$tables" --sqlite-autoincrement-width 64 --on-conflict abort \
-       --chunk-size "$CHUNK_SIZE" >"$out" 2>&1; then
-    grep -viE 'HikariConfig|idleTimeout' "$out" >&2 || true
-    rm -f "$out"
-    die "data transfer fehlgeschlagen (Ziel nicht leer? DSN/Netz? siehe oben)" 1
-  fi
-  rm -f "$out"
+  run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+    --tables "$tables" --sqlite-autoincrement-width 64 --on-conflict abort \
+    --chunk-size "$CHUNK_SIZE" \
+    || die "data transfer fehlgeschlagen (Ziel nicht leer? DSN/Netz? siehe oben)" 1
   # Watermark für die inkrementelle Phase festhalten.
   wm="$(sqlite_src "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo '?')"
   log "Watermark (max ingest_sequence der Quelle): ${wm}"
@@ -337,27 +352,26 @@ cmd_bulk() {
 # Out-of-order-Commit-Fall gehört in die quiescte Switch-Phase (cmd_switch).
 cmd_incremental() {
   require_source; require_target
-  local base tables since out fail=0 newwm
+  local base tables since fail=0 newwm
   base="$(basename "$SQLITE_DB")"
   tables="$(app_tables 2>/dev/null || echo '')"
   [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
   if [ -n "${SINCE:-}" ]; then
     since="$SINCE"
+    [[ "$since" =~ ^[0-9]+$ ]] || die "SINCE='${since}' ist nicht numerisch (ingest_sequence-Untergrenze)" 2
   else
     since="$(pg_psql "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo '')"
     [[ "$since" =~ ^[0-9]+$ ]] || die "SINCE nicht gesetzt und Ziel-MAX(ingest_sequence) nicht ermittelbar" 1
   fi
   log "Phase 2 (incremental): --since-column ingest_sequence --since ${since} --on-conflict skip"
-  out="$(mktemp)"
-  if ! run_dmigrate data transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
-       --tables "$tables" --since-column ingest_sequence --since "$since" \
-       --on-conflict skip --chunk-size "$CHUNK_SIZE" >"$out" 2>&1; then
-    grep -viE 'HikariConfig|idleTimeout' "$out" >&2 || true
-    rm -f "$out"
-    die "data transfer (incremental) fehlgeschlagen — siehe oben" 1
-  fi
-  rm -f "$out"
-  # Verifikation: Parität + Duplikatfreiheit (PK) + Sequenz-Erhalt.
+  run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+    --tables "$tables" --sqlite-autoincrement-width 64 --since-column ingest_sequence \
+    --since "$since" --on-conflict skip --chunk-size "$CHUNK_SIZE" \
+    || die "data transfer (incremental) fehlgeschlagen — siehe oben" 1
+  # Verifikation: Row-Count-Parität + Duplikatfreiheit (PK) + Sequenz-Erhalt.
+  # ACHTUNG: das sind Count-/PK-Checks — sie belegen NICHT die inhaltliche
+  # Aktualität MUTABLER Tabellen (--on-conflict skip lässt geänderte Rows stehen).
+  # Der inhaltliche Re-Sync mutabler Tabellen erfolgt erst im quiescten Switch.
   verify_parity "$tables" || fail=1
   verify_no_dup playback_events ingest_sequence || fail=1
   verify_no_dup srt_health_samples id || fail=1
@@ -365,7 +379,7 @@ cmd_incremental() {
   verify_sequence srt_health_samples id || fail=1
   [ "$fail" -eq 0 ] || die "Incremental-Verifikation fehlgeschlagen — siehe ✘ oben" 1
   newwm="$(pg_psql "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo '?')"
-  log "Phase 2 (incremental) grün — Parität + duplikatfrei + Sequenz-Erhalt. Neues Watermark=${newwm}."
+  log "Phase 2 (incremental) grün — append-only Parität/duplikatfrei/Sequenz-Erhalt; MUTABLE Tabellen werden erst im Switch inhaltlich reconciled. Neues Watermark=${newwm}."
 }
 
 cmd_switch() {
