@@ -5,12 +5,13 @@
 > (`c7d7720`: Parität + **Sequenz-Erhalt** nativ, ADR-0007-BIGSERIAL-Vorbehalt
 > erledigt); T3 `incremental` (`937ee73`: `--on-conflict skip`, idempotent);
 > **T2+T3 code-reviewt** (`f84c558`: 6 Findings gefixt, u. a. verify_parity-Batch,
-> SINCE-Validierung); **T4 `switch`** (`23edaeb`, **Design a**): quiescter finaler
+> SINCE-Validierung); **T4 `switch`** (`23edaeb`, **Design a**; code-reviewt `0892ece`, 5 Findings: append-only Per-PK-Since, verify_migration-Dedup, insert-only-Annahme dokumentiert): quiescter finaler
 > Re-Sync — append-only Delta (`--since` mit Lookback + skip) + mutable Voll-Re-Sync
 > (`--on-conflict update`, fängt Mutationen; empirisch belegt) + Verifikation
 > (Parität/Sequenz/SUM-Aggregat) + Operator-/Rollback-Hinweis. `make smoke-cutover`
-> grün (**8 Cases**, inkl. Design-a-Mutations-Beleg). **Nächst: Tranche 5 (Runbook +
-> R-29-Closeout + Roadmap/Lastenheft).** Zuvor gefirmt: tranchiert,
+> grün (**8 Cases**, inkl. Design-a-Mutations-Beleg). **Alle 4 Phasen gebaut UND
+> reviewt. Nächst: Tranche 5 (Runbook + R-29-Closeout + Roadmap/Lastenheft).**
+> Zuvor gefirmt: tranchiert,
 > ADR-0007 **Accepted**, Watermark entschieden. Liegt seit dem Tranche-1-Bau in
 > `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
