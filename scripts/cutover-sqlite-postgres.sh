@@ -15,7 +15,9 @@
 #     Parität/Sequenz-Erhalt-Verifikation. Voll implementiert.
 #   incremental — Phase 2 (data transfer --since): Delta seit Bulk nachziehen,
 #     idempotent (--on-conflict skip). Voll implementiert.
-#   switch — Phase 3 (Quiesce → finales Delta → Umschalten). Stub (Folge-Arbeit).
+#   switch — Phase 3: finaler quiescter Re-Sync (append-only Delta via --since +
+#     mutable --on-conflict update) + Verifikation + Umschalt-/Rollback-Hinweis.
+#     Voraussetzung: Writer quiesct. Voll implementiert.
 #
 # ENV:
 #   SQLITE_DB Host-Pfad der Quell-SQLite (z. B. /var/lib/mtrace/m-trace.db).
@@ -29,6 +31,8 @@
 #   PG_CLIENT_IMAGE psql-Client-Image (Default postgres:17-alpine).
 #   CHUNK_SIZE data-transfer-Chunkgröße (Default 10000).
 #   SINCE incremental: ingest_sequence-Untergrenze; Default = Ziel-MAX (Auto-Resume).
+#   LOOKBACK switch: konservativer Re-Scan-Überlapp (Zeilen, Default 100000).
+#   APPEND_ONLY switch: immutable Tabellen (Default playback_events,srt_health_samples).
 #
 # Exit-Codes: 0 ok · 1 hard FAIL (Transfer-/Verifikations-Fehler) · 2 Config-/
 #             Nutzungsfehler · 3 Pre-Flight-Befund (Ziel nicht bereit) · 4 noch
@@ -45,6 +49,12 @@ CHUNK_SIZE="${CHUNK_SIZE:-10000}"
 # nur eine grobe „Schema vorhanden?"-Untergrenze (>=). Bei Schema-Änderung
 # mitziehen (spiegelt EXPECT_TABLES aus generate-postgres-schema.sh).
 EXPECT_TABLES=13
+# Append-only (immutable) High-Volume-Tabellen: im Switch nur finaler Delta
+# (skip), kein voller update-Re-Sync. Alles NICHT Gelistete gilt als mutable
+# (sichere Default-Richtung: update verliert nie Daten). LOOKBACK: konservativer
+# Re-Scan-Überlapp in Zeilen (fängt Out-of-order-Commits am letzten Watermark).
+APPEND_ONLY="${APPEND_ONLY:-playback_events,srt_health_samples}"
+LOOKBACK="${LOOKBACK:-100000}"
 
 log()  { printf '[cutover] %s\n' "$*"; }
 warn() { printf '[cutover] WARN: %s\n' "$*" >&2; }
@@ -167,6 +177,27 @@ run_transfer() {
   fi
   grep -viE 'HikariConfig|idleTimeout' "$out" >&2 || true
   rm -f "$out"; return 1
+}
+
+# Numerisches Aggregat (SUM) Quelle vs Ziel — Content-Sanity über eine Zahlen-
+# Spalte (Row-Count-Parität fängt "gleiche Anzahl, andere Werte" nicht).
+verify_aggregate() { # table numeric_col
+  local tbl="$1" col="$2" s t
+  s="$(sqlite_src "SELECT COALESCE(SUM($col),0) FROM \"$tbl\";" 2>/dev/null || echo ERR)"
+  t="$(pg_psql "SELECT COALESCE(SUM($col),0) FROM \"$tbl\";" 2>/dev/null || echo ERR)"
+  if [ "$s" != ERR ] && [ "$s" = "$t" ]; then
+    log "  ✔ ${tbl}: SUM(${col})=${t} (Quelle==Ziel)"; return 0
+  fi
+  warn "  ✘ ${tbl}: SUM(${col}) Quelle=${s} != Ziel=${t}"; return 1
+}
+
+# csv_minus "a,b,c" "b" -> "a,c" (Mengendifferenz über Kommalisten).
+csv_minus() {
+  local item out='' IFS=','
+  for item in $1; do
+    case ",$2," in *",${item},"*) ;; *) out+="${out:+,}${item}" ;; esac
+  done
+  printf '%s\n' "$out"
 }
 
 require_source() {
@@ -382,13 +413,47 @@ cmd_incremental() {
   log "Phase 2 (incremental) grün — append-only Parität/duplikatfrei/Sequenz-Erhalt; MUTABLE Tabellen werden erst im Switch inhaltlich reconciled. Neues Watermark=${newwm}."
 }
 
+# --- Phase 3: Switch (finaler quiescter Re-Sync + Verifikation) -----------
+# Voraussetzung: die Quell-Writer sind quiesct (API gestoppt/read-only) — nur
+# dann ist der finale Lauf konsistent (der Switch kann das nicht erzwingen).
+# Zwei Pässe (Design a): append-only Tabellen -> finaler Delta via --since
+# (Watermark-Lookback) + skip; alle übrigen (mutable) -> voller --on-conflict
+# update Re-Sync, der alle zwischenzeitlichen Mutationen fängt.
 cmd_switch() {
   require_source; require_target
-  warn "Phase 3 (switch) noch nicht implementiert (Folge-Arbeit)."
-  # Writer quiescen → finales incremental mit konservativem Lookback →
-  # MTRACE_PERSISTENCE=postgres → Verifikation (Row-Counts + Watermark) →
-  # Rollback = zurück auf SQLite.
-  return 4
+  local base tables mutable since tmax fail=0
+  base="$(basename "$SQLITE_DB")"
+  tables="$(app_tables 2>/dev/null || echo '')"
+  [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
+  warn "Voraussetzung: Quell-Writer müssen quiesct sein (API gestoppt/read-only) — nicht automatisch geprüft."
+  mutable="$(csv_minus "$tables" "$APPEND_ONLY")"
+  tmax="$(pg_psql "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo 0)"
+  [[ "$tmax" =~ ^[0-9]+$ ]] || tmax=0
+  since=$(( tmax > LOOKBACK ? tmax - LOOKBACK : 0 ))
+  log "Phase 3 (switch): append-only Delta (--since ${since}, Lookback ${LOOKBACK}) + mutable Voll-Re-Sync (--on-conflict update)"
+  run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+    --tables "$APPEND_ONLY" --sqlite-autoincrement-width 64 \
+    --since-column ingest_sequence --since "$since" --on-conflict skip \
+    --chunk-size "$CHUNK_SIZE" \
+    || die "Switch-Pass 1 (append-only) fehlgeschlagen — siehe oben" 1
+  if [ -n "$mutable" ]; then
+    run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+      --tables "$mutable" --sqlite-autoincrement-width 64 --on-conflict update \
+      --chunk-size "$CHUNK_SIZE" \
+      || die "Switch-Pass 2 (mutable Re-Sync) fehlgeschlagen — siehe oben" 1
+  fi
+  # Verifikation: Parität + Duplikatfreiheit + Sequenz-Erhalt + Content-Aggregat.
+  verify_parity "$tables" || fail=1
+  verify_no_dup playback_events ingest_sequence || fail=1
+  verify_no_dup srt_health_samples id || fail=1
+  verify_sequence playback_events ingest_sequence || fail=1
+  verify_sequence srt_health_samples id || fail=1
+  verify_aggregate playback_events ingest_sequence || fail=1
+  verify_aggregate srt_health_samples id || fail=1
+  [ "$fail" -eq 0 ] || die "Switch-Verifikation fehlgeschlagen — siehe ✘ oben" 1
+  log "Phase 3 (switch) grün — Ziel ist konsistent mit der quiescten Quelle."
+  log "OPERATOR-SCHRITT: MTRACE_PERSISTENCE=postgres setzen + API neu starten."
+  log "ROLLBACK: bei MTRACE_PERSISTENCE=sqlite bleiben/zurücksetzen — die SQLite-Quelle ist unangetastet (nur gelesen)."
 }
 
 usage() {

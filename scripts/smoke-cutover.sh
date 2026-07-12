@@ -16,6 +16,8 @@
 #   6. incremental nach neuem Quell-Delta -> grün (Exit 0); zieht das Delta nach,
 #      Parität + duplikatfrei.
 #   7. incremental erneut -> grün (Exit 0); idempotent (keine Duplikate).
+#   8. switch nach mutabler Änderung + append-only Delta -> grün (Exit 0);
+#      belegt, dass der finale Re-Sync die Mutation propagiert (Design a).
 #
 # Ephemere Ressourcen (eigenes Netz + PG-Container, trap-cleanup). Opt-in
 # (NICHT in `make gates`). Exit 0 nur, wenn alle drei Erwartungen zutreffen.
@@ -54,6 +56,7 @@ docker run --rm --user "$(id -u):$(id -g)" --entrypoint sh -v "${WORK}:/work" "$
   -c 'sqlite3 /work/live.db < /work/V1.sql'
 docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 -v "${WORK}:/work" "$SQLITE_IMAGE" /work/live.db "
 INSERT INTO projects(project_id) VALUES ('demo') ON CONFLICT DO NOTHING;
+INSERT INTO stream_sessions(session_id,project_id,state,started_at,last_seen_at,event_count,sample_rate_ppm) VALUES ('sess-1','demo','active','t','t',5,1000000);
 INSERT INTO playback_events(project_id,session_id,event_name,client_timestamp,server_received_at,sequence_number,sdk_name,sdk_version,schema_version,delivery_status,time_skew_warning)
 VALUES ('demo','s-1','play','2026-07-12T00:00:01Z','2026-07-12T00:00:01Z',1,'js','1.0','1','accepted',0),
        ('demo','s-1','pause','2026-07-12T00:00:02Z','2026-07-12T00:00:02Z',2,'js','1.0','1','accepted',0);
@@ -118,13 +121,30 @@ INSERT INTO playback_events(project_id,session_id,event_name,client_timestamp,se
 VALUES ('demo','s-1','seek','t','t',3,'js','1.0','1','accepted',0),('demo','s-1','end','t','t',4,'js','1.0','1','accepted',0);
 INSERT INTO srt_health_samples(project_id,stream_id,connection_id,collected_at,ingested_at,rtt_ms,packet_loss_total,retransmissions_total,available_bandwidth_bps,source_status,source_error_code,connection_state,health_state)
 VALUES ('demo','s-1','c1','t','t',9.0,0,0,1000000,'ok','none','connected','healthy');"
-echo "  [6/7] incremental zieht das Delta nach (erwartet Exit 0: Parität + duplikatfrei)"
+echo "  [6/8] incremental zieht das Delta nach (erwartet Exit 0: Parität + duplikatfrei)"
 run_case "incremental" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
-echo "  [7/7] incremental erneut → idempotent (erwartet Exit 0, keine Duplikate)"
+echo "  [7/8] incremental erneut → idempotent (erwartet Exit 0, keine Duplikate)"
 run_case "incremental" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
+
+# Mutable Änderung + append-only Delta erzeugen. Der --on-conflict-skip-
+# incremental fängt die Mutation NICHT — erst der quiescte Switch (Design a).
+docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 -v "${WORK}:/work" "$SQLITE_IMAGE" /work/live.db "
+UPDATE stream_sessions SET event_count=99, state='ended' WHERE session_id='sess-1';
+INSERT INTO playback_events(project_id,session_id,event_name,client_timestamp,server_received_at,sequence_number,sdk_name,sdk_version,schema_version,delivery_status,time_skew_warning)
+VALUES ('demo','s-1','stop','t','t',5,'js','1.0','1','accepted',0);"
+echo "  [8/8] switch → append-only Delta + mutable Re-Sync (erwartet Exit 0)"
+run_case "switch" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
+# Beleg für Design (a): der Switch propagiert die mutable Änderung, die der
+# skip-incremental NICHT gefangen hätte.
+ss="$(docker run --rm -i --network "${NET}" "$PG_IMAGE" psql "$DSN" -tAc "SELECT event_count FROM stream_sessions WHERE session_id='sess-1';" 2>/dev/null || echo '?')"
+if [ "$ss" = "99" ]; then
+  echo "  ✔ Switch propagierte die mutable Änderung (stream_sessions.event_count=99)"
+else
+  echo "  ✘ Switch: stream_sessions.event_count=${ss} (erwartet 99)" >&2; fail=1
+fi
 
 if [[ "$fail" -ne 0 ]]; then
   echo "✘ smoke-cutover: mindestens eine Erwartung verfehlt." >&2
   exit 1
 fi
-echo "✔ smoke-cutover: doctor + profile (gesund/Tripwire) + bulk (Parität/Sequenz + abort-Guard) + incremental (Delta + Idempotenz) — alle Erwartungen erfüllt."
+echo "✔ smoke-cutover: doctor + profile (gesund/Tripwire) + bulk (Parität/Sequenz + abort-Guard) + incremental (Delta + Idempotenz) + switch (append-only Delta + mutable Re-Sync) — alle Erwartungen erfüllt."
