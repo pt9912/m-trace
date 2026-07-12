@@ -1,15 +1,16 @@
 # Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: 🚧 **Tranche 3 komplett (2026-07-12)** — Tranchen 1–3 gebaut +
-> verifiziert: T1 Tooling (`doctor`) + Phase 0 `profile` (code-reviewt `0ec5296`);
-> T2 `bulk` (`c7d7720`: Transfer + Parität + **Sequenz-Erhalt** nativ via
-> `--sqlite-autoincrement-width 64`, ADR-0007-BIGSERIAL-Vorbehalt erledigt +
-> `--on-conflict abort`-Guard); T3 `incremental` (`937ee73`: Delta via
-> `--since-column ingest_sequence --on-conflict skip`, **idempotent** +
-> duplikatfrei; SINCE default = Ziel-MAX/Auto-Resume). `make smoke-cutover` grün
-> (7 Cases). **Nächst: Tranche 4 (`switch`: Quiesce → finales Delta mit
-> konservativem Lookback → `MTRACE_PERSISTENCE=postgres` → Verifikation →
-> Rollback).** Zuvor gefirmt: tranchiert,
+> **Status**: 🚧 **Tranche 4 komplett — alle 4 Cutover-Phasen gebaut (2026-07-12)**.
+> T1 Tooling (`doctor`) + Phase 0 `profile` (reviewt `0ec5296`); T2 `bulk`
+> (`c7d7720`: Parität + **Sequenz-Erhalt** nativ, ADR-0007-BIGSERIAL-Vorbehalt
+> erledigt); T3 `incremental` (`937ee73`: `--on-conflict skip`, idempotent);
+> **T2+T3 code-reviewt** (`f84c558`: 6 Findings gefixt, u. a. verify_parity-Batch,
+> SINCE-Validierung); **T4 `switch`** (`23edaeb`, **Design a**): quiescter finaler
+> Re-Sync — append-only Delta (`--since` mit Lookback + skip) + mutable Voll-Re-Sync
+> (`--on-conflict update`, fängt Mutationen; empirisch belegt) + Verifikation
+> (Parität/Sequenz/SUM-Aggregat) + Operator-/Rollback-Hinweis. `make smoke-cutover`
+> grün (**8 Cases**, inkl. Design-a-Mutations-Beleg). **Nächst: Tranche 5 (Runbook +
+> R-29-Closeout + Roadmap/Lastenheft).** Zuvor gefirmt: tranchiert,
 > ADR-0007 **Accepted**, Watermark entschieden. Liegt seit dem Tranche-1-Bau in
 > `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
