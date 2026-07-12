@@ -1,7 +1,11 @@
 # 0007 — SQLite→Postgres-Datenmigration / Cutover (optional)
 
-> **Status**: Proposed (Skizze / Stub — noch nicht entschieden)
-> **Datum**: 2026-07-10
+> **Status**: **Accepted** (2026-07-12) — Watermark entschieden, Ausführung
+> tranchiert in [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md).
+> Der ursprüngliche Blocker („Watermark hängt an R-27/R-28") ist weg:
+> `plan-0.23.0` released, R-27/R-28 🟢. Bau gated auf konkreten Cutover-Bedarf
+> (R-29). Zuvor: Proposed (2026-07-10).
+> **Datum**: 2026-07-10 (Proposed) · 2026-07-12 (Accepted)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: `spec/lastenheft.md` RAK-91 (Postgres „proceed, optional");
 > [ADR-0005](0005-production-ops-backends.md) (Postgres deferred mit
@@ -39,9 +43,10 @@ statt Hand-Portage.
 
 ## Entscheidung
 
-> **Vorschlag (noch offen):** Einen **optionalen, ops-/deploy-zeitigen**
-> SQLite→Postgres-**Cutover** über d-migrate `data transfer` bereitstellen,
-> in vier Phasen: **Bulk → inkrementell → Profile-Check → Switch**. Details in
+> **Entscheidung (Accepted 2026-07-12):** Einen **optionalen, ops-/deploy-
+> zeitigen** SQLite→Postgres-**Cutover** über d-migrate `data transfer`
+> bereitstellen, in vier Phasen: **Profile-Check → Bulk → inkrementell →
+> Switch** (Profile-Check ist Pre-Flight, läuft zuerst). Details in
 > [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md).
 
 Kern der vorgeschlagenen Mechanik:
@@ -74,14 +79,25 @@ unangetastet: d-migrate läuft als **ephemerer Ops-Container** (kein Runtime-
 - **Minimale Downtime** — Bulk + inkrementelles Nachziehen statt Stop-the-world.
 - **Reversibel** — bis zum bestätigten Switch bleibt SQLite die Autorität.
 
+## Entschieden 2026-07-12 (vormals offen)
+
+- **Watermark-Wahl entschieden**: `ingest_sequence` bleibt das `--since`-Delta-
+  Signal — **keine** Commit-Zeit-Spalte am Cutover nötig. Die R-28-Non-Monotonie
+  ist eine **Ziel**-Eigenschaft (Multi-Replica-PG); der Cutover liest per
+  `--since-column` aus der **Quelle**, und die ist Single-Instance-SQLite →
+  dort ist `ingest_sequence` monoton. Details in
+  [`plan-0.24.0`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md) §4.
+- **Konsistenz während des Cutovers gelöst**: der Rest-Effekt (Zuweisung ≠
+  Commit-Order auf einer Instanz) wird durch **Writer-Quiesce vor dem finalen
+  Delta** + **`--on-conflict skip`-Idempotenz mit konservativem Lookback**
+  getragen; die Vollständigkeits-Garantie liegt im quiescten finalen Lauf, nicht
+  in den Zwischenläufen.
+
 ## Nicht Entschieden / Grenzen
 
-- **Watermark-Wahl** offen: `ingest_sequence` (app-monoton, aber R-28-Block-
-  Allokation macht es connection-übergreifend non-monoton) vs. eine Commit-
-  Zeit-Spalte (vgl. R-27). Der Cutover braucht ein **konsistentes** Delta-
-  Signal — hängt an der R-27/R-28-Auflösung in `plan-0.23.0`.
-- **Konsistenz während des Cutovers** (in-flight-Writes, out-of-order-Commits)
-  ist der harte Teil — nicht in diesem Stub gelöst.
+- **`data profile`-Toleranz** (Abbruch- vs. Info-Warnings) und **Verifikations-
+  Tiefe** (Row-Count vs. inhaltliche Stichprobe) bleiben Bau-Detail der
+  plan-0.24.0-Tranchen (§8).
 - **Multi-Tenant/Multi-Replica-Cutover** (mehrere Quell-DBs / geteilter
   Ziel-Store) nicht betrachtet.
 - **Kein Zwang**: SQLite bleibt Default; der Cutover ist opt-in für

@@ -1,16 +1,27 @@
-# Implementation Plan (Skizze) — `0.24.0` SQLite→Postgres-Cutover
+# Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: 📝 **Skizze / Draft** — noch nicht gestartet, noch nicht
-> committed als Scope. Folge-Kandidat zu
+> **Status**: ✅ **Gefirmt / entscheidungsreif** — tranchiert, ADR-0007
+> **Accepted**, Watermark entschieden. **Noch nicht gebaut**: der Bau ist
+> auf konkreten Betreiber-Bedarf gegated (R-29-Trigger). Wandert nach
+> `in-progress/`, sobald Tranche 1 startet. Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
 > (Runtime-Adapter + Scale-out-Evidenz). Die Versionsnummer `0.24.0` ist
 > provisorisch.
 >
 > **Bezug**: [ADR-0007](../../adr/0007-sqlite-postgres-data-cutover.md)
-> (Cutover-Entscheidung, Proposed); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md)
+> (Cutover-Entscheidung, **Accepted 2026-07-12**); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md)
 > (Runtime-Adapter); RAK-91; Roadmap-Anker „defer-**with-migration-seed**"
 > ([`plan-0.15.0.md`](../done/plan-0.15.0.md) Szenario A Tranche 5);
 > R-26 / **R-29** in [`risks-backlog.md`](../in-progress/risks-backlog.md).
+>
+> **Firming-Amendment 2026-07-12** — der Blocker der ursprünglichen Skizze
+> („hängt an `plan-0.23.0` R-27/R-28") ist **weg**: `plan-0.23.0` ist
+> released, **R-27** (Commit-Zeit-Wasserzeichen) und **R-28** (DB-autoritativer
+> Sequencer) sind 🟢. d-migrate ist auf `ghcr.io/pt9912/d-migrate:0.9.10`
+> gepinnt (`apps/api/Makefile:28`); `data transfer`/`data profile` samt der
+> hier genutzten Flags sind gegen dieses Image **verifiziert** (§7). Damit
+> geht der Plan von Skizze auf gefirmt: Watermark entschieden (§4), Tranchen
+> geschnitten (§5), DoD geschärft (§6).
 
 ## 1. Ziel
 
@@ -45,47 +56,101 @@ Deployments, die aktiv auf den Postgres-Scale-out-Store wechseln.
 
 ## 3. Vorgehen (vier Phasen)
 
-Reihenfolge **Bulk → inkrementell → Profile-Check → Switch**; der
+Reihenfolge **Profile-Check → Bulk → inkrementell → Switch**; der
 Profile-Check läuft als Pre-Flight **vor** dem Bulk.
 
 | Phase | d-migrate | Zweck |
 | ----- | --------- | ----- |
-| **0. Profile-Check** | `data profile --source sqlite://…` | Target-Typ-Kompatibilität + Quality-Warnings gegen die drift-bewachte PG-Baseline; Pre-Flight-Abbruch bei Inkompatibilität. |
-| **1. Bulk** | `data transfer --source sqlite://… --target postgres://… --sqlite-autoincrement-width 64 --on-conflict abort --chunk-size N` | V1–V7-Tabellen einmalig übertragen (Schema via `plan-0.23.0`-DDL bereits angelegt); Sequenz-Zählerstände getreu. Watermark (max `ingest_sequence`) festhalten. |
-| **2. Inkrementell** | `data transfer --since-column ingest_sequence --since <watermark> --on-conflict skip` | Delta seit Bulk nachziehen; wiederholbar bis zum Cutover-Fenster → minimale Downtime. |
-| **3. Switch** | — | Writer kurz quiescen → finales inkrementelles Nachziehen → `MTRACE_PERSISTENCE=postgres` schalten → Verifikation → (Rollback: zurück auf SQLite). |
+| **0. Profile-Check** | `data profile --source sqlite://… --format json` | Quality-Warnings + Target-Typ-Kompatibilität der **Quelle** als Pre-Flight (Abbruch bei Inkompatibilität). `data profile` nimmt **kein** `--target` — die strukturelle PG-Baseline garantiert das eingecheckte `migrations/postgres/V1__m_trace.sql` + `make schema-generate-postgres-check`, nicht dieser Schritt. |
+| **1. Bulk** | `data transfer --source sqlite://… --target postgres://… --sqlite-autoincrement-width 64 --on-conflict abort --chunk-size N` | V1–V7-Tabellen einmalig übertragen (Schema via `plan-0.23.0`-DDL bereits angelegt); Sequenz-Zählerstände getreu. `--on-conflict abort` fängt einen versehentlich nicht-frischen Ziel-Store. Watermark (max `ingest_sequence`) festhalten. |
+| **2. Inkrementell** | `data transfer --since-column ingest_sequence --since <watermark> --on-conflict skip` | Delta seit Bulk nachziehen; wiederholbar bis zum Cutover-Fenster → minimale Downtime. Idempotent über `--on-conflict skip`. |
+| **3. Switch** | — | Writer kurz quiescen → finales inkrementelles Nachziehen mit **konservativem Lookback** → `MTRACE_PERSISTENCE=postgres` schalten → Verifikation → (Rollback: zurück auf SQLite). |
 
-## 4. Offene Fragen / Crux
+## 4. Watermark-Entscheidung (vormals Crux, jetzt aufgelöst)
 
-- **Watermark-Signal** (Crux, hängt an `plan-0.23.0` R-27/R-28): `ingest_sequence`
-  ist app-monoton, aber die R-28-Block-Allokation macht es connection-
-  übergreifend non-monoton; ein inkrementelles `--since` braucht ein
-  **lückenlos-konsistentes** Delta-Signal. Möglicherweise Commit-Zeit-Spalte
-  (vgl. R-27) statt `ingest_sequence`. **Blocker bis R-27/R-28 stehen.**
-- **In-flight-Konsistenz** während des Switch-Fensters (out-of-order-Commits
-  dürfen nicht zwischen finalem Delta und Umschaltung verloren gehen).
-- **Verifikations-Tiefe**: Row-Count je Tabelle reicht als Smoke; eine
-  inhaltliche Stichprobe (Hash/Checksumme je Chunk) wäre stärker.
-- **`data profile`-Toleranz**: welche Quality-Warnings sind Abbruch- vs.
-  Info-Kriterium?
+**Entscheidung: `ingest_sequence` bleibt das `--since`-Delta-Signal** — keine
+Commit-Zeit-Spalte am Cutover nötig.
 
-## 5. Akzeptanz / DoD (Skizze)
+Die Skizze und ADR-0007 sorgten sich, die R-28-Block-Allokation mache
+`ingest_sequence` non-monoton. **Das gilt nur PG-seitig unter mehreren Replicas
+— am _Ziel_.** Der Cutover liest per `--since-column` aus der **Quelle**, und
+die Quelle ist per Definition ein **Single-Instance-SQLite** (genau der Store,
+von dem migriert wird). Dort ist `ingest_sequence` monoton; die
+R-28-Non-Monotonie existiert erst im Multi-Replica-PG-Zielbetrieb, also
+**nach** dem Cutover.
+
+Rest-Effekt und seine Auflösung:
+
+- **Zuweisung ≠ Commit-Order auf einer Instanz** (Handler A=100, B=101, B
+  committet zuerst) → ein *zwischenzeitlicher* `--since 101`-Lauf könnte 100
+  knapp verpassen. Unkritisch, weil:
+  1. **Phase 3 quiesct die Writer** vor dem finalen Delta → keine In-flight-
+     Commits mehr, die eine Lücke hinterlassen könnten.
+  2. **`--on-conflict skip` ist idempotent** → der finale Lauf startet mit einem
+     **konservativen (niedrigeren) Watermark** und re-transferiert einen
+     Lookback-Überlapp duplikatfrei.
+- Die **Vollständigkeits-Garantie liegt im quiescten finalen Lauf**, nicht in
+  perfekt-konsistenten Zwischenläufen. Zwischenläufe verkleinern nur das finale
+  Delta (Downtime), tragen aber keine Korrektheitslast.
+
+Damit ist §4-Crux #1 der Skizze und ADR-0007-„Nicht Entschieden: Watermark-
+Wahl" beantwortet.
+
+## 5. Tranchen
+
+Gate je Tranche; SQLite-Default-Pfad + `make gates` bleiben in **jeder**
+Tranche unverändert grün (der Cutover ist reiner opt-in-Ops-Pfad, kein
+Runtime-/API-Code-Impact — ADR-0007 „What Bleibt Unverändert").
+
+| Tranche | Inhalt | Gate |
+| ------- | ------ | ---- |
+| **1** | **Tooling-Gerüst + Profile-Check (Pre-Flight).** Cutover-Skript (`scripts/cutover-sqlite-postgres.sh`) + `make cutover-*`-Target; ephemerer d-migrate-Container über den **bestehenden `DMIGRATE_IMAGE`-Pin** (Single-Source, kein zweiter Pin). Phase 0: `data profile --source sqlite://` → Quality-Warnings + Target-Typ-Kompatibilität, Abbruch bei Inkompatibilität (Toleranz-Politik in §8 offen → hier festlegen). | Profile-Check läuft gegen eine live V1–V7-migrierte SQLite + frische PG (plan-0.23.0-DDL), meldet Kompatibilität und bricht bei Inkompatibilität fail-loud ab; SQLite-Default + `make gates` grün. |
+| **2** | **Bulk-Transfer + Sequenz-Erhalt.** Phase 1: `data transfer … --sqlite-autoincrement-width 64 --on-conflict abort --chunk-size N`. Watermark (`SELECT MAX(ingest_sequence)`) festhalten. PG-Sequenz-Zählerstand von `ingest_sequence` **und** `srt_health_samples.id` prüfen. | Frische PG trägt **alle** SQLite-Zeilen (Row-Count-Parität je Tabelle); beide 64-bit-Sequenzen setzen den SQLite-`MAX` fort (erster neuer DB-vergebener Wert kollidiert nicht). |
+| **3** | **Inkrementell + Idempotenz.** Phase 2: `data transfer --since-column ingest_sequence --since <watermark> --on-conflict skip`, wiederholbar. | Delta seit Bulk wird nachgezogen; **Re-Run idempotent** (0 Duplikate, `COUNT(DISTINCT ingest_sequence) == COUNT(*)`); Row-Count-Parität hält nach jedem Lauf. |
+| **4** | **Switch + Verifikation + Rollback.** Phase 3: Writer quiescen → finales Delta mit konservativem Lookback → `MTRACE_PERSISTENCE=postgres` → Verifikation (Row-Counts + Watermark + optionale inhaltliche Stichprobe, §8). Rollback (zurück auf SQLite) dokumentiert + getestet. | End-to-End-Cutover grün; nach Switch keine verlorenen In-flight-Writes; Rollback stellt die SQLite-Autorität wieder her. |
+| **5** | **Opt-in-Smoke + Runbook + Closeout.** Reproduzierbarer opt-in-Smoke (analog [`smoke-pg-lab`](../../../scripts/smoke-pg-lab.sh)), Operator-Runbook (`docs/user/` bzw. `docs/ops/`). Nachziehen: R-29 → gelöst, Roadmap, Lastenheft (RAK), ADR-0007-Closeout-Notiz. | `make smoke-cutover` (o. ä.) grün end-to-end; Runbook vollständig; `make gates` + SQLite-Default unverändert grün. |
+
+## 6. Akzeptanz / DoD
 
 - Frische, per `plan-0.23.0`-DDL angelegte PG-DB trägt nach dem Cutover
   **alle** SQLite-Zeilen (Row-Count-Parität je Tabelle).
-- `ingest_sequence`-Sequenz in PG setzt den SQLite-`MAX` fort (erster neuer
-  DB-vergebener Wert kollidiert nicht).
+- `ingest_sequence`- **und** `srt_health_samples.id`-Sequenz in PG setzen den
+  jeweiligen SQLite-`MAX` fort (erster neuer DB-vergebener Wert kollidiert
+  nicht).
 - Inkrementeller Re-Run ist **idempotent** (`--on-conflict skip` → keine
-  Duplikate).
+  Duplikate; `COUNT(DISTINCT ingest_sequence) == COUNT(*)`).
 - Rollback zurück auf SQLite ist dokumentiert und getestet.
 - Der Cutover-Ablauf ist als opt-in-Smoke reproduzierbar (analog
   [`smoke-pg-lab`](../../../scripts/smoke-pg-lab.sh)); SQLite-Default-Pfad +
   `make gates` unverändert grün.
+- API-Runtime bleibt JDK-frei ([ADR-0002](../../adr/0002-persistence-store.md)):
+  d-migrate läuft nur als ephemerer Ops-Container, kein Runtime-/Deploy-Image-
+  Impact.
 
-## 6. Voraussetzungen / Sequenzierung
+## 7. Verifizierte Voraussetzungen
 
-- **Setzt `plan-0.23.0` voraus**: PG-Schema + Runtime-Adapter + der
-  R-27/R-28-Auflösung (Commit-Order-Signal), an der das Watermark hängt.
-- d-migrate `data transfer` ist ab `v0.9.9` verfügbar (bereits gepinnt).
-- Erst nach einem konkreten Cutover-Bedarf zu starten (R-29-Trigger), nicht
-  vorgezogen.
+- **`plan-0.23.0` erledigt** (`done/`): PG-Schema (`migrations/postgres/V1__m_trace.sql`)
+  + Runtime-Adapter + Drift-Check stehen; **R-27** (Commit-Zeit-Wasserzeichen)
+  und **R-28** (DB-autoritativer `nextval`-Sequencer) 🟢 — der ursprüngliche
+  Watermark-Blocker ist damit weg (§4).
+- **d-migrate `0.9.10`** gepinnt (`apps/api/Makefile:28`, Single-Source). Gegen
+  dieses Image verifiziert (`data transfer --help` / `data profile --help`):
+  `--since-column`/`--since`, `--on-conflict abort|skip|update`, `--chunk-size`
+  (Default 10000), `--sqlite-autoincrement-width 32|64`, `--truncate`,
+  `--tables`, `--filter`, `--trigger-mode` existieren. **Refinement**:
+  `data profile` nimmt **kein** `--target` (profiliert eine DB + meldet
+  Target-Typ-Kompatibilität) — die strukturelle PG-Baseline bleibt Sache des
+  eingecheckten DDL + Drift-Checks, nicht des Profile-Schritts (§3 Phase 0).
+
+## 8. Offene Fragen (für die Bau-Tranchen)
+
+- **`data profile`-Toleranz** (Tranche 1): welche Quality-Warnings sind Abbruch-
+  vs. Info-Kriterium? Pre-Flight muss fail-loud sein, ohne an harmlosen
+  Warnings zu scheitern.
+- **Verifikations-Tiefe** (Tranche 4): Row-Count je Tabelle reicht als Smoke;
+  eine inhaltliche Stichprobe (Hash/Checksumme je Chunk) wäre stärker — Aufwand
+  vs. Nutzen abwägen.
+- **Konservativer-Lookback-Fenster** (Tranche 4): wie groß der Sicherheits-
+  Überlapp im finalen quiescten Lauf (fixe N Zeilen vs. Zeitfenster)? Da
+  `--on-conflict skip` den Überlapp duplikatfrei absorbiert, ist großzügig
+  billig — Default festlegen.
