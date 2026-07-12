@@ -53,6 +53,11 @@ EXPECT_TABLES=13
 # (skip), kein voller update-Re-Sync. Alles NICHT Gelistete gilt als mutable
 # (sichere Default-Richtung: update verliert nie Daten). LOOKBACK: konservativer
 # Re-Scan-Überlapp in Zeilen (fängt Out-of-order-Commits am letzten Watermark).
+# ⚠ KORREKTHEITS-ANNAHME (tragend): die APPEND_ONLY-Tabellen MÜSSEN insert-only
+# sein — der skip-Pass propagiert KEINE Updates an bestehenden Rows. Heute
+# erfüllt: playback_events setzt delivery_status beim Insert (nie ge-UPDATEt,
+# grep-bestätigt), srt_health_samples sind reine Samples. Bekommt eine dieser
+# Tabellen je einen UPDATE-Pfad, MUSS sie hier RAUS (sonst stiller Verlust).
 APPEND_ONLY="${APPEND_ONLY:-playback_events,srt_health_samples}"
 LOOKBACK="${LOOKBACK:-100000}"
 
@@ -185,7 +190,12 @@ verify_aggregate() { # table numeric_col
   local tbl="$1" col="$2" s t
   s="$(sqlite_src "SELECT COALESCE(SUM($col),0) FROM \"$tbl\";" 2>/dev/null || echo ERR)"
   t="$(pg_psql "SELECT COALESCE(SUM($col),0) FROM \"$tbl\";" 2>/dev/null || echo ERR)"
-  if [ "$s" != ERR ] && [ "$s" = "$t" ]; then
+  # SQLite rendert einen Integer-SUM bei 64-bit-Overflow als Float (5.0e+18),
+  # PG als exaktes Numeric -> nicht vergleichbar. Dann inconclusive (kein False-✘).
+  if ! [[ "$s" =~ ^[0-9]+$ ]] || ! [[ "$t" =~ ^[0-9]+$ ]]; then
+    warn "  ? ${tbl}: SUM(${col}) nicht als Ganzzahl vergleichbar (Quelle='${s}' Ziel='${t}') — übersprungen"; return 0
+  fi
+  if [ "$s" = "$t" ]; then
     log "  ✔ ${tbl}: SUM(${col})=${t} (Quelle==Ziel)"; return 0
   fi
   warn "  ✘ ${tbl}: SUM(${col}) Quelle=${s} != Ziel=${t}"; return 1
@@ -198,6 +208,23 @@ csv_minus() {
     case ",$2," in *",${item},"*) ;; *) out+="${out:+,}${item}" ;; esac
   done
   printf '%s\n' "$out"
+}
+
+# Standard-Verifikation nach einem Transfer: Row-Count-Parität + Duplikatfreiheit
+# + Sequenz-Erhalt für die zwei 64-bit-PK-Tabellen. Mit "aggregate" zusätzlich
+# das SUM-Content-Aggregat. 0 = alles ok, 1 = mind. ein Befund.
+verify_migration() { # tables(csv) [aggregate]
+  local fail=0
+  verify_parity "$1" || fail=1
+  verify_no_dup playback_events ingest_sequence || fail=1
+  verify_no_dup srt_health_samples id || fail=1
+  verify_sequence playback_events ingest_sequence || fail=1
+  verify_sequence srt_health_samples id || fail=1
+  if [ "${2:-}" = "aggregate" ]; then
+    verify_aggregate playback_events ingest_sequence || fail=1
+    verify_aggregate srt_health_samples id || fail=1
+  fi
+  return "$fail"
 }
 
 require_source() {
@@ -354,7 +381,7 @@ PY
 # transferiert (auf beiden Seiten vom Migrations-Runner verwaltet).
 cmd_bulk() {
   require_source; require_target
-  local base tables wm fail=0
+  local base tables wm
   base="$(basename "$SQLITE_DB")"
   tables="$(app_tables 2>/dev/null || echo '')"
   [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
@@ -366,11 +393,8 @@ cmd_bulk() {
   # Watermark für die inkrementelle Phase festhalten.
   wm="$(sqlite_src "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo '?')"
   log "Watermark (max ingest_sequence der Quelle): ${wm}"
-  # Verifikation: Row-Count-Parität + Sequenz-Erhalt (kein PK-Kollision).
-  verify_parity "$tables" || fail=1
-  verify_sequence playback_events ingest_sequence || fail=1
-  verify_sequence srt_health_samples id || fail=1
-  [ "$fail" -eq 0 ] || die "Bulk-Verifikation fehlgeschlagen — siehe ✘ oben" 1
+  # Verifikation: Parität + Duplikatfreiheit + Sequenz-Erhalt.
+  verify_migration "$tables" || die "Bulk-Verifikation fehlgeschlagen — siehe ✘ oben" 1
   log "Phase 1 (bulk) grün — Row-Count-Parität + Sequenz-Erhalt bestätigt. Watermark=${wm}."
 }
 
@@ -383,7 +407,7 @@ cmd_bulk() {
 # Out-of-order-Commit-Fall gehört in die quiescte Switch-Phase (cmd_switch).
 cmd_incremental() {
   require_source; require_target
-  local base tables since fail=0 newwm
+  local base tables since newwm
   base="$(basename "$SQLITE_DB")"
   tables="$(app_tables 2>/dev/null || echo '')"
   [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
@@ -399,16 +423,11 @@ cmd_incremental() {
     --tables "$tables" --sqlite-autoincrement-width 64 --since-column ingest_sequence \
     --since "$since" --on-conflict skip --chunk-size "$CHUNK_SIZE" \
     || die "data transfer (incremental) fehlgeschlagen — siehe oben" 1
-  # Verifikation: Row-Count-Parität + Duplikatfreiheit (PK) + Sequenz-Erhalt.
-  # ACHTUNG: das sind Count-/PK-Checks — sie belegen NICHT die inhaltliche
-  # Aktualität MUTABLER Tabellen (--on-conflict skip lässt geänderte Rows stehen).
-  # Der inhaltliche Re-Sync mutabler Tabellen erfolgt erst im quiescten Switch.
-  verify_parity "$tables" || fail=1
-  verify_no_dup playback_events ingest_sequence || fail=1
-  verify_no_dup srt_health_samples id || fail=1
-  verify_sequence playback_events ingest_sequence || fail=1
-  verify_sequence srt_health_samples id || fail=1
-  [ "$fail" -eq 0 ] || die "Incremental-Verifikation fehlgeschlagen — siehe ✘ oben" 1
+  # Verifikation: Parität + Duplikatfreiheit + Sequenz-Erhalt.
+  # ACHTUNG: Count-/PK-Checks — belegen NICHT die inhaltliche Aktualität MUTABLER
+  # Tabellen (--on-conflict skip lässt geänderte Rows stehen); deren Re-Sync
+  # erfolgt erst im quiescten Switch.
+  verify_migration "$tables" || die "Incremental-Verifikation fehlgeschlagen — siehe ✘ oben" 1
   newwm="$(pg_psql "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo '?')"
   log "Phase 2 (incremental) grün — append-only Parität/duplikatfrei/Sequenz-Erhalt; MUTABLE Tabellen werden erst im Switch inhaltlich reconciled. Neues Watermark=${newwm}."
 }
@@ -421,36 +440,46 @@ cmd_incremental() {
 # update Re-Sync, der alle zwischenzeitlichen Mutationen fängt.
 cmd_switch() {
   require_source; require_target
-  local base tables mutable since tmax fail=0
+  local base tables mutable ao t pkcol tmax_t since_t
   base="$(basename "$SQLITE_DB")"
   tables="$(app_tables 2>/dev/null || echo '')"
   [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
   warn "Voraussetzung: Quell-Writer müssen quiesct sein (API gestoppt/read-only) — nicht automatisch geprüft."
   mutable="$(csv_minus "$tables" "$APPEND_ONLY")"
-  tmax="$(pg_psql "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo 0)"
-  [[ "$tmax" =~ ^[0-9]+$ ]] || tmax=0
-  since=$(( tmax > LOOKBACK ? tmax - LOOKBACK : 0 ))
-  log "Phase 3 (switch): append-only Delta (--since ${since}, Lookback ${LOOKBACK}) + mutable Voll-Re-Sync (--on-conflict update)"
-  run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
-    --tables "$APPEND_ONLY" --sqlite-autoincrement-width 64 \
-    --since-column ingest_sequence --since "$since" --on-conflict skip \
-    --chunk-size "$CHUNK_SIZE" \
-    || die "Switch-Pass 1 (append-only) fehlgeschlagen — siehe oben" 1
+  log "Phase 3 (switch): append-only Delta (Lookback ${LOOKBACK}) + mutable Voll-Re-Sync (--on-conflict update)"
+  # Pass 1: append-only Tabellen — je Tabelle finaler Delta über IHREN PK als
+  # Since-Spalte (nicht nur playback_events; srt bekommt id-Filter statt Full-Scan).
+  IFS=',' read -ra ao <<< "$APPEND_ONLY"
+  for t in "${ao[@]}"; do
+    case ",${tables}," in *",${t},"*) ;; *) continue ;; esac   # nur in der Quelle vorhandene
+    pkcol="$(sqlite_src "SELECT name FROM pragma_table_info('${t}') WHERE pk>0 ORDER BY pk LIMIT 1;" 2>/dev/null || echo '')"
+    if [[ "$pkcol" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+      tmax_t="$(pg_psql "SELECT COALESCE(MAX(\"${pkcol}\"),0) FROM \"${t}\";" 2>/dev/null || echo 0)"
+      [[ "$tmax_t" =~ ^[0-9]+$ ]] || tmax_t=0
+      since_t=$(( tmax_t > LOOKBACK ? tmax_t - LOOKBACK : 0 ))
+      log "  append-only ${t}: --since-column ${pkcol} --since ${since_t}"
+      run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+        --tables "$t" --sqlite-autoincrement-width 64 \
+        --since-column "$pkcol" --since "$since_t" --on-conflict skip \
+        --chunk-size "$CHUNK_SIZE" \
+        || die "Switch append-only ${t} fehlgeschlagen — siehe oben" 1
+    else
+      log "  append-only ${t}: kein einzelner Integer-PK -> Full-Scan + skip"
+      run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+        --tables "$t" --sqlite-autoincrement-width 64 --on-conflict skip \
+        --chunk-size "$CHUNK_SIZE" \
+        || die "Switch append-only ${t} fehlgeschlagen — siehe oben" 1
+    fi
+  done
+  # Pass 2: mutable Tabellen — voller Re-Sync, fängt alle Mutationen.
   if [ -n "$mutable" ]; then
     run_transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
       --tables "$mutable" --sqlite-autoincrement-width 64 --on-conflict update \
       --chunk-size "$CHUNK_SIZE" \
-      || die "Switch-Pass 2 (mutable Re-Sync) fehlgeschlagen — siehe oben" 1
+      || die "Switch-Pass mutable Re-Sync fehlgeschlagen — siehe oben" 1
   fi
   # Verifikation: Parität + Duplikatfreiheit + Sequenz-Erhalt + Content-Aggregat.
-  verify_parity "$tables" || fail=1
-  verify_no_dup playback_events ingest_sequence || fail=1
-  verify_no_dup srt_health_samples id || fail=1
-  verify_sequence playback_events ingest_sequence || fail=1
-  verify_sequence srt_health_samples id || fail=1
-  verify_aggregate playback_events ingest_sequence || fail=1
-  verify_aggregate srt_health_samples id || fail=1
-  [ "$fail" -eq 0 ] || die "Switch-Verifikation fehlgeschlagen — siehe ✘ oben" 1
+  verify_migration "$tables" aggregate || die "Switch-Verifikation fehlgeschlagen — siehe ✘ oben" 1
   log "Phase 3 (switch) grün — Ziel ist konsistent mit der quiescten Quelle."
   log "OPERATOR-SCHRITT: MTRACE_PERSISTENCE=postgres setzen + API neu starten."
   log "ROLLBACK: bei MTRACE_PERSISTENCE=sqlite bleiben/zurücksetzen — die SQLite-Quelle ist unangetastet (nur gelesen)."
