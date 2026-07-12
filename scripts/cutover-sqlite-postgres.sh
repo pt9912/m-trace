@@ -21,7 +21,8 @@
 #   PG_NETWORK Optional: Docker-Netz, dem die Client-/d-migrate-Container
 #                    beitreten, wenn der DSN-Host ein Container-Name ist.
 #   DMIGRATE_IMAGE Override; Default = Single-Source-Pin aus apps/api/Makefile
-#                    (`make -C apps/api -s print-dmigrate-image`).
+#                    (`make -C apps/api -s print-dmigrate-image`). Ohne Repo-
+#                    Checkout (Standalone-Deploy) DMIGRATE_IMAGE explizit setzen.
 #   SQLITE_IMAGE sqlite3-Client-Image (Default keinos/sqlite3).
 #   PG_CLIENT_IMAGE psql-Client-Image (Default postgres:17-alpine).
 #   CHUNK_SIZE data-transfer-Chunkgröße (Default 10000).
@@ -35,7 +36,10 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 SQLITE_IMAGE="${SQLITE_IMAGE:-keinos/sqlite3}"
 PG_CLIENT_IMAGE="${PG_CLIENT_IMAGE:-postgres:17-alpine}"
 CHUNK_SIZE="${CHUNK_SIZE:-10000}"
-# Erwartetes Ziel-Schema (PG-DDL, ADR-0006): 13 Tabellen.
+# Erwartetes Ziel-Schema (PG-DDL, ADR-0006): 13 Tabellen. Source of Truth ist
+# die eingecheckte PG-DDL + der schema-generate-postgres-check-Drift-Gate; hier
+# nur eine grobe „Schema vorhanden?"-Untergrenze (>=). Bei Schema-Änderung
+# mitziehen (spiegelt EXPECT_TABLES aus generate-postgres-schema.sh).
 EXPECT_TABLES=13
 
 log()  { printf '[cutover] %s\n' "$*"; }
@@ -62,13 +66,18 @@ run_dmigrate() {
   local img; img="$(resolve_dmigrate_image)"
   [ -n "$img" ] || die "DMIGRATE_IMAGE nicht auflösbar (apps/api print-dmigrate-image leer)"
   local src_dir; src_dir="$(cd "$(dirname "$SQLITE_DB")" && pwd)"
+  local net extra
   mapfile -t net < <(docker_net_args)
+  # Optionaler zweiter Mount (host:container) für Report-Output außerhalb des
+  # Quell-Verzeichnisses (RUN_DMIGRATE_EXTRA_MOUNT).
+  extra=(); [ -n "${RUN_DMIGRATE_EXTRA_MOUNT:-}" ] && extra=(-v "${RUN_DMIGRATE_EXTRA_MOUNT}")
   docker run --rm --user "$(id -u):$(id -g)" \
-    -v "${src_dir}:/work" -w /work "${net[@]}" "$img" "$@"
+    -v "${src_dir}:/work" -w /work "${net[@]}" "${extra[@]}" "$img" "$@"
 }
 
 # psql gegen das Ziel-PG (Client-Container). Gibt tuple-only aus.
 pg_psql() {
+  local net
   mapfile -t net < <(docker_net_args)
   docker run --rm -i "${net[@]}" "$PG_CLIENT_IMAGE" \
     psql "$PG_DSN" -tA -c "$1"
@@ -92,23 +101,35 @@ cmd_doctor() {
   local img; img="$(resolve_dmigrate_image)"
   [ -n "$img" ] || die "DMIGRATE_IMAGE nicht auflösbar"
   log "d-migrate-Image: $img"
-  if docker run --rm "$img" --version >/dev/null 2>&1; then
-    log "  ✔ d-migrate-Container lauffähig ($(docker run --rm "$img" --version 2>/dev/null))"
+  local ver
+  if ver="$(docker run --rm "$img" --version 2>/dev/null)"; then
+    log "  ✔ d-migrate-Container lauffähig (${ver})"
   else
     warn "  ✘ d-migrate-Container startet nicht (Image gepullt?)"; rc=3
   fi
 
-  # 2) Quelle: SQLite lesbar (integrity_check, ohne d-migrate).
+  # 2) Quelle: für den d-migrate-User (uid) lesbar UND read-write öffenbar.
+  #    d-migrate/HikariCP öffnet SQLite RW — ein Read-Check (oder als root) würde
+  #    das SQLITE_READONLY nicht fangen, an dem profile/bulk dann sterben. Daher
+  #    denselben User + eine echte, zurückgerollte Write-Probe (BEGIN IMMEDIATE
+  #    allein reicht NICHT: SQLite defert den Write-Fehler bis zum Statement).
   local src_dir base
   src_dir="$(cd "$(dirname "$SQLITE_DB")" && pwd)"
   base="$(basename "$SQLITE_DB")"
-  local integ
-  integ="$(docker run --rm --user 0:0 --entrypoint sqlite3 \
+  local integ rwerr
+  integ="$(docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 \
     -v "${src_dir}:/work" "$SQLITE_IMAGE" "/work/${base}" 'PRAGMA integrity_check;' 2>/dev/null || true)"
-  if [ "$integ" = "ok" ]; then
-    log "  ✔ Quell-SQLite lesbar (integrity_check ok): $SQLITE_DB"
-  else
+  if [ "$integ" != "ok" ]; then
     warn "  ✘ Quell-SQLite nicht lesbar / integrity_check != ok ('$integ')"; rc=3
+  else
+    rwerr="$(docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 \
+      -v "${src_dir}:/work" "$SQLITE_IMAGE" "/work/${base}" \
+      'BEGIN; CREATE TABLE IF NOT EXISTS __cutover_rwprobe__(x); ROLLBACK;' 2>&1 >/dev/null || true)"
+    if [ -z "$rwerr" ]; then
+      log "  ✔ Quell-SQLite lesbar + read-write öffenbar (uid $(id -u)): $SQLITE_DB"
+    else
+      warn "  ✘ Quell-SQLite nicht read-write für uid $(id -u) — d-migrate öffnet RW ('${rwerr}'); Quelle + Verzeichnis müssen schreibbar sein"; rc=3
+    fi
   fi
 
   # 3) Ziel: PG erreichbar.
@@ -155,22 +176,24 @@ cmd_doctor() {
 cmd_profile() {
   require_source
   command -v python3 >/dev/null 2>&1 || die "python3 nötig für die Profile-Auswertung"
-  local src_dir base
-  src_dir="$(cd "$(dirname "$SQLITE_DB")" && pwd)"
+  local base outdir
   base="$(basename "$SQLITE_DB")"
+  # Report in ein separates Temp-Verzeichnis (Mount /out) schreiben, NICHT ins
+  # Live-Quell-Verzeichnis — sonst landet profile.json neben der Produktions-DB.
+  outdir="$(mktemp -d)"
   log "Phase 0: data profile (Quelle) — Toleranz self-type-only"
-  rm -f "${src_dir}/profile.json"
-  local perr="${src_dir}/.profile.err"
-  if ! run_dmigrate data profile --source "sqlite:///work/${base}" \
-       --format json --output /work/profile.json >"$perr" 2>&1; then
-    grep -viE 'HikariConfig|idleTimeout' "$perr" >&2 || true
-    rm -f "$perr"
+  if ! RUN_DMIGRATE_EXTRA_MOUNT="${outdir}:/out" run_dmigrate data profile \
+       --source "sqlite:///work/${base}" --format json --output /out/profile.json \
+       >"${outdir}/profile.err" 2>&1; then
+    grep -viE 'HikariConfig|idleTimeout' "${outdir}/profile.err" >&2 || true
+    rm -rf "$outdir"
     die "data profile fehlgeschlagen — (a). Hinweis: d-migrate öffnet SQLite read-write; die Quelle (+ ihr Verzeichnis) muss für den d-migrate-Container-User (uid $(id -u)) beschreibbar sein." 3
   fi
-  rm -f "$perr"
-  [ -f "${src_dir}/profile.json" ] || die "data profile erzeugte keinen Report" 3
+  if [ ! -f "${outdir}/profile.json" ]; then
+    rm -rf "$outdir"; die "data profile erzeugte keinen Report" 3
+  fi
   # Auswertung über tables[].columns[].targetCompatibility[].
-  if ! PROFILE_JSON="${src_dir}/profile.json" python3 - <<'PY'
+  if ! PROFILE_JSON="${outdir}/profile.json" python3 - <<'PY'
 import json, os, sys
 d = json.load(open(os.environ["PROFILE_JSON"]))
 fails, cross, empties, no_self = [], 0, [], []
@@ -200,8 +223,10 @@ if fails:
 print("[cutover] profile: OK — keine self-type-Inkompatibilität (Tripwire still bei Gesundheit).")
 PY
   then
+    rm -rf "$outdir"
     die "Phase 0 Abbruch — self-type-Inkompatibilität (b), siehe oben" 3
   fi
+  rm -rf "$outdir"
   log "Phase 0 (profile) grün."
 }
 
@@ -237,7 +262,9 @@ cmd_switch() {
 }
 
 usage() {
-  sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'
+  # Header-Kommentar (nach dem Shebang bis zur ersten Nicht-Kommentarzeile) —
+  # robust gegen Header-Längenänderung statt fixer Zeilenspanne.
+  awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0"
 }
 
 main() {
