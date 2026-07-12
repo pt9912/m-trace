@@ -13,6 +13,9 @@
 #      Tabelle + Sequenz-Erhalt (kein PK-Kollision).
 #   5. bulk erneut gegen das nicht-leere Ziel -> Abbruch (Exit 1); belegt den
 #      --on-conflict-abort-Guard (kein Doppel-Load).
+#   6. incremental nach neuem Quell-Delta -> grün (Exit 0); zieht das Delta nach,
+#      Parität + duplikatfrei.
+#   7. incremental erneut -> grün (Exit 0); idempotent (keine Duplikate).
 #
 # Ephemere Ressourcen (eigenes Netz + PG-Container, trap-cleanup). Opt-in
 # (NICHT in `make gates`). Exit 0 nur, wenn alle drei Erwartungen zutreffen.
@@ -98,19 +101,30 @@ run_case() { # name expected_rc  ENV...
   fi
 }
 
-echo "  [1/5] doctor gegen gesunde Quelle + frisches (leeres) Ziel (erwartet Exit 0)"
+echo "  [1/7] doctor gegen gesunde Quelle + frisches (leeres) Ziel (erwartet Exit 0)"
 run_case "doctor" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
-echo "  [2/5] profile gegen gesunde Quelle (erwartet Exit 0)"
+echo "  [2/7] profile gegen gesunde Quelle (erwartet Exit 0)"
 run_case "profile" 0 env SQLITE_DB="${WORK}/live.db"
-echo "  [3/5] profile gegen KORRUPTE Quelle (erwartet Exit 3, (b)-Tripwire)"
+echo "  [3/7] profile gegen KORRUPTE Quelle (erwartet Exit 3, (b)-Tripwire)"
 run_case "profile" 3 env SQLITE_DB="${WORK}/corrupt.db"
-echo "  [4/5] bulk gegen frisches Ziel (erwartet Exit 0: Parität + Sequenz-Erhalt)"
+echo "  [4/7] bulk gegen frisches Ziel (erwartet Exit 0: Parität + Sequenz-Erhalt)"
 run_case "bulk" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
-echo "  [5/5] bulk erneut → Ziel nicht leer, --on-conflict abort (erwartet Exit 1)"
+echo "  [5/7] bulk erneut → Ziel nicht leer, --on-conflict abort (erwartet Exit 1)"
 run_case "bulk" 1 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
+
+# Delta in der Quelle erzeugen (neue playback_events + srt-Row), dann inkrementell.
+docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 -v "${WORK}:/work" "$SQLITE_IMAGE" /work/live.db "
+INSERT INTO playback_events(project_id,session_id,event_name,client_timestamp,server_received_at,sequence_number,sdk_name,sdk_version,schema_version,delivery_status,time_skew_warning)
+VALUES ('demo','s-1','seek','t','t',3,'js','1.0','1','accepted',0),('demo','s-1','end','t','t',4,'js','1.0','1','accepted',0);
+INSERT INTO srt_health_samples(project_id,stream_id,connection_id,collected_at,ingested_at,rtt_ms,packet_loss_total,retransmissions_total,available_bandwidth_bps,source_status,source_error_code,connection_state,health_state)
+VALUES ('demo','s-1','c1','t','t',9.0,0,0,1000000,'ok','none','connected','healthy');"
+echo "  [6/7] incremental zieht das Delta nach (erwartet Exit 0: Parität + duplikatfrei)"
+run_case "incremental" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
+echo "  [7/7] incremental erneut → idempotent (erwartet Exit 0, keine Duplikate)"
+run_case "incremental" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
 
 if [[ "$fail" -ne 0 ]]; then
   echo "✘ smoke-cutover: mindestens eine Erwartung verfehlt." >&2
   exit 1
 fi
-echo "✔ smoke-cutover: doctor + profile (gesund/Korrupt-Tripwire) + bulk (Parität/Sequenz-Erhalt + abort-Guard) — alle Erwartungen erfüllt."
+echo "✔ smoke-cutover: doctor + profile (gesund/Tripwire) + bulk (Parität/Sequenz + abort-Guard) + incremental (Delta + Idempotenz) — alle Erwartungen erfüllt."
