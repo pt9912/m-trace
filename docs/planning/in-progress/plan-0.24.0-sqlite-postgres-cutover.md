@@ -1,13 +1,14 @@
 # Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: 🚧 **Tranche 1 komplett (2026-07-12)** — d-migrate-Blocker via
-> `0.9.11` aufgelöst; Tooling-Gerüst (`doctor`, Pin-Helper, `make cutover`) **und**
-> Phase 0 (`profile`, Toleranz self-type-only §8.1) gebaut + verifiziert;
-> `make smoke-cutover` grün (doctor + profile gesund + Korrupt-Tripwire).
-> **Code-reviewt** (lokaler `/code-review` high, 7 Findings alle gefixt `0ec5296`:
-> u. a. doctor-RW-Probe als d-migrate-User statt root, Report in Temp statt
-> Live-Quell-Dir, `usage()`-Truncation). Nächst: Tranche 2 (`bulk`), dann
-> `incremental`/`switch`. Zuvor gefirmt: tranchiert,
+> **Status**: 🚧 **Tranche 2 komplett (2026-07-12)** — Tranche 1 (Tooling +
+> Phase 0 `profile`, code-reviewt `0ec5296`) **und** Phase 1 `bulk` (`c7d7720`)
+> gebaut + verifiziert. `bulk`: `data transfer` aller App-Tabellen + Row-Count-
+> Parität + **Sequenz-Erhalt** (nativ via `--sqlite-autoincrement-width 64`, PG-
+> BIGSERIAL setzt SQLite-`MAX` fort — **kein `setval` nötig**; der ADR-0007-
+> BIGSERIAL-Vorbehalt ist damit erledigt) + `--on-conflict abort`-Guard.
+> `make smoke-cutover` grün (5 Cases: doctor + profile gesund/Tripwire + bulk +
+> bulk-abort-Guard). **Nächst: Tranche 3 (`incremental`)**, dann `switch`. Zuvor
+> gefirmt: tranchiert,
 > ADR-0007 **Accepted**, Watermark entschieden. Liegt seit dem Tranche-1-Bau in
 > `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
