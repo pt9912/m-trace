@@ -17,7 +17,7 @@ NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate schema-generate-postgres schema-generate-postgres-check benchmark-smoke fuzz-check mutation-report
+.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate schema-generate-postgres schema-generate-postgres-check print-dmigrate-image benchmark-smoke fuzz-check mutation-report
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002). Build-/Dev-time-Werkzeug; das API-Image bleibt
@@ -25,7 +25,13 @@ NO_CACHE_FILTER_RACE     := --no-cache-filter race
 # in V1__m_trace.sql stabil bleibt — `:latest` würde bei jedem
 # d-migrate-Release einen schleichenden DDL-Diff erzeugen.
 SCHEMA_DIR     := internal/storage
-DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:0.9.10
+DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:0.9.11
+
+# Single-Source-Ausgabe des gepinnten d-migrate-Images für Skripte
+# außerhalb dieses Makefiles (z. B. scripts/cutover-sqlite-postgres.sh),
+# damit der Pin nicht dupliziert wird. `make -C apps/api -s print-dmigrate-image`.
+print-dmigrate-image:
+	@printf '%s\n' '$(DMIGRATE_IMAGE)'
 
 # Run unit + integration tests inside Docker.
 test:
