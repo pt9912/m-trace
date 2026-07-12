@@ -1,11 +1,17 @@
 # 0007 — SQLite→Postgres-Datenmigration / Cutover (optional)
 
-> **Status**: **Accepted** (2026-07-12) — Watermark entschieden, Ausführung
-> tranchiert in [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md).
-> Der ursprüngliche Blocker („Watermark hängt an R-27/R-28") ist weg:
-> `plan-0.23.0` released, R-27/R-28 🟢. Bau gated auf konkreten Cutover-Bedarf
-> (R-29). Zuvor: Proposed (2026-07-10).
-> **Datum**: 2026-07-10 (Proposed) · 2026-07-12 (Accepted)
+> **Status**: **Accepted + GELIEFERT** (2026-07-12) — die vier Phasen
+> (Profile-Check → Bulk → inkrementell → Switch) sind als opt-in-Ops-Werkzeug
+> `scripts/cutover-sqlite-postgres.sh` (`make cutover`) implementiert, alle
+> code-reviewt, `make smoke-cutover` (8 Cases) grün, Operator-Runbook
+> [`docs/ops/postgres-cutover.md`](../ops/postgres-cutover.md). Watermark
+> entschieden (`ingest_sequence` auf der Single-Instance-Quelle); mutable
+> Tabellen werden im quiescten Switch per `--on-conflict update` reconciled.
+> Ausführung tranchiert in
+> [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md);
+> `R-29` → 🟢. Getaggter Release (Lastenheft-RAK/Version-Bump/Tag) separat,
+> permission-gated. Zuvor: Proposed (2026-07-10), Accepted (2026-07-12).
+> **Datum**: 2026-07-10 (Proposed) · 2026-07-12 (Accepted + geliefert)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: `spec/lastenheft.md` RAK-91 (Postgres „proceed, optional");
 > [ADR-0005](0005-production-ops-backends.md) (Postgres deferred mit

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **ops/cutover**: optionaler SQLite→Postgres-Cutover als ephemeres
+  d-migrate-Ops-Werkzeug (`scripts/cutover-sqlite-postgres.sh`, `make cutover
+  ARGS=doctor|profile|bulk|incremental|switch`; d-migrate-Pin `0.9.11`). Vier
+  Phasen (Profile-Check → Bulk → inkrementell → Switch): sequenz-erhaltende
+  Erstübertragung, idempotentes inkrementelles Nachziehen und ein quiescter
+  finaler Re-Sync, der mutable Tabellen per `--on-conflict update` reconciled.
+  Verifikation (Row-Count-Parität, Duplikatfreiheit, Sequenz-Erhalt,
+  Content-Aggregat); Operator-Runbook `docs/ops/postgres-cutover.md`; opt-in-Smoke
+  `make smoke-cutover`. `SQLite` bleibt Default; keine Runtime-/Wire-/Public-API-
+  Änderung (API-Image bleibt JDK-frei).
+  ([ADR-0007](docs/adr/0007-sqlite-postgres-data-cutover.md), `R-29`)
+
 ## [0.23.0] - 2026-07-11
 
 > **Minor-Release** gemäß
