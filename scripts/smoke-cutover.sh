@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # smoke-cutover.sh — opt-in-Smoke für den SQLite->Postgres-Cutover (ADR-0007).
 #
-# Verifiziert die profile-unabhängige Tooling + Phase 0 (data profile) von
+# Verifiziert doctor + Phase 0 (profile) + Phase 1 (bulk) von
 # scripts/cutover-sqlite-postgres.sh gegen ein ephemeres Lab:
 #   1. doctor gegen frische, per PG-DDL angelegte Ziel-DB + gesunde Quelle
 #      -> alle Pre-Flight-Checks grün (Exit 0).
@@ -9,6 +9,10 @@
 #      sind Info, kein Abbruch.
 #   3. profile gegen eine KORRUPTE Quelle (ein Text-Wert in einer INTEGER-
 #      Spalte) -> Abbruch (Exit 3); belegt das (b)-Tripwire.
+#   4. bulk gegen das frische Ziel -> grün (Exit 0); Row-Count-Parität je
+#      Tabelle + Sequenz-Erhalt (kein PK-Kollision).
+#   5. bulk erneut gegen das nicht-leere Ziel -> Abbruch (Exit 1); belegt den
+#      --on-conflict-abort-Guard (kein Doppel-Load).
 #
 # Ephemere Ressourcen (eigenes Netz + PG-Container, trap-cleanup). Opt-in
 # (NICHT in `make gates`). Exit 0 nur, wenn alle drei Erwartungen zutreffen.
@@ -49,7 +53,10 @@ docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 -v "${WORK}:/wor
 INSERT INTO projects(project_id) VALUES ('demo') ON CONFLICT DO NOTHING;
 INSERT INTO playback_events(project_id,session_id,event_name,client_timestamp,server_received_at,sequence_number,sdk_name,sdk_version,schema_version,delivery_status,time_skew_warning)
 VALUES ('demo','s-1','play','2026-07-12T00:00:01Z','2026-07-12T00:00:01Z',1,'js','1.0','1','accepted',0),
-       ('demo','s-1','pause','2026-07-12T00:00:02Z','2026-07-12T00:00:02Z',2,'js','1.0','1','accepted',0);"
+       ('demo','s-1','pause','2026-07-12T00:00:02Z','2026-07-12T00:00:02Z',2,'js','1.0','1','accepted',0);
+INSERT INTO srt_health_samples(project_id,stream_id,connection_id,collected_at,ingested_at,rtt_ms,packet_loss_total,retransmissions_total,available_bandwidth_bps,source_status,source_error_code,connection_state,health_state)
+VALUES ('demo','s-1','c1','t','t',12.5,0,0,1000000,'ok','none','connected','healthy'),
+       ('demo','s-1','c1','t','t',13.0,1,0,1000000,'ok','none','connected','healthy');"
 cp "${WORK}/live.db" "${WORK}/corrupt.db"
 # Text-Wert in die INTEGER-Spalte sequence_number (SQLite-Affinity lässt ihn Text).
 docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 -v "${WORK}:/work" "$SQLITE_IMAGE" /work/corrupt.db "
@@ -91,15 +98,19 @@ run_case() { # name expected_rc  ENV...
   fi
 }
 
-echo "  [1/3] doctor gegen gesunde Quelle + frisches Ziel (erwartet Exit 0)"
+echo "  [1/5] doctor gegen gesunde Quelle + frisches (leeres) Ziel (erwartet Exit 0)"
 run_case "doctor" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
-echo "  [2/3] profile gegen gesunde Quelle (erwartet Exit 0)"
+echo "  [2/5] profile gegen gesunde Quelle (erwartet Exit 0)"
 run_case "profile" 0 env SQLITE_DB="${WORK}/live.db"
-echo "  [3/3] profile gegen KORRUPTE Quelle (erwartet Exit 3, (b)-Tripwire)"
+echo "  [3/5] profile gegen KORRUPTE Quelle (erwartet Exit 3, (b)-Tripwire)"
 run_case "profile" 3 env SQLITE_DB="${WORK}/corrupt.db"
+echo "  [4/5] bulk gegen frisches Ziel (erwartet Exit 0: Parität + Sequenz-Erhalt)"
+run_case "bulk" 0 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
+echo "  [5/5] bulk erneut → Ziel nicht leer, --on-conflict abort (erwartet Exit 1)"
+run_case "bulk" 1 env SQLITE_DB="${WORK}/live.db" PG_DSN="${DSN}" PG_NETWORK="${NET}"
 
 if [[ "$fail" -ne 0 ]]; then
   echo "✘ smoke-cutover: mindestens eine Erwartung verfehlt." >&2
   exit 1
 fi
-echo "✔ smoke-cutover: doctor grün, profile grün (Gesund), profile bricht ab (Korrupt)."
+echo "✔ smoke-cutover: doctor + profile (gesund/Korrupt-Tripwire) + bulk (Parität/Sequenz-Erhalt + abort-Guard) — alle Erwartungen erfüllt."

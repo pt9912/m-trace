@@ -11,7 +11,8 @@
 #     Ziel-PG erreichbar + Schema vorhanden + (für Bulk) leer. Voll implementiert.
 #   profile — Phase 0 (data profile): self-type-Kompatibilitäts-Pre-Flight der
 #     Quelle (Abbruch bei Wert-Typ-Korruption). Voll implementiert (s. cmd_profile).
-#   bulk — Phase 1 (data transfer, Erstübertragung). Stub (Folge-Arbeit).
+#   bulk — Phase 1 (data transfer): Erstübertragung aller App-Tabellen +
+#     Parität/Sequenz-Erhalt-Verifikation. Voll implementiert.
 #   incremental — Phase 2 (data transfer --since, Delta). Stub (Folge-Arbeit).
 #   switch — Phase 3 (Quiesce → finales Delta → Umschalten). Stub (Folge-Arbeit).
 #
@@ -27,8 +28,9 @@
 #   PG_CLIENT_IMAGE psql-Client-Image (Default postgres:17-alpine).
 #   CHUNK_SIZE data-transfer-Chunkgröße (Default 10000).
 #
-# Exit-Codes: 0 ok · 2 Config-/Nutzungsfehler · 3 Pre-Flight-Befund
-#             (Ziel nicht bereit) · 4 noch nicht implementiert (Stub/blockiert).
+# Exit-Codes: 0 ok · 1 hard FAIL (Transfer-/Verifikations-Fehler) · 2 Config-/
+#             Nutzungsfehler · 3 Pre-Flight-Befund (Ziel nicht bereit) · 4 noch
+#             nicht implementiert (Stub).
 
 set -euo pipefail
 
@@ -81,6 +83,35 @@ pg_psql() {
   mapfile -t net < <(docker_net_args)
   docker run --rm -i "${net[@]}" "$PG_CLIENT_IMAGE" \
     psql "$PG_DSN" -tA -c "$1"
+}
+
+# Read-Query gegen die Quell-SQLite (als d-migrate-User). Gibt den Wert aus.
+sqlite_src() {
+  local src_dir base
+  src_dir="$(cd "$(dirname "$SQLITE_DB")" && pwd)"
+  base="$(basename "$SQLITE_DB")"
+  docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 \
+    -v "${src_dir}:/work" "$SQLITE_IMAGE" "/work/${base}" "$1"
+}
+
+# Sequenz-Erhalt prüfen: der nächste DB-vergebene Wert der PK-Sequenz muss
+# ECHT über dem Quell-MAX liegen (sonst PK-Kollision beim ersten neuen Insert).
+# Leere Quell-Tabelle (MAX 0, frische Sequenz) ist kollisionsfrei.
+verify_sequence() { # table column -> 0 ok / 1 fail
+  local tbl="$1" col="$2" seq lastv iscalled srcmax next
+  seq="$(pg_psql "SELECT pg_get_serial_sequence('$tbl','$col');" 2>/dev/null || echo '')"
+  [ -n "$seq" ] || { warn "  ✘ ${tbl}.${col}: keine PG-Sequenz gefunden"; return 1; }
+  lastv="$(pg_psql "SELECT last_value FROM $seq;" 2>/dev/null || echo '')"
+  iscalled="$(pg_psql "SELECT is_called FROM $seq;" 2>/dev/null || echo '')"
+  srcmax="$(sqlite_src "SELECT COALESCE(MAX($col),0) FROM \"$tbl\";" 2>/dev/null || echo '')"
+  if ! [[ "$lastv" =~ ^[0-9]+$ ]] || ! [[ "$srcmax" =~ ^[0-9]+$ ]]; then
+    warn "  ✘ ${tbl}.${col}: Sequenz-/MAX-Abfrage fehlgeschlagen (last='${lastv}' max='${srcmax}')"; return 1
+  fi
+  if [ "$iscalled" = "t" ]; then next=$((lastv + 1)); else next=$lastv; fi
+  if [ "$next" -gt "$srcmax" ]; then
+    log "  ✔ ${tbl}.${col}: nächster Sequenzwert=${next} > MAX=${srcmax} (kein Kollision)"; return 0
+  fi
+  warn "  ✘ ${tbl}.${col}: nächster Sequenzwert=${next} <= MAX=${srcmax} — würde kollidieren"; return 1
 }
 
 require_source() {
@@ -230,16 +261,47 @@ PY
   log "Phase 0 (profile) grün."
 }
 
+# --- Phase 1: Bulk-Transfer + Sequenz-Erhalt ------------------------------
+# `data transfer --sqlite-autoincrement-width 64` überträgt alle App-Tabellen
+# und setzt die PG-BIGSERIAL-Zählerstände auf den SQLite-MAX fort (verifiziert:
+# kein Neustart bei 1). schema_migrations + sqlite_%-Interna werden NICHT
+# transferiert (auf beiden Seiten vom Migrations-Runner verwaltet).
 cmd_bulk() {
   require_source; require_target
-  warn "Phase 1 (bulk) noch nicht implementiert (Folge-Arbeit)."
-  # Vorgesehener Aufruf (data transfer ist bereits ausführungs-verifiziert):
-  #   run_dmigrate data transfer \
-  #     --source "sqlite:///work/$(basename "$SQLITE_DB")" \
-  #     --target "$PG_DSN" \
-  #     --sqlite-autoincrement-width 64 --on-conflict abort --chunk-size "$CHUNK_SIZE"
-  #   Danach Watermark festhalten: SELECT MAX(ingest_sequence) FROM playback_events.
-  return 4
+  local base tables wm out fail=0
+  base="$(basename "$SQLITE_DB")"
+  tables="$(sqlite_src "SELECT group_concat(name) FROM (SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations' ORDER BY name);" 2>/dev/null || echo '')"
+  [ -n "$tables" ] || die "keine transferierbaren Tabellen in der Quelle gefunden" 1
+  log "Phase 1 (bulk): data transfer (--on-conflict abort) — Tabellen: ${tables}"
+  out="$(mktemp)"
+  if ! run_dmigrate data transfer --source "sqlite:///work/${base}" --target "$PG_DSN" \
+       --tables "$tables" --sqlite-autoincrement-width 64 --on-conflict abort \
+       --chunk-size "$CHUNK_SIZE" >"$out" 2>&1; then
+    grep -viE 'HikariConfig|idleTimeout' "$out" >&2 || true
+    rm -f "$out"
+    die "data transfer fehlgeschlagen (Ziel nicht leer? DSN/Netz? siehe oben)" 1
+  fi
+  rm -f "$out"
+  # Watermark für die inkrementelle Phase (Tranche 2/3) festhalten.
+  wm="$(sqlite_src "SELECT COALESCE(MAX(ingest_sequence),0) FROM playback_events;" 2>/dev/null || echo '?')"
+  log "Watermark (max ingest_sequence der Quelle): ${wm}"
+  # Verifikation 1: Row-Count-Parität je Tabelle.
+  local t src_c tgt_c tarr
+  IFS=',' read -ra tarr <<< "$tables"
+  for t in "${tarr[@]}"; do
+    src_c="$(sqlite_src "SELECT count(*) FROM \"$t\";" 2>/dev/null || echo ERR)"
+    tgt_c="$(pg_psql "SELECT count(*) FROM \"$t\";" 2>/dev/null || echo ERR)"
+    if [ "$src_c" != ERR ] && [ "$src_c" = "$tgt_c" ]; then
+      log "  ✔ ${t}: ${tgt_c} Zeilen (Parität)"
+    else
+      warn "  ✘ ${t}: Quelle=${src_c} != Ziel=${tgt_c}"; fail=1
+    fi
+  done
+  # Verifikation 2: Sequenz-Erhalt (kein PK-Kollision beim ersten neuen Insert).
+  verify_sequence playback_events ingest_sequence || fail=1
+  verify_sequence srt_health_samples id || fail=1
+  [ "$fail" -eq 0 ] || die "Bulk-Verifikation fehlgeschlagen — siehe ✘ oben" 1
+  log "Phase 1 (bulk) grün — Row-Count-Parität + Sequenz-Erhalt bestätigt. Watermark=${wm}."
 }
 
 cmd_incremental() {
