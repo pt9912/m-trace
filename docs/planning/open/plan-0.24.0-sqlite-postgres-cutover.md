@@ -1,9 +1,9 @@
 # Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: ✅ **Gefirmt / entscheidungsreif** — tranchiert, ADR-0007
-> **Accepted**, Watermark entschieden. **Noch nicht gebaut**: der Bau ist
-> auf konkreten Betreiber-Bedarf gegated (R-29-Trigger). Wandert nach
-> `in-progress/`, sobald Tranche 1 startet. Folge-Kandidat zu
+> **Status**: 🚧 **Tranche 1 gestartet (2026-07-12), Phase 0 blockiert** auf
+> einen d-migrate-`data profile`-Fix (Bau-Amendment unten). Zuvor gefirmt:
+> tranchiert, ADR-0007 **Accepted**, Watermark entschieden. Wandert nach
+> `in-progress/`, sobald der Bau fortgesetzt wird. Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
 > (Runtime-Adapter + Scale-out-Evidenz). Die Versionsnummer `0.24.0` ist
 > provisorisch.
@@ -18,10 +18,30 @@
 > („hängt an `plan-0.23.0` R-27/R-28") ist **weg**: `plan-0.23.0` ist
 > released, **R-27** (Commit-Zeit-Wasserzeichen) und **R-28** (DB-autoritativer
 > Sequencer) sind 🟢. d-migrate ist auf `ghcr.io/pt9912/d-migrate:0.9.10`
-> gepinnt (`apps/api/Makefile:28`); `data transfer`/`data profile` samt der
-> hier genutzten Flags sind gegen dieses Image **verifiziert** (§7). Damit
-> geht der Plan von Skizze auf gefirmt: Watermark entschieden (§4), Tranchen
-> geschnitten (§5), DoD geschärft (§6).
+> gepinnt (`apps/api/Makefile:28`); die hier genutzten Flags sind gegen dieses
+> Image auf `--help`-Ebene (**Flag-Existenz**) verifiziert (§7). Damit geht der
+> Plan von Skizze auf gefirmt: Watermark entschieden (§4), Tranchen geschnitten
+> (§5), DoD geschärft (§6). **Korrektur (s. Bau-Amendment)**: die `--help`-
+> Verifikation belegt nur die Flags, **nicht die Ausführung** — die Ausführung
+> zeigt `data profile` für dieses Schema als kaputt.
+>
+> **Bau-Amendment 2026-07-12 (Tranche 1 gestartet, Phase 0 blockiert).** Der Bau
+> ist angelaufen. Empirischer Befund gegen `d-migrate 0.9.10`: **`data transfer`
+> (Cutover-Kern, Phasen 1–3) funktioniert** — SQLite→PG verifiziert, Integer-PK
+> `ingest_sequence` wertetreu (`maxseq` erhalten), `--sqlite-autoincrement-width
+> 64 --on-conflict abort --chunk-size`. **Aber `data profile` (Phase 0) crasht**
+> für dieses Schema (exit 5): `targetTypeCompatibility` auf **jeder** Integer-
+> Spalte (Integer→String-Cast) und auf **leeren** Tabellen (null→Number-Cast).
+> Da fast alle m-trace-Tabellen Integer-Spalten haben, ist `data profile` in
+> `0.9.10` als Phase-0-Pre-Flight unbrauchbar. **Entscheidung (Owner): erst
+> d-migrate `data profile` fixen** (Bug-Report `scratchpad/dmigrate-data-profile-bug.de.md`;
+> Fix **in Arbeit** upstream), dann Phase 0 wie geplant — **Tranche 1 pausiert**
+> bis zum d-migrate-Release. **Resume, sobald der Fix da ist:** (1) den
+> `DMIGRATE_IMAGE`-Pin (`apps/api/Makefile:28`) auf die gefixte Version bumpen;
+> (2) `data profile` gegen das **echte m-trace-Schema** re-verifizieren (eine
+> Tabelle mit Integer-Spalten **und** eine leere Tabelle — beide Crashes müssen
+> weg sein); (3) Phase-0-Pre-Flight + Tranche-1-Tooling (`scripts/cutover-…`,
+> `make cutover-*`, `DMIGRATE_IMAGE` via `print-dmigrate-image`) bauen.
 
 ## 1. Ziel
 
@@ -133,13 +153,19 @@ Runtime-/API-Code-Impact — ADR-0007 „What Bleibt Unverändert").
   + Runtime-Adapter + Drift-Check stehen; **R-27** (Commit-Zeit-Wasserzeichen)
   und **R-28** (DB-autoritativer `nextval`-Sequencer) 🟢 — der ursprüngliche
   Watermark-Blocker ist damit weg (§4).
-- **d-migrate `0.9.10`** gepinnt (`apps/api/Makefile:28`, Single-Source). Gegen
-  dieses Image verifiziert (`data transfer --help` / `data profile --help`):
+- **d-migrate `0.9.10`** gepinnt (`apps/api/Makefile:28`, Single-Source).
+  **Flag-Existenz** gegen `--help` verifiziert (`data transfer` / `data profile`):
   `--since-column`/`--since`, `--on-conflict abort|skip|update`, `--chunk-size`
   (Default 10000), `--sqlite-autoincrement-width 32|64`, `--truncate`,
-  `--tables`, `--filter`, `--trigger-mode` existieren. **Refinement**:
-  `data profile` nimmt **kein** `--target` (profiliert eine DB + meldet
-  Target-Typ-Kompatibilität) — die strukturelle PG-Baseline bleibt Sache des
+  `--tables`, `--filter`, `--trigger-mode` existieren.
+- **`data transfer` ausführungs-verifiziert** (Bau-Amendment): SQLite→PG grün,
+  Integer-PK `ingest_sequence` wertetreu, `--sqlite-autoincrement-width 64
+  --on-conflict abort --chunk-size` wirksam.
+- **`data profile` ausführungs-KAPUTT** in `0.9.10` (Bau-Amendment, blockiert
+  Phase 0): crasht (exit 5) auf Integer-Spalten (`targetTypeCompatibility`
+  Integer→String-Cast) **und** leeren Tabellen (null→Number-Cast). Wartet auf
+  d-migrate-Fix (in Arbeit). **Refinement** (gilt weiter): `data profile` nimmt
+  **kein** `--target` — die strukturelle PG-Baseline bleibt Sache des
   eingecheckten DDL + Drift-Checks, nicht des Profile-Schritts (§3 Phase 0).
 
 ## 8. Offene Fragen (für die Bau-Tranchen)
