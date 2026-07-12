@@ -2,6 +2,20 @@
 
 > **Stand**: 2026-07-12
 >
+> **Feierabend 2026-07-12**: **SQLite→Postgres-Cutover (plan-0.24.0)
+> implementiert + auf `origin/main`** — 4 Phasen
+> (`doctor`/`profile`/`bulk`/`incremental`/`switch`), **jede code-reviewt**,
+> `make smoke-cutover` (8 Cases) grün, Operator-Runbook
+> [`../../ops/postgres-cutover.md`](../../ops/postgres-cutover.md), `R-29` 🟢,
+> ADR-0007 „geliefert". **Kein eigenes 0.24.0-Tag** (reine Ops-Tooling ohne
+> Runtime-/Package-Diff) → rollt in den nächsten Release (CHANGELOG
+> `[Unreleased]`). Außerdem heute: Load-Smoke-CI-Fix (Exit-Code-Contract +
+> `R-24`-Debounce, `456fc3a`); d-migrate `0.9.11` gepinnt (fixte `data profile`);
+> Read-only-Profile-Enhancement für d-migrate geschrieben (Scratchpad, ephemer)
+> → wenn eingearbeitet, `doctor`-RW-Probe für den `profile`-Pfad lockerbar.
+> **Offen (nächste größere Tranche): `R-26 b`** (repliken-übergreifend fairer
+> Ingest-Limiter, shared Redis — hat noch keinen eigenen Plan).
+>
 > **Phase**: ✅ `0.23.0` Postgres Scale-out (Minor) **released** (Tag
 > `v0.23.0`, GHCR- + npm-Publish grün, 2026-07-11), Lastenheft-Patch
 > `1.1.25` (RAK-126..RAK-130, §13.24). Liefert den **optionalen**
