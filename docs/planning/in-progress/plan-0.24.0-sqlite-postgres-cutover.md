@@ -57,7 +57,9 @@
 > `bulk`/`incremental`/`switch` als Stubs mit verifiziertem Ziel-Aufruf),
 > `make cutover ARGS=…`, `print-dmigrate-image` (Single-Source-Pin).
 > **Offen in Tranche 1**: den `profile`-Stub durch den echten `data profile`-
-> Aufruf ersetzen (Toleranz-Politik §8) + opt-in-Smoke. Danach Tranche 2 (bulk).
+> Aufruf ersetzen (Toleranz-Politik **entschieden**, §8.1: self-type only) +
+> opt-in-Smoke. Danach Tranche 2 (bulk). Alle drei §8-Fragen sind gefirmt
+> (Toleranz §8.1, Verifikations-Tiefe §8.2, Lookback §8.3).
 
 ## 1. Ziel
 
@@ -140,10 +142,10 @@ Runtime-/API-Code-Impact — ADR-0007 „What Bleibt Unverändert").
 
 | Tranche | Inhalt | Gate |
 | ------- | ------ | ---- |
-| **1** | **Tooling-Gerüst + Profile-Check (Pre-Flight).** Cutover-Skript (`scripts/cutover-sqlite-postgres.sh`) + `make cutover-*`-Target; ephemerer d-migrate-Container über den **bestehenden `DMIGRATE_IMAGE`-Pin** (Single-Source, kein zweiter Pin). Phase 0: `data profile --source sqlite://` → Quality-Warnings + Target-Typ-Kompatibilität, Abbruch bei Inkompatibilität (Toleranz-Politik in §8 offen → hier festlegen). | Profile-Check läuft gegen eine live V1–V7-migrierte SQLite + frische PG (plan-0.23.0-DDL), meldet Kompatibilität und bricht bei Inkompatibilität fail-loud ab; SQLite-Default + `make gates` grün. |
+| **1** | **Tooling-Gerüst + Profile-Check (Pre-Flight).** Cutover-Skript (`scripts/cutover-sqlite-postgres.sh`) + `make cutover-*`-Target; ephemerer d-migrate-Container über den **bestehenden `DMIGRATE_IMAGE`-Pin** (Single-Source, kein zweiter Pin). Phase 0: `data profile --source sqlite://` → Quality-Warnings + Target-Typ-Kompatibilität, Abbruch bei Inkompatibilität (Toleranz-Politik **entschieden**, §8.1: self-type only). | Profile-Check läuft gegen eine live V1–V7-migrierte SQLite + frische PG (plan-0.23.0-DDL), meldet Kompatibilität und bricht bei Inkompatibilität fail-loud ab; SQLite-Default + `make gates` grün. |
 | **2** | **Bulk-Transfer + Sequenz-Erhalt.** Phase 1: `data transfer … --sqlite-autoincrement-width 64 --on-conflict abort --chunk-size N`. Watermark (`SELECT MAX(ingest_sequence)`) festhalten. PG-Sequenz-Zählerstand von `ingest_sequence` **und** `srt_health_samples.id` prüfen. | Frische PG trägt **alle** SQLite-Zeilen (Row-Count-Parität je Tabelle); beide 64-bit-Sequenzen setzen den SQLite-`MAX` fort (erster neuer DB-vergebener Wert kollidiert nicht). |
 | **3** | **Inkrementell + Idempotenz.** Phase 2: `data transfer --since-column ingest_sequence --since <watermark> --on-conflict skip`, wiederholbar. | Delta seit Bulk wird nachgezogen; **Re-Run idempotent** (0 Duplikate, `COUNT(DISTINCT ingest_sequence) == COUNT(*)`); Row-Count-Parität hält nach jedem Lauf. |
-| **4** | **Switch + Verifikation + Rollback.** Phase 3: Writer quiescen → finales Delta mit konservativem Lookback → `MTRACE_PERSISTENCE=postgres` → Verifikation (Row-Counts + Watermark + optionale inhaltliche Stichprobe, §8). Rollback (zurück auf SQLite) dokumentiert + getestet. | End-to-End-Cutover grün; nach Switch keine verlorenen In-flight-Writes; Rollback stellt die SQLite-Autorität wieder her. |
+| **4** | **Switch + Verifikation + Rollback.** Phase 3: Writer quiescen → finales Delta mit konservativem Lookback → `MTRACE_PERSISTENCE=postgres` → Verifikation (Row-Counts + Watermark + numerisches Aggregat; Verifikations-Tiefe §8.2, Lookback §8.3). Rollback (zurück auf SQLite) dokumentiert + getestet. | End-to-End-Cutover grün; nach Switch keine verlorenen In-flight-Writes; Rollback stellt die SQLite-Autorität wieder her. |
 | **5** | **Opt-in-Smoke + Runbook + Closeout.** Reproduzierbarer opt-in-Smoke (analog [`smoke-pg-lab`](../../../scripts/smoke-pg-lab.sh)), Operator-Runbook (`docs/user/` bzw. `docs/ops/`). Nachziehen: R-29 → gelöst, Roadmap, Lastenheft (RAK), ADR-0007-Closeout-Notiz. | `make smoke-cutover` (o. ä.) grün end-to-end; Runbook vollständig; `make gates` + SQLite-Default unverändert grün. |
 
 ## 6. Akzeptanz / DoD
@@ -185,16 +187,87 @@ Runtime-/API-Code-Impact — ADR-0007 „What Bleibt Unverändert").
   `0.9.11` gebumpt. **Refinement** (gilt weiter): `data profile` nimmt **kein**
   `--target` — die strukturelle PG-Baseline bleibt Sache des eingecheckten DDL +
   Drift-Checks, nicht des Profile-Schritts (§3 Phase 0).
+- **Profile-Output-Shape verifiziert** (Grundlage für §8.1): `data profile`
+  emittiert `targetCompatibility[]` + `INVALID_TARGET_TYPE_VALUES`-Warnings für
+  **alle** Kandidat-Zieltypen `{INTEGER, DECIMAL, BOOLEAN, DATE, DATETIME,
+  STRING}` je Spalte — ein gesundes Schema erzeugt also erwartungsgemäß
+  Cross-Type-Warnings. Das PG-DDL nutzt nur `text` / `integer`·`bigint` /
+  `double precision` (kein `boolean`/`timestamp`/`date`/`json`/`numeric`), womit
+  der reale Zieltyp jeder Spalte == ihr `logicalType` ist → nur die
+  **self-type**-Kompatibilität ist Abbruch-Signal (§8.1).
 
-## 8. Offene Fragen (für die Bau-Tranchen)
+## 8. Entscheidungen (Bau-Vorgaben)
 
-- **`data profile`-Toleranz** (Tranche 1): welche Quality-Warnings sind Abbruch-
-  vs. Info-Kriterium? Pre-Flight muss fail-loud sein, ohne an harmlosen
-  Warnings zu scheitern.
-- **Verifikations-Tiefe** (Tranche 4): Row-Count je Tabelle reicht als Smoke;
-  eine inhaltliche Stichprobe (Hash/Checksumme je Chunk) wäre stärker — Aufwand
-  vs. Nutzen abwägen.
-- **Konservativer-Lookback-Fenster** (Tranche 4): wie groß der Sicherheits-
-  Überlapp im finalen quiescten Lauf (fixe N Zeilen vs. Zeitfenster)? Da
-  `--on-conflict skip` den Überlapp duplikatfrei absorbiert, ist großzügig
-  billig — Default festlegen.
+Die drei offenen Fragen der Skizze sind entschieden — belegt an der **realen
+`data profile`-Ausgabe (0.9.11)** und am eingecheckten PG-DDL (§7,
+Profile-Shape-Zeile).
+
+### 8.1 `data profile`-Toleranz (Tranche 1) — **self-type only**
+
+**Befund:** `data profile` nimmt **kein** `--target` und prüft jede Spalte gegen
+**alle** Kandidat-Zieltypen `{INTEGER, DECIMAL, BOOLEAN, DATE, DATETIME,
+STRING}`. Pro (Spalte, Zieltyp) mit `incompatibleCount > 0` entsteht eine
+`INVALID_TARGET_TYPE_VALUES`-`WARN`. Ein **gesundes** Schema erzeugt damit
+massenhaft Warnings (jede `INTEGER`-Spalte ist „inkompatibel" zu `BOOLEAN`/
+`DATE`/`DATETIME` usw.). „Jede Warning ⇒ Abbruch" bräche also **immer** ab —
+genau die Falle, die diese Frage benennt.
+
+**Relevant ist nur der Zieltyp, auf den die Spalte real abgebildet wird.** Das
+PG-DDL (§7) kennt genau drei Typen — `text`, `integer`/`bigint`,
+`double precision`. Der PG-Zieltyp jeder Spalte ist damit **identisch** zu ihrem
+SQLite-`logicalType` (`STRING`/`INTEGER`/`DECIMAL`); `BOOLEAN`, `DATE`,
+`DATETIME`, `NUMERIC`, `JSON` kommen im Ziel **nicht** vor.
+
+**Politik:**
+
+- **Abbruch (fail-loud)** genau dann, wenn (a) der Profile-Schritt selbst ≠ 0
+  endet (Crash / Quelle unlesbar), **oder** (b) für **irgendeine** Spalte der
+  `targetCompatibility`-Eintrag mit `targetType == column.logicalType`
+  `incompatibleCount > 0` hat — ein Wert, der sich nicht in seinen **eigenen**
+  Zieltyp abbilden lässt (echte Korruption / Typ-Fehlklassifikation).
+- **Info (nie Abbruch):** alle `INVALID_TARGET_TYPE_VALUES` mit
+  `targetType != logicalType` (Cross-Type-Rauschen, in jeder gesunden DB
+  vorhanden), `nullCount > 0`, leere Tabellen (`rowCount == 0`, alle Counts 0),
+  `numericStats` / `topValues` / Verteilungen.
+
+Auf gesunden Daten feuert der Abbruch nie — das gewünschte Tripwire-Verhalten
+(still bei Gesundheit, laut bei Korruption). Ausgewertet wird der
+`--format json`-Report über `tables[].columns[].targetCompatibility[]`.
+
+### 8.2 Verifikations-Tiefe (Tranche 4) — **zweistufig**
+
+- **Gate (verpflichtend, im Smoke):** Row-Count-Parität **je Tabelle** (alle 13)
+  **+** Watermark-Konsistenz — `MAX(ingest_sequence)` und
+  `MAX(srt_health_samples.id)` Quelle == Ziel, und die PG-Sequenz-Zählerstände
+  setzen den `MAX` fort. Fängt die realistischen Fehlermodi (Teiltransfer,
+  Off-by-one-Sequenz) ab.
+- **Default-on, leichtgewichtig:** je Tabelle ein **numerisches Aggregat**
+  (`COUNT`, `MIN`, `MAX`, `SUM` der PK-/Sequenz-Spalte) Quelle vs. Ziel — ein
+  einzelner (indizierter) Scan ohne Sort, schließt die „gleiche Anzahl, andere
+  Werte"-Lücke, die reiner Row-Count verfehlt. Gehört in den Smoke.
+- **Opt-in, schwer (`--deep`, nur im Runbook):** voller Per-Row-Checksum/Hash je
+  Tabelle. Auf großen Stores (≫ 10⁷ Zeilen) teuer (Full-Scan + Sort); der
+  Grenznutzen ist gering, weil `data transfer` **nativ** und wertetreu
+  ausführungs-verifiziert ist (§7). Bewusst nicht Default — für regulierte/
+  paranoide Betriebe dokumentiert.
+
+### 8.3 Konservativer Lookback (Tranche 4) — **fixe Sequenz-Anzahl, Default `100000`**
+
+**Einheit = Zeilen/Sequenz-Zähler, nicht Zeitfenster.** `--since` läuft über
+`ingest_sequence` (monotone Ganzzahl auf der Single-Instance-Quelle, §4); die
+Zeile ist die natürliche, exakte Einheit. Ein Zeitfenster bräuchte eine
+verlässliche Commit-Zeit-Spalte (am Cutover nicht vorhanden) und wäre unschärfer.
+
+**Default: finaler `--since = (Watermark − LOOKBACK)` mit `LOOKBACK = 100000`
+Zeilen** (env-tunbar, analog `CHUNK_SIZE`). Anker: der gemessene Ingest-Peak
+~3 842 ev/s (0.22.5-Soak) → 100 000 Zeilen ≈ 26 s Ingest, was jedes realistische
+In-flight-Fenster (Sub-Sekunden-Commit-Latenz zwischen Watermark-Lesen und
+Quiesce) um Größenordnungen überdeckt.
+
+**Warum großzügig gratis ist:** `--on-conflict skip` absorbiert den Überlapp
+duplikatfrei (§4); der Lookback re-scannt nur bereits vorhandene Zeilen. Die
+Korrektheitslast trägt ohnehin der **quiescte** finale Lauf (keine In-flight-
+Commits mehr) — der Lookback deckt nur die Zuweisung-≠-Commit-Order-Lücke des
+letzten Live-Watermarks. Operatoren können `LOOKBACK` bei kleinem Post-Bulk-
+Delta bis auf den Bulk-Watermark hochziehen (dann re-scannt der finale Lauf das
+gesamte Delta, weiterhin duplikatfrei).
