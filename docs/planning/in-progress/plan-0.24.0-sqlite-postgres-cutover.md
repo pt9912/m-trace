@@ -1,8 +1,11 @@
 # Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: ✅ **Implementierung + Closeout komplett (T1–T5, 2026-07-12)** — nur
-> der getaggte Release (Version-Bump, Lastenheft-RAK §13.25, Tag, Publish) ist
-> offen (separate, permission-gated Aktion); bis dahin bleibt der Plan hier.
+> **Status**: ✅ **Implementierung + Closeout komplett (T1–T5, 2026-07-12)** —
+> **kein eigenes 0.24.0-Release** (Owner-Entscheidung 2026-07-12): der Cutover ist
+> reine Ops-Tooling ohne Runtime-/Wire-/Package-Änderung, liegt auf `main` +
+> CHANGELOG `[Unreleased]` und rollt in den nächsten Release mit echten
+> Änderungen. Die Versionsnummer `0.24.0` ist nur ein Plan-Identifier. Der Plan
+> bleibt in `in-progress/`, bis der Cutover Teil eines getaggten Releases wird.
 > T1 Tooling (`doctor`) + Phase 0 `profile` (reviewt `0ec5296`); T2 `bulk`
 > (`c7d7720`: Parität + **Sequenz-Erhalt** nativ, ADR-0007-BIGSERIAL-Vorbehalt
 > erledigt); T3 `incremental` (`937ee73`: `--on-conflict skip`, idempotent);
@@ -13,8 +16,8 @@
 > (Parität/Sequenz/SUM-Aggregat) + Operator-/Rollback-Hinweis. `make smoke-cutover`
 > grün (**8 Cases**, inkl. Design-a-Mutations-Beleg). **T5 Closeout** fertig:
 > Operator-Runbook [`../../ops/postgres-cutover.md`](../../ops/postgres-cutover.md),
-> R-29 → 🟢, ADR-0007 „Accepted + geliefert", CHANGELOG `[Unreleased]`. **Offen: nur
-> der getaggte Release.** Zuvor gefirmt: tranchiert,
+> R-29 → 🟢, ADR-0007 „Accepted + geliefert", CHANGELOG `[Unreleased]`. **Kein
+> eigenes 0.24.0-Tag — rollt in den nächsten Release.** Zuvor gefirmt: tranchiert,
 > ADR-0007 **Accepted**, Watermark entschieden. Liegt seit dem Tranche-1-Bau in
 > `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)

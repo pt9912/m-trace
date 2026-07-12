@@ -9,8 +9,9 @@
 > Tabellen werden im quiescten Switch per `--on-conflict update` reconciled.
 > Ausführung tranchiert in
 > [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md);
-> `R-29` → 🟢. Getaggter Release (Lastenheft-RAK/Version-Bump/Tag) separat,
-> permission-gated. Zuvor: Proposed (2026-07-10), Accepted (2026-07-12).
+> `R-29` → 🟢. **Kein eigenes 0.24.0-Release** (Owner-Entscheidung: reine
+> Ops-Tooling ohne Runtime-/Package-Änderung) — rollt in den nächsten Release.
+> Zuvor: Proposed (2026-07-10), Accepted (2026-07-12).
 > **Datum**: 2026-07-10 (Proposed) · 2026-07-12 (Accepted + geliefert)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: `spec/lastenheft.md` RAK-91 (Postgres „proceed, optional");
