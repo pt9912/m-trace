@@ -132,6 +132,14 @@ cleanup() {
     echo "[load-smoke] cleanup: docker compose down -v"
     (cd "$ROOT_DIR" && docker compose down -v >/dev/null 2>&1) || true
   fi
+  # Semantischen Exit-Code (0=ok, 1=hard FAIL, 2=config, 3=inconclusive) für
+  # Aufrufer festhalten, die über `make` laufen: GNU make kollabiert JEDEN
+  # Recipe-Fehler auf Exit 2 und zerstört damit den 0/1/2/3-Contract (ein
+  # Hard-FAIL/INCONCLUSIVE käme sonst als "config" an). Setzt der Aufrufer
+  # LOAD_SMOKE_RC_FILE, liest er den echten Code aus dieser Datei statt aus $?.
+  if [ -n "${LOAD_SMOKE_RC_FILE:-}" ]; then
+    printf '%s\n' "$status" > "$LOAD_SMOKE_RC_FILE" 2>/dev/null || true
+  fi
   exit $status
 }
 trap cleanup EXIT

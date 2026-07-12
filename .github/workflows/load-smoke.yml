@@ -15,6 +15,14 @@ name: Load smoke
 # lastabhaengig flaky; das Verdikt liest sich aus dem Job-Summary +
 # Artefakt (Step-Outcome, k6-Summary, Reconciliation), NICHT aus der
 # Job-Farbe.
+#
+# Debounce (R-24): der Job wird bei einem SLO-Bruch/stillen Verlust
+# (Smoke-Exit 1) erst rot, wenn STREAK_THRESHOLD Hard-FAILs IN FOLGE
+# auftreten. Ein einzelner lastabhaengig-flaky Ausreisser auf dem Shared-
+# Runner bleibt gruen (::warning::). Config-Fehler (Exit 2) roeten sofort
+# (deterministisch). Der vorige semantische Exit-Code wird aus dem
+# load-smoke.log-Artefakt des Vorlaufs gelesen ("smoke exit=N"), da die
+# Job-Farbe selbst bereits debounced ist.
 
 on:
   schedule:
@@ -38,6 +46,7 @@ on:
 
 permissions:
   contents: read
+  actions: read   # Verdict liest die Exit-Codes vorheriger Laeufe (Debounce, R-24)
 
 jobs:
   load-smoke:
@@ -55,13 +64,26 @@ jobs:
           TARGET_EVENT_RATE: ${{ inputs.target_event_rate || '400' }}
         run: |
           set +e
+          # Semantischen Exit-Code (0/1/2/3) aus dem Skript retten: der Aufruf laeuft
+          # ueber `make`, und GNU make kollabiert JEDEN Recipe-Fehler auf Exit 2 ->
+          # der 0/1/2/3-Contract ginge sonst verloren (Hard-FAIL/INCONCLUSIVE kaemen
+          # als "config" an, exit 3 wuerde faelschlich rot). Das Skript schreibt seinen
+          # echten Exit-Code via EXIT-Trap in diese Datei (LOAD_SMOKE_RC_FILE).
+          export LOAD_SMOKE_RC_FILE="$PWD/load-smoke.rc"
+          rm -f "$LOAD_SMOKE_RC_FILE"
           mode="${{ inputs.mode || 'slo' }}"
           if [ "$mode" = "soak" ]; then
             make smoke-soak 2>&1 | tee load-smoke.log
           else
             make smoke-load-slo 2>&1 | tee load-smoke.log
           fi
-          rc=${PIPESTATUS[0]}
+          make_rc=${PIPESTATUS[0]}
+          if [ -f "$LOAD_SMOKE_RC_FILE" ]; then
+            rc="$(cat "$LOAD_SMOKE_RC_FILE")"
+          else
+            # Skript starb vor dem EXIT-Trap (z. B. make-Setup) -> make_rc ist aussagekraeftig.
+            rc="$make_rc"
+          fi
           echo "smoke_rc=$rc" >> "$GITHUB_OUTPUT"
           echo "[load-smoke.yml] smoke exit=$rc (0=ok, 1=hard FAIL, 2=config, 3=inconclusive)"
 
@@ -70,18 +92,67 @@ jobs:
       # INCONCLUSIVE (exit 3). Nur ein Hard-FAIL faerbt den Job rot; ein
       # Flake/INCONCLUSIVE bleibt gruen. Schliesst die Sichtbarkeitsluecke
       # des reinen continue-on-error (echte Regression sonst nur im selten
-      # gelesenen Summary). Debounce (rot erst nach N Hard-FAILs in Folge)
-      # bleibt Folge-Item — siehe risks-backlog R-24.
+      # gelesenen Summary).
+      #
+      # Debounce (R-24): Hard-FAIL (exit 1) roetet den Job erst nach
+      # STREAK_THRESHOLD Vorkommen IN FOLGE — ein einzelner lastabhaengiger
+      # Flake auf dem Shared-Runner bleibt gruen (::warning::). Der vorige
+      # semantische Exit-Code kommt aus dem load-smoke.log-Artefakt des
+      # Vorlaufs (Zeile "smoke exit=N"), nicht aus der bereits debounceten
+      # Job-Farbe. Config-Fehler (exit 2) sind deterministisch -> sofort rot.
       - name: Verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # N=2: eine echte SLO-Regression darf nicht mehrere Naechte gruen
+          # verstecken (bewusst schaerfer als die Mutation-Promote-Schwelle 3;
+          # ein Same-Day-Re-Run per workflow_dispatch bestaetigt zusaetzlich).
+          STREAK_THRESHOLD: "2"
         run: |
           rc="${{ steps.load.outputs.smoke_rc }}"
           case "$rc" in
-            0) echo "::notice::Load smoke OK (exit 0)." ;;
-            3) echo "::notice::Load smoke INCONCLUSIVE (exit 3: Readback-Lesefehler oder Soak < 10M) — kein Verlust-Urteil, Job bleibt gruen." ;;
-            1) echo "::error::Load smoke HARD FAIL (exit 1: stiller Verlust / SLO-Bruch / Fehlerquote) — siehe Summary/Artefakt."; exit 1 ;;
-            2) echo "::error::Load smoke Config-/Nutzungsfehler (exit 2)."; exit 1 ;;
+            0) echo "::notice::Load smoke OK (exit 0)."; exit 0 ;;
+            3) echo "::notice::Load smoke INCONCLUSIVE (exit 3: Readback-Lesefehler oder Soak < 10M) — kein Verlust-Urteil, Job bleibt gruen."; exit 0 ;;
+            2) echo "::error::Load smoke Config-/Nutzungsfehler (exit 2) — deterministisch, kein Debounce."; exit 1 ;;
+            1) : ;;  # Hard-FAIL -> Debounce unten
             *) echo "::error::Load smoke unerwarteter Exit ($rc)."; exit 1 ;;
           esac
+
+          # --- Debounce fuer Hard-FAIL (rc==1), R-24 ---
+          # Wie viele Laeufe in Folge (inkl. diesem) waren Hard-FAIL? Bis zu
+          # (STREAK_THRESHOLD-1) Vorlaeufe zurueckschauen; ein Nicht-1 oder ein
+          # fehlendes Artefakt bricht die Kette (fail-safe: Job bleibt gruen).
+          streak=1
+          need=$(( STREAK_THRESHOLD - 1 ))
+          checked=0
+          mapfile -t prev_ids < <(
+            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/load-smoke.yml/runs?status=completed&per_page=15" \
+              --jq ".workflow_runs[] | select(.id != ${GITHUB_RUN_ID}) | .id" 2>/dev/null || true
+          )
+          for pid in "${prev_ids[@]:-}"; do
+            [ -z "$pid" ] && break
+            [ "$streak" -ge "$STREAK_THRESHOLD" ] && break
+            [ "$checked" -ge "$need" ] && break
+            checked=$(( checked + 1 ))
+            rm -rf _prev
+            if ! gh run download "$pid" -n "load-smoke-$pid" -D _prev 2>/dev/null; then
+              echo "::notice::Debounce: Vorlauf $pid ohne lesbares Artefakt — Kette bricht (fail-safe gruen)."
+              break
+            fi
+            pexit="$(grep -hoE 'smoke exit=[0-9]+' _prev/load-smoke.log 2>/dev/null | grep -oE '[0-9]+' | tail -1 || true)"
+            echo "Debounce: Vorlauf $pid smoke exit=${pexit:-?}"
+            if [ "$pexit" = "1" ]; then
+              streak=$(( streak + 1 ))
+            else
+              break
+            fi
+          done
+
+          if [ "$streak" -ge "$STREAK_THRESHOLD" ]; then
+            echo "::error::Load smoke HARD FAIL — ${streak} Hard-FAILs in Folge (>= Schwelle ${STREAK_THRESHOLD}): echte SLO-Regression / stiller Verlust / Fehlerquote. Siehe Summary/Artefakt."
+            exit 1
+          fi
+          echo "::warning::Load smoke Hard-FAIL (exit 1), aber erst ${streak}/${STREAK_THRESHOLD} in Folge — lastabhaengiger Flake wahrscheinlich, Job bleibt gruen. Ein erneuter Hard-FAIL roetet. Siehe Summary/Artefakt."
+          exit 0
 
       - name: Job summary
         if: always()
