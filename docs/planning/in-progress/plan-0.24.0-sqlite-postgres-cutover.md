@@ -1,14 +1,15 @@
 # Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: 🚧 **Tranche 2 komplett (2026-07-12)** — Tranche 1 (Tooling +
-> Phase 0 `profile`, code-reviewt `0ec5296`) **und** Phase 1 `bulk` (`c7d7720`)
-> gebaut + verifiziert. `bulk`: `data transfer` aller App-Tabellen + Row-Count-
-> Parität + **Sequenz-Erhalt** (nativ via `--sqlite-autoincrement-width 64`, PG-
-> BIGSERIAL setzt SQLite-`MAX` fort — **kein `setval` nötig**; der ADR-0007-
-> BIGSERIAL-Vorbehalt ist damit erledigt) + `--on-conflict abort`-Guard.
-> `make smoke-cutover` grün (5 Cases: doctor + profile gesund/Tripwire + bulk +
-> bulk-abort-Guard). **Nächst: Tranche 3 (`incremental`)**, dann `switch`. Zuvor
-> gefirmt: tranchiert,
+> **Status**: 🚧 **Tranche 3 komplett (2026-07-12)** — Tranchen 1–3 gebaut +
+> verifiziert: T1 Tooling (`doctor`) + Phase 0 `profile` (code-reviewt `0ec5296`);
+> T2 `bulk` (`c7d7720`: Transfer + Parität + **Sequenz-Erhalt** nativ via
+> `--sqlite-autoincrement-width 64`, ADR-0007-BIGSERIAL-Vorbehalt erledigt +
+> `--on-conflict abort`-Guard); T3 `incremental` (`937ee73`: Delta via
+> `--since-column ingest_sequence --on-conflict skip`, **idempotent** +
+> duplikatfrei; SINCE default = Ziel-MAX/Auto-Resume). `make smoke-cutover` grün
+> (7 Cases). **Nächst: Tranche 4 (`switch`: Quiesce → finales Delta mit
+> konservativem Lookback → `MTRACE_PERSISTENCE=postgres` → Verifikation →
+> Rollback).** Zuvor gefirmt: tranchiert,
 > ADR-0007 **Accepted**, Watermark entschieden. Liegt seit dem Tranche-1-Bau in
 > `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
