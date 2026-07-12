@@ -1,7 +1,7 @@
 # 0007 — SQLite→Postgres-Datenmigration / Cutover (optional)
 
 > **Status**: **Accepted** (2026-07-12) — Watermark entschieden, Ausführung
-> tranchiert in [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md).
+> tranchiert in [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md).
 > Der ursprüngliche Blocker („Watermark hängt an R-27/R-28") ist weg:
 > `plan-0.23.0` released, R-27/R-28 🟢. Bau gated auf konkreten Cutover-Bedarf
 > (R-29). Zuvor: Proposed (2026-07-10).
@@ -13,7 +13,7 @@
 > `docs/planning/in-progress/risks-backlog.md` R-26 / R-29;
 > Roadmap-Anker „defer-**with-migration-seed**" ([`plan-0.15.0.md`](../planning/done/plan-0.15.0.md)
 > Szenario A Tranche 5); Ausführung in
-> [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md).
+> [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md).
 
 ## Kontext
 
@@ -47,7 +47,7 @@ statt Hand-Portage.
 > zeitigen** SQLite→Postgres-**Cutover** über d-migrate `data transfer`
 > bereitstellen, in vier Phasen: **Profile-Check → Bulk → inkrementell →
 > Switch** (Profile-Check ist Pre-Flight, läuft zuerst). Details in
-> [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md).
+> [`plan-0.24.0-sqlite-postgres-cutover.md`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md).
 
 Kern der vorgeschlagenen Mechanik:
 
@@ -86,7 +86,7 @@ unangetastet: d-migrate läuft als **ephemerer Ops-Container** (kein Runtime-
   ist eine **Ziel**-Eigenschaft (Multi-Replica-PG); der Cutover liest per
   `--since-column` aus der **Quelle**, und die ist Single-Instance-SQLite →
   dort ist `ingest_sequence` monoton. Details in
-  [`plan-0.24.0`](../planning/open/plan-0.24.0-sqlite-postgres-cutover.md) §4.
+  [`plan-0.24.0`](../planning/in-progress/plan-0.24.0-sqlite-postgres-cutover.md) §4.
 - **Konsistenz während des Cutovers gelöst**: der Rest-Effekt (Zuweisung ≠
   Commit-Order auf einer Instanz) wird durch **Writer-Quiesce vor dem finalen
   Delta** + **`--on-conflict skip`-Idempotenz mit konservativem Lookback**

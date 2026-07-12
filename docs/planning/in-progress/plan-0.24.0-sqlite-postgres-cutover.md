@@ -4,8 +4,8 @@
 > `0.9.11` **aufgelöst**; profile-unabhängiges Tooling-Gerüst gebaut + verifiziert
 > (`doctor`-Pre-Flight, Pin-Helper, `make cutover`). Offen in Tranche 1: `profile`
 > (Phase 0) verdrahten; danach Phasen `bulk`/`incremental`/`switch`. Zuvor
-> gefirmt: tranchiert, ADR-0007 **Accepted**, Watermark entschieden. Wandert nach
-> `in-progress/`, sobald der Bau fortgesetzt wird. Folge-Kandidat zu
+> gefirmt: tranchiert, ADR-0007 **Accepted**, Watermark entschieden. Liegt seit
+> dem Tranche-1-Bau in `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
 > (Runtime-Adapter + Scale-out-Evidenz). Die Versionsnummer `0.24.0` ist
 > provisorisch.
@@ -14,7 +14,7 @@
 > (Cutover-Entscheidung, **Accepted 2026-07-12**); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md)
 > (Runtime-Adapter); RAK-91; Roadmap-Anker „defer-**with-migration-seed**"
 > ([`plan-0.15.0.md`](../done/plan-0.15.0.md) Szenario A Tranche 5);
-> R-26 / **R-29** in [`risks-backlog.md`](../in-progress/risks-backlog.md).
+> R-26 / **R-29** in [`risks-backlog.md`](risks-backlog.md).
 >
 > **Firming-Amendment 2026-07-12** — der Blocker der ursprünglichen Skizze
 > („hängt an `plan-0.23.0` R-27/R-28") ist **weg**: `plan-0.23.0` ist
