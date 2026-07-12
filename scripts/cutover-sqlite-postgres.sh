@@ -9,8 +9,8 @@
 # Subcommands:
 #   doctor — profile-unabhängiger Pre-Flight: Tooling erreichbar, Quelle lesbar,
 #     Ziel-PG erreichbar + Schema vorhanden + (für Bulk) leer. Voll implementiert.
-#   profile — Phase 0 (data profile): Quality-Warnings + Target-Typ-Kompatibilität
-#     der Quelle. Noch nicht verdrahtet (echter Aufruf ersetzt den Stub, s. cmd_profile).
+#   profile — Phase 0 (data profile): self-type-Kompatibilitäts-Pre-Flight der
+#     Quelle (Abbruch bei Wert-Typ-Korruption). Voll implementiert (s. cmd_profile).
 #   bulk — Phase 1 (data transfer, Erstübertragung). Stub (Folge-Arbeit).
 #   incremental — Phase 2 (data transfer --since, Delta). Stub (Folge-Arbeit).
 #   switch — Phase 3 (Quiesce → finales Delta → Umschalten). Stub (Folge-Arbeit).
@@ -147,18 +147,62 @@ cmd_doctor() {
   return "$rc"
 }
 
-# --- Stubs: die d-migrate-getriebenen Phasen ------------------------------
+# --- Phase 0: data profile (Pre-Flight, Toleranz self-type-only) -----
+# `data profile` ist source-only (kein --target). Toleranz-Politik:
+# Abbruch nur bei (a) Profile-Exit != 0 (Crash/Quelle unlesbar) oder (b) einer
+# Spalte, deren self-type-Eintrag (targetType == logicalType) incompatibleCount
+# > 0 hat. Cross-Type-Warnings / Null / leere Tabellen sind Info, nie Abbruch.
 cmd_profile() {
-  require_source; require_target
-  warn "Phase 0 (data profile) noch nicht verdrahtet (Folge-Arbeit)."
-  # d-migrate 0.9.11 fixt die Integer-/Leer-Spalten-Crashes (verifiziert) —
-  # der Pre-Flight kann jetzt gebaut werden. Vorgesehener Aufruf:
-  #   run_dmigrate data profile \
-  #     --source "sqlite:///work/$(basename "$SQLITE_DB")" \
-  #     --format json --output /work/profile.json
-  #   Danach targetCompatibility je Spalte auswerten (incompatibleCount>0 =>
-  #   Abbruch); leere Tabellen sind unkritisch (nonNullCount=0).
-  return 4
+  require_source
+  command -v python3 >/dev/null 2>&1 || die "python3 nötig für die Profile-Auswertung"
+  local src_dir base
+  src_dir="$(cd "$(dirname "$SQLITE_DB")" && pwd)"
+  base="$(basename "$SQLITE_DB")"
+  log "Phase 0: data profile (Quelle) — Toleranz self-type-only"
+  rm -f "${src_dir}/profile.json"
+  local perr="${src_dir}/.profile.err"
+  if ! run_dmigrate data profile --source "sqlite:///work/${base}" \
+       --format json --output /work/profile.json >"$perr" 2>&1; then
+    grep -viE 'HikariConfig|idleTimeout' "$perr" >&2 || true
+    rm -f "$perr"
+    die "data profile fehlgeschlagen — (a). Hinweis: d-migrate öffnet SQLite read-write; die Quelle (+ ihr Verzeichnis) muss für den d-migrate-Container-User (uid $(id -u)) beschreibbar sein." 3
+  fi
+  rm -f "$perr"
+  [ -f "${src_dir}/profile.json" ] || die "data profile erzeugte keinen Report" 3
+  # Auswertung über tables[].columns[].targetCompatibility[].
+  if ! PROFILE_JSON="${src_dir}/profile.json" python3 - <<'PY'
+import json, os, sys
+d = json.load(open(os.environ["PROFILE_JSON"]))
+fails, cross, empties, no_self = [], 0, [], []
+for t in d.get("tables", []):
+    if t.get("rowCount", 0) == 0:
+        empties.append(t["name"])
+    for c in t.get("columns", []):
+        lt = c.get("logicalType")
+        tc = c.get("targetCompatibility", []) or []
+        self_e = next((e for e in tc if e.get("targetType") == lt), None)
+        if self_e is None:
+            no_self.append(f'{t["name"]}.{c["name"]} (logicalType={lt})')
+            continue
+        if self_e.get("incompatibleCount", 0) > 0:
+            fails.append(f'{t["name"]}.{c["name"]}: {self_e["incompatibleCount"]} Wert(e) nicht nach {lt} abbildbar')
+        cross += sum(1 for e in tc if e.get("targetType") != lt and e.get("incompatibleCount", 0) > 0)
+print(f'[cutover] profile: {len(d.get("tables",[]))} Tabellen, {len(empties)} leer, '
+      f'{cross} Cross-Type-Warnings (Info)')
+if no_self:
+    print(f'[cutover] profile: {len(no_self)} Spalte(n) ohne self-type-Eintrag (Info) — '
+          f'Struktur via DDL/Drift-Check garantiert', file=sys.stderr)
+if fails:
+    print("[cutover] FAIL (b): self-type-Inkompatibilität — Werte nicht in ihren eigenen Zieltyp abbildbar:", file=sys.stderr)
+    for f in fails:
+        print(f'   - {f}', file=sys.stderr)
+    sys.exit(1)
+print("[cutover] profile: OK — keine self-type-Inkompatibilität (Tripwire still bei Gesundheit).")
+PY
+  then
+    die "Phase 0 Abbruch — self-type-Inkompatibilität (b), siehe oben" 3
+  fi
+  log "Phase 0 (profile) grün."
 }
 
 cmd_bulk() {

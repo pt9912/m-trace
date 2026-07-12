@@ -1,11 +1,12 @@
 # Implementation Plan — `0.24.0` SQLite→Postgres-Cutover
 
-> **Status**: 🚧 **Tranche 1 läuft (2026-07-12)** — d-migrate-Blocker via
-> `0.9.11` **aufgelöst**; profile-unabhängiges Tooling-Gerüst gebaut + verifiziert
-> (`doctor`-Pre-Flight, Pin-Helper, `make cutover`). Offen in Tranche 1: `profile`
-> (Phase 0) verdrahten; danach Phasen `bulk`/`incremental`/`switch`. Zuvor
-> gefirmt: tranchiert, ADR-0007 **Accepted**, Watermark entschieden. Liegt seit
-> dem Tranche-1-Bau in `in-progress/` (2026-07-12). Folge-Kandidat zu
+> **Status**: 🚧 **Tranche 1 komplett (2026-07-12)** — d-migrate-Blocker via
+> `0.9.11` aufgelöst; Tooling-Gerüst (`doctor`, Pin-Helper, `make cutover`) **und**
+> Phase 0 (`profile`, Toleranz self-type-only §8.1) gebaut + verifiziert;
+> `make smoke-cutover` grün (doctor + profile gesund + Korrupt-Tripwire). Nächst:
+> Tranche 2 (`bulk`), dann `incremental`/`switch`. Zuvor gefirmt: tranchiert,
+> ADR-0007 **Accepted**, Watermark entschieden. Liegt seit dem Tranche-1-Bau in
+> `in-progress/` (2026-07-12). Folge-Kandidat zu
 > [`plan-0.23.0-postgres-scaleout`](../done/plan-0.23.0-postgres-scaleout.md)
 > (Runtime-Adapter + Scale-out-Evidenz). Die Versionsnummer `0.24.0` ist
 > provisorisch.
@@ -60,6 +61,23 @@
 > Aufruf ersetzen (Toleranz-Politik **entschieden**, §8.1: self-type only) +
 > opt-in-Smoke. Danach Tranche 2 (bulk). Alle drei §8-Fragen sind gefirmt
 > (Toleranz §8.1, Verifikations-Tiefe §8.2, Lookback §8.3).
+>
+> **Bau-Amendment 2026-07-12 (c) — Phase 0 (`profile`) gebaut, Tranche 1 komplett.**
+> `cmd_profile` implementiert die §8.1-Politik (self-type only): `data profile
+> --format json` der Quelle, dann je Spalte der `targetCompatibility`-Eintrag mit
+> `targetType == logicalType` → `incompatibleCount > 0` = Abbruch (exit 3);
+> Cross-Type/Null/leere Tabellen = Info. Beide Richtungen verifiziert. **Smoke**
+> `scripts/smoke-cutover.sh` + `make smoke-cutover` (opt-in, ephemeres Lab): (1)
+> `doctor` grün, (2) `profile` grün auf gesunder Quelle (47 Cross-Type-Warnings
+> als Info), (3) `profile` bricht auf korrupter Quelle ab (Text in INTEGER-Spalte
+> → `sequence_number` self-type-inkompatibel, exit 3) — das §8.1-(b)-Tripwire.
+> **Nebenbefund (im Smoke-Bau aufgedeckt)**: d-migrate öffnet die SQLite-Quelle
+> **read-write** (HikariCP) → die Quelle muss für den d-migrate-Container-User
+> beschreibbar sein (sonst `SQLITE_READONLY`); `cmd_profile` surft den Fehler jetzt
+> mit Hinweis. **Gate-Stand**: `make smoke-cutover` + `schema-generate-postgres-check`
+> + `lint-variante-b` + `docs-check` grün; voller `make gates` nicht gelaufen (kein
+> Go-/TS-Source berührt, nur opt-in-Skripte + Pin/DDL-Header). **Nächst: Tranche 2
+> (`bulk`)** — `data transfer` ist bereits ausführungs-verifiziert (Amendment b).
 
 ## 1. Ziel
 
