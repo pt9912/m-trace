@@ -375,7 +375,8 @@ designated single-source documents:
 
 Guiding documents:
 
-- [spec/lastenheft.md](spec/lastenheft.md) — requirements (normative, 1.1.24; German)
+- [docs/user/anwenderhandbuch.md](docs/user/anwenderhandbuch.md) — user manual (task-oriented; German)
+- [spec/lastenheft.md](spec/lastenheft.md) — requirements (normative, 1.1.26; German)
 - [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — status, follow-up ADRs, open decisions
 - [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — backend decision (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — release process
