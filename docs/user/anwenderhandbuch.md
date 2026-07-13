@@ -1,6 +1,6 @@
 # Benutzerhandbuch: m-trace
 
-Handbuch-Version: 1.0<br>
+Handbuch-Version: 1.1<br>
 Software-Version: 0.25.0<br>
 Stand: 2026-07-13<br>
 Gültigkeitsbereich: Self-hosted-Betrieb (Compose-Lab und eigene Deployments)
@@ -32,7 +32,7 @@ vorausgesetzt; m-trace-interne Begriffe erklärt das Glossar (§9).
 ### Voraussetzungen
 
 - Linux oder macOS mit **Docker** (Compose v2) und **make**.
-- Für SDK-/CLI-Aufgaben: **Node.js 22+** und **pnpm**.
+- Für SDK-/CLI-Aufgaben: **Node.js 22** und **pnpm**.
 - Freie lokale Ports **8080** (API) und **5173** (Dashboard).
 
 ## 2. Erste Schritte
@@ -41,7 +41,8 @@ vorausgesetzt; m-trace-interne Begriffe erklärt das Glossar (§9).
 
 1. Repository klonen und ins Verzeichnis wechseln.
 2. Optional: `cp .env.example .env` und Werte anpassen
-   (die Datei dokumentiert alle Variablen).
+   (die Datei dokumentiert die Lab- und Betriebs-Variablen mit
+   Beispielwerten).
 3. `make dev` ausführen.
 
 **Ergebnis:** API und Dashboard laufen; ein Beispiel-HLS-Stream wird
@@ -136,10 +137,11 @@ Wiedergabe-Ereignisse laufen als Batches gegen
 
 #### Vorgehen
 
-1. Öffnen Sie `/sessions` im Dashboard.
+1. Öffnen Sie `/sessions` im Dashboard (die Liste aktualisiert sich
+   live über Server-Sent-Events, mit Polling-Fallback).
 2. Wählen Sie eine Session für die Detailansicht mit Zeitverlauf
-   (Timeline aktualisiert sich live über Server-Sent-Events, mit
-   Polling-Fallback).
+   (per Refresh-Knopf aktualisieren; lange Verläufe über
+   „Load more" nachladen).
 
 Alternativ per API:
 
@@ -173,10 +175,12 @@ curl -X POST http://localhost:8080/api/analyze \
   -d '{"kind":"url","url":"https://cdn.example.test/manifest.m3u8"}'
 ```
 
-> **Betriebshinweis:** `POST /api/analyze` ist bewusst
-> authentifizierungsfrei und für den Betrieb im **internen Netz**
-> gedacht. Exponieren Sie die API öffentlich, gehört dieser Endpunkt
-> hinter eine Egress-/Zugriffs-Beschränkung
+> **Betriebshinweis:** `POST /api/analyze` ist für ungebundene Aufrufe
+> (wie oben) bewusst authentifizierungsfrei und für den Betrieb im
+> **internen Netz** gedacht; wird das Ergebnis per
+> `correlation_id`/`session_id` an eine Session gebunden, ist das
+> Projekt-Token Pflicht. Exponieren Sie die API öffentlich, gehört
+> dieser Endpunkt hinter eine Egress-/Zugriffs-Beschränkung
 > ([`../../spec/backend-api-contract.md`](../../spec/backend-api-contract.md) §3.6).
 
 #### Ergebnis
@@ -279,9 +283,10 @@ dem Runbook [`../ops/postgres-cutover.md`](../ops/postgres-cutover.md).
 
 ## 4. Einstellungen
 
-Die maßgebliche, kommentierte Referenz aller Umgebungsvariablen ist
+Die kommentierte Referenz der Lab- und Betriebs-Variablen ist
 [`.env.example`](../../.env.example) im Repo-Wurzelverzeichnis; die
-wichtigsten:
+Auth-Spezialvariablen (Limiter-Backends, Signing-Keys, Policies)
+dokumentiert [`auth.md`](auth.md) §5. Die wichtigsten:
 
 | Variable | Wirkung | Default |
 |---|---|---|
@@ -305,7 +310,8 @@ m-trace hat keine Benutzerkonten im Dashboard; das Zugriffsmodell sind
 - **Session-Token** (`mtr_st_...`): kurzlebig, für Browser (§3.6).
 - Das Lab-Projekt `demo`/`demo-token` und env-geseedete Lab-Projekte
   (`MTRACE_LAB_PROJECTS`) haben **vorhersagbare Tokens — niemals in
-  produktiven Umgebungen verwenden** (die API warnt beim Seeden im Log).
+  produktiven Umgebungen verwenden** (beim Seeden zusätzlicher
+  Lab-Projekte warnt die API im Log; `demo` ist im Lab immer da).
 
 ## 6. Betrieb: Software beziehen und aktualisieren
 
@@ -344,11 +350,13 @@ Origins des Projekts, oder die Projekt-Policy verbietet den Zugriff.
 erschöpft; bei `{"error":"origin_rate_limited"}` hat der vorgelagerte
 Origin-/IP-Limiter gegriffen.
 
-**Lösung:** Nach `Retry-After` erneut senden (das SDK batcht und
-wiederholt selbst). Dauerhaft: Budget erhöhen bzw. bei mehreren
-Replicas das geteilte Redis-Backend aktivieren (§3.7). Wichtig: `429`
-verwirft client-bestätigte Daten nicht still — abgelehnte Events wurden
-nie angenommen.
+**Lösung:** Erneut senden — beim Event-Ingest nennt `Retry-After` die
+Wartezeit; der Origin-/IP-Limiter (`origin_rate_limited`) sendet
+keinen `Retry-After`-Header, hier mit Backoff wiederholen (das SDK
+batcht und wiederholt in beiden Fällen selbst). Dauerhaft: Budget
+erhöhen bzw. bei mehreren Replicas das geteilte Redis-Backend
+aktivieren (§3.7). Wichtig: `429` verwirft client-bestätigte Daten
+nicht still — abgelehnte Events wurden nie angenommen.
 
 ### Fehler: `422` mit `manifest_not_supported`
 
@@ -434,3 +442,4 @@ Betreiber; Details zum Datenmodell: [`auth.md`](auth.md) §6.
 | Handbuch-Version | Software-Version | Datum | Änderung |
 |---|---|---|---|
 | 1.0 | 0.25.0 | 2026-07-13 | Erstausgabe (aufgabenbasiert nach [`benutzerhandbuch-standard.md`](benutzerhandbuch-standard.md)) |
+| 1.1 | 0.25.0 | 2026-07-13 | Review-Korrekturen: Live-Update gilt für die Sessions-Liste (Detail = manueller Refresh); `Retry-After` nur beim Event-Ingest-429; Seeding-Warnung präzisiert (nur `MTRACE_LAB_PROJECTS`); Node 22 statt „22+"; `/api/analyze`-Auth bei Session-Bindung; ENV-Referenz-Wortlaut (`.env.example` um Rate-Limit-/Redis-/Postgres-Block ergänzt) |
