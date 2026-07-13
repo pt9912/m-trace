@@ -138,7 +138,16 @@ dem Tag): `benchmark.yml` Nightly-Run **29214912437** ✅ (success,
 2026-07-13; kein offenes Regression-Issue); `fuzz.yml` Nightly-Run
 **29216703084** ✅ (success, 2026-07-13; **kein** offenes `fuzz`-Issue);
 `mutation.yml` letzte 3 Runs **29216950248 / 29174901900 / 29134023445**
-alle success — Score-Trend stabil. Lokale Verifikation: `make release-gate
+alle success — Score-Trend stabil. **Release-Durchführung (2026-07-13)**: Tag `v0.25.0` auf `764991e`;
+`build.yml`-Tag-Lauf **29244837617** ✅ (erster Lauf rot durch
+Docker-Hub-TLS-Timeout beim Base-Image-Pull — Runner-Infra, Rerun grün;
+Security-Gates + Postgres-Job waren schon im ersten Lauf grün);
+GitHub-Release publiziert; `publish-packages.yml` **29245610008** ✅ +
+`publish-images.yml` **29245610094** ✅ (verify + Publish). Artefakte
+verifiziert: GHCR `m-trace-api`/`-dashboard`/`-analyzer-service:0.25.0`,
+npm `@pt9912/player-sdk@0.25.0` + `@pt9912/stream-analyzer@0.25.0`.
+
+Lokale Verifikation: `make release-gate
 VER=0.25.0` (Ergebnis s. Release-Commit), zuvor einzeln grün: `make gates`,
 `make smoke-load-multi-tenant`, `make smoke-scaleout-fairness`,
 `make smoke-scaleout-load`, `make smoke-cutover`.
