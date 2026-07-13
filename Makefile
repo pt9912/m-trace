@@ -16,7 +16,7 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-scaleout smoke-scaleout-load cutover smoke-cutover smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-load-multi-tenant smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-scaleout smoke-scaleout-load cutover smoke-cutover smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs lint-variante-b lint-variante-b-fix lint-variante-b-diff test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -255,6 +255,14 @@ smoke-load:
 # Nightly. Erfordert capacity (angehobenes Limit). Destruktiv, opt-in.
 smoke-load-slo:
 	LOAD_PROFILE=open bash scripts/smoke-load.sh
+
+# `make smoke-load-multi-tenant` (R-26) fährt den Noisy-Neighbor-Fall
+# gegen N geseedete Lab-Projekte (MTRACE_LAB_PROJECTS) auf einer
+# Instanz: lab-1 saturiert den Limiter, lab-2..N müssen isoliert
+# bleiben (0x 429, p95 im Budget); der Noisy wird nachweislich
+# gedrosselt. Default-Limiter aktiv. Destruktiv, opt-in.
+smoke-load-multi-tenant:
+	MODE=multi-tenant bash scripts/smoke-load.sh
 
 # `make smoke-soak` ergänzt den Last-Smoke um die Retention-Probe
 # (ADR-0005 Trigger #3): misst nach dem Load die Read-Retention-p95

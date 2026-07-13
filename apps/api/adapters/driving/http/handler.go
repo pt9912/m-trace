@@ -41,6 +41,13 @@ type PlaybackEventsHandler struct {
 	AuthHeaders *AuthHeaderParser
 	Tracer      trace.Tracer
 	Logger      *slog.Logger
+	// TrustForwardedFor (MTRACE_TRUST_FORWARDED_FOR, RAK-90): die
+	// client_ip-Rate-Limit-Dimension nutzt das letzte XFF-Element statt
+	// r.RemoteAddr — dieselbe Trust-Boundary wie der Origin-/IP-Limiter.
+	// Hinter LB/Proxy ist RemoteAddr die Proxy-IP: ohne den Opt-in
+	// teilen sich dort ALLE Clients/Projekte einen client_ip-Bucket,
+	// und der Limiter wirkt als globale statt per-Client-Drossel.
+	TrustForwardedFor bool
 }
 
 // ServeHTTP follows the validation order from
@@ -214,7 +221,7 @@ func (h *PlaybackEventsHandler) serve(
 		AuthToken:          legacyToken,
 		PreResolvedProject: preResolved,
 		Origin:             r.Header.Get("Origin"),
-		ClientIP:           clientIPFromRequest(r),
+		ClientIP:           h.clientIP(r),
 		Events:             toEventInputs(payload.Events),
 		Boundaries:         toBoundaryInputs(payload.SessionBoundaries),
 		Trace: driving.BatchTraceContext{
@@ -330,10 +337,24 @@ func (r *statusRecorder) statusCode() int {
 	return r.code
 }
 
+// clientIP liefert die client_ip-Rate-Limit-Dimension (F-110). Mit
+// aktiviertem XFF-Trust zählt — wie beim Origin-/IP-Limiter
+// (originLimiterKey) — das letzte XFF-Element (der vom vertrauten
+// Reverse-Proxy zuletzt angehängte Hop); ohne Opt-in bleibt es bei
+// r.RemoteAddr (Default, unverändert).
+func (h *PlaybackEventsHandler) clientIP(r *http.Request) string {
+	if h.TrustForwardedFor {
+		if ip := xffClientIP(r); ip != "" {
+			return ip
+		}
+	}
+	return clientIPFromRequest(r)
+}
+
 // clientIPFromRequest extrahiert die Client-Adresse aus r.RemoteAddr
-// für die Rate-Limit-Dimension client_ip (F-110).
-// In 0.1.0 wird `X-Forwarded-For` bewusst nicht ausgewertet — ein
-// vertrauenswürdiger Proxy-Chain-Header ist nicht eingerichtet.
+// für die Rate-Limit-Dimension client_ip (F-110). `X-Forwarded-For`
+// zählt nur über den expliziten Trust-Opt-in (s. clientIP) — ohne
+// vertrauten Proxy wäre der Header client-kontrolliert (Bucket-Spoofing).
 // httptest und CLI liefern z. B. "127.0.0.1:54321"; der Port wird
 // abgeschnitten, IPv6-Klammern werden beibehalten (net.SplitHostPort).
 func clientIPFromRequest(r *http.Request) string {

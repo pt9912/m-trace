@@ -70,6 +70,7 @@ const (
 	envRateLimitRefill       = "MTRACE_RATE_LIMIT_REFILL"
 	envRateLimitBackend      = "MTRACE_RATE_LIMIT_BACKEND"
 	envRateLimitFailClosed   = "MTRACE_RATE_LIMIT_FAIL_CLOSED"
+	envLabProjects           = "MTRACE_LAB_PROJECTS"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (RAK-72). Ein
@@ -304,6 +305,78 @@ func parseIngestRateLimit(logger *slog.Logger) (int, float64) {
 	return capacity, refill
 }
 
+// labProjectCount (R-26 b, Multi-Tenant-Lab) liest `MTRACE_LAB_PROJECTS`.
+// N > 0 seedet ZUSÄTZLICH zum `demo`-Projekt N deterministische
+// Lab-Projekte `lab-1`..`lab-N` (Token `lab-token-<i>`, gleiche
+// Allowed-Origins wie `demo`) — die Grundlage für den Multi-Tenant-
+// Last-Smoke (Token-Fan-out über N Projekte). Ohne ENV bleibt die
+// Projekt-Menge byte-identisch (nur `demo`). Nur für Lab-/Lasttest-
+// Setups: die Tokens sind vorhersagbar (gleiche Klasse wie das
+// hartkodierte `demo-token`), Produktions-Projekte kommen aus der
+// Projekt-/Token-Verwaltung. Ungültige Werte werden mit WARN ignoriert;
+// Obergrenze 256 gegen Tippfehler-Explosion.
+func labProjectCount(logger *slog.Logger) int {
+	raw := strings.TrimSpace(os.Getenv(envLabProjects))
+	if raw == "" {
+		return 0
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 || n > 256 {
+		logger.Warn(
+			"lab projects ignored (invalid)",
+			"raw", raw,
+			"hint", "set "+envLabProjects+" to an integer in 1..256",
+		)
+		return 0
+	}
+	return n
+}
+
+// labProjectSetup baut die statische Lab-Projekt-Konfiguration (`demo`
+// + optionale `MTRACE_LAB_PROJECTS`-Zusatzprojekte, R-26 b) samt der
+// Domain-Projektion für den Rotating-Resolver-Basisbestand.
+func labProjectSetup(logger *slog.Logger) (map[string]auth.ProjectConfig, map[string]domain.Project) {
+	projectConfigs := map[string]auth.ProjectConfig{
+		"demo": {
+			Token: "demo-token",
+			AllowedOrigins: []string{
+				"http://localhost:5173",
+				"http://localhost:3000",
+				"http://dashboard-e2e:5173",
+			},
+		},
+	}
+	seedLabProjects(projectConfigs, logger)
+	baseProjects := make(map[string]domain.Project, len(projectConfigs))
+	for projectID, cfg := range projectConfigs {
+		baseProjects[projectID] = domain.Project{
+			ID:             projectID,
+			Token:          domain.ProjectToken(cfg.Token),
+			AllowedOrigins: append([]string(nil), cfg.AllowedOrigins...),
+		}
+	}
+	return projectConfigs, baseProjects
+}
+
+// seedLabProjects (R-26 b) ergänzt projectConfigs um die env-getriebenen
+// Lab-Projekte `lab-1..N` — additiv zu `demo` (dessen Allowed-Origins
+// übernommen werden); No-op ohne/bei ungültiger ENV.
+func seedLabProjects(projectConfigs map[string]auth.ProjectConfig, logger *slog.Logger) {
+	n := labProjectCount(logger)
+	if n <= 0 {
+		return
+	}
+	demoOrigins := projectConfigs["demo"].AllowedOrigins
+	for i := 1; i <= n; i++ {
+		projectConfigs[fmt.Sprintf("lab-%d", i)] = auth.ProjectConfig{
+			Token:          fmt.Sprintf("lab-token-%d", i),
+			AllowedOrigins: append([]string(nil), demoOrigins...),
+		}
+	}
+	logger.Info("multi-tenant lab projects seeded",
+		"count", n, "ids", fmt.Sprintf("lab-1..lab-%d", n))
+}
+
 // rateLimitFailClosedOptIn liest `MTRACE_RATE_LIMIT_FAIL_CLOSED` und
 // akzeptiert nur explizit-truthy Werte. Default ist fail-open auf den
 // lokalen In-Memory-Fallback (s. buildIngestRateLimiter).
@@ -392,25 +465,8 @@ func buildHandler(
 		return nil, nil, nil, nil, fmt.Errorf("otel telemetry adapter init: %w", err)
 	}
 
-	projectConfigs := map[string]auth.ProjectConfig{
-		"demo": {
-			Token: "demo-token",
-			AllowedOrigins: []string{
-				"http://localhost:5173",
-				"http://localhost:3000",
-				"http://dashboard-e2e:5173",
-			},
-		},
-	}
+	projectConfigs, baseProjects := labProjectSetup(logger)
 	staticResolver := auth.NewStaticProjectResolver(projectConfigs)
-	baseProjects := make(map[string]domain.Project, len(projectConfigs))
-	for projectID, cfg := range projectConfigs {
-		baseProjects[projectID] = domain.Project{
-			ID:             projectID,
-			Token:          domain.ProjectToken(cfg.Token),
-			AllowedOrigins: append([]string(nil), cfg.AllowedOrigins...),
-		}
-	}
 	//  (RAK-73): Wenn die Persistenz SQLite hält,
 	// wickeln wir den Static-Resolver in einen RotatingProjectResolver
 	// ein, der `mtr_pt_*`-Tokens über `project_token_generations`

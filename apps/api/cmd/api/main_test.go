@@ -120,6 +120,22 @@ func TestBuildIngestRateLimiter(t *testing.T) {
 	})
 }
 
+// TestLabProjectCount: das Multi-Tenant-Lab-Seeding (R-26 b) ist strikt
+// opt-in — ohne/mit ungültiger ENV bleibt es bei 0 (Projekt-Menge
+// byte-identisch, nur `demo`).
+func TestLabProjectCount(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+	for raw, want := range map[string]int{
+		"": 0, "0": 0, "-3": 0, "abc": 0, "257": 0,
+		"1": 1, "3": 3, "256": 256,
+	} {
+		t.Setenv(envLabProjects, raw)
+		if got := labProjectCount(logger); got != want {
+			t.Errorf("%s=%q: got %d, want %d", envLabProjects, raw, got, want)
+		}
+	}
+}
+
 // TestRateLimitFailClosedOptIn: nur explizit-truthy Werte schalten auf
 // fail-closed; Default (und alles andere) bleibt fail-open (§4.3 des
 // R-26-b-Plans — bewusst anders als der geteilte Auth-Schalter).

@@ -24,6 +24,11 @@ services:
       # misst.
       MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
       MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
+      # Multi-Tenant-Last-Smoke (R-26): N Lab-Projekte seeden + XFF-Trust
+      # fuer per-Projekt-Client-IPs (k6 sendet synthetische XFF). Leer =
+      # Default (nur `demo`-Projekt, kein XFF-Trust).
+      MTRACE_LAB_PROJECTS: "${MTRACE_LAB_PROJECTS:-}"
+      MTRACE_TRUST_FORWARDED_FOR: "${MTRACE_TRUST_FORWARDED_FOR:-}"
     volumes:
       # SQLite-Volume überlebt `make stop`/`docker compose down` ohne
       # `--volumes`. Reset ausschließlich über `make wipe` (siehe

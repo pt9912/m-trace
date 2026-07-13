@@ -75,10 +75,11 @@ func NewRouter(
 	mux := http.NewServeMux()
 
 	playback := &PlaybackEventsHandler{
-		UseCase:     useCase,
-		AuthHeaders: playbackAuthHeaders,
-		Tracer:      tracer,
-		Logger:      logger,
+		UseCase:           useCase,
+		AuthHeaders:       playbackAuthHeaders,
+		Tracer:            tracer,
+		Logger:            logger,
+		TrustForwardedFor: trustForwardedFor,
 	}
 	sessionsList := &SessionsListHandler{
 		UseCase:  sessions,

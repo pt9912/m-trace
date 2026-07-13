@@ -14,12 +14,23 @@ set -euo pipefail
 # wird im Upsert VOR dem Event-Append getickt, eigene Tx, taugt nicht
 # als Persistenz-Beleg) und NICHT der Prometheus-Counter.
 #
-# Zwei Modi:
+# Drei Modi:
 #   MODE=capacity Rate-Limit pro Project hochgesetzt
 #                  (MTRACE_RATE_LIMIT_CAPACITY/-REFILL ins Lab injiziert)
 #                  -> misst die echte Ingest-/Persistenz-Kapazität.
 #   MODE=contract Default-Limit (100/s) aktiv -> verifiziert, dass der
 #                  Limiter greift (429) ohne stillen Verlust.
+#   MODE=multi-tenant (R-26 b) Default-Limit aktiv, MT_PROJECTS
+#                  Lab-Projekte geseedet (MTRACE_LAB_PROJECTS), Noisy
+#                  Neighbor (lab-1, MT_NOISY_EVENT_RATE) gegen Victims
+#                  (lab-2..N, MT_VICTIM_EVENT_RATE je Projekt).
+#                  XFF-Trust wird aktiviert (MTRACE_TRUST_FORWARDED_FOR=1)
+#                  und k6 sendet je Projekt eine eigene synthetische
+#                  Client-IP — sonst teilen sich alle Projekte den einen
+#                  client_ip-Bucket der k6-Quell-IP und der Lauf misst
+#                  den IP-Bucket statt der Per-Projekt-Isolation.
+#                  Gates: Victims 0x 429 + p95 im Budget, Noisy wird
+#                  gedrosselt, globale Reconciliation unverändert.
 #
 # Destruktiv: setzt das Core-Lab-SQLite-Volume zurück (frische DB pro
 # Lauf, damit die Reconciliation nur diesen Lauf zählt).
@@ -34,7 +45,8 @@ set -euo pipefail
 #      OPEN_MAX_VUS, OPEN_PREALLOC_VUS, BASE_URL, PROJECT_TOKEN,
 #      SESSION_PREFIX, SMOKE_LOAD_AUTOSTART, K6_IMAGE, SQLITE_IMAGE,
 #      SQLITE_DB_PATH, RETENTION_PROBE, N_PROBES, RETENTION_P95_BUDGET_MS,
-#      SOAK_MIN_EVENTS.
+#      SOAK_MIN_EVENTS, MT_PROJECTS, MT_NOISY_EVENT_RATE,
+#      MT_VICTIM_EVENT_RATE.
 #
 # Manuell gegen ein bereits laufendes Lab: SMOKE_LOAD_AUTOSTART=0.
 
@@ -80,6 +92,14 @@ RETENTION_PROBE="${RETENTION_PROBE:-0}"
 N_PROBES="${N_PROBES:-50}"
 RETENTION_P95_BUDGET_MS="${RETENTION_P95_BUDGET_MS:-2000}"
 SOAK_MIN_EVENTS="${SOAK_MIN_EVENTS:-10000000}"
+# Multi-Tenant-Mode (R-26 b): lab-1 = Noisy Neighbor (deutlich über der
+# Default-Capacity 100/s -> wird gedrosselt), lab-2..N = Victims (unter
+# der Capacity -> dürfen KEIN 429 sehen). Schwellen: R-26:
+# Victims 0x 429, Victim-p95 < P95_BUDGET_MS, Victim-Accept-Quote
+# >= (100 - MAX_ERROR_PCT)%.
+MT_PROJECTS="${MT_PROJECTS:-3}"
+MT_NOISY_EVENT_RATE="${MT_NOISY_EVENT_RATE:-400}"
+MT_VICTIM_EVENT_RATE="${MT_VICTIM_EVENT_RATE:-50}"
 
 for dep in docker curl python3; do
   command -v "$dep" >/dev/null 2>&1 || {
@@ -93,9 +113,9 @@ docker compose version >/dev/null 2>&1 || {
 }
 
 case "$MODE" in
-  capacity | contract) ;;
+  capacity | contract | multi-tenant) ;;
   *)
-    echo "[load-smoke] MODE='$MODE' ungültig — erlaubt: capacity | contract" >&2
+    echo "[load-smoke] MODE='$MODE' ungültig — erlaubt: capacity | contract | multi-tenant" >&2
     exit 2
     ;;
 esac
@@ -106,6 +126,10 @@ esac
 # (misleading green). Daher harter Abbruch statt falschem Grün.
 if [ "$MODE" = "capacity" ] && [ "$SMOKE_LOAD_AUTOSTART" != "1" ]; then
   echo "[load-smoke] MODE=capacity erfordert SMOKE_LOAD_AUTOSTART=1 (Override braucht frischen Container)" >&2
+  exit 2
+fi
+if [ "$MODE" = "multi-tenant" ] && [ "$SMOKE_LOAD_AUTOSTART" != "1" ]; then
+  echo "[load-smoke] MODE=multi-tenant erfordert SMOKE_LOAD_AUTOSTART=1 (MTRACE_LAB_PROJECTS + MTRACE_TRUST_FORWARDED_FOR brauchen frischen Container)" >&2
   exit 2
 fi
 
@@ -148,6 +172,11 @@ if [ "$MODE" = "capacity" ]; then
   export MTRACE_RATE_LIMIT_CAPACITY="$CAP_CAPACITY"
   export MTRACE_RATE_LIMIT_REFILL="$CAP_REFILL"
   echo "[load-smoke] mode=capacity (rate limit raised to ${CAP_CAPACITY}/${CAP_REFILL} per project)"
+elif [ "$MODE" = "multi-tenant" ]; then
+  unset MTRACE_RATE_LIMIT_CAPACITY MTRACE_RATE_LIMIT_REFILL 2>/dev/null || true
+  export MTRACE_LAB_PROJECTS="$MT_PROJECTS"
+  export MTRACE_TRUST_FORWARDED_FOR=1
+  echo "[load-smoke] mode=multi-tenant (${MT_PROJECTS} Lab-Projekte; noisy=lab-1 @${MT_NOISY_EVENT_RATE} ev/s, victims je @${MT_VICTIM_EVENT_RATE} ev/s; Default-Limiter aktiv; XFF-Trust an)"
 else
   unset MTRACE_RATE_LIMIT_CAPACITY MTRACE_RATE_LIMIT_REFILL 2>/dev/null || true
   echo "[load-smoke] mode=contract (default 100/s limiter active)"
@@ -179,7 +208,15 @@ k6_env_args=(
   -e BASE_URL="$BASE_URL" -e PROJECT_TOKEN="$PROJECT_TOKEN"
   -e BATCH_SIZE="$BATCH_SIZE" -e SESSION_PREFIX="$SESSION_PREFIX"
 )
-if [ "$LOAD_PROFILE" = "open" ]; then
+if [ "$MODE" = "multi-tenant" ]; then
+  echo "[load-smoke] szenario=multi-tenant: noisy ${MT_NOISY_EVENT_RATE} ev/s vs $((MT_PROJECTS - 1)) victims je ${MT_VICTIM_EVENT_RATE} ev/s, ${DURATION}"
+  k6_env_args+=(
+    -e MT_PROJECTS="$MT_PROJECTS" -e MT_NOISY_EVENT_RATE="$MT_NOISY_EVENT_RATE"
+    -e MT_VICTIM_EVENT_RATE="$MT_VICTIM_EVENT_RATE" -e DURATION="$DURATION"
+    -e P95_BUDGET_MS="$P95_BUDGET_MS"
+  )
+  recon_sessions=0 # AUTOSTART=1 erzwungen -> SQLite-COUNT-Readback (GLOB matcht p<i>-Sessions)
+elif [ "$LOAD_PROFILE" = "open" ]; then
   echo "[load-smoke] profile=open (SLO): ~${TARGET_EVENT_RATE} ev/s offered, p95<${P95_BUDGET_MS}ms, ${DURATION}"
   k6_env_args+=(
     -e LOAD_PROFILE=open -e TARGET_EVENT_RATE="$TARGET_EVENT_RATE"
@@ -370,6 +407,32 @@ if mode == "contract" and rate_limited == 0:
     fail.append("contract-Modus: kein 429 -> Limiter hat nicht gegriffen")
 if mode == "capacity" and accepted == 0:
     fail.append("capacity-Modus: 0 akzeptiert -> Limit-Override nicht aktiv?")
+if mode == "multi-tenant":
+    # Noisy-Neighbor-Gates (R-26): Victims voll isoliert
+    # (0x 429, Accept-Quote, p95 via k6-Threshold), Noisy nachweislich
+    # gedrosselt. Die k6-Thresholds (victim-429/victim-p95/noisy-429)
+    # schlagen zusaetzlich ueber k6_rc auf.
+    v_sent = cnt("mtrace_mt_victim_sent")
+    v_acc = cnt("mtrace_mt_victim_accepted")
+    v_rl = cnt("mtrace_mt_victim_rate_limited")
+    n_acc = cnt("mtrace_mt_noisy_accepted")
+    n_rl = cnt("mtrace_mt_noisy_rate_limited")
+    vdur = m.get("http_req_duration{role:victim}", {}).get("values", {})
+    print(f"[load-smoke] multi-tenant: victims sent={v_sent} accepted={v_acc} "
+          f"rate_limited={v_rl} p95={vdur.get('p(95)', 0):.1f}ms; "
+          f"noisy accepted={n_acc} rate_limited={n_rl}")
+    if v_rl > 0:
+        fail.append(f"Noisy-Neighbor-Leck: Victims sahen {v_rl} rate-limited Events "
+                    f"(Per-Projekt-Isolation verletzt)")
+    if n_rl == 0:
+        fail.append("multi-tenant: Noisy wurde nie gedrosselt (0x 429) -> "
+                    "Lauf misst keine Limiter-Kontention")
+    if v_sent and v_acc < v_sent * (100.0 - max_err_pct) / 100.0:
+        fail.append(f"Victim-Accept-Quote {100.0 * v_acc / v_sent:.2f}% "
+                    f"< {100.0 - max_err_pct}%")
+    if k6_rc != 0:
+        fail.append(f"k6-Thresholds verletzt (exit={k6_rc}; "
+                    f"victim-429/victim-p95/noisy-429) — siehe k6-Log")
 if profile == "open" and k6_rc != 0:
     fail.append(f"SLO verfehlt (k6 exit={k6_rc}; Threshold p95<{p95_budget:.0f}ms / dropped<1%): "
                 f"gemessen p95 {dur.get('p(95)', 0):.1f}ms, dropped_iterations={dropped}")

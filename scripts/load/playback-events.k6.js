@@ -16,6 +16,22 @@
 //   SESSION_PREFIX (default load-vu)
 // VUs/Dauer kommen ueber k6-CLI-Flags (--vus / --duration).
 //
+// MT_PROJECTS >= 2 aktiviert das Multi-Tenant-Szenario (R-26 b):
+// Projekt lab-1 ist der Noisy Neighbor (MT_NOISY_EVENT_RATE ev/s,
+// deutlich ueber der Limiter-Capacity), lab-2..lab-N sind Victims
+// (MT_VICTIM_EVENT_RATE ev/s je Projekt, unter der Capacity). Die
+// Lab-Projekte muessen API-seitig via MTRACE_LAB_PROJECTS geseedet
+// sein. Jedes Projekt sendet eine eigene synthetische Client-IP als
+// X-Forwarded-For (10.99.0.<i>; das Lab setzt
+// MTRACE_TRUST_FORWARDED_FOR=1) und KEINEN Origin-Header (curl-Pfad)
+// — sonst wuerden die geteilte Quell-IP bzw. der geteilte Origin die
+// client_ip-/origin-Buckets ueber Projekte hinweg konfundieren und
+// der Test misst nicht die Per-Projekt-Isolation.
+// Gates (k6-Thresholds, Schwellen: R-26):
+//   - Victims sehen KEIN 429 (mtrace_mt_victim_rate_limited count<1)
+//   - Victim-p95 < P95_BUDGET_MS (http_req_duration{role:victim})
+//   - der Noisy WIRD gedrosselt (mtrace_mt_noisy_rate_limited count>0)
+//
 // Lauf (Feasibility; Core-Lab via `make dev-detached`):
 //   docker run --rm --network host -v "$PWD/scripts/load:/scripts:ro" \
 //     grafana/k6 run --vus 20 --duration 30s \
@@ -45,8 +61,50 @@ const SESSION_PREFIX = __ENV.SESSION_PREFIX || "load-vu";
 // über Runner hinweg (Review-Empfehlung). Ohne LOAD_PROFILE=open bleibt
 // das Skript closed-loop (--vus/--duration), wie für die
 // Korrektheits-Gates.
+const MT_PROJECTS = parseInt(__ENV.MT_PROJECTS || "0", 10);
+
 export const options = (function () {
   const o = { thresholds: {} };
+  if (MT_PROJECTS >= 2) {
+    const noisyRate = parseInt(__ENV.MT_NOISY_EVENT_RATE || "400", 10);
+    const victimRate = parseInt(__ENV.MT_VICTIM_EVENT_RATE || "50", 10);
+    const duration = __ENV.DURATION || "30s";
+    o.scenarios = {
+      noisy: {
+        executor: "constant-arrival-rate",
+        exec: "mtProject",
+        rate: Math.max(1, Math.ceil(noisyRate / BATCH_SIZE)),
+        timeUnit: "1s",
+        duration: duration,
+        preAllocatedVUs: 10,
+        maxVUs: 40,
+        env: { MT_INDEX: "1", MT_ROLE: "noisy" },
+        tags: { role: "noisy" },
+      },
+    };
+    for (let i = 2; i <= MT_PROJECTS; i++) {
+      o.scenarios[`victim${i}`] = {
+        executor: "constant-arrival-rate",
+        exec: "mtProject",
+        rate: Math.max(1, Math.ceil(victimRate / BATCH_SIZE)),
+        timeUnit: "1s",
+        duration: duration,
+        preAllocatedVUs: 5,
+        maxVUs: 15,
+        env: { MT_INDEX: String(i), MT_ROLE: "victim" },
+        tags: { role: "victim" },
+      };
+    }
+    // Noisy-Neighbor-Gates (Schwellen: R-26): Victims voll
+    // isoliert (kein einziges 429, p95 im Budget), Noisy nachweislich
+    // gedrosselt (sonst misst der Lauf gar keine Limiter-Kontention).
+    o.thresholds["mtrace_mt_victim_rate_limited"] = ["count<1"];
+    o.thresholds["mtrace_mt_noisy_rate_limited"] = ["count>0"];
+    o.thresholds["http_req_duration{role:victim}"] = [
+      `p(95)<${parseInt(__ENV.P95_BUDGET_MS || "1000", 10)}`,
+    ];
+    return o;
+  }
   if ((__ENV.LOAD_PROFILE || "closed") === "open") {
     const eventRate = parseInt(__ENV.TARGET_EVENT_RATE || "400", 10);
     const batchRate = Math.max(1, Math.ceil(eventRate / BATCH_SIZE));
@@ -76,37 +134,61 @@ export const eventsAccepted = new Counter("mtrace_events_accepted");
 export const eventsRateLimited = new Counter("mtrace_events_rate_limited");
 export const eventsRejected = new Counter("mtrace_events_rejected");
 
+// Multi-Tenant-Zaehler (Rollen-granular): tragen die Noisy-Neighbor-
+// Gates (Thresholds oben). Die globalen Zaehler laufen zusaetzlich
+// weiter, damit die Reconciliation-/Fehlerquoten-Auswertung des Smoke
+// unveraendert funktioniert.
+export const mtVictimSent = new Counter("mtrace_mt_victim_sent");
+export const mtVictimAccepted = new Counter("mtrace_mt_victim_accepted");
+export const mtVictimRateLimited = new Counter("mtrace_mt_victim_rate_limited");
+export const mtNoisySent = new Counter("mtrace_mt_noisy_sent");
+export const mtNoisyAccepted = new Counter("mtrace_mt_noisy_accepted");
+export const mtNoisyRateLimited = new Counter("mtrace_mt_noisy_rate_limited");
+const mtVictim = { sent: mtVictimSent, accepted: mtVictimAccepted, rateLimited: mtVictimRateLimited };
+const mtNoisy = { sent: mtNoisySent, accepted: mtNoisyAccepted, rateLimited: mtNoisyRateLimited };
+
 // Modul-Scope = pro VU isoliert in k6: fortlaufende Sequenz je VU.
+// (Ein VU gehoert genau einem Szenario/Projekt -> Sequenz je Session.)
 let seq = 0;
 
-export default function () {
-  const sessionId = `${SESSION_PREFIX}-${__VU}`;
+// postBatch kapselt Batch-Bau + POST + Zaehler — geteilt zwischen dem
+// Single-Projekt-Default und den Multi-Tenant-Szenarien.
+function postBatch(cfg) {
   const events = [];
   for (let i = 0; i < BATCH_SIZE; i++) {
     seq += 1;
     events.push({
       event_name: "rebuffer_started",
-      project_id: PROJECT_ID,
-      session_id: sessionId,
+      project_id: cfg.projectId,
+      session_id: cfg.sessionId,
       client_timestamp: new Date().toISOString(),
       sequence_number: seq,
       sdk: { name: "@pt9912/player-sdk", version: "loadtest" },
     });
   }
+  const headers = {
+    "Content-Type": "application/json",
+    "X-MTrace-Token": cfg.token,
+  };
+  if (cfg.origin) {
+    headers.Origin = cfg.origin;
+  }
+  if (cfg.xff) {
+    headers["X-Forwarded-For"] = cfg.xff;
+  }
   const payload = JSON.stringify({ schema_version: "1.0", events });
   const res = http.post(`${BASE_URL}/api/playback-events`, payload, {
-    headers: {
-      "Content-Type": "application/json",
-      "X-MTrace-Token": PROJECT_TOKEN,
-      Origin: ORIGIN,
-    },
+    headers: headers,
   });
 
   eventsSent.add(BATCH_SIZE);
+  if (cfg.counters) cfg.counters.sent.add(BATCH_SIZE);
   if (res.status === 202) {
     eventsAccepted.add(BATCH_SIZE);
+    if (cfg.counters) cfg.counters.accepted.add(BATCH_SIZE);
   } else if (res.status === 429) {
     eventsRateLimited.add(BATCH_SIZE);
+    if (cfg.counters) cfg.counters.rateLimited.add(BATCH_SIZE);
   } else {
     eventsRejected.add(BATCH_SIZE);
   }
@@ -120,6 +202,32 @@ export default function () {
   });
 }
 
+export default function () {
+  postBatch({
+    token: PROJECT_TOKEN,
+    projectId: PROJECT_ID,
+    sessionId: `${SESSION_PREFIX}-${__VU}`,
+    origin: ORIGIN,
+    counters: null,
+  });
+}
+
+// mtProject ist die exec-Funktion aller Multi-Tenant-Szenarien; das
+// Projekt kommt aus dem Szenario-env (MT_INDEX/MT_ROLE). Eigene
+// synthetische Client-IP je Projekt (XFF), kein Origin-Header — s.
+// Header-Kommentar (Konfundierungs-Vermeidung).
+export function mtProject() {
+  const idx = __ENV.MT_INDEX;
+  postBatch({
+    token: `lab-token-${idx}`,
+    projectId: `lab-${idx}`,
+    sessionId: `${SESSION_PREFIX}-p${idx}-${__VU}`,
+    xff: `10.99.0.${idx}`,
+    origin: null,
+    counters: __ENV.MT_ROLE === "noisy" ? mtNoisy : mtVictim,
+  });
+}
+
 // handleSummary schreibt die volle Metrik-Struktur als JSON fuer die
 // Auswertung im Smoke (zuverlaessiger als das deprecatete
 // --summary-export) plus eine knappe stdout-Zusammenfassung ohne externe
@@ -128,7 +236,7 @@ export function handleSummary(data) {
   const m = data.metrics || {};
   const val = (name, key) =>
     (m[name] && m[name].values && m[name].values[key]) || 0;
-  const text =
+  let text =
     `\n  http_reqs: ${val("http_reqs", "count")} (${val("http_reqs", "rate").toFixed(1)}/s)\n` +
     `  events accepted: ${val("mtrace_events_accepted", "count")} (${val("mtrace_events_accepted", "rate").toFixed(1)}/s)\n` +
     `  events rate_limited: ${val("mtrace_events_rate_limited", "count")}\n` +
@@ -136,6 +244,16 @@ export function handleSummary(data) {
     `  http_req_duration: p90=${val("http_req_duration", "p(90)").toFixed(1)}ms ` +
     `p95=${val("http_req_duration", "p(95)").toFixed(1)}ms ` +
     `max=${val("http_req_duration", "max").toFixed(1)}ms\n`;
+  if (MT_PROJECTS >= 2) {
+    text +=
+      `  MT noisy (lab-1): sent=${val("mtrace_mt_noisy_sent", "count")} ` +
+      `accepted=${val("mtrace_mt_noisy_accepted", "count")} ` +
+      `rate_limited=${val("mtrace_mt_noisy_rate_limited", "count")}\n` +
+      `  MT victims (lab-2..lab-${MT_PROJECTS}): sent=${val("mtrace_mt_victim_sent", "count")} ` +
+      `accepted=${val("mtrace_mt_victim_accepted", "count")} ` +
+      `rate_limited=${val("mtrace_mt_victim_rate_limited", "count")}\n` +
+      `  victim p95: ${val("http_req_duration{role:victim}", "p(95)").toFixed(1)}ms\n`;
+  }
   return {
     stdout: text,
     "/work/summary.json": JSON.stringify(data),

@@ -25,6 +25,44 @@
 > NOSCRIPT-Pfad). ENV-Doku als `docs/user/auth.md` §5.10 (inkl. der
 > dokumentationspflichtigen gemischten Fail-Modi, §8.1).
 >
+> **Bau-Amendment 2026-07-13 (T2) — Multi-Tenant-Lab; Befund: XFF-Trust
+> musste auf die Ingest-`client_ip`-Dimension ausgeweitet werden.**
+> **Befund (beim T2-Bau, im Plan/Review übersehen):** die
+> `client_ip`-Dimension nutzte stur `r.RemoteAddr` (XFF „bewusst nicht
+> ausgewertet" — Stand vor RAK-90). Hinter LB/Proxy (T3-Lab: nginx;
+> produktiv: Ingress) kollabieren damit **alle** Quellen auf die
+> Proxy-IP → EIN `client_ip`-Bucket mit derselben uniformen Capacity:
+> (a) die T2-/T3-Fairness-Messung wäre konfundiert (der Lauf misst den
+> geteilten IP-Bucket statt der Projekt-Isolation — schon auf einer
+> Instanz teilen alle k6-Projekte die eine Quell-IP), (b) produktiv
+> wirkt der Ingest-Limiter hinter jedem Proxy als **globale**
+> 100/s-Drossel statt per-Client. **Fix:** die Ingest-`client_ip`-
+> Dimension folgt jetzt der bestehenden RAK-90-Trust-Boundary
+> (`MTRACE_TRUST_FORWARDED_FOR`, Default aus → byte-identisch);
+> geteilter `xffClientIP`-Helper mit dem Origin-Limiter-Key; Unit-Test
+> (`TestPlaybackClientIP_XFFTrustBoundary`); Doku auth.md §5.10/§5.9.
+> **T2-Tooling:** `MTRACE_LAB_PROJECTS=N` seedet additiv `lab-1..N`
+> (Token `lab-token-<i>`, 1..256, Default byte-stabil nur `demo`);
+> k6-Multi-Tenant-Szenarien (`MT_PROJECTS`): noisy `lab-1`
+> (`MT_NOISY_EVENT_RATE`, Default 400 ev/s ≫ Capacity) vs. victims
+> `lab-2..N` (`MT_VICTIM_EVENT_RATE`, Default 50 ev/s je Projekt),
+> synthetische Client-IP je Projekt via XFF (`10.99.0.<i>`), **kein**
+> Origin-Header (sonst konfundiert der geteilte Origin-Bucket analog);
+> `make smoke-load-multi-tenant` (`MODE=multi-tenant`, erzwingt frisches
+> Lab). **Noisy-Neighbor-Schwellen festgelegt (T2-Auftrag):** Victims
+> **0× 429** (k6-Threshold `count<1`), Victim-p95 <
+> `P95_BUDGET_MS` (Default 1000 ms), Victim-Accept-Quote ≥
+> 100−`MAX_ERROR_PCT` (Default ≥ 95 %), Noisy nachweislich gedrosselt
+> (`count>0`); globale Verlust-Reconciliation unverändert.
+> (`docker-compose.yml` reicht `MTRACE_LAB_PROJECTS`/
+> `MTRACE_TRUST_FORWARDED_FOR` in den api-Container durch — der erste
+> Lauf scheiterte genau daran, 100 % 401.) **Verifiziert
+> (Single-Instance-Baseline, 2026-07-13):** `make smoke-load-multi-tenant`
+> grün — Victims 3640/3640 akzeptiert, **0× 429**, p95 55 ms; Noisy auf
+> exakt sein Budget gedrosselt (3080 akzeptiert ≈ 100 ev/s × 30 s,
+> 8940× 429); kein stiller Verlust (persisted == accepted 6720),
+> 0 % Fehler. Die Scale-out-Variante desselben Nachweises ist T3.
+>
 > **Bezug**: **R-26 b** in [`risks-backlog.md`](risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in
 > [`docs/perf/budgets.md`](../../perf/budgets.md) §8 (throttled 2,01× über 2

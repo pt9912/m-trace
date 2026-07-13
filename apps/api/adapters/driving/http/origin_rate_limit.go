@@ -58,19 +58,29 @@ func originRateLimitMiddleware(next http.Handler, limiter driven.OriginRateLimit
 // damit lokale Lab-Pfade ohne RemoteAddr nicht blockiert werden).
 func originLimiterKey(r *http.Request, trustXFF bool) string {
 	if trustXFF {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			// XFF ist eine kommagetrennte Liste; das **letzte** Element
-			// ist die vom Reverse-Proxy zuletzt hinzugefügte IP (also
-			// der Hop direkt vor dem Server). Bei genau einem Proxy ist
-			// das die Client-IP.
-			parts := strings.Split(xff, ",")
-			last := strings.TrimSpace(parts[len(parts)-1])
-			if last != "" {
-				return "ip:" + last
-			}
+		if ip := xffClientIP(r); ip != "" {
+			return "ip:" + ip
 		}
 	}
 	return clientIPFromRemoteAddr(r)
+}
+
+// xffClientIP liefert das **letzte** Element der `X-Forwarded-For`-
+// Liste — die vom Reverse-Proxy zuletzt hinzugefügte IP (also der Hop
+// direkt vor dem Server; bei genau einem Proxy die Client-IP) — oder
+// "" ohne/bei leerem Header. Nur hinter der Trust-Boundary
+// (MTRACE_TRUST_FORWARDED_FOR) verwenden: ohne vertrauten Proxy ist
+// der Header client-kontrolliert. Geteilt zwischen Origin-Limiter-Key
+// und der client_ip-Dimension des Ingest-Limiters (R-26 b: hinter
+// LB/Proxy ist RemoteAddr die Proxy-IP — ohne XFF teilen sich dort
+// alle Clients einen client_ip-Bucket).
+func xffClientIP(r *http.Request) string {
+	xff := r.Header.Get("X-Forwarded-For")
+	if xff == "" {
+		return ""
+	}
+	parts := strings.Split(xff, ",")
+	return strings.TrimSpace(parts[len(parts)-1])
 }
 
 // clientIPFromRemoteAddr entkoppelt `host:port` aus `r.RemoteAddr`.

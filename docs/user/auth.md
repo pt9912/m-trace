@@ -827,8 +827,14 @@ müssen den Origin-Limiter deaktiviert lassen (Default).
 Der Ingest-Pfad (`POST /api/playback-events`) erzwingt ein
 Token-Bucket-Budget über drei unabhängige Dimensionen (`project_id`,
 `client_ip`, `Origin`) — **batch-weise, all-or-nothing** (ein 429
-verbraucht in keiner Dimension Tokens). Kapazität und Refill gelten
-uniform für alle Projekte:
+verbraucht in keiner Dimension Tokens). Die `client_ip`-Dimension folgt
+derselben XFF-Trust-Boundary wie der Origin-/IP-Limiter (§5.9,
+`MTRACE_TRUST_FORWARDED_FOR`): mit Opt-in zählt das letzte
+`X-Forwarded-For`-Element. Hinter LB/Reverse-Proxy ist das nötig —
+sonst ist `RemoteAddr` für alle Clients die Proxy-IP und die
+`client_ip`-Dimension wirkt als **ein** geteilter Bucket (globale statt
+per-Client-Drossel). Kapazität und Refill gelten uniform für alle
+Projekte:
 
 | ENV | Wirkung |
 |---|---|

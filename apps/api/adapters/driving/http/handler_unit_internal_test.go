@@ -240,3 +240,38 @@ func TestWriteUseCaseError_AuthLifecycleErrors(t *testing.T) {
 		})
 	}
 }
+
+// TestPlaybackClientIP_XFFTrustBoundary (R-26 b): die client_ip-
+// Rate-Limit-Dimension folgt der MTRACE_TRUST_FORWARDED_FOR-Boundary —
+// mit Opt-in zählt das letzte XFF-Element (hinter LB/Proxy ist
+// RemoteAddr die Proxy-IP: EIN Bucket für alle Clients), ohne Opt-in
+// bleibt RemoteAddr maßgeblich (XFF wäre client-kontrolliert).
+func TestPlaybackClientIP_XFFTrustBoundary(t *testing.T) {
+	t.Parallel()
+	mk := func(xff string) *http.Request {
+		r := httptest.NewRequest(http.MethodPost, "/api/playback-events", nil)
+		r.RemoteAddr = "10.0.0.9:4711"
+		if xff != "" {
+			r.Header.Set("X-Forwarded-For", xff)
+		}
+		return r
+	}
+	cases := []struct {
+		name  string
+		trust bool
+		xff   string
+		want  string
+	}{
+		{"untrusted ignores XFF", false, "203.0.113.7", "10.0.0.9"},
+		{"trusted uses last XFF hop", true, "198.51.100.2, 203.0.113.7", "203.0.113.7"},
+		{"trusted without XFF falls back to RemoteAddr", true, "", "10.0.0.9"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := &PlaybackEventsHandler{TrustForwardedFor: tc.trust}
+			if got := h.clientIP(mk(tc.xff)); got != tc.want {
+				t.Fatalf("clientIP = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
