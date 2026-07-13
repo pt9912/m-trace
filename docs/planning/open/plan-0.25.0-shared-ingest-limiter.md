@@ -41,7 +41,8 @@ RAK-90/RAK-88, wo Redis ebenfalls opt-in ist).
 - **Redis-Adapter** für den bestehenden Driven-Port `driven.RateLimiter`
   (**port-erhaltend**, wie beim R-28-Sequencer: Call-Sites unangetastet).
 - **ENV-Selektor** `MTRACE_RATE_LIMIT_BACKEND=memory|redis` (Default
-  `memory`), Muster = `buildOriginRateLimiter`/`buildIssuanceRateLimiter`.
+  `memory`; Name ist Arbeitstitel, s. §8.2), Muster =
+  `buildOriginRateLimiter`/`buildIssuanceRateLimiter`.
 - **Multi-Tenant-Lab-Tooling**: env-getriebenes Seeding von N Lab-Projekten
   (additiv zum `demo`-Default, byte-stabil ohne ENV), k6-Token-Fan-out,
   eigene `make`-Modes (aus der R-26-Machbarkeitsnotiz, dort Teil (b)).
@@ -129,6 +130,12 @@ Neuer Adapter im bestehenden Package `adapters/driven/ratelimit`, implementiert
 - `KEYS[1..k]` = Bucket-Hashes der **nicht-leeren** Dimensionen
   (`mtrace:ingest:project:<id>`, `mtrace:ingest:ip:<ip>`,
   `mtrace:ingest:origin:<hash>`), `k ∈ 1..3`.
+- Key-Bildung: `project_id` und `client_ip` sind längenbegrenzt/validiert
+  und gehen raw in den Key; **nur Origin wird gehasht** — der Header ist
+  client-kontrolliert und unbegrenzt lang, der Hash bounded die Key-Länge
+  (fester Hash, z. B. SHA-256/hex verkürzt; Namensgebung analog der
+  RAK-90-Formulierung „`Origin`-Header-Hash" — der bestehende
+  Origin-Limiter selbst keyed auf Client-IP, gibt also kein Muster vor).
 - `ARGV` = `n` (Batch-Größe — neu ggü. Origin/Issuance), `capacity`,
   `refill`, `now` (unix-nano, Client-Uhr wie im etablierten Muster),
   `ttl`.
@@ -137,16 +144,30 @@ Neuer Adapter im bestehenden Package `adapters/driven/ratelimit`, implementiert
   Refund-Tanz nötig); Deny → Rückgabe 0 → Adapter mappt auf
   `domain.ErrRateLimited`. Leerer Key (alle Dimensionen leer) bleibt No-op
   wie im In-Memory.
-- Refill-Klausel gegen Uhren-Drift der Replicas: `elapsed < 0` auf 0 clampen
-  (NTP-Skew darf Tokens weder schenken noch fressen).
+- Refill-Klausel gegen Uhren-Drift der Replicas (Client-`now` kommt von N
+  Uhren): **(a)** `elapsed < 0` auf 0 clampen (kein Token-Fressen) **und
+  (b)** `last_at` darf **nie regressieren** — gespeichert wird
+  `max(stored_last_at, now)`, nicht `now`. (b) ist der wesentliche Teil:
+  das etablierte Lua-Muster schreibt `last_at = now` unconditional (auch im
+  Deny-Pfad) — eine Replica mit nachgehender Uhr regressiert damit
+  `last_at`, und der nächste Call der vorgehenden Replica bekommt die
+  Skew-Differenz **erneut** als Refill gutgeschrieben. Bei alternierenden
+  Calls ist das systematische Refill-Inflation (~`skew × refill` Extra-Tokens
+  pro Slow→Fast-Wechsel); bei ~600 Calls/s Hot-Path-Frequenz (§4.4) kann
+  schon 10 ms Skew ein Mehrfaches des intendierten Budgets schenken —
+  für Origin/Issuance (Auth-Frequenz) tolerierbar, hier material. Mit
+  (a)+(b) ist Skew ein **einmaliger, begrenzter** Effekt statt
+  kontinuierlicher Inflation.
 
 ### 4.2 Wiring + Boot-Validation
 
 `buildIngestRateLimiter` in `main.go`, Spiegel von `buildOriginRateLimiter`:
-Switch auf `MTRACE_RATE_LIMIT_BACKEND` (`memory` Default | `redis`);
-unbekannte Werte lehnt der Boot-Validator mit präziser Begründung ab
-(RAK-90-Stil, inkl. „warum kein `sqlite`": nicht Multi-Host-tauglich für
-einen Hot-Path-Bucket). `redis` nutzt `buildRedisClient()` und damit den
+Switch auf `MTRACE_RATE_LIMIT_BACKEND` (`memory` Default | `redis`;
+ENV-Name ist Arbeitstitel, s. §8.2); unbekannte Werte lehnt der
+Boot-Validator mit präziser Begründung ab (RAK-90-Stil: `sqlite` und
+`memcached` werden — wie in den beiden bestehenden Limiter-Validatoren —
+explizit mit Begründungs- bzw. „Folge-Item"-Wording abgelehnt,
+symmetrische Fehlertexte). `redis` nutzt `buildRedisClient()` und damit den
 bestehenden `MTRACE_REDIS_*`-Block (geteilter Server mit Origin/Issuance,
 eigener Key-Prefix `mtrace:ingest:`).
 
@@ -165,7 +186,10 @@ Optionen bei Redis-Ausfall:
 
 **Empfehlung**: fail-open-to-memory als Default für den *Ingest*-Limiter
 (anderes Schutzgut als Auth-Flutung bei Origin/Issuance), fail-closed als
-opt-in-Flag. Entscheidung beim Owner (§8.1).
+Opt-in — das Flag hieße dann konsequent `MTRACE_RATE_LIMIT_FAIL_CLOSED`.
+**Achtung**: es gibt einen dokumentierten Gegen-Präzedenzfall im Code
+(geteilter Fail-Mode-Schalter, `main.go:1090`) — volle Abwägung in §8.1,
+Entscheidung beim Owner.
 
 ### 4.4 Performance-Betrachtung
 
@@ -192,8 +216,13 @@ Boot-Validation (§4.2), Fail-Mode gemäß §8.1-Entscheidung. Tests via
 miniredis (Muster `redis_issuance_rate_limiter_test.go`): Cross-Instance-
 Sharing (zwei Adapter-Instanzen, ein Budget — der eigentliche R-26-b-Kern als
 Unit-Beleg), n-Token-Batch, all-or-nothing über 3 Dimensionen,
-Capacity/Refill-Verhalten, Outage (fail-closed und fail-open), Context-Cancel,
-Empty-Key-No-op. Läuft in `make gates` (in-process, kein Service). ENV-Doku.
+Capacity/Refill-Verhalten, **Uhren-Drift** (zwei Adapter-Instanzen mit
+gegeneinander versetzten injizierten Uhren, alternierende Calls →
+Assertion: kein Refill-Überschuss über das Budget; **nur hier belegbar** —
+der T3-Compose-Lab-Nachweis läuft auf einem Host mit einer Uhr und kann
+Skew-Inflation prinzipiell nicht fangen), Outage (fail-closed und
+fail-open), Context-Cancel, Empty-Key-No-op. Läuft in `make gates`
+(in-process, kein Service). ENV-Doku.
 
 **T2 — Multi-Tenant-Lab-Tooling (single-instance).** Env-getriebenes
 N-Projekt-Seeding (additiv zu `demo`, byte-stabiler Default ohne ENV);
@@ -239,9 +268,14 @@ ADR-Frage gemäß §8.5.
   heute schon fürs Issuance-Script; Single-Redis-Annahme wird explizit
   dokumentiert (Nicht-Ziel §2).
 - **Uhren-Drift der Replicas** (Client-`now` als ARGV, etabliertes Muster):
-  für 1s-Granularität-Buckets unkritisch bei NTP; negative elapsed werden
-  geclampt (§4.1). Alternative (Redis-`TIME`) würde die deterministische
-  Testbarkeit (injizierte Uhr) kosten — bewusst nicht gewählt.
+  ohne Gegenmaßnahme nicht nur Rausch-, sondern **Inflations**-Risiko — das
+  unconditional `last_at = now` des etablierten Musters schenkt der
+  vorgehenden Replica die Skew-Differenz wiederholt als Refill (§4.1).
+  Mitigiert durch elapsed-Clamp **+ monotones `last_at`** (§4.1) →
+  einmaliger, begrenzter Effekt; belegt per miniredis-Skew-Test in T1
+  (T3 kann es nicht fangen, eine Host-Uhr). Alternative (Redis-`TIME`)
+  würde die deterministische Testbarkeit (injizierte Uhr) kosten —
+  bewusst nicht gewählt.
 - **„Fairness" präzise halten**: der shared Bucket garantiert die **globale
   Per-Projekt-Decke** (FCFS über Replicas), keine Gleichverteilung pro
   Replica — die Nachweis-Formulierung (T3) misst die Decke und die
@@ -252,13 +286,29 @@ ADR-Frage gemäß §8.5.
 
 ## 8. Offene Fragen (Owner-Calls)
 
-- **§8.1 Fail-Mode-Default** für `backend=redis`: fail-open-to-memory
-  (Empfehlung, §4.3) vs. fail-closed (Origin/Issuance-Präzedenz)? Eigenes
-  Flag `MTRACE_RATE_LIMIT_FAIL_OPEN` oder (nicht empfohlen, anderes
-  Schutzgut) Wiederverwendung von `MTRACE_AUTH_ISSUANCE_FAIL_OPEN`?
-- **§8.2 ENV-Name/Default**: `MTRACE_RATE_LIMIT_BACKEND=memory|redis`,
-  Default `memory` — ok? (Kein `disabled`: der Ingest-Limiter ist heute
-  immer an, das bleibt.)
+- **§8.1 Fail-Mode** für `backend=redis` — zwei in sich kohärente
+  Varianten: **(i)** Default **fail-open-to-memory** + Opt-in-Flag
+  `MTRACE_RATE_LIMIT_FAIL_CLOSED` (Empfehlung §4.3: Schutzgut ist
+  Telemetrie-Verfügbarkeit, nicht Auth-Flutung; Degradation = exakt der
+  heutige Per-Replica-Zustand). **(ii)** Default **fail-closed** unter
+  **Wiederverwendung des bestehenden geteilten Schalters**
+  `MTRACE_AUTH_ISSUANCE_FAIL_OPEN`. (ii) ist der **dokumentierte
+  Code-Präzedenzfall**: Origin- und Issuance-Limiter teilen den
+  Fail-Mode-Schalter bewusst, „damit ein Operator nicht versehentlich
+  einen halb-fail-closed Pfad konstruiert" (`main.go:1090`). Die Spannung
+  ist real und gehört zur Entscheidung: (i) optimiert das Schutzgut pro
+  Limiter, erzeugt aber genau die heterogene Fail-Mode-Landschaft (ein
+  Redis, drei Limiter, gemischte Modi), vor der der bestehende Kommentar
+  warnt; (ii) hält die Landschaft homogen und opfert dafür die
+  Schutzgut-Differenzierung. Owner-Call mit diesem vollen Kontext.
+- **§8.2 ENV-Name/Default**: Default `memory` (kein `disabled`: der
+  Ingest-Limiter ist heute immer an, das bleibt). Name — zwei Kandidaten:
+  `MTRACE_RATE_LIMIT_BACKEND` (konsistent mit der bestehenden
+  `MTRACE_RATE_LIMIT_*`-Familie Capacity/Refill) oder
+  `MTRACE_INGEST_RATE_LIMITER` (konsistent mit der Selektor-Konvention
+  `MTRACE_ORIGIN_RATE_LIMITER` / `MTRACE_AUTH_ISSUANCE_LIMITER`). Beides
+  vertretbar — Owner-Call; der Plan verwendet bis dahin
+  `MTRACE_RATE_LIMIT_BACKEND` als Arbeitstitel.
 - **§8.3 Per-Projekt-Buckets** (RAK-74/F-113-Anschluss): uniforme ENV-Caps
   beibehalten (Empfehlung — Parität zum heutigen In-Memory-Verhalten,
   kleiner Scope) oder policy-getriebene Projekt-Buckets im selben Zug
