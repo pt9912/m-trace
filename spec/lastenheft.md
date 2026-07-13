@@ -2,12 +2,28 @@
 
 **Projektname:** m-trace<br>
 **Dokumenttyp:** Lastenheft<br>
-**Version:** 1.1.25<br>
+**Version:** 1.1.26<br>
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
 **Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md).
 
+> **Patch `1.1.26` (Multi-Tenant-Fairness + Datenmigration für `0.25.0`)**:
+> Schließt die in Patch `1.1.25` bewusst offen gelassene `R-26 b`-Achse und
+> führt die neue RAK-Gruppe `RAK-131`..`RAK-135` in §13.25 ein. Inhalt: ein
+> optionaler, repliken-übergreifend fairer Ingest-Rate-Limiter auf einem
+> geteilten Redis (`MTRACE_RATE_LIMIT_BACKEND=redis`, port-erhaltend; In-Memory
+> bleibt Default), die `X-Forwarded-For`-Trust-Boundary für die
+> `client_ip`-Limiter-Dimension (validiert, hinter LB/Proxy sonst globale statt
+> per-Client-Drossel), der messbare Fairness-Nachweis (ein Per-Projekt-Budget
+> über N Replicas statt N × Capacity; Noisy-Neighbor-Isolation) und die
+> optionale SQLite→Postgres-Datenmigration bestehender Deployments als
+> Ops-Werkzeug (Entscheidung in
+> [`docs/adr/0007-sqlite-postgres-data-cutover.md`](../docs/adr/0007-sqlite-postgres-data-cutover.md)).
+> Weder Redis noch Postgres werden Pflichtabhängigkeit; keine Wire-,
+> Public-API- oder Analyzer-Schema-Änderung. Patch-Log siehe §13.25.
+
+>
 > **Patch `1.1.25` (Postgres Scale-out für `0.23.0`)**:
 > Reaktiviert `RAK-91` von „defer" auf „proceed, optional" (Entscheidung in
 > [`docs/adr/0006-postgres-scaleout-adapter.md`](../docs/adr/0006-postgres-scaleout-adapter.md))
@@ -2436,6 +2452,40 @@ Akzeptanzkriterien:
 | RAK-128 | Muss | **Multi-Replica-Betrieb auf geteiltem Store**: Eine Harness startet ≥ 2 API-Instanzen hinter einem Load-Balancer auf einem geteilten Postgres. Die Startup-Migration ist gegen konkurrierende Instanzen serialisiert (kein Race, genau eine Baseline-Migration), und das Verbindungs-Budget ist dokumentiert. |
 | RAK-129 | Muss | **Scale-out-Nachweis (`R-26 c`)**: Ein Scale-out-Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store: keinen stillen Verlust (jedes bestätigte Event ist persistiert) und keine Duplikate (Anzahl eindeutiger Ingest-Sequenzen gleich Gesamtzahl). Die Durchsatz-Charakteristik ist ehrlich dokumentiert (flaschenhals-abhängig); `R-26 b` (repliken-übergreifende Fairness) bleibt als offen benannt. |
 | RAK-130 | Muss | **Closeout und SQLite-Invarianz**: `0.23.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Beleg sind dokumentiert. Die adapter-agnostische Korrektheits-Suite läuft gegen `SQLite` **und** Postgres; der `SQLite`-Pfad bleibt über die gesamte Umsetzung unverändert grün. |
+
+### 13.25 Version 0.25.0: Multi-Tenant-Fairness + SQLite→Postgres-Cutover (RAK-131..RAK-135)
+
+`0.25.0` schließt die in §13.24 bewusst offen gelassene `R-26 b`-Achse: das
+Per-Projekt-Ingest-Rate-Limit wirkt über N API-Replicas als **ein** gemeinsames
+Budget statt als N × Capacity. Geliefert wird ein **optionaler, nicht-Default**
+Redis-Adapter für den bestehenden Ingest-Limiter-Port (Muster analog dem
+Origin-/IP-Limiter aus RAK-90: geteilter Redis-Server, eigener Key-Prefix,
+atomare Lua-Operation) samt messbarem Fairness-Nachweis, plus die
+`X-Forwarded-For`-Trust-Boundary für die `client_ip`-Limiter-Dimension — hinter
+LB/Reverse-Proxy ist `RemoteAddr` die Proxy-IP, ohne den Opt-in wirkte die
+Dimension dort als globale statt per-Client-Drossel.
+
+Zusätzlich liefert `0.25.0` die seit dem Roadmap-Anker
+„defer-with-migration-seed" vorgesehene **Datenmigration bestehender
+SQLite-Deployments nach Postgres** als optionales, operator-getriebenes
+Ops-Werkzeug (Entscheidung und Grenzen in
+[`docs/adr/0007-sqlite-postgres-data-cutover.md`](../docs/adr/0007-sqlite-postgres-data-cutover.md);
+die API-Runtime bleibt JDK-frei gemäß
+[`docs/adr/0002-persistence-store.md`](../docs/adr/0002-persistence-store.md)).
+
+`SQLite` und der In-Memory-Limiter bleiben lokale Standards; Redis und Postgres
+sind opt-in und werden nicht als versteckte Pflichtabhängigkeit eingeführt.
+`0.25.0` ändert keine Wire-, Public-API- oder Analyzer-Schema-Verträge.
+
+Akzeptanzkriterien:
+
+| Kennung | Prioritaet | Akzeptanzkriterium |
+|---|---|---|
+| RAK-131 | Muss | **Optionaler shared Ingest-Limiter (`R-26 b`, `F-110`/`NF-20`)**: Der Ingest-Rate-Limiter ist über `MTRACE_RATE_LIMIT_BACKEND=redis` auf einen geteilten Redis-Server umschaltbar und implementiert denselben Driven-Port wie der In-Process-Limiter (batch-weise, all-or-nothing über die Dimensionen `project_id`/`client_ip`/`origin`; Uhren-Drift zwischen Replicas darf das Budget nicht inflationieren). Default bleibt `memory`; ohne explizite Wahl ändert sich das Verhalten nicht. Bei Redis-Ausfall degradiert der Limiter default auf den lokalen In-Process-Bucket (Verfügbarkeit vor repliken-übergreifender Fairness; strikt-ablehnendes Verhalten ist als Opt-in wählbar) — nie auf einen Serverfehler. |
+| RAK-132 | Muss | **`client_ip`-Trust-Boundary**: Die `client_ip`-Dimension des Ingest-Limiters folgt derselben `X-Forwarded-For`-Trust-Boundary wie der Origin-/IP-Limiter (RAK-90, `MTRACE_TRUST_FORWARDED_FOR`): mit Opt-in zählt das letzte XFF-Element, als IP validiert (Nicht-IP-Werte fallen auf `RemoteAddr` zurück und erreichen nie einen Store-Key); ohne Opt-in bleibt `RemoteAddr` maßgeblich. |
+| RAK-133 | Muss | **Fairness-Nachweis (`R-26 b`)**: Ein reproduzierbarer Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store + Limiter: (a) das gedrosselte Per-Projekt-Budget skaliert NICHT mit der Replica-Zahl (Inversion des per-Replica-Verhaltens), (b) ein saturierendes Projekt nimmt anderen Projekten kein Budget weg (Noisy-Neighbor-Isolation: unbeteiligte Projekte sehen keine Drosselung und halten ihre Latenz-/Accept-Budgets), (c) die Verlust-/Duplikatfreiheits-Gates aus RAK-129 bleiben unverändert grün. |
+| RAK-134 | Muss | **SQLite→Postgres-Cutover als Ops-Werkzeug**: Ein bestehendes SQLite-Deployment kann seine Historie sequenz-erhaltend nach Postgres migrieren (Bulk → idempotentes inkrementelles Nachziehen → quiescter finaler Re-Sync mit Verifikation: Row-Count-Parität, Duplikatfreiheit, Sequenz-Fortsetzung). Die Quelle wird ausschließlich lesend geöffnet (Rollback = Konfig-Schritt zurück auf die unangetastete SQLite); der Ablauf läuft als ephemerer Ops-Container mit Operator-Runbook und ist opt-in (kein automatischer Trigger). |
+| RAK-135 | Muss | **Closeout und Default-Invarianz**: `0.25.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Belege sind dokumentiert. Ohne die neuen Opt-ins (`MTRACE_RATE_LIMIT_BACKEND`, `MTRACE_TRUST_FORWARDED_FOR`, Cutover) bleibt das Standardverhalten unverändert; die bestehenden Suiten (`SQLite`-Default, Postgres-Adapter, In-Memory-Limiter) bleiben über die gesamte Umsetzung grün. |
 
 ---
 

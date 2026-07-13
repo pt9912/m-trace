@@ -121,7 +121,7 @@
 > Skript-Zeilen bereinigt, k6-`arrivalScenario`-Builder statt 3×
 > handgeschriebener Szenario-Form.
 >
-> **Bezug**: **R-26 b** in [`risks-backlog.md`](risks-backlog.md)
+> **Bezug**: **R-26 b** in [`risks-backlog.md`](../in-progress/risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in
 > [`docs/perf/budgets.md`](../../perf/budgets.md) §8 (throttled 2,01× über 2
 > Replicas = Limiter liegt pro Replica); RAK-129 (lässt R-26 b explizit
@@ -130,6 +130,18 @@
 > (Ingest-Policies; Projekt-Buckets s. §8.3);
 > [ADR-0005](../../adr/0005-production-ops-backends.md) (Ops-Backends),
 > [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md) (Scale-out-Kontext).
+
+## 0. Release-Log `0.25.0` (Closeout)
+
+Quality-Gates-Verdict (2026-07-13, gemäß releasing.md-Pflichtprüfung vor
+dem Tag): `benchmark.yml` Nightly-Run **29214912437** ✅ (success,
+2026-07-13; kein offenes Regression-Issue); `fuzz.yml` Nightly-Run
+**29216703084** ✅ (success, 2026-07-13; **kein** offenes `fuzz`-Issue);
+`mutation.yml` letzte 3 Runs **29216950248 / 29174901900 / 29134023445**
+alle success — Score-Trend stabil. Lokale Verifikation: `make release-gate
+VER=0.25.0` (Ergebnis s. Release-Commit), zuvor einzeln grün: `make gates`,
+`make smoke-load-multi-tenant`, `make smoke-scaleout-fairness`,
+`make smoke-scaleout-load`, `make smoke-cutover`.
 
 ## 1. Ziel
 
@@ -375,6 +387,16 @@ RAK-126..130) gemäß §8.4; kein ADR (§8.5).
 - **Cross-Instance-Sharing als Unit-Beleg** (miniredis) in `make gates`;
   Outage-Fail-Modes getestet.
 - Doku: ENV-Referenz, budgets.md-§9, risks-backlog (R-26 🟢), CHANGELOG.
+
+## 6.1 RAK-Verifikationsmatrix (Minor-Release `0.25.0`, Lastenheft-Patch `1.1.26`)
+
+| RAK | Akzeptanzkriterium (Kurzform) | Beleg |
+|---|---|---|
+| RAK-131 | Optionaler shared Ingest-Limiter, port-erhaltend, memory-Default, drift-fest, fail-open-Degradation | `RedisTokenBucketRateLimiter` hinter unverändertem `driven.RateLimiter` (`adapters/driven/ratelimit/redis_token_bucket.go`, Compile-Time-Assertion); Selektor + Boot-Validation `buildIngestRateLimiter` (`TestBuildIngestRateLimiter`); miniredis-Suite in `make gates`: Cross-Instance-Sharing, n-Token-Batch, all-or-nothing, **Skew-Test** (versetzte Uhren → exakt Capacity), Outage fail-open/fail-closed, Recovery (NOSCRIPT), Context-Cancel ≠ Outage |
+| RAK-132 | `client_ip` folgt der XFF-Trust-Boundary, IP-validiert | `requestClientIP`/`xffClientIP` (net.ParseIP, geteilt mit Origin-Limiter-Key); `TestPlaybackClientIP_XFFTrustBoundary` (untrusted ignoriert XFF; trusted nimmt letztes Element; Nicht-IP/host:port → RemoteAddr-Fallback; IPv6-Kanonisierung); Doku `docs/user/auth.md` §5.10 |
+| RAK-133 | Fairness-Nachweis über ≥ 2 Replicas: Inversion + Noisy-Neighbor + Korrektheits-Gates | `make smoke-scaleout-fairness` (budgets.md **§9**): throttled 1→2 Replicas **0,96–1,0×** statt 2,01× (§8-Referenz-Setup 50 VUs/60 s/Batch 20); Victims 0× 429 + p95 + Accept-Quote-Gate, Noisy nachweislich gedrosselt; `persisted == accepted == COUNT(DISTINCT ingest_sequence)` in allen Phasen; Single-Instance-Baseline `make smoke-load-multi-tenant` |
+| RAK-134 | SQLite→Postgres-Cutover als opt-in Ops-Werkzeug, Quelle read-only, Verifikation, Runbook | [`plan-0.24.0`](plan-0.24.0-sqlite-postgres-cutover.md) T1–T5 (alle Phasen code-reviewt): `scripts/cutover-sqlite-postgres.sh` (`make cutover ARGS=doctor\|profile\|bulk\|incremental\|switch`), `make smoke-cutover` **10 Cases** grün (inkl. read-only-Quelle, Korrupt-Tripwire, abort-Guard, Idempotenz, Mutations-Beleg); Sequenz-Erhalt empirisch (`last_value=MAX`); Runbook [`docs/ops/postgres-cutover.md`](../../ops/postgres-cutover.md); d-migrate ≥ 0.9.12 öffnet die Quelle read-only |
+| RAK-135 | Closeout + Default-Invarianz | Bump/CHANGELOG/Roadmap/Plan-Archiv mit diesem Release; Default byte-identisch (`TestBuildIngestRateLimiter` memory-Default; `MTRACE_LAB_PROJECTS`/Trust/Backends alle opt-in); volle Gates (SQLite-Default-Suite + PG-Lab + In-Memory-Limiter-Tests) grün; T1–T3 code-reviewt (21 Findings gefixt, Review-Amendment) |
 
 ## 7. Risiken
 

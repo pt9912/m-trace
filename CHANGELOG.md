@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.25.0] - 2026-07-13
+
+> **Minor-Release** gemäß
+> [`docs/user/releasing.md`](docs/user/releasing.md). Lastenheft-Patch
+> `1.1.26` (neue RAK-Gruppe `RAK-131`..`RAK-135` in §13.25; normativer
+> Stand `1.1.25` → `1.1.26`). Schließt `R-26 b` (repliken-übergreifende
+> Multi-Tenant-Fairness, letzter offener Teil von `R-26`) und liefert die
+> seit „defer-with-migration-seed" vorgesehene SQLite→Postgres-
+> Datenmigration (`R-29`, [ADR-0007](docs/adr/0007-sqlite-postgres-data-cutover.md))
+> als Ops-Werkzeug nach. `SQLite` und der In-Memory-Limiter bleiben
+> Default; Redis/Postgres bleiben opt-in. Keine Wire-, Public-API- oder
+> Analyzer-Schema-Änderung. Verifikationsmatrix in
+> `docs/planning/…/plan-0.25.0-shared-ingest-limiter.md` §6.1.
 
 ### Added
 

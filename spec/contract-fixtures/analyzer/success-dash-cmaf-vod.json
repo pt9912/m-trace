@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "analyzerVersion": "0.23.0",
+  "analyzerVersion": "0.25.0",
   "analyzerKind": "dash",
   "input": {
     "source": "text",
