@@ -1,9 +1,8 @@
 # Implementation Plan — `0.25.0` Repliken-übergreifend fairer Ingest-Limiter (R-26 b)
 
-> **Status**: **Skizze (2026-07-13, ungefirmt)** — Owner-Review ausstehend; die
-> offenen Fragen in §8 sind Owner-Calls. Die Versionsnummer `0.25.0` ist
-> provisorisch (Plan-Identifier). Hinweis Release-Zuschnitt: der nächste
-> getaggte Release nimmt den bereits gelieferten Cutover
+> **Status**: **Gefirmt (2026-07-13, Owner-Review)** — die §8-Fragen sind
+> entschieden (s. §8). Die Versionsnummer `0.25.0` ist bestätigt (§8.4):
+> der Release nimmt den bereits gelieferten Cutover
 > ([`plan-0.24.0`](../in-progress/plan-0.24.0-sqlite-postgres-cutover.md),
 > CHANGELOG `[Unreleased]`) mit.
 >
@@ -41,7 +40,7 @@ RAK-90/RAK-88, wo Redis ebenfalls opt-in ist).
 - **Redis-Adapter** für den bestehenden Driven-Port `driven.RateLimiter`
   (**port-erhaltend**, wie beim R-28-Sequencer: Call-Sites unangetastet).
 - **ENV-Selektor** `MTRACE_RATE_LIMIT_BACKEND=memory|redis` (Default
-  `memory`; Name ist Arbeitstitel, s. §8.2), Muster =
+  `memory`; entschieden, §8.2), Muster =
   `buildOriginRateLimiter`/`buildIssuanceRateLimiter`.
 - **Multi-Tenant-Lab-Tooling**: env-getriebenes Seeding von N Lab-Projekten
   (additiv zum `demo`-Default, byte-stabil ohne ENV), k6-Token-Fan-out,
@@ -54,7 +53,7 @@ RAK-90/RAK-88, wo Redis ebenfalls opt-in ist).
 
 - **Policy-getriebene Per-Projekt-Buckets** (RAK-74-Anschluss): die heutigen
   uniformen ENV-Caps (`MTRACE_RATE_LIMIT_CAPACITY`/`_REFILL`, gleich für alle
-  Projekte) bleiben — s. Owner-Frage §8.3.
+  Projekte) bleiben (entschieden, §8.3).
 - **Redis-Cluster-Betrieb**: die Multi-Key-Lua-Scripts setzen (wie schon das
   Issuance-Script mit global+projekt-Key) einen Single-Redis voraus;
   Cluster-Tauglichkeit (Hash-Tags) ist Folge-Scope.
@@ -163,7 +162,7 @@ Neuer Adapter im bestehenden Package `adapters/driven/ratelimit`, implementiert
 
 `buildIngestRateLimiter` in `main.go`, Spiegel von `buildOriginRateLimiter`:
 Switch auf `MTRACE_RATE_LIMIT_BACKEND` (`memory` Default | `redis`;
-ENV-Name ist Arbeitstitel, s. §8.2); unbekannte Werte lehnt der
+Name entschieden, §8.2); unbekannte Werte lehnt der
 Boot-Validator mit präziser Begründung ab (RAK-90-Stil: `sqlite` und
 `memcached` werden — wie in den beiden bestehenden Limiter-Validatoren —
 explizit mit Begründungs- bzw. „Folge-Item"-Wording abgelehnt,
@@ -171,7 +170,7 @@ symmetrische Fehlertexte). `redis` nutzt `buildRedisClient()` und damit den
 bestehenden `MTRACE_REDIS_*`-Block (geteilter Server mit Origin/Issuance,
 eigener Key-Prefix `mtrace:ingest:`).
 
-### 4.3 Fail-Mode (Owner-Call, §8.1)
+### 4.3 Fail-Mode (entschieden: fail-open-to-memory, §8.1)
 
 Redis wird mit `backend=redis` zur **Hot-Path-Abhängigkeit des Ingest**.
 Optionen bei Redis-Ausfall:
@@ -184,12 +183,14 @@ Optionen bei Redis-Ausfall:
   repliken-übergreifende Fairness, nie die Limitierung selbst und nie
   Verfügbarkeit. Eintritt/Austritt als WARN-Log sichtbar machen.
 
-**Empfehlung**: fail-open-to-memory als Default für den *Ingest*-Limiter
-(anderes Schutzgut als Auth-Flutung bei Origin/Issuance), fail-closed als
-Opt-in — das Flag hieße dann konsequent `MTRACE_RATE_LIMIT_FAIL_CLOSED`.
-**Achtung**: es gibt einen dokumentierten Gegen-Präzedenzfall im Code
-(geteilter Fail-Mode-Schalter, `main.go:1090`) — volle Abwägung in §8.1,
-Entscheidung beim Owner.
+**Entschieden (Owner-Review 2026-07-13, §8.1)**: fail-open-to-memory ist
+Default für den *Ingest*-Limiter (anderes Schutzgut als Auth-Flutung bei
+Origin/Issuance); fail-closed als Opt-in via
+`MTRACE_RATE_LIMIT_FAIL_CLOSED=1`. `MTRACE_AUTH_ISSUANCE_FAIL_OPEN` wird
+**nicht** wiederverwendet — die bewusste Abweichung vom geteilten
+Fail-Mode-Schalter der Auth-Limiter (`main.go:1090`) inkl. der daraus
+folgenden gemischten Fail-Modi auf demselben Redis ist Teil der
+Entscheidung (volle Abwägung in §8.1) und gehört in die Operator-Doku.
 
 ### 4.4 Performance-Betrachtung
 
@@ -212,7 +213,8 @@ damit ein Fairness-/Verfügbarkeitsverlust nicht still ist.
 ## 5. Tranchen
 
 **T1 — Redis-Adapter + Selektor + Tests.** Adapter (§4.1), Wiring +
-Boot-Validation (§4.2), Fail-Mode gemäß §8.1-Entscheidung. Tests via
+Boot-Validation (§4.2), Fail-Mode gemäß §4.3 (fail-open-to-memory Default
++ `MTRACE_RATE_LIMIT_FAIL_CLOSED`-Opt-in). Tests via
 miniredis (Muster `redis_issuance_rate_limiter_test.go`): Cross-Instance-
 Sharing (zwei Adapter-Instanzen, ein Budget — der eigentliche R-26-b-Kern als
 Unit-Beleg), n-Token-Batch, all-or-nothing über 3 Dimensionen,
@@ -242,9 +244,9 @@ unverändert (`persisted==accepted`, `distinct==COUNT(*)`). Ergebnisse als
 budgets.md-§9 dokumentieren (inkl. Redis-Attribution §4.4).
 
 **T4 — Closeout.** R-26 → 🟢 (b geschlossen, letzter offener Teil),
-roadmap Schritt 57, CHANGELOG `[Unreleased]`; Release-Zuschnitt +
-Lastenheft-Patch (neue RAK-Gruppe analog RAK-126..130) gemäß §8.4;
-ADR-Frage gemäß §8.5.
+roadmap Schritt 57, CHANGELOG `[Unreleased]`; Release `0.25.0` inkl.
+wartendem Cutover + Lastenheft-Patch (neue RAK-Gruppe analog
+RAK-126..130) gemäß §8.4; kein ADR (§8.5).
 
 ## 6. DoD
 
@@ -284,11 +286,11 @@ ADR-Frage gemäß §8.5.
   open-loop-Fan-out über N Tokens muss die Ziel-Rate pro Projekt (nicht
   global) treiben, sonst misst der Lauf das Falsche.
 
-## 8. Offene Fragen (Owner-Calls)
+## 8. Entschiedene Owner-Fragen (Owner-Review 2026-07-13)
 
 - **§8.1 Fail-Mode** für `backend=redis` — zwei in sich kohärente
-  Varianten: **(i)** Default **fail-open-to-memory** + Opt-in-Flag
-  `MTRACE_RATE_LIMIT_FAIL_CLOSED` (Empfehlung §4.3: Schutzgut ist
+  Varianten standen zur Wahl: **(i)** Default **fail-open-to-memory** +
+  Opt-in-Flag `MTRACE_RATE_LIMIT_FAIL_CLOSED` (Schutzgut ist
   Telemetrie-Verfügbarkeit, nicht Auth-Flutung; Degradation = exakt der
   heutige Per-Replica-Zustand). **(ii)** Default **fail-closed** unter
   **Wiederverwendung des bestehenden geteilten Schalters**
@@ -296,28 +298,30 @@ ADR-Frage gemäß §8.5.
   Code-Präzedenzfall**: Origin- und Issuance-Limiter teilen den
   Fail-Mode-Schalter bewusst, „damit ein Operator nicht versehentlich
   einen halb-fail-closed Pfad konstruiert" (`main.go:1090`). Die Spannung
-  ist real und gehört zur Entscheidung: (i) optimiert das Schutzgut pro
-  Limiter, erzeugt aber genau die heterogene Fail-Mode-Landschaft (ein
-  Redis, drei Limiter, gemischte Modi), vor der der bestehende Kommentar
-  warnt; (ii) hält die Landschaft homogen und opfert dafür die
-  Schutzgut-Differenzierung. Owner-Call mit diesem vollen Kontext.
-- **§8.2 ENV-Name/Default**: Default `memory` (kein `disabled`: der
-  Ingest-Limiter ist heute immer an, das bleibt). Name — zwei Kandidaten:
-  `MTRACE_RATE_LIMIT_BACKEND` (konsistent mit der bestehenden
-  `MTRACE_RATE_LIMIT_*`-Familie Capacity/Refill) oder
-  `MTRACE_INGEST_RATE_LIMITER` (konsistent mit der Selektor-Konvention
-  `MTRACE_ORIGIN_RATE_LIMITER` / `MTRACE_AUTH_ISSUANCE_LIMITER`). Beides
-  vertretbar — Owner-Call; der Plan verwendet bis dahin
-  `MTRACE_RATE_LIMIT_BACKEND` als Arbeitstitel.
-- **§8.3 Per-Projekt-Buckets** (RAK-74/F-113-Anschluss): uniforme ENV-Caps
-  beibehalten (Empfehlung — Parität zum heutigen In-Memory-Verhalten,
-  kleiner Scope) oder policy-getriebene Projekt-Buckets im selben Zug
-  (Use-Case-/Policy-Resolution-Umbau, deutlich größer)?
-- **§8.4 Release-Zuschnitt**: eigener Minor-Release (nimmt den wartenden
-  Cutover aus `[Unreleased]` mit) + Lastenheft-Patch mit neuer RAK-Gruppe
-  analog `0.23.0` (RAK-126..130)?
-- **§8.5 ADR ja/nein**: Empfehlung **nein** — erweitert das bestehende
+  ist real: (i) optimiert das Schutzgut pro Limiter, erzeugt aber genau
+  die heterogene Fail-Mode-Landschaft (ein Redis, drei Limiter, gemischte
+  Modi), vor der der bestehende Kommentar warnt; (ii) hält die Landschaft
+  homogen und opfert dafür die Schutzgut-Differenzierung.
+  **Entschieden: (i)** — die Schutzgut-Differenzierung wiegt schwerer;
+  die gemischten Fail-Modi sind bewusst in Kauf genommen und werden in
+  §4.3 und der Operator-Doku explizit dokumentiert.
+- **§8.2 ENV-Name/Default**: **Entschieden:
+  `MTRACE_RATE_LIMIT_BACKEND=memory|redis`**, Default `memory` (kein
+  `disabled`: der Ingest-Limiter ist heute immer an, das bleibt) —
+  konsistent mit der bestehenden `MTRACE_RATE_LIMIT_*`-Familie
+  (Capacity/Refill), die der Operator ohnehin zusammen konfiguriert.
+  Alternative `MTRACE_INGEST_RATE_LIMITER` (Selektor-Konvention
+  `MTRACE_ORIGIN_RATE_LIMITER` / `MTRACE_AUTH_ISSUANCE_LIMITER`)
+  verworfen.
+- **§8.3 Per-Projekt-Buckets** (RAK-74/F-113-Anschluss): **Entschieden:
+  uniforme ENV-Caps bleiben** (Parität zum heutigen In-Memory-Verhalten,
+  kleiner Scope); policy-getriebene Projekt-Buckets
+  (Use-Case-/Policy-Resolution-Umbau, deutlich größer) bleiben
+  RAK-74-Folge-Scope.
+- **§8.4 Release-Zuschnitt**: **Entschieden: eigener Minor-Release
+  `0.25.0`** (nimmt den wartenden Cutover aus `[Unreleased]` mit) +
+  Lastenheft-Patch mit neuer RAK-Gruppe analog `0.23.0` (RAK-126..130).
+- **§8.5 ADR ja/nein**: **Entschieden: nein** — erweitert das bestehende
   Redis-Ops-Muster (ADR-0005, RAK-88/90) port-erhaltend auf einen weiteren
-  Adapter; Entscheidung + Vorbehalte leben im Plan und in R-26. Alternativ
-  ein kurzer ADR „Ingest-Limiter-Backend", falls die Hot-Path-Abhängigkeit
-  ADR-würdig erscheint.
+  Adapter; Entscheidung + Vorbehalte leben im Plan und in R-26, die
+  RAK-Gruppe (§8.4) macht das Zielbild normativ.
