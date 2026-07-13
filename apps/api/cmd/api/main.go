@@ -68,6 +68,8 @@ const (
 	envAuthIssuanceFailOpen  = "MTRACE_AUTH_ISSUANCE_FAIL_OPEN"
 	envRateLimitCapacity     = "MTRACE_RATE_LIMIT_CAPACITY"
 	envRateLimitRefill       = "MTRACE_RATE_LIMIT_REFILL"
+	envRateLimitBackend      = "MTRACE_RATE_LIMIT_BACKEND"
+	envRateLimitFailClosed   = "MTRACE_RATE_LIMIT_FAIL_CLOSED"
 )
 
 // Auth-/Token-Lifecycle Default-Limits (RAK-72). Ein
@@ -302,6 +304,79 @@ func parseIngestRateLimit(logger *slog.Logger) (int, float64) {
 	return capacity, refill
 }
 
+// rateLimitFailClosedOptIn liest `MTRACE_RATE_LIMIT_FAIL_CLOSED` und
+// akzeptiert nur explizit-truthy Werte. Default ist fail-open auf den
+// lokalen In-Memory-Fallback (s. buildIngestRateLimiter).
+func rateLimitFailClosedOptIn() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(envRateLimitFailClosed))) {
+	case "1", "true", "yes":
+		return true
+	default:
+		return false
+	}
+}
+
+// buildIngestRateLimiter (R-26 b) wählt das Backend des Ingest-Rate-
+// Limiters per ENV-Selektor `MTRACE_RATE_LIMIT_BACKEND`:
+//   - leer / `memory` (Default): In-Process-Token-Bucket pro Replica —
+//     unverändertes Verhalten. Über N Replicas ist die effektive
+//     Per-Projekt-Decke damit N × Capacity (gemessen: budgets.md §8).
+//   - `redis`: shared Token-Bucket auf dem gemeinsamen Redis-Server
+//     (derselbe `MTRACE_REDIS_*`-ENV-Block wie Issuance-/Origin-Limiter,
+//     eigener Key-Prefix `mtrace:ingest`) — EIN Per-Projekt-Budget über
+//     alle Replicas. Fail-Mode default **fail-open** auf den lokalen
+//     Memory-Fallback: BEWUSST anders als der geteilte fail-closed-
+//     Schalter der Auth-Limiter (s. buildOriginRateLimiter) — Schutzgut
+//     ist hier Telemetrie-Verfügbarkeit, nicht Auth-Flutung; die
+//     Degradation entspricht exakt dem Verhalten vor R-26 b. Striktes
+//     Verhalten opt-in via `MTRACE_RATE_LIMIT_FAIL_CLOSED=1` (Outage →
+//     429). Die daraus möglichen gemischten Fail-Modi auf demselben
+//     Redis sind Owner-entschieden und operator-dokumentiert.
+//   - `sqlite`: NICHT unterstützt — ein Hot-Path-Bucket über Hosts
+//     hinweg braucht ein Network-Backend; SQLite via Shared-Volume ist
+//     nicht Multi-Host-tauglich (siehe Backend-Strategie).
+//   - `memcached`: Folge-Item gemeinsam mit Issuance-/Origin-Limiter,
+//     falls Operator-Bedarf nach Memcached entsteht.
+func buildIngestRateLimiter(logger *slog.Logger) (driven.RateLimiter, error) {
+	capacity, refill := parseIngestRateLimit(logger)
+	backend := strings.ToLower(strings.TrimSpace(os.Getenv(envRateLimitBackend)))
+	switch backend {
+	case "", "memory":
+		return ratelimit.NewTokenBucketRateLimiter(capacity, refill, time.Now), nil
+	case "redis":
+		client, err := buildRedisClient()
+		if err != nil {
+			return nil, fmt.Errorf("%s=redis: %w", envRateLimitBackend, err)
+		}
+		failClosed := rateLimitFailClosedOptIn()
+		logger.Info("ingest rate limiter active", "backend", "redis",
+			"capacity", capacity,
+			"refill_per_second", refill,
+			"fail_mode", failModeLabel(!failClosed),
+		)
+		return ratelimit.NewRedisTokenBucketRateLimiter(client, ratelimit.RedisTokenBucketConfig{
+			Capacity:        capacity,
+			RefillPerSecond: refill,
+			FailClosed:      failClosed,
+		}, logger)
+	case "sqlite":
+		return nil, fmt.Errorf(
+			"%s=sqlite is not supported (a shared ingest bucket is not Multi-Host-safe on shared SQLite volumes)",
+			envRateLimitBackend,
+		)
+	case "memcached":
+		return nil, fmt.Errorf(
+			"%s=memcached is a follow-up item — gets delivered jointly with the issuance-/origin-limiter in a future tranche to avoid backend fragmentation",
+			envRateLimitBackend,
+		)
+	default:
+		return nil, fmt.Errorf(
+			"%s=%q is not supported (valid: memory|redis; memcached is a follow-up item)",
+			envRateLimitBackend, backend,
+		)
+	}
+}
+
 // buildHandler wirt die driven Adapter (Auth, Rate-Limit, Metrics,
 // Telemetry, Analyzer) mit den persistierten Repos zusammen, baut
 // die drei Use Cases und liefert den fertig konfigurierten HTTP-
@@ -349,8 +424,10 @@ func buildHandler(
 		projectTokenRepo = persist.projectToken
 		resolver = auth.NewRotatingProjectResolver(projectTokenRepo, staticResolver, staticResolver)
 	}
-	rlCapacity, rlRefill := parseIngestRateLimit(logger)
-	limiter := ratelimit.NewTokenBucketRateLimiter(rlCapacity, rlRefill, time.Now)
+	limiter, err := buildIngestRateLimiter(logger)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("ingest rate limiter init: %w", err)
+	}
 	publisher := metrics.NewPrometheusPublisher(metrics.WithActiveSessionsFunc(activeSessionsGauge(persist.sessions, logger)))
 	analyzer := newAnalyzer(logger)
 

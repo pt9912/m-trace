@@ -1,10 +1,29 @@
 # Implementation Plan — `0.25.0` Repliken-übergreifend fairer Ingest-Limiter (R-26 b)
 
-> **Status**: **Gefirmt (2026-07-13, Owner-Review)** — die §8-Fragen sind
+> **Status**: **Gefirmt (2026-07-13, Owner-Review); Tranche 1 GEBAUT
+> (2026-07-13)** — die §8-Fragen sind
 > entschieden (s. §8). Die Versionsnummer `0.25.0` ist bestätigt (§8.4):
 > der Release nimmt den bereits gelieferten Cutover
 > ([`plan-0.24.0`](plan-0.24.0-sqlite-postgres-cutover.md),
 > CHANGELOG `[Unreleased]`) mit.
+>
+> **Bau-Amendment 2026-07-13 (T1).** `RedisTokenBucketRateLimiter`
+> (`apps/api/adapters/driven/ratelimit/redis_token_bucket.go`) gemäß §4.1:
+> EIN Lua-Script (n-Token, bis zu 3 Buckets, check-then-debit
+> all-or-nothing, Deny persistiert nur den Refill-Stand), elapsed-Clamp +
+> **monotones `last_at`** (`max(stored, now)`), Origin-Hash
+> (SHA-256/hex, 32 Zeichen); EVALSHA→EVAL-Fallback. Fail-open-to-memory
+> Default + `MTRACE_RATE_LIMIT_FAIL_CLOSED`-Opt-in (§8.1), Degradations-
+> Ein-/Austritt je einmal WARN (§4.5); abgebrochener Context wird als
+> Outage behandelt (Port kennt nur `error`; `ctx.Err()` würde an der
+> Call-Site als rate-limited gezählt und als 500 enden). Wiring
+> `buildIngestRateLimiter` + Boot-Validation (§4.2, `sqlite`/`memcached`
+> explizit abgelehnt); Default `memory` byte-identisch (kein neuer
+> Log-Output auf dem Default-Pfad). **10 miniredis-Tests grün** inkl.
+> Cross-Instance-Sharing, **Skew-Test** (versetzte Uhren, exakt Capacity
+> — keine Refill-Inflation) und Outage-Recovery (deckt zugleich den
+> NOSCRIPT-Pfad). ENV-Doku als `docs/user/auth.md` §5.10 (inkl. der
+> dokumentationspflichtigen gemischten Fail-Modi, §8.1).
 >
 > **Bezug**: **R-26 b** in [`risks-backlog.md`](risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in

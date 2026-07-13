@@ -822,6 +822,48 @@ müssen den Origin-Limiter deaktiviert lassen (Default).
 (opt-in). Drei aufeinanderfolgende Token-Aufrufe → erwartete
 201/201/429 mit `origin_rate_limited`-Body.
 
+### 5.10 Ingest-Rate-Limiter-Backend (`R-26`)
+
+Der Ingest-Pfad (`POST /api/playback-events`) erzwingt ein
+Token-Bucket-Budget über drei unabhängige Dimensionen (`project_id`,
+`client_ip`, `Origin`) — **batch-weise, all-or-nothing** (ein 429
+verbraucht in keiner Dimension Tokens). Kapazität und Refill gelten
+uniform für alle Projekte:
+
+| ENV | Wirkung |
+|---|---|
+| `MTRACE_RATE_LIMIT_CAPACITY` | Bucket-Kapazität je Dimension (Default 100). |
+| `MTRACE_RATE_LIMIT_REFILL` | Refill in Token/s (Default 100). |
+| `MTRACE_RATE_LIMIT_BACKEND` | Backend-Selektor, siehe Tabelle unten (Default `memory`). |
+| `MTRACE_RATE_LIMIT_FAIL_CLOSED` | Nur `redis`: `1`/`true`/`yes` schaltet auf fail-closed (Redis-Outage → 429 statt lokalem Fallback). |
+
+**ENV-Selektor** `MTRACE_RATE_LIMIT_BACKEND`:
+
+| Wert | Verhalten |
+|---|---|
+| `memory` (Default) / leer | In-Process-Token-Bucket **pro Replica** — unverändertes Standard-Verhalten. Über N Replicas ist die effektive Per-Projekt-Decke `N × Capacity`; für Single-Replica-Setups korrekt. |
+| `redis` | Shared Token-Bucket auf dem gemeinsamen Redis-Server (`R-26`): **ein** Per-Projekt-Budget über alle Replicas — repliken-übergreifend fair. Gleicher `MTRACE_REDIS_ADDR`/`_AUTH`/`_DB`-Block wie Issuance-/Origin-Limiter, eigener Key-Prefix `mtrace:ingest` (der client-kontrollierte `Origin`-Header geht nur gehasht in den Key). Atomare Lua-`EVAL`-Operation über bis zu drei Buckets, n Tokens pro Batch. |
+| `sqlite` | **nicht unterstützt** — ein Hot-Path-Bucket über Hosts hinweg braucht ein Network-Backend; SQLite-Volume ist nicht Multi-Host-tauglich. |
+| `memcached` | Folge-Item gemeinsam mit Issuance-/Origin-Limiter, falls Operator-Bedarf nach Memcached entsteht. |
+
+**Fail-Mode — bewusst anders als die Auth-Limiter (§5.4/§5.9):**
+Default ist **fail-open auf einen lokalen In-Memory-Fallback**. Bei
+Redis-Outage bleibt der Ingest verfügbar und limitiert (pro Replica);
+nur die repliken-übergreifende Fairness pausiert, bis Redis zurück ist
+— das Schutzgut ist hier Telemetrie-Verfügbarkeit, nicht Auth-Flutung.
+Die Auth-Limiter defaulten fail-closed und teilen ihren Schalter
+(`MTRACE_AUTH_ISSUANCE_FAIL_OPEN`, §5.4); der Ingest-Limiter nutzt
+diesen Schalter **nicht**. Wer `MTRACE_RATE_LIMIT_BACKEND=redis` fährt,
+betreibt damit ggf. **gemischte Fail-Modi auf demselben Redis-Server**
+— eine bewusste Entscheidung zugunsten der Schutzgut-Differenzierung;
+ein strikt homogen fail-closed Setup erreicht man mit
+`MTRACE_RATE_LIMIT_FAIL_CLOSED=1`. Ein- und Austritt der Degradation
+werden je einmal als WARN geloggt (kein Log-Flood auf dem Hot-Path).
+
+**Reject-Verhalten** bei Limit-Verletzung unverändert: `429 Too Many
+Requests` mit `Retry-After: 1`; abgelehnte Events zählen in
+`mtrace_rate_limited_events_total`.
+
 ---
 
 ## 6. Datenschutz / GDPR
