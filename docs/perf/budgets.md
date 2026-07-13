@@ -238,7 +238,8 @@ Setup identisch §8):**
 | **Throttled, shared Redis-Limiter** | **107 ev/s** | **102 ev/s** | **0,96×** | **EIN Per-Projekt-Budget über alle Replicas** |
 
 Noisy-Neighbor **über den LB** (3 Lab-Projekte; Noisy 400 ev/s offered,
-Victims je 50 ev/s, 60 s): Victims **7240/7240 akzeptiert, 0× 429**;
+Victims je 50 ev/s nominal = **60 ev/s effektiv** — k6 rundet auf ganze
+Batches auf, `ceil(50/20)×20`; 60 s): Victims **7240/7240 akzeptiert, 0× 429**;
 der Noisy wurde auf sein Budget gedrosselt (**17 920× 429**);
 `persisted == accepted == distinct == 13 340` — kein Verlust, keine
 Duplikate.

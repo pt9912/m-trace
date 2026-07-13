@@ -30,6 +30,10 @@ services:
   # Shared Ingest-Limiter-Backend (R-26 b): nur vom Fairness-Modus des
   # Scale-out-Lasttests genutzt (MTRACE_RATE_LIMIT_BACKEND=redis) — der
   # R-26-c-Durchsatzpfad läuft weiter ohne Redis (Default memory).
+  # BEWUSST keine depends_on-Kante von den api-Replicas hierher: die
+  # Nicht-Fairness-Pfade (Boot-Smoke, R-26-c-Lasttest) nutzen Redis nie
+  # und sollen nicht an einem Redis-Pull/-Healthcheck scheitern können;
+  # der Fairness-Smoke wartet selbst auf redis-cli ping.
   redis:
     image: redis:7-alpine
     healthcheck:
@@ -45,8 +49,6 @@ services:
     image: m-trace-api:0.1.2
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
@@ -78,8 +80,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
       MTRACE_PERSISTENCE: "postgres"
@@ -99,6 +99,9 @@ services:
       - api-1
       - api-2
     volumes:
-      - ./scripts/scaleout-nginx.conf:/etc/nginx/nginx.conf:ro
+      # Default: korrektes strip+append-XFF. Der R-26-b-Fairness-Modus
+      # mountet stattdessen die Pass-through-Variante (SCALEOUT_NGINX_CONF
+      # → scripts/scaleout-nginx-fairness.conf, gesetzt vom Smoke).
+      - "${SCALEOUT_NGINX_CONF:-./scripts/scaleout-nginx.conf}:/etc/nginx/nginx.conf:ro"
     ports:
       - "${SCALEOUT_LB_PORT:-8088}:8080"

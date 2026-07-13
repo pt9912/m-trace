@@ -373,21 +373,32 @@ func seedLabProjects(projectConfigs map[string]auth.ProjectConfig, logger *slog.
 			AllowedOrigins: append([]string(nil), demoOrigins...),
 		}
 	}
-	logger.Info("multi-tenant lab projects seeded",
-		"count", n, "ids", fmt.Sprintf("lab-1..lab-%d", n))
+	// Laut warnen (Parität zu MTRACE_AUTH_LAB_DEFAULT): die Tokens sind
+	// vorhersagbar und gelten über baseProjects auch auf dem
+	// Auth-Session-/Policy-Pfad — NICHT für Produktion.
+	logger.Warn("multi-tenant lab projects seeded — predictable lab tokens, NOT for production",
+		"count", n, "ids", fmt.Sprintf("lab-1..lab-%d", n),
+		"env", envLabProjects)
 }
 
-// rateLimitFailClosedOptIn liest `MTRACE_RATE_LIMIT_FAIL_CLOSED` und
-// akzeptiert nur explizit-truthy Werte. Default ist fail-open auf den
-// lokalen In-Memory-Fallback (s. buildIngestRateLimiter).
-func rateLimitFailClosedOptIn() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(envRateLimitFailClosed))) {
+// envTruthyOptIn ist DIE Truthy-Auswertung für Opt-in-ENV-Flags:
+// nur explizit "1"/"true"/"yes" (case-insensitiv) schalten ein. Vor
+// diesem Helper existierte der Switch als vier identische Kopien —
+// eine Erweiterung der akzeptierten Tokens hätte die Flags
+// inkonsistent gemacht (z. B. "on" wirkt bei einem, nicht beim anderen).
+func envTruthyOptIn(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
 	case "1", "true", "yes":
 		return true
 	default:
 		return false
 	}
 }
+
+// rateLimitFailClosedOptIn liest `MTRACE_RATE_LIMIT_FAIL_CLOSED` und
+// akzeptiert nur explizit-truthy Werte. Default ist fail-open auf den
+// lokalen In-Memory-Fallback (s. buildIngestRateLimiter).
+func rateLimitFailClosedOptIn() bool { return envTruthyOptIn(envRateLimitFailClosed) }
 
 // buildIngestRateLimiter (R-26 b) wählt das Backend des Ingest-Rate-
 // Limiters per ENV-Selektor `MTRACE_RATE_LIMIT_BACKEND`:
@@ -1186,14 +1197,7 @@ func buildRedisClient() (*redis.Client, error) {
 
 // issuanceFailOpenOptIn liest `MTRACE_AUTH_ISSUANCE_FAIL_OPEN` und
 // akzeptiert nur explizit-truthy Werte. Default ist fail-closed.
-func issuanceFailOpenOptIn() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(envAuthIssuanceFailOpen))) {
-	case "1", "true", "yes":
-		return true
-	default:
-		return false
-	}
-}
+func issuanceFailOpenOptIn() bool { return envTruthyOptIn(envAuthIssuanceFailOpen) }
 
 func failModeLabel(failOpen bool) string {
 	if failOpen {
@@ -1283,23 +1287,9 @@ func buildOriginRateLimiter(logger *slog.Logger) (driven.OriginRateLimiter, erro
 // HTTP-Adapter nutzt `r.RemoteAddr` als client_ip-Quelle (Default).
 // Operator muss XFF explizit aktivieren, sonst trifft der Origin-
 // Limiter den Reverse-Proxy statt den Client.
-func trustForwardedForOptIn() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(envTrustForwardedFor))) {
-	case "1", "true", "yes":
-		return true
-	default:
-		return false
-	}
-}
+func trustForwardedForOptIn() bool { return envTruthyOptIn(envTrustForwardedFor) }
 
 // labDefaultOptIn liest `MTRACE_AUTH_LAB_DEFAULT` und akzeptiert nur
 // die explizit truthy Werte `1`/`true`/`yes`. Alles andere (inklusive
 // fehlend) gilt als „nicht opt-in" — der Aufrufer hard-failt dann.
-func labDefaultOptIn() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(envAuthLabDefault))) {
-	case "1", "true", "yes":
-		return true
-	default:
-		return false
-	}
-}
+func labDefaultOptIn() bool { return envTruthyOptIn(envAuthLabDefault) }

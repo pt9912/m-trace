@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
@@ -265,6 +266,12 @@ func TestPlaybackClientIP_XFFTrustBoundary(t *testing.T) {
 		{"untrusted ignores XFF", false, "203.0.113.7", "10.0.0.9"},
 		{"trusted uses last XFF hop", true, "198.51.100.2, 203.0.113.7", "203.0.113.7"},
 		{"trusted without XFF falls back to RemoteAddr", true, "", "10.0.0.9"},
+		// Validierungs-Kontrakt: die XFF-abgeleitete IP landet raw in
+		// Redis-Bucket-Keys — Nicht-IP-Werte (Spoofing/kaputter Proxy)
+		// dürfen dort NIE ankommen und fallen auf RemoteAddr zurück.
+		{"trusted rejects non-IP XFF", true, "evil" + strings.Repeat("x", 512), "10.0.0.9"},
+		{"trusted rejects host:port XFF", true, "203.0.113.7:1234", "10.0.0.9"},
+		{"trusted canonicalizes IPv6", true, "2001:DB8:0:0:0:0:0:1", "2001:db8::1"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

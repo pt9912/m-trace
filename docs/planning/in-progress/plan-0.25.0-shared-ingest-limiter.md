@@ -88,6 +88,39 @@
 > als budgets.md **§9** (inkl. Konfundierungs-Voraussetzung + Redis-
 > Attributions-Vorbehalt).
 >
+> **Review-Amendment 2026-07-13 — T1–T3 code-reviewt (high), 21 Findings
+> bestätigt + gefixt.** 8 Finder-Winkel + 1-Vote-Verify über den
+> T1–T3-Diff; 1 Kandidat widerlegt. Korrektheit/Security gefixt:
+> XFF-abgeleitete `client_ip` wird jetzt als IP **validiert**
+> (`net.ParseIP` in `xffClientIP` — vorher unbounded client-
+> kontrollierbarer Redis-Key auf dem Trust-Pfad); Context-Abbrüche
+> zählen nicht mehr als Outage (kein False-Degraded/WARN-Rauschen, das
+> die „log once"-Kante eines echten Ausfalls verbrauchen könnte; eigener
+> Vertragstest); Lua auf **Unix-Millis** (Nanos überschritten Luas
+> exakten Double-Bereich 2^53, tostring quantisierte auf ~100 µs) +
+> nil-Guard für partielle Hashes + Deny-Pfad schreibt nicht mehr (nur
+> EXPIRE); api-Replicas hängen nicht mehr per `depends_on` am Redis
+> (Nicht-Fairness-Pfade booten wieder redis-frei; der Fairness-Smoke
+> wartet selbst auf `redis-cli ping`); XFF-Pass-through-nginx in
+> **separate Lab-Conf** ausgelagert (`scaleout-nginx-fairness.conf` via
+> `SCALEOUT_NGINX_CONF`; Default-LB strippt+appendet wieder korrekt);
+> Lab-Seeding warnt laut (`logger.Warn`, „NOT for production" — die
+> vorhersagbaren Tokens gelten via baseProjects auch auf dem
+> Auth-Session-Pfad); k6: `LOAD_PROFILE=open`+`MT_PROJECTS` bricht hart
+> ab, `dropped_iterations`-Threshold auch im MT-Modus, Batch-Rundung der
+> Raten dokumentiert + Guard (effektive Victim-Rate < Capacity; Default
+> 50 nominal = 60 effektiv — budgets.md §9 korrigiert); Scaleout-MT-Gate
+> um die fehlende Victim-Accept-Quote ergänzt (war gegen smoke-load.sh
+> gedriftet). Cleanup: geteiltes Paket `adapters/driven/redisutil`
+> (EVALSHA→EVAL-Fallback, NOSCRIPT-Erkennung, Fail-Mode-Label — vorher
+> 2–3 Kopien über auth/ratelimit), ein `envTruthyOptIn` statt vier
+> identischer Switches, eine geteilte `requestClientIP`-Auflösung für
+> Ingest- und Origin-Limiter (Parser konsolidiert), Lua-Loops gefaltet,
+> toter `fallback == nil`-Zweig raus, `markRecovered` mit Load-Guard
+> (kein gelocktes CAS pro Hot-Path-Request), tote/duplizierte
+> Skript-Zeilen bereinigt, k6-`arrivalScenario`-Builder statt 3×
+> handgeschriebener Szenario-Form.
+>
 > **Bezug**: **R-26 b** in [`risks-backlog.md`](risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in
 > [`docs/perf/budgets.md`](../../perf/budgets.md) §8 (throttled 2,01× über 2

@@ -830,7 +830,10 @@ Token-Bucket-Budget über drei unabhängige Dimensionen (`project_id`,
 verbraucht in keiner Dimension Tokens). Die `client_ip`-Dimension folgt
 derselben XFF-Trust-Boundary wie der Origin-/IP-Limiter (§5.9,
 `MTRACE_TRUST_FORWARDED_FOR`): mit Opt-in zählt das letzte
-`X-Forwarded-For`-Element. Hinter LB/Reverse-Proxy ist das nötig —
+`X-Forwarded-For`-Element — **validiert als IP** (Nicht-IP-Werte fallen
+auf `RemoteAddr` zurück; der Wert landet raw in Redis-Bucket-Keys und
+darf deshalb nie ein unbegrenzter client-kontrollierter String sein).
+Hinter LB/Reverse-Proxy ist das nötig —
 sonst ist `RemoteAddr` für alle Clients die Proxy-IP und die
 `client_ip`-Dimension wirkt als **ein** geteilter Bucket (globale statt
 per-Client-Drossel). Kapazität und Refill gelten uniform für alle

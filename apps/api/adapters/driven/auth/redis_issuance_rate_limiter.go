@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/redisutil"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
@@ -214,20 +214,9 @@ func (l *RedisIssuanceRateLimiter) Allow(ctx context.Context, projectID string, 
 }
 
 // evalScript ruft das Lua-Script per EVALSHA und fällt bei
-// `NOSCRIPT`-Error auf `EVAL` zurück.
+// `NOSCRIPT`-Error auf `EVAL` zurück (geteilte Logik: redisutil).
 func (l *RedisIssuanceRateLimiter) evalScript(ctx context.Context, keys []string, args []any) (any, error) {
-	if l.scriptSHA != "" {
-		res, err := l.client.EvalSha(ctx, l.scriptSHA, keys, args...).Result()
-		if err == nil {
-			return res, nil
-		}
-		// Bei NOSCRIPT-Fehler: Script ist aus dem Redis-Cache gefallen,
-		// EVAL re-uploaded es implizit.
-		if !isNoScriptError(err) {
-			return nil, err
-		}
-	}
-	return l.client.Eval(ctx, redisIssuanceLuaScript, keys, args...).Result()
+	return redisutil.Eval(ctx, l.client, l.scriptSHA, redisIssuanceLuaScript, keys, args)
 }
 
 // handleRedisError implementiert den Fail-Mode-Vertrag.
@@ -235,7 +224,7 @@ func (l *RedisIssuanceRateLimiter) handleRedisError(ctx context.Context, project
 	if l.logger != nil {
 		l.logger.Warn("redis-issuance-limiter outage",
 			"error", err.Error(),
-			"fail_mode", failModeName(l.failOpen),
+			"fail_mode", redisutil.FailModeLabel(l.failOpen),
 		)
 	}
 	if l.failOpen && l.fallback != nil {
@@ -251,19 +240,6 @@ func (l *RedisIssuanceRateLimiter) resolveProjectConfig(override domain.RateLimi
 		return l.projectCfg
 	}
 	return bucketConfig{Capacity: override.Capacity, RefillPerSecond: override.RefillPerSecond}
-}
-
-// isNoScriptError erkennt den Redis-`NOSCRIPT`-Error.
-// go-redis liefert das als Error mit `NOSCRIPT`-Prefix.
-func isNoScriptError(err error) bool {
-	return err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT")
-}
-
-func failModeName(failOpen bool) string {
-	if failOpen {
-		return "fail-open (local memory fallback)"
-	}
-	return "fail-closed (deny on outage)"
 }
 
 // Compile-time check.

@@ -51,6 +51,7 @@ MT_PROJECTS="${MT_PROJECTS:-3}"
 MT_NOISY_EVENT_RATE="${MT_NOISY_EVENT_RATE:-400}"
 MT_VICTIM_EVENT_RATE="${MT_VICTIM_EVENT_RATE:-50}"
 P95_BUDGET_MS="${P95_BUDGET_MS:-1000}"
+MAX_ERROR_PCT="${MAX_ERROR_PCT:-5}"
 
 if [ "$FAIRNESS" = "1" ]; then
   # Shared Limiter + Multi-Tenant-Seeding + XFF-Trust in den Stack
@@ -60,7 +61,19 @@ if [ "$FAIRNESS" = "1" ]; then
   export MTRACE_REDIS_ADDR=redis:6379
   export MTRACE_LAB_PROJECTS="$MT_PROJECTS"
   export MTRACE_TRUST_FORWARDED_FOR=1
+  # NUR der Fairness-Modus bekommt den XFF-Pass-through-nginx (synthetische
+  # per-Projekt-Client-IPs); die Default-Conf strippt+appendet korrekt und
+  # bleibt frei vom Spoofing-Footgun.
+  export SCALEOUT_NGINX_CONF="./scripts/scaleout-nginx-fairness.conf"
   unset MTRACE_RATE_LIMIT_CAPACITY MTRACE_RATE_LIMIT_REFILL 2>/dev/null || true
+  # k6 rundet Raten auf ganze Batches AUF — die effektive Victim-Rate muss
+  # unter der Default-Capacity (100/s) bleiben (sonst Rundungs-Artefakt
+  # statt Fairness-Signal im 0x429-Gate).
+  mt_victim_offered=$(( (MT_VICTIM_EVENT_RATE + BATCH_SIZE - 1) / BATCH_SIZE * BATCH_SIZE ))
+  if [ "$mt_victim_offered" -ge 100 ]; then
+    echo "[scaleout-load] MT_VICTIM_EVENT_RATE=${MT_VICTIM_EVENT_RATE} → effektiv ${mt_victim_offered} ev/s >= Capacity 100/s (batch-aufgerundet)" >&2
+    exit 2
+  fi
 fi
 
 cleanup() { ${COMPOSE} -f "${FILE}" down -v --remove-orphans >/dev/null 2>&1 || true; }
@@ -85,6 +98,20 @@ wait_health() {
 }
 wait_health "http://localhost:${LB_PORT}/api/health" "LB"
 wait_health "http://localhost:${API1_PORT}/api/health" "api-1"
+if [ "$FAIRNESS" = "1" ]; then
+  # Redis muss bereit sein, BEVOR gemessen wird: fail-open würde einen
+  # nicht erreichbaren Redis still auf per-Replica-Fallback degradieren
+  # und Phase A/B misst dann den falschen Limiter (Gate schlüge zwar an,
+  # aber als irreführendes 2x statt als klarer Setup-Fehler).
+  redis_ok=0
+  for _ in $(seq 1 30); do
+    if ${COMPOSE} -f "${FILE}" exec -T redis redis-cli ping 2>/dev/null | grep -q PONG; then
+      redis_ok=1; break
+    fi
+    sleep 1
+  done
+  [ "${redis_ok}" -eq 1 ] || { echo "[scaleout-load] Redis nicht bereit (FAIRNESS-Modus)" >&2; exit 1; }
+fi
 
 psql_q() { ${COMPOSE} -f "${FILE}" exec -T postgres psql -U mtrace -d mtrace -tAc "$1" | tr -d '[:space:]'; }
 k6_count() { python3 -c "import json;m=json.load(open('$1'))['metrics'].get('$2',{}).get('values',{});print(int(m.get('count',0)))"; }
@@ -155,20 +182,24 @@ run_mt_phase() {
   echo "    victims: sent=${v_sent} accepted=${v_acc} rate_limited=${v_rl}; noisy rate_limited=${n_rl}" >&2
   echo "    accepted(202)=${accepted} persisted(psql)=${persisted} distinct=${distinct}" >&2
 
-  local fail=0
+  # Gates im run_phase-Stil (early-exit je Gate). Schwellen identisch zum
+  # Single-Instance-MT-Gate in smoke-load.sh — inkl. Victim-Accept-Quote,
+  # damit die beiden Fairness-Nachweise nicht auseinanderdriften (eine
+  # Victim-Degradation über schnelle 5xx erzeugt weder 429 noch p95-Bruch).
   [ "${v_sent}" -gt 0 ] || { echo "[scaleout-load] INCONCLUSIVE (C): keine Victim-Events (Setup?)" >&2; exit 3; }
   if [ "${v_rl}" != "0" ]; then
-    echo "[scaleout-load] FAIL (C): Victims sahen ${v_rl} rate-limited Events über den LB — Isolation verletzt" >&2; fail=1; fi
+    echo "[scaleout-load] FAIL (C): Victims sahen ${v_rl} rate-limited Events über den LB — Isolation verletzt" >&2; exit 1; fi
   if [ "${n_rl}" = "0" ]; then
-    echo "[scaleout-load] FAIL (C): Noisy wurde nie gedrosselt — Lauf misst keine Limiter-Kontention" >&2; fail=1; fi
+    echo "[scaleout-load] FAIL (C): Noisy wurde nie gedrosselt — Lauf misst keine Limiter-Kontention" >&2; exit 1; fi
+  if ! python3 -c "import sys; sys.exit(0 if ${v_acc} >= ${v_sent} * (100.0 - ${MAX_ERROR_PCT}) / 100.0 else 1)"; then
+    echo "[scaleout-load] FAIL (C): Victim-Accept-Quote $((100 * v_acc / v_sent))% < $((100 - MAX_ERROR_PCT))% (Degradation ohne 429?)" >&2; exit 1; fi
   if [ "${k6_rc}" -ne 0 ]; then
-    echo "[scaleout-load] FAIL (C): k6-Thresholds verletzt (exit=${k6_rc}: victim-429/victim-p95/noisy-429)" >&2; fail=1; fi
+    echo "[scaleout-load] FAIL (C): k6-Thresholds verletzt (exit=${k6_rc}: victim-429/victim-p95/noisy-429/dropped)" >&2; exit 1; fi
   if [ "${persisted}" != "${accepted}" ]; then
-    echo "[scaleout-load] FAIL (C): persisted ${persisted} != accepted ${accepted}" >&2; fail=1; fi
+    echo "[scaleout-load] FAIL (C): persisted ${persisted} != accepted ${accepted}" >&2; exit 1; fi
   if [ "${distinct}" != "${persisted}" ]; then
-    echo "[scaleout-load] FAIL (C): distinct ${distinct} != persisted ${persisted}" >&2; fail=1; fi
-  [ "${fail}" -eq 0 ] || exit 1
-  echo "    ✓ C: Victims isoliert (0x 429), Noisy gedrosselt (${n_rl}x 429), kein Verlust, 0 Dups" >&2
+    echo "[scaleout-load] FAIL (C): distinct ${distinct} != persisted ${persisted}" >&2; exit 1; fi
+  echo "    ✓ C: Victims isoliert (0x 429, Accept-Quote ok), Noisy gedrosselt (${n_rl}x 429), kein Verlust, 0 Dups" >&2
 }
 
 rate1="$(run_phase "http://localhost:${API1_PORT}" "sol1" "A(1 Replica)")"

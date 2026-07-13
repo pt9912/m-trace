@@ -57,12 +57,26 @@ func originRateLimitMiddleware(next http.Handler, limiter driven.OriginRateLimit
 // einen Empty-String — der Limiter mappt das auf `(true, nil)` (No-Op,
 // damit lokale Lab-Pfade ohne RemoteAddr nicht blockiert werden).
 func originLimiterKey(r *http.Request, trustXFF bool) string {
+	if ip := requestClientIP(r, trustXFF); ip != "" {
+		return "ip:" + ip
+	}
+	return ""
+}
+
+// requestClientIP ist DIE Client-IP-Auflösung für Rate-Limit-Zwecke —
+// geteilt zwischen dem Origin-/IP-Limiter-Key und der client_ip-
+// Dimension des Ingest-Limiters (R-26 b: hinter LB/Proxy ist RemoteAddr
+// die Proxy-IP — ohne XFF teilen sich dort alle Clients einen Bucket).
+// Mit trustXFF zählt das letzte XFF-Element, sonst (und als Fallback
+// bei fehlendem/ungültigem XFF) r.RemoteAddr. Liefert die nackte IP;
+// Aufrufer setzen ggf. ihren eigenen Key-Prefix.
+func requestClientIP(r *http.Request, trustXFF bool) string {
 	if trustXFF {
 		if ip := xffClientIP(r); ip != "" {
-			return "ip:" + ip
+			return ip
 		}
 	}
-	return clientIPFromRemoteAddr(r)
+	return clientIPFromRequest(r)
 }
 
 // xffClientIP liefert das **letzte** Element der `X-Forwarded-For`-
@@ -70,32 +84,31 @@ func originLimiterKey(r *http.Request, trustXFF bool) string {
 // direkt vor dem Server; bei genau einem Proxy die Client-IP) — oder
 // "" ohne/bei leerem Header. Nur hinter der Trust-Boundary
 // (MTRACE_TRUST_FORWARDED_FOR) verwenden: ohne vertrauten Proxy ist
-// der Header client-kontrolliert. Geteilt zwischen Origin-Limiter-Key
-// und der client_ip-Dimension des Ingest-Limiters (R-26 b: hinter
-// LB/Proxy ist RemoteAddr die Proxy-IP — ohne XFF teilen sich dort
-// alle Clients einen client_ip-Bucket).
+// der Header client-kontrolliert.
+//
+// Der Wert wird als IP VALIDIERT (net.ParseIP, kanonisiert): die
+// XFF-abgeleitete client_ip landet raw in Redis-Bucket-Keys
+// (mtrace:ingest:ip:<val>) — ohne Validierung wäre der Key hinter
+// einem nicht-sanitisierenden Proxy ein unbounded client-kontrollierter
+// String (Key-Länge/-Kardinalität auf dem geteilten Redis). Nicht-IP-
+// Werte fallen auf RemoteAddr zurück.
 func xffClientIP(r *http.Request) string {
 	xff := r.Header.Get("X-Forwarded-For")
 	if xff == "" {
 		return ""
 	}
 	parts := strings.Split(xff, ",")
-	return strings.TrimSpace(parts[len(parts)-1])
-}
-
-// clientIPFromRemoteAddr entkoppelt `host:port` aus `r.RemoteAddr`.
-// Bei `host`-only (Test-Server) wird der ganze Wert genommen. Bei
-// nicht-parsbarem RemoteAddr liefert die Funktion Empty-String.
-func clientIPFromRemoteAddr(r *http.Request) string {
-	raw := r.RemoteAddr
-	if raw == "" {
+	ip := net.ParseIP(strings.TrimSpace(parts[len(parts)-1]))
+	if ip == nil {
 		return ""
 	}
-	host, _, err := net.SplitHostPort(raw)
-	if err != nil {
-		// `r.RemoteAddr` kann in Tests auch ohne Port kommen.
-		host = raw
-	}
+	return ip.String()
+}
+
+// clientIPFromRemoteAddr ist der "ip:"-präfixte Origin-Limiter-Wrapper
+// um den geteilten RemoteAddr-Parser (clientIPFromRequest, handler.go).
+func clientIPFromRemoteAddr(r *http.Request) string {
+	host := clientIPFromRequest(r)
 	if host == "" {
 		return ""
 	}

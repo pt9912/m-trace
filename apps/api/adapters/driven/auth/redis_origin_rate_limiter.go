@@ -9,6 +9,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/redisutil"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
 
@@ -157,23 +158,14 @@ func (l *RedisOriginRateLimiter) Allow(ctx context.Context, key string) (bool, e
 }
 
 func (l *RedisOriginRateLimiter) evalScript(ctx context.Context, keys []string, args []any) (any, error) {
-	if l.scriptSHA != "" {
-		res, err := l.client.EvalSha(ctx, l.scriptSHA, keys, args...).Result()
-		if err == nil {
-			return res, nil
-		}
-		if !isNoScriptError(err) {
-			return nil, err
-		}
-	}
-	return l.client.Eval(ctx, redisOriginLuaScript, keys, args...).Result()
+	return redisutil.Eval(ctx, l.client, l.scriptSHA, redisOriginLuaScript, keys, args)
 }
 
 func (l *RedisOriginRateLimiter) handleRedisError(ctx context.Context, key string, err error) (bool, error) {
 	if l.logger != nil {
 		l.logger.Warn("redis-origin-limiter outage",
 			"error", err.Error(),
-			"fail_mode", failModeName(l.failOpen),
+			"fail_mode", redisutil.FailModeLabel(l.failOpen),
 		)
 	}
 	if l.failOpen && l.fallback != nil {

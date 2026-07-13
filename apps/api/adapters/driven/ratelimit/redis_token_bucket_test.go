@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -356,5 +357,52 @@ func TestRedisTokenBucket_OriginKeyHashed(t *testing.T) {
 	}
 	if suffix := strings.TrimPrefix(originKey, "mtrace:ingest:origin:"); len(suffix) != 32 {
 		t.Fatalf("origin key suffix must be a 32-hex-char hash, got %q", suffix)
+	}
+}
+
+// warnCountHandler zählt WARN-Records — Beleg für den „kein
+// False-Outage"-Vertrag des Degraded-Signals.
+type warnCountHandler struct{ warns *int32 }
+
+func (h warnCountHandler) Enabled(context.Context, slog.Level) bool { return true }
+func (h warnCountHandler) Handle(_ context.Context, r slog.Record) error {
+	if r.Level == slog.LevelWarn {
+		atomic.AddInt32(h.warns, 1)
+	}
+	return nil
+}
+func (h warnCountHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
+func (h warnCountHandler) WithGroup(string) slog.Handler      { return h }
+
+// TestRedisTokenBucket_ContextCancelIsNotAnOutage: Client-Abbrüche bei
+// GESUNDEM Redis dürfen weder Outage- noch Recovery-WARNs erzeugen —
+// sonst verbraucht Cancellation-Rauschen die „log once"-Kante eines
+// echten Ausfalls und das Degraded-Signal wird wertlos.
+func TestRedisTokenBucket_ContextCancelIsNotAnOutage(t *testing.T) {
+	t.Parallel()
+	_, client := startMiniredis(t)
+	clock := newFakeClock(testBase())
+	var warns int32
+	logger := slog.New(warnCountHandler{warns: &warns})
+	l, err := ratelimit.NewRedisTokenBucketRateLimiter(client, ratelimit.RedisTokenBucketConfig{
+		Capacity: 10, RefillPerSecond: 0, Now: clock.Now,
+	}, logger)
+	if err != nil {
+		t.Fatalf("limiter: %v", err)
+	}
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	key := driven.RateLimitKey{ProjectID: "cancel-noise"}
+
+	for i := 0; i < 3; i++ {
+		if err := l.Allow(canceled, key, 1); err != nil {
+			t.Fatalf("canceled ctx call %d: fallback must decide, got %v", i, err)
+		}
+	}
+	if err := l.Allow(context.Background(), key, 1); err != nil {
+		t.Fatalf("healthy call: %v", err)
+	}
+	if got := atomic.LoadInt32(&warns); got != 0 {
+		t.Fatalf("context cancellations produced %d WARN(s); want 0 (no false outage/recovery)", got)
 	}
 }

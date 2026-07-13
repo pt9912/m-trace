@@ -337,18 +337,13 @@ func (r *statusRecorder) statusCode() int {
 	return r.code
 }
 
-// clientIP liefert die client_ip-Rate-Limit-Dimension (F-110). Mit
-// aktiviertem XFF-Trust zählt — wie beim Origin-/IP-Limiter
-// (originLimiterKey) — das letzte XFF-Element (der vom vertrauten
-// Reverse-Proxy zuletzt angehängte Hop); ohne Opt-in bleibt es bei
-// r.RemoteAddr (Default, unverändert).
+// clientIP liefert die client_ip-Rate-Limit-Dimension (F-110) über die
+// geteilte Auflösung requestClientIP (origin_rate_limit.go) — dieselbe
+// Trust-Boundary und derselbe XFF-/RemoteAddr-Pfad wie beim
+// Origin-/IP-Limiter, damit beide Limiter denselben Client identisch
+// bucketieren.
 func (h *PlaybackEventsHandler) clientIP(r *http.Request) string {
-	if h.TrustForwardedFor {
-		if ip := xffClientIP(r); ip != "" {
-			return ip
-		}
-	}
-	return clientIPFromRequest(r)
+	return requestClientIP(r, h.TrustForwardedFor)
 }
 
 // clientIPFromRequest extrahiert die Client-Adresse aus r.RemoteAddr

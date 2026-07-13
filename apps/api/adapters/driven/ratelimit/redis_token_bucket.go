@@ -4,15 +4,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/pt9912/m-trace/apps/api/adapters/driven/redisutil"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 )
@@ -39,10 +40,12 @@ import (
 //   - fail-closed (opt-in, MTRACE_RATE_LIMIT_FAIL_CLOSED=1): Outage →
 //     Deny (`domain.ErrRateLimited`, HTTP 429) — nie ein 500.
 //
-// Ein abgebrochener Context wird wie eine Outage behandelt (Fallback bzw.
-// Deny) statt `ctx.Err()` durch den Port zu reichen: der Port kennt nur
-// `error`, und die Call-Site zählt jeden Fehler als rate-limited — ein
-// Context-Fehler würde dort Metriken verfälschen und als 500 enden.
+// Ein abgebrochener Context wird wie eine Outage ENTSCHIEDEN (Fallback
+// bzw. Deny), aber NICHT als Outage GEWERTET: `ctx.Err()` durch den Port
+// zu reichen würde an der Call-Site als rate-limited gezählt und als 500
+// enden — und ein Client-Disconnect darf weder das Degraded-Signal
+// flippen noch False-Outage-WARNs erzeugen (sonst verbraucht ein
+// Cancellation-Rauschen die „log once"-Kante eines echten Ausfalls).
 type RedisTokenBucketRateLimiter struct {
 	client     redis.UniversalClient
 	capacity   int
@@ -64,7 +67,11 @@ type RedisTokenBucketRateLimiter struct {
 //	ARGV[1] = n (Batch-Größe in Tokens)
 //	ARGV[2] = capacity
 //	ARGV[3] = refill per second
-//	ARGV[4] = now in unix-nano (Client-Uhr der Replica)
+//	ARGV[4] = now in unix-MILLIsekunden (Client-Uhr der Replica) —
+//	          bewusst nicht Nanosekunden wie in den Auth-Limiter-Scripts:
+//	          ~1.7e18 ns überschreitet Luas exakten Double-Bereich (2^53)
+//	          und tostring() (%.14g) quantisiert auf ~100µs; Millis
+//	          (~1.7e12) bleiben bis weit übers Jahr 2200 exakt.
 //	ARGV[5] = ttl seconds
 //
 // Uhren-Drift-Schutz (die Replicas liefern `now` von N Uhren): elapsed < 0
@@ -73,7 +80,16 @@ type RedisTokenBucketRateLimiter struct {
 // Replica `last_at` zurücksetzen und die vorgehende bekäme die Skew-Differenz
 // bei jedem Wechsel erneut als Refill gutgeschrieben (systematische
 // Inflation auf dem Hot-Path); so bleibt Skew ein einmaliger, begrenzter
-// Effekt. Der Deny-Pfad persistiert den Refill-Stand ohne Abbuchung.
+// Effekt. Ein partiell beschädigter Hash (tokens ODER last_at fehlt, z. B.
+// durch manuelle Ops-Eingriffe) wird als frischer Bucket behandelt statt
+// mit einem Lua-Fehler jeden Request auf dem Key zu killen.
+//
+// Der Deny-Pfad schreibt NICHT (nur EXPIRE auf bestehende Keys): der
+// Refill-Stand ist aus den unveränderten Werten rekonstruierbar, und das
+// erspart dem heißesten Pfad (saturierender Noisy) die HSET-Writes.
+// Unter Skew ist das zusätzlich konservativer als Schreiben (nie
+// inflationär). EXPIRE bleibt, damit ein dauersaturierter Bucket nicht
+// mitten im Ansturm expired und voll zurückkommt.
 //
 // Returns 1 (allowed) oder 0 (denied).
 const redisIngestLuaScript = `
@@ -85,35 +101,30 @@ local ttl = tonumber(ARGV[5])
 
 local tokens = {}
 local last = {}
+local allowed = 1
 for i, key in ipairs(KEYS) do
     local stored = redis.call('HMGET', key, 'tokens', 'last_at')
     local t = tonumber(stored[1])
     local l = tonumber(stored[2])
-    if t == nil then
+    if t == nil or l == nil then
         t = capacity
         l = now
     end
     if l < now then
-        t = math.min(capacity, t + ((now - l) / 1000000000.0) * refill)
+        t = math.min(capacity, t + ((now - l) / 1000.0) * refill)
         l = now
+    end
+    if t < n then
+        allowed = 0
     end
     tokens[i] = t
     last[i] = l
 end
 
-local allowed = 1
-for i = 1, #KEYS do
-    if tokens[i] < n then
-        allowed = 0
-    end
-end
-
 for i, key in ipairs(KEYS) do
-    local t = tokens[i]
     if allowed == 1 then
-        t = t - n
+        redis.call('HSET', key, 'tokens', tostring(tokens[i] - n), 'last_at', tostring(last[i]))
     end
-    redis.call('HSET', key, 'tokens', tostring(t), 'last_at', tostring(last[i]))
     redis.call('EXPIRE', key, ttl)
 end
 return allowed
@@ -180,16 +191,17 @@ func (l *RedisTokenBucketRateLimiter) Allow(ctx context.Context, key driven.Rate
 		return nil
 	}
 	if err := ctx.Err(); err != nil {
-		return l.handleRedisError(ctx, key, n, err)
+		// Client weg — Fail-Mode-Entscheidung ohne Outage-Wertung.
+		return l.failDecision(ctx, key, n)
 	}
 	args := []any{
 		n,
 		l.capacity,
 		l.refill,
-		strconv.FormatInt(l.now().UnixNano(), 10),
+		strconv.FormatInt(l.now().UnixMilli(), 10),
 		l.ttlSec,
 	}
-	res, err := l.evalScript(ctx, keys, args)
+	res, err := redisutil.Eval(ctx, l.client, l.scriptSHA, redisIngestLuaScript, keys, args)
 	if err != nil {
 		return l.handleRedisError(ctx, key, n, err)
 	}
@@ -205,29 +217,29 @@ func (l *RedisTokenBucketRateLimiter) Allow(ctx context.Context, key driven.Rate
 	return nil
 }
 
-func (l *RedisTokenBucketRateLimiter) evalScript(ctx context.Context, keys []string, args []any) (any, error) {
-	if l.scriptSHA != "" {
-		res, err := l.client.EvalSha(ctx, l.scriptSHA, keys, args...).Result()
-		if err == nil {
-			return res, nil
-		}
-		if !isNoScriptError(err) {
-			return nil, err
-		}
-	}
-	return l.client.Eval(ctx, redisIngestLuaScript, keys, args...).Result()
-}
-
 // handleRedisError ist der Outage-Pfad: einmaliges WARN beim Eintritt
 // (kein Flood — Allow läuft pro Batch-Request), dann Fail-Mode-Politik.
+// Context-Abbrüche (der Request ist tot, Redis ist gesund) zählen NICHT
+// als Outage — sie würden das Degraded-Signal verfälschen und die
+// „log once"-Kante eines echten Ausfalls verbrauchen.
 func (l *RedisTokenBucketRateLimiter) handleRedisError(ctx context.Context, key driven.RateLimitKey, n int, err error) error {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return l.failDecision(ctx, key, n)
+	}
 	if l.degraded.CompareAndSwap(false, true) && l.logger != nil {
 		l.logger.Warn("redis-ingest-limiter outage — degraded mode begins",
 			"error", err.Error(),
-			"fail_mode", ingestFailModeName(l.failClosed),
+			"fail_mode", redisutil.FailModeLabel(!l.failClosed),
 		)
 	}
-	if l.failClosed || l.fallback == nil {
+	return l.failDecision(ctx, key, n)
+}
+
+// failDecision wendet die Fail-Mode-Politik an: fail-closed → Deny,
+// fail-open → lokaler In-Memory-Fallback. Der Konstruktor garantiert
+// fallback != nil genau dann, wenn !failClosed.
+func (l *RedisTokenBucketRateLimiter) failDecision(ctx context.Context, key driven.RateLimitKey, n int) error {
+	if l.failClosed {
 		return domain.ErrRateLimited
 	}
 	return l.fallback.Allow(ctx, key, n)
@@ -236,19 +248,27 @@ func (l *RedisTokenBucketRateLimiter) handleRedisError(ctx context.Context, key 
 // markRecovered loggt das Ende einer Degradations-Phase genau einmal —
 // im fail-open-Modus war währenddessen die repliken-übergreifende
 // Fairness pausiert (per-Replica-Fallback), das soll nicht still enden.
+// Der Load-Guard hält den Hot-Path frei von gelockten RMW-Ops: das CAS
+// läuft nur, wenn tatsächlich eine Degradation zu beenden ist.
 func (l *RedisTokenBucketRateLimiter) markRecovered() {
+	if !l.degraded.Load() {
+		return
+	}
 	if l.degraded.CompareAndSwap(true, false) && l.logger != nil {
 		l.logger.Warn("redis-ingest-limiter recovered — degraded mode ends",
-			"fail_mode", ingestFailModeName(l.failClosed),
+			"fail_mode", redisutil.FailModeLabel(!l.failClosed),
 		)
 	}
 }
 
 // redisBucketKeys bildet die Redis-Keys der nicht-leeren Dimensionen.
-// project_id und client_ip sind längenbegrenzt/validiert und gehen raw
-// in den Key; NUR der Origin wird gehasht — der Header ist client-
-// kontrolliert und unbegrenzt lang, der Hash bounded die Key-Länge
-// (Namensgebung analog RAK-90 „Origin-Header-Hash").
+// project_id ist längenbegrenzt/validiert und geht raw in den Key;
+// client_ip ist auf dem XFF-Trust-Pfad nur deshalb bounded, weil
+// xffClientIP (HTTP-Adapter) ausschließlich per net.ParseIP validierte
+// Werte durchlässt — reißt diese Invariante, wird der Key unbounded
+// client-kontrollierbar. NUR der Origin wird gehasht: der Header ist
+// client-kontrolliert und unbegrenzt lang, der Hash bounded die
+// Key-Länge (Namensgebung analog RAK-90 „Origin-Header-Hash").
 func redisBucketKeys(prefix string, key driven.RateLimitKey) []string {
 	out := make([]string, 0, 3)
 	if key.ProjectID != "" {
@@ -262,17 +282,6 @@ func redisBucketKeys(prefix string, key driven.RateLimitKey) []string {
 		out = append(out, prefix+":origin:"+hex.EncodeToString(sum[:16]))
 	}
 	return out
-}
-
-func ingestFailModeName(failClosed bool) string {
-	if failClosed {
-		return "fail-closed (deny on outage)"
-	}
-	return "fail-open (local memory fallback)"
-}
-
-func isNoScriptError(err error) bool {
-	return err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT")
 }
 
 // Compile-time check.

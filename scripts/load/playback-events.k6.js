@@ -19,7 +19,13 @@
 // MT_PROJECTS >= 2 aktiviert das Multi-Tenant-Szenario (R-26 b):
 // Projekt lab-1 ist der Noisy Neighbor (MT_NOISY_EVENT_RATE ev/s,
 // deutlich ueber der Limiter-Capacity), lab-2..lab-N sind Victims
-// (MT_VICTIM_EVENT_RATE ev/s je Projekt, unter der Capacity). Die
+// (MT_VICTIM_EVENT_RATE ev/s je Projekt, unter der Capacity).
+// ACHTUNG Rundung: Raten werden auf ganze Batches AUFgerundet — die
+// effektiv angebotene Rate ist ceil(rate/BATCH_SIZE)*BATCH_SIZE ev/s
+// (Default 50 -> effektiv 60 bei Batch 20); die Victim-Rate muss auch
+// NACH Rundung unter der Limiter-Capacity liegen, sonst meldet das
+// 0x429-Gate einen Rundungs-Artefakt als Isolation-Failure. Nicht mit
+// LOAD_PROFILE=open kombinierbar (harter Abbruch statt Silent-Win). Die
 // Lab-Projekte muessen API-seitig via MTRACE_LAB_PROJECTS geseedet
 // sein. Jedes Projekt sendet eine eigene synthetische Client-IP als
 // X-Forwarded-For (10.99.0.<i>; das Lab setzt
@@ -63,60 +69,79 @@ const SESSION_PREFIX = __ENV.SESSION_PREFIX || "load-vu";
 // Korrektheits-Gates.
 const MT_PROJECTS = parseInt(__ENV.MT_PROJECTS || "0", 10);
 
+// arrivalScenario baut die geteilte constant-arrival-rate-Form: die
+// EVENT-Rate wird auf ganze Batches AUFgerundet — die effektiv
+// angebotene Rate ist also `ceil(rate/BATCH_SIZE)*BATCH_SIZE` ev/s
+// (z. B. 50 -> 60 bei Batch 20). Aufrufer, die gegen eine Capacity
+// messen, muessen mit der EFFEKTIVEN Rate rechnen (s. offeredRate).
+function offeredRate(eventRate) {
+  return Math.max(1, Math.ceil(eventRate / BATCH_SIZE)) * BATCH_SIZE;
+}
+function arrivalScenario(eventRate, duration, prealloc, maxVUs, extra) {
+  return Object.assign(
+    {
+      executor: "constant-arrival-rate",
+      rate: Math.max(1, Math.ceil(eventRate / BATCH_SIZE)),
+      timeUnit: "1s",
+      duration: duration,
+      preAllocatedVUs: prealloc,
+      maxVUs: maxVUs,
+    },
+    extra || {},
+  );
+}
+
 export const options = (function () {
   const o = { thresholds: {} };
   if (MT_PROJECTS >= 2) {
+    if ((__ENV.LOAD_PROFILE || "closed") === "open") {
+      // Die Achsen sind nicht kombinierbar: MT definiert eigene
+      // Szenarien/Gates. Still zu gewinnen waere ein False-Green-Trap
+      // (Operator erwartet das Open-Loop-SLO, gefahren wuerde MT).
+      throw new Error(
+        "MT_PROJECTS>=2 ist mit LOAD_PROFILE=open nicht kombinierbar (Multi-Tenant definiert eigene Szenarien und Gates)",
+      );
+    }
     const noisyRate = parseInt(__ENV.MT_NOISY_EVENT_RATE || "400", 10);
     const victimRate = parseInt(__ENV.MT_VICTIM_EVENT_RATE || "50", 10);
     const duration = __ENV.DURATION || "30s";
     o.scenarios = {
-      noisy: {
-        executor: "constant-arrival-rate",
+      noisy: arrivalScenario(noisyRate, duration, 10, 40, {
         exec: "mtProject",
-        rate: Math.max(1, Math.ceil(noisyRate / BATCH_SIZE)),
-        timeUnit: "1s",
-        duration: duration,
-        preAllocatedVUs: 10,
-        maxVUs: 40,
         env: { MT_INDEX: "1", MT_ROLE: "noisy" },
         tags: { role: "noisy" },
-      },
+      }),
     };
     for (let i = 2; i <= MT_PROJECTS; i++) {
-      o.scenarios[`victim${i}`] = {
-        executor: "constant-arrival-rate",
+      o.scenarios[`victim${i}`] = arrivalScenario(victimRate, duration, 5, 15, {
         exec: "mtProject",
-        rate: Math.max(1, Math.ceil(victimRate / BATCH_SIZE)),
-        timeUnit: "1s",
-        duration: duration,
-        preAllocatedVUs: 5,
-        maxVUs: 15,
         env: { MT_INDEX: String(i), MT_ROLE: "victim" },
         tags: { role: "victim" },
-      };
+      });
     }
     // Noisy-Neighbor-Gates (Schwellen: R-26): Victims voll
     // isoliert (kein einziges 429, p95 im Budget), Noisy nachweislich
     // gedrosselt (sonst misst der Lauf gar keine Limiter-Kontention).
+    // dropped_iterations: unterdimensionierte maxVUs wuerden die
+    // angebotene Last sonst STILL unter das Ziel druecken und die
+    // Fairness-Messung entwerten (Gates gruen ohne echte Kontention).
     o.thresholds["mtrace_mt_victim_rate_limited"] = ["count<1"];
     o.thresholds["mtrace_mt_noisy_rate_limited"] = ["count>0"];
     o.thresholds["http_req_duration{role:victim}"] = [
       `p(95)<${parseInt(__ENV.P95_BUDGET_MS || "1000", 10)}`,
     ];
+    o.thresholds["dropped_iterations"] = ["rate<0.01"];
     return o;
   }
   if ((__ENV.LOAD_PROFILE || "closed") === "open") {
     const eventRate = parseInt(__ENV.TARGET_EVENT_RATE || "400", 10);
-    const batchRate = Math.max(1, Math.ceil(eventRate / BATCH_SIZE));
     o.scenarios = {
-      slo: {
-        executor: "constant-arrival-rate",
-        rate: batchRate,
-        timeUnit: "1s",
-        duration: __ENV.DURATION || "30s",
-        preAllocatedVUs: parseInt(__ENV.OPEN_PREALLOC_VUS || "50", 10),
-        maxVUs: parseInt(__ENV.OPEN_MAX_VUS || "100", 10),
-      },
+      slo: arrivalScenario(
+        eventRate,
+        __ENV.DURATION || "30s",
+        parseInt(__ENV.OPEN_PREALLOC_VUS || "50", 10),
+        parseInt(__ENV.OPEN_MAX_VUS || "100", 10),
+      ),
     };
     o.thresholds["http_req_duration"] = [
       `p(95)<${parseInt(__ENV.P95_BUDGET_MS || "1000", 10)}`,
@@ -245,7 +270,10 @@ export function handleSummary(data) {
     `p95=${val("http_req_duration", "p(95)").toFixed(1)}ms ` +
     `max=${val("http_req_duration", "max").toFixed(1)}ms\n`;
   if (MT_PROJECTS >= 2) {
+    const noisyOffered = offeredRate(parseInt(__ENV.MT_NOISY_EVENT_RATE || "400", 10));
+    const victimOffered = offeredRate(parseInt(__ENV.MT_VICTIM_EVENT_RATE || "50", 10));
     text +=
+      `  MT offered (batch-aufgerundet): noisy=${noisyOffered} ev/s, victim=${victimOffered} ev/s je Projekt\n` +
       `  MT noisy (lab-1): sent=${val("mtrace_mt_noisy_sent", "count")} ` +
       `accepted=${val("mtrace_mt_noisy_accepted", "count")} ` +
       `rate_limited=${val("mtrace_mt_noisy_rate_limited", "count")}\n` +

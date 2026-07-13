@@ -168,17 +168,26 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Default: kein Capacity-Override (der capacity-Modus exportiert danach).
+unset MTRACE_RATE_LIMIT_CAPACITY MTRACE_RATE_LIMIT_REFILL 2>/dev/null || true
 if [ "$MODE" = "capacity" ]; then
   export MTRACE_RATE_LIMIT_CAPACITY="$CAP_CAPACITY"
   export MTRACE_RATE_LIMIT_REFILL="$CAP_REFILL"
   echo "[load-smoke] mode=capacity (rate limit raised to ${CAP_CAPACITY}/${CAP_REFILL} per project)"
 elif [ "$MODE" = "multi-tenant" ]; then
-  unset MTRACE_RATE_LIMIT_CAPACITY MTRACE_RATE_LIMIT_REFILL 2>/dev/null || true
+  # k6 rundet Event-Raten auf ganze Batches AUF: effektiv angeboten wird
+  # ceil(rate/BATCH_SIZE)*BATCH_SIZE ev/s. Die EFFEKTIVE Victim-Rate muss
+  # unter der Default-Capacity (100/s) bleiben, sonst meldet das
+  # 0x429-Gate einen Rundungs-Artefakt als Isolation-Failure.
+  mt_victim_offered=$(( (MT_VICTIM_EVENT_RATE + BATCH_SIZE - 1) / BATCH_SIZE * BATCH_SIZE ))
+  if [ "$mt_victim_offered" -ge 100 ]; then
+    echo "[load-smoke] MT_VICTIM_EVENT_RATE=${MT_VICTIM_EVENT_RATE} ergibt batch-aufgerundet ${mt_victim_offered} ev/s >= Default-Capacity 100/s — Victims würden am eigenen Budget drosseln (Rundungs-Artefakt, kein Fairness-Signal)" >&2
+    exit 2
+  fi
   export MTRACE_LAB_PROJECTS="$MT_PROJECTS"
   export MTRACE_TRUST_FORWARDED_FOR=1
-  echo "[load-smoke] mode=multi-tenant (${MT_PROJECTS} Lab-Projekte; noisy=lab-1 @${MT_NOISY_EVENT_RATE} ev/s, victims je @${MT_VICTIM_EVENT_RATE} ev/s; Default-Limiter aktiv; XFF-Trust an)"
+  echo "[load-smoke] mode=multi-tenant (${MT_PROJECTS} Lab-Projekte; noisy=lab-1 @${MT_NOISY_EVENT_RATE} ev/s, victims je @${MT_VICTIM_EVENT_RATE} ev/s [effektiv ${mt_victim_offered} ev/s, batch-aufgerundet]; Default-Limiter aktiv; XFF-Trust an)"
 else
-  unset MTRACE_RATE_LIMIT_CAPACITY MTRACE_RATE_LIMIT_REFILL 2>/dev/null || true
   echo "[load-smoke] mode=contract (default 100/s limiter active)"
 fi
 
@@ -215,7 +224,6 @@ if [ "$MODE" = "multi-tenant" ]; then
     -e MT_VICTIM_EVENT_RATE="$MT_VICTIM_EVENT_RATE" -e DURATION="$DURATION"
     -e P95_BUDGET_MS="$P95_BUDGET_MS"
   )
-  recon_sessions=0 # AUTOSTART=1 erzwungen -> SQLite-COUNT-Readback (GLOB matcht p<i>-Sessions)
 elif [ "$LOAD_PROFILE" = "open" ]; then
   echo "[load-smoke] profile=open (SLO): ~${TARGET_EVENT_RATE} ev/s offered, p95<${P95_BUDGET_MS}ms, ${DURATION}"
   k6_env_args+=(
