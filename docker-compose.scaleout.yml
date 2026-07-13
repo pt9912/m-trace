@@ -27,6 +27,17 @@ services:
       timeout: 3s
       retries: 40
 
+  # Shared Ingest-Limiter-Backend (R-26 b): nur vom Fairness-Modus des
+  # Scale-out-Lasttests genutzt (MTRACE_RATE_LIMIT_BACKEND=redis) — der
+  # R-26-c-Durchsatzpfad läuft weiter ohne Redis (Default memory).
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
   api-1:
     build:
       context: ./apps/api
@@ -34,6 +45,8 @@ services:
     image: m-trace-api:0.1.2
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
@@ -46,6 +59,12 @@ services:
       ANALYZER_BASE_URL: ""
       MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
       MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
+      # R-26 b (Fairness-Modus): shared Redis-Ingest-Limiter + Multi-
+      # Tenant-Seeding + XFF-Trust. Leer = Default (memory, nur demo).
+      MTRACE_RATE_LIMIT_BACKEND: "${MTRACE_RATE_LIMIT_BACKEND:-}"
+      MTRACE_REDIS_ADDR: "${MTRACE_REDIS_ADDR:-}"
+      MTRACE_LAB_PROJECTS: "${MTRACE_LAB_PROJECTS:-}"
+      MTRACE_TRUST_FORWARDED_FOR: "${MTRACE_TRUST_FORWARDED_FOR:-}"
     ports:
       # api-1 direkt erreichbar für die 1-Replica-Durchsatz-Baseline des
       # Scale-out-Lasttests (Phase A); Phase B lastet über den LB beide.
@@ -59,6 +78,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       MTRACE_API_LISTEN_ADDR: ":8080"
       MTRACE_PERSISTENCE: "postgres"
@@ -67,6 +88,10 @@ services:
       ANALYZER_BASE_URL: ""
       MTRACE_RATE_LIMIT_CAPACITY: "${MTRACE_RATE_LIMIT_CAPACITY:-}"
       MTRACE_RATE_LIMIT_REFILL: "${MTRACE_RATE_LIMIT_REFILL:-}"
+      MTRACE_RATE_LIMIT_BACKEND: "${MTRACE_RATE_LIMIT_BACKEND:-}"
+      MTRACE_REDIS_ADDR: "${MTRACE_REDIS_ADDR:-}"
+      MTRACE_LAB_PROJECTS: "${MTRACE_LAB_PROJECTS:-}"
+      MTRACE_TRUST_FORWARDED_FOR: "${MTRACE_TRUST_FORWARDED_FOR:-}"
 
   lb:
     image: nginx:1.27-alpine

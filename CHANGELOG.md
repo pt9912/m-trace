@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ratelimit/ingest**: repliken-übergreifend fairer Ingest-Limiter
+  (`MTRACE_RATE_LIMIT_BACKEND=redis`, `R-26`) — shared Token-Bucket auf dem
+  gemeinsamen Redis-Server (atomares Lua-Script: n-Token-Batch, bis zu drei
+  Dimensionen all-or-nothing, Uhren-Drift-fest via monotonem `last_at`):
+  **ein** Per-Projekt-Budget über N Replicas statt `N × Capacity`
+  (gemessen: throttled 1→2 Replicas **0,96×** statt 2,01×,
+  [`docs/perf/budgets.md`](docs/perf/budgets.md) §9); Noisy-Neighbor-
+  Isolation belegt (Victims 0× 429 bei saturierendem Nachbar-Projekt).
+  Fail-Mode: fail-open auf lokalen In-Memory-Fallback (Default; strikt via
+  `MTRACE_RATE_LIMIT_FAIL_CLOSED=1`); Default-Backend bleibt `memory`
+  (unverändertes Verhalten ohne ENV). Die `client_ip`-Dimension folgt
+  jetzt der XFF-Trust-Boundary (`MTRACE_TRUST_FORWARDED_FOR`) — hinter
+  LB/Proxy wirkte sie sonst als globale statt per-Client-Drossel.
+  Multi-Tenant-Lab-Tooling: `MTRACE_LAB_PROJECTS`,
+  `make smoke-load-multi-tenant`, `make smoke-scaleout-fairness`.
+  (ENV-Referenz: [`docs/user/auth.md`](docs/user/auth.md) §5.10)
+
 - **ops/cutover**: optionaler SQLite→Postgres-Cutover als ephemeres
   d-migrate-Ops-Werkzeug (`scripts/cutover-sqlite-postgres.sh`, `make cutover
   ARGS=doctor|profile|bulk|incremental|switch`; d-migrate-Pin `0.9.12`). Vier

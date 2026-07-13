@@ -1,9 +1,15 @@
 # Implementation Plan — `0.25.0` Repliken-übergreifend fairer Ingest-Limiter (R-26 b)
 
-> **Status**: **Gefirmt (2026-07-13, Owner-Review); Tranche 1 GEBAUT
-> (2026-07-13)** — die §8-Fragen sind
-> entschieden (s. §8). Die Versionsnummer `0.25.0` ist bestätigt (§8.4):
-> der Release nimmt den bereits gelieferten Cutover
+> **Status**: **Gefirmt (2026-07-13, Owner-Review); T1–T3 GEBAUT +
+> NACHWEIS ERBRACHT (2026-07-13)** — Fairness-Inversion gemessen:
+> throttled 1→2 Replicas **0,96×** mit shared Redis-Limiter (statt 2,01×
+> per-Replica; Gate ≤ 1,15×, budgets.md §9), Noisy-Neighbor über den LB
+> isoliert, Korrektheits-Gates unverändert; R-26 → 🟢. **Offen: T4-Release**
+> (eigener Minor `0.25.0` inkl. wartendem Cutover + Lastenheft-Patch mit
+> neuer RAK-Gruppe, §8.4 — die Release-Prozedur ist Owner-getrieben; bis
+> dahin CHANGELOG `[Unreleased]`, Plan bleibt in `in-progress/`). Die
+> §8-Fragen sind entschieden (s. §8); Versionsnummer `0.25.0` bestätigt
+> (§8.4): der Release nimmt den bereits gelieferten Cutover
 > ([`plan-0.24.0`](plan-0.24.0-sqlite-postgres-cutover.md),
 > CHANGELOG `[Unreleased]`) mit.
 >
@@ -62,6 +68,25 @@
 > exakt sein Budget gedrosselt (3080 akzeptiert ≈ 100 ev/s × 30 s,
 > 8940× 429); kein stiller Verlust (persisted == accepted 6720),
 > 0 % Fehler. Die Scale-out-Variante desselben Nachweises ist T3.
+>
+> **Bau-Amendment 2026-07-13 (T3) — Scale-out-Fairness-Nachweis ERBRACHT.**
+> `docker-compose.scaleout.yml` + Redis-Service (`redis:7-alpine`) +
+> ENV-Pass-throughs (`MTRACE_RATE_LIMIT_BACKEND`/`MTRACE_REDIS_ADDR`/
+> `MTRACE_LAB_PROJECTS`/`MTRACE_TRUST_FORWARDED_FOR`); Lab-nginx reicht
+> XFF **unverändert** durch (Lab-only, dokumentiert — mit
+> `$proxy_add_x_forwarded_for` wäre das letzte Element immer die eine
+> k6-Container-IP und der T2-Befund schlüge über den LB wieder zu);
+> `smoke-scaleout-load.sh` `FAIRNESS=1`-Modus (+
+> `make smoke-scaleout-fairness`): Phasen A/B throttled mit
+> `backend=redis` + Inversion-Gate (`FAIRNESS_MAX_SCALE`, Default 1,15) +
+> Phase C Noisy-Neighbor über den LB. **Messung (2026-07-13,
+> §8-Referenz-Setup 50 VUs/60 s/Batch 20): throttled 1→2 Replicas
+> 107→102 ev/s = 0,96×** (Inversion des 2,01×-Befunds; DoD ≤ 1,15×
+> erfüllt); Phase C: Victims 7240/7240, **0× 429**, Noisy 17 920× 429
+> gedrosselt; `persisted == accepted == distinct` in allen Phasen (0
+> Verlust, 0 Duplikate — Korrektheits-Gates unverändert). Dokumentiert
+> als budgets.md **§9** (inkl. Konfundierungs-Voraussetzung + Redis-
+> Attributions-Vorbehalt).
 >
 > **Bezug**: **R-26 b** in [`risks-backlog.md`](risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in

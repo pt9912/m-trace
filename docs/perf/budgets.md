@@ -209,3 +209,53 @@ eines Single-Postgres ist ein eigener Folge-Scope. Connection-Budget-
 Vorbehalt: `N × database/sql-Pool + Startup/Migration` muss unter Postgres'
 `max_connections` bleiben (Default-Pool unbounded → beim Hochskalieren
 begrenzen oder pgbouncer).
+
+## 9. Multi-Tenant-Fairness (`make smoke-scaleout-fairness`, opt-in)
+
+`make smoke-scaleout-fairness` (`FAIRNESS=1
+scripts/smoke-scaleout-load.sh`) belegt die repliken-übergreifende
+Per-Projekt-Fairness des **shared Redis-Ingest-Limiters**
+(`MTRACE_RATE_LIMIT_BACKEND=redis`, **R-26**; ENV-Referenz in
+[`docs/user/auth.md`](../user/auth.md) §5.10) über den
+Multi-Replica-Stack aus §8 (2 API-Replicas + geteilter Postgres +
+nginx-LB, zusätzlich ein Redis-Service). Opt-in, **nicht** in
+`make gates`.
+
+**Gates (Pass/Fail):**
+
+| Kriterium | Schwelle | Begründung |
+|---|---|---|
+| Fairness-Inversion | throttled Skalierung 1→2 Replicas ≤ 1,15× | §8 maß **2,01×** mit per-Replica-In-Memory-Limiter (N Replicas geben dem Projekt N× Budget); der shared Limiter muss daraus EIN Budget machen (~1,0×). |
+| Noisy-Neighbor-Isolation | Victims 0× 429 · Victim-p95 < 1000 ms · Noisy > 0× 429 | Ein saturierendes Projekt darf anderen Projekten kein Budget wegnehmen; der Noisy selbst muss nachweislich gedrosselt sein (sonst misst der Lauf keine Limiter-Kontention). |
+| Korrektheit unverändert | `persisted == accepted` und `COUNT(DISTINCT ingest_sequence) == COUNT(*)` | Wie §8 — der Limiter-Backend-Wechsel darf Verlust-/Duplikatfreiheit nicht anfassen. |
+
+**Referenz-Messung (2026-07-13, 20-Kern-Host, 50 VUs / 60 s / Batch 20 —
+Setup identisch §8):**
+
+| Modus | 1 Replica | 2 Replicas | Skalierung | Deutung |
+|---|---|---|---|---|
+| Throttled, per-Replica-Limiter (§8) | 101 ev/s | 203 ev/s | 2,01× | Budget skaliert mit Replicas — die R-26-b-Lücke |
+| **Throttled, shared Redis-Limiter** | **107 ev/s** | **102 ev/s** | **0,96×** | **EIN Per-Projekt-Budget über alle Replicas** |
+
+Noisy-Neighbor **über den LB** (3 Lab-Projekte; Noisy 400 ev/s offered,
+Victims je 50 ev/s, 60 s): Victims **7240/7240 akzeptiert, 0× 429**;
+der Noisy wurde auf sein Budget gedrosselt (**17 920× 429**);
+`persisted == accepted == distinct == 13 340` — kein Verlust, keine
+Duplikate.
+
+**Mess-Voraussetzung (Konfundierungs-Vermeidung):** die
+`client_ip`-Dimension muss die **echte** Client-IP sehen — hinter dem LB
+ist `RemoteAddr` die Proxy-IP, also EIN geteilter Bucket für sämtlichen
+Traffic. Der Fairness-Lauf aktiviert daher `MTRACE_TRUST_FORWARDED_FOR=1`
+(dieselbe Trust-Boundary wie beim Origin-Limiter), k6 sendet je Projekt
+eine synthetische XFF-IP, und der Lab-nginx reicht den Header
+**unverändert** durch (Lab-only; ein Produktions-Proxy muss
+strippen+appenden). Kein Origin-Header (curl-Pfad) → auch der
+Origin-Bucket bleibt projekt-neutral.
+
+**Attribution:** bei `backend=redis` ist der Single-Redis geteilte
+Infrastruktur; die Request-Raten dieses Labs (ein `EVALSHA` pro
+Batch-Request) sind für Redis vernachlässigbar. Für app-gebundene
+Hochlast gilt: der Limiter kostet einen Redis-Roundtrip pro Batch — bei
+einer künftigen Sättigungs-Messung ist Redis wie in §8 der Postgres
+explizit zu attribuieren (docker stats), bevor ein Verdict fällt.
