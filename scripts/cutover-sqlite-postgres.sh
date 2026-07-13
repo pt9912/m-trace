@@ -252,28 +252,17 @@ cmd_doctor() {
     warn "  ✘ d-migrate-Container startet nicht (Image gepullt?)"; rc=3
   fi
 
-  # 2) Quelle: für den d-migrate-User (uid) lesbar UND read-write öffenbar.
-  #    d-migrate/HikariCP öffnet SQLite RW — ein Read-Check (oder als root) würde
-  #    das SQLITE_READONLY nicht fangen, an dem profile/bulk dann sterben. Daher
-  #    denselben User + eine echte, zurückgerollte Write-Probe (BEGIN IMMEDIATE
-  #    allein reicht NICHT: SQLite defert den Write-Fehler bis zum Statement).
-  local src_dir base
-  src_dir="$(cd "$(dirname "$SQLITE_DB")" && pwd)"
-  base="$(basename "$SQLITE_DB")"
-  local integ rwerr
-  integ="$(docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 \
-    -v "${src_dir}:/work" "$SQLITE_IMAGE" "/work/${base}" 'PRAGMA integrity_check;' 2>/dev/null || true)"
-  if [ "$integ" != "ok" ]; then
-    warn "  ✘ Quell-SQLite nicht lesbar / integrity_check != ok ('$integ')"; rc=3
+  # 2) Quelle: für den d-migrate-User (uid) lesbar. d-migrate (>= 0.9.12,
+  #    --read-only Default) öffnet die Quelle für profile UND die Transfer-
+  #    Quellseite read-only (file:?mode=ro, keine -wal/-shm-Nebendateien) —
+  #    keine Phase braucht mehr eine schreibbare Quelle. Probe als derselbe
+  #    uid wie der d-migrate-Container (als root würde sie Rechte maskieren).
+  local integ
+  integ="$(sqlite_src 'PRAGMA integrity_check;' 2>/dev/null || true)"
+  if [ "$integ" = "ok" ]; then
+    log "  ✔ Quell-SQLite lesbar, integrity_check ok (uid $(id -u)): $SQLITE_DB"
   else
-    rwerr="$(docker run --rm --user "$(id -u):$(id -g)" --entrypoint sqlite3 \
-      -v "${src_dir}:/work" "$SQLITE_IMAGE" "/work/${base}" \
-      'BEGIN; CREATE TABLE IF NOT EXISTS __cutover_rwprobe__(x); ROLLBACK;' 2>&1 >/dev/null || true)"
-    if [ -z "$rwerr" ]; then
-      log "  ✔ Quell-SQLite lesbar + read-write öffenbar (uid $(id -u)): $SQLITE_DB"
-    else
-      warn "  ✘ Quell-SQLite nicht read-write für uid $(id -u) — d-migrate öffnet RW ('${rwerr}'); Quelle + Verzeichnis müssen schreibbar sein"; rc=3
-    fi
+    warn "  ✘ Quell-SQLite nicht lesbar / integrity_check != ok ('$integ')"; rc=3
   fi
 
   # 3) Ziel: PG erreichbar.
@@ -331,7 +320,7 @@ cmd_profile() {
        >"${outdir}/profile.err" 2>&1; then
     grep -viE 'HikariConfig|idleTimeout' "${outdir}/profile.err" >&2 || true
     rm -rf "$outdir"
-    die "data profile fehlgeschlagen — (a). Hinweis: d-migrate öffnet SQLite read-write; die Quelle (+ ihr Verzeichnis) muss für den d-migrate-Container-User (uid $(id -u)) beschreibbar sein." 3
+    die "data profile fehlgeschlagen — (a). Hinweis: die Quelle muss für den d-migrate-Container-User (uid $(id -u)) lesbar sein (d-migrate >= 0.9.12 öffnet read-only)." 3
   fi
   if [ ! -f "${outdir}/profile.json" ]; then
     rm -rf "$outdir"; die "data profile erzeugte keinen Report" 3

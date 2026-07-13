@@ -30,9 +30,11 @@ automatischer Trigger. Der Cutover wird manuell/operator-initiiert.
   `psql -f`). Der `doctor` prüft das.
 - Das Ziel ist **leer** (frischer Store) — der Bulk fährt `--on-conflict abort`
   und bricht sonst ab. Für ein bereits teilbefülltes Ziel siehe `incremental`.
-- Die **Quell-SQLite** ist für den d-migrate-Container-User **read-write**
-  öffenbar (d-migrate/HikariCP öffnet SQLite RW; sonst `SQLITE_READONLY`). Der
-  `doctor` prüft das. Ggf. den Cutover als der Datei-Owner (oder root) fahren.
+- Die **Quell-SQLite** ist für den d-migrate-Container-User **lesbar**. Mehr
+  ist nicht nötig: d-migrate (≥ 0.9.12, `--read-only` Default) öffnet die
+  Quelle für `profile` und die Transfer-Quellseite schreibgeschützt
+  (`file:…?mode=ro`, keine `-wal`/`-shm`-Nebendateien). Der `doctor` prüft die
+  Lesbarkeit als derselbe uid.
 - `docker`, das Repo-Checkout (für den `DMIGRATE_IMAGE`-Pin) und `python3`
   (Profile-Auswertung) sind vorhanden. Ohne Repo: `DMIGRATE_IMAGE` explizit setzen.
 
@@ -57,9 +59,9 @@ make cutover ARGS=switch        # Phase 3: finaler Re-Sync + Verifikation
 
 ### Phase 0 — `doctor` + `profile`
 
-`doctor` verifiziert: d-migrate-Container lauffähig, Quelle lesbar **und
-read-write** (uid), Ziel-PG erreichbar, Ziel-Schema vorhanden (≥ 13 Tabellen),
-Ziel leer. `profile` prüft die **Typ-Gesundheit** der Quelle: bricht ab, wenn ein
+`doctor` verifiziert: d-migrate-Container lauffähig, Quelle lesbar (als
+derselbe uid wie der d-migrate-Container), Ziel-PG erreichbar, Ziel-Schema
+vorhanden (≥ 13 Tabellen), Ziel leer. `profile` prüft die **Typ-Gesundheit** der Quelle: bricht ab, wenn ein
 Wert sich nicht in seinen eigenen Zieltyp abbilden lässt (echte Korruption);
 Cross-Type-Warnungen und leere Tabellen sind Info, kein Abbruch.
 
@@ -133,7 +135,7 @@ Nutzungsfehler · `3` Pre-Flight-Befund (Ziel nicht bereit) · `4` Stub.
 
 ## 8. Reproduzierbarer Smoke
 
-`make smoke-cutover` fährt den vollen Ablauf (doctor · profile inkl.
-Korrupt-Tripwire · bulk inkl. abort-Guard · incremental inkl. Idempotenz ·
-switch inkl. Mutations-Beleg) gegen ein ephemeres Lab. Opt-in, nicht in
-`make gates`.
+`make smoke-cutover` fährt den vollen Ablauf (doctor inkl. read-only-Quelle ·
+profile inkl. read-only-Quelle + Korrupt-Tripwire · bulk inkl. abort-Guard ·
+incremental inkl. Idempotenz · switch inkl. Mutations-Beleg) gegen ein
+ephemeres Lab. Opt-in, nicht in `make gates`.
