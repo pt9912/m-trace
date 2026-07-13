@@ -1,6 +1,18 @@
 # Roadmap
 
-> **Stand**: 2026-07-12
+> **Stand**: 2026-07-13
+>
+> **2026-07-13**: (1) **d-migrate `0.9.12` eingearbeitet** (`1f1be65`): das
+> Read-only-Enhancement kam upstream breiter als geplant (`--read-only`
+> Default für `profile`/`export` **und** die Transfer-Quellseite) — Pin
+> gebumpt, `doctor`-Write-Probe durch reine Lese-Probe ersetzt (keine
+> Cutover-Phase braucht mehr eine schreibbare Quelle), `make smoke-cutover`
+> auf **10 Cases** erweitert (read-only-Quelle), `make gates` grün.
+> (2) **R-26 b geschnitten**: Skizze
+> [`open/plan-0.25.0-shared-ingest-limiter.md`](../open/plan-0.25.0-shared-ingest-limiter.md)
+> (Redis-Adapter port-erhaltend hinter `driven.RateLimiter` nach
+> RAK-90-Muster + Multi-Tenant-Lab-Tooling + Scale-out-Fairness-Nachweis;
+> 4 Tranchen, §8-Owner-Fragen offen — **ungefirmt, Owner-Review ausstehend**).
 >
 > **Feierabend 2026-07-12**: **SQLite→Postgres-Cutover (plan-0.24.0)
 > implementiert + auf `origin/main`** — 4 Phasen
@@ -14,7 +26,7 @@
 > Read-only-Profile-Enhancement für d-migrate geschrieben (Scratchpad, ephemer)
 > → wenn eingearbeitet, `doctor`-RW-Probe für den `profile`-Pfad lockerbar.
 > **Offen (nächste größere Tranche): `R-26 b`** (repliken-übergreifend fairer
-> Ingest-Limiter, shared Redis — hat noch keinen eigenen Plan).
+> Ingest-Limiter, shared Redis — seit 2026-07-13 skizziert, s. oben).
 >
 > **Phase**: ✅ `0.23.0` Postgres Scale-out (Minor) **released** (Tag
 > `v0.23.0`, GHCR- + npm-Publish grün, 2026-07-11), Lastenheft-Patch
@@ -271,7 +283,7 @@ Commit-Hashes, z. B. [`docs/planning/done/plan-0.3.0.md`](../done/plan-0.3.0.md)
 | 54  | ✅      | `0.20.0` Package Publishing released: publishbare npm-Pakete auf `@pt9912/player-sdk` und `@pt9912/stream-analyzer` umgestellt, GitHub-Packages-Workflow ergänzt, Release-Doku erweitert und erster Package-Publish vorbereitet/ausgeführt. Dashboard und Analyzer-Service bleiben `private: true`. | Nach Schritt 53 und Decision-only `0.19.0` | RAK-116..RAK-120 ✅; `spec/lastenheft.md` §13.22; [`done/plan-0.20.0.md`](../done/plan-0.20.0.md); Tag `v0.20.0` |
 | 55  | ✅      | `0.21.0` OCI Image Publishing released: GHCR-Namensschema, Make-Targets, Publish-Workflow und Release-Doku für drei Runtime-Images geliefert; kein `latest`, kein Production-K8s-Go. | Nach Schritt 54 und ausgelöstem Container-Publishing-Trigger | RAK-121..RAK-125 ✅; `spec/lastenheft.md` §13.23; [`done/plan-0.21.0.md`](../done/plan-0.21.0.md); Tag `v0.21.0` |
 | 56  | ✅      | `0.23.0` Postgres Scale-out released (2026-07-11): optionaler Postgres-Runtime-Adapter (`MTRACE_PERSISTENCE=postgres`), DB-autoritativer Ingest-Sequencer (R-28), R-27-Read-Wasserzeichen, Multi-Replica-Harness mit `pg_advisory_lock`-serialisierter Startup-Migration, Scale-out-Lasttest → **R-26 c belegt** (0 Verlust/0 Dup über 2 Replicas @ ~1,4 Mio Events; Durchsatz store-gebunden = Single-Postgres-Decke ~12k ev/s, ehrlich attribuiert in `budgets.md` §8). SQLite bleibt Default. Lastenheft-Patch `1.1.25` mit RAK-126..RAK-130 in §13.24; GHCR + npm publish grün. Zwischen 0.21.0 und hier: Patch-Releases 0.22.0–0.22.4 (Security/Tooling, §1-Historie). | Nach Schritt 55 und ausgelöstem Multi-Replica-/Scale-out-Trigger (R-26 c) | RAK-126..RAK-130 ✅; `spec/lastenheft.md` §13.24; [`done/plan-0.23.0-postgres-scaleout.md`](../done/plan-0.23.0-postgres-scaleout.md); Tag `v0.23.0` |
-| 57  | ⬜      | **Nächste größere Tranche wählen** (Folge-Scope von `0.23.0`): **(A) R-26 b** — repliken-übergreifend fairer Ingest-Limiter (shared Redis), damit die Per-Projekt-Ingest-Decke nicht `N × Capacity` skaliert; hat noch **keinen eigenen Plan** (nur risks-backlog R-26 🟡), müsste erst geschnitten werden. **(B) `plan-0.24.0-sqlite-postgres-cutover`** — SQLite→Postgres-Datenmigration bestehender Läufe; **Implementierung + Closeout komplett** (2026-07-12: 4 Phasen `doctor`/`profile`/`bulk`/`incremental`/`switch` gebaut + alle code-reviewt, `make cutover`, `make smoke-cutover` 8 Cases grün, Runbook `docs/ops/postgres-cutover.md`, ADR-0007 „geliefert", R-29 🟢). **Kein eigenes 0.24.0-Tag** (reine Ops-Tooling ohne Runtime-/Package-Änderung, Owner-Entscheidung 2026-07-12) — liegt auf `main` + CHANGELOG `[Unreleased]`, rollt in den nächsten Release. | Nach `0.23.0`-Release; Trigger = Betreiber-Bedarf (Multi-Tenant-Fairness bzw. Bestandsdaten-Migration) | R-26 b: [`risks-backlog.md`](risks-backlog.md); R-29: [`in-progress/plan-0.24.0-sqlite-postgres-cutover.md`](plan-0.24.0-sqlite-postgres-cutover.md), [ADR-0007](../../adr/0007-sqlite-postgres-data-cutover.md) |
+| 57  | ⬜      | **Nächste größere Tranche wählen** (Folge-Scope von `0.23.0`): **(A) R-26 b** — repliken-übergreifend fairer Ingest-Limiter (shared Redis), damit die Per-Projekt-Ingest-Decke nicht `N × Capacity` skaliert; **Skizze liegt vor** (2026-07-13, [`open/plan-0.25.0-shared-ingest-limiter.md`](../open/plan-0.25.0-shared-ingest-limiter.md): Redis-Adapter port-erhaltend nach RAK-90-Muster, 4 Tranchen, DoD = Fairness-Inversion des 2,01×-Befunds; **ungefirmt**, §8-Owner-Fragen offen). **(B) `plan-0.24.0-sqlite-postgres-cutover`** — SQLite→Postgres-Datenmigration bestehender Läufe; **Implementierung + Closeout komplett** (2026-07-12: 4 Phasen `doctor`/`profile`/`bulk`/`incremental`/`switch` gebaut + alle code-reviewt, `make cutover`, `make smoke-cutover` 8 Cases grün, Runbook `docs/ops/postgres-cutover.md`, ADR-0007 „geliefert", R-29 🟢). **Kein eigenes 0.24.0-Tag** (reine Ops-Tooling ohne Runtime-/Package-Änderung, Owner-Entscheidung 2026-07-12) — liegt auf `main` + CHANGELOG `[Unreleased]`, rollt in den nächsten Release. | Nach `0.23.0`-Release; Trigger = Betreiber-Bedarf (Multi-Tenant-Fairness bzw. Bestandsdaten-Migration) | R-26 b: [`risks-backlog.md`](risks-backlog.md); R-29: [`in-progress/plan-0.24.0-sqlite-postgres-cutover.md`](plan-0.24.0-sqlite-postgres-cutover.md), [ADR-0007](../../adr/0007-sqlite-postgres-data-cutover.md) |
 
 ---
 
