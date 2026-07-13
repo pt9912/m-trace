@@ -3,10 +3,10 @@
 > **Status**: **Gefirmt (2026-07-13, Owner-Review)** — die §8-Fragen sind
 > entschieden (s. §8). Die Versionsnummer `0.25.0` ist bestätigt (§8.4):
 > der Release nimmt den bereits gelieferten Cutover
-> ([`plan-0.24.0`](../in-progress/plan-0.24.0-sqlite-postgres-cutover.md),
+> ([`plan-0.24.0`](plan-0.24.0-sqlite-postgres-cutover.md),
 > CHANGELOG `[Unreleased]`) mit.
 >
-> **Bezug**: **R-26 b** in [`risks-backlog.md`](../in-progress/risks-backlog.md)
+> **Bezug**: **R-26 b** in [`risks-backlog.md`](risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in
 > [`docs/perf/budgets.md`](../../perf/budgets.md) §8 (throttled 2,01× über 2
 > Replicas = Limiter liegt pro Replica); RAK-129 (lässt R-26 b explizit
