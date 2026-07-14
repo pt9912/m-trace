@@ -6,7 +6,7 @@
 **Status:** Verbindlich<br>
 **Lizenz:** MIT<br>
 **Architekturstil:** Mono-Repo mit hexagonaler Architektur<br>
-**Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker — Backend-Stack entschieden in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md).
+**Primärer Stack:** Go 1.22 (stdlib `net/http`, Prometheus, OpenTelemetry, Distroless-Runtime), SvelteKit, TypeScript, Docker.<br>
 
 > **Patch `1.1.26` (Multi-Tenant-Fairness + Datenmigration für `0.25.0`)**:
 > Schließt die in Patch `1.1.25` bewusst offen gelassene `R-26 b`-Achse und
@@ -18,15 +18,13 @@
 > per-Client-Drossel), der messbare Fairness-Nachweis (ein Per-Projekt-Budget
 > über N Replicas statt N × Capacity; Noisy-Neighbor-Isolation) und die
 > optionale SQLite→Postgres-Datenmigration bestehender Deployments als
-> Ops-Werkzeug (Entscheidung in
-> [`docs/adr/0007-sqlite-postgres-data-cutover.md`](../docs/adr/0007-sqlite-postgres-data-cutover.md)).
+> Ops-Werkzeug.
 > Weder Redis noch Postgres werden Pflichtabhängigkeit; keine Wire-,
 > Public-API- oder Analyzer-Schema-Änderung. Patch-Log siehe §13.25.
 
 >
 > **Patch `1.1.25` (Postgres Scale-out für `0.23.0`)**:
-> Reaktiviert `RAK-91` von „defer" auf „proceed, optional" (Entscheidung in
-> [`docs/adr/0006-postgres-scaleout-adapter.md`](../docs/adr/0006-postgres-scaleout-adapter.md))
+> Reaktiviert `RAK-91` von „defer" auf „proceed, optional"
 > und führt die neue RAK-Gruppe `RAK-126`..`RAK-130` in §13.24 ein. Inhalt:
 > ein optionaler Postgres-Runtime-Adapter (`MTRACE_PERSISTENCE=postgres` +
 > DSN) als nicht-Default-Persistenz, ein DB-autoritativer Ingest-Sequencer
@@ -153,8 +151,7 @@
 > Marker mit Integer-ppm-Persistenz und Immutability nach erstem
 > gültigem Wert (`R-10`/RAK-85), SRT-Health-Detail-Cursor-
 > Pagination via `samples_cursor`/`next_cursor` plus `400
-> cursor_invalid` gemäß [`spec/backend-api-contract.md`](backend-api-contract.md)
-> §7a.3/§7a.4 (`R-11`/RAK-86), MediaMTX-Provisionierungs-Adapter
+> cursor_invalid` (`R-11`/RAK-86), MediaMTX-Provisionierungs-Adapter
 > mit strikt-additivem `provision=true`-Query-Param
 > (`R-15`/RAK-87), Redis-basierter Multi-Host-Issuance-Limiter als
 > Network-Backend (`R-17`/RAK-88, gemeinsam mit `R-22`-Redis-
@@ -233,9 +230,8 @@
 > Secret-Manager, produktive MediaMTX-/SRS-Auth-Hook-Kopplung,
 > globale Stream-Key-Rotation über mehrere Deployments,
 > Production-Ops-Backends aus `0.13.0`, Cookies für Player-
-> Telemetrie. Wire-Vertrag für `POST /api/auth/session-tokens` und
-> die zusätzlichen Auth-Header für `POST /api/playback-events` lebt in
-> [`spec/backend-api-contract.md`](backend-api-contract.md). Patch-Log siehe
+> Telemetrie. Der Wire-Vertrag umfasst `POST /api/auth/session-tokens` und
+> die zusätzlichen Auth-Header für `POST /api/playback-events`. Patch-Log siehe
 
 >
 >
@@ -254,8 +250,8 @@
 > Webhook-Zustellung. Architekturentscheidung für `0.11.0`:
 > Variante B — Ingest-Control als Modul in `apps/api`, **kein**
 > eigener `apps/ingest-gateway`-Service. Eine spätere Ausgliederung
-> bleibt möglich, ist aber Folge-Scope. Wire-Erweiterung in
-> [`spec/backend-api-contract.md`](backend-api-contract.md) für `/api/ingest/*`. Patch-Log
+> bleibt möglich, ist aber Folge-Scope. Die Wire-Erweiterung umfasst
+> `/api/ingest/*`. Patch-Log
 > siehe
 
 >
@@ -475,7 +471,7 @@ Der Fokus liegt auf:
 - hexagonaler Architektur
 - lokaler Entwicklungsumgebung
 - lauffähigem Docker-Compose-Setup
-- Backend-API in Go (siehe [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md))
+- Backend-API in Go
 - SvelteKit Dashboard
 - TypeScript Player-SDK
 - einfachem Stream Analyzer
@@ -608,7 +604,7 @@ hexagon → adapters
 
 ### 7.3 API-Anwendung
 
-Die API-Anwendung muss unter `apps/api` liegen. Backend-Technologie ist Go gemäß [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md); Spec in §10.1.
+Die API-Anwendung muss unter `apps/api` liegen. Backend-Technologie ist Go; siehe §10.1.
 
 #### Hauptaufgaben
 
@@ -1006,10 +1002,10 @@ Die finale Aufteilung ist erst sinnvoll, wenn echte Anforderungen für Mehrbenut
 
 | App | Zweck | MVP-Status | Technologie |
 |---|---|---|---|
-| `apps/api` | zentrale Backend-API | Muss | Go (ADR-0001) |
+| `apps/api` | zentrale Backend-API | Muss | Go |
 | `apps/dashboard` | Web-Dashboard | Muss | SvelteKit |
 | `apps/demo-player` | SDK-Referenz und Testplayer | Nicht MVP, zunächst `/demo`-Route | SvelteKit oder Vite |
-| `apps/ingest-gateway` | Stream-Key, Ingest und Routing | Kann | Go (analog ADR-0001) |
+| `apps/ingest-gateway` | Stream-Key, Ingest und Routing | Kann | Go |
 | `apps/analyzer-api` | separater Analyse-Service | Deferred / Folge-Scope bei RAK-102-Trigger | Technologie offen (Go oder Node.js erst im Folgeplan) |
 | `apps/control-plane` | spätere Verwaltungsplattform (`F-132`) | Später | offen |
 
@@ -1455,12 +1451,12 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `CONTRIBUTING.md` | Beitragsregeln |
 | `LICENSE` | Lizenz |
 | `SECURITY.md` | Sicherheitsmeldungen |
-| [`spec/architecture.md`](architecture.md) | Architekturüberblick |
+| `spec/architecture.md` | Architekturüberblick |
 | [`docs/user/local-development.md`](../docs/user/local-development.md) | lokale Entwicklung |
-| [`spec/telemetry-model.md`](telemetry-model.md) | Telemetrie- und Eventmodell |
-| [`spec/player-sdk.md`](player-sdk.md) | Player-SDK-Nutzung |
+| `spec/telemetry-model.md` | Telemetrie- und Eventmodell |
+| `spec/player-sdk.md` | Player-SDK-Nutzung |
 | [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) | Stream Analyzer |
-| [`docs/planning/in-progress/roadmap.md`](../docs/planning/in-progress/roadmap.md) | geplante Entwicklung |
+| `docs/planning/in-progress/roadmap.md` | geplante Entwicklung |
 
 ---
 
@@ -1499,7 +1495,7 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 | NF-15 | Muss | Datenbankpersistenz |
 | NF-16 | Muss | Authentifizierung |
 | NF-17 | Muss | Multi-Stream-Betrieb |
-| NF-18 | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase. Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 ([`docs/planning/in-progress/risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md)) bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. **Patch `1.1.18` (`0.13.0`):** NF-18 wird mit `MVP-42` als optionaler Optionspfad harmonisiert. `0.13.0` darf Beispielmanifeste oder Entscheidungsnotizen liefern, verpflichtet aber nicht zu Production-Ready-Kubernetes, Cluster-Betrieb, Cloud-Provider-Integration oder K8s-Smoke-Stage als Standard-Gate. Wird eine K8s-Smoke-Stage aktiviert, muss R-9 vorher mit eigener Observability-Label-Allowlist oder dokumentierter Gegenmaßnahme entschieden sein. |
+| NF-18 | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase. Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. **Patch `1.1.18` (`0.13.0`):** NF-18 wird mit `MVP-42` als optionaler Optionspfad harmonisiert. `0.13.0` darf Beispielmanifeste oder Entscheidungsnotizen liefern, verpflichtet aber nicht zu Production-Ready-Kubernetes, Cluster-Betrieb, Cloud-Provider-Integration oder K8s-Smoke-Stage als Standard-Gate. Wird eine K8s-Smoke-Stage aktiviert, muss R-9 vorher mit eigener Observability-Label-Allowlist oder dokumentierter Gegenmaßnahme entschieden sein. |
 | NF-19 | Muss | CI-basierte Stream-Checks |
 
 ### 8.4 Performance
@@ -1588,7 +1584,7 @@ Streaming-Observability-relevante Komponenten und Communities sind stark durch G
 
 ### 9.1 Backend-Entscheidung
 
-**Entschieden: Go.** Die Wahl ist in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md) (Status: Accepted) festgehalten und beruht auf zwei Mini-Prototypen mit identischem Muss-Scope ([`spec/backend-api-contract.md`](backend-api-contract.md)); das Spike-Protokoll liegt in [`docs/spike/backend-stack-results.md`](../docs/spike/backend-stack-results.md).
+**Entschieden: Go.** Die Wahl beruht auf zwei Mini-Prototypen mit identischem Muss-Scope.
 
 Historischer Tradeoff (Stand vor dem Spike):
 
@@ -1653,7 +1649,7 @@ Für den MVP bedeutet das:
 
 ### 10.1 Backend
 
-Backend-Technologie: **Go**, entschieden in [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md).
+Backend-Technologie: **Go**.
 
 | Bereich | Festlegung |
 |---|---|
@@ -1670,7 +1666,7 @@ Backend-Technologie: **Go**, entschieden in [`docs/adr/0001-backend-stack.md`](.
 
 Mindestanforderungen an die Implementierung:
 
-- HTTP API für Event-Ingest gemäß [`spec/backend-api-contract.md`](backend-api-contract.md)
+- HTTP API für Event-Ingest
 - Health Check
 - strukturierte Logs (`slog`)
 - OpenTelemetry-kompatibles Eventmodell
@@ -1710,7 +1706,7 @@ globale Kopplung. Es umfasst:
 | `testpackage` | Ja |
 | `unparam` | Ja |
 
-Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; erst on demand bei wachsender Codebase (siehe [`docs/planning/in-progress/roadmap.md`](../docs/planning/in-progress/roadmap.md) Folge-ADR).
+Multi-Modul-Aufteilung über `go.work` ist nicht im MVP erforderlich; sie bleibt bei wachsender Codebase eine spätere Option.
 
 
 ### 10.2 Frontend
@@ -1842,7 +1838,7 @@ Nicht im `0.1.0`-MVP:
 | MVP-19 | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
 | MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (Tranche-Notiz):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
 | MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
-| MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil (ADR-0003); die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
+| MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil; die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
 | MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap). |
 | MVP-24 | Muss (historisch) | WebRTC | **Erfüllt:** WebRTC-Lab ab `0.7.0` (RAK-47..RAK-50), produktiver Player-SDK-Adapter ab `0.8.0` (RAK-51..RAK-55), Drift-Smoke ab `0.9.0` (RAK-56). |
 | MVP-25 | Muss (historisch) | SRT-Health-View | **Erfüllt:** SRT-Health-View ab `0.6.0` (RAK-41..RAK-46). |
@@ -2044,7 +2040,7 @@ Akzeptanzkriterien:
 |---|---|---|
 | RAK-47 | Muss | WebRTC-Lab-Setup mit lokalem WHIP-/WHEP-Endpoint und Compose-Stack `mtrace-webrtc` (analog `examples/srt/`/`examples/dash/`); Project-Name-Konvention aus `examples/README.md` ist eingehalten. |
 | RAK-48 | Muss | `make smoke-webrtc-prep` prüft die Vorbereitungsgrenze (Endpoints antworten, Compose-Stack hochgefahren, kein Playback-Qualitäts- oder `getStats()`-Anspruch) und ist als opt-in Target dokumentiert (analog `make smoke-srt`/`make smoke-dash`). |
-| RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist in [`spec/telemetry-model.md`](telemetry-model.md) dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
+| RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
 | RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert; ergänzt den Smoke um eine Operator-sichtbare Stelle. |
 | RAK-51 | Kann | `@pt9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. **Hinweis (Patch `1.1.10`):** RAK-51 ist in §13.10 für `0.8.0` zu „Muss" hochgestuft; §13.9 bleibt als historische Aussage für `0.7.0` bestehen. |
 
@@ -2063,8 +2059,8 @@ Akzeptanzkriterien:
 |---|---|---|
 | RAK-51 | Muss | `@pt9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
 | RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
-| RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist aus [`spec/telemetry-model.md`](telemetry-model.md) (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe aus [`spec/telemetry-model.md`](telemetry-model.md) werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie ist im Adapter-Code umgesetzt. R-12 ([`docs/planning/in-progress/risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md)) wird ab diesem Punkt release-blockierend. |
+| RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
+| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie ist im Adapter-Code umgesetzt. R-12 wird ab diesem Punkt release-blockierend. |
 | RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
 
 ### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse
@@ -2075,7 +2071,7 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist aus [`spec/telemetry-model.md`](telemetry-model.md).2. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 im `risks-backlog.md` von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
+| RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
 | RAK-57 | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7 Port-Quickref nachgezogen. |
 | RAK-58 | Muss | DASH-Manifest-Analyse im `@pt9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
 | RAK-59 | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
@@ -2208,7 +2204,7 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-83 | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku in [`spec/telemetry-model.md`](telemetry-model.md) entsprechend aktualisiert. |
+| RAK-83 | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku wird entsprechend aktualisiert. |
 | RAK-84 | Muss | **`ListSessions` Bulk-Read-Performance** (`R-7`): neuer Port-Methode `ListBoundariesForSessions(ctx, sessionIDs)` in `SessionRepository`; SQLite-Adapter implementiert mit einer `IN`-Clause statt N+1; Performance-Benchmark zeigt < 200 ms p95 für 1000 Sessions pro Page. Race-Test bleibt grün. |
 | RAK-85 | Muss | **Sampling-Vollständigkeits-Marker** (`R-10`): SDK-Pflicht-Feld `meta.session_sample_rate` (Wire-Float, Range `(0, 1]`) bei `sampleRate < 1`; Server normalisiert via `round(x * 1_000_000)` auf Integer-ppm (`SAMPLE_RATE_FULL = 1_000_000`); Session-Spalte `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000` (Migration `V7`); Immutability nach erstem nicht-Default-Wert via exaktem Integer-Vergleich; Drift-Counter `mtrace_sample_rate_drift_total{project_id}` mit konfigurablem Toleranz-Band (±100 ppm). Read-API liefert beide Werte (ppm + abgeleiteter Float-Display). Schema-Eintrag in `contracts/event-schema.json`. |
 | RAK-86 | Muss | **SRT-Health-Cursor-Pagination** (`R-11`): `GET /api/srt/health/{stream_id}` akzeptiert `samples_cursor`-Query-Param (gemäß §7a.3 — **nicht** `cursor`-Alias) und liefert `next_cursor`-Feld; Cursor-Token kapselt `process_instance_id + (ingested_at, id)`-Position analog §10.3; `400 cursor_invalid` bei `process_instance_id`-Mismatch oder malformed-Base64/Schema-Mismatch (§7a.4); Contract-Fixture für den `400`-Pfad. |
@@ -2240,7 +2236,7 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-91 | Muss | **Postgres-/Ops-Scope (`MVP-40`)**: `0.13.0` dokumentiert eine verbindliche Entscheidung für Postgres als Seed-Slice, POC oder Defer. Die Entscheidung enthält mindestens zwei Alternativen, Begründung, Migrations-/Rollbackpfad oder messbare Reaktivierungs-Trigger. SQLite bleibt lokaler Standard und wird durch Postgres nicht als versteckte Pflichtabhängigkeit ersetzt. **Reaktiviert (ADR-0006, 2026-07-11)**: Defer → „proceed, optional" — Postgres als **optionaler nicht-Default**-Adapter (SQLite bleibt Standard, keine versteckte Pflichtabhängigkeit). Der horizontale Scale-out-Nachweis (R-26 c) ist mit Messwerten erbracht (0 Verlust/0 Duplikate über 2 Replicas; Durchsatz-Grenze = Single-Postgres). Repliken-übergreifende Multi-Tenant-Fairness (R-26 b) bleibt offen. |
+| RAK-91 | Muss | **Postgres-/Ops-Scope (`MVP-40`)**: `0.13.0` dokumentiert eine verbindliche Entscheidung für Postgres als Seed-Slice, POC oder Defer. Die Entscheidung enthält mindestens zwei Alternativen, Begründung, Migrations-/Rollbackpfad oder messbare Reaktivierungs-Trigger. SQLite bleibt lokaler Standard und wird durch Postgres nicht als versteckte Pflichtabhängigkeit ersetzt. **Reaktiviert (2026-07-11)**: Defer → „proceed, optional" — Postgres als **optionaler nicht-Default**-Adapter (SQLite bleibt Standard, keine versteckte Pflichtabhängigkeit). Der horizontale Scale-out-Nachweis (R-26 c) ist mit Messwerten erbracht (0 Verlust/0 Duplikate über 2 Replicas; Durchsatz-Grenze = Single-Postgres). Repliken-übergreifende Multi-Tenant-Fairness (R-26 b) bleibt offen. |
 | RAK-92 | Muss | **Analytics-Backend-Entscheidung (`MVP-41`)**: ClickHouse, VictoriaMetrics und Mimir (oder eine begründete gleichwertige Option) werden anhand von Komplexität, Betriebskosten, Query-Fähigkeit, Integrationsaufwand, Relevanz der Workloads und Migrationsrisiko verglichen. Ergebnis ist `proceed`, `defer` oder `POC`; ein POC braucht Erfolgskriterien, Abbruchkriterien und Zeitgrenze. |
 | RAK-93 | Muss | **Kubernetes-/NF-18-Harmonisierung (`MVP-42`, `NF-18`, R-9)**: K8s bleibt ein optionaler Option-Pfad. Beispielmanifeste oder Entscheidungsnotizen dürfen geliefert werden, aber ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage darf erst verbindlich werden, wenn R-9 mit Observability-Label-Allowlist, Risiko-Matrix und mindestens zwei Gegenmaßnahmen entschieden ist. |
 | RAK-94 | Muss | **Devcontainer-Scope (`MVP-43`)**: Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder explizit deferred. In beiden Fällen sind Begründung, lokale Standardentwicklungs-Abgrenzung und Reaktivierungs-Trigger dokumentiert. |
@@ -2430,8 +2426,7 @@ Akzeptanzkriterien:
 
 `0.23.0` schließt die letzte unbelegte Architektur-Achse aus `R-26`: die
 **horizontale Scale-out-Fähigkeit**. `RAK-91` (Postgres-Entscheidung aus
-`0.13.0`) wird von „defer" auf „proceed, optional" reaktiviert (Begründung in
-[`docs/adr/0006-postgres-scaleout-adapter.md`](../docs/adr/0006-postgres-scaleout-adapter.md)).
+`0.13.0`) wird von „defer" auf „proceed, optional" reaktiviert.
 Geliefert wird ein **optionaler, nicht-Default** Postgres-Runtime-Adapter, der
 den mit SQLite strukturell nicht erbringbaren Multi-Replica-Betrieb (≥ 2
 API-Instanzen auf einem geteilten Store) ermöglicht und mit einem
@@ -2465,13 +2460,9 @@ atomare Lua-Operation) samt messbarem Fairness-Nachweis, plus die
 LB/Reverse-Proxy ist `RemoteAddr` die Proxy-IP, ohne den Opt-in wirkte die
 Dimension dort als globale statt per-Client-Drossel.
 
-Zusätzlich liefert `0.25.0` die seit dem Roadmap-Anker
-„defer-with-migration-seed" vorgesehene **Datenmigration bestehender
+Zusätzlich liefert `0.25.0` die vorgesehene **Datenmigration bestehender
 SQLite-Deployments nach Postgres** als optionales, operator-getriebenes
-Ops-Werkzeug (Entscheidung und Grenzen in
-[`docs/adr/0007-sqlite-postgres-data-cutover.md`](../docs/adr/0007-sqlite-postgres-data-cutover.md);
-die API-Runtime bleibt JDK-frei gemäß
-[`docs/adr/0002-persistence-store.md`](../docs/adr/0002-persistence-store.md)).
+Ops-Werkzeug. Die API-Runtime bleibt JDK-frei.
 
 `SQLite` und der In-Memory-Limiter bleiben lokale Standards; Redis und Postgres
 sind opt-in und werden nicht als versteckte Pflichtabhängigkeit eingeführt.
@@ -2594,10 +2585,10 @@ Owner und Folgeplan vorliegt.
 | Kennung | Status | Entscheidung |
 |---|---|---|
 | OE-1 | resolved | Projektlizenz: **MIT** (siehe `LICENSE`) |
-| OE-2 | resolved | Backend-Technologie final: **Go** (siehe [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md)) |
-| OE-3 | resolved | Datenhaltung im MVP: **SQLite als lokaler Durable-Store** ab `0.4.0` (siehe [`docs/adr/0002-persistence-store.md`](../docs/adr/0002-persistence-store.md)) |
+| OE-2 | resolved | Backend-Technologie final: **Go** |
+| OE-3 | resolved | Datenhaltung im MVP: **SQLite als lokaler Durable-Store** ab `0.4.0` |
 | OE-4 | resolved | Frontend-Styling im MVP: **eigenes CSS ohne Tailwind/UI-Library** |
-| OE-5 | resolved | Live-Updates: **Server-Sent Events mit Polling-Fallback**; WebSocket nicht in `0.4.0` (siehe [`docs/adr/0003-live-updates.md`](../docs/adr/0003-live-updates.md)) |
+| OE-5 | resolved | Live-Updates: **Server-Sent Events mit Polling-Fallback**; WebSocket nicht in `0.4.0` |
 | OE-6 | resolved | CI-Zielplattform: **GitHub Actions `ubuntu-24.04`** |
 | OE-7 | resolved | Release-Konvention: **trunk-based auf `main`, annotierte SemVer-Tags `vX.Y.Z`, GitHub Release aus [`CHANGELOG.md`](../CHANGELOG.md)** |
 | OE-8 | resolved | npm-Paketname Player-SDK: **`@pt9912/player-sdk`** ab `0.20.0`; Lieferstände vor `0.20.0` wurden nicht öffentlich über GitHub Packages publiziert. Der historische interne Scope `@npm9912` hat daher keinen externen Migrationsvertrag. |
@@ -2610,16 +2601,8 @@ Owner und Folgeplan vorliegt.
 ### Schritt 0: Backend-Technologie-Spike — abgeschlossen
 
 Backend-Technologie wurde durch zwei lauffähige Mini-Prototypen (Go,
-Micronaut) im identischen Muss-Scope entschieden. Dokumentation:
-
-- Spike-Spezifikation: [`docs/spike/0001-backend-stack.md`](../docs/spike/0001-backend-stack.md)
-- Implementierungsplan: [`docs/planning/done/plan-spike.md`](../docs/planning/done/plan-spike.md)
-- API-Kontrakt: [`spec/backend-api-contract.md`](backend-api-contract.md)
-- Spike-Protokoll: [`docs/spike/backend-stack-results.md`](../docs/spike/backend-stack-results.md)
-- Entscheidung: [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md) (Status: Accepted) — **Go**
-
-Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
-(siehe [`docs/planning/in-progress/roadmap.md`](../docs/planning/in-progress/roadmap.md)).
+Micronaut) im identischen Muss-Scope entschieden. Ergebnis ist **Go**;
+die Implementierung ist als `apps/api` integriert.
 
 ---
 
@@ -2634,7 +2617,7 @@ Sieger-Branch `spike/go-api` ist auf `main` als `apps/api` integriert
 
 ### Schritt 2: API-Grundgerüst
 
-- Backend-App unter `apps/api` in Go (siehe [`docs/adr/0001-backend-stack.md`](../docs/adr/0001-backend-stack.md))
+- Backend-App unter `apps/api` in Go
 - Hexagon-Struktur anlegen
 - Domain-Modelle für StreamSession und PlaybackEvent
 - Use Case `RegisterPlaybackEventUseCase`
@@ -2687,8 +2670,8 @@ Der MVP ist fertig, wenn:
 - Das Player-SDK Events erzeugt.
 - Die API Events annimmt.
 - Das Dashboard Events anzeigt.
-- Die Architektur in [`spec/architecture.md`](architecture.md) beschrieben ist.
-- Das Eventmodell in [`spec/telemetry-model.md`](telemetry-model.md) beschrieben ist.
+- Die Architektur in `spec/architecture.md` beschrieben ist.
+- Das Eventmodell in `spec/telemetry-model.md` beschrieben ist.
 - Tests für zentrale Use Cases vorhanden sind.
 - CI mindestens Build und Tests ausführt.
 - [`CHANGELOG.md`](../CHANGELOG.md) einen Eintrag pro Release enthält.

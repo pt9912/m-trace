@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5.0.0
@@ -43,6 +45,14 @@ jobs:
 
       - name: Quality gates
         run: make gates
+
+      - name: Documentation history gates
+        if: github.event_name == 'pull_request'
+        env:
+          DOC_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.sha }}
+        run: |
+          make docs-immutable RANGE="$DOC_RANGE"
+          make docs-commits RANGE="$DOC_RANGE"
 
       - name: Build
         run: make build

@@ -1,6 +1,6 @@
 # Backend-API-Kontrakt
 
-> **Bezug**: F-106..F-115, F-118..F-122, ADR-0001.
+> **Bezug**: F-106..F-115, F-118..F-122.
 
 Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 
@@ -885,7 +885,7 @@ erscheinen in den Read-Antworten von `GET /api/stream-sessions/{id}`:
 
 | Feld | Typ | Beschreibung |
 |---|---|---|
-| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1, §10.4 und [ADR-0002](../docs/adr/0002-persistence-store.md)). Tie-Breaker der kanonischen Event-Sortierung. |
+| `ingest_sequence` | `int64`, ≥ 1, monoton steigend, global eindeutig | Durable Persistenz-Sequenz, durch das Storage-Backend vergeben (siehe §10.1 und §10.4). Tie-Breaker der kanonischen Event-Sortierung. |
 | `delivery_status` | `string` aus `{"accepted", "duplicate_suspected", "replayed"}` | Timeline-Klassifikation jedes Events; siehe §10.2. Default ist `"accepted"`. |
 | `correlation_id` | `string` (UUIDv4 oder vergleichbar), **nicht-leer in neu verarbeiteten Events**; bei historisch persistierten Events kann der Wert `""` sein (Read-Pfad liefert ihn dann als JSON-`""`, siehe Migrations-Hinweis unten) | Server-generierte, durable Source-of-Truth für die Tempo-unabhängige Dashboard-Korrelation einer Session. Konstant über alle neu verarbeiteten Events derselben Session; auch in der Session-Header-Response exposed (siehe §3.7.1). |
 | `trace_id` | `string`, 32 Hex-Zeichen, optional (`null` zulässig wenn weder `traceparent` noch Server-Trace gesetzt — Edge-Case) | W3C-Trace-ID des Batches, in dem das Event registriert wurde. Vom SDK propagiert (`traceparent`-Header, siehe §1) oder server-generiert. Primär für Tempo-Cross-Trace-Suche; Dashboard-Korrelation läuft über `correlation_id`. |
@@ -1268,8 +1268,7 @@ dann setzt der Server `source_status: stale`.
 ## 10. Persistenz
 
 `0.1.x`–`0.3.x` nutzten In-Memory-Repositories (Datenverlust bei
-Neustart, beabsichtigt). ist der lokale Durable-Store
-SQLite (siehe [ADR 0002](../docs/adr/0002-persistence-store.md)). Die
+Neustart, beabsichtigt). Der lokale Durable-Store ist SQLite. Die
 nachfolgenden Sub-Sections sind Vertrag gegenüber API-Konsumenten —
 sie beschreiben das beobachtbare Verhalten, nicht die interne
 Implementierung.
@@ -1339,8 +1338,7 @@ Kontrakts.
   Legacy-Format (`process_instance_id`-basiert, `0.1.x`/`0.2.x`/`0.3.x`)
   erkannt und dauerhaft abgewiesen. Nach Aktivierung der
   projekt-skopierten Read-Pfade werden auch v2-Session-Cursor ohne
-  Project-Scope dauerhaft als Legacy abgewiesen. Die feingranulare
-  Begründung steht in [ADR 0004 — Cursor-Strategie](../docs/adr/0004-cursor-strategy.md).
+  Project-Scope dauerhaft als Legacy abgewiesen.
 
 **Kompatibilitätsmatrix**:
 
@@ -1391,7 +1389,7 @@ Events angenommen wurden).
 
 > Bezug: RAK-42, RAK-46.
 
-SRT-Health-Samples sind durable in SQLite persistiert (ADR-0002).
+SRT-Health-Samples sind durable in SQLite persistiert.
 Tabelle (finalisiert über `apps/api/internal/storage/schema.yaml`):
 
 | Spalte | Typ | Bemerkung |
@@ -1525,8 +1523,7 @@ CORS-Preflight, `backfill_truncated` ab > 1000 Events.
 
 ## 11. Pflichttests für die API
 
-Ursprünglich aus ADR-0001 abgeleitet; weiterhin
-Pflichtabdeckung für den Ingest-Pfad:
+Weiterhin gilt folgende Pflichtabdeckung für den Ingest-Pfad:
 
 - Unit-Test `RegisterPlaybackEventBatch`: Happy Path
 - Unit-Test zentrale Domain-Validierung: Pflichtfelder, Schema-Version

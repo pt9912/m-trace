@@ -345,7 +345,7 @@ Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus F-93 ins
 
 ### 2.5 Trace-Korrelation
 
-> Bezug: RAK-29; RAK-32; ADR-0002.
+> Bezug: RAK-29; RAK-32.
 
 Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkeit (RAK-31, optional) und Tempo-unabhängige Dashboard-Timeline (RAK-32, Pflicht) sauber entkoppelt sind.
 
@@ -470,7 +470,7 @@ Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nich
 | Backend | Daten | Cardinality-Verträglichkeit | Konsumenten |
 |---|---|---|---|
 | **Prometheus** | Aggregat-Metriken (counts, rates, optional gauges); ausschließlich bounded Aggregat-Labels aus §3.2 | hart begrenzt auf wenige Serien pro Metrik; Forbidden-Liste aus §3.1 ist release-blockierend | Grafana-Dashboards (`observability/grafana/dashboards/m-trace-overview.json`); Alerting; RAK-9-Cardinality-Smoke |
-| **SQLite** (ADR-0002) | Session-/Event-Historie mit allen Per-Session-Identifiern (`session_id`, `correlation_id`, `trace_id`, `span_id`, redacted URLs, `network_signal_absent`-Boundary-Records) | unbeschränkt — durable Event-Store, kein Cardinality-Vertrag | Dashboard-Session-Timeline (RAK-32); Read-Pfad `GET /api/stream-sessions/...`; SDK-Cursor-Pagination |
+| **SQLite** | Session-/Event-Historie mit allen Per-Session-Identifiern (`session_id`, `correlation_id`, `trace_id`, `span_id`, redacted URLs, `network_signal_absent`-Boundary-Records) | unbeschränkt — durable Event-Store, kein Cardinality-Vertrag | Dashboard-Session-Timeline (RAK-32); Read-Pfad `GET /api/stream-sessions/...`; SDK-Cursor-Pagination |
 | **OTel/Tempo** | Per-Request-Trace-Spans mit allen Span-Attributen (`mtrace.session.correlation_id`, `batch.size`, `mtrace.batch.outcome`, …); ein Server-Span pro Batch | sample-basiert; Span-Cardinality ist im Cardinality-Vertrag aus §3.1 nicht bindend | Tempo-Trace-Suche (`make dev-tempo`, RAK-31, optional); Span-Ebene-Debugging beim Header-Verarbeitung-/Outcome-Pfad |
 
 Diese Trennung ist die zentrale Architektur-Aussage von F-97. Praktische Konsequenzen:
@@ -575,10 +575,8 @@ dieser Drift-Strategie:
    Feld nicht findet, lässt das zugehörige Histogram/Gauge weg und
    emittiert die übrigen Metriken normal weiter. Eine Browser-Version
    ohne einzelnes Soll-Feld blockiert keinen Telemetriepfad.
-3. **Schema-Drift ist release-blockierend**. Der
-   Risiko-Eintrag steht im
-   [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md) als
-   **R-12**: bei Browser-Major-Version mit
+3. **Schema-Drift ist release-blockierend**. Bei einer
+   Browser-Major-Version mit
    `getStats()`-Schema-Änderung muss die `webrtc.*`-Allowlist
    gegen die neuen Browser-Felder reviewed und ggf. die
    `WEBRTC_ERROR_CODES`-Liste erweitert werden, bevor das nächste
@@ -714,7 +712,7 @@ CGO-frei (R-2 in `risks-backlog.md` aufgelöst).
 ### 7.1 Datenmodell
 
 Ein **Sample** repräsentiert eine SRT-Verbindung zu einem Polling-Zeitpunkt
-und ist in `apps/api` durable persistiert (SQLite, ADR-0002). Pflicht- und
+und ist in `apps/api` durable persistiert (SQLite). Pflicht- und
 Optional-Felder im Domain-Modell:
 
 | Feld | Pflicht | Typ | Einheit / Bedeutung |

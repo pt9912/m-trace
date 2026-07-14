@@ -2,22 +2,22 @@
 
 ## 0. Dokumenteninformationen
 
-> **Bezug**: AK-1..AK-11, F-10..F-16, ADR-0001.
+> **Bezug**: AK-1..AK-11, F-10..F-16.
 
 ### 0.1 Zweck
 
-Dieses Dokument beschreibt das **Zielbild (Soll)** der Architektur — *wie* die Anforderungen aus dem Lastenheft strukturell umgesetzt werden sollen. Es führt das Lastenheft nicht erneut, sondern erklärt Hexagon-Aufteilung, Verzeichnisstruktur, Abhängigkeitsregeln, Datenflüsse und die Querverweise zu den Architektur-Entscheidungen (ADRs).
+Dieses Dokument beschreibt das **Zielbild (Soll)** der Architektur — *wie* die Anforderungen aus dem Lastenheft strukturell umgesetzt werden sollen. Es führt das Lastenheft nicht erneut, sondern erklärt Hexagon-Aufteilung, Verzeichnisstruktur, Abhängigkeitsregeln und Datenflüsse.
 
-**Soll/Ist-Trennung**: Dieses Dokument enthält **kein** Status-Tracking. Der Lieferstand wird ausschließlich im Code, in [`CHANGELOG.md`](../CHANGELOG.md) und in den Plan-Dokumenten unter `docs/planning/` geführt.
+**Soll/Ist-Trennung**: Dieses Dokument enthält **kein** Status-Tracking. Es beschreibt ausschließlich das architektonische Zielbild.
 
-Differenzen Code↔Soll werden **nicht** durch weichere Architektur-Formulierungen kaschiert, sondern als Aufgabe in den Plan-Dokumenten getrackt — der Code zieht das Soll ein, oder das Soll wird begründet via ADR angepasst.
+Differenzen Code↔Soll werden **nicht** durch weichere Architektur-Formulierungen kaschiert: Der Code zieht das Soll ein, oder das Zielbild wird über den geregelten Änderungsprozess angepasst.
 
 ### 0.2 Nicht-Ziel
 
 - Anforderungen formulieren — das ist Aufgabe von [`lastenheft.md`](./lastenheft.md).
-- Release-Plan oder Status verfolgen — siehe [`roadmap.md`](../docs/planning/in-progress/roadmap.md).
-- Stack-Entscheidungen begründen — siehe ADRs unter `docs/adr/`.
-- Risiken sammeln — siehe [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md).
+- Release-Plan oder Status verfolgen.
+- Stack-Entscheidungen begründen.
+- Risiken sammeln.
 
 ### 0.3 Architekturstil
 
@@ -30,7 +30,7 @@ m-trace nutzt **Hexagonale Architektur (Ports & Adapters)** für Komponenten mit
 | `packages/player-sdk`      | leichte Adapter-Struktur            | Browser-Library, Hexagon ohne Mehrwert im MVP                               |
 | `packages/stream-analyzer` | hexagonal oder geschichtete Library | Einsatz pro Folge-Phase prüfen                                              |
 
-Die Backend-Stack-Wahl (Go) ist in [ADR-0001](../docs/adr/0001-backend-stack.md) entschieden.
+Der primäre Backend-Stack ist Go.
 
 ---
 
@@ -298,14 +298,14 @@ apps/api/
 │   └── driven/
 │       ├── auth/
 │       ├── metrics/
-│       ├── persistence/             # Sub-Pakete pro Backend (ADR-0002):
+│       ├── persistence/             # Sub-Pakete pro Backend:
 │       │   ├── inmemory/            # Test-/Dev-Fallback
 │       │   ├── sqlite/              # Default
 │       │   └── contract/            # gemeinsame Adapter-Test-Suite
 │       ├── ratelimit/
 │       └── telemetry/
 ├── internal/
-│   └── storage/                     # SQLite-Apply-Runner + Migrationen (ADR-0002)
+│   └── storage/                     # SQLite-Apply-Runner + Migrationen
 ├── go.mod                           # github.com/pt9912/m-trace/apps/api
 ├── go.sum
 ├── Dockerfile                       # multi-stage: deps, compile, lint, test, build, runtime
@@ -517,8 +517,8 @@ gescraped ().
 
 | Thema                  | Umsetzung                                                                                                                                                                                                                                                                                                                                                                                                                        | Bezug                              |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | ADR-0001                   |
-| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | ADR-0001; F-91, F-92       |
+| Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | F-89                       |
+| Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | F-91, F-92                 |
 | Metriken               | Prometheus über `/api/metrics`-Endpoint, nur Aggregate                                                                                                                                                                                                                                                                                                                                                                           | F-93, F-95..F-105             |
 | Auth                   | Header `X-MTrace-Token`, Auflösung über `ProjectResolver`                                                                                                                                                                                                                                                                                                                                                                        | F-106..F-110, NF-24 |
 | Rate Limiting          | In-Memory Token-Bucket, 100 Events/s/Project                                                                                                                                                                                                                                                                                                                                                                                     | F-110, F-119                  |
@@ -526,27 +526,11 @@ gescraped ().
 
 ---
 
-## 7. Architekturelle Entscheidungen
+## 7. Entscheidungsgrenzen
 
-### 7.1 Bestand
-
-| ADR                                           | Status   | Inhalt                                                                           |
-| --------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
-| [ADR-0001](../docs/adr/0001-backend-stack.md) | Accepted | Backend-Stack: Go 1.22, stdlib `net/http`, Prometheus, OpenTelemetry, Distroless |
-
-### 7.2 Geplant
-
-Folge-ADRs aus [Roadmap](../docs/planning/in-progress/roadmap.md):
-
-| Erwartete ADR                                 | Kennungen              |
-| --------------------------------------------- | ---------------------- |
-| Persistenz via SQLite                         | ADR-0002, MVP-16, OE-3 |
-| Live-Updates via SSE                          | ADR-0003, OE-5, R-3    |
-| SRT-Binding-Stack                             | R-2                    |
-| Coverage-Tooling für Go                       | —                      |
-| `apps/api` Multi-Modul-Aufteilung (`go.work`) | R-1                    |
-
-Die zugehörigen technischen Risiken stehen in [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md).
+Diese Sicht dokumentiert das resultierende Zielbild. Begründungen,
+Lieferstatus, offene Risiken und die zeitliche Umsetzung gehören nicht in
+diese Architektursicht und werden hier weder katalogisiert noch dupliziert.
 
 ---
 
@@ -571,7 +555,7 @@ flowchart LR
 | --------- | ------------------------------------------- | -------------------------------------- |
 | `deps`    | `golang:1.22`                               | `go mod download`, Cache-Layer         |
 | `compile` | `golang:1.22`                               | schneller `go build` für Iteration     |
-| `lint`    | `golangci/golangci-lint:v1.62-alpine`       | Default-Linters laut ADR-0001  |
+| `lint`    | `golangci/golangci-lint:v1.62-alpine`       | statische Analyse              |
 | `test`    | `golang:1.22`                               | `go test ./...`                        |
 | `build`   | `golang:1.22`                               | Stripped binary (`-s -w`) für Runtime  |
 | `runtime` | `gcr.io/distroless/static-debian12:nonroot` | Final-Image (~10 MB, Cold-Start ~9 ms) |
@@ -611,18 +595,15 @@ flowchart TB
 | Verzeichnislayout `apps/api/`                     | §4              | F-10..F-16                 |
 | Validierungsreihenfolge im Use Case               | §5.1            | F-118..F-122               |
 | Prometheus nur für Aggregate                      | §5.2, §6        | F-95..F-105, AK-9          |
-| OpenTelemetry-Querschnitt                         | §5.3, §6        | F-91, F-92, ADR-0001       |
-| Docker-only-Workflow, Distroless                  | §8.1            | ADR-0001                   |
+| OpenTelemetry-Querschnitt                         | §5.3, §6        | F-91, F-92                 |
+| Docker-only-Workflow, Distroless                  | §8.1            | NF-3, NF-4                 |
 | Repository-Doku-Tauglichkeit                      | dieses Dokument | AK-10                      |
 
 ---
 
 ## 10. Offene Architekturfragen
 
-Verweise auf die normativen Listen statt Duplikat:
-
-- Offene Lastenheft-Entscheidungen: [Roadmap](../docs/planning/in-progress/roadmap.md).
-- Bekannte Phase-2-Risiken: [`risks-backlog.md`](../docs/planning/in-progress/risks-backlog.md) (R-1..R-3).
-- Erwartete Folge-ADRs: [Roadmap](../docs/planning/in-progress/roadmap.md).
-
-Architekturfragen, die hier *neu* aufgerufen werden, kommen über einen Folge-ADR oder einen `risks-backlog.md`-Eintrag in den Bestand.
+Dieses Dokument führt keine Liste offener Entscheidungen oder Risiken.
+Architekturfragen werden über den geregelten Entscheidungs- und
+Planungsprozess geklärt und erst als beschlossenes Zielbild hier
+nachgezogen.

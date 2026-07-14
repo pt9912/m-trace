@@ -1,5 +1,97 @@
 # Doku-Referenz-Checks via d-check (ghcr.io/pt9912/d-check).
-# Default-Scan-Wurzeln (docs/, spec/, Root-*.md); `modules` aktiviert
-# Link-, Anker- und Bildreferenz-Prüfung.
-# Beschreibung siehe: https://raw.githubusercontent.com/pt9912/d-check/refs/heads/main/README.md
-modules: [links, anchors]
+# Der vollständige Repo-Scan schließt nur lokale, nicht versionierte
+# Arbeitsartefakte aus. `codepaths` prüft aktuelle Doku; historische Pläne
+# und die konzeptionellen Paketpfade der Architektur bleiben ausgenommen.
+# Beschreibung siehe: https://raw.githubusercontent.com/pt9912/d-check/refs/heads/main/docs/user/benutzerhandbuch.md
+scan:
+  roots: ['.']
+  ignore: ['.security/.trivy-cache/**', '.tmp/**']
+
+modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix]
+
+codepaths:
+  scope:
+    roots: [docs/user, docs/ops, docs/dev, docs/perf, docs/adr, spec]
+  exempt-paths: [spec/architecture.md]
+
+hostpaths:
+  prefixes: [Users, Development]
+
+# Native Tabellenquelle fuer die Requirements Traceability Matrix. `RAK-51`
+# ist historisch erst als Kann und spaeter als Muss definiert; `last` bildet
+# diese ausdrueckliche Hochstufung deterministisch ab.
+trace:
+  requirements:
+    source: spec/lastenheft.md
+    id-pattern: '(F|NF|MVP|AK|RAK)-[0-9]+'
+    format: table
+    table:
+      id-column: Kennung
+      text-columns: [Anforderung, Akzeptanzkriterium]
+      modality-column: Prioritaet
+      duplicate-ids: last
+    modality: {}
+  adrs:
+    dir: docs/adr
+    file-pattern: '^([0-9]{4})-.*\.md$'
+    id-prefix: 'ADR-'
+  slices:
+    dir: docs/planning/done
+    file-pattern: '^plan-(.+)\.md$'
+    id-prefix: 'plan-'
+
+# Normative Referenzen folgen dem Stable Dependencies Principle:
+# Vertrag > Technik > Sicht > ADR > Planung. Bestehende Accepted-ADRs sind
+# beim Einführen des Gates explizit grandfathered; neue ADRs nicht.
+matrix:
+  classes:
+    - name: contract
+      paths: [spec/lastenheft.md]
+    - name: technical-spec
+      paths: [spec/backend-api-contract.md, spec/browser-support.md, spec/player-sdk.md, spec/telemetry-model.md]
+    - name: view-spec
+      paths: [spec/architecture.md]
+    - name: adr
+      paths: ['docs/adr/[0-9]*.md']
+      token: 'ADR-[0-9]{4}'
+    - name: planning
+      paths: ['docs/planning/**/*.md']
+      token: 'plan-[0-9]+\.[0-9]+\.[0-9]+'
+  rules:
+    - {from: contract, to: technical-spec, allow: false}
+    - {from: contract, to: view-spec, allow: false}
+    - {from: contract, to: adr, allow: false}
+    - {from: contract, to: planning, allow: false}
+    - {from: technical-spec, to: view-spec, allow: false}
+    - {from: technical-spec, to: adr, allow: false}
+    - {from: technical-spec, to: planning, allow: false}
+    - {from: view-spec, to: adr, allow: false}
+    - {from: view-spec, to: planning, allow: false}
+    - {from: adr, to: planning, allow: false}
+  status:
+    forbidden: [superseded, deprecated]
+  exclude-sections: [Historie, Geschichte]
+  exempt-paths:
+    - docs/adr/0001-backend-stack.md
+    - docs/adr/0002-persistence-store.md
+    - docs/adr/0003-live-updates.md
+    - docs/adr/0004-cursor-strategy.md
+    - docs/adr/0005-production-ops-backends.md
+    - docs/adr/0006-postgres-scaleout-adapter.md
+    - docs/adr/0007-sqlite-postgres-data-cutover.md
+
+# Future-only-Sensoren: Sie werden über eigene Make-Targets mit Commit-Range
+# oder Staged-Diff aufgerufen und gehören deshalb nicht in `modules`.
+vcs:
+  paths: ['docs/adr/[0-9]*.md']
+  immutable-when: '^> \*\*Status\*\*: (Accepted|\*\*Accepted \+ GELIEFERT\*\*)'
+  exclude-sections: [Historie, Geschichte]
+  status-line: '^> \*\*Status\*\*:'
+  head-allow: '^> \*\*Status\*\*: (Accepted.*|\*\*Accepted \+ GELIEFERT\*\*.*|Superseded.*)'
+
+commits:
+  id-patterns:
+    - 'ADR-[0-9]{4}'
+    - '(F|NF|MVP|AK|RAK|R)-[0-9]+'
+    - 'plan-[0-9]+\.[0-9]+\.[0-9]+'
+  exempt-pattern: '^(Merge |Revert |docs(\([^)]*\))?: |test(\([^)]*\))?: |build(\([^)]*\))?: |ci(\([^)]*\))?: |chore(\([^)]*\))?: )'
