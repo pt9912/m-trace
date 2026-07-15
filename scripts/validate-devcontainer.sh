@@ -41,7 +41,7 @@ if (config.remoteUser !== "vscode") {
 }
 
 const postCreate = String(config.postCreateCommand || "");
-if (!postCreate.includes("corepack enable") || !postCreate.includes("pnpm@10.18.0")) {
+if (!postCreate.includes("corepack enable") || !postCreate.includes("pnpm@11.13.0")) {
   fail("postCreateCommand must only prepare pinned pnpm via corepack");
 }
 if (/\b(pnpm|npm|yarn)\s+(install|add|update)\b/.test(postCreate)) {

@@ -9,7 +9,7 @@ FROM node:22-trixie-slim AS pnpm-base
 
 WORKDIR /workspace
 
-RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.13.0 --activate
 
 FROM pnpm-base AS lock-refresh-tool
 

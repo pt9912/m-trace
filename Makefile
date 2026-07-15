@@ -974,7 +974,7 @@ lock-refresh:
 		-v "$(CURDIR):/workspace" \
 		-w /workspace \
 		$(TS_IMAGE):lock-refresh-tool \
-		pnpm install --lockfile-only --ignore-scripts
+		pnpm install --lockfile-only --ignore-scripts --store-dir=/tmp/.pnpm-store
 
 # fullbuild ist der kanonische End-zu-End-Lauf vom frischen Clone:
 # Dependencies installieren, alles bauen (workspace + api Docker)

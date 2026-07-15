@@ -6,7 +6,7 @@
 FROM node:22-trixie-slim AS build
 WORKDIR /workspace
 
-RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.13.0 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/analyzer-service/package.json apps/analyzer-service/
@@ -24,7 +24,7 @@ RUN pnpm --filter @pt9912/stream-analyzer run build \
 
 # `pnpm deploy --prod` flacht die Workspace-Symlinks in eine
 # selbst-tragende node_modules-Hierarchie ab und lässt die Dev-Deps
-# weg. `--legacy` ist nötig, weil pnpm v10 sonst inject-workspace-
+# weg. `--legacy` ist nötig, weil pnpm v10+ sonst inject-workspace-
 # packages erwartet — was wir nicht globalisiert aktiv haben (siehe
 # Plan §7.5/3 Begründung). Das Ergebnis-Verzeichnis kann von der
 # Runtime-Stage als read-only-Bundle übernommen werden.

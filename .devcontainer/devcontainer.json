@@ -23,6 +23,6 @@
   "containerEnv": {
     "PNPM_HOME": "/usr/local/share/pnpm"
   },
-  "postCreateCommand": "corepack enable && corepack prepare pnpm@10.18.0 --activate && pnpm --version && go version",
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@11.13.0 --activate && pnpm --version && go version",
   "remoteUser": "vscode"
 }

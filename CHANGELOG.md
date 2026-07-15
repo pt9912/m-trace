@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> **Security-Auslöser**: `security-audit.yml`-Nightly-Treffer vom
+> 2026-07-15 (Issue #14, Lauf `29380639302`) mit zwei fehlgeschlagenen
+> Gates. `pnpm audit` brach mit HTTP 410, weil npm seine
+> Legacy-Audit-Endpoints (`/-/npm/v1/security/audits{,/quick}`) zum
+> 2026-07-15 endgültig abgeschaltet hat; der Trivy-Image-Scan meldete
+> zwei neue `perl-base`-CVEs ohne Trixie-Fix. Beide Gates lokal grün
+> (`make audit-ts`, `make image-scan`); keine Wire-, Public-API- oder
+> Runtime-Änderung.
+
+### Changed
+
+- pnpm `10.18.0` → `11.13.0`, workspace-weit gepinnt (`package.json`
+  `packageManager` + `engines.pnpm` `>=11 <12`; root- und
+  Analyzer-Service-`Dockerfile` via corepack; `.devcontainer`;
+  `scripts/validate-devcontainer.sh`; alle `pnpm/action-setup`-Aufrufe
+  in `build`/`verify-release`/`benchmark`/`benchmark-observation`/
+  `mutation`). Grund: erst pnpm 11 spricht den Bulk-Advisory-Endpoint
+  (`/-/npm/v1/security/advisories/bulk`); die von pnpm 10 genutzten
+  Legacy-Endpoints hat npm zum 2026-07-15 abgeschaltet, sodass
+  `make audit-ts` mit HTTP 410 brach (Issue #14). Begleit-Migrationen
+  für pnpm 11:
+  - `overrides` (picomatch, devalue, esbuild, undici) von
+    `package.json#pnpm` nach `pnpm-workspace.yaml` verschoben — pnpm 11
+    liest Settings nicht mehr aus dem `pnpm`-Feld in `package.json`.
+    `pnpm-lock.yaml` bleibt byte-identisch (`lockfileVersion 9.0`,
+    keine Änderung der Dependency-Auflösung).
+  - Dashboard-Image-Install um `--ignore-scripts` ergänzt (Angleichung
+    an die übrigen Stages) — pnpm 11 macht `ERR_PNPM_IGNORED_BUILDS`
+    (esbuild-Postinstall) zum Fehler statt zur Warnung.
+  - `make lock-refresh` erhält `--store-dir=/tmp/.pnpm-store` (der
+    pnpm-11-Store-Default ist im gemounteten `--user`-Container nicht
+    schreibbar).
+
+### Security
+
+- Trivy-Ignore-Liste (`.security/vulnignore.yaml`) um zwei
+  `perl-base`-CVEs des `trixie-slim`-Base der `mtrace-dashboard`- und
+  `mtrace-analyzer-service`-Images erweitert (Nightly-Audit Issue #14):
+  - `CVE-2026-13221` (silently incorrect Regex-Compile, Perl ≤ 5.43.9,
+    CRITICAL) — kein Trixie-Fix (auch sid unfixed).
+  - `CVE-2026-57432` (Integer Overflow in `S_measure_struct` →
+    OOB-Heap-Read bei pack/unpack, Perl ≤ 5.43.10, HIGH) — kein
+    Trixie-Fix (sid gefixt in `5.40.1-8`, Backport ausstehend).
+  Beide `expires` `2026-08-26` im perl-base-Cohort; die Runtime ruft
+  perl nie auf (`CMD ["node", …]`, kein perl-Pfad erreichbar).
+
 ## [0.25.0] - 2026-07-13
 
 > **Minor-Release** gemäß

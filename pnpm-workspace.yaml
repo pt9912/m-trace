@@ -1,3 +1,23 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Dependency-Build-Scripts (pnpm 11 `allowBuilds`, ersetzt das v10-
+# `onlyBuiltDependencies`/`neverBuiltDependencies`). Ohne expliziten
+# Eintrag bricht pnpm 11 mit `ERR_PNPM_IGNORED_BUILDS` ab. `esbuild`
+# lief schon unter pnpm 10 ohne Postinstall (Binary via optionalDeps-
+# Plattformpaket) — die Docker-Stages installieren ohnehin mit
+# `--ignore-scripts`. `false` = Postinstall bewusst NICHT ausführen und
+# den Befund quittieren (konsistent zur No-Build-Scripts-Haltung).
+allowBuilds:
+  esbuild: false
+
+# Dependency-Overrides. Seit pnpm 11 werden Settings NICHT mehr aus dem
+# `pnpm`-Feld in package.json gelesen (nur noch hier bzw. in .npmrc) —
+# siehe https://pnpm.io/settings. Bei Migration/Erweiterung: pnpm-
+# workspace.yaml ist die einzige Quelle.
+overrides:
+  picomatch: ^4.0.4
+  devalue: ^5.8.1
+  esbuild: ^0.28.1
+  undici: ^7.28.0
