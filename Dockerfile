@@ -92,3 +92,15 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
  && apt-get install -y --no-install-recommends jq python3 \
  && rm -rf /var/lib/apt/lists/*
 RUN bash scripts/smoke-cli.sh
+
+FROM build AS mutation-ts
+
+# StrykerJS verwaltet seine Test-Runner-Worker über `ps` (procps); das
+# node:slim-Base hat es nicht (host schon → Bruch nur im Container).
+# Dieser Stage bäckt das fehlende Tool in einen gecachten Layer. Die
+# Mutation selbst läuft via `docker run` (Report-Verzeichnis per
+# Bind-Mount auf den Host), nicht als RUN hier — deshalb kein
+# CMD/RUN der Mutation im Stage.
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+ && apt-get install -y --no-install-recommends procps \
+ && rm -rf /var/lib/apt/lists/*

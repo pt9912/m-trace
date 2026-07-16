@@ -528,17 +528,31 @@ api-mutation-report:
 
 # `make ts-mutation-report` ist das TS-Pendant. Pilot-Modul:
 # `packages/player-sdk/src/adapters/webrtc/sampling.ts`. Tool:
-# StrykerJS via `pnpm dlx` (kein devDep im player-sdk-Manifest, damit
-# der Stryker-Versions-Bump nicht im Lockfile pinned). Vitest-Runner
-# (selbe Vitest-Version wie `make ts-test`). Output:
+# StrykerJS + `@stryker-mutator/vitest-runner`, als exakte devDeps
+# (`9.6.1`) gepinnt — NICHT via `pnpm dlx`. Grund: unter pnpm-11-
+# Isolation resolved der dlx-Store-Symlink weder Strykers ESM-
+# `import('typescript')` noch das Runner-Plugin (beide keine
+# deklarierten stryker-core-Deps) → der Gate war still tot. devDeps +
+# `.pnpm`-Hoisting lösen das; `plugins: [...]` in `stryker.conf.cjs`
+# deklariert den Runner explizit (Glob-Discovery greift unter pnpm
+# nicht). Output:
 #  - `packages/player-sdk/reports/mutation/mutation.html` (visuell)
 #  - `packages/player-sdk/reports/mutation/mutation.json` (Trend-Tracking)
-# Initial nicht-blockierend; opt-in. Lokaler Lauf braucht Node + pnpm
-# (host-side, kein Container — selbe Voraussetzung wie `make ts-test`).
-# Docker-Umzug (ADR-0008) ist zurückgestellt (R-31): StrykerJS via
-# `pnpm dlx` findet im Container das Workspace-`typescript` nicht.
+# Initial nicht-blockierend; opt-in.
+#
+# Ausführungsort ist Docker (ADR-0008): der Lauf passiert im
+# `mutation-ts`-Stage-Image (= `build` + `procps` für Strykers
+# Worker-Verwaltung; analog api-mutation-report im golang-Container).
+# Der Report-Ordner ist Verzeichnis-Output → per Bind-Mount auf den
+# Host gespiegelt (statt tee wie beim Bench). Kein Netz nötig (devDeps
+# statt dlx-Fetch → hermetisch).
 ts-mutation-report:
-	$(PNPM) --filter @pt9912/player-sdk run mutation
+	@mkdir -p packages/player-sdk/reports/mutation
+	$(TS_DOCKER_BUILD) --target mutation-ts -t $(TS_IMAGE):mutation-ts .
+	docker run --rm \
+		-v "$(CURDIR)/packages/player-sdk/reports:/workspace/packages/player-sdk/reports" \
+		$(TS_IMAGE):mutation-ts \
+		sh -c '$(PNPM) --filter @pt9912/player-sdk run mutation'
 
 # `make mutation-report` bündelt Go + TS in einem Aufruf
 # (Plan-DoD Wrapper). Bleibt opt-in.

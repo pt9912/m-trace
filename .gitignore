@@ -128,6 +128,10 @@ tmp/
 .tmp/
 *.bak
 
+# StrykerJS-Mutation-Reports (generiert; mutation.yml lädt sie als
+# Workflow-Artefakt hoch — das Go-Pendant liegt unter .tmp/mutation).
+packages/player-sdk/reports/
+
 # Spike-isolated dependency caches (see docs/planning/plan-spike.md §7.2):
 .gomodcache/
 .gradle-user-home/

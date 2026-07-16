@@ -55,7 +55,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mess-basiert — eine A/B-Messung Host vs. Docker belegt Container-Overhead
   ≈ 0, die §4-Budgets halten). `benchmark-observation.yml` braucht dafür
   keinen Host-`pnpm install` mehr. Der Go-Bench war bereits
-  containerisiert; der TypeScript-Mutation-Gate folgt separat (`R-31`).
+  containerisiert; der TypeScript-Mutation-Gate zieht im selben ADR-0008-
+  Zug nach (s. Fixed).
+- Der TypeScript-Mutation-Gate (`make ts-mutation-report`) läuft jetzt
+  in Docker (`mutation-ts`-Stage = `build` + `procps`) statt host-seitig;
+  `mutation.yml` (TS-Job) braucht keinen Host-`pnpm install` mehr
+  ([ADR-0008](docs/adr/0008-benchmark-mutation-execution-in-docker.md)).
+
+### Fixed
+
+- TypeScript-Mutation-Gate (StrykerJS, `packages/player-sdk`)
+  reaktiviert: er war unter pnpm 11 **still komplett tot** — StrykerJS
+  via `pnpm dlx` konnte unter pnpms isoliertem Store-Linker weder sein
+  `typescript` noch das `@stryker-mutator/vitest-runner`-Plugin auflösen
+  (`ERR_MODULE_NOT_FOUND`), und `continue-on-error` + `|| true` im
+  `mutation.yml`-Nightly maskierten den Bruch, sodass der Mutation-Score
+  nie gemessen wurde. Fix: StrykerJS + vitest-runner als exakte devDeps
+  (`9.6.1`) statt `pnpm dlx` (→ `.pnpm`-Hoisting löst `typescript`),
+  `plugins: ["@stryker-mutator/vitest-runner"]` in `stryker.conf.cjs`
+  (explizit statt Glob-Discovery), `procps` im Container (Strykers
+  `ps`-Worker-Verwaltung), und das maskierende `|| true` entfernt (mit
+  `break: 0` ist jeder Non-Zero-Exit ein echter Bruch → jetzt sichtbar,
+  Job bleibt via `continue-on-error` nicht-blockierend). Score wieder
+  gemessen (74,52 %). Getrackt als `R-31` (aufgelöst).
 
 ### Security
 

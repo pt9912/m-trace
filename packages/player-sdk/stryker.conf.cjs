@@ -24,6 +24,13 @@
 module.exports = {
   packageManager: "pnpm",
   testRunner: "vitest",
+  // Plugins explizit deklarieren statt über den Default-Glob
+  // `@stryker-mutator/*`: unter pnpms isoliertem node_modules liegen
+  // `core` und `vitest-runner` in getrennten `.pnpm`-Verzeichnissen,
+  // sodass die Glob-Discovery den Runner nicht als Sibling findet. Der
+  // explizite Name lässt Stryker `require.resolve` nutzen, das pnpm
+  // auflöst.
+  plugins: ["@stryker-mutator/vitest-runner"],
   reporters: ["html", "json", "clear-text", "progress"],
   htmlReporter: { fileName: "reports/mutation/mutation.html" },
   jsonReporter: { fileName: "reports/mutation/mutation.json" },

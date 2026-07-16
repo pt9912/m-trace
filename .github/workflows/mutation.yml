@@ -98,21 +98,22 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Install Node dependencies
-        run: pnpm install --frozen-lockfile
+      # Kein Host-`pnpm install` mehr: die Mutation läuft im Container
+      # (ADR-0008); StrykerJS ist als devDep im `build`-Image installiert.
 
       - name: Print runner info
         run: bash scripts/print-bench-runner-info.sh
 
       - name: Run StrykerJS on player-sdk
-        # Plan-DoD §5: nicht-blockierend. `|| true` schluckt
-        # Stryker-Exit (würde nur an `break`-Schwelle scheitern, die
-        # in `stryker.conf.cjs` auf 0 gesetzt ist; defensives `|| true`
-        # für Tool-Pannen während der Beobachtungsphase).
-        run: |
-          set -eu
-          pnpm --filter @pt9912/player-sdk exec pwd
-          pnpm --filter @pt9912/player-sdk run mutation || true
+        # Nicht-blockierend über `continue-on-error: true` (der Job
+        # bleibt grün), aber das Step-Ergebnis bleibt SICHTBAR: KEIN
+        # `|| true` mehr. Mit `break: 0` in `stryker.conf.cjs` exitet
+        # Stryker bei jedem Score mit 0 → ein Non-Zero-Exit ist ein
+        # echter Tool-/Setup-Fehler und soll rot sichtbar sein. Genau
+        # so ein Bruch (StrykerJS lief unter pnpm 11 gar nicht mehr,
+        # ERR_MODULE_NOT_FOUND) blieb zuvor durch `|| true` monatelang
+        # unentdeckt. Lauf in Docker (ADR-0008) via `make`.
+        run: make ts-mutation-report
 
       - name: Upload TS mutation artifact
         if: always()

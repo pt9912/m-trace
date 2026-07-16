@@ -1,19 +1,22 @@
 # 0008 — Ausführungsort der Bench-/Mutation-Gates: Docker
 
-> **Status**: **Accepted** (2026-07-16); **TS-Bench-Gate geliefert**,
-> **TS-Mutation-Gate zurückgestellt** (R-31). `make analyzer-benchmark-smoke`
-> läuft jetzt im `build`-Stage-Container (`docker run`), analog zum
-> schon-containerisierten Go-Bench (`api-benchmark-smoke` in
-> `golang:1.26.5`); die Go-Gates (`api-benchmark-smoke` /
-> `api-mutation-report`) waren bereits Docker. Der `ts-mutation-report`-
-> Umzug ist **zurückgestellt (R-31)**: StrykerJS via `pnpm dlx` löst im
-> Container das Workspace-`typescript` nicht auf (`ERR_MODULE_NOT_FOUND`)
-> — eigener Fix nötig, bleibt bis dahin host-seitig. Der Beschluss ist
-> **mess-basiert**, nicht plausibilitäts-basiert: eine A/B-Messung Host
-> vs. Docker (5× je Seite, interleaved) belegt, dass der
-> Container-Overhead für die CPU-gebundenen Hot-Path-Benches innerhalb
-> des Mess-Rauschens (≈ 0) liegt und alle Wall-Clock-Budgets aus
-> [`docs/perf/budgets.md`](../perf/budgets.md) §4 halten.
+> **Status**: **Accepted + GELIEFERT** (2026-07-16) — alle vier Bench-/
+> Mutation-Gates laufen in Docker. `make analyzer-benchmark-smoke`
+> (TS-Bench) und `make ts-mutation-report` (TS-Mutation) sind in den
+> Container gezogen; die Go-Gates (`api-benchmark-smoke` /
+> `api-mutation-report` in `golang:1.26.5`) waren bereits Docker. Der
+> Bench-Beschluss ist **mess-basiert**: eine A/B-Messung Host vs. Docker
+> (5× je Seite, interleaved) belegt Container-Overhead ≈ 0, alle
+> Wall-Clock-Budgets aus [`docs/perf/budgets.md`](../perf/budgets.md) §4
+> halten. **Nebenbefund beim Mutation-Umzug**: der TS-Mutation-Gate war
+> unter pnpm 11 **still komplett tot** — StrykerJS via `pnpm dlx` konnte
+> weder sein `typescript` noch das vitest-Runner-Plugin auflösen
+> (`ERR_MODULE_NOT_FOUND`), maskiert durch `continue-on-error` + `|| true`
+> im Nightly, sodass der Score **nie gemessen** wurde. Fix: StrykerJS +
+> vitest-runner als exakte devDeps (`9.6.1`) statt `pnpm dlx` +
+> explizite `plugins`-Deklaration + `procps` im Mutation-Container; der
+> Score wird wieder gemessen (74,52 %), und das Nightly-`|| true` fällt
+> weg (Bruch künftig sichtbar). `R-31` damit **aufgelöst**.
 > **Datum**: 2026-07-16 (Proposed + Accepted + geliefert)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: [`docs/perf/budgets.md`](../perf/budgets.md) §2/§3/§4
@@ -103,55 +106,70 @@ aber die **Delta**-Größe (Host vs. Docker, gleiche Maschine), und die ist
 
 ## Entscheidung
 
-> **Entscheidung (Accepted 2026-07-16):** Der **Zielzustand für den
-> Ausführungsort der Bench-/Mutation-Gates ist Docker** — für alle vier
-> Gates. Geliefert: `analyzer-benchmark-smoke` läuft im `build`-Stage-
-> Image via `docker run` (die Go-Gates waren schon Docker).
-> `ts-mutation-report` folgt demselben Zielzustand, ist aber
-> zurückgestellt (R-31, s. u.). Der Budget-Check
+> **Entscheidung (Accepted 2026-07-16):** Der **Ausführungsort der
+> Bench-/Mutation-Gates ist Docker** — für alle vier Gates. Geliefert:
+> `analyzer-benchmark-smoke` und `ts-mutation-report` laufen im Container
+> via `docker run` (die Go-Gates waren schon Docker). Der Budget-Check
 > (`scripts/check-bench-budgets.mjs`, reines Node-builtins) bleibt auf
 > dem Host, weil er die vom Container erzeugte Ausgabe liest.
 
 Mechanik:
 
-- **Bench** (`analyzer-benchmark-smoke`, geliefert): `docker run
-  m-trace-ts:build` schreibt die vitest-Bench-Tabelle auf stdout; `tee`
-  spiegelt sie nach `.tmp/bench/analyzer-bench.txt` (Host-Artefakt, das
+- **Bench** (`analyzer-benchmark-smoke`): `docker run m-trace-ts:build`
+  schreibt die vitest-Bench-Tabelle auf stdout; `tee` spiegelt sie nach
+  `.tmp/bench/analyzer-bench.txt` (Host-Artefakt, das
   `benchmark-observation.yml` als Trend hochlädt); der Budget-Check läuft
   auf dem Host. **Exakt** das Muster des schon-Dockerisierten Go-Benches
   (`docker run golang:1.26.5 … | tee .tmp/bench/api-bench.txt`).
-- **Mutation** (`ts-mutation-report`): **zurückgestellt (R-31).** Der
-  geplante Weg — `docker run m-trace-ts:build` fährt StrykerJS, Report-
-  Ordner per **Bind-Mount** (`-v …/reports:/workspace/…/reports`) auf den
-  Host (kein stdout) — scheitert daran, dass StrykerJS via `pnpm dlx` das
-  Workspace-`typescript` im Container nicht auflöst
-  (`ts-config-preprocessor` → `ERR_MODULE_NOT_FOUND: Cannot find package
-  'typescript'`). Kandidat-Fix: `typescript` in die `pnpm dlx
-  --package`-Liste, plus Nachweis, dass Stryker im Container vollständig
-  durchläuft UND der Host-Pfad heil bleibt (der könnte durch
-  `continue-on-error` + `|| true` bislang stillschweigend fehlschlagen).
-  `ts-mutation-report` bleibt bis dahin host-seitig.
+- **Mutation** (`ts-mutation-report`): `docker run m-trace-ts:mutation-ts`
+  (= `build` + `procps`, s. u.) fährt StrykerJS; der Report-Ordner ist
+  Verzeichnis-Output (kein stdout) → per **Bind-Mount**
+  (`-v …/reports:/workspace/…/reports`) auf den Host. Hermetisch: kein
+  Netz nötig (devDeps statt `pnpm dlx`-Fetch).
 
-**Kein dedizierter `bench`-Dockerfile-Stage.** Der `build`-Stage enthält
-bereits alles, was Bench/Mutation brauchen (node_modules + gebautes
-`dist` + `benchmarks/` + vitest); ein eigener `RUN`-Stage wäre entweder
-ein inhaltsloser Alias von `build`, oder würde — mit Budget-Check *im*
-Container — den Host-Artefakt zerstören, den der Beobachtungs-Nightly
-hochlädt. `docker run` des `build`-Images erzeugt den Artefakt direkt und
-bleibt symmetrisch zum Go-Bench.
+**Stage-Wahl.** Der Bench braucht **keinen** eigenen Stage — der
+`build`-Stage enthält bereits alles (node_modules + gebautes `dist` +
+`benchmarks/` + vitest), und ein `RUN`-Stage mit Budget-Check *im*
+Container würde den Host-Artefakt zerstören, den der Beobachtungs-Nightly
+hochlädt. Die Mutation braucht dagegen **einen** dünnen Stage
+(`mutation-ts` = `FROM build` + `procps`), weil StrykerJS seine
+Test-Runner-Worker über `ps` verwaltet und das `node:slim`-Base es nicht
+mitbringt (analog `cli-smoke`, der `jq`/`python3` nachinstalliert). In
+beiden Fällen führt **`docker run`** den Lauf aus (nicht `docker build
+--target … RUN`), damit die Ergebnisse (Bench-stdout / Report-
+Verzeichnis) auf den Host gelangen.
+
+**Mutation-Gate-Fix (Nebenbefund).** Der TS-Mutation-Gate war unter pnpm
+11 **still tot**: StrykerJS lief via `pnpm dlx`, und pnpms isolierter
+Store-Linker macht stryker-cores ESM-`import('typescript')` UND das
+Plugin-Discovery (`@stryker-mutator/vitest-runner`) unauflösbar — beide
+sind keine deklarierten stryker-core-Deps, also linkt pnpm sie nicht in
+den Auflösungspfad (unter npms flachem Hoisting wären sie gefunden
+worden). `ERR_MODULE_NOT_FOUND`, kein Report — maskiert durch
+`continue-on-error` + `|| true` im Nightly, sodass die „grünen" Läufe den
+Score nie maßen. Fix: **StrykerJS + vitest-runner als exakte devDeps
+(`9.6.1`, Peer-Pin ist exakt)** statt `pnpm dlx` (→ `.pnpm`-Hoisting löst
+`typescript`) **plus `plugins: ["@stryker-mutator/vitest-runner"]`** in
+`stryker.conf.cjs` (die Glob-Discovery `@stryker-mutator/*` greift unter
+pnpm nicht, der explizite Name lässt Stryker `require.resolve` nutzen).
+Host **und** Container liefern denselben Score (74,52 %). Zusätzlich
+fällt das Nightly-`|| true` weg: mit `break: 0` exitet Stryker bei jedem
+Score mit 0, ein Non-Zero-Exit ist also ein echter Bruch und bleibt jetzt
+sichtbar (`continue-on-error` hält den Job trotzdem nicht-blockierend).
 
 ## Konsequenzen
 
 **Positiv:**
 
-- Einheitlicher Ausführungsort für die Bench-Gates (Go + TS) und die
-  Go-Mutation; TS-Mutation folgt mit R-31.
-- `make analyzer-benchmark-smoke` braucht **keine Host-`node_modules`**
-  mehr → in `benchmark-observation.yml` entfällt der `pnpm install`-
-  Schritt; die pnpm-`.modules.yaml`-Purge-Falle beim Toolchain-Bump
-  betrifft dieses Gate nicht mehr. `ts-mutation-report` bleibt bis zum
-  R-31-Fix host-seitig (inkl. `pnpm install` in `mutation.yml`).
-- Reproduzierbarkeit: der Bench läuft gegen die exakt gebaute Artefakt-
+- Einheitlicher Ausführungsort über alle vier Bench-/Mutation-Gates.
+- `make analyzer-benchmark-smoke` **und** `ts-mutation-report` brauchen
+  **keine Host-`node_modules`** mehr → in `benchmark-observation.yml` und
+  `mutation.yml` (TS-Job) entfällt der `pnpm install`-Schritt; die
+  pnpm-`.modules.yaml`-Purge-Falle beim Toolchain-Bump betrifft diese
+  Gates nicht mehr.
+- Der TS-Mutation-Gate **funktioniert wieder** (war unter pnpm 11 still
+  tot) und meldet Brüche künftig sichtbar (kein maskierendes `|| true`).
+- Reproduzierbarkeit: die Läufe gehen gegen die exakt gebaute Artefakt-
   Kette (`build`-Image) statt gegen einen möglicherweise driftenden
   Host-`node_modules`-Zustand.
 
@@ -169,11 +187,15 @@ bleibt symmetrisch zum Go-Bench.
   (release-zeitig, opt-in, host-`tsup`) bleibt host-seitig — außerhalb
   des Scopes dieses ADR (Bench/Mutation-Gates). Ein späterer Umzug ist
   ein eigener Schritt.
-- Beim späteren ts-mutation-Umzug (R-31) werden die Reports vom
-  Container (root) via Bind-Mount geschrieben → root-owned auf dem Host,
-  konsistent mit dem schon bestehenden Go-Mutation-Verhalten
-  (`-v $(CURDIR):/src` in `golang`). Für den jetzt gelieferten Bench
-  entfällt das (stdout/tee statt Verzeichnis-Output).
+- Die ts-mutation-Reports werden vom Container (root) via Bind-Mount
+  geschrieben → root-owned auf dem Host, konsistent mit dem bestehenden
+  Go-Mutation-Verhalten (`-v $(CURDIR):/src` in `golang`).
+- StrykerJS + vitest-runner sind jetzt im Lockfile gepinnt (`9.6.1`) —
+  die zuvor bewusste „kein Stryker im Lockfile"-Wahl (`pnpm dlx`) ist
+  umgekehrt, weil genau sie unter pnpm 11 den stillen Bruch verursacht
+  hat. Stryker-Bumps sind damit ein Lockfile-Diff (sichtbar, review-bar)
+  statt eines unsichtbaren `latest`-Drifts. Der Peer ist exakt
+  (`vitest-runner` → `core@9.6.1`), daher beide exakt gepinnt.
 
 **Budget-Wartung unverändert:** die Schwellen aus
 [`docs/perf/budgets.md`](../perf/budgets.md) bleiben, was sie sind —

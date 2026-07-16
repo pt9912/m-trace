@@ -115,17 +115,23 @@ per `go install` zur Laufzeit gezogen — kein Eintrag in `go.mod`.
 make ts-mutation-report
 ```
 
-Läuft host-side via `pnpm dlx` (Stryker ist **nicht** als
-devDependency im player-sdk gepinnt, damit Stryker-Versions-
-Bumps nicht im Lockfile pinned werden). Vitest-Runner verwendet
-dieselbe Vitest-Version wie `make ts-test`.
+Läuft in Docker
+([ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md),
+analog zum Go-Pendant im `golang`-Container): der `mutation-ts`-Stage
+(= `build` + `procps`) wird gebaut, `docker run` fährt StrykerJS, und
+der Report wird per Bind-Mount auf den Host gespiegelt. StrykerJS +
+`@stryker-mutator/vitest-runner` sind als **exakte devDeps** (`9.6.1`)
+gepinnt (Vitest-Runner nutzt dieselbe Vitest-Version wie `make ts-test`).
 
-> **Ausführungsort**: Der Zielzustand ist Docker
-> ([ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md),
-> analog zum Go-Pendant im `golang`-Container), der Umzug ist aber
-> **zurückgestellt** (`R-31`): StrykerJS löst im Container das
-> Workspace-`typescript` nicht auf. Bis dahin bleibt dieser Gate
-> host-seitig.
+> **Warum devDeps statt `pnpm dlx`**: unter pnpm 11 macht der
+> isolierte Store-Linker Strykers `import('typescript')` UND das
+> vitest-Runner-Plugin unauflösbar (`ERR_MODULE_NOT_FOUND`) — beide
+> keine deklarierten stryker-core-Deps. Das legte den Gate lange still
+> lahm (maskiert durch `continue-on-error` + `\|\| true` im Nightly).
+> devDeps + `.pnpm`-Hoisting lösen `typescript`; `plugins: [...]` in
+> `stryker.conf.cjs` deklariert den Runner explizit; `procps` im
+> Container deckt Strykers `ps`-Worker-Verwaltung. Siehe `R-31`
+> (aufgelöst) und ADR-0008.
 
 HTML-Report öffnen:
 
