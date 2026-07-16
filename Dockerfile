@@ -41,7 +41,18 @@ COPY packages/stream-analyzer packages/stream-analyzer
 FROM source AS build
 
 RUN pnpm run build
-RUN pnpm install --frozen-lockfile --ignore-scripts --offline
+# Bin-Symlinks der Workspace-Konsumenten (z. B. m-trace in
+# apps/analyzer-service/node_modules/.bin, verifiziert von smoke-cli
+# Schritt 7) neu verlinken. Der `deps`-Install lief vor `pnpm run
+# build`, also fehlte das Bin-Ziel dist/cli/main.cjs — und pnpm 11
+# legt einen Bin-Symlink NICHT mehr an, wenn das Ziel zur Install-Zeit
+# fehlt (pnpm 10 erzeugte einen dangling Symlink, der nach dem Build
+# griff). Ein bloßer Re-Install re-linkt bereits verlinkte Workspace-
+# Pakete unter pnpm 11 nicht (auch --force/pnpm rebuild nicht); erst
+# ein frischer Link-Lauf mit vorhandenem dist erzeugt die Bins. Der
+# Store bleibt erhalten, daher --offline.
+RUN rm -rf node_modules apps/*/node_modules packages/*/node_modules \
+ && pnpm install --frozen-lockfile --ignore-scripts --offline
 
 FROM build AS test
 
