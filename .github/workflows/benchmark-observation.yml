@@ -47,8 +47,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      - name: Install Node dependencies
-        run: pnpm install --frozen-lockfile
+      # Kein Host-`pnpm install` mehr: beide Bench-Smokes laufen im
+      # Container (ADR-0008), der Budget-Check (check-bench-budgets.mjs)
+      # ist reines Node-builtins. Host-`node` genügt (Setup Node.js
+      # oben) für den Budget-Check und die Runner-Info.
 
       - name: Stream-analyzer benchmark smoke
         id: ts-bench

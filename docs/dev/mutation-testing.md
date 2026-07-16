@@ -120,6 +120,13 @@ devDependency im player-sdk gepinnt, damit Stryker-Versions-
 Bumps nicht im Lockfile pinned werden). Vitest-Runner verwendet
 dieselbe Vitest-Version wie `make ts-test`.
 
+> **Ausführungsort**: Der Zielzustand ist Docker
+> ([ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md),
+> analog zum Go-Pendant im `golang`-Container), der Umzug ist aber
+> **zurückgestellt** (`R-31`): StrykerJS löst im Container das
+> Workspace-`typescript` nicht auf. Bis dahin bleibt dieser Gate
+> host-seitig.
+
 HTML-Report öffnen:
 
 ```bash

@@ -39,6 +39,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `make lock-refresh` erhält `--store-dir=/tmp/.pnpm-store` (der
     pnpm-11-Store-Default ist im gemounteten `--user`-Container nicht
     schreibbar).
+- Dockerfile `build`-Stage verlinkt die Workspace-Consumer-Bins nach dem
+  Build neu (`rm -rf node_modules … && pnpm install --offline`). Weitere
+  pnpm-11-Migrationsfolge: pnpm 11 legt einen Bin-Symlink nicht mehr an,
+  wenn das Ziel zur Install-Zeit fehlt (der `deps`-Install läuft vor
+  `pnpm run build`, also fehlte `packages/stream-analyzer/dist/cli/main.cjs`),
+  und ein bloßer Re-Install re-linkt bereits verlinkte Workspace-Pakete
+  nicht. Ohne den Re-Link brach der CI-Job „CLI smoke" (Schritt „bin via
+  consumer .bin"). Nur der Monorepo-Build betroffen — `npm install`-
+  Konsumenten bekommen `dist/` fertig im Tarball.
+- Der TypeScript-Stream-Analyzer-Bench-Smoke
+  (`make analyzer-benchmark-smoke`) läuft jetzt im `build`-Stage-Container
+  statt host-seitig
+  ([ADR-0008](docs/adr/0008-benchmark-mutation-execution-in-docker.md);
+  mess-basiert — eine A/B-Messung Host vs. Docker belegt Container-Overhead
+  ≈ 0, die §4-Budgets halten). `benchmark-observation.yml` braucht dafür
+  keinen Host-`pnpm install` mehr. Der Go-Bench war bereits
+  containerisiert; der TypeScript-Mutation-Gate folgt separat (`R-31`).
 
 ### Security
 

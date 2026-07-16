@@ -21,6 +21,15 @@ Obergrenzen**, kein Vergleich gegen den letzten Commit (das ist
 
 - **Plattform**: GitHub Actions `ubuntu-24.04` (PR-Pfad). Lokale
   Läufe können niedrigere Werte zeigen; Budgets sind für CI gesetzt.
+- **Ausführungsort**: **Docker** für beide Bench-Gates
+  ([ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md)) —
+  der Go-Bench im `golang:1.26.5`-Container, der TS-Bench im
+  `build`-Stage-Image. Eine A/B-Messung Host vs. Docker (ADR-0008)
+  belegt, dass der Container-Overhead für die CPU-gebundenen Hot-Path-
+  Benches innerhalb des Mess-Rauschens (≈ 0) liegt; die hier gelisteten
+  Budgets halten unter Docker (engster Fall Detector: ~1,9× Headroom).
+  Der Budget-Check (`check-bench-budgets.mjs`) läuft auf dem Host über
+  die vom Container erzeugte Ausgabe.
 - **Messprotokoll**: jeder Smoke-Run druckt Runner-OS, CPU-Modell
   und relevante Runtime-Versionen (Go, Node, pnpm) — damit ein
   Budget-Failure einordenbar bleibt.

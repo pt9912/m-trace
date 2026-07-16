@@ -468,15 +468,23 @@ api-benchmark-smoke:
 # `docs/perf/budgets.md`; PR-Blockierung ist
 # via `make gates` aktiv.
 #
-# Workflow: vitest-bench-stdout wird nach
-# `.tmp/bench/analyzer-bench.txt` gespiegelt; `scripts/check-bench-
-# budgets.mjs --kind ts` parst die Texttabelle und prüft jeden Bench
-# gegen das Budget aus `docs/perf/budgets.md` (Plan-DoD „Budget-
-# Verletzung erzeugt eindeutige Fehlermeldung mit Ist/Soll").
+# Ausführungsort ist Docker (ADR-0008): der Bench läuft im `build`-
+# Stage-Image (node_modules + gebautes dist + benchmarks/ + vitest
+# sind dort schon vorhanden), analog zum schon-containerisierten
+# Go-Bench. Empirisch belegt (ADR-0008 A/B-Messung): der
+# Container-Overhead ist für die CPU-gebundenen In-Memory-Benches
+# innerhalb des Mess-Rauschens (≈ 0), die Budgets halten.
+#
+# Workflow: der Container schreibt die vitest-Bench-Tabelle auf
+# stdout, `tee` spiegelt sie nach `.tmp/bench/analyzer-bench.txt`
+# (Host-Artefakt für den Beobachtungs-Nightly); `scripts/check-bench-
+# budgets.mjs --kind ts` parst die Texttabelle auf dem Host und prüft
+# jeden Bench gegen das Budget aus `docs/perf/budgets.md`.
 analyzer-benchmark-smoke:
 	@bash scripts/print-bench-runner-info.sh
 	@mkdir -p .tmp/bench
-	@bash -o pipefail -c '$(PNPM) --filter @pt9912/stream-analyzer run bench 2>&1 | tee .tmp/bench/analyzer-bench.txt'
+	$(TS_DOCKER_BUILD) --target build -t $(TS_IMAGE):build .
+	@bash -o pipefail -c 'docker run --rm $(TS_IMAGE):build sh -c "$(PNPM) --filter @pt9912/stream-analyzer run bench" 2>&1 | tee .tmp/bench/analyzer-bench.txt'
 	node scripts/check-bench-budgets.mjs --kind ts < .tmp/bench/analyzer-bench.txt
 
 # `make benchmark-smoke` bündelt beide Bench-Smokes in einem
@@ -527,6 +535,8 @@ api-mutation-report:
 #  - `packages/player-sdk/reports/mutation/mutation.json` (Trend-Tracking)
 # Initial nicht-blockierend; opt-in. Lokaler Lauf braucht Node + pnpm
 # (host-side, kein Container — selbe Voraussetzung wie `make ts-test`).
+# Docker-Umzug (ADR-0008) ist zurückgestellt (R-31): StrykerJS via
+# `pnpm dlx` findet im Container das Workspace-`typescript` nicht.
 ts-mutation-report:
 	$(PNPM) --filter @pt9912/player-sdk run mutation
 
