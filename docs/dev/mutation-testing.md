@@ -71,6 +71,22 @@ grüne Workflow-Ergebnisse belegen deshalb nur, dass der nicht-
 blockierende Workflow lief; sie belegen noch keine stabile
 Mutation-Score-Reihe für den TS-Piloten.
 
+Status `2026-07-16`: Der TS-Mutation-Gate war unter pnpm 11 **still
+komplett tot** — StrykerJS lief via `pnpm dlx` gar nicht mehr durch
+(`ERR_MODULE_NOT_FOUND`), maskiert durch `continue-on-error` +
+`|| true` (behoben in `R-31` /
+[ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md)).
+Die Drei-Runs-Beobachtungsphase für den TS-Piloten **startet damit
+neu**: alle vorherigen „grünen" `mutation.yml`-Runs haben **keinen
+Score gemessen** und zählen nicht. Erster realer Messwert (2026-07-16,
+lokal + Container): **74,52 % (155/208)** — über der 70-%-Schwelle,
+aber die Promotion-Uhr zählt **Nightly**-Läufe; der erste Nightly nach
+dem Fix ist Beobachtungslauf 1 von 3. Weil der Score knapp über der
+Schwelle liegt, ist die Bestätigung über drei Läufe (statt sofortiger
+Promotion) hier besonders angezeigt. Der Wegfall des maskierenden
+`|| true` (ADR-0008) sorgt dafür, dass ein erneuter Bruch die Reihe
+nicht wieder unbemerkt reißt.
+
 1. Drei aufeinanderfolgende Nightly-`mutation.yml`-Runs zeigen
    > 70 % für ein Modul.
 2. Folge-Commit nimmt das Modul aus `continue-on-error: true`
