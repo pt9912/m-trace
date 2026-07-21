@@ -7,7 +7,9 @@
 > (MR-001..MR-004); [`harness/README.md`](../../harness/README.md) §Source
 > precedence; RAK-95 (Release-Automatisierung, normativ im Lastenheft) als
 > Prozess-Anker. Kein neuer normativer Lastenheft-Bezug — dies ist ein
-> **Prozess-/Harness-ADR** ohne Spec-Stratum-Schärfung (`Schärft: —`).
+> **Prozess-/Harness-ADR** ohne Spec-Stratum-Schärfung. (Das aus der
+> v3.5.0-Vorlage stammende `Schärft:`-Kopffeld wird erst mit dem
+> Template-Landing in W1/W2 eingeführt und hier noch nicht geführt.)
 
 ## Kontext
 
@@ -99,9 +101,13 @@ Bestandteile:
    codepaths-scope), `harness/README.md`, `Makefile`/`d-check.mk`-Kommentare,
    `README.md` und veröffentlichte „stable links" auf die neuen Pfade.
 
-Die Ausführung ist **kein Ein-Schritt-Commit**, sondern eine sequenzierte Welle
-(eigener Migrationsplan unter docs/plan/planning/, siehe Roadmap) — der Link-Churn
-(genau der Grund für MR-001) wird kontrolliert und gate-grün abgearbeitet.
+Die Ausführung ist **kein Ein-Schritt-Commit**, sondern eine sequenzierte
+Migrations-Welle — Sequenz, Wellen und Slice-Schnitt stehen im zugehörigen
+Migrationsplan (in der Roadmap §1.2 gelistet). Die Referenz-Richtung bleibt
+**Plan → ADR** (SDP): der Plan verweist aufwärts auf dieses ADR, ein
+ADR → Planning-Link ist `matrix-forbidden` und daher bewusst weggelassen —
+die Discovery läuft über die Roadmap. Der Link-Churn (genau der Grund für
+MR-001) wird kontrolliert und gate-grün abgearbeitet.
 
 ## Konsequenzen
 
@@ -126,10 +132,13 @@ Die Ausführung ist **kein Ein-Schritt-Commit**, sondern eine sequenzierte Welle
   `docs/adr/`/`docs/planning/`, die `.d-check.yml`-Pfade, README/Handbuch und ggf.
   extern zitierte URLs. Das ist die eigentliche Umbau-Arbeit und trägt Regressions-
   Risiko (tote Links) — abgesichert durch `make docs-check` nach jedem Schritt.
-- **Accepted-ADRs sind immutabel.** ADR-0001..0008 wandern per `git mv` (Pfad ändert
-  sich), ihr **Inhalt** bleibt unberührt (MR-002-Grandfathering gilt weiter); der
+- **Accepted-ADRs sind immutabel.** Der Move betrifft **Pfad, nicht Inhalt**:
+  ADR-0001..0008 wandern per `git mv`, ihr Inhalt bleibt unberührt; der
   Immutabilitäts-Sensor (`make docs-immutable`) darf durch den reinen Move nicht
-  anschlagen — Move-Commit ohne Inhaltsänderung.
+  anschlagen — Move-Commit ohne Inhaltsänderung. Davon zu trennen ist das
+  **inhaltliche** MR-002-Grandfathering: es gilt nur für die historisch
+  abweichenden 0001–0007; ADR-0008 wurde bereits konform verfasst und braucht es
+  nicht. Der Pfad-Move gilt für alle acht.
 - **Zwischenzustände.** Während der Welle sind Pfade teils alt/teils neu; die Gates
   müssen pro Schritt grün bleiben (kein „großer Bang"-Commit).
 - **Nicht Teil dieses ADR:** die *inhaltliche* Umstellung der Slice-Form auf
