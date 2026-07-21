@@ -18,6 +18,13 @@ kanonische Layout heben, sodass AGENTS.md, die vendored Templates („Ziel-Form"
 und die Source-Precedence-Pfade **ohne Divergenz-Steuer** zusammenpassen. MR-001
 (Pfad-Divergenz) wird dabei aufgelöst, nicht fortgeschrieben.
 
+**Owner-Entscheidung (2026-07-21): volle v3.5.0-Form.** Es wird die kanonische
+**Wellen/Slices-Planung** adoptiert (neue Arbeit als `slice-NNN`/`welle-NN`, **nicht**
+weiter `plan-<version>`), und `roadmap.md` wird auf den 5-Abschnitt-Kanon (Aktuelle
+Welle · Nächste Wellen · Meilensteine · Abgeschlossene Wellen · Historische
+Trigger-Verschiebungen) reformatiert. Die opt-in-d-check-Module werden als konkreter
+Slice **umgesetzt** (W7), nicht als Kandidat vertagt.
+
 Zielzustand (Kanon): `docs/plan/adr/`, `docs/plan/planning/{open,next,in-progress,done}/`,
 `docs/plan/carveouts/`, `docs/reviews/`, `AGENTS.md`,
 `.harness/baseline/v3.5.0/{regelwerk,templates}/` + `SHA256SUMS`,
@@ -34,13 +41,18 @@ und der risikoreiche Link-Churn ist eine isolierte, gate-abgesicherte letzte Wel
 | **W1 — Vendored Baseline** | `lab-regelwerk.zip` (sha256 `123e3383…`) nach `.harness/baseline/v3.5.0/{regelwerk,templates}/` + `SHA256SUMS` entpacken; `harness/conventions.md` §Baseline auf vendored v3.5.0 umstellen (Commit-URL ersetzt) | ADR-0009 Accepted | Vendored Bundle committet, SHA256SUMS verifiziert, `make docs-check` grün |
 | **W2 — AGENTS.md** | `AGENTS.md` aus vendored Template kopiert-und-ausgefüllt (Source Precedence auf m-trace-Spec-Straten, reale Gate-Tabelle, Hard Rules, 8-Schritt-Workflow); `harness/README.md` gegen die Template-Pflichtgliederung abgeglichen | W1 done | `AGENTS.md` vorhanden, nur reale Make-Targets behauptet, `make docs-check` grün |
 | **W3 — docs/reviews/ + next/** | `docs/reviews/` (Review-Report-Template) + `docs/planning/next/` anlegen; Reviewer-/Closure-Note-Skills nach `.harness/skills/` (aus Template) | W2 done | Verzeichnisse + Templates da, Konvention in `AGENTS.md`/`harness/README.md` verlinkt, Gates grün |
-| **W4 — Carveout-Mechanismus + risks-backlog-Triage** | `docs/plan/carveouts/` (Index + Template) anlegen; `risks-backlog.md` R-N gegen die Werkzeug-Triade triagieren (Carveout / ADR / Roadmap-Kandidat); neue MR für die bewusst behaltene risks-backlog-Praxis + `plan-<version>`-Slice-Form | W3 done | Triage-Ergebnis dokumentiert, `conventions.md` MR-Liste aktualisiert, Gates grün |
+| **W4 — Carveout-Mechanismus + risks-backlog-Triage** | `docs/plan/carveouts/` (Index + Template) anlegen; `risks-backlog.md` R-N gegen die Werkzeug-Triade triagieren (Carveout / ADR / Roadmap-Kandidat); ggf. MR nur für nach der Triage verbleibende risks-backlog-Restpraxis | W3 done | Triage-Ergebnis dokumentiert, `conventions.md` MR-Liste aktualisiert, Gates grün |
 | **W5 — Layout-Move (der Struktur-Umbau)** | Inventar-Slice (repo-weiter Grep, §3) → `docs/adr/` → `docs/plan/adr/`, `docs/planning/` → `docs/plan/planning/`; `.d-check.yml` an **allen 8 Stellen** (inkl. `vcs.paths` + `matrix.exempt-paths`), Nicht-MD-Refs (`.go`/`.ts`-Kommentare, `.gitignore`, `scripts/*.sh`, `lastenheft.md`-Tabelle), MD-Links, `README.md`, Handbuch, „stable links"; **MR-001 auflösen** (nach done-Historie) | W4 done | `make docs-check` + `make gates` + **Grep-Rest-Check** grün auf frischem Klon, `docs-immutable` prüft >0 ADRs, MR-001 als aufgelöst markiert |
+| **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren, Bestand `plan-<version>.md` grandfathern (**Vorschlag — Owner-Ratifizierung offen**, §4); `roadmap.md` auf den 5-Abschnitt-Kanon reformatieren (im kanonischen Pfad aus W5; bisherige Lieferstand-Tabelle → „Abgeschlossene Wellen", nichts löschen) | W5 done | `roadmap.md` folgt dem Kanon, MR in `conventions.md`, `make gates` grün, kein Lieferstand-Verlust |
+| **W7 — opt-in-d-check-Module aktivieren** | konkreter Slice: `versions` (ghcr-Image-Pins gg. `version.md#aktuell`), `ids` (nach Anker-Retrofit, `conventions.md` §Requirement-link convergence), `citations`/`sources` nach Bedarf — je Modul erst advisory-Lauf ohne Befund, dann in `.d-check.yml` + `make gates` binden | W6 done (Layout + `version.md` stehen) | aktivierte Module grün in `make gates`, keine Falschbefunde, DoD je Modul dokumentiert |
 
 **Reihenfolge-Begründung:** W1–W4 sind additiv und netzlos — sie brechen keine
 bestehenden Pfade. W5 trägt den gesamten Link-Churn und läuft zuletzt, wenn AGENTS.md
 und die Konventionen bereits kanonisch formuliert sind, sodass der Move nur noch die
-Verzeichnisse nachzieht.
+Verzeichnisse nachzieht. W6/W7 sind **Content-Wellen nach dem Move** (getrennt vom
+Pfad-Move, §3-Disziplin): W6 reformatiert `roadmap.md` und etabliert die Wellen/Slices-
+Form im schon kanonischen Pfad; W7 aktiviert die opt-in-Module, sobald das Layout und
+`version.md` stehen (Abhängigkeit von W5/W6).
 
 ## 3. Slice-Schnitt (W5, der kritische)
 
@@ -81,16 +93,23 @@ gewahrt); der **zweite Commit** trägt die Cross-Doc-Link-Fixes.
 5. **MR-001 auflösen** + `harness/conventions.md`/`harness/README.md` Source-Precedence
    auf die kanonischen Pfade.
 
-## 4. Out-of-Scope (bewusst nicht in dieser Welle)
+## 4. Out-of-Scope / offene Owner-Entscheidung
 
-- **Slice-Form-Umstellung** `plan-<version>` → `slice-NNN`/`welle-NN`: bleibt
-  bewusst release-gebunden (neue MR in W4), keine Umbenennung des Bestands.
-- **Aktivierung neuer opt-in-d-check-Module** (`ids`/`citations`/`sources`/`versions`):
-  eigener Folge-Slice (Kandidat, siehe §6). Die opt-in-Modul-Frage wurde
-  zwischenzeitlich als „R-32" erwogen, **bewusst nicht** in die risks-backlog
-  aufgenommen (der Identifier existiert nirgends sonst) — sie ist ein
-  Roadmap-Kandidat, kein Risiko.
-- **Inhaltliche Neufassung** bestehender Accepted-ADRs (Immutabilität, MR-002).
+> **Provenienz-Hinweis.** Frühere Fassungen dieses Plans führten „Slice-Form bleibt
+> `plan-<version>`" und „opt-in-Module bleiben Kandidat" als „bewusst" out-of-scope —
+> das war ein Scoping-Vorgriff des Autors ohne Owner-Beschluss. Owner-Entscheidung
+> 2026-07-21 (§1): beides ist In-Scope (W6/W7). Es bleibt nur eine rule-backed
+> Grenze und eine echte offene Entscheidung.
+
+- **Inhaltliche Neufassung** bestehender Accepted-ADRs bleibt ausgeschlossen —
+  gebunden durch die Hard Rule „ADRs immutabel nach `Accepted`" (Regelwerk Modul 4)
+  **plus MR-002** (Owner-erfasst 2026-07-14). Der W5-Move betrifft nur den **Pfad**,
+  nicht den Inhalt.
+- **Offen (Owner-Entscheidung, W6):** Behandlung des **Bestands** `plan-<version>.md`
+  (Dutzende Dateien in `done/`). *Vorschlag des Autors:* grandfathern (historische
+  Records bleiben, nur neue Arbeit nutzt `slice-NNN`/`welle-NN`) — regelwerk-konsistent
+  (Brownfield-Grandfathering wie MR-002), kein Massen-Churn, Release-Versions-Kopplung
+  bleibt. *Alternative:* Vollumbenennung des Bestands. **Nicht vorentschieden.**
 
 ## 5. Risiken und offene Punkte
 
@@ -108,15 +127,22 @@ gewahrt); der **zweite Commit** trägt die Cross-Doc-Link-Fixes.
   gewahrt.
 - **Toter externer Link** durch W5-Move (Grund für MR-001). Gegenmittel: W5 zuletzt,
   Grep + `docs-check` pro Slice, Redirect-Hinweis im `README.md` erwägen.
+- **`roadmap.md`-Reformat (W6)** darf keinen Lieferstand verlieren: die bisherige
+  §1.1-Lieferstand-Tabelle wird in „Abgeschlossene Wellen" überführt, nicht gelöscht;
+  der 5-Abschnitt-Kanon trägt die Historie weiter.
+- **W7-Falschbefunde:** `ids` würde heute 340 nackte Kennungen auf den Dateianfang
+  linken (`conventions.md` §Requirement-link convergence) — Anker-Retrofit ist
+  Vorbedingung, sonst bleibt `ids` aus. Je Modul erst advisory-Lauf ohne Befund.
 - Ob W5 überhaupt gefahren wird, hängt an ADR-0009: bei unvertretbarem Link-Bruch
   greift ADR-0009 Variante C (Layout-Welle vertagt, MR-001 befristet).
 
 ## 6. Folge-Kandidaten (nach Migration)
 
-- **d-check opt-in-Module aktivieren** (`ids` nach Anker-Retrofit laut
-  `conventions.md` §Requirement-link convergence; `versions` für die ghcr-Image-Pins;
-  `citations`/`sources` nach Bedarf) — Roadmap-Kandidat, wird zum Slice, wenn geschnitten.
-- **Freshness-Audit** der vendored Baseline gegen künftige Kurs-Releases (v3.5.0 §Modul 2).
+- **Freshness-Audit** der vendored Baseline gegen künftige Kurs-Releases (v3.5.0
+  §Modul 2): beobachtbarer Auslöser (neuer Kurs-Tag) → Re-Vendoring-Review, kein
+  Auto-Bump.
+- Sollte der Owner die **Vollumbenennung** des `plan-<version>`-Bestands (§4) wählen,
+  ist das ein eigener, großer Slice nach W6.
 
 ## 7. Closure-Notiz
 

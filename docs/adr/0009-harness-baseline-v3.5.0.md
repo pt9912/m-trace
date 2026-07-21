@@ -55,16 +55,17 @@ jeder „Ziel-Form"-Verweis müsste um-gepfadet werden, und ein Leser, der der
 Referenz-Form folgt, bekäme kanonische Pfade, die das Repo nicht hat. Die
 v3.5.0-Adoption ist damit **kein reiner Versions-Bump, sondern ein Struktur-Umbau.**
 
-Zusätzlich weichen zwei m-trace-Praktiken vom Kanon ab, die **bewusst bleiben**
-sollen und daher als Adaption zu deklarieren sind statt still zu divergieren:
+Zusätzlich weichen zwei m-trace-Praktiken vom Kanon ab:
 
 - **Slice-Form:** m-trace nutzt release-gebundene `plan-<version>.md` statt
-  `slice-NNN`/`welle-NN` (release-getriebenes Repo mit normativem Release-Plan im
-  Lastenheft, RAK-1..RAK-46).
+  `slice-NNN`/`welle-NN`. **Owner-Entscheidung (2026-07-21): auf die kanonische
+  Wellen/Slices-Form migrieren** (neue Arbeit `slice-NNN`/`welle-NN`, Bestand
+  grandfathered — der Umgang mit dem Bestand ist offene Owner-Ratifizierung, Plan §4);
+  `roadmap.md` wird auf den v3.5.0-Kanon (5 Abschnitte) reformatiert.
 - **Vertagte Arbeit:** m-trace führt `docs/planning/in-progress/risks-backlog.md`
   (R-N mit Triggern) — das Regelwerk kennt kein „risks-backlog", sondern Carveouts
-  (Gate-Ausnahmen), BF-Sub-Area-Markierungen und Roadmap-Kandidaten. Die R-N-Einträge
-  sind überwiegend Risiko-/Folge-Trigger, keine Gate-Ausnahmen.
+  (Gate-Ausnahmen), BF-Sub-Area-Markierungen und Roadmap-Kandidaten. Die R-N werden
+  gegen die Werkzeug-Triade triagiert (Plan W4).
 
 ## Entscheidung
 
@@ -88,11 +89,13 @@ Bestandteile:
    auf m-traces Spec-Straten, Hard Rules (Docker-only, Suppression-Verbot,
    git-mv-Zweischritt, Architektur meilensteinfrei, ADR-Immutabilität, Gate-Senkung
    nur per ADR), reale Gate-Tabelle (keine halluzinierten Gates), 8-Schritt-Workflow.
-4. **conventions.md nachziehen:** **MR-001 zurückziehen** (Layout ist danach
-   kanonisch → Eintrag nach done-Historie mit „aufgelöst"); MR-002 (ADR-Grandfathering),
-   MR-003 (ID-Familien `F/NF/MVP/AK/RAK/R`), MR-004 (WSL-hostpaths) bleiben; **neue MR**
-   für die bewusst behaltene `plan-<version>`-Slice-Form und für die
-   risks-backlog-Praxis.
+4. **conventions.md + Planungs-Form nachziehen:** **MR-001 zurückziehen** (Layout ist
+   danach kanonisch → Eintrag nach done-Historie mit „aufgelöst"); MR-002/003/004
+   bleiben. **Kanonische Wellen/Slices-Form** (Owner-Entscheidung 2026-07-21): neue
+   Arbeit als `slice-NNN`/`welle-NN`, Bestand `plan-<version>` grandfathered (Umgang
+   mit dem Bestand: offene Owner-Ratifizierung, Plan §4); `roadmap.md` auf den
+   v3.5.0-Kanon reformatieren. Ggf. neue MR nur für nach der Triage verbleibende
+   risks-backlog-Restpraxis.
 5. **risks-backlog triagieren** gegen die Werkzeug-Triade: echte Gate-Ausnahmen →
    Carveout (docs/plan/carveouts/CO-NNN); Architektur-Dauerentscheidungen → ADR;
    Rest (Risiko-/Folge-Trigger) → Roadmap-Kandidat/Slice bzw. als deklarierte
@@ -141,9 +144,12 @@ MR-001) wird kontrolliert und gate-grün abgearbeitet.
   nicht. Der Pfad-Move gilt für alle acht.
 - **Zwischenzustände.** Während der Welle sind Pfade teils alt/teils neu; die Gates
   müssen pro Schritt grün bleiben (kein „großer Bang"-Commit).
-- **Nicht Teil dieses ADR:** die *inhaltliche* Umstellung der Slice-Form auf
-  `slice-NNN`/`welle-NN` (bleibt bewusst `plan-<version>`, neue MR) und die Aktivierung
-  der neuen opt-in-d-check-Module — beides eigene Folge-Entscheidungen.
+- **Erweiterter Scope = mehr Arbeit (Owner-Entscheidung 2026-07-21).** Die Umstellung
+  der Planungs-Form auf `slice-NNN`/`welle-NN` samt `roadmap.md`-Reformat (Plan W6) und
+  die Aktivierung der opt-in-d-check-Module (Plan W7) sind **Teil** der Migration —
+  zwei zusätzliche Content-Wellen nach dem Layout-Move, nicht vertagte
+  Folge-Entscheidungen. Einzige offene Owner-Ratifizierung: Umgang mit dem
+  `plan-<version>`-Bestand (grandfathern vs. umbenennen, Plan §4).
 
 ## Alternativen
 
