@@ -93,9 +93,10 @@ Bestandteile:
    danach kanonisch → Eintrag nach done-Historie mit „aufgelöst"); MR-002/003/004
    bleiben. **Kanonische Wellen/Slices-Form** (Owner-Entscheidung 2026-07-21): neue
    Arbeit als `slice-NNN`/`welle-NN`, Bestand `plan-<version>` grandfathered (Umgang
-   mit dem Bestand: offene Owner-Ratifizierung, Plan §4); `roadmap.md` auf den
-   v3.5.0-Kanon reformatieren. Ggf. neue MR nur für nach der Triage verbleibende
-   risks-backlog-Restpraxis.
+   mit dem Bestand: offene Owner-Ratifizierung, Plan §4); **frische, altlastenfreie
+   `roadmap.md`** im v3.5.0-Kanon anlegen und den historienlastigen Alt-Stand nach
+   `done/` archivieren (Owner-Entscheidung 2026-07-21). Ggf. neue MR nur für nach der
+   Triage verbleibende risks-backlog-Restpraxis.
 5. **risks-backlog triagieren** gegen die Werkzeug-Triade: echte Gate-Ausnahmen →
    Carveout (docs/plan/carveouts/CO-NNN); Architektur-Dauerentscheidungen → ADR;
    Rest (Risiko-/Folge-Trigger) → Roadmap-Kandidat/Slice bzw. als deklarierte

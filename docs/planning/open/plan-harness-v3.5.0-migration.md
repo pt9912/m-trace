@@ -43,7 +43,7 @@ und der risikoreiche Link-Churn ist eine isolierte, gate-abgesicherte letzte Wel
 | **W3 — docs/reviews/ + next/** | `docs/reviews/` (Review-Report-Template) + `docs/planning/next/` anlegen; Reviewer-/Closure-Note-Skills nach `.harness/skills/` (aus Template) | W2 done | Verzeichnisse + Templates da, Konvention in `AGENTS.md`/`harness/README.md` verlinkt, Gates grün |
 | **W4 — Carveout-Mechanismus + risks-backlog-Triage** | `docs/plan/carveouts/` (Index + Template) anlegen; `risks-backlog.md` R-N gegen die Werkzeug-Triade triagieren (Carveout / ADR / Roadmap-Kandidat); ggf. MR nur für nach der Triage verbleibende risks-backlog-Restpraxis | W3 done | Triage-Ergebnis dokumentiert, `conventions.md` MR-Liste aktualisiert, Gates grün |
 | **W5 — Layout-Move (der Struktur-Umbau)** | Inventar-Slice (repo-weiter Grep, §3) → `docs/adr/` → `docs/plan/adr/`, `docs/planning/` → `docs/plan/planning/`; `.d-check.yml` an **allen 8 Stellen** (inkl. `vcs.paths` + `matrix.exempt-paths`), Nicht-MD-Refs (`.go`/`.ts`-Kommentare, `.gitignore`, `scripts/*.sh`, `lastenheft.md`-Tabelle), MD-Links, `README.md`, Handbuch, „stable links"; **MR-001 auflösen** (nach done-Historie) | W4 done | `make docs-check` + `make gates` + **Grep-Rest-Check** grün auf frischem Klon, `docs-immutable` prüft >0 ADRs, MR-001 als aufgelöst markiert |
-| **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren (Owner-entschieden, §1); Umgang mit dem Bestand `plan-<version>.md` — grandfathern (**nur dieser Punkt offen, Owner-Ratifizierung §4**); `roadmap.md` auf den 5-Abschnitt-Kanon reformatieren (im kanonischen Pfad aus W5; bisherige Lieferstand-Tabelle → „Abgeschlossene Wellen", nichts löschen) | W5 done | `roadmap.md` folgt dem Kanon, MR in `conventions.md`, `make gates` grün, kein Lieferstand-Verlust |
+| **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren (Owner-entschieden, §1); Umgang mit dem Bestand `plan-<version>.md` — grandfathern (**nur dieser Punkt offen, Owner-Ratifizierung §4**); **frische, altlastenfreie `roadmap.md`** (5 Abschnitte, forward-looking) am kanonischen Pfad anlegen und die bestehende historienlastige Roadmap per `git mv` nach `done/roadmap-pre-v3.5.0.md` **archivieren** (Owner-Entscheidung 2026-07-21); „Abgeschlossene Wellen" = **Pointer-Tabelle** auf `done/`-Closure-Notizen + Verweis auf die Alt-Roadmap für die volle Pre-v3.5.0-Historie | W5 done | frische `roadmap.md` folgt dem Kanon (keine Altlasten), Alt-Stand in `done/` verlinkt, MR in `conventions.md`, `make gates` grün |
 | **W7 — opt-in-d-check-Module aktivieren** | zwei Teile: **(7a)** `version.md#aktuell` nach Regelwerk §Versions-Register **anlegen** — es existiert heute **keine** `version.md`; sie konsolidiert die verstreuten Quellen (`packages/*/src/version.ts` `0.25.0`, `DCHECK_DIGEST` in `Makefile`, Go-`serviceVersion` `0.25.0`, `releasing.md`-Bump-Checkliste). **(7b)** Module aktivieren: `versions` (ghcr-Pins gg. `version.md#aktuell`), `ids` (nach Anker-Retrofit, `conventions.md` §Requirement-link convergence), `citations`/`sources` nach Bedarf — je Modul erst advisory-Lauf ohne Befund, dann in `.d-check.yml` + `make gates` binden | W6 done | `version.md` kanonisch (single source), aktivierte Module grün in `make gates`, keine Falschbefunde, DoD je Modul |
 
 **Reihenfolge-Begründung:** W1–W4 sind additiv und netzlos — sie brechen keine
@@ -128,9 +128,12 @@ gewahrt); der **zweite Commit** trägt die Cross-Doc-Link-Fixes.
   gewahrt.
 - **Toter externer Link** durch W5-Move (Grund für MR-001). Gegenmittel: W5 zuletzt,
   Grep + `docs-check` pro Slice, Redirect-Hinweis im `README.md` erwägen.
-- **`roadmap.md`-Reformat (W6)** darf keinen Lieferstand verlieren: die bisherige
-  §1.1-Lieferstand-Tabelle wird in „Abgeschlossene Wellen" überführt, nicht gelöscht;
-  der 5-Abschnitt-Kanon trägt die Historie weiter.
+- **`roadmap.md`-Neuanlage (W6):** die frische Roadmap bleibt bewusst **altlastenfrei**
+  (Owner-Entscheidung). Die volle Historie geht **nicht verloren** — sie wandert als
+  `git mv`-Archiv nach `done/roadmap-pre-v3.5.0.md` und lebt ohnehin in den einzelnen
+  `done/plan-X.Y.Z.md`; die neue Roadmap verlinkt beides. Der kanonische Pfad
+  (`…/in-progress/roadmap.md`) bleibt gleich → bestehende Verweise darauf lösen weiter
+  auf die (neue) Datei auf.
 - **`version.md` fehlt (W7a):** `versions` prüft gegen `version.md#aktuell`, das es
   heute **nicht** gibt und das keine Vor-Welle anlegt → W7 baut es zuerst selbst
   (konsolidiert die 4 verstreuten Versions-Quellen, §2 W7). Ohne den Schritt hätte
