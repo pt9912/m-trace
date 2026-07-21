@@ -59,9 +59,9 @@ Zusätzlich weichen zwei m-trace-Praktiken vom Kanon ab:
 
 - **Slice-Form:** m-trace nutzt release-gebundene `plan-<version>.md` statt
   `slice-NNN`/`welle-NN`. **Owner-Entscheidung (2026-07-21): auf die kanonische
-  Wellen/Slices-Form migrieren** (neue Arbeit `slice-NNN`/`welle-NN`, Bestand
-  grandfathered — der Umgang mit dem Bestand ist offene Owner-Ratifizierung, Plan §4);
-  `roadmap.md` wird auf den v3.5.0-Kanon (5 Abschnitte) reformatiert.
+  Wellen/Slices-Form migrieren** (neue Arbeit `slice-NNN`/`welle-NN`; der Bestand
+  `plan-<version>` wird grandfathered — Variante A, Owner-ratifiziert 2026-07-21,
+  Plan §4); `roadmap.md` wird auf den v3.5.0-Kanon (5 Abschnitte) gebracht.
 - **Vertagte Arbeit:** m-trace führt `docs/planning/in-progress/risks-backlog.md`
   (R-N mit Triggern) — das Regelwerk kennt kein „risks-backlog", sondern Carveouts
   (Gate-Ausnahmen), BF-Sub-Area-Markierungen und Roadmap-Kandidaten. Die R-N werden
@@ -92,8 +92,8 @@ Bestandteile:
 4. **conventions.md + Planungs-Form nachziehen:** **MR-001 zurückziehen** (Layout ist
    danach kanonisch → Eintrag nach done-Historie mit „aufgelöst"); MR-002/003/004
    bleiben. **Kanonische Wellen/Slices-Form** (Owner-Entscheidung 2026-07-21): neue
-   Arbeit als `slice-NNN`/`welle-NN`, Bestand `plan-<version>` grandfathered (Umgang
-   mit dem Bestand: offene Owner-Ratifizierung, Plan §4); **frische, altlastenfreie
+   Arbeit als `slice-NNN`/`welle-NN`, Bestand `plan-<version>` grandfathered (Variante A,
+   Owner-ratifiziert 2026-07-21, Plan §4); **frische, altlastenfreie
    `roadmap.md`** im v3.5.0-Kanon anlegen und den historienlastigen Alt-Stand nach
    `done/` archivieren (Owner-Entscheidung 2026-07-21). Ggf. neue MR nur für nach der
    Triage verbleibende risks-backlog-Restpraxis.
@@ -149,8 +149,9 @@ MR-001) wird kontrolliert und gate-grün abgearbeitet.
   der Planungs-Form auf `slice-NNN`/`welle-NN` samt `roadmap.md`-Reformat (Plan W6) und
   die Aktivierung der opt-in-d-check-Module (Plan W7) sind **Teil** der Migration —
   zwei zusätzliche Content-Wellen nach dem Layout-Move, nicht vertagte
-  Folge-Entscheidungen. Einzige offene Owner-Ratifizierung: Umgang mit dem
-  `plan-<version>`-Bestand (grandfathern vs. umbenennen, Plan §4).
+  Folge-Entscheidungen. Der `plan-<version>`-Bestand wird grandfathered (Variante A,
+  Owner-ratifiziert 2026-07-21) — keine Bestands-Umbenennung. Alle Scope-Fragen sind
+  damit entschieden.
 
 ## Alternativen
 

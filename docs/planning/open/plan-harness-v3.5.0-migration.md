@@ -43,7 +43,7 @@ und der risikoreiche Link-Churn ist eine isolierte, gate-abgesicherte letzte Wel
 | **W3 — docs/reviews/ + next/** | `docs/reviews/` (Review-Report-Template) + `docs/planning/next/` anlegen; Reviewer-/Closure-Note-Skills nach `.harness/skills/` (aus Template) | W2 done | Verzeichnisse + Templates da, Konvention in `AGENTS.md`/`harness/README.md` verlinkt, Gates grün |
 | **W4 — Carveout-Mechanismus + risks-backlog-Triage** | `docs/plan/carveouts/` (Index + Template) anlegen; `risks-backlog.md` R-N gegen die Werkzeug-Triade triagieren (Carveout / ADR / Roadmap-Kandidat); ggf. MR nur für nach der Triage verbleibende risks-backlog-Restpraxis | W3 done | Triage-Ergebnis dokumentiert, `conventions.md` MR-Liste aktualisiert, Gates grün |
 | **W5 — Layout-Move (der Struktur-Umbau)** | Inventar-Slice (repo-weiter Grep, §3) → `docs/adr/` → `docs/plan/adr/`, `docs/planning/` → `docs/plan/planning/`; `.d-check.yml` an **allen 8 Stellen** (inkl. `vcs.paths` + `matrix.exempt-paths`), Nicht-MD-Refs (`.go`/`.ts`-Kommentare, `.gitignore`, `scripts/*.sh`, `lastenheft.md`-Tabelle), MD-Links, `README.md`, Handbuch, „stable links"; **MR-001 auflösen** (nach done-Historie) | W4 done | `make docs-check` + `make gates` + **Grep-Rest-Check** grün auf frischem Klon, `docs-immutable` prüft >0 ADRs, MR-001 als aufgelöst markiert |
-| **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren (Owner-entschieden, §1); Umgang mit dem Bestand `plan-<version>.md` — grandfathern (**nur dieser Punkt offen, Owner-Ratifizierung §4**); **frische, altlastenfreie `roadmap.md`** (5 Abschnitte, forward-looking) am kanonischen Pfad anlegen und die bestehende historienlastige Roadmap per `git mv` nach `done/roadmap-pre-v3.5.0.md` **archivieren** (Owner-Entscheidung 2026-07-21); „Abgeschlossene Wellen" = **Pointer-Tabelle** auf `done/`-Closure-Notizen + Verweis auf die Alt-Roadmap für die volle Pre-v3.5.0-Historie | W5 done | frische `roadmap.md` folgt dem Kanon (keine Altlasten), Alt-Stand in `done/` verlinkt, MR in `conventions.md`, `make gates` grün |
+| **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren (Owner-entschieden, §1); Umgang mit dem Bestand `plan-<version>.md` — grandfathern (**Owner-ratifiziert 2026-07-21, Variante A, §4**); **frische, altlastenfreie `roadmap.md`** (5 Abschnitte, forward-looking) am kanonischen Pfad anlegen und die bestehende historienlastige Roadmap per `git mv` nach `done/roadmap-pre-v3.5.0.md` **archivieren** (Owner-Entscheidung 2026-07-21); „Abgeschlossene Wellen" = **Pointer-Tabelle** auf `done/`-Closure-Notizen + Verweis auf die Alt-Roadmap für die volle Pre-v3.5.0-Historie | W5 done | frische `roadmap.md` folgt dem Kanon (keine Altlasten), Alt-Stand in `done/` verlinkt, MR in `conventions.md`, `make gates` grün |
 | **W7 — opt-in-d-check-Module aktivieren** | zwei Teile: **(7a)** `version.md#aktuell` nach Regelwerk §Versions-Register **anlegen** — es existiert heute **keine** `version.md`; sie konsolidiert die verstreuten Quellen (`packages/*/src/version.ts` `0.25.0`, `DCHECK_DIGEST` in `Makefile`, Go-`serviceVersion` `0.25.0`, `releasing.md`-Bump-Checkliste). **(7b)** Module aktivieren: `versions` (ghcr-Pins gg. `version.md#aktuell`), `ids` (nach Anker-Retrofit, `conventions.md` §Requirement-link convergence), `citations`/`sources` nach Bedarf — je Modul erst advisory-Lauf ohne Befund, dann in `.d-check.yml` + `make gates` binden | W6 done | `version.md` kanonisch (single source), aktivierte Module grün in `make gates`, keine Falschbefunde, DoD je Modul |
 
 **Reihenfolge-Begründung:** W1–W4 sind additiv und netzlos — sie brechen keine
@@ -94,23 +94,24 @@ gewahrt); der **zweite Commit** trägt die Cross-Doc-Link-Fixes.
 5. **MR-001 auflösen** + `harness/conventions.md`/`harness/README.md` Source-Precedence
    auf die kanonischen Pfade.
 
-## 4. Out-of-Scope / offene Owner-Entscheidung
+## 4. Out-of-Scope
 
 > **Provenienz-Hinweis.** Frühere Fassungen dieses Plans führten „Slice-Form bleibt
 > `plan-<version>`" und „opt-in-Module bleiben Kandidat" als „bewusst" out-of-scope —
 > das war ein Scoping-Vorgriff des Autors ohne Owner-Beschluss. Owner-Entscheidung
-> 2026-07-21 (§1): beides ist In-Scope (W6/W7). Es bleibt nur eine rule-backed
-> Grenze und eine echte offene Entscheidung.
+> 2026-07-21 (§1): beides ist In-Scope (W6/W7). Alle Scope-Fragen sind damit
+> entschieden; es bleibt nur eine rule-backed Grenze.
 
 - **Inhaltliche Neufassung** bestehender Accepted-ADRs bleibt ausgeschlossen —
   gebunden durch die Hard Rule „ADRs immutabel nach `Accepted`" (Regelwerk Modul 4)
   **plus MR-002** (Owner-erfasst 2026-07-14). Der W5-Move betrifft nur den **Pfad**,
   nicht den Inhalt.
-- **Offen (Owner-Entscheidung, W6):** Behandlung des **Bestands** `plan-<version>.md`
-  (Dutzende Dateien in `done/`). *Vorschlag des Autors:* grandfathern (historische
-  Records bleiben, nur neue Arbeit nutzt `slice-NNN`/`welle-NN`) — regelwerk-konsistent
-  (Brownfield-Grandfathering wie MR-002), kein Massen-Churn, Release-Versions-Kopplung
-  bleibt. *Alternative:* Vollumbenennung des Bestands. **Nicht vorentschieden.**
+- **Bestand `plan-<version>.md` (Dutzende in `done/`): grandfathered**
+  (Owner-Entscheidung 2026-07-21, Variante A). Historische Records bleiben unverändert;
+  nur neue Arbeit nutzt `slice-NNN`/`welle-NN`. Regelwerk-konsistent (Brownfield-
+  Grandfathering wie MR-002), kein Massen-Churn, Release-Versions-Kopplung bleibt.
+  Wird in W6 als MR in `conventions.md` deklariert. (Die verworfene Alternative —
+  Vollumbenennung des Bestands — ist damit vom Tisch.)
 
 ## 5. Risiken und offene Punkte
 
@@ -149,8 +150,6 @@ gewahrt); der **zweite Commit** trägt die Cross-Doc-Link-Fixes.
 - **Freshness-Audit** der vendored Baseline gegen künftige Kurs-Releases (v3.5.0
   §Modul 2): beobachtbarer Auslöser (neuer Kurs-Tag) → Re-Vendoring-Review, kein
   Auto-Bump.
-- Sollte der Owner die **Vollumbenennung** des `plan-<version>`-Bestands (§4) wählen,
-  ist das ein eigener, großer Slice nach W6.
 
 ## 7. Closure-Notiz
 
