@@ -230,7 +230,7 @@ Blockierung bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
 
 **Harness: Baseline-Migration auf ai-harness-course v3.5.0**
 ([ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md), **Accepted 2026-07-22**;
-**W1 umgesetzt 2026-07-22**, W2–W7 offen):
+**W1+W2 umgesetzt 2026-07-22**, W3–W7 offen):
 strukturelle Adoption des v3.5.0-Regelwerks — vendored Baseline, AGENTS.md,
 Kanon-Layout `docs/plan/...`, Auflösung von MR-001, **kanonische Wellen/Slices-Form
 + `roadmap.md`-Reformat** (Owner-Entscheidung 2026-07-21). Sequenziert als

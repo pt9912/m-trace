@@ -1,7 +1,7 @@
 # Plan: Harness-Baseline-Migration auf ai-harness-course v3.5.0
 
-> **Status**: In progress — 2026-07-22. **W1 (Vendored Baseline) umgesetzt**;
-> nächste Welle W2 (AGENTS.md). Umsetzung von
+> **Status**: In progress — 2026-07-22. **W1 (Vendored Baseline) + W2 (AGENTS.md)
+> umgesetzt**; nächste Welle W3 (docs/reviews/ + next/). Umsetzung von
 > [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) (**Accepted 2026-07-22**):
 > strukturelle Adoption des v3.5.0-Kanons.
 >
@@ -11,7 +11,7 @@
 > Prozess-Anker RAK-95 (Release-Automatisierung). Kein Lastenheft-Patch (Harness-/
 > Prozess-Arbeit, keine User-Surface).
 >
-> **Wellen-Fortschritt**: W1 ✅ (2026-07-22) · W2–W7 offen.
+> **Wellen-Fortschritt**: W1 ✅ · W2 ✅ (2026-07-22) · W3–W7 offen.
 
 ## 1. Ziel
 
