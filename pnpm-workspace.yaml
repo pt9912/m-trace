@@ -22,3 +22,8 @@ overrides:
   esbuild: ^0.28.1
   undici: ^7.28.0
   brace-expansion: ^5.0.7
+  # fast-uri >=3.0.0 <=3.1.3: Host-Confusion via literal-backslash
+  # authority delimiter (GHSA-v2hh-gcrm-f6hx, HIGH). Nur transitiv
+  # via @stryker-mutator/core > ajv > fast-uri (reines devDep im
+  # Mutation-Gate, kein Runtime-Pfad). Fix in 3.1.4. Issue #16.
+  fast-uri: ^3.1.4
