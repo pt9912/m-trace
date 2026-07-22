@@ -7,9 +7,19 @@ adopted harness baseline. It supplements the baseline without copying it.
 
 ## Baseline
 
-m-trace adopts `grundlagen-konventionen.md` from ai-harness-course at commit
-[`d2f60dae33516ef09e84930bb6bf28e31b275ade`](https://github.com/pt9912/ai-harness-course/blob/d2f60dae33516ef09e84930bb6bf28e31b275ade/lab/regelwerk/grundlagen-konventionen.md),
-retrieved 2026-07-14.
+m-trace adopts the ai-harness-course **v3.5.0** baseline (2026-07-19), vendored
+netless under `.harness/baseline/v3.5.0/regelwerk/` (17 modules + 3 fundamentals)
+and `.harness/baseline/v3.5.0/templates/` (the reference target forms). The
+release archive `lab-regelwerk.zip` carries sha256
+`123e3383261102e6be6465e1f4bade08a474c00edc4fff89f5c4b11bd640f8ff`; per-file
+integrity is pinned in `.harness/baseline/v3.5.0/SHA256SUMS` and verified with
+`sha256sum -c`. Vendored 2026-07-22 per
+[ADR-0009](../docs/adr/0009-harness-baseline-v3.5.0.md).
+
+This supersedes the prior commit pin (`grundlagen-konventionen.md` only, at
+ai-harness-course `d2f60da`, retrieved 2026-07-14): the whole regelwerk and the
+full template set are now present and integrity-checked, so the `../templates/…`
+reference forms resolve locally instead of drifting against a moving course head.
 
 ## Spec strata
 

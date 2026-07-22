@@ -5,7 +5,12 @@
 # Beschreibung siehe: https://raw.githubusercontent.com/pt9912/d-check/refs/heads/main/docs/user/benutzerhandbuch.md
 scan:
   roots: ['.']
-  ignore: ['.security/.trivy-cache/**', '.tmp/**']
+  # `.harness/baseline/**` ist die netzlos vendored, integritaets-gepruefte
+  # Regelwerk-/Template-Referenz (SHA256SUMS) — Referenzmaterial, kein
+  # authored Projekt-Doc. Aus dem Doku-Lint ausgenommen; die Integritaet
+  # traegt `sha256sum -c SHA256SUMS`, nicht `docs-check`. Kuenftige echte
+  # Projekt-Artefakte unter `.harness/skills/` bleiben bewusst gescannt.
+  ignore: ['.security/.trivy-cache/**', '.tmp/**', '.harness/baseline/**']
 
 modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix]
 

@@ -1,0 +1,14 @@
+# Doku-Referenz-Gate (Adopter-Baseline). Startgerüst: `d-check --print-config`.
+# Ins Repo-Root kopieren. Wächst mit den Artefakten: ids/codepaths erst
+# aktivieren, wenn Targets/roots existieren — sonst Config-Fehler bzw. ein
+# behaupteter, aber leerer Gate (Modul 13).
+scan:
+  roots: ["."]
+  ignore: ["**/*.template.md", ".tmp/**"]
+modules: [links, anchors]
+# ids:
+#   patterns:
+#     - {regex: 'ADR-\d{4}', target: docs/plan/adr/}                    # aktivieren, sobald docs/plan/adr/ existiert
+#     - {regex: '<PREFIX>-[A-Z]{2}-\d{2}', target: spec/lastenheft.md}  # Präfix setzen; aktivieren, sobald spec/lastenheft.md existiert
+# codepaths:
+#   roots: [spec, docs, harness]                                        # aktivieren, sobald diese Verzeichnisse existieren

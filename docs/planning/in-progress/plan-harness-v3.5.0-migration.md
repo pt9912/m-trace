@@ -1,14 +1,17 @@
 # Plan: Harness-Baseline-Migration auf ai-harness-course v3.5.0
 
-> **Status**: Proposed (open) — 2026-07-21. Umsetzung von
-> [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) (Proposed): strukturelle
-> Adoption des v3.5.0-Kanons.
+> **Status**: In progress — 2026-07-22. **W1 (Vendored Baseline) umgesetzt**;
+> nächste Welle W2 (AGENTS.md). Umsetzung von
+> [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) (**Accepted 2026-07-22**):
+> strukturelle Adoption des v3.5.0-Kanons.
 >
 > **Bezug**: [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md);
 > [`../../../harness/conventions.md`](../../../harness/conventions.md) (Baseline,
-> MR-001..MR-004); [`../in-progress/roadmap.md`](../in-progress/roadmap.md).
+> MR-001..MR-004); [`roadmap.md`](roadmap.md).
 > Prozess-Anker RAK-95 (Release-Automatisierung). Kein Lastenheft-Patch (Harness-/
 > Prozess-Arbeit, keine User-Surface).
+>
+> **Wellen-Fortschritt**: W1 ✅ (2026-07-22) · W2–W7 offen.
 
 ## 1. Ziel
 

@@ -1,7 +1,7 @@
 # 0009 — Regelwerk-Baseline auf ai-harness-course v3.5.0: strukturelle Adoption
 
-> **Status**: **Proposed** (2026-07-21)
-> **Datum**: 2026-07-21 (Proposed)
+> **Status**: **Accepted** (2026-07-22)
+> **Datum**: 2026-07-21 (Proposed), 2026-07-22 (Accepted)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: [`harness/conventions.md`](../../harness/conventions.md) §Baseline / §Adaptations
 > (MR-001..MR-004); [`harness/README.md`](../../harness/README.md) §Source
@@ -184,3 +184,4 @@ MR-001) wird kontrolliert und gate-grün abgearbeitet.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-07-21 | Proposed | ADR-0009 |
+| 2026-07-22 | Accepted (Owner-Freigabe); W1 (Vendored Baseline) umgesetzt | Migrationsplan W1 |
