@@ -2,76 +2,78 @@
 
 ## Purpose
 
-This directory records the repository-level precedence, conventions and real
-quality sensors used by humans and automation. It points to authoritative
-sources and does not duplicate their contracts.
+Dieses Verzeichnis hält die Repository-weite Präzedenz, die Konventionen und die
+realen Quality-Sensoren fest, die von Menschen und Automation genutzt werden. Es
+verweist auf die autoritativen Quellen und dupliziert deren Verträge nicht.
 
 ## Source precedence
 
-When two sources conflict, the higher-ranked source wins and the lower-ranked
-source must be corrected:
+Bei Konflikt zweier Quellen gewinnt die höherrangige, und die niederrangige muss
+korrigiert werden:
 
-1. `spec/lastenheft.md` (contract)
-2. technical specifications under `spec/`
-3. `spec/architecture.md` (derived architectural view)
-4. accepted records under `docs/adr/`
+1. `spec/lastenheft.md` (Contract)
+2. Technik-Spezifikationen unter `spec/`
+3. `spec/architecture.md` (abgeleitete Architektursicht)
+4. akzeptierte Records unter `docs/adr/`
 5. `docs/planning/in-progress/roadmap.md`
-6. user and operations documentation under `docs/user/` and `docs/ops/`
-7. root README files
-8. this harness documentation
+6. Anwender- und Betriebs-Dokumentation unter `docs/user/` und `docs/ops/`
+7. Root-README-Dateien
+8. diese Harness-Dokumentation
 
-The exact classification and repository-specific adaptations are declared in
-[`conventions.md`](conventions.md).
+Die genaue Klassifikation und die repository-spezifischen Adaptionen sind in
+[`conventions.md`](conventions.md) deklariert.
 
-## Guides
+## Guides (Feedforward-Quellen)
 
-| Guide | Role |
+| Guide | Rolle |
 |---|---|
-| [`spec/lastenheft.md`](../spec/lastenheft.md) | Contract: what m-trace must provide |
-| [`spec/architecture.md`](../spec/architecture.md) | Derived component and dependency view |
-| [`docs/adr/`](../docs/adr/) | Rationale for accepted architectural choices |
-| [`docs/planning/in-progress/roadmap.md`](../docs/planning/in-progress/roadmap.md) | Delivery status and sequencing |
+| [`spec/lastenheft.md`](../spec/lastenheft.md) | Contract: was m-trace bereitstellen muss |
+| [`spec/architecture.md`](../spec/architecture.md) | Abgeleitete Komponenten- und Abhängigkeitssicht |
+| [`docs/adr/`](../docs/adr/) | Begründung akzeptierter Architektur-Entscheidungen |
+| [`docs/planning/in-progress/roadmap.md`](../docs/planning/in-progress/roadmap.md) | Lieferstatus und Sequenzierung |
 
-## Sensors
+## Sensors (Feedback-Gates)
 
-| Target | Checks |
+| Target | Prüft |
 |---|---|
-| `make docs-check` | Markdown references, spans, tracked targets, code paths and document direction |
-| `make doc-trace` | Advisory requirements matrix from the native Lastenheft tables and planning references |
-| `make docs-immutable STAGED=1` | Accepted-ADR core against the staged diff |
-| `make docs-commits RANGE=base..head` | Commit-message traceability over a pull-request range |
-| `make gates` | Required repository quality gates |
-| `make build` | Buildable release artifacts |
+| `make docs-check` | Markdown-Referenzen, Spans, tracked Targets, Code-Pfade und Dokument-Richtung |
+| `make doc-trace` | Advisory-Requirements-Matrix aus den nativen Lastenheft-Tabellen und Planning-Referenzen |
+| `make docs-immutable STAGED=1` | Accepted-ADR-Kern gegen den gestagten Diff |
+| `make docs-commits RANGE=base..head` | Commit-Message-Traceability über einen Pull-Request-Bereich |
+| `make gates` | Verpflichtende Repository-Quality-Gates |
+| `make build` | Baubare Release-Artefakte |
 
-Only commands that exist in the Makefile are listed here. Run status belongs
-to CI and is not recorded in this document.
+Nur Befehle, die im Makefile existieren, sind hier gelistet. Der Ausführungs-
+Status gehört zu CI und wird in diesem Dokument nicht festgehalten.
 
 ## Traceability rules
 
-Requirements use the existing `F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*` and
-`R-*` families. Architecture decisions use `ADR-NNNN`. New normative
-references point from volatile to stable sources; downward provenance is
-confined to designated history sections.
+Requirements nutzen die bestehenden Familien `F-*`, `NF-*`, `MVP-*`, `AK-*`,
+`RAK-*` und `R-*`. Architektur-Entscheidungen nutzen `ADR-NNNN`. Neue normative
+Verweise zeigen von volatilen zu stabilen Quellen; Abwärts-Provenienz bleibt auf
+ausgewiesene History-Abschnitte beschränkt.
 
-Commit-message enforcement applies to pull-request ranges. Documentation,
-test, build, CI and maintenance commits are exempt; feature and fix commits
-carry a requirement, decision or plan identifier.
+Die Commit-Message-Durchsetzung gilt für Pull-Request-Bereiche. Dokumentations-,
+Test-, Build-, CI- und Wartungs-Commits sind exempt; Feature- und Fix-Commits
+tragen eine Requirement-, Entscheidungs- oder Plan-Kennung.
 
 ## Safety and scope boundaries
 
-- Never weaken a higher-ranked contract to match an implementation drift.
-- Never claim a gate that has no executable target.
-- Existing accepted ADRs are historical records; changes require the
-  documented decision process.
+- Niemals einen höherrangigen Contract abschwächen, um einer Implementierungs-
+  Drift zu entsprechen.
+- Niemals ein Gate behaupten, das kein ausführbares Target hat.
+- Bestehende akzeptierte ADRs sind historische Records; Änderungen erfordern den
+  dokumentierten Entscheidungsprozess.
 
 ## Minimal agent workflow
 
-1. Read the highest-ranked source relevant to the task.
-2. Inspect existing code and tests before changing behavior.
-3. Link the change to an existing requirement, decision, test or gate.
-4. Implement the smallest coherent change.
-5. Run focused tests.
-6. Run `make docs-check` for documentation changes.
-7. Run the proportionate aggregate gate.
-8. Update lower-ranked status or user documentation without changing the
-   higher-ranked contract implicitly.
+1. Die höchstrangige für die Aufgabe relevante Quelle lesen.
+2. Bestehenden Code und Tests prüfen, bevor Verhalten geändert wird.
+3. Die Änderung an ein bestehendes Requirement, eine Entscheidung, einen Test
+   oder ein Gate binden.
+4. Die kleinste kohärente Änderung umsetzen.
+5. Fokussierte Tests laufen lassen.
+6. `make docs-check` bei Dokumentations-Änderungen laufen lassen.
+7. Den proportionalen Aggregat-Gate laufen lassen.
+8. Niederrangigen Status oder Anwender-Dokumentation aktualisieren, ohne den
+   höherrangigen Contract implizit zu ändern.

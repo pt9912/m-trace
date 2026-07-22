@@ -1,131 +1,138 @@
-# Harness conventions
+# Harness-Konventionen
 
-## Purpose
+## Zweck
 
-This file declares m-trace-specific structure rules and adaptations to the
-adopted harness baseline. It supplements the baseline without copying it.
+Diese Datei deklariert m-trace-spezifische Strukturregeln und Adaptionen
+gegenüber der adoptierten Harness-Baseline. Sie supplementiert die Baseline,
+ohne sie zu kopieren.
 
 ## Baseline
 
-m-trace adopts the ai-harness-course **v3.5.0** baseline (2026-07-19), vendored
-netless under `.harness/baseline/v3.5.0/regelwerk/` (17 modules + 3 fundamentals)
-and `.harness/baseline/v3.5.0/templates/` (the reference target forms). The
-release archive `lab-regelwerk.zip` carries sha256
-`123e3383261102e6be6465e1f4bade08a474c00edc4fff89f5c4b11bd640f8ff`; per-file
-integrity is pinned in `.harness/baseline/v3.5.0/SHA256SUMS` and verified with
-`sha256sum -c`. Vendored 2026-07-22 per
+m-trace adoptiert die ai-harness-course-**v3.5.0**-Baseline (2026-07-19),
+vendored netzlos unter `.harness/baseline/v3.5.0/regelwerk/` (17 Module +
+3 Grundlagen) und `.harness/baseline/v3.5.0/templates/` (die Referenz-Ziel-
+Formen). Das Release-Archiv `lab-regelwerk.zip` trägt sha256
+`123e3383261102e6be6465e1f4bade08a474c00edc4fff89f5c4b11bd640f8ff`; die
+Per-Datei-Integrität ist in `.harness/baseline/v3.5.0/SHA256SUMS` gepinnt und
+wird mit `sha256sum -c` verifiziert. Vendored 2026-07-22 gemäß
 [ADR-0009](../docs/adr/0009-harness-baseline-v3.5.0.md).
 
-This supersedes the prior commit pin (`grundlagen-konventionen.md` only, at
-ai-harness-course `d2f60da`, retrieved 2026-07-14): the whole regelwerk and the
-full template set are now present and integrity-checked, so the `../templates/…`
-reference forms resolve locally instead of drifting against a moving course head.
+Dies löst den vorherigen Commit-Pin ab (nur `grundlagen-konventionen.md`, bei
+ai-harness-course `d2f60da`, abgerufen 2026-07-14): das gesamte Regelwerk und
+der vollständige Template-Satz sind jetzt präsent und integritäts-geprüft,
+sodass die `../templates/…`-Referenz-Formen lokal auflösen, statt gegen einen
+sich bewegenden Kurs-Head zu driften.
 
-## Spec strata
+## Spec-Straten
 
-| Stratum | Files | Role |
+| Stratum | Dateien | Rolle |
 |---|---|---|
-| Contract | `spec/lastenheft.md` | Binding requirements and acceptance criteria |
-| Technical | `spec/backend-api-contract.md`, `spec/browser-support.md`, `spec/player-sdk.md`, `spec/telemetry-model.md` | Binding technical detail that refines the contract |
-| View | `spec/architecture.md` | Derived component, dependency and data-flow view |
+| Contract | `spec/lastenheft.md` | Bindende Anforderungen und Akzeptanzkriterien |
+| Technical | `spec/backend-api-contract.md`, `spec/browser-support.md`, `spec/player-sdk.md`, `spec/telemetry-model.md` | Bindendes technisches Detail, das den Contract verfeinert |
+| View | `spec/architecture.md` | Abgeleitete Komponenten-, Abhängigkeits- und Datenfluss-Sicht |
 
-Normative reference stability is `Contract > Technical > View > ADR >
-Planning`. References point upward. Spec documents do not use ADR or planning
-artifacts as normative sources. Downward provenance is permitted only in
-designated history sections.
+Die normative Referenz-Stabilität ist `Contract > Technical > View > ADR >
+Planning`. Verweise zeigen aufwärts. Spec-Dokumente nutzen keine ADR- oder
+Planning-Artefakte als normative Quelle. Abwärts-Provenienz ist nur in
+ausgewiesenen History-Abschnitten erlaubt.
 
-## Adaptations
+## Adaptionen
 
-### MR-001 - Repository paths
+### MR-001 - Repository-Pfade
 
-- **Date:** 2026-07-14
-- **Scope:** ADR and planning directories
-- **Baseline difference:** m-trace uses `docs/adr/` instead of
-  `docs/plan/adr/`, and `docs/planning/` instead of
-  `docs/plan/planning/`.
-- **Reason:** Established public repository layout with extensive stable links.
-- **Resolution trigger:** Permanent unless a separately reviewed repository
-  layout migration is approved.
+- **Datum:** 2026-07-14
+- **Scope:** ADR- und Planning-Verzeichnisse
+- **Baseline-Unterschied:** m-trace nutzt `docs/adr/` statt `docs/plan/adr/`
+  und `docs/planning/` statt `docs/plan/planning/`.
+- **Grund:** Etabliertes öffentliches Repository-Layout mit umfangreichen
+  stabilen Links.
+- **Auflösungs-Trigger:** Permanent, sofern nicht eine separat reviewte
+  Repository-Layout-Migration freigegeben wird.
 
-### MR-002 - Accepted ADR grandfathering
+### MR-002 - Accepted-ADR-Grandfathering
 
-- **Date:** 2026-07-14
-- **Scope:** `docs/adr/0001-*.md` through `docs/adr/0007-*.md`
-- **Baseline difference:** These accepted Brownfield records contain historic
-  plan provenance outside a designated history section.
-- **Reason:** Accepted ADRs are immutable under the adopted baseline and are
-  not rewritten solely to retrofit the convention.
-- **Resolution trigger:** Permanent historical exception. New ADRs receive no
-  exemption; future accepted-ADR changes are blocked by the ADR immutability
-  sensor.
+- **Datum:** 2026-07-14
+- **Scope:** `docs/adr/0001-*.md` bis `docs/adr/0007-*.md`
+- **Baseline-Unterschied:** Diese akzeptierten Brownfield-Records enthalten
+  historische Plan-Provenienz außerhalb eines ausgewiesenen History-Abschnitts.
+- **Grund:** Akzeptierte ADRs sind unter der adoptierten Baseline immutable und
+  werden nicht allein zum Nachrüsten der Konvention umgeschrieben.
+- **Auflösungs-Trigger:** Permanente historische Ausnahme. Neue ADRs erhalten
+  keine Ausnahme; künftige Accepted-ADR-Änderungen werden vom
+  ADR-Immutabilitäts-Sensor blockiert.
 
-### MR-003 - Requirement ID families
+### MR-003 - Requirement-ID-Familien
 
-- **Date:** 2026-07-14
-- **Scope:** Contract, plans, commits and reviews
-- **Baseline difference:** m-trace predates the `LH-*` example family and uses
-  `F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*` and `R-*`.
-- **Reason:** The identifiers are part of the established contract and release
-  history.
-- **Resolution trigger:** Permanent. New requirement families must be declared
-  here before use.
+- **Datum:** 2026-07-14
+- **Scope:** Contract, Pläne, Commits und Reviews
+- **Baseline-Unterschied:** m-trace datiert vor der `LH-*`-Beispielfamilie und
+  nutzt `F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*` und `R-*`.
+- **Grund:** Die Kennungen sind Teil des etablierten Contracts und der
+  Release-Historie.
+- **Auflösungs-Trigger:** Permanent. Neue Requirement-Familien müssen hier vor
+  Nutzung deklariert werden.
 
-### MR-004 - WSL host-path examples
+### MR-004 - WSL-Host-Pfad-Beispiele
 
-- **Date:** 2026-07-14
-- **Scope:** Three WSL troubleshooting examples in
+- **Datum:** 2026-07-14
+- **Scope:** Drei WSL-Troubleshooting-Beispiele in
   `docs/user/local-development.md`
-- **Baseline difference:** The `hostpaths` sensor normally rejects host-local
-  absolute paths.
-- **Reason:** These paths are the subject of the operator guidance and cannot
-  be replaced by repository-relative paths without losing the diagnosis.
-- **Resolution trigger:** Permanent while WSL2 remains supported. The
-  `hostpaths` sensor therefore gates `/Users` and `/Development`; `/mnt` and
-  `/home` are intentionally outside its configured prefix set.
+- **Baseline-Unterschied:** Der `hostpaths`-Sensor lehnt host-lokale absolute
+  Pfade normalerweise ab.
+- **Grund:** Diese Pfade sind der Gegenstand der Operator-Guidance und können
+  nicht durch repository-relative Pfade ersetzt werden, ohne die Diagnose zu
+  verlieren.
+- **Auflösungs-Trigger:** Permanent, solange WSL2 unterstützt wird. Der
+  `hostpaths`-Sensor gated daher `/Users` und `/Development`; `/mnt` und
+  `/home` liegen bewusst außerhalb seines konfigurierten Präfix-Satzes.
 
-## Sensor binding classes
+## Sensor-Bindungsklassen
 
-m-trace currently uses requirement binding (`F-*`, `NF-*`, `MVP-*`, `AK-*`,
-`RAK-*`, `R-*`), ADR binding (`ADR-NNNN`) and reproducibility binding through
-immutable image digests.
+m-trace nutzt derzeit Requirement-Bindung (`F-*`, `NF-*`, `MVP-*`, `AK-*`,
+`RAK-*`, `R-*`), ADR-Bindung (`ADR-NNNN`) und Reproduzierbarkeits-Bindung über
+immutable Image-Digests.
 
-## Modes
+## Modi
 
-| Sub-area | Mode | Graduation condition |
+| Sub-Area | Modus | Graduierungs-Bedingung |
 |---|---|---|
-| Spec reference direction | Greenfield | Enforced by `make docs-check`; no open reconciliation findings |
-| Existing accepted ADRs | Brownfield, grandfathered | Historical files remain immutable; every new ADR follows the baseline |
-| Commit traceability | Greenfield for new pull requests | PR ranges pass `make docs-commits`; pre-adoption history remains unchanged |
-| Requirement coverage | Brownfield, observable | Every required requirement has a slice or curated coverage reference and `make doc-complete` passes |
-| Requirement links | Brownfield | Stable per-requirement anchors exist and the ID-link gate can be enabled without ambiguous root links |
+| Spec-Referenz-Richtung | Greenfield | Durchgesetzt von `make docs-check`; keine offenen Reconciliation-Befunde |
+| Bestehende akzeptierte ADRs | Brownfield, grandfathered | Historische Dateien bleiben immutable; jede neue ADR folgt der Baseline |
+| Commit-Traceability | Greenfield für neue Pull Requests | PR-Bereiche bestehen `make docs-commits`; Vor-Adoptions-Historie bleibt unverändert |
+| Requirement-Coverage | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
+| Requirement-Links | Brownfield | Stabile Per-Requirement-Anker existieren und der ID-Link-Gate kann ohne mehrdeutige Root-Links aktiviert werden |
 
-## Requirement-coverage convergence
+## Requirement-Coverage-Konvergenz
 
-d-check v0.43.0 reads the existing `Kennung`/`Prioritaet`/`Anforderung` and
-`Akzeptanzkriterium` tables natively. `make doc-trace` is the advisory sensor.
-The historical `RAK-51` redefinition uses the explicit `duplicate-ids: last`
-policy because the later row raises its modality from Kann to Muss.
+d-check v0.43.0 liest die bestehenden `Kennung`/`Prioritaet`/`Anforderung`- und
+`Akzeptanzkriterium`-Tabellen nativ. `make doc-trace` ist der Advisory-Sensor.
+Die historische `RAK-51`-Redefinition nutzt die explizite
+`duplicate-ids: last`-Policy, weil die spätere Zeile ihre Modalität von Kann auf
+Muss anhebt.
 
-`make doc-complete` is not bound into CI while required requirements without a
-slice or curated coverage reference remain. Graduation requires triaging those
-entries, adding truthful upward coverage references or explicit curated
-coverage, and reaching a passing gate without weakening the modality policy.
+`make doc-complete` ist nicht in CI gebunden, solange geforderte Requirements
+ohne Slice- oder kuratierten Coverage-Verweis verbleiben. Die Graduierung
+erfordert das Triagieren dieser Einträge, das Hinzufügen wahrheitsgemäßer
+Aufwärts-Coverage-Verweise oder expliziter kuratierter Coverage und das
+Erreichen eines bestehenden Gates ohne Schwächung der Modalitäts-Policy.
 
-## Requirement-link convergence
+## Requirement-Link-Konvergenz
 
-The d-check `ids` module is not enabled yet. Requirements currently live in
-Markdown table rows, so automatic repair would turn 340 bare identifiers into
-links to the beginning of `spec/lastenheft.md`, not to the individual
-definition. That creates link-shaped ambiguity and is not accepted as
-convergence.
+Das d-check-`ids`-Modul ist noch nicht aktiviert. Requirements leben derzeit in
+Markdown-Tabellenzeilen, sodass eine automatische Reparatur 340 nackte
+Kennungen in Links auf den Anfang von `spec/lastenheft.md` verwandeln würde,
+nicht auf die einzelne Definition. Das erzeugt link-förmige Mehrdeutigkeit und
+wird nicht als Konvergenz akzeptiert.
 
-Graduation requires these steps:
+Die Graduierung erfordert diese Schritte:
 
-1. Give each normative requirement a stable, directly addressable definition
-   anchor without changing its identifier or contractual wording.
-2. Verify that d-check resolves every configured ID family to that definition,
-   not merely to the containing file.
-3. Migrate upward references in active technical, ADR, planning and user
-   documentation; historical release records remain unchanged where required.
-4. Enable `ids` only after its advisory run reports no ambiguous target and the
-   resulting links pass `links` and `anchors`.
+1. Jedem normativen Requirement einen stabilen, direkt adressierbaren
+   Definitions-Anker geben, ohne seine Kennung oder vertragliche Formulierung zu
+   ändern.
+2. Verifizieren, dass d-check jede konfigurierte ID-Familie auf diese Definition
+   auflöst, nicht bloß auf die enthaltende Datei.
+3. Aufwärts-Verweise in aktiver technischer, ADR-, Planning- und Anwender-
+   Dokumentation migrieren; historische Release-Records bleiben unverändert, wo
+   gefordert.
+4. `ids` erst aktivieren, nachdem sein Advisory-Lauf kein mehrdeutiges Ziel
+   meldet und die resultierenden Links `links` und `anchors` bestehen.
