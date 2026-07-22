@@ -1,9 +1,17 @@
 # Plan: Harness-Baseline-Migration auf ai-harness-course v3.5.0
 
 > **Status**: In progress — 2026-07-22. **W1 (Vendored Baseline) + W2 (AGENTS.md)
-> umgesetzt**; nächste Welle W3 (docs/reviews/ + next/). Umsetzung von
+> + W3 (Review-/Closure-Harness) umgesetzt**; nächste Welle W4 (Carveouts +
+> risks-backlog-Triage). Umsetzung von
 > [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) (**Accepted 2026-07-22**):
 > strukturelle Adoption des v3.5.0-Kanons.
+>
+> **W3-Hinweis (Scope-Vorzug, Owner-Entscheidung 2026-07-22):** Über den
+> geplanten W3-Kern (docs/reviews/, docs/planning/next/, Reviewer-Skills) hinaus
+> wurde der **komplette Closure-Note-Stack vorgezogen** — [ADR-0010](../../adr/0010-closure-note-pflicht.md)
+> (Proposed), `scripts/check_closure_notes.py`, `make verify-closure-notes`,
+> Grandfather-Liste. Gebaut gegen die aktuelle Form; W5/W6 ziehen Pfade/Slice-
+> Template-Verankerung nach (bewusst akzeptierter Churn, ADR-0010 §Konsequenzen).
 >
 > **Bezug**: [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md);
 > [`../../../harness/conventions.md`](../../../harness/conventions.md) (Baseline,
@@ -11,7 +19,8 @@
 > Prozess-Anker RAK-95 (Release-Automatisierung). Kein Lastenheft-Patch (Harness-/
 > Prozess-Arbeit, keine User-Surface).
 >
-> **Wellen-Fortschritt**: W1 ✅ · W2 ✅ (2026-07-22) · W3–W7 offen.
+> **Wellen-Fortschritt**: W1 ✅ · W2 ✅ · W3 ✅ (2026-07-22, inkl. vorgezogenem
+> Closure-Note-Stack) · W4–W7 offen.
 
 ## 1. Ziel
 

@@ -40,6 +40,7 @@ Die genaue Klassifikation und die repository-spezifischen Adaptionen sind in
 | `make doc-trace` | Advisory-Requirements-Matrix aus den nativen Lastenheft-Tabellen und Planning-Referenzen |
 | `make docs-immutable STAGED=1` | Accepted-ADR-Kern gegen den gestagten Diff |
 | `make docs-commits RANGE=base..head` | Commit-Message-Traceability über einen Pull-Request-Bereich |
+| `make verify-closure-notes` | Struktureller Closure-Note-Gate für neue `done/`-Pläne (ADR-0010; standalone) |
 | `make gates` | Verpflichtende Repository-Quality-Gates |
 | `make build` | Baubare Release-Artefakte |
 

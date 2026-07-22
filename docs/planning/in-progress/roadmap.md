@@ -230,7 +230,8 @@ Blockierung bleibt deferred, bis echte >70%-Score-Reihen vorliegen.
 
 **Harness: Baseline-Migration auf ai-harness-course v3.5.0**
 ([ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md), **Accepted 2026-07-22**;
-**W1+W2 umgesetzt 2026-07-22**, W3–W7 offen):
+**W1–W3 umgesetzt 2026-07-22** (W3 inkl. vorgezogenem Closure-Note-Stack,
+[ADR-0010](../../adr/0010-closure-note-pflicht.md) Proposed), W4–W7 offen):
 strukturelle Adoption des v3.5.0-Regelwerks — vendored Baseline, AGENTS.md,
 Kanon-Layout `docs/plan/...`, Auflösung von MR-001, **kanonische Wellen/Slices-Form
 + `roadmap.md`-Reformat** (Owner-Entscheidung 2026-07-21). Sequenziert als
@@ -241,7 +242,10 @@ W4 carveouts+risks-backlog-Triage), Struktur-Umbau/Link-Churn (W5 Layout-Move),
 dann Content-Wellen (W6 Wellen/Slices-Form + `roadmap.md`-Reformat, W7
 opt-in-d-check-Module). Start-Trigger **ADR-0009 Accepted** ist erfüllt (2026-07-22,
 Owner-Opt-in); W1 (vendored Baseline `.harness/baseline/v3.5.0/` + SHA256SUMS,
-`conventions.md §Baseline` umgestellt) ist grün abgeschlossen. Kein
+`conventions.md §Baseline` umgestellt), W2 (AGENTS.md) und W3 (Review-/Closure-
+Harness: `docs/reviews/`, `docs/planning/next/`, `.harness/skills/`, plus
+vorgezogener Closure-Note-Stack ADR-0010 + `make verify-closure-notes`) sind grün
+abgeschlossen. Kein
 Lastenheft-Patch (Harness-/Prozess-Arbeit, keine User-Surface). Die opt-in-Module
 (zwischenzeitlich als „R-32" erwogen) werden als **W7 umgesetzt**, **kein**
 risks-backlog-Eintrag.

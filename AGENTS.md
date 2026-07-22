@@ -142,6 +142,7 @@ Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
 | `make arch-check` | Hexagonal-Architektur-Abhängigkeitsregeln |
 | `make coverage-gate` | Go- + TypeScript-Coverage-Schwellen |
 | `make docs-check` | Markdown-Referenzen, Spans, tracked Targets, Code-Pfade, Richtung |
+| `make verify-closure-notes` | Struktureller Closure-Note-Gate für neue `done/`-Pläne (ADR-0010; standalone, noch nicht in `make gates`) |
 | `make gates` | Alle inneren Quality-Gates — mandatory vor einem Pull Request |
 | `make security-gates` | `govulncheck` + `pnpm audit` + Trivy-Image-Scan (separater CI-Job, nicht in `make gates`) |
 | `make ci` | CI-äquivalent (`gates` + `build`) |
@@ -160,6 +161,14 @@ Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
 - Bewusst vertagte Tradeoffs werden als `R-N`-Einträge mit Triggerschwelle in
   [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
   getrackt, nicht nur in einem Code-Kommentar.
+- Neue (nicht grandfatherte) Pläne in `docs/planning/done/` tragen eine
+  **Closure-Note** mit den drei Pflicht-Inhalten aus ADR-0010 (Lernsignal /
+  Folge-Slice / Architektur-Beobachtung); Struktur prüft
+  `make verify-closure-notes`, Inhalt der closure-note-reviewer-Skill.
+- Review-Läufe (Code/Plan/Design) folgen den Skills unter
+  [`.harness/skills/`](.harness/skills/)
+  (`reviewer.md`, `closure-note-reviewer.md`); Reports landen in
+  [`docs/reviews/`](docs/reviews/).
 - Quality-Gate-Definitionen leben im `Makefile`; nie ein Gate behaupten, das
   kein ausführbares Target hat.
 
