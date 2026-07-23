@@ -12,7 +12,28 @@ scan:
   # Projekt-Artefakte unter `.harness/skills/` bleiben bewusst gescannt.
   ignore: ['.security/.trivy-cache/**', '.tmp/**', '.harness/baseline/**']
 
-modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix]
+modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions]
+
+# Modul `versions` (W7): gepinnte m-trace-GHCR-Image-Verweise in Markdown müssen
+# die aktuelle Release-Version (aus `version.md#aktuell`) tragen. Geprüftes Live-
+# Ziel: die konkreten Betriebs-Pins im Anwenderhandbuch §6. m-trace-Images nutzen
+# das `:X.Y.Z`-Tag-Format (ohne `v`; der Git-Tag ist `vX.Y.Z`). Historische Pins in
+# `done/`-Plänen + CHANGELOG sind Audit-Bestand → exempt. Ergänzend guardet
+# `make k8s-validate` die deploy/k8s-YAML-Tags gegen die Root-`package.json`
+# (YAML liegt außerhalb der Markdown-Reichweite dieses Moduls).
+versions:
+  pin-pattern: 'ghcr\.io/pt9912/m-trace-[a-z-]+:(\d+\.\d+\.\d+)'
+  current-from: version.md#aktuell
+  exempt-paths: ['docs/plan/planning/done/**', 'CHANGELOG.md']
+
+# W7-Advisory: `ids`/`citations`/`sources` bleiben (noch) AUS:
+#  - `ids`: d-check würde die ~3193 nackten Kennungen mechanisch auf Datei-Level
+#    linken (`[ID](ziel-datei)`, kein Anker — Anker ist laut Handbuch optional).
+#    m-traces Policy (conventions.md §Requirement-Link-Konvergenz) lehnt diese
+#    Datei-Level-Mehrdeutigkeit ab und verlangt Per-ID-Anker. Die Aktivierung mit
+#    verankerten Links ist als `slice-001-requirement-anker-ids` geschnitten.
+#  - `citations`/`sources` brauchen explizite Marker (`d-check:cite`/`dsource`);
+#    m-trace nutzt keine → nichts zu prüfen.
 
 codepaths:
   scope:

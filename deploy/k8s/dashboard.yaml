@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: ghcr.io/pt9912/m-trace-dashboard:0.22.0
+          image: ghcr.io/pt9912/m-trace-dashboard:0.25.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

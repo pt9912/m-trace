@@ -315,11 +315,14 @@ m-trace hat keine Benutzerkonten im Dashboard; das Zugriffsmodell sind
 
 ## 6. Betrieb: Software beziehen und aktualisieren
 
-- **Container-Images** (empfohlen für den Betrieb):
-  `ghcr.io/pt9912/m-trace-api`, `ghcr.io/pt9912/m-trace-dashboard`,
-  `ghcr.io/pt9912/m-trace-analyzer-service` — jeweils mit konkretem
-  Versions-Tag (z. B. `0.25.0`); ein `latest`-Tag wird bewusst nicht
-  gepflegt. Kubernetes-Beispiele: `deploy/k8s/`.
+- **Container-Images** (empfohlen für den Betrieb) — jeweils mit konkretem
+  Versions-Tag; ein `latest`-Tag wird bewusst nicht gepflegt. Aktueller Stand
+  (siehe [`version.md#aktuell`](../../version.md#aktuell)):
+  - `ghcr.io/pt9912/m-trace-api:0.25.0`
+  - `ghcr.io/pt9912/m-trace-dashboard:0.25.0`
+  - `ghcr.io/pt9912/m-trace-analyzer-service:0.25.0`
+
+  Kubernetes-Beispiele: `deploy/k8s/`.
 - **npm-Pakete**: `@pt9912/player-sdk` (Browser-SDK) und
   `@pt9912/stream-analyzer` (Library + CLI) über GitHub Packages.
 - Versionsstände und Änderungen: [`CHANGELOG.md`](../../CHANGELOG.md).
