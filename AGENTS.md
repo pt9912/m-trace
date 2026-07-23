@@ -40,12 +40,11 @@ als „Ziel-Form" verweist (netzlos, weil parallel zu `regelwerk/` vendored), un
 als Vorlage, die beim Anlegen neuer Artefakte (ADR, Plan/Slice/Welle, Carveout,
 Review-Report) **kopiert und ausgefüllt** wird statt frei zu formulieren.
 
-> **Pfad-Hinweis.** Die vendored Templates nutzen das Kanon-Layout
-> (`docs/plan/adr/`, `docs/plan/planning/`). m-trace nutzt derzeit
-> `docs/adr/` und `docs/planning/` (Adaption MR-001 in
-> [`harness/conventions.md`](harness/conventions.md)); die Pfade unten sind
-> m-traces reale, aktuelle Pfade. Der Layout-Umzug auf die Kanon-Form ist eine
-> spätere, separat abgesicherte Migrations-Welle.
+> **Pfad-Hinweis.** m-trace folgt dem Kanon-Layout: ADRs unter
+> `docs/plan/adr/`, Planung unter `docs/plan/planning/`, Carveouts unter
+> `docs/plan/carveouts/`. Der Layout-Umzug wurde in der v3.5.0-Migration W5
+> vollzogen; die vormalige Pfad-Divergenz (`docs/adr/`, `docs/planning/`) ist
+> mit MR-001 aufgelöst (siehe [`harness/conventions.md`](harness/conventions.md)).
 
 ## 2. Kanonische Quellen (Source Precedence)
 
@@ -61,8 +60,8 @@ In dieser Reihenfolge, gemäß [`harness/conventions.md`](harness/conventions.md
    [`spec/telemetry-model.md`](spec/telemetry-model.md).
 3. [`spec/architecture.md`](spec/architecture.md) — abgeleitete Komponenten-,
    Abhängigkeits- und Sequenzsicht.
-4. [`docs/adr/`](docs/adr/) — ADR-Verzeichnis und -Index.
-5. [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+4. [`docs/adr/`](docs/plan/adr/) — ADR-Verzeichnis und -Index.
+5. [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
    — aktuelle Welle und Lieferstatus.
 6. [`README.md`](README.md) — Projekt-Überblick.
 7. **AGENTS.md (diese Datei).**
@@ -107,7 +106,7 @@ Schwelle und `git log --follow` wird unzuverlässig.
 
 [`spec/architecture.md`](spec/architecture.md) referenziert ADRs und
 Modul-Pfade, aber **keine** Wellen, Slices, Commit-Hashes oder Closure-Daten.
-Die zeitliche Schicht lebt in [`docs/planning/`](docs/planning/) und den
+Die zeitliche Schicht lebt in [`docs/planning/`](docs/plan/planning/) und den
 Closure-Notizen.
 
 ### 3.5 ADRs sind nach `Accepted` immutable
@@ -155,13 +154,13 @@ Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
   ID-Schema (`F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*`, `R-*`; ADR-Nummern über
   den ADR-Index) — nie ad hoc im PR vergeben. Dokumentations-, Test-, Build-,
   CI- und Wartungs-Commits sind exempt.
-- Neue ADRs müssen den ADR-Index unter [`docs/adr/`](docs/adr/) aktualisieren.
-- Roadmap und Status-Geschichte leben in [`docs/planning/`](docs/planning/),
+- Neue ADRs müssen den ADR-Index unter [`docs/adr/`](docs/plan/adr/) aktualisieren.
+- Roadmap und Status-Geschichte leben in [`docs/planning/`](docs/plan/planning/),
   nicht in [`spec/architecture.md`](spec/architecture.md).
 - Bewusst vertagte Tradeoffs werden als `R-N`-Einträge mit Triggerschwelle in
-  [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
   getrackt, nicht nur in einem Code-Kommentar.
-- Neue (nicht grandfatherte) Pläne in `docs/planning/done/` tragen eine
+- Neue (nicht grandfatherte) Pläne in `docs/plan/planning/done/` tragen eine
   **Closure-Note** mit den drei Pflicht-Inhalten aus ADR-0010 (Lernsignal /
   Folge-Slice / Architektur-Beobachtung); Struktur prüft
   `make verify-closure-notes`, Inhalt der closure-note-reviewer-Skill.

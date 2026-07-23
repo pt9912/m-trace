@@ -15,7 +15,7 @@ für Sicherheitsmeldungen.
 
 Die jeweils aktuelle Release-Reihe ergibt sich aus dem letzten
 Tag (`git tag --list 'v*'`) und der Release-Übersicht in
-[`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+[`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
 §3.
 
 ## 2. Sicherheitslücke melden
@@ -65,7 +65,7 @@ Security-Gates: `vuln-check` (Go), `audit-ts` (npm/pnpm),
 Drift-Gate. Sie laufen parallel zu `make build` und sind in
 [`docs/user/quality.md`](docs/user/quality.md) und im
 Lieferstand-Plan
-[`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md)
+[`docs/planning/done/plan-0.8.5.md`](docs/plan/planning/done/plan-0.8.5.md)
 beschrieben. Eine sicherheitsrelevante Änderung muss diese Gates
 weiterhin grün halten.
 

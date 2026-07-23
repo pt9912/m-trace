@@ -14,8 +14,8 @@ korrigiert werden:
 1. `spec/lastenheft.md` (Contract)
 2. Technik-Spezifikationen unter `spec/`
 3. `spec/architecture.md` (abgeleitete Architektursicht)
-4. akzeptierte Records unter `docs/adr/`
-5. `docs/planning/in-progress/roadmap.md`
+4. akzeptierte Records unter `docs/plan/adr/`
+5. `docs/plan/planning/in-progress/roadmap.md`
 6. Anwender- und Betriebs-Dokumentation unter `docs/user/` und `docs/ops/`
 7. Root-README-Dateien
 8. diese Harness-Dokumentation
@@ -29,8 +29,8 @@ Die genaue Klassifikation und die repository-spezifischen Adaptionen sind in
 |---|---|
 | [`spec/lastenheft.md`](../spec/lastenheft.md) | Contract: was m-trace bereitstellen muss |
 | [`spec/architecture.md`](../spec/architecture.md) | Abgeleitete Komponenten- und Abhängigkeitssicht |
-| [`docs/adr/`](../docs/adr/) | Begründung akzeptierter Architektur-Entscheidungen |
-| [`docs/planning/in-progress/roadmap.md`](../docs/planning/in-progress/roadmap.md) | Lieferstatus und Sequenzierung |
+| [`docs/plan/adr/`](../docs/plan/adr/) | Begründung akzeptierter Architektur-Entscheidungen |
+| [`docs/plan/planning/in-progress/roadmap.md`](../docs/plan/planning/in-progress/roadmap.md) | Lieferstatus und Sequenzierung |
 
 ## Sensors (Feedback-Gates)
 

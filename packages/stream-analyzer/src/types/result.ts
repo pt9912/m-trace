@@ -125,7 +125,7 @@ export interface DashAnalysisResult extends BaseAnalysisResult {
  * neue Finding-Codes). Breaking Changes (Felder löschen/umbenennen/
  * umtypisieren, finite Wertedomänen einschränken) erfordern eine
  * Major-Version, einen Eintrag in `CHANGELOG.md` und ein Update von
- * `docs/user/stream-analyzer.md` und `docs/planning/done/`.
+ * `docs/user/stream-analyzer.md` und `docs/plan/planning/done/`.
  */
 export type AnalysisResult =
   | MasterAnalysisResult

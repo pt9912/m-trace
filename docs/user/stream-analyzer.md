@@ -6,7 +6,7 @@ Backend-Integration (`apps/api`), eine CLI und ein stabiles
 JSON-Ergebnisformat.
 
 Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
-F-68..F-81), [`docs/planning/done/plan-0.3.0.md`](../planning/done/plan-0.3.0.md),
+F-68..F-81), [`docs/plan/planning/done/plan-0.3.0.md`](../plan/planning/done/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
 ## 1. Lieferumfang
@@ -431,7 +431,7 @@ Minor unverändert bleibt:
 
 **Breaking Changes** (verlangen Major-Bump + Eintrag in
 `CHANGELOG.md` + Update von `docs/user/stream-analyzer.md` und
-`docs/planning/done/plan-0.3.0.md`):
+`docs/plan/planning/done/plan-0.3.0.md`):
 
 - Felder löschen oder umbenennen.
 - Den Typ eines bestehenden Felds ändern (`number → string`,
@@ -807,6 +807,6 @@ no-args (Exit 2), URL-Input gegen eine RFC1918-Adresse (Exit 1 +
 `fetch_blocked` — exerciert den echten Loader-Pfad inklusive
 SSRF-Schutz) und `--help` über `pnpm exec m-trace` (Bin-Symlink +
 Shebang). Der Aufruf spiegelt das DoD-Smoke-Kriterium aus
-[`plan-0.3.0`](../planning/done/plan-0.3.0.md) §8 und die
-DASH-Erweiterung aus [`plan-0.9.0`](../planning/done/plan-0.9.0.md)
+[`plan-0.3.0`](../plan/planning/done/plan-0.3.0.md) §8 und die
+DASH-Erweiterung aus [`plan-0.9.0`](../plan/planning/done/plan-0.9.0.md)
 Tranche 3.

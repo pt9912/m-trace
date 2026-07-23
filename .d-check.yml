@@ -16,8 +16,23 @@ modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix]
 
 codepaths:
   scope:
-    roots: [docs/user, docs/ops, docs/dev, docs/perf, docs/adr, spec]
+    roots: [docs/user, docs/ops, docs/dev, docs/perf, docs/plan/adr, spec]
   exempt-paths: [spec/architecture.md]
+
+# Tombstone-Register (W5-Layout-Move, v3.5.0-Migration): die immutablen
+# Accepted-ADRs (MR-002) tragen Verweise auf die Pre-Move-Pfade und duerfen
+# nicht editiert werden. `ignore-refs` nimmt genau diese aufgeloesten Ziele
+# von der Existenzpruefung aus (geteilt von links/anchors/codepaths),
+# scoped auf die ADR-Quelldateien — mit Gate, nichts verschwindet still.
+ignore-refs:
+  - in: 'docs/plan/adr/**'
+    refs:
+      - 'docs/planning/**'    # Code-Span-Verweise auf den Alt-Planning-Pfad
+      - 'docs/adr/**'         # Code-Span-Verweise auf den Alt-ADR-Pfad
+      - 'docs/plan/perf/**'   # ADR-0008 ](../perf/…) post-move ins Leere
+      - 'docs/plan/dev/**'    # ADR-0008 ](../dev/…)
+      - 'docs/plan/ops/**'    # ADR-0007 ](../ops/…)
+      - 'docs/harness/**'     # ADR-0009 ](../../harness/…)
 
 hostpaths:
   prefixes: [Users, Development]
@@ -37,11 +52,11 @@ trace:
       duplicate-ids: last
     modality: {}
   adrs:
-    dir: docs/adr
+    dir: docs/plan/adr
     file-pattern: '^([0-9]{4})-.*\.md$'
     id-prefix: 'ADR-'
   slices:
-    dir: docs/planning/done
+    dir: docs/plan/planning/done
     file-pattern: '^plan-(.+)\.md$'
     id-prefix: 'plan-'
 
@@ -57,10 +72,10 @@ matrix:
     - name: view-spec
       paths: [spec/architecture.md]
     - name: adr
-      paths: ['docs/adr/[0-9]*.md']
+      paths: ['docs/plan/adr/[0-9]*.md']
       token: 'ADR-[0-9]{4}'
     - name: planning
-      paths: ['docs/planning/**/*.md']
+      paths: ['docs/plan/planning/**/*.md']
       token: 'plan-[0-9]+\.[0-9]+\.[0-9]+'
   rules:
     - {from: contract, to: technical-spec, allow: false}
@@ -77,18 +92,18 @@ matrix:
     forbidden: [superseded, deprecated]
   exclude-sections: [Historie, Geschichte]
   exempt-paths:
-    - docs/adr/0001-backend-stack.md
-    - docs/adr/0002-persistence-store.md
-    - docs/adr/0003-live-updates.md
-    - docs/adr/0004-cursor-strategy.md
-    - docs/adr/0005-production-ops-backends.md
-    - docs/adr/0006-postgres-scaleout-adapter.md
-    - docs/adr/0007-sqlite-postgres-data-cutover.md
+    - docs/plan/adr/0001-backend-stack.md
+    - docs/plan/adr/0002-persistence-store.md
+    - docs/plan/adr/0003-live-updates.md
+    - docs/plan/adr/0004-cursor-strategy.md
+    - docs/plan/adr/0005-production-ops-backends.md
+    - docs/plan/adr/0006-postgres-scaleout-adapter.md
+    - docs/plan/adr/0007-sqlite-postgres-data-cutover.md
 
 # Future-only-Sensoren: Sie werden über eigene Make-Targets mit Commit-Range
 # oder Staged-Diff aufgerufen und gehören deshalb nicht in `modules`.
 vcs:
-  paths: ['docs/adr/[0-9]*.md']
+  paths: ['docs/plan/adr/[0-9]*.md']
   immutable-when: '^> \*\*Status\*\*: (Accepted|\*\*Accepted \+ GELIEFERT\*\*)'
   exclude-sections: [Historie, Geschichte]
   status-line: '^> \*\*Status\*\*:'

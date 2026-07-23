@@ -94,7 +94,7 @@ ${image_tail}
    the per-image \`.trivyignore\` automatically.
 5. Push the fix; the next Nightly verifies that the gate is green
    again. If the issue stays open beyond 7 days, escalate via the
-   Tranche-3 risks backlog (\`docs/planning/in-progress/risks-backlog.md\`).
+   Tranche-3 risks backlog (\`docs/plan/planning/in-progress/risks-backlog.md\`).
 EOF
 )
 

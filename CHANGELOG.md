@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Der TypeScript-Stream-Analyzer-Bench-Smoke
   (`make analyzer-benchmark-smoke`) läuft jetzt im `build`-Stage-Container
   statt host-seitig
-  ([ADR-0008](docs/adr/0008-benchmark-mutation-execution-in-docker.md);
+  ([ADR-0008](docs/plan/adr/0008-benchmark-mutation-execution-in-docker.md);
   mess-basiert — eine A/B-Messung Host vs. Docker belegt Container-Overhead
   ≈ 0, die §4-Budgets halten). `benchmark-observation.yml` braucht dafür
   keinen Host-`pnpm install` mehr. Der Go-Bench war bereits
@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Der TypeScript-Mutation-Gate (`make ts-mutation-report`) läuft jetzt
   in Docker (`mutation-ts`-Stage = `build` + `procps`) statt host-seitig;
   `mutation.yml` (TS-Job) braucht keinen Host-`pnpm install` mehr
-  ([ADR-0008](docs/adr/0008-benchmark-mutation-execution-in-docker.md)).
+  ([ADR-0008](docs/plan/adr/0008-benchmark-mutation-execution-in-docker.md)).
 
 ### Fixed
 
@@ -100,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Stand `1.1.25` → `1.1.26`). Schließt `R-26 b` (repliken-übergreifende
 > Multi-Tenant-Fairness, letzter offener Teil von `R-26`) und liefert die
 > seit „defer-with-migration-seed" vorgesehene SQLite→Postgres-
-> Datenmigration (`R-29`, [ADR-0007](docs/adr/0007-sqlite-postgres-data-cutover.md))
+> Datenmigration (`R-29`, [ADR-0007](docs/plan/adr/0007-sqlite-postgres-data-cutover.md))
 > als Ops-Werkzeug nach. `SQLite` und der In-Memory-Limiter bleiben
 > Default; Redis/Postgres bleiben opt-in. Keine Wire-, Public-API- oder
 > Analyzer-Schema-Änderung. Verifikationsmatrix in
@@ -137,7 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (d-migrate ≥ 0.9.12, `file:…?mode=ro`) — eine nur lesbare Quelle genügt für
   alle Phasen. `SQLite` bleibt Default; keine Runtime-/Wire-/Public-API-
   Änderung (API-Image bleibt JDK-frei).
-  ([ADR-0007](docs/adr/0007-sqlite-postgres-data-cutover.md), `R-29`)
+  ([ADR-0007](docs/plan/adr/0007-sqlite-postgres-data-cutover.md), `R-29`)
 
 ## [0.23.0] - 2026-07-11
 
@@ -145,7 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md). Lastenheft-Patch
 > `1.1.25` (neue RAK-Gruppe `RAK-126`..`RAK-130` in §13.24; normativer
 > Stand `1.1.24` → `1.1.25`). Reaktiviert `RAK-91` (Postgres „defer" →
-> „proceed, optional", [ADR-0006](docs/adr/0006-postgres-scaleout-adapter.md))
+> „proceed, optional", [ADR-0006](docs/plan/adr/0006-postgres-scaleout-adapter.md))
 > und liefert den **optionalen** Postgres-Scale-out-Adapter samt
 > R-26-c-Nachweis. `SQLite` bleibt Default; keine Wire-, Public-API- oder
 > Analyzer-Schema-Änderung. Verifikationsmatrix in
@@ -277,7 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Lastenheft-Patch; normativer Stand bleibt `1.1.24`. Sammelt die
 > seit `0.22.2` auf `main` aufgelaufenen Security-/CI-/Doku-Fixes und
 > rollt den WebRTC-Drift-Test-Fix aus
-> [`docs/planning/done/plan-0.22.3-webrtc-drift.md`](docs/planning/done/plan-0.22.3-webrtc-drift.md)
+> [`docs/planning/done/plan-0.22.3-webrtc-drift.md`](docs/plan/planning/done/plan-0.22.3-webrtc-drift.md)
 > ein (dort als „kein eigener Tag" geführt — die Versionsnummer war
 > reserviert, aber nie getaggt).
 >
@@ -354,7 +354,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `failed`/`closed` — `disconnected` ist `connection_state`-
   Allowlist-konform (`spec/telemetry-model.md` §1.4). Behebt den
   CI-Flake aus
-  [`plan-0.22.3-webrtc-drift`](docs/planning/done/plan-0.22.3-webrtc-drift.md);
+  [`plan-0.22.3-webrtc-drift`](docs/plan/planning/done/plan-0.22.3-webrtc-drift.md);
   reiner Test-Fix, kein SDK-/Wire-/Spec-Touch.
 - Flaky CORS-Preflight-Test
   (`TestNewRouter_NilAllowlistRejectsAllPreflights`) im Paket
@@ -372,7 +372,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) — kein
 > Lastenheft-Patch; normativer Stand bleibt `1.1.24`.
 > Plan in
-> [`docs/planning/done/plan-0.22.2.md`](docs/planning/done/plan-0.22.2.md).
+> [`docs/planning/done/plan-0.22.2.md`](docs/plan/planning/done/plan-0.22.2.md).
 >
 > **Security-Auslöser**: GO-2026-5037 (`crypto/x509` ineffiziente
 > Hostname-Kandidaten-Parsing) und GO-2026-5039 (`net/textproto`
@@ -417,7 +417,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) — kein
 > Lastenheft-Patch; normativer Stand bleibt `1.1.24`.
 > Plan in
-> [`docs/planning/done/plan-0.22.1.md`](docs/planning/done/plan-0.22.1.md).
+> [`docs/planning/done/plan-0.22.1.md`](docs/plan/planning/done/plan-0.22.1.md).
 >
 > **Security-Auslöser**: GHSA-77vg-94rm-hx3p (`devalue` DoS via
 > sparse-array deserialization, Patched-Range `>=5.8.1`) wurde am
@@ -470,12 +470,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) — kein
 > Lastenheft-Patch; normativer Stand bleibt `1.1.24`.
 > Plan in
-> [`docs/planning/done/plan-0.22.0.md`](docs/planning/done/plan-0.22.0.md).
+> [`docs/planning/done/plan-0.22.0.md`](docs/plan/planning/done/plan-0.22.0.md).
 
 ### Added
 
 - `0.22.0` Quality-Gates-Follow-up aktiviert:
-  [`docs/planning/done/plan-0.22.0.md`](docs/planning/done/plan-0.22.0.md)
+  [`docs/planning/done/plan-0.22.0.md`](docs/plan/planning/done/plan-0.22.0.md)
   promoted `make benchmark-smoke` nach fünf grünen Beobachtungsläufen
   in den PR-blockierenden `make gates`-Pfad.
 
@@ -494,7 +494,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — OCI Image Publishing nach `0.20.0`,
 > Lastenheft-Patch `1.1.24` mit RAK-121..RAK-125 in §13.23.
 > Plan in
-> [`docs/planning/done/plan-0.21.0.md`](docs/planning/done/plan-0.21.0.md).
+> [`docs/planning/done/plan-0.21.0.md`](docs/plan/planning/done/plan-0.21.0.md).
 
 ### Added
 
@@ -521,7 +521,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — Package Publishing nach `0.19.0`,
 > Lastenheft-Patch `1.1.23` mit RAK-116..RAK-120 in §13.22.
 > Plan in
-> [`docs/planning/done/plan-0.20.0.md`](docs/planning/done/plan-0.20.0.md).
+> [`docs/planning/done/plan-0.20.0.md`](docs/plan/planning/done/plan-0.20.0.md).
 
 ### Added
 
@@ -555,17 +555,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — Offene Risiken / Trigger-Re-Eval nach `0.17.0`.
 > Kein Lastenheft-Patch; der normative Stand bleibt `1.1.22`.
 > Plan in
-> [`docs/planning/done/plan-0.18.0.md`](docs/planning/done/plan-0.18.0.md).
+> [`docs/planning/done/plan-0.18.0.md`](docs/plan/planning/done/plan-0.18.0.md).
 
 ### Changed
 
 - `0.18.0` Decision-Closeout archiviert unter
-  [`docs/planning/done/plan-0.18.0.md`](docs/planning/done/plan-0.18.0.md):
+  [`docs/planning/done/plan-0.18.0.md`](docs/plan/planning/done/plan-0.18.0.md):
   `R-9`, `R-12` und `R-13`
   bleiben offen, aber mit präzisierten Folge-Triggern in Plan,
   Roadmap und Risks-Backlog. `R-13` hat ein neues reproduzierbares
   Trivy-Re-Review-Artefakt unter
-  [`docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md`](docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md).
+  [`docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md`](docs/plan/planning/in-progress/r13-trivy-rereview-2026-05-13.md).
 - K8s-Beispielmanifeste auf den aktuellen Release-Stand synchronisiert:
   `m-trace-api`, `m-trace-analyzer` und `m-trace-dashboard` verwenden
   jetzt Image-Tags `0.18.0`; `make k8s-validate` prüft den Drift.
@@ -581,14 +581,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — Hardening / Evidence Review nach `0.16.0`,
 > Lastenheft-Patch `1.1.22` mit RAK-111..RAK-115 in §13.21.
 > Plan in
-> [`docs/planning/done/plan-0.17.0.md`](docs/planning/done/plan-0.17.0.md).
+> [`docs/planning/done/plan-0.17.0.md`](docs/plan/planning/done/plan-0.17.0.md).
 
 ### Added
 
 - `0.17.0` Planung aktiviert: Lastenheft-Patch `1.1.22` ergänzt
   §13.21 mit RAK-111..RAK-115 für Hardening / Evidence Review; der
   Plan liegt archiviert unter
-  [`docs/planning/done/plan-0.17.0.md`](docs/planning/done/plan-0.17.0.md).
+  [`docs/planning/done/plan-0.17.0.md`](docs/plan/planning/done/plan-0.17.0.md).
 - `0.17.0` Tranche 0: Szenario D aus dem `0.16.0`-Closeout gewählt.
   Hardening-only ist der einzige Go-Pfad; Productization, Next Slice,
   Switch, externe Analyzer-API, Control-Plane, Postgres, Analytics,
@@ -623,14 +623,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — Selected Product Slice / Analyzer Range Fetch nach `0.15.0`,
 > Lastenheft-Patch `1.1.21` mit RAK-106..RAK-110 in §13.20.
 > Plan in
-> [`docs/planning/done/plan-0.16.0.md`](docs/planning/done/plan-0.16.0.md).
+> [`docs/planning/done/plan-0.16.0.md`](docs/plan/planning/done/plan-0.16.0.md).
 
 ### Added
 
 - `0.16.0` Planung aktiviert und released: Lastenheft-Patch `1.1.21` ergänzt
   §13.20 mit RAK-106..RAK-110 für Selected Product Slice / Analyzer
   Range Fetch; der Plan ist archiviert in
-  [`docs/planning/done/plan-0.16.0.md`](docs/planning/done/plan-0.16.0.md).
+  [`docs/planning/done/plan-0.16.0.md`](docs/plan/planning/done/plan-0.16.0.md).
 - `0.16.0` Tranche 0: Szenario B aus `0.15.0` RAK-104 importiert.
   HTTP-Range-/Byte-Range-Loader fuer manifest-referenzierte CMAF-
   Init-/Media-Segmente ist der einzige Go-Pfad; externe Analyzer-API,
@@ -664,14 +664,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — Product-Scope-/Analyzer-Boundary-Release nach `0.14.0`,
 > Lastenheft-Patch `1.1.20` mit RAK-101..RAK-105 in §13.19.
 > Plan in
-> [`docs/planning/done/plan-0.15.0.md`](docs/planning/done/plan-0.15.0.md).
+> [`docs/planning/done/plan-0.15.0.md`](docs/plan/planning/done/plan-0.15.0.md).
 
 ### Added
 
 - `0.15.0` Planung aktiviert: Lastenheft-Patch `1.1.20` ergänzt
   §13.19 mit RAK-101..RAK-105 für Product Scope / Analyzer Boundary;
   der Plan ist archiviert in
-  [`docs/planning/done/plan-0.15.0.md`](docs/planning/done/plan-0.15.0.md).
+  [`docs/planning/done/plan-0.15.0.md`](docs/plan/planning/done/plan-0.15.0.md).
 - `0.15.0` Tranche 1: Zielgruppenentscheidung für die nächsten
   Minor-Releases auf Selbsthoster, kleine bis mittlere
   Streaming-Teams, Broadcaster-Labs und technische Media-/DevOps-Teams
@@ -702,7 +702,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
 > §3.1 — Ops-Backend-Follow-up nach `0.13.0`, Lastenheft-Patch
 > `1.1.19` mit RAK-96..RAK-100 in §13.18. Plan in
-> [`docs/planning/done/plan-0.14.0.md`](docs/planning/done/plan-0.14.0.md).
+> [`docs/planning/done/plan-0.14.0.md`](docs/plan/planning/done/plan-0.14.0.md).
 
 ### Added
 
@@ -737,7 +737,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **Minor-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
 > §3.1 — Decision-and-Seed-Release für Production-/Ops-Backends,
 > Lastenheft-Patch `1.1.18` mit RAK-91..RAK-95 in §13.17. Plan in
-> [`docs/planning/done/plan-0.13.0.md`](docs/planning/done/plan-0.13.0.md).
+> [`docs/planning/done/plan-0.13.0.md`](docs/plan/planning/done/plan-0.13.0.md).
 
 ### Added
 
@@ -778,7 +778,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — Folge-Items der Backlog-Risiken R-5/R-7/R-10/R-11/R-13/R-15/
 > R-17/R-20/R-22, Lastenheft-Patch `1.1.17` mit RAK-83..RAK-90 in
 > §13.16, neue RAK-Verifikationsmatrix. Plan in
-> [`docs/planning/done/plan-0.12.6.md`](docs/planning/done/plan-0.12.6.md).
+> [`docs/planning/done/plan-0.12.6.md`](docs/plan/planning/done/plan-0.12.6.md).
 
 ### Added
 
@@ -923,7 +923,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > §3.1 — neue User-Surface (Auth-/Ingest-Adapter), Lastenheft-Patch
 > `1.1.16` mit RAK-77..RAK-82 in §13.15, neue
 > RAK-Verifikationsmatrix. Plan in
-> [`docs/planning/done/plan-0.12.5.md`](docs/planning/done/plan-0.12.5.md).
+> [`docs/planning/done/plan-0.12.5.md`](docs/plan/planning/done/plan-0.12.5.md).
 
 ### Added
 
@@ -1043,7 +1043,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **Patch-Release** gemäß [`docs/user/releasing.md`](docs/user/releasing.md)
 > §3.1 — kein Lastenheft-Patch, keine RAK-Verifikationsmatrix, keine
 > neue User-Surface oder Wire-Verträge. Plan in
-> [`docs/planning/done/plan-0.12.1.md`](docs/planning/done/plan-0.12.1.md).
+> [`docs/planning/done/plan-0.12.1.md`](docs/plan/planning/done/plan-0.12.1.md).
 
 ### Added
 
@@ -1086,7 +1086,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Minor-Release** mit Lastenheft-Patch `1.1.15` (F-111..F-113 von
 > Kann auf Release-Muss; neue RAK-Gruppe `RAK-71`..`RAK-76` in §13.14).
-> Plan in [`docs/planning/done/plan-0.12.0.md`](docs/planning/done/plan-0.12.0.md).
+> Plan in [`docs/planning/done/plan-0.12.0.md`](docs/plan/planning/done/plan-0.12.0.md).
 
 ### Added
 
@@ -1144,7 +1144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - R-14 (`validate-key` bleibt Diagnose-Pfad), R-17 (Multi-Replica-
   Issuance-Limiter), R-18 (Multi-Key-Rotation-Workflow), R-20 (KMS/
   Vault), R-21 (Future-Browser-Konsument auf `/api/ingest/*`) im
-  [`risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  [`risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
   mit Triggerschwellen.
 
 ## [0.11.0] - 2026-05-09
@@ -1152,7 +1152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **Minor-Release** mit Lastenheft-Patch `1.1.14` (F-49 +
 > RAK-65..RAK-70 in §13.13, NF-13 um „lokaler Stream-Control-Pfad"
 > erweitert). Plan in
-> [`docs/planning/done/plan-0.11.0.md`](docs/planning/done/plan-0.11.0.md).
+> [`docs/planning/done/plan-0.11.0.md`](docs/plan/planning/done/plan-0.11.0.md).
 
 ### Added
 
@@ -1249,7 +1249,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **Minor-Release** mit Lastenheft-Patch `1.1.13` (RAK-60..RAK-64
 > in §13.12, NF-13 als „CMAF-Analyse im Stream-Analyzer-Scope"
 > präzisiert). Plan in
-> [`docs/planning/done/plan-0.10.0.md`](docs/planning/done/plan-0.10.0.md).
+> [`docs/planning/done/plan-0.10.0.md`](docs/plan/planning/done/plan-0.10.0.md).
 
 ### Added
 
@@ -1363,7 +1363,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) §3.1). Keine
 > neue Produktfunktion, keine User-Surface- oder Wire-
 > Vertragsänderung. Plan in
-> [`docs/planning/done/plan-0.9.6.md`](docs/planning/done/plan-0.9.6.md).
+> [`docs/planning/done/plan-0.9.6.md`](docs/plan/planning/done/plan-0.9.6.md).
 
 ### Added
 
@@ -1388,14 +1388,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NF-18`, `MVP-19`..`MVP-26`, `MVP-37` und `MVP-42` mit
   `1.1.12`-Status- bzw. Lieferstand-Vermerk redaktionell
   geschärft, ohne Anforderungen zu senken oder zu heben.
-- [`docs/planning/done/plan-0.1.0.md`](docs/planning/done/plan-0.1.0.md)
+- [`docs/planning/done/plan-0.1.0.md`](docs/plan/planning/done/plan-0.1.0.md)
   §4a.15 als neuer Patch-Log-Eintrag.
 - [`README.md`](README.md): neuer Abschnitt „Mitarbeit und
   Sicherheitsmeldungen", `cp .env.example .env`-Hinweis im
   Lokal-Setup, Statusblock auf `0.9.6`.
-- [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+- [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
   und
-  [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
   Header und Phase-Beschreibung auf den `0.9.6`-Stand
   aktualisiert; keine inhaltliche Änderung an aktiven R-Items.
 - Versions-Bump `0.9.5` → `0.9.6` in allen versionsführenden
@@ -1430,12 +1430,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) §3.1) ohne
 > User-Surface-Änderung. Liefert die vier statistisch- bzw.
 > langlaufenden Quality-Gates aus
-> [`docs/planning/in-progress/extra-gates.md`](docs/planning/in-progress/extra-gates.md):
+> [`docs/planning/in-progress/extra-gates.md`](docs/plan/planning/in-progress/extra-gates.md):
 > Benchmark-Smoke (PR-Pfad) + Nightly-`benchstat`-Regressionen
 > (§3.2/§3.3), selektives Fuzzing + TS-Property-Tests (§3.5) und
 > Mutation-Testing als Nightly-Report (§3.6). Kein Lastenheft-Patch
 > (Quality-Gates, keine User-Surface). Plan in
-> [`done/plan-0.9.5.md`](docs/planning/done/plan-0.9.5.md).
+> [`done/plan-0.9.5.md`](docs/plan/planning/done/plan-0.9.5.md).
 
 ### Added (Tranche 0 — Plan-Aktivierung + Baseline-Entscheidungen)
 
@@ -1448,7 +1448,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   begründet in `plan-0.9.5.md` §1a Tranche 0.
 - Quarantäne-Policy: maximal 30 Tage Skip mit Begründungs-
   Kommentar plus Backlog-Item in
-  [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md);
+  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md);
   Verlängerung ist Plan-DoD-Item-Änderung im jeweiligen Folge-Plan.
 
 ### Added (Tranche 1 — Benchmark-Smoke API + Stream-Analyzer)
@@ -1663,7 +1663,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > Drift-Smoke + SRS-Lab + DASH-Manifest-Analyse — Minor-Release mit
 > drei thematisch getrennten Liefergegenständen aus
-> [`done/plan-0.9.0.md`](docs/planning/done/plan-0.9.0.md). RAK-56
+> [`done/plan-0.9.0.md`](docs/plan/planning/done/plan-0.9.0.md). RAK-56
 > (Browser-Drift-Smoke, automatisiert detektiert R-12) Soll;
 > RAK-57 (SRS-Lab `examples/srs/`) Kann (MVP-36 eingelöst);
 > RAK-58 (DASH-Manifest-Analyse) Muss (NF-12 eingelöst, MVP-37
@@ -1830,7 +1830,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Konvention (`0.X.Y`) in `docs/user/releasing.md` §3.1 verankert. Keine
 > User-Surface-Änderung, kein Lastenheft-Patch, keine RAK-
 > Verifikationsmatrix (Plan-DoD-Items reichen). Lieferstand der
-> Tranchen 0–3 in [`docs/planning/done/plan-0.8.5.md`](docs/planning/done/plan-0.8.5.md)
+> Tranchen 0–3 in [`docs/planning/done/plan-0.8.5.md`](docs/plan/planning/done/plan-0.8.5.md)
 > archiviert.
 
 ### Added
@@ -2324,7 +2324,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Persistenz (Tranche 1):** durable SQLite-Persistenz für
   `stream_sessions`, `playback_events` und `ingest_sequence`; Cursor
-  sind Restart-stabil ([ADR-0002](docs/adr/0002-persistence-store.md));
+  sind Restart-stabil ([ADR-0002](docs/plan/adr/0002-persistence-store.md));
   Reset-Pfad ist `make wipe`; Cursor-v3 mit Project-Scope plus
   `cursor_invalid_legacy`/`cursor_invalid_malformed`/`cursor_expired`-
   Codes (siehe `spec/backend-api-contract.md` §10.3).
@@ -2345,10 +2345,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Degradationen ab. Endpoint-spezifische Auth: `POST /api/playback-
   events` und Session-/Event-Reads sind tokenpflichtig; ungebundene
   `POST /api/analyze`-Requests bleiben tokenfrei und liefern
-  `session_link.status="detached"` ([R-6](docs/planning/in-progress/risks-backlog.md)
+  `session_link.status="detached"` ([R-6](docs/plan/planning/in-progress/risks-backlog.md)
   technisch geschlossen).
 - **Dashboard-Session-Timeline (Tranche 4):** Timeline-Ansicht
-  `/sessions/<id>` mit Server-Sent Events ([ADR-0003](docs/adr/0003-live-updates.md))
+  `/sessions/<id>` mit Server-Sent Events ([ADR-0003](docs/plan/adr/0003-live-updates.md))
   plus Polling-Fallback und Backfill-Cursor; Mini-Status-Panels und
   konfigurierbare Service-Links (F-39/F-40); Tempo-unabhängig (RAK-32).
 - **Optionales Tempo-Profil (Tranche 5):** `make dev-tempo` startet

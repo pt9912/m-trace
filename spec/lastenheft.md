@@ -1456,7 +1456,7 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 | `spec/telemetry-model.md` | Telemetrie- und Eventmodell |
 | `spec/player-sdk.md` | Player-SDK-Nutzung |
 | [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) | Stream Analyzer |
-| `docs/planning/in-progress/roadmap.md` | geplante Entwicklung |
+| `docs/plan/planning/in-progress/roadmap.md` | geplante Entwicklung |
 
 ---
 

@@ -25,7 +25,7 @@ import {
  * MPD-Parser für DASH-Manifests (RAK-58 /
  * NF-12). Der Parser extrahiert die Mindest-Felder aus
  * `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie
- * pro `docs/planning/done/` §0.5:
+ * pro `docs/plan/planning/done/` §0.5:
  *
  *   - `details.profiles` (aus `MPD@profiles`)
  *   - `details.type` (`MPD@type` ∈ `static` / `dynamic`, Default `static`)

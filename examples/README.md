@@ -3,7 +3,7 @@
 > **Status**: `0.5.0` released. Diese Stelle liefert reproduzierbare
 > lokale Beispiele für die Streaming-Protokolle, die das Multi-Protocol
 > Lab (Lastenheft §7.8 + RAK-36..RAK-40) abdeckt. Bezug:
-> [`docs/planning/done/plan-0.5.0.md`](../docs/planning/done/plan-0.5.0.md).
+> [`docs/planning/done/plan-0.5.0.md`](../docs/plan/planning/done/plan-0.5.0.md).
 
 ## Zweck
 

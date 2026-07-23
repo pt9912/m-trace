@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # m-trace API spike — Go variant
 #
-# Docker-only workflow per docs/planning/plan-spike.md §14.11. The repository ships
+# Docker-only workflow per docs/plan/planning/done/plan-spike.md §14.11. The repository ships
 # no Go toolchain, no go.sum manipulation outside Docker, and no host-level
 # build artefacts. All build/test/lint steps run via:
 #   docker build --target <stage> -t m-trace-api-spike:go-<stage> .

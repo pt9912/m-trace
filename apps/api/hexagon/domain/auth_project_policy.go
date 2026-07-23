@@ -13,7 +13,7 @@ import (
 //
 // Wire-Vertrag in `spec/backend-api-contract.md` §3.9 (Auth-Matrix,
 // CORS-Preflight, Project-Policies-Block); Out-of-Scope-Klammern in
-// `docs/planning/in-progress/` §0.1 (Origin-/IP-Buckets
+// `docs/plan/planning/in-progress/` §0.1 (Origin-/IP-Buckets
 // optionaler Zusatz).
 
 // HTTPMethod modelliert die im Pflichtpfad zulässigen

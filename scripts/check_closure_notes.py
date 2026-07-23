@@ -100,10 +100,10 @@ def is_substantive(section: str) -> tuple[bool, str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--done-dir", default="docs/planning/done", type=Path)
+    ap.add_argument("--done-dir", default="docs/plan/planning/done", type=Path)
     ap.add_argument(
         "--grandfather-file",
-        default="docs/planning/.closure-grandfathered",
+        default="docs/plan/planning/.closure-grandfathered",
         type=Path,
     )
     ap.add_argument("--glob", default="plan-*.md")

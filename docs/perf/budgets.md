@@ -1,7 +1,7 @@
 # Performance-Budgets
 
 > **Status**: PR-blockierende Budget-Smokes — initiale Tabelle aus
-> [`docs/planning/done/plan-0.9.5.md`](../planning/done/plan-0.9.5.md)
+> [`docs/plan/planning/done/plan-0.9.5.md`](../plan/planning/done/plan-0.9.5.md)
 > §1a, in `0.22.0` nach fünf grünen Beobachtungsläufen
 > (`benchmark-observation.yml` Runs `25592982776`..`25769811661`)
 > PR-blockierend über `make gates` geschaltet. Werte bleiben bewusst
@@ -11,7 +11,7 @@
 
 Single-Source-of-Truth für die `make api-benchmark-smoke` /
 `make analyzer-benchmark-smoke` / `make benchmark-smoke`-Targets aus
-[`extra-gates.md`](../planning/in-progress/extra-gates.md) §3.2. Jeder
+[`extra-gates.md`](../plan/planning/in-progress/extra-gates.md) §3.2. Jeder
 Smoke schlägt als PR-Block fehl, wenn ein Hot-Path die hier
 gelistete Schwelle überschreitet. Die Schwellen sind **absolute
 Obergrenzen**, kein Vergleich gegen den letzten Commit (das ist
@@ -22,7 +22,7 @@ Obergrenzen**, kein Vergleich gegen den letzten Commit (das ist
 - **Plattform**: GitHub Actions `ubuntu-24.04` (PR-Pfad). Lokale
   Läufe können niedrigere Werte zeigen; Budgets sind für CI gesetzt.
 - **Ausführungsort**: **Docker** für beide Bench-Gates
-  ([ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md)) —
+  ([ADR-0008](../plan/adr/0008-benchmark-mutation-execution-in-docker.md)) —
   der Go-Bench im `golang:1.26.5`-Container, der TS-Bench im
   `build`-Stage-Image. Eine A/B-Messung Host vs. Docker (ADR-0008)
   belegt, dass der Container-Overhead für die CPU-gebundenen Hot-Path-
@@ -147,7 +147,7 @@ Dev-Laptop (historisch, 20 VUs / 30 s / Batch 20):
 serialisierter Writer), aber die belastbare Decke liegt hardware-abhängig
 **oberhalb von ~3842 ev/s** (CI, dort noch graceful) — die frühere
 ~800-ev/s-Zahl war ein Dev-Laptop-Artefakt. Empirische Grundlage für die
-Evaluierung des [ADR-0005](../adr/0005-production-ops-backends.md)-Postgres-
+Evaluierung des [ADR-0005](../plan/adr/0005-production-ops-backends.md)-Postgres-
 Triggers. Die Soak-Variante (`make smoke-soak`) misst zusätzlich die
 Read-Retention-p95 gegen 2 s als **Trigger-#3-Evidenz (Proxy)**: die
 Read-API serviert nur keyset-indizierte (größenunabhängige) Reads, keinen
@@ -169,7 +169,7 @@ ADR-0005-Trigger #1 (Multi-Replica → Postgres). Die Multi-Replica-Achse
 k6-Playback-Event-Last gegen den Multi-Replica-Stack
 (`docker-compose.scaleout.yml`: 2 API-Replicas + **geteilter** Postgres +
 nginx-LB) und liefert die horizontale Scale-out-Evidenz aus
-[ADR-0006](../adr/0006-postgres-scaleout-adapter.md) (**R-26 c**). Readback
+[ADR-0006](../plan/adr/0006-postgres-scaleout-adapter.md) (**R-26 c**). Readback
 via `psql` gegen den geteilten Postgres (kein SQLite-GLOB/Volume-Hack):
 `persisted = COUNT(*)`, `distinct = COUNT(DISTINCT ingest_sequence)` je
 Session-Prefix. Opt-in, **nicht** in `make gates`.

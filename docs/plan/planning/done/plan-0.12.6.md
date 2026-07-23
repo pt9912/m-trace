@@ -1,0 +1,999 @@
+# Implementation Plan — `0.12.6` (Folge-Items-Sammlung nach `0.12.5`)
+
+> **Status**: ✅ released 2026-05-12 (Tag `v0.12.6`). Alle 10
+> Tranchen geschlossen (T0..T9 ✅ Code-Liefer-Stand 2026-05-11;
+> T10 Closeout 2026-05-12). Acht R-N strukturell aufgelöst (R-5,
+> R-7, R-10, R-11, R-15, R-17, R-20, R-22) plus R-13 als
+> Wartungs-Tranche. Vorgänger ist `0.12.5` (released 2026-05-11,
+> Tag `v0.12.5`; Plan in [`plan-0.12.5.md`](./plan-0.12.5.md)).
+>
+> **Wave-2-Quality-Gates (releasing.md §3.1)**: benchmark.yml run
+> `25705097012` ✅ (2026-05-12), fuzz.yml run `25707248676` ✅
+> (2026-05-12, keine offenen fuzz-Issues), mutation.yml letzte
+> drei Runs `25707444662`/`25645624823`/`25623561573` alle
+> success — Score-Trend stabil.
+>
+> **Release-Typ**: **Minor-Release** (`0.12.6`) gemäß
+> [`docs/user/releasing.md`](../../../user/releasing.md) §3.1 —
+> T0-Entscheidung 2026-05-11: alle neun R-N-Items haben einen
+> Code-Pfad in diesem Release; Lastenheft-Patch `1.1.17` mit
+> RAK-83..RAK-90 in §13.16. Sequenziell vor `0.13.0` (Production /
+> Ops Backends). RAK-Range schiebt `0.13.0` auf `RAK-91+`.
+>
+> **Ziel**: Die nach `0.12.5` offen gebliebenen R-N-Items aus
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1 systematisch
+> adressieren. Plan enthält **eine Tranche pro R-N**; T0 hat alle
+> neun aktiviert (Default-A aus §0.3 §2 Tranchen-Auswahl).
+>
+> **Bezug**:
+> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
+> R-5/R-7/R-9/R-10/R-11/R-13/R-15/R-17/R-20/R-22 (R-9 wird im
+> `0.13.0`-Plan bearbeitet, weil K8s-bezogen);
+> [`done/plan-0.4.0.md`](./plan-0.4.0.md) §3.1/§4.4/§8.3
+> (R-5/R-7/R-10);
+> [`done/plan-0.6.0.md`](./plan-0.6.0.md) §4 Sub-3.3 (R-11);
+> [`done/plan-0.8.5.md`](./plan-0.8.5.md) §2 Tranche 1 (R-13);
+> [`done/plan-0.11.0.md`](./plan-0.11.0.md) §0.1 + §0.6
+> (R-15);
+> [`done/plan-0.12.5.md`](./plan-0.12.5.md) Tranche 2 + §11
+> Folge-Scope (R-17, R-20, R-22).
+>
+> **Nachfolger**: [`plan-0.13.0.md`](../done/plan-0.13.0.md)
+> (Production / Ops Backends, MVP-40..MVP-44). RAK-Range
+> verschiebt sich: `0.12.6` belegt `RAK-83..RAK-90` in §13.16,
+> `0.13.0` belegt seit T0 `RAK-91..RAK-95` in §13.17.
+
+## 0. Konvention
+
+DoD-Checkboxen tracken den Lieferstand:
+
+- `[x]` ausgeliefert mit Commit-Hash.
+- `[ ]` offen.
+- `[!]` blockiert durch ADR-/Scope-Entscheidung.
+- 🟡 in Arbeit.
+
+### 0.1 Scope-Definition
+
+`0.12.6` ist eine **Folge-Items-Sammlung** für R-N-Einträge, die
+nach dem `0.12.5`-Release in [`risks-backlog.md`](../in-progress/risks-backlog.md)
+§1.1 offen oder „teilweise gelöst" sind. Pro R-N gibt es eine
+Tranche, die das Item entweder strukturell auflöst (🟢) oder mit
+geschärftem Trigger und konkreterem Folge-Pfad weiterträgt.
+
+Tranchen pro R-N im Plan (Tranche-Aktivierung in T0):
+
+| R-N  | Charakter                          | User-Surface?                     | Default-Empfehlung   |
+| ---- | ---------------------------------- | --------------------------------- | -------------------- |
+| R-5  | Time-Skew-Persistenz + Dashboard   | Read-Pfad-Detail-Spalte           | Patch (Doku/Schema)  |
+| R-7  | `ListSessions` N+1 → Bulk-Read     | nein (interne Performance)        | Patch                |
+| R-10 | Sampling-Lücken-Marker             | Read-Pfad-Detail                  | Patch (Doku/Marker)  |
+| R-11 | SRT-Health-Cursor-Pagination       | Wire-Vertrag schon spec'd         | Patch (Adapter-Code) |
+| R-13 | Trivy-Ignore Re-Review 2026-08-04  | nein (Wartung)                    | Patch (CI-Wartung)   |
+| R-15 | Externe Media-Server-Provisionierung | neue Wire-Endpoints             | Minor (RAK-Gruppe)   |
+| R-17 | Multi-Host-Issuance-Limiter        | neuer Network-Backend-Adapter     | Minor (RAK)          |
+| R-20 | Produktiver Vault/KMS-Adapter      | neue Vault-Auth-Mechanismen + KMS | Minor (RAK)          |
+| R-22 | Origin-/IP-Rate-Limiting           | neuer Driven-Port + ENV           | Minor (RAK)          |
+
+In Scope (T0-Entscheidung):
+
+- Eine **Untermenge** der neun R-N-Tranchen wird aktiviert. Items,
+  die nicht aktiviert werden, bleiben im Backlog stehen — mit
+  geschärftem Trigger oder Re-Eval-Notiz, falls inhaltlich
+  nötig.
+- Pro aktivierter Tranche: Code-Pfad (sofern relevant), Tests,
+  Doku-Update, Risks-Backlog-Status-Move.
+
+Out of Scope (auch bei voller Aktivierung):
+
+- **R-9** (K8s-Smoke-Stage-Whitelist) — wird im `0.13.0`-Plan
+  (MVP-42 K8s-Manifeste) bearbeitet, nicht hier.
+- Production-Backends (`MVP-40` Postgres, `MVP-41`
+  ClickHouse/VictoriaMetrics) — `0.13.0`-Scope.
+- OAuth/OIDC/SSO + User-/Org-Verwaltung — RAK-71-Out-of-Scope
+  bleibt normativ.
+- Neue Funktionalität jenseits der R-N-Trigger.
+
+### 0.2 Vorgänger-Gate
+
+- `0.12.5` ist released (Tag `v0.12.5`); Lastenheft-Patch
+  `1.1.16` mit RAK-77..RAK-82 in §13.15 persistiert.
+- `risks-backlog.md` §1.1 enthält die hier adressierten R-N-Items
+  mit aktuellem Trigger-Stand.
+- Memory-Lehren aus `0.12.5`: T0-Closeout-Commit zuerst, dann
+  `make gates` (Drift-Gate-Reihenfolge); Lab-Smokes nicht in
+  `make gates`, sondern als opt-in Make-Target pro Adapter.
+
+### 0.2.1 Smoke-Targets-Konvention
+
+Die Tranche-DoDs nennen mehrere neue `make smoke-*`-Targets
+(`smoke-srt-health-pagination`, `smoke-origin-rate-limit`,
+`smoke-issuance-multi-host`, `smoke-vault-approle`,
+`smoke-kms-skeleton`, `smoke-mediaserver-provision`). **Keines
+davon existiert heute** im [`Makefile`](../../../../Makefile) — sie
+werden **zusammen mit dem Adapter-Code in der jeweiligen Tranche
+neu angelegt**, analog zum Pattern aus `0.12.5`:
+
+- `scripts/smoke-<name>.sh` als Bash-Wrapper, der den End-to-End-
+  Test (oder reduzierte Lab-Variante) via `golang:1.26.3`-Docker
+  triggert (Vorbilder: `scripts/smoke-key-rotation.sh`,
+  `scripts/smoke-issuance-replica.sh`,
+  `scripts/smoke-browser-ingest.sh` aus `0.12.5`).
+- `Makefile`-Target plus `.PHONY`-Liste plus Help-Eintrag.
+- Opt-in (NICHT in `make gates`).
+
+DoD-Klauseln in den Tranchen lesen sich deshalb als
+„`make smoke-<name>` als Operator-Smoke" und schließen
+implizit das Anlegen von Script + Target ein. Sollte eine
+Tranche nur ein **Test-Wrapper-Pattern** liefern (statt echtem
+Compose-/Container-Smoke), wird das im Tranche-DoD explizit
+markiert (vgl. `smoke-issuance-replica` aus `0.12.5` T2, das
+zwei `*sql.DB`-Verbindungen statt zwei API-Prozessen nutzt).
+
+### 0.3 Architektur-/Scope-Entscheidungen (T0)
+
+Die T0-Aktivierung trifft mindestens diese Entscheidungen
+**bevor** der Plan nach `in-progress/` wandert:
+
+1. **Release-Typ**:
+   - **Patch** `0.12.6` — wenn nur Tranchen ohne neue User-Surface
+     aktiviert werden (R-5/R-7/R-10/R-11/R-13). Kein Lastenheft-
+     Patch, keine RAK-Matrix.
+   - **Minor** — wenn mindestens eine Tranche mit neuer Wire-/
+     Adapter-Surface aktiviert wird (R-15/R-17/R-20/R-22). Dann
+     Lastenheft-Patch (vermutlich `1.1.17`) mit neuer RAK-Gruppe.
+
+2. **RAK-Range-Vorbesetzung** (nur bei Minor): Default-Empfehlung
+   ist `RAK-83`..`RAK-N`, weil RAK-77..RAK-82 mit `0.12.5` belegt
+   sind. Falls `0.13.0` vor `0.12.6` aktiviert wird, schiebt sich
+   die Range entsprechend nach hinten — die T0-Aktivierung gegen
+   den dann aktuellen Lastenheft-Stand validieren.
+
+3. **Tranchen-Auswahl** pro R-N: aktivieren / deferr / als-Backlog-
+   Eintrag-verschärfen. Default-Empfehlung pro R-N steht in der
+   §0.1-Tabelle, finale Entscheidung im T0-Closeout-Commit-Body.
+
+4. **Vorgänger-Plan-Reihenfolge gegenüber `0.13.0`**: ist `0.12.6`
+   ein Zwischen-Patch vor `0.13.0` oder ein paralleler Minor?
+   - **Sequenziell** (`0.12.6` vor `0.13.0`): einfacher, weil
+     Lastenheft-Patches in Reihenfolge wandern und R-N-Adressierung
+     vor Production-Ops kommt.
+   - **Parallel**: nur sinnvoll, wenn `0.13.0` Production-Backends
+     liefert, die für die R-N-Tranchen Voraussetzung sind (z. B.
+     Multi-Host für R-17, KMS für R-20). Default-Empfehlung
+     sequenziell.
+
+### 0.4 Lastenheft-Patch (Vorschlag, nur bei Minor-Variante)
+
+Bei Minor-Aktivierung ergänzt der Plan eine neue RAK-Gruppe in
+einem neuen Lastenheft-Abschnitt. Genaue Patch-Version und §-
+Nummer werden zur T0-Aktivierung gegen den dann aktuellen
+Lastenheft-Stand bestimmt — Vorschlag bei Aktivierung **vor**
+`0.13.0`:
+
+| RAK (Platzhalter) | Bereich                | Anforderung                                                                                       |
+| ----------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| RAK-83            | Telemetry/Skew-Read    | Time-Skew-Markierung im Read-Pfad sichtbar (R-5); persistente Spalte + Dashboard-Indikator.       |
+| RAK-84            | Sessions/Bulk-Read     | `ListSessions`-Performance-Garantie unter Multi-Hundert-Sessions-Hard-Cap (R-7).                  |
+| RAK-85            | Telemetry/Sampling     | Sampling-Lücken-Marker im Read-Pfad (R-10); Schema-Spalte + Dashboard-Banner.                     |
+| RAK-86            | SRT-Health/Cursor      | Cursor-Pagination für `GET /api/srt/health/{stream_id}` (R-11); Wire-Vertrag schon in §7a.3.       |
+| RAK-87            | Ingest/Provisionierung | Optionaler MediaMTX-/SRS-Provisionierungs-Adapter (R-15).                                         |
+| RAK-88            | Auth/Multi-Host-Limiter| Network-Backend-Adapter (Redis/Memcached) für Multi-Host-Issuance-Limiter (R-17 Resttrigger).      |
+| RAK-89            | Auth/Vault-Production  | Produktive Vault-Authentifizierung (AppRole/IAM/K8s-ServiceAccount) plus KMS-Adapter (R-20 Resttrigger). |
+| RAK-90            | Auth/IP-Limiter        | Origin-/IP-nahes Rate-Limiting als Driven-Port-Adapter (R-22).                                    |
+
+> Die genaue RAK-Anzahl und §-Nummer hängt von der T0-aktivierten
+> Tranchen-Untermenge ab. Patch-Block-Wording analog `1.1.16`
+> aus `0.12.5`.
+
+## 1. Tranchen-Übersicht
+
+| Tranche | R-N  | Inhalt                                          | Charakter   | Status |
+| ------- | ---- | ----------------------------------------------- | ----------- | ------ |
+| 0       | —    | Plan-Aktivierung, Release-Typ-Entscheidung (Minor), Tranchen-Auswahl (Option A — alle 9), Lastenheft-Patch `1.1.17` §13.16 RAK-83..RAK-90, Roadmap-Insert | T0          | ✅      |
+| 1       | R-13 | Trivy-Ignore-Re-Review 2026-08-04 (Wartungspflicht) | CI-Wartung  | ✅      |
+| 2       | R-11 | SRT-Health-Detail-Cursor-Pagination             | Adapter-Code | ✅      |
+| 3       | R-5  | Time-Skew-Persistenz + Dashboard-Marker         | Schema + UI | ✅      |
+| 4       | R-10 | Sampling-Vollständigkeits-Marker                | Schema + UI | ✅      |
+| 5       | R-7  | `ListSessions` Bulk-Read-Port                   | Performance | ✅      |
+| 6       | R-22 | Origin-/IP-Rate-Limiter (Memory + Redis-Bundle T7) | Adapter  | ✅      |
+| 7       | R-17 | Multi-Host-Issuance-Limiter (Network-Backend)   | Adapter     | ✅      |
+| 8       | R-20 | Produktiver Vault/KMS-Adapter                   | Adapter     | ✅      |
+| 9       | R-15 | Externe Media-Server-Provisionierung            | Adapter     | ✅      |
+| 10      | —    | Closeout: Versions-Bump, CHANGELOG, Plan-Move, Tag, Wave-2-Verdict | Closeout | ⬜ |
+
+---
+
+## 2. Tranche 0 — Aktivierung
+
+Ziel: Release-Typ-Entscheidung, Tranchen-Auswahl, ggf.
+Lastenheft-Patch + RAK-Matrix-Skelett vor erster Code-Lieferung.
+
+DoD:
+
+- [x] Plan von `docs/planning/open/plan-0.12.6.md` nach
+  `docs/planning/in-progress/plan-0.12.6.md` verschoben
+  (T0-Commit).
+- [x] **Release-Typ fixiert**: **Minor `0.12.6`** (T0-Entscheidung
+  2026-05-11). Begründung: R-15/R-17/R-20/R-22 sind neue
+  User-Surface-Features (`provision=true`-Wire-Erweiterung,
+  Redis-Backend, AppRole/KMS-Auth, Origin-Limiter-Driven-Port);
+  damit greift der Regelrahmen aus `releasing.md` §3.1 für
+  Lastenheft-Patch zwingend.
+- [x] **Tranchen-Auswahl: Option A — alle 9 Tranchen** (T0-
+  Entscheidung 2026-05-11). Begründung: vergleichbarer Scope
+  zu `0.12.5` (5 Adapter-Tranchen + Closeout); Adapter sind
+  hexagonal unabhängig und können parallelisiert werden;
+  weniger Folge-Patches und technische Schulden, klare
+  Planbarkeit für `0.12.7`/`0.13.0`. Tranchen-Liste in §1
+  Übersicht spiegelt die Auswahl.
+- [x] **Sequenzierung sequenziell vor `0.13.0`** (T0-Entscheidung
+  2026-05-11). Begründung: vermeidet Integrationskonflikte;
+  Production-Backends in `0.13.0` brauchen die R-17-Multi-Host-
+  und R-20-Vault-Vorarbeit aus `0.12.6` als Voraussetzung.
+- [x] Lastenheft-Patch `1.1.17` mit §13.16 RAK-83..RAK-90
+  persistiert; Patch-Block-Wording in `spec/lastenheft.md`
+  Frontmatter oberhalb `1.1.16`. RAK-Matrix-Skelett pro
+  RAK in §13.16 ausgefüllt.
+- [x] Roadmap-Insert (Closeout-Commit): §1 Phase auf
+  🟡 `0.12.6` Tranche 0 aktiv; §1.1 Lastenheft-Eintrag auf
+  `1.1.17`; §1.2 Nächste Phase auf `0.12.6`; §2 Schritt 47.7
+  ergänzt; §3 Release-Übersicht 0.12.6-Zeile 🟡, 0.13.0-Zeile
+  RAK-91+ statt 83+.
+- [x] Vorgänger-Gate verifiziert: `git tag --list v0.12.5`
+  liefert den Tag.
+- [x] `make docs-check` grün.
+
+## 3. Tranche 1 — R-13 Trivy-Ignore Re-Review (Wartungspflicht)
+
+Ziel: `.security/vulnignore.yaml`-`expires` 2026-08-04 vor Ablauf
+re-reviewen; entweder Verlängerung mit Begründung, Trixie-Point-
+Release-Fix oder Base-Image-Wechsel (z. B. Distroless).
+
+DoD:
+
+- [x] Trivy-Scan gegen `node:22-trixie-slim` (Dashboard +
+  Analyzer-Service) mit aktuellem Vulnerability-Stand
+  (Re-Review 2026-05-11): 6 HIGH-Findings, 0 CRITICAL — exakt
+  die drei bekannten CVEs aus `.security/vulnignore.yaml`,
+  verteilt auf 6 Packages (libtinfo6/ncurses-base/ncurses-bin
+  für CVE-2025-69720, libsystemd0/libudev1 für CVE-2026-29111,
+  libcap2 für CVE-2026-4878). `Fixed Version`-Spalte leer in
+  allen Treffern → **kein Upstream-Fix in Debian Trixie**
+  verfügbar.
+- [x] Pro CVE Status-Eintrag (Re-Review 2026-05-11):
+  - `CVE-2025-69720` (ncurses): kein Trixie-Point-Release-Fix;
+    Container weiterhin ohne TTY-Pfad → Vektor nicht
+    erreichbar; **`expires` um 90 Tage verlängert** auf
+    `2026-11-02`.
+  - `CVE-2026-29111` (systemd): kein Trixie-Point-Release-Fix;
+    Container weiterhin ohne systemd/IPC-Mounts → Vektor nicht
+    aktivierbar; **`expires` um 90 Tage verlängert** auf
+    `2026-11-02`.
+  - `CVE-2026-4878` (libcap): kein Trixie-Point-Release-Fix;
+    Container weiterhin als unprivileged `USER node` ohne
+    setcap-Pfad; **`expires` um 90 Tage verlängert** auf
+    `2026-11-02`.
+- [x] `.security/vulnignore.yaml` aktualisiert: drei
+  `expires`-Werte von `2026-08-04` auf `2026-11-02`; pro
+  CVE-Block neuer Re-Review-Kommentar-Block mit Datum
+  `2026-05-11`, Plan-Bezug `plan-0.12.6 Tranche 1`, Stand
+  „kein Upstream-Fix" und Verlängerungs-Begründung.
+- [x] `scripts/render-trivyignore.sh mtrace-dashboard` grün
+  (3 entries gerendert, kein `expires`-Überschreitungs-Fehler).
+- [!] Optional: ADR-Draft für Distroless-Base-Image-Wechsel vor
+  `1.0` — bewusst **deferred**. 90 Tage Reserve bis nächstem
+  Re-Review-Termin (`2026-11-02`) reichen, um den
+  Distroless-Switch ohne Zeitdruck strukturell zu evaluieren;
+  ein vorab-`gcr.io/distroless/nodejs22-debian12`-Wechsel
+  würde den `node:22-trixie-slim`-glibc-Pfad vor einem
+  konkreten Operator-Trigger durcheinander bringen.
+- [x] Risks-Backlog R-13: Trigger-Stand-Eintrag aktualisiert
+  mit neuem `expires`-Datum (`2026-11-02`) und Re-Review-Notiz
+  (Stand `0.12.6` Tranche 1); Status bleibt ⬜ („nicht
+  ausgelöst") — die Verlängerung verschiebt den nächsten
+  Re-Review, löst R-13 aber nicht strukturell auf.
+
+## 4. Tranche 2 — R-11 SRT-Health-Detail-Cursor-Pagination
+
+Ziel: `GET /api/srt/health/{stream_id}` liefert Cursor-Pagination
+über `samples_limit` hinaus.
+
+**Wire-Vertrags-Pin** (Review-Finding 1, 2026-05-11): die
+Pagination-Semantik ist in
+[`spec/backend-api-contract.md`](../../../../spec/backend-api-contract.md)
+§7a.3 bereits präzise spezifiziert — **`samples_cursor`** als
+Query-Param, **nicht** `cursor`. Plan-DoD-Wording entsprechend
+gepinnt; jede Abweichung (z. B. zusätzlicher `cursor`-Alias mit
+Deprecation) wäre eine Spec-Änderung mit eigenem RAK und ist
+explizit **nicht** Teil dieser Tranche. Bestehende Clients/Tests
+gegen `samples_cursor`/`next_cursor` bleiben unverändert
+funktional.
+
+Fehlerverhalten ist ebenfalls schon in §7a.4 normiert:
+`400 cursor_invalid` bei `process_instance_id`-Mismatch (analog
+§10.3). Tranche 2 implementiert die Spec, sie ändert sie nicht.
+
+**Spec-Konsistenz-Fix** (während T2 erkannt, 2026-05-11): §7a.3 +
+§7a.4 trugen Pre-§4.3-Wording (`process_instance_id`-Cursor +
+monolithischer `cursor_invalid`-Body), das §10.3 mit seinem
+v3-Cursor und der Zwei-Klassen-Reject-Tabelle (`cursor_invalid_legacy`
+/ `cursor_invalid_malformed` / `cursor_expired`) widersprach. T2
+zieht §7a.3/§7a.4 auf §10.3-Konvention nach — die Pagination
+implementiert die Spec, sie ändert sie nicht: §10.3 ist die
+normative Quelle, §7a.3/§7a.4 verweisen jetzt explizit darauf.
+
+DoD:
+
+- [x] Adapter-Implementation in
+  `apps/api/adapters/driven/persistence/sqlite/srt_health_repository.go`:
+  Keyset-Pagination über `(ingested_at, id)` (TEXT-Spalte mit
+  RFC3339Nano UTC ist byte-lexikografisch zeit-sortiert; Index
+  `idx_srt_health_samples_stream_ingested` matched WHERE+ORDER
+  direkt). `limit+1`-Probe für NextAfter-Detection.
+- [x] HTTP-Handler `GET /api/srt/health/{stream_id}` akzeptiert
+  Query-Param **`samples_cursor`** (gemäß §7a.3) und liefert
+  **`next_cursor`**-Feld in der Antwort (`omit-empty` auf der
+  letzten Seite). `cursor`-Param wird **nicht** akzeptiert — kein
+  Alias, kein silent-Fallback.
+- [x] Cursor-Wire-Codec v3 in
+  `apps/api/adapters/driving/http/cursor.go`: Token kapselt
+  Collection-Scope `(pid, sid)` plus Storage-Position `(ing, id)`
+  analog dem v3-Event-Cursor aus §10.3. Reject-Klassen-Mapping:
+  - `v` fehlt / `v ∈ {1, 2}` → `400 cursor_invalid_legacy`.
+  - Alles andere (Base64-/JSON-Decode-Fehler, unbekannter `v`,
+    fehlende Pflichtfelder, fremder Project- oder Stream-Scope,
+    unbekannte Zusatzfelder) → `400 cursor_invalid_malformed`.
+  - Beide Bodies tragen `{"error":"<klasse>","reason":"<kurze
+    Erklärung>"}` — keine Information über die konkrete
+    Fehlerursache leaken (Reason ist plan-stabil, nicht
+    user-input-abhängig).
+- [x] Wire-Vertrag-Update in
+  [`spec/backend-api-contract.md`](../../../../spec/backend-api-contract.md)
+  §7a.3/§7a.4: Pre-§4.3-Wording durch §10.3-konformes v3-Wording
+  ersetzt (siehe **Spec-Konsistenz-Fix** oben). Body-Schema für
+  beide Reject-Klassen explizit; `cursor_expired` (410) für
+  Konsistenz mit §10.3 ergänzt, auch wenn ohne Retention nur via
+  `make wipe` erreichbar.
+- [x] Unit-Test + Adapter-Test:
+  - `TestSrtHealth_HistoryCursorWalksAllPages`: 1500 Samples, 4
+    Pages mit limit=400, kein Duplikat, keine Lücke,
+    Sort-Invariante stabil.
+  - `TestSrtHealth_HistoryCursorScopeIsolation`: Adapter liefert
+    nur Samples der WHERE-Stream — kein Cross-Stream-Bleed selbst
+    bei „falschem" Cursor (Defense-in-Depth; HTTP-Codec rejected
+    den Pfad schon vorher).
+  - HTTP-Tests: `TestSrtHealthDetail_CursorRoundTrip` (encode→
+    decode via API-Roundtrip), `TestSrtHealthDetail_CursorInvalidLegacy`
+    (v=2), `TestSrtHealthDetail_CursorInvalidMalformed` (sechs
+    Sub-Cases: malformed Base64, unknown version, foreign
+    project, foreign stream, missing fields, unknown field).
+  - **Contract-Fixtures** in `spec/contract-fixtures/api/` für
+    beide Reject-Klassen:
+    `srt-health-cursor-invalid-legacy.json` und
+    `srt-health-cursor-invalid-malformed.json` (testdata-Sync via
+    `make sync-contract-fixtures`, Drift-Check in
+    `make generated-drift-check`).
+- [x] Smoke `make smoke-srt-health-pagination` neu angelegt:
+  Wrapper-Target setzt `SMOKE_INCLUDE_MTRACE_API=1` und
+  `MTRACE_SRT_HEALTH_PAGINATION=1` und ruft das existierende
+  `scripts/smoke-srt-health.sh` (Konvention §0.2.1). Smoke deckt
+  (a) erste Page mit `samples_limit=1` und Existenz von
+  `next_cursor`, (b) Folge-Page mit gepacktem Cursor → 200, (c)
+  malformed Cursor → 400 `cursor_invalid_malformed`. (a)+(b) sind
+  konditional auf ≥ 2 Samples in DB (Lab-Skip ohne Fail);
+  (c) ist deterministisch.
+- [x] Risks-Backlog R-11: Status 🟢 mit Auflösungspfad „Cursor-
+  Pagination in 0.12.6 Tranche 2 (`samples_cursor`/`next_cursor` +
+  `cursor_invalid_legacy`/`cursor_invalid_malformed` gemäß
+  §7a.3/§7a.4/§10.3)"; Wieder-Eröffnung bei Operator-Report über
+  Inkonsistenz im Cursor-Wandern oder Schema-Drift.
+
+## 5. Tranche 3 — R-5 Time-Skew-Persistenz + Dashboard-Marker
+
+Ziel: `mtrace.time.skew_warning=true`-Events sind im Read-Pfad
+(Dashboard ohne Tempo) sichtbar markiert.
+
+**Implementierungs-Note** (während T3 erkannt, 2026-05-11): die
+Skew-Detection lief schon seit `0.4.0` pro Event in `parseEvents`
+(`now.Sub(ts).Abs() > TimeSkewThreshold`), das Ergebnis wurde aber
+nur zum Batch-Flag aggregiert und ans Server-Span-Attribut gehängt
+— nicht auf die Domain-Event geschrieben. T3 schreibt das gleiche
+Pro-Event-Ergebnis zusätzlich aufs `domain.PlaybackEvent.
+TimeSkewWarning` und persistiert es via V6-Spalte; das spec'd
+„`mtrace.time.skew_warning`-Attribut tragen" aus dem alten DoD-
+Wording bezog sich also auf die **Detection-Bedingung**, nicht auf
+ein Wire-Feld im Ingest-Body. Wire-In bleibt unverändert; nur das
+**Wire-Out** des Read-Pfads bekommt das neue Feld.
+
+DoD:
+
+- [x] SQLite-Schema-Erweiterung Migration `V6` mit Spalte
+  `time_skew_warning INTEGER NOT NULL DEFAULT 0` an
+  `playback_events` (SQLite hat keinen nativen BOOLEAN-Typ;
+  Go `boolToInt`-Helper im SQLite-Adapter). Hand-gepflegt analog
+  V2..V5 (schema.yaml bleibt V1-Source-of-Truth).
+- [x] Ingest-Pfad: `parseEvents` setzt `TimeSkewWarning` pro
+  Event basierend auf der bestehenden 60-s-Schwelle
+  (`TimeSkewThreshold`); Batch-Flag (Span-Attribut) bleibt
+  aggregiert wie bisher. **Wire-In bleibt unverändert** —
+  Detection ist Server-seitig, kein neues Body-Feld.
+- [x] Read-Pfad: `GetSessionDetail` (`eventWire.time_skew_warning`)
+  und SSE-`event_appended`-Frame (`frameWire.time_skew_warning`)
+  echo'en das Flag; beide mit `omitempty` (default `false`).
+  `ListSessions` braucht das Feld nicht (Session-Aggregat, kein
+  Event-Detail) — bei Read von Event-Detail ist es sichtbar.
+- [x] Dashboard-UI: `⏱ skew`-Pin in der Session-Timeline pro Event
+  mit `time_skew_warning=true`; Tooltip nennt die 60-s-Schwelle und
+  das verwandte Span-Attribut. `data-testid="time-skew-indicator"`
+  als Stable-Hook für künftige E2E-Tests.
+- [x] Doku in [`spec/telemetry-model.md`](../../../../spec/telemetry-model.md)
+  §5.3 erweitert um die Persistenz auf Event-Ebene (Migration V6,
+  Read-Pfad-Verhalten, Dashboard-Anzeige); §2.5-Tabellen-Eintrag
+  für `mtrace.time.skew_warning` ergänzt um den `0.12.6`-
+  Persistenz-Hinweis.
+- [x] Tests:
+  - Use-Case `TestRegisterPlaybackEventBatch_TimeSkew` erweitert
+    um Pro-Event-Snapshot-Assertion.
+  - `TestRegisterPlaybackEventBatch_TimeSkewPerEvent`: Mixed-Batch
+    mit einem Skew-Event und einem In-Range-Event, Pro-Event-
+    Flag-Mapping geprüft.
+  - Adapter `TestRestartPreservesTimeSkewWarning`: Roundtrip
+    durch SQLite inkl. DB-Close/Re-Open.
+  - E2E `TestE2E_TimeSkewPersistedPerEvent`: HTTP-Detail-Body
+    liefert `time_skew_warning=true` für skew-Event und
+    `omitempty` für in-range Event.
+- [x] Risks-Backlog R-5: Status 🟢 mit Auflösungspfad „Migration
+  V6 + Pro-Event-Persistenz + Read-Pfad-Echo + Dashboard-Pin in
+  0.12.6 Tranche 3"; Wieder-Eröffnungs-Trigger bei Operator-
+  Report über fehlende Skew-Sichtbarkeit oder strukturelle
+  Schwellen-Re-Eval (z. B. configurable per Project).
+
+## 6. Tranche 4 — R-10 Sampling-Vollständigkeits-Marker
+
+Ziel: Sampled Sessions (mit `sampleRate < 1`) sind im Read-Pfad
+serverseitig erkennbar markiert — der Operator muss die
+Inkompletheit nicht aus der Konfig ableiten.
+
+**Quelle des `sample_rate`-Werts** (Review-Finding 2 / OQ2,
+2026-05-11): **dediziertes Event-Feld + Immutability**, **nicht**
+„erstes Event"-Heuristik. Begründung: das erste Event kann ein
+beliebiger Pfad sein (Player-Start, später Buffer-Stall etc.) —
+fehlt das Feld dort, würde die Session fälschlich als
+voll-gesampelt markiert. Stattdessen:
+
+- **Wire-Anforderung** an das Player-SDK: Sessions, die mit
+  `sampleRate < 1` betrieben werden, müssen das in **jedem**
+  Event-Body als Pflicht-Feld `meta.session_sample_rate` (oder
+  analog) liefern. Voll-gesampelte Sessions dürfen das Feld
+  weglassen (Default-Konstante `SAMPLE_RATE_FULL`, siehe unten).
+- **Server-Verhalten**: erstmaliger Wert pro `session_id` wird in
+  der Session-Metadaten-Zeile persistiert (immutable nach erstem
+  gültigen Setzen). Spätere Events mit abweichendem Wert lösen
+  einen Warning-Log und einen `mtrace_sample_rate_drift_total`-
+  Counter aus — das Risiko wäre, dass das Operator-SDK mitten in
+  einer Session den `sampleRate` ändert, was die Lücken-Erkennung
+  inkorrekt machen würde.
+- **Fallback**: wenn keines der eingegangenen Events das Feld
+  setzt, bleibt der Wert auf `SAMPLE_RATE_FULL` — Session gilt
+  als voll gesampelt (Backwards-Compat zum heutigen Verhalten).
+
+**Präzision/Persistenz** (Review-Finding 3, 2026-05-11): keine
+Float-Spalte. Stattdessen **Integer-ppm** (parts per million)
+für deterministische Vergleiche:
+
+- Persistenz-Spalte: `sample_rate_ppm INTEGER NOT NULL DEFAULT
+  1000000`. Konstante `SAMPLE_RATE_FULL = 1_000_000` für „voll
+  gesampelt" (entspricht 1.0). Bereich `[1, 1_000_000]`.
+- Wire-Konvertierung: SDK schickt weiterhin Float `0.0 < x ≤ 1.0`
+  im JSON; der Ingest-Adapter normalisiert auf Integer-ppm via
+  `round(x * 1_000_000)`. Werte außerhalb `(0, 1]` werden mit
+  einem `mtrace_sample_rate_invalid_total`-Counter geloggt und
+  als `SAMPLE_RATE_FULL` behandelt (Fallback).
+- Immutability-Check: exakter Integer-Vergleich
+  `WHERE sample_rate_ppm = 1000000` (SQL-`=` auf Integer ist
+  deterministisch, kein Float-Drift).
+- Drift-Vergleich: `incoming_ppm != stored_ppm` mit konfig-
+  baren Toleranz-Bändern (z. B. ±100 ppm = ±0.01%) im
+  `mtrace_sample_rate_drift_total`-Counter; jenseits davon
+  zählt es als Drift, innerhalb davon als „SDK-Rundungsartefakt"
+  (silent).
+- Read-API liefert beides: `sample_rate_ppm` (raw) und
+  `sample_rate` (`= ppm / 1_000_000` als Float für Dashboard-
+  Display). Wire-API-Konsumenten dürfen den Float-Wert nicht
+  für `==`-Vergleiche nutzen — Doku-Hinweis im Wire-Block.
+
+DoD:
+
+- [x] Domain-Erweiterung: `domain.StreamSession.SampleRatePPM int`
+  + `domain.SampleRateFull` (1_000_000) + Helper
+  `SampleRatePPMFromFloat(x float64) (int, error)` mit Range-Check
+  `(0, 1]` und `math.Round`-Quantisierung.
+- [x] SDK-/Wire-Erweiterung: `contracts/event-schema.json`#
+  `reserved_meta_keys["session_sample_rate"]` mit
+  `type: "number"`, `min_exclusive: 0`, `max: 1`,
+  `scope: "session"`. Use-Case-Validierung
+  (`validateSessionSampleRate`) lehnt Out-of-Range-Werte mit 422
+  ab; Server-Adapter normalisiert via `SampleRatePPMFromFloat`.
+- [x] SQLite-Schema-Migration V7
+  (`V7__session_sample_rate.sql`): ergänzt
+  `stream_sessions.sample_rate_ppm INTEGER NOT NULL DEFAULT
+  1000000` (SQLite hat keinen nativen DECIMAL/REAL-Vergleichs-
+  Pfad; Integer-ppm hält Vergleiche deterministisch). Hand-
+  gepflegt analog V2..V6 (schema.yaml bleibt V1-Source-of-Truth).
+- [x] Ingest-Pfad
+  (`RegisterPlaybackEventBatchUseCase.applySessionSampleRate`):
+  pro distinct (project_id, session_id) im Batch wird der erste
+  Sub-1-Wert via `SetSessionSampleRatePPMIfDefault` (Adapter-
+  Methode mit `UPDATE … WHERE sample_rate_ppm = 1000000`)
+  persistiert. RowsAffected entscheidet zwischen Erst-Setzung
+  (`applied=true`) und bereits gesetzt (`applied=false`,
+  `existing`-Wert für Drift-Vergleich nachgelesen).
+- [x] Drift-Counter
+  `mtrace_sample_rate_drift_total{project_id}` (Adapter
+  `PrometheusPublisher.SampleRateDrift`) wird nur incremented,
+  wenn `abs(existing - incoming) > SampleRateDriftTolerancePPM`
+  (Konstante 100 ppm); innerhalb der Toleranz silent (SDK-
+  Rundungsartefakt).
+- [x] Read-Pfad: `sessionWire` ergänzt um `sample_rate_ppm` und
+  `sample_rate` (beide `omitempty` auf Default `SampleRateFull` →
+  voll-gesampelte Sessions tragen die Felder nicht im Body;
+  sampled-Sessions immer). Dashboard-Banner mit
+  `data-testid="sampled-banner"` und CSS-Klasse `.sampled-banner`
+  in der Session-Detail-View.
+- [!] Sampling-Lücken-Heuristik bewusst **deferred** auf
+  `0.13.0+`. T0-Entscheidung 2026-05-11: konkrete Schwellen-
+  Tuning ohne Operator-Bedarf produziert false-positive
+  `possible_loss`-Marker. Aufgenommen als Folge-Item in
+  `spec/telemetry-model.md` §8.5; Re-Eval bei Operator-Bedarf.
+- [x] Doku in
+  [`spec/telemetry-model.md`](../../../../spec/telemetry-model.md):
+  §1.4 ergänzt um „Server-seitige Sampling-Markierung"-Block;
+  neuer §8 „Sampling-Modell und Read-Pfad-Markierung" mit Wire-
+  Vertrag, Persistenz/Immutability, Drift-Counter, Read-Pfad-
+  Verhalten, deferred Lücken-Heuristik.
+  [`contracts/event-schema.json`](../../../../contracts/event-schema.json)
+  enthält den `session_sample_rate`-Eintrag im `reserved_meta_keys`-
+  Block.
+- [x] Tests:
+  - Domain-Helper (`TestSampleRatePPMFromFloat_HappyCases` +
+    `_OutOfRange`).
+  - Use-Case (`TestRegisterPlaybackEventBatch_SampleRate*`):
+    Immutable-First-Set, No-Op-Default, Drift-Counted, Within-
+    Tolerance.
+  - Migration-Count auf `7` aktualisiert
+    (`migrate_internal_test`).
+- [x] Risks-Backlog R-10: Status 🟢 mit Auflösungspfad
+  „dediziertes Meta-Feld + Immutability + Drift-Counter +
+  Read-Pfad/Dashboard in `0.12.6` Tranche 4"; Wieder-Eröffnungs-
+  Trigger: Operator-Bedarf nach konkreter Lücken-Heuristik
+  bleibt Folge-Item für `0.13.0+`.
+
+## 7. Tranche 5 — R-7 `ListSessions` Bulk-Read-Port
+
+Ziel: N+1-Latenz bei `network_signal_absent[]`-Read durch einen
+Bulk-Read-Port (`ListBoundariesForSessions(ctx, ids)`) eliminiert.
+
+DoD:
+
+- [x] Neue Port-Methode in
+  `apps/api/hexagon/port/driven/session_repository.go`:
+  `ListBoundariesForSessions(ctx, projectID string, sessionIDs []string) (map[string][]Boundary, error)`.
+  Project-skopiert; SessionIDs ohne Boundaries fehlen in der Map.
+- [x] SQLite-Adapter: dynamische `IN (?, ?, ?)`-Clause mit Project-
+  scope-WHERE; ein Query-Roundtrip ersetzt die N+1-Schleife.
+  Sortierung `session_id ASC, kind ASC, adapter ASC, reason ASC`
+  konsistent zur Singular-Methode. Result wird zu einer
+  `map[string][]Boundary` aggregiert.
+- [x] InMemory-Adapter: Map-Lookup pro SessionID; sortiert pro
+  Session-Bucket nach (kind, adapter, reason).
+- [x] `SessionsService.ListSessions` nutzt die neue Methode statt
+  pro-Eintrag-Aufruf; Default für eine Session ohne Boundaries ist
+  ein leerer Slice (Map-Miss).
+- [x] Performance-Benchmark
+  `BenchmarkSessionsService_ListSessions_MaxPage_BulkBoundaries`
+  (1000 Sessions in einer Page) — Budget < 200 ms p95 in
+  `scripts/check-bench-budgets.mjs` (Plan-DoD-Schwelle pinned).
+  Existierender `BenchmarkSessionsService_ListSessions_DefaultPage`
+  (50 ms-Budget) bleibt aktiv.
+- [x] Race-Test (`make api-race`) grün — Bulk-Methode greift auf
+  `r.mu` (InMemory) bzw. das in `database/sql`-eigenständige
+  Connection-Pooling (SQLite); keine neuen Concurrency-Surfaces.
+- [x] Adapter-Tests `TestListBoundariesForSessions_BulkReadAndScopeIsolation`
+  und `_EmptyInput`: pinnen Bulk-Sortierung, Map-Miss-Verhalten,
+  Cross-Project-Scope-Isolation und Empty-Input-No-Op.
+- [x] Risks-Backlog R-7: Status 🟢 mit Auflösungspfad „Bulk-Read-
+  Port + bench-budget < 200 ms p95 in `0.12.6` Tranche 5";
+  Wieder-Eröffnungs-Trigger: List-Latenz ≥ 200 ms p95 unter
+  Production-Last (Folge-Item).
+
+## 8. Tranche 6 — R-22 Origin-/IP-Rate-Limiter (Driven-Port)
+
+Ziel: optionaler IP-/Origin-Bucket-Limiter als Driven-Port-Adapter
+(analog `IssuanceLimiterPort` aus RAK-77, aber pro `client_ip`
+oder `Origin`-Header-Hash).
+
+**Backend-Strategie** (Review-Finding 1 / OQ1, 2026-05-11):
+**kein** SQLite-Backend für diesen Limiter. SQLite via Shared-
+Volume hat dieselben Single-Host-Beschränkungen wie der
+`0.12.5`-Issuance-Limiter — Origin-/IP-Limits sind aber typisch
+Multi-Host-Konzern (Edge/Reverse-Proxy/LB vor mehreren API-
+Replicas). Ein SQLite-Pfad würde False-Negative-Limits erzeugen,
+sobald die Replicas auf verschiedenen Hosts laufen. Backend-
+Optionen:
+
+- `memory` — In-Process Token-Bucket. Misst pro Replica;
+  geeignet für Single-Replica-Lab und als Defense-in-Depth-
+  Ergänzung zum Edge-Layer-Limit (CDN/Reverse-Proxy).
+- `redis` (Network-Backend) — atomarer Token-Bucket via
+  `EVAL`-Script. Vorausgesetzte Topologie ist sowieso ein
+  geteilter Redis (z. B. mit `R-17` Tranche 7 gemeinsam genutzt).
+  **Empfohlen** für Multi-Host-Setups.
+- Kein `sqlite` — würde dem Operator suggerieren, dass IP-Limits
+  über Hosts hinweg robust sind, was falsch wäre.
+
+DoD:
+
+- [x] Neuer Driven-Port
+  `apps/api/hexagon/port/driven/origin_rate_limiter.go` mit
+  `Allow(ctx, key string) (bool, error)`-Methode; `key=""` ist
+  No-Op `(true, nil)` (Defense gegen fehlende RemoteAddr/XFF-
+  Info).
+- [x] `InMemoryOriginRateLimiter`-Adapter: Single-Bucket pro Key,
+  wiederverwendet `tokenBucket`/`consume`/`clampMax` aus dem
+  Issuance-Limiter; Token-Bucket-Konfig via Konstruktor;
+  opportunistische Idle-Eviction (5-Min-Sweep / 10-Min-TTL).
+  `WithInMemoryOriginRateLimiterNow`-Option für Test-Determinismus.
+  **Kein** SQLite-Adapter — bewusste Plan-Entscheidung (siehe
+  Backend-Strategie oben).
+- [!] `RedisOriginRateLimiter`-Adapter: **deferred auf Tranche 7**
+  (R-17-Bundle). T7 implementiert Redis als gemeinsamer Network-
+  Backend für Issuance- und Origin-Limiter; T6 bleibt strikt
+  Memory-only. Resttrigger in Risks-Backlog R-22 dokumentiert
+  („teilweise gelöst").
+- [x] ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory`
+  (Default `disabled` — kein Limiter, Backwards-Compat).
+  Boot-Validator-Rejects:
+  - `sqlite` → „not supported (Multi-Host-unsafe on shared
+    SQLite volumes; see §8 Backend-Strategie)".
+  - `redis` / `memcached` → „follow-up item — gets delivered
+    jointly with R-17 in plan-0.12.6 Tranche 7 to avoid backend
+    fragmentation".
+- [x] Integration in
+  `apps/api/adapters/driving/http/origin_rate_limit.go` als
+  `originRateLimitMiddleware`; wrappt `POST /api/auth/session-
+  tokens` (in `registerAuthSessionRoutes`) und
+  `POST /api/playback-events` (in `NewRouter`). Reihenfolge:
+  Origin-Limit zuerst, danach Project-Limit (Issuance- bzw.
+  Event-Counter).
+- [x] `client_ip`-Quelle: Default `r.RemoteAddr` (`net.SplitHostPort`
+  entkoppelt den Port; Empty-RemoteAddr → No-Op). XFF-Trust
+  opt-in via `MTRACE_TRUST_FORWARDED_FOR=1` — Limiter nutzt
+  dann das letzte XFF-Element als Key. Operator-Doku in
+  `docs/user/auth.md` §5.9 mit Spoofing-Warning.
+- [x] Tests:
+  - Adapter
+    (`adapters/driven/auth/in_memory_origin_rate_limiter_test.go`):
+    Bucket-Depletion + Refill, Key-Isolation, Empty-Key-No-Op,
+    Disabled-Bucket, Nil-Receiver, Context-Cancel.
+  - HTTP-Integration
+    (`adapters/driving/http/origin_rate_limit_test.go`):
+    Burst → 429 mit Body `{"error":"origin_rate_limited"}`,
+    Disabled-Pfad lässt alle Aufrufe durch, XFF-Trust mit
+    unabhängigen Buckets pro XFF-Wert.
+  - **Kein** Cross-Instance-Test auf SQLite, weil der Adapter
+    es nicht gibt. Redis-Test kommt mit T7.
+- [x] `make smoke-origin-rate-limit` neu angelegt:
+  `scripts/smoke-origin-rate-limit.sh` feuert 3× `POST /api/auth/
+  session-tokens` und erwartet 201/201/429 mit
+  `origin_rate_limited`-Body. Makefile-Target + .PHONY +
+  Help-Eintrag (`make smoke-origin-rate-limit`). Opt-in,
+  voraussetzt laufende API mit `MTRACE_ORIGIN_RATE_LIMITER=memory`
+  und Capacity ≥ 2.
+- [x] Risks-Backlog R-22: Status ⬜ „teilweise gelöst" mit
+  Mitigation-Spalte „Memory-Layer geliefert in 0.12.6 Tranche 6";
+  Resttrigger „Multi-Host-IP-Limits benötigt Redis-Network-
+  Backend (Tranche 7 mit R-17)". Status wechselt nach T7 auf 🟢.
+
+## 9. Tranche 7 — R-17 Multi-Host-Issuance-Limiter (Network-Backend)
+
+Ziel: Resttrigger aus `0.12.5` Tranche 2 auflösen — echte
+Multi-Host-Topologie ohne Shared-Volume durch Network-Backend-
+Adapter.
+
+**Backend-Wahl** (Review-Finding 2 / OQ2, 2026-05-11): **Redis
+als Plan-Default für `0.12.6`**, gemeinsam mit R-22 Tranche 6.
+Begründung: ein einziger Network-Backend-Typ für beide
+Multi-Host-Limiter (Issuance + Origin/IP) hält das Operator-
+Setup einheitlich und vermeidet zwei getrennte Cluster.
+Memcached bleibt **gemeinsames Folge-Item für beide Tranchen** —
+sobald Operator-Bedarf entsteht (z. B. wegen existierender
+Memcached-Infrastruktur), wird ein Memcached-Adapter parallel
+für R-17 und R-22 nachgezogen, **nicht** für eine Tranche
+alleine (sonst entsteht Fragmentation zwischen Issuance-Limiter
+und Origin-Limiter).
+
+**T6-Resttrigger-Bundle** (`R-22`-Redis-Origin-Limiter): T7 schließt
+gleichzeitig den T6-Resttrigger ab und liefert
+`RedisOriginRateLimiter` als zweiten Network-Backend-Adapter auf
+demselben Redis-Server (`mtrace:origin`-Key-Prefix, eigener Lua-
+Script). ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=redis` wird
+aktiviert; der `FailOpen`-Schalter gilt gemeinsam mit dem
+Issuance-Limiter, damit kein halb-fail-closed-Pfad entsteht.
+
+DoD:
+
+- [x] Neuer Adapter
+  `apps/api/adapters/driven/auth/redis_issuance_rate_limiter.go` —
+  implementiert `driven.IssuanceRateLimiter` über ein atomares
+  Lua-`EVAL`-Script (beide Buckets + Refund bei project-deny in
+  einem Roundtrip). Bucket-Key-Prefix `mtrace:issuance:`,
+  Default-TTL 24 h. `SCRIPT LOAD` beim Boot, `EVALSHA`-Hot-Path
+  mit `NOSCRIPT`-Fallback auf inline `EVAL`.
+- [x] **Bundle-Mitnahme R-22** (T6-Resttrigger): zweiter Adapter
+  `redis_origin_rate_limiter.go` als Single-Bucket-Variante
+  (`mtrace:origin:<key>`, Default-TTL 10 min). Gleicher Redis-
+  Client wie der Issuance-Limiter.
+- [x] ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER` um `redis`
+  erweitert; analog `MTRACE_ORIGIN_RATE_LIMITER=redis`. Pflicht-
+  ENV `MTRACE_REDIS_ADDR` (Host:Port); optional `_AUTH`/`_DB`.
+  `memcached` lehnt der Boot-Validator mit klarer Folge-Item-
+  Begründung ab; `sqlite` für Origin-Limiter weiterhin Reject.
+- [x] Fail-Mode: **fail-closed Default** (Redis-Outage → `(false,
+  nil)` → HTTP-Handler antwortet `429 auth_issuance_rate_limited`
+  bzw. `429 origin_rate_limited`). Opt-in fail-open via
+  `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1` aktiviert lokalen In-Process-
+  Fallback. **Schalter gilt gemeinsam** für Issuance + Origin —
+  ein Operator kann nicht versehentlich einen halb-fail-closed-
+  Pfad konfigurieren.
+- [x] Tests:
+  - `RedisIssuanceRateLimiter` (sieben Tests gegen `miniredis`):
+    Happy-Path-Cross-Instance-Sharing über zwei Adapter-Instances,
+    Project-Isolation, globaler Refund bei project-deny,
+    Fail-Closed-on-Outage, Fail-Open-on-Outage, Nil-Client,
+    Context-Cancel.
+  - `RedisOriginRateLimiter` (sechs Tests): Cross-Instance-
+    Sharing, Empty-Key-No-Op, Fail-Closed/Fail-Open,
+    Nil-Client, Context-Cancel.
+- [x] `make smoke-issuance-multi-host` neu angelegt
+  (`scripts/smoke-issuance-multi-host.sh`): wrapt die Redis-
+  Adapter-Tests (`TestRedisIssuance*` + `TestRedisOrigin*`)
+  im `golang:1.26.3`-Docker, deckt R-17 + R-22-Resttrigger ab.
+  Makefile-Target + .PHONY + Help-Eintrag.
+- [x] Risks-Backlog R-17: Status **🟢** mit „Redis-Backend in
+  `0.12.6` Tranche 7"; Memcached-Folge-Item explizit
+  dokumentiert (gemeinsam mit R-22 reaktivieren, falls Bedarf).
+  R-22 ebenfalls **🟢** (Bundle-Mitnahme); Wieder-Eröffnungs-
+  Trigger sind Operator-Bedarf nach Memcached oder Token-Mint-
+  Welle trotz fail-closed-Default.
+
+## 10. Tranche 8 — R-20 Produktive Vault/KMS-Adapter
+
+Ziel: Resttrigger aus `0.12.5` Tranche 3 auflösen — produktive
+Vault-Authentifizierung (AppRole/IAM/K8s-ServiceAccount) und
+KMS-Adapter (AWS-KMS minimal).
+
+DoD:
+
+- [x] Vault-Adapter um AppRole-Auth erweitert (zwei-Phasen-Login
+  über `/v1/auth/<mount>/login` mit `role_id`+`secret_id`; Default-
+  Mount `approle` per `MTRACE_AUTH_VAULT_APPROLE_MOUNT`-Override).
+  Plus Kubernetes-ServiceAccount-Auth-Flow: JWT aus konfigurierbarem
+  Pod-File-Pfad (Default `/var/run/secrets/kubernetes.io/
+  serviceaccount/token`), Login an `/v1/auth/<mount>/login` mit
+  `role`+`jwt`. ENV-Selektor `MTRACE_AUTH_VAULT_AUTH_METHOD=
+  token|approle|kubernetes`; Default `token` für Backwards-Compat.
+- [x] Neuer `KMSSecretBackend` mit `KMSDecrypter`-Interface
+  (vendor-neutral). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND=kms`
+  aktiviert den Pfad. Production-AWS-SDK-v2-Wiring ist Folge-Item
+  (operator-injected Decrypter im `buildKMSDecrypter`-Hook);
+  `MTRACE_AUTH_KMS_LAB_MODE=1`-Opt-in aktiviert den
+  `LabPassThroughKMSDecrypter` als Pass-Through für Lab-Smokes.
+  Pflicht-ENV: `MTRACE_AUTH_KMS_ACTIVE_KID` plus entweder
+  `_ENCRYPTED_KEYS` (Base64) oder `_ENCRYPTED_KEYS_PATH`.
+- [x] Refresh-TTL-Konfig: `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS`
+  wird im Boot gelesen und der Logger nennt den Status. Default 0
+  = Boot-time-only (heutiges Verhalten). Werte > 0 sind heute
+  no-op mit explizitem Operator-Warning im Boot-Log; **periodischer
+  Refresh-Loop ist als Folge-Item nach `0.12.6` Tranche 8
+  markiert** (würde mutable `MultiKeySigningResolver` + Background-
+  Goroutine erfordern; ohne konkreten Operator-Trigger overkill).
+- [x] Compliance-Audit-Vorbereitung in
+  [`docs/user/auth.md`](../../../user/auth.md) §5.5:
+  neuer Compliance-Block mit PCI-/SOC2-relevanten Pfaden — Key-
+  Material in Logs (nie), Fail-closed-Vertrag, TLS-Anforderung
+  (Vault-Adresse mit `https://` in Production), Audit-Trail-
+  Konvention (git-History plus `vault audit`/`aws kms list-grants`).
+- [x] Tests (11 neue in `secret_backend_t8_test.go`):
+  AppRole-HappyPath, AppRole-MissingSecret, AppRole-WrongSecret-
+  Propagates-Error; K8s-HappyPath, K8s-JWTFileMissing, K8s-
+  EmptyJWT; Unsupported-Auth-Method; KMS-HappyPath, KMS-DecryptError,
+  KMS-LabPassThrough, KMS-MissingConfig (3 Sub-Cases),
+  KMS-NilDecrypter, KMS-EncryptedKeysFromPath.
+- [x] `make smoke-vault-approle` und `make smoke-kms-skeleton` neu
+  angelegt: beide Scripts wrappen die jeweiligen Adapter-Tests im
+  `golang:1.26.3`-Docker. Kein echter Vault/KMS-Server nötig
+  (`httptest.Server` + Stub-Decrypter). Makefile-Targets +
+  .PHONY + Help-Einträge ergänzt.
+- [x] Risks-Backlog R-20: Status **🟢** mit Auflösungspfad „Vault-
+  AppRole/K8s + KMS-Skelett in `0.12.6` Tranche 8";
+  Wieder-Eröffnungs-Trigger: (a) Operator-Bedarf nach produktiver
+  AWS-SDK-v2-Anbindung, (b) Refresh-Loop für automatische
+  Schlüsselrotation, (c) konkreter PCI/SOC2-Audit gegen ein
+  Operator-Setup (Lieferung allein erfüllt den Audit nicht).
+
+## 11. Tranche 9 — R-15 Externe Media-Server-Provisionierung
+
+Ziel: `POST /api/ingest/streams` (oder ein neuer dedizierter
+Endpoint) provisioniert optional gegen einen laufenden MediaMTX/
+SRS-Server, statt nur eine Konfig-Datei zu schreiben.
+
+**Backwards-Compat-Vertrag** (Review-Findings 3 + 1 /
+OQ1 2026-05-11): Wire-Erweiterung **strikt additiv** mit
+deterministischem Verhalten — der `provision`-Query-Param ist
+die einzige Schaltvariable für Seiteneffekte:
+
+- Neuer Query-Param `provision`:
+  - **Default `false`** — alter Pfad bleibt **byte-stabil** zum
+    `0.11.0`-Format. Der Server macht **kein** I/O gegen einen
+    externen Media-Server, **unabhängig** von der ENV-
+    Konfiguration. `MTRACE_MEDIASERVER_PROVISION_URL` wird in
+    diesem Pfad **nicht** gelesen; ein konfigurierter Server
+    bleibt ohne `provision=true` unberührt. Im Response-Body
+    wird `media_server_state` **nicht** emittiert.
+  - **`provision=true`** — opt-in: server-seitiges I/O findet
+    statt. `media_server_state` ist im Response-Body **immer**
+    gesetzt:
+    - ENV konfiguriert + Server erreichbar → `"applied"` oder
+      `"partial"` (je nach Adapter-Resultat).
+    - ENV konfiguriert + Server unreachable → `"failed"` plus
+      `error_code` (kein API-State-Rollback; lokale Konfig +
+      Stream sind angelegt, HTTP-Status bleibt `201 Created`).
+    - ENV **nicht** konfiguriert → `"disabled"` plus Hinweis-
+      Body „set `MTRACE_MEDIASERVER_PROVISION_URL` to enable".
+      Auch hier kein I/O-Versuch — der Server kann nicht
+      provisionieren, was er nicht kennt.
+
+  Damit ist der Body byte-stabil:
+  - `provision=false` ODER fehlt → kein neues Feld, alte
+    `0.11.0`-Clients (auch mit `additionalProperties: false`)
+    bleiben funktional.
+  - `provision=true` → neues Feld immer im Body. Neue Clients,
+    die den Param setzen, erwarten das Feld; alte Clients
+    setzen den Param nicht und sehen es nie.
+
+- Wire-Versions-Pin: Der Wire-Vertrag in
+  [`spec/backend-api-contract.md`](../../../../spec/backend-api-contract.md)
+  §3.8 bekommt einen `0.12.6`-Block mit dem additiv-Hinweis,
+  damit zukünftige Reviewer das Backwards-Compat-Versprechen
+  sehen. Folge-Endpoint
+  `POST /api/ingest/streams/{id}/provision` für nachträglichen
+  Server-Sync bleibt Folge-Item nach `0.12.6`.
+
+DoD:
+
+- [x] Neuer Driven-Port
+  `apps/api/hexagon/port/driven/media_server_provisioner.go` mit
+  `Apply(ctx, MediaServerApplyInput)` / `Rollback(ctx, projectID,
+  streamID)`. Bounded State-Enum: `applied`, `partial`, `failed`,
+  `disabled`. `MediaServerApplyInput` reicht Stream-Metadaten plus
+  Stream-Key-Hash (kein Klartext) an den Adapter.
+- [x] MediaMTX-Adapter `adapters/driven/mediaserver/
+  mediamtx_provisioner.go`: HTTP-Client gegen
+  `/v3/config/paths/add/<stream_id>` (Apply) und
+  `/v3/config/paths/delete/<stream_id>` (Rollback). 409 Conflict
+  wird als `applied` behandelt (Idempotenz). Bounded ErrorCodes:
+  `unreachable`, `auth_failure`, `server_status_<N>`,
+  `build_request`. Optionaler `Authorization: Bearer <token>`-Header
+  über `Config.AuthToken`. SRS bleibt Folge-Item nach `0.12.6`.
+- [x] ENV-Konfiguration `MTRACE_MEDIASERVER_PROVISION_URL` /
+  `MTRACE_MEDIASERVER_PROVISION_TOKEN`. Ohne URL ist der Boot-
+  Wiring no-op (`buildMediaServerProvisioner` liefert nil); Use-
+  Case mappt das auf `media_server_state="disabled"` plus
+  Operator-Hint. ENV wird im `provision=false`-Pfad **nicht**
+  gelesen — der Use-Case ruft `tryProvision` nur bei
+  `req.Provision==true`.
+- [x] Wire-Update auf `POST /api/ingest/streams`: optionaler
+  `?provision=true`-Query-Param. Default `provision=false` (oder
+  fehlt) bleibt **byte-stabil** zum `0.11.0`-Format — kein neues
+  Feld im Response-Body. `provision=true` liefert immer
+  `media_server_state: {state, hint?}` als Objekt. HTTP-Status
+  bleibt `201 Created` in allen Fällen.
+- [x] Wire-Vertrag-Erweiterung in
+  [`spec/backend-api-contract.md`](../../../../spec/backend-api-contract.md)
+  §3.8: additiv-Hinweis mit drei Wire-Beispielen (applied,
+  disabled, failed). Bounded `state`-Enum dokumentiert; Folge-
+  Endpoint `POST /api/ingest/streams/{id}/provision` explizit als
+  Folge-Item markiert.
+- [x] Contract-Test pinnt: Body byte-stabil zum `0.11.0`-Format
+  für `provision=false`-Pfad
+  (`TestIngestHandler_CreateStream_NoProvisionDefault_OmitsMediaServerState`).
+  Existierender Schema-Test gegen `srt-health-detail.json` und
+  andere Fixtures bleibt grün — die T9-Erweiterung ist additiv,
+  also kein Fixture-Update nötig.
+- [x] Operator-Doku in
+  [`docs/user/ingest-control.md`](../../../user/ingest-control.md)
+  §2.2: `provision=true`-Pfad mit Wire-Beispiel; Rollback-Pfad-
+  Block (1. Stream löschen + neu anlegen, 2. MediaMTX manuell
+  synchronisieren) bei API-State-vs-Server-State-Diskrepanz. Default-
+  Pfad ohne Provision-Flag bleibt explizit byte-stabil dokumentiert.
+- [x] Tests:
+  * Use-Case (4): Provision-False-leaves-state-empty,
+    Provision-True-without-adapter-is-disabled,
+    Provision-Applied-flows-through, Provision-Adapter-Error-is-failed.
+  * HTTP-Handler (4): NoProvisionDefault-omits-media_server_state,
+    ProvisionApplied-includes-media_server_state,
+    ProvisionDisabled-includes-hint, ProvisionFailed-201Created.
+  * MediaMTX-Adapter (8): Apply-HappyPath, Idempotent-on-Conflict,
+    AuthFailure, ServerError, Unreachable, AuthToken-Header,
+    Rollback-HappyPath, Rollback-NotFound-is-OK, Rollback-ServerError;
+    plus Missing-Endpoint-Constructor-Reject.
+- [x] `make smoke-mediaserver-provision` neu angelegt: wrapt die
+  MediaMTX-Adapter-Tests und die Use-Case-Provision-Tests über das
+  `golang:1.26.3`-Docker-Image. Makefile-Target + .PHONY + Help-
+  Eintrag.
+- [x] Risks-Backlog R-15: Status **🟢** mit Auflösungspfad
+  „MediaMTX-Adapter + additiv-Wire-Vertrag in `0.12.6` Tranche 9";
+  Wieder-Eröffnungs-Trigger: (a) SRS-Adapter, (b) Folge-Endpoint
+  `POST /api/ingest/streams/{id}/provision` für nachträglichen Sync,
+  (c) DELETE-Endpoint + automatischer Rollback.
+
+## 12. Tranche 10 — Release-Closeout
+
+DoD (analog `0.12.5`-Closeout-Pattern):
+
+- [ ] `make docs-check` grün.
+- [ ] `make gates` grün (Memory-Pattern: Bump committen, dann
+  Gates).
+- [ ] `make generated-drift-check` grün (Teil von `make gates`).
+- [ ] Falls Minor: Lastenheft-Patch persistiert, RAK-Matrix
+  vollständig (Code- + Test-Pfade pro RAK).
+- [ ] Wave-2-Quality-Gates dokumentiert (`releasing.md` §3.1):
+  benchmark.yml, fuzz.yml, fuzz-Issues, mutation.yml — alle vier
+  Indikatoren grün.
+- [ ] Versions-Bump auf `0.12.6` an allen Stellen aus
+  `releasing.md` §3.1.
+- [ ] `CHANGELOG.md` `[0.12.6] - YYYY-MM-DD`-Block:
+  `### Added` (aktivierte Adapter, ENV-Vars, Smokes),
+  `### Changed` (Wire-Updates),
+  `### Security` (R-22-Limiter, R-20-Production-Auth),
+  `### Fixed` (R-11-Pagination, R-7-Bulk-Read, ggf. R-5/R-10-
+  Marker).
+- [ ] Roadmap-Status aktualisiert: §1 Phase auf released, §2
+  Schritt 47.7 (oder analog) ✅, §3-Zeile `0.12.6` ✅.
+- [ ] Plan nach `docs/planning/done/plan-0.12.6.md` verschoben;
+  Status-Header `✅ released YYYY-MM-DD (Tag v0.12.6)`; Tranchen-
+  Übersicht alle ✅ oder mit dokumentiertem Defer-Eintrag.
+- [ ] Annotierter Tag `v0.12.6` mit Lieferzusammenfassung.
+- [ ] GitHub-Release `m-trace 0.12.6` mit Notes-File aus dem
+  CHANGELOG-Block.
+
+## 13. Folge-Scope nach `0.12.6`
+
+- [`plan-0.13.0.md`](../done/plan-0.13.0.md): Production / Ops Backends
+  (`MVP-40` Postgres, `MVP-41` ClickHouse/VictoriaMetrics,
+  `MVP-42` K8s-Manifeste, `MVP-43` Devcontainer, `MVP-44`
+  Release-Automatisierung). RAK-Range wird bei dessen T0
+  bestimmt — verschiebt sich, falls `0.12.6` als Minor RAK-83+
+  belegt.
+- **R-9** (Observability-Smoke-K8s-Label-Whitelist) wandert mit
+  `0.13.0` Tranche 3 (MVP-42 K8s), siehe Backlog-Eintrag.
+- Falls in T0 Tranchen explizit deferred wurden, bleibt der
+  R-N-Eintrag in `risks-backlog.md` §1.1 mit geschärftem Trigger
+  und Verweis auf `plan-0.12.7.md` o. ä. — der Verweis-Plan
+  selbst wird erst angelegt, wenn ein konkreter Operator-Bedarf
+  greift.
+
+## 14. Qualitätsregeln für `0.12.6`
+
+- Hexagonale Architektur: jeder neue Adapter ist Driven-Port-
+  konform; ENV-Selektion ist die einzige Auswahlsteuerung.
+- Backwards-Compat: heutige ENV-Variablen-Werte bleiben
+  Default-Pfad; neue Werte sind opt-in.
+- Lastenheft als normative Quelle: jede neue Verhaltensaussage
+  geht zuerst in den RAK-Block, dann in `docs/user/*.md`/Code
+  (Memory-Lehre `feedback_lastenheft_normativ.md`).
+- Wave-2-Verdict vor Tag dokumentieren (gepinnt im Plan-DoD wie
+  `0.12.5` Tranche 6).
+- Memory-Pattern „Closeout-Drift-Gate-Reihenfolge": Versions-
+  Bump committen, **danach** `make gates` — `generated-drift-
+  check` vergleicht Working-Tree gegen HEAD.

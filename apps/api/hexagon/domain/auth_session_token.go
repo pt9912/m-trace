@@ -10,7 +10,7 @@ import (
 //
 // Sicherheitsprofil und Wire-Vertrag in
 // `spec/backend-api-contract.md` §3.9 und
-// `docs/planning/in-progress/` §0.5/§0.6.
+// `docs/plan/planning/in-progress/` §0.5/§0.6.
 //
 // Domain-Typen (Claims, Signing-Key-Identifier,
 // zeitbasierte Validierung, Audience-/Origin-/Session-Bindung) ohne

@@ -9,7 +9,7 @@ import (
 // Ingest-Control-Domain (`0.11.0`, NF-13 / RAK-65..RAK-70).
 //
 // Modul lebt in `apps/api/hexagon/domain/` analog zur restlichen
-// Domain-Schicht (Variante B aus `docs/planning/in-progress/
+// Domain-Schicht (Variante B aus `docs/plan/planning/in-progress/
 // ` §0.3). Persistenz, HTTP, Konfigurations-Generierung
 // und Lifecycle-Events liegen in den Adapter-Schichten und
 // konsumieren nur diese Typen plus `stream_key.go`.

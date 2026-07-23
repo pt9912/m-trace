@@ -2,14 +2,14 @@
 
 > **Status**: Operator-Runbook für die **optionale** Datenmigration eines
 > bestehenden SQLite-Deployments auf den Postgres-Scale-out-Store.
-> Bezug: [ADR-0007](../adr/0007-sqlite-postgres-data-cutover.md),
-> `docs/planning/…/plan-0.24.0-sqlite-postgres-cutover.md`, Risiko `R-29`.
+> Bezug: [ADR-0007](../plan/adr/0007-sqlite-postgres-data-cutover.md),
+> `docs/plan/planning/…/plan-0.24.0-sqlite-postgres-cutover.md`, Risiko `R-29`.
 >
 > **SQLite bleibt Default.** Der Cutover ist opt-in und nur für Deployments,
-> die aktiv auf den (mit [ADR-0006](../adr/0006-postgres-scaleout-adapter.md)
+> die aktiv auf den (mit [ADR-0006](../plan/adr/0006-postgres-scaleout-adapter.md)
 > gelieferten) Postgres-Store wechseln. Läuft ausschließlich als ephemerer
 > d-migrate-Ops-Container; die API-Runtime bleibt JDK-frei
-> ([ADR-0002](../adr/0002-persistence-store.md)).
+> ([ADR-0002](../plan/adr/0002-persistence-store.md)).
 
 ## 1. Was der Cutover tut (und nicht tut)
 

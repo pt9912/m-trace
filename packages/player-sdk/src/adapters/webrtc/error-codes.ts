@@ -1,7 +1,7 @@
 /**
  * WebRTC-Adapter-Fehlercode-Taxonomie für.
  *
- * Bezug: `docs/planning/done/` §3 DoD —
+ * Bezug: `docs/plan/planning/done/` §3 DoD —
  * "WebRTC-Fehlercode-Taxonomie ist im Contract dokumentiert und wird
  * vom Adapter genutzt".
  *

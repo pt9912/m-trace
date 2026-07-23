@@ -15,7 +15,7 @@ Formen). Das Release-Archiv `lab-regelwerk.zip` trägt sha256
 `123e3383261102e6be6465e1f4bade08a474c00edc4fff89f5c4b11bd640f8ff`; die
 Per-Datei-Integrität ist in `.harness/baseline/v3.5.0/SHA256SUMS` gepinnt und
 wird mit `sha256sum -c` verifiziert. Vendored 2026-07-22 gemäß
-[ADR-0009](../docs/adr/0009-harness-baseline-v3.5.0.md).
+[ADR-0009](../docs/plan/adr/0009-harness-baseline-v3.5.0.md).
 
 Dies löst den vorherigen Commit-Pin ab (nur `grundlagen-konventionen.md`, bei
 ai-harness-course `d2f60da`, abgerufen 2026-07-14): das gesamte Regelwerk und
@@ -38,21 +38,26 @@ ausgewiesenen History-Abschnitten erlaubt.
 
 ## Adaptionen
 
-### MR-001 - Repository-Pfade
+### MR-001 - Repository-Pfade — AUFGELÖST 2026-07-23
 
-- **Datum:** 2026-07-14
+- **Datum:** 2026-07-14 (angelegt), 2026-07-23 (aufgelöst)
 - **Scope:** ADR- und Planning-Verzeichnisse
-- **Baseline-Unterschied:** m-trace nutzt `docs/adr/` statt `docs/plan/adr/`
-  und `docs/planning/` statt `docs/plan/planning/`.
-- **Grund:** Etabliertes öffentliches Repository-Layout mit umfangreichen
-  stabilen Links.
-- **Auflösungs-Trigger:** Permanent, sofern nicht eine separat reviewte
-  Repository-Layout-Migration freigegeben wird.
+- **Baseline-Unterschied (historisch):** m-trace nutzte `docs/adr/` statt
+  `docs/plan/adr/` und `docs/planning/` statt `docs/plan/planning/`.
+- **Grund (historisch):** Etabliertes öffentliches Repository-Layout mit
+  umfangreichen stabilen Links.
+- **Auflösung:** Die v3.5.0-Migration W5 (Layout-Move,
+  [`plan-harness-v3.5.0-migration.md`](../docs/plan/planning/in-progress/plan-harness-v3.5.0-migration.md))
+  hat das Repo auf das Kanon-Layout gehoben: `docs/plan/adr/`,
+  `docs/plan/planning/`, `docs/plan/carveouts/`. Die immutablen Accepted-ADRs
+  blieben unangetastet — ihre Pre-Move-Verweise sind per `ignore-refs`-Tombstone
+  in `.d-check.yml` grandfathered (Frozen-Doc-Refactoring). Damit ist die
+  Pfad-Divergenz beseitigt; diese Adaption ist geschlossen.
 
 ### MR-002 - Accepted-ADR-Grandfathering
 
 - **Datum:** 2026-07-14
-- **Scope:** `docs/adr/0001-*.md` bis `docs/adr/0007-*.md`
+- **Scope:** `docs/plan/adr/0001-*.md` bis `docs/plan/adr/0007-*.md`
 - **Baseline-Unterschied:** Diese akzeptierten Brownfield-Records enthalten
   historische Plan-Provenienz außerhalb eines ausgewiesenen History-Abschnitts.
 - **Grund:** Akzeptierte ADRs sind unter der adoptierten Baseline immutable und
@@ -89,7 +94,7 @@ ausgewiesenen History-Abschnitten erlaubt.
 ### MR-005 - Risiko-Register als Roadmap-Discovery
 
 - **Datum:** 2026-07-23
-- **Scope:** `docs/planning/in-progress/risks-backlog.md` (`R-*`-Familie)
+- **Scope:** `docs/plan/planning/in-progress/risks-backlog.md` (`R-*`-Familie)
 - **Baseline-Unterschied:** m-trace führt absehbare technische Risiken mit
   Re-Eval-Triggern (RAK-gekoppelt an die Release-Historie) in einem eigenen
   Risiko-Register. Der v3.5.0-Kanon kennt kein direktes Äquivalent — er trennt
@@ -97,7 +102,7 @@ ausgewiesenen History-Abschnitten erlaubt.
   (Architekturentscheidung).
 - **Grund:** Das Register ist die etablierte, release-gekoppelte
   Roadmap-Discovery-Praxis. Die W4-Werkzeug-Triage
-  (`docs/planning/in-progress/risks-backlog-werkzeug-triage.md`) ordnet die
+  (`docs/plan/planning/in-progress/risks-backlog-werkzeug-triage.md`) ordnet die
   aktiven Einträge zu: R-9/R-12/R-28/R-30 sind Roadmap-Kandidaten und bleiben
   hier; genuine Gate-Senkungen graduieren in ihr Gate-Werkzeug
   (Security-Suppressions → MR-006).

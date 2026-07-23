@@ -23,9 +23,9 @@ Vor jedem Release:
   dem Release-Commit.
 - [`CHANGELOG.md`](../../CHANGELOG.md) auf den Zielstand bringen.
 - betroffene Plan-, Status- und Nutzungsdokumente aktualisieren
-  ([`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md), [`spec/architecture.md`](../../spec/architecture.md), [`apps/api/README.md`](../../apps/api/README.md)).
+  ([`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md), [`spec/architecture.md`](../../spec/architecture.md), [`apps/api/README.md`](../../apps/api/README.md)).
 - Roadmap §1.1 und §1.2 nach dem Release-Bump neu schreiben (siehe
-  [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) Wartungsregel).
+  [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) Wartungsregel).
 - offene `OE-X` und `R-X` durchsehen — Einträge, die mit dem Release
   aufgelöst werden, aus den Tabellen entfernen.
 
@@ -186,7 +186,7 @@ Schritte (RAK-51..RAK-54):
 
 > **Automatisierte Teilabnahme**: Der „1 kHz Sinuston"-Anteil von
 > Schritt 2 ist über `make smoke-webrtc-tone`
-> ([`plan-0.22.4-webrtc-tone-smoke`](../planning/done/plan-0.22.4-webrtc-tone-smoke.md))
+> ([`plan-0.22.4-webrtc-tone-smoke`](../plan/planning/done/plan-0.22.4-webrtc-tone-smoke.md))
 > und den `webrtc-drift.yml`-Nightly automatisiert: ein
 > FFT/Goertzel-Check auf dem RTSP-Egress belegt „ein sauberer
 > 1-kHz-Ton liegt an und dominiert". Die *perzeptuelle* Abnahme
@@ -341,7 +341,7 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   stiller Verlust" per Readback gegen `playback_events`. Der Soak
   (Read-Retention-p95 gegen 2 s = `ADR-0005` Trigger #3, ≥ 10 Mio Events
   ~Stunden) läuft on-demand via `workflow_dispatch` (`mode=soak`).
-  Details: [`extra-gates.md`](../planning/in-progress/extra-gates.md)
+  Details: [`extra-gates.md`](../plan/planning/in-progress/extra-gates.md)
   §3.9.
 
 PR-Pfad-Wrapper (opt-in, NICHT in `make gates`):
@@ -637,10 +637,10 @@ Voraussetzungen:
 ## 7. Post-Release
 
 - [`CHANGELOG.md`](../../CHANGELOG.md) öffnet einen neuen `## [Unreleased]`-Abschnitt.
-- [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) (Release-Übersicht) aktualisiert den Status
+- [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) (Release-Übersicht) aktualisiert den Status
   des veröffentlichten Releases (`⬜ → ✅`).
 - Folge-ADRs, die mit dem Release entstehen oder fällig werden,
-  in [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) ergänzen.
+  in [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) ergänzen.
 - **Spec-Header aktualisieren**, falls die Lieferung normative
   Spec-Sections berührt: Header in den betroffenen
   `spec/*.md`-Dokumenten (Stand-Marker und Lastenheft-Patch-Ref)
@@ -648,7 +648,7 @@ Voraussetzungen:
   Spec-Inline-Versionsmarker (`ab 0.X.Y`, `seit 0.X.Y`,
   `in 0.X.Y`) sind bewusst **nicht** Teil der Spec — das Lieferzeit-
   Audit-Trail steht im [`CHANGELOG.md`](../../CHANGELOG.md) und in den
-  `docs/planning/done/plan-X.Y.Z.md`-Dokumenten (Variante-B-
+  `docs/plan/planning/done/plan-X.Y.Z.md`-Dokumenten (Variante-B-
   Konvention; siehe Spec-Kopf von [`spec/telemetry-model.md`](../../spec/telemetry-model.md)).
 - **Spec referenziert das Lastenheft nur über Kennungen**
   (`F-XXX`, `NF-XXX`, `MVP-XXX`, `AK-XXX`, `RAK-XXX`), nicht über
@@ -659,7 +659,7 @@ Voraussetzungen:
   versionsversiegelte Lastenheft-Patch-Version setzen
   (Geburtsort der RAK-Familie, nicht aktueller Stand).
 - **Spec referenziert keine Plan-Dokumente.** Pläne
-  (`docs/planning/done/plan-X.Y.Z.md`) sind dem Lastenheft
+  (`docs/plan/planning/done/plan-X.Y.Z.md`) sind dem Lastenheft
   nachrangig — sie beschreiben *wie* eine Lieferung umgesetzt
   wurde, nicht *was* normativ wahr ist. Der Spec-Inhalt steht
   als eigenständige Wahrheit, gestützt nur durch Lastenheft-
@@ -719,6 +719,6 @@ Image-Publish fehlgeschlagen:
 
 - Akzeptanzkriterien (AK-11).
 - Definition of Done.
-- [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) — Release-Übersicht und RAK-Akzeptanzkriterien.
-- [`docs/planning/in-progress/roadmap.md`](../planning/in-progress/roadmap.md) — Offene Entscheidungen.
+- [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) — Release-Übersicht und RAK-Akzeptanzkriterien.
+- [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) — Offene Entscheidungen.
 - `CHANGELOG.md` — Versionsverlauf.

@@ -7,7 +7,7 @@
 m-trace ist ein selbst-gehosteter Observability- und Diagnose-Stack für Live-Media-Workflows.  
 Er hilft, Media-Streams von der Ingest-Seite bis zum Player nachzuverfolgen, indem er Player-Telemetrie, Stream-Sessions, Infrastruktursignale, Prometheus-Metriken und ein OpenTelemetry-kompatibles Eventmodell zusammenführt.
 
-Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase und nächste Schritte: [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
+Aktueller Lieferstand pro Release: [`CHANGELOG.md`](CHANGELOG.md). Aktive Phase und nächste Schritte: [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md).
 
 ---
 
@@ -128,7 +128,7 @@ m-trace sammelt und normalisiert Signale aus Player und Backend, sodass Stream-S
 
 - **Aktueller Lieferstand pro Release**: [`CHANGELOG.md`](CHANGELOG.md).
 - **Aktive Phase und nächste Schritte**: Sektion „Roadmap" weiter
-  unten plus [`docs/planning/in-progress/`](docs/planning/in-progress/).
+  unten plus [`docs/planning/in-progress/`](docs/plan/planning/in-progress).
 
 ---
 
@@ -296,7 +296,7 @@ Details stehen in [docs/user/local-development.md](docs/user/local-development.m
 
 Status pro Release, aktive Phase, nächste Schritte und Folge-ADRs
 stehen kanonisch in
-[`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
+[`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md).
 Pro-Release-Lieferstand mit Bullet-Listen siehe
 [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -364,20 +364,20 @@ in den dafür vorgesehenen Single-Source-Dokumenten:
 
 - [`CHANGELOG.md`](CHANGELOG.md) — Keep-a-Changelog-Lieferstand
   pro Release-Tag (Added/Changed/Security/Removed).
-- [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+- [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
   — aktive Phase, nächste Schritte und Folge-ADRs.
-- [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+- [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
   — aktive Risiken inklusive Triggerschwellen.
 
 Leitende Dokumente:
 
 - [spec/lastenheft.md](spec/lastenheft.md) — Anforderungen (verbindlich, 1.1.24)
-- [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
-- [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
+- [docs/planning/in-progress/roadmap.md](docs/plan/planning/in-progress/roadmap.md) — Status, Folge-ADRs, offene Entscheidungen
+- [docs/adr/0001-backend-stack.md](docs/plan/adr/0001-backend-stack.md) — Backend-Entscheidung (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — Release-Prozess
 - [docs/user/quality.md](docs/user/quality.md) — Qualitätsrichtlinien
 
-Nächste Schritte stehen in [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) §2.
+Nächste Schritte stehen in [docs/planning/in-progress/roadmap.md](docs/plan/planning/in-progress/roadmap.md) §2.
 
 ---
 

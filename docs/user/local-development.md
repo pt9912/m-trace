@@ -1,7 +1,7 @@
 # Local Development — m-trace
 
 > **Status**: Verbindlich für `0.1.x`. Die Quickstart-Sektion wird mit jedem Sub-Release erweitert (`0.1.0` Backend Core, `0.1.1` Player-SDK + Dashboard, `0.1.2` Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](../planning/in-progress/roadmap.md) §2 Schritt 7; [Plan `0.1.0`](../planning/done/plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](../../spec/architecture.md) §8.
+> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](../plan/planning/in-progress/roadmap.md) §2 Schritt 7; [Plan `0.1.0`](../plan/planning/done/plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](../../spec/architecture.md) §8.
 
 ## 0. Zweck
 
@@ -444,7 +444,7 @@ Der Status pro Service ist über `docker compose ps` und `docker compose logs <s
 
 Ab `0.4.0` persistiert der `api`-Service Sessions, Playback-Events und
 Ingest-Sequenzen durable in einer SQLite-Datei (siehe
-[ADR-0002](../adr/0002-persistence-store.md) §8.1). Konfiguration und
+[ADR-0002](../plan/adr/0002-persistence-store.md) §8.1). Konfiguration und
 Reset-Pfad:
 
 | Aspekt | Default im Compose-Lab | Override |
@@ -459,7 +459,7 @@ Volume erhalten — der nächste Start liest die gleiche Session-Historie.
 unangetastet.
 
 **Storage-Retention in `0.4.0`**: „unlimited mit dokumentiertem
-Reset-Pfad" gemäß [ADR-0002](../adr/0002-persistence-store.md) §8.4.
+Reset-Pfad" gemäß [ADR-0002](../plan/adr/0002-persistence-store.md) §8.4.
 Sessions, Playback-Events und Ingest-Sequenzen wachsen ungebunden, bis
 der Reset-Pfad ausgeführt wird. Konkrete Retention-Werte (Zeitfenster,
 Pro-Projekt-Limit) sind ausdrücklich für eine Folge-Phase deferred —
@@ -480,7 +480,7 @@ ein leeres Schema. Andere Reset-Wege (manuelles `docker volume rm`,
 Filesystem-Eingriffe) sind nicht Teil des Vertrags.
 
 **Cursor-Recovery**: Cursor-v2 (Wire-Format aus
-[ADR-0004](../adr/0004-cursor-strategy.md)) trägt nur durable
+[ADR-0004](../plan/adr/0004-cursor-strategy.md)) trägt nur durable
 Storage-Werte (kein `process_instance_id` mehr) und bleibt nach
 API-Restart gültig. Treten dennoch Cursor-Fehler auf, mappt der
 Server folgende Klassen (siehe API-Kontrakt §10.3):

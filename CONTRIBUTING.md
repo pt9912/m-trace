@@ -51,7 +51,7 @@ Targets zusätzlich mit Security-Gates (siehe `0.8.5`).
 - Feature-Vorschläge beziehen sich auf einen Lastenheft-Eintrag
   (`F-`/`NF-`/`MVP-`/`RAK-`) oder schlagen einen neuen vor.
 - PRs verweisen auf das zugehörige Issue oder den jeweiligen Plan
-  in [`docs/planning/`](docs/planning/) und beschreiben die
+  in [`docs/planning/`](docs/plan/planning/) und beschreiben die
   durchgeführten Smokes/Gates.
 
 ## 5. Sicherheitsmeldungen

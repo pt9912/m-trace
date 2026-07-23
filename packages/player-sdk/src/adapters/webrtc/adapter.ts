@@ -13,7 +13,7 @@ import { newPeerConnectionRunId, startSampling, type SamplingDeps } from "./samp
  * attachHlsJs} und liefert Player-Events in den geteilten
  * `PlayerTracker`-Stream.
  *
- * Bezug: `docs/planning/done/` §0.5
+ * Bezug: `docs/plan/planning/done/` §0.5
  * (Implementierungsleitplanken — WHEP als einziger Signalisierungsweg)
  * und §3 DoD.
  *

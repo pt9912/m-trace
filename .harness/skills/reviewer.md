@@ -1,7 +1,7 @@
 # Reviewer-Skill — m-trace
 
 * Status: Accepted
-* Bezug: `AGENTS.md` §3 (Harte Regeln), `docs/adr/` (aktive ADRs),
+* Bezug: `AGENTS.md` §3 (Harte Regeln), `docs/plan/adr/` (aktive ADRs),
   `harness/conventions.md` (MR-001..MR-004) · <!-- d-check:ignore (ADR-/Skill-Referenzen; Anker gelten repo-lokal) -->
 * Gilt für: Code-/Plan-/Design-Review-Läufe. m-trace hat **kein** dediziertes
   `make`-Review-Target; Einstieg ist der `/code-review`-Skill (Working-Diff)
@@ -13,7 +13,7 @@ Was der Reviewer *immer* mitbringt, bevor er den Diff liest:
 
 - Diff des PR / der Änderung
 - `spec/lastenheft.md` (für referenzierte `F-*`/`NF-*`/`MVP-*`/`AK-*`/`RAK-*`-IDs)
-- ADRs unter `docs/adr/`, deren ID im PR oder in der Commit-Message vorkommt
+- ADRs unter `docs/plan/adr/`, deren ID im PR oder in der Commit-Message vorkommt
 - `AGENTS.md` §3 (Harte Regeln)
 - vorherige Findings am gleichen Modul (letzte ~5 PRs)
 

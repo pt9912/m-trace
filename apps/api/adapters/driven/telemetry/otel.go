@@ -212,7 +212,7 @@ func (t *OTelTelemetry) WithTracer(tr trace.Tracer) *OTelTelemetry {
 // `batch_size="250"` to Prometheus. The per-request batch size lives on
 // the `http.handler POST /api/playback-events` span instead (see
 // adapters/driving/http/handler.go:73). See spec/telemetry-model.md
-// 1 and docs/planning/done/ for the
+// 1 and docs/plan/planning/done/ for the
 // full cardinality contract.
 func (t *OTelTelemetry) BatchReceived(ctx context.Context, _ int) {
 	t.counter.Add(ctx, 1)

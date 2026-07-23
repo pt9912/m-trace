@@ -10,7 +10,7 @@ player telemetry, stream sessions, infrastructure signals, Prometheus metrics, a
 OpenTelemetry-compatible event model.
 
 Per-release delivery state: [`CHANGELOG.md`](CHANGELOG.md). Current phase and next
-steps: [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
+steps: [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md).
 
 ---
 
@@ -132,7 +132,7 @@ infrastructure telemetry.
 
 - **Per-release delivery state**: [`CHANGELOG.md`](CHANGELOG.md).
 - **Current phase and next steps**: the "Roadmap" section below plus
-  [`docs/planning/in-progress/`](docs/planning/in-progress/).
+  [`docs/planning/in-progress/`](docs/plan/planning/in-progress).
 
 ---
 
@@ -302,7 +302,7 @@ Details live in [docs/user/local-development.md](docs/user/local-development.md)
 
 Per-release status, current phase, next steps, and follow-up ADRs live
 canonically in
-[`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md).
+[`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md).
 Per-release delivery state with bullet lists lives in
 [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -368,21 +368,21 @@ designated single-source documents:
 
 - [`CHANGELOG.md`](CHANGELOG.md) — Keep-a-Changelog delivery state per release
   tag (Added/Changed/Security/Removed).
-- [`docs/planning/in-progress/roadmap.md`](docs/planning/in-progress/roadmap.md)
+- [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
   — current phase, next steps, and follow-up ADRs.
-- [`docs/planning/in-progress/risks-backlog.md`](docs/planning/in-progress/risks-backlog.md)
+- [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
   — active risks with trigger thresholds.
 
 Guiding documents:
 
 - [docs/user/anwenderhandbuch.md](docs/user/anwenderhandbuch.md) — user manual (task-oriented; German)
 - [spec/lastenheft.md](spec/lastenheft.md) — requirements (normative, 1.1.26; German)
-- [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) — status, follow-up ADRs, open decisions
-- [docs/adr/0001-backend-stack.md](docs/adr/0001-backend-stack.md) — backend decision (Accepted: Go)
+- [docs/planning/in-progress/roadmap.md](docs/plan/planning/in-progress/roadmap.md) — status, follow-up ADRs, open decisions
+- [docs/adr/0001-backend-stack.md](docs/plan/adr/0001-backend-stack.md) — backend decision (Accepted: Go)
 - [docs/user/releasing.md](docs/user/releasing.md) — release process
 - [docs/user/quality.md](docs/user/quality.md) — quality guidelines
 
-Next steps live in [docs/planning/in-progress/roadmap.md](docs/planning/in-progress/roadmap.md) §2.
+Next steps live in [docs/planning/in-progress/roadmap.md](docs/plan/planning/in-progress/roadmap.md) §2.
 
 > Project documentation under `spec/` and `docs/` is primarily German; this
 > README is the canonical English entry point. The German overview lives in

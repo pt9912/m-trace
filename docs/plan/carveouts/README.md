@@ -16,7 +16,7 @@ Folge-Slice. Aufgelöste Carveouts wandern nach `done/` (reiner `git mv`).
 _Keine aktiven generischen Carveouts._
 
 Die W4-Werkzeug-Triage
-([`risks-backlog-werkzeug-triage.md`](../../planning/in-progress/risks-backlog-werkzeug-triage.md))
+([`risks-backlog-werkzeug-triage.md`](../planning/in-progress/risks-backlog-werkzeug-triage.md))
 fand keine einzelne generische Gate-Senkung, die hier zu materialisieren wäre:
 Die aktiven offenen Risiken sind entweder **Roadmap-Kandidaten** (bleiben im
 Risiko-Register) oder gehören zum **Security-Gate-Suppression-Cluster**, der über

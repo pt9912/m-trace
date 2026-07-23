@@ -10,14 +10,14 @@
 
 Was der Reviewer *immer* mitbringt, bevor er urteilt:
 
-- alle Closure-Sektionen der Pläne in `docs/planning/done/`
+- alle Closure-Sektionen der Pläne in `docs/plan/planning/done/`
 - ADR-0010 §Entscheidung — die **drei Pflicht-Inhalte** (Lernsignal /
   Folge-Slice / Architektur-Beobachtung), gegen die geprüft wird
 - ADR-0010 §Kontext — *warum* Closure-Notes existieren (Auditierbarkeit,
   Lernsignal)
 - das Ergebnis von `make verify-closure-notes` für denselben Stand — was das
   Struktur-Gate bereits abgedeckt hat, wird **nicht** doppelt gemeldet
-- die Grandfather-Liste `docs/planning/.closure-grandfathered` — grandfatherte
+- die Grandfather-Liste `docs/plan/planning/.closure-grandfathered` — grandfatherte
   Altpläne tragen keine Pflicht und werden **nicht** geprüft
 
 Ohne diesen Block prüft der Reviewer Text, aber nicht *gegen die drei
@@ -26,7 +26,7 @@ Pflicht-Inhalte, die eine Closure-Note tragen muss*.
 ## Prüf-Auftrag
 
 Lies die Closure-Sektion jedes nicht-grandfatherten Plans in
-`docs/planning/done/`. Markiere alle, die *keinen* der folgenden Inhalte
+`docs/plan/planning/done/`. Markiere alle, die *keinen* der folgenden Inhalte
 tragen: (a) ein konkretes Lernsignal (z. B. „Test rot, *weil* X"), (b) ein
 konkretes Folge-Slice, (c) eine konkrete Architektur-Beobachtung. Floskeln ohne
 Inhalt sind ein HIGH-Finding.
@@ -71,7 +71,7 @@ Jedes Finding:
 
 - `kategorie`: HIGH | MEDIUM | LOW | INFO
 - `quelle`: `ADR-0010` | `Closure-Inhaltspflicht (a/b/c)`
-- `pfad`: `docs/planning/done/<plan>.md:<Zeile>`
+- `pfad`: `docs/plan/planning/done/<plan>.md:<Zeile>`
 - `befund`: *welcher* der drei Pflicht-Inhalte fehlt, 1–2 Sätze, beobachtbar,
   ohne Formulierungs-Vorschlag
 - `verifizierbar`: nein — Floskel-Erkennung ist inferentiell;

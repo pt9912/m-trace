@@ -1,7 +1,7 @@
 # Mutation Testing
 
 > **Status**: Aktiv seit `plan-0.9.5` Tranche 4 (RAK-Wave-2 /
-> [`extra-gates.md`](../planning/in-progress/extra-gates.md) §3.6).
+> [`extra-gates.md`](../plan/planning/in-progress/extra-gates.md) §3.6).
 > **Initial nicht-blockierend**: nur Nightly-Reporting; PR-
 > Blockierung erst nach Beobachtungsphase (siehe §3 Score-Schwelle).
 > Workflow:
@@ -75,7 +75,7 @@ Status `2026-07-16`: Der TS-Mutation-Gate war unter pnpm 11 **still
 komplett tot** — StrykerJS lief via `pnpm dlx` gar nicht mehr durch
 (`ERR_MODULE_NOT_FOUND`), maskiert durch `continue-on-error` +
 `|| true` (behoben in `R-31` /
-[ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md)).
+[ADR-0008](../plan/adr/0008-benchmark-mutation-execution-in-docker.md)).
 Die Drei-Runs-Beobachtungsphase für den TS-Piloten **startet damit
 neu**: alle vorherigen „grünen" `mutation.yml`-Runs haben **keinen
 Score gemessen** und zählen nicht. Erster realer Messwert (2026-07-16,
@@ -132,7 +132,7 @@ make ts-mutation-report
 ```
 
 Läuft in Docker
-([ADR-0008](../adr/0008-benchmark-mutation-execution-in-docker.md),
+([ADR-0008](../plan/adr/0008-benchmark-mutation-execution-in-docker.md),
 analog zum Go-Pendant im `golang`-Container): der `mutation-ts`-Stage
 (= `build` + `procps`) wird gebaut, `docker run` fährt StrykerJS, und
 der Report wird per Bind-Mount auf den Host gespiegelt. StrykerJS +
@@ -174,5 +174,5 @@ xdg-open packages/player-sdk/reports/mutation/mutation.html
   Quarantäne gelegt — Mutation-Tests sind nicht-blockierend, der
   flaky Lauf rauscht im Trend einfach durch. Sollte gremlins/
   Stryker selbst persistente Crashes zeigen, wandert das in
-  `docs/planning/in-progress/risks-backlog.md` als R-N-Eintrag plus
+  `docs/plan/planning/in-progress/risks-backlog.md` als R-N-Eintrag plus
   Tool-Update-Trigger.

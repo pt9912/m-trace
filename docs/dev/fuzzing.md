@@ -1,7 +1,7 @@
 # Fuzzing & Property Tests
 
 > **Status**: Aktiv seit `plan-0.9.5` Tranche 3 (RAK-Wave-2 /
-> [`extra-gates.md`](../planning/in-progress/extra-gates.md) §3.5).
+> [`extra-gates.md`](../plan/planning/in-progress/extra-gates.md) §3.5).
 > PR-Pfad: `make fuzz-check` mit kurzem Budget; Nightly-Pfad:
 > [`.github/workflows/fuzz.yml`](../../.github/workflows/fuzz.yml)
 > mit längerem Budget plus Auto-Issue bei Crash.
@@ -116,7 +116,7 @@ statt zu hängen.
 - **Crash-Triage-Pfad**: Issue-Label `fuzz` filtert.
   Sofort-Aktion: Crash-File ins Repo, dann fixen. Verlängerte
   Triage > 7 Tage produziert ein zusätzliches Risiko-Backlog-
-  Item (`docs/planning/in-progress/risks-backlog.md`).
+  Item (`docs/plan/planning/in-progress/risks-backlog.md`).
 - **Quarantäne-Pfad**: ein Fuzz-Target kann **nicht** wie ein
   Benchmark in Quarantäne gelegt werden — Plan-DoD §4 hat keine
   vergleichbare Mechanik definiert. Wenn ein Fuzz-Target

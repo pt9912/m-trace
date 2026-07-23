@@ -102,7 +102,7 @@ hs_err_pid*
 replay_pid*
 .kotlin/
 
-# Spike workflow is Docker-only (see docs/planning/plan-spike.md §14.11 and
+# Spike workflow is Docker-only (see docs/plan/planning/done/plan-spike.md §14.11 and
 # docs/spike/0001-backend-stack.md §6.11). gradle-wrapper.jar and
 # gradlew are NOT committed; the gradle:8.12-jdk21 build image
 # brings Gradle directly. Local wrapper files (if a developer
@@ -132,7 +132,7 @@ tmp/
 # Workflow-Artefakt hoch — das Go-Pendant liegt unter .tmp/mutation).
 packages/player-sdk/reports/
 
-# Spike-isolated dependency caches (see docs/planning/plan-spike.md §7.2):
+# Spike-isolated dependency caches (see docs/plan/planning/done/plan-spike.md §7.2):
 .gomodcache/
 .gradle-user-home/
 
