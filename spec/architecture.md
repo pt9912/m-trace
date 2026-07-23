@@ -226,9 +226,9 @@ Die Regel betrifft also **direkte** Imports und gilt geschichtet. Verbindliche B
 | `./hexagon/application/...` | `${MODULE}/adapters`                                                                             | Application spricht ausschließlich über Ports, nicht Adapter-Implementierungen.  |
 | `./hexagon/port/...`        | `${MODULE}/adapters`                                                                             | Ports sind Abstraktionen — sie dürfen keine Adapter-Implementierung importieren. |
 
-Absicherung als ausführbares Skript: `apps/api/scripts/check-architecture.sh` (auch als `make arch-check` aufrufbar). Das Skript iteriert über die Patterns, sammelt pro Paket die direkten Imports via `go list -f '{{join .Imports "\n"}}'` und filtert sie gegen den jeweiligen Forbidden-Regex. Bei einem Treffer wird Paketname, Begründung und Liste der verbotenen Imports ausgegeben und der Lauf bricht mit Exit 1 ab.
+Absicherung als Gate: `make arch-check` (Alias auf `a-check`, siehe `a-check.mk`) prüft die in `.a-check.yml` deklarierten Schichten (`role: domain/app/port/adapter`), erlaubten Kanten und `tech`-Kapselung gegen die **direkten** Imports — netzlos, read-only, digest-gepinnt. Ein Verstoß nennt Datei, Regel (`core-impurity`/`app-impurity`/`port-impurity`/`tech-leak`/`wrong-direction`) und das verbotene Symbol und bricht mit Exit 1 ab. `make a-check-graph` rendert die deklarierte Architektur als Mermaid.
 
-`go list -deps` greift bewusst zu weit: weil `cmd/api` den Telemetry-Adapter zieht, würde der transitive Schluss OTel zwangsläufig zeigen. Der Direkt-Import-Filter (`Imports` statt `Deps`) ist die richtige Granularität.
+Bewusst **direkte** (nicht transitive) Imports: weil `cmd/api` den Telemetry-Adapter zieht, würde ein transitiver Schluss OTel überall zeigen — die Composition Root ist daher ausgenommen, und geprüft wird die Direkt-Import-Granularität.
 
 ---
 

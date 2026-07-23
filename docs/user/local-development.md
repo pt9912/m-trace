@@ -628,11 +628,10 @@ in [`docs/user/demo-integration.md`](./demo-integration.md).
 ### 4.5 Architektur-Boundary-Check (Backend)
 
 ```bash
-cd apps/api
 make arch-check
 ```
 
-Prüft nach `apps/api/scripts/check-architecture.sh`, dass:
+Prüft über a-check (`.a-check.yml`, digest-gepinnt in `a-check.mk`), dass:
 
 - `hexagon/` keine direkten Imports auf Adapter, OTel, Prometheus, `database/sql`, `net/http` zieht.
 - `hexagon/domain/` keine Application-/Port-Imports zieht.

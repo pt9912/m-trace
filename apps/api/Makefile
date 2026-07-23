@@ -17,7 +17,7 @@ NO_CACHE_FILTER_LINT     := --no-cache-filter lint
 NO_CACHE_FILTER_COVERAGE := --no-cache-filter coverage
 NO_CACHE_FILTER_RACE     := --no-cache-filter race
 
-.PHONY: test race lint build deps compile run arch-check coverage coverage-gate coverage-report clean schema-validate schema-generate schema-generate-postgres schema-generate-postgres-check print-dmigrate-image benchmark-smoke fuzz-check mutation-report
+.PHONY: test race lint build deps compile run coverage coverage-gate coverage-report clean schema-validate schema-generate schema-generate-postgres schema-generate-postgres-check print-dmigrate-image benchmark-smoke fuzz-check mutation-report
 
 # d-migrate Container für Schema-Definition und DDL-Generierung
 # (ADR-0002). Build-/Dev-time-Werkzeug; das API-Image bleibt
@@ -66,13 +66,8 @@ compile:
 run: build
 	docker run --rm -p 8080:8080 --name m-trace-api-go $(IMAGE):go
 
-# Architecture-Boundary-Test (siehe spec/architecture.md).
-# Prüft, dass hexagon/ keine direkten Imports auf Adapter,
-# OTel, Prometheus, database/sql oder net/http enthält und die
-# Schichtengrenzen domain → application → port respektiert sind.
-arch-check:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.5 \
-		bash scripts/check-architecture.sh
+# Architecture-Boundary-Test: seit slice-003 auf Repo-Ebene über a-check
+# (`make arch-check` / `.a-check.yml`), nicht mehr hier.
 
 # Coverage-Pflicht-Gate (docs/user/quality.md §3): misst Coverage über
 # hexagon/ und adapters/, druckt den per-Funktion-Report und fordert

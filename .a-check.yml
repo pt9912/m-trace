@@ -1,0 +1,32 @@
+# .a-check.yml — Hexagon-Architektur-Regeln für apps/api (Go), geprüft von a-check.
+# Bildet die vier Regeln aus spec/architecture.md §3.4 deklarativ ab; löst
+# apps/api/scripts/check-architecture.sh ab (slice-003). Scan von der Repo-Wurzel;
+# `exclude` prunt den Verzeichnis-Walk (a-check >= v0.14.0), damit der root-eigene
+# `.security/.trivy-cache` den Lauf nicht bricht.
+version: 1
+languages:
+  go: ["apps/api/**/*.go"]
+exclude:
+  - "apps/api/**/*_test.go"   # check-architecture.sh prüfte nur Nicht-Test-Imports
+  - ".security/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - ".git/**"
+layers:
+  domain:      {globs: ["apps/api/hexagon/domain/**"], role: domain}
+  ports:       {globs: ["apps/api/hexagon/port/**"], role: port}
+  application: {globs: ["apps/api/hexagon/application/**"], role: app}
+  adapters:    {globs: ["apps/api/adapters/**"], role: adapter}
+edges:
+  - {from: adapters,    to: ports}
+  - {from: adapters,    to: domain}
+  - {from: adapters,    to: application}   # verhaltensgleich zu check-architecture.sh; slice-004 entfernt dies (Driving-Port-Boundary)
+  - {from: application, to: ports}
+  - {from: application, to: domain}
+  - {from: ports,       to: domain}
+tech:
+  - {pattern: "go.opentelemetry.io", adapter: ["apps/api/adapters/driven/telemetry", "apps/api/adapters/driving/http"]}
+  - {pattern: "github.com/prometheus", adapter: "apps/api/adapters/driven/metrics"}
+  - {pattern: "database/sql", adapter: ["apps/api/adapters/driven/persistence", "apps/api/adapters/driven/auth", "apps/api/internal/storage"]}
+  - {pattern: "net/http", adapter: "apps/api/adapters"}
+composition_root: ["apps/api/cmd/**"]
