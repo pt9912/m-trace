@@ -1,7 +1,7 @@
 # 0010 — Closure-Note-Pflicht für abgeschlossene Pläne
 
-> **Status**: **Proposed** (2026-07-22)
-> **Datum**: 2026-07-22 (Proposed)
+> **Status**: **Accepted** (2026-07-23)
+> **Datum**: 2026-07-22 (Proposed), 2026-07-23 (Accepted)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: [ADR-0009](0009-harness-baseline-v3.5.0.md) (v3.5.0-Baseline, W3
 > zog den Review-/Closure-Harness vor); `harness/conventions.md` §Modi
@@ -62,9 +62,10 @@ stehen nicht auf der Liste und müssen tragen; wandert künftig ein Plan nach
 `done/`, ist die bewusste Reibung („Note schreiben oder mit Begründung
 grandfathern") gewollt.
 
-**Gate-Platzierung.** `make verify-closure-notes` läuft zunächst **standalone**,
-**nicht** in `make gates` — solange dieses ADR `Proposed` ist. Graduierung in
-`make gates` erfolgt nach Accept (Hard Rule „Gates nur per ADR", hier additiv).
+**Gate-Platzierung.** `make verify-closure-notes` lief unter `Proposed`
+**standalone**. Mit dem Accept (2026-07-23) graduiert das Target additiv in
+`make gates` (Hard Rule „Gates nur per ADR" — die Aufnahme erfolgt genau mit
+dieser Accept-Entscheidung).
 
 ## Konsequenzen
 
@@ -120,3 +121,4 @@ grandfathern") gewollt.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-07-22 | Proposed | ADR-0010 |
+| 2026-07-23 | Accepted — `verify-closure-notes` graduiert in `make gates` | ADR-0010 |

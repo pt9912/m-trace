@@ -653,7 +653,7 @@ lint-variante-b-diff:
 # (ADR-0010): jeder nicht-grandfatherte done/-Plan trägt eine Closure-Note
 # (Heading + >= 2 Sätze außerhalb Code, keine Floskel). Die semantische
 # Prüfung (Inhalt vs. Floskel) leistet der closure-note-reviewer-Skill.
-# Standalone, noch NICHT in `make gates` — Graduierung nach ADR-0010-Accept.
+# Seit ADR-0010-Accept (2026-07-23) Teil von `make gates`.
 verify-closure-notes:
 	python3 scripts/check_closure_notes.py
 
@@ -799,7 +799,7 @@ release-gate:
 	$(MAKE) release-guard VER=$(VER)
 	@echo "[release-gate] OK -- alle Pre-Tag-Checks gruen + release-guard ok; sicher, v$(VER) zu taggen."
 
-gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check schema-generate-postgres-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check lint-variante-b
+gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check schema-generate-postgres-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check lint-variante-b verify-closure-notes
 
 #  — Quality-Gates Wave 1. Security-Gates laufen
 # parallel zu `make gates` (separater CI-Job in build.yml), nicht in
