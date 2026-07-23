@@ -22,6 +22,14 @@ Schätzung, treiben aber nie eine Welle.
 geschnitten** (siehe *Nächste Wellen*). Die nächste Welle beginnt, sobald der
 Owner eine Tranche aus den Register-Kandidaten schneidet.
 
+**Slices ohne Welle seit `welle-01`** (Wartung/Architektur, Modul 5 „ohne Welle",
+alle in [`done/`](../done/)): [`slice-003`](../done/slice-003-a-check-arch-gate.md)
+(a-check ersetzt `check-architecture.sh`),
+[`slice-004`](../done/slice-004-driving-port-boundary.md) (Driving-Port-Boundary
+säubern), [`slice-005`](../done/slice-005-closure-gate-slice-welle.md)
+(Closure-Gate greift auf slice/welle), [`slice-006`](../done/slice-006-planning-layout-nicht-slices-flach.md)
+(Planning-Layout: Nicht-Slices flach aus `in-progress/`).
+
 ## Nächste Wellen
 
 | Welle | Trigger (beobachtbar) | Wichtigste Slices | Aufwand |
@@ -33,6 +41,13 @@ Es liegt **keine geschnittene Produkt-Tranche** vor. Die Kandidaten sind im
 MR-005; Werkzeug-Einordnung in der
 [Triage](../risks-backlog-werkzeug-triage.md)) — keiner ist ein aktiver Blocker.
 Mutation-Gate-Blockierung bleibt deferred, bis echte >70 %-Score-Reihen vorliegen.
+
+**Nächster Slice-Kandidat ohne Welle:** das Review-Harness (Modul 8/10,
+`docs/reviews/`) ist eingerichtet, aber ungenutzt — bisherige Reviews landeten
+ad-hoc in Commit-Messages/Memory statt als Kanon-Review-Reports (Sekundärbefund
+aus `slice-006`; erster echter Record ist die migrierte
+[`2026-05-13-r13-trivy-rereview.md`](../../../reviews/2026-05-13-r13-trivy-rereview.md)).
+Slice-Idee: Review-Praxis auf Kanon-Review-Reports umstellen (Template + Skill).
 
 ## Meilensteine
 
