@@ -5,22 +5,8 @@ import (
 	"sync"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
-
-// EventAppendedFrame ist das Mindest-Wire-Format für SSE-Live-Updates
-// ( H4; spec/backend-api-contract.md). Konsumenten
-// laden den vollen Event-/Session-Read-Shape per REST nach.
-//
-// `TimeSkewWarning` (R-5) wird mitgeschickt,
-// damit das Dashboard den Indikator schon im Live-Update setzen kann,
-// ohne den vollen Detail-Read nachzuziehen.
-type EventAppendedFrame struct {
-	ProjectID       string
-	SessionID       string
-	EventName       string
-	IngestSequence  int64
-	TimeSkewWarning bool
-}
 
 // EventBroker ist der in-process Pub/Sub-Hub für SSE-Live-Updates.
 // Der Append-Use-Case ruft `Publish` nach erfolgreichem
@@ -37,8 +23,11 @@ type EventBroker struct {
 
 type subscriber struct {
 	projectID string
-	ch        chan EventAppendedFrame
+	ch        chan domain.EventAppendedFrame
 }
+
+// EventBroker erfüllt den EventStreamInbound-Driving-Port (slice-004).
+var _ driving.EventStreamInbound = (*EventBroker)(nil)
 
 // NewEventBroker konstruiert einen leeren Broker.
 func NewEventBroker() *EventBroker {
@@ -54,8 +43,8 @@ func NewEventBroker() *EventBroker {
 // Channel auslösen. Buffer-Größe 64: bei langsamen Konsumenten werden
 // ältere Frames gedroppt (analog zum SSE-Protokoll, das den Konsumenten
 // via `Last-Event-ID`-Reconnect zur Lücken-Schließung auffordert).
-func (b *EventBroker) Subscribe(ctx context.Context, projectID string) <-chan EventAppendedFrame {
-	ch := make(chan EventAppendedFrame, 64)
+func (b *EventBroker) Subscribe(ctx context.Context, projectID string) <-chan domain.EventAppendedFrame {
+	ch := make(chan domain.EventAppendedFrame, 64)
 	b.mu.Lock()
 	id := b.nextID
 	b.nextID++
@@ -89,7 +78,7 @@ func (b *EventBroker) Publish(events []domain.PlaybackEvent) {
 		return
 	}
 	for _, e := range events {
-		frame := EventAppendedFrame{
+		frame := domain.EventAppendedFrame{
 			ProjectID:       e.ProjectID,
 			SessionID:       e.SessionID,
 			EventName:       e.EventName,

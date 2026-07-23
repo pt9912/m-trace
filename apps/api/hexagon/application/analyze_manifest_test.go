@@ -64,8 +64,8 @@ func TestAnalyzeManifest_RejectsEmptyRequest(t *testing.T) {
 	uc := newAnalyzeUseCase(stub)
 
 	_, err := uc.AnalyzeManifest(context.Background(), domain.StreamAnalysisRequest{})
-	if !errors.Is(err, application.ErrAnalyzeManifestEmpty) {
-		t.Fatalf("expected ErrAnalyzeManifestEmpty, got %v", err)
+	if !errors.Is(err, domain.ErrAnalyzeManifestEmpty) {
+		t.Fatalf("expected domain.ErrAnalyzeManifestEmpty, got %v", err)
 	}
 	if stub.called != 0 {
 		t.Errorf("adapter should not be called when request is empty")
@@ -81,8 +81,8 @@ func TestAnalyzeManifest_RejectsWhitespaceOnlyRequest(t *testing.T) {
 		ManifestText: "   \n\t",
 		ManifestURL:  "  ",
 	})
-	if !errors.Is(err, application.ErrAnalyzeManifestEmpty) {
-		t.Fatalf("expected ErrAnalyzeManifestEmpty, got %v", err)
+	if !errors.Is(err, domain.ErrAnalyzeManifestEmpty) {
+		t.Fatalf("expected domain.ErrAnalyzeManifestEmpty, got %v", err)
 	}
 }
 

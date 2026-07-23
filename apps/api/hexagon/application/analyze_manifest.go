@@ -2,17 +2,12 @@ package application
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
-
-// ErrAnalyzeManifestEmpty wird zurückgegeben, wenn weder ManifestText
-// noch ManifestURL gesetzt ist; HTTP-Mapping: 400.
-var ErrAnalyzeManifestEmpty = errors.New("analyze manifest: weder ManifestText noch ManifestURL gesetzt")
 
 // AnalyzeManifestUseCase orchestriert den Analyzer-Aufruf gegen den
 // driven Port und löst optionale Session-Link-Felder gegen das
@@ -53,7 +48,7 @@ func (u *AnalyzeManifestUseCase) AnalyzeManifest(ctx context.Context, req domain
 	text := strings.TrimSpace(req.ManifestText)
 	url := strings.TrimSpace(req.ManifestURL)
 	if text == "" && url == "" {
-		return domain.AnalyzeManifestResult{}, ErrAnalyzeManifestEmpty
+		return domain.AnalyzeManifestResult{}, domain.ErrAnalyzeManifestEmpty
 	}
 	analysis, err := u.analyzer.AnalyzeManifest(ctx, req)
 	if err != nil {

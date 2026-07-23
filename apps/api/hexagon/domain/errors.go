@@ -55,3 +55,12 @@ var (
 	ErrAuthTokenTTLTooLarge    = errors.New("auth token ttl too large")
 	ErrAuthIssuanceRateLimited = errors.New("auth issuance rate limited")
 )
+
+var (
+	// ErrAnalyzeManifestEmpty wird zurückgegeben, wenn weder ManifestText
+	// noch ManifestURL gesetzt ist; HTTP-Mapping: 400.
+	ErrAnalyzeManifestEmpty = errors.New("analyze manifest: weder ManifestText noch ManifestURL gesetzt")
+	// ErrSrtHealthStreamUnknown wird vom Detail-Read-Pfad zurückgegeben,
+	// wenn die stream_id keinen Sample im Repository hat; HTTP-Mapping: 404.
+	ErrSrtHealthStreamUnknown = errors.New("srt health: stream unknown")
+)

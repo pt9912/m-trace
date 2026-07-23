@@ -10,8 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pt9912/m-trace/apps/api/hexagon/application"
+	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // SSE-Backfill-Limit aus spec/backend-api-contract.md Bei
@@ -31,7 +32,7 @@ const sseHeartbeatInterval = 15 * time.Second
 type SseStreamHandler struct {
 	Resolver  driven.ProjectResolver
 	Events    driven.EventRepository
-	Broker    *application.EventBroker
+	Broker    driving.EventStreamInbound
 	Logger    *slog.Logger
 	Heartbeat time.Duration
 	// BackfillLimit überschreibt den Default
@@ -153,7 +154,7 @@ func (h *SseStreamHandler) streamBackfill(
 		}
 	}
 	for _, e := range events {
-		frame := application.EventAppendedFrame{
+		frame := domain.EventAppendedFrame{
 			ProjectID:       e.ProjectID,
 			SessionID:       e.SessionID,
 			EventName:       e.EventName,
@@ -178,7 +179,7 @@ func (h *SseStreamHandler) logError(msg string, args ...any) {
 // EventSource-Format. Spec §10a verlangt exakt
 // `id`/`event`/`data`-Feldsatz mit Project-/Session-/Sequence-/
 // Event-Name-Daten.
-func writeAppendedFrame(w http.ResponseWriter, flusher http.Flusher, frame application.EventAppendedFrame) error {
+func writeAppendedFrame(w http.ResponseWriter, flusher http.Flusher, frame domain.EventAppendedFrame) error {
 	body, err := json.Marshal(frameWire{
 		ProjectID:       frame.ProjectID,
 		SessionID:       frame.SessionID,

@@ -20,7 +20,6 @@ layers:
 edges:
   - {from: adapters,    to: ports}
   - {from: adapters,    to: domain}
-  - {from: adapters,    to: application}   # verhaltensgleich zu check-architecture.sh; slice-004 entfernt dies (Driving-Port-Boundary)
   - {from: application, to: ports}
   - {from: application, to: domain}
   - {from: ports,       to: domain}

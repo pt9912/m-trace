@@ -2,9 +2,9 @@ package http_test
 
 import (
 	"context"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
-	_ "embed"
 	"errors"
 	"io"
 	"log/slog"
@@ -19,9 +19,9 @@ import (
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/auth"
 	"github.com/pt9912/m-trace/apps/api/adapters/driven/metrics"
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
-	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // fixtureSrtHealthDetail spiegelt das Wire-Format aus
@@ -47,29 +47,29 @@ func srtTestResolver() *auth.StaticProjectResolver {
 
 // stubSrtHealthInbound erfüllt SrtHealthInbound für Handler-Tests.
 type stubSrtHealthInbound struct {
-	latest        []application.SrtHealthSummary
+	latest        []driving.SrtHealthSummary
 	latestErr     error
-	historyReturn []application.SrtHealthHistoryItem
+	historyReturn []driving.SrtHealthHistoryItem
 	historyNext   *driven.SrtHealthCursor
 	historyErr    error
 	gotLimit      int
 	gotAfter      *driven.SrtHealthCursor
 }
 
-func (s *stubSrtHealthInbound) LatestByStream(_ context.Context, _ string) ([]application.SrtHealthSummary, error) {
+func (s *stubSrtHealthInbound) LatestByStream(_ context.Context, _ string) ([]driving.SrtHealthSummary, error) {
 	return s.latest, s.latestErr
 }
 
-func (s *stubSrtHealthInbound) HistoryByStream(_ context.Context, _, _ string, limit int, after *driven.SrtHealthCursor) (application.SrtHealthHistoryPage, error) {
+func (s *stubSrtHealthInbound) HistoryByStream(_ context.Context, _, _ string, limit int, after *driven.SrtHealthCursor) (driving.SrtHealthHistoryPage, error) {
 	s.gotLimit = limit
 	s.gotAfter = after
 	if s.historyErr != nil {
-		return application.SrtHealthHistoryPage{}, s.historyErr
+		return driving.SrtHealthHistoryPage{}, s.historyErr
 	}
-	return application.SrtHealthHistoryPage{Items: s.historyReturn, NextAfter: s.historyNext}, nil
+	return driving.SrtHealthHistoryPage{Items: s.historyReturn, NextAfter: s.historyNext}, nil
 }
 
-func newSrtHealthRouter(t *testing.T, inbound apihttp.SrtHealthInbound) *httptest.Server {
+func newSrtHealthRouter(t *testing.T, inbound driving.SrtHealthInbound) *httptest.Server {
 	t.Helper()
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	publisher := metrics.NewPrometheusPublisher()
@@ -84,9 +84,9 @@ func newSrtHealthRouter(t *testing.T, inbound apihttp.SrtHealthInbound) *httptes
 	return srv
 }
 
-func newSummary(streamID string, opts ...func(*application.SrtHealthSummary)) application.SrtHealthSummary {
+func newSummary(streamID string, opts ...func(*driving.SrtHealthSummary)) driving.SrtHealthSummary {
 	t := time.Date(2026, 5, 5, 8, 48, 1, 0, time.UTC)
-	s := application.SrtHealthSummary{
+	s := driving.SrtHealthSummary{
 		Sample: domain.SrtHealthSample{
 			ProjectID:             srtTestProject,
 			StreamID:              streamID,
@@ -117,7 +117,7 @@ func newSummary(streamID string, opts ...func(*application.SrtHealthSummary)) ap
 // mit den Top-Level- und nested-Feldern aus spec §7a.2.
 func TestSrtHealthList_HappyPath(t *testing.T) {
 	inbound := &stubSrtHealthInbound{
-		latest: []application.SrtHealthSummary{newSummary("srt-test")},
+		latest: []driving.SrtHealthSummary{newSummary("srt-test")},
 	}
 	srv := newSrtHealthRouter(t, inbound)
 
@@ -161,7 +161,7 @@ func TestSrtHealthList_HappyPath(t *testing.T) {
 // Detail: 200 mit envelope `{ "stream_id":..., "items": [...] }`.
 func TestSrtHealthDetail_HappyPath(t *testing.T) {
 	inbound := &stubSrtHealthInbound{
-		historyReturn: []application.SrtHealthHistoryItem{newSummary("srt-test")},
+		historyReturn: []driving.SrtHealthHistoryItem{newSummary("srt-test")},
 	}
 	srv := newSrtHealthRouter(t, inbound)
 
@@ -191,7 +191,7 @@ func TestSrtHealthDetail_HappyPath(t *testing.T) {
 
 // Detail: stream_unknown → 404 mit JSON-Body.
 func TestSrtHealthDetail_NotFound(t *testing.T) {
-	inbound := &stubSrtHealthInbound{historyErr: application.ErrSrtHealthStreamUnknown}
+	inbound := &stubSrtHealthInbound{historyErr: domain.ErrSrtHealthStreamUnknown}
 	srv := newSrtHealthRouter(t, inbound)
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/api/srt/health/missing", nil)
@@ -273,7 +273,7 @@ func TestSrtHealthList_RepoError(t *testing.T) {
 // der erwarteten Schlüssel pro Block.
 func TestSrtHealthDetail_SchemaMatchesFixture(t *testing.T) {
 	inbound := &stubSrtHealthInbound{
-		historyReturn: []application.SrtHealthHistoryItem{newSummary("srt-test")},
+		historyReturn: []driving.SrtHealthHistoryItem{newSummary("srt-test")},
 	}
 	srv := newSrtHealthRouter(t, inbound)
 
@@ -386,7 +386,7 @@ func TestSrtHealthList_PostNotAllowed(t *testing.T) {
 func TestSrtHealthDetail_CursorRoundTrip(t *testing.T) {
 	t1 := time.Date(2026, 5, 5, 8, 48, 1, 250_000_000, time.UTC)
 	inbound := &stubSrtHealthInbound{
-		historyReturn: []application.SrtHealthHistoryItem{newSummary("srt-test")},
+		historyReturn: []driving.SrtHealthHistoryItem{newSummary("srt-test")},
 		historyNext: &driven.SrtHealthCursor{
 			IngestedAt: t1,
 			ID:         4711,

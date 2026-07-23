@@ -7,7 +7,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
-	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
@@ -24,7 +23,7 @@ type RequestMetrics interface {
 // registriert dann weder `GET /api/stream-sessions/stream` noch den
 // CORS-Preflight
 type SseStreamConfig struct {
-	Broker *application.EventBroker
+	Broker driving.EventStreamInbound
 	Events driven.EventRepository
 }
 
@@ -55,7 +54,7 @@ func NewRouter(
 	analyzeMetrics AnalyzeMetrics,
 	preflightMetrics PreflightMetrics,
 	sseConfig *SseStreamConfig,
-	srtHealth SrtHealthInbound,
+	srtHealth driving.SrtHealthInbound,
 	ingestControl driving.IngestControlInbound,
 	authSession driving.AuthSessionInbound,
 	playbackAuthHeaders *AuthHeaderParser,
@@ -150,7 +149,7 @@ func NewRouter(
 // `MTRACE_SRT_SOURCE_URL`), bleibt die Funktion no-op.
 func registerSrtHealthRoutes(
 	mux *http.ServeMux,
-	srtHealth SrtHealthInbound,
+	srtHealth driving.SrtHealthInbound,
 	resolver driven.ProjectResolver,
 	allowlist OriginAllowlist,
 	preflightMetrics PreflightMetrics,

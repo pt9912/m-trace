@@ -162,14 +162,14 @@ func TestQueryService_HistoryByStream(t *testing.T) {
 	}
 }
 
-// HistoryByStream: leere Liste auf erster Seite → ErrSrtHealthStreamUnknown.
+// HistoryByStream: leere Liste auf erster Seite → domain.ErrSrtHealthStreamUnknown.
 func TestQueryService_HistoryByStream_UnknownStream(t *testing.T) {
 	now := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
 	repo := &queryRepo{history: nil}
 	svc := newQuerySvc(t, repo, now)
 	_, err := svc.HistoryByStream(context.Background(), "demo", "missing", 0, nil)
-	if !errors.Is(err, application.ErrSrtHealthStreamUnknown) {
-		t.Fatalf("expected ErrSrtHealthStreamUnknown, got %v", err)
+	if !errors.Is(err, domain.ErrSrtHealthStreamUnknown) {
+		t.Fatalf("expected domain.ErrSrtHealthStreamUnknown, got %v", err)
 	}
 }
 

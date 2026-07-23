@@ -17,6 +17,7 @@ import (
 
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // Limits für Health-History-Reads (spec §7a.3).
@@ -25,32 +26,8 @@ const (
 	MaxSrtHealthHistoryLimit     = 1000
 )
 
-// ErrSrtHealthStreamUnknown wird vom Detail-Read-Pfad zurückgegeben,
-// wenn die `stream_id` keinen Sample im Repository hat. HTTP-
-// Adapter mappt das auf `404` (spec §7a.4).
-var ErrSrtHealthStreamUnknown = errors.New("srt health: stream unknown")
-
-// SrtHealthSummary ist die abgeleitete Sicht auf einen
-// SrtHealthSample plus berechnete Felder (`derived`, `freshness`).
-// Der HTTP-Adapter serialisiert das Schema in JSON gemäß spec
-type SrtHealthSummary struct {
-	Sample            domain.SrtHealthSample
-	BandwidthHeadroom *float64 // available / required, falls required vorhanden
-	SampleAgeMillis   int64    // Zeit seit IngestedAt zum Lesezeitpunkt
-	StaleAfterMillis  int64    // Schwelle, ab der ein Sample als stale gilt
-}
-
-// SrtHealthHistoryItem trägt die Detail-Sicht: ein Sample plus
-// dieselben derived-/freshness-Felder wie die Summary.
-type SrtHealthHistoryItem = SrtHealthSummary
-
-// SrtHealthHistoryPage bündelt die Detail-Items einer Page plus den
-// optionalen Folge-Cursor. Wire-Codec für `samples_cursor`/
-// `next_cursor` lebt im HTTP-Adapter (spec §7a.3).
-type SrtHealthHistoryPage struct {
-	Items     []SrtHealthHistoryItem
-	NextAfter *driven.SrtHealthCursor
-}
+// SrtHealthQueryService erfüllt den SrtHealthInbound-Driving-Port (slice-004).
+var _ driving.SrtHealthInbound = (*SrtHealthQueryService)(nil)
 
 // SrtHealthQueryService implementiert die zwei Read-Operationen.
 type SrtHealthQueryService struct {
@@ -77,7 +54,7 @@ func NewSrtHealthQueryService(repo driven.SrtHealthRepository, now func() time.T
 
 // LatestByStream liefert pro StreamID den jüngsten persistierten
 // Sample des Projects (spec §7a.1 — `GET /api/srt/health`).
-func (s *SrtHealthQueryService) LatestByStream(ctx context.Context, projectID string) ([]SrtHealthSummary, error) {
+func (s *SrtHealthQueryService) LatestByStream(ctx context.Context, projectID string) ([]driving.SrtHealthSummary, error) {
 	if projectID == "" {
 		return nil, errors.New("SrtHealthQueryService: projectID is empty")
 	}
@@ -86,7 +63,7 @@ func (s *SrtHealthQueryService) LatestByStream(ctx context.Context, projectID st
 		return nil, fmt.Errorf("srt-health repo latest: %w", err)
 	}
 	now := s.now()
-	out := make([]SrtHealthSummary, 0, len(samples))
+	out := make([]driving.SrtHealthSummary, 0, len(samples))
 	for _, sample := range samples {
 		out = append(out, s.summarize(sample, now))
 	}
@@ -102,9 +79,9 @@ func (s *SrtHealthQueryService) LatestByStream(ctx context.Context, projectID st
 // leere Folgeseite (after != nil, len(Items) == 0) ist hingegen
 // kein Fehler — sie signalisiert „Stream existiert, keine weiteren
 // Samples".
-func (s *SrtHealthQueryService) HistoryByStream(ctx context.Context, projectID, streamID string, limit int, after *driven.SrtHealthCursor) (SrtHealthHistoryPage, error) {
+func (s *SrtHealthQueryService) HistoryByStream(ctx context.Context, projectID, streamID string, limit int, after *driven.SrtHealthCursor) (driving.SrtHealthHistoryPage, error) {
 	if projectID == "" || streamID == "" {
-		return SrtHealthHistoryPage{}, errors.New("SrtHealthQueryService: projectID/streamID is empty")
+		return driving.SrtHealthHistoryPage{}, errors.New("SrtHealthQueryService: projectID/streamID is empty")
 	}
 	page, err := s.repo.HistoryByStream(ctx, driven.SrtHealthHistoryQuery{
 		ProjectID: projectID,
@@ -113,28 +90,28 @@ func (s *SrtHealthQueryService) HistoryByStream(ctx context.Context, projectID, 
 		After:     after,
 	})
 	if err != nil {
-		return SrtHealthHistoryPage{}, fmt.Errorf("srt-health repo history: %w", err)
+		return driving.SrtHealthHistoryPage{}, fmt.Errorf("srt-health repo history: %w", err)
 	}
 	if after == nil && len(page.Items) == 0 {
-		return SrtHealthHistoryPage{}, ErrSrtHealthStreamUnknown
+		return driving.SrtHealthHistoryPage{}, domain.ErrSrtHealthStreamUnknown
 	}
 	now := s.now()
-	out := make([]SrtHealthHistoryItem, 0, len(page.Items))
+	out := make([]driving.SrtHealthHistoryItem, 0, len(page.Items))
 	for _, sample := range page.Items {
 		out = append(out, s.summarize(sample, now))
 	}
-	return SrtHealthHistoryPage{Items: out, NextAfter: page.NextAfter}, nil
+	return driving.SrtHealthHistoryPage{Items: out, NextAfter: page.NextAfter}, nil
 }
 
 // summarize berechnet die abgeleiteten Felder für einen Sample
 // gegen die aktuelle Zeit.
-func (s *SrtHealthQueryService) summarize(sample domain.SrtHealthSample, now time.Time) SrtHealthSummary {
+func (s *SrtHealthQueryService) summarize(sample domain.SrtHealthSample, now time.Time) driving.SrtHealthSummary {
 	headroom := bandwidthHeadroom(sample.AvailableBandwidthBPS, sample.RequiredBandwidthBPS)
 	age := now.Sub(sample.IngestedAt).Milliseconds()
 	if age < 0 {
 		age = 0
 	}
-	return SrtHealthSummary{
+	return driving.SrtHealthSummary{
 		Sample:            sample,
 		BandwidthHeadroom: headroom,
 		SampleAgeMillis:   age,

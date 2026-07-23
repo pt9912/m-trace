@@ -161,6 +161,8 @@ aufgerufen:
 | `IngestControlInbound` | Stream-/Ingest-Steuerung (Key-Erzeugung, Endpunkte, Lifecycle-Hooks) |
 | `SessionsInbound` | Lese-/Listing-Pfad für Sessions und Timelines |
 | `StreamAnalysisInbound` | Manifest-/CMAF-Analyse (`POST /api/analyze`) |
+| `SrtHealthInbound` | SRT-Health-Read-Pfade (jüngster Sample je Stream + paginierte History) |
+| `EventStreamInbound` | SSE-Live-Update-Stream: project-skopiertes Abonnement der Append-Frames |
 
 **Driven Ports** — Abhängigkeiten, die die Use Cases über Abstraktionen aufrufen;
 die Adapter implementieren sie (§3.4). Gruppiert nach Capability:

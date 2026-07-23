@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	apihttp "github.com/pt9912/m-trace/apps/api/adapters/driving/http"
-	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 )
 
@@ -412,7 +411,7 @@ func TestAnalyzeHandler_RejectsOversizedBody(t *testing.T) {
 
 func TestAnalyzeHandler_MapsErrEmptyTo400(t *testing.T) {
 	t.Parallel()
-	stub := &stubAnalysisInbound{err: application.ErrAnalyzeManifestEmpty}
+	stub := &stubAnalysisInbound{err: domain.ErrAnalyzeManifestEmpty}
 	server := httptest.NewServer(newAnalyzeHandler(stub))
 	defer server.Close()
 

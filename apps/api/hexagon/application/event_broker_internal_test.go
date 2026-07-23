@@ -50,7 +50,7 @@ func TestEventBroker_CancelledSubscriberDoesNotCloseSnapshotChannel(t *testing.T
 			panicked = recover()
 		}()
 		select {
-		case staleSnapshot[0].ch <- EventAppendedFrame{
+		case staleSnapshot[0].ch <- domain.EventAppendedFrame{
 			ProjectID:      "demo",
 			SessionID:      "sess-1",
 			EventName:      "manifest_loaded",

@@ -515,7 +515,7 @@ func buildHandler(
 		// geloggt; hier nur Service als nil weiterreichen.
 		srtHealthService = nil
 	}
-	var srtHealthInbound apihttp.SrtHealthInbound
+	var srtHealthInbound driving.SrtHealthInbound
 	if srtHealthService != nil {
 		srtHealthInbound = srtHealthService
 	}

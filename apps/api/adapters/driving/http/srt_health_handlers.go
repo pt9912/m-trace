@@ -12,29 +12,14 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
+	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
 )
 
 // rfc3339Millis ist das einheitliche Output-Format für die SRT-
 // Health-Read-Pfade (millisekunden-genau, UTC mit `Z`-Suffix).
 const rfc3339Millis = "2006-01-02T15:04:05.000Z07:00"
-
-// SrtHealthInbound ist der Driving-Port für die SRT-Health-Read-
-// Pfade (RAK-43, spec/backend-api-contract.md
-// . Application-Layer implementiert das Interface über
-// SrtHealthQueryService.
-//
-// HistoryByStream akzeptiert ab einen
-// optionalen Cursor (`after`) und liefert eine Page mit
-// optionalem Folge-Cursor (spec §7a.3). Der Cursor ist die Repo-
-// Sicht (`driven.SrtHealthCursor`); der HTTP-Adapter codiert ihn in
-// das Wire-Format aus §10.3 v3.
-type SrtHealthInbound interface {
-	LatestByStream(ctx context.Context, projectID string) ([]application.SrtHealthSummary, error)
-	HistoryByStream(ctx context.Context, projectID, streamID string, limit int, after *driven.SrtHealthCursor) (application.SrtHealthHistoryPage, error)
-}
 
 const (
 	srtHealthListSpan = "http.handler GET /api/srt/health"
@@ -45,7 +30,7 @@ const (
 // pro StreamID den jüngsten persistierten Sample mit derived/
 // freshness-Block (spec §7a.2).
 type SrtHealthListHandler struct {
-	UseCase  SrtHealthInbound
+	UseCase  driving.SrtHealthInbound
 	Resolver driven.ProjectResolver
 	Tracer   trace.Tracer
 	Logger   *slog.Logger
@@ -98,7 +83,7 @@ func (h *SrtHealthListHandler) serve(ctx context.Context, w http.ResponseWriter,
 // `GET /api/srt/health/{stream_id}`. Liefert die letzten N Samples
 // einer (project, stream)-Kombination mit derived-/freshness-Feldern.
 type SrtHealthGetHandler struct {
-	UseCase  SrtHealthInbound
+	UseCase  driving.SrtHealthInbound
 	Resolver driven.ProjectResolver
 	Tracer   trace.Tracer
 	Logger   *slog.Logger
@@ -164,7 +149,7 @@ func (h *SrtHealthGetHandler) serve(ctx context.Context, w http.ResponseWriter, 
 	}
 	page, err := h.UseCase.HistoryByStream(ctx, projectID, streamID, limit, after)
 	if err != nil {
-		if errors.Is(err, application.ErrSrtHealthStreamUnknown) {
+		if errors.Is(err, domain.ErrSrtHealthStreamUnknown) {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "stream_unknown", "stream_id": streamID})
 			return
 		}
@@ -241,7 +226,7 @@ type srtHealthWireFreshness struct {
 	StaleAfterMillis int64   `json:"stale_after_ms"`
 }
 
-func encodeSrtHealthSummary(s application.SrtHealthSummary) srtHealthWireItem {
+func encodeSrtHealthSummary(s driving.SrtHealthSummary) srtHealthWireItem {
 	sample := s.Sample
 	return srtHealthWireItem{
 		StreamID:        sample.StreamID,
@@ -307,7 +292,3 @@ func parseSrtHealthLimit(raw string) (int, error) {
 	}
 	return n, nil
 }
-
-// Compile-Time-Check: SrtHealthQueryService implementiert
-// SrtHealthInbound.
-var _ SrtHealthInbound = (*application.SrtHealthQueryService)(nil)

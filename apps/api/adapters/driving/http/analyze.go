@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pt9912/m-trace/apps/api/hexagon/application"
 	"github.com/pt9912/m-trace/apps/api/hexagon/domain"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driven"
 	"github.com/pt9912/m-trace/apps/api/hexagon/port/driving"
@@ -350,7 +349,7 @@ func findingsToPayload(in []domain.StreamAnalysisFinding) []analyzeFindingPayloa
 //  bewusst aus dem Antwort-Body (Info-Leak); sie wird strukturiert
 //  im Log abgelegt.
 func (h *AnalyzeHandler) mapAndWriteUseCaseError(w http.ResponseWriter, err error) {
-	if errors.Is(err, application.ErrAnalyzeManifestEmpty) {
+	if errors.Is(err, domain.ErrAnalyzeManifestEmpty) {
 		logWarn(h.Logger, "analyze rejected: empty input", "code", "invalid_request")
 		writeAnalyzeProblem(w, http.StatusBadRequest, "invalid_request", err.Error(), nil)
 		h.recordOutcome("error", "invalid_request")
