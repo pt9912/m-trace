@@ -17,20 +17,18 @@ Schätzung, treiben aber nie eine Welle.
 
 ## Aktuelle Welle
 
-**Welle:** v3.5.0-Harness-Migration — Content-Phase (W6 aktiv)
-**Plan:** [`plan-harness-v3.5.0-migration.md`](plan-harness-v3.5.0-migration.md)
-([ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) Accepted)
+**Welle:** [`welle-01-requirement-link-konvergenz`](../welle-01-requirement-link-konvergenz.md)
+— `ids` repo-weit scharfschalten (verankerte Requirement-Links).
 
-**Wichtigste Slices (verbleibend):**
-- **W6** — kanonische Slice/Welle-Form für neue Arbeit deklariert (MR-007) +
-  `plan-<version>`-Bestand grandfathered + frische Kanon-Roadmap (dieses
-  Dokument), Alt-Roadmap archiviert.
-- **W7** — opt-in-d-check-Module (`version.md` anlegen; `versions`/`ids`/
-  `citations`/`sources` je nach advisory-Lauf aktivieren).
+**Wichtigste Slices:**
+- [`slice-001`](slice-001-requirement-anker-ids.md) (in-progress) — Requirement-
+  Anker im Lastenheft + `ids` auf den Spec-Straten (`scope.roots: [spec]`).
+- `slice-002` (geplant, bei slice-001-Closure geschnitten) — `ids`-Scope-
+  Ausweitung: `R-`-Familie/risks-backlog, docs/user, examples, Planning-`in-progress/`.
 
-**Closure-Trigger (beobachtbar):** W7-Module grün in `make gates` (keine
-Falschbefunde), `version.md` kanonisch angelegt; `make gates` grün. **Kein
-Datum.** (W1–W5 sind abgeschlossen — siehe *Abgeschlossene Wellen*.)
+**Closure-Trigger (beobachtbar):** alle Slices in `done/`, `ids` repo-weit grün in
+`make gates` (Exempts: immutable ADRs, `done/`, `CHANGELOG`), §Requirement-Link-
+Konvergenz graduiert, `welle-01-results.md` geschrieben. **Kein Datum.**
 
 ## Nächste Wellen
 
@@ -49,7 +47,7 @@ Mutation-Gate-Blockierung bleibt deferred, bis echte >70 %-Score-Reihen vorliege
 | Meilenstein | Welle(n) | Trigger (extern) | Status |
 |---|---|---|---|
 | `0.25.0` released | Multi-Tenant-Fairness + Cutover | Tag `v0.25.0` + GHCR/npm-Publish (2026-07-13) | erreicht |
-| v3.5.0-Harness-Migration abgeschlossen | W1–W7 | W7 done, `make gates` grün | offen |
+| v3.5.0-Harness-Migration abgeschlossen | W1–W7 | W7 done, `make gates` grün (2026-07-23) | erreicht |
 
 ## Abhängigkeitsgraph
 
@@ -61,7 +59,8 @@ flowchart LR
     W4 --> W5[W5 Layout-Move]
     W5 --> W6[W6 Planning-Form + Roadmap]
     W6 --> W7[W7 opt-in-Module]
-    W7 --> P[Produkt-Folgewelle]
+    W7 --> WL1[welle-01 Requirement-Link-Konvergenz]
+    WL1 --> P[Produkt-Folgewelle]
 ```
 
 ## Abgeschlossene Wellen
@@ -74,6 +73,8 @@ flowchart LR
 | Migration W3 — Review-/Closure-Harness | 2026-07-22 | [Plan §2](plan-harness-v3.5.0-migration.md) ([ADR-0010](../../adr/0010-closure-note-pflicht.md)) |
 | Migration W4 — Carveouts + Werkzeug-Triage | 2026-07-23 | [Triage](risks-backlog-werkzeug-triage.md), MR-005/006 |
 | Migration W5 — Layout-Move (`docs/plan/…`) | 2026-07-23 | [Plan §3/§5](plan-harness-v3.5.0-migration.md), MR-001 aufgelöst |
+| Migration W6 — Planning-Form + Roadmap-Reformat | 2026-07-23 | [Plan §2](plan-harness-v3.5.0-migration.md), MR-007 |
+| Migration W7 — `version.md` + `versions`-Modul | 2026-07-23 | [Plan §2](plan-harness-v3.5.0-migration.md); `ids` → `welle-01` |
 
 > Der Bestand ist grandfathered (MR-007): abgeschlossene Produktarbeit liegt als
 > `plan-<version>.md` in `done/`, nicht als `welle-<NN>-results.md`. Neue Wellen
