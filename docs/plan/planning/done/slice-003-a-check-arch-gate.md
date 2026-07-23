@@ -65,6 +65,27 @@ DoD grün + `make gates` grün + Closure-Notiz; `git mv` nach `done/`.
 - **Heuristik-Grenze:** a-check liest Importe text-heuristisch — für m-traces
   Go-Code im Spike **null** Falschtreffer; `markers.ignore_symbols` steht bereit.
 
+## 7. Closure-Notiz
+
+**Geliefert:** `make arch-check` läuft deklarativ über a-check (`.a-check.yml` +
+`a-check.mk`, digest-gepinnt); `check-architecture.sh` entfernt; `make gates` grün.
+
+**Was funktionierte:** der empirische Spike **vor** der Umstellung — 0 Befunde
+belegten die Verhaltensgleichheit zu `check-architecture.sh`, die Gegenprobe
+(`net/http` in die Domain → `core-impurity`) belegte Nicht-Vakuum. Kein
+Heuristik-Falschtreffer auf m-traces Go-Code.
+
+**Was anders lief (Steering-Loop):** (1) Die anfängliche Sorge „a-check ist
+text-heuristisch, also unpräziser als `go list`" war für m-traces Code
+**empirisch falsch** — erst messen, dann urteilen. (2) Die Trivy-Cache-Walk-
+Reibung wurde **upstream gelöst** (a-check v0.14.0: `exclude` prunt den
+Verzeichnis-Walk) statt umgangen — die Config zeigt jetzt auf die Repo-Wurzel
+und ist multi-sprach-erweiterbar (TS-Pakete später).
+
+**Folge-Slice:** `slice-004` — Driving-Port-Boundary säubern (die
+`adapters→application`-Kante entfernen + ~7 `application`-Symbole nach
+`port/domain` heben), von a-check selbst abgesichert.
+
 ## 8. Sub-Area-Modus-Begründung
 
 ### Sub-Area: Architektur-Gate (Tooling)
