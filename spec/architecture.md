@@ -251,33 +251,43 @@ Absicherung als ausführbares Skript: `apps/api/scripts/check-architecture.sh` (
 
 ## 4. Verzeichnis- und Modulstruktur
 
-### 4.1 Zielstruktur Mono-Repo (`0.1.x`)
+### 4.1 Mono-Repo-Struktur
 
 ```text
 m-trace/
 ├── apps/
 │   ├── api/                         # Backend-API (Go, hexagonal)
+│   ├── analyzer-service/            # interner HTTP-Wrapper um @pt9912/stream-analyzer
 │   └── dashboard/                   # Web-Dashboard (SvelteKit)
 ├── packages/
-│   ├── player-sdk/                  # Player-SDK (TypeScript)
-│   ├── stream-analyzer/             # Manifest-Analyzer 
-│   ├── shared-types/                # gemeinsame Typen
-│   └── config/                      # gemeinsame Konfiguration
+│   ├── player-sdk/                  # @pt9912/player-sdk (TypeScript, ESM/CJS/IIFE)
+│   └── stream-analyzer/             # @pt9912/stream-analyzer (Manifest-/CMAF-Analyzer, Library + CLI)
 ├── services/
-│   ├── stream-generator/            # FFmpeg-Teststream
-│   └── media-server/                # MediaMTX
+│   ├── stream-generator/            # FFmpeg-Teststream (Lab)
+│   └── media-server/                # MediaMTX (Lab)
 ├── observability/
 │   ├── prometheus/
 │   ├── grafana/
-│   └── otel-collector/              # OpenTelemetry Collector + Konfiguration
-├── docs/
+│   ├── otel-collector/              # OpenTelemetry Collector + Konfiguration
+│   └── tempo/                       # Trace-Backend (optionales Profil)
+├── contracts/                       # Wire-/Kompat-Verträge (event-schema.json, sdk-compat.json)
+├── examples/                        # Multi-Protocol-Lab (mediamtx, srt, dash, srs, webrtc, ingest-control)
+├── deploy/                          # Deployment-Beispiele (compose, docker, k8s)
+├── scripts/                         # CI-/Gate-Skripte (Benchmarks, Schema, Closure-Notes, Anker)
+├── tests/
+│   └── e2e/                         # Browser-E2E (Playwright)
+├── spec/                            # Contract + technische Spezifikationen + Contract-Fixtures
+├── docs/                            # ADRs + Planung + Anwender-/Ops-/Dev-Doku (`docs/plan/…`)
+├── harness/                         # Harness-Konventionen (Ergänzung zu AGENTS.md)
 ├── docker-compose.yml               # Lokal-Lab
+├── docker-compose.scaleout.yml      # Multi-Replica-Postgres-Lab
+├── version.md                       # Release-Register (`version.md#aktuell`)
 ├── package.json                     # pnpm Workspace Root
 ├── pnpm-workspace.yaml
 └── pnpm-lock.yaml
 ```
 
-Dies ist die Soll-Struktur. Der aktuelle Implementierungsstand pro Verzeichnis wird im Code und in den Plan-Dokumenten geführt.
+Repräsentativer Ausschnitt des aktuellen Stands (nicht erschöpfend). `shared-types`/`config` wurden nie als eigene Pakete angelegt; gemeinsame Typen leben in den jeweiligen Paketen.
 
 ### 4.2 Hexagon-Layout pro App (`apps/api/` exemplarisch)
 
@@ -296,16 +306,22 @@ apps/api/
 │   ├── driving/
 │   │   └── http/
 │   └── driven/
-│       ├── auth/
+│       ├── auth/                     # Session-/Project-Token, Signing-Key-Resolver, Secret-Backend
+│       ├── mediaserver/              # MediaMTX-/SRS-Provisionierung + Auth-Hook-Bridge
 │       ├── metrics/
 │       ├── persistence/             # Sub-Pakete pro Backend:
 │       │   ├── inmemory/            # Test-/Dev-Fallback
 │       │   ├── sqlite/              # Default
+│       │   ├── postgres/            # optionaler Scale-out-Adapter (`MTRACE_PERSISTENCE=postgres`)
 │       │   └── contract/            # gemeinsame Adapter-Test-Suite
-│       ├── ratelimit/
-│       └── telemetry/
+│       ├── ratelimit/               # Ingest-/Issuance-/Origin-Limiter (`memory` + `redis`)
+│       ├── redisutil/               # geteilte Redis-Helfer (Lua, Bucket-Keys)
+│       ├── srt/                     # SRT-Health-Quelle (MediaMTX-API)
+│       ├── streamanalyzer/          # Adapter auf @pt9912/stream-analyzer
+│       ├── telemetry/
+│       └── webhooks/                # ausgehende Webhook-Zustellung (HMAC-SHA-256)
 ├── internal/
-│   └── storage/                     # SQLite-Apply-Runner + Migrationen
+│   └── storage/                     # Apply-Runner + Migrationen (SQLite + Postgres)
 ├── go.mod                           # github.com/pt9912/m-trace/apps/api
 ├── go.sum
 ├── Dockerfile                       # multi-stage: deps, compile, lint, test, build, runtime
