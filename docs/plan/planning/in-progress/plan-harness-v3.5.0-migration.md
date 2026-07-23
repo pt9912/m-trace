@@ -2,8 +2,9 @@
 
 > **Status**: In progress — 2026-07-23. **W1 (Vendored Baseline) + W2 (AGENTS.md)
 > + W3 (Review-/Closure-Harness) + W4 (Carveout-Mechanismus + risks-backlog-Triage)
-> + W5 (Layout-Move, MR-001 aufgelöst) umgesetzt**; nächste Welle W6 (Kanonische
-> Planning-Form + roadmap-Reformat). Umsetzung von
+> + W5 (Layout-Move, MR-001 aufgelöst) + W6 (Kanonische Planning-Form + roadmap-
+> Reformat) umgesetzt**; nächste und letzte Welle W7 (opt-in-d-check-Module).
+> Umsetzung von
 > [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) (**Accepted 2026-07-22**):
 > strukturelle Adoption des v3.5.0-Kanons.
 >
@@ -23,7 +24,9 @@
 > **Wellen-Fortschritt**: W1 ✅ · W2 ✅ · W3 ✅ (2026-07-22, inkl. vorgezogenem
 > Closure-Note-Stack) · W4 ✅ (2026-07-23, ADR-0010 Accepted + Carveout-Mechanismus
 > + Werkzeug-Triage) · W5 ✅ (2026-07-23, Layout-Move nach `docs/plan/…`, MR-001
-> aufgelöst, immutable-ADR-Verweise per `ignore-refs`-Tombstone) · W6–W7 offen.
+> aufgelöst, immutable-ADR-Verweise per `ignore-refs`-Tombstone) · W6 ✅
+> (2026-07-23, MR-007 Slice/Welle-Form + `plan-<version>`-Grandfathering, frische
+> Kanon-`roadmap.md`, Alt-Roadmap → `done/roadmap-pre-v3.5.0.md`) · W7 offen.
 
 ## 1. Ziel
 
@@ -58,7 +61,7 @@ und der risikoreiche Link-Churn ist eine isolierte, gate-abgesicherte letzte Wel
 | **W3 — docs/reviews/ + next/** | `docs/reviews/` (Review-Report-Template) + `docs/planning/next/` anlegen; Reviewer-/Closure-Note-Skills nach `.harness/skills/` (aus Template) | W2 done | Verzeichnisse + Templates da, Konvention in `AGENTS.md`/`harness/README.md` verlinkt, Gates grün |
 | **W4 — Carveout-Mechanismus + risks-backlog-Triage** ✅ | `docs/plan/carveouts/` ([Index](../../carveouts/README.md) + Verweis aufs vendored Template) angelegt; [Werkzeug-Triage](risks-backlog-werkzeug-triage.md) der aktiven R-N: R-9/R-12/R-28/R-30 = Roadmap-Kandidat (bleiben im Register, MR-005), Security-Suppression-Cluster R-13 u. a. = BF-Sub-Area-Markierung (`.security/vulnignore.yaml`, MR-006), kein eigener ADR; `conventions.md` um MR-005/MR-006 + Modus-Zeile ergänzt | W3 done | ✅ Triage dokumentiert, `conventions.md` MR-Liste aktualisiert, `make docs-check` grün |
 | **W5 — Layout-Move (der Struktur-Umbau)** ✅ | `git mv docs/adr → docs/plan/adr`, `docs/planning → docs/plan/planning` (62 Renames); `.d-check.yml` repathed (codepaths-roots, trace.adrs/slices, matrix adr/planning-paths, `matrix.exempt-paths`, `vcs.paths`) + **`ignore-refs`-Tombstone** für die immutable-ADR-Verweise; 281 MD-Links (Skript-Repath), Nicht-MD-Refs (`.go`/`.ts`-Kommentare, `.gitignore`, `Dockerfile`, `scripts/*.{sh,py}` inkl. `check_closure_notes.py`, `lastenheft.md`-Tabelle), lebende-Doc-Labels; **MR-001 aufgelöst**. Historische Records (CHANGELOG, `docs/spike/`) bewusst unverändert | W4 done | ✅ `make docs-check` + `make gates` + Grep-Rest-Check grün, `docs-immutable` sieht ADRs am neuen Pfad (0 Verstöße, ADR-Bodies unangetastet), MR-001 aufgelöst |
-| **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren (Owner-entschieden, §1); Umgang mit dem Bestand `plan-<version>.md` — grandfathern (**Owner-ratifiziert 2026-07-21, Variante A, §4**); **frische, altlastenfreie `roadmap.md`** (5 Abschnitte, forward-looking) am kanonischen Pfad anlegen und die bestehende historienlastige Roadmap per `git mv` nach `done/roadmap-pre-v3.5.0.md` **archivieren** (Owner-Entscheidung 2026-07-21); „Abgeschlossene Wellen" = **Pointer-Tabelle** auf `done/`-Closure-Notizen + Verweis auf die Alt-Roadmap für die volle Pre-v3.5.0-Historie | W5 done | frische `roadmap.md` folgt dem Kanon (keine Altlasten), Alt-Stand in `done/` verlinkt, MR in `conventions.md`, `make gates` grün |
+| **W6 — Kanonische Planning-Form** ✅ | **MR-007** deklariert die kanonische `slice-<NNN>`/`welle-<NN>`-Form für **neue** Arbeit + grandfathert den Bestand `plan-<version>.md` (Variante A); die **frische, altlastenfreie [`roadmap.md`](roadmap.md)** (Modul-6-Form: Aktuelle Welle · Nächste Wellen · Meilensteine · Abhängigkeitsgraph · Abgeschlossene Wellen · Historische Trigger-Verschiebungen) liegt am kanonischen Pfad; die historienlastige Fassung ist per `git mv` nach [`done/roadmap-pre-v3.5.0.md`](../done/roadmap-pre-v3.5.0.md) archiviert; „Abgeschlossene Wellen" = Pointer-Tabelle (`done/plan-*` + Migration-W1–W6) mit Verweis aufs Archiv. Config-Angleich (`trace.slices`-Pattern, Closure-Glob) ist ein netzloser Folge-Punkt beim ersten Slice/Welle-Artefakt (MR-007) | W5 done | ✅ frische `roadmap.md` kanonisch (keine Altlasten), Alt-Stand in `done/` verlinkt, MR-007 in `conventions.md`, `make docs-check` + `make gates` grün |
 | **W7 — opt-in-d-check-Module aktivieren** | zwei Teile: **(7a)** `version.md#aktuell` nach Regelwerk §Versions-Register **anlegen** — es existiert heute **keine** `version.md`; sie konsolidiert die verstreuten Quellen (`packages/*/src/version.ts` `0.25.0`, `DCHECK_DIGEST` in `Makefile`, Go-`serviceVersion` `0.25.0`, `releasing.md`-Bump-Checkliste). **(7b)** Module aktivieren: `versions` (ghcr-Pins gg. `version.md#aktuell`), `ids` (nach Anker-Retrofit, `conventions.md` §Requirement-link convergence), `citations`/`sources` nach Bedarf — je Modul erst advisory-Lauf ohne Befund, dann in `.d-check.yml` + `make gates` binden | W6 done | `version.md` kanonisch (single source), aktivierte Module grün in `make gates`, keine Falschbefunde, DoD je Modul |
 
 **Reihenfolge-Begründung:** W1–W4 sind additiv und netzlos — sie brechen keine

@@ -132,6 +132,28 @@ ausgewiesenen History-Abschnitten erlaubt.
   `docs/plan/carveouts/` bleibt für künftige einzelne, nicht-Security
   Gate-Senkungen reserviert.
 
+### MR-007 - Planning-Artefakt-Form (Slice/Welle vs. plan-&lt;version&gt;)
+
+- **Datum:** 2026-07-23
+- **Scope:** Planning-Artefakte unter `docs/plan/planning/`
+- **Baseline-Unterschied:** Der v3.5.0-Kanon (Modul 5/6) führt Arbeit als
+  **Slices** (`open/…/done/slice-<NNN>-<titel>.md`, Zustand = Verzeichnis) und
+  **Wellen** (`welle-<NN>.md` flach → `done/` neben `welle-<NN>-results.md`).
+  m-traces Bestand nutzt release-gekoppelte `plan-<version>.md`-Dateien in `done/`.
+- **Entscheidung (Owner 2026-07-21):** **Neue** Arbeit folgt der kanonischen
+  Slice/Welle-Form (aus den vendored Templates
+  `.harness/baseline/v3.5.0/templates/docs/plan/planning/{slice,welle}.template.md`).
+  Der **Bestand `plan-<version>.md` wird grandfathered** (Variante A): historische
+  Release-Records bleiben unverändert, keine Massen-Umbenennung, die
+  Release-Versions-Kopplung bleibt für die Alt-Form. Brownfield-konsistent
+  (analog MR-002-Grandfathering).
+- **Auflösungs-Trigger:** Permanent für den Bestand. **Folge-Punkt (bei erstem
+  Slice/Welle-Artefakt):** `trace.slices.file-pattern` (`.d-check.yml`, heute
+  `^plan-(.+)\.md$`) und der Closure-Note-Glob (`check_closure_notes.py --glob`,
+  heute `plan-*.md`) werden dann additiv um die `slice-*`/`welle-*-results`-Form
+  erweitert — solange keine solche Datei existiert, ist keine Config-Änderung
+  nötig (netzlos).
+
 ## Sensor-Bindungsklassen
 
 m-trace nutzt derzeit Requirement-Bindung (`F-*`, `NF-*`, `MVP-*`, `AK-*`,
