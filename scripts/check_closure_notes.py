@@ -23,9 +23,15 @@ import re
 import sys
 from pathlib import Path
 
-# A closure section is any heading whose text contains "Closure"
-# (matches "## Closure", "## Closure-Notiz", "## 7. Closure-Notiz", ...).
+# A closure section is a heading whose text contains "Closure". The
+# slice/welle template carries *two* such headings — "## 5. Closure-Trigger"
+# (boilerplate) and "## 7. Closure-Notiz" (the real note) — so we prefer the
+# note heading ("Closure-Not…"/"Closure Note") and fall back to any "Closure"
+# heading for plans that only carry a generic closure section.
 CLOSURE_HEADING = re.compile(r"^(#{2,})\s+.*Closure", re.IGNORECASE | re.MULTILINE)
+CLOSURE_NOTE_HEADING = re.compile(
+    r"^(#{2,})\s+.*Closure[-\s]?Not", re.IGNORECASE | re.MULTILINE
+)
 ANY_HEADING = re.compile(r"^#{1,6}\s+", re.MULTILINE)
 FENCE = re.compile(r"^```.*?^```", re.DOTALL | re.MULTILINE)
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -65,7 +71,10 @@ def load_grandfather(path: Path) -> set[str]:
 
 def closure_section_text(body: str) -> str | None:
     """Return the text of the closure section, or None if absent."""
-    m = CLOSURE_HEADING.search(body)
+    # Prefer the dedicated note heading ("Closure-Notiz"/"Closure Note"); fall
+    # back to the first generic "Closure" heading so plans with only a single
+    # closure section keep working.
+    m = CLOSURE_NOTE_HEADING.search(body) or CLOSURE_HEADING.search(body)
     if not m:
         return None
     start = m.end()
@@ -106,15 +115,31 @@ def main() -> int:
         default="docs/plan/planning/.closure-grandfathered",
         type=Path,
     )
-    ap.add_argument("--glob", default="plan-*.md")
+    ap.add_argument(
+        "--glob",
+        action="append",
+        default=None,
+        help=(
+            "Datei-Glob(s) in done/; wiederholbar. Default deckt die drei "
+            "Plan-Familien ab: plan-*.md, slice-*.md, welle-*.md."
+        ),
+    )
     args = ap.parse_args()
 
     if not args.done_dir.is_dir():
         print(f"check_closure_notes: done-dir nicht gefunden: {args.done_dir}", file=sys.stderr)
         return 2
 
+    globs = args.glob or ["plan-*.md", "slice-*.md", "welle-*.md"]
     grandfathered = load_grandfather(args.grandfather_file)
-    plans = sorted(args.done_dir.glob(args.glob))
+    seen: set[Path] = set()
+    plans: list[Path] = []
+    for pattern in globs:
+        for plan in sorted(args.done_dir.glob(pattern)):
+            if plan not in seen:
+                seen.add(plan)
+                plans.append(plan)
+    plans.sort()
     checked = 0
     exempt = 0
     violations: list[str] = []

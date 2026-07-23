@@ -57,4 +57,11 @@ Zustand jedes Slice = sein Lifecycle-Verzeichnis (nicht hier gespiegelt).
 
 ## 7. Closure-Notiz
 
-<!-- Erst nach Welle-Abschluss füllen. Verweis auf welle-01-results.md. -->
+Die Welle konvergierte die Requirement-Verlinkung in zwei Slices: `slice-001`
+baute die Anker-Infrastruktur und verankerte die Spec-Straten, `slice-002` weitete
+das auf die R-Familie und die übrige Doku aus. Am Ende waren nackte
+Requirement-Kennungen durchgängig verankerte Links, und `ids`/`anchors`/`links`
+erzwingen das seither maschinell in `make gates`. Der detaillierte Nachweis
+(RTM-Zählung, Vorher/Nachher je Modul) liegt in `welle-01-results.md`; die
+Steering-Lehre — advisory RTM (`--trace`) nach Doku-Struktur-Edits separat prüfen —
+ist dort und in der `slice-001`-Note festgehalten.
