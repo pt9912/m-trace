@@ -111,8 +111,8 @@ flowchart TB
 
     subgraph driven["Driven Adapters"]
         Persist["persistence<br/>sqlite (default) / inmemory"]
-        Auth["auth<br/>StaticProjectResolver"]
-        Rate["ratelimit<br/>TokenBucket"]
+        Auth["auth<br/>Token-Auflösung"]
+        Rate["ratelimit<br/>memory / redis"]
         Metrics["metrics<br/>PrometheusPublisher"]
         Telemetry["telemetry<br/>OTel-Adapter"]
     end
@@ -144,95 +144,78 @@ Die Domain-Errors (`ErrSchemaVersionMismatch`, `ErrUnauthorized`, `ErrBatchEmpty
 
 ### 3.3 Ports
 
-Driving Ports werden vom Adapter aufgerufen:
+Ports sind die framework-neutralen Schnittstellen zwischen Domain/Use Cases und
+Adaptern. Diese Sicht beschreibt die Port-**Familien und ihre Rolle**; die
+konkreten Methoden-Signaturen sind Implementierungsdetail **unterhalb** dieser
+Sicht und werden hier nicht geführt — so bleibt die Sicht gegen
+Signatur-Änderungen stabil und der Vertrag (Rolle/Verantwortung) klar von der
+Umsetzung getrennt.
 
-```go
-type PlaybackEventInbound interface {
-    RegisterPlaybackEventBatch(ctx context.Context, in BatchInput) (BatchResult, error)
-}
-```
+**Driving Ports** — Use-Case-Eintrittspunkte, von den Driving-Adaptern
+aufgerufen:
 
-Driven Ports werden vom Use Case aufgerufen:
+| Port | Rolle |
+|---|---|
+| `PlaybackEventInbound` | Annahme eines Player-Event-Batches (zentraler Ingest-Pfad, §5.1) |
+| `AuthSessionInbound` | Ausstellung kurzlebiger Session-Tokens |
+| `IngestControlInbound` | Stream-/Ingest-Steuerung (Key-Erzeugung, Endpunkte, Lifecycle-Hooks) |
+| `SessionsInbound` | Lese-/Listing-Pfad für Sessions und Timelines |
+| `StreamAnalysisInbound` | Manifest-/CMAF-Analyse (`POST /api/analyze`) |
 
-```go
-type EventRepository interface {
-    Append(ctx context.Context, events []domain.PlaybackEvent) error
-}
+**Driven Ports** — Abhängigkeiten, die die Use Cases über Abstraktionen aufrufen;
+die Adapter implementieren sie (§3.4). Gruppiert nach Capability:
 
-type ProjectResolver interface {
-    ResolveByToken(ctx context.Context, token string) (domain.Project, error)
-}
+| Capability | Ports | Zweck |
+|---|---|---|
+| Persistenz | `EventRepository`, `SessionRepository`, `IngestStreamRepository`, `ProjectTokenRepository`, `SrtHealthRepository`, `IngestSequencer` | durable Storage, backend-agnostisch (inmemory/sqlite/postgres) |
+| Auth | `ProjectResolver`, `ProjectPolicyResolver`, `AuthSecretBackend`, `SessionTokenSigner`, `SigningKeyResolver`, `TokenIDGenerator` | Token-Auflösung, Signatur-Key-Rotation, Secret-Backend, Ingest-Policy |
+| Rate Limiting | `RateLimiter`, `IssuanceRateLimiter`, `OriginRateLimiter` | Ingest-/Issuance-/Origin-Drosselung |
+| Observability | `Telemetry`, `MetricsPublisher` | framework-neutrale OTel-Fassade + Prometheus-Aggregat-Counter |
+| Externe I/O | `SrtSource`, `MediaServerProvisioner`, `OutboundWebhookDispatcher`, `StreamAnalyzer` | SRT-Metrikquelle, MediaMTX-/SRS-Provisionierung, ausgehende Webhooks, Manifest-Analyzer |
 
-type RateLimiter interface {
-    Allow(ctx context.Context, key RateLimitKey, n int) error
-}
+Zwei Port-Verträge tragen eine Design-Entscheidung über die reine Signatur hinaus:
 
-// RateLimitKey trägt die drei Dimensionen aus 
-// (F-110). Leere Felder werden vom Adapter übersprungen — das stellt
-// sicher, dass CLI-/Lab-Pfade ohne Origin nur Project- und Client-IP-
-// Tokens verbrauchen.
-type RateLimitKey struct {
-    ProjectID string
-    ClientIP  string
-    Origin    string
-}
-
-type MetricsPublisher interface {
-    EventsAccepted(n int)
-    InvalidEvents(n int)
-    RateLimitedEvents(n int)
-    DroppedEvents(n int)
-}
-
-type Telemetry interface {
-    BatchReceived(ctx context.Context, size int)
-}
-
-// SRT-Health-Ports.
-// Vollständiges Datenmodell in spec/telemetry-model.md und
-// spec/backend-api-contract.md.
-type SrtSource interface {
-    SnapshotConnections(ctx context.Context) ([]domain.SrtConnectionSample, error)
-}
-
-type SrtHealthRepository interface {
-    Append(ctx context.Context, samples []domain.SrtHealthSample) error
-    LatestByStream(ctx context.Context, projectID string) ([]domain.SrtHealthSample, error)
-    HistoryByStream(ctx context.Context, projectID, streamID string, limit int, cursor *Cursor) ([]domain.SrtHealthSample, *Cursor, error)
-}
-```
-
-`Telemetry` ist die framework-neutrale Fassade für OTel-Aufrufe aus dem Use Case. Implementierung in `adapters/driven/telemetry` mappt `BatchReceived` auf einen `Int64Counter` (`mtrace.api.batches.received`) mit `batch.size` als Attribut. Weitere Methoden (z. B. `BatchValidated`, `BatchPersisted`) werden bei Bedarf ergänzt — die Domain kennt nur die Port-Signatur, nicht OTel.
-
-`SrtSource` ist der Driven-Port für die SRT-Metrikquelle (MediaMTX-Control-API über HTTP). Die Domain kennt **keine** MediaMTX-spezifischen Felder; der Adapter normalisiert das Quellschema gegen `SrtConnectionSample`. `SrtHealthRepository` ist der durable-Storage-Port; SQLite-Adapter liefert die Default-Implementierung (siehe §3.4).
+- **`RateLimiter`** nimmt einen dreidimensionalen Schlüssel (`project_id`,
+  `client_ip`, `origin`, [`F-110`](lastenheft.md#f-110)); leere Dimensionen
+  überspringt der Adapter, sodass CLI-/Lab-Pfade ohne Origin nur Project- und
+  Client-IP-Budgets verbrauchen.
+- **`Telemetry`** ist die framework-neutrale Fassade für OTel aus dem Use Case
+  (der Adapter mappt auf einen `Int64Counter`); die Domain kennt nur die
+  Port-Signatur, nicht OTel. **`SrtSource`** normalisiert das MediaMTX-Quellschema
+  gegen das Domain-Modell — die Domain kennt keine MediaMTX-spezifischen Felder.
 
 ### 3.4 Adapter
 
-Adapter dürfen `hexagon/` importieren, niemals umgekehrt. Compile-Time-Enforcement der Implementierungs-Treue erfolgt über Sentinel-Checks:
+Adapter (`apps/api/adapters/`) implementieren die Ports aus §3.3 und dürfen
+`hexagon/` importieren, niemals umgekehrt. Compile-Time-Treue über Sentinel-Checks
+(`var _ driven.EventRepository = (*SqliteEventRepository)(nil)`).
 
-```go
-var _ driven.EventRepository = (*InMemoryEventRepository)(nil)
-```
+**Driving** — `adapters/driving/http/`: Router (Go-Method-Routing) mit einem
+Handler je Endpunkt-Familie (playback-events, auth/session-tokens, ingest,
+sessions, analyze, srt/health) plus dem gemounteten Prometheus-Handler;
+Request-Spans via `otel.Tracer`, Span-Attribute für Status-Code und `batch.size`.
 
-Adapter im Zielbild (`apps/api/`):
+**Driven** — je Capability (§3.3), Paket nach technischer Fähigkeit benannt (nicht
+nach Provider):
 
-| Pfad                                             | Rolle            | Implementierung                                                                                                                                                                                               | Hinweis                                                                                                                             |
-| ------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `adapters/driving/http/`                         | Driving          | `PlaybackEventsHandler`, `HealthHandler`, Router (Go-1.22-Method-Routing); Request-Spans via `otel.Tracer`                                                                                                    | mountet Prometheus-Handler aus `metrics`-Adapter; setzt Span-Attribute für Status-Code und (bei Erfolg) `batch.size`.               |
-| `adapters/driven/auth/`                          | Driven           | `StaticProjectResolver`                                                                                                                                                                                       | static-Map-Lookup auf `X-MTrace-Token`; spätere Auth-Backends (Folge-ADR) ersetzen die Implementierung ohne Änderungen am Use Case. |
-| `adapters/driven/persistence/`                   | Driven           | Sub-Pakete `inmemory/`, `sqlite/`, `contract/` — beide Backends erfüllen denselben Port-Vertrag (gemeinsame Test-Suite in `contract/`)                                                                        | SQLite ist Default; Apply-Runner in `apps/api/internal/storage`. InMemory bleibt für Tests/Dev-Fallback. |
-| `adapters/driven/ratelimit/`                     | Driven           | `TokenBucket`                                                                                                                                                                                                 | 100 Events/s/Project laut [`F-110`](lastenheft.md#f-110), [`F-119`](lastenheft.md#f-119).                                                                                          |
-| `adapters/driven/metrics/`                       | Driven           | `PrometheusPublisher`                                                                                                                                                                                         | exposed über `/api/metrics`; vier Pflicht-Counter (siehe §5.2).                                                                     |
-| `adapters/driven/telemetry/`                     | Driven           | implementiert `Telemetry`-Port via OTel-`Int64Counter` (`mtrace.api.batches.received`); Setup von `MeterProvider` und `TracerProvider` mit `autoexport`-Reader/Span-Exporter                                  | siehe §5.3 für Setup- und Exporter-Vertrag.                                                                                         |
-| `adapters/driven/srt/mediamtxclient/`            | Driven | implementiert `SrtSource`-Port via HTTP-Client gegen MediaMTX `/v3/srtconns/list`; parst gegen die Fixture [`spec/contract-fixtures/srt/mediamtx-srtconns-list.json`](contract-fixtures/srt/mediamtx-srtconns-list.json) | CGO-frei, kein libsrt-Import; Auth via `Authorization: Basic` aus ENV.                                                              |
-| `adapters/driven/persistence/sqlite/srt_health/` | Driven | implementiert `SrtHealthRepository` über die `srt_health_samples`-Tabelle                                                                                                                                              | Migration läuft im selben Apply-Runner wie `playback_events`/`stream_sessions`.                                                     |
+| Paket | implementiert | Varianten / Hinweis |
+|---|---|---|
+| `driven/persistence/` | Repository- + `IngestSequencer`-Ports | `inmemory` (Test/Dev), `sqlite` (Default), `postgres` (opt-in Scale-out, `MTRACE_PERSISTENCE=postgres`); gemeinsame `contract`-Test-Suite; Apply-Runner in `internal/storage` (inkl. SRT-Health-Tabelle) |
+| `driven/auth/` | Auth-/Token-Ports | Project-/Session-Token (`mtr_pt_*`/`mtr_st_*`), Multi-Key-Signing-Resolver, ENV-/Vault-Secret-Backend, Project-Policy |
+| `driven/ratelimit/` + `driven/redisutil/` | Limiter-Ports | Token-Bucket `memory` (Default) oder shared `redis` (Lua); `redisutil` bündelt die Redis-Helfer |
+| `driven/metrics/` | `MetricsPublisher` | Prometheus-Aggregate über `/api/metrics` (vier Pflicht-Counter, §5.2) |
+| `driven/telemetry/` | `Telemetry` | OTel-`Int64Counter` + `MeterProvider`/`TracerProvider`-Setup (autoexport, No-Op-Fallback, §5.3) |
+| `driven/srt/` | `SrtSource` | HTTP-Client gegen MediaMTX `/v3/srtconns/list`, CGO-frei; parst gegen die Fixtures unter `spec/contract-fixtures/srt/` |
+| `driven/mediaserver/` | `MediaServerProvisioner` | MediaMTX-/SRS-Provisionierung + `externalAuth`-Hook-Bridge |
+| `driven/streamanalyzer/` | `StreamAnalyzer` | reicht die Manifest-Analyse an `@pt9912/stream-analyzer` durch (via `analyzer-service`) |
+| `driven/webhooks/` | `OutboundWebhookDispatcher` | HMAC-SHA-256-signierte Zustellung + Exponential-Backoff-Retry |
 
 OTel-Imports innerhalb der Anwendung sind ausschließlich in zwei Pfaden zulässig:
 
 - `adapters/driven/telemetry/` — implementiert den `Telemetry`-Port und das OTel-SDK-Setup.
 - `adapters/driving/http/` — erzeugt Request-Spans am HTTP-Boundary.
 
-Alle Pakete unterhalb `hexagon/` importieren weder `go.opentelemetry.io/otel` noch dessen Sub-Pakete. Übrige Adapter unter `adapters/driven/{auth,metrics,persistence,ratelimit}/` ebenfalls nicht. `cmd/api/` darf den Telemetry-Adapter wiring-mäßig importieren und sieht OTel daher transitiv — das ist kein Boundary-Verstoß.
+Alle Pakete unterhalb `hexagon/` importieren weder `go.opentelemetry.io/otel` noch dessen Sub-Pakete. Alle übrigen Driven-Adapter ebenfalls nicht. `cmd/api/` darf den Telemetry-Adapter wiring-mäßig importieren und sieht OTel daher transitiv — das ist kein Boundary-Verstoß.
 
 Die Regel betrifft also **direkte** Imports und gilt geschichtet. Verbindliche Boundary-Tabelle:
 
@@ -349,10 +332,10 @@ Akteure:
 - **Browser** — Player-SDK
 - **HTTP** — `adapters/driving/http.PlaybackEventsHandler`
 - **UseCase** — `application.RegisterPlaybackEventBatch`
-- **Telemetry** — `adapters/driven/telemetry.OTelTelemetry` (über `Telemetry`-Port)
-- **Auth** — `adapters/driven/auth.StaticProjectResolver`
-- **Rate** — `adapters/driven/ratelimit.TokenBucket`
-- **Repo** — `adapters/driven/persistence.InMemoryEventRepository`
+- **Telemetry** — `adapters/driven/telemetry` (über `Telemetry`-Port)
+- **Auth** — `adapters/driven/auth` (Token-Auflösung über `ProjectResolver`)
+- **Rate** — `adapters/driven/ratelimit` (Token-Bucket, `memory`/`redis`)
+- **Repo** — `adapters/driven/persistence` (SQLite als Default)
 - **Metrics** — `adapters/driven/metrics.PrometheusPublisher`
 
 ```mermaid
@@ -536,8 +519,8 @@ gescraped ().
 | Logging                | `log/slog` mit JSON-Handler, einmalig in `main.go` als Default gesetzt                                                                                                                                                                                                                                                                                                                                                           | [`F-89`](lastenheft.md#f-89)                       |
 | Tracing & OTel-Counter | Driven Port `Telemetry` (siehe §3.3) wird vom Use Case aufgerufen; Adapter `adapters/driven/telemetry` mappt auf OTel-`Int64Counter` (`mtrace.api.batches.received`). Request-Spans erzeugt der HTTP-Adapter direkt via `otel.Tracer`. Reader/Exporter via `autoexport` mit No-Op-Fallback: ohne Env-Vars silent, mit `OTEL_TRACES_EXPORTER=otlp` (analog Metrics) wird OTLP registriert. Domain und Use Case bleiben OTel-frei. | [`F-91`](lastenheft.md#f-91), [`F-92`](lastenheft.md#f-92)                 |
 | Metriken               | Prometheus über `/api/metrics`-Endpoint, nur Aggregate                                                                                                                                                                                                                                                                                                                                                                           | [`F-93`](lastenheft.md#f-93), [`F-95`](lastenheft.md#f-95)..[`F-105`](lastenheft.md#f-105)             |
-| Auth                   | Header `X-MTrace-Token`, Auflösung über `ProjectResolver`                                                                                                                                                                                                                                                                                                                                                                        | [`F-106`](lastenheft.md#f-106)..[`F-110`](lastenheft.md#f-110), [`NF-24`](lastenheft.md#nf-24) |
-| Rate Limiting          | In-Memory Token-Bucket, 100 Events/s/Project                                                                                                                                                                                                                                                                                                                                                                                     | [`F-110`](lastenheft.md#f-110), [`F-119`](lastenheft.md#f-119)                  |
+| Auth                   | Project-Token (`mtr_pt_*`) für Ingest; kurzlebige Session-Token (`mtr_st_*`) mit rotierbaren Signing-Keys; Project-Policy + §3.9-konformer CORS-Preflight. Auflösung über die Auth-Ports (§3.3)                                                                                                                                                                                                                                    | [`F-106`](lastenheft.md#f-106)..[`F-113`](lastenheft.md#f-113), [`NF-24`](lastenheft.md#nf-24) |
+| Rate Limiting          | Token-Bucket `memory` (Default) oder shared `redis`; dimensioniert nach `project_id`/`client_ip`/`origin` (Ingest-, Issuance- und Origin-Limiter)                                                                                                                                                                                                                                                                                | [`F-110`](lastenheft.md#f-110), [`F-119`](lastenheft.md#f-119)                  |
 | Konfiguration          | Konstanten in `cmd/api/main.go`; Umweltvariablen folgen-Implementierung                                                                                                                                                                                                                                                                                                                                               | —                                  |
 
 ---
@@ -569,11 +552,11 @@ flowchart LR
 
 | Stage     | Image                                       | Zweck                                  |
 | --------- | ------------------------------------------- | -------------------------------------- |
-| `deps`    | `golang:1.22`                               | `go mod download`, Cache-Layer         |
-| `compile` | `golang:1.22`                               | schneller `go build` für Iteration     |
-| `lint`    | `golangci/golangci-lint:v1.62-alpine`       | statische Analyse              |
-| `test`    | `golang:1.22`                               | `go test ./...`                        |
-| `build`   | `golang:1.22`                               | Stripped binary (`-s -w`) für Runtime  |
+| `deps`    | `golang:1.26.5`                               | `go mod download`, Cache-Layer         |
+| `compile` | `golang:1.26.5`                               | schneller `go build` für Iteration     |
+| `lint`    | `golangci/golangci-lint:v2.12.1-alpine`       | statische Analyse              |
+| `test`    | `golang:1.26.5`                               | `go test ./...`                        |
+| `build`   | `golang:1.26.5`                               | Stripped binary (`-s -w`) für Runtime  |
 | `runtime` | `gcr.io/distroless/static-debian12:nonroot` | Final-Image (~10 MB, Cold-Start ~9 ms) |
 
 ### 8.2 Lokal-Lab
