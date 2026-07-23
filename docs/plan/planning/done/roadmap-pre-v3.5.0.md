@@ -253,7 +253,7 @@ strukturelle Adoption des v3.5.0-Regelwerks — vendored Baseline, AGENTS.md,
 Kanon-Layout `docs/plan/...`, Auflösung von MR-001, **kanonische Wellen/Slices-Form
 + `roadmap.md`-Reformat** (Owner-Entscheidung 2026-07-21). Sequenziert als
 7-Wellen-Plan
-([`in-progress/plan-harness-v3.5.0-migration.md`](../in-progress/plan-harness-v3.5.0-migration.md)):
+([`in-progress/plan-harness-v3.5.0-migration.md`](plan-harness-v3.5.0-migration.md)):
 additiv/netzlos zuerst (W1 vendored Baseline → W2 AGENTS.md → W3 reviews+next →
 W4 carveouts+risks-backlog-Triage), Struktur-Umbau/Link-Churn (W5 Layout-Move),
 dann Content-Wellen (W6 Wellen/Slices-Form + `roadmap.md`-Reformat, W7

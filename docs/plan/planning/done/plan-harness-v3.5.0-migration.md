@@ -1,6 +1,6 @@
 # Plan: Harness-Baseline-Migration auf ai-harness-course v3.5.0
 
-> **Status**: In progress — 2026-07-23. **W1 (Vendored Baseline) + W2 (AGENTS.md)
+> **Status**: **Abgeschlossen** — 2026-07-23. **W1 (Vendored Baseline) + W2 (AGENTS.md)
 > + W3 (Review-/Closure-Harness) + W4 (Carveout-Mechanismus + risks-backlog-Triage)
 > + W5 (Layout-Move, MR-001 aufgelöst) + W6 (Kanonische Planning-Form + roadmap-
 > Reformat) + W7 (opt-in-d-check-Module) umgesetzt** — **Migration W1–W7
@@ -18,7 +18,7 @@
 >
 > **Bezug**: [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md);
 > [`../../../harness/conventions.md`](../../../../harness/conventions.md) (Baseline,
-> MR-001..MR-004); [`roadmap.md`](roadmap.md).
+> MR-001..MR-004); [`roadmap.md`](../in-progress/roadmap.md).
 > Prozess-Anker [`RAK-95`](../../../../spec/lastenheft.md#rak-95) (Release-Automatisierung). Kein Lastenheft-Patch (Harness-/
 > Prozess-Arbeit, keine User-Surface).
 >
@@ -62,9 +62,9 @@ und der risikoreiche Link-Churn ist eine isolierte, gate-abgesicherte letzte Wel
 | **W1 — Vendored Baseline** | `lab-regelwerk.zip` (sha256 `123e3383…`) nach `.harness/baseline/v3.5.0/{regelwerk,templates}/` + `SHA256SUMS` entpacken; `harness/conventions.md` §Baseline auf vendored v3.5.0 umstellen (Commit-URL ersetzt) | ADR-0009 Accepted | Vendored Bundle committet, SHA256SUMS verifiziert, `make docs-check` grün |
 | **W2 — AGENTS.md** | `AGENTS.md` aus vendored Template kopiert-und-ausgefüllt (Source Precedence auf m-trace-Spec-Straten, reale Gate-Tabelle, Hard Rules, 8-Schritt-Workflow); `harness/README.md` gegen die Template-Pflichtgliederung abgeglichen | W1 done | `AGENTS.md` vorhanden, nur reale Make-Targets behauptet, `make docs-check` grün |
 | **W3 — docs/reviews/ + next/** | `docs/reviews/` (Review-Report-Template) + `docs/planning/next/` anlegen; Reviewer-/Closure-Note-Skills nach `.harness/skills/` (aus Template) | W2 done | Verzeichnisse + Templates da, Konvention in `AGENTS.md`/`harness/README.md` verlinkt, Gates grün |
-| **W4 — Carveout-Mechanismus + risks-backlog-Triage** ✅ | `docs/plan/carveouts/` ([Index](../../carveouts/README.md) + Verweis aufs vendored Template) angelegt; [Werkzeug-Triage](risks-backlog-werkzeug-triage.md) der aktiven R-N: [`R-9`](risks-backlog.md#r-9)/[`R-12`](risks-backlog.md#r-12)/[`R-28`](risks-backlog.md#r-28)/[`R-30`](risks-backlog.md#r-30) = Roadmap-Kandidat (bleiben im Register, MR-005), Security-Suppression-Cluster [`R-13`](risks-backlog.md#r-13) u. a. = BF-Sub-Area-Markierung (`.security/vulnignore.yaml`, MR-006), kein eigener ADR; `conventions.md` um MR-005/MR-006 + Modus-Zeile ergänzt | W3 done | ✅ Triage dokumentiert, `conventions.md` MR-Liste aktualisiert, `make docs-check` grün |
+| **W4 — Carveout-Mechanismus + risks-backlog-Triage** ✅ | `docs/plan/carveouts/` ([Index](../../carveouts/README.md) + Verweis aufs vendored Template) angelegt; [Werkzeug-Triage](../in-progress/risks-backlog-werkzeug-triage.md) der aktiven R-N: [`R-9`](../in-progress/risks-backlog.md#r-9)/[`R-12`](../in-progress/risks-backlog.md#r-12)/[`R-28`](../in-progress/risks-backlog.md#r-28)/[`R-30`](../in-progress/risks-backlog.md#r-30) = Roadmap-Kandidat (bleiben im Register, MR-005), Security-Suppression-Cluster [`R-13`](../in-progress/risks-backlog.md#r-13) u. a. = BF-Sub-Area-Markierung (`.security/vulnignore.yaml`, MR-006), kein eigener ADR; `conventions.md` um MR-005/MR-006 + Modus-Zeile ergänzt | W3 done | ✅ Triage dokumentiert, `conventions.md` MR-Liste aktualisiert, `make docs-check` grün |
 | **W5 — Layout-Move (der Struktur-Umbau)** ✅ | `git mv docs/adr → docs/plan/adr`, `docs/planning → docs/plan/planning` (62 Renames); `.d-check.yml` repathed (codepaths-roots, trace.adrs/slices, matrix adr/planning-paths, `matrix.exempt-paths`, `vcs.paths`) + **`ignore-refs`-Tombstone** für die immutable-ADR-Verweise; 281 MD-Links (Skript-Repath), Nicht-MD-Refs (`.go`/`.ts`-Kommentare, `.gitignore`, `Dockerfile`, `scripts/*.{sh,py}` inkl. `check_closure_notes.py`, `lastenheft.md`-Tabelle), lebende-Doc-Labels; **MR-001 aufgelöst**. Historische Records (CHANGELOG, `docs/spike/`) bewusst unverändert | W4 done | ✅ `make docs-check` + `make gates` + Grep-Rest-Check grün, `docs-immutable` sieht ADRs am neuen Pfad (0 Verstöße, ADR-Bodies unangetastet), MR-001 aufgelöst |
-| **W6 — Kanonische Planning-Form** ✅ | **MR-007** deklariert die kanonische `slice-<NNN>`/`welle-<NN>`-Form für **neue** Arbeit + grandfathert den Bestand `plan-<version>.md` (Variante A); die **frische, altlastenfreie [`roadmap.md`](roadmap.md)** (Modul-6-Form: Aktuelle Welle · Nächste Wellen · Meilensteine · Abhängigkeitsgraph · Abgeschlossene Wellen · Historische Trigger-Verschiebungen) liegt am kanonischen Pfad; die historienlastige Fassung ist per `git mv` nach [`done/roadmap-pre-v3.5.0.md`](../done/roadmap-pre-v3.5.0.md) archiviert; „Abgeschlossene Wellen" = Pointer-Tabelle (`done/plan-*` + Migration-W1–W6) mit Verweis aufs Archiv. Config-Angleich (`trace.slices`-Pattern, Closure-Glob) ist ein netzloser Folge-Punkt beim ersten Slice/Welle-Artefakt (MR-007) | W5 done | ✅ frische `roadmap.md` kanonisch (keine Altlasten), Alt-Stand in `done/` verlinkt, MR-007 in `conventions.md`, `make docs-check` + `make gates` grün |
+| **W6 — Kanonische Planning-Form** ✅ | **MR-007** deklariert die kanonische `slice-<NNN>`/`welle-<NN>`-Form für **neue** Arbeit + grandfathert den Bestand `plan-<version>.md` (Variante A); die **frische, altlastenfreie [`roadmap.md`](../in-progress/roadmap.md)** (Modul-6-Form: Aktuelle Welle · Nächste Wellen · Meilensteine · Abhängigkeitsgraph · Abgeschlossene Wellen · Historische Trigger-Verschiebungen) liegt am kanonischen Pfad; die historienlastige Fassung ist per `git mv` nach [`done/roadmap-pre-v3.5.0.md`](../done/roadmap-pre-v3.5.0.md) archiviert; „Abgeschlossene Wellen" = Pointer-Tabelle (`done/plan-*` + Migration-W1–W6) mit Verweis aufs Archiv. Config-Angleich (`trace.slices`-Pattern, Closure-Glob) ist ein netzloser Folge-Punkt beim ersten Slice/Welle-Artefakt (MR-007) | W5 done | ✅ frische `roadmap.md` kanonisch (keine Altlasten), Alt-Stand in `done/` verlinkt, MR-007 in `conventions.md`, `make docs-check` + `make gates` grün |
 | **W7 — opt-in-d-check-Module aktivieren** ✅ | **(7a)** `version.md` angelegt (Release-Register, `#aktuell`=0.25.0, 36 Releases + aktuelle Runtime-Images). **(7b)** Advisory je Modul: **`versions` aktiviert** (guardet die konkreten Betriebs-Pins im Anwenderhandbuch §6 gg. `version.md#aktuell`; nicht-vakuum verifiziert; deploy/k8s-YAML liegt außerhalb — dort greift `make k8s-validate` gg. `package.json`). **`ids`** würde ~3193 Kennungen nur datei-level linken (d-check-ok, aber m-trace-Policy verlangt Per-ID-Anker) → als **`slice-001-requirement-anker-ids`** geschnitten. **`citations`/`sources`** n/a (keine Marker). | W6 done | ✅ `version.md` kanonisch, `versions` grün + nicht-vakuum in `make gates`, keine Falschbefunde, DoD je Modul dokumentiert |
 
 **Reihenfolge-Begründung:** W1–W4 sind additiv und netzlos — sie brechen keine
@@ -185,5 +185,27 @@ gewahrt); der **zweite Commit** trägt die Cross-Doc-Link-Fixes.
 
 ## 7. Closure-Notiz
 
-<!-- Erst nach Abschluss der Migration füllen: was lief, Steering-Loop-Eintrag,
-     Folge-Slices. -->
+**Abgeschlossen 2026-07-23 (W1–W7).** Die additiv/netzlos-zuerst-Sequenzierung hat
+sich getragen: W1–W4 brachen keine Pfade, und der riskante Layout-Move lag isoliert
+in W5.
+
+**Konkretes Lernsignal (Ursache, nicht Behauptung).** Die Plan-Annahme „der
+Layout-Move braucht keinen ADR-Body-Edit, weil nichts bricht" war **falsch**: der
+Move brach 12 echte MD-Links in drei immutablen Accepted-ADRs, *weil* deren
+relative Links auf nicht-mitgewanderte Geschwister-Verzeichnisse (`harness/`,
+`docs/ops|perf|dev`) zeigten. Aufgelöst nicht durch Editieren (Immutabilität),
+sondern durch d-checks `ignore-refs`-Tombstone (A′) — ein Werkzeug, das ich erst
+nach dem Owner-Hinweis „siehe Handbuch" fand, statt vorschnell „unvertretbarer
+Bruch → W5 vertagen" zu wählen.
+
+**Konkrete Architektur-Beobachtung.** d-checks Module trennen scharf zwischen
+**gate-gebunden** (`docs-check`) und **advisory** (`--trace`/`doc-complete`): der
+inline-Anker in der falschen Tabellenzelle (slice-001) brach die RTM auf 0
+erkannte Anforderungen, und `make gates` sah es **nicht**. Grüne Gates ≠ nichts
+kaputt — advisory-Sensoren gehören nach Doku-Struktur-Edits separat geprüft.
+
+**Konkrete Folge-Slices.** Aus W7 (`ids`) entstand
+[`welle-01`](../in-progress/roadmap.md) mit `slice-001`/`slice-002`
+(Requirement-Link-Konvergenz, abgeschlossen). Offen bleibt ein enger MR-007-Punkt:
+sobald ein Slice ein konkretes Requirement *trägt*, die RTM-Coverage-Semantik für
+die `slice-*`-Form nachziehen.

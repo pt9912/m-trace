@@ -1,7 +1,7 @@
 # W4 — Werkzeug-Triage des Risiko-Registers
 
 > **Stand:** 2026-07-23. Ergebnis der Welle **W4** des
-> [v3.5.0-Migrationsplans](plan-harness-v3.5.0-migration.md). Triagiert die
+> [v3.5.0-Migrationsplans](../done/plan-harness-v3.5.0-migration.md). Triagiert die
 > aktiven Einträge aus [`risks-backlog.md`](risks-backlog.md) gegen die
 > v3.5.0-Werkzeug-Triade (Modul 7 §Werkzeug-Wahl bei Diskrepanz):
 > **Carveout · ADR · Roadmap-Kandidat**. Additiv/netzlos — Verifikation

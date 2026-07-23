@@ -60,13 +60,13 @@ flowchart LR
 | Welle | Abschluss | Closure-/Ergebnis-Record |
 |---|---|---|
 | Produkt-Releases `0.1.0`–`0.25.0` (25 Pläne) | bis 2026-07-13 | [`../done/plan-*.md`](../done/) · Übersicht: [`roadmap-pre-v3.5.0.md`](../done/roadmap-pre-v3.5.0.md) |
-| Migration W1 — Vendored Baseline | 2026-07-22 | [Plan §2](plan-harness-v3.5.0-migration.md) (`.harness/baseline/v3.5.0/` + SHA256SUMS) |
-| Migration W2 — AGENTS.md | 2026-07-22 | [Plan §2](plan-harness-v3.5.0-migration.md) |
-| Migration W3 — Review-/Closure-Harness | 2026-07-22 | [Plan §2](plan-harness-v3.5.0-migration.md) ([ADR-0010](../../adr/0010-closure-note-pflicht.md)) |
+| Migration W1 — Vendored Baseline | 2026-07-22 | [Plan §2](../done/plan-harness-v3.5.0-migration.md) (`.harness/baseline/v3.5.0/` + SHA256SUMS) |
+| Migration W2 — AGENTS.md | 2026-07-22 | [Plan §2](../done/plan-harness-v3.5.0-migration.md) |
+| Migration W3 — Review-/Closure-Harness | 2026-07-22 | [Plan §2](../done/plan-harness-v3.5.0-migration.md) ([ADR-0010](../../adr/0010-closure-note-pflicht.md)) |
 | Migration W4 — Carveouts + Werkzeug-Triage | 2026-07-23 | [Triage](risks-backlog-werkzeug-triage.md), MR-005/006 |
-| Migration W5 — Layout-Move (`docs/plan/…`) | 2026-07-23 | [Plan §3/§5](plan-harness-v3.5.0-migration.md), MR-001 aufgelöst |
-| Migration W6 — Planning-Form + Roadmap-Reformat | 2026-07-23 | [Plan §2](plan-harness-v3.5.0-migration.md), MR-007 |
-| Migration W7 — `version.md` + `versions`-Modul | 2026-07-23 | [Plan §2](plan-harness-v3.5.0-migration.md); `ids` → `welle-01` |
+| Migration W5 — Layout-Move (`docs/plan/…`) | 2026-07-23 | [Plan §3/§5](../done/plan-harness-v3.5.0-migration.md), MR-001 aufgelöst |
+| Migration W6 — Planning-Form + Roadmap-Reformat | 2026-07-23 | [Plan §2](../done/plan-harness-v3.5.0-migration.md), MR-007 |
+| Migration W7 — `version.md` + `versions`-Modul | 2026-07-23 | [Plan §2](../done/plan-harness-v3.5.0-migration.md); `ids` → `welle-01` |
 | **welle-01 — Requirement-Link-Konvergenz** | 2026-07-23 | [`welle-01-results.md`](../done/welle-01-results.md) (slice-001 + slice-002; `ids` repo-weit) |
 
 > Der Bestand ist grandfathered (MR-007): abgeschlossene Produktarbeit liegt als

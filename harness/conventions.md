@@ -47,7 +47,7 @@ ausgewiesenen History-Abschnitten erlaubt.
 - **Grund (historisch):** Etabliertes öffentliches Repository-Layout mit
   umfangreichen stabilen Links.
 - **Auflösung:** Die v3.5.0-Migration W5 (Layout-Move,
-  [`plan-harness-v3.5.0-migration.md`](../docs/plan/planning/in-progress/plan-harness-v3.5.0-migration.md))
+  [`plan-harness-v3.5.0-migration.md`](../docs/plan/planning/done/plan-harness-v3.5.0-migration.md))
   hat das Repo auf das Kanon-Layout gehoben: `docs/plan/adr/`,
   `docs/plan/planning/`, `docs/plan/carveouts/`. Die immutablen Accepted-ADRs
   blieben unangetastet — ihre Pre-Move-Verweise sind per `ignore-refs`-Tombstone
