@@ -1,7 +1,7 @@
 # Fuzzing & Property Tests
 
 > **Status**: Aktiv seit `plan-0.9.5` Tranche 3 (RAK-Wave-2 /
-> [`extra-gates.md`](../plan/planning/in-progress/extra-gates.md) §3.5).
+> [`extra-gates.md`](../plan/planning/extra-gates.md) §3.5).
 > PR-Pfad: `make fuzz-check` mit kurzem Budget; Nightly-Pfad:
 > [`.github/workflows/fuzz.yml`](../../.github/workflows/fuzz.yml)
 > mit längerem Budget plus Auto-Issue bei Crash.

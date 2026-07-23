@@ -341,7 +341,7 @@ reproduzierbarer Operator-Check angeboten.
 `POST /api/auth/session-tokens` (und alle weiteren Issuance-Pfade,
 die `driven.IssuanceRateLimiter.Allow` aufrufen) lassen sich seit
 `0.12.5` (Tranche 2, [`RAK-77`](../../spec/lastenheft.md#rak-77)) gegen einen geteilten SQLite-State
-betreiben. Damit löst der Limiter [`R-17`](../plan/planning/in-progress/risks-backlog.md#r-17) für **Single-Host-Multi-
+betreiben. Damit löst der Limiter [`R-17`](../plan/planning/risks-backlog.md#r-17) für **Single-Host-Multi-
 Replica-Setups** auf: zwei API-Instances auf demselben Host, die
 sich denselben SQLite-Volume teilen (Compose-`volumes:`,
 K8s-`hostPath`), zählen das Token-Bucket gemeinsam — die effektive
@@ -365,7 +365,7 @@ Multi-Host-Topologie (Kubernetes über mehrere Nodes, Container-
 Plattformen ohne shared storage) liefert ab `0.12.6` Tranche 7
 der `redis`-Backend einen Network-State-Bucket.
 
-**Redis-Pfad (`0.12.6` T7 / [`R-17`](../plan/planning/in-progress/risks-backlog.md#r-17))**:
+**Redis-Pfad (`0.12.6` T7 / [`R-17`](../plan/planning/risks-backlog.md#r-17))**:
 
 - Atomicity: ein einziger `EVAL`-Lua-Script-Aufruf prüft beide
   Buckets (global + project) inkl. Refund bei project-deny. Damit
@@ -428,7 +428,7 @@ wählt das Backend per ENV; alles andere ist Adapter-Detail.
 | `kms` (`0.12.6` T8)          | `KMSSecretBackend` — Skelett mit `KMSDecrypter`-Interface               | `MTRACE_AUTH_KMS_*` (siehe KMS-Block unten); produktiver Decrypter ist Folge-Item    |
 | jeder andere Wert            | Boot-Validator failt mit „not supported"                                | —                                                                                    |
 
-**Vault-Adapter (`0.12.6` T8, [`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20)):**
+**Vault-Adapter (`0.12.6` T8, [`R-20`](../plan/planning/risks-backlog.md#r-20)):**
 
 - Eigener minimaler HTTP-Client gegen `/v1/<mount>/data/<path>` —
   ohne `hashicorp/vault/api`-Dependency. Eine produktive Anbindung
@@ -461,7 +461,7 @@ wählt das Backend per ENV; alles andere ist Adapter-Detail.
   `active_kid`. Beide Backends teilen sich denselben Parser
   (`ParseSigningKeysEnv`).
 
-**KMS-Adapter-Skelett (`0.12.6` T8, [`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20)):**
+**KMS-Adapter-Skelett (`0.12.6` T8, [`R-20`](../plan/planning/risks-backlog.md#r-20)):**
 
 - `KMSSecretBackend` mit `KMSDecrypter`-Interface (Vendor-neutral
   durch die Decrypter-Indirektion). Production-Wiring (AWS-SDK-v2
@@ -549,17 +549,17 @@ export MTRACE_AUTH_VAULT_TOKEN=root-dev
 export MTRACE_AUTH_VAULT_PATH=secret/data/m-trace/signing
 ```
 
-**Resttrigger** für eine vollständig aufgelöste [`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20)-Auflösung
+**Resttrigger** für eine vollständig aufgelöste [`R-20`](../plan/planning/risks-backlog.md#r-20)-Auflösung
 bleiben offen: erste Operator-Anbindung an produktives Vault
 oder KMS, Compliance-Audit (PCI/SOC2). Die Skelett-Lieferung in
 `0.12.5` deckt nur den Driven-Port und einen Lab-Pfad — siehe
-[`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20) im Risiken-Backlog.
+[`R-20`](../plan/planning/risks-backlog.md#r-20) im Risiken-Backlog.
 
 ### 5.6 Browser-Ingest-Policy
 
 Bis `0.12.0` war `/api/ingest/*` strikt operator-/CLI-only:
 der [`RAK-74`](../../spec/lastenheft.md#rak-74)-Scope-Cut hielt jeden Browser-Konsumenten heraus.
-`0.12.5` Tranche 4 ([`RAK-80`](../../spec/lastenheft.md#rak-80), [`R-21`](../plan/planning/in-progress/risks-backlog.md#r-21)) hebt diesen Scope-Cut
+`0.12.5` Tranche 4 ([`RAK-80`](../../spec/lastenheft.md#rak-80), [`R-21`](../plan/planning/risks-backlog.md#r-21)) hebt diesen Scope-Cut
 **kontrolliert** auf — pro Project per
 `domain.BrowserIngestPolicy`.
 
@@ -603,7 +603,7 @@ die bestehenden Handler):
      — sonst `403 ingest_browser_csrf_missing`. **Hinweis**: das
      Skelett prüft nur Header-Anwesenheit; eine produktive Anti-
      CSRF-Token-Bibliothek mit signierten/zeitlich begrenzten
-     Tokens ist Folge-Item (siehe [`R-21`](../plan/planning/in-progress/risks-backlog.md#r-21)-Mitigation im Backlog).
+     Tokens ist Folge-Item (siehe [`R-21`](../plan/planning/risks-backlog.md#r-21)-Mitigation im Backlog).
 
 **Beispiel-Konfiguration (Operator-Setup, in-memory Resolver):**
 
@@ -628,7 +628,7 @@ Pfade durch — inklusive Origin-Pin-Mismatch und CSRF-Missing-Fall.
 
 ### 5.7 MediaMTX-Auth-Bridge
 
-Mit `0.12.5` Tranche 5 ([`RAK-81`](../../spec/lastenheft.md#rak-81), [`R-14`](../plan/planning/in-progress/risks-backlog.md#r-14)) gibt es einen optionalen
+Mit `0.12.5` Tranche 5 ([`RAK-81`](../../spec/lastenheft.md#rak-81), [`R-14`](../plan/planning/risks-backlog.md#r-14)) gibt es einen optionalen
 HTTP-Endpoint, der MediaMTX' `externalAuth`-Hook bedient:
 `POST /api/ingest/auth-hook`. Skelett-Adapter — bewusst ohne
 eigene Token-Issuance, weil die existierenden Stream-Keys aus
@@ -693,7 +693,7 @@ authentifiziert, bleibt Folge-Item.
 
 ### 5.8 Outbound-Webhook für Stream-Lifecycle
 
-Mit `0.12.5` Tranche 5 ([`RAK-82`](../../spec/lastenheft.md#rak-82), [`R-16`](../plan/planning/in-progress/risks-backlog.md#r-16)) liefert m-trace eine
+Mit `0.12.5` Tranche 5 ([`RAK-82`](../../spec/lastenheft.md#rak-82), [`R-16`](../plan/planning/risks-backlog.md#r-16)) liefert m-trace eine
 optionale Webhook-Zustellung der `0.11.0`-Lifecycle-Events
 (`stream_started`/`stream_ended`) an externe Konsumenten — der
 heutige lokale Pfad
@@ -915,6 +915,6 @@ Aufgabe des Operators und liegt außerhalb dieses Repos.
   §0 — Plan-Scope, Architektur, Threat Model.
 - [`docs/user/local-development.md`](./local-development.md) §2.7.3 —
   Operator-Migrationspfad `demo-token` → rotierbare Generation.
-- [`docs/plan/planning/in-progress/risks-backlog.md`](../plan/planning/in-progress/risks-backlog.md)
-  [`R-14`](../plan/planning/in-progress/risks-backlog.md#r-14), [`R-17`](../plan/planning/in-progress/risks-backlog.md#r-17), [`R-18`](../plan/planning/in-progress/risks-backlog.md#r-18) — Auth-bezogene Folge-Risiken mit
+- [`docs/plan/planning/in-progress/risks-backlog.md`](../plan/planning/risks-backlog.md)
+  [`R-14`](../plan/planning/risks-backlog.md#r-14), [`R-17`](../plan/planning/risks-backlog.md#r-17), [`R-18`](../plan/planning/risks-backlog.md#r-18) — Auth-bezogene Folge-Risiken mit
   Triggerschwellen.

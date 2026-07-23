@@ -158,7 +158,7 @@ Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
 - Roadmap und Status-Geschichte leben in [`docs/planning/`](docs/plan/planning/),
   nicht in [`spec/architecture.md`](spec/architecture.md).
 - Bewusst vertagte Tradeoffs werden als `R-N`-Einträge mit Triggerschwelle in
-  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
+  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
   getrackt, nicht nur in einem Code-Kommentar.
 - Neue (nicht grandfatherte) Pläne in `docs/plan/planning/done/` tragen eine
   **Closure-Note** mit den drei Pflicht-Inhalten aus ADR-0010 (Lernsignal /

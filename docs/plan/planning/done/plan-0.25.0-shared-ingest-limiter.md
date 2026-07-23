@@ -121,7 +121,7 @@
 > Skript-Zeilen bereinigt, k6-`arrivalScenario`-Builder statt 3×
 > handgeschriebener Szenario-Form.
 >
-> **Bezug**: **R-26 b** in [`risks-backlog.md`](../in-progress/risks-backlog.md)
+> **Bezug**: **R-26 b** in [`risks-backlog.md`](../risks-backlog.md)
 > (einziger offener Teil von R-26; a/c belegt); Messbeleg der Lücke in
 > [`docs/perf/budgets.md`](../../../perf/budgets.md) §8 (throttled 2,01× über 2
 > Replicas = Limiter liegt pro Replica); RAK-129 (lässt R-26 b explizit

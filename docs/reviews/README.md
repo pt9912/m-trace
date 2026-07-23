@@ -18,3 +18,12 @@ Reviewer → Implementation (v3.5.0-Regelwerk Modul 8/10).
 
 Ein Review-Report ohne den Eingangs-Kontext (die Verträge, gegen die geprüft
 wurde) ist nicht reproduzierbar; das Gerüst erzwingt diese Liste.
+
+## Nebenklasse: Security-Audit-Re-Reviews
+
+Neben dem Modul-8/10-Handoff-Report hält dieses Verzeichnis auch datierte
+**Security-Audit-Re-Reviews** (periodische Re-Evaluation von CVE-Suppressions,
+Form: Kontext · Eingaben · Kommandos · Ergebnis · Entscheidung). Sie sind kein
+Reviewer→Implementation-Übergabeartefakt, teilen aber Namensschema
+(`<YYYY-MM-DD>-<ref>.md`) und die „ein Report pro Lauf"-Auditierbarkeit — daher
+hier statt in einem slice-reservierten Lifecycle-Verzeichnis (slice-006).

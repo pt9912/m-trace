@@ -19,7 +19,7 @@
 > [Architektur](../../../../spec/architecture.md);
 > [Telemetry-Model](../../../../spec/telemetry-model.md);
 > [API-Kontrakt](../../../../spec/backend-api-contract.md);
-> [Risiken-Backlog](../in-progress/risks-backlog.md) R-2.
+> [Risiken-Backlog](../risks-backlog.md) R-2.
 >
 > **Vorgänger-Gate (Soll zum `0.6.0`-Start)**:
 >
@@ -145,7 +145,7 @@ DoD:
   verweisen auf diesen Plan (Tranche 0 dieses Plans).
 - [x] R-2 ist für den Startzustand präzisiert: bekannte Metrikquellen,
   Runtime-Auswirkungen und offene ADR-Frage sind im Risiken-Backlog
-  aktuell ([`risks-backlog.md`](../in-progress/risks-backlog.md) R-2
+  aktuell ([`risks-backlog.md`](../risks-backlog.md) R-2
   verweist auf §2-Optionentabelle).
 - [x] Scope-Grenze ist in README/User-Doku sichtbar: `0.6.0` liefert
   SRT-Health, nicht Stream-Key-Verwaltung, SRT-Auth, Multi-Publisher-

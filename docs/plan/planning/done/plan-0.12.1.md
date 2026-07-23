@@ -20,7 +20,7 @@
 >
 > **Bezug**:
 > [`done/plan-0.12.0.md`](../done/plan-0.12.0.md) §10 Folge-Scope;
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
+> [`risks-backlog.md`](../risks-backlog.md) §1.1
 > R-5/R-7/R-9/R-10/R-11/R-12/R-13/R-14/R-15/R-16/R-17/R-18/R-20/R-21;
 > [`docs/user/releasing.md`](../../../user/releasing.md) §3.1
 > Patch-Release-Konvention.

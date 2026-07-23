@@ -91,23 +91,27 @@ ausgewiesenen History-Abschnitten erlaubt.
   `hostpaths`-Sensor gated daher `/Users` und `/Development`; `/mnt` und
   `/home` liegen bewusst außerhalb seines konfigurierten Präfix-Satzes.
 
-### MR-005 - Risiko-Register als Roadmap-Discovery
+### MR-005 - Nicht-Slice-Register: flache Platzierung in `planning/`
 
-- **Datum:** 2026-07-23
-- **Scope:** `docs/plan/planning/in-progress/risks-backlog.md` (`R-*`-Familie)
-- **Baseline-Unterschied:** m-trace führt absehbare technische Risiken mit
-  Re-Eval-Triggern (RAK-gekoppelt an die Release-Historie) in einem eigenen
-  Risiko-Register. Der v3.5.0-Kanon kennt kein direktes Äquivalent — er trennt
-  Roadmap (aufgeschobene Arbeit), Carveout (temporäre Gate-Senkung) und ADR
-  (Architekturentscheidung).
-- **Grund:** Das Register ist die etablierte, release-gekoppelte
-  Roadmap-Discovery-Praxis. Die W4-Werkzeug-Triage
-  (`docs/plan/planning/in-progress/risks-backlog-werkzeug-triage.md`) ordnet die
-  aktiven Einträge zu: R-9/R-12/R-28/R-30 sind Roadmap-Kandidaten und bleiben
-  hier; genuine Gate-Senkungen graduieren in ihr Gate-Werkzeug
-  (Security-Suppressions → MR-006).
-- **Auflösungs-Trigger:** Permanent, solange die Wellen/Slices-Roadmap-Form (W6)
-  die Roadmap-Kandidat-Klasse nicht selbst aufnimmt.
+- **Datum:** 2026-07-23 (angelegt), 2026-07-23 (zurückgebaut, slice-006)
+- **Scope:** `docs/plan/planning/risks-backlog.md` (`R-*`-Familie),
+  `docs/plan/planning/extra-gates.md` (Quality-Gate-Backlog) samt Companion
+  `docs/plan/planning/risks-backlog-werkzeug-triage.md`.
+- **Repo-lokale Strukturregel:** m-trace führt stehende Discovery-Register
+  (Risiko-Register mit Re-Eval-Triggern, RAK-gekoppelt an die Release-Historie;
+  Quality-Gate-Backlog) samt zugehöriger Analysen. Das sind Nicht-Slice-
+  Artefakte; sie liegen **flach in `planning/`** — dasselbe Muster wie der
+  kanonische Welle-Plan, während die Lifecycle-Verzeichnisse
+  (`open/next/in-progress/done`) **slice-reserviert** bleiben.
+- **Keine Kanon-Abweichung:** Der v3.5.0-Kanon *schweigt* über
+  Nicht-Slice-Artefakte (er verbietet sie nicht); die flache Ablage füllt keine
+  „Lücke" und sanktioniert keine neue Artefaktklasse — sie folgt dem vorhandenen
+  Flach-in-`planning/`-Muster. Die frühere Fassung führte die Register in
+  `in-progress/` und rechtfertigte das mit „Kanon kennt kein Äquivalent" — beides
+  in slice-006 zurückgebaut (die W4-Triage ordnet R-9/R-12/R-28/R-30 als
+  Roadmap-Kandidaten ein, die im Register bleiben; Security-Suppressions
+  graduieren in ihr Gate-Werkzeug → MR-006).
+- **Auflösungs-Trigger:** Permanent, solange die Register geführt werden.
 
 ### MR-006 - Security-Gate-Carveout-Registry
 

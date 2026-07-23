@@ -26,7 +26,7 @@
 > [`plan-0.12.0.md`](./plan-0.12.0.md) §10 Folge-Scope,
 > §13.14 Lastenheft-RAK-71..RAK-76;
 > [`plan-0.12.1.md`](./plan-0.12.1.md) §1 Trigger-Re-Eval-Stand;
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1+§1.2
+> [`risks-backlog.md`](../risks-backlog.md) §1.1+§1.2
 > R-14/R-16/R-17/R-18/R-20/R-21;
 > [`spec/lastenheft.md`](../../../../spec/lastenheft.md) §13.15
 > (Lastenheft-Patch `1.1.16` für `0.12.5`, RAK-77..RAK-82).

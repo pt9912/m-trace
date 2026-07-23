@@ -996,5 +996,5 @@ Abdeckung, Player-SDK-CMAF, vollständige `cmf1`-Aufnahme,
 Byte-Range-Loader) gehen direkt in `0.11.0`+ und nicht in einen
 Patch-Plan. Während der `0.10.0`-Implementierung aufkommende
 deferred Tradeoffs gehören als R-N-Eintrag mit Triggerschwelle in
-[`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md),
+[`docs/planning/in-progress/risks-backlog.md`](../risks-backlog.md),
 nicht in einen leeren Patch-Plan-Stub.

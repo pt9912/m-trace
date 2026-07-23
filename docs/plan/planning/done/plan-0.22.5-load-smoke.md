@@ -80,7 +80,7 @@ In Scope:
   akkumulieren, dann Retention-/`ListSessions`-Queries messen und p95
   gegen die **2-Sekunden**-Grenze (ADR-0005:69) bewerten.
 - Nicht-blockierender Nightly-Schritt; Gate-Eintrag in
-  [`extra-gates.md`](../in-progress/extra-gates.md), Verweis aus
+  [`extra-gates.md`](../extra-gates.md), Verweis aus
   [`releasing.md`](../../../user/releasing.md) §2.
 
 Nicht in Scope:

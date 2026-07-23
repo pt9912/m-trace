@@ -7,7 +7,7 @@
 > [`plan-0.17.0.md`](plan-0.17.0.md).
 >
 > **Auslöser**: Drei aktive Punkte in
-> [`risks-backlog.md`](../in-progress/risks-backlog.md): `R-9`, `R-12`,
+> [`risks-backlog.md`](../risks-backlog.md): `R-9`, `R-12`,
 > `R-13`.
 >
 > **Release-Typ**: Minor-Release ohne Lastenheft-Patch; der normative
@@ -198,7 +198,7 @@ Analyzer-Service rendern jeweils die drei bekannten CVE-Ignores und
 haben keine unignorierten HIGH-/CRITICAL-Findings. Debian Security
 Tracker zeigt fuer `trixie` weiterhin `vulnerable`/`no-dsa` fuer alle
 drei CVEs; Fixes liegen nicht in der Trixie-Slim-Basis. Re-Review-Artefakt:
-[`../in-progress/r13-trivy-rereview-2026-05-13.md`](../in-progress/r13-trivy-rereview-2026-05-13.md).
+[`../in-progress/r13-trivy-rereview-2026-05-13.md`](../../../reviews/2026-05-13-r13-trivy-rereview.md).
 
 ### 3.3 R-12: WebRTC-Drift-Kontur
 

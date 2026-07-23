@@ -1,7 +1,7 @@
 # Implementation Plan — `0.4.0` (Erweiterte Trace-Korrelation)
 
 > **Status**: ✅ released. Alle Tranchen 0–8 abgeschlossen. Tag `v0.4.0` auf `9e4fdb3`; GitHub-Actions-Run 25359933129 grün; Release-Notes auf https://github.com/pt9912/m-trace/releases/tag/v0.4.0. Plan ist nach `docs/planning/done/` archiviert. Roadmap-Fokus auf `0.5.0` (Multi-Protokoll-Lab, RAK-36..RAK-40) verschoben.
-> **Bezug**: [Lastenheft `1.1.8`](../../../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](../in-progress/roadmap.md) §1.2/§3/§4/§5; [Architektur](../../../../spec/architecture.md); [Telemetry-Model](../../../../spec/telemetry-model.md); [API-Kontrakt](../../../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../../adr/0003-live-updates.md); [Risiken-Backlog](../in-progress/risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.8`](../../../../spec/lastenheft.md) §13.6 (RAK-29..RAK-35), §7.9, §7.10, §7.11; [Roadmap](../in-progress/roadmap.md) §1.2/§3/§4/§5; [Architektur](../../../../spec/architecture.md); [Telemetry-Model](../../../../spec/telemetry-model.md); [API-Kontrakt](../../../../spec/backend-api-contract.md); [ADR 0002 Persistenz-Store](../../adr/0002-persistence-store.md); [ADR 0003 Live-Updates](../../adr/0003-live-updates.md); [Risiken-Backlog](../risks-backlog.md).
 > **Vorgänger-Gate (Stand zum `0.4.0`-Start)**:
 >
 > - [`plan-0.3.0.md`](../done/plan-0.3.0.md) ist vollständig (`[x]`) und `v0.3.0` ist veröffentlicht.

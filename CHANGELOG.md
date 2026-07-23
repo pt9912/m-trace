@@ -565,7 +565,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bleiben offen, aber mit präzisierten Folge-Triggern in Plan,
   Roadmap und Risks-Backlog. `R-13` hat ein neues reproduzierbares
   Trivy-Re-Review-Artefakt unter
-  [`docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md`](docs/plan/planning/in-progress/r13-trivy-rereview-2026-05-13.md).
+  [`docs/planning/in-progress/r13-trivy-rereview-2026-05-13.md`](docs/reviews/2026-05-13-r13-trivy-rereview.md).
 - K8s-Beispielmanifeste auf den aktuellen Release-Stand synchronisiert:
   `m-trace-api`, `m-trace-analyzer` und `m-trace-dashboard` verwenden
   jetzt Image-Tags `0.18.0`; `make k8s-validate` prüft den Drift.
@@ -1144,7 +1144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - R-14 (`validate-key` bleibt Diagnose-Pfad), R-17 (Multi-Replica-
   Issuance-Limiter), R-18 (Multi-Key-Rotation-Workflow), R-20 (KMS/
   Vault), R-21 (Future-Browser-Konsument auf `/api/ingest/*`) im
-  [`risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
+  [`risks-backlog.md`](docs/plan/planning/risks-backlog.md)
   mit Triggerschwellen.
 
 ## [0.11.0] - 2026-05-09
@@ -1395,7 +1395,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Lokal-Setup, Statusblock auf `0.9.6`.
 - [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
   und
-  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
+  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
   Header und Phase-Beschreibung auf den `0.9.6`-Stand
   aktualisiert; keine inhaltliche Änderung an aktiven R-Items.
 - Versions-Bump `0.9.5` → `0.9.6` in allen versionsführenden
@@ -1430,7 +1430,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [`docs/user/releasing.md`](docs/user/releasing.md) §3.1) ohne
 > User-Surface-Änderung. Liefert die vier statistisch- bzw.
 > langlaufenden Quality-Gates aus
-> [`docs/planning/in-progress/extra-gates.md`](docs/plan/planning/in-progress/extra-gates.md):
+> [`docs/planning/in-progress/extra-gates.md`](docs/plan/planning/extra-gates.md):
 > Benchmark-Smoke (PR-Pfad) + Nightly-`benchstat`-Regressionen
 > (§3.2/§3.3), selektives Fuzzing + TS-Property-Tests (§3.5) und
 > Mutation-Testing als Nightly-Report (§3.6). Kein Lastenheft-Patch
@@ -1448,7 +1448,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   begründet in `plan-0.9.5.md` §1a Tranche 0.
 - Quarantäne-Policy: maximal 30 Tage Skip mit Begründungs-
   Kommentar plus Backlog-Item in
-  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md);
+  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/risks-backlog.md);
   Verlängerung ist Plan-DoD-Item-Änderung im jeweiligen Folge-Plan.
 
 ### Added (Tranche 1 — Benchmark-Smoke API + Stream-Analyzer)
@@ -2345,7 +2345,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Degradationen ab. Endpoint-spezifische Auth: `POST /api/playback-
   events` und Session-/Event-Reads sind tokenpflichtig; ungebundene
   `POST /api/analyze`-Requests bleiben tokenfrei und liefern
-  `session_link.status="detached"` ([R-6](docs/plan/planning/in-progress/risks-backlog.md)
+  `session_link.status="detached"` ([R-6](docs/plan/planning/risks-backlog.md)
   technisch geschlossen).
 - **Dashboard-Session-Timeline (Tranche 4):** Timeline-Ansicht
   `/sessions/<id>` mit Server-Sent Events ([ADR-0003](docs/plan/adr/0003-live-updates.md))

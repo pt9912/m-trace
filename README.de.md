@@ -366,7 +366,7 @@ in den dafür vorgesehenen Single-Source-Dokumenten:
   pro Release-Tag (Added/Changed/Security/Removed).
 - [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
   — aktive Phase, nächste Schritte und Folge-ADRs.
-- [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
+- [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
   — aktive Risiken inklusive Triggerschwellen.
 
 Leitende Dokumente:

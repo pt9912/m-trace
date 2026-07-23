@@ -25,7 +25,7 @@ HLS-Egress am selben Server-Setup verifizierbar.
 **Wichtig**: `0.5.0`-SRT bedeutet Beispiel/Smoke. Es bedeutet
 **nicht** SRT-Health-View ([`RAK-41`](../../spec/lastenheft.md#rak-41)..[`RAK-46`](../../spec/lastenheft.md#rak-46), Folge-Scope `0.6.0`),
 keinen SRT-Metrikimport in `apps/api` und keine CGO-Bindings
-(Risiken-Backlog [`R-2`](../../docs/plan/planning/in-progress/risks-backlog.md#r-2) in `0.6.0` Tranche 1 als CGO-frei aufgelöst —
+(Risiken-Backlog [`R-2`](../../docs/plan/planning/risks-backlog.md#r-2) in `0.6.0` Tranche 1 als CGO-frei aufgelöst —
 Quelle ist die MediaMTX-Control-API über HTTP). Das `apps/api`-Image
 bleibt `distroless-static` ohne CGO.
 

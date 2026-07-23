@@ -3,10 +3,10 @@
 > **Status**: Master-Backlog fuer die sechs vorgeschlagenen Quality-
 > Gates. Aktiv konkretisiert in zwei Folge-Plaenen:
 >
-> - [`plan-0.8.5.md`](../done/plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
+> - [`plan-0.8.5.md`](done/plan-0.8.5.md) — **Wave 1**: §3.1 govulncheck
 >   + Container-Scan, §3.4 Generated-Artifact-Drift-Gate
 >   (deterministisch, schnell, PR-blockierend; vor `0.9.0`).
-> - [`plan-0.9.5.md`](../done/plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
+> - [`plan-0.9.5.md`](done/plan-0.9.5.md) — **Wave 2**: §3.2 Benchmark-
 >   Smoke, §3.3 Nightly-`benchstat`, §3.5 Fuzzing/Property,
 >   §3.6 Mutation Testing (statistisch + langlaufend; nach `0.9.0`).
 >
@@ -42,7 +42,7 @@ Pruefungen sind bewusst Nightly- oder Release-Kandidaten.
 | 5 | Selektives Fuzzing / Property Tests | PR kurz, Nightly lang | ja fuer Seed-Corpus | Parser-/Validation-Robustheit erhoehen |
 | 6 | Mutation Testing auf kritischen Modulen | Nightly / manuell | nein initial | Teststaerke sichtbar machen |
 | 7 | WebRTC-Ton-Smoke (1-kHz-FFT/Goertzel) | Nightly + lokal opt-in | nein | manuellen 1-kHz-Hoercheck (releasing.md §2.3) automatisieren |
-| 8 | Last-/Soak-Smoke (k6 + Readback-Reconciliation) | Nightly (SLO) + on-demand (Soak) + lokal opt-in | nein | Lab-Lastfaehigkeit ([`NF-20`](../../../../spec/lastenheft.md#nf-20)/22/23), kein stiller Verlust, ADR-0005-Trigger-Evidenz |
+| 8 | Last-/Soak-Smoke (k6 + Readback-Reconciliation) | Nightly (SLO) + on-demand (Soak) + lokal opt-in | nein | Lab-Lastfaehigkeit ([`NF-20`](../../../spec/lastenheft.md#nf-20)/22/23), kein stiller Verlust, ADR-0005-Trigger-Evidenz |
 
 ## 3. Priorisierung
 
@@ -293,10 +293,10 @@ DoD:
 
 **Entscheidung:** Automatisiert die *eng definierte* manuelle
 Release-Abnahme „bestätigen, dass ein 1-kHz-Sinuston hörbar abspielt"
-aus [`releasing.md`](../../../user/releasing.md) §2.3. Komplementaer zum
-WebRTC-`getStats()`-Drift-Smoke ([`RAK-56`](../../../../spec/lastenheft.md#rak-56), releasing.md §2.4.1), der nur
+aus [`releasing.md`](../../user/releasing.md) §2.3. Komplementaer zum
+WebRTC-`getStats()`-Drift-Smoke ([`RAK-56`](../../../spec/lastenheft.md#rak-56), releasing.md §2.4.1), der nur
 `bytesReceived>0` (Medien fliessen), nicht die Tonqualitaet prueft.
-Plan: [`plan-0.22.4-webrtc-tone-smoke.md`](../done/plan-0.22.4-webrtc-tone-smoke.md).
+Plan: [`plan-0.22.4-webrtc-tone-smoke.md`](done/plan-0.22.4-webrtc-tone-smoke.md).
 
 Scope:
 
@@ -308,14 +308,14 @@ Scope:
   Lab-Netz (host-seitig ist nur WHEP erreichbar) und pipet das PCM an
   den Detektor.
 - Nightly-Schritt in
-  [`webrtc-drift.yml`](../../../../.github/workflows/webrtc-drift.yml)
+  [`webrtc-drift.yml`](../../../.github/workflows/webrtc-drift.yml)
   neben dem Drift-Smoke.
 
 Policy:
 
 - **Nicht-blockierend**: opt-in lokal, im Nightly `continue-on-error`
   — das WebRTC-Lab ist unter Last flaky (siehe
-  [`plan-0.22.3-webrtc-drift`](../done/plan-0.22.3-webrtc-drift.md)
+  [`plan-0.22.3-webrtc-drift`](done/plan-0.22.3-webrtc-drift.md)
   §2), ein Ton-Failure soll weder PRs blocken noch den Drift-Befund
   maskieren. Nicht in `make gates`.
 - Ersetzt **nicht** die perzeptuelle Operator-Abnahme („klingt/sieht
@@ -334,10 +334,10 @@ DoD:
 
 **Entscheidung:** Die Hot-Path-Mikrobenchmarks (§3.2) messen Funktionen
 isoliert gegen Budgets — nicht die Ingest→Persistenz→Read-Kette unter
-echter Parallelität ([`NF-20`](../../../../spec/lastenheft.md#nf-20)/[`NF-22`](../../../../spec/lastenheft.md#nf-22)/[`NF-23`](../../../../spec/lastenheft.md#nf-23)). Der Last-Smoke schließt diese
+echter Parallelität ([`NF-20`](../../../spec/lastenheft.md#nf-20)/[`NF-22`](../../../spec/lastenheft.md#nf-22)/[`NF-23`](../../../spec/lastenheft.md#nf-23)). Der Last-Smoke schließt diese
 Lücke als separater opt-in-Pfad (vgl.
-[`docs/perf/budgets.md`](../../../perf/budgets.md) §7). Plan:
-[`plan-0.22.5-load-smoke`](../done/plan-0.22.5-load-smoke.md).
+[`docs/perf/budgets.md`](../../perf/budgets.md) §7). Plan:
+[`plan-0.22.5-load-smoke`](done/plan-0.22.5-load-smoke.md).
 
 Scope:
 
@@ -350,9 +350,9 @@ Scope:
   / `LOAD_PROFILE=open` (`make smoke-load-slo`, constant-arrival-rate,
   runner-stabile SLO: p95 < Budget + dropped_iterations).
 - `make smoke-soak` (`RETENTION_PROBE=1`): Read-Retention-p95 gegen 2 s
-  ([ADR-0005](../../adr/0005-production-ops-backends.md) Trigger #3) —
+  ([ADR-0005](../adr/0005-production-ops-backends.md) Trigger #3) —
   belastbar erst ab ≥ 10 Mio Events (Nightly-Soak ~Stunden).
-- Nightly: [`load-smoke.yml`](../../../../.github/workflows/load-smoke.yml)
+- Nightly: [`load-smoke.yml`](../../../.github/workflows/load-smoke.yml)
   fährt die SLO (open-loop) nightlich; der Soak läuft on-demand
   (`workflow_dispatch`, lange DURATION).
 
@@ -419,7 +419,7 @@ Wave 2 (`plan-0.9.5.md` Tranche 0):
   (Default-Empfehlung; deterministische Historie + kein Retention-
   Limit; `plan-0.9.5.md` §1a Tranche-0-Commit).
 - ✅ Initiale Performance-Budgets: in
-  [`docs/perf/budgets.md`](../../../perf/budgets.md) dokumentiert —
+  [`docs/perf/budgets.md`](../../perf/budgets.md) dokumentiert —
   Architektur-basiert großzügig, Tranche-1-Beobachtungsphase
   schärft nach realen Messungen (`plan-0.9.5.md` §1a
   Tranche-0-Commit).
@@ -432,7 +432,7 @@ Wave 2 (`plan-0.9.5.md` Tranche 0):
   `benchmark-observation.yml`-Runs (`25592982776`, `25621106187`,
   `25643426077`, `25704811721`, `25769811661`) ist
   `make benchmark-smoke` in `make gates` aufgenommen
-  ([`plan-0.22.0`](../done/plan-0.22.0.md)). Der Nightly-Workflow läuft ohne
+  ([`plan-0.22.0`](done/plan-0.22.0.md)). Der Nightly-Workflow läuft ohne
   `continue-on-error`.
 - 🟡 Mutation-PR-Blockierung: weiter deferred. Der TS-Workflow-Scope
   wurde in `0.22.0` von `@npm9912/player-sdk` auf

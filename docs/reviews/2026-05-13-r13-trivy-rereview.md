@@ -10,7 +10,7 @@
 - `CVE-2026-4878`
 
 Die Single Source of Truth fuer die Suppressions bleibt
-[`../../../.security/vulnignore.yaml`](../../../../.security/vulnignore.yaml).
+[`../../../.security/vulnignore.yaml`](../../.security/vulnignore.yaml).
 
 ## Eingaben
 

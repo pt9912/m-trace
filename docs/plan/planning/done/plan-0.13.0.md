@@ -19,7 +19,7 @@
 > **Bezug**:
 > [`spec/lastenheft.md`](../../../../spec/lastenheft.md) NF-18,
 > MVP-40..MVP-44; [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
-> Folge-ADRs; [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
+> Folge-ADRs; [`docs/planning/in-progress/risks-backlog.md`](../risks-backlog.md)
 > R-9.
 >
 > **Nachfolger**: offen.

@@ -207,7 +207,7 @@ reproduzierbar sind und nicht in `make gates` enthalten:
 
 #### 2.4.1 WebRTC-Drift-Smoke (RAK-56)
 
-Der Drift-Review aus [`R-12`](../plan/planning/in-progress/risks-backlog.md#r-12) ist automatisiert.
+Der Drift-Review aus [`R-12`](../plan/planning/risks-backlog.md#r-12) ist automatisiert.
 Vor jedem Release-Tag (auch Patch) genügt ein Blick auf den letzten
 Nightly-Lauf des Workflows
 [`.github/workflows/webrtc-drift.yml`](../../.github/workflows/webrtc-drift.yml):
@@ -341,7 +341,7 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   stiller Verlust" per Readback gegen `playback_events`. Der Soak
   (Read-Retention-p95 gegen 2 s = `ADR-0005` Trigger #3, ≥ 10 Mio Events
   ~Stunden) läuft on-demand via `workflow_dispatch` (`mode=soak`).
-  Details: [`extra-gates.md`](../plan/planning/in-progress/extra-gates.md)
+  Details: [`extra-gates.md`](../plan/planning/extra-gates.md)
   §3.9.
 
 PR-Pfad-Wrapper (opt-in, NICHT in `make gates`):

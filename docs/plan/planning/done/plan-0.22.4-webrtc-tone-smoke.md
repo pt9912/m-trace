@@ -34,7 +34,7 @@ In Scope:
   [`.github/workflows/webrtc-drift.yml`](../../../../.github/workflows/webrtc-drift.yml)
   als zusätzlicher, nicht-blockierender Schritt im selben Job.
 - Doku: Gate-Eintrag in
-  [`extra-gates.md`](../in-progress/extra-gates.md) und Verweis aus
+  [`extra-gates.md`](../extra-gates.md) und Verweis aus
   [`releasing.md`](../../../user/releasing.md) §2.3.
 
 Nicht in Scope:

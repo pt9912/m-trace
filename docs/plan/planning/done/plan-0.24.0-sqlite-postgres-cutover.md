@@ -29,7 +29,7 @@
 > (Cutover-Entscheidung, **Accepted 2026-07-12**); [ADR-0006](../../adr/0006-postgres-scaleout-adapter.md)
 > (Runtime-Adapter); RAK-91; Roadmap-Anker „defer-**with-migration-seed**"
 > ([`plan-0.15.0.md`](../done/plan-0.15.0.md) Szenario A Tranche 5);
-> R-26 / **R-29** in [`risks-backlog.md`](../in-progress/risks-backlog.md).
+> R-26 / **R-29** in [`risks-backlog.md`](../risks-backlog.md).
 >
 > **Firming-Amendment 2026-07-12** — der Blocker der ursprünglichen Skizze
 > („hängt an `plan-0.23.0` R-27/R-28") ist **weg**: `plan-0.23.0` ist

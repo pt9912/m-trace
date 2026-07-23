@@ -30,10 +30,10 @@ produktive Ingest-Control-Plane. Es bedeutet:
 - **kein** mandantenfähiger SaaS-Pfad (Tenant-Auth → `0.12.0`),
 - **kein** produktiver Media-Server-Auth-Hook (`validate-key` ist
   diagnostisch, nicht ein Auth-Replacement; siehe `risks-backlog.md`
-  [`R-14`](../../docs/plan/planning/in-progress/risks-backlog.md#r-14)),
+  [`R-14`](../../docs/plan/planning/risks-backlog.md#r-14)),
 - **keine** automatische Provisionierung externer MediaMTX-Server
-  (`media-server-config` schreibt nur lokale Artefakte; [`R-15`](../../docs/plan/planning/in-progress/risks-backlog.md#r-15)),
-- **keine** produktive ausgehende Webhook-Zustellung ([`R-16`](../../docs/plan/planning/in-progress/risks-backlog.md#r-16)).
+  (`media-server-config` schreibt nur lokale Artefakte; [`R-15`](../../docs/plan/planning/risks-backlog.md#r-15)),
+- **keine** produktive ausgehende Webhook-Zustellung ([`R-16`](../../docs/plan/planning/risks-backlog.md#r-16)).
 
 Produktionsdeployments setzen Auth-Plugins, IP-Allowlists und/oder
 HMAC-signierte Stream-Keys auf MediaMTX-Seite ein — der vorliegende

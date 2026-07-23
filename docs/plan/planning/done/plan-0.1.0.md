@@ -1,7 +1,7 @@
 # Implementation Plan — `0.1.0` (Backend Core + Demo-Lab)
 
 > **Status**: ✅ abgeschlossen. `0.1.0` ist ausgeliefert; dieses Dokument bleibt als historischer Lieferstand erhalten.  
-> **Bezug**: [Lastenheft `1.1.6`](../../../../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](../in-progress/roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../../../../spec/architecture.md); [API-Kontrakt](../../../../spec/backend-api-contract.md); [Risiken-Backlog](../in-progress/risks-backlog.md).
+> **Bezug**: [Lastenheft `1.1.6`](../../../../spec/lastenheft.md) §13.1 (RAK-1, 3, 4, 6, 8 für `0.1.0`), §18 (MVP-DoD); [Roadmap](../in-progress/roadmap.md) §1.2, §2, §3; [Architektur (Zielbild)](../../../../spec/architecture.md); [API-Kontrakt](../../../../spec/backend-api-contract.md); [Risiken-Backlog](../risks-backlog.md).
 > **Folge-Pläne**: [`plan-0.1.1.md`](./plan-0.1.1.md) (Player-SDK + Dashboard), [`plan-0.1.2.md`](./plan-0.1.2.md) (Observability-Stack).
 
 ## 0. Konvention
@@ -668,6 +668,6 @@ DoD:
 ## 6. Wartung
 
 - Beim Auslagern eines `[ ]`-Items in einen Commit: `[ ]` → `[x]`, Commit-Hash anhängen (Format ```Item-Beschreibung (`<hash>`)```), gegebenenfalls Sub-Items detaillieren.
-- Neue Findings landen entweder als neues `[ ]`-Item in der passenden Tranche oder, wenn architekturrelevant und langfristig, in [`risks-backlog.md`](../in-progress/risks-backlog.md) als `R-X`.
+- Neue Findings landen entweder als neues `[ ]`-Item in der passenden Tranche oder, wenn architekturrelevant und langfristig, in [`risks-backlog.md`](../risks-backlog.md) als `R-X`.
 - Beim Schritt-Abschluss: `roadmap.md` §1.2/§2 auf ✅ flippen.
 - Nach `0.1.0`-Release: dieses Dokument als historisch archivieren; Folge-Pläne sind [`plan-0.1.1.md`](./plan-0.1.1.md) und [`plan-0.1.2.md`](./plan-0.1.2.md), danach `plan-0.2.0.md`.

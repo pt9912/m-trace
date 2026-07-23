@@ -29,9 +29,9 @@ Owner eine Tranche aus den Register-Kandidaten schneidet.
 | Produkt-Folgewelle (noch **ungeschnitten**) | Migration done **und** Owner schneidet Tranche | Kandidaten aus dem Risiko-Register: `R-30` (SSE-Backfill-Skip Multi-Replica), `R-24` (Load-Smoke-Debounce), policy-getriebene Per-Projekt-Limiter-Buckets ([`RAK-74`](../../../../spec/lastenheft.md#rak-74)-Anschluss), Redis-Cluster-Tauglichkeit der Lua-Limiter, Durchsatz jenseits Single-Postgres (`budgets.md` §8) | S–L (je Schnitt) |
 
 Es liegt **keine geschnittene Produkt-Tranche** vor. Die Kandidaten sind im
-[Risiko-Register](risks-backlog.md) mit Triggern geführt (Roadmap-Discovery,
+[Risiko-Register](../risks-backlog.md) mit Triggern geführt (Roadmap-Discovery,
 MR-005; Werkzeug-Einordnung in der
-[Triage](risks-backlog-werkzeug-triage.md)) — keiner ist ein aktiver Blocker.
+[Triage](../risks-backlog-werkzeug-triage.md)) — keiner ist ein aktiver Blocker.
 Mutation-Gate-Blockierung bleibt deferred, bis echte >70 %-Score-Reihen vorliegen.
 
 ## Meilensteine
@@ -63,7 +63,7 @@ flowchart LR
 | Migration W1 — Vendored Baseline | 2026-07-22 | [Plan §2](../done/plan-harness-v3.5.0-migration.md) (`.harness/baseline/v3.5.0/` + SHA256SUMS) |
 | Migration W2 — AGENTS.md | 2026-07-22 | [Plan §2](../done/plan-harness-v3.5.0-migration.md) |
 | Migration W3 — Review-/Closure-Harness | 2026-07-22 | [Plan §2](../done/plan-harness-v3.5.0-migration.md) ([ADR-0010](../../adr/0010-closure-note-pflicht.md)) |
-| Migration W4 — Carveouts + Werkzeug-Triage | 2026-07-23 | [Triage](risks-backlog-werkzeug-triage.md), MR-005/006 |
+| Migration W4 — Carveouts + Werkzeug-Triage | 2026-07-23 | [Triage](../risks-backlog-werkzeug-triage.md), MR-005/006 |
 | Migration W5 — Layout-Move (`docs/plan/…`) | 2026-07-23 | [Plan §3/§5](../done/plan-harness-v3.5.0-migration.md), MR-001 aufgelöst |
 | Migration W6 — Planning-Form + Roadmap-Reformat | 2026-07-23 | [Plan §2](../done/plan-harness-v3.5.0-migration.md), MR-007 |
 | Migration W7 — `version.md` + `versions`-Modul | 2026-07-23 | [Plan §2](../done/plan-harness-v3.5.0-migration.md); `ids` → `welle-01` |

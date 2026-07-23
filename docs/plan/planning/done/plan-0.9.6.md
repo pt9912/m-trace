@@ -27,7 +27,7 @@
 > MVP-40..MVP-42;
 > [`docs/planning/in-progress/roadmap.md`](../in-progress/roadmap.md)
 > Release-Übersicht und Folge-ADRs;
-> [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
+> [`docs/planning/in-progress/risks-backlog.md`](../risks-backlog.md)
 > R-9/R-13;
 > [`README.md`](../../../../README.md) mit der Überschrift
 > „Was m-trace nicht ist".
@@ -278,7 +278,7 @@ DoD:
 - [x] [`roadmap.md`](../in-progress/roadmap.md) Folge-ADRs unverändert
   (Postgres/Multi-Tenant-Folge-ADRs aus Roadmap §4 — Patch
   `1.1.12` erzeugt keine neue Folge-ADR-Entscheidung).
-- [x] [`risks-backlog.md`](../in-progress/risks-backlog.md) Header auf
+- [x] [`risks-backlog.md`](../risks-backlog.md) Header auf
   `0.9.6`-Stand aktualisiert; R-9/R-13 inhaltlich unverändert
   (der `1.1.12`-NF-18-Patch bestätigt nur den bestehenden
   „K8s-Smoke-Einführung"-Trigger, ohne ihn zu verschieben).

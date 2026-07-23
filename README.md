@@ -370,7 +370,7 @@ designated single-source documents:
   tag (Added/Changed/Security/Removed).
 - [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
   — current phase, next steps, and follow-up ADRs.
-- [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/in-progress/risks-backlog.md)
+- [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
   — active risks with trigger thresholds.
 
 Guiding documents:

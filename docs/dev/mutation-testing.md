@@ -1,7 +1,7 @@
 # Mutation Testing
 
 > **Status**: Aktiv seit `plan-0.9.5` Tranche 4 (RAK-Wave-2 /
-> [`extra-gates.md`](../plan/planning/in-progress/extra-gates.md) §3.6).
+> [`extra-gates.md`](../plan/planning/extra-gates.md) §3.6).
 > **Initial nicht-blockierend**: nur Nightly-Reporting; PR-
 > Blockierung erst nach Beobachtungsphase (siehe §3 Score-Schwelle).
 > Workflow:

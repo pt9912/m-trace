@@ -68,7 +68,7 @@ Antwort `201 Created` enthält Stream-Metadaten plus
 Aufruferseitig direkt in den Publisher (FFmpeg, OBS, …) übernehmen,
 serverseitig gibt es ihn nie wieder.
 
-**Optional: `?provision=true`** (`0.12.6` Tranche 9, [`R-15`](../plan/planning/in-progress/risks-backlog.md#r-15)). Wenn der
+**Optional: `?provision=true`** (`0.12.6` Tranche 9, [`R-15`](../plan/planning/risks-backlog.md#r-15)). Wenn der
 Operator zusätzlich einen MediaMTX-Server provisionieren möchte
 (Endpoint + Routing-Rule), kann er den `provision=true`-Query-Param
 setzen:
@@ -230,8 +230,8 @@ und [`plan-0.11.0.md`](../plan/planning/done/plan-0.11.0.md) §10.
 
 - Externe MediaMTX-Hook-Integration (Lifecycle-Events kommen aus
   dem Lab-Smoke oder einem manuellen Curl, nicht aus MediaMTX
-  selbst — Folge-Scope laut [`R-16`](../plan/planning/in-progress/risks-backlog.md#r-16) in
-  [`risks-backlog.md`](../plan/planning/in-progress/risks-backlog.md)).
+  selbst — Folge-Scope laut [`R-16`](../plan/planning/risks-backlog.md#r-16) in
+  [`risks-backlog.md`](../plan/planning/risks-backlog.md)).
 - Provisionierung der MediaMTX-Control-API. Das generierte YAML
   wird als Datei ausgespielt; MediaMTX liest es per Volume-Mount.
 - Dashboard-UI für Stream-Control. Der CRUD-Pfad ist API-only.

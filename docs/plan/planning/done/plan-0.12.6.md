@@ -21,12 +21,12 @@
 > Ops Backends). RAK-Range schiebt `0.13.0` auf `RAK-91+`.
 >
 > **Ziel**: Die nach `0.12.5` offen gebliebenen R-N-Items aus
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1 systematisch
+> [`risks-backlog.md`](../risks-backlog.md) §1.1 systematisch
 > adressieren. Plan enthält **eine Tranche pro R-N**; T0 hat alle
 > neun aktiviert (Default-A aus §0.3 §2 Tranchen-Auswahl).
 >
 > **Bezug**:
-> [`risks-backlog.md`](../in-progress/risks-backlog.md) §1.1
+> [`risks-backlog.md`](../risks-backlog.md) §1.1
 > R-5/R-7/R-9/R-10/R-11/R-13/R-15/R-17/R-20/R-22 (R-9 wird im
 > `0.13.0`-Plan bearbeitet, weil K8s-bezogen);
 > [`done/plan-0.4.0.md`](./plan-0.4.0.md) §3.1/§4.4/§8.3
@@ -55,7 +55,7 @@ DoD-Checkboxen tracken den Lieferstand:
 ### 0.1 Scope-Definition
 
 `0.12.6` ist eine **Folge-Items-Sammlung** für R-N-Einträge, die
-nach dem `0.12.5`-Release in [`risks-backlog.md`](../in-progress/risks-backlog.md)
+nach dem `0.12.5`-Release in [`risks-backlog.md`](../risks-backlog.md)
 §1.1 offen oder „teilweise gelöst" sind. Pro R-N gibt es eine
 Tranche, die das Item entweder strukturell auflöst (🟢) oder mit
 geschärftem Trigger und konkreterem Folge-Pfad weiterträgt.

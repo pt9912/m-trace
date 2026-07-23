@@ -12,7 +12,7 @@ from pathlib import Path
 # Kennungs-Familien je Quelle (MR-003).
 FAMILIES = {
     "spec/lastenheft.md": r"(?:F|NF|MVP|AK|RAK)-\d+",
-    "docs/plan/planning/in-progress/risks-backlog.md": r"R-\d+",
+    "docs/plan/planning/risks-backlog.md": r"R-\d+",
 }
 
 

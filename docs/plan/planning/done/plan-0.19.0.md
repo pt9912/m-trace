@@ -7,7 +7,7 @@
 > **Vorgänger**: `0.18.0` ist released und als Decision-Closeout in
 > [`plan-0.18.0.md`](./plan-0.18.0.md) archiviert; die drei
 > Folge-Risiken `R-9`, `R-12` und `R-13` bleiben im
-> [`risks-backlog.md`](../in-progress/risks-backlog.md)
+> [`risks-backlog.md`](../risks-backlog.md)
 > offen.
 >
 > **Auslöser**: Offene Trigger in der Roadmap (§4 „Erwartete ADRs"):

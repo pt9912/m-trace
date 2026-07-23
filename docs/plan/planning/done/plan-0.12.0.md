@@ -27,7 +27,7 @@
 > §4 Authentifizierung und §5 Validierungsreihenfolge;
 > [`docs/planning/done/plan-0.11.0.md`](../done/plan-0.11.0.md) §10
 > Folge-Scope nach `0.11.0`;
-> [`docs/planning/in-progress/risks-backlog.md`](../in-progress/risks-backlog.md)
+> [`docs/planning/in-progress/risks-backlog.md`](../risks-backlog.md)
 > R-14..R-16.
 >
 > **Nachfolger**: voraussichtlich `0.13.0` (Production / Ops Backends).

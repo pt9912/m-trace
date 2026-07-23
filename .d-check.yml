@@ -32,7 +32,7 @@ ids:
       target: spec/lastenheft.md
       exempt-paths: ['docs/plan/planning/done/**']
     - regex: '\bR-[0-9]+'
-      target: docs/plan/planning/in-progress/risks-backlog.md
+      target: docs/plan/planning/risks-backlog.md
       exempt-paths: ['spec/**', 'docs/plan/planning/done/**']
 
 # Modul `versions` (W7): gepinnte m-trace-GHCR-Image-Verweise in Markdown müssen

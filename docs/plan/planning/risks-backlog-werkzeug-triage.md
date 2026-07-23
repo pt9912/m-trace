@@ -1,7 +1,7 @@
 # W4 — Werkzeug-Triage des Risiko-Registers
 
 > **Stand:** 2026-07-23. Ergebnis der Welle **W4** des
-> [v3.5.0-Migrationsplans](../done/plan-harness-v3.5.0-migration.md). Triagiert die
+> [v3.5.0-Migrationsplans](done/plan-harness-v3.5.0-migration.md). Triagiert die
 > aktiven Einträge aus [`risks-backlog.md`](risks-backlog.md) gegen die
 > v3.5.0-Werkzeug-Triade (Modul 7 §Werkzeug-Wahl bei Diskrepanz):
 > **Carveout · ADR · Roadmap-Kandidat**. Additiv/netzlos — Verifikation
@@ -41,7 +41,7 @@ Trigger-Status der Aktiv-Tabelle (`§1.1`) zum Triage-Zeitpunkt:
 
 | R-N | Wesen | Werkzeug | Begründung |
 |---|---|---|---|
-| **[`R-13`](risks-backlog.md#r-13)** | Security-Gate-Suppression: drei `trixie-slim`-OS-CVEs (`image-scan`), kein Runtime-Pfad, ohne Upstream-Fix | **BF-Sub-Area-Markierung** (kein CO-`NNN`) | Modul-7-Frage 1: Teil eines **Clusters** vieler OS-CVE-Suppressions im selben Geltungsbereich (perl-base, sqlite3, acl, attr, gzip, util-linux, …). Ein CO-File je CVE wäre die explizit gewarnte Carveout-Kaskade. Bereits carveout-verwaltet in `.security/vulnignore.yaml` (reicher als das CO-Template) → [MR-006](../../../../harness/conventions.md). |
+| **[`R-13`](risks-backlog.md#r-13)** | Security-Gate-Suppression: drei `trixie-slim`-OS-CVEs (`image-scan`), kein Runtime-Pfad, ohne Upstream-Fix | **BF-Sub-Area-Markierung** (kein CO-`NNN`) | Modul-7-Frage 1: Teil eines **Clusters** vieler OS-CVE-Suppressions im selben Geltungsbereich (perl-base, sqlite3, acl, attr, gzip, util-linux, …). Ein CO-File je CVE wäre die explizit gewarnte Carveout-Kaskade. Bereits carveout-verwaltet in `.security/vulnignore.yaml` (reicher als das CO-Template) → [MR-006](../../../harness/conventions.md). |
 | **[`R-9`](risks-backlog.md#r-9)** | K8s-Smoke-Label-Allowlist noch Compose-Lab-spezifisch | **Roadmap-Kandidat** | Kein Gate heute gesenkt (die K8s-Smoke-Stage existiert nicht). Forward-Trigger „bei K8s-Smoke-Gate". Aufgeschobene Härtung, keine Diskrepanz. |
 | **[`R-12`](risks-backlog.md#r-12)** | WebRTC-`getStats()`-Drift zwischen Browser-Majors | **Roadmap-Kandidat** (überwacht) | Kein Gate gesenkt; ein **aktiver** Sensor (`webrtc-drift.yml`) detektiert die Drift. Re-Eval bei Browser-Major-Bump. Überwachtes Risiko, kein Carveout. |
 | **[`R-28`](risks-backlog.md#r-28)** | Multi-Replica-`ingest_sequencer` (RAM-Counter) | **Roadmap-Kandidat** | Ingenieurarbeit mit Trigger (`plan-0.23.0` Tranche 2). Kein Gate-Exception — ein fehlendes Feature, kein gesenkter Check. |
@@ -50,7 +50,7 @@ Trigger-Status der Aktiv-Tabelle (`§1.1`) zum Triage-Zeitpunkt:
 **ADR:** keiner der aktiven offenen Einträge ist eine **permanente
 Architekturentscheidung** — die architektonisch-permanenten Risiken ([`R-1`](risks-backlog.md#r-1)..[`R-4`](risks-backlog.md#r-4))
 sind bereits per ADR-0001..0003 aufgelöst; die Out-of-Scope-Stände (OS-1..OS-5,
-[`RAK-71`](../../../../spec/lastenheft.md#rak-71)) sind normativ im Lastenheft, nicht in einer ADR.
+[`RAK-71`](../../../spec/lastenheft.md#rak-71)) sind normativ im Lastenheft, nicht in einer ADR.
 
 ## 4. Ergebnis
 
@@ -60,12 +60,12 @@ sind bereits per ADR-0001..0003 aufgelöst; die Out-of-Scope-Stände (OS-1..OS-5
 2. **Der Security-Gate-Suppression-Cluster** ([`R-13`](risks-backlog.md#r-13) + die vielen nicht-R-N
    Nightly-Audit-Suppressions) ist eine **BF-Sub-Area-Markierung**, geführt in
    der bestehenden Registry `.security/vulnignore.yaml` — deklariert als
-   **[MR-006](../../../../harness/conventions.md)** plus Modus-Zeile. **Nicht** in
+   **[MR-006](../../../harness/conventions.md)** plus Modus-Zeile. **Nicht** in
    CO-Files dupliziert (Single Source of Truth, Anti-Kaskade).
 3. **Die Roadmap-Kandidat-Klasse** ([`R-9`](risks-backlog.md#r-9), [`R-12`](risks-backlog.md#r-12), [`R-28`](risks-backlog.md#r-28), [`R-30`](risks-backlog.md#r-30) und die Register-Praxis
    generell) bleibt im Risiko-Register. Dass m-trace ein RAK-gekoppeltes
    Roadmap-Discovery-Register **ohne** direktes Kanon-Äquivalent führt, ist als
-   **[MR-005](../../../../harness/conventions.md)** deklariert.
+   **[MR-005](../../../harness/conventions.md)** deklariert.
 
 ## 5. Folge-Punkte
 

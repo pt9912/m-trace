@@ -18,7 +18,7 @@
 >
 > **Bezug**:
 > [`../in-progress/roadmap.md`](../in-progress/roadmap.md),
-> [`../in-progress/risks-backlog.md`](../in-progress/risks-backlog.md),
+> [`../in-progress/risks-backlog.md`](../risks-backlog.md),
 > [`../../../spec/lastenheft.md`](../../../../spec/lastenheft.md)
 > §16.1, `MVP-20`, `F-132`, `NF-13`, `MVP-40`, `MVP-41`.
 >
