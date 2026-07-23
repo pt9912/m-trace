@@ -1,6 +1,6 @@
 # Backend-API-Kontrakt
 
-> **Bezug**: F-106..F-115, F-118..F-122.
+> **Bezug**: [`F-106`](lastenheft.md#f-106)..[`F-115`](lastenheft.md#f-115), [`F-118`](lastenheft.md#f-118)..[`F-122`](lastenheft.md#f-122).
 
 Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 
@@ -55,15 +55,15 @@ Dieser Kontrakt ist die normative Schnittstelle der m-trace API.
 | `GET`  | `/api/stream-sessions/{id}` | Stream-Session mit Events lesen | `200 OK` oder `404 Not Found` |
 | `GET`  | `/api/stream-sessions/stream` | SSE-Live-Stream der Event-Append-Frames | `200 OK` (text/event-stream) oder `401` |
 | `POST` | `/api/analyze`          | HLS-Manifest analysieren | `200 OK` |
-| `POST` | `/api/ingest/streams`   | Ingest-Stream anlegen; gibt Stream-Metadaten plus Klartext-Key genau einmal zurück (RAK-66) | `201 Created` |
-| `GET`  | `/api/ingest/streams`   | Streams im aufgelösten Project listen, ohne Klartext-Key (RAK-66/RAK-70) | `200 OK` |
-| `GET`  | `/api/ingest/streams/{id}` | Stream-Details inkl. Endpunkt und Routing-Regel lesen, ohne Klartext-Key (RAK-67) | `200 OK` oder `404 Not Found` |
-| `POST` | `/api/ingest/streams/{id}/rotate-key` | Stream-Key rotieren; gibt neuen Klartext-Key genau einmal zurück (RAK-66) | `200 OK` |
-| `POST` | `/api/ingest/streams/{id}/validate-key` | Lokalen Stream-Key gegen aktive `key_hash`-Werte prüfen; **kein** produktiver Media-Server-Auth-Pfad (RAK-65/RAK-66) | `200 OK` |
-| `POST` | `/api/ingest/hooks/stream-started` | Lokales Start-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
-| `POST` | `/api/ingest/hooks/stream-ended` | Lokales Ende-Event empfangen oder Smoke-Event einspeisen (RAK-69) | `202 Accepted` |
-| `GET`  | `/api/ingest/media-server-config` | Generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern (RAK-68) | `200 OK` |
-| `POST` | `/api/auth/session-tokens` | Kurzlebiges Session Token aus gültigem Project Token ausstellen (RAK-72) | `201 Created` |
+| `POST` | `/api/ingest/streams`   | Ingest-Stream anlegen; gibt Stream-Metadaten plus Klartext-Key genau einmal zurück ([`RAK-66`](lastenheft.md#rak-66)) | `201 Created` |
+| `GET`  | `/api/ingest/streams`   | Streams im aufgelösten Project listen, ohne Klartext-Key ([`RAK-66`](lastenheft.md#rak-66)/[`RAK-70`](lastenheft.md#rak-70)) | `200 OK` |
+| `GET`  | `/api/ingest/streams/{id}` | Stream-Details inkl. Endpunkt und Routing-Regel lesen, ohne Klartext-Key ([`RAK-67`](lastenheft.md#rak-67)) | `200 OK` oder `404 Not Found` |
+| `POST` | `/api/ingest/streams/{id}/rotate-key` | Stream-Key rotieren; gibt neuen Klartext-Key genau einmal zurück ([`RAK-66`](lastenheft.md#rak-66)) | `200 OK` |
+| `POST` | `/api/ingest/streams/{id}/validate-key` | Lokalen Stream-Key gegen aktive `key_hash`-Werte prüfen; **kein** produktiver Media-Server-Auth-Pfad ([`RAK-65`](lastenheft.md#rak-65)/[`RAK-66`](lastenheft.md#rak-66)) | `200 OK` |
+| `POST` | `/api/ingest/hooks/stream-started` | Lokales Start-Event empfangen oder Smoke-Event einspeisen ([`RAK-69`](lastenheft.md#rak-69)) | `202 Accepted` |
+| `POST` | `/api/ingest/hooks/stream-ended` | Lokales Ende-Event empfangen oder Smoke-Event einspeisen ([`RAK-69`](lastenheft.md#rak-69)) | `202 Accepted` |
+| `GET`  | `/api/ingest/media-server-config` | Generiertes/validiertes MediaMTX-Artefakt abrufen oder Diagnose liefern ([`RAK-68`](lastenheft.md#rak-68)) | `200 OK` |
+| `POST` | `/api/auth/session-tokens` | Kurzlebiges Session Token aus gültigem Project Token ausstellen ([`RAK-72`](lastenheft.md#rak-72)) | `201 Created` |
 
 ---
 
@@ -438,7 +438,7 @@ erscheinen. List-, Detail-, Event-, Fehler- und Artefakt-Antworten
 enthalten höchstens `key_fingerprint`.
 
 **Optionaler Media-Server-Provisioning-Pfad** (,
-RAK-87 / R-15). `POST /api/ingest/streams` akzeptiert einen
+[`RAK-87`](lastenheft.md#rak-87) / R-15). `POST /api/ingest/streams` akzeptiert einen
 **additiven** Query-Param `provision`:
 
 - **Default `provision=false`** (oder Query-Param fehlt): das
@@ -628,7 +628,7 @@ bestehenden lokalen/API-nahen Auth-Modells aus §4 (Variante B,
 Auth-Modul in `apps/api`) — **kein** vollständiger Identity-/SSO-/
 OAuth-Pfad und **kein** mandantenfähiger Control-Plane-Pfad. Bestehende
 `X-MTrace-Token`-Project-Token-Flows bleiben im
-Compatibility-Fenster gültig (RAK-75); siehe Out-of-Scope-
+Compatibility-Fenster gültig ([`RAK-75`](lastenheft.md#rak-75)); siehe Out-of-Scope-
 Liste in
 
 §0 für Scope, Architektur und Threat Model.
@@ -639,7 +639,7 @@ Liste in
 |---|---|
 | `POST /api/auth/session-tokens` | Pflicht-`X-MTrace-Token` (Project Token); stellt kurzlebiges Session Token aus. |
 | `POST /api/playback-events` | Pflicht — entweder `X-MTrace-Token` (Legacy/Project) **oder** `Authorization: Bearer mtr_st_*` **oder** `X-MTrace-Session-Token`. |
-| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8. **Kein** Project-Policy-Enforcement — der Pfad bleibt im Token-Validierungs-Modell (RAK-65, lokale/lab-nahe Stream-Verwaltung; `curl`-/Operator-driven, kein Browser-Konsument). Project-Policy für Ingest ist Folge-Scope; vollständige Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) §5. |
+| `POST /api/ingest/*` | Pflicht-`X-MTrace-Token` (Project Token) wie in §3.8. **Kein** Project-Policy-Enforcement — der Pfad bleibt im Token-Validierungs-Modell ([`RAK-65`](lastenheft.md#rak-65), lokale/lab-nahe Stream-Verwaltung; `curl`-/Operator-driven, kein Browser-Konsument). Project-Policy für Ingest ist Folge-Scope; vollständige Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) §5. |
 | `POST /api/analyze` mit `correlation_id`/`session_id` und `GET /api/stream-sessions[/{id}]` | Pflicht — zusätzlich zur `X-MTrace-Token`-Variante aus §4 ist `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` erlaubt, sofern das Session Token den Project- und Session-Scope passend bindet. |
 
 **Header-Priorität für Mehrfach-Auth.** Werden mehrere Auth-Header
@@ -717,7 +717,7 @@ eine globale, konservative und informationsarme Allowlist:
 Akzeptiertes Informationsniveau: ein Client darf erkennen, ob sein
 eigener Origin in der globalen Union bekannt ist; er darf **nicht**
 erkennen, welche Projects existieren oder welche anderen Origins
-konfiguriert sind. RAK-74 gilt damit für Request-Enforcement;
+konfiguriert sind. [`RAK-74`](lastenheft.md#rak-74) gilt damit für Request-Enforcement;
 Preflight ist ein konservativer Browser-Kompatibilitätsfilter.
 
 **Wire-Skizze: `POST /api/auth/session-tokens`.**
@@ -946,7 +946,7 @@ Doppelte Tripel werden im Read-Shape dedupliziert.
 > konservative CORS-Preflight-Allowlist und eine neunstufige
 > Auth-Fehlerpräzedenz. Der `X-MTrace-Token`-Pfad aus diesem
 > Abschnitt bleibt im Compatibility-Fenster gültig
-> (RAK-75).
+> ([`RAK-75`](lastenheft.md#rak-75)).
 
 `X-MTrace-Token` ist endpoint-spezifisch:
 
@@ -1039,7 +1039,7 @@ folgen einer eigenen Validierungs- und Fehlerklassen-Matrix; siehe §10.3.
 ## 6. Rate Limiting
 
 - **Quote**: 100 Events/Sekunde **pro Dimension**. Drei unabhängige
-  Dimensionen werden geprüft (F-110): `project_id`,
+  Dimensionen werden geprüft ([`F-110`](lastenheft.md#f-110)): `project_id`,
   `client_ip`, `origin`. Mismatch in einer Dimension reicht für `429`;
   ein 429 in einer Dimension verbraucht keine Tokens in den anderen
   („all-or-nothing"-Commit).
@@ -1119,7 +1119,7 @@ Verbindliche Regeln:
 
 ## 7a. SRT-Health-Read-Vertrag
 
-> Bezug: RAK-43.
+> Bezug: [`RAK-43`](lastenheft.md#rak-43).
 
 Der Vertrag liefert die Read-Endpoints. Vorgesehene Form:
 
@@ -1387,7 +1387,7 @@ Events angenommen wurden).
 
 ### 10.6 SRT-Health-Persistenz
 
-> Bezug: RAK-42, RAK-46.
+> Bezug: [`RAK-42`](lastenheft.md#rak-42), [`RAK-46`](lastenheft.md#rak-46).
 
 SRT-Health-Samples sind durable in SQLite persistiert.
 Tabelle (finalisiert über `apps/api/internal/storage/schema.yaml`):

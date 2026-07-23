@@ -29,8 +29,11 @@ Konvergenz-Schritt auf dem normativen Kern.
 - [ ] `ids` in `.d-check.yml`-`modules` + `scope.roots: [spec]` + `patterns`
       (F/NF/MVP/AK/RAK → `spec/lastenheft.md`); `make gates` grün, keine
       Falschbefunde; `anchors` grün.
-- [ ] `trace.slices.file-pattern` um `slice-*` + `welle-*` erweitert (MR-007-
-      Folgepunkt — erstes Slice/Welle-Artefakt).
+- [~] `trace.slices.file-pattern` erweitern — **deferred (offener MR-007-Punkt):**
+      die RTM (`trace.slices`) bindet **einen** `id-prefix`; `plan-*` (grandfathered)
+      und `slice-*` lassen sich damit nicht sauber mischen. `--trace` ist advisory
+      (nicht in `make gates`), und kein `done/`-Slice deckt bislang ein konkretes
+      Requirement → sauber lösen, sobald der erste Slice ein Requirement trägt.
 - [ ] `conventions.md` §Requirement-Link-Konvergenz auf „Spec-Straten graduiert,
       Rest = `slice-002`" nachgezogen.
 - [ ] Closure-Notiz.

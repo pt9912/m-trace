@@ -10,7 +10,7 @@ testen gegen dieselben Dateien:
   inklusive `analyzerKind`, `findings`-Form und `details`-Struktur.
 - `success-dash-vod.json` — Erfolgsfall mit `analyzerKind: "dash"` /
   `playlistType: "dash"` (VOD-MPD, `type=static`, on-demand-Profile;
-  ab `0.9.0` Tranche 3, RAK-58). Pinnt die DASH-Variante des
+  ab `0.9.0` Tranche 3, [`RAK-58`](../../lastenheft.md#rak-58)). Pinnt die DASH-Variante des
   Envelopes mit `details.profiles` / `type` / `live` / `periodCount`
   / `adaptationSets`-Hierarchie inklusive Mindest-Felder pro
   `Representation` (`bandwidth`, `width`/`height`, `codecs`,

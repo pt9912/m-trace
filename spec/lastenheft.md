@@ -501,15 +501,15 @@ Das Projekt muss als Mono-Repo organisiert werden.
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-1 | Muss | Das Repository muss alle Hauptbestandteile des Projekts enthalten. |
-| F-2 | Muss | Anwendungen müssen unter `apps/` liegen. |
-| F-3 | Muss | Wiederverwendbare Libraries müssen unter `packages/` liegen. |
-| F-4 | Muss | Hilfsdienste müssen unter `services/` liegen. |
-| F-5 | Muss | Beispiele müssen unter `examples/` liegen. |
-| F-6 | Muss | Observability-Konfigurationen müssen unter `observability/` liegen. |
-| F-7 | Muss | Deployment-Artefakte müssen unter `deploy/` liegen. **Patch `1.1.12` (Status-Präzisierung):** `deploy/` ist Struktur-Anker für reproduzierbare Deployment-Artefakte. Der primäre unterstützte lokale Deployment-Pfad bleibt das Compose-Lab über die Root-Datei `docker-compose.yml`. `deploy/k8s/` ist Folge-Scope (`MVP-42`, `Kann`) und ausdrücklich kein Production-Ready-K8s-Stand; siehe `deploy/README.md`. |
-| F-8 | Muss | Dokumentation muss unter `docs/` liegen. |
-| F-9 | Muss | Skripte müssen unter `scripts/` liegen. |
+| F-1 <a id="f-1"></a> | Muss | Das Repository muss alle Hauptbestandteile des Projekts enthalten. |
+| F-2 <a id="f-2"></a> | Muss | Anwendungen müssen unter `apps/` liegen. |
+| F-3 <a id="f-3"></a> | Muss | Wiederverwendbare Libraries müssen unter `packages/` liegen. |
+| F-4 <a id="f-4"></a> | Muss | Hilfsdienste müssen unter `services/` liegen. |
+| F-5 <a id="f-5"></a> | Muss | Beispiele müssen unter `examples/` liegen. |
+| F-6 <a id="f-6"></a> | Muss | Observability-Konfigurationen müssen unter `observability/` liegen. |
+| F-7 <a id="f-7"></a> | Muss | Deployment-Artefakte müssen unter `deploy/` liegen. **Patch `1.1.12` (Status-Präzisierung):** `deploy/` ist Struktur-Anker für reproduzierbare Deployment-Artefakte. Der primäre unterstützte lokale Deployment-Pfad bleibt das Compose-Lab über die Root-Datei `docker-compose.yml`. `deploy/k8s/` ist Folge-Scope (`MVP-42`, `Kann`) und ausdrücklich kein Production-Ready-K8s-Stand; siehe `deploy/README.md`. |
+| F-8 <a id="f-8"></a> | Muss | Dokumentation muss unter `docs/` liegen. |
+| F-9 <a id="f-9"></a> | Muss | Skripte müssen unter `scripts/` liegen. |
 
 #### Zielstruktur
 
@@ -565,13 +565,13 @@ Die fachlich relevanten Anwendungen und Libraries müssen nach hexagonaler Archi
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-10 | Muss | Fachlogik muss im Ordner `hexagon/` liegen. |
-| F-11 | Muss | Technische Ein- und Ausgänge müssen im Ordner `adapters/` liegen. |
-| F-12 | Muss | Abhängigkeiten müssen von außen nach innen zeigen. |
-| F-13 | Muss | Die Domain darf keine Framework-, HTTP-, Datenbank- oder Docker-Abhängigkeiten enthalten. |
-| F-14 | Muss | Ports müssen als Schnittstellen definiert werden. |
-| F-15 | Muss | Adapter müssen Ports implementieren oder Use Cases aufrufen. |
-| F-16 | Muss | DTOs dürfen nicht Teil der Domain sein. |
+| F-10 <a id="f-10"></a> | Muss | Fachlogik muss im Ordner `hexagon/` liegen. |
+| F-11 <a id="f-11"></a> | Muss | Technische Ein- und Ausgänge müssen im Ordner `adapters/` liegen. |
+| F-12 <a id="f-12"></a> | Muss | Abhängigkeiten müssen von außen nach innen zeigen. |
+| F-13 <a id="f-13"></a> | Muss | Die Domain darf keine Framework-, HTTP-, Datenbank- oder Docker-Abhängigkeiten enthalten. |
+| F-14 <a id="f-14"></a> | Muss | Ports müssen als Schnittstellen definiert werden. |
+| F-15 <a id="f-15"></a> | Muss | Adapter müssen Ports implementieren oder Use Cases aufrufen. |
+| F-16 <a id="f-16"></a> | Muss | DTOs dürfen nicht Teil der Domain sein. |
 
 #### Standardstruktur
 
@@ -610,12 +610,12 @@ Die API-Anwendung muss unter `apps/api` liegen. Backend-Technologie ist Go; sieh
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-17 | Muss | Annahme von Playback-Events |
-| F-18 | Muss | Verwaltung von Stream-Sessions |
-| F-19 | Muss | Bereitstellung von Metriken |
-| F-20 | Muss | Weitergabe von Telemetrie an OpenTelemetry |
-| F-21 | Muss | Bereitstellung von Daten für das Dashboard |
-| F-22 | Muss | Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`. |
+| F-17 <a id="f-17"></a> | Muss | Annahme von Playback-Events |
+| F-18 <a id="f-18"></a> | Muss | Verwaltung von Stream-Sessions |
+| F-19 <a id="f-19"></a> | Muss | Bereitstellung von Metriken |
+| F-20 <a id="f-20"></a> | Muss | Weitergabe von Telemetrie an OpenTelemetry |
+| F-21 <a id="f-21"></a> | Muss | Bereitstellung von Daten für das Dashboard |
+| F-22 <a id="f-22"></a> | Muss | Architektur-Vorbereitung in `apps/api` für Stream Analyzer (Port-Hook); volle Integration ab Phase `0.3.0`. |
 
 #### Mindest-Endpunkte für den MVP
 
@@ -651,12 +651,12 @@ Das Dashboard muss unter `apps/dashboard` liegen und mit SvelteKit umgesetzt wer
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-23 | Muss | Anzeige laufender Stream-Sessions |
-| F-24 | Muss | Anzeige aktueller Playback-Metriken |
-| F-25 | Muss | Anzeige von Fehlern und Warnungen |
-| F-26 | Muss | Anzeige einfacher Stream-Health-Zustände |
-| F-27 | Muss | Anzeige von Backend- und Telemetrie-Status |
-| F-28 | Muss | Integration eines Test-Players |
+| F-23 <a id="f-23"></a> | Muss | Anzeige laufender Stream-Sessions |
+| F-24 <a id="f-24"></a> | Muss | Anzeige aktueller Playback-Metriken |
+| F-25 <a id="f-25"></a> | Muss | Anzeige von Fehlern und Warnungen |
+| F-26 <a id="f-26"></a> | Muss | Anzeige einfacher Stream-Health-Zustände |
+| F-27 <a id="f-27"></a> | Muss | Anzeige von Backend- und Telemetrie-Status |
+| F-28 <a id="f-28"></a> | Muss | Integration eines Test-Players |
 
 #### Mindestansichten für den MVP
 
@@ -709,12 +709,12 @@ Hauptaufgaben:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-29 | Muss | Playback-Events annehmen |
-| F-30 | Muss | Stream-Sessions verwalten |
-| F-31 | Muss | Metriken vorbereiten oder exportieren |
-| F-32 | Muss | Daten für Dashboard bereitstellen |
-| F-33 | Muss | Stream Analyzer anbinden |
-| F-34 | Muss | Health Checks bereitstellen |
+| F-29 <a id="f-29"></a> | Muss | Playback-Events annehmen |
+| F-30 <a id="f-30"></a> | Muss | Stream-Sessions verwalten |
+| F-31 <a id="f-31"></a> | Muss | Metriken vorbereiten oder exportieren |
+| F-32 <a id="f-32"></a> | Muss | Daten für Dashboard bereitstellen |
+| F-33 <a id="f-33"></a> | Muss | Stream Analyzer anbinden |
+| F-34 <a id="f-34"></a> | Muss | Health Checks bereitstellen |
 
 Architektur:
 
@@ -750,12 +750,12 @@ Hauptaufgaben:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-35 | Muss | Live-Übersicht anzeigen |
-| F-36 | Muss | Test-Player bereitstellen |
-| F-37 | Muss | Playback-Events anzeigen |
-| F-38 | Muss | Stream-Sessions anzeigen |
-| F-39 | Muss | API-Status anzeigen |
-| F-40 | Muss | Links zu Grafana, Prometheus und Media-Server-Konsole anzeigen |
+| F-35 <a id="f-35"></a> | Muss | Live-Übersicht anzeigen |
+| F-36 <a id="f-36"></a> | Muss | Test-Player bereitstellen |
+| F-37 <a id="f-37"></a> | Muss | Playback-Events anzeigen |
+| F-38 <a id="f-38"></a> | Muss | Stream-Sessions anzeigen |
+| F-39 <a id="f-39"></a> | Muss | API-Status anzeigen |
+| F-40 <a id="f-40"></a> | Muss | Links zu Grafana, Prometheus und Media-Server-Konsole anzeigen |
 
 Architektur:
 
@@ -792,11 +792,11 @@ Spätere Hauptaufgaben:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-41 | Kann | HLS-Teststream abspielen |
-| F-42 | Kann | Player-SDK isoliert integrieren |
-| F-43 | Kann | erzeugte Events sichtbar machen |
-| F-44 | Kann | SDK-Konfiguration testen |
-| F-45 | Kann | als minimale Referenzintegration für externe Nutzer dienen |
+| F-41 <a id="f-41"></a> | Kann | HLS-Teststream abspielen |
+| F-42 <a id="f-42"></a> | Kann | Player-SDK isoliert integrieren |
+| F-43 <a id="f-43"></a> | Kann | erzeugte Events sichtbar machen |
+| F-44 <a id="f-44"></a> | Kann | SDK-Konfiguration testen |
+| F-45 <a id="f-45"></a> | Kann | als minimale Referenzintegration für externe Nutzer dienen |
 
 Warum nicht im MVP:
 
@@ -815,12 +815,12 @@ Hauptaufgaben:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-46 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Stream-Keys verwalten — lokale/lab-nahe CSPRNG-Erzeugung mit URL-sicherem Output, Persistenz speichert nur `key_hash` und redigierten `fingerprint`, Klartext-Keys nur bei Anlage/Rotation in Antworten. Historische Kann-Stufung gilt für `apps/ingest-gateway`-Ausgliederung; siehe RAK-66 in §13.13. |
-| F-47 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Ingest-Endpunkte beschreiben — Protokoll-Allowlist `srt`/`rtmp`, Host/Port/Path plus Lab-/Egress-Hinweise. Externe Infrastruktur-Provisionierung bleibt Folge-Scope; siehe RAK-67 in §13.13. |
-| F-48 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Routing-Regeln für Streams definieren — 1:1-Mapping `IngestStream` ↔ `MediaServerTarget`, deterministisch validierbar. Priorisierung, Fan-out und Failover bleiben Folge-Scope; siehe RAK-67. |
-| F-49 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Stream-Lifecycle-Events — `stream_started`/`stream_ended` als stabiles Eventmodell, lokal reproduzierbar empfangbar/auslösbar; **keine** Klartext-Keys. Produktive ausgehende Webhook-Zustellung an externe Systeme bleibt Folge-Scope; siehe RAK-69 in §13.13. |
-| F-50 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-/RTMP-Konfigurationen vorbereiten — beschreibbare, reviewbare Lab-Artefakte, kein Direkt-Manipulation laufender externer Server; siehe RAK-68 in §13.13. |
-| F-51 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Media-Server-Konfigurationen generieren oder validieren — normativer Zielserver MediaMTX im Lab-Scope; SRS bleibt Kompatibilitäts-/Dokuhintergrund. Bestehende `examples/`-Stacks bleiben grün; siehe RAK-68. |
+| F-46 <a id="f-46"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Stream-Keys verwalten — lokale/lab-nahe CSPRNG-Erzeugung mit URL-sicherem Output, Persistenz speichert nur `key_hash` und redigierten `fingerprint`, Klartext-Keys nur bei Anlage/Rotation in Antworten. Historische Kann-Stufung gilt für `apps/ingest-gateway`-Ausgliederung; siehe RAK-66 in §13.13. |
+| F-47 <a id="f-47"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Ingest-Endpunkte beschreiben — Protokoll-Allowlist `srt`/`rtmp`, Host/Port/Path plus Lab-/Egress-Hinweise. Externe Infrastruktur-Provisionierung bleibt Folge-Scope; siehe RAK-67 in §13.13. |
+| F-48 <a id="f-48"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Routing-Regeln für Streams definieren — 1:1-Mapping `IngestStream` ↔ `MediaServerTarget`, deterministisch validierbar. Priorisierung, Fan-out und Failover bleiben Folge-Scope; siehe RAK-67. |
+| F-49 <a id="f-49"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Stream-Lifecycle-Events — `stream_started`/`stream_ended` als stabiles Eventmodell, lokal reproduzierbar empfangbar/auslösbar; **keine** Klartext-Keys. Produktive ausgehende Webhook-Zustellung an externe Systeme bleibt Folge-Scope; siehe RAK-69 in §13.13. |
+| F-50 <a id="f-50"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-/RTMP-Konfigurationen vorbereiten — beschreibbare, reviewbare Lab-Artefakte, kein Direkt-Manipulation laufender externer Server; siehe RAK-68 in §13.13. |
+| F-51 <a id="f-51"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | Media-Server-Konfigurationen generieren oder validieren — normativer Zielserver MediaMTX im Lab-Scope; SRS bleibt Kompatibilitäts-/Dokuhintergrund. Bestehende `examples/`-Stacks bleiben grün; siehe RAK-68. |
 
 Mögliche Endpunkte:
 
@@ -901,12 +901,12 @@ Hauptaufgaben bei späterer Reaktivierung:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-52 | Deferred | HLS-URL entgegennehmen |
-| F-53 | Deferred | Manifest analysieren |
-| F-54 | Deferred | Analyseergebnis als JSON liefern |
-| F-55 | Deferred | Fehler und Warnungen normalisieren |
-| F-56 | Deferred | spätere DASH-/CMAF-Analyse anbieten |
-| F-57 | Deferred | Sicherheitsgrenzen für externe URL-Abrufe schaffen |
+| F-52 <a id="f-52"></a> | Deferred | HLS-URL entgegennehmen |
+| F-53 <a id="f-53"></a> | Deferred | Manifest analysieren |
+| F-54 <a id="f-54"></a> | Deferred | Analyseergebnis als JSON liefern |
+| F-55 <a id="f-55"></a> | Deferred | Fehler und Warnungen normalisieren |
+| F-56 <a id="f-56"></a> | Deferred | spätere DASH-/CMAF-Analyse anbieten |
+| F-57 <a id="f-57"></a> | Deferred | Sicherheitsgrenzen für externe URL-Abrufe schaffen |
 
 Mögliche spätere Endpunkte:
 
@@ -1052,11 +1052,11 @@ Weitere Player-Adapter sind spätere Erweiterungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-58 | Kann | dash.js |
-| F-59 | Kann | Shaka Player |
-| F-60 | Kann | Video.js |
-| F-61 | Kann | native Safari HLS |
-| F-62 | Kann | WebRTC `getStats()`, separat in späterer Phase |
+| F-58 <a id="f-58"></a> | Kann | dash.js |
+| F-59 <a id="f-59"></a> | Kann | Shaka Player |
+| F-60 <a id="f-60"></a> | Kann | Video.js |
+| F-61 <a id="f-61"></a> | Kann | native Safari HLS |
+| F-62 <a id="f-62"></a> | Kann | WebRTC `getStats()`, separat in späterer Phase |
 
 Ein Player-SDK von Grund auf ist ein eigenes Subprojekt und darf nicht unterschätzt werden. Unterschiedliche Player liefern unterschiedliche Events, Timing-Modelle und Metriken. Safari mit nativem HLS bietet besonders wenig Introspektion.
 
@@ -1086,11 +1086,11 @@ Für den MVP gilt:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-63 | Muss | Anbindung an ein `HTMLVideoElement` |
-| F-64 | Muss | Erfassung von Playback-Events |
-| F-65 | Muss | Erfassung einfacher Metriken |
-| F-66 | Muss | Versand der Events über OpenTelemetry Web SDK oder HTTP an die API |
-| F-67 | Muss | Trennung von Browser-Adapter und fachlicher Tracking-Logik |
+| F-63 <a id="f-63"></a> | Muss | Anbindung an ein `HTMLVideoElement` |
+| F-64 <a id="f-64"></a> | Muss | Erfassung von Playback-Events |
+| F-65 <a id="f-65"></a> | Muss | Erfassung einfacher Metriken |
+| F-66 <a id="f-66"></a> | Muss | Versand der Events über OpenTelemetry Web SDK oder HTTP an die API |
+| F-67 <a id="f-67"></a> | Muss | Trennung von Browser-Adapter und fachlicher Tracking-Logik |
 
 #### Zu erfassende Events im MVP
 
@@ -1141,25 +1141,25 @@ Der Stream Analyzer muss unter `packages/stream-analyzer` liegen und in TypeScri
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-68 | Muss | Abruf von HLS-Manifesten |
-| F-69 | Muss | Analyse einfacher Manifest-Eigenschaften |
-| F-70 | Muss | Prüfung von Segment-Dauern |
-| F-71 | Muss | Erkennung offensichtlicher Inkonsistenzen |
-| F-72 | Muss | Bereitstellung einer API für Backend und CLI |
-| F-73 | Muss | Vorbereitung für DASH- und CMAF-Analyse |
+| F-68 <a id="f-68"></a> | Muss | Abruf von HLS-Manifesten |
+| F-69 <a id="f-69"></a> | Muss | Analyse einfacher Manifest-Eigenschaften |
+| F-70 <a id="f-70"></a> | Muss | Prüfung von Segment-Dauern |
+| F-71 <a id="f-71"></a> | Muss | Erkennung offensichtlicher Inkonsistenzen |
+| F-72 <a id="f-72"></a> | Muss | Bereitstellung einer API für Backend und CLI |
+| F-73 <a id="f-73"></a> | Muss | Vorbereitung für DASH- und CMAF-Analyse |
 
 #### Mindestfunktionen für den MVP
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-74 | Muss | HLS Master Playlist erkennen |
-| F-75 | Muss | HLS Media Playlist erkennen |
-| F-76 | Muss | Varianten und Renditions extrahieren |
-| F-77 | Muss | Segment-Anzahl bestimmen |
-| F-78 | Muss | durchschnittliche Segment-Dauer berechnen |
-| F-79 | Muss | Abweichungen bei Segment-Dauern erkennen |
-| F-80 | Muss | einfache Live-Latenz-Schätzung |
-| F-81 | Muss | Analyseergebnis als JSON liefern |
+| F-74 <a id="f-74"></a> | Muss | HLS Master Playlist erkennen |
+| F-75 <a id="f-75"></a> | Muss | HLS Media Playlist erkennen |
+| F-76 <a id="f-76"></a> | Muss | Varianten und Renditions extrahieren |
+| F-77 <a id="f-77"></a> | Muss | Segment-Anzahl bestimmen |
+| F-78 <a id="f-78"></a> | Muss | durchschnittliche Segment-Dauer berechnen |
+| F-79 <a id="f-79"></a> | Muss | Abweichungen bei Segment-Dauern erkennen |
+| F-80 <a id="f-80"></a> | Muss | einfache Live-Latenz-Schätzung |
+| F-81 <a id="f-81"></a> | Muss | Analyseergebnis als JSON liefern |
 
 #### CLI-Ziel
 
@@ -1177,13 +1177,13 @@ Das Projekt muss eine lokale Streaming-Testumgebung bereitstellen.
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-82 | Muss | Start per Docker Compose |
-| F-83 | Muss | Media Server für lokale Tests |
-| F-84 | Muss | FFmpeg-basierter Teststream |
-| F-85 | Muss | API erreichbar unter `localhost` |
-| F-86 | Muss | Dashboard erreichbar unter `localhost` |
-| F-87 | Muss | Prometheus und Grafana optional verfügbar |
-| F-88 | Muss | OpenTelemetry Collector optional verfügbar |
+| F-82 <a id="f-82"></a> | Muss | Start per Docker Compose |
+| F-83 <a id="f-83"></a> | Muss | Media Server für lokale Tests |
+| F-84 <a id="f-84"></a> | Muss | FFmpeg-basierter Teststream |
+| F-85 <a id="f-85"></a> | Muss | API erreichbar unter `localhost` |
+| F-86 <a id="f-86"></a> | Muss | Dashboard erreichbar unter `localhost` |
+| F-87 <a id="f-87"></a> | Muss | Prometheus und Grafana optional verfügbar |
+| F-88 <a id="f-88"></a> | Muss | OpenTelemetry Collector optional verfügbar |
 
 #### Mindestdienste
 
@@ -1238,12 +1238,12 @@ Das Projekt muss Observability von Beginn an berücksichtigen.
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-89 | Muss | API muss strukturierte Logs erzeugen. |
-| F-90 | Muss | API muss Health Checks bereitstellen. |
-| F-91 | Muss | API soll OpenTelemetry unterstützen. |
-| F-92 | Muss | Playback-Events sollen als Metriken oder Traces exportierbar sein. |
-| F-93 | Muss | Prometheus soll technische Metriken erfassen können. |
-| F-94 | Soll | Grafana kann mit einem einfachen Beispiel-Dashboard ausgeliefert werden (harmonisiert mit MVP-28). |
+| F-89 <a id="f-89"></a> | Muss | API muss strukturierte Logs erzeugen. |
+| F-90 <a id="f-90"></a> | Muss | API muss Health Checks bereitstellen. |
+| F-91 <a id="f-91"></a> | Muss | API soll OpenTelemetry unterstützen. |
+| F-92 <a id="f-92"></a> | Muss | Playback-Events sollen als Metriken oder Traces exportierbar sein. |
+| F-93 <a id="f-93"></a> | Muss | Prometheus soll technische Metriken erfassen können. |
+| F-94 <a id="f-94"></a> | Soll | Grafana kann mit einem einfachen Beispiel-Dashboard ausgeliefert werden (harmonisiert mit MVP-28). |
 
 #### Mindestmetriken
 
@@ -1282,12 +1282,12 @@ Diese Labels können bei Player-Telemetrie sehr schnell zu unkontrollierbarer Ca
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-95 | Muss | Prometheus darf nur für aggregierte Metriken verwendet werden. |
-| F-96 | Muss | `session_id` darf nicht als Prometheus-Label verwendet werden. |
-| F-97 | Muss | Per-Session-Daten sollen als Traces oder Events modelliert werden. |
-| F-98 | Muss | Für hochvolumige Eventdaten muss eine spätere Storage-Option vorgesehen werden. |
-| F-99 | Muss | Das System muss Sampling vorbereiten. |
-| F-100 | Muss | Das Telemetrie-Modell muss Datenschutz und Cardinality gemeinsam berücksichtigen. |
+| F-95 <a id="f-95"></a> | Muss | Prometheus darf nur für aggregierte Metriken verwendet werden. |
+| F-96 <a id="f-96"></a> | Muss | `session_id` darf nicht als Prometheus-Label verwendet werden. |
+| F-97 <a id="f-97"></a> | Muss | Per-Session-Daten sollen als Traces oder Events modelliert werden. |
+| F-98 <a id="f-98"></a> | Muss | Für hochvolumige Eventdaten muss eine spätere Storage-Option vorgesehen werden. |
+| F-99 <a id="f-99"></a> | Muss | Das System muss Sampling vorbereiten. |
+| F-100 <a id="f-100"></a> | Muss | Das Telemetrie-Modell muss Datenschutz und Cardinality gemeinsam berücksichtigen. |
 
 #### Empfohlene Zuordnung
 
@@ -1305,11 +1305,11 @@ Im ersten MVP sollen folgende Regeln gelten:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-101 | Muss | Prometheus nur für Aggregate |
-| F-102 | Muss | Player-Sessions als OpenTelemetry-Traces vorbereiten |
-| F-103 | Muss | In-Memory-Speicherung nur für lokale Demo |
-| F-104 | Muss | keine produktive Langzeitspeicherung im MVP |
-| F-105 | Muss | keine `session_id`-Labels in Prometheus |
+| F-101 <a id="f-101"></a> | Muss | Prometheus nur für Aggregate |
+| F-102 <a id="f-102"></a> | Muss | Player-Sessions als OpenTelemetry-Traces vorbereiten |
+| F-103 <a id="f-103"></a> | Muss | In-Memory-Speicherung nur für lokale Demo |
+| F-104 <a id="f-104"></a> | Muss | keine produktive Langzeitspeicherung im MVP |
+| F-105 <a id="f-105"></a> | Muss | keine `session_id`-Labels in Prometheus |
 
 ---
 
@@ -1325,11 +1325,11 @@ MVP-Anforderungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-106 | Muss | Events enthalten eine `project_id`. |
-| F-107 | Muss | Events werden mit einem öffentlichen Project Token oder einem kurzlebigen Ingest Token versehen. |
-| F-108 | Muss | Das Backend validiert erlaubte Origins. |
-| F-109 | Muss | Tokens dürfen keine Secrets mit hoher Kritikalität sein, da Browser-Code öffentlich ist. |
-| F-110 | Muss | Rate Limits gelten pro Project, Origin und IP-Bereich. |
+| F-106 <a id="f-106"></a> | Muss | Events enthalten eine `project_id`. |
+| F-107 <a id="f-107"></a> | Muss | Events werden mit einem öffentlichen Project Token oder einem kurzlebigen Ingest Token versehen. |
+| F-108 <a id="f-108"></a> | Muss | Das Backend validiert erlaubte Origins. |
+| F-109 <a id="f-109"></a> | Muss | Tokens dürfen keine Secrets mit hoher Kritikalität sein, da Browser-Code öffentlich ist. |
+| F-110 <a id="f-110"></a> | Muss | Rate Limits gelten pro Project, Origin und IP-Bereich. |
 
 Erweiterungen, die mit Patch `1.1.15` für den `0.12.0`-Auth-/
 Security-Scope auf Release-Muss gehoben sind (historische Kann-
@@ -1337,9 +1337,9 @@ Stufung bleibt bis Patch `1.1.14` auditierbar):
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-111 | Muss (`0.12.0`-Scope, Patch `1.1.15`) | serverseitig signierte Session Tokens — kurzlebig, an Project, Audience, Ablauf und optional Session/Origin gebunden; Signaturschlüssel werden nie im Browser-Bundle, in Fixtures, Logs, Traces oder Beispiel-Configs ausgeliefert. Klartext-Token erscheint ausschließlich in der Issuance-Antwort. Siehe RAK-72 in §13.14. |
-| F-112 | Muss (`0.12.0`-Scope, Patch `1.1.15`) | rotierbare Project Tokens — Generationen mit Hash/Fingerprint, `not_before`, `grace_until?`, `expires_at?`, `revoked_at?`; Persistenz speichert nie Klartext, Grace-Phase ist persistiert und restart-stabil. Siehe RAK-73 in §13.14. |
-| F-113 | Muss (`0.12.0`-Scope, Patch `1.1.15`) | tenant-spezifische Ingest Policies im Project-Scope — erlaubte Origins, Methoden, Header, Audiences, maximale Session-Token-TTL und Rate-Limit-Buckets pro Project (Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope). Bestehende CORS-Regeln aus `NF-30`..`NF-37` werden in den Policy-Vertrag überführt. Siehe RAK-74 in §13.14. |
+| F-111 <a id="f-111"></a> | Muss (`0.12.0`-Scope, Patch `1.1.15`) | serverseitig signierte Session Tokens — kurzlebig, an Project, Audience, Ablauf und optional Session/Origin gebunden; Signaturschlüssel werden nie im Browser-Bundle, in Fixtures, Logs, Traces oder Beispiel-Configs ausgeliefert. Klartext-Token erscheint ausschließlich in der Issuance-Antwort. Siehe RAK-72 in §13.14. |
+| F-112 <a id="f-112"></a> | Muss (`0.12.0`-Scope, Patch `1.1.15`) | rotierbare Project Tokens — Generationen mit Hash/Fingerprint, `not_before`, `grace_until?`, `expires_at?`, `revoked_at?`; Persistenz speichert nie Klartext, Grace-Phase ist persistiert und restart-stabil. Siehe RAK-73 in §13.14. |
+| F-113 <a id="f-113"></a> | Muss (`0.12.0`-Scope, Patch `1.1.15`) | tenant-spezifische Ingest Policies im Project-Scope — erlaubte Origins, Methoden, Header, Audiences, maximale Session-Token-TTL und Rate-Limit-Buckets pro Project (Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope). Bestehende CORS-Regeln aus `NF-30`..`NF-37` werden in den Policy-Vertrag überführt. Siehe RAK-74 in §13.14. |
 
 #### Schema-Versionierung
 
@@ -1365,10 +1365,10 @@ Anforderungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-114 | Muss | neue Felder müssen abwärtskompatibel sein |
-| F-115 | Muss | unbekannte Felder dürfen nicht zum Fehler führen |
-| F-116 | Muss | entfernte Felder müssen über mindestens eine Minor-Version toleriert werden |
-| F-117 | Muss | Breaking Changes erfordern neue Major-Version der Event-Schemas |
+| F-114 <a id="f-114"></a> | Muss | neue Felder müssen abwärtskompatibel sein |
+| F-115 <a id="f-115"></a> | Muss | unbekannte Felder dürfen nicht zum Fehler führen |
+| F-116 <a id="f-116"></a> | Muss | entfernte Felder müssen über mindestens eine Minor-Version toleriert werden |
+| F-117 <a id="f-117"></a> | Muss | Breaking Changes erfordern neue Major-Version der Event-Schemas |
 
 #### Backpressure und Rate Limiting
 
@@ -1378,12 +1378,12 @@ MVP-Anforderungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-118 | Muss | maximale Event-Batch-Größe definieren |
-| F-119 | Muss | maximale Request-Rate pro Project definieren |
-| F-120 | Muss | HTTP `429` bei Rate Limit |
-| F-121 | Muss | HTTP `202` für angenommene Events |
-| F-122 | Muss | Events dürfen bei lokaler Überlast verworfen werden, wenn dies als Dropped-Event-Metrik sichtbar wird |
-| F-123 | Muss | SDK muss Sampling und Batch-Größe konfigurieren können |
+| F-118 <a id="f-118"></a> | Muss | maximale Event-Batch-Größe definieren |
+| F-119 <a id="f-119"></a> | Muss | maximale Request-Rate pro Project definieren |
+| F-120 <a id="f-120"></a> | Muss | HTTP `429` bei Rate Limit |
+| F-121 <a id="f-121"></a> | Muss | HTTP `202` für angenommene Events |
+| F-122 <a id="f-122"></a> | Muss | Events dürfen bei lokaler Überlast verworfen werden, wenn dies als Dropped-Event-Metrik sichtbar wird |
+| F-123 <a id="f-123"></a> | Muss | SDK muss Sampling und Batch-Größe konfigurieren können |
 
 #### Zeitstempel und Time Skew
 
@@ -1393,18 +1393,18 @@ Pflichtfelder:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-124 | Muss | `client_timestamp` |
-| F-125 | Muss | `server_received_at` |
-| F-126 | Muss | optional `client_time_origin` |
-| F-127 | Muss | optional `sequence_number` |
+| F-124 <a id="f-124"></a> | Muss | `client_timestamp` |
+| F-125 <a id="f-125"></a> | Muss | `server_received_at` |
+| F-126 <a id="f-126"></a> | Muss | optional `client_time_origin` |
+| F-127 <a id="f-127"></a> | Muss | optional `sequence_number` |
 
 Regeln:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-128 | Muss | Ordering innerhalb einer Session bevorzugt über `sequence_number` |
-| F-129 | Muss | Latenzberechnungen niemals blind nur aus Client-Zeit ableiten |
-| F-130 | Muss | Backend muss auffälligen Time Skew markieren können |
+| F-128 <a id="f-128"></a> | Muss | Ordering innerhalb einer Session bevorzugt über `sequence_number` |
+| F-129 <a id="f-129"></a> | Muss | Latenzberechnungen niemals blind nur aus Client-Zeit ableiten |
+| F-130 <a id="f-130"></a> | Muss | Backend muss auffälligen Time Skew markieren können |
 
 #### Performance-Budget für das Player-SDK
 
@@ -1442,7 +1442,7 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| F-131 | Muss | Die folgenden Pflichtdokumente müssen vorhanden und auf die aktuellen Repository-Pfade harmonisiert sein. **Eingeführt in Patch `1.1.12`** (vorher trug der Block keine eigene Kennung); [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) aus früheren Lastenheft-Ständen ist auf den realen Pfad [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) korrigiert. |
+| F-131 <a id="f-131"></a> | Muss | Die folgenden Pflichtdokumente müssen vorhanden und auf die aktuellen Repository-Pfade harmonisiert sein. **Eingeführt in Patch `1.1.12`** (vorher trug der Block keine eigene Kennung); [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) aus früheren Lastenheft-Ständen ist auf den realen Pfad [`docs/user/stream-analyzer.md`](../docs/user/stream-analyzer.md) korrigiert. |
 
 | Datei | Zweck |
 |---|---|
@@ -1466,20 +1466,20 @@ Das Projekt muss eine entwicklerfreundliche Dokumentation enthalten.
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-1 | Muss | Entwicklung muss unter Linux möglich sein. |
-| NF-2 | Muss | Entwicklung muss mit VS Code kompatibel sein. |
-| NF-3 | Muss | Lokaler Betrieb muss über Docker möglich sein. |
-| NF-4 | Muss | Build-Prozesse müssen ohne proprietäre Dienste funktionieren. |
+| NF-1 <a id="nf-1"></a> | Muss | Entwicklung muss unter Linux möglich sein. |
+| NF-2 <a id="nf-2"></a> | Muss | Entwicklung muss mit VS Code kompatibel sein. |
+| NF-3 <a id="nf-3"></a> | Muss | Lokaler Betrieb muss über Docker möglich sein. |
+| NF-4 <a id="nf-4"></a> | Muss | Build-Prozesse müssen ohne proprietäre Dienste funktionieren. |
 
 ### 8.2 Wartbarkeit
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-5 | Muss | Fachlogik muss testbar sein, ohne externe Infrastruktur zu starten. |
-| NF-6 | Muss | Domain-Klassen dürfen keine Framework-Abhängigkeiten enthalten. |
-| NF-7 | Muss | Ports müssen klar benannt und dokumentiert sein. |
-| NF-8 | Muss | Adapter müssen austauschbar sein. |
-| NF-9 | Muss | Technische Implementierungen dürfen nicht in die Domain-Schicht lecken. |
+| NF-5 <a id="nf-5"></a> | Muss | Fachlogik muss testbar sein, ohne externe Infrastruktur zu starten. |
+| NF-6 <a id="nf-6"></a> | Muss | Domain-Klassen dürfen keine Framework-Abhängigkeiten enthalten. |
+| NF-7 <a id="nf-7"></a> | Muss | Ports müssen klar benannt und dokumentiert sein. |
+| NF-8 <a id="nf-8"></a> | Muss | Adapter müssen austauschbar sein. |
+| NF-9 <a id="nf-9"></a> | Muss | Technische Implementierungen dürfen nicht in die Domain-Schicht lecken. |
 
 ### 8.3 Erweiterbarkeit
 
@@ -1487,16 +1487,16 @@ Das Projekt muss vorbereitet sein für spätere Erweiterungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-10 | Muss | MediaMTX-Adapter |
-| NF-11 | Muss | SRT-Ingest-Metriken |
-| NF-12 | Muss | DASH-Analyse |
-| NF-13 | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.20` (Tranche-Notiz):** Aus den offenen Folgeoptionen wird nur der HTTP-Range-/Byte-Range-Loader für manifest-referenzierte CMAF-Init-/Media-Segmente als kleiner Folge-Slice empfohlen; Low-Latency-CMAF, vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade bleiben deferred. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
-| NF-14 | Muss | WebRTC-Metriken |
-| NF-15 | Muss | Datenbankpersistenz |
-| NF-16 | Muss | Authentifizierung |
-| NF-17 | Muss | Multi-Stream-Betrieb |
-| NF-18 | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase. Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. **Patch `1.1.18` (`0.13.0`):** NF-18 wird mit `MVP-42` als optionaler Optionspfad harmonisiert. `0.13.0` darf Beispielmanifeste oder Entscheidungsnotizen liefern, verpflichtet aber nicht zu Production-Ready-Kubernetes, Cluster-Betrieb, Cloud-Provider-Integration oder K8s-Smoke-Stage als Standard-Gate. Wird eine K8s-Smoke-Stage aktiviert, muss R-9 vorher mit eigener Observability-Label-Allowlist oder dokumentierter Gegenmaßnahme entschieden sein. |
-| NF-19 | Muss | CI-basierte Stream-Checks |
+| NF-10 <a id="nf-10"></a> | Muss | MediaMTX-Adapter |
+| NF-11 <a id="nf-11"></a> | Muss | SRT-Ingest-Metriken |
+| NF-12 <a id="nf-12"></a> | Muss | DASH-Analyse |
+| NF-13 <a id="nf-13"></a> | Muss | CMAF-Analyse im Stream-Analyzer-Scope. **Patch `1.1.20` (Tranche-Notiz):** Aus den offenen Folgeoptionen wird nur der HTTP-Range-/Byte-Range-Loader für manifest-referenzierte CMAF-Init-/Media-Segmente als kleiner Folge-Slice empfohlen; Low-Latency-CMAF, vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfade bleiben deferred. **Patch `1.1.13` (Scope-Präzisierung):** `NF-13` wird nicht mehr als „CMAF-Vollanalyse" geführt; vollständig ist sie für den Analyzer-Scope aus `0.10.0` (manifestbasierte HLS-/DASH-Signale plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente). Explizit nicht umfasst sind vollständige Segmentset-Abdeckung, Codec-Decoding, Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF) und Player-Laufzeitpfade — diese bleiben Folge-Scope. Pflicht-Brand-Allowlist: Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Umsetzung mit RAK-60..RAK-64 (§13.12). **Patch `1.1.12` (historisch):** `F-73` aus §7.7 deckte nur die *vorbereitete Erweiterbarkeit*; vor `0.10.0` blieb die CMAF-Analyse offen. |
+| NF-14 <a id="nf-14"></a> | Muss | WebRTC-Metriken |
+| NF-15 <a id="nf-15"></a> | Muss | Datenbankpersistenz |
+| NF-16 <a id="nf-16"></a> | Muss | Authentifizierung |
+| NF-17 <a id="nf-17"></a> | Muss | Multi-Stream-Betrieb |
+| NF-18 <a id="nf-18"></a> | Muss | Kubernetes Deployment. **Patch `1.1.12` (Scope-Präzisierung):** „Erweiterbarkeit für Kubernetes" — Production-K8s ist **nicht** Bestandteil der ersten Projektphase. Optionale K8s-Manifeste bleiben `MVP-42` (`Kann`/Folge-Plan); R-9 bleibt Trigger-Risiko für eine künftige K8s-Smoke-Stage. Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer. **Patch `1.1.18` (`0.13.0`):** NF-18 wird mit `MVP-42` als optionaler Optionspfad harmonisiert. `0.13.0` darf Beispielmanifeste oder Entscheidungsnotizen liefern, verpflichtet aber nicht zu Production-Ready-Kubernetes, Cluster-Betrieb, Cloud-Provider-Integration oder K8s-Smoke-Stage als Standard-Gate. Wird eine K8s-Smoke-Stage aktiviert, muss R-9 vorher mit eigener Observability-Label-Allowlist oder dokumentierter Gegenmaßnahme entschieden sein. |
+| NF-19 <a id="nf-19"></a> | Muss | CI-basierte Stream-Checks |
 
 ### 8.4 Performance
 
@@ -1504,21 +1504,21 @@ Für den MVP gelten einfache Anforderungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-20 | Muss | API muss lokale Demo-Last problemlos verarbeiten. |
-| NF-21 | Muss | Player-SDK darf Playback nicht merklich beeinflussen. |
-| NF-22 | Muss | Dashboard muss bei mehreren aktiven Sessions bedienbar bleiben. |
-| NF-23 | Muss | Event-Erfassung muss asynchron oder leichtgewichtig erfolgen. |
+| NF-20 <a id="nf-20"></a> | Muss | API muss lokale Demo-Last problemlos verarbeiten. |
+| NF-21 <a id="nf-21"></a> | Muss | Player-SDK darf Playback nicht merklich beeinflussen. |
+| NF-22 <a id="nf-22"></a> | Muss | Dashboard muss bei mehreren aktiven Sessions bedienbar bleiben. |
+| NF-23 <a id="nf-23"></a> | Muss | Event-Erfassung muss asynchron oder leichtgewichtig erfolgen. |
 
 ### 8.5 Sicherheit
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-24 | Muss | Keine Secrets im Repository. |
-| NF-25 | Muss | `.env.example` muss Beispielwerte enthalten. |
-| NF-26 | Muss | Produktive Secrets müssen über Umgebungsvariablen gesetzt werden. |
-| NF-27 | Muss | CORS muss im lokalen Setup kontrolliert konfiguriert sein. |
-| NF-28 | Muss | Externe URLs für Stream-Analyse müssen später abgesichert werden, um SSRF-Risiken zu vermeiden. |
-| NF-29 | Muss | Security-Meldungen müssen über `SECURITY.md` beschrieben werden. |
+| NF-24 <a id="nf-24"></a> | Muss | Keine Secrets im Repository. |
+| NF-25 <a id="nf-25"></a> | Muss | `.env.example` muss Beispielwerte enthalten. |
+| NF-26 <a id="nf-26"></a> | Muss | Produktive Secrets müssen über Umgebungsvariablen gesetzt werden. |
+| NF-27 <a id="nf-27"></a> | Muss | CORS muss im lokalen Setup kontrolliert konfiguriert sein. |
+| NF-28 <a id="nf-28"></a> | Muss | Externe URLs für Stream-Analyse müssen später abgesichert werden, um SSRF-Risiken zu vermeiden. |
+| NF-29 <a id="nf-29"></a> | Muss | Security-Meldungen müssen über `SECURITY.md` beschrieben werden. |
 
 #### CORS- und CSP-Grundregeln für Player-Telemetrie
 
@@ -1528,14 +1528,14 @@ MVP-Anforderungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-30 | Muss | erlaubte Origins werden pro Project konfiguriert |
-| NF-31 | Muss | SDK-Requests nutzen standardmäßig `credentials: "omit"` |
-| NF-32 | Muss | keine Cookies für Player-Telemetrie im MVP |
-| NF-33 | Muss | Preflight-fähige CORS-Konfiguration |
-| NF-34 | Muss | `Access-Control-Allow-Origin` darf nicht pauschal `*` sein, sobald Project Tokens genutzt werden |
-| NF-35 | Muss | erlaubte Methoden zunächst auf `POST` und `OPTIONS` begrenzen |
-| NF-36 | Muss | erlaubte Header explizit definieren, z. B. `Content-Type`, `X-MTrace-Project`, `X-MTrace-Token` |
-| NF-37 | Muss | CSP-Beispiele für `connect-src` müssen dokumentiert werden |
+| NF-30 <a id="nf-30"></a> | Muss | erlaubte Origins werden pro Project konfiguriert |
+| NF-31 <a id="nf-31"></a> | Muss | SDK-Requests nutzen standardmäßig `credentials: "omit"` |
+| NF-32 <a id="nf-32"></a> | Muss | keine Cookies für Player-Telemetrie im MVP |
+| NF-33 <a id="nf-33"></a> | Muss | Preflight-fähige CORS-Konfiguration |
+| NF-34 <a id="nf-34"></a> | Muss | `Access-Control-Allow-Origin` darf nicht pauschal `*` sein, sobald Project Tokens genutzt werden |
+| NF-35 <a id="nf-35"></a> | Muss | erlaubte Methoden zunächst auf `POST` und `OPTIONS` begrenzen |
+| NF-36 <a id="nf-36"></a> | Muss | erlaubte Header explizit definieren, z. B. `Content-Type`, `X-MTrace-Project`, `X-MTrace-Token` |
+| NF-37 <a id="nf-37"></a> | Muss | CSP-Beispiele für `connect-src` müssen dokumentiert werden |
 
 Beispiel-CSP für eine Demo-Integration:
 
@@ -1552,24 +1552,24 @@ Anforderungen:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-38 | Muss | IP-Adressen dürfen im MVP nicht unnötig gespeichert werden. |
-| NF-39 | Muss | User-Agent-Daten müssen reduzierbar oder anonymisierbar sein. |
-| NF-40 | Muss | Session-IDs müssen pseudonym sein. |
-| NF-41 | Muss | Ein konfigurierbarer Anonymisierungs-Layer im Collector soll vorbereitet werden. |
-| NF-42 | Muss | Das Projekt muss dokumentieren, welche Telemetriedaten erhoben werden. |
-| NF-43 | Muss | Datenschutzfreundliche Defaults haben Vorrang vor maximaler Analyse-Tiefe. |
-| NF-44 | Muss | Für EU-Nutzung muss eine GDPR-freundliche Betriebsweise möglich sein. |
+| NF-38 <a id="nf-38"></a> | Muss | IP-Adressen dürfen im MVP nicht unnötig gespeichert werden. |
+| NF-39 <a id="nf-39"></a> | Muss | User-Agent-Daten müssen reduzierbar oder anonymisierbar sein. |
+| NF-40 <a id="nf-40"></a> | Muss | Session-IDs müssen pseudonym sein. |
+| NF-41 <a id="nf-41"></a> | Muss | Ein konfigurierbarer Anonymisierungs-Layer im Collector soll vorbereitet werden. |
+| NF-42 <a id="nf-42"></a> | Muss | Das Projekt muss dokumentieren, welche Telemetriedaten erhoben werden. |
+| NF-43 <a id="nf-43"></a> | Muss | Datenschutzfreundliche Defaults haben Vorrang vor maximaler Analyse-Tiefe. |
+| NF-44 <a id="nf-44"></a> | Muss | Für EU-Nutzung muss eine GDPR-freundliche Betriebsweise möglich sein. |
 
 ### 8.7 Qualität
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| NF-45 | Muss | Automatisierte Tests für Domain- und Application-Schicht |
-| NF-46 | Muss | Linting für TypeScript |
-| NF-47 | Muss | Tests für zentrale Backend-Use-Cases |
-| NF-48 | Muss | CI-Pipeline für Build und Test |
-| NF-49 | Muss | klare Commit- und Release-Konventionen |
-| NF-50 | Muss | CHANGELOG-Pflege ab dem ersten Release |
+| NF-45 <a id="nf-45"></a> | Muss | Automatisierte Tests für Domain- und Application-Schicht |
+| NF-46 <a id="nf-46"></a> | Muss | Linting für TypeScript |
+| NF-47 <a id="nf-47"></a> | Muss | Tests für zentrale Backend-Use-Cases |
+| NF-48 <a id="nf-48"></a> | Muss | CI-Pipeline für Build und Test |
+| NF-49 <a id="nf-49"></a> | Muss | klare Commit- und Release-Konventionen |
+| NF-50 <a id="nf-50"></a> | Muss | CHANGELOG-Pflege ab dem ersten Release |
 
 ---
 
@@ -1804,24 +1804,24 @@ Muss-Anforderungen für die Gesamt-`0.1.x`-Phase:
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| MVP-1 | Muss | Mono-Repo-Struktur |
-| MVP-2 | Muss | eine Backend-App unter `apps/api` |
-| MVP-3 | Muss | eine Web-App unter `apps/dashboard` |
-| MVP-4 | Muss | Demo-Player als `/demo`-Route im Dashboard, nicht als separate App |
-| MVP-5 | Muss | `packages/player-sdk` mit hls.js-Adapter |
-| MVP-6 | Muss | pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony |
-| MVP-7 | Muss | Docker Compose Setup |
-| MVP-8 | Muss | MediaMTX als erster Media Server |
-| MVP-9 | Muss | FFmpeg-Teststream |
-| MVP-10 | Muss | OpenTelemetry-kompatibles Eventmodell |
-| MVP-11 | Muss | API-Endpunkt für Playback-Event-Batches |
-| MVP-12 | Muss | einfache Session-Liste |
-| MVP-13 | Muss | einfache Event-Anzeige |
-| MVP-14 | Muss | einfache eingebaute Session-/Trace-Ansicht im Dashboard |
-| MVP-15 | Muss | Prometheus nur für aggregierte Metriken |
-| MVP-16 | Muss | lokale Speicherung per In-Memory oder SQLite |
-| MVP-17 | Muss | README mit Schnellstart |
-| MVP-18 | Muss | CHANGELOG mit initialem Eintrag |
+| MVP-1 <a id="mvp-1"></a> | Muss | Mono-Repo-Struktur |
+| MVP-2 <a id="mvp-2"></a> | Muss | eine Backend-App unter `apps/api` |
+| MVP-3 <a id="mvp-3"></a> | Muss | eine Web-App unter `apps/dashboard` |
+| MVP-4 <a id="mvp-4"></a> | Muss | Demo-Player als `/demo`-Route im Dashboard, nicht als separate App |
+| MVP-5 <a id="mvp-5"></a> | Muss | `packages/player-sdk` mit hls.js-Adapter |
+| MVP-6 <a id="mvp-6"></a> | Muss | pragmatische SDK-Struktur ohne vollständige Hexagon-Ceremony |
+| MVP-7 <a id="mvp-7"></a> | Muss | Docker Compose Setup |
+| MVP-8 <a id="mvp-8"></a> | Muss | MediaMTX als erster Media Server |
+| MVP-9 <a id="mvp-9"></a> | Muss | FFmpeg-Teststream |
+| MVP-10 <a id="mvp-10"></a> | Muss | OpenTelemetry-kompatibles Eventmodell |
+| MVP-11 <a id="mvp-11"></a> | Muss | API-Endpunkt für Playback-Event-Batches |
+| MVP-12 <a id="mvp-12"></a> | Muss | einfache Session-Liste |
+| MVP-13 <a id="mvp-13"></a> | Muss | einfache Event-Anzeige |
+| MVP-14 <a id="mvp-14"></a> | Muss | einfache eingebaute Session-/Trace-Ansicht im Dashboard |
+| MVP-15 <a id="mvp-15"></a> | Muss | Prometheus nur für aggregierte Metriken |
+| MVP-16 <a id="mvp-16"></a> | Muss | lokale Speicherung per In-Memory oder SQLite |
+| MVP-17 <a id="mvp-17"></a> | Muss | README mit Schnellstart |
+| MVP-18 <a id="mvp-18"></a> | Muss | CHANGELOG mit initialem Eintrag |
 
 Nicht im `0.1.0`-MVP:
 
@@ -1835,44 +1835,44 @@ Nicht im `0.1.0`-MVP:
 
 | Kennung | Prioritaet | Anforderung | Status (Patch `1.1.12`) |
 |---|---|---|---|
-| MVP-19 | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
-| MVP-20 | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (Tranche-Notiz):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
-| MVP-21 | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
-| MVP-22 | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil; die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
-| MVP-23 | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap). |
-| MVP-24 | Muss (historisch) | WebRTC | **Erfüllt:** WebRTC-Lab ab `0.7.0` (RAK-47..RAK-50), produktiver Player-SDK-Adapter ab `0.8.0` (RAK-51..RAK-55), Drift-Smoke ab `0.9.0` (RAK-56). |
-| MVP-25 | Muss (historisch) | SRT-Health-View | **Erfüllt:** SRT-Health-View ab `0.6.0` (RAK-41..RAK-46). |
-| MVP-26 | Muss (historisch) | Multi-Tenant-Betrieb | **Out of scope:** Multi-Tenant-SaaS-Betrieb ist nicht Bestandteil der ersten Projektphase. Bleibt Folge-ADR-Trigger; siehe Roadmap. |
+| MVP-19 <a id="mvp-19"></a> | Muss (historisch) | separate `apps/demo-player` | **Anders entschieden:** Demo-Player läuft als `/demo`-Route im Dashboard (`MVP-4`, `Muss`). Eine separate `apps/demo-player`-App ist nicht geplant; wenn sie kommt, ist sie Folge-Scope und triggert ein eigenes `MVP-`-Item. |
+| MVP-20 <a id="mvp-20"></a> | Muss (historisch) | separate `apps/analyzer-api` | **Erfüllt anders, externe API deferred:** `apps/analyzer-service` ist seit `0.3.0` der interne HTTP-Wrapper; `@pt9912/stream-analyzer` deckt Library/CLI-Nutzung ab. **Patch `1.1.20` (Tranche-Notiz):** eine nach außen exponierte `apps/analyzer-api` wird erst bei konkretem externem Konsumenten, Auth-/Rate-Limit-/SSRF-/Retention-/Contract-Nachweis und eigenem Folgeplan reaktiviert. |
+| MVP-21 <a id="mvp-21"></a> | Muss (historisch) | `packages/stream-analyzer` als fertiges Paket | **Erfüllt:** Paket steht seit `0.3.0` (RAK-22..RAK-28); DASH-Manifest-Analyse ergänzt in `0.9.0` (RAK-58). |
+| MVP-22 <a id="mvp-22"></a> | Muss (historisch) | Tempo als Pflichtkomponente | **Bewusst gegenteilig entschieden:** Tempo ist `Kann` (`MVP-35`) und ein optionales Compose-Profil; die produktive Trace-Korrelation läuft Tempo-unabhängig (RAK-32 in `0.4.0`). |
+| MVP-23 <a id="mvp-23"></a> | Muss (historisch) | Mimir oder ClickHouse | **Out of scope:** Production-Grade-Storage-Backends wie Mimir/ClickHouse sind nicht Bestandteil der ersten Projektphase. Bleibt höchstens Folge-ADR, wenn Multi-Tenant-/Skalierungs-Anforderung konkret wird (siehe Roadmap). |
+| MVP-24 <a id="mvp-24"></a> | Muss (historisch) | WebRTC | **Erfüllt:** WebRTC-Lab ab `0.7.0` (RAK-47..RAK-50), produktiver Player-SDK-Adapter ab `0.8.0` (RAK-51..RAK-55), Drift-Smoke ab `0.9.0` (RAK-56). |
+| MVP-25 <a id="mvp-25"></a> | Muss (historisch) | SRT-Health-View | **Erfüllt:** SRT-Health-View ab `0.6.0` (RAK-41..RAK-46). |
+| MVP-26 <a id="mvp-26"></a> | Muss (historisch) | Multi-Tenant-Betrieb | **Out of scope:** Multi-Tenant-SaaS-Betrieb ist nicht Bestandteil der ersten Projektphase. Bleibt Folge-ADR-Trigger; siehe Roadmap. |
 
 
 ### 12.2 Soll-Anforderungen
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| MVP-27 | Soll | SQLite-Persistenz statt reinem In-Memory |
-| MVP-28 | Soll | Grafana-Dashboard für Aggregate |
-| MVP-29 | Soll | einfache OTel-Collector-Konfiguration |
-| MVP-30 | Soll | rudimentäre HLS-Manifest-Prüfung als interner Spike |
-| MVP-31 | Soll | WebSocket oder SSE für Live-Updates |
-| MVP-32 | Soll | CI mit GitHub Actions |
+| MVP-27 <a id="mvp-27"></a> | Soll | SQLite-Persistenz statt reinem In-Memory |
+| MVP-28 <a id="mvp-28"></a> | Soll | Grafana-Dashboard für Aggregate |
+| MVP-29 <a id="mvp-29"></a> | Soll | einfache OTel-Collector-Konfiguration |
+| MVP-30 <a id="mvp-30"></a> | Soll | rudimentäre HLS-Manifest-Prüfung als interner Spike |
+| MVP-31 <a id="mvp-31"></a> | Soll | WebSocket oder SSE für Live-Updates |
+| MVP-32 <a id="mvp-32"></a> | Soll | CI mit GitHub Actions |
 
 
 ### 12.3 Kann-Anforderungen
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| MVP-33 | Kann | eigenständiger Stream Analyzer als `packages/stream-analyzer` |
-| MVP-34 | Kann | CLI für Stream Analyzer |
-| MVP-35 | Kann | Tempo-Integration |
-| MVP-36 | Kann | SRS-Beispiel |
-| MVP-37 | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@pt9912/stream-analyzer`); kein offener Folge-Scope. |
-| MVP-38 | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-Ingest-Beispiel — präzisiert auf lokalen SRT-/RTMP-Ingest-Control-Smoke (`make smoke-ingest-control`) für MediaMTX-nahe Lab-Artefakte (Generierung/Validierung). Historische Kann-Stufung bleibt als auditierbarer Stand bis `1.1.13` erhalten; verbindlich ist die Muss-Stufung im `0.11.0`-Lab-Control-Scope (siehe RAK-68 in §13.13). |
-| MVP-39 | Kann | SRT-Health-View |
-| MVP-40 | Kann | Persistenz mit PostgreSQL. **Patch `1.1.18` (`0.13.0`):** Entscheidungspfad als Seed- oder Defer-Scope; SQLite bleibt lokaler Standard-Store und darf nicht implizit durch Postgres als Pflichtabhängigkeit ersetzt werden. |
-| MVP-41 | Kann | ClickHouse- oder VictoriaMetrics-Anbindung. **Patch `1.1.18` (`0.13.0`):** Vergleichspfad umfasst ClickHouse, VictoriaMetrics und Mimir oder eine begründete gleichwertige Option; Ergebnis ist `proceed`, `defer` oder `POC` mit klaren Erfolgskriterien. |
-| MVP-42 | Kann | Kubernetes-Manifeste. **Patch `1.1.12` (Status-Vermerk):** bleibt `Kann` und Folge-Plan; Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer (kein Production-Ready-K8s, siehe `NF-18`-Patch und `deploy/README.md`). **Patch `1.1.18` (`0.13.0`):** optionale Beispielmanifeste oder ein K8s-Decision-Record sind zulässig; kein Production-Ready-K8s-Versprechen und keine K8s-Smoke-Pflicht ohne R-9-Entscheidung. |
-| MVP-43 | Kann | Devcontainer. **Patch `1.1.18` (`0.13.0`):** Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder mit Begründung und Reaktivierungs-Trigger deferred; er darf die lokale Standardentwicklung nicht ersetzen. |
-| MVP-44 | Kann | Release-Automatisierung. **Patch `1.1.18` (`0.13.0`):** Automatisierung muss sichere Gates, Dry-Run-/Rollback-Regeln und explizite manuelle Freigabe enthalten; automatische Veröffentlichung ohne Human Approval ist ausgeschlossen. |
+| MVP-33 <a id="mvp-33"></a> | Kann | eigenständiger Stream Analyzer als `packages/stream-analyzer` |
+| MVP-34 <a id="mvp-34"></a> | Kann | CLI für Stream Analyzer |
+| MVP-35 <a id="mvp-35"></a> | Kann | Tempo-Integration |
+| MVP-36 <a id="mvp-36"></a> | Kann | SRS-Beispiel |
+| MVP-37 <a id="mvp-37"></a> | Muss | DASH-Analyse — **Hochstufung in Patch `1.1.11`** entsprechend NF-12 (DASH-Analyse, Muss). Die Kann-Stufung in dieser Tabelle bleibt als historischer Stand bis `1.1.10` erhalten; verbindlich ist die Muss-Stufung in §13.11 (RAK-58). **Patch `1.1.12` (Lieferstand-Vermerk):** in `0.9.0` ausgeliefert (DASH-MPD-Pfad im `@pt9912/stream-analyzer`); kein offener Folge-Scope. |
+| MVP-38 <a id="mvp-38"></a> | Muss (`0.11.0`-Scope, Patch `1.1.14`) | SRT-Ingest-Beispiel — präzisiert auf lokalen SRT-/RTMP-Ingest-Control-Smoke (`make smoke-ingest-control`) für MediaMTX-nahe Lab-Artefakte (Generierung/Validierung). Historische Kann-Stufung bleibt als auditierbarer Stand bis `1.1.13` erhalten; verbindlich ist die Muss-Stufung im `0.11.0`-Lab-Control-Scope (siehe RAK-68 in §13.13). |
+| MVP-39 <a id="mvp-39"></a> | Kann | SRT-Health-View |
+| MVP-40 <a id="mvp-40"></a> | Kann | Persistenz mit PostgreSQL. **Patch `1.1.18` (`0.13.0`):** Entscheidungspfad als Seed- oder Defer-Scope; SQLite bleibt lokaler Standard-Store und darf nicht implizit durch Postgres als Pflichtabhängigkeit ersetzt werden. |
+| MVP-41 <a id="mvp-41"></a> | Kann | ClickHouse- oder VictoriaMetrics-Anbindung. **Patch `1.1.18` (`0.13.0`):** Vergleichspfad umfasst ClickHouse, VictoriaMetrics und Mimir oder eine begründete gleichwertige Option; Ergebnis ist `proceed`, `defer` oder `POC` mit klaren Erfolgskriterien. |
+| MVP-42 <a id="mvp-42"></a> | Kann | Kubernetes-Manifeste. **Patch `1.1.12` (Status-Vermerk):** bleibt `Kann` und Folge-Plan; Strukturanker `deploy/k8s/` ist mit `0.9.6` angelegt, aber leer (kein Production-Ready-K8s, siehe `NF-18`-Patch und `deploy/README.md`). **Patch `1.1.18` (`0.13.0`):** optionale Beispielmanifeste oder ein K8s-Decision-Record sind zulässig; kein Production-Ready-K8s-Versprechen und keine K8s-Smoke-Pflicht ohne R-9-Entscheidung. |
+| MVP-43 <a id="mvp-43"></a> | Kann | Devcontainer. **Patch `1.1.18` (`0.13.0`):** Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder mit Begründung und Reaktivierungs-Trigger deferred; er darf die lokale Standardentwicklung nicht ersetzen. |
+| MVP-44 <a id="mvp-44"></a> | Kann | Release-Automatisierung. **Patch `1.1.18` (`0.13.0`):** Automatisierung muss sichere Gates, Dry-Run-/Rollback-Regeln und explizite manuelle Freigabe enthalten; automatische Veröffentlichung ohne Human Approval ist ausgeschlossen. |
 
 
 ---
@@ -1897,11 +1897,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-1 | Muss | `make dev` startet die in `0.1.0` erforderlichen Pflicht-Dienste (`api`, `mediamtx`, `stream-generator`). |
-| RAK-3 | Muss | API ist erreichbar (`/api/health` liefert `200`, drei Pflicht-Endpoints aus dem Spike plus die zwei Stream-Sessions-Endpoints). |
-| RAK-4 | Muss | Teststream läuft über MediaMTX. |
-| RAK-6 | Muss | API nimmt Events an (`POST /api/playback-events` mit gültigem Token). |
-| RAK-8 | Muss | README/Local-Development-Doku beschreibt den `0.1.0`-Quickstart reproduzierbar. |
+| RAK-1 <a id="rak-1"></a> | Muss | `make dev` startet die in `0.1.0` erforderlichen Pflicht-Dienste (`api`, `mediamtx`, `stream-generator`). |
+| RAK-3 <a id="rak-3"></a> | Muss | API ist erreichbar (`/api/health` liefert `200`, drei Pflicht-Endpoints aus dem Spike plus die zwei Stream-Sessions-Endpoints). |
+| RAK-4 <a id="rak-4"></a> | Muss | Teststream läuft über MediaMTX. |
+| RAK-6 <a id="rak-6"></a> | Muss | API nimmt Events an (`POST /api/playback-events` mit gültigem Token). |
+| RAK-8 <a id="rak-8"></a> | Muss | README/Local-Development-Doku beschreibt den `0.1.0`-Quickstart reproduzierbar. |
 
 ### 13.2 Version 0.1.1: Player-SDK + Dashboard
 
@@ -1911,9 +1911,9 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-2 | Muss | Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service. |
-| RAK-5 | Muss | Player-SDK sendet hls.js-basierte Events. |
-| RAK-7 | Muss | Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge. |
+| RAK-2 <a id="rak-2"></a> | Muss | Dashboard ist erreichbar; `make dev` startet zusätzlich den `dashboard`-Service. |
+| RAK-5 <a id="rak-5"></a> | Muss | Player-SDK sendet hls.js-basierte Events. |
+| RAK-7 <a id="rak-7"></a> | Muss | Dashboard zeigt empfangene Events und einfache Session-Zusammenhänge. |
 
 ### 13.3 Version 0.1.2: Observability-Stack
 
@@ -1923,8 +1923,8 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-9 | Muss | Prometheus enthält nur aggregierte Metriken (Cardinality-Regeln aus §7.10 eingehalten). |
-| RAK-10 | Soll | Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. |
+| RAK-9 <a id="rak-9"></a> | Muss | Prometheus enthält nur aggregierte Metriken (Cardinality-Regeln aus §7.10 eingehalten). |
+| RAK-10 <a id="rak-10"></a> | Soll | Player-Session-Traces sind vorbereitet oder exemplarisch sichtbar. |
 
 RAK-8 wird in `0.1.2` ergänzt um die Doku zum `observability`-Profil.
 
@@ -1943,17 +1943,17 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-11 | Muss | SDK ist als npm-Paket baubar und lokal installierbar. |
-| RAK-12 | Muss | Public API ist dokumentiert. |
-| RAK-13 | Muss | Event-Schema ist versioniert. |
-| RAK-14 | Muss | hls.js-Adapter ist getestet. |
-| RAK-15 | Muss | HTTP-Transport ist getestet. |
-| RAK-16 | Soll | OTel-Transport ist vorbereitet oder experimentell nutzbar. |
-| RAK-17 | Muss | SDK unterstützt Batching, Sampling und Retry-Grenzen. |
-| RAK-18 | Muss | SDK hält das definierte Performance-Budget ein. |
-| RAK-19 | Muss | Browser-Support-Matrix ist dokumentiert. |
-| RAK-20 | Muss | Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert. |
-| RAK-21 | Muss | Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft. |
+| RAK-11 <a id="rak-11"></a> | Muss | SDK ist als npm-Paket baubar und lokal installierbar. |
+| RAK-12 <a id="rak-12"></a> | Muss | Public API ist dokumentiert. |
+| RAK-13 <a id="rak-13"></a> | Muss | Event-Schema ist versioniert. |
+| RAK-14 <a id="rak-14"></a> | Muss | hls.js-Adapter ist getestet. |
+| RAK-15 <a id="rak-15"></a> | Muss | HTTP-Transport ist getestet. |
+| RAK-16 <a id="rak-16"></a> | Soll | OTel-Transport ist vorbereitet oder experimentell nutzbar. |
+| RAK-17 <a id="rak-17"></a> | Muss | SDK unterstützt Batching, Sampling und Retry-Grenzen. |
+| RAK-18 <a id="rak-18"></a> | Muss | SDK hält das definierte Performance-Budget ein. |
+| RAK-19 <a id="rak-19"></a> | Muss | Browser-Support-Matrix ist dokumentiert. |
+| RAK-20 <a id="rak-20"></a> | Muss | Beispielintegration in der Dashboard-Route `/demo` ist dokumentiert. |
+| RAK-21 <a id="rak-21"></a> | Muss | Kompatibilität zwischen SDK-Version und Event-Schema wird in CI geprüft. |
 
 
 ---
@@ -1966,13 +1966,13 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-22 | Muss | HLS Manifest kann geladen werden. |
-| RAK-23 | Muss | Master Playlist kann erkannt werden. |
-| RAK-24 | Muss | Media Playlist kann erkannt werden. |
-| RAK-25 | Muss | Segment-Dauern werden geprüft. |
-| RAK-26 | Muss | Ergebnis wird als JSON ausgegeben. |
-| RAK-27 | Muss | API kann Analyzer nutzen. |
-| RAK-28 | Muss | CLI-Grundlage existiert. |
+| RAK-22 <a id="rak-22"></a> | Muss | HLS Manifest kann geladen werden. |
+| RAK-23 <a id="rak-23"></a> | Muss | Master Playlist kann erkannt werden. |
+| RAK-24 <a id="rak-24"></a> | Muss | Media Playlist kann erkannt werden. |
+| RAK-25 <a id="rak-25"></a> | Muss | Segment-Dauern werden geprüft. |
+| RAK-26 <a id="rak-26"></a> | Muss | Ergebnis wird als JSON ausgegeben. |
+| RAK-27 <a id="rak-27"></a> | Muss | API kann Analyzer nutzen. |
+| RAK-28 <a id="rak-28"></a> | Muss | CLI-Grundlage existiert. |
 
 ---
 
@@ -1984,13 +1984,13 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-29 | Muss | Player-Session-Traces werden konsistent erzeugt. |
-| RAK-30 | Soll | Manifest-Requests, Segment-Requests und Player-Events werden in einem Trace zusammengeführt, soweit technisch möglich. |
-| RAK-31 | Kann | Tempo kann optional als Trace-Backend verwendet werden. |
-| RAK-32 | Muss | Dashboard kann Session-Verläufe auch ohne Tempo einfach anzeigen. |
-| RAK-33 | Muss | Prometheus bleibt auf aggregierte Metriken beschränkt. |
-| RAK-34 | Muss | Dropped-, Rate-Limited- und Invalid-Event-Metriken sind sichtbar. |
-| RAK-35 | Muss | Dokumentation beschreibt Cardinality-Grenzen und Sampling-Strategie. |
+| RAK-29 <a id="rak-29"></a> | Muss | Player-Session-Traces werden konsistent erzeugt. |
+| RAK-30 <a id="rak-30"></a> | Soll | Manifest-Requests, Segment-Requests und Player-Events werden in einem Trace zusammengeführt, soweit technisch möglich. |
+| RAK-31 <a id="rak-31"></a> | Kann | Tempo kann optional als Trace-Backend verwendet werden. |
+| RAK-32 <a id="rak-32"></a> | Muss | Dashboard kann Session-Verläufe auch ohne Tempo einfach anzeigen. |
+| RAK-33 <a id="rak-33"></a> | Muss | Prometheus bleibt auf aggregierte Metriken beschränkt. |
+| RAK-34 <a id="rak-34"></a> | Muss | Dropped-, Rate-Limited- und Invalid-Event-Metriken sind sichtbar. |
+| RAK-35 <a id="rak-35"></a> | Muss | Dokumentation beschreibt Cardinality-Grenzen und Sampling-Strategie. |
 
 
 ---
@@ -2003,11 +2003,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-36 | Muss | MediaMTX-Beispiel vorhanden. |
-| RAK-37 | Muss | SRT-Beispiel vorhanden. |
-| RAK-38 | Muss | DASH-Beispiel vorhanden. |
-| RAK-39 | Soll | WebRTC-Beispiel vorbereitet. |
-| RAK-40 | Muss | Beispiele sind dokumentiert. |
+| RAK-36 <a id="rak-36"></a> | Muss | MediaMTX-Beispiel vorhanden. |
+| RAK-37 <a id="rak-37"></a> | Muss | SRT-Beispiel vorhanden. |
+| RAK-38 <a id="rak-38"></a> | Muss | DASH-Beispiel vorhanden. |
+| RAK-39 <a id="rak-39"></a> | Soll | WebRTC-Beispiel vorbereitet. |
+| RAK-40 <a id="rak-40"></a> | Muss | Beispiele sind dokumentiert. |
 
 ---
 
@@ -2019,12 +2019,12 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-41 | Muss | SRT-Testsetup vorhanden. |
-| RAK-42 | Muss | SRT-Verbindungsmetriken werden erfasst oder importiert. |
-| RAK-43 | Muss | RTT, Packet Loss, Retransmissions und Bandbreite werden angezeigt. |
-| RAK-44 | Muss | Dashboard enthält eine SRT-Health-Ansicht. |
-| RAK-45 | Muss | Dokumentation erklärt typische SRT-Fehlerbilder. |
-| RAK-46 | Muss | SRT-Metriken werden OTel-kompatibel modelliert. |
+| RAK-41 <a id="rak-41"></a> | Muss | SRT-Testsetup vorhanden. |
+| RAK-42 <a id="rak-42"></a> | Muss | SRT-Verbindungsmetriken werden erfasst oder importiert. |
+| RAK-43 <a id="rak-43"></a> | Muss | RTT, Packet Loss, Retransmissions und Bandbreite werden angezeigt. |
+| RAK-44 <a id="rak-44"></a> | Muss | Dashboard enthält eine SRT-Health-Ansicht. |
+| RAK-45 <a id="rak-45"></a> | Muss | Dokumentation erklärt typische SRT-Fehlerbilder. |
+| RAK-46 <a id="rak-46"></a> | Muss | SRT-Metriken werden OTel-kompatibel modelliert. |
 
 ### 13.9 Version 0.7.0: WebRTC-Lab-Erweiterung
 
@@ -2038,11 +2038,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-47 | Muss | WebRTC-Lab-Setup mit lokalem WHIP-/WHEP-Endpoint und Compose-Stack `mtrace-webrtc` (analog `examples/srt/`/`examples/dash/`); Project-Name-Konvention aus `examples/README.md` ist eingehalten. |
-| RAK-48 | Muss | `make smoke-webrtc-prep` prüft die Vorbereitungsgrenze (Endpoints antworten, Compose-Stack hochgefahren, kein Playback-Qualitäts- oder `getStats()`-Anspruch) und ist als opt-in Target dokumentiert (analog `make smoke-srt`/`make smoke-dash`). |
-| RAK-49 | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
-| RAK-50 | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert; ergänzt den Smoke um eine Operator-sichtbare Stelle. |
-| RAK-51 | Kann | `@pt9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. **Hinweis (Patch `1.1.10`):** RAK-51 ist in §13.10 für `0.8.0` zu „Muss" hochgestuft; §13.9 bleibt als historische Aussage für `0.7.0` bestehen. |
+| RAK-47 <a id="rak-47"></a> | Muss | WebRTC-Lab-Setup mit lokalem WHIP-/WHEP-Endpoint und Compose-Stack `mtrace-webrtc` (analog `examples/srt/`/`examples/dash/`); Project-Name-Konvention aus `examples/README.md` ist eingehalten. |
+| RAK-48 <a id="rak-48"></a> | Muss | `make smoke-webrtc-prep` prüft die Vorbereitungsgrenze (Endpoints antworten, Compose-Stack hochgefahren, kein Playback-Qualitäts- oder `getStats()`-Anspruch) und ist als opt-in Target dokumentiert (analog `make smoke-srt`/`make smoke-dash`). |
+| RAK-49 <a id="rak-49"></a> | Soll | `getStats()`-Subset für produktive Telemetrie ist als bounded Allowlist dokumentiert; eine Schema-Drift-Strategie zwischen Browser-Versionen (Chromium/Firefox/Safari) ist beschrieben. |
+| RAK-50 <a id="rak-50"></a> | Kann | Browser-Handcheck ist in `examples/webrtc/README.md` als manueller Verifikationspfad dokumentiert; ergänzt den Smoke um eine Operator-sichtbare Stelle. |
+| RAK-51 <a id="rak-51"></a> | Kann | `@pt9912/player-sdk` exposed einen optionalen WebRTC-Adapter-Pfad ohne Vermischung mit dem `hls.js`-Pfad; Public-API bleibt abwärtskompatibel. **Hinweis (Patch `1.1.10`):** RAK-51 ist in §13.10 für `0.8.0` zu „Muss" hochgestuft; §13.9 bleibt als historische Aussage für `0.7.0` bestehen. |
 
 ### 13.10 Version 0.8.0: Player-SDK-WebRTC-Adapter
 
@@ -2057,11 +2057,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-51 | Muss | `@pt9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
-| RAK-52 | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
-| RAK-53 | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
-| RAK-54 | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie ist im Adapter-Code umgesetzt. R-12 wird ab diesem Punkt release-blockierend. |
-| RAK-55 | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
+| RAK-51 <a id="rak-51"></a> | Muss | `@pt9912/player-sdk` exposed einen produktiven WebRTC-Adapter-Pfad ohne Vermischung mit `hls.js`; Public-API bleibt abwärtskompatibel. **Hochstufung von §13.9 „Kann" auf „Muss".** |
+| RAK-52 <a id="rak-52"></a> | Muss | Public-API für Adapter-Auswahl (z. B. `attachHlsJs(...)` / `attachWebRtc(...)`) ist dokumentiert; hls.js-Pfad bleibt Default und unverändert; opt-in pro Player-Instanz. Pack-Smoke und Browser-Support-Matrix erweitert. |
+| RAK-53 <a id="rak-53"></a> | Soll | Produktive WebRTC-Telemetrie auf bounded Allowlist (`connection_state`, `ice_state`, `dtls_state`); `mtrace_webrtc_*`-Counter im API-Ingress; `scripts/smoke-observability.sh` spiegelt die WebRTC-Forbidden-Liste aus §3.1. |
+| RAK-54 <a id="rak-54"></a> | Soll | `getStats()`-Sammlung im SDK aktiv; Muss-/Soll-Felder pro `RTCStatsType`-Gruppe werden geliefert. Die Muss-Felder sind per Contract plus Metrik-/Read-Pfad nachgewiesen; Schema-Drift-Strategie ist im Adapter-Code umgesetzt. R-12 wird ab diesem Punkt release-blockierend. |
+| RAK-55 <a id="rak-55"></a> | Kann | Browser-E2E-Smoke (Playwright) für den WebRTC-Adapter-Pfad gegen das `examples/webrtc/`-Lab; opt-in im CI-Workflow. |
 
 ### 13.11 Version 0.9.0: Drift-Smoke + SRS-Lab + DASH-Analyse
 
@@ -2071,10 +2071,10 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-56 | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
-| RAK-57 | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7 Port-Quickref nachgezogen. |
-| RAK-58 | Muss | DASH-Manifest-Analyse im `@pt9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
-| RAK-59 | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
+| RAK-56 <a id="rak-56"></a> | Soll | Browser-Drift-Smoke (Playwright, opt-in `make smoke-webrtc-stats-drift`) probt `getStats()` aus echten Browser-Versionen (Chromium, Firefox; Safari/WebKit opt-in über `MTRACE_WEBRTC_DRIFT_BROWSERS`) gegen das `examples/webrtc/`-Lab und vergleicht die Reports gegen die `webrtc.*`-Allowlist. Treffer eines unbekannten Enum-Werts oder fehlender Muss-Felder bricht den Smoke; Soll-Felder werden geloggt aber nicht release-blockierend geprüft. Nightly-CI-Job (`schedule: cron`) führt den Smoke aus; bei Failure wird (opt-in über `secrets.DRIFT_AUTO_ISSUE`) ein Issue mit Browser-Version und Drift-Befund erstellt. Mit Auslieferung wandert R-12 von „release-blockierend ab nächstem Browser-Major-Bump" auf „automatisiert detektiert, Drift bricht den Drift-Smoke"; das Manuell-Review entfällt. |
+| RAK-57 <a id="rak-57"></a> | Kann | SRS-Lab-Beispiel `examples/srs/` (Project `mtrace-srs`, analog `examples/srt/`/`examples/dash/`/`examples/webrtc/`): eigenständiger Compose-Stack mit `ossrs/srs:5`-Image gepinnt, FFmpeg-Publisher analog `examples/srt/ffmpeg-srt-loop.sh`, Host-Port-Schnitt kollisionsfrei zu Core-Lab/`mtrace-srt`/`mtrace-dash`/`mtrace-webrtc`; `examples/srs/README.md` auf 7-Punkt-Standard analog der anderen Beispiele; opt-in `make smoke-srs` (endpoint-/compose-only, kein Playback-/Telemetrie-Anspruch). Hebt MVP-36 auf eingelöst, ohne MVP-Priorität zu ändern; [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7 Port-Quickref nachgezogen. |
+| RAK-58 <a id="rak-58"></a> | Muss | DASH-Manifest-Analyse im `@pt9912/stream-analyzer`: Auto-Detection von DASH-MPD-Eingaben (XML-Header `<?xml`/`<MPD`, Content-Type-Heuristik `application/dash+xml`); Manifest-Loader von HLS-only auf HLS+DASH generalisiert; MPD-Parser deckt `MPD/Period/AdaptationSet/Representation/SegmentTemplate`-Hierarchie für VOD-MPD und einfache Live-MPD ab; JSON-Result-Schema bekommt `analyzerKind: "dash"` als zweiten Wert (HLS bleibt unverändert, additiv); Mindest-Felder im Result: `playlistType: "dash"`, `summary.itemCount` (Anzahl Representations), `details.adaptationSets` (Array mit `mimeType`, `codecs`, `bandwidth`, `width`/`height`). Fehlercode `manifest_not_hls` bleibt nur für den HLS-Parser-/HLS-Kompat-Pfad; für Eingaben, die weder HLS noch DASH sind, kommt ein additiver Public-Code (z. B. `manifest_not_supported`) im Stream-Analyzer, der API-Domain (`apps/api/hexagon/domain/stream_analysis.go`), HTTP-Status-Mapping, API-Metrik-Allowlist und CLI/API-Tests durchgereicht; Fehlermeldungen dürfen nicht mehr behaupten, eine DASH-MPD sei „kein HLS-Manifest". Analyzer-Wire-Vertrag (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) wird um zwei DASH-Beispiele erweitert. `apps/api`-Adapter reicht `analyzerKind` aus dem Analyzer-Result ins Domain-Modell durch; HLS-Pfad bleibt grün und unverändert. **Hochstufung von §12.3 MVP-37 „Kann" auf „Muss" entsprechend NF-12 (Erweiterbarkeit, Muss).** |
+| RAK-59 <a id="rak-59"></a> | Kann | DASH-CLI-Pfad: `pnpm m-trace check <url-or-file.mpd>` detektiert MPD und liefert dasselbe JSON-Result wie der Library-Pfad (Dispatcher anhand Content-Type oder Datei-Endung); `make smoke-cli` zusätzlich um eine DASH-MPD-Probe erweitert; Tests in `packages/stream-analyzer/tests/cli.test.ts` decken HLS- und DASH-Pfad parallel. |
 
 ### 13.12 Version 0.10.0: CMAF-Analyse (NF-13)
 
@@ -2092,11 +2092,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-60 | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse plus begrenzte binäre Prüfung ausgewählter HLS-/DASH-Init- und Media-Segmente; das Lastenheft präzisiert „CMAF-Vollanalyse" als vollständige Erfüllung dieses Analyzer-Scopes, nicht als vollständige Segmentset-/Codec-/Player-Prüfung. Out of scope sind Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), CDN-/Byte-Range-Vollprüfung und Player-SDK-CMAF-Playback. |
-| RAK-61 | Muss | HLS-CMAF-Signale: `EXT-X-MAP`, fMP4-Segmentmuster (`.m4s`/`.cmfv`/`.cmfa`) und relevante Tags erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik (`binary` > `manifest` > `inferred`) im Analyseergebnis. `EXT-X-MAP` und `#EXT-X-BYTERANGE` werden strukturiert extrahiert; HLS-Master-Summaries bleiben konservativ ohne `binary`-Objekt. |
-| RAK-62 | Muss | DASH-CMAF-Signale: MPD-`mimeType` (`video/mp4`/`audio/mp4`/`application/mp4`), `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik; MP4-MIME allein gilt nur als `confidence:"inferred"`-Indiz, nicht als CMAF-Konformitätsnachweis. Vererbung von `BaseURL`/`SegmentTemplate` auf `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene wird deterministisch aufgelöst. |
-| RAK-63 | Muss | CLI, API-Adapter, Contract-Fixtures (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. `details.cmaf` lebt unter den bestehenden HLS-/DASH-Detail-Objekten — kein neuer Top-Level-Envelope-Wert, kein neuer `analyzerKind`. `apps/api`-Adapter reicht `details.cmaf` über `EncodedDetails` unverändert durch. |
-| RAK-64 | Muss | Binäre CMAF-Konformitätsprüfung: ISO-BMFF-Box-Parser validiert ausgewählte Init-/Media-Segmente bounded und meldet `details.cmaf.binary.status:"passed"|"failed"|"skipped"` mit nachvollziehbaren Box-/Segment-Nachweisen. Brand-Allowlist (`0.10.0`): Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Pflicht-Boxen: Init `ftyp`+`moov`; Media-Fragment `styp`+`moof`+`traf`+`tfdt`+`mdat`; `sidx` optional. Bounded Segment-Loader mit Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6` nutzt dieselben SSRF-/Scheme-/Redirect-Regeln wie der Manifest-Loader. |
+| RAK-60 <a id="rak-60"></a> | Muss | CMAF-Scope ist normativ begrenzt: manifestbasierte Signalanalyse plus begrenzte binäre Prüfung ausgewählter HLS-/DASH-Init- und Media-Segmente; das Lastenheft präzisiert „CMAF-Vollanalyse" als vollständige Erfüllung dieses Analyzer-Scopes, nicht als vollständige Segmentset-/Codec-/Player-Prüfung. Out of scope sind Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), CDN-/Byte-Range-Vollprüfung und Player-SDK-CMAF-Playback. |
+| RAK-61 <a id="rak-61"></a> | Muss | HLS-CMAF-Signale: `EXT-X-MAP`, fMP4-Segmentmuster (`.m4s`/`.cmfv`/`.cmfa`) und relevante Tags erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik (`binary` > `manifest` > `inferred`) im Analyseergebnis. `EXT-X-MAP` und `#EXT-X-BYTERANGE` werden strukturiert extrahiert; HLS-Master-Summaries bleiben konservativ ohne `binary`-Objekt. |
+| RAK-62 <a id="rak-62"></a> | Muss | DASH-CMAF-Signale: MPD-`mimeType` (`video/mp4`/`audio/mp4`/`application/mp4`), `codecs`, `SegmentTemplate`/`SegmentList` und Initialization-Informationen erzeugen stabile `details.cmaf.signals[]` mit Confidence-Semantik; MP4-MIME allein gilt nur als `confidence:"inferred"`-Indiz, nicht als CMAF-Konformitätsnachweis. Vererbung von `BaseURL`/`SegmentTemplate` auf `MPD`/`Period`/`AdaptationSet`/`Representation`-Ebene wird deterministisch aufgelöst. |
+| RAK-63 <a id="rak-63"></a> | Muss | CLI, API-Adapter, Contract-Fixtures (`spec/contract-fixtures/analyzer/` plus Go-Testdata-Kopien) und User-Doku führen CMAF-Signale additiv durch; bestehende HLS-/DASH-Smokes bleiben unverändert grün. `details.cmaf` lebt unter den bestehenden HLS-/DASH-Detail-Objekten — kein neuer Top-Level-Envelope-Wert, kein neuer `analyzerKind`. `apps/api`-Adapter reicht `details.cmaf` über `EncodedDetails` unverändert durch. |
+| RAK-64 <a id="rak-64"></a> | Muss | Binäre CMAF-Konformitätsprüfung: ISO-BMFF-Box-Parser validiert ausgewählte Init-/Media-Segmente bounded und meldet `details.cmaf.binary.status:"passed"|"failed"|"skipped"` mit nachvollziehbaren Box-/Segment-Nachweisen. Brand-Allowlist (`0.10.0`): Init-`ftyp` `cmfc`/`cmf2`, Media-`styp` `cmfs`/`cmff`/`cmfc`/`cmf2`. Pflicht-Boxen: Init `ftyp`+`moov`; Media-Fragment `styp`+`moof`+`traf`+`tfdt`+`mdat`; `sidx` optional. Bounded Segment-Loader mit Defaults `maxSegmentBytes=2_000_000`/`maxBinarySegments=6` nutzt dieselben SSRF-/Scheme-/Redirect-Regeln wie der Manifest-Loader. |
 
 ### 13.13 Version 0.11.0: Ingest-Gateway / Stream Control (F-46..F-51)
 
@@ -2117,12 +2117,12 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-65 | Muss | Ingest-Control-Scope ist normativ begrenzt: lokale/lab-nahe Stream-Verwaltung in `apps/api` (Variante B), keine Multi-Tenant-Control-Plane, keine produktive Secret-Verwaltung (kein KMS/Vault), keine globale Stream-Key-Rotation über mehrere Deployments, keine produktive Media-Server-Auth-Kopplung, keine automatische externe Media-Server-Provisionierung, kein K8s-Operator. |
-| RAK-66 | Muss | Stream-Key-Verwaltung: Streams können angelegt, gelistet, lokal validiert und rotiert werden. CSPRNG mit mindestens 256 Bit Entropie; URL-sicheres Output-Format dokumentiert; `key_hash` und redigierter `fingerprint` getrennt vom Klartext berechnet. Klartext-Keys erscheinen ausschließlich in den Antworten von `POST /api/ingest/streams` und `POST /api/ingest/streams/{id}/rotate-key` und nicht in Logs, Fixtures, Persistenz oder Lifecycle-Events. Validate-Endpoint nutzt den vollständigen `key_hash` als verifier; `fingerprint` ist nur Anzeige-/Audit-Hilfe. |
-| RAK-67 | Muss | Ingest-Endpunkt- und Routing-Modell: `srt`/`rtmp`-Endpunkte (Host/Port/Path, Lab-Stack-Hinweis, optionaler Egress-Hinweis), Stream-Ziele (`MediaServerTarget`) und 1:1-Routing-Regeln sind validiert, dokumentiert und per API/Artefakt stabil beschreibbar. Priorisierung, Fan-out, Failover und dynamisches Load-Balancing bleiben Folge-Scope. |
-| RAK-68 | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für SRT und RTMP im Lab-Scope können generiert oder validiert werden (`GET /api/ingest/media-server-config`). Bestehende Multi-Protocol-Lab-Beispiele (`examples/srt/`, `examples/mediamtx/`, `examples/srs/`) und Smokes bleiben unverändert grün; SRS bleibt Kompatibilitäts-/Dokuhintergrund, ist aber kein Pflicht-Target. |
-| RAK-69 | Muss | Stream-Lifecycle-Events: `stream_started` und `stream_ended` haben ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder über `POST /api/ingest/hooks/stream-{started,ended}` exemplarisch ausgelöst. Events tragen **keine** Klartext-Keys (höchstens `key_fingerprint`). Produktive ausgehende Webhook-Zustellung an externe Systeme ist nicht Teil des `0.11.0`-Nachweises und darf nicht als erfüllt behauptet werden. |
-| RAK-70 | Muss | Doku, API-/Contract-Tests und Release-Smokes (`make smoke-ingest-control`) beschreiben den lokalen Stream-Control-Workflow, die Sicherheitsgrenzen (Klartext-Key nur einmal, kein produktiver Auth-Pfad) und den Unterschied zu Auth-/Tenant-Folge-Scope `0.12.0`. Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) ist konsistent mit dem Lab-Control-Scope. |
+| RAK-65 <a id="rak-65"></a> | Muss | Ingest-Control-Scope ist normativ begrenzt: lokale/lab-nahe Stream-Verwaltung in `apps/api` (Variante B), keine Multi-Tenant-Control-Plane, keine produktive Secret-Verwaltung (kein KMS/Vault), keine globale Stream-Key-Rotation über mehrere Deployments, keine produktive Media-Server-Auth-Kopplung, keine automatische externe Media-Server-Provisionierung, kein K8s-Operator. |
+| RAK-66 <a id="rak-66"></a> | Muss | Stream-Key-Verwaltung: Streams können angelegt, gelistet, lokal validiert und rotiert werden. CSPRNG mit mindestens 256 Bit Entropie; URL-sicheres Output-Format dokumentiert; `key_hash` und redigierter `fingerprint` getrennt vom Klartext berechnet. Klartext-Keys erscheinen ausschließlich in den Antworten von `POST /api/ingest/streams` und `POST /api/ingest/streams/{id}/rotate-key` und nicht in Logs, Fixtures, Persistenz oder Lifecycle-Events. Validate-Endpoint nutzt den vollständigen `key_hash` als verifier; `fingerprint` ist nur Anzeige-/Audit-Hilfe. |
+| RAK-67 <a id="rak-67"></a> | Muss | Ingest-Endpunkt- und Routing-Modell: `srt`/`rtmp`-Endpunkte (Host/Port/Path, Lab-Stack-Hinweis, optionaler Egress-Hinweis), Stream-Ziele (`MediaServerTarget`) und 1:1-Routing-Regeln sind validiert, dokumentiert und per API/Artefakt stabil beschreibbar. Priorisierung, Fan-out, Failover und dynamisches Load-Balancing bleiben Folge-Scope. |
+| RAK-68 <a id="rak-68"></a> | Muss | Media-Server-Artefakte: MediaMTX-nahe Konfigurationen für SRT und RTMP im Lab-Scope können generiert oder validiert werden (`GET /api/ingest/media-server-config`). Bestehende Multi-Protocol-Lab-Beispiele (`examples/srt/`, `examples/mediamtx/`, `examples/srs/`) und Smokes bleiben unverändert grün; SRS bleibt Kompatibilitäts-/Dokuhintergrund, ist aber kein Pflicht-Target. |
+| RAK-69 <a id="rak-69"></a> | Muss | Stream-Lifecycle-Events: `stream_started` und `stream_ended` haben ein stabiles Eventmodell und werden lokal reproduzierbar empfangen oder über `POST /api/ingest/hooks/stream-{started,ended}` exemplarisch ausgelöst. Events tragen **keine** Klartext-Keys (höchstens `key_fingerprint`). Produktive ausgehende Webhook-Zustellung an externe Systeme ist nicht Teil des `0.11.0`-Nachweises und darf nicht als erfüllt behauptet werden. |
+| RAK-70 <a id="rak-70"></a> | Muss | Doku, API-/Contract-Tests und Release-Smokes (`make smoke-ingest-control`) beschreiben den lokalen Stream-Control-Workflow, die Sicherheitsgrenzen (Klartext-Key nur einmal, kein produktiver Auth-Pfad) und den Unterschied zu Auth-/Tenant-Folge-Scope `0.12.0`. Out-of-Scope-Liste in [`docs/user/ingest-control.md`](../docs/user/ingest-control.md) ist konsistent mit dem Lab-Control-Scope. |
 
 ### 13.14 Version 0.12.0: Auth / Token Lifecycle (F-111..F-113)
 
@@ -2145,12 +2145,12 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-71 | Muss | Auth-Scope ist normativ begrenzt: kurzlebige Session Tokens, Project-Token-Generationen und Project-Policies; keine User-/Org-Verwaltung, kein OAuth/OIDC, keine Admin-UI, keine KMS-/Vault-Pflicht, keine produktive Media-Server-Auth-Kopplung als Muss-Scope. |
-| RAK-72 | Muss | Signierte Session Tokens (`F-111`): API kann kurzlebige Tokens über `POST /api/auth/session-tokens` ausstellen und über `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` validieren. Tokens sind an `project_id`, `audience` (Muss-Pfad `playback-events`), Ablaufzeit und optional `session_id`/`origin` gebunden. `ttl_seconds` hat eine harte globale Obergrenze von 900 Sekunden, fehlendes `project_max_ttl_seconds` defaultet auf exakt 900, Werte `<= 0` oder oberhalb der wirksamen Project-Grenze liefern `422 auth_token_ttl_too_large` ohne stillen Clamp. `kid` erlaubt restart-stabile Signatur-Key-Rotation; alte Verify-Keys bleiben geladen, bis alle damit signierten Tokens abgelaufen sind. Klartext-Token erscheint nur in der Issuance-Antwort; Logs/Traces/Metriken/Fixtures enthalten höchstens `token_id` oder Fingerprint. Issuance-Endpoint hat eigene globale und Project-Quoten; Überschreitung liefert `429 auth_issuance_rate_limited`. Ungültige, abgelaufene oder falsch gebundene Tokens liefern stabile `401`/`403`-Fehler nach gepinnter Präzedenz (missing → invalid → revoked → expired → not-yet-valid → project-mismatch → scope-denied → policy-denied → rate-limited) ohne Secret-Leak. |
-| RAK-73 | Muss | Project-Token-Rotation (`F-112`): mehrere Generationen pro Project sind modelliert (`token_id`, `project_id`, Hash/Fingerprint, Status, `not_before`, `grace_until?`, `expires_at?`, `revoked_at?`, `created_at`, `rotated_from?`); aktive, Grace-, abgelaufene und widerrufene Tokens werden deterministisch validiert. `grace_until` ist das persistierte Feld der alten Generation und die Restart-stabile Quelle der Grace-Validierung; `revoked_at` beendet Grace sofort. Persistenz speichert nur Hash/Fingerprint und Metadaten — nie Klartext. Migrations-/Rollback-Kriterien sind dokumentiert: Rollback auf eine vorherige Config darf keine bereits widerrufene oder abgelaufene Generation reaktivieren. |
-| RAK-74 | Muss | Ingest Policies (`F-113`): erlaubte Origins, Methoden, Header, Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-Parameter (Muss-Pfad: globale und Project-Buckets; Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope) sind Project-gebunden konfigurierbar und werden in den Browser-/Telemetrie-Pfaden `POST /api/playback-events` und `POST /api/auth/session-tokens` erzwungen. **`/api/ingest/*` bleibt im `0.11.0`-Token-Validierungs-Pfad** (RAK-65: lokale/lab-nahe Stream-Verwaltung) und konsumiert keine Project-Policy — der Pfad ist `curl`-/Operator-driven, kein Browser-Konsument; Project-Policy-Enforcement für Ingest-Control wäre Defense-in-Depth ohne `0.12.0`-Anwendungsfall und bleibt Folge-Scope. CORS-Preflight nutzt eine dokumentierte globale, konservative Allowlist (Methoden maximal `POST, OPTIONS`; Header maximal `Content-Type`, `Authorization`, `X-MTrace-Token`, `X-MTrace-Session-Token`, `traceparent`); `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige Browser-Telemetrie. Bekannte Origins liefern `204` mit gespiegeltem Origin, erlaubten Methoden/Headern, `Access-Control-Max-Age: 600`, `Vary: Origin` und `Cache-Control: no-store`; unbekannte Origins liefern `204` mit leerem Body ohne Allow-Origin/Methods/Headers, mit `Vary: Origin` und `Cache-Control: no-store` — keine Project- oder Origin-Enumeration. Project-spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST` der gelisteten Browser-Pfade. |
-| RAK-75 | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Project-Token-Flows (Demo, SDK, Analyze-/Session-Link-Auth, `0.11.0` Ingest-Control) bleiben im `0.12.0`-Compatibility-Fenster gültig oder haben dokumentierte Migrationstests. Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header vorhanden ist; ohne gültigen m-trace Header liefern sie `401 auth_token_missing`. Es gibt keinen stillen Fallback von einem ungültigen höher priorisierten Token auf einen gültigen niedriger priorisierten Token. |
-| RAK-76 | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP-/CORS-Beispiele, GDPR-/Datenschutzgrenzen (Auth-Metadaten erweitern IP-/User-Agent-Speicherung nicht) und den Unterschied zu Production-Secret-Backends aus Folge-Scope. SDK-Doku zeigt sicheres Session-Token-Caching bis kurz vor `expires_at`, ohne Speicherung in `localStorage`/persistenten Browser-Stores. `make sync-contract-fixtures` und `make generated-drift-check` decken neue Auth-Fixtures ab. |
+| RAK-71 <a id="rak-71"></a> | Muss | Auth-Scope ist normativ begrenzt: kurzlebige Session Tokens, Project-Token-Generationen und Project-Policies; keine User-/Org-Verwaltung, kein OAuth/OIDC, keine Admin-UI, keine KMS-/Vault-Pflicht, keine produktive Media-Server-Auth-Kopplung als Muss-Scope. |
+| RAK-72 <a id="rak-72"></a> | Muss | Signierte Session Tokens (`F-111`): API kann kurzlebige Tokens über `POST /api/auth/session-tokens` ausstellen und über `Authorization: Bearer mtr_st_*` oder `X-MTrace-Session-Token` validieren. Tokens sind an `project_id`, `audience` (Muss-Pfad `playback-events`), Ablaufzeit und optional `session_id`/`origin` gebunden. `ttl_seconds` hat eine harte globale Obergrenze von 900 Sekunden, fehlendes `project_max_ttl_seconds` defaultet auf exakt 900, Werte `<= 0` oder oberhalb der wirksamen Project-Grenze liefern `422 auth_token_ttl_too_large` ohne stillen Clamp. `kid` erlaubt restart-stabile Signatur-Key-Rotation; alte Verify-Keys bleiben geladen, bis alle damit signierten Tokens abgelaufen sind. Klartext-Token erscheint nur in der Issuance-Antwort; Logs/Traces/Metriken/Fixtures enthalten höchstens `token_id` oder Fingerprint. Issuance-Endpoint hat eigene globale und Project-Quoten; Überschreitung liefert `429 auth_issuance_rate_limited`. Ungültige, abgelaufene oder falsch gebundene Tokens liefern stabile `401`/`403`-Fehler nach gepinnter Präzedenz (missing → invalid → revoked → expired → not-yet-valid → project-mismatch → scope-denied → policy-denied → rate-limited) ohne Secret-Leak. |
+| RAK-73 <a id="rak-73"></a> | Muss | Project-Token-Rotation (`F-112`): mehrere Generationen pro Project sind modelliert (`token_id`, `project_id`, Hash/Fingerprint, Status, `not_before`, `grace_until?`, `expires_at?`, `revoked_at?`, `created_at`, `rotated_from?`); aktive, Grace-, abgelaufene und widerrufene Tokens werden deterministisch validiert. `grace_until` ist das persistierte Feld der alten Generation und die Restart-stabile Quelle der Grace-Validierung; `revoked_at` beendet Grace sofort. Persistenz speichert nur Hash/Fingerprint und Metadaten — nie Klartext. Migrations-/Rollback-Kriterien sind dokumentiert: Rollback auf eine vorherige Config darf keine bereits widerrufene oder abgelaufene Generation reaktivieren. |
+| RAK-74 <a id="rak-74"></a> | Muss | Ingest Policies (`F-113`): erlaubte Origins, Methoden, Header, Session-Token-Audiences, maximale Session-Token-TTL und Rate-Limit-Parameter (Muss-Pfad: globale und Project-Buckets; Origin-/IP-nahe Buckets sind optionaler Zusatz oder Folge-Scope) sind Project-gebunden konfigurierbar und werden in den Browser-/Telemetrie-Pfaden `POST /api/playback-events` und `POST /api/auth/session-tokens` erzwungen. **`/api/ingest/*` bleibt im `0.11.0`-Token-Validierungs-Pfad** (RAK-65: lokale/lab-nahe Stream-Verwaltung) und konsumiert keine Project-Policy — der Pfad ist `curl`-/Operator-driven, kein Browser-Konsument; Project-Policy-Enforcement für Ingest-Control wäre Defense-in-Depth ohne `0.12.0`-Anwendungsfall und bleibt Folge-Scope. CORS-Preflight nutzt eine dokumentierte globale, konservative Allowlist (Methoden maximal `POST, OPTIONS`; Header maximal `Content-Type`, `Authorization`, `X-MTrace-Token`, `X-MTrace-Session-Token`, `traceparent`); `Access-Control-Allow-Origin` wird nie `*` für tokenpflichtige Browser-Telemetrie. Bekannte Origins liefern `204` mit gespiegeltem Origin, erlaubten Methoden/Headern, `Access-Control-Max-Age: 600`, `Vary: Origin` und `Cache-Control: no-store`; unbekannte Origins liefern `204` mit leerem Body ohne Allow-Origin/Methods/Headers, mit `Vary: Origin` und `Cache-Control: no-store` — keine Project- oder Origin-Enumeration. Project-spezifische Policy-Erzwingung erfolgt beim tatsächlichen `POST` der gelisteten Browser-Pfade. |
+| RAK-75 <a id="rak-75"></a> | Muss | Backward Compatibility: bestehende `X-MTrace-Token`-Project-Token-Flows (Demo, SDK, Analyze-/Session-Link-Auth, `0.11.0` Ingest-Control) bleiben im `0.12.0`-Compatibility-Fenster gültig oder haben dokumentierte Migrationstests. Fremde `Authorization`-Header ohne `Bearer mtr_st_*` werden als nicht-m-trace Auth ignoriert, wenn ein gültiger m-trace Header vorhanden ist; ohne gültigen m-trace Header liefern sie `401 auth_token_missing`. Es gibt keinen stillen Fallback von einem ungültigen höher priorisierten Token auf einen gültigen niedriger priorisierten Token. |
+| RAK-76 <a id="rak-76"></a> | Muss | Security-Doku, Threat Model, Contract-Fixtures und Smokes beschreiben Token-Lifecycle, Rotation, Replay-/Leakage-Grenzen, CSP-/CORS-Beispiele, GDPR-/Datenschutzgrenzen (Auth-Metadaten erweitern IP-/User-Agent-Speicherung nicht) und den Unterschied zu Production-Secret-Backends aus Folge-Scope. SDK-Doku zeigt sicheres Session-Token-Caching bis kurz vor `expires_at`, ohne Speicherung in `localStorage`/persistenten Browser-Stores. `make sync-contract-fixtures` und `make generated-drift-check` decken neue Auth-Fixtures ab. |
 
 ### 13.15 Version 0.12.5: Auth-/Ingest-Adapter (RAK-77..RAK-82)
 
@@ -2168,12 +2168,12 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-77 | Muss | **Shared-State-Issuance-Limiter**: `IssuanceLimiterPort` mit Default-In-Process-Adapter (1:1 zum heutigen `InMemoryIssuanceRateLimiter`) plus SQLite-Backend-Adapter als erstem Shared-State-Pfad (Migration `V5`, atomare Counter-Erhöhung, TTL-Cleanup). ENV-Selektion `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`; **globaler Default bleibt `memory`** (Backwards-Compat). Andere Werte (`redis`, `memcached`, …) lehnt der Boot-Validator mit klarem Fehler ab. Topologie-Constraint des SQLite-Adapters: nur sinnvoll bei Single-Host-Deployments mit Shared-Persistent-Volume; echte Multi-Host-Topologie braucht einen Network-Backend-Adapter und bleibt Folge-Item. RAK-74-Scope-Cut bleibt aktiv: Limiter darf nicht vor `/api/ingest/*` hängen. |
-| RAK-78 | Muss | **Multi-Key-Signing-Rotation**: `MultiKeySigningResolver` ersetzt den heutigen `StaticSigningKeyResolver` als Default-Pfad mit ENV-Schema `MTRACE_AUTH_SIGNING_KEYS=<kid1>:<base64_secret1>[,<kid2>:<base64_secret2>,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=<kid>`. Verify-Set umfasst alle geladenen Keys, Sign-Key kommt aus dem aktiven `kid`; alte Tokens verifizieren weiter bis zum Ablauf der Token-TTL. Restart-stabil analog `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`. Backwards-Compat: einzelner Key über alten ENV-Pfad bleibt als degenerierter Multi-Key-Resolver mit `len(keys)==1` unterstützt. Erweitert RAK-72/RAK-73 um den ENV-getriebenen Rotation-Code-Pfad zur Doku-Stand-Lieferung aus `0.12.1` (`auth.md` §5.3.1). |
-| RAK-79 | Muss | **Secret-Backend-Driven-Port**: `SecretBackendPort` als neuer Driven-Port für Signing- und Project-Token-Secret-Bezug; ENV-Lookup-Adapter implementiert den Port 1:1 zum heutigen Verhalten und bleibt Default-Selektion. Mindestens ein externes Backend-Adapter-Skelett wird geliefert — **Auswahl: Vault-Adapter** (`hashicorp/vault/api`, Lab-Pfad mit `vault dev`-Server). KMS-Adapter bleibt additive Folge-Option. ENV-Selektion `MTRACE_AUTH_SECRET_BACKEND=env|vault` (KMS-Wert wird als unbekannter Wert vom Boot-Validator abgelehnt, bis ein Adapter geliefert wird). Caching, Refresh-TTL und Failure-Modus (fail-closed bei Backend-Outage) sind dokumentiert. Resttrigger „erste Operator-Anbindung an produktives Vault/KMS" und „Compliance-Audit (PCI/SOC2)" bleiben offen — Skelett-Lieferung allein erfüllt diese nicht. |
-| RAK-80 | Muss | **Browser-Ingest-Policy**: `/api/ingest/*` ist optional aus Browser-Origins nutzbar — Project-Policy-Schema wird um `browser_ingest_policy.{enabled, cors_allowlist[], csrf_required, origin_pin}` (oder finalisierte Schema-Variante) erweitert. Mit aktivem Project-Policy-Eintrag wird das Browser-Origin gegen die Allowlist geprüft, CSRF-Token oder Origin-Pin sind Default-Vorgabe für den aktivierten Pfad. Ohne aktivierte Policy gilt der RAK-74-Scope-Cut weiter (heutiges 204-Verhalten). Kontrollierte Aufhebung des RAK-74-Scope-Cuts — die Aussage „RAK-74-Scope-Cut bleibt strikt" aus §13.14 wird durch RAK-80 unter der Bedingung „aktive `browser_ingest_policy`" abgelöst. |
-| RAK-81 | optional (Kann) | **Auth-Bridge MediaMTX/SRS**: `MediaMTXAuthBridge`-Adapter konsumiert signierte Publish-Tokens (eigener Issuer auf Basis des bestehenden Signing-Key-Rings aus RAK-72/RAK-78). Lab-Smoke gegen echtes MediaMTX-Container-Setup; Lab-/Produktiv-Trennung bleibt. Aktivierung nur bei verfügbarer Test-Pipeline gegen echtes MediaMTX. Löst R-14 (`validate-key` ist kein Auth-Ersatz) strukturell, sofern aktiviert. |
-| RAK-82 | optional (Kann) | **Outbound-Webhook für Stream-Lifecycle**: Driven-Port `OutboundWebhookDispatcher` für `stream.started`/`stream.ended`-Events; HMAC-signierte Payload mit Project-Token-abgeleitetem Secret; definierter Retry-/Timeout-/Backoff-Pfad mit Dead-Letter-Schema. Adapter-Test plus Mock-Konsument-Smoke. Aktivierung nur bei zusätzlicher Bandbreite. Löst R-16 (lokales Lifecycle-Eventmodell ohne Outbound) strukturell, sofern aktiviert. |
+| RAK-77 <a id="rak-77"></a> | Muss | **Shared-State-Issuance-Limiter**: `IssuanceLimiterPort` mit Default-In-Process-Adapter (1:1 zum heutigen `InMemoryIssuanceRateLimiter`) plus SQLite-Backend-Adapter als erstem Shared-State-Pfad (Migration `V5`, atomare Counter-Erhöhung, TTL-Cleanup). ENV-Selektion `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite`; **globaler Default bleibt `memory`** (Backwards-Compat). Andere Werte (`redis`, `memcached`, …) lehnt der Boot-Validator mit klarem Fehler ab. Topologie-Constraint des SQLite-Adapters: nur sinnvoll bei Single-Host-Deployments mit Shared-Persistent-Volume; echte Multi-Host-Topologie braucht einen Network-Backend-Adapter und bleibt Folge-Item. RAK-74-Scope-Cut bleibt aktiv: Limiter darf nicht vor `/api/ingest/*` hängen. |
+| RAK-78 <a id="rak-78"></a> | Muss | **Multi-Key-Signing-Rotation**: `MultiKeySigningResolver` ersetzt den heutigen `StaticSigningKeyResolver` als Default-Pfad mit ENV-Schema `MTRACE_AUTH_SIGNING_KEYS=<kid1>:<base64_secret1>[,<kid2>:<base64_secret2>,…]` plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=<kid>`. Verify-Set umfasst alle geladenen Keys, Sign-Key kommt aus dem aktiven `kid`; alte Tokens verifizieren weiter bis zum Ablauf der Token-TTL. Restart-stabil analog `TestHMACSigner_RestartStableAcrossKeyResolverReinitialization`. Backwards-Compat: einzelner Key über alten ENV-Pfad bleibt als degenerierter Multi-Key-Resolver mit `len(keys)==1` unterstützt. Erweitert RAK-72/RAK-73 um den ENV-getriebenen Rotation-Code-Pfad zur Doku-Stand-Lieferung aus `0.12.1` (`auth.md` §5.3.1). |
+| RAK-79 <a id="rak-79"></a> | Muss | **Secret-Backend-Driven-Port**: `SecretBackendPort` als neuer Driven-Port für Signing- und Project-Token-Secret-Bezug; ENV-Lookup-Adapter implementiert den Port 1:1 zum heutigen Verhalten und bleibt Default-Selektion. Mindestens ein externes Backend-Adapter-Skelett wird geliefert — **Auswahl: Vault-Adapter** (`hashicorp/vault/api`, Lab-Pfad mit `vault dev`-Server). KMS-Adapter bleibt additive Folge-Option. ENV-Selektion `MTRACE_AUTH_SECRET_BACKEND=env|vault` (KMS-Wert wird als unbekannter Wert vom Boot-Validator abgelehnt, bis ein Adapter geliefert wird). Caching, Refresh-TTL und Failure-Modus (fail-closed bei Backend-Outage) sind dokumentiert. Resttrigger „erste Operator-Anbindung an produktives Vault/KMS" und „Compliance-Audit (PCI/SOC2)" bleiben offen — Skelett-Lieferung allein erfüllt diese nicht. |
+| RAK-80 <a id="rak-80"></a> | Muss | **Browser-Ingest-Policy**: `/api/ingest/*` ist optional aus Browser-Origins nutzbar — Project-Policy-Schema wird um `browser_ingest_policy.{enabled, cors_allowlist[], csrf_required, origin_pin}` (oder finalisierte Schema-Variante) erweitert. Mit aktivem Project-Policy-Eintrag wird das Browser-Origin gegen die Allowlist geprüft, CSRF-Token oder Origin-Pin sind Default-Vorgabe für den aktivierten Pfad. Ohne aktivierte Policy gilt der RAK-74-Scope-Cut weiter (heutiges 204-Verhalten). Kontrollierte Aufhebung des RAK-74-Scope-Cuts — die Aussage „RAK-74-Scope-Cut bleibt strikt" aus §13.14 wird durch RAK-80 unter der Bedingung „aktive `browser_ingest_policy`" abgelöst. |
+| RAK-81 <a id="rak-81"></a> | optional (Kann) | **Auth-Bridge MediaMTX/SRS**: `MediaMTXAuthBridge`-Adapter konsumiert signierte Publish-Tokens (eigener Issuer auf Basis des bestehenden Signing-Key-Rings aus RAK-72/RAK-78). Lab-Smoke gegen echtes MediaMTX-Container-Setup; Lab-/Produktiv-Trennung bleibt. Aktivierung nur bei verfügbarer Test-Pipeline gegen echtes MediaMTX. Löst R-14 (`validate-key` ist kein Auth-Ersatz) strukturell, sofern aktiviert. |
+| RAK-82 <a id="rak-82"></a> | optional (Kann) | **Outbound-Webhook für Stream-Lifecycle**: Driven-Port `OutboundWebhookDispatcher` für `stream.started`/`stream.ended`-Events; HMAC-signierte Payload mit Project-Token-abgeleitetem Secret; definierter Retry-/Timeout-/Backoff-Pfad mit Dead-Letter-Schema. Adapter-Test plus Mock-Konsument-Smoke. Aktivierung nur bei zusätzlicher Bandbreite. Löst R-16 (lokales Lifecycle-Eventmodell ohne Outbound) strukturell, sofern aktiviert. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.12.5` erfüllt):
 KMS-Backend-Adapter (additive Folge-Option), echte Multi-Host-
@@ -2204,14 +2204,14 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-83 | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku wird entsprechend aktualisiert. |
-| RAK-84 | Muss | **`ListSessions` Bulk-Read-Performance** (`R-7`): neuer Port-Methode `ListBoundariesForSessions(ctx, sessionIDs)` in `SessionRepository`; SQLite-Adapter implementiert mit einer `IN`-Clause statt N+1; Performance-Benchmark zeigt < 200 ms p95 für 1000 Sessions pro Page. Race-Test bleibt grün. |
-| RAK-85 | Muss | **Sampling-Vollständigkeits-Marker** (`R-10`): SDK-Pflicht-Feld `meta.session_sample_rate` (Wire-Float, Range `(0, 1]`) bei `sampleRate < 1`; Server normalisiert via `round(x * 1_000_000)` auf Integer-ppm (`SAMPLE_RATE_FULL = 1_000_000`); Session-Spalte `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000` (Migration `V7`); Immutability nach erstem nicht-Default-Wert via exaktem Integer-Vergleich; Drift-Counter `mtrace_sample_rate_drift_total{project_id}` mit konfigurablem Toleranz-Band (±100 ppm). Read-API liefert beide Werte (ppm + abgeleiteter Float-Display). Schema-Eintrag in `contracts/event-schema.json`. |
-| RAK-86 | Muss | **SRT-Health-Cursor-Pagination** (`R-11`): `GET /api/srt/health/{stream_id}` akzeptiert `samples_cursor`-Query-Param (gemäß §7a.3 — **nicht** `cursor`-Alias) und liefert `next_cursor`-Feld; Cursor-Token kapselt `process_instance_id + (ingested_at, id)`-Position analog §10.3; `400 cursor_invalid` bei `process_instance_id`-Mismatch oder malformed-Base64/Schema-Mismatch (§7a.4); Contract-Fixture für den `400`-Pfad. |
-| RAK-87 | Muss | **MediaMTX-Provisionierung** (`R-15`): neuer Driven-Port `MediaServerProvisioner` mit `Apply`/`Rollback`-API; MediaMTX-Adapter über `/v3/config/`-Pfade; ENV `MTRACE_MEDIASERVER_PROVISION_URL/_TOKEN`. Wire-Erweiterung `POST /api/ingest/streams` mit `provision`-Query-Param: **strikt additiv** — `provision=false` (Default) ist byte-stabil zum `0.11.0`-Format und liest ENV **nicht**; `provision=true` macht I/O und liefert immer `media_server_state` (vier Werte: `applied`/`partial`/`failed`/`disabled`). Provisionier-Fehler löst keinen API-State-Rollback aus. SRS bleibt Folge-Item. |
-| RAK-88 | Muss | **Multi-Host-Issuance-Limiter** (`R-17`-Resttrigger): neuer Redis-Backend-Adapter `RedisIssuanceRateLimiter` implementiert `driven.IssuanceRateLimiter` über atomare Token-Bucket-Operationen (`EVAL`-Lua mit Bucket-Key-Prefix `mtrace:issuance:`); ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite|redis` erweitert; Pflicht-ENV `MTRACE_REDIS_ADDR`/`_AUTH`. Fail-modus Default fail-closed (`429`); Opt-in fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`. Memcached bleibt Folge-Item (gemeinsam mit RAK-90). |
-| RAK-89 | Muss | **Produktive Vault/KMS-Anbindung** (`R-20`-Resttrigger): `VaultSecretBackend` aus `0.12.5` um produktive Auth-Mechanismen erweitert (AppRole via `role_id`/`secret_id`-Login, optional Kubernetes-ServiceAccount-Auth); neuer `KMSSecretBackend`-Adapter (AWS-KMS, Provider-API als Interface). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND=env|vault|kms` erweitert (heute wird `kms` abgelehnt). Optionaler Refresh-TTL via `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS` (Default 0 = Boot-Time-Load). Compliance-Audit-Doku zu PCI-/SOC2-relevanten Konfigurationspfaden in `auth.md` §5.5. |
-| RAK-90 | Muss | **Origin-/IP-Rate-Limiter** (`R-22`): neuer Driven-Port `OriginRateLimiter` mit `Allow(ctx, key)`-Methode (key = `client_ip` oder `Origin`-Header-Hash); Adapter `InMemoryOriginRateLimiter` und `RedisOriginRateLimiter` (gemeinsamer Redis-Server mit RAK-88, Bucket-Key-Prefix `mtrace:origin:`). **Kein SQLite-Adapter** — nicht Multi-Host-tauglich. ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|redis` (Default `disabled`, Backwards-Compat); `sqlite`/`memcached`-Werte werden vom Boot-Validator mit präzisen Begründungs-Fehlermeldungen abgelehnt. Integration vor `POST /api/auth/session-tokens` und `POST /api/playback-events`. `X-Forwarded-For`-Trust-Boundary via `MTRACE_TRUST_FORWARDED_FOR=1` opt-in. |
+| RAK-83 <a id="rak-83"></a> | Muss | **Time-Skew-Persistenz auf Event-Ebene** (`R-5`): Events mit `mtrace.time.skew_warning=true` werden in einer persistenten Spalte markiert (Migration `V6`); Read-Pfad (`ListSessions`, `GetSessionDetail`, SSE-Frames) echo't den Marker; Dashboard-UI zeigt einen Indikator am betroffenen Event in der Timeline. Operator-Doku wird entsprechend aktualisiert. |
+| RAK-84 <a id="rak-84"></a> | Muss | **`ListSessions` Bulk-Read-Performance** (`R-7`): neuer Port-Methode `ListBoundariesForSessions(ctx, sessionIDs)` in `SessionRepository`; SQLite-Adapter implementiert mit einer `IN`-Clause statt N+1; Performance-Benchmark zeigt < 200 ms p95 für 1000 Sessions pro Page. Race-Test bleibt grün. |
+| RAK-85 <a id="rak-85"></a> | Muss | **Sampling-Vollständigkeits-Marker** (`R-10`): SDK-Pflicht-Feld `meta.session_sample_rate` (Wire-Float, Range `(0, 1]`) bei `sampleRate < 1`; Server normalisiert via `round(x * 1_000_000)` auf Integer-ppm (`SAMPLE_RATE_FULL = 1_000_000`); Session-Spalte `sample_rate_ppm INTEGER NOT NULL DEFAULT 1000000` (Migration `V7`); Immutability nach erstem nicht-Default-Wert via exaktem Integer-Vergleich; Drift-Counter `mtrace_sample_rate_drift_total{project_id}` mit konfigurablem Toleranz-Band (±100 ppm). Read-API liefert beide Werte (ppm + abgeleiteter Float-Display). Schema-Eintrag in `contracts/event-schema.json`. |
+| RAK-86 <a id="rak-86"></a> | Muss | **SRT-Health-Cursor-Pagination** (`R-11`): `GET /api/srt/health/{stream_id}` akzeptiert `samples_cursor`-Query-Param (gemäß §7a.3 — **nicht** `cursor`-Alias) und liefert `next_cursor`-Feld; Cursor-Token kapselt `process_instance_id + (ingested_at, id)`-Position analog §10.3; `400 cursor_invalid` bei `process_instance_id`-Mismatch oder malformed-Base64/Schema-Mismatch (§7a.4); Contract-Fixture für den `400`-Pfad. |
+| RAK-87 <a id="rak-87"></a> | Muss | **MediaMTX-Provisionierung** (`R-15`): neuer Driven-Port `MediaServerProvisioner` mit `Apply`/`Rollback`-API; MediaMTX-Adapter über `/v3/config/`-Pfade; ENV `MTRACE_MEDIASERVER_PROVISION_URL/_TOKEN`. Wire-Erweiterung `POST /api/ingest/streams` mit `provision`-Query-Param: **strikt additiv** — `provision=false` (Default) ist byte-stabil zum `0.11.0`-Format und liest ENV **nicht**; `provision=true` macht I/O und liefert immer `media_server_state` (vier Werte: `applied`/`partial`/`failed`/`disabled`). Provisionier-Fehler löst keinen API-State-Rollback aus. SRS bleibt Folge-Item. |
+| RAK-88 <a id="rak-88"></a> | Muss | **Multi-Host-Issuance-Limiter** (`R-17`-Resttrigger): neuer Redis-Backend-Adapter `RedisIssuanceRateLimiter` implementiert `driven.IssuanceRateLimiter` über atomare Token-Bucket-Operationen (`EVAL`-Lua mit Bucket-Key-Prefix `mtrace:issuance:`); ENV-Selektor `MTRACE_AUTH_ISSUANCE_LIMITER=memory|sqlite|redis` erweitert; Pflicht-ENV `MTRACE_REDIS_ADDR`/`_AUTH`. Fail-modus Default fail-closed (`429`); Opt-in fail-open via `MTRACE_AUTH_ISSUANCE_FAIL_OPEN=1`. Memcached bleibt Folge-Item (gemeinsam mit RAK-90). |
+| RAK-89 <a id="rak-89"></a> | Muss | **Produktive Vault/KMS-Anbindung** (`R-20`-Resttrigger): `VaultSecretBackend` aus `0.12.5` um produktive Auth-Mechanismen erweitert (AppRole via `role_id`/`secret_id`-Login, optional Kubernetes-ServiceAccount-Auth); neuer `KMSSecretBackend`-Adapter (AWS-KMS, Provider-API als Interface). ENV-Selektor `MTRACE_AUTH_SECRET_BACKEND=env|vault|kms` erweitert (heute wird `kms` abgelehnt). Optionaler Refresh-TTL via `MTRACE_AUTH_SECRET_BACKEND_REFRESH_SECONDS` (Default 0 = Boot-Time-Load). Compliance-Audit-Doku zu PCI-/SOC2-relevanten Konfigurationspfaden in `auth.md` §5.5. |
+| RAK-90 <a id="rak-90"></a> | Muss | **Origin-/IP-Rate-Limiter** (`R-22`): neuer Driven-Port `OriginRateLimiter` mit `Allow(ctx, key)`-Methode (key = `client_ip` oder `Origin`-Header-Hash); Adapter `InMemoryOriginRateLimiter` und `RedisOriginRateLimiter` (gemeinsamer Redis-Server mit RAK-88, Bucket-Key-Prefix `mtrace:origin:`). **Kein SQLite-Adapter** — nicht Multi-Host-tauglich. ENV-Selektor `MTRACE_ORIGIN_RATE_LIMITER=disabled|memory|redis` (Default `disabled`, Backwards-Compat); `sqlite`/`memcached`-Werte werden vom Boot-Validator mit präzisen Begründungs-Fehlermeldungen abgelehnt. Integration vor `POST /api/auth/session-tokens` und `POST /api/playback-events`. `X-Forwarded-For`-Trust-Boundary via `MTRACE_TRUST_FORWARDED_FOR=1` opt-in. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.12.6` erfüllt):
 Memcached-Backend für RAK-88/RAK-90 (Folge-Item bei
@@ -2236,11 +2236,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-91 | Muss | **Postgres-/Ops-Scope (`MVP-40`)**: `0.13.0` dokumentiert eine verbindliche Entscheidung für Postgres als Seed-Slice, POC oder Defer. Die Entscheidung enthält mindestens zwei Alternativen, Begründung, Migrations-/Rollbackpfad oder messbare Reaktivierungs-Trigger. SQLite bleibt lokaler Standard und wird durch Postgres nicht als versteckte Pflichtabhängigkeit ersetzt. **Reaktiviert (2026-07-11)**: Defer → „proceed, optional" — Postgres als **optionaler nicht-Default**-Adapter (SQLite bleibt Standard, keine versteckte Pflichtabhängigkeit). Der horizontale Scale-out-Nachweis (R-26 c) ist mit Messwerten erbracht (0 Verlust/0 Duplikate über 2 Replicas; Durchsatz-Grenze = Single-Postgres). Repliken-übergreifende Multi-Tenant-Fairness (R-26 b) bleibt offen. |
-| RAK-92 | Muss | **Analytics-Backend-Entscheidung (`MVP-41`)**: ClickHouse, VictoriaMetrics und Mimir (oder eine begründete gleichwertige Option) werden anhand von Komplexität, Betriebskosten, Query-Fähigkeit, Integrationsaufwand, Relevanz der Workloads und Migrationsrisiko verglichen. Ergebnis ist `proceed`, `defer` oder `POC`; ein POC braucht Erfolgskriterien, Abbruchkriterien und Zeitgrenze. |
-| RAK-93 | Muss | **Kubernetes-/NF-18-Harmonisierung (`MVP-42`, `NF-18`, R-9)**: K8s bleibt ein optionaler Option-Pfad. Beispielmanifeste oder Entscheidungsnotizen dürfen geliefert werden, aber ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage darf erst verbindlich werden, wenn R-9 mit Observability-Label-Allowlist, Risiko-Matrix und mindestens zwei Gegenmaßnahmen entschieden ist. |
-| RAK-94 | Muss | **Devcontainer-Scope (`MVP-43`)**: Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder explizit deferred. In beiden Fällen sind Begründung, lokale Standardentwicklungs-Abgrenzung und Reaktivierungs-Trigger dokumentiert. |
-| RAK-95 | Muss | **Release-Automatisierung (`MVP-44`)**: Release-Automatisierung definiert automatisierte und manuelle Schritte, Owner/RACI, Branch-/Tag-/Environment-Guards, Dry-Run-Tests, Rollback-Regeln und Closeout-Nachweise. Jede Veröffentlichung braucht explizite Human Approval; automatische Veröffentlichung ohne Freigabe bleibt ausgeschlossen. |
+| RAK-91 <a id="rak-91"></a> | Muss | **Postgres-/Ops-Scope (`MVP-40`)**: `0.13.0` dokumentiert eine verbindliche Entscheidung für Postgres als Seed-Slice, POC oder Defer. Die Entscheidung enthält mindestens zwei Alternativen, Begründung, Migrations-/Rollbackpfad oder messbare Reaktivierungs-Trigger. SQLite bleibt lokaler Standard und wird durch Postgres nicht als versteckte Pflichtabhängigkeit ersetzt. **Reaktiviert (2026-07-11)**: Defer → „proceed, optional" — Postgres als **optionaler nicht-Default**-Adapter (SQLite bleibt Standard, keine versteckte Pflichtabhängigkeit). Der horizontale Scale-out-Nachweis (R-26 c) ist mit Messwerten erbracht (0 Verlust/0 Duplikate über 2 Replicas; Durchsatz-Grenze = Single-Postgres). Repliken-übergreifende Multi-Tenant-Fairness (R-26 b) bleibt offen. |
+| RAK-92 <a id="rak-92"></a> | Muss | **Analytics-Backend-Entscheidung (`MVP-41`)**: ClickHouse, VictoriaMetrics und Mimir (oder eine begründete gleichwertige Option) werden anhand von Komplexität, Betriebskosten, Query-Fähigkeit, Integrationsaufwand, Relevanz der Workloads und Migrationsrisiko verglichen. Ergebnis ist `proceed`, `defer` oder `POC`; ein POC braucht Erfolgskriterien, Abbruchkriterien und Zeitgrenze. |
+| RAK-93 <a id="rak-93"></a> | Muss | **Kubernetes-/NF-18-Harmonisierung (`MVP-42`, `NF-18`, R-9)**: K8s bleibt ein optionaler Option-Pfad. Beispielmanifeste oder Entscheidungsnotizen dürfen geliefert werden, aber ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage darf erst verbindlich werden, wenn R-9 mit Observability-Label-Allowlist, Risiko-Matrix und mindestens zwei Gegenmaßnahmen entschieden ist. |
+| RAK-94 <a id="rak-94"></a> | Muss | **Devcontainer-Scope (`MVP-43`)**: Devcontainer wird als reproduzierbarer Entwicklungs-Seed geliefert oder explizit deferred. In beiden Fällen sind Begründung, lokale Standardentwicklungs-Abgrenzung und Reaktivierungs-Trigger dokumentiert. |
+| RAK-95 <a id="rak-95"></a> | Muss | **Release-Automatisierung (`MVP-44`)**: Release-Automatisierung definiert automatisierte und manuelle Schritte, Owner/RACI, Branch-/Tag-/Environment-Guards, Dry-Run-Tests, Rollback-Regeln und Closeout-Nachweise. Jede Veröffentlichung braucht explizite Human Approval; automatische Veröffentlichung ohne Freigabe bleibt ausgeschlossen. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.13.0` erfüllt):
 vollständiger Production-Kubernetes-Betrieb, Managed-Cloud-Betrieb,
@@ -2261,11 +2261,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-96 | Muss | **Postgres-Triggerpflege (`MVP-40`)**: `0.14.0` importiert die `0.13.0`-Entscheidung `defer-with-migration-seed`. Ein Postgres-Runtime-Adapter, DSN-Pflichtpfad oder automatischer SQLite-Export darf nur bei dokumentiert ausgelöstem Trigger entstehen. Mindestens DDL-/Replay-/Rollback-Grenzen und Owner bleiben nachvollziehbar. |
-| RAK-97 | Muss | **Analytics-Triggerpflege (`MVP-41`)**: `0.14.0` hält ClickHouse/VictoriaMetrics/Mimir als deferred, solange kein konkreter Workload-Trigger ausgelöst ist. Query-Workloads, Erfolgskriterien, Abbruchkriterien und Kostenannahmen bleiben messbar; kein Analytics-System wird Standard- oder Pflichtabhängigkeit. |
-| RAK-98 | Muss | **K8s-/NF-18-Seed-Hardening (`MVP-42`, `NF-18`, R-9)**: Der optionale K8s-Pfad wird validiert oder gehärtet, ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage bleibt optional oder deferred, bis R-9 mit separatem K8s-Allowlist-Modus, Smoke-Scope-Trennung und Label-Cardinality-Gegenmaßnahmen geschlossen ist. |
-| RAK-99 | Muss | **Devcontainer-/DevEx-Validation (`MVP-43`)**: Der Devcontainer wird als reproduzierbarer Zusatzpfad validiert. Er darf Make-/Docker-Dokumentation und lokale Standardentwicklung nicht ersetzen und darf keine neue Pflichtumgebung einführen. |
-| RAK-100 | Muss | **Release-Guard-Hardening (`MVP-44`)**: Release-Automation bleibt freigabepflichtig. Guard-Dry-Runs, Fehlerfälle, Branch-/Tag-/Dirty-Worktree-Regeln und Runbook-Konsistenz werden nachgewiesen; Commit, Tag, Push und GitHub-Release bleiben manuelle Schritte. |
+| RAK-96 <a id="rak-96"></a> | Muss | **Postgres-Triggerpflege (`MVP-40`)**: `0.14.0` importiert die `0.13.0`-Entscheidung `defer-with-migration-seed`. Ein Postgres-Runtime-Adapter, DSN-Pflichtpfad oder automatischer SQLite-Export darf nur bei dokumentiert ausgelöstem Trigger entstehen. Mindestens DDL-/Replay-/Rollback-Grenzen und Owner bleiben nachvollziehbar. |
+| RAK-97 <a id="rak-97"></a> | Muss | **Analytics-Triggerpflege (`MVP-41`)**: `0.14.0` hält ClickHouse/VictoriaMetrics/Mimir als deferred, solange kein konkreter Workload-Trigger ausgelöst ist. Query-Workloads, Erfolgskriterien, Abbruchkriterien und Kostenannahmen bleiben messbar; kein Analytics-System wird Standard- oder Pflichtabhängigkeit. |
+| RAK-98 <a id="rak-98"></a> | Muss | **K8s-/NF-18-Seed-Hardening (`MVP-42`, `NF-18`, R-9)**: Der optionale K8s-Pfad wird validiert oder gehärtet, ohne Production-Ready-Zusage. Eine K8s-Smoke-Stage bleibt optional oder deferred, bis R-9 mit separatem K8s-Allowlist-Modus, Smoke-Scope-Trennung und Label-Cardinality-Gegenmaßnahmen geschlossen ist. |
+| RAK-99 <a id="rak-99"></a> | Muss | **Devcontainer-/DevEx-Validation (`MVP-43`)**: Der Devcontainer wird als reproduzierbarer Zusatzpfad validiert. Er darf Make-/Docker-Dokumentation und lokale Standardentwicklung nicht ersetzen und darf keine neue Pflichtumgebung einführen. |
+| RAK-100 <a id="rak-100"></a> | Muss | **Release-Guard-Hardening (`MVP-44`)**: Release-Automation bleibt freigabepflichtig. Guard-Dry-Runs, Fehlerfälle, Branch-/Tag-/Dirty-Worktree-Regeln und Runbook-Konsistenz werden nachgewiesen; Commit, Tag, Push und GitHub-Release bleiben manuelle Schritte. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.14.0` erfüllt):
 vollständiger Production-Kubernetes-Betrieb, Managed-Cloud-Betrieb,
@@ -2286,11 +2286,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-101 | Muss | **Zielgruppenentscheidung (§16.1)**: Die Primärzielgruppe für die nächsten Minor-Releases ist entschieden oder bewusst als Produkt-ADR deferred. Selbsthoster, kleine Teams und Broadcaster-Labs bleiben Default-Empfehlung, solange kein konkreter Plattform-Betreiber-Trigger mit Betriebsmodell, Owner und Folgeplan dokumentiert ist. |
-| RAK-102 | Muss | **Analyzer-API-Boundary (`MVP-20`)**: Die historische externe `apps/analyzer-api`-Anforderung wird gegen den bestehenden internen `apps/analyzer-service` bewertet. Ergebnis ist `proceed`, `POC`, `defer` oder `anders erfüllt`; ein Go braucht konkreten externen Konsumenten, API-Grenze, Auth-/Rate-Limit-/SSRF-Grenzen und Folgeplan. **Tranche-2-Entscheidung:** externe API `defer`; interner Service plus Library/CLI erfüllen den aktuellen Zielgruppen-Scope anders. |
-| RAK-103 | Muss | **Control-Plane-Scope (`F-132`)**: `apps/control-plane` wird nur als Decision-Record zugeschnitten. Aufgaben, Nicht-Ziele, Trigger, Abhängigkeiten zu Zielgruppe/Auth/Multi-Tenant und späterer Planpfad sind dokumentiert; ohne eigene Folgerelease-Freigabe entsteht keine Control-Plane-Implementierung. **Tranche-3-Entscheidung:** `defer`, kein POC in `0.15.0`; Reaktivierung nur bei konkretem Betreiberbedarf mit Auth-/Tenant-/Audit-Nachweis und eigenem Folgeplan. |
-| RAK-104 | Muss | **Analyzer-Folge-Slice (`NF-13`)**: Low-Latency-CMAF, HTTP-Range-/Byte-Range-Loader, vollständigere Segmentabdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfad werden gegeneinander bewertet. Höchstens ein eng begrenzter Folge-Slice wird empfohlen; alles andere bleibt deferred. **Tranche-4-Entscheidung:** HTTP-Range-/Byte-Range-Loader für manifest-referenzierte CMAF-Init-/Media-Segmente wird als einziger kleiner Folge-Slice empfohlen; alle anderen Optionen bleiben deferred. |
-| RAK-105 | Muss | **Ops-Trigger-Re-Eval (`MVP-40`/`MVP-41`)**: Postgres- und Analytics-Trigger aus ADR 0005 werden erneut geprüft. Ohne erreichte Trigger bleiben Postgres als `defer-with-migration-seed` und Analytics als `defer` geführt; bei erreichtem Trigger wird ein separater Folgeplan angelegt statt still umzusetzen. |
+| RAK-101 <a id="rak-101"></a> | Muss | **Zielgruppenentscheidung (§16.1)**: Die Primärzielgruppe für die nächsten Minor-Releases ist entschieden oder bewusst als Produkt-ADR deferred. Selbsthoster, kleine Teams und Broadcaster-Labs bleiben Default-Empfehlung, solange kein konkreter Plattform-Betreiber-Trigger mit Betriebsmodell, Owner und Folgeplan dokumentiert ist. |
+| RAK-102 <a id="rak-102"></a> | Muss | **Analyzer-API-Boundary (`MVP-20`)**: Die historische externe `apps/analyzer-api`-Anforderung wird gegen den bestehenden internen `apps/analyzer-service` bewertet. Ergebnis ist `proceed`, `POC`, `defer` oder `anders erfüllt`; ein Go braucht konkreten externen Konsumenten, API-Grenze, Auth-/Rate-Limit-/SSRF-Grenzen und Folgeplan. **Tranche-2-Entscheidung:** externe API `defer`; interner Service plus Library/CLI erfüllen den aktuellen Zielgruppen-Scope anders. |
+| RAK-103 <a id="rak-103"></a> | Muss | **Control-Plane-Scope (`F-132`)**: `apps/control-plane` wird nur als Decision-Record zugeschnitten. Aufgaben, Nicht-Ziele, Trigger, Abhängigkeiten zu Zielgruppe/Auth/Multi-Tenant und späterer Planpfad sind dokumentiert; ohne eigene Folgerelease-Freigabe entsteht keine Control-Plane-Implementierung. **Tranche-3-Entscheidung:** `defer`, kein POC in `0.15.0`; Reaktivierung nur bei konkretem Betreiberbedarf mit Auth-/Tenant-/Audit-Nachweis und eigenem Folgeplan. |
+| RAK-104 <a id="rak-104"></a> | Muss | **Analyzer-Folge-Slice (`NF-13`)**: Low-Latency-CMAF, HTTP-Range-/Byte-Range-Loader, vollständigere Segmentabdeckung, Codec-Decoding und Player-SDK-CMAF-Laufzeitpfad werden gegeneinander bewertet. Höchstens ein eng begrenzter Folge-Slice wird empfohlen; alles andere bleibt deferred. **Tranche-4-Entscheidung:** HTTP-Range-/Byte-Range-Loader für manifest-referenzierte CMAF-Init-/Media-Segmente wird als einziger kleiner Folge-Slice empfohlen; alle anderen Optionen bleiben deferred. |
+| RAK-105 <a id="rak-105"></a> | Muss | **Ops-Trigger-Re-Eval (`MVP-40`/`MVP-41`)**: Postgres- und Analytics-Trigger aus ADR 0005 werden erneut geprüft. Ohne erreichte Trigger bleiben Postgres als `defer-with-migration-seed` und Analytics als `defer` geführt; bei erreichtem Trigger wird ein separater Folgeplan angelegt statt still umzusetzen. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.15.0` erfüllt):
 Control-Plane-Implementierung, externe Analyzer-API-Implementierung,
@@ -2323,11 +2323,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-106 | Muss | **Import der `0.15.0`-Entscheidung**: Genau ein Folgepfad ist aktiv. Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice) wird gewaehlt; externe Analyzer-API (`RAK-102`), Control-Plane (`RAK-103`), Postgres/Analytics (`RAK-105`) und Production-K8s bleiben deferred. |
-| RAK-107 | Muss | **HTTP-Range-/Byte-Range Analyzer-Slice (`NF-13`)**: Der Slice darf nur manifest-referenzierte CMAF-Init-/Media-Segmente adressieren. Low-Latency-CMAF, vollstaendige Segmentsets, Codec-Decoding, Player-SDK-CMAF-Laufzeitpfade und nicht manifest-referenzierte Fetches bleiben out of scope. |
-| RAK-108 | Konditional Muss | **Contract-/Compatibility-Nachweis**: Sobald Analyzer-Code, Result-Schema, CLI/API-Doku oder Fixtures geaendert werden, muss der Nachweis additiv und rueckwaertskompatibel sein. Ohne Wire-/Schema-Aenderung ist die Unveraendertheit explizit zu dokumentieren. |
-| RAK-109 | Muss | **Operational-/Security-Grenzen**: Vor Fetch-Code muessen SSRF-Schutz, Redirect-Regeln, Timeout, maximale Gesamtbytes, maximale Range-Anzahl, Status-/Content-Type-Grenzen und Laufzeitbudget festgelegt und getestet oder begruendet ausgeschlossen werden. Der Slice darf keine neue externe API, Control-Plane oder Backend-Pflicht erzeugen. |
-| RAK-110 | Muss | **Closeout und Folge-Trigger**: Der Release-Closeout muss Release-Nachweis, RAK-Matrix, Changelog, Roadmap, Tag `v0.16.0`, offene Defer-Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
+| RAK-106 <a id="rak-106"></a> | Muss | **Import der `0.15.0`-Entscheidung**: Genau ein Folgepfad ist aktiv. Szenario B (`NF-13` HTTP-Range-/Byte-Range-Slice) wird gewaehlt; externe Analyzer-API (`RAK-102`), Control-Plane (`RAK-103`), Postgres/Analytics (`RAK-105`) und Production-K8s bleiben deferred. |
+| RAK-107 <a id="rak-107"></a> | Muss | **HTTP-Range-/Byte-Range Analyzer-Slice (`NF-13`)**: Der Slice darf nur manifest-referenzierte CMAF-Init-/Media-Segmente adressieren. Low-Latency-CMAF, vollstaendige Segmentsets, Codec-Decoding, Player-SDK-CMAF-Laufzeitpfade und nicht manifest-referenzierte Fetches bleiben out of scope. |
+| RAK-108 <a id="rak-108"></a> | Konditional Muss | **Contract-/Compatibility-Nachweis**: Sobald Analyzer-Code, Result-Schema, CLI/API-Doku oder Fixtures geaendert werden, muss der Nachweis additiv und rueckwaertskompatibel sein. Ohne Wire-/Schema-Aenderung ist die Unveraendertheit explizit zu dokumentieren. |
+| RAK-109 <a id="rak-109"></a> | Muss | **Operational-/Security-Grenzen**: Vor Fetch-Code muessen SSRF-Schutz, Redirect-Regeln, Timeout, maximale Gesamtbytes, maximale Range-Anzahl, Status-/Content-Type-Grenzen und Laufzeitbudget festgelegt und getestet oder begruendet ausgeschlossen werden. Der Slice darf keine neue externe API, Control-Plane oder Backend-Pflicht erzeugen. |
+| RAK-110 <a id="rak-110"></a> | Muss | **Closeout und Folge-Trigger**: Der Release-Closeout muss Release-Nachweis, RAK-Matrix, Changelog, Roadmap, Tag `v0.16.0`, offene Defer-Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.16.0` erfüllt):
 externe Analyzer-API, Control-Plane, Postgres-Default, Analytics-
@@ -2355,11 +2355,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-111 | Muss | **Import des `0.16.0`-Ergebnisses**: `0.16.0` ist released und archiviert; Szenario D wird gewaehlt. Productization, Next Slice, Switch und Defer-Pfade werden sichtbar abgegrenzt. |
-| RAK-112 | Muss | **Evidence Review und Hardening-Scope**:  prueft die `0.16.0`-Belege, Fixtures, Gate-Ergebnisse und Restgrenzen.  darf genau einen Hardening-Scope liefern oder den Folgepfad explizit deferred halten. |
-| RAK-113 | Konditional Muss | **Betriebs-/Security-Haertung**: Falls Fetch-, Analyzer-, Fixture- oder Runtime-Artefakte geaendert werden, muessen SSRF-/Redirect-/Timeout-/Groessen-/Drift-/Security-Grenzen passend nachgewiesen werden. Ohne Code-/Runtime-Aenderung ist `n/a` zu begruenden. |
-| RAK-114 | Konditional Muss | **Compatibility- und Migration-Gates**: Wire-, API-, Persistenz-, Contract- oder Runtime-Aenderungen brauchen Kompatibilitaets- und Drift-Nachweis. Ohne Aenderung muss die Unveraendertheit dokumentiert werden. |
-| RAK-115 | Muss | **Closeout und Folgepfad**: Der Release-Closeout muss RAK-Matrix, Changelog, Roadmap, Tag `v0.17.0`, offene Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
+| RAK-111 <a id="rak-111"></a> | Muss | **Import des `0.16.0`-Ergebnisses**: `0.16.0` ist released und archiviert; Szenario D wird gewaehlt. Productization, Next Slice, Switch und Defer-Pfade werden sichtbar abgegrenzt. |
+| RAK-112 <a id="rak-112"></a> | Muss | **Evidence Review und Hardening-Scope**:  prueft die `0.16.0`-Belege, Fixtures, Gate-Ergebnisse und Restgrenzen.  darf genau einen Hardening-Scope liefern oder den Folgepfad explizit deferred halten. |
+| RAK-113 <a id="rak-113"></a> | Konditional Muss | **Betriebs-/Security-Haertung**: Falls Fetch-, Analyzer-, Fixture- oder Runtime-Artefakte geaendert werden, muessen SSRF-/Redirect-/Timeout-/Groessen-/Drift-/Security-Grenzen passend nachgewiesen werden. Ohne Code-/Runtime-Aenderung ist `n/a` zu begruenden. |
+| RAK-114 <a id="rak-114"></a> | Konditional Muss | **Compatibility- und Migration-Gates**: Wire-, API-, Persistenz-, Contract- oder Runtime-Aenderungen brauchen Kompatibilitaets- und Drift-Nachweis. Ohne Aenderung muss die Unveraendertheit dokumentiert werden. |
+| RAK-115 <a id="rak-115"></a> | Muss | **Closeout und Folgepfad**: Der Release-Closeout muss RAK-Matrix, Changelog, Roadmap, Tag `v0.17.0`, offene Trigger und den naechsten Planpfad dokumentieren. Nicht gewaehlte Pfade bleiben sichtbar deferred. |
 
 Out-of-Scope-Bekräftigung (nicht durch `0.17.0`  erfüllt):
 externe Analyzer-API, Control-Plane, Postgres-Default, Analytics-
@@ -2390,11 +2390,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-116 | Muss | **Owner-Scope-Konsistenz**: Alle aktuellen Workspace-, SDK-, Analyzer-, Spec- und Test-Referenzen nutzen `@pt9912/...`; historische Done-Pläne dürfen ihren alten Kontext behalten. |
-| RAK-117 | Muss | **Publishbare Pakete begrenzen**: Nur `@pt9912/player-sdk` und `@pt9912/stream-analyzer` haben `publishConfig.registry=https://npm.pkg.github.com`; Dashboard und Analyzer-Service bleiben `private: true`. |
-| RAK-118 | Muss | **GitHub-Packages-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
-| RAK-119 | Muss | **Release-Dokumentation**: [`docs/user/releasing.md`](../docs/user/releasing.md) beschreibt Dry-Run, produktiven Publish, automatischen Release-Hook und Package-Rollback-Grenzen. |
-| RAK-120 | Muss | **Closeout und Erstveröffentlichung**: `0.20.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.20.0` und der erste erfolgreiche GitHub-Packages-Publish sind dokumentiert. |
+| RAK-116 <a id="rak-116"></a> | Muss | **Owner-Scope-Konsistenz**: Alle aktuellen Workspace-, SDK-, Analyzer-, Spec- und Test-Referenzen nutzen `@pt9912/...`; historische Done-Pläne dürfen ihren alten Kontext behalten. |
+| RAK-117 <a id="rak-117"></a> | Muss | **Publishbare Pakete begrenzen**: Nur `@pt9912/player-sdk` und `@pt9912/stream-analyzer` haben `publishConfig.registry=https://npm.pkg.github.com`; Dashboard und Analyzer-Service bleiben `private: true`. |
+| RAK-118 <a id="rak-118"></a> | Muss | **GitHub-Packages-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
+| RAK-119 <a id="rak-119"></a> | Muss | **Release-Dokumentation**: [`docs/user/releasing.md`](../docs/user/releasing.md) beschreibt Dry-Run, produktiven Publish, automatischen Release-Hook und Package-Rollback-Grenzen. |
+| RAK-120 <a id="rak-120"></a> | Muss | **Closeout und Erstveröffentlichung**: `0.20.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.20.0` und der erste erfolgreiche GitHub-Packages-Publish sind dokumentiert. |
 
 ### 13.23 Version 0.21.0: OCI Image Publishing (RAK-121..RAK-125)
 
@@ -2414,11 +2414,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-121 | Muss | **GHCR-Namensschema**: Die drei Runtime-Images verwenden stabile, owner-konsistente Namen unter `ghcr.io/pt9912/` und werden nur mit expliziten Versions-Tags veröffentlicht; `latest` wird nicht gesetzt. |
-| RAK-122 | Muss | **Make-Publish-Pfad**: Root-Targets bauen, prüfen und veröffentlichen die drei Images reproduzierbar. Der produktive Push verlangt `MTRACE_IMAGE_PUBLISH_APPROVED=1`; ohne Freigabe muss der Publish abbrechen. |
-| RAK-123 | Muss | **GitHub-Actions-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
-| RAK-124 | Muss | **Release-Dokumentation**: [`docs/user/releasing.md`](../docs/user/releasing.md) beschreibt Image-Dry-Run, produktiven GHCR-Publish, automatische Release-Hook-Ausführung und Rollback-Grenzen für teilweise oder fehlerhafte Image-Veröffentlichungen. |
-| RAK-125 | Muss | **Closeout und Erstveröffentlichung**: `0.21.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.21.0` und der erste erfolgreiche GHCR-Publish der drei Runtime-Images sind dokumentiert. |
+| RAK-121 <a id="rak-121"></a> | Muss | **GHCR-Namensschema**: Die drei Runtime-Images verwenden stabile, owner-konsistente Namen unter `ghcr.io/pt9912/` und werden nur mit expliziten Versions-Tags veröffentlicht; `latest` wird nicht gesetzt. |
+| RAK-122 <a id="rak-122"></a> | Muss | **Make-Publish-Pfad**: Root-Targets bauen, prüfen und veröffentlichen die drei Images reproduzierbar. Der produktive Push verlangt `MTRACE_IMAGE_PUBLISH_APPROVED=1`; ohne Freigabe muss der Publish abbrechen. |
+| RAK-123 <a id="rak-123"></a> | Muss | **GitHub-Actions-Workflow**: Ein manueller Workflow kann gegen einen Git-Ref trocken oder produktiv publishen; `release.published` veröffentlicht den Release-Tag mit `GITHUB_TOKEN` und `packages: write`. |
+| RAK-124 <a id="rak-124"></a> | Muss | **Release-Dokumentation**: [`docs/user/releasing.md`](../docs/user/releasing.md) beschreibt Image-Dry-Run, produktiven GHCR-Publish, automatische Release-Hook-Ausführung und Rollback-Grenzen für teilweise oder fehlerhafte Image-Veröffentlichungen. |
+| RAK-125 <a id="rak-125"></a> | Muss | **Closeout und Erstveröffentlichung**: `0.21.0` bump, Changelog, Roadmap, Plan-Archiv, Tag `v0.21.0` und der erste erfolgreiche GHCR-Publish der drei Runtime-Images sind dokumentiert. |
 
 ---
 
@@ -2442,11 +2442,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-126 | Muss | **Optionaler Postgres-Adapter (`RAK-91`-Reaktivierung, `NF-20`/`NF-22`/`NF-23`)**: Ein Postgres-Runtime-Adapter ist über `MTRACE_PERSISTENCE=postgres` + DSN als nicht-Default-Persistenz wählbar und implementiert dieselben Driven-Ports wie der SQLite-Adapter. `SQLite` bleibt Default; ohne explizite Wahl ändert sich das lokale Standardverhalten nicht. |
-| RAK-127 | Muss | **DB-autoritativer Ingest-Sequencer (`R-28`)**: Die Ingest-Sequence wird datenbank-autoritativ vergeben, sodass ≥ 2 Replicas auf einem geteilten Store kollisionsfreie, lückenlos eindeutige Sequenzwerte erhalten (kein In-Process-Zähler, der über Replicas identische Werte vergibt). Der bestehende Port-Vertrag bleibt unverändert. |
-| RAK-128 | Muss | **Multi-Replica-Betrieb auf geteiltem Store**: Eine Harness startet ≥ 2 API-Instanzen hinter einem Load-Balancer auf einem geteilten Postgres. Die Startup-Migration ist gegen konkurrierende Instanzen serialisiert (kein Race, genau eine Baseline-Migration), und das Verbindungs-Budget ist dokumentiert. |
-| RAK-129 | Muss | **Scale-out-Nachweis (`R-26 c`)**: Ein Scale-out-Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store: keinen stillen Verlust (jedes bestätigte Event ist persistiert) und keine Duplikate (Anzahl eindeutiger Ingest-Sequenzen gleich Gesamtzahl). Die Durchsatz-Charakteristik ist ehrlich dokumentiert (flaschenhals-abhängig); `R-26 b` (repliken-übergreifende Fairness) bleibt als offen benannt. |
-| RAK-130 | Muss | **Closeout und SQLite-Invarianz**: `0.23.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Beleg sind dokumentiert. Die adapter-agnostische Korrektheits-Suite läuft gegen `SQLite` **und** Postgres; der `SQLite`-Pfad bleibt über die gesamte Umsetzung unverändert grün. |
+| RAK-126 <a id="rak-126"></a> | Muss | **Optionaler Postgres-Adapter (`RAK-91`-Reaktivierung, `NF-20`/`NF-22`/`NF-23`)**: Ein Postgres-Runtime-Adapter ist über `MTRACE_PERSISTENCE=postgres` + DSN als nicht-Default-Persistenz wählbar und implementiert dieselben Driven-Ports wie der SQLite-Adapter. `SQLite` bleibt Default; ohne explizite Wahl ändert sich das lokale Standardverhalten nicht. |
+| RAK-127 <a id="rak-127"></a> | Muss | **DB-autoritativer Ingest-Sequencer (`R-28`)**: Die Ingest-Sequence wird datenbank-autoritativ vergeben, sodass ≥ 2 Replicas auf einem geteilten Store kollisionsfreie, lückenlos eindeutige Sequenzwerte erhalten (kein In-Process-Zähler, der über Replicas identische Werte vergibt). Der bestehende Port-Vertrag bleibt unverändert. |
+| RAK-128 <a id="rak-128"></a> | Muss | **Multi-Replica-Betrieb auf geteiltem Store**: Eine Harness startet ≥ 2 API-Instanzen hinter einem Load-Balancer auf einem geteilten Postgres. Die Startup-Migration ist gegen konkurrierende Instanzen serialisiert (kein Race, genau eine Baseline-Migration), und das Verbindungs-Budget ist dokumentiert. |
+| RAK-129 <a id="rak-129"></a> | Muss | **Scale-out-Nachweis (`R-26 c`)**: Ein Scale-out-Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store: keinen stillen Verlust (jedes bestätigte Event ist persistiert) und keine Duplikate (Anzahl eindeutiger Ingest-Sequenzen gleich Gesamtzahl). Die Durchsatz-Charakteristik ist ehrlich dokumentiert (flaschenhals-abhängig); `R-26 b` (repliken-übergreifende Fairness) bleibt als offen benannt. |
+| RAK-130 <a id="rak-130"></a> | Muss | **Closeout und SQLite-Invarianz**: `0.23.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Beleg sind dokumentiert. Die adapter-agnostische Korrektheits-Suite läuft gegen `SQLite` **und** Postgres; der `SQLite`-Pfad bleibt über die gesamte Umsetzung unverändert grün. |
 
 ### 13.25 Version 0.25.0: Multi-Tenant-Fairness + SQLite→Postgres-Cutover (RAK-131..RAK-135)
 
@@ -2472,11 +2472,11 @@ Akzeptanzkriterien:
 
 | Kennung | Prioritaet | Akzeptanzkriterium |
 |---|---|---|
-| RAK-131 | Muss | **Optionaler shared Ingest-Limiter (`R-26 b`, `F-110`/`NF-20`)**: Der Ingest-Rate-Limiter ist über `MTRACE_RATE_LIMIT_BACKEND=redis` auf einen geteilten Redis-Server umschaltbar und implementiert denselben Driven-Port wie der In-Process-Limiter (batch-weise, all-or-nothing über die Dimensionen `project_id`/`client_ip`/`origin`; Uhren-Drift zwischen Replicas darf das Budget nicht inflationieren). Default bleibt `memory`; ohne explizite Wahl ändert sich das Verhalten nicht. Bei Redis-Ausfall degradiert der Limiter default auf den lokalen In-Process-Bucket (Verfügbarkeit vor repliken-übergreifender Fairness; strikt-ablehnendes Verhalten ist als Opt-in wählbar) — nie auf einen Serverfehler. |
-| RAK-132 | Muss | **`client_ip`-Trust-Boundary**: Die `client_ip`-Dimension des Ingest-Limiters folgt derselben `X-Forwarded-For`-Trust-Boundary wie der Origin-/IP-Limiter (RAK-90, `MTRACE_TRUST_FORWARDED_FOR`): mit Opt-in zählt das letzte XFF-Element, als IP validiert (Nicht-IP-Werte fallen auf `RemoteAddr` zurück und erreichen nie einen Store-Key); ohne Opt-in bleibt `RemoteAddr` maßgeblich. |
-| RAK-133 | Muss | **Fairness-Nachweis (`R-26 b`)**: Ein reproduzierbarer Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store + Limiter: (a) das gedrosselte Per-Projekt-Budget skaliert NICHT mit der Replica-Zahl (Inversion des per-Replica-Verhaltens), (b) ein saturierendes Projekt nimmt anderen Projekten kein Budget weg (Noisy-Neighbor-Isolation: unbeteiligte Projekte sehen keine Drosselung und halten ihre Latenz-/Accept-Budgets), (c) die Verlust-/Duplikatfreiheits-Gates aus RAK-129 bleiben unverändert grün. |
-| RAK-134 | Muss | **SQLite→Postgres-Cutover als Ops-Werkzeug**: Ein bestehendes SQLite-Deployment kann seine Historie sequenz-erhaltend nach Postgres migrieren (Bulk → idempotentes inkrementelles Nachziehen → quiescter finaler Re-Sync mit Verifikation: Row-Count-Parität, Duplikatfreiheit, Sequenz-Fortsetzung). Die Quelle wird ausschließlich lesend geöffnet (Rollback = Konfig-Schritt zurück auf die unangetastete SQLite); der Ablauf läuft als ephemerer Ops-Container mit Operator-Runbook und ist opt-in (kein automatischer Trigger). |
-| RAK-135 | Muss | **Closeout und Default-Invarianz**: `0.25.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Belege sind dokumentiert. Ohne die neuen Opt-ins (`MTRACE_RATE_LIMIT_BACKEND`, `MTRACE_TRUST_FORWARDED_FOR`, Cutover) bleibt das Standardverhalten unverändert; die bestehenden Suiten (`SQLite`-Default, Postgres-Adapter, In-Memory-Limiter) bleiben über die gesamte Umsetzung grün. |
+| RAK-131 <a id="rak-131"></a> | Muss | **Optionaler shared Ingest-Limiter (`R-26 b`, `F-110`/`NF-20`)**: Der Ingest-Rate-Limiter ist über `MTRACE_RATE_LIMIT_BACKEND=redis` auf einen geteilten Redis-Server umschaltbar und implementiert denselben Driven-Port wie der In-Process-Limiter (batch-weise, all-or-nothing über die Dimensionen `project_id`/`client_ip`/`origin`; Uhren-Drift zwischen Replicas darf das Budget nicht inflationieren). Default bleibt `memory`; ohne explizite Wahl ändert sich das Verhalten nicht. Bei Redis-Ausfall degradiert der Limiter default auf den lokalen In-Process-Bucket (Verfügbarkeit vor repliken-übergreifender Fairness; strikt-ablehnendes Verhalten ist als Opt-in wählbar) — nie auf einen Serverfehler. |
+| RAK-132 <a id="rak-132"></a> | Muss | **`client_ip`-Trust-Boundary**: Die `client_ip`-Dimension des Ingest-Limiters folgt derselben `X-Forwarded-For`-Trust-Boundary wie der Origin-/IP-Limiter (RAK-90, `MTRACE_TRUST_FORWARDED_FOR`): mit Opt-in zählt das letzte XFF-Element, als IP validiert (Nicht-IP-Werte fallen auf `RemoteAddr` zurück und erreichen nie einen Store-Key); ohne Opt-in bleibt `RemoteAddr` maßgeblich. |
+| RAK-133 <a id="rak-133"></a> | Muss | **Fairness-Nachweis (`R-26 b`)**: Ein reproduzierbarer Lasttest belegt mit Messwerten über ≥ 2 Replicas auf geteiltem Store + Limiter: (a) das gedrosselte Per-Projekt-Budget skaliert NICHT mit der Replica-Zahl (Inversion des per-Replica-Verhaltens), (b) ein saturierendes Projekt nimmt anderen Projekten kein Budget weg (Noisy-Neighbor-Isolation: unbeteiligte Projekte sehen keine Drosselung und halten ihre Latenz-/Accept-Budgets), (c) die Verlust-/Duplikatfreiheits-Gates aus RAK-129 bleiben unverändert grün. |
+| RAK-134 <a id="rak-134"></a> | Muss | **SQLite→Postgres-Cutover als Ops-Werkzeug**: Ein bestehendes SQLite-Deployment kann seine Historie sequenz-erhaltend nach Postgres migrieren (Bulk → idempotentes inkrementelles Nachziehen → quiescter finaler Re-Sync mit Verifikation: Row-Count-Parität, Duplikatfreiheit, Sequenz-Fortsetzung). Die Quelle wird ausschließlich lesend geöffnet (Rollback = Konfig-Schritt zurück auf die unangetastete SQLite); der Ablauf läuft als ephemerer Ops-Container mit Operator-Runbook und ist opt-in (kein automatischer Trigger). |
+| RAK-135 <a id="rak-135"></a> | Muss | **Closeout und Default-Invarianz**: `0.25.0`-Bump, Changelog, Roadmap, Plan-Archiv und ADR-Belege sind dokumentiert. Ohne die neuen Opt-ins (`MTRACE_RATE_LIMIT_BACKEND`, `MTRACE_TRUST_FORWARDED_FOR`, Cutover) bleibt das Standardverhalten unverändert; die bestehenden Suiten (`SQLite`-Default, Postgres-Adapter, In-Memory-Limiter) bleiben über die gesamte Umsetzung grün. |
 
 ---
 
@@ -2486,17 +2486,17 @@ Das Projekt gilt in der ersten Phase als erfolgreich, wenn folgende Punkte erfü
 
 | Kennung | Prioritaet | Anforderung |
 |---|---|---|
-| AK-1 | Muss | Ein neuer Entwickler kann das Projekt unter Linux lokal starten. |
-| AK-2 | Muss | Die Startanleitung funktioniert ohne manuelle Sonderkonfiguration. |
-| AK-3 | Muss | Die Architektur ist klar nachvollziehbar. |
-| AK-4 | Muss | Die Domain-Schicht ist frameworkfrei. |
-| AK-5 | Muss | Die Adapter sind technisch klar getrennt. |
-| AK-6 | Muss | Mindestens ein Teststream kann abgespielt werden. |
-| AK-7 | Muss | Playback-Events werden vom Browser an die API gesendet. |
-| AK-8 | Muss | Events sind im Dashboard sichtbar. |
-| AK-9 | Muss | Basis-Metriken sind über Observability-Komponenten sichtbar oder vorbereitet. |
-| AK-10 | Muss | Das Repository ist Open-Source-tauglich dokumentiert. |
-| AK-11 | Muss | Die erste Version ist als GitHub-Release veröffentlichbar. |
+| AK-1 <a id="ak-1"></a> | Muss | Ein neuer Entwickler kann das Projekt unter Linux lokal starten. |
+| AK-2 <a id="ak-2"></a> | Muss | Die Startanleitung funktioniert ohne manuelle Sonderkonfiguration. |
+| AK-3 <a id="ak-3"></a> | Muss | Die Architektur ist klar nachvollziehbar. |
+| AK-4 <a id="ak-4"></a> | Muss | Die Domain-Schicht ist frameworkfrei. |
+| AK-5 <a id="ak-5"></a> | Muss | Die Adapter sind technisch klar getrennt. |
+| AK-6 <a id="ak-6"></a> | Muss | Mindestens ein Teststream kann abgespielt werden. |
+| AK-7 <a id="ak-7"></a> | Muss | Playback-Events werden vom Browser an die API gesendet. |
+| AK-8 <a id="ak-8"></a> | Muss | Events sind im Dashboard sichtbar. |
+| AK-9 <a id="ak-9"></a> | Muss | Basis-Metriken sind über Observability-Komponenten sichtbar oder vorbereitet. |
+| AK-10 <a id="ak-10"></a> | Muss | Das Repository ist Open-Source-tauglich dokumentiert. |
+| AK-11 <a id="ak-11"></a> | Muss | Die erste Version ist als GitHub-Release veröffentlichbar. |
 
 ---
 

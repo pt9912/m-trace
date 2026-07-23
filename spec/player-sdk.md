@@ -191,7 +191,7 @@ Header (HTTP-Standard).
 
 ## OpenTelemetry-Vorbereitung
 
-RAK-16 ist als vorbereiteter Opt-in-Pfad umgesetzt. Das SDK bringt
+[`RAK-16`](lastenheft.md#rak-16) ist als vorbereiteter Opt-in-Pfad umgesetzt. Das SDK bringt
 keine OTel-Abhängigkeit im Default-Bundle mit. Anwendungen können aber einen
 eigenen Transport über `PlayerSDKConfig.transport` injizieren:
 

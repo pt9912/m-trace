@@ -12,7 +12,20 @@ scan:
   # Projekt-Artefakte unter `.harness/skills/` bleiben bewusst gescannt.
   ignore: ['.security/.trivy-cache/**', '.tmp/**', '.harness/baseline/**']
 
-modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions]
+modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions, ids]
+
+# Modul `ids` (slice-001, welle-01): Requirement-Kennungen im Fließtext müssen
+# als verankerte Links auf ihre Definition zeigen. Stufe 1 = Spec-Straten
+# (`scope.roots: [spec]`), Familie F/NF/MVP/AK/RAK → `spec/lastenheft.md`
+# (inline-`<a id>`-Anker je Definitionszeile). Scope-Ausweitung (R-Familie,
+# docs/user, examples, Planning) = slice-002. Immutable ADRs bleiben dauerhaft
+# außerhalb (MR-002).
+ids:
+  scope:
+    roots: [spec]
+  patterns:
+    - regex: '(F|NF|MVP|AK|RAK)-[0-9]+'
+      target: spec/lastenheft.md
 
 # Modul `versions` (W7): gepinnte m-trace-GHCR-Image-Verweise in Markdown müssen
 # die aktuelle Release-Version (aus `version.md#aktuell`) tragen. Geprüftes Live-

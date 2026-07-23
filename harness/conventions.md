@@ -168,7 +168,7 @@ immutable Image-Digests.
 | Bestehende akzeptierte ADRs | Brownfield, grandfathered | Historische Dateien bleiben immutable; jede neue ADR folgt der Baseline |
 | Commit-Traceability | Greenfield für neue Pull Requests | PR-Bereiche bestehen `make docs-commits`; Vor-Adoptions-Historie bleibt unverändert |
 | Requirement-Coverage | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
-| Requirement-Links | Brownfield | Stabile Per-Requirement-Anker existieren und der ID-Link-Gate kann ohne mehrdeutige Root-Links aktiviert werden |
+| Requirement-Links | Brownfield → Greenfield (Spec-Straten) | `ids` seit `slice-001` auf `spec/**` aktiv (F/NF/MVP/AK/RAK, verankerte Links gg. inline-`<a id>`-Anker im Lastenheft). Voll graduiert, sobald `welle-01`/`slice-002` den Scope auf R-Familie + übrige aktive Doku ausdehnt |
 | Security-Gate-Suppressions (`image-scan`) | Brownfield, observable | Jede Suppression trägt Begründung + `expires` + Scope in `.security/vulnignore.yaml`; Nightly-Audit re-evaluiert; aufgelöst, sobald die `trixie-slim`-Base keine transitiven OS-CVEs ohne Runtime-Pfad mehr trägt (MR-006) |
 
 ## Requirement-Coverage-Konvergenz
@@ -187,21 +187,26 @@ Erreichen eines bestehenden Gates ohne Schwächung der Modalitäts-Policy.
 
 ## Requirement-Link-Konvergenz
 
-Das d-check-`ids`-Modul ist noch nicht aktiviert. Requirements leben derzeit in
-Markdown-Tabellenzeilen, sodass eine automatische Reparatur 340 nackte
-Kennungen in Links auf den Anfang von `spec/lastenheft.md` verwandeln würde,
-nicht auf die einzelne Definition. Das erzeugt link-förmige Mehrdeutigkeit und
-wird nicht als Konvergenz akzeptiert.
+Das d-check-`ids`-Modul ist seit `slice-001` (welle-01) **auf den Spec-Straten
+aktiv** (`scope.roots: [spec]`, Familie F/NF/MVP/AK/RAK). Requirements leben in
+Markdown-Tabellenzeilen; damit d-check auf die *einzelne Definition* auflöst statt
+auf den Datei-Anfang (link-förmige Mehrdeutigkeit, die m-trace nicht als
+Konvergenz akzeptiert), trägt jede Definitionszeile im Lastenheft einen inline-
+Anker `<a id="<kennung-klein>"></a>`, und Mentions sind verankerte Links
+`[ID](…lastenheft.md#slug)`.
 
-Die Graduierung erfordert diese Schritte:
+**Klarstellung (slice-001):** d-check selbst verlangt den Anker *nicht* — sein
+`--repair` erzeugt datei-level Links; der Anker-Zwang ist m-traces Qualitäts-
+Policy (Verweis muss auf die Definition zeigen). Der Weg zu den Ankern folgt der
+Handbuch-„Brownfield-Migration für tabellarische Lastenhefte" (inline-Anker statt
+Heading-Umbau, Tabellenform bleibt).
 
-1. Jedem normativen Requirement einen stabilen, direkt adressierbaren
-   Definitions-Anker geben, ohne seine Kennung oder vertragliche Formulierung zu
-   ändern.
-2. Verifizieren, dass d-check jede konfigurierte ID-Familie auf diese Definition
-   auflöst, nicht bloß auf die enthaltende Datei.
-3. Aufwärts-Verweise in aktiver technischer, ADR-, Planning- und Anwender-
-   Dokumentation migrieren; historische Release-Records bleiben unverändert, wo
-   gefordert.
-4. `ids` erst aktivieren, nachdem sein Advisory-Lauf kein mehrdeutiges Ziel
-   meldet und die resultierenden Links `links` und `anchors` bestehen.
+**Stand der Graduierung:**
+
+1. ✅ Spec-Straten (`spec/**`, F/NF/MVP/AK/RAK) — Anker im Lastenheft, 213
+   Mentions verankert, `ids`/`anchors`/`links` grün in `make gates`.
+2. ⬜ **`slice-002` (welle-01):** Scope-Ausweitung auf die `R-`-Familie
+   (`risks-backlog.md`) und die übrige aktive Doku (docs/user, examples,
+   Planning-`in-progress/`).
+3. **Dauerhaft außerhalb:** immutable Accepted-ADRs (`docs/plan/adr/**`) —
+   Body-Edit verböte MR-002; `ids` nimmt ADRs aus.

@@ -1,6 +1,6 @@
 # Browser-Support-Matrix
 
-> **Bezug**: F-58..F-67.
+> **Bezug**: [`F-58`](lastenheft.md#f-58)..[`F-67`](lastenheft.md#f-67).
 
 ## Einstufung
 
@@ -24,7 +24,7 @@
 - `out of scope` bedeutet: Kein Release-Gate und keine implizite
   Support-Zusage.
 
-Safari Desktop bleibt eingeschränkt (F-61), weil native HLS deutlich
+Safari Desktop bleibt eingeschränkt ([`F-61`](lastenheft.md#f-61)), weil native HLS deutlich
 weniger Playback-Introspektion liefert als hls.js. Die Demo-Route hat
 einen nativen HLS-Fallback; der Player-SDK-hls.js-Adapter ist dort aber
 nicht vollständig aktiv.

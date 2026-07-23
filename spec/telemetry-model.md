@@ -1,6 +1,6 @@
 # Telemetry-Model — m-trace
 
-> **Bezug**: F-95..F-105, F-106..F-115, F-120..F-129.
+> **Bezug**: [`F-95`](lastenheft.md#f-95)..[`F-105`](lastenheft.md#f-105), [`F-106`](lastenheft.md#f-106)..[`F-115`](lastenheft.md#f-115), [`F-120`](lastenheft.md#f-120)..[`F-129`](lastenheft.md#f-129).
 
 ## 0. Zweck
 
@@ -16,7 +16,7 @@ Drei Wirkungsebenen pro Telemetrie-Datum:
 
 ## 1. Wire-Format Player-Events
 
-> Bezug: F-106..F-115.
+> Bezug: [`F-106`](lastenheft.md#f-106)..[`F-115`](lastenheft.md#f-115).
 
 Maschinenlesbare Source of Truth für die Wire-Schema-Version ist
 [`contracts/event-schema.json`](../contracts/event-schema.json). Die
@@ -36,7 +36,7 @@ Ein einzelner `POST /api/playback-events`-Request transportiert genau einen **Ba
 }
 ```
 
-Pflicht-Header (F-106..F-110):
+Pflicht-Header ([`F-106`](lastenheft.md#f-106)..[`F-110`](lastenheft.md#f-110)):
 
 - `Content-Type: application/json`
 - `X-MTrace-Token: <project-token>` — siehe §1.5.
@@ -46,16 +46,16 @@ Pflicht-Header (F-106..F-110):
 
 | Feld | Typ | Bedeutung | Bezug |
 |---|---|---|---|
-| `event_name` | string, nicht-leer | bezeichnet das Event (siehe §1.3). | F-114 |
-| `project_id` | string, nicht-leer | identifiziert das Projekt; muss zum gelieferten Token passen, sonst `401` (Token-Bindung). | F-106; Validierung Step 9 |
-| `session_id` | string, nicht-leer | identifiziert die Player-Session; pseudonym (NF-40). | NF-40 |
-| `client_timestamp` | string, RFC3339 mit ms | Erzeugungszeitpunkt am Client. | F-124; siehe §5 |
-| `sdk.name` | string, nicht-leer | identifiziert das SDK (z. B. `@pt9912/player-sdk`). | F-107 |
-| `sdk.version` | string, SemVer | identifiziert die SDK-Version. | F-107 |
+| `event_name` | string, nicht-leer | bezeichnet das Event (siehe §1.3). | [`F-114`](lastenheft.md#f-114) |
+| `project_id` | string, nicht-leer | identifiziert das Projekt; muss zum gelieferten Token passen, sonst `401` (Token-Bindung). | [`F-106`](lastenheft.md#f-106); Validierung Step 9 |
+| `session_id` | string, nicht-leer | identifiziert die Player-Session; pseudonym ([`NF-40`](lastenheft.md#nf-40)). | [`NF-40`](lastenheft.md#nf-40) |
+| `client_timestamp` | string, RFC3339 mit ms | Erzeugungszeitpunkt am Client. | [`F-124`](lastenheft.md#f-124); siehe §5 |
+| `sdk.name` | string, nicht-leer | identifiziert das SDK (z. B. `@pt9912/player-sdk`). | [`F-107`](lastenheft.md#f-107) |
+| `sdk.version` | string, SemVer | identifiziert die SDK-Version. | [`F-107`](lastenheft.md#f-107) |
 
 ### 1.3 Erfasste Event-Typen im MVP
 
-Mindestens die folgenden `event_name`-Werte sind Pflicht; weitere können additiv ergänzt werden, ohne Schema-Bump (F-114):
+Mindestens die folgenden `event_name`-Werte sind Pflicht; weitere können additiv ergänzt werden, ohne Schema-Bump ([`F-114`](lastenheft.md#f-114)):
 
 | event_name | Trigger im SDK |
 |---|---|
@@ -74,9 +74,9 @@ Mindestens die folgenden `event_name`-Werte sind Pflicht; weitere können additi
 
 | Feld | Typ | Bedeutung | Bezug |
 |---|---|---|---|
-| `sequence_number` | int64 ≥ 0 | monoton aufsteigend pro Session; primärer Ordnungsschlüssel innerhalb einer Session. | F-127, F-128 |
-| `client_time_origin` | string, RFC3339 | Setup-Zeitpunkt des SDK; erlaubt skew-tolerantere Latenz-Auswertung. | F-126 |
-| `meta` | object | beliebige event-spezifische Felder, z. B. `bitrate`, `duration_ms`, `error_code`. Schema-Erweiterung über §6. | F-114 |
+| `sequence_number` | int64 ≥ 0 | monoton aufsteigend pro Session; primärer Ordnungsschlüssel innerhalb einer Session. | [`F-127`](lastenheft.md#f-127), [`F-128`](lastenheft.md#f-128) |
+| `client_time_origin` | string, RFC3339 | Setup-Zeitpunkt des SDK; erlaubt skew-tolerantere Latenz-Auswertung. | [`F-126`](lastenheft.md#f-126) |
+| `meta` | object | beliebige event-spezifische Felder, z. B. `bitrate`, `duration_ms`, `error_code`. Schema-Erweiterung über §6. | [`F-114`](lastenheft.md#f-114) |
 
 Manifest-/Segment-nahe Netzwerkereignisse nutzen additive, flache
 `meta`-Keys nach dem Muster `network.*`. Der Punkt ist Teil des
@@ -250,15 +250,15 @@ Backend defensiv enforcen kann.
 
 ### 1.5 SDK-Identifier und Tokens
 
-- **Project Token (`X-MTrace-Token`)**: öffentlicher Token, der dem Browser ausgeliefert wird. Token bindet auf eine `project_id`; Mismatch bei Step 9 → `401` (siehe §5.3 unten; F-106..F-110).
-- Token sind laut F-109 **keine** hochkritischen Secrets — sie schützen vor zufälligem Misuse, nicht vor gezielten Angriffen. Rotation und tenant-spezifische Policies sind Kann-Anforderungen (F-111..F-113).
-- **NF-37 CSP-Beispiele für SDK-`connect-src`**: für Drittanbieter, die das Player-SDK in eigene Seiten einbinden, wird folgendes Muster empfohlen:
+- **Project Token (`X-MTrace-Token`)**: öffentlicher Token, der dem Browser ausgeliefert wird. Token bindet auf eine `project_id`; Mismatch bei Step 9 → `401` (siehe §5.3 unten; [`F-106`](lastenheft.md#f-106)..[`F-110`](lastenheft.md#f-110)).
+- Token sind laut [`F-109`](lastenheft.md#f-109) **keine** hochkritischen Secrets — sie schützen vor zufälligem Misuse, nicht vor gezielten Angriffen. Rotation und tenant-spezifische Policies sind Kann-Anforderungen ([`F-111`](lastenheft.md#f-111)..[`F-113`](lastenheft.md#f-113)).
+- **[`NF-37`](lastenheft.md#nf-37) CSP-Beispiele für SDK-`connect-src`**: für Drittanbieter, die das Player-SDK in eigene Seiten einbinden, wird folgendes Muster empfohlen:
 
   ```text
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://collector.example.com
   ```
 
-  Der API-Endpoint muss zusätzlich in der projektspezifischen Allowed-Origins-Liste des Backends stehen (F-108).
+  Der API-Endpoint muss zusätzlich in der projektspezifischen Allowed-Origins-Liste des Backends stehen ([`F-108`](lastenheft.md#f-108)).
 
 ### 1.6 Beispiel-Payload (Happy-Path)
 
@@ -289,7 +289,7 @@ Backend defensiv enforcen kann.
 
 ## 2. OTel-Modell
 
-> Bezug: F-91, F-92.
+> Bezug: [`F-91`](lastenheft.md#f-91), [`F-92`](lastenheft.md#f-92).
 
 ### 2.1 Spans
 
@@ -310,7 +310,7 @@ Der Server setzt in **keinem** OTel-Span ein `session_id`-Attribut; Session-Such
 
 ### 2.2 Counter
 
-Der Use Case ruft am Eintritt jedes `RegisterPlaybackEventBatch`-Aufrufs einen frameworkneutralen `Telemetry`-Port auf (F-14, F-15). Der OTel-Adapter mappt diesen Aufruf auf einen Counter:
+Der Use Case ruft am Eintritt jedes `RegisterPlaybackEventBatch`-Aufrufs einen frameworkneutralen `Telemetry`-Port auf ([`F-14`](lastenheft.md#f-14), [`F-15`](lastenheft.md#f-15)). Der OTel-Adapter mappt diesen Aufruf auf einen Counter:
 
 | OTel-Counter | Typ | Aufrufstelle | Attribute |
 |---|---|---|---|
@@ -322,7 +322,7 @@ Der Use Case ruft am Eintritt jedes `RegisterPlaybackEventBatch`-Aufrufs einen f
 
 ### 2.3 Resource-Attribute
 
-`adapters/driven/telemetry/Setup` registriert für Provider-Resource folgende Pflicht-Attribute (F-91):
+`adapters/driven/telemetry/Setup` registriert für Provider-Resource folgende Pflicht-Attribute ([`F-91`](lastenheft.md#f-91)):
 
 | Attribut | Wert | Quelle |
 |---|---|---|
@@ -334,20 +334,20 @@ Die Default-Resource wird mit `resource.Default()` zusammengeführt, damit `proc
 
 ### 2.4 Beziehung zu Prometheus-Metriken
 
-| Prometheus-Counter (Pflicht laut F-93) | Quelle im Code | Erfassung |
+| Prometheus-Counter (Pflicht laut [`F-93`](lastenheft.md#f-93)) | Quelle im Code | Erfassung |
 |---|---|---|
 | `mtrace_playback_events_total` | `adapters/driven/metrics.PrometheusPublisher.EventsAccepted(n)` | Step 10 — pro Batch-Event mit Status `202` |
-| `mtrace_invalid_events_total` | `…InvalidEvents(n)` | Step 5/6/7/8 — pro Event mit Status `400`/`422` (siehe F-93 Mindestmetriken-Tabelle) |
+| `mtrace_invalid_events_total` | `…InvalidEvents(n)` | Step 5/6/7/8 — pro Event mit Status `400`/`422` (siehe [`F-93`](lastenheft.md#f-93) Mindestmetriken-Tabelle) |
 | `mtrace_rate_limited_events_total` | `…RateLimitedEvents(n)` | Step 4 — bei Rate-Limit-Treffer |
-| `mtrace_dropped_events_total` | `…DroppedEvents(n)` | nur Backpressure-Drops, **nicht** synchrone Persistenz-Fehler (F-122) |
+| `mtrace_dropped_events_total` | `…DroppedEvents(n)` | nur Backpressure-Drops, **nicht** synchrone Persistenz-Fehler ([`F-122`](lastenheft.md#f-122)) |
 
-Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus F-93 instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
+Zusätzlich zu den vier Pflicht-Countern werden die Mindestmetriken aus [`F-93`](lastenheft.md#f-93) instrumentiert (`mtrace_active_sessions`, `mtrace_api_requests_total`, …). Der OTel-translated Counter `mtrace_api_batches_received` (Quelle: `mtrace.api.batches.received` aus §2.2) ist ebenfalls label-frei — derselbe Cardinality-Vertrag wie für die vier Pflichtcounter (`__name__`/`instance`/`job`-Whitelist; jeder zusätzliche Label-Key ist release-blockierend).
 
 ### 2.5 Trace-Korrelation
 
-> Bezug: RAK-29; RAK-32.
+> Bezug: [`RAK-29`](lastenheft.md#rak-29); [`RAK-32`](lastenheft.md#rak-32).
 
-Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkeit (RAK-31, optional) und Tempo-unabhängige Dashboard-Timeline (RAK-32, Pflicht) sauber entkoppelt sind.
+Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkeit ([`RAK-31`](lastenheft.md#rak-31), optional) und Tempo-unabhängige Dashboard-Timeline ([`RAK-32`](lastenheft.md#rak-32), Pflicht) sauber entkoppelt sind.
 
 **Hybrid-Trace-ID-Strategie.** Player-SDK propagiert optional einen W3C-`traceparent`-Header gemäß [W3C Trace Context](https://www.w3.org/TR/trace-context/). Server-Verhalten:
 
@@ -363,8 +363,8 @@ Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkei
 
 | Feld | Persistenz | Quelle | Lebensdauer | Konsumenten |
 |---|---|---|---|---|
-| `trace_id` | `playback_events.trace_id` (TEXT, nullable, 32 Hex-Zeichen) | SDK-`traceparent` oder server-generiert pro Batch | pro Batch (= ein Server-Span) | Tempo (RAK-31, optional); Cross-System-Trace-Suche |
-| `correlation_id` | `stream_sessions.correlation_id` und `playback_events.correlation_id` (TEXT; bei neu verarbeiteten Events gesetzt, historische Leerwerte möglich) | server-generiert beim allerersten Event einer Session (UUIDv4 oder vergleichbar) oder per Self-Healing beim nächsten Event einer Legacy-Session | pro Session, konstant über alle neu geschriebenen Batches | Dashboard-Timeline (RAK-32) — Tempo-unabhängig |
+| `trace_id` | `playback_events.trace_id` (TEXT, nullable, 32 Hex-Zeichen) | SDK-`traceparent` oder server-generiert pro Batch | pro Batch (= ein Server-Span) | Tempo ([`RAK-31`](lastenheft.md#rak-31), optional); Cross-System-Trace-Suche |
+| `correlation_id` | `stream_sessions.correlation_id` und `playback_events.correlation_id` (TEXT; bei neu verarbeiteten Events gesetzt, historische Leerwerte möglich) | server-generiert beim allerersten Event einer Session (UUIDv4 oder vergleichbar) oder per Self-Healing beim nächsten Event einer Legacy-Session | pro Session, konstant über alle neu geschriebenen Batches | Dashboard-Timeline ([`RAK-32`](lastenheft.md#rak-32)) — Tempo-unabhängig |
 
 `correlation_id` ist die **durable Source-of-Truth** für die Korrelation einer Session über mehrere Batches hinweg. Drei aufeinanderfolgende Batches mit gleicher `session_id` produzieren drei verschiedene `trace_id`-Werte (jeder Batch ein Trace), aber dieselbe `correlation_id`.
 
@@ -384,9 +384,9 @@ Das Telemetrie-Modell trennt zwei Korrelations-Konzepte, damit Tempo-Sichtbarkei
 
 **`session_id`-Span-Attribut-Verbot.** Der Server setzt in **keinem** OTel-Span ein `session_id`-Attribut (weder unter dem rohen Schlüssel `session_id` noch in den Varianten `mtrace.session.id` / `mtrace.session_id`). Single-Session-Suche in Traces läuft ausschließlich über `mtrace.session.correlation_id`. Test-Anker: `TestHTTP_Span_DoesNotSetSessionIDAttribute`.
 
-**Outcome → HTTP-Status-Mapping** (Validierungs-Reihenfolge aus F-118..F-122):
+**Outcome → HTTP-Status-Mapping** (Validierungs-Reihenfolge aus [`F-118`](lastenheft.md#f-118)..[`F-122`](lastenheft.md#f-122)):
 
-| `mtrace.batch.outcome` | HTTP-Status | F-118..F-122 |
+| `mtrace.batch.outcome` | HTTP-Status | [`F-118`](lastenheft.md#f-118)..[`F-122`](lastenheft.md#f-122) |
 |---|---|---|
 | `auth_error` | `401 Unauthorized` | Header fehlt; Token unbekannt; Project-Mismatch; Project unbekannt |
 | `too_large` | `413 Payload Too Large` | Body > 256 KB |
@@ -415,31 +415,31 @@ Wenn das `tempo`-Compose-Profil aktiv ist (`make dev-tempo`), exportiert der OTe
 
 **Single-Session-Batch-Pflicht für `mtrace.session.correlation_id`.** Das Span-Attribut wird ausschließlich bei `mtrace.batch.session_count == 1` gesetzt; bei Multi-Session-Batches bleibt es unset (keine Komma-Liste, kein Empty-String — siehe §2.5-Tabelle). Tempo-Suche nach Multi-Session-Batches läuft daher nicht über `mtrace.session.correlation_id`, sondern muss aus dem Read-Pfad (Dashboard/SQLite) eine Single-Session-Batch-Span finden, die zur Session gehört. Diese bewusste Grenze schließt aus, dass eine Session-`correlation_id` versehentlich an einen Span gebunden wird, der mehrere Sessions umfasst.
 
-**Tempo ist Debug-Tiefe, nicht Read-Pfad.** Die Dashboard-Session-Timeline (RAK-32) ist Tempo-unabhängig. Tempo erweitert die Sichtbarkeit auf Span-Ebene (Header-Verarbeitung, Outcome-Klassifikation, Resource-Attribute); jede Aussage über *Event-Persistenz* oder *Session-State* bleibt im Read-Pfad und in SQLite verbindlich.
+**Tempo ist Debug-Tiefe, nicht Read-Pfad.** Die Dashboard-Session-Timeline ([`RAK-32`](lastenheft.md#rak-32)) ist Tempo-unabhängig. Tempo erweitert die Sichtbarkeit auf Span-Ebene (Header-Verarbeitung, Outcome-Klassifikation, Resource-Attribute); jede Aussage über *Event-Persistenz* oder *Session-State* bleibt im Read-Pfad und in SQLite verbindlich.
 
 ---
 
 ## 3. Cardinality-Regeln
 
-> Bezug: F-95..F-105.
+> Bezug: [`F-95`](lastenheft.md#f-95)..[`F-105`](lastenheft.md#f-105).
 
 ### 3.1 Verbotene Prometheus-Labels
 
-Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardinality-Explosion verursachen oder Datenschutz-/Trace-Identifier sind. Diese Liste ist die normative Quelle für `scripts/smoke-observability.sh` und für jeden neuen `mtrace_*`-Metrik-Vorschlag — sie deckt die Mindest-Verbote aus F-95..F-100 + F-105 vollständig ab; kürzere Beispiel-Listen reichen nicht als Abnahme:
+Folgende Werte dürfen **nie** als Prometheus-Label erscheinen, weil sie Cardinality-Explosion verursachen oder Datenschutz-/Trace-Identifier sind. Diese Liste ist die normative Quelle für `scripts/smoke-observability.sh` und für jeden neuen `mtrace_*`-Metrik-Vorschlag — sie deckt die Mindest-Verbote aus [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100) + [`F-105`](lastenheft.md#f-105) vollständig ab; kürzere Beispiel-Listen reichen nicht als Abnahme:
 
 | Label | Begründung | Bezug |
 |---|---|---|
-| `session_id` | hochkardinale Pseudonym-IDs; potentiell Millionen Sessions/Tag. | F-96, F-105 |
-| `user_agent` | quasi-unbegrenzter Wertebereich. | F-95..F-100, F-105 |
-| `segment_url`, `manifest_url`, beliebige `*_url` / `*_uri` | URL-Variation pro CDN/Player-Adaptation. | F-95..F-100, F-105 |
-| `client_ip` | DSGVO-Risiko + hohe Cardinality. | F-95..F-100, F-105 |
-| beliebige `project_id` | bei Multi-Tenant explosiv; nur kontrollierte Allowlist erlaubt. | F-95..F-100, F-105 |
-| `viewer_id`, `request_id` | hochkardinale Per-Request-Identifier. | F-95..F-100, F-105 |
-| `trace_id`, `span_id`, `correlation_id` | Trace-/Session-Korrelations-Identifier; Cross-System-Suche läuft über Tempo/Read-Pfad, nicht Prometheus. | F-95..F-100, F-105; §2.5 |
-| `token`, `authorization`, beliebige `*_token` / `*_secret` | Credentials gehören niemals in eine Metrik-Serie. | F-95..F-100, F-105 |
+| `session_id` | hochkardinale Pseudonym-IDs; potentiell Millionen Sessions/Tag. | [`F-96`](lastenheft.md#f-96), [`F-105`](lastenheft.md#f-105) |
+| `user_agent` | quasi-unbegrenzter Wertebereich. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105) |
+| `segment_url`, `manifest_url`, beliebige `*_url` / `*_uri` | URL-Variation pro CDN/Player-Adaptation. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105) |
+| `client_ip` | DSGVO-Risiko + hohe Cardinality. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105) |
+| beliebige `project_id` | bei Multi-Tenant explosiv; nur kontrollierte Allowlist erlaubt. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105) |
+| `viewer_id`, `request_id` | hochkardinale Per-Request-Identifier. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105) |
+| `trace_id`, `span_id`, `correlation_id` | Trace-/Session-Korrelations-Identifier; Cross-System-Suche läuft über Tempo/Read-Pfad, nicht Prometheus. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105); §2.5 |
+| `token`, `authorization`, beliebige `*_token` / `*_secret` | Credentials gehören niemals in eine Metrik-Serie. | [`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100), [`F-105`](lastenheft.md#f-105) |
 | `batch_size` | unbegrenzte Integer-Domäne, weil der OTel-Counter `mtrace.api.batches.received` vor der `MaxBatchSize=100`-Validierung läuft (siehe §2.2). `batch.size` bleibt nur als Span-Attribut. | §2.2 |
 | SRT-Source-Labels (`id`, `path`, `remoteAddr`, `state`, `connection_id`, `stream_id` als Per-Stream-Identifier) sowie URL-/IP-/Token-Varianten aus MediaMTX `/v3/srtconns/list` | hochkardinale Per-Verbindung-Identifier; werden in SQLite/OTel-Spans persistiert, **nie** als Prometheus-Label. | §7 |
-| WebRTC-/`getStats()`-Identifier (`peer_connection_id`, Report-`id`, `track_id`, `transport_id`, `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`, `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-Fingerprints, beliebige IP-Adressen, URLs, Codec-Strings, Browser-`user_agent`) sowie ein generisches `source_id`-Label aus einem WebRTC-Adapter-Pfad | hochkardinale Per-Verbindung-Identifier oder potenziell PII; gehören in den Read-Pfad (Event/Debug), niemals in Prometheus-Labels. Verbot ist release-blockierend; gespiegelt in `scripts/smoke-observability.sh`. | §3.5 (RAK-49) |
+| WebRTC-/`getStats()`-Identifier (`peer_connection_id`, Report-`id`, `track_id`, `transport_id`, `candidate_pair_id`, `local_candidate_id`, `remote_candidate_id`, `candidate_id`, `ssrc`, ICE-User-Fragmente, DTLS-/Zertifikats-Fingerprints, beliebige IP-Adressen, URLs, Codec-Strings, Browser-`user_agent`) sowie ein generisches `source_id`-Label aus einem WebRTC-Adapter-Pfad | hochkardinale Per-Verbindung-Identifier oder potenziell PII; gehören in den Read-Pfad (Event/Debug), niemals in Prometheus-Labels. Verbot ist release-blockierend; gespiegelt in `scripts/smoke-observability.sh`. | §3.5 ([`RAK-49`](lastenheft.md#rak-49)) |
 
 Erlaubt sind ausschließlich die bounded Aggregat-Labels aus §3.2. Die Forbidden-Liste in `scripts/smoke-observability.sh` deckt die Tabelle plus generische Suffixe (`_url`, `_uri`, `_token`, `_secret`) defensiv ab; jeder Treffer ist release-blockierend.
 
@@ -459,9 +459,9 @@ Erlaubt sind Labels mit kontrolliertem, kleinem Wertebereich. Jede neue `mtrace_
 | `ice_state` | feste Enum aus W3C `RTCIceConnectionState`: `new`, `checking`, `connected`, `completed`, `failed`, `disconnected`, `closed` | `checking` | zukünftige WebRTC-Aggregate (siehe §3.5) |
 | `dtls_state` | feste Enum aus W3C `RTCDtlsTransportState`: `new`, `connecting`, `connected`, `closed`, `failed` | `connected` | zukünftige WebRTC-Aggregate (siehe §3.5) |
 
-Die vier Pflichtcounter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`) und der OTel-translated Counter `mtrace_api_batches_received` tragen **gar keine** fachlichen Vector-Labels (F-95..F-100; siehe §2.4). `batch_size` ist explizit nicht in der Allowlist (siehe §3.1) — die Per-Request-Sicht „Batchgröße" lebt nur am Span.
+Die vier Pflichtcounter (`mtrace_playback_events_total`, `mtrace_invalid_events_total`, `mtrace_rate_limited_events_total`, `mtrace_dropped_events_total`) und der OTel-translated Counter `mtrace_api_batches_received` tragen **gar keine** fachlichen Vector-Labels ([`F-95`](lastenheft.md#f-95)..[`F-100`](lastenheft.md#f-100); siehe §2.4). `batch_size` ist explizit nicht in der Allowlist (siehe §3.1) — die Per-Request-Sicht „Batchgröße" lebt nur am Span.
 
-Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. RAK-9-Smoke-Test prüft dies via `count(count by (...) (...))`-PromQL; der verschärfte Smoke(`scripts/smoke-observability.sh`) prüft pro Pflichtcounter zusätzlich, dass das Labelset auf `__name__`/`instance`/`job` beschränkt ist.
+Prometheus-Series pro Mindest-Counter sollten ≤ einstellige Anzahl sein. [`RAK-9`](lastenheft.md#rak-9)-Smoke-Test prüft dies via `count(count by (...) (...))`-PromQL; der verschärfte Smoke(`scripts/smoke-observability.sh`) prüft pro Pflichtcounter zusätzlich, dass das Labelset auf `__name__`/`instance`/`job` beschränkt ist.
 
 ### 3.3 Trennung Aggregat vs Per-Session
 
@@ -469,30 +469,30 @@ Per-Session-Daten (Stream-Health, Event-Timeline, Trace-Identifier) gehen **nich
 
 | Backend | Daten | Cardinality-Verträglichkeit | Konsumenten |
 |---|---|---|---|
-| **Prometheus** | Aggregat-Metriken (counts, rates, optional gauges); ausschließlich bounded Aggregat-Labels aus §3.2 | hart begrenzt auf wenige Serien pro Metrik; Forbidden-Liste aus §3.1 ist release-blockierend | Grafana-Dashboards (`observability/grafana/dashboards/m-trace-overview.json`); Alerting; RAK-9-Cardinality-Smoke |
-| **SQLite** | Session-/Event-Historie mit allen Per-Session-Identifiern (`session_id`, `correlation_id`, `trace_id`, `span_id`, redacted URLs, `network_signal_absent`-Boundary-Records) | unbeschränkt — durable Event-Store, kein Cardinality-Vertrag | Dashboard-Session-Timeline (RAK-32); Read-Pfad `GET /api/stream-sessions/...`; SDK-Cursor-Pagination |
-| **OTel/Tempo** | Per-Request-Trace-Spans mit allen Span-Attributen (`mtrace.session.correlation_id`, `batch.size`, `mtrace.batch.outcome`, …); ein Server-Span pro Batch | sample-basiert; Span-Cardinality ist im Cardinality-Vertrag aus §3.1 nicht bindend | Tempo-Trace-Suche (`make dev-tempo`, RAK-31, optional); Span-Ebene-Debugging beim Header-Verarbeitung-/Outcome-Pfad |
+| **Prometheus** | Aggregat-Metriken (counts, rates, optional gauges); ausschließlich bounded Aggregat-Labels aus §3.2 | hart begrenzt auf wenige Serien pro Metrik; Forbidden-Liste aus §3.1 ist release-blockierend | Grafana-Dashboards (`observability/grafana/dashboards/m-trace-overview.json`); Alerting; [`RAK-9`](lastenheft.md#rak-9)-Cardinality-Smoke |
+| **SQLite** | Session-/Event-Historie mit allen Per-Session-Identifiern (`session_id`, `correlation_id`, `trace_id`, `span_id`, redacted URLs, `network_signal_absent`-Boundary-Records) | unbeschränkt — durable Event-Store, kein Cardinality-Vertrag | Dashboard-Session-Timeline ([`RAK-32`](lastenheft.md#rak-32)); Read-Pfad `GET /api/stream-sessions/...`; SDK-Cursor-Pagination |
+| **OTel/Tempo** | Per-Request-Trace-Spans mit allen Span-Attributen (`mtrace.session.correlation_id`, `batch.size`, `mtrace.batch.outcome`, …); ein Server-Span pro Batch | sample-basiert; Span-Cardinality ist im Cardinality-Vertrag aus §3.1 nicht bindend | Tempo-Trace-Suche (`make dev-tempo`, [`RAK-31`](lastenheft.md#rak-31), optional); Span-Ebene-Debugging beim Header-Verarbeitung-/Outcome-Pfad |
 
-Diese Trennung ist die zentrale Architektur-Aussage von F-97. Praktische Konsequenzen:
+Diese Trennung ist die zentrale Architektur-Aussage von [`F-97`](lastenheft.md#f-97). Praktische Konsequenzen:
 
 - **Aggregate-Anfrage** („wie viele 4xx-Antworten in den letzten 5 Minuten?") → Prometheus; nie SQLite, nie Tempo.
 - **Konkrete-Session-Anfrage** („zeig mir die Timeline von `session_id = abc-123`") → Read-Pfad/Dashboard auf SQLite; nie Prometheus, nie zwingend Tempo.
 - **Cross-System-Trace-Vertiefung** („was ist im Server-Span passiert, der diesen Batch verarbeitet hat?") → Tempo (falls aktives Profil); Per-Span-Detail, nicht Per-Session-Aggregat.
 
-Tempo ist daher Debug-Tiefe, **nicht** Read-Pfad. Die Dashboard-Session-Timeline (RAK-32) ist ausdrücklich Tempo-unabhängig (siehe §2.6); jede Aussage über Event-Persistenz oder Session-State bleibt in SQLite verbindlich.
+Tempo ist daher Debug-Tiefe, **nicht** Read-Pfad. Die Dashboard-Session-Timeline ([`RAK-32`](lastenheft.md#rak-32)) ist ausdrücklich Tempo-unabhängig (siehe §2.6); jede Aussage über Event-Persistenz oder Session-State bleibt in SQLite verbindlich.
 
 ### 3.4 Datenschutz
 
-Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet (F-100):
+Telemetrie-Modell und Datenschutz werden gemeinsam betrachtet ([`F-100`](lastenheft.md#f-100)):
 
-- `session_id` ist pseudonym (NF-40).
+- `session_id` ist pseudonym ([`NF-40`](lastenheft.md#nf-40)).
 - IP-Adressen werden nicht unnötig persistiert; falls erfasst, dann nur in OTel-Spans, nicht in Prometheus-Labels.
 - User-Agent-Felder dürfen reduzierbar sein (z. B. nur Major-Version).
 - GDPR-konformer Betrieb: Event-Store muss eine Löschanfrage pro `session_id` bedienen können — Implementierung über das `EventRepository` in der jeweiligen Persistenz-Variante.
 
 ### 3.5 WebRTC-Telemetrie
 
-> Bezug: RAK-51..RAK-55.
+> Bezug: [`RAK-51`](lastenheft.md#rak-51)..[`RAK-55`](lastenheft.md#rak-55).
 >
 > Das SDK sammelt `getStats()`-Reports im WebRTC-Adapter, der
 > API-Ingress validiert die `webrtc.*`-Allowlist und exportiert
@@ -583,28 +583,28 @@ dieser Drift-Strategie:
    Release ausgeliefert werden darf.
 4. **Smoke-Spiegelung**: `scripts/smoke-observability.sh` prüft die
    `webrtc.*`-Forbidden-Liste aus §3.1 und die bounded Cardinality
-   der `mtrace_webrtc_*`-Counter (RAK-9-Stil) — analog zum
+   der `mtrace_webrtc_*`-Counter ([`RAK-9`](lastenheft.md#rak-9)-Stil) — analog zum
    `network.*`-Pfad. Verstöße sind release-blockierend.
 
 ---
 
 ## 4. Backpressure und Limits
 
-> Bezug: F-118..F-123.
+> Bezug: [`F-118`](lastenheft.md#f-118)..[`F-123`](lastenheft.md#f-123).
 
 ### 4.1 Batch-Größe
 
 | Limit | Wert | Bezug |
 |---|---|---|
-| Mindest-Events pro Batch | 1 (leerer Batch → `422`) | F-118; Validierung Step 6 |
-| Maximal-Events pro Batch | 100 | F-118; Validierung Step 7 |
-| Maximal-Body-Größe | 256 KB | F-118; Validierung Step 2 |
+| Mindest-Events pro Batch | 1 (leerer Batch → `422`) | [`F-118`](lastenheft.md#f-118); Validierung Step 6 |
+| Maximal-Events pro Batch | 100 | [`F-118`](lastenheft.md#f-118); Validierung Step 7 |
+| Maximal-Body-Größe | 256 KB | [`F-118`](lastenheft.md#f-118); Validierung Step 2 |
 
 Das SDK muss Batches selbst aufteilen, wenn lokal mehr Events vorliegen.
 
 ### 4.2 Rate-Limit-Modell
 
-Token-Bucket pro drei Dimensionen (F-110):
+Token-Bucket pro drei Dimensionen ([`F-110`](lastenheft.md#f-110)):
 
 | Dimension | Default-Quote | Bemerkung |
 |---|---|---|
@@ -612,17 +612,17 @@ Token-Bucket pro drei Dimensionen (F-110):
 | `client_ip` | 100 Events/s | Schutz gegen einzelne Misuse-Browser |
 | `origin` | 100 Events/s | Pflicht für Browser-Traffic |
 
-Konfigurationsweise: Konstanten in `cmd/api/main.go` oder ENV-Variablen analog Spike. Verteilt-konsistente Rate-Limiter sind Bonus (F-110-Erweiterung in späteren Phasen).
+Konfigurationsweise: Konstanten in `cmd/api/main.go` oder ENV-Variablen analog Spike. Verteilt-konsistente Rate-Limiter sind Bonus ([`F-110`](lastenheft.md#f-110)-Erweiterung in späteren Phasen).
 
 ### 4.3 Drop-Politik (Backpressure)
 
-`mtrace_dropped_events_total` ist laut F-122 ausschließlich für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Channel-Puffer). Synchron fehlgeschlagenes `Append` ist **kein** Drop und inkrementiert den Counter nicht (F-122).
+`mtrace_dropped_events_total` ist laut [`F-122`](lastenheft.md#f-122) ausschließlich für **interne Backpressure-Drops** reserviert (z. B. überlaufender Async-Channel-Puffer). Synchron fehlgeschlagenes `Append` ist **kein** Drop und inkrementiert den Counter nicht ([`F-122`](lastenheft.md#f-122)).
 
-Mit synchron-blockierendem `EventRepository.Append` gibt es keinen Backpressure-Pfad — der Counter darf konstant `0` bleiben (F-93 Mindestmetriken: „Metrik muss aber existieren"). Mit Wechsel auf einen Async-Persistenz-Pfad würde der Counter relevant.
+Mit synchron-blockierendem `EventRepository.Append` gibt es keinen Backpressure-Pfad — der Counter darf konstant `0` bleiben ([`F-93`](lastenheft.md#f-93) Mindestmetriken: „Metrik muss aber existieren"). Mit Wechsel auf einen Async-Persistenz-Pfad würde der Counter relevant.
 
 ### 4.4 SDK-Konfigurierbarkeit
 
-Das SDK muss Sampling und Batch-Größe konfigurierbar anbieten (F-123, MVP-Soll):
+Das SDK muss Sampling und Batch-Größe konfigurierbar anbieten ([`F-123`](lastenheft.md#f-123), MVP-Soll):
 
 | SDK-Parameter | Bedeutung | Default-Vorschlag |
 |---|---|---|
@@ -636,19 +636,19 @@ Das SDK muss Sampling und Batch-Größe konfigurierbar anbieten (F-123, MVP-Soll
 
 ## 5. Time-Stempel und Sequenz-Ordering
 
-> Bezug: F-124..F-130.
+> Bezug: [`F-124`](lastenheft.md#f-124)..[`F-130`](lastenheft.md#f-130).
 
 ### 5.1 Pflicht- und Optional-Felder
 
 Vom Client gesetzt:
 
-- **`client_timestamp`** (Pflicht, F-124): Erzeugungszeitpunkt am Client; RFC3339 mit Millisekunden-Genauigkeit.
-- **`client_time_origin`** (optional, F-126): Setup-Zeitpunkt des SDK; erlaubt skew-toleranten Latenz-Vergleich (`client_timestamp - client_time_origin` ist robust gegen Wall-Clock-Skew).
-- **`sequence_number`** (optional, F-127): monoton aufsteigend pro Session.
+- **`client_timestamp`** (Pflicht, [`F-124`](lastenheft.md#f-124)): Erzeugungszeitpunkt am Client; RFC3339 mit Millisekunden-Genauigkeit.
+- **`client_time_origin`** (optional, [`F-126`](lastenheft.md#f-126)): Setup-Zeitpunkt des SDK; erlaubt skew-toleranten Latenz-Vergleich (`client_timestamp - client_time_origin` ist robust gegen Wall-Clock-Skew).
+- **`sequence_number`** (optional, [`F-127`](lastenheft.md#f-127)): monoton aufsteigend pro Session.
 
 Vom Server gesetzt:
 
-- **`server_received_at`** (Pflicht, F-125): vom HTTP-Adapter direkt nach Body-Parsen gestempelt; in den Domain-`PlaybackEvent`-Datensatz übernommen.
+- **`server_received_at`** (Pflicht, [`F-125`](lastenheft.md#f-125)): vom HTTP-Adapter direkt nach Body-Parsen gestempelt; in den Domain-`PlaybackEvent`-Datensatz übernommen.
 - **`ingest_sequence`** (Pflicht): monoton aufsteigender Counter pro `apps/api`-Prozess; finaler Tie-Breaker für Cursor-Pagination.
 
 ### 5.2 Ordering innerhalb einer Session
@@ -666,9 +666,9 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 ### 5.3 Latenzberechnung und Time-Skew
 
-- Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden (F-129) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
+- Latenzen dürfen niemals blind aus reiner Client-Zeit abgeleitet werden ([`F-129`](lastenheft.md#f-129)) — Client-Uhren divergieren in der Praxis um Sekunden bis Minuten.
 - Bevorzugt: Latenz = `server_received_at - client_time_origin` (skew-tolerant), nicht `server_received_at - client_timestamp`.
-- Auffälliger Skew (F-130): liegt `|client_timestamp - server_received_at|` über der Schwelle von 60 s (Konstante, kein Configuration-Item), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5).
+- Auffälliger Skew ([`F-130`](lastenheft.md#f-130)): liegt `|client_timestamp - server_received_at|` über der Schwelle von 60 s (Konstante, kein Configuration-Item), markiert das Backend den Server-Span mit dem Attribut `mtrace.time.skew_warning=true` (siehe §2.5).
 - **Persistenz auf Event-Ebene** (R-5): zusätzlich zum Span-Attribut auf Batch-Ebene wird das Skew-Bit **pro Event** in `playback_events.time_skew_warning` (Migration V6, `INTEGER NOT NULL DEFAULT 0`) persistiert. Die Pro-Event-Prüfung nutzt dieselbe 60-s-Schwelle und wird im Ingest-Use-Case unmittelbar nach dem Parsen des `client_timestamp` durchgeführt. Read-Pfade (`ListSessions`, `GetSessionDetail`, SSE-Frames in `/api/stream-sessions/stream`) echo'en das Flag als JSON-Feld `time_skew_warning` (`omitempty`, default `false`); Pre-V6-Events ohne Migration-Backfill bleiben damit als `false` sichtbar (konservativ; kein Tri-State).
 - Dashboard-Anzeige: Time-Skew-Indikator (`⏱ skew`-Pin) in der Session-Timeline pro Event mit `time_skew_warning=true`; Tooltip nennt die Schwelle und das Span-Attribut (`mtrace.time.skew_warning`).
 
@@ -676,7 +676,7 @@ durch fehlende oder fehlerhafte Client-Sequenzen instabil werden.
 
 ## 6. Schema-Versionierung
 
-> Bezug: F-114..F-117.
+> Bezug: [`F-114`](lastenheft.md#f-114)..[`F-117`](lastenheft.md#f-117).
 
 ### 6.1 Versionsfeld
 
@@ -688,10 +688,10 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 
 ### 6.2 Evolution-Regeln
 
-- **Neue Felder** (F-114): müssen abwärtskompatibel sein — bestehende Clients dürfen sie ignorieren.
-- **Unbekannte Felder** (F-115): das Backend darf nicht mit `400`/`422` reagieren, sondern muss sie ignorieren (Forward-Compatibility für Clients neuerer Schema-Version).
-- **Entfernte Felder** (F-116): müssen über mindestens eine **Minor-Version** toleriert werden — Backend akzeptiert das Feld weiterhin, ignoriert es aber.
-- **Breaking Changes** (F-117): erfordern eine neue **Major-Version** der Schema-Wire-Form. Ältere Major-Versionen können temporär weiter angenommen werden, müssen aber explizit deprecated und mit Sunset-Datum versehen sein.
+- **Neue Felder** ([`F-114`](lastenheft.md#f-114)): müssen abwärtskompatibel sein — bestehende Clients dürfen sie ignorieren.
+- **Unbekannte Felder** ([`F-115`](lastenheft.md#f-115)): das Backend darf nicht mit `400`/`422` reagieren, sondern muss sie ignorieren (Forward-Compatibility für Clients neuerer Schema-Version).
+- **Entfernte Felder** ([`F-116`](lastenheft.md#f-116)): müssen über mindestens eine **Minor-Version** toleriert werden — Backend akzeptiert das Feld weiterhin, ignoriert es aber.
+- **Breaking Changes** ([`F-117`](lastenheft.md#f-117)): erfordern eine neue **Major-Version** der Schema-Wire-Form. Ältere Major-Versionen können temporär weiter angenommen werden, müssen aber explizit deprecated und mit Sunset-Datum versehen sein.
 
 ### 6.3 Backend-Verhalten bei Schema-Versions-Mismatch
 
@@ -702,7 +702,7 @@ Jeder Batch trägt eine `schema_version` (siehe §1.1). Format: SemVer-`MAJOR.MI
 
 ## 7. SRT-Health-Modell
 
-> Bezug: RAK-41..RAK-46.
+> Bezug: [`RAK-41`](lastenheft.md#rak-41)..[`RAK-46`](lastenheft.md#rak-46).
 
 SRT-Health-Metriken sind **getrenntes Verbindungs-/Ingest-Signal** und nicht
 mit Player-Playback-Events vermischt. Die Quelle ist die
@@ -729,7 +729,7 @@ Optional-Felder im Domain-Modell:
 | `packet_loss_rate` | Optional | number (0..1) | Verlustrate als Snapshot, falls Quelle sie zusätzlich liefert. Nicht release-blockierend, weil Counter-Diff abgeleitet werden kann. |
 | `retransmissions_total` | Muss | integer (counter, kumulativ) | Empfänger-Retransmissions. Bei MediaMTX-API: `packetsReceivedRetrans`. Sender-seitige `packetsRetrans` ist optional. |
 | `available_bandwidth_bps` | Muss | integer (bits/s) | Linkkapazitäts-Schätzung der Quelle. Bei MediaMTX-API: `mbpsLinkCapacity × 1_000_000`. **Caveat**: in localhost-/Loopback-Netzen liefert MediaMTX Werte im Gbps-Bereich, die kein realistischer „verfügbarer"-Wert sind — Health-Bewertung in §7.4 kompensiert das via `required_bandwidth_bps`-Vergleich. |
-| `throughput_bps` | Optional | integer (bits/s) | Tatsächlich beobachteter Stream-Durchsatz. Bei MediaMTX-API: `mbpsReceiveRate × 1_000_000`. Erfüllt RAK-43 nicht allein. |
+| `throughput_bps` | Optional | integer (bits/s) | Tatsächlich beobachteter Stream-Durchsatz. Bei MediaMTX-API: `mbpsReceiveRate × 1_000_000`. Erfüllt [`RAK-43`](lastenheft.md#rak-43) nicht allein. |
 | `required_bandwidth_bps` | Optional | integer (bits/s) | Erwarteter Bandbreitenbedarf (aus Lab-Konfig oder Stream-Konfiguration). Ohne diese Schwelle darf `available_bandwidth_bps` angezeigt, aber **nicht** als Engpass bewertet werden. |
 | `sample_window_ms` | Optional | integer | Zeitfenster für aus Countern abgeleitete Raten, falls relevant. |
 | `source_status` | Muss | enum (§7.5) | `ok`, `unavailable`, `partial`, `stale`, `no_active_connection`. |
@@ -739,7 +739,7 @@ Optional-Felder im Domain-Modell:
 
 ### 7.2 Erweiterte SRT-Signale (deferred, sofern nicht ohne Zusatzrisiko aus der Quelle mitfallen)
 
-RAK-41..RAK-46 priorisieren die Pflichtwerte aus RAK-43; weitere
+[`RAK-41`](lastenheft.md#rak-41)..[`RAK-46`](lastenheft.md#rak-46) priorisieren die Pflichtwerte aus [`RAK-43`](lastenheft.md#rak-43); weitere
 SRT-Signale aus dem Lastenheft sind hier nicht release-blockierend.
 Folgende Signale sind aus MediaMTX-API
 verfügbar und können **als Zusatzfelder** im Datenmodell mitfallen,
