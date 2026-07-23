@@ -17,18 +17,10 @@ Schätzung, treiben aber nie eine Welle.
 
 ## Aktuelle Welle
 
-**Welle:** [`welle-01-requirement-link-konvergenz`](../welle-01-requirement-link-konvergenz.md)
-— `ids` repo-weit scharfschalten (verankerte Requirement-Links).
-
-**Wichtigste Slices:**
-- [`slice-001`](slice-001-requirement-anker-ids.md) (in-progress) — Requirement-
-  Anker im Lastenheft + `ids` auf den Spec-Straten (`scope.roots: [spec]`).
-- `slice-002` (geplant, bei slice-001-Closure geschnitten) — `ids`-Scope-
-  Ausweitung: `R-`-Familie/risks-backlog, docs/user, examples, Planning-`in-progress/`.
-
-**Closure-Trigger (beobachtbar):** alle Slices in `done/`, `ids` repo-weit grün in
-`make gates` (Exempts: immutable ADRs, `done/`, `CHANGELOG`), §Requirement-Link-
-Konvergenz graduiert, `welle-01-results.md` geschrieben. **Kein Datum.**
+**Keine aktive Welle.** `welle-01` (Requirement-Link-Konvergenz) ist abgeschlossen
+(siehe *Abgeschlossene Wellen*); eine Produkt-Folgewelle ist noch **nicht
+geschnitten** (siehe *Nächste Wellen*). Die nächste Welle beginnt, sobald der
+Owner eine Tranche aus den Register-Kandidaten schneidet.
 
 ## Nächste Wellen
 
@@ -75,6 +67,7 @@ flowchart LR
 | Migration W5 — Layout-Move (`docs/plan/…`) | 2026-07-23 | [Plan §3/§5](plan-harness-v3.5.0-migration.md), MR-001 aufgelöst |
 | Migration W6 — Planning-Form + Roadmap-Reformat | 2026-07-23 | [Plan §2](plan-harness-v3.5.0-migration.md), MR-007 |
 | Migration W7 — `version.md` + `versions`-Modul | 2026-07-23 | [Plan §2](plan-harness-v3.5.0-migration.md); `ids` → `welle-01` |
+| **welle-01 — Requirement-Link-Konvergenz** | 2026-07-23 | [`welle-01-results.md`](../done/welle-01-results.md) (slice-001 + slice-002; `ids` repo-weit) |
 
 > Der Bestand ist grandfathered (MR-007): abgeschlossene Produktarbeit liegt als
 > `plan-<version>.md` in `done/`, nicht als `welle-<NN>-results.md`. Neue Wellen

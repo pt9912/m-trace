@@ -79,6 +79,26 @@ DoD vollständig + `make gates` grün + Closure-Notiz; `git mv` nach `done/`.
   committen, `make gates` nach jedem.
 - **Slug-Eindeutigkeit:** Kennungen eindeutig → Slugs eindeutig; Skript prüft.
 
+## 7. Closure-Notiz
+
+**Geliefert:** 372 Lastenheft-Anker + 213 verankerte Links in `spec/**`; `ids` auf
+den Spec-Straten aktiv in `make gates`.
+
+**Was funktionierte:** d-check `--repair` für Bare-Detection + Relpath, dann ein
+kleines Upgrade-Skript für den `#slug`-Anker — schneller und exakter als eine
+eigene Bare-Detection. Inline-Zellen-Anker (vorab per Spike gegen das
+`anchors`-Modul verifiziert) hielten die Tabellenform.
+
+**Was anders lief (Steering-Loop):** Die Anker saßen zuerst *in der Kennungs-Zelle*
+→ die RTM (`--trace`/`doc-complete`) erkannte **0 Anforderungen**. `make gates`
+fing das **nicht** (die RTM ist advisory, nicht im Gate). Fix: Anker in die letzte
+Zelle. **Lehre:** (1) Bei einem konfigurierbaren Werkzeug erst Handbuch +
+empirischer Lauf, bevor man „geht nicht/passt nicht" sagt; (2) advisory-Tools
+außerhalb von `make gates` (`--trace`, `doc-complete`) nach Doku-Struktur-Edits
+**separat** prüfen — grüne Gates ≠ nichts kaputt.
+
+**Folge-Slice:** `slice-002` (Scope-Ausweitung auf R-Familie + übrige Doku).
+
 ## 8. Sub-Area-Modus-Begründung
 
 ### Sub-Area: Requirement-Links

@@ -68,6 +68,24 @@ danach welle-01-Closure.
 - **RTM-Titel-Kosmetik:** R-Anker in risks-backlog-Zellen erscheinen im
   `--trace`-Titel (risks-backlog ist keine RTM-Quelle → nur kosmetisch).
 
+## 7. Closure-Notiz
+
+**Geliefert:** 31 R-Anker + 173 verankerte Links über 21 Dateien; `ids` repo-weit
+scharf in `make gates`. Damit ist `welle-01` closure-reif.
+
+**Was funktionierte:** dasselbe `--repair`+Upgrade-Muster wie slice-001, jetzt
+zweizielig (lastenheft + risks-backlog).
+
+**Zwei Fallstricke früh gefangen (Steering-Loop):** (1) **matrix-Richtung** — die
+R-Familie musste in `spec/**` exempt werden, sonst hätte ein Link vom Vertrag
+aufs Risiko-Register `matrix-forbidden` erzeugt (vor dem Verlinken geprüft).
+(2) **Präfix-Über-Match** — `R-[0-9]+` traf das `R-` in `MR-`/`ADR-` (50 False
+Positives); `\b`-Wortgrenze (RE2, kein Lookbehind) fixt es. **Lehre:** bei neuen
+ID-Familien Präfix-Kollisionen mit `\b` absichern und die `matrix`-Richtung vor
+dem Verlinken prüfen.
+
+**Folge-Slices:** keine — die Sub-Area „Requirement-Links" ist Greenfield.
+
 ## 8. Sub-Area-Modus-Begründung
 
 ### Sub-Area: Requirement-Links

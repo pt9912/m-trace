@@ -2,7 +2,7 @@
 
 **Lifecycle:** Die aktive Welle liegt flach unter `docs/plan/planning/`; bei
 Closure `git mv` nach `done/` (neben `welle-01-results.md`). Zustand = Verzeichnis-
-Position; ob *aktuell* oder *geplant*, sagt die [Roadmap](in-progress/roadmap.md).
+Position; ob *aktuell* oder *geplant*, sagt die [Roadmap](../in-progress/roadmap.md).
 
 **Zielmeilenstein:** kein Meilenstein-Bezug (interne Konvergenz-/Harness-Arbeit).
 
@@ -39,7 +39,7 @@ Zustand jedes Slice = sein Lifecycle-Verzeichnis (nicht hier gespiegelt).
 
 | Slice | Titel | Scope |
 |---|---|---|
-| [`slice-001`](in-progress/slice-001-requirement-anker-ids.md) | Requirement-Anker + `ids` auf Spec-Straten | `spec/**`, F/NF/MVP/AK/RAK, 372 Anker |
+| [`slice-001`](slice-001-requirement-anker-ids.md) | Requirement-Anker + `ids` auf Spec-Straten | `spec/**`, F/NF/MVP/AK/RAK, 372 Anker |
 | `slice-002` (geschnitten bei slice-001-Closure) | `ids`-Scope-Ausweitung: `R-`-Familie + risks-backlog, docs/user, examples, Planning-`in-progress/` | Rest der aktiven Doku |
 
 ## 5. Abhängigkeiten
