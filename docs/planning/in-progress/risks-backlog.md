@@ -190,6 +190,16 @@ der Aktiv-Tabelle, damit das aktive Risiko-Set lesbar bleibt.
 Statusspalte: 🟢 aufgelöst · 🟡 in Arbeit · ⬜ offen · ⬛ nicht
 eingetreten.
 
+> **Werkzeug-Einordnung (v3.5.0-Migration W4, 2026-07-23).** Dieses Register ist
+> m-traces Roadmap-Discovery-Praxis (aufgeschobene technische Risiken mit
+> Re-Eval-Trigger, `MR-005` in [`harness/conventions.md`](../../../harness/conventions.md)).
+> Die W4-Triage der aktiven Einträge gegen die Kanon-Werkzeug-Triade
+> (Carveout / ADR / Roadmap-Kandidat) steht in
+> [`risks-backlog-werkzeug-triage.md`](risks-backlog-werkzeug-triage.md):
+> R-9/R-12/R-28/R-30 sind Roadmap-Kandidaten (bleiben hier), der
+> Security-Gate-Suppression-Cluster (R-13 u. a.) läuft über `.security/vulnignore.yaml`
+> (`MR-006`), kein Eintrag ist eine eigene ADR.
+
 ---
 
 ## 1. Risiken aus ADR-0001 (Phase-2-Risiken)

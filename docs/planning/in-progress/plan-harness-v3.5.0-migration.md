@@ -1,8 +1,8 @@
 # Plan: Harness-Baseline-Migration auf ai-harness-course v3.5.0
 
-> **Status**: In progress — 2026-07-22. **W1 (Vendored Baseline) + W2 (AGENTS.md)
-> + W3 (Review-/Closure-Harness) umgesetzt**; nächste Welle W4 (Carveouts +
-> risks-backlog-Triage). Umsetzung von
+> **Status**: In progress — 2026-07-23. **W1 (Vendored Baseline) + W2 (AGENTS.md)
+> + W3 (Review-/Closure-Harness) + W4 (Carveout-Mechanismus + risks-backlog-Triage)
+> umgesetzt**; nächste Welle W5 (Layout-Move). Umsetzung von
 > [ADR-0009](../../adr/0009-harness-baseline-v3.5.0.md) (**Accepted 2026-07-22**):
 > strukturelle Adoption des v3.5.0-Kanons.
 >
@@ -20,7 +20,8 @@
 > Prozess-Arbeit, keine User-Surface).
 >
 > **Wellen-Fortschritt**: W1 ✅ · W2 ✅ · W3 ✅ (2026-07-22, inkl. vorgezogenem
-> Closure-Note-Stack) · W4–W7 offen.
+> Closure-Note-Stack) · W4 ✅ (2026-07-23, ADR-0010 Accepted + Carveout-Mechanismus
+> + Werkzeug-Triage) · W5–W7 offen.
 
 ## 1. Ziel
 
@@ -53,7 +54,7 @@ und der risikoreiche Link-Churn ist eine isolierte, gate-abgesicherte letzte Wel
 | **W1 — Vendored Baseline** | `lab-regelwerk.zip` (sha256 `123e3383…`) nach `.harness/baseline/v3.5.0/{regelwerk,templates}/` + `SHA256SUMS` entpacken; `harness/conventions.md` §Baseline auf vendored v3.5.0 umstellen (Commit-URL ersetzt) | ADR-0009 Accepted | Vendored Bundle committet, SHA256SUMS verifiziert, `make docs-check` grün |
 | **W2 — AGENTS.md** | `AGENTS.md` aus vendored Template kopiert-und-ausgefüllt (Source Precedence auf m-trace-Spec-Straten, reale Gate-Tabelle, Hard Rules, 8-Schritt-Workflow); `harness/README.md` gegen die Template-Pflichtgliederung abgeglichen | W1 done | `AGENTS.md` vorhanden, nur reale Make-Targets behauptet, `make docs-check` grün |
 | **W3 — docs/reviews/ + next/** | `docs/reviews/` (Review-Report-Template) + `docs/planning/next/` anlegen; Reviewer-/Closure-Note-Skills nach `.harness/skills/` (aus Template) | W2 done | Verzeichnisse + Templates da, Konvention in `AGENTS.md`/`harness/README.md` verlinkt, Gates grün |
-| **W4 — Carveout-Mechanismus + risks-backlog-Triage** | `docs/plan/carveouts/` (Index + Template) anlegen; `risks-backlog.md` R-N gegen die Werkzeug-Triade triagieren (Carveout / ADR / Roadmap-Kandidat); ggf. MR nur für nach der Triage verbleibende risks-backlog-Restpraxis | W3 done | Triage-Ergebnis dokumentiert, `conventions.md` MR-Liste aktualisiert, Gates grün |
+| **W4 — Carveout-Mechanismus + risks-backlog-Triage** ✅ | `docs/plan/carveouts/` ([Index](../../plan/carveouts/README.md) + Verweis aufs vendored Template) angelegt; [Werkzeug-Triage](risks-backlog-werkzeug-triage.md) der aktiven R-N: R-9/R-12/R-28/R-30 = Roadmap-Kandidat (bleiben im Register, MR-005), Security-Suppression-Cluster R-13 u. a. = BF-Sub-Area-Markierung (`.security/vulnignore.yaml`, MR-006), kein eigener ADR; `conventions.md` um MR-005/MR-006 + Modus-Zeile ergänzt | W3 done | ✅ Triage dokumentiert, `conventions.md` MR-Liste aktualisiert, `make docs-check` grün |
 | **W5 — Layout-Move (der Struktur-Umbau)** | Inventar-Slice (repo-weiter Grep, §3) → `docs/adr/` → `docs/plan/adr/`, `docs/planning/` → `docs/plan/planning/`; `.d-check.yml` an **allen 8 Stellen** (inkl. `vcs.paths` + `matrix.exempt-paths`), Nicht-MD-Refs (`.go`/`.ts`-Kommentare, `.gitignore`, `scripts/*.sh`, `lastenheft.md`-Tabelle), MD-Links, `README.md`, Handbuch, „stable links"; **MR-001 auflösen** (nach done-Historie) | W4 done | `make docs-check` + `make gates` + **Grep-Rest-Check** grün auf frischem Klon, `docs-immutable` prüft >0 ADRs, MR-001 als aufgelöst markiert |
 | **W6 — Kanonische Planning-Form** | MR: kanonische `slice-NNN`/`welle-NN`-Form für **neue** Arbeit deklarieren (Owner-entschieden, §1); Umgang mit dem Bestand `plan-<version>.md` — grandfathern (**Owner-ratifiziert 2026-07-21, Variante A, §4**); **frische, altlastenfreie `roadmap.md`** (5 Abschnitte, forward-looking) am kanonischen Pfad anlegen und die bestehende historienlastige Roadmap per `git mv` nach `done/roadmap-pre-v3.5.0.md` **archivieren** (Owner-Entscheidung 2026-07-21); „Abgeschlossene Wellen" = **Pointer-Tabelle** auf `done/`-Closure-Notizen + Verweis auf die Alt-Roadmap für die volle Pre-v3.5.0-Historie | W5 done | frische `roadmap.md` folgt dem Kanon (keine Altlasten), Alt-Stand in `done/` verlinkt, MR in `conventions.md`, `make gates` grün |
 | **W7 — opt-in-d-check-Module aktivieren** | zwei Teile: **(7a)** `version.md#aktuell` nach Regelwerk §Versions-Register **anlegen** — es existiert heute **keine** `version.md`; sie konsolidiert die verstreuten Quellen (`packages/*/src/version.ts` `0.25.0`, `DCHECK_DIGEST` in `Makefile`, Go-`serviceVersion` `0.25.0`, `releasing.md`-Bump-Checkliste). **(7b)** Module aktivieren: `versions` (ghcr-Pins gg. `version.md#aktuell`), `ids` (nach Anker-Retrofit, `conventions.md` §Requirement-link convergence), `citations`/`sources` nach Bedarf — je Modul erst advisory-Lauf ohne Befund, dann in `.d-check.yml` + `make gates` binden | W6 done | `version.md` kanonisch (single source), aktivierte Module grün in `make gates`, keine Falschbefunde, DoD je Modul |

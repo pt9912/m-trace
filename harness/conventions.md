@@ -86,6 +86,47 @@ ausgewiesenen History-Abschnitten erlaubt.
   `hostpaths`-Sensor gated daher `/Users` und `/Development`; `/mnt` und
   `/home` liegen bewusst außerhalb seines konfigurierten Präfix-Satzes.
 
+### MR-005 - Risiko-Register als Roadmap-Discovery
+
+- **Datum:** 2026-07-23
+- **Scope:** `docs/planning/in-progress/risks-backlog.md` (`R-*`-Familie)
+- **Baseline-Unterschied:** m-trace führt absehbare technische Risiken mit
+  Re-Eval-Triggern (RAK-gekoppelt an die Release-Historie) in einem eigenen
+  Risiko-Register. Der v3.5.0-Kanon kennt kein direktes Äquivalent — er trennt
+  Roadmap (aufgeschobene Arbeit), Carveout (temporäre Gate-Senkung) und ADR
+  (Architekturentscheidung).
+- **Grund:** Das Register ist die etablierte, release-gekoppelte
+  Roadmap-Discovery-Praxis. Die W4-Werkzeug-Triage
+  (`docs/planning/in-progress/risks-backlog-werkzeug-triage.md`) ordnet die
+  aktiven Einträge zu: R-9/R-12/R-28/R-30 sind Roadmap-Kandidaten und bleiben
+  hier; genuine Gate-Senkungen graduieren in ihr Gate-Werkzeug
+  (Security-Suppressions → MR-006).
+- **Auflösungs-Trigger:** Permanent, solange die Wellen/Slices-Roadmap-Form (W6)
+  die Roadmap-Kandidat-Klasse nicht selbst aufnimmt.
+
+### MR-006 - Security-Gate-Carveout-Registry
+
+- **Datum:** 2026-07-23
+- **Scope:** `image-scan`/`vuln-check`-Gate; OS-CVE-Ausnahmen der
+  `node:22-trixie-slim`-Base (`mtrace-dashboard`, `mtrace-analyzer-service`),
+  geführt in `.security/vulnignore.yaml`
+- **Baseline-Unterschied:** Der Kanon (Modul 7) führt einzelne, temporäre
+  Gate-Senkungen als `docs/plan/carveouts/CO-NNN`. m-trace senkt den Security-Gate
+  für einen **Cluster** transitiver OS-CVEs (kein Runtime-Pfad, oft ohne
+  Upstream-Fix) über die domänenspezifische Registry `.security/vulnignore.yaml`
+  (per-CVE `reason` + `expires` + `scope`, deterministisch nach `.trivyignore`
+  gerendert, Nightly-Audit-Re-Eval).
+- **Grund:** Modul-7-Werkzeug-Wahl Frage 1 (Granularität): ein Cluster im selben
+  Geltungsbereich ist eine BF-Sub-Area-Markierung, **keine** Carveout-Kaskade
+  (ein CO-File je CVE ist der explizit gewarnte Anti-Pattern). Die vorhandene
+  Registry ist reicher als das generische CO-Template und die Single Source of
+  Truth; ein CO-File je CVE würde sie duplizieren.
+- **Auflösungs-Trigger:** Je CVE der eigene `expires`/Upstream-Fix-Trigger in
+  `vulnignore.yaml`; als Sub-Area permanent, solange die `trixie-slim`-Base
+  transitive OS-CVEs ohne Runtime-Exponierung trägt. Das generische
+  `docs/plan/carveouts/` bleibt für künftige einzelne, nicht-Security
+  Gate-Senkungen reserviert.
+
 ## Sensor-Bindungsklassen
 
 m-trace nutzt derzeit Requirement-Bindung (`F-*`, `NF-*`, `MVP-*`, `AK-*`,
@@ -101,6 +142,7 @@ immutable Image-Digests.
 | Commit-Traceability | Greenfield für neue Pull Requests | PR-Bereiche bestehen `make docs-commits`; Vor-Adoptions-Historie bleibt unverändert |
 | Requirement-Coverage | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
 | Requirement-Links | Brownfield | Stabile Per-Requirement-Anker existieren und der ID-Link-Gate kann ohne mehrdeutige Root-Links aktiviert werden |
+| Security-Gate-Suppressions (`image-scan`) | Brownfield, observable | Jede Suppression trägt Begründung + `expires` + Scope in `.security/vulnignore.yaml`; Nightly-Audit re-evaluiert; aufgelöst, sobald die `trixie-slim`-Base keine transitiven OS-CVEs ohne Runtime-Pfad mehr trägt (MR-006) |
 
 ## Requirement-Coverage-Konvergenz
 
