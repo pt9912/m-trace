@@ -5,8 +5,8 @@
 > [`examples/README.md`](../README.md) Sektion „Compose-Form"
 > Variante „Eigenes Compose").
 >
-> Bezug: Lastenheft §7.6 F-58, §7.7 F-73, §7.8 F-82..F-84, §12.3
-> MVP-37, RAK-38;
+> Bezug: Lastenheft §7.6 [`F-58`](../../spec/lastenheft.md#f-58), §7.7 [`F-73`](../../spec/lastenheft.md#f-73), §7.8 [`F-82`](../../spec/lastenheft.md#f-82)..[`F-84`](../../spec/lastenheft.md#f-84), §12.3
+> [`MVP-37`](../../spec/lastenheft.md#mvp-37), [`RAK-38`](../../spec/lastenheft.md#rak-38);
 > [`plan-0.5.0.md`](../../docs/plan/planning/done/plan-0.5.0.md) §5
 > (Tranche 4).
 >
@@ -27,10 +27,10 @@ Internet-Zugriff.
 liefert **nicht**:
 
 - vollständige DASH-Manifestanalyse in `@pt9912/stream-analyzer`
-  (MVP-37, Kann-Folge-Scope; Plan §0.1 DASH-Zeile),
+  ([`MVP-37`](../../spec/lastenheft.md#mvp-37), Kann-Folge-Scope; Plan §0.1 DASH-Zeile),
 - einen `dash.js`-Adapter im `@pt9912/player-sdk`,
 - eine DASH-Erweiterung von `POST /api/analyze` (bleibt HLS-only;
-  Lastenheft §7.6 F-58 Folge-Scope).
+  Lastenheft §7.6 [`F-58`](../../spec/lastenheft.md#f-58) Folge-Scope).
 
 ## Voraussetzungen
 
@@ -134,7 +134,7 @@ Beispiele bleiben unangetastet.
 
 - `@pt9912/stream-analyzer` analysiert DASH in `0.5.0` nicht
   produktiv: `analyzerKind: "hls"` ist die einzige produktive
-  Variante; `dash`-/`cmaf`-Erweiterung ist Folge-Scope (MVP-37).
+  Variante; `dash`-/`cmaf`-Erweiterung ist Folge-Scope ([`MVP-37`](../../spec/lastenheft.md#mvp-37)).
   Wer aus dem Beispiel heraus eine MPD an `POST /api/analyze`
   schickt, bekommt einen `not_hls`-Fehler — das ist **erwartetes**
   Verhalten in `0.5.0`.

@@ -7,7 +7,7 @@ deterministisches MediaMTX-Konfigurations-Artefakt fällt für den
 Lab-Stack ab, und Lifecycle-Hooks lassen sich lokal einspeisen.
 
 > Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §1.1.14,
-> RAK-65..RAK-70 / NF-13;
+> [`RAK-65`](../../spec/lastenheft.md#rak-65)..[`RAK-70`](../../spec/lastenheft.md#rak-70) / [`NF-13`](../../spec/lastenheft.md#nf-13);
 > [`docs/plan/planning/done/plan-0.11.0.md`](../plan/planning/done/plan-0.11.0.md);
 > [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md) §3.8;
 > [`examples/ingest-control/README.md`](../../examples/ingest-control/README.md).
@@ -68,7 +68,7 @@ Antwort `201 Created` enthält Stream-Metadaten plus
 Aufruferseitig direkt in den Publisher (FFmpeg, OBS, …) übernehmen,
 serverseitig gibt es ihn nie wieder.
 
-**Optional: `?provision=true`** (`0.12.6` Tranche 9, R-15). Wenn der
+**Optional: `?provision=true`** (`0.12.6` Tranche 9, [`R-15`](../plan/planning/in-progress/risks-backlog.md#r-15)). Wenn der
 Operator zusätzlich einen MediaMTX-Server provisionieren möchte
 (Endpoint + Routing-Rule), kann er den `provision=true`-Query-Param
 setzen:
@@ -192,9 +192,9 @@ Alle Lab-Smokes sind opt-in und **nicht** Teil von `make gates`:
 
 | Target | Zweck |
 | --- | --- |
-| `make smoke-ingest-control` | Lifecycle-Hooks gegen lokale API (RAK-69) |
-| `make smoke-srt` / `make smoke-srt-health` | Bestehende SRT-/HLS-Lab-Smokes (RAK-37/RAK-43) |
-| `make smoke-mediamtx` | MediaMTX-Core-Lab (RAK-36) |
+| `make smoke-ingest-control` | Lifecycle-Hooks gegen lokale API ([`RAK-69`](../../spec/lastenheft.md#rak-69)) |
+| `make smoke-srt` / `make smoke-srt-health` | Bestehende SRT-/HLS-Lab-Smokes ([`RAK-37`](../../spec/lastenheft.md#rak-37)/[`RAK-43`](../../spec/lastenheft.md#rak-43)) |
+| `make smoke-mediamtx` | MediaMTX-Core-Lab ([`RAK-36`](../../spec/lastenheft.md#rak-36)) |
 
 Das Generator-Beispiel in `examples/ingest-control/` läuft **ohne**
 laufende API: `mediamtx.generated.yml` ist commit-stabil und kann
@@ -230,7 +230,7 @@ und [`plan-0.11.0.md`](../plan/planning/done/plan-0.11.0.md) §10.
 
 - Externe MediaMTX-Hook-Integration (Lifecycle-Events kommen aus
   dem Lab-Smoke oder einem manuellen Curl, nicht aus MediaMTX
-  selbst — Folge-Scope laut R-16 in
+  selbst — Folge-Scope laut [`R-16`](../plan/planning/in-progress/risks-backlog.md#r-16) in
   [`risks-backlog.md`](../plan/planning/in-progress/risks-backlog.md)).
 - Provisionierung der MediaMTX-Control-API. Das generierte YAML
   wird als Datei ausgespielt; MediaMTX liest es per Volume-Mount.

@@ -1,13 +1,13 @@
 # Releasing — m-trace
 
-> **Bezug**: AK-11, F-131.
+> **Bezug**: [`AK-11`](../../spec/lastenheft.md#ak-11), [`F-131`](../../spec/lastenheft.md#f-131).
 
 ## 0. Zweck
 
 Dieses Dokument beschreibt den minimalen, reproduzierbaren
 Release-Ablauf für m-trace. Der Ablauf ist versionsunabhängig
 formuliert und verwendet Platzhalter der Form `X.Y.Z`. Er gilt für
-alle Releases aus dem Release-Plan (RAK-1..RAK-46).
+alle Releases aus dem Release-Plan ([`RAK-1`](../../spec/lastenheft.md#rak-1)..[`RAK-46`](../../spec/lastenheft.md#rak-46)).
 
 ## 1. Vorbereitung
 
@@ -109,7 +109,7 @@ eine kurze manuelle Operator-Prüfung gegen ein laufendes Lab:
    `SMOKE_INCLUDE_MTRACE_API=1 make smoke-srt-health` —
    probt zusätzlich zum MediaMTX-Pfad gegen
    `GET /api/srt/health/{stream_id}` und verifiziert die vier
-   RAK-43-Pflichtwerte im Wire-Format aus [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md).
+   [`RAK-43`](../../spec/lastenheft.md#rak-43)-Pflichtwerte im Wire-Format aus [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md).
 3. Dashboard-Route <http://localhost:5173/srt-health> öffnen — die
    Tabelle muss `srt-test` mit Health-Pill `healthy`, RTT < 5 ms und
    Bandbreite im Mbit/s-Bereich zeigen.
@@ -127,7 +127,7 @@ Vollständige Operator-Doku:
 
 Zusätzlich zu `make smoke-webrtc-prep` (auto-up/down, endpoint-only)
 braucht der Release einen kurzen manuellen Browser-Handcheck
-gegen ein laufendes Lab (RAK-50, „Kann"; nicht release-blockierend,
+gegen ein laufendes Lab ([`RAK-50`](../../spec/lastenheft.md#rak-50), „Kann"; nicht release-blockierend,
 aber Bestandteil der dokumentierten Verifikationspfade):
 
 1. `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build`.
@@ -154,7 +154,7 @@ Vollständige Operator-Doku:
 Zusätzlich zu `make smoke-webrtc-prep` und dem WebRTC-Browser-
 Handcheck braucht der Release einen produktiven End-to-End-
 Lauf des Player-SDK-WebRTC-Adapters gegen das laufende Lab. Pflicht-
-Schritte (RAK-51..RAK-54):
+Schritte ([`RAK-51`](../../spec/lastenheft.md#rak-51)..[`RAK-54`](../../spec/lastenheft.md#rak-54)):
 
 1. `make dev` (Core-Lab, API + MediaMTX + Dashboard) plus
    `mtrace-webrtc`-Stack (`docker compose -p mtrace-webrtc -f
@@ -207,7 +207,7 @@ reproduzierbar sind und nicht in `make gates` enthalten:
 
 #### 2.4.1 WebRTC-Drift-Smoke (RAK-56)
 
-Der Drift-Review aus R-12 ist automatisiert.
+Der Drift-Review aus [`R-12`](../plan/planning/in-progress/risks-backlog.md#r-12) ist automatisiert.
 Vor jedem Release-Tag (auch Patch) genügt ein Blick auf den letzten
 Nightly-Lauf des Workflows
 [`.github/workflows/webrtc-drift.yml`](../../.github/workflows/webrtc-drift.yml):
@@ -337,7 +337,7 @@ Workflows als **nicht-blockierende Beobachtungs-Gates**:
   (Cron `52 1 * * *` Europe/Berlin) — open-loop SLO (constant-arrival-
   rate, p95-Budget + `dropped_iterations`) gegen das Core-Lab,
   `continue-on-error`; Verdikt aus Job-Summary + Artefakt, nicht aus der
-  Job-Farbe. Belegt die Lab-Lastfähigkeit (NF-20/NF-22/NF-23) und „kein
+  Job-Farbe. Belegt die Lab-Lastfähigkeit ([`NF-20`](../../spec/lastenheft.md#nf-20)/[`NF-22`](../../spec/lastenheft.md#nf-22)/[`NF-23`](../../spec/lastenheft.md#nf-23)) und „kein
   stiller Verlust" per Readback gegen `playback_events`. Der Soak
   (Read-Retention-p95 gegen 2 s = `ADR-0005` Trigger #3, ≥ 10 Mio Events
   ~Stunden) läuft on-demand via `workflow_dispatch` (`mode=soak`).
@@ -717,7 +717,7 @@ Image-Publish fehlgeschlagen:
 
 ## 9. Referenzen
 
-- Akzeptanzkriterien (AK-11).
+- Akzeptanzkriterien ([`AK-11`](../../spec/lastenheft.md#ak-11)).
 - Definition of Done.
 - [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) — Release-Übersicht und RAK-Akzeptanzkriterien.
 - [`docs/plan/planning/in-progress/roadmap.md`](../plan/planning/in-progress/roadmap.md) — Offene Entscheidungen.

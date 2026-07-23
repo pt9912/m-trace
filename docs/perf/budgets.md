@@ -104,7 +104,7 @@ und wird ab Tranche 1 mit gemessen.
 
 `make smoke-load` (`scripts/smoke-load.sh` + `scripts/load/playback-events.k6.js`)
 belegt die Lab-Lastfähigkeit der Ingest→Persistenz→Read-Kette
-(NF-20/NF-22/NF-23) unter echter Parallelität — komplementär zu den
+([`NF-20`](../../spec/lastenheft.md#nf-20)/[`NF-22`](../../spec/lastenheft.md#nf-22)/[`NF-23`](../../spec/lastenheft.md#nf-23)) unter echter Parallelität — komplementär zu den
 isolierten Hot-Path-Budgets oben. **Opt-in + Nightly, NICHT in
 `make gates`** (lastabhängig hardware-/runner-flaky). Zwei Modi:
 `MODE=capacity` (Rate-Limit angehoben → echte Ingest-Kapazität),
@@ -114,7 +114,7 @@ isolierten Hot-Path-Budgets oben. **Opt-in + Nightly, NICHT in
 
 | Kriterium | Schwelle | Begründung |
 |---|---|---|
-| Kein stiller Verlust | `persisted >= accepted` (Readback gegen die echte `playback_events`-Tabelle, **nicht** `event_count`) | `persisted` = tatsächlich in `playback_events` liegende Events der Lauf-Sessions, im Autostart-/CI-Pfad per direktem `SELECT count(*)` gegen das api-Volume gezählt (O(1)); der `events[]`-Array-Readback des Detail-Endpoints bleibt portabler Fallback für `SMOKE_LOAD_AUTOSTART=0` (s. risks-backlog R-25). Jedes client-bestätigte (`202`) Event muss dort liegen. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Append erfolgreich, Client sah aber ein Timeout/`5xx`), kein Verlust. `event_count` (Session-Zähler, im Upsert vor dem Append getickt) taugt dafür ausdrücklich nicht. |
+| Kein stiller Verlust | `persisted >= accepted` (Readback gegen die echte `playback_events`-Tabelle, **nicht** `event_count`) | `persisted` = tatsächlich in `playback_events` liegende Events der Lauf-Sessions, im Autostart-/CI-Pfad per direktem `SELECT count(*)` gegen das api-Volume gezählt (O(1)); der `events[]`-Array-Readback des Detail-Endpoints bleibt portabler Fallback für `SMOKE_LOAD_AUTOSTART=0` (s. risks-backlog [`R-25`](../plan/planning/in-progress/risks-backlog.md#r-25)). Jedes client-bestätigte (`202`) Event muss dort liegen. `persisted < accepted` = stiller Verlust = FAIL. Ein Überschuss (`persisted > accepted`) ist **at-least-once unter Überlast** (Append erfolgreich, Client sah aber ein Timeout/`5xx`), kein Verlust. `event_count` (Session-Zähler, im Upsert vor dem Append getickt) taugt dafür ausdrücklich nicht. |
 | Fehlerquote | `<= MAX_ERROR_PCT` (Default 5 %) | Anteil Events mit Status ≠ `202`/`429`. An der SQLite-Sättigung sind einzelne **explizite** Fehler erwartbar (graceful degradation); nur eine katastrophale Quote bricht. |
 | Limiter (contract) / Override (capacity) | `429 > 0` bzw. `accepted > 0` | Sanity, dass der jeweilige Modus tatsächlich greift. |
 
@@ -159,9 +159,9 @@ genau diese erweitert werden.
 
 Abgrenzung: Single-Instance, **ein** Projekt/Token. Produktive
 Multi-Tenant-Isolation und Multi-Replica-Skalierung sind hier **nicht**
-belegt — getrackt als risks-backlog **R-26** (Machbarkeit) bzw.
+belegt — getrackt als risks-backlog **[`R-26`](../plan/planning/in-progress/risks-backlog.md#r-26)** (Machbarkeit) bzw.
 ADR-0005-Trigger #1 (Multi-Replica → Postgres). Die Multi-Replica-Achse
-(R-26 c) belegt §8.
+([`R-26`](../plan/planning/in-progress/risks-backlog.md#r-26) c) belegt §8.
 
 ## 8. Scale-out-Lasttest (`make smoke-scaleout-load`, opt-in)
 
@@ -169,7 +169,7 @@ ADR-0005-Trigger #1 (Multi-Replica → Postgres). Die Multi-Replica-Achse
 k6-Playback-Event-Last gegen den Multi-Replica-Stack
 (`docker-compose.scaleout.yml`: 2 API-Replicas + **geteilter** Postgres +
 nginx-LB) und liefert die horizontale Scale-out-Evidenz aus
-[ADR-0006](../plan/adr/0006-postgres-scaleout-adapter.md) (**R-26 c**). Readback
+[ADR-0006](../plan/adr/0006-postgres-scaleout-adapter.md) (**[`R-26`](../plan/planning/in-progress/risks-backlog.md#r-26) c**). Readback
 via `psql` gegen den geteilten Postgres (kein SQLite-GLOB/Volume-Hack):
 `persisted = COUNT(*)`, `distinct = COUNT(DISTINCT ingest_sequence)` je
 Session-Prefix. Opt-in, **nicht** in `make gates`.
@@ -179,7 +179,7 @@ Session-Prefix. Opt-in, **nicht** in `make gates`.
 | Kriterium | Schwelle | Begründung |
 |---|---|---|
 | Kein stiller Verlust über Replicas | `persisted == accepted` | Jedes client-bestätigte (`202`) Event muss im geteilten Store liegen. |
-| Keine Duplikate über Replicas | `COUNT(DISTINCT ingest_sequence) == COUNT(*)` | Der DB-autoritative Sequencer (**R-28**, `nextval`+Block-Allokation) muss über parallele Writer kollisionsfreie `ingest_sequence` vergeben — explizit gezählt, nicht anzahl-inferentiell. |
+| Keine Duplikate über Replicas | `COUNT(DISTINCT ingest_sequence) == COUNT(*)` | Der DB-autoritative Sequencer (**[`R-28`](../plan/planning/in-progress/risks-backlog.md#r-28)**, `nextval`+Block-Allokation) muss über parallele Writer kollisionsfreie `ingest_sequence` vergeben — explizit gezählt, nicht anzahl-inferentiell. |
 
 **Referenz-Messungen (2026-07-11, 20-Kern-Host, 50 VUs / 60 s / Batch 20):**
 
@@ -197,7 +197,7 @@ Korrektheit ist unabhängig davon wasserdicht.**
 
 - **App-gebunden** (Limiter greift): 1→2 Replicas ist **linear (2,01×)**, weil
   der Ingest-Limiter **pro Replica** in-process liegt → N Replicas geben dem
-  Projekt N× effektives Ratebudget. Das ist zugleich die **R-26-b-Lücke,
+  Projekt N× effektives Ratebudget. Das ist zugleich die **[`R-26`](../plan/planning/in-progress/risks-backlog.md#r-26)-b-Lücke,
   jetzt gemessen**: ohne shared (Redis) Ingest-Limiter ist die Per-Projekt-
   Decke nicht repliken-übergreifend fair.
 - **Store-gebunden** (Limiter aus): der **einzelne geteilte Postgres ist die
@@ -224,7 +224,7 @@ begrenzen oder pgbouncer).
 `make smoke-scaleout-fairness` (`FAIRNESS=1
 scripts/smoke-scaleout-load.sh`) belegt die repliken-übergreifende
 Per-Projekt-Fairness des **shared Redis-Ingest-Limiters**
-(`MTRACE_RATE_LIMIT_BACKEND=redis`, **R-26**; ENV-Referenz in
+(`MTRACE_RATE_LIMIT_BACKEND=redis`, **[`R-26`](../plan/planning/in-progress/risks-backlog.md#r-26)**; ENV-Referenz in
 [`docs/user/auth.md`](../user/auth.md) §5.10) über den
 Multi-Replica-Stack aus §8 (2 API-Replicas + geteilter Postgres +
 nginx-LB, zusätzlich ein Redis-Service). Opt-in, **nicht** in
@@ -243,7 +243,7 @@ Setup identisch §8):**
 
 | Modus | 1 Replica | 2 Replicas | Skalierung | Deutung |
 |---|---|---|---|---|
-| Throttled, per-Replica-Limiter (§8) | 101 ev/s | 203 ev/s | 2,01× | Budget skaliert mit Replicas — die R-26-b-Lücke |
+| Throttled, per-Replica-Limiter (§8) | 101 ev/s | 203 ev/s | 2,01× | Budget skaliert mit Replicas — die [`R-26`](../plan/planning/in-progress/risks-backlog.md#r-26)-b-Lücke |
 | **Throttled, shared Redis-Limiter** | **107 ev/s** | **102 ev/s** | **0,96×** | **EIN Per-Projekt-Budget über alle Replicas** |
 
 Noisy-Neighbor **über den LB** (3 Lab-Projekte; Noisy 400 ev/s offered,

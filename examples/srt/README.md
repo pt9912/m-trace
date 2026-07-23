@@ -5,11 +5,11 @@
 > [`examples/README.md`](../README.md) Sektion „Compose-Form"
 > Variante „Eigenes Compose").
 >
-> Bezug: Lastenheft §7.8 F-82..F-84, RAK-37 (`0.5.0`-Smoke);
+> Bezug: Lastenheft §7.8 [`F-82`](../../spec/lastenheft.md#f-82)..[`F-84`](../../spec/lastenheft.md#f-84), [`RAK-37`](../../spec/lastenheft.md#rak-37) (`0.5.0`-Smoke);
 > [`plan-0.5.0.md`](../../docs/plan/planning/done/plan-0.5.0.md) §4
 > (Tranche 3); für die SRT-Health-Erweiterung
 > [`plan-0.6.0.md`](../../docs/plan/planning/done/plan-0.6.0.md)
-> §3 (Tranche 2) plus Lastenheft §13.8 RAK-41..RAK-46.
+> §3 (Tranche 2) plus Lastenheft §13.8 [`RAK-41`](../../spec/lastenheft.md#rak-41)..[`RAK-46`](../../spec/lastenheft.md#rak-46).
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:
 > [`docs/user/local-development.md`](../../docs/user/local-development.md)
@@ -23,18 +23,18 @@ ihn als HLS wieder ausspielt. Damit ist sowohl SRT-Ingress als auch
 HLS-Egress am selben Server-Setup verifizierbar.
 
 **Wichtig**: `0.5.0`-SRT bedeutet Beispiel/Smoke. Es bedeutet
-**nicht** SRT-Health-View (RAK-41..RAK-46, Folge-Scope `0.6.0`),
+**nicht** SRT-Health-View ([`RAK-41`](../../spec/lastenheft.md#rak-41)..[`RAK-46`](../../spec/lastenheft.md#rak-46), Folge-Scope `0.6.0`),
 keinen SRT-Metrikimport in `apps/api` und keine CGO-Bindings
-(Risiken-Backlog R-2 in `0.6.0` Tranche 1 als CGO-frei aufgelöst —
+(Risiken-Backlog [`R-2`](../../docs/plan/planning/in-progress/risks-backlog.md#r-2) in `0.6.0` Tranche 1 als CGO-frei aufgelöst —
 Quelle ist die MediaMTX-Control-API über HTTP). Das `apps/api`-Image
 bleibt `distroless-static` ohne CGO.
 
 Ab `0.6.0` Tranche 2 erweitert dieser Stack das Lab um einen
 **Health-Smoke** (`make smoke-srt-health`), der zusätzlich gegen
-MediaMTX `/v3/srtconns/list` probt und die vier RAK-43-Pflichtwerte
+MediaMTX `/v3/srtconns/list` probt und die vier [`RAK-43`](../../spec/lastenheft.md#rak-43)-Pflichtwerte
 (RTT, Packet Loss, Retransmissions, verfügbare Bandbreite) numerisch
 verifiziert. Smoke-Baseline `make smoke-srt` (HLS-Pfad) bleibt
-unverändert grün und ist weiterhin der `0.5.0`-RAK-37-Nachweis.
+unverändert grün und ist weiterhin der `0.5.0`-[`RAK-37`](../../spec/lastenheft.md#rak-37)-Nachweis.
 
 Operator-Doku zur SRT-Health-View (Datenfluss, Metrik-Mapping,
 Health-Schwellen, Fehlerbilder, Cardinality-Grenzen):
@@ -105,7 +105,7 @@ Erweitert die Baseline um eine API-Probe:
    `http://localhost:9998/v3/srtconns/list`.
 3. **`items[]` enthält** mindestens einen Eintrag mit
    `path=srt-test` und `state=publish`.
-4. **Vier RAK-43-Pflichtwerte numerisch gesetzt**: `msRTT`,
+4. **Vier [`RAK-43`](../../spec/lastenheft.md#rak-43)-Pflichtwerte numerisch gesetzt**: `msRTT`,
    `packetsReceivedLoss`, `packetsReceivedRetrans` (alle ≥ 0;
    gesundes Lab liefert 0), `mbpsLinkCapacity > 0` (sonst keine
    Bandbreiten-Schätzung verfügbar).
@@ -190,7 +190,7 @@ Volumes; `down` reicht für vollständigen Reset.
   Aggregat-Counter, keine Dashboard-Sichtbarkeit. Der Health-Smoke
   aus `make smoke-srt-health` validiert die **Quelle** (MediaMTX-
   API), nicht den `apps/api`-Read-Pfad. Das kommt in
-  `plan-0.6.0` Tranche 3+ (RAK-42..RAK-46).
+  `plan-0.6.0` Tranche 3+ ([`RAK-42`](../../spec/lastenheft.md#rak-42)..[`RAK-46`](../../spec/lastenheft.md#rak-46)).
 - Kein CGO-Binding in `apps/api`: das Lab nutzt SRT ausschließlich
   innerhalb von Container (MediaMTX hat eigene SRT-Implementation).
   Das `apps/api`-`distroless-static`-Pattern bleibt unverändert; der

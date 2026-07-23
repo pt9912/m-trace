@@ -168,7 +168,7 @@ immutable Image-Digests.
 | Bestehende akzeptierte ADRs | Brownfield, grandfathered | Historische Dateien bleiben immutable; jede neue ADR folgt der Baseline |
 | Commit-Traceability | Greenfield für neue Pull Requests | PR-Bereiche bestehen `make docs-commits`; Vor-Adoptions-Historie bleibt unverändert |
 | Requirement-Coverage | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
-| Requirement-Links | Brownfield → Greenfield (Spec-Straten) | `ids` seit `slice-001` auf `spec/**` aktiv (F/NF/MVP/AK/RAK, verankerte Links gg. inline-`<a id>`-Anker im Lastenheft). Voll graduiert, sobald `welle-01`/`slice-002` den Scope auf R-Familie + übrige aktive Doku ausdehnt |
+| Requirement-Links | Greenfield | `ids` repo-weit über alle aktiven Doc-Dirs aktiv (welle-01: slice-001 Spec-Straten, slice-002 Rest + R-Familie); verankerte Links gg. inline-`<a id>`-Anker. Durchgesetzt in `make gates`. Exempt: immutable ADRs, `done/`, Root-Übersicht; R-Familie in `spec/**` (matrix-Richtung) |
 | Security-Gate-Suppressions (`image-scan`) | Brownfield, observable | Jede Suppression trägt Begründung + `expires` + Scope in `.security/vulnignore.yaml`; Nightly-Audit re-evaluiert; aufgelöst, sobald die `trixie-slim`-Base keine transitiven OS-CVEs ohne Runtime-Pfad mehr trägt (MR-006) |
 
 ## Requirement-Coverage-Konvergenz
@@ -187,13 +187,14 @@ Erreichen eines bestehenden Gates ohne Schwächung der Modalitäts-Policy.
 
 ## Requirement-Link-Konvergenz
 
-Das d-check-`ids`-Modul ist seit `slice-001` (welle-01) **auf den Spec-Straten
-aktiv** (`scope.roots: [spec]`, Familie F/NF/MVP/AK/RAK). Requirements leben in
-Markdown-Tabellenzeilen; damit d-check auf die *einzelne Definition* auflöst statt
-auf den Datei-Anfang (link-förmige Mehrdeutigkeit, die m-trace nicht als
-Konvergenz akzeptiert), trägt jede Definitionszeile im Lastenheft einen inline-
-Anker `<a id="<kennung-klein>"></a>`, und Mentions sind verankerte Links
-`[ID](…lastenheft.md#slug)`.
+Das d-check-`ids`-Modul ist **repo-weit aktiv** (welle-01, `make gates`) über alle
+aktiven Doc-Dirs. Requirements leben in Markdown-Tabellenzeilen; damit d-check auf
+die *einzelne Definition* auflöst statt auf den Datei-Anfang (link-förmige
+Mehrdeutigkeit, die m-trace nicht als Konvergenz akzeptiert), trägt jede
+Definitionszeile einen inline-Anker `<a id="<kennung-klein>"></a>` **in der
+letzten Zelle** (die Kennungs-Zelle bleibt rein — sonst passt sie nicht
+„vollständig" aufs RTM-`id-pattern` und `--trace`/`doc-complete` erkennt 0
+Anforderungen), und Mentions sind verankerte Links `[ID](…#slug)`.
 
 **Klarstellung (slice-001):** d-check selbst verlangt den Anker *nicht* — sein
 `--repair` erzeugt datei-level Links; der Anker-Zwang ist m-traces Qualitäts-
@@ -201,12 +202,15 @@ Policy (Verweis muss auf die Definition zeigen). Der Weg zu den Ankern folgt der
 Handbuch-„Brownfield-Migration für tabellarische Lastenhefte" (inline-Anker statt
 Heading-Umbau, Tabellenform bleibt).
 
-**Stand der Graduierung:**
+**Stand der Graduierung — abgeschlossen (welle-01):**
 
-1. ✅ Spec-Straten (`spec/**`, F/NF/MVP/AK/RAK) — Anker im Lastenheft, 213
-   Mentions verankert, `ids`/`anchors`/`links` grün in `make gates`.
-2. ⬜ **`slice-002` (welle-01):** Scope-Ausweitung auf die `R-`-Familie
-   (`risks-backlog.md`) und die übrige aktive Doku (docs/user, examples,
-   Planning-`in-progress/`).
-3. **Dauerhaft außerhalb:** immutable Accepted-ADRs (`docs/plan/adr/**`) —
-   Body-Edit verböte MR-002; `ids` nimmt ADRs aus.
+1. ✅ `slice-001` — Spec-Straten (`spec/**`, F/NF/MVP/AK/RAK), 372 Lastenheft-
+   Anker, 213 Mentions verankert.
+2. ✅ `slice-002` — Rest der aktiven Doku (docs/user, examples, docs/perf,
+   Planning-`in-progress/`, carveouts) + `R-`-Familie (31 Anker in
+   `risks-backlog.md`). `\b`-Wortgrenze verhindert Über-Matches (`R-` in
+   `MR-`/`ADR-`).
+3. **Dauerhaft außerhalb** (`ids`-Scope/`exempt-paths`): immutable Accepted-ADRs
+   (`docs/plan/adr/**`, MR-002), `done/`, `CHANGELOG`, Root-Übersichts-Docs; die
+   `R-`-Familie zusätzlich in `spec/**` (der Vertrag verweist nicht abwärts aufs
+   Risiko-Register — `matrix`-Richtung).

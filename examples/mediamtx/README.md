@@ -5,7 +5,7 @@
 > dokumentiert den bestehenden Pfad und ergänzt nur den opt-in Smoke
 > `make smoke-mediamtx`.
 >
-> Bezug: Lastenheft §7.8 F-82..F-84, RAK-36;
+> Bezug: Lastenheft §7.8 [`F-82`](../../spec/lastenheft.md#f-82)..[`F-84`](../../spec/lastenheft.md#f-84), [`RAK-36`](../../spec/lastenheft.md#rak-36);
 > [`plan-0.5.0.md`](../../docs/plan/planning/done/plan-0.5.0.md) §3
 > (Tranche 2);
 > [`services/media-server/mediamtx.yml`](../../services/media-server/mediamtx.yml).

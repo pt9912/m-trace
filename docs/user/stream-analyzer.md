@@ -5,8 +5,8 @@ m-trace-Toolchain. Das Paket liefert eine Bibliotheks-API für
 Backend-Integration (`apps/api`), eine CLI und ein stabiles
 JSON-Ergebnisformat.
 
-Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 (RAK-22..RAK-28,
-F-68..F-81), [`docs/plan/planning/done/plan-0.3.0.md`](../plan/planning/done/plan-0.3.0.md),
+Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §7.7 ([`RAK-22`](../../spec/lastenheft.md#rak-22)..[`RAK-28`](../../spec/lastenheft.md#rak-28),
+[`F-68`](../../spec/lastenheft.md#f-68)..[`F-81`](../../spec/lastenheft.md#f-81)), [`docs/plan/planning/done/plan-0.3.0.md`](../plan/planning/done/plan-0.3.0.md),
 [`spec/architecture.md`](../../spec/architecture.md) §5/§8 (Hexagon-Port).
 
 ## 1. Lieferumfang
@@ -270,15 +270,15 @@ welchem Hop ein SSRF-Block bzw. ein Statuscode-Problem auftrat.
 | HLS Master    | ✅       | Variants/Renditions, Group-Cross-Check, Base-URL-Auflösung.   |
 | HLS Media     | ✅       | Segmente, Toleranzregel, Live/VOD, 3×-Latenz.                 |
 | HLS via URL   | ✅       | Timeout, Größenlimit, SSRF-Schutz (siehe §6).                 |
-| DASH-MPD VOD  | ✅ ab `0.9.0` | `analyzerKind:"dash"` / `playlistType:"dash"`; MPD/Period/AdaptationSet/Representation-Hierarchie mit Mindest-Feldern (`bandwidth`, `width`/`height`, `codecs`, `mimeType`); `details.type:"static"`. RAK-58 / NF-12. |
+| DASH-MPD VOD  | ✅ ab `0.9.0` | `analyzerKind:"dash"` / `playlistType:"dash"`; MPD/Period/AdaptationSet/Representation-Hierarchie mit Mindest-Feldern (`bandwidth`, `width`/`height`, `codecs`, `mimeType`); `details.type:"static"`. [`RAK-58`](../../spec/lastenheft.md#rak-58) / [`NF-12`](../../spec/lastenheft.md#nf-12). |
 | DASH-MPD Live | ✅ ab `0.9.0` | Wie VOD plus `details.type:"dynamic"` / `details.live:true` / `minimumUpdatePeriod` / `availabilityStartTime`. SegmentTemplate-Edge-Cases (`$Time$`-Variablen, `availabilityStartTime`-Drift) sind Folge-Plan-Material. |
 | DASH via URL  | ✅ ab `0.9.0` | Loader generalisiert auf HLS+DASH (Content-Type-Allowlist `application/dash+xml`/`application/xml`/`text/xml`); Detector entscheidet am Body, nicht am Content-Type. SSRF-Schutz unverändert (§6).                  |
-| CMAF-Analyse  | ✅ ab `0.10.0` | NF-13 / RAK-60..RAK-64. **Kein neuer `analyzerKind`** — CMAF lebt als additives `details.cmaf`-Signalmodell unter `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` / `DashManifestDetails.cmaf?`. Manifestbasierte HLS-/DASH-Signale (`EXT-X-MAP`, `.m4s`/`.cmfv`/`.cmfa`-Segmentmuster, MP4-MIME, `SegmentTemplate@initialization`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (Brand-Allowlist `cmfc`/`cmf2` für Init-`ftyp`, `cmfs`/`cmff`/`cmfc`/`cmf2` für Media-`styp`; Defaults `cmaf.binary.maxSegmentBytes=2_000_000`, `cmaf.binary.maxBinarySegments=6`). Eine CMAF-Konformitätsaussage darf nur aus `details.cmaf.binary.status:"passed"` abgeleitet werden. Out of scope bleiben Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Support. |
+| CMAF-Analyse  | ✅ ab `0.10.0` | [`NF-13`](../../spec/lastenheft.md#nf-13) / [`RAK-60`](../../spec/lastenheft.md#rak-60)..[`RAK-64`](../../spec/lastenheft.md#rak-64). **Kein neuer `analyzerKind`** — CMAF lebt als additives `details.cmaf`-Signalmodell unter `MasterPlaylistDetails.cmaf?` / `MediaPlaylistDetails.cmaf?` / `DashManifestDetails.cmaf?`. Manifestbasierte HLS-/DASH-Signale (`EXT-X-MAP`, `.m4s`/`.cmfv`/`.cmfa`-Segmentmuster, MP4-MIME, `SegmentTemplate@initialization`) plus begrenzte binäre CMAF-Konformitätsprüfung ausgewählter Init-/Media-Segmente (Brand-Allowlist `cmfc`/`cmf2` für Init-`ftyp`, `cmfs`/`cmff`/`cmfc`/`cmf2` für Media-`styp`; Defaults `cmaf.binary.maxSegmentBytes=2_000_000`, `cmaf.binary.maxBinarySegments=6`). Eine CMAF-Konformitätsaussage darf nur aus `details.cmaf.binary.status:"passed"` abgeleitet werden. Out of scope bleiben Low-Latency-CMAF (`#EXT-X-PART`, chunked CMAF), vollständige Segmentset-Abdeckung, Codec-Decoding und Player-SDK-CMAF-Support. |
 | SRT           | ❌       | Eigener Bereich (`0.6.0`).                                    |
 
 ### 3.1 CMAF-Binary-Verifikation (`0.10.0`)
 
-`details.cmaf.binary` (NF-13 / RAK-64) führt eine **bounded** binäre
+`details.cmaf.binary` ([`NF-13`](../../spec/lastenheft.md#nf-13) / [`RAK-64`](../../spec/lastenheft.md#rak-64)) führt eine **bounded** binäre
 CMAF-Konformitätsprüfung der manifestseitig referenzierten Init-
 und Media-Segmente aus, sobald CMAF-Manifestsignale erkannt sind.
 Die Prüfung läuft im Default automatisch:
@@ -724,7 +724,7 @@ beziehen das Paket über `pnpm -r --if-present` automatisch ein.
 
 Der Lastenheft-Aufruf `pnpm m-trace check <url-or-file>` analysiert
 ein HLS- **oder DASH-Manifest** und gibt das vollständige
-`AnalysisResult`-JSON auf stdout aus. Ab `0.9.0` Tranche 3 (RAK-59)
+`AnalysisResult`-JSON auf stdout aus. Ab `0.9.0` Tranche 3 ([`RAK-59`](../../spec/lastenheft.md#rak-59))
 dispatcht der CLI automatisch: der Detector im
 `@pt9912/stream-analyzer`-Paket sieht den Body-Anfang an und
 schickt ihn an den HLS- oder DASH-Parser; CLI-Aufrufer müssen das
@@ -763,7 +763,7 @@ damit nur das Analyzer-JSON auf stdout landet — sinnvoll, wenn man
 
 ### 9.2 CMAF-Lab-Modus (`MTRACE_CHECK_ALLOW_PRIVATE_NETWORKS`)
 
-Ab `0.10.0` (NF-13 / RAK-63) bietet die CLI einen bewusst opt-in
+Ab `0.10.0` ([`NF-13`](../../spec/lastenheft.md#nf-13) / [`RAK-63`](../../spec/lastenheft.md#rak-63)) bietet die CLI einen bewusst opt-in
 Schalter für lokale Lab- und Fixture-HTTP-Server:
 
 ```bash

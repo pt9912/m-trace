@@ -2,7 +2,7 @@
 
 > **Status**: `0.5.0` released. Diese Stelle liefert reproduzierbare
 > lokale Beispiele für die Streaming-Protokolle, die das Multi-Protocol
-> Lab (Lastenheft §7.8 + RAK-36..RAK-40) abdeckt. Bezug:
+> Lab (Lastenheft §7.8 + [`RAK-36`](../spec/lastenheft.md#rak-36)..[`RAK-40`](../spec/lastenheft.md#rak-40)) abdeckt. Bezug:
 > [`docs/planning/done/plan-0.5.0.md`](../docs/plan/planning/done/plan-0.5.0.md).
 
 ## Zweck
@@ -78,7 +78,7 @@ Targets in `0.5.0`:
 | `make smoke-srt`        | 3       | ✅ (Project `mtrace-srt`)            |
 | `make smoke-dash`       | 4       | ✅ (Project `mtrace-dash`)           |
 | `make smoke-webrtc-prep`| 5       | ✅ ab `0.7.0` Tranche 3 (Project `mtrace-webrtc`, endpoint-only) |
-| `make smoke-srs`        | —       | ✅ ab `0.9.0` Tranche 2 (Project `mtrace-srs`, endpoint-only; RAK-57) |
+| `make smoke-srs`        | —       | ✅ ab `0.9.0` Tranche 2 (Project `mtrace-srs`, endpoint-only; [`RAK-57`](../spec/lastenheft.md#rak-57)) |
 
 ### Smoke-Skript-Konvention
 
@@ -101,8 +101,8 @@ Anforderungen:
 | [`srt/`](./srt/)         | 3       | Eigenes Compose `mtrace-srt`; Smoke `make smoke-srt` |
 | [`dash/`](./dash/)       | 4       | Eigenes Compose `mtrace-dash`; Smoke `make smoke-dash` |
 | [`webrtc/`](./webrtc/)   | 5       | Eigenes Compose `mtrace-webrtc` (ab `0.7.0` Tranche 1); Smoke `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (endpoint-only) |
-| [`srs/`](./srs/)         | —       | Eigenes Compose `mtrace-srs` (ab `0.9.0` Tranche 2); Smoke `make smoke-srs` (endpoint-only; RAK-57 / MVP-36) |
-| [`ingest-control/`](./ingest-control/) | — | Eigenes Compose `mtrace-ingest-control` (ab `0.11.0` Tranche 3); deterministisches MediaMTX-Artefakt aus `apps/api` Ingest-Control-Domain (RAK-68); SRT- und RTMP-Listener parallel. Opt-in-Smoke: `make smoke-ingest-control`. |
+| [`srs/`](./srs/)         | —       | Eigenes Compose `mtrace-srs` (ab `0.9.0` Tranche 2); Smoke `make smoke-srs` (endpoint-only; [`RAK-57`](../spec/lastenheft.md#rak-57) / [`MVP-36`](../spec/lastenheft.md#mvp-36)) |
+| [`ingest-control/`](./ingest-control/) | — | Eigenes Compose `mtrace-ingest-control` (ab `0.11.0` Tranche 3); deterministisches MediaMTX-Artefakt aus `apps/api` Ingest-Control-Domain ([`RAK-68`](../spec/lastenheft.md#rak-68)); SRT- und RTMP-Listener parallel. Opt-in-Smoke: `make smoke-ingest-control`. |
 
 Quickref über alle Beispiele plus parallel-Stack-Port-Schnitt:
 [`docs/user/local-development.md`](../docs/user/local-development.md) §2.7.

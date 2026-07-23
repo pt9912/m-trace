@@ -1,6 +1,6 @@
 # Auth / Token Lifecycle (`0.12.0`)
 
-> **Stand**: `0.12.0` Tranche 5 (Lastenheft `1.1.15`, RAK-71..RAK-76).
+> **Stand**: `0.12.0` Tranche 5 (Lastenheft `1.1.15`, [`RAK-71`](../../spec/lastenheft.md#rak-71)..[`RAK-76`](../../spec/lastenheft.md#rak-76)).
 > Siehe normativen Wire-Vertrag in
 > [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
 > §3.9 und Plan-Scope in
@@ -10,11 +10,11 @@
 ## 0. Scope
 
 `0.12.0` härtet den bestehenden lokalen/API-nahen Auth-Pfad: kurzlebige
-signierte Session Tokens (`F-111`/RAK-72), rotierbare Project-Token-
-Generationen (`F-112`/RAK-73), Project-gebundene Ingest Policies
-(`F-113`/RAK-74). `X-MTrace-Token`-Legacy-Flows bleiben gültig
-(RAK-75). Normativer Scope und Out-of-Scope-Liste in
-[`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 (RAK-71) und
+signierte Session Tokens (`F-111`/[`RAK-72`](../../spec/lastenheft.md#rak-72)), rotierbare Project-Token-
+Generationen (`F-112`/[`RAK-73`](../../spec/lastenheft.md#rak-73)), Project-gebundene Ingest Policies
+(`F-113`/[`RAK-74`](../../spec/lastenheft.md#rak-74)). `X-MTrace-Token`-Legacy-Flows bleiben gültig
+([`RAK-75`](../../spec/lastenheft.md#rak-75)). Normativer Scope und Out-of-Scope-Liste in
+[`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 ([`RAK-71`](../../spec/lastenheft.md#rak-71)) und
 [`plan-0.12.0.md`](../plan/planning/done/plan-0.12.0.md) §0.1.
 
 ---
@@ -234,7 +234,7 @@ active`.
 1. **SQLite-Persistenz** ist Voraussetzung — InMemory-Modus hat keine
    Generations-Persistenz. Default ab `0.4.0`:
    `MTRACE_PERSISTENCE=sqlite`.
-2. **Signing-Key** per Env. Seit `0.12.5` (RAK-78) ist der
+2. **Signing-Key** per Env. Seit `0.12.5` ([`RAK-78`](../../spec/lastenheft.md#rak-78)) ist der
    Multi-Key-Pfad der Default:
    `MTRACE_AUTH_SIGNING_KEYS=<kid_a>:<base64url-secret>[,<kid_b>:<base64url-secret>,…]`
    plus `MTRACE_AUTH_SIGNING_ACTIVE_KID=<kid_a>`. Der Multi-Key-
@@ -254,7 +254,7 @@ active`.
    `ProjectTokenRepository` direkt; ein dediziertes CRUD-API ist
    Folge-Scope). Solange noch keine Generation persistiert ist,
    akzeptiert der API-Pfad weiterhin `demo-token` über den Static-
-   Resolver — Backward-Compat aus RAK-75.
+   Resolver — Backward-Compat aus [`RAK-75`](../../spec/lastenheft.md#rak-75).
 4. **Rotation**: neue Generation anlegen, alte über
    `SetGraceUntil(now+grace)` markieren, später `Revoke(now)`.
    `grace_until` lebt persistent — ein API-Restart ändert die
@@ -268,7 +268,7 @@ active`.
 `kid` im Token-Header erlaubt parallele Signing-Keys. Alte Verify-
 Keys bleiben über Deployments und Restarts geladen, bis alle damit
 signierten Tokens abgelaufen sind. Der Code-Pfad wird seit `0.12.5`
-(Tranche 1, RAK-78) vom `MultiKeySigningResolver` bedient — er
+(Tranche 1, [`RAK-78`](../../spec/lastenheft.md#rak-78)) vom `MultiKeySigningResolver` bedient — er
 ersetzt den `0.12.0`-`StaticSigningKeyResolver` als Default-Pfad
 und liest die Multi-Key-ENV-Konfiguration aus
 `MTRACE_AUTH_SIGNING_KEYS=kid_a:base64,kid_b:base64` plus
@@ -340,8 +340,8 @@ reproduzierbarer Operator-Check angeboten.
 
 `POST /api/auth/session-tokens` (und alle weiteren Issuance-Pfade,
 die `driven.IssuanceRateLimiter.Allow` aufrufen) lassen sich seit
-`0.12.5` (Tranche 2, RAK-77) gegen einen geteilten SQLite-State
-betreiben. Damit löst der Limiter R-17 für **Single-Host-Multi-
+`0.12.5` (Tranche 2, [`RAK-77`](../../spec/lastenheft.md#rak-77)) gegen einen geteilten SQLite-State
+betreiben. Damit löst der Limiter [`R-17`](../plan/planning/in-progress/risks-backlog.md#r-17) für **Single-Host-Multi-
 Replica-Setups** auf: zwei API-Instances auf demselben Host, die
 sich denselben SQLite-Volume teilen (Compose-`volumes:`,
 K8s-`hostPath`), zählen das Token-Bucket gemeinsam — die effektive
@@ -365,7 +365,7 @@ Multi-Host-Topologie (Kubernetes über mehrere Nodes, Container-
 Plattformen ohne shared storage) liefert ab `0.12.6` Tranche 7
 der `redis`-Backend einen Network-State-Bucket.
 
-**Redis-Pfad (`0.12.6` T7 / R-17)**:
+**Redis-Pfad (`0.12.6` T7 / [`R-17`](../plan/planning/in-progress/risks-backlog.md#r-17))**:
 
 - Atomicity: ein einziger `EVAL`-Lua-Script-Aufruf prüft beide
   Buckets (global + project) inkl. Refund bei project-deny. Damit
@@ -387,7 +387,7 @@ der `redis`-Backend einen Network-State-Bucket.
     Origin-Limiter (`§5.9`), damit kein halb-fail-closed-Pfad
     entsteht.
 
-**RAK-74-Scope-Cut** (Lastenheft §13.14) bleibt aktiv: der Limiter
+**[`RAK-74`](../../spec/lastenheft.md#rak-74)-Scope-Cut** (Lastenheft §13.14) bleibt aktiv: der Limiter
 hängt **nicht** vor `/api/ingest/*` — der Ingest-Control-Pfad ist
 operator-/CLI-getrieben und nutzt das `0.11.0`-Token-Modell. Limiter-
 Wirkung gilt ausschließlich für die Browser-/Telemetrie-Pfade
@@ -417,7 +417,7 @@ opt-in).
 ### 5.5 Signing-Key-Backend (Secret-Source)
 
 Wo das Signing-Key-Material **herkommt**, ist seit `0.12.5`
-(Tranche 3, RAK-79) ein eigener Driven-Port
+(Tranche 3, [`RAK-79`](../../spec/lastenheft.md#rak-79)) ein eigener Driven-Port
 (`hexagon/port/driven/auth_secret_backend.go`). Der Boot-Pfad
 wählt das Backend per ENV; alles andere ist Adapter-Detail.
 
@@ -428,7 +428,7 @@ wählt das Backend per ENV; alles andere ist Adapter-Detail.
 | `kms` (`0.12.6` T8)          | `KMSSecretBackend` — Skelett mit `KMSDecrypter`-Interface               | `MTRACE_AUTH_KMS_*` (siehe KMS-Block unten); produktiver Decrypter ist Folge-Item    |
 | jeder andere Wert            | Boot-Validator failt mit „not supported"                                | —                                                                                    |
 
-**Vault-Adapter (`0.12.6` T8, R-20):**
+**Vault-Adapter (`0.12.6` T8, [`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20)):**
 
 - Eigener minimaler HTTP-Client gegen `/v1/<mount>/data/<path>` —
   ohne `hashicorp/vault/api`-Dependency. Eine produktive Anbindung
@@ -461,7 +461,7 @@ wählt das Backend per ENV; alles andere ist Adapter-Detail.
   `active_kid`. Beide Backends teilen sich denselben Parser
   (`ParseSigningKeysEnv`).
 
-**KMS-Adapter-Skelett (`0.12.6` T8, R-20):**
+**KMS-Adapter-Skelett (`0.12.6` T8, [`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20)):**
 
 - `KMSSecretBackend` mit `KMSDecrypter`-Interface (Vendor-neutral
   durch die Decrypter-Indirektion). Production-Wiring (AWS-SDK-v2
@@ -549,17 +549,17 @@ export MTRACE_AUTH_VAULT_TOKEN=root-dev
 export MTRACE_AUTH_VAULT_PATH=secret/data/m-trace/signing
 ```
 
-**Resttrigger** für eine vollständig aufgelöste R-20-Auflösung
+**Resttrigger** für eine vollständig aufgelöste [`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20)-Auflösung
 bleiben offen: erste Operator-Anbindung an produktives Vault
 oder KMS, Compliance-Audit (PCI/SOC2). Die Skelett-Lieferung in
 `0.12.5` deckt nur den Driven-Port und einen Lab-Pfad — siehe
-R-20 im Risiken-Backlog.
+[`R-20`](../plan/planning/in-progress/risks-backlog.md#r-20) im Risiken-Backlog.
 
 ### 5.6 Browser-Ingest-Policy
 
 Bis `0.12.0` war `/api/ingest/*` strikt operator-/CLI-only:
-der RAK-74-Scope-Cut hielt jeden Browser-Konsumenten heraus.
-`0.12.5` Tranche 4 (RAK-80, R-21) hebt diesen Scope-Cut
+der [`RAK-74`](../../spec/lastenheft.md#rak-74)-Scope-Cut hielt jeden Browser-Konsumenten heraus.
+`0.12.5` Tranche 4 ([`RAK-80`](../../spec/lastenheft.md#rak-80), [`R-21`](../plan/planning/in-progress/risks-backlog.md#r-21)) hebt diesen Scope-Cut
 **kontrolliert** auf — pro Project per
 `domain.BrowserIngestPolicy`.
 
@@ -567,7 +567,7 @@ der RAK-74-Scope-Cut hielt jeden Browser-Konsumenten heraus.
 
 | Feld            | Typ        | Bedeutung                                                                                       |
 | --------------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| `Enabled`       | `bool`     | Master-Switch. `false` (Default) → RAK-74-Scope-Cut bleibt strikt. `true` → Browser-Pfad offen. |
+| `Enabled`       | `bool`     | Master-Switch. `false` (Default) → [`RAK-74`](../../spec/lastenheft.md#rak-74)-Scope-Cut bleibt strikt. `true` → Browser-Pfad offen. |
 | `CORSAllowlist` | `[]string` | Browser-Origins, die durchgelassen werden (genauer String-Match).                               |
 | `CSRFRequired`  | `bool`     | Wenn `true`, müssen POSTs einen nicht-leeren `X-MTrace-CSRF`-Header tragen.                     |
 | `OriginPin`     | `string`   | Defense-in-Depth: wenn gesetzt, muss `Origin` exakt diesem Wert entsprechen (nicht nur in Allowlist). |
@@ -576,7 +576,7 @@ der RAK-74-Scope-Cut hielt jeden Browser-Konsumenten heraus.
 
 - **Keine aktivierte Policy für irgendein Project**: Preflight läuft
   über die globale konservative Allowlist (`dashboardPreflightHandler`)
-  — RAK-74-Scope-Cut bleibt strikt.
+  — [`RAK-74`](../../spec/lastenheft.md#rak-74)-Scope-Cut bleibt strikt.
 - **Aktivierte Policy + Origin in CORSAllowlist eines Projects**:
   `204` + `Access-Control-Allow-Origin: <origin>` plus
   `Access-Control-Allow-Methods: POST, OPTIONS` und
@@ -603,7 +603,7 @@ die bestehenden Handler):
      — sonst `403 ingest_browser_csrf_missing`. **Hinweis**: das
      Skelett prüft nur Header-Anwesenheit; eine produktive Anti-
      CSRF-Token-Bibliothek mit signierten/zeitlich begrenzten
-     Tokens ist Folge-Item (siehe R-21-Mitigation im Backlog).
+     Tokens ist Folge-Item (siehe [`R-21`](../plan/planning/in-progress/risks-backlog.md#r-21)-Mitigation im Backlog).
 
 **Beispiel-Konfiguration (Operator-Setup, in-memory Resolver):**
 
@@ -628,7 +628,7 @@ Pfade durch — inklusive Origin-Pin-Mismatch und CSRF-Missing-Fall.
 
 ### 5.7 MediaMTX-Auth-Bridge
 
-Mit `0.12.5` Tranche 5 (RAK-81, R-14) gibt es einen optionalen
+Mit `0.12.5` Tranche 5 ([`RAK-81`](../../spec/lastenheft.md#rak-81), [`R-14`](../plan/planning/in-progress/risks-backlog.md#r-14)) gibt es einen optionalen
 HTTP-Endpoint, der MediaMTX' `externalAuth`-Hook bedient:
 `POST /api/ingest/auth-hook`. Skelett-Adapter — bewusst ohne
 eigene Token-Issuance, weil die existierenden Stream-Keys aus
@@ -693,7 +693,7 @@ authentifiziert, bleibt Folge-Item.
 
 ### 5.8 Outbound-Webhook für Stream-Lifecycle
 
-Mit `0.12.5` Tranche 5 (RAK-82, R-16) liefert m-trace eine
+Mit `0.12.5` Tranche 5 ([`RAK-82`](../../spec/lastenheft.md#rak-82), [`R-16`](../plan/planning/in-progress/risks-backlog.md#r-16)) liefert m-trace eine
 optionale Webhook-Zustellung der `0.11.0`-Lifecycle-Events
 (`stream_started`/`stream_ended`) an externe Konsumenten — der
 heutige lokale Pfad
@@ -883,7 +883,7 @@ PII-Felder. Konkret:
 - **IP-/User-Agent-Speicherung wird nicht ausgeweitet** — die in
   `0.4.0` etablierte Cardinality-Politik (`spec/telemetry-model.md`
   §3.1) gilt unverändert. Der HTTP-Adapter liest `client_ip` für die
-  Rate-Limit-Dimension F-110, persistiert ihn aber nicht.
+  Rate-Limit-Dimension [`F-110`](../../spec/lastenheft.md#f-110), persistiert ihn aber nicht.
 - **Session-Token-Claims sind pseudonym**: `iss`, `sub` (`project_id`),
   `aud`, `iat`/`nbf`/`exp` (Unix-Sekunden), `jti` (`token_id`), plus
   optional `session_id` und `origin`. Keine User-IDs, keine E-Mail-
@@ -909,12 +909,12 @@ Aufgabe des Operators und liegt außerhalb dieses Repos.
 - [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
   §3.9 — normativer Wire-Vertrag (Auth-Matrix, Header-Priorität,
   9-stufige Fehlerpräzedenz, CORS-Preflight, Project-Policies).
-- [`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 — RAK-71..
-  RAK-76.
+- [`spec/lastenheft.md`](../../spec/lastenheft.md) §13.14 — [`RAK-71`](../../spec/lastenheft.md#rak-71)..
+  [`RAK-76`](../../spec/lastenheft.md#rak-76).
 - [`docs/plan/planning/done/plan-0.12.0.md`](../plan/planning/done/plan-0.12.0.md)
   §0 — Plan-Scope, Architektur, Threat Model.
 - [`docs/user/local-development.md`](./local-development.md) §2.7.3 —
   Operator-Migrationspfad `demo-token` → rotierbare Generation.
 - [`docs/plan/planning/in-progress/risks-backlog.md`](../plan/planning/in-progress/risks-backlog.md)
-  R-14, R-17, R-18 — Auth-bezogene Folge-Risiken mit
+  [`R-14`](../plan/planning/in-progress/risks-backlog.md#r-14), [`R-17`](../plan/planning/in-progress/risks-backlog.md#r-17), [`R-18`](../plan/planning/in-progress/risks-backlog.md#r-18) — Auth-bezogene Folge-Risiken mit
   Triggerschwellen.

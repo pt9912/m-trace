@@ -1,12 +1,12 @@
 # WebRTC-Beispiel — Multi-Protocol Lab
 
-> **Status**: Lab-Compose ab `0.7.0` Tranche 1 (RAK-47). Liefert einen
+> **Status**: Lab-Compose ab `0.7.0` Tranche 1 ([`RAK-47`](../../spec/lastenheft.md#rak-47)). Liefert einen
 > lokal startbaren WHIP-/WHEP-Lab-Pfad mit FFmpeg-Publisher (RTSP-
 > Push) und Browser-Handcheck. Endpoint-/compose-only Smoke
 > (`make smoke-webrtc-prep`) folgt in Tranche 3.
 >
-> Bezug: Lastenheft `1.1.9` §7.6 F-62, §7.8 F-82..F-84, §8.3 NF-14,
-> §12.1 MVP-24, §13.9 RAK-47..RAK-50;
+> Bezug: Lastenheft `1.1.9` §7.6 [`F-62`](../../spec/lastenheft.md#f-62), §7.8 [`F-82`](../../spec/lastenheft.md#f-82)..[`F-84`](../../spec/lastenheft.md#f-84), §8.3 [`NF-14`](../../spec/lastenheft.md#nf-14),
+> §12.1 [`MVP-24`](../../spec/lastenheft.md#mvp-24), §13.9 [`RAK-47`](../../spec/lastenheft.md#rak-47)..[`RAK-50`](../../spec/lastenheft.md#rak-50);
 > [`docs/planning/done/plan-0.7.0.md`](../../docs/plan/planning/done/plan-0.7.0.md)
 > §2 Tranche 1.
 >
@@ -19,9 +19,9 @@
 Ein lokal startbarer WebRTC-Lab-Stack, der zeigt, wie ein WHIP-/WHEP-
 Pfad gegen einen MediaMTX-basierten Lab-Server aussieht. Die
 Publisher-Seite läuft als FFmpeg-Container, der per RTSP in MediaMTX
-pushed (F-84 Muss); MediaMTX exposed denselben Stream zusätzlich als
+pushed ([`F-84`](../../spec/lastenheft.md#f-84) Muss); MediaMTX exposed denselben Stream zusätzlich als
 WHIP-Publish- und WHEP-Read-Endpoint für einen Browser-Handcheck
-(RAK-50, Browser-WHIP-Push optional manueller Pfad).
+([`RAK-50`](../../spec/lastenheft.md#rak-50), Browser-WHIP-Push optional manueller Pfad).
 
 Das Beispiel ersetzt **nicht** den Core-Lab-HLS-Pfad — WebRTC ist
 keine produktive Telemetrie- oder Dashboard-Quelle in `0.7.0`. Siehe
@@ -32,7 +32,7 @@ keine produktive Telemetrie- oder Dashboard-Quelle in `0.7.0`. Siehe
 - Docker Engine ≥ 24.0, Compose v2.20.
 - Browser mit WebRTC-Unterstützung für den Handcheck: Chromium 120+
   oder Firefox 120+. Safari als Best-Effort (Codec-/ICE-Verhalten
-  abweichend, nicht Pflicht-Browser für RAK-50).
+  abweichend, nicht Pflicht-Browser für [`RAK-50`](../../spec/lastenheft.md#rak-50)).
 - Freie Host-Ports: `8892/tcp` (WHIP/WHEP-HTTP), `8189/udp` (WebRTC-
   ICE-Media), `9999/tcp` (MediaMTX-Control-API). Kollisionsfrei zu
   Core-Lab (`8888`/`9997`), `mtrace-srt` (`8889`/`8890`/`9998`) und
@@ -174,7 +174,7 @@ Greift nur das `mtrace-webrtc`-Project. Core-Lab (`mtrace`),
   `spec/telemetry-model.md` §3.2 um die bounded WebRTC-Aggregat-
   Allowlist; eine produktive Telemetrie-Anbindung braucht einen
   eigenen Folgeplan.
-- **Kein Player-SDK-WebRTC-Adapter.** RAK-51 ist deferred (siehe
+- **Kein Player-SDK-WebRTC-Adapter.** [`RAK-51`](../../spec/lastenheft.md#rak-51) ist deferred (siehe
   `plan-0.7.0.md` §7); der `@pt9912/player-sdk` bleibt auf
   `hls.js`-only, ohne Codepfad-Vermischung.
 - **Kein TLS, kein Public-Internet, kein NAT-Traversal über LAN

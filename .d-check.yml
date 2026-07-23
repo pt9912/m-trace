@@ -14,18 +14,26 @@ scan:
 
 modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions, ids]
 
-# Modul `ids` (slice-001, welle-01): Requirement-Kennungen im Fließtext müssen
-# als verankerte Links auf ihre Definition zeigen. Stufe 1 = Spec-Straten
-# (`scope.roots: [spec]`), Familie F/NF/MVP/AK/RAK → `spec/lastenheft.md`
-# (inline-`<a id>`-Anker je Definitionszeile). Scope-Ausweitung (R-Familie,
-# docs/user, examples, Planning) = slice-002. Immutable ADRs bleiben dauerhaft
-# außerhalb (MR-002).
+# Modul `ids` (welle-01): Requirement-Kennungen im Fließtext müssen als
+# verankerte Links auf ihre Definition zeigen (inline-`<a id>`-Anker je
+# Definitionszeile, in der letzten Zelle — die ID-Zelle bleibt RTM-rein).
+# Repo-weit über alle aktiven Doc-Dirs (slice-001 = Spec-Straten, slice-002 =
+# Rest). F/NF/MVP/AK/RAK → `spec/lastenheft.md`; R → `risks-backlog.md`.
+# Die R-Familie ist in `spec/**` exempt: der Vertrag/Technik verweist nicht
+# abwärts aufs Risiko-Register (`matrix`-Richtung). Immutable ADRs
+# (`docs/plan/adr/**`) + `done/` + Root-Übersichts-Docs bleiben außerhalb.
 ids:
   scope:
-    roots: [spec]
+    roots: [spec, docs/user, docs/dev, docs/ops, docs/perf, examples, docs/plan/planning, docs/plan/carveouts]
   patterns:
-    - regex: '(F|NF|MVP|AK|RAK)-[0-9]+'
+    # \b verhindert Über-Matches: `\bR-` trifft NICHT das `R-002` in `MR-002`
+    # oder `R-0001` in `ADR-0001` (M-R/D-R = keine Wortgrenze), ` R-26` schon.
+    - regex: '\b(F|NF|MVP|AK|RAK)-[0-9]+'
       target: spec/lastenheft.md
+      exempt-paths: ['docs/plan/planning/done/**']
+    - regex: '\bR-[0-9]+'
+      target: docs/plan/planning/in-progress/risks-backlog.md
+      exempt-paths: ['spec/**', 'docs/plan/planning/done/**']
 
 # Modul `versions` (W7): gepinnte m-trace-GHCR-Image-Verweise in Markdown müssen
 # die aktuelle Release-Version (aus `version.md#aktuell`) tragen. Geprüftes Live-

@@ -1,13 +1,13 @@
 # Local Development — m-trace
 
 > **Status**: Verbindlich für `0.1.x`. Die Quickstart-Sektion wird mit jedem Sub-Release erweitert (`0.1.0` Backend Core, `0.1.1` Player-SDK + Dashboard, `0.1.2` Observability-Stack).  
-> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) AK-1, AK-2, RAK-8, MVP-7; [Roadmap](../plan/planning/in-progress/roadmap.md) §2 Schritt 7; [Plan `0.1.0`](../plan/planning/done/plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](../../spec/architecture.md) §8.
+> **Bezug**: [Lastenheft `1.1.6`](../../spec/lastenheft.md) [`AK-1`](../../spec/lastenheft.md#ak-1), [`AK-2`](../../spec/lastenheft.md#ak-2), [`RAK-8`](../../spec/lastenheft.md#rak-8), [`MVP-7`](../../spec/lastenheft.md#mvp-7); [Roadmap](../plan/planning/in-progress/roadmap.md) §2 Schritt 7; [Plan `0.1.0`](../plan/planning/done/plan-0.1.0.md) §3.6 (Wartung) und §5.2 (Compose-Lab Core); [Architektur](../../spec/architecture.md) §8.
 
 ## 0. Zweck
 
-Quickstart-Doku für ein neues Entwickler-Setup: Repo klonen, Voraussetzungen installieren, lokales Lab starten, häufige Test-/Lint-/Build-Workflows kennen. Erfüllt RAK-8 („README beschreibt den Ablauf reproduzierbar"); ergänzt das `README.md` um Detail-Schritte, die zu lang für den README-Quickstart sind.
+Quickstart-Doku für ein neues Entwickler-Setup: Repo klonen, Voraussetzungen installieren, lokales Lab starten, häufige Test-/Lint-/Build-Workflows kennen. Erfüllt [`RAK-8`](../../spec/lastenheft.md#rak-8) („README beschreibt den Ablauf reproduzierbar"); ergänzt das `README.md` um Detail-Schritte, die zu lang für den README-Quickstart sind.
 
-Leitprinzip: ein neuer Entwickler ist innerhalb von 15 Minuten von `git clone` zu einem laufenden lokalen Lab — ohne lokale Go-Toolchain, ohne tiefe System-Konfiguration, ohne manuelle Sonderfälle (AK-2).
+Leitprinzip: ein neuer Entwickler ist innerhalb von 15 Minuten von `git clone` zu einem laufenden lokalen Lab — ohne lokale Go-Toolchain, ohne tiefe System-Konfiguration, ohne manuelle Sonderfälle ([`AK-2`](../../spec/lastenheft.md#ak-2)).
 
 ## 1. Voraussetzungen
 
@@ -204,9 +204,9 @@ make stop
 
 ### 2.5 Tempo (optional, ab `0.4.0`)
 
-Tempo ist ein **optionales** Trace-Backend für Debug-Tiefe (RAK-31,
+Tempo ist ein **optionales** Trace-Backend für Debug-Tiefe ([`RAK-31`](../../spec/lastenheft.md#rak-31),
 Kann-Scope) und kein Ersatz für die eingebaute Session-Timeline
-(RAK-32). Die Dashboard-Timeline und alle Read-Pfade
+([`RAK-32`](../../spec/lastenheft.md#rak-32)). Die Dashboard-Timeline und alle Read-Pfade
 (`GET /api/stream-sessions/...`) sind Tempo-unabhängig — Source-of-
 Truth ist SQLite (ADR-0002). Tempo erweitert die Sicht auf Span-Ebene
 (Header-Verarbeitung, Outcome-Klassifikation, Resource-Attribute).
@@ -284,7 +284,7 @@ einen opt-in Smoke und ist nicht Teil von `make gates`.
 | [`examples/srt/`](../../examples/srt/) | Eigenes Compose, Project `mtrace-srt` | `docker compose -p mtrace-srt -f examples/srt/compose.yaml up -d --build` | `make smoke-srt` (auto-up/down) plus `make smoke-srt-health` ab `0.6.0` für Health-API-Probe |
 | [`examples/dash/`](../../examples/dash/) | Eigenes Compose, Project `mtrace-dash` | `docker compose -p mtrace-dash -f examples/dash/compose.yaml up -d --build` | `make smoke-dash` (auto-up/down) |
 | [`examples/webrtc/`](../../examples/webrtc/) | Eigenes Compose, Project `mtrace-webrtc` | `docker compose -p mtrace-webrtc -f examples/webrtc/compose.yaml up -d --build` | `make smoke-webrtc-prep` ab `0.7.0` Tranche 3 (auto-up/down, opt-in/endpoint-only) plus `make smoke-webrtc-stats-drift` ab `0.9.0` Tranche 1 für Browser-Drift-Detektion |
-| [`examples/srs/`](../../examples/srs/) | Eigenes Compose, Project `mtrace-srs` | `docker compose -p mtrace-srs -f examples/srs/compose.yaml up -d --build` | `make smoke-srs` ab `0.9.0` Tranche 2 (auto-up/down, opt-in/endpoint-only; RAK-57 / MVP-36) |
+| [`examples/srs/`](../../examples/srs/) | Eigenes Compose, Project `mtrace-srs` | `docker compose -p mtrace-srs -f examples/srs/compose.yaml up -d --build` | `make smoke-srs` ab `0.9.0` Tranche 2 (auto-up/down, opt-in/endpoint-only; [`RAK-57`](../../spec/lastenheft.md#rak-57) / [`MVP-36`](../../spec/lastenheft.md#mvp-36)) |
 
 Host-Ports sind so geschnitten, dass alle Beispiele **parallel** zum
 Core-Lab und untereinander laufen können:
@@ -307,7 +307,7 @@ bleiben unangetastet.
 `0.6.0` ergänzt einen lokalen SRT-Verbindungs-Health-Pfad:
 
 - **Lab-Smoke** `make smoke-srt-health` (verifiziert HLS + MediaMTX-API
-  `/v3/srtconns/list` + vier RAK-43-Pflichtwerte).
+  `/v3/srtconns/list` + vier [`RAK-43`](../../spec/lastenheft.md#rak-43)-Pflichtwerte).
 - **Collector** im API-Prozess (opt-in via `MTRACE_SRT_SOURCE_URL`).
 - **Read-Endpoints** `GET /api/srt/health[/{stream_id}]`.
 - **Dashboard-Route** `/srt-health` mit Tabelle + Mini-Timeline.
@@ -336,7 +336,7 @@ Security-Grenze, Deferred-Liste):
 ### 2.7.3 Auth / Token Lifecycle (`0.12.0`)
 
 `0.12.0` führt drei zusammenhängende Auth-Härtungen ein
-(Lastenheft `1.1.15`, RAK-71..RAK-76; vollständig in
+(Lastenheft `1.1.15`, [`RAK-71`](../../spec/lastenheft.md#rak-71)..[`RAK-76`](../../spec/lastenheft.md#rak-76); vollständig in
 [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
 §3.9):
 
@@ -415,10 +415,10 @@ Browser-Bundle. Operator-/Lab-Setups speichern den Wert in
 | `grafana` | Soll, observability-Profil | 3000 | Visualisierung der Pflicht-Counter. |
 | `otel-collector` | Soll, observability-Profil | OTLP gRPC 4317, OTLP HTTP 4318 | Empfängt OTel-Spans/-Counter aus `api`. |
 
-CSP-Beispiele für `connect-src` (NF-37):
+CSP-Beispiele für `connect-src` ([`NF-37`](../../spec/lastenheft.md#nf-37)):
 
 - Dashboard-Auslieferung im Core-Stack: `Content-Security-Policy: default-src 'self'; connect-src 'self' http://localhost:8080`.
-- Mit aktivem observability-Profil ergänzen sich Prometheus und Grafana — die Status-Ansicht des Dashboards verlinkt diese als Footer-Links (F-40), nicht als `connect-src`-Targets.
+- Mit aktivem observability-Profil ergänzen sich Prometheus und Grafana — die Status-Ansicht des Dashboards verlinkt diese als Footer-Links ([`F-40`](../../spec/lastenheft.md#f-40)), nicht als `connect-src`-Targets.
 
 ### 3.2 Inter-Service-Konfiguration
 
@@ -426,7 +426,7 @@ CSP-Beispiele für `connect-src` (NF-37):
 |---|---|---|---|
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `api` | `http://otel-collector:4317` (im observability-Profil), sonst leer | Aktiviert OTLP-Export erst, wenn observability-Profil läuft. |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `api` | `grpc` | Protokoll-Wahl, siehe `architecture.md` §5.3. |
-| `OTEL_TRACES_EXPORTER` / `OTEL_METRICS_EXPORTER` | `api` | unset (Default → autoexport mit No-Op-Fallback, silent) bzw. `console` für RAK-10-Smoke-Test | siehe `plan-0.1.2.md` §4. |
+| `OTEL_TRACES_EXPORTER` / `OTEL_METRICS_EXPORTER` | `api` | unset (Default → autoexport mit No-Op-Fallback, silent) bzw. `console` für [`RAK-10`](../../spec/lastenheft.md#rak-10)-Smoke-Test | siehe `plan-0.1.2.md` §4. |
 | `MEDIAMTX_URL` | `dashboard` | `http://mediamtx:8888` | Dashboard-Demo-Route lädt das HLS-Manifest. |
 
 ### 3.3 Service-Abhängigkeiten
@@ -647,8 +647,8 @@ Schlägt der Test fehl, listet er den verstoßenden Import explizit. Verbindlich
 |---|---|---|
 | `0.1.0`-Smoke (curl-basiert) | nach `make dev` | siehe §2.2 oben. |
 | `0.1.1`-Browser-E2E (Playwright im Container) | ohne laufenden Stack; Script startet API, MediaMTX, FFmpeg und `dashboard-e2e` selbst | `make browser-e2e` |
-| RAK-9-Smoke (Cardinality) | mit aktivem observability-Profil | `make smoke-observability` (siehe `plan-0.1.2.md` §2 + §4). |
-| RAK-10-Smoke (OTel-Spans) | startet `api` mit `OTEL_TRACES_EXPORTER=console` | `make smoke-rak10-console` |
+| [`RAK-9`](../../spec/lastenheft.md#rak-9)-Smoke (Cardinality) | mit aktivem observability-Profil | `make smoke-observability` (siehe `plan-0.1.2.md` §2 + §4). |
+| [`RAK-10`](../../spec/lastenheft.md#rak-10)-Smoke (OTel-Spans) | startet `api` mit `OTEL_TRACES_EXPORTER=console` | `make smoke-rak10-console` |
 
 ---
 

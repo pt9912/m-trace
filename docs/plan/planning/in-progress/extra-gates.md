@@ -42,7 +42,7 @@ Pruefungen sind bewusst Nightly- oder Release-Kandidaten.
 | 5 | Selektives Fuzzing / Property Tests | PR kurz, Nightly lang | ja fuer Seed-Corpus | Parser-/Validation-Robustheit erhoehen |
 | 6 | Mutation Testing auf kritischen Modulen | Nightly / manuell | nein initial | Teststaerke sichtbar machen |
 | 7 | WebRTC-Ton-Smoke (1-kHz-FFT/Goertzel) | Nightly + lokal opt-in | nein | manuellen 1-kHz-Hoercheck (releasing.md §2.3) automatisieren |
-| 8 | Last-/Soak-Smoke (k6 + Readback-Reconciliation) | Nightly (SLO) + on-demand (Soak) + lokal opt-in | nein | Lab-Lastfaehigkeit (NF-20/22/23), kein stiller Verlust, ADR-0005-Trigger-Evidenz |
+| 8 | Last-/Soak-Smoke (k6 + Readback-Reconciliation) | Nightly (SLO) + on-demand (Soak) + lokal opt-in | nein | Lab-Lastfaehigkeit ([`NF-20`](../../../../spec/lastenheft.md#nf-20)/22/23), kein stiller Verlust, ADR-0005-Trigger-Evidenz |
 
 ## 3. Priorisierung
 
@@ -294,7 +294,7 @@ DoD:
 **Entscheidung:** Automatisiert die *eng definierte* manuelle
 Release-Abnahme „bestätigen, dass ein 1-kHz-Sinuston hörbar abspielt"
 aus [`releasing.md`](../../../user/releasing.md) §2.3. Komplementaer zum
-WebRTC-`getStats()`-Drift-Smoke (RAK-56, releasing.md §2.4.1), der nur
+WebRTC-`getStats()`-Drift-Smoke ([`RAK-56`](../../../../spec/lastenheft.md#rak-56), releasing.md §2.4.1), der nur
 `bytesReceived>0` (Medien fliessen), nicht die Tonqualitaet prueft.
 Plan: [`plan-0.22.4-webrtc-tone-smoke.md`](../done/plan-0.22.4-webrtc-tone-smoke.md).
 
@@ -334,7 +334,7 @@ DoD:
 
 **Entscheidung:** Die Hot-Path-Mikrobenchmarks (§3.2) messen Funktionen
 isoliert gegen Budgets — nicht die Ingest→Persistenz→Read-Kette unter
-echter Parallelität (NF-20/NF-22/NF-23). Der Last-Smoke schließt diese
+echter Parallelität ([`NF-20`](../../../../spec/lastenheft.md#nf-20)/[`NF-22`](../../../../spec/lastenheft.md#nf-22)/[`NF-23`](../../../../spec/lastenheft.md#nf-23)). Der Last-Smoke schließt diese
 Lücke als separater opt-in-Pfad (vgl.
 [`docs/perf/budgets.md`](../../../perf/budgets.md) §7). Plan:
 [`plan-0.22.5-load-smoke`](../done/plan-0.22.5-load-smoke.md).

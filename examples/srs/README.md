@@ -5,9 +5,9 @@
 > [`examples/README.md`](../README.md) Sektion „Compose-Form"
 > Variante „Eigenes Compose").
 >
-> Bezug: Lastenheft §12.3 MVP-36 (SRS-Beispiel, „Kann"); RAK-57 aus
+> Bezug: Lastenheft §12.3 [`MVP-36`](../../spec/lastenheft.md#mvp-36) (SRS-Beispiel, „Kann"); [`RAK-57`](../../spec/lastenheft.md#rak-57) aus
 > Lastenheft §13.11; [`plan-0.9.0.md`](../../docs/plan/planning/done/plan-0.9.0.md)
-> §3 (Tranche 2). MVP-36 wird mit diesem Beispiel als eingelöst
+> §3 (Tranche 2). [`MVP-36`](../../spec/lastenheft.md#mvp-36) wird mit diesem Beispiel als eingelöst
 > betrachtet, ohne die MVP-Priorität zu ändern.
 >
 > Quickref aller Multi-Protocol-Lab-Beispiele:
@@ -59,7 +59,7 @@ HTTP-API sichtbar.
 
 ## Verifikation
 
-Opt-in Smoke (RAK-57, Kann; nicht in `make gates`):
+Opt-in Smoke ([`RAK-57`](../../spec/lastenheft.md#rak-57), Kann; nicht in `make gates`):
 
 ```bash
 make smoke-srs

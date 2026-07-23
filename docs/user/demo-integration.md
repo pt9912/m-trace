@@ -157,7 +157,7 @@ Container und prüft die Demo-Route in Chromium und Firefox.
 
 Manuell lässt sich die erzeugte Session reproduzierbar inklusive
 Timeline und über einen API-Restart hinweg verifizieren — beides ist
-Tempo-unabhängig (RAK-32):
+Tempo-unabhängig ([`RAK-32`](../../spec/lastenheft.md#rak-32)):
 
 ### Reproduzierbare Demo-Session inklusive Timeline
 

@@ -281,7 +281,7 @@ Spike-gerecht gehärtet:
 - exposed Port: `8080`
 
 Smoke-Test für Release- und Abnahmepfade (Plan §10 DoD,
-**AK-1**, **AK-2**):
+**[`AK-1`](../../spec/lastenheft.md#ak-1)**, **[`AK-2`](../../spec/lastenheft.md#ak-2)**):
 
 ```bash
 cd apps/api

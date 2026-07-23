@@ -5,7 +5,7 @@ m-trace-Lab: ein Collector liest periodisch die MediaMTX-Control-API,
 der Server bewertet Health-Zustände, das Dashboard zeigt sie.
 
 > Bezug: [`spec/lastenheft.md`](../../spec/lastenheft.md) §4.3, §13.8
-> RAK-41..RAK-46;
+> [`RAK-41`](../../spec/lastenheft.md#rak-41)..[`RAK-46`](../../spec/lastenheft.md#rak-46);
 > [`docs/plan/planning/done/plan-0.6.0.md`](../plan/planning/done/plan-0.6.0.md);
 > [`spec/telemetry-model.md`](../../spec/telemetry-model.md) §7;
 > [`spec/backend-api-contract.md`](../../spec/backend-api-contract.md)
@@ -16,7 +16,7 @@ der Server bewertet Health-Zustände, das Dashboard zeigt sie.
 
 - **Lab-Smoke** [`make smoke-srt-health`](../../scripts/smoke-srt-health.sh)
   startet den `mtrace-srt`-Stack, prüft HLS plus MediaMTX-API
-  `/v3/srtconns/list` und vier RAK-43-Pflichtwerte
+  `/v3/srtconns/list` und vier [`RAK-43`](../../spec/lastenheft.md#rak-43)-Pflichtwerte
   ([`examples/srt/README.md`](../../examples/srt/README.md)).
 - **CGO-freier Adapter** `apps/api/adapters/driven/srt/mediamtxclient`
   liest die API über HTTP, `apps/api` bleibt `distroless-static`.
