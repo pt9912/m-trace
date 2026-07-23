@@ -17,23 +17,30 @@ FAMILIES = {
 
 
 def anchor_file(path: Path, id_regex: str) -> int:
-    # Definitionszeile: | <ID> ... | ...  (ID als erstes Token der ersten Zelle)
-    row = re.compile(r"^(\|\s*)(" + id_regex + r")(\b)")
+    # Definitionszeile: | <ID> ... | ...  (ID als erstes Token der ersten Zelle).
+    # Der Anker MUSS außerhalb der Kennungs-Zelle liegen — sonst passt die ID-Zelle
+    # nicht mehr "vollständig" auf das id-pattern und die RTM (--trace/doc-complete)
+    # erkennt 0 Anforderungen. Wir setzen ihn ans Ende der Zeile (vor das letzte '|').
+    row = re.compile(r"^\|\s*(" + id_regex + r")\b")
+    strip_anchor = re.compile(r'\s*<a id="[^"]*"></a>')
     lines = path.read_text().splitlines(keepends=True)
     count = 0
     for i, line in enumerate(lines):
         m = row.match(line)
         if not m:
             continue
-        ident = m.group(2)
-        # Rest der ersten Zelle bis zum nächsten '|' prüfen: schon verankert?
-        cell_end = line.find("|", m.end())
-        cell = line[m.end(): cell_end if cell_end != -1 else len(line)]
-        if "<a id=" in cell:
-            continue
-        slug = ident.lower()
-        anchor = f' <a id="{slug}"></a>'
-        lines[i] = line[: m.end()] + anchor + line[m.end():]
+        slug = m.group(1).lower()
+        # Idempotent + Reparatur: bestehende Anker (auch fehlplatzierte) entfernen.
+        eol = ""
+        body = line
+        while body and body[-1] in "\r\n":
+            eol = body[-1] + eol
+            body = body[:-1]
+        body = strip_anchor.sub("", body).rstrip()
+        if not body.endswith("|"):
+            continue  # keine wohlgeformte Tabellenzeile
+        inner = body[:-1].rstrip()  # alles vor dem schließenden '|'
+        lines[i] = f'{inner} <a id="{slug}"></a> |' + eol
         count += 1
     path.write_text("".join(lines))
     return count

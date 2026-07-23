@@ -91,8 +91,11 @@ trace:
     id-prefix: 'ADR-'
   slices:
     dir: docs/plan/planning/done
-    file-pattern: '^plan-(.+)\.md$'
-    id-prefix: 'plan-'
+    # Mischt grandfathered `plan-<version>` mit der Kanon-Form `slice-<NNN>` /
+    # `welle-<NN>-results` (MR-007). Voll-Capture der Owner-Kennung, kein
+    # `id-prefix` — für `plan-*` byte-identisch zum Vorstand (verifiziert), für
+    # slice/welle additiv.
+    file-pattern: '^((?:plan|slice|welle)-.+)\.md$'
 
 # Normative Referenzen folgen dem Stable Dependencies Principle:
 # Vertrag > Technik > Sicht > ADR > Planung. Bestehende Accepted-ADRs sind

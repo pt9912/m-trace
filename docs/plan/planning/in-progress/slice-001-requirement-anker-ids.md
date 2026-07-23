@@ -29,11 +29,13 @@ Konvergenz-Schritt auf dem normativen Kern.
 - [ ] `ids` in `.d-check.yml`-`modules` + `scope.roots: [spec]` + `patterns`
       (F/NF/MVP/AK/RAK → `spec/lastenheft.md`); `make gates` grün, keine
       Falschbefunde; `anchors` grün.
-- [~] `trace.slices.file-pattern` erweitern — **deferred (offener MR-007-Punkt):**
-      die RTM (`trace.slices`) bindet **einen** `id-prefix`; `plan-*` (grandfathered)
-      und `slice-*` lassen sich damit nicht sauber mischen. `--trace` ist advisory
-      (nicht in `make gates`), und kein `done/`-Slice deckt bislang ein konkretes
-      Requirement → sauber lösen, sobald der erste Slice ein Requirement trägt.
+- [x] `trace.slices.file-pattern` erweitert (MR-007-Folgepunkt): `id-prefix` ist
+      optional; Voll-Capture `^((?:plan|slice|welle)-.+)\.md$` mischt grandfathered
+      `plan-*` (byte-identische Erkennung, verifiziert) mit `slice-*`/`welle-*`.
+- [x] **Regressions-Fix:** Anker sitzen in der **Anforderungs-Zelle**, NICHT in der
+      Kennungs-Zelle — sonst passt die ID-Zelle nicht „vollständig" aufs id-pattern
+      und `--trace`/`doc-complete` erkennt 0 Anforderungen. (Kosmetik: der RTM-Titel
+      zeigt den `<a id>`-Span; advisory, tolerierbar.)
 - [ ] `conventions.md` §Requirement-Link-Konvergenz auf „Spec-Straten graduiert,
       Rest = `slice-002`" nachgezogen.
 - [ ] Closure-Notiz.
