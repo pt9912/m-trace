@@ -1,7 +1,7 @@
 # 0011 — Regelwerk-Baseline-Bump v3.5.0 → v3.5.1 (nicht-struktureller Re-Vendor)
 
-> **Status**: **Proposed** (2026-07-24)
-> **Datum**: 2026-07-24 (Proposed)
+> **Status**: **Accepted** (2026-07-24)
+> **Datum**: 2026-07-24 (Proposed), 2026-07-24 (Accepted)
 > **Beteiligt**: m-trace-Owner (Solo-Entwicklung)
 > **Bezug**: [ADR-0009](0009-harness-baseline-v3.5.0.md) (strukturelle
 > v3.5.0-Adoption; dessen Re-Evaluierungs-Trigger „Baseline-Re-Vendoring als
@@ -117,3 +117,4 @@ Bestandteile:
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-07-24 | Proposed | ADR-0011 |
+| 2026-07-24 | Accepted (Owner-Freigabe) | ADR-0011 |
