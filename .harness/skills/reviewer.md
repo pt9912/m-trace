@@ -79,7 +79,7 @@ Jedes Finding:
 Zusätzlich am Ende: eine Zeile „geprüft, ohne Befund" pro betrachtetem
 Verzeichnis (Negativbefund-Zeile — sonst ist „keine Findings" nicht von „nicht
 geprüft" unterscheidbar). Report-Gerüst für den ganzen Lauf:
-`.harness/baseline/v3.5.0/templates/docs/reviews/review-report.template.md`
+`.harness/baseline/v3.5.1/templates/docs/reviews/review-report.template.md`
 kopiert-und-ausgefüllt nach `docs/reviews/`, ein Report pro Lauf, Folgeläufe als
 neue Datei statt Überschreibung.
 

@@ -1,11 +1,11 @@
 # Carveouts — m-trace
 
-Aktive Carveouts mit Auflösungs-Trigger (v3.5.0-Regelwerk Modul 7). Ein Carveout
+Aktive Carveouts mit Auflösungs-Trigger (v3.5.1-Regelwerk Modul 7). Ein Carveout
 ist eine **einzelne, temporäre Gate-Senkung** mit messbarem Auflösungs-Trigger und
 Folge-Slice. Aufgelöste Carveouts wandern nach `done/` (reiner `git mv`).
 
 - **Gerüst:** das vendored Template
-  [`carveout.template.md`](../../../.harness/baseline/v3.5.0/templates/docs/plan/carveouts/carveout.template.md)
+  [`carveout.template.md`](../../../.harness/baseline/v3.5.1/templates/docs/plan/carveouts/carveout.template.md)
   wird kopiert-und-ausgefüllt nach `docs/plan/carveouts/CO-<NNN>-<kurztitel>.md`.
 - **Werkzeug-Wahl vor dem Anlegen:** erst den Modul-7-Trichter prüfen (Carveout
   vs. BF-Sub-Area-Markierung vs. ADR). Ein Diskrepanz-**Cluster** im selben
@@ -41,4 +41,4 @@ _(noch keine)_
 
 - Jeder aktive Carveout braucht: Trigger, Folge-Slice, letztes Prüf-Datum.
 - Bei Welle-Closure: Carveout-Audit zwingend — welche gültig, welche aufgelöst?
-- Siehe [Kurs Modul 7](https://github.com/pt9912/ai-harness-course/blob/v3.5.0/kurs/de/02-planung/modul-07-carveouts.md).
+- Siehe [Kurs Modul 7](https://github.com/pt9912/ai-harness-course/blob/v3.5.1/kurs/de/02-planung/modul-07-carveouts.md).

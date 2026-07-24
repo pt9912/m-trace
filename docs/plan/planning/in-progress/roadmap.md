@@ -30,7 +30,9 @@ säubern), [`slice-005`](../done/slice-005-closure-gate-slice-welle.md)
 (Closure-Gate greift auf slice/welle), [`slice-006`](../done/slice-006-planning-layout-nicht-slices-flach.md)
 (Planning-Layout: Nicht-Slices flach aus `in-progress/`),
 [`slice-007`](../done/slice-007-review-report-praxis.md) (Review-Report-Praxis
-scharf geschaltet — erster echter Handoff-Report + normative Regel).
+scharf geschaltet — erster echter Handoff-Report + normative Regel),
+[`slice-008`](../done/slice-008-baseline-v3.5.1-bump.md) (Regelwerk-Baseline
+v3.5.0 → v3.5.1, nicht-struktureller Re-Vendor — [ADR-0011](../../adr/0011-harness-baseline-v3.5.1-bump.md), Proposed).
 
 ## Nächste Wellen
 

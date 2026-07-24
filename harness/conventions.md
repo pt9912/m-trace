@@ -8,20 +8,30 @@ ohne sie zu kopieren.
 
 ## Baseline
 
-m-trace adoptiert die ai-harness-course-**v3.5.0**-Baseline (2026-07-19),
-vendored netzlos unter `.harness/baseline/v3.5.0/regelwerk/` (17 Module +
-3 Grundlagen) und `.harness/baseline/v3.5.0/templates/` (die Referenz-Ziel-
-Formen). Das Release-Archiv `lab-regelwerk.zip` trägt sha256
-`123e3383261102e6be6465e1f4bade08a474c00edc4fff89f5c4b11bd640f8ff`; die
-Per-Datei-Integrität ist in `.harness/baseline/v3.5.0/SHA256SUMS` gepinnt und
-wird mit `sha256sum -c` verifiziert. Vendored 2026-07-22 gemäß
-[ADR-0009](../docs/plan/adr/0009-harness-baseline-v3.5.0.md).
+m-trace adoptiert die ai-harness-course-Baseline; die **aktive Version ist
+v3.5.1** (Kurs-Welle 33, 2026-07-23), vendored netzlos unter
+`.harness/baseline/v3.5.1/regelwerk/` (17 Module + 3 Grundlagen) und
+`.harness/baseline/v3.5.1/templates/` (die Referenz-Ziel-Formen). Das
+Release-Archiv `lab-regelwerk.zip` trägt sha256
+`7268a8e6f36476c98d5cf0547d16deacec70fcddcf23df38f87d029e967cb10d`; die
+Per-Datei-Integrität ist in `.harness/baseline/v3.5.1/SHA256SUMS` gepinnt und
+wird mit `sha256sum -c` verifiziert. Vendored 2026-07-24 gemäß
+[ADR-0011](../docs/plan/adr/0011-harness-baseline-v3.5.1-bump.md) (nicht-
+struktureller Bump: Kurs-URL-Stempel + eine Template-Klarstellung, dass `done/`
+neben Slices auch Nicht-Slice-Records hält — bestätigt MR-005/slice-006).
 
-Dies löst den vorherigen Commit-Pin ab (nur `grundlagen-konventionen.md`, bei
-ai-harness-course `d2f60da`, abgerufen 2026-07-14): das gesamte Regelwerk und
-der vollständige Template-Satz sind jetzt präsent und integritäts-geprüft,
-sodass die `../templates/…`-Referenz-Formen lokal auflösen, statt gegen einen
-sich bewegenden Kurs-Head zu driften.
+Die **strukturelle Adoption** (kanonisches Layout, vendored-Baseline-Mechanismus,
+AGENTS.md-Einstieg) traf ADR-0009 mit v3.5.0; ADR-0011 schreibt nur den Pin fort.
+Die vendored **v3.5.0-Baseline bleibt** unter `.harness/baseline/v3.5.0/`
+zusätzlich liegen (Owner-Entscheidung 2026-07-24), damit die
+`.harness/baseline/v3.5.0/…`-Verweise der historischen `done/`-Records und der
+immutablen ADRs netzlos auflösbar bleiben — sie ist Audit-Referenzform, nicht
+der aktive Stand. Der Baseline-Mechanismus löste seinerzeit den früheren
+Commit-Pin ab (nur `grundlagen-konventionen.md`, bei ai-harness-course
+`d2f60da`, abgerufen 2026-07-14): seither sind das gesamte Regelwerk und der
+vollständige Template-Satz präsent und integritäts-geprüft, sodass die
+`../templates/…`-Referenz-Formen lokal auflösen, statt gegen einen sich
+bewegenden Kurs-Head zu driften.
 
 ## Spec-Straten
 
@@ -146,7 +156,7 @@ ausgewiesenen History-Abschnitten erlaubt.
   m-traces Bestand nutzt release-gekoppelte `plan-<version>.md`-Dateien in `done/`.
 - **Entscheidung (Owner 2026-07-21):** **Neue** Arbeit folgt der kanonischen
   Slice/Welle-Form (aus den vendored Templates
-  `.harness/baseline/v3.5.0/templates/docs/plan/planning/{slice,welle}.template.md`).
+  `.harness/baseline/v3.5.1/templates/docs/plan/planning/{slice,welle}.template.md`).
   Der **Bestand `plan-<version>.md` wird grandfathered** (Variante A): historische
   Release-Records bleiben unverändert, keine Massen-Umbenennung, die
   Release-Versions-Kopplung bleibt für die Alt-Form. Brownfield-konsistent

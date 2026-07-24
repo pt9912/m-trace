@@ -17,9 +17,9 @@ Baseline, Modus-Deklarationen pro Sub-Area, Sensor-Bindungsklassen) leben in
 Das **Regelwerk der adoptierten Baseline** ist die **präsente, nachschlagbare
 Vertiefung** zu diesem Briefing: ein self-navigierbares **Modul-Bundle**
 (`README.md` = Index). Es ist committet vendored unter
-`.harness/baseline/v3.5.0/{regelwerk,templates}/` (Regelwerk *und* Templates
+`.harness/baseline/v3.5.1/{regelwerk,templates}/` (Regelwerk *und* Templates
 parallel, netzlos materialisiert samt `SHA256SUMS`; Bootstrap-Verfahren im
-Bundle unter `.harness/baseline/v3.5.0/regelwerk/modul-02-harness-bootstrap.md`
+Bundle unter `.harness/baseline/v3.5.1/regelwerk/modul-02-harness-bootstrap.md`
 §Bootstrap; Quelle/Stand in
 [`harness/conventions.md`](harness/conventions.md) §Baseline).
 
@@ -34,7 +34,7 @@ Regelwerk im Kontext halten**. Breiterer Pflicht-Blick bleibt bei: Bootstrap,
 Derivativ: bei Konflikt gelten die kanonischen Quellen.
 
 Die **Skelett-Vorlagen** der Baseline liegen **vendored** unter
-`.harness/baseline/v3.5.0/templates/` (aus demselben Baseline-Bundle) und tragen
+`.harness/baseline/v3.5.1/templates/` (aus demselben Baseline-Bundle) und tragen
 zwei Rollen: als **Referenz-Form**, auf die das Regelwerk mit `../templates/…`
 als „Ziel-Form" verweist (netzlos, weil parallel zu `regelwerk/` vendored), und
 als Vorlage, die beim Anlegen neuer Artefakte (ADR, Plan/Slice/Welle, Carveout,
@@ -168,7 +168,7 @@ Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
   [`.harness/skills/`](.harness/skills/)
   (`reviewer.md`, `closure-note-reviewer.md`) und **produzieren einen
   Report** aus dem vendored Template
-  ([`review-report.template.md`](.harness/baseline/v3.5.0/templates/docs/reviews/review-report.template.md))
+  ([`review-report.template.md`](.harness/baseline/v3.5.1/templates/docs/reviews/review-report.template.md))
   unter [`docs/reviews/`](docs/reviews/) — ein Report pro Lauf, Folgeläufe
   als neue Datei. Ad-hoc-Findings in Commit-Message oder Notizen **ersetzen
   den Report nicht** (Auditierbarkeit; Modul 8/10). Wann ein Report fällig

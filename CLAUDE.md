@@ -1,7 +1,7 @@
 # Claude Code — Einstieg für m-trace
 
-Dieses Repo folgt dem AI-Harness-Prozess (ai-harness-course **v3.5.0**, vendored
-unter `.harness/baseline/v3.5.0/`). Diese Datei ist **derivativ**: der
+Dieses Repo folgt dem AI-Harness-Prozess (ai-harness-course **v3.5.1**, vendored
+unter `.harness/baseline/v3.5.1/`). Diese Datei ist **derivativ**: der
 maßgebliche Einstieg ist [`AGENTS.md`](AGENTS.md); bei Konflikt gelten die dort
 genannten kanonischen Quellen ([`harness/README.md`](harness/README.md) §Source
 Precedence).
@@ -20,7 +20,7 @@ Precedence).
    Technical > View`, Details in `AGENTS.md` §2).
 
 Das Regelwerk-Bundle wird **pro Entscheidung** nachgeschlagen (Index:
-`.harness/baseline/v3.5.0/regelwerk/README.md`), **nicht** als Ganzes in den
+`.harness/baseline/v3.5.1/regelwerk/README.md`), **nicht** als Ganzes in den
 Kontext geladen.
 
 ## Nicht verhandelbar (voll in `AGENTS.md` §3)
