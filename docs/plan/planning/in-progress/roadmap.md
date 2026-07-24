@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-07-23.
+**Status:** Aktiv. **Letzte Änderung:** 2026-07-24.
 
 **Format-Regel:** Diese Roadmap ist eine Reihenfolge von **Wellen**, keine
 Reihenfolge von Terminen (v3.5.0-Regelwerk Modul 6). Ein Trigger ist eine
@@ -28,7 +28,9 @@ alle in [`done/`](../done/)): [`slice-003`](../done/slice-003-a-check-arch-gate.
 [`slice-004`](../done/slice-004-driving-port-boundary.md) (Driving-Port-Boundary
 säubern), [`slice-005`](../done/slice-005-closure-gate-slice-welle.md)
 (Closure-Gate greift auf slice/welle), [`slice-006`](../done/slice-006-planning-layout-nicht-slices-flach.md)
-(Planning-Layout: Nicht-Slices flach aus `in-progress/`).
+(Planning-Layout: Nicht-Slices flach aus `in-progress/`),
+[`slice-007`](../done/slice-007-review-report-praxis.md) (Review-Report-Praxis
+scharf geschaltet — erster echter Handoff-Report + normative Regel).
 
 ## Nächste Wellen
 
@@ -42,12 +44,15 @@ MR-005; Werkzeug-Einordnung in der
 [Triage](../risks-backlog-werkzeug-triage.md)) — keiner ist ein aktiver Blocker.
 Mutation-Gate-Blockierung bleibt deferred, bis echte >70 %-Score-Reihen vorliegen.
 
-**Nächster Slice-Kandidat ohne Welle:** das Review-Harness (Modul 8/10,
-`docs/reviews/`) ist eingerichtet, aber ungenutzt — bisherige Reviews landeten
-ad-hoc in Commit-Messages/Memory statt als Kanon-Review-Reports (Sekundärbefund
-aus `slice-006`; erster echter Record ist die migrierte
-[`2026-05-13-r13-trivy-rereview.md`](../../../reviews/2026-05-13-r13-trivy-rereview.md)).
-Slice-Idee: Review-Praxis auf Kanon-Review-Reports umstellen (Template + Skill).
+**Review-Harness — adoptiert (`slice-007`, 2026-07-24).** Das Harness (Modul
+8/10, `docs/reviews/`) war eingerichtet, aber ungenutzt; `slice-007` hat die
+Praxis scharf geschaltet — erster echter Handoff-Report
+([`2026-07-24-slice-004.md`](../../../reviews/2026-07-24-slice-004.md)) + normative
+Regel (`AGENTS.md` §5, `docs/reviews/README.md` §„Wann entsteht ein Report").
+**Folge-Kandidaten (open, nur bei Bedarf):** (1) Review-Report-Gate —
+automatisierte Kopplung „Slice → Report" analog `verify-closure-notes`, nur
+schneiden, wenn die reine Regel driftet; (2) Verifier-/Validator-Skills (Modul
+8/11) — Schwester-Rollen ohne `.harness/skills/`-Datei, Beobachtungspunkt.
 
 ## Meilensteine
 
