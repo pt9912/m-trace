@@ -26,7 +26,7 @@ include d-check.mk
 # arch-check` ist ein Alias auf das a-check-Target (Repo-Wurzel-Scan).
 include a-check.mk
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-load-multi-tenant smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-scaleout smoke-scaleout-load smoke-scaleout-fairness cutover smoke-cutover smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs docs-immutable docs-commits lint-variante-b lint-variante-b-fix lint-variante-b-diff verify-closure-notes test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-load-multi-tenant smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-scaleout smoke-scaleout-load smoke-scaleout-fairness cutover smoke-cutover smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs docs-immutable docs-commits lint-variante-b lint-variante-b-fix lint-variante-b-diff verify-closure-notes test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts audit-lock image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -99,6 +99,7 @@ help:
 		'  make release-gate VER=X.Y.Z Full pre-tag gate: gates + security-gates + release-smokes + dry-runs + release-guard (needs MTRACE_RELEASE_APPROVED=1)' \
 		'  make vuln-check             Run govulncheck on apps/api Go dependencies' \
 		'  make audit-ts               Run pnpm audit --audit-level high on the TS workspace' \
+		'  make audit-lock             Probe pnpm-lock.yaml against the advisory endpoint (diagnostic fallback for audit-ts, not a gate)' \
 		'  make image-scan             Run Trivy scan on API/Dashboard/Analyzer runtime images' \
 		'  make security-gates         Run vuln-check + audit-ts + image-scan together' \
 		'  make api-benchmark-smoke    Run Go API hot-path benchmarks (PR-blocking via gates)' \
@@ -838,6 +839,22 @@ vuln-check:
 # einer Frontend-/SDK-Dependency die Security-Wave bestehen.
 audit-ts:
 	$(TS_DOCKER_BUILD) --target audit -t $(TS_IMAGE):audit .
+
+# `make audit-lock` ist die Ersatz-Verifikation zu audit-ts: gleicher
+# Advisory-Endpoint, aber gegen die `packages:`-Sektion von
+# pnpm-lock.yaml und mit eigener gzip-Behandlung. Gedacht fuer
+# Umgebungen, in denen `pnpm audit` mit ERR_PNPM_AUDIT_BAD_RESPONSE
+# abbricht — der Abbruch haengt dort am Transport, nicht an der
+# Lockfile, und liefert deshalb gar keine Aussage ueber die
+# Dependency-Closure. Bewusst NICHT Teil von security-gates/gates: das
+# Skript zaehlt Advisories pro Paket statt pro Dependency-Pfad, die
+# Gesamtzahlen weichen von pnpm ab; verbindlich bleibt audit-ts.
+# `--no-cache-filter` erzwingt einen echten Lauf — Advisories aendern
+# sich serverseitig, ein Layer-Cache-Treffer waere still veraltet.
+# `--progress=plain` haelt die Advisory-Tabelle im TTY sichtbar.
+audit-lock:
+	$(TS_DOCKER_BUILD) --progress=plain --no-cache-filter audit-lock \
+		--target audit-lock -t $(TS_IMAGE):audit-lock .
 
 # `make image-scan` baut die drei Runtime-Images und scannt sie mit
 # Trivy. Policy: CRITICAL und HIGH brechen den Lauf; MEDIUM wird

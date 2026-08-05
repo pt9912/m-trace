@@ -73,6 +73,16 @@ FROM deps AS audit
 
 RUN pnpm audit --audit-level high
 
+# Ersatz-Verifikation zu `audit` fuer Umgebungen, in denen `pnpm audit`
+# mit ERR_PNPM_AUDIT_BAD_RESPONSE abbricht (transparenter Proxy gzippt
+# die Antwort des Bulk-Advisory-Endpoints ohne Content-Encoding-Header).
+# Diagnose, kein Gate — Begruendung im Kopf von scripts/audit-lock.mjs.
+FROM deps AS audit-lock
+
+COPY scripts/audit-lock.mjs scripts/audit-lock.mjs
+
+RUN node scripts/audit-lock.mjs pnpm-lock.yaml
+
 FROM build AS sdk-performance-smoke
 
 RUN pnpm --filter @pt9912/player-sdk run performance:smoke
