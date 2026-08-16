@@ -31,7 +31,7 @@
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.5}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 PG_IMAGE="${PG_IMAGE:-postgres:17-alpine}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"

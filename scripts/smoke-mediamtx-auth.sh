@@ -15,7 +15,7 @@
 # Implementation: ruft die End-to-End-Tests
 # `TestMediaMTXAuthHook_*` aus
 # `apps/api/adapters/driving/http/mediamtx_auth_hook_test.go` über
-# das `golang:1.26.3`-Docker-Image auf. Echte Compose-Variante
+# das `golang:1.26.6`-Docker-Image auf. Echte Compose-Variante
 # (MediaMTX-Container mit externalAuth gegen laufende m-trace-API)
 # bleibt Folge-Item — der Wire-Vertrag ist hiermit aber
 # vollständig abgedeckt.
@@ -27,7 +27,7 @@
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 

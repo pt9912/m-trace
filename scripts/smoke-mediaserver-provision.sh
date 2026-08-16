@@ -19,13 +19,13 @@
 #
 # Implementation: wrapt `TestMediaMTX_*` und
 # `TestIngestControlService_CreateStream_Provision*` ueber das
-# `golang:1.26.3`-Docker-Image. Kein echter MediaMTX-Server noetig
+# `golang:1.26.6`-Docker-Image. Kein echter MediaMTX-Server noetig
 # (`httptest.Server`-Mock); eine produktive MediaMTX-Anbindung mit
 # `examples/srt/compose.yaml` ist Folge-Item.
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 

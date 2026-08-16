@@ -14,7 +14,7 @@
 #
 # Implementation: ruft die End-to-End-Tests `TestOutboundWebhook_*`
 # aus `apps/api/adapters/driven/webhooks/http_dispatcher_test.go`
-# über das `golang:1.26.3`-Docker-Image auf.
+# über das `golang:1.26.6`-Docker-Image auf.
 #
 # Konvention:
 # - eigener Docker-Run, keine globalen Volumes
@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 

@@ -22,11 +22,11 @@
 #
 # Implementation: ruft die End-to-End-Unit-Tests
 # `TestRedisIssuance_*` und `TestRedisOrigin_*` über das
-# `golang:1.26.3`-Docker-Image auf.
+# `golang:1.26.6`-Docker-Image auf.
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 

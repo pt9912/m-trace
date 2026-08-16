@@ -12,13 +12,13 @@
 # constructor reject) sind explizit getestet.
 #
 # Implementation: wrapt `TestVault_AppRoleLogin_*` über das
-# `golang:1.26.3`-Docker-Image. Kein echter Vault-Server nötig —
+# `golang:1.26.6`-Docker-Image. Kein echter Vault-Server nötig —
 # `httptest.Server` simuliert AppRole-Login + KV-Read. Eine
 # vault-dev-CLI-Variante mit echtem Server bleibt Folge-Item.
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 

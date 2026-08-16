@@ -14,7 +14,7 @@
 #
 # Implementation: ruft den End-to-End-Unit-Test
 # `TestSqliteIssuanceRateLimiter_SharedAcrossInstances` über das
-# `golang:1.26.3`-Docker-Image auf. Der Test deckt den semantischen
+# `golang:1.26.6`-Docker-Image auf. Der Test deckt den semantischen
 # Sharing-Kern ab (zwei Adapter-Instances → dieselbe DB → geteiltes
 # Bucket). Eine echte Compose-/K8s-Multi-Container-Variante mit zwei
 # laufenden API-Prozessen ist Folge-Item, sobald ein Multi-Replica-
@@ -28,7 +28,7 @@
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 

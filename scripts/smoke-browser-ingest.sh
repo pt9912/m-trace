@@ -15,7 +15,7 @@
 #
 # Implementation: ruft die End-to-End-Browser-Ingest-Tests aus
 # `apps/api/adapters/driving/http/browser_ingest_test.go` über das
-# `golang:1.26.3`-Docker-Image auf — derselbe Wire-Vertrag, den der
+# `golang:1.26.6`-Docker-Image auf — derselbe Wire-Vertrag, den der
 # Operator gegen die laufende API mit `curl` reproduzieren würde,
 # nur als kontrollierter In-Process-`httptest.Server`-Pfad ohne
 # zusätzliche Compose-Voraussetzungen.
@@ -27,7 +27,7 @@
 
 set -euo pipefail
 
-GO_IMAGE="${GO_IMAGE:-golang:1.26.3}"
+GO_IMAGE="${GO_IMAGE:-golang:1.26.6}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 API_DIR="${REPO_ROOT}/apps/api"
 
