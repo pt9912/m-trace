@@ -819,9 +819,18 @@ gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-
 # v1.1.4 ist die letzte stable mit Go 1.26-Kompatibilitaet.
 GOVULNCHECK_VERSION ?= v1.1.4
 
-# Trivy-Image gepinnt (analog d-migrate-Image-Pin). 0.71.2 ist die
+# Trivy-Image gepinnt (analog d-migrate-Image-Pin). 0.74.0 ist die
 # stable Linie mit guter Default-Policy fuer CRITICAL/HIGH.
-TRIVY_IMAGE ?= aquasec/trivy:0.71.2
+#
+# Wartungsregel: der Pin altert NICHT ueber die Advisory-Daten — die
+# Vuln-DB wird pro Lauf frisch gezogen (kein `--skip-db-update`, der
+# Cache unter `.security/.trivy-cache` ist nur Beschleuniger). Was
+# altert, sind Scanner-Analyzer und die Kompatibilitaet zum
+# DB-Schema: ein zu altes Binary bricht irgendwann mit einem
+# Schema-Mismatch statt mit einem Finding, und dann steht das Gate
+# schlagartig. Darum den Pin regelmaessig nachziehen, nicht erst wenn
+# ein Advisory drueckt.
+TRIVY_IMAGE ?= aquasec/trivy:0.74.0
 
 # `make vuln-check` prueft Go-Dependencies in apps/api gegen die
 # Go Vulnerability Database (https://pkg.go.dev/vuln/). govulncheck
