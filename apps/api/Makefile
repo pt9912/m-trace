@@ -157,7 +157,7 @@ schema-generate-postgres-check:
 # Charakter (~5-10s pro Bench); längere Runs sind Tranche 2
 # Nightly-Workflow.
 benchmark-smoke:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.5 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.6 \
 		go test -run='^$$' -bench=. -benchmem -benchtime 1s ./hexagon/... ./adapters/...
 
 # Go-Fuzz-Suite. Findet alle
@@ -174,7 +174,7 @@ benchmark-smoke:
 # verlangt opt-in (kein PR-Pfad).
 FUZZTIME ?= 30s
 fuzz-check:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.5 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.6 \
 		bash -c 'set -eu; \
 			grep -rEho "^func (Fuzz[A-Za-z0-9_]+)" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
 				./hexagon ./adapters | sort -u | while read -r line; do \
@@ -207,7 +207,7 @@ fuzz-check:
 GREMLINS_VERSION ?= v0.5.0
 mutation-report:
 	mkdir -p .tmp/mutation
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.5 \
+	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.6 \
 		bash -c 'set -eu; \
 			go install github.com/go-gremlins/gremlins/cmd/gremlins@$(GREMLINS_VERSION); \
 			gpath=$$(go env GOPATH)/bin/gremlins; \

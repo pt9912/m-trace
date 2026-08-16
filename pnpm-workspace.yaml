@@ -39,6 +39,13 @@ overrides:
   # > ajv > fast-uri (reines devDep im Mutation-Gate, kein Runtime-Pfad).
   # Fix in 3.1.5. Issues #19/#20.
   fast-uri: ^3.1.5
+  # nanoid <3.3.18: Custom-Generatoren laufen bei `size: 0` in eine
+  # Endlosschleife -> DoS (GHSA-2v37-7h3g-55p8, HIGH). Nachgeschaerftes
+  # Advisory zur <3.3.17-Fassung. Nur transitiv via eslint-plugin-svelte
+  # > postcss (reines devDep im Lint-Gate, kein Runtime-Pfad); m-trace
+  # ruft nanoid nirgends mit eigenem `size`-Argument auf. Fix in 3.3.18.
+  # Issues #21-#29.
+  nanoid: ^3.3.18
   # postcss <=8.5.17: Path Traversal beim Auto-Loading der Previous
   # Source Map (sourceMappingURL) -> Disclosure beliebiger .map-Dateien
   # (GHSA-r28c-9q8g-f849, HIGH). Nur transitiv via eslint-plugin-svelte
