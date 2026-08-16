@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-07-24.
+**Status:** Aktiv. **Letzte Änderung:** 2026-08-16.
 
 **Format-Regel:** Diese Roadmap ist eine Reihenfolge von **Wellen**, keine
 Reihenfolge von Terminen (v3.5.0-Regelwerk Modul 6). Ein Trigger ist eine
@@ -38,12 +38,18 @@ v3.5.0 → v3.5.1, nicht-struktureller Re-Vendor — [ADR-0011](../../adr/0011-h
 
 | Welle | Trigger (beobachtbar) | Wichtigste Slices | Aufwand |
 |---|---|---|---|
-| Produkt-Folgewelle (noch **ungeschnitten**) | Migration done **und** Owner schneidet Tranche | Kandidaten aus dem Risiko-Register: `R-30` (SSE-Backfill-Skip Multi-Replica), `R-24` (Load-Smoke-Debounce), policy-getriebene Per-Projekt-Limiter-Buckets ([`RAK-74`](../../../../spec/lastenheft.md#rak-74)-Anschluss), Redis-Cluster-Tauglichkeit der Lua-Limiter, Durchsatz jenseits Single-Postgres (`budgets.md` §8) | S–L (je Schnitt) |
+| Produkt-Folgewelle (noch **ungeschnitten**) | Migration done **und** Owner schneidet Tranche | Kandidaten aus dem Risiko-Register: `R-13` (perl-freies Runtime-Base für Dashboard/Analyzer — **einziger Kandidat mit Frist**: am `2026-11-02` laufen beide Suppression-Cluster ab und `make security-gates` bricht am `expires`-Check), `R-30` (SSE-Backfill-Skip Multi-Replica), `R-24` (Load-Smoke-Debounce), policy-getriebene Per-Projekt-Limiter-Buckets ([`RAK-74`](../../../../spec/lastenheft.md#rak-74)-Anschluss), Redis-Cluster-Tauglichkeit der Lua-Limiter, Durchsatz jenseits Single-Postgres (`budgets.md` §8) | S–L (je Schnitt) |
 
 Es liegt **keine geschnittene Produkt-Tranche** vor. Die Kandidaten sind im
 [Risiko-Register](../risks-backlog.md) mit Triggern geführt (Roadmap-Discovery,
 MR-005; Werkzeug-Einordnung in der
 [Triage](../risks-backlog-werkzeug-triage.md)) — keiner ist ein aktiver Blocker.
+`R-13` wird am `2026-11-02` zu einem, falls bis dahin weder geschnitten noch
+erneut verlängert wird: der `expires`-Check in `scripts/render-trivyignore.sh`
+bricht dann von selbst, ohne dass ein neues Advisory dazukommen muss. Anders als
+bei den übrigen Kandidaten hilft Abwarten hier nicht — für vier der neun
+perl-CVEs existiert auch in `sid` kein Fix, der Backport-Trigger kann also nicht
+feuern (Re-Review: [`2026-08-16`](../../../reviews/2026-08-16-perl-base-cohort-rereview.md)).
 Mutation-Gate-Blockierung bleibt deferred, bis echte >70 %-Score-Reihen vorliegen.
 
 **Review-Harness — adoptiert (`slice-007`, 2026-07-24).** Das Harness (Modul
