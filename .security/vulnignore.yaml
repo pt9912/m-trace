@@ -488,5 +488,82 @@ trivy:
       expires: 2026-10-08
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
+    # CVE-2026-53612 / CVE-2026-53613 / CVE-2026-53614 (util-linux):
+    # Drei Schwachstellen im `mount(8)`-Pfad der Trixie-Slim-Base
+    # 2.41-5, neu im Nightly-Scan 2026-08-21 (Issue #32):
+    #   - CVE-2026-53612 — TOCTOU beim Anwenden der post-mount
+    #     ownership/mode-Aenderungen.
+    #   - CVE-2026-53613 — TOCTOU via Ancestor-Directory-Swap auf
+    #     demselben Pfad.
+    #   - CVE-2026-53614 — SUID-`mount(8)` erlaubt einen
+    #     nosuid/noexec-Bypass via `LIBMOUNT_FORCE_MOUNT2`.
+    # ABWEICHEND von den uebrigen Eintraegen hier: **es gibt einen
+    # Debian-Fix** (`2.41.5-0+deb13u1`, Trivy-Spalte "Fixed Version"
+    # gefuellt, Status `fixed`). Er ist nur noch nicht im Base-Image:
+    # `node:22-trixie-slim` frisch gepullt am 2026-08-21 liefert
+    # weiterhin `util-linux 2.41-5` (verifiziert per `dpkg -l` im
+    # frischen Image). Ein Base-Bump hilft also HEUTE nicht, wird es
+    # aber, sobald das Node-Image den Trixie-Fix einzieht — daher
+    # bewusst kurzes `expires` (30 Tage statt 90).
+    # Vektor im m-trace-Runtime: hier ehrlicher als bei perl/ncurses.
+    #   - `mount`/`umount` lagen in der Base als `-rwsr-xr-x root`
+    #     vor, der SUID-Pfad aus CVE-2026-53614 war im Image also
+    #     grundsaetzlich VORHANDEN. Er setzt zwar voraus, dass ein
+    #     Angreifer bereits Code-Ausfuehrung als USER node hat
+    #     (Defense-in-Depth, kein von aussen erreichbarer Pfad) —
+    #     "nicht erreichbar" waere hier aber zu bequem gewesen.
+    #   - Konsequenz: Dashboard- und Analyzer-Dockerfile ziehen die
+    #     SUID-Bits jetzt explizit ab (`RUN chmod u-s /usr/bin/mount
+    #     /usr/bin/umount`). Das Runtime ruft mount/umount nie auf
+    #     (reiner Node-Startpfad), der Eskalationspfad ist damit zu.
+    #   - Der Trivy-Befund bleibt davon UNBERUEHRT: erkannt wird das
+    #     dpkg-Paket, nicht das Dateibit. Diese Suppression deckt
+    #     deshalb den Scanner ab, das `chmod` den echten Vektor —
+    #     beides zusammen, nicht als Ersatz fuereinander.
+    # Re-Review-Trigger: `node:22-trixie-slim` zieht `2.41.5-0+deb13u1`
+    # ein (dann Eintraege ersatzlos entfernen) ODER `expires`-Schwelle.
+    - id: CVE-2026-53612
+      reason: "util-linux TOCTOU beim Anwenden der post-mount ownership/mode-Aenderungen (HIGH). Debian-Fix EXISTIERT (2.41.5-0+deb13u1), ist aber noch nicht im Base: node:22-trixie-slim liefert am 2026-08-21 weiterhin 2.41-5 (frisch gepullt per dpkg -l verifiziert) — Base-Bump hilft heute nicht, wird es aber. Runtime ruft mount/umount nie auf (reiner Node-Startpfad, USER node); SUID-Bits werden im Dashboard-/Analyzer-Dockerfile zusaetzlich abgezogen (`chmod u-s`), Trivy sieht davon nichts (dpkg-Erkennung). Kurzes expires, weil der Fix nur auf das Base wartet."
+      expires: 2026-09-20
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-53613
+      reason: "util-linux TOCTOU im mount-Pfad via Ancestor-Directory-Swap (HIGH). Gleiche Lage wie CVE-2026-53612: Debian-Fix 2.41.5-0+deb13u1 existiert, Base node:22-trixie-slim liefert am 2026-08-21 noch 2.41-5. Runtime ruft mount/umount nie auf; SUID-Bits im Dockerfile abgezogen. Kurzes expires bis das Base nachzieht."
+      expires: 2026-09-20
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-53614
+      reason: "util-linux SUID-mount(8) erlaubt nosuid/noexec-Bypass via LIBMOUNT_FORCE_MOUNT2 (HIGH). Der SUID-Pfad war im Image real vorhanden (-rwsr-xr-x root), setzt aber Code-Ausfuehrung als USER node voraus (Defense-in-Depth, nicht von aussen erreichbar). Adressiert: Dashboard-/Analyzer-Dockerfile ziehen die SUID-Bits von mount/umount ab — Eskalationspfad zu. Trivy meldet weiter, weil es das dpkg-Paket sieht, nicht das Dateibit. Debian-Fix 2.41.5-0+deb13u1 existiert, Base liefert am 2026-08-21 noch 2.41-5. Kurzes expires."
+      expires: 2026-09-20
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
+    # CVE-2026-14456 (openssl-provider-legacy): Denial of Service via
+    # unbounded Memory-Growth im QUIC-Server von OpenSSL. Trifft das
+    # Debian-Paket `openssl-provider-legacy` 3.5.6-1~deb13u2 der
+    # Trixie-Slim-Base; Debian-Status `fix_deferred` ("Fixed Version"
+    # leer) — kein Fix-Paket, Base-Bump hilft nicht.
+    # NVD/Trivy-DB neu im Nightly-Scan 2026-08-19 (Issues #30/#31/#32).
+    # Vektor im m-trace-Runtime nicht erreichbar (verifiziert
+    # 2026-08-21 im frisch gepullten Base):
+    #   - Node bringt sein EIGENES OpenSSL mit (`process.versions
+    #     .openssl` = 3.5.7) und ist NICHT gegen das Debian-libssl
+    #     gelinkt (`ldd $(which node)` zeigt kein ssl/crypto-Objekt).
+    #     Die verwundbare Debian-Version 3.5.6 liegt also gar nicht im
+    #     Ausfuehrungspfad von Dashboard/Analyzer.
+    #   - Das Paket liefert ausschliesslich
+    #     `/usr/lib/x86_64-linux-gnu/ossl-modules` — den
+    #     Legacy-Provider fuer das Debian-OpenSSL. Ohne Nutzung des
+    #     Debian-OpenSSL wird das Modul nie geladen.
+    #   - Der Angriffsvektor ist ein QUIC-**Server**; m-trace betreibt
+    #     keinen (grep ueber Dashboard-/Analyzer-/Packages-Quellen:
+    #     kein quic/http3-Treffer). Dashboard ist SvelteKit-adapter-node
+    #     ueber HTTP/1.1, Analyzer ein WS-Endpunkt.
+    # Re-Review-Trigger: Debian hebt `fix_deferred` auf und paketiert
+    # einen Fix ODER `expires`-Schwelle. `expires` auf 2026-11-02 =
+    # Gleichlauf mit dem R-13-Sammeltermin (kuerzer als die
+    # 90-Tage-Default-Frist, konservative Richtung).
+    - id: CVE-2026-14456
+      reason: "openssl-provider-legacy 3.5.6-1~deb13u2: DoS via unbounded Memory-Growth im OpenSSL-QUIC-Server (HIGH); Debian-Status fix_deferred, kein Fix-Paket, Base-Bump hilft nicht. Nicht erreichbar: Node nutzt sein eigenes statisch gebundeltes OpenSSL 3.5.7 und linkt NICHT gegen das Debian-libssl (ldd-verifiziert), das Paket liefert nur ossl-modules fuer eben dieses ungenutzte Debian-OpenSSL, und m-trace betreibt keinen QUIC-Server (grep-bestaetigt; Dashboard = SvelteKit-adapter-node ueber HTTP/1.1, Analyzer = WS). Neu im Nightly-Scan 2026-08-19."
+      expires: 2026-11-02
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
 govulncheck:
   ignore: []

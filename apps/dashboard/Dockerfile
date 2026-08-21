@@ -44,6 +44,23 @@ WORKDIR /app
 # diese CVE-Quelle ohne Workarounds.
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
+# SUID-Bits von `mount`/`umount` abziehen. Beide liegen in der
+# trixie-slim-Base als `-rwsr-xr-x root`; das Runtime ruft sie nie auf
+# (USER node, reiner Node-Startpfad). CVE-2026-53614 nutzt genau dieses
+# SUID-`mount(8)` fuer einen nosuid/noexec-Bypass via
+# LIBMOUNT_FORCE_MOUNT2, CVE-2026-53612/53613 sind TOCTOU-Races im
+# selben mount-Pfad. Ohne SUID ist der Eskalationspfad zu — auch
+# solange die Base `util-linux 2.41-5` statt des bereits paketierten
+# Trixie-Fixes `2.41.5-0+deb13u1` traegt.
+#
+# Wichtig: der Trivy-Befund BLEIBT dadurch bestehen. Erkannt wird das
+# dpkg-Paket, nicht das Dateibit — anders als beim npm-Rauswurf
+# darueber, den Trivy ueber `package.json` sieht. Die Suppression in
+# `.security/vulnignore.yaml` deckt deshalb den Scanner ab, dieses
+# `chmod` den tatsaechlichen Vektor. Beides zusammen, nicht als Ersatz
+# fuereinander.
+RUN chmod u-s /usr/bin/mount /usr/bin/umount
+
 ENV HOST=0.0.0.0
 ENV PORT=5173
 ENV NODE_ENV=production
