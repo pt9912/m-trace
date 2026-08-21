@@ -26,7 +26,7 @@ include d-check.mk
 # arch-check` ist ein Alias auf das a-check-Target (Repo-Wurzel-Scan).
 include a-check.mk
 
-.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-load-multi-tenant smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-scaleout smoke-scaleout-load smoke-scaleout-fairness cutover smoke-cutover smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs docs-immutable docs-commits lint-variante-b lint-variante-b-fix lint-variante-b-diff verify-closure-notes test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts audit-lock image-scan security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
+.PHONY: help dev dev-detached dev-observability dev-tempo stop wipe smoke smoke-observability smoke-tempo smoke-rak10-console smoke-analyzer smoke-mediamtx smoke-mediamtx-auth smoke-srt smoke-srt-health smoke-srt-health-pagination smoke-dash smoke-webrtc-prep smoke-webrtc-stats-drift smoke-webrtc-tone smoke-load smoke-load-slo smoke-load-multi-tenant smoke-soak smoke-srs smoke-ingest-control smoke-key-rotation smoke-issuance-replica smoke-pg-lab smoke-scaleout smoke-scaleout-load smoke-scaleout-fairness cutover smoke-cutover smoke-issuance-multi-host smoke-origin-rate-limit smoke-vault-approle smoke-kms-skeleton smoke-mediaserver-provision smoke-browser-ingest smoke-outbound-webhook smoke-cli seed-rak9 browser-e2e docs-check docs-refs docs-immutable docs-commits lint-variante-b lint-variante-b-fix lint-variante-b-diff verify-closure-notes test api-test api-race ts-test lint api-lint ts-lint build api-build ts-build coverage-gate api-coverage-gate ts-coverage-gate coverage-report arch-check sdk-pack-smoke sdk-performance-smoke package-publish-dry-run package-publish image-build image-publish-dry-run image-publish-guard image-publish k8s-validate devcontainer-validate release-guard release-guard-test release-gate gates ci install host-deps lock-refresh fullbuild sync-contract-fixtures schema-validate schema-generate schema-generate-postgres-check vuln-check audit-ts audit-lock image-scan image-start-check security-gates generated-drift-check api-benchmark-smoke analyzer-benchmark-smoke benchmark-smoke fuzz-check api-fuzz-check api-mutation-report ts-mutation-report mutation-report
 
 help:
 	@printf '%s\n' \
@@ -945,7 +945,23 @@ image-publish: image-publish-guard image-build
 	docker push $(IMAGE_DASHBOARD):$(IMAGE_TAG)
 	docker push $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG)
 
-security-gates: vuln-check audit-ts image-scan
+# `make image-start-check` startet jedes Runtime-Image und prueft, dass
+# der Container oben BLEIBT. Schliesst die Luecke, dass `image-scan`
+# die Images zwar baut und statisch scannt, aber nie startet — ein
+# sofort sterbendes Image passierte damit jede Pruefung gruen (so
+# blieb das nicht lauffaehige analyzer-service-Image unbemerkt, Fix
+# `373db24`, slice-009).
+#
+# Haengt an `image-scan`, weil dort die `:scan`-Tags ohnehin gebaut
+# werden — make fuehrt das PHONY-Target im selben Lauf nur einmal aus,
+# der Check kostet also keinen zweiten Build.
+#
+# Bewusst schmales Kriterium (startet es ueberhaupt), KEIN
+# Funktionsnachweis: dafuer sind die Compose-Smokes da.
+image-start-check: image-scan
+	bash scripts/image-start-check.sh
+
+security-gates: vuln-check audit-ts image-scan image-start-check
 
 # `make generated-drift-check` ruft die drei Generierungs-/Sync-
 # Pfade auf und stellt sicher, dass keine erzeugten Artefakte vom
