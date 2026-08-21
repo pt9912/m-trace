@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-08-21
+
 > **Security-Auslöser**: `security-audit.yml`-Nightly-Treffer vom
 > 2026-07-15 (Issue #14, Lauf `29380639302`) mit zwei fehlgeschlagenen
 > Gates. `pnpm audit` brach mit HTTP 410, weil npm seine
@@ -15,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > zwei neue `perl-base`-CVEs ohne Trixie-Fix. Beide Gates lokal grün
 > (`make audit-ts`, `make image-scan`); keine Wire-, Public-API- oder
 > Runtime-Änderung.
+
+### Added
+
+- Gate-Schritt „Runtime-Images starten (Liveness)" (`make image-start-check`,
+  `scripts/image-start-check.sh`), verdrahtet in `security-gates` und als
+  eigener Schritt in `build.yml` nach dem Trivy-Scan. Schliesst die Luecke,
+  dass `image-scan` die drei Runtime-Images zwar baut und statisch scannt,
+  sie aber nie **startet** — ein Image, das beim ersten `docker run` sofort
+  stirbt, passierte damit jede Pruefung gruen (genau so blieb der
+  analyzer-service-Startfehler unbemerkt, s. Fixed). Kriterium ist bewusst
+  schmal (Container startet und bleibt oben, kein Funktionsnachweis; das
+  API-Image ist distroless und bietet keinen Probing-Pfad). Verifiziert
+  gegen den echten kaputten Vor-Fix-Stand. Geschnitten und abgeschlossen als
+  `slice-009`.
 
 ### Changed
 
@@ -62,6 +78,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mutation.yml` (TS-Job) braucht keinen Host-`pnpm install` mehr
   ([ADR-0008](docs/plan/adr/0008-benchmark-mutation-execution-in-docker.md)).
 
+- pnpm `11.13.0` → `11.20.0` an allen neun Pin-Stellen (Workflows,
+  `packageManager`, Dockerfiles, devcontainer). Upstream hatte `11.13.0`
+  als `broken` deprecated — ein Werkzeug-Pin, den kein Gate prueft und der
+  nur beim Durchsehen eines gruenen CI-Laufs sichtbar wurde.
+- `injectWorkspacePackages: true` in `pnpm-workspace.yaml`; beide
+  Runtime-Dockerfiles deployen dadurch **ohne** `--legacy` (s. Fixed).
+  Preis: Workspace-Deps werden kopiert statt verlinkt, Aenderungen an
+  `packages/*` brauchen einen erneuten Install. Der Schalter steht im
+  Lockfile (`settings.injectWorkspacePackages`) — nach Aenderung ist
+  `make lock-refresh` Pflicht.
+- Go-Toolchain-Pin repo-weit auf `1.26.6` vereinheitlicht (22 Stellen).
+  Zuvor lagen drei verschiedene Werte nebeneinander (`1.26.3` in zehn
+  Smoke-Skripten, `1.26.5` in Dockerfile/Makefiles) — bei einem
+  CVE-getriebenen Bump muss man dann erst suchen, welche Stellen gemeint
+  sind.
+- Trivy-Pin `0.71.2` → `0.74.0`, mit Wartungsregel am Pin. Der Pin altert
+  nicht ueber die Advisory-Daten (die Vuln-DB wird pro Lauf frisch gezogen),
+  sondern ueber Scanner-Analyzer und DB-Schema-Kompatibilitaet.
+- Dependabot fuer `github-actions` aktiviert (woechentlich, ein gruppierter
+  PR); alle Action-Majors angehoben, `node-version` einheitlich aus `.nvmrc`.
+
 ### Fixed
 
 - TypeScript-Mutation-Gate (StrykerJS, `packages/player-sdk`)
@@ -79,6 +116,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Job bleibt via `continue-on-error` nicht-blockierend). Score wieder
   gemessen (74,52 %). Getrackt als `R-31` (aufgelöst).
 
+- **Das `analyzer-service`-Runtime-Image war nicht startbar** — der Container
+  starb sofort mit `Cannot find module '@pt9912/stream-analyzer'`. Ursache:
+  `pnpm deploy --prod --legacy` erzwingt die Alt-Implementierung, die
+  Workspace-Pakete als Symlink **in den Workspace** ablegt
+  (`/deploy/node_modules/@pt9912/stream-analyzer ->
+  ../../../workspace/packages/stream-analyzer`) statt sie ins Bundle zu
+  injizieren. Im Build-Stage ist der Link aufloesbar, in die Runtime-Stage
+  wandert aber nur `/deploy` — dort zeigte er ins Leere. Das Bundle war
+  entgegen dem eigenen Dockerfile-Kommentar **nicht** selbst-tragend. Das
+  `mtrace-dashboard`-Image trug denselben Defekt und ueberlebte nur, weil
+  adapter-node die player-sdk bereits zur Build-Zeit einbundelt. Fix:
+  `injectWorkspacePackages` (s. Changed) und `--legacy` entfernt — pnpm
+  nennt diesen Schalter im Fehlertext selbst als Voraussetzung
+  (`ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE`). Nicht in einem Release
+  ausgeliefert: `0.25.0` ist aelter als der ausloesende pnpm-Bump, seine
+  Images starten nachweislich.
+
 ### Security
 
 - Trivy-Ignore-Liste (`.security/vulnignore.yaml`) um zwei
@@ -89,8 +143,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `CVE-2026-57432` (Integer Overflow in `S_measure_struct` →
     OOB-Heap-Read bei pack/unpack, Perl ≤ 5.43.10, HIGH) — kein
     Trixie-Fix (sid gefixt in `5.40.1-8`, Backport ausstehend).
-  Beide `expires` `2026-08-26` im perl-base-Cohort; die Runtime ruft
-  perl nie auf (`CMD ["node", …]`, kein perl-Pfad erreichbar).
+  Beide im perl-base-Cohort; die Runtime ruft perl nie auf
+  (`CMD ["node", …]`, kein perl-Pfad erreichbar). `expires` steht nach dem
+  Re-Review vom 2026-08-21 auf `2026-11-02` (s. unten).
+
+- **Go-Toolchain `1.26.5` → `1.26.6`** — behebt sieben stdlib-Vulns, die
+  govulncheck als *„your code is affected"* meldete, also ueber erreichbare
+  Pfade (`net/http`, `encoding/xml`, `encoding/asn1`, `golang.org/x/net/idna`
+  u. a.; GO-2026-6088, GO-2026-5972, GO-2026-5026 …). Betrifft das
+  ausgelieferte API-Binary. Der Pin lag an fuenf Stellen — ein Teil-Bump
+  haette govulncheck und Trivy gegeneinander laufen lassen. Nightly-Audit
+  Issues #21–#29.
+- npm-Overrides gegen HIGH-Advisories, alle rein transitiv in devDeps (kein
+  Runtime-Pfad): `nanoid` `^3.3.18` (GHSA-2v37-7h3g-55p8, Endlosschleife bei
+  `size: 0`), `brace-expansion` `^5.0.9`, `fast-uri` `^3.1.5`, `undici`
+  `^7.29.0`, `postcss` `^8.5.18`.
+- **SUID-/SGID-Haertung der Runtime-Images**: `mtrace-dashboard` und
+  `mtrace-analyzer-service` ziehen alle SUID-/SGID-Bits ab (9 → 0 Binaries;
+  `chsh`, `passwd`, `gpasswd`, `su`, `newgrp`, `chfn`, `mount`, `umount`
+  sowie SGID-`shadow` bei `unix_chkpwd`, `chage`, `expiry`). Anlass war
+  `CVE-2026-53614` (SUID-`mount(8)` erlaubt nosuid/noexec-Bypass) — der
+  Pfad war im Image real vorhanden, nicht bloss theoretisch. Generisch per
+  `find` statt Pfadliste, damit kuenftige Base-Aenderungen erfasst bleiben.
+- Trivy-Ignore-Liste erweitert (Nightly-Audit Issues #30–#32):
+  - `CVE-2026-53612` / `CVE-2026-53613` / `CVE-2026-53614` (util-linux,
+    HIGH) — hier existiert ein Debian-Fix (`2.41.5-0+deb13u1`), er ist nur
+    noch nicht im Base (`node:22-trixie-slim` liefert `2.41-5`, gegen ein
+    frisch gepulltes Image verifiziert). Deshalb bewusst kurzes `expires`
+    `2026-09-20`. Der eigentliche Vektor ist ueber die SUID-Entfernung
+    geschlossen; die Suppression deckt nur den Scanner ab, der das
+    dpkg-Paket sieht und nicht das Dateibit.
+  - `CVE-2026-14456` (openssl-provider-legacy, HIGH, `fix_deferred`) —
+    nicht erreichbar: Node nutzt sein eigenes statisch gebundeltes OpenSSL
+    `3.5.7` und linkt nicht gegen das Debian-`libssl`, das Paket liefert nur
+    `ossl-modules` fuer eben dieses ungenutzte Debian-OpenSSL, und m-trace
+    betreibt keinen QUIC-Server. `expires` `2026-11-02`.
+- perl-base-Cohort (neun CVEs) re-reviewt gegen den Debian Security Tracker
+  statt gegen die leere Trivy-`Fixed Version`: **null von neun** sind in
+  trixie gefixt, und vier davon sind auch in `sid` ungefixt (drei als
+  `no DSA, postponed`) — fuer diese kann der bisher notierte
+  Backport-Trigger gar nicht feuern. `expires` `2026-08-26` → `2026-11-02`,
+  im Gleichlauf mit dem `R-13`-Cluster. Das Cohort laeuft ab jetzt unter
+  `R-13` mit statt unter eigener Kennung. Re-Review-Artefakt:
+  `docs/reviews/2026-08-16-perl-base-cohort-rereview.md`.
 
 ## [0.25.0] - 2026-07-13
 

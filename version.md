@@ -19,8 +19,8 @@
 
 ## Aktuell
 
-Aktuelle Version: [`0.25.0`](#0.25.0) — 2026-07-13
-(Tag [`v0.25.0`](https://github.com/pt9912/m-trace/releases/tag/v0.25.0)).
+Aktuelle Version: [`0.25.1`](#0.25.1) — 2026-08-21
+(Tag [`v0.25.1`](https://github.com/pt9912/m-trace/releases/tag/v0.25.1)).
 
 Aus anderen Dokumenten stabil referenzierbar als `version.md#aktuell` (zeigt
 immer hierher, nie auf eine feste Nummer). Pro Release sind genau diese Zeile
@@ -32,9 +32,9 @@ die neue Version zu verschieben** (die bisherige Zeile verliert ihn) — siehe
 
 Die drei auf GHCR veröffentlichten Runtime-Images der aktuellen Version:
 
-- `ghcr.io/pt9912/m-trace-api:0.25.0`
-- `ghcr.io/pt9912/m-trace-dashboard:0.25.0`
-- `ghcr.io/pt9912/m-trace-analyzer-service:0.25.0`
+- `ghcr.io/pt9912/m-trace-api:0.25.1`
+- `ghcr.io/pt9912/m-trace-dashboard:0.25.1`
+- `ghcr.io/pt9912/m-trace-analyzer-service:0.25.1`
 
 Die deploy/k8s-Manifeste tragen dieselben Tags; `make k8s-validate` erzwingt,
 dass sie mit der Root-`package.json`-Version übereinstimmen (der maschinell
@@ -44,7 +44,8 @@ durchgesetzte Versions-Guard).
 
 | Version | Datum | Tag |
 |---|---|---|
-| `0.25.0` <a id="0.25.0"></a> | 2026-07-13 | [`v0.25.0`](https://github.com/pt9912/m-trace/releases/tag/v0.25.0) |
+| `0.25.1` <a id="0.25.1"></a> | 2026-08-21 | [`v0.25.1`](https://github.com/pt9912/m-trace/releases/tag/v0.25.1) |
+| `0.25.0` | 2026-07-13 | [`v0.25.0`](https://github.com/pt9912/m-trace/releases/tag/v0.25.0) |
 | `0.23.0` | 2026-07-11 | [`v0.23.0`](https://github.com/pt9912/m-trace/releases/tag/v0.23.0) |
 | `0.22.4` | 2026-06-23 | [`v0.22.4`](https://github.com/pt9912/m-trace/releases/tag/v0.22.4) |
 | `0.22.3` | 2026-06-16 | [`v0.22.3`](https://github.com/pt9912/m-trace/releases/tag/v0.22.3) |

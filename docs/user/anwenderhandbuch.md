@@ -1,7 +1,7 @@
 # Benutzerhandbuch: m-trace
 
 Handbuch-Version: 1.1<br>
-Software-Version: 0.25.0<br>
+Software-Version: 0.25.1<br>
 Stand: 2026-07-13<br>
 Gültigkeitsbereich: Self-hosted-Betrieb (Compose-Lab und eigene Deployments)
 
@@ -318,9 +318,9 @@ m-trace hat keine Benutzerkonten im Dashboard; das Zugriffsmodell sind
 - **Container-Images** (empfohlen für den Betrieb) — jeweils mit konkretem
   Versions-Tag; ein `latest`-Tag wird bewusst nicht gepflegt. Aktueller Stand
   (siehe [`version.md#aktuell`](../../version.md#aktuell)):
-  - `ghcr.io/pt9912/m-trace-api:0.25.0`
-  - `ghcr.io/pt9912/m-trace-dashboard:0.25.0`
-  - `ghcr.io/pt9912/m-trace-analyzer-service:0.25.0`
+  - `ghcr.io/pt9912/m-trace-api:0.25.1`
+  - `ghcr.io/pt9912/m-trace-dashboard:0.25.1`
+  - `ghcr.io/pt9912/m-trace-analyzer-service:0.25.1`
 
   Kubernetes-Beispiele: `deploy/k8s/`.
 - **npm-Pakete**: `@pt9912/player-sdk` (Browser-SDK) und
