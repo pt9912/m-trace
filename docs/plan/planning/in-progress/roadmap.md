@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-08-16.
+**Status:** Aktiv. **Letzte Änderung:** 2026-08-21.
 
 **Format-Regel:** Diese Roadmap ist eine Reihenfolge von **Wellen**, keine
 Reihenfolge von Terminen (v3.5.0-Regelwerk Modul 6). Ein Trigger ist eine
@@ -68,6 +68,7 @@ schneiden, wenn die reine Regel driftet; (2) Verifier-/Validator-Skills (Modul
 |---|---|---|---|
 | `0.25.0` released | Multi-Tenant-Fairness + Cutover | Tag `v0.25.0` + GHCR/npm-Publish (2026-07-13) | erreicht |
 | v3.5.0-Harness-Migration abgeschlossen | W1–W7 | W7 done, `make gates` grün (2026-07-23) | erreicht |
+| `0.25.1` released | ohne Welle (Wartung/Security) | Tag `v0.25.1` + GHCR/npm-Publish (2026-08-21) | erreicht |
 
 ## Abhängigkeitsgraph
 
