@@ -22,13 +22,21 @@ COPY apps/analyzer-service apps/analyzer-service
 RUN pnpm --filter @pt9912/stream-analyzer run build \
  && pnpm --filter @pt9912/analyzer-service run build
 
-# `pnpm deploy --prod` flacht die Workspace-Symlinks in eine
-# selbst-tragende node_modules-Hierarchie ab und lässt die Dev-Deps
-# weg. `--legacy` ist nötig, weil pnpm v10+ sonst inject-workspace-
-# packages erwartet — was wir nicht globalisiert aktiv haben (siehe
-# Plan §7.5/3 Begründung). Das Ergebnis-Verzeichnis kann von der
-# Runtime-Stage als read-only-Bundle übernommen werden.
-RUN pnpm --filter @pt9912/analyzer-service deploy --prod --legacy /deploy
+# `pnpm deploy --prod` konsolidiert die produktiven Artefakte in ein
+# selbst-tragendes `/deploy`-Bundle ohne Dev-Deps, das die
+# Runtime-Stage als read-only uebernehmen kann.
+#
+# OHNE `--legacy`, bewusst: das Flag erzwingt die Alt-Implementierung,
+# und die legte in `/deploy/node_modules/@pt9912/stream-analyzer` nur
+# einen Symlink nach `../../../workspace/packages/stream-analyzer` ab.
+# Im Build-Stage ist der aufloesbar — in die Runtime-Stage wandert
+# aber nur `/deploy`, dort zeigte er ins Leere und das Image starb
+# beim Start mit `Cannot find module '@pt9912/stream-analyzer'`. Das
+# Bundle war also entgegen dem Kommentar NICHT selbst-tragend.
+# Voraussetzung fuer den Verzicht auf `--legacy` ist
+# `injectWorkspacePackages: true` in `pnpm-workspace.yaml` (dort
+# ausfuehrlich begruendet); pnpm verlangt das seit v10 explizit.
+RUN pnpm --filter @pt9912/analyzer-service deploy --prod /deploy
 
 # Runtime stage — startet direkt aus dem deploy-Bundle, ohne pnpm
 # binär oder einen weiteren install-Schritt.

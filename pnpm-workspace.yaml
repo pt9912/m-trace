@@ -52,3 +52,29 @@ overrides:
   # bzw. tsup (reine devDeps in Lint-/Build-Gates, kein Runtime-Pfad).
   # Fix in 8.5.18. Issues #17/#18.
   postcss: ^8.5.18
+
+# Workspace-Pakete werden beim `pnpm deploy` in das Ziel-Bundle
+# INJIZIERT statt als Symlink in den Workspace zu zeigen. Notwendig
+# fuer die Runtime-Images: `pnpm deploy --prod --legacy` erzeugte in
+# `/deploy/node_modules/@pt9912/<pkg>` einen Symlink nach
+# `../../../workspace/packages/<pkg>`. Im Build-Stage ist der
+# aufloesbar, im Runtime-Image wird aber nur `/deploy` kopiert — der
+# Link zeigte dort ins Leere. Folge: das analyzer-service-Image war
+# nicht startbar (`Cannot find module '@pt9912/stream-analyzer'`),
+# das Dashboard ueberlebte nur, weil adapter-node die player-sdk
+# schon zur Build-Zeit bundelt und zur Laufzeit nichts nachlaedt.
+#
+# pnpm nennt diesen Schalter selbst als Voraussetzung: "starting from
+# pnpm v10, we only deploy from workspaces that have
+# inject-workspace-packages=true" (ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE).
+# `--legacy` war die Ausweich-Route um genau diese Anforderung herum
+# und ist damit die Ursache, nicht die Loesung — die Dockerfiles
+# deployen jetzt ohne das Flag.
+#
+# Preis: Workspace-Deps werden kopiert statt verlinkt. Aenderungen an
+# `packages/*` brauchen dadurch einen erneuten Install, bevor sie in
+# einem konsumierenden App-Paket sichtbar werden. Der Schalter steht
+# ausserdem im Lockfile (`settings.injectWorkspacePackages`) — nach
+# Aenderung ist `make lock-refresh` Pflicht, sonst bricht jeder
+# `--frozen-lockfile`-Install mit ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+injectWorkspacePackages: true

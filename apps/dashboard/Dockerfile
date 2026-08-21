@@ -23,11 +23,18 @@ COPY packages/player-sdk packages/player-sdk
 
 RUN pnpm --filter @pt9912/player-sdk run build && pnpm --filter @pt9912/m-trace-dashboard run build
 
-# `pnpm deploy --prod --legacy` flacht die Workspace-Symlinks in eine
-# selbst-tragende node_modules-Hierarchie ab und lässt dev-Deps weg.
-# `--legacy` ist nötig, weil pnpm v10+ sonst inject-workspace-packages
-# erwartet (siehe Analyzer-Service-Dockerfile).
-RUN pnpm --filter @pt9912/m-trace-dashboard deploy --prod --legacy /deploy
+# `pnpm deploy --prod` konsolidiert die produktiven Artefakte in ein
+# selbst-tragendes `/deploy`-Bundle ohne Dev-Deps.
+#
+# OHNE `--legacy`, bewusst — siehe Analyzer-Service-Dockerfile und
+# `injectWorkspacePackages` in `pnpm-workspace.yaml`: die
+# Alt-Implementierung legte hier einen Symlink nach
+# `../../../app/packages/player-sdk` ab, der im Runtime-Image ins
+# Leere zeigt. Das Dashboard ueberlebte das nur, weil adapter-node
+# die player-sdk bereits zur Build-Zeit in `build/` bundelt und zur
+# Laufzeit nichts nachlaedt — der analyzer-service, der sein
+# Workspace-Paket zur Laufzeit `require`t, starb daran.
+RUN pnpm --filter @pt9912/m-trace-dashboard deploy --prod /deploy
 
 # Runtime stage — startet direkt aus dem deploy-Bundle, ohne pnpm-
 # Binär oder weiteren install-Schritt. SvelteKit-adapter-node legt
