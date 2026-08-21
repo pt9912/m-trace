@@ -44,22 +44,31 @@ WORKDIR /app
 # diese CVE-Quelle ohne Workarounds.
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
-# SUID-Bits von `mount`/`umount` abziehen. Beide liegen in der
-# trixie-slim-Base als `-rwsr-xr-x root`; das Runtime ruft sie nie auf
-# (USER node, reiner Node-Startpfad). CVE-2026-53614 nutzt genau dieses
-# SUID-`mount(8)` fuer einen nosuid/noexec-Bypass via
-# LIBMOUNT_FORCE_MOUNT2, CVE-2026-53612/53613 sind TOCTOU-Races im
-# selben mount-Pfad. Ohne SUID ist der Eskalationspfad zu — auch
-# solange die Base `util-linux 2.41-5` statt des bereits paketierten
-# Trixie-Fixes `2.41.5-0+deb13u1` traegt.
+# Alle SUID-/SGID-Bits im Runtime abziehen. Die trixie-slim-Base
+# bringt neun solcher Binaries mit, allesamt Passwort-/Account-
+# Verwaltung plus die mount-Familie:
+#   SUID root:   chsh, passwd, gpasswd, su, newgrp, chfn, mount, umount
+#   SGID shadow: unix_chkpwd, chage, expiry
+# Keines hat im Runtime etwas zu suchen (USER node, reiner
+# Node-Startpfad). Jedes ist ein Privilege-Escalation- bzw.
+# Shadow-Hash-Zugriffsvektor, falls jemand Code-Ausfuehrung als node
+# erlangt — Defense-in-Depth, kein von aussen erreichbarer Pfad.
+# Konkreter Anlass war CVE-2026-53614 (SUID-`mount(8)` erlaubt
+# nosuid/noexec-Bypass via LIBMOUNT_FORCE_MOUNT2; dazu
+# CVE-2026-53612/53613, TOCTOU im selben mount-Pfad). Die uebrigen
+# sieben sind dieselbe Klasse und fallen mit derselben Zeile.
 #
-# Wichtig: der Trivy-Befund BLEIBT dadurch bestehen. Erkannt wird das
+# Bewusst generisch per `find` statt einer Pfadliste: zieht die Base
+# spaeter ein weiteres SUID-Binary ein, ist es automatisch erfasst —
+# eine Liste muesste jemand nachfuehren, und niemand wuerde es.
+#
+# Wichtig: Trivy-Befunde bleiben davon UNBERUEHRT. Erkannt wird das
 # dpkg-Paket, nicht das Dateibit — anders als beim npm-Rauswurf
-# darueber, den Trivy ueber `package.json` sieht. Die Suppression in
-# `.security/vulnignore.yaml` deckt deshalb den Scanner ab, dieses
-# `chmod` den tatsaechlichen Vektor. Beides zusammen, nicht als Ersatz
-# fuereinander.
-RUN chmod u-s /usr/bin/mount /usr/bin/umount
+# darueber, den Trivy ueber `package.json` sieht. Die Suppressions in
+# `.security/vulnignore.yaml` decken deshalb den Scanner ab, dieses
+# `chmod` den tatsaechlichen Vektor. Beides zusammen, nicht als
+# Ersatz fuereinander.
+RUN find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod ug-s {} +
 
 ENV HOST=0.0.0.0
 ENV PORT=5173
