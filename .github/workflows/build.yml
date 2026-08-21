@@ -84,6 +84,15 @@ jobs:
       - name: Trivy image scan (api + dashboard + analyzer-service)
         run: make image-scan
 
+      # slice-009: die Images aus dem Scan-Schritt oben werden hier
+      # tatsaechlich GESTARTET. Ohne diesen Schritt passiert ein Image,
+      # das beim ersten `docker run` sofort stirbt, jede Pruefung gruen
+      # — genau so blieb das nicht lauffaehige analyzer-service-Image
+      # unbemerkt (Fix 373db24). Nutzt die `:scan`-Tags des vorherigen
+      # Schritts, baut also nichts neu.
+      - name: Runtime-Images starten (Liveness)
+        run: make image-start-check
+
       - name: Upload Trivy cache (artefact)
         if: always()
         uses: actions/upload-artifact@v7.0.1

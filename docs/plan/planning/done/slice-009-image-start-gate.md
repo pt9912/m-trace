@@ -98,10 +98,32 @@ sauber vom gesunden Fall. Der Check behauptet ausdrücklich **nicht**, dass ein
 Image fachlich funktioniert — dafür bleiben die Compose-Smokes zuständig.
 
 **(B) Einhängeort `security-gates`, nicht `gates`.** Dort werden die `:scan`-Tags
-ohnehin gebaut. Über `image-start-check: image-scan` führt make das PHONY-Target
-im selben Lauf nur einmal aus — im Beleglauf erschien `render-trivyignore: wrote`
-genau dreimal (einmal je Image), der Check kostet also keinen zweiten Build. Das
-Target bleibt trotzdem standalone aufrufbar.
+ohnehin gebaut, der Check braucht also keinen eigenen Build.
+
+**Nachtrag (Korrektur am selben Tag).** Der erste Entwurf hängte das Target per
+`image-start-check: image-scan` an den Scan — begründet damit, dass make ein
+PHONY-Target pro Lauf nur einmal ausführt. Das stimmt lokal, ging an der
+CI-Realität aber vorbei: `.github/workflows/build.yml` ruft die Security-Targets
+**einzeln** auf (`make vuln-check`, `make audit-ts`, `make image-scan`), nie
+`make security-gates`. Zwei Folgen, beide schlecht — der Check wäre in CI
+überhaupt nicht gelaufen (kein Schritt rief ihn auf), und hätte man ihn naiv
+ergänzt, hätte die Dependency dort in einem eigenen make-Lauf einen kompletten
+zweiten Image-Build ausgelöst. Korrigiert: die Dependency ist entfernt, die
+Reihenfolge sichert `security-gates`, ein fehlendes Image meldet das Script
+klar, und `build.yml` hat einen eigenen Schritt nach dem Trivy-Scan, der die
+dort gebauten `:scan`-Tags weiterverwendet.
+
+Das war fast dieselbe Falle wie die, die dieser Slice schließt: ein Gate, das
+lokal grün läuft und im entscheidenden Pfad gar nicht stattfindet. Aufgefallen
+ist es nur, weil nach dem grünen CI-Lauf nachgeprüft wurde, **ob** der neue
+Schritt in CI tatsächlich ausgeführt wurde — die Job-Ampel „Security gates:
+success" bezog sich auf die drei alten Schritte.
+
+**Nicht in den Nightly gehängt** (`security-audit.yml`), bewusst: der ist
+strukturell auf genau drei Gates zugeschnitten (`id`/`outcome` je Schritt, das
+Report-Script berichtet über drei ENV-Variablen, Fail-Bedingung listet drei
+Outcomes). Und er jagt zeitgetrieben **neue Advisories**, während ein
+Start-Check Regressionen fängt — die deckt `build.yml` bei jedem Push ab.
 
 **(C) Negativ-Probe gegen den echten Vor-Fix-Stand.** Nicht gegen ein
 synthetisch kaputtes Image: `pnpm-workspace.yaml`, `pnpm-lock.yaml` und

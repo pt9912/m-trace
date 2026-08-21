@@ -25,6 +25,21 @@ IMAGES="${IMAGES:-mtrace-api:scan mtrace-dashboard:scan mtrace-analyzer-service:
 # 5s sind reichlich Reserve und halten den Gate-Lauf kurz.
 GRACE="${GRACE:-5}"
 
+# Die `:scan`-Tags entstehen in `make image-scan`. Bewusst KEINE
+# make-Dependency darauf: in CI sind das getrennte `make`-Aufrufe, eine
+# Dependency wuerde dort einen kompletten zweiten Build ausloesen. Statt
+# dessen hier eine klare Meldung, wenn das Image fehlt.
+missing=""
+for img in $IMAGES; do
+  docker image inspect "$img" >/dev/null 2>&1 || missing="$missing $img"
+done
+if [ -n "$missing" ]; then
+  echo "[image-start-check] FEHLT:$missing"
+  echo "[image-start-check] Diese Images entstehen in 'make image-scan' — dieses zuerst laufen lassen"
+  echo "[image-start-check] (oder 'make security-gates', das beides in der richtigen Reihenfolge fährt)."
+  exit 1
+fi
+
 fail=0
 for img in $IMAGES; do
   if ! cid=$(docker run -d "$img" 2>/dev/null); then

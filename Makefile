@@ -952,13 +952,16 @@ image-publish: image-publish-guard image-build
 # blieb das nicht lauffaehige analyzer-service-Image unbemerkt, Fix
 # `373db24`, slice-009).
 #
-# Haengt an `image-scan`, weil dort die `:scan`-Tags ohnehin gebaut
-# werden — make fuehrt das PHONY-Target im selben Lauf nur einmal aus,
-# der Check kostet also keinen zweiten Build.
+# Setzt die `:scan`-Tags aus `image-scan` voraus, haengt aber bewusst
+# NICHT als make-Dependency daran: der CI-Job ruft die Security-Targets
+# einzeln auf (`make vuln-check`, `make audit-ts`, `make image-scan`),
+# und eine Dependency wuerde dort in einem eigenen make-Lauf einen
+# kompletten zweiten Build ausloesen. `security-gates` sichert die
+# Reihenfolge, und fehlt ein Image, sagt das Script es klar.
 #
 # Bewusst schmales Kriterium (startet es ueberhaupt), KEIN
 # Funktionsnachweis: dafuer sind die Compose-Smokes da.
-image-start-check: image-scan
+image-start-check:
 	bash scripts/image-start-check.sh
 
 security-gates: vuln-check audit-ts image-scan image-start-check
