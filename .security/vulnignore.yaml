@@ -535,6 +535,88 @@ trivy:
       expires: 2026-09-20
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
+    # CVE-2026-76642 / CVE-2026-78408 / CVE-2026-78409 / CVE-2026-78410
+    # (util-linux): vier weitere mount(8)/nsenter(1)-Schwachstellen,
+    # neu im Nightly-Scan 2026-09-04 (Issue #35) — erstmals sichtbar,
+    # weil der API-Image-Scan zuvor an CVE-2026-84304 (grpc-go, apps/
+    # api) abbrach und Trivy Dashboard/Analyzer-Service nie erreichte.
+    #   - CVE-2026-76642 — externer Mount-Helper ueberspringt die
+    #     Post-Hook-Validierung, laeuft mit privilegiertem Kontext.
+    #   - CVE-2026-78408 — `nsenter --join-cgroup` vererbt ein FD, das
+    #     ein spaeter beitretender unprivilegierter Prozess missbrauchen
+    #     kann (setzt vorherige `nsenter --join-cgroup`-Ausfuehrung durch
+    #     einen privilegierten Operator voraus).
+    #   - CVE-2026-78409 — X-mount.subdir Symlink-Traversal umgeht die
+    #     fstab-Autorisierung (braucht Linux 6.15+ und praeautorisierte
+    #     fstab-Eintraege eines lokalen Users).
+    #   - CVE-2026-78410 — restricted bind mounts pinnen die Quelle
+    #     nicht; SUID-mount(8) kann ueber eine beschreibbare Ancestor-
+    #     Directory auf eine andere Quelle umgeleitet werden.
+    # ABWEICHEND von CVE-2026-53612/53613/53614: hier gibt es (Stand
+    # 2026-09-04, Debian Security Tracker) **keinen** Trixie-Fix — nur
+    # sid 2.42.3-1 (Major-Versionssprung, kein zeitnaher Trixie-Point-
+    # Release absehbar). "Fixed Version"-Spalte bei Trivy leer, Status
+    # `affected`. `dpkg -l` in `mtrace-dashboard:scan` UND
+    # `mtrace-analyzer-service:scan` bestaetigt am 2026-09-04 weiterhin
+    # util-linux 2.41-5 (9 Packages: bsdutils, libblkid1, liblastlog2-2,
+    # libmount1, libsmartcols1, libuuid1, login, mount, util-linux).
+    # Vektor im m-trace-Runtime nicht erreichbar:
+    #   - Alle vier CVEs setzen eine tatsaechliche `mount(8)`- oder
+    #     `nsenter(1)`-Invokation voraus (Post-Hook-Helper, SUID-mount-
+    #     Redirect, fstab-basierte Bind-Mounts, cgroup-Join). Codebase-
+    #     Grep bestaetigt: kein mount/umount/nsenter-Aufruf im Node-Pfad
+    #     von Dashboard oder Analyzer-Service.
+    #   - Dashboard-/Analyzer-Dockerfile ziehen bereits blanket alle
+    #     SUID-/SGID-Bits im Runtime ab (`find / -perm -4000 -o -perm
+    #     -2000 -exec chmod ug-s`, Anlass CVE-2026-53612/53613/53614) —
+    #     der SUID-mount(8)-Pfad aus CVE-2026-78410 ist damit zusaetzlich
+    #     geschlossen.
+    #   - Container laeuft als USER node ohne fstab-Verwaltung, ohne
+    #     Multi-User-/Multi-Tenant-Cgroup-Setup und ohne Operator-Shell,
+    #     die `nsenter --join-cgroup` je aufruft.
+    # 90 Tage `expires` (kein Fix-Termin absehbar, laenger als die
+    # CVE-2026-53612er-Gruppe mit vorhandenem-aber-noch-nicht-
+    # gebasetem Fix). Re-Review-Trigger: Trixie-Paketierung eines Fixes
+    # ODER `expires`-Schwelle.
+    - id: CVE-2026-76642
+      reason: "util-linux externer Mount-Helper ueberspringt Post-Hook-Validierung, laeuft privilegiert (HIGH). Kein Trixie-Fix (nur sid 2.42.3-1), Trixie-Base 2.41-5 (dpkg-verifiziert in beiden Scan-Images am 2026-09-04). Runtime ruft mount/umount/nsenter nie auf (USER node, grep-bestaetigt); SUID-Bits blanket abgezogen."
+      expires: 2026-12-03
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-78408
+      reason: "util-linux nsenter --join-cgroup vererbt FD an spaeter beitretenden unprivilegierten Prozess (HIGH). Kein Trixie-Fix (nur sid 2.42.3-1). Setzt vorherige nsenter --join-cgroup-Ausfuehrung durch einen privilegierten Operator voraus — im m-trace-Container gibt es keine Operator-Shell und keinen nsenter-Aufruf (USER node, kein Multi-Tenant-Cgroup-Setup)."
+      expires: 2026-12-03
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-78409
+      reason: "util-linux X-mount.subdir Symlink-Traversal umgeht fstab-Autorisierung (HIGH, Linux 6.15+). Kein Trixie-Fix (nur sid 2.42.3-1). Braucht praeautorisierte fstab-Eintraege eines lokalen Users — m-trace-Container hat keine fstab-Verwaltung, USER node ruft mount nie auf."
+      expires: 2026-12-03
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+    - id: CVE-2026-78410
+      reason: "util-linux restricted bind mounts pinnen die Quelle nicht — SUID-mount(8) via beschreibbare Ancestor-Directory umleitbar (HIGH). Kein Trixie-Fix (nur sid 2.42.3-1). SUID-Bits im Dashboard-/Analyzer-Dockerfile bereits blanket abgezogen (chmod ug-s), Runtime ruft mount nie auf (USER node)."
+      expires: 2026-12-03
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
+    # CVE-2026-16742 (systemd / libsystemd0): systemd-homed erlaubt
+    # einem eingeloggten, homed-verwalteten User eine lokale Privilege
+    # Escalation via fehlender Signaturpruefung eines Home-Records
+    # (arbitraere Gruppen-Zuweisung). Neu im Nightly-Scan 2026-09-04
+    # (Issue #35, selber Grund wie oben: API-Scan-Abbruch verdeckte
+    # Dashboard/Analyzer-Service bisher). Upstream-Fix in systemd
+    # 261.2-1, Debian-sid hat 262~rc1-2 — Trixie liefert am 2026-09-04
+    # weiterhin 257.13-1~deb13u1 (dpkg-verifiziert, kein Trixie-Fix,
+    # analog CVE-2026-29111 oben).
+    # Vektor im m-trace-Runtime nicht erreichbar: der Angriff setzt
+    # einen aktiv genutzten systemd-homed-User-Login voraus. Dashboard-
+    # und Analyzer-Service-Container starten als USER node **ohne
+    # systemd-PID-1** und ohne systemd-homed-Service — libsystemd0 liegt
+    # nur als util-linux-/systemd-Transitivpaket der Base, homed wird
+    # im Runtime nie gestartet.
+    # 90 Tage expires (kein Fix-Termin absehbar). Re-Review-Trigger:
+    # Trixie-Paketierung des Fixes ODER `expires`-Schwelle.
+    - id: CVE-2026-16742
+      reason: "systemd-homed lokale Privilege Escalation via fehlender Home-Record-Signaturpruefung (arbitraere Gruppen-Zuweisung, HIGH). Kein Trixie-Fix (Upstream 261.2-1, sid 262~rc1-2, Trixie-Base weiterhin 257.13-1~deb13u1). Setzt aktiven systemd-homed-Login voraus; m-trace-Container laufen als USER node ohne systemd-PID-1 und ohne homed-Service."
+      expires: 2026-12-03
+      scope: "mtrace-dashboard, mtrace-analyzer-service"
+
     # CVE-2026-14456 (openssl-provider-legacy): Denial of Service via
     # unbounded Memory-Growth im QUIC-Server von OpenSSL. Trifft das
     # Debian-Paket `openssl-provider-legacy` 3.5.6-1~deb13u2 der

@@ -148,7 +148,7 @@ func attrMap(kvs []attribute.KeyValue) map[string]any {
 		case attribute.FLOAT64:
 			out[string(kv.Key)] = kv.Value.AsFloat64()
 		default:
-			out[string(kv.Key)] = kv.Value.Emit()
+			out[string(kv.Key)] = kv.Value.String()
 		}
 	}
 	return out

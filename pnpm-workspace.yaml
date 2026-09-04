@@ -20,6 +20,13 @@ overrides:
   picomatch: ^4.0.4
   devalue: ^5.8.1
   esbuild: ^0.28.1
+  # browserslist <=4.28.6: unbounded cache growth -> OOM
+  # (GHSA-c83g-rgw3-j3cx, HIGH) und Crash/Prototype-Write via
+  # untrusted browserslist-stats.json (GHSA-73wf-gq98-2v4g, HIGH).
+  # Nur transitiv via @stryker-mutator/core > @babel/core >
+  # @babel/helper-compilation-targets (reines devDep im
+  # Mutation-Gate, kein Runtime-Pfad). Fix in 4.28.7. Issues #33/#34/#35.
+  browserslist: ^4.28.7
   # undici <7.29.0: Cross-User Information Disclosure + Parse-Time-Crash
   # via degenerierte `private`-Cache-Direktiven (GHSA-4cwx-7wf7-3272,
   # HIGH; dazu vier moderate CRLF-/Cookie-/Desync-Advisories derselben
@@ -33,12 +40,15 @@ overrides:
   # (reines devDep im Lint-Gate, kein Runtime-Pfad). Fix in 5.0.9.
   # Issues #19/#20.
   brace-expansion: ^5.0.9
-  # fast-uri <3.1.5: Host-Confusion via Backslash-Authority-Introducer
-  # (GHSA-7p8r-x3mc-p8w7, HIGH). Nachgeschaerftes Advisory zu Issue #16
-  # (dort <=3.1.3, Pin ^3.1.4). Nur transitiv via @stryker-mutator/core
-  # > ajv > fast-uri (reines devDep im Mutation-Gate, kein Runtime-Pfad).
-  # Fix in 3.1.5. Issues #19/#20.
-  fast-uri: ^3.1.5
+  # fast-uri <3.1.6: vier weitere Host-Confusion/SSRF-Advisories
+  # (GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf,
+  # GHSA-jqff-g426-hqxp, alle HIGH) ueber IDN-Kanonisierung,
+  # IPv6-Normalisierung, Prozent-Dekodierung bzw. Schema-Normalisierung.
+  # Nachgeschaerftes Advisory zu Issue #16/#19/#20 (dort <3.1.5, Pin
+  # ^3.1.4/^3.1.5). Nur transitiv via @stryker-mutator/core > ajv >
+  # fast-uri (reines devDep im Mutation-Gate, kein Runtime-Pfad).
+  # Fix in 3.1.6. Issues #33/#34/#35.
+  fast-uri: ^3.1.6
   # nanoid <3.3.18: Custom-Generatoren laufen bei `size: 0` in eine
   # Endlosschleife -> DoS (GHSA-2v37-7h3g-55p8, HIGH). Nachgeschaerftes
   # Advisory zur <3.3.17-Fassung. Nur transitiv via eslint-plugin-svelte
