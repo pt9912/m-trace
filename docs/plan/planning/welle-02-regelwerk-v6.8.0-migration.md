@@ -165,7 +165,10 @@ Beobachtungs-Register orientiert. **T8 (Roadmap-Terminologie) bewusst spät**,
 weil sie eine Owner-Entscheidung mit Rückwirkung auf `slice-010`s frisch
 gesetzte `.d-check.yml`-Konfiguration hat (§8). **T9 (Docker-Harness-Audit)
 und T10 (d-check-Sensoren) zuletzt** — beide sind Absicherung/Härtung auf dem
-dann bereits migrierten Stand, T10 hängt zusätzlich an T2.
+dann bereits migrierten Stand, T10 hängt zusätzlich an T2. **T11
+(Review-Harness-Templates) nach T7** — die neue `Klasse`-Spalte im
+Review-Report braucht das Beobachtungs-Register als Ziel; unabhängig davon
+kann T11 parallel zu T9/T10 laufen.
 
 ## 8. Offene Owner-Entscheidungen
 
