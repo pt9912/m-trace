@@ -87,7 +87,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | Tranche 6 (noch nicht geschnitten) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0011) | Modul 4 (ADRs) |
 | Tranche 7 (noch nicht geschnitten) | Slice-Template + Beobachtungs-Register (`planning.observations`) | Modul 5 (Planning-Harness) |
 | Tranche 8 (noch nicht geschnitten) | Roadmap-Abschnitt „Aktuelle Welle" → „Offene Wellen" (Owner-Entscheidung) | Modul 6 (Roadmap) |
-| [`slice-016`](in-progress/slice-016-roadmap-offene-wellen-format.md) | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
+| [`slice-016`](done/slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
 | Tranche 9 (noch nicht geschnitten) | Docker-Harness-Audit (hermetische Build-/Test-Stages) | Modul 14 |
 | Tranche 10 (noch nicht geschnitten) | d-check-Sensoren `targets`/`vcs`/`reviews` aktivieren | Templates (`.d-check.yml`), Modul 10 |
 | Tranche 11 (noch nicht geschnitten) | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, zwei neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |

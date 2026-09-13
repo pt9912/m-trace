@@ -15,16 +15,18 @@ Schätzung, treiben aber nie eine Welle.
 
 ## Offene Wellen
 
-Geöffnet ist [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
-(Harness-Regelwerk-Baseline v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst).
-Aktuell `in-progress`:
-[`slice-016`](slice-016-roadmap-offene-wellen-format.md) (Tranche 8,
-dieses Roadmap-Format-Update selbst). Fünf weitere Tranchen sind geschnitten
-und warten in [`open/`](../open/) (`slice-012`–`015`); vier hängen an
-Owner-Entscheidungen (Welle-Datei §8) oder Abhängigkeiten zu anderen
-Tranchen. Kein Produktcode betroffen, reines Harness/Prozess-Territorium,
-läuft unabhängig von einer künftigen Produkt-Folgewelle (die weiterhin
-**nicht geschnitten** ist, siehe *Nächste Wellen*).
+**Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
+Wellen-Slice ist `in-progress`. Geöffnet ist
+[`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md) (Harness-Regelwerk-Baseline
+v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst). Tranche 8 ist `done`
+([`slice-016`](../done/slice-016-roadmap-offene-wellen-format.md), dieses
+Roadmap-Format-Update selbst); Tranche 1–4 sind geschnitten und warten in
+[`open/`](../open/) (`slice-012`–`015`); die übrigen fünf Tranchen sind noch
+nicht geschnitten und hängen teils an Owner-Entscheidungen (Welle-Datei §8)
+oder Abhängigkeiten zwischen Tranchen. Kein Produktcode betroffen, reines
+Harness/Prozess-Territorium, läuft unabhängig von einer künftigen
+Produkt-Folgewelle (die weiterhin **nicht geschnitten** ist, siehe
+*Nächste Wellen*).
 
 ## Slices ohne Welle
 
