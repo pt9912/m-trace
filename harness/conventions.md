@@ -16,7 +16,7 @@ Release-Archiv `lab-regelwerk.zip` trägt sha256
 `2c55e6d1b821ae15ff73f5a9b3dc2269843db0ffcf9845a4bd0df2cfebbdc6c7`; die
 Per-Datei-Integrität ist in `.harness/baseline/v6.8.0/SHA256SUMS` gepinnt und
 wird mit `sha256sum -c` verifiziert. Vendored 2026-09-13
-([`slice-012`](../docs/plan/planning/in-progress/slice-012-harness-baseline-v6.8.0-vendoring.md),
+([`slice-012`](../docs/plan/planning/done/slice-012-harness-baseline-v6.8.0-vendoring.md),
 [`welle-02`](../docs/plan/planning/welle-02-regelwerk-v6.8.0-migration.md)
 Tranche 1) — reines Vendoring + Zeiger-Umstellung; die inhaltliche Anpassung
 von `AGENTS.md` und dieser Datei an den neuen Kanon folgt in den weiteren

@@ -79,7 +79,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 
 | Slice | Titel | Bezug (Regelwerk-Modul) |
 |---|---|---|
-| [`slice-012`](in-progress/slice-012-harness-baseline-v6.8.0-vendoring.md) | Baseline v6.8.0 vendoren, `harness/conventions.md`-Zeiger umstellen | Grundlagen, Modul 2 (Bootstrap) |
+| [`slice-012`](done/slice-012-harness-baseline-v6.8.0-vendoring.md) ✅ | Baseline v6.8.0 vendoren, `harness/conventions.md`-Zeiger umstellen | Grundlagen, Modul 2 (Bootstrap) |
 | [`slice-013`](open/slice-013-conventions-md-zu-index.md) | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
 | [`slice-014`](open/slice-014-agents-md-neubefuellung.md) | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
 | [`slice-015`](open/slice-015-harness-readme-sensoren-auslagerung.md) | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
