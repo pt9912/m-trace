@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-08-21.
+**Status:** Aktiv. **Letzte Änderung:** 2026-09-13.
 
 **Format-Regel:** Diese Roadmap ist eine Reihenfolge von **Wellen**, keine
 Reihenfolge von Terminen (v3.5.0-Regelwerk Modul 6). Ein Trigger ist eine
@@ -32,7 +32,12 @@ säubern), [`slice-005`](../done/slice-005-closure-gate-slice-welle.md)
 [`slice-007`](../done/slice-007-review-report-praxis.md) (Review-Report-Praxis
 scharf geschaltet — erster echter Handoff-Report + normative Regel),
 [`slice-008`](../done/slice-008-baseline-v3.5.1-bump.md) (Regelwerk-Baseline
-v3.5.0 → v3.5.1, nicht-struktureller Re-Vendor — [ADR-0011](../../adr/0011-harness-baseline-v3.5.1-bump.md), Accepted).
+v3.5.0 → v3.5.1, nicht-struktureller Re-Vendor — [ADR-0011](../../adr/0011-harness-baseline-v3.5.1-bump.md), Accepted),
+[`slice-009`](../done/slice-009-image-start-gate.md) (Runtime-Images im Gate
+starten, nicht nur bauen und scannen), [`slice-010`](../done/slice-010-dcheck-planning-waves.md)
+(d-check `planning.waves` — Wellen-Register-Invariante) und
+[`slice-011`](../done/slice-011-dcheck-links-resolve-from.md) (d-check
+`links.resolve-from` — ortsfeste Verweise im Planning-Lifecycle).
 
 ## Nächste Wellen
 
