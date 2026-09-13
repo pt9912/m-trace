@@ -32,6 +32,7 @@ modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions
 # Wellen-Betrieb.
 planning:
   roadmap: docs/plan/planning/in-progress/roadmap.md
+  heading: "## Offene Wellen"
   waves:
     dir: docs/plan/planning
     mode: many
@@ -107,6 +108,15 @@ ignore-refs:
       - 'docs/plan/dev/**'    # ADR-0008 ](../dev/…)
       - 'docs/plan/ops/**'    # ADR-0007 ](../ops/…)
       - 'docs/harness/**'     # ADR-0009 ](../../harness/…)
+  # roadmap.md ist ein FESTER Bewohner von in-progress/ (wandert nie durch
+  # den Lifecycle) — sitzt aber zufällig in einem der `links.resolve-from`
+  # -Verzeichnisse und wird deshalb faelschlich als wandernde Quelle
+  # behandelt. Ihre Zeiger auf den "gerade laufenden" Slice sind bewusst
+  # ortsgebunden (sie beschreiben den aktuellen Moment, nicht einen
+  # ueberdauernden Verweis) — slice-011s bekanntes Grenzfall-Beispiel.
+  - in: 'docs/plan/planning/in-progress/roadmap.md'
+    refs:
+      - 'docs/plan/planning/in-progress/slice-*.md'
 
 hostpaths:
   prefixes: [Users, Development]

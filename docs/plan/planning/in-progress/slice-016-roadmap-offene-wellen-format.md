@@ -77,7 +77,42 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+Alle drei DoD-Punkte umgesetzt: Status-Zeile entfernt, Abschnitt in
+„## Offene Wellen" umbenannt, Meilensteine-Tabelle trägt jetzt Datum +
+auflösbaren Beleg-Anker je erreichter Zeile (CHANGELOG-Anker für die beiden
+Releases, bestehender Plan-Link für die Harness-Migration).
+`.d-check.yml` bekam `heading: "## Offene Wellen"`.
+
+**Unerwarteter Nebenfund beim Umsetzen:** Der Prosa-Absatz im
+„Offene Wellen"-Abschnitt verwies mit einem bloßen Dateinamen
+(`slice-016-roadmap-offene-wellen-format.md`) auf sich selbst — das ließ
+`links.resolve-from` (aktiv seit `slice-011`) korrekt anschlagen:
+`roadmap.md` sitzt zwar dauerhaft in `in-progress/`, liegt damit aber
+zufällig in einem der drei `resolve-from`-Verzeichnisse und wurde als
+**wandernde** Quelle behandelt, obwohl sie nie wandert. Ein bloßer
+Dateiname löst nur von genau ihrem heutigen Ort auf — genau das meldet der
+Sensor. Gelöst über einen neuen `ignore-refs`-Eintrag (scoped auf
+`roadmap.md` → `in-progress/slice-*.md`), weil dieser Verweistyp bewusst
+den *aktuellen Moment* beschreibt, keinen überdauernden Pfad. Zusätzlich
+musste `welle-02`s eigene Tabellenzeile auf `slice-016` nachgezogen werden
+(zeigte noch auf `open/`, der Slice war da schon nach `in-progress/`
+gewandert) — erwartete Pflege, kein Fehler: Ein flaches Wellendokument, das
+auf wandernde Slices verweist, braucht diesen Nachzug bei jedem
+Lifecycle-Schritt.
+
+**Verifikation:** `make docs-check` — 0 Befunde. `make gates` grün.
+
+**Steering-Loop-Lerneintrag:** `links.resolve-from`s `dirs`-Liste
+(`open`/`next`/`in-progress`) erfasst **jede** Datei in diesen Verzeichnissen
+als potenzielle wandernde Quelle — auch echte Dauerbewohner wie
+`roadmap.md`, die dort per Konvention liegen, aber nie migrieren. Für
+künftige Konfigurationen dieser Art: entweder von vornherein einen
+`ignore-refs`-Eintrag für bekannte Dauerbewohner mitschneiden, oder beim
+Aktivieren des Moduls (`slice-011`) explizit gegenprüfen, welche
+Nicht-Lifecycle-Dateien zufällig in den konfigurierten Verzeichnissen
+liegen.
+
+**Folge-Slices:** keine unmittelbaren.
 
 ## 8. Sub-Area-Modus-Begründung
 

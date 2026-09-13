@@ -1,7 +1,5 @@
 # Roadmap
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-09-13.
-
 **Format-Regel:** Diese Roadmap ist eine Reihenfolge von **Wellen**, keine
 Reihenfolge von Terminen (v3.5.0-Regelwerk Modul 6). Ein Trigger ist eine
 *beobachtbare Bedingung* (nicht ein Datum); Termine erscheinen höchstens als
@@ -15,18 +13,18 @@ Schätzung, treiben aber nie eine Welle.
 
 ---
 
-## Aktuelle Welle
+## Offene Wellen
 
-**Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
-Wellen-Slice ist `in-progress`. Geöffnet ist
-[`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md) (Harness-Regelwerk-Baseline
-v3.5.1 → v6.8.0, zehn Tranchen, additiv zuerst; nur Tranche 1,
-[`slice-012`](../open/slice-012-harness-baseline-v6.8.0-vendoring.md)
-„Baseline vendoren", ist bisher geschnitten und wartet in `open/`). Drei
-Tranchen hängen an Owner-Entscheidungen (Welle-Datei §8) — kein Produktcode
-betroffen, reines Harness/Prozess-Territorium, läuft unabhängig von einer
-künftigen Produkt-Folgewelle (die weiterhin **nicht geschnitten** ist, siehe
-*Nächste Wellen*).
+Geöffnet ist [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+(Harness-Regelwerk-Baseline v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst).
+Aktuell `in-progress`:
+[`slice-016`](slice-016-roadmap-offene-wellen-format.md) (Tranche 8,
+dieses Roadmap-Format-Update selbst). Fünf weitere Tranchen sind geschnitten
+und warten in [`open/`](../open/) (`slice-012`–`015`); vier hängen an
+Owner-Entscheidungen (Welle-Datei §8) oder Abhängigkeiten zu anderen
+Tranchen. Kein Produktcode betroffen, reines Harness/Prozess-Territorium,
+läuft unabhängig von einer künftigen Produkt-Folgewelle (die weiterhin
+**nicht geschnitten** ist, siehe *Nächste Wellen*).
 
 ## Slices ohne Welle
 
@@ -79,9 +77,9 @@ schneiden, wenn die reine Regel driftet; (2) Verifier-/Validator-Skills (Modul
 
 | Meilenstein | Welle(n) | Trigger (extern) | Status |
 |---|---|---|---|
-| `0.25.0` released | Multi-Tenant-Fairness + Cutover | Tag `v0.25.0` + GHCR/npm-Publish (2026-07-13) | erreicht |
-| v3.5.0-Harness-Migration abgeschlossen | W1–W7 | W7 done, `make gates` grün (2026-07-23) | erreicht |
-| `0.25.1` released | ohne Welle (Wartung/Security) | Tag `v0.25.1` + GHCR/npm-Publish (2026-08-21) | erreicht |
+| `0.25.0` released | Multi-Tenant-Fairness + Cutover | Tag `v0.25.0` + GHCR/npm-Publish (2026-07-13) | erreicht 2026-07-13 ([`CHANGELOG.md#0250---2026-07-13`](../../../../CHANGELOG.md#0250---2026-07-13)) |
+| v3.5.0-Harness-Migration abgeschlossen | W1–W7 | W7 done, `make gates` grün (2026-07-23) | erreicht 2026-07-23 ([Plan](../done/plan-harness-v3.5.0-migration.md)) |
+| `0.25.1` released | ohne Welle (Wartung/Security) | Tag `v0.25.1` + GHCR/npm-Publish (2026-08-21) | erreicht 2026-08-21 ([`CHANGELOG.md#0251---2026-08-21`](../../../../CHANGELOG.md#0251---2026-08-21)) |
 
 ## Abhängigkeitsgraph
 
