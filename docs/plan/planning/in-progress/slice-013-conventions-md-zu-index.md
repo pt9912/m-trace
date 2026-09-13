@@ -132,7 +132,64 @@ verifiziert + Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+Umgesetzt wie geplant: `harness/conventions.md` §Adaptionen ist jetzt Index
+(zwei Tabellen, Anker `<a id="mr-NNN">` in der Index-Zeile), sieben
+Einzeldateien unter `harness/conventions/` (MR-001 in `done/`).
+
+**§3s offene Frage (MR-001s „aufgelöst durch") wurde beim Umsetzen
+entschieden:** Das Template-Feld nimmt „aufgelöst durch" wörtlich, aber
+MR-001 hat keinen Nachfolger-MR — aufgelöst wurde es durch tatsächliche
+Slice-Arbeit (`slice-006`, v3.5.0-Migration W5). Die Tabellenzelle nennt
+jetzt `slice-006 (v3.5.0-Migration W5 — kein Nachfolger-MR, Auflösung durch
+Slice-Arbeit)` statt eines erfundenen MR-Verweises.
+
+**Größerer, ungeplanter Fund während der Umsetzung (siehe Session-Historie):**
+Das Template verlangt für **jeden** Eintrag ein Pflichtfeld
+„Ersetzt-Baseline-Regel" — ein Eintrag ohne ersetzte Regel ist laut
+Template-Wortlaut „ein Fork, keine Adaption". Für `MR-004`
+(WSL-Host-Pfad-Beispiele) und `MR-005` (Nicht-Slice-Register) fand sich
+**keine** passende Baseline-Regel — `MR-004` ist eine Sensor-Konfiguration,
+kein Regelwerk-Verstoß; `MR-005` sagte selbst schon „keine
+Kanon-Abweichung, der Kanon schweigt". Auf Nachfrage beim Owner
+entschieden: **beide aus dem MR-Mechanismus genommen** — `MR-004` als
+Kommentar direkt bei `hostpaths:` in `.d-check.yml`, `MR-005` als
+„Repo-lokale Strukturregel" in einem neuen Abschnitt von
+`harness/conventions.md`, unter Beibehaltung der Nummer/des Ankers
+`mr-005` (bestehende Verweise ohne Fragment-Anker bleiben unberührt,
+geprüft per `grep -rn "MR-004\|MR-005"` über den ganzen Baum vor der
+Änderung).
+
+**Vier Baseline-Anker recherchiert und verifiziert** (nicht geraten): über
+`grep`/`sed` im frisch vendorten `v6.8.0`-Regelwerk die exakte Zielregel je
+aktiver Adaption gesucht (`modul-04-adrs.md` §Hard Rule für Accepted-ADRs,
+`grundlagen-source-precedence.md` §ID-Schema als Klammer,
+`modul-07-carveouts.md` §Ziel-Form: Carveout,
+`modul-05-planning-harness.md` §Ziel-Form: Slice) — alle vier lösten beim
+`make docs-check`-Lauf (`anchors`-Modul) fehlerfrei auf, kein einziger
+Anker musste nachträglich korrigiert werden.
+
+**Ein Pfadtiefen-Fehler beim ersten Schreiben von `MR-001`:** Die Datei
+liegt in `harness/conventions/done/` (eine Ebene tiefer als die aktiven
+MR-Dateien in `harness/conventions/`), die Baseline-/Plan-Links waren aber
+mit der flacheren `../../`-Tiefe geschrieben — genau die Falle, vor der das
+Template selbst warnt („nach dem `git mv` nach `done/` zeigt der relative
+Pfad eine Ebene zu hoch"). Hier trat sie schon beim **Anlegen** auf, nicht
+erst bei einem späteren Move. Behoben auf `../../../`.
+
+**Verifikation:** `make docs-check` — 0 Befunde (nach Marker-Rücksetzung).
+`make gates` grün.
+
+**Steering-Loop-Lerneintrag:** Ein neues Template-Pflichtfeld nicht blind
+für Bestandseinträge ausfüllen, wenn keine passende Antwort existiert —
+zwei von sieben m-trace-MRs passten strukturell nicht in das neue
+„Ersetzt-Baseline-Regel"-Modell, und das war kein Bedienfehler der Autoren,
+sondern eine echte Kategorien-Frage. Für künftige Template-Bumps: den
+gesamten Bestand **zuerst** gegen jedes neue Pflichtfeld durchgehen, bevor
+irgendeine Datei geschrieben wird — sonst fällt der Nicht-Passfall erst
+mittendrin auf.
+
+**Folge-Slices:** keine unmittelbaren — Tranche 3 (`slice-014`,
+AGENTS.md-Rewrite) kann jetzt auf die neue Konventions-Form verweisen.
 
 ## 8. Sub-Area-Modus-Begründung
 

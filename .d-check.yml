@@ -118,6 +118,15 @@ ignore-refs:
     refs:
       - 'docs/plan/planning/in-progress/slice-*.md'
 
+# Ehemals `MR-004` in harness/conventions.md (bis welle-02 Tranche 2): kein
+# Fund im Regelwerk, den dieser Eintrag ersetzt — `hostpaths` ist eine
+# Sensor-Konfiguration, keine Baseline-Regel, gehoert deshalb hierher statt
+# in den MR-Mechanismus. Drei WSL-Troubleshooting-Beispiele in
+# docs/user/local-development.md brauchen absolute Host-Pfade als
+# Diagnose-Gegenstand (koennen nicht repo-relativ ersetzt werden, ohne die
+# Diagnose zu verlieren) -- deshalb sind /Users und /Development als
+# Praefixe erlaubt, nicht als generelle Lockerung. /mnt und /home bleiben
+# bewusst ausserhalb, solange kein weiterer Anlassfall vorliegt.
 hostpaths:
   prefixes: [Users, Development]
 

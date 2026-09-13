@@ -52,125 +52,73 @@ ausgewiesenen History-Abschnitten erlaubt.
 
 ## Adaptionen
 
-### MR-001 - Repository-Pfade — AUFGELÖST 2026-07-23
+Diese Sektion trägt den **Index**, nicht die Einträge — jede Adaption ist
+eine eigene Datei unter `harness/conventions/`, kopiert aus
+`harness/conventions/MR-NNN-titel.template.md` der vendored Baseline; ist ihr
+Auflösungs-Trigger eingetreten, wandert sie per `git mv` nach
+`conventions/done/`. Der Zustand ist die Verzeichnis-Position, kein
+Status-Feld (Baseline-Regelwerk `grundlagen-harness-dateien.md`
+§harness/conventions.md als Konventionsspeicher).
 
-- **Datum:** 2026-07-14 (angelegt), 2026-07-23 (aufgelöst)
-- **Scope:** ADR- und Planning-Verzeichnisse
-- **Baseline-Unterschied (historisch):** m-trace nutzte `docs/adr/` statt
-  `docs/plan/adr/` und `docs/planning/` statt `docs/plan/planning/`.
-- **Grund (historisch):** Etabliertes öffentliches Repository-Layout mit
-  umfangreichen stabilen Links.
-- **Auflösung:** Die v3.5.0-Migration W5 (Layout-Move,
-  [`plan-harness-v3.5.0-migration.md`](../docs/plan/planning/done/plan-harness-v3.5.0-migration.md))
-  hat das Repo auf das Kanon-Layout gehoben: `docs/plan/adr/`,
-  `docs/plan/planning/`, `docs/plan/carveouts/`. Die immutablen Accepted-ADRs
-  blieben unangetastet — ihre Pre-Move-Verweise sind per `ignore-refs`-Tombstone
-  in `.d-check.yml` grandfathered (Frozen-Doc-Refactoring). Damit ist die
-  Pfad-Divergenz beseitigt; diese Adaption ist geschlossen.
+### Aktive Adaptionen
 
-### MR-002 - Accepted-ADR-Grandfathering
+| MR | Titel | Geltungsbereich | Ersetzt-Baseline-Regel |
+|---|---|---|---|
+| [002](conventions/MR-002-accepted-adr-grandfathering.md) <a id="mr-002"></a> | Accepted-ADR-Grandfathering | `docs/plan/adr/0001-*.md`–`0007-*.md` | `modul-04-adrs.md` §Hard Rule für Accepted-ADRs |
+| [003](conventions/MR-003-requirement-id-familien.md) <a id="mr-003"></a> | Requirement-ID-Familien | Contract, Pläne, Commits, Reviews | `grundlagen-source-precedence.md` §ID-Schema als Klammer |
+| [006](conventions/MR-006-security-gate-carveout-registry.md) <a id="mr-006"></a> | Security-Gate-Carveout-Registry | `image-scan`/`vuln-check`-Gate | `modul-07-carveouts.md` §Ziel-Form: Carveout |
+| [007](conventions/MR-007-planning-artefakt-form.md) <a id="mr-007"></a> | Planning-Artefakt-Form (Slice/Welle vs. `plan-<version>`) | `docs/plan/planning/` | `modul-05-planning-harness.md` §Ziel-Form: Slice |
 
-- **Datum:** 2026-07-14
-- **Scope:** `docs/plan/adr/0001-*.md` bis `docs/plan/adr/0007-*.md`
-- **Baseline-Unterschied:** Diese akzeptierten Brownfield-Records enthalten
-  historische Plan-Provenienz außerhalb eines ausgewiesenen History-Abschnitts.
-- **Grund:** Akzeptierte ADRs sind unter der adoptierten Baseline immutable und
-  werden nicht allein zum Nachrüsten der Konvention umgeschrieben.
-- **Auflösungs-Trigger:** Permanente historische Ausnahme. Neue ADRs erhalten
-  keine Ausnahme; künftige Accepted-ADR-Änderungen werden vom
-  ADR-Immutabilitäts-Sensor blockiert.
+### Aufgelöste Adaptionen
 
-### MR-003 - Requirement-ID-Familien
+| MR | aufgelöst durch |
+|---|---|
+| [001](conventions/done/MR-001-repository-pfade.md) <a id="mr-001"></a> | slice-006 (v3.5.0-Migration W5 — kein Nachfolger-MR, Auflösung durch Slice-Arbeit) |
 
-- **Datum:** 2026-07-14
-- **Scope:** Contract, Pläne, Commits und Reviews
-- **Baseline-Unterschied:** m-trace datiert vor der `LH-*`-Beispielfamilie und
-  nutzt `F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*` und `R-*`.
-- **Grund:** Die Kennungen sind Teil des etablierten Contracts und der
-  Release-Historie.
-- **Auflösungs-Trigger:** Permanent. Neue Requirement-Familien müssen hier vor
-  Nutzung deklariert werden.
+**`MR-004` und `MR-005` sind keine Adaptionen mehr in diesem Mechanismus**
+(Nachzug `welle-02` Tranche 2, 2026-09-13): Das `v6.8.0`-Template verlangt für
+jeden Eintrag *„Ersetzt-Baseline-Regel: genau eine Regel der Baseline"* — „ein
+Eintrag, der keine benannte Regel ersetzt, ist ein Fork, keine Adaption." Für
+beide fand sich **keine** ersetzte Baseline-Regel:
 
-### MR-004 - WSL-Host-Pfad-Beispiele
+- **`MR-004`** (WSL-Host-Pfad-Beispiele) war nie eine Abweichung von einer
+  Regelwerk-Regel, sondern eine Sensor-Konfiguration — jetzt als Kommentar
+  direkt bei `hostpaths:` in `.d-check.yml`.
+- **`MR-005`** (Nicht-Slice-Register) sagte selbst „keine Kanon-Abweichung,
+  der Kanon schweigt" — passt strukturell nicht in einen Mechanismus für
+  Baseline-*Abweichungen*. Steht jetzt unten als repo-lokale Strukturregel.
 
-- **Datum:** 2026-07-14
-- **Scope:** Drei WSL-Troubleshooting-Beispiele in
-  `docs/user/local-development.md`
-- **Baseline-Unterschied:** Der `hostpaths`-Sensor lehnt host-lokale absolute
-  Pfade normalerweise ab.
-- **Grund:** Diese Pfade sind der Gegenstand der Operator-Guidance und können
-  nicht durch repository-relative Pfade ersetzt werden, ohne die Diagnose zu
-  verlieren.
-- **Auflösungs-Trigger:** Permanent, solange WSL2 unterstützt wird. Der
-  `hostpaths`-Sensor gated daher `/Users` und `/Development`; `/mnt` und
-  `/home` liegen bewusst außerhalb seines konfigurierten Präfix-Satzes.
+## Repo-lokale Strukturregeln
 
-### MR-005 - Nicht-Slice-Register: flache Platzierung in `planning/`
+Regeln, die **keine** Baseline-Vorgabe ersetzen (das Regelwerk schweigt an
+dieser Stelle), aber Konsistenz brauchen — kein Fork, keine Adaption, nur
+eine Ergänzung, wo die Baseline keine Aussage trifft.
+
+### Nicht-Slice-Register: flache Platzierung in `planning/` <a id="mr-005"></a>
+
+*(vormals `MR-005`, Nummer erhalten für bestehende Verweise — siehe oben)*
 
 - **Datum:** 2026-07-23 (angelegt), 2026-07-23 (zurückgebaut, slice-006)
-- **Scope:** `docs/plan/planning/risks-backlog.md` (`R-*`-Familie),
+- **Geltungsbereich:** `docs/plan/planning/risks-backlog.md` (`R-*`-Familie),
   `docs/plan/planning/extra-gates.md` (Quality-Gate-Backlog) samt Companion
   `docs/plan/planning/risks-backlog-werkzeug-triage.md`.
-- **Repo-lokale Strukturregel:** m-trace führt stehende Discovery-Register
-  (Risiko-Register mit Re-Eval-Triggern, RAK-gekoppelt an die Release-Historie;
-  Quality-Gate-Backlog) samt zugehöriger Analysen. Das sind Nicht-Slice-
-  Artefakte; sie liegen **flach in `planning/`** — dasselbe Muster wie der
-  kanonische Welle-Plan, während die Lifecycle-Verzeichnisse
+- **Baseline-Bezug:** keine ersetzte Regel — das Regelwerk (Modul 5/6)
+  schweigt über Nicht-Slice-Artefakte (verbietet sie nicht).
+- **Strukturregel:** m-trace führt stehende Discovery-Register
+  (Risiko-Register mit Re-Eval-Triggern, RAK-gekoppelt an die
+  Release-Historie; Quality-Gate-Backlog) samt zugehöriger Analysen. Das sind
+  Nicht-Slice-Artefakte; sie liegen **flach in `planning/`** — dasselbe
+  Muster wie der kanonische Welle-Plan, während die Lifecycle-Verzeichnisse
   (`open/next/in-progress/done`) **slice-reserviert** bleiben.
-- **Keine Kanon-Abweichung:** Der v3.5.0-Kanon *schweigt* über
-  Nicht-Slice-Artefakte (er verbietet sie nicht); die flache Ablage füllt keine
-  „Lücke" und sanktioniert keine neue Artefaktklasse — sie folgt dem vorhandenen
+- **Begründung:** Die flache Ablage füllt keine „Lücke" und sanktioniert
+  keine neue Artefaktklasse — sie folgt dem vorhandenen
   Flach-in-`planning/`-Muster. Die frühere Fassung führte die Register in
-  `in-progress/` und rechtfertigte das mit „Kanon kennt kein Äquivalent" — beides
-  in slice-006 zurückgebaut (die W4-Triage ordnet R-9/R-12/R-28/R-30 als
-  Roadmap-Kandidaten ein, die im Register bleiben; Security-Suppressions
-  graduieren in ihr Gate-Werkzeug → MR-006).
-- **Auflösungs-Trigger:** Permanent, solange die Register geführt werden.
-
-### MR-006 - Security-Gate-Carveout-Registry
-
-- **Datum:** 2026-07-23
-- **Scope:** `image-scan`/`vuln-check`-Gate; OS-CVE-Ausnahmen der
-  `node:22-trixie-slim`-Base (`mtrace-dashboard`, `mtrace-analyzer-service`),
-  geführt in `.security/vulnignore.yaml`
-- **Baseline-Unterschied:** Der Kanon (Modul 7) führt einzelne, temporäre
-  Gate-Senkungen als `docs/plan/carveouts/CO-NNN`. m-trace senkt den Security-Gate
-  für einen **Cluster** transitiver OS-CVEs (kein Runtime-Pfad, oft ohne
-  Upstream-Fix) über die domänenspezifische Registry `.security/vulnignore.yaml`
-  (per-CVE `reason` + `expires` + `scope`, deterministisch nach `.trivyignore`
-  gerendert, Nightly-Audit-Re-Eval).
-- **Grund:** Modul-7-Werkzeug-Wahl Frage 1 (Granularität): ein Cluster im selben
-  Geltungsbereich ist eine BF-Sub-Area-Markierung, **keine** Carveout-Kaskade
-  (ein CO-File je CVE ist der explizit gewarnte Anti-Pattern). Die vorhandene
-  Registry ist reicher als das generische CO-Template und die Single Source of
-  Truth; ein CO-File je CVE würde sie duplizieren.
-- **Auflösungs-Trigger:** Je CVE der eigene `expires`/Upstream-Fix-Trigger in
-  `vulnignore.yaml`; als Sub-Area permanent, solange die `trixie-slim`-Base
-  transitive OS-CVEs ohne Runtime-Exponierung trägt. Das generische
-  `docs/plan/carveouts/` bleibt für künftige einzelne, nicht-Security
-  Gate-Senkungen reserviert.
-
-### MR-007 - Planning-Artefakt-Form (Slice/Welle vs. plan-&lt;version&gt;)
-
-- **Datum:** 2026-07-23
-- **Scope:** Planning-Artefakte unter `docs/plan/planning/`
-- **Baseline-Unterschied:** Der v3.5.0-Kanon (Modul 5/6) führt Arbeit als
-  **Slices** (`open/…/done/slice-<NNN>-<titel>.md`, Zustand = Verzeichnis) und
-  **Wellen** (`welle-<NN>.md` flach → `done/` neben `welle-<NN>-results.md`).
-  m-traces Bestand nutzt release-gekoppelte `plan-<version>.md`-Dateien in `done/`.
-- **Entscheidung (Owner 2026-07-21):** **Neue** Arbeit folgt der kanonischen
-  Slice/Welle-Form (aus den vendored Templates
-  `.harness/baseline/v3.5.1/templates/docs/plan/planning/{slice,welle}.template.md`).
-  Der **Bestand `plan-<version>.md` wird grandfathered** (Variante A): historische
-  Release-Records bleiben unverändert, keine Massen-Umbenennung, die
-  Release-Versions-Kopplung bleibt für die Alt-Form. Brownfield-konsistent
-  (analog MR-002-Grandfathering).
-- **Auflösungs-Trigger:** Permanent für den Bestand. **Folge-Punkt (bei erstem
-  Slice/Welle-Artefakt):** `trace.slices.file-pattern` (`.d-check.yml`, heute
-  `^plan-(.+)\.md$`) und der Closure-Note-Glob (`check_closure_notes.py --glob`,
-  heute `plan-*.md`) werden dann additiv um die `slice-*`/`welle-*-results`-Form
-  erweitert — solange keine solche Datei existiert, ist keine Config-Änderung
-  nötig (netzlos).
+  `in-progress/` und rechtfertigte das mit „Kanon kennt kein Äquivalent" —
+  beides in `slice-006` zurückgebaut (die W4-Triage ordnet
+  R-9/R-12/R-28/R-30 als Roadmap-Kandidaten ein, die im Register bleiben;
+  Security-Suppressions graduieren in ihr Gate-Werkzeug →
+  [MR-006](#mr-006)).
+- **Gültig, solange:** die Register geführt werden.
 
 ## Sensor-Bindungsklassen
 
