@@ -27,9 +27,8 @@ für Sensors-Bindung) sowie Adaptionen ggü. der adoptierten Baseline leben in
 | 8 | [`AGENTS.md`](../AGENTS.md) | Agent-Briefing |
 | 9 | diese Datei | Harness-Einstieg |
 
-Rang 2 führt vier Dateien statt einer `spec/spezifikation.md` — eine
-Baseline-Abweichung, noch nicht als `MR-<NNN>` deklariert (siehe `welle-02`
-Tranche 5).
+Rang 2 führt vier Dateien statt einer `spec/spezifikation.md` — deklariert
+als [MR-008](conventions.md#mr-008).
 
 ## Guides (Feedforward-Quellen)
 

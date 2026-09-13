@@ -23,7 +23,7 @@ Refactor der vier bestehenden Spec-Dateien.
 
 ## 2. Definition of Done
 
-- [ ] **Neue `MR-<NNN>-spec-straten-multi-datei.md`** in
+- [x] **Neue `MR-<NNN>-spec-straten-multi-datei.md`** in
       `harness/conventions/` (aktiv, analog `MR-002`/`MR-003`/`MR-006`/
       `MR-007` aus `slice-013`): Datum, Geltungsbereich (`spec/`), **Ersetzt-
       Baseline-Regel** mit auflösbarem Anker auf
@@ -38,17 +38,17 @@ Refactor der vier bestehenden Spec-Dateien.
       Cross-Ref-/RTM-Aufwand nach sich zöge), Auflösungs-Trigger (permanent,
       **außer** ein künftiger Slice führt die Dateien tatsächlich zusammen —
       dann löst dieser MR-Eintrag auf, nicht vorher).
-- [ ] Index-Eintrag in `harness/conventions.md` §Adaptions-Block →
+- [x] Index-Eintrag in `harness/conventions.md` §Adaptions-Block →
       **Aktive Adaptionen**-Tabelle (Anker `<a id="mr-NNN">` dort, nicht in
       der Einzeldatei — Muster aus `slice-013`).
-- [ ] **Keine Änderung** an `spec/backend-api-contract.md`,
+- [x] **Keine Änderung** an `spec/backend-api-contract.md`,
       `spec/browser-support.md`, `spec/player-sdk.md`,
       `spec/telemetry-model.md` selbst — reine Registry-Deklaration.
-- [ ] `AGENTS.md` §2 Rang 2 und `harness/README.md` §Source precedence Rang 2
+- [x] `AGENTS.md` §2 Rang 2 und `harness/README.md` §Source precedence Rang 2
       verweisen auf den neuen MR (statt der bisherigen freien Prosa-Notiz
       „Baseline-Abweichung, noch nicht als `MR-<NNN>` deklariert").
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make docs-check` grün.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -82,7 +82,35 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`MR-008-spec-straten-multi-datei.md` neu angelegt (analog `MR-002`/`MR-003`/
+`MR-006`/`MR-007`): Ersetzt-Baseline-Regel-Anker auf
+`modul-03-spec.md#ziel-form-spezifikation`, mit expliziter Abgrenzung im
+Adaptions-Feld — die zitierte Baseline-Regel behandelt das *Fehlen* eines
+Stratums („Repo mit zwei Straten"), m-traces Fall ist das *Aufteilen* eines
+vorhandenen Stratums auf vier Dateien; beides ist als Adaption
+deklarationspflichtig, aber inhaltlich verschieden, deshalb im MR-Text
+ausdrücklich unterschieden statt stillschweigend gleichgesetzt. Index-Zeile
+in `harness/conventions.md` §Aktive Adaptionen ergänzt. `AGENTS.md` §2 und
+`harness/README.md` §Source precedence Rang 2 verweisen jetzt auf
+[MR-008](../../../../harness/conventions.md#mr-008) statt der bisherigen freien
+Prosa-Notiz „noch nicht deklariert". Keine Änderung an den vier
+Spec-Dateien selbst — reine Registry-Ergänzung, wie geplant.
+
+**Verifikation:** `make docs-check` — 0 Befunde (nach Marker-Rücksetzung und
+Link-Korrektur `welle-02.md` open/ → in-progress/).
+
+**Steering-Loop-Lerneintrag:** Die zitierte Baseline-Regel („ein Repo mit
+zwei Straten deklariert das als MR") deckt wörtlich nur den Fall eines
+*fehlenden* Stratums. m-traces Fall (Stratum vorhanden, nur auf mehrere
+Dateien verteilt) ist vom Wortlaut nicht direkt erfasst — laut
+Kanon-Schweigen-Prinzip wäre eine MR hier nicht zwingend erforderlich
+gewesen. Der Owner hat sich dennoch bewusst für die MR-Deklaration
+entschieden (belt-and-suspenders: die Abweichung explizit sichtbar machen,
+statt sich auf Schweigen zu verlassen) — im MR-Text selbst als Unterschied
+benannt, damit ein künftiger Leser nicht annimmt, die Baseline-Regel treffe
+wörtlich zu.
+
+**Folge-Slices:** keine unmittelbaren.
 
 ## 8. Sub-Area-Modus-Begründung
 

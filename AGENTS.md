@@ -55,8 +55,8 @@ In dieser Reihenfolge, gemäß [`harness/conventions.md`](harness/conventions.md
    [`spec/browser-support.md`](spec/browser-support.md),
    [`spec/player-sdk.md`](spec/player-sdk.md),
    [`spec/telemetry-model.md`](spec/telemetry-model.md). *(Vier Dateien statt
-   einer `spec/spezifikation.md` — Baseline-Abweichung, noch nicht als
-   `MR-<NNN>` deklariert; siehe `welle-02` Tranche 5.)*
+   einer `spec/spezifikation.md` — deklariert als
+   [MR-008](harness/conventions.md#mr-008).)*
 3. [`spec/architecture.md`](spec/architecture.md) — abgeleitete Komponenten-,
    Abhängigkeits- und Sequenzsicht.
 4. [`docs/plan/adr/`](docs/plan/adr/) — ADR-Verzeichnis und -Index.

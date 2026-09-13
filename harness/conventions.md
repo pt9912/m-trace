@@ -103,6 +103,7 @@ sie gilt für jeden Lauf.
 | [003](conventions/MR-003-requirement-id-familien.md) <a id="mr-003"></a> | Requirement-ID-Familien | Contract, Pläne, Commits, Reviews | `grundlagen-source-precedence.md` §ID-Schema als Klammer |
 | [006](conventions/MR-006-security-gate-carveout-registry.md) <a id="mr-006"></a> | Security-Gate-Carveout-Registry | `image-scan`/`vuln-check`-Gate | `modul-07-carveouts.md` §Ziel-Form: Carveout |
 | [007](conventions/MR-007-planning-artefakt-form.md) <a id="mr-007"></a> | Planning-Artefakt-Form (Slice/Welle vs. `plan-<version>`) | `docs/plan/planning/` | `modul-05-planning-harness.md` §Ziel-Form: Slice |
+| [008](conventions/MR-008-spec-straten-multi-datei.md) <a id="mr-008"></a> | Spec-Straten: Technical-Schicht auf vier Dateien | `spec/backend-api-contract.md`, `spec/browser-support.md`, `spec/player-sdk.md`, `spec/telemetry-model.md` | `modul-03-spec.md` §Ziel-Form: Spezifikation |
 
 ### Aufgelöste Adaptionen
 
