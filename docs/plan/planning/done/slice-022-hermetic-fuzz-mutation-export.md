@@ -1,6 +1,6 @@
 # Slice 022: Docker-Harness-Audit Teil 3 — hermetische Fuzz-/Mutation-Stages mit Schreib-Rückweg-Export
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 9c von 11 — Docker-Harness-Audit, Teil 3 von 3).
 
 **Bezug:** `apps/api/Dockerfile` (neue Stage `fuzz`), `apps/api/Makefile`

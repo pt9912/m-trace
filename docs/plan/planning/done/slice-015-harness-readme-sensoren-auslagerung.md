@@ -1,6 +1,6 @@
 # Slice 015: `harness/README.md` — Sensors-Tabelle + `harness/sensors/`-Auslagerung, Leseordnung
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 4 von 10).
 
 **Bezug:** `harness/README.md`, neu `harness/sensors/<target>.md` (bei Bedarf),

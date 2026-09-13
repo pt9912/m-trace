@@ -1,6 +1,6 @@
 # Slice 014: `AGENTS.md` gegen das v6.8.0-Template neu befüllen
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 3 von 10).
 
 **Bezug:** `AGENTS.md`,

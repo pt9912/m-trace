@@ -1,6 +1,6 @@
 # Slice 020: Docker-Harness-Audit Teil 1 — Base-Image-Digest-Pinning + `harness/image-hash.txt`
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 9a von 11 — Docker-Harness-Audit Teil 1 von 2).
 
 **Bezug:** `apps/api/Dockerfile`, `apps/dashboard/Dockerfile`,

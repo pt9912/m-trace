@@ -1,6 +1,6 @@
 # Slice 024: Review-Harness-Templates nachziehen
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 11 von 11 — letzte Tranche dieser Welle).
 
 **Bezug:** `.harness/skills/reviewer.md`, `docs/reviews/README.md`,

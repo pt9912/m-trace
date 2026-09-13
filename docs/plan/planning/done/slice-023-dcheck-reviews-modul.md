@@ -1,6 +1,6 @@
 # Slice 023: d-check-Modul `reviews` aktivieren
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 10 von 11).
 
 **Bezug:** `.d-check.yml` (`modules:`, neu `reviews:`), Regelwerk

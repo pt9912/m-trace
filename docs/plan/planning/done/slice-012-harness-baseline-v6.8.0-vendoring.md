@@ -1,6 +1,6 @@
 # Slice 012: Harness-Baseline v6.8.0 vendoren
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 1 von 11).
 
 **Bezug:** `.harness/baseline/`, `harness/conventions.md` §Baseline (nur der

@@ -1,6 +1,6 @@
 # Slice 021: Docker-Harness-Audit Teil 2 — hermetische `benchmark-smoke`/`vuln-check`-Stages, Mount-Abgrenzung
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 9b von 11 — Docker-Harness-Audit, Teil 2 von 3).
 
 **Bezug:** `apps/api/Dockerfile` (neue Stages `benchmark`, `vuln`),

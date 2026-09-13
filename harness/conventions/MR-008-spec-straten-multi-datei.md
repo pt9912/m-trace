@@ -25,7 +25,7 @@
   Cross-Referenzierung und RTM-Pflege erschweren würde. Ein Refactor auf
   eine Datei wäre ein erheblicher, produktnaher Eingriff (RTM, Cross-Refs,
   `matrix`-Modul) ohne erkennbaren Gegenwert (Owner-Entscheidung, siehe
-  [`welle-02`](../../docs/plan/planning/welle-02-regelwerk-v6.8.0-migration.md)
+  [`welle-02`](../../docs/plan/planning/done/welle-02-regelwerk-v6.8.0-migration.md)
   §8 Punkt 1).
 - **Auflösungs-Trigger:** Permanent — außer ein künftiger Slice führt die
   vier Dateien tatsächlich zu einer `spezifikation.md` zusammen.

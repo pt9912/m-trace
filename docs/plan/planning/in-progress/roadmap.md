@@ -21,10 +21,7 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-- [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
-
-**Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
-Wellen-Slice ist `in-progress`.
+**Keine aktive Welle.**
 
 ## Nächste Wellen
 
@@ -106,6 +103,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | Migration W6 — Planning-Form + Roadmap-Reformat | 2026-07-23 | [Plan §2](../done/plan-harness-v3.5.0-migration.md), MR-007 |
 | Migration W7 — `version.md` + `versions`-Modul | 2026-07-23 | [Plan §2](../done/plan-harness-v3.5.0-migration.md); `ids` → `welle-01` |
 | **welle-01 — Requirement-Link-Konvergenz** | 2026-07-23 | [`welle-01-results.md`](../done/welle-01-results.md) (slice-001 + slice-002; `ids` repo-weit) |
+| **welle-02 — Harness-Regelwerk-Baseline v3.5.1 → v6.8.0** | 2026-09-13 | [`welle-02-results.md`](../done/welle-02-results.md) (elf Tranchen, `slice-012`–`024`) |
 
 > Der Bestand ist grandfathered (MR-007): abgeschlossene Produktarbeit liegt als
 > `plan-<version>.md` in `done/`, nicht als `welle-<NN>-results.md`. Neue Wellen

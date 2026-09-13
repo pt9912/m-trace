@@ -94,7 +94,7 @@ erreicht haben könnten.
 ## Beobachtungs-Register (Zeiger)
 
 Der Zähler steht in
-[`observations/README.md`](observations/README.md) (m-traces Ablageform,
+[`observations/README.md`](../observations/README.md) (m-traces Ablageform,
 abweichend vom Kurs-Vorbild `observations.md` als Einzeldatei — m-trace
 folgt der Baseline-Regelwerk-Form `docs/plan/planning/observations/BEO-<KUERZEL>/<slug>/`
 direkt, siehe `slice-019`). Aktuell: keine offenen Beobachtungen.
@@ -112,7 +112,7 @@ geschnitten (kein akuter Bedarf):
 - Fuzz-/Mutation-Docker-Muster als Vorlage für künftige
   Schreib-Rückweg-Gates (kein Slice, nur Präzedenzfall).
 
-## Verifikation
+## Verifikation (Closure-Trigger)
 
 - `make gates` vollständig grün (letzter Lauf: alle Sub-Gates —
   `api-race`, `ts-test`, `lint`, `coverage-gate`, `arch-check`,

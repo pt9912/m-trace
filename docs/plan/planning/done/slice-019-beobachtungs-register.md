@@ -1,6 +1,6 @@
 # Slice 019: Beobachtungs-Register etablieren
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 7 von 11).
 
 **Bezug:** neu `docs/plan/planning/README.md`,

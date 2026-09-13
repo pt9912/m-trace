@@ -79,19 +79,19 @@ Fork-Recherche übernommen; Details je Slice-Text).
 
 | Slice | Titel | Bezug (Regelwerk-Modul) |
 |---|---|---|
-| [`slice-012`](done/slice-012-harness-baseline-v6.8.0-vendoring.md) ✅ | Baseline v6.8.0 vendoren, `harness/conventions.md`-Zeiger umstellen | Grundlagen, Modul 2 (Bootstrap) |
-| [`slice-013`](done/slice-013-conventions-md-zu-index.md) ✅ | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
-| [`slice-014`](done/slice-014-agents-md-neubefuellung.md) ✅ | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
-| [`slice-015`](done/slice-015-harness-readme-sensoren-auslagerung.md) ✅ | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
-| [`slice-017`](done/slice-017-spec-straten-mr.md) ✅ | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
-| [`slice-018`](done/slice-018-adr-trigger-grandfathering.md) ✅ | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0008 grandfathered, `MR-009`) | Modul 4 (ADRs) |
-| [`slice-019`](done/slice-019-beobachtungs-register.md) ✅ | Beobachtungs-Register etablieren (`docs/plan/planning/observations/`, Kürzel-Spalte) — mechanische `d-check`-Durchsetzung deferred, `planning.observations` existiert in `v0.75.0` (aktueller Pin) noch nicht | Modul 5/6 (Planning-Harness, Roadmap) |
-| [`slice-016`](done/slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
-| [`slice-020`](done/slice-020-digest-pinning-image-hash.md) ✅ | Docker-Harness-Audit Teil 1: Base-Image-Digest-Pinning + `harness/image-hash.txt` | Modul 14 |
-| [`slice-021`](done/slice-021-hermetic-benchmark-mount-abgrenzung.md) ✅ | Docker-Harness-Audit Teil 2: hermetische `benchmark-smoke`-Stage, Security-Scan-Mount-Abgrenzung (MR) | Modul 14 |
-| [`slice-022`](done/slice-022-hermetic-fuzz-mutation-export.md) ✅ | Docker-Harness-Audit Teil 3: hermetische Gate-Stages für `apps/api` Fuzz/Mutation (Schreib-Rückweg-Export, root-Ownership-Risiko bei `mutation-report`) | Modul 14 |
-| [`slice-023`](done/slice-023-dcheck-reviews-modul.md) ✅ | d-check-Sensor `reviews` aktivieren (`vcs`/`commits` bereits aktiv, `targets` zurückgestellt — s. §8) | Templates (`.d-check.yml`), Modul 10 |
-| [`slice-024`](done/slice-024-review-harness-templates.md) ✅ | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
+| [`slice-012`](slice-012-harness-baseline-v6.8.0-vendoring.md) ✅ | Baseline v6.8.0 vendoren, `harness/conventions.md`-Zeiger umstellen | Grundlagen, Modul 2 (Bootstrap) |
+| [`slice-013`](slice-013-conventions-md-zu-index.md) ✅ | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
+| [`slice-014`](slice-014-agents-md-neubefuellung.md) ✅ | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
+| [`slice-015`](slice-015-harness-readme-sensoren-auslagerung.md) ✅ | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
+| [`slice-017`](slice-017-spec-straten-mr.md) ✅ | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
+| [`slice-018`](slice-018-adr-trigger-grandfathering.md) ✅ | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0008 grandfathered, `MR-009`) | Modul 4 (ADRs) |
+| [`slice-019`](slice-019-beobachtungs-register.md) ✅ | Beobachtungs-Register etablieren (`docs/plan/planning/observations/`, Kürzel-Spalte) — mechanische `d-check`-Durchsetzung deferred, `planning.observations` existiert in `v0.75.0` (aktueller Pin) noch nicht | Modul 5/6 (Planning-Harness, Roadmap) |
+| [`slice-016`](slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
+| [`slice-020`](slice-020-digest-pinning-image-hash.md) ✅ | Docker-Harness-Audit Teil 1: Base-Image-Digest-Pinning + `harness/image-hash.txt` | Modul 14 |
+| [`slice-021`](slice-021-hermetic-benchmark-mount-abgrenzung.md) ✅ | Docker-Harness-Audit Teil 2: hermetische `benchmark-smoke`-Stage, Security-Scan-Mount-Abgrenzung (MR) | Modul 14 |
+| [`slice-022`](slice-022-hermetic-fuzz-mutation-export.md) ✅ | Docker-Harness-Audit Teil 3: hermetische Gate-Stages für `apps/api` Fuzz/Mutation (Schreib-Rückweg-Export, root-Ownership-Risiko bei `mutation-report`) | Modul 14 |
+| [`slice-023`](slice-023-dcheck-reviews-modul.md) ✅ | d-check-Sensor `reviews` aktivieren (`vcs`/`commits` bereits aktiv, `targets` zurückgestellt — s. §8) | Templates (`.d-check.yml`), Modul 10 |
+| [`slice-024`](slice-024-review-harness-templates.md) ✅ | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
 
 **Bewusst nicht in dieser Welle:** Modul 12 (Replay-Evaluierung) — m-trace hat
 keinen nicht-deterministischen Modell-Kern, aspirational bis zu einem
@@ -181,7 +181,7 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    (`backend-api-contract.md`, `browser-support.md`, `player-sdk.md`,
    `telemetry-model.md` statt einer `spezifikation.md`) als bewusste
    Abweichung festhält — kein Refactor der Spec-Dateien selbst. Umsetzung:
-   [`slice-017`](done/slice-017-spec-straten-mr.md).
+   [`slice-017`](slice-017-spec-straten-mr.md).
 2. **Roadmap-Terminologie (Tranche 8) — entschieden und umgesetzt
    (`slice-016`, ergänzt beim Anlegen von `slice-015`):** Umbenennung auf
    `## Offene Wellen`, `heading:` in `.d-check.yml` mitgezogen,
@@ -200,7 +200,7 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    von `slice-018`: **nicht** alle elf, sondern nur ADR-0001..0008 fehlt der
    `## Re-Evaluierungs-Trigger`-Abschnitt — ADR-0009/-0010/-0011 haben ihn
    bereits (entstanden nach dessen Einführung in den `v3.5.0`-Templates).
-   Umsetzung: [`slice-018`](done/slice-018-adr-trigger-grandfathering.md)
+   Umsetzung: [`slice-018`](slice-018-adr-trigger-grandfathering.md)
    (`MR-009`, analog `MR-002`).
 5. **`targets`-Sensor zurückgestellt (Tranche 10) — entschieden (Owner,
    2026-09-13).** Ein Test gegen `harness/README.md` als Autoritäts-Doku
@@ -211,7 +211,7 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    größerer, laufend zu pflegender Aufwand — zurückgestellt als eigener
    Folge-Slice, wenn Bedarf entsteht. `vcs`/`commits` sind bereits aktiv
    (Future-only-Sensoren, `.d-check.yml`); `reviews` läuft in
-   [`slice-023`](done/slice-023-dcheck-reviews-modul.md).
+   [`slice-023`](slice-023-dcheck-reviews-modul.md).
 
 ## 9. Closure-Notiz
 

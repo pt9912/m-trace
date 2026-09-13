@@ -1,6 +1,6 @@
 # Slice 016: Roadmap auf das v6.8.0-Template-Format heben (Tranche 8)
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 8 von 10).
 
 **Bezug:** `docs/plan/planning/in-progress/roadmap.md`, `.d-check.yml`

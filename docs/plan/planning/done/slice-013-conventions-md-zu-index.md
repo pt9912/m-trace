@@ -1,6 +1,6 @@
 # Slice 013: `harness/conventions.md` von Adaptions-Container zu Index umbauen
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 2 von 10).
 
 **Bezug:** `harness/conventions.md`, neu `harness/conventions/MR-<NNN>-*.md`

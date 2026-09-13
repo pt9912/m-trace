@@ -1,6 +1,6 @@
 # Slice 018: ADR-Re-Evaluierungs-Trigger-Audit + Grandfathering (MR-009)
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 6 von 11).
 
 **Bezug:** `docs/plan/adr/0001-*.md`–`0008-*.md` (unverändert — keine

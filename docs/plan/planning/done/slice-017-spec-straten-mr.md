@@ -1,6 +1,6 @@
 # Slice 017: Spec-Straten — MR für m-traces Vier-Datei-Technical-Schicht
 
-**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+**Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](welle-02-regelwerk-v6.8.0-migration.md)
 (Tranche 5 von 11).
 
 **Bezug:** `harness/conventions.md` (neuer `MR-<NNN>`),
