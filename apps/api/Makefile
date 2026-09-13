@@ -144,20 +144,21 @@ schema-generate-postgres:
 schema-generate-postgres-check:
 	DMIGRATE_IMAGE=$(DMIGRATE_IMAGE) bash scripts/generate-postgres-schema.sh --check
 
-# Go-Benchmark-Suite. Läuft
-# alle `Benchmark*`-Funktionen aus apps/api/.../**/*_bench_test.go
-# mit `-benchmem` in einem golang:1.26-Container. Initial-Budgets
-# (Architektur-basiert großzügig, noch nicht mess-basiert) sind in
-# `docs/perf/budgets.md` §3 dokumentiert; PR-Blockierung erst nach
-# Beobachtungsphase (Plan-DoD §2-6). Opt-in (NICHT in `make gates`).
+# Go-Benchmark-Suite. Läuft alle `Benchmark*`-Funktionen mit `-benchmem`.
+# Initial-Budgets (Architektur-basiert großzügig, noch nicht mess-basiert)
+# sind in `docs/perf/budgets.md` §3 dokumentiert. Teil von `make gates`
+# (über `api-benchmark-smoke` im root-Makefile).
 #
-# `--no-cache-filter test` zwingt BuildKit den test-Stage neu zu
-# evaluieren, damit der Bench-Output nicht aus einem alten Layer-
-# Cache kommt. `-benchtime 1s` hält den Lauf kurz für PR-Pfad-
-# Charakter (~5-10s pro Bench); längere Runs sind Tranche 2
-# Nightly-Workflow.
+# Hermetisch (Modul 14): die `benchmark`-Stage backt die Quellen per
+# `COPY` ein, kein Bind-Mount. `docker build` ohne `--no-cache-filter`
+# genügt — der eigentliche Bench-Lauf passiert erst bei `docker run`
+# gegen das frisch gebaute Image, läuft also bei jedem Aufruf neu; ein
+# gecachtes `COPY`-Layer würde nur bei unverändertem Quellstand greifen.
+# `-benchtime 1s` hält den Lauf kurz für PR-Pfad-Charakter (~5-10s pro
+# Bench); längere Runs sind Nightly-Workflow.
 benchmark-smoke:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 \
+	docker build --target benchmark -t $(IMAGE):go-benchmark .
+	docker run --rm $(IMAGE):go-benchmark \
 		go test -run='^$$' -bench=. -benchmem -benchtime 1s ./hexagon/... ./adapters/...
 
 # Go-Fuzz-Suite. Findet alle
@@ -219,4 +220,4 @@ mutation-report:
 
 # Remove all spike-related images.
 clean:
-	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps $(IMAGE):go-coverage
+	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps $(IMAGE):go-coverage $(IMAGE):go-race $(IMAGE):go-benchmark $(IMAGE):go-vuln

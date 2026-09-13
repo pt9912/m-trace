@@ -78,6 +78,27 @@ FROM deps AS race
 COPY . .
 RUN CGO_ENABLED=1 go test -race ./...
 
+# ---- benchmark ---------------------------------------------------------
+# Hermetische Bench-Basis (Modul 14 — kein Mount): Quellen per COPY
+# gebacken, kein RUN des Bench selbst. Der Lauf passiert bei `docker run`
+# gegen dieses Image (`make benchmark-smoke`) — würde der Bench stattdessen
+# hier als RUN-Schritt laufen, käme sein Ergebnis im BuildKit-Log
+# präfixiert an und wäre für den verankerten `^Benchmark`-Regex in
+# `scripts/check-bench-budgets.mjs` nicht mehr parsebar.
+FROM deps AS benchmark
+
+COPY . .
+
+# ---- vuln ----------------------------------------------------------------
+# Hermetische Basis für `make vuln-check`: `govulncheck` als Build-Schritt
+# installiert (legitimer Build-Bestandteil), der eigentliche Scan läuft
+# bei `docker run` gegen dieses Image — derselbe Grund wie bei `benchmark`.
+FROM deps AS vuln
+
+ARG GOVULNCHECK_VERSION=latest
+RUN go install golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}
+COPY . .
+
 # ---- coverage --------------------------------------------------------------
 # Misst Coverage über hexagon/ und adapters/ (cmd/api ist Wiring +
 # Signal-Handling; bewusst aus dem Coverage-Range ausgenommen) und

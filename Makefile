@@ -836,9 +836,14 @@ TRIVY_IMAGE ?= aquasec/trivy:0.74.0
 # Go Vulnerability Database (https://pkg.go.dev/vuln/). govulncheck
 # scannt nur tatsaechlich aufgerufene Funktionen — False-Positive-
 # Rate ist niedriger als bei statischen Tools.
+#
+# Hermetisch (Modul 14): die `vuln`-Stage in apps/api/Dockerfile installiert
+# govulncheck als Build-Schritt und backt die Quellen per COPY ein, kein
+# Bind-Mount. Der Scan selbst laeuft bei `docker run` gegen das gebaute
+# Image, also bei jedem Aufruf frisch.
 vuln-check:
-	docker run --rm -v "$(CURDIR)/apps/api:/src" -w /src golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 \
-		bash -c "go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) && govulncheck ./..."
+	docker build --target vuln --build-arg GOVULNCHECK_VERSION=$(GOVULNCHECK_VERSION) -t m-trace-api-spike:go-vuln apps/api
+	docker run --rm m-trace-api-spike:go-vuln govulncheck ./...
 
 # `make audit-ts` prueft die npm-Dependency-Closure des pnpm-Workspaces
 # (apps/dashboard, apps/analyzer-service, packages/*) gegen den GitHub
