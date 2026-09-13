@@ -87,8 +87,10 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | Tranche 6 (noch nicht geschnitten) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0011) | Modul 4 (ADRs) |
 | Tranche 7 (noch nicht geschnitten) | Slice-Template + Beobachtungs-Register (`planning.observations`) | Modul 5 (Planning-Harness) |
 | Tranche 8 (noch nicht geschnitten) | Roadmap-Abschnitt „Aktuelle Welle" → „Offene Wellen" (Owner-Entscheidung) | Modul 6 (Roadmap) |
+| [`slice-016`](open/slice-016-roadmap-offene-wellen-format.md) | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
 | Tranche 9 (noch nicht geschnitten) | Docker-Harness-Audit (hermetische Build-/Test-Stages) | Modul 14 |
 | Tranche 10 (noch nicht geschnitten) | d-check-Sensoren `targets`/`vcs`/`reviews` aktivieren | Templates (`.d-check.yml`), Modul 10 |
+| Tranche 11 (noch nicht geschnitten) | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, zwei neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
 
 **Bewusst nicht in dieser Welle:** Modul 12 (Replay-Evaluierung) — m-trace hat
 keinen nicht-deterministischen Modell-Kern, aspirational bis zu einem
@@ -98,6 +100,8 @@ ML-/Scoring-Feature (§6).
 
 - Tranche 2 (Konventions-Index) blockiert Tranche 10s `vcs`-Sensor (der prüft
   MR-Datei-Immutability — ohne Einzeldateien nichts zu prüfen).
+- Tranche 7 (Beobachtungs-Register) blockiert Tranche 11s `Klasse`-Spalte im
+  Review-Report (der Steering-Loop-Zähler braucht das Register als Ziel).
 - Tranche 1 (Vendoring) blockiert alle übrigen Tranchen (sie zitieren durchweg
   den neuen Regelwerk-Wortlaut).
 - Tranche 6 (ADR-Trigger-Audit) berührt **keine** bestehende ADR inhaltlich
@@ -124,7 +128,25 @@ ML-/Scoring-Feature (§6).
 - **Review-Report-Archivierung ändern** (`done/slice-<Kennung>-archiv.zip`
   statt loser `docs/reviews/`-Dateien, Modul 10). Verhaltensänderung
   gegenüber der seit `slice-007` gelebten Praxis — als Owner-Entscheidung in
-  §8 vorgemerkt, nicht automatisch in Tranche 10 mit übernommen.
+  §8 vorgemerkt. **Davon getrennt zu sehen** (und **in** Tranche 11
+  enthalten, weil unabhängig von der Archivierungsfrage nötig): die
+  Format-Nachführung von `docs/reviews/review-report.template.md` und
+  `.harness/skills/reviewer.template.md` selbst — direkter Diff gezogen
+  (2026-09-13, auf Nachfrage). Konkrete Deltas: die Findings-Tabelle bekommt
+  echte Markdown-Tabellenform (`ID | Kategorie | Befund | Quelle | Pfad |
+  Verifizierbar | Klasse`) statt Bullet-Listen, die neue `Klasse`-Spalte ist
+  der Übergabepunkt in den Steering-Loop-Zähler (Beobachtungs-Register aus
+  Tranche 7 — **Tranche 11 hängt deshalb an Tranche 7**); Zitier-Form-Disziplin
+  „Kennung, nicht Adresse" (`slice-<Kennung>` statt Lifecycle-Pfad, `make
+  <target>` statt Sensor-Datei-Link, Baseline-Stand als `vX.Y.Z` ·
+  `regelwerk/<datei>.md` §<Abschnitt> in Inline-Code statt als Link — friert
+  ein, verrottet nicht bei Baseline-Bumps); zwei neue HIGH-Fundklassen für
+  `.harness/skills/reviewer.md` („Norm nur im Template-Kommentar", „Zustandsfeld
+  trägt Chronik" — deckt sich mit AGENTS.md §3.7 aus Tranche 3).
+  `.harness/skills/closure-note-reviewer.template.md` diffte dagegen nur
+  Platzhalter-Generalisierung (`ADR-0011`/`check_closure_notes.py` → generische
+  Verweise) — kein Handlungsbedarf für m-trace, unsere Fassung ist längst
+  konkret ausgefüllt.
 
 ## 7. Tranchen-Sequenzbegründung
 
