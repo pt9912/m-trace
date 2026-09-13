@@ -2,7 +2,7 @@
 
 * Status: Accepted
 * Bezug: `AGENTS.md` §3 (Harte Regeln), `docs/plan/adr/` (aktive ADRs),
-  `harness/conventions.md` (MR-001..MR-004) · <!-- d-check:ignore (ADR-/Skill-Referenzen; Anker gelten repo-lokal) -->
+  `harness/conventions.md` (`MR-<NNN>`) · <!-- d-check:ignore (ADR-/Skill-Referenzen; Anker gelten repo-lokal) -->
 * Gilt für: Code-/Plan-/Design-Review-Läufe. m-trace hat **kein** dediziertes
   `make`-Review-Target; Einstieg ist der `/code-review`-Skill (Working-Diff)
   bzw. `/code-review ultra` (Cloud, PR/Branch). Gate-Bezug: `make gates`.
@@ -28,7 +28,7 @@ Jeder Anker HIGH/MEDIUM/LOW hat eine *konkrete* Liste. INFO ist bewusst kurz
 **HIGH** — eines der folgenden:
 
 - ADR-Verstoß (Hexagon-Layer-Import, Tool, Hard Rule) — Layer-Regel prüft
-  `make arch-check` (`scripts/check-architecture.sh`)
+  `make arch-check`
 - Sicherheits-Anti-Pattern (Injection, fehlende Auth-Prüfung, ungültig
   validierte XFF/`client_ip`-Ableitung)
 - Korrektheitsfehler im *kritischen* Pfad: Ingest-Sequencer/Event-Persistenz,
@@ -39,13 +39,22 @@ Jeder Anker HIGH/MEDIUM/LOW hat eine *konkrete* Liste. INFO ist bewusst kurz
   (bricht die Rename-Detection)
 - **Inhaltliche Änderung an einer Accepted-ADR** statt neuer ADR mit
   `Supersedes` — Hard Rule 3.5 (`make docs-immutable` fängt den Kern)
+- **Norm nur im Template-Kommentar** — eine Regel steht im `<!-- -->`-Block
+  eines `.template.md` und nirgends sonst; sie ist beim Adoptieren weg,
+  sobald der Kommentar entfernt wird. Kein Gate fängt das.
+- **Kommentar oder Zustandsfeld trägt Chronik statt Zustand** — ein
+  Kommentar in Code/Config/Skript beschreibt die verworfene Alternative
+  oder einen abwesenden Text statt den geltenden Zustand; eine
+  `Stand`-/`Status`-Zelle (Roadmap, Beobachtungs-Register, Meilenstein)
+  erzählt, wie der Zustand entstand, statt Zustand + Beleg-Anker zu
+  nennen — Hard Rule 3.7. Kein Gate fängt das.
 
 **MEDIUM** — eines der folgenden:
 
 - unklare Fehlerbehandlung am Rand des Spec-Bereichs
 - fehlende Negativtests bei neuem öffentlichem Vertrag (API-Kontrakt, SDK)
 - Variante-B-Drift in Kommentaren/Specs (Plan-/Tranche-/§-Verweis statt
-  Kennung/Link) — Hard Rule 3.7, `make lint-variante-b`
+  Kennung/Link) — Hard Rule 3.8, `make lint-variante-b`
 - Wiederholung eines Musters, das schon zweimal LOW war
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
@@ -72,16 +81,20 @@ Jedes Finding:
 
 - `kategorie`: HIGH | MEDIUM | LOW | INFO
 - `quelle`: ADR-ID, `RAK-*`/`R-*`-ID, Hard-Rule-Nummer oder „Maintainability"
+  — bei einer Baseline-Regel: `v6.8.0` · `regelwerk/<datei>.md` §<Abschnitt>,
+  kein Link (Baseline-Tag wandert bei jedem Bump, ein Link darauf rottet)
 - `pfad`: `Datei:Zeile`
 - `befund`: 1–2 Sätze, beobachtbar, ohne Lösungsvorschlag
 - `verifizierbar`: ja/nein — gibt es einen Gate-Lauf, der es bestätigen würde?
+- `klasse`: stabile Kurz-Bezeichnung des Fehlermusters — speist den
+  Steering-Loop-Zähler (siehe §Pflege)
 
 Zusätzlich am Ende: eine Zeile „geprüft, ohne Befund" pro betrachtetem
 Verzeichnis (Negativbefund-Zeile — sonst ist „keine Findings" nicht von „nicht
-geprüft" unterscheidbar). Report-Gerüst für den ganzen Lauf:
-`.harness/baseline/v3.5.1/templates/docs/reviews/review-report.template.md`
-kopiert-und-ausgefüllt nach `docs/reviews/`, ein Report pro Lauf, Folgeläufe als
-neue Datei statt Überschreibung.
+geprüft" unterscheidbar). Report-Gerüst für den ganzen Lauf: `v6.8.0` ·
+`templates/docs/reviews/review-report.template.md` kopiert-und-ausgefüllt
+nach `docs/reviews/`, ein Report pro Lauf, Folgeläufe als neue Datei statt
+Überschreibung.
 
 ## Pflege (Steering-Loop)
 
