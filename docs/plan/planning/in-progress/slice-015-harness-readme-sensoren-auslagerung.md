@@ -25,7 +25,7 @@ des Repos (Tranche 3 entfernt die Duplikat-Tabelle aus `AGENTS.md`).
 
 ## 2. Definition of Done
 
-- [ ] **Sensors-Tabelle auf drei Spalten** `Target | Vertrag | Bindung`
+- [x] **Sensors-Tabelle auf drei Spalten** `Target | Vertrag | Bindung`
       (m-traces aktuelle Tabelle hat nur `Target | Prüft` — **keine**
       Bindung-Spalte). Bindung nennt eine der vier kanonischen Klassen
       (ADR-Bindung, Carveout-Bindung, Kalibrierungs-Bindung,
@@ -35,28 +35,28 @@ des Repos (Tranche 3 entfernt die Duplikat-Tabelle aus `AGENTS.md`).
       ADR-Bindung, Reproduzierbarkeits-Bindung über Image-Digests): diese
       drei Klassen jetzt **in die Tabellenzellen** ziehen, statt als separate
       Prosa-Sektion daneben zu stehen.
-- [ ] **Target-Zelle trägt den nackten Namen, kein Argument.** Ein Aufruf wie
+- [x] **Target-Zelle trägt den nackten Namen, kein Argument.** Ein Aufruf wie
       `SLICE=<id>` gehört in eine Nachbarspalte/Prosa, nicht in die Code-Span
       des Targets — sonst meldet ein künftiger `targets`-Sensor (Tranche 10)
       `gate-undocumented`, als gäbe es die Zeile nicht (gemessen an d-check
       v0.74.1, im Regelwerk zitiert). Ein **verlinktes** Target
       (`[make X](sensors/X.md)`) ist davon nicht betroffen.
-- [ ] **Kein Lauf-Status** (grün/rot) in der Tabelle — Lauf-Wahrheit lebt in
+- [x] **Kein Lauf-Status** (grün/rot) in der Tabelle — Lauf-Wahrheit lebt in
       CI. Ein strukturell rotes Gate gehört als Carveout nach
       `docs/plan/carveouts/` (heute leer — kein Handlungsbedarf, nur als
       Regel dokumentieren).
-- [ ] **Zweite Tabelle „Werkzeuge — kein Gate"** für Targets, die der Agent
+- [x] **Zweite Tabelle „Werkzeuge — kein Gate"** für Targets, die der Agent
       braucht, aber die nichts über den Repo-Zustand urteilen (Mover,
       Messungen, Vorschau-Läufe) — Spalten `Target | Tut was | Bindung`,
       Bindung-Zelle trägt `kein Gate` **in der Zeile selbst**.
-- [ ] **Ein Gate je Datei, sobald sein Vertrag mehr als einen Satz braucht**:
+- [x] **Ein Gate je Datei, sobald sein Vertrag mehr als einen Satz braucht**:
       Prosa nach `harness/sensors/<target>.md` (kopiert aus
       `harness/sensors/gate.template.md`), Target-Zelle wird zum Link
       **darauf**. Sensor-Dateien tragen **kein Status-/Datumsfeld** (anders
       als MR-Dateien aus `slice-013`) und **kein `sensors/done/`** — ein
       retiriertes Gate verschwindet ersatzlos (Zeile + Datei), es wandert
       nicht.
-- [ ] **Wichtige Referenz-Regel für künftige einfrierende Artefakte** (Review-
+- [x] **Wichtige Referenz-Regel für künftige einfrierende Artefakte** (Review-
       Reports, Closure-Notizen, Accepted-ADRs, geschlossene Slices — **auch
       unsere eigenen**, ab jetzt): Sie zitieren ein Gate über sein
       `make <target>`-Token, **nicht** über den Pfad zu seiner Sensor-Datei —
@@ -64,19 +64,19 @@ des Repos (Tranche 3 entfernt die Duplikat-Tabelle aus `AGENTS.md`).
       Adresse. Diese Regel selbst wird **nicht** rückwirkend auf bestehende
       Closure-Notizen (`slice-009`…`012`) angewendet — nur als Praxis ab
       diesem Slice.
-- [ ] **Neue Sektion `## Leseordnung`** am Dateiende: drei bis fünf geordnete
+- [x] **Neue Sektion `## Leseordnung`** am Dateiende: drei bis fünf geordnete
       Zeiger, was ein neuer Mensch zuerst liest (z. B. `AGENTS.md` §Hard
       Rules → `spec/lastenheft.md` → `harness/conventions.md` bei Bedarf) —
       **keine** vollständige Liste, das wäre keine Ordnung.
-- [ ] **`Guides`-Tabelle bekommt eine `.harness/skills/reviewer.md`-Zeile**
+- [x] **`Guides`-Tabelle bekommt eine `.harness/skills/reviewer.md`-Zeile**
       (falls dieser Skill in m-trace existiert — prüfen, ggf. aus Template
       übernehmen, das ist ggf. ein eigener Nachzug, kein Blocker dieses
       Slices).
-- [ ] **Expliziter Ein-Index-Hinweis**: „DIES IST DER EINZIGE GATE-INDEX" (oder
+- [x] **Expliziter Ein-Index-Hinweis**: „DIES IST DER EINZIGE GATE-INDEX" (oder
       sinngemäß) direkt über der Sensors-Tabelle, damit die Regel nicht nur
       in `AGENTS.md` steht.
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make docs-check` grün.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -136,7 +136,51 @@ verweist konsistent auf diese Sektion + Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`harness/README.md` komplett gegen das `v6.8.0`-Template neu befüllt. Der
+Gate-Index vereint jetzt, was zuvor auf zwei Dateien verteilt war
+(`AGENTS.md`s alte Gate-Tabelle, aus `slice-014` entfernt, plus die
+bisherige `harness/README.md`-Tabelle): 14 Gates in drei Spalten
+(`Target | Vertrag | Bindung`), zweite Tabelle „Werkzeuge — kein Gate"
+(`doc-trace`, `coverage-report`, `host-deps`). `make gates` bekam die
+einzige Sensor-Datei dieser Tranche (`harness/sensors/gates.md`) — als
+einziges Target, dessen Vertrag mehr als einen Satz braucht (bündelt 14
+Sub-Targets); die übrigen Gates blieben Tabellenzeilen. Neue Sektion
+`## Leseordnung` (drei Zeiger). `Guides`-Tabelle bekam die
+`.harness/skills/reviewer.md`-Zeile (Skill existierte bereits aus
+`slice-007`). `docs/plan/carveouts/README.md` bestätigt: aktuell keine
+aktiven generischen Carveouts, keine `CO-<NNN>`-Zelle nötig.
+
+**Ein Bug beim Einbauen gefunden:** Zwei Target-Zellen (`docs-immutable`,
+`docs-commits`) trugen zunächst ihren Aufruf (`STAGED=1`/`RANGE=…`) direkt
+in der Code-Span des Targets — genau der DoD-Verstoß, den dieser Slice
+selbst benennt. Aufruf in die Vertrag-Spalte verschoben, Target-Zelle
+bleibt nackt.
+
+**Nachtrag, außerhalb des eigentlichen Slice-Scopes:** Beim Bearbeiten
+fiel auf, dass `docs/plan/planning/in-progress/roadmap.md` (Tranche 8,
+`slice-016`, bereits `done`) gegen `modul-06-roadmap.md` (v6.8.0) noch
+unvollständig nachgezogen war — keiner der fünf Abschnitte trug die
+Template-Zitatsätze, „Offene Wellen" war Prosa statt Liste+Marker
+(Template verlangt zwei unabhängige Aussagen: ein Zeiger je offener
+Welle-Datei **plus** Ruhe-Marker, nicht beides verschmolzen), und die
+Sektion „Slices ohne Welle" widersprach der in v6.8.0 neuen Regel
+„Wellenlose Arbeit erscheint nicht in der Roadmap" (in v3.5.1 gab es
+dieses Konzept noch nicht — echte Kehrtwende, keine Altlast). Direkt
+korrigiert (Owner-Entscheidung: Sektion streichen, keine MR — Inhalt war
+und bleibt in `git`/den einzelnen Slice-Dateien auffindbar). `welle-02.md`
+§4 auf `done/`-Link für `slice-014`/`-015` nachgezogen.
+
+**Verifikation:** `make docs-check` — 0 Befunde. `make gates` grün
+(vollständiger Lauf, alle Sub-Gates inkl. Benchmarks/Coverage/Lint/
+Closure-Notes grün).
+
+**Steering-Loop-Lerneintrag:** Ein als „nur bei Bedarf" geplanter
+Sensor-Datei-Schnitt (§3, offene Frage 1) entschied sich beim Schreiben
+von selbst — sobald die Bündelungs-Breite von `make gates` (14
+Sub-Targets) in eine einzige Tabellenzelle sollte, war klar, dass das
+kein Ein-Satz-Vertrag mehr ist. Die Regel „ein Gate je Datei, sobald sein
+Vertrag mehr als einen Satz braucht" brauchte keine Vorab-Schätzung, nur
+den Versuch, es in die Zelle zu schreiben.
 
 ## 8. Sub-Area-Modus-Begründung
 

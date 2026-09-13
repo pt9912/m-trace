@@ -1,9 +1,9 @@
 # Roadmap
 
 **Format-Regel:** Diese Roadmap ist eine Reihenfolge von **Wellen**, keine
-Reihenfolge von Terminen (v3.5.0-Regelwerk Modul 6). Ein Trigger ist eine
-*beobachtbare Bedingung* (nicht ein Datum); Termine erscheinen höchstens als
-Schätzung, treiben aber nie eine Welle.
+Reihenfolge von Terminen (Baseline-Regelwerk `modul-06-roadmap.md`). Ein
+Trigger ist eine *beobachtbare Bedingung* (nicht ein Datum); Termine
+erscheinen höchstens als Schätzung, treiben aber nie eine Welle.
 
 > **Historie vor v3.5.0.** Die vollständige Release- und Entscheidungshistorie
 > bis `0.25.0` (25 Release-/Patch-Pläne, Trigger-Re-Evals, Lessons-learned) steht
@@ -15,42 +15,23 @@ Schätzung, treiben aber nie eine Welle.
 
 ## Offene Wellen
 
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Roadmap-Struktur: fünf Abschnitte — *Offene Wellen* ist **derivativ**: Der
+Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
+`Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
+Closure-Kriterien stehen in der Welle-Datei, nicht hier.
+
+- [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
+
 **Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
-Wellen-Slice ist `in-progress`. Geöffnet ist
-[`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md) (Harness-Regelwerk-Baseline
-v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst). Tranche 1, 2, 3 und 8 sind
-`done` ([`slice-012`](../done/slice-012-harness-baseline-v6.8.0-vendoring.md),
-[`slice-013`](../done/slice-013-conventions-md-zu-index.md),
-[`slice-014`](../done/slice-014-agents-md-neubefuellung.md),
-[`slice-016`](../done/slice-016-roadmap-offene-wellen-format.md)); Tranche
-4 ist geschnitten und wartet in [`open/`](../open/) (`slice-015`);
-die übrigen sechs Tranchen sind noch nicht geschnitten und hängen teils an
-Owner-Entscheidungen (Welle-Datei §8)
-oder Abhängigkeiten zwischen Tranchen. Kein Produktcode betroffen, reines
-Harness/Prozess-Territorium, läuft unabhängig von einer künftigen
-Produkt-Folgewelle (die weiterhin **nicht geschnitten** ist, siehe
-*Nächste Wellen*).
-
-## Slices ohne Welle
-
-Wartung/Architektur, Modul 5 „ohne Welle", alle in [`done/`](../done/), seit
-Abschluss der ersten Welle: [`slice-003`](../done/slice-003-a-check-arch-gate.md)
-(a-check ersetzt `check-architecture.sh`),
-[`slice-004`](../done/slice-004-driving-port-boundary.md) (Driving-Port-Boundary
-säubern), [`slice-005`](../done/slice-005-closure-gate-slice-welle.md)
-(Closure-Gate greift auf slice/welle), [`slice-006`](../done/slice-006-planning-layout-nicht-slices-flach.md)
-(Planning-Layout: Nicht-Slices flach aus `in-progress/`),
-[`slice-007`](../done/slice-007-review-report-praxis.md) (Review-Report-Praxis
-scharf geschaltet — erster echter Handoff-Report + normative Regel),
-[`slice-008`](../done/slice-008-baseline-v3.5.1-bump.md) (Regelwerk-Baseline
-v3.5.0 → v3.5.1, nicht-struktureller Re-Vendor — [ADR-0011](../../adr/0011-harness-baseline-v3.5.1-bump.md), Accepted),
-[`slice-009`](../done/slice-009-image-start-gate.md) (Runtime-Images im Gate
-starten, nicht nur bauen und scannen), [`slice-010`](../done/slice-010-dcheck-planning-waves.md)
-(d-check `planning.waves` — Wellen-Register-Invariante) und
-[`slice-011`](../done/slice-011-dcheck-links-resolve-from.md) (d-check
-`links.resolve-from` — ortsfeste Verweise im Planning-Lifecycle).
+Wellen-Slice ist `in-progress`.
 
 ## Nächste Wellen
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Roadmap-Struktur: fünf Abschnitte, Bullet *Nächste Wellen* — die geordnete
+Vorschau: je Zeile Welle, Trigger als beobachtbare Bedingung, wichtigste
+Slices und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger (beobachtbar) | Wichtigste Slices | Aufwand |
 |---|---|---|---|
@@ -80,6 +61,9 @@ schneiden, wenn die reine Regel driftet; (2) Verifier-/Validator-Skills (Modul
 
 ## Meilensteine
 
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md` §Welle ≠
+Meilenstein ≠ Release.
+
 | Meilenstein | Welle(n) | Trigger (extern) | Status |
 |---|---|---|---|
 | `0.25.0` released | Multi-Tenant-Fairness + Cutover | Tag `v0.25.0` + GHCR/npm-Publish (2026-07-13) | erreicht 2026-07-13 ([`CHANGELOG.md#0250---2026-07-13`](../../../../CHANGELOG.md#0250---2026-07-13)) |
@@ -87,6 +71,12 @@ schneiden, wenn die reine Regel driftet; (2) Verifier-/Validator-Skills (Modul
 | `0.25.1` released | ohne Welle (Wartung/Security) | Tag `v0.25.1` + GHCR/npm-Publish (2026-08-21) | erreicht 2026-08-21 ([`CHANGELOG.md#0251---2026-08-21`](../../../../CHANGELOG.md#0251---2026-08-21)) |
 
 ## Abhängigkeitsgraph
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Roadmap-Struktur: fünf Abschnitte, Bullet *Nächste Wellen* — die
+Abhängigkeit steht als beobachtbare Bedingung in der `Trigger`-Spalte
+**und** als gerichtete Kante hier; eine Welle, die ohne fertige
+Vorgängerin nicht starten kann, ist eine Phantom-Welle.
 
 ```mermaid
 flowchart LR
@@ -101,6 +91,9 @@ flowchart LR
 ```
 
 ## Abgeschlossene Wellen
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Roadmap-Struktur: fünf Abschnitte.
 
 | Welle | Abschluss | Closure-/Ergebnis-Record |
 |---|---|---|
@@ -119,6 +112,12 @@ flowchart LR
 > ab der Produkt-Folgewelle folgen der kanonischen Form.
 
 ## Historische Trigger-Verschiebungen
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Roadmap-Struktur: fünf Abschnitte, Bullet *Historische
+Trigger-Verschiebungen* — das Drift-Log: jede Umplanung mit Datum,
+Änderung, Grund. Leer heißt starre Roadmap, jede Zeile voll heißt
+treibende.
 
 | Datum | Was wurde geändert? | Warum? |
 |---|---|---|

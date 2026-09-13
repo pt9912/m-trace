@@ -82,7 +82,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-012`](done/slice-012-harness-baseline-v6.8.0-vendoring.md) ✅ | Baseline v6.8.0 vendoren, `harness/conventions.md`-Zeiger umstellen | Grundlagen, Modul 2 (Bootstrap) |
 | [`slice-013`](done/slice-013-conventions-md-zu-index.md) ✅ | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
 | [`slice-014`](done/slice-014-agents-md-neubefuellung.md) ✅ | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
-| [`slice-015`](open/slice-015-harness-readme-sensoren-auslagerung.md) | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
+| [`slice-015`](done/slice-015-harness-readme-sensoren-auslagerung.md) ✅ | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
 | Tranche 5 (noch nicht geschnitten) | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
 | Tranche 6 (noch nicht geschnitten) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0011) | Modul 4 (ADRs) |
 | Tranche 7 (noch nicht geschnitten) | Slice-Template + Beobachtungs-Register (`planning.observations`) | Modul 5 (Planning-Harness) |
