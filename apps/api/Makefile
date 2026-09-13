@@ -169,13 +169,22 @@ benchmark-smoke:
 # Makefile-Variable: `make api-fuzz-check FUZZTIME=10m` für
 # Nightly-Budget.
 #
-# Crash-Reproduktionen landen automatisch unter
-# `testdata/fuzz/<TargetName>/<id>` (deterministisch, fix beim
-# nächsten Bench-/Test-Lauf reproduzierbar). Plan-DoD-Item 4
-# verlangt opt-in (kein PR-Pfad).
+# Crash-Reproduktionen landen unter `testdata/fuzz/<TargetName>/<id>`
+# (deterministisch, fix beim nächsten Bench-/Test-Lauf reproduzierbar).
+# Plan-DoD-Item 4 verlangt opt-in (kein PR-Pfad).
+#
+# Hermetisch (Modul 14): die `fuzz`-Stage backt die Quellen per `COPY`
+# ein, kein Bind-Mount. Der Lauf passiert in einem erstellten (nicht
+# `--rm`) Container, damit `docker cp` die Crash-Reproduktionen danach
+# heraus holen kann — als Host-User geschrieben, nicht als `root`
+# (Modul 14 §Besitz der Belege). Fehlen Crashes, ist `testdata/fuzz/`
+# leer/nicht vorhanden — der `docker cp`-Fehlschlag ist dann erwartet
+# und wird ignoriert (`|| true`), der eigentliche Exit-Code kommt aus
+# `docker start`.
 FUZZTIME ?= 30s
 fuzz-check:
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 \
+	docker build --target fuzz -t $(IMAGE):go-fuzz .
+	cid=$$(docker create $(IMAGE):go-fuzz \
 		bash -c 'set -eu; \
 			grep -rEho "^func (Fuzz[A-Za-z0-9_]+)" --include="*_fuzz_test.go" --include="*_fuzz_internal_test.go" \
 				./hexagon ./adapters | sort -u | while read -r line; do \
@@ -184,7 +193,11 @@ fuzz-check:
 					./hexagon ./adapters | head -1 | xargs dirname); \
 				echo "[fuzz-check] $$name in $$pkg ($(FUZZTIME))"; \
 				go test -run="^$$" -fuzz="^$$name$$" -fuzztime=$(FUZZTIME) "./$$pkg"; \
-			done'
+			done') ; \
+	docker start -a $$cid ; status=$$? ; \
+	docker cp $$cid:/src/testdata/fuzz testdata/fuzz 2>/dev/null || true ; \
+	docker rm $$cid >/dev/null ; \
+	exit $$status
 
 # Mutation-Testing-Suite extra-gates.md). Pilot-Modul:
 # `apps/api/hexagon/application/event_meta_validation.go` (das Package
@@ -202,22 +215,33 @@ fuzz-check:
 # Blockierung erst, wenn der Score drei Beobachtungsläufe in Folge
 # > 70 % erreicht (siehe Doku §3 Score-Schwelle).
 #
-# Container-Lauf in `golang:1.26` (konsistent mit `benchmark-smoke`/
-# `fuzz-check`); Tool wird per `go install` zur Laufzeit gezogen,
-# damit kein neuer Eintrag in `go.mod` nötig ist.
+# Hermetisch (Modul 14): nutzt dieselbe `fuzz`-Stage (Quellen per COPY
+# gebacken) wie `fuzz-check` — Tool wird per `go install` zur Laufzeit
+# gezogen, damit kein neuer Eintrag in `go.mod` nötig ist. Lauf in einem
+# erstellten (nicht `--rm`) Container, Report-Dateien per `docker cp`
+# zurückgeholt — als Host-User geschrieben, nicht als `root` (Modul 14
+# §Besitz der Belege; löst das in `slice-021` §6 vermerkte
+# Root-Ownership-Risiko auf).
 GREMLINS_VERSION ?= v0.5.0
 mutation-report:
 	mkdir -p .tmp/mutation
-	docker run --rm -v "$(CURDIR):/src" -w /src golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 \
+	docker build --target fuzz -t $(IMAGE):go-fuzz .
+	cid=$$(docker create $(IMAGE):go-fuzz \
 		bash -c 'set -eu; \
+			mkdir -p .tmp/mutation; \
 			go install github.com/go-gremlins/gremlins/cmd/gremlins@$(GREMLINS_VERSION); \
 			gpath=$$(go env GOPATH)/bin/gremlins; \
 			echo "[mutation-report] gremlins $$($$gpath --version 2>/dev/null || echo $(GREMLINS_VERSION))"; \
 			$$gpath unleash \
 				--output=.tmp/mutation/api-mutation-report.json \
 				--tags="" \
-				./hexagon/application | tee .tmp/mutation/api-mutation-report.txt'
+				./hexagon/application | tee .tmp/mutation/api-mutation-report.txt') ; \
+	docker start -a $$cid ; status=$$? ; \
+	docker cp $$cid:/src/.tmp/mutation/api-mutation-report.json .tmp/mutation/api-mutation-report.json 2>/dev/null || true ; \
+	docker cp $$cid:/src/.tmp/mutation/api-mutation-report.txt .tmp/mutation/api-mutation-report.txt 2>/dev/null || true ; \
+	docker rm $$cid >/dev/null ; \
+	exit $$status
 
 # Remove all spike-related images.
 clean:
-	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps $(IMAGE):go-coverage $(IMAGE):go-race $(IMAGE):go-benchmark $(IMAGE):go-vuln
+	-docker rmi $(IMAGE):go $(IMAGE):go-test $(IMAGE):go-lint $(IMAGE):go-compile $(IMAGE):go-deps $(IMAGE):go-coverage $(IMAGE):go-race $(IMAGE):go-benchmark $(IMAGE):go-vuln $(IMAGE):go-fuzz

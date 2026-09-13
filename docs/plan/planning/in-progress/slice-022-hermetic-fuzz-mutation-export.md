@@ -25,34 +25,34 @@ Bind-Mount, damit die Artefakte dem aufrufenden Host-User gehören, nicht
 
 ## 2. Definition of Done
 
-- [ ] **`apps/api/Dockerfile`**: neue Stage `FROM deps AS fuzz` (`COPY .
+- [x] **`apps/api/Dockerfile`**: neue Stage `FROM deps AS fuzz` (`COPY .
       .`, kein `RUN` des Fuzz-Laufs selbst — analog `benchmark`/`vuln`
       aus `slice-021`). **Keine** eigene `mutation`-Stage nötig — sie
       teilt sich `deps` direkt mit `gremlins` als Laufzeit-`go install`
       im Makefile-Aufruf (Tool-Version ändert sich unabhängig vom
       Quellstand; ein eigener Stage-Cache brächte hier keinen Vorteil,
       da `gremlins unleash` ohnehin bei jedem Lauf frisch mutiert).
-- [ ] **`apps/api/Makefile` `fuzz-check`**: `docker build --target fuzz`,
+- [x] **`apps/api/Makefile` `fuzz-check`**: `docker build --target fuzz`,
       dann `docker create` + `docker start -a` (streamt stdout, kein
       `--rm`) + `docker cp <cid>:/src/testdata/fuzz testdata/fuzz` +
       `docker rm` — Crash-Reproduktionen kommen dem Host-User gehörend
       zurück, nicht `root:root`.
-- [ ] **`apps/api/Makefile` `mutation-report`**: gleiches Muster
+- [x] **`apps/api/Makefile` `mutation-report`**: gleiches Muster
       (`docker build --target fuzz` wiederverwendet — `mkdir -p
       .tmp/mutation` bleibt Host-seitig vor dem Lauf, `docker cp
       <cid>:/src/.tmp/mutation .tmp/` nach Lauf-Ende) statt direktem
       Bind-Mount-Schreibzugriff.
-- [ ] **Verifikation:** `make fuzz-check` (in `apps/api/`, alle sechs
+- [x] **Verifikation:** `make fuzz-check` (in `apps/api/`, alle sechs
       `Fuzz*`-Targets, Default-`FUZZTIME=30s`) läuft durch, `ls -l
       testdata/fuzz` (falls Crashes) zeigt Host-User-Eigentümerschaft.
       `make mutation-report` läuft durch, `ls -l .tmp/mutation/`
       zeigt Host-User-Eigentümerschaft (Root-Ownership-Risiko aus
       `slice-021` §6 damit aufgelöst).
-- [ ] `make gates` grün (beide Targets sind opt-in, nicht Teil von
+- [x] `make gates` grün (beide Targets sind opt-in, nicht Teil von
       `make gates` selbst — Verifikation lässt `make gates` unberührt
       grün bleiben).
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make docs-check` grün.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -89,7 +89,45 @@ Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+Neue Stage `FROM deps AS fuzz` (`COPY . .`, kein RUN) in
+`apps/api/Dockerfile`. `fuzz-check` und `mutation-report`
+(`apps/api/Makefile`) beide auf `docker build --target fuzz` +
+`docker create`/`docker start -a`/`docker cp`/`docker rm` umgestellt —
+**abweichend vom ursprünglichen Plan-Entwurf** (§3 sah eine separate
+Wiederverwendung von `deps` für `mutation-report` vor): stattdessen
+teilt sich `mutation-report` direkt das `go-fuzz`-Image mit
+`fuzz-check`, da beide dieselbe Quellbasis brauchen und Docker die
+zweite `docker build`-Invocation ohnehin aus dem Layer-Cache bedient —
+kein separater Stage-Name nötig. `apps/api/Makefile`s `clean`-Target um
+`go-fuzz` ergänzt.
+
+**Verifikation (echte Läufe, nicht nur Trockenlauf):** `make fuzz-check`
+(Default `FUZZTIME=30s`, alle sechs `Fuzz*`-Targets) — sauberer,
+unpräfigierter `go test`-Output, exit 0, kein `testdata/fuzz/` (keine
+Crashes gefunden, `docker cp`-Fehlschlag korrekt via `|| true`
+verschluckt). `make mutation-report` — `gremlins unleash` lief
+vollständig durch (Killed: 222, Lived: 47, Not covered: 42), **beide**
+Ausgabedateien (`api-mutation-report.json`/`.txt`) landeten mit
+`ls -l` bestätigt als Host-User (`db:db`) im Baum, **nicht** `root:root`
+— das in `slice-021` §6 vermerkte Root-Ownership-Risiko ist damit
+aufgelöst. Vollständiger `make gates`-Lauf grün. Test-Image-Tag
+(`go-fuzz`) und keine verwaisten Container nach den Läufen bestätigt
+(`docker ps -a` leer für dieses Image).
+
+**Steering-Loop-Lerneintrag:** Das `docker create`/`start -a`/`cp`/`rm`-
+Muster (statt `docker run --rm` mit Bind-Mount) ist jetzt in drei
+Targets etabliert (`fuzz-check`, `mutation-report`) und löst den
+Besitz-Konflikt strukturell, nicht per Nacharbeit (`chown` nach dem
+Lauf) — ein `chown`-Fix hätte denselben Effekt am Ergebnis, aber jeder
+neue Bind-Mount-Gate hätte ihn erneut gebraucht. Das Muster selbst ist
+jetzt der wiederverwendbare Baustein für künftige Schreib-Rückweg-Gates,
+nicht nur eine einmalige Reparatur.
+
+**Damit ist Tranche 9 (Docker-Harness-Audit) vollständig**: 9a
+(Digest-Pinning), 9b (`benchmark-smoke`/`vuln-check`), 9c (dieser
+Slice) — alle drei Teile `done`.
+
+**Folge-Slices:** keine unmittelbaren.
 
 ## 8. Sub-Area-Modus-Begründung
 

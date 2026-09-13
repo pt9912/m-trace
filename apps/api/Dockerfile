@@ -89,6 +89,17 @@ FROM deps AS benchmark
 
 COPY . .
 
+# ---- fuzz ----------------------------------------------------------------
+# Hermetische Basis für `make fuzz-check` **und** `make mutation-report`
+# (beide brauchen dieselbe Quellbasis, kein RUN hier). Crash-Reproduktionen
+# (`testdata/fuzz/`) bzw. Mutation-Reports (`.tmp/mutation/`) entstehen erst
+# beim `docker run`/`docker create`-Lauf gegen dieses Image und kommen per
+# `docker cp` zurück — nicht per Bind-Mount, sonst gehörten sie `root`
+# (Modul 14 §Besitz der Belege eines containerisierten Gates).
+FROM deps AS fuzz
+
+COPY . .
+
 # ---- vuln ----------------------------------------------------------------
 # Hermetische Basis für `make vuln-check`: `govulncheck` als Build-Schritt
 # installiert (legitimer Build-Bestandteil), der eigentliche Scan läuft
