@@ -72,14 +72,17 @@ Grundsatz wie in der v3.5.0-Migration (ADR-0009 Variante C). Nur
 hier als Tranchen mit Kennung, Titel und Kern-Aussage vorgemerkt und werden
 geschnitten, sobald sie an der Reihe sind (§7) — ein Vorab-Schnitt aller zehn
 Tranchen würde mehrere davon an ungeklärten Owner-Entscheidungen (§8) aufhängen,
-bevor überhaupt Arbeit beginnt.
+bevor überhaupt Arbeit beginnt. Tranche 2–4 sind mittlerweile geschnitten (alle
+drei Templates — `AGENTS.template.md`, `harness/conventions.template.md`,
+`harness/README.template.md` — sind direkt diffgeprüft, nicht nur aus der
+Fork-Recherche übernommen; Details je Slice-Text).
 
 | Slice | Titel | Bezug (Regelwerk-Modul) |
 |---|---|---|
 | [`slice-012`](open/slice-012-harness-baseline-v6.8.0-vendoring.md) | Baseline v6.8.0 vendoren, `harness/README.md`-Zeiger umstellen | Grundlagen, Modul 2 (Bootstrap) |
-| Tranche 2 (noch nicht geschnitten) | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
-| Tranche 3 (noch nicht geschnitten) | `AGENTS.md` komplett neu befüllen | Modul 8, 9, 13 (Templates) |
-| Tranche 4 (noch nicht geschnitten) | `harness/README.md` nachziehen (Leseordnung, Reviewer-Zeile, Sensors-Alleinstellung) | Templates |
+| [`slice-013`](open/slice-013-conventions-md-zu-index.md) | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
+| [`slice-014`](open/slice-014-agents-md-neubefuellung.md) | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
+| [`slice-015`](open/slice-015-harness-readme-sensoren-auslagerung.md) | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
 | Tranche 5 (noch nicht geschnitten) | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
 | Tranche 6 (noch nicht geschnitten) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0011) | Modul 4 (ADRs) |
 | Tranche 7 (noch nicht geschnitten) | Slice-Template + Beobachtungs-Register (`planning.observations`) | Modul 5 (Planning-Harness) |
@@ -157,14 +160,28 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    tatsächlich zu einer `spezifikation.md` zusammenführen? Letzteres wäre ein
    erheblich größerer, produktnaher Eingriff (RTM, Cross-Refs, `matrix`-Modul)
    und sprengt diese Welle.
-2. **Roadmap-Terminologie (Tranche 8).** „Aktuelle Welle" (Singleton,
-   `planning.waves.mode: one`, gerade in `slice-010` bewusst so gewählt) vs.
-   „Offene Wellen" (Liste, `mode: many`, aktueller Kanon-Vorschlag). m-trace
-   fährt bisher nie mehr als eine Welle gleichzeitig — der Umstieg ist
-   **kosmetisch/terminologisch**, keine funktionale Notwendigkeit. **Frage:**
-   Umbenennen (und `.d-check.yml`s `planning`-Block + `heading:`-Override
-   nachziehen) oder bei „Aktuelle Welle" + `mode: one` bleiben und die
-   Abweichung in Tranche 2 als weitere MR-Adaption festhalten?
+2. **Roadmap-Terminologie (Tranche 8) — Mechanik bereits umgestellt, nur der
+   Name ist noch offen.** Direkter Diff `roadmap.template.md` v3.5.1 gegen
+   v6.8.0 gezogen (2026-09-13, beim Anlegen dieses Slices): der neue Kanon
+   nennt den Abschnitt „Offene Wellen" und führt ihn als **Liste** von
+   Wellen-Zeigern (`[<welle-id>](../<welle-id>.md)` je offener Wellen-Datei)
+   **plus** den Ruhe-Marker **zusätzlich**, wenn `in-progress/` keinen Slice
+   trägt — beides gleichzeitig ist dort ausdrücklich der Normalfall direkt
+   nach einer Wellen-Eröffnung. Genau das haben wir in `.d-check.yml`
+   (`planning.waves.mode: many`) und `roadmap.md` (Marker + Wellen-Zeiger im
+   selben Abschnitt) beim Anlegen von `welle-02` bereits umgesetzt — nicht
+   als Workaround, sondern weil es exakt der Kanon-Vorgabe entspricht.
+   **Die verbleibende, echte Frage ist nur noch der Abschnitts-**Name**:**
+   `## Aktuelle Welle` (heutiger Wortlaut, `heading:`-Default in
+   `.d-check.yml` bereits implizit darauf gesetzt) beibehalten und als
+   MR-Adaption dokumentieren, oder auf `## Offene Wellen` umbenennen (dann
+   `heading:` in `.d-check.yml` explizit mitziehen)? Zwei weitere,
+   unabhängig entscheidbare Format-Deltas aus demselben Template-Diff, die
+   bei Gelegenheit dieser Tranche mitlaufen könnten: die
+   `**Status:** Aktiv. **Letzte Änderung:** …`-Kopfzeile entfällt im neuen
+   Template ersatzlos, und die Meilensteine-Status-Spalte trägt künftig
+   „erreicht YYYY-MM-DD" **plus auflösbarem Beleg-Anker** (Tag, Workflow-Lauf,
+   Ergebnis-Notiz) statt bloßem „erreicht"/„offen".
 3. **Review-Report-Archivierung (Modul 10, bewusst Out-of-Scope in §6).** Der
    neue Kanon archiviert Review-Reports bei Slice-Closure vollständig
    (`done/slice-<Kennung>-archiv.zip`) statt sie lose in `docs/reviews/`
