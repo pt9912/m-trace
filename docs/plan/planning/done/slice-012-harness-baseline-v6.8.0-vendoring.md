@@ -116,6 +116,14 @@ schreiben.
 geschnitten und kann jetzt gegen den frisch vendorten `v6.8.0`-Wortlaut
 umgesetzt werden.
 
+**Nachtrag 2026-09-13 (Owner-Entscheidung, Reversal):** Der oben in §2/§7
+festgehaltene „kein Löschen"-Grundsatz für `v3.5.1` wurde vom Owner explizit
+widerrufen — alte Regelwerks-Stände werden nicht als Audit-Trail gebraucht,
+nur als Rauschen bewertet. `.harness/baseline/v3.5.1/` wurde daraufhin
+entfernt (`git rm -r`, siehe Folge-Commit). `docs/plan/adr/0011-harness-baseline-v3.5.1-bump.md`
+und `slice-008` bleiben unverändert stehen (Zitat eines historischen Fakts,
+kein toter Link auf eine noch existierende Datei).
+
 ## 8. Sub-Area-Modus-Begründung
 
 ### Sub-Area: Harness-Baseline (Werkzeug/Prozess)
