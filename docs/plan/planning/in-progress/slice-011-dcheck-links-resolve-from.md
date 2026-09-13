@@ -107,7 +107,45 @@ Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`.d-check.yml` führt jetzt einen `links.resolve-from`-Block mit `dirs: [open,
+next, in-progress]` und `fixed-dirs: [done]`, additiv zum bereits aktiven
+`links`-Modul — keine neue Zeile in `modules:` nötig. Umsetzung entsprach
+genau dem in §3 recherchierten Stand, keine Überraschung.
+
+**Positiv-Probe:** `make docs-check` meldete während der Umsetzung nur den
+(erwarteten, in `slice-010` dokumentierten) `planning-drift`-Fund — **kein**
+zusätzlicher Fund durch `resolve-from` selbst; der heutige Bestand in
+`open/`/`next/`/`in-progress/` enthält keinen ortsabhängigen Verweis.
+
+**Negativ-Probe (fail-closed statt Einzelfall-Mismatch):** `dirs` auf zwei
+nicht existierende Verzeichnisse gezeigt erzeugte sofort
+`link-position-dependent: kein dirs-Verzeichnis der resolve-from-Gruppe
+existiert (…) — die Gruppe prüft keine einzige Quelle (fail-closed)`, Exit 1.
+
+**Eine echte Einzeldatei-Diskrepanz (unterschiedliche Auflösung je nach
+Lifecycle-Ort) ließ sich am m-trace-Bestand nicht organisch nachstellen** —
+`open/`, `next/` und `in-progress/` liegen alle auf **derselben**
+Verzeichnistiefe unter `docs/plan/planning/`, ein korrekt geschriebener
+relativer Verweis löst von jedem der drei Orte also strukturell gleich auf.
+Das ist kein Loch in der Probe, sondern eine Eigenschaft des Bestands: Der
+reale Fangbereich der Prüfung liegt in genau zwei Fällen, die die
+Fail-closed-Probe abdeckt (Konfigurationsfehler) plus dem Fall, den nur die
+Zukunft prüfen kann — ein versehentlicher zusätzlicher `../` beim Schreiben
+eines Slice-Dokuments, oder eine künftige Änderung der Verzeichnistiefe.
+
+**Verifikation nach dem Move nach `done/`:** `make docs-check` — 0 Befunde.
+`make gates` grün.
+
+**Steering-Loop-Lerneintrag:** Bei einer Prüfung, deren Fangbereich von der
+**Struktur** des eigenen Bestands abhängt (hier: Gleichtiefe der
+Lifecycle-Verzeichnisse), lohnt sich vor dem Schnitt die kurze Prüfung, ob ein
+echter Negativfall überhaupt organisch entstehen kann — sonst bleibt die
+Prüfung bis zur nächsten Struktur-/Layout-Änderung rein defensiv, ohne dass
+das im Slice-Text als solches benannt wäre. Für künftige Struktur-Checks:
+diese Frage explizit in §3 (Plan vor Code) stellen, nicht erst beim Schreiben
+der Closure-Notiz merken.
+
+**Folge-Slices:** keine.
 
 ## 8. Sub-Area-Modus-Begründung
 

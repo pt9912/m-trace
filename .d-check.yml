@@ -69,6 +69,16 @@ versions:
 #  - `citations`/`sources` brauchen explizite Marker (`d-check:cite`/`dsource`);
 #    m-trace nutzt keine → nichts zu prüfen.
 
+# Modul `links` (slice-011): `resolve-from` meldet einen relativen Verweis in
+# einem wandernden Planning-Dokument, der nicht von JEDEM Ort seiner
+# Lifecycle-Gruppe auf dasselbe Ziel auflöst — bevor der nächste `git mv`
+# (open/next/in-progress -> done, MR-007) ihn bricht. `done/` zählt als
+# fester Auflösungsort (Ziel, keine eigene Quelle).
+links:
+  resolve-from:
+    - dirs: [docs/plan/planning/open, docs/plan/planning/next, docs/plan/planning/in-progress]
+      fixed-dirs: [docs/plan/planning/done]
+
 codepaths:
   scope:
     roots: [docs/user, docs/ops, docs/dev, docs/perf, docs/plan/adr, spec]
