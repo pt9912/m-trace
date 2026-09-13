@@ -83,7 +83,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-013`](done/slice-013-conventions-md-zu-index.md) ✅ | `harness/conventions.md` → Index + `harness/conventions/MR-<NNN>-*.md` | Grundlagen (MR-Datei-Form) |
 | [`slice-014`](done/slice-014-agents-md-neubefuellung.md) ✅ | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
 | [`slice-015`](done/slice-015-harness-readme-sensoren-auslagerung.md) ✅ | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
-| Tranche 5 (noch nicht geschnitten) | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
+| [`slice-017`](open/slice-017-spec-straten-mr.md) | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
 | Tranche 6 (noch nicht geschnitten) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0011) | Modul 4 (ADRs) |
 | Tranche 7 (noch nicht geschnitten) | Slice-Template + Beobachtungs-Register (`planning.observations`) | Modul 5 (Planning-Harness) |
 | [`slice-016`](done/slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
@@ -174,16 +174,12 @@ kann T11 parallel zu T9/T10 laufen.
 Diese Welle enthält **echte Entscheidungen**, keine reinen
 Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
 
-1. **Spec-Straten-Form (Tranche 5).** Der neue Kanon verlangt zwingend alle
-   drei Straten (`lastenheft.md` › `spezifikation.md` › `architektur.md`).
-   m-trace führt vier getrennte „Technical"-Dateien
+1. **Spec-Straten-Form (Tranche 5) — entschieden (Owner, 2026-09-13):**
+   MR-Adaption deklarieren, die m-traces Vier-Datei-Technical-Schicht
    (`backend-api-contract.md`, `browser-support.md`, `player-sdk.md`,
-   `telemetry-model.md`) statt einer `spezifikation.md`. **Frage:** Eine
-   MR-Adaption deklarieren, die diese Vier-Datei-Form als bewusste Abweichung
-   festhält (kein Refactor der Spec-Dateien selbst) — oder die vier Dateien
-   tatsächlich zu einer `spezifikation.md` zusammenführen? Letzteres wäre ein
-   erheblich größerer, produktnaher Eingriff (RTM, Cross-Refs, `matrix`-Modul)
-   und sprengt diese Welle.
+   `telemetry-model.md` statt einer `spezifikation.md`) als bewusste
+   Abweichung festhält — kein Refactor der Spec-Dateien selbst. Umsetzung:
+   [`slice-017`](open/slice-017-spec-straten-mr.md).
 2. **Roadmap-Terminologie (Tranche 8) — Mechanik bereits umgestellt, nur der
    Name ist noch offen.** Direkter Diff `roadmap.template.md` v3.5.1 gegen
    v6.8.0 gezogen (2026-09-13, beim Anlegen dieses Slices): der neue Kanon
