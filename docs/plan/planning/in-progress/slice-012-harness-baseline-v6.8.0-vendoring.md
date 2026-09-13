@@ -83,7 +83,38 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`.harness/baseline/v6.8.0/{regelwerk,templates}/` + `SHA256SUMS` (54 Dateien)
+committet, `harness/conventions.md` §Baseline auf `v6.8.0` umgestellt (Stand,
+Pfad, Release-Digest, Vendoring-Datum + Slice-/Welle-Verweis). `v3.5.1`
+bleibt unangetastet als Audit-Referenzform liegen, wie in §3 vorgesehen.
+
+**Ein Stolperstein beim Erzeugen von `SHA256SUMS`, der Erwähnung wert ist:**
+Der naive Einzeiler
+`find . -type f | sed … | xargs sha256sum > SHA256SUMS` erzeugte **zweimal
+hintereinander** eine Datei, die sich selbst nicht bestätigt
+(`sha256sum -c` meldete `SHA256SUMS: GESCHEITERT`) — die Shell legt die
+Ausgabedatei für die Umleitung an, sobald die Pipeline startet, und `find`
+lief offenbar oft genug parallel dazu, um die (noch leere) Datei selbst
+aufzulisten. Behoben, indem die Dateiliste zuerst vollständig in eine
+Shell-Variable eingefangen wurde (`FILES=$(find … )`), bevor `sha256sum`
+überhaupt lief — danach 54 von 54 Dateien `OK`, `SHA256SUMS` selbst korrekt
+nicht in sich selbst enthalten (wie im `v3.5.1`-Vorbild).
+
+**Verifikation:** `sha256sum -c SHA256SUMS` — 54/54 `OK`, Exit 0.
+`make docs-check` grün (nach Nachzug der Folge-Referenzen in `roadmap.md`,
+`welle-02` und dieser Slice-Datei selbst — alle drei zeigten zwischenzeitlich
+noch auf den `open/`-Vorstand). `make gates` grün.
+
+**Steering-Loop-Lerneintrag:** Ein Shell-Einzeiler, der eine Datei erzeugt
+UND deren eigenen Inhalt in derselben Pipeline aufzählt, ist eine
+Race-Condition-Falle — unabhängig davon, wie harmlos er aussieht. Für
+künftige Baseline-Vendorings: die Datei-Liste immer erst vollständig
+einfangen (Variable oder temporäre Datei), dann erst die Zieldatei
+schreiben.
+
+**Folge-Slices:** keine unmittelbaren — Tranche 2 (`slice-013`) ist bereits
+geschnitten und kann jetzt gegen den frisch vendorten `v6.8.0`-Wortlaut
+umgesetzt werden.
 
 ## 8. Sub-Area-Modus-Begründung
 

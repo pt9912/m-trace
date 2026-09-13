@@ -9,16 +9,20 @@ ohne sie zu kopieren.
 ## Baseline
 
 m-trace adoptiert die ai-harness-course-Baseline; die **aktive Version ist
-v3.5.1** (Kurs-Welle 33, 2026-07-23), vendored netzlos unter
-`.harness/baseline/v3.5.1/regelwerk/` (17 Module + 3 Grundlagen) und
-`.harness/baseline/v3.5.1/templates/` (die Referenz-Ziel-Formen). Das
+v6.8.0** (Kurs-Welle 135, 2026-09-13), vendored netzlos unter
+`.harness/baseline/v6.8.0/regelwerk/` (17 Module + 8 Grundlagen-Dateien) und
+`.harness/baseline/v6.8.0/templates/` (die Referenz-Ziel-Formen). Das
 Release-Archiv `lab-regelwerk.zip` trägt sha256
-`7268a8e6f36476c98d5cf0547d16deacec70fcddcf23df38f87d029e967cb10d`; die
-Per-Datei-Integrität ist in `.harness/baseline/v3.5.1/SHA256SUMS` gepinnt und
-wird mit `sha256sum -c` verifiziert. Vendored 2026-07-24 gemäß
-[ADR-0011](../docs/plan/adr/0011-harness-baseline-v3.5.1-bump.md) (nicht-
-struktureller Bump: Kurs-URL-Stempel + eine Template-Klarstellung, dass `done/`
-neben Slices auch Nicht-Slice-Records hält — bestätigt MR-005/slice-006).
+`2c55e6d1b821ae15ff73f5a9b3dc2269843db0ffcf9845a4bd0df2cfebbdc6c7`; die
+Per-Datei-Integrität ist in `.harness/baseline/v6.8.0/SHA256SUMS` gepinnt und
+wird mit `sha256sum -c` verifiziert. Vendored 2026-09-13
+([`slice-012`](../docs/plan/planning/in-progress/slice-012-harness-baseline-v6.8.0-vendoring.md),
+[`welle-02`](../docs/plan/planning/welle-02-regelwerk-v6.8.0-migration.md)
+Tranche 1) — reines Vendoring + Zeiger-Umstellung; die inhaltliche Anpassung
+von `AGENTS.md` und dieser Datei an den neuen Kanon folgt in den weiteren
+`welle-02`-Tranchen. Die vorherige **v3.5.1-Baseline bleibt** unter
+`.harness/baseline/v3.5.1/` zusätzlich liegen (Audit-Referenzform, analog zur
+v3.5.0-Präzedenz unten).
 
 Die **strukturelle Adoption** (kanonisches Layout, vendored-Baseline-Mechanismus,
 AGENTS.md-Einstieg) traf ADR-0009 mit v3.5.0; ADR-0011 schreibt nur den Pin fort.

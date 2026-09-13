@@ -15,14 +15,15 @@ Schätzung, treiben aber nie eine Welle.
 
 ## Offene Wellen
 
-**Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
-Wellen-Slice ist `in-progress`. Geöffnet ist
+Geöffnet ist
 [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md) (Harness-Regelwerk-Baseline
-v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst). Tranche 8 ist `done`
-([`slice-016`](../done/slice-016-roadmap-offene-wellen-format.md), dieses
-Roadmap-Format-Update selbst); Tranche 1–4 sind geschnitten und warten in
-[`open/`](../open/) (`slice-012`–`015`); die übrigen fünf Tranchen sind noch
-nicht geschnitten und hängen teils an Owner-Entscheidungen (Welle-Datei §8)
+v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst). Aktuell `in-progress`:
+[`slice-012`](slice-012-harness-baseline-v6.8.0-vendoring.md) (Tranche 1,
+Baseline-Vendoring). Tranche 8 ist bereits `done`
+([`slice-016`](../done/slice-016-roadmap-offene-wellen-format.md)); Tranche
+2–4 sind geschnitten und warten in [`open/`](../open/) (`slice-013`–`015`);
+die übrigen fünf Tranchen sind noch nicht geschnitten und hängen teils an
+Owner-Entscheidungen (Welle-Datei §8)
 oder Abhängigkeiten zwischen Tranchen. Kein Produktcode betroffen, reines
 Harness/Prozess-Territorium, läuft unabhängig von einer künftigen
 Produkt-Folgewelle (die weiterhin **nicht geschnitten** ist, siehe
