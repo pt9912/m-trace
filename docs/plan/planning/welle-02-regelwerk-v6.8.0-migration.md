@@ -90,7 +90,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-020`](done/slice-020-digest-pinning-image-hash.md) ✅ | Docker-Harness-Audit Teil 1: Base-Image-Digest-Pinning + `harness/image-hash.txt` | Modul 14 |
 | [`slice-021`](done/slice-021-hermetic-benchmark-mount-abgrenzung.md) ✅ | Docker-Harness-Audit Teil 2: hermetische `benchmark-smoke`-Stage, Security-Scan-Mount-Abgrenzung (MR) | Modul 14 |
 | [`slice-022`](done/slice-022-hermetic-fuzz-mutation-export.md) ✅ | Docker-Harness-Audit Teil 3: hermetische Gate-Stages für `apps/api` Fuzz/Mutation (Schreib-Rückweg-Export, root-Ownership-Risiko bei `mutation-report`) | Modul 14 |
-| [`slice-023`](in-progress/slice-023-dcheck-reviews-modul.md) | d-check-Sensor `reviews` aktivieren (`vcs`/`commits` bereits aktiv, `targets` zurückgestellt — s. §8) | Templates (`.d-check.yml`), Modul 10 |
+| [`slice-023`](done/slice-023-dcheck-reviews-modul.md) ✅ | d-check-Sensor `reviews` aktivieren (`vcs`/`commits` bereits aktiv, `targets` zurückgestellt — s. §8) | Templates (`.d-check.yml`), Modul 10 |
 | Tranche 11 (noch nicht geschnitten) | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, zwei neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
 
 **Bewusst nicht in dieser Welle:** Modul 12 (Replay-Evaluierung) — m-trace hat
@@ -211,7 +211,7 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    größerer, laufend zu pflegender Aufwand — zurückgestellt als eigener
    Folge-Slice, wenn Bedarf entsteht. `vcs`/`commits` sind bereits aktiv
    (Future-only-Sensoren, `.d-check.yml`); `reviews` läuft in
-   [`slice-023`](in-progress/slice-023-dcheck-reviews-modul.md).
+   [`slice-023`](done/slice-023-dcheck-reviews-modul.md).
 
 ## 9. Closure-Notiz
 
