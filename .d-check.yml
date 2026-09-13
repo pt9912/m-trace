@@ -12,7 +12,20 @@ scan:
   # Projekt-Artefakte unter `.harness/skills/` bleiben bewusst gescannt.
   ignore: ['.security/.trivy-cache/**', '.tmp/**', '.harness/baseline/**']
 
-modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions, ids]
+modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions, ids, planning]
+
+# Modul `planning` (slice-010): `roadmap:` schaltet unteilbar zwei Fähigkeiten
+# zugleich frei — die Basis-Invariante (Ruhe-Marker im Aktiv-Abschnitt ⟺ kein
+# `slice-*` in `in-progress/`) UND, additiv über `waves.dir`, die
+# Wellen-Register-Invariante (Roadmap-Aussagen über Wellen gegen die flachen
+# Wellendokumente). `waves.dir` erwartet EIN Verzeichnis mit aktiven, flachen
+# Wellendokumenten UND dessen eigenem `done/`-Unterverzeichnis für
+# abgeschlossene Wellen + Ergebnisnotizen — exakt m-traces Bestandslayout
+# (`welle-<NN>.md` flach unter `docs/plan/planning/`, MR-007).
+planning:
+  roadmap: docs/plan/planning/in-progress/roadmap.md
+  waves:
+    dir: docs/plan/planning
 
 # Modul `ids` (welle-01): Requirement-Kennungen im Fließtext müssen als
 # verankerte Links auf ihre Definition zeigen (inline-`<a id>`-Anker je

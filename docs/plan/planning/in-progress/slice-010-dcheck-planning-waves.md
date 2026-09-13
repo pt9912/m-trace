@@ -106,7 +106,44 @@ Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`.d-check.yml` führt jetzt `planning` in `modules:` und einen `planning`-Block
+mit `roadmap: docs/plan/planning/in-progress/roadmap.md` und
+`waves.dir: docs/plan/planning`. `waves.dir` passte wie in §3 vorab
+recherchiert ohne Anpassung — keine Überraschung in der Umsetzung selbst.
+
+**Eine Annahme aus §3 war unpräzise und wurde in der Umsetzung korrigiert:**
+„Die erste Fähigkeit (Marker/`slice-glob`) ist bewusst nicht geschnitten" —
+das ist so nicht trennbar. Sobald `planning.roadmap` gesetzt ist, ist die
+Marker-Invariante **immer** aktiv; nur `waves`/`closure`/`observations`
+darunter sind selbst noch einmal opt-in. Der erste Positiv-Lauf bestätigte
+das sofort und unmittelbar handfest: `planning-drift`, weil dieser Slice
+selbst (als `slice-010-*.md`) zum Zeitpunkt des Laufs in
+`docs/plan/planning/in-progress/` lag, während die Roadmap noch „Keine aktive
+Welle" sagte — ein **echter**, korrekt erkannter Zustand, kein Fehlalarm. Der
+Fund verschwindet von selbst, sobald der Slice (dieser Commit) nach `done/`
+wandert und `in-progress/` wieder leer ist — verifiziert unten.
+
+**Negativ-Probe** (`waves.dir` auf ein Verzeichnis ohne eigenes
+`done/`-Unterverzeichnis gezeigt, `docs/plan/planning/next`):
+`wave-drift: Wellen-Verzeichnis docs/plan/planning/next/done fehlt oder ist
+unlesbar (fail-closed)`, Exit 1 — reproduziert wie in §3 vorab belegt.
+
+**Verifikation nach dem Move nach `done/`:** `make docs-check` — 0 Befunde
+(kein `planning-drift`, kein `wave-drift`). `make gates` grün.
+
+**Steering-Loop-Lerneintrag:** Bei zusammengesetzten Opt-in-Modulen (Fähigkeit
+N baut auf einer nicht abschaltbaren Basis-Fähigkeit auf) vor dem Schnitt
+knapp gegen den echten Baum probieren, **nicht nur** die Ziel-Fähigkeit
+isoliert — der Nebenbefund (Marker-Check) wäre sonst erst beim ersten
+`make gates`-Lauf aufgefallen, nicht schon in der Planungsphase. Für künftige
+d-check-Modul-Slices: immer den vollen `--enable <modul>`-Lauf gegen den
+Ist-Zustand vorab fahren, nicht nur den dokumentierten Einzel-Schlüssel
+gedanklich isolieren.
+
+**Folge-Slices:** keine unmittelbaren — die erste Fähigkeit (Marker) ist jetzt
+faktisch mit-aktiv und deckt bereits Zukünftiges ab. Ein Folge-Slice für
+`planning.waves.mode: many` ist erst nötig, wenn m-trace je mehrere Wellen
+parallel offen führt (heute nicht der Fall).
 
 ## 8. Sub-Area-Modus-Begründung
 
