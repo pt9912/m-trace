@@ -83,7 +83,7 @@ des Repos (Tranche 3 entfernt die Duplikat-Tabelle aus `AGENTS.md`).
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `harness/README.md` | umschreiben | Sensors-Tabelle 3-spaltig + zweite Tabelle + Leseordnung |
-| `harness/conventions.md` §Sensor-Bindungsklassen | ggf. kürzen | Inhalt zieht in die Tabellenzellen, Sektion wird ggf. zum reinen Zeiger oder entfällt |
+| `harness/conventions.md` §Zusatzklassen-Deklaration für Sensors-Bindung | ggf. kürzen | Inhalt zieht in die Tabellenzellen, Sektion wird ggf. zum reinen Zeiger oder entfällt |
 | `harness/sensors/<target>.md` (0–N Dateien) | neu, nur bei Bedarf | erst anlegen, wenn ein konkretes Gate mehr als einen Satz Vertrag braucht — kein Vorab-Schnitt für alle Targets |
 
 **Bereits geklärt (Recherche vor Schnitt, 2026-09-13):** Direkter Diff

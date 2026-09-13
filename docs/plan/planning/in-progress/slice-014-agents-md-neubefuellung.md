@@ -22,14 +22,14 @@ sind entlang dieses Diffs konkret, nicht nacherzählt.
 
 ## 2. Definition of Done
 
-- [ ] **Source-Precedence-Liste auf 9 Ränge** (statt 8): neuer Rang 6
+- [x] **Source-Precedence-Liste auf 9 Ränge** (statt 8): neuer Rang 6
       `docs/user/*` (optional — falls im Repo nicht vorhanden, entlinkt mit
       `<!-- d-check:ignore -->`, m-trace **hat** `docs/user/`, also real
       verlinken). Rang 5 (`roadmap.md`) heißt jetzt „Wellen-Sequenz" statt
       „aktuelle Welle" — **nur** nachziehen, wenn Tranche 8
       (Roadmap-Terminologie) parallel oder vorher entschieden ist, sonst
       Terminologie-Bruch zwischen AGENTS.md und roadmap.md.
-- [ ] **Rang 2 (`spec/spezifikation.md`)-Kommentar „optionales 3. Spec-Stratum"
+- [x] **Rang 2 (`spec/spezifikation.md`)-Kommentar „optionales 3. Spec-Stratum"
       entfernt** — die drei Straten sind im neuen Kanon **Default**, nicht
       Zusatz (Kehrtwende gegenüber v3.5.1: **2-Straten wäre jetzt die
       MR-pflichtige Abweichung**, nicht 3-Straten). m-trace führt bereits
@@ -37,14 +37,14 @@ sind entlang dieses Diffs konkret, nicht nacherzählt.
       nur die MR-001-Referenz im alten Kommentar entfällt (m-trace hat
       ohnehin nie `MR-001` für diesen Zweck genutzt, das ist bei uns eine
       andere Nummer/Sache — siehe `harness/conventions.md`).
-- [ ] **§3.3 (git-mv-Regel) bekommt zweite Variante:** Regelfall bleibt
+- [x] **§3.3 (git-mv-Regel) bekommt zweite Variante:** Regelfall bleibt
       `git mv` zuerst, Inhalt danach — **außer** beim Übergang nach `done/`:
       dort **zuerst** der Inhalt (DoD-Häkchen, Closure-Notiz), **dann** der
       reine `git mv` (die Notiz ist Bedingung für `done/`, nicht seine
       Folge). **m-trace hat das in `slice-010`/`011`/`012` bereits genau so
       gemacht** (Closure-Notiz geschrieben, dann `git mv` nach `done/`) —
       dieser Punkt kodifiziert nur nachträglich gelebte Praxis.
-- [ ] **§3.4 (Architektur-Sicht) geändert — das ist der einzige echte
+- [x] **§3.4 (Architektur-Sicht) geändert — das ist der einzige echte
       Verhaltens-Bruch dieser Tranche:** `spec/architecture.md` darf jetzt
       Pfade zu **Code-Modulen** referenzieren (neu erlaubt), aber
       **keine ADR-Bezüge mehr** (neu **verboten** — vorher erlaubt!). Welche
@@ -53,30 +53,30 @@ sind entlang dieses Diffs konkret, nicht nacherzählt.
       `grep -n "ADR-[0-9]" spec/architecture.md` — jeder Treffer braucht eine
       Entscheidung (Verweis entfernen + Bindung ggf. in die betroffene ADR
       verlagern, oder als bewusste Abweichung dokumentieren).
-- [ ] **Neues §3.7 „Ein Kommentar beschreibt, was da ist"** — Fünf-Klassen-Test
+- [x] **Neues §3.7 „Ein Kommentar beschreibt, was da ist"** — Fünf-Klassen-Test
       (Zusage · Kopplung · Abgrenzung · Rang-Zeiger · Grenze), Indikativ statt
       Konjunktiv, keine Verweise auf entfernten Code. Gilt auch für
       Zustandsfelder (Roadmap-/Register-/Meilenstein-Status-Zellen: Zustand +
       auflösbarer Beleg-Anker, keine Chronik). **Deckt sich mit CLAUDE.md**s
       bereits gelebter Kommentar-Policy dieses Repos — reine Kodifizierung,
       kein Verhaltenswechsel für uns.
-- [ ] **§4 Quality-Gates-Tabelle vollständig entfernt.** m-traces `AGENTS.md`
+- [x] **§4 Quality-Gates-Tabelle vollständig entfernt.** m-traces `AGENTS.md`
       führt aktuell **noch eine volle Gate-Tabelle** — das ist nach neuem
       Kanon ein Duplikat-Verstoß (der Gate-Index lebt exklusiv in
       `harness/README.md` §Sensors, Tranche 4). §4 wird auf Regel + Zeiger
       gekürzt: „Kein Target nennen, das im Makefile nicht existiert — auch
       nicht in Prosa."
-- [ ] **ID-Referenz-Absatz präzisiert:** Nur Anforderungs-IDs und ADR-Nummern
+- [x] **ID-Referenz-Absatz präzisiert:** Nur Anforderungs-IDs und ADR-Nummern
       gehören in Commit-/PR-Referenzen; neue Struktur-IDs `SPEC-<NNN>`/
       `ARC-<NNN>` (falls über Tranche 5/7 eingeführt) adressieren nur
       *innerhalb* der Spec und gehören **nicht** in Commit-Messages.
-- [ ] **§6 Workflow, Schritt 8 wird expliziter Rollenwechsel:** Bericht →
+- [x] **§6 Workflow, Schritt 8 wird expliziter Rollenwechsel:** Bericht →
       Handoff an Reviewer (`.harness/skills/reviewer.md`) → Verifier, kein
       Self-Review. Deckt sich mit dem seit `slice-007` gelebten
       Review-Report-Prozess — kodifiziert nur, was schon passiert.
-- [ ] `make docs-check` grün, `harness/conventions.md`-Verweise
+- [x] `make docs-check` grün, `harness/conventions.md`-Verweise
       (Tranche 2 muss vorher fertig sein) konsistent.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -132,7 +132,65 @@ dokumentiert (auch wenn 0 Treffer) + Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`AGENTS.md` komplett neu befüllt gegen das `v6.8.0`-Template. Alle DoD-Punkte
+umgesetzt: 9-Rang-Source-Precedence (Rang 6 `docs/user/` real verlinkt, m-trace
+hat das Verzeichnis mit Inhalt — nicht die „entlinkt, meist nicht vorhanden"-Form
+des Templates); §3.3 zweite Variante (bereits gelebte Praxis, nur kodifiziert);
+§3.4 verbietet ADR-Bezüge in `spec/architecture.md` — **Audit durchgeführt**
+(`grep -n "ADR-[0-9]" spec/architecture.md`): **0 Treffer**, kein Umbau nötig;
+neues §3.7 (Kommentar-Disziplin, deckt sich mit CLAUDE.md-Praxis); §4 auf
+reinen Zeiger gekürzt (Gate-Tabelle raus, lebt jetzt exklusiv in
+`harness/README.md`, sobald Tranche 4 das nachzieht — bis dahin ist §4 hier
+schon korrekt, `harness/README.md` noch nicht); §6 Schritt 8 als expliziter
+Rollenwechsel.
+
+**Zwei Korrekturen über den reinen Template-Abgleich hinaus, beim genauen
+Lesen des Alt-Bestands gefunden:**
+
+1. **`§2` (Source Precedence) und `§5` (Dokumentations-Regeln) zitierten noch
+   die Alt-Pfade** `docs/adr/` und `docs/planning/` — obwohl die
+   „Pfad-Hinweis"-Box direkt darüber bereits korrekt `docs/plan/adr/`/
+   `docs/plan/planning/` nannte und den Move (`MR-001`) als abgeschlossen
+   beschrieb. Ein interner Widerspruch im Alt-Bestand, der offenbar seit der
+   v3.5.0-Migration unbemerkt blieb (die Pfad-Hinweis-Box wurde nachgezogen,
+   die Tabellen darunter nicht). Beim Neuschreiben korrigiert.
+2. **„MR-001..MR-004" als Range-Referenz in §1** wäre nach `slice-013`
+   (`MR-004` ist keine Adaption mehr) falsch geworden — im Neuschreiben durch
+   die generische Form `MR-<NNN>` ersetzt (matcht auch das Template selbst),
+   statt eine Zahlen-Range zu pflegen, die bei jeder MR-Änderung nachgezogen
+   werden müsste.
+
+**Verifikation:** `make docs-check` — 0 Befunde (nach Marker-Rücksetzung und
+Link-Korrektur). `make gates` grün (einziger transienter Befund während der
+Bearbeitung: `planning-drift`, solange dieser Slice in `in-progress/` lag —
+erwartet, siehe `harness/conventions.md`-Closure-Notiz zu `slice-016`).
+
+**Dritte Korrekturrunde — systematischer Template-Abgleich (Wortlaut-Diff
+gegen `AGENTS.template.md`, nicht nur Fork-Zusammenfassung):**
+
+3. Die veraltete „Pfad-Hinweis"-Box in §1 entfernt — sie chronikte den
+   `MR-001`-Pfadumzug (abgeschlossen, gehört nach `git`/`harness/conventions/done/`)
+   und war mit §2 redundant.
+4. Fünf Template-Zitatsätze („Regeln dieser Sektion/Datei: Baseline-Regelwerk
+   `<Datei>.md` §<Abschnitt>.") nachgetragen, die beim Erstschreiben
+   ausgelassen worden waren: §1 (Ziel-Form AGENTS.md), §3.4 (Architektur-Sicht,
+   zugleich eigene Ad-hoc-Audit-Notiz entfernt — redundant mit dieser
+   Closure-Notiz), §3.7 (Kommentar-Disziplin), §4 (harness/README.md als
+   Einstiegspunkt), §6-Ende (Agentenrollen).
+
+**Steering-Loop-Lerneintrag:** Ein Root-Dokument-Rewrite ist ein guter Anlass,
+den **gesamten** Bestand nochmal zu lesen statt nur die Diff-Punkte zu
+patchen — der interne Pfad-Widerspruch (Fund 1) wäre bei einem
+Abschnitt-für-Abschnitt-Patch wahrscheinlich unbemerkt stehen geblieben, weil
+keiner der Template-Deltas ihn explizit berührte. Zusätzlich: Ein
+Wortlaut-Diff (nicht nur ein inhaltlicher Abgleich) gegen das Template deckt
+Auslassungen auf, die inhaltlich unauffällig bleiben — die fünf fehlenden
+Zitatsätze (Fund 4) hätten keinen Gate-Befund ausgelöst, sind aber Teil der
+Template-Konformität.
+
+**Folge-Slices:** keine unmittelbaren — Tranche 4 (`slice-015`,
+harness/README.md) sollte zeitnah folgen, damit §4 hier nicht länger auf
+eine noch nicht nachgezogene Sensors-Tabelle zeigt.
 
 ## 8. Sub-Area-Modus-Begründung
 

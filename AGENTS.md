@@ -4,7 +4,11 @@
 
 Onboarding-Briefing für jede AI-Session, die in diesem Repo Code oder
 Dokumentation ändert. Sie verweist auf die kanonischen Quellen und formuliert
-die Hard Rules, die der Implementation-Agent immer einhalten muss.
+die Hard Rules, die der Implementer-Agent immer einhalten muss.
+
+Regeln dieser Datei: Baseline-Regelwerk `modul-09-implementierung.md`
+§Ziel-Form: AGENTS.md — sie trägt Hard Rules und Pointer auf kanonische
+Quellen, sie dupliziert deren Inhalt nicht; sonst entsteht Drift.
 
 **Bei Konflikt zwischen dieser Datei und einer kanonischen Quelle gilt die
 kanonische Quelle** (Source Precedence — siehe
@@ -17,11 +21,10 @@ Baseline, Modus-Deklarationen pro Sub-Area, Sensor-Bindungsklassen) leben in
 Das **Regelwerk der adoptierten Baseline** ist die **präsente, nachschlagbare
 Vertiefung** zu diesem Briefing: ein self-navigierbares **Modul-Bundle**
 (`README.md` = Index). Es ist committet vendored unter
-`.harness/baseline/v3.5.1/{regelwerk,templates}/` (Regelwerk *und* Templates
+`.harness/baseline/v6.8.0/{regelwerk,templates}/` (Regelwerk *und* Templates
 parallel, netzlos materialisiert samt `SHA256SUMS`; Bootstrap-Verfahren im
-Bundle unter `.harness/baseline/v3.5.1/regelwerk/modul-02-harness-bootstrap.md`
-§Bootstrap; Quelle/Stand in
-[`harness/conventions.md`](harness/conventions.md) §Baseline).
+Bundle unter `.harness/baseline/v6.8.0/regelwerk/modul-02-harness-bootstrap.md`;
+Quelle/Stand in [`harness/conventions.md`](harness/conventions.md) §Baseline).
 
 Die **verkörperte Form** (dieses Briefing, die Konventionen, deine ausgefüllten
 Artefakte) **führt**; das Regelwerk wird **pro Entscheidung nachgeschlagen,
@@ -30,21 +33,15 @@ Sub-Area-Qualifikation, Carveout-vs-Reconciliation, Modus-Diagnose. Dabei **nur
 den benötigten Abschnitt** laden (README ist der Index), **nicht das ganze
 Regelwerk im Kontext halten**. Breiterer Pflicht-Blick bleibt bei: Bootstrap,
 Änderung an [`harness/conventions.md`](harness/conventions.md) (Adaptionen
-`MR-001..MR-004`, Source-Precedence, ID-Schema), Drift-Audit gegen die Baseline.
+`MR-<NNN>`, Source-Precedence, ID-Schema), Drift-Audit gegen die Baseline.
 Derivativ: bei Konflikt gelten die kanonischen Quellen.
 
 Die **Skelett-Vorlagen** der Baseline liegen **vendored** unter
-`.harness/baseline/v3.5.1/templates/` (aus demselben Baseline-Bundle) und tragen
+`.harness/baseline/v6.8.0/templates/` (aus demselben Baseline-Bundle) und tragen
 zwei Rollen: als **Referenz-Form**, auf die das Regelwerk mit `../templates/…`
 als „Ziel-Form" verweist (netzlos, weil parallel zu `regelwerk/` vendored), und
 als Vorlage, die beim Anlegen neuer Artefakte (ADR, Plan/Slice/Welle, Carveout,
 Review-Report) **kopiert und ausgefüllt** wird statt frei zu formulieren.
-
-> **Pfad-Hinweis.** m-trace folgt dem Kanon-Layout: ADRs unter
-> `docs/plan/adr/`, Planung unter `docs/plan/planning/`, Carveouts unter
-> `docs/plan/carveouts/`. Der Layout-Umzug wurde in der v3.5.0-Migration W5
-> vollzogen; die vormalige Pfad-Divergenz (`docs/adr/`, `docs/planning/`) ist
-> mit MR-001 aufgelöst (siehe [`harness/conventions.md`](harness/conventions.md)).
 
 ## 2. Kanonische Quellen (Source Precedence)
 
@@ -57,15 +54,18 @@ In dieser Reihenfolge, gemäß [`harness/conventions.md`](harness/conventions.md
    [`spec/backend-api-contract.md`](spec/backend-api-contract.md),
    [`spec/browser-support.md`](spec/browser-support.md),
    [`spec/player-sdk.md`](spec/player-sdk.md),
-   [`spec/telemetry-model.md`](spec/telemetry-model.md).
+   [`spec/telemetry-model.md`](spec/telemetry-model.md). *(Vier Dateien statt
+   einer `spec/spezifikation.md` — Baseline-Abweichung, noch nicht als
+   `MR-<NNN>` deklariert; siehe `welle-02` Tranche 5.)*
 3. [`spec/architecture.md`](spec/architecture.md) — abgeleitete Komponenten-,
    Abhängigkeits- und Sequenzsicht.
-4. [`docs/adr/`](docs/plan/adr/) — ADR-Verzeichnis und -Index.
-5. [`docs/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
-   — aktuelle Welle und Lieferstatus.
-6. [`README.md`](README.md) — Projekt-Überblick.
-7. **AGENTS.md (diese Datei).**
-8. [`harness/README.md`](harness/README.md) — Harness-Einstieg.
+4. [`docs/plan/adr/`](docs/plan/adr/) — ADR-Verzeichnis und -Index.
+5. [`docs/plan/planning/in-progress/roadmap.md`](docs/plan/planning/in-progress/roadmap.md)
+   — Wellen-Sequenz und Lieferstatus.
+6. [`docs/user/`](docs/user/) — Anwenderhandbuch, Betrieb, Qualität, Releasing.
+7. [`README.md`](README.md) — Projekt-Überblick.
+8. **AGENTS.md (diese Datei).**
+9. [`harness/README.md`](harness/README.md) — Harness-Einstieg.
 
 Verweise zeigen aufwärts (volatil zu stabil). Spec-Dokumente nutzen nie ADR-
 oder Planning-Artefakte als normative Quelle; Abwärts-Provenienz bleibt auf
@@ -94,71 +94,104 @@ verpflichtendem `expires`-Datum — nie einzeln im Code.
 
 ### 3.3 git mv + Inhaltsänderung = zwei Commits
 
-Wenn eine Datei verschoben **und** ihr Inhalt umgeschrieben wird:
+Wenn eine Datei verschoben **und** der Inhalt umgeschrieben wird, sind das
+zwei Commits — der Move-Commit bleibt rein (Git erkennt R-Rename). Welcher
+zuerst kommt, sagt der Vorgang:
 
-1. `git mv source target` → eigener Commit (reiner Move; Git erkennt den R-Rename).
-2. Inhalt umschreiben → zweiter Commit.
+1. Regelfall: `git mv source target` → eigener Commit, dann Inhalt umschreiben.
+2. Lifecycle-Übergang nach `done/`: erst der Inhalt (DoD-Häkchen,
+   Closure-Notiz), dann der reine `git mv` — die Notiz ist die Bedingung für
+   `done/`, nicht ihre Folge.
 
 **Begründung:** Sonst fällt die Rename-Detection unter die 50-%-Similarity-
 Schwelle und `git log --follow` wird unzuverlässig.
 
 ### 3.4 Architektur ist sprach- und meilensteinfrei
 
-[`spec/architecture.md`](spec/architecture.md) referenziert ADRs und
-Modul-Pfade, aber **keine** Wellen, Slices, Commit-Hashes oder Closure-Daten.
-Die zeitliche Schicht lebt in [`docs/planning/`](docs/plan/planning/) und den
-Closure-Notizen.
+[`spec/architecture.md`](spec/architecture.md) darf Pfade zu **Code-Modulen**
+referenzieren, aber **keine** Wellen, Slices, Commit-Hashes oder
+Closure-Daten. Die zeitliche Schicht lebt in
+[`docs/plan/planning/`](docs/plan/planning/) und den Closure-Notizen. Auch
+**keine ADR-Bezüge**: Die Sicht steht im Stabilitäts-Rang über der ADR;
+welche ADR eine Aussage verbindlich macht, deklariert die ADR in ihrem
+`Schärft:`-Feld.
+
+Diese Regel ist *verkörpert*, nicht hier entschieden — sie folgt aus dem
+Sicht-Stratum (Baseline-Regelwerk `modul-03-spec.md` §Ziel-Form:
+Architektur-Sicht).
 
 ### 3.5 ADRs sind nach `Accepted` immutable
 
 Eine ADR mit Status `Accepted` wird nicht inhaltlich überschrieben. Korrekturen
 entstehen als neue ADR mit `Supersedes ADR-NNNN`. (Die Vor-Adoptions-Records
-ADR-0001..0007 sind unter MR-002 grandfathered; neue ADRs erhalten keine
-Ausnahme.)
+ADR-0001..0007 sind unter [MR-002](harness/conventions.md#mr-002)
+grandfathered; neue ADRs erhalten keine Ausnahme.)
 
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden
 
 Jede Schwellen-Senkung (Coverage, Linter-Strenge, Architekturregel) ist ein
 ADR, kein PR-Kommentar.
 
-### 3.7 Variante-B-Cross-Reference-Disziplin
+### 3.7 Ein Kommentar beschreibt, was da ist
+
+Gilt für Code, Konfiguration und Skripte — und für Zustandsfelder (Roadmap-/
+Register-/Meilenstein-Status). Ein Kommentar trägt eine dieser Klassen —
+**Zusage · Kopplung · Abgrenzung · Rang-Zeiger · Grenze** — und schreibt an
+den, der die Stelle *ändert*, nicht an den, der die Entscheidung *trifft*.
+Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-harness-dateien.md`
+§Was ein Kommentar trägt.
+
+**Falsch:** „Ohne dieses Feld behauptete die Ausgabe X, was nicht stimmt" —
+Konjunktiv über die verworfene Alternative.
+**Richtig:** „X gilt, wenn Y zutrifft" — Indikativ über den Zustand.
+
+**Falsch:** „die frühere Fassung prüfte nur Z" — beschreibt abwesenden Text.
+**Richtig:** die geltende Zusage nennen; die vorige hält `git`.
+
+**Zustandsfelder ebenso:** Eine `Stand`-/`Status`-Zelle (Roadmap, Meilenstein)
+nennt den Zustand und den Beleg als auflösbaren Anker, nicht die Chronik; das
+Drift-Log der Roadmap trägt nur Umplanungen, keine Schließungen und keine
+erreichten Meilensteine.
+
+**Begründung:** Die Abwägung gehört in die ADR, die Historie in `git`, die
+Herkunft in **ein** auflösbares Feld (`F-*`/`NF-*`/…, `ADR-*`, `slice-<NNN>`).
+Was daneben steht, liest jeder Lauf mit und bezahlt es mit Kontext.
+
+### 3.8 Variante-B-Cross-Reference-Disziplin
 
 Specs, Releasing-Docs und Makefile-Kommentare stehen als Zielbild.
 Cross-Doc-Verweise nutzen **Kennungen** (`F-*`, `NF-*`, `MVP-*`, `AK-*`,
 `RAK-*`, `R-*`, `ADR-NNNN`) oder echte Markdown-Links — nie Plan-/Tranche-/
-§-Verweise oder Audit-Trail-Stempel. Durchgesetzt von `make lint-variante-b`.
+§-Verweise oder Audit-Trail-Stempel. Durchgesetzt von `make lint-variante-b`
+(Scope: `apps/`, `packages/`, `examples/`, `scripts/`, `spec/`, `docs/user/`,
+`docs/dev/`, `.github/workflows/`, `Makefile` — Planungsartefakte unter
+`docs/plan/planning/` sind bewusst ausgenommen: ihr Gegenstand *ist* die
+Tranchen-/Wellen-Referenz).
 
 ## 4. Quality Gates
 
-Nur Targets, die im `Makefile` existieren, sind gelistet. Die vollständige
-Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
+Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-harness-dateien.md`
+§harness/README.md als Einstiegspunkt. Der Gate-Index steht **einmal**, in
+[`harness/README.md`](harness/README.md) §Sensors — dort steht auch die
+*Bindung* jedes Targets. Diese Datei führt die Liste nicht.
 
-| Target | Zweck |
-|---|---|
-| `make test` | Go- + TypeScript-Tests (`api-test` + `ts-test`) |
-| `make lint` | Go- + TypeScript-Linter (`api-lint` + `ts-lint`) |
-| `make lint-variante-b` | Variante-B-Cross-Reference-Disziplin (§3.7) |
-| `make arch-check` | Hexagonal-Architektur-Abhängigkeitsregeln |
-| `make coverage-gate` | Go- + TypeScript-Coverage-Schwellen |
-| `make docs-check` | Markdown-Referenzen, Spans, tracked Targets, Code-Pfade, Richtung |
-| `make verify-closure-notes` | Struktureller Closure-Note-Gate für neue `done/`-Pläne (ADR-0010; standalone, noch nicht in `make gates`) |
-| `make gates` | Alle inneren Quality-Gates — mandatory vor einem Pull Request |
-| `make security-gates` | `govulncheck` + `pnpm audit` + Trivy-Image-Scan (separater CI-Job, nicht in `make gates`) |
-| `make ci` | CI-äquivalent (`gates` + `build`) |
-| `make fullbuild` | Volle Closure (`install` + `ci`), vor einem Welle-Merge |
+Kein Target nennen, das im `Makefile` nicht existiert — auch nicht in Prosa.
 
 ## 5. Dokumentations-Regeln
 
-- Requirement- und ADR-IDs müssen in Pull Requests/Commits referenziert sein,
+- **Anforderungs-IDs und ADR-Nummern** müssen in Pull Requests/Commits
+  referenziert sein — sie sagen, welche Zusage oder Entscheidung berührt ist,
   nach dem in [`harness/conventions.md`](harness/conventions.md) deklarierten
   ID-Schema (`F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*`, `R-*`; ADR-Nummern über
   den ADR-Index) — nie ad hoc im PR vergeben. Dokumentations-, Test-, Build-,
   CI- und Wartungs-Commits sind exempt.
-- Neue ADRs müssen den ADR-Index unter [`docs/adr/`](docs/plan/adr/) aktualisieren.
-- Roadmap und Status-Geschichte leben in [`docs/planning/`](docs/plan/planning/),
-  nicht in [`spec/architecture.md`](spec/architecture.md).
+- Neue ADRs müssen den ADR-Index unter [`docs/plan/adr/`](docs/plan/adr/)
+  aktualisieren.
+- Roadmap und Status-Geschichte leben in
+  [`docs/plan/planning/`](docs/plan/planning/), nicht in
+  [`spec/architecture.md`](spec/architecture.md).
 - Bewusst vertagte Tradeoffs werden als `R-N`-Einträge mit Triggerschwelle in
-  [`docs/planning/in-progress/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
+  [`docs/plan/planning/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
   getrackt, nicht nur in einem Code-Kommentar.
 - Neue (nicht grandfatherte) Pläne in `docs/plan/planning/done/` tragen eine
   **Closure-Note** mit den drei Pflicht-Inhalten aus ADR-0010 (Lernsignal /
@@ -168,11 +201,11 @@ Sensor-Liste steht in [`harness/README.md`](harness/README.md) §Sensors.
   [`.harness/skills/`](.harness/skills/)
   (`reviewer.md`, `closure-note-reviewer.md`) und **produzieren einen
   Report** aus dem vendored Template
-  ([`review-report.template.md`](.harness/baseline/v3.5.1/templates/docs/reviews/review-report.template.md))
+  ([`review-report.template.md`](.harness/baseline/v6.8.0/templates/docs/reviews/review-report.template.md))
   unter [`docs/reviews/`](docs/reviews/) — ein Report pro Lauf, Folgeläufe
   als neue Datei. Ad-hoc-Findings in Commit-Message oder Notizen **ersetzen
-  den Report nicht** (Auditierbarkeit; Modul 8/10). Wann ein Report fällig
-  ist, steht in [`docs/reviews/README.md`](docs/reviews/README.md).
+  den Report nicht** (Auditierbarkeit). Wann ein Report fällig ist, steht in
+  [`docs/reviews/README.md`](docs/reviews/README.md).
 - Quality-Gate-Definitionen leben im `Makefile`; nie ein Gate behaupten, das
   kein ausführbares Target hat.
 
@@ -188,5 +221,12 @@ Pro Slice:
 6. Vor Handoff den proportionalen Aggregat-Gate laufen lassen — `make docs-check`
    bei reinen Doku-Änderungen, `make gates` bei Code.
 7. Doku/Indizes aktualisieren, falls ein öffentlicher Vertrag berührt wird.
-8. Ausgeführte Sensors und verbleibende Risiken berichten — keine Erfolgsmeldung
-   ohne Gate-Ausführung.
+8. Ausgeführte Sensors und verbleibende Risiken berichten — keine
+   Erfolgsmeldung ohne Gate-Ausführung.
+
+Dieser Workflow deckt ausschließlich die Implementer-Rolle ab. Schritt 8 ist
+der Rollenwechsel, kein Abschluss: Bericht → Handoff an Reviewer
+(`.harness/skills/reviewer.md`, siehe `harness/README.md` §Guides) →
+Verifier. Kein Self-Review — anderer Kontext findet andere Findings,
+derselbe Kontext dieselben blinden Flecken (Baseline-Regelwerk
+`modul-08-agentenrollen.md`).

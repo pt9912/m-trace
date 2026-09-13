@@ -19,7 +19,6 @@
   auf `slice-<Kennung>.md` würde die Release-Versions-Kopplung der
   historischen Records zerstören, ohne einen praktischen Nutzen zu liefern —
   die Records sind abgeschlossen und werden nicht mehr bearbeitet.
-- **Auflösungs-Trigger:** Permanent für den Bestand. **Folge-Punkt** (bereits
-  eingetreten mit `slice-001`/`welle-01`): `trace.slices.file-pattern`
-  (`.d-check.yml`) und der Closure-Note-Glob wurden additiv um die
-  `slice-*`/`welle-*-results`-Form erweitert.
+- **Auflösungs-Trigger:** Permanent für den Bestand. `trace.slices.file-pattern`
+  (`.d-check.yml`) und der Closure-Note-Glob führen additiv sowohl die
+  `plan-*`- als auch die `slice-*`/`welle-*-results`-Form.

@@ -2,40 +2,54 @@
 
 ## Zweck
 
-Diese Datei deklariert m-trace-spezifische Strukturregeln und Adaptionen
-gegenüber der adoptierten Harness-Baseline. Sie supplementiert die Baseline,
-ohne sie zu kopieren.
+Diese Datei deklariert die repo-lokalen Strukturregeln von m-trace gegenüber
+der adoptierten Harness-Baseline. Sie ist der Default-Ort für:
+
+- **Adaptionen** ggü. der Baseline (mit Begründung und Auflösungs-Trigger).
+- **ID-Schema-Deklaration** — welches Präfix-Schema m-trace nutzt
+  ([MR-003](#mr-003), da m-trace keinen `MR-000`-Adoptionseintrag führt —
+  die Baseline-Adoption selbst steht in §Baseline).
+- **Zusatzklassen-Deklarationen** für repo-spezifische Bindung-Klassen in der
+  Sensors-Tabelle, die über die vier kanonischen hinausgehen (ADR, Carveout,
+  Schwelle, Reproduzierbarkeit).
+- **Modus-Deklarationen** pro Sub-Area (Greenfield / Brownfield / Hybrid)
+  inklusive Konvergenz-Auftrag bei BF.
+
+Bei Konflikt zwischen dieser Datei und einer kanonischen Quelle gilt die
+kanonische Quelle (Source Precedence). Diese Datei ist konformitätsbringend
+für Form-Fragen, nicht autoritativ über Inhalt.
 
 ## Baseline
 
-m-trace adoptiert die ai-harness-course-Baseline; die **aktive Version ist
-v6.8.0** (Kurs-Welle 135, 2026-09-13), vendored netzlos unter
-`.harness/baseline/v6.8.0/regelwerk/` (17 Module + 8 Grundlagen-Dateien) und
-`.harness/baseline/v6.8.0/templates/` (die Referenz-Ziel-Formen). Das
-Release-Archiv `lab-regelwerk.zip` trägt sha256
-`2c55e6d1b821ae15ff73f5a9b3dc2269843db0ffcf9845a4bd0df2cfebbdc6c7`; die
-Per-Datei-Integrität ist in `.harness/baseline/v6.8.0/SHA256SUMS` gepinnt und
-wird mit `sha256sum -c` verifiziert. Vendored 2026-09-13
-([`slice-012`](../docs/plan/planning/done/slice-012-harness-baseline-v6.8.0-vendoring.md),
-[`welle-02`](../docs/plan/planning/welle-02-regelwerk-v6.8.0-migration.md)
-Tranche 1) — reines Vendoring + Zeiger-Umstellung; die inhaltliche Anpassung
-von `AGENTS.md` und dieser Datei an den neuen Kanon folgt in den weiteren
-`welle-02`-Tranchen. Die vorherige **v3.5.1-Baseline bleibt** unter
-`.harness/baseline/v3.5.1/` zusätzlich liegen (Audit-Referenzform, analog zur
-v3.5.0-Präzedenz unten).
+- **Konvention:** AI-Harness-Kurs (ai-harness-course)
+- **Stand:** `v6.8.0`
+- **Datum der Adoption:** 2026-09-13. Frühere Stände bleiben unter
+  `.harness/baseline/<tag>/` liegen (Audit-Referenzform, nicht der aktive
+  Stand).
 
-Die **strukturelle Adoption** (kanonisches Layout, vendored-Baseline-Mechanismus,
-AGENTS.md-Einstieg) traf ADR-0009 mit v3.5.0; ADR-0011 schreibt nur den Pin fort.
-Die vendored **v3.5.0-Baseline bleibt** unter `.harness/baseline/v3.5.0/`
-zusätzlich liegen (Owner-Entscheidung 2026-07-24), damit die
-`.harness/baseline/v3.5.0/…`-Verweise der historischen `done/`-Records und der
-immutablen ADRs netzlos auflösbar bleiben — sie ist Audit-Referenzform, nicht
-der aktive Stand. Der Baseline-Mechanismus löste seinerzeit den früheren
-Commit-Pin ab (nur `grundlagen-konventionen.md`, bei ai-harness-course
-`d2f60da`, abgerufen 2026-07-14): seither sind das gesamte Regelwerk und der
-vollständige Template-Satz präsent und integritäts-geprüft, sodass die
-`../templates/…`-Referenz-Formen lokal auflösen, statt gegen einen sich
-bewegenden Kurs-Head zu driften.
+**Was das Feld `Stand:` trägt:** den adoptierten Stand als **Version**, nie
+als Datum — das Datum steht in der eigenen Zeile. Ein `versions`-Sensor, der
+dieses Feld gegen Baseline-Pins im Repo hält, läuft in m-trace (noch) nicht
+(`grep -n '^modules:' .d-check.yml` führt kein `versions`); das Feld steht
+als Ziel-Form, nicht als bewachte Zusage (`welle-02` Tranche 10 evaluiert
+das).
+
+## Adoptierte Konventions-Quellen
+
+- **Extern (Lehrmaterial, kanonisch):**
+  <https://github.com/pt9912/ai-harness-course/tree/v6.8.0/kurs/de> — auf den
+  Tag `v6.8.0` gepinnt, nicht `main`-floating.
+- **Vendored Baseline (Regelwerk + Templates):** aus dem self-contained
+  Release-Asset
+  <https://github.com/pt9912/ai-harness-course/releases/download/v6.8.0/lab-regelwerk.zip>
+  nach `.harness/baseline/v6.8.0/{regelwerk,templates}/` entpackt (netzlos,
+  `SHA256SUMS`, per `sha256sum -c` verifiziert — 54 Dateien, Digest des
+  Release-Assets: `2c55e6d1b821ae15ff73f5a9b3dc2269843db0ffcf9845a4bd0df2cfebbdc6c7`).
+  Regelwerks-Stand laut `regelwerk/README.md`: Kurs-Welle 135, 2026-09-13.
+- **In-Repo (verkörperte Form):** [`AGENTS.md`](../AGENTS.md),
+  [`harness/README.md`](README.md) und diese Datei — kopiert-und-ausgefüllt
+  aus den vendorten `.harness/baseline/v6.8.0/templates/`; bei Konflikt gilt
+  das Lehrmaterial.
 
 ## Spec-Straten
 
@@ -50,15 +64,36 @@ Planning`. Verweise zeigen aufwärts. Spec-Dokumente nutzen keine ADR- oder
 Planning-Artefakte als normative Quelle. Abwärts-Provenienz ist nur in
 ausgewiesenen History-Abschnitten erlaubt.
 
-## Adaptionen
+## Adaptions-Block
 
-Diese Sektion trägt den **Index**, nicht die Einträge — jede Adaption ist
-eine eigene Datei unter `harness/conventions/`, kopiert aus
+Regeln dieser Sektion: Diese Datei trägt den **Index**, nicht die Einträge.
+Jede Adaption ist eine eigene Datei unter `harness/conventions/`, kopiert aus
 `harness/conventions/MR-NNN-titel.template.md` der vendored Baseline; ist ihr
 Auflösungs-Trigger eingetreten, wandert sie per `git mv` nach
 `conventions/done/`. Der Zustand ist die Verzeichnis-Position, kein
-Status-Feld (Baseline-Regelwerk `grundlagen-harness-dateien.md`
+Status-Feld. Der Grund für den Schnitt: Was hier steht, liest **jeder**
+Agentenlauf — aufgelöste Adaptionen gehören nicht in diesen Pfad
+(Baseline-Regelwerk `grundlagen-harness-dateien.md`
 §harness/conventions.md als Konventionsspeicher).
+
+### MR-000 — Baseline-Aussage
+
+Bleibt hier: Sie ist keine Adaption, sondern die Adoptions-Erklärung, und
+sie gilt für jeden Lauf.
+
+- **Datum:** 2026-06-13 (Erstadoption, damals Commit-Pin)
+- **Geltungsbereich:** gesamtes Repo
+- **Ersetzt-Baseline-Regel:** — *(keine; dieser Eintrag ist die
+  Adoptions-Erklärung, keine Adaption)*
+- **Adaption:** keine inhaltlichen Adaptionen ggü. Baseline-Default für
+  Verzeichniskonvention, Lifecycle-Regeln und Carveout-Disziplin. Das
+  ID-Schema weicht ab — siehe [MR-003](#mr-003) (`F-*`/`NF-*`/`MVP-*`/
+  `AK-*`/`RAK-*`/`R-*` statt `<PREFIX>-FA-*`/`<PREFIX>-QA-*`); m-trace zählt
+  ohne Bereichssegment (ein schreibender Mensch + Agent, kein
+  Mehr-Schreiber-Betrieb).
+- **Begründung:** Initial-Setzung. Spätere Adaptionen werden als `MR-<NNN>`
+  nachgetragen.
+- **Auflösungs-Trigger:** permanent.
 
 ### Aktive Adaptionen
 
@@ -75,58 +110,30 @@ Status-Feld (Baseline-Regelwerk `grundlagen-harness-dateien.md`
 |---|---|
 | [001](conventions/done/MR-001-repository-pfade.md) <a id="mr-001"></a> | slice-006 (v3.5.0-Migration W5 — kein Nachfolger-MR, Auflösung durch Slice-Arbeit) |
 
-**`MR-004` und `MR-005` sind keine Adaptionen mehr in diesem Mechanismus**
-(Nachzug `welle-02` Tranche 2, 2026-09-13): Das `v6.8.0`-Template verlangt für
-jeden Eintrag *„Ersetzt-Baseline-Regel: genau eine Regel der Baseline"* — „ein
-Eintrag, der keine benannte Regel ersetzt, ist ein Fork, keine Adaption." Für
-beide fand sich **keine** ersetzte Baseline-Regel:
+**`MR-004` und `MR-005` sind keine Adaptionen in diesem Mechanismus:** beide
+ersetzen keine Baseline-Regel (Pflichtfeld oben). `MR-004`
+(WSL-Host-Pfad-Beispiele) steht als Kommentar bei `hostpaths:` in
+`.d-check.yml`. `MR-005` (Nicht-Slice-Register: `risks-backlog.md`/
+`extra-gates.md` liegen flach in `planning/`, wie der Welle-Plan) entfällt
+ersatzlos — die Ablage ist selbsterklärend und kein Gate hängt an ihrer
+Begründung.
 
-- **`MR-004`** (WSL-Host-Pfad-Beispiele) war nie eine Abweichung von einer
-  Regelwerk-Regel, sondern eine Sensor-Konfiguration — jetzt als Kommentar
-  direkt bei `hostpaths:` in `.d-check.yml`.
-- **`MR-005`** (Nicht-Slice-Register) sagte selbst „keine Kanon-Abweichung,
-  der Kanon schweigt" — passt strukturell nicht in einen Mechanismus für
-  Baseline-*Abweichungen*. Steht jetzt unten als repo-lokale Strukturregel.
+## Zusatzklassen-Deklaration für Sensors-Bindung
 
-## Repo-lokale Strukturregeln
+Die vier kanonischen Bindung-Klassen (ADR, Carveout, Schwelle,
+Reproduzierbarkeits-Bindung — Letztere nutzt m-trace über immutable
+Image-Digests) sind ohne Deklaration legitim. Eine Zusatzklasse darüber
+hinaus:
 
-Regeln, die **keine** Baseline-Vorgabe ersetzen (das Regelwerk schweigt an
-dieser Stelle), aber Konsistenz brauchen — kein Fork, keine Adaption, nur
-eine Ergänzung, wo die Baseline keine Aussage trifft.
+| Klasse | Form | Bedeutung | Beispiel |
+|---|---|---|---|
+| Requirement-Bindung | `F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*`, `R-*` | Gate prüft eine bestimmte Anforderung/ein Risiko aus dem Lastenheft bzw. Risiko-Register | `RAK-74` für den Per-Projekt-Limiter-Bucket |
 
-### Nicht-Slice-Register: flache Platzierung in `planning/` <a id="mr-005"></a>
+## Modus-Deklaration pro Sub-Area
 
-*(vormals `MR-005`, Nummer erhalten für bestehende Verweise — siehe oben)*
-
-- **Datum:** 2026-07-23 (angelegt), 2026-07-23 (zurückgebaut, slice-006)
-- **Geltungsbereich:** `docs/plan/planning/risks-backlog.md` (`R-*`-Familie),
-  `docs/plan/planning/extra-gates.md` (Quality-Gate-Backlog) samt Companion
-  `docs/plan/planning/risks-backlog-werkzeug-triage.md`.
-- **Baseline-Bezug:** keine ersetzte Regel — das Regelwerk (Modul 5/6)
-  schweigt über Nicht-Slice-Artefakte (verbietet sie nicht).
-- **Strukturregel:** m-trace führt stehende Discovery-Register
-  (Risiko-Register mit Re-Eval-Triggern, RAK-gekoppelt an die
-  Release-Historie; Quality-Gate-Backlog) samt zugehöriger Analysen. Das sind
-  Nicht-Slice-Artefakte; sie liegen **flach in `planning/`** — dasselbe
-  Muster wie der kanonische Welle-Plan, während die Lifecycle-Verzeichnisse
-  (`open/next/in-progress/done`) **slice-reserviert** bleiben.
-- **Begründung:** Die flache Ablage füllt keine „Lücke" und sanktioniert
-  keine neue Artefaktklasse — sie folgt dem vorhandenen
-  Flach-in-`planning/`-Muster. Die frühere Fassung führte die Register in
-  `in-progress/` und rechtfertigte das mit „Kanon kennt kein Äquivalent" —
-  beides in `slice-006` zurückgebaut (die W4-Triage ordnet
-  R-9/R-12/R-28/R-30 als Roadmap-Kandidaten ein, die im Register bleiben;
-  Security-Suppressions graduieren in ihr Gate-Werkzeug →
-  [MR-006](#mr-006)).
-- **Gültig, solange:** die Register geführt werden.
-
-## Sensor-Bindungsklassen
-
-m-trace nutzt derzeit Requirement-Bindung (`F-*`, `NF-*`, `MVP-*`, `AK-*`,
-`RAK-*`, `R-*`), ADR-Bindung (`ADR-NNNN`) und Reproduzierbarkeits-Bindung über
-immutable Image-Digests.
-
-## Modi
+Ohne **Kürzel**-Spalte: m-trace zählt ADR-/Slice-/Welle-Kennungen ohne
+Bereichssegment (ein schreibender Mensch + Agent, kein Mehr-Schreiber-Betrieb
+— siehe `MR-000`).
 
 | Sub-Area | Modus | Graduierungs-Bedingung |
 |---|---|---|
@@ -139,8 +146,9 @@ immutable Image-Digests.
 
 ## Requirement-Coverage-Konvergenz
 
-d-check v0.43.0 liest die bestehenden `Kennung`/`Prioritaet`/`Anforderung`- und
-`Akzeptanzkriterium`-Tabellen nativ. `make doc-trace` ist der Advisory-Sensor.
+d-check liest die bestehenden `Kennung`/`Prioritaet`/`Anforderung`- und
+`Akzeptanzkriterium`-Tabellen nativ (lebender Pin in `d-check.mk`). `make
+doc-trace` ist der Advisory-Sensor.
 Die historische `RAK-51`-Redefinition nutzt die explizite
 `duplicate-ids: last`-Policy, weil die spätere Zeile ihre Modalität von Kann auf
 Muss anhebt.
