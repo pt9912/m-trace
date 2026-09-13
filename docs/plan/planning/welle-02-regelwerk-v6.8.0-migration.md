@@ -215,4 +215,5 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
 
 ## 9. Closure-Notiz
 
-<!-- Erst nach Welle-Abschluss füllen. Verweis auf welle-02-results.md. -->
+Alle elf Tranchen `done`. `make gates` vollständig grün. Details:
+[`welle-02-results.md`](welle-02-results.md).
