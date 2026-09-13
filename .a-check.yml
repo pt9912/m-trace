@@ -8,6 +8,7 @@ languages:
   go: ["apps/api/**/*.go"]
 exclude:
   - "apps/api/**/*_test.go"   # check-architecture.sh prüfte nur Nicht-Test-Imports
+  - "apps/api/scripts/**"     # eigenständiges Dev-Tooling (z. B. coverage-overview), kein Hexagon-Teilnehmer
   - ".security/**"
   - "**/node_modules/**"
   - "**/dist/**"
@@ -16,7 +17,12 @@ layers:
   domain:      {globs: ["apps/api/hexagon/domain/**"], role: domain}
   ports:       {globs: ["apps/api/hexagon/port/**"], role: port}
   application: {globs: ["apps/api/hexagon/application/**"], role: app}
-  adapters:    {globs: ["apps/api/adapters/**"], role: adapter}
+  # `internal/storage` (DB-Open + Migrations-Runner, ADR-0002) wird nur von
+  # `apps/api/cmd/**` (composition_root) importiert, nie von Domain/Ports/
+  # Application — dieselbe Adapter-Zone, die `tech` unten für `database/sql`
+  # bereits führt (a-check >= v0.16.0 Abdeckungs-Diagnose deckte die fehlende
+  # Layer-Deklaration auf).
+  adapters:    {globs: ["apps/api/adapters/**", "apps/api/internal/storage/**"], role: adapter}
 edges:
   - {from: adapters,    to: ports}
   - {from: adapters,    to: domain}
