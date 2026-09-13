@@ -12,7 +12,7 @@ scan:
   # Projekt-Artefakte unter `.harness/skills/` bleiben bewusst gescannt.
   ignore: ['.security/.trivy-cache/**', '.tmp/**', '.harness/baseline/**']
 
-modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions, ids, planning]
+modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions, ids, planning, reviews]
 
 # Modul `planning` (slice-010): `roadmap:` schaltet unteilbar zwei Fähigkeiten
 # zugleich frei — die Basis-Invariante (Ruhe-Marker im Aktiv-Abschnitt ⟺ kein
@@ -211,3 +211,11 @@ commits:
     - '(F|NF|MVP|AK|RAK|R)-[0-9]+'
     - 'plan-[0-9]+\.[0-9]+\.[0-9]+'
   exempt-pattern: '^(Merge |Revert |docs(\([^)]*\))?: |test(\([^)]*\))?: |build(\([^)]*\))?: |ci(\([^)]*\))?: |chore(\([^)]*\))?: )'
+
+# Modul `reviews` (slice-023): jeder `done/`-Plan mit einem DoD-Haken, dessen
+# Zeile "Review" nennt, braucht mindestens einen Report unter `docs/reviews/`
+# mit derselben Kennung im Dateinamen — deckt, was seit `slice-007` bereits
+# gelebte Praxis ist. Isoliert gegen den Bestand getestet: 0 Befunde.
+reviews:
+  done-dir: docs/plan/planning/done
+  reviews-dir: docs/reviews

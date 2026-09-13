@@ -24,19 +24,19 @@ mit einem „Review"-DoD-Haken braucht einen passenden Report unter
 
 ## 2. Definition of Done
 
-- [ ] **`.d-check.yml`**: `reviews:` Sektion ergänzt (`done-dir:
+- [x] **`.d-check.yml`**: `reviews:` Sektion ergänzt (`done-dir:
       docs/plan/planning/done`, `reviews-dir: docs/reviews`), `reviews`
       in die `modules:`-Liste aufgenommen.
-- [ ] **Isoliert getestet** (vor dem Einbau, 2026-09-13): `--enable
+- [x] **Isoliert getestet** (vor dem Einbau, 2026-09-13): `--enable
       reviews` gegen den aktuellen Bestand — 0 Befunde. Bestehende
       Review-Praxis seit `slice-007` deckt sich bereits mit dem Sensor.
-- [ ] **`make docs-check` grün** mit dem neuen Modul im regulären Lauf
+- [x] **`make docs-check` grün** mit dem neuen Modul im regulären Lauf
       (nicht nur isoliert getestet).
-- [ ] `harness/README.md` §Sensors: `make docs-check`-Zeile bleibt
+- [x] `harness/README.md` §Sensors: `make docs-check`-Zeile bleibt
       unverändert (Modul-Liste ist in `.d-check.yml` dokumentiert, nicht
       in der Sensors-Tabelle einzeln aufgeführt — Präzedenzfall: `planning`,
       `ids`, `matrix` etc. sind dort auch nicht einzeln genannt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -68,7 +68,26 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+`reviews` zur `modules:`-Liste in `.d-check.yml` hinzugefügt, `reviews:`
+Sektion (`done-dir`/`reviews-dir`) ergänzt. Isolierter Test vor dem
+Einbau (0 Befunde) und der reguläre `make docs-check`-Lauf danach
+stimmen überein — kein Überraschungs-Fund. `harness/README.md` unverändert
+(Modul-Liste steht in `.d-check.yml`, nicht in der Sensors-Tabelle
+einzeln aufgeführt, wie bei den übrigen `modules:`-Einträgen auch).
+
+**Verifikation:** `make docs-check` — 1 Befund, der erwartete transiente
+`planning-drift` (dieser Slice liegt selbst in `in-progress/`).
+
+**Steering-Loop-Lerneintrag:** Ein Sensor, der beim isolierten Test 0
+Befunde zeigt, ist nicht automatisch risikofrei beim Einbau — der reale
+Unterschied ist der volle Modul-Satz gleichzeitig (Wechselwirkungen
+zwischen Modulen sind zwar unwahrscheinlich, aber ungetestet, bis der
+reguläre Lauf tatsächlich läuft). Beide Läufe stimmten hier überein;
+dasselbe Zwei-Stufen-Vorgehen (isoliert, dann regulär) lohnt sich auch
+für künftige Modul-Aktivierungen.
+
+**Folge-Slices:** `targets`-Sensor (zurückgestellt, `welle-02` §8 Punkt
+5) — kein Slice geschnitten, da kein akuter Bedarf.
 
 ## 8. Sub-Area-Modus-Begründung
 
