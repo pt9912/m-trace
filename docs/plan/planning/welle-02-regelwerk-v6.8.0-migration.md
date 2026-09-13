@@ -85,7 +85,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-015`](done/slice-015-harness-readme-sensoren-auslagerung.md) ✅ | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
 | [`slice-017`](done/slice-017-spec-straten-mr.md) ✅ | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
 | [`slice-018`](done/slice-018-adr-trigger-grandfathering.md) ✅ | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0008 grandfathered, `MR-009`) | Modul 4 (ADRs) |
-| [`slice-019`](open/slice-019-beobachtungs-register.md) | Beobachtungs-Register etablieren (`docs/plan/planning/observations/`, Kürzel-Spalte) — mechanische `d-check`-Durchsetzung deferred, `planning.observations` existiert in `v0.75.0` (aktueller Pin) noch nicht | Modul 5/6 (Planning-Harness, Roadmap) |
+| [`slice-019`](in-progress/slice-019-beobachtungs-register.md) | Beobachtungs-Register etablieren (`docs/plan/planning/observations/`, Kürzel-Spalte) — mechanische `d-check`-Durchsetzung deferred, `planning.observations` existiert in `v0.75.0` (aktueller Pin) noch nicht | Modul 5/6 (Planning-Harness, Roadmap) |
 | [`slice-016`](done/slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
 | Tranche 9 (noch nicht geschnitten) | Docker-Harness-Audit (hermetische Build-/Test-Stages) | Modul 14 |
 | Tranche 10 (noch nicht geschnitten) | d-check-Sensoren `targets`/`vcs`/`reviews` aktivieren | Templates (`.d-check.yml`), Modul 10 |
