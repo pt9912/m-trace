@@ -180,28 +180,12 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    `telemetry-model.md` statt einer `spezifikation.md`) als bewusste
    Abweichung festhält — kein Refactor der Spec-Dateien selbst. Umsetzung:
    [`slice-017`](done/slice-017-spec-straten-mr.md).
-2. **Roadmap-Terminologie (Tranche 8) — Mechanik bereits umgestellt, nur der
-   Name ist noch offen.** Direkter Diff `roadmap.template.md` v3.5.1 gegen
-   v6.8.0 gezogen (2026-09-13, beim Anlegen dieses Slices): der neue Kanon
-   nennt den Abschnitt „Offene Wellen" und führt ihn als **Liste** von
-   Wellen-Zeigern (`[<welle-id>](../<welle-id>.md)` je offener Wellen-Datei)
-   **plus** den Ruhe-Marker **zusätzlich**, wenn `in-progress/` keinen Slice
-   trägt — beides gleichzeitig ist dort ausdrücklich der Normalfall direkt
-   nach einer Wellen-Eröffnung. Genau das haben wir in `.d-check.yml`
-   (`planning.waves.mode: many`) und `roadmap.md` (Marker + Wellen-Zeiger im
-   selben Abschnitt) beim Anlegen von `welle-02` bereits umgesetzt — nicht
-   als Workaround, sondern weil es exakt der Kanon-Vorgabe entspricht.
-   **Die verbleibende, echte Frage ist nur noch der Abschnitts-**Name**:**
-   `## Aktuelle Welle` (heutiger Wortlaut, `heading:`-Default in
-   `.d-check.yml` bereits implizit darauf gesetzt) beibehalten und als
-   MR-Adaption dokumentieren, oder auf `## Offene Wellen` umbenennen (dann
-   `heading:` in `.d-check.yml` explizit mitziehen)? Zwei weitere,
-   unabhängig entscheidbare Format-Deltas aus demselben Template-Diff, die
-   bei Gelegenheit dieser Tranche mitlaufen könnten: die
-   `**Status:** Aktiv. **Letzte Änderung:** …`-Kopfzeile entfällt im neuen
-   Template ersatzlos, und die Meilensteine-Status-Spalte trägt künftig
-   „erreicht YYYY-MM-DD" **plus auflösbarem Beleg-Anker** (Tag, Workflow-Lauf,
-   Ergebnis-Notiz) statt bloßem „erreicht"/„offen".
+2. **Roadmap-Terminologie (Tranche 8) — entschieden und umgesetzt
+   (`slice-016`, ergänzt beim Anlegen von `slice-015`):** Umbenennung auf
+   `## Offene Wellen`, `heading:` in `.d-check.yml` mitgezogen,
+   `**Status:** Aktiv. **Letzte Änderung:** …`-Kopfzeile entfernt,
+   Meilensteine-Status-Spalte trägt `erreicht YYYY-MM-DD` plus
+   auflösbarem Beleg-Anker. Keine offene Frage mehr.
 3. **Review-Report-Archivierung (Modul 10, bewusst Out-of-Scope in §6).** Der
    neue Kanon archiviert Review-Reports bei Slice-Closure vollständig
    (`done/slice-<Kennung>-archiv.zip`) statt sie lose in `docs/reviews/`
