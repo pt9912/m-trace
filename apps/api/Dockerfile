@@ -21,7 +21,9 @@
 # ---------------------------------------------------------------------------
 
 # ---- deps ------------------------------------------------------------------
-FROM golang:1.26.6 AS deps
+# Digest-gepinnt (Modul 14): Update = bewusster Commit, der die Digest-Zeile
+# anhebt. Ermitteln via `docker buildx imagetools inspect golang:1.26.6`.
+FROM golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 AS deps
 
 WORKDIR /src
 ENV GOFLAGS="-mod=readonly" \
@@ -49,7 +51,8 @@ RUN CGO_ENABLED=0 go build -o /tmp/api ./cmd/api
 # //nolint-Suppressions). Konfiguration in apps/api/.golangci.yml;
 # Pro-Scope-Carveouts (Tests, scripts/, Test-Contract-Bibliothek) sind
 # dort dokumentiert. Bezug: docs/user/quality.md §1.2.
-FROM golangci/golangci-lint:v2.12.1-alpine AS lint
+# Digest ermitteln via `docker buildx imagetools inspect golangci/golangci-lint:v2.12.1-alpine`.
+FROM golangci/golangci-lint:v2.12.1-alpine@sha256:25cd0933d1a4ced61e907aabac044cfc0182ab067c09c25d568e15750e9695aa AS lint
 
 WORKDIR /src
 COPY --from=deps /go/pkg/mod /go/pkg/mod
@@ -143,7 +146,8 @@ RUN CGO_ENABLED=0 go build \
 RUN mkdir -p /staging/var/lib/mtrace
 
 # ---- runtime ---------------------------------------------------------------
-FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+# Digest ermitteln via `docker buildx imagetools inspect gcr.io/distroless/static-debian12:nonroot`.
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab AS runtime
 
 COPY --from=build /out/api /usr/local/bin/api
 COPY --from=build --chown=65532:65532 /staging/var/lib/mtrace /var/lib/mtrace

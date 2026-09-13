@@ -837,7 +837,7 @@ TRIVY_IMAGE ?= aquasec/trivy:0.74.0
 # scannt nur tatsaechlich aufgerufene Funktionen — False-Positive-
 # Rate ist niedriger als bei statischen Tools.
 vuln-check:
-	docker run --rm -v "$(CURDIR)/apps/api:/src" -w /src golang:1.26.6 \
+	docker run --rm -v "$(CURDIR)/apps/api:/src" -w /src golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 \
 		bash -c "go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) && govulncheck ./..."
 
 # `make audit-ts` prueft die npm-Dependency-Closure des pnpm-Workspaces
@@ -922,11 +922,23 @@ image-scan:
 		--ignorefile /work/.trivyignore \
 		mtrace-analyzer-service:scan
 
+# `harness/image-hash.txt` ist der Reproduzierbarkeits-Beleg aus Modul 14
+# (`docker buildx build --metadata-file` -> Digest je Service extrahiert).
+# Adressiert *ein* gebautes Image je Zeile; ein Update entsteht nur durch
+# einen neuen `make image-build`-Lauf, nie von Hand editiert.
 image-build:
 	@test -n "$(IMAGE_TAG)" || (echo "VER or IMAGE_TAG is required, e.g. make image-build VER=0.21.0" >&2; exit 2)
-	docker build --target runtime -t $(IMAGE_API):$(IMAGE_TAG) apps/api
-	docker build -f apps/dashboard/Dockerfile -t $(IMAGE_DASHBOARD):$(IMAGE_TAG) .
-	docker build -f apps/analyzer-service/Dockerfile -t $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG) .
+	@command -v jq >/dev/null 2>&1 || (echo "[image-build] missing dependency: jq (apt: 'apt-get install jq')" >&2; exit 2)
+	@mkdir -p .tmp/image-meta
+	docker build --target runtime --metadata-file .tmp/image-meta/api.json -t $(IMAGE_API):$(IMAGE_TAG) apps/api
+	docker build -f apps/dashboard/Dockerfile --metadata-file .tmp/image-meta/dashboard.json -t $(IMAGE_DASHBOARD):$(IMAGE_TAG) .
+	docker build -f apps/analyzer-service/Dockerfile --metadata-file .tmp/image-meta/analyzer-service.json -t $(IMAGE_ANALYZER_SERVICE):$(IMAGE_TAG) .
+	@{ \
+		echo "api: $$(jq -r '.["containerimage.digest"]' .tmp/image-meta/api.json)"; \
+		echo "dashboard: $$(jq -r '.["containerimage.digest"]' .tmp/image-meta/dashboard.json)"; \
+		echo "analyzer-service: $$(jq -r '.["containerimage.digest"]' .tmp/image-meta/analyzer-service.json)"; \
+	} > harness/image-hash.txt
+	@cat harness/image-hash.txt
 
 image-publish-dry-run: image-build
 	docker image inspect $(IMAGE_API):$(IMAGE_TAG) >/dev/null

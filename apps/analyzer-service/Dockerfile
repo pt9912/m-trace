@@ -3,7 +3,8 @@
 # konsolidiert die produktiven Artefakte über `pnpm deploy --prod`
 # in `/deploy`. Damit braucht die Runtime-Stage keinen weiteren
 # pnpm-install-Schritt mehr (plan-0.3.0 §9 Tranche 7.5/3).
-FROM node:22-trixie-slim AS build
+# Digest ermitteln via `docker buildx imagetools inspect node:22-trixie-slim`.
+FROM node:22-trixie-slim@sha256:7b8a0c89c54499bee567618f96578e1a12a800f062fbdbfd1fb6a443fa6f6284 AS build
 WORKDIR /workspace
 
 RUN corepack enable && corepack prepare pnpm@11.20.0 --activate
@@ -40,7 +41,8 @@ RUN pnpm --filter @pt9912/analyzer-service deploy --prod /deploy
 
 # Runtime stage — startet direkt aus dem deploy-Bundle, ohne pnpm
 # binär oder einen weiteren install-Schritt.
-FROM node:22-trixie-slim AS runtime
+# Digest ermitteln via `docker buildx imagetools inspect node:22-trixie-slim`.
+FROM node:22-trixie-slim@sha256:7b8a0c89c54499bee567618f96578e1a12a800f062fbdbfd1fb6a443fa6f6284 AS runtime
 WORKDIR /app
 
 # `node:*-trixie-slim`-Images bringen `npm` unter

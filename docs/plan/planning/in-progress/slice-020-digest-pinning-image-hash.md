@@ -37,31 +37,32 @@ drei Runtime-Images einführen.
 
 ## 2. Definition of Done
 
-- [ ] **`apps/api/Dockerfile`**: `golang:1.26.6`, `golangci/golangci-lint:v2.12.1-alpine`,
+- [x] **`apps/api/Dockerfile`**: `golang:1.26.6`, `golangci/golangci-lint:v2.12.1-alpine`,
       `gcr.io/distroless/static-debian12:nonroot` je mit `@sha256:…`-Digest
       (per `docker buildx imagetools inspect <image:tag>` ermittelt,
       2026-09-13) — Tag bleibt als Kommentar neben dem Digest für
       Menschen-Lesbarkeit.
-- [ ] **`apps/dashboard/Dockerfile`, `apps/analyzer-service/Dockerfile`**:
+- [x] **`apps/dashboard/Dockerfile`, `apps/analyzer-service/Dockerfile`**:
       beide `node:22-trixie-slim`-Stages (build + runtime) je mit
       `@sha256:…`-Digest.
-- [ ] **`apps/api/Makefile`**: die drei Ad-hoc-`docker run … golang:1.26.6`-
-      Aufrufe (`benchmark-smoke`, `fuzz-check`, `mutation-report`) auf
-      denselben Digest gezogen — reine String-Änderung, **keine**
+- [x] **`apps/api/Makefile`**: die drei Ad-hoc-`docker run … golang:1.26.6`-
+      Aufrufe (`benchmark-smoke`, `fuzz-check`, `mutation-report`) **und**
+      `Makefile` (root) `vuln-check` (vierter, beim Umsetzen gefundener
+      Fall) auf denselben Digest gezogen — reine String-Änderung, **keine**
       Struktur-/Mount-Änderung (die kommt in Tranche 9b).
-- [ ] **`harness/image-hash.txt`** neu: `make image-build` erweitert um
+- [x] **`harness/image-hash.txt`** neu: `make image-build` erweitert um
       `--metadata-file`, Digest je Service per `jq` extrahiert
       (`api`/`dashboard`/`analyzer-service`, je eine Zeile
       `<service>: sha256:…`).
-- [ ] **`harness/README.md`** referenziert `harness/image-hash.txt` (§Guides
+- [x] **`harness/README.md`** referenziert `harness/image-hash.txt` (§Guides
       oder §Sensors, je nach Passung).
-- [ ] **Verifikation:** `make image-build VER=<test-tag>` läuft durch,
+- [x] **Verifikation:** `make image-build VER=<test-tag>` läuft durch,
       erzeugt korrektes `harness/image-hash.txt`; `make gates` läuft
       vollständig grün (Digest-Pin ändert den Image-*Inhalt* nicht, nur
       seine Adressierung — bereits lokal gecachte Digests bestätigt
       identisch mit den bisherigen Tags).
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make docs-check` grün.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -110,7 +111,40 @@ Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz (nach `done/`)
 
-<!-- Erst nach Abschluss füllen. -->
+Alle vier Base-Images (`golang:1.26.6`, `golangci/golangci-lint:v2.12.1-alpine`,
+`gcr.io/distroless/static-debian12:nonroot`, `node:22-trixie-slim`) in den
+drei App-Dockerfiles per `@sha256:`-Digest gepinnt. Bei den Ad-hoc-
+`docker run`-Aufrufen in `apps/api/Makefile` fand sich beim Umsetzen ein
+**vierter** Fall über die geplanten drei hinaus: `vuln-check` im
+root-`Makefile` nutzte denselben unpgepinnten `golang:1.26.6` — mit
+gepinnt.
+
+`make image-build` erweitert um `--metadata-file` je Service +
+`jq`-Extraktion nach `harness/image-hash.txt`. Ein `jq`-Quoting-Fehler
+beim ersten Versuch (`.\"containerimage.digest\"` — Make doppelt-
+escapte die Backslashes) auf die robustere `.["containerimage.digest"]`-
+Syntax korrigiert, mit einem echten `make image-build VER=…`-Testlauf
+verifiziert (drei Digests korrekt geschrieben, Test-Images danach
+gelöscht). `harness/README.md` §Werkzeuge — kein Gate bekam die Zeile.
+
+**Verifikation:** vollständiger `make gates`-Lauf grün (api-race, ts-test,
+lint, coverage-gate, arch-check, schema-validate, generated-drift-check,
+schema-generate-postgres-check, sdk-pack-smoke, sdk-performance-smoke,
+benchmark-smoke) — Digest-Pinning ändert den Image-Inhalt nicht, nur
+seine Adressierung, bestätigt durch identische lokale Digests vor der
+Änderung. `make docs-check` — 0 Befunde (nach Marker-Rücksetzung).
+
+**Steering-Loop-Lerneintrag:** Ein systematischer `grep` über beide
+Makefiles nach dem Image-Namen (statt nur die im Plan vorab benannten
+Stellen zu patchen) fand den vierten, ungeplanten Fall (`vuln-check`).
+Dieselbe Lektion wie in `slice-018` (Vorab-Schätzung vs. Audit-Befund):
+ein `grep -rn "<image>"` über den gesamten Suchraum ist billiger als das
+Risiko, eine Stelle zu übersehen, die dieselbe Klasse Drift trägt wie die
+gerade gefixten.
+
+**Folge-Slices:** Tranche 9b (hermetische Gate-Stages für `apps/api`
+Bench/Fuzz/Mutation, Security-Scan-Mount-Abgrenzung) — noch nicht
+geschnitten.
 
 ## 8. Sub-Area-Modus-Begründung
 

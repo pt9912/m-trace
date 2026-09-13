@@ -83,6 +83,7 @@ nicht rückwirkend für bestehende Closure-Notizen (`slice-009`…`012`).
 | `make doc-trace` | druckt die Advisory-Requirements-Matrix aus den nativen Lastenheft-Tabellen und Planning-Referenzen auf stdout | kein Gate |
 | `make coverage-report` | druckt den Coverage-Report ohne Schwellen-Urteil | kein Gate |
 | `make host-deps` | installiert lokale `node_modules` für Nicht-Docker-Targets (frozen-lockfile) | kein Gate |
+| `make image-build` | baut die drei Runtime-Images und schreibt [`harness/image-hash.txt`](../harness/image-hash.txt) (Reproduzierbarkeits-Beleg, Modul 14) | kein Gate |
 
 **Aktueller Lauf-Status:** CI-Badge bzw. lokal `make help` / `make gates`.
 **Rote Gates:** Begründung im verlinkten `docs/plan/carveouts/CO-<NNN>` —
