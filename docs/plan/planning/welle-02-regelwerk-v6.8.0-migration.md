@@ -90,7 +90,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-020`](done/slice-020-digest-pinning-image-hash.md) ✅ | Docker-Harness-Audit Teil 1: Base-Image-Digest-Pinning + `harness/image-hash.txt` | Modul 14 |
 | [`slice-021`](done/slice-021-hermetic-benchmark-mount-abgrenzung.md) ✅ | Docker-Harness-Audit Teil 2: hermetische `benchmark-smoke`-Stage, Security-Scan-Mount-Abgrenzung (MR) | Modul 14 |
 | [`slice-022`](done/slice-022-hermetic-fuzz-mutation-export.md) ✅ | Docker-Harness-Audit Teil 3: hermetische Gate-Stages für `apps/api` Fuzz/Mutation (Schreib-Rückweg-Export, root-Ownership-Risiko bei `mutation-report`) | Modul 14 |
-| Tranche 10 (noch nicht geschnitten) | d-check-Sensoren `targets`/`vcs`/`reviews` aktivieren | Templates (`.d-check.yml`), Modul 10 |
+| [`slice-023`](open/slice-023-dcheck-reviews-modul.md) | d-check-Sensor `reviews` aktivieren (`vcs`/`commits` bereits aktiv, `targets` zurückgestellt — s. §8) | Templates (`.d-check.yml`), Modul 10 |
 | Tranche 11 (noch nicht geschnitten) | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, zwei neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
 
 **Bewusst nicht in dieser Welle:** Modul 12 (Replay-Evaluierung) — m-trace hat
@@ -202,6 +202,16 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    bereits (entstanden nach dessen Einführung in den `v3.5.0`-Templates).
    Umsetzung: [`slice-018`](done/slice-018-adr-trigger-grandfathering.md)
    (`MR-009`, analog `MR-002`).
+5. **`targets`-Sensor zurückgestellt (Tranche 10) — entschieden (Owner,
+   2026-09-13).** Ein Test gegen `harness/README.md` als Autoritäts-Doku
+   ergab 90 `gate-undocumented`-Funde: m-trace hat ~90 Makefile-Targets
+   (Smoke-Suiten, Release-/Image-Plumbing, Dev-Helfer), `harness/README.md`
+   listet bewusst nur 17 (Gates + Werkzeuge). Eine vollständige
+   `exempt-targets`-Liste für alle Nicht-Gate-Targets wäre selbst ein
+   größerer, laufend zu pflegender Aufwand — zurückgestellt als eigener
+   Folge-Slice, wenn Bedarf entsteht. `vcs`/`commits` sind bereits aktiv
+   (Future-only-Sensoren, `.d-check.yml`); `reviews` läuft in
+   [`slice-023`](open/slice-023-dcheck-reviews-modul.md).
 
 ## 9. Closure-Notiz
 
