@@ -17,13 +17,21 @@ Schätzung, treiben aber nie eine Welle.
 
 ## Aktuelle Welle
 
-**Keine aktive Welle.** `welle-01` (Requirement-Link-Konvergenz) ist abgeschlossen
-(siehe *Abgeschlossene Wellen*); eine Produkt-Folgewelle ist noch **nicht
-geschnitten** (siehe *Nächste Wellen*). Die nächste Welle beginnt, sobald der
-Owner eine Tranche aus den Register-Kandidaten schneidet.
+**Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
+Wellen-Slice ist `in-progress`. Geöffnet ist
+[`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md) (Harness-Regelwerk-Baseline
+v3.5.1 → v6.8.0, zehn Tranchen, additiv zuerst; nur Tranche 1,
+[`slice-012`](../open/slice-012-harness-baseline-v6.8.0-vendoring.md)
+„Baseline vendoren", ist bisher geschnitten und wartet in `open/`). Drei
+Tranchen hängen an Owner-Entscheidungen (Welle-Datei §8) — kein Produktcode
+betroffen, reines Harness/Prozess-Territorium, läuft unabhängig von einer
+künftigen Produkt-Folgewelle (die weiterhin **nicht geschnitten** ist, siehe
+*Nächste Wellen*).
 
-**Slices ohne Welle seit `welle-01`** (Wartung/Architektur, Modul 5 „ohne Welle",
-alle in [`done/`](../done/)): [`slice-003`](../done/slice-003-a-check-arch-gate.md)
+## Slices ohne Welle
+
+Wartung/Architektur, Modul 5 „ohne Welle", alle in [`done/`](../done/), seit
+Abschluss der ersten Welle: [`slice-003`](../done/slice-003-a-check-arch-gate.md)
 (a-check ersetzt `check-architecture.sh`),
 [`slice-004`](../done/slice-004-driving-port-boundary.md) (Driving-Port-Boundary
 säubern), [`slice-005`](../done/slice-005-closure-gate-slice-welle.md)

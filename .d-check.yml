@@ -22,10 +22,19 @@ modules: [links, anchors, spans, tracked, codepaths, hostpaths, matrix, versions
 # Wellendokumenten UND dessen eigenem `done/`-Unterverzeichnis für
 # abgeschlossene Wellen + Ergebnisnotizen — exakt m-traces Bestandslayout
 # (`welle-<NN>.md` flach unter `docs/plan/planning/`, MR-007).
+# `mode: many` (statt Default `one`) seit `welle-02`: eine Welle kann jetzt
+# offen sein, ohne dass einer ihrer Slices in `in-progress/` läuft (Planung
+# vor Ausführung) — unter `one` wäre genau das ein `wave-drift`-Fund
+# (Ruhe-Marker + Wellen-Zeiger zugleich gilt dort als Widerspruch, siehe
+# d-check-Handbuch „Wellen-Boundary (Marker orthogonal)"). m-trace führt
+# weiterhin nie mehrere Wellen zugleich — `many` wird hier für die
+# Orthogonalität von Marker und Wellen-Zeiger gebraucht, nicht für Parallel-
+# Wellen-Betrieb.
 planning:
   roadmap: docs/plan/planning/in-progress/roadmap.md
   waves:
     dir: docs/plan/planning
+    mode: many
 
 # Modul `ids` (welle-01): Requirement-Kennungen im Fließtext müssen als
 # verankerte Links auf ihre Definition zeigen (inline-`<a id>`-Anker je
