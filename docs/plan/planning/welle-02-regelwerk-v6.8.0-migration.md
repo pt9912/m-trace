@@ -88,7 +88,8 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-019`](done/slice-019-beobachtungs-register.md) ✅ | Beobachtungs-Register etablieren (`docs/plan/planning/observations/`, Kürzel-Spalte) — mechanische `d-check`-Durchsetzung deferred, `planning.observations` existiert in `v0.75.0` (aktueller Pin) noch nicht | Modul 5/6 (Planning-Harness, Roadmap) |
 | [`slice-016`](done/slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
 | [`slice-020`](done/slice-020-digest-pinning-image-hash.md) ✅ | Docker-Harness-Audit Teil 1: Base-Image-Digest-Pinning + `harness/image-hash.txt` | Modul 14 |
-| Tranche 9b (noch nicht geschnitten) | Docker-Harness-Audit Teil 2: hermetische Gate-Stages für `apps/api` Bench/Fuzz/Mutation, Security-Scan-Mount-Abgrenzung | Modul 14 |
+| [`slice-021`](open/slice-021-hermetic-benchmark-mount-abgrenzung.md) | Docker-Harness-Audit Teil 2: hermetische `benchmark-smoke`-Stage, Security-Scan-Mount-Abgrenzung (MR) | Modul 14 |
+| Tranche 9c (noch nicht geschnitten) | Docker-Harness-Audit Teil 3: hermetische Gate-Stages für `apps/api` Fuzz/Mutation (Schreib-Rückweg-Export, root-Ownership-Risiko bei `mutation-report`) | Modul 14 |
 | Tranche 10 (noch nicht geschnitten) | d-check-Sensoren `targets`/`vcs`/`reviews` aktivieren | Templates (`.d-check.yml`), Modul 10 |
 | Tranche 11 (noch nicht geschnitten) | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, zwei neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
 
