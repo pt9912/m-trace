@@ -39,6 +39,7 @@ als [MR-008](conventions.md#mr-008).
 | [`spec/architecture.md`](../spec/architecture.md) | Komponenten, Schichten, Constraints |
 | [`docs/plan/adr/`](../docs/plan/adr/) | Architekturentscheidungen |
 | [`docs/plan/planning/`](../docs/plan/planning/) | Slice-Pläne und Roadmap |
+| [`docs/plan/planning/observations/`](../docs/plan/planning/observations/) | Beobachtungs-Register: wiederkehrende Diskrepanz-/Konventions-Funde je Sub-Area (`BEO-<KUERZEL>/<slug>`), Steering-Loop-Zähler |
 | [`AGENTS.md`](../AGENTS.md) | Hard Rules, Source Precedence, Workflow |
 | [`conventions.md`](conventions.md) | ID-Schemata, Adaptions-Block (`MR-*`), Modus-Deklarationen |
 | [`.harness/skills/reviewer.md`](../.harness/skills/reviewer.md) | Reviewer-Skill: HIGH-Liste, Kategorien-Regeln, Negativbefund-Pflicht, Output-Schema — nächste Rolle nach Schritt 8 des Minimal Agent Workflow, nicht Teil der Implementer-Eingabe |

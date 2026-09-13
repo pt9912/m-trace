@@ -133,18 +133,19 @@ hinaus:
 
 ## Modus-Deklaration pro Sub-Area
 
-Ohne **Kürzel**-Spalte: m-trace zählt ADR-/Slice-/Welle-Kennungen ohne
-Bereichssegment (ein schreibender Mensch + Agent, kein Mehr-Schreiber-Betrieb
-— siehe `MR-000`).
+**Kürzel** dient ausschließlich der Beobachtungs-Pfadform
+`BEO-<KUERZEL>/<slug>` (`docs/plan/planning/observations/`) — ADR-/Slice-/
+Welle-Kennungen zählen weiterhin **ohne** Bereichssegment (ein
+schreibender Mensch + Agent, kein Mehr-Schreiber-Betrieb — siehe `MR-000`).
 
-| Sub-Area | Modus | Graduierungs-Bedingung |
-|---|---|---|
-| Spec-Referenz-Richtung | Greenfield | Durchgesetzt von `make docs-check`; keine offenen Reconciliation-Befunde |
-| Bestehende akzeptierte ADRs | Brownfield, grandfathered | Historische Dateien bleiben immutable; jede neue ADR folgt der Baseline |
-| Commit-Traceability | Greenfield für neue Pull Requests | PR-Bereiche bestehen `make docs-commits`; Vor-Adoptions-Historie bleibt unverändert |
-| Requirement-Coverage | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
-| Requirement-Links | Greenfield | `ids` repo-weit über alle aktiven Doc-Dirs aktiv (welle-01: slice-001 Spec-Straten, slice-002 Rest + R-Familie); verankerte Links gg. inline-`<a id>`-Anker. Durchgesetzt in `make gates`. Exempt: immutable ADRs, `done/`, Root-Übersicht; R-Familie in `spec/**` (matrix-Richtung) |
-| Security-Gate-Suppressions (`image-scan`) | Brownfield, observable | Jede Suppression trägt Begründung + `expires` + Scope in `.security/vulnignore.yaml`; Nightly-Audit re-evaluiert; aufgelöst, sobald die `trixie-slim`-Base keine transitiven OS-CVEs ohne Runtime-Pfad mehr trägt (MR-006) |
+| Sub-Area | Kürzel | Modus | Graduierungs-Bedingung |
+|---|---|---|---|
+| Spec-Referenz-Richtung | `SPEC` | Greenfield | Durchgesetzt von `make docs-check`; keine offenen Reconciliation-Befunde |
+| Bestehende akzeptierte ADRs | `ADR` | Brownfield, grandfathered | Historische Dateien bleiben immutable; jede neue ADR folgt der Baseline |
+| Commit-Traceability | `COMMIT` | Greenfield für neue Pull Requests | PR-Bereiche bestehen `make docs-commits`; Vor-Adoptions-Historie bleibt unverändert |
+| Requirement-Coverage | `REQCOV` | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
+| Requirement-Links | `REQLINK` | Greenfield | `ids` repo-weit über alle aktiven Doc-Dirs aktiv (welle-01: slice-001 Spec-Straten, slice-002 Rest + R-Familie); verankerte Links gg. inline-`<a id>`-Anker. Durchgesetzt in `make gates`. Exempt: immutable ADRs, `done/`, Root-Übersicht; R-Familie in `spec/**` (matrix-Richtung) |
+| Security-Gate-Suppressions (`image-scan`) | `SECGATE` | Brownfield, observable | Jede Suppression trägt Begründung + `expires` + Scope in `.security/vulnignore.yaml`; Nightly-Audit re-evaluiert; aufgelöst, sobald die `trixie-slim`-Base keine transitiven OS-CVEs ohne Runtime-Pfad mehr trägt (MR-006) |
 
 ## Requirement-Coverage-Konvergenz
 
