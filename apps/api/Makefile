@@ -25,7 +25,7 @@ NO_CACHE_FILTER_RACE     := --no-cache-filter race
 # in V1__m_trace.sql stabil bleibt — `:latest` würde bei jedem
 # d-migrate-Release einen schleichenden DDL-Diff erzeugen.
 SCHEMA_DIR     := internal/storage
-DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:0.9.12
+DMIGRATE_IMAGE := ghcr.io/pt9912/d-migrate:1.3.1
 
 # Single-Source-Ausgabe des gepinnten d-migrate-Images für Skripte
 # außerhalb dieses Makefiles (z. B. scripts/cutover-sqlite-postgres.sh),
@@ -118,7 +118,7 @@ schema-validate:
 # Initial-File vor dem Lauf explizit.
 schema-generate:
 	rm -f $(SCHEMA_DIR)/migrations/V1__m_trace.sql
-	docker run --rm -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
+	docker run --rm --user "$$(id -u):$$(id -g)" -v "$(CURDIR)/$(SCHEMA_DIR):/work" \
 		$(DMIGRATE_IMAGE) export flyway \
 			--source /work/schema.yaml --target sqlite \
 			--version 1 --output /work/migrations
