@@ -52,6 +52,18 @@ WORKDIR /app
 # Dockerfile, plan-0.8.5 Tranche 1 Closeout).
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
+# `node:22-trixie-slim` baeckt den Debian-Paketstand zum Zeitpunkt des
+# Base-Image-Builds ein und bleibt bei einem gepinnten Tag hinter
+# spaeteren Debian-Security-Updates zurueck (u.a. CVE-2026-11822/11824,
+# FTS5-Memory-Corruption in libsqlite3-0; CVE-2026-86145/89161,
+# PCRE2-Memory-Corruption in libpcre2-8-0 — beide im trixie/main-Repo
+# bereits als *u2 verfuegbar, im Base-Image-Layer aber noch *u1). Volles
+# `apt-get upgrade` statt Paket-fuer-Paket-Pins, damit kuenftige
+# Debian-Point-Releases automatisch mitkommen statt bei jedem Nightly-
+# Fund eine neue Zeile zu brauchen.
+RUN apt-get update && apt-get upgrade -y \
+ && rm -rf /var/lib/apt/lists/*
+
 # Alle SUID-/SGID-Bits im Runtime abziehen. Die trixie-slim-Base
 # bringt neun solcher Binaries mit, allesamt Passwort-/Account-
 # Verwaltung plus die mount-Familie:
