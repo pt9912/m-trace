@@ -84,7 +84,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-014`](done/slice-014-agents-md-neubefuellung.md) ✅ | `AGENTS.md` komplett neu befüllen | Modul 3, 8, 9, 13 (Templates) |
 | [`slice-015`](done/slice-015-harness-readme-sensoren-auslagerung.md) ✅ | `harness/README.md`: Sensors-Tabelle 3-spaltig + `harness/sensors/<target>.md`-Auslagerung + Leseordnung | Grundlagen (Sensors-Auslagerung, Templates) |
 | [`slice-017`](done/slice-017-spec-straten-mr.md) ✅ | MR für m-traces Multi-Datei-Technical-Schicht deklarieren | Modul 3 (Spec) |
-| Tranche 6 (noch nicht geschnitten) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0011) | Modul 4 (ADRs) |
+| [`slice-018`](open/slice-018-adr-trigger-grandfathering.md) | ADR-Re-Evaluierungs-Trigger-Audit (ADR-0001..0008 grandfathered, `MR-009`) | Modul 4 (ADRs) |
 | Tranche 7 (noch nicht geschnitten) | Slice-Template + Beobachtungs-Register (`planning.observations`) | Modul 5 (Planning-Harness) |
 | [`slice-016`](done/slice-016-roadmap-offene-wellen-format.md) ✅ | Roadmap „Aktuelle Welle" → „Offene Wellen", Status-Zeile entfernt, Meilenstein-Anker | Modul 6 (Roadmap) |
 | Tranche 9 (noch nicht geschnitten) | Docker-Harness-Audit (hermetische Build-/Test-Stages) | Modul 14 |
@@ -193,13 +193,13 @@ Mach-Fragen — bewusst hier gesammelt statt in einzelnen Slices versteckt:
    gelebten, erst kürzlich „scharf geschalteten" Praxis. **Frage:** Umstellen
    (eigene Folge-Welle) oder bei der aktuellen, bewährten Form bleiben und die
    Abweichung dokumentieren?
-4. **ADR-Trigger-Grandfathering (Tranche 6).** ADR-0001..0011 haben kein
-   Re-Evaluierungs-Trigger-Feld. **Frage:** Analog `MR-002`
-   (ADR-Pfad-Grandfathering) alle Bestands-ADRs pauschal grandfathern und nur
-   neue ADRs zum Trigger-Feld verpflichten — oder rückwirkend je ADR ein
-   Trigger nachtragen (bedeutet: Ergänzung in einer neuen, nachgelagerten
-   Registry-Datei, **nicht** Edit der immutablen ADR-Bodies selbst,
-   AGENTS.md §3.5)?
+4. **ADR-Trigger-Grandfathering (Tranche 6) — entschieden (Owner,
+   2026-09-13): pauschal grandfathern.** Korrigierter Befund beim Schneiden
+   von `slice-018`: **nicht** alle elf, sondern nur ADR-0001..0008 fehlt der
+   `## Re-Evaluierungs-Trigger`-Abschnitt — ADR-0009/-0010/-0011 haben ihn
+   bereits (entstanden nach dessen Einführung in den `v3.5.0`-Templates).
+   Umsetzung: [`slice-018`](open/slice-018-adr-trigger-grandfathering.md)
+   (`MR-009`, analog `MR-002`).
 
 ## 9. Closure-Notiz
 
