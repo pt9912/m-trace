@@ -91,7 +91,7 @@ Fork-Recherche übernommen; Details je Slice-Text).
 | [`slice-021`](done/slice-021-hermetic-benchmark-mount-abgrenzung.md) ✅ | Docker-Harness-Audit Teil 2: hermetische `benchmark-smoke`-Stage, Security-Scan-Mount-Abgrenzung (MR) | Modul 14 |
 | [`slice-022`](done/slice-022-hermetic-fuzz-mutation-export.md) ✅ | Docker-Harness-Audit Teil 3: hermetische Gate-Stages für `apps/api` Fuzz/Mutation (Schreib-Rückweg-Export, root-Ownership-Risiko bei `mutation-report`) | Modul 14 |
 | [`slice-023`](done/slice-023-dcheck-reviews-modul.md) ✅ | d-check-Sensor `reviews` aktivieren (`vcs`/`commits` bereits aktiv, `targets` zurückgestellt — s. §8) | Templates (`.d-check.yml`), Modul 10 |
-| [`slice-024`](in-progress/slice-024-review-harness-templates.md) | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
+| [`slice-024`](done/slice-024-review-harness-templates.md) ✅ | Review-Harness-Templates nachziehen (Findings-Tabelle + `Klasse`-Spalte, Zitier-Form-Disziplin, neue Reviewer-Skill-Fundklassen) | Modul 10, Templates (`docs/reviews/review-report.template.md`, `.harness/skills/reviewer.template.md`) |
 
 **Bewusst nicht in dieser Welle:** Modul 12 (Replay-Evaluierung) — m-trace hat
 keinen nicht-deterministischen Modell-Kern, aspirational bis zu einem
