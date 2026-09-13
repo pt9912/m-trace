@@ -18,10 +18,11 @@ Schätzung, treiben aber nie eine Welle.
 **Keine aktive Welle** im Sinn eines laufenden Slices — noch kein
 Wellen-Slice ist `in-progress`. Geöffnet ist
 [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md) (Harness-Regelwerk-Baseline
-v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst). Tranche 1 und 8 sind `done`
-([`slice-012`](../done/slice-012-harness-baseline-v6.8.0-vendoring.md),
+v3.5.1 → v6.8.0, elf Tranchen, additiv zuerst). Tranche 1, 2 und 8 sind
+`done` ([`slice-012`](../done/slice-012-harness-baseline-v6.8.0-vendoring.md),
+[`slice-013`](../done/slice-013-conventions-md-zu-index.md),
 [`slice-016`](../done/slice-016-roadmap-offene-wellen-format.md)); Tranche
-2–4 sind geschnitten und warten in [`open/`](../open/) (`slice-013`–`015`);
+3–4 sind geschnitten und warten in [`open/`](../open/) (`slice-014`–`015`);
 die übrigen fünf Tranchen sind noch nicht geschnitten und hängen teils an
 Owner-Entscheidungen (Welle-Datei §8)
 oder Abhängigkeiten zwischen Tranchen. Kein Produktcode betroffen, reines
