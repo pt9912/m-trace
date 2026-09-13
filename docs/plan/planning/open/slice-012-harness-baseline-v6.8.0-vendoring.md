@@ -1,10 +1,10 @@
 # Slice 012: Harness-Baseline v6.8.0 vendoren
 
 **Lifecycle:** Zustand = Verzeichnis. **Welle:** [`welle-02`](../welle-02-regelwerk-v6.8.0-migration.md)
-(Tranche 1 von 10).
+(Tranche 1 von 11).
 
-**Bezug:** `.harness/baseline/`, `harness/README.md`, `harness/conventions.md`
-(nur der Baseline-Verweis, nicht die MR-Struktur — die ist Tranche 2).
+**Bezug:** `.harness/baseline/`, `harness/conventions.md` §Baseline (nur der
+Baseline-Verweis, nicht die MR-Struktur — die ist Tranche 2).
 
 **Autor:** Nachgang Regelwerk-Recherche v3.5.1→v6.8.0. **Datum:** 2026-09-13.
 
@@ -13,10 +13,12 @@
 ## 1. Ziel
 
 Die vendorte Regelwerk-Baseline von `v3.5.1` (Kurs-Welle 33) auf `v6.8.0`
-(Kurs-Welle 135) heben — reines Vendoring + Zeiger-Umstellung, **keine**
-inhaltliche Anpassung von `AGENTS.md`/`harness/conventions.md` (die folgen in
-Tranche 2/3). Damit steht der neue Regelwerk-Wortlaut netzlos + integritäts-
-geprüft im Repo, bevor irgendeine andere Tranche ihn zitiert.
+(Kurs-Welle 135) heben — reines Vendoring + der Baseline-Zeiger in
+`harness/conventions.md` §Baseline (Stand, Pfad, Digest). **Keine** sonstige
+inhaltliche Anpassung von `AGENTS.md`/`harness/conventions.md` (die
+MR-Container→Index-Umstellung und der AGENTS.md-Rewrite folgen in
+Tranche 2/3). Damit steht der neue Regelwerk-Wortlaut netzlos +
+integritäts-geprüft im Repo, bevor irgendeine andere Tranche ihn zitiert.
 
 ## 2. Definition of Done
 
@@ -24,8 +26,8 @@ geprüft im Repo, bevor irgendeine andere Tranche ihn zitiert.
       committet (Assets aus dem GitHub-Release `v6.8.0` von
       `pt9912/ai-harness-course`, Digest lokal gegen `SHA256SUMS` verifiziert
       vor dem Commit — nicht nur „hat entpackt").
-- [ ] `harness/README.md` §Baseline zeigt auf `v6.8.0` (Commit-URL/Pfad
-      analog zum bisherigen `v3.5.1`-Verweis).
+- [ ] `harness/conventions.md` §Baseline zeigt auf `v6.8.0` (Stand, Pfad,
+      SHA256-Digest — analog zum bisherigen `v3.5.1`-Absatz).
 - [ ] `.harness/baseline/v3.5.1/` bleibt als historischer Stand erhalten
       (kein Löschen — Audit-Trail, analog wie `v3.5.0` neben `v3.5.1` liegt).
 - [ ] `make docs-check` grün.
@@ -38,7 +40,7 @@ geprüft im Repo, bevor irgendeine andere Tranche ihn zitiert.
 | `.harness/baseline/v6.8.0/regelwerk/**` | neu | aus `lab-regelwerk.zip` entpackt |
 | `.harness/baseline/v6.8.0/templates/**` | neu | aus `lab-regelwerk.zip` entpackt |
 | `.harness/baseline/v6.8.0/SHA256SUMS` | neu | Release-Asset, unverändert übernommen |
-| `harness/README.md` | update | Baseline-Zeiger `v3.5.1` → `v6.8.0` |
+| `harness/conventions.md` §Baseline | update | Baseline-Zeiger `v3.5.1` → `v6.8.0` (nur dieser Absatz, nicht die MR-Struktur) |
 
 **Bereits erledigt (Recherche vor Schnitt, 2026-09-13):** `lab-regelwerk.zip`
 + `SHA256SUMS` von
