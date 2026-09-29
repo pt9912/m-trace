@@ -35,15 +35,15 @@ kandidiert; alternativ eigenes Skript neben `verify-closure-notes`).
 
 ## 2. Definition of Done
 
-- [ ] Sensor-Target existiert und ist an die Gate-Kette angebunden (Target-
+- [x] Sensor-Target existiert und ist an die Gate-Kette angebunden (Target-
       Name im Closure-Entscheid; d-check-Modul oder Skript+Target).
-- [ ] Sensor meldet über die bestehenden done-Slices (025–032) die
+- [x] Sensor meldet über die bestehenden done-Slices (025–032) die
       bekannten Drift-Fälle reproduzierbar (Verifikation gegen die
       Review-Fundliste).
-- [ ] Lifecycle-Ausnahmen deklariert und begrenzt: Marker-Tanz (Roadmap),
+- [x] Lifecycle-Ausnahmen deklariert und begrenzt: Marker-Tanz (Roadmap),
       Slice-Dokument selbst, Review-Report-Dateien.
-- [ ] `make gates` grün mit dem neuen Sensor in der Kette.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag; BEO-PLAN `state.md` auf
+- [x] `make gates` grün mit dem neuen Sensor in der Kette.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag; BEO-PLAN `state.md` auf
       `verkörpert` (Zielort + `seit slice-033`).
 
 ## 3. Plan (vor Code)
@@ -75,7 +75,42 @@ DoD vollständig + Gates grün + Closure-Notiz + `git mv` nach `done/`.
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+Der mechanische Sensor ist verkörpert: `scripts/check_plan_paths.py` +
+Target `verify-plan-paths` in der `gates`-Kette. Je Slice-Range
+(Anlage^..letzte Berührung, `--follow`) werden die Plan-§3-Pfade gegen die
+real geänderten Dateien geprüft — zwei Befund-Richtungen (PHANTOM /
+UNDECLARED), Lifecycle-Ausnahmen deklarierbar. Kalibriert über alle
+done-Slices 025–032: slice-032 reproduziert die Review-Funde 1:1 (3
+Befunde), slice-025/028 zeigen die historischen Drifts (7 bzw. 2),
+026/027/029/030 sauber. BEO-PLAN `state.md` → `verkörpert` (Zielort
+`scripts/check_plan_paths.py` + `Makefile` Target `verify-plan-paths`,
+`seit slice-033`).
+
+**Was hat funktioniert:** Kalibrierung gegen die bekannten Funde vor dem
+Ausbau — der Sensor meldete slice-032s Drift exakt (3 Befunde) und blieb
+auf den sauberen Slices stumm.
+
+**Was ging anders als geplant:** Git-Quirk: `--follow` kombiniert nicht
+mit `--reverse` (git ignoriert `--reverse` still) — die erste Range-Version
+war rückwärts und lief leer; der Fix dreht die Ordnung explizit im Code
+(kommentiert im Skript).
+
+**Steering-Loop-Eintrag:** Sensor verkörpert — die Familie „Plan-Angabe
+vs. realer Diff" wird künftig beim ersten Verstoß (statt nach der
+Ausschöpfung) gemeldet; `state.md` von BEO-PLAN trägt den Ausgang.
+— liegt in `scripts/check_plan_paths.py` + `Makefile` Target
+`verify-plan-paths`. Auslöser: `BEO-PLAN/plan-diff-drift`
+(slice-025/026/028/032, 5×).
+
+**Beobachtungs-Register (`../observations/`):** `BEO-PLAN/plan-diff-drift`
+Ausgang vollzogen — `state.md` → `verkörpert` mit Zielort; Evidence-Dateien
+bleiben als Historie.
+
+**Folge-Slices:** keine.
+
+**Risiken aus §6:** beide entfallen — False-Positives über die
+deklarierte Ausnahmeliste begrenzt (erster Lauf kalibriert), Range-
+Ermittlung über `git log --follow` gelöst.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
