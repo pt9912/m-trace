@@ -4,11 +4,11 @@
 ist die DoD dieses Slices, keine Wellen-Grenze.
 
 **Bezug:** `BEO-PLAN/plan-diff-drift` (`state.md`: `geplant`), Review-Reports
-`2026-09-29-slice-025.md` bis `-slice-032.md` (F-1-Familie, 5×),
+`2026-09-29-slice-025.md` bis `-slice-032.md` (Familie „Plan-Angabe vs. realer Diff", 5×),
 `.d-check.yml`, `tools/` bzw. `scripts/` (Sensor-Ablageort offen).
 
-**Autor:** modul-06-Konsequenz nach 5. Familien-Auftreten (Review slice-032
-F-1, MEDIUM); Owner-Freigabe über BEO-PLAN-Folge. **Datum:** 2026-09-29.
+**Autor:** modul-06-Konsequenz nach 5. Familien-Auftreten (Review slice-032,
+MEDIUM-Finding); Owner-Freigabe über BEO-PLAN-Folge. **Datum:** 2026-09-29.
 
 ---
 

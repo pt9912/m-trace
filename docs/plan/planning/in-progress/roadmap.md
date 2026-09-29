@@ -21,9 +21,7 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-Wellenlose Arbeit im Lauf:
-[`slice-033`](slice-033-plan-diff-sensor.md) — mechanischer Sensor
-Plan-§3-Pfade gegen Slice-Diff (BEO-PLAN-Ausschöpfung).
+**Keine aktive Welle.**
 
 ## Nächste Wellen
 
