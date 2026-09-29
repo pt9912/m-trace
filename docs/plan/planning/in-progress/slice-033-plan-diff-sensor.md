@@ -50,7 +50,7 @@ kandidiert; alternativ eigenes Skript neben `verify-closure-notes`).
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| Sensor (Ablageort im Closure-Entscheid: d-check-Modul oder `scripts/`) | neu | Plan-§3-Pfade gegen Slice-Range-Diff |
+| `scripts/check_plan_paths.py` | neu | Plan-§3-Pfade gegen Slice-Range-Diff |
 | `Makefile` | update | Target-Anbindung |
 | `docs/plan/planning/observations/BEO-PLAN/plan-diff-drift/state.md` | update | Ausgang `geplant` → `verkörpert` |
 

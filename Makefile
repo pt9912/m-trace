@@ -669,6 +669,12 @@ lint-variante-b-diff:
 verify-closure-notes:
 	python3 scripts/check_closure_notes.py
 
+# Plan-§3-Sensor (BEO-PLAN): je in-progress-Slice werden die in Plan §3
+# deklarierten Pfade gegen den realen Slice-Diff geprüft (PHANTOM/UNDECLARED).
+# Mit SLICE=slice-0NN lässt sich ein done-Slice historisch kalibrieren.
+verify-plan-paths:
+	python3 scripts/check_plan_paths.py $(SLICE)
+
 test: api-test ts-test
 
 api-test:
@@ -813,7 +819,7 @@ release-gate:
 	$(MAKE) release-guard VER=$(VER)
 	@echo "[release-gate] OK -- alle Pre-Tag-Checks gruen + release-guard ok; sicher, v$(VER) zu taggen."
 
-gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check schema-generate-postgres-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check lint-variante-b verify-closure-notes
+gates: api-race ts-test lint coverage-gate arch-check schema-validate generated-drift-check schema-generate-postgres-check sdk-pack-smoke sdk-performance-smoke benchmark-smoke docs-check lint-variante-b verify-closure-notes verify-plan-paths
 
 #  — Quality-Gates Wave 1. Security-Gates laufen
 # parallel zu `make gates` (separater CI-Job in build.yml), nicht in
