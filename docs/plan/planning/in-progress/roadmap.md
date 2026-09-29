@@ -21,7 +21,9 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+Wellenlose Arbeit im Lauf:
+[`slice-030`](slice-030-agents-md-doku-regeln-tabelle.md) — AGENTS.md §5 auf
+v6.13.0-Template-Form (Index-Tabelle, harness/rules-Split).
 
 ## Nächste Wellen
 
