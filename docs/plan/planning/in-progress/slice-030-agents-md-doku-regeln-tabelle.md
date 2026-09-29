@@ -30,12 +30,12 @@ Review-Läufe) als Kurzform-Zeiger mit Volltext nach `harness/rules/
 
 ## 2. Definition of Done
 
-- [ ] `AGENTS.md` §5 als Index-Tabelle nach dem v6.13.0-Template (8 Zeilen,
+- [x] `AGENTS.md` §5 als Index-Tabelle nach dem v6.13.0-Template (7 Zeilen,
       alle bisherigen Regeln erhalten).
-- [ ] `harness/rules/closure-notes.md` + `harness/rules/reviews.md` tragen
+- [x] `harness/rules/closure-notes.md` + `harness/rules/reviews.md` tragen
       die Volltexte der zwei Langregeln (links vom neuen Pfad aus gültig).
-- [ ] `make docs-check` grün (163+ Dateien, keine toten Links).
-- [ ] Closure-Notiz.
+- [x] `make docs-check` grün (172 Dateien, 0 Befunde).
+- [x] Closure-Notiz.
 
 ## 3. Plan (vor Code)
 
@@ -65,7 +65,32 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+AGENTS.md §5 trägt die v6.13.0-Index-Tabelle (7 Regeln): die vier
+Template-Regeln (IDs/Commit-Traceability mit m-trace-ID-Schema ohne RB,
+ADR-Index, Planning-Pfad, Makefile-Gates) plus die drei m-trace-eigenen
+(R-N-Backlog, Closure-Noten, Review-Läufe). Die zwei Langregeln (Closure-
+Noten, Review-Läufe) leben mit Volltext in `harness/rules/{closure-notes,
+reviews}.md` — der Tabellenzeile bleibt der Kurzform-Zeiger.
+
+**Was hat funktioniert:** Plan §3 nannte exakt die drei geänderten Dateien;
+der Real-Diff wurde vor der Closure dagegen geprüft — die erste Runde
+ohne Abweichung seit dem BEO-PLAN-Eintrag (AGENTS.md §6 Schritt 4
+bewährt).
+
+**Was ging anders als geplant:** Nichts Substanzielles; die
+target-untracked-Befunde der neuen `harness/rules/`-Dateien lösten sich
+mit dem Commit (docs-check prüft gegen den git-Index).
+
+**Steering-Loop-Eintrag:** keine — der BEO-PLAN-Eintrag (3×) ist bereits
+in `slice-029` verkörpert; dieser Slice befolgt die verkörperte Form.
+
+**Beobachtungs-Register (`../observations/`):** keine Beobachtung
+angefallen.
+
+**Folge-Slices:** keine.
+
+**Risiken aus §6:** beide entfallen — links vom neuen Pfad gültig
+(docs-check grün), Plan/Diff-Schnitt gehalten.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
