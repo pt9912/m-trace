@@ -6,7 +6,7 @@ Auflösungs-Trigger und Folge-Slice. Aufgelöste Carveouts wandern nach `done/`
 (reiner `git mv`).
 
 - **Gerüst:** das vendored Template
-  [`carveout.template.md`](../../../.harness/baseline/v6.8.0/templates/docs/plan/carveouts/carveout.template.md)
+  [`carveout.template.md`](../../../.harness/baseline/v6.13.0/templates/docs/plan/carveouts/carveout.template.md)
   wird kopiert-und-ausgefüllt nach `docs/plan/carveouts/CO-<NNN>-<kurztitel>.md`.
 - **Werkzeug-Wahl vor dem Anlegen:** erst den Modul-7-Trichter prüfen (Carveout
   vs. BF-Sub-Area-Markierung vs. ADR). Ein Diskrepanz-**Cluster** im selben

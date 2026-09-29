@@ -4,7 +4,7 @@
 - **Geltungsbereich:** Contract (`spec/lastenheft.md`), Pläne, Commits und
   Reviews
 - **Ersetzt-Baseline-Regel:** [`grundlagen-source-precedence.md` §ID-Schema
-  als Klammer](../../.harness/baseline/v6.8.0/regelwerk/grundlagen-source-precedence.md#id-schema-als-klammer)
+  als Klammer](../../.harness/baseline/v6.13.0/regelwerk/grundlagen-source-precedence.md#id-schema-als-klammer)
   — dort ist `LH-FA-<NN>`/`LH-QA-<NN>` die vorgeführte Beispielfamilie mit
   frei wählbarem Vertrags-Präfix.
 - **Adaption:** m-trace datiert vor dieser Beispielfamilie und nutzt

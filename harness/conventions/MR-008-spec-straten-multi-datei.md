@@ -4,7 +4,7 @@
 - **Geltungsbereich:** `spec/backend-api-contract.md`, `spec/browser-support.md`,
   `spec/player-sdk.md`, `spec/telemetry-model.md`
 - **Ersetzt-Baseline-Regel:** [`modul-03-spec.md` §Ziel-Form:
-  Spezifikation](../../.harness/baseline/v6.8.0/regelwerk/modul-03-spec.md#ziel-form-spezifikation)
+  Spezifikation](../../.harness/baseline/v6.13.0/regelwerk/modul-03-spec.md#ziel-form-spezifikation)
   — dort ist `spec/spezifikation.md` (eine Datei) die einzige vorgesehene
   Form für das Technical-Stratum; „ein Repo mit zwei Straten deklariert das
   als `MR-<NNN>`" behandelt das *Fehlen* eines Stratums, nicht dessen
@@ -25,7 +25,7 @@
   Cross-Referenzierung und RTM-Pflege erschweren würde. Ein Refactor auf
   eine Datei wäre ein erheblicher, produktnaher Eingriff (RTM, Cross-Refs,
   `matrix`-Modul) ohne erkennbaren Gegenwert (Owner-Entscheidung, siehe
-  [`welle-02`](../../docs/plan/planning/done/welle-02-regelwerk-v6.8.0-migration.md)
+  [`welle-02`](../../docs/plan/planning/done/welle-02-regelwerk-v6.13.0-migration.md)
   §8 Punkt 1).
 - **Auflösungs-Trigger:** Permanent — außer ein künftiger Slice führt die
   vier Dateien tatsächlich zu einer `spezifikation.md` zusammen.

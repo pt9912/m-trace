@@ -8,7 +8,7 @@ Reviewer → Implementation (Baseline-Regelwerk `modul-10-review-harness.md`).
 - **Ein Report pro Lauf.** Folgeläufe bekommen eine neue Datei, keine
   Überschreibung (Auditierbarkeit).
 - **Namensschema:** `<YYYY-MM-DD>-<slice-oder-diff-ref>.md`.
-- **Gerüst:** das vendored Template `v6.8.0` ·
+- **Gerüst:** das vendored Template `v6.13.0` ·
   `templates/docs/reviews/review-report.template.md`
   wird kopiert-und-ausgefüllt (nicht frei formuliert). Findings folgen der
   Tabellenform `ID | Kategorie | Befund | Quelle | Pfad | Verifizierbar |

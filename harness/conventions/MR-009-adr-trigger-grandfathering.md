@@ -3,7 +3,7 @@
 - **Datum:** 2026-09-13
 - **Geltungsbereich:** `docs/plan/adr/0001-*.md` bis `docs/plan/adr/0008-*.md`
 - **Ersetzt-Baseline-Regel:** [`modul-04-adrs.md` §Kernidee (Modul
-  4)](../../.harness/baseline/v6.8.0/regelwerk/modul-04-adrs.md#kernidee-modul-4)
+  4)](../../.harness/baseline/v6.13.0/regelwerk/modul-04-adrs.md#kernidee-modul-4)
   — dort gilt: „Jede ADR trägt einen Re-Evaluierungs-Trigger … oder
   ausdrücklich *permanent*", umgesetzt als eigener
   `## Re-Evaluierungs-Trigger`-Abschnitt (Ziel-Form ADR/MADR).

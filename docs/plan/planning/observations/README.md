@@ -13,7 +13,7 @@ auflösbarem Beleg-Anker, keine Chronik) · `evidence/<vorgangs-id>.md`
 wird **abgeleitet**, nicht geführt — er ist die Zahl der Evidence-Dateien.
 
 **Anlage:** kopiert aus
-[`observation.template.md`](../../../../.harness/baseline/v6.8.0/templates/docs/plan/planning/observation.template.md)
+[`observation.template.md`](../../../../.harness/baseline/v6.13.0/templates/docs/plan/planning/observation.template.md)
 nach `docs/plan/planning/observations/BEO-<KUERZEL>/<slug>/`. `<KUERZEL>` wird
 **nachgeschlagen**, nicht formuliert — aus der Kürzel-Spalte der
 Modus-Deklaration in [`harness/conventions.md`](../../../../harness/conventions.md#modus-deklaration-pro-sub-area).

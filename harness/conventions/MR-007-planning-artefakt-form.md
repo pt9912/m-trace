@@ -3,14 +3,14 @@
 - **Datum:** 2026-07-23
 - **Geltungsbereich:** Planning-Artefakte unter `docs/plan/planning/`
 - **Ersetzt-Baseline-Regel:** [`modul-05-planning-harness.md` §Ziel-Form:
-  Slice](../../.harness/baseline/v6.8.0/regelwerk/modul-05-planning-harness.md#ziel-form-slice)
+  Slice](../../.harness/baseline/v6.13.0/regelwerk/modul-05-planning-harness.md#ziel-form-slice)
   — dort ist `slice-<Kennung>.md` (Zustand = Lifecycle-Verzeichnis) die
   einzige vorgesehene Form für neue Arbeit.
 - **Adaption:** m-traces Bestand nutzt release-gekoppelte
   `plan-<version>.md`-Dateien in `done/`. **Entscheidung (Owner
   2026-07-21):** **Neue** Arbeit folgt der kanonischen Slice/Welle-Form (aus
   den vendored Templates
-  `.harness/baseline/v6.8.0/templates/docs/plan/planning/{slice,welle}.template.md`).
+  `.harness/baseline/v6.13.0/templates/docs/plan/planning/{slice,welle}.template.md`).
   Der **Bestand `plan-<version>.md` wird grandfathered** (Variante A):
   historische Release-Records bleiben unverändert, keine
   Massen-Umbenennung, die Release-Versions-Kopplung bleibt für die Alt-Form.

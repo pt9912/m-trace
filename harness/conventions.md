@@ -22,33 +22,33 @@ für Form-Fragen, nicht autoritativ über Inhalt.
 ## Baseline
 
 - **Konvention:** AI-Harness-Kurs (ai-harness-course)
-- **Stand:** `v6.8.0`
-- **Datum der Adoption:** 2026-09-13. Frühere Stände bleiben unter
-  `.harness/baseline/<tag>/` liegen (Audit-Referenzform, nicht der aktive
-  Stand).
+- **Stand:** `v6.13.0`
+- **Datum der Adoption:** 2026-09-29. Ältere vendierte Stände verbleiben
+  nicht im Repo — sie werden beim Upgrade entfernt (Owner-Entscheid,
+  dokumentiert in der Closure-Notiz von `slice-025`).
 
 **Was das Feld `Stand:` trägt:** den adoptierten Stand als **Version**, nie
 als Datum — das Datum steht in der eigenen Zeile. Ein `versions`-Sensor, der
 dieses Feld gegen Baseline-Pins im Repo hält, läuft in m-trace (noch) nicht
-(`grep -n '^modules:' .d-check.yml` führt kein `versions`); das Feld steht
-als Ziel-Form, nicht als bewachte Zusage (`welle-02` Tranche 10 evaluiert
-das).
+(das `versions`-Modul in `.d-check.yml` guardet gepinnte GHCR-Image-Verweise,
+keine Baseline-Pins); das Feld steht als Ziel-Form, nicht als bewachte
+Zusage.
 
 ## Adoptierte Konventions-Quellen
 
 - **Extern (Lehrmaterial, kanonisch):**
-  <https://github.com/pt9912/ai-harness-course/tree/v6.8.0/kurs/de> — auf den
-  Tag `v6.8.0` gepinnt, nicht `main`-floating.
+  <https://github.com/pt9912/ai-harness-course/tree/v6.13.0/kurs/de> — auf den
+  Tag `v6.13.0` gepinnt, nicht `main`-floating.
 - **Vendored Baseline (Regelwerk + Templates):** aus dem self-contained
   Release-Asset
-  <https://github.com/pt9912/ai-harness-course/releases/download/v6.8.0/lab-regelwerk.zip>
-  nach `.harness/baseline/v6.8.0/{regelwerk,templates}/` entpackt (netzlos,
+  <https://github.com/pt9912/ai-harness-course/releases/download/v6.13.0/lab-regelwerk.zip>
+  nach `.harness/baseline/v6.13.0/{regelwerk,templates}/` entpackt (netzlos,
   `SHA256SUMS`, per `sha256sum -c` verifiziert — 54 Dateien, Digest des
-  Release-Assets: `2c55e6d1b821ae15ff73f5a9b3dc2269843db0ffcf9845a4bd0df2cfebbdc6c7`).
-  Regelwerks-Stand laut `regelwerk/README.md`: Kurs-Welle 135, 2026-09-13.
+  Release-Assets: `b5151e77807e2affebb25cfab9be24b88cf43afc42c075db0b982a2ff1052b96`).
+  Regelwerks-Stand laut `regelwerk/README.md`: Kurs-Welle 153, 2026-09-28.
 - **In-Repo (verkörperte Form):** [`AGENTS.md`](../AGENTS.md),
   [`harness/README.md`](README.md) und diese Datei — kopiert-und-ausgefüllt
-  aus den vendorten `.harness/baseline/v6.8.0/templates/`; bei Konflikt gilt
+  aus den vendorten `.harness/baseline/v6.13.0/templates/`; bei Konflikt gilt
   das Lehrmaterial.
 
 ## Spec-Straten

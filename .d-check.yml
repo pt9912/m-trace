@@ -117,6 +117,13 @@ ignore-refs:
   - in: 'docs/plan/planning/in-progress/roadmap.md'
     refs:
       - 'docs/plan/planning/in-progress/slice-*.md'
+  # MR-001 liegt in done/ (immutable, modul-02 Append-only) und linkt die
+  # v6.8.0-Regelwerk-Dateien. Der Alt-Baum wurde in slice-025 entfernt
+  # (Owner-Entscheid, Praezedenz b254801); die Links bleiben als historische
+  # Adresse stehen.
+  - in: 'harness/conventions/done/MR-001-*'
+    refs:
+      - '.harness/baseline/v6.8.0/**'
 
 # Ehemals `MR-004` in harness/conventions.md (bis welle-02 Tranche 2): kein
 # Fund im Regelwerk, den dieser Eintrag ersetzt — `hostpaths` ist eine

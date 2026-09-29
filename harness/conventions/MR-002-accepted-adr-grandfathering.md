@@ -3,7 +3,7 @@
 - **Datum:** 2026-07-14
 - **Geltungsbereich:** `docs/plan/adr/0001-*.md` bis `docs/plan/adr/0007-*.md`
 - **Ersetzt-Baseline-Regel:** [`modul-04-adrs.md` §Hard Rule für
-  Accepted-ADRs](../../.harness/baseline/v6.8.0/regelwerk/modul-04-adrs.md#hard-rule-für-accepted-adrs)
+  Accepted-ADRs](../../.harness/baseline/v6.13.0/regelwerk/modul-04-adrs.md#hard-rule-für-accepted-adrs)
   — dort gilt uneingeschränkt: „Eine ADR mit Status `Accepted` wird nicht
   inhaltlich überschrieben."
 - **Adaption:** Die Hard Rule gilt für diese sieben Vor-Adoptions-Records

@@ -81,7 +81,7 @@ Jedes Finding:
 
 - `kategorie`: HIGH | MEDIUM | LOW | INFO
 - `quelle`: ADR-ID, `RAK-*`/`R-*`-ID, Hard-Rule-Nummer oder „Maintainability"
-  — bei einer Baseline-Regel: `v6.8.0` · `regelwerk/<datei>.md` §<Abschnitt>,
+  — bei einer Baseline-Regel: `v6.13.0` · `regelwerk/<datei>.md` §<Abschnitt>,
   kein Link (Baseline-Tag wandert bei jedem Bump, ein Link darauf rottet)
 - `pfad`: `Datei:Zeile`
 - `befund`: 1–2 Sätze, beobachtbar, ohne Lösungsvorschlag
@@ -91,7 +91,7 @@ Jedes Finding:
 
 Zusätzlich am Ende: eine Zeile „geprüft, ohne Befund" pro betrachtetem
 Verzeichnis (Negativbefund-Zeile — sonst ist „keine Findings" nicht von „nicht
-geprüft" unterscheidbar). Report-Gerüst für den ganzen Lauf: `v6.8.0` ·
+geprüft" unterscheidbar). Report-Gerüst für den ganzen Lauf: `v6.13.0` ·
 `templates/docs/reviews/review-report.template.md` kopiert-und-ausgefüllt
 nach `docs/reviews/`, ein Report pro Lauf, Folgeläufe als neue Datei statt
 Überschreibung.

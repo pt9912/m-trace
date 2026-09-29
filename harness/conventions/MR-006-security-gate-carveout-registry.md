@@ -5,7 +5,7 @@
   `node:22-trixie-slim`-Base (`mtrace-dashboard`, `mtrace-analyzer-service`),
   geführt in `.security/vulnignore.yaml`
 - **Ersetzt-Baseline-Regel:** [`modul-07-carveouts.md` §Ziel-Form:
-  Carveout](../../.harness/baseline/v6.8.0/regelwerk/modul-07-carveouts.md#ziel-form-carveout)
+  Carveout](../../.harness/baseline/v6.13.0/regelwerk/modul-07-carveouts.md#ziel-form-carveout)
   — dort ist die Dateikonvention **ein** `docs/plan/carveouts/CO-<NNN>-*.md`
   je einzelner, temporärer Gate-Senkung.
 - **Adaption:** m-trace senkt den Security-Gate für einen **Cluster**
