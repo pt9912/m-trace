@@ -21,7 +21,9 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+Wellenlose Arbeit im Lauf:
+[`slice-025`](slice-025-harness-baseline-v6.13.0.md) — Regelwerk-Baseline
+v6.8.0 → v6.13.0.
 
 ## Nächste Wellen
 
