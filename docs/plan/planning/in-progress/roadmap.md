@@ -21,9 +21,7 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-Wellenlose Arbeit im Lauf:
-[`slice-026`](slice-026-suppression-triage.md) — Suppression-Triage
-(abgelaufene `expires` in vulnignore.yaml).
+**Keine aktive Welle.**
 
 ## Nächste Wellen
 
