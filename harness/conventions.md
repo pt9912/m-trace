@@ -146,6 +146,7 @@ schreibender Mensch + Agent, kein Mehr-Schreiber-Betrieb — siehe `MR-000`).
 | Requirement-Coverage | `REQCOV` | Brownfield, observable | Jedes geforderte Requirement hat einen Slice oder kuratierten Coverage-Verweis und `make doc-complete` besteht |
 | Requirement-Links | `REQLINK` | Greenfield | `ids` repo-weit über alle aktiven Doc-Dirs aktiv (welle-01: slice-001 Spec-Straten, slice-002 Rest + R-Familie); verankerte Links gg. inline-`<a id>`-Anker. Durchgesetzt in `make gates`. Exempt: immutable ADRs, `done/`, Root-Übersicht; R-Familie in `spec/**` (matrix-Richtung) |
 | Security-Gate-Suppressions (`image-scan`) | `SECGATE` | Brownfield, observable | Jede Suppression trägt Begründung + `expires` + Scope in `.security/vulnignore.yaml`; Nightly-Audit re-evaluiert; aufgelöst, sobald die `trixie-slim`-Base keine transitiven OS-CVEs ohne Runtime-Pfad mehr trägt (MR-006) |
+| Planning-Pläne (Slice/Welle) | `PLAN` | Brownfield, observable | Plan §3/DoD vor jeder Slice-Closure gegen den realen Diff geprüft (Änderungs-Art, Zählung, Pin-Orte); Kennungen ab Anlegen verlinkt (`ids`) |
 
 ## Requirement-Coverage-Konvergenz
 

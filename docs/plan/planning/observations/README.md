@@ -22,4 +22,5 @@ Modus-Deklaration in [`harness/conventions.md`](../../../../harness/conventions.
 Slice-Plans). Die Welle-Closure liest, was 3× erreicht hat; die
 Slice-Planung (§8) liest, was darunter steht.
 
-_Keine offenen Beobachtungen._
+[`BEO-PLAN/plan-diff-drift`](BEO-PLAN/plan-diff-drift/observation.md) —
+**verkörpert** (`AGENTS.md` §6, seit `slice-029`).

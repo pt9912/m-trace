@@ -218,7 +218,9 @@ Pro Slice:
 1. [`harness/README.md`](harness/README.md) lesen.
 2. Relevante kanonische Quelle lesen (Source Precedence beachten).
 3. Betroffene Requirement-/ADR-IDs identifizieren.
-4. Kleinste sinnvolle Änderung planen.
+4. Kleinste sinnvolle Änderung planen — und vor der Slice-Closure Plan §3/DoD
+   gegen den realen Diff prüfen (Änderungs-Art, Zählung, Pin-Orte stimmen mit
+   dem Gebauten überein; Abweichungen werden im Plan nachgeführt).
 5. Engsten nützlichen Sensor laufen lassen.
 6. Vor Handoff den proportionalen Aggregat-Gate laufen lassen — `make docs-check`
    bei reinen Doku-Änderungen, `make gates` bei Code.
