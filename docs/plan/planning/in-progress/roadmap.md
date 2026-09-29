@@ -21,7 +21,8 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+**Aktiv: [`slice-034`](slice-034-tools-uebernahme.md) — aih-Tools übernehmen
+(ohne Welle; Closure-Bedingung ist die Slice-DoD).**
 
 ## Nächste Wellen
 
