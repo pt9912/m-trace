@@ -3,7 +3,7 @@
 **Lifecycle:** Zustand = Verzeichnis. **Welle:** ohne Welle — Closure-Bedingung
 ist die DoD dieses Slices.
 
-**Bezug:** [R-32](../../risks-backlog.md#r-32) ·
+**Bezug:** [R-32](../risks-backlog.md#r-32) ·
 [MR-003](../../../../harness/conventions.md#mr-003) · Durchsetzungsschicht-
 Adoption `8856c40` · Review
 [2026-09-29-slice-034.md, F-2](../../../reviews/2026-09-29-slice-034.md).
@@ -26,7 +26,7 @@ demselben Abgleich.
 
 - **Aktivierung** (`make hooks-install`) — bleibt Owner-Entscheid; dieser
   Slice räumt nur die Bedingung weg, die
-  [R-32](../../risks-backlog.md#r-32) „vor Aktivierung" setzt.
+  [R-32](../risks-backlog.md#r-32) „vor Aktivierung" setzt.
 - **d-check-`ids`-Konfiguration** — sie prüft bereits die Familien nach
   [MR-003](../../../../harness/conventions.md#mr-003); nur die Commands-Texte
   nennen noch die Emission-Menge.
@@ -42,7 +42,7 @@ demselben Abgleich.
       Messages; die Selbstprüfung läuft gegen einen Wegwerf-Klon grün
       (rot fällt, grün geht durch).
 - [ ] Commands nennen die korrekte Kennungs-Menge (kein `LH-` mehr);
-      [R-32](../../risks-backlog.md#r-32) im Register aufgelöst (§1.2, mit
+      [R-32](../risks-backlog.md#r-32) im Register aufgelöst (§1.2, mit
       Auflösungs-Befund).
 - [ ] `make docs-check` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` (frischer Kontext).
@@ -56,7 +56,7 @@ demselben Abgleich.
 | `tools/harness/selbstpruefung.sh` | update | MSG_ROT/MSG_GRUEN-Defaults auf m-trace-konforme Beispiele |
 | `.claude/commands/implement-slice.md` | update | Commit-Kennung (Z. 43), Berichten (Z. 70), Herkunfts-Formen (Z. 147), Doc-Gate (Z. 33) |
 | `.claude/commands/plan-welle.md`, `close-welle.md` | update | Doc-Gate-Bullets (LH- entfällt aus der Kennungs-Liste) |
-| `docs/plan/planning/risks-backlog.md` | update | [R-32](../../risks-backlog.md#r-32) nach §1.2 (aufgelöst), Anker bleibt |
+| `docs/plan/planning/risks-backlog.md` | update | [R-32](../risks-backlog.md#r-32) nach §1.2 (aufgelöst), Anker bleibt |
 
 ## 4. Trigger
 
@@ -89,7 +89,7 @@ DoD vollständig + Selbstprüfungs-Lauf grün (Wegwerf-Klon) + Closure-Notiz +
 **Vorgelagert — Sub-Area-Wahl:** Commit-Traceability (`COMMIT`, conventions
 §Modus-Deklaration) berührt mit dem Wächter genau eine Sub-Area; Schwelle
 (Kennungs-Zusage in AGENTS.md §5.1 + [MR-003](../../../../harness/conventions.md#mr-003)
-+ [R-32](../../risks-backlog.md#r-32)) erfüllt.
++ [R-32](../risks-backlog.md#r-32)) erfüllt.
 
 **Vorgelagert — offene Beobachtungen sichten:** slice-034-Closure meldete
 „keine Beobachtung angefallen"; Register trägt keine BEO-Klasse zur
@@ -98,6 +98,6 @@ Commit-Traceability.
 **Modus-Begründung:** Werkzeug-Anpassung am adoptierten Emission-Stand
 (Brownfield): die Form „Emission byte-identisch" gilt hier nicht — der
 Wächter wurde in `8856c40` ohne Byte-Identitäts-DoD adoptiert, und
-[R-32](../../risks-backlog.md#r-32) dokumentiert die Anpassung als
+[R-32](../risks-backlog.md#r-32) dokumentiert die Anpassung als
 [MR-003](../../../../harness/conventions.md#mr-003)-Konvergenz. Keine
 Gate-Senkung — der Wächter schärft (Fremdfamilie `LH-*` fällt durch). Kein ADR.
