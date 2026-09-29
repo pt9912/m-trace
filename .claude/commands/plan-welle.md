@@ -15,8 +15,8 @@ Modul 5 (Planning-Lifecycle), Modul 7 (Carveouts). Bei Konflikt gilt der Kurs.
 ## Repo-lokale Adaptionen, die du beachten MUSST (ANPASSEN an dein Repo)
 
 <!-- ANPASSEN: die Adaptionen DEINES Repos gegenüber der Baseline (dein
-     `harness/conventions.md`, „MR-Block"). Die planungs-relevanten aus der
-     emittierten Schicht stehen unten; ergänze/streiche nach deinem Repo. -->
+     `harness/conventions.md`, „MR-Block"). Die planungs-relevanten Adaptionen
+     stehen unten; ergänze/streiche nach deinem Repo. -->
 
 Lies den Adaptions-Block („MR-Block") in `harness/conventions.md`; die planungs-relevanten:
 
@@ -28,9 +28,8 @@ Lies den Adaptions-Block („MR-Block") in `harness/conventions.md`; die planung
 - **Strenges Doc-Gate (d-check).** Jede `LH-`/`ADR-`/`MR-`-Kennung in einer gescannten `.md` muss ein
   klickbarer Anker-Link sein (link-policy: always) — ein bares Kennungs-Token bricht `docs-check`. Der
   Welle-Plan wird gescannt.
-- **Docker-only + Gate-Nachweis/Stop-Hook.** Nur `make`-Targets, nie Host-Toolchain. `make gates`
-  endet mit `record-gates`; jede Inhaltsänderung nach einem Gate-Lauf (inkl. Commit) macht den Stempel
-  ungültig → `make gates` erneut laufen.
+- **Docker-only.** Nur `make`-Targets, nie Host-Toolchain (`AGENTS.md` §3.1). Nach jeder
+  Inhaltsänderung den proportionalen Aggregat-Gate erneut laufen lassen (`AGENTS.md` §6).
 - **Commit via Message-Datei** (`git commit -F <datei>`).
 
 ## Kontext lesen

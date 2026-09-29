@@ -17,12 +17,11 @@ Wellen-Closure), Modul 7 (Carveouts), Modul 5 (Lifecycle). Bei Konflikt gilt der
 ## Repo-lokale Adaptionen, die du beachten MUSST (ANPASSEN an dein Repo)
 
 <!-- ANPASSEN: die Adaptionen DEINES Repos gegenüber der Baseline (dein
-     `harness/conventions.md`, „MR-Block"). Die closure-relevanten aus der
-     emittierten Schicht stehen unten; ergänze/streiche nach deinem Repo. -->
+     `harness/conventions.md`, „MR-Block"). Die closure-relevanten Adaptionen
+     stehen unten; ergänze/streiche nach deinem Repo. -->
 
-- **Docker-only + Gate-Nachweis/Stop-Hook.** Nur `make`-Targets; `make gates` endet mit
-  `record-gates`. Jede Inhaltsänderung nach einem Gate-Lauf (inkl. Commit) macht den Stempel ungültig →
-  nach dem Wave-Self-Close-Commit `make gates` grün bestätigen.
+- **Docker-only.** Nur `make`-Targets (`AGENTS.md` §3.1); nach dem Wave-Self-Close-Commit
+  `make gates` grün bestätigen.
 - **Strenges Doc-Gate.** `LH-`/`ADR-`/`MR-`-Kennungen in gescannten `.md` als klickbare Anker-Links —
   die Results-Notiz und die Roadmap werden gescannt.
 - **Neue Artefakte per `cp` aus den vendored Templates** — die Results-Notiz entsteht per `cp` aus
@@ -115,8 +114,8 @@ Wellen-Closure), Modul 7 (Carveouts), Modul 5 (Lifecycle). Bei Konflikt gilt der
 
 ## Abschluss
 
-8. `make gates` grün nach dem Commit bestätigen (der Stop-Hook-Stempel muss auf den aktuellen Tree
-   passen). Erst wenn **alle sechs Belege** vorliegen — Trigger · Carveout-Audit · Results-Notiz ·
+8. `make gates` grün nach dem Commit bestätigen. Erst wenn **alle sechs Belege** vorliegen —
+   Trigger · Carveout-Audit · Results-Notiz ·
    Archivierung (oder ihre nicht eingetretene Start-Bedingung) · Self-Close-Commit ·
    fortgeschriebene Roadmap — ist die Welle auditierbar geschlossen.
 

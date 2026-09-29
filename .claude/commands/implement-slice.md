@@ -16,24 +16,20 @@ Kanonische Quellen (vendored Regelwerk, `.harness/baseline/<tag>/regelwerk/`): M
 ## Repo-lokale Adaptionen, die du beachten MUSST (ANPASSEN an dein Repo)
 
 <!-- ANPASSEN: Dieser Block listet die Adaptionen DEINES Repos gegenüber der Baseline
-     (dein `harness/conventions.md`, „MR-Block"). Der Bootstrap hat eine
-     Durchsetzungsschicht emittiert (Stop-Hook, Command-Guard, Gate-Nachweis,
-     Doc-Gate); die daraus folgenden, workflow-relevanten Adaptionen stehen unten.
-     Ergänze/streiche nach deinem Repo. -->
+     (dein `harness/conventions.md`, „MR-Block"). Die emittierte Durchsetzungsschicht
+     ist in diesem Repo nur TEILWEISE adoptiert: commit-msg-Traeger + Selbstprüfung
+     ja; Stop-Hook, Command-Guard, Gate-Nachweis nein. Ergänze/streiche nach
+     deinem Repo. -->
 
 Über das Regelwerk hinaus trägt dein Repo lokale Adaptionen gegenüber der Baseline. Lies den
-Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevanten (aus der
-emittierten Durchsetzungsschicht):
+Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevanten:
 
 - **Docker-only, kein Host-Toolchain.** Jeder Gate und jedes Tool läuft in einem gepinnten
-  Docker-Image; der emittierte PreToolUse-Guard (`.claude/hooks/pretooluse-command-guard.sh`) blockt
-  die Host-Toolchain deiner Sprache (und prüft Sub-Shell-Strings). Rufe nie einen Host-Toolchain auf
-  — nur die `make`-Targets.
-- **Gate-Nachweis + Stop-Hook.** `make gates` endet mit `record-gates`, das einen Content-Hash des
-  Working Tree stempelt; der Stop-Hook verweigert den Abschluss, solange der aktuelle Tree nicht
-  passt. **Jede Inhaltsänderung nach einem Gate-Lauf — inklusive jedes Commits und jedes `git mv`
-  — macht den Stempel ungültig: `make gates` erneut laufen.** Ein Commit/Move ohne frischen
-  Gate-Lauf lässt den Stop-Hook rot.
+  Docker-Image. Rufe nie eine Host-Toolchain auf — nur die `make`-Targets (`AGENTS.md` §3.1).
+- **Gate-Lauf statt Gate-Stempel.** `make gates` stempelt keinen Nachweis; die Disziplin trägt
+  `AGENTS.md` §6: nach jeder Inhaltsänderung — inklusive jedes Commits und jedes `git mv` — den
+  proportionalen Aggregat-Gate erneut laufen lassen (`make docs-check` bei reinen Doku-Änderungen,
+  sonst `make gates`).
 - **Strenges Doc-Gate (d-check).** Jede `LH-`/`ADR-`/`MR-`-Kennung in einer gescannten `.md` muss
   ein klickbarer Anker-Link sein (link-policy: always) — ein bares Kennungs-Token bricht
   `docs-check` (`id-unlinked`). `codepaths` verlangt, dass Pfade in Inline-Code existieren: eine
@@ -42,8 +38,8 @@ emittierten Durchsetzungsschicht):
   via Inline-Code + `d-check:ignore`. `docs/reviews/**` ist ausgenommen (Zeitdokumente).
 - **Neue Artefakte per `cp` aus den vendored Templates** (`.harness/baseline/<tag>/templates/…`),
   dann ausfüllen — keine handgeschriebenen oder repo-gepflegten Template-Kopien.
-- **Commit via Message-Datei** (`git commit -F <datei>`): der Guard scannt den Command-String,
-  also nie eine Commit-Message inline, die ein geblocktes Tool-Token enthält.
+- **Commit via Message-Datei** (`git commit -F <datei>`): längere Messages entstehen lesbar in einer
+  Datei, nicht im Kommando-Zeilen-String.
 - **Commit-Kennung.** Eine Commit-Message ohne Kennung (`ADR-NNNN`, `LH-XX-NN`, `MR-NNN`,
   `slice-N`) weist der git-eigene Hook `.githooks/commit-msg` ab, sobald er aktiviert ist. Er liegt
   versioniert im Repo und **reist mit dem Klon, seine Aktivierung nicht**: `make hooks-install`
@@ -131,8 +127,8 @@ ist eine Lifecycle-Rücksprungkante (11).
     hier den Lauf: *„der Implementer-Agent läuft `make verify-*` **selbst** vor der
     ‚fertig'-Meldung"* — ein Sensor, der erst zur Wellen-Closure feuert, ist pro Slice keiner.
     **Ein nicht gelaufener Sensor ist ein Befund, kein Formfehler:** ihn wegzulassen ist eine
-    Aussage („betrifft diesen Slice nicht"), die begründet werden muss. Kein Gate erzwingt das —
-    der Stop-Hook deckt nur `make gates`. Das ist die *Behauptung* der Implementer-Rolle und die
+    Aussage („betrifft diesen Slice nicht"), die begründet werden muss. Kein Gate erzwingt das. Das
+    ist die *Behauptung* der Implementer-Rolle und die
     *Eingabe* des Verifiers — **nicht** das finale DoD-Urteil (Modul 11: „Behauptung ohne
     Bestätigung ist die häufigste Verifier-Lücke"; eine DoD-Verletzung ist eine Verifier-only-Klasse,
     unsichtbar für Review und Tests). Ausgeführte Sensors + Restrisiken berichten.
