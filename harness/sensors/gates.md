@@ -9,7 +9,7 @@ Bündel (`Makefile`-Definition von `gates`): `api-race`, `ts-test`, `lint`
 `ts-coverage-gate`), `arch-check`, `schema-validate`,
 `generated-drift-check`, `schema-generate-postgres-check`,
 `sdk-pack-smoke`, `sdk-performance-smoke`, `benchmark-smoke`, `docs-check`,
-`lint-variante-b`, `verify-closure-notes`.
+`lint-variante-b`, `verify-closure-notes`, `verify-plan-paths`.
 
 ## Grenze — was das Grün nicht abdeckt
 

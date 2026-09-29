@@ -70,6 +70,7 @@ nicht rückwirkend für bestehende Closure-Notizen (`slice-009`…`012`).
 | `make docs-immutable` | Accepted-ADR-Kern gegen den gestagten Diff (Aufruf: `STAGED=1`) | — |
 | `make docs-commits` | Commit-Message-Traceability über einen Pull-Request-Bereich (Aufruf: `RANGE=base..head`) | — |
 | `make verify-closure-notes` | Struktureller Closure-Note-Gate für neue `done/`-Pläne | ADR-0010 |
+| `make verify-plan-paths` | Plan-§3-Pfade gegen den realen Slice-Diff je in-progress-Slice (PHANTOM/UNDECLARED; BEO-PLAN-Sensor, `scripts/check_plan_paths.py`; Kalibrierung: `SLICE=slice-0NN`) | BEO-PLAN |
 | `make build` | Baubare Release-Artefakte (`api-build` + `ts-build`) | — |
 | [`make gates`](sensors/gates.md) | Alle inneren Quality-Gates gebündelt; Grenze und Zusammensetzung in der verlinkten Datei | — |
 | `make security-gates` | `govulncheck` + `pnpm audit` + Trivy-Image-Scan + Image-Start-Smoke (separater CI-Job, nicht in `make gates`) | — |

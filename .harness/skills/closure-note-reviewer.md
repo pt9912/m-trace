@@ -31,6 +31,13 @@ tragen: (a) ein konkretes Lernsignal (z. B. „Test rot, *weil* X"), (b) ein
 konkretes Folge-Slice, (c) eine konkrete Architektur-Beobachtung. Floskeln ohne
 Inhalt sind ein HIGH-Finding.
 
+**Kennzahlen gegen den Objektstand:** Jede Zahl in der Closure-Notiz
+(Zeilen-, Eintrags- und Zählerstände, Schwellen-Enumerationen) gegen das
+bezeichnete Objekt nachzählen — Datei zeilenweise, Register-Zähler lesen.
+Eine Kennzahl, die gegen keinen Stand auflöst, ist ein LOW-Finding (Klasse
+„Closure-Kennzahl weicht vom Objektstand ab"; 3× im Radar, sharpened
+2026-09-29).
+
 Inferentiell, weil „Inhalt vs. Floskel" semantisch ist; das computational Gate
 (`scripts/check_closure_notes.py`) deckt nur die Struktur (Closure-Heading,
 Satzzahl außerhalb Code-Blöcken, Floskel-Blockliste).
