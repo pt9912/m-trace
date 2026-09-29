@@ -23,4 +23,7 @@ Slice-Plans). Die Welle-Closure liest, was 3× erreicht hat; die
 Slice-Planung (§8) liest, was darunter steht.
 
 [`BEO-PLAN/plan-diff-drift`](BEO-PLAN/plan-diff-drift/observation.md) —
-**verkörpert** (`AGENTS.md` §6, seit `slice-029`).
+**verkörpert** (`AGENTS.md` §6, seit `slice-029`). Prosa-Ausschöpfung mit
+dem 4. Auftreten (slice-030, `evidence/slice-030.md`): ein mechanischer
+Sensor für die Semantik-Drift (Plan-Formulierung vs. Diff) ist begründet
+nicht möglich — Urteilsfall; Mitigation bleibt die verkörperte Prüfpflicht.

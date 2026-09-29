@@ -409,42 +409,6 @@ trivy:
       expires: 2026-10-29
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
-    # CVE-2026-53615 (util-linux / libblkid): Integer Overflow
-    # (uint32_t) in parse_dos_extended() — dem EBR-Parser (Extended
-    # Boot Record) in libblkid/src/partitions/dos.c. Ein praepariertes
-    # Block-Device-Image mit manipuliertem EBR laesst libblkid eine
-    # Partition bei Sektor 0 (MBR) registrieren; der Bug existiert seit
-    # 2009 (util-linux-ng 2.17). NVD-Publikation ~2026-06-18, Trivy
-    # stuft (Aqua/Debian) HIGH. Betrifft die gesamte util-linux-
-    # Paketkohorte der Trixie-Slim-Base 2.41-5 (bsdutils, libblkid1,
-    # liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount,
-    # util-linux — 9 Packages).
-    # Debian-Stand: KEIN Fix-Paket ("Fixed Version"-Spalte leer);
-    # Upstream-Fix (Karel Zak) noch nicht nach Trixie paketiert, ein
-    # Base-Bump/`apt-get upgrade` hilft daher nicht.
-    # Vektor im m-trace-Runtime nicht erreichbar:
-    #   - Der Angriffspfad braucht ein praepariertes Block-Device, das
-    #     libblkid probet — laut Advisory typischerweise via
-    #     udev/udisks als root beim Hot-Plug (USB-Insertion,
-    #     loop-gemountetes Image).
-    #   - Dashboard- und Analyzer-Service-Runtime sind Node-Container
-    #     (SvelteKit-adapter-node bzw. Analyzer-WS), USER node: **kein**
-    #     udev/udisks, **keine** Block-Device-Hot-Plug-Events, keine
-    #     USB-/loop-mount-Surface, kein privilegierter Device-Zugriff.
-    #   - Codebase-grep bestaetigt: kein blkid/libblkid/partition-
-    #     Aufruf im Node-Pfad (einzige "partition"-Treffer sind
-    #     `(project_id, session_id)`-Event-Partitionen, semantisch
-    #     unverwandt). libblkid liegt nur als util-linux-Transitivpaket
-    #     der Base, wird im Runtime nie invoked.
-    # Re-Review 2026-07-10 (Nightly-Audit, Issue #12/#13): `expires`
-    # 90 Tage auf 2026-10-08. Naechster Re-Review-Trigger: Debian-
-    # Paketierung des Upstream-Fixes (Trixie-DSA/deb13u-Backport) ODER
-    # `expires`-Schwelle.
-    - id: CVE-2026-53615
-      reason: "util-linux/libblkid parse_dos_extended() Integer Overflow (EBR-Parser, dos.c; HIGH) → crafted Block-Device registriert Partition bei Sektor 0; Trixie-Base 2.41-5, KEIN Fix-Paket (Fixed Version leer, Upstream-Fix nicht nach Trixie paketiert, Base-Bump hilft nicht). Vektor braucht libblkid-Probing eines praeparierten Block-Devices (udev/udisks-Hot-Plug); Node-Container ohne udev/udisks, ohne Block-Device-/USB-/loop-Surface, USER node, ruft libblkid nie auf (grep-bestaetigt). NVD-Publikation ~2026-06-18, neu im Nightly-Scan. Trifft 9 util-linux-Packages."
-      expires: 2026-10-08
-      scope: "mtrace-dashboard, mtrace-analyzer-service"
-
     # CVE-2026-76642 / CVE-2026-78408 / CVE-2026-78409 / CVE-2026-78410
     # (util-linux): vier weitere mount(8)/nsenter(1)-Schwachstellen,
     # neu im Nightly-Scan 2026-09-04 (Issue #35) — erstmals sichtbar,
