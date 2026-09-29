@@ -169,3 +169,4 @@ apps/api/internal/storage/migrations/*.sql~
 # ---------------------------------------------------------------------------
 .claude/settings.local.json
 .codex
+.harness/state/

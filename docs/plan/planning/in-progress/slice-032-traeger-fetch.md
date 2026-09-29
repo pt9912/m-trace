@@ -30,17 +30,18 @@ Pin: `TRAEGER_TAG=v0.2.5` + Plattform-Digest `linux/amd64` im Makefile.
 
 ## 2. Definition of Done
 
-- [ ] `scripts/traeger-fetch.sh` übernommen (Herkunft im Header).
-- [ ] `Makefile`: Target `traeger-fetch` mit Pins `TRAEGER_TAG=v0.2.5` +
-      `TRAEGER_SHA256_LINUX_AMD64` (Dogfood-Hälfte: eigener Makefile-Pin statt
-      Manifest-Kanal).
-- [ ] `.gitignore`: `.harness/state/` (der Träger ist fetched State, kein
+- [x] `scripts/traeger-fetch.sh` übernommen — byte-identisch zur
+      v6.13.0-Emission (Diff gegen `/tmp/aih-v6.13.0`).
+- [x] `Makefile`: Glob-Include `include harness/mk/*.mk` (aih-Vorlage) +
+      `harness/mk/traeger.mk` mit Pins `TRAEGER_TAG=v0.2.5` +
+      `TRAEGER_CARRIER=.harness/state/bin/ai-harness-init`.
+- [x] `.gitignore`: `.harness/state/` (der Träger ist fetched State, kein
       Source).
-- [ ] `make traeger-fetch` gelaufen: Träger liegt unter
+- [x] `make traeger-fetch` gelaufen: Träger liegt unter
       `.harness/state/bin/ai-harness-init`, Digest = Release-Digest
-      (`c6a6a171…`), Exit 0.
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+      (`c6a6a171…`, Manifest-Kanal SHA256SUMS), Exit 0.
+- [x] `make docs-check` grün.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -71,9 +72,40 @@ DoD vollständig + `make traeger-fetch` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+Der Träger `ai-harness-init v0.2.5` (linux/amd64) liegt digest-verifiziert
+unter `.harness/state/bin/` (gitignored State); der Fetch läuft im
+digest-gepinntem curl-Bild und verifiziert gegen die SHA256SUMS desselben
+Releases (Manifest-Kanal). Die Verdrahtung folgt der aih-Architektur:
+Fragment `harness/mk/traeger.mk` (Pin + Target, „EIN KOMMANDO, KEIN GATE")
++ Glob-Include im Root-Makefile — künftige Fragmente greifen automatisch
+(Owner-Hinweis: „es wird noch mehr mk's geben").
 
-## 8. Sub-Area-Prüfungen und Modus-Begründung
+**Was hat funktioniert:** Byte-identische Übernahme per Diff gegen die
+Emission statt Abschreiben — zwei Verfremdungen im ersten Write (Tippfehler
+`carier_abs`, duplizierter Block) wurden so vor dem Commit gefangen.
+
+**Was ging anders als geplannt:** Die Pins sind weniger als ursprünglich
+vorgesehen — statt `TRAEGER_SHA256_LINUX_AMD64` im Makefile trägt das
+Fragment nur den Release-Tag, und die Verifizierung läuft über den
+Manifest-Kanal (SHA256SUMS desselben Releases). Das ist die
+emittierte-Form-Vorgabe des Fragments („das Fragment führt nur den
+Release-Tag"); der Digest-Pin wäre die Dogfood-Hälfte gewesen, die das
+Fragment laut Kopf entfallen lässt.
+
+**Steering-Loop-Eintrag:** Guide geschärft: `harness/mk/*.mk`-Fragments
+sind die Emission des Init-Tools — Root-Makefile bindet per Glob ein,
+kein Inlining von Target-Logik ins Root-Makefile. — liegt in
+`Makefile` (Include-Kommentar). Auslöser: `BEO-PLAN`-Nachbarschaft,
+Erstvorkommen.
+
+**Beobachtungs-Register (`../observations/`):** keine Beobachtung
+angefallen.
+
+**Folge-Slices:** keine.
+
+**Risiken aus §6:** beide entfallen — der Träger ist abgelegt, nicht
+ausgeführt (Emit gegen m-trace bleibt eigene Entscheidung); Plattform-
+Kopplung entfällt (Manifest-Kanal statt Einzeldigest-Pins).
 
 Werkzeug-Übernahme (Brownfield): das Skript ist aus der aih-Emission
 geprüft (Review-Report slice-031-Nachlauf); die Anpassung beschränkt sich
