@@ -21,7 +21,8 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+**Aktiv: [`slice-035`](slice-035-commit-msg-muster-mr003.md) — commit-msg-Muster
+an MR-003-Familien (ohne Welle; Closure-Bedingung ist die Slice-DoD).**
 
 ## Nächste Wellen
 
