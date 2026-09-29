@@ -36,23 +36,23 @@ Baseline-Abschnitt und aktive Referenzen umstellen, Alt-Stand entfernen.
 
 ## 2. Definition of Done
 
-- [ ] `.harness/baseline/v6.13.0/{regelwerk,templates}/` + `SHA256SUMS`
+- [x] `.harness/baseline/v6.13.0/{regelwerk,templates}/` + `SHA256SUMS`
       committet; Provenienz verifiziert (Zip-Digest `b5151e…` gegen das
       Release-SHA256SUMS-Asset, Extraktion diff-identisch zum liegenden
       Bestand, `sha256sum -c` → 54× OK).
-- [ ] `harness/conventions.md` §Baseline auf `v6.13.0` (Stand, Datum, URLs,
+- [x] `harness/conventions.md` §Baseline auf `v6.13.0` (Stand, Datum, URLs,
       Pfad, Digest, Kurs-Welle 153) und ohne den „Frühere Stände bleiben"-
       Satz (Owner-Entscheid, Präzedenz `b254801`).
-- [ ] `.harness/baseline/v6.8.0/` entfernt.
-- [ ] Aktive Referenzen auf `v6.13.0` gehoben: `AGENTS.md` (Pfade + §3.6),
+- [x] `.harness/baseline/v6.8.0/` entfernt.
+- [x] Aktive Referenzen auf `v6.13.0` gehoben: `AGENTS.md` (Pfade + §3.6),
       MR-002–MR-009 (Link-Versionen, Einträge unverändert),
       `.harness/skills/reviewer.md`, `.claude/agents/architect.md`,
       `docs/reviews/README.md`, `docs/plan/carveouts/README.md`,
       `docs/plan/planning/observations/README.md`.
-- [ ] `ignore-refs`-Tombstone für `MR-001` (done/, immutable) gegen die
+- [x] `ignore-refs`-Tombstone für `MR-001` (done/, immutable) gegen die
       entfernten v6.8.0-Ziele.
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make docs-check` grün (156 Dateien, 0 Befunde).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -89,7 +89,43 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+Upgrade `v6.8.0` (Kurs-Welle 135) → `v6.13.0` (Kurs-Welle 153) vollzogen:
+Vendoring mit vollständiger Provenienz-Kette (Release-SHA256SUMS-Asset
+trägt den Zip-Digest `b5151e…`, Extraktion diff-identisch zum liegenden
+Bestand, `sha256sum -c` → 54× OK), §Baseline umgestellt, Alt-Stand per
+Owner-Entscheid entfernt (Präzedenz `b254801`), aktive Referenzen gehoben.
+Inhalte der MR-Einträge unverändert (Append-only, modul-02).
+
+**Was hat funktioniert:** Headings-Abgleich zwischen beiden Baseline-Ständen
+vor dem MR-Link-Bump — alle Ziel-Anker bestanden, kein Anchor-Drift. Der
+liegende (schon entpackte) Bestand machte den Vendor-Commit zum
+Verifikations-Diff statt zum Download-Risiko.
+
+**Was ging anders als geplant:** Zwei docs-check-Befunde nach den
+mechanischen Edits: (1) Der pauschale `s/v6.8.0/v6.13.0/g`-Sed griff auch
+den welle-02-**Dateinamen** in MR-008 (Artefakt-Adresse, kein Pin) —
+zurückgeschrieben. (2) planning-drift: Der Ruhe-Marker „Keine aktive
+Welle" widerspricht jedem Slice in `in-progress/`, auch dem wellenlosen —
+der Marker muss weichen, nicht ergänzt werden.
+
+**Steering-Loop-Eintrag:** Guide geschärft: Versions-Bumps per Sed dürfen
+nur auf Pins zielen — Dateinamen, die eine Versionsnummer tragen
+(`welle-02-regelwerk-v6.8.0-migration.md`), ausnehmen und repo-weit
+gegenzählen. (Gezählt, nicht verkörpert — kein Sensor nötig, `make
+docs-check` fing beide Fälle.)
+
+**Beobachtungs-Register (`../observations/`):** keine Beobachtung angefallen.
+
+**Folge-Slices:** keine.
+
+**Risiken aus §6:** beide mit Ausgang (Tote Links → Tombstone;
+Anchor-Drift → entfallen, siehe §6).
+
+**Nicht übernommen aus v6.13.0 (Append-only, gilt ab diesem Stand):**
+modul-05 „Ein Slice, dessen Gegenstand ein anderer übernimmt", Hard-Rule-
+Trigger-Audit (modul-06), RB-Reihe (modul-03), file.max-lines/
+`harness/rules/`-Split. Einzige Zielform-Anpassung der verkörperten Form:
+AGENTS.md §3.6 Carveout-Nuance (modul-09).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
