@@ -21,9 +21,7 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-Wellenlose Arbeit im Lauf:
-[`slice-029`](slice-029-plan-diff-drift-registered.md) — Plan-vs-Diff-Drift
-ins Beobachtungs-Register (BEO-PLAN).
+**Keine aktive Welle.**
 
 ## Nächste Wellen
 
