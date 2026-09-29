@@ -343,13 +343,16 @@ trivy:
     # 90 Tage auf 2026-09-29. Naechster Re-Review-Trigger: Trixie-
     # Backport von acl >= 2.4.0 bzw. attr >= 2.6.0 (deb13u-Update)
     # ODER `expires`-Schwelle.
+    # Re-Review 2026-09-29 (slice-026, Nightly-Audit #36-#48): Base
+    # geprueft — libacl1 2.3.2-2+b1, libattr1 1:2.5.2-3, kein Fix
+    # (Trivy "Fixed Version" leer). `expires` 30 Tage auf 2026-10-29.
     - id: CVE-2026-54369
       reason: "acl/libacl1 TOCTOU-Symlink-Traversal in den pfadbasierten libacl-Funktionen (acl_get_file/acl_set_file/acl_extended_file/acl_delete_def_file), acl <2.4.0 (Trivy HIGH, CVSS 7.1, CWE-59) → lokale Privilege Escalation via privilegiertem getfacl/setfacl/chacl-Caller; Trixie ohne Upstream-Fix (kein Fixed-Version-Eintrag, Base-Bump hilft nicht). libacl1 nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft keine ACL-Funktion auf (grep-bestaetigt), USER node ohne privilegierten Caller. Neu im Nightly-Scan 2026-07-01."
-      expires: 2026-09-29
+      expires: 2026-10-29
       scope: "mtrace-dashboard, mtrace-analyzer-service"
     - id: CVE-2026-54371
       reason: "attr/libattr1 Symlink-Traversal in getfattr/setfattr, attr <2.6.0 (Trivy HIGH, CVSS 7.1, CWE-59) → lokale Privilege Escalation via privilegiertem getfattr/setfattr-Caller ueber angreifer-kontrollierten Pfad; Trixie ohne Upstream-Fix (kein Fixed-Version-Eintrag, Base-Bump hilft nicht). libattr1 nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft kein xattr-Utility auf (grep-bestaetigt), USER node ohne privilegierten Caller. NVD-Publikation 2026-06-29, neu im Nightly-Scan 2026-07-01."
-      expires: 2026-09-29
+      expires: 2026-10-29
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
     # CVE-2026-41992 (gzip): Global Buffer Over-read (CWE-126) im
@@ -398,9 +401,12 @@ trivy:
     # `expires` 90 Tage auf 2026-09-30. Naechster Re-Review-
     # Trigger: Debian-Paketierung des Upstream-Fixes (gzip >1.14
     # bzw. deb13u-Backport) ODER `expires`-Schwelle.
+    # Re-Review 2026-09-29 (slice-026, Nightly-Audit #36-#48): Base
+    # geprueft — gzip 1.13-1+deb13u1, Upstream-Fix (>1.14) weiterhin
+    # nicht paketiert. `expires` 30 Tage auf 2026-10-29.
     - id: CVE-2026-41992
       reason: "gzip <=1.14 Global Buffer Over-read im LZH-Decoder (CWE-126, NIST 7.5 HIGH / CNA 6.9 MEDIUM) → Info-Disclosure, benoetigt `gzip -d` ueber praeparierte LZW-+LZH-Dateien in einem Aufruf; alle Debian-Suites vulnerable, KEIN Fix-Paket (no-dsa/Minor, Upstream-Commit nicht paketiert), Base-Bump hilft nicht. gzip nur transitives OS-Paket der trixie-slim-Base; Node-Runtime ruft das gzip-CLI nie auf (grep-bestaetigt), Node nutzt gebundelte zlib ohne LZH-Pfad. NVD-Publikation 2026-06-29, neu im Nightly-Scan 2026-07-02."
-      expires: 2026-09-30
+      expires: 2026-10-29
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
     # CVE-2026-53615 (util-linux / libblkid): Integer Overflow
@@ -437,53 +443,6 @@ trivy:
     - id: CVE-2026-53615
       reason: "util-linux/libblkid parse_dos_extended() Integer Overflow (EBR-Parser, dos.c; HIGH) → crafted Block-Device registriert Partition bei Sektor 0; Trixie-Base 2.41-5, KEIN Fix-Paket (Fixed Version leer, Upstream-Fix nicht nach Trixie paketiert, Base-Bump hilft nicht). Vektor braucht libblkid-Probing eines praeparierten Block-Devices (udev/udisks-Hot-Plug); Node-Container ohne udev/udisks, ohne Block-Device-/USB-/loop-Surface, USER node, ruft libblkid nie auf (grep-bestaetigt). NVD-Publikation ~2026-06-18, neu im Nightly-Scan. Trifft 9 util-linux-Packages."
       expires: 2026-10-08
-      scope: "mtrace-dashboard, mtrace-analyzer-service"
-
-    # CVE-2026-53612 / CVE-2026-53613 / CVE-2026-53614 (util-linux):
-    # Drei Schwachstellen im `mount(8)`-Pfad der Trixie-Slim-Base
-    # 2.41-5, neu im Nightly-Scan 2026-08-21 (Issue #32):
-    #   - CVE-2026-53612 — TOCTOU beim Anwenden der post-mount
-    #     ownership/mode-Aenderungen.
-    #   - CVE-2026-53613 — TOCTOU via Ancestor-Directory-Swap auf
-    #     demselben Pfad.
-    #   - CVE-2026-53614 — SUID-`mount(8)` erlaubt einen
-    #     nosuid/noexec-Bypass via `LIBMOUNT_FORCE_MOUNT2`.
-    # ABWEICHEND von den uebrigen Eintraegen hier: **es gibt einen
-    # Debian-Fix** (`2.41.5-0+deb13u1`, Trivy-Spalte "Fixed Version"
-    # gefuellt, Status `fixed`). Er ist nur noch nicht im Base-Image:
-    # `node:22-trixie-slim` frisch gepullt am 2026-08-21 liefert
-    # weiterhin `util-linux 2.41-5` (verifiziert per `dpkg -l` im
-    # frischen Image). Ein Base-Bump hilft also HEUTE nicht, wird es
-    # aber, sobald das Node-Image den Trixie-Fix einzieht — daher
-    # bewusst kurzes `expires` (30 Tage statt 90).
-    # Vektor im m-trace-Runtime: hier ehrlicher als bei perl/ncurses.
-    #   - `mount`/`umount` lagen in der Base als `-rwsr-xr-x root`
-    #     vor, der SUID-Pfad aus CVE-2026-53614 war im Image also
-    #     grundsaetzlich VORHANDEN. Er setzt zwar voraus, dass ein
-    #     Angreifer bereits Code-Ausfuehrung als USER node hat
-    #     (Defense-in-Depth, kein von aussen erreichbarer Pfad) —
-    #     "nicht erreichbar" waere hier aber zu bequem gewesen.
-    #   - Konsequenz: Dashboard- und Analyzer-Dockerfile ziehen die
-    #     SUID-Bits jetzt explizit ab (`RUN chmod u-s /usr/bin/mount
-    #     /usr/bin/umount`). Das Runtime ruft mount/umount nie auf
-    #     (reiner Node-Startpfad), der Eskalationspfad ist damit zu.
-    #   - Der Trivy-Befund bleibt davon UNBERUEHRT: erkannt wird das
-    #     dpkg-Paket, nicht das Dateibit. Diese Suppression deckt
-    #     deshalb den Scanner ab, das `chmod` den echten Vektor —
-    #     beides zusammen, nicht als Ersatz fuereinander.
-    # Re-Review-Trigger: `node:22-trixie-slim` zieht `2.41.5-0+deb13u1`
-    # ein (dann Eintraege ersatzlos entfernen) ODER `expires`-Schwelle.
-    - id: CVE-2026-53612
-      reason: "util-linux TOCTOU beim Anwenden der post-mount ownership/mode-Aenderungen (HIGH). Debian-Fix EXISTIERT (2.41.5-0+deb13u1), ist aber noch nicht im Base: node:22-trixie-slim liefert am 2026-08-21 weiterhin 2.41-5 (frisch gepullt per dpkg -l verifiziert) — Base-Bump hilft heute nicht, wird es aber. Runtime ruft mount/umount nie auf (reiner Node-Startpfad, USER node); SUID-Bits werden im Dashboard-/Analyzer-Dockerfile zusaetzlich abgezogen (`chmod u-s`), Trivy sieht davon nichts (dpkg-Erkennung). Kurzes expires, weil der Fix nur auf das Base wartet."
-      expires: 2026-09-20
-      scope: "mtrace-dashboard, mtrace-analyzer-service"
-    - id: CVE-2026-53613
-      reason: "util-linux TOCTOU im mount-Pfad via Ancestor-Directory-Swap (HIGH). Gleiche Lage wie CVE-2026-53612: Debian-Fix 2.41.5-0+deb13u1 existiert, Base node:22-trixie-slim liefert am 2026-08-21 noch 2.41-5. Runtime ruft mount/umount nie auf; SUID-Bits im Dockerfile abgezogen. Kurzes expires bis das Base nachzieht."
-      expires: 2026-09-20
-      scope: "mtrace-dashboard, mtrace-analyzer-service"
-    - id: CVE-2026-53614
-      reason: "util-linux SUID-mount(8) erlaubt nosuid/noexec-Bypass via LIBMOUNT_FORCE_MOUNT2 (HIGH). Der SUID-Pfad war im Image real vorhanden (-rwsr-xr-x root), setzt aber Code-Ausfuehrung als USER node voraus (Defense-in-Depth, nicht von aussen erreichbar). Adressiert: Dashboard-/Analyzer-Dockerfile ziehen die SUID-Bits von mount/umount ab — Eskalationspfad zu. Trivy meldet weiter, weil es das dpkg-Paket sieht, nicht das Dateibit. Debian-Fix 2.41.5-0+deb13u1 existiert, Base liefert am 2026-08-21 noch 2.41-5. Kurzes expires."
-      expires: 2026-09-20
       scope: "mtrace-dashboard, mtrace-analyzer-service"
 
     # CVE-2026-76642 / CVE-2026-78408 / CVE-2026-78409 / CVE-2026-78410
