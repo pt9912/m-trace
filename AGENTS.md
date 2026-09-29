@@ -181,35 +181,15 @@ Kein Target nennen, das im `Makefile` nicht existiert — auch nicht in Prosa.
 
 ## 5. Dokumentations-Regeln
 
-- **Anforderungs-IDs und ADR-Nummern** müssen in Pull Requests/Commits
-  referenziert sein — sie sagen, welche Zusage oder Entscheidung berührt ist,
-  nach dem in [`harness/conventions.md`](harness/conventions.md) deklarierten
-  ID-Schema (`F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*`, `R-*`; ADR-Nummern über
-  den ADR-Index) — nie ad hoc im PR vergeben. Dokumentations-, Test-, Build-,
-  CI- und Wartungs-Commits sind exempt.
-- Neue ADRs müssen den ADR-Index unter [`docs/plan/adr/`](docs/plan/adr/)
-  aktualisieren.
-- Roadmap und Status-Geschichte leben in
-  [`docs/plan/planning/`](docs/plan/planning/), nicht in
-  [`spec/architecture.md`](spec/architecture.md).
-- Bewusst vertagte Tradeoffs werden als `R-N`-Einträge mit Triggerschwelle in
-  [`docs/plan/planning/risks-backlog.md`](docs/plan/planning/risks-backlog.md)
-  getrackt, nicht nur in einem Code-Kommentar.
-- Neue (nicht grandfatherte) Pläne in `docs/plan/planning/done/` tragen eine
-  **Closure-Note** mit den drei Pflicht-Inhalten aus ADR-0010 (Lernsignal /
-  Folge-Slice / Architektur-Beobachtung); Struktur prüft
-  `make verify-closure-notes`, Inhalt der closure-note-reviewer-Skill.
-- Review-Läufe (Code/Plan/Design) folgen den Skills unter
-  [`.harness/skills/`](.harness/skills/)
-  (`reviewer.md`, `closure-note-reviewer.md`) und **produzieren einen
-  Report** aus dem vendored Template
-  ([`review-report.template.md`](.harness/baseline/v6.13.0/templates/docs/reviews/review-report.template.md))
-  unter [`docs/reviews/`](docs/reviews/) — ein Report pro Lauf, Folgeläufe
-  als neue Datei. Ad-hoc-Findings in Commit-Message oder Notizen **ersetzen
-  den Report nicht** (Auditierbarkeit). Wann ein Report fällig ist, steht in
-  [`docs/reviews/README.md`](docs/reviews/README.md).
-- Quality-Gate-Definitionen leben im `Makefile`; nie ein Gate behaupten, das
-  kein ausführbares Target hat.
+| # | Regel | Datei |
+|---|---|---|
+| 1 | **Anforderungs-IDs und ADR-Nummern** müssen in Pull Requests/Commits referenziert sein — sie sagen, welche Zusage oder Entscheidung berührt ist, nach dem in [`harness/conventions.md`](harness/conventions.md) deklarierten ID-Schema (`F-*`, `NF-*`, `MVP-*`, `AK-*`, `RAK-*`, `R-*`; ADR-Nummern über den ADR-Index) — nie ad hoc im PR vergeben. Dokumentations-, Test-, Build-, CI- und Wartungs-Commits sind exempt. | — |
+| 2 | Neue ADRs müssen den ADR-Index unter [`docs/plan/adr/`](docs/plan/adr/) aktualisieren. | — |
+| 3 | Roadmap und Status-Geschichte leben in [`docs/plan/planning/`](docs/plan/planning/), nicht in [`spec/architecture.md`](spec/architecture.md). | — |
+| 4 | Bewusst vertagte Tradeoffs werden als `R-N`-Einträge mit Triggerschwelle in [`docs/plan/planning/risks-backlog.md`](docs/plan/planning/risks-backlog.md) getrackt, nicht nur in einem Code-Kommentar. | — |
+| 5 | Closure-Noten: Neue (nicht grandfathered) Pläne in `docs/plan/planning/done/` tragen die drei Pflicht-Inhalte aus ADR-0010; Struktur prüft `make verify-closure-notes`. | [closure-notes.md](harness/rules/closure-notes.md) |
+| 6 | Review-Läufe folgen den Skills unter [`.harness/skills/`](.harness/skills/) und produzieren einen Report unter [`docs/reviews/`](docs/reviews/) — ein Report pro Lauf. | [reviews.md](harness/rules/reviews.md) |
+| 7 | Quality-Gate-Definitionen leben im `Makefile`; nie ein Gate behaupten, das kein ausführbares Target hat. | — |
 
 ## 6. Minimal Agent Workflow
 
