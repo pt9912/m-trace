@@ -29,17 +29,18 @@ Link-Referenz-Definitionen werden unabhängig geprüft, neues opt-in-Modul
 
 ## 2. Definition of Done
 
-- [ ] `a-check.mk` Digest auf v0.20.0 (Release-Notes:
+- [x] `a-check.mk` Digest auf v0.20.0 (Release-Notes:
       `sha256:e8208764…`), Kommentar-Version nachgezogen.
-- [ ] `d-check.mk` auf v0.79.0 (DCHECK_IMAGE + DCHECK_DIGEST
+- [x] `d-check.mk` auf v0.79.0 (DCHECK_IMAGE + DCHECK_DIGEST
       `sha256:b4b8756b…`), Makefile-§-Kommentar (Zeile 19) nachgezogen.
-- [ ] `make arch-check` gelaufen; neue Befunde (a-check-Breaking-Change)
-      triagiert.
-- [ ] `make docs-check` gelaufen; neue Befunde (Zeilenumbruch-Links,
-      Referenz-Definitionen) triagiert.
-- [ ] `make gates`-Relevanz: beide Gates sind PR-blockierend im CI — grün
-      lokal vor Closure.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make arch-check` gelaufen; neue Befunde (a-check-Breaking-Change)
+      triagiert — **0 Befunde**, m-traces Port-Konfiguration trägt das
+      Breaking-Muster (Richtungssegment am Glob-Ende) nicht.
+- [x] `make docs-check` gelaufen; neue Befunde (Zeilenumbruch-Links,
+      Referenz-Definitionen) triagiert — **0 Befunde**.
+- [x] `make gates` grün (Komplettcheck wegen Makefile-Touch, lokal, vor
+      Push — Exit 0).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 
 ## 3. Plan (vor Code)
 
@@ -70,7 +71,37 @@ DoD vollständig + beide Gates lokal grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+Beide Gate-Tools auf Release-Stand: a-check `v0.20.0`, d-check `v0.79.0`
+(Digests aus den Release-Notes). Die a-check-BREAKING-Änderung (Port-Glob
+mit Richtungssegment schaltet `port-locality` nicht mehr still ab) trifft
+m-traces Konfiguration nicht — `make arch-check` 0 Befunde. d-checks neue
+Link-Regeln (Ziel hinter Zeilenumbruch, unabhängig geprüfte
+Referenz-Definitionen) melden ebenfalls nichts; das neue opt-in-Modul
+`file` bleibt ungeschaltet. `make gates` Komplettcheck grün vor Push.
+
+**Was hat funktioniert:** Digests aus den Release-Notes statt
+`latest`-Guess; die beiden Gate-Läufe vor der Closure haben die
+Triage-Frage („melden die neuen Versionen etwas?") direkt beantwortet.
+
+**Was ging anders als geplant:** Der wirksame `DCHECK_DIGEST`-Pin steht
+nicht in `d-check.mk`, sondern im Root-`Makefile` (dessen `?=`-Setzung
+vor dem Include sticht d-check.mks Default) — der erste Edit ging in die
+No-op-Klappe und wurde zurückgebaut. a-check.mk hat dagegen einen
+Direkt-Digest ohne Fallback; beide Dateien pinzen unterschiedlich.
+
+**Steering-Loop-Eintrag:** Guide geschärft: bei Gate-Tool-Bumps den
+wirksamen Pin-Aufenthaltsort prüfen (`grep DCHECK_DIGEST Makefile
+d-check.mk`), bevor die mk-Datei editiert wird — d-check.mks
+`DCHECK_DIGEST ?=` ist Fallback, das Root-Makefile sticht. (Gezählt, nicht
+verkörpert — Erstvorkommen.)
+
+**Beobachtungs-Register (`../observations/`):** keine Beobachtung angefallen.
+
+**Folge-Slices:** keine. Offen als bewusst ungeschaltet: das `file`-Modul
+(AGENTS.md-Ratchet) — opt-in, sobald eine gemessene Ist-Zeilenzahl vorliegt.
+
+**Risiken aus §6:** beide entfallen — a-check meldet nichts (Konfiguration
+unberührt), d-check meldet nichts (Doku-Lage sauber).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
