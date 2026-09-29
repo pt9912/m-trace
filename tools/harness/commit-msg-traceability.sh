@@ -4,11 +4,11 @@
 # der vorgeschlagenen Message-Datei als $1; Exit ungleich 0 bricht den Commit ab.
 #
 # ZUSAGE. Exit 0, wenn die Message mindestens eine Kennung aus der Menge
-# {ADR-, LH-, MR-, slice-} traegt oder ihr Betreff mit "Merge " bzw. "Revert "
-# beginnt; Exit 1, wenn keines von beidem zutrifft; Exit 2, wenn die Datei fehlt
-# oder nicht lesbar ist. Betreff ist die erste nicht-leere Zeile ohne
-# Kommentarzeichen; die Kennung darf auch im Rumpf stehen, eine Kommentarzeile
-# zaehlt dagegen nicht.
+# {ADR-, F-, NF-, MVP-, AK-, RAK-, R-, MR-, slice-} traegt oder ihr Betreff
+# mit "Merge " bzw. "Revert " beginnt; Exit 1, wenn keines von beidem
+# zutrifft; Exit 2, wenn die Datei fehlt oder nicht lesbar ist. Betreff ist
+# die erste nicht-leere Zeile ohne Kommentarzeichen; die Kennung darf auch im
+# Rumpf stehen, eine Kommentarzeile zaehlt dagegen nicht.
 #
 # GRENZE. Geprueft wird die ANWESENHEIT einer Kennung, nicht ihre Wahrheit: eine
 # Message, die zusaetzlich einen nicht aufloesbaren Verweis nennt, geht mit
@@ -56,8 +56,12 @@ if [[ "$subject" =~ $exempt ]]; then
 fi
 
 # Kennung: ERE ueber die ganze Datei, Kommentarzeilen ausgenommen. Der Dialekt
-# ist POSIX-ERE ([0-9] statt \d) — bash kennt die \d-Kurzform nicht.
-patterns='(ADR-[0-9]{4}|LH-[A-Z]{2}-[0-9]{2}|MR-[0-9]{3}|slice-[0-9]+)'
+# ist POSIX-ERE ([0-9] statt \d) — bash kennt die \d-Kurzform nicht; \b als
+# GNU-ERE-Wortgrenze greift auf glibc. Die Wortgrenze verhindert Substring-
+# Matches: `R-` taucht als Fragment in `ADR-0001`/`MR-003` auf, `F-` in `NF-`
+# — \b plus Reihenfolge (NF- vor F-) waere hier schon genug; sie blockt zusaetzlich
+# Fremd-Substrings (`FOR-1234`).
+patterns='\b(ADR-[0-9]{4}|NF-[0-9]+|F-[0-9]+|MVP-[0-9]+|AK-[0-9]+|RAK-[0-9]+|R-[0-9]+|MR-[0-9]{3}|slice-[0-9]+)'
 while IFS= read -r line || [ -n "$line" ]; do
   trimmed="${line#"${line%%[![:space:]]*}"}"
   case "$trimmed" in

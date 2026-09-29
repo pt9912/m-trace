@@ -22,7 +22,8 @@ Wellen-Closure), Modul 7 (Carveouts), Modul 5 (Lifecycle). Bei Konflikt gilt der
 
 - **Docker-only.** Nur `make`-Targets (`AGENTS.md` §3.1); nach dem Wave-Self-Close-Commit
   `make gates` grün bestätigen.
-- **Strenges Doc-Gate.** `LH-`/`ADR-`/`MR-`-Kennungen in gescannten `.md` als klickbare Anker-Links —
+- **Strenges Doc-Gate.** Die `ids`-Kennungen (`F-`/`NF-`/`MVP-`/`AK-`/`RAK-`/`R-`, MR-003) in
+  gescannten `.md` als klickbare Anker-Links —
   die Results-Notiz und die Roadmap werden gescannt.
 - **Neue Artefakte per `cp` aus den vendored Templates** — die Results-Notiz entsteht per `cp` aus
   `.harness/baseline/<tag>/templates/docs/plan/planning/welle-results.template.md` und wird danach

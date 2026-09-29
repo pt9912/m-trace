@@ -30,9 +30,9 @@ Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevan
   `AGENTS.md` §6: nach jeder Inhaltsänderung — inklusive jedes Commits und jedes `git mv` — den
   proportionalen Aggregat-Gate erneut laufen lassen (`make docs-check` bei reinen Doku-Änderungen,
   sonst `make gates`).
-- **Strenges Doc-Gate (d-check).** Jede `LH-`/`ADR-`/`MR-`-Kennung in einer gescannten `.md` muss
-  ein klickbarer Anker-Link sein (link-policy: always) — ein bares Kennungs-Token bricht
-  `docs-check` (`id-unlinked`). `codepaths` verlangt, dass Pfade in Inline-Code existieren: eine
+- **Strenges Doc-Gate (d-check).** Die `ids`-Kennungen (`F-`/`NF-`/`MVP-`/`AK-`/`RAK-`/`R-`, MR-003) in
+  einer gescannten `.md` müssen ein klickbarer Anker-Link sein (link-policy: always) — ein bares
+  Kennungs-Token bricht `docs-check` (`id-unlinked`). `codepaths` verlangt, dass Pfade in Inline-Code existieren: eine
   *geplante* Datei braucht einen Inline-`d-check:ignore`-Marker, eine *bewusst entfernte* gehört in
   `ignore-refs`. Spec verweist nie abwärts auf ADR/Slice; ein Verweis auf eine superseded ADR nur
   via Inline-Code + `d-check:ignore`. `docs/reviews/**` ist ausgenommen (Zeitdokumente).
@@ -40,15 +40,16 @@ Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevan
   dann ausfüllen — keine handgeschriebenen oder repo-gepflegten Template-Kopien.
 - **Commit via Message-Datei** (`git commit -F <datei>`): längere Messages entstehen lesbar in einer
   Datei, nicht im Kommando-Zeilen-String.
-- **Commit-Kennung.** Eine Commit-Message ohne Kennung (`ADR-NNNN`, `LH-XX-NN`, `MR-NNN`,
-  `slice-N`) weist der git-eigene Hook `.githooks/commit-msg` ab, sobald er aktiviert ist. Er liegt
+- **Commit-Kennung.** Eine Commit-Message ohne Kennung (`F-1`, `NF-2`, `MVP-3`, `AK-4`, `RAK-5`,
+  `R-6`, `ADR-NNNN`, `MR-NNN`, `slice-<NNN>` — die Menge nach MR-003) weist der git-eigene Hook
+  `.githooks/commit-msg` ab, sobald er aktiviert ist. Er liegt
   versioniert im Repo und **reist mit dem Klon, seine Aktivierung nicht**: `make hooks-install`
   setzt `core.hooksPath` und ist der eine Schritt dazwischen; `git commit --no-verify` umgeht ihn.
   **An diesem Pfad ist das Werkzeug ein Gast** — der Name ist von `git` fixiert und das Verzeichnis
   gehört dem Repo: der Bootstrap legt seinen Träger **nur ab, wo der Pfad frei ist**. Führt dieses
   Repo dort schon einen eigenen, bleibt er unberührt, und der Bootstrap sagt es; die mitgelieferte
-  Prüfung `tools/harness/commit-msg-traceability.sh` liegt in beiden Fällen daneben (sie wird bei
-  jedem Lauf kanonisch neu geschrieben) und kann aus dem eigenen Träger aufgerufen werden.
+  Prüfung `tools/harness/commit-msg-traceability.sh` liegt in beiden Fällen daneben und kann aus dem
+  eigenen Träger aufgerufen werden.
   Geprüft wird die **Anwesenheit** einer Kennung, nicht ihre Wahrheit. Was er **nicht** erreicht:
   die zweite Hälfte der Traceability-Zusage — ein Doku-Update bei berührtem öffentlichem Vertrag —
   ist von einem Commit-Wächter nicht mechanisch prüfbar und bleibt deine Arbeit. Er **erreicht**
@@ -67,7 +68,7 @@ Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevan
    Baum laden.
 6. Die als Argument übergebene Slice-Datei lesen.
 7. Alle referenzierten ADRs und Anforderungen lesen.
-8. Berichten: Slice-ID · LH-IDs · ADR-IDs · betroffene Komponenten · zu laufende Gates.
+8. Berichten: Slice-ID · Anforderungs-IDs · ADR-IDs · betroffene Komponenten · zu laufende Gates.
 
 ## Nach in-progress eintreten (Modul 5 Lifecycle + Modul 8 Übergabe)
 
@@ -144,7 +145,8 @@ ist eine Lifecycle-Rücksprungkante (11).
     (indikativ, auflösbar), oder trägt er eine Slice-Nummer als Begründung, ein „(… , entschieden)"
     ohne Anker-Form, oder einen Konjunktiv über eine verworfene Alternative bzw. eine noch nicht
     existierende künftige Änderung (**„sobald Slice X das tut …"**)? Herkunft steht nur als **ein**
-    auflösbares Feld in den dort genannten Formen (`LH-*`, `ADR-*`, `· seit welle-<NN>`, wellenlos
+    auflösbares Feld in den dort genannten Formen (`F-*`/`NF-*`/`MVP-*`/`AK-*`/`RAK-*`/`R-*`/`ADR-*`,
+    `· seit welle-<NN>`, wellenlos
     `· seit slice-<NNN>`) — alles andere ist Zustand, keine Chronik, und wird vor der Übergabe
     umformuliert statt mitgeschleift.
 

@@ -84,7 +84,7 @@ SELBSTPRUEFUNG_GATE="${SELBSTPRUEFUNG_GATE:-make gates}"
 # Die zwei Commit-Messages. Sie gehoeren zum Traeger, nicht zum Lauf: ein
 # eigener Traeger bringt eine eigene Kennungs-Menge mit.
 SELBSTPRUEFUNG_MSG_ROT="${SELBSTPRUEFUNG_MSG_ROT:-Selbstpruefung ohne Kennung}"
-SELBSTPRUEFUNG_MSG_GRUEN="${SELBSTPRUEFUNG_MSG_GRUEN:-Selbstpruefung mit Kennung LH-FA-01}"
+SELBSTPRUEFUNG_MSG_GRUEN="${SELBSTPRUEFUNG_MSG_GRUEN:-Selbstpruefung mit Kennung MR-003}"
 
 fehler() {
 	echo "selbstpruefung: FEHLER — $1" >&2

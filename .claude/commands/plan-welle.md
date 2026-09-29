@@ -25,8 +25,9 @@ Lies den Adaptions-Block („MR-Block") in `harness/conventions.md`; die planung
   bestehendes Artefakt.** Ein `cp` gefolgt von vollem Überschreiben (`Write`) ist derselbe Verstoß,
   weil der `cp` verworfen wird. Das gilt für den Welle-Plan (`welle.template.md`) **und** jeden neuen
   Slice (`slice.template.md`).
-- **Strenges Doc-Gate (d-check).** Jede `LH-`/`ADR-`/`MR-`-Kennung in einer gescannten `.md` muss ein
-  klickbarer Anker-Link sein (link-policy: always) — ein bares Kennungs-Token bricht `docs-check`. Der
+- **Strenges Doc-Gate (d-check).** Die `ids`-Kennungen (`F-`/`NF-`/`MVP-`/`AK-`/`RAK-`/`R-`, MR-003) in
+  einer gescannten `.md` müssen ein klickbarer Anker-Link sein (link-policy: always) — ein bares
+  Kennungs-Token bricht `docs-check`. Der
   Welle-Plan wird gescannt.
 - **Docker-only.** Nur `make`-Targets, nie Host-Toolchain (`AGENTS.md` §3.1). Nach jeder
   Inhaltsänderung den proportionalen Aggregat-Gate erneut laufen lassen (`AGENTS.md` §6).
