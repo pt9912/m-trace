@@ -35,17 +35,18 @@ sie automatisch.
 
 ## 2. Definition of Done
 
-- [ ] `tools/harness/{slice-mv,baseline-verify,history-range-guard}.sh`
-      byte-identisch aus der Emission übernommen.
-- [ ] `harness/mk/{slice-mv,baseline}.mk` übernommen (GATE_CHECKS-Zeilen
+- [x] `tools/harness/{slice-mv,baseline-verify,history-range-guard}.sh`
+      übernommen — `slice-mv`/`history-range-guard` byte-identisch;
+      `baseline-verify` mit deklarierter Abweichung (§6).
+- [x] `harness/mk/{slice-mv,baseline}.mk` übernommen (GATE_CHECKS-Zeilen
       inert — m-trace hat keinen Aggregator-Verbraucher).
-- [ ] `Makefile`: `history-range-guard`-Target + Vorbedingung an
+- [x] `Makefile`: `history-range-guard`-Target + Vorbedingung an
       `doc-immutable`/`doc-commits`.
-- [ ] Verifikation: `make baseline-verify` grün (54 Dateien);
+- [x] Verifikation: `make baseline-verify` grün (54 Dateien);
       `make slice-mv` ohne Argument → Usage/Exit 2;
       `make history-range-guard RANGE=<gültige Range>` Exit 0.
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] `make docs-check` grün (191 Dateien, 0 Befunde).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 
 ## 3. Plan (vor Code)
 
@@ -73,10 +74,47 @@ DoD vollständig + Verifikationsläufe grün + Closure-Notiz + `git mv` nach
 - **GATE_CHECKS-Zeilen in den Fragmenten sind inert** (m-trace hat keinen
   aih-Aggregator) — **Ausgang:** entfallen — verbatim-Übernahme laut
   Emission, Kommentar erklärt die Herkunft.
+- **`baseline-verify.sh` weicht um genau einen sed-Filter ab** —
+  Normalisierung `./`-präfixierter SHA256SUMS-Zeilen auf der Soll-Seite des
+  Vollständigkeits-Vergleichs (Bootstrap slice-025 listete mit Präfix,
+  Emission ohne — ohne Filter falsch-rot über alle 54 Zeilen). Owner-Entscheid:
+  `.harness/baseline/**` bleibt unangetastet; die Digest-Prüfung (`sha256sum
+  -c`) läuft weiter gegen die committete SHA256SUMS. **Ausgang:** deklariert
+  ([Review-Report slice-034, F-4](../../../reviews/2026-09-29-slice-034.md);
+  Verifier Item 1 bestätigt exakt diese eine Differenz).
+- **Roadmap-Fix (+2/−1) war in §3 nicht deklariert** — planning-drift
+  („Keine aktive Welle" bei liegendem Slice) erzwang die Zeile. **Ausgang:**
+  eingetreten, in §7 nachgeführt.
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+**Datum:** 2026-09-29. **Belege:** Review
+[2026-09-29-slice-034.md](../../../reviews/2026-09-29-slice-034.md) (Erstlauf
+merge-blockierend, Nachfolge `577502e` entkräftet); Verifier
+[2026-09-29-slice-034-verifier.md](../../../reviews/2026-09-29-slice-034-verifier.md)
+(„DoD bestätigt: ja", alle Läufe selbst gefahren, Negativ-Proben belegen
+fail-closed).
+
+- **Geliefert:** `slice-mv` + `history-range-guard` byte-identisch,
+  `baseline-verify` mit deklariertem Einzeiler (§6), Fragmente unter
+  `harness/mk/` (GATE_CHECKS inert), Makefile-Wiring als Vorbedingung vor
+  `doc-immutable`/`doc-commits`. Die Durchsetzungsschicht (Rollen-Agenten,
+  Commands, commit-msg-Träger, Selbstprüfung) ging als Owner-Entscheid
+  neben dem Slice (`8856c40`) — die §1-Grenze (Stop-Hook, Command-Guard,
+  Gate-Nachweis nicht adoptiert) ist eingehalten.
+- **Validator:** n/a — interne Wartung, kein End-Nutzer-Wert; ausdrücklich
+  übersprungen statt still.
+- **Risiken:** [R-32](../risks-backlog.md#r-32) (commit-msg-Muster ohne
+  MR-003-Familien) weiter offen, Triggerschwelle „vor `make hooks-install`".
+  Übrige §6: entfallen bzw. deklariert.
+- **Beobachtungs-Register:** keine Beobachtung angefallen.
+- **Steering-Loop-Lerneintrag (geschärfte Regel, `· seit slice-034`):**
+  Adoptions-Abgleich prüft Tool UND Datenseite. „Byte-identisch" blieb für
+  `slice-mv`/`history-range-guard` erfüllt, während `baseline-verify` am
+  Bootstrap-Datenformat scheiterte (`SHA256SUMS` mit `./`-Präfix). Die
+  Reparatur liegt am Tool als deklarierte Abweichung, nie am Datenanker
+  `.harness/baseline/**` — er trägt die Integrität und wird nicht
+  regeneriert.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
