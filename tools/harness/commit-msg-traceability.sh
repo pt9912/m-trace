@@ -57,10 +57,9 @@ fi
 
 # Kennung: ERE ueber die ganze Datei, Kommentarzeilen ausgenommen. Der Dialekt
 # ist POSIX-ERE ([0-9] statt \d) — bash kennt die \d-Kurzform nicht; \b als
-# GNU-ERE-Wortgrenze greift auf glibc. Die Wortgrenze verhindert Substring-
-# Matches: `R-` taucht als Fragment in `ADR-0001`/`MR-003` auf, `F-` in `NF-`
-# — \b plus Reihenfolge (NF- vor F-) waere hier schon genug; sie blockt zusaetzlich
-# Fremd-Substrings (`FOR-1234`).
+# GNU-ERE-Wortgrenze greift auf glibc. Die Wortgrenze an der Alternation
+# verankert jeden Match auf Token-Anfang: `ADR-0001`/`MR-003` tragen kein
+# `R-`-Match, `NF-` kein `F-`-Match, `FOR-1234` bleibt fremd.
 patterns='\b(ADR-[0-9]{4}|NF-[0-9]+|F-[0-9]+|MVP-[0-9]+|AK-[0-9]+|RAK-[0-9]+|R-[0-9]+|MR-[0-9]{3}|slice-[0-9]+)'
 while IFS= read -r line || [ -n "$line" ]; do
   trimmed="${line#"${line%%[![:space:]]*}"}"
