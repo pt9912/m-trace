@@ -6,7 +6,7 @@
 geprüft.
 
 **Gegenstand:** Plan
-`docs/plan/planning/in-progress/slice-034-tools-uebernahme.md` (Stand
+`docs/plan/planning/done/slice-034-tools-uebernahme.md` (Stand
 in-progress) gegen die Commits `8856c40` (Durchsetzungsschicht, Owner-Entscheid
 ohne Slice-Plan — außerhalb des slice-034-Umfangs), `7b9ac06`
 (slice-034-Implementierung), `577502e` (Review-Nachfolge F-1/F-2). Prüf-Stand:
