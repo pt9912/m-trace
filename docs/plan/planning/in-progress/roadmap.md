@@ -21,7 +21,9 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+Wellenlose Arbeit im Lauf:
+[`slice-032`](slice-032-traeger-fetch.md) — traeger-fetch übernehmen
+(verifizierter Fetch des ai-harness-init-Trägers).
 
 ## Nächste Wellen
 
