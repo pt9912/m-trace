@@ -14,11 +14,12 @@ ist die DoD dieses Slices, keine Wellen-Grenze.
 
 ## 1. Ziel und Abgrenzung
 
-**Ziel:** Die drei Review-Fundklassen der Familie „Plan-Angabe vs. realer
-Diff" (slice-025 F-1, slice-026 F-1, slice-028 F-1) als BEO-PLAN/plan-diff-
-drift ins Beobachtungs-Register formalisieren (3×-Schwelle erreicht): Sub-
-Area `PLAN` in der Modus-Deklaration ergänzen (Kürzel-Nachschlag-Pflicht),
-die Gegenmaßnahme in `AGENTS.md` §6 verkörpern, `state.md` auf `verkörpert`
+**Ziel:** Die drei Review-Fundmeldungen der Familie „Plan-Angabe vs. realer
+Diff" (je erstes Finding in den Reports `2026-09-29-slice-025.md`,
+`-slice-026.md`, `-slice-028.md`) als BEO-PLAN/plan-diff-drift ins
+Beobachtungs-Register formalisieren (3×-Schwelle erreicht): Sub-Area `PLAN`
+in der Modus-Deklaration ergänzen (Kürzel-Nachschlag-Pflicht), die
+Gegenmaßnahme in `AGENTS.md` §6 verkörpern, `state.md` auf `verkörpert`
 stellen.
 
 **Ausdrücklich NICHT in diesem Slice:**
@@ -30,15 +31,15 @@ stellen.
 
 ## 2. Definition of Done
 
-- [ ] `harness/conventions.md` §Modus-Deklaration um Sub-Area `PLAN` ergänzt
+- [x] `harness/conventions.md` §Modus-Deklaration um Sub-Area `PLAN` ergänzt
       (Kürzel-Nachschlag-Basis für den BEO-Pfad).
-- [ ] `AGENTS.md` §6, Schritt 4: Plan-Abgleich vor der Slice-Closure
+- [x] `AGENTS.md` §6, Schritt 4: Plan-Abgleich vor der Slice-Closure
       verkörpert.
-- [ ] `BEO-PLAN/plan-diff-drift/` angelegt: `observation.md`, `state.md`
+- [x] `BEO-PLAN/plan-diff-drift/` angelegt: `observation.md`, `state.md`
       (Stand `verkörpert`), `evidence/slice-025.md`, `evidence/slice-026.md`,
       `evidence/slice-028.md`.
-- [ ] `make docs-check` grün.
-- [ ] Closure-Notiz.
+- [x] `make docs-check` grün.
+- [x] Closure-Notiz.
 
 ## 3. Plan (vor Code)
 
@@ -67,7 +68,34 @@ DoD vollständig + `make docs-check` grün + Closure-Notiz + `git mv` nach
 
 ## 7. Closure-Notiz
 
-*(füllt bei Closure)*
+Das Beobachtungs-Register trägt seinen ersten Eintrag: `BEO-PLAN/plan-diff-
+drift` (observation + state `verkörpert` + 3 Evidence-Dateien je
+abgeschlossenem Vorgang). Die Gegenmaßnahme ist in `AGENTS.md` §6, Schritt 4
+verkörpert (Plan-Abgleich vor der Slice-Closure); die Sub-Area `PLAN` steht
+in der Modus-Deklaration als Kürzel-Nachschlag-Basis.
+
+**Was hat funktioniert:** Die 3×-Lage war vollständig belegt — je Fund
+existiert eine Evidence-Datei mit Vorgang + Fund-Satz; der Zähler
+(Anzahl Evidence-Dateien) ergibt sich aus dem Dateisystem.
+
+**Was ging anders als geplant:** Die Evidence-Dateien lagen im
+`ids`-Scope — die Review-Finding-IDs (`F-1`) kollidieren dort mit der
+Lastenheft-Requirement `F-1` (gleicher Token, andere Semantik) und wurden
+als `id-unlinked` beanstandet. Formuliert auf „erstes Finding" statt
+Token; die `F-N`-Tokens sind im `ids`-Scope nicht zu nutzen, wenn kein
+Lastenheft-Bezug gemeint ist.
+
+**Steering-Loop-Eintrag:** Guide geschärft: Evidence- und Beleg-Dateien in
+`ids`-gescannten Dirs dürfen Lastenheft-Kennungs-Token (`F-N`) nur mit
+Lastenheft-Bezug tragen. (Gezählt, nicht verkörpert — Erstvorkommen.)
+
+**Beobachtungs-Register (`../observations/`):** `BEO-PLAN/plan-diff-drift`
+neu angelegt, Belege `evidence/slice-025.md`, `evidence/slice-026.md`,
+`evidence/slice-028.md`.
+
+**Folge-Slices:** keine.
+
+**Risiken aus §6:** entfallen (siehe §6 — Verkörperung im selben Vorgang).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
