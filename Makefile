@@ -16,9 +16,9 @@ THRESHOLD ?= $(COVERAGE_THRESHOLD)
 
 .DEFAULT_GOAL := help
 
-# `d-check.mk` wird mit d-check v0.75.0 `--print-mk` erzeugt. Der Digest
+# `d-check.mk` wird mit d-check v0.79.0 `--print-mk` erzeugt. Der Digest
 # sticht den dort eingebetteten Release-Tag und hält alle Targets reproduzierbar.
-DCHECK_DIGEST ?= sha256:18e9cd857f8db3569526d1f9a3cbeba8af51e9f2dd84c17a22444028b977c3da
+DCHECK_DIGEST ?= sha256:b4b8756b40d3dcd2670a3f83526cb5e5d727d1a850571f73be31edba248abb40
 include d-check.mk
 
 # Architektur-Gate via a-check (digest-gepinnt in a-check.mk). Löst das

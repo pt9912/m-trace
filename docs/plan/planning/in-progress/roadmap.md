@@ -21,7 +21,9 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+Wellenlose Arbeit im Lauf:
+[`slice-028`](slice-028-gate-tool-bumps.md) — Gate-Tool-Bumps (a-check
+v0.20.0, d-check v0.79.0).
 
 ## Nächste Wellen
 
