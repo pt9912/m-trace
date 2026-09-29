@@ -21,7 +21,9 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-**Keine aktive Welle.**
+Wellenlose Arbeit im Lauf:
+[`slice-027`](slice-027-risks-backlog-ausduennen.md) — risks-backlog
+ausdünnen (§1.1 auf offene Risiken, Duplikate raus).
 
 ## Nächste Wellen
 
