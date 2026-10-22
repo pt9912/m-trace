@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Go-Toolchain `1.26.6` → `1.26.10`** (Dockerfile samt Digest, zehn
+  `smoke-*.sh`) — behebt die stdlib-Befunde, die govulncheck als erreichbar
+  und Trivy als HIGH meldeten (GO-2026-6599, GO-2026-6600,
+  CVE-2026-78667, CVE-2026-97031, CVE-2026-111943). Nightly-Audit
+  Issues #49–#72.
+- `golang.org/x/net` `v0.58.0` → `v0.60.0` (CVE-2026-78669, HIGH).
+- pnpm-Overrides gegen HIGH-Advisories, rein transitiv in devDeps (kein
+  Runtime-Pfad): neu `vite` `^8.1.6` (GHSA-587h-7wmj-h5pm) und
+  `source-map-js` `^1.2.2`; angehoben `undici` `^7.29.1`,
+  `brace-expansion` `^5.0.11`, `devalue` `^5.9.3`.
+
 ## [0.25.1] - 2026-08-21
 
 > **Security-Auslöser**: `security-audit.yml`-Nightly-Treffer vom
