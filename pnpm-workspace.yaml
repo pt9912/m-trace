@@ -68,6 +68,11 @@ overrides:
   # bzw. tsup (reine devDeps in Lint-/Build-Gates, kein Runtime-Pfad).
   # Fix in 8.5.18. Issues #17/#18.
   postcss: ^8.5.18
+  # zod <4.6.6: Speicher-Erschoepfung bei der Validierung ueberdimensionierter
+  # constrained Collections (GHSA-mrhx-c7xc-m3w5, HIGH). Nur transitiv via
+  # @stryker-mutator/core > mutation-server-protocol > zod (reines devDep im
+  # Mutation-Gate, kein Runtime-Pfad). Fix in 4.6.6. Issues #73/#74/#76.
+  zod: ^4.6.6
 
 # Workspace-Pakete werden beim `pnpm deploy` in das Ziel-Bundle
 # INJIZIERT statt als Symlink in den Workspace zu zeigen. Notwendig

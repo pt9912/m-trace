@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Runtime-Pfad): neu `vite` `^8.1.6` (GHSA-587h-7wmj-h5pm) und
   `source-map-js` `^1.2.2`; angehoben `undici` `^7.29.1`,
   `brace-expansion` `^5.0.11`, `devalue` `^5.9.3`.
+- pnpm-Override `zod` `^4.6.6` (GHSA-mrhx-c7xc-m3w5, HIGH), rein transitiv
+  via `@stryker-mutator/core` im Mutation-Gate (kein Runtime-Pfad).
+  Nightly-Audit Issues #73, #74, #76.
 
 ## [0.25.1] - 2026-08-21
 
